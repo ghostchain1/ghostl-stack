@@ -24,6 +24,7 @@ const BRIDGE = process.env.BRIDGE_L2L3_ADDRESS!;
 const POLICY = process.env.GUARD_POLICY_ADDRESS!;
 const PRIVATE_KEY = process.env.PRIVATE_KEY || "";
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
+const ALLOW_INSECURE_ADMIN = process.env.ALLOW_INSECURE_ADMIN === "1";
 const STATE_DIR = process.env.STATE_DIR || "/state";
 const AUTO_PAUSE = process.env.AUTO_PAUSE !== "0";
 const riskWindowRaw = Number(process.env.RISK_WINDOW_SECONDS || "300");
@@ -242,7 +243,10 @@ app.use(express.json());
 app.use(express.static(new URL("../public", import.meta.url).pathname));
 
 function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
-  if (!ADMIN_TOKEN) return next();
+  if (!ADMIN_TOKEN && !ALLOW_INSECURE_ADMIN) {
+    return res.status(403).json({ ok: false, error: "ADMIN_TOKEN not configured" });
+  }
+  if (!ADMIN_TOKEN && ALLOW_INSECURE_ADMIN) return next();
   const token = req.header("x-admin-token");
   if (!token || token !== ADMIN_TOKEN) return res.status(401).json({ ok: false, error: "unauthorized" });
   next();
