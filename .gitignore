@@ -11,3 +11,7 @@ contracts/typechain-types/
 
 # generated at runtime by deploy script
 services/ghost-guard/.env
+services/ghost-relayer/.env
+
+# local scratch
+.tmp/
