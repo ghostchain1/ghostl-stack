@@ -35,18 +35,37 @@ describe("ERC20 bridge (MVP)", function () {
       .to.emit(bridge, "ERC20Finalized")
       .withArgs(await l2Token.getAddress(), user.address, user.address, amount, nonce);
 
-    const L3Token = await ethers.getContractFactory("L3BridgedToken");
-    const l3Token = await L3Token.connect(owner).deploy(relayer.address, await l2Token.getAddress());
-    await l3Token.waitForDeployment();
+    const Factory = await ethers.getContractFactory("L3BridgedTokenFactory");
+    const factory = await Factory.connect(owner).deploy(relayer.address);
+    await factory.waitForDeployment();
 
-    await expect(l3Token.connect(relayer).mintFromL2(user.address, user.address, amount, nonce))
-      .to.emit(l3Token, "MintedFromL2");
+    const deployTx = await factory
+      .connect(relayer)
+      .getOrDeployBridgedToken(await l2Token.getAddress(), "Ghost Token (L2) (L3)", "GHOSTL3", 18);
+    const receipt = await deployTx.wait();
+    const event = receipt?.logs
+      .map((l) => {
+        try {
+          return factory.interface.parseLog(l);
+        } catch {
+          return null;
+        }
+      })
+      .find((e) => e?.name === "BridgedTokenDeployed");
+    const l3TokenAddr = event?.args?.l3Token as string;
+    expect(ethers.isAddress(l3TokenAddr)).to.equal(true);
+
+    const l3Token = await ethers.getContractAt("L3BridgedToken", l3TokenAddr);
+
+    await expect(l3Token.connect(relayer).mintFromL2(user.address, user.address, amount, nonce)).to.emit(
+      l3Token,
+      "MintedFromL2"
+    );
     expect(await l3Token.balanceOf(user.address)).to.equal(amount);
 
     await expect(l3Token.connect(relayer).mintFromL2(user.address, user.address, amount, nonce)).to.be.revertedWith("already");
 
-    await expect(l3Token.connect(user).burnToL2(user.address, amount, nonce))
-      .to.emit(l3Token, "BurnInitiated");
+    await expect(l3Token.connect(user).burnToL2(user.address, amount, nonce)).to.emit(l3Token, "BurnInitiated");
     expect(await l3Token.balanceOf(user.address)).to.equal(0n);
 
     await expect(bridge.connect(user).releaseERC20FromL3(await l2Token.getAddress(), user.address, user.address, amount, nonce))
@@ -94,4 +113,3 @@ describe("ERC20 bridge (MVP)", function () {
       .to.be.revertedWith("blocked by policy");
   });
 });
-

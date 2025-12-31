@@ -13,8 +13,8 @@ contract L3BridgedToken is ERC20 {
 
     event OwnerChanged(address indexed owner);
     event RelayerChanged(address indexed relayer);
-    event MintedFromL2(address indexed from, address indexed to, uint256 amount, uint256 nonce, bytes32 key);
-    event BurnInitiated(address indexed from, address indexed to, uint256 amount, uint256 nonce, bytes32 key);
+    event MintedFromL2(address indexed l2Token, address indexed from, address indexed to, uint256 amount, uint256 nonce, bytes32 key);
+    event BurnInitiated(address indexed l2Token, address indexed from, address indexed to, uint256 amount, uint256 nonce, bytes32 key);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "not owner");
@@ -26,8 +26,15 @@ contract L3BridgedToken is ERC20 {
         _;
     }
 
-    constructor(address relayerAddr, address l2TokenAddr) ERC20("Ghost Token (L3)", "GHOST") {
-        owner = msg.sender;
+    constructor(
+        address ownerAddr,
+        address relayerAddr,
+        address l2TokenAddr,
+        string memory name_,
+        string memory symbol_,
+        uint8 decimals_
+    ) ERC20(name_, symbol_, decimals_) {
+        owner = ownerAddr;
         relayer = relayerAddr;
         l2Token = l2TokenAddr;
     }
@@ -47,7 +54,7 @@ contract L3BridgedToken is ERC20 {
         require(!processed[key], "already");
         processed[key] = true;
         _mint(to, amount);
-        emit MintedFromL2(from, to, amount, nonce, key);
+        emit MintedFromL2(l2Token, from, to, amount, nonce, key);
     }
 
     /// @notice Burn bridged tokens on L3 to release the escrowed L2 tokens to `to` (via relayer).
@@ -56,6 +63,6 @@ contract L3BridgedToken is ERC20 {
         require(!burned[key], "already");
         burned[key] = true;
         _burn(msg.sender, amount);
-        emit BurnInitiated(msg.sender, to, amount, nonce, key);
+        emit BurnInitiated(l2Token, msg.sender, to, amount, nonce, key);
     }
 }

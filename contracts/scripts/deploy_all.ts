@@ -46,11 +46,31 @@ async function main() {
   const inboxAddr = await inbox.getAddress();
   console.log("L3Inbox (L3):", inboxAddr);
 
-  const L3Token = await ethers.getContractFactory("L3BridgedToken");
-  const l3Token = await L3Token.connect(l3Signer).deploy(relayerAddr, l2TokenAddr);
-  await l3Token.waitForDeployment();
-  const l3TokenAddr = await l3Token.getAddress();
-  console.log("L3BridgedToken (L3):", l3TokenAddr);
+  const Factory = await ethers.getContractFactory("L3BridgedTokenFactory");
+  const factory = await Factory.connect(l3Signer).deploy(relayerAddr);
+  await factory.waitForDeployment();
+  const factoryAddr = await factory.getAddress();
+  console.log("L3BridgedTokenFactory (L3):", factoryAddr);
+
+  // Deploy a default bridged token for the demo GhostTokenL2.
+  const l2Name = await l2Token.name();
+  const l2Symbol = await l2Token.symbol();
+  const l2Decimals = await l2Token.decimals();
+  const l3Name = `${l2Name} (L3)`;
+  const l3Symbol = `${l2Symbol}L3`;
+  const deployTokenTx = await factory.getOrDeployBridgedToken(l2TokenAddr, l3Name, l3Symbol, l2Decimals);
+  const deployTokenRcpt = await deployTokenTx.wait();
+  const deployed = deployTokenRcpt?.logs
+    .map((l) => {
+      try {
+        return factory.interface.parseLog(l);
+      } catch {
+        return null;
+      }
+    })
+    .find((e) => e?.name === "BridgedTokenDeployed");
+  const l3TokenAddr = String(deployed?.args?.l3Token ?? "");
+  console.log("L3BridgedToken (L3, default):", l3TokenAddr);
 
   // Write addresses for ghost-guard env
   const fs = await import("node:fs/promises");
@@ -76,6 +96,7 @@ async function main() {
     `RPC_L3=http://localhost:10545`,
     `BRIDGE_L2L3_ADDRESS=${bridgeAddr}`,
     `L3_INBOX_ADDRESS=${inboxAddr}`,
+    `L3_TOKEN_FACTORY_ADDRESS=${factoryAddr}`,
     `L3_TOKEN_ADDRESS=${l3TokenAddr}`,
     `RELAYER_PRIVATE_KEY=`,
     `L2_RELAYER_PRIVATE_KEY=`,
