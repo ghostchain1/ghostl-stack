@@ -1,10 +1,9 @@
 {
   "name": "ghostl-contracts",
   "private": true,
-  "type": "module",
   "scripts": {
     "build": "hardhat compile",
-    "deploy:all": "hardhat run scripts/deploy_all.ts",
+    "deploy:all": "hardhat run --network ghostl2 scripts/deploy_all.ts",
     "test": "hardhat test"
   },
   "devDependencies": {
