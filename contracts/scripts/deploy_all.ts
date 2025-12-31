@@ -40,6 +40,26 @@ async function main() {
   await setRelayerTx.wait();
   console.log("Bridge relayer (L2):", relayerAddr);
 
+  // Deploy optimistic settlement contracts:
+  // - L2 batches posted to L1 (Anvil)
+  // - L3 batches posted to L2 (GhostL2)
+  const l1Rpc = process.env.RPC_L1 ?? "http://localhost:8545";
+  const l1Provider = new ethers.JsonRpcProvider(l1Rpc);
+  const l1Signer = new ethers.Wallet(relayerKey, l1Provider);
+
+  const Rollup = await ethers.getContractFactory("OptimisticRollup");
+  const challengePeriodSeconds = 30;
+
+  const l1Rollup = await Rollup.connect(l1Signer).deploy(7192, challengePeriodSeconds, await l1Signer.getAddress());
+  await l1Rollup.waitForDeployment();
+  const l1RollupAddr = await l1Rollup.getAddress();
+  console.log("OptimisticRollup L2->L1 (L1):", l1RollupAddr);
+
+  const l2Rollup = await Rollup.connect(l2[0]).deploy(7393, challengePeriodSeconds, await l2[0].getAddress());
+  await l2Rollup.waitForDeployment();
+  const l2RollupAddr = await l2Rollup.getAddress();
+  console.log("OptimisticRollup L3->L2 (L2):", l2RollupAddr);
+
   const Inbox = await ethers.getContractFactory("L3Inbox");
   const inbox = await Inbox.connect(l3Signer).deploy(relayerAddr);
   await inbox.waitForDeployment();
@@ -96,9 +116,12 @@ async function main() {
   const relayerEnvPath = "/workspaces/ghostl-stack/services/ghost-relayer/.env";
   const relayerEnv = [
     `PORT=7171`,
+    `RPC_L1=http://localhost:8545`,
     `RPC_L2=http://localhost:9545`,
     `RPC_L3=http://localhost:10545`,
     `BRIDGE_L2L3_ADDRESS=${bridgeAddr}`,
+    `L1_ROLLUP_L2_ADDRESS=${l1RollupAddr}`,
+    `L2_ROLLUP_L3_ADDRESS=${l2RollupAddr}`,
     `L3_INBOX_ADDRESS=${inboxAddr}`,
     `L3_TOKEN_FACTORY_ADDRESS=${factoryAddr}`,
     `L3_TOKEN_ADDRESS=${l3TokenAddr}`,
@@ -111,10 +134,41 @@ async function main() {
   await fs.writeFile(relayerEnvPath, relayerEnv, "utf8");
   console.log("Wrote:", relayerEnvPath);
 
+  const proposerDir = "/workspaces/ghostl-stack/services/ghost-rollup-proposer";
+  const proposerL2Path = `${proposerDir}/.env.l2`;
+  const proposerL3Path = `${proposerDir}/.env.l3`;
+  const proposerL2Env = [
+    `PORT=7272`,
+    `RPC_SETTLEMENT=http://localhost:8545`,
+    `RPC_CHILD=http://localhost:9545`,
+    `ROLLUP_ADDRESS=${l1RollupAddr}`,
+    `PROPOSER_PRIVATE_KEY=`,
+    `CHALLENGE_PERIOD_SECONDS=${challengePeriodSeconds}`,
+    `BATCH_SIZE=20`,
+    `CONFIRMATIONS=0`
+  ].join("\n") + "\n";
+  const proposerL3Env = [
+    `PORT=7373`,
+    `RPC_SETTLEMENT=http://localhost:9545`,
+    `RPC_CHILD=http://localhost:10545`,
+    `ROLLUP_ADDRESS=${l2RollupAddr}`,
+    `PROPOSER_PRIVATE_KEY=`,
+    `CHALLENGE_PERIOD_SECONDS=${challengePeriodSeconds}`,
+    `BATCH_SIZE=20`,
+    `CONFIRMATIONS=0`
+  ].join("\n") + "\n";
+  await fs.mkdir(proposerDir, { recursive: true });
+  await fs.writeFile(proposerL2Path, proposerL2Env, "utf8");
+  await fs.writeFile(proposerL3Path, proposerL3Env, "utf8");
+  console.log("Wrote:", proposerL2Path);
+  console.log("Wrote:", proposerL3Path);
+
   console.log("\nNext:");
   console.log("1) Add PRIVATE_KEY in services/ghost-guard/.env (use a funded key on L2)");
   console.log("2) Add RELAYER_PRIVATE_KEY in services/ghost-relayer/.env (use a funded key on L3)");
-  console.log("3) Restart docker compose or run services locally");
+  console.log("3) Add L2_RELAYER_PRIVATE_KEY in services/ghost-relayer/.env (funded on L2 for finalization / releases)");
+  console.log("4) Add PROPOSER_PRIVATE_KEY in services/ghost-rollup-proposer/.env.l2 and .env.l3 to post batches");
+  console.log("5) Restart docker compose or run services locally");
 }
 
 main().catch((e) => {

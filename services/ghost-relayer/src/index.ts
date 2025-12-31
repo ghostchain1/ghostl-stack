@@ -5,9 +5,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 const PORT = Number(process.env.PORT || "7171");
+const RPC_L1 = process.env.RPC_L1 || "";
 const RPC_L2 = process.env.RPC_L2!;
 const RPC_L3 = process.env.RPC_L3!;
 const BRIDGE = process.env.BRIDGE_L2L3_ADDRESS!;
+const L1_ROLLUP_L2 = process.env.L1_ROLLUP_L2_ADDRESS || "";
+const L2_ROLLUP_L3 = process.env.L2_ROLLUP_L3_ADDRESS || "";
 const L3_INBOX = process.env.L3_INBOX_ADDRESS!;
 const L3_TOKEN_FACTORY = process.env.L3_TOKEN_FACTORY_ADDRESS!;
 const RELAYER_PRIVATE_KEY = process.env.RELAYER_PRIVATE_KEY || "";
@@ -64,12 +67,22 @@ l2Provider.pollingInterval = 1000;
 const l3Provider = new ethers.JsonRpcProvider(RPC_L3, undefined, { polling: true });
 l3Provider.pollingInterval = 1000;
 
+const l1Provider = RPC_L1 ? new ethers.JsonRpcProvider(RPC_L1, undefined, { polling: true }) : null;
+if (l1Provider) l1Provider.pollingInterval = 1000;
+
 const observeOnly = !RELAYER_PRIVATE_KEY;
 const l3Signer = observeOnly ? null : new ethers.NonceManager(new ethers.Wallet(RELAYER_PRIVATE_KEY, l3Provider));
 const l2Key = L2_RELAYER_PRIVATE_KEY || RELAYER_PRIVATE_KEY;
 const l2Signer = l2Key ? new ethers.NonceManager(new ethers.Wallet(l2Key, l2Provider)) : null;
 const inbox = new ethers.Contract(L3_INBOX, inboxAbi, l3Signer ?? l3Provider);
 const l3Factory = new ethers.Contract(L3_TOKEN_FACTORY, l3FactoryAbi, l3Signer ?? l3Provider);
+
+const rollupAbi = [
+  "function batchesLength() view returns (uint256)",
+  "function batches(uint256) view returns (uint256 startBlock,uint256 endBlock,bytes32 root,uint256 proposedAt,bool challenged,bool finalized,bool invalidated)"
+];
+const l1Rollup = l1Provider && L1_ROLLUP_L2 ? new ethers.Contract(L1_ROLLUP_L2, rollupAbi, l1Provider) : null;
+const l2Rollup = L2_ROLLUP_L3 ? new ethers.Contract(L2_ROLLUP_L3, rollupAbi, l2Provider) : null;
 
 type LogEntry = { ts: number; level: "info" | "warn" | "error"; msg: string; data?: any };
 const logBuffer: Array<LogEntry> = [];
@@ -144,6 +157,77 @@ function msgKeyErc20(token: string, from: string, to: string, amount: bigint, no
   );
 }
 
+function hashLeaf(blockNumber: number, blockHash: string): string {
+  return ethers.keccak256(
+    ethers.solidityPacked(["uint256", "bytes32"], [BigInt(blockNumber), blockHash as `0x${string}`])
+  );
+}
+
+function hashPair(a: string, b: string): string {
+  return ethers.keccak256(ethers.concat([a as `0x${string}`, b as `0x${string}`]));
+}
+
+function merkleRoot(leaves: Array<string>): string {
+  if (leaves.length === 0) return ethers.ZeroHash;
+  let level = leaves.slice();
+  while (level.length > 1) {
+    const next: Array<string> = [];
+    for (let i = 0; i < level.length; i += 2) {
+      const left = level[i]!;
+      const right = level[i + 1] ?? left;
+      next.push(hashPair(left, right));
+    }
+    level = next;
+  }
+  return level[0]!;
+}
+
+const verifiedBatchCache = new Set<string>();
+async function verifyFinalizedBatchContainsBlock(opts: {
+  rollup: ethers.Contract | null;
+  settlementName: "l1" | "l2";
+  childProvider: ethers.JsonRpcProvider;
+  childBlockNumber: number;
+  childBlockHash: string;
+}): Promise<boolean> {
+  const { rollup, settlementName, childProvider, childBlockNumber, childBlockHash } = opts;
+  if (!rollup) return true; // gating disabled
+
+  const len = Number(await rollup.batchesLength());
+  const maxScan = Math.min(len, 50);
+  for (let i = len - 1; i >= Math.max(0, len - maxScan); i--) {
+    const b = await rollup.batches(i);
+    const start = Number(b.startBlock);
+    const end = Number(b.endBlock);
+    const root = String(b.root);
+    const finalized = Boolean(b.finalized);
+    const challenged = Boolean(b.challenged);
+    const invalidated = Boolean(b.invalidated);
+    if (!finalized || challenged || invalidated) continue;
+    if (childBlockNumber < start || childBlockNumber > end) continue;
+
+    const cacheKey = `${settlementName}:${rollup.target}:${i}:${root}`;
+    if (!verifiedBatchCache.has(cacheKey)) {
+      // Verify root matches the actual child chain blocks (dev-friendly correctness check).
+      const blocks = await Promise.all(
+        Array.from({ length: end - start + 1 }, (_, j) => childProvider.getBlock(start + j))
+      );
+      const leaves = blocks.map((blk, j) => hashLeaf(start + j, blk!.hash));
+      const computed = merkleRoot(leaves);
+      if (computed !== root) return false;
+      verifiedBatchCache.add(cacheKey);
+    }
+
+    // Ensure the specific leaf exists as expected (cheap sanity check).
+    const expectedLeaf = hashLeaf(childBlockNumber, childBlockHash);
+    const actualLeaf = hashLeaf(childBlockNumber, (await childProvider.getBlock(childBlockNumber))!.hash);
+    if (expectedLeaf !== actualLeaf) return false;
+
+    return true;
+  }
+  return false;
+}
+
 type PendingFinalize =
   | {
       kind: "DepositInitiated";
@@ -152,6 +236,8 @@ type PendingFinalize =
       to: string;
       amount: string;
       nonce: string;
+      l2BlockNumber: number;
+      l2BlockHash: string;
       firstSeen: number;
       lastAttempt: number | null;
       attempts: number;
@@ -164,6 +250,8 @@ type PendingFinalize =
       to: string;
       amount: string;
       nonce: string;
+      l2BlockNumber: number;
+      l2BlockHash: string;
       firstSeen: number;
       lastAttempt: number | null;
       attempts: number;
@@ -320,6 +408,15 @@ async function tryFinalizeOne(p: PendingFinalize) {
 
   try {
     metrics.finalizeAttempts += 1;
+    const okOnL1 = await verifyFinalizedBatchContainsBlock({
+      rollup: l1Rollup,
+      settlementName: "l1",
+      childProvider: l2Provider,
+      childBlockNumber: p.l2BlockNumber,
+      childBlockHash: p.l2BlockHash
+    });
+    if (!okOnL1) throw new Error("L2 block not finalized on L1 rollup");
+
     if (p.kind === "DepositInitiated") {
       const k = msgKeyEth(p.from, p.to, BigInt(p.amount), BigInt(p.nonce));
       const t = (await l2Bridge.depositTime(k)) as bigint;
@@ -365,6 +462,9 @@ async function handleDepositLog(log: ethers.Log) {
     const amount = parsed.args[2] as bigint;
     const nonce = parsed.args[3] as bigint;
     const key = msgKeyEth(from, to, amount, nonce);
+    const l2BlockNumber = Number(log.blockNumber);
+    let l2BlockHash = String(log.blockHash ?? "");
+    if (!l2BlockHash) l2BlockHash = (await l2Provider.getBlock(l2BlockNumber))!.hash;
 
     lastSeen = { kind: "DepositInitiated", from, to, amount: amount.toString(), nonce: nonce.toString(), key, l2Tx: log.transactionHash };
 
@@ -376,6 +476,8 @@ async function handleDepositLog(log: ethers.Log) {
         to,
         amount: amount.toString(),
         nonce: nonce.toString(),
+        l2BlockNumber,
+        l2BlockHash,
         firstSeen: Date.now(),
         lastAttempt: null,
         attempts: 0
@@ -392,6 +494,9 @@ async function handleDepositLog(log: ethers.Log) {
     const amount = parsed.args[3] as bigint;
     const nonce = parsed.args[4] as bigint;
     const key = msgKeyErc20(token, from, to, amount, nonce);
+    const l2BlockNumber = Number(log.blockNumber);
+    let l2BlockHash = String(log.blockHash ?? "");
+    if (!l2BlockHash) l2BlockHash = (await l2Provider.getBlock(l2BlockNumber))!.hash;
 
     lastSeen = { kind: "ERC20DepositInitiated", token, from, to, amount: amount.toString(), nonce: nonce.toString(), key, l2Tx: log.transactionHash };
 
@@ -404,6 +509,8 @@ async function handleDepositLog(log: ethers.Log) {
         to,
         amount: amount.toString(),
         nonce: nonce.toString(),
+        l2BlockNumber,
+        l2BlockHash,
         firstSeen: Date.now(),
         lastAttempt: null,
         attempts: 0
@@ -434,6 +541,18 @@ async function handleBurnLog(log: ethers.Log) {
   const expectedL3Token = (await l3Factory.l3TokenForL2Token(l2Token)) as string;
   if (!expectedL3Token || expectedL3Token === ethers.ZeroAddress) return;
   if (ethers.getAddress(expectedL3Token) !== ethers.getAddress(log.address)) return;
+
+  const l3BlockNumber = Number(log.blockNumber);
+  let l3BlockHash = String(log.blockHash ?? "");
+  if (!l3BlockHash) l3BlockHash = (await l3Provider.getBlock(l3BlockNumber))!.hash;
+  const okOnL2 = await verifyFinalizedBatchContainsBlock({
+    rollup: l2Rollup,
+    settlementName: "l2",
+    childProvider: l3Provider,
+    childBlockNumber: l3BlockNumber,
+    childBlockHash: l3BlockHash
+  });
+  if (!okOnL2) return;
 
   const already = await l2Bridge.erc20WithdrawProcessed(msgKeyErc20(l2Token, from, to, amount, nonce));
   if (already) return;
@@ -565,15 +684,23 @@ app.use(express.json());
 
 app.get("/health", async (_req, res) => {
   try {
+    const l1ChainId = l1Provider ? await l1Provider.send("eth_chainId", []) : null;
     const l2ChainId = await l2Provider.send("eth_chainId", []);
     const l3ChainId = await l3Provider.send("eth_chainId", []);
     res.json({
       ok: true,
       observeOnly,
+      l1ChainId,
       l2ChainId,
       l3ChainId,
       confirmations: CONFIRMATIONS,
       bridge: BRIDGE,
+      rollupGating: {
+        l2FinalityOnL1: Boolean(l1Rollup),
+        l3FinalityOnL2: Boolean(l2Rollup),
+        l1RollupL2: L1_ROLLUP_L2 || null,
+        l2RollupL3: L2_ROLLUP_L3 || null
+      },
       inbox: L3_INBOX,
       l3TokenFactory: L3_TOKEN_FACTORY,
       hasL2Signer: Boolean(l2Signer),
