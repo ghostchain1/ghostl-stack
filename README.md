@@ -17,6 +17,10 @@ bash infra/scripts/up.sh
 - Ghost Guard UI: `http://localhost:7070/`
 - Relayer UI proxy: `http://localhost:7070/proxy/relayer-health`
 
+## Chains
+
+Polygon Edge chain data lives under `chains/` and is initialized automatically by `infra/scripts/up.sh`.
+
 ## Demo (emit a deposit event)
 
 ```bash

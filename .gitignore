@@ -15,3 +15,6 @@ services/ghost-relayer/.env
 
 # local scratch
 .tmp/
+
+# polygon-edge chain data (generated)
+chains/**/data/
