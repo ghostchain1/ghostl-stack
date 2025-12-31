@@ -44,6 +44,15 @@ bash infra/scripts/demo-relay.sh
 bash infra/scripts/demo-relay-erc20.sh
 ```
 
+## Demo (ERC20 withdraw back to L2)
+
+```bash
+bash infra/scripts/demo-withdraw-erc20.sh
+```
+
+Notes:
+- `ghost-relayer` uses `RELAYER_PRIVATE_KEY` for L3 mints; for L2 releases it uses `L2_RELAYER_PRIVATE_KEY` if set, otherwise falls back to `RELAYER_PRIVATE_KEY`.
+
 ## Relayer health
 
 ```bash

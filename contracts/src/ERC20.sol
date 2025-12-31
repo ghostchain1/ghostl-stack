@@ -59,5 +59,14 @@ contract ERC20 {
         }
         emit Transfer(address(0), to, value);
     }
-}
 
+    function _burn(address from, uint256 value) internal {
+        uint256 bal = balanceOf[from];
+        require(bal >= value, "balance");
+        unchecked {
+            balanceOf[from] = bal - value;
+            totalSupply -= value;
+        }
+        emit Transfer(from, address(0), value);
+    }
+}

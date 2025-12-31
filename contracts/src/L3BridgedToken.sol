@@ -9,10 +9,12 @@ contract L3BridgedToken is ERC20 {
     address public immutable l2Token;
 
     mapping(bytes32 => bool) public processed;
+    mapping(bytes32 => bool) public burned;
 
     event OwnerChanged(address indexed owner);
     event RelayerChanged(address indexed relayer);
     event MintedFromL2(address indexed from, address indexed to, uint256 amount, uint256 nonce, bytes32 key);
+    event BurnInitiated(address indexed from, address indexed to, uint256 amount, uint256 nonce, bytes32 key);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "not owner");
@@ -47,5 +49,13 @@ contract L3BridgedToken is ERC20 {
         _mint(to, amount);
         emit MintedFromL2(from, to, amount, nonce, key);
     }
-}
 
+    /// @notice Burn bridged tokens on L3 to release the escrowed L2 tokens to `to` (via relayer).
+    function burnToL2(address to, uint256 amount, uint256 nonce) external {
+        bytes32 key = keccak256(abi.encode(l2Token, msg.sender, to, amount, nonce));
+        require(!burned[key], "already");
+        burned[key] = true;
+        _burn(msg.sender, amount);
+        emit BurnInitiated(msg.sender, to, amount, nonce, key);
+    }
+}
