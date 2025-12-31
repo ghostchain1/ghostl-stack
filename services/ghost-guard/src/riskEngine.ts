@@ -2,6 +2,8 @@ export type RiskInput = {
   actor: string;
   amountWei: bigint;
   nonce: bigint;
+  recentCount?: number;
+  recentAmountWei?: bigint;
 };
 
 export function computeRiskScore(input: RiskInput): number {
@@ -20,6 +22,18 @@ export function computeRiskScore(input: RiskInput): number {
   if (input.amountWei >= tenEth) score += 15;
   if (input.amountWei >= fiftyEth) score += 20;
   if (input.amountWei >= hundredEth) score += 25;
+
+  const recentCount = input.recentCount ?? 0;
+  const recentAmountWei = input.recentAmountWei ?? 0n;
+  // velocity: lots of deposits in a short window => higher risk
+  if (recentCount >= 3) score += 5;
+  if (recentCount >= 5) score += 10;
+  if (recentCount >= 10) score += 20;
+
+  // burst size: lots of value in the window => higher risk
+  if (recentAmountWei >= tenEth) score += 5;
+  if (recentAmountWei >= fiftyEth) score += 10;
+  if (recentAmountWei >= hundredEth) score += 15;
 
   // cap 0..100
   if (score > 100) score = 100;

@@ -67,6 +67,19 @@ curl -sS -X POST http://localhost:7070/policy/threshold -H 'content-type: applic
 curl -sS -X POST http://localhost:7070/policy/delay -H 'content-type: application/json' -d '{"seconds":30}'
 ```
 
+## Allowlist / blocklist (optional)
+
+Set `ADMIN_TOKEN` when starting `ghost-guard` to protect these endpoints, then:
+
+```bash
+curl -sS http://localhost:7070/lists
+curl -sS -X POST http://localhost:7070/lists/allow -H 'content-type: application/json' -H 'x-admin-token: ...' -d '{"address":"0x..."}'
+curl -sS -X POST http://localhost:7070/lists/block -H 'content-type: application/json' -H 'x-admin-token: ...' -d '{"address":"0x..."}'
+curl -sS -X POST http://localhost:7070/lists/remove -H 'content-type: application/json' -H 'x-admin-token: ...' -d '{"address":"0x..."}'
+```
+
+Lists are stored in a docker volume mounted at `/state` in the `ghost-guard` container.
+
 ## Dev prerequisites
 
 - `docker` + Docker Compose
