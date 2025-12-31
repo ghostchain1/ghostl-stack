@@ -213,4 +213,26 @@ app.get("/health", async (_req, res) => {
 });
 
 app.get("/metrics", (_req, res) => res.json({ ok: true, ...metrics }));
+
+function promLine(name: string, value: number | string, labels?: Record<string, string>) {
+  const l = labels
+    ? `{${Object.entries(labels)
+        .map(([k, v]) => `${k}=\"${String(v).replaceAll("\\", "\\\\").replaceAll("\"", "\\\"")}\"`)
+        .join(",")}}`
+    : "";
+  return `${name}${l} ${value}\n`;
+}
+
+app.get("/metrics/prom", (_req, res) => {
+  res.type("text/plain; version=0.0.4");
+  let out = "";
+  out += promLine("ghost_rollup_proposer_up", 1);
+  out += promLine("ghost_rollup_proposer_observe_only", observeOnly ? 1 : 0);
+  out += promLine("ghost_rollup_proposer_proposals_total", metrics.proposals);
+  out += promLine("ghost_rollup_proposer_finalizations_total", metrics.finalizations);
+  out += promLine("ghost_rollup_proposer_errors_total", metrics.errors);
+  out += promLine("ghost_rollup_proposer_batch_size", BATCH_SIZE);
+  out += promLine("ghost_rollup_proposer_challenge_period_seconds", CHALLENGE_PERIOD_SECONDS);
+  res.send(out);
+});
 app.listen(PORT, () => console.log(`Ghost Rollup Proposer listening on :${PORT}`));

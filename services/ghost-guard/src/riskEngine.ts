@@ -4,6 +4,7 @@ export type RiskInput = {
   nonce: bigint;
   recentCount?: number;
   recentAmountWei?: bigint;
+  ageSeconds?: number | null;
 };
 
 export function computeRiskScore(input: RiskInput): number {
@@ -34,6 +35,14 @@ export function computeRiskScore(input: RiskInput): number {
   if (recentAmountWei >= tenEth) score += 5;
   if (recentAmountWei >= fiftyEth) score += 10;
   if (recentAmountWei >= hundredEth) score += 15;
+
+  const ageSeconds = input.ageSeconds ?? null;
+  // address age: new actors are a bit riskier (sybil / spam)
+  if (ageSeconds != null && Number.isFinite(ageSeconds)) {
+    if (ageSeconds < 60) score += 15;
+    else if (ageSeconds < 10 * 60) score += 10;
+    else if (ageSeconds < 60 * 60) score += 5;
+  }
 
   // cap 0..100
   if (score > 100) score = 100;
