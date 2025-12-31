@@ -14,6 +14,12 @@ Brings up:
 bash infra/scripts/up.sh
 ```
 
+## Start (PolyBFT L2 anchored on L1)
+
+```bash
+bash infra/scripts/up_polybft.sh
+```
+
 ## Production-style health check
 
 ```bash
@@ -51,6 +57,7 @@ Challengers are also generated:
 ## Chains
 
 Polygon Edge chain data lives under `chains/` and is initialized automatically by `infra/scripts/up.sh`.
+For a more production-like setup, use PolyBFT on L2 via `infra/scripts/up_polybft.sh`.
 
 ### Premine a funded key (enforcement)
 

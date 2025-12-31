@@ -11,6 +11,14 @@ This folder contains the **local Polygon Edge chain data** used by the dev stack
 bash infra/scripts/chains/init.sh
 ```
 
+## Initialize L2 as PolyBFT (anchored on L1)
+
+This requires L1 (Anvil) to be running because it deploys the rootchain contracts and finalizes the genesis validator set.
+
+```bash
+bash infra/scripts/up_polybft.sh
+```
+
 ## Premine a funded key (for Guard / Relayer)
 
 Edit `chains/l2/chain.json` (and optionally `chains/l3/chain.json`) or run:
