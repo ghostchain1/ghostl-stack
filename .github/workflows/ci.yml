@@ -16,13 +16,17 @@ jobs:
       - name: Contracts install + build
         working-directory: contracts
         run: |
-          npm install
+          npm ci
           npm run build
+
+      - name: Contracts test
+        working-directory: contracts
+        run: npm test
 
       - name: Guard install
         working-directory: services/ghost-guard
-        run: npm install
+        run: npm ci
 
       - name: Relayer install
         working-directory: services/ghost-relayer
-        run: npm install
+        run: npm ci
