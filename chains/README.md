@@ -32,3 +32,14 @@ cd ..
 ```bash
 bash infra/scripts/chains/reset.sh
 ```
+
+## Troubleshooting
+
+If `ghostl2` / `ghostl3` won’t start, run:
+
+```bash
+bash infra/scripts/chains/doctor.sh
+```
+
+Polygon Edge runs as user `edge` (uid `100`, gid `101`) and can refuse to start if the bind-mounted data dir has mismatched ownership.
+`bash infra/scripts/chains/init.sh` fixes ownership + permissions.

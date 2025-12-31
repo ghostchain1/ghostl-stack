@@ -1,5 +1,8 @@
 .DS_Store
 
+# dependencies
+**/node_modules/
+
 # local-only env variants
 .env.local
 .env.*.local

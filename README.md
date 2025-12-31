@@ -6,10 +6,18 @@ Brings up:
 - GhostL3: Polygon Edge (7393) on :10545
 - Ghost Guard API on :7070
 - Ghost Relayer API on :7171
+- Prometheus on :9090
+- Grafana on :3000 (admin/admin)
 
 ## Start
 ```bash
 bash infra/scripts/up.sh
+```
+
+## Production-style health check
+
+```bash
+bash infra/scripts/doctor.sh
 ```
 
 ## Create service keys (Guard/Relayer/Proposers)
@@ -26,6 +34,10 @@ During `bash infra/scripts/up.sh`, the deploy step generates:
 - `services/ghost-rollup-proposer/.env.l2` (posts L2 batches to L1)
 - `services/ghost-rollup-proposer/.env.l3` (posts L3 batches to L2)
 
+This matches the dev architecture:
+- **L2 is “settled” on L1** via `OptimisticRollup` on Anvil
+- **L3 is “settled” on L2** via `OptimisticRollup` on GhostL2
+
 Set `PROPOSER_PRIVATE_KEY` in those env files to enable batch posting + finalization.
 Challengers are also generated:
 - `services/ghost-rollup-challenger/.env.l2` and `.env.l3` (optional)
@@ -34,6 +46,7 @@ Challengers are also generated:
 
 - Ghost Guard UI: `http://localhost:7070/`
 - Relayer UI proxy: `http://localhost:7070/proxy/relayer-health`
+- Grafana: `http://localhost:3000/` (Prometheus is auto-provisioned)
 
 ## Chains
 
@@ -147,7 +160,8 @@ Both `ghost-guard` and `ghost-relayer` persist a block cursor in `/state/cursor.
 
 - `docker` + Docker Compose
 - Node.js + npm
-- `git-lfs` (repo has an LFS `pre-push` hook)
+- `git-lfs` (repo has an LFS `pre-push` hook; Codespaces installs it via devcontainer feature)
+  - If you hit the hook error locally: `bash infra/scripts/git_lfs_fix.sh`
 
 ## Config files
 

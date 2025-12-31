@@ -57,7 +57,13 @@ challenger_l3_addr="$(jq -r '.challengerL3.address' "$keys_path")"
 
 echo "Writing keys into env files..."
 
+admin_token="$(
+  cd "$ROOT_DIR/contracts"
+  node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"
+)"
+
 perl -0777 -i -pe "s/^PRIVATE_KEY=.*$/PRIVATE_KEY=$guard_pk/m" "$guard_env"
+perl -0777 -i -pe "s/^ADMIN_TOKEN=.*$/ADMIN_TOKEN=$admin_token/m" "$guard_env"
 perl -0777 -i -pe "s/^RELAYER_PRIVATE_KEY=.*$/RELAYER_PRIVATE_KEY=$relayer_pk/m; s/^L2_RELAYER_PRIVATE_KEY=.*$/L2_RELAYER_PRIVATE_KEY=$relayer_pk/m" "$relayer_env"
 perl -0777 -i -pe "s/^PROPOSER_PRIVATE_KEY=.*$/PROPOSER_PRIVATE_KEY=$proposer_l2_pk/m" "$proposer_l2_env"
 perl -0777 -i -pe "s/^PROPOSER_PRIVATE_KEY=.*$/PROPOSER_PRIVATE_KEY=$proposer_l3_pk/m" "$proposer_l3_env"
