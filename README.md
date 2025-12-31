@@ -33,6 +33,12 @@ cd ..
 bash infra/scripts/demo-relay.sh
 ```
 
+## Demo (ERC20 bridge)
+
+```bash
+bash infra/scripts/demo-relay-erc20.sh
+```
+
 ## Relayer health
 
 ```bash
