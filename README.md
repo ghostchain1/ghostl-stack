@@ -27,6 +27,8 @@ During `bash infra/scripts/up.sh`, the deploy step generates:
 - `services/ghost-rollup-proposer/.env.l3` (posts L3 batches to L2)
 
 Set `PROPOSER_PRIVATE_KEY` in those env files to enable batch posting + finalization.
+Challengers are also generated:
+- `services/ghost-rollup-challenger/.env.l2` and `.env.l3` (optional)
 
 ## Ops UI
 

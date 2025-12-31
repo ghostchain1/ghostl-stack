@@ -145,6 +145,46 @@ services:
     networks: [ghostnet]
     depends_on: [ghostl2, ghostl3]
 
+  ghost-rollup-challenger-l2:
+    image: node:22-alpine
+    user: "0:0"
+    working_dir: /app
+    volumes:
+      - ../services/ghost-rollup-challenger:/app
+      - ghost_rollup_challenger_node_modules:/app/node_modules
+      - ghost_rollup_challenger_l2_state:/state
+    command: sh -lc "test -f node_modules/.package-lock.json || (test -f package-lock.json && npm ci --no-audit --no-fund || npm install --no-audit --no-fund); npm run start"
+    env_file:
+      - ../services/ghost-rollup-challenger/.env.l2
+    environment:
+      RPC_SETTLEMENT: "http://anvil:8545"
+      RPC_CHILD: "http://ghostl2:9545"
+      STATE_DIR: "/state"
+    ports:
+      - "7282:7282"
+    networks: [ghostnet]
+    depends_on: [anvil, ghostl2]
+
+  ghost-rollup-challenger-l3:
+    image: node:22-alpine
+    user: "0:0"
+    working_dir: /app
+    volumes:
+      - ../services/ghost-rollup-challenger:/app
+      - ghost_rollup_challenger_node_modules:/app/node_modules
+      - ghost_rollup_challenger_l3_state:/state
+    command: sh -lc "test -f node_modules/.package-lock.json || (test -f package-lock.json && npm ci --no-audit --no-fund || npm install --no-audit --no-fund); npm run start"
+    env_file:
+      - ../services/ghost-rollup-challenger/.env.l3
+    environment:
+      RPC_SETTLEMENT: "http://ghostl2:9545"
+      RPC_CHILD: "http://ghostl3:10545"
+      STATE_DIR: "/state"
+    ports:
+      - "7383:7383"
+    networks: [ghostnet]
+    depends_on: [ghostl2, ghostl3]
+
 networks:
   ghostnet:
 
@@ -156,3 +196,6 @@ volumes:
   ghost_rollup_proposer_node_modules:
   ghost_rollup_proposer_l2_state:
   ghost_rollup_proposer_l3_state:
+  ghost_rollup_challenger_node_modules:
+  ghost_rollup_challenger_l2_state:
+  ghost_rollup_challenger_l3_state:

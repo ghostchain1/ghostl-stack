@@ -38,4 +38,7 @@ docker compose up -d --build ghost-relayer
 echo "Starting Rollup Proposers..."
 docker compose up -d --build ghost-rollup-proposer-l2 ghost-rollup-proposer-l3
 
-echo "Done. Anvil=8545, L2=9545, L3=10545, Guard=7070, Relayer=7171, ProposerL2=7272, ProposerL3=7373"
+echo "Starting Rollup Challengers..."
+docker compose up -d --build ghost-rollup-challenger-l2 ghost-rollup-challenger-l3
+
+echo "Done. Anvil=8545, L2=9545, L3=10545, Guard=7070, Relayer=7171, ProposerL2=7272, ProposerL3=7373, ChallengerL2=7282, ChallengerL3=7383"
