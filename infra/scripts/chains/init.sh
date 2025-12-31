@@ -98,5 +98,20 @@ init_chain() {
   echo "[$chain] RPC=http://localhost:$jsonrpc (container jsonrpc :$jsonrpc, grpc :$grpc, libp2p :$libp2p)"
 }
 
-init_chain l2
-init_chain l3
+target="${1:-all}"
+case "$target" in
+  all)
+    init_chain l2
+    init_chain l3
+    ;;
+  l2)
+    init_chain l2
+    ;;
+  l3)
+    init_chain l3
+    ;;
+  *)
+    echo "Usage: bash infra/scripts/chains/init.sh [all|l2|l3]" >&2
+    exit 1
+    ;;
+esac

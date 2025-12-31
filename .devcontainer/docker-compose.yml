@@ -40,6 +40,39 @@ services:
       - "8545:8545"
     networks: [ghostnet]
 
+  anvil-rpc-proxy:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - ../services/ghost-rpc-proxy:/app:ro
+    environment:
+      PORT: "8546"
+      UPSTREAM_URL: "http://anvil:8545"
+      LOG_REQUESTS: "${GHOST_RPC_PROXY_LOG_REQUESTS:-0}"
+    command: ["node", "index.mjs"]
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    ports:
+      - "18545:8546"
+    networks: [ghostnet]
+    depends_on:
+      anvil:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:8546/health').then(r=>r.json()).then(j=>{if(!j.ok) process.exit(1)}).catch(()=>process.exit(1))\""
+        ]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+      start_period: 2s
+
   ghostl2:
     image: 0xpolygon/polygon-edge:latest
     entrypoint: ["/bin/sh", "-lc"]
