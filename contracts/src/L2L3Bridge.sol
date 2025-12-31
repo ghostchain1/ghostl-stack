@@ -68,7 +68,7 @@ contract L2L3Bridge {
     }
 
     /// Finalize step: guarded by policy (ALLOW/DELAY/PAUSE + risk threshold)
-    function finalizeToL3(address from, address to, uint256 amount, uint256 nonce) external {
+    function finalizeToL3(address from, address to, uint256 amount, uint256 nonce) external onlyRelayer {
         bytes32 key = keccak256(abi.encode(from, to, amount, nonce));
         uint256 t = depositTime[key];
         require(t != 0, "no deposit");
@@ -85,7 +85,7 @@ contract L2L3Bridge {
         emit Finalized(from, to, amount, nonce);
     }
 
-    function finalizeERC20ToL3(address token, address from, address to, uint256 amount, uint256 nonce) external {
+    function finalizeERC20ToL3(address token, address from, address to, uint256 amount, uint256 nonce) external onlyRelayer {
         bytes32 key = keccak256(abi.encode(token, from, to, amount, nonce));
         uint256 t = erc20DepositTime[key];
         require(t != 0, "no deposit");

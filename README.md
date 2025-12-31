@@ -12,6 +12,14 @@ Brings up:
 bash infra/scripts/up.sh
 ```
 
+## Optimistic Rollup (L2→L1, L3→L2)
+
+During `bash infra/scripts/up.sh`, the deploy step generates:
+- `services/ghost-rollup-proposer/.env.l2` (posts L2 batches to L1)
+- `services/ghost-rollup-proposer/.env.l3` (posts L3 batches to L2)
+
+Set `PROPOSER_PRIVATE_KEY` in those env files to enable batch posting + finalization.
+
 ## Ops UI
 
 - Ghost Guard UI: `http://localhost:7070/`
@@ -59,6 +67,12 @@ bash infra/scripts/demo-relay.sh
 
 ```bash
 bash infra/scripts/demo-relay-erc20.sh
+```
+
+## Demo (optimistic L2->L1 -> L2 finalize -> L3 mint)
+
+```bash
+bash infra/scripts/demo-optimistic-erc20.sh
 ```
 
 ## Demo (ERC20 withdraw back to L2)
