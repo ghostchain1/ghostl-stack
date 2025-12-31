@@ -1,7 +1,20 @@
 import "dotenv/config";
 import express from "express";
 import { ethers } from "ethers";
-import { computeRiskScore } from "./riskEngine.js";
+import { computeRiskScore } from "./riskEngine.ts";
+
+const jsonRpcProviderProto = (ethers.JsonRpcProvider as any).prototype;
+if (!jsonRpcProviderProto.__ghostGuardPatched) {
+  jsonRpcProviderProto.__ghostGuardPatched = true;
+  const originalSend = jsonRpcProviderProto.send;
+  jsonRpcProviderProto.send = async function (method: string, params: Array<any>) {
+    const result = await originalSend.call(this, method, params);
+    // Polygon Edge can return `null` for eth_getFilterChanges when there are no results;
+    // ethers expects an array.
+    if (method === "eth_getFilterChanges" && !Array.isArray(result)) return [];
+    return result;
+  };
+}
 
 const PORT = Number(process.env.PORT || "7070");
 const RPC_L2 = process.env.RPC_L2!;
@@ -25,32 +38,39 @@ const policyAbi = [
   "event RiskScoreSet(address indexed who, uint256 score)"
 ];
 
-const provider = new ethers.JsonRpcProvider(RPC_L2);
+const provider = new ethers.JsonRpcProvider(RPC_L2, undefined, { polling: true });
+provider.pollingInterval = 1000;
 
 const signer = PRIVATE_KEY
   ? new ethers.Wallet(PRIVATE_KEY, provider)
   : null;
 
-const bridge = new ethers.Contract(BRIDGE, bridgeAbi, provider);
 const policy = new ethers.Contract(POLICY, policyAbi, signer ?? provider);
 
 let lastEvent: any = null;
 
-bridge.on("DepositInitiated", async (from: string, to: string, amount: bigint, nonce: bigint, ev: any) => {
-  lastEvent = { from, to, amount: amount.toString(), nonce: nonce.toString(), tx: ev.log.transactionHash };
+const depositTopic = ethers.id("DepositInitiated(address,address,uint256,uint256)");
+const bridgeIface = new ethers.Interface(bridgeAbi);
+
+let nextBlockToScan: number | null = null;
+
+async function handleDepositLog(log: ethers.Log) {
+  const parsed = bridgeIface.parseLog(log);
+  const from = parsed.args[0] as string;
+  const to = parsed.args[1] as string;
+  const amount = parsed.args[2] as bigint;
+  const nonce = parsed.args[3] as bigint;
+
+  lastEvent = { from, to, amount: amount.toString(), nonce: nonce.toString(), tx: log.transactionHash };
 
   const risk = computeRiskScore({ actor: from, amountWei: amount, nonce });
   console.log(`[Guard] DepositInitiated from=${from} amountWei=${amount} nonce=${nonce} risk=${risk}`);
 
-  // If we don't have a signer, we can only observe (read-only)
   if (!signer) {
     console.log("[Guard] No PRIVATE_KEY set; running in observe-only mode.");
     return;
   }
 
-  // Policy action:
-  // - Set risk score on-chain
-  // - If risk too high, pause mode (2 = PAUSE)
   try {
     const tx1 = await policy.setRiskScore(from, risk);
     await tx1.wait();
@@ -63,7 +83,29 @@ bridge.on("DepositInitiated", async (from: string, to: string, amount: bigint, n
   } catch (e) {
     console.error("[Guard] Failed to write policy:", e);
   }
-});
+}
+
+async function pollBridgeOnce() {
+  const latest = await provider.getBlockNumber();
+  if (nextBlockToScan == null) nextBlockToScan = latest;
+  if (nextBlockToScan > latest) return;
+
+  const logs = await provider.getLogs({
+    address: BRIDGE,
+    fromBlock: nextBlockToScan,
+    toBlock: latest,
+    topics: [depositTopic]
+  });
+
+  for (const log of logs) {
+    await handleDepositLog(log);
+  }
+
+  nextBlockToScan = latest + 1;
+}
+
+pollBridgeOnce().catch((e) => console.error("[Guard] Initial poll failed:", e));
+setInterval(() => pollBridgeOnce().catch((e) => console.error("[Guard] Poll failed:", e)), 2000);
 
 const app = express();
 app.use(express.json());
