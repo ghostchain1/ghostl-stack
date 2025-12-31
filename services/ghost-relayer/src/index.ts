@@ -22,7 +22,9 @@ if (!RPC_L2 || !RPC_L3 || !BRIDGE || !L3_INBOX || !L3_TOKEN_FACTORY) {
 }
 
 const bridgeAbi = [
+  "event DepositInitiated(address indexed from, address indexed to, uint256 amount, uint256 nonce)",
   "event Finalized(address indexed from, address indexed to, uint256 amount, uint256 nonce)",
+  "event ERC20DepositInitiated(address indexed token, address indexed from, address indexed to, uint256 amount, uint256 nonce)",
   "event ERC20Finalized(address indexed token, address indexed from, address indexed to, uint256 amount, uint256 nonce)"
 ];
 
@@ -31,7 +33,9 @@ const inboxAbi = [
   "function processed(bytes32 key) view returns (bool)"
 ];
 
+const depositTopic = ethers.id("DepositInitiated(address,address,uint256,uint256)");
 const finalizedTopic = ethers.id("Finalized(address,address,uint256,uint256)");
+const erc20DepositTopic = ethers.id("ERC20DepositInitiated(address,address,address,uint256,uint256)");
 const erc20FinalizedTopic = ethers.id("ERC20Finalized(address,address,address,uint256,uint256)");
 const bridgeIface = new ethers.Interface(bridgeAbi);
 
@@ -80,9 +84,13 @@ const metrics = {
   l3Polls: 0,
   l2LogsSeen: 0,
   l3LogsSeen: 0,
+  depositsSeen: 0,
+  erc20DepositsSeen: 0,
   finalizedSeen: 0,
   erc20FinalizedSeen: 0,
   burnsSeen: 0,
+  finalizeAttempts: 0,
+  finalizeSuccess: 0,
   relayedToL3: 0,
   releasedToL2: 0,
   errors: 0
@@ -136,6 +144,57 @@ function msgKeyErc20(token: string, from: string, to: string, amount: bigint, no
   );
 }
 
+type PendingFinalize =
+  | {
+      kind: "DepositInitiated";
+      key: string;
+      from: string;
+      to: string;
+      amount: string;
+      nonce: string;
+      firstSeen: number;
+      lastAttempt: number | null;
+      attempts: number;
+    }
+  | {
+      kind: "ERC20DepositInitiated";
+      key: string;
+      token: string;
+      from: string;
+      to: string;
+      amount: string;
+      nonce: string;
+      firstSeen: number;
+      lastAttempt: number | null;
+      attempts: number;
+    };
+
+const pendingByKey = new Map<string, PendingFinalize>();
+const pendingPath = path.join(STATE_DIR, "pending.json");
+
+async function loadPending() {
+  try {
+    const raw = await fs.readFile(pendingPath, "utf8");
+    const parsed = JSON.parse(raw) as { pending?: Array<PendingFinalize> };
+    for (const p of parsed.pending ?? []) {
+      if (p && typeof p.key === "string" && p.key.startsWith("0x")) pendingByKey.set(p.key, p);
+    }
+  } catch {
+    // ignore
+  }
+}
+
+async function savePending() {
+  await fs.mkdir(STATE_DIR, { recursive: true });
+  const tmp = `${pendingPath}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify({ pending: Array.from(pendingByKey.values()) }, null, 2) + "\n", "utf8");
+  await fs.rename(tmp, pendingPath);
+}
+
+function scrubEthersError(e: any): string {
+  return String(e?.shortMessage ?? e?.reason ?? e?.message ?? e);
+}
+
 async function handleFinalizedLog(log: ethers.Log) {
   const parsed = bridgeIface.parseLog(log);
   if (parsed.name === "Finalized") {
@@ -147,6 +206,7 @@ async function handleFinalizedLog(log: ethers.Log) {
 
     const key = msgKeyEth(from, to, amount, nonce);
     lastSeen = { kind: "Finalized", from, to, amount: amount.toString(), nonce: nonce.toString(), key, l2Tx: log.transactionHash };
+    pendingByKey.delete(key);
 
     if (observeOnly) {
       const msg = `[Relayer] Observe-only saw Finalized key=${key} l2Tx=${log.transactionHash}`;
@@ -179,6 +239,7 @@ async function handleFinalizedLog(log: ethers.Log) {
 
     const key = msgKeyErc20(token, from, to, amount, nonce);
     lastSeen = { kind: "ERC20Finalized", token, from, to, amount: amount.toString(), nonce: nonce.toString(), key, l2Tx: log.transactionHash };
+    pendingByKey.delete(key);
 
     if (observeOnly) {
       const msg = `[Relayer] Observe-only saw ERC20Finalized key=${key} l2Tx=${log.transactionHash}`;
@@ -241,12 +302,115 @@ async function handleFinalizedLog(log: ethers.Log) {
 
 const l2BridgeAbi = [
   "function releaseERC20FromL3(address token, address from, address to, uint256 amount, uint256 nonce) external",
-  "function erc20WithdrawProcessed(bytes32 key) view returns (bool)"
+  "function erc20WithdrawProcessed(bytes32 key) view returns (bool)",
+  "function finalizeToL3(address from, address to, uint256 amount, uint256 nonce) external",
+  "function finalizeERC20ToL3(address token, address from, address to, uint256 amount, uint256 nonce) external",
+  "function depositTime(bytes32 key) view returns (uint256)",
+  "function erc20DepositTime(bytes32 key) view returns (uint256)"
 ];
 const l2Bridge = new ethers.Contract(BRIDGE, l2BridgeAbi, l2Signer ?? l2Provider);
 
 const burnTopic = ethers.id("BurnInitiated(address,address,address,uint256,uint256,bytes32)");
 const l3TokenIface = new ethers.Interface(l3TokenAbi);
+
+async function tryFinalizeOne(p: PendingFinalize) {
+  if (!l2Signer) return;
+  const now = Date.now();
+  if (p.lastAttempt && now - p.lastAttempt < 1500) return;
+
+  try {
+    metrics.finalizeAttempts += 1;
+    if (p.kind === "DepositInitiated") {
+      const k = msgKeyEth(p.from, p.to, BigInt(p.amount), BigInt(p.nonce));
+      const t = (await l2Bridge.depositTime(k)) as bigint;
+      if (t === 0n) {
+        pendingByKey.delete(p.key);
+        return;
+      }
+      const tx = await l2Bridge.finalizeToL3(p.from, p.to, BigInt(p.amount), BigInt(p.nonce));
+      await tx.wait();
+      metrics.finalizeSuccess += 1;
+      const msg = `[Relayer] Finalized L2->L3 key=${p.key} l2Tx=${tx.hash}`;
+      console.log(msg);
+      pushLog("info", msg);
+      return;
+    }
+
+    const k = msgKeyErc20(p.token, p.from, p.to, BigInt(p.amount), BigInt(p.nonce));
+    const t = (await l2Bridge.erc20DepositTime(k)) as bigint;
+    if (t === 0n) {
+      pendingByKey.delete(p.key);
+      return;
+    }
+    const tx = await l2Bridge.finalizeERC20ToL3(p.token, p.from, p.to, BigInt(p.amount), BigInt(p.nonce));
+    await tx.wait();
+    metrics.finalizeSuccess += 1;
+    const msg = `[Relayer] Finalized L2 ERC20->L3 key=${p.key} l2Tx=${tx.hash}`;
+    console.log(msg);
+    pushLog("info", msg);
+  } catch (e) {
+    p.lastAttempt = Date.now();
+    p.attempts += 1;
+    const msg = `[Relayer] Finalize blocked key=${p.key} err=${scrubEthersError(e)}`;
+    pushLog("warn", msg);
+  }
+}
+
+async function handleDepositLog(log: ethers.Log) {
+  const parsed = bridgeIface.parseLog(log);
+  if (parsed.name === "DepositInitiated") {
+    metrics.depositsSeen += 1;
+    const from = parsed.args[0] as string;
+    const to = parsed.args[1] as string;
+    const amount = parsed.args[2] as bigint;
+    const nonce = parsed.args[3] as bigint;
+    const key = msgKeyEth(from, to, amount, nonce);
+
+    lastSeen = { kind: "DepositInitiated", from, to, amount: amount.toString(), nonce: nonce.toString(), key, l2Tx: log.transactionHash };
+
+    if (!pendingByKey.has(key)) {
+      pendingByKey.set(key, {
+        kind: "DepositInitiated",
+        key,
+        from,
+        to,
+        amount: amount.toString(),
+        nonce: nonce.toString(),
+        firstSeen: Date.now(),
+        lastAttempt: null,
+        attempts: 0
+      });
+    }
+    return;
+  }
+
+  if (parsed.name === "ERC20DepositInitiated") {
+    metrics.erc20DepositsSeen += 1;
+    const token = parsed.args[0] as string;
+    const from = parsed.args[1] as string;
+    const to = parsed.args[2] as string;
+    const amount = parsed.args[3] as bigint;
+    const nonce = parsed.args[4] as bigint;
+    const key = msgKeyErc20(token, from, to, amount, nonce);
+
+    lastSeen = { kind: "ERC20DepositInitiated", token, from, to, amount: amount.toString(), nonce: nonce.toString(), key, l2Tx: log.transactionHash };
+
+    if (!pendingByKey.has(key)) {
+      pendingByKey.set(key, {
+        kind: "ERC20DepositInitiated",
+        key,
+        token,
+        from,
+        to,
+        amount: amount.toString(),
+        nonce: nonce.toString(),
+        firstSeen: Date.now(),
+        lastAttempt: null,
+        attempts: 0
+      });
+    }
+  }
+}
 
 async function handleBurnLog(log: ethers.Log) {
   const parsed = l3TokenIface.parseLog(log);
@@ -302,16 +466,30 @@ async function pollL2Once() {
       address: BRIDGE,
       fromBlock: nextL2BlockToScan,
       toBlock: scanTo,
-      topics: [[finalizedTopic, erc20FinalizedTopic]]
+      topics: [[depositTopic, erc20DepositTopic, finalizedTopic, erc20FinalizedTopic]]
     });
     metrics.l2LogsSeen += logs.length;
 
     for (const log of logs) {
-      await handleFinalizedLog(log);
+      const topic0 = log.topics[0] ?? "";
+      if (topic0 === depositTopic || topic0 === erc20DepositTopic) await handleDepositLog(log);
+      else await handleFinalizedLog(log);
+    }
+
+    // Attempt a few pending finalizations each pass (policy gated in-contract).
+    if (l2Signer && pendingByKey.size > 0) {
+      const maxPerTick = 3;
+      let i = 0;
+      for (const p of pendingByKey.values()) {
+        await tryFinalizeOne(p);
+        i += 1;
+        if (i >= maxPerTick) break;
+      }
     }
 
     nextL2BlockToScan = scanTo + 1;
     await saveCursor("l2", { nextBlockToScan: nextL2BlockToScan });
+    await savePending();
   } catch (e) {
     console.error("[Relayer] Poll failed:", e);
     pushLog("error", "[Relayer] Poll failed", { error: String(e) });
@@ -333,6 +511,12 @@ try {
   if (cursor.nextBlockToScan != null) nextL3BlockToScan = cursor.nextBlockToScan;
 } catch (e) {
   console.error("[Relayer] Failed to load cursor:", e);
+}
+
+try {
+  await loadPending();
+} catch (e) {
+  console.error("[Relayer] Failed to load pending:", e);
 }
 
 async function pollL3Once() {
@@ -393,6 +577,7 @@ app.get("/health", async (_req, res) => {
       inbox: L3_INBOX,
       l3TokenFactory: L3_TOKEN_FACTORY,
       hasL2Signer: Boolean(l2Signer),
+      pendingFinalizations: pendingByKey.size,
       lastSeen,
       lastRelayed
     });

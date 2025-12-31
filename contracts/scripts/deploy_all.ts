@@ -82,6 +82,10 @@ async function main() {
     `GUARD_POLICY_ADDRESS=${policyAddr}`,
     `BRIDGE_L2L3_ADDRESS=${bridgeAddr}`,
     `PRIVATE_KEY=`,
+    `GRAPH_WINDOW_SECONDS=3600`,
+    `ALERT_MIN_RISK=70`,
+    `ADMIN_TOKEN=`,
+    `ALLOW_INSECURE_ADMIN=0`,
     `L2_TOKEN_ADDRESS=${l2TokenAddr}`,
     `START_BLOCK=`
   ].join("\n") + "\n";
