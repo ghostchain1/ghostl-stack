@@ -196,5 +196,26 @@ app.get("/health", async (_req, res) => {
   }
 });
 app.get("/metrics", (_req, res) => res.json({ ok: true, ...metrics }));
-app.listen(PORT, () => console.log(`Ghost Rollup Challenger listening on :${PORT}`));
 
+function promLine(name: string, value: number | string, labels?: Record<string, string>) {
+  const l = labels
+    ? `{${Object.entries(labels)
+        .map(([k, v]) => `${k}=\"${String(v).replaceAll("\\", "\\\\").replaceAll("\"", "\\\"")}\"`)
+        .join(",")}}`
+    : "";
+  return `${name}${l} ${value}\n`;
+}
+
+app.get("/metrics/prom", (_req, res) => {
+  res.type("text/plain; version=0.0.4");
+  let out = "";
+  out += promLine("ghost_rollup_challenger_up", 1);
+  out += promLine("ghost_rollup_challenger_observe_only", observeOnly ? 1 : 0);
+  out += promLine("ghost_rollup_challenger_checks_total", metrics.checks);
+  out += promLine("ghost_rollup_challenger_mismatches_total", metrics.mismatches);
+  out += promLine("ghost_rollup_challenger_challenges_sent_total", metrics.challengesSent);
+  out += promLine("ghost_rollup_challenger_errors_total", metrics.errors);
+  out += promLine("ghost_rollup_challenger_confirmations", CONFIRMATIONS);
+  res.send(out);
+});
+app.listen(PORT, () => console.log(`Ghost Rollup Challenger listening on :${PORT}`));
