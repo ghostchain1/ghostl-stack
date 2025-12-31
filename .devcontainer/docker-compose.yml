@@ -98,12 +98,12 @@ services:
 
   ghost-guard:
     image: node:22-alpine
-    user: node
+    user: "0:0"
     working_dir: /app
     volumes:
       - ../services/ghost-guard:/app
       - ghost_guard_node_modules:/app/node_modules
-    command: sh -lc "test -f node_modules/.package-lock.json || npm ci --no-audit --no-fund; npm run dev"
+    command: sh -lc "test -f node_modules/.package-lock.json || npm ci --no-audit --no-fund; npm run start"
     env_file:
       - ../services/ghost-guard/.env
     environment:

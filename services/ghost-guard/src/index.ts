@@ -33,19 +33,23 @@ const bridgeAbi = [
 
 const policyAbi = [
   "function setMode(uint8 m) external",
+  "function setDelaySeconds(uint256 s) external",
+  "function setRiskThreshold(uint256 t) external",
   "function setRiskScore(address who, uint256 score) external",
   "function mode() view returns (uint8)",
+  "function delaySeconds() view returns (uint256)",
+  "function riskThreshold() view returns (uint256)",
+  "function riskScore(address who) view returns (uint256)",
   "event RiskScoreSet(address indexed who, uint256 score)"
 ];
 
 const provider = new ethers.JsonRpcProvider(RPC_L2, undefined, { polling: true });
 provider.pollingInterval = 1000;
 
-const signer = PRIVATE_KEY
-  ? new ethers.Wallet(PRIVATE_KEY, provider)
-  : null;
+const signer = PRIVATE_KEY ? new ethers.Wallet(PRIVATE_KEY, provider) : null;
+const signerWithNonce = signer ? new ethers.NonceManager(signer) : null;
 
-const policy = new ethers.Contract(POLICY, policyAbi, signer ?? provider);
+const policy = new ethers.Contract(POLICY, policyAbi, signerWithNonce ?? provider);
 
 let lastEvent: any = null;
 
@@ -53,6 +57,7 @@ const depositTopic = ethers.id("DepositInitiated(address,address,uint256,uint256
 const bridgeIface = new ethers.Interface(bridgeAbi);
 
 let nextBlockToScan: number | null = null;
+let pollInFlight = false;
 
 async function handleDepositLog(log: ethers.Log) {
   const parsed = bridgeIface.parseLog(log);
@@ -86,6 +91,9 @@ async function handleDepositLog(log: ethers.Log) {
 }
 
 async function pollBridgeOnce() {
+  if (pollInFlight) return;
+  pollInFlight = true;
+  try {
   const latest = await provider.getBlockNumber();
   if (nextBlockToScan == null) nextBlockToScan = latest;
   if (nextBlockToScan > latest) return;
@@ -102,6 +110,9 @@ async function pollBridgeOnce() {
   }
 
   nextBlockToScan = latest + 1;
+  } finally {
+    pollInFlight = false;
+  }
 }
 
 pollBridgeOnce().catch((e) => console.error("[Guard] Initial poll failed:", e));
@@ -114,7 +125,24 @@ app.get("/health", async (_req, res) => {
   try {
     const chainId = await provider.send("eth_chainId", []);
     const mode = await policy.mode();
-    res.json({ ok: true, chainId, policyMode: Number(mode), lastEvent });
+    const delaySeconds = await policy.delaySeconds();
+    const riskThreshold = await policy.riskThreshold();
+
+    let lastActorRiskScore: number | null = null;
+    if (lastEvent?.from) {
+      const r = await policy.riskScore(lastEvent.from);
+      lastActorRiskScore = Number(r);
+    }
+
+    res.json({
+      ok: true,
+      chainId,
+      policyMode: Number(mode),
+      delaySeconds: Number(delaySeconds),
+      riskThreshold: Number(riskThreshold),
+      lastActorRiskScore,
+      lastEvent
+    });
   } catch (e: any) {
     res.status(500).json({ ok: false, error: e?.message ?? String(e) });
   }
@@ -128,6 +156,41 @@ app.post("/policy/mode", async (req, res) => {
   const tx = await policy.setMode(m);
   await tx.wait();
   res.json({ ok: true, mode: m });
+});
+
+app.post("/policy/threshold", async (req, res) => {
+  if (!signer) return res.status(400).json({ ok: false, error: "PRIVATE_KEY missing" });
+  const t = Number(req.body?.threshold);
+  if (!Number.isFinite(t) || t < 0 || t > 100) {
+    return res.status(400).json({ ok: false, error: "threshold must be 0..100" });
+  }
+  const tx = await policy.setRiskThreshold(Math.floor(t));
+  await tx.wait();
+  res.json({ ok: true, riskThreshold: Math.floor(t) });
+});
+
+app.post("/policy/delay", async (req, res) => {
+  if (!signer) return res.status(400).json({ ok: false, error: "PRIVATE_KEY missing" });
+  const s = Number(req.body?.seconds);
+  if (!Number.isFinite(s) || s < 0) {
+    return res.status(400).json({ ok: false, error: "seconds must be >= 0" });
+  }
+  const tx = await policy.setDelaySeconds(Math.floor(s));
+  await tx.wait();
+  res.json({ ok: true, delaySeconds: Math.floor(s) });
+});
+
+app.post("/policy/risk", async (req, res) => {
+  if (!signer) return res.status(400).json({ ok: false, error: "PRIVATE_KEY missing" });
+  const who = String(req.body?.who ?? "");
+  const score = Number(req.body?.score);
+  if (!ethers.isAddress(who)) return res.status(400).json({ ok: false, error: "who must be an address" });
+  if (!Number.isFinite(score) || score < 0 || score > 100) {
+    return res.status(400).json({ ok: false, error: "score must be 0..100" });
+  }
+  const tx = await policy.setRiskScore(who, Math.floor(score));
+  await tx.wait();
+  res.json({ ok: true, who, score: Math.floor(score) });
 });
 
 app.listen(PORT, () => console.log(`Ghost Guard listening on :${PORT}`));
