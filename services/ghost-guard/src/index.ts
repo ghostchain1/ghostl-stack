@@ -77,13 +77,48 @@ function pushLog(level: LogEntry["level"], msg: string, data?: any) {
   while (logBuffer.length > 200) logBuffer.shift();
 }
 
+type Alert = {
+  ts: number;
+  kind: string;
+  token: string | null;
+  from: string;
+  to: string;
+  amountWei: string;
+  nonce: string;
+  tx: string;
+  risk: number;
+  velocityRisk: number;
+  graphRisk: any;
+  reasons: Array<string>;
+  isAllowlisted: boolean;
+  isBlocklisted: boolean;
+};
+
+const alerts: Array<Alert> = [];
+const alertMinRiskRaw = Number(process.env.ALERT_MIN_RISK || "70");
+const ALERT_MIN_RISK =
+  Number.isFinite(alertMinRiskRaw) && alertMinRiskRaw >= 0 ? Math.floor(alertMinRiskRaw) : 70;
+const alertsPath = path.join(STATE_DIR, "alerts.jsonl");
+
+async function emitAlert(a: Alert) {
+  alerts.push(a);
+  while (alerts.length > 200) alerts.shift();
+  try {
+    await fs.mkdir(STATE_DIR, { recursive: true });
+    await fs.appendFile(alertsPath, JSON.stringify(a) + "\n", "utf8");
+  } catch {
+    // ignore
+  }
+}
+
 const metrics = {
   startedAt: Date.now(),
   polls: 0,
   logsSeen: 0,
   depositsSeen: 0,
   policyWrites: 0,
-  policyWriteErrors: 0
+  policyWriteErrors: 0,
+  alerts: 0
 };
 
 const depositTopic = ethers.id("DepositInitiated(address,address,uint256,uint256)");
@@ -208,6 +243,27 @@ async function handleDepositLog(log: ethers.Log) {
   const msg = `[Guard] ${parsed.name} from=${from} amountWei=${amount} nonce=${nonce} risk=${risk} (velocity=${velocityRisk}, graph=${graphRisk.score})`;
   console.log(msg);
   pushLog("info", msg, lastEvent);
+
+  const shouldAlert = !isAllowlisted && (isBlocklisted || risk >= ALERT_MIN_RISK || (graphRisk.reasons?.length ?? 0) > 0);
+  if (shouldAlert) {
+    metrics.alerts += 1;
+    await emitAlert({
+      ts: Date.now(),
+      kind: parsed.name,
+      token,
+      from,
+      to,
+      amountWei: amount.toString(),
+      nonce: nonce.toString(),
+      tx: String(log.transactionHash ?? ""),
+      risk,
+      velocityRisk,
+      graphRisk,
+      reasons: Array.isArray(graphRisk.reasons) ? graphRisk.reasons : [],
+      isAllowlisted,
+      isBlocklisted
+    });
+  }
 
   if (!signer) {
     console.log("[Guard] No PRIVATE_KEY set; running in observe-only mode.");
@@ -368,6 +424,10 @@ app.get("/health", async (_req, res) => {
 
 app.get("/events", async (_req, res) => {
   res.json({ ok: true, events: recentEvents.slice(-50) });
+});
+
+app.get("/alerts", async (_req, res) => {
+  res.json({ ok: true, alerts: alerts.slice(-200), alertMinRisk: ALERT_MIN_RISK });
 });
 
 app.get("/logs", async (_req, res) => {

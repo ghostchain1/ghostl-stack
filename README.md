@@ -21,6 +21,19 @@ bash infra/scripts/up.sh
 
 Polygon Edge chain data lives under `chains/` and is initialized automatically by `infra/scripts/up.sh`.
 
+### Premine a funded key (enforcement)
+
+If you want Ghost Guard / Relayer to send transactions, premine a wallet in `chains/l2/chain.json` (and optionally `chains/l3/chain.json`), then reset:
+
+```bash
+cd contracts
+node -e "const {Wallet}=require('ethers'); const w=Wallet.createRandom(); console.log('ADDRESS=',w.address); console.log('PRIVATE_KEY=',w.privateKey);"
+cd ..
+bash infra/scripts/chains/premine.sh 0xYourAddress --l3
+bash infra/scripts/reset.sh
+bash infra/scripts/up.sh
+```
+
 ## Demo (emit a deposit event)
 
 ```bash
