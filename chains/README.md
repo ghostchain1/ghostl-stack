@@ -11,9 +11,24 @@ This folder contains the **local Polygon Edge chain data** used by the dev stack
 bash infra/scripts/chains/init.sh
 ```
 
+## Premine a funded key (for Guard / Relayer)
+
+Edit `chains/l2/chain.json` (and optionally `chains/l3/chain.json`) or run:
+
+```bash
+bash infra/scripts/chains/premine.sh 0xYourAddress --l3
+```
+
+Generate a new wallet (example):
+
+```bash
+cd contracts
+node -e "const {Wallet}=require('ethers'); const w=Wallet.createRandom(); console.log('ADDRESS=',w.address); console.log('PRIVATE_KEY=',w.privateKey);"
+cd ..
+```
+
 ## Reset chain data
 
 ```bash
 bash infra/scripts/chains/reset.sh
 ```
-

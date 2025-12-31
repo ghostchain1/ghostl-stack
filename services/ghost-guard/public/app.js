@@ -3,6 +3,7 @@ const guardHealthEl = document.getElementById("guardHealth");
 const relayerHealthEl = document.getElementById("relayerHealth");
 const listsEl = document.getElementById("lists");
 const eventsEl = document.getElementById("events");
+const alertsEl = document.getElementById("alerts");
 const guardMetricsEl = document.getElementById("guardMetrics");
 const relayerMetricsEl = document.getElementById("relayerMetrics");
 const guardLogsEl = document.getElementById("guardLogs");
@@ -78,6 +79,9 @@ async function refreshAll() {
 
     const events = await api("/events");
     eventsEl.textContent = pretty(events);
+
+    const alerts = await api("/alerts");
+    alertsEl.textContent = pretty(alerts);
 
     const guardMetrics = await api("/metrics");
     guardMetricsEl.textContent = pretty(guardMetrics);
