@@ -83,7 +83,7 @@ curl -sS -X POST http://localhost:7070/policy/delay -H 'content-type: applicatio
 
 ## Allowlist / blocklist (optional)
 
-Set `ADMIN_TOKEN` when starting `ghost-guard` to protect these endpoints, then:
+Set `ADMIN_TOKEN` when starting `ghost-guard` to protect all write endpoints (`/policy/*` and `/lists/*`), then:
 
 ```bash
 curl -sS http://localhost:7070/lists

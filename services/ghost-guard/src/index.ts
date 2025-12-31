@@ -325,7 +325,7 @@ app.post("/lists/remove", requireAdmin, async (req, res) => {
 });
 
 // manual controls (requires PRIVATE_KEY)
-app.post("/policy/mode", async (req, res) => {
+app.post("/policy/mode", requireAdmin, async (req, res) => {
   if (!signer) return res.status(400).json({ ok: false, error: "PRIVATE_KEY missing" });
   const m = Number(req.body?.mode);
   if (![0, 1, 2].includes(m)) return res.status(400).json({ ok: false, error: "mode must be 0/1/2" });
@@ -334,7 +334,7 @@ app.post("/policy/mode", async (req, res) => {
   res.json({ ok: true, mode: m });
 });
 
-app.post("/policy/threshold", async (req, res) => {
+app.post("/policy/threshold", requireAdmin, async (req, res) => {
   if (!signer) return res.status(400).json({ ok: false, error: "PRIVATE_KEY missing" });
   const t = Number(req.body?.threshold);
   if (!Number.isFinite(t) || t < 0 || t > 100) {
@@ -345,7 +345,7 @@ app.post("/policy/threshold", async (req, res) => {
   res.json({ ok: true, riskThreshold: Math.floor(t) });
 });
 
-app.post("/policy/delay", async (req, res) => {
+app.post("/policy/delay", requireAdmin, async (req, res) => {
   if (!signer) return res.status(400).json({ ok: false, error: "PRIVATE_KEY missing" });
   const s = Number(req.body?.seconds);
   if (!Number.isFinite(s) || s < 0) {
@@ -356,7 +356,7 @@ app.post("/policy/delay", async (req, res) => {
   res.json({ ok: true, delaySeconds: Math.floor(s) });
 });
 
-app.post("/policy/risk", async (req, res) => {
+app.post("/policy/risk", requireAdmin, async (req, res) => {
   if (!signer) return res.status(400).json({ ok: false, error: "PRIVATE_KEY missing" });
   const who = String(req.body?.who ?? "");
   const score = Number(req.body?.score);
