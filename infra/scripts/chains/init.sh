@@ -13,17 +13,21 @@ need_cmd jq
 
 fix_perms() {
   local data_dir="$1"
-  # Best-effort: ensure both the polygon-edge user and the workspace user can
-  # read/write/delete generated chain data on the bind mount.
-  chmod -R a+rwX "$data_dir" 2>/dev/null || true
-  find "$data_dir" -type d -exec chmod 777 {} + 2>/dev/null || true
-  find "$data_dir" -type f -exec chmod 666 {} + 2>/dev/null || true
+  # polygon-edge runs as user "edge" (uid=100 gid=101) by default. Newer
+  # versions error if the data-dir was created by a different group.
+  # Keep ownership aligned to edge:edge, but make files world-readable/writable
+  # for local dev ergonomics.
+  sudo chown -R 100:101 "$data_dir" >/dev/null 2>&1 || true
+  sudo chmod -R a+rwX "$data_dir" >/dev/null 2>&1 || true
+  sudo find "$data_dir" -type d -exec chmod 777 {} + >/dev/null 2>&1 || true
+  sudo find "$data_dir" -type f -exec chmod 666 {} + >/dev/null 2>&1 || true
 
-  docker run --rm --entrypoint /bin/sh -v "$data_dir:/data" "$IMAGE" -lc '
+  docker run --rm --user 0:0 --entrypoint /bin/sh -v "$data_dir:/data" "$IMAGE" -lc "
     set -e
+    chown -R 100:101 /data || true
     find /data -type d -exec chmod 777 {} +
     find /data -type f -exec chmod 666 {} +
-  ' >/dev/null 2>&1 || true
+  " >/dev/null 2>&1 || true
 }
 
 init_chain() {
@@ -39,7 +43,7 @@ init_chain() {
   mkdir -p "$data"
   # polygon-edge image defaults to a non-root "edge" user. Ensure bind-mounted
   # dirs are writable regardless of host uid/gid.
-  chmod 777 "$data" || true
+  sudo chmod 777 "$data" >/dev/null 2>&1 || true
   fix_perms "$data"
 
   local name chain_id premine_addr premine_amt gas_limit boot_ip libp2p grpc jsonrpc
