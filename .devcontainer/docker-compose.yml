@@ -6,20 +6,27 @@ services:
       - ..:/workspaces/ghostl-stack:cached
     networks: [ghostnet]
 
-  anvil:
-    image: ghcr.io/foundry-rs/foundry:latest
-    entrypoint: ["anvil"]
-    restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    healthcheck:
-      test: ["CMD-SHELL", "bash -lc 'echo > /dev/tcp/127.0.0.1/8545'"]
-      interval: 2s
-      timeout: 1s
-      retries: 30
+ anvil:
+  image: ghcr.io/foundry-rs/foundry:latest
+  entrypoint: ["/bin/sh", "-lc"]
+  command: >
+    "
+    echo 'Starting Anvil...' &&
+    anvil
+      --host 0.0.0.0
+      --port 8545
+      --chain-id 31337
+      --block-time 1
+    "
+  ports:
+    - "8545:8545"
+  networks: [ghostnet]
+  healthcheck:
+    test: ["CMD", "wget", "-qO-", "http://localhost:8545"]
+    interval: 5s
+    timeout: 3s
+    retries: 20
+
       start_period: 2s
     command:
       - "--host"
