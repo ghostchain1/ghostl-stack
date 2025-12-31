@@ -31,7 +31,7 @@ describe("ERC20 bridge (MVP)", function () {
 
     expect(await l2Token.balanceOf(await bridge.getAddress())).to.equal(amount);
 
-    await expect(bridge.connect(owner).finalizeERC20ToL3(await l2Token.getAddress(), user.address, user.address, amount, nonce))
+    await expect(bridge.connect(relayer).finalizeERC20ToL3(await l2Token.getAddress(), user.address, user.address, amount, nonce))
       .to.emit(bridge, "ERC20Finalized")
       .withArgs(await l2Token.getAddress(), user.address, user.address, amount, nonce);
 
@@ -104,7 +104,7 @@ describe("ERC20 bridge (MVP)", function () {
     await (await l2Token.connect(user).approve(await bridge.getAddress(), amount)).wait();
     await (await bridge.connect(user).depositERC20ToL3(await l2Token.getAddress(), user.address, amount, nonce)).wait();
 
-    await (await bridge.connect(owner).finalizeERC20ToL3(await l2Token.getAddress(), user.address, user.address, amount, nonce)).wait();
+    await (await bridge.connect(relayer).finalizeERC20ToL3(await l2Token.getAddress(), user.address, user.address, amount, nonce)).wait();
 
     // Pause policy: Mode.PAUSE == 2
     await (await policy.connect(owner).setMode(2)).wait();
