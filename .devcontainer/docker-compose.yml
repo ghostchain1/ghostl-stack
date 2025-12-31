@@ -6,7 +6,7 @@ services:
       - ..:/workspaces/ghostl-stack:cached
     networks: [ghostnet]
 
- anvil:
+  anvil:
   image: ghcr.io/foundry-rs/foundry:latest
   entrypoint: ["/bin/sh", "-lc"]
   command: >
