@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+echo "Initializing chains..."
+bash /workspaces/ghostl-stack/infra/scripts/chains/init.sh
+
 cd /workspaces/ghostl-stack/.devcontainer
 docker compose up -d --build anvil ghostl2 ghostl3 workspace
 
