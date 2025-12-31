@@ -19,6 +19,12 @@ async function main() {
   console.log("GuardPolicy (L2):", policyAddr);
   console.log("L2L3Bridge (L2):", bridgeAddr);
 
+  const GhostToken = await ethers.getContractFactory("GhostTokenL2");
+  const l2Token = await GhostToken.connect(l2[0]).deploy();
+  await l2Token.waitForDeployment();
+  const l2TokenAddr = await l2Token.getAddress();
+  console.log("GhostTokenL2 (L2):", l2TokenAddr);
+
   // Deploy inbox on L3 (GhostL3) using the same dev key by default.
   const l3Rpc = process.env.RPC_L3 ?? "http://localhost:10545";
   const relayerKey =
@@ -34,6 +40,12 @@ async function main() {
   const inboxAddr = await inbox.getAddress();
   console.log("L3Inbox (L3):", inboxAddr);
 
+  const L3Token = await ethers.getContractFactory("L3BridgedToken");
+  const l3Token = await L3Token.connect(l3Signer).deploy(await l3Signer.getAddress(), l2TokenAddr);
+  await l3Token.waitForDeployment();
+  const l3TokenAddr = await l3Token.getAddress();
+  console.log("L3BridgedToken (L3):", l3TokenAddr);
+
   // Write addresses for ghost-guard env
   const fs = await import("node:fs/promises");
   const envPath = "/workspaces/ghostl-stack/services/ghost-guard/.env";
@@ -43,7 +55,9 @@ async function main() {
     `RPC_L3=http://localhost:10545`,
     `GUARD_POLICY_ADDRESS=${policyAddr}`,
     `BRIDGE_L2L3_ADDRESS=${bridgeAddr}`,
-    `PRIVATE_KEY=`
+    `PRIVATE_KEY=`,
+    `L2_TOKEN_ADDRESS=${l2TokenAddr}`,
+    `START_BLOCK=`
   ].join("\n") + "\n";
 
   await fs.writeFile(envPath, env, "utf8");
@@ -56,7 +70,10 @@ async function main() {
     `RPC_L3=http://localhost:10545`,
     `BRIDGE_L2L3_ADDRESS=${bridgeAddr}`,
     `L3_INBOX_ADDRESS=${inboxAddr}`,
-    `RELAYER_PRIVATE_KEY=`
+    `L3_TOKEN_ADDRESS=${l3TokenAddr}`,
+    `RELAYER_PRIVATE_KEY=`,
+    `L2_TOKEN_ADDRESS=${l2TokenAddr}`,
+    `START_BLOCK=`
   ].join("\n") + "\n";
 
   await fs.writeFile(relayerEnvPath, relayerEnv, "utf8");
