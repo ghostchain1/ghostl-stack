@@ -1,0 +1,109 @@
+version: "3.9"
+services:
+  workspace:
+    image: mcr.microsoft.com/devcontainers/base:ubuntu
+    command: sleep infinity
+    volumes:
+      - ..:/workspaces/ghostl-stack:cached
+    networks: [ghostnet]
+
+  anvil:
+    image: ghcr.io/foundry-rs/foundry:latest
+    entrypoint: ["anvil"]
+    command:
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "8545"
+      - "--chain-id"
+      - "31337"
+      - "--block-time"
+      - "1"
+    ports:
+      - "8545:8545"
+    networks: [ghostnet]
+
+  ghostl2:
+    image: 0xpolygon/polygon-edge:latest
+    entrypoint: ["/bin/sh", "-lc"]
+    command:
+      - |
+        if [ ! -f /data/genesis.json ]; then
+          polygon-edge secrets init --data-dir /data/secrets >/dev/null 2>&1 || true;
+          polygon-edge genesis \
+            --dir /data/genesis.json \
+            --name GhostL2 \
+            --chain-id 7192 \
+            --premine 0x1000000000000000000000000000000000000000:1000000000000000000000 \
+            --consensus ibft \
+            --validators-path /data/secrets \
+            --validators-prefix validator \
+            --block-gas-limit 30000000;
+        fi;
+        polygon-edge server \
+          --data-dir /data \
+          --chain /data/genesis.json \
+          --grpc-address 0.0.0.0:9632 \
+          --libp2p 0.0.0.0:14792 \
+          --jsonrpc 0.0.0.0:9545
+    ports:
+      - "9545:9545"
+    volumes:
+      - ghostl2_data:/data
+    networks: [ghostnet]
+    depends_on: [anvil]
+
+  ghostl3:
+    image: 0xpolygon/polygon-edge:latest
+    entrypoint: ["/bin/sh", "-lc"]
+    command:
+      - |
+        if [ ! -f /data/genesis.json ]; then
+          polygon-edge secrets init --data-dir /data/secrets >/dev/null 2>&1 || true;
+          polygon-edge genesis \
+            --dir /data/genesis.json \
+            --name GhostL3 \
+            --chain-id 7393 \
+            --premine 0x1000000000000000000000000000000000000000:1000000000000000000000000000000000000000 \
+            --consensus ibft \
+            --validators-path /data/secrets \
+            --validators-prefix validator \
+            --block-gas-limit 30000000;
+        fi;
+        polygon-edge server \
+          --data-dir /data \
+          --chain /data/genesis.json \
+          --grpc-address 0.0.0.0:10632 \
+          --libp2p 0.0.0.0:16793 \
+          --jsonrpc 0.0.0.0:10545
+    ports:
+      - "10545:10545"
+    volumes:
+      - ghostl3_data:/data
+    networks: [ghostnet]
+    depends_on: [ghostl2]
+
+  ghost-guard:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - ../services/ghost-guard:/app
+    command: sh -lc "npm install && npm run dev"
+    environment:
+      PORT: "7070"
+      RPC_L2: "http://ghostl2:9545"
+      RPC_L3: "http://ghostl3:10545"
+      BRIDGE_L2L3_ADDRESS: ""
+      GUARD_POLICY_ADDRESS: ""
+      PRIVATE_KEY: ""
+    ports:
+      - "7070:7070"
+    networks: [ghostnet]
+    depends_on: [ghostl2, ghostl3]
+
+networks:
+  ghostnet:
+
+volumes:
+  ghostl2_data:
+  ghostl3_data:

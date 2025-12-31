@@ -1,0 +1,17 @@
+{
+  "name": "ghostl-contracts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "hardhat compile",
+    "deploy:all": "hardhat run scripts/deploy_all.ts",
+    "test": "hardhat test"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.10",
+    "typescript": "^5.6.3",
+    "ts-node": "^10.9.2",
+    "dotenv": "^16.4.5"
+  }
+}
