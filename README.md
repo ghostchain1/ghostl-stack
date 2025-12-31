@@ -12,6 +12,14 @@ Brings up:
 bash infra/scripts/up.sh
 ```
 
+## Create service keys (Guard/Relayer/Proposers)
+
+This generates fresh private keys (saved only into ignored `.env` files), funds the addresses on L1/L2/L3 from the default dev account, and restarts services:
+
+```bash
+bash infra/scripts/keys/init.sh
+```
+
 ## Optimistic Rollup (L2→L1, L3→L2)
 
 During `bash infra/scripts/up.sh`, the deploy step generates:
