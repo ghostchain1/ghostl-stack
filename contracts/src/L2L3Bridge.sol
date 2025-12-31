@@ -7,17 +7,21 @@ import "./ERC20.sol";
 contract L2L3Bridge {
     GuardPolicy public policy;
     address public owner;
+    address public relayer;
 
     // (actor, amount, nonce) => timestamp deposit initiated
     mapping(bytes32 => uint256) public depositTime;
     // (token, actor, amount, nonce) => timestamp deposit initiated
     mapping(bytes32 => uint256) public erc20DepositTime;
+    mapping(bytes32 => bool) public erc20WithdrawProcessed;
 
     event DepositInitiated(address indexed from, address indexed to, uint256 amount, uint256 nonce);
     event Finalized(address indexed from, address indexed to, uint256 amount, uint256 nonce);
     event ERC20DepositInitiated(address indexed token, address indexed from, address indexed to, uint256 amount, uint256 nonce);
     event ERC20Finalized(address indexed token, address indexed from, address indexed to, uint256 amount, uint256 nonce);
+    event ERC20WithdrawReleased(address indexed token, address indexed from, address indexed to, uint256 amount, uint256 nonce);
     event PolicyChanged(address indexed policy);
+    event RelayerChanged(address indexed relayer);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "not owner");
@@ -27,11 +31,22 @@ contract L2L3Bridge {
     constructor(address policyAddr) {
         owner = msg.sender;
         policy = GuardPolicy(policyAddr);
+        relayer = msg.sender;
     }
 
     function setPolicy(address policyAddr) external onlyOwner {
         policy = GuardPolicy(policyAddr);
         emit PolicyChanged(policyAddr);
+    }
+
+    function setRelayer(address relayerAddr) external onlyOwner {
+        relayer = relayerAddr;
+        emit RelayerChanged(relayerAddr);
+    }
+
+    modifier onlyRelayer() {
+        require(msg.sender == relayer, "not relayer");
+        _;
     }
 
     /// User deposits on L2 to mint/release on L3 (offchain relayer can mirror on the other chain).
@@ -84,5 +99,18 @@ contract L2L3Bridge {
 
         erc20DepositTime[key] = 0;
         emit ERC20Finalized(token, from, to, amount, nonce);
+    }
+
+    /// @notice Release escrowed L2 tokens after a corresponding burn on L3 (called by relayer).
+    function releaseERC20FromL3(address token, address from, address to, uint256 amount, uint256 nonce) external onlyRelayer {
+        bytes32 key = keccak256(abi.encode(token, from, to, amount, nonce));
+        require(!erc20WithdrawProcessed[key], "already");
+        erc20WithdrawProcessed[key] = true;
+
+        (bool ok, ) = policy.check(from, amount);
+        require(ok, "blocked by policy");
+
+        require(ERC20(token).transfer(to, amount), "transfer");
+        emit ERC20WithdrawReleased(token, from, to, amount, nonce);
     }
 }

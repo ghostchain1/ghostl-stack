@@ -136,6 +136,7 @@ services:
       RPC_L2: "http://ghostl2:9545"
       RPC_L3: "http://ghostl3:10545"
       RELAYER_PRIVATE_KEY: "${RELAYER_PRIVATE_KEY-}"
+      L2_RELAYER_PRIVATE_KEY: "${L2_RELAYER_PRIVATE_KEY-}"
       CONFIRMATIONS: "${CONFIRMATIONS-0}"
       STATE_DIR: "/state"
     ports:
