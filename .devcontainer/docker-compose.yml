@@ -103,6 +103,7 @@ services:
     volumes:
       - ../services/ghost-guard:/app
       - ghost_guard_node_modules:/app/node_modules
+      - ghost_guard_state:/state
     command: sh -lc "test -f node_modules/.package-lock.json || (test -f package-lock.json && npm ci --no-audit --no-fund || npm install --no-audit --no-fund); npm run start"
     env_file:
       - ../services/ghost-guard/.env
@@ -110,6 +111,10 @@ services:
       RPC_L2: "http://ghostl2:9545"
       RPC_L3: "http://ghostl3:10545"
       PRIVATE_KEY: "${PRIVATE_KEY-}"
+      ADMIN_TOKEN: "${ADMIN_TOKEN-}"
+      AUTO_PAUSE: "${AUTO_PAUSE-1}"
+      RISK_WINDOW_SECONDS: "${RISK_WINDOW_SECONDS-300}"
+      STATE_DIR: "/state"
     ports:
       - "7070:7070"
     networks: [ghostnet]
@@ -142,3 +147,4 @@ volumes:
   ghostl3_data:
   ghost_guard_node_modules:
   ghost_relayer_node_modules:
+  ghost_guard_state:
