@@ -163,12 +163,38 @@ async function main() {
   console.log("Wrote:", proposerL2Path);
   console.log("Wrote:", proposerL3Path);
 
+  const challengerDir = "/workspaces/ghostl-stack/services/ghost-rollup-challenger";
+  const challengerL2Path = `${challengerDir}/.env.l2`;
+  const challengerL3Path = `${challengerDir}/.env.l3`;
+  const challengerL2Env = [
+    `PORT=7282`,
+    `RPC_SETTLEMENT=http://localhost:8545`,
+    `RPC_CHILD=http://localhost:9545`,
+    `ROLLUP_ADDRESS=${l1RollupAddr}`,
+    `CHALLENGER_PRIVATE_KEY=`,
+    `CONFIRMATIONS=0`
+  ].join("\n") + "\n";
+  const challengerL3Env = [
+    `PORT=7383`,
+    `RPC_SETTLEMENT=http://localhost:9545`,
+    `RPC_CHILD=http://localhost:10545`,
+    `ROLLUP_ADDRESS=${l2RollupAddr}`,
+    `CHALLENGER_PRIVATE_KEY=`,
+    `CONFIRMATIONS=0`
+  ].join("\n") + "\n";
+  await fs.mkdir(challengerDir, { recursive: true });
+  await fs.writeFile(challengerL2Path, challengerL2Env, "utf8");
+  await fs.writeFile(challengerL3Path, challengerL3Env, "utf8");
+  console.log("Wrote:", challengerL2Path);
+  console.log("Wrote:", challengerL3Path);
+
   console.log("\nNext:");
   console.log("1) Add PRIVATE_KEY in services/ghost-guard/.env (use a funded key on L2)");
   console.log("2) Add RELAYER_PRIVATE_KEY in services/ghost-relayer/.env (use a funded key on L3)");
   console.log("3) Add L2_RELAYER_PRIVATE_KEY in services/ghost-relayer/.env (funded on L2 for finalization / releases)");
   console.log("4) Add PROPOSER_PRIVATE_KEY in services/ghost-rollup-proposer/.env.l2 and .env.l3 to post batches");
-  console.log("5) Restart docker compose or run services locally");
+  console.log("5) Add CHALLENGER_PRIVATE_KEY in services/ghost-rollup-challenger/.env.l2 and .env.l3 (optional)");
+  console.log("6) Restart docker compose or run services locally");
 }
 
 main().catch((e) => {

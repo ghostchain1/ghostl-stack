@@ -14,6 +14,8 @@ services/ghost-guard/.env
 services/ghost-relayer/.env
 services/ghost-rollup-proposer/.env.l2
 services/ghost-rollup-proposer/.env.l3
+services/ghost-rollup-challenger/.env.l2
+services/ghost-rollup-challenger/.env.l3
 
 # local scratch
 .tmp/
