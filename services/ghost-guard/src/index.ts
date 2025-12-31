@@ -28,7 +28,8 @@ if (!RPC_L2 || !BRIDGE || !POLICY) {
 }
 
 const bridgeAbi = [
-  "event DepositInitiated(address indexed from, address indexed to, uint256 amount, uint256 nonce)"
+  "event DepositInitiated(address indexed from, address indexed to, uint256 amount, uint256 nonce)",
+  "event ERC20DepositInitiated(address indexed token, address indexed from, address indexed to, uint256 amount, uint256 nonce)"
 ];
 
 const policyAbi = [
@@ -54,6 +55,7 @@ const policy = new ethers.Contract(POLICY, policyAbi, signerWithNonce ?? provide
 let lastEvent: any = null;
 
 const depositTopic = ethers.id("DepositInitiated(address,address,uint256,uint256)");
+const erc20DepositTopic = ethers.id("ERC20DepositInitiated(address,address,address,uint256,uint256)");
 const bridgeIface = new ethers.Interface(bridgeAbi);
 
 let nextBlockToScan: number | null = null;
@@ -62,15 +64,24 @@ const START_BLOCK = process.env.START_BLOCK ? Number(process.env.START_BLOCK) : 
 
 async function handleDepositLog(log: ethers.Log) {
   const parsed = bridgeIface.parseLog(log);
-  const from = parsed.args[0] as string;
-  const to = parsed.args[1] as string;
-  const amount = parsed.args[2] as bigint;
-  const nonce = parsed.args[3] as bigint;
+  const token = (parsed.name === "ERC20DepositInitiated" ? (parsed.args[0] as string) : null);
+  const from = parsed.name === "ERC20DepositInitiated" ? (parsed.args[1] as string) : (parsed.args[0] as string);
+  const to = parsed.name === "ERC20DepositInitiated" ? (parsed.args[2] as string) : (parsed.args[1] as string);
+  const amount = parsed.name === "ERC20DepositInitiated" ? (parsed.args[3] as bigint) : (parsed.args[2] as bigint);
+  const nonce = parsed.name === "ERC20DepositInitiated" ? (parsed.args[4] as bigint) : (parsed.args[3] as bigint);
 
-  lastEvent = { from, to, amount: amount.toString(), nonce: nonce.toString(), tx: log.transactionHash };
+  lastEvent = {
+    kind: parsed.name,
+    token,
+    from,
+    to,
+    amount: amount.toString(),
+    nonce: nonce.toString(),
+    tx: log.transactionHash
+  };
 
   const risk = computeRiskScore({ actor: from, amountWei: amount, nonce });
-  console.log(`[Guard] DepositInitiated from=${from} amountWei=${amount} nonce=${nonce} risk=${risk}`);
+  console.log(`[Guard] ${parsed.name} from=${from} amountWei=${amount} nonce=${nonce} risk=${risk}`);
 
   if (!signer) {
     console.log("[Guard] No PRIVATE_KEY set; running in observe-only mode.");
@@ -107,7 +118,7 @@ async function pollBridgeOnce() {
     address: BRIDGE,
     fromBlock: nextBlockToScan,
     toBlock: latest,
-    topics: [depositTopic]
+    topics: [[depositTopic, erc20DepositTopic]]
   });
 
   for (const log of logs) {
