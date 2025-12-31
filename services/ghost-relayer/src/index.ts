@@ -11,6 +11,7 @@ const BRIDGE = process.env.BRIDGE_L2L3_ADDRESS!;
 const L3_INBOX = process.env.L3_INBOX_ADDRESS!;
 const L3_TOKEN = process.env.L3_TOKEN_ADDRESS!;
 const RELAYER_PRIVATE_KEY = process.env.RELAYER_PRIVATE_KEY || "";
+const L2_RELAYER_PRIVATE_KEY = process.env.L2_RELAYER_PRIVATE_KEY || "";
 const STATE_DIR = process.env.STATE_DIR || "/state";
 const confirmationsRaw = Number(process.env.CONFIRMATIONS || "0");
 const CONFIRMATIONS = Number.isFinite(confirmationsRaw) && confirmationsRaw >= 0 ? Math.floor(confirmationsRaw) : 0;
@@ -36,7 +37,9 @@ const bridgeIface = new ethers.Interface(bridgeAbi);
 
 const l3TokenAbi = [
   "function mintFromL2(address from, address to, uint256 amount, uint256 nonce) external",
-  "function processed(bytes32 key) view returns (bool)"
+  "function processed(bytes32 key) view returns (bool)",
+  "function l2Token() view returns (address)",
+  "event BurnInitiated(address indexed from, address indexed to, uint256 amount, uint256 nonce, bytes32 key)"
 ];
 
 const l2Provider = new ethers.JsonRpcProvider(RPC_L2, undefined, { polling: true });
@@ -47,21 +50,27 @@ l3Provider.pollingInterval = 1000;
 
 const observeOnly = !RELAYER_PRIVATE_KEY;
 const l3Signer = observeOnly ? null : new ethers.NonceManager(new ethers.Wallet(RELAYER_PRIVATE_KEY, l3Provider));
+const l2Key = L2_RELAYER_PRIVATE_KEY || RELAYER_PRIVATE_KEY;
+const l2Signer = l2Key ? new ethers.NonceManager(new ethers.Wallet(l2Key, l2Provider)) : null;
 const inbox = new ethers.Contract(L3_INBOX, inboxAbi, l3Signer ?? l3Provider);
 const l3Token = new ethers.Contract(L3_TOKEN, l3TokenAbi, l3Signer ?? l3Provider);
 
-let nextBlockToScan: number | null = null;
-let pollInFlight = false;
+let nextL2BlockToScan: number | null = null;
+let nextL3BlockToScan: number | null = null;
+let pollL2InFlight = false;
+let pollL3InFlight = false;
 let lastRelayed: any = null;
 let lastSeen: any = null;
 const START_BLOCK = process.env.START_BLOCK ? Number(process.env.START_BLOCK) : null;
 
 type CursorState = { nextBlockToScan: number | null };
-const cursorPath = path.join(STATE_DIR, "cursor.json");
+function cursorPathFor(name: "l2" | "l3") {
+  return path.join(STATE_DIR, `${name}_cursor.json`);
+}
 
-async function loadCursor(): Promise<CursorState> {
+async function loadCursor(name: "l2" | "l3"): Promise<CursorState> {
   try {
-    const raw = await fs.readFile(cursorPath, "utf8");
+    const raw = await fs.readFile(cursorPathFor(name), "utf8");
     const parsed = JSON.parse(raw) as Partial<CursorState>;
     const n = parsed.nextBlockToScan;
     if (typeof n === "number" && Number.isFinite(n) && n >= 0) return { nextBlockToScan: Math.floor(n) };
@@ -71,11 +80,12 @@ async function loadCursor(): Promise<CursorState> {
   return { nextBlockToScan: null };
 }
 
-async function saveCursor(state: CursorState) {
+async function saveCursor(name: "l2" | "l3", state: CursorState) {
   await fs.mkdir(STATE_DIR, { recursive: true });
-  const tmp = `${cursorPath}.tmp`;
+  const p = cursorPathFor(name);
+  const tmp = `${p}.tmp`;
   await fs.writeFile(tmp, JSON.stringify(state, null, 2) + "\n", "utf8");
-  await fs.rename(tmp, cursorPath);
+  await fs.rename(tmp, p);
 }
 
 function msgKeyEth(from: string, to: string, amount: bigint, nonce: bigint): string {
@@ -146,22 +156,56 @@ async function handleFinalizedLog(log: ethers.Log) {
   }
 }
 
-async function pollOnce() {
-  if (pollInFlight) return;
-  pollInFlight = true;
+const l2BridgeAbi = [
+  "function releaseERC20FromL3(address token, address from, address to, uint256 amount, uint256 nonce) external",
+  "function erc20WithdrawProcessed(bytes32 key) view returns (bool)"
+];
+const l2Bridge = new ethers.Contract(BRIDGE, l2BridgeAbi, l2Signer ?? l2Provider);
+
+const burnTopic = ethers.id("BurnInitiated(address,address,uint256,uint256,bytes32)");
+const l3TokenIface = new ethers.Interface(l3TokenAbi);
+
+async function handleBurnLog(log: ethers.Log, l2Token: string) {
+  const parsed = l3TokenIface.parseLog(log);
+  const from = parsed.args[0] as string;
+  const to = parsed.args[1] as string;
+  const amount = parsed.args[2] as bigint;
+  const nonce = parsed.args[3] as bigint;
+  const key = parsed.args[4] as string;
+
+  lastSeen = { kind: "BurnInitiated", l2Token, from, to, amount: amount.toString(), nonce: nonce.toString(), key, l3Tx: log.transactionHash };
+
+  if (!l2Signer) {
+    console.log(`[Relayer] Observe-only (missing L2 signer key) saw BurnInitiated key=${key} l3Tx=${log.transactionHash}`);
+    return;
+  }
+
+  const already = await l2Bridge.erc20WithdrawProcessed(msgKeyErc20(l2Token, from, to, amount, nonce));
+  if (already) return;
+
+  const tx = await l2Bridge.releaseERC20FromL3(l2Token, from, to, amount, nonce);
+  await tx.wait();
+
+  lastRelayed = { kind: "ERC20WithdrawReleased", l2Token, from, to, amount: amount.toString(), nonce: nonce.toString(), key, l3Tx: log.transactionHash, l2Tx: tx.hash };
+  console.log(`[Relayer] Released ERC20 to L2 key=${key} l3Tx=${log.transactionHash} l2Tx=${tx.hash}`);
+}
+
+async function pollL2Once() {
+  if (pollL2InFlight) return;
+  pollL2InFlight = true;
   try {
     const latest = await l2Provider.getBlockNumber();
     const scanTo = Math.max(0, latest - CONFIRMATIONS);
-    if (nextBlockToScan == null) {
+    if (nextL2BlockToScan == null) {
       const lookback = 100;
       const defaultStart = Math.max(0, scanTo - lookback);
-      nextBlockToScan = START_BLOCK != null && Number.isFinite(START_BLOCK) ? Math.max(0, Math.floor(START_BLOCK)) : defaultStart;
+      nextL2BlockToScan = START_BLOCK != null && Number.isFinite(START_BLOCK) ? Math.max(0, Math.floor(START_BLOCK)) : defaultStart;
     }
-    if (nextBlockToScan > scanTo) return;
+    if (nextL2BlockToScan > scanTo) return;
 
     const logs = await l2Provider.getLogs({
       address: BRIDGE,
-      fromBlock: nextBlockToScan,
+      fromBlock: nextL2BlockToScan,
       toBlock: scanTo,
       topics: [[finalizedTopic, erc20FinalizedTopic]]
     });
@@ -170,24 +214,68 @@ async function pollOnce() {
       await handleFinalizedLog(log);
     }
 
-    nextBlockToScan = scanTo + 1;
-    await saveCursor({ nextBlockToScan });
+    nextL2BlockToScan = scanTo + 1;
+    await saveCursor("l2", { nextBlockToScan: nextL2BlockToScan });
   } catch (e) {
     console.error("[Relayer] Poll failed:", e);
   } finally {
-    pollInFlight = false;
+    pollL2InFlight = false;
   }
 }
 
 try {
-  const cursor = await loadCursor();
-  if (cursor.nextBlockToScan != null) nextBlockToScan = cursor.nextBlockToScan;
+  const cursor = await loadCursor("l2");
+  if (cursor.nextBlockToScan != null) nextL2BlockToScan = cursor.nextBlockToScan;
 } catch (e) {
   console.error("[Relayer] Failed to load cursor:", e);
 }
 
-pollOnce();
-setInterval(pollOnce, 2000);
+try {
+  const cursor = await loadCursor("l3");
+  if (cursor.nextBlockToScan != null) nextL3BlockToScan = cursor.nextBlockToScan;
+} catch (e) {
+  console.error("[Relayer] Failed to load cursor:", e);
+}
+
+const L2_TOKEN = await l3Token.l2Token();
+
+async function pollL3Once() {
+  if (pollL3InFlight) return;
+  pollL3InFlight = true;
+  try {
+    const latest = await l3Provider.getBlockNumber();
+    const scanTo = Math.max(0, latest - CONFIRMATIONS);
+    if (nextL3BlockToScan == null) {
+      const lookback = 100;
+      const defaultStart = Math.max(0, scanTo - lookback);
+      nextL3BlockToScan = START_BLOCK != null && Number.isFinite(START_BLOCK) ? Math.max(0, Math.floor(START_BLOCK)) : defaultStart;
+    }
+    if (nextL3BlockToScan > scanTo) return;
+
+    const logs = await l3Provider.getLogs({
+      address: L3_TOKEN,
+      fromBlock: nextL3BlockToScan,
+      toBlock: scanTo,
+      topics: [burnTopic]
+    });
+
+    for (const log of logs) {
+      await handleBurnLog(log, L2_TOKEN);
+    }
+
+    nextL3BlockToScan = scanTo + 1;
+    await saveCursor("l3", { nextBlockToScan: nextL3BlockToScan });
+  } catch (e) {
+    console.error("[Relayer] L3 poll failed:", e);
+  } finally {
+    pollL3InFlight = false;
+  }
+}
+
+pollL2Once();
+pollL3Once();
+setInterval(pollL2Once, 2000);
+setInterval(pollL3Once, 2000);
 
 const app = express();
 app.use(express.json());
@@ -205,6 +293,8 @@ app.get("/health", async (_req, res) => {
       bridge: BRIDGE,
       inbox: L3_INBOX,
       l3Token: L3_TOKEN,
+      l2Token: L2_TOKEN,
+      hasL2Signer: Boolean(l2Signer),
       lastSeen,
       lastRelayed
     });

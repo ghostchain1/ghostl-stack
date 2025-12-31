@@ -34,14 +34,20 @@ async function main() {
 
   const l3Provider = new ethers.JsonRpcProvider(l3Rpc);
   const l3Signer = new ethers.Wallet(relayerKey, l3Provider);
+  const relayerAddr = await l3Signer.getAddress();
+
+  const setRelayerTx = await bridge.setRelayer(relayerAddr);
+  await setRelayerTx.wait();
+  console.log("Bridge relayer (L2):", relayerAddr);
+
   const Inbox = await ethers.getContractFactory("L3Inbox");
-  const inbox = await Inbox.connect(l3Signer).deploy(await l3Signer.getAddress());
+  const inbox = await Inbox.connect(l3Signer).deploy(relayerAddr);
   await inbox.waitForDeployment();
   const inboxAddr = await inbox.getAddress();
   console.log("L3Inbox (L3):", inboxAddr);
 
   const L3Token = await ethers.getContractFactory("L3BridgedToken");
-  const l3Token = await L3Token.connect(l3Signer).deploy(await l3Signer.getAddress(), l2TokenAddr);
+  const l3Token = await L3Token.connect(l3Signer).deploy(relayerAddr, l2TokenAddr);
   await l3Token.waitForDeployment();
   const l3TokenAddr = await l3Token.getAddress();
   console.log("L3BridgedToken (L3):", l3TokenAddr);
@@ -72,6 +78,7 @@ async function main() {
     `L3_INBOX_ADDRESS=${inboxAddr}`,
     `L3_TOKEN_ADDRESS=${l3TokenAddr}`,
     `RELAYER_PRIVATE_KEY=`,
+    `L2_RELAYER_PRIVATE_KEY=`,
     `L2_TOKEN_ADDRESS=${l2TokenAddr}`,
     `START_BLOCK=`
   ].join("\n") + "\n";
