@@ -14,17 +14,26 @@ set -a
 source "$ENV_FILE"
 set +a
 
-HEALTH="$(curl -sS http://localhost:7070/health)"
-LAST_EVENT="$(echo "$HEALTH" | jq -c '.lastEvent')"
-if [ "$LAST_EVENT" = "null" ]; then
-  echo "No lastEvent in Ghost Guard yet. Run: bash infra/scripts/demo-deposit.sh"
-  exit 1
-fi
+LAST_DEPOSIT_PATH="$ROOT_DIR/.tmp/last_deposit.json"
+if [ -f "$LAST_DEPOSIT_PATH" ]; then
+  DEMO_FROM="$(jq -r '.from' "$LAST_DEPOSIT_PATH")"
+  DEMO_TO="$(jq -r '.to' "$LAST_DEPOSIT_PATH")"
+  DEMO_AMOUNT_WEI="$(jq -r '.amountWei' "$LAST_DEPOSIT_PATH")"
+  DEMO_NONCE="$(jq -r '.nonce' "$LAST_DEPOSIT_PATH")"
+else
+  HEALTH="$(curl -sS http://localhost:7070/health)"
+  LAST_EVENT="$(echo "$HEALTH" | jq -c '.lastEvent')"
+  if [ "$LAST_EVENT" = "null" ]; then
+    echo "No .tmp/last_deposit.json and no lastEvent in Ghost Guard."
+    echo "Run: bash infra/scripts/demo-deposit.sh"
+    exit 1
+  fi
 
-DEMO_FROM="$(echo "$LAST_EVENT" | jq -r '.from')"
-DEMO_TO="$(echo "$LAST_EVENT" | jq -r '.to')"
-DEMO_AMOUNT_WEI="$(echo "$LAST_EVENT" | jq -r '.amount')"
-DEMO_NONCE="$(echo "$LAST_EVENT" | jq -r '.nonce')"
+  DEMO_FROM="$(echo "$LAST_EVENT" | jq -r '.from')"
+  DEMO_TO="$(echo "$LAST_EVENT" | jq -r '.to')"
+  DEMO_AMOUNT_WEI="$(echo "$LAST_EVENT" | jq -r '.amount')"
+  DEMO_NONCE="$(echo "$LAST_EVENT" | jq -r '.nonce')"
+fi
 
 echo "Finalizing deposit:"
 echo "  from=$DEMO_FROM"
@@ -38,4 +47,3 @@ DEMO_TO="$DEMO_TO" \
 DEMO_AMOUNT_WEI="$DEMO_AMOUNT_WEI" \
 DEMO_NONCE="$DEMO_NONCE" \
 npx hardhat run --network ghostl2 scripts/demo_finalize.ts
-

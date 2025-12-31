@@ -1,4 +1,5 @@
 import { ethers } from "hardhat";
+import fs from "node:fs/promises";
 
 async function main() {
   const bridgeAddress = process.env.BRIDGE_L2L3_ADDRESS;
@@ -24,10 +25,23 @@ async function main() {
 
   await tx.wait();
   console.log("DepositInitiated emitted.");
+
+  const out = {
+    bridge: bridgeAddress,
+    from: signer.address,
+    to,
+    amountWei: amountWei.toString(),
+    nonce: nonce.toString(),
+    depositTx: tx.hash
+  };
+
+  const outPath = "/workspaces/ghostl-stack/.tmp/last_deposit.json";
+  await fs.mkdir("/workspaces/ghostl-stack/.tmp", { recursive: true });
+  await fs.writeFile(outPath, JSON.stringify(out, null, 2) + "\n", "utf8");
+  console.log("Wrote:", outPath);
 }
 
 main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
-
