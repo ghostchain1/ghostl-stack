@@ -2,6 +2,8 @@ import "dotenv/config";
 import express from "express";
 import { ethers } from "ethers";
 import { computeRiskScore } from "./riskEngine.ts";
+import fs from "node:fs/promises";
+import path from "node:path";
 
 const jsonRpcProviderProto = (ethers.JsonRpcProvider as any).prototype;
 if (!jsonRpcProviderProto.__ghostGuardPatched) {
@@ -21,6 +23,12 @@ const RPC_L2 = process.env.RPC_L2!;
 const BRIDGE = process.env.BRIDGE_L2L3_ADDRESS!;
 const POLICY = process.env.GUARD_POLICY_ADDRESS!;
 const PRIVATE_KEY = process.env.PRIVATE_KEY || "";
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
+const STATE_DIR = process.env.STATE_DIR || "/state";
+const AUTO_PAUSE = process.env.AUTO_PAUSE !== "0";
+const riskWindowRaw = Number(process.env.RISK_WINDOW_SECONDS || "300");
+const RISK_WINDOW_SECONDS =
+  Number.isFinite(riskWindowRaw) && riskWindowRaw > 0 ? Math.floor(riskWindowRaw) : 300;
 
 if (!RPC_L2 || !BRIDGE || !POLICY) {
   console.error("Missing env: RPC_L2, BRIDGE_L2L3_ADDRESS, GUARD_POLICY_ADDRESS");
@@ -62,6 +70,45 @@ let nextBlockToScan: number | null = null;
 let pollInFlight = false;
 const START_BLOCK = process.env.START_BLOCK ? Number(process.env.START_BLOCK) : null;
 
+type ListsState = { allowlist: Array<string>; blocklist: Array<string> };
+const allowlist = new Set<string>();
+const blocklist = new Set<string>();
+
+const actorEvents = new Map<string, Array<{ ts: number; amountWei: bigint }>>();
+
+async function loadLists() {
+  try {
+    await fs.mkdir(STATE_DIR, { recursive: true });
+    const p = path.join(STATE_DIR, "lists.json");
+    const raw = await fs.readFile(p, "utf8");
+    const parsed = JSON.parse(raw) as Partial<ListsState>;
+    for (const a of parsed.allowlist ?? []) allowlist.add(ethers.getAddress(a));
+    for (const a of parsed.blocklist ?? []) blocklist.add(ethers.getAddress(a));
+  } catch {
+    // first run / no state
+  }
+}
+
+async function saveLists() {
+  await fs.mkdir(STATE_DIR, { recursive: true });
+  const p = path.join(STATE_DIR, "lists.json");
+  const state: ListsState = { allowlist: Array.from(allowlist), blocklist: Array.from(blocklist) };
+  await fs.writeFile(p, JSON.stringify(state, null, 2) + "\n", "utf8");
+}
+
+function recordActorEvent(actor: string, amountWei: bigint) {
+  const now = Date.now();
+  const cutoff = now - Math.max(1, RISK_WINDOW_SECONDS) * 1000;
+  const list = actorEvents.get(actor) ?? [];
+  list.push({ ts: now, amountWei });
+  while (list.length > 0 && list[0]!.ts < cutoff) list.shift();
+  actorEvents.set(actor, list);
+
+  let recentAmountWei = 0n;
+  for (const e of list) recentAmountWei += e.amountWei;
+  return { recentCount: list.length, recentAmountWei };
+}
+
 async function handleDepositLog(log: ethers.Log) {
   const parsed = bridgeIface.parseLog(log);
   const token = (parsed.name === "ERC20DepositInitiated" ? (parsed.args[0] as string) : null);
@@ -70,6 +117,16 @@ async function handleDepositLog(log: ethers.Log) {
   const amount = parsed.name === "ERC20DepositInitiated" ? (parsed.args[3] as bigint) : (parsed.args[2] as bigint);
   const nonce = parsed.name === "ERC20DepositInitiated" ? (parsed.args[4] as bigint) : (parsed.args[3] as bigint);
 
+  const { recentCount, recentAmountWei } = recordActorEvent(from, amount);
+
+  let risk = computeRiskScore({ actor: from, amountWei: amount, nonce, recentCount, recentAmountWei });
+
+  const normalizedFrom = ethers.getAddress(from);
+  const isAllowlisted = allowlist.has(normalizedFrom);
+  const isBlocklisted = blocklist.has(normalizedFrom);
+  if (isAllowlisted) risk = 0;
+  if (isBlocklisted) risk = 100;
+
   lastEvent = {
     kind: parsed.name,
     token,
@@ -77,11 +134,17 @@ async function handleDepositLog(log: ethers.Log) {
     to,
     amount: amount.toString(),
     nonce: nonce.toString(),
-    tx: log.transactionHash
+    tx: log.transactionHash,
+    risk,
+    recentCount,
+    recentAmountWei: recentAmountWei.toString(),
+    isAllowlisted,
+    isBlocklisted
   };
 
-  const risk = computeRiskScore({ actor: from, amountWei: amount, nonce });
-  console.log(`[Guard] ${parsed.name} from=${from} amountWei=${amount} nonce=${nonce} risk=${risk}`);
+  console.log(
+    `[Guard] ${parsed.name} from=${from} amountWei=${amount} nonce=${nonce} risk=${risk} recentCount=${recentCount}`
+  );
 
   if (!signer) {
     console.log("[Guard] No PRIVATE_KEY set; running in observe-only mode.");
@@ -92,7 +155,7 @@ async function handleDepositLog(log: ethers.Log) {
     const tx1 = await policy.setRiskScore(from, risk);
     await tx1.wait();
 
-    if (risk >= 80) {
+    if (AUTO_PAUSE && risk >= 80) {
       const tx2 = await policy.setMode(2); // PAUSE
       await tx2.wait();
       console.log("[Guard] High risk => policy paused.");
@@ -131,11 +194,24 @@ async function pollBridgeOnce() {
   }
 }
 
+try {
+  await loadLists();
+} catch (e) {
+  console.error("[Guard] Failed to load lists:", e);
+}
+
 pollBridgeOnce().catch((e) => console.error("[Guard] Initial poll failed:", e));
 setInterval(() => pollBridgeOnce().catch((e) => console.error("[Guard] Poll failed:", e)), 2000);
 
 const app = express();
 app.use(express.json());
+
+function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
+  if (!ADMIN_TOKEN) return next();
+  const token = req.header("x-admin-token");
+  if (!token || token !== ADMIN_TOKEN) return res.status(401).json({ ok: false, error: "unauthorized" });
+  next();
+}
 
 app.get("/health", async (_req, res) => {
   try {
@@ -157,11 +233,48 @@ app.get("/health", async (_req, res) => {
       delaySeconds: Number(delaySeconds),
       riskThreshold: Number(riskThreshold),
       lastActorRiskScore,
+      autoPause: AUTO_PAUSE,
+      riskWindowSeconds: RISK_WINDOW_SECONDS,
+      hasPrivateKey: Boolean(PRIVATE_KEY),
       lastEvent
     });
   } catch (e: any) {
     res.status(500).json({ ok: false, error: e?.message ?? String(e) });
   }
+});
+
+app.get("/lists", (_req, res) => {
+  res.json({ ok: true, allowlist: Array.from(allowlist), blocklist: Array.from(blocklist) });
+});
+
+app.post("/lists/allow", requireAdmin, async (req, res) => {
+  const addressRaw = String(req.body?.address ?? "");
+  if (!ethers.isAddress(addressRaw)) return res.status(400).json({ ok: false, error: "address must be valid" });
+  const address = ethers.getAddress(addressRaw);
+  allowlist.add(address);
+  blocklist.delete(address);
+  await saveLists();
+  res.json({ ok: true, address, allowlisted: true });
+});
+
+app.post("/lists/block", requireAdmin, async (req, res) => {
+  const addressRaw = String(req.body?.address ?? "");
+  if (!ethers.isAddress(addressRaw)) return res.status(400).json({ ok: false, error: "address must be valid" });
+  const address = ethers.getAddress(addressRaw);
+  blocklist.add(address);
+  allowlist.delete(address);
+  await saveLists();
+  res.json({ ok: true, address, blocklisted: true });
+});
+
+app.post("/lists/remove", requireAdmin, async (req, res) => {
+  const addressRaw = String(req.body?.address ?? "");
+  if (!ethers.isAddress(addressRaw)) return res.status(400).json({ ok: false, error: "address must be valid" });
+  const address = ethers.getAddress(addressRaw);
+  allowlist.delete(address);
+  blocklist.delete(address);
+  await saveLists();
+  res.json({ ok: true, address, removed: true });
 });
 
 // manual controls (requires PRIVATE_KEY)
