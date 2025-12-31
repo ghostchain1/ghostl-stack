@@ -1,0 +1,428 @@
+version: "3.8"
+
+services:
+  workspace:
+    image: mcr.microsoft.com/devcontainers/base:ubuntu
+    command: sleep infinity
+    volumes:
+      - ..:/workspaces/ghostl-stack:cached
+    networks: [ghostnet]
+
+  anvil:
+    image: ghcr.io/foundry-rs/foundry:latest
+    entrypoint: ["/bin/sh", "-lc"]
+    command: >
+      "
+      echo 'Starting Anvil...' &&
+      anvil \
+        --host 0.0.0.0 \
+        --port 8545 \
+        --chain-id 31337 \
+        --block-time 1
+      "
+    ports:
+      - "8545:8545"
+    networks: [ghostnet]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8545"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 2s
+
+  anvil-rpc-proxy:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - ../services/ghost-rpc-proxy:/app:ro
+    environment:
+      PORT: "8546"
+      UPSTREAM_URL: "http://anvil:8545"
+      LOG_REQUESTS: "${GHOST_RPC_PROXY_LOG_REQUESTS:-0}"
+    command: ["node", "index.mjs"]
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    ports:
+      - "18545:8546"
+    networks: [ghostnet]
+    depends_on:
+      anvil:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:8546/health').then(r=>r.json()).then(j=>{if(!j.ok) process.exit(1)}).catch(()=>process.exit(1))\""
+        ]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+      start_period: 2s
+
+  ghostl2:
+    image: 0xpolygon/polygon-edge:latest
+    entrypoint: ["/bin/sh", "-lc"]
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9545"]
+      interval: 2s
+      timeout: 1s
+      retries: 60
+      start_period: 3s
+    command:
+      - |
+        set -e
+        test -f /data/genesis.json || { echo "Missing /data/genesis.json (run: bash infra/scripts/chains/init.sh)"; exit 1; }
+        test -f /data/validator-1/consensus/validator.key || { echo "Missing /data/validator-1 (run: bash infra/scripts/chains/init.sh)"; exit 1; }
+        exec polygon-edge server \
+          --data-dir /data/validator-1 \
+          --chain /data/genesis.json \
+          --grpc-address 0.0.0.0:9632 \
+          --libp2p 0.0.0.0:14792 \
+          --jsonrpc 0.0.0.0:9545
+    ports:
+      - "9545:9545"
+    volumes:
+      - ../chains/l2/data:/data
+    networks: [ghostnet]
+    depends_on:
+      anvil:
+        condition: service_healthy
+
+  ghostl3:
+    image: 0xpolygon/polygon-edge:latest
+    entrypoint: ["/bin/sh", "-lc"]
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 10545"]
+      interval: 2s
+      timeout: 1s
+      retries: 60
+      start_period: 3s
+    command:
+      - |
+        set -e
+        test -f /data/genesis.json || { echo "Missing /data/genesis.json (run: bash infra/scripts/chains/init.sh)"; exit 1; }
+        test -f /data/validator-1/consensus/validator.key || { echo "Missing /data/validator-1 (run: bash infra/scripts/chains/init.sh)"; exit 1; }
+        exec polygon-edge server \
+          --data-dir /data/validator-1 \
+          --chain /data/genesis.json \
+          --grpc-address 0.0.0.0:10632 \
+          --libp2p 0.0.0.0:16793 \
+          --jsonrpc 0.0.0.0:10545
+    ports:
+      - "10545:10545"
+    volumes:
+      - ../chains/l3/data:/data
+    networks: [ghostnet]
+    depends_on:
+      ghostl2:
+        condition: service_healthy
+
+  ghost-guard:
+    image: node:22-alpine
+    user: "0:0"
+    working_dir: /app
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    volumes:
+      - ../services/ghost-guard:/app
+      - ghost_guard_node_modules:/app/node_modules
+      - ghost_guard_state:/state
+    command: sh -lc "test -f node_modules/.package-lock.json || (test -f package-lock.json && npm ci --no-audit --no-fund || npm install --no-audit --no-fund); npm run start"
+    env_file:
+      - ../services/ghost-guard/.env
+    environment:
+      RPC_L2: "http://ghostl2:9545"
+      RPC_L3: "http://ghostl3:10545"
+      STATE_DIR: "/state"
+    ports:
+      - "7070:7070"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7070/health | grep -q '\"ok\":true'"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+      start_period: 5s
+    networks: [ghostnet]
+    depends_on:
+      ghostl2:
+        condition: service_healthy
+      ghostl3:
+        condition: service_healthy
+
+  ghost-relayer:
+    image: node:22-alpine
+    user: "0:0"
+    working_dir: /app
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    volumes:
+      - ../services/ghost-relayer:/app
+      - ghost_relayer_node_modules:/app/node_modules
+      - ghost_relayer_state:/state
+    command: sh -lc "test -f node_modules/.package-lock.json || (test -f package-lock.json && npm ci --no-audit --no-fund || npm install --no-audit --no-fund); npm run start"
+    env_file:
+      - ../services/ghost-relayer/.env
+    environment:
+      RPC_L1: "http://anvil:8545"
+      RPC_L2: "http://ghostl2:9545"
+      RPC_L3: "http://ghostl3:10545"
+      STATE_DIR: "/state"
+    ports:
+      - "7171:7171"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7171/health | grep -q '\"ok\":true'"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+      start_period: 5s
+    networks: [ghostnet]
+    depends_on:
+      anvil:
+        condition: service_healthy
+      ghostl2:
+        condition: service_healthy
+      ghostl3:
+        condition: service_healthy
+
+  ghost-rollup-proposer-l2:
+    image: node:22-alpine
+    user: "0:0"
+    working_dir: /app
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    volumes:
+      - ../services/ghost-rollup-proposer:/app
+      - ghost_rollup_proposer_node_modules:/app/node_modules
+      - ghost_rollup_proposer_l2_state:/state
+    command: sh -lc "test -f node_modules/.package-lock.json || (test -f package-lock.json && npm ci --no-audit --no-fund || npm install --no-audit --no-fund); npm run start"
+    env_file:
+      - ../services/ghost-rollup-proposer/.env.l2
+    environment:
+      RPC_SETTLEMENT: "http://anvil:8545"
+      RPC_CHILD: "http://ghostl2:9545"
+      STATE_DIR: "/state"
+    ports:
+      - "7272:7272"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7272/health | grep -q '\"ok\":true'"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+      start_period: 5s
+    networks: [ghostnet]
+    depends_on:
+      anvil:
+        condition: service_healthy
+      ghostl2:
+        condition: service_healthy
+
+  ghost-rollup-proposer-l3:
+    image: node:22-alpine
+    user: "0:0"
+    working_dir: /app
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    volumes:
+      - ../services/ghost-rollup-proposer:/app
+      - ghost_rollup_proposer_node_modules:/app/node_modules
+      - ghost_rollup_proposer_l3_state:/state
+    command: sh -lc "test -f node_modules/.package-lock.json || (test -f package-lock.json && npm ci --no-audit --no-fund || npm install --no-audit --no-fund); npm run start"
+    env_file:
+      - ../services/ghost-rollup-proposer/.env.l3
+    environment:
+      RPC_SETTLEMENT: "http://ghostl2:9545"
+      RPC_CHILD: "http://ghostl3:10545"
+      STATE_DIR: "/state"
+    ports:
+      - "7373:7373"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7373/health | grep -q '\"ok\":true'"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+      start_period: 5s
+    networks: [ghostnet]
+    depends_on:
+      ghostl2:
+        condition: service_healthy
+      ghostl3:
+        condition: service_healthy
+
+  ghost-rollup-challenger-l2:
+    image: node:22-alpine
+    user: "0:0"
+    working_dir: /app
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    volumes:
+      - ../services/ghost-rollup-challenger:/app
+      - ghost_rollup_challenger_node_modules:/app/node_modules
+      - ghost_rollup_challenger_l2_state:/state
+    command: sh -lc "test -f node_modules/.package-lock.json || (test -f package-lock.json && npm ci --no-audit --no-fund || npm install --no-audit --no-fund); npm run start"
+    env_file:
+      - ../services/ghost-rollup-challenger/.env.l2
+    environment:
+      RPC_SETTLEMENT: "http://anvil:8545"
+      RPC_CHILD: "http://ghostl2:9545"
+      STATE_DIR: "/state"
+    ports:
+      - "7282:7282"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7282/health | grep -q '\"ok\":true'"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+      start_period: 5s
+    networks: [ghostnet]
+    depends_on:
+      anvil:
+        condition: service_healthy
+      ghostl2:
+        condition: service_healthy
+
+  ghost-rollup-challenger-l3:
+    image: node:22-alpine
+    user: "0:0"
+    working_dir: /app
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    volumes:
+      - ../services/ghost-rollup-challenger:/app
+      - ghost_rollup_challenger_node_modules:/app/node_modules
+      - ghost_rollup_challenger_l3_state:/state
+    command: sh -lc "test -f node_modules/.package-lock.json || (test -f package-lock.json && npm ci --no-audit --no-fund || npm install --no-audit --no-fund); npm run start"
+    env_file:
+      - ../services/ghost-rollup-challenger/.env.l3
+    environment:
+      RPC_SETTLEMENT: "http://ghostl2:9545"
+      RPC_CHILD: "http://ghostl3:10545"
+      STATE_DIR: "/state"
+    ports:
+      - "7383:7383"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7383/health | grep -q '\"ok\":true'"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+      start_period: 5s
+    networks: [ghostnet]
+    depends_on:
+      ghostl2:
+        condition: service_healthy
+      ghostl3:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus"]
+    volumes:
+      - ../infra/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/-/ready >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 2s
+      retries: 30
+      start_period: 5s
+    networks: [ghostnet]
+    depends_on:
+      - ghost-guard
+      - ghost-relayer
+      - ghost-rollup-proposer-l2
+      - ghost-rollup-proposer-l3
+      - ghost-rollup-challenger-l2
+      - ghost-rollup-challenger-l3
+
+  grafana:
+    image: grafana/grafana:11.3.1
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    environment:
+      GF_SECURITY_ADMIN_USER: "admin"
+      GF_SECURITY_ADMIN_PASSWORD: "admin"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../infra/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 3000"]
+      interval: 5s
+      timeout: 2s
+      retries: 30
+      start_period: 10s
+    networks: [ghostnet]
+    depends_on:
+      prometheus:
+        condition: service_healthy
+
+networks:
+  ghostnet:
+
+volumes:
+  ghost_guard_node_modules:
+  ghost_relayer_node_modules:
+  ghost_guard_state:
+  ghost_relayer_state:
+  ghost_rollup_proposer_node_modules:
+  ghost_rollup_proposer_l2_state:
+  ghost_rollup_proposer_l3_state:
+  ghost_rollup_challenger_node_modules:
+  ghost_rollup_challenger_l2_state:
+  ghost_rollup_challenger_l3_state:
+  prometheus_data:
+  grafana_data:
