@@ -2,6 +2,11 @@ const statusEl = document.getElementById("status");
 const guardHealthEl = document.getElementById("guardHealth");
 const relayerHealthEl = document.getElementById("relayerHealth");
 const listsEl = document.getElementById("lists");
+const eventsEl = document.getElementById("events");
+const guardMetricsEl = document.getElementById("guardMetrics");
+const relayerMetricsEl = document.getElementById("relayerMetrics");
+const guardLogsEl = document.getElementById("guardLogs");
+const relayerLogsEl = document.getElementById("relayerLogs");
 
 const tokenInput = document.getElementById("adminToken");
 const saveTokenBtn = document.getElementById("saveToken");
@@ -71,6 +76,21 @@ async function refreshAll() {
     const relayer = await api("/proxy/relayer-health");
     relayerHealthEl.textContent = pretty(relayer);
 
+    const events = await api("/events");
+    eventsEl.textContent = pretty(events);
+
+    const guardMetrics = await api("/metrics");
+    guardMetricsEl.textContent = pretty(guardMetrics);
+
+    const relayerMetrics = await api("/proxy/relayer-metrics");
+    relayerMetricsEl.textContent = pretty(relayerMetrics);
+
+    const guardLogs = await api("/logs");
+    guardLogsEl.textContent = pretty(guardLogs);
+
+    const relayerLogs = await api("/proxy/relayer-logs");
+    relayerLogsEl.textContent = pretty(relayerLogs);
+
     const lists = await api("/lists");
     listsEl.textContent = pretty(lists);
 
@@ -137,4 +157,3 @@ blockBtn.addEventListener("click", () => listAction("/lists/block"));
 removeBtn.addEventListener("click", () => listAction("/lists/remove"));
 
 refreshAll();
-

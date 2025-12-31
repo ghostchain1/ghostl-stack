@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 contract ERC20 {
     string public name;
     string public symbol;
-    uint8 public immutable decimals = 18;
+    uint8 public immutable decimals;
 
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;
@@ -13,9 +13,10 @@ contract ERC20 {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
-    constructor(string memory name_, string memory symbol_) {
+    constructor(string memory name_, string memory symbol_, uint8 decimals_) {
         name = name_;
         symbol = symbol_;
+        decimals = decimals_;
     }
 
     function transfer(address to, uint256 value) external returns (bool) {
