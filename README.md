@@ -11,6 +11,21 @@ Brings up:
 bash infra/scripts/up.sh
 ```
 
+## Demo (emit a deposit event)
+
+```bash
+bash infra/scripts/demo-deposit.sh
+```
+
+## Enable enforcement (optional)
+
+By default Ghost Guard runs in observe-only mode (no `PRIVATE_KEY`).
+
+```bash
+cd .devcontainer
+PRIVATE_KEY=... docker compose up -d --force-recreate ghost-guard
+```
+
 ## Dev prerequisites
 
 - `docker` + Docker Compose
