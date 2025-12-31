@@ -24,28 +24,12 @@ services:
 
   ghostl2:
     image: 0xpolygon/polygon-edge:latest
-    user: "0:0"
     entrypoint: ["/bin/sh", "-lc"]
     command:
       - |
         set -e
-        if [ ! -f /data/genesis.json ]; then
-          mkdir -p /data/validator-1;
-          if [ ! -f /data/validator-1/consensus/validator.key ]; then
-            polygon-edge secrets init --insecure --data-dir /data/validator-1 >/dev/null;
-          fi;
-          NODE_ID="$(polygon-edge secrets output --data-dir /data/validator-1 --node-id | tail -n 1 | tr -d '\r\n')";
-          polygon-edge genesis \
-            --dir /data/genesis.json \
-            --name GhostL2 \
-            --chain-id 7192 \
-            --premine 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266:1000000000000000000000000 \
-            --bootnode "/ip4/127.0.0.1/tcp/14792/p2p/$$NODE_ID" \
-            --consensus ibft \
-            --validators-path /data \
-            --validators-prefix validator- \
-            --block-gas-limit 30000000;
-        fi;
+        test -f /data/genesis.json || { echo "Missing /data/genesis.json (run: bash infra/scripts/chains/init.sh)"; exit 1; }
+        test -f /data/validator-1/consensus/validator.key || { echo "Missing /data/validator-1 (run: bash infra/scripts/chains/init.sh)"; exit 1; }
         exec polygon-edge server \
           --data-dir /data/validator-1 \
           --chain /data/genesis.json \
@@ -55,34 +39,18 @@ services:
     ports:
       - "9545:9545"
     volumes:
-      - ghostl2_data:/data
+      - ../chains/l2/data:/data
     networks: [ghostnet]
     depends_on: [anvil]
 
   ghostl3:
     image: 0xpolygon/polygon-edge:latest
-    user: "0:0"
     entrypoint: ["/bin/sh", "-lc"]
     command:
       - |
         set -e
-        if [ ! -f /data/genesis.json ]; then
-          mkdir -p /data/validator-1;
-          if [ ! -f /data/validator-1/consensus/validator.key ]; then
-            polygon-edge secrets init --insecure --data-dir /data/validator-1 >/dev/null;
-          fi;
-          NODE_ID="$(polygon-edge secrets output --data-dir /data/validator-1 --node-id | tail -n 1 | tr -d '\r\n')";
-          polygon-edge genesis \
-            --dir /data/genesis.json \
-            --name GhostL3 \
-            --chain-id 7393 \
-            --premine 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266:1000000000000000000000000 \
-            --bootnode "/ip4/127.0.0.1/tcp/16793/p2p/$$NODE_ID" \
-            --consensus ibft \
-            --validators-path /data \
-            --validators-prefix validator- \
-            --block-gas-limit 30000000;
-        fi;
+        test -f /data/genesis.json || { echo "Missing /data/genesis.json (run: bash infra/scripts/chains/init.sh)"; exit 1; }
+        test -f /data/validator-1/consensus/validator.key || { echo "Missing /data/validator-1 (run: bash infra/scripts/chains/init.sh)"; exit 1; }
         exec polygon-edge server \
           --data-dir /data/validator-1 \
           --chain /data/genesis.json \
@@ -92,7 +60,7 @@ services:
     ports:
       - "10545:10545"
     volumes:
-      - ghostl3_data:/data
+      - ../chains/l3/data:/data
     networks: [ghostnet]
     depends_on: [ghostl2]
 
@@ -149,8 +117,6 @@ networks:
   ghostnet:
 
 volumes:
-  ghostl2_data:
-  ghostl3_data:
   ghost_guard_node_modules:
   ghost_relayer_node_modules:
   ghost_guard_state:

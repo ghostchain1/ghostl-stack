@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="/workspaces/ghostl-stack"
+IMAGE="0xpolygon/polygon-edge:latest"
+
+need_cmd() {
+  command -v "$1" >/dev/null 2>&1 || { echo "Missing required command: $1" >&2; exit 1; }
+}
+
+need_cmd docker
+need_cmd jq
+
+fix_perms() {
+  local data_dir="$1"
+  # Best-effort: ensure both the polygon-edge user and the workspace user can
+  # read/write/delete generated chain data on the bind mount.
+  chmod -R a+rwX "$data_dir" 2>/dev/null || true
+  find "$data_dir" -type d -exec chmod 777 {} + 2>/dev/null || true
+  find "$data_dir" -type f -exec chmod 666 {} + 2>/dev/null || true
+
+  docker run --rm --entrypoint /bin/sh -v "$data_dir:/data" "$IMAGE" -lc '
+    set -e
+    find /data -type d -exec chmod 777 {} +
+    find /data -type f -exec chmod 666 {} +
+  ' >/dev/null 2>&1 || true
+}
+
+init_chain() {
+  local chain="$1"
+  local cfg="$ROOT_DIR/chains/$chain/chain.json"
+  local data="$ROOT_DIR/chains/$chain/data"
+
+  if [ ! -f "$cfg" ]; then
+    echo "Missing config: $cfg" >&2
+    exit 1
+  fi
+
+  mkdir -p "$data"
+  # polygon-edge image defaults to a non-root "edge" user. Ensure bind-mounted
+  # dirs are writable regardless of host uid/gid.
+  chmod 777 "$data" || true
+  fix_perms "$data"
+
+  local name chain_id premine_addr premine_amt gas_limit boot_ip libp2p grpc jsonrpc
+  name="$(jq -r '.name' "$cfg")"
+  chain_id="$(jq -r '.chainId' "$cfg")"
+  premine_addr="$(jq -r '.premine.address' "$cfg")"
+  premine_amt="$(jq -r '.premine.amountWei' "$cfg")"
+  gas_limit="$(jq -r '.blockGasLimit' "$cfg")"
+  boot_ip="$(jq -r '.bootnodeIp' "$cfg")"
+  libp2p="$(jq -r '.libp2pPort' "$cfg")"
+  grpc="$(jq -r '.grpcPort' "$cfg")"
+  jsonrpc="$(jq -r '.jsonrpcPort' "$cfg")"
+
+  if [ ! -f "$data/genesis.json" ]; then
+    echo "[$chain] generating genesis + validator secrets..."
+
+    if [ ! -f "$data/validator-1/consensus/validator.key" ]; then
+      docker run --rm -v "$data:/data" "$IMAGE" \
+        secrets init --insecure --data-dir /data/validator-1 >/dev/null
+    fi
+    fix_perms "$data"
+
+    local node_id
+    node_id="$(
+      docker run --rm -v "$data:/data" "$IMAGE" \
+        secrets output --data-dir /data/validator-1 --node-id | tail -n 1 | tr -d '\r\n'
+    )"
+
+    docker run --rm -v "$data:/data" "$IMAGE" \
+      genesis \
+      --dir /data/genesis.json \
+      --name "$name" \
+      --chain-id "$chain_id" \
+      --premine "$premine_addr:$premine_amt" \
+      --bootnode "/ip4/$boot_ip/tcp/$libp2p/p2p/$node_id" \
+      --consensus ibft \
+      --validators-path /data \
+      --validators-prefix validator- \
+      --block-gas-limit "$gas_limit" >/dev/null
+    fix_perms "$data"
+
+    echo "[$chain] wrote $data/genesis.json"
+  else
+    if [ ! -f "$data/validator-1/consensus/validator.key" ]; then
+      echo "[$chain] genesis exists but validator key is missing; run: bash infra/scripts/chains/reset.sh" >&2
+      exit 1
+    fi
+    fix_perms "$data"
+    echo "[$chain] already initialized"
+  fi
+
+  echo "[$chain] RPC=http://localhost:$jsonrpc (container jsonrpc :$jsonrpc, grpc :$grpc, libp2p :$libp2p)"
+}
+
+init_chain l2
+init_chain l3
