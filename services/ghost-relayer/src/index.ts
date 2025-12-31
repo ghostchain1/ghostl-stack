@@ -104,6 +104,9 @@ const metrics = {
   burnsSeen: 0,
   finalizeAttempts: 0,
   finalizeSuccess: 0,
+  finalizeBlockedPolicy: 0,
+  finalizeBlockedRollup: 0,
+  finalizeErrors: 0,
   relayedToL3: 0,
   releasedToL2: 0,
   errors: 0
@@ -283,6 +286,13 @@ function scrubEthersError(e: any): string {
   return String(e?.shortMessage ?? e?.reason ?? e?.message ?? e);
 }
 
+function classifyFinalizeError(msg: string): "policy" | "rollup" | "other" {
+  const m = msg.toLowerCase();
+  if (m.includes("blocked by policy") || m.includes("delay not elapsed")) return "policy";
+  if (m.includes("not finalized") || m.includes("rollup")) return "rollup";
+  return "other";
+}
+
 async function handleFinalizedLog(log: ethers.Log) {
   const parsed = bridgeIface.parseLog(log);
   if (parsed.name === "Finalized") {
@@ -404,7 +414,9 @@ const l3TokenIface = new ethers.Interface(l3TokenAbi);
 async function tryFinalizeOne(p: PendingFinalize) {
   if (!l2Signer) return;
   const now = Date.now();
-  if (p.lastAttempt && now - p.lastAttempt < 1500) return;
+  // simple backoff to avoid spamming the chain on delay/policy/rollup gating
+  const backoffMs = Math.min(60_000, 1500 * Math.max(1, Math.min(20, p.attempts + 1)));
+  if (p.lastAttempt && now - p.lastAttempt < backoffMs) return;
 
   try {
     metrics.finalizeAttempts += 1;
@@ -448,8 +460,16 @@ async function tryFinalizeOne(p: PendingFinalize) {
   } catch (e) {
     p.lastAttempt = Date.now();
     p.attempts += 1;
-    const msg = `[Relayer] Finalize blocked key=${p.key} err=${scrubEthersError(e)}`;
-    pushLog("warn", msg);
+    const err = scrubEthersError(e);
+    const kind = classifyFinalizeError(err);
+    if (kind === "policy") metrics.finalizeBlockedPolicy += 1;
+    else if (kind === "rollup") metrics.finalizeBlockedRollup += 1;
+    else metrics.finalizeErrors += 1;
+
+    if (p.attempts === 1 || p.attempts % 10 === 0) {
+      const msg = `[Relayer] Finalize blocked key=${p.key} kind=${kind} attempts=${p.attempts} err=${err}`;
+      pushLog("warn", msg);
+    }
   }
 }
 
@@ -719,6 +739,40 @@ app.get("/logs", async (_req, res) => {
 
 app.get("/metrics", async (_req, res) => {
   res.json({ ok: true, ...metrics, observeOnly, hasL2Signer: Boolean(l2Signer), confirmations: CONFIRMATIONS });
+});
+
+function promLine(name: string, value: number | string, labels?: Record<string, string>) {
+  const l = labels
+    ? `{${Object.entries(labels)
+        .map(([k, v]) => `${k}=\"${String(v).replaceAll("\\", "\\\\").replaceAll("\"", "\\\"")}\"`)
+        .join(",")}}`
+    : "";
+  return `${name}${l} ${value}\n`;
+}
+
+app.get("/metrics/prom", async (_req, res) => {
+  res.type("text/plain; version=0.0.4");
+  let out = "";
+  out += promLine("ghost_relayer_up", 1);
+  out += promLine("ghost_relayer_observe_only", observeOnly ? 1 : 0);
+  out += promLine("ghost_relayer_has_l2_signer", l2Signer ? 1 : 0);
+  out += promLine("ghost_relayer_pending_finalizations", pendingByKey.size);
+  out += promLine("ghost_relayer_l2_polls_total", metrics.l2Polls);
+  out += promLine("ghost_relayer_l3_polls_total", metrics.l3Polls);
+  out += promLine("ghost_relayer_l2_logs_seen_total", metrics.l2LogsSeen);
+  out += promLine("ghost_relayer_l3_logs_seen_total", metrics.l3LogsSeen);
+  out += promLine("ghost_relayer_deposits_seen_total", metrics.depositsSeen);
+  out += promLine("ghost_relayer_erc20_deposits_seen_total", metrics.erc20DepositsSeen);
+  out += promLine("ghost_relayer_finalize_attempts_total", metrics.finalizeAttempts);
+  out += promLine("ghost_relayer_finalize_success_total", metrics.finalizeSuccess);
+  out += promLine("ghost_relayer_relayed_to_l3_total", metrics.relayedToL3);
+  out += promLine("ghost_relayer_released_to_l2_total", metrics.releasedToL2);
+  out += promLine("ghost_relayer_errors_total", metrics.errors);
+  out += promLine("ghost_relayer_rollup_gating_enabled", 1, {
+    l2_on_l1: l1Rollup ? "1" : "0",
+    l3_on_l2: l2Rollup ? "1" : "0"
+  });
+  res.send(out);
 });
 
 app.listen(PORT, () => console.log(`Ghost Relayer listening on :${PORT}`));

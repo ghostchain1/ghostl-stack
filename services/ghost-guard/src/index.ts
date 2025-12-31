@@ -28,6 +28,15 @@ const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
 const ALLOW_INSECURE_ADMIN = process.env.ALLOW_INSECURE_ADMIN === "1";
 const STATE_DIR = process.env.STATE_DIR || "/state";
 const AUTO_PAUSE = process.env.AUTO_PAUSE !== "0";
+const AUTO_ACTION = (process.env.AUTO_ACTION || "").toLowerCase(); // "pause" | "quarantine" | ""
+const quarantineDelayRaw = Number(process.env.QUARANTINE_DELAY_SECONDS || "30");
+const QUARANTINE_DELAY_SECONDS =
+  Number.isFinite(quarantineDelayRaw) && quarantineDelayRaw >= 0 ? Math.floor(quarantineDelayRaw) : 30;
+const quarantineThresholdRaw = Number(process.env.AUTO_QUARANTINE_THRESHOLD || "70");
+const AUTO_QUARANTINE_THRESHOLD =
+  Number.isFinite(quarantineThresholdRaw) && quarantineThresholdRaw >= 0 ? Math.floor(quarantineThresholdRaw) : 70;
+const pauseThresholdRaw = Number(process.env.AUTO_PAUSE_THRESHOLD || "90");
+const AUTO_PAUSE_THRESHOLD = Number.isFinite(pauseThresholdRaw) && pauseThresholdRaw >= 0 ? Math.floor(pauseThresholdRaw) : 90;
 const riskWindowRaw = Number(process.env.RISK_WINDOW_SECONDS || "300");
 const RISK_WINDOW_SECONDS =
   Number.isFinite(riskWindowRaw) && riskWindowRaw > 0 ? Math.floor(riskWindowRaw) : 300;
@@ -135,6 +144,29 @@ const blocklist = new Set<string>();
 
 const actorEvents = new Map<string, Array<{ ts: number; amountWei: bigint }>>();
 const graph = createGraphState();
+const firstSeen = new Map<string, number>();
+const firstSeenPath = path.join(STATE_DIR, "first_seen.json");
+
+async function loadFirstSeen() {
+  try {
+    const raw = await fs.readFile(firstSeenPath, "utf8");
+    const parsed = JSON.parse(raw) as Record<string, number>;
+    for (const [k, v] of Object.entries(parsed)) {
+      if (typeof v === "number" && Number.isFinite(v) && v > 0) firstSeen.set(ethers.getAddress(k), Math.floor(v));
+    }
+  } catch {
+    // ignore
+  }
+}
+
+async function saveFirstSeen() {
+  await fs.mkdir(STATE_DIR, { recursive: true });
+  const obj: Record<string, number> = {};
+  for (const [k, v] of firstSeen) obj[k] = v;
+  const tmp = `${firstSeenPath}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(obj, null, 2) + "\n", "utf8");
+  await fs.rename(tmp, firstSeenPath);
+}
 
 async function loadLists() {
   try {
@@ -203,7 +235,22 @@ async function handleDepositLog(log: ethers.Log) {
 
   recordGraphEdge(graph, from, to, Date.now(), GRAPH_WINDOW_SECONDS * 1000);
 
-  const velocityRisk = computeRiskScore({ actor: from, amountWei: amount, nonce, recentCount, recentAmountWei });
+  const normalizedFrom = ethers.getAddress(from);
+  const now = Date.now();
+  if (!firstSeen.has(normalizedFrom)) {
+    firstSeen.set(normalizedFrom, now);
+    await saveFirstSeen();
+  }
+  const ageSeconds = Math.floor((now - (firstSeen.get(normalizedFrom) ?? now)) / 1000);
+
+  const velocityRisk = computeRiskScore({
+    actor: from,
+    amountWei: amount,
+    nonce,
+    recentCount,
+    recentAmountWei,
+    ageSeconds
+  });
   const graphRisk = computeGraphRisk({
     from,
     to,
@@ -214,7 +261,6 @@ async function handleDepositLog(log: ethers.Log) {
 
   let risk = Math.max(velocityRisk, graphRisk.score);
 
-  const normalizedFrom = ethers.getAddress(from);
   const isAllowlisted = allowlist.has(normalizedFrom);
   const isBlocklisted = blocklist.has(normalizedFrom);
   if (isAllowlisted) risk = 0;
@@ -231,6 +277,7 @@ async function handleDepositLog(log: ethers.Log) {
     risk,
     velocityRisk,
     graphRisk,
+    ageSeconds,
     recentCount,
     recentAmountWei: recentAmountWei.toString(),
     isAllowlisted,
@@ -276,7 +323,33 @@ async function handleDepositLog(log: ethers.Log) {
     await tx1.wait();
     metrics.policyWrites += 1;
 
-    if (AUTO_PAUSE && risk >= 80) {
+    // Automated response:
+    // - default (legacy): AUTO_PAUSE pauses at risk>=80
+    // - AUTO_ACTION=quarantine: set DELAY with QUARANTINE_DELAY_SECONDS above AUTO_QUARANTINE_THRESHOLD, PAUSE above AUTO_PAUSE_THRESHOLD
+    // - AUTO_ACTION=pause: PAUSE above AUTO_PAUSE_THRESHOLD
+    if (AUTO_ACTION === "quarantine") {
+      if (risk >= AUTO_PAUSE_THRESHOLD) {
+        const tx2 = await policy.setMode(2); // PAUSE
+        await tx2.wait();
+        console.log("[Guard] High risk => policy paused.");
+        pushLog("warn", "[Guard] High risk => policy paused.", { risk });
+      } else if (risk >= AUTO_QUARANTINE_THRESHOLD) {
+        const txDelay = await policy.setDelaySeconds(QUARANTINE_DELAY_SECONDS);
+        await txDelay.wait();
+        const txMode = await policy.setMode(1); // DELAY
+        await txMode.wait();
+        console.log("[Guard] Elevated risk => policy delayed (quarantine).");
+        pushLog("warn", "[Guard] Elevated risk => policy delayed (quarantine).", { risk, delaySeconds: QUARANTINE_DELAY_SECONDS });
+      }
+    } else if (AUTO_ACTION === "pause") {
+      if (risk >= AUTO_PAUSE_THRESHOLD) {
+        const tx2 = await policy.setMode(2); // PAUSE
+        await tx2.wait();
+        console.log("[Guard] High risk => policy paused.");
+        pushLog("warn", "[Guard] High risk => policy paused.", { risk });
+      }
+    } else if (AUTO_PAUSE && risk >= 80) {
+      // Legacy behavior
       const tx2 = await policy.setMode(2); // PAUSE
       await tx2.wait();
       console.log("[Guard] High risk => policy paused.");
@@ -326,6 +399,12 @@ try {
   await loadLists();
 } catch (e) {
   console.error("[Guard] Failed to load lists:", e);
+}
+
+try {
+  await loadFirstSeen();
+} catch (e) {
+  console.error("[Guard] Failed to load first_seen:", e);
 }
 
 try {
@@ -436,6 +515,37 @@ app.get("/logs", async (_req, res) => {
 
 app.get("/metrics", async (_req, res) => {
   res.json({ ok: true, ...metrics, hasPrivateKey: Boolean(PRIVATE_KEY) });
+});
+
+function promLine(name: string, value: number | string, labels?: Record<string, string>) {
+  const l = labels
+    ? `{${Object.entries(labels)
+        .map(([k, v]) => `${k}=\"${String(v).replaceAll("\\", "\\\\").replaceAll("\"", "\\\"")}\"`)
+        .join(",")}}`
+    : "";
+  return `${name}${l} ${value}\n`;
+}
+
+app.get("/metrics/prom", async (_req, res) => {
+  res.type("text/plain; version=0.0.4");
+  const up = 1;
+  let out = "";
+  out += promLine("ghost_guard_up", up);
+  out += promLine("ghost_guard_polls_total", metrics.polls);
+  out += promLine("ghost_guard_logs_seen_total", metrics.logsSeen);
+  out += promLine("ghost_guard_deposits_seen_total", metrics.depositsSeen);
+  out += promLine("ghost_guard_policy_writes_total", metrics.policyWrites);
+  out += promLine("ghost_guard_policy_write_errors_total", metrics.policyWriteErrors);
+  out += promLine("ghost_guard_alerts_total", metrics.alerts);
+  out += promLine("ghost_guard_allowlist_size", allowlist.size);
+  out += promLine("ghost_guard_blocklist_size", blocklist.size);
+  out += promLine("ghost_guard_first_seen_entries", firstSeen.size);
+  out += promLine("ghost_guard_auto_pause_enabled", AUTO_PAUSE ? 1 : 0);
+  out += promLine("ghost_guard_auto_action", 1, { mode: AUTO_ACTION || "legacy" });
+  out += promLine("ghost_guard_quarantine_delay_seconds", QUARANTINE_DELAY_SECONDS);
+  out += promLine("ghost_guard_auto_quarantine_threshold", AUTO_QUARANTINE_THRESHOLD);
+  out += promLine("ghost_guard_auto_pause_threshold", AUTO_PAUSE_THRESHOLD);
+  res.send(out);
 });
 
 app.get("/lists", (_req, res) => {
