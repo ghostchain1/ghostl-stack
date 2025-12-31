@@ -10,14 +10,17 @@ services:
 
   anvil:
     image: ghcr.io/foundry-rs/foundry:latest
-    entrypoint: ["/bin/sh", "-lc"]
-    command: |
-      echo 'Starting Anvil...' &&
-      exec anvil \
-        --host 0.0.0.0 \
-        --port 8545 \
-        --chain-id 31337 \
-        --block-time 1
+    command:
+      - anvil
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8545"
+      - --chain-id
+      - "31337"
+      - --block-time
+      - "1"
+    restart: unless-stopped
     ports:
       - "8545:8545"
     networks: [ghostnet]
