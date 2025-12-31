@@ -9,15 +9,15 @@ const RPC_L2 = process.env.RPC_L2!;
 const RPC_L3 = process.env.RPC_L3!;
 const BRIDGE = process.env.BRIDGE_L2L3_ADDRESS!;
 const L3_INBOX = process.env.L3_INBOX_ADDRESS!;
-const L3_TOKEN = process.env.L3_TOKEN_ADDRESS!;
+const L3_TOKEN_FACTORY = process.env.L3_TOKEN_FACTORY_ADDRESS!;
 const RELAYER_PRIVATE_KEY = process.env.RELAYER_PRIVATE_KEY || "";
 const L2_RELAYER_PRIVATE_KEY = process.env.L2_RELAYER_PRIVATE_KEY || "";
 const STATE_DIR = process.env.STATE_DIR || "/state";
 const confirmationsRaw = Number(process.env.CONFIRMATIONS || "0");
 const CONFIRMATIONS = Number.isFinite(confirmationsRaw) && confirmationsRaw >= 0 ? Math.floor(confirmationsRaw) : 0;
 
-if (!RPC_L2 || !RPC_L3 || !BRIDGE || !L3_INBOX || !L3_TOKEN) {
-  console.error("Missing env: RPC_L2, RPC_L3, BRIDGE_L2L3_ADDRESS, L3_INBOX_ADDRESS, L3_TOKEN_ADDRESS");
+if (!RPC_L2 || !RPC_L3 || !BRIDGE || !L3_INBOX || !L3_TOKEN_FACTORY) {
+  console.error("Missing env: RPC_L2, RPC_L3, BRIDGE_L2L3_ADDRESS, L3_INBOX_ADDRESS, L3_TOKEN_FACTORY_ADDRESS");
   process.exit(1);
 }
 
@@ -35,11 +35,23 @@ const finalizedTopic = ethers.id("Finalized(address,address,uint256,uint256)");
 const erc20FinalizedTopic = ethers.id("ERC20Finalized(address,address,address,uint256,uint256)");
 const bridgeIface = new ethers.Interface(bridgeAbi);
 
+const l2Erc20MetaAbi = [
+  "function name() view returns (string)",
+  "function symbol() view returns (string)",
+  "function decimals() view returns (uint8)"
+];
+
+const l3FactoryAbi = [
+  "function l3TokenForL2Token(address l2Token) view returns (address)",
+  "function getOrDeployBridgedToken(address l2Token, string name, string symbol, uint8 decimals) external returns (address)",
+  "event BridgedTokenDeployed(address indexed l2Token, address indexed l3Token, string name, string symbol, uint8 decimals)"
+];
+
 const l3TokenAbi = [
   "function mintFromL2(address from, address to, uint256 amount, uint256 nonce) external",
   "function processed(bytes32 key) view returns (bool)",
   "function l2Token() view returns (address)",
-  "event BurnInitiated(address indexed from, address indexed to, uint256 amount, uint256 nonce, bytes32 key)"
+  "event BurnInitiated(address indexed l2Token, address indexed from, address indexed to, uint256 amount, uint256 nonce, bytes32 key)"
 ];
 
 const l2Provider = new ethers.JsonRpcProvider(RPC_L2, undefined, { polling: true });
@@ -53,7 +65,28 @@ const l3Signer = observeOnly ? null : new ethers.NonceManager(new ethers.Wallet(
 const l2Key = L2_RELAYER_PRIVATE_KEY || RELAYER_PRIVATE_KEY;
 const l2Signer = l2Key ? new ethers.NonceManager(new ethers.Wallet(l2Key, l2Provider)) : null;
 const inbox = new ethers.Contract(L3_INBOX, inboxAbi, l3Signer ?? l3Provider);
-const l3Token = new ethers.Contract(L3_TOKEN, l3TokenAbi, l3Signer ?? l3Provider);
+const l3Factory = new ethers.Contract(L3_TOKEN_FACTORY, l3FactoryAbi, l3Signer ?? l3Provider);
+
+type LogEntry = { ts: number; level: "info" | "warn" | "error"; msg: string; data?: any };
+const logBuffer: Array<LogEntry> = [];
+function pushLog(level: LogEntry["level"], msg: string, data?: any) {
+  logBuffer.push({ ts: Date.now(), level, msg, data });
+  while (logBuffer.length > 200) logBuffer.shift();
+}
+
+const metrics = {
+  startedAt: Date.now(),
+  l2Polls: 0,
+  l3Polls: 0,
+  l2LogsSeen: 0,
+  l3LogsSeen: 0,
+  finalizedSeen: 0,
+  erc20FinalizedSeen: 0,
+  burnsSeen: 0,
+  relayedToL3: 0,
+  releasedToL2: 0,
+  errors: 0
+};
 
 let nextL2BlockToScan: number | null = null;
 let nextL3BlockToScan: number | null = null;
@@ -106,6 +139,7 @@ function msgKeyErc20(token: string, from: string, to: string, amount: bigint, no
 async function handleFinalizedLog(log: ethers.Log) {
   const parsed = bridgeIface.parseLog(log);
   if (parsed.name === "Finalized") {
+    metrics.finalizedSeen += 1;
     const from = parsed.args[0] as string;
     const to = parsed.args[1] as string;
     const amount = parsed.args[2] as bigint;
@@ -115,7 +149,9 @@ async function handleFinalizedLog(log: ethers.Log) {
     lastSeen = { kind: "Finalized", from, to, amount: amount.toString(), nonce: nonce.toString(), key, l2Tx: log.transactionHash };
 
     if (observeOnly) {
-      console.log(`[Relayer] Observe-only saw Finalized key=${key} l2Tx=${log.transactionHash}`);
+      const msg = `[Relayer] Observe-only saw Finalized key=${key} l2Tx=${log.transactionHash}`;
+      console.log(msg);
+      pushLog("info", msg);
       return;
     }
 
@@ -126,11 +162,15 @@ async function handleFinalizedLog(log: ethers.Log) {
     await tx.wait();
 
     lastRelayed = { kind: "Finalized", from, to, amount: amount.toString(), nonce: nonce.toString(), key, l2Tx: log.transactionHash, l3Tx: tx.hash };
-    console.log(`[Relayer] Relayed Finalized key=${key} l2Tx=${log.transactionHash} l3Tx=${tx.hash}`);
+    metrics.relayedToL3 += 1;
+    const msg = `[Relayer] Relayed Finalized key=${key} l2Tx=${log.transactionHash} l3Tx=${tx.hash}`;
+    console.log(msg);
+    pushLog("info", msg, lastRelayed);
     return;
   }
 
   if (parsed.name === "ERC20Finalized") {
+    metrics.erc20FinalizedSeen += 1;
     const token = parsed.args[0] as string;
     const from = parsed.args[1] as string;
     const to = parsed.args[2] as string;
@@ -141,10 +181,50 @@ async function handleFinalizedLog(log: ethers.Log) {
     lastSeen = { kind: "ERC20Finalized", token, from, to, amount: amount.toString(), nonce: nonce.toString(), key, l2Tx: log.transactionHash };
 
     if (observeOnly) {
-      console.log(`[Relayer] Observe-only saw ERC20Finalized key=${key} l2Tx=${log.transactionHash}`);
+      const msg = `[Relayer] Observe-only saw ERC20Finalized key=${key} l2Tx=${log.transactionHash}`;
+      console.log(msg);
+      pushLog("info", msg, { token });
       return;
     }
 
+    let l3TokenAddr = (await l3Factory.l3TokenForL2Token(token)) as string;
+    if (!l3TokenAddr || l3TokenAddr === ethers.ZeroAddress) {
+      if (observeOnly) {
+        console.log(`[Relayer] Observe-only: missing bridged token for ${token} (set RELAYER_PRIVATE_KEY to auto-deploy)`);
+        return;
+      }
+
+      const l2Token = new ethers.Contract(token, l2Erc20MetaAbi, l2Provider);
+      let name = `Bridged ${token.slice(0, 6)}`;
+      let symbol = `BRG${token.slice(2, 6)}`;
+      let decimals = 18;
+      try {
+        const [n, s, d] = await Promise.all([l2Token.name(), l2Token.symbol(), l2Token.decimals()]);
+        name = `${String(n)} (L3)`;
+        symbol = `${String(s)}L3`;
+        decimals = Number(d);
+      } catch {
+        // ignore
+      }
+
+      const txDeploy = await l3Factory.getOrDeployBridgedToken(token, name, symbol, decimals);
+      const rcpt = await txDeploy.wait();
+      l3TokenAddr = (await l3Factory.l3TokenForL2Token(token)) as string;
+      if (!l3TokenAddr || l3TokenAddr === ethers.ZeroAddress) {
+        const ev = rcpt?.logs
+          .map((l) => {
+            try {
+              return l3Factory.interface.parseLog(l);
+            } catch {
+              return null;
+            }
+          })
+          .find((e) => e?.name === "BridgedTokenDeployed");
+        l3TokenAddr = String(ev?.args?.l3Token ?? "");
+      }
+    }
+
+    const l3Token = new ethers.Contract(l3TokenAddr, l3TokenAbi, l3Signer ?? l3Provider);
     const already = await l3Token.processed(key);
     if (already) return;
 
@@ -152,7 +232,10 @@ async function handleFinalizedLog(log: ethers.Log) {
     await tx.wait();
 
     lastRelayed = { kind: "ERC20Finalized", token, from, to, amount: amount.toString(), nonce: nonce.toString(), key, l2Tx: log.transactionHash, l3Tx: tx.hash };
-    console.log(`[Relayer] Relayed ERC20Finalized key=${key} l2Tx=${log.transactionHash} l3Tx=${tx.hash}`);
+    metrics.relayedToL3 += 1;
+    const msg = `[Relayer] Relayed ERC20Finalized key=${key} l2Tx=${log.transactionHash} l3Tx=${tx.hash}`;
+    console.log(msg);
+    pushLog("info", msg, lastRelayed);
   }
 }
 
@@ -162,23 +245,31 @@ const l2BridgeAbi = [
 ];
 const l2Bridge = new ethers.Contract(BRIDGE, l2BridgeAbi, l2Signer ?? l2Provider);
 
-const burnTopic = ethers.id("BurnInitiated(address,address,uint256,uint256,bytes32)");
+const burnTopic = ethers.id("BurnInitiated(address,address,address,uint256,uint256,bytes32)");
 const l3TokenIface = new ethers.Interface(l3TokenAbi);
 
-async function handleBurnLog(log: ethers.Log, l2Token: string) {
+async function handleBurnLog(log: ethers.Log) {
   const parsed = l3TokenIface.parseLog(log);
-  const from = parsed.args[0] as string;
-  const to = parsed.args[1] as string;
-  const amount = parsed.args[2] as bigint;
-  const nonce = parsed.args[3] as bigint;
-  const key = parsed.args[4] as string;
+  metrics.burnsSeen += 1;
+  const l2Token = parsed.args[0] as string;
+  const from = parsed.args[1] as string;
+  const to = parsed.args[2] as string;
+  const amount = parsed.args[3] as bigint;
+  const nonce = parsed.args[4] as bigint;
+  const key = parsed.args[5] as string;
 
   lastSeen = { kind: "BurnInitiated", l2Token, from, to, amount: amount.toString(), nonce: nonce.toString(), key, l3Tx: log.transactionHash };
 
   if (!l2Signer) {
-    console.log(`[Relayer] Observe-only (missing L2 signer key) saw BurnInitiated key=${key} l3Tx=${log.transactionHash}`);
+    const msg = `[Relayer] Observe-only (missing L2 signer key) saw BurnInitiated key=${key} l3Tx=${log.transactionHash}`;
+    console.log(msg);
+    pushLog("warn", msg, { l2Token });
     return;
   }
+
+  const expectedL3Token = (await l3Factory.l3TokenForL2Token(l2Token)) as string;
+  if (!expectedL3Token || expectedL3Token === ethers.ZeroAddress) return;
+  if (ethers.getAddress(expectedL3Token) !== ethers.getAddress(log.address)) return;
 
   const already = await l2Bridge.erc20WithdrawProcessed(msgKeyErc20(l2Token, from, to, amount, nonce));
   if (already) return;
@@ -187,13 +278,17 @@ async function handleBurnLog(log: ethers.Log, l2Token: string) {
   await tx.wait();
 
   lastRelayed = { kind: "ERC20WithdrawReleased", l2Token, from, to, amount: amount.toString(), nonce: nonce.toString(), key, l3Tx: log.transactionHash, l2Tx: tx.hash };
-  console.log(`[Relayer] Released ERC20 to L2 key=${key} l3Tx=${log.transactionHash} l2Tx=${tx.hash}`);
+  metrics.releasedToL2 += 1;
+  const msg = `[Relayer] Released ERC20 to L2 key=${key} l3Tx=${log.transactionHash} l2Tx=${tx.hash}`;
+  console.log(msg);
+  pushLog("info", msg, lastRelayed);
 }
 
 async function pollL2Once() {
   if (pollL2InFlight) return;
   pollL2InFlight = true;
   try {
+    metrics.l2Polls += 1;
     const latest = await l2Provider.getBlockNumber();
     const scanTo = Math.max(0, latest - CONFIRMATIONS);
     if (nextL2BlockToScan == null) {
@@ -209,6 +304,7 @@ async function pollL2Once() {
       toBlock: scanTo,
       topics: [[finalizedTopic, erc20FinalizedTopic]]
     });
+    metrics.l2LogsSeen += logs.length;
 
     for (const log of logs) {
       await handleFinalizedLog(log);
@@ -218,6 +314,8 @@ async function pollL2Once() {
     await saveCursor("l2", { nextBlockToScan: nextL2BlockToScan });
   } catch (e) {
     console.error("[Relayer] Poll failed:", e);
+    pushLog("error", "[Relayer] Poll failed", { error: String(e) });
+    metrics.errors += 1;
   } finally {
     pollL2InFlight = false;
   }
@@ -237,12 +335,11 @@ try {
   console.error("[Relayer] Failed to load cursor:", e);
 }
 
-const L2_TOKEN = await l3Token.l2Token();
-
 async function pollL3Once() {
   if (pollL3InFlight) return;
   pollL3InFlight = true;
   try {
+    metrics.l3Polls += 1;
     const latest = await l3Provider.getBlockNumber();
     const scanTo = Math.max(0, latest - CONFIRMATIONS);
     if (nextL3BlockToScan == null) {
@@ -253,20 +350,22 @@ async function pollL3Once() {
     if (nextL3BlockToScan > scanTo) return;
 
     const logs = await l3Provider.getLogs({
-      address: L3_TOKEN,
       fromBlock: nextL3BlockToScan,
       toBlock: scanTo,
       topics: [burnTopic]
     });
+    metrics.l3LogsSeen += logs.length;
 
     for (const log of logs) {
-      await handleBurnLog(log, L2_TOKEN);
+      await handleBurnLog(log);
     }
 
     nextL3BlockToScan = scanTo + 1;
     await saveCursor("l3", { nextBlockToScan: nextL3BlockToScan });
   } catch (e) {
     console.error("[Relayer] L3 poll failed:", e);
+    pushLog("error", "[Relayer] L3 poll failed", { error: String(e) });
+    metrics.errors += 1;
   } finally {
     pollL3InFlight = false;
   }
@@ -292,8 +391,7 @@ app.get("/health", async (_req, res) => {
       confirmations: CONFIRMATIONS,
       bridge: BRIDGE,
       inbox: L3_INBOX,
-      l3Token: L3_TOKEN,
-      l2Token: L2_TOKEN,
+      l3TokenFactory: L3_TOKEN_FACTORY,
       hasL2Signer: Boolean(l2Signer),
       lastSeen,
       lastRelayed
@@ -301,6 +399,14 @@ app.get("/health", async (_req, res) => {
   } catch (e: any) {
     res.status(500).json({ ok: false, error: e?.message ?? String(e) });
   }
+});
+
+app.get("/logs", async (_req, res) => {
+  res.json({ ok: true, logs: logBuffer.slice(-200) });
+});
+
+app.get("/metrics", async (_req, res) => {
+  res.json({ ok: true, ...metrics, observeOnly, hasL2Signer: Boolean(l2Signer), confirmations: CONFIRMATIONS });
 });
 
 app.listen(PORT, () => console.log(`Ghost Relayer listening on :${PORT}`));

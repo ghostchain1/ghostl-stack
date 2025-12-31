@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import { ethers } from "ethers";
 import { computeRiskScore } from "./riskEngine.ts";
+import { computeGraphRisk, createGraphState, recordGraphEdge } from "./graphRisk.ts";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -32,6 +33,9 @@ const RISK_WINDOW_SECONDS =
   Number.isFinite(riskWindowRaw) && riskWindowRaw > 0 ? Math.floor(riskWindowRaw) : 300;
 const confirmationsRaw = Number(process.env.CONFIRMATIONS || "0");
 const CONFIRMATIONS = Number.isFinite(confirmationsRaw) && confirmationsRaw >= 0 ? Math.floor(confirmationsRaw) : 0;
+const graphWindowRaw = Number(process.env.GRAPH_WINDOW_SECONDS || "3600");
+const GRAPH_WINDOW_SECONDS =
+  Number.isFinite(graphWindowRaw) && graphWindowRaw > 0 ? Math.floor(graphWindowRaw) : 3600;
 
 if (!RPC_L2 || !BRIDGE || !POLICY) {
   console.error("Missing env: RPC_L2, BRIDGE_L2L3_ADDRESS, GUARD_POLICY_ADDRESS");
@@ -64,6 +68,23 @@ const signerWithNonce = signer ? new ethers.NonceManager(signer) : null;
 const policy = new ethers.Contract(POLICY, policyAbi, signerWithNonce ?? provider);
 
 let lastEvent: any = null;
+const recentEvents: Array<any> = [];
+
+type LogEntry = { ts: number; level: "info" | "warn" | "error"; msg: string; data?: any };
+const logBuffer: Array<LogEntry> = [];
+function pushLog(level: LogEntry["level"], msg: string, data?: any) {
+  logBuffer.push({ ts: Date.now(), level, msg, data });
+  while (logBuffer.length > 200) logBuffer.shift();
+}
+
+const metrics = {
+  startedAt: Date.now(),
+  polls: 0,
+  logsSeen: 0,
+  depositsSeen: 0,
+  policyWrites: 0,
+  policyWriteErrors: 0
+};
 
 const depositTopic = ethers.id("DepositInitiated(address,address,uint256,uint256)");
 const erc20DepositTopic = ethers.id("ERC20DepositInitiated(address,address,address,uint256,uint256)");
@@ -78,6 +99,7 @@ const allowlist = new Set<string>();
 const blocklist = new Set<string>();
 
 const actorEvents = new Map<string, Array<{ ts: number; amountWei: bigint }>>();
+const graph = createGraphState();
 
 async function loadLists() {
   try {
@@ -144,7 +166,18 @@ async function handleDepositLog(log: ethers.Log) {
 
   const { recentCount, recentAmountWei } = recordActorEvent(from, amount);
 
-  let risk = computeRiskScore({ actor: from, amountWei: amount, nonce, recentCount, recentAmountWei });
+  recordGraphEdge(graph, from, to, Date.now(), GRAPH_WINDOW_SECONDS * 1000);
+
+  const velocityRisk = computeRiskScore({ actor: from, amountWei: amount, nonce, recentCount, recentAmountWei });
+  const graphRisk = computeGraphRisk({
+    from,
+    to,
+    blocklist,
+    windowMs: GRAPH_WINDOW_SECONDS * 1000,
+    state: graph
+  });
+
+  let risk = Math.max(velocityRisk, graphRisk.score);
 
   const normalizedFrom = ethers.getAddress(from);
   const isAllowlisted = allowlist.has(normalizedFrom);
@@ -161,32 +194,42 @@ async function handleDepositLog(log: ethers.Log) {
     nonce: nonce.toString(),
     tx: log.transactionHash,
     risk,
+    velocityRisk,
+    graphRisk,
     recentCount,
     recentAmountWei: recentAmountWei.toString(),
     isAllowlisted,
     isBlocklisted
   };
+  recentEvents.push({ ts: Date.now(), ...lastEvent });
+  while (recentEvents.length > 50) recentEvents.shift();
 
-  console.log(
-    `[Guard] ${parsed.name} from=${from} amountWei=${amount} nonce=${nonce} risk=${risk} recentCount=${recentCount}`
-  );
+  metrics.depositsSeen += 1;
+  const msg = `[Guard] ${parsed.name} from=${from} amountWei=${amount} nonce=${nonce} risk=${risk} (velocity=${velocityRisk}, graph=${graphRisk.score})`;
+  console.log(msg);
+  pushLog("info", msg, lastEvent);
 
   if (!signer) {
     console.log("[Guard] No PRIVATE_KEY set; running in observe-only mode.");
+    pushLog("warn", "[Guard] No PRIVATE_KEY set; running in observe-only mode.");
     return;
   }
 
   try {
     const tx1 = await policy.setRiskScore(from, risk);
     await tx1.wait();
+    metrics.policyWrites += 1;
 
     if (AUTO_PAUSE && risk >= 80) {
       const tx2 = await policy.setMode(2); // PAUSE
       await tx2.wait();
       console.log("[Guard] High risk => policy paused.");
+      pushLog("warn", "[Guard] High risk => policy paused.", { risk });
     }
   } catch (e) {
     console.error("[Guard] Failed to write policy:", e);
+    pushLog("error", "[Guard] Failed to write policy", { error: String(e) });
+    metrics.policyWriteErrors += 1;
   }
 }
 
@@ -194,6 +237,7 @@ async function pollBridgeOnce() {
   if (pollInFlight) return;
   pollInFlight = true;
   try {
+  metrics.polls += 1;
   const latest = await provider.getBlockNumber();
   const scanTo = Math.max(0, latest - CONFIRMATIONS);
   if (nextBlockToScan == null) {
@@ -209,6 +253,7 @@ async function pollBridgeOnce() {
     toBlock: scanTo,
     topics: [[depositTopic, erc20DepositTopic]]
   });
+  metrics.logsSeen += logs.length;
 
   for (const log of logs) {
     await handleDepositLog(log);
@@ -263,6 +308,30 @@ app.get("/proxy/relayer-health", async (_req, res) => {
   }
 });
 
+async function proxyRelayer(pathname: string, res: express.Response) {
+  const base = process.env.RELAYER_BASE_URL || "http://ghost-relayer:7171";
+  const url = `${base}${pathname}`;
+  const r = await fetch(url);
+  const txt = await r.text();
+  res.status(r.status).type(r.headers.get("content-type") || "application/json").send(txt);
+}
+
+app.get("/proxy/relayer-logs", async (_req, res) => {
+  try {
+    await proxyRelayer("/logs", res);
+  } catch (e: any) {
+    res.status(502).json({ ok: false, error: e?.message ?? String(e) });
+  }
+});
+
+app.get("/proxy/relayer-metrics", async (_req, res) => {
+  try {
+    await proxyRelayer("/metrics", res);
+  } catch (e: any) {
+    res.status(502).json({ ok: false, error: e?.message ?? String(e) });
+  }
+});
+
 app.get("/health", async (_req, res) => {
   try {
     const chainId = await provider.send("eth_chainId", []);
@@ -285,13 +354,28 @@ app.get("/health", async (_req, res) => {
       lastActorRiskScore,
       autoPause: AUTO_PAUSE,
       riskWindowSeconds: RISK_WINDOW_SECONDS,
+      graphWindowSeconds: GRAPH_WINDOW_SECONDS,
       confirmations: CONFIRMATIONS,
       hasPrivateKey: Boolean(PRIVATE_KEY),
+      metrics,
+      recentEvents: recentEvents.slice(-10),
       lastEvent
     });
   } catch (e: any) {
     res.status(500).json({ ok: false, error: e?.message ?? String(e) });
   }
+});
+
+app.get("/events", async (_req, res) => {
+  res.json({ ok: true, events: recentEvents.slice(-50) });
+});
+
+app.get("/logs", async (_req, res) => {
+  res.json({ ok: true, logs: logBuffer.slice(-200) });
+});
+
+app.get("/metrics", async (_req, res) => {
+  res.json({ ok: true, ...metrics, hasPrivateKey: Boolean(PRIVATE_KEY) });
 });
 
 app.get("/lists", (_req, res) => {
