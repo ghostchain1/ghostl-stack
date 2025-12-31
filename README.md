@@ -32,6 +32,19 @@ cd .devcontainer
 PRIVATE_KEY=... docker compose up -d --force-recreate ghost-guard
 ```
 
+## Policy controls (requires enforcement)
+
+```bash
+# allow / delay / pause
+curl -sS -X POST http://localhost:7070/policy/mode -H 'content-type: application/json' -d '{"mode":0}'
+
+# adjust risk threshold (0..100) to unblock high-risk deposits during demos
+curl -sS -X POST http://localhost:7070/policy/threshold -H 'content-type: application/json' -d '{"threshold":100}'
+
+# optional: set a fixed delay (seconds) before finalize
+curl -sS -X POST http://localhost:7070/policy/delay -H 'content-type: application/json' -d '{"seconds":30}'
+```
+
 ## Dev prerequisites
 
 - `docker` + Docker Compose
