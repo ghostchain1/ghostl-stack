@@ -103,7 +103,7 @@ services:
     volumes:
       - ../services/ghost-guard:/app
       - ghost_guard_node_modules:/app/node_modules
-    command: sh -lc "test -f node_modules/.package-lock.json || npm ci --no-audit --no-fund; npm run start"
+    command: sh -lc "test -f node_modules/.package-lock.json || (test -f package-lock.json && npm ci --no-audit --no-fund || npm install --no-audit --no-fund); npm run start"
     env_file:
       - ../services/ghost-guard/.env
     environment:
@@ -115,6 +115,25 @@ services:
     networks: [ghostnet]
     depends_on: [ghostl2, ghostl3]
 
+  ghost-relayer:
+    image: node:22-alpine
+    user: "0:0"
+    working_dir: /app
+    volumes:
+      - ../services/ghost-relayer:/app
+      - ghost_relayer_node_modules:/app/node_modules
+    command: sh -lc "test -f node_modules/.package-lock.json || (test -f package-lock.json && npm ci --no-audit --no-fund || npm install --no-audit --no-fund); npm run start"
+    env_file:
+      - ../services/ghost-relayer/.env
+    environment:
+      RPC_L2: "http://ghostl2:9545"
+      RPC_L3: "http://ghostl3:10545"
+      RELAYER_PRIVATE_KEY: "${RELAYER_PRIVATE_KEY-}"
+    ports:
+      - "7171:7171"
+    networks: [ghostnet]
+    depends_on: [ghostl2, ghostl3]
+
 networks:
   ghostnet:
 
@@ -122,3 +141,4 @@ volumes:
   ghostl2_data:
   ghostl3_data:
   ghost_guard_node_modules:
+  ghost_relayer_node_modules:

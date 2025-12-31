@@ -5,6 +5,7 @@ Brings up:
 - GhostL2: Polygon Edge (7192) on :9545
 - GhostL3: Polygon Edge (7393) on :10545
 - Ghost Guard API on :7070
+- Ghost Relayer API on :7171
 
 ## Start
 ```bash
@@ -21,6 +22,21 @@ bash infra/scripts/demo-deposit.sh
 
 ```bash
 bash infra/scripts/demo-finalize.sh
+```
+
+## Demo (relay to L3)
+
+```bash
+cd .devcontainer
+RELAYER_PRIVATE_KEY=0xac0974... docker compose up -d --force-recreate ghost-relayer
+cd ..
+bash infra/scripts/demo-relay.sh
+```
+
+## Relayer health
+
+```bash
+curl -sS http://localhost:7171/health
 ```
 
 ## Enable enforcement (optional)

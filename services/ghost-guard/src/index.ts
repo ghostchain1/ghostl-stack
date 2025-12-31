@@ -58,6 +58,7 @@ const bridgeIface = new ethers.Interface(bridgeAbi);
 
 let nextBlockToScan: number | null = null;
 let pollInFlight = false;
+const START_BLOCK = process.env.START_BLOCK ? Number(process.env.START_BLOCK) : null;
 
 async function handleDepositLog(log: ethers.Log) {
   const parsed = bridgeIface.parseLog(log);
@@ -95,7 +96,11 @@ async function pollBridgeOnce() {
   pollInFlight = true;
   try {
   const latest = await provider.getBlockNumber();
-  if (nextBlockToScan == null) nextBlockToScan = latest;
+  if (nextBlockToScan == null) {
+    const lookback = 100;
+    const defaultStart = Math.max(0, latest - lookback);
+    nextBlockToScan = START_BLOCK != null && Number.isFinite(START_BLOCK) ? Math.max(0, Math.floor(START_BLOCK)) : defaultStart;
+  }
   if (nextBlockToScan > latest) return;
 
   const logs = await provider.getLogs({

@@ -29,4 +29,7 @@ echo "Starting Ghost Guard..."
 cd /workspaces/ghostl-stack/.devcontainer
 docker compose up -d --build ghost-guard
 
-echo "Done. Anvil=8545, L2=9545, L3=10545, Guard=7070"
+echo "Starting Ghost Relayer..."
+docker compose up -d --build ghost-relayer
+
+echo "Done. Anvil=8545, L2=9545, L3=10545, Guard=7070, Relayer=7171"

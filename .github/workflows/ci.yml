@@ -22,3 +22,7 @@ jobs:
       - name: Guard install
         working-directory: services/ghost-guard
         run: npm install
+
+      - name: Relayer install
+        working-directory: services/ghost-relayer
+        run: npm install
