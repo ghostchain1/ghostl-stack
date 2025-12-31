@@ -239,12 +239,25 @@ setInterval(() => pollBridgeOnce().catch((e) => console.error("[Guard] Poll fail
 const app = express();
 app.use(express.json());
 
+app.use(express.static(new URL("../public", import.meta.url).pathname));
+
 function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
   if (!ADMIN_TOKEN) return next();
   const token = req.header("x-admin-token");
   if (!token || token !== ADMIN_TOKEN) return res.status(401).json({ ok: false, error: "unauthorized" });
   next();
 }
+
+app.get("/proxy/relayer-health", async (_req, res) => {
+  try {
+    const url = process.env.RELAYER_HEALTH_URL || "http://ghost-relayer:7171/health";
+    const r = await fetch(url);
+    const txt = await r.text();
+    res.status(r.status).type(r.headers.get("content-type") || "application/json").send(txt);
+  } catch (e: any) {
+    res.status(502).json({ ok: false, error: e?.message ?? String(e) });
+  }
+});
 
 app.get("/health", async (_req, res) => {
   try {
