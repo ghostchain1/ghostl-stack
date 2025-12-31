@@ -12,6 +12,11 @@ Brings up:
 bash infra/scripts/up.sh
 ```
 
+## Ops UI
+
+- Ghost Guard UI: `http://localhost:7070/`
+- Relayer UI proxy: `http://localhost:7070/proxy/relayer-health`
+
 ## Demo (emit a deposit event)
 
 ```bash
