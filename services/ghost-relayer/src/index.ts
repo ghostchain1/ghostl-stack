@@ -1,6 +1,8 @@
 import "dotenv/config";
 import express from "express";
 import { ethers } from "ethers";
+import fs from "node:fs/promises";
+import path from "node:path";
 
 const PORT = Number(process.env.PORT || "7171");
 const RPC_L2 = process.env.RPC_L2!;
@@ -9,6 +11,9 @@ const BRIDGE = process.env.BRIDGE_L2L3_ADDRESS!;
 const L3_INBOX = process.env.L3_INBOX_ADDRESS!;
 const L3_TOKEN = process.env.L3_TOKEN_ADDRESS!;
 const RELAYER_PRIVATE_KEY = process.env.RELAYER_PRIVATE_KEY || "";
+const STATE_DIR = process.env.STATE_DIR || "/state";
+const confirmationsRaw = Number(process.env.CONFIRMATIONS || "0");
+const CONFIRMATIONS = Number.isFinite(confirmationsRaw) && confirmationsRaw >= 0 ? Math.floor(confirmationsRaw) : 0;
 
 if (!RPC_L2 || !RPC_L3 || !BRIDGE || !L3_INBOX || !L3_TOKEN) {
   console.error("Missing env: RPC_L2, RPC_L3, BRIDGE_L2L3_ADDRESS, L3_INBOX_ADDRESS, L3_TOKEN_ADDRESS");
@@ -50,6 +55,28 @@ let pollInFlight = false;
 let lastRelayed: any = null;
 let lastSeen: any = null;
 const START_BLOCK = process.env.START_BLOCK ? Number(process.env.START_BLOCK) : null;
+
+type CursorState = { nextBlockToScan: number | null };
+const cursorPath = path.join(STATE_DIR, "cursor.json");
+
+async function loadCursor(): Promise<CursorState> {
+  try {
+    const raw = await fs.readFile(cursorPath, "utf8");
+    const parsed = JSON.parse(raw) as Partial<CursorState>;
+    const n = parsed.nextBlockToScan;
+    if (typeof n === "number" && Number.isFinite(n) && n >= 0) return { nextBlockToScan: Math.floor(n) };
+  } catch {
+    // ignore
+  }
+  return { nextBlockToScan: null };
+}
+
+async function saveCursor(state: CursorState) {
+  await fs.mkdir(STATE_DIR, { recursive: true });
+  const tmp = `${cursorPath}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(state, null, 2) + "\n", "utf8");
+  await fs.rename(tmp, cursorPath);
+}
 
 function msgKeyEth(from: string, to: string, amount: bigint, nonce: bigint): string {
   return ethers.keccak256(
@@ -108,7 +135,9 @@ async function handleFinalizedLog(log: ethers.Log) {
       return;
     }
 
-    // The L3 token enforces idempotency via its `processed` mapping.
+    const already = await l3Token.processed(key);
+    if (already) return;
+
     const tx = await l3Token.mintFromL2(from, to, amount, nonce);
     await tx.wait();
 
@@ -122,17 +151,18 @@ async function pollOnce() {
   pollInFlight = true;
   try {
     const latest = await l2Provider.getBlockNumber();
+    const scanTo = Math.max(0, latest - CONFIRMATIONS);
     if (nextBlockToScan == null) {
       const lookback = 100;
-      const defaultStart = Math.max(0, latest - lookback);
+      const defaultStart = Math.max(0, scanTo - lookback);
       nextBlockToScan = START_BLOCK != null && Number.isFinite(START_BLOCK) ? Math.max(0, Math.floor(START_BLOCK)) : defaultStart;
     }
-    if (nextBlockToScan > latest) return;
+    if (nextBlockToScan > scanTo) return;
 
     const logs = await l2Provider.getLogs({
       address: BRIDGE,
       fromBlock: nextBlockToScan,
-      toBlock: latest,
+      toBlock: scanTo,
       topics: [[finalizedTopic, erc20FinalizedTopic]]
     });
 
@@ -140,12 +170,20 @@ async function pollOnce() {
       await handleFinalizedLog(log);
     }
 
-    nextBlockToScan = latest + 1;
+    nextBlockToScan = scanTo + 1;
+    await saveCursor({ nextBlockToScan });
   } catch (e) {
     console.error("[Relayer] Poll failed:", e);
   } finally {
     pollInFlight = false;
   }
+}
+
+try {
+  const cursor = await loadCursor();
+  if (cursor.nextBlockToScan != null) nextBlockToScan = cursor.nextBlockToScan;
+} catch (e) {
+  console.error("[Relayer] Failed to load cursor:", e);
 }
 
 pollOnce();
@@ -163,6 +201,7 @@ app.get("/health", async (_req, res) => {
       observeOnly,
       l2ChainId,
       l3ChainId,
+      confirmations: CONFIRMATIONS,
       bridge: BRIDGE,
       inbox: L3_INBOX,
       l3Token: L3_TOKEN,

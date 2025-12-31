@@ -80,6 +80,10 @@ curl -sS -X POST http://localhost:7070/lists/remove -H 'content-type: applicatio
 
 Lists are stored in a docker volume mounted at `/state` in the `ghost-guard` container.
 
+## Restart safety
+
+Both `ghost-guard` and `ghost-relayer` persist a block cursor in `/state/cursor.json` so they can resume after restarts.
+
 ## Dev prerequisites
 
 - `docker` + Docker Compose

@@ -29,6 +29,8 @@ const AUTO_PAUSE = process.env.AUTO_PAUSE !== "0";
 const riskWindowRaw = Number(process.env.RISK_WINDOW_SECONDS || "300");
 const RISK_WINDOW_SECONDS =
   Number.isFinite(riskWindowRaw) && riskWindowRaw > 0 ? Math.floor(riskWindowRaw) : 300;
+const confirmationsRaw = Number(process.env.CONFIRMATIONS || "0");
+const CONFIRMATIONS = Number.isFinite(confirmationsRaw) && confirmationsRaw >= 0 ? Math.floor(confirmationsRaw) : 0;
 
 if (!RPC_L2 || !BRIDGE || !POLICY) {
   console.error("Missing env: RPC_L2, BRIDGE_L2L3_ADDRESS, GUARD_POLICY_ADDRESS");
@@ -94,6 +96,28 @@ async function saveLists() {
   const p = path.join(STATE_DIR, "lists.json");
   const state: ListsState = { allowlist: Array.from(allowlist), blocklist: Array.from(blocklist) };
   await fs.writeFile(p, JSON.stringify(state, null, 2) + "\n", "utf8");
+}
+
+type CursorState = { nextBlockToScan: number | null };
+const cursorPath = path.join(STATE_DIR, "cursor.json");
+
+async function loadCursor(): Promise<CursorState> {
+  try {
+    const raw = await fs.readFile(cursorPath, "utf8");
+    const parsed = JSON.parse(raw) as Partial<CursorState>;
+    const n = parsed.nextBlockToScan;
+    if (typeof n === "number" && Number.isFinite(n) && n >= 0) return { nextBlockToScan: Math.floor(n) };
+  } catch {
+    // ignore
+  }
+  return { nextBlockToScan: null };
+}
+
+async function saveCursor(state: CursorState) {
+  await fs.mkdir(STATE_DIR, { recursive: true });
+  const tmp = `${cursorPath}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(state, null, 2) + "\n", "utf8");
+  await fs.rename(tmp, cursorPath);
 }
 
 function recordActorEvent(actor: string, amountWei: bigint) {
@@ -170,17 +194,18 @@ async function pollBridgeOnce() {
   pollInFlight = true;
   try {
   const latest = await provider.getBlockNumber();
+  const scanTo = Math.max(0, latest - CONFIRMATIONS);
   if (nextBlockToScan == null) {
     const lookback = 100;
-    const defaultStart = Math.max(0, latest - lookback);
+    const defaultStart = Math.max(0, scanTo - lookback);
     nextBlockToScan = START_BLOCK != null && Number.isFinite(START_BLOCK) ? Math.max(0, Math.floor(START_BLOCK)) : defaultStart;
   }
-  if (nextBlockToScan > latest) return;
+  if (nextBlockToScan > scanTo) return;
 
   const logs = await provider.getLogs({
     address: BRIDGE,
     fromBlock: nextBlockToScan,
-    toBlock: latest,
+    toBlock: scanTo,
     topics: [[depositTopic, erc20DepositTopic]]
   });
 
@@ -188,7 +213,8 @@ async function pollBridgeOnce() {
     await handleDepositLog(log);
   }
 
-  nextBlockToScan = latest + 1;
+  nextBlockToScan = scanTo + 1;
+  await saveCursor({ nextBlockToScan });
   } finally {
     pollInFlight = false;
   }
@@ -198,6 +224,13 @@ try {
   await loadLists();
 } catch (e) {
   console.error("[Guard] Failed to load lists:", e);
+}
+
+try {
+  const cursor = await loadCursor();
+  if (cursor.nextBlockToScan != null) nextBlockToScan = cursor.nextBlockToScan;
+} catch (e) {
+  console.error("[Guard] Failed to load cursor:", e);
 }
 
 pollBridgeOnce().catch((e) => console.error("[Guard] Initial poll failed:", e));
@@ -235,6 +268,7 @@ app.get("/health", async (_req, res) => {
       lastActorRiskScore,
       autoPause: AUTO_PAUSE,
       riskWindowSeconds: RISK_WINDOW_SECONDS,
+      confirmations: CONFIRMATIONS,
       hasPrivateKey: Boolean(PRIVATE_KEY),
       lastEvent
     });
