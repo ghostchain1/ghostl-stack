@@ -70,15 +70,17 @@ PRIVATE_KEY=... docker compose up -d --force-recreate ghost-guard
 
 ## Policy controls (requires enforcement)
 
+If `ADMIN_TOKEN` is set (recommended), add `-H 'x-admin-token: ...'` to write requests.
+
 ```bash
 # allow / delay / pause
-curl -sS -X POST http://localhost:7070/policy/mode -H 'content-type: application/json' -d '{"mode":0}'
+curl -sS -X POST http://localhost:7070/policy/mode -H 'content-type: application/json' -H 'x-admin-token: ...' -d '{"mode":0}'
 
 # adjust risk threshold (0..100) to unblock high-risk deposits during demos
-curl -sS -X POST http://localhost:7070/policy/threshold -H 'content-type: application/json' -d '{"threshold":100}'
+curl -sS -X POST http://localhost:7070/policy/threshold -H 'content-type: application/json' -H 'x-admin-token: ...' -d '{"threshold":100}'
 
 # optional: set a fixed delay (seconds) before finalize
-curl -sS -X POST http://localhost:7070/policy/delay -H 'content-type: application/json' -d '{"seconds":30}'
+curl -sS -X POST http://localhost:7070/policy/delay -H 'content-type: application/json' -H 'x-admin-token: ...' -d '{"seconds":30}'
 ```
 
 ## Allowlist / blocklist (optional)
@@ -93,6 +95,8 @@ curl -sS -X POST http://localhost:7070/lists/remove -H 'content-type: applicatio
 ```
 
 Lists are stored in a docker volume mounted at `/state` in the `ghost-guard` container.
+
+If you really want to run without auth locally, set `ALLOW_INSECURE_ADMIN=1` for `ghost-guard`.
 
 ## Restart safety
 
