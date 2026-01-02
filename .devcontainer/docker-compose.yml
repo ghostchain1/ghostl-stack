@@ -70,6 +70,7 @@ services:
 
   ghostl2:
     image: 0xpolygon/polygon-edge:latest
+    user: "0:0"
     entrypoint: ["/bin/sh", "-lc"]
     restart: unless-stopped
     logging:
@@ -83,17 +84,56 @@ services:
       timeout: 1s
       retries: 60
       start_period: 3s
+    environment:
+      CHAIN_NAME: "GhostL2"
+      CHAIN_ID: "7192"
+      PREMINE_ADDRESS: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+      PREMINE_AMOUNT_WEI: "1000000000000000000000000"
+      BLOCK_GAS_LIMIT: "30000000"
+      BOOTNODE_IP: "127.0.0.1"
+      LIBP2P_PORT: "14792"
+      GRPC_PORT: "9632"
+      JSONRPC_PORT: "9545"
     command:
       - |
         set -e
-        test -f /data/genesis.json || { echo "Missing /data/genesis.json (run: bash infra/scripts/chains/init.sh)"; exit 1; }
-        test -f /data/validator-1/consensus/validator.key || { echo "Missing /data/validator-1 (run: bash infra/scripts/chains/init.sh)"; exit 1; }
+        DATA_DIR="/data"
+        VALIDATOR_DIR="$DATA_DIR/validator-1"
+        GENESIS="$DATA_DIR/genesis.json"
+
+        ensure_perms() {
+          chmod -R a+rwX "$DATA_DIR" >/dev/null 2>&1 || true
+        }
+
+        if [ ! -f "$GENESIS" ] || [ ! -f "$VALIDATOR_DIR/consensus/validator.key" ]; then
+          echo "[${CHAIN_NAME}] initializing chain data..."
+          rm -rf "$DATA_DIR"/*
+          mkdir -p "$VALIDATOR_DIR"
+          polygon-edge secrets init --insecure --data-dir "$VALIDATOR_DIR"
+          NODE_ID="$(polygon-edge secrets output --data-dir "$VALIDATOR_DIR" --node-id | tail -n 1 | tr -d '\r\n')"
+          polygon-edge genesis \
+            --dir "$GENESIS" \
+            --name "$CHAIN_NAME" \
+            --chain-id "$CHAIN_ID" \
+            --premine "${PREMINE_ADDRESS}:${PREMINE_AMOUNT_WEI}" \
+            --bootnode "/ip4/${BOOTNODE_IP}/tcp/${LIBP2P_PORT}/p2p/${NODE_ID}" \
+            --consensus ibft \
+            --validators-path "$DATA_DIR" \
+            --validators-prefix validator- \
+            --block-gas-limit "$BLOCK_GAS_LIMIT"
+          ensure_perms
+          echo "[${CHAIN_NAME}] genesis created"
+        else
+          ensure_perms
+          echo "[${CHAIN_NAME}] chain data already initialized"
+        fi
+
         exec polygon-edge server \
-          --data-dir /data/validator-1 \
-          --chain /data/genesis.json \
-          --grpc-address 0.0.0.0:9632 \
-          --libp2p 0.0.0.0:14792 \
-          --jsonrpc 0.0.0.0:9545
+          --data-dir "$VALIDATOR_DIR" \
+          --chain "$GENESIS" \
+          --grpc-address 0.0.0.0:"$GRPC_PORT" \
+          --libp2p 0.0.0.0:"$LIBP2P_PORT" \
+          --jsonrpc 0.0.0.0:"$JSONRPC_PORT"
     ports:
       - "9545:9545"
     volumes:
@@ -105,6 +145,7 @@ services:
 
   ghostl3:
     image: 0xpolygon/polygon-edge:latest
+    user: "0:0"
     entrypoint: ["/bin/sh", "-lc"]
     restart: unless-stopped
     logging:
@@ -118,17 +159,56 @@ services:
       timeout: 1s
       retries: 60
       start_period: 3s
+    environment:
+      CHAIN_NAME: "GhostL3"
+      CHAIN_ID: "7393"
+      PREMINE_ADDRESS: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+      PREMINE_AMOUNT_WEI: "1000000000000000000000000"
+      BLOCK_GAS_LIMIT: "30000000"
+      BOOTNODE_IP: "127.0.0.1"
+      LIBP2P_PORT: "16793"
+      GRPC_PORT: "10632"
+      JSONRPC_PORT: "10545"
     command:
       - |
         set -e
-        test -f /data/genesis.json || { echo "Missing /data/genesis.json (run: bash infra/scripts/chains/init.sh)"; exit 1; }
-        test -f /data/validator-1/consensus/validator.key || { echo "Missing /data/validator-1 (run: bash infra/scripts/chains/init.sh)"; exit 1; }
+        DATA_DIR="/data"
+        VALIDATOR_DIR="$DATA_DIR/validator-1"
+        GENESIS="$DATA_DIR/genesis.json"
+
+        ensure_perms() {
+          chmod -R a+rwX "$DATA_DIR" >/dev/null 2>&1 || true
+        }
+
+        if [ ! -f "$GENESIS" ] || [ ! -f "$VALIDATOR_DIR/consensus/validator.key" ]; then
+          echo "[${CHAIN_NAME}] initializing chain data..."
+          rm -rf "$DATA_DIR"/*
+          mkdir -p "$VALIDATOR_DIR"
+          polygon-edge secrets init --insecure --data-dir "$VALIDATOR_DIR"
+          NODE_ID="$(polygon-edge secrets output --data-dir "$VALIDATOR_DIR" --node-id | tail -n 1 | tr -d '\r\n')"
+          polygon-edge genesis \
+            --dir "$GENESIS" \
+            --name "$CHAIN_NAME" \
+            --chain-id "$CHAIN_ID" \
+            --premine "${PREMINE_ADDRESS}:${PREMINE_AMOUNT_WEI}" \
+            --bootnode "/ip4/${BOOTNODE_IP}/tcp/${LIBP2P_PORT}/p2p/${NODE_ID}" \
+            --consensus ibft \
+            --validators-path "$DATA_DIR" \
+            --validators-prefix validator- \
+            --block-gas-limit "$BLOCK_GAS_LIMIT"
+          ensure_perms
+          echo "[${CHAIN_NAME}] genesis created"
+        else
+          ensure_perms
+          echo "[${CHAIN_NAME}] chain data already initialized"
+        fi
+
         exec polygon-edge server \
-          --data-dir /data/validator-1 \
-          --chain /data/genesis.json \
-          --grpc-address 0.0.0.0:10632 \
-          --libp2p 0.0.0.0:16793 \
-          --jsonrpc 0.0.0.0:10545
+          --data-dir "$VALIDATOR_DIR" \
+          --chain "$GENESIS" \
+          --grpc-address 0.0.0.0:"$GRPC_PORT" \
+          --libp2p 0.0.0.0:"$LIBP2P_PORT" \
+          --jsonrpc 0.0.0.0:"$JSONRPC_PORT"
     ports:
       - "10545:10545"
     volumes:
