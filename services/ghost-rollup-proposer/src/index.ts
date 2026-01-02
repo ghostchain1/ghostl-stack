@@ -10,13 +10,16 @@ const RPC_CHILD = process.env.RPC_CHILD!;
 const ROLLUP = process.env.ROLLUP_ADDRESS!;
 const PROPOSER_PRIVATE_KEY = process.env.PROPOSER_PRIVATE_KEY || "";
 const STATE_DIR = process.env.STATE_DIR || "/state";
-const confirmationsRaw = Number(process.env.CONFIRMATIONS || "0");
+const confirmationsRaw = Number(process.env.CONFIRMATIONS || "12");
 const CONFIRMATIONS = Number.isFinite(confirmationsRaw) && confirmationsRaw >= 0 ? Math.floor(confirmationsRaw) : 0;
 const batchSizeRaw = Number(process.env.BATCH_SIZE || "20");
 const BATCH_SIZE = Number.isFinite(batchSizeRaw) && batchSizeRaw > 0 ? Math.floor(batchSizeRaw) : 20;
 const challengePeriodRaw = Number(process.env.CHALLENGE_PERIOD_SECONDS || "30");
 const CHALLENGE_PERIOD_SECONDS =
   Number.isFinite(challengePeriodRaw) && challengePeriodRaw >= 0 ? Math.floor(challengePeriodRaw) : 30;
+const EXPECTED_SETTLEMENT_CHAIN_ID = parseChainIdEnv(process.env.EXPECTED_SETTLEMENT_CHAIN_ID, "EXPECTED_SETTLEMENT_CHAIN_ID");
+const EXPECTED_CHILD_CHAIN_ID = parseChainIdEnv(process.env.EXPECTED_CHILD_CHAIN_ID, "EXPECTED_CHILD_CHAIN_ID");
+const EXPECTED_ROLLUP_CODE_HASH = parseCodeHashEnv(process.env.ROLLUP_CODE_HASH);
 
 if (!RPC_SETTLEMENT || !RPC_CHILD || !ROLLUP) {
   console.error("Missing env: RPC_SETTLEMENT, RPC_CHILD, ROLLUP_ADDRESS");
@@ -44,6 +47,25 @@ const rollup = new ethers.Contract(ROLLUP, rollupAbi, signer ?? settlement);
 
 type Cursor = { nextChildBlock: number | null };
 const cursorPath = path.join(STATE_DIR, "cursor.json");
+
+function parseChainIdEnv(raw: string | undefined, label: string): bigint | null {
+  if (!raw) return null;
+  try {
+    const n = BigInt(raw);
+    if (n <= 0n) throw new Error("chainId must be positive");
+    return n;
+  } catch {
+    console.warn(`[Startup] Ignoring invalid ${label}=${raw}`);
+    return null;
+  }
+}
+
+function parseCodeHashEnv(raw: string | undefined): string | null {
+  if (!raw) return null;
+  if (ethers.isHexString(raw, 32)) return ethers.hexlify(raw);
+  console.warn(`[Startup] Ignoring invalid ROLLUP_CODE_HASH=${raw}`);
+  return null;
+}
 
 async function loadCursor(): Promise<Cursor> {
   try {
@@ -170,8 +192,49 @@ function scrubError(e: any) {
   return String(e?.shortMessage ?? e?.reason ?? e?.message ?? e);
 }
 
+async function assertChainId(provider: ethers.JsonRpcProvider, expected: bigint | null, label: string): Promise<bigint> {
+  const raw = await provider.send("eth_chainId", []);
+  const chainId = BigInt(raw);
+  if (expected != null && chainId !== expected) {
+    throw new Error(`Unexpected ${label} chainId ${chainId} (wanted ${expected})`);
+  }
+  console.log(`[Startup] ${label} chainId=${chainId} (0x${chainId.toString(16)})`);
+  return chainId;
+}
+
+async function assertRollupDeployment() {
+  const code = await settlement.getCode(ROLLUP);
+  if (!code || code === "0x") throw new Error(`No code at rollup address ${ROLLUP}`);
+  const codeHash = ethers.keccak256(code);
+  if (EXPECTED_ROLLUP_CODE_HASH && codeHash.toLowerCase() !== EXPECTED_ROLLUP_CODE_HASH.toLowerCase()) {
+    throw new Error(`Rollup code hash mismatch: got ${codeHash}, expected ${EXPECTED_ROLLUP_CODE_HASH}`);
+  }
+  console.log(`[Startup] Rollup code hash ${codeHash}`);
+}
+
+async function assertChallengePeriod() {
+  const onchain = Number(await rollup.challengePeriodSeconds());
+  if (Number.isFinite(onchain) && onchain !== CHALLENGE_PERIOD_SECONDS) {
+    throw new Error(
+      `Challenge period mismatch: env=${CHALLENGE_PERIOD_SECONDS}s onchain=${onchain}s (update CHALLENGE_PERIOD_SECONDS or contract)`
+    );
+  }
+}
+
+async function bootstrapSafety() {
+  await assertChainId(settlement, EXPECTED_SETTLEMENT_CHAIN_ID, "settlement");
+  await assertChainId(child, EXPECTED_CHILD_CHAIN_ID, "child");
+  await assertRollupDeployment();
+  await assertChallengePeriod();
+}
+
 let inFlight = false;
 let state: Cursor = await loadCursor();
+
+await bootstrapSafety().catch((e) => {
+  console.error("[Proposer] Startup failed:", scrubError(e));
+  process.exit(1);
+});
 
 async function tick() {
   if (inFlight) return;
