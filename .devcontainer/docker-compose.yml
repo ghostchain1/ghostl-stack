@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   workspace:
     image: mcr.microsoft.com/devcontainers/base:ubuntu
@@ -71,7 +69,6 @@ services:
   ghostl2:
     image: 0xpolygon/polygon-edge:latest
     user: "0:0"
-    working_dir: /polygon-edge
     entrypoint: ["/bin/sh", "-lc"]
     restart: unless-stopped
     logging:
@@ -98,46 +95,46 @@ services:
     command:
       - |
         set -e
-        EDGE_BIN="/polygon-edge/polygon-edge"
+        EDGE_BIN="polygon-edge"
         # Health checks rely on nc, but the polygon-edge image is bare Alpine
         apk add --no-cache netcat-openbsd >/dev/null 2>&1 || true
         DATA_DIR="/data"
-        VALIDATOR_DIR="$DATA_DIR/validator-1"
-        GENESIS="$DATA_DIR/genesis.json"
+        VALIDATOR_DIR="$$DATA_DIR/validator-1"
+        GENESIS="$$DATA_DIR/genesis.json"
 
         ensure_perms() {
-          chmod -R a+rwX "$DATA_DIR" >/dev/null 2>&1 || true
+          chmod -R a+rwX "$$DATA_DIR" >/dev/null 2>&1 || true
         }
 
-        if [ ! -f "$GENESIS" ] || [ ! -f "$VALIDATOR_DIR/consensus/validator.key" ]; then
-          echo "[${CHAIN_NAME}] initializing chain data..."
-          rm -rf "$DATA_DIR"/*
-          mkdir -p "$VALIDATOR_DIR"
-          "$EDGE_BIN" secrets init --insecure --data-dir "$VALIDATOR_DIR"
-          NODE_ID="$("$EDGE_BIN" secrets output --data-dir "$VALIDATOR_DIR" --node-id | tail -n 1 | tr -d '\r\n')"
-          "$EDGE_BIN" genesis \
-            --dir "$GENESIS" \
-            --name "$CHAIN_NAME" \
-            --chain-id "$CHAIN_ID" \
-            --premine "${PREMINE_ADDRESS}:${PREMINE_AMOUNT_WEI}" \
-            --bootnode "/ip4/${BOOTNODE_IP}/tcp/${LIBP2P_PORT}/p2p/${NODE_ID}" \
+        if [ ! -f "$$GENESIS" ] || [ ! -f "$$VALIDATOR_DIR/consensus/validator.key" ]; then
+          echo "[$${CHAIN_NAME}] initializing chain data..."
+          rm -rf "$$DATA_DIR"/*
+          mkdir -p "$$VALIDATOR_DIR"
+          "$$EDGE_BIN" secrets init --insecure --data-dir "$$VALIDATOR_DIR"
+          NODE_ID="$("$${EDGE_BIN}" secrets output --data-dir "$$VALIDATOR_DIR" --node-id | tail -n 1 | tr -d '\r\n')"
+          "$$EDGE_BIN" genesis \
+            --dir "$$GENESIS" \
+            --name "$${CHAIN_NAME}" \
+            --chain-id "$${CHAIN_ID}" \
+            --premine "$${PREMINE_ADDRESS}:$${PREMINE_AMOUNT_WEI}" \
+            --bootnode "/ip4/$${BOOTNODE_IP}/tcp/$${LIBP2P_PORT}/p2p/$${NODE_ID}" \
             --consensus ibft \
-            --validators-path "$DATA_DIR" \
+            --validators-path "$$DATA_DIR" \
             --validators-prefix validator- \
-            --block-gas-limit "$BLOCK_GAS_LIMIT"
+            --block-gas-limit "$${BLOCK_GAS_LIMIT}"
           ensure_perms
-          echo "[${CHAIN_NAME}] genesis created"
+          echo "[$${CHAIN_NAME}] genesis created"
         else
           ensure_perms
-          echo "[${CHAIN_NAME}] chain data already initialized"
+          echo "[$${CHAIN_NAME}] chain data already initialized"
         fi
 
-        exec "$EDGE_BIN" server \
-          --data-dir "$VALIDATOR_DIR" \
-          --chain "$GENESIS" \
-          --grpc-address 0.0.0.0:"$GRPC_PORT" \
-          --libp2p 0.0.0.0:"$LIBP2P_PORT" \
-          --jsonrpc 0.0.0.0:"$JSONRPC_PORT"
+        exec "$$EDGE_BIN" server \
+          --data-dir "$$VALIDATOR_DIR" \
+          --chain "$$GENESIS" \
+          --grpc-address 0.0.0.0:"$${GRPC_PORT}" \
+          --libp2p 0.0.0.0:"$${LIBP2P_PORT}" \
+          --jsonrpc 0.0.0.0:"$${JSONRPC_PORT}"
     ports:
       - "9545:9545"
     volumes:
@@ -150,7 +147,6 @@ services:
   ghostl3:
     image: 0xpolygon/polygon-edge:latest
     user: "0:0"
-    working_dir: /polygon-edge
     entrypoint: ["/bin/sh", "-lc"]
     restart: unless-stopped
     logging:
@@ -177,46 +173,46 @@ services:
     command:
       - |
         set -e
-        EDGE_BIN="/polygon-edge/polygon-edge"
+        EDGE_BIN="polygon-edge"
         # Health checks rely on nc, but the polygon-edge image is bare Alpine
         apk add --no-cache netcat-openbsd >/dev/null 2>&1 || true
         DATA_DIR="/data"
-        VALIDATOR_DIR="$DATA_DIR/validator-1"
-        GENESIS="$DATA_DIR/genesis.json"
+        VALIDATOR_DIR="$$DATA_DIR/validator-1"
+        GENESIS="$$DATA_DIR/genesis.json"
 
         ensure_perms() {
-          chmod -R a+rwX "$DATA_DIR" >/dev/null 2>&1 || true
+          chmod -R a+rwX "$$DATA_DIR" >/dev/null 2>&1 || true
         }
 
-        if [ ! -f "$GENESIS" ] || [ ! -f "$VALIDATOR_DIR/consensus/validator.key" ]; then
-          echo "[${CHAIN_NAME}] initializing chain data..."
-          rm -rf "$DATA_DIR"/*
-          mkdir -p "$VALIDATOR_DIR"
-          "$EDGE_BIN" secrets init --insecure --data-dir "$VALIDATOR_DIR"
-          NODE_ID="$("$EDGE_BIN" secrets output --data-dir "$VALIDATOR_DIR" --node-id | tail -n 1 | tr -d '\r\n')"
-          "$EDGE_BIN" genesis \
-            --dir "$GENESIS" \
-            --name "$CHAIN_NAME" \
-            --chain-id "$CHAIN_ID" \
-            --premine "${PREMINE_ADDRESS}:${PREMINE_AMOUNT_WEI}" \
-            --bootnode "/ip4/${BOOTNODE_IP}/tcp/${LIBP2P_PORT}/p2p/${NODE_ID}" \
+        if [ ! -f "$$GENESIS" ] || [ ! -f "$$VALIDATOR_DIR/consensus/validator.key" ]; then
+          echo "[$${CHAIN_NAME}] initializing chain data..."
+          rm -rf "$$DATA_DIR"/*
+          mkdir -p "$$VALIDATOR_DIR"
+          "$$EDGE_BIN" secrets init --insecure --data-dir "$$VALIDATOR_DIR"
+          NODE_ID="$("$${EDGE_BIN}" secrets output --data-dir "$$VALIDATOR_DIR" --node-id | tail -n 1 | tr -d '\r\n')"
+          "$$EDGE_BIN" genesis \
+            --dir "$$GENESIS" \
+            --name "$${CHAIN_NAME}" \
+            --chain-id "$${CHAIN_ID}" \
+            --premine "$${PREMINE_ADDRESS}:$${PREMINE_AMOUNT_WEI}" \
+            --bootnode "/ip4/$${BOOTNODE_IP}/tcp/$${LIBP2P_PORT}/p2p/$${NODE_ID}" \
             --consensus ibft \
-            --validators-path "$DATA_DIR" \
+            --validators-path "$$DATA_DIR" \
             --validators-prefix validator- \
-            --block-gas-limit "$BLOCK_GAS_LIMIT"
+            --block-gas-limit "$${BLOCK_GAS_LIMIT}"
           ensure_perms
-          echo "[${CHAIN_NAME}] genesis created"
+          echo "[$${CHAIN_NAME}] genesis created"
         else
           ensure_perms
-          echo "[${CHAIN_NAME}] chain data already initialized"
+          echo "[$${CHAIN_NAME}] chain data already initialized"
         fi
 
-        exec "$EDGE_BIN" server \
-          --data-dir "$VALIDATOR_DIR" \
-          --chain "$GENESIS" \
-          --grpc-address 0.0.0.0:"$GRPC_PORT" \
-          --libp2p 0.0.0.0:"$LIBP2P_PORT" \
-          --jsonrpc 0.0.0.0:"$JSONRPC_PORT"
+        exec "$$EDGE_BIN" server \
+          --data-dir "$$VALIDATOR_DIR" \
+          --chain "$$GENESIS" \
+          --grpc-address 0.0.0.0:"$${GRPC_PORT}" \
+          --libp2p 0.0.0.0:"$${LIBP2P_PORT}" \
+          --jsonrpc 0.0.0.0:"$${JSONRPC_PORT}"
     ports:
       - "10545:10545"
     volumes:
