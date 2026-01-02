@@ -225,6 +225,7 @@ function recordActorEvent(actor: string, amountWei: bigint) {
 
 async function handleDepositLog(log: ethers.Log) {
   const parsed = bridgeIface.parseLog(log);
+  if (!parsed) return;
   const token = (parsed.name === "ERC20DepositInitiated" ? (parsed.args[0] as string) : null);
   const from = parsed.name === "ERC20DepositInitiated" ? (parsed.args[1] as string) : (parsed.args[0] as string);
   const to = parsed.name === "ERC20DepositInitiated" ? (parsed.args[2] as string) : (parsed.args[1] as string);
