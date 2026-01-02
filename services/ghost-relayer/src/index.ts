@@ -215,7 +215,11 @@ async function verifyFinalizedBatchContainsBlock(opts: {
       const blocks = await Promise.all(
         Array.from({ length: end - start + 1 }, (_, j) => childProvider.getBlock(start + j))
       );
-      const leaves = blocks.map((blk, j) => hashLeaf(start + j, blk!.hash));
+      const leaves: Array<string> = [];
+      for (const [j, blk] of blocks.entries()) {
+        if (!blk?.hash) return false;
+        leaves.push(hashLeaf(start + j, blk.hash));
+      }
       const computed = merkleRoot(leaves);
       if (computed !== root) return false;
       verifiedBatchCache.add(cacheKey);
@@ -223,7 +227,9 @@ async function verifyFinalizedBatchContainsBlock(opts: {
 
     // Ensure the specific leaf exists as expected (cheap sanity check).
     const expectedLeaf = hashLeaf(childBlockNumber, childBlockHash);
-    const actualLeaf = hashLeaf(childBlockNumber, (await childProvider.getBlock(childBlockNumber))!.hash);
+    const targetBlock = await childProvider.getBlock(childBlockNumber);
+    if (!targetBlock?.hash) return false;
+    const actualLeaf = hashLeaf(childBlockNumber, targetBlock.hash);
     if (expectedLeaf !== actualLeaf) return false;
 
     return true;
@@ -295,6 +301,7 @@ function classifyFinalizeError(msg: string): "policy" | "rollup" | "other" {
 
 async function handleFinalizedLog(log: ethers.Log) {
   const parsed = bridgeIface.parseLog(log);
+  if (!parsed) return;
   if (parsed.name === "Finalized") {
     metrics.finalizedSeen += 1;
     const from = parsed.args[0] as string;
@@ -371,14 +378,16 @@ async function handleFinalizedLog(log: ethers.Log) {
       l3TokenAddr = (await l3Factory.l3TokenForL2Token(token)) as string;
       if (!l3TokenAddr || l3TokenAddr === ethers.ZeroAddress) {
         const ev = rcpt?.logs
-          .map((l) => {
+          .map((l: ethers.Log) => {
             try {
               return l3Factory.interface.parseLog(l);
             } catch {
               return null;
             }
           })
-          .find((e) => e?.name === "BridgedTokenDeployed");
+          .find((e: ethers.LogDescription | null): e is ethers.LogDescription =>
+            Boolean(e && e.name === "BridgedTokenDeployed")
+          );
         l3TokenAddr = String(ev?.args?.l3Token ?? "");
       }
     }
@@ -475,6 +484,7 @@ async function tryFinalizeOne(p: PendingFinalize) {
 
 async function handleDepositLog(log: ethers.Log) {
   const parsed = bridgeIface.parseLog(log);
+  if (!parsed) return;
   if (parsed.name === "DepositInitiated") {
     metrics.depositsSeen += 1;
     const from = parsed.args[0] as string;
@@ -484,7 +494,11 @@ async function handleDepositLog(log: ethers.Log) {
     const key = msgKeyEth(from, to, amount, nonce);
     const l2BlockNumber = Number(log.blockNumber);
     let l2BlockHash = String(log.blockHash ?? "");
-    if (!l2BlockHash) l2BlockHash = (await l2Provider.getBlock(l2BlockNumber))!.hash;
+    if (!l2BlockHash) {
+      const blk = await l2Provider.getBlock(l2BlockNumber);
+      if (!blk?.hash) return;
+      l2BlockHash = blk.hash;
+    }
 
     lastSeen = { kind: "DepositInitiated", from, to, amount: amount.toString(), nonce: nonce.toString(), key, l2Tx: log.transactionHash };
 
@@ -516,7 +530,11 @@ async function handleDepositLog(log: ethers.Log) {
     const key = msgKeyErc20(token, from, to, amount, nonce);
     const l2BlockNumber = Number(log.blockNumber);
     let l2BlockHash = String(log.blockHash ?? "");
-    if (!l2BlockHash) l2BlockHash = (await l2Provider.getBlock(l2BlockNumber))!.hash;
+    if (!l2BlockHash) {
+      const blk = await l2Provider.getBlock(l2BlockNumber);
+      if (!blk?.hash) return;
+      l2BlockHash = blk.hash;
+    }
 
     lastSeen = { kind: "ERC20DepositInitiated", token, from, to, amount: amount.toString(), nonce: nonce.toString(), key, l2Tx: log.transactionHash };
 
@@ -541,6 +559,7 @@ async function handleDepositLog(log: ethers.Log) {
 
 async function handleBurnLog(log: ethers.Log) {
   const parsed = l3TokenIface.parseLog(log);
+  if (!parsed) return;
   metrics.burnsSeen += 1;
   const l2Token = parsed.args[0] as string;
   const from = parsed.args[1] as string;
@@ -564,7 +583,11 @@ async function handleBurnLog(log: ethers.Log) {
 
   const l3BlockNumber = Number(log.blockNumber);
   let l3BlockHash = String(log.blockHash ?? "");
-  if (!l3BlockHash) l3BlockHash = (await l3Provider.getBlock(l3BlockNumber))!.hash;
+  if (!l3BlockHash) {
+    const blk = await l3Provider.getBlock(l3BlockNumber);
+    if (!blk?.hash) return;
+    l3BlockHash = blk.hash;
+  }
   const okOnL2 = await verifyFinalizedBatchContainsBlock({
     rollup: l2Rollup,
     settlementName: "l2",
