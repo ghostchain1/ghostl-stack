@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import type { Request, Response } from "express";
 import { ethers } from "ethers";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -254,7 +255,7 @@ tick();
 setInterval(tick, 2000);
 
 const app = express();
-app.get("/health", async (_req, res) => {
+app.get("/health", async (_req: Request, res: Response) => {
   try {
     const settlementChainId = await settlement.send("eth_chainId", []);
     const childChainId = await child.send("eth_chainId", []);
@@ -275,7 +276,7 @@ app.get("/health", async (_req, res) => {
   }
 });
 
-app.get("/metrics", (_req, res) => res.json({ ok: true, ...metrics }));
+app.get("/metrics", (_req: Request, res: Response) => res.json({ ok: true, ...metrics }));
 
 function promLine(name: string, value: number | string, labels?: Record<string, string>) {
   const l = labels
@@ -286,7 +287,7 @@ function promLine(name: string, value: number | string, labels?: Record<string, 
   return `${name}${l} ${value}\n`;
 }
 
-app.get("/metrics/prom", (_req, res) => {
+app.get("/metrics/prom", (_req: Request, res: Response) => {
   res.type("text/plain; version=0.0.4");
   let out = "";
   out += promLine("ghost_rollup_proposer_up", 1);
