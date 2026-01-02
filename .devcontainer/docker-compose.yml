@@ -71,6 +71,7 @@ services:
   ghostl2:
     image: 0xpolygon/polygon-edge:latest
     user: "0:0"
+    working_dir: /polygon-edge
     entrypoint: ["/bin/sh", "-lc"]
     restart: unless-stopped
     logging:
@@ -97,6 +98,7 @@ services:
     command:
       - |
         set -e
+        EDGE_BIN="/polygon-edge/polygon-edge"
         # Health checks rely on nc, but the polygon-edge image is bare Alpine
         apk add --no-cache netcat-openbsd >/dev/null 2>&1 || true
         DATA_DIR="/data"
@@ -111,9 +113,9 @@ services:
           echo "[${CHAIN_NAME}] initializing chain data..."
           rm -rf "$DATA_DIR"/*
           mkdir -p "$VALIDATOR_DIR"
-          polygon-edge secrets init --insecure --data-dir "$VALIDATOR_DIR"
-          NODE_ID="$(polygon-edge secrets output --data-dir "$VALIDATOR_DIR" --node-id | tail -n 1 | tr -d '\r\n')"
-          polygon-edge genesis \
+          "$EDGE_BIN" secrets init --insecure --data-dir "$VALIDATOR_DIR"
+          NODE_ID="$("$EDGE_BIN" secrets output --data-dir "$VALIDATOR_DIR" --node-id | tail -n 1 | tr -d '\r\n')"
+          "$EDGE_BIN" genesis \
             --dir "$GENESIS" \
             --name "$CHAIN_NAME" \
             --chain-id "$CHAIN_ID" \
@@ -130,7 +132,7 @@ services:
           echo "[${CHAIN_NAME}] chain data already initialized"
         fi
 
-        exec polygon-edge server \
+        exec "$EDGE_BIN" server \
           --data-dir "$VALIDATOR_DIR" \
           --chain "$GENESIS" \
           --grpc-address 0.0.0.0:"$GRPC_PORT" \
@@ -148,6 +150,7 @@ services:
   ghostl3:
     image: 0xpolygon/polygon-edge:latest
     user: "0:0"
+    working_dir: /polygon-edge
     entrypoint: ["/bin/sh", "-lc"]
     restart: unless-stopped
     logging:
@@ -174,6 +177,7 @@ services:
     command:
       - |
         set -e
+        EDGE_BIN="/polygon-edge/polygon-edge"
         # Health checks rely on nc, but the polygon-edge image is bare Alpine
         apk add --no-cache netcat-openbsd >/dev/null 2>&1 || true
         DATA_DIR="/data"
@@ -188,9 +192,9 @@ services:
           echo "[${CHAIN_NAME}] initializing chain data..."
           rm -rf "$DATA_DIR"/*
           mkdir -p "$VALIDATOR_DIR"
-          polygon-edge secrets init --insecure --data-dir "$VALIDATOR_DIR"
-          NODE_ID="$(polygon-edge secrets output --data-dir "$VALIDATOR_DIR" --node-id | tail -n 1 | tr -d '\r\n')"
-          polygon-edge genesis \
+          "$EDGE_BIN" secrets init --insecure --data-dir "$VALIDATOR_DIR"
+          NODE_ID="$("$EDGE_BIN" secrets output --data-dir "$VALIDATOR_DIR" --node-id | tail -n 1 | tr -d '\r\n')"
+          "$EDGE_BIN" genesis \
             --dir "$GENESIS" \
             --name "$CHAIN_NAME" \
             --chain-id "$CHAIN_ID" \
@@ -207,7 +211,7 @@ services:
           echo "[${CHAIN_NAME}] chain data already initialized"
         fi
 
-        exec polygon-edge server \
+        exec "$EDGE_BIN" server \
           --data-dir "$VALIDATOR_DIR" \
           --chain "$GENESIS" \
           --grpc-address 0.0.0.0:"$GRPC_PORT" \
