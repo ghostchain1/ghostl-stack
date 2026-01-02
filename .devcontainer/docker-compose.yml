@@ -97,6 +97,8 @@ services:
     command:
       - |
         set -e
+        # Health checks rely on nc, but the polygon-edge image is bare Alpine
+        apk add --no-cache netcat-openbsd >/dev/null 2>&1 || true
         DATA_DIR="/data"
         VALIDATOR_DIR="$DATA_DIR/validator-1"
         GENESIS="$DATA_DIR/genesis.json"
@@ -172,6 +174,8 @@ services:
     command:
       - |
         set -e
+        # Health checks rely on nc, but the polygon-edge image is bare Alpine
+        apk add --no-cache netcat-openbsd >/dev/null 2>&1 || true
         DATA_DIR="/data"
         VALIDATOR_DIR="$DATA_DIR/validator-1"
         GENESIS="$DATA_DIR/genesis.json"
