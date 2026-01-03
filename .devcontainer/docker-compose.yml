@@ -8,26 +8,16 @@ services:
 
   anvil:
     image: ghcr.io/foundry-rs/foundry:latest
-    command:
-      - anvil
-      - --host
-      - 0.0.0.0
-      - --port
-      - "8545"
-      - --chain-id
-      - "31337"
-      - --block-time
-      - "1"
+    entrypoint: ["/bin/sh", "-lc"]
+    command: >
+      echo 'Starting Anvil...' &&
+      anvil --host 0.0.0.0 --port 8545 --chain-id 31337 --block-time 1
     restart: unless-stopped
     ports:
       - "8545:8545"
     networks: [ghostnet]
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "cast rpc --rpc-url http://localhost:8545 eth_chainId >/dev/null 2>&1"
-        ]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8545 >/dev/null 2>&1"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -109,11 +99,11 @@ services:
         if [ ! -f "$$GENESIS" ] || [ ! -f "$$VALIDATOR_DIR/consensus/validator.key" ]; then
           echo "[$${CHAIN_NAME}] initializing chain data..."
           rm -rf "$$DATA_DIR"/*
-          mkdir -p "$$VALIDATOR_DIR"
+          mkdir -p "$$DATA_DIR" "$$VALIDATOR_DIR"
           "$$EDGE_BIN" secrets init --insecure --data-dir "$$VALIDATOR_DIR"
           NODE_ID="$("$${EDGE_BIN}" secrets output --data-dir "$$VALIDATOR_DIR" --node-id | tail -n 1 | tr -d '\r\n')"
           "$$EDGE_BIN" genesis \
-            --dir "$$GENESIS" \
+            --dir "$$DATA_DIR" \
             --name "$${CHAIN_NAME}" \
             --chain-id "$${CHAIN_ID}" \
             --premine "$${PREMINE_ADDRESS}:$${PREMINE_AMOUNT_WEI}" \
@@ -187,11 +177,11 @@ services:
         if [ ! -f "$$GENESIS" ] || [ ! -f "$$VALIDATOR_DIR/consensus/validator.key" ]; then
           echo "[$${CHAIN_NAME}] initializing chain data..."
           rm -rf "$$DATA_DIR"/*
-          mkdir -p "$$VALIDATOR_DIR"
+          mkdir -p "$$DATA_DIR" "$$VALIDATOR_DIR"
           "$$EDGE_BIN" secrets init --insecure --data-dir "$$VALIDATOR_DIR"
           NODE_ID="$("$${EDGE_BIN}" secrets output --data-dir "$$VALIDATOR_DIR" --node-id | tail -n 1 | tr -d '\r\n')"
           "$$EDGE_BIN" genesis \
-            --dir "$$GENESIS" \
+            --dir "$$DATA_DIR" \
             --name "$${CHAIN_NAME}" \
             --chain-id "$${CHAIN_ID}" \
             --premine "$${PREMINE_ADDRESS}:$${PREMINE_AMOUNT_WEI}" \
