@@ -2,7 +2,8 @@
 set -euo pipefail
 
 ROOT_DIR="/workspaces/ghostl-stack"
-IMAGE="0xpolygon/polygon-edge:latest"
+# Pin to a released build; `latest` drifts and can break existing chain data.
+IMAGE="0xpolygon/polygon-edge:1.3.2"
 NETWORK="devcontainer_ghostnet"
 ROOTCHAIN_RPC="http://anvil-rpc-proxy:8546"
 DEPLOYER_KEY_HEX="ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
