@@ -1,0 +1,290 @@
+#!/usr/bin/env node
+import express from "express";
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import { ethers } from "ethers";
+
+const PORT = Number(process.env.PORT || "8545");
+const UPSTREAM_RPC = process.env.UPSTREAM_RPC || "http://l1:8545";
+const STATE_DIR = process.env.STATE_DIR || "/state";
+const DECISIONS_LOG = path.join(STATE_DIR, "guard-decisions.jsonl");
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
+const ALLOW_INSECURE_ADMIN = process.env.ALLOW_INSECURE_ADMIN === "1";
+const DEFAULT_DELAY_SECONDS = Number(process.env.DEFAULT_DELAY_SECONDS || "0");
+const GUARD_EVAL_URL =
+  process.env.GUARD_EVAL_URL ||
+  (process.env.GUARD_URL ? `${process.env.GUARD_URL.replace(/\/$/, "")}/gate/eval` : "");
+
+const BATCH_SENDER_ADDRESS = safeAddr(process.env.BATCH_SENDER_ADDRESS);
+const PROPOSER_ADDRESS = safeAddr(process.env.PROPOSER_ADDRESS);
+
+const state = {
+  mode: "allow", // allow | pause | delay | block
+  delaySeconds: DEFAULT_DELAY_SECONDS > 0 ? DEFAULT_DELAY_SECONDS : 0,
+  nextAllowedAt: 0
+};
+
+const metrics = {
+  startedAt: Date.now(),
+  rpcRequests: 0,
+  proxied: 0,
+  blocked: 0,
+  delayed: 0,
+  guardErrors: 0,
+  guardDecisions: 0
+};
+
+const recentDecisions = [];
+
+function safeAddr(a) {
+  try {
+    return a ? ethers.getAddress(a) : null;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeAction(action) {
+  const a = String(action || "").toLowerCase();
+  if (["allow", "pause", "delay", "block"].includes(a)) return a;
+  if (["reject", "quarantine"].includes(a)) return "block";
+  return "allow";
+}
+
+async function appendDecision(entry) {
+  recentDecisions.push(entry);
+  while (recentDecisions.length > 200) recentDecisions.shift();
+  try {
+    await fs.mkdir(STATE_DIR, { recursive: true });
+    await fs.appendFile(DECISIONS_LOG, JSON.stringify(entry) + "\n", "utf8");
+  } catch (e) {
+    console.error("[gate] failed to write decision log:", e);
+  }
+}
+
+function requireAdmin(req, res, next) {
+  if (!ADMIN_TOKEN && !ALLOW_INSECURE_ADMIN) {
+    return res.status(403).json({ ok: false, error: "ADMIN_TOKEN not configured" });
+  }
+  if (!ADMIN_TOKEN && ALLOW_INSECURE_ADMIN) return next();
+  const token = req.header("x-admin-token");
+  if (!token || token !== ADMIN_TOKEN) return res.status(401).json({ ok: false, error: "unauthorized" });
+  next();
+}
+
+async function guardEval(context) {
+  if (!GUARD_EVAL_URL) return null;
+  try {
+    const r = await fetch(GUARD_EVAL_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(context)
+    });
+    if (!r.ok) throw new Error(`status ${r.status}`);
+    const body = await r.json();
+    metrics.guardDecisions += 1;
+    return body;
+  } catch (e) {
+    metrics.guardErrors += 1;
+    console.warn("[gate] guard eval failed:", e?.message ?? String(e));
+    return null;
+  }
+}
+
+async function forwardRpc(body) {
+  const r = await fetch(UPSTREAM_RPC, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) {
+    const txt = await r.text();
+    throw new Error(`upstream status ${r.status}: ${txt}`);
+  }
+  return r.json();
+}
+
+function gateDecisionForTx(txSummary) {
+  const now = Date.now();
+  if (state.mode === "pause") {
+    return { action: "pause", reason: "manual_pause" };
+  }
+  if (state.mode === "block") {
+    return { action: "block", reason: "manual_block" };
+  }
+  if (state.mode === "delay") {
+    if (now < state.nextAllowedAt) {
+      return { action: "delay", reason: "manual_delay", retryAt: state.nextAllowedAt };
+    }
+    state.nextAllowedAt = now + state.delaySeconds * 1000;
+    return { action: "delay", reason: "manual_delay", retryAt: state.nextAllowedAt };
+  }
+  return { action: "allow", reason: "manual_allow" };
+}
+
+async function handleSendRawTx(body) {
+  const raw = body.params?.[0];
+  if (!raw || typeof raw !== "string") {
+    return { jsonrpc: "2.0", id: body.id ?? null, error: { code: -32602, message: "missing raw tx" } };
+  }
+  let tx;
+  try {
+    tx = ethers.Transaction.from(raw);
+  } catch (e) {
+    return { jsonrpc: "2.0", id: body.id ?? null, error: { code: -32602, message: `invalid raw tx: ${e?.message ?? e}` } };
+  }
+
+  const txSummary = {
+    hash: tx.hash,
+    from: tx.from ? ethers.getAddress(tx.from) : null,
+    to: tx.to ? ethers.getAddress(tx.to) : null,
+    nonce: tx.nonce,
+    type: tx.type,
+    value: tx.value?.toString() ?? "0",
+    gasLimit: tx.gasLimit?.toString() ?? null,
+    dataLength: tx.data ? tx.data.length / 2 - 1 : 0
+  };
+
+  let role = "unknown";
+  if (txSummary.from && BATCH_SENDER_ADDRESS && txSummary.from === BATCH_SENDER_ADDRESS) role = "batcher";
+  else if (txSummary.from && PROPOSER_ADDRESS && txSummary.from === PROPOSER_ADDRESS) role = "proposer";
+
+  const manualDecision = gateDecisionForTx(txSummary);
+  let decision = { ...manualDecision, source: "manual" };
+
+  if (manualDecision.action === "allow") {
+    const guardDecision = await guardEval({ role, tx: txSummary });
+    if (guardDecision?.action) {
+      decision = { ...guardDecision, action: normalizeAction(guardDecision.action), source: "guard" };
+    }
+  }
+
+  const entry = {
+    ts: Date.now(),
+    role,
+    action: decision.action,
+    reason: decision.reason || "",
+    risk: typeof decision.risk === "number" ? decision.risk : null,
+    delaySeconds: decision.delaySeconds || state.delaySeconds,
+    retryAt: decision.retryAt || null,
+    tx: txSummary
+  };
+
+  if (decision.action === "allow") {
+    const upstream = await forwardRpc(body);
+    entry.result = "forwarded";
+    metrics.proxied += 1;
+    await appendDecision(entry);
+    return upstream;
+  }
+
+  if (decision.action === "delay") {
+    metrics.delayed += 1;
+    entry.result = "delayed";
+    entry.retryAt = entry.retryAt || Date.now() + entry.delaySeconds * 1000;
+    state.nextAllowedAt = entry.retryAt;
+    await appendDecision(entry);
+    return {
+      jsonrpc: "2.0",
+      id: body.id ?? null,
+      error: {
+        code: -32099,
+        message: "op-gate delayed",
+        data: { action: "delay", reason: decision.reason, retryAt: entry.retryAt }
+      }
+    };
+  }
+
+  metrics.blocked += 1;
+  entry.result = "blocked";
+  await appendDecision(entry);
+  return {
+    jsonrpc: "2.0",
+    id: body.id ?? null,
+    error: {
+      code: -32098,
+      message: `op-gate ${decision.action}`,
+      data: { action: decision.action, reason: decision.reason }
+    }
+  };
+}
+
+async function handleRpc(body) {
+  metrics.rpcRequests += 1;
+  const method = body.method;
+  if (method === "eth_sendRawTransaction") {
+    return handleSendRawTx(body);
+  }
+  return forwardRpc(body);
+}
+
+function promLine(name, value, labels) {
+  const l = labels
+    ? `{${Object.entries(labels)
+        .map(([k, v]) => `${k}="${String(v).replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`)
+        .join(",")}}`
+    : "";
+  return `${name}${l} ${value}\n`;
+}
+
+const app = express();
+app.use(express.json({ limit: "10mb" }));
+
+app.post("/", async (req, res) => {
+  const body = req.body;
+  try {
+    if (Array.isArray(body)) {
+      const results = await Promise.all(body.map((b) => handleRpc(b)));
+      res.json(results);
+    } else {
+      const result = await handleRpc(body);
+      res.json(result);
+    }
+  } catch (e) {
+    console.error("[gate] rpc error", e);
+    res.status(500).json({ jsonrpc: "2.0", id: body?.id ?? null, error: { code: -32000, message: String(e) } });
+  }
+});
+
+app.get("/gate/status", (_req, res) => {
+  res.json({
+    ok: true,
+    mode: state.mode,
+    delaySeconds: state.delaySeconds,
+    nextAllowedAt: state.nextAllowedAt,
+    metrics,
+    recentDecisions: recentDecisions.slice(-50)
+  });
+});
+
+app.post("/gate/mode", requireAdmin, (req, res) => {
+  const mode = String(req.body?.mode || "allow").toLowerCase();
+  const delaySecondsRaw = Number(req.body?.delaySeconds ?? state.delaySeconds);
+  const delaySeconds = Number.isFinite(delaySecondsRaw) && delaySecondsRaw >= 0 ? Math.floor(delaySecondsRaw) : 0;
+  if (!["allow", "pause", "delay", "block"].includes(mode)) {
+    return res.status(400).json({ ok: false, error: "mode must be allow|pause|delay|block" });
+  }
+  state.mode = mode;
+  state.delaySeconds = delaySeconds;
+  state.nextAllowedAt = 0;
+  res.json({ ok: true, mode, delaySeconds });
+});
+
+app.get("/metrics/prom", (_req, res) => {
+  res.type("text/plain; version=0.0.4");
+  let out = "";
+  out += promLine("op_gate_up", 1);
+  out += promLine("op_gate_mode", 1, { mode: state.mode });
+  out += promLine("op_gate_delay_seconds", state.delaySeconds);
+  out += promLine("op_gate_requests_total", metrics.rpcRequests);
+  out += promLine("op_gate_proxied_total", metrics.proxied);
+  out += promLine("op_gate_blocked_total", metrics.blocked);
+  out += promLine("op_gate_delayed_total", metrics.delayed);
+  out += promLine("op_gate_guard_errors_total", metrics.guardErrors);
+  out += promLine("op_gate_guard_decisions_total", metrics.guardDecisions);
+  res.send(out);
+});
+
+app.listen(PORT, () => {
+  console.log(`[gate] listening on :${PORT}, upstream ${UPSTREAM_RPC}, guard ${GUARD_EVAL_URL || "none"}`);
+});

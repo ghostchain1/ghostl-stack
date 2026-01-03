@@ -257,11 +257,13 @@ services:
       - ../services/ghost-guard:/app
       - ghost_guard_node_modules:/app/node_modules
       - ghost_guard_state:/state
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: sh -lc "test -f node_modules/.package-lock.json || (test -f package-lock.json && npm ci --no-audit --no-fund || npm install --no-audit --no-fund); npm run start"
     env_file:
       - ../services/ghost-guard/.env
     environment:
-      RPC_L2: "http://ghostl2:9545"
+      RPC_L2: "http://host.docker.internal:29545"
       RPC_L3: "http://ghostl3:10545"
       STATE_DIR: "/state"
     ports:
@@ -293,12 +295,14 @@ services:
       - ../services/ghost-relayer:/app
       - ghost_relayer_node_modules:/app/node_modules
       - ghost_relayer_state:/state
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: sh -lc "test -f node_modules/.package-lock.json || (test -f package-lock.json && npm ci --no-audit --no-fund || npm install --no-audit --no-fund); npm run start"
     env_file:
       - ../services/ghost-relayer/.env
     environment:
-      RPC_L1: "http://anvil:8545"
-      RPC_L2: "http://ghostl2:9545"
+      RPC_L1: "http://host.docker.internal:28545"
+      RPC_L2: "http://host.docker.internal:29545"
       RPC_L3: "http://ghostl3:10545"
       STATE_DIR: "/state"
     ports:
@@ -332,12 +336,14 @@ services:
       - ../services/ghost-rollup-proposer:/app
       - ghost_rollup_proposer_node_modules:/app/node_modules
       - ghost_rollup_proposer_l2_state:/state
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: sh -lc "test -f node_modules/.package-lock.json || (test -f package-lock.json && npm ci --no-audit --no-fund || npm install --no-audit --no-fund); npm run start"
     env_file:
       - ../services/ghost-rollup-proposer/.env.l2
     environment:
-      RPC_SETTLEMENT: "http://anvil:8545"
-      RPC_CHILD: "http://ghostl2:9545"
+      RPC_SETTLEMENT: "http://host.docker.internal:28545"
+      RPC_CHILD: "http://host.docker.internal:29545"
       STATE_DIR: "/state"
     ports:
       - "7272:7272"
@@ -368,11 +374,13 @@ services:
       - ../services/ghost-rollup-proposer:/app
       - ghost_rollup_proposer_node_modules:/app/node_modules
       - ghost_rollup_proposer_l3_state:/state
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: sh -lc "test -f node_modules/.package-lock.json || (test -f package-lock.json && npm ci --no-audit --no-fund || npm install --no-audit --no-fund); npm run start"
     env_file:
       - ../services/ghost-rollup-proposer/.env.l3
     environment:
-      RPC_SETTLEMENT: "http://ghostl2:9545"
+      RPC_SETTLEMENT: "http://host.docker.internal:29545"
       RPC_CHILD: "http://ghostl3:10545"
       STATE_DIR: "/state"
     ports:
@@ -404,12 +412,14 @@ services:
       - ../services/ghost-rollup-challenger:/app
       - ghost_rollup_challenger_node_modules:/app/node_modules
       - ghost_rollup_challenger_l2_state:/state
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: sh -lc "test -f node_modules/.package-lock.json || (test -f package-lock.json && npm ci --no-audit --no-fund || npm install --no-audit --no-fund); npm run start"
     env_file:
       - ../services/ghost-rollup-challenger/.env.l2
     environment:
-      RPC_SETTLEMENT: "http://anvil:8545"
-      RPC_CHILD: "http://ghostl2:9545"
+      RPC_SETTLEMENT: "http://host.docker.internal:28545"
+      RPC_CHILD: "http://host.docker.internal:29545"
       STATE_DIR: "/state"
     ports:
       - "7282:7282"
@@ -440,11 +450,13 @@ services:
       - ../services/ghost-rollup-challenger:/app
       - ghost_rollup_challenger_node_modules:/app/node_modules
       - ghost_rollup_challenger_l3_state:/state
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: sh -lc "test -f node_modules/.package-lock.json || (test -f package-lock.json && npm ci --no-audit --no-fund || npm install --no-audit --no-fund); npm run start"
     env_file:
       - ../services/ghost-rollup-challenger/.env.l3
     environment:
-      RPC_SETTLEMENT: "http://ghostl2:9545"
+      RPC_SETTLEMENT: "http://host.docker.internal:29545"
       RPC_CHILD: "http://ghostl3:10545"
       STATE_DIR: "/state"
     ports:
@@ -474,8 +486,10 @@ services:
         max-file: "3"
     volumes:
       - ../services/ai-monitor:/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
-      RPC_L2: "http://ghostl2:9545"
+      RPC_L2: "http://host.docker.internal:29545"
       GUARD_URL: "http://ghost-guard:7070"
       PORT: "7575"
       OBSERVE_ONLY: "${AI_MONITOR_OBSERVE_ONLY:-0}"
@@ -506,6 +520,8 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus"]
     volumes:
       - ../infra/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro

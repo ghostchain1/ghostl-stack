@@ -549,6 +549,47 @@ app.get("/metrics/prom", async (_req, res) => {
   res.send(out);
 });
 
+app.post("/gate/eval", async (req, res) => {
+  const role = String(req.body?.role ?? "unknown");
+  const tx = (req.body as any)?.tx ?? {};
+  let from: string | null = null;
+  try {
+    from = tx?.from ? ethers.getAddress(String(tx.from)) : null;
+  } catch {
+    from = null;
+  }
+
+  let risk = 0;
+  const reasons: string[] = [];
+
+  if (from && blocklist.has(from)) {
+    risk = 100;
+    reasons.push("blocklisted");
+  }
+  if (from && allowlist.has(from)) {
+    risk = 0;
+    reasons.push("allowlisted");
+  }
+
+  let decision: { action: "allow" | "pause" | "block"; reason: string } = { action: "allow", reason: "ok" };
+  if (risk >= AUTO_QUARANTINE_THRESHOLD) {
+    decision = { action: "block", reason: "quarantine_threshold" };
+  } else if (AUTO_PAUSE && risk >= AUTO_PAUSE_THRESHOLD) {
+    decision = { action: "pause", reason: "pause_threshold" };
+  }
+
+  const delaySeconds = decision.action === "block" && QUARANTINE_DELAY_SECONDS > 0 ? QUARANTINE_DELAY_SECONDS : 0;
+  res.json({
+    ok: true,
+    action: decision.action,
+    reason: reasons[0] ?? decision.reason,
+    risk,
+    delaySeconds,
+    from,
+    role
+  });
+});
+
 app.get("/lists", (_req, res) => {
   res.json({ ok: true, allowlist: Array.from(allowlist), blocklist: Array.from(blocklist) });
 });
