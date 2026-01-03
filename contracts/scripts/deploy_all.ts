@@ -1,14 +1,25 @@
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import path from "node:path";
 import { promises as fs } from "node:fs";
 
 async function main() {
   const ROOT = process.env.ROOT_DIR ?? path.resolve(__dirname, "..", "..");
+  const l2ChainId = Number(process.env.L2_CHAIN_ID ?? network.config.chainId ?? 7192);
+  const l3ChainId = Number(process.env.L3_CHAIN_ID ?? 7393);
+  const challengePeriodSeconds = Number(process.env.CHALLENGE_PERIOD_SECONDS ?? 30);
+  const rpcL1 = process.env.RPC_L1 ?? "http://localhost:8545";
+  const rpcL2Public =
+    process.env.RPC_L2 ??
+    (typeof (network.config as any)?.url === "string" ? String((network.config as any).url) : "http://localhost:9545");
+  const rpcL3Public = process.env.RPC_L3 ?? "http://localhost:10545";
 
+  console.log(
+    `Config -> L2 chainId=${l2ChainId}, L3 chainId=${l3ChainId}, challengePeriodSeconds=${challengePeriodSeconds}`
+  );
   // Deploy policy + bridge on L2 (GhostL2)
   const l2 = await ethers.getSigners();
 
-  console.log("Deploying to GhostL2...");
+  console.log(`Deploying to GhostL2 network (${network.name})...`);
   const Policy = await ethers.getContractFactory("GuardPolicy");
   const policy = await Policy.connect(l2[0]).deploy();
   await policy.waitForDeployment();
@@ -30,7 +41,7 @@ async function main() {
   console.log("GhostTokenL2 (L2):", l2TokenAddr);
 
   // Deploy inbox on L3 (GhostL3) using the same dev key by default.
-  const l3Rpc = process.env.RPC_L3 ?? "http://localhost:10545";
+  const l3Rpc = rpcL3Public;
   const relayerKey =
     process.env.RELAYER_PRIVATE_KEY ??
     process.env.DEPLOYER_PRIVATE_KEY ??
@@ -47,19 +58,17 @@ async function main() {
   // Deploy optimistic settlement contracts:
   // - L2 batches posted to L1 (Anvil)
   // - L3 batches posted to L2 (GhostL2)
-  const l1Rpc = process.env.RPC_L1 ?? "http://localhost:8545";
-  const l1Provider = new ethers.JsonRpcProvider(l1Rpc);
+  const l1Provider = new ethers.JsonRpcProvider(rpcL1);
   const l1Signer = new ethers.Wallet(relayerKey, l1Provider);
 
   const Rollup = await ethers.getContractFactory("OptimisticRollup");
-  const challengePeriodSeconds = 30;
 
-  const l1Rollup = await Rollup.connect(l1Signer).deploy(7192, challengePeriodSeconds, await l1Signer.getAddress());
+  const l1Rollup = await Rollup.connect(l1Signer).deploy(l2ChainId, challengePeriodSeconds, await l1Signer.getAddress());
   await l1Rollup.waitForDeployment();
   const l1RollupAddr = await l1Rollup.getAddress();
   console.log("OptimisticRollup L2->L1 (L1):", l1RollupAddr);
 
-  const l2Rollup = await Rollup.connect(l2[0]).deploy(7393, challengePeriodSeconds, await l2[0].getAddress());
+  const l2Rollup = await Rollup.connect(l2[0]).deploy(l3ChainId, challengePeriodSeconds, await l2[0].getAddress());
   await l2Rollup.waitForDeployment();
   const l2RollupAddr = await l2Rollup.getAddress();
   console.log("OptimisticRollup L3->L2 (L2):", l2RollupAddr);
@@ -100,8 +109,8 @@ async function main() {
   const envPath = path.join(ROOT, "services/ghost-guard/.env");
   const env = [
     `PORT=7070`,
-    `RPC_L2=http://localhost:9545`,
-    `RPC_L3=http://localhost:10545`,
+    `RPC_L2=${rpcL2Public}`,
+    `RPC_L3=${rpcL3Public}`,
     `GUARD_POLICY_ADDRESS=${policyAddr}`,
     `BRIDGE_L2L3_ADDRESS=${bridgeAddr}`,
     `PRIVATE_KEY=`,
@@ -119,9 +128,9 @@ async function main() {
   const relayerEnvPath = path.join(ROOT, "services/ghost-relayer/.env");
   const relayerEnv = [
     `PORT=7171`,
-    `RPC_L1=http://localhost:8545`,
-    `RPC_L2=http://localhost:9545`,
-    `RPC_L3=http://localhost:10545`,
+    `RPC_L1=${rpcL1}`,
+    `RPC_L2=${rpcL2Public}`,
+    `RPC_L3=${rpcL3Public}`,
     `BRIDGE_L2L3_ADDRESS=${bridgeAddr}`,
     `L1_ROLLUP_L2_ADDRESS=${l1RollupAddr}`,
     `L2_ROLLUP_L3_ADDRESS=${l2RollupAddr}`,
@@ -142,8 +151,8 @@ async function main() {
   const proposerL3Path = `${proposerDir}/.env.l3`;
   const proposerL2Env = [
     `PORT=7272`,
-    `RPC_SETTLEMENT=http://localhost:8545`,
-    `RPC_CHILD=http://localhost:9545`,
+    `RPC_SETTLEMENT=${rpcL1}`,
+    `RPC_CHILD=${rpcL2Public}`,
     `ROLLUP_ADDRESS=${l1RollupAddr}`,
     `PROPOSER_PRIVATE_KEY=`,
     `CHALLENGE_PERIOD_SECONDS=${challengePeriodSeconds}`,
@@ -152,8 +161,8 @@ async function main() {
   ].join("\n") + "\n";
   const proposerL3Env = [
     `PORT=7373`,
-    `RPC_SETTLEMENT=http://localhost:9545`,
-    `RPC_CHILD=http://localhost:10545`,
+    `RPC_SETTLEMENT=${rpcL2Public}`,
+    `RPC_CHILD=${rpcL3Public}`,
     `ROLLUP_ADDRESS=${l2RollupAddr}`,
     `PROPOSER_PRIVATE_KEY=`,
     `CHALLENGE_PERIOD_SECONDS=${challengePeriodSeconds}`,
@@ -171,16 +180,16 @@ async function main() {
   const challengerL3Path = `${challengerDir}/.env.l3`;
   const challengerL2Env = [
     `PORT=7282`,
-    `RPC_SETTLEMENT=http://localhost:8545`,
-    `RPC_CHILD=http://localhost:9545`,
+    `RPC_SETTLEMENT=${rpcL1}`,
+    `RPC_CHILD=${rpcL2Public}`,
     `ROLLUP_ADDRESS=${l1RollupAddr}`,
     `CHALLENGER_PRIVATE_KEY=`,
     `CONFIRMATIONS=0`
   ].join("\n") + "\n";
   const challengerL3Env = [
     `PORT=7383`,
-    `RPC_SETTLEMENT=http://localhost:9545`,
-    `RPC_CHILD=http://localhost:10545`,
+    `RPC_SETTLEMENT=${rpcL2Public}`,
+    `RPC_CHILD=${rpcL3Public}`,
     `ROLLUP_ADDRESS=${l2RollupAddr}`,
     `CHALLENGER_PRIVATE_KEY=`,
     `CONFIRMATIONS=0`
