@@ -9,16 +9,22 @@ services:
 
   anvil:
     image: ghcr.io/foundry-rs/foundry:latest
-    entrypoint: ["/bin/sh", "-lc"]
-    command: >
-      echo 'Starting Anvil...' &&
-      anvil --host 0.0.0.0 --port 8545 --chain-id 31337 --block-time 1
+    entrypoint: ["anvil"]
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8545"
+      - --chain-id
+      - "31337"
+      - --block-time
+      - "1"
     restart: unless-stopped
     ports:
       - "8545:8545"
     networks: [ghostnet]
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8545 >/dev/null 2>&1"]
+      test: ["CMD-SHELL", "anvil --version >/dev/null 2>&1"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -71,7 +77,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget -qO- --timeout=2 http://127.0.0.1:9545 | grep -q jsonrpc"
+          "wget -qO- --timeout=2 http://127.0.0.1:9545 | grep -q chain_id"
         ]
       interval: 5s
       timeout: 3s
@@ -116,7 +122,7 @@ services:
           "$$EDGE_BIN" secrets init --insecure --data-dir "$$VALIDATOR_DIR"
           NODE_ID="$("$${EDGE_BIN}" secrets output --data-dir "$$VALIDATOR_DIR" --node-id | tail -n 1 | tr -d '\r\n')"
           "$$EDGE_BIN" genesis \
-            --dir "$$DATA_DIR" \
+            --dir "$$GENESIS" \
             --name "$${CHAIN_NAME}" \
             --chain-id "$${CHAIN_ID}" \
             --premine "$${PREMINE_ADDRESS}:$${PREMINE_AMOUNT_WEI}" \
@@ -161,7 +167,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget -qO- --timeout=2 http://127.0.0.1:10545 | grep -q jsonrpc"
+          "wget -qO- --timeout=2 http://127.0.0.1:10545 | grep -q chain_id"
         ]
       interval: 5s
       timeout: 3s
@@ -206,7 +212,7 @@ services:
           "$$EDGE_BIN" secrets init --insecure --data-dir "$$VALIDATOR_DIR"
           NODE_ID="$("$${EDGE_BIN}" secrets output --data-dir "$$VALIDATOR_DIR" --node-id | tail -n 1 | tr -d '\r\n')"
           "$$EDGE_BIN" genesis \
-            --dir "$$DATA_DIR" \
+            --dir "$$GENESIS" \
             --name "$${CHAIN_NAME}" \
             --chain-id "$${CHAIN_ID}" \
             --premine "$${PREMINE_ADDRESS}:$${PREMINE_AMOUNT_WEI}" \
@@ -454,6 +460,42 @@ services:
       ghostl2:
         condition: service_healthy
       ghostl3:
+        condition: service_healthy
+
+  ai-monitor:
+    image: node:22-alpine
+    user: "0:0"
+    working_dir: /app
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    volumes:
+      - ../services/ai-monitor:/app
+    environment:
+      RPC_L2: "http://ghostl2:9545"
+      GUARD_URL: "http://ghost-guard:7070"
+      PORT: "7575"
+      OBSERVE_ONLY: "${AI_MONITOR_OBSERVE_ONLY:-0}"
+      THROTTLE_THRESHOLD: "${AI_MONITOR_THROTTLE_THRESHOLD:-70}"
+      PAUSE_THRESHOLD: "${AI_MONITOR_PAUSE_THRESHOLD:-90}"
+      BASE_DELAY_MS: "${AI_MONITOR_BASE_DELAY_MS:-2000}"
+      MAX_DELAY_MS: "${AI_MONITOR_MAX_DELAY_MS:-8000}"
+      ADMIN_TOKEN: "${AI_MONITOR_ADMIN_TOKEN:-}"
+    command: sh -lc "npm ci --no-audit --no-fund && npm start"
+    ports:
+      - "7575:7575"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7575/health >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    networks: [ghostnet]
+    depends_on:
+      ghost-guard:
         condition: service_healthy
 
   prometheus:
