@@ -1,0 +1,130 @@
+version: "3.8"
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  l1:
+    image: ghcr.io/foundry-rs/foundry:latest
+    entrypoint: ["anvil"]
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8545"
+      - --chain-id
+      - "${L1_CHAIN_ID:-31337}"
+    ports:
+      - "28545:8545"
+    restart: unless-stopped
+    logging: *default-logging
+
+  l2-geth:
+    image: local/op-geth:latest
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - l1
+    ports:
+      - "29545:9545"
+    volumes:
+      - ./data/l2-geth:/data
+      - ./config/jwt.txt:/config/jwt.txt:ro
+    command: >
+      --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug
+      --http.vhosts="*"
+      --ws --ws.addr=0.0.0.0 --ws.origins="*"
+      --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts="*" --authrpc.jwtsecret=/config/jwt.txt
+      --datadir=/data
+      --networkid=${L2_CHAIN_ID:-901}
+      --gcmode=archive
+      --rollup.disabletxpoolgossip=true
+
+  op-node:
+    image: local/op-node:latest
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - l1
+      - l2-geth
+    volumes:
+      - ./data/op-node:/data
+      - ./config/rollup.json:/config/rollup.json:ro
+      - ./config/jwt.txt:/config/jwt.txt:ro
+    command:
+      - op-node
+      - --l1=${L1_RPC:-http://l1:8545}
+      - --l2=http://l2-geth:8551
+      - --l2.jwt-secret=/config/jwt.txt
+      - --rollup.config=/config/rollup.json
+      - --rpc.addr=0.0.0.0
+      - --rpc.port=9546
+      - --l1.rpckind=basic
+      - --p2p.disable
+    ports:
+      - "9546:9546"
+
+  op-batcher:
+    image: local/op-batcher:latest
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - op-node
+    environment:
+      L2OO_ADDRESS: "${L2OO_ADDRESS:-0x0000000000000000000000000000000000000000}"
+    command:
+      - op-batcher
+      - --l1-eth-rpc=http://l1:8545
+      - --l2-eth-rpc=http://l2-geth:9545
+      - --rollup-rpc=http://op-node:9546
+      - --private-key=${BATCHER_KEY}
+      - --rpc.addr=0.0.0.0
+      - --rpc.port=8551
+      - --submitsinglesync=true
+    volumes:
+      - ./config/rollup.json:/config/rollup.json:ro
+    ports:
+      - "8551:8551"
+
+  op-proposer:
+    image: local/op-proposer:latest
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - op-node
+    command:
+      - op-proposer
+      - --l1-eth-rpc=http://l1:8545
+      - --l2-eth-rpc=http://l2-geth:9545
+      - --rollup-rpc=http://op-node:9546
+      - --private-key=${PROPOSER_KEY}
+      - --allow-non-finalized
+      - --rpc.addr=0.0.0.0
+      - --rpc.port=8560
+    volumes:
+      - ./config/rollup.json:/config/rollup.json:ro
+    ports:
+      - "8560:8560"
+
+  # Challenger requires Kona/cannon base images; leave optional for now.
+  # op-challenger:
+  #   image: local/op-challenger:latest
+  #   restart: unless-stopped
+  #   logging: *default-logging
+  #   depends_on:
+  #     - op-node
+  #   command:
+  #     - op-challenger
+  #     - --l2=http://l2-geth:9545
+  #     - --l1=${L1_RPC:-http://l1:8545}
+  #     - --rollup.config=/config/rollup.json
+  #     - --rpc.addr=0.0.0.0
+  #     - --rpc.port=8561
+  #     - --private-key=${CHALLENGER_KEY}
+  #   volumes:
+  #     - ./config/rollup.json:/config/rollup.json:ro
+  #   ports:
+  #     - "8561:8561"
