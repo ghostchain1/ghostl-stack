@@ -1,0 +1,125 @@
+version: "3.8"
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  l3-geth:
+    image: local/op-geth:latest
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - l2-geth
+    ports:
+      - "${L3_HOST_RPC:-39545}:8545"
+    volumes:
+      - ./l3/${L3_NAME:-ghostl3}/data:/data
+      - ./l3/${L3_NAME:-ghostl3}/config/jwt.txt:/config/jwt.txt:ro
+      - ./l3/${L3_NAME:-ghostl3}/config/genesis.json:/config/genesis.json:ro
+    entrypoint: ["/bin/sh"]
+    command:
+      - -c
+      - |
+        set -e
+        if [ ! -d /data/geth ]; then
+          echo "[l3-geth] initializing genesis..."
+          geth init --datadir /data /config/genesis.json
+        fi
+        exec geth \
+          --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug \
+          --http.vhosts="*" \
+          --ws --ws.addr=0.0.0.0 --ws.origins="*" \
+          --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts="*" --authrpc.jwtsecret=/config/jwt.txt \
+          --datadir=/data \
+          --networkid=${L3_CHAIN_ID:-902} \
+          --gcmode=archive \
+          --rollup.disabletxpoolgossip=true
+
+  l3-op-node:
+    image: local/op-node:latest
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - l3-geth
+    volumes:
+      - ./l3/${L3_NAME:-ghostl3}/data/op-node:/data
+      - ./l3/${L3_NAME:-ghostl3}/config/rollup.json:/config/rollup.json:ro
+      - ./l3/${L3_NAME:-ghostl3}/config/jwt.txt:/config/jwt.txt:ro
+      - ./l3/${L3_NAME:-ghostl3}/config/l1-chain.json:/config/l1-chain.json:ro
+    environment:
+      OP_NODE_L1_BEACON_IGNORE: "1"
+      OP_NODE_SEQUENCER_ENABLED: "1"
+    command:
+      - op-node
+      - --l1=${L3_L1_RPC:-http://l2-geth:8545}
+      - --l2=http://l3-geth:8551
+      - --l2.jwt-secret=/config/jwt.txt
+      - --rollup.config=/config/rollup.json
+      - --rollup.l1-chain-config=/config/l1-chain.json
+      - --rpc.addr=0.0.0.0
+      - --rpc.port=${L3_ROLLUP_RPC_PORT:-19546}
+      - --l1.rpckind=basic
+      - --p2p.disable
+      - --l1.beacon.ignore
+      - --sequencer.enabled
+      - --sequencer.l1-confs=0
+      - --metrics.enabled
+      - --metrics.addr=0.0.0.0
+      - --metrics.port=${L3_METRICS_NODE_PORT:-8300}
+    ports:
+      - "${L3_ROLLUP_RPC_HOST_PORT:-39546}:${L3_ROLLUP_RPC_PORT:-19546}"
+      - "${L3_METRICS_NODE_HOST_PORT:-8300}:${L3_METRICS_NODE_PORT:-8300}"
+
+  l3-op-batcher:
+    image: local/op-batcher:latest
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - l3-op-node
+    environment:
+      L2OO_ADDRESS: "${L3_L2OO_ADDRESS:-0x0000000000000000000000000000000000000000}"
+    command:
+      - op-batcher
+      - --l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}
+      - --l2-eth-rpc=http://l3-geth:8545
+      - --rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}
+      - --private-key=${L3_BATCHER_KEY:-${BATCHER_KEY}}
+      - --rpc.addr=0.0.0.0
+      - --rpc.port=${L3_BATCHER_RPC_PORT:-18551}
+      - --metrics.enabled
+      - --metrics.addr=0.0.0.0
+      - --metrics.port=${L3_METRICS_BATCHER_PORT:-8301}
+    volumes:
+      - ./l3/${L3_NAME:-ghostl3}/config/rollup.json:/config/rollup.json:ro
+    ports:
+      - "${L3_BATCHER_HOST_PORT:-39551}:${L3_BATCHER_RPC_PORT:-18551}"
+      - "${L3_METRICS_BATCHER_HOST_PORT:-8301}:${L3_METRICS_BATCHER_PORT:-8301}"
+
+  l3-op-proposer:
+    image: local/op-proposer:latest
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - l3-op-node
+    command:
+      - op-proposer
+      - --l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}
+      - --rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}
+      - --game-factory-address=${L3_GAME_FACTORY_ADDRESS:-0x2349B04c147099fa4d6366a0A85629F8aE0FEc96}
+      - --proposal-interval=30s
+      - --game-type=0
+      - --private-key=${L3_PROPOSER_KEY:-${PROPOSER_KEY}}
+      - --allow-non-finalized
+      - --rpc.addr=0.0.0.0
+      - --rpc.port=${L3_PROPOSER_RPC_PORT:-18560}
+      - --metrics.enabled
+      - --metrics.addr=0.0.0.0
+      - --metrics.port=${L3_METRICS_PROPOSER_PORT:-8302}
+    volumes:
+      - ./l3/${L3_NAME:-ghostl3}/config/rollup.json:/config/rollup.json:ro
+    ports:
+      - "${L3_PROPOSER_HOST_PORT:-39560}:${L3_PROPOSER_RPC_PORT:-18560}"
+      - "${L3_METRICS_PROPOSER_HOST_PORT:-8302}:${L3_METRICS_PROPOSER_PORT:-8302}"
