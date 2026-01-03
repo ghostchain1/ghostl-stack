@@ -1,0 +1,9 @@
+{
+  "name": "op-gate",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "ethers": "^6.13.3",
+    "express": "^4.19.2"
+  }
+}

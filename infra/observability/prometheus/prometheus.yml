@@ -32,3 +32,23 @@ scrape_configs:
     metrics_path: /metrics/prom
     static_configs:
       - targets: ["ghost-rollup-challenger-l3:7383"]
+
+  - job_name: opstack-node
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:7300"]
+
+  - job_name: opstack-batcher
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:7301"]
+
+  - job_name: opstack-proposer
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:7302"]
+
+  - job_name: op-gate
+    metrics_path: /metrics/prom
+    static_configs:
+      - targets: ["host.docker.internal:28546"]
