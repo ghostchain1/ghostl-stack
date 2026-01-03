@@ -2,7 +2,7 @@
   "name": "ghostl-stack",
   "dockerComposeFile": ["docker-compose.yml"],
   "service": "workspace",
-  "workspaceFolder": "/workspaces/ghostl-stack",
+  "workspaceFolder": "/home/ghost/ghostl-stack",
   "features": {
     "ghcr.io/devcontainers/features/node:1": { "version": "22" },
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
