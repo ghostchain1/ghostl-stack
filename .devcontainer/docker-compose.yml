@@ -91,13 +91,21 @@ services:
         DATA_DIR="/data"
         VALIDATOR_DIR="$$DATA_DIR/validator-1"
         GENESIS="$$DATA_DIR/genesis.json"
+        EXPECTED_CHAIN_ID="$${CHAIN_ID}"
+
+        regen_reason=""
+        if [ -f "$$GENESIS" ]; then
+          if ! grep -q "\"chainID\": $${EXPECTED_CHAIN_ID}" "$$GENESIS"; then
+            regen_reason="chain id changed"
+          fi
+        fi
 
         ensure_perms() {
           chmod -R a+rwX "$$DATA_DIR" >/dev/null 2>&1 || true
         }
 
-        if [ ! -f "$$GENESIS" ] || [ ! -f "$$VALIDATOR_DIR/consensus/validator.key" ]; then
-          echo "[$${CHAIN_NAME}] initializing chain data..."
+        if [ -n "$$regen_reason" ] || [ ! -f "$$GENESIS" ] || [ ! -f "$$VALIDATOR_DIR/consensus/validator.key" ]; then
+          echo "[$${CHAIN_NAME}] initializing chain data... $${regen_reason}"
           rm -rf "$$DATA_DIR"/*
           mkdir -p "$$DATA_DIR" "$$VALIDATOR_DIR"
           "$$EDGE_BIN" secrets init --insecure --data-dir "$$VALIDATOR_DIR"
@@ -169,13 +177,21 @@ services:
         DATA_DIR="/data"
         VALIDATOR_DIR="$$DATA_DIR/validator-1"
         GENESIS="$$DATA_DIR/genesis.json"
+        EXPECTED_CHAIN_ID="$${CHAIN_ID}"
+
+        regen_reason=""
+        if [ -f "$$GENESIS" ]; then
+          if ! grep -q "\"chainID\": $${EXPECTED_CHAIN_ID}" "$$GENESIS"; then
+            regen_reason="chain id changed"
+          fi
+        fi
 
         ensure_perms() {
           chmod -R a+rwX "$$DATA_DIR" >/dev/null 2>&1 || true
         }
 
-        if [ ! -f "$$GENESIS" ] || [ ! -f "$$VALIDATOR_DIR/consensus/validator.key" ]; then
-          echo "[$${CHAIN_NAME}] initializing chain data..."
+        if [ -n "$$regen_reason" ] || [ ! -f "$$GENESIS" ] || [ ! -f "$$VALIDATOR_DIR/consensus/validator.key" ]; then
+          echo "[$${CHAIN_NAME}] initializing chain data... $${regen_reason}"
           rm -rf "$$DATA_DIR"/*
           mkdir -p "$$DATA_DIR" "$$VALIDATOR_DIR"
           "$$EDGE_BIN" secrets init --insecure --data-dir "$$VALIDATOR_DIR"
