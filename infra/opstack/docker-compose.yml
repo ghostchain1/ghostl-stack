@@ -29,19 +29,27 @@ services:
     depends_on:
       - l1
     ports:
-      - "29545:9545"
+      - "29545:8545"
     volumes:
       - ./data/l2-geth:/data
       - ./config/jwt.txt:/config/jwt.txt:ro
+      - ./config/genesis-l2.json:/config/genesis-l2.json:ro
+    entrypoint: ["/bin/sh", "-c"]
     command: >
-      --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug
-      --http.vhosts="*"
-      --ws --ws.addr=0.0.0.0 --ws.origins="*"
-      --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts="*" --authrpc.jwtsecret=/config/jwt.txt
-      --datadir=/data
-      --networkid=${L2_CHAIN_ID:-901}
-      --gcmode=archive
-      --rollup.disabletxpoolgossip=true
+      set -e
+      if [ ! -d /data/geth ]; then
+        echo "[l2-geth] initializing genesis..."
+        geth init --datadir /data /config/genesis-l2.json
+      fi
+      exec geth
+        --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug
+        --http.vhosts="*"
+        --ws --ws.addr=0.0.0.0 --ws.origins="*"
+        --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts="*" --authrpc.jwtsecret=/config/jwt.txt
+        --datadir=/data
+        --networkid=${L2_CHAIN_ID:-901}
+        --gcmode=archive
+        --rollup.disabletxpoolgossip=true
 
   op-node:
     image: local/op-node:latest
@@ -54,6 +62,8 @@ services:
       - ./data/op-node:/data
       - ./config/rollup.json:/config/rollup.json:ro
       - ./config/jwt.txt:/config/jwt.txt:ro
+    environment:
+      OP_NODE_L1_BEACON_IGNORE: "1"
     command:
       - op-node
       - --l1=${L1_RPC:-http://l1:8545}
@@ -64,6 +74,7 @@ services:
       - --rpc.port=9546
       - --l1.rpckind=basic
       - --p2p.disable
+      - --l1.beacon.ignore
     ports:
       - "9546:9546"
 
@@ -78,12 +89,11 @@ services:
     command:
       - op-batcher
       - --l1-eth-rpc=http://l1:8545
-      - --l2-eth-rpc=http://l2-geth:9545
+      - --l2=http://l2-geth:8551
       - --rollup-rpc=http://op-node:9546
       - --private-key=${BATCHER_KEY}
       - --rpc.addr=0.0.0.0
       - --rpc.port=8551
-      - --submitsinglesync=true
     volumes:
       - ./config/rollup.json:/config/rollup.json:ro
     ports:
@@ -98,7 +108,7 @@ services:
     command:
       - op-proposer
       - --l1-eth-rpc=http://l1:8545
-      - --l2-eth-rpc=http://l2-geth:9545
+      - --l2=http://l2-geth:8551
       - --rollup-rpc=http://op-node:9546
       - --private-key=${PROPOSER_KEY}
       - --allow-non-finalized
