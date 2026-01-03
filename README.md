@@ -169,6 +169,9 @@ Both `ghost-guard` and `ghost-relayer` persist a block cursor in `/state/cursor.
 - Node.js + npm
 - `git-lfs` (repo has an LFS `pre-push` hook; Codespaces installs it via devcontainer feature)
   - If you hit the hook error locally: `bash infra/scripts/git_lfs_fix.sh`
+- Polygonscan verification (Polygon / Amoy):
+  - Set `POLYGONSCAN_API_KEY`, `POLYGON_RPC_URL` (mainnet) and/or `POLYGON_AMOY_RPC_URL`, plus `DEPLOYER_PRIVATE_KEY`.
+  - Example (mainnet): `cd contracts && POLYGONSCAN_API_KEY=... POLYGON_RPC_URL=... DEPLOYER_PRIVATE_KEY=... npx hardhat verify --network polygon 0xYourDeployedAddress`
 
 ## Config files
 
