@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd /workspaces/ghostl-stack/.devcontainer
+cd/home/ghost/ghostl-stack//.devcontainer
 docker compose down
