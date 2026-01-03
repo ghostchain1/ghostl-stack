@@ -3,7 +3,7 @@ services:
     image: mcr.microsoft.com/devcontainers/base:ubuntu
     command: sleep infinity
     volumes:
-      - ..:/workspaces/ghostl-stack:cached
+      - ..:/home/ghost/ghostl-stack:cached
       - /var/run/docker.sock:/var/run/docker.sock
     networks: [ghostnet]
 
