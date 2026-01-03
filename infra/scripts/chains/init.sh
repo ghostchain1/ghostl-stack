@@ -62,6 +62,7 @@ init_chain() {
     echo "[$chain] generating genesis + validator secrets..."
 
     if [ ! -f "$data/validator-1/consensus/validator.key" ]; then
+      mkdir -p "$data/validator-1"
       docker run --rm -v "$data:/data" "$IMAGE" \
         secrets init --insecure --data-dir /data/validator-1 >/dev/null
     fi
@@ -75,7 +76,7 @@ init_chain() {
 
     docker run --rm -v "$data:/data" "$IMAGE" \
       genesis \
-      --dir /data/genesis.json \
+      --dir /data \
       --name "$name" \
       --chain-id "$chain_id" \
       --premine "$premine_addr:$premine_amt" \
