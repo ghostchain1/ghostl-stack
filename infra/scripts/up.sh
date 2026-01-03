@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "Initializing chains..."
-bash/home/ghost/ghostl-stack//infra/scripts/chains/init.sh
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-cd/home/ghost/ghostl-stack//.devcontainer
+echo "Initializing chains..."
+bash "$ROOT/infra/scripts/chains/init.sh"
+
+cd "$ROOT/.devcontainer"
 docker compose up -d --build anvil ghostl2 ghostl3 workspace
 
 echo "Waiting for RPCs..."
@@ -25,11 +27,11 @@ for url in http://localhost:8545 http://localhost:9545 http://localhost:10545; d
 done
 
 echo "Deploying contracts..."
-cd/home/ghost/ghostl-stack/contracts
+cd "$ROOT/contracts"
 npm run deploy:all
 
 echo "Starting Ghost Guard..."
-cd/home/ghost/ghostl-stack/.devcontainer
+cd "$ROOT/.devcontainer"
 docker compose up -d --build ghost-guard
 
 echo "Starting Ghost Relayer..."
