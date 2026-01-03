@@ -1,7 +1,9 @@
 import { ethers } from "hardhat";
 import fs from "node:fs/promises";
+import path from "node:path";
 
 async function main() {
+  const ROOT = process.env.ROOT_DIR ?? path.resolve(__dirname, "..", "..");
   const bridgeAddress = process.env.BRIDGE_L2L3_ADDRESS;
   const tokenAddress = process.env.L2_TOKEN_ADDRESS;
   if (!bridgeAddress || !tokenAddress) {
@@ -43,8 +45,9 @@ async function main() {
     depositTx: tx.hash
   };
 
-  const outPath = "/workspaces/ghostl-stack/.tmp/last_deposit_erc20.json";
-  await fs.mkdir("/workspaces/ghostl-stack/.tmp", { recursive: true });
+  const tmpDir = path.join(ROOT, ".tmp");
+  const outPath = path.join(tmpDir, "last_deposit_erc20.json");
+  await fs.mkdir(tmpDir, { recursive: true });
   await fs.writeFile(outPath, JSON.stringify(out, null, 2) + "\n", "utf8");
   console.log("Wrote:", outPath);
 }
@@ -53,4 +56,3 @@ main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
-

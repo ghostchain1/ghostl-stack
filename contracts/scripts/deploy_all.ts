@@ -1,6 +1,10 @@
 import { ethers } from "hardhat";
+import path from "node:path";
+import { promises as fs } from "node:fs";
 
 async function main() {
+  const ROOT = process.env.ROOT_DIR ?? path.resolve(__dirname, "..", "..");
+
   // Deploy policy + bridge on L2 (GhostL2)
   const l2 = await ethers.getSigners();
 
@@ -93,8 +97,7 @@ async function main() {
   console.log("L3BridgedToken (L3, default):", l3TokenAddr);
 
   // Write addresses for ghost-guard env
-  const fs = await import("node:fs/promises");
-  const envPath = "/workspaces/ghostl-stack/services/ghost-guard/.env";
+  const envPath = path.join(ROOT, "services/ghost-guard/.env");
   const env = [
     `PORT=7070`,
     `RPC_L2=http://localhost:9545`,
@@ -113,7 +116,7 @@ async function main() {
   await fs.writeFile(envPath, env, "utf8");
   console.log("Wrote:", envPath);
 
-  const relayerEnvPath = "/workspaces/ghostl-stack/services/ghost-relayer/.env";
+  const relayerEnvPath = path.join(ROOT, "services/ghost-relayer/.env");
   const relayerEnv = [
     `PORT=7171`,
     `RPC_L1=http://localhost:8545`,
@@ -134,7 +137,7 @@ async function main() {
   await fs.writeFile(relayerEnvPath, relayerEnv, "utf8");
   console.log("Wrote:", relayerEnvPath);
 
-  const proposerDir = "/workspaces/ghostl-stack/services/ghost-rollup-proposer";
+  const proposerDir = path.join(ROOT, "services/ghost-rollup-proposer");
   const proposerL2Path = `${proposerDir}/.env.l2`;
   const proposerL3Path = `${proposerDir}/.env.l3`;
   const proposerL2Env = [
@@ -163,7 +166,7 @@ async function main() {
   console.log("Wrote:", proposerL2Path);
   console.log("Wrote:", proposerL3Path);
 
-  const challengerDir = "/workspaces/ghostl-stack/services/ghost-rollup-challenger";
+  const challengerDir = path.join(ROOT, "services/ghost-rollup-challenger");
   const challengerL2Path = `${challengerDir}/.env.l2`;
   const challengerL3Path = `${challengerDir}/.env.l3`;
   const challengerL2Env = [
