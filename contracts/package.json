@@ -3,7 +3,9 @@
   "private": true,
   "scripts": {
     "build": "hardhat compile",
-    "deploy:all": "hardhat run --network ghostl2 scripts/deploy_all.ts",
+    "deploy:all": "npm run deploy:edge",
+    "deploy:edge": "hardhat run --network ghostl2 scripts/deploy_all.ts",
+    "deploy:op": "hardhat run --network ghostl2Op scripts/deploy_all.ts",
     "test": "hardhat test"
   },
   "devDependencies": {
