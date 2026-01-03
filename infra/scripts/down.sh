@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd/home/ghost/ghostl-stack//.devcontainer
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$ROOT/.devcontainer"
 docker compose down

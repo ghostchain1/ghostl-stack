@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="/workspaces/ghostl-stack"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="${ROOT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)}"
 
 addr="${1:-}"
 if [ -z "$addr" ]; then
@@ -35,4 +36,3 @@ if [ "$apply_to_l3" -eq 1 ]; then
 fi
 
 echo "Next: bash infra/scripts/reset.sh && bash infra/scripts/up.sh"
-

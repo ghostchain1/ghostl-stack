@@ -1,7 +1,9 @@
 import { ethers } from "hardhat";
 import fs from "node:fs/promises";
+import path from "node:path";
 
 async function main() {
+  const ROOT = process.env.ROOT_DIR ?? path.resolve(__dirname, "..", "..");
   const l3TokenAddress = process.env.L3_TOKEN_ADDRESS;
   if (!l3TokenAddress) {
     throw new Error("Missing env L3_TOKEN_ADDRESS (source services/ghost-relayer/.env first)");
@@ -35,8 +37,9 @@ async function main() {
     burnTx: tx.hash
   };
 
-  const outPath = "/workspaces/ghostl-stack/.tmp/last_withdraw_erc20.json";
-  await fs.mkdir("/workspaces/ghostl-stack/.tmp", { recursive: true });
+  const tmpDir = path.join(ROOT, ".tmp");
+  const outPath = path.join(tmpDir, "last_withdraw_erc20.json");
+  await fs.mkdir(tmpDir, { recursive: true });
   await fs.writeFile(outPath, JSON.stringify(out, null, 2) + "\n", "utf8");
   console.log("Wrote:", outPath);
 }
@@ -45,4 +48,3 @@ main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
-

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="/workspaces/ghostl-stack"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="${ROOT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)}"
 # Pin to a released build; `latest` drifts and can break existing chain data.
 IMAGE="0xpolygon/polygon-edge:1.3.2"
 NETWORK="devcontainer_ghostnet"

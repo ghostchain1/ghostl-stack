@@ -24,7 +24,8 @@ install_one() {
   fi
 }
 
-ROOT="/home/ghost/ghostl-stack"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="${ROOT:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 
 if command -v git-lfs >/dev/null 2>&1; then
   # Ensure LFS filters/hooks are configured in this environment.
