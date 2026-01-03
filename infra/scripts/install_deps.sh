@@ -24,7 +24,7 @@ install_one() {
   fi
 }
 
-ROOT="/workspaces/ghostl-stack"
+ROOT="/home/ghost/ghostl-stack"
 
 if command -v git-lfs >/dev/null 2>&1; then
   # Ensure LFS filters/hooks are configured in this environment.
