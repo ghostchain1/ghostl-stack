@@ -24,3 +24,9 @@ Defaults:
 - Metrics: `8300/8301/8302`
 
 ⚠️ The generated `rollup.json` and `genesis.json` keep placeholder contract addresses from the L2 template; update them with your L3 deployments before relying on the chain.
+
+## Smoke test an L3
+```bash
+bash infra/scripts/opstack/l3/smoke.sh infra/opstack/l3/ghostpay/.env
+```
+Checks chainId, latest block from the L3 RPC, and rollup RPC syncing status.
