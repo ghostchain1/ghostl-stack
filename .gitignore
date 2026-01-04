@@ -25,3 +25,7 @@ services/ghost-rollup-challenger/.env.l3
 
 # polygon-edge chain data (generated)
 chains/**/data/
+
+# local infra node data (permission restricted)
+infra/opstack/l3/ghostsample/data/
+infra/opstack/data/l2-geth/
