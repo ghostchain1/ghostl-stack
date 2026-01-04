@@ -45,6 +45,13 @@ const CONFIRMATIONS = Number.isFinite(confirmationsRaw) && confirmationsRaw >= 0
 const graphWindowRaw = Number(process.env.GRAPH_WINDOW_SECONDS || "3600");
 const GRAPH_WINDOW_SECONDS =
   Number.isFinite(graphWindowRaw) && graphWindowRaw > 0 ? Math.floor(graphWindowRaw) : 3600;
+const autoChallengeUrl = process.env.AUTO_CHALLENGE_URL || "";
+const autoChallengeDryRun = process.env.AUTO_CHALLENGE_DRY_RUN === "1";
+const autoChallengeThresholdRaw = Number(process.env.AUTO_CHALLENGE_THRESHOLD || "90");
+const AUTO_CHALLENGE_THRESHOLD =
+  Number.isFinite(autoChallengeThresholdRaw) && autoChallengeThresholdRaw >= 0
+    ? Math.floor(autoChallengeThresholdRaw)
+    : 90;
 
 if (!RPC_L2 || !BRIDGE || !POLICY) {
   console.error("Missing env: RPC_L2, BRIDGE_L2L3_ADDRESS, GUARD_POLICY_ADDRESS");
@@ -127,7 +134,18 @@ const metrics = {
   depositsSeen: 0,
   policyWrites: 0,
   policyWriteErrors: 0,
-  alerts: 0
+  alerts: 0,
+  autoChallengeAttempts: 0,
+  autoChallengeErrors: 0,
+  autoChallengeLast: null as null | {
+    risk: number;
+    tx: string;
+    batchId?: number;
+    dryRun: boolean;
+    reason: string;
+    at: number;
+    response?: any;
+  }
 };
 
 const depositTopic = ethers.id("DepositInitiated(address,address,uint256,uint256)");
@@ -356,6 +374,36 @@ async function handleDepositLog(log: ethers.Log) {
       console.log("[Guard] High risk => policy paused.");
       pushLog("warn", "[Guard] High risk => policy paused.", { risk });
     }
+
+    // Auto trigger challenger when risk is high.
+    if (autoChallengeUrl && risk >= AUTO_CHALLENGE_THRESHOLD) {
+      metrics.autoChallengeAttempts += 1;
+      try {
+        const resp = await fetch(autoChallengeUrl, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            reason: `risk=${risk}`,
+            risk,
+            dryRun: autoChallengeDryRun
+          })
+        });
+        const body = await resp.json().catch(() => ({}));
+        metrics.autoChallengeLast = {
+          risk,
+          tx: body?.lastChallenged?.tx || "",
+          batchId: body?.lastChecked?.batchId ?? body?.lastChallenged?.batchId,
+          dryRun: autoChallengeDryRun || Boolean(body?.observeOnly) || Boolean(body?.dryRun),
+          reason: "guard_high_risk",
+          at: Date.now(),
+          response: body
+        };
+        console.log("[Guard] Auto challenge trigger sent", metrics.autoChallengeLast);
+      } catch (e) {
+        metrics.autoChallengeErrors += 1;
+        console.warn("[Guard] Auto challenge trigger failed:", e);
+      }
+    }
   } catch (e) {
     console.error("[Guard] Failed to write policy:", e);
     pushLog("error", "[Guard] Failed to write policy", { error: String(e) });
@@ -521,7 +569,7 @@ app.get("/metrics", async (_req, res) => {
 function promLine(name: string, value: number | string, labels?: Record<string, string>) {
   const l = labels
     ? `{${Object.entries(labels)
-        .map(([k, v]) => `${k}=\"${String(v).replaceAll("\\", "\\\\").replaceAll("\"", "\\\"")}\"`)
+        .map(([k, v]) => `${k}="${String(v).replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`)
         .join(",")}}`
     : "";
   return `${name}${l} ${value}\n`;
@@ -529,23 +577,22 @@ function promLine(name: string, value: number | string, labels?: Record<string, 
 
 app.get("/metrics/prom", async (_req, res) => {
   res.type("text/plain; version=0.0.4");
-  const up = 1;
   let out = "";
-  out += promLine("ghost_guard_up", up);
+  out += promLine("ghost_guard_up", 1);
   out += promLine("ghost_guard_polls_total", metrics.polls);
   out += promLine("ghost_guard_logs_seen_total", metrics.logsSeen);
   out += promLine("ghost_guard_deposits_seen_total", metrics.depositsSeen);
   out += promLine("ghost_guard_policy_writes_total", metrics.policyWrites);
   out += promLine("ghost_guard_policy_write_errors_total", metrics.policyWriteErrors);
   out += promLine("ghost_guard_alerts_total", metrics.alerts);
-  out += promLine("ghost_guard_allowlist_size", allowlist.size);
-  out += promLine("ghost_guard_blocklist_size", blocklist.size);
-  out += promLine("ghost_guard_first_seen_entries", firstSeen.size);
-  out += promLine("ghost_guard_auto_pause_enabled", AUTO_PAUSE ? 1 : 0);
-  out += promLine("ghost_guard_auto_action", 1, { mode: AUTO_ACTION || "legacy" });
-  out += promLine("ghost_guard_quarantine_delay_seconds", QUARANTINE_DELAY_SECONDS);
-  out += promLine("ghost_guard_auto_quarantine_threshold", AUTO_QUARANTINE_THRESHOLD);
-  out += promLine("ghost_guard_auto_pause_threshold", AUTO_PAUSE_THRESHOLD);
+  out += promLine("ghost_guard_auto_challenge_attempts_total", metrics.autoChallengeAttempts);
+  out += promLine("ghost_guard_auto_challenge_errors_total", metrics.autoChallengeErrors);
+  if (metrics.autoChallengeLast) {
+    out += promLine("ghost_guard_auto_challenge_last_risk", metrics.autoChallengeLast.risk);
+    if (metrics.autoChallengeLast.batchId !== undefined) {
+      out += promLine("ghost_guard_auto_challenge_last_batch_id", metrics.autoChallengeLast.batchId);
+    }
+  }
   res.send(out);
 });
 

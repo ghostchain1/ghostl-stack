@@ -12,6 +12,7 @@ const CHALLENGER_PRIVATE_KEY = process.env.CHALLENGER_PRIVATE_KEY || "";
 const STATE_DIR = process.env.STATE_DIR || "/state";
 const confirmationsRaw = Number(process.env.CONFIRMATIONS || "0");
 const CONFIRMATIONS = Number.isFinite(confirmationsRaw) && confirmationsRaw >= 0 ? Math.floor(confirmationsRaw) : 0;
+const DRY_RUN = process.env.CHALLENGER_DRY_RUN === "1";
 
 if (!RPC_SETTLEMENT || !RPC_CHILD || !ROLLUP) {
   console.error("Missing env: RPC_SETTLEMENT, RPC_CHILD, ROLLUP_ADDRESS");
@@ -98,10 +99,13 @@ function scrubError(e: any) {
 const metrics = {
   startedAt: Date.now(),
   observeOnly,
+  dryRun: DRY_RUN,
   checks: 0,
   mismatches: 0,
   challengesSent: 0,
   errors: 0,
+  triggers: 0,
+  triggerErrors: 0,
   lastChecked: null as any,
   lastChallenged: null as any
 };
@@ -140,12 +144,15 @@ async function checkOneBatch(batchId: number) {
 
   metrics.mismatches += 1;
   const reason = `root mismatch computed=${computed}`;
-  if (observeOnly) return;
+  if (observeOnly || DRY_RUN) {
+    metrics.lastChallenged = { batchId, tx: null, reason, dryRun: true };
+    return;
+  }
 
   const tx = await rollup.challengeBatch(batchId, reason);
   await tx.wait();
   metrics.challengesSent += 1;
-  metrics.lastChallenged = { batchId, tx: tx.hash, reason };
+  metrics.lastChallenged = { batchId, tx: tx.hash, reason, dryRun: false };
 }
 
 async function tick() {
@@ -177,6 +184,28 @@ tick();
 setInterval(tick, 2000);
 
 const app = express();
+app.use(express.json({ limit: "1mb" }));
+
+app.post("/trigger", async (req, res) => {
+  if (inFlight) return res.status(429).json({ ok: false, error: "busy" });
+  const batchIdRaw = req.body?.batchId;
+  metrics.triggers += 1;
+  try {
+    if (batchIdRaw !== undefined) {
+      const n = Number(batchIdRaw);
+      if (!Number.isFinite(n) || n < 0) return res.status(400).json({ ok: false, error: "invalid batchId" });
+      await checkOneBatch(Math.floor(n));
+      metrics.lastChecked = { batchId: Math.floor(n), forced: true };
+    } else {
+      await tick();
+    }
+    res.json({ ok: true, observeOnly, dryRun: DRY_RUN, lastChecked: metrics.lastChecked, lastChallenged: metrics.lastChallenged });
+  } catch (e: any) {
+    metrics.triggerErrors += 1;
+    res.status(500).json({ ok: false, error: scrubError(e) });
+  }
+});
+
 app.get("/health", async (_req, res) => {
   try {
     const settlementChainId = await settlement.send("eth_chainId", []);
@@ -211,10 +240,13 @@ app.get("/metrics/prom", (_req, res) => {
   let out = "";
   out += promLine("ghost_rollup_challenger_up", 1);
   out += promLine("ghost_rollup_challenger_observe_only", observeOnly ? 1 : 0);
+  out += promLine("ghost_rollup_challenger_dry_run", DRY_RUN ? 1 : 0);
   out += promLine("ghost_rollup_challenger_checks_total", metrics.checks);
   out += promLine("ghost_rollup_challenger_mismatches_total", metrics.mismatches);
   out += promLine("ghost_rollup_challenger_challenges_sent_total", metrics.challengesSent);
   out += promLine("ghost_rollup_challenger_errors_total", metrics.errors);
+  out += promLine("ghost_rollup_challenger_triggers_total", metrics.triggers);
+  out += promLine("ghost_rollup_challenger_trigger_errors_total", metrics.triggerErrors);
   out += promLine("ghost_rollup_challenger_confirmations", CONFIRMATIONS);
   res.send(out);
 });

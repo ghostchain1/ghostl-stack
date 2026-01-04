@@ -44,6 +44,60 @@
       ],
       "title": "Relayer Activity",
       "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 14 },
+      "id": 4,
+      "options": { "legend": { "displayMode": "list", "placement": "right" } },
+      "targets": [
+        { "expr": "up{job=~\"opstack-node|opstack-batcher|opstack-proposer|op-gate\"}", "refId": "A" }
+      ],
+      "title": "OP Stack Up",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "id": 5,
+      "options": { "legend": { "displayMode": "table", "placement": "right" } },
+      "targets": [
+        { "expr": "op_gate_blocked_total", "refId": "A" },
+        { "expr": "op_gate_delayed_total", "refId": "B" },
+        { "expr": "op_gate_proxied_total", "refId": "C" }
+      ],
+      "title": "Gate Decisions",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "id": 6,
+      "options": { "legend": { "displayMode": "table", "placement": "right" } },
+      "targets": [
+        { "expr": "ghost_guard_auto_challenge_attempts_total", "refId": "A" },
+        { "expr": "ghost_guard_auto_challenge_errors_total", "refId": "B" },
+        { "expr": "ghost_rollup_challenger_triggers_total", "refId": "C" },
+        { "expr": "ghost_rollup_challenger_trigger_errors_total", "refId": "D" }
+      ],
+      "title": "Auto-Challenge Trigger",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "id": 7,
+      "options": { "legend": { "displayMode": "table", "placement": "right" } },
+      "targets": [
+        { "expr": "ghost_rollup_challenger_mismatches_total", "refId": "A" },
+        { "expr": "ghost_rollup_challenger_challenges_sent_total", "refId": "B" }
+      ],
+      "title": "Challenger Outcomes",
+      "type": "timeseries"
     }
   ],
   "refresh": "5s",
