@@ -15,15 +15,24 @@
     "arrowGlacierBlock": 0,
     "grayGlacierBlock": 0,
     "mergeNetsplitBlock": 0,
-    "terminalTotalDifficulty": 0,
     "shanghaiTime": 0,
     "cancunTime": 0,
-    "blobSchedule": {
-      "cancun": {
-        "target": 3,
-        "max": 6,
-        "baseFeeUpdateFraction": 3338477
-      }
+    "pragueTime": 0,
+    "bedrockBlock": 0,
+    "regolithTime": 0,
+    "canyonTime": 0,
+    "ecotoneTime": 0,
+    "fjordTime": 0,
+    "graniteTime": 0,
+    "holoceneTime": 0,
+    "isthmusTime": 0,
+    "jovianTime": 0,
+    "terminalTotalDifficulty": 0,
+    "depositContractAddress": "0x0000000000000000000000000000000000000000",
+    "optimism": {
+      "eip1559Elasticity": 6,
+      "eip1559Denominator": 50,
+      "eip1559DenominatorCanyon": 250
     }
   },
   "nonce": "0x0",
