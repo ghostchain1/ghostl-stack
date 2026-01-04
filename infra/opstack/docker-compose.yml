@@ -109,6 +109,7 @@ services:
       - --l1.beacon.ignore
       - --sequencer.enabled
       - --sequencer.l1-confs=0
+      - --l1.runtime-config-reload-interval=0
       - --metrics.enabled
       - --metrics.addr=0.0.0.0
       - --metrics.port=7300
