@@ -58,7 +58,7 @@ cp "$OP_DIR/config/jwt.txt" "$DEST/config/jwt.txt"
 export OP_DIR DEST CHAIN_ID L1_CHAIN_ID
 
 # Rollup config: start from L2 template and tweak chain IDs / timestamps.
-python - <<'PY'
+python3 - <<'PY'
 import json, os, time, sys
 
 src_rollup = os.path.join(os.environ["OP_DIR"], "config", "rollup.json")
@@ -79,7 +79,7 @@ with open(dst_rollup, "w") as f:
 PY
 
 # L1 chain config for this L3 (points at GhostL2 by default).
-python - <<'PY'
+python3 - <<'PY'
 import json, os
 
 src_chain = os.path.join(os.environ["OP_DIR"], "config", "l1-chain.json")
@@ -97,7 +97,7 @@ with open(dst_chain, "w") as f:
 PY
 
 # Geth genesis: copy and bump chain ID + timestamp as a placeholder.
-python - <<'PY'
+python3 - <<'PY'
 import json, os, time
 
 src_genesis = os.path.join(os.environ["OP_DIR"], "config", "genesis-l2.json")

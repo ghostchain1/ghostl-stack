@@ -52,6 +52,10 @@ const AUTO_CHALLENGE_THRESHOLD =
   Number.isFinite(autoChallengeThresholdRaw) && autoChallengeThresholdRaw >= 0
     ? Math.floor(autoChallengeThresholdRaw)
     : 90;
+const failOpen = process.env.FAIL_OPEN === "1";
+const rateLimitWindowMs = Math.max(1000, Number(process.env.RATE_LIMIT_WINDOW_MS || "1000"));
+const rateLimitMax = Math.max(1, Number(process.env.RATE_LIMIT_MAX || "20"));
+const rateLimiter = new Map<string, Array<number>>();
 
 if (!RPC_L2 || !BRIDGE || !POLICY) {
   console.error("Missing env: RPC_L2, BRIDGE_L2L3_ADDRESS, GUARD_POLICY_ADDRESS");
@@ -145,7 +149,8 @@ const metrics = {
     reason: string;
     at: number;
     response?: any;
-  }
+  },
+  rateLimited: 0
 };
 
 const depositTopic = ethers.id("DepositInitiated(address,address,uint256,uint256)");
@@ -593,6 +598,10 @@ app.get("/metrics/prom", async (_req, res) => {
       out += promLine("ghost_guard_auto_challenge_last_batch_id", metrics.autoChallengeLast.batchId);
     }
   }
+  out += promLine("ghost_guard_rate_limited_total", metrics.rateLimited);
+  out += promLine("ghost_guard_rate_limit_window_ms", rateLimitWindowMs);
+  out += promLine("ghost_guard_rate_limit_max", rateLimitMax);
+  out += promLine("ghost_guard_fail_open", failOpen ? 1 : 0);
   res.send(out);
 });
 
@@ -626,6 +635,20 @@ app.post("/gate/eval", async (req, res) => {
   }
 
   const delaySeconds = decision.action === "block" && QUARANTINE_DELAY_SECONDS > 0 ? QUARANTINE_DELAY_SECONDS : 0;
+  if (rateLimitExceeded(from ?? "unknown")) {
+    metrics.rateLimited += 1;
+    const action = failOpen ? "allow" : "block";
+    return res.status(429).json({
+      ok: false,
+      action,
+      reason: "rate_limited",
+      risk,
+      delaySeconds,
+      from,
+      role,
+      failOpen
+    });
+  }
   res.json({
     ok: true,
     action: decision.action,
@@ -715,5 +738,15 @@ app.post("/policy/risk", requireAdmin, async (req, res) => {
   await tx.wait();
   res.json({ ok: true, who, score: Math.floor(score) });
 });
+
+function rateLimitExceeded(key: string) {
+  const now = Date.now();
+  const windowStart = now - rateLimitWindowMs;
+  const list = rateLimiter.get(key) ?? [];
+  const filtered = list.filter((ts) => ts >= windowStart);
+  filtered.push(now);
+  rateLimiter.set(key, filtered);
+  return filtered.length > rateLimitMax;
+}
 
 app.listen(PORT, () => console.log(`Ghost Guard listening on :${PORT}`));
