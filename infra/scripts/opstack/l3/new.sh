@@ -127,11 +127,24 @@ L3_PROPOSER_HOST_PORT=$PROPOSER_RPC_HOST_PORT
 L3_METRICS_NODE_HOST_PORT=8300
 L3_METRICS_BATCHER_HOST_PORT=8301
 L3_METRICS_PROPOSER_HOST_PORT=8302
+L3_BATCHER_KEY=
+L3_PROPOSER_KEY=
+L3_L2OO_ADDRESS=0x0000000000000000000000000000000000000000
+EOF
+
+cat >"$DEST/config/policy.sample.json" <<'EOF'
+{
+  "allowlist": [],
+  "blocklist": [],
+  "riskThreshold": 70,
+  "notes": "Update with L3 policy settings before production. Keep secrets out of version control."
+}
 EOF
 
 cat <<EOF
 Created L3 scaffold: $DEST
 - Config: $DEST/config/rollup.json and genesis.json (replace contract addresses before use)
+- Sample policy: $DEST/config/policy.sample.json
 - Env:     $DEST/.env
 
 Run with:
