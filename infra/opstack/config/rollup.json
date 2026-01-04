@@ -5,7 +5,7 @@
       "number": 42
     },
     "l2": {
-      "hash": "0x38e3a10357bbf7eb5251a7ff546a935526f981ed2a8674c6e964d87f1ce3c1b1",
+      "hash": "0x0725d2227a5140ad8a7f28b2f312781102e3cd933408821e53708037591f6482",
       "number": 0
     },
     "l2_time": 1767481516,
@@ -45,4 +45,3 @@
     "eip1559DenominatorCanyon": 250
   }
 }
-
