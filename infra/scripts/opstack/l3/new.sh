@@ -133,12 +133,13 @@ L3_L2OO_ADDRESS=0x0000000000000000000000000000000000000000
 L3_GUARD_URL=http://op-gate:8545
 L3_GUARD_TIMEOUT=5s
 L3_GUARD_FAIL_OPEN=true
+L3_GUARD_POLICY=./config/policy.json
 EOF
 
 cat >"$DEST/config/policy.sample.json" <<'EOF'
 {
   "allowlist": [],
-  "blocklist": [],
+  "denylist": [],
   "riskThreshold": 70,
   "notes": "Update with L3 policy settings before production. Keep secrets out of version control."
 }
