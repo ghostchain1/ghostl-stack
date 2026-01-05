@@ -53,6 +53,7 @@ Challengers are also generated:
 - Ghost Guard UI: `http://localhost:7070/`
 - Relayer UI proxy: `http://localhost:7070/proxy/relayer-health`
 - Grafana: `http://localhost:3000/` (Prometheus is auto-provisioned)
+- Command dashboard: `cd dashboard && npm start` (devcontainer preloads `SAFE_CONTRACTS`, override with `SAFE_CONTRACTS=0xabc:Ops Safe,...` for real multisigs)
 
 ## Chains
 
