@@ -1,0 +1,32 @@
+{
+  "allowlist": [],
+  "denylist": [],
+  "riskThreshold": 70,
+  "rules": [
+    {
+      "id": "high_value",
+      "if": { "txValueEthGte": 5 },
+      "risk": 50,
+      "reason": "high_value"
+    },
+    {
+      "id": "large_block",
+      "if": { "blockTxCountGte": 500 },
+      "risk": 30,
+      "reason": "large_block"
+    },
+    {
+      "id": "new_sender_unproven",
+      "if": { "txFromNew": true },
+      "risk": 20,
+      "reason": "new_sender"
+    },
+    {
+      "id": "large_calldata",
+      "if": { "txDataLengthGte": 10000 },
+      "risk": 25,
+      "reason": "large_calldata"
+    }
+  ],
+  "notes": "Update with production allow/deny lists and app-specific rules before launch."
+}
