@@ -7,6 +7,7 @@ Pages / Components
 - NotificationsCenter
 
 Services
-- FeatureFlagsService
-- NetworkContextService
-- ThemeService
+- FeatureFlagsService (feature gating + overrides)
+- NetworkContextService (current chain/env + persistence)
+- ThemeService (light/dark toggle + persistence)
+- AppShellProvider (wraps layout with the above providers)
