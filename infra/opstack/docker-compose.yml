@@ -288,7 +288,7 @@ services:
       - "8560:8560"
       - "7302:7302"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:8560 >/dev/null"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7302/metrics >/dev/null"]
       interval: 20s
       timeout: 10s
       retries: 6
