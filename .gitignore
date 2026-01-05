@@ -34,3 +34,7 @@ chains/**/data/
 infra/opstack/l3/ghostsample/data/
 infra/opstack/data/l2-geth/
 infra/opstack/l3/ghostl3/data/
+
+# build artifacts
+apps/web/.next/
+dist/
