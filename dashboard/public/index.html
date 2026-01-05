@@ -10,7 +10,7 @@
         --bg: radial-gradient(circle at 10% 20%, rgba(76, 201, 240, 0.08), transparent 25%),
           radial-gradient(circle at 90% 10%, rgba(255, 107, 255, 0.08), transparent 25%),
           #050910;
-        --panel: rgba(18, 29, 48, 0.75);
+        --panel: rgba(18, 29, 48, 0.78);
         --text: #e7f4ff;
         --muted: #9bb0c9;
         --accent: #6cf1ff;
@@ -36,7 +36,7 @@
 
       .shell {
         display: grid;
-        grid-template-columns: 2.2fr 1fr;
+        grid-template-columns: 2.1fr 1fr;
         gap: 16px;
       }
       .panel {
@@ -138,6 +138,27 @@
         opacity: 0.7;
       }
 
+      .blueprint-nav {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .bp-tab {
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+        cursor: pointer;
+        transition: border-color 120ms ease, transform 120ms ease;
+      }
+      .bp-tab.active {
+        border-color: rgba(108, 241, 255, 0.5);
+        transform: translateY(-2px);
+      }
+      .bp-list { margin: 0; padding-left: 16px; }
+      .bp-list li { margin: 4px 0; color: var(--text); }
+
       @media (max-width: 960px) {
         .shell { grid-template-columns: 1fr; }
         body { padding: 16px; }
@@ -203,9 +224,12 @@
       const intervalInput = document.getElementById("interval");
       const intervalLabel = document.getElementById("intervalLabel");
       const blueprintEl = document.getElementById("blueprint");
+      const bpNav = document.createElement("div");
+      const bpDetail = document.createElement("div");
 
       let currentServices = [];
       let intervalId = null;
+      let activeBlueprint = "Identity & Security";
 
       const formatHex = (v) => {
         if (v === null || v === undefined) return "";
@@ -337,17 +361,35 @@
 
       const renderBlueprint = () => {
         blueprintEl.innerHTML = "";
-        const grid = document.createElement("div");
-        grid.className = "grid";
+        bpNav.className = "blueprint-nav";
+        bpDetail.className = "glass";
+
         blueprintSections.forEach((sec) => {
-          const card = document.createElement("div");
-          card.className = "card";
-          card.innerHTML = `<h3>${sec.title}</h3><ul class="small" style="padding-left:16px; margin:6px 0 0 0;">${sec.items
-            .map((i) => `<li>${i}</li>`)
-            .join("")}</ul>`;
-          grid.appendChild(card);
+          const tab = document.createElement("div");
+          tab.className = `bp-tab ${activeBlueprint === sec.title ? "active" : ""}`;
+          tab.innerHTML = `<div style="font-weight:700;">${sec.title}</div><div class="small">${sec.items.length} items</div>`;
+          tab.addEventListener("click", () => {
+            activeBlueprint = sec.title;
+            renderBlueprint();
+          });
+          bpNav.appendChild(tab);
         });
-        blueprintEl.appendChild(grid);
+
+        const active = blueprintSections.find((s) => s.title === activeBlueprint) || blueprintSections[0];
+        if (active) {
+          const list = document.createElement("ul");
+          list.className = "bp-list";
+          active.items.forEach((i) => {
+            const li = document.createElement("li");
+            li.textContent = i;
+            list.appendChild(li);
+          });
+          bpDetail.innerHTML = `<div class="row" style="align-items:center; margin-bottom:6px;"><h3 style="margin:0;">${active.title}</h3><div class="space"></div><div class="pill">${active.items.length} capabilities</div></div>`;
+          bpDetail.appendChild(list);
+        }
+
+        blueprintEl.appendChild(bpNav);
+        blueprintEl.appendChild(bpDetail);
       };
 
       const renderLinks = (links) => {
