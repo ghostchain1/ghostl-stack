@@ -61,7 +61,7 @@ services:
       ADMIN_TOKEN: "${GATE_ADMIN_TOKEN:-}"
       ALLOW_INSECURE_ADMIN: "${GATE_ALLOW_INSECURE_ADMIN:-0}"
       DEFAULT_DELAY_SECONDS: "${GATE_DEFAULT_DELAY_SECONDS:-0}"
-      GUARD_URL: "${GATE_GUARD_URL:-http://host.docker.internal:7070}"
+      GUARD_URL: "${GATE_GUARD_URL:-http://ghost-guard:7070}"
       BATCH_SENDER_ADDRESS: "${BATCH_SENDER_ADDRESS:-}"
       PROPOSER_ADDRESS: "${PROPOSER_ADDRESS:-}"
     volumes:
@@ -74,6 +74,48 @@ services:
       timeout: 5s
       retries: 5
       start_period: 15s
+    <<: *default-security
+    mem_limit: 512m
+    cpus: "0.5"
+
+  ghost-guard:
+    build:
+      context: ../../services/ghost-guard
+      dockerfile: Dockerfile
+    image: local/ghost-guard:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      l2-geth:
+        condition: service_healthy
+    environment:
+      PORT: 7070
+      RPC_L2: http://l2-geth:8545
+      BRIDGE_L2L3_ADDRESS: ${BRIDGE_L2L3_ADDRESS:-0x0000000000000000000000000000000000000000}
+      GUARD_POLICY_ADDRESS: ${GUARD_POLICY_ADDRESS:-}
+      PRIVATE_KEY: ${GUARD_PRIVATE_KEY:-}
+      ADMIN_TOKEN: ${GUARD_ADMIN_TOKEN:-}
+      STATE_DIR: /state
+      AUTO_PAUSE: ${GUARD_AUTO_PAUSE:-0}
+      AUTO_ACTION: ${GUARD_AUTO_ACTION:-}
+      QUARANTINE_DELAY_SECONDS: ${GUARD_QUARANTINE_DELAY_SECONDS:-30}
+      AUTO_QUARANTINE_THRESHOLD: ${GUARD_AUTO_QUARANTINE_THRESHOLD:-70}
+      AUTO_PAUSE_THRESHOLD: ${GUARD_AUTO_PAUSE_THRESHOLD:-90}
+      RISK_WINDOW_SECONDS: ${GUARD_RISK_WINDOW_SECONDS:-300}
+      GRAPH_WINDOW_SECONDS: ${GUARD_GRAPH_WINDOW_SECONDS:-3600}
+      ALERT_MIN_RISK: ${GUARD_ALERT_MIN_RISK:-70}
+      RATE_LIMIT_WINDOW_MS: ${GUARD_RATE_LIMIT_WINDOW_MS:-1000}
+      RATE_LIMIT_MAX: ${GUARD_RATE_LIMIT_MAX:-20}
+    volumes:
+      - ./data/guard:/state
+    ports:
+      - "7070:7070"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7070/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
     <<: *default-security
     mem_limit: 512m
     cpus: "0.5"
