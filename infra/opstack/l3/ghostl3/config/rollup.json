@@ -1,11 +1,11 @@
 {
   "genesis": {
     "l1": {
-      "hash": "0x4a865de7e9c9bc053f6256e741f1c2497a83aee63a66af55c3a5959a7f1744ef",
+      "hash": "0x8c5e3c86fe5820d314d6f6ce05f1990d9202ea1cb845c83340653eaf51c38d2e",
       "number": 0
     },
     "l2": {
-      "hash": "0x8c5e3c86fe5820d314d6f6ce05f1990d9202ea1cb845c83340653eaf51c38d2e",
+      "hash": "0x65db18141bbbd49317d285177f8a002d53df2671c6a009220992c3ed0ce4471d",
       "number": 0
     },
     "l2_time": 1767596629,

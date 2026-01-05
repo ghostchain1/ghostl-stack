@@ -42,7 +42,7 @@ services:
           --gcmode=archive \
           --rollup.disabletxpoolgossip=true
     healthcheck:
-      test: ["CMD-SHELL", "geth attach http://localhost:8545 --exec net.version >/dev/null 2>&1"]
+      test: ["CMD-SHELL", "geth attach --exec 'net.version' http://localhost:8545 >/dev/null 2>&1"]
       interval: 20s
       timeout: 10s
       retries: 6
