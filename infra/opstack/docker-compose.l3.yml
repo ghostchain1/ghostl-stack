@@ -13,10 +13,12 @@ x-security: &default-security
 services:
   l3-geth:
     image: local/op-geth:${OPSTACK_IMAGE_TAG:-devnet}
+    user: "1000:1000"
     restart: unless-stopped
     logging: *default-logging
     depends_on:
-      - l2-geth
+      l2-geth:
+        condition: service_healthy
     ports:
       - "${L3_HOST_RPC:-39545}:8545"
     volumes:
@@ -53,6 +55,7 @@ services:
 
   l3-op-node:
     image: local/op-node:${OPSTACK_IMAGE_TAG:-devnet}
+    user: "1000:1000"
     restart: unless-stopped
     logging: *default-logging
     depends_on:
@@ -101,6 +104,7 @@ services:
 
   l3-op-batcher:
     image: local/op-batcher:${OPSTACK_IMAGE_TAG:-devnet}
+    user: "1000:1000"
     restart: unless-stopped
     logging: *default-logging
     depends_on:
@@ -136,6 +140,7 @@ services:
 
   l3-op-proposer:
     image: local/op-proposer:${OPSTACK_IMAGE_TAG:-devnet}
+    user: "1000:1000"
     restart: unless-stopped
     logging: *default-logging
     depends_on:

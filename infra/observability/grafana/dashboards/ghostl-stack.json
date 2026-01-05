@@ -49,6 +49,31 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": { "defaults": {}, "overrides": [] },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "id": 4,
+      "options": { "legend": { "displayMode": "list", "placement": "right" } },
+      "targets": [
+        { "expr": "up{job=~\"opstack-node|opstack-batcher|opstack-proposer|op-gate\"}", "refId": "A" }
+      ],
+      "title": "OP Stack Up",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "id": 32,
+      "options": { "legend": { "displayMode": "table", "placement": "right" } },
+      "targets": [
+        { "expr": "changes(process_start_time_seconds{job=\"opstack-proposer\"}[1h])", "refId": "A", "legendFormat": "proposer restarts (1h)" },
+        { "expr": "changes(process_start_time_seconds{job=\"opstack-node\"}[1h])", "refId": "B", "legendFormat": "op-node restarts (1h)" }
+      ],
+      "title": "Restarts (L2)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 22 },
       "id": 31,
       "options": { "legend": { "displayMode": "table", "placement": "right" } },
       "targets": [
@@ -63,32 +88,7 @@
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": { "defaults": {}, "overrides": [] },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
-      "id": 32,
-      "options": { "legend": { "displayMode": "table", "placement": "right" } },
-      "targets": [
-        { "expr": "changes(process_start_time_seconds{job=\"opstack-proposer\"}[1h])", "refId": "A", "legendFormat": "proposer restarts (1h)" },
-        { "expr": "changes(process_start_time_seconds{job=\"opstack-node\"}[1h])", "refId": "B", "legendFormat": "op-node restarts (1h)" }
-      ],
-      "title": "Restarts",
-      "type": "timeseries"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": { "defaults": {}, "overrides": [] },
-      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 14 },
-      "id": 4,
-      "options": { "legend": { "displayMode": "list", "placement": "right" } },
-      "targets": [
-        { "expr": "up{job=~\"opstack-node|opstack-batcher|opstack-proposer|op-gate\"}", "refId": "A" }
-      ],
-      "title": "OP Stack Up",
-      "type": "timeseries"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": { "defaults": {}, "overrides": [] },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 22 },
       "id": 5,
       "options": { "legend": { "displayMode": "table", "placement": "right" } },
       "targets": [
@@ -96,13 +96,13 @@
         { "expr": "op_gate_delayed_total", "refId": "B" },
         { "expr": "op_gate_proxied_total", "refId": "C" }
       ],
-      "title": "Gate Decisions",
+      "title": "Gate Decisions Summary",
       "type": "timeseries"
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": { "defaults": {}, "overrides": [] },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 30 },
       "id": 6,
       "options": { "legend": { "displayMode": "table", "placement": "right" } },
       "targets": [
@@ -117,7 +117,7 @@
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": { "defaults": {}, "overrides": [] },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 30 },
       "id": 7,
       "options": { "legend": { "displayMode": "table", "placement": "right" } },
       "targets": [
@@ -125,6 +125,49 @@
         { "expr": "ghost_rollup_challenger_challenges_sent_total", "refId": "B" }
       ],
       "title": "Challenger Outcomes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 38 },
+      "id": 8,
+      "options": { "legend": { "displayMode": "table", "placement": "right" } },
+      "targets": [
+        { "expr": "ai_monitor_risk_score", "refId": "A", "legendFormat": "risk score" },
+        { "expr": "ai_monitor_congestion_score", "refId": "B", "legendFormat": "congestion" },
+        { "expr": "ai_monitor_last_action", "refId": "C", "legendFormat": "last action" }
+      ],
+      "title": "AI Monitor (L2)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 38 },
+      "id": 9,
+      "options": { "legend": { "displayMode": "table", "placement": "right" } },
+      "targets": [
+        { "expr": "changes(process_start_time_seconds{job=~\"l3-op-node|l3-op-batcher|l3-op-proposer\"}[1h])", "refId": "A", "legendFormat": "{{job}} restarts (1h)" }
+      ],
+      "title": "Restarts (L3)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 46 },
+      "id": 10,
+      "options": { "legend": { "displayMode": "table", "placement": "right" } },
+      "targets": [
+        { "expr": "process_resident_memory_bytes{job=~\"opstack-node|opstack-batcher|opstack-proposer|op-gate|ghost-guard|ghost-relayer|rollup-proposer-l2|rollup-proposer-l3|rollup-challenger-l2|rollup-challenger-l3\"}", "refId": "A", "legendFormat": "{{job}}" }
+      ],
+      "title": "Process RSS",
       "type": "timeseries"
     }
   ],
