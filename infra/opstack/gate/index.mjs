@@ -230,6 +230,15 @@ function promLine(name, value, labels) {
 const app = express();
 app.use(express.json({ limit: "10mb" }));
 
+// Simple guard endpoints for op-node / op-proposer vetting.
+app.post("/guard/op-node", (req, res) => {
+  res.json({ allow: true, reason: "default-allow" });
+});
+
+app.post("/guard/proposer", (req, res) => {
+  res.json({ allow: true, reason: "default-allow" });
+});
+
 app.post("/", async (req, res) => {
   const body = req.body;
   try {
