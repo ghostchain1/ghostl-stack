@@ -243,9 +243,101 @@ function guardDecisionFromMode() {
   return { allow: true, reason: "manual_allow" };
 }
 
+function evaluatePolicy(context) {
+  let risk = 0;
+  let reason = "policy_allow";
+
+  const subject = context.tx || context.block || context.proposal || {};
+  const from = subject.from ? safeAddr(subject.from) : null;
+
+  if (from && policy.allowlist?.includes(from)) {
+    return { allow: true, reason: "allowlist" };
+  }
+  if (from && policy.denylist?.includes(from)) {
+    return { allow: false, reason: "denylist" };
+  }
+
+  if (context.tx) {
+    const valueEth = Number(ethers.formatEther(context.tx.value || "0"));
+    if (valueEth >= 1) {
+      risk += Math.min(12, Math.floor(valueEth));
+      reason = "high_value";
+    }
+    if (context.tx.dataLength > 10000) {
+      risk += 4;
+      reason = "large_calldata";
+    }
+  }
+
+  if (context.block) {
+    if (context.block.txCount && context.block.txCount >= 500) {
+      risk += 10;
+      reason = "large_block";
+    }
+  }
+
+  for (const rule of policy.rules || []) {
+    const cond = rule.if || {};
+    if (cond.blockTxCountGte && context.block?.txCount >= cond.blockTxCountGte) {
+      risk += rule.risk || 0;
+      reason = rule.reason || rule.id || "rule_match";
+    }
+    if (cond.txValueEthGte && context.tx) {
+      const valueEth = Number(ethers.formatEther(context.tx.value || "0"));
+      if (valueEth >= cond.txValueEthGte) {
+        risk += rule.risk || 0;
+        reason = rule.reason || rule.id || "rule_match";
+      }
+    }
+  }
+
+  const delayCutoff = policy.thresholds?.delay ?? 6;
+  const blockCutoff = policy.thresholds?.block ?? 12;
+  if (risk >= blockCutoff) return { allow: false, reason, risk };
+  if (risk >= delayCutoff) {
+    return {
+      allow: false,
+      reason,
+      risk,
+      retryAt: Date.now() + Math.max(5_000, state.delaySeconds * 1000)
+    };
+  }
+  return { allow: true, reason, risk };
+}
+
+function recordGuardDecision(endpoint, decision, context) {
+  metrics.guardDecisions += 1;
+  if (decision.error) {
+    metrics.guardDecisionCounts.error += 1;
+  } else if (decision.retryAt) {
+    metrics.guardDecisionCounts.delay += 1;
+  } else if (decision.allow) {
+    metrics.guardDecisionCounts.allow += 1;
+  } else {
+    metrics.guardDecisionCounts.deny += 1;
+  }
+  appendDecision({
+    ts: Date.now(),
+    endpoint,
+    decision,
+    ctx: context
+  }).catch((e) => console.error("[gate] appendDecision failed", e));
+}
+
 app.post("/guard/op-node", async (req, res) => {
   // Base decision from manual mode
   let decision = guardDecisionFromMode();
+
+  if (decision.allow) {
+    const policyDecision = evaluatePolicy({
+      block: {
+        txCount: req.body?.txCount,
+        hash: req.body?.block?.hash,
+        number: req.body?.block?.number
+      }
+    });
+    decision = { allow: policyDecision.allow, reason: policyDecision.reason, retryAt: policyDecision.retryAt };
+  }
 
   // Optional external guard eval (GUARD_EVAL_URL) re-used from tx path
   if (decision.allow && GUARD_EVAL_URL) {
@@ -256,11 +348,22 @@ app.post("/guard/op-node", async (req, res) => {
     }
   }
 
+  recordGuardDecision("op-node", decision, req.body);
   res.json(decision);
 });
 
 app.post("/guard/proposer", async (req, res) => {
   let decision = guardDecisionFromMode();
+
+  if (decision.allow) {
+    const policyDecision = evaluatePolicy({
+      proposal: req.body,
+      tx: {
+        value: req.body?.value || "0"
+      }
+    });
+    decision = { allow: policyDecision.allow, reason: policyDecision.reason, retryAt: policyDecision.retryAt };
+  }
 
   if (decision.allow && GUARD_EVAL_URL) {
     const guardResp = await guardEval({ role: "proposer", proposal: req.body });
@@ -270,6 +373,7 @@ app.post("/guard/proposer", async (req, res) => {
     }
   }
 
+  recordGuardDecision("proposer", decision, req.body);
   res.json(decision);
 });
 
@@ -295,6 +399,7 @@ app.get("/gate/status", (_req, res) => {
     mode: state.mode,
     delaySeconds: state.delaySeconds,
     nextAllowedAt: state.nextAllowedAt,
+    policy,
     metrics,
     recentDecisions: recentDecisions.slice(-50)
   });
@@ -313,6 +418,23 @@ app.post("/gate/mode", requireAdmin, (req, res) => {
   res.json({ ok: true, mode, delaySeconds });
 });
 
+app.get("/guard/policy", requireAdmin, (_req, res) => {
+  res.json({ ok: true, policy });
+});
+
+app.post("/guard/policy", requireAdmin, async (req, res) => {
+  const next = req.body;
+  if (!next || typeof next !== "object") {
+    return res.status(400).json({ ok: false, error: "policy must be an object" });
+  }
+  try {
+    await savePolicy(next);
+    res.json({ ok: true, policy });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
 app.get("/metrics/prom", (_req, res) => {
   res.type("text/plain; version=0.0.4");
   let out = "";
@@ -325,6 +447,10 @@ app.get("/metrics/prom", (_req, res) => {
   out += promLine("op_gate_delayed_total", metrics.delayed);
   out += promLine("op_gate_guard_errors_total", metrics.guardErrors);
   out += promLine("op_gate_guard_decisions_total", metrics.guardDecisions);
+  out += promLine("op_gate_guard_decisions", metrics.guardDecisionCounts.allow, { result: "allow" });
+  out += promLine("op_gate_guard_decisions", metrics.guardDecisionCounts.deny, { result: "deny" });
+  out += promLine("op_gate_guard_decisions", metrics.guardDecisionCounts.delay, { result: "delay" });
+  out += promLine("op_gate_guard_decisions", metrics.guardDecisionCounts.error, { result: "error" });
   res.send(out);
 });
 
