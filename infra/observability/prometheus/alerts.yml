@@ -1,0 +1,44 @@
+groups:
+  - name: guard
+    rules:
+      - alert: GuardDenySpike
+        expr: rate(op_gate_guard_decisions{result="deny"}[5m]) > 2
+        for: 2m
+        labels:
+          severity: warning
+          service: op-gate
+        annotations:
+          summary: "Guard deny spike"
+          description: "Guard is denying >2 decisions/min over last 5m (current: {{ $value }}). Check policy/traffic."
+
+      - alert: GuardErrorSpike
+        expr: rate(op_gate_guard_decisions{result="error"}[5m]) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+          service: op-gate
+        annotations:
+          summary: "Guard error spike"
+          description: "Guard errors >0.5/min over last 5m (current: {{ $value }}). Check guard backend/webhook."
+
+  - name: proposer
+    rules:
+      - alert: ProposerDown
+        expr: up{job="opstack-proposer"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: op-proposer
+        annotations:
+          summary: "Proposer down"
+          description: "op-proposer target is down for >1m."
+
+      - alert: ProposerRestarting
+        expr: changes(process_start_time_seconds{job="opstack-proposer"}[10m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          service: op-proposer
+        annotations:
+          summary: "Proposer restarting"
+          description: "process_start_time_seconds changed within 10m (possible restart)."
