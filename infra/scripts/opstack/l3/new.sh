@@ -130,6 +130,9 @@ L3_METRICS_PROPOSER_HOST_PORT=8302
 L3_BATCHER_KEY=
 L3_PROPOSER_KEY=
 L3_L2OO_ADDRESS=0x0000000000000000000000000000000000000000
+L3_GUARD_URL=http://op-gate:8545
+L3_GUARD_TIMEOUT=5s
+L3_GUARD_FAIL_OPEN=true
 EOF
 
 cat >"$DEST/config/policy.sample.json" <<'EOF'
@@ -147,7 +150,7 @@ Created L3 scaffold: $DEST
 - Sample policy: $DEST/config/policy.sample.json
 - Env:     $DEST/.env
 
-Run with:
+Run with (guards enabled by default):
   docker compose -f infra/opstack/docker-compose.yml -f infra/opstack/docker-compose.l3.yml \\
     --env-file infra/opstack/l3/$NAME/.env up -d l3-geth l3-op-node l3-op-batcher l3-op-proposer
 
