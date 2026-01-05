@@ -17,6 +17,8 @@ services:
       - "8545"
       - --chain-id
       - "${L1_CHAIN_ID:-31337}"
+      - --timestamp
+      - "${L1_TIMESTAMP:-1767502513}"
     ports:
       - "28545:8545"
     restart: unless-stopped
