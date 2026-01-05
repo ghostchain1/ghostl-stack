@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../../dist/apps/api",
+    "rootDir": "../..",
+    "lib": ["ES2021"],
+    "types": ["node"],
+    "noEmitOnError": true
+  },
+  "include": [
+    "src",
+    "../../packages/types/**/*.ts"
+  ]
+}

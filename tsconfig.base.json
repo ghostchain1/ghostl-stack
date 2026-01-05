@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@ghostl/types": ["packages/types/index.ts"],
+      "@ghostl/types/*": ["packages/types/*"],
+      "@ghostl/ui": ["packages/ui/src/index.ts"],
+      "@ghostl/ui/*": ["packages/ui/src/*"]
+    }
+  }
+}

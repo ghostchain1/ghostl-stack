@@ -1,0 +1,30 @@
+{
+  "name": "@ghostl/api",
+  "version": "0.0.1",
+  "private": true,
+  "main": "dist/server.js",
+  "types": "dist/server.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "ts-node src/server.ts"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "express-session": "^1.17.3",
+    "jsonwebtoken": "^9.0.2",
+    "siwe": "^2.1.4",
+    "session-file-store": "^1.5.0",
+    "undici": "^6.19.8",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.21",
+    "@types/express-session": "^1.17.7",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/session-file-store": "^1.2.5",
+    "@types/node": "^20.11.30",
+    "ts-node": "^10.9.2"
+  }
+}
