@@ -177,3 +177,32 @@ services:
     <<: *default-security
     mem_limit: 1g
     cpus: "1.0"
+
+  validator-service:
+    build:
+      context: ../../services/validator-service
+      dockerfile: Dockerfile
+    image: local/validator-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      l2-geth:
+        condition: service_healthy
+      l3-geth:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+    environment:
+      PORT: 7600
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+      RPC_L2: http://l2-geth:8545
+      RPC_L3: http://l3-geth:8545
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7600/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 512m
+    cpus: "0.5"
