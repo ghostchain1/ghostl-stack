@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GhostL Stack Dashboard</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #0b1723;
+        --panel: #102131;
+        --text: #e8f1ff;
+        --muted: #9fb3c8;
+        --accent: #4cc9f0;
+        --bad: #ff6b6b;
+        --good: #4caf50;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+        background: radial-gradient(circle at 20% 20%, rgba(76, 201, 240, 0.08), transparent 35%),
+          radial-gradient(circle at 80% 10%, rgba(255, 107, 107, 0.08), transparent 30%),
+          var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        padding: 24px;
+      }
+      h1 {
+        margin: 0 0 16px;
+        font-size: 24px;
+        letter-spacing: 0.5px;
+      }
+      #meta {
+        color: var(--muted);
+        margin-bottom: 16px;
+        font-size: 14px;
+      }
+      #grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+      }
+      .card {
+        background: linear-gradient(135deg, rgba(16, 33, 49, 0.9), rgba(16, 33, 49, 0.8));
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        transition: transform 150ms ease, border-color 150ms ease;
+      }
+      .card:hover { transform: translateY(-2px); border-color: rgba(76, 201, 240, 0.3); }
+      .card h3 { margin: 0 0 6px; font-size: 16px; }
+      .status { font-weight: 700; }
+      .ok { color: var(--good); }
+      .bad { color: var(--bad); }
+      .row { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); }
+      .mono { font-family: "JetBrains Mono", "SFMono-Regular", monospace; font-size: 12px; color: var(--text); }
+      button {
+        background: var(--accent);
+        color: #04111f;
+        border: none;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 6px 16px rgba(76, 201, 240, 0.3);
+      }
+      button:hover { filter: brightness(1.05); }
+      @media (max-width: 600px) { body { padding: 16px; } }
+    </style>
+  </head>
+  <body>
+    <h1>GhostL Stack Dashboard</h1>
+    <div id="meta">Loading...</div>
+    <div style="margin-bottom:12px;">
+      <button id="refresh">Refresh now</button>
+    </div>
+    <div id="grid"></div>
+
+    <script>
+      const grid = document.getElementById("grid");
+      const meta = document.getElementById("meta");
+      const formatHex = (v) => {
+        if (!v) return "";
+        if (typeof v === "string" && v.startsWith("0x")) return String(parseInt(v, 16));
+        return String(v);
+      };
+
+      const render = (services) => {
+        grid.innerHTML = "";
+        services.forEach((s) => {
+          const card = document.createElement("div");
+          card.className = "card";
+          const ok = s.ok;
+          let details = "";
+          if (s.data && typeof s.data === "object") {
+            if ("chainId" in s.data) details = `chainId ${formatHex(s.data.chainId)}`;
+            if ("l2ChainId" in s.data || "l3ChainId" in s.data) {
+              details = `l2 ${formatHex(s.data.l2ChainId)} · l3 ${formatHex(s.data.l3ChainId)}`;
+            }
+            if (s.id === "l2-geth") details = `block ${formatHex(s.data)}`;
+            if (s.id === "op-node" && s.data?.unsafe_l2) {
+              details = `unsafe ${formatHex(s.data.unsafe_l2?.number)} · safe ${formatHex(s.data.safe_l2?.number)}`;
+            }
+            if (s.id === "op-gate" && s.data?.guard) details = `mode ${s.data.guard?.mode ?? "?"}`;
+          }
+          card.innerHTML = `
+            <h3>${s.id}</h3>
+            <div class="status ${ok ? "ok" : "bad"}">${ok ? "OK" : "DOWN"}</div>
+            <div class="row"><span>Details</span><span class="mono">${ok ? details || "—" : s.error || "error"}</span></div>
+          `;
+          grid.appendChild(card);
+        });
+      };
+
+      const load = async () => {
+        meta.textContent = "Refreshing...";
+        try {
+          const res = await fetch("/api/status");
+          if (!res.ok) throw new Error(`status ${res.status}`);
+          const body = await res.json();
+          render(body.services || []);
+          const ts = new Date();
+          meta.textContent = `Last update: ${ts.toLocaleTimeString()}`;
+        } catch (e) {
+          meta.textContent = `Error: ${e?.message || e}`;
+        }
+      };
+
+      document.getElementById("refresh").addEventListener("click", load);
+      load();
+      setInterval(load, 5000);
+    </script>
+  </body>
+</html>
