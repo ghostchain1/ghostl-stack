@@ -66,9 +66,9 @@ services:
       - --l1.beacon.ignore
       - --sequencer.enabled
       - --sequencer.l1-confs=0
-      - --guard-url=http://op-gate:8545/guard/op-node
-      - --guard-timeout=5s
-      - --guard-fail-open
+      - --guard-url=${L3_GUARD_URL:-http://op-gate:8545}/guard/op-node
+      - --guard-timeout=${L3_GUARD_TIMEOUT:-5s}
+      - --guard-fail-open=${L3_GUARD_FAIL_OPEN:-true}
       - --metrics.enabled
       - --metrics.addr=0.0.0.0
       - --metrics.port=${L3_METRICS_NODE_PORT:-8300}
@@ -116,9 +116,9 @@ services:
       - --game-type=0
       - --private-key=${L3_PROPOSER_KEY:-${PROPOSER_KEY}}
       - --allow-non-finalized
-      - --guard-url=http://op-gate:8545/guard/proposer
-      - --guard-timeout=5s
-      - --guard-fail-open
+      - --guard-url=${L3_GUARD_URL:-http://op-gate:8545}/guard/proposer
+      - --guard-timeout=${L3_GUARD_TIMEOUT:-5s}
+      - --guard-fail-open=${L3_GUARD_FAIL_OPEN:-true}
       - --rpc.addr=0.0.0.0
       - --rpc.port=${L3_PROPOSER_RPC_PORT:-18560}
       - --metrics.enabled
