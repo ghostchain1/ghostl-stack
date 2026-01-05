@@ -1,9 +1,19 @@
 'use client';
 
 import { useState } from 'react';
+import { useFeatureFlags } from '../services/FeatureFlagsService';
+import { useNetwork } from '../services/NetworkContextService';
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
+  const { current } = useNetwork();
+  const { isEnabled } = useFeatureFlags();
+
+  const actions = [
+    { id: 'restart', label: 'Restart node', enabled: isEnabled('ops.restart') },
+    { id: 'alerts', label: 'Open alerts', enabled: isEnabled('observability.alerts') },
+    { id: 'rotate-keys', label: 'Rotate keys', enabled: isEnabled('security.guardWrites') }
+  ];
 
   return (
     <div>
@@ -13,12 +23,19 @@ export function CommandPalette() {
       {open && (
         <div className="card" style={{ position: 'absolute', right: 16, top: 56, width: 320 }}>
           <div className="muted" style={{ marginBottom: 8 }}>
-            Quick actions (stub)
+            Quick actions {current ? `(${current.label})` : ''}
           </div>
           <div className="stack">
-            <div className="badge">Restart node</div>
-            <div className="badge">Open alerts</div>
-            <div className="badge">Rotate keys</div>
+            {actions.map((action) => (
+              <div
+                key={action.id}
+                className="badge"
+                style={{ opacity: action.enabled ? 1 : 0.45 }}
+                aria-disabled={!action.enabled}
+              >
+                {action.label}
+              </div>
+            ))}
           </div>
         </div>
       )}
