@@ -54,7 +54,7 @@ const saveStore = async (store: StoreShape) => {
 };
 
 export const createPersistentIdentityServices = async () => {
-  let store = await loadStore();
+  const store = await loadStore();
 
   const persist = async () => saveStore(store);
 

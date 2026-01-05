@@ -10,6 +10,14 @@ export interface PrometheusRangeResult {
   values: [number, string][];
 }
 
+export interface PrometheusAlert {
+  labels: Record<string, string>;
+  annotations?: Record<string, string>;
+  state?: string;
+  activeAt?: string;
+  value?: number | string;
+}
+
 export interface PrometheusApiResponse<T = unknown> {
   status: 'success' | 'error';
   data: T;
@@ -48,10 +56,10 @@ export class PrometheusClient {
     return json.data?.result || [];
   }
 
-  async alerts(): Promise<any[]> {
+  async alerts(): Promise<PrometheusAlert[]> {
     const res = await fetch(this.buildUrl('/api/v1/alerts'));
     if (!res.ok) throw new Error(`Prometheus alerts failed: ${res.status}`);
-    const json = (await res.json()) as PrometheusApiResponse<{ alerts: any[] }>;
+    const json = (await res.json()) as PrometheusApiResponse<{ alerts: PrometheusAlert[] }>;
     return json.data?.alerts || [];
   }
 }

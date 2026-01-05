@@ -40,16 +40,16 @@ export const buildStackRouter = (deps: StackDeps) => {
     const guardAlerts = await queryNumber(deps.prometheus, 'ghost_guard_alerts_total');
     const guardDeposits = await queryNumber(deps.prometheus, 'ghost_guard_deposits_seen_total');
 
-    let guardActiveAlerts: any[] = [];
+    let guardActiveAlerts: unknown[] = [];
     if (deps.guard) {
       try {
-        guardActiveAlerts = (await deps.guard.listAlerts()) as any[];
+        guardActiveAlerts = (await deps.guard.listAlerts()) as unknown[];
       } catch {
         // ignore
       }
     }
 
-    let relayerHealth: any = null;
+    let relayerHealth: unknown = null;
     if (deps.relayer) {
       try {
         relayerHealth = await deps.relayer.health();

@@ -1,9 +1,11 @@
-import { Request, Response, Router } from 'express';
+import { NextFunction, Request, Response, Router } from 'express';
 import type { NodeHealthService, NodeInventoryService } from './services';
 
 const asyncHandler =
-  <TReq extends Request = Request, TRes extends Response = Response>(fn: (req: TReq, res: TRes, next: any) => Promise<any>) =>
-  (req: TReq, res: TRes, next: any) =>
+  <TReq extends Request = Request, TRes extends Response = Response>(
+    fn: (req: TReq, res: TRes, next: NextFunction) => Promise<unknown>
+  ) =>
+  (req: TReq, res: TRes, next: NextFunction) =>
     Promise.resolve(fn(req, res, next)).catch(next);
 
 export interface NodeDeps {
