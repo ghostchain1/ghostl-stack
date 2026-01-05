@@ -27,18 +27,44 @@
         background: var(--bg);
         color: var(--text);
         min-height: 100vh;
-        padding: 28px;
+        display: grid;
+        grid-template-columns: 260px 1fr;
       }
+      nav {
+        padding: 24px 18px;
+        border-right: 1px solid var(--border);
+        background: rgba(10, 16, 28, 0.85);
+      }
+      nav h1 { margin: 0 0 10px; font-size: 20px; letter-spacing: 0.5px; }
+      nav .navlink {
+        display: block;
+        padding: 10px 12px;
+        border-radius: 10px;
+        margin-bottom: 6px;
+        color: var(--text);
+        text-decoration: none;
+        border: 1px solid transparent;
+        transition: background 120ms ease, border-color 120ms ease;
+      }
+      nav .navlink:hover { background: rgba(255, 255, 255, 0.04); border-color: var(--border); }
+      nav .navlink strong { display: block; }
+      nav .navlink span { color: var(--muted); font-size: 12px; }
+
+      main { padding: 24px; }
       h1 { margin: 0 0 6px; letter-spacing: 0.5px; font-weight: 800; }
       h2 { margin: 0 0 12px; font-size: 18px; letter-spacing: 0.2px; }
       p { margin: 0; color: var(--muted); }
       a { color: var(--accent); }
-
-      .shell {
-        display: grid;
-        grid-template-columns: 2.1fr 1fr;
-        gap: 16px;
+      select, input[type="text"] {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 8px 10px;
+        border-radius: 10px;
+        font-size: 13px;
       }
+
+      .shell { display: grid; grid-template-columns: 2.1fr 1fr; gap: 16px; }
       .panel {
         background: var(--panel);
         border: 1px solid var(--border);
@@ -81,11 +107,7 @@
       }
       button:hover { filter: brightness(1.05); }
 
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 10px;
-      }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
       .card {
         padding: 12px;
         border-radius: 12px;
@@ -96,18 +118,8 @@
       }
       .card:hover { transform: translateY(-2px); border-color: rgba(108, 241, 255, 0.35); }
       .card h3 { margin: 0 0 4px; font-size: 15px; letter-spacing: 0.3px; }
-      .status {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-weight: 700;
-        font-size: 13px;
-      }
-      .dot {
-        width: 9px; height: 9px; border-radius: 50%;
-        background: var(--muted);
-        box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.03);
-      }
+      .status { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; }
+      .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.03); }
       .ok .dot { background: var(--good); }
       .bad .dot { background: var(--bad); }
       .warn .dot { background: var(--warn); }
@@ -131,6 +143,28 @@
       .linkcard a { text-decoration: none; color: var(--accent); font-weight: 700; }
       .small { font-size: 12px; color: var(--muted); }
 
+      .module-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+      .module-card {
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        font-size: 12px;
+      }
+      .chip.ok { color: var(--good); border-color: rgba(106, 240, 144, 0.35); }
+      .chip.beta { color: var(--warn); border-color: rgba(245, 194, 107, 0.35); }
+      .chip.plan { color: var(--muted); }
+      .mutelist { margin: 6px 0 0; padding-left: 16px; color: var(--text); }
+      .mutelist li { margin: 4px 0; }
+
       .spark {
         height: 3px;
         border-radius: 999px;
@@ -152,66 +186,350 @@
         cursor: pointer;
         transition: border-color 120ms ease, transform 120ms ease;
       }
-      .bp-tab.active {
-        border-color: rgba(108, 241, 255, 0.5);
-        transform: translateY(-2px);
-      }
+      .bp-tab.active { border-color: rgba(108, 241, 255, 0.5); transform: translateY(-2px); }
       .bp-list { margin: 0; padding-left: 16px; }
       .bp-list li { margin: 4px 0; color: var(--text); }
 
-      @media (max-width: 960px) {
+      table { width: 100%; border-collapse: collapse; font-size: 12px; }
+      th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+      th { text-align: left; color: var(--muted); }
+
+      @media (max-width: 1024px) {
+        body { grid-template-columns: 1fr; }
+        nav { display: none; }
         .shell { grid-template-columns: 1fr; }
-        body { padding: 16px; }
+        main { padding: 16px; }
       }
     </style>
   </head>
   <body>
-    <div class="shell">
-      <div>
-        <div class="panel">
-          <div class="row">
-            <div>
-              <h1>GhostL Stack Command</h1>
-              <p>Unified control surface for L1/L2/L3, guard, gate, and observability.</p>
+    <nav>
+      <h1>GhostL Command</h1>
+      <p class="small">L1/L2/L3 · Validators · Bridges · AI Guard</p>
+      <a class="navlink" href="#services"><strong>Service Health</strong><span>op-node, geth, gate, guard</span></a>
+      <a class="navlink" href="#modules"><strong>Feature Rollup</strong><span>Status of enterprise modules</span></a>
+      <a class="navlink" href="#validators"><strong>Validators</strong><span>Stake · Proposer · Alerts</span></a>
+      <a class="navlink" href="#blueprint"><strong>Capabilities</strong><span>Identity, nodes, validators...</span></a>
+      <a class="navlink" href="#rbac"><strong>RBAC Matrix</strong><span>Who can do what</span></a>
+      <a class="navlink" href="#apis"><strong>APIs</strong><span>REST / GraphQL schema</span></a>
+      <a class="navlink" href="#metrics"><strong>Metrics & Observability</strong><span>Prom/Grafana targets</span></a>
+      <a class="navlink" href="#rollup"><strong>Rollup Admin</strong><span>L2/L3 controls</span></a>
+    </nav>
+    <main>
+      <div class="shell">
+        <div>
+          <div class="panel" id="services">
+            <div class="row">
+              <div>
+                <h1>GhostL Stack Command</h1>
+                <p>Unified control surface for L1/L2/L3, guard, gate, observability, and rollups.</p>
+              </div>
+              <div class="space"></div>
+              <div class="glass">
+                <div class="small">Auto refresh</div>
+                <div class="row" style="gap:8px; align-items:center;">
+                  <input id="interval" type="range" min="3" max="30" value="5" />
+                  <div id="intervalLabel" class="pill">5s</div>
+                  <button class="secondary" id="refresh">Refresh</button>
+                </div>
+              </div>
             </div>
-            <div class="space"></div>
-            <div class="glass">
-              <div class="small">Auto refresh</div>
-              <div class="row" style="gap:8px; align-items:center;">
-                <input id="interval" type="range" min="3" max="30" value="5" />
-                <div id="intervalLabel" class="pill">5s</div>
-                <button class="secondary" id="refresh">Refresh</button>
+            <div class="row" style="margin-top:12px;">
+              <div class="glass" id="meta">Loading...</div>
+              <div class="pill" id="summary"></div>
+            </div>
+          </div>
+
+          <div class="panel" style="margin-top:12px;">
+            <div class="row" style="align-items:center; margin-bottom:8px;">
+              <h2 style="margin:0;">Core Services</h2>
+              <div class="space"></div>
+              <div class="spark" style="width:140px;"></div>
+            </div>
+            <div id="grid" class="grid"></div>
+          </div>
+
+          <div class="panel" style="margin-top:12px;" id="identity">
+            <div class="row" style="align-items:center; margin-bottom:8px;">
+              <h2 style="margin:0;">Identity, Access & Security</h2>
+              <div class="space"></div>
+              <div class="pill">Wallet · SSO · RBAC · Audit</div>
+            </div>
+            <div class="grid" id="identityGrid">
+              <div class="card" id="walletCard">
+                <div class="row" style="align-items:center;">
+                  <h3 style="margin:0;">Wallet Login</h3>
+                  <div class="space"></div>
+                  <button id="siweButton" class="secondary" style="margin-right:6px;">SIWE</button>
+                  <button id="connectWallet">Connect</button>
+                </div>
+                <div class="muted">Address: <span id="walletAddress">Not connected</span></div>
+                <div class="muted">Chain: <span id="walletChain">—</span></div>
+              </div>
+              <div class="card">
+                <div class="row" style="align-items:center;">
+                  <h3 style="margin:0;">OAuth / SSO</h3>
+                  <div class="space"></div>
+                  <button class="secondary" id="ssoButton">Login</button>
+                </div>
+                <div class="muted">OIDC (Keycloak/Okta/GitHub/Google). Status: <span id="ssoStatus">Not configured</span></div>
+              </div>
+              <div class="card">
+                <div class="row" style="align-items:center;">
+                  <h3 style="margin:0;">RBAC Role</h3>
+                  <div class="space"></div>
+                  <select id="roleSelect">
+                    <option>Admin</option>
+                    <option>Validator</option>
+                    <option>Ops</option>
+                    <option selected>Viewer</option>
+                  </select>
+                </div>
+                <div class="muted">Local role applied to dashboard actions; sync to API when backend RBAC is enabled.</div>
+              </div>
+              <div class="card">
+                <div class="row" style="align-items:center;">
+                  <h3 style="margin:0;">API Keys</h3>
+                  <div class="space"></div>
+                  <button class="secondary" id="addApiKey">Generate</button>
+                </div>
+                <div class="small">Backed by core-service proxy; Admin/Ops only.</div>
+                <div id="apiKeyList" class="mono" style="margin-top:6px;"></div>
+              </div>
+              <div class="card">
+                <div class="row" style="align-items:center;">
+                  <h3 style="margin:0;">Multisig Admin</h3>
+                  <div class="space"></div>
+                  <button class="secondary" id="addSigner">Add signer</button>
+                </div>
+                <div class="muted">Track who must approve admin actions (2-of-N). Stored locally.</div>
+                <div id="multisigList" class="small" style="margin-top:6px;"></div>
+              </div>
+              <div class="card">
+                <div class="row" style="align-items:center;">
+                  <h3 style="margin:0;">Security Signals</h3>
+                  <div class="space"></div>
+                  <span class="chip ok">Live</span>
+                </div>
+                <div id="securitySignals" class="muted">Awaiting data...</div>
+                <div id="securityTelemetry" class="small" style="margin-top:8px;"></div>
+              </div>
+              <div class="card">
+                <div class="row" style="align-items:center;">
+                  <h3 style="margin:0;">Safes</h3>
+                  <div class="space"></div>
+                  <span class="chip beta">Linked</span>
+                </div>
+                <div class="muted">On-chain safe contracts and mapped signers.</div>
+                <div id="safeList" class="small" style="margin-top:8px;"></div>
               </div>
             </div>
           </div>
-          <div class="row" style="margin-top:12px;">
-            <div class="glass" id="meta">Loading...</div>
-            <div class="pill" id="summary"></div>
+
+          <div class="panel" style="margin-top:12px;" id="modules">
+            <div class="row" style="align-items:center; margin-bottom:8px;">
+              <h2 style="margin:0;">Feature Rollup</h2>
+              <div class="space"></div>
+              <div class="pill">roadmap + live</div>
+            </div>
+            <div id="modulesGrid" class="module-grid"></div>
+          </div>
+
+          <div class="panel" style="margin-top:12px;" id="network">
+            <div class="row" style="align-items:center; margin-bottom:8px;">
+              <h2 style="margin:0;">Network Health</h2>
+              <div class="space"></div>
+              <div class="pill">L2 · L3 · Sync · Peers</div>
+            </div>
+            <div id="networkGrid" class="grid"></div>
+          </div>
+
+          <div class="panel" style="margin-top:12px;" id="ops">
+            <div class="row" style="align-items:center; margin-bottom:8px;">
+              <h2 style="margin:0;">Ops & Controls</h2>
+              <div class="space"></div>
+              <div class="pill">Runtime · Policy · Logs</div>
+            </div>
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+              <div class="card">
+                <div class="row" style="justify-content:space-between; align-items:center;">
+                  <h3 style="margin:0;">Restart Services</h3>
+                  <span class="chip">Ops</span>
+                </div>
+                <div class="muted">One-click restart via docker compose.</div>
+                <div class="row wrap" style="gap:6px; margin-top:8px;">
+                  <button class="secondary" data-restart="ghostl2">Restart L2</button>
+                  <button class="secondary" data-restart="ghostl3">Restart L3</button>
+                  <button class="secondary" data-restart="ghost-guard">Restart Guard</button>
+                  <button class="secondary" data-restart="ghost-relayer">Restart Relayer</button>
+                  <button class="secondary" data-restart="ghost-rollup-proposer-l2">Restart Proposer L2</button>
+                  <button class="secondary" data-restart="ghost-rollup-proposer-l3">Restart Proposer L3</button>
+                  <button class="secondary" data-restart="ghost-rollup-challenger-l2">Restart Challenger L2</button>
+                  <button class="secondary" data-restart="ghost-rollup-challenger-l3">Restart Challenger L3</button>
+                </div>
+              </div>
+              <div class="card">
+                <div class="row" style="justify-content:space-between; align-items:center;">
+                  <h3 style="margin:0;">Guard Policy</h3>
+                  <span class="chip beta">Live</span>
+                </div>
+                <div class="muted">Mode, delay, risk threshold.</div>
+                <div class="row wrap" style="gap:6px; margin-top:8px;">
+                  <button class="secondary" data-guard-mode="0">Allow</button>
+                  <button class="secondary" data-guard-mode="1">Delay</button>
+                  <button class="secondary" data-guard-mode="2">Pause</button>
+                  <button class="secondary" data-guard-delay="30">Delay 30s</button>
+                  <button class="secondary" data-guard-threshold="100">Threshold 100</button>
+                </div>
+              </div>
+              <div class="card">
+                <div class="row" style="justify-content:space-between; align-items:center;">
+                  <h3 style="margin:0;">Challenge / Proof</h3>
+                  <span class="chip beta">Manual</span>
+                </div>
+                <div class="muted">Trigger challenger to re-check batches.</div>
+                <div class="row wrap" style="gap:6px; margin-top:8px;">
+                  <button class="secondary" data-trigger-layer="l2">Trigger L2</button>
+                  <button class="secondary" data-trigger-layer="l3">Trigger L3</button>
+                </div>
+              </div>
+              <div class="card">
+                <div class="row" style="justify-content:space-between; align-items:center;">
+                  <h3 style="margin:0;">Logs</h3>
+                  <span class="chip">Tail</span>
+                </div>
+                <div class="muted">Fetch latest 200 lines.</div>
+                <div class="row wrap" style="gap:6px; margin-top:8px;">
+                  <button class="secondary" data-logs="ghostl2">L2</button>
+                  <button class="secondary" data-logs="ghostl3">L3</button>
+                  <button class="secondary" data-logs="ghost-guard">Guard</button>
+                  <button class="secondary" data-logs="ghost-relayer">Relayer</button>
+                  <button class="secondary" data-logs="ghost-rollup-proposer-l2">Proposer L2</button>
+                  <button class="secondary" data-logs="ghost-rollup-proposer-l3">Proposer L3</button>
+                  <button class="secondary" data-logs="ghost-rollup-challenger-l2">Challenger L2</button>
+                  <button class="secondary" data-logs="ghost-rollup-challenger-l3">Challenger L3</button>
+                </div>
+                <pre id="logOutput" class="detail" style="margin-top:8px; max-height:220px; overflow:auto;">Select a service to view logs...</pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" style="margin-top:12px;" id="validators">
+            <div class="row" style="align-items:center; margin-bottom:8px;">
+              <h2 style="margin:0;">Validators</h2>
+              <div class="space"></div>
+              <div class="pill">Stake · Commission · Missed · Proposer · Byzantine</div>
+            </div>
+            <div id="validatorGrid" class="grid"></div>
+          </div>
+
+          <div class="panel" style="margin-top:12px;" id="token">
+            <div class="row" style="align-items:center; margin-bottom:8px;">
+              <h2 style="margin:0;">Token & Treasury</h2>
+              <div class="space"></div>
+              <div class="pill">Supply · Emissions · Gas · Treasury</div>
+            </div>
+            <div id="tokenGrid" class="grid"></div>
+          </div>
+
+          <div class="panel" style="margin-top:12px;" id="proofs">
+            <div class="row" style="align-items:center; margin-bottom:8px;">
+              <h2 style="margin:0;">Proofs & Finality</h2>
+              <div class="space"></div>
+              <div class="pill">Fraud/ZK · Challenges · Settlements</div>
+            </div>
+            <div id="proofGrid" class="grid"></div>
+          </div>
+
+          <div class="panel" style="margin-top:12px;" id="ai">
+            <div class="row" style="align-items:center; margin-bottom:8px;">
+              <h2 style="margin:0;">AI & Intelligence</h2>
+              <div class="space"></div>
+              <div class="pill">Risk · Congestion · Downtime · Capacity</div>
+            </div>
+            <div id="aiGrid" class="grid"></div>
+          </div>
+
+          <div class="panel" style="margin-top:12px;" id="bridge">
+            <div class="row" style="align-items:center; margin-bottom:8px;">
+              <h2 style="margin:0;">Bridges & Interop</h2>
+              <div class="space"></div>
+              <div class="pill">Pending · Liquidity · Fees · Proofs</div>
+            </div>
+            <div id="bridgeGrid" class="grid"></div>
+          </div>
+
+          <div class="panel" style="margin-top:12px;" id="contracts">
+            <div class="row" style="align-items:center; margin-bottom:8px;">
+              <h2 style="margin:0;">Contracts & VM</h2>
+              <div class="space"></div>
+              <div class="pill">Registry · Proxy · Revert · Pause</div>
+            </div>
+            <div id="contractGrid" class="grid"></div>
+          </div>
+
+          <div class="panel" style="margin-top:12px;" id="blueprint">
+            <div class="row" style="align-items:center; margin-bottom:8px;">
+              <h2 style="margin:0;">Capability Blueprint</h2>
+              <div class="space"></div>
+              <div class="pill">Identity → Advanced L3</div>
+            </div>
+            <div id="blueprintContent"></div>
+          </div>
+
+          <div class="panel" style="margin-top:12px;" id="rbac">
+            <div class="row" style="align-items:center; margin-bottom:8px;">
+              <h2 style="margin:0;">RBAC Matrix</h2>
+              <div class="space"></div>
+              <div class="pill">Admin · Validator · Ops · Viewer</div>
+            </div>
+            <table>
+              <thead>
+                <tr><th>Capability</th><th>Admin</th><th>Validator</th><th>Ops</th><th>Viewer</th></tr>
+              </thead>
+              <tbody id="rbacTable"></tbody>
+            </table>
+          </div>
+
+          <div class="panel" style="margin-top:12px;" id="apis">
+            <div class="row" style="align-items:center; margin-bottom:8px;">
+              <h2 style="margin:0;">API Schema</h2>
+              <div class="space"></div>
+              <div class="pill">REST + GraphQL</div>
+            </div>
+            <div class="links" id="apiList"></div>
+          </div>
+
+          <div class="panel" style="margin-top:12px;" id="metrics">
+            <div class="row" style="align-items:center; margin-bottom:8px;">
+              <h2 style="margin:0;">Metrics & Observability</h2>
+              <div class="space"></div>
+              <div class="pill">Prom + Grafana</div>
+            </div>
+            <div class="links" id="metricList"></div>
+          </div>
+
+          <div class="panel" style="margin-top:12px;" id="rollup">
+            <div class="row" style="align-items:center; margin-bottom:8px;">
+              <h2 style="margin:0;">L2 / L3 Rollup Admin</h2>
+              <div class="space"></div>
+              <div class="pill">Sequencer · Proofs · DA</div>
+            </div>
+            <div id="rollupCards" class="grid"></div>
           </div>
         </div>
 
-        <div class="panel" style="margin-top:12px;">
-          <div class="row" style="align-items:center; margin-bottom:8px;">
-            <h2 style="margin:0;">Core Services</h2>
-            <div class="space"></div>
-            <div class="spark" style="width:140px;"></div>
-          </div>
-          <div id="grid" class="grid"></div>
+        <div class="panel">
+          <h2>Service Detail</h2>
+          <div id="detailTitle" class="pill" style="margin-bottom:8px;">Select a service</div>
+          <div id="detail" class="detail">Click any card to inspect raw data and diagnostics.</div>
+          <div style="margin:14px 0 6px; font-weight:700;">Diagnostics</div>
+          <div id="diag" class="glass small">Loading...</div>
+          <div style="margin:14px 0 6px; font-weight:700;">Quick Links</div>
+          <div class="links" id="links"></div>
         </div>
       </div>
-
-      <div class="panel">
-        <h2>Service Detail</h2>
-        <div id="detailTitle" class="pill" style="margin-bottom:8px;">Select a service</div>
-        <div id="detail" class="detail">Click any card to inspect raw data and diagnostics.</div>
-        <div style="margin:14px 0 6px; font-weight:700;">Diagnostics</div>
-        <div id="diag" class="glass small">Loading...</div>
-        <div style="margin:14px 0 6px; font-weight:700;">Quick Links</div>
-        <div class="links" id="links"></div>
-        <div style="margin:14px 0 6px; font-weight:700;">Capability Blueprint</div>
-        <div id="blueprint" class="glass small">Loading...</div>
-      </div>
-    </div>
+    </main>
 
     <script>
       const grid = document.getElementById("grid");
@@ -223,212 +541,634 @@
       const linksEl = document.getElementById("links");
       const intervalInput = document.getElementById("interval");
       const intervalLabel = document.getElementById("intervalLabel");
-      const blueprintEl = document.getElementById("blueprint");
+      const blueprintContent = document.getElementById("blueprintContent");
+      const modulesGrid = document.getElementById("modulesGrid");
+      const networkGrid = document.getElementById("networkGrid");
+      const rbacTable = document.getElementById("rbacTable");
+      const apiList = document.getElementById("apiList");
+      const metricList = document.getElementById("metricList");
+      const rollupCards = document.getElementById("rollupCards");
+      const walletAddressEl = document.getElementById("walletAddress");
+      const walletChainEl = document.getElementById("walletChain");
+      const connectWalletBtn = document.getElementById("connectWallet");
+      const siweButton = document.getElementById("siweButton");
+      const roleSelect = document.getElementById("roleSelect");
+      const apiKeyList = document.getElementById("apiKeyList");
+      const addApiKeyBtn = document.getElementById("addApiKey");
+      const addSignerBtn = document.getElementById("addSigner");
+      const multisigList = document.getElementById("multisigList");
+      const securitySignals = document.getElementById("securitySignals");
+      const securityTelemetry = document.getElementById("securityTelemetry");
+      const ssoButton = document.getElementById("ssoButton");
+      const ssoStatusEl = document.getElementById("ssoStatus");
+      const safeList = document.getElementById("safeList");
+      const validatorGrid = document.getElementById("validatorGrid");
+      const tokenGrid = document.getElementById("tokenGrid");
+      const proofGrid = document.getElementById("proofGrid");
+      const aiGrid = document.getElementById("aiGrid");
+      const bridgeGrid = document.getElementById("bridgeGrid");
+      const contractGrid = document.getElementById("contractGrid");
+      const logOutput = document.getElementById("logOutput");
+
       const bpNav = document.createElement("div");
       const bpDetail = document.createElement("div");
 
       let currentServices = [];
       let intervalId = null;
       let activeBlueprint = "Identity & Security";
+      let identityState = {
+        wallet: null,
+        role: "Viewer",
+        multisig: []
+      };
+      let sessionInfo = { role: "Viewer", wallet: null, oidc: null, apiKeys: [], safes: [] };
+
+      const saveIdentityState = () => {
+        try {
+          localStorage.setItem("ghostlIdentity", JSON.stringify(identityState));
+        } catch (e) {
+          console.warn("Persist identity failed", e);
+        }
+      };
+
+      const loadIdentityState = () => {
+        try {
+          const stored = JSON.parse(localStorage.getItem("ghostlIdentity") || "{}");
+          identityState = {
+            wallet: stored.wallet || null,
+            role: stored.role || "Viewer",
+            multisig: stored.multisig || []
+          };
+        } catch (e) {
+          identityState = { wallet: null, role: "Viewer", multisig: [] };
+        }
+      };
+
+      const readableChain = (chainId) => {
+        if (!chainId) return "—";
+        const map = {
+          "0x1": "Ethereum Mainnet",
+          "0x5": "Goerli",
+          "0xaa36a7": "Sepolia",
+          "0xa": "OP Mainnet",
+          "0x1a4": "OP Goerli",
+          "0x2105": "OP Sepolia"
+        };
+        return map[chainId] || chainId;
+      };
+
+      const randomHex = (bytes = 12) => {
+        try {
+          return Array.from(crypto.getRandomValues(new Uint8Array(bytes)))
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
+        } catch (_) {
+          return Math.random().toString(16).slice(2, 2 + bytes * 2);
+        }
+      };
+
+      const postJson = async (url, body) => {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body || {})
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `status ${res.status}`);
+        }
+        return res.json().catch(() => ({}));
+      };
+
+      const buildSiweMessage = (address, chainId, nonce) => {
+        const domain = window.location.host;
+        const origin = window.location.origin;
+        const statement = "Sign in to GhostL Command";
+        const issuedAt = new Date().toISOString();
+        return `${domain} wants you to sign in with your Ethereum account:
+${address}
+
+${statement}
+
+URI: ${origin}
+Version: 1
+Chain ID: ${chainId}
+Nonce: ${nonce}
+Issued At: ${issuedAt}`;
+      };
 
       const formatHex = (v) => {
         if (v === null || v === undefined) return "";
         if (typeof v === "string" && v.startsWith("0x")) return String(parseInt(v, 16));
         return String(v);
       };
-
       const statusColor = (svc) => (svc.ok ? "ok" : "bad");
 
       const blueprintSections = [
-        {
-          title: "Identity & Security",
-          items: [
-            "Wallet/OAuth login, RBAC",
-            "Admin multisig approvals",
-            "Slashing + key rotation alerts",
-            "Firewall/port + rate-limit posture"
-          ]
-        },
-        {
-          title: "Nodes & Consensus",
-          items: [
-            "Validator/full/archive inventory",
-            "Sync/peer health, CPU/RAM/disk",
-            "Version drift + restart/upgrade hooks",
-            "Fork/reorg/finality monitors"
-          ]
-        },
-        {
-          title: "Validators",
-          items: [
-            "Active/jailed/slashed status",
-            "Stake, commission, rewards",
-            "Missed blocks / participation",
-            "Proposer rotation + BFT alerts"
-          ]
-        },
-        {
-          title: "Token & Treasury",
-          items: [
-            "Supply/inflation/emissions",
-            "Gas model + fee distribution",
-            "Treasury balances + multisig",
-            "Bridge fees / protocol income"
-          ]
-        },
-        {
-          title: "Contracts & VM",
-          items: [
-            "Registry + ownership/proxy status",
-            "Pause/emergency controls",
-            "Gas usage + revert rates",
-            "AI anomaly & exploit scoring"
-          ]
-        },
-        {
-          title: "Bridges & Interop",
-          items: [
-            "Liquidity + pending/finalized transfers",
-            "Validator sigs per transfer",
-            "Pause/fee tuning/emergency modes",
-            "Fraud/fault-proof monitoring"
-          ]
-        },
-        {
-          title: "Txs & Blocks",
-          items: [
-            "Mempool + tx lifecycle",
-            "Block production timeline",
-            "MEV/fairness indicators",
-            "Gas optimization insights"
-          ]
-        },
-        {
-          title: "AI & Intelligence",
-          items: [
-            "Fraud/Sybil/bot detection",
-            "Predictive congestion/gas",
-            "Downtime/slash risk forecast",
-            "Capacity planning"
-          ]
-        },
-        {
-          title: "Observability & Alerts",
-          items: [
-            "Prom/Grafana embeds",
-            "Latency percentiles / KPIs",
-            "Threshold + anomaly alerts",
-            "Webhook/Slack/Email/Discord"
-          ]
-        },
-        {
-          title: "DevOps & Upgrades",
-          items: [
-            "Hard/soft fork scheduling",
-            "Feature flags, canary/rollback",
-            "Contract/validator CI/CD hooks",
-            "Version compatibility checks"
-          ]
-        },
-        {
-          title: "Governance",
-          items: [
-            "Proposal creation/voting/quorum",
-            "Delegated voting + execution queues",
-            "Snapshot/off-chain links",
-            "Participation analytics"
-          ]
-        },
-        {
-          title: "API & Integrations",
-          items: [
-            "RPC endpoint manager + rate limits",
-            "API usage analytics",
-            "SDK versioning",
-            "Exchange/oracle/indexer hooks"
-          ]
-        },
-        {
-          title: "Advanced (L2/L3)",
-          items: [
-            "Sequencer controls",
-            "Fraud/ZK proof status",
-            "DA monitoring",
-            "L1↔L2 settlement tracking"
-          ]
-        }
+        { title: "Identity & Security", items: ["Wallet/OAuth login, RBAC", "Admin multisig approvals", "Slashing + key rotation alerts", "Firewall/port + rate-limit posture", "Vault/HSM health", "Attack surface & API abuse monitoring", "Audit trails"] },
+        { title: "Nodes & Chain", items: ["Chain ID/env/consensus", "Finality & block time", "Epoch/round tracking", "Fork/reorg detection", "Node list & uptime", "Peer/sync/IOPS", "Restart/upgrade orchestration", "Version drift detection"] },
+        { title: "Validators", items: ["Status active/jailed/slashed", "Stake/delegation/commission", "Rewards & missed blocks", "Voting power distribution", "Proposer rotation", "Participation rate", "Byzantine/finality alerts"] },
+        { title: "Token & Treasury", items: ["Supply/circulating/emissions", "Burn/mint tracking", "Gas model config", "Fee distribution", "Treasury balances", "Multisig approvals", "Revenue + validator payouts"] },
+        { title: "Contracts & VM", items: ["Registry + ownership/proxy", "ABI/source verification", "Pause/emergency controls", "Gas usage/call frequency", "Revert/reentrancy detection", "AI anomaly scoring"] },
+        { title: "Bridges & Interop", items: ["Supported chains & liquidity", "Pending/finalized transfers", "Failed/disputed txs", "Validator sigs per transfer", "Fee tuning / pause / emergency", "Fraud proof monitoring"] },
+        { title: "Txs & Blocks", items: ["Mempool + lifecycle", "Block production timeline", "Proposer identity", "MEV/fairness", "Gas optimization insights", "Failed tx diagnostics"] },
+        { title: "AI & Intelligence", items: ["Fraud/Sybil/bot detection", "Wallet behavior profiling", "Contract risk scoring", "Congestion/gas prediction", "Downtime/slash risk forecast"] },
+        { title: "Observability & Alerts", items: ["Prom/Grafana embeds", "Custom KPIs / SLA", "Latency percentiles", "Threshold + anomaly alerts", "Validator/bridge incident alerts"] },
+        { title: "DevOps & Upgrades", items: ["Hard/soft fork scheduling", "Feature flags / canary / rollback", "CI/CD hooks", "Version compatibility checks"] },
+        { title: "Governance", items: ["Proposal creation/voting/quorum", "Delegated voting", "Execution queues", "Snapshot/off-chain links", "Participation analytics"] },
+        { title: "API & Integrations", items: ["RPC manager + rate limits", "API usage analytics", "SDK versions", "Webhooks", "Exchanges/oracles/indexers", "KYC/compliance"] },
+        { title: "Advanced L2/L3", items: ["Sequencer controls", "Fraud/ZK proof views", "DA monitoring", "L1↔L2 settlement tracking", "AI fee markets"] }
       ];
 
       const featureModules = [
-        {
-          title: "Access & Security",
-          status: "live",
-          points: ["RBAC matrix", "Admin multisig", "SSO + wallet auth", "Audit log stream"]
-        },
-        {
-          title: "Nodes & Consensus",
-          status: "live",
-          points: ["Validator/full/archive inventory", "Sync/peer health", "Version drift alerts", "Restart hooks"]
-        },
-        {
-          title: "Validators",
-          status: "beta",
-          points: ["Stake/commission view", "Missed blocks", "Proposer rotation", "Byzantine alerts"]
-        },
-        {
-          title: "Token & Treasury",
-          status: "beta",
-          points: ["Supply/emissions", "Gas model controls", "Treasury balances", "Multisig spends"]
-        },
-        {
-          title: "Contracts & VM",
-          status: "plan",
-          points: ["Registry + ownership", "Proxy/upgrade status", "Revert rate/AI risk", "Pause/emergency"]
-        },
-        {
-          title: "Bridges & Interop",
-          status: "plan",
-          points: ["Pending/finalized transfers", "Liquidity pools", "Pause/fee tuning", "Fraud/fault proofs"]
-        },
-        {
-          title: "Txs & Blocks",
-          status: "live",
-          points: ["Mempool & lifecycle", "Block production timeline", "MEV/fairness signals", "Gas insights"]
-        },
-        {
-          title: "AI & Intelligence",
-          status: "beta",
-          points: ["Fraud/Sybil scoring", "Predictive congestion", "Downtime/slash risk", "Capacity planning"]
-        },
-        {
-          title: "Observability & Alerts",
-          status: "live",
-          points: ["Prom/Grafana embeds", "Threshold + anomaly alerts", "Latency/KPI panels", "Webhooks/Slack/Email"]
-        },
-        {
-          title: "DevOps & Upgrades",
-          status: "plan",
-          points: ["Fork scheduling", "Feature flags/canary", "Rollback paths", "Version compatibility"]
-        },
-        {
-          title: "Governance",
-          status: "plan",
-          points: ["Proposal/voting dashboards", "Quorum tracking", "Delegations", "Snapshot/off-chain links"]
-        },
-        {
-          title: "API & Integrations",
-          status: "plan",
-          points: ["RPC manager + rate limits", "API analytics", "SDK versions", "Exchange/oracle/indexer hooks"]
-        },
-        {
-          title: "Advanced L2/L3",
-          status: "plan",
-          points: ["Sequencer controls", "Fraud/ZK proof views", "DA monitoring", "L1↔L2 settlement"]
-        }
+        { title: "Access & Security", status: "live", points: ["RBAC matrix", "Admin multisig", "SSO + wallet auth", "Audit log stream"] },
+        { title: "Nodes & Consensus", status: "live", points: ["Validator/full/archive inventory", "Sync/peer health", "Version drift alerts", "Restart hooks"] },
+        { title: "Validators", status: "beta", points: ["Stake/commission view", "Missed blocks", "Proposer rotation", "Byzantine alerts"] },
+        { title: "Token & Treasury", status: "beta", points: ["Supply/emissions", "Gas model controls", "Treasury balances", "Multisig spends"] },
+        { title: "Contracts & VM", status: "plan", points: ["Registry + ownership", "Proxy/upgrade status", "Revert rate/AI risk", "Pause/emergency"] },
+        { title: "Bridges & Interop", status: "plan", points: ["Pending/finalized transfers", "Liquidity pools", "Pause/fee tuning", "Fraud/fault proofs"] },
+        { title: "Txs & Blocks", status: "live", points: ["Mempool & lifecycle", "Block production timeline", "MEV/fairness signals", "Gas insights"] },
+        { title: "AI & Intelligence", status: "beta", points: ["Fraud/Sybil scoring", "Predictive congestion", "Downtime/slash risk", "Capacity planning"] },
+        { title: "Observability & Alerts", status: "live", points: ["Prom/Grafana embeds", "Threshold + anomaly alerts", "Latency/KPI panels", "Webhooks/Slack/Email"] },
+        { title: "DevOps & Upgrades", status: "plan", points: ["Fork scheduling", "Feature flags/canary", "Rollback paths", "Version compatibility"] },
+        { title: "Governance", status: "plan", points: ["Proposal/voting dashboards", "Quorum tracking", "Delegations", "Snapshot/off-chain links"] },
+        { title: "API & Integrations", status: "plan", points: ["RPC manager + rate limits", "API analytics", "SDK versions", "Exchange/oracle/indexer hooks"] },
+        { title: "Advanced L2/L3", status: "plan", points: ["Sequencer controls", "Fraud/ZK proof views", "DA monitoring", "L1↔L2 settlement"] }
       ];
 
+      const rbacMatrix = [
+        { capability: "Restart/upgrade nodes", admin: "✓", validator: "—", ops: "✓", viewer: "—" },
+        { capability: "Modify guard/gate policy", admin: "✓", validator: "—", ops: "✓", viewer: "—" },
+        { capability: "Submit governance props", admin: "✓", validator: "✓", ops: "—", viewer: "—" },
+        { capability: "Treasury spend/bridge pause", admin: "✓", validator: "—", ops: "✓*", viewer: "—" },
+        { capability: "View metrics/logs", admin: "✓", validator: "✓", ops: "✓", viewer: "✓" },
+        { capability: "Deploy contracts", admin: "✓", validator: "—", ops: "✓", viewer: "—" },
+        { capability: "Manage API keys", admin: "✓", validator: "—", ops: "✓", viewer: "—" }
+      ];
+
+      const apiSchema = [
+        { title: "REST: /api/status", detail: "Health of core services (op-node, geth, guard, gate)" },
+        { title: "REST: /api/diag", detail: "Guard + gate diagnostics, links" },
+        { title: "GraphQL: /graphql", detail: "Planned: nodes, validators, bridges, txs, governance" },
+        { title: "Webhooks", detail: "Alerts: validator downtime, bridge incidents, anomalies" }
+      ];
+
+      const metricTargets = [
+        { title: "Prometheus", detail: "http://localhost:9090" },
+        { title: "Grafana", detail: "http://localhost:3000" },
+        { title: "op-node", detail: "optimism_syncStatus, op_node_*" },
+        { title: "op-batcher/proposer", detail: "op_batcher_*, op_proposer_*" },
+        { title: "guard/gate", detail: "ghost_guard_*, op_gate_*" },
+        { title: "l2-geth", detail: "geth_* RPC / exec" }
+      ];
+
+      const rollupControls = [
+        { title: "Sequencer Control", detail: "Pause/resume, L1 origin, batching config", status: "live" },
+        { title: "Proofs & Finality", detail: "Fraud/ZK proof status, challenges, L1 settlements", status: "beta" },
+        { title: "Data Availability", detail: "DA footprint, alt-DA monitoring", status: "plan" },
+        { title: "Fee Markets", detail: "AI-controlled fees, gas target tuning", status: "plan" }
+      ];
+      const validatorDefaults = [
+        { id: "l2", stake: "?", commission: "?", missedBlocks: "?", proposerIndex: "?", byzantine: "?" },
+        { id: "l3", stake: "?", commission: "?", missedBlocks: "?", proposerIndex: "?", byzantine: "?" }
+      ];
+      const tokenDefaults = [
+        { id: "l2", supply: "?", emissions: "?", gasBase: "?", gasTarget: "?", treasury: "?", multisig: "?" },
+        { id: "l3", supply: "?", emissions: "?", gasBase: "?", gasTarget: "?", treasury: "?", multisig: "?" }
+      ];
+      const proofDefaults = [
+        { id: "l2", proposals: "?", finalizations: "?", challenges: "?", settlement: "?", next: "?", status: "?" },
+        { id: "l3", proposals: "?", finalizations: "?", challenges: "?", settlement: "?", next: "?", status: "?" }
+      ];
+      const aiDefaults = [
+        { id: "l2", risk: "?", congestion: "?", downtime: "?", capacity: "?", action: "?" },
+        { id: "l3", risk: "?", congestion: "?", downtime: "?", capacity: "?", action: "?" }
+      ];
+      const networkDefaults = [
+        { id: "l2", block: "?", peers: "?", syncing: "?", version: "?", lag: "?" },
+        { id: "l3", block: "?", peers: "?", syncing: "?", version: "?", lag: "?" }
+      ];
+      const bridgeDefaults = [
+        { id: "l2", pending: "?", finalized: "?", liquidity: "?", fees: "?", pause: "?", proofs: "?" },
+        { id: "l3", pending: "?", finalized: "?", liquidity: "?", fees: "?", pause: "?", proofs: "?" }
+      ];
+      const contractDefaults = [
+        { id: "l2", registry: "?", ownership: "?", proxies: "?", revertRate: "?", pause: "?", aiRisk: "?" },
+        { id: "l3", registry: "?", ownership: "?", proxies: "?", revertRate: "?", pause: "?", aiRisk: "?" }
+      ];
+
+      const renderIdentity = () => {
+        const wallet = sessionInfo.wallet || identityState.wallet;
+        walletAddressEl.textContent = wallet?.address || "Not connected";
+        walletChainEl.textContent = wallet?.chainId ? `${readableChain(wallet.chainId)} (${wallet.chainId})` : "—";
+        roleSelect.value = sessionInfo.role || identityState.role || "Viewer";
+
+        if (!sessionInfo.apiKeys?.length) {
+          apiKeyList.innerHTML = `<div class="muted">No API keys yet or insufficient role.</div>`;
+        } else {
+          apiKeyList.innerHTML = sessionInfo.apiKeys
+            .map(
+              (k) =>
+                `<div class="row" style="align-items:center; margin:4px 0; gap:8px;"><span class="mono">${k.key}</span><span class="small">${k.label ||
+                  "key"}</span><button class="secondary" data-key="${k.id}" style="padding:4px 8px;">Revoke</button></div>`
+            )
+            .join("");
+          apiKeyList.querySelectorAll("button[data-key]").forEach((btn) => {
+            btn.addEventListener("click", () => revokeApiKey(btn.getAttribute("data-key")));
+          });
+        }
+
+        if (!identityState.multisig.length) {
+          multisigList.innerHTML = `<div class="muted">No signers added.</div>`;
+        } else {
+          multisigList.innerHTML = identityState.multisig.map((s, i) => `<div>${i + 1}. ${s}</div>`).join("");
+        }
+
+        if (sessionInfo.oidc?.email) {
+          ssoStatusEl.textContent = `${sessionInfo.oidc.email} (${sessionInfo.oidc.name || "SSO"})`;
+          ssoButton.textContent = "Logout";
+        } else {
+          ssoStatusEl.textContent = "Not authenticated";
+          ssoButton.textContent = "Login";
+        }
+
+        if (!sessionInfo.safes?.length) {
+          safeList.innerHTML = `<div class="muted">No safes configured. Set SAFE_CONTRACTS env.</div>`;
+        } else {
+          safeList.innerHTML = sessionInfo.safes
+            .map(
+              (s) =>
+                `<div>${s.label || "Safe"} · <span class="mono">${s.address}</span>${
+                  identityState.multisig.length ? `<div class="small">Signers: ${identityState.multisig.join(", ")}</div>` : ""
+                }</div>`
+            )
+            .join("");
+        }
+      };
+
+      const connectWallet = async () => {
+        if (!window.ethereum) {
+          walletAddressEl.textContent = "No wallet detected";
+          return;
+        }
+        try {
+          const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+          const chainId = await window.ethereum.request({ method: "eth_chainId" });
+          identityState.wallet = { address: accounts[0], chainId };
+          saveIdentityState();
+          renderIdentity();
+        } catch (e) {
+          walletAddressEl.textContent = e?.message || "Connect failed";
+        }
+      };
+
+      const siweLogin = async () => {
+        try {
+          if (!identityState.wallet?.address) {
+            await connectWallet();
+          }
+          if (!identityState.wallet?.address) return;
+          const nonceRes = await fetch("/auth/siwe/nonce");
+          const { nonce } = await nonceRes.json();
+          const chainIdHex = identityState.wallet.chainId || (await window.ethereum.request({ method: "eth_chainId" }));
+          const chainId = parseInt(chainIdHex, 16);
+          const message = buildSiweMessage(identityState.wallet.address, chainId, nonce);
+          const signature = await window.ethereum.request({
+            method: "personal_sign",
+            params: [message, identityState.wallet.address]
+          });
+          const verifyRes = await fetch("/auth/siwe/verify", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ message, signature })
+          });
+          if (!verifyRes.ok) throw new Error((await verifyRes.json()).error || "SIWE verify failed");
+          await loadSession();
+        } catch (e) {
+          walletAddressEl.textContent = e?.message || "SIWE failed";
+        }
+      };
+
+      const loadSession = async () => {
+        try {
+          const res = await fetch("/auth/me");
+          if (!res.ok) throw new Error(`status ${res.status}`);
+          const body = await res.json();
+          sessionInfo = {
+            role: body.user?.role || "Viewer",
+            wallet: body.user?.wallet || null,
+            oidc: body.user?.oidc || null,
+            apiKeys: body.user?.apiKeys || [],
+            safes: body.safes || []
+          };
+          identityState.role = sessionInfo.role;
+          if (sessionInfo.wallet) identityState.wallet = sessionInfo.wallet;
+          renderIdentity();
+        } catch (e) {
+          console.warn("Load session failed", e);
+        }
+      };
+
+      const addApiKey = async () => {
+        try {
+          const label = prompt("Label for API key") || "api-key";
+          const res = await fetch("/api/keys", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ label })
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            alert(err.error || "Cannot create key (need Ops/Admin?)");
+            return;
+          }
+          const body = await res.json();
+          sessionInfo.apiKeys = [body.key, ...(sessionInfo.apiKeys || [])];
+          renderIdentity();
+        } catch (e) {
+          alert(e?.message || "Failed to create key");
+        }
+      };
+
+      const revokeApiKey = async (id) => {
+        try {
+          const res = await fetch(`/api/keys/${id}`, { method: "DELETE" });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            alert(err.error || "Cannot revoke key");
+            return;
+          }
+          sessionInfo.apiKeys = (sessionInfo.apiKeys || []).filter((k) => k.id !== id);
+          renderIdentity();
+        } catch (e) {
+          alert(e?.message || "Failed to revoke key");
+        }
+      };
+
+      const addSigner = () => {
+        const signer = prompt("Add signer address or label for admin multisig");
+        if (!signer) return;
+        const trimmed = signer.trim();
+        if (!trimmed) return;
+        if (!identityState.multisig.includes(trimmed)) {
+          identityState.multisig = [...identityState.multisig, trimmed];
+          saveIdentityState();
+          renderIdentity();
+        }
+      };
+
+      const setSecuritySignals = (diag) => {
+        const signals = [];
+        const guard = diag?.guardHealth;
+        const gate = diag?.gateStatus;
+        if (guard) {
+          signals.push(
+            guard.ok
+              ? `Guard ${guard.policyMode ?? guard.mode ?? "?"} · risk ${guard.riskThreshold ?? "?"} · policy ${guard.policyAddress ?? "?"}`
+              : `Guard unreachable: ${guard.error || "error"}`
+          );
+        }
+        if (gate) {
+          signals.push(
+            gate.ok
+              ? `Gate ${gate.mode ?? gate?.policy?.mode ?? "allow"} · requests ${gate?.metrics?.rpcRequests ?? 0}`
+              : `Gate unreachable: ${gate.error || "error"}`
+          );
+        }
+        const opNode = currentServices.find((s) => s.id === "op-node");
+        if (opNode?.data?.unsafe_l2) {
+          signals.push(
+            `op-node unsafe ${formatHex(opNode.data.unsafe_l2?.number)} · safe ${formatHex(opNode.data.safe_l2?.number)}`
+          );
+        }
+        if (!signals.length) signals.push("No security telemetry yet. Ensure /api/diag and /api/status are reachable.");
+        securitySignals.innerHTML = signals.map((s) => `<div class="small">${s}</div>`).join("");
+      };
+
+      const renderSecurityTelemetry = (metrics) => {
+        if (!metrics) {
+          securityTelemetry.innerHTML = `<div class="muted">No metrics available.</div>`;
+          return;
+        }
+        securityTelemetry.innerHTML = `
+          <div>Slashing events: ${metrics.slashing ?? "?"}</div>
+          <div>Key rotations: ${metrics.keyRotations ?? "?"}</div>
+          <div>Firewall blocks: ${metrics.firewall ?? "?"}</div>
+          <div>Open ports (firewall): ${metrics.ports ?? "?"}</div>
+        `;
+      };
+
+      const loadSecurityMetrics = async () => {
+        try {
+          const res = await fetch("/api/security/metrics");
+          if (!res.ok) throw new Error(`status ${res.status}`);
+          const body = await res.json();
+          if (body.safes) {
+            sessionInfo.safes = body.safes;
+            renderIdentity();
+          }
+          renderSecurityTelemetry(body.metrics);
+        } catch (e) {
+          securityTelemetry.innerHTML = `<div class="muted">Metrics unavailable: ${e?.message || e}</div>`;
+        }
+      };
+
+      const renderValidators = (validators) => {
+        validatorGrid.innerHTML = "";
+        const list = validators && validators.length ? validators : validatorDefaults;
+        list.forEach((v) => {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <h3 style="margin:0;">${(v.id || "validator").toUpperCase()}</h3>
+              <div class="status ${v.byzantine && Number(v.byzantine) > 0 ? "bad" : "ok"}"><span class="dot"></span>${v.byzantine && Number(v.byzantine) > 0 ? "Alert" : "Nominal"}</div>
+            </div>
+            <div class="muted">Stake: ${v.stake ?? "?"}</div>
+            <div class="muted">Commission: ${v.commission ?? "?"}</div>
+            <div class="muted">Missed blocks: ${v.missedBlocks ?? "?"}</div>
+            <div class="muted">Proposer rotation: ${v.proposerIndex ?? "?"}</div>
+            <div class="muted">Byzantine alerts: ${v.byzantine ?? "0"}</div>
+          `;
+          validatorGrid.appendChild(card);
+        });
+      };
+
+      const loadValidators = async () => {
+        try {
+          const res = await fetch("/api/validators");
+          if (!res.ok) throw new Error(`status ${res.status}`);
+          const body = await res.json();
+          renderValidators(body.validators || []);
+        } catch (e) {
+          validatorGrid.innerHTML = `<div class="muted">Validator metrics unavailable: ${e?.message || e}</div>`;
+        }
+      };
+
+      const renderToken = (networks) => {
+        tokenGrid.innerHTML = "";
+        const list = networks && networks.length ? networks : tokenDefaults;
+        list.forEach((n) => {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <h3 style="margin:0;">${(n.id || "").toUpperCase()}</h3>
+              <div class="status ok"><span class="dot"></span>Token</div>
+            </div>
+            <div class="muted">Supply: ${n.supply ?? "?"}</div>
+            <div class="muted">Emissions: ${n.emissions ?? "?"}</div>
+            <div class="muted">Gas model: base ${n.gasBase ?? "?"} · target ${n.gasTarget ?? "?"}</div>
+            <div class="muted">Treasury balance: ${n.treasury ?? "?"}</div>
+            <div class="muted">Multisig spends: ${n.multisig ?? "?"}</div>
+          `;
+          tokenGrid.appendChild(card);
+        });
+      };
+
+      const loadToken = async () => {
+        try {
+          const res = await fetch("/api/token");
+          if (!res.ok) throw new Error(`status ${res.status}`);
+          const body = await res.json();
+          renderToken(body.networks || []);
+        } catch (e) {
+          tokenGrid.innerHTML = `<div class="muted">Token metrics unavailable: ${e?.message || e}</div>`;
+        }
+      };
+
+      const renderProofs = (networks) => {
+        proofGrid.innerHTML = "";
+        const list = networks && networks.length ? networks : proofDefaults;
+        list.forEach((n) => {
+          const card = document.createElement("div");
+          card.className = "card";
+          const statusClass = n.status && String(n.status).toLowerCase().includes("degraded") ? "warn" : "ok";
+          card.innerHTML = `
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <h3 style="margin:0;">${(n.id || "").toUpperCase()}</h3>
+              <div class="status ${statusClass}"><span class="dot"></span>${n.status ?? "Proofs"}</div>
+            </div>
+            <div class="muted">Proposals: ${n.proposals ?? "?"}</div>
+            <div class="muted">Finalizations: ${n.finalizations ?? "?"}</div>
+            <div class="muted">Challenges: ${n.challenges ?? "?"}</div>
+            <div class="muted">Settlement: ${n.settlement ?? "?"}</div>
+            <div class="muted">Next batch: ${n.next ?? "?"}</div>
+          `;
+          proofGrid.appendChild(card);
+        });
+      };
+
+      const loadProofs = async () => {
+        try {
+          const res = await fetch("/api/proofs");
+          if (!res.ok) throw new Error(`status ${res.status}`);
+          const body = await res.json();
+          renderProofs(body.networks || []);
+        } catch (e) {
+          proofGrid.innerHTML = `<div class="muted">Proof metrics unavailable: ${e?.message || e}</div>`;
+        }
+      };
+
+      const renderBridge = (networks) => {
+        bridgeGrid.innerHTML = "";
+        const list = networks && networks.length ? networks : bridgeDefaults;
+        list.forEach((n) => {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <h3 style="margin:0;">${(n.id || "").toUpperCase()}</h3>
+              <div class="status ${n.pause && String(n.pause).toLowerCase().includes("pause") ? "warn" : "ok"}"><span class="dot"></span>${n.pause ?? "Interop"}</div>
+            </div>
+            <div class="muted">Pending/finalized: ${n.pending ?? "?"} / ${n.finalized ?? "?"}</div>
+            <div class="muted">Liquidity: ${n.liquidity ?? "?"}</div>
+            <div class="muted">Fees: ${n.fees ?? "?"}</div>
+            <div class="muted">Proofs: ${n.proofs ?? "?"}</div>
+          `;
+          bridgeGrid.appendChild(card);
+        });
+      };
+
+      const renderAI = (networks) => {
+        aiGrid.innerHTML = "";
+        const list = networks && networks.length ? networks : aiDefaults;
+        list.forEach((n) => {
+          const card = document.createElement("div");
+          card.className = "card";
+          const statusClass = n.downtime && String(n.downtime).toLowerCase().includes("risk") ? "warn" : "ok";
+          card.innerHTML = `
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <h3 style="margin:0;">${(n.id || "").toUpperCase()}</h3>
+              <div class="status ${statusClass}"><span class="dot"></span>${n.action ?? "AI"}</div>
+            </div>
+            <div class="muted">Fraud/Sybil risk: ${n.risk ?? "?"}</div>
+            <div class="muted">Predictive congestion: ${n.congestion ?? "?"}</div>
+            <div class="muted">Downtime/slash: ${n.downtime ?? "?"}</div>
+            <div class="muted">Capacity planning: ${n.capacity ?? "?"}</div>
+          `;
+          aiGrid.appendChild(card);
+        });
+      };
+
+      const loadAI = async () => {
+        try {
+          const res = await fetch("/api/ai");
+          if (!res.ok) throw new Error(`status ${res.status}`);
+          const body = await res.json();
+          renderAI(body.networks || []);
+        } catch (e) {
+          aiGrid.innerHTML = `<div class="muted">AI signals unavailable: ${e?.message || e}</div>`;
+        }
+      };
+
+      const loadBridge = async () => {
+        try {
+          const res = await fetch("/api/bridge");
+          if (!res.ok) throw new Error(`status ${res.status}`);
+          const body = await res.json();
+          renderBridge(body.networks || []);
+        } catch (e) {
+          bridgeGrid.innerHTML = `<div class="muted">Bridge metrics unavailable: ${e?.message || e}</div>`;
+        }
+      };
+
+      const renderContracts = (networks) => {
+        contractGrid.innerHTML = "";
+        const list = networks && networks.length ? networks : contractDefaults;
+        list.forEach((n) => {
+          const card = document.createElement("div");
+          card.className = "card";
+          const risk = n.aiRisk ?? "?";
+          const pause = n.pause ?? "0";
+          card.innerHTML = `
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <h3 style="margin:0;">${(n.id || "").toUpperCase()}</h3>
+              <div class="status ${Number(pause) > 0 ? "warn" : "ok"}"><span class="dot"></span>${Number(pause) > 0 ? "Paused" : "Active"}</div>
+            </div>
+            <div class="muted">Registry: ${n.registry ?? "?"}</div>
+            <div class="muted">Ownerless: ${n.ownership ?? "?"}</div>
+            <div class="muted">Upgradeable proxies: ${n.proxies ?? "?"}</div>
+            <div class="muted">Revert rate: ${n.revertRate ?? "?"}</div>
+            <div class="muted">AI risk: ${risk}</div>
+          `;
+          contractGrid.appendChild(card);
+        });
+      };
+
+      const loadContracts = async () => {
+        try {
+          const res = await fetch("/api/contracts");
+          if (!res.ok) throw new Error(`status ${res.status}`);
+          const body = await res.json();
+          renderContracts(body.networks || []);
+        } catch (e) {
+          contractGrid.innerHTML = `<div class="muted">Contract telemetry unavailable: ${e?.message || e}</div>`;
+        }
+      };
+
       const renderBlueprint = () => {
-        blueprintEl.innerHTML = "";
+        blueprintContent.innerHTML = "";
         bpNav.className = "blueprint-nav";
         bpDetail.className = "glass";
 
@@ -456,8 +1196,135 @@
           bpDetail.appendChild(list);
         }
 
-        blueprintEl.appendChild(bpNav);
-        blueprintEl.appendChild(bpDetail);
+        blueprintContent.appendChild(bpNav);
+        blueprintContent.appendChild(bpDetail);
+      };
+
+      const renderModules = () => {
+        modulesGrid.innerHTML = "";
+        featureModules.forEach((m) => {
+          const card = document.createElement("div");
+          card.className = "module-card";
+          const statusClass = m.status === "live" ? "ok" : m.status === "beta" ? "beta" : "plan";
+          const statusLabel = m.status === "live" ? "Live" : m.status === "beta" ? "Beta" : "Planned";
+          card.innerHTML = `
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <h3 style="margin:0;">${m.title}</h3>
+              <span class="chip ${statusClass}">${statusLabel}</span>
+            </div>
+            <ul class="mutelist">${m.points.map((p) => `<li>${p}</li>`).join("")}</ul>
+          `;
+          modulesGrid.appendChild(card);
+        });
+      };
+
+      const renderNetwork = (nets) => {
+        networkGrid.innerHTML = "";
+        const list = nets && nets.length ? nets : networkDefaults;
+        list.forEach((n) => {
+          const card = document.createElement("div");
+          card.className = "card";
+          const statusClass = n.up === false ? "bad" : "ok";
+          const lag = n.lagSeconds !== undefined ? `${n.lagSeconds}s` : n.lag ?? "?";
+          card.innerHTML = `
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <h3 style="margin:0;">${(n.id || "").toUpperCase()}</h3>
+              <div class="status ${statusClass}"><span class="dot"></span>${n.up === false ? "Down" : "Live"}</div>
+            </div>
+            <div class="muted">Block: ${n.block ?? "?"}</div>
+            <div class="muted">Peers: ${n.peers ?? "?"}</div>
+            <div class="muted">Sync: ${n.syncing ? "Syncing" : "Synced"}</div>
+            <div class="muted">Lag: ${lag}</div>
+            <div class="muted">Client: ${n.version ?? "?"}</div>
+          `;
+          networkGrid.appendChild(card);
+        });
+      };
+
+      const restartService = async (service) => {
+        try {
+          meta.textContent = `Restarting ${service}...`;
+          await postJson("/api/manage/restart", { service });
+          meta.textContent = `Restarted ${service}`;
+        } catch (e) {
+          meta.textContent = `Restart ${service} failed: ${e?.message || e}`;
+        }
+      };
+
+      const updateGuard = async ({ mode, delaySeconds, threshold }) => {
+        try {
+          meta.textContent = "Updating Guard policy...";
+          await postJson("/api/manage/guard", { mode, delaySeconds, threshold });
+          meta.textContent = "Guard policy updated";
+        } catch (e) {
+          meta.textContent = `Guard update failed: ${e?.message || e}`;
+        }
+      };
+
+      const triggerChallenger = async (layer) => {
+        try {
+          meta.textContent = `Triggering challenger ${layer}...`;
+          await postJson("/api/manage/challenger", { layer });
+          meta.textContent = `Challenger ${layer} triggered`;
+        } catch (e) {
+          meta.textContent = `Challenger ${layer} failed: ${e?.message || e}`;
+        }
+      };
+
+      const fetchLogs = async (service) => {
+        try {
+          logOutput.textContent = `Loading logs for ${service}...`;
+          const body = await postJson("/api/manage/logs", { service, lines: 200 });
+          logOutput.textContent = body.logs || "No logs";
+        } catch (e) {
+          logOutput.textContent = `Logs error: ${e?.message || e}`;
+        }
+      };
+
+      const renderRBAC = () => {
+        rbacTable.innerHTML = "";
+        rbacMatrix.forEach((r) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${r.capability}</td><td>${r.admin}</td><td>${r.validator}</td><td>${r.ops}</td><td>${r.viewer}</td>`;
+          rbacTable.appendChild(tr);
+        });
+      };
+
+      const renderAPIs = () => {
+        apiList.innerHTML = "";
+        apiSchema.forEach((a) => {
+          const card = document.createElement("div");
+          card.className = "linkcard";
+          card.innerHTML = `<div class="small">${a.title}</div><div>${a.detail}</div>`;
+          apiList.appendChild(card);
+        });
+      };
+
+      const renderMetrics = () => {
+        metricList.innerHTML = "";
+        metricTargets.forEach((m) => {
+          const card = document.createElement("div");
+          card.className = "linkcard";
+          card.innerHTML = `<div class="small">${m.title}</div><div>${m.detail}</div>`;
+          metricList.appendChild(card);
+        });
+      };
+
+      const renderRollup = () => {
+        rollupCards.innerHTML = "";
+        rollupControls.forEach((r) => {
+          const card = document.createElement("div");
+          card.className = "card";
+          const statusClass = r.status === "live" ? "ok" : r.status === "beta" ? "warn" : "bad";
+          card.innerHTML = `
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <h3 style="margin:0;">${r.title}</h3>
+              <div class="status ${statusClass}"><span class="dot"></span>${r.status}</div>
+            </div>
+            <div class="muted">${r.detail}</div>
+          `;
+          rollupCards.appendChild(card);
+        });
       };
 
       const renderLinks = (links) => {
@@ -483,25 +1350,18 @@
 
         diagEl.textContent = `${guardLine}\n${gateLine}`;
         renderLinks(diag.links || {});
+        setSecuritySignals(diag);
       };
 
-      const renderModules = () => {
-        const container = document.getElementById("modules");
-        container.innerHTML = "";
-        featureModules.forEach((m) => {
-          const card = document.createElement("div");
-          card.className = "module-card";
-          const statusClass = m.status === "live" ? "ok" : m.status === "beta" ? "beta" : "plan";
-          const statusLabel = m.status === "live" ? "Live" : m.status === "beta" ? "Beta" : "Planned";
-          card.innerHTML = `
-            <div class="row" style="justify-content:space-between; align-items:center;">
-              <h3 style="margin:0;">${m.title}</h3>
-              <span class="chip ${statusClass}">${statusLabel}</span>
-            </div>
-            <ul class="mutelist">${m.points.map((p) => `<li>${p}</li>`).join("")}</ul>
-          `;
-          container.appendChild(card);
-        });
+      const loadNetwork = async () => {
+        try {
+          const res = await fetch("/api/nodes");
+          if (!res.ok) throw new Error(`status ${res.status}`);
+          const body = await res.json();
+          renderNetwork(body.networks || []);
+        } catch (e) {
+          networkGrid.innerHTML = `<div class="muted">Network telemetry unavailable: ${e?.message || e}</div>`;
+        }
       };
 
       const renderServices = (services) => {
@@ -556,9 +1416,14 @@
             renderDiag(diag);
           } else {
             diagEl.textContent = "Diagnostics unavailable";
+            setSecuritySignals({});
           }
+          await loadSecurityMetrics();
+          await loadNetwork();
         } catch (e) {
           meta.textContent = `Error: ${e?.message || e}`;
+          setSecuritySignals({});
+          networkGrid.innerHTML = `<div class="muted">Network telemetry unavailable: ${e?.message || e}</div>`;
         }
       };
 
@@ -570,9 +1435,88 @@
         intervalId = setInterval(load, val * 1000);
       });
 
+      loadIdentityState();
+      renderIdentity();
+      connectWalletBtn.addEventListener("click", connectWallet);
+      siweButton.addEventListener("click", siweLogin);
+      roleSelect.addEventListener("change", async (e) => {
+        const role = e.target.value;
+        try {
+          const res = await fetch("/auth/role", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ role })
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            alert(err.error || "Not allowed");
+          }
+          await loadSession();
+        } catch (err) {
+          alert(err?.message || "Role change failed");
+        }
+      });
+      addApiKeyBtn.addEventListener("click", addApiKey);
+      addSignerBtn.addEventListener("click", addSigner);
+      ssoButton.addEventListener("click", async () => {
+        if (sessionInfo.oidc?.email) {
+          await fetch("/auth/logout", { method: "POST" });
+          await loadSession();
+        } else {
+          window.location.href = "/auth/oidc/login";
+        }
+      });
+      if (window.ethereum) {
+        window.ethereum.on("accountsChanged", (accounts) => {
+          if (accounts && accounts.length) {
+            identityState.wallet = { address: accounts[0], chainId: identityState.wallet?.chainId || null };
+            saveIdentityState();
+            renderIdentity();
+          }
+        });
+        window.ethereum.on("chainChanged", (chainId) => {
+          if (identityState.wallet) {
+            identityState.wallet.chainId = chainId;
+            saveIdentityState();
+            renderIdentity();
+          }
+        });
+      }
+
+      document.querySelectorAll("button[data-restart]").forEach((btn) =>
+        btn.addEventListener("click", () => restartService(btn.getAttribute("data-restart")))
+      );
+      document.querySelectorAll("button[data-guard-mode]").forEach((btn) =>
+        btn.addEventListener("click", () => updateGuard({ mode: Number(btn.getAttribute("data-guard-mode")) }))
+      );
+      document.querySelectorAll("button[data-guard-delay]").forEach((btn) =>
+        btn.addEventListener("click", () => updateGuard({ delaySeconds: Number(btn.getAttribute("data-guard-delay")) }))
+      );
+      document.querySelectorAll("button[data-guard-threshold]").forEach((btn) =>
+        btn.addEventListener("click", () => updateGuard({ threshold: Number(btn.getAttribute("data-guard-threshold")) }))
+      );
+      document.querySelectorAll("button[data-trigger-layer]").forEach((btn) =>
+        btn.addEventListener("click", () => triggerChallenger(btn.getAttribute("data-trigger-layer")))
+      );
+      document.querySelectorAll("button[data-logs]").forEach((btn) =>
+        btn.addEventListener("click", () => fetchLogs(btn.getAttribute("data-logs")))
+      );
+
+      loadSession();
       renderBlueprint();
       renderModules();
+      loadNetwork();
+      renderRBAC();
+      renderAPIs();
+      renderMetrics();
+      renderRollup();
       load();
+      loadValidators();
+      loadToken();
+      loadProofs();
+      loadAI();
+      loadBridge();
+      loadContracts();
       intervalId = setInterval(load, Number(intervalInput.value) * 1000);
     </script>
   </body>
