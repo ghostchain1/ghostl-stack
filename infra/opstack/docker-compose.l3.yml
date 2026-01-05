@@ -653,11 +653,11 @@ services:
     depends_on:
       l2-geth:
         condition: service_healthy
-      guard:
+      ghost-guard:
         condition: service_healthy
     environment:
       RPC_L2: http://l2-geth:8545
-      GUARD_URL: ${GUARD_URL:-http://guard:7070}
+      GUARD_URL: ${GUARD_URL:-http://ghost-guard:7070}
       OBSERVE_ONLY: ${AI_MONITOR_OBSERVE_ONLY:-1}
       ADMIN_TOKEN: ${AI_MONITOR_ADMIN_TOKEN:-}
     healthcheck:
