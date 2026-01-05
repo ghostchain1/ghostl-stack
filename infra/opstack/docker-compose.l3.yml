@@ -412,3 +412,233 @@ services:
     <<: *default-security
     mem_limit: 256m
     cpus: "0.25"
+
+  liquidity-service:
+    build:
+      context: ../../services/liquidity-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/liquidity-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      l2-geth:
+        condition: service_healthy
+      l3-geth:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+      RPC_L2: http://l2-geth:8545
+      RPC_L3: http://l3-geth:8545
+      BRIDGE_ADDRESS: ${BRIDGE_ADDRESS:-0x0000000000000000000000000000000000000000}
+      L2_TOKEN_ADDRESS: ${L2_TOKEN_ADDRESS:-0x0000000000000000000000000000000000000000}
+      L3_TOKEN_ADDRESS: ${L3_TOKEN_ADDRESS:-0x0000000000000000000000000000000000000000}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7606/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  anomaly-detection-service:
+    build:
+      context: ../../services/anomaly-detection-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/anomaly-detection-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7616/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  feature-flags-service:
+    build:
+      context: ../../services/feature-flags-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/feature-flags-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      FEATURE_FLAGS: ${FEATURE_FLAGS:-}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7611/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  governance-service:
+    build:
+      context: ../../services/governance-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/governance-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7645/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  contract-registry-service:
+    build:
+      context: ../../services/contract-registry-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/contract-registry-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      l2-geth:
+        condition: service_healthy
+      l3-geth:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+      RPC_L2: http://l2-geth:8545
+      RPC_L3: http://l3-geth:8545
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7608/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  contract-risk-service:
+    build:
+      context: ../../services/contract-risk-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/contract-risk-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7609/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  proxy-inspector-service:
+    build:
+      context: ../../services/proxy-inspector-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/proxy-inspector-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7631/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  mempool-service:
+    build:
+      context: ../../services/mempool-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/mempool-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7610/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  tx-index-service:
+    build:
+      context: ../../services/tx-index-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/tx-index-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7625/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  peer-graph-service:
+    build:
+      context: ../../services/peer-graph-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/peer-graph-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      l2-geth:
+        condition: service_healthy
+      l3-geth:
+        condition: service_healthy
+    environment:
+      RPC_L2: http://l2-geth:8545
+      RPC_L3: http://l3-geth:8545
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7636/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
