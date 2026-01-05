@@ -1,0 +1,96 @@
+.nh
+.TH greet 8
+
+.SH NAME
+greet \- Some app
+
+
+.SH SYNOPSIS
+greet
+
+.EX
+[--another-flag|-b]
+[--flag|--fl|-f]=[value]
+[--socket|-s]=[value]
+.EE
+
+
+.SH DESCRIPTION
+Description of the application.
+
+.PP
+\fBUsage\fP:
+
+.EX
+app [first_arg] [second_arg]
+.EE
+
+
+.SH GLOBAL OPTIONS
+\fB--another-flag, -b\fP: another usage text
+
+.PP
+\fB--flag, --fl, -f\fP="":
+
+.PP
+\fB--socket, -s\fP="": some 'usage' text (default: /some/path)
+
+
+.SH COMMANDS
+.SH config, c
+another usage test
+
+.PP
+\fB--another-flag, -b\fP: another usage text
+
+.PP
+\fB--flag, --fl, -f\fP="":
+
+.SS sub-config, s, ss
+another usage test
+
+.PP
+\fB--sub-command-flag, -s\fP: some usage text
+
+.PP
+\fB--sub-flag, --sub-fl, -s\fP="":
+
+.SH info, i, in
+retrieve generic information
+
+.SH some-command
+.SH usage, u
+standard usage text
+
+.EX
+Usage for the usage text
+- formatted:  Based on the specified ConfigMap and summon secrets.yml
+- list:       Inspect the environment for a specific process running on a Pod
+- for_effect: Compare 'namespace' environment with 'local'
+
+```
+func() { ... }
+```
+
+Should be a part of the same code block
+.EE
+
+.PP
+\fB--another-flag, -b\fP: another usage text
+
+.PP
+\fB--flag, --fl, -f\fP="":
+
+.SS sub-usage, su
+standard usage text
+
+.PP
+.RS
+
+.PP
+Single line of UsageText
+
+.RE
+
+.PP
+\fB--sub-command-flag, -s\fP: some usage text
