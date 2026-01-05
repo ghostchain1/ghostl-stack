@@ -14,7 +14,19 @@
       "if": { "blockTxCountGte": 500 },
       "risk": 30,
       "reason": "large_block"
+    },
+    {
+      "id": "new_sender_unproven",
+      "if": { "txFromNew": true },
+      "risk": 20,
+      "reason": "new_sender"
+    },
+    {
+      "id": "large_calldata",
+      "if": { "txDataLengthGte": 10000 },
+      "risk": 25,
+      "reason": "large_calldata"
     }
   ],
-  "notes": "Fill in production policy, allow/deny lists, and specific app rules."
+  "notes": "Fill in production policy, allow/deny lists, and specific app rules. Add txFromNew/txDataLengthGte as needed for your model."
 }
