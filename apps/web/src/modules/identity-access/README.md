@@ -16,3 +16,9 @@ Services
 - AuthService (wallet signature, SSO tokens)
 - RBACService (role → permissions matrix)
 - AuditLogService (write once, immutable view)
+
+Data models
+- User { id, email, wallets[], roles[] }
+- Role { id, name, permissions[] }
+- ApiKey { id, name, scopes[], lastUsedAt }
+- Session { id, userId, createdAt, ip }
