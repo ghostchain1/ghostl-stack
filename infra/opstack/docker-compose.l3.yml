@@ -131,6 +131,7 @@ services:
       - --metrics.enabled
       - --metrics.addr=0.0.0.0
       - --metrics.port=${L3_METRICS_BATCHER_PORT:-8301}
+      - --throttle.unsafe-da-bytes-lower-threshold=0
     volumes:
       - ./l3/${L3_NAME:-ghostl3}/config/rollup.json:/config/rollup.json:ro
     ports:
