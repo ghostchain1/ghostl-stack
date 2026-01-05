@@ -206,3 +206,209 @@ services:
     <<: *default-security
     mem_limit: 512m
     cpus: "0.5"
+
+  auth-service:
+    build:
+      context: ../../services/auth-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/auth-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7639/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  rbac-service:
+    build:
+      context: ../../services/rbac-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/rbac-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7640/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  session-service:
+    build:
+      context: ../../services/session-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/session-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7643/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  notifications-service:
+    build:
+      context: ../../services/notifications-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/notifications-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7638/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  alerts-service:
+    build:
+      context: ../../services/alerts-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/alerts-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7644/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  node-health-service:
+    build:
+      context: ../../services/node-health-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/node-health-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      l2-geth:
+        condition: service_healthy
+      l3-geth:
+        condition: service_healthy
+    environment:
+      RPC_L2: http://l2-geth:8545
+      RPC_L3: http://l3-geth:8545
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7613/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  consensus-telemetry-service:
+    build:
+      context: ../../services/consensus-telemetry-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/consensus-telemetry-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      l2-geth:
+        condition: service_healthy
+      l3-geth:
+        condition: service_healthy
+    environment:
+      RPC_L2: http://l2-geth:8545
+      RPC_L3: http://l3-geth:8545
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7635/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  slashing-detection-service:
+    build:
+      context: ../../services/slashing-detection-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/slashing-detection-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7620/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  treasury-service:
+    build:
+      context: ../../services/treasury-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/treasury-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7628/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  bridge-service:
+    build:
+      context: ../../services/bridge-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/bridge-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7604/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
