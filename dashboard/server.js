@@ -11,20 +11,56 @@ const PORT = process.env.PORT || 4000;
 const SESSION_SECRET = process.env.SESSION_SECRET || "dev-ghostl-session";
 const ROOT_DIR = path.resolve(__dirname, "..");
 const COMPOSE_FILE = path.join(ROOT_DIR, ".devcontainer", "docker-compose.yml");
+const SAFE_ENV_PATH = path.join(__dirname, ".env");
+const parseSafeContracts = (raw) =>
+  String(raw || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const [address, label] = entry.split(":");
+      return { address, label: label || "Safe" };
+    });
+const defaultSafes = (() => {
+  const chains = ["l2", "l3"];
+  const results = [];
+  chains.forEach((chain) => {
+    try {
+      const cfg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, "chains", chain, "chain.json"), "utf-8"));
+      if (cfg?.premine?.address) results.push({ address: cfg.premine.address, label: `${chain.toUpperCase()} Treasury (dev)` });
+    } catch {
+      // ignore missing configs
+    }
+  });
+  return results.length
+    ? results
+    : [
+        { address: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", label: "L2 Ops Safe (dev)" },
+        { address: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8", label: "L3 Ops Safe (dev)" }
+      ];
+})();
+const readSafeEnv = () => {
+  try {
+    const raw = fs.readFileSync(SAFE_ENV_PATH, "utf-8");
+    const line = raw
+      .split("\n")
+      .map((l) => l.trim())
+      .find((l) => l.startsWith("SAFE_CONTRACTS="));
+    return line ? line.slice("SAFE_CONTRACTS=".length).trim() : "";
+  } catch {
+    return "";
+  }
+};
 const OIDC_ISSUER = process.env.OIDC_ISSUER;
 const OIDC_CLIENT_ID = process.env.OIDC_CLIENT_ID;
 const OIDC_CLIENT_SECRET = process.env.OIDC_CLIENT_SECRET;
 const OIDC_REDIRECT_URI = process.env.OIDC_REDIRECT_URI || `http://localhost:${PORT}/auth/oidc/callback`;
 const CORE_SERVICE_URL = process.env.CORE_SERVICE_URL || "http://localhost:8080";
 const PROM_URL = process.env.PROM_URL || "http://localhost:9090";
-const SAFE_CONTRACTS = (process.env.SAFE_CONTRACTS || "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean)
-  .map((entry) => {
-    const [address, label] = entry.split(":");
-    return { address, label: label || "Safe" };
-  });
+const SAFE_CONTRACTS = (() => {
+  const parsed = parseSafeContracts(process.env.SAFE_CONTRACTS || readSafeEnv());
+  return parsed.length ? parsed : defaultSafes;
+})();
 const CORE_KEYS_ENDPOINT = `${CORE_SERVICE_URL.replace(/\/$/, "")}/api/keys`;
 
 const app = express();
