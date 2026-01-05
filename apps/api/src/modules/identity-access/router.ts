@@ -1,4 +1,4 @@
-import { Request, Response, Router } from 'express';
+import { NextFunction, Request, Response, Router } from 'express';
 import { randomBytes } from 'crypto';
 import type {
   ApiKeyService,
@@ -11,8 +11,10 @@ import { requirePermission } from '../../lib/rbac';
 import type { User } from '../../../../../packages/types';
 
 const asyncHandler =
-  <TReq extends Request = Request, TRes extends Response = Response>(fn: (req: TReq, res: TRes, next: any) => Promise<any>) =>
-  (req: TReq, res: TRes, next: any) =>
+  <TReq extends Request = Request, TRes extends Response = Response>(
+    fn: (req: TReq, res: TRes, next: NextFunction) => Promise<unknown>
+  ) =>
+  (req: TReq, res: TRes, next: NextFunction) =>
     Promise.resolve(fn(req, res, next)).catch(next);
 
 export interface IdentityAccessDeps {
@@ -23,7 +25,7 @@ export interface IdentityAccessDeps {
   userService: UserService;
 }
 
-const attachSession = async (req: any, user: User | null, deps: IdentityAccessDeps) => {
+const attachSession = async (req: Request, user: User | null, deps: IdentityAccessDeps) => {
   if (!user) return { permissions: [] as string[] };
   const permissions = await deps.rbacService.getUserPermissions(user);
   req.session.userId = user.id;

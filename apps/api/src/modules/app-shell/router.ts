@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import type { ThemeMode } from '@ghostl/types';
 import type {
   FeatureFlagsService,
   NetworkContextService,
@@ -56,7 +57,7 @@ export const buildAppShellRouter = (deps: AppShellDependencies) => {
       res.status(400).json({ error: 'mode required' });
       return;
     }
-    await deps.theme.set(mode as any);
+    await deps.theme.set(mode as ThemeMode);
     res.json({ mode });
   });
 

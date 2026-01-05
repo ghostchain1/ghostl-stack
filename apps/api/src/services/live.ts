@@ -1,10 +1,5 @@
-import type {
-  ChainInfo,
-  Node,
-  NodeMetrics,
-  Alert,
-  LogEvent
-} from '@ghostl/types';
+import type { ChainInfo, Node, NodeMetrics, Alert, LogEvent } from '@ghostl/types';
+import type { PrometheusAlert, PrometheusVectorResult } from '../clients/prometheus';
 import { PrometheusClient } from '../clients/prometheus';
 import { GrafanaClient } from '../clients/grafana';
 import { RelayerClient } from '../clients/relayer';
@@ -47,6 +42,16 @@ const readJsonEnv = <T>(key: string): T | undefined => {
   } catch {
     return undefined;
   }
+};
+
+type GuardAlert = {
+  tx?: string;
+  nonce?: string;
+  from?: string;
+  to?: string;
+  amountWei?: string;
+  reasons?: string[];
+  ts?: number;
 };
 
 export const createLiveServices = (deps: {
@@ -213,9 +218,9 @@ export const createLiveServices = (deps: {
 
   const nodeHealthService: NodeHealthService = {
     async getHealth(id: string): Promise<NodeMetrics> {
-      let cpuResult: any[] = [];
-      let peersResult: any[] = [];
-      let lagResult: any[] = [];
+      let cpuResult: PrometheusVectorResult[] = [];
+      let peersResult: PrometheusVectorResult[] = [];
+      let lagResult: PrometheusVectorResult[] = [];
       try {
         cpuResult = await deps.prometheus.query(`node_cpu_usage_percent{instance="${id}"}`);
         peersResult = await deps.prometheus.query(`peer_count{instance="${id}"}`);
@@ -260,7 +265,7 @@ export const createLiveServices = (deps: {
       const now = Date.now();
       const end = endMs || now;
       const start = startMs || end - 5 * 60 * 1000;
-      const result = await deps.loki.queryRange(query || '{job!=\"\"}', start * 1_000_000, end * 1_000_000, limit);
+      const result = await deps.loki.queryRange(query || '{job!=""}', start * 1_000_000, end * 1_000_000, limit);
       const events: LogEvent[] = [];
       result.forEach((entry) => {
         entry.values.forEach(([ts, msg]) => {
@@ -283,29 +288,33 @@ export const createLiveServices = (deps: {
   const alertRulesService: AlertRulesService = {
     async list(): Promise<Alert[]> {
       try {
-        const alerts = await deps.prometheus.alerts();
+        const alerts: PrometheusAlert[] = await deps.prometheus.alerts();
         return alerts.map((a) => ({
           id: a.labels?.alertname || 'alert',
           severity: (a.labels?.severity as Alert['severity']) || 'info',
           source: a.labels?.job || 'prometheus',
           state: a.state === 'firing' ? 'firing' : 'resolved',
-          firedAt: a.activeAt,
-          resolvedAt: a.value === 0 ? new Date().toISOString() : undefined,
+          firedAt: a.activeAt || new Date().toISOString(),
+          resolvedAt: a.value !== undefined && Number(a.value) === 0 ? new Date().toISOString() : undefined,
           labels: a.labels,
           message: a.annotations?.description || a.annotations?.summary
         }));
       } catch {
         if (deps.guard) {
           try {
-            const guardAlerts = (await deps.guard.listAlerts()) as any[];
-            return guardAlerts.map((g: any) => ({
+            const guardAlerts = (await deps.guard.listAlerts()) as GuardAlert[];
+            return guardAlerts.map((g) => ({
               id: g.tx || g.nonce || g.from || `guard-${g.ts}`,
               severity: 'critical' as Alert['severity'],
               source: 'guard',
               state: 'firing',
-              firedAt: new Date(g.ts || Date.now()).toISOString(),
+              firedAt: new Date(g.ts ?? Date.now()).toISOString(),
               message: g.reasons?.join(', ') || 'Guard alert',
-              labels: { from: g.from, to: g.to, amountWei: g.amountWei }
+              labels: {
+                ...(g.from ? { from: g.from } : {}),
+                ...(g.to ? { to: g.to } : {}),
+                ...(g.amountWei ? { amountWei: g.amountWei } : {})
+              }
             }));
           } catch {
             return [];

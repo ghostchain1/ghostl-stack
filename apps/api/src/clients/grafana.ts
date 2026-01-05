@@ -7,6 +7,13 @@ export interface GrafanaDashboard {
   url: string;
 }
 
+interface GrafanaSearchResult {
+  id: number;
+  uid: string;
+  title: string;
+  url: string;
+}
+
 export class GrafanaClient {
   constructor(private baseUrl: string, private apiKey?: string) {}
 
@@ -21,7 +28,7 @@ export class GrafanaClient {
       headers: this.headers()
     });
     if (!res.ok) throw new Error(`Grafana search failed: ${res.status}`);
-    const data = (await res.json()) as any[];
+    const data = (await res.json()) as GrafanaSearchResult[];
     return data.map((d) => ({ id: d.id, uid: d.uid, title: d.title, url: `${this.baseUrl}${d.url}` }));
   }
 }
