@@ -48,6 +48,34 @@
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "id": 31,
+      "options": { "legend": { "displayMode": "table", "placement": "right" } },
+      "targets": [
+        { "expr": "op_gate_guard_decisions{result=\"allow\"}", "refId": "A", "legendFormat": "allow" },
+        { "expr": "op_gate_guard_decisions{result=\"deny\"}", "refId": "B", "legendFormat": "deny" },
+        { "expr": "op_gate_guard_decisions{result=\"delay\"}", "refId": "C", "legendFormat": "delay" },
+        { "expr": "op_gate_guard_decisions{result=\"error\"}", "refId": "D", "legendFormat": "error" }
+      ],
+      "title": "Guard Decisions",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "id": 32,
+      "options": { "legend": { "displayMode": "table", "placement": "right" } },
+      "targets": [
+        { "expr": "changes(process_start_time_seconds{job=\"opstack-proposer\"}[1h])", "refId": "A", "legendFormat": "proposer restarts (1h)" },
+        { "expr": "changes(process_start_time_seconds{job=\"opstack-node\"}[1h])", "refId": "B", "legendFormat": "op-node restarts (1h)" }
+      ],
+      "title": "Restarts",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
       "gridPos": { "h": 6, "w": 24, "x": 0, "y": 14 },
       "id": 4,
       "options": { "legend": { "displayMode": "list", "placement": "right" } },
