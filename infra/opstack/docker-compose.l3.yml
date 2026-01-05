@@ -653,8 +653,6 @@ services:
     depends_on:
       l2-geth:
         condition: service_healthy
-      ghost-guard:
-        condition: service_healthy
     environment:
       RPC_L2: http://l2-geth:8545
       GUARD_URL: ${GUARD_URL:-http://ghost-guard:7070}
