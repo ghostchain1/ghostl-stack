@@ -8,9 +8,11 @@ const PORT = Number(process.env.PORT || "8545");
 const UPSTREAM_RPC = process.env.UPSTREAM_RPC || "http://l1:8545";
 const STATE_DIR = process.env.STATE_DIR || "/state";
 const DECISIONS_LOG = path.join(STATE_DIR, "guard-decisions.jsonl");
+const POLICY_FILE = path.join(STATE_DIR, "guard-policy.json");
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
 const ALLOW_INSECURE_ADMIN = process.env.ALLOW_INSECURE_ADMIN === "1";
 const DEFAULT_DELAY_SECONDS = Number(process.env.DEFAULT_DELAY_SECONDS || "0");
+const GUARD_WEBHOOK_URL = process.env.GUARD_WEBHOOK_URL || "";
 const GUARD_EVAL_URL =
   process.env.GUARD_EVAL_URL ||
   (process.env.GUARD_URL ? `${process.env.GUARD_URL.replace(/\/$/, "")}/gate/eval` : "");
@@ -31,10 +33,41 @@ const metrics = {
   blocked: 0,
   delayed: 0,
   guardErrors: 0,
-  guardDecisions: 0
+  guardDecisions: 0,
+  guardDecisionCounts: { allow: 0, deny: 0, delay: 0, error: 0 }
 };
 
 const recentDecisions = [];
+const sseClients = new Set();
+let policy = {
+  version: 1,
+  updatedAt: Date.now(),
+  thresholds: { delay: 6, block: 12 },
+  allowlist: [],
+  denylist: [],
+  rules: [
+    { id: "high-value", if: { txValueEthGte: 5 }, risk: 8, reason: "high_value" },
+    { id: "large-tx-count", if: { blockTxCountGte: 500 }, risk: 10, reason: "large_block" }
+  ]
+};
+
+async function loadPolicy() {
+  try {
+    const raw = await fs.readFile(POLICY_FILE, "utf8");
+    policy = JSON.parse(raw);
+    policy.updatedAt = policy.updatedAt || Date.now();
+    console.log("[gate] loaded guard policy", { version: policy.version, updatedAt: policy.updatedAt });
+  } catch (e) {
+    console.warn("[gate] using default guard policy", e?.message || e);
+  }
+}
+
+async function savePolicy(nextPolicy) {
+  policy = { ...nextPolicy, updatedAt: Date.now() };
+  await fs.mkdir(STATE_DIR, { recursive: true });
+  await fs.writeFile(POLICY_FILE, JSON.stringify(policy, null, 2), "utf8");
+  console.log("[gate] saved guard policy", { version: policy.version, updatedAt: policy.updatedAt });
+}
 
 function safeAddr(a) {
   try {
@@ -59,6 +92,23 @@ async function appendDecision(entry) {
     await fs.appendFile(DECISIONS_LOG, JSON.stringify(entry) + "\n", "utf8");
   } catch (e) {
     console.error("[gate] failed to write decision log:", e);
+  }
+
+  const payload = JSON.stringify(entry);
+  for (const res of sseClients) {
+    try {
+      res.write(`data: ${payload}\n\n`);
+    } catch {
+      sseClients.delete(res);
+    }
+  }
+
+  if (GUARD_WEBHOOK_URL) {
+    fetch(GUARD_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: payload
+    }).catch((err) => console.warn("[gate] guard webhook failed:", err?.message || err));
   }
 }
 
@@ -454,6 +504,18 @@ app.get("/metrics/prom", (_req, res) => {
   res.send(out);
 });
 
+// SSE stream of guard decisions
+app.get("/guard/events", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders?.();
+  sseClients.add(res);
+  req.on("close", () => sseClients.delete(res));
+});
+
 app.listen(PORT, () => {
-  console.log(`[gate] listening on :${PORT}, upstream ${UPSTREAM_RPC}, guard ${GUARD_EVAL_URL || "none"}`);
+  loadPolicy().then(() => {
+    console.log(`[gate] listening on :${PORT}, upstream ${UPSTREAM_RPC}, guard ${GUARD_EVAL_URL || "none"}`);
+  });
 });
