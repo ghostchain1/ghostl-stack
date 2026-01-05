@@ -1,0 +1,20 @@
+{
+  "allowlist": [],
+  "denylist": [],
+  "riskThreshold": 70,
+  "rules": [
+    {
+      "id": "high_value",
+      "if": { "txValueEthGte": 5 },
+      "risk": 50,
+      "reason": "high_value"
+    },
+    {
+      "id": "large_block",
+      "if": { "blockTxCountGte": 500 },
+      "risk": 30,
+      "reason": "large_block"
+    }
+  ],
+  "notes": "Fill in production policy, allow/deny lists, and specific app rules."
+}
