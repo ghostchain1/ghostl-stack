@@ -231,12 +231,46 @@ const app = express();
 app.use(express.json({ limit: "10mb" }));
 
 // Simple guard endpoints for op-node / op-proposer vetting.
-app.post("/guard/op-node", (req, res) => {
-  res.json({ allow: true, reason: "default-allow" });
+function guardDecisionFromMode() {
+  const now = Date.now();
+  if (state.mode === "pause") return { allow: false, reason: "manual_pause" };
+  if (state.mode === "block") return { allow: false, reason: "manual_block" };
+  if (state.mode === "delay") {
+    const retryAt = Math.max(state.nextAllowedAt, now + state.delaySeconds * 1000);
+    state.nextAllowedAt = retryAt;
+    return { allow: false, reason: "manual_delay", retryAt };
+  }
+  return { allow: true, reason: "manual_allow" };
+}
+
+app.post("/guard/op-node", async (req, res) => {
+  // Base decision from manual mode
+  let decision = guardDecisionFromMode();
+
+  // Optional external guard eval (GUARD_EVAL_URL) re-used from tx path
+  if (decision.allow && GUARD_EVAL_URL) {
+    const guardResp = await guardEval({ role: "op-node", block: req.body?.block });
+    if (guardResp?.action) {
+      const action = normalizeAction(guardResp.action);
+      decision = { allow: action === "allow", reason: guardResp.reason || action, retryAt: guardResp.retryAt };
+    }
+  }
+
+  res.json(decision);
 });
 
-app.post("/guard/proposer", (req, res) => {
-  res.json({ allow: true, reason: "default-allow" });
+app.post("/guard/proposer", async (req, res) => {
+  let decision = guardDecisionFromMode();
+
+  if (decision.allow && GUARD_EVAL_URL) {
+    const guardResp = await guardEval({ role: "proposer", proposal: req.body });
+    if (guardResp?.action) {
+      const action = normalizeAction(guardResp.action);
+      decision = { allow: action === "allow", reason: guardResp.reason || action, retryAt: guardResp.retryAt };
+    }
+  }
+
+  res.json(decision);
 });
 
 app.post("/", async (req, res) => {
