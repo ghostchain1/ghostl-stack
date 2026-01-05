@@ -22,7 +22,8 @@ if (!jsonRpcProviderProto.__ghostGuardPatched) {
 const PORT = Number(process.env.PORT || "7070");
 const RPC_L2 = process.env.RPC_L2!;
 const BRIDGE = process.env.BRIDGE_L2L3_ADDRESS!;
-const POLICY = process.env.GUARD_POLICY_ADDRESS!;
+const POLICY = process.env.GUARD_POLICY_ADDRESS || "";
+const POLICY_ENABLED = POLICY !== "" && POLICY !== ethers.ZeroAddress;
 const PRIVATE_KEY = process.env.PRIVATE_KEY || "";
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
 const ALLOW_INSECURE_ADMIN = process.env.ALLOW_INSECURE_ADMIN === "1";
@@ -57,8 +58,8 @@ const rateLimitWindowMs = Math.max(1000, Number(process.env.RATE_LIMIT_WINDOW_MS
 const rateLimitMax = Math.max(1, Number(process.env.RATE_LIMIT_MAX || "20"));
 const rateLimiter = new Map<string, Array<number>>();
 
-if (!RPC_L2 || !BRIDGE || !POLICY) {
-  console.error("Missing env: RPC_L2, BRIDGE_L2L3_ADDRESS, GUARD_POLICY_ADDRESS");
+if (!RPC_L2 || !BRIDGE) {
+  console.error("Missing env: RPC_L2, BRIDGE_L2L3_ADDRESS");
   process.exit(1);
 }
 
@@ -85,7 +86,7 @@ provider.pollingInterval = 1000;
 const signer = PRIVATE_KEY ? new ethers.Wallet(PRIVATE_KEY, provider) : null;
 const signerWithNonce = signer ? new ethers.NonceManager(signer) : null;
 
-const policy = new ethers.Contract(POLICY, policyAbi, signerWithNonce ?? provider);
+const policy = POLICY_ENABLED ? new ethers.Contract(POLICY, policyAbi, signerWithNonce ?? provider) : null;
 
 let lastEvent: any = null;
 const recentEvents: Array<any> = [];
@@ -336,9 +337,15 @@ async function handleDepositLog(log: ethers.Log) {
     });
   }
 
-  if (!signer) {
-    console.log("[Guard] No PRIVATE_KEY set; running in observe-only mode.");
-    pushLog("warn", "[Guard] No PRIVATE_KEY set; running in observe-only mode.");
+  if (!signer || !policy) {
+    if (!signer) {
+      console.log("[Guard] No PRIVATE_KEY set; running in observe-only mode.");
+      pushLog("warn", "[Guard] No PRIVATE_KEY set; running in observe-only mode.");
+    }
+    if (!policy) {
+      console.log("[Guard] No policy address configured; skipping on-chain actions.");
+      pushLog("warn", "[Guard] No policy address configured; skipping on-chain actions.");
+    }
     return;
   }
 
@@ -524,6 +531,24 @@ app.get("/proxy/relayer-metrics", async (_req, res) => {
 app.get("/health", async (_req, res) => {
   try {
     const chainId = await provider.send("eth_chainId", []);
+
+    if (!policy) {
+      return res.json({
+        ok: true,
+        chainId,
+        policyEnabled: false,
+        note: "GUARD_POLICY_ADDRESS is empty/zero; running in observe-only mode.",
+        autoPause: AUTO_PAUSE,
+        riskWindowSeconds: RISK_WINDOW_SECONDS,
+        graphWindowSeconds: GRAPH_WINDOW_SECONDS,
+        confirmations: CONFIRMATIONS,
+        hasPrivateKey: Boolean(PRIVATE_KEY),
+        metrics,
+        recentEvents: recentEvents.slice(-10),
+        lastEvent
+      });
+    }
+
     const mode = await policy.mode();
     const delaySeconds = await policy.delaySeconds();
     const riskThreshold = await policy.riskThreshold();
