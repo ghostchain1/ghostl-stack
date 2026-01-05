@@ -264,12 +264,15 @@ services:
         condition: service_healthy
       op-gate:
         condition: service_healthy
+    environment:
+      L2OO_ADDRESS: ${L2OO_ADDRESS:-0x8f86403A4DE0BB5791fa46B8e795C547942fE4Cf}
+      PROPOSER_KEY: ${PROPOSER_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
     command:
       - op-proposer
       - --l1-eth-rpc=http://op-gate:8545
       - --rollup-rpc=http://op-node:9546
-      - --l2oo-address=${L2OO_ADDRESS:-0x0000000000000000000000000000000000000000}
-      - --private-key=${PROPOSER_KEY}
+      - --l2oo-address=${L2OO_ADDRESS:-0x8f86403A4DE0BB5791fa46B8e795C547942fE4Cf}
+      - --private-key=${PROPOSER_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
       - --allow-non-finalized
       - --guard-url=http://op-gate:8545/guard/proposer
       - --guard-timeout=5s
