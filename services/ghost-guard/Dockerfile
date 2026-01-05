@@ -1,9 +1,10 @@
 FROM node:20-alpine AS base
 WORKDIR /app
 COPY package*.json ./
-RUN npm install --production
+RUN npm ci
 COPY src ./src
+COPY tsconfig.json ./
+RUN npm run build
 ENV NODE_ENV=production
-USER node
 EXPOSE 7070
-CMD ["node", "--experimental-strip-types", "src/index.ts"]
+CMD ["node", "dist/index.js"]

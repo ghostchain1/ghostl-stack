@@ -1,8 +1,8 @@
 import "dotenv/config";
 import express from "express";
 import { ethers } from "ethers";
-import { computeRiskScore } from "./riskEngine.ts";
-import { computeGraphRisk, createGraphState, recordGraphEdge } from "./graphRisk.ts";
+import { computeRiskScore } from "./riskEngine.js";
+import { computeGraphRisk, createGraphState, recordGraphEdge } from "./graphRisk.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -721,7 +721,7 @@ app.post("/lists/remove", requireAdmin, async (req, res) => {
 
 // manual controls (requires PRIVATE_KEY)
 app.post("/policy/mode", requireAdmin, async (req, res) => {
-  if (!signer) return res.status(400).json({ ok: false, error: "PRIVATE_KEY missing" });
+  if (!signer || !policy) return res.status(400).json({ ok: false, error: "policy signer missing" });
   const m = Number(req.body?.mode);
   if (![0, 1, 2].includes(m)) return res.status(400).json({ ok: false, error: "mode must be 0/1/2" });
   const tx = await policy.setMode(m);
@@ -730,7 +730,7 @@ app.post("/policy/mode", requireAdmin, async (req, res) => {
 });
 
 app.post("/policy/threshold", requireAdmin, async (req, res) => {
-  if (!signer) return res.status(400).json({ ok: false, error: "PRIVATE_KEY missing" });
+  if (!signer || !policy) return res.status(400).json({ ok: false, error: "policy signer missing" });
   const t = Number(req.body?.threshold);
   if (!Number.isFinite(t) || t < 0 || t > 100) {
     return res.status(400).json({ ok: false, error: "threshold must be 0..100" });
@@ -741,7 +741,7 @@ app.post("/policy/threshold", requireAdmin, async (req, res) => {
 });
 
 app.post("/policy/delay", requireAdmin, async (req, res) => {
-  if (!signer) return res.status(400).json({ ok: false, error: "PRIVATE_KEY missing" });
+  if (!signer || !policy) return res.status(400).json({ ok: false, error: "policy signer missing" });
   const s = Number(req.body?.seconds);
   if (!Number.isFinite(s) || s < 0) {
     return res.status(400).json({ ok: false, error: "seconds must be >= 0" });
@@ -752,7 +752,7 @@ app.post("/policy/delay", requireAdmin, async (req, res) => {
 });
 
 app.post("/policy/risk", requireAdmin, async (req, res) => {
-  if (!signer) return res.status(400).json({ ok: false, error: "PRIVATE_KEY missing" });
+  if (!signer || !policy) return res.status(400).json({ ok: false, error: "policy signer missing" });
   const who = String(req.body?.who ?? "");
   const score = Number(req.body?.score);
   if (!ethers.isAddress(who)) return res.status(400).json({ ok: false, error: "who must be an address" });

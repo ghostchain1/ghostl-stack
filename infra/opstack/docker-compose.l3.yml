@@ -30,10 +30,12 @@ services:
       - -c
       - |
         set -e
+        ENODE_L2="enode://ee9270b480cc105aae5217e7d7fc175ea2a0e15fdda90947ecbfd23b89607f79c1a21890091ff13c058c12c6629c198c65d343db6164dc0a0d5a9310cd95cad6@l2-geth:30303"
         if [ ! -d /data/geth ]; then
           echo "[l3-geth] initializing genesis..."
           geth init --datadir /data /config/genesis.json
         fi
+        echo "[\"${L3_BOOTNODES:-$$ENODE_L2}\"]" > /data/static-nodes.json
         exec geth \
           --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug \
           --http.vhosts="*" \
@@ -42,9 +44,15 @@ services:
           --datadir=/data \
           --networkid=${L3_CHAIN_ID:-902} \
           --gcmode=archive \
+          --bootnodes=${L3_BOOTNODES:-$$ENODE_L2} \
+          --nodiscover \
           --rollup.disabletxpoolgossip=true
     healthcheck:
-      test: ["CMD-SHELL", "geth attach --exec 'net.version' http://localhost:8545 >/dev/null 2>&1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:8545 >/dev/null",
+        ]
       interval: 30s
       timeout: 5s
       retries: 3
