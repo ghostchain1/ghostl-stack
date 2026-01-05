@@ -16,6 +16,10 @@ contracts/artifacts/
 contracts/cache/
 contracts/typechain-types/
 
+# avoid committing build caches and forge artifacts
+cache/
+out/
+
 # generated at runtime by deploy script
 services/ghost-guard/.env
 services/ghost-relayer/.env
