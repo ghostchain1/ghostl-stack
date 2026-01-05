@@ -1,0 +1,19 @@
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "next", "prettier"],
+  "ignorePatterns": ["dist", "node_modules"],
+  "env": {
+    "es6": true,
+    "node": true
+  },
+  "settings": {
+    "next": {
+      "rootDir": "apps/web"
+    }
+  },
+  "rules": {
+    "next/no-html-link-for-pages": "off"
+  }
+}
