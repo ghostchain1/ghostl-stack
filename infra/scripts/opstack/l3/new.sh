@@ -145,6 +145,9 @@ cat >"$DEST/config/policy.sample.json" <<'EOF'
 }
 EOF
 
+# Create a default policy.json from the sample if not present
+cp -n "$DEST/config/policy.sample.json" "$DEST/config/policy.json" || true
+
 cat <<EOF
 Created L3 scaffold: $DEST
 - Config: $DEST/config/rollup.json and genesis.json (replace contract addresses before use)
