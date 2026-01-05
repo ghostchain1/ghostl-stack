@@ -9,32 +9,32 @@ scrape_configs:
   - job_name: ghost-guard
     metrics_path: /metrics/prom
     static_configs:
-      - targets: ["ghost-guard:7070"]
+      - targets: ["host.docker.internal:7070"]
 
   - job_name: ghost-relayer
     metrics_path: /metrics/prom
     static_configs:
-      - targets: ["ghost-relayer:7171"]
+      - targets: ["host.docker.internal:7171"]
 
   - job_name: rollup-proposer-l2
     metrics_path: /metrics/prom
     static_configs:
-      - targets: ["ghost-rollup-proposer-l2:7272"]
+      - targets: ["host.docker.internal:7272"]
 
   - job_name: rollup-proposer-l3
     metrics_path: /metrics/prom
     static_configs:
-      - targets: ["ghost-rollup-proposer-l3:7373"]
+      - targets: ["host.docker.internal:7373"]
 
   - job_name: rollup-challenger-l2
     metrics_path: /metrics/prom
     static_configs:
-      - targets: ["ghost-rollup-challenger-l2:7282"]
+      - targets: ["host.docker.internal:7282"]
 
   - job_name: rollup-challenger-l3
     metrics_path: /metrics/prom
     static_configs:
-      - targets: ["ghost-rollup-challenger-l3:7383"]
+      - targets: ["host.docker.internal:7383"]
 
   - job_name: opstack-node
     metrics_path: /metrics
