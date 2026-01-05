@@ -16,6 +16,8 @@ const GUARD_WEBHOOK_URL = process.env.GUARD_WEBHOOK_URL || "";
 const GUARD_EVAL_URL =
   process.env.GUARD_EVAL_URL ||
   (process.env.GUARD_URL ? `${process.env.GUARD_URL.replace(/\/$/, "")}/gate/eval` : "");
+const MODEL_URL = process.env.MODEL_URL || "";
+const MODEL_TIMEOUT_MS = Number(process.env.MODEL_TIMEOUT_MS || "2000");
 
 const BATCH_SENDER_ADDRESS = safeAddr(process.env.BATCH_SENDER_ADDRESS);
 const PROPOSER_ADDRESS = safeAddr(process.env.PROPOSER_ADDRESS);
@@ -39,6 +41,11 @@ const metrics = {
 
 const recentDecisions = [];
 const sseClients = new Set();
+const circuitBreaker = {
+  tripped: false,
+  reason: "",
+  until: 0
+};
 let policy = {
   version: 1,
   updatedAt: Date.now(),
@@ -389,12 +396,45 @@ app.post("/guard/op-node", async (req, res) => {
     decision = { allow: policyDecision.allow, reason: policyDecision.reason, retryAt: policyDecision.retryAt };
   }
 
+  // Circuit breaker
+  if (circuitBreaker.tripped && Date.now() < circuitBreaker.until) {
+    decision = { allow: false, reason: circuitBreaker.reason || "circuit_breaker" };
+  } else if (circuitBreaker.tripped && Date.now() >= circuitBreaker.until) {
+    circuitBreaker.tripped = false;
+    circuitBreaker.reason = "";
+  }
+
   // Optional external guard eval (GUARD_EVAL_URL) re-used from tx path
   if (decision.allow && GUARD_EVAL_URL) {
     const guardResp = await guardEval({ role: "op-node", block: req.body?.block });
     if (guardResp?.action) {
       const action = normalizeAction(guardResp.action);
       decision = { allow: action === "allow", reason: guardResp.reason || action, retryAt: guardResp.retryAt };
+    }
+  }
+
+  // Optional model scoring
+  if (decision.allow && MODEL_URL) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), MODEL_TIMEOUT_MS);
+      const resp = await fetch(MODEL_URL, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ role: "op-node", block: req.body }),
+        signal: controller.signal
+      });
+      clearTimeout(timer);
+      if (resp.ok) {
+        const model = await resp.json();
+        if (typeof model.risk === "number" && model.risk >= (policy.thresholds?.block ?? 12)) {
+          decision = { allow: false, reason: model.reason || "model_block" };
+        } else if (typeof model.risk === "number" && model.risk >= (policy.thresholds?.delay ?? 6)) {
+          decision = { allow: false, reason: model.reason || "model_delay", retryAt: Date.now() + 5000 };
+        }
+      }
+    } catch (e) {
+      metrics.guardErrors += 1;
     }
   }
 
@@ -415,11 +455,42 @@ app.post("/guard/proposer", async (req, res) => {
     decision = { allow: policyDecision.allow, reason: policyDecision.reason, retryAt: policyDecision.retryAt };
   }
 
+  if (circuitBreaker.tripped && Date.now() < circuitBreaker.until) {
+    decision = { allow: false, reason: circuitBreaker.reason || "circuit_breaker" };
+  } else if (circuitBreaker.tripped && Date.now() >= circuitBreaker.until) {
+    circuitBreaker.tripped = false;
+    circuitBreaker.reason = "";
+  }
+
   if (decision.allow && GUARD_EVAL_URL) {
     const guardResp = await guardEval({ role: "proposer", proposal: req.body });
     if (guardResp?.action) {
       const action = normalizeAction(guardResp.action);
       decision = { allow: action === "allow", reason: guardResp.reason || action, retryAt: guardResp.retryAt };
+    }
+  }
+
+  if (decision.allow && MODEL_URL) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), MODEL_TIMEOUT_MS);
+      const resp = await fetch(MODEL_URL, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ role: "proposer", proposal: req.body }),
+        signal: controller.signal
+      });
+      clearTimeout(timer);
+      if (resp.ok) {
+        const model = await resp.json();
+        if (typeof model.risk === "number" && model.risk >= (policy.thresholds?.block ?? 12)) {
+          decision = { allow: false, reason: model.reason || "model_block" };
+        } else if (typeof model.risk === "number" && model.risk >= (policy.thresholds?.delay ?? 6)) {
+          decision = { allow: false, reason: model.reason || "model_delay", retryAt: Date.now() + 5000 };
+        }
+      }
+    } catch (e) {
+      metrics.guardErrors += 1;
     }
   }
 
@@ -483,6 +554,22 @@ app.post("/guard/policy", requireAdmin, async (req, res) => {
   } catch (e) {
     res.status(500).json({ ok: false, error: e?.message || String(e) });
   }
+});
+
+app.post("/guard/circuit-breaker", requireAdmin, (req, res) => {
+  const minutes = Number(req.body?.minutes || 5);
+  const reason = req.body?.reason || "admin_trip";
+  circuitBreaker.tripped = true;
+  circuitBreaker.reason = reason;
+  circuitBreaker.until = Date.now() + Math.max(1, minutes) * 60_000;
+  res.json({ ok: true, circuitBreaker });
+});
+
+app.delete("/guard/circuit-breaker", requireAdmin, (_req, res) => {
+  circuitBreaker.tripped = false;
+  circuitBreaker.reason = "";
+  circuitBreaker.until = 0;
+  res.json({ ok: true, circuitBreaker });
 });
 
 app.get("/metrics/prom", (_req, res) => {
