@@ -126,6 +126,7 @@ services:
       - --l2-eth-rpc=http://l3-geth:8545
       - --rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}
       - --private-key=${L3_BATCHER_KEY:-${BATCHER_KEY}}
+      - --data-availability-type=${L3_DA_TYPE:-calldata}
       - --rpc.addr=0.0.0.0
       - --rpc.port=${L3_BATCHER_RPC_PORT:-18551}
       - --metrics.enabled
