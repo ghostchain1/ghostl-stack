@@ -36,8 +36,8 @@
   "isthmus_time": 0,
   "jovian_time": 0,
   "batch_inbox_address": "0x00289c189bee4e70334629f04cd5ed602b6600eb",
-  "deposit_contract_address": "0x56e7b0790fb2006719b4964f771b6d51affaf7fb",
-  "l1_system_config_address": "0x79eb6693714d5694ec51a37ed0ea1820daec247d",
+  "deposit_contract_address": "0x20c626b6cf91d5d137bd8b2a476553872c505896",
+  "l1_system_config_address": "0x9a82ed6ffaa8675b6e393199f11bb2d5b248eb9b",
   "protocol_versions_address": "0x5fc8d32690cc91d4c39d9d3abcbd16989f875707",
   "chain_op_config": {
     "eip1559Elasticity": 6,

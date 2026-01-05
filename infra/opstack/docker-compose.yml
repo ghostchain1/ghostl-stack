@@ -12,7 +12,7 @@ x-security: &default-security
 
 services:
   l1:
-    image: ${FOUNDRY_IMAGE:-ghcr.io/foundry-rs/foundry:nightly-2024-09-18}
+    image: ${FOUNDRY_IMAGE:-ghcr.io/foundry-rs/foundry@sha256:465bdc521c1775b5b720e61f1ddd5946fc51f507ae15cd173650b7e5c9a712d6}
     entrypoint: ["anvil"]
     command:
       - --host
@@ -48,6 +48,8 @@ services:
     working_dir: /app
     restart: unless-stopped
     logging: *default-logging
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       l1:
         condition: service_healthy
@@ -121,6 +123,7 @@ services:
 
   op-node:
     image: local/op-node:${OPSTACK_IMAGE_TAG:-devnet}
+    user: "1000:1000"
     restart: unless-stopped
     logging: *default-logging
     depends_on:
@@ -172,6 +175,7 @@ services:
 
   op-batcher:
     image: local/op-batcher:${OPSTACK_IMAGE_TAG:-devnet}
+    user: "1000:1000"
     restart: unless-stopped
     logging: *default-logging
     depends_on:
@@ -210,6 +214,7 @@ services:
 
   op-proposer:
     image: local/op-proposer:${OPSTACK_IMAGE_TAG:-devnet}
+    user: "1000:1000"
     restart: unless-stopped
     logging: *default-logging
     depends_on:
@@ -270,10 +275,11 @@ services:
   #     - "8561:8561"
 
   prometheus:
-    profiles: ["observability"]
-    image: ${PROMETHEUS_IMAGE:-prom/prometheus:v2.53.0}
+    image: ${PROMETHEUS_IMAGE:-prom/prometheus@sha256:075b1ba2c4ebb04bc3a6ab86c06ec8d8099f8fda1c96ef6d104d9bb1def1d8bc}
     restart: unless-stopped
     logging: *default-logging
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
@@ -287,8 +293,7 @@ services:
     cpus: "0.5"
 
   grafana:
-    profiles: ["observability"]
-    image: ${GRAFANA_IMAGE:-grafana/grafana:11.2.0}
+    image: ${GRAFANA_IMAGE:-grafana/grafana@sha256:408afb9726de5122b00a2576763a8a57a3c86d5b0eff5305bc994ceb3eb96c3f}
     restart: unless-stopped
     logging: *default-logging
     environment:
@@ -301,6 +306,8 @@ services:
       - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
     <<: *default-security
     mem_limit: 512m
     cpus: "0.5"
