@@ -359,6 +359,74 @@
         }
       ];
 
+      const featureModules = [
+        {
+          title: "Access & Security",
+          status: "live",
+          points: ["RBAC matrix", "Admin multisig", "SSO + wallet auth", "Audit log stream"]
+        },
+        {
+          title: "Nodes & Consensus",
+          status: "live",
+          points: ["Validator/full/archive inventory", "Sync/peer health", "Version drift alerts", "Restart hooks"]
+        },
+        {
+          title: "Validators",
+          status: "beta",
+          points: ["Stake/commission view", "Missed blocks", "Proposer rotation", "Byzantine alerts"]
+        },
+        {
+          title: "Token & Treasury",
+          status: "beta",
+          points: ["Supply/emissions", "Gas model controls", "Treasury balances", "Multisig spends"]
+        },
+        {
+          title: "Contracts & VM",
+          status: "plan",
+          points: ["Registry + ownership", "Proxy/upgrade status", "Revert rate/AI risk", "Pause/emergency"]
+        },
+        {
+          title: "Bridges & Interop",
+          status: "plan",
+          points: ["Pending/finalized transfers", "Liquidity pools", "Pause/fee tuning", "Fraud/fault proofs"]
+        },
+        {
+          title: "Txs & Blocks",
+          status: "live",
+          points: ["Mempool & lifecycle", "Block production timeline", "MEV/fairness signals", "Gas insights"]
+        },
+        {
+          title: "AI & Intelligence",
+          status: "beta",
+          points: ["Fraud/Sybil scoring", "Predictive congestion", "Downtime/slash risk", "Capacity planning"]
+        },
+        {
+          title: "Observability & Alerts",
+          status: "live",
+          points: ["Prom/Grafana embeds", "Threshold + anomaly alerts", "Latency/KPI panels", "Webhooks/Slack/Email"]
+        },
+        {
+          title: "DevOps & Upgrades",
+          status: "plan",
+          points: ["Fork scheduling", "Feature flags/canary", "Rollback paths", "Version compatibility"]
+        },
+        {
+          title: "Governance",
+          status: "plan",
+          points: ["Proposal/voting dashboards", "Quorum tracking", "Delegations", "Snapshot/off-chain links"]
+        },
+        {
+          title: "API & Integrations",
+          status: "plan",
+          points: ["RPC manager + rate limits", "API analytics", "SDK versions", "Exchange/oracle/indexer hooks"]
+        },
+        {
+          title: "Advanced L2/L3",
+          status: "plan",
+          points: ["Sequencer controls", "Fraud/ZK proof views", "DA monitoring", "L1↔L2 settlement"]
+        }
+      ];
+
       const renderBlueprint = () => {
         blueprintEl.innerHTML = "";
         bpNav.className = "blueprint-nav";
@@ -415,6 +483,25 @@
 
         diagEl.textContent = `${guardLine}\n${gateLine}`;
         renderLinks(diag.links || {});
+      };
+
+      const renderModules = () => {
+        const container = document.getElementById("modules");
+        container.innerHTML = "";
+        featureModules.forEach((m) => {
+          const card = document.createElement("div");
+          card.className = "module-card";
+          const statusClass = m.status === "live" ? "ok" : m.status === "beta" ? "beta" : "plan";
+          const statusLabel = m.status === "live" ? "Live" : m.status === "beta" ? "Beta" : "Planned";
+          card.innerHTML = `
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <h3 style="margin:0;">${m.title}</h3>
+              <span class="chip ${statusClass}">${statusLabel}</span>
+            </div>
+            <ul class="mutelist">${m.points.map((p) => `<li>${p}</li>`).join("")}</ul>
+          `;
+          container.appendChild(card);
+        });
       };
 
       const renderServices = (services) => {
@@ -484,6 +571,7 @@
       });
 
       renderBlueprint();
+      renderModules();
       load();
       intervalId = setInterval(load, Number(intervalInput.value) * 1000);
     </script>
