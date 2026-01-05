@@ -18,6 +18,9 @@ BATCHER_RPC_HOST_PORT=39551
 PROPOSER_RPC_HOST_PORT=39560
 SETTLEMENT_RPC="http://l2-geth:8545"
 L1_CHAIN_ID="${L2_CHAIN_ID:-901}"
+PORTAL_ADDRESS=""
+SYSTEM_CONFIG_ADDRESS=""
+GAME_FACTORY_ADDRESS=""
 
 shift
 while [[ $# -gt 0 ]]; do
@@ -38,6 +41,18 @@ while [[ $# -gt 0 ]]; do
       L1_CHAIN_ID="$2"
       shift 2
       ;;
+    --portal)
+      PORTAL_ADDRESS="$2"
+      shift 2
+      ;;
+    --system-config)
+      SYSTEM_CONFIG_ADDRESS="$2"
+      shift 2
+      ;;
+    --dgf|--game-factory)
+      GAME_FACTORY_ADDRESS="$2"
+      shift 2
+      ;;
     *)
       echo "unknown arg: $1" >&2
       exit 1
@@ -55,7 +70,7 @@ fi
 
 cp "$OP_DIR/config/jwt.txt" "$DEST/config/jwt.txt"
 
-export OP_DIR DEST CHAIN_ID L1_CHAIN_ID
+export OP_DIR DEST CHAIN_ID L1_CHAIN_ID PORTAL_ADDRESS SYSTEM_CONFIG_ADDRESS GAME_FACTORY_ADDRESS
 
 # Rollup config: start from L2 template and tweak chain IDs / timestamps.
 python3 - <<'PY'
@@ -72,6 +87,13 @@ with open(src_rollup) as f:
 data["l1_chain_id"] = l1_chain_id
 data["l2_chain_id"] = chain_id
 data["genesis"]["l2_time"] = int(time.time())
+
+portal = os.environ.get("PORTAL_ADDRESS", "")
+system_cfg = os.environ.get("SYSTEM_CONFIG_ADDRESS", "")
+if portal:
+    data["deposit_contract_address"] = portal
+if system_cfg:
+    data["l1_system_config_address"] = system_cfg
 
 with open(dst_rollup, "w") as f:
     json.dump(data, f, indent=2)
@@ -134,6 +156,7 @@ L3_GUARD_URL=http://op-gate:8545
 L3_GUARD_TIMEOUT=5s
 L3_GUARD_FAIL_OPEN=true
 L3_GUARD_POLICY=./config/policy.json
+L3_GAME_FACTORY_ADDRESS=${GAME_FACTORY_ADDRESS:-0x0000000000000000000000000000000000000000}
 EOF
 
 cat >"$DEST/config/policy.sample.json" <<'EOF'
@@ -153,6 +176,9 @@ Created L3 scaffold: $DEST
 - Config: $DEST/config/rollup.json and genesis.json (replace contract addresses before use)
 - Sample policy: $DEST/config/policy.sample.json
 - Env:     $DEST/.env
+  - portal: ${PORTAL_ADDRESS:-<unset>}
+  - system config: ${SYSTEM_CONFIG_ADDRESS:-<unset>}
+  - DGF (game factory): ${GAME_FACTORY_ADDRESS:-<unset>}
 
 Run with (guards enabled by default):
   docker compose -f infra/opstack/docker-compose.yml -f infra/opstack/docker-compose.l3.yml \\
