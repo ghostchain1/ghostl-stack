@@ -3,99 +3,249 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GhostL Stack Dashboard</title>
+    <title>GhostL Stack Command</title>
     <style>
       :root {
-        color-scheme: light;
-        --bg: #0b1723;
-        --panel: #102131;
-        --text: #e8f1ff;
-        --muted: #9fb3c8;
-        --accent: #4cc9f0;
+        color-scheme: dark;
+        --bg: radial-gradient(circle at 10% 20%, rgba(76, 201, 240, 0.08), transparent 25%),
+          radial-gradient(circle at 90% 10%, rgba(255, 107, 255, 0.08), transparent 25%),
+          #050910;
+        --panel: rgba(18, 29, 48, 0.75);
+        --text: #e7f4ff;
+        --muted: #9bb0c9;
+        --accent: #6cf1ff;
+        --accent-2: #ff7fd1;
         --bad: #ff6b6b;
-        --good: #4caf50;
+        --good: #6af090;
+        --warn: #f5c26b;
+        --border: rgba(255, 255, 255, 0.08);
       }
       * { box-sizing: border-box; }
       body {
         margin: 0;
-        font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-        background: radial-gradient(circle at 20% 20%, rgba(76, 201, 240, 0.08), transparent 35%),
-          radial-gradient(circle at 80% 10%, rgba(255, 107, 107, 0.08), transparent 30%),
-          var(--bg);
+        font-family: "Manrope", "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+        background: var(--bg);
         color: var(--text);
         min-height: 100vh;
-        padding: 24px;
+        padding: 28px;
       }
-      h1 {
-        margin: 0 0 16px;
-        font-size: 24px;
-        letter-spacing: 0.5px;
-      }
-      #meta {
-        color: var(--muted);
-        margin-bottom: 16px;
-        font-size: 14px;
-      }
-      #grid {
+      h1 { margin: 0 0 6px; letter-spacing: 0.5px; font-weight: 800; }
+      h2 { margin: 0 0 12px; font-size: 18px; letter-spacing: 0.2px; }
+      p { margin: 0; color: var(--muted); }
+      a { color: var(--accent); }
+
+      .shell {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 12px;
+        grid-template-columns: 2.2fr 1fr;
+        gap: 16px;
       }
-      .card {
-        background: linear-gradient(135deg, rgba(16, 33, 49, 0.9), rgba(16, 33, 49, 0.8));
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 10px;
-        padding: 14px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        transition: transform 150ms ease, border-color 150ms ease;
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 16px;
+        backdrop-filter: blur(6px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
       }
-      .card:hover { transform: translateY(-2px); border-color: rgba(76, 201, 240, 0.3); }
-      .card h3 { margin: 0 0 6px; font-size: 16px; }
-      .status { font-weight: 700; }
-      .ok { color: var(--good); }
-      .bad { color: var(--bad); }
-      .row { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); }
-      .mono { font-family: "JetBrains Mono", "SFMono-Regular", monospace; font-size: 12px; color: var(--text); }
+      .glass {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+      }
+      .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+      .space { flex: 1; }
+      .pill {
+        padding: 6px 10px;
+        border-radius: 24px;
+        font-size: 12px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--border);
+        color: var(--muted);
+      }
       button {
-        background: var(--accent);
-        color: #04111f;
+        background: linear-gradient(135deg, var(--accent), #3ae0f7);
+        color: #04121f;
         border: none;
         padding: 10px 14px;
-        border-radius: 8px;
-        font-weight: 700;
+        border-radius: 10px;
+        font-weight: 800;
         cursor: pointer;
-        box-shadow: 0 6px 16px rgba(76, 201, 240, 0.3);
+        box-shadow: 0 10px 30px rgba(108, 241, 255, 0.25);
+      }
+      button.secondary {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border);
+        box-shadow: none;
       }
       button:hover { filter: brightness(1.05); }
-      @media (max-width: 600px) { body { padding: 16px; } }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 10px;
+      }
+      .card {
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: linear-gradient(160deg, rgba(24, 38, 60, 0.9), rgba(13, 22, 35, 0.8));
+        transition: transform 160ms ease, border-color 160ms ease;
+        cursor: pointer;
+      }
+      .card:hover { transform: translateY(-2px); border-color: rgba(108, 241, 255, 0.35); }
+      .card h3 { margin: 0 0 4px; font-size: 15px; letter-spacing: 0.3px; }
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 700;
+        font-size: 13px;
+      }
+      .dot {
+        width: 9px; height: 9px; border-radius: 50%;
+        background: var(--muted);
+        box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.03);
+      }
+      .ok .dot { background: var(--good); }
+      .bad .dot { background: var(--bad); }
+      .warn .dot { background: var(--warn); }
+      .muted { color: var(--muted); font-size: 13px; }
+      .mono { font-family: "JetBrains Mono", "SFMono-Regular", monospace; font-size: 12px; color: var(--text); }
+
+      .detail {
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: "JetBrains Mono", "SFMono-Regular", monospace;
+        font-size: 12px;
+        color: var(--text);
+        background: rgba(0, 0, 0, 0.35);
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+      }
+
+      .links { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-top: 8px; }
+      .linkcard { padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.03); }
+      .linkcard a { text-decoration: none; color: var(--accent); font-weight: 700; }
+      .small { font-size: 12px; color: var(--muted); }
+
+      .spark {
+        height: 3px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--accent), var(--accent-2));
+        opacity: 0.7;
+      }
+
+      @media (max-width: 960px) {
+        .shell { grid-template-columns: 1fr; }
+        body { padding: 16px; }
+      }
     </style>
   </head>
   <body>
-    <h1>GhostL Stack Dashboard</h1>
-    <div id="meta">Loading...</div>
-    <div style="margin-bottom:12px;">
-      <button id="refresh">Refresh now</button>
+    <div class="shell">
+      <div>
+        <div class="panel">
+          <div class="row">
+            <div>
+              <h1>GhostL Stack Command</h1>
+              <p>Unified control surface for L1/L2/L3, guard, gate, and observability.</p>
+            </div>
+            <div class="space"></div>
+            <div class="glass">
+              <div class="small">Auto refresh</div>
+              <div class="row" style="gap:8px; align-items:center;">
+                <input id="interval" type="range" min="3" max="30" value="5" />
+                <div id="intervalLabel" class="pill">5s</div>
+                <button class="secondary" id="refresh">Refresh</button>
+              </div>
+            </div>
+          </div>
+          <div class="row" style="margin-top:12px;">
+            <div class="glass" id="meta">Loading...</div>
+            <div class="pill" id="summary"></div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:12px;">
+          <div class="row" style="align-items:center; margin-bottom:8px;">
+            <h2 style="margin:0;">Core Services</h2>
+            <div class="space"></div>
+            <div class="spark" style="width:140px;"></div>
+          </div>
+          <div id="grid" class="grid"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Service Detail</h2>
+        <div id="detailTitle" class="pill" style="margin-bottom:8px;">Select a service</div>
+        <div id="detail" class="detail">Click any card to inspect raw data and diagnostics.</div>
+        <div style="margin:14px 0 6px; font-weight:700;">Diagnostics</div>
+        <div id="diag" class="glass small">Loading...</div>
+        <div style="margin:14px 0 6px; font-weight:700;">Quick Links</div>
+        <div class="links" id="links"></div>
+      </div>
     </div>
-    <div id="grid"></div>
 
     <script>
       const grid = document.getElementById("grid");
       const meta = document.getElementById("meta");
+      const summary = document.getElementById("summary");
+      const detail = document.getElementById("detail");
+      const detailTitle = document.getElementById("detailTitle");
+      const diagEl = document.getElementById("diag");
+      const linksEl = document.getElementById("links");
+      const intervalInput = document.getElementById("interval");
+      const intervalLabel = document.getElementById("intervalLabel");
+
+      let currentServices = [];
+      let intervalId = null;
+
       const formatHex = (v) => {
-        if (!v) return "";
+        if (v === null || v === undefined) return "";
         if (typeof v === "string" && v.startsWith("0x")) return String(parseInt(v, 16));
         return String(v);
       };
 
-      const render = (services) => {
+      const statusColor = (svc) => (svc.ok ? "ok" : "bad");
+
+      const renderLinks = (links) => {
+        linksEl.innerHTML = "";
+        Object.entries(links).forEach(([k, v]) => {
+          const card = document.createElement("div");
+          card.className = "linkcard";
+          const label = k.replace(/([A-Z])/g, " $1").trim();
+          card.innerHTML = `<div class="small">${label}</div><a href="${v}" target="_blank" rel="noreferrer">${v}</a>`;
+          linksEl.appendChild(card);
+        });
+      };
+
+      const renderDiag = (diag) => {
+        const guard = diag.guardHealth;
+        const gate = diag.gateStatus;
+        const guardLine = guard?.ok
+          ? `Guard: OK · mode ${guard.policyMode ?? guard.mode ?? "?"} · risk ${guard.riskThreshold ?? "?"}`
+          : `Guard: ${guard?.error || "unreachable"}`;
+        const gateLine = gate?.ok
+          ? `Gate: OK · mode ${gate.mode ?? gate?.policy?.mode ?? "allow"} · requests ${gate?.metrics?.rpcRequests ?? 0}`
+          : `Gate: ${gate?.error || "unreachable"}`;
+
+        diagEl.textContent = `${guardLine}\n${gateLine}`;
+        renderLinks(diag.links || {});
+      };
+
+      const renderServices = (services) => {
         grid.innerHTML = "";
         services.forEach((s) => {
           const card = document.createElement("div");
-          card.className = "card";
+          card.className = `card ${statusColor(s)}`;
           const ok = s.ok;
           let details = "";
           if (s.data && typeof s.data === "object") {
-            if ("chainId" in s.data) details = `chainId ${formatHex(s.data.chainId)}`;
+            if ("chainId" in s.data) details = `chain ${formatHex(s.data.chainId)}`;
             if ("l2ChainId" in s.data || "l3ChainId" in s.data) {
               details = `l2 ${formatHex(s.data.l2ChainId)} · l3 ${formatHex(s.data.l3ChainId)}`;
             }
@@ -103,34 +253,58 @@
             if (s.id === "op-node" && s.data?.unsafe_l2) {
               details = `unsafe ${formatHex(s.data.unsafe_l2?.number)} · safe ${formatHex(s.data.safe_l2?.number)}`;
             }
-            if (s.id === "op-gate" && s.data?.guard) details = `mode ${s.data.guard?.mode ?? "?"}`;
+            if (s.id === "op-gate" && s.data?.mode) details = `mode ${s.data.mode}`;
           }
           card.innerHTML = `
-            <h3>${s.id}</h3>
-            <div class="status ${ok ? "ok" : "bad"}">${ok ? "OK" : "DOWN"}</div>
-            <div class="row"><span>Details</span><span class="mono">${ok ? details || "—" : s.error || "error"}</span></div>
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <h3>${s.id}</h3>
+              <div class="status ${statusColor(s)}"><span class="dot"></span>${ok ? "Online" : "Degraded"}</div>
+            </div>
+            <div class="muted">${ok ? details || "—" : s.error || "error"}</div>
           `;
+          card.addEventListener("click", () => {
+            detailTitle.textContent = s.id;
+            detail.textContent = JSON.stringify(s, null, 2);
+          });
           grid.appendChild(card);
         });
+
+        const up = services.filter((s) => s.ok).length;
+        summary.textContent = `${up}/${services.length} services nominal`;
       };
 
       const load = async () => {
         meta.textContent = "Refreshing...";
         try {
-          const res = await fetch("/api/status");
-          if (!res.ok) throw new Error(`status ${res.status}`);
-          const body = await res.json();
-          render(body.services || []);
+          const [statusRes, diagRes] = await Promise.all([fetch("/api/status"), fetch("/api/diag")]);
+          if (!statusRes.ok) throw new Error(`status ${statusRes.status}`);
+          const body = await statusRes.json();
+          currentServices = body.services || [];
+          renderServices(currentServices);
           const ts = new Date();
-          meta.textContent = `Last update: ${ts.toLocaleTimeString()}`;
+          meta.textContent = `Last update: ${ts.toLocaleTimeString()} · ${body.services?.length || 0} services`;
+
+          if (diagRes.ok) {
+            const diag = await diagRes.json();
+            renderDiag(diag);
+          } else {
+            diagEl.textContent = "Diagnostics unavailable";
+          }
         } catch (e) {
           meta.textContent = `Error: ${e?.message || e}`;
         }
       };
 
       document.getElementById("refresh").addEventListener("click", load);
+      intervalInput.addEventListener("input", (e) => {
+        const val = Number(e.target.value);
+        intervalLabel.textContent = `${val}s`;
+        if (intervalId) clearInterval(intervalId);
+        intervalId = setInterval(load, val * 1000);
+      });
+
       load();
-      setInterval(load, 5000);
+      intervalId = setInterval(load, Number(intervalInput.value) * 1000);
     </script>
   </body>
 </html>
