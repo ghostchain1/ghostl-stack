@@ -1,0 +1,45 @@
+---
+description: 'w3: Enhanced Ethereum Integration for Go'
+---
+
+# `w3`: Enhanced Ethereum Integration for Go
+
+<div className="flex flex-wrap gap-2 my-2">
+  <a href="https://pkg.go.dev/github.com/lmittmann/w3">
+    <img src="https://pkg.go.dev/badge/github.com/lmittmann/w3.svg" alt="Go Reference" />
+  </a>
+  <a href="https://goreportcard.com/report/github.com/lmittmann/w3">
+    <img src="https://goreportcard.com/badge/github.com/lmittmann/w3" alt="Go Report Card" />
+  </a>
+  <a href="https://coveralls.io/github/lmittmann/w3?branch=main">
+    <img src="https://coveralls.io/repos/github/lmittmann/w3/badge.svg?branch=main" alt="Coverage Status" />
+  </a>
+  <a href="https://github.com/lmittmann/w3/releases">
+    <img src="https://img.shields.io/github/v/release/lmittmann/w3" alt="Latest Release" />
+  </a>
+</div>
+
+<Image src="/gopher.png" alt="W3 Gopher" width={158} height={224} align="right" className="ml-2 md:ml-6 mb-2"/>
+
+`w3` is your toolbelt for integrating with Ethereum in Go. Closely linked to `go‑ethereum`, it provides an ergonomic wrapper for working with **RPC**, **ABI's**, and the **EVM**.
+
+
+```txt
+go get github.com/lmittmann/w3
+```
+
+
+## At a Glance
+
+* Use `w3.Client` to connect to an RPC endpoint. The client features batch request support for up to **80x faster requests** and easy extendibility. [learn&nbsp;more&nbsp;➔](/rpc-overview)
+* Use `w3vm.VM` to simulate EVM execution with optional tracing and Mainnet state forking, or test Smart Contracts. [learn&nbsp;more&nbsp;➔](/vm-overview)
+* Use `w3.Func` and `w3.Event` to create ABI bindings from Solidity function and event signatures. [learn&nbsp;more&nbsp;➔](/helper-abi)
+* Use `w3.A`, `w3.H`, and many other utility functions to parse addresses, hashes, and other common types from strings. [learn&nbsp;more&nbsp;➔](/helper-utils)
+
+
+## Sponsors
+
+<div class="mt-4">
+  <img src="/assets/ef-logo.svg" alt="EF Logo" class="w-full max-w-72 dark:hidden" />
+  <img src="/assets/ef-logo-dark.svg" alt="EF Logo Dark" class="w-full max-w-72 hidden dark:block" />
+</div>

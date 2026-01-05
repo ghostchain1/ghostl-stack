@@ -1,0 +1,25 @@
+name: golangci-lint
+on:
+  push:
+    tags:
+      - v2.*
+    branches:
+      - v2-maint
+  pull_request:
+    branches:
+      - v2-maint
+permissions:
+  contents: read
+jobs:
+  golangci:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v5
+        with:
+          version: latest

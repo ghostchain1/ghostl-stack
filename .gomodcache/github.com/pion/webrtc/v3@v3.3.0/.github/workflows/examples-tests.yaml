@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+# SPDX-License-Identifier: MIT
+name: Examples Tests
+on:
+  pull_request:
+    branches:
+      - master
+      - v3
+  push:
+    branches:
+      - master
+      - v3
+
+jobs:
+  pion-to-pion-test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: test
+        run: cd examples/pion-to-pion && ./test.sh

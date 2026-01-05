@@ -1,0 +1,90 @@
+name: Run Tests
+on:
+  push:
+    branches:
+      - v2-maint
+    tags:
+      - v2.*
+  pull_request:
+    branches:
+      - v2-maint
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        go: [stable, oldstable]
+    name: ${{ matrix.os }} @ Go ${{ matrix.go }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+      - name: Set PATH
+        run: echo "${GITHUB_WORKSPACE}/.local/bin" >>"${GITHUB_PATH}"
+      - if: matrix.go == 'stable' && matrix.os == 'ubuntu-latest'
+        run: make ensure-goimports
+      - if: matrix.go == 'stable' && matrix.os == 'ubuntu-latest'
+        run: make lint
+      - run: make vet
+      - run: make test
+        env:
+          GFLAGS: -tags urfave_cli_no_docs
+      - run: make test
+      - run: make -C cmd/urfave-cli-genflags
+      - run: make check-binary-size
+        env:
+          GFLAGS: -tags urfave_cli_no_docs
+      - run: make check-binary-size
+      - run: make yamlfmt
+      - if: matrix.go == 'stable' && matrix.os == 'ubuntu-latest'
+        run: make generate
+      - run: make diffcheck
+      - if: matrix.go == 'stable' && matrix.os == 'ubuntu-latest'
+        run: make v2diff
+      - if: success() && matrix.go == 'stable' && matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+  test-docs:
+    name: test-docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: latest
+      - name: Set PATH
+        run: echo "${GITHUB_WORKSPACE}/.local/bin" >>"${GITHUB_PATH}"
+      - run: make ensure-gfmrun
+      - run: make gfmrun
+        env:
+          FLAGS: --walk docs/v2/
+      - run: make diffcheck
+  publish:
+    permissions:
+      contents: write
+    # let v3 handle docs
+    # if: startswith(github.ref, 'refs/tags/')
+    if: false
+    name: publish
+    needs: [test-docs]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: make ensure-mkdocs
+        env:
+          FLAGS: --upgrade-pip
+      - run: make set-mkdocs-remote
+        env:
+          MKDOCS_REMOTE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: make deploy-mkdocs
