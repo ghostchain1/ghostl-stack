@@ -16,6 +16,7 @@ import { createPersistentIdentityServices } from './services/auth-store';
 import { LokiClient } from './clients/loki';
 import { GuardClient } from './clients/guard';
 import { AlertmanagerClient } from './clients/alertmanager';
+import type { AlertmanagerAlert } from './clients/alertmanager';
 import { buildStackRouter } from './modules/stack/router';
 import { buildWalletRouter } from './modules/wallet/router';
 
@@ -71,7 +72,7 @@ app.use(
     alerts: liveServices.observability.alertRulesService,
     notifications: liveServices.observability.notificationRouterService,
     guard: guard,
-    alertProxy: alertmanager ? (payload) => alertmanager.send(payload) : undefined
+    alertProxy: alertmanager ? (payload: AlertmanagerAlert) => alertmanager.send(payload) : undefined
   })
 );
 app.use(

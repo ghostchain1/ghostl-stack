@@ -1,4 +1,4 @@
-import { Request, Response, Router } from 'express';
+import { NextFunction, Request, Response, Router } from 'express';
 import type {
   AlertRulesService,
   LogsService,
@@ -6,10 +6,13 @@ import type {
   NotificationRouterService
 } from './services';
 import { requirePermission } from '../../lib/rbac';
+import type { AlertmanagerAlert } from '../../clients/alertmanager';
 
 const asyncHandler =
-  <TReq extends Request = Request, TRes extends Response = Response>(fn: (req: TReq, res: TRes, next: any) => Promise<any>) =>
-  (req: TReq, res: TRes, next: any) =>
+  <TReq extends Request = Request, TRes extends Response = Response>(
+    fn: (req: TReq, res: TRes, next: NextFunction) => Promise<unknown>
+  ) =>
+  (req: TReq, res: TRes, next: NextFunction) =>
     Promise.resolve(fn(req, res, next)).catch(next);
 
 export interface ObservabilityDeps {
@@ -21,7 +24,7 @@ export interface ObservabilityDeps {
     listPolicies: () => Promise<unknown>;
     setPolicy: (path: 'mode' | 'threshold' | 'delay', body: unknown) => Promise<unknown>;
   };
-  alertProxy?: (payload: unknown) => Promise<unknown>;
+  alertProxy?: (payload: AlertmanagerAlert) => Promise<unknown>;
 }
 
 export const buildObservabilityRouter = (deps: ObservabilityDeps) => {

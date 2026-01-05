@@ -1,4 +1,4 @@
-import type { Proposal, Vote } from '../../../../../packages/types';
+import type { Proposal } from '../../../../../packages/types';
 
 export interface GovernanceService {
   list(): Promise<Proposal[]>;
