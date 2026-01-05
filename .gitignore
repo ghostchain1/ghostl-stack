@@ -30,3 +30,4 @@ chains/**/data/
 infra/opstack/l3/ghostsample/data/
 infra/opstack/data/l2-geth/
 infra/opstack/l3/ghostl3/
+!infra/opstack/l3/ghostl3/config/policy.production.sample.json
