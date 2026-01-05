@@ -187,6 +187,8 @@
         <div id="diag" class="glass small">Loading...</div>
         <div style="margin:14px 0 6px; font-weight:700;">Quick Links</div>
         <div class="links" id="links"></div>
+        <div style="margin:14px 0 6px; font-weight:700;">Capability Blueprint</div>
+        <div id="blueprint" class="glass small">Loading...</div>
       </div>
     </div>
 
@@ -200,6 +202,7 @@
       const linksEl = document.getElementById("links");
       const intervalInput = document.getElementById("interval");
       const intervalLabel = document.getElementById("intervalLabel");
+      const blueprintEl = document.getElementById("blueprint");
 
       let currentServices = [];
       let intervalId = null;
@@ -211,6 +214,141 @@
       };
 
       const statusColor = (svc) => (svc.ok ? "ok" : "bad");
+
+      const blueprintSections = [
+        {
+          title: "Identity & Security",
+          items: [
+            "Wallet/OAuth login, RBAC",
+            "Admin multisig approvals",
+            "Slashing + key rotation alerts",
+            "Firewall/port + rate-limit posture"
+          ]
+        },
+        {
+          title: "Nodes & Consensus",
+          items: [
+            "Validator/full/archive inventory",
+            "Sync/peer health, CPU/RAM/disk",
+            "Version drift + restart/upgrade hooks",
+            "Fork/reorg/finality monitors"
+          ]
+        },
+        {
+          title: "Validators",
+          items: [
+            "Active/jailed/slashed status",
+            "Stake, commission, rewards",
+            "Missed blocks / participation",
+            "Proposer rotation + BFT alerts"
+          ]
+        },
+        {
+          title: "Token & Treasury",
+          items: [
+            "Supply/inflation/emissions",
+            "Gas model + fee distribution",
+            "Treasury balances + multisig",
+            "Bridge fees / protocol income"
+          ]
+        },
+        {
+          title: "Contracts & VM",
+          items: [
+            "Registry + ownership/proxy status",
+            "Pause/emergency controls",
+            "Gas usage + revert rates",
+            "AI anomaly & exploit scoring"
+          ]
+        },
+        {
+          title: "Bridges & Interop",
+          items: [
+            "Liquidity + pending/finalized transfers",
+            "Validator sigs per transfer",
+            "Pause/fee tuning/emergency modes",
+            "Fraud/fault-proof monitoring"
+          ]
+        },
+        {
+          title: "Txs & Blocks",
+          items: [
+            "Mempool + tx lifecycle",
+            "Block production timeline",
+            "MEV/fairness indicators",
+            "Gas optimization insights"
+          ]
+        },
+        {
+          title: "AI & Intelligence",
+          items: [
+            "Fraud/Sybil/bot detection",
+            "Predictive congestion/gas",
+            "Downtime/slash risk forecast",
+            "Capacity planning"
+          ]
+        },
+        {
+          title: "Observability & Alerts",
+          items: [
+            "Prom/Grafana embeds",
+            "Latency percentiles / KPIs",
+            "Threshold + anomaly alerts",
+            "Webhook/Slack/Email/Discord"
+          ]
+        },
+        {
+          title: "DevOps & Upgrades",
+          items: [
+            "Hard/soft fork scheduling",
+            "Feature flags, canary/rollback",
+            "Contract/validator CI/CD hooks",
+            "Version compatibility checks"
+          ]
+        },
+        {
+          title: "Governance",
+          items: [
+            "Proposal creation/voting/quorum",
+            "Delegated voting + execution queues",
+            "Snapshot/off-chain links",
+            "Participation analytics"
+          ]
+        },
+        {
+          title: "API & Integrations",
+          items: [
+            "RPC endpoint manager + rate limits",
+            "API usage analytics",
+            "SDK versioning",
+            "Exchange/oracle/indexer hooks"
+          ]
+        },
+        {
+          title: "Advanced (L2/L3)",
+          items: [
+            "Sequencer controls",
+            "Fraud/ZK proof status",
+            "DA monitoring",
+            "L1↔L2 settlement tracking"
+          ]
+        }
+      ];
+
+      const renderBlueprint = () => {
+        blueprintEl.innerHTML = "";
+        const grid = document.createElement("div");
+        grid.className = "grid";
+        blueprintSections.forEach((sec) => {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `<h3>${sec.title}</h3><ul class="small" style="padding-left:16px; margin:6px 0 0 0;">${sec.items
+            .map((i) => `<li>${i}</li>`)
+            .join("")}</ul>`;
+          grid.appendChild(card);
+        });
+        blueprintEl.appendChild(grid);
+      };
 
       const renderLinks = (links) => {
         linksEl.innerHTML = "";
@@ -303,6 +441,7 @@
         intervalId = setInterval(load, val * 1000);
       });
 
+      renderBlueprint();
       load();
       intervalId = setInterval(load, Number(intervalInput.value) * 1000);
     </script>
