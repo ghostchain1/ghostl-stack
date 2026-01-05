@@ -68,6 +68,36 @@ app.get("/api/status", async (_req, res) => {
   res.json({ ok: true, services: results });
 });
 
+app.get("/api/diag", async (_req, res) => {
+  const response = {
+    ok: true,
+    guardHealth: null,
+    gateStatus: null,
+    links: {
+      grafana: "http://localhost:3000",
+      prometheus: "http://localhost:9090",
+      opGate: "http://localhost:28546/gate/status",
+      l1Rpc: "http://localhost:28545",
+      l2Rpc: "http://localhost:29545",
+      l3Rpc: "http://localhost:10545"
+    }
+  };
+
+  try {
+    response.guardHealth = await fetchJson("http://localhost:7070/health");
+  } catch (e) {
+    response.guardHealth = { ok: false, error: e?.message || String(e) };
+  }
+
+  try {
+    response.gateStatus = await fetchJson("http://localhost:28546/gate/status");
+  } catch (e) {
+    response.gateStatus = { ok: false, error: e?.message || String(e) };
+  }
+
+  res.json(response);
+});
+
 app.listen(PORT, () => {
   console.log(`ghostl-stack dashboard running on http://localhost:${PORT}`);
 });
