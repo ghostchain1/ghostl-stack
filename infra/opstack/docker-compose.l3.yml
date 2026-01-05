@@ -642,3 +642,411 @@ services:
     <<: *default-security
     mem_limit: 256m
     cpus: "0.25"
+
+  ai-monitor:
+    build:
+      context: ../../services/ai-monitor
+      dockerfile: ../../services/common.Dockerfile
+    image: local/ai-monitor:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      l2-geth:
+        condition: service_healthy
+      guard:
+        condition: service_healthy
+    environment:
+      RPC_L2: http://l2-geth:8545
+      GUARD_URL: ${GUARD_URL:-http://guard:7070}
+      OBSERVE_ONLY: ${AI_MONITOR_OBSERVE_ONLY:-1}
+      ADMIN_TOKEN: ${AI_MONITOR_ADMIN_TOKEN:-}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7575/health >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  audit-log-service:
+    build:
+      context: ../../services/audit-log-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/audit-log-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      LOG_PATH: /data/audit.log
+    volumes:
+      - ./data/audit:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7641/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  block-index-service:
+    build:
+      context: ../../services/block-index-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/block-index-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7626/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  chain-status-service:
+    build:
+      context: ../../services/chain-status-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/chain-status-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7612/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  compliance-export-service:
+    build:
+      context: ../../services/compliance-export-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/compliance-export-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7621/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  dispute-service:
+    build:
+      context: ../../services/dispute-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/dispute-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7607/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  entity-tagging-service:
+    build:
+      context: ../../services/entity-tagging-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/entity-tagging-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7627/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  explainability-service:
+    build:
+      context: ../../services/explainability-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/explainability-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7632/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  fee-model-service:
+    build:
+      context: ../../services/fee-model-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/fee-model-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7615/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  forecasting-service:
+    build:
+      context: ../../services/forecasting-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/forecasting-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7617/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  global-search-service:
+    build:
+      context: ../../services/global-search-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/global-search-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7637/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  key-rotation-service:
+    build:
+      context: ../../services/key-rotation-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/key-rotation-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7619/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  network-context-service:
+    build:
+      context: ../../services/network-context-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/network-context-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7633/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  node-inventory-service:
+    build:
+      context: ../../services/node-inventory-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/node-inventory-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7622/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  participation-service:
+    build:
+      context: ../../services/participation-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/participation-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7603/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  payout-service:
+    build:
+      context: ../../services/payout-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/payout-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7629/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  rewards-service:
+    build:
+      context: ../../services/rewards-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/rewards-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7602/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  secrets-health-service:
+    build:
+      context: ../../services/secrets-health-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/secrets-health-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7618/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  snapshot-service:
+    build:
+      context: ../../services/snapshot-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/snapshot-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7624/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  staking-service:
+    build:
+      context: ../../services/staking-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/staking-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7601/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  supply-service:
+    build:
+      context: ../../services/supply-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/supply-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7614/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  theme-service:
+    build:
+      context: ../../services/theme-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/theme-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7634/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  transfer-lifecycle-service:
+    build:
+      context: ../../services/transfer-lifecycle-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/transfer-lifecycle-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7605/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  upgrade-orchestrator-service:
+    build:
+      context: ../../services/upgrade-orchestrator-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/upgrade-orchestrator-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7623/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
+
+  verification-service:
+    build:
+      context: ../../services/verification-service
+      dockerfile: ../../services/common.Dockerfile
+    image: local/verification-service:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7630/health >/dev/null"]
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.25"
