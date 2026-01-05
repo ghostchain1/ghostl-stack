@@ -1,0 +1,7 @@
+[submodule "infra/opstack/op-geth"]
+	path = infra/opstack/op-geth
+	url = git@github.com:ghostchain1/op-geth.git
+
+[submodule "infra/opstack/optimism"]
+	path = infra/opstack/optimism
+	url = git@github.com:ghostchain1/optimism.git
