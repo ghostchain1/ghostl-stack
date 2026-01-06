@@ -20,6 +20,7 @@ import { AlertmanagerClient } from './clients/alertmanager';
 import type { AlertmanagerAlert } from './clients/alertmanager';
 import { buildStackRouter } from './modules/stack/router';
 import { buildWalletRouter } from './modules/wallet/router';
+type HexString = string;
 
 const app = express();
 const FileStore = FileStoreFactory(session);
@@ -72,7 +73,8 @@ const servicesBase = {
   rpc: process.env.RPC_SERVICE_URL || 'http://localhost:7650',
   usage: process.env.USAGE_SERVICE_URL || 'http://localhost:7651',
   webhooks: process.env.WEBHOOKS_SERVICE_URL || 'http://localhost:7652',
-  ai: process.env.AI_SERVICE_URL || 'http://localhost:7660'
+  ai: process.env.AI_SERVICE_URL || 'http://localhost:7660',
+  explorerRpc: process.env.EXPLORER_RPC_URL || process.env.RPC_L2 || 'http://localhost:29545'
 };
 
 app.use('/app-shell', buildAppShellRouter(services.appShell));
@@ -114,6 +116,18 @@ app.use(
   })
 );
 app.use('/wallet', buildWalletRouter());
+
+const rpcCall = async (method: string, params: unknown[] = []) => {
+  const res = await fetch(servicesBase.explorerRpc, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
+  });
+  if (!res.ok) throw new Error(`RPC ${method} failed: ${res.status}`);
+  const body = (await res.json()) as { result?: any; error?: any };
+  if (body.error) throw new Error(body.error.message || 'rpc_error');
+  return body.result;
+};
 
 app.get('/api/bridge', async (_req, res) => {
   const bridges = await proxyJson<{ bridges?: unknown[] }>(`${servicesBase.bridge}/bridges`, { bridges: [] });
@@ -187,6 +201,55 @@ app.get('/api/validators', async (_req, res) => {
 app.get('/api/ai', async (_req, res) => {
   const data = await proxyJson<{ networks?: unknown[] }>(`${servicesBase.ai}/anomalies`, { networks: [] });
   res.json(data);
+});
+
+app.get('/explorer/blocks', async (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 10, 50);
+  try {
+    const latestHex = (await rpcCall('eth_blockNumber')) as HexString;
+    const latest = parseInt(latestHex, 16);
+    const blocks = await Promise.all(
+      Array.from({ length: limit }, (_, i) => latest - i)
+        .filter((n) => n >= 0)
+        .map(async (num) => {
+          const block = (await rpcCall('eth_getBlockByNumber', ['0x' + num.toString(16), true])) as any;
+          return {
+            number: parseInt(block.number, 16),
+            hash: block.hash,
+            proposer: block.miner,
+            txCount: Array.isArray(block.transactions) ? block.transactions.length : 0,
+            size: block.size ? parseInt(block.size, 16) : undefined,
+            time: new Date(parseInt(block.timestamp, 16) * 1000).toISOString()
+          };
+        })
+    );
+    res.json({ blocks });
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message, blocks: [] });
+  }
+});
+
+app.get('/explorer/txs', async (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 20, 100);
+  try {
+    const latestHex = (await rpcCall('eth_blockNumber')) as HexString;
+    const latest = parseInt(latestHex, 16);
+    const block = (await rpcCall('eth_getBlockByNumber', ['0x' + latest.toString(16), true])) as any;
+    const txs = (block.transactions || []).slice(0, limit).map((t: any) => ({
+      hash: t.hash,
+      from: t.from,
+      to: t.to,
+      value: t.value,
+      gas: parseInt(t.gas, 16),
+      status: 'success',
+      nonce: parseInt(t.nonce, 16),
+      blockNumber: latest,
+      time: new Date(parseInt(block.timestamp, 16) * 1000).toISOString()
+    }));
+    res.json({ txs });
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message, txs: [] });
+  }
 });
 
 app.get('/integrations/rpc', async (_req, res) => {
