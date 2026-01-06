@@ -8,6 +8,12 @@ const DEV_PRIVATE_KEY =
 const EXTERNAL_DEPLOYER_KEY = process.env.DEPLOYER_PRIVATE_KEY
   ? [process.env.DEPLOYER_PRIVATE_KEY]
   : [];
+const RPC_L1 = process.env.RPC_L1 ?? "http://localhost:8545";
+const RPC_L2 = process.env.RPC_L2 ?? "http://localhost:9545";
+const RPC_L3 = process.env.RPC_L3 ?? "http://localhost:10545";
+const L1_CHAIN_ID = Number(process.env.L1_CHAIN_ID ?? 31337);
+const L2_CHAIN_ID = Number(process.env.L2_CHAIN_ID ?? 7192);
+const L3_CHAIN_ID = Number(process.env.L3_CHAIN_ID ?? 7393);
 const POLYGON_RPC_URL = process.env.POLYGON_RPC_URL ?? "https://polygon-rpc.com";
 const POLYGON_AMOY_RPC_URL =
   process.env.POLYGON_AMOY_RPC_URL ?? "https://rpc-amoy.polygon.technology";
@@ -23,9 +29,9 @@ const config: HardhatUserConfig = {
     sources: "./src"
   },
   networks: {
-    anvil: { url: "http://localhost:8545", chainId: 31337 },
-    ghostl2: { url: "http://localhost:9545", chainId: 7192, accounts: [DEV_PRIVATE_KEY] },
-    ghostl3: { url: "http://localhost:10545", chainId: 7393, accounts: [DEV_PRIVATE_KEY] },
+    anvil: { url: RPC_L1, chainId: L1_CHAIN_ID },
+    ghostl2: { url: RPC_L2, chainId: L2_CHAIN_ID, accounts: [DEV_PRIVATE_KEY] },
+    ghostl3: { url: RPC_L3, chainId: L3_CHAIN_ID, accounts: [DEV_PRIVATE_KEY] },
     ghostl2Op: { url: OP_L2_RPC, chainId: OP_L2_CHAIN_ID, accounts: [DEV_PRIVATE_KEY] },
     ghostl3Op: { url: OP_L3_RPC, chainId: OP_L3_CHAIN_ID, accounts: [DEV_PRIVATE_KEY] },
     polygon: { url: POLYGON_RPC_URL, chainId: 137, accounts: EXTERNAL_DEPLOYER_KEY },

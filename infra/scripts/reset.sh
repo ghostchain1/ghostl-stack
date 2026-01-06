@@ -2,8 +2,10 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-cd "$ROOT/.devcontainer"
-docker compose down -v
-echo "Removing chain data..."
-bash "$ROOT/infra/scripts/chains/reset.sh"
-echo "Reset complete."
+echo "Stopping services..."
+bash "$ROOT/infra/scripts/down.sh"
+
+echo "Resetting OP Stack data dirs..."
+bash "$ROOT/infra/scripts/opstack/reset.sh"
+
+echo "Reset complete. Re-run: bash infra/scripts/up.sh"

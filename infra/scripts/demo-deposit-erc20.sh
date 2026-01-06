@@ -21,5 +21,4 @@ echo "Using L2_TOKEN_ADDRESS=$L2_TOKEN_ADDRESS"
 echo "Sending demo ERC20 deposit (amount=${DEMO_AMOUNT_ETH} tokens)..."
 
 cd "$ROOT_DIR/contracts"
-DEMO_AMOUNT_ETH="$DEMO_AMOUNT_ETH" npx hardhat run --network ghostl2 scripts/demo_deposit_erc20.ts
-
+DEMO_AMOUNT_ETH="$DEMO_AMOUNT_ETH" npx hardhat run --network ghostl2Op scripts/demo_deposit_erc20.ts
