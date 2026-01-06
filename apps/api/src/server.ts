@@ -236,7 +236,8 @@ app.get('/explorer/txs', async (req, res) => {
     const latestHex = (await rpcCall('eth_blockNumber')) as HexString;
     const latest = parseInt(latestHex, 16);
     const collected: any[] = [];
-    for (let num = latest; num >= 0 && collected.length < limit; num--) {
+    const maxDepth = Math.max(limit * 10, 500);
+    for (let num = latest; num >= 0 && collected.length < limit && latest - num <= maxDepth; num--) {
       const block = (await rpcCall('eth_getBlockByNumber', ['0x' + num.toString(16), true])) as any;
       const blockTime = new Date(parseInt(block.timestamp, 16) * 1000).toISOString();
       (block.transactions || []).forEach((t: any) => {
