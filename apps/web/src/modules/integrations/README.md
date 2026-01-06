@@ -11,3 +11,13 @@ Services
 - RateLimitService
 - UsageAnalyticsService
 - WebhookService
+
+Data models
+- RpcEndpoint { id, url, type, region, status }
+- Webhook { id, eventTypes[], targetUrl, secretRef }
+
+Components
+- RpcEndpointManager
+- UsageAnalytics
+- WebhooksPanel
+- PartnerIntegrations
