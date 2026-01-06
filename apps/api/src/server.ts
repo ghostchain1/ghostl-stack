@@ -74,7 +74,8 @@ const servicesBase = {
   usage: process.env.USAGE_SERVICE_URL || 'http://localhost:7651',
   webhooks: process.env.WEBHOOKS_SERVICE_URL || 'http://localhost:7652',
   ai: process.env.AI_SERVICE_URL || 'http://localhost:7660',
-  explorerRpc: process.env.EXPLORER_RPC_URL || process.env.RPC_L2 || 'http://localhost:29545'
+  explorerRpc: process.env.EXPLORER_RPC_URL || process.env.RPC_L2 || 'http://localhost:29545',
+  swap: process.env.SWAP_SERVICE_URL || 'http://localhost:7670'
 };
 
 app.use('/app-shell', buildAppShellRouter(services.appShell));
@@ -269,6 +270,21 @@ app.get('/wallet/balance', async (req, res) => {
 app.get('/integrations/rpc', async (_req, res) => {
   const data = await proxyJson<{ endpoints?: unknown[] }>(`${servicesBase.rpc}/endpoints`, { endpoints: [] });
   res.json(data.endpoints || []);
+});
+
+app.get('/swap/quote', async (req, res) => {
+  const tokenIn = typeof req.query.tokenIn === 'string' ? req.query.tokenIn : '';
+  const tokenOut = typeof req.query.tokenOut === 'string' ? req.query.tokenOut : '';
+  const amount = typeof req.query.amount === 'string' ? req.query.amount : '';
+  if (!tokenIn || !tokenOut || !amount) {
+    res.status(400).json({ error: 'tokenIn, tokenOut, amount required' });
+    return;
+  }
+  const url = `${servicesBase.swap}/quote?tokenIn=${encodeURIComponent(tokenIn)}&tokenOut=${encodeURIComponent(
+    tokenOut
+  )}&amount=${encodeURIComponent(amount)}`;
+  const data = await proxyJson<{ routes?: unknown[] }>(url, { routes: [] });
+  res.json(data);
 });
 
 app.get('/integrations/usage', async (_req, res) => {
