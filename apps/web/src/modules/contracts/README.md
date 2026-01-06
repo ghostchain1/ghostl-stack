@@ -11,3 +11,13 @@ Services
 - VerificationService
 - ProxyInspectorService
 - ContractRiskService
+
+Data models
+- Contract { address, name, abi, verified, proxyType, owner }
+- ContractCallStats { calls, avgGas, reverts, timeRange }
+
+Components
+- ContractsRegistry
+- ContractDetailCard
+- AdminControls
+- ExecutionAnalytics
