@@ -11,3 +11,13 @@ Services
 - FraudScoringService
 - ForecastingService
 - ExplainabilityService
+
+Data models
+- Anomaly { id, entity, score, reasons[], time }
+- Forecast { metric, horizon, value, confidence }
+
+Components
+- AISecurityCenter
+- WalletBehaviorProfiles
+- SybilDetectionPanel
+- ForecastingPanel
