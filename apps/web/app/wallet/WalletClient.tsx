@@ -35,7 +35,9 @@ export function WalletClient() {
     swapQuoteError,
     fetchSwapQuote,
     selectedRoute,
-    setSelectedRoute
+    setSelectedRoute,
+    slippageBps,
+    setSlippageBps
   } = useWallet();
   const [to, setTo] = useState('');
   const [amount, setAmount] = useState('0.01');
@@ -263,10 +265,21 @@ export function WalletClient() {
                 >
                   {swapRoutes.map((r, idx) => (
                     <option key={r.id || idx} value={idx}>
-                      {(r.path || []).join(' → ') || 'direct'} · out {r.amountOut || '?'} min {r.minAmountOut || '?'}
+                      {(r.path || []).join(' → ') || 'direct'} · out {r.amountOut || '?'} min {r.minAmountOut || '?'} {r.dex ? `· ${r.dex}` : ''}
                     </option>
                   ))}
                 </select>
+                <div className="inline-form" style={{ gap: 8 }}>
+                  <span className="muted">Slippage %</span>
+                  <input
+                    className="input"
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={(slippageBps / 100).toString()}
+                    onChange={(e) => setSlippageBps(Math.max(0, Math.round(Number(e.target.value || 0) * 100)))}
+                  />
+                </div>
               </div>
             )}
             {swapQuoteError && (
