@@ -235,18 +235,27 @@ app.get('/explorer/txs', async (req, res) => {
   try {
     const latestHex = (await rpcCall('eth_blockNumber')) as HexString;
     const latest = parseInt(latestHex, 16);
-    const block = (await rpcCall('eth_getBlockByNumber', ['0x' + latest.toString(16), true])) as any;
-    const txs = (block.transactions || []).slice(0, limit).map((t: any) => ({
-      hash: t.hash,
-      from: t.from,
-      to: t.to,
-      value: t.value,
-      gas: parseInt(t.gas, 16),
-      status: 'success',
-      nonce: parseInt(t.nonce, 16),
-      blockNumber: latest,
-      time: new Date(parseInt(block.timestamp, 16) * 1000).toISOString()
-    }));
+    const collected: any[] = [];
+    for (let num = latest; num >= 0 && collected.length < limit; num--) {
+      const block = (await rpcCall('eth_getBlockByNumber', ['0x' + num.toString(16), true])) as any;
+      const blockTime = new Date(parseInt(block.timestamp, 16) * 1000).toISOString();
+      (block.transactions || []).forEach((t: any) => {
+        if (collected.length < limit) {
+          collected.push({
+            hash: t.hash,
+            from: t.from,
+            to: t.to,
+            value: t.value,
+            gas: parseInt(t.gas, 16),
+            status: 'success',
+            nonce: parseInt(t.nonce, 16),
+            blockNumber: parseInt(block.number, 16),
+            time: blockTime
+          });
+        }
+      });
+    }
+    const txs = collected.slice(0, limit);
     res.json({ txs });
   } catch (e) {
     res.status(500).json({ error: (e as Error).message, txs: [] });
