@@ -1,4 +1,4 @@
-import type { RiskSignal, KeyRef } from '@ghostchain/types/security';
+import type { RiskSignal, KeyRef } from '@ghostl/types/security';
 
 export interface SecretsHealth {
   sealed: boolean;

@@ -1,6 +1,6 @@
 'use client';
 
-import type { Node, NodeMetrics } from '@ghostchain/types/nodes';
+import type { Node, NodeMetrics } from '@ghostl/types/nodes';
 
 export function NodeDetail({ node, metrics }: { node: Node; metrics?: NodeMetrics }) {
   return (

@@ -1,6 +1,6 @@
 'use client';
 
-import type { Proposal, Vote } from '@ghostchain/types/governance';
+import type { Proposal, Vote } from '@ghostl/types/governance';
 
 export function VoteTracking({ proposal, votes }: { proposal: Proposal; votes: Vote[] }) {
   const quorumMet = votes.reduce((sum, v) => sum + v.weight, 0) >= proposal.quorum;

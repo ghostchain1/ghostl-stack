@@ -1,6 +1,6 @@
 'use client';
 
-import type { Forecast } from '@ghostchain/types/ai';
+import type { Forecast } from '@ghostl/types/ai';
 
 export function ForecastingPanel({ forecasts }: { forecasts: Forecast[] }) {
   return (

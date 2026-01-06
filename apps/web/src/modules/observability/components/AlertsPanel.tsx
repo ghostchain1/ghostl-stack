@@ -1,6 +1,6 @@
 'use client';
 
-import type { Alert } from '@ghostchain/types/observability';
+import type { Alert } from '@ghostl/types/observability';
 
 export function AlertsPanel({ alerts }: { alerts: Alert[] }) {
   const tone = (severity: Alert['severity']) => {

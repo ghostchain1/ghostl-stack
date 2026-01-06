@@ -1,6 +1,6 @@
 'use client';
 
-import type { Anomaly } from '@ghostchain/types/ai';
+import type { Anomaly } from '@ghostl/types/ai';
 
 export function AISecurityCenter({ anomalies }: { anomalies: Anomaly[] }) {
   return (

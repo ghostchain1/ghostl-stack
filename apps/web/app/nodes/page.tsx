@@ -1,41 +1,25 @@
 import { Card, Badge } from '@ghostl/ui';
-import { rpcCall } from '../../src/lib/rpc';
+import type { Node, NodeMetrics } from '@ghostl/types/nodes';
+import { apiFetch } from '../../src/lib/api';
 
-type NodeSnapshot = {
-  id: string;
-  type: string;
-  host: string;
-  version: string;
-  status: 'online' | 'offline' | 'degraded';
-  peers?: number;
-  lagSeconds?: number;
-};
+type NodeDetail = Node & { metrics: NodeMetrics };
 
-const rpcEndpoints = [
-  { id: 'l2', type: 'validator', host: 'l2 rpc', rpc: process.env.NEXT_PUBLIC_L2_RPC || 'http://localhost:9545' },
-  { id: 'l3', type: 'validator', host: 'l3 rpc', rpc: process.env.NEXT_PUBLIC_L3_RPC || 'http://localhost:10545' }
-];
+const fallbackMetrics: NodeMetrics = { cpu: 0, mem: 0, disk: 0, peers: 0 };
 
-async function collectNode(rpc: string, id: string, type: string, host: string): Promise<NodeSnapshot> {
-  try {
-    const [blockHex, peersHex, version, block] = await Promise.all([
-      rpcCall<string>(rpc, 'eth_blockNumber'),
-      rpcCall<string>(rpc, 'net_peerCount').catch(() => '0x0'),
-      rpcCall<string>(rpc, 'web3_clientVersion').catch(() => 'unknown'),
-      rpcCall<{ timestamp?: string }>(rpc, 'eth_getBlockByNumber', ['latest', false])
-    ]);
-    const peers = parseInt(peersHex || '0x0', 16);
-    const lagSeconds = block?.timestamp ? Math.max(0, Date.now() / 1000 - parseInt(block.timestamp, 16)) : undefined;
-    const blockNum = parseInt(blockHex || '0x0', 16);
-    const status: NodeSnapshot['status'] = blockNum > 0 ? 'online' : 'degraded';
-    return { id, type, host, version, status, peers, lagSeconds };
-  } catch {
-    return { id, type, host, version: 'unknown', status: 'offline' };
-  }
+async function loadNodeDetails(): Promise<NodeDetail[]> {
+  const list = await apiFetch<Node[]>('/nodes', { fallback: [] });
+  const enriched = await Promise.all(
+    list.map((node) =>
+      apiFetch<{ node: Node; metrics: NodeMetrics }>(`/nodes/${encodeURIComponent(node.id)}`, {
+        fallback: { node, metrics: fallbackMetrics }
+      }).then((res) => ({ ...node, ...(res?.node || {}), metrics: res?.metrics || fallbackMetrics }))
+    )
+  );
+  return enriched;
 }
 
 export default async function NodesPage() {
-  const nodes = await Promise.all(rpcEndpoints.map((n) => collectNode(n.rpc, n.id, n.type, n.host)));
+  const nodes = await loadNodeDetails();
 
   return (
     <div className="content">
@@ -55,15 +39,26 @@ export default async function NodesPage() {
               </div>
               <div className="spread">
                 <span className="muted">Peers</span>
-                <span>{node.peers ?? 'n/a'}</span>
+                <span>{node.metrics.peers ?? 'n/a'}</span>
               </div>
               <div className="spread">
                 <span className="muted">Lag</span>
-                <span>{node.lagSeconds !== undefined ? `${Math.round(node.lagSeconds)}s` : 'n/a'}</span>
+                <span>{node.metrics.lag !== undefined ? `${node.metrics.lag}s` : 'n/a'}</span>
               </div>
+              {node.lastSeenAt && (
+                <div className="spread">
+                  <span className="muted">Last seen</span>
+                  <span>{node.lastSeenAt}</span>
+                </div>
+              )}
             </div>
           </Card>
         ))}
+        {!nodes.length && (
+          <Card title="Nodes">
+            <div className="muted">No nodes reported by /nodes API.</div>
+          </Card>
+        )}
       </div>
     </div>
   );

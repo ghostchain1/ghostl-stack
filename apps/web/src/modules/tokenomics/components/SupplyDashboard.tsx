@@ -1,6 +1,6 @@
 'use client';
 
-import type { SupplySnapshot } from '@ghostchain/types/tokenomics';
+import type { SupplySnapshot } from '@ghostl/types/tokenomics';
 
 export function SupplyDashboard({ snapshots }: { snapshots: SupplySnapshot[] }) {
   const latest = snapshots[0];
