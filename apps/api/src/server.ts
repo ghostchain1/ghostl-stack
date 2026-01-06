@@ -287,6 +287,30 @@ app.get('/swap/quote', async (req, res) => {
   res.json(data);
 });
 
+app.post('/swap/execute', async (req, res) => {
+  const body = req.body || {};
+  if (!body || typeof body !== 'object') {
+    res.status(400).json({ error: 'invalid_body' });
+    return;
+  }
+  try {
+    const upstream = await fetch(`${servicesBase.swap}/execute`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!upstream.ok) {
+      const err = await upstream.json().catch(() => ({}));
+      res.status(upstream.status).json(err);
+      return;
+    }
+    const data = await upstream.json().catch(() => ({}));
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message });
+  }
+});
+
 app.get('/integrations/usage', async (_req, res) => {
   const data = await proxyJson<{ usage?: unknown[] }>(`${servicesBase.usage}/usage`, { usage: [] });
   res.json(data.usage || []);
