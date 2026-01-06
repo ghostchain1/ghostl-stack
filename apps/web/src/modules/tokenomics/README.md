@@ -12,3 +12,14 @@ Services
 - FeeModelService
 - TreasuryService
 - PayoutService
+
+Data models
+- SupplySnapshot { total, circulating, burned, minted, time }
+- TreasuryTx { id, to, amount, purpose, approvals[] }
+
+Components
+- SupplyDashboard
+- FeeMarketCard
+- TreasuryOverview
+- PayoutsPanel
+- RevenuePanel
