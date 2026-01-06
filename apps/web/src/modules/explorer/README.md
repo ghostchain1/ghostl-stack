@@ -11,3 +11,13 @@ Services
 - TxIndexService
 - BlockIndexService
 - EntityTaggingService
+
+Data models
+- Tx { hash, from, to, value, gas, status, error }
+- Block { number, hash, proposer, txCount, size, time }
+
+Components
+- MempoolStream
+- TransactionsTable
+- BlocksTable
+- EntityView
