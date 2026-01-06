@@ -48,6 +48,7 @@ export function WalletClient() {
   const [privateKey, setPrivateKey] = useState('');
   const [swapAmount, setSwapAmount] = useState('0.01');
   const [swapRecipient, setSwapRecipient] = useState('');
+  const [quoteTimer, setQuoteTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
   const selectedRouteObj = useMemo(() => swapRoutes[selectedRoute], [swapRoutes, selectedRoute]);
 
@@ -61,7 +62,12 @@ export function WalletClient() {
   }, [account, bridgeRecipient, swapRecipient]);
 
   useEffect(() => {
-    fetchSwapQuote(swapAmount).catch(() => undefined);
+    if (quoteTimer) clearTimeout(quoteTimer);
+    const timer = setTimeout(() => {
+      fetchSwapQuote(swapAmount).catch(() => undefined);
+    }, 300);
+    setQuoteTimer(timer);
+    return () => clearTimeout(timer);
   }, [fetchSwapQuote, swapAmount]);
 
   const balanceList = useMemo(
