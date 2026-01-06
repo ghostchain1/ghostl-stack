@@ -2,18 +2,27 @@ import { AISecurityCenter } from '../../src/modules/ai/components/AISecurityCent
 import { WalletBehaviorProfiles } from '../../src/modules/ai/components/WalletBehaviorProfiles';
 import { SybilDetectionPanel } from '../../src/modules/ai/components/SybilDetectionPanel';
 import { ForecastingPanel } from '../../src/modules/ai/components/ForecastingPanel';
-import type { Anomaly, Forecast } from '@ghostchain/types/ai';
+import type { Anomaly, Forecast } from '@ghostl/types/ai';
 import { apiFetch } from '../../src/lib/api';
 
+type RawAi = {
+  id?: string;
+  risk?: number | string;
+  action?: string;
+};
+
 async function loadAI() {
-  const data = await apiFetch<{ networks?: any[]; ok?: boolean }>('/api/ai', { fallback: { networks: [] } });
-  const anomalies: Anomaly[] = (data.networks || []).map((n) => ({
-    id: n.id || 'ai',
-    entity: n.id || 'network',
-    score: Number(n.risk ?? 0),
-    reasons: [n.action || ''],
-    time: new Date().toISOString()
-  }));
+  const data = await apiFetch<{ networks?: RawAi[]; ok?: boolean }>('/api/ai', { fallback: { networks: [] } });
+  const anomalies: Anomaly[] = (data.networks || []).map((n) => {
+    const score = typeof n.risk === 'string' ? Number(n.risk) || 0 : Number(n.risk || 0);
+    return {
+      id: n.id || 'ai',
+      entity: n.id || 'network',
+      score,
+      reasons: [n.action || ''],
+      time: new Date().toISOString()
+    };
+  });
   const forecasts: Forecast[] = [
     { metric: 'gas', horizon: '15m', value: 0, confidence: 0.5 },
     { metric: 'downtime', horizon: '1h', value: 0, confidence: 0.5 }

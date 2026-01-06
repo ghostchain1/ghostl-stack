@@ -6,7 +6,7 @@ import { DashboardsPanel } from '../../src/modules/observability/components/Dash
 import { LogsViewer } from '../../src/modules/observability/components/LogsViewer';
 import { AlertsPanel } from '../../src/modules/observability/components/AlertsPanel';
 import { NotificationRouter } from '../../src/modules/observability/components/NotificationRouter';
-import type { Alert, LogEvent } from '@ghostchain/types/observability';
+import type { Alert, LogEvent } from '@ghostl/types/observability';
 import { apiFetch } from '../../src/lib/api';
 
 export default function ObservabilityPage() {
@@ -23,7 +23,7 @@ export default function ObservabilityPage() {
     { name: 'Grafana', url: 'http://localhost:3000' }
   ];
   const dashboards = [{ name: 'Stack', url: 'http://localhost:3000' }];
-  const routes = [
+  const routes: { target: string; channel: 'slack' | 'discord' | 'webhook' | 'email'; active: boolean }[] = [
     { target: 'slack://alerts', channel: 'slack', active: true },
     { target: 'https://example.com/webhook', channel: 'webhook', active: true }
   ];

@@ -2,21 +2,29 @@ import { ValidatorsTable } from '../../src/modules/validators/components/Validat
 import { ValidatorDetailCard } from '../../src/modules/validators/components/ValidatorDetailCard';
 import { VotingPowerChart } from '../../src/modules/validators/components/VotingPowerChart';
 import { ParticipationPanel } from '../../src/modules/validators/components/ParticipationPanel';
-import type { Validator, SlashEvent } from '@ghostchain/types/validators';
+import type { Validator, SlashEvent } from '@ghostl/types/validators';
 import { apiFetch } from '../../src/lib/api';
 
+type RawValidator = Partial<Validator> & {
+  proposerIndex?: number | string;
+  byzantine?: number | string;
+};
+
 async function loadValidators(): Promise<Validator[]> {
-  const data = await apiFetch<{ validators?: any[] }>('/api/validators', {
+  const data = await apiFetch<{ validators?: RawValidator[] }>('/api/validators', {
     fallback: { validators: [] }
   });
-  return (data.validators || []).map((v) => ({
-    id: v.id || v.address || 'unknown',
-    address: v.id || v.address || '0x0',
-    status: 'active',
-    stake: v.stake || '?',
-    commission: Number(v.commission || 0),
-    power: Number(v.byzantine || v.proposerIndex || 0)
-  }));
+  return (data.validators || []).map((v) => {
+    const powerSource = v.byzantine ?? v.proposerIndex ?? v.power ?? 0;
+    return {
+      id: v.id || v.address || 'unknown',
+      address: v.id || v.address || '0x0',
+      status: v.status || 'active',
+      stake: v.stake || '?',
+      commission: Number(v.commission || 0),
+      power: typeof powerSource === 'string' ? Number(powerSource) || 0 : Number(powerSource || 0)
+    };
+  });
 }
 
 const mockParticipation = { finality: 'safe', participation: '95%', proposer: 'rotating' };
