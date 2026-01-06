@@ -77,3 +77,17 @@ export async function swapTokens(params: {
   }
   return res.json() as Promise<{ tx: string; note?: string }>;
 }
+
+export async function getSwapQuote(params: { tokenIn: string; tokenOut: string; amount: string }) {
+  const query = new URLSearchParams({
+    tokenIn: params.tokenIn,
+    tokenOut: params.tokenOut,
+    amount: params.amount
+  });
+  const res = await fetch(`${API_URL}/swap/quote?${query.toString()}`, { credentials: 'include' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Quote failed: ${res.status}`);
+  }
+  return res.json() as Promise<{ routes?: { amountOut?: string; minAmountOut?: string; path?: string[] }[] }>;
+}

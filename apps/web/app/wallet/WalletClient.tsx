@@ -30,7 +30,10 @@ export function WalletClient() {
     bridgeToL3,
     sendViaApi,
     swapViaApi,
-    bridgeViaApi
+    bridgeViaApi,
+    swapQuote,
+    swapQuoteError,
+    fetchSwapQuote
   } = useWallet();
   const [to, setTo] = useState('');
   const [amount, setAmount] = useState('0.01');
@@ -47,7 +50,11 @@ export function WalletClient() {
     if (account && !swapRecipient) {
       setSwapRecipient(account);
     }
-  }, [account, bridgeRecipient]);
+  }, [account, bridgeRecipient, swapRecipient]);
+
+  useEffect(() => {
+    fetchSwapQuote(swapAmount).catch(() => undefined);
+  }, [fetchSwapQuote, swapAmount]);
 
   const balanceList = useMemo(
     () =>
@@ -244,6 +251,15 @@ export function WalletClient() {
             >
               Swap via API
             </Button>
+            {swapQuote && (
+              <span className="muted" style={{ fontSize: 12 }}>
+                Quote out: {swapQuote.amountOut || '?'} (min {swapQuote.minAmountOut || '?'}) path:{' '}
+                {(swapQuote.path || []).join(' → ')}
+              </span>
+            )}
+            {swapQuoteError && (
+              <span className="muted" style={{ color: '#f97316', fontSize: 12 }}>{swapQuoteError}</span>
+            )}
             <span className="muted" style={{ fontSize: 12 }}>
               Demo uses passthrough transfer (tokenIn == tokenOut). Provide private key to use backend signer.
             </span>
