@@ -3,6 +3,7 @@
 import { BrowserProvider, Contract, Interface, JsonRpcProvider, formatUnits, parseUnits } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { tokensForChain, TokenConfig, SupportedChain } from './tokens';
+import { bridgeTransfer, getBalance as apiGetBalance, sendFunds, swapTokens } from './api';
 
 type ChainConfig = {
   id: number;
@@ -91,18 +92,17 @@ export function useWallet() {
       const address = acct || account;
       const activeChain = targetChain || chain;
       if (!address) return;
-      const provider = new JsonRpcProvider(chainConfigs[activeChain].rpc);
       try {
         const entries = await Promise.all(
           tokensForChain(activeChain).map(async (t) => {
+            const rpc = chainConfigs[activeChain].rpc;
             if (t.type === 'native') {
-              const bal = await provider.getBalance(address);
-              return [tokenKey(t), formatUnits(bal, t.decimals)];
+              const res = await apiGetBalance({ rpc, address });
+              return [tokenKey(t), formatUnits(BigInt(res.balance), t.decimals)];
             }
             if (!t.address) return [tokenKey(t), '0'];
-            const erc20 = new Contract(t.address, erc20Abi, provider);
-            const bal = await erc20.balanceOf(address);
-            return [tokenKey(t), formatUnits(bal, t.decimals)];
+            const res = await apiGetBalance({ rpc, address, token: t.address });
+            return [tokenKey(t), formatUnits(BigInt(res.balance), t.decimals)];
           })
         );
         setBalances((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
@@ -145,29 +145,41 @@ export function useWallet() {
   );
 
   const send = useCallback(
-    async (to: string, amount: string) => {
+    async (to: string, amount: string, opts?: { privateKey?: string }) => {
       if (!selectedToken) throw new Error('No token selected');
       setStatus(`Sending ${amount} ${selectedToken.symbol} on ${chainConfigs[chain].name}...`);
       try {
-        const { signer } = await ensureSigner(chain);
-        const parsed = parseUnits(amount, selectedToken.decimals);
-        let tx;
-        if (selectedToken.type === 'erc20' && selectedToken.address) {
-          const erc20 = new Contract(selectedToken.address, erc20Abi, signer);
-          tx = await erc20.transfer(to, parsed);
+        const parsed = parseUnits(amount, selectedToken.decimals).toString();
+        const rpc = chainConfigs[chain].rpc;
+        if (opts?.privateKey) {
+          const res = await sendFunds({
+            rpc,
+            to,
+            amount: parsed,
+            privateKey: opts.privateKey,
+            token: selectedToken.type === 'erc20' ? selectedToken.address : undefined
+          });
+          setStatus(`Sent via API: ${res.tx}`);
         } else {
-          tx = await signer.sendTransaction({ to, value: parsed });
+          const { signer } = await ensureSigner(chain);
+          let tx;
+          if (selectedToken.type === 'erc20' && selectedToken.address) {
+            const erc20 = new Contract(selectedToken.address, erc20Abi, signer);
+            tx = await erc20.transfer(to, parsed);
+          } else {
+            tx = await signer.sendTransaction({ to, value: parsed });
+          }
+          await tx.wait();
+          setStatus('Sent');
         }
-        await tx.wait();
-        setStatus('Sent');
-        await refreshBalances(await signer.getAddress(), chain);
+        await refreshBalances(account || undefined, chain);
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Send failed';
         setStatus(msg);
         throw err;
       }
     },
-    [chain, ensureSigner, refreshBalances, selectedToken]
+    [account, chain, ensureSigner, refreshBalances, selectedToken]
   );
 
   const pollFinalization = useCallback(
@@ -286,6 +298,27 @@ export function useWallet() {
     setSelectedToken,
     bridgeStatus,
     bridgeHash,
-    bridgeToL3
+    bridgeToL3,
+    sendViaApi: send,
+    swapViaApi: async (amount: string, recipient: string, pk: string) => {
+      if (!selectedToken.address) throw new Error('Select an ERC20 token to swap');
+      return swapTokens({
+        rpc: chainConfigs[chain].rpc,
+        tokenIn: selectedToken.address,
+        tokenOut: selectedToken.address,
+        amountIn: parseUnits(amount, selectedToken.decimals).toString(),
+        recipient,
+        privateKey: pk
+      });
+    },
+    bridgeViaApi: async (amount: string, to: string, pk: string) =>
+      bridgeTransfer({
+        fromRpc: chainConfigs[chain].rpc,
+        toRpc: chainConfigs[chain === 'l2' ? 'l3' : 'l2'].rpc,
+        token: selectedToken.type === 'erc20' ? selectedToken.address : undefined,
+        to,
+        amount: parseUnits(amount, selectedToken.decimals).toString(),
+        privateKey: pk
+      })
   };
 }
