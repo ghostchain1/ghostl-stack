@@ -161,6 +161,14 @@ export function useWallet() {
     [selectedOutToken, selectedToken]
   );
 
+  // Debounce swap quotes on amount or token change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchSwapQuote(swapAmount).catch(() => undefined);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [fetchSwapQuote, swapAmount, selectedToken, selectedOutToken]);
+
   const connect = useCallback(async () => {
     try {
       const { signer } = await ensureSigner(chain);
