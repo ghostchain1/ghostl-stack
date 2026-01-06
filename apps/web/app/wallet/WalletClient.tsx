@@ -37,7 +37,9 @@ export function WalletClient() {
     selectedRoute,
     setSelectedRoute,
     slippageBps,
-    setSlippageBps
+    setSlippageBps,
+    selectedOutToken,
+    setSelectedOutToken
   } = useWallet();
   const [to, setTo] = useState('');
   const [amount, setAmount] = useState('0.01');
@@ -214,13 +216,30 @@ export function WalletClient() {
         <Card title="Swap (passthrough demo)" subtitle="Token transfer via API">
           <div className="stack">
             <div className="inline-form" style={{ gap: 8 }}>
-              <span className="muted">Token</span>
+              <span className="muted">Token in</span>
               <select
                 className="select"
                 value={selectedToken.address || `native-${selectedToken.chain}`}
                 onChange={(e) => {
                   const t = tokens.find((tok) => (tok.address || `native-${tok.chain}`) === e.target.value);
                   if (t) setSelectedToken(t);
+                }}
+              >
+                {tokens.map((t) => (
+                  <option key={t.address || `native-${t.chain}`} value={t.address || `native-${t.chain}`}>
+                    {t.symbol} ({chainConfigs[t.chain].name})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="inline-form" style={{ gap: 8 }}>
+              <span className="muted">Token out</span>
+              <select
+                className="select"
+                value={selectedOutToken.address || `native-${selectedOutToken.chain}`}
+                onChange={(e) => {
+                  const t = tokens.find((tok) => (tok.address || `native-${tok.chain}`) === e.target.value);
+                  if (t) setSelectedOutToken(t);
                 }}
               >
                 {tokens.map((t) => (
