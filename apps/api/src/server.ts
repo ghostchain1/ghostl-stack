@@ -2,6 +2,7 @@ import express from 'express';
 import session from 'express-session';
 import FileStoreFactory from 'session-file-store';
 import cors from 'cors';
+import { fetch } from 'undici';
 import { buildAppShellRouter } from './modules/app-shell/router';
 import { buildIdentityAccessRouter } from './modules/identity-access/router';
 import { buildChainRouter } from './modules/chain/router';
@@ -45,6 +46,33 @@ const alertmanager = process.env.ALERTMANAGER_URL ? new AlertmanagerClient(proce
 const liveServices = createLiveServices({ prometheus, grafana, relayer, loki, guard, alertmanager });
 const identityServicesPromise = createPersistentIdentityServices();
 
+const proxyJson = async <T>(url: string, fallback: T): Promise<T> => {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`status ${res.status}`);
+    return (await res.json()) as T;
+  } catch {
+    return fallback;
+  }
+};
+
+const servicesBase = {
+  bridge: process.env.BRIDGE_SERVICE_URL || 'http://localhost:7604',
+  transfers: process.env.TRANSFER_SERVICE_URL || 'http://localhost:7605',
+  liquidity: process.env.LIQUIDITY_SERVICE_URL || 'http://localhost:7606',
+  contracts: process.env.CONTRACT_REGISTRY_URL || 'http://localhost:7608',
+  contractRisk: process.env.CONTRACT_RISK_URL || 'http://localhost:7609',
+  supply: process.env.SUPPLY_SERVICE_URL || 'http://localhost:7614',
+  feeModel: process.env.FEE_MODEL_SERVICE_URL || 'http://localhost:7615',
+  treasury: process.env.TREASURY_SERVICE_URL || 'http://localhost:7628',
+  payouts: process.env.PAYOUT_SERVICE_URL || 'http://localhost:7629',
+  governance: process.env.GOVERNANCE_SERVICE_URL || 'http://localhost:7645',
+  devops: process.env.DEVOPS_SERVICE_URL || 'http://localhost:7623',
+  rpc: process.env.RPC_SERVICE_URL || 'http://localhost:7650',
+  usage: process.env.USAGE_SERVICE_URL || 'http://localhost:7651',
+  webhooks: process.env.WEBHOOKS_SERVICE_URL || 'http://localhost:7652'
+};
+
 app.use('/app-shell', buildAppShellRouter(services.appShell));
 identityServicesPromise.then((identity) => {
   app.use('/', buildIdentityAccessRouter(identity));
@@ -84,6 +112,85 @@ app.use(
   })
 );
 app.use('/wallet', buildWalletRouter());
+
+app.get('/api/bridge', async (_req, res) => {
+  const bridges = await proxyJson<{ bridges?: unknown[] }>(`${servicesBase.bridge}/bridges`, { bridges: [] });
+  const transfers = await proxyJson<{ transfers?: unknown[] }>(`${servicesBase.transfers}/transfers`, { transfers: [] });
+  const pools = await proxyJson<{ pools?: unknown[] }>(`${servicesBase.liquidity}/liquidity`, { pools: [] });
+  res.json({ ok: true, networks: bridges.bridges || [], transfers: transfers.transfers || [], pools: pools.pools || [] });
+});
+
+app.get('/api/contracts', async (_req, res) => {
+  const registry = await proxyJson<{ contracts?: any[] }>(`${servicesBase.contracts}/contracts`, { contracts: [] });
+  const risks = await proxyJson<{ contracts?: any[] }>(`${servicesBase.contractRisk}/risk`, { contracts: [] });
+  const merged =
+    registry.contracts?.map((c) => ({
+      id: c.address || c.name || 'contract',
+      address: c.address,
+      name: c.name,
+      proxies: c.proxyType,
+      ownership: c.owner,
+      verified: c.verified,
+      risk: risks.contracts?.find((r) => r.address === c.address)
+    })) || [];
+  res.json({ ok: true, networks: merged });
+});
+
+app.get('/api/token', async (_req, res) => {
+  const supply = await proxyJson<{ supply?: string; emissions?: string }>(`${servicesBase.supply}/supply`, {});
+  const treasury = await proxyJson<{ balance?: string }>(`${servicesBase.treasury}/treasury`, {});
+  res.json({
+    ok: true,
+    networks: [
+      {
+        id: 'l2',
+        supply: supply.supply || '0',
+        emissions: supply.emissions || '0',
+        multisig: treasury.balance || '0'
+      }
+    ]
+  });
+});
+
+app.get('/devops/releases', async (_req, res) => {
+  const data = await proxyJson<{ releases?: unknown[] }>(`${servicesBase.devops}/releases`, { releases: [] });
+  res.json(data.releases || []);
+});
+
+app.get('/devops/forks', async (_req, res) => {
+  const data = await proxyJson<{ forks?: unknown[] }>(`${servicesBase.devops}/forks`, { forks: [] });
+  res.json(data.forks || []);
+});
+
+app.get('/devops/upgrades', async (_req, res) => {
+  const data = await proxyJson<{ upgrades?: unknown[] }>(`${servicesBase.devops}/upgrades`, { upgrades: [] });
+  res.json(data.upgrades || []);
+});
+
+app.get('/governance/proposals', async (_req, res) => {
+  const data = await proxyJson<{ proposals?: unknown[] }>(`${servicesBase.governance}/proposals`, { proposals: [] });
+  res.json(data.proposals || []);
+});
+
+app.get('/governance/votes', async (_req, res) => {
+  const data = await proxyJson<{ votes?: unknown[] }>(`${servicesBase.governance}/votes`, { votes: [] });
+  res.json(data.votes || []);
+});
+
+app.get('/integrations/rpc', async (_req, res) => {
+  const data = await proxyJson<{ endpoints?: unknown[] }>(`${servicesBase.rpc}/endpoints`, { endpoints: [] });
+  res.json(data.endpoints || []);
+});
+
+app.get('/integrations/usage', async (_req, res) => {
+  const data = await proxyJson<{ usage?: unknown[] }>(`${servicesBase.usage}/usage`, { usage: [] });
+  res.json(data.usage || []);
+});
+
+app.get('/integrations/webhooks', async (_req, res) => {
+  const data = await proxyJson<{ webhooks?: unknown[] }>(`${servicesBase.webhooks}/webhooks`, { webhooks: [] });
+  res.json(data.webhooks || []);
+});
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
