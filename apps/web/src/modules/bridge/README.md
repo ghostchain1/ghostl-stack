@@ -12,3 +12,14 @@ Services
 - TransferLifecycleService
 - LiquidityService
 - DisputeService
+
+Data models
+- Transfer { id, srcChain, dstChain, status, amount, txs[] }
+- BridgeControl { paused, feeBps, emergencyMode }
+
+Components
+- BridgesOverview
+- TransfersTable
+- LiquidityPools
+- DisputesPanel
+- EmergencyControls
