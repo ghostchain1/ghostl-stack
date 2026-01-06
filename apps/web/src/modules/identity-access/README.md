@@ -22,3 +22,11 @@ Data models
 - Role { id, name, permissions[] }
 - ApiKey { id, name, scopes[], lastUsedAt }
 - Session { id, userId, createdAt, ip }
+
+Permission groups (RBAC you’ll want)
+- Viewer: read-only dashboards
+- Operator: node/validator ops actions
+- Security Admin: keys, vault, policies, incident response
+- Treasury Admin: payouts, multisig flows, financial exports
+- Protocol Admin: fee model, forks, feature flags
+- Developer: contracts registry, webhooks, RPC management
