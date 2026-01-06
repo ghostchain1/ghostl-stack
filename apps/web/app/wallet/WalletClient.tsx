@@ -27,16 +27,25 @@ export function WalletClient() {
     setSelectedToken,
     bridgeStatus,
     bridgeHash,
-    bridgeToL3
+    bridgeToL3,
+    sendViaApi,
+    swapViaApi,
+    bridgeViaApi
   } = useWallet();
   const [to, setTo] = useState('');
   const [amount, setAmount] = useState('0.01');
   const [bridgeAmount, setBridgeAmount] = useState('0.01');
   const [bridgeRecipient, setBridgeRecipient] = useState('');
+  const [privateKey, setPrivateKey] = useState('');
+  const [swapAmount, setSwapAmount] = useState('0.01');
+  const [swapRecipient, setSwapRecipient] = useState('');
 
   useEffect(() => {
     if (account && !bridgeRecipient) {
       setBridgeRecipient(account);
+    }
+    if (account && !swapRecipient) {
+      setSwapRecipient(account);
     }
   }, [account, bridgeRecipient]);
 
@@ -51,7 +60,11 @@ export function WalletClient() {
 
   const handleSend = async () => {
     try {
-      await send(to, amount);
+      if (privateKey) {
+        await sendViaApi(to, amount, { privateKey });
+      } else {
+        await send(to, amount);
+      }
     } catch {
       // status already set in hook
     }
@@ -59,7 +72,11 @@ export function WalletClient() {
 
   const handleBridge = async () => {
     try {
-      await bridgeToL3(bridgeAmount, bridgeRecipient || account || undefined);
+      if (privateKey) {
+        await bridgeViaApi(bridgeAmount, bridgeRecipient || account || '', privateKey);
+      } else {
+        await bridgeToL3(bridgeAmount, bridgeRecipient || account || undefined);
+      }
     } catch {
       // status already set in hook
     }
@@ -106,6 +123,18 @@ export function WalletClient() {
               </div>
             )}
             {!session.user && <span className="muted">Login required to use wallet actions.</span>}
+            <div className="stack" style={{ marginTop: 8 }}>
+              <span className="muted">Optional API signer (private key)</span>
+              <input
+                className="input"
+                placeholder="0x..."
+                value={privateKey}
+                onChange={(e) => setPrivateKey(e.target.value)}
+              />
+              <span className="muted" style={{ fontSize: 12 }}>
+                If provided, sends/bridges/swaps use backend signing over RPC. Leave blank to use injected wallet.
+              </span>
+            </div>
           </div>
         </Card>
         <Card title="Send" subtitle="Simple transfer">
@@ -169,6 +198,55 @@ export function WalletClient() {
                 Tx: <code>{bridgeHash}</code>
               </span>
             )}
+          </div>
+        </Card>
+        <Card title="Swap (passthrough demo)" subtitle="Token transfer via API">
+          <div className="stack">
+            <div className="inline-form" style={{ gap: 8 }}>
+              <span className="muted">Token</span>
+              <select
+                className="select"
+                value={selectedToken.address || `native-${selectedToken.chain}`}
+                onChange={(e) => {
+                  const t = tokens.find((tok) => (tok.address || `native-${tok.chain}`) === e.target.value);
+                  if (t) setSelectedToken(t);
+                }}
+              >
+                {tokens.map((t) => (
+                  <option key={t.address || `native-${t.chain}`} value={t.address || `native-${t.chain}`}>
+                    {t.symbol} ({chainConfigs[t.chain].name})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <input
+              className="input"
+              placeholder={`amount ${selectedToken.symbol}`}
+              value={swapAmount}
+              onChange={(e) => setSwapAmount(e.target.value)}
+            />
+            <input
+              className="input"
+              placeholder="recipient"
+              value={swapRecipient}
+              onChange={(e) => setSwapRecipient(e.target.value)}
+            />
+            <Button
+              onClick={async () => {
+                if (!privateKey) return;
+                try {
+                  await swapViaApi(swapAmount, swapRecipient || account || '', privateKey);
+                } catch {
+                  // status handled in hook
+                }
+              }}
+              disabled={!privateKey}
+            >
+              Swap via API
+            </Button>
+            <span className="muted" style={{ fontSize: 12 }}>
+              Demo uses passthrough transfer (tokenIn == tokenOut). Provide private key to use backend signer.
+            </span>
           </div>
         </Card>
       </div>
