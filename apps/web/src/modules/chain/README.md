@@ -7,6 +7,17 @@ Pages
 - Config Viewer (read-only)
 
 Services
-- ChainStatusService
+- ChainStatusService (finality, reorgs, block time)
 - ConsensusTelemetryService
 - PeerGraphService
+
+Data models
+- ChainInfo { chainId, name, env, consensus }
+- EpochInfo { epoch, round, start, end }
+- ReorgEvent { depth, fromBlock, toBlock, time }
+
+Components
+- ChainOverviewCard
+- ForkReorgMonitor
+- PeerTopology
+- ConfigViewer
