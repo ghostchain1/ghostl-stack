@@ -4,7 +4,7 @@ import { FeatureFlagsPanel } from '../../src/modules/devops/components/FeatureFl
 import { UpgradeJobs } from '../../src/modules/devops/components/UpgradeJobs';
 import { RollbackHistory } from '../../src/modules/devops/components/RollbackHistory';
 import { apiFetch } from '../../src/lib/api';
-import type { Release, ForkEvent } from '@ghostchain/types/devops';
+import type { Release, ForkEvent } from '@ghostl/types/devops';
 
 async function loadDevOps() {
   const releases = await apiFetch<Release[]>('/devops/releases', { fallback: [] }).catch(() => []);

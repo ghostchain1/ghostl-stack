@@ -3,7 +3,7 @@ import { VoteTracking } from '../../src/modules/governance/components/VoteTracki
 import { ExecutionQueue } from '../../src/modules/governance/components/ExecutionQueue';
 import { DelegationPanel } from '../../src/modules/governance/components/DelegationPanel';
 import { apiFetch } from '../../src/lib/api';
-import type { Proposal, Vote } from '@ghostchain/types/governance';
+import type { Proposal, Vote } from '@ghostl/types/governance';
 
 async function loadGovernance() {
   const proposals = await apiFetch<Proposal[]>('/governance/proposals', { fallback: [] }).catch(() => []);

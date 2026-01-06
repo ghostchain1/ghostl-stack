@@ -3,11 +3,18 @@ import { FeeMarketCard } from '../../src/modules/tokenomics/components/FeeMarket
 import { TreasuryOverview } from '../../src/modules/tokenomics/components/TreasuryOverview';
 import { PayoutsPanel } from '../../src/modules/tokenomics/components/PayoutsPanel';
 import { RevenuePanel } from '../../src/modules/tokenomics/components/RevenuePanel';
-import type { SupplySnapshot, TreasuryTx } from '@ghostchain/types/tokenomics';
+import type { SupplySnapshot } from '@ghostl/types/tokenomics';
 import { apiFetch } from '../../src/lib/api';
 
+type RawNetwork = {
+  id?: string;
+  supply?: string;
+  emissions?: string;
+  multisig?: string;
+};
+
 async function loadTokenomics() {
-  const data = await apiFetch<{ networks?: any[] }>('/api/token', { fallback: { networks: [] } });
+  const data = await apiFetch<{ networks?: RawNetwork[] }>('/api/token', { fallback: { networks: [] } });
   const snap: SupplySnapshot[] = (data.networks || []).map((n) => ({
     total: n.supply || '?',
     circulating: n.supply || '?',
@@ -15,7 +22,6 @@ async function loadTokenomics() {
     minted: n.emissions || '?',
     time: new Date().toISOString()
   }));
-  const payouts: TreasuryTx[] = [];
   const revenue = (data.networks || []).map((n) => ({ source: n.id || 'net', amount: n.multisig || '?' }));
   return { snap, revenue };
 }
@@ -24,14 +30,13 @@ export default async function TokenomicsPage() {
   const { snap, revenue } = await loadTokenomics();
   const feeModel = { baseFee: '—', targetGas: '—', mode: 'auto' };
   const balance = { chain: 'l2', native: '—', token: '—' };
-  const payouts: TreasuryTx[] = [];
   return (
     <div className="content">
       <div className="card-grid">
         <SupplyDashboard snapshots={snap} />
         <FeeMarketCard model={feeModel} />
-        <TreasuryOverview balance={balance} recent={payouts} />
-        <PayoutsPanel payouts={payouts} />
+        <TreasuryOverview balance={balance} recent={[]} />
+        <PayoutsPanel payouts={[]} />
         <RevenuePanel items={revenue} />
       </div>
     </div>
