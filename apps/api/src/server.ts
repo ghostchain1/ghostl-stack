@@ -240,21 +240,26 @@ app.get('/explorer/txs', async (req, res) => {
     for (let num = latest; num >= 0 && collected.length < limit && latest - num <= maxDepth; num--) {
       const block = (await rpcCall('eth_getBlockByNumber', ['0x' + num.toString(16), true])) as any;
       const blockTime = new Date(parseInt(block.timestamp, 16) * 1000).toISOString();
-      (block.transactions || []).forEach((t: any) => {
+      for (const t of block.transactions || []) {
         if (collected.length < limit) {
+          let txObj = t;
+          if (typeof t === 'string') {
+            txObj = await rpcCall('eth_getTransactionByHash', [t]);
+          }
+          if (!txObj) continue;
           collected.push({
-            hash: t.hash,
-            from: t.from,
-            to: t.to,
-            value: t.value,
-            gas: parseInt(t.gas, 16),
+            hash: txObj.hash,
+            from: txObj.from,
+            to: txObj.to,
+            value: txObj.value,
+            gas: txObj.gas ? parseInt(txObj.gas, 16) : undefined,
             status: 'success',
-            nonce: parseInt(t.nonce, 16),
+            nonce: txObj.nonce ? parseInt(txObj.nonce, 16) : undefined,
             blockNumber: parseInt(block.number, 16),
             time: blockTime
           });
         }
-      });
+      }
     }
     const txs = collected.slice(0, limit);
     res.json({ txs });
