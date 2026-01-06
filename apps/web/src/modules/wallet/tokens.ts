@@ -36,6 +36,11 @@ const envTokens: TokenConfig[] = [
 export const defaultTokens: TokenConfig[] = [
   { chain: 'l2', symbol: 'ETH', decimals: 18, type: 'native' },
   { chain: 'l3', symbol: 'ETH', decimals: 18, type: 'native' },
+  // Demo ERC20s; override via env to match your router.
+  { chain: 'l2', symbol: 'GHO', address: '0x4200000000000000000000000000000000000006', decimals: 18, type: 'erc20' },
+  { chain: 'l2', symbol: 'USDC', address: '0x4200000000000000000000000000000000000008', decimals: 6, type: 'erc20' },
+  { chain: 'l3', symbol: 'GHO', address: '0x4200000000000000000000000000000000000007', decimals: 18, type: 'erc20' },
+  { chain: 'l3', symbol: 'USDC', address: '0x4200000000000000000000000000000000000009', decimals: 6, type: 'erc20' },
   ...envTokens
 ];
 
