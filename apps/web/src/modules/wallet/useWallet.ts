@@ -3,7 +3,7 @@
 import { BrowserProvider, Contract, Interface, JsonRpcProvider, formatUnits, parseUnits } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { tokensForChain, TokenConfig, SupportedChain } from './tokens';
-import { bridgeTransfer, getBalance as apiGetBalance, sendFunds, swapTokens } from './api';
+import { bridgeTransfer, getBalance as apiGetBalance, sendFunds, swapTokens, getSwapQuote } from './api';
 
 type ChainConfig = {
   id: number;
@@ -53,6 +53,8 @@ export function useWallet() {
   const [selectedToken, setSelectedToken] = useState<TokenConfig>(tokensForChain('l2')[0]);
   const [bridgeStatus, setBridgeStatus] = useState<string>('');
   const [bridgeHash, setBridgeHash] = useState<string>('');
+  const [swapQuote, setSwapQuote] = useState<{ amountOut?: string; minAmountOut?: string; path?: string[] } | null>(null);
+  const [swapQuoteError, setSwapQuoteError] = useState<string>('');
 
   const chainTokens = useMemo(() => tokensForChain(chain), [chain]);
 
@@ -119,6 +121,32 @@ export function useWallet() {
       refreshBalances(account, chain).catch(() => undefined);
     }
   }, [account, chain, refreshBalances]);
+
+  const fetchSwapQuote = useCallback(
+    async (amount: string) => {
+      if (!selectedToken.address) {
+        setSwapQuote(null);
+        return null;
+      }
+      try {
+        const res = await getSwapQuote({
+          tokenIn: selectedToken.address,
+          tokenOut: selectedToken.address,
+          amount: parseUnits(amount || '0', selectedToken.decimals).toString()
+        });
+        const route = (res.routes || [])[0] || null;
+        setSwapQuote(route);
+        setSwapQuoteError('');
+        return route;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Quote failed';
+        setSwapQuote(null);
+        setSwapQuoteError(msg);
+        return null;
+      }
+    },
+    [selectedToken]
+  );
 
   const connect = useCallback(async () => {
     try {
@@ -319,6 +347,9 @@ export function useWallet() {
         to,
         amount: parseUnits(amount, selectedToken.decimals).toString(),
         privateKey: pk
-      })
+      }),
+    swapQuote,
+    swapQuoteError,
+    fetchSwapQuote
   };
 }
