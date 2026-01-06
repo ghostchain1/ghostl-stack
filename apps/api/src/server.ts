@@ -67,10 +67,12 @@ const servicesBase = {
   treasury: process.env.TREASURY_SERVICE_URL || 'http://localhost:7628',
   payouts: process.env.PAYOUT_SERVICE_URL || 'http://localhost:7629',
   governance: process.env.GOVERNANCE_SERVICE_URL || 'http://localhost:7645',
+  validators: process.env.VALIDATOR_SERVICE_URL || 'http://localhost:7607',
   devops: process.env.DEVOPS_SERVICE_URL || 'http://localhost:7623',
   rpc: process.env.RPC_SERVICE_URL || 'http://localhost:7650',
   usage: process.env.USAGE_SERVICE_URL || 'http://localhost:7651',
-  webhooks: process.env.WEBHOOKS_SERVICE_URL || 'http://localhost:7652'
+  webhooks: process.env.WEBHOOKS_SERVICE_URL || 'http://localhost:7652',
+  ai: process.env.AI_SERVICE_URL || 'http://localhost:7660'
 };
 
 app.use('/app-shell', buildAppShellRouter(services.appShell));
@@ -175,6 +177,16 @@ app.get('/governance/proposals', async (_req, res) => {
 app.get('/governance/votes', async (_req, res) => {
   const data = await proxyJson<{ votes?: unknown[] }>(`${servicesBase.governance}/votes`, { votes: [] });
   res.json(data.votes || []);
+});
+
+app.get('/api/validators', async (_req, res) => {
+  const data = await proxyJson<{ validators?: unknown[] }>(`${servicesBase.validators}/validators`, { validators: [] });
+  res.json(data);
+});
+
+app.get('/api/ai', async (_req, res) => {
+  const data = await proxyJson<{ networks?: unknown[] }>(`${servicesBase.ai}/anomalies`, { networks: [] });
+  res.json(data);
 });
 
 app.get('/integrations/rpc', async (_req, res) => {
