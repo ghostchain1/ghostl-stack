@@ -37,7 +37,10 @@ chains/**/data/
 # local infra node data (permission restricted)
 infra/opstack/l3/ghostsample/data/
 infra/opstack/data/l2-geth/
+infra/opstack/data/l1-geth/
 infra/opstack/l3/ghostl3/data/
+/infra/opstack/optimism/
+apps/api/data/
 
 # build artifacts
 apps/web/.next/
