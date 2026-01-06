@@ -66,8 +66,18 @@ export function useWallet() {
   const [selectedRoute, setSelectedRoute] = useState<number>(0);
   const [swapQuoteError, setSwapQuoteError] = useState<string>('');
   const [slippageBps, setSlippageBps] = useState<number>(50); // 0.50%
+  const [externalTokens, setExternalTokens] = useState<TokenConfig[]>([]);
 
-  const chainTokens = useMemo(() => tokensForChain(chain), [chain]);
+  const chainTokens = useMemo(() => {
+    const fromDefaults = tokensForChain(chain);
+    const extras = externalTokens.filter((t) => t.chain === chain);
+    const dedup = new Map<string, TokenConfig>();
+    [...fromDefaults, ...extras].forEach((t) => {
+      const key = `${t.chain}:${t.address || 'native'}`;
+      if (!dedup.has(key)) dedup.set(key, t);
+    });
+    return Array.from(dedup.values());
+  }, [chain, externalTokens]);
 
   useEffect(() => {
     setSelectedToken(chainTokens[0]);
@@ -160,6 +170,36 @@ export function useWallet() {
     },
     [selectedOutToken, selectedToken]
   );
+
+  useEffect(() => {
+    const url = process.env.NEXT_PUBLIC_TOKEN_LIST_URL;
+    if (!url) return;
+    fetch(url)
+      .then((r) => r.json())
+      .then((j) => {
+        if (!Array.isArray(j.tokens)) return;
+        const mapped: TokenConfig[] = j.tokens
+          .map((t: any) => {
+            const chainId = Number(t.chainId);
+            const entry: [SupportedChain, number][] = [
+              ['l2', chainConfigs.l2.id],
+              ['l3', chainConfigs.l3.id]
+            ];
+            const chainMatch = entry.find((e) => e[1] === chainId);
+            if (!chainMatch) return null;
+            return {
+              chain: chainMatch[0],
+              address: t.address,
+              symbol: t.symbol || t.name || 'TOK',
+              decimals: Number(t.decimals || 18),
+              type: 'erc20' as const
+            };
+          })
+          .filter(Boolean) as TokenConfig[];
+        setExternalTokens(mapped);
+      })
+      .catch(() => undefined);
+  }, []);
 
   // Debounce swap quotes on amount or token change
   useEffect(() => {
