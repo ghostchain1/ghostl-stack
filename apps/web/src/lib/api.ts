@@ -5,7 +5,7 @@ type FetchOptions<T> = {
   next?: { revalidate?: number };
 };
 
-export async function apiFetch<T = any>(path: string, options: FetchOptions<T> = {}): Promise<T> {
+export async function apiFetch<T = unknown>(path: string, options: FetchOptions<T> = {}): Promise<T> {
   try {
     const res = await fetch(`${API_BASE}${path}`, { next: options.next });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);

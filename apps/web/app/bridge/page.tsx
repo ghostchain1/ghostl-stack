@@ -3,11 +3,19 @@ import { TransfersTable } from '../../src/modules/bridge/components/TransfersTab
 import { LiquidityPools } from '../../src/modules/bridge/components/LiquidityPools';
 import { DisputesPanel } from '../../src/modules/bridge/components/DisputesPanel';
 import { EmergencyControls } from '../../src/modules/bridge/components/EmergencyControls';
-import type { Transfer } from '@ghostchain/types/bridge';
+import type { Transfer } from '@ghostl/types/bridge';
 import { apiFetch } from '../../src/lib/api';
 
+type RawBridge = {
+  id?: string;
+  pause?: string;
+  pending?: string;
+  liquidity?: string;
+  fees?: string;
+};
+
 async function loadBridge() {
-  const data = await apiFetch<{ networks?: any[]; ok?: boolean }>('/api/bridge', { fallback: { networks: [] } });
+  const data = await apiFetch<{ networks?: RawBridge[]; ok?: boolean }>('/api/bridge', { fallback: { networks: [] } });
   const bridges = (data.networks || []).map((n) => ({
     id: n.id || 'unknown',
     src: 'l2',
