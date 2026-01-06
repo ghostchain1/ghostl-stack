@@ -59,6 +59,7 @@ export function useWallet() {
   const [chainWarning, setChainWarning] = useState<string>('');
   const [balances, setBalances] = useState<Record<string, string>>({});
   const [selectedToken, setSelectedToken] = useState<TokenConfig>(tokensForChain('l2')[0]);
+  const [selectedOutToken, setSelectedOutToken] = useState<TokenConfig>(tokensForChain('l2')[0]);
   const [bridgeStatus, setBridgeStatus] = useState<string>('');
   const [bridgeHash, setBridgeHash] = useState<string>('');
   const [swapRoutes, setSwapRoutes] = useState<SwapRoute[]>([]);
@@ -70,6 +71,7 @@ export function useWallet() {
 
   useEffect(() => {
     setSelectedToken(chainTokens[0]);
+    setSelectedOutToken(chainTokens[0]);
   }, [chainTokens]);
 
   const ensureSigner = useCallback(
@@ -134,14 +136,14 @@ export function useWallet() {
 
   const fetchSwapQuote = useCallback(
     async (amount: string) => {
-      if (!selectedToken.address) {
+      if (!selectedToken.address || !selectedOutToken.address) {
         setSwapRoutes([]);
         return null;
       }
       try {
         const res = await getSwapQuote({
           tokenIn: selectedToken.address,
-          tokenOut: selectedToken.address,
+          tokenOut: selectedOutToken.address,
           amount: parseUnits(amount || '0', selectedToken.decimals).toString()
         });
         const routes = res.routes || [];
@@ -156,7 +158,7 @@ export function useWallet() {
         return null;
       }
     },
-    [selectedToken]
+    [selectedOutToken, selectedToken]
   );
 
   const connect = useCallback(async () => {
@@ -341,7 +343,7 @@ export function useWallet() {
     sendViaApi: send,
     swapViaApi: async (amount: string, recipient: string, pk: string) => {
       // Native swaps fall back to simple send
-      if (!selectedToken.address) {
+      if (!selectedToken.address || !selectedOutToken.address) {
         return sendFunds({
           rpc: chainConfigs[chain].rpc,
           to: recipient,
@@ -365,7 +367,7 @@ export function useWallet() {
         }
         return executeSwap({
           tokenIn: selectedToken.address,
-          tokenOut: selectedToken.address,
+          tokenOut: selectedOutToken.address,
           amountIn: amountInStr,
           minAmountOut: minOut,
           path: route.path,
@@ -378,7 +380,7 @@ export function useWallet() {
       return swapTokens({
         rpc: chainConfigs[chain].rpc,
         tokenIn: selectedToken.address,
-        tokenOut: selectedToken.address,
+        tokenOut: selectedOutToken.address,
         amountIn: parseUnits(amount, selectedToken.decimals).toString(),
         recipient,
         privateKey: pk
@@ -399,6 +401,8 @@ export function useWallet() {
     selectedRoute,
     setSelectedRoute,
     slippageBps,
-    setSlippageBps
+    setSlippageBps,
+    selectedOutToken,
+    setSelectedOutToken
   };
 }
