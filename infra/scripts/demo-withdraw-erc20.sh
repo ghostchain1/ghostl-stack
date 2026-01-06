@@ -28,7 +28,7 @@ if curl -sS http://localhost:7171/health | jq -e '.observeOnly == true' >/dev/nu
 fi
 
 cd "$ROOT_DIR/contracts"
-DEMO_AMOUNT_ETH="$DEMO_AMOUNT_ETH" npx hardhat run --network ghostl3 scripts/demo_burn_erc20_l3.ts
+DEMO_AMOUNT_ETH="$DEMO_AMOUNT_ETH" npx hardhat run --network ghostl3Op scripts/demo_burn_erc20_l3.ts
 
 LAST_WITHDRAW_PATH="$ROOT_DIR/.tmp/last_withdraw_erc20.json"
 EXPECTED_NONCE="$(jq -r '.nonce' "$LAST_WITHDRAW_PATH")"
@@ -49,7 +49,6 @@ for i in $(seq 1 60); do
 done
 
 echo "L2 balance:"
-DEMO_ACCOUNT=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 L2_TOKEN_ADDRESS="$L2_TOKEN_ADDRESS" npx hardhat run --network ghostl2 scripts/demo_balance_l2.ts
+DEMO_ACCOUNT=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 L2_TOKEN_ADDRESS="$L2_TOKEN_ADDRESS" npx hardhat run --network ghostl2Op scripts/demo_balance_l2.ts
 echo "L3 balance:"
-DEMO_ACCOUNT=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 L3_TOKEN_ADDRESS="$L3_TOKEN_ADDRESS" npx hardhat run --network ghostl3 scripts/demo_balance_l3.ts
-
+DEMO_ACCOUNT=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 L3_TOKEN_ADDRESS="$L3_TOKEN_ADDRESS" npx hardhat run --network ghostl3Op scripts/demo_balance_l3.ts

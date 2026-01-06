@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 const { ethers } = require('ethers');
 
-const L2_RPC = process.env.L2_RPC || 'http://localhost:9545';
-const L3_RPC = process.env.L3_RPC || 'http://localhost:10545';
+const L2_RPC = process.env.L2_RPC || 'http://localhost:29545';
+const L3_RPC = process.env.L3_RPC || 'http://localhost:39545';
 const FUNDER_PK = process.env.FUNDER_PK;
 const TARGET = process.env.TARGET || 'l2';
 const AMOUNT = process.env.AMOUNT || '1.0';

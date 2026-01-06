@@ -39,5 +39,4 @@ DEMO_FROM="$DEMO_FROM" \
 DEMO_TO="$DEMO_TO" \
 DEMO_AMOUNT_WEI="$DEMO_AMOUNT_WEI" \
 DEMO_NONCE="$DEMO_NONCE" \
-npx hardhat run --network ghostl2 scripts/demo_finalize_erc20.ts
-
+npx hardhat run --network ghostl2Op scripts/demo_finalize_erc20.ts
