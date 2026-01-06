@@ -78,6 +78,8 @@ export async function swapTokens(params: {
   return res.json() as Promise<{ tx: string; note?: string }>;
 }
 
+export type SwapRoute = { id?: string; amountOut?: string; minAmountOut?: string; path?: string[]; dex?: string };
+
 export async function getSwapQuote(params: { tokenIn: string; tokenOut: string; amount: string }) {
   const query = new URLSearchParams({
     tokenIn: params.tokenIn,
@@ -89,5 +91,28 @@ export async function getSwapQuote(params: { tokenIn: string; tokenOut: string; 
     const err = await res.json().catch(() => ({}));
     throw new Error(err.error || `Quote failed: ${res.status}`);
   }
-  return res.json() as Promise<{ routes?: { amountOut?: string; minAmountOut?: string; path?: string[] }[] }>;
+  return res.json() as Promise<{ routes?: SwapRoute[] }>;
+}
+
+export async function executeSwap(params: {
+  routeId?: string;
+  path?: string[];
+  tokenIn: string;
+  tokenOut: string;
+  amountIn: string;
+  minAmountOut?: string;
+  recipient: string;
+  privateKey: string;
+}) {
+  const res = await fetch(`${API_URL}/swap/execute`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(params)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Swap execute failed: ${res.status}`);
+  }
+  return res.json() as Promise<{ tx?: string; routeId?: string }>;
 }

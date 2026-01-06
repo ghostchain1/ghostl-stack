@@ -31,9 +31,11 @@ export function WalletClient() {
     sendViaApi,
     swapViaApi,
     bridgeViaApi,
-    swapQuote,
+    swapRoutes,
     swapQuoteError,
-    fetchSwapQuote
+    fetchSwapQuote,
+    selectedRoute,
+    setSelectedRoute
   } = useWallet();
   const [to, setTo] = useState('');
   const [amount, setAmount] = useState('0.01');
@@ -251,17 +253,27 @@ export function WalletClient() {
             >
               Swap via API
             </Button>
-            {swapQuote && (
-              <span className="muted" style={{ fontSize: 12 }}>
-                Quote out: {swapQuote.amountOut || '?'} (min {swapQuote.minAmountOut || '?'}) path:{' '}
-                {(swapQuote.path || []).join(' → ')}
-              </span>
+            {swapRoutes.length > 0 && (
+              <div className="stack">
+                <span className="muted" style={{ fontSize: 12 }}>Select route</span>
+                <select
+                  className="select"
+                  value={selectedRoute}
+                  onChange={(e) => setSelectedRoute(Number(e.target.value))}
+                >
+                  {swapRoutes.map((r, idx) => (
+                    <option key={r.id || idx} value={idx}>
+                      {(r.path || []).join(' → ') || 'direct'} · out {r.amountOut || '?'} min {r.minAmountOut || '?'}
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
             {swapQuoteError && (
               <span className="muted" style={{ color: '#f97316', fontSize: 12 }}>{swapQuoteError}</span>
             )}
             <span className="muted" style={{ fontSize: 12 }}>
-              Demo uses passthrough transfer (tokenIn == tokenOut). Provide private key to use backend signer.
+              Swap executes via router service when a route is available; falls back to passthrough transfer otherwise. Private key required for API execution.
             </span>
           </div>
         </Card>

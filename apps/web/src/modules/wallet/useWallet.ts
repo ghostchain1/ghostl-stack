@@ -3,7 +3,15 @@
 import { BrowserProvider, Contract, Interface, JsonRpcProvider, formatUnits, parseUnits } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { tokensForChain, TokenConfig, SupportedChain } from './tokens';
-import { bridgeTransfer, getBalance as apiGetBalance, sendFunds, swapTokens, getSwapQuote } from './api';
+import {
+  bridgeTransfer,
+  getBalance as apiGetBalance,
+  sendFunds,
+  swapTokens,
+  getSwapQuote,
+  executeSwap,
+  type SwapRoute
+} from './api';
 
 type ChainConfig = {
   id: number;
@@ -53,7 +61,8 @@ export function useWallet() {
   const [selectedToken, setSelectedToken] = useState<TokenConfig>(tokensForChain('l2')[0]);
   const [bridgeStatus, setBridgeStatus] = useState<string>('');
   const [bridgeHash, setBridgeHash] = useState<string>('');
-  const [swapQuote, setSwapQuote] = useState<{ amountOut?: string; minAmountOut?: string; path?: string[] } | null>(null);
+  const [swapRoutes, setSwapRoutes] = useState<SwapRoute[]>([]);
+  const [selectedRoute, setSelectedRoute] = useState<number>(0);
   const [swapQuoteError, setSwapQuoteError] = useState<string>('');
 
   const chainTokens = useMemo(() => tokensForChain(chain), [chain]);
@@ -125,7 +134,7 @@ export function useWallet() {
   const fetchSwapQuote = useCallback(
     async (amount: string) => {
       if (!selectedToken.address) {
-        setSwapQuote(null);
+        setSwapRoutes([]);
         return null;
       }
       try {
@@ -134,13 +143,14 @@ export function useWallet() {
           tokenOut: selectedToken.address,
           amount: parseUnits(amount || '0', selectedToken.decimals).toString()
         });
-        const route = (res.routes || [])[0] || null;
-        setSwapQuote(route);
+        const routes = res.routes || [];
+        setSwapRoutes(routes);
+        setSelectedRoute(0);
         setSwapQuoteError('');
-        return route;
+        return routes[0] || null;
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Quote failed';
-        setSwapQuote(null);
+        setSwapRoutes([]);
         setSwapQuoteError(msg);
         return null;
       }
@@ -330,6 +340,20 @@ export function useWallet() {
     sendViaApi: send,
     swapViaApi: async (amount: string, recipient: string, pk: string) => {
       if (!selectedToken.address) throw new Error('Select an ERC20 token to swap');
+      const route = swapRoutes[selectedRoute];
+      if (route) {
+        return executeSwap({
+          tokenIn: selectedToken.address,
+          tokenOut: selectedToken.address,
+          amountIn: parseUnits(amount, selectedToken.decimals).toString(),
+          minAmountOut: route.minAmountOut,
+          path: route.path,
+          routeId: route.id,
+          recipient,
+          privateKey: pk
+        });
+      }
+      // fallback to passthrough
       return swapTokens({
         rpc: chainConfigs[chain].rpc,
         tokenIn: selectedToken.address,
@@ -348,8 +372,10 @@ export function useWallet() {
         amount: parseUnits(amount, selectedToken.decimals).toString(),
         privateKey: pk
       }),
-    swapQuote,
+    swapRoutes,
     swapQuoteError,
-    fetchSwapQuote
+    fetchSwapQuote,
+    selectedRoute,
+    setSelectedRoute
   };
 }
