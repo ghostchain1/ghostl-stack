@@ -1,6 +1,6 @@
 'use client';
 
-import type { RiskSignal } from '@ghostchain/types/security';
+import type { RiskSignal } from '@ghostl/types/security';
 
 export function SecurityOverview({ score, signals }: { score: number; signals: RiskSignal[] }) {
   const severityColor = (severity: RiskSignal['severity']) => {

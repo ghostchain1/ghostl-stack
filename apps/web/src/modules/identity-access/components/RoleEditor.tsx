@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { Role } from '@ghostchain/types/auth';
+import type { Role } from '@ghostl/types/auth';
 
 type Props = {
   roles: Role[];

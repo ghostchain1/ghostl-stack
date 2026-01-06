@@ -1,6 +1,6 @@
 'use client';
 
-import type { ForkEvent } from '@ghostchain/types/devops';
+import type { ForkEvent } from '@ghostl/types/devops';
 
 export function ForkScheduler({ forks }: { forks: ForkEvent[] }) {
   return (

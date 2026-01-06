@@ -1,6 +1,6 @@
 'use client';
 
-import type { Contract } from '@ghostchain/types/contracts';
+import type { Contract } from '@ghostl/types/contracts';
 
 export function ContractsRegistry({ contracts }: { contracts: Contract[] }) {
   return (

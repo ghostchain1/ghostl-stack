@@ -1,4 +1,4 @@
-import type { RpcEndpoint, Webhook } from '@ghostchain/types/integrations';
+import type { RpcEndpoint, Webhook } from '@ghostl/types/integrations';
 
 export interface RpcManagerService {
   list(): Promise<RpcEndpoint[]>;

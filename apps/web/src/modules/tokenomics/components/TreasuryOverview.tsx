@@ -1,6 +1,6 @@
 'use client';
 
-import type { TreasuryTx } from '@ghostchain/types/tokenomics';
+import type { TreasuryTx } from '@ghostl/types/tokenomics';
 
 type TreasuryBalance = { native?: string; token?: string; chain?: string };
 

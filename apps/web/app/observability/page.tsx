@@ -9,24 +9,43 @@ import { NotificationRouter } from '../../src/modules/observability/components/N
 import type { Alert, LogEvent } from '@ghostl/types/observability';
 import { apiFetch } from '../../src/lib/api';
 
+type PromVector = { metric: Record<string, string>; value?: [number, string] };
+type Dashboard = { id: string; name: string; url: string };
+
+const PROM_URL = process.env.NEXT_PUBLIC_PROMETHEUS_URL || 'http://localhost:9090';
+
 export default function ObservabilityPage() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [logs, setLogs] = useState<LogEvent[]>([]);
+  const [metrics, setMetrics] = useState<{ name: string; url: string }[]>([]);
+  const [dashboards, setDashboards] = useState<Dashboard[]>([]);
+  const [routes, setRoutes] = useState<
+    { target: string; channel: 'slack' | 'discord' | 'webhook' | 'email'; active: boolean }[]
+  >([]);
 
   useEffect(() => {
     apiFetch<Alert[]>('/observability/alerts', { fallback: [] }).then((a) => setAlerts(a));
     apiFetch<LogEvent[]>('/observability/logs', { fallback: [] }).then((l) => setLogs(l));
+    apiFetch<PromVector[]>('/observability/metrics?q=up', { fallback: [] }).then((res) => {
+      if (!Array.isArray(res)) return;
+      const targets = res.map((entry) => ({
+        name: entry.metric.job || entry.metric.instance || 'target',
+        url: PROM_URL
+      }));
+      setMetrics(targets.length ? targets : [{ name: 'Prometheus', url: PROM_URL }]);
+    });
+    apiFetch<Dashboard[]>('/observability/dashboards', { fallback: [] }).then((res) => setDashboards(res));
+    apiFetch<{ id: string; type: string; target: string }[]>('/observability/channels', { fallback: [] }).then(
+      (channels) => {
+        const mapped = (channels || []).map((c) => ({
+          target: c.target,
+          channel: (c.type as 'slack' | 'discord' | 'webhook' | 'email') || 'webhook',
+          active: true
+        }));
+        setRoutes(mapped);
+      }
+    );
   }, []);
-
-  const metrics = [
-    { name: 'Prometheus', url: 'http://localhost:9090' },
-    { name: 'Grafana', url: 'http://localhost:3000' }
-  ];
-  const dashboards = [{ name: 'Stack', url: 'http://localhost:3000' }];
-  const routes: { target: string; channel: 'slack' | 'discord' | 'webhook' | 'email'; active: boolean }[] = [
-    { target: 'slack://alerts', channel: 'slack', active: true },
-    { target: 'https://example.com/webhook', channel: 'webhook', active: true }
-  ];
 
   return (
     <div className="content">

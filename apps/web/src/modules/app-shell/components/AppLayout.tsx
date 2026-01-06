@@ -45,7 +45,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <nav className="nav">
           {navItems.map((item) => {
             const disabled = item.flag ? !isEnabled(item.flag) : false;
-            const roleBlocked = item.roles ? !item.roles.some((r) => userRoles.includes(r)) : false;
+            const roleBlocked =
+              item.roles && item.roles.length && userRoles.length ? !item.roles.some((r) => userRoles.includes(r)) : false;
             if (roleBlocked) return null;
             return (
               <Link

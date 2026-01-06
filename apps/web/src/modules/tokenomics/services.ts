@@ -1,4 +1,4 @@
-import type { SupplySnapshot, TreasuryTx } from '@ghostchain/types/tokenomics';
+import type { SupplySnapshot, TreasuryTx } from '@ghostl/types/tokenomics';
 
 export interface SupplyService {
   list(): Promise<SupplySnapshot[]>;

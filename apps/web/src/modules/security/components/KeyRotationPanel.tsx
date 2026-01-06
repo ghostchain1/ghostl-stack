@@ -1,6 +1,6 @@
 'use client';
 
-import type { KeyRef } from '@ghostchain/types/security';
+import type { KeyRef } from '@ghostl/types/security';
 
 export function KeyRotationPanel({ keys }: { keys: KeyRef[] }) {
   return (

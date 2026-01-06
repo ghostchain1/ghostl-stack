@@ -1,75 +1,116 @@
 import { Card, Badge } from '@ghostl/ui';
-import { rpcCall } from '../../src/lib/rpc';
+import type { ChainInfo, EpochInfo, ReorgEvent } from '@ghostl/types/chain';
+import { apiFetch } from '../../src/lib/api';
 
-type ChainSnapshot = {
-  id: string;
-  name: string;
-  env: string;
-  chainId: number;
-  block?: number;
-  baseFee?: string;
-  peers?: number;
-  lagSeconds?: number;
+type ChainStatusResponse = {
+  info: ChainInfo;
+  epoch: EpochInfo;
+  blockTimeMs: number;
+  finalityLag: number;
+  reorgs: ReorgEvent[];
 };
 
-const rpcEndpoints = [
-  { id: 'l2', name: 'GhostL2', env: 'local', rpc: process.env.NEXT_PUBLIC_L2_RPC || 'http://localhost:9545' },
-  { id: 'l3', name: 'GhostL3', env: 'local', rpc: process.env.NEXT_PUBLIC_L3_RPC || 'http://localhost:10545' }
-];
+type TelemetryResponse = {
+  participation: number;
+  latency: Record<string, number>;
+  health: Record<string, unknown>;
+};
 
-async function collectChainSnapshot(rpc: string, id: string, name: string, env: string): Promise<ChainSnapshot> {
-  try {
-    const [chainIdHex, blockHex, peersHex, block] = await Promise.all([
-      rpcCall<string>(rpc, 'eth_chainId'),
-      rpcCall<string>(rpc, 'eth_blockNumber'),
-      rpcCall<string>(rpc, 'net_peerCount').catch(() => '0x0'),
-      rpcCall<{ baseFeePerGas?: string; timestamp?: string }>(rpc, 'eth_getBlockByNumber', ['latest', false])
-    ]);
-    const chainId = parseInt(chainIdHex || '0x0', 16);
-    const blockNum = parseInt(blockHex || '0x0', 16);
-    const peers = parseInt(peersHex || '0x0', 16);
-    const lagSeconds = block?.timestamp ? Math.max(0, Date.now() / 1000 - parseInt(block.timestamp, 16)) : undefined;
-    const baseFee = block?.baseFeePerGas ? `${Number(BigInt(block.baseFeePerGas)) / 1e9} gwei` : undefined;
-    return { id, name, env, chainId, block: blockNum, peers, baseFee, lagSeconds };
-  } catch {
-    return { id, name, env, chainId: 0 };
-  }
-}
+type PeerResponse = {
+  peers: { id: string; address: string; latencyMs?: number }[];
+  topology: Record<string, unknown>;
+};
 
 export default async function ChainPage() {
-  const snapshots = await Promise.all(
-    rpcEndpoints.map((net) => collectChainSnapshot(net.rpc, net.id, net.name, net.env))
-  );
+  const [status, telemetry, peers] = await Promise.all([
+    apiFetch<ChainStatusResponse>('/chain/status', {
+      fallback: {
+        info: { chainId: '', name: 'unknown', env: '', consensus: '' },
+        epoch: { epoch: 0, round: 0, start: '', end: '' },
+        blockTimeMs: 0,
+        finalityLag: 0,
+        reorgs: []
+      }
+    }),
+    apiFetch<TelemetryResponse>('/chain/telemetry', {
+      fallback: { participation: 0, latency: {}, health: {} }
+    }),
+    apiFetch<PeerResponse>('/chain/peers', { fallback: { peers: [], topology: {} } })
+  ]);
+
+  const participation = telemetry.participation ? `${Math.round(telemetry.participation * 100)}%` : 'n/a';
+  const blockTime = status.blockTimeMs ? `${(status.blockTimeMs / 1000).toFixed(2)}s` : 'n/a';
 
   return (
     <div className="content">
       <div className="card-grid">
-        {snapshots.map((snap) => (
-          <Card key={snap.id} title={`${snap.name}`} subtitle={`Chain ${snap.chainId || 'n/a'}`}>
-            <div className="stack">
-              <div className="spread">
-                <span className="muted">Environment</span>
-                <span>{snap.env}</span>
-              </div>
-              <div className="spread">
-                <span className="muted">Block</span>
-                <Badge>{snap.block ?? 'n/a'}</Badge>
-              </div>
-              <div className="spread">
-                <span className="muted">Peers</span>
-                <span>{snap.peers ?? 'n/a'}</span>
-              </div>
-              <div className="spread">
-                <span className="muted">Base fee</span>
-                <span>{snap.baseFee ?? 'n/a'}</span>
-              </div>
-              <div className="spread">
-                <span className="muted">Lag (s)</span>
-                <span>{snap.lagSeconds !== undefined ? Math.round(snap.lagSeconds) : 'n/a'}</span>
-              </div>
+        <Card title={status.info.name || 'Chain'} subtitle={`Chain ${status.info.chainId || 'n/a'}`}>
+          <div className="stack">
+            <div className="spread">
+              <span className="muted">Environment</span>
+              <span>{status.info.env || 'n/a'}</span>
             </div>
-          </Card>
-        ))}
+            <div className="spread">
+              <span className="muted">Consensus</span>
+              <span>{status.info.consensus || 'n/a'}</span>
+            </div>
+            <div className="spread">
+              <span className="muted">Epoch</span>
+              <Badge>{status.epoch.epoch ?? 0}</Badge>
+            </div>
+            <div className="spread">
+              <span className="muted">Block time</span>
+              <span>{blockTime}</span>
+            </div>
+            <div className="spread">
+              <span className="muted">Finality lag</span>
+              <span>{status.finalityLag ?? 0}</span>
+            </div>
+          </div>
+        </Card>
+
+        <Card title="Consensus telemetry" subtitle="Participation & latency">
+          <div className="stack">
+            <div className="spread">
+              <span className="muted">Participation</span>
+              <Badge tone="success">{participation}</Badge>
+            </div>
+            <div className="spread">
+              <span className="muted">Latency (p50)</span>
+              <span>{telemetry.latency?.p50 ? `${telemetry.latency.p50} ms` : 'n/a'}</span>
+            </div>
+            <div className="spread">
+              <span className="muted">Health samples</span>
+              <span>{Array.isArray((telemetry.health as { services?: unknown[] })?.services) ? 'ok' : 'n/a'}</span>
+            </div>
+          </div>
+        </Card>
+
+        <Card title="Peers" subtitle={`Total ${peers.peers.length}`}>
+          <div className="stack" style={{ gap: 6 }}>
+            {peers.peers.slice(0, 5).map((p) => (
+              <div key={p.id} className="spread">
+                <span>{p.id}</span>
+                <span className="muted">{p.latencyMs !== undefined ? `${p.latencyMs} ms` : 'n/a'}</span>
+              </div>
+            ))}
+            {!peers.peers.length && <div className="muted">No peers reported.</div>}
+          </div>
+        </Card>
+
+        <Card title="Reorgs" subtitle="Recent events">
+          <div className="stack" style={{ gap: 6 }}>
+            {status.reorgs.slice(0, 5).map((r) => (
+              <div key={`${r.fromBlock}-${r.toBlock}-${r.depth}`} className="row" style={{ justifyContent: 'space-between' }}>
+                <div className="muted">
+                  {r.fromBlock} → {r.toBlock}
+                </div>
+                <Badge tone="warning">depth {r.depth}</Badge>
+              </div>
+            ))}
+            {!status.reorgs.length && <div className="muted">No recent reorgs.</div>}
+          </div>
+        </Card>
       </div>
     </div>
   );
