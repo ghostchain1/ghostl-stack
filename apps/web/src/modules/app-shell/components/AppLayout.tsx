@@ -12,7 +12,7 @@ import { useFeatureFlags } from '../services/FeatureFlagsService';
 import { useNetwork } from '../services/NetworkContextService';
 import { useTheme } from '../services/ThemeService';
 
-const navItems: { href: string; label: string; flag?: string }[] = [
+const navItems: { href: string; label: string; flag?: string; roles?: string[] }[] = [
   { href: '/', label: 'Overview' },
   { href: '/chain', label: 'Chain' },
   { href: '/nodes', label: 'Nodes' },
@@ -22,7 +22,13 @@ const navItems: { href: string; label: string; flag?: string }[] = [
   { href: '/observability/logs', label: 'Logs', flag: 'observability.grafana' },
   { href: '/observability/stack', label: 'Stack', flag: 'observability.grafana' },
   { href: '/wallet', label: 'Wallet', flag: 'wallet.siwe' },
-  { href: '/devops/releases', label: 'DevOps' }
+  { href: '/bridge', label: 'Bridge' },
+  { href: '/contracts', label: 'Contracts', roles: ['Developer', 'Protocol Admin'] },
+  { href: '/tokenomics', label: 'Treasury', roles: ['Treasury Admin', 'Protocol Admin'] },
+  { href: '/ai', label: 'AI' },
+  { href: '/devops', label: 'DevOps', roles: ['Protocol Admin'] },
+  { href: '/governance', label: 'Governance', roles: ['Protocol Admin', 'Developer'] },
+  { href: '/integrations', label: 'Integrations', roles: ['Developer'] }
 ];
 
 export function AppLayout({ children }: { children: ReactNode }) {
@@ -31,6 +37,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { isEnabled } = useFeatureFlags();
   const { current } = useNetwork();
   const { theme, toggleTheme } = useTheme();
+  const userRoles = user?.roles || [];
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -38,6 +45,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <nav className="nav">
           {navItems.map((item) => {
             const disabled = item.flag ? !isEnabled(item.flag) : false;
+            const roleBlocked = item.roles ? !item.roles.some((r) => userRoles.includes(r)) : false;
+            if (roleBlocked) return null;
             return (
               <Link
                 key={item.href}
