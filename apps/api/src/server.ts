@@ -252,6 +252,20 @@ app.get('/explorer/txs', async (req, res) => {
   }
 });
 
+app.get('/wallet/balance', async (req, res) => {
+  const address = typeof req.query.address === 'string' ? req.query.address : '';
+  if (!address) {
+    res.status(400).json({ error: 'address required' });
+    return;
+  }
+  try {
+    const balanceHex = (await rpcCall('eth_getBalance', [address, 'latest'])) as HexString;
+    res.json({ address, balance: balanceHex });
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message });
+  }
+});
+
 app.get('/integrations/rpc', async (_req, res) => {
   const data = await proxyJson<{ endpoints?: unknown[] }>(`${servicesBase.rpc}/endpoints`, { endpoints: [] });
   res.json(data.endpoints || []);
