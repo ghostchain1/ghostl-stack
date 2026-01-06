@@ -12,19 +12,27 @@ x-security: &default-security
 
 services:
   l1:
-    image: ${FOUNDRY_IMAGE:-ghcr.io/foundry-rs/foundry@sha256:465bdc521c1775b5b720e61f1ddd5946fc51f507ae15cd173650b7e5c9a712d6}
-    entrypoint: ["anvil"]
+    image: ghcr.io/ethereum-optimism/op-geth:${OPSTACK_IMAGE_TAG:-latest}
+    user: "1000:1000"
+    entrypoint: ["/bin/sh"]
     command:
-      - --host
-      - 0.0.0.0
-      - --port
-      - "8545"
-      - --chain-id
-      - "${L1_CHAIN_ID:-31337}"
-      - --timestamp
-      - "${L1_TIMESTAMP:-1767502513}"
+      - -c
+      - |
+        set -e
+        if [ ! -d /data/geth ]; then
+          echo "[l1-geth] initializing genesis..."
+          geth init --datadir /data /config/l1-genesis.json
+        fi
+        exec geth \
+          --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug \
+          --http.vhosts="*" \
+          --datadir=/data \
+          --networkid=${L1_CHAIN_ID:-31337} \
+          --gcmode=archive \
+          --mine --miner.etherbase=${L1_MINER_ADDRESS:-0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266} --miner.gasprice=0 \
+          --nodiscover
     healthcheck:
-      test: ["CMD-SHELL", "cast block-number --rpc-url http://localhost:8545 >/dev/null"]
+      test: ["CMD-SHELL", "geth attach --datadir /data --exec 'net.version' http://localhost:8545 >/dev/null 2>&1"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -36,6 +44,9 @@ services:
     <<: *default-security
     mem_limit: 1g
     cpus: "1.0"
+    volumes:
+      - ./data/l1-geth:/data
+      - ./config/l1-genesis.json:/config/l1-genesis.json:ro
 
   op-gate:
     image: ${OP_GATE_IMAGE:-local/op-gate:0.1.0}
@@ -122,6 +133,7 @@ services:
 
   l2-geth:
     image: ghcr.io/ethereum-optimism/op-geth:${OPSTACK_IMAGE_TAG:-latest}
+    user: "1000:1000"
     restart: unless-stopped
     logging: *default-logging
     depends_on:
@@ -154,7 +166,7 @@ services:
           --gcmode=archive \
           --rollup.disabletxpoolgossip=true
     healthcheck:
-      test: ["CMD-SHELL", "geth attach --exec 'net.version' http://localhost:8545 >/dev/null 2>&1"]
+      test: ["CMD-SHELL", "geth attach --datadir /data --exec 'net.version' http://localhost:8545 >/dev/null 2>&1"]
       interval: 20s
       timeout: 10s
       retries: 6
@@ -229,7 +241,7 @@ services:
       L2OO_ADDRESS: "${L2OO_ADDRESS:-0x0000000000000000000000000000000000000000}"
     command:
       - op-batcher
-      - --l1-eth-rpc=http://op-gate:8545
+      - --l1-eth-rpc=http://l1:8545
       - --l2-eth-rpc=http://l2-geth:8545
       - --rollup-rpc=http://op-node:9546
       - --private-key=${BATCHER_KEY}
@@ -270,7 +282,7 @@ services:
     command:
       - op-proposer
       # Route through op-gate (guard-aware) and avoid the invalid comma-separated RPC URL.
-      - --l1-eth-rpc=http://op-gate:8545
+      - --l1-eth-rpc=http://l1:8545
       - --rollup-rpc=http://op-node:9546
       - --l2oo-address=${L2OO_ADDRESS:-0x8f86403A4DE0BB5791fa46B8e795C547942fE4Cf}
       - --private-key=${PROPOSER_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}

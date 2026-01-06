@@ -2,48 +2,39 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+OP_DIR="$ROOT/infra/opstack"
 
-echo "Initializing chains..."
-bash "$ROOT/infra/scripts/chains/init.sh"
+if [ ! -f "$OP_DIR/.env" ]; then
+  echo "Missing $OP_DIR/.env (copy .env.sample and run infra/scripts/opstack/keys/init.sh)" >&2
+  exit 1
+fi
 
+set -a
+source "$OP_DIR/.env"
+[ -f "$OP_DIR/.env.secrets" ] && source "$OP_DIR/.env.secrets"
+set +a
+
+HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:28545}"
+HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29545}"
+
+echo "Starting OP Stack devnet (L1 + L2)..."
+bash "$ROOT/infra/scripts/opstack/up.sh"
+
+echo "Deploying contracts to OP L2 and writing service env files..."
+bash "$ROOT/infra/scripts/opstack/deploy.sh"
+
+echo "Starting services (Guard/Relayer/Proposers/Challengers/Obs) against OP RPCs..."
 cd "$ROOT/.devcontainer"
-docker compose up -d --build anvil ghostl2 ghostl3 workspace
+SERVICES=(
+  ghost-guard
+  ghost-relayer
+  ghost-rollup-proposer-l2
+  ghost-rollup-proposer-l3
+  ghost-rollup-challenger-l2
+  ghost-rollup-challenger-l3
+  prometheus
+  grafana
+)
+docker compose up -d --no-deps "${SERVICES[@]}"
 
-echo "Waiting for RPCs..."
-for url in http://localhost:8545 http://localhost:9545 http://localhost:10545; do
-  for i in $(seq 1 60); do
-    if curl -s -X POST "$url" \
-      -H 'content-type: application/json' \
-      --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' >/dev/null; then
-      echo "OK: $url"
-      break
-    fi
-    sleep 1
-    if [ "$i" -eq 60 ]; then
-      echo "RPC not responding: $url"
-      exit 1
-    fi
-  done
-done
-
-echo "Deploying contracts..."
-cd "$ROOT/contracts"
-npm run deploy:all
-
-echo "Starting Ghost Guard..."
-cd "$ROOT/.devcontainer"
-docker compose up -d --build ghost-guard
-
-echo "Starting Ghost Relayer..."
-docker compose up -d --build ghost-relayer
-
-echo "Starting Rollup Proposers..."
-docker compose up -d --build ghost-rollup-proposer-l2 ghost-rollup-proposer-l3
-
-echo "Starting Rollup Challengers..."
-docker compose up -d --build ghost-rollup-challenger-l2 ghost-rollup-challenger-l3
-
-echo "Starting Prometheus + Grafana..."
-docker compose up -d --build prometheus grafana
-
-echo "Done. Anvil=8545, L2=9545, L3=10545, Guard=7070, Relayer=7171, ProposerL2=7272, ProposerL3=7373, ChallengerL2=7282, ChallengerL3=7383, Prometheus=9090, Grafana=3000"
+echo "Done. L1=$HOST_L1_RPC, L2=$HOST_L2_RPC, Guard=7070, Relayer=7171, ProposerL2=7272, ProposerL3=7373, ChallengerL2=7282, ChallengerL3=7383, Prometheus=9090, Grafana=3000"

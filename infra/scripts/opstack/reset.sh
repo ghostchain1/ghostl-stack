@@ -19,6 +19,7 @@ chown_data_dir() {
 
 chown_data_dir "$OP_DIR/data/l2-geth"
 chown_data_dir "$OP_DIR/data/op-node"
+chown_data_dir "$OP_DIR/data/l1-geth"
 
 echo "Stopping OP Stack devnet..."
 cd "$OP_DIR"
@@ -28,7 +29,7 @@ chown_data_dir "$OP_DIR/data/l2-geth"
 chown_data_dir "$OP_DIR/data/op-node"
 
 echo "Removing data dirs..."
-rm -rf "$OP_DIR/data/l2-geth" "$OP_DIR/data/op-node"
-mkdir -p "$OP_DIR/data/l2-geth" "$OP_DIR/data/op-node"
+rm -rf "$OP_DIR/data/l1-geth" "$OP_DIR/data/l2-geth" "$OP_DIR/data/op-node"
+mkdir -p "$OP_DIR/data/l1-geth" "$OP_DIR/data/l2-geth" "$OP_DIR/data/op-node"
 
 echo "Reset complete."

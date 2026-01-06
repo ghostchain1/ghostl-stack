@@ -3,9 +3,20 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="${ROOT_DIR:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
+OP_ENV="$ROOT_DIR/infra/opstack/.env"
 
-echo "Running chain checks..."
-bash "$ROOT_DIR/infra/scripts/chains/doctor.sh"
+if [ -f "$OP_ENV" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$OP_ENV"
+  [ -f "$ROOT_DIR/infra/opstack/.env.secrets" ] && source "$ROOT_DIR/infra/opstack/.env.secrets"
+  set +a
+fi
+
+HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:28545}"
+HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29545}"
+HOST_L3_RPC="${HOST_L3_RPC:-http://localhost:39545}"
+HOST_GATE_RPC="${HOST_GATE_RPC:-http://localhost:28546}"
 
 jsonrpc_chain_id() {
   local url="$1"
@@ -36,12 +47,18 @@ print_http() {
 
 echo
 echo "RPC chainIds:"
-echo "  L1(anvil):  $(jsonrpc_chain_id http://localhost:8545 || true)"
-echo "  L2:         $(jsonrpc_chain_id http://localhost:9545 || true)"
-echo "  L3:         $(jsonrpc_chain_id http://localhost:10545 || true)"
+echo "  L1(anvil):  $(jsonrpc_chain_id "$HOST_L1_RPC" || true)"
+echo "  L2(op-geth):$(jsonrpc_chain_id "$HOST_L2_RPC" || true)"
+echo "  L3(op-stack optional): $(jsonrpc_chain_id "$HOST_L3_RPC" || true)"
 
 echo
 echo "Health endpoints:"
+
+wait_http "$HOST_GATE_RPC/gate/status" op-gate >/dev/null || true
+print_http "$HOST_GATE_RPC/gate/status"
+
+wait_http http://localhost:9546 optimism-op-node >/dev/null || true
+print_http http://localhost:9546
 
 wait_http http://localhost:7070/health ghost-guard >/dev/null || true
 print_http http://localhost:7070/health
