@@ -1,6 +1,6 @@
 'use client';
 
-import type { BridgeControl } from '@ghostchain/types/bridge';
+import type { BridgeControl } from '@ghostl/types/bridge';
 
 export function EmergencyControls({ control }: { control: BridgeControl }) {
   return (

@@ -1,6 +1,6 @@
 'use client';
 
-import type { SlashEvent, Validator } from '@ghostchain/types/validators';
+import type { SlashEvent, Validator } from '@ghostl/types/validators';
 
 export function ValidatorDetailCard({
   validator,

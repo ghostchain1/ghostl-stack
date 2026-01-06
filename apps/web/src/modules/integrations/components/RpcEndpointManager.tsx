@@ -1,6 +1,6 @@
 'use client';
 
-import type { RpcEndpoint } from '@ghostchain/types/integrations';
+import type { RpcEndpoint } from '@ghostl/types/integrations';
 
 export function RpcEndpointManager({ endpoints }: { endpoints: RpcEndpoint[] }) {
   const tone = (status: RpcEndpoint['status']) => {

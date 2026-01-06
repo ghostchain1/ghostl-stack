@@ -1,4 +1,4 @@
-import type { ChainInfo, EpochInfo, ReorgEvent } from '@ghostchain/types/chain';
+import type { ChainInfo, EpochInfo, ReorgEvent } from '@ghostl/types/chain';
 
 export interface ChainStatus {
   chain: ChainInfo;

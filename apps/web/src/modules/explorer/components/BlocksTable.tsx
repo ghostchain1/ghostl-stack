@@ -1,6 +1,6 @@
 'use client';
 
-import type { Block } from '@ghostchain/types/explorer';
+import type { Block } from '@ghostl/types/explorer';
 
 export function BlocksTable({ blocks }: { blocks: Block[] }) {
   return (

@@ -1,6 +1,6 @@
 'use client';
 
-import type { Validator } from '@ghostchain/types/validators';
+import type { Validator } from '@ghostl/types/validators';
 
 export function VotingPowerChart({ validators }: { validators: Validator[] }) {
   const total = validators.reduce((sum, v) => sum + v.power, 0);
