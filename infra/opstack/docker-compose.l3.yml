@@ -12,7 +12,7 @@ x-security: &default-security
 
 services:
   l3-geth:
-    image: local/op-geth:${OPSTACK_IMAGE_TAG:-devnet}
+    image: ghcr.io/ethereum-optimism/op-geth:${OPSTACK_IMAGE_TAG:-latest}
     user: "1000:1000"
     restart: unless-stopped
     logging: *default-logging
@@ -62,7 +62,7 @@ services:
     cpus: "2.0"
 
   l3-op-node:
-    image: local/op-node:${OPSTACK_IMAGE_TAG:-devnet}
+    image: ghcr.io/ethereum-optimism/op-node:${OPSTACK_IMAGE_TAG:-latest}
     user: "1000:1000"
     restart: unless-stopped
     logging: *default-logging
@@ -111,7 +111,7 @@ services:
     cpus: "1.5"
 
   l3-op-batcher:
-    image: local/op-batcher:${OPSTACK_IMAGE_TAG:-devnet}
+    image: ghcr.io/ethereum-optimism/op-batcher:${OPSTACK_IMAGE_TAG:-latest}
     user: "1000:1000"
     restart: unless-stopped
     logging: *default-logging
@@ -149,7 +149,7 @@ services:
     cpus: "1.0"
 
   l3-op-proposer:
-    image: local/op-proposer:${OPSTACK_IMAGE_TAG:-devnet}
+    image: ghcr.io/ethereum-optimism/op-proposer:${OPSTACK_IMAGE_TAG:-latest}
     user: "1000:1000"
     restart: unless-stopped
     logging: *default-logging

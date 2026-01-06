@@ -65,186 +65,6 @@ services:
       retries: 30
       start_period: 2s
 
-  ghostl2:
-    image: 0xpolygon/polygon-edge:1.3.2
-    user: "0:0"
-    entrypoint: ["/bin/sh", "-lc"]
-    restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "wget -qO- --timeout=2 http://127.0.0.1:9545 | grep -q chain_id"
-        ]
-      interval: 5s
-      timeout: 3s
-      retries: 60
-      start_period: 40s
-    environment:
-      CHAIN_NAME: "GhostL2"
-      CHAIN_ID: "7192"
-      PREMINE_ADDRESS: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
-      PREMINE_AMOUNT_WEI: "1000000000000000000000000"
-      BLOCK_GAS_LIMIT: "30000000"
-      BOOTNODE_IP: "127.0.0.1"
-      LIBP2P_PORT: "14792"
-      GRPC_PORT: "9632"
-      JSONRPC_PORT: "9545"
-    command:
-      - |
-        set -e
-        EDGE_BIN="polygon-edge"
-        # Health checks rely on nc, but the polygon-edge image is bare Alpine
-        apk add --no-cache netcat-openbsd >/dev/null 2>&1 || true
-        DATA_DIR="/data"
-        VALIDATOR_DIR="$$DATA_DIR/validator-1"
-        GENESIS="$$DATA_DIR/genesis.json"
-        EXPECTED_CHAIN_ID="$${CHAIN_ID}"
-
-        regen_reason=""
-        if [ -f "$$GENESIS" ]; then
-          if ! grep -q "\"chainID\": $${EXPECTED_CHAIN_ID}" "$$GENESIS"; then
-            regen_reason="chain id changed"
-          fi
-        fi
-
-        ensure_perms() {
-          chmod -R a+rwX "$$DATA_DIR" >/dev/null 2>&1 || true
-        }
-
-        if [ -n "$$regen_reason" ] || [ ! -f "$$GENESIS" ] || [ ! -f "$$VALIDATOR_DIR/consensus/validator.key" ]; then
-          echo "[$${CHAIN_NAME}] initializing chain data... $${regen_reason}"
-          rm -rf "$$DATA_DIR"/*
-          mkdir -p "$$DATA_DIR" "$$VALIDATOR_DIR"
-          "$$EDGE_BIN" secrets init --insecure --data-dir "$$VALIDATOR_DIR"
-          NODE_ID="$("$${EDGE_BIN}" secrets output --data-dir "$$VALIDATOR_DIR" --node-id | tail -n 1 | tr -d '\r\n')"
-          "$$EDGE_BIN" genesis \
-            --dir "$$GENESIS" \
-            --name "$${CHAIN_NAME}" \
-            --chain-id "$${CHAIN_ID}" \
-            --premine "$${PREMINE_ADDRESS}:$${PREMINE_AMOUNT_WEI}" \
-            --bootnode "/ip4/$${BOOTNODE_IP}/tcp/$${LIBP2P_PORT}/p2p/$${NODE_ID}" \
-            --consensus ibft \
-            --validators-path "$$DATA_DIR" \
-            --validators-prefix validator- \
-            --block-gas-limit "$${BLOCK_GAS_LIMIT}"
-          ensure_perms
-          echo "[$${CHAIN_NAME}] genesis created"
-        else
-          ensure_perms
-          echo "[$${CHAIN_NAME}] chain data already initialized"
-        fi
-
-        exec "$$EDGE_BIN" server \
-          --data-dir "$$VALIDATOR_DIR" \
-          --chain "$$GENESIS" \
-          --grpc-address 0.0.0.0:"$${GRPC_PORT}" \
-          --libp2p 0.0.0.0:"$${LIBP2P_PORT}" \
-          --jsonrpc 0.0.0.0:"$${JSONRPC_PORT}"
-    ports:
-      - "9545:9545"
-    volumes:
-      - ../chains/l2/data:/data
-    networks: [ghostnet]
-    depends_on:
-      anvil:
-        condition: service_healthy
-
-  ghostl3:
-    image: 0xpolygon/polygon-edge:1.3.2
-    user: "0:0"
-    entrypoint: ["/bin/sh", "-lc"]
-    restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "wget -qO- --timeout=2 http://127.0.0.1:10545 | grep -q chain_id"
-        ]
-      interval: 5s
-      timeout: 3s
-      retries: 60
-      start_period: 40s
-    environment:
-      CHAIN_NAME: "GhostL3"
-      CHAIN_ID: "7393"
-      PREMINE_ADDRESS: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
-      PREMINE_AMOUNT_WEI: "1000000000000000000000000"
-      BLOCK_GAS_LIMIT: "30000000"
-      BOOTNODE_IP: "127.0.0.1"
-      LIBP2P_PORT: "16793"
-      GRPC_PORT: "10632"
-      JSONRPC_PORT: "10545"
-    command:
-      - |
-        set -e
-        EDGE_BIN="polygon-edge"
-        # Health checks rely on nc, but the polygon-edge image is bare Alpine
-        apk add --no-cache netcat-openbsd >/dev/null 2>&1 || true
-        DATA_DIR="/data"
-        VALIDATOR_DIR="$$DATA_DIR/validator-1"
-        GENESIS="$$DATA_DIR/genesis.json"
-        EXPECTED_CHAIN_ID="$${CHAIN_ID}"
-
-        regen_reason=""
-        if [ -f "$$GENESIS" ]; then
-          if ! grep -q "\"chainID\": $${EXPECTED_CHAIN_ID}" "$$GENESIS"; then
-            regen_reason="chain id changed"
-          fi
-        fi
-
-        ensure_perms() {
-          chmod -R a+rwX "$$DATA_DIR" >/dev/null 2>&1 || true
-        }
-
-        if [ -n "$$regen_reason" ] || [ ! -f "$$GENESIS" ] || [ ! -f "$$VALIDATOR_DIR/consensus/validator.key" ]; then
-          echo "[$${CHAIN_NAME}] initializing chain data... $${regen_reason}"
-          rm -rf "$$DATA_DIR"/*
-          mkdir -p "$$DATA_DIR" "$$VALIDATOR_DIR"
-          "$$EDGE_BIN" secrets init --insecure --data-dir "$$VALIDATOR_DIR"
-          NODE_ID="$("$${EDGE_BIN}" secrets output --data-dir "$$VALIDATOR_DIR" --node-id | tail -n 1 | tr -d '\r\n')"
-          "$$EDGE_BIN" genesis \
-            --dir "$$GENESIS" \
-            --name "$${CHAIN_NAME}" \
-            --chain-id "$${CHAIN_ID}" \
-            --premine "$${PREMINE_ADDRESS}:$${PREMINE_AMOUNT_WEI}" \
-            --bootnode "/ip4/$${BOOTNODE_IP}/tcp/$${LIBP2P_PORT}/p2p/$${NODE_ID}" \
-            --consensus ibft \
-            --validators-path "$$DATA_DIR" \
-            --validators-prefix validator- \
-            --block-gas-limit "$${BLOCK_GAS_LIMIT}"
-          ensure_perms
-          echo "[$${CHAIN_NAME}] genesis created"
-        else
-          ensure_perms
-          echo "[$${CHAIN_NAME}] chain data already initialized"
-        fi
-
-        exec "$$EDGE_BIN" server \
-          --data-dir "$$VALIDATOR_DIR" \
-          --chain "$$GENESIS" \
-          --grpc-address 0.0.0.0:"$${GRPC_PORT}" \
-          --libp2p 0.0.0.0:"$${LIBP2P_PORT}" \
-          --jsonrpc 0.0.0.0:"$${JSONRPC_PORT}"
-    ports:
-      - "10545:10545"
-    volumes:
-      - ../chains/l3/data:/data
-    networks: [ghostnet]
-    depends_on:
-      ghostl2:
-        condition: service_healthy
-
   ghost-guard:
     image: node:22-alpine
     user: "0:0"
@@ -266,7 +86,6 @@ services:
       - ../services/ghost-guard/.env
     environment:
       RPC_L2: "http://host.docker.internal:29545"
-      RPC_L3: "http://ghostl3:10545"
       STATE_DIR: "/state"
     ports:
       - "7070:7070"
@@ -278,11 +97,6 @@ services:
       start_period: 5s
     networks: [ghostnet]
     depends_on:
-      ghostl2:
-        condition: service_healthy
-      ghostl3:
-        condition: service_healthy
-
   ghost-relayer:
     image: node:22-alpine
     user: "0:0"
@@ -319,11 +133,6 @@ services:
     depends_on:
       anvil:
         condition: service_healthy
-      ghostl2:
-        condition: service_healthy
-      ghostl3:
-        condition: service_healthy
-
   ghost-rollup-proposer-l2:
     image: node:22-alpine
     user: "0:0"
@@ -359,9 +168,6 @@ services:
     depends_on:
       anvil:
         condition: service_healthy
-      ghostl2:
-        condition: service_healthy
-
   ghost-rollup-proposer-l3:
     image: node:22-alpine
     user: "0:0"
@@ -383,7 +189,7 @@ services:
       - ../services/ghost-rollup-proposer/.env.l3
     environment:
       RPC_SETTLEMENT: "http://host.docker.internal:9545"
-      RPC_CHILD: "http://ghostl3:10545"
+      RPC_CHILD: "http://host.docker.internal:39545"
       STATE_DIR: "/state"
     ports:
       - "7373:7373"
@@ -395,11 +201,6 @@ services:
       start_period: 5s
     networks: [ghostnet]
     depends_on:
-      ghostl2:
-        condition: service_healthy
-      ghostl3:
-        condition: service_healthy
-
   ghost-rollup-challenger-l2:
     image: node:22-alpine
     user: "0:0"
@@ -435,9 +236,6 @@ services:
     depends_on:
       anvil:
         condition: service_healthy
-      ghostl2:
-        condition: service_healthy
-
   ghost-rollup-challenger-l3:
     image: node:22-alpine
     user: "0:0"
@@ -471,11 +269,6 @@ services:
       start_period: 5s
     networks: [ghostnet]
     depends_on:
-      ghostl2:
-        condition: service_healthy
-      ghostl3:
-        condition: service_healthy
-
   ai-monitor:
     image: node:22-alpine
     user: "0:0"
