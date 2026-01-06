@@ -4,14 +4,15 @@ import { promises as fs } from "node:fs";
 
 async function main() {
   const ROOT = process.env.ROOT_DIR ?? path.resolve(__dirname, "..", "..");
-  const l2ChainId = Number(process.env.L2_CHAIN_ID ?? network.config.chainId ?? 7192);
-  const l3ChainId = Number(process.env.L3_CHAIN_ID ?? 7393);
+  // Default to OP Stack devnet ports (Anvil L1 :28545, op-geth L2 :29545). L3 is optional; keep overrideable.
+  const l2ChainId = Number(process.env.L2_CHAIN_ID ?? network.config.chainId ?? 901);
+  const l3ChainId = Number(process.env.L3_CHAIN_ID ?? 902);
   const challengePeriodSeconds = Number(process.env.CHALLENGE_PERIOD_SECONDS ?? 30);
-  const rpcL1 = process.env.RPC_L1 ?? "http://localhost:8545";
+  const rpcL1 = process.env.RPC_L1 ?? "http://localhost:28545";
   const rpcL2Public =
     process.env.RPC_L2 ??
-    (typeof (network.config as any)?.url === "string" ? String((network.config as any).url) : "http://localhost:9545");
-  const rpcL3Public = process.env.RPC_L3 ?? "http://localhost:10545";
+    (typeof (network.config as any)?.url === "string" ? String((network.config as any).url) : "http://localhost:29545");
+  const rpcL3Public = process.env.RPC_L3 ?? "http://localhost:39545";
 
   console.log(
     `Config -> L2 chainId=${l2ChainId}, L3 chainId=${l3ChainId}, challengePeriodSeconds=${challengePeriodSeconds}`
