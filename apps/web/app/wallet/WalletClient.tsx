@@ -49,6 +49,8 @@ export function WalletClient() {
   const [swapAmount, setSwapAmount] = useState('0.01');
   const [swapRecipient, setSwapRecipient] = useState('');
 
+  const selectedRouteObj = useMemo(() => swapRoutes[selectedRoute], [swapRoutes, selectedRoute]);
+
   useEffect(() => {
     if (account && !bridgeRecipient) {
       setBridgeRecipient(account);
@@ -288,6 +290,38 @@ export function WalletClient() {
                     </option>
                   ))}
                 </select>
+                {selectedRouteObj && (
+                  <div className="card" style={{ padding: 8 }}>
+                    <div className="spread" style={{ fontSize: 12 }}>
+                      <span className="muted">DEX</span>
+                      <span>{selectedRouteObj.dex || '—'}</span>
+                    </div>
+                    <div className="spread" style={{ fontSize: 12 }}>
+                      <span className="muted">Path</span>
+                      <span>{(selectedRouteObj.path || []).join(' → ') || 'direct'}</span>
+                    </div>
+                    <div className="spread" style={{ fontSize: 12 }}>
+                      <span className="muted">Est. out</span>
+                      <span>{selectedRouteObj.amountOut || '?'}</span>
+                    </div>
+                    <div className="spread" style={{ fontSize: 12 }}>
+                      <span className="muted">Min. out</span>
+                      <span>{selectedRouteObj.minAmountOut || '?'}</span>
+                    </div>
+                    {selectedRouteObj.feeBps !== undefined && (
+                      <div className="spread" style={{ fontSize: 12 }}>
+                        <span className="muted">Fee</span>
+                        <span>{(selectedRouteObj.feeBps / 100).toFixed(2)}%</span>
+                      </div>
+                    )}
+                    {selectedRouteObj.priceImpactBps !== undefined && (
+                      <div className="spread" style={{ fontSize: 12 }}>
+                        <span className="muted">Price impact</span>
+                        <span>{(selectedRouteObj.priceImpactBps / 100).toFixed(2)}%</span>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="inline-form" style={{ gap: 8 }}>
                   <span className="muted">Slippage %</span>
                   <input
