@@ -64,6 +64,7 @@ export function useWallet() {
   const [swapRoutes, setSwapRoutes] = useState<SwapRoute[]>([]);
   const [selectedRoute, setSelectedRoute] = useState<number>(0);
   const [swapQuoteError, setSwapQuoteError] = useState<string>('');
+  const [slippageBps, setSlippageBps] = useState<number>(50); // 0.50%
 
   const chainTokens = useMemo(() => tokensForChain(chain), [chain]);
 
@@ -339,14 +340,34 @@ export function useWallet() {
     bridgeToL3,
     sendViaApi: send,
     swapViaApi: async (amount: string, recipient: string, pk: string) => {
-      if (!selectedToken.address) throw new Error('Select an ERC20 token to swap');
+      // Native swaps fall back to simple send
+      if (!selectedToken.address) {
+        return sendFunds({
+          rpc: chainConfigs[chain].rpc,
+          to: recipient,
+          amount: parseUnits(amount, selectedToken.decimals).toString(),
+          privateKey: pk
+        });
+      }
+
       const route = swapRoutes[selectedRoute];
       if (route) {
+        const amountInStr = parseUnits(amount, selectedToken.decimals).toString();
+        let minOut = route.minAmountOut || route.amountOut;
+        if (route.amountOut && slippageBps >= 0) {
+          try {
+            const out = BigInt(route.amountOut);
+            const adjusted = (out * BigInt(10000 - slippageBps)) / BigInt(10000);
+            minOut = adjusted.toString();
+          } catch {
+            // ignore parse errors, use route-provided min
+          }
+        }
         return executeSwap({
           tokenIn: selectedToken.address,
           tokenOut: selectedToken.address,
-          amountIn: parseUnits(amount, selectedToken.decimals).toString(),
-          minAmountOut: route.minAmountOut,
+          amountIn: amountInStr,
+          minAmountOut: minOut,
           path: route.path,
           routeId: route.id,
           recipient,
@@ -376,6 +397,8 @@ export function useWallet() {
     swapQuoteError,
     fetchSwapQuote,
     selectedRoute,
-    setSelectedRoute
+    setSelectedRoute,
+    slippageBps,
+    setSlippageBps
   };
 }
