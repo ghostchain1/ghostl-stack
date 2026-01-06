@@ -78,7 +78,15 @@ export async function swapTokens(params: {
   return res.json() as Promise<{ tx: string; note?: string }>;
 }
 
-export type SwapRoute = { id?: string; amountOut?: string; minAmountOut?: string; path?: string[]; dex?: string };
+export type SwapRoute = {
+  id?: string;
+  amountOut?: string;
+  minAmountOut?: string;
+  path?: string[];
+  dex?: string;
+  feeBps?: number;
+  priceImpactBps?: number;
+};
 
 export async function getSwapQuote(params: { tokenIn: string; tokenOut: string; amount: string }) {
   const query = new URLSearchParams({
