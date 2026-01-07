@@ -67,6 +67,7 @@ export function useWallet() {
   const [swapQuoteError, setSwapQuoteError] = useState<string>('');
   const [slippageBps, setSlippageBps] = useState<number>(50); // 0.50%
   const [externalTokens, setExternalTokens] = useState<TokenConfig[]>([]);
+  const [swapAmount, setSwapAmount] = useState<string>('');
 
   const chainTokens = useMemo(() => {
     const fromDefaults = tokensForChain(chain);
@@ -446,6 +447,8 @@ export function useWallet() {
     swapRoutes,
     swapQuoteError,
     fetchSwapQuote,
+    swapAmount,
+    setSwapAmount,
     selectedRoute,
     setSelectedRoute,
     slippageBps,

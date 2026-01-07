@@ -119,7 +119,7 @@ services:
     environment:
       RPC_L1: "http://host.docker.internal:28545"
       RPC_L2: "http://host.docker.internal:29545"
-      RPC_L3: "http://ghostl3:10545"
+      RPC_L3: "http://host.docker.internal:39545"
       STATE_DIR: "/state"
     ports:
       - "7171:7171"
@@ -188,7 +188,7 @@ services:
     env_file:
       - ../services/ghost-rollup-proposer/.env.l3
     environment:
-      RPC_SETTLEMENT: "http://host.docker.internal:9545"
+      RPC_SETTLEMENT: "http://host.docker.internal:29545"
       RPC_CHILD: "http://host.docker.internal:39545"
       STATE_DIR: "/state"
     ports:
@@ -256,8 +256,8 @@ services:
     env_file:
       - ../services/ghost-rollup-challenger/.env.l3
     environment:
-      RPC_SETTLEMENT: "http://host.docker.internal:9545"
-      RPC_CHILD: "http://ghostl3:10545"
+      RPC_SETTLEMENT: "http://host.docker.internal:29545"
+      RPC_CHILD: "http://host.docker.internal:39545"
       STATE_DIR: "/state"
     ports:
       - "7383:7383"

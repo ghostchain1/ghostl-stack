@@ -11,8 +11,10 @@ docker compose stop --no-deps \
   ai-monitor \
   prometheus grafana >/dev/null 2>&1 || true
 
-echo "Stopping OP Stack devnet..."
-cd "$ROOT/infra/opstack"
-docker compose down >/dev/null 2>&1 || true
+echo "Stopping OP Stack devnet (L1/L2)..."
+bash "$ROOT/infra/scripts/opstack/down-l2.sh"
+
+echo "Stopping OP Stack L3..."
+bash "$ROOT/infra/scripts/opstack/down-l3.sh" || true
 
 echo "Down complete."

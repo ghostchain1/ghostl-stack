@@ -1,9 +1,9 @@
 configType = "custom"
 opDeployerVersion = "v0.0.0"
-l1ChainID = 31337
-fundDevAccounts = true
-l1ContractsLocator = "file:///home/ghost/ghostl-stack/infra/opstack/optimism/packages/contracts-bedrock/forge-artifacts"
-l2ContractsLocator = "file:///home/ghost/ghostl-stack/infra/opstack/optimism/packages/contracts-bedrock/forge-artifacts"
+l1ChainID = 901
+fundDevAccounts = false
+l1ContractsLocator = "file:///work/infra/opstack/optimism/packages/contracts-bedrock"
+l2ContractsLocator = "file:///work/infra/opstack/optimism/packages/contracts-bedrock"
 
 [superchainRoles]
   SuperchainProxyAdminOwner = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
@@ -12,7 +12,7 @@ l2ContractsLocator = "file:///home/ghost/ghostl-stack/infra/opstack/optimism/pac
   Challenger = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 
 [[chains]]
-  id = "0x0000000000000000000000000000000000000000000000000000000000000385"
+  id = "0x0000000000000000000000000000000000000000000000000000000000000386"
   baseFeeVaultRecipient = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
   l1FeeVaultRecipient = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
   sequencerFeeVaultRecipient = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
