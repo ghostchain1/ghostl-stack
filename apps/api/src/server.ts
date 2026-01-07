@@ -3,6 +3,7 @@ import session from 'express-session';
 import FileStoreFactory from 'session-file-store';
 import cors from 'cors';
 import { fetch } from 'undici';
+import type {} from './types/session';
 import { buildAppShellRouter } from './modules/app-shell/router';
 import { buildIdentityAccessRouter } from './modules/identity-access/router';
 import { buildChainRouter } from './modules/chain/router';
