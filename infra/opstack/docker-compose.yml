@@ -12,27 +12,26 @@ x-security: &default-security
 
 services:
   l1:
-    image: ghcr.io/ethereum-optimism/op-geth:${OPSTACK_IMAGE_TAG:-latest}
+    image: ghcr.io/foundry-rs/foundry:stable
     user: "1000:1000"
-    entrypoint: ["/bin/sh"]
+    entrypoint: ["anvil"]
+    environment:
+      ANVIL_IP_ADDR: 0.0.0.0
     command:
-      - -c
-      - |
-        set -e
-        if [ ! -d /data/geth ]; then
-          echo "[l1-geth] initializing genesis..."
-          geth init --datadir /data /config/l1-genesis.json
-        fi
-        exec geth \
-          --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug \
-          --http.vhosts="*" \
-          --datadir=/data \
-          --networkid=${L1_CHAIN_ID:-31337} \
-          --gcmode=archive \
-          --mine --miner.etherbase=${L1_MINER_ADDRESS:-0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266} --miner.gasprice=0 \
-          --nodiscover
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8545"
+      - --chain-id
+      - "${L1_CHAIN_ID:-31337}"
+      - --block-time
+      - "2"
+      - --base-fee
+      - "0"
+      - --gas-limit
+      - "30000000"
     healthcheck:
-      test: ["CMD-SHELL", "geth attach --datadir /data --exec 'net.version' http://localhost:8545 >/dev/null 2>&1"]
+      test: ["CMD-SHELL", "cast block-number --rpc-url http://localhost:8545 >/dev/null"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -44,9 +43,6 @@ services:
     <<: *default-security
     mem_limit: 1g
     cpus: "1.0"
-    volumes:
-      - ./data/l1-geth:/data
-      - ./config/l1-genesis.json:/config/l1-genesis.json:ro
 
   op-gate:
     image: ${OP_GATE_IMAGE:-local/op-gate:0.1.0}

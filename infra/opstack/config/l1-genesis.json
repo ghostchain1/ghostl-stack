@@ -38,7 +38,7 @@
     }
   },
   "nonce": "0x0",
-  "timestamp": "0x695d7390",
+  "timestamp": "0x695e1ca7",
   "extraData": "0x",
   "gasLimit": "0x1c9c380",
   "difficulty": "0x1",
@@ -954,5 +954,6 @@
   "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
   "baseFeePerGas": "0x3b9aca00",
   "excessBlobGas": null,
-  "blobGasUsed": null
+  "blobGasUsed": null,
+  "hash": "0x81c026475fdc7449731eae46d0d8be580cc79e26ee73bdd5c5c64250bde44098"
 }
