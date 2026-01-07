@@ -30,9 +30,9 @@
   "timestamp": "0x695e1ca7",
   "extraData": "0x",
   "gasLimit": "0x1c9c380",
-  "difficulty": "0x0",
+  "difficulty": "0x1",
   "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
   "coinbase": "0x0000000000000000000000000000000000000000",
   "alloc": {},
-  "baseFeePerGas": "0x0"
+  "baseFeePerGas": "0x3b9aca00"
 }

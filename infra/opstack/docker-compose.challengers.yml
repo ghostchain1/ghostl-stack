@@ -1,0 +1,80 @@
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-security: &default-security
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  op-challenger:
+    image: ghcr.io/ethereum-optimism/op-challenger:${OPSTACK_IMAGE_TAG:-latest}
+    user: "1000:1000"
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      op-node:
+        condition: service_healthy
+    volumes:
+      - ./data/op-challenger:/data
+      - ./config/rollup.json:/config/rollup.json:ro
+      - ./config/genesis-l2.json:/config/genesis-l2.json:ro
+      - ./config/l1-chain.json:/config/l1-chain.json:ro
+    command:
+      - op-challenger
+      - --l1-eth-rpc=${L1_RPC:-http://l1:8545}
+      - --rollup-rpc=http://op-node:9546
+      - --l2-eth-rpc=http://l2-geth:8545
+      - --game-factory-address=${L2_GAME_FACTORY_ADDRESS:-0xa79c78bcb7c9a77f962638cee8f80f39a91f2dc3}
+      - --datadir=/data
+      - --private-key=${CHALLENGER_KEY:-}
+      - --trace-type=${L2_CHALLENGER_TRACE_TYPE:-cannon}
+      - --cannon-rollup-config=/config/rollup.json
+      - --cannon-l2-genesis=/config/genesis-l2.json
+      - --l1-genesis=/config/l1-chain.json
+      - --metrics.enabled
+      - --metrics.addr=0.0.0.0
+      - --metrics.port=${L2_CHALLENGER_METRICS_PORT:-7303}
+    ports:
+      - "${L2_CHALLENGER_METRICS_HOST_PORT:-7303}:${L2_CHALLENGER_METRICS_PORT:-7303}"
+    <<: *default-security
+    mem_limit: 1g
+    cpus: "0.75"
+
+  l3-op-challenger:
+    image: ghcr.io/ethereum-optimism/op-challenger:${OPSTACK_IMAGE_TAG:-latest}
+    user: "1000:1000"
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      l3-op-node:
+        condition: service_healthy
+    volumes:
+      - ./l3/${L3_NAME:-ghostl3}/data/challenger:/data
+      - ./l3/${L3_NAME:-ghostl3}/config/rollup.json:/config/rollup.json:ro
+      - ./l3/${L3_NAME:-ghostl3}/config/genesis.json:/config/genesis.json:ro
+      - ./l3/${L3_NAME:-ghostl3}/config/l1-chain.json:/config/l1-chain.json:ro
+    command:
+      - op-challenger
+      - --l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}
+      - --rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}
+      - --l2-eth-rpc=http://l3-geth:8545
+      - --game-factory-address=${L3_GAME_FACTORY_ADDRESS:-0xa325cd8d69cd8af65569b36bc0a14808c3e1f436}
+      - --datadir=/data
+      - --private-key=${L3_CHALLENGER_KEY:-${CHALLENGER_KEY:-}}
+      - --trace-type=${L3_CHALLENGER_TRACE_TYPE:-cannon}
+      - --cannon-rollup-config=/config/rollup.json
+      - --cannon-l2-genesis=/config/genesis.json
+      - --l1-genesis=/config/l1-chain.json
+      - --metrics.enabled
+      - --metrics.addr=0.0.0.0
+      - --metrics.port=${L3_CHALLENGER_METRICS_PORT:-8303}
+    ports:
+      - "${L3_CHALLENGER_METRICS_HOST_PORT:-8303}:${L3_CHALLENGER_METRICS_PORT:-8303}"
+    <<: *default-security
+    mem_limit: 1g
+    cpus: "0.75"
