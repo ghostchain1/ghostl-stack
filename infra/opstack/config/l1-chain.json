@@ -26,13 +26,13 @@
       }
     }
   },
-  "nonce": "0x0",
-  "timestamp": "0x0",
-  "extraData": "0x00",
+  "nonce": "0x0000000000000000",
+  "timestamp": "0x695e1ca7",
+  "extraData": "0x",
   "gasLimit": "0x1c9c380",
-  "difficulty": "0x1",
+  "difficulty": "0x0",
   "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
   "coinbase": "0x0000000000000000000000000000000000000000",
   "alloc": {},
-  "baseFeePerGas": "0x3b9aca00"
+  "baseFeePerGas": "0x0"
 }

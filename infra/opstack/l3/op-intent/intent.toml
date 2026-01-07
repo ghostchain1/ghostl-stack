@@ -1,9 +1,8 @@
 configType = "custom"
-opDeployerVersion = "v0.0.0"
 l1ChainID = 901
 fundDevAccounts = false
-l1ContractsLocator = "file:///work/infra/opstack/optimism/packages/contracts-bedrock"
-l2ContractsLocator = "file:///work/infra/opstack/optimism/packages/contracts-bedrock"
+l1ContractsLocator = "file:///home/ghost/ghostl-stack/infra/opstack/optimism/packages/contracts-bedrock/forge-artifacts"
+l2ContractsLocator = "file:///home/ghost/ghostl-stack/infra/opstack/optimism/packages/contracts-bedrock/forge-artifacts"
 
 [superchainRoles]
   SuperchainProxyAdminOwner = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
@@ -12,7 +11,7 @@ l2ContractsLocator = "file:///work/infra/opstack/optimism/packages/contracts-bed
   Challenger = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 
 [[chains]]
-  id = "0x0000000000000000000000000000000000000000000000000000000000000386"
+  id = "0x0000000000000000000000000000000000000000000000000000000000001ce1"
   baseFeeVaultRecipient = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
   l1FeeVaultRecipient = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
   sequencerFeeVaultRecipient = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
@@ -33,6 +32,4 @@ l2ContractsLocator = "file:///work/infra/opstack/optimism/packages/contracts-bed
     unsafeBlockSigner = "0x39F920a6CefE557B193BB5f301bb83737A56A4C8"
     batcher = "0x32171083fD74F0423eAB1192F04125d3a8f0B1C2"
     proposer = "0x5ACEe8F117C7923748cD2bCca30335C99E4eABD9"
-    challenger = "0x41100A2f4FC313FBF0aA16976AbE7DAF298dc9AF"
-  [chains.customGasToken]
-    liquidityControllerOwner = "0x0000000000000000000000000000000000000000"
+    challenger = "0x5eeB010Fc727b32756354ebF391F8b926d264D7a"
