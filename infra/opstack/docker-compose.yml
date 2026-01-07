@@ -12,26 +12,33 @@ x-security: &default-security
 
 services:
   l1:
-    image: ghcr.io/foundry-rs/foundry:stable
+    image: ghcr.io/ethereum-optimism/op-geth:${OPSTACK_IMAGE_TAG:-devnet}
     user: "1000:1000"
-    entrypoint: ["anvil"]
-    environment:
-      ANVIL_IP_ADDR: 0.0.0.0
+    entrypoint: ["/bin/sh"]
     command:
-      - --host
-      - 0.0.0.0
-      - --port
-      - "8545"
-      - --chain-id
-      - "${L1_CHAIN_ID:-31337}"
-      - --block-time
-      - "2"
-      - --base-fee
-      - "0"
-      - --gas-limit
-      - "30000000"
+      - -c
+      - |
+        set -e
+        if [ ! -d /data/geth ]; then
+          echo "[l1-geth] initializing genesis..."
+          geth init --datadir /data /config/l1-genesis.json
+        fi
+        exec geth \
+          --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug \
+          --http.vhosts="*" \
+          --ws --ws.addr=0.0.0.0 --ws.origins="*" \
+          --datadir=/data \
+          --networkid=${L1_CHAIN_ID:-31337} \
+          --gcmode=archive
+    volumes:
+      - ./data/l1-geth:/data
+      - ./config/l1-genesis.json:/config/l1-genesis.json:ro
     healthcheck:
-      test: ["CMD-SHELL", "cast block-number --rpc-url http://localhost:8545 >/dev/null"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:8545 >/dev/null",
+        ]
       interval: 15s
       timeout: 5s
       retries: 5
