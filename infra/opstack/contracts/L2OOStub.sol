@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.17;
 
 /// @dev Minimal L2 Output Oracle stub for local/devnet use only.
 contract L2OutputOracle {
