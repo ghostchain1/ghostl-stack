@@ -12,7 +12,7 @@ x-security: &default-security
 
 services:
   op-challenger:
-    image: ghcr.io/ethereum-optimism/op-challenger:${OPSTACK_IMAGE_TAG:-latest}
+    image: ${OP_CHALLENGER_IMAGE:-local/op-challenger:${OPSTACK_IMAGE_TAG:-devnet}}
     user: "1000:1000"
     restart: unless-stopped
     logging: *default-logging
