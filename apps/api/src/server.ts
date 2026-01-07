@@ -38,22 +38,29 @@ app.use(
 );
 
 const services = createStubServices();
-const prometheus = new PrometheusClient(process.env.PROMETHEUS_URL || 'http://localhost:9090');
-const grafana = new GrafanaClient(process.env.GRAFANA_URL || 'http://localhost:3000', process.env.GRAFANA_API_KEY);
-const relayer = new RelayerClient(process.env.RELAYER_URL || 'http://localhost:7171');
-const loki = process.env.LOKI_URL ? new LokiClient(process.env.LOKI_URL) : undefined;
-const guard = process.env.GUARD_URL ? new GuardClient(process.env.GUARD_URL, process.env.GUARD_ADMIN_TOKEN) : undefined;
-const alertmanager = process.env.ALERTMANAGER_URL ? new AlertmanagerClient(process.env.ALERTMANAGER_URL) : undefined;
+const prometheusUrl = process.env.PROMETHEUS_URL || 'http://localhost:9090';
+const grafanaUrl = process.env.GRAFANA_URL || 'http://localhost:3000';
+const relayerUrl = process.env.RELAYER_URL || 'http://localhost:7171';
+const guardUrl = process.env.GUARD_URL || 'http://localhost:7070';
+const lokiUrl = process.env.LOKI_URL || 'http://localhost:3100';
+const alertmanagerUrl = process.env.ALERTMANAGER_URL || 'http://localhost:9093';
+const prometheus = new PrometheusClient(prometheusUrl);
+const grafana = new GrafanaClient(grafanaUrl, process.env.GRAFANA_API_KEY);
+const relayer = new RelayerClient(relayerUrl);
+const loki = lokiUrl ? new LokiClient(lokiUrl) : undefined;
+const guard = guardUrl ? new GuardClient(guardUrl, process.env.GUARD_ADMIN_TOKEN) : undefined;
+const alertmanager = alertmanagerUrl ? new AlertmanagerClient(alertmanagerUrl) : undefined;
 const liveServices = createLiveServices({ prometheus, grafana, relayer, loki, guard, alertmanager });
 const identityServicesPromise = createPersistentIdentityServices();
 
-const proxyJson = async <T>(url: string, fallback: T): Promise<T> => {
+const proxyJson = async <T>(url: string, fallback?: T): Promise<T> => {
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`status ${res.status}`);
     return (await res.json()) as T;
-  } catch {
-    return fallback;
+  } catch (err) {
+    if (fallback !== undefined) return fallback;
+    throw err;
   }
 };
 
@@ -76,6 +83,19 @@ const servicesBase = {
   ai: process.env.AI_SERVICE_URL || 'http://localhost:7660',
   explorerRpc: process.env.EXPLORER_RPC_URL || process.env.RPC_L2 || 'http://localhost:29545',
   swap: process.env.SWAP_SERVICE_URL || 'http://localhost:7670'
+};
+
+const fetchOk = async (url: string, timeoutMs = 2000) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    return res.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
 };
 
 app.use('/app-shell', buildAppShellRouter(services.appShell));
@@ -154,8 +174,8 @@ app.get('/api/contracts', async (_req, res) => {
 });
 
 app.get('/api/token', async (_req, res) => {
-  const supply = await proxyJson<{ supply?: string; emissions?: string }>(`${servicesBase.supply}/supply`, {});
-  const treasury = await proxyJson<{ balance?: string }>(`${servicesBase.treasury}/treasury`, {});
+  const supply = await proxyJson<{ supply?: string; emissions?: string }>(`${servicesBase.supply}/supply`, { supply: '0', emissions: '0' });
+  const treasury = await proxyJson<{ balance?: string }>(`${servicesBase.treasury}/treasury`, { balance: '0' });
   res.json({
     ok: true,
     networks: [
@@ -201,7 +221,7 @@ app.get('/api/validators', async (_req, res) => {
 
 app.get('/api/ai', async (_req, res) => {
   const data = await proxyJson<{ networks?: unknown[] }>(`${servicesBase.ai}/anomalies`, { networks: [] });
-  res.json(data);
+  res.json(data || { networks: [] });
 });
 
 app.get('/explorer/blocks', async (req, res) => {
@@ -299,7 +319,7 @@ app.get('/swap/quote', async (req, res) => {
     tokenOut
   )}&amount=${encodeURIComponent(amount)}`;
   const data = await proxyJson<{ routes?: unknown[] }>(url, { routes: [] });
-  res.json(data);
+  res.json(data.routes ? data : { routes: [] });
 });
 
 app.post('/swap/execute', async (req, res) => {
@@ -322,7 +342,7 @@ app.post('/swap/execute', async (req, res) => {
     const data = await upstream.json().catch(() => ({}));
     res.json(data);
   } catch (e) {
-    res.status(500).json({ error: (e as Error).message });
+    res.status(502).json({ error: (e as Error).message || 'swap_execute_failed' });
   }
 });
 
@@ -336,8 +356,28 @@ app.get('/integrations/webhooks', async (_req, res) => {
   res.json(data.webhooks || []);
 });
 
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok' });
+app.get('/health', async (_req, res) => {
+  const [promOk, grafanaOk, guardOk, relayerOk, lokiOk, alertmanagerOk] = await Promise.all([
+    fetchOk(`${prometheusUrl}/-/healthy`),
+    fetchOk(`${grafanaUrl}/api/health`),
+    fetchOk(`${guardUrl}/health`),
+    fetchOk(`${relayerUrl}/health`),
+    fetchOk(`${lokiUrl}/ready`),
+    fetchOk(`${alertmanagerUrl}/api/v2/status`)
+  ]);
+  const status = promOk && grafanaOk && guardOk && relayerOk ? 'ok' : 'degraded';
+  res.json({
+    status,
+    dependencies: {
+      prometheus: { url: prometheusUrl, ok: promOk },
+      grafana: { url: grafanaUrl, ok: grafanaOk },
+      guard: { url: guardUrl, ok: guardOk },
+      relayer: { url: relayerUrl, ok: relayerOk },
+      loki: { url: lokiUrl, ok: lokiOk },
+      alertmanager: { url: alertmanagerUrl, ok: alertmanagerOk }
+    },
+    upstream: servicesBase
+  });
 });
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

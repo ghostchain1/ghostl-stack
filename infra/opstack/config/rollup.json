@@ -1,7 +1,7 @@
 {
   "genesis": {
     "l1": {
-      "hash": "0xee3d6b64d82114184be0e9e67d857e6d8a8ef91c168ffffcd6cfda0918b594e5",
+      "hash": "0x02d7400ec4d587ad5b6f886780c1c33f8bccb6bace5464fc52a363ec36936bab",
       "number": 0
     },
     "l2": {
@@ -45,4 +45,3 @@
     "eip1559DenominatorCanyon": 250
   }
 }
-
