@@ -14,10 +14,10 @@
     "londonBlock": 0,
     "arrowGlacierBlock": 0,
     "grayGlacierBlock": 0,
-    "mergeNetsplitBlock": 0,
-    "shanghaiTime": 0,
-    "cancunTime": 0,
-    "terminalTotalDifficulty": 0,
+  "mergeNetsplitBlock": 0,
+  "shanghaiTime": 0,
+  "cancunTime": 0,
+  "terminalTotalDifficulty": 0,
     "depositContractAddress": "0x0000000000000000000000000000000000000000",
     "blobSchedule": {
       "cancun": {
@@ -41,7 +41,7 @@
   "timestamp": "0x695e1ca7",
   "extraData": "0x",
   "gasLimit": "0x1c9c380",
-  "difficulty": "0x1",
+  "difficulty": "0x0",
   "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
   "coinbase": "0x0000000000000000000000000000000000000000",
   "alloc": {

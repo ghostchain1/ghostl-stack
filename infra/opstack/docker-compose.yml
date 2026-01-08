@@ -24,12 +24,16 @@ services:
           geth init --datadir /data /config/l1-genesis.json
         fi
         exec geth \
-          --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug \
+          --dev --dev.period=${L1_DEV_PERIOD:-2} \
+          --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug,txpool \
           --http.vhosts="*" \
           --ws --ws.addr=0.0.0.0 --ws.origins="*" \
           --datadir=/data \
           --networkid=${L1_CHAIN_ID:-31337} \
-          --gcmode=archive
+          --gcmode=archive \
+          --mine \
+          --miner.gasprice=${L1_MINER_GASPRICE:-1} \
+          --miner.etherbase=${L1_MINER_ETHERBASE:-0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266}
     volumes:
       - ./data/l1-geth:/data
       - ./config/l1-genesis.json:/config/l1-genesis.json:ro
@@ -160,7 +164,7 @@ services:
           geth init --datadir /data /config/genesis-l2.json
         fi
         exec geth \
-          --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug \
+          --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug,txpool \
           --http.vhosts="*" \
           --ws --ws.addr=0.0.0.0 --ws.origins="*" \
           --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts="*" --authrpc.jwtsecret=/config/jwt.txt \
