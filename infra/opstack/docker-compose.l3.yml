@@ -116,7 +116,7 @@ services:
       l3-op-node:
         condition: service_healthy
     environment:
-      L2OO_ADDRESS: "${L3_L2OO_ADDRESS:-0xc54b7bf74e299fa75065b9da06044cd26cc58ffb}"
+      L2OO_ADDRESS: "${L3_L2OO_ADDRESS:-0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512}"
     command:
       - op-batcher
       - --l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}
@@ -157,7 +157,7 @@ services:
       - op-proposer
       - --l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}
       - --rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}
-      - --game-factory-address=${L3_GAME_FACTORY_ADDRESS:-0x2349B04c147099fa4d6366a0A85629F8aE0FEc96}
+      - --game-factory-address=${L3_GAME_FACTORY_ADDRESS:-0x5FbDB2315678afecb367f032d93F642f64180aa3}
       - --proposal-interval=30s
       - --game-type=0
       - --private-key=${L3_PROPOSER_KEY:-${PROPOSER_KEY}}
