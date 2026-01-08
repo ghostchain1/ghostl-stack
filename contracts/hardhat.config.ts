@@ -18,7 +18,7 @@ const POLYGON_RPC_URL = process.env.POLYGON_RPC_URL ?? "https://polygon-rpc.com"
 const POLYGON_AMOY_RPC_URL =
   process.env.POLYGON_AMOY_RPC_URL ?? "https://rpc-amoy.polygon.technology";
 const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY ?? "";
-const OP_L2_RPC = process.env.OP_L2_RPC ?? "http://localhost:29545";
+const OP_L2_RPC = process.env.OP_L2_RPC ?? "http://localhost:29547";
 const OP_L3_RPC = process.env.OP_L3_RPC ?? "http://localhost:39545";
 const OP_L2_CHAIN_ID = Number(process.env.OP_L2_CHAIN_ID ?? 901);
 const OP_L3_CHAIN_ID = Number(process.env.OP_L3_CHAIN_ID ?? 902);

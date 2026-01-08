@@ -26,6 +26,10 @@ l2ContractsLocator = "file:///home/ghost/ghostl-stack/infra/opstack/optimism/pac
   chainFeesRecipient = "0x0000000000000000000000000000000000000000"
   minBaseFee = 0
   daFootprintGasScalar = 0
+  useCustomGasToken = true
+  customGasTokenAddress = "0x8464135c8F25Da09e49BC8782676a84730C318bC"
+  gasPayingTokenName = "Ghost L3 Gas"
+  gasPayingTokenSymbol = "GL3"
   [chains.roles]
     l1ProxyAdminOwner = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
     l2ProxyAdminOwner = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
@@ -36,3 +40,6 @@ l2ContractsLocator = "file:///home/ghost/ghostl-stack/infra/opstack/optimism/pac
     challenger = "0x5eeB010Fc727b32756354ebF391F8b926d264D7a"
   [chains.customGasToken]
     liquidityControllerOwner = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+    name = "Ghost L3 Gas"
+    symbol = "GL3"
+    decimals = 18

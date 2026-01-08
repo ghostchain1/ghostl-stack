@@ -10,7 +10,7 @@ if [ -f "$OP_DIR/.env" ]; then
 fi
 
 HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:28545}"
-HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29545}"
+HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
 
 # Hardhat network config uses OP_* vars; ensure they follow the host RPCs.
 export OP_L2_RPC="${OP_L2_RPC:-$HOST_L2_RPC}"

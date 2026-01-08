@@ -23,7 +23,7 @@ source "$OP_DIR/.env"
 set +a
 
 HOST_L3_RPC="${HOST_L3_RPC:-http://localhost:39545}"
-HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29545}"
+HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
 
 echo "Ensuring L2 RPC is reachable for L3 settlement..."
 if ! curl -fsS -X POST "$HOST_L2_RPC" -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' >/dev/null 2>&1; then
