@@ -17,7 +17,7 @@ set +a
 
 HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:28545}"
 L1_CONTAINER_RPC="${L1_CONTAINER_RPC:-http://localhost:8545}"
-HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29545}"
+HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
 TAG="${OPSTACK_IMAGE_TAG:-devnet}"
 GATE_IMAGE="${OP_GATE_IMAGE:-local/op-gate:0.1.0}"
 
