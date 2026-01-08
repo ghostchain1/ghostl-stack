@@ -6,9 +6,12 @@ ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 OP_DIR="$ROOT/infra/opstack"
 L3_NAME="${L3_NAME:-ghostl3}"
 
-HOST_UID=${LOCAL_UID:-$(id -u)}
-HOST_GID=${LOCAL_GID:-$(id -g)}
-echo "Reclaiming data ownership (UID $HOST_UID GID $HOST_GID)..."
+# Default ownership for data dirs; can override via OWNER_USER/OWNER_GROUP.
+OWNER_USER="${OWNER_USER:-ghost}"
+OWNER_GROUP="${OWNER_GROUP:-ghost}"
+HOST_UID=${LOCAL_UID:-$(id -u "$OWNER_USER" 2>/dev/null || echo 1000)}
+HOST_GID=${LOCAL_GID:-$(id -g "$OWNER_GROUP" 2>/dev/null || echo 1000)}
+echo "Reclaiming data ownership as ${OWNER_USER}:${OWNER_GROUP} (UID $HOST_UID GID $HOST_GID)..."
 
 chown_data_dir() {
   local target="$1"
