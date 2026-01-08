@@ -1,0 +1,69 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import "./ERC20.sol";
+
+contract GhostGasTokenBase is ERC20 {
+    address public owner;
+    mapping(address => bool) public minters;
+
+    event OwnerChanged(address indexed owner);
+    event MinterChanged(address indexed account, bool allowed);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "not owner");
+        _;
+    }
+
+    modifier onlyMinter() {
+        require(minters[msg.sender], "not minter");
+        _;
+    }
+
+    constructor(
+        string memory name_,
+        string memory symbol_,
+        uint8 decimals_,
+        uint256 initialSupply
+    ) ERC20(name_, symbol_, decimals_) {
+        owner = msg.sender;
+        minters[msg.sender] = true;
+        if (initialSupply > 0) {
+            _mint(msg.sender, initialSupply);
+        }
+    }
+
+    function setOwner(address newOwner) external onlyOwner {
+        owner = newOwner;
+        emit OwnerChanged(newOwner);
+    }
+
+    function setMinter(address account, bool allowed) external onlyOwner {
+        minters[account] = allowed;
+        emit MinterChanged(account, allowed);
+    }
+
+    function mint(address to, uint256 amount) external onlyMinter {
+        _mint(to, amount);
+    }
+
+    function burn(uint256 amount) external {
+        _burn(msg.sender, amount);
+    }
+
+    function burnFrom(address from, uint256 amount) external onlyMinter {
+        _burn(from, amount);
+    }
+}
+
+contract GhostGasTokenL2 is GhostGasTokenBase {
+    constructor(uint256 initialSupply)
+        GhostGasTokenBase("GhostL2 Gas Token", "GL2GAS", 18, initialSupply)
+    {}
+}
+
+contract GhostGasTokenL3 is GhostGasTokenBase {
+    constructor(uint256 initialSupply)
+        GhostGasTokenBase("GhostL3 Gas Token", "GL3GAS", 18, initialSupply)
+    {}
+}
