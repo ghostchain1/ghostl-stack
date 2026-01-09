@@ -24,6 +24,25 @@ services:
       - ./config/rollup.json:/config/rollup.json:ro
       - ./config/genesis-l2.json:/config/genesis-l2.json:ro
       - ./config/l1-chain.json:/config/l1-chain.json:ro
+      - ${OP_CHALLENGER_ASSETS_DIR:-./optimism/op-program/bin}:/assets/op-program:ro
+      - ./optimism/cannon/bin:/assets/cannon:ro
+    environment:
+      OP_CHALLENGER_L1_ETH_RPC: ${L1_RPC:-http://l1:8545}
+      OP_CHALLENGER_ROLLUP_RPC: http://op-node:9546
+      OP_CHALLENGER_L2_ETH_RPC: http://l2-geth:8545
+      OP_CHALLENGER_GAME_FACTORY_ADDRESS: ${L2_GAME_FACTORY_ADDRESS:-0xa79c78bcb7c9a77f962638cee8f80f39a91f2dc3}
+      OP_CHALLENGER_PRIVATE_KEY: ${CHALLENGER_KEY:-}
+      OP_CHALLENGER_DATADIR: /data
+      OP_CHALLENGER_L1_BEACON: ${L1_BEACON_RPC:-${L1_RPC:-http://l1:8545}}
+      OP_CHALLENGER_TRACE_TYPE: ${L2_CHALLENGER_TRACE_TYPE:-cannon}
+      OP_CHALLENGER_CANNON_ROLLUP_CONFIG: /config/rollup.json
+      OP_CHALLENGER_CANNON_L2_GENESIS: /config/genesis-l2.json
+      OP_CHALLENGER_L1_GENESIS: /config/l1-chain.json
+      OP_CHALLENGER_CANNON_BIN: ${OP_CHALLENGER_CANNON_BIN:-/assets/cannon/cannon}
+      OP_CHALLENGER_CANNON_SERVER: ${OP_CHALLENGER_CANNON_SERVER:-/assets/op-program/op-program}
+      OP_CHALLENGER_CANNON_PRESTATE: ${OP_CHALLENGER_CANNON_PRESTATE:-/assets/op-program/prestate-mt64.bin.gz}
+      OP_CHALLENGER_CANNON_KONA_SERVER: ${OP_CHALLENGER_CANNON_KONA_SERVER:-/usr/local/bin/kona-host}
+      OP_CHALLENGER_CANNON_KONA_PRESTATE: ${OP_CHALLENGER_CANNON_KONA_PRESTATE:-/assets/op-program/prestate-mt64.bin.gz}
     command:
       - op-challenger
       - --l1-eth-rpc=${L1_RPC:-http://l1:8545}
@@ -58,6 +77,25 @@ services:
       - ./l3/${L3_NAME:-ghostl3}/config/rollup.json:/config/rollup.json:ro
       - ./l3/${L3_NAME:-ghostl3}/config/genesis.json:/config/genesis.json:ro
       - ./l3/${L3_NAME:-ghostl3}/config/l1-chain.json:/config/l1-chain.json:ro
+      - ${OP_CHALLENGER_ASSETS_DIR:-./optimism/op-program/bin}:/assets/op-program:ro
+      - ./optimism/cannon/bin:/assets/cannon:ro
+    environment:
+      OP_CHALLENGER_L1_ETH_RPC: ${L3_L1_RPC:-http://l2-geth:8545}
+      OP_CHALLENGER_ROLLUP_RPC: http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}
+      OP_CHALLENGER_L2_ETH_RPC: http://l3-geth:8545
+      OP_CHALLENGER_GAME_FACTORY_ADDRESS: ${L3_GAME_FACTORY_ADDRESS:-0x5FbDB2315678afecb367f032d93F642f64180aa3}
+      OP_CHALLENGER_PRIVATE_KEY: ${L3_CHALLENGER_KEY:-${CHALLENGER_KEY:-}}
+      OP_CHALLENGER_DATADIR: /data
+      OP_CHALLENGER_L1_BEACON: ${L3_L1_BEACON_RPC:-${L3_L1_RPC:-http://l2-geth:8545}}
+      OP_CHALLENGER_TRACE_TYPE: ${L3_CHALLENGER_TRACE_TYPE:-cannon}
+      OP_CHALLENGER_CANNON_ROLLUP_CONFIG: /config/rollup.json
+      OP_CHALLENGER_CANNON_L2_GENESIS: /config/genesis.json
+      OP_CHALLENGER_L1_GENESIS: /config/l1-chain.json
+      OP_CHALLENGER_CANNON_BIN: ${OP_CHALLENGER_CANNON_BIN:-/assets/cannon/cannon}
+      OP_CHALLENGER_CANNON_SERVER: ${OP_CHALLENGER_CANNON_SERVER:-/assets/op-program/op-program}
+      OP_CHALLENGER_CANNON_PRESTATE: ${OP_CHALLENGER_CANNON_PRESTATE:-/assets/op-program/prestate-mt64.bin.gz}
+      OP_CHALLENGER_CANNON_KONA_SERVER: ${OP_CHALLENGER_CANNON_KONA_SERVER:-/usr/local/bin/kona-host}
+      OP_CHALLENGER_CANNON_KONA_PRESTATE: ${OP_CHALLENGER_CANNON_KONA_PRESTATE:-/assets/op-program/prestate-mt64.bin.gz}
     command:
       - op-challenger
       - --l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}
