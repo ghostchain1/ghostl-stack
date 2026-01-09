@@ -24,11 +24,15 @@ set +a
 
 HOST_L3_RPC="${HOST_L3_RPC:-http://localhost:39545}"
 HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
+L2_CONTAINER_RPC="${L2_CONTAINER_RPC:-http://localhost:8545}"
+L3_CONTAINER_RPC="${L3_CONTAINER_RPC:-http://localhost:8545}"
 
 echo "Ensuring L2 RPC is reachable for L3 settlement..."
 if ! curl -fsS -X POST "$HOST_L2_RPC" -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' >/dev/null 2>&1; then
-  echo "L2 RPC $HOST_L2_RPC is not reachable; start L1/L2 first (infra/scripts/opstack/up-l2.sh)." >&2
-  exit 1
+  if ! docker compose -f "$OP_DIR/docker-compose.yml" --env-file "$OP_DIR/.env" exec -T l2-geth wget -qO- --header='content-type: application/json' --post-data='{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "$L2_CONTAINER_RPC" >/dev/null 2>&1; then
+    echo "L2 RPC $HOST_L2_RPC is not reachable; start L1/L2 first (infra/scripts/opstack/up-l2.sh)." >&2
+    exit 1
+  fi
 fi
 
 echo "Starting OP Stack L3 ($L3_NAME)..."
@@ -46,6 +50,10 @@ echo "Waiting for L3 RPC..."
 for i in $(seq 1 60); do
   if curl -fsS -X POST "$HOST_L3_RPC" -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' >/dev/null 2>&1; then
     echo "OK: $HOST_L3_RPC"
+    break
+  fi
+  if docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" exec -T l3-geth wget -qO- --header='content-type: application/json' --post-data='{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "$L3_CONTAINER_RPC" >/dev/null 2>&1; then
+    echo "OK (container RPC): $L3_CONTAINER_RPC"
     break
   fi
   sleep 1
