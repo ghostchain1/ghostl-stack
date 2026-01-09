@@ -18,6 +18,7 @@ set +a
 HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:28545}"
 L1_CONTAINER_RPC="${L1_CONTAINER_RPC:-http://localhost:8545}"
 HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
+L2_CONTAINER_RPC="${L2_CONTAINER_RPC:-http://localhost:8545}"
 TAG="${OPSTACK_IMAGE_TAG:-devnet}"
 GATE_IMAGE="${OP_GATE_IMAGE:-local/op-gate:0.1.0}"
 
@@ -50,6 +51,10 @@ echo "Waiting for L1 RPC..."
 for i in $(seq 1 60); do
   if curl -fsS -X POST "$HOST_L1_RPC" -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' >/dev/null 2>&1; then
     echo "OK: $HOST_L1_RPC"
+    break
+  fi
+  if docker compose "${COMPOSE_ENV_ARGS[@]}" exec -T l1 wget -qO- --header='content-type: application/json' --post-data='{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "$L1_CONTAINER_RPC" >/dev/null 2>&1; then
+    echo "OK (container RPC): $L1_CONTAINER_RPC"
     break
   fi
   sleep 1
@@ -116,6 +121,10 @@ echo "Waiting for L2 RPC..."
 for i in $(seq 1 60); do
   if curl -fsS -X POST "$HOST_L2_RPC" -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' >/dev/null 2>&1; then
     echo "OK: $HOST_L2_RPC"
+    break
+  fi
+  if docker compose "${COMPOSE_ENV_ARGS[@]}" exec -T l2-geth wget -qO- --header='content-type: application/json' --post-data='{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "$L2_CONTAINER_RPC" >/dev/null 2>&1; then
+    echo "OK (container RPC): $L2_CONTAINER_RPC"
     break
   fi
   sleep 1
