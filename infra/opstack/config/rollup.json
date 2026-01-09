@@ -1,7 +1,7 @@
 {
   "genesis": {
     "l1": {
-      "hash": "0xa308b8712a69cc4f6532346450dbaa0b7a3d1e94315fd4a0e150a938435ece16",
+      "hash": "0xd560b1af1d2a5d590eecd7d2fc1297aae3945c2d6b4a8fb0e1e1bf85a6c69f8f",
       "number": 0
     },
     "l2": {
@@ -24,7 +24,7 @@
   "max_sequencer_drift": 600,
   "seq_window_size": 3600,
   "channel_timeout": 300,
-  "l1_chain_id": 31337,
+  "l1_chain_id": 1337,
   "l2_chain_id": 901,
   "regolith_time": 0,
   "canyon_time": 0,
