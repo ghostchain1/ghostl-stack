@@ -18,15 +18,31 @@ services:
     - /bin/sh
     command:
     - -c
-    - "set -e\nif [ ! -d /data/geth ]; then\n  echo \"[l1-geth] initializing genesis...\"\
-      \n  geth init --datadir /data /config/l1-genesis.json\nfi\nexec geth \\\n  --dev\
-      \ --dev.period=${L1_DEV_PERIOD:-2} \\\n  --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug,txpool\
-      \ \\\n  --http.vhosts=\"*\" \\\n  --ws --ws.addr=0.0.0.0 --ws.origins=\"*\"\
-      \ \\\n  --datadir=/data \\\n  --networkid=${L1_CHAIN_ID:-31337} \\\n  --gcmode=archive\
-      \ \\\n  --mine \\\n  --miner.gasprice=${L1_MINER_GASPRICE:-1} \\\n  --miner.etherbase=${L1_MINER_ETHERBASE:-0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266}\n"
+    - |
+      set -e
+      if [ ! -d /data/geth ]; then
+        echo "[l1-geth] initializing genesis..."
+        geth init --datadir /data /config/l1-genesis.json
+      fi
+      exec geth \
+        --dev --dev.period=${L1_DEV_PERIOD:-2} \
+        --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug,txpool,personal \
+        --http.vhosts="*" \
+        --rpc.allow-unprotected-txs \
+        --ws --ws.addr=0.0.0.0 --ws.origins="*" \
+        --datadir=/data \
+        --networkid=${L1_CHAIN_ID:-31337} \
+        --gcmode=archive \
+        --mine \
+        --miner.gasprice=${L1_MINER_GASPRICE:-1} \
+        --miner.etherbase=${L1_MINER_ETHERBASE:-0x7964ef0fbd1306461bab9ad05118dbc4248d0546} \
+        --allow-insecure-unlock \
+        --unlock 0x71562b71999873db5b286df957af199ec94617f7,0x7964ef0fbd1306461bab9ad05118dbc4248d0546 \
+        --password /config/l1-keystore-password
     volumes:
     - ./data/l1-geth-new:/data
     - ./config/l1-genesis.json:/config/l1-genesis.json:ro
+    - ./config/l1-keystore-password:/config/l1-keystore-password:ro
     healthcheck:
       test:
       - CMD-SHELL
