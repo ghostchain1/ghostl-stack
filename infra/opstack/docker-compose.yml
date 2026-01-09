@@ -13,7 +13,7 @@ services:
     cap_drop: *id001
     security_opt: *id002
     image: ghcr.io/ethereum-optimism/op-geth:${OPSTACK_IMAGE_TAG:-devnet}
-    user: 1000:1000
+    user: "0:0"
     entrypoint:
     - /bin/sh
     command:
@@ -32,6 +32,7 @@ services:
         --datadir=/data \
         --networkid=${L1_CHAIN_ID:-1337} \
         --gcmode=archive \
+        --fakepow \
         --mine \
         --miner.gasprice=${L1_MINER_GASPRICE:-1} \
         --miner.etherbase=${L1_MINER_ETHERBASE:-0x7964ef0fbd1306461bab9ad05118dbc4248d0546}
@@ -49,7 +50,7 @@ services:
       retries: 5
       start_period: 10s
     ports:
-    - 28545:8545
+    - 18545:8545
     restart: unless-stopped
     logging: *id003
     mem_limit: 1g
