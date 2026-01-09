@@ -38,6 +38,10 @@ chains/**/data/
 infra/opstack/l3/ghostsample/data/
 infra/opstack/data/l2-geth/
 infra/opstack/data/l1-geth/
+infra/opstack/data/l2-geth-new/
+infra/opstack/data/l1-geth-new/
+infra/opstack/data/op-node/
+infra/opstack/data/op-sequencer/
 infra/opstack/l3/ghostl3/data/
 /infra/opstack/optimism/
 apps/api/data/
