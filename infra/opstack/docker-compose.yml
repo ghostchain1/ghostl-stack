@@ -1,108 +1,99 @@
-x-logging: &default-logging
-  driver: "json-file"
+x-logging: &id003
+  driver: json-file
   options:
-    max-size: "10m"
-    max-file: "3"
-
-x-security: &default-security
-  cap_drop:
-    - ALL
-  security_opt:
-    - no-new-privileges:true
-
+    max-size: 10m
+    max-file: '3'
+x-security:
+  cap_drop: &id001
+  - ALL
+  security_opt: &id002
+  - no-new-privileges:true
 services:
   l1:
+    cap_drop: *id001
+    security_opt: *id002
     image: ghcr.io/ethereum-optimism/op-geth:${OPSTACK_IMAGE_TAG:-devnet}
-    user: "1000:1000"
-    entrypoint: ["/bin/sh"]
+    user: 1000:1000
+    entrypoint:
+    - /bin/sh
     command:
-      - -c
-      - |
-        set -e
-        if [ ! -d /data/geth ]; then
-          echo "[l1-geth] initializing genesis..."
-          geth init --datadir /data /config/l1-genesis.json
-        fi
-        exec geth \
-          --dev --dev.period=${L1_DEV_PERIOD:-2} \
-          --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug,txpool \
-          --http.vhosts="*" \
-          --ws --ws.addr=0.0.0.0 --ws.origins="*" \
-          --datadir=/data \
-          --networkid=${L1_CHAIN_ID:-31337} \
-          --gcmode=archive \
-          --mine \
-          --miner.gasprice=${L1_MINER_GASPRICE:-1} \
-          --miner.etherbase=${L1_MINER_ETHERBASE:-0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266}
+    - -c
+    - "set -e\nif [ ! -d /data/geth ]; then\n  echo \"[l1-geth] initializing genesis...\"\
+      \n  geth init --datadir /data /config/l1-genesis.json\nfi\nexec geth \\\n  --dev\
+      \ --dev.period=${L1_DEV_PERIOD:-2} \\\n  --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug,txpool\
+      \ \\\n  --http.vhosts=\"*\" \\\n  --ws --ws.addr=0.0.0.0 --ws.origins=\"*\"\
+      \ \\\n  --datadir=/data \\\n  --networkid=${L1_CHAIN_ID:-31337} \\\n  --gcmode=archive\
+      \ \\\n  --mine \\\n  --miner.gasprice=${L1_MINER_GASPRICE:-1} \\\n  --miner.etherbase=${L1_MINER_ETHERBASE:-0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266}\n"
     volumes:
-      - ./data/l1-geth:/data
-      - ./config/l1-genesis.json:/config/l1-genesis.json:ro
+    - ./data/l1-geth-new:/data
+    - ./config/l1-genesis.json:/config/l1-genesis.json:ro
     healthcheck:
       test:
-        [
-          "CMD-SHELL",
-          "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:8545 >/dev/null",
-        ]
+      - CMD-SHELL
+      - 'wget -qO- --header=''Content-Type: application/json'' --post-data=''{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}''
+        http://localhost:8545 >/dev/null'
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 10s
     ports:
-      - "28545:8545"
+    - 28545:8545
     restart: unless-stopped
-    logging: *default-logging
-    <<: *default-security
+    logging: *id003
     mem_limit: 1g
-    cpus: "1.0"
-
+    cpus: '1.0'
   op-gate:
+    cap_drop: *id001
+    security_opt: *id002
     image: ${OP_GATE_IMAGE:-local/op-gate:0.1.0}
     build:
       context: ./gate
       dockerfile: Dockerfile
       args:
         NODE_IMAGE: ${OP_STACK_BASE_IMAGE:-node:22-alpine3.19}
-    user: "1000:1000"
+    user: 1000:1000
     working_dir: /app
     restart: unless-stopped
-    logging: *default-logging
+    logging: *id003
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+    - host.docker.internal:host-gateway
     depends_on:
       l1:
         condition: service_healthy
     environment:
       NODE_ENV: production
-      PORT: "${GATE_PORT:-8545}"
-      UPSTREAM_RPC: "${GATE_UPSTREAM_RPC:-http://l2-geth:8545}"
-      STATE_DIR: "/state"
-      ADMIN_TOKEN: "${GATE_ADMIN_TOKEN:-}"
-      ALLOW_INSECURE_ADMIN: "${GATE_ALLOW_INSECURE_ADMIN:-0}"
-      DEFAULT_DELAY_SECONDS: "${GATE_DEFAULT_DELAY_SECONDS:-0}"
-      GUARD_URL: "${GATE_GUARD_URL:-http://ghost-guard:7070}"
-      BATCH_SENDER_ADDRESS: "${BATCH_SENDER_ADDRESS:-}"
-      PROPOSER_ADDRESS: "${PROPOSER_ADDRESS:-}"
+      PORT: ${GATE_PORT:-8545}
+      UPSTREAM_RPC: ${GATE_UPSTREAM_RPC:-http://l2-geth:8545}
+      STATE_DIR: /state
+      ADMIN_TOKEN: ${GATE_ADMIN_TOKEN:-}
+      ALLOW_INSECURE_ADMIN: ${GATE_ALLOW_INSECURE_ADMIN:-0}
+      DEFAULT_DELAY_SECONDS: ${GATE_DEFAULT_DELAY_SECONDS:-0}
+      GUARD_URL: ${GATE_GUARD_URL:-http://ghost-guard:7070}
+      BATCH_SENDER_ADDRESS: ${BATCH_SENDER_ADDRESS:-}
+      PROPOSER_ADDRESS: ${PROPOSER_ADDRESS:-}
     volumes:
-      - op_gate_state:/state
+    - op_gate_state:/state
     ports:
-      - "28546:8545"
+    - 28546:8545
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8545/gate/status >/dev/null"]
+      test:
+      - CMD-SHELL
+      - curl -sf http://localhost:8545/gate/status >/dev/null
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 15s
-    <<: *default-security
     mem_limit: 512m
-    cpus: "0.5"
-
+    cpus: '0.5'
   ghost-guard:
+    cap_drop: *id001
+    security_opt: *id002
     build:
       context: ../../services/ghost-guard
       dockerfile: Dockerfile
     image: local/ghost-guard:${OPSTACK_IMAGE_TAG:-devnet}
     restart: unless-stopped
-    logging: *default-logging
+    logging: *id003
     depends_on:
       l2-geth:
         condition: service_healthy
@@ -125,156 +116,160 @@ services:
       RATE_LIMIT_WINDOW_MS: ${GUARD_RATE_LIMIT_WINDOW_MS:-1000}
       RATE_LIMIT_MAX: ${GUARD_RATE_LIMIT_MAX:-20}
     volumes:
-      - ./data/guard:/state
+    - ./data/guard:/state
     ports:
-      - "7070:7070"
+    - 7070:7070
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:7070/health >/dev/null"]
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:7070/health >/dev/null
       interval: 20s
       timeout: 10s
       retries: 6
       start_period: 20s
-    <<: *default-security
     mem_limit: 512m
-    cpus: "0.5"
-
+    cpus: '0.5'
   l2-geth:
+    cap_drop: *id001
+    security_opt: *id002
     image: ghcr.io/ethereum-optimism/op-geth:${OPSTACK_IMAGE_TAG:-latest}
-    user: "1000:1000"
+    user: 1000:1000
     restart: unless-stopped
-    logging: *default-logging
+    logging: *id003
     depends_on:
       l1:
         condition: service_healthy
       op-gate:
         condition: service_healthy
     ports:
-      - "29545:8545"
+    - 29545:8545
     volumes:
-      - ./data/l2-geth:/data
-      - ./config/jwt.txt:/config/jwt.txt:ro
-      - ./config/genesis-l2.json:/config/genesis-l2.json:ro
-    entrypoint: ["/bin/sh"]
+    - ./data/l2-geth-new:/data
+    - ./config/jwt.txt:/config/jwt.txt:ro
+    - ./config/genesis-l2.json:/config/genesis-l2.json:ro
+    entrypoint:
+    - /bin/sh
     command:
-      - -c
-      - |
-        set -e
-        if [ ! -d /data/geth ]; then
-          echo "[l2-geth] initializing genesis..."
-          geth init --datadir /data /config/genesis-l2.json
-        fi
-        exec geth \
-          --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug,txpool \
-          --http.vhosts="*" \
-          --ws --ws.addr=0.0.0.0 --ws.origins="*" \
-          --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts="*" --authrpc.jwtsecret=/config/jwt.txt \
-          --datadir=/data \
-          --networkid=${L2_CHAIN_ID:-901} \
-          --gcmode=archive \
-          --rollup.disabletxpoolgossip=true
+    - -c
+    - "set -e\nif [ ! -d /data/geth ]; then\n  echo \"[l2-geth] initializing genesis...\"\
+      \n  geth init --datadir /data /config/genesis-l2.json\nfi\nexec geth \\\n  --http\
+      \ --http.addr=0.0.0.0 --http.api=eth,net,web3,debug,txpool \\\n  --http.vhosts=\"\
+      *\" \\\n  --ws --ws.addr=0.0.0.0 --ws.origins=\"*\" \\\n  --authrpc.addr=0.0.0.0\
+      \ --authrpc.port=8551 --authrpc.vhosts=\"*\" --authrpc.jwtsecret=/config/jwt.txt\
+      \ \\\n  --datadir=/data \\\n  --networkid=${L2_CHAIN_ID:-901} \\\n  --gcmode=archive\
+      \ \\\n  --rollup.disabletxpoolgossip=true\n"
     healthcheck:
-      test: ["CMD-SHELL", "geth attach --datadir /data --exec 'net.version' http://localhost:8545 >/dev/null 2>&1"]
+      test:
+      - CMD-SHELL
+      - geth attach --datadir /data --exec 'net.version' http://localhost:8545 >/dev/null
+        2>&1
       interval: 20s
       timeout: 10s
       retries: 6
       start_period: 25s
-    <<: *default-security
     mem_limit: 4g
-    cpus: "2.0"
-
+    cpus: '2.0'
   op-node:
+    cap_drop: *id001
+    security_opt: *id002
     image: ghcr.io/ethereum-optimism/op-node:${OPSTACK_IMAGE_TAG:-latest}
-    user: "1000:1000"
+    user: 1000:1000
     restart: unless-stopped
-    logging: *default-logging
+    logging: *id003
     depends_on:
       l1:
         condition: service_healthy
       l2-geth:
         condition: service_healthy
     volumes:
-      - ./data/op-node:/data
-      - ./config/rollup.json:/config/rollup.json:ro
-      - ./config/jwt.txt:/config/jwt.txt:ro
-      - ./config/l1-chain.json:/config/l1-chain.json:ro
+    - ./data/op-node:/data
+    - ./config/rollup.json:/config/rollup.json:ro
+    - ./config/jwt.txt:/config/jwt.txt:ro
+    - ./config/l1-chain.json:/config/l1-chain.json:ro
     environment:
-      OP_NODE_L1_BEACON_IGNORE: "1"
-      OP_NODE_SEQUENCER_ENABLED: "1"
+      OP_NODE_L1_BEACON_IGNORE: '1'
+      OP_NODE_SEQUENCER_ENABLED: '1'
     command:
-      - op-node
-      - --l1=${L1_RPC:-http://l1:8545}
-      - --l2=http://l2-geth:8551
-      - --l2.jwt-secret=/config/jwt.txt
-      - --rollup.config=/config/rollup.json
-      - --rollup.l1-chain-config=/config/l1-chain.json
-      - --rpc.addr=0.0.0.0
-      - --rpc.port=9546
-      - --l1.rpckind=basic
-      - --p2p.disable
-      - --l1.beacon.ignore
-      - --sequencer.enabled
-      - --sequencer.l1-confs=0
-      - --l1.runtime-config-reload-interval=0
-      - --metrics.enabled
-      - --metrics.addr=0.0.0.0
-      - --metrics.port=7300
+    - op-node
+    - --l1=${L1_RPC:-http://l1:8545}
+    - --l2=http://l2-geth:8551
+    - --l2.jwt-secret=/config/jwt.txt
+    - --rollup.config=/config/rollup.json
+    - --rollup.l1-chain-config=/config/l1-chain.json
+    - --rpc.addr=0.0.0.0
+    - --rpc.port=9546
+    - --l1.rpckind=basic
+    - --p2p.disable
+    - --l1.beacon.ignore
+    - --sequencer.enabled
+    - --sequencer.l1-confs=0
+    - --l1.runtime-config-reload-interval=0
+    - --metrics.enabled
+    - --metrics.addr=0.0.0.0
+    - --metrics.port=7300
     ports:
-      - "9546:9546"
-      - "7300:7300"
+    - 9546:9546
+    - 7300:7300
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"optimism_syncStatus\",\"params\":[]}' http://localhost:9546 >/dev/null"]
+      test:
+      - CMD-SHELL
+      - 'wget -qO- --header=''Content-Type: application/json'' --post-data=''{"jsonrpc":"2.0","id":1,"method":"optimism_syncStatus","params":[]}''
+        http://localhost:9546 >/dev/null'
       interval: 20s
       timeout: 10s
       retries: 6
       start_period: 25s
-    <<: *default-security
     mem_limit: 2g
-    cpus: "1.5"
-
+    cpus: '1.5'
   op-batcher:
+    cap_drop: *id001
+    security_opt: *id002
     image: ghcr.io/ethereum-optimism/op-batcher:${OPSTACK_IMAGE_TAG:-latest}
-    user: "1000:1000"
+    user: 1000:1000
     restart: unless-stopped
-    logging: *default-logging
+    logging: *id003
     depends_on:
       op-node:
         condition: service_healthy
       op-gate:
         condition: service_healthy
     environment:
-      L2OO_ADDRESS: "${L2OO_ADDRESS:-0x01477FA1415F801F40245A71C558b198ff154F0f}"
+      L2OO_ADDRESS: ${L2OO_ADDRESS:-0x01477FA1415F801F40245A71C558b198ff154F0f}
     command:
-      - op-batcher
-      - --l1-eth-rpc=http://l1:8545
-      - --l2-eth-rpc=http://l2-geth:8545
-      - --rollup-rpc=http://op-node:9546
-      - --private-key=${BATCHER_KEY}
-      - --rpc.addr=0.0.0.0
-      - --rpc.port=8551
-      - --throttle.unsafe-da-bytes-lower-threshold=0
-      - --metrics.enabled
-      - --metrics.addr=0.0.0.0
-      - --metrics.port=7301
+    - op-batcher
+    - --l1-eth-rpc=http://l1:8545
+    - --l2-eth-rpc=http://l2-geth:8545
+    - --rollup-rpc=http://op-node:9546
+    - --private-key=${BATCHER_KEY}
+    - --rpc.addr=0.0.0.0
+    - --rpc.port=8551
+    - --throttle.unsafe-da-bytes-lower-threshold=0
+    - --metrics.enabled
+    - --metrics.addr=0.0.0.0
+    - --metrics.port=7301
     volumes:
-      - ./config/rollup.json:/config/rollup.json:ro
+    - ./config/rollup.json:/config/rollup.json:ro
     ports:
-      - "8551:8551"
-      - "7301:7301"
+    - 8551:8551
+    - 7301:7301
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:8551 >/dev/null"]
+      test:
+      - CMD-SHELL
+      - 'wget -qO- --header=''Content-Type: application/json'' --post-data=''{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}''
+        http://localhost:8551 >/dev/null'
       interval: 20s
       timeout: 10s
       retries: 6
       start_period: 25s
-    <<: *default-security
     mem_limit: 1g
-    cpus: "1.0"
-
+    cpus: '1.0'
   op-proposer:
+    cap_drop: *id001
+    security_opt: *id002
     image: ghcr.io/ethereum-optimism/op-proposer:${OPSTACK_IMAGE_TAG:-latest}
-    user: "1000:1000"
+    user: 1000:1000
     restart: unless-stopped
-    logging: *default-logging
+    logging: *id003
     depends_on:
       op-node:
         condition: service_healthy
@@ -284,125 +279,113 @@ services:
       L2OO_ADDRESS: ${L2OO_ADDRESS:-0x01477FA1415F801F40245A71C558b198ff154F0f}
       PROPOSER_KEY: ${PROPOSER_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
     command:
-      - op-proposer
-      # Route through op-gate (guard-aware) and avoid the invalid comma-separated RPC URL.
-      - --l1-eth-rpc=http://l1:8545
-      - --rollup-rpc=http://op-node:9546
-      - --l2oo-address=${L2OO_ADDRESS:-0x01477FA1415F801F40245A71C558b198ff154F0f}
-      - --private-key=${PROPOSER_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
-      - --allow-non-finalized
-      - --txmgr.send-timeout=30s
-      - --txmgr.retry-interval=3s
-      - --rpc.addr=0.0.0.0
-      - --rpc.port=8560
-      - --metrics.enabled
-      - --metrics.addr=0.0.0.0
-      - --metrics.port=7302
+    - op-proposer
+    - --l1-eth-rpc=http://l1:8545
+    - --rollup-rpc=http://op-node:9546
+    - --l2oo-address=${L2OO_ADDRESS:-0x01477FA1415F801F40245A71C558b198ff154F0f}
+    - --private-key=${PROPOSER_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
+    - --allow-non-finalized
+    - --txmgr.send-timeout=30s
+    - --txmgr.retry-interval=3s
+    - --rpc.addr=0.0.0.0
+    - --rpc.port=8560
+    - --metrics.enabled
+    - --metrics.addr=0.0.0.0
+    - --metrics.port=7302
     volumes:
-      - ./config/rollup.json:/config/rollup.json:ro
+    - ./config/rollup.json:/config/rollup.json:ro
     ports:
-      - "8560:8560"
-      - "7302:7302"
+    - 8560:8560
+    - 7302:7302
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:7302/metrics >/dev/null"]
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:7302/metrics >/dev/null
       interval: 20s
       timeout: 10s
       retries: 6
       start_period: 25s
-    <<: *default-security
     mem_limit: 1g
-    cpus: "1.0"
-
-  # Challenger requires Kona/cannon base images; leave optional for now.
-  # op-challenger:
-  #   image: local/op-challenger:latest
-  #   restart: unless-stopped
-  #   logging: *default-logging
-  #   depends_on:
-  #     - op-node
-  #   command:
-  #     - op-challenger
-  #     - --l2=http://l2-geth:9545
-  #     - --l1=${L1_RPC:-http://l1:8545}
-  #     - --rollup.config=/config/rollup.json
-  #     - --rpc.addr=0.0.0.0
-  #     - --rpc.port=8561
-  #     - --private-key=${CHALLENGER_KEY}
-  #   volumes:
-  #     - ./config/rollup.json:/config/rollup.json:ro
-  #   ports:
-  #     - "8561:8561"
-
+    cpus: '1.0'
   prometheus:
+    cap_drop: *id001
+    security_opt: *id002
     image: ${PROMETHEUS_IMAGE:-prom/prometheus@sha256:075b1ba2c4ebb04bc3a6ab86c06ec8d8099f8fda1c96ef6d104d9bb1def1d8bc}
     restart: unless-stopped
-    logging: *default-logging
+    logging: *id003
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+    - host.docker.internal:host-gateway
     volumes:
-      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
+    - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    - prometheus_data:/prometheus
     command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --storage.tsdb.path=/prometheus
+    - --config.file=/etc/prometheus/prometheus.yml
+    - --storage.tsdb.path=/prometheus
     ports:
-      - "9090:9090"
+    - 9090:9090
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/-/healthy >/dev/null"]
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:9090/-/healthy >/dev/null
       interval: 15s
       timeout: 5s
       retries: 6
       start_period: 15s
-    <<: *default-security
     mem_limit: 512m
-    cpus: "0.5"
-
+    cpus: '0.5'
   alertmanager:
+    cap_drop: *id001
+    security_opt: *id002
     image: ${ALERTMANAGER_IMAGE:-prom/alertmanager:v0.27.0}
     restart: unless-stopped
-    logging: *default-logging
+    logging: *id003
     command:
-      - --config.file=/etc/alertmanager/alertmanager.yml
-      - --storage.path=/alertmanager
+    - --config.file=/etc/alertmanager/alertmanager.yml
+    - --storage.path=/alertmanager
     volumes:
-      - ./observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-      - alertmanager_data:/alertmanager
+    - ./observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    - alertmanager_data:/alertmanager
     ports:
-      - "9093:9093"
+    - 9093:9093
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:9093/api/v2/status >/dev/null"]
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:9093/api/v2/status >/dev/null
       interval: 20s
       timeout: 5s
       retries: 6
       start_period: 15s
-    <<: *default-security
     mem_limit: 256m
-    cpus: "0.25"
-
+    cpus: '0.25'
   loki:
+    cap_drop: *id001
+    security_opt: *id002
     image: ${LOKI_IMAGE:-grafana/loki:2.9.8}
     restart: unless-stopped
-    logging: *default-logging
-    command: ["-config.file=/etc/loki/config.yml"]
+    logging: *id003
+    command:
+    - -config.file=/etc/loki/config.yml
     volumes:
-      - ./observability/loki/config.yml:/etc/loki/config.yml:ro
-      - loki_data:/loki
+    - ./observability/loki/config.yml:/etc/loki/config.yml:ro
+    - loki_data:/loki
     ports:
-      - "3100:3100"
+    - 3100:3100
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3100/ready >/dev/null"]
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:3100/ready >/dev/null
       interval: 20s
       timeout: 5s
       retries: 6
       start_period: 15s
-    <<: *default-security
     mem_limit: 512m
-    cpus: "0.5"
-
+    cpus: '0.5'
   grafana:
+    cap_drop: *id001
+    security_opt: *id002
     image: ${GRAFANA_IMAGE:-grafana/grafana@sha256:408afb9726de5122b00a2576763a8a57a3c86d5b0eff5305bc994ceb3eb96c3f}
     restart: unless-stopped
-    logging: *default-logging
+    logging: *id003
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
       PROMETHEUS_URL: ${PROMETHEUS_URL:-http://prometheus:9090}
@@ -412,18 +395,16 @@ services:
       loki:
         condition: service_healthy
     ports:
-      - "3000:3000"
+    - 3000:3000
     volumes:
-      - grafana_data:/var/lib/grafana
-      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
-    <<: *default-security
+    - grafana_data:/var/lib/grafana
+    - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
     mem_limit: 512m
-    cpus: "0.5"
-
+    cpus: '0.5'
 volumes:
-  op_gate_state:
-  prometheus_data:
-  grafana_data:
-  alertmanager_data:
-  loki_data:
+  op_gate_state: null
+  prometheus_data: null
+  grafana_data: null
+  alertmanager_data: null
+  loki_data: null

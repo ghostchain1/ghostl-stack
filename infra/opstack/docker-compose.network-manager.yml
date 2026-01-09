@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   network-manager:
-    image: ghcr.io/ethereum-optimism/op-geth:devnet
+    image: alpine:3.19
     container_name: opstack-network-manager
     restart: unless-stopped
     network_mode: host
