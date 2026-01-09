@@ -25,20 +25,16 @@ services:
         geth init --datadir /data /config/l1-genesis.json
       fi
       exec geth \
-        --dev --dev.period=${L1_DEV_PERIOD:-2} \
         --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug,txpool,personal \
         --http.vhosts="*" \
         --rpc.allow-unprotected-txs \
         --ws --ws.addr=0.0.0.0 --ws.origins="*" \
         --datadir=/data \
-        --networkid=${L1_CHAIN_ID:-31337} \
+        --networkid=${L1_CHAIN_ID:-1337} \
         --gcmode=archive \
         --mine \
         --miner.gasprice=${L1_MINER_GASPRICE:-1} \
-        --miner.etherbase=${L1_MINER_ETHERBASE:-0x7964ef0fbd1306461bab9ad05118dbc4248d0546} \
-        --allow-insecure-unlock \
-        --unlock 0x71562b71999873db5b286df957af199ec94617f7,0x7964ef0fbd1306461bab9ad05118dbc4248d0546 \
-        --password /config/l1-keystore-password
+        --miner.etherbase=${L1_MINER_ETHERBASE:-0x7964ef0fbd1306461bab9ad05118dbc4248d0546}
     volumes:
     - ./data/l1-geth-new:/data
     - ./config/l1-genesis.json:/config/l1-genesis.json:ro
