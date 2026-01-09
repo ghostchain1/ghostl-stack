@@ -17,7 +17,7 @@
     "mergeNetsplitBlock": 0,
     "shanghaiTime": 0,
     "cancunTime": 0,
-    "terminalTotalDifficulty": 0,
+    "terminalTotalDifficulty": 115792089237316195423570985008687907853269984665640564039457584007913129639935,
     "depositContractAddress": "0x0000000000000000000000000000000000000000",
     "blobSchedule": {
       "cancun": {
@@ -941,6 +941,11 @@
     },
     "fabb0ac9d68b0b445fb7357272ff202c5651694a": {
       "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
+    },
+    "4e59b44847b379578588920ca78fbf26c0b4956c": {
+      "balance": "0x0",
+      "code": "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3",
+      "storage": {}
     },
     "0x01477fa1415f801f40245a71c558b198ff154f0f": {
       "balance": "0x0",
