@@ -40,7 +40,7 @@ docker compose --env-file infra/opstack/.env --env-file infra/opstack/.env.secre
 ## L2 + L3 stack and challengers
 - Combined run: `docker compose --env-file infra/opstack/.env --env-file infra/opstack/.env.secrets -f infra/opstack/docker-compose.yml -f infra/opstack/docker-compose.l3.yml up -d l1 op-gate l2-geth op-node op-batcher op-proposer l3-geth l3-op-node l3-op-batcher l3-op-proposer`
 - Challengers overlay (optional): `docker compose --env-file infra/opstack/.env --env-file infra/opstack/.env.secrets -f infra/opstack/docker-compose.yml -f infra/opstack/docker-compose.l3.yml -f infra/opstack/docker-compose.challengers.yml up -d op-challenger l3-op-challenger`
-  - Fill `L2_GAME_FACTORY_ADDRESS`, `L3_GAME_FACTORY_ADDRESS`, `CHALLENGER_KEY`/`L3_CHALLENGER_KEY`, and Cannon/Kona paths (`OP_CHALLENGER_CANNON_*`/`OP_CHALLENGER_CANNON_KONA_*`) before enabling challengers.
+  - Fill `L2_GAME_FACTORY_ADDRESS`, `L3_GAME_FACTORY_ADDRESS`, `CHALLENGER_KEY`/`L3_CHALLENGER_KEY`. Cannon/Kona bins + prestates are wired to the vendored optimism assets (`optimism/cannon/bin`, `optimism/op-program/bin`) via `/assets`, but you can override with `OP_CHALLENGER_CANNON_*`/`OP_CHALLENGER_CANNON_KONA_*`.
 - Helper script: `bash infra/scripts/opstack/up-challengers.sh` (starts L1/L2, optional L3, then challenger services with the overlay).
 - Flow + sequence diagram for L3→L2→L1 settlement lives in `docs/opstack-l2-l3-stack.md`.
 

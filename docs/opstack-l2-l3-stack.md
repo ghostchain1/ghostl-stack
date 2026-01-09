@@ -75,7 +75,7 @@ docker compose --env-file infra/opstack/.env --env-file infra/opstack/.env.secre
   -f infra/opstack/docker-compose.challengers.yml \
   up -d op-challenger l3-op-challenger
 ```
-- Fill `L2_GAME_FACTORY_ADDRESS`, `L3_GAME_FACTORY_ADDRESS`, `CHALLENGER_KEY`, and cannon/kona assets before enabling challengers.
+- Fill `L2_GAME_FACTORY_ADDRESS`, `L3_GAME_FACTORY_ADDRESS`, `CHALLENGER_KEY`; Cannon/Kona bins + prestates default to the vendored optimism assets mounted at `/assets`, but override with your own paths if you prefer.
 
 ### Finality + multichain guardrails
 - Allow L3→L2 withdrawals only after L3’s dispute window on L2 closes.
