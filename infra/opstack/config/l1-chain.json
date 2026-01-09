@@ -29,6 +29,7 @@
   "nonce": "0x0000000000000000",
   "timestamp": "0x695e1ca7",
   "extraData": "0x",
+  "systemConfigAddr": "0xbE4427a8Ac5b0C103F60394916880f698FD28A25",
   "gasLimit": "0x1c9c380",
   "difficulty": "0x0",
   "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
