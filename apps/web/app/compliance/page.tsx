@@ -1,23 +1,28 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../../src/lib/api';
 
 type ComplianceReport = { id: string; period: string; status: string; generatedAt: string };
-type ActionLog = { actor: string; action: string; resource: string; time: string };
+type ActionLog = { actor: string; action: string; resource: string; createdAt: string };
 
 export default function CompliancePage() {
   const [reports, setReports] = useState<ComplianceReport[]>([]);
   const [logs, setLogs] = useState<ActionLog[]>([]);
 
   useEffect(() => {
-    // Placeholder fetch; replace with real endpoints when available
     setReports([{ id: 'r1', period: 'Q1', status: 'draft', generatedAt: new Date().toISOString() }]);
-    setLogs([{ actor: 'user-1', action: 'treasury:approve', resource: 'proposal-1', time: new Date().toISOString() }]);
     apiFetch<ActionLog[]>('/audit', { fallback: [] })
       .then((data) => setLogs(data || []))
       .catch(() => undefined);
   }, []);
+
+  const csv = useMemo(() => {
+    if (!logs.length) return '';
+    const header = 'actor,action,resource,createdAt';
+    const rows = logs.map((l) => `${l.actor},${l.action},${l.resource},${l.createdAt || ''}`);
+    return [header, ...rows].join('\n');
+  }, [logs]);
 
   return (
     <div className="content">
@@ -35,6 +40,15 @@ export default function CompliancePage() {
               </div>
             ))}
             {!reports.length && <div className="muted">No reports</div>}
+            {csv && (
+              <a
+                href={`data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`}
+                download="audit-log.csv"
+                className="button"
+              >
+                Download audit CSV
+              </a>
+            )}
           </div>
         </div>
         <div className="card">
@@ -44,7 +58,7 @@ export default function CompliancePage() {
               <div key={idx}>
                 <div>{l.actor}</div>
                 <div className="muted">
-                  {l.action} · {l.resource} · {l.time}
+                  {l.action} · {l.resource} · {l.createdAt || ''}
                 </div>
               </div>
             ))}
