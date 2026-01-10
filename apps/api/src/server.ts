@@ -891,8 +891,10 @@ app.post(['/v1/devops/rollback/:id/execute'], requirePermission('devops:write'),
   }
   const dryRun = req.query.dryRun === '1' || req.query.dryRun === 'true';
   const approved = req.header('x-execution-approve') === 'yes';
-  if (!dryRun && !approved) {
-    res.status(400).json({ error: 'approval required: set x-execution-approve: yes or dryRun=1' });
+  const token = req.header('x-execution-token');
+  const tokenOk = env.EXECUTION_APPROVAL_TOKEN ? token === env.EXECUTION_APPROVAL_TOKEN : true;
+  if (!dryRun && (!approved || !tokenOk)) {
+    res.status(400).json({ error: 'approval required: set x-execution-approve: yes and valid x-execution-token or dryRun=1' });
     return;
   }
   for (const step of plan.steps) {
