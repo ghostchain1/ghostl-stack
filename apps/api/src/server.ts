@@ -239,20 +239,29 @@ const saveContractState = (items: ContractState[]) => {
   fs.writeFileSync(contractStateFile, JSON.stringify(items, null, 2));
 };
 let contractStates = loadContractState();
-const pausibleAbi = ['function pause()', 'function unpause()'];
+const pausableAbi = ['function pause()', 'function unpause()'];
+const proxyAdminAbi = ['function upgrade(address proxy, address implementation)', 'function upgradeTo(address implementation)'];
+const ownableAbi = ['function transferOwnership(address newOwner)'];
+const guardianAbi = ['function setGuardian(address)'];
 const pausableInterface = new Interface(pausibleAbi);
+const proxyAdminInterface = new Interface(proxyAdminAbi);
+const ownableInterface = new Interface(ownableAbi);
+const guardianInterface = new Interface(guardianAbi);
 
-const sendContractTx = async (method: 'pause' | 'unpause') => {
-  if (!env.CONTRACT_RPC_URL || !env.CONTRACT_ADMIN_KEY || !env.CONTRACT_TARGET_ADDRESS) {
+const sendRawTx = async (to: string, data: string) => {
+  if (!env.CONTRACT_RPC_URL || !env.CONTRACT_ADMIN_KEY) {
     throw new Error('contract tx not configured');
   }
   const provider = new JsonRpcProvider(env.CONTRACT_RPC_URL);
   const wallet = new Wallet(env.CONTRACT_ADMIN_KEY, provider);
-  const tx = await wallet.sendTransaction({
-    to: env.CONTRACT_TARGET_ADDRESS,
-    data: pausableInterface.encodeFunctionData(method)
-  });
+  const tx = await wallet.sendTransaction({ to, data });
   return tx.hash;
+};
+
+const sendContractTx = async (method: 'pause' | 'unpause', target = env.CONTRACT_TARGET_ADDRESS) => {
+  if (!target) throw new Error('contract target not configured');
+  const data = pausableInterface.encodeFunctionData(method);
+  return sendRawTx(target, data);
 };
 
 const fetchOk = async (url: string, timeoutMs = 2000) => {
@@ -563,6 +572,100 @@ app.post(['/v1/api/contracts/resume', '/api/contracts/resume'], requirePermissio
     meta: { correlationId: req.correlationId, txHash }
   });
   res.json({ ok: true, address, paused: false, txHash });
+});
+
+app.post(['/v1/api/contracts/upgrade', '/api/contracts/upgrade'], requirePermission('contracts:write'), async (req, res) => {
+  const { proxyAddress, implementation } = req.body || {};
+  const proxy = (proxyAddress as string) || env.CONTRACT_TARGET_ADDRESS;
+  const admin = env.CONTRACT_PROXY_ADMIN_ADDRESS || proxy;
+  if (!proxy || !implementation) {
+    res.status(400).json({ error: 'proxyAddress and implementation required' });
+    return;
+  }
+  try {
+    const data =
+      env.CONTRACT_PROXY_ADMIN_ADDRESS && env.CONTRACT_PROXY_ADMIN_ADDRESS !== proxy
+        ? proxyAdminInterface.encodeFunctionData('upgrade', [proxy, implementation])
+        : proxyAdminInterface.encodeFunctionData('upgradeTo', [implementation]);
+    const txHash = await sendRawTx(admin, data);
+    await auditLogService?.append({
+      actorId: req.session.userId || 'unknown',
+      action: 'contract:upgrade',
+      resource: proxy,
+      meta: { correlationId: req.correlationId, implementation, txHash }
+    });
+    res.json({ ok: true, txHash });
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message });
+  }
+});
+
+app.post(['/v1/api/contracts/transfer-ownership', '/api/contracts/transfer-ownership'], requirePermission('contracts:write'), async (req, res) => {
+  const { address, newOwner } = req.body || {};
+  const target = (address as string) || env.CONTRACT_TARGET_ADDRESS;
+  if (!target || !newOwner) {
+    res.status(400).json({ error: 'address and newOwner required' });
+    return;
+  }
+  try {
+    const data = ownableInterface.encodeFunctionData('transferOwnership', [newOwner]);
+    const txHash = await sendRawTx(target, data);
+    await auditLogService?.append({
+      actorId: req.session.userId || 'unknown',
+      action: 'contract:transferOwnership',
+      resource: target,
+      meta: { correlationId: req.correlationId, newOwner, txHash }
+    });
+    res.json({ ok: true, txHash });
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message });
+  }
+});
+
+app.post(['/v1/api/contracts/set-guardian', '/api/contracts/set-guardian'], requirePermission('contracts:write'), async (req, res) => {
+  const { address, guardian } = req.body || {};
+  const target = (address as string) || env.CONTRACT_TARGET_ADDRESS;
+  if (!target || !guardian) {
+    res.status(400).json({ error: 'address and guardian required' });
+    return;
+  }
+  try {
+    const data = guardianInterface.encodeFunctionData('setGuardian', [guardian]);
+    const txHash = await sendRawTx(target, data);
+    await auditLogService?.append({
+      actorId: req.session.userId || 'unknown',
+      action: 'contract:setGuardian',
+      resource: target,
+      meta: { correlationId: req.correlationId, guardian, txHash }
+    });
+    res.json({ ok: true, txHash });
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message });
+  }
+});
+
+app.post(['/v1/api/contracts/execute', '/api/contracts/execute'], requirePermission('contracts:write'), async (req, res) => {
+  const { to, data } = req.body || {};
+  if (!to || !data) {
+    res.status(400).json({ error: 'to and data required' });
+    return;
+  }
+  if (typeof data !== 'string' || !data.startsWith('0x')) {
+    res.status(400).json({ error: 'data must be hex string' });
+    return;
+  }
+  try {
+    const txHash = await sendRawTx(to, data);
+    await auditLogService?.append({
+      actorId: req.session.userId || 'unknown',
+      action: 'contract:execute',
+      resource: to,
+      meta: { correlationId: req.correlationId, txHash }
+    });
+    res.json({ ok: true, txHash });
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message });
+  }
 });
 
 app.get(['/v1/api/token', '/api/token'], requirePermission('treasury:read'), async (_req, res) => {

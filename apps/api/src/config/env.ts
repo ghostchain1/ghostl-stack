@@ -22,6 +22,7 @@ const EnvSchema = z.object({
   CONTRACT_ADMIN_KEY: z.string().optional(),
   CONTRACT_RPC_URL: z.string().url().optional(),
   CONTRACT_TARGET_ADDRESS: z.string().optional(),
+  CONTRACT_PROXY_ADMIN_ADDRESS: z.string().optional(),
   SUPPLY_SERVICE_URL: z.string().url().default('http://localhost:7614'),
   FEE_MODEL_SERVICE_URL: z.string().url().default('http://localhost:7615'),
   TREASURY_SERVICE_URL: z.string().url().default('http://localhost:7628'),
