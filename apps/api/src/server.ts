@@ -520,7 +520,7 @@ const fetchOk = async (url: string, timeoutMs = 2000) => {
 app.use(['/v1/app-shell', '/app-shell'], buildAppShellRouter(services.appShell));
 app.use(
   ['/v1/chain', '/chain'],
-  requirePermission('chain:read'),
+  env.PUBLIC_CHAIN ? (_req: any, _res: any, next: any) => next() : requirePermission('chain:read'),
   buildChainRouter({
     status: liveServices.chain.chainStatusService,
     telemetry: liveServices.chain.consensusTelemetryService,
