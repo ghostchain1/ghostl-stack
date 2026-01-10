@@ -10,9 +10,11 @@ type Incident = {
 };
 
 const severityClass = (s?: string) => {
-  if (s === 'critical' || s === 'error') return 'badge bad';
-  if (s === 'warning') return 'badge warn';
-  return 'badge muted';
+  if (!s) return 'badge muted';
+  const normalized = s.toLowerCase();
+  if (normalized.includes('crit') || normalized.includes('error')) return 'badge bad';
+  if (normalized.includes('warn')) return 'badge warn';
+  return 'badge ok';
 };
 
 export function IncidentTimeline({ incidents }: { incidents: Incident[] }) {
@@ -23,10 +25,9 @@ export function IncidentTimeline({ incidents }: { incidents: Incident[] }) {
         {incidents.map((i, idx) => (
           <div key={i.id || idx} className="row" style={{ justifyContent: 'space-between' }}>
             <div>
-              <div>{i.message || 'incident'}</div>
-              <div className="muted">
-                {i.source} · {i.time || i.createdAt || 'unknown'}
-              </div>
+              <div style={{ fontWeight: 600 }}>{i.message || 'incident'}</div>
+              <div className="muted">{i.source}</div>
+              <div className="muted">{i.time || i.createdAt || 'unknown'}</div>
             </div>
             <div className={severityClass(i.severity)}>{i.severity || 'info'}</div>
           </div>

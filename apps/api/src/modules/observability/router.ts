@@ -61,6 +61,7 @@ export const buildObservabilityRouter = (deps: ObservabilityDeps) => {
     '/alerts',
     asyncHandler(async (_req, res) => {
       const alerts = await deps.alerts.list();
+      alerts.sort((a, b) => (a.firedAt || '').localeCompare(b.firedAt || ''));
       res.json(alerts);
     })
   );
