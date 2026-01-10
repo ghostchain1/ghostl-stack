@@ -85,6 +85,8 @@ type UpgradePlan = {
   approvals: { userId: string; at: string }[];
 };
 type ComplianceReport = { id: string; period: string; status: string; generatedAt: string };
+type ComplianceFinding = { id: string; area: string; severity: 'low' | 'medium' | 'high'; detail: string };
+type ComplianceDetail = ComplianceReport & { controls: string[]; findings: ComplianceFinding[]; exportedAt?: string };
 
 const app = express();
 const FileStore = FileStoreFactory(session);
@@ -478,17 +480,17 @@ const assertAllowedAction = (action?: { type: string; payload?: Record<string, u
 };
 
 const complianceFile = path.join(process.cwd(), 'data', 'compliance-reports.json');
-const loadCompliance = (): ComplianceReport[] => {
+const loadCompliance = (): ComplianceDetail[] => {
   try {
     const raw = fs.readFileSync(complianceFile, 'utf-8');
-    return JSON.parse(raw) as ComplianceReport[];
+    return JSON.parse(raw) as ComplianceDetail[];
   } catch {
     ensureDir(complianceFile);
     fs.writeFileSync(complianceFile, JSON.stringify([]));
     return [];
   }
 };
-const saveCompliance = (items: ComplianceReport[]) => {
+const saveCompliance = (items: ComplianceDetail[]) => {
   ensureDir(complianceFile);
   fs.writeFileSync(complianceFile, JSON.stringify(items, null, 2));
 };
@@ -1288,17 +1290,49 @@ app.get(['/v1/governance/delegations', '/governance/delegations'], requirePermis
   res.json(data.delegations || []);
 });
 
+app.get(['/v1/governance/snapshot', '/governance/snapshot'], requirePermission('governance:read'), async (_req, res) => {
+  const space = env.SNAPSHOT_SPACE || 'ghostldao.eth';
+  const api = env.SNAPSHOT_API_URL || 'https://hub.snapshot.org/graphql';
+  const proposals = [
+    { id: 'snap-1', title: 'Snapshot placeholder', status: 'active', link: `https://snapshot.org/#/${space}/proposal/snap-1` }
+  ];
+  res.json({ space, api, proposals });
+});
+
+app.get(['/v1/governance/forum', '/governance/forum'], requirePermission('governance:read'), async (_req, res) => {
+  const forum = env.FORUM_URL || 'https://forum.example.org';
+  const threads = [
+    { id: 'thr-1', title: 'Upgrade discussion', url: `${forum}/t/upgrade-discussion`, replies: 3 },
+    { id: 'thr-2', title: 'Validator incentives', url: `${forum}/t/validator-incentives`, replies: 1 }
+  ];
+  res.json({ forum, threads });
+});
+
 app.get(['/v1/compliance/reports', '/compliance/reports'], requirePermission('iam:read'), async (_req, res) => {
   res.json({ ok: true, reports: complianceReports });
 });
 
+app.get(['/v1/compliance/reports/:id', '/compliance/reports/:id'], requirePermission('iam:read'), async (req, res) => {
+  const report = complianceReports.find((r) => r.id === req.params.id);
+  if (!report) {
+    res.status(404).json({ error: 'not_found' });
+    return;
+  }
+  res.json({ ok: true, report });
+});
+
 app.post(['/v1/compliance/reports', '/compliance/reports'], requirePermission('iam:write'), async (req, res) => {
   const { period } = req.body || {};
-  const report: ComplianceReport = {
+  const report: ComplianceDetail = {
     id: `rep-${Date.now()}`,
     period: period || 'unspecified',
     status: 'draft',
-    generatedAt: new Date().toISOString()
+    generatedAt: new Date().toISOString(),
+    controls: ['authz', 'keys', 'backups', 'logging', 'network'],
+    findings: [
+      { id: 'f1', area: 'authz', severity: 'medium', detail: 'Dual approvals enforced for upgrades and treasury.' },
+      { id: 'f2', area: 'logging', severity: 'low', detail: 'Alerts signed; audit log export available.' }
+    ]
   };
   complianceReports.push(report);
   saveCompliance(complianceReports);
@@ -1309,6 +1343,29 @@ app.post(['/v1/compliance/reports', '/compliance/reports'], requirePermission('i
     meta: { correlationId: req.correlationId }
   });
   res.status(201).json({ ok: true, report });
+});
+
+app.get(['/v1/compliance/reports/:id/export', '/compliance/reports/:id/export'], requirePermission('iam:read'), async (req, res) => {
+  const report = complianceReports.find((r) => r.id === req.params.id);
+  if (!report) {
+    res.status(404).json({ error: 'not_found' });
+    return;
+  }
+  const format = (req.query.format as string) || 'json';
+  const rows = [
+    ['id', 'period', 'status', 'generatedAt', 'area', 'severity', 'detail'].join(','),
+    ...report.findings.map((f) =>
+      [report.id, report.period, report.status, report.generatedAt, f.area, f.severity, `"${f.detail}"`].join(',')
+    )
+  ];
+  report.exportedAt = new Date().toISOString();
+  saveCompliance(complianceReports);
+  if (format === 'csv') {
+    res.setHeader('content-type', 'text/csv');
+    res.send(rows.join('\n'));
+    return;
+  }
+  res.json({ ok: true, report });
 });
 
 app.get(['/v1/api/validators', '/api/validators'], requirePermission('validator:read'), async (_req, res) => {
@@ -1395,7 +1452,14 @@ app.get(['/v1/api/validators/metrics', '/api/validators/metrics'], requirePermis
 
 app.get(['/v1/api/ai', '/api/ai'], requirePermission('ai:read'), async (_req, res) => {
   const data = await proxyJson<{ networks?: unknown[] }>(`${servicesBase.ai}/anomalies`, { networks: [] });
-  res.json(data || { networks: [] });
+  const sybil: { id: string; cluster: string; score: number; size: number; tags?: string[] }[] = [
+    { id: 'syb-1', cluster: 'cluster-a', score: 0.82, size: 12, tags: ['new wallets', 'bridges'] },
+    { id: 'syb-2', cluster: 'cluster-b', score: 0.41, size: 5, tags: ['low activity'] }
+  ];
+  const contractRisk: { address: string; risk: number; notes?: string[] }[] = [
+    { address: env.CONTRACT_TARGET_ADDRESS || '0xcontract', risk: 0.2, notes: ['allowlisted'] }
+  ];
+  res.json({ networks: data.networks || [], sybil, contractRisk });
 });
 
 app.get(['/v1/observability/incidents', '/observability/incidents'], requirePermission('observability:read'), async (_req, res) => {
@@ -1581,6 +1645,16 @@ app.get(['/v1/integrations/usage', '/integrations/usage'], async (_req, res) => 
 app.get(['/v1/integrations/webhooks', '/integrations/webhooks'], async (_req, res) => {
   const data = await proxyJson<{ webhooks?: unknown[] }>(`${servicesBase.webhooks}/webhooks`, { webhooks: [] });
   res.json(data.webhooks || []);
+});
+
+app.get(['/v1/integrations/partners', '/integrations/partners'], async (_req, res) => {
+  res.json({
+    partners: [
+      { name: 'IndexerOne', type: 'indexer', status: 'pending', url: 'https://indexer.example.com' },
+      { name: 'OracleX', type: 'oracle', status: 'connected', url: 'https://oracle.example.com' },
+      { name: 'KYC Corp', type: 'kyc', status: 'error', url: 'https://kyc.example.com' }
+    ]
+  });
 });
 
 app.get(['/v1/health', '/health'], async (_req, res) => {
