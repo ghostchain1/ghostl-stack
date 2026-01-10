@@ -9,9 +9,13 @@ type ActionLog = { actor: string; action: string; resource: string; createdAt: s
 export default function CompliancePage() {
   const [reports, setReports] = useState<ComplianceReport[]>([]);
   const [logs, setLogs] = useState<ActionLog[]>([]);
+  const [period, setPeriod] = useState('');
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
-    setReports([{ id: 'r1', period: 'Q1', status: 'draft', generatedAt: new Date().toISOString() }]);
+    apiFetch<{ reports: ComplianceReport[] }>('/compliance/reports', { fallback: { reports: [] } })
+      .then((res) => setReports(res.reports || []))
+      .catch(() => undefined);
     apiFetch<ActionLog[]>('/audit', { fallback: [] })
       .then((data) => setLogs(data || []))
       .catch(() => undefined);
@@ -40,6 +44,41 @@ export default function CompliancePage() {
               </div>
             ))}
             {!reports.length && <div className="muted">No reports</div>}
+            <div className="row" style={{ gap: 6 }}>
+              <input
+                type="text"
+                placeholder="Period (e.g., Q2)"
+                value={period}
+                onChange={(e) => setPeriod(e.target.value)}
+                style={{ flex: 1, padding: '6px 8px' }}
+              />
+              <button
+                onClick={async () => {
+                  setMessage('');
+                  try {
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/compliance/reports`, {
+                      method: 'POST',
+                      headers: { 'content-type': 'application/json' },
+                      credentials: 'include',
+                      body: JSON.stringify({ period })
+                    });
+                    const json = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                      setMessage(json.error || `HTTP ${res.status}`);
+                    } else {
+                      setMessage('Report generated');
+                      setPeriod('');
+                      setReports((prev) => [...prev, json.report]);
+                    }
+                  } catch (e) {
+                    setMessage((e as Error).message);
+                  }
+                }}
+              >
+                Generate
+              </button>
+            </div>
+            {message && <div className="muted">{message}</div>}
             {csv && (
               <a
                 href={`data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`}
