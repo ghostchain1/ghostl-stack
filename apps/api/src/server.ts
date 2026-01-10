@@ -203,13 +203,13 @@ if (env.EMAIL_SMTP_URL && env.EMAIL_FROM && env.EMAIL_TO) {
 }
 
 const sendNotification = async (alert: { id?: string; message?: string; severity?: string }, channels: string[]) => {
-  const sendWithTimeout = async (url: string, body: unknown, timeoutMs = 5000) => {
+  const sendWithTimeout = async (url: string, body: unknown, timeoutMs = 5000, headers: Record<string, string> = {}) => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       await fetch(url, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', ...headers },
         body: JSON.stringify(body),
         signal: controller.signal
       });
@@ -253,13 +253,16 @@ const sendNotification = async (alert: { id?: string; message?: string; severity
               ? { content: `[${alert.severity || 'info'}] ${alert.id || 'alert'} - ${alert.message || 'incident'}` }
               : { alert };
         await retry(async () => {
-          const headers: Record<string, string> = { 'content-type': 'application/json' };
-          if (env.ALERT_WEBHOOK_SECRET) {
+          const headers: Record<string, string> = {};
+          if (env.ALERT_WEBHOOK_SECRET && ch.type !== 'email') {
             const hmac = crypto.createHmac('sha256', env.ALERT_WEBHOOK_SECRET);
-            hmac.update(JSON.stringify(payload));
+            const body = JSON.stringify(payload);
+            const ts = Date.now().toString();
+            hmac.update(`${ts}:${body}`);
+            headers['x-signature-ts'] = ts;
             headers['x-signature-sha256'] = hmac.digest('hex');
           }
-          await sendWithTimeout(ch.target, payload);
+          await sendWithTimeout(ch.target, payload, 5000, headers);
         }, 3, 500).catch(() => undefined);
       }
     })
@@ -834,6 +837,27 @@ app.post(['/v1/devops/rollback/:id'], requirePermission('devops:write'), async (
     meta: { correlationId: req.correlationId, rollbackOf: plan.id }
   });
   res.status(201).json({ ok: true, plan: rollbackPlan });
+});
+
+app.post(['/v1/devops/rollback/:id/execute'], requirePermission('devops:write'), async (req, res) => {
+  const plan = upgradePlans.find((p) => p.id === req.params.id);
+  if (!plan) {
+    res.status(404).json({ error: 'plan_not_found' });
+    return;
+  }
+  plan.steps.forEach((s) => {
+    s.status = 'done';
+    s.notes = `auto-completed at ${new Date().toISOString()}`;
+  });
+  plan.updatedAt = new Date().toISOString();
+  saveUpgradePlans(upgradePlans);
+  await auditLogService?.append({
+    actorId: req.session.userId || 'unknown',
+    action: 'upgrade-plan:rollback:execute',
+    resource: plan.id,
+    meta: { correlationId: req.correlationId }
+  });
+  res.json({ ok: true, plan });
 });
 
 app.get(['/v1/api/token', '/api/token'], requirePermission('treasury:read'), async (_req, res) => {
