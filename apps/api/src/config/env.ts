@@ -32,6 +32,7 @@ const EnvSchema = z.object({
   SLACK_WEBHOOK_URL: z.string().url().optional(),
   DISCORD_WEBHOOK_URL: z.string().url().optional(),
   ALERT_WEBHOOK_URL: z.string().url().optional(),
+  ALERT_WEBHOOK_SECRET: z.string().optional(),
   EMAIL_SMTP_URL: z.string().optional(),
   EMAIL_FROM: z.string().email().optional(),
   EMAIL_TO: z.string().email().optional(),

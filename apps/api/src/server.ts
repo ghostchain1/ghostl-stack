@@ -73,6 +73,7 @@ type UpgradePlan = {
   steps: { id: string; name: string; status: 'pending' | 'in_progress' | 'done'; notes?: string }[];
   createdAt: string;
   updatedAt: string;
+  rollbackOf?: string;
 };
 
 const app = express();
@@ -251,7 +252,15 @@ const sendNotification = async (alert: { id?: string; message?: string; severity
             : ch.type === 'discord'
               ? { content: `[${alert.severity || 'info'}] ${alert.id || 'alert'} - ${alert.message || 'incident'}` }
               : { alert };
-        await retry(() => sendWithTimeout(ch.target, payload), 3, 500).catch(() => undefined);
+        await retry(async () => {
+          const headers: Record<string, string> = { 'content-type': 'application/json' };
+          if (env.ALERT_WEBHOOK_SECRET) {
+            const hmac = crypto.createHmac('sha256', env.ALERT_WEBHOOK_SECRET);
+            hmac.update(JSON.stringify(payload));
+            headers['x-signature-sha256'] = hmac.digest('hex');
+          }
+          await sendWithTimeout(ch.target, payload);
+        }, 3, 500).catch(() => undefined);
       }
     })
   );
@@ -796,6 +805,35 @@ app.post(['/v1/devops/upgrade-plans/:id/steps/:stepId'], requirePermission('devo
     meta: { correlationId: req.correlationId, status, notes }
   });
   res.json({ ok: true, plan });
+});
+
+app.post(['/v1/devops/rollback/:id'], requirePermission('devops:write'), async (req, res) => {
+  const plan = upgradePlans.find((p) => p.id === req.params.id);
+  if (!plan) {
+    res.status(404).json({ error: 'plan_not_found' });
+    return;
+  }
+  const rollbackPlan: UpgradePlan = {
+    id: `rollback-${Date.now()}`,
+    name: `Rollback of ${plan.name}`,
+    rollbackOf: plan.id,
+    steps: [...plan.steps].reverse().map((s) => ({
+      id: `${Math.random().toString(36).slice(2)}`,
+      name: `Rollback ${s.name}`,
+      status: 'pending'
+    })),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  upgradePlans.push(rollbackPlan);
+  saveUpgradePlans(upgradePlans);
+  await auditLogService?.append({
+    actorId: req.session.userId || 'unknown',
+    action: 'upgrade-plan:rollback',
+    resource: rollbackPlan.id,
+    meta: { correlationId: req.correlationId, rollbackOf: plan.id }
+  });
+  res.status(201).json({ ok: true, plan: rollbackPlan });
 });
 
 app.get(['/v1/api/token', '/api/token'], requirePermission('treasury:read'), async (_req, res) => {
