@@ -17,4 +17,7 @@ export interface NodeMetrics {
   iops?: number;
   peers: number;
   lag?: number;
+  version?: string;
+  expectedVersion?: string;
+  versionDrift?: boolean;
 }

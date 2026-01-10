@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from 'react';
 
-type Metrics = { missedBlocks: number; finalityLag: number };
+type Metrics = {
+  missedBlocks: number;
+  finalityLag: number;
+  participationRate?: number;
+  lastProposer?: string;
+  bftAlerts?: { message: string; severity: string; time: string }[];
+};
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -40,6 +46,26 @@ export function ValidatorMetrics() {
           <div>Finality lag</div>
           <div className={metrics.finalityLag > 0 ? 'badge warn' : 'badge ok'}>{metrics.finalityLag}</div>
         </div>
+        <div className="row" style={{ justifyContent: 'space-between' }}>
+          <div>Participation</div>
+          <div className={metrics.participationRate && metrics.participationRate < 0.95 ? 'badge warn' : 'badge ok'}>
+            {(metrics.participationRate ?? 0).toFixed(2)}
+          </div>
+        </div>
+        <div className="row" style={{ justifyContent: 'space-between' }}>
+          <div>Last proposer</div>
+          <div className="badge">{metrics.lastProposer || 'unknown'}</div>
+        </div>
+        {metrics.bftAlerts && metrics.bftAlerts.length > 0 && (
+          <div className="stack" style={{ gap: 4 }}>
+            <div className="muted">BFT / equivocation alerts</div>
+            {metrics.bftAlerts.slice(0, 3).map((a) => (
+              <div key={`${a.message}-${a.time}`} className={`pill ${a.severity === 'critical' ? 'bad' : 'warn'}`}>
+                {a.message} · {new Date(a.time).toLocaleString()}
+              </div>
+            ))}
+          </div>
+        )}
         <button onClick={load} style={{ width: '100%' }}>
           Refresh
         </button>

@@ -218,21 +218,28 @@ export const createLiveServices = (deps: {
 
   const nodeHealthService: NodeHealthService = {
     async getHealth(id: string): Promise<NodeMetrics> {
+      const instance = id;
       let cpuResult: PrometheusVectorResult[] = [];
+      let memResult: PrometheusVectorResult[] = [];
+      let diskResult: PrometheusVectorResult[] = [];
+      let iopsResult: PrometheusVectorResult[] = [];
       let peersResult: PrometheusVectorResult[] = [];
       let lagResult: PrometheusVectorResult[] = [];
       try {
-        cpuResult = await deps.prometheus.query(`node_cpu_usage_percent{instance="${id}"}`);
-        peersResult = await deps.prometheus.query(`peer_count{instance="${id}"}`);
-        lagResult = await deps.prometheus.query(`finality_lag_blocks{instance="${id}"}`);
+        cpuResult = await deps.prometheus.query(`node_cpu_usage_percent{instance="${instance}"}`);
+        memResult = await deps.prometheus.query(`node_memory_usage_percent{instance="${instance}"}`);
+        diskResult = await deps.prometheus.query(`node_filesystem_usage_percent{instance="${instance}"}`);
+        iopsResult = await deps.prometheus.query(`node_disk_iops{instance="${instance}"}`);
+        peersResult = await deps.prometheus.query(`peer_count{instance="${instance}"}`);
+        lagResult = await deps.prometheus.query(`finality_lag_blocks{instance="${instance}"}`);
       } catch {
         // fall back to zeros
       }
       return {
         cpu: parsePromValue(cpuResult[0]?.value) || 0,
-        mem: 0,
-        disk: 0,
-        iops: undefined,
+        mem: parsePromValue(memResult[0]?.value) || 0,
+        disk: parsePromValue(diskResult[0]?.value) || 0,
+        iops: parsePromValue(iopsResult[0]?.value),
         peers: parsePromValue(peersResult[0]?.value) || 0,
         lag: parsePromValue(lagResult[0]?.value)
       };
