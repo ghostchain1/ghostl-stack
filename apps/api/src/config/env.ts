@@ -29,6 +29,7 @@ const EnvSchema = z.object({
   TREASURY_MULTISIG_THRESHOLD: z.coerce.number().int().min(1).max(10).default(2),
   TREASURY_MULTISIG_SIGNERS: z.string().optional(),
   SLACK_WEBHOOK_URL: z.string().url().optional(),
+  DISCORD_WEBHOOK_URL: z.string().url().optional(),
   ALERT_WEBHOOK_URL: z.string().url().optional(),
   GOVERNANCE_SERVICE_URL: z.string().url().default('http://localhost:7645'),
   VALIDATOR_SERVICE_URL: z.string().url().default('http://localhost:7607'),
