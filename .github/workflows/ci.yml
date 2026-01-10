@@ -13,6 +13,15 @@ jobs:
         with:
           node-version: 22
 
+      - name: Install workspace deps
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build apps
+        run: npm run build
+
       - name: Contracts install + build
         working-directory: contracts
         run: |

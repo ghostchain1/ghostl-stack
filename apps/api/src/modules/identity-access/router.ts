@@ -31,6 +31,10 @@ const attachSession = async (req: Request, user: User | null, deps: IdentityAcce
   req.session.userId = user.id;
   req.session.roles = user.roles;
   req.session.permissions = permissions;
+  const ttlMs = 30 * 60 * 1000;
+  const now = Date.now();
+  req.session.expiresAt = now + ttlMs;
+  req.session.lastSeenAt = now;
   return { permissions };
 };
 
@@ -64,6 +68,12 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
       req.session.nonceCreatedAt = undefined;
       const user = await deps.userService.get(session.userId);
       const { permissions } = await attachSession(req, user, deps);
+      await deps.auditLogService.append({
+        actorId: user?.id || 'unknown',
+        action: 'login:wallet',
+        resource: user?.id || 'unknown',
+        meta: { correlationId: req.correlationId }
+      });
       res.json({ session, user, permissions });
     })
   );
@@ -79,6 +89,12 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
       const session = await deps.authService.loginWithSso(token);
       const user = await deps.userService.get(session.userId);
       const { permissions } = await attachSession(req, user, deps);
+      await deps.auditLogService.append({
+        actorId: user?.id || 'unknown',
+        action: 'login:sso',
+        resource: user?.id || 'unknown',
+        meta: { correlationId: req.correlationId }
+      });
       res.json({ session, user, permissions });
     })
   );
@@ -86,7 +102,14 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
   router.post(
     '/auth/logout',
     asyncHandler(async (req, res) => {
+      const actorId = req.session.userId || 'unknown';
       req.session.destroy(() => undefined);
+      await deps.auditLogService.append({
+        actorId,
+        action: 'logout',
+        resource: actorId,
+        meta: { correlationId: req.correlationId }
+      });
       res.json({ ok: true });
     })
   );
@@ -118,6 +141,12 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
     requirePermission('iam:write'),
     asyncHandler(async (req, res) => {
       const created = await deps.userService.create(req.body);
+      await deps.auditLogService.append({
+        actorId: req.session.userId || 'unknown',
+        action: 'user:create',
+        resource: created.id,
+        meta: { correlationId: req.correlationId }
+      });
       res.status(201).json(created);
     })
   );
@@ -127,6 +156,12 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
     requirePermission('iam:write'),
     asyncHandler(async (req, res) => {
       const updated = await deps.userService.update(req.params.id, req.body);
+      await deps.auditLogService.append({
+        actorId: req.session.userId || 'unknown',
+        action: 'user:update',
+        resource: updated.id,
+        meta: { correlationId: req.correlationId }
+      });
       res.json(updated);
     })
   );
@@ -145,6 +180,12 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
     requirePermission('iam:write'),
     asyncHandler(async (req, res) => {
       const role = await deps.rbacService.createRole(req.body);
+      await deps.auditLogService.append({
+        actorId: req.session.userId || 'unknown',
+        action: 'role:create',
+        resource: role.id,
+        meta: { correlationId: req.correlationId }
+      });
       res.status(201).json(role);
     })
   );
@@ -154,6 +195,12 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
     requirePermission('iam:write'),
     asyncHandler(async (req, res) => {
       const role = await deps.rbacService.updateRole(req.params.id, req.body);
+      await deps.auditLogService.append({
+        actorId: req.session.userId || 'unknown',
+        action: 'role:update',
+        resource: role.id,
+        meta: { correlationId: req.correlationId }
+      });
       res.json(role);
     })
   );
@@ -163,6 +210,12 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
     requirePermission('iam:write'),
     asyncHandler(async (req, res) => {
       await deps.rbacService.deleteRole(req.params.id);
+      await deps.auditLogService.append({
+        actorId: req.session.userId || 'unknown',
+        action: 'role:delete',
+        resource: req.params.id,
+        meta: { correlationId: req.correlationId }
+      });
       res.status(204).end();
     })
   );
@@ -182,6 +235,12 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
     asyncHandler(async (req, res) => {
       const { userId, name, scopes } = req.body as { userId: string; name: string; scopes: string[] };
       const key = await deps.apiKeyService.create(userId, name, scopes || []);
+      await deps.auditLogService.append({
+        actorId: req.session.userId || 'unknown',
+        action: 'api_key:create',
+        resource: key.id,
+        meta: { correlationId: req.correlationId, userId, name, scopes }
+      });
       res.status(201).json(key);
     })
   );
@@ -191,6 +250,12 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
     requirePermission('iam:write'),
     asyncHandler(async (req, res) => {
       await deps.apiKeyService.revoke(req.params.id);
+      await deps.auditLogService.append({
+        actorId: req.session.userId || 'unknown',
+        action: 'api_key:revoke',
+        resource: req.params.id,
+        meta: { correlationId: req.correlationId }
+      });
       res.status(204).end();
     })
   );

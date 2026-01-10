@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import { SiweMessage } from 'siwe';
 import jwt from 'jsonwebtoken';
 import type { ApiKey, Role, Session, User } from '@ghostl/types';
@@ -14,11 +14,42 @@ import type {
 } from '../modules/identity-access/services';
 
 const defaultRoles: Role[] = [
-  { id: 'viewer', name: 'Viewer', permissions: ['iam:read'] },
+  {
+    id: 'viewer',
+    name: 'Viewer',
+    permissions: [
+      'iam:read',
+      'chain:read',
+      'nodes:read',
+      'observability:read',
+      'bridge:read',
+      'treasury:read',
+      'contracts:read',
+      'devops:read',
+      'governance:read',
+      'validator:read',
+      'ai:read'
+    ]
+  },
   {
     id: 'admin',
     name: 'Protocol Admin',
-    permissions: ['iam:read', 'iam:write', 'feature-flags:write', 'nodes:write', 'chain:write', 'guard:write']
+    permissions: [
+      'iam:read',
+      'iam:write',
+      'feature-flags:write',
+      'nodes:write',
+      'chain:write',
+      'guard:write',
+      'observability:write',
+      'bridge:write',
+      'treasury:write',
+      'contracts:write',
+      'devops:write',
+      'governance:write',
+      'validator:write',
+      'ai:write'
+    ]
   }
 ];
 
@@ -29,7 +60,7 @@ const defaultUsers: User[] = [
 interface StoreShape {
   users: User[];
   roles: Role[];
-  apiKeys: (ApiKey & { userId: string })[];
+  apiKeys: (ApiKey & { userId: string; secret: string })[];
   sessions: Session[];
   audit: AuditLogEntry[];
 }
@@ -109,18 +140,39 @@ export const createPersistentIdentityServices = async () => {
 
   const apiKeyService: ApiKeyService = {
     async list(userId?: string) {
-      if (!userId) return store.apiKeys;
-      return store.apiKeys.filter((k) => k.userId === userId);
+      const keys = userId ? store.apiKeys.filter((k) => k.userId === userId) : store.apiKeys;
+      return keys.map(({ secret: _secret, ...rest }) => rest);
     },
     async create(userId: string, name: string, scopes: string[]) {
-      const key: ApiKey & { userId: string } = { id: randomUUID(), name, scopes, userId, lastUsedAt: undefined };
+      const secret = randomUUID();
+      const hashed = await hashSecret(secret);
+      const key: ApiKey & { userId: string; secret: string } = {
+        id: randomUUID(),
+        name,
+        scopes,
+        userId,
+        lastUsedAt: undefined,
+        secret: hashed
+      };
       store.apiKeys.push(key);
       await persist();
-      return key;
+      await auditLogService.append({
+        actorId: userId,
+        action: 'api_key:create',
+        resource: key.id,
+        meta: { name, scopes }
+      });
+      const { secret: _hashedSecret, ...rest } = key;
+      return { ...rest, secret };
     },
     async revoke(id: string) {
       store.apiKeys = store.apiKeys.filter((k) => k.id !== id);
       await persist();
+      await auditLogService.append({
+        actorId: 'system',
+        action: 'api_key:revoke',
+        resource: id
+      });
     }
   };
 
@@ -156,6 +208,12 @@ export const createPersistentIdentityServices = async () => {
         }));
       const session = issueSession(user.id);
       await persist();
+      await auditLogService.append({
+        actorId: user.id,
+        action: 'login:wallet',
+        resource: user.id,
+        meta: { wallets: user.wallets }
+      });
       return session;
     },
     async loginWithSso(token: string) {
@@ -173,6 +231,12 @@ export const createPersistentIdentityServices = async () => {
       }
       const session = issueSession(user.id);
       await persist();
+      await auditLogService.append({
+        actorId: user.id,
+        action: 'login:sso',
+        resource: user.id,
+        meta: { email, roles: user.roles }
+      });
       return session;
     },
     async getSession(sessionId: string) {
@@ -180,6 +244,11 @@ export const createPersistentIdentityServices = async () => {
     },
     async revokeSession(sessionId: string) {
       store.sessions = store.sessions.filter((s) => s.id !== sessionId);
+      await auditLogService.append({
+        actorId: 'system',
+        action: 'session:revoke',
+        resource: sessionId
+      });
       await persist();
     }
   };
@@ -195,4 +264,8 @@ const verifySiwe = async (message: string, signature: string, nonce: string): Pr
   } catch {
     return null;
   }
+};
+
+const hashSecret = async (secret: string) => {
+  return createHash('sha256').update(secret).digest('hex');
 };

@@ -7,5 +7,7 @@ declare module 'express-session' {
     permissions?: string[];
     nonce?: string;
     nonceCreatedAt?: number;
+    expiresAt?: number;
+    lastSeenAt?: number;
   }
 }

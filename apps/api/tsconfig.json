@@ -5,7 +5,7 @@
     "rootDir": "../..",
     "lib": ["ES2021"],
     "types": ["node", "express-session"],
-    "typeRoots": ["./src/types", "./node_modules/@types"],
+    "typeRoots": ["./src/types", "./node_modules/@types", "../../node_modules/@types"],
     "noEmitOnError": true
   },
   "include": [
