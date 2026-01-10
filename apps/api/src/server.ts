@@ -1,4 +1,6 @@
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import express from 'express';
 import session from 'express-session';
 import FileStoreFactory from 'session-file-store';
@@ -47,6 +49,15 @@ type ExplorerTx = {
   nonce?: string;
   blockNumber: string;
   time: string;
+};
+type TreasuryProposal = {
+  id: string;
+  action: string;
+  payload?: Record<string, unknown>;
+  approvals: string[];
+  status: 'pending' | 'ready';
+  createdAt: string;
+  updatedAt: string;
 };
 
 const app = express();
@@ -181,6 +192,24 @@ const sendNotification = async (alert: { id?: string; message?: string; severity
     })
   );
 };
+
+const treasuryStateFile = process.env.TREASURY_STATE_FILE || path.join(process.cwd(), 'data', 'treasury-proposals.json');
+const ensureDir = (filePath: string) => fs.mkdirSync(path.dirname(filePath), { recursive: true });
+const loadTreasuryProposals = (): TreasuryProposal[] => {
+  try {
+    const raw = fs.readFileSync(treasuryStateFile, 'utf-8');
+    return JSON.parse(raw) as TreasuryProposal[];
+  } catch {
+    ensureDir(treasuryStateFile);
+    fs.writeFileSync(treasuryStateFile, JSON.stringify([]));
+    return [];
+  }
+};
+const saveTreasuryProposals = (items: TreasuryProposal[]) => {
+  ensureDir(treasuryStateFile);
+  fs.writeFileSync(treasuryStateFile, JSON.stringify(items, null, 2));
+};
+let treasuryProposals = loadTreasuryProposals();
 
 const fetchOk = async (url: string, timeoutMs = 2000) => {
   const controller = new AbortController();
@@ -449,21 +478,52 @@ app.post(['/v1/api/treasury/approve', '/api/treasury/approve'], requirePermissio
   const requiredSigners =
     (env.TREASURY_MULTISIG_SIGNERS && env.TREASURY_MULTISIG_SIGNERS.split(',').map((s) => s.trim()).filter(Boolean)) || [];
   const threshold = env.TREASURY_MULTISIG_THRESHOLD;
+  let proposal = treasuryProposals.find((p) => p.id === proposalId);
+  if (!proposal) {
+    proposal = {
+      id: proposalId,
+      action: 'unknown',
+      payload: {},
+      approvals: [],
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    treasuryProposals.push(proposal);
+  }
+  if (requiredSigners.length && !requiredSigners.includes(signer)) {
+    res.status(403).json({ error: 'unauthorized_signer' });
+    return;
+  }
+  if (!proposal.approvals.includes(signer)) {
+    proposal.approvals.push(signer);
+  }
+  if (proposal.approvals.length >= threshold) {
+    proposal.status = 'ready';
+  }
+  proposal.updatedAt = new Date().toISOString();
+  saveTreasuryProposals(treasuryProposals);
   const approval = {
     proposalId,
     signer,
     at: new Date().toISOString(),
     threshold,
     totalSigners: requiredSigners.length,
-    requiredSigners
+    requiredSigners,
+    approvals: proposal.approvals,
+    status: proposal.status
   };
   await auditLogService?.append({
     actorId: req.session.userId || 'unknown',
     action: 'treasury:approve',
     resource: proposalId,
-    meta: { correlationId: req.correlationId, signer }
+    meta: { correlationId: req.correlationId, signer, status: proposal.status }
   });
   res.json({ ok: true, approval });
+});
+
+app.get(['/v1/api/treasury/proposals', '/api/treasury/proposals'], requirePermission('treasury:read'), async (_req, res) => {
+  res.json({ ok: true, proposals: treasuryProposals });
 });
 
 app.get(['/v1/devops/releases', '/devops/releases'], requirePermission('devops:read'), async (_req, res) => {
