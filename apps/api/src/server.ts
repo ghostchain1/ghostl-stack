@@ -7,6 +7,7 @@ import FileStoreFactory from 'session-file-store';
 import cors from 'cors';
 import { fetch } from 'undici';
 import type {} from './types/session';
+import { Interface, JsonRpcProvider, Wallet } from 'ethers';
 import { buildAppShellRouter } from './modules/app-shell/router';
 import { buildIdentityAccessRouter } from './modules/identity-access/router';
 import { buildChainRouter } from './modules/chain/router';
@@ -233,6 +234,21 @@ const saveContractState = (items: ContractState[]) => {
   fs.writeFileSync(contractStateFile, JSON.stringify(items, null, 2));
 };
 let contractStates = loadContractState();
+const pausibleAbi = ['function pause()', 'function unpause()'];
+const pausableInterface = new Interface(pausibleAbi);
+
+const sendContractTx = async (method: 'pause' | 'unpause') => {
+  if (!env.CONTRACT_RPC_URL || !env.CONTRACT_ADMIN_KEY || !env.CONTRACT_TARGET_ADDRESS) {
+    throw new Error('contract tx not configured');
+  }
+  const provider = new JsonRpcProvider(env.CONTRACT_RPC_URL);
+  const wallet = new Wallet(env.CONTRACT_ADMIN_KEY, provider);
+  const tx = await wallet.sendTransaction({
+    to: env.CONTRACT_TARGET_ADDRESS,
+    data: pausableInterface.encodeFunctionData(method)
+  });
+  return tx.hash;
+};
 
 const fetchOk = async (url: string, timeoutMs = 2000) => {
   const controller = new AbortController();
@@ -487,6 +503,12 @@ app.post(['/v1/api/contracts/pause', '/api/contracts/pause'], requirePermission(
     res.status(400).json({ error: 'address required' });
     return;
   }
+  let txHash: string | undefined;
+  try {
+    txHash = await sendContractTx('pause');
+  } catch {
+    // if on-chain call fails, still record desired state
+  }
   const existing = contractStates.find((c) => c.address.toLowerCase() === (address as string).toLowerCase());
   const now = new Date().toISOString();
   if (existing) {
@@ -501,10 +523,10 @@ app.post(['/v1/api/contracts/pause', '/api/contracts/pause'], requirePermission(
     actorId: req.session.userId || 'unknown',
     action: 'contract:pause',
     resource: address,
-    meta: { correlationId: req.correlationId, reason }
+    meta: { correlationId: req.correlationId, reason, txHash }
   });
   await sendNotification({ id: 'contract_pause', message: `Paused ${address}`, severity: 'critical' }, notificationChannels.map((c) => c.id));
-  res.json({ ok: true, address, paused: true });
+  res.json({ ok: true, address, paused: true, txHash });
 });
 
 app.post(['/v1/api/contracts/resume', '/api/contracts/resume'], requirePermission('contracts:write'), async (req, res) => {
@@ -512,6 +534,12 @@ app.post(['/v1/api/contracts/resume', '/api/contracts/resume'], requirePermissio
   if (!address) {
     res.status(400).json({ error: 'address required' });
     return;
+  }
+  let txHash: string | undefined;
+  try {
+    txHash = await sendContractTx('unpause');
+  } catch {
+    // ignore, still update desired state
   }
   const existing = contractStates.find((c) => c.address.toLowerCase() === (address as string).toLowerCase());
   const now = new Date().toISOString();
@@ -527,9 +555,9 @@ app.post(['/v1/api/contracts/resume', '/api/contracts/resume'], requirePermissio
     actorId: req.session.userId || 'unknown',
     action: 'contract:resume',
     resource: address,
-    meta: { correlationId: req.correlationId }
+    meta: { correlationId: req.correlationId, txHash }
   });
-  res.json({ ok: true, address, paused: false });
+  res.json({ ok: true, address, paused: false, txHash });
 });
 
 app.get(['/v1/api/token', '/api/token'], requirePermission('treasury:read'), async (_req, res) => {
