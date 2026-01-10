@@ -80,6 +80,7 @@ type UpgradePlan = {
   createdAt: string;
   updatedAt: string;
   rollbackOf?: string;
+  lastDryRunAt?: string;
 };
 
 const app = express();
@@ -385,6 +386,42 @@ const executeUpgradeAction = async (action?: { type: string; payload?: Record<st
     }
     default:
       return undefined;
+  }
+};
+
+const allowlist = (env.EXECUTION_ALLOWLIST && env.EXECUTION_ALLOWLIST.split(',').map((a) => a.trim().toLowerCase()).filter(Boolean)) || [];
+const isAllowedAddress = (addr?: string) => {
+  if (!addr) return true;
+  if (!allowlist.length) return true;
+  return allowlist.includes(addr.toLowerCase());
+};
+
+const assertAllowedAction = (action?: { type: string; payload?: Record<string, unknown> }) => {
+  if (!action) return;
+  const payload = action.payload || {};
+  switch (action.type) {
+    case 'pause':
+    case 'unpause':
+      if (!isAllowedAddress(payload.address as string)) throw new Error('address not allowlisted');
+      return;
+    case 'upgrade': {
+      const proxy = (payload.proxyAddress as string) || env.CONTRACT_TARGET_ADDRESS;
+      const admin = env.CONTRACT_PROXY_ADMIN_ADDRESS || proxy;
+      if (!isAllowedAddress(proxy) || !isAllowedAddress(admin) || !isAllowedAddress(payload.implementation as string)) {
+        throw new Error('upgrade target not allowlisted');
+      }
+      return;
+    }
+    case 'transferOwnership':
+      if (!isAllowedAddress(payload.address as string) || !isAllowedAddress(payload.newOwner as string)) {
+        throw new Error('ownership target not allowlisted');
+      }
+      return;
+    case 'execute':
+      if (!isAllowedAddress(payload.to as string)) throw new Error('execute target not allowlisted');
+      return;
+    default:
+      return;
   }
 };
 
@@ -860,6 +897,10 @@ app.post(['/v1/devops/upgrade-plans/:id/execute'], requirePermission('devops:wri
     res.status(404).json({ error: 'plan_not_found' });
     return;
   }
+  if (plan.steps.length > env.EXECUTION_MAX_ACTIONS) {
+    res.status(400).json({ error: 'too_many_actions', max: env.EXECUTION_MAX_ACTIONS });
+    return;
+  }
   const dryRun = req.query.dryRun === '1' || req.query.dryRun === 'true';
   const approved = req.header('x-execution-approve') === 'yes';
   const token = req.header('x-execution-token');
@@ -868,7 +909,24 @@ app.post(['/v1/devops/upgrade-plans/:id/execute'], requirePermission('devops:wri
     res.status(400).json({ error: 'approval required: set x-execution-approve: yes and valid x-execution-token or dryRun=1' });
     return;
   }
+  if (!dryRun) {
+    if (!plan.lastDryRunAt) {
+      res.status(400).json({ error: 'dry_run_required' });
+      return;
+    }
+    const last = new Date(plan.lastDryRunAt).getTime();
+    if (Date.now() - last > env.EXECUTION_DRY_RUN_TTL_MS) {
+      res.status(400).json({ error: 'dry_run_expired' });
+      return;
+    }
+  }
   for (const step of plan.steps) {
+    try {
+      assertAllowedAction(step.action);
+    } catch (e) {
+      res.status(400).json({ error: (e as Error).message, step: step.id });
+      return;
+    }
     step.status = dryRun ? 'pending' : 'in_progress';
     saveUpgradePlans(upgradePlans);
     try {
@@ -888,6 +946,9 @@ app.post(['/v1/devops/upgrade-plans/:id/execute'], requirePermission('devops:wri
     }
   }
   plan.updatedAt = new Date().toISOString();
+  if (dryRun) {
+    plan.lastDryRunAt = new Date().toISOString();
+  }
   saveUpgradePlans(upgradePlans);
   await auditLogService?.append({
     actorId: req.session.userId || 'unknown',
@@ -933,6 +994,10 @@ app.post(['/v1/devops/rollback/:id/execute'], requirePermission('devops:write'),
     res.status(404).json({ error: 'plan_not_found' });
     return;
   }
+  if (plan.steps.length > env.EXECUTION_MAX_ACTIONS) {
+    res.status(400).json({ error: 'too_many_actions', max: env.EXECUTION_MAX_ACTIONS });
+    return;
+  }
   const dryRun = req.query.dryRun === '1' || req.query.dryRun === 'true';
   const approved = req.header('x-execution-approve') === 'yes';
   const token = req.header('x-execution-token');
@@ -942,6 +1007,12 @@ app.post(['/v1/devops/rollback/:id/execute'], requirePermission('devops:write'),
     return;
   }
   for (const step of plan.steps) {
+    try {
+      assertAllowedAction(step.action);
+    } catch (e) {
+      res.status(400).json({ error: (e as Error).message, step: step.id });
+      return;
+    }
     step.status = dryRun ? 'pending' : 'in_progress';
     saveUpgradePlans(upgradePlans);
     try {
