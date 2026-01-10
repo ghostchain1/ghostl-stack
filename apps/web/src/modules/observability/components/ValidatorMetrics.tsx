@@ -8,6 +8,7 @@ type Metrics = {
   participationRate?: number;
   lastProposer?: string;
   proposerRotation?: { proposer: string; at: string }[];
+  proposerSummary?: { proposer: string; count: number }[];
   bftAlerts?: { message: string; severity: string; time: string }[];
 };
 
@@ -65,6 +66,18 @@ export function ValidatorMetrics() {
                 {p.proposer} · {new Date(p.at).toLocaleTimeString()}
               </div>
             ))}
+          </div>
+        )}
+        {metrics.proposerSummary && metrics.proposerSummary.length > 0 && (
+          <div className="stack" style={{ gap: 4 }}>
+            <div className="muted">Rotation heatmap (last hour)</div>
+            <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
+              {metrics.proposerSummary.map((p) => (
+                <div key={p.proposer} className="pill">
+                  {p.proposer}: {p.count}
+                </div>
+              ))}
+            </div>
           </div>
         )}
         {metrics.bftAlerts && metrics.bftAlerts.length > 0 && (

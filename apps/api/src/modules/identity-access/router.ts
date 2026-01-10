@@ -54,13 +54,17 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
   router.post(
     '/auth/login/wallet',
     asyncHandler(async (req, res) => {
-      const { message, signature } = req.body as { message?: string; signature?: string };
+      const { message, signature, hardwareProof } = req.body as { message?: string; signature?: string; hardwareProof?: string };
       if (!message || !signature) {
         res.status(400).json({ error: 'message and signature required' });
         return;
       }
       if (!req.session.nonce || !req.session.nonceCreatedAt || Date.now() - req.session.nonceCreatedAt > 5 * 60 * 1000) {
         res.status(400).json({ error: 'nonce_required_or_expired' });
+        return;
+      }
+      if (process.env.HARDWARE_WALLET_REQUIRED === 'true' && !hardwareProof) {
+        res.status(403).json({ error: 'hardware_wallet_required' });
         return;
       }
       const session = await deps.authService.loginWithWallet(message, signature, req.session.nonce);
@@ -72,9 +76,9 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
         actorId: user?.id || 'unknown',
         action: 'login:wallet',
         resource: user?.id || 'unknown',
-        meta: { correlationId: req.correlationId }
+        meta: { correlationId: req.correlationId, hardwareWallet: process.env.HARDWARE_WALLET_REQUIRED === 'true' }
       });
-      res.json({ session, user, permissions });
+      res.json({ session, user, permissions, hardwareRequired: process.env.HARDWARE_WALLET_REQUIRED === 'true' });
     })
   );
 
