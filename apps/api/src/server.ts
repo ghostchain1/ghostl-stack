@@ -81,6 +81,7 @@ type UpgradePlan = {
   updatedAt: string;
   rollbackOf?: string;
   lastDryRunAt?: string;
+  approvals: string[];
 };
 
 const app = express();
@@ -849,7 +850,8 @@ app.post(['/v1/devops/upgrade-plans', '/devops/upgrade-plans'], requirePermissio
       action: s.action
     })),
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    approvals: []
   };
   upgradePlans.push(plan);
   saveUpgradePlans(upgradePlans);
@@ -891,6 +893,30 @@ app.post(['/v1/devops/upgrade-plans/:id/steps/:stepId'], requirePermission('devo
   res.json({ ok: true, plan });
 });
 
+app.post(['/v1/devops/upgrade-plans/:id/approve'], requirePermission('devops:write'), async (req, res) => {
+  const plan = upgradePlans.find((p) => p.id === req.params.id);
+  if (!plan) {
+    res.status(404).json({ error: 'plan_not_found' });
+    return;
+  }
+  if (!req.session.userId) {
+    res.status(401).json({ error: 'unauthenticated' });
+    return;
+  }
+  if (!plan.approvals.includes(req.session.userId)) {
+    plan.approvals.push(req.session.userId);
+  }
+  plan.updatedAt = new Date().toISOString();
+  saveUpgradePlans(upgradePlans);
+  await auditLogService?.append({
+    actorId: req.session.userId,
+    action: 'upgrade-plan:approve',
+    resource: plan.id,
+    meta: { correlationId: req.correlationId }
+  });
+  res.json({ ok: true, approvals: plan.approvals });
+});
+
 app.post(['/v1/devops/upgrade-plans/:id/execute'], requirePermission('devops:write'), async (req, res) => {
   const plan = upgradePlans.find((p) => p.id === req.params.id);
   if (!plan) {
@@ -907,6 +933,10 @@ app.post(['/v1/devops/upgrade-plans/:id/execute'], requirePermission('devops:wri
   const tokenOk = env.EXECUTION_APPROVAL_TOKEN ? token === env.EXECUTION_APPROVAL_TOKEN : true;
   if (!dryRun && (!approved || !tokenOk)) {
     res.status(400).json({ error: 'approval required: set x-execution-approve: yes and valid x-execution-token or dryRun=1' });
+    return;
+  }
+  if (!dryRun && new Set(plan.approvals).size < 2) {
+    res.status(400).json({ error: 'dual_approval_required' });
     return;
   }
   if (!dryRun) {
@@ -1004,6 +1034,10 @@ app.post(['/v1/devops/rollback/:id/execute'], requirePermission('devops:write'),
   const tokenOk = env.EXECUTION_APPROVAL_TOKEN ? token === env.EXECUTION_APPROVAL_TOKEN : true;
   if (!dryRun && (!approved || !tokenOk)) {
     res.status(400).json({ error: 'approval required: set x-execution-approve: yes and valid x-execution-token or dryRun=1' });
+    return;
+  }
+  if (!dryRun && new Set(plan.approvals).size < 2) {
+    res.status(400).json({ error: 'dual_approval_required' });
     return;
   }
   for (const step of plan.steps) {
