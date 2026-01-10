@@ -15,6 +15,10 @@ const EnvSchema = z.object({
     .string()
     .transform((v) => v === 'true')
     .optional(),
+  PUBLIC_CHAIN: z
+    .string()
+    .transform((v) => v === 'true')
+    .optional(),
   BRIDGE_SERVICE_URL: z.string().url().default('http://localhost:7604'),
   TRANSFER_SERVICE_URL: z.string().url().default('http://localhost:7605'),
   LIQUIDITY_SERVICE_URL: z.string().url().default('http://localhost:7606'),
