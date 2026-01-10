@@ -889,20 +889,30 @@ app.post(['/v1/devops/rollback/:id/execute'], requirePermission('devops:write'),
     res.status(404).json({ error: 'plan_not_found' });
     return;
   }
+  const dryRun = req.query.dryRun === '1' || req.query.dryRun === 'true';
+  const approved = req.header('x-execution-approve') === 'yes';
+  if (!dryRun && !approved) {
+    res.status(400).json({ error: 'approval required: set x-execution-approve: yes or dryRun=1' });
+    return;
+  }
   for (const step of plan.steps) {
-    step.status = 'in_progress';
+    step.status = dryRun ? 'pending' : 'in_progress';
     saveUpgradePlans(upgradePlans);
     try {
-      const txHash = await executeUpgradeAction(step.action);
-      step.notes = `completed at ${new Date().toISOString()}${txHash ? ` tx=${txHash}` : ''}`;
+      const txHash = dryRun ? undefined : await executeUpgradeAction(step.action);
+      step.notes = `${dryRun ? 'dry-run at' : 'completed at'} ${new Date().toISOString()}${txHash ? ` tx=${txHash}` : ''}`;
     } catch (e) {
-      step.status = 'pending';
-      saveUpgradePlans(upgradePlans);
-      res.status(500).json({ error: (e as Error).message, step: step.id });
+      if (!dryRun) {
+        step.status = 'pending';
+        saveUpgradePlans(upgradePlans);
+      }
+      res.status(500).json({ error: (e as Error).message, step: step.id, dryRun });
       return;
     }
-    step.status = 'done';
-    saveUpgradePlans(upgradePlans);
+    if (!dryRun) {
+      step.status = 'done';
+      saveUpgradePlans(upgradePlans);
+    }
   }
   plan.updatedAt = new Date().toISOString();
   saveUpgradePlans(upgradePlans);
@@ -1235,3 +1245,24 @@ if (require.main === module) {
 }
 
 export default app;
+app.post(['/v1/webhooks/alerts', '/webhooks/alerts'], async (req, res) => {
+  if (!env.ALERT_WEBHOOK_SECRET) {
+    res.status(503).json({ error: 'webhook verification not configured' });
+    return;
+  }
+  const signature = req.header('x-signature-sha256');
+  const ts = req.header('x-signature-ts');
+  if (!signature || !ts) {
+    res.status(400).json({ error: 'missing signature headers' });
+    return;
+  }
+  const body = JSON.stringify(req.body || {});
+  const hmac = crypto.createHmac('sha256', env.ALERT_WEBHOOK_SECRET);
+  hmac.update(`${ts}:${body}`);
+  const expected = hmac.digest('hex');
+  if (expected !== signature) {
+    res.status(401).json({ error: 'invalid signature' });
+    return;
+  }
+  res.json({ ok: true });
+});
