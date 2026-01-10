@@ -81,7 +81,7 @@ type UpgradePlan = {
   updatedAt: string;
   rollbackOf?: string;
   lastDryRunAt?: string;
-  approvals: string[];
+  approvals: { userId: string; at: string }[];
 };
 
 const app = express();
@@ -311,7 +311,7 @@ const saveContractState = (items: ContractState[]) => {
   fs.writeFileSync(contractStateFile, JSON.stringify(items, null, 2));
 };
 let contractStates = loadContractState();
-const pausableAbi = ['function pause()', 'function unpause()'];
+const pausableAbi = ['function pause()', 'function unpause()', 'function paused() view returns (bool)'];
 const proxyAdminAbi = ['function upgrade(address proxy, address implementation)', 'function upgradeTo(address implementation)'];
 const ownableAbi = ['function transferOwnership(address newOwner)'];
 const guardianAbi = ['function setGuardian(address)'];
@@ -332,6 +332,17 @@ const sendRawTx = async (to: string, data: string) => {
 
 const sendContractTx = async (method: 'pause' | 'unpause', target = env.CONTRACT_TARGET_ADDRESS) => {
   if (!target) throw new Error('contract target not configured');
+  const provider = env.CONTRACT_RPC_URL ? new JsonRpcProvider(env.CONTRACT_RPC_URL) : undefined;
+  if (provider) {
+    try {
+      const current = await provider.call({ to: target, data: pausableInterface.encodeFunctionData('paused') });
+      const paused = pausableInterface.decodeFunctionResult('paused', current)[0] as boolean;
+      if (method === 'pause' && paused) return undefined;
+      if (method === 'unpause' && !paused) return undefined;
+    } catch {
+      // ignore validation failures
+    }
+  }
   const data = pausableInterface.encodeFunctionData(method);
   return sendRawTx(target, data);
 };
@@ -903,8 +914,8 @@ app.post(['/v1/devops/upgrade-plans/:id/approve'], requirePermission('devops:wri
     res.status(401).json({ error: 'unauthenticated' });
     return;
   }
-  if (!plan.approvals.includes(req.session.userId)) {
-    plan.approvals.push(req.session.userId);
+  if (!plan.approvals.find((a) => a.userId === req.session.userId)) {
+    plan.approvals.push({ userId: req.session.userId, at: new Date().toISOString() });
   }
   plan.updatedAt = new Date().toISOString();
   saveUpgradePlans(upgradePlans);
@@ -935,7 +946,7 @@ app.post(['/v1/devops/upgrade-plans/:id/execute'], requirePermission('devops:wri
     res.status(400).json({ error: 'approval required: set x-execution-approve: yes and valid x-execution-token or dryRun=1' });
     return;
   }
-  if (!dryRun && new Set(plan.approvals).size < 2) {
+  if (!dryRun && new Set(plan.approvals.map((a) => a.userId)).size < 2) {
     res.status(400).json({ error: 'dual_approval_required' });
     return;
   }
@@ -1036,7 +1047,7 @@ app.post(['/v1/devops/rollback/:id/execute'], requirePermission('devops:write'),
     res.status(400).json({ error: 'approval required: set x-execution-approve: yes and valid x-execution-token or dryRun=1' });
     return;
   }
-  if (!dryRun && new Set(plan.approvals).size < 2) {
+  if (!dryRun && new Set(plan.approvals.map((a) => a.userId)).size < 2) {
     res.status(400).json({ error: 'dual_approval_required' });
     return;
   }
@@ -1215,6 +1226,34 @@ app.get(['/v1/api/validators/metrics', '/api/validators/metrics'], requirePermis
 app.get(['/v1/api/ai', '/api/ai'], requirePermission('ai:read'), async (_req, res) => {
   const data = await proxyJson<{ networks?: unknown[] }>(`${servicesBase.ai}/anomalies`, { networks: [] });
   res.json(data || { networks: [] });
+});
+
+app.get(['/v1/observability/incidents', '/observability/incidents'], requirePermission('observability:read'), async (_req, res) => {
+  const bridgeIncidents = await proxyJson<{ incidents?: unknown[] }>(`${servicesBase.bridge}/bridges/incidents`, { incidents: [] }).catch(() => ({
+    incidents: []
+  }));
+  let validatorAlerts: Array<{ source: string; message: string; severity: string; time: string }> = [];
+  try {
+    const alerts = await prometheus.alerts();
+    validatorAlerts =
+      alerts
+        ?.filter((a) => a.labels?.job?.includes('validator') || a.labels?.alertname?.includes('missed'))
+        .map((a) => ({
+          source: a.labels?.job || 'prometheus',
+          message: a.annotations?.summary || a.annotations?.description || a.labels?.alertname || 'alert',
+          severity: a.labels?.severity || 'info',
+          time: a.activeAt || new Date().toISOString()
+        })) || [];
+  } catch {
+    validatorAlerts = [];
+  }
+  res.json({
+    ok: true,
+    incidents: [
+      ...((bridgeIncidents.incidents as any[]) || []).map((i) => ({ ...i, source: 'bridge' })),
+      ...validatorAlerts
+    ]
+  });
 });
 
 app.get(['/v1/explorer/blocks', '/explorer/blocks'], async (req, res) => {
