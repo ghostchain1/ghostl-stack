@@ -59,6 +59,12 @@ type TreasuryProposal = {
   createdAt: string;
   updatedAt: string;
 };
+type ContractState = {
+  address: string;
+  paused: boolean;
+  reason?: string;
+  updatedAt: string;
+};
 
 const app = express();
 const FileStore = FileStoreFactory(session);
@@ -210,6 +216,23 @@ const saveTreasuryProposals = (items: TreasuryProposal[]) => {
   fs.writeFileSync(treasuryStateFile, JSON.stringify(items, null, 2));
 };
 let treasuryProposals = loadTreasuryProposals();
+
+const contractStateFile = env.CONTRACT_STATE_FILE || path.join(process.cwd(), 'data', 'contracts-state.json');
+const loadContractState = (): ContractState[] => {
+  try {
+    const raw = fs.readFileSync(contractStateFile, 'utf-8');
+    return JSON.parse(raw) as ContractState[];
+  } catch {
+    ensureDir(contractStateFile);
+    fs.writeFileSync(contractStateFile, JSON.stringify([]));
+    return [];
+  }
+};
+const saveContractState = (items: ContractState[]) => {
+  ensureDir(contractStateFile);
+  fs.writeFileSync(contractStateFile, JSON.stringify(items, null, 2));
+};
+let contractStates = loadContractState();
 
 const fetchOk = async (url: string, timeoutMs = 2000) => {
   const controller = new AbortController();
@@ -447,10 +470,66 @@ app.get(['/v1/api/contracts', '/api/contracts'], requirePermission('contracts:re
         verified: c.verified,
         upgradeable: upgradeMetric ? upgradeMetric.value?.[1] === '1' : undefined,
         paused: pausedMetric ? pausedMetric.value?.[1] === '1' : undefined,
+        desiredState: contractStates.find((s) => s.address.toLowerCase() === address.toLowerCase()),
         risk: risks.contracts?.find((r) => (r.address as string)?.toLowerCase() === address.toLowerCase())
       };
     }) || [];
   res.json({ ok: true, networks: merged });
+});
+
+app.get(['/v1/api/contracts/state', '/api/contracts/state'], requirePermission('contracts:read'), async (_req, res) => {
+  res.json({ ok: true, contracts: contractStates });
+});
+
+app.post(['/v1/api/contracts/pause', '/api/contracts/pause'], requirePermission('contracts:write'), async (req, res) => {
+  const { address, reason } = req.body || {};
+  if (!address) {
+    res.status(400).json({ error: 'address required' });
+    return;
+  }
+  const existing = contractStates.find((c) => c.address.toLowerCase() === (address as string).toLowerCase());
+  const now = new Date().toISOString();
+  if (existing) {
+    existing.paused = true;
+    existing.reason = reason;
+    existing.updatedAt = now;
+  } else {
+    contractStates.push({ address, paused: true, reason, updatedAt: now });
+  }
+  saveContractState(contractStates);
+  await auditLogService?.append({
+    actorId: req.session.userId || 'unknown',
+    action: 'contract:pause',
+    resource: address,
+    meta: { correlationId: req.correlationId, reason }
+  });
+  await sendNotification({ id: 'contract_pause', message: `Paused ${address}`, severity: 'critical' }, notificationChannels.map((c) => c.id));
+  res.json({ ok: true, address, paused: true });
+});
+
+app.post(['/v1/api/contracts/resume', '/api/contracts/resume'], requirePermission('contracts:write'), async (req, res) => {
+  const { address } = req.body || {};
+  if (!address) {
+    res.status(400).json({ error: 'address required' });
+    return;
+  }
+  const existing = contractStates.find((c) => c.address.toLowerCase() === (address as string).toLowerCase());
+  const now = new Date().toISOString();
+  if (existing) {
+    existing.paused = false;
+    existing.updatedAt = now;
+    existing.reason = undefined;
+  } else {
+    contractStates.push({ address, paused: false, updatedAt: now });
+  }
+  saveContractState(contractStates);
+  await auditLogService?.append({
+    actorId: req.session.userId || 'unknown',
+    action: 'contract:resume',
+    resource: address,
+    meta: { correlationId: req.correlationId }
+  });
+  res.json({ ok: true, address, paused: false });
 });
 
 app.get(['/v1/api/token', '/api/token'], requirePermission('treasury:read'), async (_req, res) => {
