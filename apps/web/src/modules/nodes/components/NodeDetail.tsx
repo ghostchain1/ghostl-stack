@@ -10,6 +10,11 @@ export function NodeDetail({ node, metrics }: { node: Node; metrics?: NodeMetric
           <div style={{ fontWeight: 800 }}>{node.id}</div>
           <div className="muted">
             {node.type} · {node.host} · {node.version}
+            {metrics?.versionDrift && (
+              <span className="pill warn" style={{ marginLeft: 8 }}>
+                drift vs {metrics.expectedVersion || 'expected'}
+              </span>
+            )}
           </div>
         </div>
         <div className={`badge ${node.status === 'online' ? 'ok' : node.status === 'syncing' ? 'warn' : 'bad'}`}>{node.status}</div>

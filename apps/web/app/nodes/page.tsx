@@ -35,7 +35,20 @@ export default async function NodesPage() {
               </div>
               <div className="spread">
                 <span className="muted">Version</span>
-                <span>{node.version}</span>
+                <span>
+                  {node.version}
+                  {node.metrics.versionDrift ? (
+                    <Badge tone="warning" style={{ marginLeft: 6 }}>
+                      drift vs {node.metrics.expectedVersion || 'expected'}
+                    </Badge>
+                  ) : null}
+                </span>
+              </div>
+              <div className="spread">
+                <span className="muted">CPU / Mem / Disk</span>
+                <span>
+                  {node.metrics.cpu}% / {node.metrics.mem}% / {node.metrics.disk}%
+                </span>
               </div>
               <div className="spread">
                 <span className="muted">Peers</span>

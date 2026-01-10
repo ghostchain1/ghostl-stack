@@ -56,7 +56,11 @@ const EnvSchema = z.object({
   CHAIN_ENV: z.string().optional(),
   CONSENSUS: z.string().optional(),
   PROM_MISSED_BLOCKS_QUERY: z.string().optional(),
-  PROM_FINALITY_LAG_QUERY: z.string().optional()
+  PROM_FINALITY_LAG_QUERY: z.string().optional(),
+  PROM_PARTICIPATION_QUERY: z.string().optional(),
+  PROM_PROPOSER_QUERY: z.string().optional(),
+  EXPECTED_NODE_VERSION: z.string().optional(),
+  GAS_PRICE_MODEL: z.string().optional()
 });
 
 const parsed = EnvSchema.safeParse(process.env);

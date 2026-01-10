@@ -1299,6 +1299,20 @@ app.get(['/v1/api/validators/metrics', '/api/validators/metrics'], requirePermis
       return fallback;
     }
   };
+  const queryString = async (query?: string, fallback?: string) => {
+    if (!query) return fallback;
+    try {
+      const result = await prometheus.query(query);
+      if (!result?.length) return fallback;
+      const first = result[0];
+      const fromMetric = first.metric?.proposer || first.metric?.validator || first.metric?.role;
+      if (fromMetric) return fromMetric;
+      const val = first?.value?.[1];
+      return typeof val === 'string' ? val : fallback;
+    } catch {
+      return fallback;
+    }
+  };
   const missedBlocks =
     (await queryNumber(env.PROM_MISSED_BLOCKS_QUERY || 'op_gate_missed_blocks')) ??
     (await queryNumber('missed_blocks_total')) ??
@@ -1311,11 +1325,41 @@ app.get(['/v1/api/validators/metrics', '/api/validators/metrics'], requirePermis
     const finalized = await queryNumber(process.env.PROM_FINALIZED_HEIGHT_QUERY || 'op_gate_finalized_block');
     if (head !== undefined && finalized !== undefined) finalityLag = head - finalized;
   }
+  const participationRate =
+    (await queryNumber(env.PROM_PARTICIPATION_QUERY || 'op_gate_participation_rate')) ??
+    (await queryNumber('participation_rate')) ??
+    0;
+  const lastProposer =
+    (await queryString(env.PROM_PROPOSER_QUERY || 'op_gate_last_proposer')) ||
+    (await queryString('last_proposer')) ||
+    'unknown';
+  let bftAlerts: Array<{ message: string; severity: string; time: string }> = [];
+  try {
+    const alerts = await prometheus.alerts();
+    bftAlerts =
+      alerts
+        ?.filter(
+          (a) =>
+            a.labels?.alertname?.toLowerCase().includes('bft') ||
+            a.labels?.alertname?.toLowerCase().includes('equivocation') ||
+            a.labels?.alertname?.toLowerCase().includes('double')
+        )
+        .map((a) => ({
+          message: a.annotations?.summary || a.annotations?.description || a.labels?.alertname || 'consensus alert',
+          severity: a.labels?.severity || 'info',
+          time: a.activeAt || new Date().toISOString()
+        })) || [];
+  } catch {
+    bftAlerts = [];
+  }
   res.json({
     ok: true,
     metrics: {
       missedBlocks,
-      finalityLag: finalityLag ?? 0
+      finalityLag: finalityLag ?? 0,
+      participationRate,
+      lastProposer,
+      bftAlerts
     }
   });
 });

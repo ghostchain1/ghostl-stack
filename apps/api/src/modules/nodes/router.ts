@@ -32,7 +32,11 @@ export const buildNodeRouter = (deps: NodeDeps) => {
         res.status(404).json({ error: 'not_found' });
         return;
       }
-      const metrics = await deps.health.getHealth(req.params.id);
+      const metrics = await deps.health.getHealth(node.host || req.params.id);
+      const expectedVersion = process.env.EXPECTED_NODE_VERSION;
+      metrics.version = metrics.version || node.version;
+      metrics.expectedVersion = expectedVersion;
+      metrics.versionDrift = Boolean(expectedVersion && metrics.version && expectedVersion !== metrics.version);
       res.json({ node, metrics });
     })
   );
