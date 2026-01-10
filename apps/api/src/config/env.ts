@@ -63,7 +63,12 @@ const EnvSchema = z.object({
   GAS_PRICE_MODEL: z.string().optional(),
   SNAPSHOT_SPACE: z.string().optional(),
   SNAPSHOT_API_URL: z.string().optional(),
-  FORUM_URL: z.string().optional()
+  FORUM_URL: z.string().optional(),
+  VAULT_HEALTH_URL: z.string().optional(),
+  HARDWARE_WALLET_REQUIRED: z
+    .string()
+    .transform((v) => v === 'true')
+    .optional()
 });
 
 const parsed = EnvSchema.safeParse(process.env);
