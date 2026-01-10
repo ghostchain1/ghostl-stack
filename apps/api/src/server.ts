@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import { config as loadEnv } from 'dotenv';
 import express from 'express';
 import session from 'express-session';
 import FileStoreFactory from 'session-file-store';
@@ -32,6 +33,8 @@ import { requirePermission } from './lib/rbac';
 import type { NotificationChannel } from './modules/observability/services';
 import { buildDevopsRouter } from './modules/devops/router';
 import './types/express';
+// Load environment variables from local env file when running locally
+loadEnv({ path: path.join(process.cwd(), 'apps/api/.env.local') });
 type HexString = string;
 type RpcError = { message?: string };
 type RpcResponse<T> = { result?: T; error?: RpcError };
@@ -529,7 +532,7 @@ app.use(
 );
 app.use(
   ['/v1/nodes', '/nodes'],
-  requirePermission('nodes:read'),
+  env.PUBLIC_NODES ? (_req: any, _res: any, next: any) => next() : requirePermission('nodes:read'),
   buildNodeRouter({
     inventory: liveServices.nodes.nodeInventoryService,
     health: liveServices.nodes.nodeHealthService
@@ -537,7 +540,7 @@ app.use(
 );
 app.use(
   ['/v1/stack', '/stack'],
-  requirePermission('chain:read'),
+  env.PUBLIC_STACK ? (_req: any, _res: any, next: any) => next() : requirePermission('chain:read'),
   buildStackRouter({
     prometheus,
     guard,
@@ -576,8 +579,21 @@ identityServicesPromise.then((identity) => {
   );
 });
 
-const rpcCall = async <T = unknown>(method: string, params: unknown[] = []) => {
-  const res = await fetch(servicesBase.explorerRpc, {
+const rpcUrls = {
+  l1: env.RPC_L1 || 'http://localhost:8545',
+  l2: env.RPC_L2 || servicesBase.explorerRpc,
+  l3: env.RPC_L3 || 'http://localhost:10545',
+  default: servicesBase.explorerRpc
+};
+const rpcForChain = (chain?: string) => {
+  if (chain === 'l1') return rpcUrls.l1;
+  if (chain === 'l3') return rpcUrls.l3;
+  if (chain === 'l2') return rpcUrls.l2;
+  return rpcUrls.default;
+};
+
+const rpcCall = async <T = unknown>(method: string, params: unknown[] = [], rpcUrl = servicesBase.explorerRpc) => {
+  const res = await fetch(rpcUrl, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
@@ -1425,7 +1441,10 @@ app.get(['/v1/compliance/reports/:id/export', '/compliance/reports/:id/export'],
   res.json({ ok: true, report });
 });
 
-app.get(['/v1/api/validators', '/api/validators'], requirePermission('validator:read'), async (_req, res) => {
+const validatorGuard = env.PUBLIC_VALIDATORS ? (_req: any, _res: any, next: any) => next() : requirePermission('validator:read');
+const explorerGuard = env.PUBLIC_EXPLORER ? (_req: any, _res: any, next: any) => next() : requirePermission('explorer:read');
+
+app.get(['/v1/api/validators', '/api/validators'], validatorGuard, async (_req, res) => {
   const data = await proxyJson<{ validators?: unknown[] }>(`${servicesBase.validators}/validators`, { validators: [] });
   res.json(data);
 });
@@ -1477,7 +1496,7 @@ app.post(['/v1/nodes/:id/upgrade', '/nodes/:id/upgrade'], requirePermission('dev
   res.json({ ok: true, id, action: 'upgrade', version: version || 'unspecified' });
 });
 
-app.get(['/v1/api/validators/metrics', '/api/validators/metrics'], requirePermission('validator:read'), async (_req, res) => {
+app.get(['/v1/api/validators/metrics', '/api/validators/metrics'], validatorGuard, async (_req, res) => {
   const queryNumber = async (query?: string, fallback?: number) => {
     if (!query) return fallback;
     try {
@@ -1637,16 +1656,18 @@ app.get(['/v1/observability/incidents', '/observability/incidents'], requirePerm
   });
 });
 
-app.get(['/v1/explorer/blocks', '/explorer/blocks'], async (req, res) => {
+app.get(['/v1/explorer/blocks', '/explorer/blocks'], explorerGuard, async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 10, 50);
+  const chain = typeof req.query.chain === 'string' ? req.query.chain : undefined;
+  const rpcUrl = rpcForChain(chain);
   try {
-    const latestHex = (await rpcCall<HexString>('eth_blockNumber')) as HexString;
+    const latestHex = (await rpcCall<HexString>('eth_blockNumber', [], rpcUrl)) as HexString;
     const latest = parseInt(latestHex, 16);
     const blocks = await Promise.all(
       Array.from({ length: limit }, (_, i) => latest - i)
         .filter((n) => n >= 0)
         .map(async (num) => {
-          const block = (await rpcCall<RpcBlock>('eth_getBlockByNumber', ['0x' + num.toString(16), true])) as RpcBlock;
+          const block = (await rpcCall<RpcBlock>('eth_getBlockByNumber', ['0x' + num.toString(16), true], rpcUrl)) as RpcBlock;
           return {
             number: parseInt(block.number, 16),
             hash: block.hash,
@@ -1657,17 +1678,19 @@ app.get(['/v1/explorer/blocks', '/explorer/blocks'], async (req, res) => {
           };
         })
     );
-    res.json({ blocks });
+    res.json({ blocks, chain: chain || 'l2' });
   } catch (e) {
     res.status(500).json({ error: (e as Error).message, blocks: [] });
   }
 });
 
-app.get(['/v1/explorer/mempool', '/explorer/mempool'], async (_req, res) => {
+app.get(['/v1/explorer/mempool', '/explorer/mempool'], explorerGuard, async (req, res) => {
+  const chain = typeof req.query.chain === 'string' ? req.query.chain : undefined;
+  const rpcUrl = rpcForChain(chain);
   let pending = 0;
   let queued = 0;
   try {
-    const status = (await rpcCall<Record<string, string>>('txpool_status')) || {};
+    const status = (await rpcCall<Record<string, string>>('txpool_status', [], rpcUrl)) || {};
     pending = status.pending ? parseInt(status.pending, 16) || 0 : 0;
     queued = status.queued ? parseInt(status.queued, 16) || 0 : 0;
   } catch {
@@ -1681,21 +1704,23 @@ app.get(['/v1/explorer/mempool', '/explorer/mempool'], async (_req, res) => {
   });
 });
 
-app.get(['/v1/explorer/txs', '/explorer/txs'], async (req, res) => {
+app.get(['/v1/explorer/txs', '/explorer/txs'], explorerGuard, async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 20, 100);
+  const chain = typeof req.query.chain === 'string' ? req.query.chain : undefined;
+  const rpcUrl = rpcForChain(chain);
   try {
-    const latestHex = (await rpcCall<HexString>('eth_blockNumber')) as HexString;
+    const latestHex = (await rpcCall<HexString>('eth_blockNumber', [], rpcUrl)) as HexString;
     const latest = parseInt(latestHex, 16);
     const collected: ExplorerTx[] = [];
     const maxDepth = Math.max(limit * 10, 500);
     for (let num = latest; num >= 0 && collected.length < limit && latest - num <= maxDepth; num--) {
-      const block = (await rpcCall<RpcBlock>('eth_getBlockByNumber', ['0x' + num.toString(16), true])) as RpcBlock;
+      const block = (await rpcCall<RpcBlock>('eth_getBlockByNumber', ['0x' + num.toString(16), true], rpcUrl)) as RpcBlock;
       const blockTime = new Date(parseInt(block.timestamp, 16) * 1000).toISOString();
       for (const t of block.transactions || []) {
         if (collected.length < limit) {
           let txObj: RpcTx | null = null;
           if (typeof t === 'string') {
-            txObj = (await rpcCall<RpcTx>('eth_getTransactionByHash', [t])) || null;
+            txObj = (await rpcCall<RpcTx>('eth_getTransactionByHash', [t], rpcUrl)) || null;
           } else {
             txObj = t as RpcTx;
           }
@@ -1715,7 +1740,7 @@ app.get(['/v1/explorer/txs', '/explorer/txs'], async (req, res) => {
       }
     }
     const txs = collected.slice(0, limit);
-    res.json({ txs });
+    res.json({ txs, chain: chain || 'l2' });
   } catch (e) {
     res.status(500).json({ error: (e as Error).message, txs: [] });
   }

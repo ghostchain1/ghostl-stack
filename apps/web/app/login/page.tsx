@@ -1,12 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { SiweMessage } from 'siwe';
 import { BrowserProvider } from 'ethers';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const PREFILL_SSO = process.env.NEXT_PUBLIC_SSO_JWT || '';
+const LOCALSTORAGE_KEY = 'ghostl-sso-token';
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const returnTo = useMemo(() => searchParams.get('returnTo') || '/', [searchParams]);
   const [message] = useState('Sign in to GhostL Dashboard');
   const [token, setToken] = useState('');
   const [nonce, setNonce] = useState<string | null>(null);
@@ -55,7 +61,7 @@ export default function LoginPage() {
       });
       if (res.ok) {
         setStatus('Success. Reloading...');
-        window.location.href = '/';
+        window.location.href = returnTo;
       } else {
         const err = await res.json().catch(() => ({}));
         setStatus(`Failed: ${err.error || res.status}`);
@@ -76,12 +82,31 @@ export default function LoginPage() {
     });
     if (res.ok) {
       setStatus('Success. Reloading...');
-      window.location.href = '/';
+      window.location.href = returnTo;
     } else {
       const err = await res.json().catch(() => ({}));
       setStatus(`Failed: ${err.error || res.status}`);
     }
   };
+
+  useEffect(() => {
+    // Prefill SSO token from env or localStorage
+    const existing = PREFILL_SSO || (typeof window !== 'undefined' ? localStorage.getItem(LOCALSTORAGE_KEY) : '');
+    if (existing) setToken(existing);
+
+    fetch(`${API_URL}/auth/session`, { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((session) => {
+        if (session?.user?.id) router.replace(returnTo);
+      })
+      .catch(() => undefined);
+  }, [returnTo, router]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(LOCALSTORAGE_KEY, token);
+    }
+  }, [token]);
 
   return (
     <div className="content">

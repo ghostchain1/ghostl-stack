@@ -31,9 +31,9 @@ export const buildStackRouter = (deps: StackDeps) => {
     const chain = (req.query.chain as string) || 'l2';
     const headQuery = `op_gate_head_block{chain="${chain}"}`;
     const finalizedQuery = `op_gate_finalized_block{chain="${chain}"}`;
-    const head = await queryNumber(deps.prometheus, headQuery);
-    const finalized = await queryNumber(deps.prometheus, finalizedQuery);
-    const lag = head !== undefined && finalized !== undefined ? head - finalized : undefined;
+    const head = (await queryNumber(deps.prometheus, headQuery)) ?? 0;
+    const finalized = (await queryNumber(deps.prometheus, finalizedQuery)) ?? 0;
+    const lag = head - finalized;
 
     const relayerFinalized = await queryNumber(deps.prometheus, 'ghost_relayer_finalized_total');
     const relayerErrors = await queryNumber(deps.prometheus, 'ghost_relayer_errors_total');
@@ -43,7 +43,12 @@ export const buildStackRouter = (deps: StackDeps) => {
     let guardActiveAlerts: unknown[] = [];
     if (deps.guard) {
       try {
-        guardActiveAlerts = (await deps.guard.listAlerts()) as unknown[];
+        const guardRes = await deps.guard.listAlerts();
+        if (Array.isArray((guardRes as any)?.alerts)) {
+          guardActiveAlerts = (guardRes as any).alerts;
+        } else if (Array.isArray(guardRes)) {
+          guardActiveAlerts = guardRes;
+        }
       } catch {
         // ignore
       }

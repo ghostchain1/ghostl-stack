@@ -9,6 +9,7 @@ import type { TokenConfig } from '../../src/modules/wallet/tokens';
 const bridgeAddress = process.env.NEXT_PUBLIC_BRIDGE_ADDRESS || '';
 
 const tokenKey = (t: TokenConfig) => `${t.chain}:${t.address || 'native'}`;
+type ManagedWallet = { id: string; address: string; label: string; chain: string; role: string };
 
 export function WalletClient() {
   const session = useSession();
@@ -49,6 +50,13 @@ export function WalletClient() {
   const [swapAmount, setSwapAmount] = useState('0.01');
   const [swapRecipient, setSwapRecipient] = useState('');
   const [quoteTimer, setQuoteTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [managedWallets, setManagedWallets] = useState<ManagedWallet[]>([]);
+  const [newWallet, setNewWallet] = useState<{ address: string; label: string; chain: 'l1' | 'l2' | 'l3'; role: string }>({
+    address: '',
+    label: '',
+    chain: 'l2',
+    role: 'operator'
+  });
 
   const selectedRouteObj = useMemo(() => swapRoutes[selectedRoute], [swapRoutes, selectedRoute]);
 
@@ -69,6 +77,24 @@ export function WalletClient() {
     setQuoteTimer(timer);
     return () => clearTimeout(timer);
   }, [fetchSwapQuote, swapAmount, quoteTimer]);
+
+  // Managed wallets persisted in localStorage for quick switching/reference
+  useEffect(() => {
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('managed-wallets') : null;
+    if (stored) {
+      try {
+        setManagedWallets(JSON.parse(stored));
+      } catch {
+        // ignore malformed
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('managed-wallets', JSON.stringify(managedWallets));
+    }
+  }, [managedWallets]);
 
   const balanceList = useMemo(
     () =>
@@ -103,6 +129,21 @@ export function WalletClient() {
     }
   };
 
+  const addManagedWallet = () => {
+    if (!newWallet.address) return;
+    const entry: ManagedWallet = { id: `${Date.now()}`, ...newWallet };
+    setManagedWallets((prev) => [entry, ...prev]);
+    setNewWallet({ address: '', label: '', chain: newWallet.chain, role: newWallet.role });
+  };
+
+  const removeManagedWallet = (id: string) => setManagedWallets((prev) => prev.filter((w) => w.id !== id));
+
+  const useManagedWallet = (mw: ManagedWallet) => {
+    setTo(mw.address);
+    setBridgeRecipient(mw.address);
+    switchChain(mw.chain as 'l1' | 'l2' | 'l3').catch(() => undefined);
+  };
+
   return (
     <div className="content">
       <div className="card-grid">
@@ -111,11 +152,8 @@ export function WalletClient() {
             <Button onClick={connect}>{account ? 'Reconnect' : 'Connect wallet'}</Button>
             <div className="inline-form" style={{ gap: 8 }}>
               <span className="muted">Chain</span>
-              <select
-                className="select"
-                value={chain}
-                onChange={(e) => switchChain(e.target.value as 'l2' | 'l3')}
-              >
+              <select className="select" value={chain} onChange={(e) => switchChain(e.target.value as typeof chain)}>
+                <option value="l1">GhostL1</option>
                 <option value="l2">GhostL2</option>
                 <option value="l3">GhostL3</option>
               </select>
@@ -132,11 +170,11 @@ export function WalletClient() {
                 </div>
               ))}
             </div>
-            {status && <span className="muted">{status}</span>}
-            {chainWarning && (
-              <div className="stack">
-                <span className="muted" style={{ color: '#f97316' }}>
-                  {chainWarning}
+          {status && <span className="muted">{status}</span>}
+          {chainWarning && (
+            <div className="stack">
+              <span className="muted" style={{ color: '#f97316' }}>
+                {chainWarning}
                 </span>
                 <Button onClick={connect} variant="secondary">
                   Switch wallet to {chainConfigs[chain].name}
@@ -218,6 +256,65 @@ export function WalletClient() {
               <span className="muted">
                 Tx: <code>{bridgeHash}</code>
               </span>
+            )}
+          </div>
+        </Card>
+        <Card title="Wallet management" subtitle="Track L1/L2/L3 destinations">
+          <div className="stack">
+            <div className="inline-form" style={{ gap: 8 }}>
+              <input
+                className="input"
+                placeholder="Address 0x..."
+                value={newWallet.address}
+                onChange={(e) => setNewWallet((w) => ({ ...w, address: e.target.value }))}
+              />
+              <input
+                className="input"
+                placeholder="Label (treasury, ops...)"
+                value={newWallet.label}
+                onChange={(e) => setNewWallet((w) => ({ ...w, label: e.target.value }))}
+              />
+            </div>
+            <div className="inline-form" style={{ gap: 8 }}>
+              <select className="select" value={newWallet.chain} onChange={(e) => setNewWallet((w) => ({ ...w, chain: e.target.value as 'l1' | 'l2' | 'l3' }))}>
+                <option value="l1">L1</option>
+                <option value="l2">L2</option>
+                <option value="l3">L3</option>
+              </select>
+              <input
+                className="input"
+                placeholder="Role (operator, treasury...)"
+                value={newWallet.role}
+                onChange={(e) => setNewWallet((w) => ({ ...w, role: e.target.value }))}
+              />
+              <Button onClick={addManagedWallet} variant="secondary">
+                Add
+              </Button>
+            </div>
+            {!managedWallets.length && <span className="muted">No saved wallets yet.</span>}
+            {managedWallets.length > 0 && (
+              <div className="stack" style={{ gap: 6 }}>
+                {managedWallets.map((w) => (
+                  <div key={w.id} className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className="stack" style={{ gap: 2 }}>
+                      <span style={{ fontWeight: 700 }}>{w.label || w.address.slice(0, 10)}</span>
+                      <span className="muted">{w.address}</span>
+                      <div className="inline-form" style={{ gap: 6, fontSize: 12 }}>
+                        <Badge tone="default">{w.chain.toUpperCase()}</Badge>
+                        <span className="muted">{w.role}</span>
+                      </div>
+                    </div>
+                    <div className="row" style={{ gap: 6 }}>
+                      <Button variant="secondary" onClick={() => useManagedWallet(w)}>
+                        Use
+                      </Button>
+                      <Button variant="ghost" onClick={() => removeManagedWallet(w.id)}>
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </Card>
