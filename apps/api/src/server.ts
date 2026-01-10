@@ -1275,7 +1275,12 @@ app.get(['/v1/observability/incidents', '/observability/incidents'], requirePerm
     const alerts = await prometheus.alerts();
     validatorAlerts =
       alerts
-        ?.filter((a) => a.labels?.job?.includes('validator') || a.labels?.alertname?.includes('missed'))
+        ?.filter(
+          (a) =>
+            a.labels?.job?.includes('validator') ||
+            a.labels?.alertname?.toLowerCase().includes('missed') ||
+            a.labels?.alertname?.toLowerCase().includes('finality')
+        )
         .map((a) => ({
           source: a.labels?.job || 'prometheus',
           message: a.annotations?.summary || a.annotations?.description || a.labels?.alertname || 'alert',
