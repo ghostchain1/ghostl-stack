@@ -17,6 +17,8 @@ type PromVector = { metric: Record<string, string>; value?: [number, string] };
 type Dashboard = { id: string; name: string; url: string };
 
 const PROM_URL = process.env.NEXT_PUBLIC_PROMETHEUS_URL || 'http://localhost:9090';
+const PROM_PROPOSER = process.env.NEXT_PUBLIC_PROM_PROPOSER_QUERY || 'op_gate_last_proposer';
+const PROM_PARTICIPATION = process.env.NEXT_PUBLIC_PROM_PARTICIPATION_QUERY || 'op_gate_participation_rate';
 
 export default function ObservabilityPage() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -57,6 +59,9 @@ export default function ObservabilityPage() {
 
   return (
     <div className="content">
+      <div className="muted" style={{ marginBottom: 8 }}>
+        Using PromQL: proposer={PROM_PROPOSER}, participation={PROM_PARTICIPATION}
+      </div>
       <div className="card-grid">
         <MetricsPanel targets={metrics} />
         <DashboardsPanel dashboards={dashboards} />
