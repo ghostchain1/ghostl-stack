@@ -29,6 +29,7 @@ import { buildWalletRouter } from './modules/wallet/router';
 import { env } from './config/env';
 import { requirePermission } from './lib/rbac';
 import type { NotificationChannel } from './modules/observability/services';
+import { buildDevopsRouter } from './modules/devops/router';
 type HexString = string;
 type RpcError = { message?: string };
 type RpcResponse<T> = { result?: T; error?: RpcError };
@@ -516,6 +517,13 @@ app.use(
   })
 );
 app.use(['/v1/wallet', '/wallet'], buildWalletRouter());
+app.use(
+  ['/v1/devops', '/devops'],
+  buildDevopsRouter({
+    releases: liveServices.devops.releaseService,
+    forks: liveServices.devops.forkService
+  })
+);
 
 identityServicesPromise.then((identity) => {
   auditLogService = identity.auditLogService;
