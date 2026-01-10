@@ -6,6 +6,7 @@ import session from 'express-session';
 import FileStoreFactory from 'session-file-store';
 import cors from 'cors';
 import { fetch } from 'undici';
+import nodemailer from 'nodemailer';
 import type {} from './types/session';
 import { Interface, JsonRpcProvider, Wallet } from 'ethers';
 import { buildAppShellRouter } from './modules/app-shell/router';
@@ -184,23 +185,42 @@ if (env.DISCORD_WEBHOOK_URL) {
 if (env.ALERT_WEBHOOK_URL) {
   notificationChannels.push({ id: 'webhook-default', type: 'webhook', target: env.ALERT_WEBHOOK_URL });
 }
+if (env.EMAIL_SMTP_URL && env.EMAIL_FROM && env.EMAIL_TO) {
+  notificationChannels.push({
+    id: 'email-default',
+    type: 'email',
+    target: env.EMAIL_TO,
+    meta: { smtpUrl: env.EMAIL_SMTP_URL, from: env.EMAIL_FROM }
+  });
+}
 
 const sendNotification = async (alert: { id?: string; message?: string; severity?: string }, channels: string[]) => {
   const targets = notificationChannels.filter((c) => channels.includes(c.id));
   await Promise.all(
     targets.map(async (ch) => {
       if (!ch.target) return;
-      const payload =
-        ch.type === 'slack'
-          ? { text: `[${alert.severity || 'info'}] ${alert.id || 'alert'} - ${alert.message || 'incident'}` }
-          : ch.type === 'discord'
-            ? { content: `[${alert.severity || 'info'}] ${alert.id || 'alert'} - ${alert.message || 'incident'}` }
-            : { alert };
-      await fetch(ch.target, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(payload)
-      }).catch(() => undefined);
+      if (ch.type === 'email' && ch.meta?.smtpUrl && ch.meta?.from) {
+        const transporter = nodemailer.createTransport(ch.meta.smtpUrl as string);
+        await transporter.sendMail({
+          from: ch.meta.from as string,
+          to: ch.target,
+          subject: `[${alert.severity || 'info'}] ${alert.id || 'alert'}`,
+          text: alert.message || 'incident',
+          html: `<p>${alert.message || 'incident'}</p>`
+        });
+      } else {
+        const payload =
+          ch.type === 'slack'
+            ? { text: `[${alert.severity || 'info'}] ${alert.id || 'alert'} - ${alert.message || 'incident'}` }
+            : ch.type === 'discord'
+              ? { content: `[${alert.severity || 'info'}] ${alert.id || 'alert'} - ${alert.message || 'incident'}` }
+              : { alert };
+        await fetch(ch.target, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).catch(() => undefined);
+      }
     })
   );
 };

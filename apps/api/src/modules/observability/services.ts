@@ -30,4 +30,5 @@ export interface NotificationChannel {
   id: string;
   type: 'slack' | 'webhook' | 'discord' | 'email';
   target: string;
+  meta?: Record<string, unknown>;
 }
