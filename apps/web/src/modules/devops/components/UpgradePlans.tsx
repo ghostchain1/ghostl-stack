@@ -13,7 +13,7 @@ type Plan = {
   id: string;
   name: string;
   steps: Step[];
-  approvals: string[];
+  approvals: { userId: string; at: string }[];
   createdAt: string;
   updatedAt: string;
 };
@@ -93,7 +93,10 @@ export function UpgradePlans() {
             <div className="row" style={{ justifyContent: 'space-between', marginBottom: 6 }}>
               <div>
                 <div style={{ fontWeight: 600 }}>{p.name}</div>
-                <div className="muted">Approvals: {p.approvals.length}</div>
+                <div className="muted">
+                  Approvals: {p.approvals.length}{' '}
+                  {p.approvals.length ? `(${p.approvals.map((a) => a.userId).join(', ')})` : ''}
+                </div>
               </div>
               <div className="row" style={{ gap: 6 }}>
                 <button onClick={() => act(p.id, 'approve')}>Approve</button>
