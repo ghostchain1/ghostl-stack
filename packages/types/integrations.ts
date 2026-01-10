@@ -17,3 +17,10 @@ export interface Webhook {
   secretRef?: string;
   createdAt?: string;
 }
+
+export interface IntegrationPartner {
+  name: string;
+  type: 'exchange' | 'oracle' | 'indexer' | 'analytics' | 'kyc';
+  status: 'connected' | 'pending' | 'error';
+  url?: string;
+}
