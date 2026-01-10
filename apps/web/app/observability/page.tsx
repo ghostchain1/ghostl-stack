@@ -8,6 +8,7 @@ import { AlertsPanel } from '../../src/modules/observability/components/AlertsPa
 import { NotificationRouter } from '../../src/modules/observability/components/NotificationRouter';
 import { IncidentTimeline } from '../../src/modules/observability/components/IncidentTimeline';
 import { BridgeValidatorHealth } from '../../src/modules/observability/components/BridgeValidatorHealth';
+import { ValidatorMetrics } from '../../src/modules/observability/components/ValidatorMetrics';
 import type { Alert, LogEvent } from '@ghostl/types/observability';
 import { apiFetch } from '../../src/lib/api';
 
@@ -63,6 +64,7 @@ export default function ObservabilityPage() {
         <NotificationRouter routes={routes} />
         <IncidentTimeline incidents={incidents} />
         <BridgeValidatorHealth />
+        <ValidatorMetrics />
       </div>
     </div>
   );
