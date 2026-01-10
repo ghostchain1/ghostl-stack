@@ -7,6 +7,7 @@ import { LogsViewer } from '../../src/modules/observability/components/LogsViewe
 import { AlertsPanel } from '../../src/modules/observability/components/AlertsPanel';
 import { NotificationRouter } from '../../src/modules/observability/components/NotificationRouter';
 import { IncidentTimeline } from '../../src/modules/observability/components/IncidentTimeline';
+import { BridgeValidatorHealth } from '../../src/modules/observability/components/BridgeValidatorHealth';
 import type { Alert, LogEvent } from '@ghostl/types/observability';
 import { apiFetch } from '../../src/lib/api';
 
@@ -61,6 +62,7 @@ export default function ObservabilityPage() {
         <AlertsPanel alerts={alerts} />
         <NotificationRouter routes={routes} />
         <IncidentTimeline incidents={incidents} />
+        <BridgeValidatorHealth />
       </div>
     </div>
   );
