@@ -36,6 +36,7 @@ const EnvSchema = z.object({
   EMAIL_SMTP_URL: z.string().optional(),
   EMAIL_FROM: z.string().email().optional(),
   EMAIL_TO: z.string().email().optional(),
+  EXECUTION_APPROVAL_TOKEN: z.string().optional(),
   GOVERNANCE_SERVICE_URL: z.string().url().default('http://localhost:7645'),
   VALIDATOR_SERVICE_URL: z.string().url().default('http://localhost:7607'),
   DEVOPS_SERVICE_URL: z.string().url().default('http://localhost:7623'),
