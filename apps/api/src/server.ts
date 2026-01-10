@@ -854,6 +854,50 @@ app.post(['/v1/devops/upgrade-plans/:id/steps/:stepId'], requirePermission('devo
   res.json({ ok: true, plan });
 });
 
+app.post(['/v1/devops/upgrade-plans/:id/execute'], requirePermission('devops:write'), async (req, res) => {
+  const plan = upgradePlans.find((p) => p.id === req.params.id);
+  if (!plan) {
+    res.status(404).json({ error: 'plan_not_found' });
+    return;
+  }
+  const dryRun = req.query.dryRun === '1' || req.query.dryRun === 'true';
+  const approved = req.header('x-execution-approve') === 'yes';
+  const token = req.header('x-execution-token');
+  const tokenOk = env.EXECUTION_APPROVAL_TOKEN ? token === env.EXECUTION_APPROVAL_TOKEN : true;
+  if (!dryRun && (!approved || !tokenOk)) {
+    res.status(400).json({ error: 'approval required: set x-execution-approve: yes and valid x-execution-token or dryRun=1' });
+    return;
+  }
+  for (const step of plan.steps) {
+    step.status = dryRun ? 'pending' : 'in_progress';
+    saveUpgradePlans(upgradePlans);
+    try {
+      const txHash = dryRun ? undefined : await executeUpgradeAction(step.action);
+      step.notes = `${dryRun ? 'dry-run at' : 'completed at'} ${new Date().toISOString()}${txHash ? ` tx=${txHash}` : ''}`;
+    } catch (e) {
+      if (!dryRun) {
+        step.status = 'pending';
+        saveUpgradePlans(upgradePlans);
+      }
+      res.status(500).json({ error: (e as Error).message, step: step.id, dryRun });
+      return;
+    }
+    if (!dryRun) {
+      step.status = 'done';
+      saveUpgradePlans(upgradePlans);
+    }
+  }
+  plan.updatedAt = new Date().toISOString();
+  saveUpgradePlans(upgradePlans);
+  await auditLogService?.append({
+    actorId: req.session.userId || 'unknown',
+    action: 'upgrade-plan:execute',
+    resource: plan.id,
+    meta: { correlationId: req.correlationId, dryRun }
+  });
+  res.json({ ok: true, plan });
+});
+
 app.post(['/v1/devops/rollback/:id'], requirePermission('devops:write'), async (req, res) => {
   const plan = upgradePlans.find((p) => p.id === req.params.id);
   if (!plan) {
