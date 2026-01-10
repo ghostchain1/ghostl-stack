@@ -14,6 +14,7 @@ export function TransfersTable({ transfers }: { transfers: Transfer[] }) {
             <th>Dst</th>
             <th>Status</th>
             <th>Amount</th>
+            <th>Signatures</th>
           </tr>
         </thead>
         <tbody>
@@ -26,11 +27,16 @@ export function TransfersTable({ transfers }: { transfers: Transfer[] }) {
                 <span className={`badge ${t.status === 'finalized' ? 'ok' : t.status === 'pending' ? 'warn' : 'bad'}`}>{t.status}</span>
               </td>
               <td>{t.amount}</td>
+              <td>
+                <span className="pill">
+                  {t.signatures?.length || 0}/{t.requiredSignatures || 2}
+                </span>
+              </td>
             </tr>
           ))}
           {!transfers.length && (
             <tr>
-              <td colSpan={5} className="muted">
+              <td colSpan={6} className="muted">
                 No transfers.
               </td>
             </tr>
