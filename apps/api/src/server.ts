@@ -1468,16 +1468,22 @@ app.get(['/v1/api/validators/metrics', '/api/validators/metrics'], requirePermis
   const proposerQuery = env.PROM_PROPOSER_QUERY || 'op_gate_last_proposer';
   const lastProposer = (await queryString(proposerQuery)) || (await queryString('last_proposer')) || 'unknown';
   let proposerRotation: Array<{ proposer: string; at: string }> = [];
+  let proposerSummary: Array<{ proposer: string; count: number }> = [];
   try {
     const end = Date.now();
     const start = end - 60 * 60 * 1000;
     const series = await prometheus.queryRange(proposerQuery, start, end, 300);
-    proposerRotation = series
-      .flatMap((s) => s.values || [])
-      .map((v) => ({ proposer: v[1], at: new Date(Number(v[0]) * 1000).toISOString() }))
-      .slice(-20);
+    const values = series.flatMap((s) => s.values || []);
+    proposerRotation = values.map((v) => ({ proposer: v[1], at: new Date(Number(v[0]) * 1000).toISOString() })).slice(-40);
+    const counts = new Map<string, number>();
+    proposerRotation.forEach((p) => counts.set(p.proposer, (counts.get(p.proposer) || 0) + 1));
+    proposerSummary = Array.from(counts.entries())
+      .map(([proposer, count]) => ({ proposer, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
   } catch {
     proposerRotation = [];
+    proposerSummary = [];
   }
   let bftAlerts: Array<{ message: string; severity: string; time: string }> = [];
   try {
@@ -1506,6 +1512,7 @@ app.get(['/v1/api/validators/metrics', '/api/validators/metrics'], requirePermis
       participationRate,
       lastProposer,
       proposerRotation,
+      proposerSummary,
       bftAlerts
     }
   });
