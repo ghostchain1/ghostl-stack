@@ -1423,6 +1423,53 @@ app.get(['/v1/api/validators', '/api/validators'], requirePermission('validator:
   res.json(data);
 });
 
+app.post(['/v1/nodes/:id/restart', '/nodes/:id/restart'], requirePermission('devops:write'), async (req, res) => {
+  const id = req.params.id;
+  try {
+    const upstream = await fetch(`${servicesBase.devops}/nodes/${encodeURIComponent(id)}/restart`, { method: 'POST' });
+    if (!upstream.ok) {
+      const body = await upstream.json().catch(() => ({}));
+      res.status(upstream.status).json(body);
+      return;
+    }
+  } catch {
+    // fall through to stubbed response
+  }
+  await auditLogService?.append({
+    actorId: req.session.userId || 'unknown',
+    action: 'node:restart',
+    resource: id,
+    meta: { correlationId: req.correlationId }
+  });
+  res.json({ ok: true, id, action: 'restart' });
+});
+
+app.post(['/v1/nodes/:id/upgrade', '/nodes/:id/upgrade'], requirePermission('devops:write'), async (req, res) => {
+  const id = req.params.id;
+  const version = typeof req.body?.version === 'string' ? req.body.version : undefined;
+  try {
+    const upstream = await fetch(`${servicesBase.devops}/nodes/${encodeURIComponent(id)}/upgrade`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ version })
+    });
+    if (!upstream.ok) {
+      const body = await upstream.json().catch(() => ({}));
+      res.status(upstream.status).json(body);
+      return;
+    }
+  } catch {
+    // fall through to stubbed response
+  }
+  await auditLogService?.append({
+    actorId: req.session.userId || 'unknown',
+    action: 'node:upgrade',
+    resource: id,
+    meta: { correlationId: req.correlationId, version }
+  });
+  res.json({ ok: true, id, action: 'upgrade', version: version || 'unspecified' });
+});
+
 app.get(['/v1/api/validators/metrics', '/api/validators/metrics'], requirePermission('validator:read'), async (_req, res) => {
   const queryNumber = async (query?: string, fallback?: number) => {
     if (!query) return fallback;

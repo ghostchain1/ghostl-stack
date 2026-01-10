@@ -73,7 +73,13 @@ export function ValidatorMetrics() {
             <div className="muted">Rotation heatmap (last hour)</div>
             <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
               {metrics.proposerSummary.map((p) => (
-                <div key={p.proposer} className="pill">
+                <div
+                  key={p.proposer}
+                  className="pill"
+                  style={{
+                    background: 'linear-gradient(90deg, var(--accent) 0%, var(--accent) ' + Math.min(p.count * 10, 100) + '%, rgba(255,255,255,0.1) ' + Math.min(p.count * 10, 100) + '%)'
+                  }}
+                >
                   {p.proposer}: {p.count}
                 </div>
               ))}
