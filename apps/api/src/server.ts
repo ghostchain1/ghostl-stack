@@ -578,10 +578,34 @@ const rpcCall = async <T = unknown>(method: string, params: unknown[] = []) => {
 };
 
 app.get(['/v1/api/bridge', '/api/bridge'], requirePermission('bridge:read'), async (_req, res) => {
-  const bridges = await proxyJson<{ bridges?: unknown[] }>(`${servicesBase.bridge}/bridges`, { bridges: [] });
-  const transfers = await proxyJson<{ transfers?: unknown[] }>(`${servicesBase.transfers}/transfers`, { transfers: [] });
-  const pools = await proxyJson<{ pools?: unknown[] }>(`${servicesBase.liquidity}/liquidity`, { pools: [] });
-  res.json({ ok: true, networks: bridges.bridges || [], transfers: transfers.transfers || [], pools: pools.pools || [] });
+  const [bridges, transfers, pools, signatures] = await Promise.all([
+    proxyJson<{ bridges?: any[] }>(`${servicesBase.bridge}/bridges`, { bridges: [] }).catch(() => ({ bridges: [] })),
+    proxyJson<{ transfers?: any[] }>(`${servicesBase.transfers}/transfers`, { transfers: [] }).catch(() => ({ transfers: [] })),
+    proxyJson<{ pools?: any[] }>(`${servicesBase.liquidity}/liquidity`, { pools: [] }).catch(() => ({ pools: [] })),
+    proxyJson<{ signatures?: any[] }>(`${servicesBase.bridge}/bridges/signatures`, { signatures: [] }).catch(() => ({ signatures: [] }))
+  ]);
+  const sigMap = new Map<string, { signatures?: string[]; required?: number }>();
+  (signatures.signatures || []).forEach((s: { transferId?: string; signatures?: string[]; required?: number }) => {
+    if (s.transferId) sigMap.set(s.transferId, { signatures: s.signatures || [], required: s.required });
+  });
+  const txs = (transfers.transfers as any[]) || [];
+  const enriched = txs.map((t) => {
+    const sig = sigMap.get(t.id) || {};
+    return { ...t, signatures: sig.signatures || [], requiredSignatures: sig.required || t.requiredSignatures || 2 };
+  });
+  const pending = enriched.filter((t) => t.status === 'pending');
+  const finalized = enriched.filter((t) => t.status === 'finalized');
+  res.json({
+    ok: true,
+    networks: bridges.bridges || [],
+    transfers: enriched,
+    pools: pools.pools || [],
+    summary: {
+      pending: pending.length,
+      finalized: finalized.length,
+      signaturesMissing: pending.filter((t) => (t.signatures?.length || 0) < (t.requiredSignatures || 2)).length
+    }
+  });
 });
 
 app.get(['/v1/api/bridge/incidents', '/api/bridge/incidents'], requirePermission('bridge:write'), async (_req, res) => {
@@ -1154,6 +1178,10 @@ app.post(['/v1/devops/rollback/:id/execute'], requirePermission('devops:write'),
 app.get(['/v1/api/token', '/api/token'], requirePermission('treasury:read'), async (_req, res) => {
   const supply = await proxyJson<{ supply?: string; emissions?: string }>(`${servicesBase.supply}/supply`, { supply: '0', emissions: '0' });
   const treasury = await proxyJson<{ balance?: string }>(`${servicesBase.treasury}/treasury`, { balance: '0' });
+  const feeModel = await proxyJson<{ mode?: string; baseFee?: string; targetGas?: string }>(
+    `${servicesBase.feeModel}/model`,
+    { mode: env.GAS_PRICE_MODEL || 'auto', baseFee: undefined, targetGas: undefined }
+  ).catch(() => ({ mode: env.GAS_PRICE_MODEL || 'auto' }));
   res.json({
     ok: true,
     networks: [
@@ -1163,7 +1191,8 @@ app.get(['/v1/api/token', '/api/token'], requirePermission('treasury:read'), asy
         emissions: supply.emissions || '0',
         multisig: treasury.balance || '0'
       }
-    ]
+    ],
+    feeModel
   });
 });
 
@@ -1426,6 +1455,24 @@ app.get(['/v1/explorer/blocks', '/explorer/blocks'], async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: (e as Error).message, blocks: [] });
   }
+});
+
+app.get(['/v1/explorer/mempool', '/explorer/mempool'], async (_req, res) => {
+  let pending = 0;
+  let queued = 0;
+  try {
+    const status = (await rpcCall<Record<string, string>>('txpool_status')) || {};
+    pending = status.pending ? parseInt(status.pending, 16) || 0 : 0;
+    queued = status.queued ? parseInt(status.queued, 16) || 0 : 0;
+  } catch {
+    // fall back to zeros
+  }
+  res.json({
+    pending,
+    queued,
+    fairnessScore: Number((Math.max(0, 1 - pending / 1000)).toFixed(2)),
+    mevRisk: pending > 500 ? 'elevated' : 'low'
+  });
 });
 
 app.get(['/v1/explorer/txs', '/explorer/txs'], async (req, res) => {

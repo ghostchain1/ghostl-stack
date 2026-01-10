@@ -1,5 +1,6 @@
 import { BlocksTable } from '../../../src/modules/explorer/components/BlocksTable';
 import { TransactionsTable } from '../../../src/modules/explorer/components/TransactionsTable';
+import { MempoolPanel } from '../../../src/modules/explorer/components/MempoolPanel';
 import type { Block, Tx } from '@ghostl/types/explorer';
 import { apiFetch } from '../../../src/lib/api';
 
@@ -12,6 +13,7 @@ export default async function ExplorerTxsPage() {
       <div className="card-grid">
         <BlocksTable blocks={blocks.blocks || []} />
         <TransactionsTable txs={txs.txs || []} />
+        <MempoolPanel />
       </div>
     </div>
   );
