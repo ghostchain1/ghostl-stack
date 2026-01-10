@@ -24,6 +24,7 @@ import { buildStackRouter } from './modules/stack/router';
 import { buildWalletRouter } from './modules/wallet/router';
 import { env } from './config/env';
 import { requirePermission } from './lib/rbac';
+import type { NotificationChannel } from './modules/observability/services';
 type HexString = string;
 type RpcError = { message?: string };
 type RpcResponse<T> = { result?: T; error?: RpcError };
@@ -155,6 +156,31 @@ const contractMetadata = {
   upgradeabilityQuery: env.CONTRACT_UPGRADEABILITY_QUERY || 'op_contract_upgradeability',
   pauseQuery: env.CONTRACT_PAUSE_QUERY || 'op_contract_paused'
 };
+const notificationChannels: NotificationChannel[] = [];
+if (env.SLACK_WEBHOOK_URL) {
+  notificationChannels.push({ id: 'slack-default', type: 'slack', target: env.SLACK_WEBHOOK_URL });
+}
+if (env.ALERT_WEBHOOK_URL) {
+  notificationChannels.push({ id: 'webhook-default', type: 'webhook', target: env.ALERT_WEBHOOK_URL });
+}
+
+const sendNotification = async (alert: { id?: string; message?: string; severity?: string }, channels: string[]) => {
+  const targets = notificationChannels.filter((c) => channels.includes(c.id));
+  await Promise.all(
+    targets.map(async (ch) => {
+      if (!ch.target) return;
+      const payload =
+        ch.type === 'slack'
+          ? { text: `[${alert.severity || 'info'}] ${alert.id || 'alert'} - ${alert.message || 'incident'}` }
+          : { alert };
+      await fetch(ch.target, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(() => undefined);
+    })
+  );
+};
 
 const fetchOk = async (url: string, timeoutMs = 2000) => {
   const controller = new AbortController();
@@ -208,8 +234,12 @@ identityServicesPromise.then((identity) => {
       metrics: liveServices.observability.metricsService,
       logs: liveServices.observability.logsService,
       alerts: liveServices.observability.alertRulesService,
-      notifications: liveServices.observability.notificationRouterService,
+      notifications: {
+        listChannels: async () => notificationChannels,
+        send: async (alert, channels) => sendNotification(alert, channels)
+      },
       guard: guard,
+      channels: notificationChannels,
       auditLog: identity.auditLogService,
       alertProxy: alertmanager ? (payload: AlertmanagerAlert) => alertmanager.send(payload) : undefined
     })
