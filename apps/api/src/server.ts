@@ -31,6 +31,7 @@ import { env } from './config/env';
 import { requirePermission } from './lib/rbac';
 import type { NotificationChannel } from './modules/observability/services';
 import { buildDevopsRouter } from './modules/devops/router';
+import './types/express';
 type HexString = string;
 type RpcError = { message?: string };
 type RpcResponse<T> = { result?: T; error?: RpcError };
@@ -388,8 +389,11 @@ const executeUpgradeAction = async (action?: { type: string; payload?: Record<st
       if (env.CONTRACT_RPC_URL) {
         try {
           const provider = new JsonRpcProvider(env.CONTRACT_RPC_URL);
-          const currentImpl = await provider.getStorageAt(proxy, '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc');
-          if (currentImpl.toLowerCase().endsWith(impl.toLowerCase().replace('0x', '').padStart(64, '0'))) {
+          const slot = '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc';
+          // ethers v6 uses getStorage; fallback to any for compatibility
+          const currentImpl = ((provider as any).getStorageAt || provider.getStorage).call(provider, proxy, slot) as Promise<string>;
+          const val = await currentImpl;
+          if (val?.toLowerCase().endsWith(impl.toLowerCase().replace('0x', '').padStart(64, '0'))) {
             return undefined;
           }
         } catch {
@@ -552,9 +556,10 @@ app.use(
 identityServicesPromise.then((identity) => {
   auditLogService = identity.auditLogService;
   app.use(['/v1', '/'], buildIdentityAccessRouter(identity));
+  const observabilityGuard = env.PUBLIC_OBSERVABILITY ? (_req: any, _res: any, next: any) => next() : requirePermission('observability:read');
   app.use(
     ['/v1/observability', '/observability'],
-    requirePermission('observability:read'),
+    observabilityGuard,
     buildObservabilityRouter({
       metrics: liveServices.observability.metricsService,
       logs: liveServices.observability.logsService,
@@ -844,7 +849,7 @@ app.post(['/v1/api/contracts/resume', '/api/contracts/resume'], requirePermissio
 app.post(['/v1/api/contracts/upgrade', '/api/contracts/upgrade'], requirePermission('contracts:write'), async (req, res) => {
   const { proxyAddress, implementation } = req.body || {};
   const proxy = (proxyAddress as string) || env.CONTRACT_TARGET_ADDRESS;
-  const admin = env.CONTRACT_PROXY_ADMIN_ADDRESS || proxy;
+  const admin = (env.CONTRACT_PROXY_ADMIN_ADDRESS as string | undefined) || proxy;
   if (!proxy || !implementation) {
     res.status(400).json({ error: 'proxyAddress and implementation required' });
     return;
@@ -854,6 +859,7 @@ app.post(['/v1/api/contracts/upgrade', '/api/contracts/upgrade'], requirePermiss
       env.CONTRACT_PROXY_ADMIN_ADDRESS && env.CONTRACT_PROXY_ADMIN_ADDRESS !== proxy
         ? proxyAdminInterface.encodeFunctionData('upgrade', [proxy, implementation])
         : proxyAdminInterface.encodeFunctionData('upgradeTo', [implementation]);
+    if (!admin) throw new Error('proxy admin address required');
     const txHash = await sendRawTx(admin, data);
     await auditLogService?.append({
       actorId: req.session.userId || 'unknown',
@@ -1110,7 +1116,8 @@ app.post(['/v1/devops/rollback/:id'], requirePermission('devops:write'), async (
       status: 'pending'
     })),
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    approvals: []
   };
   upgradePlans.push(rollbackPlan);
   saveUpgradePlans(upgradePlans);

@@ -18,6 +18,8 @@ import type {
   MetricsService,
   NotificationRouterService
 } from '../modules/observability/services';
+import type { ReleaseService, ForkSchedulerService } from '../modules/devops/services';
+import type { Release, ForkEvent } from '@ghostl/types/devops';
 
 const parsePromValue = (value?: [number, string]) => {
   if (!value) return undefined;
@@ -360,9 +362,36 @@ export const createLiveServices = (deps: {
     }
   };
 
+  const releaseService: ReleaseService = {
+    async list() {
+      const releasesEnv = readJsonEnv<Release[]>('DEVOPS_RELEASES');
+      return releasesEnv || [];
+    },
+    async plan(release) {
+      return { ...release, status: 'planned', components: release.components || [] };
+    },
+    async start(version) {
+      return { version, status: 'running', components: [], startedAt: new Date().toISOString() };
+    },
+    async complete(version) {
+      return { version, status: 'completed', components: [], completedAt: new Date().toISOString() };
+    }
+  };
+
+  const forkService: ForkSchedulerService = {
+    async list() {
+      const forksEnv = readJsonEnv<ForkEvent[]>('DEVOPS_FORKS');
+      return forksEnv || [];
+    },
+    async schedule(event) {
+      return event;
+    }
+  };
+
   return {
     chain: { chainStatusService, consensusTelemetryService, peerGraphService },
     nodes: { nodeInventoryService, nodeHealthService },
-    observability: { metricsService, logsService, alertRulesService, notificationRouterService }
+    observability: { metricsService, logsService, alertRulesService, notificationRouterService },
+    devops: { releaseService, forkService }
   };
 };
