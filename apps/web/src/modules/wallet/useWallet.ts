@@ -180,19 +180,19 @@ export function useWallet() {
       .then((j) => {
         if (!Array.isArray(j.tokens)) return;
         const mapped: TokenConfig[] = j.tokens
-          .map((t: any) => {
-            const chainId = Number(t.chainId);
+          .map((t: Record<string, unknown>) => {
+            const chainId = Number(t.chainId as number | string | undefined);
             const entry: [SupportedChain, number][] = [
               ['l2', chainConfigs.l2.id],
               ['l3', chainConfigs.l3.id]
             ];
             const chainMatch = entry.find((e) => e[1] === chainId);
-            if (!chainMatch) return null;
+            if (!chainMatch || typeof t.address !== 'string') return null;
             return {
               chain: chainMatch[0],
               address: t.address,
-              symbol: t.symbol || t.name || 'TOK',
-              decimals: Number(t.decimals || 18),
+              symbol: (t.symbol as string) || (t.name as string) || 'TOK',
+              decimals: Number(t.decimals ?? 18),
               type: 'erc20' as const
             };
           })

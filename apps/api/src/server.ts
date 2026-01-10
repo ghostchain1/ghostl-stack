@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import express from 'express';
 import session from 'express-session';
 import FileStoreFactory from 'session-file-store';
@@ -21,7 +22,31 @@ import { AlertmanagerClient } from './clients/alertmanager';
 import type { AlertmanagerAlert } from './clients/alertmanager';
 import { buildStackRouter } from './modules/stack/router';
 import { buildWalletRouter } from './modules/wallet/router';
+import { env } from './config/env';
+import { requirePermission } from './lib/rbac';
 type HexString = string;
+type RpcError = { message?: string };
+type RpcResponse<T> = { result?: T; error?: RpcError };
+type RpcTx = { hash: string; from?: string; to?: string; value?: string; gas?: string; nonce?: string };
+type RpcBlock = {
+  number: string;
+  hash?: string;
+  miner?: string;
+  transactions: (RpcTx | string)[];
+  size?: string;
+  timestamp: string;
+};
+type ExplorerTx = {
+  hash: string;
+  from?: string;
+  to?: string;
+  value?: string;
+  gas?: string;
+  status: string;
+  nonce?: string;
+  blockNumber: string;
+  time: string;
+};
 
 const app = express();
 const FileStore = FileStoreFactory(session);
@@ -30,29 +55,70 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'dev-secret',
+    secret: env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    store: new FileStore({ path: process.env.SESSION_STORE_PATH || '.sessions', retries: 1 }),
-    cookie: { secure: false }
+    store: new FileStore({ path: env.SESSION_STORE_PATH, retries: 1 }),
+    rolling: true,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 30 * 60 * 1000
+    }
   })
 );
 
+app.use((req, res, next) => {
+  const correlationId = req.header('x-request-id') || crypto.randomUUID();
+  req.correlationId = correlationId;
+  res.setHeader('x-request-id', correlationId);
+  const start = Date.now();
+  res.on('finish', () => {
+    const entry = {
+      ts: new Date().toISOString(),
+      level: 'info',
+      correlationId,
+      method: req.method,
+      path: req.originalUrl,
+      status: res.statusCode,
+      durationMs: Date.now() - start
+    };
+    // eslint-disable-next-line no-console
+    console.log(JSON.stringify(entry));
+  });
+  next();
+});
+
+app.use((req, res, next) => {
+  if (req.session && req.session.expiresAt && req.session.expiresAt < Date.now()) {
+    req.session.destroy(() => undefined);
+    res.status(401).json({ error: 'session_expired' });
+    return;
+  }
+  if (req.session) {
+    req.session.lastSeenAt = Date.now();
+    req.session.expiresAt = Date.now() + 30 * 60 * 1000;
+  }
+  next();
+});
+
 const services = createStubServices();
-const prometheusUrl = process.env.PROMETHEUS_URL || 'http://localhost:9090';
-const grafanaUrl = process.env.GRAFANA_URL || 'http://localhost:3000';
-const relayerUrl = process.env.RELAYER_URL || 'http://localhost:7171';
-const guardUrl = process.env.GUARD_URL || 'http://localhost:7070';
-const lokiUrl = process.env.LOKI_URL || 'http://localhost:3100';
-const alertmanagerUrl = process.env.ALERTMANAGER_URL || 'http://localhost:9093';
+const prometheusUrl = env.PROMETHEUS_URL;
+const grafanaUrl = env.GRAFANA_URL;
+const relayerUrl = env.RELAYER_URL;
+const guardUrl = env.GUARD_URL;
+const lokiUrl = env.LOKI_URL || 'http://localhost:3100';
+const alertmanagerUrl = env.ALERTMANAGER_URL || 'http://localhost:9093';
 const prometheus = new PrometheusClient(prometheusUrl);
-const grafana = new GrafanaClient(grafanaUrl, process.env.GRAFANA_API_KEY);
+const grafana = new GrafanaClient(grafanaUrl, env.GRAFANA_API_KEY);
 const relayer = new RelayerClient(relayerUrl);
 const loki = lokiUrl ? new LokiClient(lokiUrl) : undefined;
-const guard = guardUrl ? new GuardClient(guardUrl, process.env.GUARD_ADMIN_TOKEN) : undefined;
+const guard = guardUrl ? new GuardClient(guardUrl, env.GUARD_ADMIN_TOKEN) : undefined;
 const alertmanager = alertmanagerUrl ? new AlertmanagerClient(alertmanagerUrl) : undefined;
 const liveServices = createLiveServices({ prometheus, grafana, relayer, loki, guard, alertmanager });
 const identityServicesPromise = createPersistentIdentityServices();
+let auditLogService: { append: (entry: { actorId: string; action: string; resource: string; meta?: Record<string, unknown> }) => Promise<unknown> } | undefined;
 
 const proxyJson = async <T>(url: string, fallback?: T): Promise<T> => {
   try {
@@ -66,24 +132,24 @@ const proxyJson = async <T>(url: string, fallback?: T): Promise<T> => {
 };
 
 const servicesBase = {
-  bridge: process.env.BRIDGE_SERVICE_URL || 'http://localhost:7604',
-  transfers: process.env.TRANSFER_SERVICE_URL || 'http://localhost:7605',
-  liquidity: process.env.LIQUIDITY_SERVICE_URL || 'http://localhost:7606',
-  contracts: process.env.CONTRACT_REGISTRY_URL || 'http://localhost:7608',
-  contractRisk: process.env.CONTRACT_RISK_URL || 'http://localhost:7609',
-  supply: process.env.SUPPLY_SERVICE_URL || 'http://localhost:7614',
-  feeModel: process.env.FEE_MODEL_SERVICE_URL || 'http://localhost:7615',
-  treasury: process.env.TREASURY_SERVICE_URL || 'http://localhost:7628',
-  payouts: process.env.PAYOUT_SERVICE_URL || 'http://localhost:7629',
-  governance: process.env.GOVERNANCE_SERVICE_URL || 'http://localhost:7645',
-  validators: process.env.VALIDATOR_SERVICE_URL || 'http://localhost:7607',
-  devops: process.env.DEVOPS_SERVICE_URL || 'http://localhost:7623',
-  rpc: process.env.RPC_SERVICE_URL || 'http://localhost:7650',
-  usage: process.env.USAGE_SERVICE_URL || 'http://localhost:7651',
-  webhooks: process.env.WEBHOOKS_SERVICE_URL || 'http://localhost:7652',
-  ai: process.env.AI_SERVICE_URL || 'http://localhost:7660',
-  explorerRpc: process.env.EXPLORER_RPC_URL || process.env.RPC_L2 || 'http://localhost:29545',
-  swap: process.env.SWAP_SERVICE_URL || 'http://localhost:7670'
+  bridge: env.BRIDGE_SERVICE_URL,
+  transfers: env.TRANSFER_SERVICE_URL,
+  liquidity: env.LIQUIDITY_SERVICE_URL,
+  contracts: env.CONTRACT_REGISTRY_URL,
+  contractRisk: env.CONTRACT_RISK_URL,
+  supply: env.SUPPLY_SERVICE_URL,
+  feeModel: env.FEE_MODEL_SERVICE_URL,
+  treasury: env.TREASURY_SERVICE_URL,
+  payouts: env.PAYOUT_SERVICE_URL,
+  governance: env.GOVERNANCE_SERVICE_URL,
+  validators: env.VALIDATOR_SERVICE_URL,
+  devops: env.DEVOPS_SERVICE_URL,
+  rpc: env.RPC_SERVICE_URL,
+  usage: env.USAGE_SERVICE_URL,
+  webhooks: env.WEBHOOKS_SERVICE_URL,
+  ai: env.AI_SERVICE_URL,
+  explorerRpc: env.EXPLORER_RPC_URL || env.RPC_L2 || 'http://localhost:29545',
+  swap: env.SWAP_SERVICE_URL
 };
 
 const fetchOk = async (url: string, timeoutMs = 2000) => {
@@ -99,12 +165,10 @@ const fetchOk = async (url: string, timeoutMs = 2000) => {
   }
 };
 
-app.use('/app-shell', buildAppShellRouter(services.appShell));
-identityServicesPromise.then((identity) => {
-  app.use('/', buildIdentityAccessRouter(identity));
-});
+app.use(['/v1/app-shell', '/app-shell'], buildAppShellRouter(services.appShell));
 app.use(
-  '/chain',
+  ['/v1/chain', '/chain'],
+  requirePermission('chain:read'),
   buildChainRouter({
     status: liveServices.chain.chainStatusService,
     telemetry: liveServices.chain.consensusTelemetryService,
@@ -112,55 +176,197 @@ app.use(
   })
 );
 app.use(
-  '/nodes',
+  ['/v1/nodes', '/nodes'],
+  requirePermission('nodes:read'),
   buildNodeRouter({
     inventory: liveServices.nodes.nodeInventoryService,
     health: liveServices.nodes.nodeHealthService
   })
 );
 app.use(
-  '/observability',
-  buildObservabilityRouter({
-    metrics: liveServices.observability.metricsService,
-    logs: liveServices.observability.logsService,
-    alerts: liveServices.observability.alertRulesService,
-    notifications: liveServices.observability.notificationRouterService,
-    guard: guard,
-    alertProxy: alertmanager ? (payload: AlertmanagerAlert) => alertmanager.send(payload) : undefined
-  })
-);
-app.use(
-  '/stack',
+  ['/v1/stack', '/stack'],
+  requirePermission('chain:read'),
   buildStackRouter({
     prometheus,
     guard,
     relayer
   })
 );
-app.use('/wallet', buildWalletRouter());
+app.use(['/v1/wallet', '/wallet'], buildWalletRouter());
 
-const rpcCall = async (method: string, params: unknown[] = []) => {
+identityServicesPromise.then((identity) => {
+  auditLogService = identity.auditLogService;
+  app.use(['/v1', '/'], buildIdentityAccessRouter(identity));
+  app.use(
+    ['/v1/observability', '/observability'],
+    requirePermission('observability:read'),
+    buildObservabilityRouter({
+      metrics: liveServices.observability.metricsService,
+      logs: liveServices.observability.logsService,
+      alerts: liveServices.observability.alertRulesService,
+      notifications: liveServices.observability.notificationRouterService,
+      guard: guard,
+      auditLog: identity.auditLogService,
+      alertProxy: alertmanager ? (payload: AlertmanagerAlert) => alertmanager.send(payload) : undefined
+    })
+  );
+});
+
+const rpcCall = async <T = unknown>(method: string, params: unknown[] = []) => {
   const res = await fetch(servicesBase.explorerRpc, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
   });
   if (!res.ok) throw new Error(`RPC ${method} failed: ${res.status}`);
-  const body = (await res.json()) as { result?: any; error?: any };
+  const body = (await res.json()) as RpcResponse<T>;
   if (body.error) throw new Error(body.error.message || 'rpc_error');
   return body.result;
 };
 
-app.get('/api/bridge', async (_req, res) => {
+app.get(['/v1/api/bridge', '/api/bridge'], requirePermission('bridge:read'), async (_req, res) => {
   const bridges = await proxyJson<{ bridges?: unknown[] }>(`${servicesBase.bridge}/bridges`, { bridges: [] });
   const transfers = await proxyJson<{ transfers?: unknown[] }>(`${servicesBase.transfers}/transfers`, { transfers: [] });
   const pools = await proxyJson<{ pools?: unknown[] }>(`${servicesBase.liquidity}/liquidity`, { pools: [] });
   res.json({ ok: true, networks: bridges.bridges || [], transfers: transfers.transfers || [], pools: pools.pools || [] });
 });
 
-app.get('/api/contracts', async (_req, res) => {
-  const registry = await proxyJson<{ contracts?: any[] }>(`${servicesBase.contracts}/contracts`, { contracts: [] });
-  const risks = await proxyJson<{ contracts?: any[] }>(`${servicesBase.contractRisk}/risk`, { contracts: [] });
+app.get(['/v1/api/bridge/incidents', '/api/bridge/incidents'], requirePermission('bridge:write'), async (_req, res) => {
+  const upstream = await fetch(`${servicesBase.bridge}/bridges/incidents`, {
+    headers: { 'x-admin-token': env.BRIDGE_ADMIN_TOKEN || '' }
+  });
+  const body = await upstream.json().catch(() => ({}));
+  if (!upstream.ok) {
+    res.status(upstream.status).json(body);
+    return;
+  }
+  res.json(body);
+});
+
+app.post(['/v1/api/bridge/incidents', '/api/bridge/incidents'], requirePermission('bridge:write'), async (req, res) => {
+  const upstream = await fetch(`${servicesBase.bridge}/bridges/incidents`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-admin-token': env.BRIDGE_ADMIN_TOKEN || ''
+    },
+    body: JSON.stringify(req.body || {})
+  });
+  const body = (await upstream.json().catch(() => ({}))) as { incident?: { id?: string } };
+  if (!upstream.ok) {
+    res.status(upstream.status).json(body);
+    return;
+  }
+  if (alertmanager) {
+    try {
+      await alertmanager.send({
+        status: 'firing',
+        labels: { alertname: 'bridge_incident', severity: req.body?.severity || 'warning' },
+        annotations: { description: req.body?.message || 'bridge incident' }
+      });
+    } catch {
+      // ignore alert forwarding errors
+    }
+  }
+  await auditLogService?.append({
+    actorId: req.session.userId || 'unknown',
+    action: 'bridge:incident',
+    resource: body?.incident?.id || 'bridge',
+    meta: { correlationId: req.correlationId, severity: req.body?.severity }
+  });
+  res.status(201).json(body);
+});
+
+app.post(['/v1/api/bridge/pause', '/api/bridge/pause'], requirePermission('bridge:write'), async (req, res) => {
+  const upstream = await fetch(`${servicesBase.bridge}/bridges/pause`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-admin-token': env.BRIDGE_ADMIN_TOKEN || ''
+    }
+  });
+  const body = await upstream.json().catch(() => ({}));
+  if (!upstream.ok) {
+    res.status(upstream.status).json(body);
+    return;
+  }
+  await auditLogService?.append({
+    actorId: req.session.userId || 'unknown',
+    action: 'bridge:pause',
+    resource: 'bridge',
+    meta: { correlationId: req.correlationId }
+  });
+  res.json(body);
+});
+
+app.post(['/v1/api/bridge/resume', '/api/bridge/resume'], requirePermission('bridge:write'), async (req, res) => {
+  const upstream = await fetch(`${servicesBase.bridge}/bridges/resume`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-admin-token': env.BRIDGE_ADMIN_TOKEN || ''
+    }
+  });
+  const body = await upstream.json().catch(() => ({}));
+  if (!upstream.ok) {
+    res.status(upstream.status).json(body);
+    return;
+  }
+  await auditLogService?.append({
+    actorId: req.session.userId || 'system',
+    action: 'bridge:resume',
+    resource: 'bridge',
+    meta: { correlationId: req.correlationId }
+  });
+  res.json(body);
+});
+
+app.get(['/v1/api/bridge/fees', '/api/bridge/fees'], requirePermission('bridge:write'), async (req, res) => {
+  const upstream = await fetch(`${servicesBase.bridge}/bridges/fees`, {
+    headers: {
+      'x-admin-token': env.BRIDGE_ADMIN_TOKEN || ''
+    }
+  });
+  const body = await upstream.json().catch(() => ({}));
+  if (!upstream.ok) {
+    res.status(upstream.status).json(body);
+    return;
+  }
+  await auditLogService?.append({
+    actorId: req.session.userId || 'unknown',
+    action: 'bridge:fees:read',
+    resource: 'bridge',
+    meta: { correlationId: req.correlationId }
+  });
+  res.json(body);
+});
+
+app.post(['/v1/api/bridge/fees', '/api/bridge/fees'], requirePermission('bridge:write'), async (req, res) => {
+  const upstream = await fetch(`${servicesBase.bridge}/bridges/fees`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-admin-token': env.BRIDGE_ADMIN_TOKEN || ''
+    },
+    body: JSON.stringify({ feeBps: req.body?.feeBps })
+  });
+  const body = await upstream.json().catch(() => ({}));
+  if (!upstream.ok) {
+    res.status(upstream.status).json(body);
+    return;
+  }
+  await auditLogService?.append({
+    actorId: req.session.userId || 'unknown',
+    action: 'bridge:fees:update',
+    resource: 'bridge',
+    meta: { correlationId: req.correlationId, feeBps: req.body?.feeBps }
+  });
+  res.json(body);
+});
+
+app.get(['/v1/api/contracts', '/api/contracts'], requirePermission('contracts:read'), async (_req, res) => {
+  const registry = await proxyJson<{ contracts?: Array<Record<string, unknown>> }>(`${servicesBase.contracts}/contracts`, { contracts: [] });
+  const risks = await proxyJson<{ contracts?: Array<Record<string, unknown>> }>(`${servicesBase.contractRisk}/risk`, { contracts: [] });
   const merged =
     registry.contracts?.map((c) => ({
       id: c.address || c.name || 'contract',
@@ -174,7 +380,7 @@ app.get('/api/contracts', async (_req, res) => {
   res.json({ ok: true, networks: merged });
 });
 
-app.get('/api/token', async (_req, res) => {
+app.get(['/v1/api/token', '/api/token'], requirePermission('treasury:read'), async (_req, res) => {
   const supply = await proxyJson<{ supply?: string; emissions?: string }>(`${servicesBase.supply}/supply`, { supply: '0', emissions: '0' });
   const treasury = await proxyJson<{ balance?: string }>(`${servicesBase.treasury}/treasury`, { balance: '0' });
   res.json({
@@ -190,51 +396,84 @@ app.get('/api/token', async (_req, res) => {
   });
 });
 
-app.get('/devops/releases', async (_req, res) => {
+app.get(['/v1/devops/releases', '/devops/releases'], requirePermission('devops:read'), async (_req, res) => {
   const data = await proxyJson<{ releases?: unknown[] }>(`${servicesBase.devops}/releases`, { releases: [] });
   res.json(data.releases || []);
 });
 
-app.get('/devops/forks', async (_req, res) => {
+app.get(['/v1/devops/forks', '/devops/forks'], requirePermission('devops:read'), async (_req, res) => {
   const data = await proxyJson<{ forks?: unknown[] }>(`${servicesBase.devops}/forks`, { forks: [] });
   res.json(data.forks || []);
 });
 
-app.get('/devops/upgrades', async (_req, res) => {
+app.get(['/v1/devops/upgrades', '/devops/upgrades'], requirePermission('devops:read'), async (_req, res) => {
   const data = await proxyJson<{ upgrades?: unknown[] }>(`${servicesBase.devops}/upgrades`, { upgrades: [] });
   res.json(data.upgrades || []);
 });
 
-app.get('/governance/proposals', async (_req, res) => {
+app.get(['/v1/governance/proposals', '/governance/proposals'], requirePermission('governance:read'), async (_req, res) => {
   const data = await proxyJson<{ proposals?: unknown[] }>(`${servicesBase.governance}/proposals`, { proposals: [] });
   res.json(data.proposals || []);
 });
 
-app.get('/governance/votes', async (_req, res) => {
+app.get(['/v1/governance/votes', '/governance/votes'], requirePermission('governance:read'), async (_req, res) => {
   const data = await proxyJson<{ votes?: unknown[] }>(`${servicesBase.governance}/votes`, { votes: [] });
   res.json(data.votes || []);
 });
 
-app.get('/api/validators', async (_req, res) => {
+app.get(['/v1/api/validators', '/api/validators'], requirePermission('validator:read'), async (_req, res) => {
   const data = await proxyJson<{ validators?: unknown[] }>(`${servicesBase.validators}/validators`, { validators: [] });
   res.json(data);
 });
 
-app.get('/api/ai', async (_req, res) => {
+app.get(['/v1/api/validators/metrics', '/api/validators/metrics'], requirePermission('validator:read'), async (_req, res) => {
+  const queryNumber = async (query?: string, fallback?: number) => {
+    if (!query) return fallback;
+    try {
+      const result = await prometheus.query(query);
+      const val = result?.[0]?.value?.[1];
+      const parsed = val ? Number(val) : NaN;
+      return Number.isFinite(parsed) ? parsed : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+  const missedBlocks =
+    (await queryNumber(env.PROM_MISSED_BLOCKS_QUERY || 'op_gate_missed_blocks')) ??
+    (await queryNumber('missed_blocks_total')) ??
+    0;
+  let finalityLag =
+    (await queryNumber(env.PROM_FINALITY_LAG_QUERY || 'op_gate_finality_lag_blocks')) ??
+    (await queryNumber('finality_lag_blocks'));
+  if (finalityLag === undefined) {
+    const head = await queryNumber(process.env.PROM_BLOCK_HEIGHT_QUERY || 'op_gate_head_block');
+    const finalized = await queryNumber(process.env.PROM_FINALIZED_HEIGHT_QUERY || 'op_gate_finalized_block');
+    if (head !== undefined && finalized !== undefined) finalityLag = head - finalized;
+  }
+  res.json({
+    ok: true,
+    metrics: {
+      missedBlocks,
+      finalityLag: finalityLag ?? 0
+    }
+  });
+});
+
+app.get(['/v1/api/ai', '/api/ai'], requirePermission('ai:read'), async (_req, res) => {
   const data = await proxyJson<{ networks?: unknown[] }>(`${servicesBase.ai}/anomalies`, { networks: [] });
   res.json(data || { networks: [] });
 });
 
-app.get('/explorer/blocks', async (req, res) => {
+app.get(['/v1/explorer/blocks', '/explorer/blocks'], async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 10, 50);
   try {
-    const latestHex = (await rpcCall('eth_blockNumber')) as HexString;
+    const latestHex = (await rpcCall<HexString>('eth_blockNumber')) as HexString;
     const latest = parseInt(latestHex, 16);
     const blocks = await Promise.all(
       Array.from({ length: limit }, (_, i) => latest - i)
         .filter((n) => n >= 0)
         .map(async (num) => {
-          const block = (await rpcCall('eth_getBlockByNumber', ['0x' + num.toString(16), true])) as any;
+          const block = (await rpcCall<RpcBlock>('eth_getBlockByNumber', ['0x' + num.toString(16), true])) as RpcBlock;
           return {
             number: parseInt(block.number, 16),
             hash: block.hash,
@@ -251,21 +490,23 @@ app.get('/explorer/blocks', async (req, res) => {
   }
 });
 
-app.get('/explorer/txs', async (req, res) => {
+app.get(['/v1/explorer/txs', '/explorer/txs'], async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 20, 100);
   try {
-    const latestHex = (await rpcCall('eth_blockNumber')) as HexString;
+    const latestHex = (await rpcCall<HexString>('eth_blockNumber')) as HexString;
     const latest = parseInt(latestHex, 16);
-    const collected: any[] = [];
+    const collected: ExplorerTx[] = [];
     const maxDepth = Math.max(limit * 10, 500);
     for (let num = latest; num >= 0 && collected.length < limit && latest - num <= maxDepth; num--) {
-      const block = (await rpcCall('eth_getBlockByNumber', ['0x' + num.toString(16), true])) as any;
+      const block = (await rpcCall<RpcBlock>('eth_getBlockByNumber', ['0x' + num.toString(16), true])) as RpcBlock;
       const blockTime = new Date(parseInt(block.timestamp, 16) * 1000).toISOString();
       for (const t of block.transactions || []) {
         if (collected.length < limit) {
-          let txObj = t;
+          let txObj: RpcTx | null = null;
           if (typeof t === 'string') {
-            txObj = await rpcCall('eth_getTransactionByHash', [t]);
+            txObj = (await rpcCall<RpcTx>('eth_getTransactionByHash', [t])) || null;
+          } else {
+            txObj = t as RpcTx;
           }
           if (!txObj) continue;
           collected.push({
@@ -273,10 +514,10 @@ app.get('/explorer/txs', async (req, res) => {
             from: txObj.from,
             to: txObj.to,
             value: txObj.value,
-            gas: txObj.gas ? parseInt(txObj.gas, 16) : undefined,
+            gas: txObj.gas,
             status: 'success',
-            nonce: txObj.nonce ? parseInt(txObj.nonce, 16) : undefined,
-            blockNumber: parseInt(block.number, 16),
+            nonce: txObj.nonce,
+            blockNumber: parseInt(block.number, 16).toString(),
             time: blockTime
           });
         }
@@ -289,7 +530,7 @@ app.get('/explorer/txs', async (req, res) => {
   }
 });
 
-app.get('/wallet/balance', async (req, res) => {
+app.get(['/v1/wallet/balance', '/wallet/balance'], async (req, res) => {
   const address = typeof req.query.address === 'string' ? req.query.address : '';
   if (!address) {
     res.status(400).json({ error: 'address required' });
@@ -303,12 +544,12 @@ app.get('/wallet/balance', async (req, res) => {
   }
 });
 
-app.get('/integrations/rpc', async (_req, res) => {
+app.get(['/v1/integrations/rpc', '/integrations/rpc'], async (_req, res) => {
   const data = await proxyJson<{ endpoints?: unknown[] }>(`${servicesBase.rpc}/endpoints`, { endpoints: [] });
   res.json(data.endpoints || []);
 });
 
-app.get('/swap/quote', async (req, res) => {
+app.get(['/v1/swap/quote', '/swap/quote'], async (req, res) => {
   const tokenIn = typeof req.query.tokenIn === 'string' ? req.query.tokenIn : '';
   const tokenOut = typeof req.query.tokenOut === 'string' ? req.query.tokenOut : '';
   const amount = typeof req.query.amount === 'string' ? req.query.amount : '';
@@ -323,7 +564,7 @@ app.get('/swap/quote', async (req, res) => {
   res.json(data.routes ? data : { routes: [] });
 });
 
-app.post('/swap/execute', async (req, res) => {
+app.post(['/v1/swap/execute', '/swap/execute'], async (req, res) => {
   const body = req.body || {};
   if (!body || typeof body !== 'object') {
     res.status(400).json({ error: 'invalid_body' });
@@ -347,17 +588,17 @@ app.post('/swap/execute', async (req, res) => {
   }
 });
 
-app.get('/integrations/usage', async (_req, res) => {
+app.get(['/v1/integrations/usage', '/integrations/usage'], async (_req, res) => {
   const data = await proxyJson<{ usage?: unknown[] }>(`${servicesBase.usage}/usage`, { usage: [] });
   res.json(data.usage || []);
 });
 
-app.get('/integrations/webhooks', async (_req, res) => {
+app.get(['/v1/integrations/webhooks', '/integrations/webhooks'], async (_req, res) => {
   const data = await proxyJson<{ webhooks?: unknown[] }>(`${servicesBase.webhooks}/webhooks`, { webhooks: [] });
   res.json(data.webhooks || []);
 });
 
-app.get('/health', async (_req, res) => {
+app.get(['/v1/health', '/health'], async (_req, res) => {
   const [promOk, grafanaOk, guardOk, relayerOk, lokiOk, alertmanagerOk] = await Promise.all([
     fetchOk(`${prometheusUrl}/-/healthy`),
     fetchOk(`${grafanaUrl}/api/health`),
@@ -381,9 +622,17 @@ app.get('/health', async (_req, res) => {
   });
 });
 
-app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error(err);
-  res.status(500).json({ error: 'internal_error', message: err.message });
+app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error(
+    JSON.stringify({
+      ts: new Date().toISOString(),
+      level: 'error',
+      correlationId: req.correlationId,
+      message: err.message,
+      stack: err.stack
+    })
+  );
+  res.status(500).json({ error: 'internal_error', message: err.message, correlationId: req.correlationId });
 });
 
 const port = process.env.PORT || 4000;
