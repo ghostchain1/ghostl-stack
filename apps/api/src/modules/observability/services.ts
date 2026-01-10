@@ -25,3 +25,9 @@ export interface NotificationRouterService {
 export interface AuditLog {
   append(entry: { actorId: string; action: string; resource: string; meta?: Record<string, unknown> }): Promise<unknown>;
 }
+
+export interface NotificationChannel {
+  id: string;
+  type: 'slack' | 'webhook' | 'email';
+  target: string;
+}
