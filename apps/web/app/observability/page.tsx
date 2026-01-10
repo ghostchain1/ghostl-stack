@@ -6,6 +6,7 @@ import { DashboardsPanel } from '../../src/modules/observability/components/Dash
 import { LogsViewer } from '../../src/modules/observability/components/LogsViewer';
 import { AlertsPanel } from '../../src/modules/observability/components/AlertsPanel';
 import { NotificationRouter } from '../../src/modules/observability/components/NotificationRouter';
+import { IncidentTimeline } from '../../src/modules/observability/components/IncidentTimeline';
 import type { Alert, LogEvent } from '@ghostl/types/observability';
 import { apiFetch } from '../../src/lib/api';
 
@@ -22,6 +23,7 @@ export default function ObservabilityPage() {
   const [routes, setRoutes] = useState<
     { target: string; channel: 'slack' | 'discord' | 'webhook' | 'email'; active: boolean }[]
   >([]);
+  const [incidents, setIncidents] = useState<{ source: string; message?: string; severity?: string; time?: string; createdAt?: string }[]>([]);
 
   useEffect(() => {
     apiFetch<Alert[]>('/observability/alerts', { fallback: [] }).then((a) => setAlerts(a));
@@ -45,6 +47,9 @@ export default function ObservabilityPage() {
         setRoutes(mapped);
       }
     );
+    apiFetch<{ incidents: any[] }>('/observability/incidents', { fallback: { incidents: [] } }).then((res) => {
+      setIncidents(res.incidents || []);
+    });
   }, []);
 
   return (
@@ -55,6 +60,7 @@ export default function ObservabilityPage() {
         <LogsViewer events={logs} />
         <AlertsPanel alerts={alerts} />
         <NotificationRouter routes={routes} />
+        <IncidentTimeline incidents={incidents} />
       </div>
     </div>
   );
