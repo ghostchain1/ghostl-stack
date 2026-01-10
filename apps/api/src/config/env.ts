@@ -13,12 +13,28 @@ const EnvSchema = z.object({
   ALERTMANAGER_URL: z.string().url().optional(),
   PUBLIC_OBSERVABILITY: z
     .string()
-    .transform((v) => v === 'true')
-    .optional(),
+    .default('true')
+    .transform((v) => v === 'true'),
   PUBLIC_CHAIN: z
     .string()
-    .transform((v) => v === 'true')
-    .optional(),
+    .default('true')
+    .transform((v) => v === 'true'),
+  PUBLIC_NODES: z
+    .string()
+    .default('true')
+    .transform((v) => v === 'true'),
+  PUBLIC_VALIDATORS: z
+    .string()
+    .default('true')
+    .transform((v) => v === 'true'),
+  PUBLIC_EXPLORER: z
+    .string()
+    .default('true')
+    .transform((v) => v === 'true'),
+  PUBLIC_STACK: z
+    .string()
+    .default('true')
+    .transform((v) => v === 'true'),
   BRIDGE_SERVICE_URL: z.string().url().default('http://localhost:7604'),
   TRANSFER_SERVICE_URL: z.string().url().default('http://localhost:7605'),
   LIQUIDITY_SERVICE_URL: z.string().url().default('http://localhost:7606'),
@@ -56,7 +72,9 @@ const EnvSchema = z.object({
   WEBHOOKS_SERVICE_URL: z.string().url().default('http://localhost:7652'),
   AI_SERVICE_URL: z.string().url().default('http://localhost:7660'),
   EXPLORER_RPC_URL: z.string().url().optional(),
+  RPC_L1: z.string().url().optional(),
   RPC_L2: z.string().url().optional(),
+  RPC_L3: z.string().url().optional(),
   SWAP_SERVICE_URL: z.string().url().default('http://localhost:7670'),
   BRIDGE_ADMIN_TOKEN: z.string().optional(),
   CHAIN_ID: z.string().optional(),
@@ -67,6 +85,7 @@ const EnvSchema = z.object({
   PROM_FINALITY_LAG_QUERY: z.string().optional(),
   PROM_PARTICIPATION_QUERY: z.string().optional(),
   PROM_PROPOSER_QUERY: z.string().optional(),
+  PROM_LATENCY_P50_QUERY: z.string().optional(),
   EXPECTED_NODE_VERSION: z.string().optional(),
   GAS_PRICE_MODEL: z.string().optional(),
   SNAPSHOT_SPACE: z.string().optional(),

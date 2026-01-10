@@ -18,6 +18,14 @@ export default function StackPage() {
   const [chain, setChain] = useState<'l2' | 'l3'>('l2');
   const [data, setData] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(false);
+  const fallback: Overview = {
+    chain,
+    head: 0,
+    finalized: 0,
+    lag: 0,
+    relayer: { finalized: 0, errors: 0, health: null },
+    guard: { alerts: 0, deposits: 0, activeAlerts: [] }
+  };
 
   const load = async (target: 'l2' | 'l3') => {
     setLoading(true);
@@ -25,9 +33,15 @@ export default function StackPage() {
       const res = await fetch(`${API_URL}/stack/overview?chain=${target}`, { cache: 'no-cache' });
       if (!res.ok) throw new Error('failed');
       const json = (await res.json()) as Overview;
-      setData(json);
+      setData({
+        ...fallback,
+        ...json,
+        chain: json.chain || target,
+        relayer: { ...fallback.relayer, ...(json.relayer || {}) },
+        guard: { ...fallback.guard, ...(json.guard || {}), activeAlerts: json.guard?.activeAlerts || [] }
+      });
     } catch {
-      setData(null);
+      setData(fallback);
     } finally {
       setLoading(false);
     }
@@ -52,15 +66,15 @@ export default function StackPage() {
           <div className="stack">
             <div className="spread">
               <span className="muted">Head</span>
-              <span>{data?.head ?? 'n/a'}</span>
+              <span>{data?.head ?? 0}</span>
             </div>
             <div className="spread">
               <span className="muted">Finalized</span>
-              <span>{data?.finalized ?? 'n/a'}</span>
+              <span>{data?.finalized ?? 0}</span>
             </div>
             <div className="spread">
               <span className="muted">Lag</span>
-              <Badge tone={(data?.lag || 0) > 5 ? 'warning' : 'default'}>{data?.lag ?? 'n/a'}</Badge>
+              <Badge tone={(data?.lag || 0) > 5 ? 'warning' : 'default'}>{data?.lag ?? 0}</Badge>
             </div>
           </div>
         </Card>
@@ -68,7 +82,7 @@ export default function StackPage() {
           <div className="stack">
             <div className="spread">
               <span className="muted">Finalized batches</span>
-              <span>{data?.relayer.finalized ?? 'n/a'}</span>
+              <span>{data?.relayer.finalized ?? 0}</span>
             </div>
             <div className="spread">
               <span className="muted">Errors</span>
@@ -81,7 +95,7 @@ export default function StackPage() {
           <div className="stack">
             <div className="spread">
               <span className="muted">Deposits seen</span>
-              <span>{data?.guard.deposits ?? 'n/a'}</span>
+              <span>{data?.guard.deposits ?? 0}</span>
             </div>
             <div className="spread">
               <span className="muted">Alerts total</span>

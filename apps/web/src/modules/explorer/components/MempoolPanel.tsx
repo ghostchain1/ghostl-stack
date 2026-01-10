@@ -11,14 +11,14 @@ type MempoolInfo = {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
-export function MempoolPanel() {
+export function MempoolPanel({ chain = 'l2' }: { chain?: string }) {
   const [info, setInfo] = useState<MempoolInfo>({ pending: 0, queued: 0 });
   const [loading, setLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/v1/explorer/mempool`, { credentials: 'include' });
+      const res = await fetch(`${API_BASE}/v1/explorer/mempool?chain=${chain}`, { credentials: 'include' });
       const json = await res.json();
       setInfo(json);
     } catch {
@@ -34,7 +34,9 @@ export function MempoolPanel() {
 
   return (
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 6 }}>Mempool & MEV</div>
+      <div style={{ fontWeight: 700, marginBottom: 6 }}>
+        Mempool & MEV <span className="muted">({chain.toUpperCase()})</span>
+      </div>
       {loading && <div className="muted">Loading…</div>}
       <div className="stack" style={{ gap: 6 }}>
         <div className="pill">Pending: {info.pending}</div>

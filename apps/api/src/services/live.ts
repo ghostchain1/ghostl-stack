@@ -83,13 +83,16 @@ export const createLiveServices = (deps: {
   const blockHeightQuery = process.env.PROM_BLOCK_HEIGHT_QUERY || 'op_gate_head_block';
   const finalizedHeightQuery = process.env.PROM_FINALIZED_HEIGHT_QUERY || 'op_gate_finalized_block';
   const epochQuery = process.env.PROM_EPOCH_QUERY || 'epoch_number';
+  const participationQuery = process.env.PROM_PARTICIPATION_QUERY || 'op_gate_participation_rate';
+  const latencyP50Query = process.env.PROM_LATENCY_P50_QUERY || 'op_gate_network_latency_ms';
+
   const chainStatusService: ChainStatusService = {
     async getChainInfo(): Promise<ChainInfo> {
       const defaultInfo: ChainInfo = {
-        chainId: process.env.CHAIN_ID || '7192',
-        name: process.env.CHAIN_NAME || 'GhostL2',
-        env: process.env.CHAIN_ENV || 'local',
-        consensus: process.env.CONSENSUS || 'IBFT'
+        chainId: process.env.CHAIN_ID || '901',
+        name: process.env.CHAIN_NAME || 'GhostL2 Devnet',
+        env: process.env.CHAIN_ENV || 'devnet',
+        consensus: process.env.CONSENSUS || 'OP-Stack'
       };
       return defaultInfo;
     },
@@ -101,7 +104,7 @@ export const createLiveServices = (deps: {
       const val =
         (await queryNumber(deps.prometheus, 'op_gate_block_time_seconds')) ||
         (await queryNumber(deps.prometheus, 'block_time_seconds'));
-      return (val || 0) * 1000;
+      return (val || 2) * 1000;
     },
     async getFinalityLag() {
       const head = await queryNumber(deps.prometheus, blockHeightQuery);
@@ -127,13 +130,13 @@ export const createLiveServices = (deps: {
 
   const consensusTelemetryService: ConsensusTelemetryService = {
     async getParticipationRate() {
-      const val = await queryNumber(deps.prometheus, 'op_gate_participation_rate');
+      const val = await queryNumber(deps.prometheus, participationQuery);
       if (val !== undefined) return val;
       return (await queryNumber(deps.prometheus, 'participation_rate')) || 0;
     },
     async getLatencyMetrics() {
       const latency =
-        (await queryNumber(deps.prometheus, 'op_gate_network_latency_ms')) ||
+        (await queryNumber(deps.prometheus, latencyP50Query)) ||
         (await queryNumber(deps.prometheus, 'network_latency_ms'));
       return { p50: latency || 0 };
     },
