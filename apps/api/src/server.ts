@@ -313,8 +313,8 @@ const saveContractState = (items: ContractState[]) => {
 let contractStates = loadContractState();
 const pausableAbi = ['function pause()', 'function unpause()', 'function paused() view returns (bool)'];
 const proxyAdminAbi = ['function upgrade(address proxy, address implementation)', 'function upgradeTo(address implementation)'];
-const ownableAbi = ['function transferOwnership(address newOwner)'];
-const guardianAbi = ['function setGuardian(address)'];
+const ownableAbi = ['function transferOwnership(address newOwner)', 'function owner() view returns (address)'];
+const guardianAbi = ['function setGuardian(address)', 'function guardian() view returns (address)'];
 const pausableInterface = new Interface(pausibleAbi);
 const proxyAdminInterface = new Interface(proxyAdminAbi);
 const ownableInterface = new Interface(ownableAbi);
@@ -377,6 +377,17 @@ const executeUpgradeAction = async (action?: { type: string; payload?: Record<st
       const impl = payload.implementation as string;
       const admin = env.CONTRACT_PROXY_ADMIN_ADDRESS || proxy;
       if (!proxy || !impl) throw new Error('proxy/implementation required');
+      if (env.CONTRACT_RPC_URL) {
+        try {
+          const provider = new JsonRpcProvider(env.CONTRACT_RPC_URL);
+          const currentImpl = await provider.getStorageAt(proxy, '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc');
+          if (currentImpl.toLowerCase().endsWith(impl.toLowerCase().replace('0x', '').padStart(64, '0'))) {
+            return undefined;
+          }
+        } catch {
+          // ignore
+        }
+      }
       const data =
         env.CONTRACT_PROXY_ADMIN_ADDRESS && env.CONTRACT_PROXY_ADMIN_ADDRESS !== proxy
           ? proxyAdminInterface.encodeFunctionData('upgrade', [proxy, impl])
@@ -387,7 +398,34 @@ const executeUpgradeAction = async (action?: { type: string; payload?: Record<st
       const target = (payload.address as string) || env.CONTRACT_TARGET_ADDRESS;
       const newOwner = payload.newOwner as string;
       if (!target || !newOwner) throw new Error('address/newOwner required');
+      if (env.CONTRACT_RPC_URL) {
+        try {
+          const provider = new JsonRpcProvider(env.CONTRACT_RPC_URL);
+          const current = await provider.call({ to: target, data: ownableInterface.encodeFunctionData('owner') });
+          const decoded = ownableInterface.decodeFunctionResult('owner', current)[0] as string;
+          if (decoded.toLowerCase() === newOwner.toLowerCase()) return undefined;
+        } catch {
+          // ignore
+        }
+      }
       const data = ownableInterface.encodeFunctionData('transferOwnership', [newOwner]);
+      return sendRawTx(target, data);
+    }
+    case 'setGuardian': {
+      const target = (payload.address as string) || env.CONTRACT_TARGET_ADDRESS;
+      const guardian = payload.guardian as string;
+      if (!target || !guardian) throw new Error('address/guardian required');
+      if (env.CONTRACT_RPC_URL) {
+        try {
+          const provider = new JsonRpcProvider(env.CONTRACT_RPC_URL);
+          const current = await provider.call({ to: target, data: guardianInterface.encodeFunctionData('guardian') });
+          const decoded = guardianInterface.decodeFunctionResult('guardian', current)[0] as string;
+          if (decoded.toLowerCase() === guardian.toLowerCase()) return undefined;
+        } catch {
+          // ignore
+        }
+      }
+      const data = guardianInterface.encodeFunctionData('setGuardian', [guardian]);
       return sendRawTx(target, data);
     }
     case 'execute': {
