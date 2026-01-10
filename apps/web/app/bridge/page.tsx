@@ -3,6 +3,7 @@ import { TransfersTable } from '../../src/modules/bridge/components/TransfersTab
 import { LiquidityPools } from '../../src/modules/bridge/components/LiquidityPools';
 import { DisputesPanel } from '../../src/modules/bridge/components/DisputesPanel';
 import { EmergencyControls } from '../../src/modules/bridge/components/EmergencyControls';
+import { BridgeMetrics } from '../../src/modules/bridge/components/BridgeMetrics';
 import type { Transfer } from '@ghostl/types/bridge';
 import { apiFetch } from '../../src/lib/api';
 
@@ -51,6 +52,7 @@ export default async function BridgePage() {
     <div className="content">
       <div className="card-grid">
         <BridgesOverview bridges={bridges} summary={summary} />
+        <BridgeMetrics summary={summary} />
         <TransfersTable transfers={transfers} />
         <LiquidityPools pools={pools} />
         <DisputesPanel disputes={[]} />
