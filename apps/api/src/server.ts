@@ -9,6 +9,7 @@ import { fetch } from 'undici';
 import nodemailer from 'nodemailer';
 import type {} from './types/session';
 import { Interface, JsonRpcProvider, Wallet } from 'ethers';
+import type { Transfer } from '@ghostl/types/bridge';
 import { buildAppShellRouter } from './modules/app-shell/router';
 import { buildIdentityAccessRouter } from './modules/identity-access/router';
 import { buildChainRouter } from './modules/chain/router';
@@ -87,6 +88,9 @@ type UpgradePlan = {
 type ComplianceReport = { id: string; period: string; status: string; generatedAt: string };
 type ComplianceFinding = { id: string; area: string; severity: 'low' | 'medium' | 'high'; detail: string };
 type ComplianceDetail = ComplianceReport & { controls: string[]; findings: ComplianceFinding[]; exportedAt?: string };
+type BridgeNetwork = { id?: string; pause?: string; pending?: string; liquidity?: string; fees?: string };
+type BridgeSignature = { transferId?: string; signatures?: string[]; required?: number };
+type BridgeIncident = { message?: string; severity?: string; createdAt?: string; time?: string; source?: string };
 
 const app = express();
 const FileStore = FileStoreFactory(session);
@@ -297,7 +301,7 @@ const saveTreasuryProposals = (items: TreasuryProposal[]) => {
   ensureDir(treasuryStateFile);
   fs.writeFileSync(treasuryStateFile, JSON.stringify(items, null, 2));
 };
-let treasuryProposals = loadTreasuryProposals();
+const treasuryProposals = loadTreasuryProposals();
 
 const contractStateFile = env.CONTRACT_STATE_FILE || path.join(process.cwd(), 'data', 'contracts-state.json');
 const loadContractState = (): ContractState[] => {
@@ -314,12 +318,12 @@ const saveContractState = (items: ContractState[]) => {
   ensureDir(contractStateFile);
   fs.writeFileSync(contractStateFile, JSON.stringify(items, null, 2));
 };
-let contractStates = loadContractState();
+const contractStates = loadContractState();
 const pausableAbi = ['function pause()', 'function unpause()', 'function paused() view returns (bool)'];
 const proxyAdminAbi = ['function upgrade(address proxy, address implementation)', 'function upgradeTo(address implementation)'];
 const ownableAbi = ['function transferOwnership(address newOwner)', 'function owner() view returns (address)'];
 const guardianAbi = ['function setGuardian(address)', 'function guardian() view returns (address)'];
-const pausableInterface = new Interface(pausibleAbi);
+const pausableInterface = new Interface(pausableAbi);
 const proxyAdminInterface = new Interface(proxyAdminAbi);
 const ownableInterface = new Interface(ownableAbi);
 const guardianInterface = new Interface(guardianAbi);
@@ -366,7 +370,7 @@ const saveUpgradePlans = (items: UpgradePlan[]) => {
   ensureDir(upgradePlanFile);
   fs.writeFileSync(upgradePlanFile, JSON.stringify(items, null, 2));
 };
-let upgradePlans = loadUpgradePlans();
+const upgradePlans = loadUpgradePlans();
 
 const executeUpgradeAction = async (action?: { type: string; payload?: Record<string, unknown> }) => {
   if (!action) return undefined;
@@ -494,7 +498,7 @@ const saveCompliance = (items: ComplianceDetail[]) => {
   ensureDir(complianceFile);
   fs.writeFileSync(complianceFile, JSON.stringify(items, null, 2));
 };
-let complianceReports = loadCompliance();
+const complianceReports = loadCompliance();
 
 const fetchOk = async (url: string, timeoutMs = 2000) => {
   const controller = new AbortController();
@@ -581,16 +585,16 @@ const rpcCall = async <T = unknown>(method: string, params: unknown[] = []) => {
 
 app.get(['/v1/api/bridge', '/api/bridge'], requirePermission('bridge:read'), async (_req, res) => {
   const [bridges, transfers, pools, signatures] = await Promise.all([
-    proxyJson<{ bridges?: any[] }>(`${servicesBase.bridge}/bridges`, { bridges: [] }).catch(() => ({ bridges: [] })),
-    proxyJson<{ transfers?: any[] }>(`${servicesBase.transfers}/transfers`, { transfers: [] }).catch(() => ({ transfers: [] })),
-    proxyJson<{ pools?: any[] }>(`${servicesBase.liquidity}/liquidity`, { pools: [] }).catch(() => ({ pools: [] })),
-    proxyJson<{ signatures?: any[] }>(`${servicesBase.bridge}/bridges/signatures`, { signatures: [] }).catch(() => ({ signatures: [] }))
+    proxyJson<{ bridges?: BridgeNetwork[] }>(`${servicesBase.bridge}/bridges`, { bridges: [] }).catch(() => ({ bridges: [] })),
+    proxyJson<{ transfers?: Transfer[] }>(`${servicesBase.transfers}/transfers`, { transfers: [] }).catch(() => ({ transfers: [] })),
+    proxyJson<{ pools?: BridgeNetwork[] }>(`${servicesBase.liquidity}/liquidity`, { pools: [] }).catch(() => ({ pools: [] })),
+    proxyJson<{ signatures?: BridgeSignature[] }>(`${servicesBase.bridge}/bridges/signatures`, { signatures: [] }).catch(() => ({ signatures: [] }))
   ]);
   const sigMap = new Map<string, { signatures?: string[]; required?: number }>();
-  (signatures.signatures || []).forEach((s: { transferId?: string; signatures?: string[]; required?: number }) => {
+  (signatures.signatures || []).forEach((s) => {
     if (s.transferId) sigMap.set(s.transferId, { signatures: s.signatures || [], required: s.required });
   });
-  const txs = (transfers.transfers as any[]) || [];
+  const txs = (transfers.transfers as Transfer[]) || [];
   const enriched = txs.map((t) => {
     const sig = sigMap.get(t.id) || {};
     return { ...t, signatures: sig.signatures || [], requiredSignatures: sig.required || t.requiredSignatures || 2 };
@@ -1293,18 +1297,64 @@ app.get(['/v1/governance/delegations', '/governance/delegations'], requirePermis
 app.get(['/v1/governance/snapshot', '/governance/snapshot'], requirePermission('governance:read'), async (_req, res) => {
   const space = env.SNAPSHOT_SPACE || 'ghostldao.eth';
   const api = env.SNAPSHOT_API_URL || 'https://hub.snapshot.org/graphql';
-  const proposals = [
-    { id: 'snap-1', title: 'Snapshot placeholder', status: 'active', link: `https://snapshot.org/#/${space}/proposal/snap-1` }
-  ];
+  let proposals: { id: string; title: string; status: string; link: string }[] = [];
+  try {
+    const body = {
+      query: `
+        query Proposals($space: String!) {
+          proposals(first: 5, where: { space_in: [$space] }, orderBy: "created", orderDirection: desc) {
+            id
+            title
+            state
+          }
+        }
+      `,
+      variables: { space }
+    };
+    const resSnap = await fetch(api, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const json = (await resSnap.json().catch(() => ({}))) as { data?: { proposals?: { id: string; title: string; state: string }[] } };
+    proposals =
+      json?.data?.proposals?.map((p) => ({
+        id: p.id,
+        title: p.title,
+        status: p.state,
+        link: `https://snapshot.org/#/${space}/proposal/${p.id}`
+      })) || [];
+  } catch {
+    proposals = [];
+  }
+  if (!proposals.length) {
+    proposals = [{ id: 'snap-placeholder', title: 'No snapshot proposals found', status: 'none', link: `https://snapshot.org/#/${space}` }];
+  }
   res.json({ space, api, proposals });
 });
 
 app.get(['/v1/governance/forum', '/governance/forum'], requirePermission('governance:read'), async (_req, res) => {
   const forum = env.FORUM_URL || 'https://forum.example.org';
-  const threads = [
-    { id: 'thr-1', title: 'Upgrade discussion', url: `${forum}/t/upgrade-discussion`, replies: 3 },
-    { id: 'thr-2', title: 'Validator incentives', url: `${forum}/t/validator-incentives`, replies: 1 }
-  ];
+  let threads: { id: string; title: string; url: string; replies: number }[] = [];
+  try {
+    const latest = await fetch(`${forum.replace(/\/$/, '')}/latest.json`);
+    const json = (await latest.json().catch(() => ({}))) as { topic_list?: { topics?: { id: number; title: string; slug: string; reply_count?: number }[] } };
+    threads =
+      json?.topic_list?.topics?.slice(0, 5).map((t) => ({
+        id: String(t.id),
+        title: t.title,
+        url: `${forum}/t/${t.slug}/${t.id}`,
+        replies: t.reply_count || 0
+      })) || [];
+  } catch {
+    threads = [];
+  }
+  if (!threads.length) {
+    threads = [
+      { id: 'thr-1', title: 'Upgrade discussion', url: `${forum}/t/upgrade-discussion`, replies: 3 },
+      { id: 'thr-2', title: 'Validator incentives', url: `${forum}/t/validator-incentives`, replies: 1 }
+    ];
+  }
   res.json({ forum, threads });
 });
 
@@ -1415,10 +1465,20 @@ app.get(['/v1/api/validators/metrics', '/api/validators/metrics'], requirePermis
     (await queryNumber(env.PROM_PARTICIPATION_QUERY || 'op_gate_participation_rate')) ??
     (await queryNumber('participation_rate')) ??
     0;
-  const lastProposer =
-    (await queryString(env.PROM_PROPOSER_QUERY || 'op_gate_last_proposer')) ||
-    (await queryString('last_proposer')) ||
-    'unknown';
+  const proposerQuery = env.PROM_PROPOSER_QUERY || 'op_gate_last_proposer';
+  const lastProposer = (await queryString(proposerQuery)) || (await queryString('last_proposer')) || 'unknown';
+  let proposerRotation: Array<{ proposer: string; at: string }> = [];
+  try {
+    const end = Date.now();
+    const start = end - 60 * 60 * 1000;
+    const series = await prometheus.queryRange(proposerQuery, start, end, 300);
+    proposerRotation = series
+      .flatMap((s) => s.values || [])
+      .map((v) => ({ proposer: v[1], at: new Date(Number(v[0]) * 1000).toISOString() }))
+      .slice(-20);
+  } catch {
+    proposerRotation = [];
+  }
   let bftAlerts: Array<{ message: string; severity: string; time: string }> = [];
   try {
     const alerts = await prometheus.alerts();
@@ -1445,9 +1505,28 @@ app.get(['/v1/api/validators/metrics', '/api/validators/metrics'], requirePermis
       finalityLag: finalityLag ?? 0,
       participationRate,
       lastProposer,
+      proposerRotation,
       bftAlerts
     }
   });
+});
+
+app.get(['/v1/security/controls', '/security/controls'], requirePermission('iam:read'), async (_req, res) => {
+  const hardwareWalletRequired = Boolean(env.HARDWARE_WALLET_REQUIRED);
+  let vaultHealthy = false;
+  let hsmHealthy = false;
+  if (env.VAULT_HEALTH_URL) {
+    try {
+      const resp = await fetch(env.VAULT_HEALTH_URL);
+      vaultHealthy = resp.ok;
+    } catch {
+      vaultHealthy = false;
+    }
+  }
+  if (env.GUARD_URL) {
+    hsmHealthy = await fetchOk(`${env.GUARD_URL}/health`);
+  }
+  res.json({ vaultHealthy, vaultUrl: env.VAULT_HEALTH_URL, hsmHealthy, hardwareWalletRequired });
 });
 
 app.get(['/v1/api/ai', '/api/ai'], requirePermission('ai:read'), async (_req, res) => {
@@ -1463,9 +1542,11 @@ app.get(['/v1/api/ai', '/api/ai'], requirePermission('ai:read'), async (_req, re
 });
 
 app.get(['/v1/observability/incidents', '/observability/incidents'], requirePermission('observability:read'), async (_req, res) => {
-  const bridgeIncidents = await proxyJson<{ incidents?: unknown[] }>(`${servicesBase.bridge}/bridges/incidents`, { incidents: [] }).catch(() => ({
-    incidents: []
-  }));
+  const bridgeIncidents = await proxyJson<{ incidents?: BridgeIncident[] }>(`${servicesBase.bridge}/bridges/incidents`, { incidents: [] }).catch(
+    () => ({
+      incidents: []
+    })
+  );
   let validatorAlerts: Array<{ source: string; message: string; severity: string; time: string }> = [];
   try {
     const alerts = await prometheus.alerts();
@@ -1489,7 +1570,7 @@ app.get(['/v1/observability/incidents', '/observability/incidents'], requirePerm
   res.json({
     ok: true,
     incidents: [
-      ...((bridgeIncidents.incidents as any[]) || []).map((i) => ({ ...i, source: 'bridge' })),
+      ...((bridgeIncidents.incidents as BridgeIncident[]) || []).map((i) => ({ ...i, source: 'bridge' })),
       ...validatorAlerts
     ]
   });

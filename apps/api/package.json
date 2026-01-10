@@ -6,7 +6,8 @@
   "types": "dist/server.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "ts-node src/server.ts"
+    "dev": "ts-node src/server.ts",
+    "lint": "eslint src --ext .ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

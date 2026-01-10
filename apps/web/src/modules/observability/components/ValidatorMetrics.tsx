@@ -7,6 +7,7 @@ type Metrics = {
   finalityLag: number;
   participationRate?: number;
   lastProposer?: string;
+  proposerRotation?: { proposer: string; at: string }[];
   bftAlerts?: { message: string; severity: string; time: string }[];
 };
 
@@ -56,6 +57,16 @@ export function ValidatorMetrics() {
           <div>Last proposer</div>
           <div className="badge">{metrics.lastProposer || 'unknown'}</div>
         </div>
+        {metrics.proposerRotation && metrics.proposerRotation.length > 0 && (
+          <div className="stack" style={{ gap: 4 }}>
+            <div className="muted">Recent proposer rotation</div>
+            {metrics.proposerRotation.slice(-5).map((p) => (
+              <div key={`${p.proposer}-${p.at}`} className="pill">
+                {p.proposer} · {new Date(p.at).toLocaleTimeString()}
+              </div>
+            ))}
+          </div>
+        )}
         {metrics.bftAlerts && metrics.bftAlerts.length > 0 && (
           <div className="stack" style={{ gap: 4 }}>
             <div className="muted">BFT / equivocation alerts</div>
