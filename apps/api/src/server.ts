@@ -151,6 +151,10 @@ const servicesBase = {
   explorerRpc: env.EXPLORER_RPC_URL || env.RPC_L2 || 'http://localhost:29545',
   swap: env.SWAP_SERVICE_URL
 };
+const contractMetadata = {
+  upgradeabilityQuery: env.CONTRACT_UPGRADEABILITY_QUERY || 'op_contract_upgradeability',
+  pauseQuery: env.CONTRACT_PAUSE_QUERY || 'op_contract_paused'
+};
 
 const fetchOk = async (url: string, timeoutMs = 2000) => {
   const controller = new AbortController();
@@ -367,16 +371,26 @@ app.post(['/v1/api/bridge/fees', '/api/bridge/fees'], requirePermission('bridge:
 app.get(['/v1/api/contracts', '/api/contracts'], requirePermission('contracts:read'), async (_req, res) => {
   const registry = await proxyJson<{ contracts?: Array<Record<string, unknown>> }>(`${servicesBase.contracts}/contracts`, { contracts: [] });
   const risks = await proxyJson<{ contracts?: Array<Record<string, unknown>> }>(`${servicesBase.contractRisk}/risk`, { contracts: [] });
+  const pausedFlags = contractMetadata.pauseQuery ? await prometheus.query(contractMetadata.pauseQuery).catch(() => []) : [];
+  const upgradeabilityFlags = contractMetadata.upgradeabilityQuery ? await prometheus.query(contractMetadata.upgradeabilityQuery).catch(() => []) : [];
+
   const merged =
-    registry.contracts?.map((c) => ({
-      id: c.address || c.name || 'contract',
-      address: c.address,
-      name: c.name,
-      proxies: c.proxyType,
-      ownership: c.owner,
-      verified: c.verified,
-      risk: risks.contracts?.find((r) => r.address === c.address)
-    })) || [];
+    registry.contracts?.map((c) => {
+      const address = (c.address as string) || '';
+      const pausedMetric = pausedFlags.find((p) => p.metric.address?.toLowerCase() === address.toLowerCase());
+      const upgradeMetric = upgradeabilityFlags.find((u) => u.metric.address?.toLowerCase() === address.toLowerCase());
+      return {
+        id: address || (c.name as string) || 'contract',
+        address,
+        name: c.name,
+        proxies: c.proxyType,
+        ownership: c.owner,
+        verified: c.verified,
+        upgradeable: upgradeMetric ? upgradeMetric.value?.[1] === '1' : undefined,
+        paused: pausedMetric ? pausedMetric.value?.[1] === '1' : undefined,
+        risk: risks.contracts?.find((r) => (r.address as string)?.toLowerCase() === address.toLowerCase())
+      };
+    }) || [];
   res.json({ ok: true, networks: merged });
 });
 

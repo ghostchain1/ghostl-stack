@@ -4,7 +4,8 @@ import type {
   LogsService,
   MetricsService,
   NotificationRouterService,
-  AuditLog
+  AuditLog,
+  NotificationChannel
 } from './services';
 import { requirePermission } from '../../lib/rbac';
 import type { AlertmanagerAlert } from '../../clients/alertmanager';
@@ -21,6 +22,7 @@ export interface ObservabilityDeps {
   logs: LogsService;
   alerts: AlertRulesService;
   notifications: NotificationRouterService;
+  channels?: NotificationChannel[];
   auditLog?: AuditLog;
   guard?: {
     listPolicies: () => Promise<unknown>;
@@ -166,8 +168,27 @@ export const buildObservabilityRouter = (deps: ObservabilityDeps) => {
   router.get(
     '/channels',
     asyncHandler(async (_req, res) => {
-      const channels = await deps.notifications.listChannels();
+      const channels =
+        deps.channels ||
+        (await deps.notifications.listChannels().catch(() => []));
       res.json(channels);
+    })
+  );
+
+  router.post(
+    '/channels/test',
+    requirePermission('observability:write'),
+    asyncHandler(async (req, res) => {
+      const channelIds = (req.body?.channels as string[]) || [];
+      const alert = req.body?.alert || { id: 'test', severity: 'info', message: 'test alert' };
+      await deps.notifications.send(alert, channelIds);
+      await deps.auditLog?.append({
+        actorId: req.session.userId || 'unknown',
+        action: 'alert:test',
+        resource: 'channels',
+        meta: { correlationId: req.correlationId, channelIds }
+      });
+      res.json({ ok: true });
     })
   );
 

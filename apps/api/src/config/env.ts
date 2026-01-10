@@ -16,6 +16,8 @@ const EnvSchema = z.object({
   LIQUIDITY_SERVICE_URL: z.string().url().default('http://localhost:7606'),
   CONTRACT_REGISTRY_URL: z.string().url().default('http://localhost:7608'),
   CONTRACT_RISK_URL: z.string().url().default('http://localhost:7609'),
+  CONTRACT_UPGRADEABILITY_QUERY: z.string().optional(),
+  CONTRACT_PAUSE_QUERY: z.string().optional(),
   SUPPLY_SERVICE_URL: z.string().url().default('http://localhost:7614'),
   FEE_MODEL_SERVICE_URL: z.string().url().default('http://localhost:7615'),
   TREASURY_SERVICE_URL: z.string().url().default('http://localhost:7628'),
