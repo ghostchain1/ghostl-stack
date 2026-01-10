@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.15;
 
 import "forge-std/Script.sol";
 import "@eth-optimism-bedrock/src/L1/ProxyAdmin.sol";
@@ -10,7 +10,14 @@ import "@eth-optimism-bedrock/src/L1/L1CrossDomainMessenger.sol";
 import "@eth-optimism-bedrock/src/L1/L1StandardBridge.sol";
 import "@eth-optimism-bedrock/src/L1/L2OutputOracle.sol";
 import "@eth-optimism-bedrock/src/dispute/DisputeGameFactory.sol";
-import "@eth-optimism-bedrock/src/dispute/FaultDisputeGame.sol";
+
+/// @notice Minimal placeholder dispute game so the factory has code to point at.
+contract DummyFaultDisputeGame {
+    function initialize(bytes calldata) external {}
+    function version() external pure returns (string memory) {
+        return "dummy-fault-game";
+    }
+}
 
 /// @notice Minimal deploy script to stand up the essential OP Stack L1 suite for a devnet.
 /// WARNING: This is a pared-down script; it skips advanced wiring (superchain config, interop, anchors).
@@ -25,7 +32,7 @@ contract DeployL1 is Script {
         L1StandardBridge standardBridge;
         L2OutputOracle l2OutputOracle;
         DisputeGameFactory disputeGameFactory;
-        FaultDisputeGame faultGameImpl;
+        address faultGameImpl;
     }
 
     Deployed public deployed;
@@ -68,25 +75,10 @@ contract DeployL1 is Script {
         });
         deployed.systemConfig = new SystemConfig(l2ChainId, addrs, rcfg, false);
 
-        // DisputeGameFactory + a simple FaultDisputeGame impl
+        // DisputeGameFactory + a placeholder FaultDisputeGame impl
         deployed.disputeGameFactory = new DisputeGameFactory(deployer);
-        deployed.faultGameImpl = new FaultDisputeGame(
-            IBigStepper(address(0)), // placeholder
-            0, // maxDepth
-            0, // splitDepth
-            IFaultDisputeGame.TimeBounds({upper: 1 days, lower: 1 hours}),
-            true,
-            IPreimageOracle(address(0)),
-            SequencerFeeVault(payable(address(0))),
-            IFaultDisputeGame.WireParameters({
-                vm: VMParameters({maxStackDepth: 0, maxMemory: 0, maxInbox: 0, zkvm: false}),
-                l2ChainId: uint64(l2ChainId),
-                prover: address(0),
-                challenger: challenger,
-                defender: proposer
-            })
-        );
-        deployed.disputeGameFactory.setImplementation(1, address(deployed.faultGameImpl));
+        deployed.faultGameImpl = address(new DummyFaultDisputeGame());
+        deployed.disputeGameFactory.setImplementation(1, deployed.faultGameImpl);
 
         // L2OutputOracle (simplified; adjust params to match your rollup config)
         deployed.l2OutputOracle = new L2OutputOracle(
@@ -130,6 +122,6 @@ contract DeployL1 is Script {
         console2.log("L1StandardBridge", address(deployed.standardBridge));
         console2.log("L2OutputOracle", address(deployed.l2OutputOracle));
         console2.log("DisputeGameFactory", address(deployed.disputeGameFactory));
-        console2.log("FaultDisputeGameImpl", address(deployed.faultGameImpl));
+        console2.log("FaultDisputeGameImpl", deployed.faultGameImpl);
     }
 }

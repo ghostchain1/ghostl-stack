@@ -6,11 +6,15 @@ libs = [
   "optimism/packages/contracts-bedrock",
 ]
 fs_permissions = [
-  { access = "read", path = "optimism/packages/contracts-bedrock" }
+  { access = "read", path = "optimism/packages/contracts-bedrock" },
+  { access = "read", path = "." }
 ]
+auto_detect_solc = true
 remappings = [
-  "@eth-optimism-bedrock/=optimism/packages/contracts-bedrock/",
-  "@openzeppelin/=optimism/packages/contracts-bedrock/lib/openzeppelin-contracts/",
   "@openzeppelin/contracts-upgradeable/=optimism/packages/contracts-bedrock/lib/openzeppelin-contracts-upgradeable/contracts/",
+  "@openzeppelin/contracts/=optimism/packages/contracts-bedrock/lib/openzeppelin-contracts/contracts/",
+  "@openzeppelin/=optimism/packages/contracts-bedrock/lib/openzeppelin-contracts/",
+  "@eth-optimism-bedrock/=optimism/packages/contracts-bedrock/",
+  "src/=optimism/packages/contracts-bedrock/src/",
   "forge-std/=optimism/packages/contracts-bedrock/lib/forge-std/src/",
 ]
