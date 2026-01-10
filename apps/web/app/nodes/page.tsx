@@ -6,6 +6,7 @@ import { NodeDetail } from '../../src/modules/nodes/components/NodeDetail';
 type NodeDetail = Node & { metrics: NodeMetrics };
 
 const fallbackMetrics: NodeMetrics = { cpu: 0, mem: 0, disk: 0, peers: 0 };
+const DEVOPS_URL = process.env.NEXT_PUBLIC_DEVOPS_URL || 'http://localhost:7623';
 
 async function loadNodeDetails(): Promise<NodeDetail[]> {
   const list = await apiFetch<Node[]>('/nodes', { fallback: [] });
@@ -24,6 +25,9 @@ export default async function NodesPage() {
 
   return (
     <div className="content">
+      <div className="muted" style={{ marginBottom: 8 }}>
+        Node actions are routed via DEVOPS orchestrator at {DEVOPS_URL}.
+      </div>
       <div className="card-grid">
         {nodes.map((node) => (
           <NodeDetail key={node.id} node={node} metrics={node.metrics} />
