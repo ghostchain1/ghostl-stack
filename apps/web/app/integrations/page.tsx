@@ -3,7 +3,7 @@ import { UsageAnalytics } from '../../src/modules/integrations/components/UsageA
 import { WebhooksPanel } from '../../src/modules/integrations/components/WebhooksPanel';
 import { PartnerIntegrations } from '../../src/modules/integrations/components/PartnerIntegrations';
 import { apiFetch } from '../../src/lib/api';
-import type { RpcEndpoint, Webhook } from '@ghostl/types/integrations';
+import type { RpcEndpoint, Webhook, IntegrationPartner } from '@ghostl/types/integrations';
 
 async function loadIntegrations() {
   const endpoints = await apiFetch<RpcEndpoint[]>('/integrations/rpc', { fallback: [] }).catch(() => []);
@@ -11,14 +11,14 @@ async function loadIntegrations() {
     fallback: []
   }).catch(() => []);
   const hooks = await apiFetch<Webhook[]>('/integrations/webhooks', { fallback: [] }).catch(() => []);
-  return { endpoints, usage, hooks };
+  const partners = await apiFetch<{ partners: IntegrationPartner[] }>('/integrations/partners', { fallback: { partners: [] } })
+    .then((r) => r.partners || [])
+    .catch(() => []);
+  return { endpoints, usage, hooks, partners };
 }
 
 export default async function IntegrationsPage() {
-  const { endpoints, usage, hooks } = await loadIntegrations();
-  const partners: { name: string; type: 'exchange' | 'oracle' | 'indexer' | 'other'; status: string }[] = [
-    { name: 'Example Indexer', type: 'indexer', status: 'pending' }
-  ];
+  const { endpoints, usage, hooks, partners } = await loadIntegrations();
   return (
     <div className="content">
       <div className="card-grid">

@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../../src/lib/api';
 
-type ComplianceReport = { id: string; period: string; status: string; generatedAt: string };
+type ComplianceFinding = { id: string; area: string; severity: string; detail: string };
+type ComplianceReport = { id: string; period: string; status: string; generatedAt: string; controls?: string[]; findings?: ComplianceFinding[]; exportedAt?: string };
 type ActionLog = { actor: string; action: string; resource: string; createdAt: string };
 
 export default function CompliancePage() {
@@ -35,12 +36,38 @@ export default function CompliancePage() {
           <div style={{ fontWeight: 700, marginBottom: 8 }}>Compliance reports</div>
           <div className="stack" style={{ gap: 6 }}>
             {reports.map((r) => (
-              <div key={r.id} className="row" style={{ justifyContent: 'space-between' }}>
-                <div>
-                  <div>{r.period}</div>
-                  <div className="muted">{r.generatedAt}</div>
+              <div key={r.id} className="stack" style={{ gap: 6, border: '1px solid var(--border)', padding: 8, borderRadius: 8 }}>
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <div>
+                    <div>{r.period}</div>
+                    <div className="muted">{r.generatedAt}</div>
+                  </div>
+                  <div className="badge">{r.status}</div>
                 </div>
-                <div className="badge">{r.status}</div>
+                {r.controls?.length ? <div className="muted">Controls: {r.controls.join(', ')}</div> : null}
+                {r.findings?.length ? (
+                  <div className="stack" style={{ gap: 4 }}>
+                    {r.findings.map((f) => (
+                      <div key={f.id} className={`pill ${f.severity === 'high' ? 'bad' : f.severity === 'medium' ? 'warn' : ''}`}>
+                        {f.area}: {f.detail}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+                  <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/compliance/reports/${r.id}`} className="button secondary" target="_blank" rel="noreferrer">
+                    View JSON
+                  </a>
+                  <a
+                    href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/compliance/reports/${r.id}/export?format=csv`}
+                    className="button secondary"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Export CSV
+                  </a>
+                </div>
+                {r.exportedAt && <div className="muted">Last exported: {r.exportedAt}</div>}
               </div>
             ))}
             {!reports.length && <div className="muted">No reports</div>}

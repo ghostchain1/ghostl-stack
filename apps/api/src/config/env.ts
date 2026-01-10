@@ -60,7 +60,10 @@ const EnvSchema = z.object({
   PROM_PARTICIPATION_QUERY: z.string().optional(),
   PROM_PROPOSER_QUERY: z.string().optional(),
   EXPECTED_NODE_VERSION: z.string().optional(),
-  GAS_PRICE_MODEL: z.string().optional()
+  GAS_PRICE_MODEL: z.string().optional(),
+  SNAPSHOT_SPACE: z.string().optional(),
+  SNAPSHOT_API_URL: z.string().optional(),
+  FORUM_URL: z.string().optional()
 });
 
 const parsed = EnvSchema.safeParse(process.env);
