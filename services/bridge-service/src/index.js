@@ -1,9 +1,12 @@
 import express from "express";
 import cors from "cors";
+import fs from "fs";
+import path from "path";
 
 const PORT = Number(process.env.PORT || 7604);
 const PROM_URL = process.env.PROM_URL || "http://localhost:9090";
 const AUTH_TOKEN = process.env.ADMIN_TOKEN || "";
+const INCIDENTS_FILE = process.env.INCIDENTS_FILE || path.join(process.cwd(), "data", "bridge-incidents.json");
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
@@ -36,12 +39,30 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
+const ensureDir = (filePath) => fs.mkdirSync(path.dirname(filePath), { recursive: true });
+
+const loadIncidents = () => {
+  try {
+    const raw = fs.readFileSync(INCIDENTS_FILE, "utf-8");
+    return JSON.parse(raw);
+  } catch {
+    ensureDir(INCIDENTS_FILE);
+    fs.writeFileSync(INCIDENTS_FILE, JSON.stringify([]));
+    return [];
+  }
+};
+
+const saveIncidents = (items) => {
+  ensureDir(INCIDENTS_FILE);
+  fs.writeFileSync(INCIDENTS_FILE, JSON.stringify(items, null, 2));
+};
+
 let bridgeState = {
   status: "live",
   feeBps: 0
 };
 
-const incidents = [];
+let incidents = loadIncidents();
 
 app.get("/health", (_req, res) => res.json({ ok: true, service: "bridge-service" }));
 
@@ -106,6 +127,7 @@ app.post("/bridges/incidents", requireAdmin, (req, res) => {
     createdAt: new Date().toISOString()
   };
   incidents.push(entry);
+  saveIncidents(incidents);
   console.log(`[bridge-service] incident logged`, entry);
   res.status(201).json({ ok: true, incident: entry });
 });
