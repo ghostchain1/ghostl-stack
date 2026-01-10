@@ -1,6 +1,7 @@
 import { Card, Badge } from '@ghostl/ui';
 import type { Node, NodeMetrics } from '@ghostl/types/nodes';
 import { apiFetch } from '../../src/lib/api';
+import { NodeDetail } from '../../src/modules/nodes/components/NodeDetail';
 
 type NodeDetail = Node & { metrics: NodeMetrics };
 
@@ -25,47 +26,7 @@ export default async function NodesPage() {
     <div className="content">
       <div className="card-grid">
         {nodes.map((node) => (
-          <Card key={node.id} title={`${node.id.toUpperCase()}`} subtitle={`${node.type.toUpperCase()} • ${node.host}`}>
-            <div className="stack">
-              <div className="spread">
-                <span className="muted">Status</span>
-                <Badge tone={node.status === 'online' ? 'success' : node.status === 'degraded' ? 'warning' : 'critical'}>
-                  {node.status}
-                </Badge>
-              </div>
-              <div className="spread">
-                <span className="muted">Version</span>
-                <span>
-                  {node.version}
-                  {node.metrics.versionDrift ? (
-                    <Badge tone="warning" style={{ marginLeft: 6 }}>
-                      drift vs {node.metrics.expectedVersion || 'expected'}
-                    </Badge>
-                  ) : null}
-                </span>
-              </div>
-              <div className="spread">
-                <span className="muted">CPU / Mem / Disk</span>
-                <span>
-                  {node.metrics.cpu}% / {node.metrics.mem}% / {node.metrics.disk}%
-                </span>
-              </div>
-              <div className="spread">
-                <span className="muted">Peers</span>
-                <span>{node.metrics.peers ?? 'n/a'}</span>
-              </div>
-              <div className="spread">
-                <span className="muted">Lag</span>
-                <span>{node.metrics.lag !== undefined ? `${node.metrics.lag}s` : 'n/a'}</span>
-              </div>
-              {node.lastSeenAt && (
-                <div className="spread">
-                  <span className="muted">Last seen</span>
-                  <span>{node.lastSeenAt}</span>
-                </div>
-              )}
-            </div>
-          </Card>
+          <NodeDetail key={node.id} node={node} metrics={node.metrics} />
         ))}
         {!nodes.length && (
           <Card title="Nodes">
