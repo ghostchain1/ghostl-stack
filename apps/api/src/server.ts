@@ -67,6 +67,13 @@ type ContractState = {
   reason?: string;
   updatedAt: string;
 };
+type UpgradePlan = {
+  id: string;
+  name: string;
+  steps: { id: string; name: string; status: 'pending' | 'in_progress' | 'done'; notes?: string }[];
+  createdAt: string;
+  updatedAt: string;
+};
 
 const app = express();
 const FileStore = FileStoreFactory(session);
@@ -195,6 +202,35 @@ if (env.EMAIL_SMTP_URL && env.EMAIL_FROM && env.EMAIL_TO) {
 }
 
 const sendNotification = async (alert: { id?: string; message?: string; severity?: string }, channels: string[]) => {
+  const sendWithTimeout = async (url: string, body: unknown, timeoutMs = 5000) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+
+  const retry = async (fn: () => Promise<void>, attempts = 3, delayMs = 500) => {
+    let lastErr;
+    for (let i = 0; i < attempts; i++) {
+      try {
+        await fn();
+        return;
+      } catch (e) {
+        lastErr = e;
+        await new Promise((r) => setTimeout(r, delayMs));
+      }
+    }
+    throw lastErr;
+  };
+
   const targets = notificationChannels.filter((c) => channels.includes(c.id));
   await Promise.all(
     targets.map(async (ch) => {
@@ -215,11 +251,7 @@ const sendNotification = async (alert: { id?: string; message?: string; severity
             : ch.type === 'discord'
               ? { content: `[${alert.severity || 'info'}] ${alert.id || 'alert'} - ${alert.message || 'incident'}` }
               : { alert };
-        await fetch(ch.target, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(payload)
-        }).catch(() => undefined);
+        await retry(() => sendWithTimeout(ch.target, payload), 3, 500).catch(() => undefined);
       }
     })
   );
@@ -283,6 +315,23 @@ const sendContractTx = async (method: 'pause' | 'unpause', target = env.CONTRACT
   const data = pausableInterface.encodeFunctionData(method);
   return sendRawTx(target, data);
 };
+
+const upgradePlanFile = path.join(process.cwd(), 'data', 'upgrade-plans.json');
+const loadUpgradePlans = (): UpgradePlan[] => {
+  try {
+    const raw = fs.readFileSync(upgradePlanFile, 'utf-8');
+    return JSON.parse(raw) as UpgradePlan[];
+  } catch {
+    ensureDir(upgradePlanFile);
+    fs.writeFileSync(upgradePlanFile, JSON.stringify([]));
+    return [];
+  }
+};
+const saveUpgradePlans = (items: UpgradePlan[]) => {
+  ensureDir(upgradePlanFile);
+  fs.writeFileSync(upgradePlanFile, JSON.stringify(items, null, 2));
+};
+let upgradePlans = loadUpgradePlans();
 
 const fetchOk = async (url: string, timeoutMs = 2000) => {
   const controller = new AbortController();
@@ -686,6 +735,67 @@ app.post(['/v1/api/contracts/execute', '/api/contracts/execute'], requirePermiss
   } catch (e) {
     res.status(500).json({ error: (e as Error).message });
   }
+});
+
+app.get(['/v1/devops/upgrade-plans', '/devops/upgrade-plans'], requirePermission('devops:read'), async (_req, res) => {
+  res.json({ ok: true, plans: upgradePlans });
+});
+
+app.post(['/v1/devops/upgrade-plans', '/devops/upgrade-plans'], requirePermission('devops:write'), async (req, res) => {
+  const { name, steps } = req.body || {};
+  if (!name || !Array.isArray(steps)) {
+    res.status(400).json({ error: 'name and steps[] required' });
+    return;
+  }
+  const plan: UpgradePlan = {
+    id: `plan-${Date.now()}`,
+    name,
+    steps: steps.map((s: { name: string }) => ({
+      id: `${Math.random().toString(36).slice(2)}`,
+      name: s.name,
+      status: 'pending'
+    })),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  upgradePlans.push(plan);
+  saveUpgradePlans(upgradePlans);
+  await auditLogService?.append({
+    actorId: req.session.userId || 'unknown',
+    action: 'upgrade-plan:create',
+    resource: plan.id,
+    meta: { correlationId: req.correlationId }
+  });
+  res.status(201).json({ ok: true, plan });
+});
+
+app.post(['/v1/devops/upgrade-plans/:id/steps/:stepId'], requirePermission('devops:write'), async (req, res) => {
+  const plan = upgradePlans.find((p) => p.id === req.params.id);
+  if (!plan) {
+    res.status(404).json({ error: 'plan_not_found' });
+    return;
+  }
+  const step = plan.steps.find((s) => s.id === req.params.stepId);
+  if (!step) {
+    res.status(404).json({ error: 'step_not_found' });
+    return;
+  }
+  const { status, notes } = req.body || {};
+  if (!['pending', 'in_progress', 'done'].includes(status)) {
+    res.status(400).json({ error: 'invalid status' });
+    return;
+  }
+  step.status = status as UpgradePlan['steps'][number]['status'];
+  step.notes = notes;
+  plan.updatedAt = new Date().toISOString();
+  saveUpgradePlans(upgradePlans);
+  await auditLogService?.append({
+    actorId: req.session.userId || 'unknown',
+    action: 'upgrade-plan:update',
+    resource: `${plan.id}:${step.id}`,
+    meta: { correlationId: req.correlationId, status, notes }
+  });
+  res.json({ ok: true, plan });
 });
 
 app.get(['/v1/api/token', '/api/token'], requirePermission('treasury:read'), async (_req, res) => {
