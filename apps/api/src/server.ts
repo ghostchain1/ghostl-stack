@@ -70,7 +70,13 @@ type ContractState = {
 type UpgradePlan = {
   id: string;
   name: string;
-  steps: { id: string; name: string; status: 'pending' | 'in_progress' | 'done'; notes?: string }[];
+  steps: {
+    id: string;
+    name: string;
+    status: 'pending' | 'in_progress' | 'done';
+    notes?: string;
+    action?: { type: string; payload?: Record<string, unknown> };
+  }[];
   createdAt: string;
   updatedAt: string;
   rollbackOf?: string;
@@ -344,6 +350,43 @@ const saveUpgradePlans = (items: UpgradePlan[]) => {
   fs.writeFileSync(upgradePlanFile, JSON.stringify(items, null, 2));
 };
 let upgradePlans = loadUpgradePlans();
+
+const executeUpgradeAction = async (action?: { type: string; payload?: Record<string, unknown> }) => {
+  if (!action) return undefined;
+  const payload = action.payload || {};
+  switch (action.type) {
+    case 'pause':
+      return sendContractTx('pause', payload.address as string | undefined);
+    case 'unpause':
+      return sendContractTx('unpause', payload.address as string | undefined);
+    case 'upgrade': {
+      const proxy = (payload.proxyAddress as string) || env.CONTRACT_TARGET_ADDRESS;
+      const impl = payload.implementation as string;
+      const admin = env.CONTRACT_PROXY_ADMIN_ADDRESS || proxy;
+      if (!proxy || !impl) throw new Error('proxy/implementation required');
+      const data =
+        env.CONTRACT_PROXY_ADMIN_ADDRESS && env.CONTRACT_PROXY_ADMIN_ADDRESS !== proxy
+          ? proxyAdminInterface.encodeFunctionData('upgrade', [proxy, impl])
+          : proxyAdminInterface.encodeFunctionData('upgradeTo', [impl]);
+      return sendRawTx(admin!, data);
+    }
+    case 'transferOwnership': {
+      const target = (payload.address as string) || env.CONTRACT_TARGET_ADDRESS;
+      const newOwner = payload.newOwner as string;
+      if (!target || !newOwner) throw new Error('address/newOwner required');
+      const data = ownableInterface.encodeFunctionData('transferOwnership', [newOwner]);
+      return sendRawTx(target, data);
+    }
+    case 'execute': {
+      const to = payload.to as string;
+      const data = payload.data as string;
+      if (!to || typeof data !== 'string' || !data.startsWith('0x')) throw new Error('to/data required');
+      return sendRawTx(to, data);
+    }
+    default:
+      return undefined;
+  }
+};
 
 const fetchOk = async (url: string, timeoutMs = 2000) => {
   const controller = new AbortController();
@@ -762,10 +805,11 @@ app.post(['/v1/devops/upgrade-plans', '/devops/upgrade-plans'], requirePermissio
   const plan: UpgradePlan = {
     id: `plan-${Date.now()}`,
     name,
-    steps: steps.map((s: { name: string }) => ({
+    steps: steps.map((s: { name: string; action?: { type: string; payload?: Record<string, unknown> } }) => ({
       id: `${Math.random().toString(36).slice(2)}`,
       name: s.name,
-      status: 'pending'
+      status: 'pending',
+      action: s.action
     })),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -845,10 +889,21 @@ app.post(['/v1/devops/rollback/:id/execute'], requirePermission('devops:write'),
     res.status(404).json({ error: 'plan_not_found' });
     return;
   }
-  plan.steps.forEach((s) => {
-    s.status = 'done';
-    s.notes = `auto-completed at ${new Date().toISOString()}`;
-  });
+  for (const step of plan.steps) {
+    step.status = 'in_progress';
+    saveUpgradePlans(upgradePlans);
+    try {
+      const txHash = await executeUpgradeAction(step.action);
+      step.notes = `completed at ${new Date().toISOString()}${txHash ? ` tx=${txHash}` : ''}`;
+    } catch (e) {
+      step.status = 'pending';
+      saveUpgradePlans(upgradePlans);
+      res.status(500).json({ error: (e as Error).message, step: step.id });
+      return;
+    }
+    step.status = 'done';
+    saveUpgradePlans(upgradePlans);
+  }
   plan.updatedAt = new Date().toISOString();
   saveUpgradePlans(upgradePlans);
   await auditLogService?.append({
