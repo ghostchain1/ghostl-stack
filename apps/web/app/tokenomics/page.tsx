@@ -14,7 +14,9 @@ type RawNetwork = {
 };
 
 async function loadTokenomics() {
-  const data = await apiFetch<{ networks?: RawNetwork[] }>('/api/token', { fallback: { networks: [] } });
+  const data = await apiFetch<{ networks?: RawNetwork[]; feeModel?: { baseFee?: string; targetGas?: string; mode?: string } }>('/api/token', {
+    fallback: { networks: [] }
+  });
   const snap: SupplySnapshot[] = (data.networks || []).map((n) => ({
     total: n.supply || '?',
     circulating: n.supply || '?',
@@ -23,18 +25,18 @@ async function loadTokenomics() {
     time: new Date().toISOString()
   }));
   const revenue = (data.networks || []).map((n) => ({ source: n.id || 'net', amount: n.multisig || '?' }));
-  return { snap, revenue };
+  return { snap, revenue, feeModel: data.feeModel };
 }
 
 export default async function TokenomicsPage() {
-  const { snap, revenue } = await loadTokenomics();
-  const feeModel = { baseFee: '—', targetGas: '—', mode: 'auto' };
+  const { snap, revenue, feeModel } = await loadTokenomics();
+  const model = feeModel || { baseFee: '—', targetGas: '—', mode: 'auto' };
   const balance = { chain: 'l2', native: '—', token: '—' };
   return (
     <div className="content">
       <div className="card-grid">
         <SupplyDashboard snapshots={snap} />
-        <FeeMarketCard model={feeModel} />
+        <FeeMarketCard model={model} />
         <TreasuryOverview balance={balance} recent={[]} />
         <PayoutsPanel payouts={[]} />
         <RevenuePanel items={revenue} />

@@ -13,6 +13,8 @@ export interface Transfer {
   amount: string;
   txs: TransferTxRef[];
   createdAt?: string;
+  signatures?: string[];
+  requiredSignatures?: number;
 }
 
 export interface BridgeControl {
