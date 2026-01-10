@@ -3,7 +3,8 @@ import type {
   AlertRulesService,
   LogsService,
   MetricsService,
-  NotificationRouterService
+  NotificationRouterService,
+  AuditLog
 } from './services';
 import { requirePermission } from '../../lib/rbac';
 import type { AlertmanagerAlert } from '../../clients/alertmanager';
@@ -20,6 +21,7 @@ export interface ObservabilityDeps {
   logs: LogsService;
   alerts: AlertRulesService;
   notifications: NotificationRouterService;
+  auditLog?: AuditLog;
   guard?: {
     listPolicies: () => Promise<unknown>;
     setPolicy: (path: 'mode' | 'threshold' | 'delay', body: unknown) => Promise<unknown>;
@@ -66,10 +68,22 @@ export const buildObservabilityRouter = (deps: ObservabilityDeps) => {
     asyncHandler(async (req, res) => {
       if (deps.alertProxy) {
         const result = await deps.alertProxy(req.body);
+        await deps.auditLog?.append({
+          actorId: req.session.userId || 'unknown',
+          action: 'alert:create',
+          resource: 'alertmanager',
+          meta: { correlationId: req.correlationId }
+        });
         res.status(201).json(result);
         return;
       }
       const alert = await deps.alerts.create(req.body);
+      await deps.auditLog?.append({
+        actorId: req.session.userId || 'unknown',
+        action: 'alert:create',
+        resource: alert.id || 'alert',
+        meta: { correlationId: req.correlationId }
+      });
       res.status(201).json(alert);
     })
   );
@@ -77,12 +91,18 @@ export const buildObservabilityRouter = (deps: ObservabilityDeps) => {
   router.get(
     '/guard/policy',
     requirePermission('guard:write'),
-    asyncHandler(async (_req, res) => {
+    asyncHandler(async (req, res) => {
       if (!deps.guard) {
         res.status(404).json({ error: 'guard_not_configured' });
         return;
       }
       const policy = await deps.guard.listPolicies();
+      await deps.auditLog?.append({
+        actorId: req.session.userId || 'unknown',
+        action: 'guard:policy:read',
+        resource: 'guard',
+        meta: { correlationId: req.correlationId }
+      });
       res.json(policy);
     })
   );
@@ -97,6 +117,12 @@ export const buildObservabilityRouter = (deps: ObservabilityDeps) => {
       }
       const path = req.params.path as 'mode' | 'threshold' | 'delay';
       const result = await deps.guard.setPolicy(path, req.body);
+      await deps.auditLog?.append({
+        actorId: req.session.userId || 'unknown',
+        action: 'guard:policy:update',
+        resource: path,
+        meta: { correlationId: req.correlationId }
+      });
       res.json(result);
     })
   );

@@ -21,3 +21,7 @@ export interface NotificationRouterService {
   listChannels(): Promise<{ id: string; type: string; target: string }[]>;
   send(alert: Alert, channels: string[]): Promise<void>;
 }
+
+export interface AuditLog {
+  append(entry: { actorId: string; action: string; resource: string; meta?: Record<string, unknown> }): Promise<unknown>;
+}

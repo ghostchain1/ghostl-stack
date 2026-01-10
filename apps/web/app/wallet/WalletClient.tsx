@@ -68,7 +68,7 @@ export function WalletClient() {
     }, 300);
     setQuoteTimer(timer);
     return () => clearTimeout(timer);
-  }, [fetchSwapQuote, swapAmount]);
+  }, [fetchSwapQuote, swapAmount, quoteTimer]);
 
   const balanceList = useMemo(
     () =>
