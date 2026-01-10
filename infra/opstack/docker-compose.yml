@@ -12,7 +12,7 @@ services:
   l1:
     cap_drop: *id001
     security_opt: *id002
-    image: ghcr.io/ethereum-optimism/op-geth:${OPSTACK_IMAGE_TAG:-devnet}
+    image: ethereum/client-go:v1.13.15
     user: "0:0"
     entrypoint:
     - /bin/sh
@@ -31,14 +31,20 @@ services:
         --ws --ws.addr=0.0.0.0 --ws.origins="*" \
         --datadir=/data \
         --networkid=${L1_CHAIN_ID:-1337} \
+        --nodiscover \
+        --syncmode=full \
         --gcmode=archive \
-        --fakepow \
         --mine \
-        --miner.gasprice=${L1_MINER_GASPRICE:-1} \
-        --miner.etherbase=${L1_MINER_ETHERBASE:-0x7964ef0fbd1306461bab9ad05118dbc4248d0546}
+        --miner.gasprice=${L1_MINER_GASPRICE:-0} \
+        --miner.etherbase=${L1_MINER_ETHERBASE:-0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266} \
+        --unlock ${L1_MINER_ETHERBASE:-0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266} \
+        --password /config/l1-keystore-password \
+        --keystore /config/l1-keystore/keystore \
+        --allow-insecure-unlock
     volumes:
-    - ./data/l1-geth-new:/data
+    - l1-geth-data:/data
     - ./config/l1-genesis.json:/config/l1-genesis.json:ro
+    - ./config/l1-keystore-geth:/config/l1-keystore:ro
     - ./config/l1-keystore-password:/config/l1-keystore-password:ro
     healthcheck:
       test:
@@ -467,3 +473,4 @@ volumes:
   grafana_data: null
   alertmanager_data: null
   loki_data: null
+  l1-geth-data: null
