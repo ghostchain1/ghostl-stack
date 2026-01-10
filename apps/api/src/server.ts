@@ -84,6 +84,7 @@ type UpgradePlan = {
   lastDryRunAt?: string;
   approvals: { userId: string; at: string }[];
 };
+type ComplianceReport = { id: string; period: string; status: string; generatedAt: string };
 
 const app = express();
 const FileStore = FileStoreFactory(session);
@@ -475,6 +476,23 @@ const assertAllowedAction = (action?: { type: string; payload?: Record<string, u
       return;
   }
 };
+
+const complianceFile = path.join(process.cwd(), 'data', 'compliance-reports.json');
+const loadCompliance = (): ComplianceReport[] => {
+  try {
+    const raw = fs.readFileSync(complianceFile, 'utf-8');
+    return JSON.parse(raw) as ComplianceReport[];
+  } catch {
+    ensureDir(complianceFile);
+    fs.writeFileSync(complianceFile, JSON.stringify([]));
+    return [];
+  }
+};
+const saveCompliance = (items: ComplianceReport[]) => {
+  ensureDir(complianceFile);
+  fs.writeFileSync(complianceFile, JSON.stringify(items, null, 2));
+};
+let complianceReports = loadCompliance();
 
 const fetchOk = async (url: string, timeoutMs = 2000) => {
   const controller = new AbortController();
@@ -1239,6 +1257,29 @@ app.get(['/v1/governance/queue', '/governance/queue'], requirePermission('govern
 app.get(['/v1/governance/delegations', '/governance/delegations'], requirePermission('governance:read'), async (_req, res) => {
   const data = await proxyJson<{ delegations?: unknown[] }>(`${servicesBase.governance}/delegations`, { delegations: [] });
   res.json(data.delegations || []);
+});
+
+app.get(['/v1/compliance/reports', '/compliance/reports'], requirePermission('iam:read'), async (_req, res) => {
+  res.json({ ok: true, reports: complianceReports });
+});
+
+app.post(['/v1/compliance/reports', '/compliance/reports'], requirePermission('iam:write'), async (req, res) => {
+  const { period } = req.body || {};
+  const report: ComplianceReport = {
+    id: `rep-${Date.now()}`,
+    period: period || 'unspecified',
+    status: 'draft',
+    generatedAt: new Date().toISOString()
+  };
+  complianceReports.push(report);
+  saveCompliance(complianceReports);
+  await auditLogService?.append({
+    actorId: req.session.userId || 'unknown',
+    action: 'compliance:report',
+    resource: report.id,
+    meta: { correlationId: req.correlationId }
+  });
+  res.status(201).json({ ok: true, report });
 });
 
 app.get(['/v1/api/validators', '/api/validators'], requirePermission('validator:read'), async (_req, res) => {
