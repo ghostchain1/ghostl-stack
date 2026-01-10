@@ -29,6 +29,15 @@ export interface AuditLogService {
   list(limit?: number): Promise<AuditLogEntry[]>;
 }
 
+export interface MultisigApproval {
+  proposalId: string;
+  signer: string;
+  at: string;
+  threshold: number;
+  totalSigners: number;
+  requiredSigners: string[];
+}
+
 export interface ApiKeyService {
   list(userId?: string): Promise<ApiKey[]>;
   create(userId: string, name: string, scopes: string[]): Promise<ApiKey>;
