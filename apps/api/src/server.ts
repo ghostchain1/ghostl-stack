@@ -396,6 +396,32 @@ app.get(['/v1/api/token', '/api/token'], requirePermission('treasury:read'), asy
   });
 });
 
+app.post(['/v1/api/treasury/approve', '/api/treasury/approve'], requirePermission('treasury:write'), async (req, res) => {
+  const { proposalId, signer } = req.body || {};
+  if (!proposalId || !signer) {
+    res.status(400).json({ error: 'proposalId and signer required' });
+    return;
+  }
+  const requiredSigners =
+    (env.TREASURY_MULTISIG_SIGNERS && env.TREASURY_MULTISIG_SIGNERS.split(',').map((s) => s.trim()).filter(Boolean)) || [];
+  const threshold = env.TREASURY_MULTISIG_THRESHOLD;
+  const approval = {
+    proposalId,
+    signer,
+    at: new Date().toISOString(),
+    threshold,
+    totalSigners: requiredSigners.length,
+    requiredSigners
+  };
+  await auditLogService?.append({
+    actorId: req.session.userId || 'unknown',
+    action: 'treasury:approve',
+    resource: proposalId,
+    meta: { correlationId: req.correlationId, signer }
+  });
+  res.json({ ok: true, approval });
+});
+
 app.get(['/v1/devops/releases', '/devops/releases'], requirePermission('devops:read'), async (_req, res) => {
   const data = await proxyJson<{ releases?: unknown[] }>(`${servicesBase.devops}/releases`, { releases: [] });
   res.json(data.releases || []);

@@ -20,6 +20,8 @@ const EnvSchema = z.object({
   FEE_MODEL_SERVICE_URL: z.string().url().default('http://localhost:7615'),
   TREASURY_SERVICE_URL: z.string().url().default('http://localhost:7628'),
   PAYOUT_SERVICE_URL: z.string().url().default('http://localhost:7629'),
+  TREASURY_MULTISIG_THRESHOLD: z.coerce.number().int().min(1).max(10).default(2),
+  TREASURY_MULTISIG_SIGNERS: z.string().optional(),
   GOVERNANCE_SERVICE_URL: z.string().url().default('http://localhost:7645'),
   VALIDATOR_SERVICE_URL: z.string().url().default('http://localhost:7607'),
   DEVOPS_SERVICE_URL: z.string().url().default('http://localhost:7623'),
