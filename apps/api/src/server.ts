@@ -1223,6 +1223,16 @@ app.get(['/v1/governance/votes', '/governance/votes'], requirePermission('govern
   res.json(data.votes || []);
 });
 
+app.get(['/v1/governance/queue', '/governance/queue'], requirePermission('governance:read'), async (_req, res) => {
+  const data = await proxyJson<{ queue?: unknown[] }>(`${servicesBase.governance}/queue`, { queue: [] });
+  res.json(data.queue || []);
+});
+
+app.get(['/v1/governance/delegations', '/governance/delegations'], requirePermission('governance:read'), async (_req, res) => {
+  const data = await proxyJson<{ delegations?: unknown[] }>(`${servicesBase.governance}/delegations`, { delegations: [] });
+  res.json(data.delegations || []);
+});
+
 app.get(['/v1/api/validators', '/api/validators'], requirePermission('validator:read'), async (_req, res) => {
   const data = await proxyJson<{ validators?: unknown[] }>(`${servicesBase.validators}/validators`, { validators: [] });
   res.json(data);

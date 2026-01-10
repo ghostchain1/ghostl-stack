@@ -8,21 +8,26 @@ import type { Proposal, Vote } from '@ghostl/types/governance';
 async function loadGovernance() {
   const proposals = await apiFetch<Proposal[]>('/governance/proposals', { fallback: [] }).catch(() => []);
   const votes = await apiFetch<Vote[]>('/governance/votes', { fallback: [] }).catch(() => []);
-  return { proposals, votes };
+  const queue = await apiFetch<{ id: string; eta: string; action: string; status: string }[]>('/governance/queue', {
+    fallback: []
+  }).catch(() => []);
+  const delegations = await apiFetch<{ delegator: string; delegate: string; weight: number }[]>('/governance/delegations', {
+    fallback: []
+  }).catch(() => []);
+  return { proposals, votes, queue, delegations };
 }
 
 export default async function GovernancePage() {
-  const { proposals, votes } = await loadGovernance();
-  const proposal = proposals[0] || {
-    id: 'p1',
-    title: 'Placeholder proposal',
-    status: 'draft' as const,
-    quorum: 0,
-    votesFor: 0,
-    votesAgainst: 0
-  };
-  const queue = [{ id: 'exec-1', eta: new Date().toISOString(), action: 'Upgrade rollup', status: 'queued' as const }];
-  const delegations = [{ delegator: '0xabc', delegate: '0xdef', weight: 1 }];
+  const { proposals, votes, queue, delegations } = await loadGovernance();
+  const proposal =
+    proposals[0] || ({
+      id: 'placeholder',
+      title: 'No proposals',
+      status: 'draft',
+      quorum: 0,
+      votesFor: 0,
+      votesAgainst: 0
+    } as Proposal);
   return (
     <div className="content">
       <div className="card-grid">
