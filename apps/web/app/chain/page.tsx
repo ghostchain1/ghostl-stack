@@ -21,6 +21,22 @@ type PeerResponse = {
   topology: Record<string, unknown>;
 };
 
+const defaultChains = {
+  l1: {
+    info: { chainId: '701', name: 'GhostL1 Devnet', env: 'devnet', consensus: 'L1 rollup' },
+    epoch: { epoch: 0 },
+    blockTimeMs: 2000,
+    finalityLag: 0
+  },
+  l2: null as unknown as ChainStatusResponse,
+  l3: {
+    info: { chainId: '1101', name: 'GhostL3 Devnet', env: 'devnet', consensus: 'L3 rollup' },
+    epoch: { epoch: 0 },
+    blockTimeMs: 2000,
+    finalityLag: 0
+  }
+};
+
 export default async function ChainPage() {
   const [status, telemetry, peers] = await Promise.all([
     apiFetch<ChainStatusResponse>('/chain/status', {
@@ -38,53 +54,76 @@ export default async function ChainPage() {
     apiFetch<PeerResponse>('/chain/peers', { fallback: { peers: [], topology: {} } })
   ]);
 
-  const participation = telemetry.participation ? `${Math.round(telemetry.participation * 100)}%` : 'n/a';
+  const participation =
+    typeof telemetry.participation === 'number' ? `${Math.round(telemetry.participation * 100)}%` : 'n/a';
   const blockTime = status.blockTimeMs ? `${(status.blockTimeMs / 1000).toFixed(2)}s` : 'n/a';
+  const latencyP50 =
+    typeof telemetry.latency?.p50 === 'number' ? `${telemetry.latency.p50} ms` : 'n/a';
+  const healthSamples = Array.isArray((telemetry.health as { services?: unknown[] })?.services)
+    ? 'ok'
+    : 'n/a';
+  const chains = ['l1', 'l2', 'l3'].map((key) => {
+    if (key === 'l2') {
+      return { key, status, participation, blockTime, latencyP50, healthSamples };
+    }
+    const fallback = defaultChains[key as 'l1' | 'l3'];
+    return {
+      key,
+      status: {
+        info: fallback.info,
+        epoch: { epoch: fallback.epoch.epoch, round: 0, start: '', end: '' },
+        blockTimeMs: fallback.blockTimeMs,
+        finalityLag: fallback.finalityLag,
+        reorgs: []
+      },
+      participation: 'n/a',
+      blockTime: `${(fallback.blockTimeMs / 1000).toFixed(2)}s`,
+      latencyP50: 'n/a',
+      healthSamples: 'n/a'
+    };
+  });
 
   return (
     <div className="content">
       <div className="card-grid">
-        <Card title={status.info.name || 'Chain'} subtitle={`Chain ${status.info.chainId || 'n/a'}`}>
-          <div className="stack">
-            <div className="spread">
-              <span className="muted">Environment</span>
-              <span>{status.info.env || 'n/a'}</span>
+        {chains.map((chain) => (
+          <Card key={chain.key} title={chain.status.info.name || 'Chain'} subtitle={`Chain ${chain.status.info.chainId || 'n/a'}`}>
+            <div className="stack">
+              <div className="spread">
+                <span className="muted">Environment</span>
+                <span>{chain.status.info.env || 'n/a'}</span>
+              </div>
+              <div className="spread">
+                <span className="muted">Consensus</span>
+                <span>{chain.status.info.consensus || 'n/a'}</span>
+              </div>
+              <div className="spread">
+                <span className="muted">Epoch</span>
+                <Badge>{chain.status.epoch.epoch ?? 0}</Badge>
+              </div>
+              <div className="spread">
+                <span className="muted">Block time</span>
+                <span>{chain.blockTime}</span>
+              </div>
+              <div className="spread">
+                <span className="muted">Finality lag</span>
+                <span>{chain.status.finalityLag ?? 0}</span>
+              </div>
+              <div className="spread">
+                <span className="muted">Participation</span>
+                <Badge tone="success">{chain.participation}</Badge>
+              </div>
+              <div className="spread">
+                <span className="muted">Latency (p50)</span>
+                <span>{chain.latencyP50}</span>
+              </div>
+              <div className="spread">
+                <span className="muted">Health samples</span>
+                <span>{chain.healthSamples}</span>
+              </div>
             </div>
-            <div className="spread">
-              <span className="muted">Consensus</span>
-              <span>{status.info.consensus || 'n/a'}</span>
-            </div>
-            <div className="spread">
-              <span className="muted">Epoch</span>
-              <Badge>{status.epoch.epoch ?? 0}</Badge>
-            </div>
-            <div className="spread">
-              <span className="muted">Block time</span>
-              <span>{blockTime}</span>
-            </div>
-            <div className="spread">
-              <span className="muted">Finality lag</span>
-              <span>{status.finalityLag ?? 0}</span>
-            </div>
-          </div>
-        </Card>
-
-        <Card title="Consensus telemetry" subtitle="Participation & latency">
-          <div className="stack">
-            <div className="spread">
-              <span className="muted">Participation</span>
-              <Badge tone="success">{participation}</Badge>
-            </div>
-            <div className="spread">
-              <span className="muted">Latency (p50)</span>
-              <span>{telemetry.latency?.p50 ? `${telemetry.latency.p50} ms` : 'n/a'}</span>
-            </div>
-            <div className="spread">
-              <span className="muted">Health samples</span>
-              <span>{Array.isArray((telemetry.health as { services?: unknown[] })?.services) ? 'ok' : 'n/a'}</span>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        ))}
 
         <Card title="Peers" subtitle={`Total ${peers.peers.length}`}>
           <div className="stack" style={{ gap: 6 }}>

@@ -20,6 +20,11 @@ type ChainConfig = {
 };
 
 const chainConfigs: Record<SupportedChain, ChainConfig> = {
+  l1: {
+    id: Number(process.env.NEXT_PUBLIC_L1_CHAIN_ID || 701),
+    name: 'GhostL1',
+    rpc: process.env.NEXT_PUBLIC_L1_RPC || 'http://localhost:8545'
+  },
   l2: {
     id: Number(process.env.NEXT_PUBLIC_L2_CHAIN_ID || 7192),
     name: 'GhostL2',
@@ -182,10 +187,11 @@ export function useWallet() {
         const mapped: TokenConfig[] = j.tokens
           .map((t: Record<string, unknown>) => {
             const chainId = Number(t.chainId as number | string | undefined);
-            const entry: [SupportedChain, number][] = [
-              ['l2', chainConfigs.l2.id],
-              ['l3', chainConfigs.l3.id]
-            ];
+    const entry: [SupportedChain, number][] = [
+      ['l1', chainConfigs.l1.id],
+      ['l2', chainConfigs.l2.id],
+      ['l3', chainConfigs.l3.id]
+    ];
             const chainMatch = entry.find((e) => e[1] === chainId);
             if (!chainMatch || typeof t.address !== 'string') return null;
             return {
