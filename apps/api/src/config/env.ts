@@ -11,6 +11,10 @@ const EnvSchema = z.object({
   GUARD_ADMIN_TOKEN: z.string().optional(),
   LOKI_URL: z.string().url().optional(),
   ALERTMANAGER_URL: z.string().url().optional(),
+  PUBLIC_OBSERVABILITY: z
+    .string()
+    .transform((v) => v === 'true')
+    .optional(),
   BRIDGE_SERVICE_URL: z.string().url().default('http://localhost:7604'),
   TRANSFER_SERVICE_URL: z.string().url().default('http://localhost:7605'),
   LIQUIDITY_SERVICE_URL: z.string().url().default('http://localhost:7606'),
