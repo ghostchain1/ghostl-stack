@@ -28,6 +28,6 @@ export interface AuditLog {
 
 export interface NotificationChannel {
   id: string;
-  type: 'slack' | 'webhook' | 'email';
+  type: 'slack' | 'webhook' | 'discord' | 'email';
   target: string;
 }
