@@ -178,6 +178,9 @@ const notificationChannels: NotificationChannel[] = [];
 if (env.SLACK_WEBHOOK_URL) {
   notificationChannels.push({ id: 'slack-default', type: 'slack', target: env.SLACK_WEBHOOK_URL });
 }
+if (env.DISCORD_WEBHOOK_URL) {
+  notificationChannels.push({ id: 'discord-default', type: 'discord', target: env.DISCORD_WEBHOOK_URL });
+}
 if (env.ALERT_WEBHOOK_URL) {
   notificationChannels.push({ id: 'webhook-default', type: 'webhook', target: env.ALERT_WEBHOOK_URL });
 }
@@ -190,7 +193,9 @@ const sendNotification = async (alert: { id?: string; message?: string; severity
       const payload =
         ch.type === 'slack'
           ? { text: `[${alert.severity || 'info'}] ${alert.id || 'alert'} - ${alert.message || 'incident'}` }
-          : { alert };
+          : ch.type === 'discord'
+            ? { content: `[${alert.severity || 'info'}] ${alert.id || 'alert'} - ${alert.message || 'incident'}` }
+            : { alert };
       await fetch(ch.target, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
