@@ -3,7 +3,7 @@
 OP Stack L2 (GhostL2) devnet that aligns with the GhostChain blueprint: Optimistic now, hybrid OP + ZK later, with AI Guard/Relayer hooks on top.
 
 ## What runs
-- L1: Anvil (host port `28545`)
+- L1: Ghostchain IBFT (host port `18545`)
 - L2: op-geth + op-node + op-batcher + op-proposer (host port `29547`)
 - `op-gate` JSON-RPC proxy sits in front of L1 for batcher/proposer and can be driven by Ghost Guard (metrics on `28546/metrics/prom`).
 - Containers use `local/op-*` images built from the vendored Optimism sources.
@@ -23,12 +23,15 @@ cp infra/opstack/.env.secrets.sample infra/opstack/.env.secrets  # keys; do not 
 bash infra/scripts/opstack/keys/init.sh                     # regenerates keys/addresses
 # Optional: point GATE_GUARD_URL at your Ghost Guard instance (default host:7070).
 
-# 3) Start devnet
+# 3) Ensure Ghostchain L1 is running (separate compose)
+pushd infra/ghostchain && docker compose -f docker-compose.ibft.yml up -d && popd
+
+# 4) Start devnet
 bash infra/scripts/opstack/up.sh -- --env-file .env --env-file .env.secrets
-# L1 RPC: http://localhost:28545
+# L1 RPC: http://localhost:18545
 # L2 RPC: http://localhost:29547
 
-# 4) Deploy contracts to OP L2 and emit service env files
+# 5) Deploy contracts to OP L2 and emit service env files
 bash infra/scripts/opstack/deploy.sh
 # Gate: `op-batcher` / `op-proposer` point at `op-gate` (host `28546`) for Guard-aware pause/delay/deny.
 
@@ -38,7 +41,7 @@ docker compose --env-file infra/opstack/.env --env-file infra/opstack/.env.secre
 ```
 
 ## L2 + L3 stack and challengers
-- Combined run: `docker compose --env-file infra/opstack/.env --env-file infra/opstack/.env.secrets -f infra/opstack/docker-compose.yml -f infra/opstack/docker-compose.l3.yml up -d l1 op-gate l2-geth op-node op-batcher op-proposer l3-geth l3-op-node l3-op-batcher l3-op-proposer`
+- Combined run: `docker compose --env-file infra/opstack/.env --env-file infra/opstack/.env.secrets -f infra/opstack/docker-compose.yml -f infra/opstack/docker-compose.l3.yml up -d op-gate l2-geth op-node op-batcher op-proposer l3-geth l3-op-node l3-op-batcher l3-op-proposer`
 - Challengers overlay (optional): `docker compose --env-file infra/opstack/.env --env-file infra/opstack/.env.secrets -f infra/opstack/docker-compose.yml -f infra/opstack/docker-compose.l3.yml -f infra/opstack/docker-compose.challengers.yml up -d op-challenger l3-op-challenger`
   - Fill `L2_GAME_FACTORY_ADDRESS`, `L3_GAME_FACTORY_ADDRESS`, `CHALLENGER_KEY`/`L3_CHALLENGER_KEY`. Cannon/Kona bins + prestates are wired to the vendored optimism assets (`optimism/cannon/bin`, `optimism/op-program/bin`) via `/assets`, but you can override with `OP_CHALLENGER_CANNON_*`/`OP_CHALLENGER_CANNON_KONA_*`.
 - Helper script: `bash infra/scripts/opstack/up-challengers.sh` (starts L1/L2, optional L3, then challenger services with the overlay).
@@ -55,3 +58,4 @@ bash infra/scripts/opstack/reset.sh
 - L3 is reserved for the upcoming OP Stack app-chain on GhostL2 (host RPC placeholder `39545`).
 - L3 guard defaults are now fail-closed (`L3_GUARD_FAIL_OPEN=false` by default).
 - Healthchecks gate startup ordering; if you tweak ports, update the compose healthchecks accordingly.
+- L1 is external (Ghostchain IBFT on `http://localhost:18545`); make sure it is running before bringing up the OP Stack stack.

@@ -15,8 +15,7 @@ source "$OP_DIR/.env"
 [ -f "$OP_DIR/.env.secrets" ] && source "$OP_DIR/.env.secrets"
 set +a
 
-HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:28545}"
-L1_CONTAINER_RPC="${L1_CONTAINER_RPC:-http://localhost:8545}"
+HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:18545}"
 HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
 L2_CONTAINER_RPC="${L2_CONTAINER_RPC:-http://localhost:8545}"
 TAG="${OPSTACK_IMAGE_TAG:-devnet}"
@@ -37,24 +36,17 @@ if [ "${#missing[@]}" -gt 0 ]; then
   exit 1
 fi
 
-echo "Starting OP Stack L1/L2..."
+echo "Starting OP Stack L2 (expecting external L1 at $HOST_L1_RPC)..."
 cd "$OP_DIR"
 COMPOSE_ENV_ARGS=(--env-file "$OP_DIR/.env")
 if [ -f "$OP_DIR/.env.secrets" ]; then
   COMPOSE_ENV_ARGS+=(--env-file "$OP_DIR/.env.secrets")
 fi
 
-# Bring up L1 first to capture its genesis hash.
-docker compose "${COMPOSE_ENV_ARGS[@]}" up -d l1
-
 echo "Waiting for L1 RPC..."
 for i in $(seq 1 60); do
   if curl -fsS -X POST "$HOST_L1_RPC" -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' >/dev/null 2>&1; then
     echo "OK: $HOST_L1_RPC"
-    break
-  fi
-  if docker compose "${COMPOSE_ENV_ARGS[@]}" exec -T l1 wget -qO- --header='content-type: application/json' --post-data='{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "$L1_CONTAINER_RPC" >/dev/null 2>&1; then
-    echo "OK (container RPC): $L1_CONTAINER_RPC"
     break
   fi
   sleep 1
@@ -64,11 +56,11 @@ for i in $(seq 1 60); do
   fi
 done
 
-
-# Fetch L1 genesis block details from inside the L1 container to ensure the hash matches op-node expectations.
+# Fetch L1 genesis block details from the external L1 to ensure the hash matches op-node expectations.
+L1_GENESIS_JSON=""
 for i in $(seq 1 10); do
   set +e
-  L1_GENESIS_JSON=$(docker compose "${COMPOSE_ENV_ARGS[@]}" exec -T l1 wget -qO- --header='Content-Type: application/json' --post-data='{"jsonrpc":"2.0","id":1,"method":"eth_getBlockByNumber","params":["0x0", false]}' "$L1_CONTAINER_RPC" 2>/dev/null)
+  L1_GENESIS_JSON=$(curl -fsS -X POST "$HOST_L1_RPC" -H 'Content-Type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_getBlockByNumber","params":["0x0", false]}')
   rc=$?
   set -e
   if [ "$rc" -eq 0 ] && [ -n "$L1_GENESIS_JSON" ]; then
@@ -77,7 +69,7 @@ for i in $(seq 1 10); do
   sleep 1
 done
 if [ -z "$L1_GENESIS_JSON" ]; then
-  echo "Failed to query L1 genesis block from l1 container" >&2
+  echo "Failed to query L1 genesis block from $HOST_L1_RPC" >&2
   exit 1
 fi
 L1_GENESIS_HASH=$(printf '%s' "$L1_GENESIS_JSON" | jq -r '.result.hash')
@@ -150,4 +142,4 @@ if [ -n "$L2_GENESIS_HASH" ] && [ "$L2_GENESIS_HASH" != "null" ]; then
   echo "Set rollup genesis.l2.hash=$L2_GENESIS_HASH"
 fi
 
-echo "OP Stack L1/L2 up. L1=$HOST_L1_RPC L2=$HOST_L2_RPC"
+echo "OP Stack L2 up (external L1). L1=$HOST_L1_RPC L2=$HOST_L2_RPC"

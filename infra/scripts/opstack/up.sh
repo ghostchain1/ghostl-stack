@@ -4,12 +4,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
-HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:28545}"
+HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:18545}"
 HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
 HOST_L3_RPC="${HOST_L3_RPC:-http://localhost:39545}"
 ENABLE_L3="${ENABLE_L3:-1}"
 
-echo "Starting OP Stack L1/L2..."
+echo "Starting OP Stack L2 (external L1 expected at $HOST_L1_RPC)..."
 bash "$ROOT/infra/scripts/opstack/up-l2.sh"
 
 if [ "$ENABLE_L3" = "1" ]; then
