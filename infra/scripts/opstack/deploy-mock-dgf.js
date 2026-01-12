@@ -10,30 +10,46 @@ const fs = require("fs");
 const artifactPath = path.resolve(__dirname, "../../../contracts/artifacts/src/MockDisputeGameFactory.sol/MockDisputeGameFactory.json");
 const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
 
-const L1_RPC = process.env.L1_RPC || "http://localhost:28545";
+const L1_RPC = process.env.L1_RPC || "http://localhost:18545";
 const L2_RPC = process.env.L2_RPC || "http://localhost:29547";
+const L1_CHAIN_ID = process.env.L1_CHAIN_ID ? Number(process.env.L1_CHAIN_ID) : 14000101;
+const L2_CHAIN_ID = process.env.L2_CHAIN_ID ? Number(process.env.L2_CHAIN_ID) : 901;
 const DEFAULT_PK = process.env.PRIVATE_KEY || "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"; // hardhat default
 
-async function fundAndDeploy(rpcUrl, label) {
-  const provider = new ethers.JsonRpcProvider(rpcUrl);
-  const funder = new ethers.Wallet(DEFAULT_PK, provider);
-  const deployer = ethers.Wallet.createRandom().connect(provider);
-  // fund the fresh deployer to avoid address collisions on repeat runs
-  console.log(`[${label}] Funding deployer ${deployer.address} from ${funder.address}...`);
-  const fundTx = await funder.sendTransaction({ to: await deployer.getAddress(), value: ethers.parseEther("10") });
-  console.log(`[${label}] Fund tx: ${fundTx.hash}`);
-  await provider.waitForTransaction(fundTx.hash, 1, 30000);
+async function fundAndDeploy(rpcUrl, label, chainId) {
+  const provider = new ethers.JsonRpcProvider(rpcUrl, { chainId, name: `${label.toLowerCase()}-chain` });
+  const deployer = new ethers.Wallet(DEFAULT_PK, provider);
   const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, deployer);
   console.log(`[${label}] Deploying MockDisputeGameFactory from ${await deployer.getAddress()}...`);
-  const contract = await factory.deploy();
-  const receipt = await provider.waitForTransaction(contract.deploymentTransaction().hash, 1, 60000);
+  const feeOpts = { maxPriorityFeePerGas: ethers.parseUnits("1", "gwei"), maxFeePerGas: ethers.parseUnits("10", "gwei") };
+  const contract = await factory.deploy({ gasLimit: 6_000_000n, ...feeOpts });
+  const txHash = contract.deploymentTransaction().hash;
+  let receipt = null;
+  for (let i = 0; i < 120; i++) { // ~120s
+    try {
+      receipt = await provider.getTransactionReceipt(txHash);
+    } catch (err) {
+      const msg = (err?.message || "").toLowerCase();
+      if (msg.includes("transaction indexing is in progress")) {
+        await new Promise((r) => setTimeout(r, 1000));
+        continue;
+      }
+      throw err;
+    }
+    if (receipt) break;
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  if (!receipt) {
+    throw new Error(`[${label}] Timeout waiting for deployment tx ${txHash}`);
+  }
   const addr = await contract.getAddress();
   console.log(`[${label}] Deployed at ${addr} (tx: ${receipt.hash})`);
   return addr;
 }
 
 async function deploy(rpcUrl, label) {
-  return fundAndDeploy(rpcUrl, label);
+  const chainId = label === "L1" ? L1_CHAIN_ID : L2_CHAIN_ID;
+  return fundAndDeploy(rpcUrl, label, chainId);
 }
 
 async function main() {
