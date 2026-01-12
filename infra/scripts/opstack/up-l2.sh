@@ -89,6 +89,11 @@ if [ -n "$L1_GENESIS_HASH" ] && [ "$L1_GENESIS_HASH" != "null" ]; then
   # Keep l1-chain.json in sync with the live L1 genesis so op-node validation passes.
   L1_TS_HEX=$(printf '%s' "$L1_GENESIS_JSON" | jq -r '.result.timestamp')
   L1_TS_DEC=$((L1_TS_HEX))
+  if [ "$L1_TS_DEC" -eq 0 ]; then
+    L1_TS_DEC=$(date +%s)
+    L1_TS_HEX=$(printf '0x%x' "$L1_TS_DEC")
+    echo "L1 genesis timestamp missing; using current epoch $L1_TS_HEX ($L1_TS_DEC)"
+  fi
   L1_DIFF=$(printf '%s' "$L1_GENESIS_JSON" | jq -r '.result.difficulty')
   L1_GAS_LIMIT=$(printf '%s' "$L1_GENESIS_JSON" | jq -r '.result.gasLimit')
   L1_EXTRA=$(printf '%s' "$L1_GENESIS_JSON" | jq -r '.result.extraData')
@@ -133,5 +138,16 @@ for i in $(seq 1 60); do
     exit 1
   fi
 done
+
+echo "Recording L2 genesis hash into rollup config..."
+L2_GENESIS_HASH=$(docker compose "${COMPOSE_ENV_ARGS[@]}" exec -T l2-geth wget -qO- --header='content-type: application/json' --post-data='{"jsonrpc":"2.0","id":1,"method":"eth_getBlockByNumber","params":["0x0", false]}' "$L2_CONTAINER_RPC" | jq -r '.result.hash' || true)
+if [ -z "$L2_GENESIS_HASH" ] || [ "$L2_GENESIS_HASH" = "null" ]; then
+  L2_GENESIS_HASH=$(curl -fsS -X POST "$HOST_L2_RPC" -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_getBlockByNumber","params":["0x0", false]}' | jq -r '.result.hash' || true)
+fi
+if [ -n "$L2_GENESIS_HASH" ] && [ "$L2_GENESIS_HASH" != "null" ]; then
+  tmp_rollup_l2_hash=$(mktemp)
+  jq --arg hash "$L2_GENESIS_HASH" '.genesis.l2.hash = $hash' "$OP_DIR/config/rollup.json" >"$tmp_rollup_l2_hash" && mv "$tmp_rollup_l2_hash" "$OP_DIR/config/rollup.json"
+  echo "Set rollup genesis.l2.hash=$L2_GENESIS_HASH"
+fi
 
 echo "OP Stack L1/L2 up. L1=$HOST_L1_RPC L2=$HOST_L2_RPC"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { SiweMessage } from 'siwe';
 import { BrowserProvider } from 'ethers';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -10,9 +10,25 @@ const PREFILL_SSO = process.env.NEXT_PUBLIC_SSO_JWT || '';
 const LOCALSTORAGE_KEY = 'ghostl-sso-token';
 
 export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="content">
+          <div className="card" style={{ maxWidth: 460 }}>
+            <div className="muted">Loading login…</div>
+          </div>
+        </div>
+      }
+    >
+      <LoginClient />
+    </Suspense>
+  );
+}
+
+function LoginClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const returnTo = useMemo(() => searchParams.get('returnTo') || '/', [searchParams]);
+  const returnTo = useMemo(() => searchParams?.get('returnTo') || '/', [searchParams]);
   const [message] = useState('Sign in to GhostL Dashboard');
   const [token, setToken] = useState('');
   const [nonce, setNonce] = useState<string | null>(null);

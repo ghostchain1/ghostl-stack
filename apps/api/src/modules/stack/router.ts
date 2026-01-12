@@ -27,6 +27,14 @@ export interface StackDeps {
 export const buildStackRouter = (deps: StackDeps) => {
   const router = Router();
 
+  const extractAlerts = (payload: unknown): unknown[] => {
+    if (Array.isArray(payload)) return payload;
+    if (payload && typeof payload === 'object' && Array.isArray((payload as { alerts?: unknown[] }).alerts)) {
+      return (payload as { alerts?: unknown[] }).alerts || [];
+    }
+    return [];
+  };
+
   router.get('/overview', async (req, res) => {
     const chain = (req.query.chain as string) || 'l2';
     const headQuery = `op_gate_head_block{chain="${chain}"}`;
@@ -40,19 +48,8 @@ export const buildStackRouter = (deps: StackDeps) => {
     const guardAlerts = await queryNumber(deps.prometheus, 'ghost_guard_alerts_total');
     const guardDeposits = await queryNumber(deps.prometheus, 'ghost_guard_deposits_seen_total');
 
-    let guardActiveAlerts: unknown[] = [];
-    if (deps.guard) {
-      try {
-        const guardRes = await deps.guard.listAlerts();
-        if (Array.isArray((guardRes as any)?.alerts)) {
-          guardActiveAlerts = (guardRes as any).alerts;
-        } else if (Array.isArray(guardRes)) {
-          guardActiveAlerts = guardRes;
-        }
-      } catch {
-        // ignore
-      }
-    }
+    const guardActiveAlerts =
+      deps.guard ? await deps.guard.listAlerts().then((payload) => extractAlerts(payload)).catch(() => []) : [];
 
     let relayerHealth: unknown = null;
     if (deps.relayer) {

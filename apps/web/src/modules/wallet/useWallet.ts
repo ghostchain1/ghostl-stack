@@ -21,19 +21,19 @@ type ChainConfig = {
 
 const chainConfigs: Record<SupportedChain, ChainConfig> = {
   l1: {
-    id: Number(process.env.NEXT_PUBLIC_L1_CHAIN_ID || 701),
+    id: Number(process.env.NEXT_PUBLIC_L1_CHAIN_ID || 1337),
     name: 'GhostL1',
-    rpc: process.env.NEXT_PUBLIC_L1_RPC || 'http://localhost:8545'
+    rpc: process.env.NEXT_PUBLIC_L1_RPC || 'http://localhost:18545'
   },
   l2: {
-    id: Number(process.env.NEXT_PUBLIC_L2_CHAIN_ID || 7192),
+    id: Number(process.env.NEXT_PUBLIC_L2_CHAIN_ID || 901),
     name: 'GhostL2',
-    rpc: process.env.NEXT_PUBLIC_L2_RPC || 'http://localhost:9545'
+    rpc: process.env.NEXT_PUBLIC_L2_RPC || 'http://localhost:29545'
   },
   l3: {
-    id: Number(process.env.NEXT_PUBLIC_L3_CHAIN_ID || 7393),
+    id: Number(process.env.NEXT_PUBLIC_L3_CHAIN_ID || 902),
     name: 'GhostL3',
-    rpc: process.env.NEXT_PUBLIC_L3_RPC || 'http://localhost:10545'
+    rpc: process.env.NEXT_PUBLIC_L3_RPC || 'http://localhost:39545'
   }
 };
 

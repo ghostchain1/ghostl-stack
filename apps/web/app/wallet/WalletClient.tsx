@@ -138,7 +138,7 @@ export function WalletClient() {
 
   const removeManagedWallet = (id: string) => setManagedWallets((prev) => prev.filter((w) => w.id !== id));
 
-  const useManagedWallet = (mw: ManagedWallet) => {
+  const applyManagedWallet = (mw: ManagedWallet) => {
     setTo(mw.address);
     setBridgeRecipient(mw.address);
     switchChain(mw.chain as 'l1' | 'l2' | 'l3').catch(() => undefined);
@@ -305,10 +305,10 @@ export function WalletClient() {
                       </div>
                     </div>
                     <div className="row" style={{ gap: 6 }}>
-                      <Button variant="secondary" onClick={() => useManagedWallet(w)}>
+                      <Button variant="secondary" onClick={() => applyManagedWallet(w)}>
                         Use
                       </Button>
-                      <Button variant="ghost" onClick={() => removeManagedWallet(w.id)}>
+                      <Button variant="secondary" onClick={() => removeManagedWallet(w.id)}>
                         Remove
                       </Button>
                     </div>

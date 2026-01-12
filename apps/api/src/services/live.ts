@@ -179,9 +179,9 @@ export const createLiveServices = (deps: {
 
   const configuredNodes = readJsonEnv<Node[]>('NODE_INVENTORY');
   const defaultNodes: Node[] = [
-    { id: 'ghostl1', type: 'full', host: 'localhost:8545', version: 'local', status: 'online' },
-    { id: 'ghostl2', type: 'validator', host: 'localhost:9545', version: 'local', status: 'online' },
-    { id: 'ghostl3', type: 'validator', host: 'localhost:10545', version: 'local', status: 'online' }
+    { id: 'ghostl1', type: 'full', host: 'localhost:18545', version: 'local', status: 'online' },
+    { id: 'ghostl2', type: 'validator', host: 'localhost:29545', version: 'local', status: 'online' },
+    { id: 'ghostl3', type: 'validator', host: 'localhost:39545', version: 'local', status: 'online' }
   ];
   const listNodes = async (): Promise<Node[]> => {
     if (configuredNodes) return configuredNodes;
