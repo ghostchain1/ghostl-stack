@@ -1,14 +1,14 @@
 {
   "genesis": {
-    "l1": {
-      "hash": "0x821c564b3b5d0bf7226b6f8278eaf257770240c2fc6df4f0778fee0bd4db4fb0",
-      "number": 0
-    },
-    "l2": {
-      "hash": "0xf856c1f065306bcc505fe9584178a30535abe3db46b1f55cb417975801e9ea3f",
-      "number": 0
-    },
-    "l2_time": 1768097347,
+  "l1": {
+    "hash": "0x26b6a2c43218c0a0aae270b160653fd4bd1fb711d7f19805f5d4f6667f11079c",
+    "number": 0
+  },
+  "l2": {
+    "hash": "0xf856c1f065306bcc505fe9584178a30535abe3db46b1f55cb417975801e9ea3f",
+    "number": 0
+  },
+  "l2_time": 1768234835,
     "system_config": {
       "batcherAddr": "0x32171083fd74f0423eab1192f04125d3a8f0b1c2",
       "overhead": "0x0000000000000000000000000000000000000000000000000000000000000000",
