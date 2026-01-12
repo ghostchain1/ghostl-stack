@@ -2,10 +2,7 @@
   "name": "ghostl-stack-monorepo",
   "private": true,
   "version": "0.0.1",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "workspaces": ["apps/api", "apps/web", "packages/*"],
   "scripts": {
     "build": "npm run build -w apps/api && npm run build -w apps/web",
     "build:api": "npm run build -w apps/api",

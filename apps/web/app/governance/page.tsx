@@ -5,12 +5,17 @@ import { DelegationPanel } from '../../src/modules/governance/components/Delegat
 import { apiFetch } from '../../src/lib/api';
 import type { Proposal, Vote } from '@ghostl/types/governance';
 
+type QueueStatus = 'queued' | 'executed' | 'canceled';
+type QueueItem = { id: string; eta: string; action: string; status: QueueStatus };
+
 async function loadGovernance() {
   const proposals = await apiFetch<Proposal[]>('/governance/proposals', { fallback: [] }).catch(() => []);
   const votes = await apiFetch<Vote[]>('/governance/votes', { fallback: [] }).catch(() => []);
-  const queue = await apiFetch<{ id: string; eta: string; action: string; status: string }[]>('/governance/queue', {
-    fallback: []
-  }).catch(() => []);
+  const queueRaw = await apiFetch<QueueItem[]>('/governance/queue', { fallback: [] }).catch(() => []);
+  const queue: QueueItem[] = queueRaw.map((item) => ({
+    ...item,
+    status: (['queued', 'executed', 'canceled'] as QueueStatus[]).includes(item.status) ? item.status : 'queued'
+  }));
   const delegations = await apiFetch<{ delegator: string; delegate: string; weight: number }[]>('/governance/delegations', {
     fallback: []
   }).catch(() => []);

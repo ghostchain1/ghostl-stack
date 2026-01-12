@@ -5,9 +5,9 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 export type NetworkConfig = { id: string; label: string; env: string; rpc?: string; chainId?: number };
 
 const DEFAULT_NETWORKS: NetworkConfig[] = [
-  { id: 'l1', label: 'GhostL1 (dev Anvil)', env: 'local', rpc: 'http://localhost:8545', chainId: 31337 },
-  { id: 'l2', label: 'GhostL2', env: 'local', rpc: 'http://localhost:9545', chainId: 7192 },
-  { id: 'l3', label: 'GhostL3', env: 'local', rpc: 'http://localhost:10545', chainId: 7393 }
+  { id: 'l1', label: 'GhostL1 (OP Stack L1)', env: 'local', rpc: 'http://localhost:18545', chainId: 1337 },
+  { id: 'l2', label: 'GhostL2', env: 'local', rpc: 'http://localhost:29545', chainId: 901 },
+  { id: 'l3', label: 'GhostL3', env: 'local', rpc: 'http://localhost:39545', chainId: 902 }
 ];
 
 type NetworkContextValue = {
