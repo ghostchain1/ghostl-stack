@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { config as loadEnv } from 'dotenv';
-import express from 'express';
+import express, { type RequestHandler } from 'express';
 import session from 'express-session';
 import FileStoreFactory from 'session-file-store';
 import cors from 'cors';
@@ -11,6 +11,7 @@ import nodemailer from 'nodemailer';
 import type {} from './types/session';
 import { Interface, JsonRpcProvider, Wallet } from 'ethers';
 import type { Transfer } from '@ghostl/types/bridge';
+import type { Anomaly, ContractRisk, Forecast, SybilSignal } from '@ghostl/types/ai';
 import { buildAppShellRouter } from './modules/app-shell/router';
 import { buildIdentityAccessRouter } from './modules/identity-access/router';
 import { buildChainRouter } from './modules/chain/router';
@@ -196,6 +197,8 @@ const servicesBase = {
   usage: env.USAGE_SERVICE_URL,
   webhooks: env.WEBHOOKS_SERVICE_URL,
   ai: env.AI_SERVICE_URL,
+  forecasting: env.FORECASTING_SERVICE_URL,
+  explainability: env.EXPLAINABILITY_SERVICE_URL,
   explorerRpc: env.EXPLORER_RPC_URL || env.RPC_L2 || 'http://localhost:29545',
   swap: env.SWAP_SERVICE_URL
 };
@@ -393,11 +396,16 @@ const executeUpgradeAction = async (action?: { type: string; payload?: Record<st
         try {
           const provider = new JsonRpcProvider(env.CONTRACT_RPC_URL);
           const slot = '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc';
-          // ethers v6 uses getStorage; fallback to any for compatibility
-          const currentImpl = ((provider as any).getStorageAt || provider.getStorage).call(provider, proxy, slot) as Promise<string>;
-          const val = await currentImpl;
-          if (val?.toLowerCase().endsWith(impl.toLowerCase().replace('0x', '').padStart(64, '0'))) {
-            return undefined;
+          const storageReader = provider as unknown as {
+            getStorageAt?: (address: string, slot: string) => Promise<string>;
+            getStorage?: (address: string, slot: string) => Promise<string>;
+          };
+          const readStorage = storageReader.getStorageAt || storageReader.getStorage;
+          if (readStorage) {
+            const val = await readStorage.call(provider, proxy, slot);
+            if (val?.toLowerCase().endsWith(impl.toLowerCase().replace('0x', '').padStart(64, '0'))) {
+              return undefined;
+            }
           }
         } catch {
           // ignore
@@ -520,10 +528,12 @@ const fetchOk = async (url: string, timeoutMs = 2000) => {
   }
 };
 
+const allowAll: RequestHandler = (_req, _res, next) => next();
+
 app.use(['/v1/app-shell', '/app-shell'], buildAppShellRouter(services.appShell));
 app.use(
   ['/v1/chain', '/chain'],
-  env.PUBLIC_CHAIN ? (_req: any, _res: any, next: any) => next() : requirePermission('chain:read'),
+  env.PUBLIC_CHAIN ? allowAll : requirePermission('chain:read'),
   buildChainRouter({
     status: liveServices.chain.chainStatusService,
     telemetry: liveServices.chain.consensusTelemetryService,
@@ -532,7 +542,7 @@ app.use(
 );
 app.use(
   ['/v1/nodes', '/nodes'],
-  env.PUBLIC_NODES ? (_req: any, _res: any, next: any) => next() : requirePermission('nodes:read'),
+  env.PUBLIC_NODES ? allowAll : requirePermission('nodes:read'),
   buildNodeRouter({
     inventory: liveServices.nodes.nodeInventoryService,
     health: liveServices.nodes.nodeHealthService
@@ -540,7 +550,7 @@ app.use(
 );
 app.use(
   ['/v1/stack', '/stack'],
-  env.PUBLIC_STACK ? (_req: any, _res: any, next: any) => next() : requirePermission('chain:read'),
+  env.PUBLIC_STACK ? allowAll : requirePermission('chain:read'),
   buildStackRouter({
     prometheus,
     guard,
@@ -559,7 +569,7 @@ app.use(
 identityServicesPromise.then((identity) => {
   auditLogService = identity.auditLogService;
   app.use(['/v1', '/'], buildIdentityAccessRouter(identity));
-  const observabilityGuard = env.PUBLIC_OBSERVABILITY ? (_req: any, _res: any, next: any) => next() : requirePermission('observability:read');
+  const observabilityGuard = env.PUBLIC_OBSERVABILITY ? allowAll : requirePermission('observability:read');
   app.use(
     ['/v1/observability', '/observability'],
     observabilityGuard,
@@ -580,9 +590,9 @@ identityServicesPromise.then((identity) => {
 });
 
 const rpcUrls = {
-  l1: env.RPC_L1 || 'http://localhost:8545',
+  l1: env.RPC_L1 || 'http://localhost:18545',
   l2: env.RPC_L2 || servicesBase.explorerRpc,
-  l3: env.RPC_L3 || 'http://localhost:10545',
+  l3: env.RPC_L3 || 'http://localhost:39545',
   default: servicesBase.explorerRpc
 };
 const rpcForChain = (chain?: string) => {
@@ -1441,8 +1451,8 @@ app.get(['/v1/compliance/reports/:id/export', '/compliance/reports/:id/export'],
   res.json({ ok: true, report });
 });
 
-const validatorGuard = env.PUBLIC_VALIDATORS ? (_req: any, _res: any, next: any) => next() : requirePermission('validator:read');
-const explorerGuard = env.PUBLIC_EXPLORER ? (_req: any, _res: any, next: any) => next() : requirePermission('explorer:read');
+const validatorGuard = env.PUBLIC_VALIDATORS ? allowAll : requirePermission('validator:read');
+const explorerGuard = env.PUBLIC_EXPLORER ? allowAll : requirePermission('explorer:read');
 
 app.get(['/v1/api/validators', '/api/validators'], validatorGuard, async (_req, res) => {
   const data = await proxyJson<{ validators?: unknown[] }>(`${servicesBase.validators}/validators`, { validators: [] });
@@ -1610,15 +1620,101 @@ app.get(['/v1/security/controls', '/security/controls'], requirePermission('iam:
 });
 
 app.get(['/v1/api/ai', '/api/ai'], requirePermission('ai:read'), async (_req, res) => {
-  const data = await proxyJson<{ networks?: unknown[] }>(`${servicesBase.ai}/anomalies`, { networks: [] });
-  const sybil: { id: string; cluster: string; score: number; size: number; tags?: string[] }[] = [
-    { id: 'syb-1', cluster: 'cluster-a', score: 0.82, size: 12, tags: ['new wallets', 'bridges'] },
-    { id: 'syb-2', cluster: 'cluster-b', score: 0.41, size: 5, tags: ['low activity'] }
-  ];
-  const contractRisk: { address: string; risk: number; notes?: string[] }[] = [
-    { address: env.CONTRACT_TARGET_ADDRESS || '0xcontract', risk: 0.2, notes: ['allowlisted'] }
-  ];
-  res.json({ networks: data.networks || [], sybil, contractRisk });
+  const queryNumber = async (query?: string): Promise<number | undefined> => {
+    if (!query) return undefined;
+    try {
+      const result = await prometheus.query(query);
+      const val = result?.[0]?.value?.[1];
+      const parsed = val ? Number(val) : NaN;
+      return Number.isFinite(parsed) ? parsed : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+
+  const anomalyResp = await proxyJson<{ anomalies?: Array<{ id?: string; entity?: string; score?: number | string; reasons?: string[]; time?: string }> }>(
+    `${servicesBase.ai}/anomalies`,
+    { anomalies: [] }
+  ).catch(() => ({ anomalies: [] }));
+  const now = new Date().toISOString();
+  const anomalies: Anomaly[] =
+    anomalyResp.anomalies
+      ?.map((a, idx) => ({
+        id: a.id || `anomaly-${idx}`,
+        entity: a.entity || 'network',
+        score: Number(a.score ?? 0),
+        reasons: a.reasons?.length ? a.reasons : ['risk score'],
+        time: a.time ? new Date(a.time).toISOString() : now
+      }))
+      .filter((a) => Number.isFinite(a.score)) || [];
+
+  if (!anomalies.length) {
+    const [riskScore, congestionScore] = await Promise.all([queryNumber('ai_monitor_risk_score'), queryNumber('ai_monitor_congestion_score')]);
+    if (riskScore !== undefined) {
+      anomalies.push({ id: 'risk', entity: 'network', score: riskScore, reasons: ['AI monitor risk score'], time: now });
+    }
+    if (congestionScore !== undefined) {
+      anomalies.push({ id: 'congestion', entity: 'network', score: congestionScore, reasons: ['AI monitor congestion'], time: now });
+    }
+  }
+
+  const explainResp = await proxyJson<{ explanations?: Array<{ id?: string; metric?: string; reasons?: string[]; value?: number | string }> }>(
+    `${servicesBase.explainability}/explain`,
+    { explanations: [] }
+  ).catch(() => ({ explanations: [] }));
+  if (explainResp.explanations?.length) {
+    anomalies.forEach((a) => {
+      const hit = explainResp.explanations?.find((e) => e.id === a.id || e.metric === a.entity);
+      if (hit?.reasons?.length) {
+        a.reasons = hit.reasons;
+      }
+    });
+  }
+
+  const forecastResp = await proxyJson<{ forecasts?: Forecast[] }>(`${servicesBase.forecasting}/forecast`, { forecasts: [] }).catch(() => ({
+    forecasts: []
+  }));
+  let forecasts: Forecast[] =
+    (forecastResp.forecasts || [])
+      .map((f) => ({
+        metric: f.metric,
+        horizon: f.horizon,
+        value: Number(f.value ?? 0),
+        confidence: Number(f.confidence ?? 0)
+      }))
+      .filter((f) => Number.isFinite(f.value)) || [];
+  if (!forecasts.length) {
+    const riskScore = anomalies.find((a) => a.id === 'risk')?.score ?? 0;
+    const congestion = anomalies.find((a) => a.id === 'congestion')?.score ?? 0;
+    forecasts = [
+      { metric: 'risk', horizon: '5m', value: riskScore, confidence: 0.6 },
+      { metric: 'congestion', horizon: '5m', value: congestion, confidence: 0.6 }
+    ];
+  }
+
+  const contractRiskResp = await proxyJson<{ contracts?: Array<{ address?: string; risk?: number | string; revertRate?: number | string }> }>(
+    `${servicesBase.contractRisk}/risk`,
+    { contracts: [] }
+  ).catch(() => ({ contracts: [] }));
+  const contractRisk: ContractRisk[] =
+    contractRiskResp.contracts
+      ?.map((c) => ({
+        address: c.address || env.CONTRACT_TARGET_ADDRESS || '0xcontract',
+        risk: Number(c.risk ?? 0),
+        notes: c.revertRate !== undefined ? [`revert ${(Number(c.revertRate) * 100).toFixed(0)}%`] : undefined
+      }))
+      .filter((c) => Number.isFinite(c.risk)) || [];
+
+  const sybil: SybilSignal[] =
+    anomalies.map((a, idx) => ({
+      id: `sybil-${a.id || idx}`,
+      cluster: a.entity || `entity-${idx}`,
+      score: a.score,
+      size: 1,
+      tags: a.reasons
+    })) || [];
+
+  res.json({ anomalies, forecasts, sybil, contractRisk });
 });
 
 app.get(['/v1/observability/incidents', '/observability/incidents'], requirePermission('observability:read'), async (_req, res) => {

@@ -5,10 +5,10 @@
       "number": 0
     },
     "l2": {
-      "hash": "0x58369386a64d16a320f585953633b96e9c926c537a9746f136732a2758b94d7a",
+      "hash": "0x821c564b3b5d0bf7226b6f8278eaf257770240c2fc6df4f0778fee0bd4db4fb0",
       "number": 0
     },
-    "l2_time": 1767775399,
+    "l2_time": 1768097347,
     "system_config": {
       "batcherAddr": "0x32171083fd74f0423eab1192f04125d3a8f0b1c2",
       "overhead": "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -37,7 +37,7 @@
   "jovian_time": 0,
   "batch_inbox_address": "0x00289c189bee4e70334629f04cd5ed602b6600eb",
   "deposit_contract_address": "0xD89444BcDd25C6cee5e95DD6d47Ce7742b54C9d8",
-  "l1_system_config_address": "0x63bc5C9F7480bca8C46582fcC26BcCCB75b5Db3E",
+  "l1_system_config_address": "0x242364f3b3a65982289fabeb8c332f21a6237e29",
   "protocol_versions_address": "0x41b343Df2196081e42ac8Da11a1aA38De08e8658",
   "chain_op_config": {
     "eip1559Elasticity": 6,

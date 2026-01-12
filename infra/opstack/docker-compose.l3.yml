@@ -460,6 +460,8 @@ services:
         condition: service_healthy
     environment:
       PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    ports:
+      - "7616:7616"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:7616/health >/dev/null"]
       interval: 20s
@@ -546,6 +548,8 @@ services:
         condition: service_healthy
     environment:
       PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    ports:
+      - "7609:7609"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:7609/health >/dev/null"]
       interval: 20s
@@ -662,6 +666,8 @@ services:
       GUARD_URL: ${GUARD_URL:-http://ghost-guard:7070}
       OBSERVE_ONLY: ${AI_MONITOR_OBSERVE_ONLY:-1}
       ADMIN_TOKEN: ${AI_MONITOR_ADMIN_TOKEN:-}
+    ports:
+      - "7575:7575"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:7575/health >/dev/null"]
       interval: 20s
@@ -776,6 +782,8 @@ services:
         condition: service_healthy
     environment:
       PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    ports:
+      - "7632:7632"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:7632/health >/dev/null"]
     <<: *default-security
@@ -812,6 +820,8 @@ services:
         condition: service_healthy
     environment:
       PROM_URL: ${PROM_URL:-http://prometheus:9090}
+    ports:
+      - "7617:7617"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:7617/health >/dev/null"]
     <<: *default-security
