@@ -2,7 +2,7 @@
 set -eu
 
 # Ports we want to keep free for host-level RPC publishes.
-PORTS="28545 28546 29545"
+PORTS="28545 28546 29545 29547"
 
 echo "[net-mgr] starting; monitoring ports: $PORTS"
 

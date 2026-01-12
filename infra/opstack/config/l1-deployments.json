@@ -31,15 +31,15 @@
   "PermissionedDisputeGameV2Impl": "0x0000000000000000000000000000000000000000",
   "StorageSetterImpl": "0x2476c911e6d4d9411e677d8faf15a64ac1fdeee8",
   "OpChainProxyAdminImpl": "0x0c790b33fbd46ef921504da413d072d2398d7e33",
-  "OptimismPortalProxy": "0x7423e173cb2970ae4a06f03450a8f07901344c3a",
+  "OptimismPortalProxy": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
   "AddressManagerImpl": "0xa27d0b916f58d140b1e58fdabb8a836bf6c2df93",
   "L1Erc721BridgeProxy": "0x71f044d237ca60a55ae31a68bda0319711e73552",
-  "SystemConfigProxy": "0x242364f3b3a65982289fabeb8c332f21a6237e29",
+  "SystemConfigProxy": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
   "OptimismMintableErc20FactoryProxy": "0x69abbde9ebba86707ae2ccf56e9572fbb0d11da6",
-  "L1StandardBridgeProxy": "0x061c137864195998838574da9e822102fa029d70",
-  "L1CrossDomainMessengerProxy": "0xea7cfd038c520128c244426766fb7d10804002f5",
+  "L1StandardBridgeProxy": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+  "L1CrossDomainMessengerProxy": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
   "EthLockboxProxy": "0x39826c72b00375e6ac4a0a139e72287d759b4455",
-  "DisputeGameFactoryProxy": "0xa79c78bcb7c9a77f962638cee8f80f39a91f2dc3",
+  "DisputeGameFactoryProxy": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
   "AnchorStateRegistryProxy": "0x40e624c1f01b522ff6b80979790446d0ea1a6010",
   "FaultDisputeGameImpl": "0x0000000000000000000000000000000000000000",
   "FaultDisputeGameCannonKonaImpl": "0x0000000000000000000000000000000000000000",
@@ -48,5 +48,5 @@
   "DelayedWethPermissionlessGameProxy": "0x0000000000000000000000000000000000000000",
   "AltDAChallengeProxy": "0x0000000000000000000000000000000000000000",
   "AltDAChallengeImpl": "0x0000000000000000000000000000000000000000",
-  "L2OutputOracleProxy": "0x01477FA1415F801F40245A71C558b198ff154F0f"
+  "L2OutputOracleProxy": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
 }

@@ -161,7 +161,7 @@ services:
       op-gate:
         condition: service_healthy
     ports:
-    - 29545:8545
+    - 29547:8545
     volumes:
     - ./data/l2-geth-new:/data
     - ./config/jwt.txt:/config/jwt.txt:ro
@@ -215,6 +215,7 @@ services:
     - --rpc.addr=0.0.0.0
     - --rpc.port=9546
     - --l1.rpckind=basic
+    - --l1.trustrpc
     - --p2p.disable
     - --l1.beacon.ignore
     - --l1.runtime-config-reload-interval=0
@@ -264,6 +265,7 @@ services:
     - --rpc.addr=0.0.0.0
     - --rpc.port=9646
     - --l1.rpckind=basic
+    - --l1.trustrpc
     - --p2p.disable
     - --l1.beacon.ignore
     - --sequencer.enabled
