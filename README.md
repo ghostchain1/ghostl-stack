@@ -9,6 +9,11 @@ Brings up:
 - Prometheus on :9090
 - Grafana on :3000 (admin/admin)
 
+## OP Stack L3-on-L2 Testnet Checklist
+
+Use the battle-tested deployment checklist (with preflight script) for GhostLayer3 → GhostLayer2 → GhostLayer1:
+- `docs/opstack-l3-testnet-deployment-checklist.md`
+
 ## Start
 ```bash
 bash infra/scripts/up.sh
