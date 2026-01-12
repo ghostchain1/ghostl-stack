@@ -5,10 +5,10 @@
       "number": 0
     },
     "l2": {
-      "hash": "0x9c060aaade358049e26c512bffa83186a5481a916dff7a876a83f6c0562b4d91",
+      "hash": "0x26b6a2c43218c0a0aae270b160653fd4bd1fb711d7f19805f5d4f6667f11079c",
       "number": 0
     },
-    "l2_time": 1768225063,
+    "l2_time": 1768233299,
     "system_config": {
       "batcherAddr": "0x32171083fd74f0423eab1192f04125d3a8f0b1c2",
       "overhead": "0x0000000000000000000000000000000000000000000000000000000000000000",
