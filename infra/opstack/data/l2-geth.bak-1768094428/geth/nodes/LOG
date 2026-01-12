@@ -761,3 +761,37 @@
 11:10:23.950772 table@remove removed @213
 11:10:23.951202 table@remove removed @214
 11:10:23.951350 table@remove removed @215
+12:44:27.994968 memdb@flush N·55098 S·3MiB
+12:44:28.036383 memdb@flush created L0@223 N·55098 S·1MiB "loc..seq,v1070232":"n:\xff..ail,v1037452"
+12:44:28.036608 version@stat F·[1 4] S·8MiB[1MiB 6MiB] Sc·[0.25 0.07]
+12:44:28.042244 memdb@flush committed F·1 T·44.769307ms
+12:44:28.043277 journal@remove removed @216
+12:45:02.850379 table@compaction L0·1 -> L1·4 S·8MiB Q·1078782
+12:45:03.038226 table@build created L1@224 N·42848 S·2MiB "loc..seq,v1070232":"n:K..ail,v1015215"
+12:45:03.174445 table@build created L1@225 N·42320 S·2MiB "n:K..ail,v1016501":"n:\x96..ail,v961212"
+12:45:03.268731 table@build created L1@226 N·42726 S·2MiB "n:\x96..ail,v835156":"n:\xe2..ail,v1040849"
+12:45:03.309886 table@build created L1@227 N·15921 S·772KiB "n:\xe2..ail,v738134":"version,v1"
+12:45:03.310085 version@stat F·[0 4] S·6MiB[0B 6MiB] Sc·[0.00 0.07]
+12:45:03.321236 table@compaction committed F-1 S-1MiB Ke·0 D·53090 T·470.721839ms
+12:45:03.321909 table@remove removed @223
+12:45:03.322597 table@remove removed @218
+12:45:03.323711 table@remove removed @219
+12:45:03.324251 table@remove removed @220
+12:45:03.325328 table@remove removed @221
+14:18:46.260283 memdb@flush N·55117 S·3MiB
+14:18:46.317766 memdb@flush created L0@229 N·55117 S·1MiB "loc..seq,v1131108":"n:\xff..ail,v1087556"
+14:18:46.318324 version@stat F·[1 4] S·8MiB[1MiB 6MiB] Sc·[0.25 0.07]
+14:18:46.332641 memdb@flush committed F·1 T·71.27967ms
+14:18:46.334635 journal@remove removed @222
+14:19:14.807275 table@compaction L0·1 -> L1·4 S·8MiB Q·1133783
+14:19:14.948774 table@build created L1@230 N·42853 S·2MiB "loc..seq,v1131108":"n:K..ail,v490289"
+14:19:15.127287 table@build created L1@231 N·42290 S·2MiB "n:K..ail,v1047659":"n:\x94..ail,v1065000"
+14:19:15.254078 table@build created L1@232 N·42680 S·2MiB "n:\x94..ail,v1064996":"n:\xde..ail,v781641"
+14:19:15.284741 table@build created L1@233 N·17978 S·871KiB "n:\xde..ail,v781635":"version,v1"
+14:19:15.284867 version@stat F·[0 4] S·6MiB[0B 6MiB] Sc·[0.00 0.07]
+14:19:15.291221 table@compaction committed F-1 S-1MiB Ke·0 D·53131 T·483.89737ms
+14:19:15.291684 table@remove removed @229
+14:19:15.292247 table@remove removed @224
+14:19:15.293060 table@remove removed @225
+14:19:15.293359 table@remove removed @226
+14:19:15.293492 table@remove removed @227

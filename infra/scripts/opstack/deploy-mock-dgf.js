@@ -11,7 +11,7 @@ const artifactPath = path.resolve(__dirname, "../../../contracts/artifacts/src/M
 const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
 
 const L1_RPC = process.env.L1_RPC || "http://localhost:28545";
-const L2_RPC = process.env.L2_RPC || "http://localhost:29545";
+const L2_RPC = process.env.L2_RPC || "http://localhost:29547";
 const DEFAULT_PK = process.env.PRIVATE_KEY || "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"; // hardhat default
 
 async function fundAndDeploy(rpcUrl, label) {

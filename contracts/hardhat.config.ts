@@ -29,7 +29,7 @@ const config: HardhatUserConfig = {
     sources: "./src"
   },
   networks: {
-    anvil: { url: RPC_L1, chainId: L1_CHAIN_ID },
+    anvil: { url: RPC_L1, chainId: L1_CHAIN_ID, accounts: [DEV_PRIVATE_KEY] },
     ghostl2: { url: RPC_L2, chainId: L2_CHAIN_ID, accounts: [DEV_PRIVATE_KEY] },
     ghostl3: { url: RPC_L3, chainId: L3_CHAIN_ID, accounts: [DEV_PRIVATE_KEY] },
     ghostl2Op: { url: OP_L2_RPC, chainId: OP_L2_CHAIN_ID, accounts: [DEV_PRIVATE_KEY] },

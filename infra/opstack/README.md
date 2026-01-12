@@ -4,7 +4,7 @@ OP Stack L2 (GhostL2) devnet that aligns with the GhostChain blueprint: Optimist
 
 ## What runs
 - L1: Anvil (host port `28545`)
-- L2: op-geth + op-node + op-batcher + op-proposer (host port `29545`)
+- L2: op-geth + op-node + op-batcher + op-proposer (host port `29547`)
 - `op-gate` JSON-RPC proxy sits in front of L1 for batcher/proposer and can be driven by Ghost Guard (metrics on `28546/metrics/prom`).
 - Containers use `local/op-*` images built from the vendored Optimism sources.
 
@@ -26,7 +26,7 @@ bash infra/scripts/opstack/keys/init.sh                     # regenerates keys/a
 # 3) Start devnet
 bash infra/scripts/opstack/up.sh -- --env-file .env --env-file .env.secrets
 # L1 RPC: http://localhost:28545
-# L2 RPC: http://localhost:29545
+# L2 RPC: http://localhost:29547
 
 # 4) Deploy contracts to OP L2 and emit service env files
 bash infra/scripts/opstack/deploy.sh
