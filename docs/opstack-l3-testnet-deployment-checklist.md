@@ -36,6 +36,20 @@ Populate L1-derived L2 addresses from deployment artifacts:
 bash infra/scripts/opstack/sync-env-from-l1-deployments.sh infra/opstack/.env
 ```
 
+One-shot env sync + preflight:
+```bash
+npm run opstack:check
+```
+
+If you have a parent L2 deployment artifact for L3, sync it into `.env.l3`:
+```bash
+bash infra/scripts/opstack/sync-env-from-l2-deployments.sh infra/opstack/.env.l3 /path/to/l2-deployments.json
+```
+Or, if your `config/l2-deployments.json` exists and you want the shortcut:
+```bash
+npm run env:sync:opstack:l3
+```
+
 ---
 
 ## 🗺️ Reference Architecture (sanity anchor)

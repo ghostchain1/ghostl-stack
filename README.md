@@ -1,7 +1,7 @@
 # ghostl-stack (Codespaces)
 
 Brings up:
-- L1: Anvil (31337) on :8545
+- L1 (Ghostchain): dev geth (chainId 1337) on :8545
 - GhostL2: Polygon Edge (7192) on :9545
 - GhostL3: Polygon Edge (7393) on :10545
 - Ghost Guard API on :7070
@@ -13,6 +13,14 @@ Brings up:
 
 Use the battle-tested deployment checklist (with preflight script) for GhostLayer3 → GhostLayer2 → GhostLayer1:
 - `docs/opstack-l3-testnet-deployment-checklist.md`
+- Shortcut commands:
+  - `npm run env:sync:opstack` to pull L1 deployment addresses into `infra/opstack/.env`
+  - `npm run env:sync:opstack:l3` to pull parent L2 deployment addresses into `infra/opstack/.env.l3` (if `config/l2-deployments.json` exists or you pass a path)
+  - `npm run preflight:opstack` to validate RPCs, chain IDs, oracles, portals, bridges, and data dirs
+  - `npm run opstack:check` to run env sync + preflight in one go
+- Optional: if you have a parent L2 deployment artifact for L3, sync it into `infra/opstack/.env.l3`:
+  - `bash infra/scripts/opstack/sync-env-from-l2-deployments.sh infra/opstack/.env.l3 /path/to/l2-deployments.json`
+  - Note: `config/l2-deployments.json` currently holds generated placeholder addresses—replace with real L2 deployment output before production/preflight.
 
 ## Start
 ```bash
