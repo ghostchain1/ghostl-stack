@@ -9,58 +9,6 @@ x-security:
   security_opt: &id002
   - no-new-privileges:true
 services:
-  l1:
-    cap_drop: *id001
-    security_opt: *id002
-    image: ethereum/client-go:v1.13.15
-    user: "0:0"
-    entrypoint:
-    - /bin/sh
-    command:
-    - -c
-    - |
-      set -e
-      if [ ! -d /data/geth ]; then
-        echo "[l1-geth] initializing genesis..."
-        geth init --datadir /data /config/l1-genesis.json
-      fi
-      exec geth \
-        --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug,txpool,personal \
-        --http.vhosts="*" \
-        --rpc.allow-unprotected-txs \
-        --ws --ws.addr=0.0.0.0 --ws.origins="*" \
-        --datadir=/data \
-        --networkid=${L1_CHAIN_ID:-1337} \
-        --nodiscover \
-        --syncmode=full \
-        --gcmode=archive \
-        --mine \
-        --miner.gasprice=${L1_MINER_GASPRICE:-0} \
-        --miner.etherbase=${L1_MINER_ETHERBASE:-0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266} \
-        --unlock ${L1_MINER_ETHERBASE:-0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266} \
-        --password /config/l1-keystore-password \
-        --keystore /config/l1-keystore/keystore \
-        --allow-insecure-unlock
-    volumes:
-    - l1-geth-data:/data
-    - ./config/l1-genesis.json:/config/l1-genesis.json:ro
-    - ./config/l1-keystore-geth:/config/l1-keystore:ro
-    - ./config/l1-keystore-password:/config/l1-keystore-password:ro
-    healthcheck:
-      test:
-      - CMD-SHELL
-      - 'wget -qO- --header=''Content-Type: application/json'' --post-data=''{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}''
-        http://localhost:8545 >/dev/null'
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    ports:
-    - 28545:8545
-    restart: unless-stopped
-    logging: *id003
-    mem_limit: 1g
-    cpus: '1.0'
   op-gate:
     cap_drop: *id001
     security_opt: *id002
@@ -76,9 +24,6 @@ services:
     logging: *id003
     extra_hosts:
     - host.docker.internal:host-gateway
-    depends_on:
-      l1:
-        condition: service_healthy
     environment:
       NODE_ENV: production
       PORT: ${GATE_PORT:-8545}
@@ -156,8 +101,6 @@ services:
     restart: unless-stopped
     logging: *id003
     depends_on:
-      l1:
-        condition: service_healthy
       op-gate:
         condition: service_healthy
     ports:
@@ -196,8 +139,6 @@ services:
     restart: unless-stopped
     logging: *id003
     depends_on:
-      l1:
-        condition: service_healthy
       l2-geth:
         condition: service_healthy
     volumes:
@@ -207,7 +148,7 @@ services:
     - ./config/l1-chain.json:/config/l1-chain.json:ro
     command:
     - op-node
-    - --l1=${L1_RPC:-http://l1:8545}
+    - --l1=${L1_RPC:-http://host.docker.internal:18545}
     - --l2=http://l2-geth:8551
     - --l2.jwt-secret=/config/jwt.txt
     - --rollup.config=/config/rollup.json
@@ -244,8 +185,6 @@ services:
     restart: unless-stopped
     logging: *id003
     depends_on:
-      l1:
-        condition: service_healthy
       l2-geth:
         condition: service_healthy
     volumes:
@@ -257,7 +196,7 @@ services:
       OP_NODE_L1_BEACON_IGNORE: '1'
     command:
     - op-node
-    - --l1=${L1_RPC:-http://l1:8545}
+    - --l1=${L1_RPC:-http://host.docker.internal:18545}
     - --l2=http://l2-geth:8551
     - --l2.jwt-secret=/config/jwt.txt
     - --rollup.config=/config/rollup.json
@@ -269,7 +208,7 @@ services:
     - --p2p.disable
     - --l1.beacon.ignore
     - --sequencer.enabled
-    - --sequencer.l1-confs=0
+    - --sequencer.l1-confs=${SEQUENCER_L1_CONFS:-2}
     - --l1.runtime-config-reload-interval=0
     - --metrics.enabled
     - --metrics.addr=0.0.0.0
@@ -304,7 +243,7 @@ services:
       L2OO_ADDRESS: ${L2OO_ADDRESS:-0x01477FA1415F801F40245A71C558b198ff154F0f}
     command:
     - op-batcher
-    - --l1-eth-rpc=http://l1:8545
+    - --l1-eth-rpc=${L1_RPC:-http://host.docker.internal:18545}
     - --l2-eth-rpc=http://l2-geth:8545
     - --rollup-rpc=http://op-node:9546
     - --private-key=${BATCHER_KEY}
@@ -347,7 +286,7 @@ services:
       PROPOSER_KEY: ${PROPOSER_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
     command:
     - op-proposer
-    - --l1-eth-rpc=http://l1:8545
+    - --l1-eth-rpc=${L1_RPC:-http://host.docker.internal:18545}
     - --rollup-rpc=http://op-node:9546
     - --l2oo-address=${L2OO_ADDRESS:-0x01477FA1415F801F40245A71C558b198ff154F0f}
     - --private-key=${PROPOSER_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
@@ -475,4 +414,3 @@ volumes:
   grafana_data: null
   alertmanager_data: null
   loki_data: null
-  l1-geth-data: null
