@@ -5,11 +5,12 @@ import { Badge, Button, Card } from '@ghostl/ui';
 import { useSession } from '../../src/modules/identity-access/session';
 import { useWallet } from '../../src/modules/wallet/useWallet';
 import type { TokenConfig } from '../../src/modules/wallet/tokens';
+import type { WalletRecord, TokenRecord } from '@ghostl/types';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 const bridgeAddress = process.env.NEXT_PUBLIC_BRIDGE_ADDRESS || '';
 
 const tokenKey = (t: TokenConfig) => `${t.chain}:${t.address || 'native'}`;
-type ManagedWallet = { id: string; address: string; label: string; chain: string; role: string };
 
 export function WalletClient() {
   const session = useSession();
@@ -50,12 +51,29 @@ export function WalletClient() {
   const [swapAmount, setSwapAmount] = useState('0.01');
   const [swapRecipient, setSwapRecipient] = useState('');
   const [quoteTimer, setQuoteTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
-  const [managedWallets, setManagedWallets] = useState<ManagedWallet[]>([]);
-  const [newWallet, setNewWallet] = useState<{ address: string; label: string; chain: 'l1' | 'l2' | 'l3'; role: string }>({
-    address: '',
+  const [inventory, setInventory] = useState<WalletRecord[]>([]);
+  const [inventoryStatus, setInventoryStatus] = useState('');
+  const [watchForm, setWatchForm] = useState<{ label: string; address: string; chainId: string; ownerUserId: string }>({
     label: '',
-    chain: 'l2',
-    role: 'operator'
+    address: '',
+    chainId: 'l2',
+    ownerUserId: ''
+  });
+  const [custodialForm, setCustodialForm] = useState<{ label: string; chainId: string; ownerUserId: string }>({
+    label: '',
+    chainId: 'l2',
+    ownerUserId: ''
+  });
+  const [exportedKey, setExportedKey] = useState<string>('');
+  const [selectedWalletId, setSelectedWalletId] = useState<string>('');
+  const [tokensInv, setTokensInv] = useState<WalletRecord[]>([]);
+  const [tokenList, setTokenList] = useState<TokenRecord[]>([]);
+  const [tokenStatus, setTokenStatus] = useState('');
+  const [tokenForm, setTokenForm] = useState<{ address: string; chainId: string; type: TokenRecord['type']; rpc?: string }>({
+    address: '',
+    chainId: 'l2',
+    type: 'erc20',
+    rpc: ''
   });
 
   const selectedRouteObj = useMemo(() => swapRoutes[selectedRoute], [swapRoutes, selectedRoute]);
@@ -78,23 +96,171 @@ export function WalletClient() {
     return () => clearTimeout(timer);
   }, [fetchSwapQuote, swapAmount, quoteTimer]);
 
-  // Managed wallets persisted in localStorage for quick switching/reference
-  useEffect(() => {
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('managed-wallets') : null;
-    if (stored) {
-      try {
-        setManagedWallets(JSON.parse(stored));
-      } catch {
-        // ignore malformed
+  const chainLabels = useMemo(
+    () => ({
+      l1: 'GhostL1',
+      l2: 'GhostL2',
+      l3: 'GhostL3'
+    }),
+    []
+  );
+
+  const loadInventory = async () => {
+    setInventoryStatus('Loading wallets...');
+    try {
+      const res = await fetch(`${API_URL}/wallets`, { credentials: 'include' });
+      if (!res.ok) throw new Error(`Load failed ${res.status}`);
+      const data = (await res.json()) as WalletRecord[];
+      setInventory(data);
+      setTokensInv(data);
+      if (!selectedWalletId && data.length) {
+        setSelectedWalletId(data[0].id);
       }
+      setInventoryStatus('');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to load wallets';
+      setInventoryStatus(msg);
     }
-  }, []);
+  };
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('managed-wallets', JSON.stringify(managedWallets));
+    if (session.user) {
+      loadInventory().catch(() => undefined);
     }
-  }, [managedWallets]);
+  }, [session.user?.id]);
+
+  useEffect(() => {
+    const loadTokens = async () => {
+      if (!selectedWalletId) return;
+      setTokenStatus('Loading tokens...');
+      try {
+        const res = await fetch(`${API_URL}/wallets/${selectedWalletId}/tokens`, { credentials: 'include' });
+        if (!res.ok) throw new Error(`Load failed ${res.status}`);
+        const data = (await res.json()) as TokenRecord[];
+        setTokenList(data);
+        setTokenStatus('');
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Failed to load tokens';
+        setTokenStatus(msg);
+      }
+    };
+    loadTokens().catch(() => undefined);
+  }, [selectedWalletId]);
+
+  const createWatchWallet = async () => {
+    if (!watchForm.address || !watchForm.label) {
+      setInventoryStatus('Label and address required');
+      return;
+    }
+    setInventoryStatus('Creating watch wallet...');
+    try {
+      const res = await fetch(`${API_URL}/wallets`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ ...watchForm, ownerUserId: watchForm.ownerUserId || undefined })
+      });
+      if (!res.ok) throw new Error(`Create failed ${res.status}`);
+      await loadInventory();
+      setWatchForm({ ...watchForm, label: '', address: '' });
+      setInventoryStatus('Watch wallet added');
+      setTimeout(() => setInventoryStatus(''), 2000);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Create failed';
+      setInventoryStatus(msg);
+    }
+  };
+
+  const createCustodialWallet = async () => {
+    if (!custodialForm.label) {
+      setInventoryStatus('Label required');
+      return;
+    }
+    setInventoryStatus('Creating custodial wallet...');
+    try {
+      const res = await fetch(`${API_URL}/wallets/custodial`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ ...custodialForm, ownerUserId: custodialForm.ownerUserId || undefined })
+      });
+      if (!res.ok) throw new Error(`Create failed ${res.status}`);
+      const body = (await res.json()) as { wallet: WalletRecord; exportedKey?: string };
+      setExportedKey(body.exportedKey || '');
+      await loadInventory();
+      setCustodialForm({ ...custodialForm, label: '' });
+      setInventoryStatus('Custodial wallet created');
+      setTimeout(() => setInventoryStatus(''), 2000);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Create failed';
+      setInventoryStatus(msg);
+    }
+  };
+
+  const rotateManagedWallet = async (id: string) => {
+    setInventoryStatus('Rotating key...');
+    try {
+      const res = await fetch(`${API_URL}/wallets/${id}/rotate`, { method: 'POST', credentials: 'include' });
+      if (!res.ok) throw new Error(`Rotate failed ${res.status}`);
+      const body = (await res.json()) as { wallet: WalletRecord; exportedKey?: string };
+      setExportedKey(body.exportedKey || '');
+      await loadInventory();
+      setInventoryStatus('Key rotated');
+      setTimeout(() => setInventoryStatus(''), 2000);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Rotate failed';
+      setInventoryStatus(msg);
+    }
+  };
+
+  const revokeWallet = async (id: string) => {
+    setInventoryStatus('Revoking wallet...');
+    try {
+      const res = await fetch(`${API_URL}/wallets/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (!res.ok) throw new Error(`Revoke failed ${res.status}`);
+      await loadInventory();
+      setInventoryStatus('Wallet revoked');
+      setTimeout(() => setInventoryStatus(''), 2000);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Revoke failed';
+      setInventoryStatus(msg);
+    }
+  };
+
+  const applyManagedWallet = (wallet: WalletRecord) => {
+    setTo(wallet.address);
+    setBridgeRecipient(wallet.address);
+    if (wallet.chainId === 'l1' || wallet.chainId === 'l2' || wallet.chainId === 'l3') {
+      switchChain(wallet.chainId).catch(() => undefined);
+    }
+    setSelectedWalletId(wallet.id);
+  };
+
+  const importToken = async () => {
+    if (!selectedWalletId || !tokenForm.address) {
+      setTokenStatus('Wallet + address required');
+      return;
+    }
+    setTokenStatus('Importing token...');
+    try {
+      const res = await fetch(`${API_URL}/wallets/${selectedWalletId}/tokens/import`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ ...tokenForm, rpc: tokenForm.rpc || undefined })
+      });
+      if (!res.ok) throw new Error(`Import failed ${res.status}`);
+      await res.json();
+      setTokenForm((f) => ({ ...f, address: '' }));
+      setTokenStatus('Token imported');
+      setTimeout(() => setTokenStatus(''), 2000);
+      const resList = await fetch(`${API_URL}/wallets/${selectedWalletId}/tokens`, { credentials: 'include' });
+      if (resList.ok) setTokenList((await resList.json()) as TokenRecord[]);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Import failed';
+      setTokenStatus(msg);
+    }
+  };
 
   const balanceList = useMemo(
     () =>
@@ -127,21 +293,6 @@ export function WalletClient() {
     } catch {
       // status already set in hook
     }
-  };
-
-  const addManagedWallet = () => {
-    if (!newWallet.address) return;
-    const entry: ManagedWallet = { id: `${Date.now()}`, ...newWallet };
-    setManagedWallets((prev) => [entry, ...prev]);
-    setNewWallet({ address: '', label: '', chain: newWallet.chain, role: newWallet.role });
-  };
-
-  const removeManagedWallet = (id: string) => setManagedWallets((prev) => prev.filter((w) => w.id !== id));
-
-  const applyManagedWallet = (mw: ManagedWallet) => {
-    setTo(mw.address);
-    setBridgeRecipient(mw.address);
-    switchChain(mw.chain as 'l1' | 'l2' | 'l3').catch(() => undefined);
   };
 
   return (
@@ -194,6 +345,90 @@ export function WalletClient() {
                 If provided, sends/bridges/swaps use backend signing over RPC. Leave blank to use injected wallet.
               </span>
             </div>
+          </div>
+        </Card>
+        <Card title="Token import & balances" subtitle="ERC-20/721/1155 discovery">
+          <div className="stack" style={{ gap: 10 }}>
+            <div className="inline-form" style={{ gap: 8 }}>
+              <span className="muted">Wallet</span>
+              <select className="select" value={selectedWalletId} onChange={(e) => setSelectedWalletId(e.target.value)}>
+                <option value="">Select wallet</option>
+                {tokensInv.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.label} · {w.address.slice(0, 8)}… · {chainLabels[w.chainId] || w.chainId}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid-3">
+              <input className="input" placeholder="Token contract address" value={tokenForm.address} onChange={(e) => setTokenForm((f) => ({ ...f, address: e.target.value }))} />
+              <select className="select" value={tokenForm.chainId} onChange={(e) => setTokenForm((f) => ({ ...f, chainId: e.target.value }))}>
+                <option value="l1">L1</option>
+                <option value="l2">L2</option>
+                <option value="l3">L3</option>
+              </select>
+              <select className="select" value={tokenForm.type} onChange={(e) => setTokenForm((f) => ({ ...f, type: e.target.value as TokenRecord['type'] }))}>
+                <option value="erc20">ERC-20</option>
+                <option value="erc721">ERC-721</option>
+                <option value="erc1155">ERC-1155</option>
+              </select>
+            </div>
+            <input className="input" placeholder="RPC (optional, for metadata)" value={tokenForm.rpc || ''} onChange={(e) => setTokenForm((f) => ({ ...f, rpc: e.target.value }))} />
+            <div className="inline-form" style={{ gap: 8 }}>
+              <Button onClick={importToken} disabled={!selectedWalletId}>
+                Import token
+              </Button>
+              {tokenStatus && <span className="muted">{tokenStatus}</span>}
+            </div>
+            <div className="stack" style={{ gap: 6 }}>
+              {!tokenList.length && <span className="muted">No imported tokens yet.</span>}
+              {tokenList.map((t) => (
+                <div key={t.id} className="spread" style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px' }}>
+                  <div className="stack" style={{ gap: 2 }}>
+                    <strong>{t.symbol}</strong>
+                    <span className="muted" style={{ fontSize: 12 }}>
+                      {t.name} · {t.address.slice(0, 8)}… · {t.type}
+                    </span>
+                  </div>
+                  <div className="inline-form" style={{ gap: 6 }}>
+                    <Badge tone="default">{chainLabels[t.chainId] || t.chainId}</Badge>
+                    <Badge tone="default">{t.type}</Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+        <Card title="Cross-layer bridge planner" subtitle="Plan L1 ↔ L2 ↔ L3 flows">
+          <div className="stack">
+            <div className="grid-3">
+              <label className="stack">
+                <span className="muted">From chain</span>
+                <select className="select" value={chain} onChange={(e) => switchChain(e.target.value as typeof chain)}>
+                  <option value="l1">L1</option>
+                  <option value="l2">L2</option>
+                  <option value="l3">L3</option>
+                </select>
+              </label>
+              <label className="stack">
+                <span className="muted">To chain</span>
+                <select className="select" value={chain === 'l3' ? 'l2' : chain === 'l2' ? 'l1' : 'l2'} readOnly>
+                  <option value="l1">L1</option>
+                  <option value="l2">L2</option>
+                  <option value="l3">L3</option>
+                </select>
+              </label>
+              <label className="stack">
+                <span className="muted">Amount</span>
+                <input className="input" value={bridgeAmount} onChange={(e) => setBridgeAmount(e.target.value)} />
+              </label>
+            </div>
+            <div className="muted" style={{ fontSize: 12 }}>
+              Bridge planner uses current chain as source; destination auto-steps down/up the stack for staged messaging. Use main bridge action for actual submit.
+            </div>
+            <Button variant="secondary" onClick={() => setBridgeStatus(`Planned route ${chain.toUpperCase()} → ${chain === 'l3' ? 'L2' : chain === 'l2' ? 'L1' : 'L2'} for ${bridgeAmount}`)}>
+              Simulate plan
+            </Button>
           </div>
         </Card>
         <Card title="Send" subtitle="Simple transfer">
@@ -259,63 +494,93 @@ export function WalletClient() {
             )}
           </div>
         </Card>
-        <Card title="Wallet management" subtitle="Track L1/L2/L3 destinations">
-          <div className="stack">
-            <div className="inline-form" style={{ gap: 8 }}>
-              <input
-                className="input"
-                placeholder="Address 0x..."
-                value={newWallet.address}
-                onChange={(e) => setNewWallet((w) => ({ ...w, address: e.target.value }))}
-              />
-              <input
-                className="input"
-                placeholder="Label (treasury, ops...)"
-                value={newWallet.label}
-                onChange={(e) => setNewWallet((w) => ({ ...w, label: e.target.value }))}
-              />
+        <Card title="Wallet management" subtitle="API-backed registry (watch + custodial)">
+          <div className="stack" style={{ gap: 12 }}>
+            <div className="grid-3">
+              <div className="stack">
+                <span className="muted">Add watch-only</span>
+                <input className="input" placeholder="Label" value={watchForm.label} onChange={(e) => setWatchForm((f) => ({ ...f, label: e.target.value }))} />
+                <input className="input" placeholder="Address 0x..." value={watchForm.address} onChange={(e) => setWatchForm((f) => ({ ...f, address: e.target.value }))} />
+                <div className="inline-form" style={{ gap: 8 }}>
+                  <select className="select" value={watchForm.chainId} onChange={(e) => setWatchForm((f) => ({ ...f, chainId: e.target.value }))}>
+                    <option value="l1">L1</option>
+                    <option value="l2">L2</option>
+                    <option value="l3">L3</option>
+                  </select>
+                  <input className="input" placeholder="Owner user id (optional)" value={watchForm.ownerUserId} onChange={(e) => setWatchForm((f) => ({ ...f, ownerUserId: e.target.value }))} />
+                </div>
+                <Button variant="secondary" onClick={createWatchWallet}>
+                  Save watch wallet
+                </Button>
+              </div>
+              <div className="stack">
+                <span className="muted">Create custodial (key returns once)</span>
+                <input className="input" placeholder="Label" value={custodialForm.label} onChange={(e) => setCustodialForm((f) => ({ ...f, label: e.target.value }))} />
+                <div className="inline-form" style={{ gap: 8 }}>
+                  <select className="select" value={custodialForm.chainId} onChange={(e) => setCustodialForm((f) => ({ ...f, chainId: e.target.value }))}>
+                    <option value="l1">L1</option>
+                    <option value="l2">L2</option>
+                    <option value="l3">L3</option>
+                  </select>
+                  <input className="input" placeholder="Owner user id (optional)" value={custodialForm.ownerUserId} onChange={(e) => setCustodialForm((f) => ({ ...f, ownerUserId: e.target.value }))} />
+                </div>
+                <Button onClick={createCustodialWallet}>Create custodial</Button>
+                {exportedKey && (
+                  <div className="stack" style={{ gap: 4 }}>
+                    <span className="muted" style={{ fontSize: 12 }}>
+                      Exported key (copy once; not stored server-side)
+                    </span>
+                    <input className="input" value={exportedKey} readOnly />
+                  </div>
+                )}
+              </div>
+              <div className="stack">
+                <span className="muted">Status</span>
+                <div className="pill" style={{ justifyContent: 'space-between' }}>
+                  <span>Inventory</span>
+                  <span>{inventory.length} wallets</span>
+                </div>
+                {inventoryStatus && <span className="muted">{inventoryStatus}</span>}
+              </div>
             </div>
-            <div className="inline-form" style={{ gap: 8 }}>
-              <select className="select" value={newWallet.chain} onChange={(e) => setNewWallet((w) => ({ ...w, chain: e.target.value as 'l1' | 'l2' | 'l3' }))}>
-                <option value="l1">L1</option>
-                <option value="l2">L2</option>
-                <option value="l3">L3</option>
-              </select>
-              <input
-                className="input"
-                placeholder="Role (operator, treasury...)"
-                value={newWallet.role}
-                onChange={(e) => setNewWallet((w) => ({ ...w, role: e.target.value }))}
-              />
-              <Button onClick={addManagedWallet} variant="secondary">
-                Add
-              </Button>
-            </div>
-            {!managedWallets.length && <span className="muted">No saved wallets yet.</span>}
-            {managedWallets.length > 0 && (
-              <div className="stack" style={{ gap: 6 }}>
-                {managedWallets.map((w) => (
-                  <div key={w.id} className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div className="stack" style={{ gap: 2 }}>
-                      <span style={{ fontWeight: 700 }}>{w.label || w.address.slice(0, 10)}</span>
-                      <span className="muted">{w.address}</span>
-                      <div className="inline-form" style={{ gap: 6, fontSize: 12 }}>
-                        <Badge tone="default">{w.chain.toUpperCase()}</Badge>
-                        <span className="muted">{w.role}</span>
-                      </div>
+            <div className="stack" style={{ gap: 8 }}>
+              {!inventory.length && <span className="muted">No managed wallets yet.</span>}
+              {inventory.map((w) => (
+                <div
+                  key={w.id}
+                  className="spread"
+                  style={{ padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 12, background: 'rgba(255,255,255,0.03)' }}
+                >
+                  <div className="stack" style={{ gap: 4 }}>
+                    <strong>{w.label}</strong>
+                    <span className="muted" style={{ fontSize: 12 }}>
+                      {w.address}
+                    </span>
+                    <div className="inline-form" style={{ gap: 6, fontSize: 12 }}>
+                      <Badge tone="default">{chainLabels[w.chainId] || w.chainId}</Badge>
+                      <Badge tone="default">{w.type}</Badge>
+                      {w.keyPreview && <Badge tone="default">key {w.keyPreview}</Badge>}
+                      {w.status && <Badge tone="default">{w.status}</Badge>}
                     </div>
-                    <div className="row" style={{ gap: 6 }}>
+                  </div>
+                  <div className="stack" style={{ alignItems: 'flex-end', gap: 6 }}>
+                    <div className="inline-form" style={{ gap: 6 }}>
                       <Button variant="secondary" onClick={() => applyManagedWallet(w)}>
                         Use
                       </Button>
-                      <Button variant="secondary" onClick={() => removeManagedWallet(w.id)}>
-                        Remove
+                      {w.type === 'custodial' && (
+                        <Button variant="secondary" onClick={() => rotateManagedWallet(w.id)}>
+                          Rotate key
+                        </Button>
+                      )}
+                      <Button variant="secondary" onClick={() => revokeWallet(w.id)}>
+                        Revoke
                       </Button>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
+              ))}
+            </div>
           </div>
         </Card>
         <Card title="Swap (passthrough demo)" subtitle="Token transfer via API">

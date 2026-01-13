@@ -13,7 +13,10 @@
       "@ghostl/types": ["packages/types/index.ts"],
       "@ghostl/types/*": ["packages/types/*"],
       "@ghostl/ui": ["packages/ui/src/index.ts"],
-      "@ghostl/ui/*": ["packages/ui/src/*"]
+      "@ghostl/ui/*": ["packages/ui/src/*"],
+      "@ghostl/sdk": ["packages/sdk/src/index.ts"],
+      "@ghostl/config": ["packages/config/index.ts"],
+      "@ghostl/config/*": ["packages/config/*"]
     }
   }
 }
