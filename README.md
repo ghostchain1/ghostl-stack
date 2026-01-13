@@ -9,6 +9,31 @@ Brings up:
 - Prometheus on :9090
 - Grafana on :3000 (admin/admin)
 
+## Repo layout
+- `apps/api`: Express API that fronts the service stubs.
+- `apps/web`: Next.js dashboard (App Router) that talks to `apps/api`.
+- `apps/worker`: background jobs/indexers/alerts scaffold.
+- `packages/types`, `packages/ui`: shared contracts and UI primitives.
+- `packages/sdk`: chain ops helper library (RPC/health/ops).
+- `packages/config`: shared config/schema presets placeholder.
+- `services/`: service stubs grouped by domain (see `services/README.md`).
+- `infra/`: docker/devcontainer scripts, OP Stack infra, and helper scripts.
+- `contracts/`: Solidity + Foundry artifacts.
+- `chains/`: Polygon Edge chain configs (data dirs are ignored).
+- `docs/`: architecture notes, deployment guides, and checklists (see `docs/README.md`).
+- `core-service/`, `dashboard/`: supporting Go service and command dashboard.
+
+## Docs & checklists
+- Docs index: `docs/README.md`
+- Dev + VS Code checklists: `docs/checklists/README.md`
+- Full-stack blueprint: `docs/ghostchain-management.md`
+- L3-on-L2 deployment checklist: `docs/opstack-l3-testnet-deployment-checklist.md`
+
+## Environment
+- API: copy `apps/api/.env.example` to `apps/api/.env.local` (aligns with `apps/api/src/config/env.ts`).
+- Web: copy `apps/web/.env.example` to `apps/web/.env.local`.
+- OP Stack scripts still expect `infra/opstack/.env` and `infra/opstack/.env.l3` (see shortcuts below).
+
 ## OP Stack L3-on-L2 Testnet Checklist
 
 Use the battle-tested deployment checklist (with preflight script) for GhostLayer3 → GhostLayer2 → GhostLayer1:
