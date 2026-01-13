@@ -11,6 +11,22 @@ services:
     ports:
       - "7644:7644"
 
+  ai-clock-sync:
+    build:
+      context: ./ai-clock-sync
+    image: ghostl/ai-clock-sync:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7690
+      - CLOCK_SYNC_RPC_L1
+      - CLOCK_SYNC_RPC_L2
+      - CLOCK_SYNC_RPC_L3
+      - CLOCK_SYNC_INTERVAL_MS
+      - CLOCK_SYNC_DRIFT_THRESHOLD_SEC
+    ports:
+      - "7690:7690"
+
   contract-registry-service:
     build:
       context: ./contract-registry-service
