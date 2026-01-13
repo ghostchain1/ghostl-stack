@@ -1,0 +1,10 @@
+{
+  "name": "ai-clock-sync",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Clock drift monitor for Ghostchain L1, Ghost L2, and Ghost L3",
+  "main": "index.js",
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {}
+}
