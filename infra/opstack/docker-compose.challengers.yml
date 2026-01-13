@@ -30,7 +30,7 @@ services:
       OP_CHALLENGER_L1_ETH_RPC: ${L1_RPC:-http://l1:8545}
       OP_CHALLENGER_ROLLUP_RPC: http://op-node:9546
       OP_CHALLENGER_L2_ETH_RPC: http://l2-geth:8545
-      OP_CHALLENGER_GAME_FACTORY_ADDRESS: ${L2_GAME_FACTORY_ADDRESS:-0xa79c78bcb7c9a77f962638cee8f80f39a91f2dc3}
+      OP_CHALLENGER_GAME_FACTORY_ADDRESS: ${L2_GAME_FACTORY_ADDRESS:-0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9}
       OP_CHALLENGER_PRIVATE_KEY: ${CHALLENGER_KEY:-}
       OP_CHALLENGER_DATADIR: /data
       OP_CHALLENGER_L1_BEACON: ${L1_BEACON_RPC:-${L1_RPC:-http://l1:8545}}
@@ -48,7 +48,7 @@ services:
       - --l1-eth-rpc=${L1_RPC:-http://l1:8545}
       - --rollup-rpc=http://op-node:9546
       - --l2-eth-rpc=http://l2-geth:8545
-      - --game-factory-address=${L2_GAME_FACTORY_ADDRESS:-0xa79c78bcb7c9a77f962638cee8f80f39a91f2dc3}
+      - --game-factory-address=${L2_GAME_FACTORY_ADDRESS:-0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9}
       - --datadir=/data
       - --private-key=${CHALLENGER_KEY:-}
       - --trace-type=${L2_CHALLENGER_TRACE_TYPE:-cannon}
@@ -82,7 +82,7 @@ services:
       OP_CHALLENGER_L1_ETH_RPC: ${L3_L1_RPC:-http://l2-geth:8545}
       OP_CHALLENGER_ROLLUP_RPC: http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}
       OP_CHALLENGER_L2_ETH_RPC: http://l3-geth:8545
-      OP_CHALLENGER_GAME_FACTORY_ADDRESS: ${L3_GAME_FACTORY_ADDRESS:-0x5FbDB2315678afecb367f032d93F642f64180aa3}
+      OP_CHALLENGER_GAME_FACTORY_ADDRESS: ${L3_GAME_FACTORY_ADDRESS:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}
       OP_CHALLENGER_PRIVATE_KEY: ${L3_CHALLENGER_KEY:-${CHALLENGER_KEY:-}}
       OP_CHALLENGER_DATADIR: /data
       OP_CHALLENGER_L1_BEACON: ${L3_L1_BEACON_RPC:-${L3_L1_RPC:-http://l2-geth:8545}}
@@ -100,7 +100,7 @@ services:
       - --l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}
       - --rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}
       - --l2-eth-rpc=http://l3-geth:8545
-      - --game-factory-address=${L3_GAME_FACTORY_ADDRESS:-0x5FbDB2315678afecb367f032d93F642f64180aa3}
+      - --game-factory-address=${L3_GAME_FACTORY_ADDRESS:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}
       - --datadir=/data
       - --private-key=${L3_CHALLENGER_KEY:-${CHALLENGER_KEY:-}}
       - --trace-type=${L3_CHALLENGER_TRACE_TYPE:-cannon}

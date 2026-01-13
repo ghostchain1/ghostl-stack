@@ -157,7 +157,7 @@ services:
       - op-proposer
       - --l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}
       - --rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}
-      - --game-factory-address=${L3_GAME_FACTORY_ADDRESS:-0x5FbDB2315678afecb367f032d93F642f64180aa3}
+      - --game-factory-address=${L3_GAME_FACTORY_ADDRESS:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}
       - --proposal-interval=30s
       - --game-type=0
       - --private-key=${L3_PROPOSER_KEY:-${PROPOSER_KEY}}
