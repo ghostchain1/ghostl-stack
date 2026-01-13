@@ -13,3 +13,5 @@ export * from './observability';
 export * from './devops';
 export * from './governance';
 export * from './integrations';
+export * from './wallets';
+export * from './tokens';

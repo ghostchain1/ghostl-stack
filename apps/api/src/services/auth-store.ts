@@ -28,7 +28,8 @@ const defaultRoles: Role[] = [
       'devops:read',
       'governance:read',
       'validator:read',
-      'ai:read'
+      'ai:read',
+      'wallets:read'
     ]
   },
   {
@@ -48,7 +49,9 @@ const defaultRoles: Role[] = [
       'devops:write',
       'governance:write',
       'validator:write',
-      'ai:write'
+      'ai:write',
+      'wallets:read',
+      'wallets:write'
     ]
   }
 ];

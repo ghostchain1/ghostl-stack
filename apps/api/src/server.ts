@@ -33,6 +33,10 @@ import { env } from './config/env';
 import { requirePermission } from './lib/rbac';
 import type { NotificationChannel } from './modules/observability/services';
 import { buildDevopsRouter } from './modules/devops/router';
+import { buildWalletAdminRouter } from './modules/wallet-admin/router';
+import { createWalletService } from './services/wallet-store';
+import { createTokenService } from './services/token-store';
+import { buildTokenRouter } from './modules/token/router';
 import './types/express';
 // Load environment variables from local env file when running locally
 loadEnv({ path: path.join(process.cwd(), 'apps/api/.env.local') });
@@ -167,6 +171,8 @@ const guard = guardUrl ? new GuardClient(guardUrl, env.GUARD_ADMIN_TOKEN) : unde
 const alertmanager = alertmanagerUrl ? new AlertmanagerClient(alertmanagerUrl) : undefined;
 const liveServices = createLiveServices({ prometheus, grafana, relayer, loki, guard, alertmanager });
 const identityServicesPromise = createPersistentIdentityServices();
+const walletServicePromise = createWalletService();
+const tokenServicePromise = createTokenService();
 let auditLogService: { append: (entry: { actorId: string; action: string; resource: string; meta?: Record<string, unknown> }) => Promise<unknown> } | undefined;
 
 const proxyJson = async <T>(url: string, fallback?: T): Promise<T> => {
@@ -566,8 +572,10 @@ app.use(
   })
 );
 
-identityServicesPromise.then((identity) => {
+identityServicesPromise.then(async (identity) => {
   auditLogService = identity.auditLogService;
+  const walletService = await walletServicePromise;
+  const tokenService = await tokenServicePromise;
   app.use(['/v1', '/'], buildIdentityAccessRouter(identity));
   const observabilityGuard = env.PUBLIC_OBSERVABILITY ? allowAll : requirePermission('observability:read');
   app.use(
@@ -587,6 +595,8 @@ identityServicesPromise.then((identity) => {
       alertProxy: alertmanager ? (payload: AlertmanagerAlert) => alertmanager.send(payload) : undefined
     })
   );
+  app.use(['/v1/wallets', '/wallets'], buildWalletAdminRouter(walletService));
+  app.use(['/v1', '/'], buildTokenRouter(tokenService, walletService));
 });
 
 const rpcUrls = {
