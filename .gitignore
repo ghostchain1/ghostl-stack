@@ -58,3 +58,19 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 *.tsbuildinfo
+
+# secrets / keys / certs
+*.pem
+*.key
+*.crt
+*.cer
+*.pfx
+*.p12
+*.jks
+*.keystore
+*keystore*
+*.enc
+.certs/
+.secrets/
+secrets/
+certs/
