@@ -37,6 +37,7 @@ import { buildWalletAdminRouter } from './modules/wallet-admin/router';
 import { createWalletService } from './services/wallet-store';
 import { createTokenService } from './services/token-store';
 import { buildTokenRouter } from './modules/token/router';
+import { buildGhostchainRouter } from './modules/ghostchain/router';
 import './types/express';
 // Load environment variables from local env file when running locally
 loadEnv({ path: path.join(process.cwd(), 'apps/api/.env.local') });
@@ -208,6 +209,11 @@ const servicesBase = {
   explorerRpc: env.EXPLORER_RPC_URL || env.RPC_L2 || 'http://localhost:29545',
   swap: env.SWAP_SERVICE_URL
 };
+const ghostchainConfig = [
+  { id: 'l1' as const, label: 'GhostChain L1', rpc: env.RPC_L1 || 'http://localhost:18545' },
+  { id: 'l2' as const, label: 'GhostLayer2', rpc: env.RPC_L2 || servicesBase.explorerRpc },
+  { id: 'l3' as const, label: 'GhostLayer3', rpc: env.RPC_L3 || 'http://localhost:39545' }
+];
 const contractMetadata = {
   upgradeabilityQuery: env.CONTRACT_UPGRADEABILITY_QUERY || 'op_contract_upgradeability',
   pauseQuery: env.CONTRACT_PAUSE_QUERY || 'op_contract_paused'
@@ -577,6 +583,7 @@ identityServicesPromise.then(async (identity) => {
   const walletService = await walletServicePromise;
   const tokenService = await tokenServicePromise;
   app.use(['/v1', '/'], buildIdentityAccessRouter(identity));
+  app.use(['/v1', '/'], buildGhostchainRouter(ghostchainConfig));
   const observabilityGuard = env.PUBLIC_OBSERVABILITY ? allowAll : requirePermission('observability:read');
   app.use(
     ['/v1/observability', '/observability'],
@@ -1464,8 +1471,37 @@ app.get(['/v1/compliance/reports/:id/export', '/compliance/reports/:id/export'],
 const validatorGuard = env.PUBLIC_VALIDATORS ? allowAll : requirePermission('validator:read');
 const explorerGuard = env.PUBLIC_EXPLORER ? allowAll : requirePermission('explorer:read');
 
+const ghostValidatorFallback = async () => {
+  const items: Array<{ id: string; address: string; status: string; stake: string; commission: number; power: number }> = [];
+  for (const chain of ghostchainConfig) {
+    try {
+      const provider = new JsonRpcProvider(chain.rpc);
+      const block = await provider.getBlockNumber();
+      items.push({
+        id: `${chain.id}-validator`,
+        address: `ghost-${chain.id}`,
+        status: 'active',
+        stake: 'N/A',
+        commission: 0,
+        power: block
+      });
+    } catch {
+      items.push({
+        id: `${chain.id}-validator`,
+        address: `ghost-${chain.id}`,
+        status: 'unknown',
+        stake: 'N/A',
+        commission: 0,
+        power: 0
+      });
+    }
+  }
+  return items;
+};
+
 app.get(['/v1/api/validators', '/api/validators'], validatorGuard, async (_req, res) => {
-  const data = await proxyJson<{ validators?: unknown[] }>(`${servicesBase.validators}/validators`, { validators: [] });
+  const fallback = { validators: await ghostValidatorFallback() };
+  const data = await proxyJson<{ validators?: unknown[] }>(`${servicesBase.validators}/validators`, fallback);
   res.json(data);
 });
 

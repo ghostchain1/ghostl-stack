@@ -1,0 +1,674 @@
+services:
+  alerts-service:
+    build:
+      context: ./alerts-service
+    image: ghostl/alerts-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7644
+      - PROM_URL=${PROM_URL}
+    ports:
+      - "7644:7644"
+
+  contract-registry-service:
+    build:
+      context: ./contract-registry-service
+    image: ghostl/contract-registry-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7608
+      - PROM_URL=${PROM_URL}
+      - RPC_L2=${RPC_L2}
+      - RPC_L3=${RPC_L3}
+    ports:
+      - "7608:7608"
+
+  contract-risk-service:
+    build:
+      context: ./contract-risk-service
+    image: ghostl/contract-risk-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7609
+      - PROM_URL=${PROM_URL}
+    ports:
+      - "7609:7609"
+
+  dispute-service:
+    build:
+      context: ./dispute-service
+    image: ghostl/dispute-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7607
+      - PROM_URL=${PROM_URL}
+    ports:
+      - "7607:7607"
+
+  transfer-lifecycle-service:
+    build:
+      context: ./transfer-lifecycle-service
+    image: ghostl/transfer-lifecycle-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7605
+      - PROM_URL=${PROM_URL}
+    ports:
+      - "7605:7605"
+
+  tx-index-service:
+    build:
+      context: ./tx-index-service
+    image: ghostl/tx-index-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7625
+      - PROM_URL=${PROM_URL}
+    ports:
+      - "7625:7625"
+
+  entity-tagging-service:
+    build:
+      context: ./entity-tagging-service
+    image: ghostl/entity-tagging-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7627
+    ports:
+      - "7627:7627"
+
+  key-rotation-service:
+    build:
+      context: ./key-rotation-service
+    image: ghostl/key-rotation-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7619
+      - PROM_URL=${PROM_URL}
+    ports:
+      - "7619:7619"
+
+  bridge-service:
+    build:
+      context: ./bridge-service
+    image: ghostl/bridge-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7604
+      - PROM_URL=${PROM_URL}
+      - ADMIN_TOKEN=${BRIDGE_ADMIN_TOKEN}
+      - INCIDENTS_FILE=/data/bridge-incidents.json
+    ports:
+      - "7604:7604"
+    volumes:
+      - ./data:/data
+
+  ghost-guard:
+    build:
+      context: ./ghost-guard
+    image: ghostl/ghost-guard:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7070
+      - RPC_L2=${RPC_L2}
+      - BRIDGE_L2L3_ADDRESS=${BRIDGE_L2L3_ADDRESS}
+      - GUARD_POLICY_ADDRESS=${GUARD_POLICY_ADDRESS}
+      - ADMIN_TOKEN=${BRIDGE_ADMIN_TOKEN}
+      - STATE_DIR=/state
+      - ALLOW_INSECURE_ADMIN=1
+    volumes:
+      - ./data:/state
+    ports:
+      - "7070:7070"
+
+  ghost-relayer:
+    build:
+      context: ./ghost-relayer
+    image: ghostl/ghost-relayer:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7171
+      - RPC_L1=${RPC_L1}
+      - RPC_L2=${RPC_L2}
+      - RPC_L3=${RPC_L3}
+      - BRIDGE_L2L3_ADDRESS=${BRIDGE_L2L3_ADDRESS}
+      - L1_ROLLUP_L2_ADDRESS=${L1_ROLLUP_L2_ADDRESS}
+      - L2_ROLLUP_L3_ADDRESS=${L2_ROLLUP_L3_ADDRESS}
+      - L3_INBOX_ADDRESS=${L3_INBOX_ADDRESS}
+      - L3_TOKEN_FACTORY_ADDRESS=${L3_TOKEN_FACTORY_ADDRESS}
+      - RELAYER_PRIVATE_KEY=${RELAYER_PRIVATE_KEY}
+      - L2_RELAYER_PRIVATE_KEY=${L2_RELAYER_PRIVATE_KEY}
+      - STATE_DIR=/state
+    volumes:
+      - ./data:/state
+    ports:
+      - "7171:7171"
+
+  validator-service:
+    build:
+      context: ./validator-service
+    image: ghostl/validator-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7600
+      - PROM_URL=${PROM_URL}
+      - RPC_L2=${RPC_L2}
+      - RPC_L3=${RPC_L3}
+    ports:
+      - "7600:7600"
+
+  node-health-service:
+    build:
+      context: ./node-health-service
+    image: ghostl/node-health-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7613
+      - RPC_L2=${RPC_L2}
+      - RPC_L3=${RPC_L3}
+    ports:
+      - "7613:7613"
+
+  mempool-service:
+    build:
+      context: ./mempool-service
+    image: ghostl/mempool-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7610
+      - PROM_URL=${PROM_URL}
+    ports:
+      - "7610:7610"
+
+  node-inventory-service:
+    build:
+      context: ./node-inventory-service
+    image: ghostl/node-inventory-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7622
+    ports:
+      - "7622:7622"
+
+  notifications-service:
+    build:
+      context: ./notifications-service
+    image: ghostl/notifications-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7638
+    ports:
+      - "7638:7638"
+
+  global-search-service:
+    build:
+      context: ./global-search-service
+    image: ghostl/global-search-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7637
+    ports:
+      - "7637:7637"
+
+  feature-flags-service:
+    build:
+      context: ./feature-flags-service
+    image: ghostl/feature-flags-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7611
+      - FEATURE_FLAGS=${FEATURE_FLAGS}
+    ports:
+      - "7611:7611"
+
+  theme-service:
+    build:
+      context: ./theme-service
+    image: ghostl/theme-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7634
+      - UI_THEME=${UI_THEME}
+    ports:
+      - "7634:7634"
+
+  governance-service:
+    build:
+      context: ./governance-service
+    image: ghostl/governance-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7645
+    ports:
+      - "7645:7645"
+
+  compliance-export-service:
+    build:
+      context: ./compliance-export-service
+    image: ghostl/compliance-export-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7621
+    ports:
+      - "7621:7621"
+
+  chain-status-service:
+    build:
+      context: ./chain-status-service
+    image: ghostl/chain-status-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7612
+      - RPC_L2=${RPC_L2}
+      - RPC_L3=${RPC_L3}
+    ports:
+      - "7612:7612"
+
+  network-context-service:
+    build:
+      context: ./network-context-service
+    image: ghostl/network-context-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7633
+      - RPC_L2=${RPC_L2}
+      - RPC_L3=${RPC_L3}
+      - NET_ENV=${NET_ENV}
+    ports:
+      - "7633:7633"
+
+  consensus-telemetry-service:
+    build:
+      context: ./consensus-telemetry-service
+    image: ghostl/consensus-telemetry-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7635
+      - RPC_L2=${RPC_L2}
+      - RPC_L3=${RPC_L3}
+    ports:
+      - "7635:7635"
+
+  peer-graph-service:
+    build:
+      context: ./peer-graph-service
+    image: ghostl/peer-graph-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7636
+      - RPC_L2=${RPC_L2}
+      - RPC_L3=${RPC_L3}
+    ports:
+      - "7636:7636"
+
+  ghost-rollup-proposer:
+    build:
+      context: ./ghost-rollup-proposer
+    image: ghostl/ghost-rollup-proposer:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7272
+      - RPC_SETTLEMENT=${RPC_L2}
+      - RPC_CHILD=${RPC_L3}
+      - ROLLUP_ADDRESS=${L2_ROLLUP_L3_ADDRESS}
+      - PROPOSER_PRIVATE_KEY=${PROPOSER_PRIVATE_KEY}
+      - STATE_DIR=/state
+    volumes:
+      - ./data:/state
+    ports:
+      - "7272:7272"
+
+  ghost-rollup-challenger:
+    build:
+      context: ./ghost-rollup-challenger
+    image: ghostl/ghost-rollup-challenger:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7282
+      - RPC_SETTLEMENT=${RPC_L2}
+      - RPC_CHILD=${RPC_L3}
+      - ROLLUP_ADDRESS=${L2_ROLLUP_L3_ADDRESS}
+      - CHALLENGER_PRIVATE_KEY=${CHALLENGER_PRIVATE_KEY}
+      - STATE_DIR=/state
+    volumes:
+      - ./data:/state
+    ports:
+      - "7282:7282"
+
+  rewards-service:
+    build:
+      context: ./rewards-service
+    image: ghostl/rewards-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7602
+      - PROM_URL=${PROM_URL}
+    ports:
+      - "7602:7602"
+
+  staking-service:
+    build:
+      context: ./staking-service
+    image: ghostl/staking-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7601
+      - PROM_URL=${PROM_URL}
+    ports:
+      - "7601:7601"
+
+  fee-model-service:
+    build:
+      context: ./fee-model-service
+    image: ghostl/fee-model-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7615
+      - PROM_URL=${PROM_URL}
+    ports:
+      - "7615:7615"
+
+  supply-service:
+    build:
+      context: ./supply-service
+    image: ghostl/supply-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7614
+      - PROM_URL=${PROM_URL}
+    ports:
+      - "7614:7614"
+
+  participation-service:
+    build:
+      context: ./participation-service
+    image: ghostl/participation-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7603
+      - PROM_URL=${PROM_URL}
+    ports:
+      - "7603:7603"
+
+  liquidity-service:
+    build:
+      context: ./liquidity-service
+    image: ghostl/liquidity-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7606
+      - PROM_URL=${PROM_URL}
+      - RPC_L2=${RPC_L2}
+      - RPC_L3=${RPC_L3}
+      - BRIDGE_ADDRESS=${BRIDGE_ADDRESS}
+      - L2_TOKEN_ADDRESS=${L2_TOKEN_ADDRESS}
+      - L3_TOKEN_ADDRESS=${L3_TOKEN_ADDRESS}
+    ports:
+      - "7606:7606"
+
+  treasury-service:
+    build:
+      context: ./treasury-service
+    image: ghostl/treasury-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7628
+      - PROM_URL=${PROM_URL}
+      - EXECUTION_APPROVAL_TOKEN=${EXECUTION_APPROVAL_TOKEN}
+      - TREASURY_STATE_FILE=/data/treasury-proposals.json
+    volumes:
+      - ./data:/data
+    ports:
+      - "7628:7628"
+
+  auth-service:
+    build:
+      context: ./auth-service
+    image: ghostl/auth-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7639
+    ports:
+      - "7639:7639"
+
+  session-service:
+    build:
+      context: ./session-service
+    image: ghostl/session-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7643
+    ports:
+      - "7643:7643"
+
+  rbac-service:
+    build:
+      context: ./rbac-service
+    image: ghostl/rbac-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7640
+    ports:
+      - "7640:7640"
+
+  command-palette-service:
+    build:
+      context: ./command-palette-service
+    image: ghostl/command-palette-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7642
+    ports:
+      - "7642:7642"
+
+  ai-monitor:
+    build:
+      context: ./ai-monitor
+    image: ghostl/ai-monitor:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7575
+      - RPC_L2=${RPC_L2}
+      - GUARD_URL=${GUARD_URL}
+      - ADMIN_TOKEN=${BRIDGE_ADMIN_TOKEN}
+      - OBSERVE_ONLY=1
+    ports:
+      - "7575:7575"
+
+  anomaly-detection-service:
+    build:
+      context: ./anomaly-detection-service
+    image: ghostl/anomaly-detection-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7616
+      - PROM_URL=${PROM_URL}
+    ports:
+      - "7616:7616"
+
+  explainability-service:
+    build:
+      context: ./explainability-service
+    image: ghostl/explainability-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7632
+      - PROM_URL=${PROM_URL}
+    ports:
+      - "7632:7632"
+
+  forecasting-service:
+    build:
+      context: ./forecasting-service
+    image: ghostl/forecasting-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7617
+      - PROM_URL=${PROM_URL}
+    ports:
+      - "7617:7617"
+
+  ghost-rpc-proxy:
+    build:
+      context: ./ghost-rpc-proxy
+    image: ghostl/ghost-rpc-proxy:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=8546
+      - UPSTREAM_URL=${UPSTREAM_URL}
+      - LOG_REQUESTS=${LOG_REQUESTS}
+    ports:
+      - "8546:8546"
+
+  payout-service:
+    build:
+      context: ./payout-service
+    image: ghostl/payout-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7629
+    ports:
+      - "7629:7629"
+
+  proxy-inspector-service:
+    build:
+      context: ./proxy-inspector-service
+    image: ghostl/proxy-inspector-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7631
+      - PROM_URL=${PROM_URL}
+    ports:
+      - "7631:7631"
+
+  verification-service:
+    build:
+      context: ./verification-service
+    image: ghostl/verification-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7630
+    ports:
+      - "7630:7630"
+
+  secrets-health-service:
+    build:
+      context: ./secrets-health-service
+    image: ghostl/secrets-health-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7618
+      - PROM_URL=${PROM_URL}
+    ports:
+      - "7618:7618"
+
+  slashing-detection-service:
+    build:
+      context: ./slashing-detection-service
+    image: ghostl/slashing-detection-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7620
+      - PROM_URL=${PROM_URL}
+    ports:
+      - "7620:7620"
+
+  snapshot-service:
+    build:
+      context: ./snapshot-service
+    image: ghostl/snapshot-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7624
+    ports:
+      - "7624:7624"
+
+  upgrade-orchestrator-service:
+    build:
+      context: ./upgrade-orchestrator-service
+    image: ghostl/upgrade-orchestrator-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7623
+    ports:
+      - "7623:7623"
+
+  audit-log-service:
+    build:
+      context: ./audit-log-service
+    image: ghostl/audit-log-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7641
+      - AUDIT_LOG_PATH=/data/audit.log
+    volumes:
+      - ./data:/data
+    ports:
+      - "7641:7641"
+
+  block-index-service:
+    build:
+      context: ./block-index-service
+    image: ghostl/block-index-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7626
+      - PROM_URL=${PROM_URL}
+    ports:
+      - "7626:7626"
+
+networks:
+  default:
+    name: ghostl-services
