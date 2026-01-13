@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 
-export type SessionUser = { email?: string; roles?: string[]; permissions?: string[] };
+export type SessionUser = { id?: string; email?: string; roles?: string[]; permissions?: string[] };
 export type SessionState = {
   user?: SessionUser;
   loading: boolean;
@@ -20,7 +20,10 @@ export function SessionProvider({ children, initial }: { children: React.ReactNo
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/auth/session`, { credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
-          setState({ user: { email: data.user?.email, roles: data.roles, permissions: data.permissions }, loading: false });
+          setState({
+            user: { id: data.user?.id, email: data.user?.email, roles: data.roles, permissions: data.permissions },
+            loading: false
+          });
           return;
         }
       } catch {
