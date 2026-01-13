@@ -49,3 +49,5 @@ apps/api/data/
 # build artifacts
 apps/web/.next/
 dist/
+
+.git/gc.log
