@@ -2,7 +2,12 @@
   "name": "ghostl-stack-monorepo",
   "private": true,
   "version": "0.0.1",
-  "workspaces": ["apps/api", "apps/web", "apps/worker", "packages/*"],
+  "workspaces": [
+    "apps/api",
+    "apps/web",
+    "apps/worker",
+    "packages/*"
+  ],
   "scripts": {
     "build": "npm run build -w apps/api && npm run build -w apps/web",
     "build:api": "npm run build -w apps/api",
@@ -14,12 +19,16 @@
     "opstack:check": "npm run env:sync:opstack && npm run env:sync:opstack:l3 && npm run preflight:opstack"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^7.16.1",
-    "@typescript-eslint/parser": "^7.16.1",
-    "eslint": "^8.57.0",
-    "eslint-config-next": "^14.2.3",
+    "@typescript-eslint/eslint-plugin": "^8.14.0",
+    "@typescript-eslint/parser": "^8.14.0",
+    "eslint": "^9.8.0",
+    "eslint-config-next": "^16.1.1",
     "eslint-config-prettier": "^9.1.0",
+    "globals": "^15.11.0",
     "prettier": "^3.2.5",
     "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "nodemailer": "7.0.12"
   }
 }
