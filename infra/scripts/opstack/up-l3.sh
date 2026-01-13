@@ -44,7 +44,7 @@ if [ -f "$OP_DIR/.env.secrets" ]; then
 fi
 # --no-deps prevents auto-starting L1/L2; assume up-l2.sh already ran.
 docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" up -d --no-deps \
-  l3-geth l3-op-node l3-op-batcher l3-op-proposer
+  l3-geth l3-op-node l3-op-batcher
 
 echo "Waiting for L3 RPC..."
 for i in $(seq 1 60); do

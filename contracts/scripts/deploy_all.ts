@@ -2,6 +2,49 @@ import { ethers, network } from "hardhat";
 import path from "node:path";
 import { promises as fs } from "node:fs";
 
+const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
+async function waitForReceipt(
+  provider: ethers.JsonRpcProvider,
+  hash: string,
+  label: string,
+  retries = 0,
+  timeoutMs = 120_000
+): Promise<ethers.TransactionReceipt | null> {
+  const start = Date.now();
+  while (true) {
+    try {
+      const rcpt = await provider.getTransactionReceipt(hash);
+      if (rcpt) return rcpt;
+    } catch (err: any) {
+      const msg = String(err?.message || err);
+      if (msg.includes("transaction indexing is in progress") || msg.includes("indexing is in progress")) {
+        await sleep(1000);
+        continue;
+      }
+      throw err;
+    }
+    await sleep(1000 + Math.min(retries, 10) * 500);
+    retries++;
+    if (Date.now() - start > timeoutMs) {
+      console.warn(`Waited ${timeoutMs}ms for ${label} receipt ${hash}, continuing...`);
+      return null;
+    }
+  }
+}
+
+async function waitForDeployment(
+  contract: ethers.Contract,
+  provider: ethers.JsonRpcProvider,
+  label: string
+): Promise<void> {
+  const tx = contract.deploymentTransaction();
+  if (!tx?.hash) {
+    throw new Error(`Missing deployment transaction for ${label}`);
+  }
+  await waitForReceipt(provider, tx.hash, label);
+}
+
 async function main() {
   const ROOT = process.env.ROOT_DIR ?? path.resolve(__dirname, "..", "..");
   // Default to OP Stack devnet ports (Anvil L1 :28545, op-geth L2 :29545). L3 is optional; keep overrideable.
@@ -23,11 +66,11 @@ async function main() {
   console.log(`Deploying to GhostL2 network (${network.name})...`);
   const Policy = await ethers.getContractFactory("GuardPolicy");
   const policy = await Policy.connect(l2[0]).deploy();
-  await policy.waitForDeployment();
+  await waitForDeployment(policy, l2[0].provider as ethers.JsonRpcProvider, "GuardPolicy");
 
   const Bridge = await ethers.getContractFactory("L2L3Bridge");
   const bridge = await Bridge.connect(l2[0]).deploy(await policy.getAddress());
-  await bridge.waitForDeployment();
+  await waitForDeployment(bridge, l2[0].provider as ethers.JsonRpcProvider, "L2L3Bridge");
 
   const policyAddr = await policy.getAddress();
   const bridgeAddr = await bridge.getAddress();
@@ -37,7 +80,7 @@ async function main() {
 
   const GhostToken = await ethers.getContractFactory("GhostTokenL2");
   const l2Token = await GhostToken.connect(l2[0]).deploy();
-  await l2Token.waitForDeployment();
+  await waitForDeployment(l2Token, l2[0].provider as ethers.JsonRpcProvider, "GhostTokenL2");
   const l2TokenAddr = await l2Token.getAddress();
   console.log("GhostTokenL2 (L2):", l2TokenAddr);
 
@@ -53,7 +96,7 @@ async function main() {
   const relayerAddr = await l3Signer.getAddress();
 
   const setRelayerTx = await bridge.setRelayer(relayerAddr);
-  await setRelayerTx.wait();
+  await waitForReceipt(l2[0].provider as ethers.JsonRpcProvider, setRelayerTx.hash, "Bridge.setRelayer");
   console.log("Bridge relayer (L2):", relayerAddr);
 
   // Deploy optimistic settlement contracts:
@@ -65,24 +108,24 @@ async function main() {
   const Rollup = await ethers.getContractFactory("OptimisticRollup");
 
   const l1Rollup = await Rollup.connect(l1Signer).deploy(l2ChainId, challengePeriodSeconds, await l1Signer.getAddress());
-  await l1Rollup.waitForDeployment();
+  await waitForDeployment(l1Rollup, l1Provider, "OptimisticRollup L2->L1");
   const l1RollupAddr = await l1Rollup.getAddress();
   console.log("OptimisticRollup L2->L1 (L1):", l1RollupAddr);
 
   const l2Rollup = await Rollup.connect(l2[0]).deploy(l3ChainId, challengePeriodSeconds, await l2[0].getAddress());
-  await l2Rollup.waitForDeployment();
+  await waitForDeployment(l2Rollup, l2[0].provider as ethers.JsonRpcProvider, "OptimisticRollup L3->L2");
   const l2RollupAddr = await l2Rollup.getAddress();
   console.log("OptimisticRollup L3->L2 (L2):", l2RollupAddr);
 
   const Inbox = await ethers.getContractFactory("L3Inbox");
   const inbox = await Inbox.connect(l3Signer).deploy(relayerAddr);
-  await inbox.waitForDeployment();
+  await waitForDeployment(inbox, l3Provider, "L3Inbox");
   const inboxAddr = await inbox.getAddress();
   console.log("L3Inbox (L3):", inboxAddr);
 
   const Factory = await ethers.getContractFactory("L3BridgedTokenFactory");
   const factory = await Factory.connect(l3Signer).deploy(relayerAddr);
-  await factory.waitForDeployment();
+  await waitForDeployment(factory, l3Provider, "L3BridgedTokenFactory");
   const factoryAddr = await factory.getAddress();
   console.log("L3BridgedTokenFactory (L3):", factoryAddr);
 

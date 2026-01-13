@@ -111,8 +111,8 @@ if [ -n "$L1_GENESIS_HASH" ] && [ "$L1_GENESIS_HASH" != "null" ]; then
   echo "Pinned L2 genesis timestamp to L1 genesis: $L1_TS_HEX ($L1_TS_DEC)"
 fi
 
-# Bring up the rest of the stack.
-docker compose "${COMPOSE_ENV_ARGS[@]}" up -d l2-geth op-node op-sequencer op-batcher op-proposer
+# Bring up the stack (proposer omitted since L2OO is not deployed in this devnet).
+docker compose "${COMPOSE_ENV_ARGS[@]}" up -d l2-geth op-node op-sequencer op-batcher
 
 echo "Waiting for L2 RPC..."
 for i in $(seq 1 60); do
