@@ -29,7 +29,13 @@ echo "Deploying contracts to OP L2 and writing service env files..."
 bash "$ROOT/infra/scripts/opstack/deploy.sh"
 
 echo "Starting services (Guard/Relayer/Proposers/Challengers/Obs) against OP RPCs..."
-cd "$ROOT/.devcontainer"
+COMPOSE_DIR="$ROOT/.devcontainer"
+COMPOSE_FILE="$COMPOSE_DIR/docker-compose.yml"
+if [ ! -f "$COMPOSE_FILE" ]; then
+  # Fallback to the services compose bundle when the devcontainer scaffold is absent (e.g., local checkout).
+  COMPOSE_DIR="$ROOT/services"
+  COMPOSE_FILE="$COMPOSE_DIR/docker-compose.yml"
+fi
 SERVICES=(
   ghost-guard
   ghost-relayer
@@ -40,6 +46,6 @@ SERVICES=(
   prometheus
   grafana
 )
-docker compose up -d --no-deps "${SERVICES[@]}"
+docker compose -f "$COMPOSE_FILE" up -d --no-deps "${SERVICES[@]}"
 
 echo "Done. L1=$HOST_L1_RPC, L2=$HOST_L2_RPC${ENABLE_L3:+, L3=$HOST_L3_RPC}, Guard=7070, Relayer=7171, ProposerL2=7272, ProposerL3=7373, ChallengerL2=7282, ChallengerL3=7383, Prometheus=9090, Grafana=3000"
