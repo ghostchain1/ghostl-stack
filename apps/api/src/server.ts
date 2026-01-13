@@ -39,8 +39,8 @@ import { createTokenService } from './services/token-store';
 import { buildTokenRouter } from './modules/token/router';
 import { buildGhostchainRouter } from './modules/ghostchain/router';
 import './types/express';
-// Load environment variables from local env file when running locally
-loadEnv({ path: path.join(process.cwd(), 'apps/api/.env.local') });
+// Load environment variables from local env file when running locally (cwd may be repo root or apps/api)
+loadEnv({ path: path.join(process.cwd(), '.env.local') });
 type HexString = string;
 type RpcError = { message?: string };
 type RpcResponse<T> = { result?: T; error?: RpcError };
