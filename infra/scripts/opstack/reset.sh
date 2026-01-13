@@ -10,6 +10,8 @@ L3_NAME="${L3_NAME:-ghostl3}"
 L2_DATA_DIR="${OP_DIR}/data/l2-geth-new"
 OP_NODE_DATA_DIR="${OP_DIR}/data/op-node"
 OP_SEQUENCER_DATA_DIR="${OP_DIR}/data/op-sequencer"
+OP_BATCHER_DATA_DIR="${OP_DIR}/data/op-batcher"
+OP_PROPOSER_DATA_DIR="${OP_DIR}/data/op-proposer"
 
 # Default ownership for data dirs; can override via OWNER_USER/OWNER_GROUP.
 OWNER_USER="${OWNER_USER:-ghost}"
@@ -26,13 +28,25 @@ chown_data_dir() {
   docker run --rm -v "${target}:/data" busybox chown -R "${HOST_UID}:${HOST_GID}" /data >/dev/null 2>&1 || true
 }
 
+wipe_data_dir() {
+  local target="$1"
+  mkdir -p "$target"
+  # Use a throwaway root container to ensure we can delete files even if they were created as root.
+  docker run --rm -v "${target}:/data" busybox sh -c "rm -rf /data/*" >/dev/null 2>&1 || true
+  chown "${HOST_UID}:${HOST_GID}" "$target" >/dev/null 2>&1 || true
+}
+
 chown_data_dir "$L2_DATA_DIR"
 chown_data_dir "$OP_NODE_DATA_DIR"
 chown_data_dir "$OP_SEQUENCER_DATA_DIR"
+chown_data_dir "$OP_BATCHER_DATA_DIR"
+chown_data_dir "$OP_PROPOSER_DATA_DIR"
 if compgen -G "$OP_DIR/l3/*" >/dev/null; then
   for l3_dir in "$OP_DIR"/l3/*; do
     chown_data_dir "$l3_dir/data"
     chown_data_dir "$l3_dir/data/op-node"
+    chown_data_dir "$l3_dir/data/op-batcher"
+    chown_data_dir "$l3_dir/data/op-proposer"
   done
 fi
 
@@ -43,22 +57,30 @@ bash "$ROOT/infra/scripts/opstack/down-l2.sh" || true
 chown_data_dir "$L2_DATA_DIR"
 chown_data_dir "$OP_NODE_DATA_DIR"
 chown_data_dir "$OP_SEQUENCER_DATA_DIR"
+chown_data_dir "$OP_BATCHER_DATA_DIR"
+chown_data_dir "$OP_PROPOSER_DATA_DIR"
 if compgen -G "$OP_DIR/l3/*" >/dev/null; then
   for l3_dir in "$OP_DIR"/l3/*; do
     chown_data_dir "$l3_dir/data"
     chown_data_dir "$l3_dir/data/op-node"
+    chown_data_dir "$l3_dir/data/op-batcher"
+    chown_data_dir "$l3_dir/data/op-proposer"
   done
 fi
 
 echo "Removing data dirs..."
-rm -rf "$L2_DATA_DIR" "$OP_NODE_DATA_DIR" "$OP_SEQUENCER_DATA_DIR"
-mkdir -p "$L2_DATA_DIR" "$OP_NODE_DATA_DIR" "$OP_SEQUENCER_DATA_DIR"
-chown "${HOST_UID}:${HOST_GID}" "$L2_DATA_DIR" "$OP_NODE_DATA_DIR" "$OP_SEQUENCER_DATA_DIR"
+wipe_data_dir "$L2_DATA_DIR"
+wipe_data_dir "$OP_NODE_DATA_DIR"
+wipe_data_dir "$OP_SEQUENCER_DATA_DIR"
+wipe_data_dir "$OP_BATCHER_DATA_DIR"
+wipe_data_dir "$OP_PROPOSER_DATA_DIR"
 if compgen -G "$OP_DIR/l3/*" >/dev/null; then
   for l3_dir in "$OP_DIR"/l3/*; do
     if [ -d "$l3_dir" ]; then
-      rm -rf "$l3_dir/data"
-      mkdir -p "$l3_dir/data" "$l3_dir/data/op-node"
+      wipe_data_dir "$l3_dir/data"
+      wipe_data_dir "$l3_dir/data/op-node"
+      wipe_data_dir "$l3_dir/data/op-batcher"
+      wipe_data_dir "$l3_dir/data/op-proposer"
     fi
   done
 fi
