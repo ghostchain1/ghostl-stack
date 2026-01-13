@@ -3,5 +3,5 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --production
 COPY src ./src
-EXPOSE 7600
+EXPOSE 7626
 CMD ["node", "src/index.js"]
