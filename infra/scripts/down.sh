@@ -3,8 +3,13 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 echo "Stopping services (Guard/Relayer/Proposers/Challengers/Obs)..."
-cd "$ROOT/.devcontainer"
-docker compose stop --no-deps \
+COMPOSE_DIR="$ROOT/.devcontainer"
+COMPOSE_FILE="$COMPOSE_DIR/docker-compose.yml"
+if [ ! -f "$COMPOSE_FILE" ]; then
+  COMPOSE_DIR="$ROOT/services"
+  COMPOSE_FILE="$COMPOSE_DIR/docker-compose.yml"
+fi
+docker compose -f "$COMPOSE_FILE" stop --no-deps \
   ghost-guard ghost-relayer \
   ghost-rollup-proposer-l2 ghost-rollup-proposer-l3 \
   ghost-rollup-challenger-l2 ghost-rollup-challenger-l3 \

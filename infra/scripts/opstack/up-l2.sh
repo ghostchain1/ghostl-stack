@@ -82,9 +82,10 @@ if [ -n "$L1_GENESIS_HASH" ] && [ "$L1_GENESIS_HASH" != "null" ]; then
   L1_TS_HEX=$(printf '%s' "$L1_GENESIS_JSON" | jq -r '.result.timestamp')
   L1_TS_DEC=$((L1_TS_HEX))
   if [ "$L1_TS_DEC" -eq 0 ]; then
-    L1_TS_DEC=$(date +%s)
+    # Use a deterministic fallback when the L1 genesis timestamp is zero to keep the L2 genesis hash stable across restarts.
+    L1_TS_DEC=${FALLBACK_L1_GENESIS_TS:-1700000000}
     L1_TS_HEX=$(printf '0x%x' "$L1_TS_DEC")
-    echo "L1 genesis timestamp missing; using current epoch $L1_TS_HEX ($L1_TS_DEC)"
+    echo "L1 genesis timestamp missing; using fallback $L1_TS_HEX ($L1_TS_DEC)"
   fi
   L1_DIFF=$(printf '%s' "$L1_GENESIS_JSON" | jq -r '.result.difficulty')
   L1_GAS_LIMIT=$(printf '%s' "$L1_GENESIS_JSON" | jq -r '.result.gasLimit')
@@ -103,7 +104,7 @@ if [ -n "$L1_GENESIS_HASH" ] && [ "$L1_GENESIS_HASH" != "null" ]; then
     | .baseFeePerGas = $base
   ' "$OP_DIR/config/l1-chain.json" >"$tmp_l1" && mv "$tmp_l1" "$OP_DIR/config/l1-chain.json"
 
-  # Align L2 genesis timestamps with the live L1 genesis time to avoid sequencer time errors.
+  # Align L2 genesis timestamps with the live (or fallback) L1 genesis time to avoid sequencer time errors.
   tmp_rollup_l2=$(mktemp)
   jq --argjson l2time "$L1_TS_DEC" '.genesis.l2_time = $l2time' "$OP_DIR/config/rollup.json" >"$tmp_rollup_l2" && mv "$tmp_rollup_l2" "$OP_DIR/config/rollup.json"
   tmp_genesis_l2=$(mktemp)
@@ -112,7 +113,7 @@ if [ -n "$L1_GENESIS_HASH" ] && [ "$L1_GENESIS_HASH" != "null" ]; then
 fi
 
 # Bring up the rest of the stack.
-docker compose "${COMPOSE_ENV_ARGS[@]}" up -d l2-geth op-node op-batcher op-proposer
+docker compose "${COMPOSE_ENV_ARGS[@]}" up -d l2-geth op-node op-sequencer op-batcher op-proposer
 
 echo "Waiting for L2 RPC..."
 for i in $(seq 1 60); do
