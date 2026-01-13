@@ -77,6 +77,7 @@ export function WalletClient() {
   });
 
   const selectedRouteObj = useMemo(() => swapRoutes[selectedRoute], [swapRoutes, selectedRoute]);
+  const [bridgePlanStatus, setBridgePlanStatus] = useState('');
 
   useEffect(() => {
     if (account && !bridgeRecipient) {
@@ -355,7 +356,7 @@ export function WalletClient() {
                 <option value="">Select wallet</option>
                 {tokensInv.map((w) => (
                   <option key={w.id} value={w.id}>
-                    {w.label} · {w.address.slice(0, 8)}… · {chainLabels[w.chainId] || w.chainId}
+                    {w.label} · {w.address.slice(0, 8)}… · {chainLabels[w.chainId as keyof typeof chainLabels] || w.chainId}
                   </option>
                 ))}
               </select>
@@ -391,7 +392,7 @@ export function WalletClient() {
                     </span>
                   </div>
                   <div className="inline-form" style={{ gap: 6 }}>
-                    <Badge tone="default">{chainLabels[t.chainId] || t.chainId}</Badge>
+                    <Badge tone="default">{chainLabels[t.chainId as keyof typeof chainLabels] || t.chainId}</Badge>
                     <Badge tone="default">{t.type}</Badge>
                   </div>
                 </div>
@@ -412,7 +413,7 @@ export function WalletClient() {
               </label>
               <label className="stack">
                 <span className="muted">To chain</span>
-                <select className="select" value={chain === 'l3' ? 'l2' : chain === 'l2' ? 'l1' : 'l2'} readOnly>
+                <select className="select" value={chain === 'l3' ? 'l2' : chain === 'l2' ? 'l1' : 'l2'} disabled>
                   <option value="l1">L1</option>
                   <option value="l2">L2</option>
                   <option value="l3">L3</option>
@@ -426,9 +427,17 @@ export function WalletClient() {
             <div className="muted" style={{ fontSize: 12 }}>
               Bridge planner uses current chain as source; destination auto-steps down/up the stack for staged messaging. Use main bridge action for actual submit.
             </div>
-            <Button variant="secondary" onClick={() => setBridgeStatus(`Planned route ${chain.toUpperCase()} → ${chain === 'l3' ? 'L2' : chain === 'l2' ? 'L1' : 'L2'} for ${bridgeAmount}`)}>
+            <Button
+              variant="secondary"
+              onClick={() =>
+                setBridgePlanStatus(
+                  `Planned route ${chain.toUpperCase()} → ${chain === 'l3' ? 'L2' : chain === 'l2' ? 'L1' : 'L2'} for ${bridgeAmount}`
+                )
+              }
+            >
               Simulate plan
             </Button>
+            {bridgePlanStatus && <div className="muted">{bridgePlanStatus}</div>}
           </div>
         </Card>
         <Card title="Send" subtitle="Simple transfer">
@@ -557,7 +566,7 @@ export function WalletClient() {
                       {w.address}
                     </span>
                     <div className="inline-form" style={{ gap: 6, fontSize: 12 }}>
-                      <Badge tone="default">{chainLabels[w.chainId] || w.chainId}</Badge>
+                      <Badge tone="default">{chainLabels[w.chainId as keyof typeof chainLabels] || w.chainId}</Badge>
                       <Badge tone="default">{w.type}</Badge>
                       {w.keyPreview && <Badge tone="default">key {w.keyPreview}</Badge>}
                       {w.status && <Badge tone="default">{w.status}</Badge>}
