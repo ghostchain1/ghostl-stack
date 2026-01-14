@@ -30,7 +30,10 @@ if [ ! -d node_modules ]; then
   npm ci --no-audit --no-fund
 fi
 
-echo "Deploying contracts to OP devnet (network: ghostl2Op)..."
+echo "Deploying GhostChain PoS/L1 stack and bridging glue..."
+npm run deploy:futuristic
+
+echo "Deploying OP devnet contracts (network: ghostl2Op)..."
 npm run deploy:op
 
 echo "Contracts deployed. Service env files were updated under services/."
