@@ -6,5 +6,6 @@ RUN npm install
 COPY tsconfig.json ./tsconfig.json
 COPY src ./src
 EXPOSE 7272
-# Use ts-node ESM transpile-only for fast startup.
-CMD ["npx", "ts-node-esm", "--transpile-only", "src/index.ts"]
+# Use ts-node loader in ESM mode; skip type checking for speed.
+ENV TS_NODE_TRANSPILE_ONLY=1
+CMD ["node", "--loader", "ts-node/esm", "--no-warnings", "--experimental-specifier-resolution=node", "src/index.ts"]
