@@ -86,3 +86,7 @@ if compgen -G "$OP_DIR/l3/*" >/dev/null; then
 fi
 
 echo "Reset complete."
+if [ -f "$OP_DIR/config/futuristic-deployments.local.json" ]; then
+  rm -f "$OP_DIR/config/futuristic-deployments.local.json"
+  echo "Removed cached futuristic deployment manifest."
+fi

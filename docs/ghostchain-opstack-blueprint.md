@@ -1,6 +1,6 @@
 # GhostChain OP Stack Blueprint
 
-Recommendation carried into this repo: GhostL2 runs on OP Stack now, with a clean path to a hybrid OP + ZK rollup later (Polygon CDK / zkEVM-style proofs). GhostL3 stays as OP Stack app-chains on GhostL2. AI Guard + relayers remain first-class.
+Recommendation carried into this repo: GhostL2 runs on OP Stack now, with a clean path to a hybrid OP + ZK rollup later (Polygon CDK / zkEVM-style proofs). GhostL3 stays as OP Stack app-chains on GhostL2. AI Guard + relayers remain first-class, riding atop the L1 custom PoS described in `docs/ghostchain-l1.md` / `docs/ghostchain-pos-alignment.md`.
 
 ## Why OP Stack fits GhostChain
 - Full control of sequencer / batcher / proposer / challenger so AI Guard can pause, delay, or throttle before finalize.
@@ -19,11 +19,19 @@ Recommendation carried into this repo: GhostL2 runs on OP Stack now, with a clea
 3) L3: OP Stack app-chains on GhostL2 with per-app AI policies.
 4) ZK upgrade: add validity proofs to OP batches (Polygon CDK/zkEVM-style) without rewriting the stack.
 
+## Consensus alignment (L1 → L2 → L3)
+
+1. **L1 finality** – GhostChain PoS publishes epochs/checkpoints, slashes misbehavior, and exposes `CheckpointManager`, `PauseGuardian`, and governance endpoints for L2/L3 to trust.
+2. **L2 finality** – The PolyBFT-style L2 uses OP Stack (op-node/op-sequencer) to produce fast BFT blocks, then posts checkpoint roots + dispute/finality data back to GhostChain L1 via the bridge stack (`BridgeRouter`, `TokenBridge`, `OutputOracle`, `FinalizationManager`).
+3. **L3 finality** – OP Stack app-chains (ghost-l3) operate on the “soft finality” sequencer/batcher/proposer model, emit output roots + batches to L2, and rely on the L2 dispute/finality contracts to enforce correctness; withdraws follow the challenge window, then await the L2 checkpoint that was anchored to L1.
+
+This multi-layer ladder is documented in `docs/ghostchain-pos-alignment.md`; keep the `FUT_*` contract addresses in sync with your deploy script outputs so services can subscribe to the correct oracle/bridge endpoints.
+
 ## Stack reference (this repo)
 - L2/L3 framework: OP Stack (optimistic today; ZK proofs later).
-- Dev chain: OP Stack devnet under `infra/opstack/` (Anvil L1 + op-geth/op-node/batcher/proposer).
-- Tooling: Hardhat networks `ghostl2Op` / `ghostl3Op` (see `contracts/hardhat.config.ts`).
-- Services: Ghost Guard, Relayer, rollup proposer/challenger continue to read RPCs + envs emitted by deploy scripts.
+- Dev chain: OP Stack devnet under `infra/opstack/` (Anvil L1 + op-geth/op-node/batcher/proposer); scripts now call `npm run deploy:futuristic` before the OP deployments to ensure the L1 PoS + bridge stack is on-chain.
+- Tooling: Hardhat networks `ghostl2Op` / `ghostl3Op` (see `contracts/hardhat.config.ts`); new `deploy_futuristic_stack.ts` script outputs `FUT_*` addresses consumed by the services env files.
+- Services: Ghost Guard, Relayer, rollup proposer/challenger read RPCs + envs produced by the `deploy.sh` script, which now rewrites beacon addresses for checkpoints, finalization, and the AddressBook.
 
 ## Operational steps (devnet)
 - Build images (once): `bash infra/scripts/opstack/build.sh`
