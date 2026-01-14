@@ -97,6 +97,12 @@ async function main() {
   // Governance
   const govToken = await deploy<Deployable>("GovernanceToken", [deployer.address]);
   const ve = await deploy<Deployable>("VotingEscrow", [deployer.address]);
+  // Resilience
+  const pauseGuardian = await deploy<Deployable>("PauseGuardianV2", [deployer.address]);
+  const emergency = await deploy<Deployable>("EmergencyShutdownV2", [deployer.address]);
+  const forkRecovery = await deploy<Deployable>("ForkRecoveryManager", [deployer.address]);
+
+  // Governance
   const governor = await deploy<Deployable>("GovernorV2", [
     deployer.address,
     ve.getAddress(),
@@ -134,11 +140,6 @@ async function main() {
   await (await addressBook.setAddress(ethers.id("PAUSE"), await pauseGuardian.getAddress())).wait();
   await (await addressBook.setAddress(ethers.id("EMERGENCY"), await emergency.getAddress())).wait();
   await (await addressBook.setAddress(ethers.id("FORK_RECOVERY"), await forkRecovery.getAddress())).wait();
-
-  // Resilience
-  const pauseGuardian = await deploy<Deployable>("PauseGuardianV2", [deployer.address]);
-  const emergency = await deploy<Deployable>("EmergencyShutdownV2", [deployer.address]);
-  const forkRecovery = await deploy<Deployable>("ForkRecoveryManager", [deployer.address]);
 
   console.log("\nDeployment complete.");
   console.log(`UNBONDING_PERIOD=${UNBONDING_PERIOD}s, MIN_STAKE_WEI=${MIN_STAKE_WEI}, DOWNTIME_SLASH_BPS=${DOWNTIME_SLASH_BPS}, L3_CHALLENGE_WINDOW=${CHALLENGE_WINDOW}s, L2_CHECKPOINT_INTERVAL=${CHECKPOINT_INTERVAL}s`);

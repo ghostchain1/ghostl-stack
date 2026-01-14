@@ -19,7 +19,7 @@ HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29545}"
 HOST_L3_RPC="${HOST_L3_RPC:-http://localhost:39545}"
 ENABLE_L3="${ENABLE_L3:-1}"
 
-echo "Starting OP Stack devnet (L1/L2${ENABLE_L3:+/L3})..."
+echo "Starting GhostChain PoS + OP Stack devnet (L1/L2${ENABLE_L3:+/L3})..."
 bash "$ROOT/infra/scripts/opstack/up-l2.sh"
 if [ "$ENABLE_L3" = "1" ]; then
   bash "$ROOT/infra/scripts/opstack/up-l3.sh"
