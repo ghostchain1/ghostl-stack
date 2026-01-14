@@ -6,5 +6,5 @@ RUN npm install
 COPY tsconfig.json ./tsconfig.json
 COPY src ./src
 EXPOSE 7272
-# Node 20 can strip types at runtime; avoids ts-node/ESM loader issues.
-CMD ["node", "--experimental-strip-types", "src/index.ts"]
+# Use ts-node ESM transpile-only for fast startup.
+CMD ["npx", "ts-node-esm", "--transpile-only", "src/index.ts"]
