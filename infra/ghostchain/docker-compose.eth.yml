@@ -149,6 +149,7 @@ services:
       SECRET_KEY_BASE: 6d31c6c2b8b7344f5f3d2421f3d8a42d9d27f9b4a7ad0b287f1aa4f8c6efb6d3
       DISABLE_EVISION: "true"
       API_ONLY: "true"
+      LOG_LEVEL: warn
     ports:
       - "18644:4000"
     networks:
