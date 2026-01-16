@@ -100,9 +100,57 @@ services:
     mem_limit: 2g
     cpus: "1.5"
 
+  ghostscout-db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: blockscout
+    volumes:
+      - ghostscout-db-data:/var/lib/postgresql/data
+    networks:
+      ghostchain:
+        ipv4_address: 172.28.0.30
+    <<: *default-security
+    mem_limit: 1g
+    cpus: "0.5"
+
+  ghostscout:
+    image: blockscout/blockscout:latest
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - ghostscout-db
+      - ghostchain-node1
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@ghostscout-db:5432/blockscout
+      ECTO_USE_SSL: "false"
+      ETHEREUM_JSONRPC_HTTP_URL: http://ghostchain-node1:8545
+      ETHEREUM_JSONRPC_TRACE_URL: http://ghostchain-node1:8545
+      ETHEREUM_JSONRPC_WS_URL: ws://ghostchain-node1:8546
+      BLOCKSCOUT_HOST: 0.0.0.0
+      PORT: 4000
+      NETWORK: Ghostchain
+      SUBNETWORK: PoA
+      COIN: GHOST
+      SECRET_KEY_BASE: 6d31c6c2b8b7344f5f3d2421f3d8a42d9d27f9b4a7ad0b287f1aa4f8c6efb6d3
+    ports:
+      - "18640:4000"
+    networks:
+      ghostchain:
+        ipv4_address: 172.28.0.31
+    <<: *default-security
+    mem_limit: 2g
+    cpus: "1.5"
+
 networks:
   ghostchain:
     driver: bridge
     ipam:
       config:
         - subnet: 172.28.0.0/16
+
+volumes:
+  ghostscout-db-data:
