@@ -1,5 +1,10 @@
+x-host-gateway: &host-gateway
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+
 services:
   alerts-service:
+    <<: *host-gateway
     build:
       context: ./alerts-service
     image: ghostl/alerts-service:local
@@ -12,6 +17,7 @@ services:
       - "7644:7644"
 
   ai-clock-sync:
+    <<: *host-gateway
     build:
       context: ./ai-clock-sync
     image: ghostl/ai-clock-sync:local
@@ -28,6 +34,7 @@ services:
       - "7690:7690"
 
   contract-registry-service:
+    <<: *host-gateway
     build:
       context: ./contract-registry-service
     image: ghostl/contract-registry-service:local
@@ -42,6 +49,7 @@ services:
       - "7608:7608"
 
   contract-risk-service:
+    <<: *host-gateway
     build:
       context: ./contract-risk-service
     image: ghostl/contract-risk-service:local
@@ -54,6 +62,7 @@ services:
       - "7609:7609"
 
   dispute-service:
+    <<: *host-gateway
     build:
       context: ./dispute-service
     image: ghostl/dispute-service:local
@@ -66,6 +75,7 @@ services:
       - "7607:7607"
 
   transfer-lifecycle-service:
+    <<: *host-gateway
     build:
       context: ./transfer-lifecycle-service
     image: ghostl/transfer-lifecycle-service:local
@@ -78,6 +88,7 @@ services:
       - "7605:7605"
 
   tx-index-service:
+    <<: *host-gateway
     build:
       context: ./tx-index-service
     image: ghostl/tx-index-service:local
@@ -90,6 +101,7 @@ services:
       - "7625:7625"
 
   entity-tagging-service:
+    <<: *host-gateway
     build:
       context: ./entity-tagging-service
     image: ghostl/entity-tagging-service:local
@@ -101,6 +113,7 @@ services:
       - "7627:7627"
 
   key-rotation-service:
+    <<: *host-gateway
     build:
       context: ./key-rotation-service
     image: ghostl/key-rotation-service:local
@@ -113,6 +126,7 @@ services:
       - "7619:7619"
 
   bridge-service:
+    <<: *host-gateway
     build:
       context: ./bridge-service
     image: ghostl/bridge-service:local
@@ -128,26 +142,8 @@ services:
     volumes:
       - ./data:/data
 
-  ghost-guard:
-    build:
-      context: ./ghost-guard
-    image: ghostl/ghost-guard:local
-    env_file:
-      - ./stack.env
-    environment:
-      - PORT=7070
-      - RPC_L2=${RPC_L2}
-      - BRIDGE_L2L3_ADDRESS=${BRIDGE_L2L3_ADDRESS}
-      - GUARD_POLICY_ADDRESS=${GUARD_POLICY_ADDRESS}
-      - ADMIN_TOKEN=${BRIDGE_ADMIN_TOKEN}
-      - STATE_DIR=/state
-      - ALLOW_INSECURE_ADMIN=1
-    volumes:
-      - ./data:/state
-    ports:
-      - "7070:7070"
-
   ghost-relayer:
+    <<: *host-gateway
     build:
       context: ./ghost-relayer
     image: ghostl/ghost-relayer:local
@@ -170,8 +166,42 @@ services:
       - ./data:/state
     ports:
       - "7171:7171"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - node -e "fetch('http://127.0.0.1:7171/health').then(r=>{if(!r.ok)process.exit(1);return r.json();}).then(j=>{if(!j.ok)process.exit(1);}).catch(()=>process.exit(1));"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  network-manager-service:
+    <<: *host-gateway
+    build:
+      context: ./network-manager-service
+    image: ghostl/network-manager-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - NETWORK_MANAGER_PORT=${NETWORK_MANAGER_PORT:-7766}
+      - MONITOR_HOST=${MONITOR_HOST:-host.docker.internal}
+      - MONITOR_RPC_L1=${MONITOR_RPC_L1:-http://host.docker.internal:18545}
+      - MONITOR_RPC_L2=${MONITOR_RPC_L2:-http://host.docker.internal:29547}
+      - MONITOR_RPC_L3=${MONITOR_RPC_L3:-http://host.docker.internal:39545}
+      - MONITOR_PORTS=${MONITOR_PORTS:-7070,7171,18545,29547,39545}
+      - MONITOR_HEALTH_ENDPOINTS=${MONITOR_HEALTH_ENDPOINTS:-http://host.docker.internal:7070/health,http://host.docker.internal:7171/health}
+      - MONITOR_INTERVAL_MS=${MONITOR_INTERVAL_MS:-10000}
+    ports:
+      - "7766:7766"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - node -e "fetch('http://127.0.0.1:'+(process.env.NETWORK_MANAGER_PORT||'7766')+'/health').then(r=>{if(!r.ok)process.exit(1);return r.json();}).then(j=>{if(!j.ok)process.exit(1);}).catch(()=>process.exit(1));"
+      interval: 20s
+      timeout: 5s
+      retries: 5
 
   validator-service:
+    <<: *host-gateway
     build:
       context: ./validator-service
     image: ghostl/validator-service:local
@@ -186,6 +216,7 @@ services:
       - "7600:7600"
 
   node-health-service:
+    <<: *host-gateway
     build:
       context: ./node-health-service
     image: ghostl/node-health-service:local
@@ -199,6 +230,7 @@ services:
       - "7613:7613"
 
   mempool-service:
+    <<: *host-gateway
     build:
       context: ./mempool-service
     image: ghostl/mempool-service:local
@@ -211,6 +243,7 @@ services:
       - "7610:7610"
 
   node-inventory-service:
+    <<: *host-gateway
     build:
       context: ./node-inventory-service
     image: ghostl/node-inventory-service:local
@@ -222,6 +255,7 @@ services:
       - "7622:7622"
 
   notifications-service:
+    <<: *host-gateway
     build:
       context: ./notifications-service
     image: ghostl/notifications-service:local
@@ -233,6 +267,7 @@ services:
       - "7638:7638"
 
   global-search-service:
+    <<: *host-gateway
     build:
       context: ./global-search-service
     image: ghostl/global-search-service:local
@@ -244,6 +279,7 @@ services:
       - "7637:7637"
 
   feature-flags-service:
+    <<: *host-gateway
     build:
       context: ./feature-flags-service
     image: ghostl/feature-flags-service:local
@@ -256,6 +292,7 @@ services:
       - "7611:7611"
 
   theme-service:
+    <<: *host-gateway
     build:
       context: ./theme-service
     image: ghostl/theme-service:local
@@ -268,6 +305,7 @@ services:
       - "7634:7634"
 
   governance-service:
+    <<: *host-gateway
     build:
       context: ./governance-service
     image: ghostl/governance-service:local
@@ -279,6 +317,7 @@ services:
       - "7645:7645"
 
   compliance-export-service:
+    <<: *host-gateway
     build:
       context: ./compliance-export-service
     image: ghostl/compliance-export-service:local
@@ -290,6 +329,7 @@ services:
       - "7621:7621"
 
   chain-status-service:
+    <<: *host-gateway
     build:
       context: ./chain-status-service
     image: ghostl/chain-status-service:local
@@ -303,6 +343,7 @@ services:
       - "7612:7612"
 
   network-context-service:
+    <<: *host-gateway
     build:
       context: ./network-context-service
     image: ghostl/network-context-service:local
@@ -317,6 +358,7 @@ services:
       - "7633:7633"
 
   consensus-telemetry-service:
+    <<: *host-gateway
     build:
       context: ./consensus-telemetry-service
     image: ghostl/consensus-telemetry-service:local
@@ -330,6 +372,7 @@ services:
       - "7635:7635"
 
   peer-graph-service:
+    <<: *host-gateway
     build:
       context: ./peer-graph-service
     image: ghostl/peer-graph-service:local
@@ -343,6 +386,7 @@ services:
       - "7636:7636"
 
   ghost-rollup-proposer:
+    <<: *host-gateway
     build:
       context: ./ghost-rollup-proposer
     image: ghostl/ghost-rollup-proposer:local
@@ -361,6 +405,7 @@ services:
       - "7272:7272"
 
   ghost-rollup-challenger:
+    <<: *host-gateway
     build:
       context: ./ghost-rollup-challenger
     image: ghostl/ghost-rollup-challenger:local
@@ -379,6 +424,7 @@ services:
       - "7282:7282"
 
   rewards-service:
+    <<: *host-gateway
     build:
       context: ./rewards-service
     image: ghostl/rewards-service:local
@@ -391,6 +437,7 @@ services:
       - "7602:7602"
 
   staking-service:
+    <<: *host-gateway
     build:
       context: ./staking-service
     image: ghostl/staking-service:local
@@ -403,6 +450,7 @@ services:
       - "7601:7601"
 
   fee-model-service:
+    <<: *host-gateway
     build:
       context: ./fee-model-service
     image: ghostl/fee-model-service:local
@@ -415,6 +463,7 @@ services:
       - "7615:7615"
 
   supply-service:
+    <<: *host-gateway
     build:
       context: ./supply-service
     image: ghostl/supply-service:local
@@ -427,6 +476,7 @@ services:
       - "7614:7614"
 
   participation-service:
+    <<: *host-gateway
     build:
       context: ./participation-service
     image: ghostl/participation-service:local
@@ -439,6 +489,7 @@ services:
       - "7603:7603"
 
   liquidity-service:
+    <<: *host-gateway
     build:
       context: ./liquidity-service
     image: ghostl/liquidity-service:local
@@ -456,6 +507,7 @@ services:
       - "7606:7606"
 
   treasury-service:
+    <<: *host-gateway
     build:
       context: ./treasury-service
     image: ghostl/treasury-service:local
@@ -472,6 +524,7 @@ services:
       - "7628:7628"
 
   auth-service:
+    <<: *host-gateway
     build:
       context: ./auth-service
     image: ghostl/auth-service:local
@@ -483,6 +536,7 @@ services:
       - "7639:7639"
 
   session-service:
+    <<: *host-gateway
     build:
       context: ./session-service
     image: ghostl/session-service:local
@@ -494,6 +548,7 @@ services:
       - "7643:7643"
 
   rbac-service:
+    <<: *host-gateway
     build:
       context: ./rbac-service
     image: ghostl/rbac-service:local
@@ -505,6 +560,7 @@ services:
       - "7640:7640"
 
   command-palette-service:
+    <<: *host-gateway
     build:
       context: ./command-palette-service
     image: ghostl/command-palette-service:local
@@ -516,6 +572,7 @@ services:
       - "7642:7642"
 
   ai-monitor:
+    <<: *host-gateway
     build:
       context: ./ai-monitor
     image: ghostl/ai-monitor:local
@@ -531,6 +588,7 @@ services:
       - "7575:7575"
 
   anomaly-detection-service:
+    <<: *host-gateway
     build:
       context: ./anomaly-detection-service
     image: ghostl/anomaly-detection-service:local
@@ -543,6 +601,7 @@ services:
       - "7616:7616"
 
   explainability-service:
+    <<: *host-gateway
     build:
       context: ./explainability-service
     image: ghostl/explainability-service:local
@@ -555,6 +614,7 @@ services:
       - "7632:7632"
 
   forecasting-service:
+    <<: *host-gateway
     build:
       context: ./forecasting-service
     image: ghostl/forecasting-service:local
@@ -567,6 +627,7 @@ services:
       - "7617:7617"
 
   ghost-rpc-proxy:
+    <<: *host-gateway
     build:
       context: ./ghost-rpc-proxy
     image: ghostl/ghost-rpc-proxy:local
@@ -580,6 +641,7 @@ services:
       - "8546:8546"
 
   payout-service:
+    <<: *host-gateway
     build:
       context: ./payout-service
     image: ghostl/payout-service:local
@@ -591,6 +653,7 @@ services:
       - "7629:7629"
 
   proxy-inspector-service:
+    <<: *host-gateway
     build:
       context: ./proxy-inspector-service
     image: ghostl/proxy-inspector-service:local
@@ -603,6 +666,7 @@ services:
       - "7631:7631"
 
   verification-service:
+    <<: *host-gateway
     build:
       context: ./verification-service
     image: ghostl/verification-service:local
@@ -614,6 +678,7 @@ services:
       - "7630:7630"
 
   secrets-health-service:
+    <<: *host-gateway
     build:
       context: ./secrets-health-service
     image: ghostl/secrets-health-service:local
@@ -626,6 +691,7 @@ services:
       - "7618:7618"
 
   slashing-detection-service:
+    <<: *host-gateway
     build:
       context: ./slashing-detection-service
     image: ghostl/slashing-detection-service:local
@@ -638,6 +704,7 @@ services:
       - "7620:7620"
 
   snapshot-service:
+    <<: *host-gateway
     build:
       context: ./snapshot-service
     image: ghostl/snapshot-service:local
@@ -649,6 +716,7 @@ services:
       - "7624:7624"
 
   upgrade-orchestrator-service:
+    <<: *host-gateway
     build:
       context: ./upgrade-orchestrator-service
     image: ghostl/upgrade-orchestrator-service:local
@@ -660,6 +728,7 @@ services:
       - "7623:7623"
 
   audit-log-service:
+    <<: *host-gateway
     build:
       context: ./audit-log-service
     image: ghostl/audit-log-service:local
@@ -674,6 +743,7 @@ services:
       - "7641:7641"
 
   block-index-service:
+    <<: *host-gateway
     build:
       context: ./block-index-service
     image: ghostl/block-index-service:local

@@ -13,7 +13,7 @@ if [ -f "$OP_ENV" ]; then
   set +a
 fi
 
-HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:28545}"
+HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:18545}"
 HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
 HOST_L3_RPC="${HOST_L3_RPC:-http://localhost:39545}"
 HOST_GATE_RPC="${HOST_GATE_RPC:-http://localhost:28546}"

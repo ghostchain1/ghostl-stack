@@ -46,6 +46,18 @@ async function waitForDeployment(
 }
 
 async function main() {
+  const GAS_LIMIT = BigInt(process.env.DEPLOY_GAS_LIMIT ?? "15000000");
+  const MAX_FEE_PER_GAS = process.env.DEPLOY_MAX_FEE_PER_GAS ? BigInt(process.env.DEPLOY_MAX_FEE_PER_GAS) : undefined;
+  const MAX_PRIORITY_FEE_PER_GAS = process.env.DEPLOY_PRIORITY_FEE_PER_GAS
+    ? BigInt(process.env.DEPLOY_PRIORITY_FEE_PER_GAS)
+    : undefined;
+  const txOpts =
+    MAX_FEE_PER_GAS !== undefined && MAX_PRIORITY_FEE_PER_GAS !== undefined
+      ? { gasLimit: GAS_LIMIT, maxFeePerGas: MAX_FEE_PER_GAS, maxPriorityFeePerGas: MAX_PRIORITY_FEE_PER_GAS }
+      : { gasLimit: GAS_LIMIT };
+  console.log(
+    `Using GAS_LIMIT=${GAS_LIMIT.toString()} maxFeePerGas=${MAX_FEE_PER_GAS ?? "default"} priorityFee=${MAX_PRIORITY_FEE_PER_GAS ?? "default"}`
+  );
   const ROOT = process.env.ROOT_DIR ?? path.resolve(__dirname, "..", "..");
   // Default to OP Stack devnet ports (Anvil L1 :28545, op-geth L2 :29545). L3 is optional; keep overrideable.
   const l2ChainId = Number(process.env.L2_CHAIN_ID ?? network.config.chainId ?? 901);
@@ -64,12 +76,14 @@ async function main() {
   const l2 = await ethers.getSigners();
 
   console.log(`Deploying to GhostL2 network (${network.name})...`);
+  console.log("== Deploy GuardPolicy on L2 ==");
   const Policy = await ethers.getContractFactory("GuardPolicy");
-  const policy = await Policy.connect(l2[0]).deploy();
+  const policy = await Policy.connect(l2[0]).deploy(txOpts);
   await waitForDeployment(policy, l2[0].provider as ethers.JsonRpcProvider, "GuardPolicy");
 
+  console.log("== Deploy L2L3Bridge on L2 ==");
   const Bridge = await ethers.getContractFactory("L2L3Bridge");
-  const bridge = await Bridge.connect(l2[0]).deploy(await policy.getAddress());
+  const bridge = await Bridge.connect(l2[0]).deploy(await policy.getAddress(), txOpts);
   await waitForDeployment(bridge, l2[0].provider as ethers.JsonRpcProvider, "L2L3Bridge");
 
   const policyAddr = await policy.getAddress();
@@ -78,8 +92,9 @@ async function main() {
   console.log("GuardPolicy (L2):", policyAddr);
   console.log("L2L3Bridge (L2):", bridgeAddr);
 
+  console.log("== Deploy GhostTokenL2 on L2 ==");
   const GhostToken = await ethers.getContractFactory("GhostTokenL2");
-  const l2Token = await GhostToken.connect(l2[0]).deploy();
+  const l2Token = await GhostToken.connect(l2[0]).deploy(txOpts);
   await waitForDeployment(l2Token, l2[0].provider as ethers.JsonRpcProvider, "GhostTokenL2");
   const l2TokenAddr = await l2Token.getAddress();
   console.log("GhostTokenL2 (L2):", l2TokenAddr);
@@ -95,7 +110,8 @@ async function main() {
   const l3Signer = new ethers.Wallet(relayerKey, l3Provider);
   const relayerAddr = await l3Signer.getAddress();
 
-  const setRelayerTx = await bridge.setRelayer(relayerAddr);
+  console.log("== Set bridge relayer on L2 ==");
+  const setRelayerTx = await bridge.setRelayer(relayerAddr, txOpts);
   await waitForReceipt(l2[0].provider as ethers.JsonRpcProvider, setRelayerTx.hash, "Bridge.setRelayer");
   console.log("Bridge relayer (L2):", relayerAddr);
 
@@ -107,24 +123,38 @@ async function main() {
 
   const Rollup = await ethers.getContractFactory("OptimisticRollup");
 
-  const l1Rollup = await Rollup.connect(l1Signer).deploy(l2ChainId, challengePeriodSeconds, await l1Signer.getAddress());
+  console.log("== Deploy OptimisticRollup L2->L1 on L1 ==");
+  const l1Rollup = await Rollup.connect(l1Signer).deploy(
+    l2ChainId,
+    challengePeriodSeconds,
+    await l1Signer.getAddress(),
+    txOpts
+  );
   await waitForDeployment(l1Rollup, l1Provider, "OptimisticRollup L2->L1");
   const l1RollupAddr = await l1Rollup.getAddress();
   console.log("OptimisticRollup L2->L1 (L1):", l1RollupAddr);
 
-  const l2Rollup = await Rollup.connect(l2[0]).deploy(l3ChainId, challengePeriodSeconds, await l2[0].getAddress());
+  console.log("== Deploy OptimisticRollup L3->L2 on L2 ==");
+  const l2Rollup = await Rollup.connect(l2[0]).deploy(
+    l3ChainId,
+    challengePeriodSeconds,
+    await l2[0].getAddress(),
+    txOpts
+  );
   await waitForDeployment(l2Rollup, l2[0].provider as ethers.JsonRpcProvider, "OptimisticRollup L3->L2");
   const l2RollupAddr = await l2Rollup.getAddress();
   console.log("OptimisticRollup L3->L2 (L2):", l2RollupAddr);
 
+  console.log("== Deploy L3Inbox on L3 ==");
   const Inbox = await ethers.getContractFactory("L3Inbox");
-  const inbox = await Inbox.connect(l3Signer).deploy(relayerAddr);
+  const inbox = await Inbox.connect(l3Signer).deploy(relayerAddr, txOpts);
   await waitForDeployment(inbox, l3Provider, "L3Inbox");
   const inboxAddr = await inbox.getAddress();
   console.log("L3Inbox (L3):", inboxAddr);
 
+  console.log("== Deploy L3BridgedTokenFactory on L3 ==");
   const Factory = await ethers.getContractFactory("L3BridgedTokenFactory");
-  const factory = await Factory.connect(l3Signer).deploy(relayerAddr);
+  const factory = await Factory.connect(l3Signer).deploy(relayerAddr, txOpts);
   await waitForDeployment(factory, l3Provider, "L3BridgedTokenFactory");
   const factoryAddr = await factory.getAddress();
   console.log("L3BridgedTokenFactory (L3):", factoryAddr);
@@ -135,7 +165,7 @@ async function main() {
   const l2Decimals = await l2Token.decimals();
   const l3Name = `${l2Name} (L3)`;
   const l3Symbol = `${l2Symbol}L3`;
-  const deployTokenTx = await factory.getOrDeployBridgedToken(l2TokenAddr, l3Name, l3Symbol, l2Decimals);
+  const deployTokenTx = await factory.getOrDeployBridgedToken(l2TokenAddr, l3Name, l3Symbol, l2Decimals, txOpts);
   const deployTokenRcpt = await deployTokenTx.wait();
   const deployed = deployTokenRcpt?.logs
     .map((l) => {

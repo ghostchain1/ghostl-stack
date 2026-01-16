@@ -58,8 +58,8 @@ if [ -f "$OP_ENV" ]; then
   set +a
 fi
 
-RPC_L1="${HOST_L1_RPC:-http://localhost:28545}"
-OP_L2_RPC="${OP_L2_RPC:-${HOST_L2_RPC:-http://localhost:29545}}"
+RPC_L1="${HOST_L1_RPC:-http://localhost:18545}"
+OP_L2_RPC="${OP_L2_RPC:-${HOST_L2_RPC:-http://localhost:29547}}"
 OP_L3_RPC="${OP_L3_RPC:-${HOST_L3_RPC:-http://localhost:39545}}"
 
 rpc_ready() {

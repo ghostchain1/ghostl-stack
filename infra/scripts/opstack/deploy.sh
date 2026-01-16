@@ -9,7 +9,7 @@ if [ -f "$OP_DIR/.env" ]; then
   export $(grep -v '^#' "$OP_DIR/.env" | xargs -d '\n')
 fi
 
-HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:28545}"
+HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:18545}"
 HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
 
 # Hardhat network config uses OP_* vars; ensure they follow the host RPCs.
