@@ -7,6 +7,7 @@ This folder now runs Ghostchain as a clique PoA chain on stock geth (no forked c
 cd infra/ghostchain
 bash scripts/up.sh          # init keys/datadirs + start bootnode + 2 geth nodes
 bash scripts/health.sh      # quick RPC checks (chainId, blockNumber, peers)
+# Explorer (GhostScout) on http://localhost:18640 once up.sh has started the stack
 # Stop:
 bash scripts/down.sh
 ```
@@ -27,6 +28,7 @@ Chain config:
 Compose files:
 - `docker-compose.eth.yml` — default geth PoA stack (bootnode + node1 + node2)
 - `docker-compose.ibft.yml` — legacy Besu IBFT (kept for reference; stopped by default)
+- GhostScout explorer is included (Blockscout) + Postgres DB
 
 ## Quick tx with cast (optional)
 Requires Foundry’s `cast`:
