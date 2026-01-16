@@ -15,8 +15,12 @@
     "arrowGlacierBlock": 0,
     "grayGlacierBlock": 0,
     "mergeNetsplitBlock": 0,
-    "shanghaiTime": 0,
-    "cancunTime": 0,
+    "shanghaiTime": 4102444800,
+    "cancunTime": 4102444800,
+    "clique": {
+      "period": 2,
+      "epoch": 30000
+    },
     "blobSchedule": {
       "cancun": {
         "target": 3,
@@ -25,26 +29,19 @@
       }
     }
   },
-  "nonce": "0x0000000000000000",
-  "timestamp": "0x6553f100",
+  "nonce": "0x0",
+  "timestamp": "0x0",
+  "extraData": "0x000000000000000000000000000000000000000000000000000000000000000070997970c51812dc3a010c7d01b50e0d17dc79c8f39fd6e51aad88f6f4ce6ab8827279cfffb922660000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
   "gasLimit": "0x1c9c380",
   "difficulty": "0x1",
   "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
   "coinbase": "0x0000000000000000000000000000000000000000",
-  "extraData": "0xf87ea00000000000000000000000000000000000000000000000000000000000000000f85494c25d312177d2e0c406ecc5025a0f98e0c13a93bd944bb8e00bf2d6cdd6747cd773f674ba9eca42f4d29494f02896c880ac1d264b14381471f9783b5b44d2940194d70b789a4d0b01de4a601f56e154e200afe5808400000000c0",
-  "baseFeePerGas": "0x3b9aca00",
   "alloc": {
-    "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266": {
-      "balance": "0x52b7d2dcc80cd2e4000000"
-    },
-    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8": {
-      "balance": "0x52b7d2dcc80cd2e4000000"
-    },
-    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc": {
-      "balance": "0x52b7d2dcc80cd2e4000000"
-    },
-    "0x15d34aaf54267db7d7c367839aaf71a00a2c6a65": {
-      "balance": "0x52b7d2dcc80cd2e4000000"
-    }
-  }
+    "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266": { "balance": "0x52b7d2dcc80cd2e4000000" },
+    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8": { "balance": "0x52b7d2dcc80cd2e4000000" },
+    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc": { "balance": "0x52b7d2dcc80cd2e4000000" },
+    "0x15d34aaf54267db7d7c367839aaf71a00a2c6a65": { "balance": "0x52b7d2dcc80cd2e4000000" },
+    "0x59c6995e998f97a5a0044966f0945389dc9e86da": { "balance": "0x52b7d2dcc80cd2e4000000" }
+  },
+  "baseFeePerGas": "0x3b9aca00"
 }
