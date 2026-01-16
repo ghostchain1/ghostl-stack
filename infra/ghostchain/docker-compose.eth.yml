@@ -104,6 +104,12 @@ services:
     image: postgres:15-alpine
     restart: unless-stopped
     logging: *default-logging
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETUID
+      - SETGID
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -114,6 +120,8 @@ services:
       ghostchain:
         ipv4_address: 172.28.0.30
     <<: *default-security
+    cap_drop: []
+    security_opt: []
     mem_limit: 1g
     cpus: "0.5"
 
@@ -124,6 +132,8 @@ services:
     depends_on:
       - ghostscout-db
       - ghostchain-node1
+    entrypoint: ["/app/bin/blockscout"]
+    command: ["start"]
     environment:
       DATABASE_URL: postgres://postgres:postgres@ghostscout-db:5432/blockscout
       ECTO_USE_SSL: "false"
@@ -136,6 +146,7 @@ services:
       SUBNETWORK: PoA
       COIN: GHOST
       SECRET_KEY_BASE: 6d31c6c2b8b7344f5f3d2421f3d8a42d9d27f9b4a7ad0b287f1aa4f8c6efb6d3
+      DISABLE_EVISION: "true"
     ports:
       - "18640:4000"
     networks:
