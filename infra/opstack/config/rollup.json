@@ -1,7 +1,7 @@
 {
   "genesis": {
     "l1": {
-      "hash": "0x312eac678cb351086a6046a4ef32b36881a07cec624e4f5f9e75f75a2fe68116",
+      "hash": "0xbbe1492afc43e4295f3b631b51b7dade7f9fa1450467a1f53475a61ffbebe8fc",
       "number": 0
     },
     "l2": {
@@ -36,9 +36,9 @@
   "isthmus_time": 0,
   "jovian_time": 0,
   "batch_inbox_address": "0x00289c189bee4e70334629f04cd5ed602b6600eb",
-  "deposit_contract_address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-  "l1_system_config_address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-  "protocol_versions_address": "0x41b343Df2196081e42ac8Da11a1aA38De08e8658",
+  "deposit_contract_address": "0xa8e6006308b85301Ad8212491e26952cB65dAd1e",
+  "l1_system_config_address": "0x85Bc1E830fB12F0613Ae7890251f3409Ef903D68",
+  "protocol_versions_address": "0x59f2f1fcfe2474fd5f0b9ba1e73ca90b143eb8d0",
   "chain_op_config": {
     "eip1559Elasticity": 6,
     "eip1559Denominator": 50,
