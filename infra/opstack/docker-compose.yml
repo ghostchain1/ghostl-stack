@@ -106,7 +106,7 @@ services:
     ports:
     - 29547:8545
     volumes:
-    - ./data/l2-geth-new:/data
+    - ./data/l2-geth-new2:/data
     - ./config/jwt.txt:/config/jwt.txt:ro
     - ./config/genesis-l2.json:/config/genesis-l2.json:ro
     entrypoint:
@@ -118,7 +118,7 @@ services:
       \ --http.addr=0.0.0.0 --http.api=eth,net,web3,debug,txpool \\\n  --http.vhosts=\"\
       *\" \\\n  --ws --ws.addr=0.0.0.0 --ws.origins=\"*\" \\\n  --authrpc.addr=0.0.0.0\
       \ --authrpc.port=8551 --authrpc.vhosts=\"*\" --authrpc.jwtsecret=/config/jwt.txt\
-      \ \\\n  --datadir=/data \\\n  --networkid=${L2_CHAIN_ID:-901} \\\n  --gcmode=archive\
+      \\\n  --datadir=/data \\\n  --networkid=${L2_CHAIN_ID:-901} \\\n  --gcmode=archive\
       \ \\\n  --rollup.disabletxpoolgossip=true\n"
     healthcheck:
       test:
@@ -138,6 +138,8 @@ services:
     user: 1000:1000
     restart: unless-stopped
     logging: *id003
+    extra_hosts:
+    - host.docker.internal:host-gateway
     depends_on:
       l2-geth:
         condition: service_healthy
@@ -184,6 +186,8 @@ services:
     user: 1000:1000
     restart: unless-stopped
     logging: *id003
+    extra_hosts:
+    - host.docker.internal:host-gateway
     depends_on:
       l2-geth:
         condition: service_healthy
@@ -234,6 +238,8 @@ services:
     user: 1000:1000
     restart: unless-stopped
     logging: *id003
+    extra_hosts:
+    - host.docker.internal:host-gateway
     depends_on:
       op-node:
         condition: service_healthy
@@ -276,6 +282,8 @@ services:
     user: 1000:1000
     restart: unless-stopped
     logging: *id003
+    extra_hosts:
+    - host.docker.internal:host-gateway
     depends_on:
       op-node:
         condition: service_healthy

@@ -23,19 +23,63 @@ const OP_L3_RPC = process.env.OP_L3_RPC ?? "http://localhost:39545";
 const OP_L2_CHAIN_ID = Number(process.env.OP_L2_CHAIN_ID ?? 901);
 const OP_L3_CHAIN_ID = Number(process.env.OP_L3_CHAIN_ID ?? 902);
 
+const REQUEST_TIMEOUT_MS = 120_000;
+
 const config: HardhatUserConfig = {
   solidity: "0.8.24",
   paths: {
     sources: "./src"
   },
   networks: {
-    anvil: { url: RPC_L1, chainId: L1_CHAIN_ID, accounts: [DEV_PRIVATE_KEY] },
-    ghostl2: { url: RPC_L2, chainId: L2_CHAIN_ID, accounts: [DEV_PRIVATE_KEY] },
-    ghostl3: { url: RPC_L3, chainId: L3_CHAIN_ID, accounts: [DEV_PRIVATE_KEY] },
-    ghostl2Op: { url: OP_L2_RPC, chainId: OP_L2_CHAIN_ID, accounts: [DEV_PRIVATE_KEY] },
-    ghostl3Op: { url: OP_L3_RPC, chainId: OP_L3_CHAIN_ID, accounts: [DEV_PRIVATE_KEY] },
-    polygon: { url: POLYGON_RPC_URL, chainId: 137, accounts: EXTERNAL_DEPLOYER_KEY },
-    polygonAmoy: { url: POLYGON_AMOY_RPC_URL, chainId: 80002, accounts: EXTERNAL_DEPLOYER_KEY }
+    anvil: {
+      url: RPC_L1,
+      chainId: L1_CHAIN_ID,
+      accounts: [DEV_PRIVATE_KEY],
+      timeout: REQUEST_TIMEOUT_MS,
+      gasPrice: 1_000_000_000
+    },
+    ghostl2: {
+      url: RPC_L2,
+      chainId: L2_CHAIN_ID,
+      accounts: [DEV_PRIVATE_KEY],
+      timeout: REQUEST_TIMEOUT_MS,
+      gasPrice: 1_000_000_000
+    },
+    ghostl3: {
+      url: RPC_L3,
+      chainId: L3_CHAIN_ID,
+      accounts: [DEV_PRIVATE_KEY],
+      timeout: REQUEST_TIMEOUT_MS,
+      gasPrice: 1_000_000_000
+    },
+    ghostl2Op: {
+      url: OP_L2_RPC,
+      chainId: OP_L2_CHAIN_ID,
+      accounts: [DEV_PRIVATE_KEY],
+      timeout: REQUEST_TIMEOUT_MS,
+      gasPrice: 1_000_000_000
+    },
+    ghostl3Op: {
+      url: OP_L3_RPC,
+      chainId: OP_L3_CHAIN_ID,
+      accounts: [DEV_PRIVATE_KEY],
+      timeout: REQUEST_TIMEOUT_MS,
+      gasPrice: 1_000_000_000
+    },
+    polygon: {
+      url: POLYGON_RPC_URL,
+      chainId: 137,
+      accounts: EXTERNAL_DEPLOYER_KEY,
+      timeout: REQUEST_TIMEOUT_MS,
+      gasPrice: 1_000_000_000
+    },
+    polygonAmoy: {
+      url: POLYGON_AMOY_RPC_URL,
+      chainId: 80002,
+      accounts: EXTERNAL_DEPLOYER_KEY,
+      timeout: REQUEST_TIMEOUT_MS,
+      gasPrice: 1_000_000_000
+    }
   },
   etherscan: {
     apiKey: {
