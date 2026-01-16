@@ -14,8 +14,8 @@ source "$OP_DIR/.env"
 [ -f "$OP_DIR/.env.secrets" ] && source "$OP_DIR/.env.secrets"
 set +a
 
-HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:28545}"
-HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29545}"
+HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:18545}"
+HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
 HOST_L3_RPC="${HOST_L3_RPC:-http://localhost:39545}"
 ENABLE_L3="${ENABLE_L3:-1}"
 
@@ -31,13 +31,13 @@ bash "$ROOT/infra/scripts/opstack/deploy.sh"
 echo "Starting services (Guard/Relayer/Proposers/Challengers/Obs) against OP RPCs..."
 COMPOSE_DIR="$ROOT/.devcontainer"
 COMPOSE_FILE="$COMPOSE_DIR/docker-compose.yml"
+GUARD_PORT=7070
 if [ ! -f "$COMPOSE_FILE" ]; then
   # Fallback to the services compose bundle when the devcontainer scaffold is absent (e.g., local checkout).
   COMPOSE_DIR="$ROOT/services"
   COMPOSE_FILE="$COMPOSE_DIR/docker-compose.yml"
 fi
 SERVICES=(
-  ghost-guard
   ghost-relayer
   ghost-rollup-proposer-l2
   ghost-rollup-proposer-l3
@@ -48,4 +48,4 @@ SERVICES=(
 )
 docker compose -f "$COMPOSE_FILE" up -d --no-deps "${SERVICES[@]}"
 
-echo "Done. L1=$HOST_L1_RPC, L2=$HOST_L2_RPC${ENABLE_L3:+, L3=$HOST_L3_RPC}, Guard=7070, Relayer=7171, ProposerL2=7272, ProposerL3=7373, ChallengerL2=7282, ChallengerL3=7383, Prometheus=9090, Grafana=3000"
+echo "Done. L1=$HOST_L1_RPC, L2=$HOST_L2_RPC${ENABLE_L3:+, L3=$HOST_L3_RPC}, Guard=$GUARD_PORT, Relayer=7171, ProposerL2=7272, ProposerL3=7373, ChallengerL2=7282, ChallengerL3=7383, Prometheus=9090, Grafana=3000"

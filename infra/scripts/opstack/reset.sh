@@ -7,7 +7,7 @@ OP_DIR="$ROOT/infra/opstack"
 L3_NAME="${L3_NAME:-ghostl3}"
 
 # Data directory locations (keep in sync with docker-compose.yml)
-L2_DATA_DIR="${OP_DIR}/data/l2-geth-new"
+L2_DATA_DIR="${OP_DIR}/data/l2-geth-new2"
 OP_NODE_DATA_DIR="${OP_DIR}/data/op-node"
 OP_SEQUENCER_DATA_DIR="${OP_DIR}/data/op-sequencer"
 OP_BATCHER_DATA_DIR="${OP_DIR}/data/op-batcher"

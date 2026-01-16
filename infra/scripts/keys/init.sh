@@ -94,8 +94,8 @@ cd "$ROOT_DIR/.devcontainer"
 docker compose stop --no-deps ghost-rollup-proposer-l2 ghost-rollup-proposer-l3 >/dev/null 2>&1 || true
 docker compose stop --no-deps ghost-rollup-challenger-l2 ghost-rollup-challenger-l3 >/dev/null 2>&1 || true
 
-HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:28545}"
-HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29545}"
+HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:18545}"
+HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
 HOST_L3_RPC="${HOST_L3_RPC:-http://localhost:39545}"
 FUND_AMOUNT_ETH="${FUND_AMOUNT_ETH:-10}"
 

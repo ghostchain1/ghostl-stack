@@ -217,7 +217,7 @@ check_contract "L3 StandardBridge (L2 side)" "$L3_BRIDGE_L2" "$L2_RPC"
 check_contract "L3 StandardBridge (L3 side)" "$L3_BRIDGE_L3" "$L3_RPC"
 
 echo "---- Data dir hygiene ----"
-check_datadir "L2 geth data (infra/opstack/data/l2-geth-new)" "$REPO_ROOT/infra/opstack/data/l2-geth-new"
+check_datadir "L2 geth data (infra/opstack/data/l2-geth-new2)" "$REPO_ROOT/infra/opstack/data/l2-geth-new2"
 check_datadir "L2 op-node data (infra/opstack/data/op-node)" "$REPO_ROOT/infra/opstack/data/op-node"
 check_datadir "L3 geth data (infra/opstack/l3/${L3_NAME_VAR}/data)" "$REPO_ROOT/infra/opstack/l3/${L3_NAME_VAR}/data"
 
