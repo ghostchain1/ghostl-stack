@@ -34,7 +34,11 @@
     "0x70997970c51812dc3a010c7d01b50e0d17dc79c8": { "balance": "0x52b7d2dcc80cd2e4000000" },
     "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc": { "balance": "0x52b7d2dcc80cd2e4000000" },
     "0x15d34aaf54267db7d7c367839aaf71a00a2c6a65": { "balance": "0x52b7d2dcc80cd2e4000000" },
-    "0x59c6995e998f97a5a0044966f0945389dc9e86da": { "balance": "0x52b7d2dcc80cd2e4000000" }
+    "0x59c6995e998f97a5a0044966f0945389dc9e86da": { "balance": "0x52b7d2dcc80cd2e4000000" },
+    "0x4e59b44847b379578588920ca78fbf26c0b4956c": {
+      "balance": "0x0",
+      "code": "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3"
+    }
   },
   "baseFeePerGas": "0x3b9aca00"
 }
