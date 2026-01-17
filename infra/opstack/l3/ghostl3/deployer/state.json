@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "create2Salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "create2Salt": "0x9757facf50ce9bfea49b853715c434fd3d1dcc59945915c28346a4e3aa146fb5",
   "appliedIntent": null,
   "prestateManifest": null,
   "superchainContracts": null,

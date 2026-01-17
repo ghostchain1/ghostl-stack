@@ -4,16 +4,19 @@ import { promises as fs } from "node:fs";
 import "dotenv/config";
 
 async function loadArtifact(name: string) {
-  const artifactPath = path.join(
-    __dirname,
-    "..",
-    "artifacts",
-    "contracts",
-    `${name}.sol`,
-    `${name}.json`
-  );
-  const raw = await fs.readFile(artifactPath, "utf8");
-  return JSON.parse(raw);
+  const candidates = [
+    path.join(__dirname, "..", "artifacts", "contracts", `${name}.sol`, `${name}.json`),
+    path.join(__dirname, "..", "artifacts", "src", `${name}.sol`, `${name}.json`)
+  ];
+  for (const artifactPath of candidates) {
+    try {
+      const raw = await fs.readFile(artifactPath, "utf8");
+      return JSON.parse(raw);
+    } catch {
+      // try next path
+    }
+  }
+  throw new Error(`Missing artifact for ${name}; run npm run build in ./contracts`);
 }
 
 async function main() {

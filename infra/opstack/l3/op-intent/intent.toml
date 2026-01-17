@@ -27,7 +27,8 @@ l2ContractsLocator = "file:///home/ghost/ghostl-stack/infra/opstack/optimism/pac
   minBaseFee = 0
   daFootprintGasScalar = 0
   useCustomGasToken = true
-  customGasTokenAddress = "0x8464135c8F25Da09e49BC8782676a84730C318bC"
+  # Update this after deploying the L3 gas token on L2.
+  customGasTokenAddress = "0x71C95911E9a5D330f4D621842EC243EE1343292e"
   gasPayingTokenName = "Ghost L3 Gas"
   gasPayingTokenSymbol = "GL3"
   [chains.roles]
