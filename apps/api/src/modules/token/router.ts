@@ -27,30 +27,32 @@ export const buildTokenRouter = (tokens: TokenService, wallets: WalletService) =
         res.status(404).json({ error: 'wallet_not_found' });
         return;
       }
+      const chainOverride = typeof req.query.chain === 'string' ? req.query.chain : undefined;
       const tokenList = await tokens.list(wallet.id);
       const rpcFor = (chainId: string) => {
         if (chainId === 'l1') return env.RPC_L1 || env.EXPLORER_RPC_URL || 'http://localhost:18545';
         if (chainId === 'l3') return env.RPC_L3 || env.EXPLORER_RPC_URL || 'http://localhost:39545';
-        return env.RPC_L2 || env.EXPLORER_RPC_URL || 'http://localhost:29545';
+        return env.RPC_L2 || env.EXPLORER_RPC_URL || 'http://localhost:18547';
       };
-      const provider = new JsonRpcProvider(rpcFor(wallet.chainId));
+      const targetChain = chainOverride || wallet.chainId;
+      const provider = new JsonRpcProvider(rpcFor(targetChain));
       const balances = [];
       const nativeBalance = await provider.getBalance(wallet.address).catch(() => null);
       if (nativeBalance) {
-        balances.push({ type: 'native', chainId: wallet.chainId, address: wallet.address, balance: nativeBalance.toString() });
+        balances.push({ type: 'native', chainId: targetChain, address: wallet.address, balance: nativeBalance.toString() });
       }
       for (const t of tokenList) {
         if (t.type === 'erc20') {
           try {
             const contract = new Contract(t.address, ['function balanceOf(address) view returns (uint256)'], provider);
             const bal = await contract.balanceOf(wallet.address);
-            balances.push({ ...t, balance: bal.toString() });
+            balances.push({ ...t, chainId: targetChain, balance: bal.toString() });
           } catch {
-            balances.push({ ...t, balance: null, error: 'rpc_error' });
+            balances.push({ ...t, chainId: targetChain, balance: null, error: 'rpc_error' });
           }
         }
       }
-      res.json({ balances });
+      res.json({ balances, chain: targetChain });
     }
   );
 

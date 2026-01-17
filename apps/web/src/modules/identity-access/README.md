@@ -1,19 +1,19 @@
 # Identity & Access Module
 
 Pages
-- Login (Wallet / SSO)
+- Login (password / SSO)
 - Users & Roles
 - API Keys
 - Sessions
 
 Key components
-- WalletConnectButton
+- GhostWalletButton
 - RoleEditor
 - PolicyViewer
 - ApprovalFlowPanel (multi-sig approvals)
 
 Services
-- AuthService (wallet signature, SSO tokens)
+- AuthService (password auth, SSO tokens)
 - RBACService (role → permissions matrix)
 - AuditLogService (write once, immutable view)
 

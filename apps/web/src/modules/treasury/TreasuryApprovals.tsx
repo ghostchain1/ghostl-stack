@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { resolveApiBase } from '../../lib/runtime';
 
 type Proposal = {
   id: string;
@@ -8,7 +9,7 @@ type Proposal = {
   createdAt?: string;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE = resolveApiBase();
 
 export function TreasuryApprovals() {
   const [proposals, setProposals] = useState<Proposal[]>([]);

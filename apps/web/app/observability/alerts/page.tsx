@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { Badge, Card, Button } from '@ghostl/ui';
 import { useSession } from '../../../src/modules/identity-access/session';
+import { resolveApiBase } from '../../../src/lib/runtime';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = resolveApiBase();
 
 type Alert = {
   id: string;

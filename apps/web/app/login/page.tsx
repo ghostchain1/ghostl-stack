@@ -1,11 +1,10 @@
 'use client';
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
-import { SiweMessage } from 'siwe';
-import { BrowserProvider } from 'ethers';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { resolveApiBase } from '../../src/lib/runtime';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = resolveApiBase();
 const PREFILL_SSO = process.env.NEXT_PUBLIC_SSO_JWT || '';
 const LOCALSTORAGE_KEY = 'ghostl-sso-token';
 
@@ -29,63 +28,43 @@ function LoginClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const returnTo = useMemo(() => searchParams?.get('returnTo') || '/', [searchParams]);
-  const [message] = useState('Sign in to GhostL Dashboard');
   const [token, setToken] = useState('');
-  const [nonce, setNonce] = useState<string | null>(null);
-  const [status, setStatus] = useState<string>('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [status, setStatus] = useState('');
 
-  const fetchNonce = async () => {
-    setStatus('Requesting nonce...');
-    const res = await fetch(`${API_URL}/auth/nonce`, { credentials: 'include' });
-    const data = await res.json();
-    setNonce(data.nonce);
-    setStatus('Nonce received; ready to sign.');
+  const loginPassword = async () => {
+    setStatus('Signing in...');
+    const res = await fetch(`${API_URL}/auth/login/password`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, password })
+    });
+    if (res.ok) {
+      setStatus('Success. Reloading...');
+      window.location.href = returnTo;
+      return;
+    }
+    const err = await res.json().catch(() => ({}));
+    setStatus(`Failed: ${err.error || res.status}`);
   };
 
-  const loginWallet = async () => {
-    try {
-      if (!nonce) {
-        setStatus('Fetch nonce first');
-        return;
-      }
-      setStatus('Preparing SIWE message...');
-      const eth = (window as unknown as { ethereum?: unknown }).ethereum as { request: (args: unknown) => Promise<unknown> } | undefined;
-      if (!eth) {
-        setStatus('No injected wallet found');
-        return;
-      }
-      const browserProvider = new BrowserProvider(eth);
-      const [address] = await browserProvider.send('eth_requestAccounts', []);
-      const chainId = await browserProvider.send('eth_chainId', []);
-      const siwe = new SiweMessage({
-        domain: window.location.host,
-        address,
-        statement: message,
-        uri: window.location.origin,
-        version: '1',
-        chainId: parseInt(chainId, 16),
-        nonce
-      });
-      const preparedMessage = siwe.prepareMessage();
-      const sig = await browserProvider.send('personal_sign', [preparedMessage, address]);
-      setStatus('Logging in...');
-      const res = await fetch(`${API_URL}/auth/login/wallet`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ message: preparedMessage, signature: sig })
-      });
-      if (res.ok) {
-        setStatus('Success. Reloading...');
-        window.location.href = returnTo;
-      } else {
-        const err = await res.json().catch(() => ({}));
-        setStatus(`Failed: ${err.error || res.status}`);
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Login failed';
-      setStatus(msg);
+  const registerPassword = async () => {
+    setStatus('Creating account...');
+    const res = await fetch(`${API_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, password, createWallet: true })
+    });
+    if (res.ok) {
+      setStatus('Account created. Redirecting...');
+      window.location.href = returnTo;
+      return;
     }
+    const err = await res.json().catch(() => ({}));
+    setStatus(`Failed: ${err.error || res.status}`);
   };
 
   const loginSso = async () => {
@@ -106,7 +85,6 @@ function LoginClient() {
   };
 
   useEffect(() => {
-    // Prefill SSO token from env or localStorage
     const existing = PREFILL_SSO || (typeof window !== 'undefined' ? localStorage.getItem(LOCALSTORAGE_KEY) : '');
     if (existing) setToken(existing);
 
@@ -126,17 +104,26 @@ function LoginClient() {
 
   return (
     <div className="content">
-      <div className="card" style={{ maxWidth: 460 }}>
-        <h3>Login</h3>
+      <div className="card" style={{ maxWidth: 520 }}>
+        <h3>GhostWallet Access</h3>
         <div className="stack">
-          <button className="button secondary" type="button" onClick={fetchNonce}>
-            1) Get nonce
-          </button>
-          {nonce && <span className="muted">Nonce: {nonce}</span>}
-          <button className="button" type="button" onClick={loginWallet}>
-            2) Sign & login with wallet
-          </button>
-          <p className="muted">Uses SIWE. Connect wallet, sign, and establish session.</p>
+          <label className="stack">
+            <span className="muted">Email</span>
+            <input className="input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ops@ghostchain.dev" />
+          </label>
+          <label className="stack">
+            <span className="muted">Password</span>
+            <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+          </label>
+          <div className="inline-form" style={{ gap: 8 }}>
+            <button className="button" type="button" onClick={loginPassword}>
+              Sign in
+            </button>
+            <button className="button secondary" type="button" onClick={registerPassword}>
+              Create account
+            </button>
+          </div>
+          <p className="muted">GhostWallet is fully native. Private keys stay server-side.</p>
           <hr />
           <label className="stack">
             <span className="muted">SSO JWT token</span>

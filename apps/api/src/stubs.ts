@@ -9,9 +9,9 @@ export const createStubServices = () => {
   ];
 
   const availableNetworks: NetworkContext[] = [
-    { chainId: '1337', name: 'GhostL1', environment: 'local', rpcUrl: 'http://localhost:18545' },
-    { chainId: '901', name: 'GhostL2', environment: 'local', rpcUrl: 'http://localhost:29545' },
-    { chainId: '902', name: 'GhostL3', environment: 'local', rpcUrl: 'http://localhost:39545' }
+    { chainId: '14000101', name: 'GhostChain L1', environment: 'local', rpcUrl: 'http://localhost:18545' },
+    { chainId: '901', name: 'GhostL2', environment: 'local', rpcUrl: 'http://localhost:18547' },
+    { chainId: '903', name: 'GhostL3', environment: 'local', rpcUrl: 'http://localhost:39545' }
   ];
 
   let currentNetwork: NetworkContext = availableNetworks[1];

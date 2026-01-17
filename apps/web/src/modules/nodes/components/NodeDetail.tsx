@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { resolveApiBase } from '../../../lib/runtime';
 import type { Node, NodeMetrics } from '@ghostl/types/nodes';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE = resolveApiBase();
 
 export function NodeDetail({ node, metrics }: { node: Node; metrics?: NodeMetrics }) {
   const [statusMsg, setStatusMsg] = useState('');

@@ -4,9 +4,9 @@ import net from 'net';
 const PORT = Number(process.env.NETWORK_MANAGER_PORT || '7766');
 const MONITOR_HOST = process.env.MONITOR_HOST || 'localhost';
 const RPC_L1 = process.env.MONITOR_RPC_L1 || process.env.RPC_L1 || 'http://localhost:18545';
-const RPC_L2 = process.env.MONITOR_RPC_L2 || process.env.RPC_L2 || 'http://localhost:29547';
+const RPC_L2 = process.env.MONITOR_RPC_L2 || process.env.RPC_L2 || 'http://localhost:18547';
 const RPC_L3 = process.env.MONITOR_RPC_L3 || process.env.RPC_L3 || 'http://localhost:39545';
-const PORTS = (process.env.MONITOR_PORTS || '7070,7171,29547,39545').split(',').map(p => Number(p.trim())).filter(Boolean);
+const PORTS = (process.env.MONITOR_PORTS || '7070,7171,18545,18547,39545').split(',').map(p => Number(p.trim())).filter(Boolean);
 const HEALTH_ENDPOINTS = (process.env.MONITOR_HEALTH_ENDPOINTS || '').split(',').map(h => h.trim()).filter(Boolean);
 
 const app = express();

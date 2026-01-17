@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { Card, Badge } from '@ghostl/ui';
+import { resolveApiBase } from '../../../src/lib/runtime';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = resolveApiBase();
 
 type Overview = {
   chain: string;

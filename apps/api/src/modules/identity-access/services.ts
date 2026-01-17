@@ -1,7 +1,8 @@
 import type { ApiKey, Role, Session, User } from '../../../../../packages/types';
 
 export interface AuthService {
-  loginWithWallet(message: string, signature: string, nonce: string): Promise<Session>;
+  loginWithPassword(email: string, password: string): Promise<Session>;
+  registerWithPassword(email: string, password: string, roles?: string[]): Promise<Session>;
   loginWithSso(token: string): Promise<Session>;
   getSession(sessionId: string): Promise<Session | null>;
   revokeSession(sessionId: string): Promise<void>;

@@ -4,7 +4,7 @@ import http from "http";
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
 const rpcL1 = process.env.CLOCK_SYNC_RPC_L1 || process.env.RPC_L1 || "http://host.docker.internal:18545";
-const rpcL2 = process.env.CLOCK_SYNC_RPC_L2 || process.env.RPC_L2 || "http://host.docker.internal:29547";
+const rpcL2 = process.env.CLOCK_SYNC_RPC_L2 || process.env.RPC_L2 || "http://host.docker.internal:18547";
 const rpcL3 = process.env.CLOCK_SYNC_RPC_L3 || process.env.RPC_L3 || "http://host.docker.internal:39545";
 const pollMs = Number(process.env.CLOCK_SYNC_INTERVAL_MS || 5000);
 const warnThreshold = Number(process.env.CLOCK_SYNC_DRIFT_THRESHOLD_SEC || 2);
