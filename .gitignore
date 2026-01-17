@@ -36,6 +36,9 @@ services/ghost-rollup-challenger/.env.l3
 # local scratch
 .tmp/
 
+# forge broadcast artifacts
+infra/opstack/broadcast/
+
 # polygon-edge chain data (generated)
 chains/**/data/
 
@@ -55,6 +58,9 @@ apps/api/data/
 infra/ghostchain/data/
 infra/ghostchain/config/bootnode-enode.txt
 infra/ghostchain/ghostl2/data/
+
+# runtime state snapshots
+services/data/state.json
 
 # build artifacts
 apps/web/.next/

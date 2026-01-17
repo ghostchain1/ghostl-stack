@@ -1,13 +1,20 @@
 # ghostl-stack (Codespaces)
 
 Brings up:
-- L1 (Ghostchain): dev geth (chainId 1337) on :8545
-- GhostL2: Polygon Edge (7192) on :9545
-- GhostL3: Polygon Edge (7393) on :10545
+- L1 (GhostChain): Ethereum-clone geth devnet (chainId 14000101) on :18545
+- GhostL2: Shibarium-clone (OP Stack L2 on GhostChain) on :18547 (forwarder) / :29547 (direct)
+- GhostL3: OP Stack L3 rollup on GhostL2 on :39545
 - Ghost Guard API on :7070
 - Ghost Relayer API on :7171
 - Prometheus on :9090
 - Grafana on :3000 (admin/admin)
+
+## Architecture (quick model)
+- GhostChain = Ethereum clone (L1 settlement layer)
+- GhostL2 = Shibarium clone (OP Stack L2 on GhostChain)
+- GhostL3 = OP Stack L3 on GhostL2
+- Full flow: `docs/ghostchain-architecture.md`
+- Diagram: `docs/ghostchain-architecture.mmd`
 
 ## Repo layout
 - `apps/api`: Express API that fronts the service stubs.
@@ -36,7 +43,7 @@ Brings up:
 
 ## OP Stack L3-on-L2 Testnet Checklist
 
-Use the battle-tested deployment checklist (with preflight script) for GhostLayer3 → GhostLayer2 → GhostLayer1:
+Use the battle-tested deployment checklist (with preflight script) for GhostL3 → GhostL2 → GhostChain:
 - `docs/opstack-l3-testnet-deployment-checklist.md`
 - Shortcut commands:
   - `npm run env:sync:opstack` to pull L1 deployment addresses into `infra/opstack/.env`
@@ -95,8 +102,8 @@ Challengers are also generated:
 
 ## Chains
 
-Polygon Edge chain data lives under `chains/` and is initialized automatically by `infra/scripts/up.sh`.
-For a more production-like setup, use PolyBFT on L2 via `infra/scripts/up_polybft.sh`.
+Legacy Polygon Edge chain data lives under `chains/` and is initialized automatically by `infra/scripts/up.sh`.
+For the current OP Stack path, use `infra/opstack` and the GhostChain → GhostL2 → GhostL3 flow above.
 
 ### Premine a funded key (enforcement)
 

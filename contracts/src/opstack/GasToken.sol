@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.15;
 
 /// @title GasToken
 /// @notice Minimal ERC20 to serve as a custom gas token. Deploy separately on each rollup
