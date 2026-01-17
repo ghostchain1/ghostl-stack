@@ -1,6 +1,6 @@
 'use client';
 
-import { BrowserProvider, Contract, Interface, JsonRpcProvider, formatUnits, parseUnits } from 'ethers';
+import { formatUnits, parseUnits } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { tokensForChain, TokenConfig, SupportedChain } from './tokens';
 import {
@@ -12,6 +12,7 @@ import {
   executeSwap,
   type SwapRoute
 } from './api';
+import { resolveRpcBase } from '../../lib/runtime';
 
 type ChainConfig = {
   id: number;
@@ -21,47 +22,29 @@ type ChainConfig = {
 
 const chainConfigs: Record<SupportedChain, ChainConfig> = {
   l1: {
-    id: Number(process.env.NEXT_PUBLIC_L1_CHAIN_ID || 1337),
-    name: 'GhostL1',
-    rpc: process.env.NEXT_PUBLIC_L1_RPC || 'http://localhost:18545'
+    id: Number(process.env.NEXT_PUBLIC_L1_CHAIN_ID || 14000101),
+    name: 'GhostChain',
+    rpc: resolveRpcBase(process.env.NEXT_PUBLIC_L1_RPC, 18545, 'http://localhost:18545')
   },
   l2: {
     id: Number(process.env.NEXT_PUBLIC_L2_CHAIN_ID || 901),
     name: 'GhostL2',
-    rpc: process.env.NEXT_PUBLIC_L2_RPC || 'http://localhost:29545'
+    rpc: resolveRpcBase(process.env.NEXT_PUBLIC_L2_RPC, 18547, 'http://localhost:18547')
   },
   l3: {
-    id: Number(process.env.NEXT_PUBLIC_L3_CHAIN_ID || 902),
+    id: Number(process.env.NEXT_PUBLIC_L3_CHAIN_ID || 903),
     name: 'GhostL3',
-    rpc: process.env.NEXT_PUBLIC_L3_RPC || 'http://localhost:39545'
+    rpc: resolveRpcBase(process.env.NEXT_PUBLIC_L3_RPC, 39545, 'http://localhost:39545')
   }
 };
-
-const erc20Abi = [
-  'function balanceOf(address owner) view returns (uint256)',
-  'function allowance(address owner, address spender) view returns (uint256)',
-  'function approve(address spender, uint256 amount) returns (bool)',
-  'function transfer(address to, uint256 amount) returns (bool)'
-];
-
-const bridgeAbi = [
-  'function depositToL3(address to, uint256 amount, uint256 nonce) payable',
-  'function depositERC20ToL3(address token, address to, uint256 amount, uint256 nonce)',
-  'event DepositInitiated(address indexed from, address indexed to, uint256 amount, uint256 nonce)',
-  'event ERC20DepositInitiated(address indexed token, address indexed from, address indexed to, uint256 amount, uint256 nonce)',
-  'event Finalized(address indexed from, address indexed to, uint256 amount, uint256 nonce)',
-  'event ERC20Finalized(address indexed token, address indexed from, address indexed to, uint256 amount, uint256 nonce)'
-];
-
-const bridgeAddress = process.env.NEXT_PUBLIC_BRIDGE_ADDRESS;
 
 const tokenKey = (token: TokenConfig) => `${token.chain}:${token.address || 'native'}`;
 
 export function useWallet() {
+  const [walletId, setWalletId] = useState<string>('');
   const [account, setAccount] = useState<string | null>(null);
   const [chain, setChain] = useState<SupportedChain>('l2');
   const [status, setStatus] = useState<string>('');
-  const [chainWarning, setChainWarning] = useState<string>('');
   const [balances, setBalances] = useState<Record<string, string>>({});
   const [selectedToken, setSelectedToken] = useState<TokenConfig>(tokensForChain('l2')[0]);
   const [selectedOutToken, setSelectedOutToken] = useState<TokenConfig>(tokensForChain('l2')[0]);
@@ -70,7 +53,7 @@ export function useWallet() {
   const [swapRoutes, setSwapRoutes] = useState<SwapRoute[]>([]);
   const [selectedRoute, setSelectedRoute] = useState<number>(0);
   const [swapQuoteError, setSwapQuoteError] = useState<string>('');
-  const [slippageBps, setSlippageBps] = useState<number>(50); // 0.50%
+  const [slippageBps, setSlippageBps] = useState<number>(50);
   const [externalTokens, setExternalTokens] = useState<TokenConfig[]>([]);
   const [swapAmount, setSwapAmount] = useState<string>('');
 
@@ -90,31 +73,15 @@ export function useWallet() {
     setSelectedOutToken(chainTokens[0]);
   }, [chainTokens]);
 
-  const ensureSigner = useCallback(
-    async (target?: SupportedChain) => {
-      const eth = (window as unknown as { ethereum?: { request: (args: unknown) => Promise<unknown> } }).ethereum;
-      if (!eth) throw new Error('No injected wallet found');
-      const desiredChain = target || chain;
-      const browserProvider = new BrowserProvider(eth);
-      let network = await browserProvider.getNetwork();
-      if (network.chainId !== BigInt(chainConfigs[desiredChain].id)) {
-        try {
-          await eth.request({
-            method: 'wallet_switchEthereumChain',
-            params: [{ chainId: '0x' + chainConfigs[desiredChain].id.toString(16) }]
-          });
-          network = await browserProvider.getNetwork();
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : 'Failed to switch chain';
-          setChainWarning(`Wallet is on ${network.chainId.toString()}, expected ${chainConfigs[desiredChain].id}`);
-          throw new Error(msg);
-        }
+  const setActiveWallet = useCallback(
+    (id: string, address: string, defaultChain?: SupportedChain) => {
+      setWalletId(id);
+      setAccount(address);
+      if (defaultChain) {
+        setChain(defaultChain);
       }
-      setChainWarning('');
-      const signer = await browserProvider.getSigner();
-      return { signer, browserProvider };
     },
-    [chain]
+    []
   );
 
   const refreshBalances = useCallback(
@@ -150,6 +117,111 @@ export function useWallet() {
     }
   }, [account, chain, refreshBalances]);
 
+  useEffect(() => {
+    const url = process.env.NEXT_PUBLIC_TOKEN_LIST_URL;
+    if (!url) return;
+    fetch(url)
+      .then((r) => r.json())
+      .then((j) => {
+        if (!Array.isArray(j.tokens)) return;
+        const mapped: TokenConfig[] = j.tokens
+          .map((t: Record<string, unknown>) => {
+            const chainId = Number(t.chainId as number | string | undefined);
+            const entry: [SupportedChain, number][] = [
+              ['l1', chainConfigs.l1.id],
+              ['l2', chainConfigs.l2.id],
+              ['l3', chainConfigs.l3.id]
+            ];
+            const chainMatch = entry.find((e) => e[1] === chainId);
+            if (!chainMatch || typeof t.address !== 'string') return null;
+            return {
+              chain: chainMatch[0],
+              address: t.address,
+              symbol: (t.symbol as string) || (t.name as string) || 'TOK',
+              decimals: Number(t.decimals ?? 18),
+              type: 'erc20' as const
+            };
+          })
+          .filter(Boolean) as TokenConfig[];
+        setExternalTokens(mapped);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const connect = useCallback(async () => {
+    setStatus('Select a GhostWallet to continue.');
+  }, []);
+
+  const switchChain = useCallback(
+    async (target: SupportedChain) => {
+      setChain(target);
+      setStatus('');
+      if (account) {
+        await refreshBalances(account, target);
+      }
+    },
+    [account, refreshBalances]
+  );
+
+  const send = useCallback(
+    async (to: string, amount: string) => {
+      if (!walletId) {
+        setStatus('Select a GhostWallet first.');
+        return;
+      }
+      try {
+        setStatus('Sending transaction...');
+        const parsed = parseUnits(amount || '0', selectedToken.decimals).toString();
+        const result = await sendFunds({
+          walletId,
+          chainId: chain,
+          to,
+          amount: parsed,
+          token: selectedToken.type === 'erc20' ? selectedToken.address : undefined
+        });
+        setStatus(`Sent: ${result.tx}`);
+        await refreshBalances(account || undefined, chain);
+        return result.tx;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Send failed';
+        setStatus(msg);
+        throw err;
+      }
+    },
+    [account, chain, refreshBalances, selectedToken, walletId]
+  );
+
+  const bridgeToL3 = useCallback(
+    async (amount: string, recipient?: string) => {
+      if (!walletId) throw new Error('Select a GhostWallet first.');
+      const token = selectedToken;
+      const desiredRecipient = recipient || account || '';
+      if (!desiredRecipient) throw new Error('Missing recipient');
+      setBridgeStatus('Submitting bridge transfer...');
+      setBridgeHash('');
+      try {
+        const parsed = parseUnits(amount, token.decimals).toString();
+        const target = chain === 'l2' ? 'l3' : 'l2';
+        const res = await bridgeTransfer({
+          walletId,
+          fromChain: chain,
+          toChain: target,
+          token: token.type === 'erc20' ? token.address : undefined,
+          to: desiredRecipient,
+          amount: parsed
+        });
+        setBridgeHash(res.tx);
+        setBridgeStatus('Transfer submitted');
+        return res.tx;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Bridge failed';
+        setBridgeStatus(msg);
+        throw err;
+      }
+    },
+    [account, chain, selectedToken, walletId]
+  );
+
   const fetchSwapQuote = useCallback(
     async (amount: string) => {
       if (!selectedToken.address || !selectedOutToken.address) {
@@ -178,211 +250,19 @@ export function useWallet() {
   );
 
   useEffect(() => {
-    const url = process.env.NEXT_PUBLIC_TOKEN_LIST_URL;
-    if (!url) return;
-    fetch(url)
-      .then((r) => r.json())
-      .then((j) => {
-        if (!Array.isArray(j.tokens)) return;
-        const mapped: TokenConfig[] = j.tokens
-          .map((t: Record<string, unknown>) => {
-            const chainId = Number(t.chainId as number | string | undefined);
-    const entry: [SupportedChain, number][] = [
-      ['l1', chainConfigs.l1.id],
-      ['l2', chainConfigs.l2.id],
-      ['l3', chainConfigs.l3.id]
-    ];
-            const chainMatch = entry.find((e) => e[1] === chainId);
-            if (!chainMatch || typeof t.address !== 'string') return null;
-            return {
-              chain: chainMatch[0],
-              address: t.address,
-              symbol: (t.symbol as string) || (t.name as string) || 'TOK',
-              decimals: Number(t.decimals ?? 18),
-              type: 'erc20' as const
-            };
-          })
-          .filter(Boolean) as TokenConfig[];
-        setExternalTokens(mapped);
-      })
-      .catch(() => undefined);
-  }, []);
-
-  // Debounce swap quotes on amount or token change
-  useEffect(() => {
     const timer = setTimeout(() => {
       fetchSwapQuote(swapAmount).catch(() => undefined);
     }, 300);
     return () => clearTimeout(timer);
   }, [fetchSwapQuote, swapAmount, selectedToken, selectedOutToken]);
 
-  const connect = useCallback(async () => {
-    try {
-      const { signer } = await ensureSigner(chain);
-      const addr = await signer.getAddress();
-      setAccount(addr);
-      await refreshBalances(addr, chain);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to connect wallet';
-      setStatus(msg);
-    }
-  }, [chain, ensureSigner, refreshBalances]);
-
-  const switchChain = useCallback(
-    async (target: SupportedChain) => {
-      setChain(target);
-      setStatus('');
-      setChainWarning('');
-      if (account) {
-        await refreshBalances(account, target);
-      }
-    },
-    [account, refreshBalances]
-  );
-
-  const send = useCallback(
-    async (to: string, amount: string, opts?: { privateKey?: string }) => {
-      if (!selectedToken) throw new Error('No token selected');
-      setStatus(`Sending ${amount} ${selectedToken.symbol} on ${chainConfigs[chain].name}...`);
-      try {
-        const parsed = parseUnits(amount, selectedToken.decimals).toString();
-        const rpc = chainConfigs[chain].rpc;
-        if (opts?.privateKey) {
-          const res = await sendFunds({
-            rpc,
-            to,
-            amount: parsed,
-            privateKey: opts.privateKey,
-            token: selectedToken.type === 'erc20' ? selectedToken.address : undefined
-          });
-          setStatus(`Sent via API: ${res.tx}`);
-        } else {
-          const { signer } = await ensureSigner(chain);
-          let tx;
-          if (selectedToken.type === 'erc20' && selectedToken.address) {
-            const erc20 = new Contract(selectedToken.address, erc20Abi, signer);
-            tx = await erc20.transfer(to, parsed);
-          } else {
-            tx = await signer.sendTransaction({ to, value: parsed });
-          }
-          await tx.wait();
-          setStatus('Sent');
-        }
-        await refreshBalances(account || undefined, chain);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Send failed';
-        setStatus(msg);
-        throw err;
-      }
-    },
-    [account, chain, ensureSigner, refreshBalances, selectedToken]
-  );
-
-  const pollFinalization = useCallback(
-    async ({
-      receiptBlock,
-      token,
-      nonce,
-      from,
-      to
-    }: {
-      receiptBlock: number;
-      token: TokenConfig;
-      nonce: bigint;
-      from?: string;
-      to?: string;
-    }) => {
-      if (!bridgeAddress) return false;
-      const provider = new JsonRpcProvider(chainConfigs.l2.rpc);
-      const iface = new Interface(bridgeAbi);
-      const eventName = token.type === 'erc20' && token.address ? 'ERC20Finalized' : 'Finalized';
-      for (let i = 0; i < 10; i++) {
-        const logs = await provider.getLogs({
-          address: bridgeAddress,
-          fromBlock: receiptBlock,
-          toBlock: 'latest'
-        });
-        const match = logs
-          .map((log) => {
-            try {
-              return iface.parseLog(log);
-            } catch {
-              return null;
-            }
-          })
-          .find((parsed) => {
-            if (!parsed || parsed.name !== eventName || !parsed.args) return false;
-            const nonceMatch = parsed.args.nonce === nonce;
-            const fromMatch = from ? parsed.args.from?.toLowerCase?.() === from.toLowerCase() : true;
-            const toMatch = to ? parsed.args.to?.toLowerCase?.() === to.toLowerCase() : true;
-            if (eventName === 'ERC20Finalized' && token.address) {
-              const tokenMatch = parsed.args.token?.toLowerCase?.() === token.address.toLowerCase();
-              return nonceMatch && fromMatch && toMatch && tokenMatch;
-            }
-            return nonceMatch && fromMatch && toMatch;
-          });
-        if (match) {
-          setBridgeStatus('Finalized on L2 (ready on L3)');
-          return true;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-      }
-      setBridgeStatus('Deposit confirmed; waiting for relayer finalization...');
-      return false;
-    },
-    []
-  );
-
-  const bridgeToL3 = useCallback(
-    async (amount: string, recipient?: string) => {
-      if (!bridgeAddress) throw new Error('Missing NEXT_PUBLIC_BRIDGE_ADDRESS');
-      const token = selectedToken;
-      const desiredRecipient = recipient || account || '';
-      if (!desiredRecipient) throw new Error('Missing recipient');
-      setBridgeStatus('Preparing bridge transaction...');
-      setBridgeHash('');
-      try {
-        const { signer } = await ensureSigner('l2');
-        const from = await signer.getAddress();
-        const parsed = parseUnits(amount, token.decimals);
-        const nonce = BigInt(Math.floor(Date.now() / 1000));
-        const bridge = new Contract(bridgeAddress, bridgeAbi, signer);
-
-        let tx;
-        if (token.type === 'erc20' && token.address) {
-          const erc20 = new Contract(token.address, erc20Abi, signer);
-          const allowance = await erc20.allowance(from, bridgeAddress);
-          if (allowance < parsed) {
-            setBridgeStatus('Approving token for bridge...');
-            const approveTx = await erc20.approve(bridgeAddress, parsed);
-            await approveTx.wait();
-          }
-          setBridgeStatus('Depositing token to L2 bridge...');
-          tx = await bridge.depositERC20ToL3(token.address, desiredRecipient, parsed, nonce);
-        } else {
-          setBridgeStatus('Depositing native to L2 bridge...');
-          tx = await bridge.depositToL3(desiredRecipient, parsed, nonce, { value: parsed });
-        }
-        setBridgeHash(tx.hash);
-        const receipt = await tx.wait();
-        setBridgeStatus('Deposit confirmed, watching for finalization...');
-        await pollFinalization({ receiptBlock: receipt.blockNumber, token, nonce, from, to: desiredRecipient });
-        await refreshBalances(from, 'l2');
-        return tx.hash;
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Bridge failed';
-        setBridgeStatus(msg);
-        throw err;
-      }
-    },
-    [account, ensureSigner, pollFinalization, refreshBalances, selectedToken]
-  );
+  const selectedRouteObj = useMemo(() => swapRoutes[selectedRoute], [swapRoutes, selectedRoute]);
 
   return {
+    walletId,
     account,
     chain,
     status,
-    chainWarning,
     balances,
     chainConfigs,
     tokens: chainTokens,
@@ -396,14 +276,15 @@ export function useWallet() {
     bridgeHash,
     bridgeToL3,
     sendViaApi: send,
-    swapViaApi: async (amount: string, recipient: string, pk: string) => {
-      // Native swaps fall back to simple send
+    swapViaApi: async (amount: string, recipient: string) => {
+      if (!walletId) throw new Error('Select a GhostWallet first.');
       if (!selectedToken.address || !selectedOutToken.address) {
         return sendFunds({
-          rpc: chainConfigs[chain].rpc,
+          walletId,
+          chainId: chain,
           to: recipient,
           amount: parseUnits(amount, selectedToken.decimals).toString(),
-          privateKey: pk
+          token: selectedToken.type === 'erc20' ? selectedToken.address : undefined
         });
       }
 
@@ -417,7 +298,7 @@ export function useWallet() {
             const adjusted = (out * BigInt(10000 - slippageBps)) / BigInt(10000);
             minOut = adjusted.toString();
           } catch {
-            // ignore parse errors, use route-provided min
+            // ignore parse errors
           }
         }
         return executeSwap({
@@ -428,27 +309,27 @@ export function useWallet() {
           path: route.path,
           routeId: route.id,
           recipient,
-          privateKey: pk
+          walletId,
+          chainId: chain
         });
       }
-      // fallback to passthrough
       return swapTokens({
-        rpc: chainConfigs[chain].rpc,
+        walletId,
+        chainId: chain,
         tokenIn: selectedToken.address,
         tokenOut: selectedOutToken.address,
         amountIn: parseUnits(amount, selectedToken.decimals).toString(),
-        recipient,
-        privateKey: pk
+        recipient
       });
     },
-    bridgeViaApi: async (amount: string, to: string, pk: string) =>
+    bridgeViaApi: async (amount: string, to: string) =>
       bridgeTransfer({
-        fromRpc: chainConfigs[chain].rpc,
-        toRpc: chainConfigs[chain === 'l2' ? 'l3' : 'l2'].rpc,
+        walletId,
+        fromChain: chain,
+        toChain: chain === 'l2' ? 'l3' : 'l2',
         token: selectedToken.type === 'erc20' ? selectedToken.address : undefined,
         to,
-        amount: parseUnits(amount, selectedToken.decimals).toString(),
-        privateKey: pk
+        amount: parseUnits(amount, selectedToken.decimals).toString()
       }),
     swapRoutes,
     swapQuoteError,
@@ -457,9 +338,11 @@ export function useWallet() {
     setSwapAmount,
     selectedRoute,
     setSelectedRoute,
+    selectedRouteObj,
     slippageBps,
     setSlippageBps,
     selectedOutToken,
-    setSelectedOutToken
+    setSelectedOutToken,
+    setActiveWallet
   };
 }

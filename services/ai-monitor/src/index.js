@@ -2,7 +2,7 @@ import express from "express";
 import client from "prom-client";
 
 const env = process.env;
-const RPC_L2 = env.RPC_L2 || "http://ghostl2:9545";
+const RPC_L2 = env.RPC_L2 || "http://localhost:18547";
 const GUARD_URL = env.GUARD_URL || "http://host.docker.internal:7070";
 const ADMIN_TOKEN = env.ADMIN_TOKEN || "";
 const PORT = Number(env.PORT || 7575);

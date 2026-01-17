@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response, Router } from 'express';
-import { randomBytes } from 'crypto';
 import type {
   ApiKeyService,
   AuthService,
@@ -9,6 +8,9 @@ import type {
 } from './services';
 import { requirePermission } from '../../lib/rbac';
 import type { User } from '../../../../../packages/types';
+import type { WalletService } from '../../services/wallet-store';
+import type { GhostWalletService } from '../../services/ghostwallet';
+import { env } from '../../config/env';
 
 const asyncHandler =
   <TReq extends Request = Request, TRes extends Response = Response>(
@@ -23,6 +25,8 @@ export interface IdentityAccessDeps {
   auditLogService: AuditLogService;
   apiKeyService: ApiKeyService;
   userService: UserService;
+  walletService?: WalletService;
+  ghostWalletService?: GhostWalletService;
 }
 
 const attachSession = async (req: Request, user: User | null, deps: IdentityAccessDeps) => {
@@ -38,47 +42,91 @@ const attachSession = async (req: Request, user: User | null, deps: IdentityAcce
   return { permissions };
 };
 
+const formatAuthError = (err: unknown) => {
+  const message = err instanceof Error ? err.message : 'internal_error';
+  switch (message) {
+    case 'invalid_credentials':
+      return { status: 401, error: 'invalid_credentials' };
+    case 'password_not_set':
+      return { status: 409, error: 'password_not_set' };
+    case 'user_exists':
+      return { status: 409, error: 'user_exists' };
+    case 'SSO_JWT_SECRET not configured':
+      return { status: 503, error: 'sso_not_configured' };
+    default:
+      return { status: 500, error: 'internal_error', message };
+  }
+};
+
+const respondAuthError = (res: Response, err: unknown) => {
+  const mapped = formatAuthError(err);
+  res.status(mapped.status).json(mapped);
+};
+
 export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
   const router = Router();
 
-  router.get(
-    '/auth/nonce',
+  router.post(
+    '/auth/register',
     asyncHandler(async (req, res) => {
-      const nonce = randomBytes(16).toString('hex');
-      req.session.nonce = nonce;
-      req.session.nonceCreatedAt = Date.now();
-      res.json({ nonce });
+      if (!env.ALLOW_PUBLIC_SIGNUP) {
+        res.status(403).json({ error: 'signup_disabled' });
+        return;
+      }
+      const { email, password, createWallet } = req.body as { email?: string; password?: string; createWallet?: boolean };
+      if (!email || !password) {
+        res.status(400).json({ error: 'email and password required' });
+        return;
+      }
+      try {
+        const session = await deps.authService.registerWithPassword(email, password);
+        const user = await deps.userService.get(session.userId);
+        const { permissions } = await attachSession(req, user, deps);
+        if (createWallet !== false && user && deps.ghostWalletService) {
+          await deps.ghostWalletService.createWallet({ userId: user.id, label: 'Primary GhostWallet', chainId: 'l1' });
+        }
+        await deps.auditLogService.append({
+          actorId: user?.id || 'unknown',
+          action: 'register',
+          resource: user?.id || 'unknown',
+          meta: { correlationId: req.correlationId }
+        });
+        res.json({ session, user, permissions });
+      } catch (err) {
+        respondAuthError(res, err);
+      }
     })
   );
 
   router.post(
-    '/auth/login/wallet',
+    '/auth/login/password',
     asyncHandler(async (req, res) => {
-      const { message, signature, hardwareProof } = req.body as { message?: string; signature?: string; hardwareProof?: string };
-      if (!message || !signature) {
-        res.status(400).json({ error: 'message and signature required' });
+      const { email, password } = req.body as { email?: string; password?: string };
+      if (!email || !password) {
+        res.status(400).json({ error: 'email and password required' });
         return;
       }
-      if (!req.session.nonce || !req.session.nonceCreatedAt || Date.now() - req.session.nonceCreatedAt > 5 * 60 * 1000) {
-        res.status(400).json({ error: 'nonce_required_or_expired' });
-        return;
+      try {
+        const session = await deps.authService.loginWithPassword(email, password);
+        const user = await deps.userService.get(session.userId);
+        const { permissions } = await attachSession(req, user, deps);
+        if (user && deps.ghostWalletService) {
+          const wallets = deps.walletService ? await deps.walletService.list() : [];
+          const owned = wallets.filter((w) => w.ownerUserId === user.id && w.type === 'custodial');
+          if (!owned.length) {
+            await deps.ghostWalletService.createWallet({ userId: user.id, label: 'Primary GhostWallet', chainId: 'l1' });
+          }
+        }
+        await deps.auditLogService.append({
+          actorId: user?.id || 'unknown',
+          action: 'login:password',
+          resource: user?.id || 'unknown',
+          meta: { correlationId: req.correlationId }
+        });
+        res.json({ session, user, permissions });
+      } catch (err) {
+        respondAuthError(res, err);
       }
-      if (process.env.HARDWARE_WALLET_REQUIRED === 'true' && !hardwareProof) {
-        res.status(403).json({ error: 'hardware_wallet_required' });
-        return;
-      }
-      const session = await deps.authService.loginWithWallet(message, signature, req.session.nonce);
-      req.session.nonce = undefined;
-      req.session.nonceCreatedAt = undefined;
-      const user = await deps.userService.get(session.userId);
-      const { permissions } = await attachSession(req, user, deps);
-      await deps.auditLogService.append({
-        actorId: user?.id || 'unknown',
-        action: 'login:wallet',
-        resource: user?.id || 'unknown',
-        meta: { correlationId: req.correlationId, hardwareWallet: process.env.HARDWARE_WALLET_REQUIRED === 'true' }
-      });
-      res.json({ session, user, permissions, hardwareRequired: process.env.HARDWARE_WALLET_REQUIRED === 'true' });
     })
   );
 
@@ -90,16 +138,20 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
         res.status(400).json({ error: 'token required' });
         return;
       }
-      const session = await deps.authService.loginWithSso(token);
-      const user = await deps.userService.get(session.userId);
-      const { permissions } = await attachSession(req, user, deps);
-      await deps.auditLogService.append({
-        actorId: user?.id || 'unknown',
-        action: 'login:sso',
-        resource: user?.id || 'unknown',
-        meta: { correlationId: req.correlationId }
-      });
-      res.json({ session, user, permissions });
+      try {
+        const session = await deps.authService.loginWithSso(token);
+        const user = await deps.userService.get(session.userId);
+        const { permissions } = await attachSession(req, user, deps);
+        await deps.auditLogService.append({
+          actorId: user?.id || 'unknown',
+          action: 'login:sso',
+          resource: user?.id || 'unknown',
+          meta: { correlationId: req.correlationId }
+        });
+        res.json({ session, user, permissions });
+      } catch (err) {
+        respondAuthError(res, err);
+      }
     })
   );
 

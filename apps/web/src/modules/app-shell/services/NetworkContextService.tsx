@@ -1,13 +1,14 @@
 'use client';
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 
 export type NetworkConfig = { id: string; label: string; env: string; rpc?: string; chainId?: number };
 
 const DEFAULT_NETWORKS: NetworkConfig[] = [
-  { id: 'l1', label: 'GhostL1 (OP Stack L1)', env: 'local', rpc: 'http://localhost:18545', chainId: 1337 },
-  { id: 'l2', label: 'GhostL2', env: 'local', rpc: 'http://localhost:29545', chainId: 901 },
-  { id: 'l3', label: 'GhostL3', env: 'local', rpc: 'http://localhost:39545', chainId: 902 }
+  { id: 'l1', label: 'GhostChain L1', env: 'local', rpc: 'http://localhost:18545', chainId: 14000101 },
+  { id: 'l2', label: 'GhostL2', env: 'local', rpc: 'http://localhost:18547', chainId: 901 },
+  { id: 'l3', label: 'GhostL3', env: 'local', rpc: 'http://localhost:39545', chainId: 903 }
 ];
 
 type NetworkContextValue = {
@@ -24,7 +25,7 @@ const NetworkContext = createContext<NetworkContextValue>({
   setNetwork: () => undefined
 });
 
-export function NetworkProvider({ children }: { children: React.ReactNode }) {
+export function NetworkProvider({ children }: { children: ReactNode }) {
   const [networks] = useState<NetworkConfig[]>(DEFAULT_NETWORKS);
   const [currentId, setCurrentId] = useState<string>(DEFAULT_NETWORKS[1].id);
 

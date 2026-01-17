@@ -1,7 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
-import { Wallet } from 'ethers';
 import type { WalletRecord, WalletPolicy } from '@ghostl/types';
 import { openSqlite, type SqliteHandle } from './db';
 
@@ -11,6 +10,11 @@ type CreateWalletInput = {
   chainId: string;
   ownerUserId?: string;
   policy?: WalletPolicy;
+  keyType?: WalletRecord['keyType'];
+  derivationPath?: string;
+  encryptedKey?: string;
+  encryptedMnemonic?: string;
+  keyPreview?: string;
 };
 
 type CreateCustodialInput = {
@@ -18,9 +22,17 @@ type CreateCustodialInput = {
   chainId: string;
   ownerUserId?: string;
   policy?: WalletPolicy;
+  address: string;
+  keyType?: WalletRecord['keyType'];
+  derivationPath?: string;
+  encryptedKey: string;
+  encryptedMnemonic?: string;
+  keyPreview?: string;
 };
 
 type StoreShape = { wallets: WalletRecord[] };
+
+const recordKeyPreview = (address: string) => `${address.slice(0, 6)}…${address.slice(-4)}`;
 
 const loadStore = async (): Promise<StoreShape> => {
   const filePath = process.env.WALLET_STORE_PATH || path.join(process.cwd(), 'data', 'wallets.json');
@@ -56,11 +68,26 @@ export const createWalletService = async () => {
         status TEXT,
         policy TEXT,
         keyPreview TEXT,
+        keyType TEXT,
+        derivationPath TEXT,
+        encryptedKey TEXT,
+        encryptedMnemonic TEXT,
         version INTEGER,
         createdAt TEXT,
         updatedAt TEXT
       );
     `);
+    const columns = db.prepare(`PRAGMA table_info(wallets)`).all() as { name: string }[];
+    const existing = new Set(columns.map((c) => c.name));
+    const addColumn = (name: string, type: string) => {
+      if (!existing.has(name)) {
+        db.exec(`ALTER TABLE wallets ADD COLUMN ${name} ${type}`);
+      }
+    };
+    addColumn('keyType', 'TEXT');
+    addColumn('derivationPath', 'TEXT');
+    addColumn('encryptedKey', 'TEXT');
+    addColumn('encryptedMnemonic', 'TEXT');
   }
 
   const store = db ? null : await loadStore();
@@ -70,7 +97,7 @@ export const createWalletService = async () => {
   };
   const now = () => new Date().toISOString();
 
-  const baseRecord = (input: { label: string; address: string; chainId: string; ownerUserId?: string; policy?: WalletPolicy }) => {
+  const baseRecord = (input: CreateWalletInput | CreateCustodialInput) => {
     const ts = now();
     return {
       id: randomUUID(),
@@ -92,8 +119,25 @@ export const createWalletService = async () => {
     };
     if (db) {
       db.prepare(
-        `INSERT INTO wallets (id,label,address,chainId,type,ownerUserId,status,policy,keyPreview,version,createdAt,updatedAt)
-         VALUES (@id,@label,@address,@chainId,@type,@ownerUserId,@status,@policy,@keyPreview,@version,@createdAt,@updatedAt)`
+        `INSERT INTO wallets (id,label,address,chainId,type,ownerUserId,status,policy,keyPreview,keyType,derivationPath,encryptedKey,encryptedMnemonic,version,createdAt,updatedAt)
+         VALUES (@id,@label,@address,@chainId,@type,@ownerUserId,@status,@policy,@keyPreview,@keyType,@derivationPath,@encryptedKey,@encryptedMnemonic,@version,@createdAt,@updatedAt)`
+      ).run({ ...record, policy: serializePolicy(record.policy) });
+    } else {
+      store!.wallets.push(record);
+      await persist();
+    }
+    return record;
+  };
+
+  const createExternal = async (input: CreateWalletInput) => {
+    const record: WalletRecord = {
+      ...baseRecord(input),
+      type: 'external'
+    };
+    if (db) {
+      db.prepare(
+        `INSERT INTO wallets (id,label,address,chainId,type,ownerUserId,status,policy,keyPreview,keyType,derivationPath,encryptedKey,encryptedMnemonic,version,createdAt,updatedAt)
+         VALUES (@id,@label,@address,@chainId,@type,@ownerUserId,@status,@policy,@keyPreview,@keyType,@derivationPath,@encryptedKey,@encryptedMnemonic,@version,@createdAt,@updatedAt)`
       ).run({ ...record, policy: serializePolicy(record.policy) });
     } else {
       store!.wallets.push(record);
@@ -103,22 +147,24 @@ export const createWalletService = async () => {
   };
 
   const createCustodial = async (input: CreateCustodialInput) => {
-    const generated = Wallet.createRandom();
+    if (!input.encryptedKey || !input.address) {
+      throw new Error('encryptedKey and address required for custodial wallet');
+    }
     const record: WalletRecord = {
-      ...baseRecord({ ...input, address: generated.address }),
+      ...baseRecord(input),
       type: 'custodial',
-      keyPreview: `${generated.privateKey.slice(0, 8)}…${generated.privateKey.slice(-4)}`
+      keyPreview: input.keyPreview || recordKeyPreview(input.address)
     };
     if (db) {
       db.prepare(
-        `INSERT INTO wallets (id,label,address,chainId,type,ownerUserId,status,policy,keyPreview,version,createdAt,updatedAt)
-         VALUES (@id,@label,@address,@chainId,@type,@ownerUserId,@status,@policy,@keyPreview,@version,@createdAt,@updatedAt)`
+        `INSERT INTO wallets (id,label,address,chainId,type,ownerUserId,status,policy,keyPreview,keyType,derivationPath,encryptedKey,encryptedMnemonic,version,createdAt,updatedAt)
+         VALUES (@id,@label,@address,@chainId,@type,@ownerUserId,@status,@policy,@keyPreview,@keyType,@derivationPath,@encryptedKey,@encryptedMnemonic,@version,@createdAt,@updatedAt)`
       ).run({ ...record, policy: serializePolicy(record.policy) });
     } else {
       store!.wallets.push(record);
       await persist();
     }
-    return { wallet: record, exportedKey: generated.privateKey };
+    return { wallet: record };
   };
 
   const list = async () => {
@@ -147,6 +193,9 @@ export const createWalletService = async () => {
     async createWatch(input: CreateWalletInput) {
       return createWatch(input);
     },
+    async createExternal(input: CreateWalletInput) {
+      return createExternal(input);
+    },
     async importWatch(input: CreateWalletInput) {
       return createWatch(input);
     },
@@ -156,17 +205,27 @@ export const createWalletService = async () => {
     async rotateCustodial(id: string) {
       const wallet = await get(id);
       if (!wallet || wallet.type !== 'custodial') throw new Error('wallet not found or not custodial');
-      const generated = Wallet.createRandom();
-      wallet.address = generated.address;
-      wallet.keyPreview = `${generated.privateKey.slice(0, 8)}…${generated.privateKey.slice(-4)}`;
+      throw new Error('rotateCustodial must be performed through GhostWallet');
+    },
+    async rotateCustodialKey(id: string, data: { address: string; encryptedKey: string; encryptedMnemonic?: string; derivationPath?: string; keyType?: WalletRecord['keyType']; keyPreview?: string }) {
+      const wallet = await get(id);
+      if (!wallet || wallet.type !== 'custodial') throw new Error('wallet not found or not custodial');
+      wallet.address = data.address;
+      wallet.encryptedKey = data.encryptedKey;
+      wallet.encryptedMnemonic = data.encryptedMnemonic;
+      wallet.derivationPath = data.derivationPath;
+      wallet.keyType = data.keyType;
+      wallet.keyPreview = data.keyPreview || recordKeyPreview(data.address);
       wallet.version = (wallet.version || 1) + 1;
       wallet.updatedAt = now();
       if (db) {
-        db.prepare('UPDATE wallets SET address=@address,keyPreview=@keyPreview,version=@version,updatedAt=@updatedAt WHERE id=@id').run(wallet);
+        db.prepare(
+          'UPDATE wallets SET address=@address,keyPreview=@keyPreview,version=@version,encryptedKey=@encryptedKey,encryptedMnemonic=@encryptedMnemonic,derivationPath=@derivationPath,keyType=@keyType,updatedAt=@updatedAt WHERE id=@id'
+        ).run(wallet);
       } else {
         await persist();
       }
-      return { wallet, exportedKey: generated.privateKey };
+      return { wallet };
     },
     async update(id: string, input: Partial<Omit<WalletRecord, 'id' | 'createdAt' | 'type'>>) {
       const wallet = await get(id);
@@ -174,7 +233,7 @@ export const createWalletService = async () => {
       Object.assign(wallet, input, { updatedAt: now() });
       if (db) {
         db.prepare(
-          'UPDATE wallets SET label=@label,address=@address,chainId=@chainId,ownerUserId=@ownerUserId,status=@status,policy=@policy,updatedAt=@updatedAt WHERE id=@id'
+          'UPDATE wallets SET label=@label,address=@address,chainId=@chainId,ownerUserId=@ownerUserId,status=@status,policy=@policy,keyPreview=@keyPreview,keyType=@keyType,derivationPath=@derivationPath,encryptedKey=@encryptedKey,encryptedMnemonic=@encryptedMnemonic,updatedAt=@updatedAt WHERE id=@id'
         ).run({ ...wallet, policy: serializePolicy(wallet.policy) });
       } else {
         await persist();

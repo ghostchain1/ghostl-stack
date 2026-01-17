@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { resolveApiBase } from '../../../lib/runtime';
 
 type SecurityStatus = {
   vaultHealthy?: boolean;
@@ -9,7 +10,7 @@ type SecurityStatus = {
   hsmHealthy?: boolean;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE = resolveApiBase();
 
 export function SecurityControls() {
   const [status, setStatus] = useState<SecurityStatus>({});

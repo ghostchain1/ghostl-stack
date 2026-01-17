@@ -17,7 +17,7 @@ services:
       context: ./gate
       dockerfile: Dockerfile
       args:
-        NODE_IMAGE: ${OP_STACK_BASE_IMAGE:-node:22-alpine3.19}
+        NODE_IMAGE: ${OP_STACK_BASE_IMAGE:-node@sha256:40dc4b415c17b85bea9be05314b4a753f45a4e1716bb31c01182e6c53d51a654}
     user: 1000:1000
     working_dir: /app
     restart: unless-stopped
@@ -96,7 +96,7 @@ services:
   l2-geth:
     cap_drop: *id001
     security_opt: *id002
-    image: ghcr.io/ethereum-optimism/op-geth:${OPSTACK_IMAGE_TAG:-latest}
+    image: ghcr.io/ethereum-optimism/op-geth@sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0
     user: 1000:1000
     restart: unless-stopped
     logging: *id003
@@ -134,7 +134,7 @@ services:
   op-node:
     cap_drop: *id001
     security_opt: *id002
-    image: ghcr.io/ethereum-optimism/op-node:${OPSTACK_IMAGE_TAG:-latest}
+    image: ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b
     user: 1000:1000
     restart: unless-stopped
     logging: *id003
@@ -184,7 +184,7 @@ services:
   op-sequencer:
     cap_drop: *id001
     security_opt: *id002
-    image: ghcr.io/ethereum-optimism/op-node:${OPSTACK_IMAGE_TAG:-latest}
+    image: ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b
     user: 1000:1000
     restart: unless-stopped
     profiles:
@@ -238,7 +238,7 @@ services:
   op-batcher:
     cap_drop: *id001
     security_opt: *id002
-    image: ghcr.io/ethereum-optimism/op-batcher:${OPSTACK_IMAGE_TAG:-latest}
+    image: ghcr.io/ethereum-optimism/op-batcher@sha256:21a2426a292a0d1b6c3665c9e07549df97d98e40edda6c880d34e22aefe279d2
     user: 1000:1000
     restart: unless-stopped
     logging: *id003
@@ -288,7 +288,7 @@ services:
   op-proposer:
     cap_drop: *id001
     security_opt: *id002
-    image: ghcr.io/ethereum-optimism/op-proposer:${OPSTACK_IMAGE_TAG:-latest}
+    image: ghcr.io/ethereum-optimism/op-proposer@sha256:00590e36e37994eefd8bbc9a6498ad20c62b072b381d0b8cdb7293056e6e5b64
     user: 1000:1000
     restart: unless-stopped
     logging: *id003
@@ -361,7 +361,7 @@ services:
   alertmanager:
     cap_drop: *id001
     security_opt: *id002
-    image: ${ALERTMANAGER_IMAGE:-prom/alertmanager:v0.27.0}
+    image: ${ALERTMANAGER_IMAGE:-prom/alertmanager@sha256:e13b6ed5cb929eeaee733479dce55e10eb3bc2e9c4586c705a4e8da41e5eacf5}
     restart: unless-stopped
     logging: *id003
     command:
@@ -385,7 +385,7 @@ services:
   loki:
     cap_drop: *id001
     security_opt: *id002
-    image: ${LOKI_IMAGE:-grafana/loki:2.9.8}
+    image: ${LOKI_IMAGE:-grafana/loki@sha256:8b5bd7748d0e4da66cd741ac276e485517514af0bea32167e27c0e1a95bcf8aa}
     restart: unless-stopped
     logging: *id003
     command:

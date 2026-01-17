@@ -13,7 +13,7 @@ export function createWatchWallet(label: string, address: string, chainId: strin
 }
 
 // Mock RPC health check placeholder (replace with real RPC client).
-export async function checkRpcHealth(rpcUrl: string): Promise<HealthStatus> {
+export async function checkRpcHealth(_rpcUrl: string): Promise<HealthStatus> {
   // TODO: wire to JSON-RPC or provider; return optimistic placeholder for now.
   return { ok: true, latencyMs: 42, head: 0, peers: 0 };
 }

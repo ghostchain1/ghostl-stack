@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { resolveApiBase } from '../../../lib/runtime';
 
 type Incident = {
   source: string;
@@ -10,7 +11,7 @@ type Incident = {
   createdAt?: string;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE = resolveApiBase();
 
 const badge = (sev?: string) => {
   if (!sev) return 'badge muted';

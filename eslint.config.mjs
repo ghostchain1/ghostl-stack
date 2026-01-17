@@ -19,6 +19,7 @@ export default tseslint.config(
   {
     files: ['**/*.{ts,tsx,js,jsx}'],
     languageOptions: {
+      parser: tseslint.parser,
       parserOptions: {
         ecmaVersion: 2022,
         sourceType: 'module'
@@ -29,7 +30,8 @@ export default tseslint.config(
       }
     },
     plugins: {
-      '@next/next': nextPlugin
+      '@next/next': nextPlugin,
+      '@typescript-eslint': tseslint.plugin
     },
     settings: {
       next: {

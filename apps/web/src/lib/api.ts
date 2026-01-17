@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { resolveApiBase } from './runtime';
 
 type FetchOptions<T> = {
   fallback?: T;
@@ -7,7 +7,7 @@ type FetchOptions<T> = {
 
 export async function apiFetch<T = unknown>(path: string, options: FetchOptions<T> = {}): Promise<T> {
   try {
-    const res = await fetch(`${API_BASE}${path}`, { next: options.next });
+    const res = await fetch(`${resolveApiBase()}${path}`, { next: options.next });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return (await res.json()) as T;
   } catch (e) {

@@ -1,14 +1,14 @@
-import { Card, Badge } from '@ghostl/ui';
+import { Card } from '@ghostl/ui';
 import type { Node, NodeMetrics } from '@ghostl/types/nodes';
 import { apiFetch } from '../../src/lib/api';
 import { NodeDetail } from '../../src/modules/nodes/components/NodeDetail';
 
-type NodeDetail = Node & { metrics: NodeMetrics };
+type NodeDetailRecord = Node & { metrics: NodeMetrics };
 
 const fallbackMetrics: NodeMetrics = { cpu: 0, mem: 0, disk: 0, peers: 0 };
 const DEVOPS_URL = process.env.NEXT_PUBLIC_DEVOPS_URL || 'http://localhost:7623';
 
-async function loadNodeDetails(): Promise<NodeDetail[]> {
+async function loadNodeDetails(): Promise<NodeDetailRecord[]> {
   const list = await apiFetch<Node[]>('/nodes', { fallback: [] });
   const enriched = await Promise.all(
     list.map((node) =>

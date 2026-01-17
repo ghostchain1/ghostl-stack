@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { resolveApiBase } from '../../../lib/runtime';
 
 type Metrics = {
   missedBlocks: number;
@@ -12,7 +13,7 @@ type Metrics = {
   bftAlerts?: { message: string; severity: string; time: string }[];
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE = resolveApiBase();
 
 export function ValidatorMetrics() {
   const [metrics, setMetrics] = useState<Metrics>({ missedBlocks: 0, finalityLag: 0 });

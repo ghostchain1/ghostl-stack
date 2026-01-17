@@ -2,8 +2,8 @@ import express from "express";
 import { ethers } from "ethers";
 
 const PORT = Number(process.env.PORT || 7635);
-const RPC_L2 = process.env.RPC_L2 || "http://localhost:9545";
-const RPC_L3 = process.env.RPC_L3 || "http://localhost:10545";
+const RPC_L2 = process.env.RPC_L2 || "http://localhost:18547";
+const RPC_L3 = process.env.RPC_L3 || "http://localhost:39545";
 
 const app = express();
 app.use(express.json());
