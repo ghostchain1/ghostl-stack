@@ -35,6 +35,7 @@ import type { NotificationChannel } from './modules/observability/services';
 import { buildDevopsRouter } from './modules/devops/router';
 import { buildWalletAdminRouter } from './modules/wallet-admin/router';
 import { createWalletService } from './services/wallet-store';
+import { createGhostWalletService } from './services/ghostwallet';
 import { createTokenService } from './services/token-store';
 import { buildTokenRouter } from './modules/token/router';
 import { buildGhostchainRouter } from './modules/ghostchain/router';
@@ -138,7 +139,6 @@ app.use((req, res, next) => {
       status: res.statusCode,
       durationMs: Date.now() - start
     };
-    // eslint-disable-next-line no-console
     console.log(JSON.stringify(entry));
   });
   next();
@@ -173,6 +173,7 @@ const alertmanager = alertmanagerUrl ? new AlertmanagerClient(alertmanagerUrl) :
 const liveServices = createLiveServices({ prometheus, grafana, relayer, loki, guard, alertmanager });
 const identityServicesPromise = createPersistentIdentityServices();
 const walletServicePromise = createWalletService();
+const ghostWalletServicePromise = walletServicePromise.then((wallets) => createGhostWalletService(wallets));
 const tokenServicePromise = createTokenService();
 let auditLogService: { append: (entry: { actorId: string; action: string; resource: string; meta?: Record<string, unknown> }) => Promise<unknown> } | undefined;
 
@@ -206,13 +207,13 @@ const servicesBase = {
   ai: env.AI_SERVICE_URL,
   forecasting: env.FORECASTING_SERVICE_URL,
   explainability: env.EXPLAINABILITY_SERVICE_URL,
-  explorerRpc: env.EXPLORER_RPC_URL || env.RPC_L2 || 'http://localhost:29545',
+  explorerRpc: env.EXPLORER_RPC_URL || env.RPC_L2 || 'http://localhost:18547',
   swap: env.SWAP_SERVICE_URL
 };
 const ghostchainConfig = [
   { id: 'l1' as const, label: 'GhostChain L1', rpc: env.RPC_L1 || 'http://localhost:18545' },
-  { id: 'l2' as const, label: 'GhostLayer2', rpc: env.RPC_L2 || servicesBase.explorerRpc },
-  { id: 'l3' as const, label: 'GhostLayer3', rpc: env.RPC_L3 || 'http://localhost:39545' }
+  { id: 'l2' as const, label: 'GhostL2', rpc: env.RPC_L2 || servicesBase.explorerRpc },
+  { id: 'l3' as const, label: 'GhostL3', rpc: env.RPC_L3 || 'http://localhost:39545' }
 ];
 const contractMetadata = {
   upgradeabilityQuery: env.CONTRACT_UPGRADEABILITY_QUERY || 'op_contract_upgradeability',
@@ -569,7 +570,9 @@ app.use(
     relayer
   })
 );
-app.use(['/v1/wallet', '/wallet'], buildWalletRouter());
+ghostWalletServicePromise.then((ghostWalletService) => {
+  app.use(['/v1/wallet', '/wallet'], buildWalletRouter(ghostWalletService));
+});
 app.use(
   ['/v1/devops', '/devops'],
   buildDevopsRouter({
@@ -582,7 +585,8 @@ identityServicesPromise.then(async (identity) => {
   auditLogService = identity.auditLogService;
   const walletService = await walletServicePromise;
   const tokenService = await tokenServicePromise;
-  app.use(['/v1', '/'], buildIdentityAccessRouter(identity));
+  const ghostWalletService = await ghostWalletServicePromise;
+  app.use(['/v1', '/'], buildIdentityAccessRouter({ ...identity, walletService, ghostWalletService }));
   app.use(['/v1', '/'], buildGhostchainRouter(ghostchainConfig));
   const observabilityGuard = env.PUBLIC_OBSERVABILITY ? allowAll : requirePermission('observability:read');
   app.use(
@@ -602,7 +606,7 @@ identityServicesPromise.then(async (identity) => {
       alertProxy: alertmanager ? (payload: AlertmanagerAlert) => alertmanager.send(payload) : undefined
     })
   );
-  app.use(['/v1/wallets', '/wallets'], buildWalletAdminRouter(walletService));
+  app.use(['/v1/wallets', '/wallets'], buildWalletAdminRouter(walletService, ghostWalletService));
   app.use(['/v1', '/'], buildTokenRouter(tokenService, walletService));
 });
 

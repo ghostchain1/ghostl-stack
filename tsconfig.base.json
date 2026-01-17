@@ -15,6 +15,8 @@
       "@ghostl/ui": ["packages/ui/src/index.ts"],
       "@ghostl/ui/*": ["packages/ui/src/*"],
       "@ghostl/sdk": ["packages/sdk/src/index.ts"],
+      "@ghostl/ghostwallet": ["packages/ghostwallet/src/index.ts"],
+      "@ghostl/ghostchain-sdk": ["packages/ghostchain-sdk/src/index.ts"],
       "@ghostl/config": ["packages/config/index.ts"],
       "@ghostl/config/*": ["packages/config/*"]
     }

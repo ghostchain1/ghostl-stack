@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { createHash, randomUUID } from 'crypto';
-import { SiweMessage } from 'siwe';
+import { createHash, randomBytes, randomUUID, scrypt as scryptCallback, timingSafeEqual } from 'crypto';
+import { promisify } from 'util';
 import jwt from 'jsonwebtoken';
 import type { ApiKey, Role, Session, User } from '@ghostl/types';
 import type {
@@ -29,7 +29,8 @@ const defaultRoles: Role[] = [
       'governance:read',
       'validator:read',
       'ai:read',
-      'wallets:read'
+      'wallets:read',
+      'wallets:write'
     ]
   },
   {
@@ -60,12 +61,15 @@ const defaultUsers: User[] = [
   { id: 'user-1', email: 'admin@ghostl.dev', wallets: [], roles: ['admin'] }
 ];
 
+const scrypt = promisify(scryptCallback);
+
 interface StoreShape {
   users: User[];
   roles: Role[];
   apiKeys: (ApiKey & { userId: string; secret: string })[];
   sessions: Session[];
   audit: AuditLogEntry[];
+  credentials: Record<string, { salt: string; hash: string; updatedAt: string }>;
 }
 
 const loadStore = async (): Promise<StoreShape> => {
@@ -73,9 +77,16 @@ const loadStore = async (): Promise<StoreShape> => {
   try {
     const raw = await fs.readFile(filePath, 'utf-8');
     return JSON.parse(raw) as StoreShape;
-  } catch (err) {
+  } catch (_err) {
     await fs.mkdir(path.dirname(filePath), { recursive: true });
-    const initial: StoreShape = { users: defaultUsers, roles: defaultRoles, apiKeys: [], sessions: [], audit: [] };
+    const initial: StoreShape = {
+      users: defaultUsers,
+      roles: defaultRoles,
+      apiKeys: [],
+      sessions: [],
+      audit: [],
+      credentials: {}
+    };
     await fs.writeFile(filePath, JSON.stringify(initial, null, 2));
     return initial;
   }
@@ -87,8 +98,38 @@ const saveStore = async (store: StoreShape) => {
   await fs.writeFile(filePath, JSON.stringify(store, null, 2));
 };
 
+const hashPassword = async (password: string, salt?: string) => {
+  const actualSalt = salt || randomBytes(16).toString('base64');
+  const derived = (await scrypt(password, actualSalt, 32)) as Buffer;
+  return { salt: actualSalt, hash: derived.toString('base64') };
+};
+
+const verifyPassword = async (password: string, credential: { salt: string; hash: string }) => {
+  const derived = (await scrypt(password, credential.salt, 32)) as Buffer;
+  const stored = Buffer.from(credential.hash, 'base64');
+  if (stored.length !== derived.length) return false;
+  return timingSafeEqual(stored, derived);
+};
+
 export const createPersistentIdentityServices = async () => {
   const store = await loadStore();
+  if (!store.credentials) {
+    store.credentials = {};
+  }
+  const bootstrapEmail = process.env.BOOTSTRAP_ADMIN_EMAIL || 'admin@ghostl.dev';
+  const bootstrapPassword = process.env.BOOTSTRAP_ADMIN_PASSWORD;
+  if (bootstrapPassword) {
+    let admin = store.users.find((u) => u.email === bootstrapEmail);
+    if (!admin) {
+      admin = { id: randomUUID(), email: bootstrapEmail, wallets: [], roles: ['admin'] };
+      store.users.push(admin);
+    } else if (!admin.roles.includes('admin')) {
+      admin.roles = Array.from(new Set([...admin.roles, 'admin']));
+    }
+    const cred = await hashPassword(bootstrapPassword);
+    store.credentials[admin.id] = { ...cred, updatedAt: new Date().toISOString() };
+    await saveStore(store);
+  }
 
   const persist = async () => saveStore(store);
 
@@ -198,24 +239,40 @@ export const createPersistentIdentityServices = async () => {
   };
 
   const authService: AuthService = {
-    async loginWithWallet(message: string, signature: string, nonce: string) {
-      const address = await verifySiwe(message, signature, nonce);
-      if (!address) throw new Error('invalid wallet login');
-      const existing = store.users.find((u) => u.wallets.includes(address));
-      const user =
-        existing ||
-        (await userService.create({
-          email: `${address.toLowerCase()}@wallet`,
-          wallets: [address],
-          roles: ['viewer']
-        }));
+    async registerWithPassword(email: string, password: string, roles?: string[]) {
+      const existing = store.users.find((u) => u.email === email);
+      if (existing) throw new Error('user_exists');
+      const user = await userService.create({
+        email,
+        wallets: [],
+        roles: roles && roles.length ? roles : ['viewer']
+      });
+      const cred = await hashPassword(password);
+      store.credentials[user.id] = { ...cred, updatedAt: new Date().toISOString() };
       const session = issueSession(user.id);
       await persist();
       await auditLogService.append({
         actorId: user.id,
-        action: 'login:wallet',
+        action: 'register:password',
         resource: user.id,
-        meta: { wallets: user.wallets }
+        meta: { email: user.email, roles: user.roles }
+      });
+      return session;
+    },
+    async loginWithPassword(email: string, password: string) {
+      const user = store.users.find((u) => u.email === email);
+      if (!user) throw new Error('invalid_credentials');
+      const cred = store.credentials[user.id];
+      if (!cred) throw new Error('password_not_set');
+      const ok = await verifyPassword(password, cred);
+      if (!ok) throw new Error('invalid_credentials');
+      const session = issueSession(user.id);
+      await persist();
+      await auditLogService.append({
+        actorId: user.id,
+        action: 'login:password',
+        resource: user.id,
+        meta: { email: user.email }
       });
       return session;
     },
@@ -224,13 +281,19 @@ export const createPersistentIdentityServices = async () => {
       if (!secret) throw new Error('SSO_JWT_SECRET not configured');
       const payload = jwt.verify(token, secret) as { sub?: string; email?: string; roles?: string[]; wallets?: string[] };
       const email = payload.email || payload.sub || 'sso-user';
+      const wallets = (payload.wallets || []).map((w) => w.toLowerCase());
       let user = store.users.find((u) => u.email === email);
       if (!user) {
         user = await userService.create({
           email,
-          wallets: payload.wallets || [],
+          wallets,
           roles: payload.roles && payload.roles.length ? payload.roles : ['viewer']
         });
+      } else if (wallets.length) {
+        const merged = Array.from(new Set([...(user.wallets || []), ...wallets]));
+        if (merged.length !== (user.wallets || []).length) {
+          user.wallets = merged;
+        }
       }
       const session = issueSession(user.id);
       await persist();
@@ -257,16 +320,6 @@ export const createPersistentIdentityServices = async () => {
   };
 
   return { rbacService, userService, apiKeyService, auditLogService, authService };
-};
-
-const verifySiwe = async (message: string, signature: string, nonce: string): Promise<string | null> => {
-  try {
-    const siwe = new SiweMessage(message);
-    const fields = await siwe.verify({ signature, nonce });
-    return fields.data.address;
-  } catch {
-    return null;
-  }
 };
 
 const hashSecret = async (secret: string) => {

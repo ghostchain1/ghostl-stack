@@ -18,6 +18,10 @@ export interface WalletRecord {
   status?: 'active' | 'pending' | 'revoked';
   policy?: WalletPolicy;
   keyPreview?: string;
+  keyType?: 'mnemonic' | 'privateKey';
+  derivationPath?: string;
+  encryptedKey?: string;
+  encryptedMnemonic?: string;
   version?: number;
   createdAt: string;
   updatedAt: string;

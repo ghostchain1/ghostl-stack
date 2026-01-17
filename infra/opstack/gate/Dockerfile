@@ -1,5 +1,4 @@
-# syntax=docker/dockerfile:1.7
-ARG NODE_IMAGE=node:22-alpine3.19
+ARG NODE_IMAGE=node@sha256:40dc4b415c17b85bea9be05314b4a753f45a4e1716bb31c01182e6c53d51a654
 
 FROM ${NODE_IMAGE} AS base
 WORKDIR /app

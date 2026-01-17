@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { resolveApiBase } from '../../../lib/runtime';
 
 type Step = {
   id: string;
@@ -18,7 +19,7 @@ type Plan = {
   updatedAt: string;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE = resolveApiBase();
 
 export function UpgradePlans() {
   const [plans, setPlans] = useState<Plan[]>([]);

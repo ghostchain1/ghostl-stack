@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { resolveApiBase } from '../../../lib/runtime';
 
 type MempoolInfo = {
   pending: number;
@@ -9,7 +10,7 @@ type MempoolInfo = {
   mevRisk?: string;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE = resolveApiBase();
 
 export function MempoolPanel({ chain = 'l2' }: { chain?: string }) {
   const [info, setInfo] = useState<MempoolInfo>({ pending: 0, queued: 0 });

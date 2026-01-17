@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../../src/lib/api';
+import { resolveApiBase } from '../../src/lib/runtime';
 
 type ComplianceFinding = { id: string; area: string; severity: string; detail: string };
 type ComplianceReport = { id: string; period: string; status: string; generatedAt: string; controls?: string[]; findings?: ComplianceFinding[]; exportedAt?: string };
 type ActionLog = { actor: string; action: string; resource: string; createdAt: string };
 
 export default function CompliancePage() {
+  const API_URL = resolveApiBase();
   const [reports, setReports] = useState<ComplianceReport[]>([]);
   const [logs, setLogs] = useState<ActionLog[]>([]);
   const [period, setPeriod] = useState('');
@@ -55,11 +57,11 @@ export default function CompliancePage() {
                   </div>
                 ) : null}
                 <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-                  <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/compliance/reports/${r.id}`} className="button secondary" target="_blank" rel="noreferrer">
+                  <a href={`${API_URL}/compliance/reports/${r.id}`} className="button secondary" target="_blank" rel="noreferrer">
                     View JSON
                   </a>
                   <a
-                    href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/compliance/reports/${r.id}/export?format=csv`}
+                    href={`${API_URL}/compliance/reports/${r.id}/export?format=csv`}
                     className="button secondary"
                     target="_blank"
                     rel="noreferrer"
@@ -83,7 +85,7 @@ export default function CompliancePage() {
                 onClick={async () => {
                   setMessage('');
                   try {
-                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/compliance/reports`, {
+                    const res = await fetch(`${API_URL}/compliance/reports`, {
                       method: 'POST',
                       headers: { 'content-type': 'application/json' },
                       credentials: 'include',

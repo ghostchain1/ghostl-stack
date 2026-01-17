@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card } from '@ghostl/ui';
+import { resolveApiBase } from '../../lib/runtime';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = resolveApiBase();
 const LOCAL_STATUS_TIMEOUT = 2500;
 
 type User = {

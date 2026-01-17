@@ -51,10 +51,12 @@ infra/opstack/data/l2-geth-new2/
 infra/opstack/data/l1-geth-new/
 infra/opstack/data/op-node/
 infra/opstack/data/op-sequencer/
+infra/opstack/data/guard/
 infra/opstack/l3/ghostl3/data/
 /infra/opstack/optimism/
 infra/opstack/infra/opstack/optimism/
 apps/api/data/
+apps/api/.sessions/
 infra/ghostchain/data/
 infra/ghostchain/config/bootnode-enode.txt
 infra/ghostchain/ghostl2/data/

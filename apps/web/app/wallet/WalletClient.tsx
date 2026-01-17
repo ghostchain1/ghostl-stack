@@ -1,13 +1,16 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { formatUnits, parseUnits } from 'ethers';
 import { Badge, Button, Card } from '@ghostl/ui';
 import { useSession } from '../../src/modules/identity-access/session';
 import { useWallet } from '../../src/modules/wallet/useWallet';
 import type { TokenConfig } from '../../src/modules/wallet/tokens';
 import type { WalletRecord, TokenRecord } from '@ghostl/types';
+import { resolveApiBase } from '../../src/lib/runtime';
+import { fundWallet, getBalance as apiGetBalance, getTxReceipt } from '../../src/modules/wallet/api';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = resolveApiBase();
 const bridgeAddress = process.env.NEXT_PUBLIC_BRIDGE_ADDRESS || '';
 
 const tokenKey = (t: TokenConfig) => `${t.chain}:${t.address || 'native'}`;
@@ -20,7 +23,6 @@ export function WalletClient() {
     chainConfigs,
     balances,
     status,
-    chainWarning,
     tokens,
     connect,
     switchChain,
@@ -30,9 +32,7 @@ export function WalletClient() {
     bridgeStatus,
     bridgeHash,
     bridgeToL3,
-    sendViaApi,
     swapViaApi,
-    bridgeViaApi,
     swapRoutes,
     swapQuoteError,
     fetchSwapQuote,
@@ -41,30 +41,46 @@ export function WalletClient() {
     slippageBps,
     setSlippageBps,
     selectedOutToken,
-    setSelectedOutToken
+    setSelectedOutToken,
+    setActiveWallet
   } = useWallet();
   const [to, setTo] = useState('');
   const [amount, setAmount] = useState('0.01');
   const [bridgeAmount, setBridgeAmount] = useState('0.01');
   const [bridgeRecipient, setBridgeRecipient] = useState('');
-  const [privateKey, setPrivateKey] = useState('');
   const [swapAmount, setSwapAmount] = useState('0.01');
   const [swapRecipient, setSwapRecipient] = useState('');
-  const [quoteTimer, setQuoteTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const quoteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [fundAmount, setFundAmount] = useState('1');
+  const [fundChain, setFundChain] = useState<'l1' | 'l2' | 'l3'>('l1');
+  const [fundStatus, setFundStatus] = useState('');
+  const [fundBalance, setFundBalance] = useState('');
+  const [txLookupHash, setTxLookupHash] = useState('');
+  const [txLookupChain, setTxLookupChain] = useState<'l1' | 'l2' | 'l3'>('l1');
+  const [txLookupStatus, setTxLookupStatus] = useState('');
+  const [txLookupResult, setTxLookupResult] = useState<null | {
+    status: 'pending' | 'confirmed';
+    tx: string;
+    chainId: string;
+    blockNumber?: number;
+    gasUsed?: string;
+    effectiveGasPrice?: string | null;
+    from?: string;
+    to?: string | null;
+  }>(null);
   const [inventory, setInventory] = useState<WalletRecord[]>([]);
   const [inventoryStatus, setInventoryStatus] = useState('');
-  const [watchForm, setWatchForm] = useState<{ label: string; address: string; chainId: string; ownerUserId: string }>({
+  const [watchForm, setWatchForm] = useState<{ label: string; address: string; chainId: string; ownerUserId?: string }>({
     label: '',
     address: '',
     chainId: 'l2',
-    ownerUserId: ''
+    ownerUserId: undefined
   });
-  const [custodialForm, setCustodialForm] = useState<{ label: string; chainId: string; ownerUserId: string }>({
+  const [custodialForm, setCustodialForm] = useState<{ label: string; chainId: string; ownerUserId?: string }>({
     label: '',
     chainId: 'l2',
-    ownerUserId: ''
+    ownerUserId: undefined
   });
-  const [exportedKey, setExportedKey] = useState<string>('');
   const [selectedWalletId, setSelectedWalletId] = useState<string>('');
   const [tokensInv, setTokensInv] = useState<WalletRecord[]>([]);
   const [tokenList, setTokenList] = useState<TokenRecord[]>([]);
@@ -78,6 +94,7 @@ export function WalletClient() {
 
   const selectedRouteObj = useMemo(() => swapRoutes[selectedRoute], [swapRoutes, selectedRoute]);
   const [bridgePlanStatus, setBridgePlanStatus] = useState('');
+  const selectedWallet = useMemo(() => inventory.find((w) => w.id === selectedWalletId) || null, [inventory, selectedWalletId]);
 
   useEffect(() => {
     if (account && !bridgeRecipient) {
@@ -89,13 +106,15 @@ export function WalletClient() {
   }, [account, bridgeRecipient, swapRecipient]);
 
   useEffect(() => {
-    if (quoteTimer) clearTimeout(quoteTimer);
+    if (quoteTimerRef.current) clearTimeout(quoteTimerRef.current);
     const timer = setTimeout(() => {
       fetchSwapQuote(swapAmount).catch(() => undefined);
     }, 300);
-    setQuoteTimer(timer);
-    return () => clearTimeout(timer);
-  }, [fetchSwapQuote, swapAmount, quoteTimer]);
+    quoteTimerRef.current = timer;
+    return () => {
+      if (quoteTimerRef.current) clearTimeout(quoteTimerRef.current);
+    };
+  }, [fetchSwapQuote, swapAmount]);
 
   const chainLabels = useMemo(
     () => ({
@@ -116,6 +135,9 @@ export function WalletClient() {
       setTokensInv(data);
       if (!selectedWalletId && data.length) {
         setSelectedWalletId(data[0].id);
+        if (data[0].chainId === 'l1' || data[0].chainId === 'l2' || data[0].chainId === 'l3') {
+          setActiveWallet(data[0].id, data[0].address, data[0].chainId as 'l1' | 'l2' | 'l3');
+        }
       }
       setInventoryStatus('');
     } catch (err) {
@@ -128,6 +150,12 @@ export function WalletClient() {
     if (session.user) {
       loadInventory().catch(() => undefined);
     }
+  }, [session.user?.id]);
+
+  useEffect(() => {
+    if (!session.user?.id) return;
+    setWatchForm((prev) => ({ ...prev, ownerUserId: prev.ownerUserId ?? session.user!.id }));
+    setCustodialForm((prev) => ({ ...prev, ownerUserId: prev.ownerUserId ?? session.user!.id }));
   }, [session.user?.id]);
 
   useEffect(() => {
@@ -186,8 +214,7 @@ export function WalletClient() {
         body: JSON.stringify({ ...custodialForm, ownerUserId: custodialForm.ownerUserId || undefined })
       });
       if (!res.ok) throw new Error(`Create failed ${res.status}`);
-      const body = (await res.json()) as { wallet: WalletRecord; exportedKey?: string };
-      setExportedKey(body.exportedKey || '');
+      await res.json();
       await loadInventory();
       setCustodialForm({ ...custodialForm, label: '' });
       setInventoryStatus('Custodial wallet created');
@@ -203,8 +230,7 @@ export function WalletClient() {
     try {
       const res = await fetch(`${API_URL}/wallets/${id}/rotate`, { method: 'POST', credentials: 'include' });
       if (!res.ok) throw new Error(`Rotate failed ${res.status}`);
-      const body = (await res.json()) as { wallet: WalletRecord; exportedKey?: string };
-      setExportedKey(body.exportedKey || '');
+      await res.json();
       await loadInventory();
       setInventoryStatus('Key rotated');
       setTimeout(() => setInventoryStatus(''), 2000);
@@ -234,6 +260,7 @@ export function WalletClient() {
     if (wallet.chainId === 'l1' || wallet.chainId === 'l2' || wallet.chainId === 'l3') {
       switchChain(wallet.chainId).catch(() => undefined);
     }
+    setActiveWallet(wallet.id, wallet.address, wallet.chainId as 'l1' | 'l2' | 'l3');
     setSelectedWalletId(wallet.id);
   };
 
@@ -274,10 +301,10 @@ export function WalletClient() {
 
   const handleSend = async () => {
     try {
-      if (privateKey) {
-        await sendViaApi(to, amount, { privateKey });
-      } else {
-        await send(to, amount);
+      const tx = await send(to, amount);
+      if (tx) {
+        setTxLookupHash(tx);
+        setTxLookupChain(chain);
       }
     } catch {
       // status already set in hook
@@ -286,13 +313,72 @@ export function WalletClient() {
 
   const handleBridge = async () => {
     try {
-      if (privateKey) {
-        await bridgeViaApi(bridgeAmount, bridgeRecipient || account || '', privateKey);
-      } else {
-        await bridgeToL3(bridgeAmount, bridgeRecipient || account || undefined);
+      const tx = await bridgeToL3(bridgeAmount, bridgeRecipient || account || undefined);
+      if (tx) {
+        setTxLookupHash(tx);
+        setTxLookupChain(chain);
       }
     } catch {
       // status already set in hook
+    }
+  };
+
+  const handleFund = async () => {
+    if (!selectedWalletId) {
+      setFundStatus('Select a wallet to fund.');
+      return;
+    }
+    const chainLabel = chainLabels[fundChain as keyof typeof chainLabels] || fundChain.toUpperCase();
+    setFundStatus(`Funding wallet on ${chainLabel}...`);
+    try {
+      const parsed = parseUnits(fundAmount || '0', 18).toString();
+      const res = await fundWallet({ walletId: selectedWalletId, chainId: fundChain, amount: parsed });
+      setFundStatus(`Funded: ${res.tx}`);
+      setTxLookupHash(res.tx);
+      setTxLookupChain(fundChain);
+      await loadInventory();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Funding failed';
+      setFundStatus(msg);
+    }
+  };
+
+  const handleFundBalanceCheck = async () => {
+    if (!selectedWallet || !selectedWallet.address) {
+      setFundStatus('Select a wallet to check.');
+      return;
+    }
+    setFundStatus('Checking balance...');
+    try {
+      const res = await apiGetBalance({ rpc: chainConfigs[fundChain].rpc, address: selectedWallet.address });
+      const readable = formatUnits(res.balance, 18);
+      setFundBalance(readable);
+      setFundStatus('');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Balance check failed';
+      setFundStatus(msg);
+    }
+  };
+
+  const handleTxLookup = async () => {
+    if (!txLookupHash) {
+      setTxLookupStatus('Enter a tx hash.');
+      return;
+    }
+    if (!/^0x[0-9a-fA-F]{64}$/.test(txLookupHash)) {
+      setTxLookupStatus('Invalid tx hash.');
+      setTxLookupResult(null);
+      return;
+    }
+    setTxLookupStatus('Checking receipt...');
+    try {
+      const result = await getTxReceipt({ chainId: txLookupChain, tx: txLookupHash });
+      setTxLookupResult(result);
+      setTxLookupStatus(result.status === 'pending' ? 'Pending' : 'Confirmed');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Receipt lookup failed';
+      setTxLookupStatus(msg);
+      setTxLookupResult(null);
     }
   };
 
@@ -301,7 +387,7 @@ export function WalletClient() {
       <div className="card-grid">
         <Card title="Wallet" subtitle={`Connect to ${chainConfigs[chain].name}`}>
           <div className="stack">
-            <Button onClick={connect}>{account ? 'Reconnect' : 'Connect wallet'}</Button>
+            <Button onClick={connect}>{account ? 'Refresh status' : 'Select GhostWallet'}</Button>
             <div className="inline-form" style={{ gap: 8 }}>
               <span className="muted">Chain</span>
               <select className="select" value={chain} onChange={(e) => switchChain(e.target.value as typeof chain)}>
@@ -322,30 +408,8 @@ export function WalletClient() {
                 </div>
               ))}
             </div>
-          {status && <span className="muted">{status}</span>}
-          {chainWarning && (
-            <div className="stack">
-              <span className="muted" style={{ color: '#f97316' }}>
-                {chainWarning}
-                </span>
-                <Button onClick={connect} variant="secondary">
-                  Switch wallet to {chainConfigs[chain].name}
-                </Button>
-              </div>
-            )}
+            {status && <span className="muted">{status}</span>}
             {!session.user && <span className="muted">Login required to use wallet actions.</span>}
-            <div className="stack" style={{ marginTop: 8 }}>
-              <span className="muted">Optional API signer (private key)</span>
-              <input
-                className="input"
-                placeholder="0x..."
-                value={privateKey}
-                onChange={(e) => setPrivateKey(e.target.value)}
-              />
-              <span className="muted" style={{ fontSize: 12 }}>
-                If provided, sends/bridges/swaps use backend signing over RPC. Leave blank to use injected wallet.
-              </span>
-            </div>
           </div>
         </Card>
         <Card title="Token import & balances" subtitle="ERC-20/721/1155 discovery">
@@ -471,7 +535,7 @@ export function WalletClient() {
             </Button>
           </div>
         </Card>
-        <Card title="Bridge" subtitle="L2 → L3 bridge call (user-signed)">
+        <Card title="Bridge" subtitle="L2 → L3 bridge call (GhostWallet-signed)">
           <div className="stack">
             <div className="inline-form" style={{ gap: 8 }}>
               <span className="muted">Recipient (L3)</span>
@@ -505,6 +569,34 @@ export function WalletClient() {
         </Card>
         <Card title="Wallet management" subtitle="API-backed registry (watch + custodial)">
           <div className="stack" style={{ gap: 12 }}>
+            <div className="stack">
+              <span className="muted">Fund GhostChain wallet (server-side funder key)</span>
+              <div className="inline-form" style={{ gap: 8 }}>
+                <select className="select" value={fundChain} onChange={(e) => setFundChain(e.target.value as 'l1' | 'l2' | 'l3')}>
+                  <option value="l1">GhostChain</option>
+                  <option value="l2">GhostL2</option>
+                  <option value="l3">GhostL3</option>
+                </select>
+                <input
+                  className="input"
+                  placeholder="Amount GTK"
+                  value={fundAmount}
+                  onChange={(e) => setFundAmount(e.target.value)}
+                />
+                <Button variant="secondary" onClick={handleFund} disabled={!selectedWalletId}>
+                  Fund wallet
+                </Button>
+                <Button variant="secondary" onClick={handleFundBalanceCheck} disabled={!selectedWalletId}>
+                  Check balance
+                </Button>
+                {fundStatus && <span className="muted">{fundStatus}</span>}
+              </div>
+              {fundBalance && (
+                <div className="muted" style={{ fontSize: 12 }}>
+                  Balance on {chainLabels[fundChain as keyof typeof chainLabels] || fundChain.toUpperCase()}: {fundBalance}
+                </div>
+              )}
+            </div>
             <div className="grid-3">
               <div className="stack">
                 <span className="muted">Add watch-only</span>
@@ -516,14 +608,14 @@ export function WalletClient() {
                     <option value="l2">L2</option>
                     <option value="l3">L3</option>
                   </select>
-                  <input className="input" placeholder="Owner user id (optional)" value={watchForm.ownerUserId} onChange={(e) => setWatchForm((f) => ({ ...f, ownerUserId: e.target.value }))} />
+                  <input className="input" placeholder="Owner user id (optional)" value={watchForm.ownerUserId || ''} onChange={(e) => setWatchForm((f) => ({ ...f, ownerUserId: e.target.value }))} />
                 </div>
                 <Button variant="secondary" onClick={createWatchWallet}>
                   Save watch wallet
                 </Button>
               </div>
               <div className="stack">
-                <span className="muted">Create custodial (key returns once)</span>
+                <span className="muted">Create GhostWallet (custodied)</span>
                 <input className="input" placeholder="Label" value={custodialForm.label} onChange={(e) => setCustodialForm((f) => ({ ...f, label: e.target.value }))} />
                 <div className="inline-form" style={{ gap: 8 }}>
                   <select className="select" value={custodialForm.chainId} onChange={(e) => setCustodialForm((f) => ({ ...f, chainId: e.target.value }))}>
@@ -531,17 +623,9 @@ export function WalletClient() {
                     <option value="l2">L2</option>
                     <option value="l3">L3</option>
                   </select>
-                  <input className="input" placeholder="Owner user id (optional)" value={custodialForm.ownerUserId} onChange={(e) => setCustodialForm((f) => ({ ...f, ownerUserId: e.target.value }))} />
+                  <input className="input" placeholder="Owner user id (optional)" value={custodialForm.ownerUserId || ''} onChange={(e) => setCustodialForm((f) => ({ ...f, ownerUserId: e.target.value }))} />
                 </div>
-                <Button onClick={createCustodialWallet}>Create custodial</Button>
-                {exportedKey && (
-                  <div className="stack" style={{ gap: 4 }}>
-                    <span className="muted" style={{ fontSize: 12 }}>
-                      Exported key (copy once; not stored server-side)
-                    </span>
-                    <input className="input" value={exportedKey} readOnly />
-                  </div>
-                )}
+                <Button onClick={createCustodialWallet}>Create GhostWallet</Button>
               </div>
               <div className="stack">
                 <span className="muted">Status</span>
@@ -590,6 +674,51 @@ export function WalletClient() {
                 </div>
               ))}
             </div>
+          </div>
+        </Card>
+        <Card title="Transaction status" subtitle="Verify receipts on L1/L2/L3">
+          <div className="stack" style={{ gap: 10 }}>
+            <div className="inline-form" style={{ gap: 8 }}>
+              <select className="select" value={txLookupChain} onChange={(e) => setTxLookupChain(e.target.value as 'l1' | 'l2' | 'l3')}>
+                <option value="l1">GhostChain</option>
+                <option value="l2">GhostL2</option>
+                <option value="l3">GhostL3</option>
+              </select>
+              <input
+                className="input"
+                placeholder="tx hash"
+                value={txLookupHash}
+                onChange={(e) => setTxLookupHash(e.target.value)}
+              />
+              <Button variant="secondary" onClick={handleTxLookup}>
+                Check receipt
+              </Button>
+            </div>
+            {txLookupStatus && <span className="muted">{txLookupStatus}</span>}
+            {txLookupResult && (
+              <div className="card" style={{ padding: 10 }}>
+                <div className="spread" style={{ fontSize: 12 }}>
+                  <span className="muted">Status</span>
+                  <span>{txLookupResult.status}</span>
+                </div>
+                <div className="spread" style={{ fontSize: 12 }}>
+                  <span className="muted">Block</span>
+                  <span>{txLookupResult.blockNumber ?? '—'}</span>
+                </div>
+                <div className="spread" style={{ fontSize: 12 }}>
+                  <span className="muted">Gas used</span>
+                  <span>{txLookupResult.gasUsed ?? '—'}</span>
+                </div>
+                <div className="spread" style={{ fontSize: 12 }}>
+                  <span className="muted">From</span>
+                  <span>{txLookupResult.from || '—'}</span>
+                </div>
+                <div className="spread" style={{ fontSize: 12 }}>
+                  <span className="muted">To</span>
+                  <span>{txLookupResult.to || '—'}</span>
+                </div>
+              </div>
+            )}
           </div>
         </Card>
         <Card title="Swap (passthrough demo)" subtitle="Token transfer via API">
@@ -642,14 +771,13 @@ export function WalletClient() {
             />
             <Button
               onClick={async () => {
-                if (!privateKey) return;
                 try {
-                  await swapViaApi(swapAmount, swapRecipient || account || '', privateKey);
+                  await swapViaApi(swapAmount, swapRecipient || account || '');
                 } catch {
                   // status handled in hook
                 }
               }}
-              disabled={!privateKey}
+              disabled={!account}
             >
               Swap via API
             </Button>
@@ -716,7 +844,7 @@ export function WalletClient() {
               <span className="muted" style={{ color: '#f97316', fontSize: 12 }}>{swapQuoteError}</span>
             )}
             <span className="muted" style={{ fontSize: 12 }}>
-              Swap executes via router service when a route is available; falls back to passthrough transfer otherwise. Private key required for API execution.
+              Swap executes via router service when a route is available; falls back to passthrough transfer otherwise.
             </span>
           </div>
         </Card>

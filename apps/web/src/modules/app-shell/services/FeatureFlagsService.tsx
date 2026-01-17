@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 
 export type FeatureFlags = Record<string, boolean>;
 
@@ -15,8 +16,7 @@ const DEFAULT_FLAGS: FeatureFlags = {
   'observability.grafana': true,
   'observability.alerts': true,
   'security.guardWrites': false,
-  'ops.restart': true,
-  'wallet.siwe': true
+  'ops.restart': true
 };
 
 const STORAGE_KEY = 'ghostl.featureFlags';
@@ -37,7 +37,7 @@ const FeatureFlagContext = createContext<FeatureFlagContextValue>({
   setFlag: () => undefined
 });
 
-export function FeatureFlagsProvider({ children }: { children: React.ReactNode }) {
+export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
   const seedFromEnv = useMemo(() => parseEnvFlags(process.env.NEXT_PUBLIC_FEATURE_FLAGS), []);
   const [flags, setFlags] = useState<FeatureFlags>({ ...DEFAULT_FLAGS, ...seedFromEnv });
 

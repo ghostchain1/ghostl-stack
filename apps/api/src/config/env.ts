@@ -1,4 +1,8 @@
+import path from 'path';
+import { config as loadEnv } from 'dotenv';
 import { z } from 'zod';
+
+loadEnv({ path: path.join(process.cwd(), '.env.local') });
 
 const EnvSchema = z.object({
   SESSION_SECRET: z.string().min(1).default('dev-secret'),
@@ -97,14 +101,24 @@ const EnvSchema = z.object({
   HARDWARE_WALLET_REQUIRED: z
     .string()
     .transform((v) => v === 'true')
-    .optional()
+    .optional(),
+  GHOSTWALLET_MASTER_KEY: z.string().min(1),
+  GHOSTWALLET_DERIVATION_PATH: z.string().optional(),
+  ALLOW_PUBLIC_SIGNUP: z
+    .string()
+    .default('false')
+    .transform((v) => v === 'true'),
+  BOOTSTRAP_ADMIN_EMAIL: z.string().email().optional(),
+  BOOTSTRAP_ADMIN_PASSWORD: z.string().optional(),
+  AUTH_JWT_SECRET: z.string().optional(),
+  GHOSTWALLET_FUNDER_PRIVATE_KEY: z.string().optional(),
+  GHOSTWALLET_FUNDER_CHAIN: z.enum(['l1', 'l2', 'l3']).optional()
 });
 
 const parsed = EnvSchema.safeParse(process.env);
 
 if (!parsed.success) {
   // Fail fast to avoid booting without required env
-  // eslint-disable-next-line no-console
   console.error('Invalid environment configuration', parsed.error.flatten().fieldErrors);
   throw new Error('Invalid environment configuration');
 }
