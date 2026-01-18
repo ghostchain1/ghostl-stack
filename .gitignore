@@ -12,6 +12,12 @@
 **/.env
 **/.env.local
 **/.env.*.local
+.env.*
+**/.env.*
+!.env.example
+!.env.*.example
+!.env.sample
+!.env.*.sample
 infra/opstack/.env
 infra/opstack/.env.local
 infra/opstack/.env.secrets
@@ -127,10 +133,34 @@ pnpm-debug.log*
 *.keystore
 *keystore*
 *.enc
+*.der
+*.csr
+*.jwt
+*.token
+*.secret
+*.secrets
 .certs/
 .secrets/
 secrets/
 certs/
+.ssh/
+.gnupg/
+.aws/
+.gcloud/
+.azure/
+.netrc
+.pypirc
+.docker/
+
+# databases / local stores
+*.sqlite
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+*.rdb
+dump.rdb
+appendonly.aof
 
 # allow committed dev keys for local Ghostchain
 !infra/ghostchain/geth/keys/*.key
