@@ -81,6 +81,7 @@ const EnvSchema = z.object({
   RPC_L1: z.string().url().optional(),
   RPC_L2: z.string().url().optional(),
   RPC_L3: z.string().url().optional(),
+  RPC_REGISTRY_URL: z.string().url().default('https://rpc.ghostchain.cloud/v1/endpoints'),
   SWAP_SERVICE_URL: z.string().url().default('http://localhost:7670'),
   BRIDGE_ADMIN_TOKEN: z.string().optional(),
   CHAIN_ID: z.string().optional(),
