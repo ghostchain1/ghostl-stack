@@ -1,11 +1,17 @@
 import type { ApiKey, Role, Session, User } from '../../../../../packages/types';
 
 export interface AuthService {
-  loginWithPassword(email: string, password: string): Promise<Session>;
-  registerWithPassword(email: string, password: string, roles?: string[]): Promise<Session>;
-  loginWithSso(token: string): Promise<Session>;
+  loginWithPassword(email: string, password: string, context?: { ip?: string; userAgent?: string }): Promise<User>;
+  registerWithPassword(email: string, password: string, roles?: string[], context?: { ip?: string; userAgent?: string }): Promise<User>;
+  loginWithSso(token: string, context?: { ip?: string; userAgent?: string }): Promise<User>;
+  createSession(
+    userId: string,
+    sessionId: string,
+    context?: { ip?: string; userAgent?: string; rotatedFrom?: string | null }
+  ): Promise<Session>;
   getSession(sessionId: string): Promise<Session | null>;
   revokeSession(sessionId: string): Promise<void>;
+  bootstrapAdmin(email: string, password: string, context?: { ip?: string; userAgent?: string }): Promise<User>;
 }
 
 export interface RBACService {

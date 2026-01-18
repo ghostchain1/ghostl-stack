@@ -15,70 +15,99 @@ type Endpoint = {
   status: 'healthy' | 'degraded' | 'down';
 };
 
+type RiskScore = { label: string; score: number; reasons: string[] };
+type Explainability = {
+  confidence: number;
+  reasoning: string;
+  evidence: Array<{ kind: string; ref: string; detail: string }>;
+  model: { name: string; version: string };
+};
+
 type TxIntel = {
   txHash: string;
-  chain: ChainRef;
+  chain: { layer: string; chainId: number; name: string };
   classification: string;
-  anomalies: string[];
-  riskScore: number;
-  explainability: { confidence: number; reasoning: string; dataRefs: Record<string, string | number | null> };
+  risk: RiskScore;
+  anomalySignals: Array<{ name: string; severity: number; detail: string }>;
+  summary: {
+    from: string;
+    to: string | null;
+    valueWei: string;
+    gasUsed: string | null;
+    effectiveGasPriceWei: string | null;
+    blockNumber: number | null;
+  };
+  explainability: Explainability;
 };
 
 type WalletIntel = {
   address: string;
-  chain: ChainRef;
+  chain: { layer: string; chainId: number; name: string };
+  risk: RiskScore;
   profile: {
-    balance: string;
-    nonce: number;
-    isContract: boolean;
-    recentTxs: number;
-    relatedWallets: string[];
-    phishingRisk: boolean;
-    riskScore: number;
+    activityLevel: string;
+    typicalTxValueWeiP50: string;
+    typicalTxValueWeiP95: string;
+    contractInteractionRate: number;
+    uniqueCounterparties: number;
   };
-  explainability: { confidence: number; reasoning: string; dataRefs: Record<string, string | number | null> };
+  phishingDrainSignals: Array<{ name: string; severity: number; detail: string }>;
+  clusters: Array<{ clusterId: string; relatedAddresses: string[]; reason: string }>;
+  explainability: Explainability;
 };
 
 type ContractIntel = {
   address: string;
-  chain: ChainRef;
-  risk: number;
-  findings: string[];
-  explainability: { confidence: number; reasoning: string; dataRefs: Record<string, string | number | null> };
+  chain: { layer: string; chainId: number; name: string };
+  risk: RiskScore;
+  findings: Array<{ id: string; severity: number; title: string; detail: string }>;
+  fingerprint: { bytecodeHash: string; isProxyLikely: boolean; proxyTarget?: string | null };
+  explainability: Explainability;
 };
 
 type NetworkIntel = {
-  chain: ChainRef;
-  avgBlockTimeSec: number;
-  lastBlockAgeSec: number;
-  stalled: boolean;
-  status: string;
-  explainability: { confidence: number; reasoning: string; dataRefs: Record<string, string | number | null> };
+  chain: { layer: string; chainId: number; name: string };
+  risk: RiskScore;
+  health: {
+    headBlock: number;
+    avgBlockTimeSec: number;
+    txPerBlockAvg: number;
+    baseFeeTrend: string;
+  };
+  anomalies: Array<{ name: string; severity: number; detail: string }>;
+  earlyWarnings: Array<{ name: string; severity: number; detail: string }>;
+  explainability: Explainability;
 };
 
 type BridgeIntel = {
-  chain: ChainRef;
-  flows: Array<{
-    addresses: string[];
-    totalEvents: number;
-    lastEventBlock: number | null;
-    delaySec: number | null;
-    stuck: boolean;
-    fraudLikelihood: number;
+  scope: { l1: { layer: string; chainId: number; name: string }; l2: { layer: string; chainId: number; name: string }; l3: { layer: string; chainId: number; name: string } };
+  risk: RiskScore;
+  messages: Array<{
+    id: string;
+    direction: string;
+    srcTxHash: string;
+    status: string;
+    ageBlocks: number;
+    detail: string;
   }>;
-  explainability: { confidence: number; reasoning: string; dataRefs: Record<string, string | number | null> };
+  stuckSignals: Array<{ name: string; severity: number; detail: string }>;
+  explainability: Explainability;
 };
 
 type GovernanceIntel = {
-  chain: ChainRef;
-  proposals: Array<{ txHash: string; blockNumber: number; topic0: string }>;
-  explainability: { confidence: number; reasoning: string; dataRefs: Record<string, string | number | null> };
+  chain: { layer: string; chainId: number; name: string };
+  proposalId: string;
+  risk: RiskScore;
+  impact: { security: string; gas: string; validatorOps: string };
+  manipulationSignals: Array<{ name: string; severity: number; detail: string }>;
+  explainability: Explainability;
 };
 
 type Forecasting = {
-  chain: ChainRef;
-  forecasts: Array<{ metric: string; horizon: string; value: number; confidence: number }>;
-  explainability: { confidence: number; reasoning: string; dataRefs: Record<string, string | number | null> };
+  chain: { layer: string; chainId: number; name: string };
+  horizonBlocks: number;
+  forecasts: { avgGasPriceWei: string; congestion: string; avgTxPerBlock: number };
+  explainability: Explainability;
 };
 
 const API_URL = resolveApiBase();
@@ -88,6 +117,7 @@ export function AiCommandCenter() {
   const [txHash, setTxHash] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
   const [contractAddress, setContractAddress] = useState('');
+  const [proposalId, setProposalId] = useState('');
   const [status, setStatus] = useState('');
   const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
   const [txIntel, setTxIntel] = useState<TxIntel | null>(null);
@@ -191,9 +221,13 @@ export function AiCommandCenter() {
   };
 
   const runGovernanceIntel = async () => {
+    if (!proposalId) return;
     setStatus('Running governance intelligence...');
     try {
-      const res = await fetch(`${API_URL}/ai/governance-intel?chain=${chain}`, { credentials: 'include' });
+      const res = await fetch(
+        `${API_URL}/ai/governance-intel?chain=${chain}&proposalId=${encodeURIComponent(proposalId)}`,
+        { credentials: 'include' }
+      );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as GovernanceIntel;
       setGovernanceIntel(data);
@@ -249,9 +283,13 @@ export function AiCommandCenter() {
             <div className="stack">
               <div className="row">
                 <Badge>{txIntel.classification}</Badge>
-                <Badge>risk {Math.round(txIntel.riskScore * 100)}%</Badge>
+                <Badge>
+                  {txIntel.risk.label} {Math.round(txIntel.risk.score)}%
+                </Badge>
               </div>
-              <div className="muted">Anomalies: {txIntel.anomalies.join(', ') || 'none'}</div>
+              <div className="muted">
+                Signals: {txIntel.anomalySignals.map((signal) => signal.name).join(', ') || 'none'}
+              </div>
               <div className="muted">Reasoning: {txIntel.explainability.reasoning}</div>
               <div className="muted">Confidence: {(txIntel.explainability.confidence * 100).toFixed(0)}%</div>
             </div>
@@ -263,11 +301,14 @@ export function AiCommandCenter() {
           {walletIntel && (
             <div className="stack">
               <div className="row">
-                <Badge>{walletIntel.profile.isContract ? 'contract' : 'wallet'}</Badge>
-                <Badge>risk {Math.round(walletIntel.profile.riskScore * 100)}%</Badge>
+                <Badge>{walletIntel.profile.activityLevel}</Badge>
+                <Badge>
+                  {walletIntel.risk.label} {Math.round(walletIntel.risk.score)}%
+                </Badge>
               </div>
-              <div className="muted">Balance: {walletIntel.profile.balance}</div>
-              <div className="muted">Recent txs: {walletIntel.profile.recentTxs}</div>
+              <div className="muted">P50 value: {walletIntel.profile.typicalTxValueWeiP50}</div>
+              <div className="muted">P95 value: {walletIntel.profile.typicalTxValueWeiP95}</div>
+              <div className="muted">Counterparties: {walletIntel.profile.uniqueCounterparties}</div>
               <div className="muted">Reasoning: {walletIntel.explainability.reasoning}</div>
               <div className="muted">Confidence: {(walletIntel.explainability.confidence * 100).toFixed(0)}%</div>
             </div>
@@ -279,9 +320,13 @@ export function AiCommandCenter() {
           {contractIntel && (
             <div className="stack">
               <div className="row">
-                <Badge>risk {Math.round(contractIntel.risk * 100)}%</Badge>
+                <Badge>
+                  {contractIntel.risk.label} {Math.round(contractIntel.risk.score)}%
+                </Badge>
               </div>
-              <div className="muted">Findings: {contractIntel.findings.join(', ')}</div>
+              <div className="muted">
+                Findings: {contractIntel.findings.map((finding) => finding.id).join(', ') || 'none'}
+              </div>
               <div className="muted">Reasoning: {contractIntel.explainability.reasoning}</div>
               <div className="muted">Confidence: {(contractIntel.explainability.confidence * 100).toFixed(0)}%</div>
             </div>
@@ -293,12 +338,14 @@ export function AiCommandCenter() {
           <Button onClick={runNetworkIntel}>Refresh</Button>
           <div className="stack">
             {networkIntel.map((entry) => (
-              <div key={entry.chain} className="row" style={{ justifyContent: 'space-between' }}>
+              <div key={`${entry.chain.layer}-${entry.chain.chainId}`} className="row" style={{ justifyContent: 'space-between' }}>
                 <div>
-                  <div>{entry.chain.toUpperCase()}</div>
-                  <div className="muted">avg {entry.avgBlockTimeSec.toFixed(1)}s · age {entry.lastBlockAgeSec}s</div>
+                  <div>{entry.chain.name}</div>
+                  <div className="muted">
+                    avg {entry.health.avgBlockTimeSec.toFixed(1)}s · tx/block {entry.health.txPerBlockAvg.toFixed(1)} · fee {entry.health.baseFeeTrend}
+                  </div>
                 </div>
-                <Badge>{entry.status}</Badge>
+                <Badge>{entry.risk.label}</Badge>
               </div>
             ))}
             {!networkIntel.length && <div className="muted">No network signals.</div>}
@@ -308,29 +355,35 @@ export function AiCommandCenter() {
           <Button onClick={runBridgeIntel}>Refresh</Button>
           {bridgeIntel && (
             <div className="stack">
-              {bridgeIntel.flows.map((flow, idx) => (
-                <div key={`${flow.lastEventBlock}-${idx}`} className="stack">
-                  <div className="muted">Events: {flow.totalEvents}</div>
-                  <div className="muted">Last block: {flow.lastEventBlock ?? 'n/a'}</div>
-                  <div className="muted">Delay: {flow.delaySec ?? 'n/a'}s</div>
-                  <div className="muted">Fraud risk: {(flow.fraudLikelihood * 100).toFixed(0)}%</div>
+              <div className="row">
+                <Badge>{bridgeIntel.risk.label}</Badge>
+                <div className="muted">Messages: {bridgeIntel.messages.length}</div>
+              </div>
+              {bridgeIntel.messages.slice(0, 4).map((message) => (
+                <div key={message.id} className="stack">
+                  <div className="muted">
+                    {message.direction} · {message.status} · age {message.ageBlocks}
+                  </div>
+                  <div className="muted">Tx: {message.srcTxHash}</div>
                 </div>
               ))}
-              {!bridgeIntel.flows.length && <div className="muted">No bridge activity.</div>}
+              {!bridgeIntel.messages.length && <div className="muted">No bridge activity.</div>}
               <div className="muted">Reasoning: {bridgeIntel.explainability.reasoning}</div>
             </div>
           )}
         </Card>
         <Card title="Governance Intelligence" subtitle="On-chain proposals">
+          <input className="input" placeholder="proposal id" value={proposalId} onChange={(e) => setProposalId(e.target.value)} />
           <Button onClick={runGovernanceIntel}>Refresh</Button>
           {governanceIntel && (
             <div className="stack">
-              {governanceIntel.proposals.map((proposal) => (
-                <div key={proposal.txHash} className="muted">
-                  {proposal.txHash} · block {proposal.blockNumber}
+              <div className="row">
+                <Badge>{governanceIntel.risk.label}</Badge>
+                <div className="muted">
+                  {governanceIntel.impact.security} security · {governanceIntel.impact.gas} gas
                 </div>
-              ))}
-              {!governanceIntel.proposals.length && <div className="muted">No governance signals.</div>}
+              </div>
+              <div className="muted">Signals: {governanceIntel.manipulationSignals.map((signal) => signal.name).join(', ') || 'none'}</div>
               <div className="muted">Reasoning: {governanceIntel.explainability.reasoning}</div>
             </div>
           )}
@@ -339,12 +392,18 @@ export function AiCommandCenter() {
           <Button onClick={runForecasting}>Refresh</Button>
           {forecasting && (
             <div className="stack">
-              {forecasting.forecasts.map((f) => (
-                <div key={`${f.metric}-${f.horizon}`} className="muted">
-                  {f.metric} ({f.horizon}) · {f.value.toFixed(4)} · {(f.confidence * 100).toFixed(0)}%
-                </div>
-              ))}
-              {!forecasting.forecasts.length && <div className="muted">No forecasts available.</div>}
+              <div className="row" style={{ justifyContent: 'space-between' }}>
+                <div>Avg gas price</div>
+                <div className="muted">{forecasting.forecasts.avgGasPriceWei}</div>
+              </div>
+              <div className="row" style={{ justifyContent: 'space-between' }}>
+                <div>Congestion</div>
+                <div className="muted">{forecasting.forecasts.congestion}</div>
+              </div>
+              <div className="row" style={{ justifyContent: 'space-between' }}>
+                <div>Avg tx/block</div>
+                <div className="muted">{forecasting.forecasts.avgTxPerBlock.toFixed(2)}</div>
+              </div>
               <div className="muted">Reasoning: {forecasting.explainability.reasoning}</div>
             </div>
           )}
