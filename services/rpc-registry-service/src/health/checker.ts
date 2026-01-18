@@ -166,11 +166,11 @@ export class HealthChecker {
   getRegistrySnapshot(): RegistryResponse {
     const chains = chainConfig().map((chain) => {
       const region = regionFor([...chain.http, ...chain.ws]);
-      const type = [...chain.http, ...chain.ws].some((url) => isPrivateUrl(url)) ? 'private' : 'public';
+      const type: ChainEntry['type'] = [...chain.http, ...chain.ws].some((url) => isPrivateUrl(url)) ? 'private' : 'public';
       const entries = [...chain.http, ...chain.ws];
       const statuses = entries.map((url) => this.health.get(`${chain.chainId}:${url}`)?.status || 'DOWN');
       const hasOk = statuses.includes('OK');
-      const status = hasOk ? 'active' : 'degraded';
+      const status: ChainEntry['status'] = hasOk ? 'active' : 'degraded';
       return {
         chainId: chain.chainId,
         name: chain.name,
