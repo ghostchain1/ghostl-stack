@@ -12,7 +12,6 @@ import type {} from './types/session';
 import WebSocket from 'ws';
 import { Interface, JsonRpcProvider, Wallet } from 'ethers';
 import type { Transfer } from '@ghostl/types/bridge';
-import type { Anomaly, ContractRisk, Forecast, SybilSignal } from '@ghostl/types/ai';
 import { buildAppShellRouter } from './modules/app-shell/router';
 import { buildIdentityAccessRouter } from './modules/identity-access/router';
 import { buildChainRouter } from './modules/chain/router';
@@ -43,6 +42,7 @@ import { buildGhostchainRouter } from './modules/ghostchain/router';
 import { buildKycRouter } from './modules/kyc/router';
 import { createKycService } from './services/kyc-store';
 import { createIntegrationsStore } from './services/integrations-store';
+import { buildAiRouter } from './modules/ai/router';
 import './types/express';
 // Load environment variables from local env file when running locally (cwd may be repo root or apps/api)
 loadEnv({ path: path.join(process.cwd(), '.env.local') });
@@ -228,11 +228,13 @@ type RpcRegistryChain = {
   chainId: number;
   chainKey?: string;
   chainName?: string;
+  name?: string;
   layer?: string;
   chainType?: string;
   network?: string;
   rollup?: { parentChainId?: number };
   endpoints?: RpcRegistryEntry[];
+  rpc?: { http?: string[]; ws?: string[] };
 };
 
 type RpcRegistryResponse = {
@@ -412,6 +414,44 @@ const fetchRegistryEndpoints = async () => {
   const chainIds = new Set<string>();
   chains.forEach((chain) => {
     chainIds.add(String(chain.chainId));
+    if ((chain as { rpc?: { http?: string[]; ws?: string[] } }).rpc) {
+      const rpc = (chain as { rpc?: { http?: string[]; ws?: string[] } }).rpc || {};
+      (rpc.http || []).forEach((url) => {
+        endpoints.push({
+          url,
+          protocol: 'http',
+          chainId: chain.chainId,
+          name: chain.chainName || chain.name,
+          chain: {
+            chainId: chain.chainId,
+            name: chain.chainName || chain.name,
+            chainKey: chain.chainKey,
+            layer: chain.layer,
+            chainType: chain.chainType,
+            network: chain.network,
+            parentChainId: chain.rollup?.parentChainId
+          }
+        });
+      });
+      (rpc.ws || []).forEach((url) => {
+        endpoints.push({
+          url,
+          protocol: 'ws',
+          chainId: chain.chainId,
+          name: chain.chainName || chain.name,
+          chain: {
+            chainId: chain.chainId,
+            name: chain.chainName || chain.name,
+            chainKey: chain.chainKey,
+            layer: chain.layer,
+            chainType: chain.chainType,
+            network: chain.network,
+            parentChainId: chain.rollup?.parentChainId
+          }
+        });
+      });
+      return;
+    }
     (chain.endpoints || []).forEach((endpoint) => {
       endpoints.push({
         ...endpoint,
@@ -975,6 +1015,7 @@ app.use(
     forks: liveServices.devops.forkService
   })
 );
+app.use(['/v1/ai', '/ai'], buildAiRouter());
 
 identityServicesPromise.then(async (identity) => {
   auditLogService = identity.auditLogService;
@@ -2066,103 +2107,6 @@ app.get(['/v1/security/controls', '/security/controls'], requirePermission('iam:
   res.json({ vaultHealthy, vaultUrl: env.VAULT_HEALTH_URL, hsmHealthy, hardwareWalletRequired });
 });
 
-app.get(['/v1/api/ai', '/api/ai'], requirePermission('ai:read'), async (_req, res) => {
-  const queryNumber = async (query?: string): Promise<number | undefined> => {
-    if (!query) return undefined;
-    try {
-      const result = await prometheus.query(query);
-      const val = result?.[0]?.value?.[1];
-      const parsed = val ? Number(val) : NaN;
-      return Number.isFinite(parsed) ? parsed : undefined;
-    } catch {
-      return undefined;
-    }
-  };
-
-  const anomalyResp = await proxyJson<{ anomalies?: Array<{ id?: string; entity?: string; score?: number | string; reasons?: string[]; time?: string }> }>(
-    `${servicesBase.ai}/anomalies`,
-    { anomalies: [] }
-  ).catch(() => ({ anomalies: [] }));
-  const now = new Date().toISOString();
-  const anomalies: Anomaly[] =
-    anomalyResp.anomalies
-      ?.map((a, idx) => ({
-        id: a.id || `anomaly-${idx}`,
-        entity: a.entity || 'network',
-        score: Number(a.score ?? 0),
-        reasons: a.reasons?.length ? a.reasons : ['risk score'],
-        time: a.time ? new Date(a.time).toISOString() : now
-      }))
-      .filter((a) => Number.isFinite(a.score)) || [];
-
-  if (!anomalies.length) {
-    const [riskScore, congestionScore] = await Promise.all([queryNumber('ai_monitor_risk_score'), queryNumber('ai_monitor_congestion_score')]);
-    if (riskScore !== undefined) {
-      anomalies.push({ id: 'risk', entity: 'network', score: riskScore, reasons: ['AI monitor risk score'], time: now });
-    }
-    if (congestionScore !== undefined) {
-      anomalies.push({ id: 'congestion', entity: 'network', score: congestionScore, reasons: ['AI monitor congestion'], time: now });
-    }
-  }
-
-  const explainResp = await proxyJson<{ explanations?: Array<{ id?: string; metric?: string; reasons?: string[]; value?: number | string }> }>(
-    `${servicesBase.explainability}/explain`,
-    { explanations: [] }
-  ).catch(() => ({ explanations: [] }));
-  if (explainResp.explanations?.length) {
-    anomalies.forEach((a) => {
-      const hit = explainResp.explanations?.find((e) => e.id === a.id || e.metric === a.entity);
-      if (hit?.reasons?.length) {
-        a.reasons = hit.reasons;
-      }
-    });
-  }
-
-  const forecastResp = await proxyJson<{ forecasts?: Forecast[] }>(`${servicesBase.forecasting}/forecast`, { forecasts: [] }).catch(() => ({
-    forecasts: []
-  }));
-  let forecasts: Forecast[] =
-    (forecastResp.forecasts || [])
-      .map((f) => ({
-        metric: f.metric,
-        horizon: f.horizon,
-        value: Number(f.value ?? 0),
-        confidence: Number(f.confidence ?? 0)
-      }))
-      .filter((f) => Number.isFinite(f.value)) || [];
-  if (!forecasts.length) {
-    const riskScore = anomalies.find((a) => a.id === 'risk')?.score ?? 0;
-    const congestion = anomalies.find((a) => a.id === 'congestion')?.score ?? 0;
-    forecasts = [
-      { metric: 'risk', horizon: '5m', value: riskScore, confidence: 0.6 },
-      { metric: 'congestion', horizon: '5m', value: congestion, confidence: 0.6 }
-    ];
-  }
-
-  const contractRiskResp = await proxyJson<{ contracts?: Array<{ address?: string; risk?: number | string; revertRate?: number | string }> }>(
-    `${servicesBase.contractRisk}/risk`,
-    { contracts: [] }
-  ).catch(() => ({ contracts: [] }));
-  const contractRisk: ContractRisk[] =
-    contractRiskResp.contracts
-      ?.map((c) => ({
-        address: c.address || env.CONTRACT_TARGET_ADDRESS || '0xcontract',
-        risk: Number(c.risk ?? 0),
-        notes: c.revertRate !== undefined ? [`revert ${(Number(c.revertRate) * 100).toFixed(0)}%`] : undefined
-      }))
-      .filter((c) => Number.isFinite(c.risk)) || [];
-
-  const sybil: SybilSignal[] =
-    anomalies.map((a, idx) => ({
-      id: `sybil-${a.id || idx}`,
-      cluster: a.entity || `entity-${idx}`,
-      score: a.score,
-      size: 1,
-      tags: a.reasons
-    })) || [];
-
-  res.json({ anomalies, forecasts, sybil, contractRisk });
-});
 
 app.get(['/v1/observability/incidents', '/observability/incidents'], requirePermission('observability:read'), async (_req, res) => {
   const bridgeIncidents = await proxyJson<{ incidents?: BridgeIncident[] }>(`${servicesBase.bridge}/bridges/incidents`, { incidents: [] }).catch(
