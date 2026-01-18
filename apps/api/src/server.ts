@@ -42,6 +42,7 @@ import { buildTokenRouter } from './modules/token/router';
 import { buildGhostchainRouter } from './modules/ghostchain/router';
 import { buildKycRouter } from './modules/kyc/router';
 import { createKycService } from './services/kyc-store';
+import { createIntegrationsStore } from './services/integrations-store';
 import './types/express';
 // Load environment variables from local env file when running locally (cwd may be repo root or apps/api)
 loadEnv({ path: path.join(process.cwd(), '.env.local') });
@@ -179,6 +180,7 @@ const walletServicePromise = createWalletService();
 const ghostWalletServicePromise = walletServicePromise.then((wallets) => createGhostWalletService(wallets));
 const tokenServicePromise = createTokenService();
 const kycServicePromise = createKycService();
+const integrationsStorePromise = createIntegrationsStore();
 let auditLogService: { append: (entry: { actorId: string; action: string; resource: string; meta?: Record<string, unknown> }) => Promise<unknown> } | undefined;
 
 const proxyJson = async <T>(url: string, fallback?: T): Promise<T> => {
@@ -1867,6 +1869,8 @@ app.get(['/v1/compliance/reports/:id/export', '/compliance/reports/:id/export'],
 
 const validatorGuard = env.PUBLIC_VALIDATORS ? allowAll : requirePermission('validator:read');
 const explorerGuard = env.PUBLIC_EXPLORER ? allowAll : requirePermission('explorer:read');
+const integrationsReadGuard = requirePermission('integrations:read');
+const integrationsWriteGuard = requirePermission('integrations:write');
 
 const ghostValidatorFallback = async () => {
   const items: Array<{ id: string; address: string; status: string; stake: string; commission: number; power: number }> = [];
@@ -2299,6 +2303,123 @@ app.get(['/v1/wallet/balance', '/wallet/balance'], async (req, res) => {
   }
 });
 
+app.get(['/v1/integrations/definitions', '/integrations/definitions'], integrationsReadGuard, async (_req, res) => {
+  const integrations = await integrationsStorePromise;
+  res.json(integrations.listDefinitions());
+});
+
+app.get(['/v1/integrations/instances', '/integrations/instances'], integrationsReadGuard, async (_req, res) => {
+  const integrations = await integrationsStorePromise;
+  res.json(integrations.listInstances());
+});
+
+app.get(['/v1/integrations/instances/:id', '/integrations/instances/:id'], integrationsReadGuard, async (req, res) => {
+  const integrations = await integrationsStorePromise;
+  const instance = integrations.getInstance(req.params.id);
+  if (!instance) {
+    res.status(404).json({ error: 'instance_not_found' });
+    return;
+  }
+  res.json(instance);
+});
+
+app.post(['/v1/integrations/instances', '/integrations/instances'], integrationsWriteGuard, async (req, res) => {
+  const body = req.body || {};
+  if (!body || typeof body !== 'object') {
+    res.status(400).json({ error: 'invalid_body' });
+    return;
+  }
+  try {
+    const integrations = await integrationsStorePromise;
+    const instance = await integrations.createInstance({
+      definitionId: body.definitionId,
+      environment: body.environment || 'dev',
+      enabled: Boolean(body.enabled),
+      config: body.config || {},
+      policy: body.policy
+    });
+    await auditLogService?.append({
+      actorId: req.session.userId || 'unknown',
+      action: 'integration:create',
+      resource: instance.id,
+      meta: { definitionId: instance.definitionId, environment: instance.environment, enabled: instance.enabled }
+    });
+    res.status(201).json(instance);
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'create_failed' });
+  }
+});
+
+app.patch(['/v1/integrations/instances/:id', '/integrations/instances/:id'], integrationsWriteGuard, async (req, res) => {
+  const body = req.body || {};
+  if (!body || typeof body !== 'object') {
+    res.status(400).json({ error: 'invalid_body' });
+    return;
+  }
+  try {
+    const integrations = await integrationsStorePromise;
+    const instance = await integrations.updateInstance(req.params.id, {
+      enabled: typeof body.enabled === 'boolean' ? body.enabled : undefined,
+      environment: body.environment,
+      policy: body.policy,
+      config: body.config
+    });
+    const action = body.config ? 'integration:rotate' : 'integration:update';
+    await auditLogService?.append({
+      actorId: req.session.userId || 'unknown',
+      action,
+      resource: instance.id,
+      meta: { definitionId: instance.definitionId, environment: instance.environment, enabled: instance.enabled }
+    });
+    res.json(instance);
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'update_failed' });
+  }
+});
+
+app.post(
+  ['/v1/integrations/instances/:id/enable', '/integrations/instances/:id/enable'],
+  integrationsWriteGuard,
+  async (req, res) => {
+    const body = req.body || {};
+    try {
+      const integrations = await integrationsStorePromise;
+      const instance = await integrations.updateInstance(req.params.id, {
+        enabled: typeof body.enabled === 'boolean' ? body.enabled : true
+      });
+      await auditLogService?.append({
+        actorId: req.session.userId || 'unknown',
+        action: instance.enabled ? 'integration:enable' : 'integration:disable',
+        resource: instance.id,
+        meta: { definitionId: instance.definitionId }
+      });
+      res.json(instance);
+    } catch (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'update_failed' });
+    }
+  }
+);
+
+app.post(
+  ['/v1/integrations/instances/:id/test', '/integrations/instances/:id/test'],
+  integrationsWriteGuard,
+  async (req, res) => {
+    try {
+      const integrations = await integrationsStorePromise;
+      const result = await integrations.testInstance(req.params.id);
+      await auditLogService?.append({
+        actorId: req.session.userId || 'unknown',
+        action: 'integration:test',
+        resource: req.params.id,
+        meta: { ok: result.ok }
+      });
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'test_failed' });
+    }
+  }
+);
+
 app.get(['/v1/integrations/rpc', '/integrations/rpc'], async (_req, res) => {
   const endpoints = await getRpcEndpoints();
   res.json(endpoints);
@@ -2341,29 +2462,6 @@ app.post(['/v1/swap/execute', '/swap/execute'], async (req, res) => {
   } catch (e) {
     res.status(502).json({ error: (e as Error).message || 'swap_execute_failed' });
   }
-});
-
-app.get(['/v1/integrations/usage', '/integrations/usage'], async (_req, res) => {
-  const data = await proxyJson<{ usage?: unknown[] }>(`${servicesBase.usage}/usage`, { usage: [] });
-  res.json(data.usage || []);
-});
-
-app.get(['/v1/integrations/webhooks', '/integrations/webhooks'], async (_req, res) => {
-  const data = await proxyJson<{ webhooks?: unknown[] }>(`${servicesBase.webhooks}/webhooks`, { webhooks: [] });
-  res.json(data.webhooks || []);
-});
-
-app.get(['/v1/integrations/partners', '/integrations/partners'], async (_req, res) => {
-  const kycName = env.KYC_PROVIDER_NAME || 'KYC Corp';
-  const kycUrl = env.KYC_PROVIDER_URL;
-  const kycStatus = env.KYC_PROVIDER_STATUS || (kycUrl ? 'connected' : 'pending');
-  res.json({
-    partners: [
-      { name: 'IndexerOne', type: 'indexer', status: 'pending', url: 'https://indexer.example.com' },
-      { name: 'OracleX', type: 'oracle', status: 'connected', url: 'https://oracle.example.com' },
-      { name: kycName, type: 'kyc', status: kycStatus, url: kycUrl }
-    ]
-  });
 });
 
 app.get(['/v1/health', '/health'], async (_req, res) => {
