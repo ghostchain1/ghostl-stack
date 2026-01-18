@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card } from '@ghostl/ui';
 import type { IntegrationDefinition, IntegrationInstance, IntegrationTestResult } from '@ghostl/types/integrations';
 import { resolveApiBase } from '../../lib/runtime';
+import { RpcEndpointManager } from './components/RpcEndpointManager';
+import type { RpcEndpoint } from '@ghostl/types/integrations';
 
 const API_URL = resolveApiBase();
 
@@ -29,6 +31,7 @@ const toNumber = (value: string, fallback: number) => {
 export function IntegrationsControlCenter() {
   const [definitions, setDefinitions] = useState<IntegrationDefinition[]>([]);
   const [instances, setInstances] = useState<IntegrationInstance[]>([]);
+  const [rpcEndpoints, setRpcEndpoints] = useState<RpcEndpoint[]>([]);
   const [status, setStatus] = useState<string>('');
   const [selectedDefinitionId, setSelectedDefinitionId] = useState<string>('');
   const [environment, setEnvironment] = useState<IntegrationInstance['environment']>('dev');
@@ -54,15 +57,18 @@ export function IntegrationsControlCenter() {
   const load = async () => {
     setStatus('Loading integrations...');
     try {
-      const [defRes, instRes] = await Promise.all([
+      const [defRes, instRes, rpcRes] = await Promise.all([
         fetch(`${API_URL}/integrations/definitions`, { credentials: 'include' }),
-        fetch(`${API_URL}/integrations/instances`, { credentials: 'include' })
+        fetch(`${API_URL}/integrations/instances`, { credentials: 'include' }),
+        fetch(`${API_URL}/integrations/rpc`, { credentials: 'include' })
       ]);
       if (!defRes.ok || !instRes.ok) throw new Error('auth_required');
       const defJson = (await defRes.json()) as IntegrationDefinition[];
       const instJson = (await instRes.json()) as IntegrationInstance[];
+      const rpcJson = rpcRes.ok ? ((await rpcRes.json()) as RpcEndpoint[]) : [];
       setDefinitions(defJson);
       setInstances(instJson);
+      setRpcEndpoints(rpcJson);
       setSelectedDefinitionId(defJson[0]?.id || '');
       setStatus('');
     } catch (err) {
@@ -463,6 +469,9 @@ export function IntegrationsControlCenter() {
             </Card>
           );
         })}
+      </div>
+      <div className="card-grid">
+        <RpcEndpointManager endpoints={rpcEndpoints} />
       </div>
     </div>
   );
