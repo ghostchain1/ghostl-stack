@@ -31,7 +31,8 @@ const defaultRoles: Role[] = [
       'ai:read',
       'wallets:read',
       'wallets:write',
-      'kyc:read'
+      'kyc:read',
+      'integrations:read'
     ]
   },
   {
@@ -55,7 +56,9 @@ const defaultRoles: Role[] = [
       'wallets:read',
       'wallets:write',
       'kyc:read',
-      'kyc:write'
+      'kyc:write',
+      'integrations:read',
+      'integrations:write'
     ]
   }
 ];

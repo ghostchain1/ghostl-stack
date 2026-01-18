@@ -98,7 +98,9 @@ const EnvSchema = z.object({
   SNAPSHOT_SPACE: z.string().optional(),
   SNAPSHOT_API_URL: z.string().optional(),
   FORUM_URL: z.string().optional(),
+  VAULT_ADDR: z.string().url().optional(),
   VAULT_HEALTH_URL: z.string().optional(),
+  VAULT_TOKEN: z.string().optional(),
   HARDWARE_WALLET_REQUIRED: z
     .string()
     .transform((v) => v === 'true')
@@ -107,6 +109,8 @@ const EnvSchema = z.object({
   KYC_PROVIDER_URL: z.string().url().optional(),
   KYC_PROVIDER_STATUS: z.enum(['connected', 'pending', 'error']).optional(),
   KYC_STORE_PATH: z.string().optional(),
+  INTEGRATIONS_STORE_PATH: z.string().optional(),
+  INTEGRATIONS_MASTER_KEY: z.string().optional(),
   GHOSTWALLET_MASTER_KEY: z.string().min(1),
   GHOSTWALLET_DERIVATION_PATH: z.string().optional(),
   ALLOW_PUBLIC_SIGNUP: z
