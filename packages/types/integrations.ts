@@ -3,9 +3,24 @@ export type EndpointStatus = 'healthy' | 'degraded' | 'down';
 
 export interface RpcEndpoint {
   id: string;
+  chainId?: string;
+  chainKey?: string;
+  chainName?: string;
+  layer?: string;
+  chainType?: string;
+  network?: string;
   url: string;
   type: RpcEndpointType;
+  protocol?: 'http' | 'ws';
+  auth?: 'none' | 'apiKey' | 'bearer' | 'basic';
   region?: string;
+  priority?: number;
+  features?: Record<string, boolean>;
+  latencyMs?: number;
+  peerCount?: number;
+  syncing?: boolean;
+  clientVersion?: string;
+  wsError?: string;
   status: EndpointStatus;
   lastCheckedAt?: string;
 }

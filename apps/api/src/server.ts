@@ -9,6 +9,7 @@ import cors from 'cors';
 import { fetch } from 'undici';
 import nodemailer from 'nodemailer';
 import type {} from './types/session';
+import WebSocket from 'ws';
 import { Interface, JsonRpcProvider, Wallet } from 'ethers';
 import type { Transfer } from '@ghostl/types/bridge';
 import type { Anomaly, ContractRisk, Forecast, SybilSignal } from '@ghostl/types/ai';
@@ -39,6 +40,8 @@ import { createGhostWalletService } from './services/ghostwallet';
 import { createTokenService } from './services/token-store';
 import { buildTokenRouter } from './modules/token/router';
 import { buildGhostchainRouter } from './modules/ghostchain/router';
+import { buildKycRouter } from './modules/kyc/router';
+import { createKycService } from './services/kyc-store';
 import './types/express';
 // Load environment variables from local env file when running locally (cwd may be repo root or apps/api)
 loadEnv({ path: path.join(process.cwd(), '.env.local') });
@@ -175,6 +178,7 @@ const identityServicesPromise = createPersistentIdentityServices();
 const walletServicePromise = createWalletService();
 const ghostWalletServicePromise = walletServicePromise.then((wallets) => createGhostWalletService(wallets));
 const tokenServicePromise = createTokenService();
+const kycServicePromise = createKycService();
 let auditLogService: { append: (entry: { actorId: string; action: string; resource: string; meta?: Record<string, unknown> }) => Promise<unknown> } | undefined;
 
 const proxyJson = async <T>(url: string, fallback?: T): Promise<T> => {
@@ -186,6 +190,392 @@ const proxyJson = async <T>(url: string, fallback?: T): Promise<T> => {
     if (fallback !== undefined) return fallback;
     throw err;
   }
+};
+
+type RpcRegistryEntry = {
+  id?: string;
+  url?: string;
+  rpc?: string;
+  http?: string;
+  type?: string;
+  protocol?: 'http' | 'ws';
+  auth?: 'none' | 'apiKey' | 'bearer' | 'basic';
+  region?: string;
+  status?: string;
+  priority?: number;
+  features?: Record<string, boolean>;
+  health?: { status?: string; latencyMs?: number; lastChecked?: string };
+  chainId?: number | string;
+  chain_id?: number | string;
+  chain?: {
+    id?: number | string;
+    chainId?: number | string;
+    name?: string;
+    chainKey?: string;
+    layer?: string;
+    chainType?: string;
+    network?: string;
+    parentChainId?: number | string;
+  };
+  name?: string;
+  lastCheckedAt?: string;
+  checkedAt?: string;
+};
+
+type RpcRegistryChain = {
+  chainId: number;
+  chainKey?: string;
+  chainName?: string;
+  layer?: string;
+  chainType?: string;
+  network?: string;
+  rollup?: { parentChainId?: number };
+  endpoints?: RpcRegistryEntry[];
+};
+
+type RpcRegistryResponse = {
+  registry?: { name?: string; version?: string; generatedAt?: string };
+  chains?: RpcRegistryChain[];
+};
+
+type RpcCache = { expiresAt: number; endpoints: unknown[] };
+let rpcEndpointCache: RpcCache | null = null;
+
+const withTimeout = async <T>(promise: Promise<T>, ms: number) => {
+  let timer: NodeJS.Timeout | undefined;
+  const timeoutPromise = new Promise<T>((_resolve, reject) => {
+    timer = setTimeout(() => reject(new Error('timeout')), ms);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+};
+
+const rpcProbe = async <T>(url: string, method: string, params: unknown[] = []) => {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
+  });
+  if (!res.ok) throw new Error(`rpc_${method}_failed`);
+  const body = (await res.json()) as RpcResponse<T>;
+  if (body.error) throw new Error(body.error.message || 'rpc_error');
+  return body.result as T;
+};
+
+const probeHttpEndpoint = async (endpoint: { id: string; url: string }) => {
+  const started = Date.now();
+  try {
+    const rawChainId = await withTimeout(rpcProbe<string>(endpoint.url, 'eth_chainId'), 1500);
+    const chainId = rawChainId?.startsWith('0x') ? String(parseInt(rawChainId, 16)) : rawChainId;
+    const syncing = await withTimeout(rpcProbe<boolean | { startingBlock?: string }>(endpoint.url, 'eth_syncing'), 1500)
+      .then((result) => result !== false)
+      .catch(() => undefined);
+    const peerCountHex = await withTimeout(rpcProbe<string>(endpoint.url, 'net_peerCount'), 1500).catch(() => undefined);
+    const clientVersion = await withTimeout(rpcProbe<string>(endpoint.url, 'web3_clientVersion'), 1500).catch(() => undefined);
+    const latencyMs = Date.now() - started;
+    const status = syncing ? 'degraded' : latencyMs > 1200 ? 'degraded' : 'healthy';
+    const peerCount = peerCountHex ? parseInt(peerCountHex, 16) : undefined;
+    return {
+      ...endpoint,
+      status,
+      latencyMs,
+      peerCount,
+      syncing,
+      clientVersion,
+      chainId: endpoint.chainId || (chainId ? String(chainId) : undefined),
+      lastCheckedAt: new Date().toISOString()
+    };
+  } catch {
+    return {
+      ...endpoint,
+      status: 'down',
+      latencyMs: null,
+      lastCheckedAt: new Date().toISOString()
+    };
+  }
+};
+
+const probeWsEndpoint = async (endpoint: { id: string; url: string }) => {
+  return new Promise((resolve) => {
+    const started = Date.now();
+    const ws = new WebSocket(endpoint.url);
+    let settled = false;
+    const finalize = (status: 'healthy' | 'degraded' | 'down') => {
+      if (settled) return;
+      settled = true;
+      try {
+        ws.close();
+      } catch {
+        // ignore
+      }
+      const latencyMs = status === 'down' ? null : Date.now() - started;
+      resolve({
+        ...endpoint,
+        status,
+        latencyMs,
+        wsError: status === 'down' ? 'connect_failed' : undefined,
+        lastCheckedAt: new Date().toISOString()
+      });
+    };
+    const timer = setTimeout(() => finalize('down'), 1500);
+    ws.onopen = () => {
+      clearTimeout(timer);
+      finalize(Date.now() - started > 1200 ? 'degraded' : 'healthy');
+    };
+    ws.onerror = () => {
+      clearTimeout(timer);
+      finalize('down');
+    };
+  });
+};
+
+const probeRpcEndpoint = async (endpoint: { id: string; url: string; protocol?: string }) => {
+  const protocol = endpoint.protocol || (endpoint.url.startsWith('ws') ? 'ws' : 'http');
+  if (protocol === 'ws') {
+    return probeWsEndpoint(endpoint);
+  }
+  return probeHttpEndpoint(endpoint);
+};
+
+const normalizeRpcEndpoint = (entry: RpcRegistryEntry, source: string) => {
+  const url = entry.url || entry.rpc || entry.http;
+  if (!url) return null;
+  const chainId = entry.chainId ?? entry.chain_id ?? entry.chain?.chainId ?? entry.chain?.id;
+  const idBase = entry.id || `${source}-${chainId ?? 'unknown'}-${url}`;
+  const id = crypto.createHash('sha256').update(idBase).digest('hex').slice(0, 12);
+  const status =
+    entry.health?.status === 'degraded' || entry.health?.status === 'down'
+      ? entry.health?.status
+      : entry.status === 'degraded' || entry.status === 'down'
+        ? entry.status
+        : 'healthy';
+  const type =
+    entry.type === 'partner'
+      ? 'partner'
+      : entry.auth && entry.auth !== 'none'
+        ? 'private'
+        : 'public';
+  return {
+    id,
+    chainId: chainId ? String(chainId) : undefined,
+    chainKey: entry.chain?.chainKey,
+    chainName: entry.chain?.name || entry.name,
+    layer: entry.chain?.layer,
+    chainType: entry.chain?.chainType,
+    network: entry.chain?.network,
+    url,
+    type,
+    protocol: entry.protocol,
+    auth: entry.auth,
+    region: entry.region,
+    priority: entry.priority,
+    features: entry.features,
+    latencyMs: entry.health?.latencyMs,
+    status,
+    lastCheckedAt: entry.health?.lastChecked || entry.lastCheckedAt || entry.checkedAt || new Date().toISOString()
+  };
+};
+
+const getTargetChainIds = () => {
+  const ids = new Set<string>();
+  ids.add('14000101');
+  ids.add('901');
+  ids.add('903');
+  if (env.CHAIN_ID) ids.add(env.CHAIN_ID);
+  if (process.env.GHOSTCHAIN_L1_CHAIN_ID) ids.add(process.env.GHOSTCHAIN_L1_CHAIN_ID);
+  if (process.env.GHOSTL2_CHAIN_ID) ids.add(process.env.GHOSTL2_CHAIN_ID);
+  if (process.env.GHOSTL3_CHAIN_ID) ids.add(process.env.GHOSTL3_CHAIN_ID);
+  return Array.from(ids);
+};
+
+const fetchRegistryEndpoints = async () => {
+  const registryUrl = 'https://rpc.ghostchain.cloud/v1/endpoints';
+  const res = await fetch(registryUrl);
+  if (!res.ok) return { endpoints: [] as ReturnType<typeof normalizeRpcEndpoint>[], chainIds: [] as string[] };
+  const body = (await res.json()) as RpcRegistryResponse | RpcRegistryEntry[];
+  if (Array.isArray(body)) {
+    const endpoints = body
+      .map((entry) => normalizeRpcEndpoint(entry, 'ghostchain'))
+      .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+    const chainIds = Array.from(
+      new Set(endpoints.map((entry) => entry.chainId).filter(Boolean) as string[])
+    );
+    return { endpoints, chainIds };
+  }
+  const chains = body.chains || [];
+  const endpoints: RpcRegistryEntry[] = [];
+  const chainIds = new Set<string>();
+  chains.forEach((chain) => {
+    chainIds.add(String(chain.chainId));
+    (chain.endpoints || []).forEach((endpoint) => {
+      endpoints.push({
+        ...endpoint,
+        chainId: chain.chainId,
+        name: chain.chainName,
+        chain: {
+          chainId: chain.chainId,
+          name: chain.chainName,
+          chainKey: chain.chainKey,
+          layer: chain.layer,
+          chainType: chain.chainType,
+          network: chain.network,
+          parentChainId: chain.rollup?.parentChainId
+        }
+      });
+    });
+  });
+  const normalized = endpoints
+    .map((entry) => normalizeRpcEndpoint(entry, 'ghostchain'))
+    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+  const wsMirrors = endpoints
+    .filter((entry) => typeof entry.url === 'string' && entry.url.startsWith('http'))
+    .map((entry) => ({
+      ...entry,
+      url: entry.url?.replace(/^http/, 'ws'),
+      protocol: 'ws'
+    }))
+    .map((entry) => normalizeRpcEndpoint(entry, 'ghostchain'))
+    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+  const merged = [...normalized, ...wsMirrors].reduce((acc, endpoint) => {
+    if (!endpoint) return acc;
+    if (acc.find((item) => item.url === endpoint.url)) return acc;
+    acc.push(endpoint);
+    return acc;
+  }, [] as typeof normalized);
+  return { endpoints: merged, chainIds: Array.from(chainIds) };
+};
+
+const fetchPublicChainEndpoints = async (chainIds: string[]) => {
+  const res = await fetch('https://chainid.network/chains.json');
+  if (!res.ok) return [] as unknown[];
+  const chains = (await res.json()) as {
+    chainId: number;
+    name: string;
+    rpc: string[];
+  }[];
+  const chainMap = new Map<string, { chainId: number; name: string; rpc: string[] }>();
+  chains.forEach((chain) => chainMap.set(String(chain.chainId), chain));
+  const endpoints: RpcRegistryEntry[] = [];
+  chainIds.forEach((id) => {
+    const chain = chainMap.get(id);
+    if (!chain) return;
+    chain.rpc
+      .filter((rpc) => rpc.startsWith('http'))
+      .slice(0, 2)
+      .forEach((rpcUrl) => {
+        endpoints.push({
+          url: rpcUrl,
+          chainId: chain.chainId,
+          name: chain.name,
+          type: 'public',
+          status: 'degraded'
+        });
+      });
+  });
+  return endpoints
+    .map((entry) => normalizeRpcEndpoint(entry, 'public'))
+    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+};
+
+const layerForChainId = (chainId?: string) => {
+  if (!chainId) return undefined;
+  if (chainId === (process.env.GHOSTCHAIN_L1_CHAIN_ID || '14000101')) return 'L1';
+  if (chainId === (process.env.GHOSTL2_CHAIN_ID || env.CHAIN_ID || '901')) return 'L2';
+  if (chainId === (process.env.GHOSTL3_CHAIN_ID || '903')) return 'L3';
+  return undefined;
+};
+
+const getRpcEndpoints = async () => {
+  const now = Date.now();
+  if (rpcEndpointCache && rpcEndpointCache.expiresAt > now) {
+    return rpcEndpointCache.endpoints;
+  }
+  const ttl = 5 * 60 * 1000 + Math.floor(Math.random() * 10 * 60 * 1000);
+  const targetChainIds = getTargetChainIds();
+  let registryEndpoints: ReturnType<typeof normalizeRpcEndpoint>[] = [];
+  let registryChainIds: string[] = [];
+  try {
+    const registry = (await withTimeout(fetchRegistryEndpoints(), 5000)) as {
+      endpoints: ReturnType<typeof normalizeRpcEndpoint>[];
+      chainIds: string[];
+    };
+    registryEndpoints = registry.endpoints;
+    registryChainIds = registry.chainIds;
+  } catch {
+    registryEndpoints = [];
+  }
+  const chainIds = Array.from(new Set([...targetChainIds, ...registryChainIds]));
+  const registryByChain = new Map<string, number>();
+  registryEndpoints.forEach((endpoint) => {
+    if (endpoint?.chainId) {
+      registryByChain.set(endpoint.chainId, (registryByChain.get(endpoint.chainId) || 0) + 1);
+    }
+  });
+  const missingChainIds = chainIds.filter((id) => !registryByChain.get(id));
+  let publicEndpoints: ReturnType<typeof normalizeRpcEndpoint>[] = [];
+  if (missingChainIds.length) {
+    try {
+      publicEndpoints = (await withTimeout(fetchPublicChainEndpoints(missingChainIds), 5000)) as ReturnType<typeof normalizeRpcEndpoint>[];
+    } catch {
+      publicEndpoints = [];
+    }
+  }
+  let endpoints = [...registryEndpoints, ...publicEndpoints].filter(Boolean);
+  endpoints = endpoints.map((endpoint) => ({
+    ...endpoint,
+    layer: endpoint?.layer || layerForChainId(endpoint?.chainId)
+  }));
+  const existingChains = new Set(endpoints.map((endpoint) => endpoint?.chainId).filter(Boolean) as string[]);
+  const fallbackByChain: Record<string, { name: string; url: string }> = {
+    [process.env.GHOSTCHAIN_L1_CHAIN_ID || '14000101']: {
+      name: 'GhostChain L1',
+      url: env.RPC_L1 || 'http://localhost:18545'
+    },
+    [process.env.GHOSTL2_CHAIN_ID || env.CHAIN_ID || '901']: {
+      name: 'GhostL2',
+      url: env.RPC_L2 || servicesBase.explorerRpc
+    },
+    [process.env.GHOSTL3_CHAIN_ID || '903']: {
+      name: 'GhostL3',
+      url: env.RPC_L3 || 'http://localhost:39545'
+    }
+  };
+  chainIds.forEach((id) => {
+    if (existingChains.has(id)) return;
+    const fallback = fallbackByChain[id];
+    if (!fallback || !fallback.url) return;
+    endpoints.push({
+      id: crypto.createHash('sha256').update(`fallback-${id}-${fallback.url}`).digest('hex').slice(0, 12),
+      chainId: id,
+      chainName: fallback.name,
+      layer: id === (process.env.GHOSTCHAIN_L1_CHAIN_ID || '14000101') ? 'L1' : id === (process.env.GHOSTL2_CHAIN_ID || env.CHAIN_ID || '901') ? 'L2' : 'L3',
+      url: fallback.url,
+      type: 'public',
+      region: 'local',
+      status: 'healthy',
+      lastCheckedAt: new Date().toISOString()
+    });
+  });
+
+  const probeCandidates = endpoints.filter(
+    (endpoint) => endpoint.url.startsWith('http') && endpoint.protocol !== 'ws'
+  );
+  const maxProbes = 8;
+  const probes = await Promise.allSettled(
+    probeCandidates.slice(0, maxProbes).map((endpoint) => probeRpcEndpoint(endpoint))
+  );
+  probes.forEach((result) => {
+    if (result.status !== 'fulfilled') return;
+    const updated = result.value;
+    const index = endpoints.findIndex((endpoint) => endpoint.id === updated.id);
+    if (index >= 0) endpoints[index] = updated;
+  });
+
+  rpcEndpointCache = { endpoints, expiresAt: now + ttl };
+  return endpoints;
 };
 
 const servicesBase = {
@@ -572,6 +962,9 @@ app.use(
 );
 ghostWalletServicePromise.then((ghostWalletService) => {
   app.use(['/v1/wallet', '/wallet'], buildWalletRouter(ghostWalletService));
+});
+kycServicePromise.then((kycService) => {
+  app.use(['/v1/kyc', '/kyc'], buildKycRouter(kycService));
 });
 app.use(
   ['/v1/devops', '/devops'],
@@ -1907,8 +2300,8 @@ app.get(['/v1/wallet/balance', '/wallet/balance'], async (req, res) => {
 });
 
 app.get(['/v1/integrations/rpc', '/integrations/rpc'], async (_req, res) => {
-  const data = await proxyJson<{ endpoints?: unknown[] }>(`${servicesBase.rpc}/endpoints`, { endpoints: [] });
-  res.json(data.endpoints || []);
+  const endpoints = await getRpcEndpoints();
+  res.json(endpoints);
 });
 
 app.get(['/v1/swap/quote', '/swap/quote'], async (req, res) => {
@@ -1961,11 +2354,14 @@ app.get(['/v1/integrations/webhooks', '/integrations/webhooks'], async (_req, re
 });
 
 app.get(['/v1/integrations/partners', '/integrations/partners'], async (_req, res) => {
+  const kycName = env.KYC_PROVIDER_NAME || 'KYC Corp';
+  const kycUrl = env.KYC_PROVIDER_URL;
+  const kycStatus = env.KYC_PROVIDER_STATUS || (kycUrl ? 'connected' : 'pending');
   res.json({
     partners: [
       { name: 'IndexerOne', type: 'indexer', status: 'pending', url: 'https://indexer.example.com' },
       { name: 'OracleX', type: 'oracle', status: 'connected', url: 'https://oracle.example.com' },
-      { name: 'KYC Corp', type: 'kyc', status: 'error', url: 'https://kyc.example.com' }
+      { name: kycName, type: 'kyc', status: kycStatus, url: kycUrl }
     ]
   });
 });
