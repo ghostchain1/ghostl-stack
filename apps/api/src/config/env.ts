@@ -102,6 +102,10 @@ const EnvSchema = z.object({
     .string()
     .transform((v) => v === 'true')
     .optional(),
+  KYC_PROVIDER_NAME: z.string().optional(),
+  KYC_PROVIDER_URL: z.string().url().optional(),
+  KYC_PROVIDER_STATUS: z.enum(['connected', 'pending', 'error']).optional(),
+  KYC_STORE_PATH: z.string().optional(),
   GHOSTWALLET_MASTER_KEY: z.string().min(1),
   GHOSTWALLET_DERIVATION_PATH: z.string().optional(),
   ALLOW_PUBLIC_SIGNUP: z

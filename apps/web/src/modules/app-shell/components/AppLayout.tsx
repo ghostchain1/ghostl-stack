@@ -54,6 +54,7 @@ const navSections: { title: string; items: NavItem[] }[] = [
     title: 'Security',
     items: [
       { href: '/compliance', label: 'Compliance', roles: ['Admin', 'Operator', 'Protocol Admin'] },
+      { href: '/kyc', label: 'KYC', roles: ['admin', 'viewer'] },
       { href: '/devops', label: 'DevOps', roles: ['Protocol Admin'] },
       { href: '/integrations', label: 'Integrations', roles: ['Developer'] },
       { href: '/ai', label: 'AI' }
