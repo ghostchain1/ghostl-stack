@@ -392,7 +392,7 @@ const getTargetChainIds = () => {
 };
 
 const fetchRegistryEndpoints = async () => {
-  const registryUrl = 'https://rpc.ghostchain.cloud/v1/endpoints';
+  const registryUrl = env.RPC_REGISTRY_URL || 'https://rpc.ghostchain.cloud/v1/endpoints';
   const res = await fetch(registryUrl);
   if (!res.ok) return { endpoints: [] as ReturnType<typeof normalizeRpcEndpoint>[], chainIds: [] as string[] };
   const body = (await res.json()) as RpcRegistryResponse | RpcRegistryEntry[];
