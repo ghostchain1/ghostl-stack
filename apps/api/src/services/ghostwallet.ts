@@ -1,4 +1,4 @@
-import { Contract, JsonRpcProvider, Wallet } from 'ethers';
+import { Contract, Wallet } from 'ethers';
 import {
   decryptSecret,
   encryptSecret,
@@ -10,6 +10,7 @@ import {
 import type { WalletService } from './wallet-store';
 import type { WalletRecord } from '@ghostl/types';
 import { env } from '../config/env';
+import { ghostWalletRpcManager } from './rpc-manager';
 
 type ChainRef = 'l1' | 'l2' | 'l3';
 
@@ -74,12 +75,6 @@ type ReceiptSummary = {
 };
 
 const erc20Abi = ['function transfer(address to, uint256 amount) returns (bool)'];
-
-const rpcFor = (chainId: ChainRef) => {
-  if (chainId === 'l1') return env.RPC_L1 || env.EXPLORER_RPC_URL || 'http://localhost:18545';
-  if (chainId === 'l3') return env.RPC_L3 || env.EXPLORER_RPC_URL || 'http://localhost:39545';
-  return env.RPC_L2 || env.EXPLORER_RPC_URL || 'http://localhost:18547';
-};
 
 const keyPreview = (address: string) => `${address.slice(0, 6)}…${address.slice(-4)}`;
 
@@ -160,50 +155,52 @@ export const createGhostWalletService = (wallets: WalletService) => {
       const wallet = await wallets.get(input.walletId);
       if (!wallet) throw new Error('wallet_not_found');
       const pk = decryptKey(wallet);
-      const provider = new JsonRpcProvider(rpcFor(input.chainId));
-      const signer = new Wallet(pk, provider);
-      const network = await provider.getNetwork();
-      const signed = await signer.signTransaction({
-        to: input.to,
-        value: input.value,
-        data: input.data,
-        gasLimit: input.gasLimit,
-        gasPrice: input.gasPrice,
-        maxFeePerGas: input.maxFeePerGas,
-        maxPriorityFeePerGas: input.maxPriorityFeePerGas,
-        nonce: input.nonce,
-        chainId: Number(network.chainId)
+      return ghostWalletRpcManager.withProvider(input.chainId, async (provider) => {
+        const signer = new Wallet(pk, provider);
+        const network = await provider.getNetwork();
+        const signed = await signer.signTransaction({
+          to: input.to,
+          value: input.value,
+          data: input.data,
+          gasLimit: input.gasLimit,
+          gasPrice: input.gasPrice,
+          maxFeePerGas: input.maxFeePerGas,
+          maxPriorityFeePerGas: input.maxPriorityFeePerGas,
+          nonce: input.nonce,
+          chainId: Number(network.chainId)
+        });
+        return { signed };
       });
-      return { signed };
     },
     async sendTransaction(input: SendTxInput) {
       const wallet = await wallets.get(input.walletId);
       if (!wallet) throw new Error('wallet_not_found');
       const pk = decryptKey(wallet);
-      const provider = new JsonRpcProvider(rpcFor(input.chainId));
-      const signer = new Wallet(pk, provider);
-      let tx;
-      if (input.token) {
-        const contract = new Contract(input.token, erc20Abi, signer);
-        tx = await contract.transfer(input.to, input.amount, {
-          gasLimit: input.gasLimit,
-          gasPrice: input.gasPrice,
-          maxFeePerGas: input.maxFeePerGas,
-          maxPriorityFeePerGas: input.maxPriorityFeePerGas
-        });
-      } else {
-        tx = await signer.sendTransaction({
-          to: input.to,
-          value: input.amount,
-          gasLimit: input.gasLimit,
-          gasPrice: input.gasPrice,
-          maxFeePerGas: input.maxFeePerGas,
-          maxPriorityFeePerGas: input.maxPriorityFeePerGas,
-          data: input.data
-        });
-      }
-      await tx.wait();
-      return { tx: tx.hash };
+      return ghostWalletRpcManager.withProvider(input.chainId, async (provider) => {
+        const signer = new Wallet(pk, provider);
+        let tx;
+        if (input.token) {
+          const contract = new Contract(input.token, erc20Abi, signer);
+          tx = await contract.transfer(input.to, input.amount, {
+            gasLimit: input.gasLimit,
+            gasPrice: input.gasPrice,
+            maxFeePerGas: input.maxFeePerGas,
+            maxPriorityFeePerGas: input.maxPriorityFeePerGas
+          });
+        } else {
+          tx = await signer.sendTransaction({
+            to: input.to,
+            value: input.amount,
+            gasLimit: input.gasLimit,
+            gasPrice: input.gasPrice,
+            maxFeePerGas: input.maxFeePerGas,
+            maxPriorityFeePerGas: input.maxPriorityFeePerGas,
+            data: input.data
+          });
+        }
+        await tx.wait();
+        return { tx: tx.hash };
+      });
     },
     async fundWallet(input: FundWalletInput) {
       const wallet = await wallets.get(input.walletId);
@@ -212,33 +209,35 @@ export const createGhostWalletService = (wallets: WalletService) => {
       if (!funderKey) {
         throw new Error('funder_not_configured');
       }
-      const chainId = input.chainId || env.GHOSTWALLET_FUNDER_CHAIN || 'l1';
-      const provider = new JsonRpcProvider(rpcFor(chainId));
-      const funder = new Wallet(funderKey, provider);
-      const tx = await funder.sendTransaction({
-        to: wallet.address,
-        value: input.amount,
-        data: input.data
+      const chainId = (input.chainId || env.GHOSTWALLET_FUNDER_CHAIN || 'l1') as ChainRef;
+      return ghostWalletRpcManager.withProvider(chainId, async (provider) => {
+        const funder = new Wallet(funderKey, provider);
+        const tx = await funder.sendTransaction({
+          to: wallet.address,
+          value: input.amount,
+          data: input.data
+        });
+        await tx.wait();
+        return { tx: tx.hash, from: funder.address, to: wallet.address, chainId };
       });
-      await tx.wait();
-      return { tx: tx.hash, from: funder.address, to: wallet.address, chainId };
     },
     async getTransactionReceipt(chainId: ChainRef, txHash: string): Promise<ReceiptSummary> {
-      const provider = new JsonRpcProvider(rpcFor(chainId));
-      const receipt = await provider.getTransactionReceipt(txHash);
-      if (!receipt) {
-        return { status: 'pending', tx: txHash, chainId };
-      }
-      return {
-        status: 'confirmed',
-        tx: receipt.hash,
-        chainId,
-        blockNumber: receipt.blockNumber,
-        gasUsed: receipt.gasUsed?.toString(),
-        effectiveGasPrice: (receipt as { effectiveGasPrice?: bigint }).effectiveGasPrice?.toString() ?? null,
-        from: receipt.from,
-        to: receipt.to
-      };
+      return ghostWalletRpcManager.withProvider(chainId, async (provider) => {
+        const receipt = await provider.getTransactionReceipt(txHash);
+        if (!receipt) {
+          return { status: 'pending', tx: txHash, chainId };
+        }
+        return {
+          status: 'confirmed',
+          tx: receipt.hash,
+          chainId,
+          blockNumber: receipt.blockNumber,
+          gasUsed: receipt.gasUsed?.toString(),
+          effectiveGasPrice: (receipt as { effectiveGasPrice?: bigint }).effectiveGasPrice?.toString() ?? null,
+          from: receipt.from,
+          to: receipt.to
+        };
+      });
     }
   };
 };
