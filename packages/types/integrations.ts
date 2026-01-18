@@ -39,3 +39,47 @@ export interface IntegrationPartner {
   status: 'connected' | 'pending' | 'error';
   url?: string;
 }
+
+export type IntegrationEnvironment = 'local' | 'dev' | 'staging' | 'prod';
+
+export type IntegrationDefinition = {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  configFields: Array<{
+    key: string;
+    label: string;
+    type: 'string' | 'url' | 'number' | 'boolean' | 'secret';
+    required?: boolean;
+  }>;
+};
+
+export type IntegrationInstance = {
+  id: string;
+  definitionId: string;
+  enabled: boolean;
+  environment: IntegrationEnvironment;
+  configRef: { kind: 'vault' | 'db'; ref: string };
+  health: {
+    status: 'OK' | 'DEGRADED' | 'DOWN';
+    lastCheckedAt: string | null;
+    latencyMs: number | null;
+    lastError: string | null;
+  };
+  policy: {
+    timeoutMs: number;
+    retries: number;
+    backoffMs: number;
+    rateLimitPerMin: number;
+    circuitBreaker: { enabled: boolean; failOpen: boolean };
+  };
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type IntegrationTestResult = {
+  ok: boolean;
+  checks: Array<{ name: string; ok: boolean; detail: string }>;
+  latencyMs: number | null;
+};
