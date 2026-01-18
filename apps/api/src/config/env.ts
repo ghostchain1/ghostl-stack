@@ -7,6 +7,9 @@ loadEnv({ path: path.join(process.cwd(), '.env.local') });
 const EnvSchema = z.object({
   SESSION_SECRET: z.string().min(1).default('dev-secret'),
   SESSION_STORE_PATH: z.string().default('.sessions'),
+  AUTH_DB_PATH: z.string().optional(),
+  SESSION_TTL_MS: z.coerce.number().int().min(60_000).max(86_400_000).default(30 * 60 * 1000),
+  SETUP_TOKEN: z.string().optional(),
   PROMETHEUS_URL: z.string().url().default('http://localhost:9090'),
   GRAFANA_URL: z.string().url().default('http://localhost:3000'),
   GRAFANA_API_KEY: z.string().optional(),
