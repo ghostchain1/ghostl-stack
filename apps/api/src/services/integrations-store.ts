@@ -80,6 +80,18 @@ const definitions: IntegrationDefinition[] = [
     ]
   },
   {
+    id: 'rpc-endpoint',
+    name: 'RPC Endpoint',
+    description: 'Direct RPC endpoint configuration for chain access.',
+    category: 'network',
+    configFields: [
+      { key: 'baseUrl', label: 'RPC URL', type: 'url', required: true },
+      { key: 'chainId', label: 'Chain ID', type: 'number' },
+      { key: 'protocol', label: 'Protocol', type: 'string' },
+      { key: 'apiKey', label: 'API Key', type: 'secret' }
+    ]
+  },
+  {
     id: 'kyc-provider',
     name: 'KYC Provider',
     description: 'External KYC/AML verification gateway.',
@@ -186,6 +198,22 @@ const requestWithTimeout = async (url: string, options: RequestInit, timeoutMs: 
   } finally {
     clearTimeout(timer);
   }
+};
+
+const rpcJson = async (url: string, method: string, timeoutMs: number) => {
+  const res = await requestWithTimeout(
+    url,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params: [] })
+    },
+    timeoutMs
+  );
+  if (!res.ok) throw new Error(`http_${res.status}`);
+  const body = (await res.json()) as { result?: unknown; error?: { message?: string } };
+  if (body.error) throw new Error(body.error.message || 'rpc_error');
+  return body.result;
 };
 
 const buildChecks = (entries: Array<{ name: string; ok: boolean; detail: string }>) => entries;
@@ -334,6 +362,11 @@ export const createIntegrationsStore = async () => {
         const body = (await res.json().catch(() => ({}))) as { contracts?: unknown[] };
         const hasContracts = Array.isArray(body.contracts);
         checks.push({ name: 'contracts', ok: hasContracts, detail: hasContracts ? 'contracts_ok' : 'contracts_missing' });
+        ok = checks.every((c) => c.ok);
+      } else if (instance.definitionId === 'rpc-endpoint') {
+        const result = await rpcJson(baseUrl, 'eth_chainId', timeoutMs);
+        const hasChainId = typeof result === 'string' && result.length > 0;
+        checks.push({ name: 'chainId', ok: hasChainId, detail: hasChainId ? 'chainId_ok' : 'chainId_missing' });
         ok = checks.every((c) => c.ok);
       } else {
         const res = await requestWithTimeout(baseUrl, { headers }, timeoutMs);
