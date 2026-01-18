@@ -30,7 +30,8 @@ const defaultRoles: Role[] = [
       'validator:read',
       'ai:read',
       'wallets:read',
-      'wallets:write'
+      'wallets:write',
+      'kyc:read'
     ]
   },
   {
@@ -52,7 +53,9 @@ const defaultRoles: Role[] = [
       'validator:write',
       'ai:write',
       'wallets:read',
-      'wallets:write'
+      'wallets:write',
+      'kyc:read',
+      'kyc:write'
     ]
   }
 ];
