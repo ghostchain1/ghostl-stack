@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { NextFunction, Request, Response, Router } from 'express';
 import type {
   ApiKeyService,
@@ -35,11 +36,16 @@ const attachSession = async (req: Request, user: User | null, deps: IdentityAcce
   req.session.userId = user.id;
   req.session.roles = user.roles;
   req.session.permissions = permissions;
-  const ttlMs = 30 * 60 * 1000;
+  req.session.ip = req.ip;
+  req.session.userAgent = req.headers['user-agent'];
+  if (!req.session.csrfToken) {
+    req.session.csrfToken = crypto.randomUUID();
+  }
+  const ttlMs = env.SESSION_TTL_MS || 30 * 60 * 1000;
   const now = Date.now();
   req.session.expiresAt = now + ttlMs;
   req.session.lastSeenAt = now;
-  return { permissions };
+  return { permissions, csrfToken: req.session.csrfToken as string };
 };
 
 const formatAuthError = (err: unknown) => {
@@ -47,10 +53,14 @@ const formatAuthError = (err: unknown) => {
   switch (message) {
     case 'invalid_credentials':
       return { status: 401, error: 'invalid_credentials' };
+    case 'account_locked':
+      return { status: 429, error: 'account_locked' };
     case 'password_not_set':
       return { status: 409, error: 'password_not_set' };
     case 'user_exists':
       return { status: 409, error: 'user_exists' };
+    case 'bootstrap_disabled':
+      return { status: 409, error: 'bootstrap_disabled' };
     case 'SSO_JWT_SECRET not configured':
       return { status: 503, error: 'sso_not_configured' };
     default:
@@ -66,6 +76,32 @@ const respondAuthError = (res: Response, err: unknown) => {
 export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
   const router = Router();
 
+  const rotateSession = async (req: Request) => {
+    const previous = req.sessionID;
+    await new Promise<void>((resolve, reject) => {
+      req.session.regenerate((err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+    req.session.rotatedFrom = previous;
+    return previous;
+  };
+
+  const requestContext = (req: Request) => ({
+    ip: req.ip,
+    userAgent: req.headers['user-agent']
+  });
+
+  const setCsrfCookie = (res: Response, token: string) => {
+    res.cookie('csrf_token', token, {
+      httpOnly: false,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/'
+    });
+  };
+
   router.post(
     '/auth/register',
     asyncHandler(async (req, res) => {
@@ -79,9 +115,13 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
         return;
       }
       try {
-        const session = await deps.authService.registerWithPassword(email, password);
-        const user = await deps.userService.get(session.userId);
-        const { permissions } = await attachSession(req, user, deps);
+        const user = await deps.authService.registerWithPassword(email, password, undefined, requestContext(req));
+        await rotateSession(req);
+        const { permissions, csrfToken } = await attachSession(req, user, deps);
+        const session = await deps.authService.createSession(user.id, req.sessionID, {
+          ...requestContext(req),
+          rotatedFrom: req.session.rotatedFrom as string | undefined
+        });
         if (createWallet !== false && user && deps.ghostWalletService) {
           await deps.ghostWalletService.createWallet({ userId: user.id, label: 'Primary GhostWallet', chainId: 'l1' });
         }
@@ -89,9 +129,50 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
           actorId: user?.id || 'unknown',
           action: 'register',
           resource: user?.id || 'unknown',
-          meta: { correlationId: req.correlationId }
+          meta: { correlationId: req.correlationId, ip: req.ip, userAgent: req.headers['user-agent'] }
         });
-        res.json({ session, user, permissions });
+        setCsrfCookie(res, csrfToken);
+        res.json({ session, user, permissions, csrfToken });
+      } catch (err) {
+        await deps.auditLogService.append({
+          actorId: 'unknown',
+          action: 'register:failed',
+          resource: email,
+          meta: { correlationId: req.correlationId, ip: req.ip, userAgent: req.headers['user-agent'] }
+        });
+        respondAuthError(res, err);
+      }
+    })
+  );
+
+  router.post(
+    '/auth/bootstrap',
+    asyncHandler(async (req, res) => {
+      const { email, password, token } = req.body as { email?: string; password?: string; token?: string };
+      if (!env.SETUP_TOKEN || token !== env.SETUP_TOKEN) {
+        res.status(403).json({ error: 'invalid_setup_token' });
+        return;
+      }
+      if (!email || !password) {
+        res.status(400).json({ error: 'email and password required' });
+        return;
+      }
+      try {
+        const user = await deps.authService.bootstrapAdmin(email, password, requestContext(req));
+        await rotateSession(req);
+        const { permissions, csrfToken } = await attachSession(req, user, deps);
+        const session = await deps.authService.createSession(user.id, req.sessionID, {
+          ...requestContext(req),
+          rotatedFrom: req.session.rotatedFrom as string | undefined
+        });
+        await deps.auditLogService.append({
+          actorId: user.id,
+          action: 'bootstrap:admin',
+          resource: user.id,
+          meta: { correlationId: req.correlationId, ip: req.ip, userAgent: req.headers['user-agent'] }
+        });
+        setCsrfCookie(res, csrfToken);
+        res.json({ session, user, permissions, csrfToken });
       } catch (err) {
         respondAuthError(res, err);
       }
@@ -107,9 +188,13 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
         return;
       }
       try {
-        const session = await deps.authService.loginWithPassword(email, password);
-        const user = await deps.userService.get(session.userId);
-        const { permissions } = await attachSession(req, user, deps);
+        const user = await deps.authService.loginWithPassword(email, password, requestContext(req));
+        await rotateSession(req);
+        const { permissions, csrfToken } = await attachSession(req, user, deps);
+        const session = await deps.authService.createSession(user.id, req.sessionID, {
+          ...requestContext(req),
+          rotatedFrom: req.session.rotatedFrom as string | undefined
+        });
         if (user && deps.ghostWalletService) {
           const wallets = deps.walletService ? await deps.walletService.list() : [];
           const owned = wallets.filter((w) => w.ownerUserId === user.id && w.type === 'custodial');
@@ -121,10 +206,17 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
           actorId: user?.id || 'unknown',
           action: 'login:password',
           resource: user?.id || 'unknown',
-          meta: { correlationId: req.correlationId }
+          meta: { correlationId: req.correlationId, ip: req.ip, userAgent: req.headers['user-agent'] }
         });
-        res.json({ session, user, permissions });
+        setCsrfCookie(res, csrfToken);
+        res.json({ session, user, permissions, csrfToken });
       } catch (err) {
+        await deps.auditLogService.append({
+          actorId: 'unknown',
+          action: 'login:failed',
+          resource: email,
+          meta: { correlationId: req.correlationId, ip: req.ip, userAgent: req.headers['user-agent'] }
+        });
         respondAuthError(res, err);
       }
     })
@@ -139,17 +231,28 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
         return;
       }
       try {
-        const session = await deps.authService.loginWithSso(token);
-        const user = await deps.userService.get(session.userId);
-        const { permissions } = await attachSession(req, user, deps);
+        const user = await deps.authService.loginWithSso(token, requestContext(req));
+        await rotateSession(req);
+        const { permissions, csrfToken } = await attachSession(req, user, deps);
+        const session = await deps.authService.createSession(user.id, req.sessionID, {
+          ...requestContext(req),
+          rotatedFrom: req.session.rotatedFrom as string | undefined
+        });
         await deps.auditLogService.append({
           actorId: user?.id || 'unknown',
           action: 'login:sso',
           resource: user?.id || 'unknown',
-          meta: { correlationId: req.correlationId }
+          meta: { correlationId: req.correlationId, ip: req.ip, userAgent: req.headers['user-agent'] }
         });
-        res.json({ session, user, permissions });
+        setCsrfCookie(res, csrfToken);
+        res.json({ session, user, permissions, csrfToken });
       } catch (err) {
+        await deps.auditLogService.append({
+          actorId: 'unknown',
+          action: 'login:sso_failed',
+          resource: 'unknown',
+          meta: { correlationId: req.correlationId, ip: req.ip, userAgent: req.headers['user-agent'] }
+        });
         respondAuthError(res, err);
       }
     })
@@ -159,12 +262,15 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
     '/auth/logout',
     asyncHandler(async (req, res) => {
       const actorId = req.session.userId || 'unknown';
+      if (req.sessionID) {
+        await deps.authService.revokeSession(req.sessionID);
+      }
       req.session.destroy(() => undefined);
       await deps.auditLogService.append({
         actorId,
         action: 'logout',
         resource: actorId,
-        meta: { correlationId: req.correlationId }
+        meta: { correlationId: req.correlationId, ip: req.ip, userAgent: req.headers['user-agent'] }
       });
       res.json({ ok: true });
     })
@@ -179,7 +285,10 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
       }
       const user = await deps.userService.get(req.session.userId);
       const permissions = req.session.permissions || [];
-      res.json({ user, roles: req.session.roles || [], permissions });
+      if (req.session.csrfToken) {
+        setCsrfCookie(res, req.session.csrfToken as string);
+      }
+      res.json({ user, roles: req.session.roles || [], permissions, csrfToken: req.session.csrfToken || null });
     })
   );
 

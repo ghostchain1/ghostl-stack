@@ -3,17 +3,27 @@ import WebSocket from 'ws';
 import { env } from '../config/env';
 
 type ChainRef = 'l1' | 'l2' | 'l3';
+type ChainLayer = 'L1' | 'L2' | 'L3';
 type EndpointStatus = 'OK' | 'DEGRADED' | 'DOWN';
 
 type RegistryResponse = {
+  registry?: {
+    name: string;
+    version: string;
+    generatedAt: string;
+  };
   chains: Array<{
     chainId: number;
-    name: string;
+    chainKey?: string;
+    chainName?: string;
+    name?: string;
     layer: 'L1' | 'L2' | 'L3';
-    region: string;
-    rpc: { http: string[]; ws: string[] };
-    type: 'public' | 'private';
-    status: 'active' | 'degraded';
+    chainType?: 'settlement' | 'rollup' | 'sidechain';
+    network?: 'mainnet' | 'testnet' | 'devnet';
+    regions?: string[];
+    nativeCurrency?: { name: string; symbol: string; decimals: number };
+    rpc?: { http?: string[]; ws?: string[] };
+    endpoints?: Array<{ url: string; protocol?: 'http' | 'ws' }>;
   }>;
 };
 
@@ -82,6 +92,26 @@ const buildFallback = (): RegistryResponse => {
 };
 
 const chainForLayer = (layer: ChainRef) => (layer === 'l1' ? 'L1' : layer === 'l2' ? 'L2' : 'L3');
+const normalizeLayer = (layer: ChainLayer | ChainRef) =>
+  layer === 'l1' || layer === 'L1' ? 'l1' : layer === 'l2' || layer === 'L2' ? 'l2' : 'l3';
+
+const isValidRegistry = (payload: unknown): payload is RegistryResponse => {
+  if (!payload || typeof payload !== 'object') return false;
+  const chains = (payload as { chains?: unknown }).chains;
+  if (!Array.isArray(chains) || !chains.length) return false;
+  return chains.every((chain) => {
+    if (!chain || typeof chain !== 'object') return false;
+    const entry = chain as RegistryResponse['chains'][number];
+    if (!Number.isFinite(entry.chainId)) return false;
+    if (!entry.layer || !['L1', 'L2', 'L3'].includes(entry.layer)) return false;
+    if (entry.rpc) {
+      if (entry.rpc.http && !Array.isArray(entry.rpc.http)) return false;
+      if (entry.rpc.ws && !Array.isArray(entry.rpc.ws)) return false;
+    }
+    if (entry.endpoints && !Array.isArray(entry.endpoints)) return false;
+    return true;
+  });
+};
 
 const rpcChainId = async (url: string, timeoutMs: number) => {
   const controller = new AbortController();
@@ -97,6 +127,26 @@ const rpcChainId = async (url: string, timeoutMs: number) => {
     const body = (await res.json()) as { result?: string; error?: { message?: string } };
     if (body.error) throw new Error(body.error.message || 'rpc_error');
     if (!body.result) throw new Error('missing_chainId');
+    return parseInt(body.result, 16);
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+const rpcBlockNumber = async (url: string, timeoutMs: number) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] }),
+      signal: controller.signal
+    });
+    if (!res.ok) throw new Error(`http_${res.status}`);
+    const body = (await res.json()) as { result?: string; error?: { message?: string } };
+    if (body.error) throw new Error(body.error.message || 'rpc_error');
+    if (!body.result) throw new Error('missing_blockNumber');
     return parseInt(body.result, 16);
   } finally {
     clearTimeout(timer);
@@ -138,6 +188,41 @@ const wsChainId = async (url: string, timeoutMs: number) =>
     };
   });
 
+const wsBlockNumber = async (url: string, timeoutMs: number) =>
+  new Promise<number>((resolve, reject) => {
+    const socket = new WebSocket(url);
+    const timer = setTimeout(() => {
+      socket.close();
+      reject(new Error('ws_timeout'));
+    }, timeoutMs);
+    socket.onopen = () => {
+      socket.send(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] }));
+    };
+    socket.onmessage = (event) => {
+      clearTimeout(timer);
+      try {
+        const data = JSON.parse(String(event.data)) as { result?: string; error?: { message?: string } };
+        if (data.error) {
+          reject(new Error(data.error.message || 'rpc_error'));
+          return;
+        }
+        if (!data.result) {
+          reject(new Error('missing_blockNumber'));
+          return;
+        }
+        resolve(parseInt(data.result, 16));
+      } catch (err) {
+        reject(err instanceof Error ? err : new Error('ws_error'));
+      } finally {
+        socket.close();
+      }
+    };
+    socket.onerror = () => {
+      clearTimeout(timer);
+      reject(new Error('ws_error'));
+    };
+  });
+
 export class GhostWalletRpcManager {
   private registryUrl: string | undefined;
   private registryAvailable = false;
@@ -163,8 +248,11 @@ export class GhostWalletRpcManager {
     (['l1', 'l2', 'l3'] as ChainRef[]).forEach((layer) => {
       const entry = data.chains.find((chain) => chain.layer === chainForLayer(layer));
       if (!entry) return;
+      const http = entry.rpc?.http || [];
+      const ws = entry.rpc?.ws || [];
+      const endpointUrls = entry.endpoints || [];
       const endpoints: Endpoint[] = [
-        ...entry.rpc.http.map((url) => ({
+        ...http.map((url) => ({
           chainId: entry.chainId,
           url,
           protocol: 'http' as const,
@@ -175,7 +263,7 @@ export class GhostWalletRpcManager {
           latencyMs: null,
           lastError: null
         })),
-        ...entry.rpc.ws.map((url) => ({
+        ...ws.map((url) => ({
           chainId: entry.chainId,
           url,
           protocol: 'ws' as const,
@@ -185,7 +273,20 @@ export class GhostWalletRpcManager {
           lastCheckedAt: null,
           latencyMs: null,
           lastError: null
-        }))
+        })),
+        ...endpointUrls
+          .filter((endpoint) => endpoint.url)
+          .map((endpoint) => ({
+            chainId: entry.chainId,
+            url: endpoint.url,
+            protocol: endpoint.protocol || (endpoint.url.startsWith('ws') ? 'ws' : 'http'),
+            status: 'DEGRADED',
+            failures: [],
+            recoveryCount: 0,
+            lastCheckedAt: null,
+            latencyMs: null,
+            lastError: null
+          }))
       ];
       next.set(layer, endpoints);
     });
@@ -201,8 +302,8 @@ export class GhostWalletRpcManager {
     try {
       const res = await fetch(this.registryUrl);
       if (!res.ok) throw new Error('registry_unavailable');
-      const body = (await res.json()) as RegistryResponse;
-      if (!body.chains) throw new Error('invalid_registry');
+      const body = (await res.json()) as unknown;
+      if (!isValidRegistry(body)) throw new Error('invalid_registry');
       this.registryAvailable = true;
       this.initEndpoints(body);
     } catch {
@@ -244,7 +345,12 @@ export class GhostWalletRpcManager {
         endpoint.protocol === 'ws'
           ? await wsChainId(endpoint.url, this.timeoutMs)
           : await rpcChainId(endpoint.url, this.timeoutMs);
+      const blockNumber =
+        endpoint.protocol === 'ws'
+          ? await wsBlockNumber(endpoint.url, this.timeoutMs)
+          : await rpcBlockNumber(endpoint.url, this.timeoutMs);
       if (chainId !== endpoint.chainId) throw new Error('chainId_mismatch');
+      if (!Number.isFinite(blockNumber)) throw new Error('blockNumber_invalid');
       this.recordSuccess(endpoint, Date.now() - started);
     } catch (err) {
       this.recordFailure(endpoint, err instanceof Error ? err.message : 'probe_failed');
@@ -264,8 +370,9 @@ export class GhostWalletRpcManager {
     return [...list].sort((a, b) => order[a.status] - order[b.status]);
   }
 
-  getProvider(chain: ChainRef) {
-    const endpoints = this.orderedEndpoints(chain).filter((e) => e.protocol === 'http');
+  getProvider(chain: ChainRef | ChainLayer) {
+    const normalized = normalizeLayer(chain);
+    const endpoints = this.orderedEndpoints(normalized).filter((e) => e.protocol === 'http');
     const target = endpoints[0];
     if (!target) {
       throw new Error('rpc_unavailable');
@@ -273,8 +380,25 @@ export class GhostWalletRpcManager {
     return new JsonRpcProvider(target.url);
   }
 
-  async withProvider<T>(chain: ChainRef, action: (provider: JsonRpcProvider) => Promise<T>): Promise<T> {
-    const endpoints = this.orderedEndpoints(chain).filter((e) => e.protocol === 'http');
+  getHealth() {
+    const data: Record<ChainLayer, Endpoint[]> = { L1: [], L2: [], L3: [] };
+    for (const [key, value] of this.endpoints.entries()) {
+      const layer = chainForLayer(key);
+      data[layer] = value.map((endpoint) => ({
+        ...endpoint,
+        failures: [...endpoint.failures]
+      }));
+    }
+    return data;
+  }
+
+  getPoolSnapshot() {
+    return this.getHealth();
+  }
+
+  async withProvider<T>(chain: ChainRef | ChainLayer, action: (provider: JsonRpcProvider) => Promise<T>): Promise<T> {
+    const normalized = normalizeLayer(chain);
+    const endpoints = this.orderedEndpoints(normalized).filter((e) => e.protocol === 'http');
     if (!endpoints.length) throw new Error('rpc_unavailable');
     const first = endpoints[0];
     try {

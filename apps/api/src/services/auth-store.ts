@@ -1,7 +1,5 @@
-import { promises as fs } from 'fs';
-import path from 'path';
-import { createHash, randomBytes, randomUUID, scrypt as scryptCallback, timingSafeEqual } from 'crypto';
-import { promisify } from 'util';
+import { randomUUID } from 'crypto';
+import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
 import type { ApiKey, Role, Session, User } from '@ghostl/types';
 import type {
@@ -12,11 +10,35 @@ import type {
   RBACService,
   UserService
 } from '../modules/identity-access/services';
+import { openSqlite, type SqliteHandle } from './db';
 
-const defaultRoles: Role[] = [
+const AUTH_DB_PATH = process.env.AUTH_DB_PATH || process.env.SQLITE_DB_PATH || 'data/auth.db';
+const SESSION_TTL_MS = Number(process.env.SESSION_TTL_MS || 30 * 60 * 1000);
+
+const roles: Role[] = [
   {
-    id: 'viewer',
-    name: 'Viewer',
+    id: 'readonly',
+    name: 'READONLY',
+    permissions: [
+      'iam:read',
+      'chain:read',
+      'nodes:read',
+      'observability:read',
+      'bridge:read',
+      'treasury:read',
+      'contracts:read',
+      'devops:read',
+      'governance:read',
+      'validator:read',
+      'ai:read',
+      'wallets:read',
+      'kyc:read',
+      'integrations:read'
+    ]
+  },
+  {
+    id: 'operator',
+    name: 'OPERATOR',
     permissions: [
       'iam:read',
       'chain:read',
@@ -32,12 +54,16 @@ const defaultRoles: Role[] = [
       'wallets:read',
       'wallets:write',
       'kyc:read',
-      'integrations:read'
+      'kyc:write',
+      'integrations:read',
+      'integrations:write',
+      'nodes:write',
+      'chain:write'
     ]
   },
   {
     id: 'admin',
-    name: 'Protocol Admin',
+    name: 'ADMIN',
     permissions: [
       'iam:read',
       'iam:write',
@@ -63,271 +89,353 @@ const defaultRoles: Role[] = [
   }
 ];
 
-const defaultUsers: User[] = [
-  { id: 'user-1', email: 'admin@ghostl.dev', wallets: [], roles: ['admin'] }
-];
+const roleOrder: Record<string, number> = { READONLY: 0, OPERATOR: 1, ADMIN: 2 };
 
-const scrypt = promisify(scryptCallback);
+const normalizeRole = (role?: string) => {
+  if (!role) return 'READONLY';
+  const raw = role.toUpperCase();
+  if (raw === 'ADMIN') return 'ADMIN';
+  if (raw === 'OPERATOR') return 'OPERATOR';
+  if (raw === 'READONLY' || raw === 'VIEWER') return 'READONLY';
+  return 'READONLY';
+};
 
-interface StoreShape {
-  users: User[];
-  roles: Role[];
-  apiKeys: (ApiKey & { userId: string; secret: string })[];
-  sessions: Session[];
-  audit: AuditLogEntry[];
-  credentials: Record<string, { salt: string; hash: string; updatedAt: string }>;
-}
+const resolveRoleFromRoles = (rolesInput?: string[]) => {
+  if (!rolesInput || !rolesInput.length) return 'READONLY';
+  const normalized = rolesInput.map((role) => normalizeRole(role));
+  return normalized.sort((a, b) => roleOrder[b] - roleOrder[a])[0] || 'READONLY';
+};
 
-const loadStore = async (): Promise<StoreShape> => {
-  const filePath = process.env.AUTH_STORE_PATH || path.join(process.cwd(), 'data', 'iam.json');
+const userFromRow = (row: any): User => ({
+  id: row.id,
+  email: row.email,
+  wallets: [],
+  roles: [normalizeRole(row.role).toLowerCase()]
+});
+
+const openAuthDb = (): SqliteHandle => {
+  const db = openSqlite(AUTH_DB_PATH);
+  if (!db) throw new Error('auth_db_unavailable');
+  db.exec(`
+    create table if not exists users (
+      id text primary key,
+      email text not null unique,
+      password_hash text not null,
+      role text not null,
+      created_at text not null,
+      updated_at text not null
+    );
+    create table if not exists sessions (
+      id text primary key,
+      user_id text not null,
+      created_at text not null,
+      expires_at text not null,
+      rotated_from text,
+      revoked_at text,
+      ip text,
+      user_agent text,
+      csrf_token text,
+      data text
+    );
+    create table if not exists audit_logs (
+      id text primary key,
+      user_id text,
+      action text not null,
+      ip text,
+      user_agent text,
+      created_at text not null,
+      metadata text
+    );
+    create table if not exists api_keys (
+      id text primary key,
+      user_id text not null,
+      name text not null,
+      scopes text not null,
+      secret_hash text not null,
+      last_used_at text
+    );
+    create table if not exists login_attempts (
+      id text primary key,
+      email text,
+      ip text,
+      attempts integer not null,
+      last_attempt text not null,
+      locked_until text
+    );
+  `);
+  return db;
+};
+
+const db = openAuthDb();
+
+const nowIso = () => new Date().toISOString();
+
+const hashPassword = async (password: string) => {
+  return argon2.hash(password, { type: argon2.argon2id });
+};
+
+const verifyPassword = async (password: string, hash: string) => {
   try {
-    const raw = await fs.readFile(filePath, 'utf-8');
-    return JSON.parse(raw) as StoreShape;
-  } catch (_err) {
-    await fs.mkdir(path.dirname(filePath), { recursive: true });
-    const initial: StoreShape = {
-      users: defaultUsers,
-      roles: defaultRoles,
-      apiKeys: [],
-      sessions: [],
-      audit: [],
-      credentials: {}
-    };
-    await fs.writeFile(filePath, JSON.stringify(initial, null, 2));
-    return initial;
+    return await argon2.verify(hash, password);
+  } catch {
+    return false;
   }
 };
 
-const saveStore = async (store: StoreShape) => {
-  const filePath = process.env.AUTH_STORE_PATH || path.join(process.cwd(), 'data', 'iam.json');
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, JSON.stringify(store, null, 2));
+const auditLogService: AuditLogService = {
+  async append(entry) {
+    const id = randomUUID();
+    const createdAt = nowIso();
+    db.prepare(
+      'insert into audit_logs (id, user_id, action, ip, user_agent, created_at, metadata) values (?, ?, ?, ?, ?, ?, ?)'
+    ).run(id, entry.actorId || null, entry.action, entry.meta?.ip || null, entry.meta?.userAgent || null, createdAt, JSON.stringify(entry.meta || {}));
+    return { id, createdAt, ...entry };
+  },
+  async list(limit = 200) {
+    const rows = db
+      .prepare('select * from audit_logs order by created_at desc limit ?')
+      .all(limit);
+    return rows.map((row: any) => ({
+      id: row.id,
+      actorId: row.user_id || 'unknown',
+      action: row.action,
+      resource: row.user_id || 'unknown',
+      createdAt: row.created_at,
+      meta: row.metadata ? JSON.parse(row.metadata) : undefined
+    }));
+  }
 };
 
-const hashPassword = async (password: string, salt?: string) => {
-  const actualSalt = salt || randomBytes(16).toString('base64');
-  const derived = (await scrypt(password, actualSalt, 32)) as Buffer;
-  return { salt: actualSalt, hash: derived.toString('base64') };
+const rbacService: RBACService = {
+  async listRoles() {
+    return roles;
+  },
+  async createRole() {
+    throw new Error('roles_locked');
+  },
+  async updateRole() {
+    throw new Error('roles_locked');
+  },
+  async deleteRole() {
+    throw new Error('roles_locked');
+  },
+  async getUserPermissions(user: User) {
+    const role = resolveRoleFromRoles(user.roles);
+    const entry = roles.find((r) => r.name === role);
+    return entry ? entry.permissions : [];
+  }
 };
 
-const verifyPassword = async (password: string, credential: { salt: string; hash: string }) => {
-  const derived = (await scrypt(password, credential.salt, 32)) as Buffer;
-  const stored = Buffer.from(credential.hash, 'base64');
-  if (stored.length !== derived.length) return false;
-  return timingSafeEqual(stored, derived);
+const userService: UserService = {
+  async list() {
+    const rows = db.prepare('select * from users order by created_at asc').all();
+    return rows.map(userFromRow);
+  },
+  async get(id: string) {
+    const row = db.prepare('select * from users where id = ?').get(id);
+    return row ? userFromRow(row) : null;
+  },
+  async create(input) {
+    const id = randomUUID();
+    const createdAt = nowIso();
+    const role = resolveRoleFromRoles(input.roles);
+    db.prepare('insert into users (id, email, password_hash, role, created_at, updated_at) values (?, ?, ?, ?, ?, ?)').run(
+      id,
+      input.email,
+      await hashPassword(randomUUID()),
+      role,
+      createdAt,
+      createdAt
+    );
+    return { id, email: input.email, wallets: input.wallets || [], roles: [role.toLowerCase()] };
+  },
+  async update(id, input) {
+    const existing = db.prepare('select * from users where id = ?').get(id);
+    if (!existing) throw new Error('user not found');
+    const role = input.roles ? resolveRoleFromRoles(input.roles) : normalizeRole(existing.role);
+    const updatedAt = nowIso();
+    db.prepare('update users set email = ?, role = ?, updated_at = ? where id = ?').run(
+      input.email || existing.email,
+      role,
+      updatedAt,
+      id
+    );
+    const row = db.prepare('select * from users where id = ?').get(id);
+    return userFromRow(row);
+  }
+};
+
+const apiKeyService: ApiKeyService = {
+  async list(userId?: string) {
+    const rows = userId
+      ? db.prepare('select * from api_keys where user_id = ?').all(userId)
+      : db.prepare('select * from api_keys').all();
+    return rows.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      scopes: JSON.parse(row.scopes || '[]'),
+      lastUsedAt: row.last_used_at || undefined
+    }));
+  },
+  async create(userId, name, scopes) {
+    const id = randomUUID();
+    const secret = randomUUID();
+    const secretHash = await hashPassword(secret);
+    db.prepare('insert into api_keys (id, user_id, name, scopes, secret_hash, last_used_at) values (?, ?, ?, ?, ?, ?)').run(
+      id,
+      userId,
+      name,
+      JSON.stringify(scopes || []),
+      secretHash,
+      null
+    );
+    await auditLogService.append({ actorId: userId, action: 'api_key:create', resource: id, meta: { name, scopes } });
+    return { id, name, scopes, lastUsedAt: undefined, secret } as ApiKey;
+  },
+  async revoke(id) {
+    db.prepare('delete from api_keys where id = ?').run(id);
+    await auditLogService.append({ actorId: 'system', action: 'api_key:revoke', resource: id });
+  }
+};
+
+const recordLoginAttempt = (email: string, ip: string | undefined, ok: boolean) => {
+  const row = db
+    .prepare('select * from login_attempts where email = ? and ip = ?')
+    .get(email, ip || '');
+  const now = nowIso();
+  if (ok) {
+    if (row) {
+      db.prepare('delete from login_attempts where id = ?').run(row.id);
+    }
+    return;
+  }
+  const attempts = row ? row.attempts + 1 : 1;
+  const lockedUntil = attempts >= 5 ? new Date(Date.now() + attempts * 60_000).toISOString() : null;
+  if (row) {
+    db.prepare('update login_attempts set attempts = ?, last_attempt = ?, locked_until = ? where id = ?').run(
+      attempts,
+      now,
+      lockedUntil,
+      row.id
+    );
+  } else {
+    db.prepare('insert into login_attempts (id, email, ip, attempts, last_attempt, locked_until) values (?, ?, ?, ?, ?, ?)').run(
+      randomUUID(),
+      email,
+      ip || '',
+      attempts,
+      now,
+      lockedUntil
+    );
+  }
+};
+
+const checkLockout = (email: string, ip: string | undefined) => {
+  const row = db
+    .prepare('select * from login_attempts where email = ? and ip = ?')
+    .get(email, ip || '');
+  if (!row || !row.locked_until) return false;
+  return new Date(row.locked_until).getTime() > Date.now();
+};
+
+const authService: AuthService = {
+  async loginWithPassword(email, password, context) {
+    if (checkLockout(email, context?.ip)) throw new Error('account_locked');
+    const row = db.prepare('select * from users where email = ?').get(email);
+    if (!row) {
+      recordLoginAttempt(email, context?.ip, false);
+      throw new Error('invalid_credentials');
+    }
+    const ok = await verifyPassword(password, row.password_hash);
+    if (!ok) {
+      recordLoginAttempt(email, context?.ip, false);
+      throw new Error('invalid_credentials');
+    }
+    recordLoginAttempt(email, context?.ip, true);
+    return userFromRow(row);
+  },
+  async registerWithPassword(email, password, rolesInput) {
+    const existing = db.prepare('select * from users where email = ?').get(email);
+    if (existing) throw new Error('user_exists');
+    const id = randomUUID();
+    const now = nowIso();
+    const role = resolveRoleFromRoles(rolesInput);
+    const passwordHash = await hashPassword(password);
+    db.prepare('insert into users (id, email, password_hash, role, created_at, updated_at) values (?, ?, ?, ?, ?, ?)').run(
+      id,
+      email,
+      passwordHash,
+      role,
+      now,
+      now
+    );
+    return { id, email, wallets: [], roles: [role.toLowerCase()] };
+  },
+  async loginWithSso(token) {
+    const secret = process.env.SSO_JWT_SECRET;
+    if (!secret) throw new Error('SSO_JWT_SECRET not configured');
+    const payload = jwt.verify(token, secret) as { sub?: string; email?: string };
+    const email = payload.email || payload.sub;
+    if (!email) throw new Error('invalid_credentials');
+    const existing = db.prepare('select * from users where email = ?').get(email);
+    if (!existing) throw new Error('invalid_credentials');
+    return userFromRow(existing);
+  },
+  async createSession(userId, sessionId, context) {
+    const now = nowIso();
+    const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
+    db.prepare(
+      'insert into sessions (id, user_id, created_at, expires_at, rotated_from, revoked_at, ip, user_agent, csrf_token, data) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)' +
+        ' on conflict(id) do update set user_id = excluded.user_id, expires_at = excluded.expires_at, rotated_from = excluded.rotated_from, revoked_at = excluded.revoked_at, ip = excluded.ip, user_agent = excluded.user_agent, csrf_token = excluded.csrf_token, data = excluded.data'
+    ).run(
+      sessionId,
+      userId,
+      now,
+      expiresAt,
+      context?.rotatedFrom || null,
+      null,
+      context?.ip || null,
+      context?.userAgent || null,
+      null,
+      null
+    );
+    return { id: sessionId, userId, createdAt: now, ip: context?.ip, userAgent: context?.userAgent };
+  },
+  async getSession(sessionId) {
+    const row = db.prepare('select * from sessions where id = ?').get(sessionId);
+    if (!row) return null;
+    if (row.revoked_at) return null;
+    if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) return null;
+    return { id: row.id, userId: row.user_id, createdAt: row.created_at, ip: row.ip, userAgent: row.user_agent };
+  },
+  async revokeSession(sessionId) {
+    db.prepare('update sessions set revoked_at = ? where id = ?').run(nowIso(), sessionId);
+    await auditLogService.append({ actorId: 'system', action: 'session:revoke', resource: sessionId });
+  },
+  async bootstrapAdmin(email, password) {
+    const existing = db.prepare('select count(1) as count from users').get() as { count: number };
+    if (existing.count > 0) throw new Error('bootstrap_disabled');
+    const id = randomUUID();
+    const now = nowIso();
+    const passwordHash = await hashPassword(password);
+    db.prepare('insert into users (id, email, password_hash, role, created_at, updated_at) values (?, ?, ?, ?, ?, ?)').run(
+      id,
+      email,
+      passwordHash,
+      'ADMIN',
+      now,
+      now
+    );
+    return { id, email, wallets: [], roles: ['admin'] };
+  }
 };
 
 export const createPersistentIdentityServices = async () => {
-  const store = await loadStore();
-  if (!store.credentials) {
-    store.credentials = {};
-  }
-  const bootstrapEmail = process.env.BOOTSTRAP_ADMIN_EMAIL || 'admin@ghostl.dev';
-  const bootstrapPassword = process.env.BOOTSTRAP_ADMIN_PASSWORD;
-  if (bootstrapPassword) {
-    let admin = store.users.find((u) => u.email === bootstrapEmail);
-    if (!admin) {
-      admin = { id: randomUUID(), email: bootstrapEmail, wallets: [], roles: ['admin'] };
-      store.users.push(admin);
-    } else if (!admin.roles.includes('admin')) {
-      admin.roles = Array.from(new Set([...admin.roles, 'admin']));
-    }
-    const cred = await hashPassword(bootstrapPassword);
-    store.credentials[admin.id] = { ...cred, updatedAt: new Date().toISOString() };
-    await saveStore(store);
-  }
-
-  const persist = async () => saveStore(store);
-
-  const rbacService: RBACService = {
-    async listRoles() {
-      return store.roles;
-    },
-    async createRole(input) {
-      const role: Role = { id: randomUUID(), ...input };
-      store.roles.push(role);
-      await persist();
-      return role;
-    },
-    async updateRole(id, input) {
-      const role = store.roles.find((r) => r.id === id);
-      if (!role) throw new Error('role not found');
-      Object.assign(role, input);
-      await persist();
-      return role;
-    },
-    async deleteRole(id) {
-      store.roles = store.roles.filter((r) => r.id !== id);
-      await persist();
-    },
-    async getUserPermissions(user: User) {
-      const permissions = user.roles.flatMap((roleId) => store.roles.find((r) => r.id === roleId)?.permissions || []);
-      return Array.from(new Set(permissions));
-    }
+  return {
+    authService,
+    rbacService,
+    auditLogService,
+    apiKeyService,
+    userService
   };
-
-  const userService: UserService = {
-    async list() {
-      return store.users;
-    },
-    async get(id: string) {
-      return store.users.find((u) => u.id === id) || null;
-    },
-    async create(input) {
-      const created: User = { id: randomUUID(), ...input };
-      store.users.push(created);
-      await persist();
-      return created;
-    },
-    async update(id, input) {
-      const user = store.users.find((u) => u.id === id);
-      if (!user) throw new Error('user not found');
-      Object.assign(user, input);
-      await persist();
-      return user;
-    }
-  };
-
-  const apiKeyService: ApiKeyService = {
-    async list(userId?: string) {
-      const keys = userId ? store.apiKeys.filter((k) => k.userId === userId) : store.apiKeys;
-      return keys.map(({ secret: _secret, ...rest }) => rest);
-    },
-    async create(userId: string, name: string, scopes: string[]) {
-      const secret = randomUUID();
-      const hashed = await hashSecret(secret);
-      const key: ApiKey & { userId: string; secret: string } = {
-        id: randomUUID(),
-        name,
-        scopes,
-        userId,
-        lastUsedAt: undefined,
-        secret: hashed
-      };
-      store.apiKeys.push(key);
-      await persist();
-      await auditLogService.append({
-        actorId: userId,
-        action: 'api_key:create',
-        resource: key.id,
-        meta: { name, scopes }
-      });
-      const { secret: _hashedSecret, ...rest } = key;
-      return { ...rest, secret };
-    },
-    async revoke(id: string) {
-      store.apiKeys = store.apiKeys.filter((k) => k.id !== id);
-      await persist();
-      await auditLogService.append({
-        actorId: 'system',
-        action: 'api_key:revoke',
-        resource: id
-      });
-    }
-  };
-
-  const auditLogService: AuditLogService = {
-    async append(entry) {
-      const record: AuditLogEntry = { id: randomUUID(), createdAt: new Date().toISOString(), ...entry };
-      store.audit.push(record);
-      await persist();
-      return record;
-    },
-    async list(limit = 50) {
-      return store.audit.slice(-limit).reverse();
-    }
-  };
-
-  const issueSession = (userId: string): Session => {
-    const session: Session = { id: randomUUID(), userId, createdAt: new Date().toISOString(), ip: '127.0.0.1' };
-    store.sessions.push(session);
-    return session;
-  };
-
-  const authService: AuthService = {
-    async registerWithPassword(email: string, password: string, roles?: string[]) {
-      const existing = store.users.find((u) => u.email === email);
-      if (existing) throw new Error('user_exists');
-      const user = await userService.create({
-        email,
-        wallets: [],
-        roles: roles && roles.length ? roles : ['viewer']
-      });
-      const cred = await hashPassword(password);
-      store.credentials[user.id] = { ...cred, updatedAt: new Date().toISOString() };
-      const session = issueSession(user.id);
-      await persist();
-      await auditLogService.append({
-        actorId: user.id,
-        action: 'register:password',
-        resource: user.id,
-        meta: { email: user.email, roles: user.roles }
-      });
-      return session;
-    },
-    async loginWithPassword(email: string, password: string) {
-      const user = store.users.find((u) => u.email === email);
-      if (!user) throw new Error('invalid_credentials');
-      const cred = store.credentials[user.id];
-      if (!cred) throw new Error('password_not_set');
-      const ok = await verifyPassword(password, cred);
-      if (!ok) throw new Error('invalid_credentials');
-      const session = issueSession(user.id);
-      await persist();
-      await auditLogService.append({
-        actorId: user.id,
-        action: 'login:password',
-        resource: user.id,
-        meta: { email: user.email }
-      });
-      return session;
-    },
-    async loginWithSso(token: string) {
-      const secret = process.env.SSO_JWT_SECRET;
-      if (!secret) throw new Error('SSO_JWT_SECRET not configured');
-      const payload = jwt.verify(token, secret) as { sub?: string; email?: string; roles?: string[]; wallets?: string[] };
-      const email = payload.email || payload.sub || 'sso-user';
-      const wallets = (payload.wallets || []).map((w) => w.toLowerCase());
-      let user = store.users.find((u) => u.email === email);
-      if (!user) {
-        user = await userService.create({
-          email,
-          wallets,
-          roles: payload.roles && payload.roles.length ? payload.roles : ['viewer']
-        });
-      } else if (wallets.length) {
-        const merged = Array.from(new Set([...(user.wallets || []), ...wallets]));
-        if (merged.length !== (user.wallets || []).length) {
-          user.wallets = merged;
-        }
-      }
-      const session = issueSession(user.id);
-      await persist();
-      await auditLogService.append({
-        actorId: user.id,
-        action: 'login:sso',
-        resource: user.id,
-        meta: { email, roles: user.roles }
-      });
-      return session;
-    },
-    async getSession(sessionId: string) {
-      return store.sessions.find((s) => s.id === sessionId) || null;
-    },
-    async revokeSession(sessionId: string) {
-      store.sessions = store.sessions.filter((s) => s.id !== sessionId);
-      await auditLogService.append({
-        actorId: 'system',
-        action: 'session:revoke',
-        resource: sessionId
-      });
-      await persist();
-    }
-  };
-
-  return { rbacService, userService, apiKeyService, auditLogService, authService };
-};
-
-const hashSecret = async (secret: string) => {
-  return createHash('sha256').update(secret).digest('hex');
 };

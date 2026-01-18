@@ -33,11 +33,17 @@ function LoginClient() {
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState('');
 
+  const csrfHeader = () => {
+    if (typeof document === 'undefined') return {};
+    const match = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
+    return match ? { 'x-csrf-token': decodeURIComponent(match[1]) } : {};
+  };
+
   const loginPassword = async () => {
     setStatus('Signing in...');
     const res = await fetch(`${API_URL}/auth/login/password`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', ...csrfHeader() },
       credentials: 'include',
       body: JSON.stringify({ email, password })
     });
@@ -54,7 +60,7 @@ function LoginClient() {
     setStatus('Creating account...');
     const res = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', ...csrfHeader() },
       credentials: 'include',
       body: JSON.stringify({ email, password, createWallet: true })
     });
@@ -71,7 +77,7 @@ function LoginClient() {
     setStatus('Logging in with SSO...');
     const res = await fetch(`${API_URL}/auth/login/sso`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', ...csrfHeader() },
       credentials: 'include',
       body: JSON.stringify({ token })
     });

@@ -4,7 +4,6 @@ import path from 'path';
 import { config as loadEnv } from 'dotenv';
 import express, { type RequestHandler } from 'express';
 import session from 'express-session';
-import FileStoreFactory from 'session-file-store';
 import cors from 'cors';
 import { fetch } from 'undici';
 import nodemailer from 'nodemailer';
@@ -43,6 +42,8 @@ import { buildKycRouter } from './modules/kyc/router';
 import { createKycService } from './services/kyc-store';
 import { createIntegrationsStore } from './services/integrations-store';
 import { buildAiRouter } from './modules/ai/router';
+import { ghostWalletRpcManager } from './services/rpc-manager';
+import { createSessionStore } from './services/session-store';
 import './types/express';
 // Load environment variables from local env file when running locally (cwd may be repo root or apps/api)
 loadEnv({ path: path.join(process.cwd(), '.env.local') });
@@ -108,7 +109,7 @@ type BridgeSignature = { transferId?: string; signatures?: string[]; required?: 
 type BridgeIncident = { message?: string; severity?: string; createdAt?: string; time?: string; source?: string };
 
 const app = express();
-const FileStore = FileStoreFactory(session);
+const sessionStore = createSessionStore();
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
@@ -117,16 +118,41 @@ app.use(
     secret: env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    store: new FileStore({ path: env.SESSION_STORE_PATH, retries: 1 }),
+    store: sessionStore,
     rolling: true,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
       sameSite: 'lax',
-      maxAge: 30 * 60 * 1000
+      maxAge: env.SESSION_TTL_MS || 30 * 60 * 1000
     }
   })
 );
+
+const isStateChanging = (method: string) => !['GET', 'HEAD', 'OPTIONS'].includes(method);
+const sameOrigin = (req: express.Request) => {
+  const origin = req.headers.origin || req.headers.referer;
+  if (!origin || typeof origin !== 'string') return false;
+  try {
+    const originUrl = new URL(origin);
+    const host = req.headers.host || '';
+    return originUrl.host === host;
+  } catch {
+    return false;
+  }
+};
+
+app.use((req, res, next) => {
+  if (!isStateChanging(req.method)) return next();
+  if (!req.session?.userId) return next();
+  const csrfHeader = req.header('x-csrf-token');
+  const sessionToken = req.session.csrfToken as string | undefined;
+  if (csrfHeader && sessionToken && csrfHeader === sessionToken) {
+    return next();
+  }
+  if (sameOrigin(req)) return next();
+  res.status(403).json({ error: 'csrf_failed' });
+});
 
 app.use((req, res, next) => {
   const correlationId = req.header('x-request-id') || crypto.randomUUID();
@@ -1016,6 +1042,10 @@ app.use(
   })
 );
 app.use(['/v1/ai', '/ai'], buildAiRouter());
+
+app.get(['/v1/rpc/pool', '/rpc/pool'], requirePermission('integrations:read'), (_req, res) => {
+  res.json({ pool: ghostWalletRpcManager.getPoolSnapshot() });
+});
 
 identityServicesPromise.then(async (identity) => {
   auditLogService = identity.auditLogService;
