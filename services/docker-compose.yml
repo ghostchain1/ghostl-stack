@@ -15,6 +15,18 @@ services:
     ports:
       - "29545:29545"
 
+  rpc-registry-service:
+    <<: *host-gateway
+    build:
+      context: ./rpc-registry-service
+    image: ghostl/rpc-registry-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=8088
+    ports:
+      - "8088:8088"
+
   alerts-service:
     <<: *host-gateway
     build:
