@@ -9,6 +9,8 @@
 .env.*.local
 /.env
 **/.env
+**/.env.local
+**/.env.*.local
 infra/opstack/.env
 infra/opstack/.env.local
 infra/opstack/.env.secrets
@@ -66,9 +68,33 @@ services/data/state.json
 
 # build artifacts
 apps/web/.next/
+**/.next/
 dist/
+**/dist/
 
 .git/gc.log
+
+# logs
+*.log
+logs/
+**/logs/
+
+# coverage
+coverage/
+**/coverage/
+.nyc_output/
+
+# tooling caches
+.turbo/
+**/.turbo/
+.parcel-cache/
+**/.parcel-cache/
+.vite/
+**/.vite/
+.eslintcache
+.stylelintcache
+.cache/
+**/.cache/
 
 # common JS tool logs/cache
 npm-debug.log*
