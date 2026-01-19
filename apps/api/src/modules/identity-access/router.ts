@@ -207,6 +207,55 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
   );
 
   router.post(
+    '/api/auth/login',
+    asyncHandler(async (req, res) => {
+      const { email, password } = req.body as { email?: string; password?: string };
+      if (!email || !password) {
+        res.status(400).json({ error: 'email and password required' });
+        return;
+      }
+      try {
+        const user = await deps.authService.loginWithPassword(email, password, requestContext(req));
+        await rotateSession(req);
+        const { csrfToken } = await attachSession(req, user, deps);
+        await deps.authService.createSession(user.id, req.sessionID, {
+          ...requestContext(req),
+          rotatedFrom: req.session.rotatedFrom as string | undefined
+        });
+        await deps.auditLogService.append({
+          actorId: user?.id || 'unknown',
+          action: 'login:password',
+          resource: user?.id || 'unknown',
+          meta: { correlationId: req.correlationId, ip: req.ip, userAgent: req.headers['user-agent'] }
+        });
+        await emitEvent({
+          scope: 'auth',
+          type: 'auth:login',
+          actorId: user?.id,
+          status: 'ok',
+          payload: { email, method: 'password' }
+        });
+        if (csrfToken) setCsrfCookie(res, csrfToken);
+        res.json({ user: { id: user.id, email: user.email, role: user.roles?.[0] } });
+      } catch (err) {
+        await deps.auditLogService.append({
+          actorId: 'unknown',
+          action: 'login:failed',
+          resource: email,
+          meta: { correlationId: req.correlationId, ip: req.ip, userAgent: req.headers['user-agent'] }
+        });
+        await emitEvent({
+          scope: 'auth',
+          type: 'auth:login',
+          status: 'error',
+          payload: { email, method: 'password', error: err instanceof Error ? err.message : 'login_failed' }
+        });
+        respondAuthError(res, err);
+      }
+    })
+  );
+
+  router.post(
     '/auth/login/password',
     asyncHandler(async (req, res) => {
       const { email, password } = req.body as { email?: string; password?: string };
@@ -336,6 +385,31 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
     })
   );
 
+  router.post(
+    '/api/auth/logout',
+    asyncHandler(async (req, res) => {
+      const actorId = req.session.userId || 'unknown';
+      if (req.sessionID) {
+        await deps.authService.revokeSession(req.sessionID);
+      }
+      req.session.destroy(() => undefined);
+      await deps.auditLogService.append({
+        actorId,
+        action: 'logout',
+        resource: actorId,
+        meta: { correlationId: req.correlationId, ip: req.ip, userAgent: req.headers['user-agent'] }
+      });
+      await emitEvent({
+        scope: 'auth',
+        type: 'auth:logout',
+        actorId,
+        status: 'ok',
+        payload: { userId: actorId }
+      });
+      res.json({ ok: true });
+    })
+  );
+
   router.get(
     '/auth/session',
     asyncHandler(async (req, res) => {
@@ -349,6 +423,25 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
         setCsrfCookie(res, req.session.csrfToken as string);
       }
       res.json({ user, roles: req.session.roles || [], permissions, csrfToken: req.session.csrfToken || null });
+    })
+  );
+
+  router.get(
+    '/api/auth/me',
+    asyncHandler(async (req, res) => {
+      if (!req.session.userId) {
+        res.status(401).json({ error: 'unauthenticated' });
+        return;
+      }
+      const user = await deps.userService.get(req.session.userId);
+      if (!user) {
+        res.status(401).json({ error: 'unauthenticated' });
+        return;
+      }
+      if (req.session.csrfToken) {
+        setCsrfCookie(res, req.session.csrfToken as string);
+      }
+      res.json({ user: { id: user.id, email: user.email, role: user.roles?.[0] } });
     })
   );
 

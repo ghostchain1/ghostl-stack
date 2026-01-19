@@ -131,7 +131,7 @@ const corsAllowlist = parseCorsAllowlist();
 const isOriginAllowed = (origin?: string) => {
   if (!origin) return true;
   if (corsAllowlist.size) return corsAllowlist.has(origin);
-  if (process.env.NODE_ENV !== 'production') return isLocalOrigin(origin);
+  if (process.env.NODE_ENV !== 'production') return true;
   return false;
 };
 
@@ -1112,10 +1112,31 @@ app.get(['/v1/rpc/pool', '/rpc/pool'], requirePermission('integrations:read'), (
 
 identityServicesPromise.then(async (identity) => {
   auditLogService = identity.auditLogService;
+  const bootstrapEmail = env.BOOTSTRAP_ADMIN_EMAIL;
+  const bootstrapPassword = env.BOOTSTRAP_ADMIN_PASSWORD;
+  if (bootstrapEmail && bootstrapPassword) {
+    try {
+      const admin = await identity.authService.bootstrapAdmin(bootstrapEmail, bootstrapPassword);
+      await identity.auditLogService.append({
+        actorId: admin.id,
+        action: 'bootstrap:admin',
+        resource: admin.id,
+        meta: { source: 'startup', email: bootstrapEmail }
+      });
+      console.log(`Bootstrapped admin user ${bootstrapEmail}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'bootstrap_failed';
+      if (message !== 'bootstrap_disabled') {
+        console.warn(`Bootstrap admin failed: ${message}`);
+      }
+    }
+  }
   const walletService = await walletServicePromise;
   const tokenService = await tokenServicePromise;
   const ghostWalletService = await ghostWalletServicePromise;
-  app.use(['/v1', '/'], buildIdentityAccessRouter({ ...identity, walletService, ghostWalletService }));
+  const identityRouter = buildIdentityAccessRouter({ ...identity, walletService, ghostWalletService });
+  app.use('/v1', identityRouter);
+  app.use('/', identityRouter);
   app.use(['/v1', '/'], buildGhostchainRouter(ghostchainConfig));
   const observabilityGuard = env.PUBLIC_OBSERVABILITY ? allowAll : requirePermission('observability:read');
   app.use(
