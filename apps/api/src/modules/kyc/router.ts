@@ -70,7 +70,17 @@ export const buildKycRouter = (kyc: KycService) => {
       res.status(400).json({ error: parsed.error.message });
       return;
     }
-    const updated = kyc.updatePolicy(parsed.data);
+    const currentPolicy = kyc.getPolicy();
+    const policyPatch = {
+      ...parsed.data,
+      requiredDocs: parsed.data.requiredDocs
+        ? {
+            individual: parsed.data.requiredDocs.individual ?? currentPolicy.requiredDocs.individual,
+            business: parsed.data.requiredDocs.business ?? currentPolicy.requiredDocs.business
+          }
+        : undefined
+    };
+    const updated = kyc.updatePolicy(policyPatch);
     await kyc.save();
     res.json(updated);
   });
@@ -102,7 +112,8 @@ export const buildKycRouter = (kyc: KycService) => {
   });
 
   router.get('/applicants/:id', requirePermission('kyc:read'), async (req, res) => {
-    const applicant = kyc.get(req.params.id);
+    const applicantId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const applicant = kyc.get(applicantId);
     if (!applicant) {
       res.status(404).json({ error: 'not_found' });
       return;
@@ -129,7 +140,17 @@ export const buildKycRouter = (kyc: KycService) => {
       res.status(400).json({ error: parsed.error.message });
       return;
     }
-    const applicant = kyc.updateApplicant(req.params.id, parsed.data, req.session.userId);
+    const applicantId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const screening = parsed.data.screening
+      ? {
+          pep: false,
+          sanctions: false,
+          adverseMedia: false,
+          watchlists: [],
+          ...parsed.data.screening
+        }
+      : undefined;
+    const applicant = kyc.updateApplicant(applicantId, { ...parsed.data, screening }, req.session.userId);
     if (!applicant) {
       res.status(404).json({ error: 'not_found' });
       return;
@@ -145,7 +166,8 @@ export const buildKycRouter = (kyc: KycService) => {
       res.status(400).json({ error: parsed.error.message });
       return;
     }
-    const applicant = kyc.assignReviewer(req.params.id, parsed.data.reviewerId, req.session.userId);
+    const applicantId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const applicant = kyc.assignReviewer(applicantId, parsed.data.reviewerId, req.session.userId);
     if (!applicant) {
       res.status(404).json({ error: 'not_found' });
       return;
@@ -160,7 +182,8 @@ export const buildKycRouter = (kyc: KycService) => {
       res.status(400).json({ error: parsed.error.message });
       return;
     }
-    const doc = kyc.addDocument(req.params.id, parsed.data, req.session.userId);
+    const applicantId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const doc = kyc.addDocument(applicantId, parsed.data, req.session.userId);
     if (!doc) {
       res.status(404).json({ error: 'not_found' });
       return;
@@ -180,7 +203,9 @@ export const buildKycRouter = (kyc: KycService) => {
       return;
     }
     const reviewer = req.session.userId || 'system';
-    const doc = kyc.reviewDocument(req.params.id, req.params.docId, parsed.data, reviewer);
+    const applicantId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const docId = Array.isArray(req.params.docId) ? req.params.docId[0] : req.params.docId;
+    const doc = kyc.reviewDocument(applicantId, docId, parsed.data, reviewer);
     if (!doc) {
       res.status(404).json({ error: 'not_found' });
       return;
@@ -200,7 +225,8 @@ export const buildKycRouter = (kyc: KycService) => {
       return;
     }
     const reviewer = req.session.userId || 'system';
-    const review = kyc.addReview(req.params.id, parsed.data, reviewer);
+    const applicantId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const review = kyc.addReview(applicantId, parsed.data, reviewer);
     if (!review) {
       res.status(404).json({ error: 'not_found' });
       return;
@@ -221,7 +247,8 @@ export const buildKycRouter = (kyc: KycService) => {
       return;
     }
     const reviewer = req.session.userId || 'system';
-    const applicant = kyc.setRiskOverride(req.params.id, parsed.data, reviewer);
+    const applicantId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const applicant = kyc.setRiskOverride(applicantId, parsed.data, reviewer);
     if (!applicant) {
       res.status(404).json({ error: 'not_found' });
       return;

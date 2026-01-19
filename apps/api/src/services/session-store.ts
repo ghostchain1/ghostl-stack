@@ -27,7 +27,7 @@ export class SqliteSessionStore extends session.Store {
 
   get(sid: string, callback: (err?: Error | null, session?: session.SessionData | null) => void) {
     try {
-      const row = this.db.prepare('select * from sessions where id = ?').get(sid);
+      const row = this.db.prepare('select * from sessions where id = ?').get(sid) as any;
       if (!row) {
         callback();
         return;

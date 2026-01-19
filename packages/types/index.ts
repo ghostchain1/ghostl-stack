@@ -16,3 +16,4 @@ export * from './integrations';
 export * from './wallets';
 export * from './tokens';
 export * from './kyc';
+export * from './events';
