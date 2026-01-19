@@ -23,8 +23,7 @@ services:
       - "${L3_HOST_RPC:-39545}:8545"
     volumes:
       - ./l3/${L3_NAME:-ghostl3}/data:/data
-      - ./l3/${L3_NAME:-ghostl3}/config/jwt.txt:/config/jwt.txt:ro
-      - ./l3/${L3_NAME:-ghostl3}/config/genesis.json:/config/genesis.json:ro
+      - ./l3/${L3_NAME:-ghostl3}/config:/config:ro
     entrypoint: ["/bin/sh"]
     command:
       - -c
@@ -71,9 +70,7 @@ services:
         condition: service_healthy
     volumes:
       - ./l3/${L3_NAME:-ghostl3}/data/op-node:/data
-      - ./l3/${L3_NAME:-ghostl3}/config/rollup.json:/config/rollup.json:ro
-      - ./l3/${L3_NAME:-ghostl3}/config/jwt.txt:/config/jwt.txt:ro
-      - ./l3/${L3_NAME:-ghostl3}/config/l1-chain.json:/config/l1-chain.json:ro
+      - ./l3/${L3_NAME:-ghostl3}/config:/config:ro
     environment:
       OP_NODE_L1_BEACON_IGNORE: "1"
       OP_NODE_SEQUENCER_ENABLED: "1"
@@ -131,7 +128,7 @@ services:
       - --metrics.port=${L3_METRICS_BATCHER_PORT:-8301}
       - --throttle.unsafe-da-bytes-lower-threshold=0
     volumes:
-      - ./l3/${L3_NAME:-ghostl3}/config/rollup.json:/config/rollup.json:ro
+      - ./l3/${L3_NAME:-ghostl3}/config:/config:ro
     ports:
       - "${L3_BATCHER_HOST_PORT:-39551}:${L3_BATCHER_RPC_PORT:-18551}"
       - "${L3_METRICS_BATCHER_HOST_PORT:-8301}:${L3_METRICS_BATCHER_PORT:-8301}"
@@ -168,7 +165,7 @@ services:
       - --metrics.addr=0.0.0.0
       - --metrics.port=${L3_METRICS_PROPOSER_PORT:-8302}
     volumes:
-      - ./l3/${L3_NAME:-ghostl3}/config/rollup.json:/config/rollup.json:ro
+      - ./l3/${L3_NAME:-ghostl3}/config:/config:ro
     ports:
       - "${L3_PROPOSER_HOST_PORT:-39560}:${L3_PROPOSER_RPC_PORT:-18560}"
       - "${L3_METRICS_PROPOSER_HOST_PORT:-8302}:${L3_METRICS_PROPOSER_PORT:-8302}"
