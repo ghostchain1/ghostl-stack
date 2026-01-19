@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Badge, Card, Button } from '@ghostl/ui';
 import { useSession } from '../../../src/modules/identity-access/session';
 import { resolveApiBase } from '../../../src/lib/runtime';
+import { jsonWithCsrf } from '../../../src/lib/csrf';
 
 const API_URL = resolveApiBase();
 
@@ -28,7 +29,6 @@ export default function AlertsPage() {
   const session = useSession();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [policy, setPolicy] = useState<Policy | null>(null);
-  const [adminToken, setAdminToken] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modeInput, setModeInput] = useState(0);
@@ -36,17 +36,17 @@ export default function AlertsPage() {
   const [delayInput, setDelayInput] = useState<number | ''>('');
   const policyModeLabel =
     policy?.mode === 0 ? 'allow' : policy?.mode === 1 ? 'delay' : policy?.mode === 2 ? 'pause' : 'unknown';
-  const canWriteGuard = session.user?.permissions?.includes('guard:write') ?? false;
+  const canWriteGuard = session.user?.role === 'ADMIN';
 
   const load = async () => {
-    const res = await fetch(`${API_URL}/observability/alerts`);
+    const res = await fetch(`${API_URL}/observability/alerts`, { credentials: 'include' });
     const data = await res.json();
     setAlerts(data);
   };
 
   const loadPolicy = async () => {
     try {
-      const res = await fetch(`${API_URL}/observability/guard/policy`);
+      const res = await fetch(`${API_URL}/observability/guard/policy`, { credentials: 'include' });
       if (res.ok) {
         const p = await res.json();
         setPolicy(p);
@@ -67,10 +67,8 @@ export default function AlertsPage() {
     try {
       const res = await fetch(`${API_URL}/observability/guard/policy/${path}`, {
         method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          ...(adminToken ? { 'x-admin-token': adminToken } : {})
-        },
+        headers: jsonWithCsrf(),
+        credentials: 'include',
         body: JSON.stringify(body)
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -100,14 +98,8 @@ export default function AlertsPage() {
             ))}
           </div>
         </Card>
-        <Card title="Guard policy" subtitle="Admin token required for writes">
+        <Card title="Guard policy" subtitle="Admin session required for writes">
           <div className="stack">
-            <input
-              className="input"
-              placeholder="x-admin-token"
-              value={adminToken}
-              onChange={(e) => setAdminToken(e.target.value)}
-            />
             <div className="stack">
               <div className="spread">
                 <span className="muted">Mode</span>

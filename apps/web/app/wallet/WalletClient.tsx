@@ -8,6 +8,7 @@ import { useWallet } from '../../src/modules/wallet/useWallet';
 import type { TokenConfig } from '../../src/modules/wallet/tokens';
 import type { WalletRecord, TokenRecord } from '@ghostl/types';
 import { resolveApiBase } from '../../src/lib/runtime';
+import { jsonWithCsrf } from '../../src/lib/csrf';
 import { fundWallet, getBalance as apiGetBalance, getTxReceipt } from '../../src/modules/wallet/api';
 
 const API_URL = resolveApiBase();
@@ -185,7 +186,7 @@ export function WalletClient() {
     try {
       const res = await fetch(`${API_URL}/wallets`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: jsonWithCsrf(),
         credentials: 'include',
         body: JSON.stringify({ ...watchForm, ownerUserId: watchForm.ownerUserId || undefined })
       });
@@ -209,7 +210,7 @@ export function WalletClient() {
     try {
       const res = await fetch(`${API_URL}/wallets/custodial`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: jsonWithCsrf(),
         credentials: 'include',
         body: JSON.stringify({ ...custodialForm, ownerUserId: custodialForm.ownerUserId || undefined })
       });
@@ -228,7 +229,11 @@ export function WalletClient() {
   const rotateManagedWallet = async (id: string) => {
     setInventoryStatus('Rotating key...');
     try {
-      const res = await fetch(`${API_URL}/wallets/${id}/rotate`, { method: 'POST', credentials: 'include' });
+      const res = await fetch(`${API_URL}/wallets/${id}/rotate`, {
+        method: 'POST',
+        headers: jsonWithCsrf(),
+        credentials: 'include'
+      });
       if (!res.ok) throw new Error(`Rotate failed ${res.status}`);
       await res.json();
       await loadInventory();
@@ -243,7 +248,7 @@ export function WalletClient() {
   const revokeWallet = async (id: string) => {
     setInventoryStatus('Revoking wallet...');
     try {
-      const res = await fetch(`${API_URL}/wallets/${id}`, { method: 'DELETE', credentials: 'include' });
+      const res = await fetch(`${API_URL}/wallets/${id}`, { method: 'DELETE', headers: jsonWithCsrf(), credentials: 'include' });
       if (!res.ok) throw new Error(`Revoke failed ${res.status}`);
       await loadInventory();
       setInventoryStatus('Wallet revoked');
@@ -273,7 +278,7 @@ export function WalletClient() {
     try {
       const res = await fetch(`${API_URL}/wallets/${selectedWalletId}/tokens/import`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: jsonWithCsrf(),
         credentials: 'include',
         body: JSON.stringify({ ...tokenForm, rpc: tokenForm.rpc || undefined })
       });

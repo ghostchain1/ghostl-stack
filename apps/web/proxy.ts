@@ -4,6 +4,7 @@ import { normalizeRole, resolveMinimumRole, roleOrder } from './src/modules/iden
 
 const isPublicPath = (pathname: string) =>
   pathname === '/login' ||
+  pathname.startsWith('/api/auth') ||
   pathname === '/health' ||
   pathname.startsWith('/_next') ||
   pathname === '/favicon.ico' ||
@@ -19,7 +20,7 @@ export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   if (isPublicPath(pathname)) return NextResponse.next();
 
-  const minimumRole = resolveMinimumRole(pathname);
+  const minimumRole = resolveMinimumRole(pathname, req.method);
   const session = await getSessionUser(req);
 
   if (!session.user) {
@@ -32,7 +33,7 @@ export async function proxy(req: NextRequest) {
   }
 
   if (minimumRole) {
-    const role = normalizeRole(session.roles);
+    const role = normalizeRole(session.user?.role);
     if (roleOrder[role] < roleOrder[minimumRole]) {
       if (isApiRequest(pathname)) {
         return NextResponse.json({ error: 'forbidden' }, { status: 403 });

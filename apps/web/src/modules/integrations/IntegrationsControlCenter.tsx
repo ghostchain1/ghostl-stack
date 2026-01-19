@@ -5,6 +5,7 @@ import { Badge, Button, Card } from '@ghostl/ui';
 import type { AnalyticsEvent, WebhookStatusSummary } from '@ghostl/types';
 import type { IntegrationDefinition, IntegrationInstance, IntegrationTestResult } from '@ghostl/types/integrations';
 import { resolveApiBase } from '../../lib/runtime';
+import { jsonWithCsrf } from '../../lib/csrf';
 import { RpcEndpointManager } from './components/RpcEndpointManager';
 import type { RpcEndpoint } from '@ghostl/types/integrations';
 import { useSession } from '../identity-access/session';
@@ -32,7 +33,7 @@ const toNumber = (value: string, fallback: number) => {
 
 export function IntegrationsControlCenter() {
   const session = useSession();
-  const isAdmin = session.user?.roles?.includes('admin') ?? false;
+  const isAdmin = session.user?.role === 'ADMIN';
   const [definitions, setDefinitions] = useState<IntegrationDefinition[]>([]);
   const [instances, setInstances] = useState<IntegrationInstance[]>([]);
   const [rpcEndpoints, setRpcEndpoints] = useState<RpcEndpoint[]>([]);
@@ -144,7 +145,7 @@ export function IntegrationsControlCenter() {
     try {
       const res = await fetch(`${API_URL}/integrations/instances`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: jsonWithCsrf(),
         credentials: 'include',
         body: JSON.stringify({
           definitionId: selectedDefinitionId,
@@ -184,7 +185,7 @@ export function IntegrationsControlCenter() {
     try {
       const res = await fetch(`${API_URL}/integrations/instances/${instance.id}`, {
         method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
+        headers: jsonWithCsrf(),
         credentials: 'include',
         body: JSON.stringify({
           enabled: edits.enabled ?? instance.enabled,
@@ -207,7 +208,7 @@ export function IntegrationsControlCenter() {
     try {
       const res = await fetch(`${API_URL}/integrations/instances/${instance.id}/enable`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: jsonWithCsrf(),
         credentials: 'include',
         body: JSON.stringify({ enabled: next })
       });
@@ -225,6 +226,7 @@ export function IntegrationsControlCenter() {
     try {
       const res = await fetch(`${API_URL}/integrations/instances/${instance.id}/test`, {
         method: 'POST',
+        headers: jsonWithCsrf(),
         credentials: 'include'
       });
       if (!res.ok) throw new Error(`Test failed ${res.status}`);

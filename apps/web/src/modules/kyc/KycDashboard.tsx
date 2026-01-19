@@ -11,6 +11,7 @@ import type {
   KycSummary
 } from '@ghostl/types/kyc';
 import { resolveApiBase } from '../../lib/runtime';
+import { jsonWithCsrf } from '../../lib/csrf';
 
 const API_URL = resolveApiBase();
 
@@ -43,8 +44,10 @@ type Filters = {
   search?: string;
 };
 
-const fetchJson = async <T,>(path: string, options?: RequestInit): Promise<T> => {
-  const res = await fetch(`${API_URL}${path}`, { credentials: 'include', ...options });
+const fetchJson = async <T,>(path: string, options: RequestInit = {}): Promise<T> => {
+  const method = (options.method || 'GET').toUpperCase();
+  const headers = method === 'GET' || method === 'HEAD' ? options.headers : jsonWithCsrf(options.headers);
+  const res = await fetch(`${API_URL}${path}`, { credentials: 'include', ...options, headers });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.error || `HTTP ${res.status}`);

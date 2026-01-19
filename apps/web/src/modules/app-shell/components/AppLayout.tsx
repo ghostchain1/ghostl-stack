@@ -8,11 +8,12 @@ import { GlobalSearch } from './GlobalSearch';
 import { NetworkSwitcher } from './NetworkSwitcher';
 import { NotificationsCenter } from './NotificationsCenter';
 import { useSession } from '../../identity-access/session';
+import { normalizeRole, roleOrder, type Role } from '../../identity-access/access-policy';
 import { useFeatureFlags } from '../services/FeatureFlagsService';
 import { useNetwork } from '../services/NetworkContextService';
 import { useTheme } from '../services/ThemeService';
 
-type NavItem = { href: string; label: string; flag?: string; roles?: string[] };
+type NavItem = { href: string; label: string; flag?: string; minRole?: Role };
 
 const navSections: { title: string; items: NavItem[] }[] = [
   {
@@ -44,25 +45,25 @@ const navSections: { title: string; items: NavItem[] }[] = [
   {
     title: 'Protocol',
     items: [
-      { href: '/contracts', label: 'Contracts', roles: ['Developer', 'Protocol Admin'] },
-      { href: '/tokenomics', label: 'Tokenomics', roles: ['Treasury Admin', 'Protocol Admin'] },
-      { href: '/treasury', label: 'Treasury', roles: ['Treasury Admin', 'Protocol Admin'] },
-      { href: '/governance', label: 'Governance', roles: ['Protocol Admin', 'Developer'] }
+      { href: '/contracts', label: 'Contracts' },
+      { href: '/tokenomics', label: 'Tokenomics' },
+      { href: '/treasury', label: 'Treasury' },
+      { href: '/governance', label: 'Governance' }
     ]
   },
   {
     title: 'Security',
     items: [
-      { href: '/compliance', label: 'Compliance', roles: ['Admin', 'Operator', 'Protocol Admin'] },
-      { href: '/kyc', label: 'KYC', roles: ['admin', 'viewer'] },
-      { href: '/devops', label: 'DevOps', roles: ['Protocol Admin'] },
-      { href: '/integrations', label: 'Integrations', roles: ['Developer'] },
-      { href: '/ai', label: 'AI' }
+      { href: '/compliance', label: 'Compliance' },
+      { href: '/kyc', label: 'KYC' },
+      { href: '/devops', label: 'DevOps' },
+      { href: '/integrations', label: 'Integrations', minRole: 'OPERATOR' },
+      { href: '/ai', label: 'AI', minRole: 'READONLY' }
     ]
   },
   {
     title: 'Admin',
-    items: [{ href: '/admin/users', label: 'Users', roles: ['Admin', 'Operator', 'Protocol Admin'] }]
+    items: [{ href: '/admin/users', label: 'Users', minRole: 'ADMIN' }]
   }
 ];
 
@@ -72,7 +73,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { isEnabled } = useFeatureFlags();
   const { current } = useNetwork();
   const { theme, toggleTheme } = useTheme();
-  const userRoles = user?.roles || [];
+  const userRole = normalizeRole(user?.role);
   const ribbon = [
     { label: 'Stack', value: 'Operational' },
     { label: 'Bridges', value: 'Monitoring' },
@@ -89,8 +90,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <div className="nav-title">{section.title}</div>
               {section.items.map((item) => {
                 const disabled = item.flag ? !isEnabled(item.flag) : false;
-                const roleBlocked =
-                  item.roles && item.roles.length && userRoles.length ? !item.roles.some((r) => userRoles.includes(r)) : false;
+                const roleBlocked = item.minRole ? roleOrder[userRole] < roleOrder[item.minRole] : false;
                 if (roleBlocked) return null;
                 const isActive = item.href === '/' ? pathname === '/' : pathname?.startsWith(item.href);
                 return (
@@ -136,12 +136,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             {user && (
               <div className="inline-form">
                 {user.email && <span className="muted">{user.email}</span>}
-                {(user.roles || []).map((r) => (
-                  <span key={r} className="badge">
-                    {r}
-                  </span>
-                ))}
-                {(user.permissions || []).includes('guard:write') && <span className="badge">guard:write</span>}
+                {user.role && <span className="badge">{user.role}</span>}
               </div>
             )}
           </div>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { resolveApiBase } from '../../../lib/runtime';
+import { jsonWithCsrf } from '../../../lib/csrf';
 import type { Node, NodeMetrics } from '@ghostl/types/nodes';
 
 const API_BASE = resolveApiBase();
@@ -23,7 +24,7 @@ export function NodeDetail({ node, metrics }: { node: Node; metrics?: NodeMetric
     try {
       const res = await fetch(`${API_BASE}/nodes/${encodeURIComponent(node.id)}/${action}`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: jsonWithCsrf(),
         credentials: 'include',
         body: body ? JSON.stringify(body) : undefined
       });
