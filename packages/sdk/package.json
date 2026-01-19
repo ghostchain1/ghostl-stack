@@ -12,6 +12,9 @@
     "@ghostl/types": "0.0.1"
   },
   "devDependencies": {
-    "typescript": "^5.4.5"
+    "typescript": "5.4.5"
+  },
+  "engines": {
+    "node": ">=20 <21"
   }
 }

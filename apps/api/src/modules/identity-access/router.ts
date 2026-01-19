@@ -12,6 +12,7 @@ import type { User } from '../../../../../packages/types';
 import type { WalletService } from '../../services/wallet-store';
 import type { GhostWalletService } from '../../services/ghostwallet';
 import { env } from '../../config/env';
+import { emitEvent } from '../../lib/events';
 
 const asyncHandler =
   <TReq extends Request = Request, TRes extends Response = Response>(
@@ -131,7 +132,14 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
           resource: user?.id || 'unknown',
           meta: { correlationId: req.correlationId, ip: req.ip, userAgent: req.headers['user-agent'] }
         });
-        setCsrfCookie(res, csrfToken);
+        await emitEvent({
+          scope: 'auth',
+          type: 'auth:register',
+          actorId: user?.id,
+          status: 'ok',
+          payload: { email }
+        });
+        if (csrfToken) setCsrfCookie(res, csrfToken);
         res.json({ session, user, permissions, csrfToken });
       } catch (err) {
         await deps.auditLogService.append({
@@ -139,6 +147,12 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
           action: 'register:failed',
           resource: email,
           meta: { correlationId: req.correlationId, ip: req.ip, userAgent: req.headers['user-agent'] }
+        });
+        await emitEvent({
+          scope: 'auth',
+          type: 'auth:register',
+          status: 'error',
+          payload: { email, error: err instanceof Error ? err.message : 'register_failed' }
         });
         respondAuthError(res, err);
       }
@@ -171,9 +185,22 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
           resource: user.id,
           meta: { correlationId: req.correlationId, ip: req.ip, userAgent: req.headers['user-agent'] }
         });
-        setCsrfCookie(res, csrfToken);
+        await emitEvent({
+          scope: 'auth',
+          type: 'auth:bootstrap',
+          actorId: user.id,
+          status: 'ok',
+          payload: { email }
+        });
+        if (csrfToken) setCsrfCookie(res, csrfToken);
         res.json({ session, user, permissions, csrfToken });
       } catch (err) {
+        await emitEvent({
+          scope: 'auth',
+          type: 'auth:bootstrap',
+          status: 'error',
+          payload: { email, error: err instanceof Error ? err.message : 'bootstrap_failed' }
+        });
         respondAuthError(res, err);
       }
     })
@@ -208,7 +235,14 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
           resource: user?.id || 'unknown',
           meta: { correlationId: req.correlationId, ip: req.ip, userAgent: req.headers['user-agent'] }
         });
-        setCsrfCookie(res, csrfToken);
+        await emitEvent({
+          scope: 'auth',
+          type: 'auth:login',
+          actorId: user?.id,
+          status: 'ok',
+          payload: { email, method: 'password' }
+        });
+        if (csrfToken) setCsrfCookie(res, csrfToken);
         res.json({ session, user, permissions, csrfToken });
       } catch (err) {
         await deps.auditLogService.append({
@@ -216,6 +250,12 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
           action: 'login:failed',
           resource: email,
           meta: { correlationId: req.correlationId, ip: req.ip, userAgent: req.headers['user-agent'] }
+        });
+        await emitEvent({
+          scope: 'auth',
+          type: 'auth:login',
+          status: 'error',
+          payload: { email, method: 'password', error: err instanceof Error ? err.message : 'login_failed' }
         });
         respondAuthError(res, err);
       }
@@ -244,7 +284,14 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
           resource: user?.id || 'unknown',
           meta: { correlationId: req.correlationId, ip: req.ip, userAgent: req.headers['user-agent'] }
         });
-        setCsrfCookie(res, csrfToken);
+        await emitEvent({
+          scope: 'auth',
+          type: 'auth:login',
+          actorId: user?.id,
+          status: 'ok',
+          payload: { method: 'sso' }
+        });
+        if (csrfToken) setCsrfCookie(res, csrfToken);
         res.json({ session, user, permissions, csrfToken });
       } catch (err) {
         await deps.auditLogService.append({
@@ -252,6 +299,12 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
           action: 'login:sso_failed',
           resource: 'unknown',
           meta: { correlationId: req.correlationId, ip: req.ip, userAgent: req.headers['user-agent'] }
+        });
+        await emitEvent({
+          scope: 'auth',
+          type: 'auth:login',
+          status: 'error',
+          payload: { method: 'sso', error: err instanceof Error ? err.message : 'login_failed' }
         });
         respondAuthError(res, err);
       }
@@ -271,6 +324,13 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
         action: 'logout',
         resource: actorId,
         meta: { correlationId: req.correlationId, ip: req.ip, userAgent: req.headers['user-agent'] }
+      });
+      await emitEvent({
+        scope: 'auth',
+        type: 'auth:logout',
+        actorId,
+        status: 'ok',
+        payload: { userId: actorId }
       });
       res.json({ ok: true });
     })
@@ -320,7 +380,8 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
     '/users/:id',
     requirePermission('iam:write'),
     asyncHandler(async (req, res) => {
-      const updated = await deps.userService.update(req.params.id, req.body);
+      const userId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const updated = await deps.userService.update(userId, req.body);
       await deps.auditLogService.append({
         actorId: req.session.userId || 'unknown',
         action: 'user:update',
@@ -359,7 +420,8 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
     '/roles/:id',
     requirePermission('iam:write'),
     asyncHandler(async (req, res) => {
-      const role = await deps.rbacService.updateRole(req.params.id, req.body);
+      const roleId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const role = await deps.rbacService.updateRole(roleId, req.body);
       await deps.auditLogService.append({
         actorId: req.session.userId || 'unknown',
         action: 'role:update',
@@ -374,11 +436,12 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
     '/roles/:id',
     requirePermission('iam:write'),
     asyncHandler(async (req, res) => {
-      await deps.rbacService.deleteRole(req.params.id);
+      const roleId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      await deps.rbacService.deleteRole(roleId);
       await deps.auditLogService.append({
         actorId: req.session.userId || 'unknown',
         action: 'role:delete',
-        resource: req.params.id,
+        resource: roleId,
         meta: { correlationId: req.correlationId }
       });
       res.status(204).end();
@@ -389,7 +452,14 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
     '/api-keys',
     requirePermission('iam:read'),
     asyncHandler(async (req, res) => {
-      const list = await deps.apiKeyService.list(req.query.userId as string | undefined);
+      const rawUserId = req.query.userId;
+      const userId =
+        typeof rawUserId === 'string'
+          ? rawUserId
+          : Array.isArray(rawUserId) && typeof rawUserId[0] === 'string'
+            ? rawUserId[0]
+            : undefined;
+      const list = await deps.apiKeyService.list(userId);
       res.json(list);
     })
   );
@@ -414,11 +484,12 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
     '/api-keys/:id',
     requirePermission('iam:write'),
     asyncHandler(async (req, res) => {
-      await deps.apiKeyService.revoke(req.params.id);
+      const apiKeyId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      await deps.apiKeyService.revoke(apiKeyId);
       await deps.auditLogService.append({
         actorId: req.session.userId || 'unknown',
         action: 'api_key:revoke',
-        resource: req.params.id,
+        resource: apiKeyId,
         meta: { correlationId: req.correlationId }
       });
       res.status(204).end();

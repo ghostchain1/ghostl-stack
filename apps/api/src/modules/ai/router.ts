@@ -4,10 +4,12 @@ import { z } from 'zod';
 import { ghostWalletRpcManager } from '../../services/rpc-manager';
 import { env } from '../../config/env';
 import { requirePermission } from '../../lib/rbac';
+import { emitEvent } from '../../lib/events';
 
 type ChainRef = 'l1' | 'l2' | 'l3';
 type ChainLayer = 'L1' | 'L2' | 'L3';
 type ChainDescriptor = { layer: ChainLayer; chainId: number; name: 'GhostChain' | 'GhostL2' | 'GhostL3' };
+type ProviderLog = { transactionHash: string; index: number; blockNumber: number; topics: string[] };
 
 const chainParam = z.enum(['l1', 'l2', 'l3']);
 const chainLayerSchema = z.enum(['L1', 'L2', 'L3']);
@@ -764,8 +766,22 @@ export const buildAiRouter = () => {
         res.status(500).json({ error: 'tx_intel_schema_invalid' });
         return;
       }
+      await emitEvent({
+        scope: 'ai',
+        type: 'ai:tx-intel',
+        actorId: req.session?.userId,
+        status: 'ok',
+        payload: { chain: chain.data, txHash }
+      });
       res.json(parsed.data);
     } catch (err) {
+      await emitEvent({
+        scope: 'ai',
+        type: 'ai:tx-intel',
+        actorId: req.session?.userId,
+        status: 'error',
+        payload: { chain: chain.data, txHash, error: err instanceof Error ? err.message : 'tx_not_found' }
+      });
       res.status(404).json({ error: err instanceof Error ? err.message : 'tx_not_found' });
     }
   });
@@ -791,8 +807,22 @@ export const buildAiRouter = () => {
         res.status(500).json({ error: 'wallet_intel_schema_invalid' });
         return;
       }
+      await emitEvent({
+        scope: 'ai',
+        type: 'ai:wallet-intel',
+        actorId: req.session?.userId,
+        status: 'ok',
+        payload: { chain: chain.data, address, lookbackBlocks, maxTxs }
+      });
       res.json(parsed.data);
     } catch (err) {
+      await emitEvent({
+        scope: 'ai',
+        type: 'ai:wallet-intel',
+        actorId: req.session?.userId,
+        status: 'error',
+        payload: { chain: chain.data, address, error: err instanceof Error ? err.message : 'wallet_error' }
+      });
       res.status(500).json({ error: err instanceof Error ? err.message : 'wallet_error' });
     }
   });
@@ -811,8 +841,22 @@ export const buildAiRouter = () => {
         res.status(500).json({ error: 'contract_intel_schema_invalid' });
         return;
       }
+      await emitEvent({
+        scope: 'ai',
+        type: 'ai:contract-intel',
+        actorId: req.session?.userId,
+        status: 'ok',
+        payload: { chain: chain.data, address }
+      });
       res.json(parsed.data);
     } catch (err) {
+      await emitEvent({
+        scope: 'ai',
+        type: 'ai:contract-intel',
+        actorId: req.session?.userId,
+        status: 'error',
+        payload: { chain: chain.data, address, error: err instanceof Error ? err.message : 'contract_error' }
+      });
       res.status(500).json({ error: err instanceof Error ? err.message : 'contract_error' });
     }
   });
@@ -821,71 +865,89 @@ export const buildAiRouter = () => {
     const chainInput = req.query.chain;
     const chains = chainInput ? [chainInput] : ['l1', 'l2', 'l3'];
     const windowBlocks = Number(req.query.windowBlocks || 500);
-    const results = await Promise.all(
-      chains.map(async (c) => {
-        const parsed = chainParam.safeParse(c);
-        if (!parsed.success) return null;
-        return getProvider(parsed.data, async (provider) => {
-          const sampleSize = Number.isFinite(windowBlocks) ? Math.min(Math.max(windowBlocks, 10), 120) : 60;
-          const blocks = await fetchLatestBlocks(parsed.data, sampleSize);
-          const times = blocks.map((b) => Number(b.timestamp)).filter(Boolean);
-          const latest = blocks[blocks.length - 1];
-          const deltas = times.slice(1).map((t, idx) => t - times[idx]);
-          const avg = deltas.length ? deltas.reduce((a, b) => a + b, 0) / deltas.length : 0;
-          const lastAge = latest ? Math.max(0, Math.floor(Date.now() / 1000) - Number(latest.timestamp)) : 0;
-          const stalled = avg > 0 && lastAge > avg * 3;
-          const warning = avg > 0 && lastAge > avg * 2;
-          const txCounts = blocks.map((b) => (b.transactions ? b.transactions.length : 0));
-          const txPerBlockAvg = txCounts.length ? txCounts.reduce((a, b) => a + b, 0) / txCounts.length : 0;
-          const baseFees = blocks.map((b) => (b.baseFeePerGas ? Number(b.baseFeePerGas) : null)).filter((v): v is number => v !== null);
-          let baseFeeTrend: 'DOWN' | 'FLAT' | 'UP' | 'UNKNOWN' = 'UNKNOWN';
-          if (baseFees.length >= 4) {
-            const mid = Math.floor(baseFees.length / 2);
-            const firstAvg = baseFees.slice(0, mid).reduce((a, b) => a + b, 0) / mid;
-            const lastAvg = baseFees.slice(mid).reduce((a, b) => a + b, 0) / (baseFees.length - mid);
-            if (firstAvg > 0 && lastAvg > firstAvg * 1.1) baseFeeTrend = 'UP';
-            else if (firstAvg > 0 && lastAvg < firstAvg * 0.9) baseFeeTrend = 'DOWN';
-            else baseFeeTrend = 'FLAT';
-          }
-          const anomalies = [
-            stalled ? { name: 'chain_stall', severity: 4 as const, detail: 'last block age exceeds 3x avg' } : null
-          ].filter(Boolean) as Array<{ name: string; severity: 1 | 2 | 3 | 4 | 5; detail: string }>;
-          const earlyWarnings = [
-            warning ? { name: 'block_delay', severity: 3 as const, detail: 'last block age exceeds 2x avg' } : null
-          ].filter(Boolean) as Array<{ name: string; severity: 1 | 2 | 3 | 4 | 5; detail: string }>;
-          const features = [
-            ...anomalies.map((a) => ({ name: a.name, weight: a.severity * 10, detail: a.detail })),
-            ...earlyWarnings.map((a) => ({ name: a.name, weight: a.severity * 5, detail: a.detail }))
-          ];
-          const risk = computeRisk(features);
-          const explainability = buildExplainability(0.7, `avg_block_time:${avg.toFixed(2)}s; last_age:${lastAge}s`, [
-            { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: `head:${latest?.number ?? ''}` }
-          ]);
-          return {
-            chain: chainDescriptor(parsed.data),
-            risk,
-            health: {
-              headBlock: latest?.number ?? 0,
-              avgBlockTimeSec: avg,
-              txPerBlockAvg,
-              baseFeeTrend
-            },
-            anomalies,
-            earlyWarnings,
-            explainability
-          };
-        });
-      })
-    );
-    const outputs = results.filter(Boolean) as Array<z.infer<typeof networkIntelSchema>>;
-    for (const output of outputs) {
-      const parsed = networkIntelSchema.safeParse(output);
-      if (!parsed.success) {
-        res.status(500).json({ error: 'network_intel_schema_invalid' });
-        return;
+    try {
+      const results = await Promise.all(
+        chains.map(async (c) => {
+          const parsed = chainParam.safeParse(c);
+          if (!parsed.success) return null;
+          return getProvider(parsed.data, async (provider) => {
+            const sampleSize = Number.isFinite(windowBlocks) ? Math.min(Math.max(windowBlocks, 10), 120) : 60;
+            const blocks = await fetchLatestBlocks(parsed.data, sampleSize);
+            const times = blocks.map((b) => Number(b.timestamp)).filter(Boolean);
+            const latest = blocks[blocks.length - 1];
+            const deltas = times.slice(1).map((t, idx) => t - times[idx]);
+            const avg = deltas.length ? deltas.reduce((a, b) => a + b, 0) / deltas.length : 0;
+            const lastAge = latest ? Math.max(0, Math.floor(Date.now() / 1000) - Number(latest.timestamp)) : 0;
+            const stalled = avg > 0 && lastAge > avg * 3;
+            const warning = avg > 0 && lastAge > avg * 2;
+            const txCounts = blocks.map((b) => (b.transactions ? b.transactions.length : 0));
+            const txPerBlockAvg = txCounts.length ? txCounts.reduce((a, b) => a + b, 0) / txCounts.length : 0;
+            const baseFees = blocks.map((b) => (b.baseFeePerGas ? Number(b.baseFeePerGas) : null)).filter((v): v is number => v !== null);
+            let baseFeeTrend: 'DOWN' | 'FLAT' | 'UP' | 'UNKNOWN' = 'UNKNOWN';
+            if (baseFees.length >= 4) {
+              const mid = Math.floor(baseFees.length / 2);
+              const firstAvg = baseFees.slice(0, mid).reduce((a, b) => a + b, 0) / mid;
+              const lastAvg = baseFees.slice(mid).reduce((a, b) => a + b, 0) / (baseFees.length - mid);
+              if (firstAvg > 0 && lastAvg > firstAvg * 1.1) baseFeeTrend = 'UP';
+              else if (firstAvg > 0 && lastAvg < firstAvg * 0.9) baseFeeTrend = 'DOWN';
+              else baseFeeTrend = 'FLAT';
+            }
+            const anomalies = [
+              stalled ? { name: 'chain_stall', severity: 4 as const, detail: 'last block age exceeds 3x avg' } : null
+            ].filter(Boolean) as Array<{ name: string; severity: 1 | 2 | 3 | 4 | 5; detail: string }>;
+            const earlyWarnings = [
+              warning ? { name: 'block_delay', severity: 3 as const, detail: 'last block age exceeds 2x avg' } : null
+            ].filter(Boolean) as Array<{ name: string; severity: 1 | 2 | 3 | 4 | 5; detail: string }>;
+            const features = [
+              ...anomalies.map((a) => ({ name: a.name, weight: a.severity * 10, detail: a.detail })),
+              ...earlyWarnings.map((a) => ({ name: a.name, weight: a.severity * 5, detail: a.detail }))
+            ];
+            const risk = computeRisk(features);
+            const explainability = buildExplainability(0.7, `avg_block_time:${avg.toFixed(2)}s; last_age:${lastAge}s`, [
+              { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: `head:${latest?.number ?? ''}` }
+            ]);
+            return {
+              chain: chainDescriptor(parsed.data),
+              risk,
+              health: {
+                headBlock: latest?.number ?? 0,
+                avgBlockTimeSec: avg,
+                txPerBlockAvg,
+                baseFeeTrend
+              },
+              anomalies,
+              earlyWarnings,
+              explainability
+            };
+          });
+        })
+      );
+      const outputs = results.filter(Boolean) as Array<z.infer<typeof networkIntelSchema>>;
+      for (const output of outputs) {
+        const parsed = networkIntelSchema.safeParse(output);
+        if (!parsed.success) {
+          res.status(500).json({ error: 'network_intel_schema_invalid' });
+          return;
+        }
       }
+      await emitEvent({
+        scope: 'ai',
+        type: 'ai:network-intel',
+        actorId: req.session?.userId,
+        status: 'ok',
+        payload: { chains, windowBlocks }
+      });
+      res.json({ status: outputs });
+    } catch (err) {
+      await emitEvent({
+        scope: 'ai',
+        type: 'ai:network-intel',
+        actorId: req.session?.userId,
+        status: 'error',
+        payload: { chains, error: err instanceof Error ? err.message : 'network_error' }
+      });
+      res.status(500).json({ error: err instanceof Error ? err.message : 'network_error' });
     }
-    res.json({ status: outputs });
   });
 
   router.get('/ai/bridge-intel', guard, async (req, res) => {
@@ -900,6 +962,13 @@ export const buildAiRouter = () => {
       .filter((addr): addr is string => Boolean(addr))
       .map((addr) => addr.toLowerCase());
     if (!l1Addresses.length && !l2Addresses.length) {
+      await emitEvent({
+        scope: 'ai',
+        type: 'ai:bridge-intel',
+        actorId: req.session?.userId,
+        status: 'error',
+        payload: { lookbackBlocks, error: 'bridge_addresses_missing' }
+      });
       res.json({
         scope: { l1, l2, l3 },
         risk: { score: 0, label: 'SAFE', reasons: [] },
@@ -911,73 +980,91 @@ export const buildAiRouter = () => {
       });
       return;
     }
-    const result = await Promise.all([
-      getProvider('l1', async (provider) => {
-        const latest = await provider.getBlockNumber();
-        const fromBlock = Math.max(latest - (Number.isFinite(lookbackBlocks) ? lookbackBlocks : 10_000), 0);
-        const logs = l1Addresses.length ? await provider.getLogs({ fromBlock, toBlock: latest, address: l1Addresses }) : [];
-        return { logs, latest };
-      }),
-      getProvider('l2', async (provider) => {
-        const latest = await provider.getBlockNumber();
-        const fromBlock = Math.max(latest - (Number.isFinite(lookbackBlocks) ? lookbackBlocks : 10_000), 0);
-        const logs = l2Addresses.length ? await provider.getLogs({ fromBlock, toBlock: latest, address: l2Addresses }) : [];
-        return { logs, latest };
-      })
-    ]);
-    const l1Logs = result[0].logs;
-    const l2Logs = result[1].logs;
-    const l1Head = result[0].latest;
-    const l2Head = result[1].latest;
-    const l1Messages = l1Logs.map((log) => {
-      const ageBlocks = l1Head - log.blockNumber;
-      const status = ageBlocks > 2000 ? 'STUCK' : ageBlocks > 200 ? 'PENDING' : 'FINALIZED';
-      return {
-        id: `${log.transactionHash}:${log.index}`,
-        direction: 'L2_TO_L1' as const,
-        srcTxHash: log.transactionHash,
-        status,
-        ageBlocks,
-        detail: `log:${log.topics[0]}`
+    try {
+      const result = await Promise.all([
+        getProvider('l1', async (provider) => {
+          const latest = await provider.getBlockNumber();
+          const fromBlock = Math.max(latest - (Number.isFinite(lookbackBlocks) ? lookbackBlocks : 10_000), 0);
+          const logs = l1Addresses.length ? await provider.getLogs({ fromBlock, toBlock: latest, address: l1Addresses }) : [];
+          return { logs, latest };
+        }),
+        getProvider('l2', async (provider) => {
+          const latest = await provider.getBlockNumber();
+          const fromBlock = Math.max(latest - (Number.isFinite(lookbackBlocks) ? lookbackBlocks : 10_000), 0);
+          const logs = l2Addresses.length ? await provider.getLogs({ fromBlock, toBlock: latest, address: l2Addresses }) : [];
+          return { logs, latest };
+        })
+      ]);
+      const l1Logs = result[0].logs as ProviderLog[];
+      const l2Logs = result[1].logs as ProviderLog[];
+      const l1Head = result[0].latest;
+      const l2Head = result[1].latest;
+      const l1Messages = l1Logs.map((log) => {
+        const ageBlocks = l1Head - log.blockNumber;
+        const status = ageBlocks > 2000 ? 'STUCK' : ageBlocks > 200 ? 'PENDING' : 'FINALIZED';
+        return {
+          id: `${log.transactionHash}:${log.index}`,
+          direction: 'L2_TO_L1' as const,
+          srcTxHash: log.transactionHash,
+          status,
+          ageBlocks,
+          detail: `log:${log.topics[0]}`
+        };
+      });
+      const l2Messages = l2Logs.map((log) => {
+        const ageBlocks = l2Head - log.blockNumber;
+        const status = ageBlocks > 2000 ? 'STUCK' : ageBlocks > 200 ? 'PENDING' : 'FINALIZED';
+        return {
+          id: `${log.transactionHash}:${log.index}`,
+          direction: 'L3_TO_L2' as const,
+          srcTxHash: log.transactionHash,
+          status,
+          ageBlocks,
+          detail: `log:${log.topics[0]}`
+        };
+      });
+      const messages = [...l2Messages, ...l1Messages];
+      const stuckSignals = messages
+        .filter((message) => message.status === 'STUCK')
+        .map((message) => ({
+          name: 'bridge_message_stuck',
+          severity: 4 as const,
+          detail: `${message.direction}:${message.id}`
+        }));
+      const risk = computeRisk(stuckSignals.map((signal) => ({ name: signal.name, weight: 15, detail: signal.detail })));
+      const explainability = buildExplainability(0.66, `messages:${messages.length}`, [
+        { kind: 'rpc', ref: 'eth_getLogs', detail: `l1:${l1Logs.length} l2:${l2Logs.length}` }
+      ]);
+      const payload = {
+        scope: { l1, l2, l3 },
+        risk,
+        messages,
+        stuckSignals,
+        explainability
       };
-    });
-    const l2Messages = l2Logs.map((log) => {
-      const ageBlocks = l2Head - log.blockNumber;
-      const status = ageBlocks > 2000 ? 'STUCK' : ageBlocks > 200 ? 'PENDING' : 'FINALIZED';
-      return {
-        id: `${log.transactionHash}:${log.index}`,
-        direction: 'L3_TO_L2' as const,
-        srcTxHash: log.transactionHash,
-        status,
-        ageBlocks,
-        detail: `log:${log.topics[0]}`
-      };
-    });
-    const messages = [...l2Messages, ...l1Messages];
-    const stuckSignals = messages
-      .filter((message) => message.status === 'STUCK')
-      .map((message) => ({
-        name: 'bridge_message_stuck',
-        severity: 4 as const,
-        detail: `${message.direction}:${message.id}`
-      }));
-    const risk = computeRisk(stuckSignals.map((signal) => ({ name: signal.name, weight: 15, detail: signal.detail })));
-    const explainability = buildExplainability(0.66, `messages:${messages.length}`, [
-      { kind: 'rpc', ref: 'eth_getLogs', detail: `l1:${l1Logs.length} l2:${l2Logs.length}` }
-    ]);
-    const payload = {
-      scope: { l1, l2, l3 },
-      risk,
-      messages,
-      stuckSignals,
-      explainability
-    };
-    const parsed = bridgeIntelSchema.safeParse(payload);
-    if (!parsed.success) {
-      res.status(500).json({ error: 'bridge_intel_schema_invalid' });
-      return;
+      const parsed = bridgeIntelSchema.safeParse(payload);
+      if (!parsed.success) {
+        res.status(500).json({ error: 'bridge_intel_schema_invalid' });
+        return;
+      }
+      await emitEvent({
+        scope: 'ai',
+        type: 'ai:bridge-intel',
+        actorId: req.session?.userId,
+        status: 'ok',
+        payload: { lookbackBlocks, messageCount: messages.length }
+      });
+      res.json(parsed.data);
+    } catch (err) {
+      await emitEvent({
+        scope: 'ai',
+        type: 'ai:bridge-intel',
+        actorId: req.session?.userId,
+        status: 'error',
+        payload: { lookbackBlocks, error: err instanceof Error ? err.message : 'bridge_error' }
+      });
+      res.status(500).json({ error: err instanceof Error ? err.message : 'bridge_error' });
     }
-    res.json(parsed.data);
   });
 
   router.get('/ai/governance-intel', guard, async (req, res) => {
@@ -1008,40 +1095,67 @@ export const buildAiRouter = () => {
         res.status(500).json({ error: 'governance_intel_schema_invalid' });
         return;
       }
+      await emitEvent({
+        scope: 'ai',
+        type: 'ai:governance-intel',
+        actorId: req.session?.userId,
+        status: 'error',
+        payload: { chain: chain.data, proposalId, error: 'governance_contract_missing' }
+      });
       res.json(parsed.data);
       return;
     }
-    const result = await getProvider(chain.data, async (provider) => {
-      const latest = await provider.getBlockNumber();
-      const fromBlock = Math.max(latest - 1000, 0);
-      const logs = await provider.getLogs({ fromBlock, toBlock: latest, address: governanceAddr });
-      const matched = logs.filter((log) => log.topics.some((topic) => topic.toLowerCase().includes(proposalId.toLowerCase().replace(/^0x/, ''))));
-      const manipulationSignals = matched.length > 3 ? [{ name: 'proposal_activity_spike', severity: 2 as const, detail: 'high log count' }] : [];
-      const risk = computeRisk(manipulationSignals.map((signal) => ({ name: signal.name, weight: 10, detail: signal.detail })));
-      const impact = {
-        security: matched.length ? 'MEDIUM' : 'LOW',
-        gas: 'NEUTRAL',
-        validatorOps: 'LOW'
-      };
-      const explainability = buildExplainability(0.68, `governance_logs:${logs.length}`, [
-        { kind: 'rpc', ref: 'eth_getLogs', detail: `from:${fromBlock} to:${latest}` },
-        { kind: 'event', ref: governanceAddr, detail: `matches:${matched.length}` }
-      ]);
-      return {
-        chain: chainDescriptor(chain.data),
-        proposalId,
-        risk,
-        impact,
-        manipulationSignals,
-        explainability
-      };
-    });
-    const parsed = governanceIntelSchema.safeParse(result);
-    if (!parsed.success) {
-      res.status(500).json({ error: 'governance_intel_schema_invalid' });
-      return;
+    try {
+      const result = await getProvider(chain.data, async (provider) => {
+        const latest = await provider.getBlockNumber();
+        const fromBlock = Math.max(latest - 1000, 0);
+      const logs = (await provider.getLogs({ fromBlock, toBlock: latest, address: governanceAddr })) as ProviderLog[];
+        const matched = logs.filter((log) =>
+          log.topics.some((topic) => topic.toLowerCase().includes(proposalId.toLowerCase().replace(/^0x/, '')))
+        );
+        const manipulationSignals = matched.length > 3 ? [{ name: 'proposal_activity_spike', severity: 2 as const, detail: 'high log count' }] : [];
+        const risk = computeRisk(manipulationSignals.map((signal) => ({ name: signal.name, weight: 10, detail: signal.detail })));
+        const impact = {
+          security: matched.length ? 'MEDIUM' : 'LOW',
+          gas: 'NEUTRAL',
+          validatorOps: 'LOW'
+        };
+        const explainability = buildExplainability(0.68, `governance_logs:${logs.length}`, [
+          { kind: 'rpc', ref: 'eth_getLogs', detail: `from:${fromBlock} to:${latest}` },
+          { kind: 'event', ref: governanceAddr, detail: `matches:${matched.length}` }
+        ]);
+        return {
+          chain: chainDescriptor(chain.data),
+          proposalId,
+          risk,
+          impact,
+          manipulationSignals,
+          explainability
+        };
+      });
+      const parsed = governanceIntelSchema.safeParse(result);
+      if (!parsed.success) {
+        res.status(500).json({ error: 'governance_intel_schema_invalid' });
+        return;
+      }
+      await emitEvent({
+        scope: 'ai',
+        type: 'ai:governance-intel',
+        actorId: req.session?.userId,
+        status: 'ok',
+        payload: { chain: chain.data, proposalId }
+      });
+      res.json(parsed.data);
+    } catch (err) {
+      await emitEvent({
+        scope: 'ai',
+        type: 'ai:governance-intel',
+        actorId: req.session?.userId,
+        status: 'error',
+        payload: { chain: chain.data, proposalId, error: err instanceof Error ? err.message : 'governance_error' }
+      });
+      res.status(500).json({ error: err instanceof Error ? err.message : 'governance_error' });
     }
-    res.json(parsed.data);
   });
 
   router.get('/ai/forecasting', guard, async (req, res) => {
@@ -1052,38 +1166,60 @@ export const buildAiRouter = () => {
       res.status(400).json({ error: 'invalid_input' });
       return;
     }
-    const result = await getProvider(chain.data, async (provider) => {
-      const sampleSize = Number.isFinite(windowBlocks) ? Math.min(Math.max(windowBlocks, 20), 200) : 80;
-      const blocks = await fetchLatestBlocks(chain.data, sampleSize);
-      const gasRatios = blocks
-        .map((b) => (b.gasUsed && b.gasLimit ? Number(b.gasUsed) / Number(b.gasLimit) : null))
-        .filter((v): v is number => v !== null);
-      const baseFees = blocks.map((b) => (b.baseFeePerGas ? Number(b.baseFeePerGas) : null)).filter((v): v is number => v !== null);
-      const avgGas = gasRatios.length ? gasRatios.reduce((a, b) => a + b, 0) / gasRatios.length : 0;
-      const avgFee = baseFees.length ? baseFees.reduce((a, b) => a + b, 0) / baseFees.length : 0;
-      const avgTxPerBlock = blocks.length ? blocks.reduce((sum, b) => sum + (b.transactions ? b.transactions.length : 0), 0) / blocks.length : 0;
-      const congestion = avgGas > 0.75 ? 'HIGH' : avgGas > 0.4 ? 'MEDIUM' : 'LOW';
-      const confidence = Math.min(0.9, 0.5 + gasRatios.length * 0.01);
-      const explainability = buildExplainability(confidence, 'rolling_block_average', [
-        { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: `sample:${blocks.length}` }
-      ]);
-      return {
-        chain: chainDescriptor(chain.data),
-        horizonBlocks: Number.isFinite(horizonBlocks) ? Math.max(1, horizonBlocks) : 200,
-        forecasts: {
-          avgGasPriceWei: Math.round(avgFee).toString(),
-          congestion,
-          avgTxPerBlock
-        },
-        explainability
-      };
-    });
-    const parsed = forecastingSchema.safeParse(result);
-    if (!parsed.success) {
-      res.status(500).json({ error: 'forecasting_schema_invalid' });
-      return;
+    try {
+      const result = await getProvider(chain.data, async (provider) => {
+        const sampleSize = Number.isFinite(windowBlocks) ? Math.min(Math.max(windowBlocks, 20), 200) : 80;
+        const blocks = await fetchLatestBlocks(chain.data, sampleSize);
+        const gasRatios = blocks
+          .map((b) => (b.gasUsed && b.gasLimit ? Number(b.gasUsed) / Number(b.gasLimit) : null))
+          .filter((v): v is number => v !== null);
+        const baseFees = blocks
+          .map((b) => (b.baseFeePerGas ? Number(b.baseFeePerGas) : null))
+          .filter((v): v is number => v !== null);
+        const avgGas = gasRatios.length ? gasRatios.reduce((a, b) => a + b, 0) / gasRatios.length : 0;
+        const avgFee = baseFees.length ? baseFees.reduce((a, b) => a + b, 0) / baseFees.length : 0;
+        const avgTxPerBlock = blocks.length
+          ? blocks.reduce((sum, b) => sum + (b.transactions ? b.transactions.length : 0), 0) / blocks.length
+          : 0;
+        const congestion = avgGas > 0.75 ? 'HIGH' : avgGas > 0.4 ? 'MEDIUM' : 'LOW';
+        const confidence = Math.min(0.9, 0.5 + gasRatios.length * 0.01);
+        const explainability = buildExplainability(confidence, 'rolling_block_average', [
+          { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: `sample:${blocks.length}` }
+        ]);
+        return {
+          chain: chainDescriptor(chain.data),
+          horizonBlocks: Number.isFinite(horizonBlocks) ? Math.max(1, horizonBlocks) : 200,
+          forecasts: {
+            avgGasPriceWei: Math.round(avgFee).toString(),
+            congestion,
+            avgTxPerBlock
+          },
+          explainability
+        };
+      });
+      const parsed = forecastingSchema.safeParse(result);
+      if (!parsed.success) {
+        res.status(500).json({ error: 'forecasting_schema_invalid' });
+        return;
+      }
+      await emitEvent({
+        scope: 'ai',
+        type: 'ai:forecasting',
+        actorId: req.session?.userId,
+        status: 'ok',
+        payload: { chain: chain.data, horizonBlocks, windowBlocks }
+      });
+      res.json(parsed.data);
+    } catch (err) {
+      await emitEvent({
+        scope: 'ai',
+        type: 'ai:forecasting',
+        actorId: req.session?.userId,
+        status: 'error',
+        payload: { chain: chain.data, error: err instanceof Error ? err.message : 'forecasting_error' }
+      });
+      res.status(500).json({ error: err instanceof Error ? err.message : 'forecasting_error' });
     }
-    res.json(parsed.data);
   });
 
   router.get('/ai/explain', guard, async (req, res) => {
@@ -1097,8 +1233,22 @@ export const buildAiRouter = () => {
     if (type === 'tx') {
       try {
         const result = await txIntel(chain.data, entity);
+        await emitEvent({
+          scope: 'ai',
+          type: 'ai:explain',
+          actorId: req.session?.userId,
+          status: 'ok',
+          payload: { chain: chain.data, type, entity }
+        });
         res.json({ explainability: result.explainability });
       } catch (err) {
+        await emitEvent({
+          scope: 'ai',
+          type: 'ai:explain',
+          actorId: req.session?.userId,
+          status: 'error',
+          payload: { chain: chain.data, type, entity, error: err instanceof Error ? err.message : 'tx_not_found' }
+        });
         res.status(404).json({ error: err instanceof Error ? err.message : 'tx_not_found' });
       }
       return;
@@ -1106,16 +1256,44 @@ export const buildAiRouter = () => {
     if (type === 'wallet') {
       try {
         const result = await walletIntel(chain.data, entity);
+        await emitEvent({
+          scope: 'ai',
+          type: 'ai:explain',
+          actorId: req.session?.userId,
+          status: 'ok',
+          payload: { chain: chain.data, type, entity }
+        });
         res.json({ explainability: result.explainability });
       } catch (err) {
+        await emitEvent({
+          scope: 'ai',
+          type: 'ai:explain',
+          actorId: req.session?.userId,
+          status: 'error',
+          payload: { chain: chain.data, type, entity, error: err instanceof Error ? err.message : 'wallet_not_found' }
+        });
         res.status(404).json({ error: err instanceof Error ? err.message : 'wallet_not_found' });
       }
       return;
     }
     try {
       const result = await contractIntel(chain.data, entity);
+      await emitEvent({
+        scope: 'ai',
+        type: 'ai:explain',
+        actorId: req.session?.userId,
+        status: 'ok',
+        payload: { chain: chain.data, type, entity }
+      });
       res.json({ explainability: result.explainability });
     } catch (err) {
+      await emitEvent({
+        scope: 'ai',
+        type: 'ai:explain',
+        actorId: req.session?.userId,
+        status: 'error',
+        payload: { chain: chain.data, type, entity, error: err instanceof Error ? err.message : 'contract_not_found' }
+      });
       res.status(404).json({ error: err instanceof Error ? err.message : 'contract_not_found' });
     }
   });

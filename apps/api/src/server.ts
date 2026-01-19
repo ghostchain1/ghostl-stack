@@ -44,6 +44,7 @@ import { createIntegrationsStore } from './services/integrations-store';
 import { buildAiRouter } from './modules/ai/router';
 import { ghostWalletRpcManager } from './services/rpc-manager';
 import { createSessionStore } from './services/session-store';
+import { emitEvent, getEvents, getWebhookDeliveries, getWebhookSummary } from './lib/events';
 import './types/express';
 // Load environment variables from local env file when running locally (cwd may be repo root or apps/api)
 loadEnv({ path: path.join(process.cwd(), '.env.local') });
@@ -108,10 +109,44 @@ type BridgeNetwork = { id?: string; pause?: string; pending?: string; liquidity?
 type BridgeSignature = { transferId?: string; signatures?: string[]; required?: number };
 type BridgeIncident = { message?: string; severity?: string; createdAt?: string; time?: string; source?: string };
 
+const parseCorsAllowlist = () => {
+  const raw = process.env.CORS_ALLOW_ORIGINS || '';
+  return new Set(
+    raw
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean)
+  );
+};
+
+const isLocalOrigin = (origin: string) => {
+  try {
+    const { hostname } = new URL(origin);
+    return ['localhost', '127.0.0.1', '0.0.0.0', '::1'].includes(hostname);
+  } catch {
+    return false;
+  }
+};
+
+const corsAllowlist = parseCorsAllowlist();
+const isOriginAllowed = (origin?: string) => {
+  if (!origin) return true;
+  if (corsAllowlist.size) return corsAllowlist.has(origin);
+  if (process.env.NODE_ENV !== 'production') return isLocalOrigin(origin);
+  return false;
+};
+
 const app = express();
 const sessionStore = createSessionStore();
 
-app.use(cors({ origin: true, credentials: true }));
+app.set('trust proxy', 1);
+app.use(
+  '/',
+  cors({
+    origin: (origin, callback) => callback(null, isOriginAllowed(origin)),
+    credentials: true
+  }) as RequestHandler
+);
 app.use(express.json());
 app.use(
   session({
@@ -126,7 +161,7 @@ app.use(
       sameSite: 'lax',
       maxAge: env.SESSION_TTL_MS || 30 * 60 * 1000
     }
-  })
+  }) as unknown as RequestHandler
 );
 
 const isStateChanging = (method: string) => !['GET', 'HEAD', 'OPTIONS'].includes(method);
@@ -140,6 +175,23 @@ const sameOrigin = (req: express.Request) => {
   } catch {
     return false;
   }
+};
+
+const requireAuth: RequestHandler = (req, res, next) => {
+  if (!req.session?.userId) {
+    res.status(401).json({ error: 'unauthenticated' });
+    return;
+  }
+  next();
+};
+
+const requireAdmin: RequestHandler = (req, res, next) => {
+  const roles = (req.session?.roles || []).map((role) => String(role).toLowerCase());
+  if (roles.includes('admin')) {
+    next();
+    return;
+  }
+  res.status(403).json({ error: 'forbidden' });
 };
 
 app.use((req, res, next) => {
@@ -295,7 +347,7 @@ const rpcProbe = async <T>(url: string, method: string, params: unknown[] = []) 
   return body.result as T;
 };
 
-const probeHttpEndpoint = async (endpoint: { id: string; url: string }) => {
+const probeHttpEndpoint = async (endpoint: { id: string; url: string; chainId?: string }) => {
   const started = Date.now();
   try {
     const rawChainId = await withTimeout(rpcProbe<string>(endpoint.url, 'eth_chainId'), 1500);
@@ -503,7 +555,7 @@ const fetchRegistryEndpoints = async () => {
     .map((entry) => ({
       ...entry,
       url: entry.url?.replace(/^http/, 'ws'),
-      protocol: 'ws'
+      protocol: 'ws' as const
     }))
     .map((entry) => normalizeRpcEndpoint(entry, 'ghostchain'))
     .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
@@ -563,11 +615,11 @@ const getRpcEndpoints = async () => {
   }
   const ttl = 5 * 60 * 1000 + Math.floor(Math.random() * 10 * 60 * 1000);
   const targetChainIds = getTargetChainIds();
-  let registryEndpoints: ReturnType<typeof normalizeRpcEndpoint>[] = [];
+  let registryEndpoints: Array<NonNullable<ReturnType<typeof normalizeRpcEndpoint>>> = [];
   let registryChainIds: string[] = [];
   try {
     const registry = (await withTimeout(fetchRegistryEndpoints(), 5000)) as {
-      endpoints: ReturnType<typeof normalizeRpcEndpoint>[];
+      endpoints: Array<NonNullable<ReturnType<typeof normalizeRpcEndpoint>>>;
       chainIds: string[];
     };
     registryEndpoints = registry.endpoints;
@@ -583,15 +635,19 @@ const getRpcEndpoints = async () => {
     }
   });
   const missingChainIds = chainIds.filter((id) => !registryByChain.get(id));
-  let publicEndpoints: ReturnType<typeof normalizeRpcEndpoint>[] = [];
+  let publicEndpoints: Array<NonNullable<ReturnType<typeof normalizeRpcEndpoint>>> = [];
   if (missingChainIds.length) {
     try {
-      publicEndpoints = (await withTimeout(fetchPublicChainEndpoints(missingChainIds), 5000)) as ReturnType<typeof normalizeRpcEndpoint>[];
+      publicEndpoints = (await withTimeout(fetchPublicChainEndpoints(missingChainIds), 5000)) as Array<
+        NonNullable<ReturnType<typeof normalizeRpcEndpoint>>
+      >;
     } catch {
       publicEndpoints = [];
     }
   }
-  let endpoints = [...registryEndpoints, ...publicEndpoints].filter(Boolean);
+  let endpoints = [...registryEndpoints, ...publicEndpoints].filter(Boolean) as Array<
+    NonNullable<ReturnType<typeof normalizeRpcEndpoint>>
+  >;
   endpoints = endpoints.map((endpoint) => ({
     ...endpoint,
     layer: endpoint?.layer || layerForChainId(endpoint?.chainId)
@@ -618,11 +674,19 @@ const getRpcEndpoints = async () => {
     endpoints.push({
       id: crypto.createHash('sha256').update(`fallback-${id}-${fallback.url}`).digest('hex').slice(0, 12),
       chainId: id,
+      chainKey: undefined,
       chainName: fallback.name,
       layer: id === (process.env.GHOSTCHAIN_L1_CHAIN_ID || '14000101') ? 'L1' : id === (process.env.GHOSTL2_CHAIN_ID || env.CHAIN_ID || '901') ? 'L2' : 'L3',
+      chainType: undefined,
+      network: undefined,
       url: fallback.url,
       type: 'public',
+      protocol: 'http',
+      auth: undefined,
       region: 'local',
+      priority: undefined,
+      features: undefined,
+      latencyMs: undefined,
       status: 'healthy',
       lastCheckedAt: new Date().toISOString()
     });
@@ -637,7 +701,7 @@ const getRpcEndpoints = async () => {
   );
   probes.forEach((result) => {
     if (result.status !== 'fulfilled') return;
-    const updated = result.value;
+    const updated = result.value as NonNullable<ReturnType<typeof normalizeRpcEndpoint>>;
     const index = endpoints.findIndex((endpoint) => endpoint.id === updated.id);
     if (index >= 0) endpoints[index] = updated;
   });
@@ -1978,7 +2042,7 @@ app.get(['/v1/api/validators', '/api/validators'], validatorGuard, async (_req, 
 });
 
 app.post(['/v1/nodes/:id/restart', '/nodes/:id/restart'], requirePermission('devops:write'), async (req, res) => {
-  const id = req.params.id;
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   try {
     const upstream = await fetch(`${servicesBase.devops}/nodes/${encodeURIComponent(id)}/restart`, { method: 'POST' });
     if (!upstream.ok) {
@@ -1999,7 +2063,7 @@ app.post(['/v1/nodes/:id/restart', '/nodes/:id/restart'], requirePermission('dev
 });
 
 app.post(['/v1/nodes/:id/upgrade', '/nodes/:id/upgrade'], requirePermission('devops:write'), async (req, res) => {
-  const id = req.params.id;
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const version = typeof req.body?.version === 'string' ? req.body.version : undefined;
   try {
     const upstream = await fetch(`${servicesBase.devops}/nodes/${encodeURIComponent(id)}/upgrade`, {
@@ -2289,7 +2353,8 @@ app.get(['/v1/integrations/instances', '/integrations/instances'], integrationsR
 
 app.get(['/v1/integrations/instances/:id', '/integrations/instances/:id'], integrationsReadGuard, async (req, res) => {
   const integrations = await integrationsStorePromise;
-  const instance = integrations.getInstance(req.params.id);
+  const instanceId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const instance = integrations.getInstance(instanceId);
   if (!instance) {
     res.status(404).json({ error: 'instance_not_found' });
     return;
@@ -2318,8 +2383,27 @@ app.post(['/v1/integrations/instances', '/integrations/instances'], integrations
       resource: instance.id,
       meta: { definitionId: instance.definitionId, environment: instance.environment, enabled: instance.enabled }
     });
+    await emitEvent({
+      scope: 'integrations',
+      type: 'integrations:create',
+      actorId: req.session.userId,
+      status: 'ok',
+      payload: {
+        instanceId: instance.id,
+        definitionId: instance.definitionId,
+        environment: instance.environment,
+        enabled: instance.enabled
+      }
+    });
     res.status(201).json(instance);
   } catch (err) {
+    await emitEvent({
+      scope: 'integrations',
+      type: 'integrations:create',
+      actorId: req.session.userId,
+      status: 'error',
+      payload: { definitionId: body.definitionId, error: err instanceof Error ? err.message : 'create_failed' }
+    });
     res.status(400).json({ error: err instanceof Error ? err.message : 'create_failed' });
   }
 });
@@ -2332,7 +2416,8 @@ app.patch(['/v1/integrations/instances/:id', '/integrations/instances/:id'], int
   }
   try {
     const integrations = await integrationsStorePromise;
-    const instance = await integrations.updateInstance(req.params.id, {
+    const instanceId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const instance = await integrations.updateInstance(instanceId, {
       enabled: typeof body.enabled === 'boolean' ? body.enabled : undefined,
       environment: body.environment,
       policy: body.policy,
@@ -2345,8 +2430,27 @@ app.patch(['/v1/integrations/instances/:id', '/integrations/instances/:id'], int
       resource: instance.id,
       meta: { definitionId: instance.definitionId, environment: instance.environment, enabled: instance.enabled }
     });
+    await emitEvent({
+      scope: 'integrations',
+      type: body.config ? 'integrations:rotate' : 'integrations:update',
+      actorId: req.session.userId,
+      status: 'ok',
+      payload: {
+        instanceId: instance.id,
+        definitionId: instance.definitionId,
+        environment: instance.environment,
+        enabled: instance.enabled
+      }
+    });
     res.json(instance);
   } catch (err) {
+    await emitEvent({
+      scope: 'integrations',
+      type: body.config ? 'integrations:rotate' : 'integrations:update',
+      actorId: req.session.userId,
+      status: 'error',
+      payload: { instanceId: Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, error: err instanceof Error ? err.message : 'update_failed' }
+    });
     res.status(400).json({ error: err instanceof Error ? err.message : 'update_failed' });
   }
 });
@@ -2358,7 +2462,8 @@ app.post(
     const body = req.body || {};
     try {
       const integrations = await integrationsStorePromise;
-      const instance = await integrations.updateInstance(req.params.id, {
+      const instanceId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const instance = await integrations.updateInstance(instanceId, {
         enabled: typeof body.enabled === 'boolean' ? body.enabled : true
       });
       await auditLogService?.append({
@@ -2367,8 +2472,22 @@ app.post(
         resource: instance.id,
         meta: { definitionId: instance.definitionId }
       });
+      await emitEvent({
+        scope: 'integrations',
+        type: instance.enabled ? 'integrations:enable' : 'integrations:disable',
+        actorId: req.session.userId,
+        status: 'ok',
+        payload: { instanceId: instance.id, definitionId: instance.definitionId, enabled: instance.enabled }
+      });
       res.json(instance);
     } catch (err) {
+      await emitEvent({
+        scope: 'integrations',
+        type: 'integrations:toggle',
+        actorId: req.session.userId,
+        status: 'error',
+        payload: { instanceId: Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, error: err instanceof Error ? err.message : 'update_failed' }
+      });
       res.status(400).json({ error: err instanceof Error ? err.message : 'update_failed' });
     }
   }
@@ -2380,15 +2499,30 @@ app.post(
   async (req, res) => {
     try {
       const integrations = await integrationsStorePromise;
-      const result = await integrations.testInstance(req.params.id);
+      const instanceId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const result = await integrations.testInstance(instanceId);
       await auditLogService?.append({
         actorId: req.session.userId || 'unknown',
         action: 'integration:test',
-        resource: req.params.id,
+        resource: instanceId,
         meta: { ok: result.ok }
+      });
+      await emitEvent({
+        scope: 'integrations',
+        type: 'integrations:test',
+        actorId: req.session.userId,
+        status: result.ok ? 'ok' : 'error',
+        payload: { instanceId, ok: result.ok, latencyMs: result.latencyMs }
       });
       res.json(result);
     } catch (err) {
+      await emitEvent({
+        scope: 'integrations',
+        type: 'integrations:test',
+        actorId: req.session.userId,
+        status: 'error',
+        payload: { instanceId: Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, error: err instanceof Error ? err.message : 'test_failed' }
+      });
       res.status(400).json({ error: err instanceof Error ? err.message : 'test_failed' });
     }
   }
@@ -2397,6 +2531,46 @@ app.post(
 app.get(['/v1/integrations/rpc', '/integrations/rpc'], async (_req, res) => {
   const endpoints = await getRpcEndpoints();
   res.json(endpoints);
+});
+
+app.post(['/v1/analytics/events', '/analytics/events'], requireAuth, async (req, res) => {
+  const body = req.body || {};
+  if (!body || typeof body !== 'object') {
+    res.status(400).json({ error: 'invalid_body' });
+    return;
+  }
+  const scope = typeof body.scope === 'string' ? body.scope : 'analytics';
+  const type = typeof body.type === 'string' ? body.type : 'analytics:event';
+  const payload = typeof body.payload === 'object' && body.payload ? body.payload : {};
+  await emitEvent({
+    scope: scope === 'ai' || scope === 'integrations' || scope === 'auth' || scope === 'webhook' ? scope : 'analytics',
+    type,
+    actorId: req.session.userId,
+    status: 'ok',
+    payload
+  });
+  res.status(202).json({ ok: true });
+});
+
+app.get(['/v1/analytics/events', '/analytics/events'], requireAdmin, async (req, res) => {
+  const scope = typeof req.query.scope === 'string' ? req.query.scope : undefined;
+  const limit = Number(req.query.limit || 20);
+  const events = await getEvents({
+    scope: scope === 'ai' || scope === 'integrations' || scope === 'auth' || scope === 'webhook' || scope === 'analytics' ? scope : undefined,
+    limit
+  });
+  res.json({ events });
+});
+
+app.get(['/v1/webhooks/status', '/webhooks/status'], requireAdmin, async (_req, res) => {
+  const summary = await getWebhookSummary();
+  res.json(summary);
+});
+
+app.get(['/v1/webhooks/deliveries', '/webhooks/deliveries'], requireAdmin, async (req, res) => {
+  const limit = Number(req.query.limit || 20);
+  const deliveries = await getWebhookDeliveries(Number.isFinite(limit) ? limit : 20);
+  res.json({ deliveries });
 });
 
 app.get(['/v1/swap/quote', '/swap/quote'], async (req, res) => {
@@ -2483,14 +2657,28 @@ if (require.main === module) {
 }
 
 export default app;
-app.post(['/v1/webhooks/alerts', '/webhooks/alerts'], async (req, res) => {
+app.post(['/v1/webhooks/alerts', '/webhooks/alerts'], requireAdmin, async (req, res) => {
   if (!env.ALERT_WEBHOOK_SECRET) {
+    await emitEvent({
+      scope: 'webhook',
+      type: 'webhook:delivery',
+      actorId: req.session?.userId,
+      status: 'error',
+      payload: { error: 'webhook_secret_missing' }
+    });
     res.status(503).json({ error: 'webhook verification not configured' });
     return;
   }
   const signature = req.header('x-signature-sha256');
   const ts = req.header('x-signature-ts');
   if (!signature || !ts) {
+    await emitEvent({
+      scope: 'webhook',
+      type: 'webhook:delivery',
+      actorId: req.session?.userId,
+      status: 'error',
+      payload: { error: 'missing_signature_headers' }
+    });
     res.status(400).json({ error: 'missing signature headers' });
     return;
   }
@@ -2499,8 +2687,22 @@ app.post(['/v1/webhooks/alerts', '/webhooks/alerts'], async (req, res) => {
   hmac.update(`${ts}:${body}`);
   const expected = hmac.digest('hex');
   if (expected !== signature) {
+    await emitEvent({
+      scope: 'webhook',
+      type: 'webhook:delivery',
+      actorId: req.session?.userId,
+      status: 'error',
+      payload: { error: 'invalid_signature' }
+    });
     res.status(401).json({ error: 'invalid signature' });
     return;
   }
+  await emitEvent({
+    scope: 'webhook',
+    type: 'webhook:delivery',
+    actorId: req.session?.userId,
+    status: 'ok',
+    payload: { delivered: true }
+  });
   res.json({ ok: true });
 });

@@ -228,11 +228,11 @@ const rbacService: RBACService = {
 
 const userService: UserService = {
   async list() {
-    const rows = db.prepare('select * from users order by created_at asc').all();
+    const rows = db.prepare('select * from users order by created_at asc').all() as any[];
     return rows.map(userFromRow);
   },
   async get(id: string) {
-    const row = db.prepare('select * from users where id = ?').get(id);
+    const row = db.prepare('select * from users where id = ?').get(id) as any;
     return row ? userFromRow(row) : null;
   },
   async create(input) {
@@ -250,7 +250,7 @@ const userService: UserService = {
     return { id, email: input.email, wallets: input.wallets || [], roles: [role.toLowerCase()] };
   },
   async update(id, input) {
-    const existing = db.prepare('select * from users where id = ?').get(id);
+    const existing = db.prepare('select * from users where id = ?').get(id) as any;
     if (!existing) throw new Error('user not found');
     const role = input.roles ? resolveRoleFromRoles(input.roles) : normalizeRole(existing.role);
     const updatedAt = nowIso();
@@ -260,17 +260,17 @@ const userService: UserService = {
       updatedAt,
       id
     );
-    const row = db.prepare('select * from users where id = ?').get(id);
+    const row = db.prepare('select * from users where id = ?').get(id) as any;
     return userFromRow(row);
   }
 };
 
 const apiKeyService: ApiKeyService = {
   async list(userId?: string) {
-    const rows = userId
+    const rows = (userId
       ? db.prepare('select * from api_keys where user_id = ?').all(userId)
-      : db.prepare('select * from api_keys').all();
-    return rows.map((row: any) => ({
+      : db.prepare('select * from api_keys').all()) as any[];
+    return rows.map((row) => ({
       id: row.id,
       name: row.name,
       scopes: JSON.parse(row.scopes || '[]'),
@@ -301,7 +301,7 @@ const apiKeyService: ApiKeyService = {
 const recordLoginAttempt = (email: string, ip: string | undefined, ok: boolean) => {
   const row = db
     .prepare('select * from login_attempts where email = ? and ip = ?')
-    .get(email, ip || '');
+    .get(email, ip || '') as any;
   const now = nowIso();
   if (ok) {
     if (row) {
@@ -333,7 +333,7 @@ const recordLoginAttempt = (email: string, ip: string | undefined, ok: boolean) 
 const checkLockout = (email: string, ip: string | undefined) => {
   const row = db
     .prepare('select * from login_attempts where email = ? and ip = ?')
-    .get(email, ip || '');
+    .get(email, ip || '') as any;
   if (!row || !row.locked_until) return false;
   return new Date(row.locked_until).getTime() > Date.now();
 };
@@ -341,7 +341,7 @@ const checkLockout = (email: string, ip: string | undefined) => {
 const authService: AuthService = {
   async loginWithPassword(email, password, context) {
     if (checkLockout(email, context?.ip)) throw new Error('account_locked');
-    const row = db.prepare('select * from users where email = ?').get(email);
+    const row = db.prepare('select * from users where email = ?').get(email) as any;
     if (!row) {
       recordLoginAttempt(email, context?.ip, false);
       throw new Error('invalid_credentials');
@@ -355,7 +355,7 @@ const authService: AuthService = {
     return userFromRow(row);
   },
   async registerWithPassword(email, password, rolesInput) {
-    const existing = db.prepare('select * from users where email = ?').get(email);
+    const existing = db.prepare('select * from users where email = ?').get(email) as any;
     if (existing) throw new Error('user_exists');
     const id = randomUUID();
     const now = nowIso();
@@ -377,7 +377,7 @@ const authService: AuthService = {
     const payload = jwt.verify(token, secret) as { sub?: string; email?: string };
     const email = payload.email || payload.sub;
     if (!email) throw new Error('invalid_credentials');
-    const existing = db.prepare('select * from users where email = ?').get(email);
+    const existing = db.prepare('select * from users where email = ?').get(email) as any;
     if (!existing) throw new Error('invalid_credentials');
     return userFromRow(existing);
   },
@@ -402,7 +402,7 @@ const authService: AuthService = {
     return { id: sessionId, userId, createdAt: now, ip: context?.ip, userAgent: context?.userAgent };
   },
   async getSession(sessionId) {
-    const row = db.prepare('select * from sessions where id = ?').get(sessionId);
+    const row = db.prepare('select * from sessions where id = ?').get(sessionId) as any;
     if (!row) return null;
     if (row.revoked_at) return null;
     if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) return null;

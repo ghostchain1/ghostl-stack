@@ -41,7 +41,8 @@ export const buildWalletAdminRouter = (wallets: WalletService, ghostWallet: Ghos
   });
 
   router.get('/:id', requirePermission('wallets:read'), async (req, res) => {
-    const wallet = await wallets.get(req.params.id);
+    const walletId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const wallet = await wallets.get(walletId);
     if (!wallet) {
       res.status(404).json({ error: 'not_found' });
       return;
@@ -129,7 +130,8 @@ export const buildWalletAdminRouter = (wallets: WalletService, ghostWallet: Ghos
 
   router.post('/:id/rotate', requirePermission('wallets:write'), async (req, res) => {
     try {
-      const rotated = await ghostWallet.rotateWallet(req.params.id);
+      const walletId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const rotated = await ghostWallet.rotateWallet(walletId);
       res.json(sanitize(rotated.wallet));
     } catch (err) {
       res.status(400).json({ error: (err as Error).message });
@@ -138,7 +140,8 @@ export const buildWalletAdminRouter = (wallets: WalletService, ghostWallet: Ghos
 
   router.patch('/:id', requirePermission('wallets:write'), async (req, res) => {
     try {
-      const updated = await wallets.update(req.params.id, req.body || {});
+      const walletId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const updated = await wallets.update(walletId, req.body || {});
       res.json(updated);
     } catch (err) {
       res.status(400).json({ error: (err as Error).message });
@@ -146,7 +149,8 @@ export const buildWalletAdminRouter = (wallets: WalletService, ghostWallet: Ghos
   });
 
   router.delete('/:id', requirePermission('wallets:write'), async (req, res) => {
-    await wallets.delete(req.params.id);
+    const walletId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    await wallets.delete(walletId);
     res.json({ ok: true });
   });
 

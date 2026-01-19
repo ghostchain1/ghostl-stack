@@ -7,13 +7,13 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "dotenv": "^16.4.5",
+    "dotenv": "^17.2.3",
     "ethers": "^6.13.2",
-    "express": "^4.19.2"
+    "express": "^5.2.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^22.9.0",
-    "typescript": "^5.6.3"
+    "typescript": "5.4.5"
   }
 }
