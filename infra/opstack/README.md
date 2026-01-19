@@ -24,6 +24,11 @@ cp infra/opstack/.env.secrets.sample infra/opstack/.env.secrets  # keys; do not 
 bash infra/scripts/opstack/keys/init.sh                     # regenerates keys/addresses
 # Optional: point GATE_GUARD_URL at your Ghost Guard instance (default host:7070).
 
+# Optional: validate bind-mount paths before boot
+bash infra/scripts/opstack/validate-mounts.sh l2
+# For L3 config (if enabled):
+bash infra/scripts/opstack/validate-mounts.sh l3
+
 # 3) Ensure GhostChain L1 is running (separate stack)
 pushd infra/ghostchain && bash scripts/up.sh && popd
 
