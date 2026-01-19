@@ -10,6 +10,8 @@ if [ ! -f "$OP_DIR/.env" ]; then
   exit 1
 fi
 
+bash "$ROOT/infra/scripts/opstack/validate-mounts.sh" l2
+
 set -a
 source "$OP_DIR/.env"
 [ -f "$OP_DIR/.env.secrets" ] && source "$OP_DIR/.env.secrets"

@@ -17,6 +17,8 @@ if [ ! -f "$L3_ENV_FILE" ]; then
   exit 1
 fi
 
+bash "$ROOT/infra/scripts/opstack/validate-mounts.sh" l3
+
 set -a
 source "$OP_DIR/.env"
 [ -f "$OP_DIR/.env.secrets" ] && source "$OP_DIR/.env.secrets"
