@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card } from '@ghostl/ui';
 import { resolveApiBase } from '../../lib/runtime';
+import { jsonWithCsrf } from '../../lib/csrf';
+import type { Role } from './access-policy';
 
 const API_URL = resolveApiBase();
 const LOCAL_STATUS_TIMEOUT = 2500;
@@ -11,31 +13,25 @@ type User = {
   id: string;
   email?: string;
   wallets?: string[];
-  roles: string[];
+  role: Role;
 };
 
-type Role = {
-  id: string;
-  name: string;
-  permissions: string[];
-};
+const availableRoles: Role[] = ['READONLY', 'OPERATOR', 'ADMIN'];
 
 export function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
   const [status, setStatus] = useState<string>('');
-  const [newUser, setNewUser] = useState<{ email: string; wallets: string; roles: string }>({
+  const [newUser, setNewUser] = useState<{ email: string; wallets: string; role: Role }>({
     email: '',
     wallets: '',
-    roles: 'viewer'
+    role: 'READONLY'
   });
   const [walletInputs, setWalletInputs] = useState<Record<string, string>>({});
 
-  const roleMap = useMemo(() => Object.fromEntries(roles.map((r) => [r.id, r])), [roles]);
   const summary = useMemo(() => {
     const walletTotal = users.reduce((acc, u) => acc + (u.wallets?.length || 0), 0);
     const roleSet = new Set<string>();
-    users.forEach((u) => (u.roles || []).forEach((r) => roleSet.add(r)));
+    users.forEach((u) => roleSet.add(u.role));
     return { users: users.length, wallets: walletTotal, roles: roleSet.size };
   }, [users]);
 
@@ -47,15 +43,10 @@ export function UserManagement() {
   const load = async () => {
     setStatus('Loading users...');
     try {
-      const [uRes, rRes] = await Promise.all([
-        fetch(`${API_URL}/users`, { credentials: 'include' }),
-        fetch(`${API_URL}/roles`, { credentials: 'include' })
-      ]);
-      if (!uRes.ok || !rRes.ok) throw new Error('auth_required');
+      const uRes = await fetch(`${API_URL}/users`, { credentials: 'include' });
+      if (!uRes.ok) throw new Error('auth_required');
       const uJson = (await uRes.json()) as User[];
-      const rJson = (await rRes.json()) as Role[];
       setUsers(uJson);
-      setRoles(rJson);
       setStatus('');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to load users';
@@ -76,17 +67,17 @@ export function UserManagement() {
     try {
       const res = await fetch(`${API_URL}/users`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: jsonWithCsrf(),
         credentials: 'include',
         body: JSON.stringify({
           email: newUser.email,
           wallets: newUser.wallets ? newUser.wallets.split(',').map((w) => w.trim()) : [],
-          roles: newUser.roles ? newUser.roles.split(',').map((r) => r.trim()) : ['viewer']
+          role: newUser.role
         })
       });
       if (!res.ok) throw new Error(`Create failed ${res.status}`);
       await load();
-      setNewUser({ email: '', wallets: '', roles: 'viewer' });
+      setNewUser({ email: '', wallets: '', role: 'READONLY' });
       flashStatus('User created');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Create failed';
@@ -99,7 +90,7 @@ export function UserManagement() {
     try {
       const res = await fetch(`${API_URL}/users/${id}`, {
         method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
+        headers: jsonWithCsrf(),
         credentials: 'include',
         body: JSON.stringify(update)
       });
@@ -138,7 +129,7 @@ export function UserManagement() {
             <span className="muted">across users</span>
           </div>
         </Card>
-        <Card title="Roles" subtitle="Unique role ids">
+        <Card title="Roles" subtitle="Unique roles">
           <div className="stack">
             <div style={{ fontSize: 28, fontWeight: 800 }}>{summary.roles}</div>
             <span className="muted">coverage</span>
@@ -146,7 +137,7 @@ export function UserManagement() {
         </Card>
       </div>
 
-      <Card title="Create user" subtitle="SSO or wallet-managed">
+      <Card title="Create user" subtitle="Email + role">
         <div className="stack" style={{ gap: 8 }}>
           <div className="inline-form" style={{ gap: 8 }}>
             <input
@@ -162,12 +153,17 @@ export function UserManagement() {
               onChange={(e) => setNewUser((u) => ({ ...u, wallets: e.target.value }))}
             />
           </div>
-          <input
-            className="input"
-            placeholder="roles (comma separated)"
-            value={newUser.roles}
-            onChange={(e) => setNewUser((u) => ({ ...u, roles: e.target.value }))}
-          />
+          <select
+            className="select"
+            value={newUser.role}
+            onChange={(e) => setNewUser((u) => ({ ...u, role: e.target.value as Role }))}
+          >
+            {availableRoles.map((role) => (
+              <option key={role} value={role}>
+                {role}
+              </option>
+            ))}
+          </select>
           <Button onClick={createUser}>Create</Button>
           {status && <span className="muted">{status}</span>}
         </div>
@@ -178,25 +174,17 @@ export function UserManagement() {
           <Card key={u.id} title={u.email || u.id} subtitle={u.id}>
             <div className="stack" style={{ gap: 8 }}>
               <div className="stack">
-                <span className="muted">Roles</span>
-                <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-                  {(u.roles || []).map((r) => (
-                    <Badge key={r}>{r}</Badge>
-                  ))}
+                <span className="muted">Role</span>
+                <div className="row" style={{ gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <Badge>{u.role}</Badge>
                   <select
                     className="select"
-                    onChange={(e) => {
-                      const role = e.target.value;
-                      if (!role) return;
-                      const next = Array.from(new Set([...(u.roles || []), role]));
-                      updateUser(u.id, { roles: next });
-                    }}
-                    defaultValue=""
+                    value={u.role}
+                    onChange={(e) => updateUser(u.id, { role: e.target.value as Role })}
                   >
-                    <option value="">Add role…</option>
-                    {roles.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.name || r.id}
+                    {availableRoles.map((role) => (
+                      <option key={role} value={role}>
+                        {role}
                       </option>
                     ))}
                   </select>
@@ -244,16 +232,6 @@ export function UserManagement() {
                 </div>
               </div>
 
-              <div className="stack">
-                <span className="muted">Permissions (derived)</span>
-                <div className="stack" style={{ gap: 2 }}>
-                  {(u.roles || []).flatMap((r) => roleMap[r]?.permissions || []).map((p) => (
-                    <span key={`${u.id}-${p}`} className="muted" style={{ fontSize: 12 }}>
-                      {p}
-                    </span>
-                  ))}
-                </div>
-              </div>
             </div>
           </Card>
         ))}

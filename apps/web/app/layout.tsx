@@ -12,10 +12,7 @@ export const metadata = {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const session = await fetchServerSession();
-  const initialSession =
-    session.user || session.roles || session.permissions
-      ? { user: { email: session.user?.email, roles: session.roles, permissions: session.permissions }, loading: false }
-      : undefined;
+  const initialSession = session.user ? { user: session.user, loading: false } : undefined;
   return (
     <html lang="en">
       <body>

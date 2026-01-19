@@ -1,4 +1,5 @@
 import { resolveApiBase } from '../../lib/runtime';
+import { jsonWithCsrf } from '../../lib/csrf';
 
 const API_URL = resolveApiBase();
 
@@ -14,7 +15,7 @@ export async function bridgeTransfer(params: {
 }) {
   const res = await fetch(`${API_URL}/wallet/bridge`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: jsonWithCsrf(),
     credentials: 'include',
     body: JSON.stringify(params)
   });
@@ -53,7 +54,7 @@ export async function sendFunds(params: {
 }) {
   const res = await fetch(`${API_URL}/wallet/send`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: jsonWithCsrf(),
     credentials: 'include',
     body: JSON.stringify(params)
   });
@@ -72,7 +73,7 @@ export async function fundWallet(params: {
 }) {
   const res = await fetch(`${API_URL}/wallet/fund`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: jsonWithCsrf(),
     credentials: 'include',
     body: JSON.stringify(params)
   });
@@ -93,7 +94,7 @@ export async function swapTokens(params: {
 }) {
   const res = await fetch(`${API_URL}/wallet/swap`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: jsonWithCsrf(),
     credentials: 'include',
     body: JSON.stringify(params)
   });
@@ -141,7 +142,7 @@ export async function executeSwap(params: {
 }) {
   const res = await fetch(`${API_URL}/swap/execute`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: jsonWithCsrf(),
     credentials: 'include',
     body: JSON.stringify(params)
   });
