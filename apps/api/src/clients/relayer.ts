@@ -1,4 +1,3 @@
-import { fetch } from 'undici';
 
 export class RelayerClient {
   constructor(private baseUrl: string) {}
