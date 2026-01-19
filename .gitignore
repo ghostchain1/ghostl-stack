@@ -44,6 +44,7 @@ services/ghost-rollup-challenger/.env.l3
 
 # local scratch
 .tmp/
+.gomodcache/
 
 # forge broadcast artifacts
 infra/opstack/broadcast/

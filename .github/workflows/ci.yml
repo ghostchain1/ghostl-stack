@@ -11,10 +11,13 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.21.0
 
       - name: Install workspace deps
         run: npm ci
+
+      - name: Enforce Node version
+        run: npm run node:check
 
       - name: Lint
         run: npm run lint

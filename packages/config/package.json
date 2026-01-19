@@ -6,5 +6,8 @@
   "types": "index.d.ts",
   "scripts": {
     "lint": "echo \"TODO: lint\""
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
   }
 }

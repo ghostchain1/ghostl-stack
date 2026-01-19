@@ -1,4 +1,3 @@
-import { fetch } from 'undici';
 
 export class GuardClient {
   constructor(private baseUrl: string, private adminToken?: string) {}

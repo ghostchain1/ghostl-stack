@@ -3,7 +3,7 @@
   "compilerOptions": {
     "outDir": "../../dist/apps/api",
     "rootDir": "../..",
-    "lib": ["ES2021"],
+    "lib": ["ES2022"],
     "types": ["node", "express-session"],
     "typeRoots": ["./src/types", "./node_modules/@types", "../../node_modules/@types"],
     "noEmitOnError": true
