@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../../src/lib/api';
 import { resolveApiBase } from '../../src/lib/runtime';
+import { jsonWithCsrf } from '../../src/lib/csrf';
 
 type ComplianceFinding = { id: string; area: string; severity: string; detail: string };
 type ComplianceReport = { id: string; period: string; status: string; generatedAt: string; controls?: string[]; findings?: ComplianceFinding[]; exportedAt?: string };
@@ -87,7 +88,7 @@ export default function CompliancePage() {
                   try {
                     const res = await fetch(`${API_URL}/compliance/reports`, {
                       method: 'POST',
-                      headers: { 'content-type': 'application/json' },
+                      headers: jsonWithCsrf(),
                       credentials: 'include',
                       body: JSON.stringify({ period })
                     });

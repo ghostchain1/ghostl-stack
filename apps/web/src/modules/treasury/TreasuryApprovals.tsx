@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { resolveApiBase } from '../../lib/runtime';
+import { jsonWithCsrf } from '../../lib/csrf';
 
 type Proposal = {
   id: string;
@@ -39,7 +40,7 @@ export function TreasuryApprovals() {
       const res = await fetch(`${API_BASE}/v1/api/treasury/approve`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'content-type': 'application/json' },
+        headers: jsonWithCsrf(),
         body: JSON.stringify({ proposalId: id, signer: 'ui' })
       });
       const json = await res.json().catch(() => ({}));

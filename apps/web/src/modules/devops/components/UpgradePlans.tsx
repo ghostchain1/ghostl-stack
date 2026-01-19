@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { resolveApiBase } from '../../../lib/runtime';
+import { jsonWithCsrf } from '../../../lib/csrf';
 
 type Step = {
   id: string;
@@ -24,7 +25,6 @@ const API_BASE = resolveApiBase();
 export function UpgradePlans() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(false);
-  const [token, setToken] = useState('');
   const [message, setMessage] = useState('');
 
   const load = async () => {
@@ -46,11 +46,7 @@ export function UpgradePlans() {
 
   const act = async (planId: string, action: 'approve' | 'dryrun' | 'execute') => {
     setMessage('');
-    const headers: Record<string, string> = { 'content-type': 'application/json' };
-    if (action !== 'approve') {
-      headers['x-execution-approve'] = 'yes';
-      if (token) headers['x-execution-token'] = token;
-    }
+    const headers = jsonWithCsrf(action !== 'approve' ? { 'x-execution-approve': 'yes' } : {});
     const url =
       action === 'approve'
         ? `${API_BASE}/v1/devops/upgrade-plans/${planId}/approve`
@@ -73,16 +69,9 @@ export function UpgradePlans() {
     <div className="card">
       <div style={{ fontWeight: 700, marginBottom: 8 }}>Upgrade plans</div>
       <div className="muted" style={{ marginBottom: 8 }}>
-        Approvals require two unique users; execution requires approval header + token.
+        Approvals require two unique users; execution requires the approval header.
       </div>
       <div className="row" style={{ gap: 8, alignItems: 'center', marginBottom: 8 }}>
-        <input
-          type="text"
-          placeholder="Execution token"
-          value={token}
-          onChange={(e) => setToken(e.target.value)}
-          style={{ flex: 1, padding: '6px 8px' }}
-        />
         <button onClick={load} disabled={loading}>
           Refresh
         </button>

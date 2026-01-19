@@ -3,8 +3,9 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { resolveApiBase } from '../../lib/runtime';
+import { normalizeRole, type Role } from './access-policy';
 
-export type SessionUser = { id?: string; email?: string; roles?: string[]; permissions?: string[] };
+export type SessionUser = { id?: string; email?: string; role?: Role };
 export type SessionState = {
   user?: SessionUser;
   loading: boolean;
@@ -19,11 +20,16 @@ export function SessionProvider({ children, initial }: { children: ReactNode; in
     if (initial?.user) return;
     const load = async () => {
       try {
-        const res = await fetch(`${resolveApiBase()}/auth/session`, { credentials: 'include' });
+        const res = await fetch(`${resolveApiBase()}/api/auth/me`, { credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
+          const rawUser = data?.user ?? data;
+          if (!rawUser?.id) {
+            setState({ loading: false });
+            return;
+          }
           setState({
-            user: { id: data.user?.id, email: data.user?.email, roles: data.roles, permissions: data.permissions },
+            user: { id: rawUser.id, email: rawUser.email, role: normalizeRole(rawUser.role ?? data.role) },
             loading: false
           });
           return;

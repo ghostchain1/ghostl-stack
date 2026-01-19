@@ -116,7 +116,7 @@ const API_URL = resolveApiBase();
 
 export function AiCommandCenter() {
   const session = useSession();
-  const isAdmin = session.user?.roles?.includes('admin') ?? false;
+  const isAdmin = session.user?.role === 'ADMIN';
   const [chain, setChain] = useState<ChainRef>('l2');
   const [txHash, setTxHash] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
