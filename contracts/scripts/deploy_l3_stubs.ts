@@ -1,4 +1,7 @@
-import { ethers } from "hardhat";
+import { ethers, artifacts, network } from "hardhat";
+import fs from "fs";
+import path from "path";
+import crypto from "node:crypto";
 
 async function main() {
   const rpc = process.env.RPC_L2 ?? "http://localhost:29545";
@@ -12,6 +15,10 @@ async function main() {
   console.log("Deploying L3 stubs from", await signer.getAddress(), "to", rpc);
   const net = await provider.getNetwork();
   console.log("Network", net);
+
+  const outputDir = process.env.OUTPUT_DIR ?? path.resolve(__dirname, "..", "deployments", network.name);
+  const outputFile = process.env.OUTPUT_FILE ?? path.join(outputDir, "l3.json");
+  const version = process.env.CONTRACTS_VERSION ?? "0.0.1";
 
   const L2OO = await ethers.getContractFactory("MockL2OutputOracle", signer);
   const l2oo = await L2OO.deploy(0);
@@ -27,9 +34,30 @@ async function main() {
   const dgfAddress = await dgf.getAddress();
   console.log("MockDisputeGameFactory deployed at", dgfAddress);
 
-  console.log("\nSet these for L3 proposer/batcher:");
-  console.log("  L3_L2OO_ADDRESS=", l2ooAddress);
-  console.log("  L3_GAME_FACTORY_ADDRESS=", dgfAddress);
+  const chainId = Number((await provider.getNetwork()).chainId);
+  const entries = [
+    { name: "MockL2OutputOracle", address: l2ooAddress },
+    { name: "MockDisputeGameFactory", address: dgfAddress }
+  ];
+  const contracts = await Promise.all(
+    entries.map(async (entry) => {
+      const artifact = await artifacts.readArtifact(entry.name);
+      const abiHash = crypto.createHash("sha256").update(JSON.stringify(artifact.abi)).digest("hex");
+      return {
+        name: entry.name,
+        address: entry.address,
+        chainId,
+        layer: "l3",
+        abi: artifact.abi,
+        abiHash,
+        version,
+        deployedAt: new Date().toISOString()
+      };
+    })
+  );
+  fs.mkdirSync(outputDir, { recursive: true });
+  fs.writeFileSync(outputFile, JSON.stringify({ network: network.name, layer: "l3", contracts }, null, 2));
+  console.log("Wrote deployments to", outputFile);
 }
 
 main().catch((err) => {

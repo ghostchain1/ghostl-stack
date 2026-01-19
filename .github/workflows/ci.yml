@@ -35,6 +35,36 @@ jobs:
         working-directory: contracts
         run: npm test
 
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Foundry tests
+        working-directory: contracts
+        run: |
+          npm run test:foundry
+          npm run test:invariant
+
+      - name: Formal - Slither
+        working-directory: contracts
+        run: npm run formal:slither
+
+      - name: Formal - Scribble
+        working-directory: contracts
+        run: npm run formal:scribble
+
+      - name: Formal - Echidna
+        working-directory: contracts
+        run: npm run formal:echidna
+
+      - name: Formal - Certora (optional)
+        if: ${{ secrets.CERTORAKEY != '' }}
+        working-directory: contracts
+        env:
+          CERTORAKEY: ${{ secrets.CERTORAKEY }}
+        run: npm run formal:certora
+
       - name: Guard install
         working-directory: services/ghost-guard
         run: npm ci

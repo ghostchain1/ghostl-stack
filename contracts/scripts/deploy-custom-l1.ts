@@ -1,6 +1,7 @@
-import { ethers } from "hardhat";
+import { ethers, artifacts, network } from "hardhat";
 import fs from "fs";
 import path from "path";
+import crypto from "node:crypto";
 
 function getEnv(name: string, fallback?: string) {
   const v = process.env[name] ?? fallback;
@@ -19,7 +20,9 @@ async function main() {
   const overhead = BigInt(getEnv("OVERHEAD", "2100"));
   const scalar = BigInt(getEnv("SCALAR", "1000000"));
   const proposer = getEnv("PROPOSER", ethers.ZeroAddress);
-  const outputFile = getEnv("OUTPUT_FILE", path.join(process.cwd(), "../infra/opstack/config/l1-deployments.custom.json"));
+  const outputDir = getEnv("OUTPUT_DIR", path.join(process.cwd(), "deployments", network.name));
+  const outputFile = getEnv("OUTPUT_FILE", path.join(outputDir, "l1.json"));
+  const version = process.env.CONTRACTS_VERSION ?? "0.0.1";
 
   const [deployer] = await ethers.getSigners();
   console.log(`Deployer: ${deployer.address}`);
@@ -54,15 +57,34 @@ async function main() {
   await l1Bridge.waitForDeployment();
   console.log(`L1 StandardBridge: ${l1Bridge.target as string}`);
 
-  const result = {
-    L1CrossDomainMessenger: messenger.target as string,
-    SystemConfig: systemConfig.target as string,
-    OptimismPortal: portal.target as string,
-    L1OutputOracle: outputOracle.target as string,
-    DisputeGameFactory: dgf.target as string,
-    L1StandardBridge: l1Bridge.target as string
-  };
+  const contracts = [
+    { name: "L1CrossDomainMessenger", address: messenger.target as string },
+    { name: "L1SystemConfig", address: systemConfig.target as string },
+    { name: "L1OptimismPortal", address: portal.target as string },
+    { name: "L1OutputOracle", address: outputOracle.target as string },
+    { name: "L1DisputeGameFactory", address: dgf.target as string },
+    { name: "StandardBridge", address: l1Bridge.target as string }
+  ];
+  const chainId = Number((await ethers.provider.getNetwork()).chainId);
+  const enriched = await Promise.all(
+    contracts.map(async (entry) => {
+      const artifact = await artifacts.readArtifact(entry.name);
+      const abiHash = crypto.createHash("sha256").update(JSON.stringify(artifact.abi)).digest("hex");
+      return {
+        name: entry.name,
+        address: entry.address,
+        chainId,
+        layer: "l1",
+        abi: artifact.abi,
+        abiHash,
+        version,
+        deployedAt: new Date().toISOString()
+      };
+    })
+  );
+  const result = { network: network.name, layer: "l1", contracts: enriched };
 
+  fs.mkdirSync(outputDir, { recursive: true });
   fs.writeFileSync(outputFile, JSON.stringify(result, null, 2) + "\n");
   console.log(`Wrote deployments to ${outputFile}`);
 }

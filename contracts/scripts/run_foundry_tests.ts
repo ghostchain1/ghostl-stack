@@ -1,0 +1,34 @@
+import { spawnSync } from "node:child_process";
+import { mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
+
+const args = process.argv.slice(2);
+const mode = args.includes("--mode") ? args[args.indexOf("--mode") + 1] : "default";
+const root = path.resolve(__dirname, "..");
+const reportsDir = path.join(root, "reports", "foundry");
+mkdirSync(reportsDir, { recursive: true });
+
+const forgeArgs = ["test", "--json", "--seed", "0x2a"];
+if (mode === "fuzz") {
+  forgeArgs.push("--fuzz-runs", "512");
+}
+if (mode === "invariant") {
+  forgeArgs.push("--match-test", "invariant_");
+}
+
+const result = spawnSync("forge", forgeArgs, { cwd: root, stdio: "pipe" });
+if (result.stdout && result.stdout.length) {
+  writeFileSync(path.join(reportsDir, "last.json"), result.stdout);
+  process.stdout.write(result.stdout);
+}
+if (result.stderr && result.stderr.length) {
+  process.stderr.write(result.stderr);
+}
+const summary = {
+  mode,
+  status: result.status === 0 ? "ok" : "failed",
+  exitCode: result.status ?? 1,
+  updatedAt: new Date().toISOString()
+};
+writeFileSync(path.join(reportsDir, "summary.json"), JSON.stringify(summary, null, 2));
+process.exit(result.status ?? 1);

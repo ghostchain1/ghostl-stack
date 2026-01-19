@@ -25,8 +25,23 @@ const OP_L3_CHAIN_ID = Number(process.env.OP_L3_CHAIN_ID ?? 902);
 
 const REQUEST_TIMEOUT_MS = 120_000;
 
+const enableModelChecker = process.env.FORMAL_VERIFY === "true";
+const soliditySettings = enableModelChecker
+  ? {
+      optimizer: { enabled: true, runs: 200 },
+      modelChecker: {
+        engine: "chc",
+        timeout: 60_000,
+        targets: ["assert", "require"]
+      }
+    }
+  : { optimizer: { enabled: true, runs: 200 } };
+
 const config: HardhatUserConfig = {
-  solidity: "0.8.24",
+  solidity: {
+    version: "0.8.24",
+    settings: soliditySettings
+  },
   paths: {
     sources: "./src"
   },

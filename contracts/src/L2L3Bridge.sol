@@ -68,6 +68,8 @@ contract L2L3Bridge {
     }
 
     /// Finalize step: guarded by policy (ALLOW/DELAY/PAUSE + risk threshold)
+    /// #if_succeeds {:msg "only relayer finalize"} msg.sender == relayer;
+    /// #if_succeeds {:msg "deposit consumed"} depositTime[keccak256(abi.encode(from, to, amount, nonce))] == 0;
     function finalizeToL3(address from, address to, uint256 amount, uint256 nonce) external onlyRelayer {
         bytes32 key = keccak256(abi.encode(from, to, amount, nonce));
         uint256 t = depositTime[key];
@@ -102,6 +104,8 @@ contract L2L3Bridge {
     }
 
     /// @notice Release escrowed L2 tokens after a corresponding burn on L3 (called by relayer).
+    /// #if_succeeds {:msg "only relayer release"} msg.sender == relayer;
+    /// #if_succeeds {:msg "withdraw marked"} erc20WithdrawProcessed[keccak256(abi.encode(token, from, to, amount, nonce))];
     function releaseERC20FromL3(address token, address from, address to, uint256 amount, uint256 nonce) external onlyRelayer {
         bytes32 key = keccak256(abi.encode(token, from, to, amount, nonce));
         require(!erc20WithdrawProcessed[key], "already");

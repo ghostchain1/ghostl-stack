@@ -21,6 +21,7 @@
     "opstack:check": "npm run env:sync:opstack && npm run env:sync:opstack:l3 && npm run preflight:opstack"
   },
   "devDependencies": {
+    "next": "^15.2.3",
     "@typescript-eslint/eslint-plugin": "^8.14.0",
     "@typescript-eslint/parser": "^8.14.0",
     "eslint": "^9.8.0",

@@ -44,6 +44,8 @@ import { buildAiRouter } from './modules/ai/router';
 import { ghostWalletRpcManager } from './services/rpc-manager';
 import { createSessionStore } from './services/session-store';
 import { emitEvent, getEvents, getWebhookDeliveries, getWebhookSummary } from './lib/events';
+import { createContractJob, readContractJob, readContractJobLog } from './lib/contract-jobs';
+import { listContracts as listRegisteredContracts, registerContracts } from './lib/contract-registry-store';
 import './types/express';
 // Load environment variables from local env file when running locally (cwd may be repo root or apps/api)
 loadEnv({ path: path.join(process.cwd(), '.env.local') });
@@ -118,6 +120,20 @@ const parseCorsAllowlist = () => {
   );
 };
 
+const resolveRepoRoot = () => {
+  const cwd = process.cwd();
+  if (fs.existsSync(path.join(cwd, 'contracts'))) return cwd;
+  const parent = path.resolve(cwd, '..');
+  if (fs.existsSync(path.join(parent, 'contracts'))) return parent;
+  return cwd;
+};
+
+const repoRoot = resolveRepoRoot();
+const contractsRoot = path.join(repoRoot, 'contracts');
+const contractsDeploymentsDir = path.join(contractsRoot, 'deployments');
+const contractsReportsDir = path.join(contractsRoot, 'reports');
+const contractsDocsDir = path.join(repoRoot, 'docs', 'contracts');
+
 const isLocalOrigin = (origin: string) => {
   try {
     const { hostname } = new URL(origin);
@@ -176,6 +192,12 @@ const sameOrigin = (req: express.Request) => {
   }
 };
 
+const parseEmailList = (value?: string | null) =>
+  (value || '')
+    .split(',')
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean);
+
 const requireAuth: RequestHandler = (req, res, next) => {
   if (!req.session?.userId) {
     res.status(401).json({ error: 'unauthenticated' });
@@ -186,11 +208,18 @@ const requireAuth: RequestHandler = (req, res, next) => {
 
 const requireAdmin: RequestHandler = (req, res, next) => {
   const roles = (req.session?.roles || []).map((role) => String(role).toLowerCase());
-  if (roles.includes('admin')) {
+  if (roles.includes('admin') || roles.includes('owner')) {
     next();
     return;
   }
   res.status(403).json({ error: 'forbidden' });
+};
+
+const hasContractsToken = (req: express.Request) => {
+  const token = process.env.CONTRACTS_REGISTRY_TOKEN;
+  if (!token) return process.env.NODE_ENV !== 'production';
+  const header = req.header('x-contracts-token');
+  return Boolean(header && header === token);
 };
 
 app.use((req, res, next) => {
@@ -1112,6 +1141,32 @@ app.get(['/v1/rpc/pool', '/rpc/pool'], requirePermission('integrations:read'), (
 
 identityServicesPromise.then(async (identity) => {
   auditLogService = identity.auditLogService;
+  const bootstrapOwnerEmails = parseEmailList(env.BOOTSTRAP_OWNER_EMAILS);
+  const bootstrapOwnerPassword = env.BOOTSTRAP_OWNER_PASSWORD;
+  if (bootstrapOwnerEmails.length && bootstrapOwnerPassword) {
+    try {
+      const existingUsers = await identity.userService.list();
+      if (existingUsers.length === 0) {
+        const createdEmails: string[] = [];
+        for (const email of bootstrapOwnerEmails) {
+          const owner = await identity.authService.registerWithPassword(email, bootstrapOwnerPassword, ['owner']);
+          await identity.auditLogService.append({
+            actorId: owner.id,
+            action: 'bootstrap:owner',
+            resource: owner.id,
+            meta: { source: 'startup', email }
+          });
+          createdEmails.push(email);
+        }
+        if (createdEmails.length) {
+          console.log(`Bootstrapped owner user(s) ${createdEmails.join(', ')}`);
+        }
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'bootstrap_failed';
+      console.warn(`Bootstrap owner failed: ${message}`);
+    }
+  }
   const bootstrapEmail = env.BOOTSTRAP_ADMIN_EMAIL;
   const bootstrapPassword = env.BOOTSTRAP_ADMIN_PASSWORD;
   if (bootstrapEmail && bootstrapPassword) {
@@ -1352,11 +1407,27 @@ app.post(['/v1/api/bridge/fees', '/api/bridge/fees'], requirePermission('bridge:
 app.get(['/v1/api/contracts', '/api/contracts'], requirePermission('contracts:read'), async (_req, res) => {
   const registry = await proxyJson<{ contracts?: Array<Record<string, unknown>> }>(`${servicesBase.contracts}/contracts`, { contracts: [] });
   const risks = await proxyJson<{ contracts?: Array<Record<string, unknown>> }>(`${servicesBase.contractRisk}/risk`, { contracts: [] });
+  const localRegistry = listRegisteredContracts();
   const pausedFlags = contractMetadata.pauseQuery ? await prometheus.query(contractMetadata.pauseQuery).catch(() => []) : [];
   const upgradeabilityFlags = contractMetadata.upgradeabilityQuery ? await prometheus.query(contractMetadata.upgradeabilityQuery).catch(() => []) : [];
 
+  const sourceContracts = [
+    ...(registry.contracts || []),
+    ...localRegistry.map((entry) => ({
+      id: entry.name,
+      name: entry.name,
+      address: entry.address,
+      registry: entry.address,
+      layer: entry.layer,
+      chainId: entry.chainId,
+      abi: entry.abi,
+      abiHash: entry.abiHash,
+      version: entry.version
+    }))
+  ];
+
   const merged =
-    registry.contracts?.map((c) => {
+    sourceContracts.map((c) => {
       const address = (c.address as string) || '';
       const pausedMetric = pausedFlags.find((p) => p.metric.address?.toLowerCase() === address.toLowerCase());
       const upgradeMetric = upgradeabilityFlags.find((u) => u.metric.address?.toLowerCase() === address.toLowerCase());
@@ -1367,6 +1438,11 @@ app.get(['/v1/api/contracts', '/api/contracts'], requirePermission('contracts:re
         proxies: c.proxyType,
         ownership: c.owner,
         verified: c.verified,
+        layer: c.layer,
+        chainId: c.chainId,
+        abi: c.abi,
+        abiHash: c.abiHash,
+        version: c.version,
         upgradeable: upgradeMetric ? upgradeMetric.value?.[1] === '1' : undefined,
         paused: pausedMetric ? pausedMetric.value?.[1] === '1' : undefined,
         desiredState: contractStates.find((s) => s.address.toLowerCase() === address.toLowerCase()),
@@ -1378,6 +1454,151 @@ app.get(['/v1/api/contracts', '/api/contracts'], requirePermission('contracts:re
 
 app.get(['/v1/api/contracts/state', '/api/contracts/state'], requirePermission('contracts:read'), async (_req, res) => {
   res.json({ ok: true, contracts: contractStates });
+});
+
+app.post(['/v1/api/contracts/register', '/api/contracts/register'], async (req, res) => {
+  const permissions = (req.session?.permissions || []) as string[];
+  const canWrite = permissions.includes('*') || permissions.includes('contracts:write');
+  if (!canWrite && !hasContractsToken(req)) {
+    res.status(403).json({ error: 'forbidden' });
+    return;
+  }
+  const body = req.body || {};
+  const entries = Array.isArray(body.contracts) ? body.contracts : body.contract ? [body.contract] : [];
+  if (!entries.length) {
+    res.status(400).json({ error: 'contract_required' });
+    return;
+  }
+  const normalized = entries.map((entry) => ({
+    name: String(entry.name || entry.id || entry.address),
+    address: String(entry.address || ''),
+    chainId: Number(entry.chainId || 0),
+    layer: String(entry.layer || 'l2'),
+    abi: entry.abi || [],
+    abiHash: String(entry.abiHash || ''),
+    version: String(entry.version || '0.0.1'),
+    deployedAt: entry.deployedAt ? String(entry.deployedAt) : undefined
+  }));
+  const stored = registerContracts(normalized);
+  res.json({ ok: true, contracts: stored });
+});
+
+app.get(['/v1/api/contracts/deployments', '/api/contracts/deployments'], requirePermission('contracts:read'), async (_req, res) => {
+  if (!fs.existsSync(contractsDeploymentsDir)) {
+    res.json({ ok: true, deployments: [] });
+    return;
+  }
+  const deployments: Array<{ network: string; layer: string; file: string }> = [];
+  const networks = fs.readdirSync(contractsDeploymentsDir, { withFileTypes: true });
+  networks.forEach((entry) => {
+    if (!entry.isDirectory()) return;
+    const dir = path.join(contractsDeploymentsDir, entry.name);
+    fs.readdirSync(dir).forEach((file) => {
+      if (!file.endsWith('.json')) return;
+      const layer = file.replace('.json', '');
+      deployments.push({ network: entry.name, layer, file: path.join(dir, file) });
+    });
+  });
+  res.json({ ok: true, deployments });
+});
+
+app.post(['/v1/api/contracts/deploy', '/api/contracts/deploy'], requirePermission('contracts:write'), async (req, res) => {
+  const { layer, network, rpc, deployerKeyEnv } = req.body || {};
+  const args = ['run', 'deploy:one-click', '--', '--layer', layer || 'all', '--network', network || 'ghostl2'];
+  if (rpc) args.push('--rpc', String(rpc));
+  if (deployerKeyEnv) args.push('--deployer-key', String(deployerKeyEnv));
+  const job = createContractJob({
+    type: 'deploy',
+    command: 'npm',
+    args,
+    cwd: contractsRoot,
+    env: process.env,
+    meta: { layer, network, rpc }
+  });
+  res.json({ ok: true, job });
+});
+
+app.get(['/v1/api/contracts/deploy/:id', '/api/contracts/deploy/:id'], requirePermission('contracts:read'), async (req, res) => {
+  const job = readContractJob(req.params.id);
+  if (!job) {
+    res.status(404).json({ error: 'job_not_found' });
+    return;
+  }
+  const offset = req.query.offset ? Number(req.query.offset) : 0;
+  const log = readContractJobLog(req.params.id, offset);
+  res.json({ ok: true, job, log });
+});
+
+app.post(['/v1/api/contracts/tests/run', '/api/contracts/tests/run'], requirePermission('contracts:write'), async (req, res) => {
+  const kind = String(req.body?.kind || 'foundry');
+  const target = kind === 'fuzz' ? 'test:fuzz' : kind === 'invariant' ? 'test:invariant' : 'test:foundry';
+  const job = createContractJob({
+    type: 'tests',
+    command: 'npm',
+    args: ['run', target],
+    cwd: contractsRoot,
+    env: process.env,
+    meta: { kind }
+  });
+  res.json({ ok: true, job });
+});
+
+app.get(['/v1/api/contracts/tests/summary', '/api/contracts/tests/summary'], requirePermission('contracts:read'), async (_req, res) => {
+  const summaryPath = path.join(contractsReportsDir, 'foundry', 'summary.json');
+  if (!fs.existsSync(summaryPath)) {
+    res.json({ ok: true, summary: null });
+    return;
+  }
+  const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+  res.json({ ok: true, summary });
+});
+
+app.post(['/v1/api/contracts/formal/run', '/api/contracts/formal/run'], requirePermission('contracts:write'), async (req, res) => {
+  const tool = String(req.body?.tool || 'slither');
+  const script = tool === 'scribble' ? 'formal:scribble' : tool === 'echidna' ? 'formal:echidna' : 'formal:slither';
+  const job = createContractJob({
+    type: 'formal',
+    command: 'npm',
+    args: ['run', script],
+    cwd: contractsRoot,
+    env: process.env,
+    meta: { tool }
+  });
+  res.json({ ok: true, job });
+});
+
+app.get(['/v1/api/contracts/formal/summary', '/api/contracts/formal/summary'], requirePermission('contracts:read'), async (_req, res) => {
+  const summaryPath = path.join(contractsReportsDir, 'formal', 'summary.json');
+  if (!fs.existsSync(summaryPath)) {
+    res.json({ ok: true, summary: null });
+    return;
+  }
+  const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+  res.json({ ok: true, summary });
+});
+
+app.get(['/v1/api/contracts/diagrams', '/api/contracts/diagrams'], requirePermission('contracts:read'), async (_req, res) => {
+  const diagramsDir = path.join(contractsDocsDir, 'diagrams');
+  if (!fs.existsSync(diagramsDir)) {
+    res.json({ ok: true, files: [] });
+    return;
+  }
+  const files = fs.readdirSync(diagramsDir).map((name) => ({
+    name,
+    path: path.join(diagramsDir, name)
+  }));
+  res.json({ ok: true, files });
+});
+
+app.get(['/v1/api/contracts/diagrams/:name', '/api/contracts/diagrams/:name'], requirePermission('contracts:read'), async (req, res) => {
+  const diagramsDir = path.join(contractsDocsDir, 'diagrams');
+  const fileName = path.basename(req.params.name);
+  const filePath = path.join(diagramsDir, fileName);
+  if (!fs.existsSync(filePath)) {
+    res.status(404).json({ error: 'diagram_not_found' });
+    return;
+  }
+  res.sendFile(path.resolve(filePath));
 });
 
 app.post(['/v1/api/contracts/pause', '/api/contracts/pause'], requirePermission('contracts:write'), async (req, res) => {

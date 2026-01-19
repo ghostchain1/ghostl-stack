@@ -127,6 +127,9 @@ const EnvSchema = z.object({
     .string()
     .default('false')
     .transform((v) => v === 'true'),
+  OWNER_EMAILS: z.string().optional(),
+  BOOTSTRAP_OWNER_EMAILS: z.string().optional(),
+  BOOTSTRAP_OWNER_PASSWORD: z.string().optional(),
   BOOTSTRAP_ADMIN_EMAIL: z.string().email().optional(),
   BOOTSTRAP_ADMIN_PASSWORD: z.string().optional(),
   AUTH_JWT_SECRET: z.string().optional(),
