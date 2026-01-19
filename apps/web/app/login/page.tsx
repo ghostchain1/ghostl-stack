@@ -39,11 +39,20 @@ function LoginClient() {
     return match ? { 'x-csrf-token': decodeURIComponent(match[1]) } : {};
   };
 
+  const buildAuthHeaders = () => {
+    const headers = new Headers({ 'content-type': 'application/json' });
+    const csrf = csrfHeader();
+    if ('x-csrf-token' in csrf) {
+      headers.set('x-csrf-token', csrf['x-csrf-token']);
+    }
+    return headers;
+  };
+
   const loginPassword = async () => {
     setStatus('Signing in...');
     const res = await fetch(`${API_URL}/auth/login/password`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', ...csrfHeader() },
+      headers: buildAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify({ email, password })
     });
@@ -60,7 +69,7 @@ function LoginClient() {
     setStatus('Creating account...');
     const res = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', ...csrfHeader() },
+      headers: buildAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify({ email, password, createWallet: true })
     });
@@ -77,7 +86,7 @@ function LoginClient() {
     setStatus('Logging in with SSO...');
     const res = await fetch(`${API_URL}/auth/login/sso`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', ...csrfHeader() },
+      headers: buildAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify({ token })
     });

@@ -27,12 +27,13 @@ export const buildNodeRouter = (deps: NodeDeps) => {
   router.get(
     '/:id',
     asyncHandler(async (req, res) => {
-      const node = await deps.inventory.get(req.params.id);
+      const nodeId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const node = await deps.inventory.get(nodeId);
       if (!node) {
         res.status(404).json({ error: 'not_found' });
         return;
       }
-      const metrics = await deps.health.getHealth(node.host || req.params.id);
+      const metrics = await deps.health.getHealth(node.host || nodeId);
       const expectedVersion = process.env.EXPECTED_NODE_VERSION;
       metrics.version = metrics.version || node.version;
       metrics.expectedVersion = expectedVersion;
@@ -44,7 +45,8 @@ export const buildNodeRouter = (deps: NodeDeps) => {
   router.get(
     '/:id/logs',
     asyncHandler(async (req, res) => {
-      const logs = await deps.health.getLogs(req.params.id, Number(req.query.tail) || 100);
+      const nodeId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const logs = await deps.health.getLogs(nodeId, Number(req.query.tail) || 100);
       res.json(logs);
     })
   );

@@ -60,10 +60,9 @@ const buildFallback = (): RegistryResponse => {
       chainId: Number(process.env.RPC_L1_CHAIN_ID || process.env.GHOSTCHAIN_L1_CHAIN_ID || '14000101'),
       name: 'GhostChain',
       layer: 'L1',
-      region: 'local',
+      regions: ['local'],
       rpc: { http: l1, ws: l1ws },
-      type: 'private',
-      status: 'active'
+      chainType: 'settlement'
     });
   }
   if (l2.length || l2ws.length) {
@@ -71,10 +70,9 @@ const buildFallback = (): RegistryResponse => {
       chainId: Number(process.env.RPC_L2_CHAIN_ID || process.env.GHOSTL2_CHAIN_ID || env.CHAIN_ID || '901'),
       name: 'GhostL2',
       layer: 'L2',
-      region: 'local',
+      regions: ['local'],
       rpc: { http: l2, ws: l2ws },
-      type: 'private',
-      status: 'active'
+      chainType: 'rollup'
     });
   }
   if (l3.length || l3ws.length) {
@@ -82,10 +80,9 @@ const buildFallback = (): RegistryResponse => {
       chainId: Number(process.env.RPC_L3_CHAIN_ID || process.env.GHOSTL3_CHAIN_ID || '903'),
       name: 'GhostL3',
       layer: 'L3',
-      region: 'local',
+      regions: ['local'],
       rpc: { http: l3, ws: l3ws },
-      type: 'private',
-      status: 'active'
+      chainType: 'rollup'
     });
   }
   return { chains };
@@ -256,7 +253,7 @@ export class GhostWalletRpcManager {
           chainId: entry.chainId,
           url,
           protocol: 'http' as const,
-          status: 'DEGRADED',
+          status: 'DEGRADED' as EndpointStatus,
           failures: [],
           recoveryCount: 0,
           lastCheckedAt: null,
@@ -267,7 +264,7 @@ export class GhostWalletRpcManager {
           chainId: entry.chainId,
           url,
           protocol: 'ws' as const,
-          status: 'DEGRADED',
+          status: 'DEGRADED' as EndpointStatus,
           failures: [],
           recoveryCount: 0,
           lastCheckedAt: null,
@@ -279,8 +276,8 @@ export class GhostWalletRpcManager {
           .map((endpoint) => ({
             chainId: entry.chainId,
             url: endpoint.url,
-            protocol: endpoint.protocol || (endpoint.url.startsWith('ws') ? 'ws' : 'http'),
-            status: 'DEGRADED',
+            protocol: (endpoint.protocol || (endpoint.url.startsWith('ws') ? 'ws' : 'http')) as 'ws' | 'http',
+            status: 'DEGRADED' as EndpointStatus,
             failures: [],
             recoveryCount: 0,
             lastCheckedAt: null,

@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card } from '@ghostl/ui';
+import type { AnalyticsEvent, WebhookStatusSummary } from '@ghostl/types';
 import type { IntegrationDefinition, IntegrationInstance, IntegrationTestResult } from '@ghostl/types/integrations';
 import { resolveApiBase } from '../../lib/runtime';
 import { RpcEndpointManager } from './components/RpcEndpointManager';
 import type { RpcEndpoint } from '@ghostl/types/integrations';
+import { useSession } from '../identity-access/session';
 
 const API_URL = resolveApiBase();
 
@@ -29,10 +31,15 @@ const toNumber = (value: string, fallback: number) => {
 };
 
 export function IntegrationsControlCenter() {
+  const session = useSession();
+  const isAdmin = session.user?.roles?.includes('admin') ?? false;
   const [definitions, setDefinitions] = useState<IntegrationDefinition[]>([]);
   const [instances, setInstances] = useState<IntegrationInstance[]>([]);
   const [rpcEndpoints, setRpcEndpoints] = useState<RpcEndpoint[]>([]);
   const [status, setStatus] = useState<string>('');
+  const [events, setEvents] = useState<AnalyticsEvent[]>([]);
+  const [webhookStatus, setWebhookStatus] = useState<WebhookStatusSummary | null>(null);
+  const [webhookDeliveries, setWebhookDeliveries] = useState<AnalyticsEvent[]>([]);
   const [selectedDefinitionId, setSelectedDefinitionId] = useState<string>('');
   const [environment, setEnvironment] = useState<IntegrationInstance['environment']>('dev');
   const [enabled, setEnabled] = useState(true);
@@ -80,6 +87,43 @@ export function IntegrationsControlCenter() {
   useEffect(() => {
     load().catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const loadActivity = async () => {
+      try {
+        const [eventsRes, webhookRes, deliveriesRes] = await Promise.all([
+          fetch(`${API_URL}/analytics/events?scope=integrations&limit=8`, { credentials: 'include' }),
+          fetch(`${API_URL}/webhooks/status`, { credentials: 'include' }),
+          fetch(`${API_URL}/webhooks/deliveries?limit=5`, { credentials: 'include' })
+        ]);
+        if (eventsRes.ok) {
+          const data = (await eventsRes.json()) as { events?: AnalyticsEvent[] };
+          setEvents(data.events || []);
+        }
+        if (webhookRes.ok) {
+          const data = (await webhookRes.json()) as WebhookStatusSummary;
+          setWebhookStatus(data);
+        }
+        if (deliveriesRes.ok) {
+          const data = (await deliveriesRes.json()) as { deliveries?: AnalyticsEvent[] };
+          setWebhookDeliveries(data.deliveries || []);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    loadActivity();
+  }, [isAdmin]);
+
+  const summarizeEvent = (event: AnalyticsEvent) => {
+    const payload = event.payload || {};
+    const summaryFields = ['instanceId', 'definitionId', 'environment', 'enabled', 'ok'];
+    const details = summaryFields
+      .map((field) => (payload as Record<string, unknown>)[field])
+      .filter((value) => value !== undefined && value !== null);
+    return details.length ? details.join(' · ') : '';
+  };
 
   const createInstance = async () => {
     if (!selectedDefinitionId) {
@@ -470,6 +514,52 @@ export function IntegrationsControlCenter() {
           );
         })}
       </div>
+      {isAdmin && (
+        <div className="card-grid">
+          <Card title="Recent Integration Activity" subtitle="Admin-only analytics">
+            {events.length === 0 && <div className="muted">No recent integration events.</div>}
+            <div className="stack">
+              {events.map((event) => (
+                <div key={event.id} className="row" style={{ justifyContent: 'space-between' }}>
+                  <div>
+                    <div>{event.type}</div>
+                    <div className="muted">{summarizeEvent(event)}</div>
+                  </div>
+                  <div className="muted">{event.at}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+          <Card title="Webhook Status" subtitle="Admin-only delivery summary">
+            {!webhookStatus && <div className="muted">No webhook data.</div>}
+            {webhookStatus && (
+              <div className="stack">
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <span className="muted">Deliveries (24h)</span>
+                  <span>{webhookStatus.total24h}</span>
+                </div>
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <span className="muted">Failures (24h)</span>
+                  <span>{webhookStatus.failures24h}</span>
+                </div>
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <span className="muted">Last delivery</span>
+                  <span>{webhookStatus.lastDeliveryAt || 'n/a'}</span>
+                </div>
+                {webhookStatus.lastError && <div className="muted">Last error: {webhookStatus.lastError}</div>}
+                <div className="stack">
+                  {webhookDeliveries.map((delivery) => (
+                    <div key={delivery.id} className="row" style={{ justifyContent: 'space-between' }}>
+                      <div>{delivery.status === 'error' ? 'Failed' : 'Delivered'}</div>
+                      <div className="muted">{delivery.at}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
       <div className="card-grid">
         <RpcEndpointManager endpoints={rpcEndpoints} />
       </div>

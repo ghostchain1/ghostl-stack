@@ -13,7 +13,8 @@ export const buildTokenRouter = (tokens: TokenService, wallets: WalletService) =
     '/wallets/:walletId/tokens',
     requirePermission('wallets:read'),
     async (req, res) => {
-      const list = await tokens.list(req.params.walletId);
+      const walletId = Array.isArray(req.params.walletId) ? req.params.walletId[0] : req.params.walletId;
+      const list = await tokens.list(walletId);
       res.json(list);
     }
   );
@@ -22,7 +23,8 @@ export const buildTokenRouter = (tokens: TokenService, wallets: WalletService) =
     '/wallets/:walletId/balances',
     requirePermission('wallets:read'),
     async (req, res) => {
-      const wallet = await wallets.get(req.params.walletId);
+      const walletId = Array.isArray(req.params.walletId) ? req.params.walletId[0] : req.params.walletId;
+      const wallet = await wallets.get(walletId);
       if (!wallet) {
         res.status(404).json({ error: 'wallet_not_found' });
         return;
@@ -71,7 +73,8 @@ export const buildTokenRouter = (tokens: TokenService, wallets: WalletService) =
         res.status(400).json({ error: parsed.error.message });
         return;
       }
-      const created = await tokens.importToken({ walletId: req.params.walletId, ...parsed.data });
+      const walletId = Array.isArray(req.params.walletId) ? req.params.walletId[0] : req.params.walletId;
+      const created = await tokens.importToken({ walletId, ...parsed.data });
       res.status(201).json(created);
     }
   );
@@ -80,7 +83,8 @@ export const buildTokenRouter = (tokens: TokenService, wallets: WalletService) =
     '/wallets/:walletId/tokens/:tokenId',
     requirePermission('wallets:write'),
     async (req, res) => {
-      await tokens.delete(req.params.tokenId);
+      const tokenId = Array.isArray(req.params.tokenId) ? req.params.tokenId[0] : req.params.tokenId;
+      await tokens.delete(tokenId);
       res.json({ ok: true });
     }
   );

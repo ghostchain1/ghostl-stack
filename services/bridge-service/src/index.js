@@ -8,8 +8,41 @@ const PROM_URL = process.env.PROM_URL || "http://localhost:9090";
 const AUTH_TOKEN = process.env.ADMIN_TOKEN || "";
 const INCIDENTS_FILE = process.env.INCIDENTS_FILE || path.join(process.cwd(), "data", "bridge-incidents.json");
 
+const parseCorsAllowlist = () => {
+  const raw = process.env.CORS_ALLOW_ORIGINS || "";
+  return new Set(
+    raw
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean)
+  );
+};
+
+const isLocalOrigin = (origin) => {
+  try {
+    const { hostname } = new URL(origin);
+    return ["localhost", "127.0.0.1", "0.0.0.0", "::1"].includes(hostname);
+  } catch {
+    return false;
+  }
+};
+
+const corsAllowlist = parseCorsAllowlist();
+const isOriginAllowed = (origin) => {
+  if (!origin) return true;
+  if (corsAllowlist.size) return corsAllowlist.has(origin);
+  if (process.env.NODE_ENV !== "production") return isLocalOrigin(origin);
+  return false;
+};
+
 const app = express();
-app.use(cors({ origin: true, credentials: true }));
+app.set("trust proxy", 1);
+app.use(
+  cors({
+    origin: (origin, callback) => callback(null, isOriginAllowed(origin)),
+    credentials: true
+  })
+);
 app.use(express.json());
 
 const promQuery = async (query) => {

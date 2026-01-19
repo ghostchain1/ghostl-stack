@@ -55,7 +55,6 @@ const buildBaseApplicant = (input: Partial<KycApplicant> & { type: KycApplicantT
   const createdAt = now();
   return {
     id: recordKey(),
-    type: input.type,
     status: 'pending' as const,
     riskLevel: 'low' as const,
     riskScore: 0,
