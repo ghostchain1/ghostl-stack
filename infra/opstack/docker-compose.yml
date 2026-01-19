@@ -107,8 +107,7 @@ services:
     - 29547:8545
     volumes:
     - ./data/l2-geth-new2:/data
-    - ./config/jwt.txt:/config/jwt.txt:ro
-    - ./config/genesis-l2.json:/config/genesis-l2.json:ro
+    - ./config:/config:ro
     entrypoint:
     - /bin/sh
     command:
@@ -145,9 +144,7 @@ services:
         condition: service_healthy
     volumes:
     - ./data/op-node:/data
-    - ./config/rollup.json:/config/rollup.json:ro
-    - ./config/jwt.txt:/config/jwt.txt:ro
-    - ./config/l1-chain.json:/config/l1-chain.json:ro
+    - ./config:/config:ro
     command:
     - op-node
     - --l1=${L1_RPC:-http://host.docker.internal:18545}
@@ -197,9 +194,7 @@ services:
         condition: service_healthy
     volumes:
     - ./data/op-sequencer:/data
-    - ./config/rollup.json:/config/rollup.json:ro
-    - ./config/jwt.txt:/config/jwt.txt:ro
-    - ./config/l1-chain.json:/config/l1-chain.json:ro
+    - ./config:/config:ro
     environment:
       OP_NODE_L1_BEACON_IGNORE: '1'
     command:
@@ -270,7 +265,7 @@ services:
     - --metrics.addr=0.0.0.0
     - --metrics.port=7301
     volumes:
-    - ./config/rollup.json:/config/rollup.json:ro
+    - ./config:/config:ro
     ports:
     - 8551:8551
     - 7301:7301
@@ -318,7 +313,7 @@ services:
     - --metrics.addr=0.0.0.0
     - --metrics.port=7302
     volumes:
-    - ./config/rollup.json:/config/rollup.json:ro
+    - ./config:/config:ro
     ports:
     - 8560:8560
     - 7302:7302

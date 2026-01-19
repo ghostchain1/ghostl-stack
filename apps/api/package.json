@@ -13,7 +13,7 @@
     "@ghostl/ghostwallet": "0.0.1",
     "@types/better-sqlite3": "^7.6.13",
     "argon2": "^0.41.1",
-    "better-sqlite3": "^9.6.0",
+    "better-sqlite3": "^11.6.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "ethers": "^6.13.2",
@@ -22,7 +22,6 @@
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^7.0.12",
     "session-file-store": "^1.5.0",
-    "undici": "^7.18.2",
     "ws": "^8.19.0",
     "zod": "^3.25.76"
   },
@@ -31,13 +30,13 @@
     "@types/express": "^5.0.6",
     "@types/express-session": "^1.17.7",
     "@types/jsonwebtoken": "^9.0.6",
-    "@types/node": "^20.19.30",
+    "@types/node": "^22.10.2",
     "@types/nodemailer": "^7.0.5",
     "@types/session-file-store": "^1.2.5",
     "ts-node": "^10.9.2",
     "@types/ws": "^8.5.12"
   },
   "engines": {
-    "node": ">=20 <21"
+    "node": ">=22.21.0 <23"
   }
 }

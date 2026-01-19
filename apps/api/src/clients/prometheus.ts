@@ -1,4 +1,3 @@
-import { fetch } from 'undici';
 
 export interface PrometheusVectorResult {
   metric: Record<string, string>;

@@ -1,4 +1,3 @@
-import { fetch } from 'undici';
 
 export interface GrafanaDashboard {
   id: number;

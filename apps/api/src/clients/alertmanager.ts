@@ -1,4 +1,3 @@
-import { fetch } from 'undici';
 
 export interface AlertmanagerAlert {
   labels?: Record<string, string>;

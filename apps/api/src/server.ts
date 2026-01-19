@@ -5,7 +5,6 @@ import { config as loadEnv } from 'dotenv';
 import express, { type RequestHandler } from 'express';
 import session from 'express-session';
 import cors from 'cors';
-import { fetch } from 'undici';
 import nodemailer from 'nodemailer';
 import type {} from './types/session';
 import WebSocket from 'ws';
