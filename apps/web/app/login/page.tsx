@@ -33,19 +33,24 @@ function LoginClient() {
 
   const loginPassword = async () => {
     setStatus('Signing in...');
-    const res = await fetch(`${API_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: jsonWithCsrf(),
-      credentials: 'include',
-      body: JSON.stringify({ email, password })
-    });
-    if (res.ok) {
-      setStatus('Success. Reloading...');
-      window.location.href = returnTo;
-      return;
+    try {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: jsonWithCsrf(),
+        credentials: 'include',
+        body: JSON.stringify({ email, password })
+      });
+      if (res.ok) {
+        setStatus('Success. Reloading...');
+        window.location.href = returnTo;
+        return;
+      }
+      const err = await res.json().catch(() => ({}));
+      setStatus(`Failed: ${err.error || res.status}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Network error';
+      setStatus(`Failed: ${message}`);
     }
-    const err = await res.json().catch(() => ({}));
-    setStatus(`Failed: ${err.error || res.status}`);
   };
 
   useEffect(() => {

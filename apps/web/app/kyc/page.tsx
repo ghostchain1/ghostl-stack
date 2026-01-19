@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation';
-import { fetchServerSession } from '../../src/modules/identity-access/serverSession';
 import { apiFetch } from '../../src/lib/api';
 import type { KycApplicant, KycPolicy, KycProvider, KycSummary } from '@ghostl/types/kyc';
 import { KycDashboard } from '../../src/modules/kyc/KycDashboard';
@@ -26,10 +24,6 @@ const emptySummary: KycSummary = {
 };
 
 export default async function KycPage() {
-  const session = await fetchServerSession();
-  if (!session.user) {
-    redirect('/login?returnTo=/kyc');
-  }
   const summary = await apiFetch<KycSummary>('/kyc/summary', { fallback: emptySummary }).catch(() => emptySummary);
   const applicants = await apiFetch<KycApplicant[]>('/kyc/applicants', { fallback: [] }).catch(() => []);
   const providers = await apiFetch<{ providers: KycProvider[] }>('/kyc/providers', { fallback: { providers: [] } })

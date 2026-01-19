@@ -8,12 +8,12 @@ import { GlobalSearch } from './GlobalSearch';
 import { NetworkSwitcher } from './NetworkSwitcher';
 import { NotificationsCenter } from './NotificationsCenter';
 import { useSession } from '../../identity-access/session';
-import { normalizeRole, roleOrder, type Role } from '../../identity-access/access-policy';
+import { normalizeRole, resolveMinimumRole, roleOrder } from '../../identity-access/access-policy';
 import { useFeatureFlags } from '../services/FeatureFlagsService';
 import { useNetwork } from '../services/NetworkContextService';
 import { useTheme } from '../services/ThemeService';
 
-type NavItem = { href: string; label: string; flag?: string; minRole?: Role };
+type NavItem = { href: string; label: string; flag?: string };
 
 const navSections: { title: string; items: NavItem[] }[] = [
   {
@@ -57,13 +57,13 @@ const navSections: { title: string; items: NavItem[] }[] = [
       { href: '/compliance', label: 'Compliance' },
       { href: '/kyc', label: 'KYC' },
       { href: '/devops', label: 'DevOps' },
-      { href: '/integrations', label: 'Integrations', minRole: 'OPERATOR' },
-      { href: '/ai', label: 'AI', minRole: 'READONLY' }
+      { href: '/integrations', label: 'Integrations' },
+      { href: '/ai', label: 'AI' }
     ]
   },
   {
     title: 'Admin',
-    items: [{ href: '/admin/users', label: 'Users', minRole: 'ADMIN' }]
+    items: [{ href: '/admin/users', label: 'Users' }]
   }
 ];
 
@@ -90,7 +90,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <div className="nav-title">{section.title}</div>
               {section.items.map((item) => {
                 const disabled = item.flag ? !isEnabled(item.flag) : false;
-                const roleBlocked = item.minRole ? roleOrder[userRole] < roleOrder[item.minRole] : false;
+                const minimumRole = resolveMinimumRole(item.href, 'GET');
+                const roleBlocked = minimumRole ? roleOrder[userRole] < roleOrder[minimumRole] : false;
                 if (roleBlocked) return null;
                 const isActive = item.href === '/' ? pathname === '/' : pathname?.startsWith(item.href);
                 return (

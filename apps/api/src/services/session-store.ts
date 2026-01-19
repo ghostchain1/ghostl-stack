@@ -54,6 +54,10 @@ export class SqliteSessionStore extends session.Store {
       const ttl = Number(process.env.SESSION_TTL_MS || 30 * 60 * 1000);
       const expires = sess.cookie?.expires ? new Date(sess.cookie.expires).toISOString() : new Date(Date.now() + ttl).toISOString();
       const userId = (sess as any).userId || null;
+      if (!userId) {
+        if (callback) callback();
+        return;
+      }
       const rotatedFrom = (sess as any).rotatedFrom || null;
       const csrfToken = (sess as any).csrfToken || null;
       const data = JSON.stringify(sess);
@@ -80,6 +84,11 @@ export class SqliteSessionStore extends session.Store {
 
   touch(sid: string, sess: session.SessionData, callback?: (err?: Error | null) => void) {
     try {
+      const userId = (sess as any).userId || null;
+      if (!userId) {
+        if (callback) callback();
+        return;
+      }
       const ttl = Number(process.env.SESSION_TTL_MS || 30 * 60 * 1000);
       const expires = sess.cookie?.expires ? new Date(sess.cookie.expires).toISOString() : new Date(Date.now() + ttl).toISOString();
       this.db.prepare('update sessions set expires_at = ?, data = ? where id = ?').run(expires, JSON.stringify(sess), sid);
