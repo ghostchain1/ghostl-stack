@@ -17,12 +17,16 @@ contract Treasury is Ownable {
 
     receive() external payable {}
 
+    /// #if_succeeds {:msg "only owner withdraw ETH"} msg.sender == owner();
+    /// #if_succeeds {:msg "eth balance decreases"} address(this).balance == old(address(this).balance) - amount;
     function withdrawETH(address payable to, uint256 amount) external onlyOwner {
         require(address(this).balance >= amount, "insufficient ETH");
         to.transfer(amount);
         emit WithdrawETH(to, amount);
     }
 
+    /// #if_succeeds {:msg "only owner withdraw native"} msg.sender == owner();
+    /// #if_succeeds {:msg "native balance decreases"} native.balanceOf(address(this)) == old(native.balanceOf(address(this))) - amount;
     function withdrawNative(address to, uint256 amount) external onlyOwner {
         native.transfer(to, amount);
         emit WithdrawNative(to, amount);

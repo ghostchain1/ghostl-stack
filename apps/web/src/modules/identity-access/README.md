@@ -24,3 +24,4 @@ Roles
 - READONLY
 - OPERATOR
 - ADMIN
+- OWNER

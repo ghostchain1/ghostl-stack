@@ -53,7 +53,7 @@ export function IntegrationsControlCenter() {
     circuitBreakerEnabled: true,
     circuitBreakerFailOpen: false
   });
-  const [instanceEdits, setInstanceEdits] = useState<Record<string, Partial<IntegrationInstance['policy']>>>({});
+  const [instanceEdits, setInstanceEdits] = useState<Record<string, Partial<IntegrationInstance>>>({});
   const [instanceConfigs, setInstanceConfigs] = useState<Record<string, Record<string, string>>>({});
   const [testResults, setTestResults] = useState<Record<string, IntegrationTestResult | null>>({});
 

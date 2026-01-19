@@ -1,0 +1,9 @@
+{
+  "filter_paths": "node_modules|test|docs|scripts|artifacts|cache|out",
+  "exclude_detectors": [
+    "naming-convention",
+    "low-level-calls",
+    "assembly"
+  ],
+  "solc_version": "0.8.24"
+}

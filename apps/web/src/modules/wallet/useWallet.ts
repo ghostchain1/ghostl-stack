@@ -12,7 +12,8 @@ import {
   executeSwap,
   type SwapRoute
 } from './api';
-import { resolveRpcBase } from '../../lib/runtime';
+import { resolveApiBase } from '../../lib/runtime';
+import type { RpcEndpoint } from '@ghostl/types/integrations';
 
 type ChainConfig = {
   id: number;
@@ -20,21 +21,21 @@ type ChainConfig = {
   rpc: string;
 };
 
-const chainConfigs: Record<SupportedChain, ChainConfig> = {
+const baseChainConfigs: Record<SupportedChain, ChainConfig> = {
   l1: {
     id: Number(process.env.NEXT_PUBLIC_L1_CHAIN_ID || 14000101),
     name: 'GhostChain',
-    rpc: resolveRpcBase(process.env.NEXT_PUBLIC_L1_RPC, 18545, 'http://localhost:18545')
+    rpc: ''
   },
   l2: {
     id: Number(process.env.NEXT_PUBLIC_L2_CHAIN_ID || 901),
     name: 'GhostL2',
-    rpc: resolveRpcBase(process.env.NEXT_PUBLIC_L2_RPC, 18547, 'http://localhost:18547')
+    rpc: ''
   },
   l3: {
     id: Number(process.env.NEXT_PUBLIC_L3_CHAIN_ID || 903),
     name: 'GhostL3',
-    rpc: resolveRpcBase(process.env.NEXT_PUBLIC_L3_RPC, 39545, 'http://localhost:39545')
+    rpc: ''
   }
 };
 
@@ -56,6 +57,28 @@ export function useWallet() {
   const [slippageBps, setSlippageBps] = useState<number>(50);
   const [externalTokens, setExternalTokens] = useState<TokenConfig[]>([]);
   const [swapAmount, setSwapAmount] = useState<string>('');
+  const [chainConfigs, setChainConfigs] = useState<Record<SupportedChain, ChainConfig>>(baseChainConfigs);
+
+  useEffect(() => {
+    const loadRpcRegistry = async () => {
+      try {
+        const res = await fetch(`${resolveApiBase()}/integrations/rpc`, { credentials: 'include' });
+        if (!res.ok) return;
+        const endpoints = (await res.json()) as RpcEndpoint[];
+        const next = { ...baseChainConfigs };
+        const pickRpc = (chainId: number) =>
+          endpoints.find((endpoint) => Number(endpoint.chainId) === chainId && endpoint.url?.startsWith('http'))?.url ||
+          '';
+        next.l1.rpc = pickRpc(next.l1.id);
+        next.l2.rpc = pickRpc(next.l2.id);
+        next.l3.rpc = pickRpc(next.l3.id);
+        setChainConfigs(next);
+      } catch {
+        // ignore
+      }
+    };
+    loadRpcRegistry().catch(() => undefined);
+  }, []);
 
   const chainTokens = useMemo(() => {
     const fromDefaults = tokensForChain(chain);
@@ -93,6 +116,9 @@ export function useWallet() {
         const entries = await Promise.all(
           tokensForChain(activeChain).map(async (t) => {
             const rpc = chainConfigs[activeChain].rpc;
+            if (!rpc) {
+              throw new Error('rpc_registry_unavailable');
+            }
             if (t.type === 'native') {
               const res = await apiGetBalance({ rpc, address });
               return [tokenKey(t), formatUnits(BigInt(res.balance), t.decimals)];
@@ -108,7 +134,7 @@ export function useWallet() {
         setStatus(msg);
       }
     },
-    [account, chain]
+    [account, chain, chainConfigs]
   );
 
   useEffect(() => {

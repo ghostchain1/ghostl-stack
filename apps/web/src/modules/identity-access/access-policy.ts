@@ -1,16 +1,20 @@
-export type Role = 'READONLY' | 'OPERATOR' | 'ADMIN';
+export type Role = 'READONLY' | 'OPERATOR' | 'ADMIN' | 'OWNER';
 
 type PolicyEntry = { pattern: string; role: Role; methods?: string[] };
 
 export const roleOrder: Record<Role, number> = {
   READONLY: 0,
   OPERATOR: 1,
-  ADMIN: 2
+  ADMIN: 2,
+  OWNER: 3
 };
 
 const policies: PolicyEntry[] = [
   { pattern: '/', role: 'READONLY' },
   { pattern: '/dashboard', role: 'READONLY' },
+  { pattern: '/console/overview', role: 'READONLY' },
+  { pattern: '/console/ai', role: 'READONLY' },
+  { pattern: '/console/chains-nodes', role: 'READONLY' },
   { pattern: '/ai', role: 'READONLY' },
   { pattern: '/wallet', role: 'READONLY' },
   { pattern: '/integrations', role: 'READONLY' },
@@ -27,6 +31,16 @@ const policies: PolicyEntry[] = [
   { pattern: '/compliance', role: 'OPERATOR' },
   { pattern: '/kyc', role: 'OPERATOR' },
   { pattern: '/devops', role: 'OPERATOR' },
+  { pattern: '/console/users-wallets', role: 'OPERATOR' },
+  { pattern: '/console/tokens', role: 'OPERATOR' },
+  { pattern: '/console/contracts', role: 'OPERATOR' },
+  { pattern: '/console/bridge', role: 'OPERATOR' },
+  { pattern: '/console/validators', role: 'OPERATOR' },
+  { pattern: '/console/treasury', role: 'OPERATOR' },
+  { pattern: '/console/governance', role: 'OPERATOR' },
+  { pattern: '/console/compliance', role: 'OPERATOR' },
+  { pattern: '/console/devops', role: 'OPERATOR' },
+  { pattern: '/console/integrations', role: 'OPERATOR' },
   { pattern: '/admin', role: 'ADMIN' },
   { pattern: '/analytics', role: 'ADMIN' },
   { pattern: '/webhooks', role: 'ADMIN' },
@@ -42,6 +56,9 @@ export const normalizeRole = (roleInput?: string | string[] | null): Role => {
   if (!roleInput) return 'READONLY';
   const roles = Array.isArray(roleInput) ? roleInput : [roleInput];
   const lowered = roles.map((role) => role.toLowerCase());
+  if (lowered.includes('owner') || lowered.includes('root') || lowered.includes('superadmin')) {
+    return 'OWNER';
+  }
   if (
     lowered.includes('admin') ||
     lowered.includes('protocol admin') ||

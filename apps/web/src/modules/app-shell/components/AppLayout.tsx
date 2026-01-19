@@ -12,10 +12,11 @@ import { normalizeRole, resolveMinimumRole, roleOrder } from '../../identity-acc
 import { useFeatureFlags } from '../services/FeatureFlagsService';
 import { useNetwork } from '../services/NetworkContextService';
 import { useTheme } from '../services/ThemeService';
+import { resolveApiBase } from '../../../lib/runtime';
 
 type NavItem = { href: string; label: string; flag?: string };
 
-const navSections: { title: string; items: NavItem[] }[] = [
+const legacyNavSections: { title: string; items: NavItem[] }[] = [
   {
     title: 'Command',
     items: [
@@ -67,6 +68,27 @@ const navSections: { title: string; items: NavItem[] }[] = [
   }
 ];
 
+const consoleNavSections: { title: string; items: NavItem[] }[] = [
+  {
+    title: 'Operator Console',
+    items: [
+      { href: '/console/overview', label: 'Overview' },
+      { href: '/console/users-wallets', label: 'Users & Wallets' },
+      { href: '/console/tokens', label: 'Tokens' },
+      { href: '/console/contracts', label: 'Contracts' },
+      { href: '/console/bridge', label: 'Bridge' },
+      { href: '/console/ai', label: 'AI' },
+      { href: '/console/chains-nodes', label: 'Chains & Nodes' },
+      { href: '/console/validators', label: 'Validators' },
+      { href: '/console/treasury', label: 'Treasury' },
+      { href: '/console/governance', label: 'Governance' },
+      { href: '/console/compliance', label: 'Compliance & KYC' },
+      { href: '/console/devops', label: 'DevOps' },
+      { href: '/console/integrations', label: 'Integrations' }
+    ]
+  }
+];
+
 export function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { user } = useSession();
@@ -74,6 +96,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { current } = useNetwork();
   const { theme, toggleTheme } = useTheme();
   const userRole = normalizeRole(user?.role);
+  const isConsole = pathname?.startsWith('/console');
+  const navSections = isConsole ? consoleNavSections : legacyNavSections;
   const ribbon = [
     { label: 'Stack', value: 'Operational' },
     { label: 'Bridges', value: 'Monitoring' },
@@ -129,6 +153,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <div className="topbar-actions">
             <GlobalSearch />
             <NetworkSwitcher />
+            {current?.env && <span className="badge">{current.env}</span>}
             <CommandPalette />
             <NotificationsCenter />
             <button className="button secondary" type="button" onClick={toggleTheme} title="Toggle theme">
@@ -138,6 +163,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <div className="inline-form">
                 {user.email && <span className="muted">{user.email}</span>}
                 {user.role && <span className="badge">{user.role}</span>}
+                <button
+                  className="button secondary"
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await fetch(`${resolveApiBase()}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+                    } finally {
+                      window.location.href = '/login';
+                    }
+                  }}
+                >
+                  Logout
+                </button>
               </div>
             )}
           </div>

@@ -38,9 +38,7 @@ export async function proxy(req: NextRequest) {
       if (isApiRequest(pathname)) {
         return NextResponse.json({ error: 'forbidden' }, { status: 403 });
       }
-      const forbidden = NextResponse.rewrite(new URL('/403', req.url));
-      forbidden.status = 403;
-      return forbidden;
+      return NextResponse.rewrite(new URL('/403', req.url), { status: 403 });
     }
   }
 
