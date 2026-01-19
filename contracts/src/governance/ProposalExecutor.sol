@@ -43,6 +43,7 @@ contract ProposalExecutor {
         emit Queued(id, target, value, data, eta);
     }
 
+    /// #if_succeeds {:msg "only governor execute"} msg.sender == governor;
     function execute(uint256 id) external onlyGovernor returns (bytes memory) {
         QueuedTx storage txData = queue[id];
         require(!txData.executed, "executed");

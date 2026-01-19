@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../src/lib/api';
 import { rpcCall } from '../src/lib/rpc';
-import { resolveRpcBase } from '../src/lib/runtime';
+import { useSession } from '../src/modules/identity-access/session';
+import { normalizeRole, roleOrder } from '../src/modules/identity-access/access-policy';
 
 type RpcSnapshot = {
   id: string;
@@ -38,18 +39,18 @@ type ApiHealth = {
   status?: string;
   dependencies?: Record<string, { ok?: boolean; url?: string }>;
 };
+type AlertSummary = { total: number; active: number };
+type RpcEndpoint = { url: string; protocol?: string; status?: string };
+type RpcPoolResponse = { pool?: { L1?: RpcEndpoint[]; L2?: RpcEndpoint[]; L3?: RpcEndpoint[] } };
 
-const L1_RPC = resolveRpcBase(process.env.NEXT_PUBLIC_L1_RPC, 18545, 'http://localhost:18545');
-const L2_RPC = resolveRpcBase(process.env.NEXT_PUBLIC_L2_RPC, 18547, 'http://localhost:18547');
-const L3_RPC = resolveRpcBase(process.env.NEXT_PUBLIC_L3_RPC, 39545, 'http://localhost:39545');
 const L1_CHAIN_ID = Number(process.env.NEXT_PUBLIC_L1_CHAIN_ID || 14000101);
 const L2_CHAIN_ID = Number(process.env.NEXT_PUBLIC_L2_CHAIN_ID || 901);
 const L3_CHAIN_ID = Number(process.env.NEXT_PUBLIC_L3_CHAIN_ID || 903);
 
-const NETWORKS = [
-  { id: 'l1', label: 'GhostChain L1', rpc: L1_RPC, targetChainId: L1_CHAIN_ID },
-  { id: 'l2', label: 'GhostL2', rpc: L2_RPC, targetChainId: L2_CHAIN_ID },
-  { id: 'l3', label: 'GhostL3', rpc: L3_RPC, targetChainId: L3_CHAIN_ID }
+const BASE_NETWORKS = [
+  { id: 'l1', label: 'GhostChain L1', targetChainId: L1_CHAIN_ID, rpc: '' },
+  { id: 'l2', label: 'GhostL2', targetChainId: L2_CHAIN_ID, rpc: '' },
+  { id: 'l3', label: 'GhostL3', targetChainId: L3_CHAIN_ID, rpc: '' }
 ];
 
 const parseHexNumber = (value?: string | null) => {
@@ -71,9 +72,14 @@ const formatMs = (value?: number) => {
 const formatStatus = (value?: string) => (value ? value.toUpperCase() : 'UNKNOWN');
 
 export default function HomePage() {
+  const { user } = useSession();
+  const userRole = normalizeRole(user?.role);
+  const canReadObservability = roleOrder[userRole] >= roleOrder.OPERATOR;
+  const canReadIntegrations = roleOrder[userRole] >= roleOrder.OPERATOR;
+  const [networkConfigs, setNetworkConfigs] = useState(BASE_NETWORKS);
   const [rpcSnapshots, setRpcSnapshots] = useState<Record<string, RpcSnapshot>>(() => {
     const initial: Record<string, RpcSnapshot> = {};
-    NETWORKS.forEach((network) => {
+    BASE_NETWORKS.forEach((network) => {
       initial[network.id] = { ...network, status: 'loading' };
     });
     return initial;
@@ -81,13 +87,17 @@ export default function HomePage() {
   const [stackOverview, setStackOverview] = useState<{ l2?: StackOverview | null; l3?: StackOverview | null }>({});
   const [chainStatus, setChainStatus] = useState<ChainStatus | null>(null);
   const [apiHealth, setApiHealth] = useState<ApiHealth | null>(null);
+  const [alertSummary, setAlertSummary] = useState<AlertSummary>({ total: 0, active: 0 });
 
   useEffect(() => {
     let active = true;
 
     const loadRpc = async () => {
       const results = await Promise.all(
-        NETWORKS.map(async (network) => {
+        networkConfigs.map(async (network) => {
+          if (!network.rpc) {
+            return { ...network, status: 'error' as const };
+          }
           try {
             const [chainHex, blockHex, gasHex, peerHex] = await Promise.all([
               rpcCall<string>(network.rpc, 'eth_chainId'),
@@ -124,17 +134,33 @@ export default function HomePage() {
     };
 
     const loadApi = async () => {
-      const [health, chain, l2, l3] = await Promise.all([
+      const [health, chain, l2, l3, poolResp, alerts] = await Promise.all([
         apiFetch<ApiHealth | null>('/health', { fallback: null }),
         apiFetch<ChainStatus | null>('/chain/status', { fallback: null }),
         apiFetch<StackOverview | null>('/stack/overview?chain=l2', { fallback: null }),
-        apiFetch<StackOverview | null>('/stack/overview?chain=l3', { fallback: null })
+        apiFetch<StackOverview | null>('/stack/overview?chain=l3', { fallback: null }),
+        canReadIntegrations ? apiFetch<RpcPoolResponse>('/rpc/pool', { fallback: {} }) : {},
+        canReadObservability ? apiFetch<Array<{ state?: string }>>('/observability/alerts', { fallback: [] }) : []
       ]);
 
       if (!active) return;
       setApiHealth(health);
       setChainStatus(chain);
       setStackOverview({ l2, l3 });
+      const pool = poolResp && typeof poolResp === 'object' ? (poolResp as RpcPoolResponse).pool : undefined;
+      if (pool) {
+        const pickUrl = (list?: RpcEndpoint[]) =>
+          list?.find((endpoint) => endpoint.protocol !== 'ws')?.url || list?.[0]?.url || '';
+        const updated = BASE_NETWORKS.map((network) => {
+          const poolKey = network.id === 'l1' ? 'L1' : network.id === 'l2' ? 'L2' : 'L3';
+          return { ...network, rpc: pickUrl(pool[poolKey]) };
+        });
+        const changed = updated.some((network, idx) => network.rpc !== networkConfigs[idx]?.rpc);
+        if (changed) setNetworkConfigs(updated);
+      }
+      const total = Array.isArray(alerts) ? alerts.length : 0;
+      const activeAlerts = Array.isArray(alerts) ? alerts.filter((alert) => alert.state !== 'resolved').length : 0;
+      setAlertSummary({ total, active: activeAlerts });
     };
 
     loadRpc();
@@ -149,7 +175,7 @@ export default function HomePage() {
       active = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [canReadIntegrations, canReadObservability, networkConfigs]);
 
   const tools = useMemo(
     () => [
@@ -293,7 +319,7 @@ export default function HomePage() {
           <span className="badge">Direct nodes</span>
         </div>
         <div className="data-grid">
-          {NETWORKS.map((network) => {
+          {networkConfigs.map((network) => {
             const snapshot = rpcSnapshots[network.id];
             const statusLabel = snapshot?.status === 'ok' ? 'Online' : snapshot?.status === 'error' ? 'RPC error' : 'Loading';
             return (
@@ -426,6 +452,56 @@ export default function HomePage() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="card reveal">
+        <div className="spread">
+          <h3>Observability</h3>
+          <span className="badge">Ops</span>
+        </div>
+        <div className="card-grid" style={{ marginTop: 16 }}>
+          <div className="card">
+            <div className="section-title">Alerts</div>
+            <div className="metric">
+              <div className="metric-label">Active</div>
+              <div className="metric-value">{formatNumber(alertSummary.active)}</div>
+            </div>
+            <div className="metric">
+              <div className="metric-label">Total</div>
+              <div className="metric-value">{formatNumber(alertSummary.total)}</div>
+            </div>
+            <Link className="button secondary" href="/observability/alerts">
+              View alerts
+            </Link>
+          </div>
+          <div className="card">
+            <div className="section-title">Telemetry endpoints</div>
+            <div className="stack">
+              <div className="spread">
+                <span className="muted">Prometheus</span>
+                <span className={apiHealth?.dependencies?.prometheus?.ok ? 'pill' : 'pill warn'}>
+                  {apiHealth?.dependencies?.prometheus?.ok ? 'connected' : 'missing'}
+                </span>
+              </div>
+              {apiHealth?.dependencies?.prometheus?.url && <div className="muted">{apiHealth.dependencies.prometheus.url}</div>}
+              <div className="spread">
+                <span className="muted">Grafana</span>
+                <span className={apiHealth?.dependencies?.grafana?.ok ? 'pill' : 'pill warn'}>
+                  {apiHealth?.dependencies?.grafana?.ok ? 'connected' : 'missing'}
+                </span>
+              </div>
+              {apiHealth?.dependencies?.grafana?.url && <div className="muted">{apiHealth.dependencies.grafana.url}</div>}
+            </div>
+            <div className="row" style={{ gap: 8, marginTop: 12 }}>
+              <Link className="button secondary" href="/observability">
+                Observability dashboard
+              </Link>
+              <Link className="button secondary" href="/observability/stack">
+                Grafana stack
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
     </div>

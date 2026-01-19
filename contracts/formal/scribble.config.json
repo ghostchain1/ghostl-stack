@@ -1,0 +1,8 @@
+{
+  "input": "src",
+  "outputMode": "files",
+  "output": "reports/formal/scribble",
+  "compiler": {
+    "version": "0.8.24"
+  }
+}

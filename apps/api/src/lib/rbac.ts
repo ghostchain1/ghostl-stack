@@ -15,6 +15,10 @@ export const requirePermission = (permission: string): RequestHandler => {
       return;
     }
     const permissions = (req.session?.permissions || []) as string[];
+    if (permissions.includes('*')) {
+      next();
+      return;
+    }
     if (permissions.includes(permission)) {
       next();
       return;

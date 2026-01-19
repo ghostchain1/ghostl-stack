@@ -1,5 +1,6 @@
-import { ethers, network } from "hardhat";
+import { ethers, network, artifacts } from "hardhat";
 import path from "node:path";
+import crypto from "node:crypto";
 import { promises as fs } from "node:fs";
 
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
@@ -59,6 +60,7 @@ async function main() {
     `Using GAS_LIMIT=${GAS_LIMIT.toString()} maxFeePerGas=${MAX_FEE_PER_GAS ?? "default"} priorityFee=${MAX_PRIORITY_FEE_PER_GAS ?? "default"}`
   );
   const ROOT = process.env.ROOT_DIR ?? path.resolve(__dirname, "..", "..");
+  const version = process.env.CONTRACTS_VERSION ?? "0.0.1";
   // Default to OP Stack devnet ports (Anvil L1 :28545, op-geth L2 :29545). L3 is optional; keep overrideable.
   const l2ChainId = Number(process.env.L2_CHAIN_ID ?? network.config.chainId ?? 901);
   const l3ChainId = Number(process.env.L3_CHAIN_ID ?? 902);
@@ -72,6 +74,29 @@ async function main() {
   console.log(
     `Config -> L2 chainId=${l2ChainId}, L3 chainId=${l3ChainId}, challengePeriodSeconds=${challengePeriodSeconds}`
   );
+  const outputDir = process.env.OUTPUT_DIR ?? path.resolve(__dirname, "..", "deployments", network.name);
+  await fs.mkdir(outputDir, { recursive: true });
+  const deployments: Record<string, { name: string; address: string; chainId: number; layer: string; abi: unknown; abiHash: string; version: string; deployedAt: string }[]> = {
+    l1: [],
+    l2: [],
+    l3: []
+  };
+
+  const recordDeployment = async (layer: "l1" | "l2" | "l3", name: string, address: string, chainId: number) => {
+    const artifact = await artifacts.readArtifact(name);
+    const abiHash = crypto.createHash("sha256").update(JSON.stringify(artifact.abi)).digest("hex");
+    deployments[layer].push({
+      name,
+      address,
+      chainId,
+      layer,
+      abi: artifact.abi,
+      abiHash,
+      version,
+      deployedAt: new Date().toISOString()
+    });
+  };
+
   // Deploy policy + bridge on L2 (GhostL2)
   const l2 = await ethers.getSigners();
 
@@ -88,6 +113,8 @@ async function main() {
 
   const policyAddr = await policy.getAddress();
   const bridgeAddr = await bridge.getAddress();
+  await recordDeployment("l2", "GuardPolicy", policyAddr, l2ChainId);
+  await recordDeployment("l2", "L2L3Bridge", bridgeAddr, l2ChainId);
 
   console.log("GuardPolicy (L2):", policyAddr);
   console.log("L2L3Bridge (L2):", bridgeAddr);
@@ -97,6 +124,7 @@ async function main() {
   const l2Token = await GhostToken.connect(l2[0]).deploy(txOpts);
   await waitForDeployment(l2Token, l2[0].provider as ethers.JsonRpcProvider, "GhostTokenL2");
   const l2TokenAddr = await l2Token.getAddress();
+  await recordDeployment("l2", "GhostTokenL2", l2TokenAddr, l2ChainId);
   console.log("GhostTokenL2 (L2):", l2TokenAddr);
 
   // Deploy inbox on L3 (GhostL3) using the same dev key by default.
@@ -132,6 +160,8 @@ async function main() {
   );
   await waitForDeployment(l1Rollup, l1Provider, "OptimisticRollup L2->L1");
   const l1RollupAddr = await l1Rollup.getAddress();
+  const l1Network = await l1Provider.getNetwork();
+  await recordDeployment("l1", "OptimisticRollup", l1RollupAddr, Number(l1Network.chainId));
   console.log("OptimisticRollup L2->L1 (L1):", l1RollupAddr);
 
   console.log("== Deploy OptimisticRollup L3->L2 on L2 ==");
@@ -143,6 +173,7 @@ async function main() {
   );
   await waitForDeployment(l2Rollup, l2[0].provider as ethers.JsonRpcProvider, "OptimisticRollup L3->L2");
   const l2RollupAddr = await l2Rollup.getAddress();
+  await recordDeployment("l2", "OptimisticRollup", l2RollupAddr, l2ChainId);
   console.log("OptimisticRollup L3->L2 (L2):", l2RollupAddr);
 
   console.log("== Deploy L3Inbox on L3 ==");
@@ -150,6 +181,7 @@ async function main() {
   const inbox = await Inbox.connect(l3Signer).deploy(relayerAddr, txOpts);
   await waitForDeployment(inbox, l3Provider, "L3Inbox");
   const inboxAddr = await inbox.getAddress();
+  await recordDeployment("l3", "L3Inbox", inboxAddr, l3ChainId);
   console.log("L3Inbox (L3):", inboxAddr);
 
   console.log("== Deploy L3BridgedTokenFactory on L3 ==");
@@ -157,6 +189,7 @@ async function main() {
   const factory = await Factory.connect(l3Signer).deploy(relayerAddr, txOpts);
   await waitForDeployment(factory, l3Provider, "L3BridgedTokenFactory");
   const factoryAddr = await factory.getAddress();
+  await recordDeployment("l3", "L3BridgedTokenFactory", factoryAddr, l3ChainId);
   console.log("L3BridgedTokenFactory (L3):", factoryAddr);
 
   // Deploy a default bridged token for the demo GhostTokenL2.
@@ -178,6 +211,9 @@ async function main() {
     .find((e) => e?.name === "BridgedTokenDeployed");
   const l3TokenAddr = String(deployed?.args?.l3Token ?? "");
   console.log("L3BridgedToken (L3, default):", l3TokenAddr);
+  if (l3TokenAddr) {
+    await recordDeployment("l3", "L3BridgedToken", l3TokenAddr, l3ChainId);
+  }
 
   // Write addresses for ghost-guard env
   const envPath = path.join(ROOT, "services/ghost-guard/.env");
@@ -273,6 +309,27 @@ async function main() {
   await fs.writeFile(challengerL3Path, challengerL3Env, "utf8");
   console.log("Wrote:", challengerL2Path);
   console.log("Wrote:", challengerL3Path);
+
+  const writeLayer = async (layer: "l1" | "l2" | "l3") => {
+    const filePath = path.join(outputDir, `${layer}.json`);
+    await fs.writeFile(filePath, JSON.stringify({ network: network.name, layer, contracts: deployments[layer] }, null, 2));
+    console.log("Wrote:", filePath);
+  };
+  await writeLayer("l1");
+  await writeLayer("l2");
+  await writeLayer("l3");
+
+  const rollupConfig = {
+    l1: { rollup: l1RollupAddr, chainId: Number(l1Network.chainId) },
+    l2: { rollup: l2RollupAddr, chainId: l2ChainId },
+    l3: { inbox: inboxAddr, factory: factoryAddr, chainId: l3ChainId }
+  };
+  await fs.writeFile(path.join(outputDir, "rollup-config.json"), JSON.stringify(rollupConfig, null, 2));
+  const chainsRoot = path.resolve(ROOT, "chains");
+  await fs.mkdir(path.join(chainsRoot, "l2"), { recursive: true });
+  await fs.mkdir(path.join(chainsRoot, "l3"), { recursive: true });
+  await fs.writeFile(path.join(chainsRoot, "l2", "rollup.json"), JSON.stringify(rollupConfig.l2, null, 2));
+  await fs.writeFile(path.join(chainsRoot, "l3", "rollup.json"), JSON.stringify(rollupConfig.l3, null, 2));
 
   console.log("\nNext:");
   console.log("1) Add PRIVATE_KEY in services/ghost-guard/.env (use a funded key on L2)");

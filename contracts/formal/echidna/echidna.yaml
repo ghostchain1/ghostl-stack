@@ -1,0 +1,7 @@
+corpusDir: reports/formal/echidna-corpus
+seqLen: 32
+testMode: assertion
+shrinking: true
+maxTimeDelay: 10
+maxCampaigns: 1
+maxTime: 120

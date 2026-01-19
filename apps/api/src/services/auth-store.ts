@@ -86,18 +86,44 @@ const roles: Role[] = [
       'integrations:read',
       'integrations:write'
     ]
+  },
+  {
+    id: 'owner',
+    name: 'OWNER',
+    permissions: ['*']
   }
 ];
 
-const roleOrder: Record<string, number> = { READONLY: 0, OPERATOR: 1, ADMIN: 2 };
+const roleOrder: Record<string, number> = { READONLY: 0, OPERATOR: 1, ADMIN: 2, OWNER: 3 };
 
 const normalizeRole = (role?: string) => {
   if (!role) return 'READONLY';
   const raw = role.toUpperCase();
+  if (raw === 'OWNER') return 'OWNER';
   if (raw === 'ADMIN') return 'ADMIN';
   if (raw === 'OPERATOR') return 'OPERATOR';
   if (raw === 'READONLY' || raw === 'VIEWER') return 'READONLY';
   return 'READONLY';
+};
+
+const normalizeEmail = (email?: string | null) => (email ? email.trim().toLowerCase() : '');
+
+const isOwnerEmail = (email?: string | null) => {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return false;
+  const ownerEntries = [process.env.OWNER_EMAILS, process.env.BOOTSTRAP_OWNER_EMAILS].filter(
+    (value): value is string => Boolean(value)
+  );
+  const owners = ownerEntries
+    .flatMap((value) => value.split(','))
+    .map((entry) => normalizeEmail(entry))
+    .filter(Boolean);
+  return owners.includes(normalized);
+};
+
+const resolveRoleForEmail = (email: string | undefined, role: string) => {
+  if (role === 'OWNER') return 'OWNER';
+  return isOwnerEmail(email) ? 'OWNER' : role;
 };
 
 const resolveRoleFromRoles = (rolesInput?: string[]) => {
@@ -110,7 +136,7 @@ const userFromRow = (row: any): User => ({
   id: row.id,
   email: row.email,
   wallets: [],
-  roles: [normalizeRole(row.role).toLowerCase()]
+  roles: [resolveRoleForEmail(row.email, normalizeRole(row.role)).toLowerCase()]
 });
 
 const openAuthDb = (): SqliteHandle => {
@@ -238,7 +264,7 @@ const userService: UserService = {
   async create(input) {
     const id = randomUUID();
     const createdAt = nowIso();
-    const role = resolveRoleFromRoles(input.roles);
+    const role = resolveRoleForEmail(input.email, resolveRoleFromRoles(input.roles));
     db.prepare('insert into users (id, email, password_hash, role, created_at, updated_at) values (?, ?, ?, ?, ?, ?)').run(
       id,
       input.email,
@@ -252,7 +278,10 @@ const userService: UserService = {
   async update(id, input) {
     const existing = db.prepare('select * from users where id = ?').get(id) as any;
     if (!existing) throw new Error('user not found');
-    const role = input.roles ? resolveRoleFromRoles(input.roles) : normalizeRole(existing.role);
+    const role = resolveRoleForEmail(
+      input.email || existing.email,
+      input.roles ? resolveRoleFromRoles(input.roles) : normalizeRole(existing.role)
+    );
     const updatedAt = nowIso();
     db.prepare('update users set email = ?, role = ?, updated_at = ? where id = ?').run(
       input.email || existing.email,
@@ -359,7 +388,7 @@ const authService: AuthService = {
     if (existing) throw new Error('user_exists');
     const id = randomUUID();
     const now = nowIso();
-    const role = resolveRoleFromRoles(rolesInput);
+    const role = resolveRoleForEmail(email, resolveRoleFromRoles(rolesInput));
     const passwordHash = await hashPassword(password);
     db.prepare('insert into users (id, email, password_hash, role, created_at, updated_at) values (?, ?, ?, ?, ?, ?)').run(
       id,
@@ -418,15 +447,16 @@ const authService: AuthService = {
     const id = randomUUID();
     const now = nowIso();
     const passwordHash = await hashPassword(password);
+    const role = resolveRoleForEmail(email, 'ADMIN');
     db.prepare('insert into users (id, email, password_hash, role, created_at, updated_at) values (?, ?, ?, ?, ?, ?)').run(
       id,
       email,
       passwordHash,
-      'ADMIN',
+      role,
       now,
       now
     );
-    return { id, email, wallets: [], roles: ['admin'] };
+    return { id, email, wallets: [], roles: [role.toLowerCase()] };
   }
 };
 

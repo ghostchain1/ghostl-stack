@@ -7,11 +7,24 @@
     "deploy:edge": "hardhat run --network ghostl2 scripts/deploy_all.ts",
     "deploy:op": "hardhat run --network ghostl2Op scripts/deploy_all.ts",
     "deploy:futuristic": "hardhat run --network anvil scripts/deploy_futuristic_stack.ts",
-    "test": "hardhat test"
+    "deploy:one-click": "ts-node scripts/deploy_one_click.ts",
+    "deploy:testnet": "ts-node scripts/one_click_testnet.ts",
+    "docs:diagrams": "ts-node scripts/generate_diagrams.ts",
+    "formal:slither": "ts-node scripts/run_slither.ts",
+    "formal:scribble": "ts-node scripts/run_scribble.ts",
+    "formal:echidna": "ts-node scripts/run_echidna.ts",
+    "formal:certora": "ts-node scripts/run_certora.ts",
+    "verify:formal": "ts-node scripts/run_formal_verification.ts",
+    "test": "hardhat test",
+    "test:foundry": "ts-node scripts/run_foundry_tests.ts --mode default",
+    "test:fuzz": "ts-node scripts/run_foundry_tests.ts --mode fuzz",
+    "test:invariant": "ts-node scripts/run_foundry_tests.ts --mode invariant"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@consensys/scribble": "^0.10.1",
     "hardhat": "^2.22.10",
+    "surya": "^0.4.3",
     "typescript": "5.6.3",
     "ts-node": "^10.9.2",
     "dotenv": "^17.2.3"
