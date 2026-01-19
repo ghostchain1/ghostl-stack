@@ -12,6 +12,7 @@
     "build": "npm run build -w apps/api && npm run build -w apps/web",
     "build:api": "npm run build -w apps/api",
     "build:web": "npm run build -w apps/web",
+    "deprecations:check": "node scripts/check-deprecations.mjs",
     "lint": "eslint apps packages --ext .ts,.tsx",
     "preflight:opstack": "bash infra/scripts/opstack/preflight-3layer.sh infra/opstack/.env infra/opstack/.env.l3",
     "env:sync:opstack": "bash infra/scripts/opstack/sync-env-from-l1-deployments.sh infra/opstack/.env",
@@ -26,9 +27,18 @@
     "eslint-config-prettier": "^9.1.0",
     "globals": "^15.11.0",
     "prettier": "^3.2.5",
-    "typescript": "^5.4.5"
+    "typescript": "5.4.5"
   },
   "dependencies": {
     "nodemailer": "7.0.12"
+  },
+  "engines": {
+    "node": ">=20 <21"
+  },
+  "overrides": {
+    "diff": "^8.0.3",
+    "ts-node": {
+      "diff": "^8.0.3"
+    }
   }
 }

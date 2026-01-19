@@ -15,7 +15,7 @@ export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|robots.txt).*)']
 };
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   if (isPublicPath(pathname)) return NextResponse.next();
 

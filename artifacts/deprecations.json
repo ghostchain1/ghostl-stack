@@ -1,0 +1,15 @@
+{
+  "generatedAt": "2026-01-19T05:05:35.621Z",
+  "items": [],
+  "checks": {
+    "npmLs": {
+      "code": 0
+    },
+    "npmOutdated": {
+      "code": 1
+    },
+    "npmAudit": {
+      "code": 0
+    }
+  }
+}
