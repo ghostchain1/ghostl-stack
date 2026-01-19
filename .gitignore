@@ -67,11 +67,13 @@ infra/opstack/infra/opstack/optimism/
 apps/api/data/
 apps/api/.sessions/
 infra/ghostchain/data/
+infra/ghostchain/logs/
 infra/ghostchain/config/bootnode-enode.txt
 infra/ghostchain/ghostl2/data/
 
 # runtime state snapshots
 services/data/state.json
+services/**/data/
 
 # build artifacts
 apps/web/.next/
