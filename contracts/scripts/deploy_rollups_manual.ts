@@ -19,6 +19,13 @@ async function loadArtifact(name: string) {
   throw new Error(`Missing artifact for ${name}; run npm run build in ./contracts`);
 }
 
+async function assertCode(provider: ethers.JsonRpcProvider, address: string, label: string) {
+  const code = await provider.getCode(address);
+  if (!code || code === "0x") {
+    throw new Error(`No code at ${label} address ${address}`);
+  }
+}
+
 async function main() {
   const gasLimit = BigInt(process.env.DEPLOY_GAS_LIMIT ?? "20000000");
   const maxFeePerGas = process.env.DEPLOY_MAX_FEE_PER_GAS ? BigInt(process.env.DEPLOY_MAX_FEE_PER_GAS) : undefined;
@@ -39,6 +46,11 @@ async function main() {
     process.env.L2_TOKEN_ADDRESS ??
     process.env.L2_TOKEN ?? // fallback
     "";
+  const existingL1Rollup = process.env.L1_ROLLUP_L2_ADDRESS;
+  const existingL2Rollup = process.env.L2_ROLLUP_L3_ADDRESS;
+  const existingInbox = process.env.L3_INBOX_ADDRESS;
+  const existingFactory = process.env.L3_TOKEN_FACTORY_ADDRESS;
+  const existingL3Token = process.env.L3_TOKEN_ADDRESS;
 
   if (!l2TokenAddr) {
     throw new Error("Missing L2_TOKEN_ADDRESS env (GhostTokenL2 address)");
@@ -83,64 +95,96 @@ async function main() {
     l2Signer
   );
 
-  console.log("== Deploy OptimisticRollup L2->L1 on L1 ==");
-  const l1Rollup = await rollupFactoryL1.deploy(
-    l2ChainId,
-    challengePeriodSeconds,
-    await l1Signer.getAddress(),
-    txOpts
-  );
-  await l1Rollup.waitForDeployment();
-  const l1RollupAddr = await l1Rollup.getAddress();
-  console.log("OptimisticRollup L2->L1 (L1):", l1RollupAddr);
+  let l1RollupAddr = existingL1Rollup;
+  if (l1RollupAddr) {
+    await assertCode(l1Provider, l1RollupAddr, "L1 rollup");
+  } else {
+    console.log("== Deploy OptimisticRollup L2->L1 on L1 ==");
+    const l1Rollup = await rollupFactoryL1.deploy(
+      l2ChainId,
+      challengePeriodSeconds,
+      await l1Signer.getAddress(),
+      txOpts
+    );
+    await l1Rollup.waitForDeployment();
+    l1RollupAddr = await l1Rollup.getAddress();
+    console.log("OptimisticRollup L2->L1 (L1):", l1RollupAddr);
+  }
 
-  console.log("== Deploy OptimisticRollup L3->L2 on L2 ==");
-  const l2Rollup = await rollupFactoryL2.deploy(
-    l3ChainId,
-    challengePeriodSeconds,
-    await l2Signer.getAddress(),
-    txOpts
-  );
-  await l2Rollup.waitForDeployment();
-  const l2RollupAddr = await l2Rollup.getAddress();
-  console.log("OptimisticRollup L3->L2 (L2):", l2RollupAddr);
+  let l2RollupAddr = existingL2Rollup;
+  if (l2RollupAddr) {
+    await assertCode(l2Provider, l2RollupAddr, "L2 rollup");
+  } else {
+    console.log("== Deploy OptimisticRollup L3->L2 on L2 ==");
+    const l2Rollup = await rollupFactoryL2.deploy(
+      l3ChainId,
+      challengePeriodSeconds,
+      await l2Signer.getAddress(),
+      txOpts
+    );
+    await l2Rollup.waitForDeployment();
+    l2RollupAddr = await l2Rollup.getAddress();
+    console.log("OptimisticRollup L3->L2 (L2):", l2RollupAddr);
+  }
 
-  console.log("== Deploy L3Inbox on L3 ==");
-  const inboxFactory = new ethers.ContractFactory(inboxArtifact.abi, inboxArtifact.bytecode, l3Signer);
-  const inbox = await inboxFactory.deploy(await l3Signer.getAddress(), txOpts);
-  await inbox.waitForDeployment();
-  const inboxAddr = await inbox.getAddress();
-  console.log("L3Inbox (L3):", inboxAddr);
+  let inboxAddr = existingInbox;
+  if (inboxAddr) {
+    await assertCode(l3Provider, inboxAddr, "L3 inbox");
+  } else {
+    console.log("== Deploy L3Inbox on L3 ==");
+    const inboxFactory = new ethers.ContractFactory(inboxArtifact.abi, inboxArtifact.bytecode, l3Signer);
+    const inbox = await inboxFactory.deploy(await l3Signer.getAddress(), txOpts);
+    await inbox.waitForDeployment();
+    inboxAddr = await inbox.getAddress();
+    console.log("L3Inbox (L3):", inboxAddr);
+  }
 
-  console.log("== Deploy L3BridgedTokenFactory on L3 ==");
-  const factoryFactory = new ethers.ContractFactory(factoryArtifact.abi, factoryArtifact.bytecode, l3Signer);
-  const factory = await factoryFactory.deploy(await l3Signer.getAddress(), txOpts);
-  await factory.waitForDeployment();
-  const factoryAddr = await factory.getAddress();
-  console.log("L3BridgedTokenFactory (L3):", factoryAddr);
+  let factoryAddr = existingFactory;
+  if (factoryAddr) {
+    await assertCode(l3Provider, factoryAddr, "L3 token factory");
+  } else {
+    console.log("== Deploy L3BridgedTokenFactory on L3 ==");
+    const factoryFactory = new ethers.ContractFactory(factoryArtifact.abi, factoryArtifact.bytecode, l3Signer);
+    const factory = await factoryFactory.deploy(await l3Signer.getAddress(), txOpts);
+    await factory.waitForDeployment();
+    factoryAddr = await factory.getAddress();
+    console.log("L3BridgedTokenFactory (L3):", factoryAddr);
+  }
 
-  console.log("== Deploy default L3 bridged token for GhostTokenL2 ==");
-  const l2Token = new ethers.Contract(l2TokenAddr, l2TokenArtifact.abi, l2Provider);
-  const l2Name = await l2Token.name();
-  const l2Symbol = await l2Token.symbol();
-  const l2Decimals = await l2Token.decimals();
-  const l3Name = `${l2Name} (L3)`;
-  const l3Symbol = `${l2Symbol}L3`;
-  const deployTokenTx = await factory
-    .connect(l3Signer)
-    .getOrDeployBridgedToken(l2TokenAddr, l3Name, l3Symbol, l2Decimals, txOpts);
-  const deployTokenRcpt = await deployTokenTx.wait();
-  const deployed = deployTokenRcpt?.logs
-    .map((l) => {
-      try {
-        return factory.interface.parseLog(l);
-      } catch {
-        return null;
-      }
-    })
-    .find((e) => e?.name === "BridgedTokenDeployed");
-  const l3TokenAddr = String(deployed?.args?.l3Token ?? "");
-  console.log("L3BridgedToken (L3, default):", l3TokenAddr);
+  let l3TokenAddr = existingL3Token;
+  if (!l3TokenAddr) {
+    console.log("== Deploy default L3 bridged token for GhostTokenL2 ==");
+    const l2Token = new ethers.Contract(l2TokenAddr, l2TokenArtifact.abi, l2Provider);
+    const l2Name = await l2Token.name();
+    const l2Symbol = await l2Token.symbol();
+    const l2Decimals = await l2Token.decimals();
+    const l3Name = `${l2Name} (L3)`;
+    const l3Symbol = `${l2Symbol}L3`;
+    const factory = new ethers.Contract(factoryAddr!, factoryArtifact.abi, l3Signer) as ethers.Contract & {
+      getOrDeployBridgedToken: (
+        l2Token: string,
+        name: string,
+        symbol: string,
+        decimals: number,
+        opts?: ethers.TransactionRequest
+      ) => Promise<ethers.ContractTransactionResponse>;
+    };
+    const deployTokenTx = await factory.getOrDeployBridgedToken(l2TokenAddr, l3Name, l3Symbol, l2Decimals, txOpts);
+    const deployTokenRcpt = await deployTokenTx.wait();
+    const deployed = deployTokenRcpt?.logs
+      .map((log: ethers.Log) => {
+        try {
+          return factory.interface.parseLog(log);
+        } catch {
+          return null;
+        }
+      })
+      .find((entry) => entry?.name === "BridgedTokenDeployed");
+    l3TokenAddr = String(deployed?.args?.l3Token ?? "");
+    console.log("L3BridgedToken (L3, default):", l3TokenAddr);
+  } else {
+    await assertCode(l3Provider, l3TokenAddr, "L3 bridged token");
+  }
 
   console.log("Summary:");
   console.log({

@@ -11,6 +11,7 @@
   "include": [
     "src",
     "src/types/**/*.d.ts",
-    "../../packages/types/**/*.ts"
+    "../../packages/types/**/*.ts",
+    "../../observability/**/*.ts"
   ]
 }

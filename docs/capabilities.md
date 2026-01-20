@@ -52,6 +52,14 @@ Dependencies: downstream service base URLs from `services/stack.env` (`servicesB
 | POST `/observability/alerts` | Create alert rule / proxy. | `observability:read` unless public | `Alert` payload | `Alert` |
 | GET `/observability/logs` | Loki log search. | `observability:read` unless public | `?q&limit&start&end` | `LogEvent[]` |
 | GET `/observability/logs/stream` | SSE log tail. | `observability:read` unless public | `?q` | SSE stream |
+| GET `/observability/logs/api/query` | Normalized log search. | `observability:read` unless public | `?q&layers&chains&components&severities&start&end&limit` | `NormalizedLogEvent[]` |
+| GET `/observability/logs/api/stream` | Normalized log stream (SSE). | `observability:read` unless public | `?q&layers&chains&components&severities` | SSE stream |
+| GET `/observability/logs/api/aggregate` | Log aggregation. | `observability:read` unless public | `?groupBy&...filters` | `LogAggregateResult` |
+| GET `/observability/logs/api/incidents` | Log incident summaries. | `observability:read` unless public | `?filters` | `{ incidents: LogIncident[] }` |
+| GET `/observability/logs/api/insights` | AI log insight report. | `observability:read` unless public | `?filters` | `LogInsightReport` |
+| GET `/observability/logs/api/correlation` | Trace correlation data. | `observability:read` unless public | `?filters` | `{ traces, layerCounts, total }` |
+| GET `/observability/logs/api/critical` | Critical log ledger. | `observability:read` unless public | `?limit` | `{ records: CriticalLogRecord[] }` |
+| GET `/observability/logs/api/metrics` | Log-derived Prometheus metrics. | `observability:read` unless public | `?filters` | Prometheus text |
 | GET `/observability/channels` | Notification channels. | `observability:read` unless public | none | `Channel[]` |
 | POST `/observability/channels/test` | Test notification channels. | `observability:write` | `{ channels: string[], alert? }` | `{ ok: true }` |
 | GET `/observability/incidents` | Incident summary. | `observability:read` | none | `{ ok: true, incidents: BridgeIncident[] }` |

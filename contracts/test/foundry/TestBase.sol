@@ -6,6 +6,8 @@ interface Vm {
     function expectRevert(bytes calldata) external;
     function assume(bool) external;
     function warp(uint256) external;
+    function sign(uint256, bytes32) external returns (uint8, bytes32, bytes32);
+    function addr(uint256) external returns (address);
 }
 
 abstract contract TestBase {

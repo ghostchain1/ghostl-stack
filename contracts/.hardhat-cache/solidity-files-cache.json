@@ -2302,6 +2302,271 @@
       "artifacts": [
         "L2OutputOracle"
       ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/ai/AIAttestationBase.sol": {
+      "lastModificationDate": 1768900262567,
+      "contentHash": "df4b53c5b4fc610c184fc15eb78894e4",
+      "sourceName": "src/ai/AIAttestationBase.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "AIAttestationBase"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/ai/AILayerGuardian.sol": {
+      "lastModificationDate": 1768900279727,
+      "contentHash": "63612b966cc36712aa115525eacdaa85",
+      "sourceName": "src/ai/AILayerGuardian.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./AIAttestationBase.sol",
+        "./IAITransactionGuard.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "AILayerGuardian"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/ai/IAITransactionGuard.sol": {
+      "lastModificationDate": 1768899601111,
+      "contentHash": "e0fe873d6a8fc349afdc016c5149d0d2",
+      "sourceName": "src/ai/IAITransactionGuard.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "IAITransactionGuard"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l3/AIGuardianL3.sol": {
+      "lastModificationDate": 1768899735907,
+      "contentHash": "1204d50c70aec5eb4c67987279c164b6",
+      "sourceName": "src/l3/AIGuardianL3.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../ai/AILayerGuardian.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "AIGuardianL3"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l2/AIGuardianL2.sol": {
+      "lastModificationDate": 1768899732287,
+      "contentHash": "9633574a112a0ee25ae1f7a05c3acc8a",
+      "sourceName": "src/l2/AIGuardianL2.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../ai/AILayerGuardian.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "AIGuardianL2"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/AIGuardianL1.sol": {
+      "lastModificationDate": 1768899728523,
+      "contentHash": "c6b47cd1b9283e754797ff19681e23a6",
+      "sourceName": "src/l1/AIGuardianL1.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../ai/AILayerGuardian.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "AIGuardianL1"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/ai/AICommandCenter.sol": {
+      "lastModificationDate": 1768900489571,
+      "contentHash": "4951f1d77140e17598f2ac21b147d5d6",
+      "sourceName": "src/ai/AICommandCenter.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "AICommandCenter"
+      ]
     }
   }
 }
