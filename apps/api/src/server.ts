@@ -15,6 +15,8 @@ import { buildIdentityAccessRouter } from './modules/identity-access/router';
 import { buildChainRouter } from './modules/chain/router';
 import { buildNodeRouter } from './modules/nodes/router';
 import { buildObservabilityRouter } from './modules/observability/router';
+import { CriticalLogStore } from './modules/observability/critical-log-store';
+import { LogIntelService } from './modules/observability/log-intel';
 import { createStubServices } from './stubs';
 import { PrometheusClient } from './clients/prometheus';
 import { GrafanaClient } from './clients/grafana';
@@ -280,6 +282,10 @@ const relayer = new RelayerClient(relayerUrl);
 const loki = lokiUrl ? new LokiClient(lokiUrl) : undefined;
 const guard = guardUrl ? new GuardClient(guardUrl, env.GUARD_ADMIN_TOKEN) : undefined;
 const alertmanager = alertmanagerUrl ? new AlertmanagerClient(alertmanagerUrl) : undefined;
+const criticalLogStore = new CriticalLogStore(
+  env.OBSERVABILITY_CRITICAL_LOG_PATH || './data/critical-logs.jsonl',
+  env.OBSERVABILITY_CRITICAL_LOG_SECRET
+);
 const liveServices = createLiveServices({ prometheus, grafana, relayer, loki, guard, alertmanager });
 const identityServicesPromise = createPersistentIdentityServices();
 const walletServicePromise = createWalletService();
@@ -1193,6 +1199,14 @@ identityServicesPromise.then(async (identity) => {
   app.use('/v1', identityRouter);
   app.use('/', identityRouter);
   app.use(['/v1', '/'], buildGhostchainRouter(ghostchainConfig));
+  const logIntel = new LogIntelService({
+    loki,
+    anomalyUrl: servicesBase.ai,
+    explainabilityUrl: servicesBase.explainability,
+    auditLog: identity.auditLogService,
+    criticalStore: criticalLogStore,
+    maxLimit: env.OBSERVABILITY_LOG_MAX_LIMIT
+  });
   const observabilityGuard = env.PUBLIC_OBSERVABILITY ? allowAll : requirePermission('observability:read');
   app.use(
     ['/v1/observability', '/observability'],
@@ -1208,6 +1222,8 @@ identityServicesPromise.then(async (identity) => {
       guard: guard,
       channels: notificationChannels,
       auditLog: identity.auditLogService,
+      logIntel,
+      criticalStore: criticalLogStore,
       alertProxy: alertmanager ? (payload: AlertmanagerAlert) => alertmanager.send(payload) : undefined
     })
   );
