@@ -43,7 +43,8 @@ const config: HardhatUserConfig = {
     settings: soliditySettings
   },
   paths: {
-    sources: "./src"
+    sources: "./src",
+    cache: "./.hardhat-cache"
   },
   networks: {
     anvil: {

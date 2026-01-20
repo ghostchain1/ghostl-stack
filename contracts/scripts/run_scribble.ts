@@ -8,7 +8,7 @@ mkdirSync(outDir, { recursive: true });
 
 const result = spawnSync(
   "npx",
-  ["@consensys/scribble", "--config", "formal/scribble.config.json"],
+  ["scribble", "--config", "formal/scribble.config.json"],
   { cwd: root, stdio: "inherit" }
 );
 const summaryPath = path.join(root, "reports", "formal", "summary.json");
