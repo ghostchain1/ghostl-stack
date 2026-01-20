@@ -1,3 +1,4 @@
+contracts/reports/formal/scribble/scribble.json filter=lfs diff=lfs merge=lfs -text
 infra/opstack/bin/op-deployer-0.5.2-linux-amd64/op-deployer filter=lfs diff=lfs merge=lfs -text
 infra/opstack/bin/op-deployer-0.6.0-rc.2-linux-amd64/op-deployer filter=lfs diff=lfs merge=lfs -text
 infra/opstack/bin/op-deployer-x86 filter=lfs diff=lfs merge=lfs -text

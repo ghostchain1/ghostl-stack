@@ -53,7 +53,7 @@ export const buildObservabilityLogsApiRouter = (deps: ObservabilityLogsApiDeps) 
       const events = await deps.logIntel.query({ ...query, limit: Math.min(query.limit || 1000, 1000) });
       const counts = new Map<string, number>();
       events.forEach((event) => {
-        const key = `severity=\"${event.severity}\",component=\"${event.component}\",layer=\"${event.layer}\",chain=\"${event.chain}\"`;
+        const key = `severity="${event.severity}",component="${event.component}",layer="${event.layer}",chain="${event.chain}"`;
         counts.set(key, (counts.get(key) || 0) + 1);
       });
       const lines = [

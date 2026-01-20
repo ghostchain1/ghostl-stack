@@ -177,7 +177,7 @@ const explorerTxSchema = z.object({
 });
 
 const explorerTxsSchema = z.object({
-  txs: z.array(explorerTxSchema).default([]),
+  txs: z.array(explorerTxSchema),
   chain: z.string().optional()
 });
 
@@ -188,7 +188,7 @@ const explorerBlockSchema = z.object({
 });
 
 const explorerBlocksSchema = z.object({
-  blocks: z.array(explorerBlockSchema).default([]),
+  blocks: z.array(explorerBlockSchema),
   chain: z.string().optional()
 });
 

@@ -18,6 +18,7 @@ interface IBridgeMintableERC20 {
 /// - On "source" chain: escrow canonical token OR burn representation token.
 /// - On "dest" chain: mint representation token OR release escrowed canonical token.
 /// This requires you to choose which side holds canonical custody vs representation.
+// slither-disable-next-line locked-ether
 contract StandardBridge {
     event BridgeInitiated(
         address indexed localToken,

@@ -57,7 +57,7 @@ type CorrelationResponse = {
   total: number;
 };
 
-const parseListParam = (value: string | null): string[] => {
+const parseListParam = (value?: string | null): string[] => {
   if (!value) return [];
   return value
     .split(',')
@@ -121,7 +121,7 @@ const exportCsv = (events: NormalizedLogEvent[]) => {
   const rows = events.map((event) =>
     headers
       .map((key) => {
-        const value = (event as Record<string, unknown>)[key];
+        const value = (event as unknown as Record<string, unknown>)[key];
         return JSON.stringify(value ?? '');
       })
       .join(',')

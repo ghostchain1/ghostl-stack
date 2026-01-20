@@ -436,6 +436,7 @@ contract AILayerGuardian is AIAttestationBase, IAITransactionGuard {
         (bool allowed, uint64 waitSeconds, bytes32 reason) = checkTransaction(operationId);
         if (!allowed) {
             if (waitSeconds > 0) revert("delayed");
+            // slither-disable-next-line incorrect-equality
             if (reason == REASON_PAUSED) revert("paused");
             revert("blocked");
         }

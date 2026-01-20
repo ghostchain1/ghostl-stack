@@ -24,7 +24,7 @@ contract RewardDistributor is Ownable {
     function distribute(address[] calldata stakers, uint256[] calldata amounts) external onlyOwner {
         require(stakers.length == amounts.length, "len mismatch");
         for (uint256 i = 0; i < stakers.length; i++) {
-            native.transfer(stakers[i], amounts[i]);
+            require(native.transfer(stakers[i], amounts[i]), "transfer failed");
             emit Distributed(stakers[i], amounts[i]);
         }
     }

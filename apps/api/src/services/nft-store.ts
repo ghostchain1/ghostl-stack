@@ -1,6 +1,5 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { randomUUID } from 'crypto';
 import type { NftContract, NftToken } from '@ghostl/types/nfts';
 import { openSqlite, type SqliteHandle } from './db';
 
@@ -98,7 +97,8 @@ export const createNftStore = async () => {
     }
     let tokens = store!.tokens;
     if (filter?.contractId) tokens = tokens.filter((t) => t.contractId === filter.contractId);
-    if (filter?.owner) tokens = tokens.filter((t) => t.owner === normalizeAddress(filter.owner));
+    const ownerFilter = filter?.owner ? normalizeAddress(filter.owner) : undefined;
+    if (ownerFilter) tokens = tokens.filter((t) => t.owner === ownerFilter);
     return tokens;
   };
 
