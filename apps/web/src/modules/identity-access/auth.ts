@@ -2,9 +2,9 @@ import type { NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
 import { normalizeRole, roleOrder, type Role } from './access-policy';
 
-export type SessionUser = { id?: string; email?: string; role?: Role };
+export type SessionUser = { id?: string; email?: string; username?: string; wallets?: string[]; role?: Role };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export const getSessionUser = async (req?: NextRequest): Promise<{ user?: SessionUser }> => {
   try {
@@ -17,7 +17,15 @@ export const getSessionUser = async (req?: NextRequest): Promise<{ user?: Sessio
     const data = await res.json();
     const rawUser = data?.user ?? data;
     if (!rawUser?.id) return {};
-    return { user: { id: rawUser.id, email: rawUser.email, role: normalizeRole(rawUser.role ?? data.role) } };
+    return {
+      user: {
+        id: rawUser.id,
+        email: rawUser.email,
+        username: rawUser.username,
+        wallets: rawUser.wallets,
+        role: normalizeRole(rawUser.role ?? data.role)
+      }
+    };
   } catch {
     return {};
   }

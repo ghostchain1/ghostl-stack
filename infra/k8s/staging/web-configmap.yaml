@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ghostl-web-config
+  namespace: ghostl
+data:
+  NEXT_PUBLIC_ENV: "staging"

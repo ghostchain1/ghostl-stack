@@ -12,6 +12,7 @@ const LOCAL_STATUS_TIMEOUT = 2500;
 type User = {
   id: string;
   email?: string;
+  username?: string;
   wallets?: string[];
   role: Role;
 };
@@ -21,12 +22,14 @@ const availableRoles: Role[] = ['READONLY', 'OPERATOR', 'ADMIN'];
 export function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [status, setStatus] = useState<string>('');
-  const [newUser, setNewUser] = useState<{ email: string; wallets: string; role: Role }>({
+  const [newUser, setNewUser] = useState<{ email: string; username: string; wallets: string; role: Role }>({
     email: '',
+    username: '',
     wallets: '',
     role: 'READONLY'
   });
   const [walletInputs, setWalletInputs] = useState<Record<string, string>>({});
+  const [usernameInputs, setUsernameInputs] = useState<Record<string, string>>({});
 
   const summary = useMemo(() => {
     const walletTotal = users.reduce((acc, u) => acc + (u.wallets?.length || 0), 0);
@@ -45,9 +48,9 @@ export function UserManagement() {
     try {
       const uRes = await fetch(`${API_URL}/users`, { credentials: 'include' });
       if (!uRes.ok) throw new Error('auth_required');
-      const uJson = (await uRes.json()) as User[];
-      setUsers(uJson);
-      setStatus('');
+          const uJson = (await uRes.json()) as User[];
+          setUsers(uJson);
+          setStatus('');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to load users';
       setStatus(msg);
@@ -71,13 +74,14 @@ export function UserManagement() {
         credentials: 'include',
         body: JSON.stringify({
           email: newUser.email,
+          username: newUser.username ? newUser.username.trim() : undefined,
           wallets: newUser.wallets ? newUser.wallets.split(',').map((w) => w.trim()) : [],
           role: newUser.role
         })
       });
       if (!res.ok) throw new Error(`Create failed ${res.status}`);
       await load();
-      setNewUser({ email: '', wallets: '', role: 'READONLY' });
+      setNewUser({ email: '', username: '', wallets: '', role: 'READONLY' });
       flashStatus('User created');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Create failed';
@@ -148,6 +152,12 @@ export function UserManagement() {
             />
             <input
               className="input"
+              placeholder="username (optional)"
+              value={newUser.username}
+              onChange={(e) => setNewUser((u) => ({ ...u, username: e.target.value }))}
+            />
+            <input
+              className="input"
               placeholder="wallets (comma separated 0x...)"
               value={newUser.wallets}
               onChange={(e) => setNewUser((u) => ({ ...u, wallets: e.target.value }))}
@@ -171,7 +181,7 @@ export function UserManagement() {
 
       <div className="card-grid">
         {users.map((u) => (
-          <Card key={u.id} title={u.email || u.id} subtitle={u.id}>
+        <Card key={u.id} title={u.username || u.email || u.id} subtitle={u.id}>
             <div className="stack" style={{ gap: 8 }}>
               <div className="stack">
                 <span className="muted">Role</span>
@@ -188,6 +198,27 @@ export function UserManagement() {
                       </option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              <div className="stack">
+                <span className="muted">Username</span>
+                <div className="inline-form" style={{ gap: 6 }}>
+                  <input
+                    className="input"
+                    placeholder="username"
+                    value={usernameInputs[u.id] ?? u.username ?? ''}
+                    onChange={(e) => setUsernameInputs((prev) => ({ ...prev, [u.id]: e.target.value }))}
+                  />
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      const next = (usernameInputs[u.id] ?? u.username ?? '').trim();
+                      updateUser(u.id, { username: next || undefined });
+                    }}
+                  >
+                    Save
+                  </Button>
                 </div>
               </div>
 

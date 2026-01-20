@@ -48,8 +48,10 @@ const legacyNavSections: { title: string; items: NavItem[] }[] = [
     items: [
       { href: '/contracts', label: 'Contracts' },
       { href: '/tokenomics', label: 'Tokenomics' },
+      { href: '/stocks', label: 'Stocks' },
       { href: '/treasury', label: 'Treasury' },
-      { href: '/governance', label: 'Governance' }
+      { href: '/governance', label: 'Governance' },
+      { href: '/nfts', label: 'NFTs' }
     ]
   },
   {
@@ -104,6 +106,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     { label: 'Sequencer', value: 'Finality <2s' },
     { label: 'Guards', value: 'Active' }
   ];
+  const userLabel = user?.username || user?.email;
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -161,7 +164,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </button>
             {user && (
               <div className="inline-form">
-                {user.email && <span className="muted">{user.email}</span>}
+                {userLabel && <span className="muted">{userLabel}</span>}
                 {user.role && <span className="badge">{user.role}</span>}
                 <button
                   className="button secondary"

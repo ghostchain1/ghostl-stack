@@ -127,6 +127,16 @@ async function main() {
   await recordDeployment("l2", "GhostTokenL2", l2TokenAddr, l2ChainId);
   console.log("GhostTokenL2 (L2):", l2TokenAddr);
 
+  console.log("== Deploy GhostNFT on L2 ==");
+  const GhostNFT = await ethers.getContractFactory("GhostNFT");
+  const l2NftName = process.env.L2_NFT_NAME ?? "GhostL2 NFT";
+  const l2NftSymbol = process.env.L2_NFT_SYMBOL ?? "GL2NFT";
+  const l2Nft = await GhostNFT.connect(l2[0]).deploy(l2NftName, l2NftSymbol, txOpts);
+  await waitForDeployment(l2Nft, l2[0].provider as ethers.JsonRpcProvider, "GhostNFT L2");
+  const l2NftAddr = await l2Nft.getAddress();
+  await recordDeployment("l2", "GhostNFT", l2NftAddr, l2ChainId);
+  console.log("GhostNFT (L2):", l2NftAddr);
+
   // Deploy inbox on L3 (GhostL3) using the same dev key by default.
   const l3Rpc = rpcL3Public;
   const relayerKey =
@@ -164,6 +174,15 @@ async function main() {
   await recordDeployment("l1", "OptimisticRollup", l1RollupAddr, Number(l1Network.chainId));
   console.log("OptimisticRollup L2->L1 (L1):", l1RollupAddr);
 
+  console.log("== Deploy GhostNFT on L1 ==");
+  const l1NftName = process.env.L1_NFT_NAME ?? "GhostChain NFT";
+  const l1NftSymbol = process.env.L1_NFT_SYMBOL ?? "GL1NFT";
+  const l1Nft = await GhostNFT.connect(l1Signer).deploy(l1NftName, l1NftSymbol, txOpts);
+  await waitForDeployment(l1Nft, l1Provider, "GhostNFT L1");
+  const l1NftAddr = await l1Nft.getAddress();
+  await recordDeployment("l1", "GhostNFT", l1NftAddr, Number(l1Network.chainId));
+  console.log("GhostNFT (L1):", l1NftAddr);
+
   console.log("== Deploy OptimisticRollup L3->L2 on L2 ==");
   const l2Rollup = await Rollup.connect(l2[0]).deploy(
     l3ChainId,
@@ -191,6 +210,15 @@ async function main() {
   const factoryAddr = await factory.getAddress();
   await recordDeployment("l3", "L3BridgedTokenFactory", factoryAddr, l3ChainId);
   console.log("L3BridgedTokenFactory (L3):", factoryAddr);
+
+  console.log("== Deploy GhostNFT on L3 ==");
+  const l3NftName = process.env.L3_NFT_NAME ?? "GhostL3 NFT";
+  const l3NftSymbol = process.env.L3_NFT_SYMBOL ?? "GL3NFT";
+  const l3Nft = await GhostNFT.connect(l3Signer).deploy(l3NftName, l3NftSymbol, txOpts);
+  await waitForDeployment(l3Nft, l3Provider, "GhostNFT L3");
+  const l3NftAddr = await l3Nft.getAddress();
+  await recordDeployment("l3", "GhostNFT", l3NftAddr, l3ChainId);
+  console.log("GhostNFT (L3):", l3NftAddr);
 
   // Deploy a default bridged token for the demo GhostTokenL2.
   const l2Name = await l2Token.name();
