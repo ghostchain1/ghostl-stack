@@ -337,6 +337,7 @@ services:
     - host.docker.internal:host-gateway
     volumes:
     - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    - ./observability/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
     - prometheus_data:/prometheus
     command:
     - --config.file=/etc/prometheus/prometheus.yml
@@ -422,6 +423,26 @@ services:
     - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
     mem_limit: 512m
     cpus: '0.5'
+  vector:
+    cap_drop: *id001
+    security_opt: *id002
+    image: ${VECTOR_IMAGE:-timberio/vector:0.38.0-alpine}
+    restart: unless-stopped
+    logging: *id003
+    depends_on:
+      loki:
+        condition: service_started
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    - ./observability/vector/vector.yaml:/etc/vector/vector.yaml:ro
+    environment:
+      VECTOR_LOG: info
+    command:
+    - --config
+    - /etc/vector/vector.yaml
+    mem_limit: 256m
+    cpus: '0.25'
 volumes:
   op_gate_state: null
   prometheus_data: null

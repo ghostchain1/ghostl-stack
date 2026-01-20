@@ -7,6 +7,7 @@
     "deploy:edge": "hardhat run --network ghostl2 scripts/deploy_all.ts",
     "deploy:op": "hardhat run --network ghostl2Op scripts/deploy_all.ts",
     "deploy:futuristic": "hardhat run --network anvil scripts/deploy_futuristic_stack.ts",
+    "deploy:ai": "hardhat run --network ghostl2 scripts/deploy_ai_layers.ts",
     "deploy:one-click": "ts-node scripts/deploy_one_click.ts",
     "deploy:testnet": "ts-node scripts/one_click_testnet.ts",
     "docs:diagrams": "ts-node scripts/generate_diagrams.ts",

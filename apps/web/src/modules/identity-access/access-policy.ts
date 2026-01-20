@@ -23,7 +23,7 @@ const policies: PolicyEntry[] = [
   { pattern: '/validators', role: 'OPERATOR' },
   { pattern: '/bridge', role: 'OPERATOR' },
   { pattern: '/explorer', role: 'OPERATOR' },
-  { pattern: '/observability', role: 'OPERATOR' },
+  { pattern: '/observability', role: 'READONLY' },
   { pattern: '/contracts', role: 'OPERATOR' },
   { pattern: '/tokenomics', role: 'OPERATOR' },
   { pattern: '/treasury', role: 'OPERATOR' },

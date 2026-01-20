@@ -18,6 +18,9 @@ const EnvSchema = z.object({
   GUARD_ADMIN_TOKEN: z.string().optional(),
   LOKI_URL: z.string().url().optional(),
   ALERTMANAGER_URL: z.string().url().optional(),
+  OBSERVABILITY_CRITICAL_LOG_PATH: z.string().default('./data/critical-logs.jsonl'),
+  OBSERVABILITY_CRITICAL_LOG_SECRET: z.string().optional(),
+  OBSERVABILITY_LOG_MAX_LIMIT: z.coerce.number().int().min(50).max(5000).default(500),
   PUBLIC_OBSERVABILITY: z
     .string()
     .default('true')

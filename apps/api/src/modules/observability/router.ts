@@ -7,6 +7,9 @@ import type {
   AuditLog,
   NotificationChannel
 } from './services';
+import { buildObservabilityLogsApiRouter } from './logs-api';
+import type { CriticalLogStore } from './critical-log-store';
+import type { LogIntelService } from './log-intel';
 import { requirePermission } from '../../lib/rbac';
 import type { AlertmanagerAlert } from '../../clients/alertmanager';
 
@@ -24,6 +27,8 @@ export interface ObservabilityDeps {
   notifications: NotificationRouterService;
   channels?: NotificationChannel[];
   auditLog?: AuditLog;
+  logIntel?: LogIntelService;
+  criticalStore?: CriticalLogStore;
   guard?: {
     listPolicies: () => Promise<unknown>;
     setPolicy: (path: 'mode' | 'threshold' | 'delay', body: unknown) => Promise<unknown>;
@@ -33,6 +38,10 @@ export interface ObservabilityDeps {
 
 export const buildObservabilityRouter = (deps: ObservabilityDeps) => {
   const router = Router();
+
+  if (deps.logIntel) {
+    router.use('/logs/api', buildObservabilityLogsApiRouter({ logIntel: deps.logIntel, criticalStore: deps.criticalStore }));
+  }
 
   router.get(
     '/metrics',

@@ -12,6 +12,7 @@ import type {
   PeerGraphService
 } from '../modules/chain/services';
 import type { NodeHealthService, NodeInventoryService } from '../modules/nodes/services';
+import { flattenLokiEntries } from '../modules/observability/log-helpers';
 import type {
   AlertRulesService,
   LogsService,
@@ -278,22 +279,33 @@ export const createLiveServices = (deps: {
       const end = endMs || now;
       const start = startMs || end - 5 * 60 * 1000;
       const result = await deps.loki.queryRange(query || '{job!=""}', start * 1_000_000, end * 1_000_000, limit);
-      const events: LogEvent[] = [];
-      result.forEach((entry) => {
-        entry.values.forEach(([ts, msg]) => {
-          events.push({
-            source: entry.stream.job || entry.stream.instance || 'loki',
-            level: (entry.stream.level as LogEvent['level']) || 'info',
-            message: msg,
-            time: new Date(parseInt(ts, 10) / 1_000_000).toISOString(),
-            labels: entry.stream
-          });
-        });
-      });
-      return events;
+      return flattenLokiEntries(result).map((entry) => entry.log);
     },
-    tail(_source: string, _onEvent: (event: LogEvent) => void) {
-      return () => undefined;
+    tail(source: string, onEvent: (event: LogEvent) => void) {
+      if (!deps.loki) return () => undefined;
+      let active = true;
+      let lastNs = Date.now() * 1_000_000;
+      const interval = setInterval(async () => {
+        if (!active) return;
+        const endNs = Date.now() * 1_000_000;
+        try {
+          const result = await deps.loki!.queryRange(source || '{job!=""}', lastNs, endNs, 100);
+          const flattened = flattenLokiEntries(result);
+          flattened.sort((a, b) => Number(a.timestampNs) - Number(b.timestampNs));
+          flattened.forEach((entry) => onEvent(entry.log));
+          if (flattened.length) {
+            lastNs = Number(flattened[flattened.length - 1].timestampNs) + 1;
+          } else {
+            lastNs = endNs;
+          }
+        } catch {
+          // ignore and retry
+        }
+      }, 2000);
+      return () => {
+        active = false;
+        clearInterval(interval);
+      };
     }
   };
 
