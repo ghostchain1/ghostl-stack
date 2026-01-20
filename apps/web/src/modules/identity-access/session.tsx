@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { resolveApiBase } from '../../lib/runtime';
 import { normalizeRole, type Role } from './access-policy';
 
-export type SessionUser = { id?: string; email?: string; role?: Role };
+export type SessionUser = { id?: string; email?: string; username?: string; wallets?: string[]; role?: Role };
 export type SessionState = {
   user?: SessionUser;
   loading: boolean;
@@ -29,7 +29,13 @@ export function SessionProvider({ children, initial }: { children: ReactNode; in
             return;
           }
           setState({
-            user: { id: rawUser.id, email: rawUser.email, role: normalizeRole(rawUser.role ?? data.role) },
+            user: {
+              id: rawUser.id,
+              email: rawUser.email,
+              username: rawUser.username,
+              wallets: rawUser.wallets,
+              role: normalizeRole(rawUser.role ?? data.role)
+            },
             loading: false
           });
           return;

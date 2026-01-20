@@ -1,0 +1,44 @@
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+
+ingester:
+  wal:
+    enabled: true
+  lifecycler:
+    address: 0.0.0.0
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+  chunk_idle_period: 5m
+  chunk_retain_period: 2m
+
+limits_config:
+  retention_period: 168h
+
+schema_config:
+  configs:
+    - from: 2022-10-24
+      store: boltdb-shipper
+      object_store: s3
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h
+
+storage_config:
+  boltdb_shipper:
+    active_index_directory: /loki/index
+    cache_location: /loki/index_cache
+    cache_ttl: 24h
+    shared_store: s3
+  aws:
+    s3: ${LOKI_S3_URL}
+    s3forcepathstyle: true
+    insecure: false
+
+compactor:
+  working_directory: /loki/compactor
+  shared_store: s3

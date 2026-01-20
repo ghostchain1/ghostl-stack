@@ -132,10 +132,11 @@ const resolveRoleFromRoles = (rolesInput?: string[]) => {
   return normalized.sort((a, b) => roleOrder[b] - roleOrder[a])[0] || 'READONLY';
 };
 
-const userFromRow = (row: any): User => ({
+const userFromRow = (row: any, wallets: string[] = []): User => ({
   id: row.id,
   email: row.email,
-  wallets: [],
+  username: row.username || undefined,
+  wallets,
   roles: [resolveRoleForEmail(row.email, normalizeRole(row.role)).toLowerCase()]
 });
 
@@ -148,6 +149,7 @@ const openAuthDb = (): SqliteHandle => {
       email text not null unique,
       password_hash text not null,
       role text not null,
+      username text,
       created_at text not null,
       updated_at text not null
     );
@@ -189,12 +191,54 @@ const openAuthDb = (): SqliteHandle => {
       locked_until text
     );
   `);
+  const columns = db.prepare(`PRAGMA table_info(users)`).all() as { name: string }[];
+  const existing = new Set(columns.map((c) => c.name));
+  if (!existing.has('username')) {
+    db.exec(`ALTER TABLE users ADD COLUMN username text`);
+  }
+  db.exec(`
+    create table if not exists user_wallets (
+      id text primary key,
+      user_id text not null,
+      address text not null,
+      chain_id text,
+      label text,
+      created_at text not null
+    );
+    create unique index if not exists user_wallets_unique on user_wallets(user_id, address);
+    create index if not exists user_wallets_address on user_wallets(address);
+  `);
   return db;
 };
 
 const db = openAuthDb();
 
 const nowIso = () => new Date().toISOString();
+
+const normalizeAddress = (address: string) => address.trim().toLowerCase();
+
+const loadWalletsForUser = (userId: string) => {
+  const rows = db.prepare('select address from user_wallets where user_id = ?').all(userId) as { address: string }[];
+  return rows.map((row) => row.address);
+};
+
+const replaceWalletsForUser = (userId: string, wallets: string[]) => {
+  db.prepare('delete from user_wallets where user_id = ?').run(userId);
+  const insert = db.prepare('insert into user_wallets (id, user_id, address, created_at) values (?, ?, ?, ?)');
+  const createdAt = nowIso();
+  const unique = Array.from(new Set(wallets.map((w) => normalizeAddress(w)).filter(Boolean)));
+  for (const address of unique) {
+    insert.run(randomUUID(), userId, address, createdAt);
+  }
+};
+
+const isUsernameTaken = (username: string, exceptUserId?: string) => {
+  if (!username) return false;
+  const row = db.prepare('select id from users where username = ?').get(username) as { id?: string } | undefined;
+  if (!row) return false;
+  if (exceptUserId && row.id === exceptUserId) return false;
+  return true;
+};
 
 const hashPassword = async (password: string) => {
   return argon2.hash(password, { type: argon2.argon2id });
@@ -255,42 +299,59 @@ const rbacService: RBACService = {
 const userService: UserService = {
   async list() {
     const rows = db.prepare('select * from users order by created_at asc').all() as any[];
-    return rows.map(userFromRow);
+    const walletRows = db.prepare('select user_id, address from user_wallets').all() as { user_id: string; address: string }[];
+    const walletMap = new Map<string, string[]>();
+    walletRows.forEach((row) => {
+      const existing = walletMap.get(row.user_id) || [];
+      existing.push(row.address);
+      walletMap.set(row.user_id, existing);
+    });
+    return rows.map((row) => userFromRow(row, walletMap.get(row.id) || []));
   },
   async get(id: string) {
     const row = db.prepare('select * from users where id = ?').get(id) as any;
-    return row ? userFromRow(row) : null;
+    return row ? userFromRow(row, loadWalletsForUser(id)) : null;
   },
   async create(input) {
+    const username = input.username?.trim();
+    if (username && isUsernameTaken(username)) {
+      throw new Error('username_exists');
+    }
     const id = randomUUID();
     const createdAt = nowIso();
     const role = resolveRoleForEmail(input.email, resolveRoleFromRoles(input.roles));
-    db.prepare('insert into users (id, email, password_hash, role, created_at, updated_at) values (?, ?, ?, ?, ?, ?)').run(
-      id,
-      input.email,
-      await hashPassword(randomUUID()),
-      role,
-      createdAt,
-      createdAt
-    );
-    return { id, email: input.email, wallets: input.wallets || [], roles: [role.toLowerCase()] };
+    db.prepare(
+      'insert into users (id, email, password_hash, role, username, created_at, updated_at) values (?, ?, ?, ?, ?, ?, ?)'
+    ).run(id, input.email, await hashPassword(randomUUID()), role, username || null, createdAt, createdAt);
+    if (input.wallets?.length) {
+      replaceWalletsForUser(id, input.wallets);
+    }
+    return { id, email: input.email, username: username || undefined, wallets: input.wallets || [], roles: [role.toLowerCase()] };
   },
   async update(id, input) {
     const existing = db.prepare('select * from users where id = ?').get(id) as any;
     if (!existing) throw new Error('user not found');
+    const nextUsername = input.username?.trim() ?? existing.username ?? null;
+    if (nextUsername && isUsernameTaken(nextUsername, id)) {
+      throw new Error('username_exists');
+    }
     const role = resolveRoleForEmail(
       input.email || existing.email,
       input.roles ? resolveRoleFromRoles(input.roles) : normalizeRole(existing.role)
     );
     const updatedAt = nowIso();
-    db.prepare('update users set email = ?, role = ?, updated_at = ? where id = ?').run(
+    db.prepare('update users set email = ?, role = ?, username = ?, updated_at = ? where id = ?').run(
       input.email || existing.email,
       role,
+      nextUsername,
       updatedAt,
       id
     );
+    if (input.wallets) {
+      replaceWalletsForUser(id, input.wallets);
+    }
     const row = db.prepare('select * from users where id = ?').get(id) as any;
-    return userFromRow(row);
+    return userFromRow(row, loadWalletsForUser(id));
   }
 };
 
@@ -381,7 +442,7 @@ const authService: AuthService = {
       throw new Error('invalid_credentials');
     }
     recordLoginAttempt(email, context?.ip, true);
-    return userFromRow(row);
+    return userFromRow(row, loadWalletsForUser(row.id));
   },
   async registerWithPassword(email, password, rolesInput) {
     const existing = db.prepare('select * from users where email = ?').get(email) as any;
@@ -398,7 +459,7 @@ const authService: AuthService = {
       now,
       now
     );
-    return { id, email, wallets: [], roles: [role.toLowerCase()] };
+    return { id, email, username: undefined, wallets: [], roles: [role.toLowerCase()] };
   },
   async loginWithSso(token) {
     const secret = process.env.SSO_JWT_SECRET;
@@ -408,7 +469,7 @@ const authService: AuthService = {
     if (!email) throw new Error('invalid_credentials');
     const existing = db.prepare('select * from users where email = ?').get(email) as any;
     if (!existing) throw new Error('invalid_credentials');
-    return userFromRow(existing);
+    return userFromRow(existing, loadWalletsForUser(existing.id));
   },
   async createSession(userId, sessionId, context) {
     const now = nowIso();
@@ -456,7 +517,7 @@ const authService: AuthService = {
       now,
       now
     );
-    return { id, email, wallets: [], roles: [role.toLowerCase()] };
+    return { id, email, username: undefined, wallets: [], roles: [role.toLowerCase()] };
   }
 };
 

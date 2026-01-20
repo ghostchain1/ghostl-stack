@@ -1,0 +1,10 @@
+resources:
+  - namespace.yaml
+  - api-secret.example.yaml
+  - api-configmap.yaml
+  - api-pvc.yaml
+  - api-deployment.yaml
+  - api-service.yaml
+  - web-configmap.yaml
+  - web-deployment.yaml
+  - web-service.yaml

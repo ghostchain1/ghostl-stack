@@ -156,6 +156,7 @@ certs/
 .netrc
 .pypirc
 .docker/
+infra/k8s/**/api-secret.yaml
 
 # databases / local stores
 *.sqlite

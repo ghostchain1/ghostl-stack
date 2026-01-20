@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ghostl-api-config
+  namespace: ghostl
+data:
+  CORS_ALLOW_ORIGINS: "http://localhost:3200"

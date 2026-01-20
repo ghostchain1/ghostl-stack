@@ -236,7 +236,7 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
           payload: { email, method: 'password' }
         });
         if (csrfToken) setCsrfCookie(res, csrfToken);
-        res.json({ user: { id: user.id, email: user.email, role: user.roles?.[0] } });
+        res.json({ user: { id: user.id, email: user.email, username: user.username, role: user.roles?.[0] } });
       } catch (err) {
         await deps.auditLogService.append({
           actorId: 'unknown',
@@ -441,7 +441,7 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
       if (req.session.csrfToken) {
         setCsrfCookie(res, req.session.csrfToken as string);
       }
-      res.json({ user: { id: user.id, email: user.email, role: user.roles?.[0] } });
+      res.json({ user: { id: user.id, email: user.email, username: user.username, role: user.roles?.[0] } });
     })
   );
 
@@ -451,6 +451,24 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
     asyncHandler(async (_req, res) => {
       const users = await deps.userService.list();
       res.json(users);
+    })
+  );
+
+  router.get(
+    '/users/lookup',
+    requirePermission('iam:read'),
+    asyncHandler(async (req, res) => {
+      const username = typeof req.query.username === 'string' ? req.query.username.trim() : '';
+      const address = typeof req.query.address === 'string' ? req.query.address.trim().toLowerCase() : '';
+      const users = await deps.userService.list();
+      let matches = users;
+      if (username) {
+        matches = matches.filter((u) => (u.username || '').toLowerCase() === username.toLowerCase());
+      }
+      if (address) {
+        matches = matches.filter((u) => (u.wallets || []).map((w) => w.toLowerCase()).includes(address));
+      }
+      res.json({ users: matches });
     })
   );
 

@@ -57,13 +57,21 @@ async function main() {
   await l1Bridge.waitForDeployment();
   console.log(`L1 StandardBridge: ${l1Bridge.target as string}`);
 
+  const GhostNFT = await ethers.getContractFactory("GhostNFT");
+  const nftName = process.env.L1_NFT_NAME ?? "GhostChain NFT";
+  const nftSymbol = process.env.L1_NFT_SYMBOL ?? "GL1NFT";
+  const nft = await GhostNFT.deploy(nftName, nftSymbol);
+  await nft.waitForDeployment();
+  console.log(`GhostNFT: ${nft.target as string}`);
+
   const contracts = [
     { name: "L1CrossDomainMessenger", address: messenger.target as string },
     { name: "L1SystemConfig", address: systemConfig.target as string },
     { name: "L1OptimismPortal", address: portal.target as string },
     { name: "L1OutputOracle", address: outputOracle.target as string },
     { name: "L1DisputeGameFactory", address: dgf.target as string },
-    { name: "StandardBridge", address: l1Bridge.target as string }
+    { name: "StandardBridge", address: l1Bridge.target as string },
+    { name: "GhostNFT", address: nft.target as string }
   ];
   const chainId = Number((await ethers.provider.getNetwork()).chainId);
   const enriched = await Promise.all(

@@ -67,7 +67,14 @@ const token = process.env.CONTRACTS_REGISTRY_TOKEN || "";
 const verificationUrl = process.env.VERIFICATION_SERVICE_URL || "";
 
 const layers = layer === "all" ? ["l1", "l2", "l3"] : [layer];
-const results: Array<{ layer: string; registered: number; failed: number; errors: string[] }> = [];
+const results: Array<{
+  layer: string;
+  registered: number;
+  failed: number;
+  nftRegistered: number;
+  nftFailed: number;
+  errors: string[];
+}> = [];
 
 const postJson = async (url: string, body: unknown) => {
   const res = await fetch(url, {
@@ -91,6 +98,8 @@ const registerLayer = async (layerKey: string) => {
   const contracts = Array.isArray(data.contracts) ? data.contracts : [];
   let registered = 0;
   let failed = 0;
+  let nftRegistered = 0;
+  let nftFailed = 0;
   const errors: string[] = [];
   for (const entry of contracts) {
     try {
@@ -109,7 +118,28 @@ const registerLayer = async (layerKey: string) => {
       errors.push(err instanceof Error ? err.message : String(err));
     }
   }
-  results.push({ layer: layerKey, registered, failed, errors });
+  const nftContracts = contracts.filter(
+    (entry) => (entry as { name?: string }).name?.toLowerCase() === "ghostnft"
+  );
+  for (const entry of nftContracts) {
+    const address = (entry as { address?: string }).address;
+    if (!address) continue;
+    const rpcOverride =
+      layerKey === "l1" ? process.env.RPC_L1 : layerKey === "l3" ? process.env.RPC_L3 : process.env.RPC_L2;
+    try {
+      await postJson(`${apiBase}/api/nfts/contracts`, {
+        address,
+        chainId: layerKey,
+        standard: "erc721",
+        ...(rpcOverride ? { rpc: rpcOverride } : {})
+      });
+      nftRegistered++;
+    } catch (err) {
+      nftFailed++;
+      errors.push(err instanceof Error ? err.message : String(err));
+    }
+  }
+  results.push({ layer: layerKey, registered, failed, nftRegistered, nftFailed, errors });
 };
 
 (async () => {
@@ -117,7 +147,14 @@ const registerLayer = async (layerKey: string) => {
     try {
       await registerLayer(layerKey);
     } catch (err) {
-      results.push({ layer: layerKey, registered: 0, failed: 1, errors: [err instanceof Error ? err.message : String(err)] });
+      results.push({
+        layer: layerKey,
+        registered: 0,
+        failed: 1,
+        nftRegistered: 0,
+        nftFailed: 1,
+        errors: [err instanceof Error ? err.message : String(err)]
+      });
     }
   }
 

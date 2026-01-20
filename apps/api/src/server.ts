@@ -9,6 +9,7 @@ import nodemailer from 'nodemailer';
 import type {} from './types/session';
 import WebSocket from 'ws';
 import { Interface, JsonRpcProvider, Wallet } from 'ethers';
+import { z } from 'zod';
 import type { Transfer } from '@ghostl/types/bridge';
 import { buildAppShellRouter } from './modules/app-shell/router';
 import { buildIdentityAccessRouter } from './modules/identity-access/router';
@@ -29,6 +30,7 @@ import { AlertmanagerClient } from './clients/alertmanager';
 import type { AlertmanagerAlert } from './clients/alertmanager';
 import { buildStackRouter } from './modules/stack/router';
 import { buildWalletRouter } from './modules/wallet/router';
+import { buildNftRouter } from './modules/nft/router';
 import { env } from './config/env';
 import { requirePermission } from './lib/rbac';
 import type { NotificationChannel } from './modules/observability/services';
@@ -37,6 +39,7 @@ import { buildWalletAdminRouter } from './modules/wallet-admin/router';
 import { createWalletService } from './services/wallet-store';
 import { createGhostWalletService } from './services/ghostwallet';
 import { createTokenService } from './services/token-store';
+import { createNftStore } from './services/nft-store';
 import { buildTokenRouter } from './modules/token/router';
 import { buildGhostchainRouter } from './modules/ghostchain/router';
 import { buildKycRouter } from './modules/kyc/router';
@@ -111,6 +114,26 @@ type ComplianceDetail = ComplianceReport & { controls: string[]; findings: Compl
 type BridgeNetwork = { id?: string; pause?: string; pending?: string; liquidity?: string; fees?: string };
 type BridgeSignature = { transferId?: string; signatures?: string[]; required?: number };
 type BridgeIncident = { message?: string; severity?: string; createdAt?: string; time?: string; source?: string };
+type MarketToken = {
+  id: string;
+  symbol: string;
+  chainId: string;
+  name?: string;
+  priceUsd?: string;
+  change24h?: string;
+  marketCapUsd?: string;
+  supply?: string;
+  emissions?: string;
+  treasuryHoldings?: string;
+  updatedAt?: string;
+};
+type MarketRecommendation = {
+  id: string;
+  title: string;
+  action: 'hold' | 'reduce' | 'increase';
+  confidence: number;
+  rationale: string[];
+};
 
 const parseCorsAllowlist = () => {
   const raw = process.env.CORS_ALLOW_ORIGINS || '';
@@ -291,6 +314,7 @@ const identityServicesPromise = createPersistentIdentityServices();
 const walletServicePromise = createWalletService();
 const ghostWalletServicePromise = walletServicePromise.then((wallets) => createGhostWalletService(wallets));
 const tokenServicePromise = createTokenService();
+const nftStorePromise = createNftStore();
 const kycServicePromise = createKycService();
 const integrationsStorePromise = createIntegrationsStore();
 let auditLogService: { append: (entry: { actorId: string; action: string; resource: string; meta?: Record<string, unknown> }) => Promise<unknown> } | undefined;
@@ -904,6 +928,114 @@ const proxyAdminInterface = new Interface(proxyAdminAbi);
 const ownableInterface = new Interface(ownableAbi);
 const guardianInterface = new Interface(guardianAbi);
 
+const marketDataFile = env.MARKET_DATA_FILE || path.join(process.cwd(), 'data', 'market-data.json');
+const loadMarketDefaults = (): MarketToken[] => {
+  if (!env.MARKET_DEFAULT_TOKENS) return [];
+  try {
+    const parsed = JSON.parse(env.MARKET_DEFAULT_TOKENS) as MarketToken[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+const normalizeMarketToken = (input: MarketToken): MarketToken => {
+  const chainId = input.chainId || 'l2';
+  const symbol = input.symbol || 'TOKEN';
+  const id = `${chainId}:${symbol}`;
+  const updatedAt = input.updatedAt || new Date().toISOString();
+  return { ...input, chainId, symbol, id, updatedAt };
+};
+const parseNumber = (value?: string | number | null) => {
+  if (value === null || value === undefined) return undefined;
+  const num = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(num) ? num : undefined;
+};
+const buildMarketRecommendations = (inputs: {
+  risk?: number;
+  congestion?: number;
+  treasuryBalance?: number;
+  supply?: number;
+  anomalies?: Array<{ id?: string; score?: number; reasons?: string[] }>;
+}): MarketRecommendation[] => {
+  const recs: MarketRecommendation[] = [];
+  if (inputs.risk !== undefined) {
+    if (inputs.risk >= 80) {
+      recs.push({
+        id: 'risk-reduce',
+        title: 'Reduce exposure during elevated risk window',
+        action: 'reduce',
+        confidence: Math.min(0.95, inputs.risk / 100),
+        rationale: ['Risk score above 80 from AI monitor', 'Historical outages correlate with elevated risk windows']
+      });
+    } else if (inputs.risk >= 60) {
+      recs.push({
+        id: 'risk-hold',
+        title: 'Hold allocations while monitoring risk trend',
+        action: 'hold',
+        confidence: Math.min(0.9, inputs.risk / 100),
+        rationale: ['Risk score trending higher', 'Keep liquidity available for incident response']
+      });
+    }
+  }
+  if (inputs.congestion !== undefined && inputs.congestion >= 80) {
+    recs.push({
+      id: 'congestion-gas-buffer',
+      title: 'Increase gas buffer for operations',
+      action: 'increase',
+      confidence: Math.min(0.85, inputs.congestion / 100),
+      rationale: ['Congestion score above 80', 'Higher fees expected during peaks']
+    });
+  }
+  if (inputs.treasuryBalance !== undefined && inputs.supply !== undefined && inputs.supply > 0) {
+    const ratio = inputs.treasuryBalance / inputs.supply;
+    if (ratio < 0.01) {
+      recs.push({
+        id: 'treasury-buffer',
+        title: 'Boost treasury reserves',
+        action: 'increase',
+        confidence: 0.75,
+        rationale: ['Treasury reserves below 1% of supply', 'Low buffer reduces operational resilience']
+      });
+    }
+  }
+  if (!recs.length && inputs.anomalies && inputs.anomalies.length) {
+    recs.push({
+      id: 'anomaly-hold',
+      title: 'Hold allocations pending anomaly review',
+      action: 'hold',
+      confidence: 0.6,
+      rationale: ['Anomalies detected by AI monitor', 'Await root-cause classification']
+    });
+  }
+  if (!recs.length) {
+    recs.push({
+      id: 'baseline-hold',
+      title: 'Maintain current allocations',
+      action: 'hold',
+      confidence: 0.5,
+      rationale: ['No elevated risk signals', 'Market data within expected ranges']
+    });
+  }
+  return recs;
+};
+const loadMarketData = (): { tokens: MarketToken[] } => {
+  try {
+    const raw = fs.readFileSync(marketDataFile, 'utf-8');
+    const parsed = JSON.parse(raw) as { tokens?: MarketToken[] };
+    return { tokens: (parsed.tokens || []).map(normalizeMarketToken) };
+  } catch {
+    const defaults = loadMarketDefaults().map(normalizeMarketToken);
+    ensureDir(marketDataFile);
+    fs.writeFileSync(marketDataFile, JSON.stringify({ tokens: defaults }, null, 2));
+    return { tokens: defaults };
+  }
+};
+const saveMarketData = (data: { tokens: MarketToken[] }) => {
+  ensureDir(marketDataFile);
+  fs.writeFileSync(marketDataFile, JSON.stringify({ tokens: data.tokens.map(normalizeMarketToken) }, null, 2));
+};
+let marketData = loadMarketData();
+
 const sendRawTx = async (to: string, data: string) => {
   if (!env.CONTRACT_RPC_URL || !env.CONTRACT_ADMIN_KEY) {
     throw new Error('contract tx not configured');
@@ -1195,6 +1327,7 @@ identityServicesPromise.then(async (identity) => {
   const walletService = await walletServicePromise;
   const tokenService = await tokenServicePromise;
   const ghostWalletService = await ghostWalletServicePromise;
+  const nftStore = await nftStorePromise;
   const identityRouter = buildIdentityAccessRouter({ ...identity, walletService, ghostWalletService });
   app.use('/v1', identityRouter);
   app.use('/', identityRouter);
@@ -1229,6 +1362,7 @@ identityServicesPromise.then(async (identity) => {
   );
   app.use(['/v1/wallets', '/wallets'], buildWalletAdminRouter(walletService, ghostWalletService));
   app.use(['/v1', '/'], buildTokenRouter(tokenService, walletService));
+  app.use(['/v1', '/'], buildNftRouter(nftStore, ghostWalletService, walletService));
 });
 
 const rpcUrls = {
@@ -2071,6 +2205,84 @@ app.get(['/v1/api/token', '/api/token'], requirePermission('treasury:read'), asy
     ],
     feeModel
   });
+});
+
+app.get(['/v1/api/stocks', '/api/stocks'], requirePermission('treasury:read'), async (_req, res) => {
+  const [supply, treasury, forecasts, anomalies, explanations] = await Promise.all([
+    proxyJson<{ supply?: string; emissions?: string }>(`${servicesBase.supply}/supply`, { supply: '0', emissions: '0' }),
+    proxyJson<{ balance?: string }>(`${servicesBase.treasury}/treasury`, { balance: '0' }),
+    proxyJson<{ forecasts?: Array<{ metric?: string; horizon?: string; value?: number; confidence?: number }> }>(
+      `${servicesBase.forecasting}/forecast`,
+      { forecasts: [] }
+    ).catch(() => ({ forecasts: [] })),
+    proxyJson<{ anomalies?: Array<{ id?: string; score?: number; reasons?: string[] }> }>(`${servicesBase.ai}/anomalies`, { anomalies: [] }).catch(
+      () => ({ anomalies: [] })
+    ),
+    proxyJson<{ explanations?: Array<{ id?: string; metric?: string; value?: string; reasons?: string[] }> }>(
+      `${servicesBase.explainability}/explain`,
+      { explanations: [] }
+    ).catch(() => ({ explanations: [] }))
+  ]);
+
+  const supplyValue = parseNumber(supply.supply);
+  const treasuryValue = parseNumber(treasury.balance);
+  const riskForecast = forecasts.forecasts?.find((f) => f.metric === 'risk');
+  const congestionForecast = forecasts.forecasts?.find((f) => f.metric === 'congestion');
+  const recommendations = buildMarketRecommendations({
+    risk: parseNumber(riskForecast?.value),
+    congestion: parseNumber(congestionForecast?.value),
+    treasuryBalance: treasuryValue,
+    supply: supplyValue,
+    anomalies: anomalies.anomalies
+  });
+
+  const tokens = marketData.tokens.map((token) => {
+    const enriched: MarketToken = { ...token };
+    if (token.chainId === 'l2' || token.chainId === 'l3' || token.chainId === 'l1') {
+      if (supply.supply) enriched.supply = supply.supply;
+      if (supply.emissions) enriched.emissions = supply.emissions;
+    }
+    if (treasury.balance) enriched.treasuryHoldings = treasury.balance;
+    enriched.updatedAt = new Date().toISOString();
+    return enriched;
+  });
+
+  res.json({
+    ok: true,
+    tokens,
+    treasury: { balance: treasury.balance || '0' },
+    forecasts: forecasts.forecasts || [],
+    anomalies: anomalies.anomalies || [],
+    explanations: explanations.explanations || [],
+    recommendations,
+    updatedAt: new Date().toISOString()
+  });
+});
+
+app.post(['/v1/api/stocks/tokens', '/api/stocks/tokens'], requirePermission('treasury:write'), async (req, res) => {
+  const schema = z.object({
+    tokens: z.array(
+      z.object({
+        symbol: z.string(),
+        chainId: z.string(),
+        name: z.string().optional(),
+        priceUsd: z.string().optional(),
+        change24h: z.string().optional(),
+        marketCapUsd: z.string().optional(),
+        treasuryHoldings: z.string().optional()
+      })
+    )
+  });
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  marketData = {
+    tokens: parsed.data.tokens.map((token) => normalizeMarketToken({ id: '', ...token }))
+  };
+  saveMarketData(marketData);
+  res.json({ ok: true, tokens: marketData.tokens });
 });
 
 app.post(['/v1/api/treasury/approve', '/api/treasury/approve'], requirePermission('treasury:write'), async (req, res) => {

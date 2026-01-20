@@ -25,7 +25,12 @@ export const resolveHostUrl = (envUrl: string | undefined, port: number, fallbac
   return envUrl || fallback;
 };
 
-export const resolveApiBase = () => resolveHostUrl(process.env.NEXT_PUBLIC_API_URL, 4000, 'http://localhost:4000');
+export const resolveApiBase = () => {
+  if (typeof window === 'undefined') {
+    return process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+  }
+  return resolveHostUrl(process.env.NEXT_PUBLIC_API_URL, 4000, 'http://localhost:4000');
+};
 
 export const resolveRpcBase = (envUrl: string | undefined, port: number, fallback: string) =>
   resolveHostUrl(envUrl, port, fallback);
