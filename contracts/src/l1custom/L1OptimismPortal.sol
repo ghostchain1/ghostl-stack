@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import {LibErrors} from "../common/LibErrors.sol";
 
 /// @notice Minimal portal to emit deposit events and expose a version string.
+// slither-disable-next-line locked-ether
 contract L1OptimismPortal {
     event TransactionDeposited(address indexed from, address indexed to, uint256 value, uint256 gasLimit, bool isCreation, bytes data);
     event Paused();

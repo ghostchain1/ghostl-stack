@@ -27,6 +27,7 @@ contract Faucet is Ownable {
 
     function drip(address to) external {
         require(address(this).balance >= dripAmount, "insufficient balance");
+        require(to == msg.sender, "self only");
         uint256 last = lastDrip[to];
         require(block.timestamp >= last + cooldown, "cooldown");
         lastDrip[to] = block.timestamp;

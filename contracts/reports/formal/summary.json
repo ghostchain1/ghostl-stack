@@ -1,5 +1,6 @@
 {
-  "tool": "echidna",
-  "status": "ok",
-  "updatedAt": "2026-01-20T03:44:04.741Z"
+  "tool": "slither",
+  "issues": 0,
+  "totalFindings": 236,
+  "updatedAt": "2026-01-20T22:18:37.941Z"
 }

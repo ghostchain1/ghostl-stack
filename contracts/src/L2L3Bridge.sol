@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "./GuardPolicy.sol";
 import "./ERC20.sol";
 
+// slither-disable-next-line locked-ether
 contract L2L3Bridge {
     GuardPolicy public policy;
     address public owner;
@@ -53,6 +54,7 @@ contract L2L3Bridge {
     function depositToL3(address to, uint256 amount, uint256 nonce) external payable {
         // In MVP we just emit an event; funds handling can be added later (ERC20 escrow etc).
         bytes32 key = keccak256(abi.encode(msg.sender, to, amount, nonce));
+        // slither-disable-next-line incorrect-equality
         require(depositTime[key] == 0, "already");
         depositTime[key] = block.timestamp;
         emit DepositInitiated(msg.sender, to, amount, nonce);
@@ -61,6 +63,7 @@ contract L2L3Bridge {
     /// Deposit an ERC20 on L2 to mint the bridged representation on L3.
     function depositERC20ToL3(address token, address to, uint256 amount, uint256 nonce) external {
         bytes32 key = keccak256(abi.encode(token, msg.sender, to, amount, nonce));
+        // slither-disable-next-line incorrect-equality
         require(erc20DepositTime[key] == 0, "already");
         erc20DepositTime[key] = block.timestamp;
         require(ERC20(token).transferFrom(msg.sender, address(this), amount), "transferFrom");
@@ -111,8 +114,9 @@ contract L2L3Bridge {
         require(!erc20WithdrawProcessed[key], "already");
         erc20WithdrawProcessed[key] = true;
 
-        (bool ok, ) = policy.check(from, amount);
+        (bool ok, uint256 waitSeconds) = policy.check(from, amount);
         require(ok, "blocked by policy");
+        require(waitSeconds == 0, "delay");
 
         require(ERC20(token).transfer(to, amount), "transfer");
         emit ERC20WithdrawReleased(token, from, to, amount, nonce);

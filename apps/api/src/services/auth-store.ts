@@ -1,15 +1,8 @@
 import { randomUUID } from 'crypto';
 import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
-import type { ApiKey, Role, Session, User } from '@ghostl/types';
-import type {
-  ApiKeyService,
-  AuditLogEntry,
-  AuditLogService,
-  AuthService,
-  RBACService,
-  UserService
-} from '../modules/identity-access/services';
+import type { ApiKey, Role, User } from '@ghostl/types';
+import type { ApiKeyService, AuditLogService, AuthService, RBACService, UserService } from '../modules/identity-access/services';
 import { openSqlite, type SqliteHandle } from './db';
 
 const AUTH_DB_PATH = process.env.AUTH_DB_PATH || process.env.SQLITE_DB_PATH || 'data/auth.db';

@@ -3,4 +3,6 @@
 /typechain-types/
 /.foundry-out/
 /.foundry-cache/
+/.foundry-out-local/
+/.foundry-cache-local/
 /.hardhat-cache/

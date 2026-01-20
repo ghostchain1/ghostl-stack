@@ -360,7 +360,6 @@ const txIntel = async (chain: ChainRef, txHash: string) =>
     const tx = await provider.getTransaction(txHash);
     if (!tx) throw new Error('tx_not_found');
     const receipt = await provider.getTransactionReceipt(txHash);
-    const block = tx.blockNumber ? await provider.getBlock(tx.blockNumber) : null;
     const to = tx.to ? tx.to.toLowerCase() : null;
     const selector = parseSelector(tx.data);
     const addresses = addressesFor();
@@ -870,7 +869,7 @@ export const buildAiRouter = () => {
         chains.map(async (c) => {
           const parsed = chainParam.safeParse(c);
           if (!parsed.success) return null;
-          return getProvider(parsed.data, async (provider) => {
+          return getProvider(parsed.data, async (_provider) => {
             const sampleSize = Number.isFinite(windowBlocks) ? Math.min(Math.max(windowBlocks, 10), 120) : 60;
             const blocks = await fetchLatestBlocks(parsed.data, sampleSize);
             const times = blocks.map((b) => Number(b.timestamp)).filter(Boolean);
@@ -1109,7 +1108,7 @@ export const buildAiRouter = () => {
       const result = await getProvider(chain.data, async (provider) => {
         const latest = await provider.getBlockNumber();
         const fromBlock = Math.max(latest - 1000, 0);
-      const logs = (await provider.getLogs({ fromBlock, toBlock: latest, address: governanceAddr })) as ProviderLog[];
+        const logs = (await provider.getLogs({ fromBlock, toBlock: latest, address: governanceAddr })) as ProviderLog[];
         const matched = logs.filter((log) =>
           log.topics.some((topic) => topic.toLowerCase().includes(proposalId.toLowerCase().replace(/^0x/, '')))
         );
@@ -1167,7 +1166,7 @@ export const buildAiRouter = () => {
       return;
     }
     try {
-      const result = await getProvider(chain.data, async (provider) => {
+      const result = await getProvider(chain.data, async (_provider) => {
         const sampleSize = Number.isFinite(windowBlocks) ? Math.min(Math.max(windowBlocks, 20), 200) : 80;
         const blocks = await fetchLatestBlocks(chain.data, sampleSize);
         const gasRatios = blocks

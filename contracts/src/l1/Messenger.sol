@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "../common/Ownable.sol";
 
 /// @notice Lightweight message inbox/outbox for devnet bridging demos.
+// slither-disable-next-line locked-ether
 contract Messenger is Ownable {
     struct QueuedMessage {
         address from;

@@ -190,7 +190,7 @@ const vaultRead = async (ref: string) => {
   return body.data?.data || {};
 };
 
-const requestWithTimeout = async (url: string, options: RequestInit, timeoutMs: number) => {
+const requestWithTimeout = async (url: string, options: Parameters<typeof fetch>[1], timeoutMs: number) => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {

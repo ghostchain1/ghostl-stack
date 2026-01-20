@@ -27,8 +27,6 @@ type DeployJob = {
   exitCode?: number | null;
 };
 
-type DeployStatus = { job: DeployJob; log: { text: string; nextOffset: number } };
-
 const tabs = ['Registry', 'Tests', 'Formal', 'Diagrams', 'Deploy'] as const;
 
 type Tab = (typeof tabs)[number];

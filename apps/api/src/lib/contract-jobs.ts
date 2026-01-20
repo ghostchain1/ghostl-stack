@@ -32,7 +32,7 @@ export const createContractJob = (input: {
   command: string;
   args: string[];
   cwd: string;
-  env?: NodeJS.ProcessEnv;
+  env?: Record<string, string | undefined>;
   meta?: Record<string, unknown>;
 }) => {
   ensureDir();

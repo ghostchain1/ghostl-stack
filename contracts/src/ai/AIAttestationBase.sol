@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {Ownable} from "../common/Ownable.sol";
 
 /// @notice Base contract for AI attestations backed by signer quorum and feed digests.
+/// #invariant minSigners > 0;
 abstract contract AIAttestationBase is Ownable {
     uint8 public constant L1 = 1;
     uint8 public constant L2 = 2;
@@ -97,7 +98,6 @@ abstract contract AIAttestationBase is Ownable {
         _;
     }
 
-    /// #invariant minSigners > 0;
     constructor() {
         cachedChainId = block.chainid;
         cachedDomainSeparator = _buildDomainSeparator();
