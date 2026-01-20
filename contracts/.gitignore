@@ -1,3 +1,6 @@
 /artifacts/
 /cache/
 /typechain-types/
+/.foundry-out/
+/.foundry-cache/
+/.hardhat-cache/
