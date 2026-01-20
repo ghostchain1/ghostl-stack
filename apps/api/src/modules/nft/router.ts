@@ -7,8 +7,6 @@ import type { NftStore } from '../../services/nft-store';
 import { requirePermission } from '../../lib/rbac';
 import { env } from '../../config/env';
 
-const zeroAddress = '0x0000000000000000000000000000000000000000';
-
 const erc721Iface = new Interface([
   'event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)',
   'function name() view returns (string)',
@@ -142,6 +140,10 @@ export const buildNftRouter = (store: NftStore, ghostWallet: GhostWalletService,
     const resolvedChain = chainId || contract?.chainId;
     if (!resolvedAddress || !resolvedChain) {
       res.status(400).json({ error: 'contractId or address+chainId required' });
+      return;
+    }
+    if (resolvedChain !== 'l1' && resolvedChain !== 'l2' && resolvedChain !== 'l3') {
+      res.status(400).json({ error: 'invalid_chain' });
       return;
     }
     const role = keccakId('MINTER_ROLE');

@@ -7,6 +7,10 @@ const mode = args.includes("--mode") ? args[args.indexOf("--mode") + 1] : "defau
 const root = path.resolve(__dirname, "..");
 const reportsDir = path.join(root, "reports", "foundry");
 mkdirSync(reportsDir, { recursive: true });
+const foundryOut = path.join(root, ".foundry-out-local");
+const foundryCache = path.join(root, ".foundry-cache-local");
+mkdirSync(foundryOut, { recursive: true });
+mkdirSync(foundryCache, { recursive: true });
 
 const forgeArgs = ["test", "--json"];
 if (mode === "fuzz") {
@@ -19,7 +23,12 @@ if (mode === "invariant") {
 const result = spawnSync("forge", forgeArgs, {
   cwd: root,
   stdio: "pipe",
-  env: { ...process.env, FOUNDRY_FUZZ_SEED: "0x2a" }
+  env: {
+    ...process.env,
+    FOUNDRY_FUZZ_SEED: "0x2a",
+    FOUNDRY_OUT: foundryOut,
+    FOUNDRY_CACHE_PATH: foundryCache
+  }
 });
 if (result.stdout && result.stdout.length) {
   writeFileSync(path.join(reportsDir, "last.json"), result.stdout);

@@ -1,5 +1,5 @@
-import { execSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { execSync, spawnSync } from "node:child_process";
+import { mkdirSync, writeFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
 const root = path.resolve(__dirname, "..");
@@ -12,17 +12,49 @@ const svgPath = path.join(outDir, "contracts.svg");
 const mermaidOverview = path.join(outDir, "architecture.mmd");
 const mermaidModules = path.join(outDir, "modules.mmd");
 
-execSync("npx surya graph src/**/*.sol -O dot > \"" + dotPath + "\"", {
-  cwd: root,
-  stdio: "inherit",
-  shell: process.env.SHELL ?? "/bin/bash"
-});
+const collectSolFiles = (dir: string, files: string[] = []): string[] => {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === "apps") {
+      continue;
+    }
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      collectSolFiles(fullPath, files);
+      continue;
+    }
+    if (entry.isFile() && entry.name.endsWith(".sol")) {
+      files.push(path.relative(root, fullPath));
+    }
+  }
+  return files;
+};
 
-execSync("npx surya mdreport src/**/*.sol > \"" + mdPath + "\"", {
+const solFiles = collectSolFiles(path.join(root, "src"));
+if (solFiles.length === 0) {
+  throw new Error("No Solidity files found for diagram generation.");
+}
+
+const graphResult = spawnSync("npx", ["surya", "graph", ...solFiles, "-O", "dot"], {
   cwd: root,
-  stdio: "inherit",
-  shell: process.env.SHELL ?? "/bin/bash"
+  stdio: ["ignore", "pipe", "inherit"]
 });
+if (graphResult.status !== 0) {
+  process.exit(graphResult.status ?? 1);
+}
+if (graphResult.stdout) {
+  writeFileSync(dotPath, graphResult.stdout);
+}
+
+const reportResult = spawnSync("npx", ["surya", "mdreport", ...solFiles], {
+  cwd: root,
+  stdio: ["ignore", "pipe", "inherit"]
+});
+if (reportResult.status !== 0) {
+  process.exit(reportResult.status ?? 1);
+}
+if (reportResult.stdout) {
+  writeFileSync(mdPath, reportResult.stdout);
+}
 
 try {
   execSync('dot -Tsvg "' + dotPath + '" -o "' + svgPath + '"', {

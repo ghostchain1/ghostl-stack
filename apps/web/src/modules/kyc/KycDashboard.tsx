@@ -44,7 +44,7 @@ type Filters = {
   search?: string;
 };
 
-const fetchJson = async <T,>(path: string, options: RequestInit = {}): Promise<T> => {
+const fetchJson = async <T,>(path: string, options: Parameters<typeof fetch>[1] = {}): Promise<T> => {
   const method = (options.method || 'GET').toUpperCase();
   const headers = method === 'GET' || method === 'HEAD' ? options.headers : jsonWithCsrf(options.headers);
   const res = await fetch(`${API_URL}${path}`, { credentials: 'include', ...options, headers });

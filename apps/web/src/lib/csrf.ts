@@ -1,4 +1,5 @@
 const CSRF_COOKIE = 'csrf_token';
+type HeaderInit = Record<string, string> | Array<[string, string]> | Headers;
 
 const readCookie = (name: string) => {
   if (typeof document === 'undefined') return null;
@@ -6,14 +7,14 @@ const readCookie = (name: string) => {
   return match ? decodeURIComponent(match[1]) : null;
 };
 
-export const withCsrf = (headers: HeadersInit = {}) => {
+export const withCsrf = (headers: HeaderInit = {}) => {
   const next = new Headers(headers);
   const token = readCookie(CSRF_COOKIE);
   if (token) next.set('x-csrf-token', token);
   return next;
 };
 
-export const jsonWithCsrf = (headers: HeadersInit = {}) => {
+export const jsonWithCsrf = (headers: HeaderInit = {}) => {
   const next = withCsrf(headers);
   if (!next.has('content-type')) {
     next.set('content-type', 'application/json');

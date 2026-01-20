@@ -10,7 +10,7 @@ This folder provides runnable scaffolding for Slither, Scribble, Echidna, and op
 ## Scribble (instrumentation)
 
 - Run: `npm run formal:scribble`
-- Output: `contracts/reports/formal/scribble/`
+- Output: `contracts/reports/formal/scribble/scribble.json`
 - Uses annotations embedded in core contracts.
 
 ## Echidna (property fuzzing)

@@ -65,7 +65,7 @@ const sanitizeDetails = (value: unknown): unknown => {
   if (typeof value === 'string') {
     return value.replace(
       /(token|secret|password|private|mnemonic|seed)\s*[:=]\s*([A-Za-z0-9-_/.]+)/gi,
-      (_match, label, token) => `${label}=***`
+      (_match, label, _token) => `${label}=***`
     );
   }
   return value;

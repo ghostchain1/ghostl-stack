@@ -159,15 +159,6 @@ const contractsDeploymentsDir = path.join(contractsRoot, 'deployments');
 const contractsReportsDir = path.join(contractsRoot, 'reports');
 const contractsDocsDir = path.join(repoRoot, 'docs', 'contracts');
 
-const isLocalOrigin = (origin: string) => {
-  try {
-    const { hostname } = new URL(origin);
-    return ['localhost', '127.0.0.1', '0.0.0.0', '::1'].includes(hostname);
-  } catch {
-    return false;
-  }
-};
-
 const corsAllowlist = parseCorsAllowlist();
 const isOriginAllowed = (origin?: string) => {
   if (!origin) return true;
@@ -382,7 +373,7 @@ type RpcCache = { expiresAt: number; endpoints: unknown[] };
 let rpcEndpointCache: RpcCache | null = null;
 
 const withTimeout = async <T>(promise: Promise<T>, ms: number) => {
-  let timer: NodeJS.Timeout | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const timeoutPromise = new Promise<T>((_resolve, reject) => {
     timer = setTimeout(() => reject(new Error('timeout')), ms);
   });

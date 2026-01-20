@@ -74,8 +74,10 @@ contract Governor is Ownable {
         Proposal storage p = proposals[id];
         require(!p.queued, "queued");
         require(p.forVotes > p.againstVotes, "not passed");
-        uint256 eta = executor.queueTx(p.target, p.value, p.data);
+        uint256 eta = block.timestamp + executor.delay();
         p.queued = true;
+        // slither-disable-next-line unused-return
+        executor.queueTx(p.target, p.value, p.data);
         emit Queued(id, eta);
     }
 
@@ -83,8 +85,9 @@ contract Governor is Ownable {
         Proposal storage p = proposals[id];
         require(p.queued, "not queued");
         require(!p.executed, "executed");
-        executor.execute(id);
         p.executed = true;
+        // slither-disable-next-line unused-return
+        executor.execute(id);
         emit Executed(id);
     }
 

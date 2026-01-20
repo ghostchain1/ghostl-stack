@@ -8,13 +8,13 @@ import "../common/Ownable.sol";
 contract NativeToken is ERC20, Ownable {
     constructor(string memory _name, string memory _symbol) ERC20(_name, _symbol, 18) {}
 
-    /// #if_succeeds {:msg "only owner mint"} msg.sender == owner();
+    /// #if_succeeds {:msg "only owner mint"} msg.sender == owner;
     /// #if_succeeds {:msg "totalSupply increases"} totalSupply == old(totalSupply) + amount;
     function mint(address to, uint256 amount) external onlyOwner {
         _mint(to, amount);
     }
 
-    /// #if_succeeds {:msg "only owner burn"} msg.sender == owner();
+    /// #if_succeeds {:msg "only owner burn"} msg.sender == owner;
     /// #if_succeeds {:msg "totalSupply decreases"} totalSupply == old(totalSupply) - amount;
     function burn(address from, uint256 amount) external onlyOwner {
         _burn(from, amount);

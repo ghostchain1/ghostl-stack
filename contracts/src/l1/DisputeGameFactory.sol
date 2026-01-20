@@ -67,10 +67,9 @@ contract DisputeGameFactory {
         if (games[gameId] != address(0)) revert GameAlreadyExists(gameId);
 
         game = _clone(impl);
-        IGameClone(game).initialize(initData);
-
         games[gameId] = game;
         allGames.push(game);
+        IGameClone(game).initialize(initData);
 
         emit GameCreated(gameId, gameType, game, initData);
     }

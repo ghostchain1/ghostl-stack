@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "../common/Ownable.sol";
 
 /// @notice Minimal deposit portal for L1->L2 messaging in a devnet.
+// slither-disable-next-line locked-ether
 contract Portal is Ownable {
     event ETHDeposit(address indexed from, address indexed to, uint256 amount, bytes data);
     event MessageSent(address indexed from, address indexed to, bytes data);

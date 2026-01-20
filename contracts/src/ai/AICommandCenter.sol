@@ -352,7 +352,7 @@ contract AICommandCenter is Ownable {
     function _validateSignatures(bytes32 decisionHash, bytes[] calldata signatures) internal view {
         require(signatures.length >= minSigners, "signatures");
         address[] memory seen = new address[](signatures.length);
-        uint256 valid;
+        uint256 valid = 0;
         for (uint256 i = 0; i < signatures.length; i++) {
             address signer = _recoverSigner(decisionHash, signatures[i]);
             if (!aiSigners[signer]) {

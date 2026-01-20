@@ -15,7 +15,7 @@ type FetchOptions<T> = {
   next?: { revalidate?: number };
   schema?: z.ZodType<T>;
   baseUrl?: string;
-  init?: RequestInit;
+  init?: Parameters<typeof fetch>[1];
 };
 
 const handleAuthStatus = (status: number) => {
