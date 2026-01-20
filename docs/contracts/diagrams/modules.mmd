@@ -1,0 +1,17 @@
+flowchart LR
+  subgraph Bridge
+    GuardPolicy --> L2L3Bridge
+    L2L3Bridge --> L3Inbox
+    L3Inbox --> L3Factory
+  end
+  subgraph Governance
+    Governor --> ProposalExecutor
+  end
+  subgraph Treasury
+    NativeToken --> Treasury
+  end
+  subgraph Validators
+    ValidatorRegistry
+    StakingManager
+    SlashingManager
+  end

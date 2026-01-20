@@ -1411,8 +1411,8 @@ app.get(['/v1/api/contracts', '/api/contracts'], requirePermission('contracts:re
   const pausedFlags = contractMetadata.pauseQuery ? await prometheus.query(contractMetadata.pauseQuery).catch(() => []) : [];
   const upgradeabilityFlags = contractMetadata.upgradeabilityQuery ? await prometheus.query(contractMetadata.upgradeabilityQuery).catch(() => []) : [];
 
-  const sourceContracts = [
-    ...(registry.contracts || []),
+  const sourceContracts: Array<Record<string, unknown>> = [
+    ...((registry.contracts || []) as Array<Record<string, unknown>>),
     ...localRegistry.map((entry) => ({
       id: entry.name,
       name: entry.name,
@@ -1428,21 +1428,29 @@ app.get(['/v1/api/contracts', '/api/contracts'], requirePermission('contracts:re
 
   const merged =
     sourceContracts.map((c) => {
-      const address = (c.address as string) || '';
+      const address = typeof c.address === 'string' ? c.address : '';
+      const name = typeof c.name === 'string' ? c.name : '';
+      const proxyType = typeof c.proxyType === 'string' ? c.proxyType : undefined;
+      const owner = typeof c.owner === 'string' ? c.owner : undefined;
+      const verified = typeof c.verified === 'boolean' ? c.verified : undefined;
+      const layer = typeof c.layer === 'string' ? c.layer : undefined;
+      const chainId = typeof c.chainId === 'number' ? c.chainId : undefined;
+      const abiHash = typeof c.abiHash === 'string' ? c.abiHash : undefined;
+      const version = typeof c.version === 'string' ? c.version : undefined;
       const pausedMetric = pausedFlags.find((p) => p.metric.address?.toLowerCase() === address.toLowerCase());
       const upgradeMetric = upgradeabilityFlags.find((u) => u.metric.address?.toLowerCase() === address.toLowerCase());
       return {
-        id: address || (c.name as string) || 'contract',
+        id: address || name || 'contract',
         address,
-        name: c.name,
-        proxies: c.proxyType,
-        ownership: c.owner,
-        verified: c.verified,
-        layer: c.layer,
-        chainId: c.chainId,
+        name,
+        proxies: proxyType,
+        ownership: owner,
+        verified,
+        layer,
+        chainId,
         abi: c.abi,
-        abiHash: c.abiHash,
-        version: c.version,
+        abiHash,
+        version,
         upgradeable: upgradeMetric ? upgradeMetric.value?.[1] === '1' : undefined,
         paused: pausedMetric ? pausedMetric.value?.[1] === '1' : undefined,
         desiredState: contractStates.find((s) => s.address.toLowerCase() === address.toLowerCase()),
@@ -1464,21 +1472,32 @@ app.post(['/v1/api/contracts/register', '/api/contracts/register'], async (req, 
     return;
   }
   const body = req.body || {};
-  const entries = Array.isArray(body.contracts) ? body.contracts : body.contract ? [body.contract] : [];
+  const entries: Array<Record<string, unknown>> = Array.isArray(body.contracts)
+    ? body.contracts
+    : body.contract
+      ? [body.contract]
+      : [];
   if (!entries.length) {
     res.status(400).json({ error: 'contract_required' });
     return;
   }
-  const normalized = entries.map((entry) => ({
-    name: String(entry.name || entry.id || entry.address),
-    address: String(entry.address || ''),
-    chainId: Number(entry.chainId || 0),
-    layer: String(entry.layer || 'l2'),
-    abi: entry.abi || [],
-    abiHash: String(entry.abiHash || ''),
-    version: String(entry.version || '0.0.1'),
-    deployedAt: entry.deployedAt ? String(entry.deployedAt) : undefined
-  }));
+  const normalized = entries.map((entry) => {
+    const layerRaw = String(entry.layer || 'l2');
+    const layer = (layerRaw === 'l1' || layerRaw === 'l2' || layerRaw === 'l3' ? layerRaw : 'l2') as
+      | 'l1'
+      | 'l2'
+      | 'l3';
+    return {
+      name: String(entry.name || entry.id || entry.address),
+      address: String(entry.address || ''),
+      chainId: Number(entry.chainId || 0),
+      layer,
+      abi: (entry.abi ?? []) as unknown,
+      abiHash: String(entry.abiHash || ''),
+      version: String(entry.version || '0.0.1'),
+      deployedAt: entry.deployedAt ? String(entry.deployedAt) : undefined
+    };
+  });
   const stored = registerContracts(normalized);
   res.json({ ok: true, contracts: stored });
 });
@@ -1489,8 +1508,8 @@ app.get(['/v1/api/contracts/deployments', '/api/contracts/deployments'], require
     return;
   }
   const deployments: Array<{ network: string; layer: string; file: string }> = [];
-  const networks = fs.readdirSync(contractsDeploymentsDir, { withFileTypes: true });
-  networks.forEach((entry) => {
+  const networks = fs.readdirSync(contractsDeploymentsDir, { withFileTypes: true }) as fs.Dirent[];
+  networks.forEach((entry: fs.Dirent) => {
     if (!entry.isDirectory()) return;
     const dir = path.join(contractsDeploymentsDir, entry.name);
     fs.readdirSync(dir).forEach((file) => {
@@ -1519,13 +1538,19 @@ app.post(['/v1/api/contracts/deploy', '/api/contracts/deploy'], requirePermissio
 });
 
 app.get(['/v1/api/contracts/deploy/:id', '/api/contracts/deploy/:id'], requirePermission('contracts:read'), async (req, res) => {
-  const job = readContractJob(req.params.id);
+  const jobId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  if (!jobId) {
+    res.status(400).json({ error: 'job_id_required' });
+    return;
+  }
+  const job = readContractJob(jobId);
   if (!job) {
     res.status(404).json({ error: 'job_not_found' });
     return;
   }
-  const offset = req.query.offset ? Number(req.query.offset) : 0;
-  const log = readContractJobLog(req.params.id, offset);
+  const offsetParam = Array.isArray(req.query.offset) ? req.query.offset[0] : req.query.offset;
+  const offset = offsetParam ? Number(offsetParam) : 0;
+  const log = readContractJobLog(jobId, offset);
   res.json({ ok: true, job, log });
 });
 
@@ -1592,7 +1617,12 @@ app.get(['/v1/api/contracts/diagrams', '/api/contracts/diagrams'], requirePermis
 
 app.get(['/v1/api/contracts/diagrams/:name', '/api/contracts/diagrams/:name'], requirePermission('contracts:read'), async (req, res) => {
   const diagramsDir = path.join(contractsDocsDir, 'diagrams');
-  const fileName = path.basename(req.params.name);
+  const nameParam = Array.isArray(req.params.name) ? req.params.name[0] : req.params.name;
+  if (!nameParam) {
+    res.status(400).json({ error: 'diagram_name_required' });
+    return;
+  }
+  const fileName = path.basename(String(nameParam));
   const filePath = path.join(diagramsDir, fileName);
   if (!fs.existsSync(filePath)) {
     res.status(404).json({ error: 'diagram_not_found' });

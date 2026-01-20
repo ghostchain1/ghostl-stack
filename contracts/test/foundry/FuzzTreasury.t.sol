@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "./TestBase.sol";
 import "../../src/l1/NativeToken.sol";
 import "../../src/l1/Treasury.sol";
+import "../../src/common/Ownable.sol";
 
 contract FuzzTreasury is TestBase {
     NativeToken private token;
@@ -18,7 +19,7 @@ contract FuzzTreasury is TestBase {
 
     function testFuzz_onlyOwnerWithdrawETH(uint256 amount) public {
         vm.prank(address(0xBEEF));
-        vm.expectRevert(bytes("not owner"));
+        vm.expectRevert(abi.encodeWithSelector(Ownable.NotOwner.selector));
         treasury.withdrawETH(payable(address(0xBEEF)), amount);
     }
 

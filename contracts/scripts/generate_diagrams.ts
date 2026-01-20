@@ -12,23 +12,23 @@ const svgPath = path.join(outDir, "contracts.svg");
 const mermaidOverview = path.join(outDir, "architecture.mmd");
 const mermaidModules = path.join(outDir, "modules.mmd");
 
-execSync('npx surya graph "src/**/*.sol" -O dot > "' + dotPath + '"', {
+execSync("npx surya graph src/**/*.sol -O dot > \"" + dotPath + "\"", {
   cwd: root,
   stdio: "inherit",
-  shell: true
+  shell: process.env.SHELL ?? "/bin/bash"
 });
 
-execSync('npx surya mdreport "src/**/*.sol" > "' + mdPath + '"', {
+execSync("npx surya mdreport src/**/*.sol > \"" + mdPath + "\"", {
   cwd: root,
   stdio: "inherit",
-  shell: true
+  shell: process.env.SHELL ?? "/bin/bash"
 });
 
 try {
   execSync('dot -Tsvg "' + dotPath + '" -o "' + svgPath + '"', {
     cwd: root,
     stdio: "inherit",
-    shell: true
+    shell: process.env.SHELL ?? "/bin/bash"
   });
 } catch (err) {
   console.warn("dot not installed; skipping SVG render.");

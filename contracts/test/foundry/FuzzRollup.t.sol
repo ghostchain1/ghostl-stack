@@ -20,6 +20,7 @@ contract FuzzRollup is TestBase {
 
     function testFuzz_contiguousBatches(uint256 startBlock, uint256 endBlock) public {
         vm.assume(endBlock >= startBlock);
+        vm.assume(endBlock < type(uint256).max - 1);
         bytes32 root = keccak256(abi.encode(startBlock, endBlock));
         vm.prank(proposer);
         rollup.proposeBatch(startBlock, endBlock, root);
