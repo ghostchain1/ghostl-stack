@@ -26,12 +26,13 @@ contract ProposalExecutor {
     }
 
     constructor(uint256 _delay) {
-        governor = msg.sender;
         delay = _delay;
-        emit GovernorUpdated(msg.sender);
     }
 
-    function setGovernor(address _gov) external onlyGovernor {
+    function setGovernor(address _gov) external {
+        if (governor != address(0)) {
+            require(msg.sender == governor, "not governor");
+        }
         governor = _gov;
         emit GovernorUpdated(_gov);
     }

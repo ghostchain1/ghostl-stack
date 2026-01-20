@@ -5,6 +5,7 @@ import "./TestBase.sol";
 import "../../src/governance/Governor.sol";
 import "../../src/governance/ProposalExecutor.sol";
 import "../../src/common/ERC20.sol";
+import "../../src/common/Ownable.sol";
 
 contract GovToken is ERC20 {
     constructor() ERC20("Gov", "GOV", 18) {
@@ -32,7 +33,7 @@ contract FuzzGovernance is TestBase {
     function testFuzz_queueRequiresOwner(address target, uint256 value, bytes calldata data) public {
         governor.propose(target, value, data);
         vm.prank(address(0xBEEF));
-        vm.expectRevert(bytes("not owner"));
+        vm.expectRevert(abi.encodeWithSelector(Ownable.NotOwner.selector));
         governor.queue(0);
     }
 }

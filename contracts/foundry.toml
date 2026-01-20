@@ -5,6 +5,5 @@ out = "out"
 libs = ["lib"]
 optimizer = true
 optimizer_runs = 200
-fuzz_runs = 128
-invariant_runs = 64
-seed = "0x2a"
+fuzz = { runs = 128 }
+invariant = { runs = 64 }

@@ -11,6 +11,8 @@ interface Vm {
 abstract contract TestBase {
     Vm internal constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
+    receive() external payable {}
+
     function assertTrue(bool value, string memory message) internal {
         require(value, message);
     }
