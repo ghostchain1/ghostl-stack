@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ghostl-web
+  namespace: ghostl
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ghostl-web
+  template:
+    metadata:
+      labels:
+        app: ghostl-web
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/ghostchain1/ghostl-web:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3200
+          envFrom:
+            - configMapRef:
+                name: ghostl-web-config
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3200
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3200
+            initialDelaySeconds: 10
+            periodSeconds: 20

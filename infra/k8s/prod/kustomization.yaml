@@ -1,0 +1,10 @@
+resources:
+  - ../base
+images:
+  - name: ghcr.io/ghostchain1/ghostl-api
+    newTag: prod
+  - name: ghcr.io/ghostchain1/ghostl-web
+    newTag: prod
+patchesStrategicMerge:
+  - api-configmap.yaml
+  - web-configmap.yaml

@@ -69,4 +69,28 @@ contract GasToken {
         balanceOf[to] += amount;
         emit Transfer(address(0), to, amount);
     }
+
+    function burn(uint256 amount) external {
+        _burn(msg.sender, amount);
+    }
+
+    function burnFrom(address from, uint256 amount) external {
+        uint256 allowed = allowance[from][msg.sender];
+        if (allowed != type(uint256).max) {
+            require(allowed >= amount, "ERC20: insufficient allowance");
+            allowance[from][msg.sender] = allowed - amount;
+            emit Approval(from, msg.sender, allowance[from][msg.sender]);
+        }
+        _burn(from, amount);
+    }
+
+    function _burn(address from, uint256 amount) internal {
+        uint256 fromBalance = balanceOf[from];
+        require(fromBalance >= amount, "ERC20: balance too low");
+        unchecked {
+            balanceOf[from] = fromBalance - amount;
+            totalSupply -= amount;
+        }
+        emit Transfer(from, address(0), amount);
+    }
 }

@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ghostl-api
+  namespace: ghostl
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ghostl-api
+  template:
+    metadata:
+      labels:
+        app: ghostl-api
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/ghostchain1/ghostl-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4000
+          envFrom:
+            - configMapRef:
+                name: ghostl-api-config
+            - secretRef:
+                name: ghostl-api-secrets
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 20
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: ghostl-api-data

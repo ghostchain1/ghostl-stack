@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ghostl-web-config
+  namespace: ghostl
+data:
+  NODE_ENV: "production"
+  PORT: "3200"
+  NEXT_PUBLIC_ENV: "prod"
+  NEXT_PUBLIC_API_URL: "http://localhost:4000"
+  API_INTERNAL_URL: "http://ghostl-api:4000"
+  NEXT_PUBLIC_L1_RPC: "http://localhost:18545"
+  NEXT_PUBLIC_L2_RPC: "http://localhost:18547"
+  NEXT_PUBLIC_L3_RPC: "http://localhost:39545"
+  NEXT_PUBLIC_L1_CHAIN_ID: "14000101"
+  NEXT_PUBLIC_L2_CHAIN_ID: "901"
+  NEXT_PUBLIC_L3_CHAIN_ID: "903"
+  NEXT_PUBLIC_DEVOPS_URL: "http://localhost:7623"
