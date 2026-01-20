@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "./TestBase.sol";
 import "../../src/l1/NativeToken.sol";
+import "../../src/common/Ownable.sol";
 
 contract FuzzNativeToken is TestBase {
     NativeToken private token;
@@ -31,7 +32,7 @@ contract FuzzNativeToken is TestBase {
     function testFuzz_nonOwnerCannotMint(address to, uint256 amount) public {
         vm.assume(to != address(0));
         vm.prank(address(0xBEEF));
-        vm.expectRevert(bytes("not owner"));
+        vm.expectRevert(abi.encodeWithSelector(Ownable.NotOwner.selector));
         token.mint(to, amount);
     }
 }

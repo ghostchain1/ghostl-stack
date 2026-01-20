@@ -8,7 +8,7 @@ const root = path.resolve(__dirname, "..");
 const reportsDir = path.join(root, "reports", "foundry");
 mkdirSync(reportsDir, { recursive: true });
 
-const forgeArgs = ["test", "--json", "--seed", "0x2a"];
+const forgeArgs = ["test", "--json"];
 if (mode === "fuzz") {
   forgeArgs.push("--fuzz-runs", "512");
 }
@@ -16,7 +16,11 @@ if (mode === "invariant") {
   forgeArgs.push("--match-test", "invariant_");
 }
 
-const result = spawnSync("forge", forgeArgs, { cwd: root, stdio: "pipe" });
+const result = spawnSync("forge", forgeArgs, {
+  cwd: root,
+  stdio: "pipe",
+  env: { ...process.env, FOUNDRY_FUZZ_SEED: "0x2a" }
+});
 if (result.stdout && result.stdout.length) {
   writeFileSync(path.join(reportsDir, "last.json"), result.stdout);
   process.stdout.write(result.stdout);
