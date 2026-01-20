@@ -1,0 +1,2307 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/home/ghost/ghostl-stack/contracts/src/ERC20.sol": {
+      "lastModificationDate": 1768818330187,
+      "contentHash": "3f4130a3a05267e5bc834b90b19d66ba",
+      "sourceName": "src/ERC20.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "ERC20"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/futuristic/FutureStack.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "9c0fab4cc140b4c5debb146290652289",
+      "sourceName": "src/futuristic/FutureStack.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../ERC20.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "AIGovernanceAdvisor",
+        "AIMonetaryPolicy",
+        "AISecurityOracle",
+        "AccessManaged",
+        "AccountAbstraction",
+        "AddressBook",
+        "AnomalyDetector",
+        "AutonomousExecutor",
+        "BaseFeeOracle",
+        "BatchInbox",
+        "BatcherBondManager",
+        "BridgeRouter",
+        "BurnController",
+        "ChainConfigV2",
+        "CheckpointManager",
+        "CircuitBreaker",
+        "CollateralVault",
+        "ComplianceGate",
+        "ConsensusParams",
+        "ContractRegistry",
+        "CrossChainMessenger",
+        "DEXRouter",
+        "DecentralizedID",
+        "DelegationManager",
+        "DisputeGameFactoryV2",
+        "EmergencyShutdownV2",
+        "EmissionController",
+        "EpochManager",
+        "FaultDisputeGame",
+        "FeeMarketV2",
+        "FinalizationManager",
+        "ForkRecoveryManager",
+        "FraudProofVerifier",
+        "GenesisConfigV2",
+        "GovernanceToken",
+        "GovernorV2",
+        "IBurnableToken",
+        "IERC20Minimal",
+        "IERC721Minimal",
+        "IMintableToken",
+        "ITreasuryV2",
+        "IdentityRegistry",
+        "InsuranceFund",
+        "KeeperRegistry",
+        "LiquidityPool",
+        "MerkleProofVerifier",
+        "MetaTxForwarder",
+        "MintController",
+        "Multicall",
+        "NFTBridge",
+        "NFTCore",
+        "NativeTokenV2",
+        "OutputOracle",
+        "Pausable",
+        "PauseGuardianV2",
+        "PegStabilityModule",
+        "PredictiveGasManager",
+        "PriceOracleRouter",
+        "ProposalExecutorV2",
+        "QuadraticVoting",
+        "ReputationScore",
+        "RewardDistributorV2",
+        "RollupManagerV2",
+        "RoyaltyManager",
+        "SelectiveDisclosure",
+        "SequencerRegistry",
+        "SlashingManagerV2",
+        "SoulboundToken",
+        "Stablecoin",
+        "StablecoinController",
+        "StakingManagerV2",
+        "StateCommitmentChain",
+        "TokenBridge",
+        "TransactionClassifier",
+        "TreasuryBackstop",
+        "TreasuryV2",
+        "UpgradeManagerV2",
+        "UpgradeableProxy",
+        "ValidatorRecovery",
+        "ValidatorRegistryV2",
+        "VolatilityController",
+        "VotingEscrow",
+        "WrappedNative",
+        "YieldVault",
+        "ZKIdentityVerifier",
+        "ZKProofVerifier"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/StakeToken.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "7e8b8df7e2abfab3a63b95a9e84082eb",
+      "sourceName": "src/StakeToken.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./ERC20.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "StakeToken"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/L3BridgedToken.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "091ef697e2fcb1c388a9ce162b429510",
+      "sourceName": "src/L3BridgedToken.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./ERC20.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "L3BridgedToken"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/L3BridgedTokenFactory.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "bca340e8351b231563d7fe6727bf27d9",
+      "sourceName": "src/L3BridgedTokenFactory.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./L3BridgedToken.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "L3BridgedTokenFactory"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/L2L3Bridge.sol": {
+      "lastModificationDate": 1768847496810,
+      "contentHash": "2f0bb7eee2edb836449ed1d017df9bd1",
+      "sourceName": "src/L2L3Bridge.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./GuardPolicy.sol",
+        "./ERC20.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "L2L3Bridge"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/GuardPolicy.sol": {
+      "lastModificationDate": 1768818330187,
+      "contentHash": "cfa198d0dece6a0a4948a990b5fcd690",
+      "sourceName": "src/GuardPolicy.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "GuardPolicy"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/GhostTokenL2.sol": {
+      "lastModificationDate": 1768818330187,
+      "contentHash": "01173369ea18d3e3704a68ac28b993dd",
+      "sourceName": "src/GhostTokenL2.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./ERC20.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "GhostTokenL2"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/GhostGasTokens.sol": {
+      "lastModificationDate": 1768818330187,
+      "contentHash": "492b57bb6829ba0ddb1f0653a1921115",
+      "sourceName": "src/GhostGasTokens.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./ERC20.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "GhostGasTokenBase",
+        "GhostGasTokenL2",
+        "GhostGasTokenL3"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/L3Inbox.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "6c8817328049d50914f9eb6f77160d47",
+      "sourceName": "src/L3Inbox.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "L3Inbox"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/Merkle.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "fae0b1108da146a23345a5e6623ecf04",
+      "sourceName": "src/Merkle.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "Merkle"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/OptimisticRollup.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "58be95a01cad2b41b643f97f8112edec",
+      "sourceName": "src/OptimisticRollup.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./Merkle.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "OptimisticRollup"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/MockDisputeGameFactory.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "9ef9b57d39dc29c12eacd84f33a9dd69",
+      "sourceName": "src/MockDisputeGameFactory.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "MockDisputeGameFactory"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/MockL2OutputOracle.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "8f1761497ccc5ea76e95ef7c66916376",
+      "sourceName": "src/MockL2OutputOracle.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "MockL2OutputOracle"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/MockSystemConfig.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "0d134d2ee2396ba532535bf0ae3daacd",
+      "sourceName": "src/MockSystemConfig.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "0.8.24"
+      ],
+      "artifacts": [
+        "MockSystemConfig"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/ZkBatchVerifier.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "0a8f403c38fa78d504a6fc13628a12ea",
+      "sourceName": "src/ZkBatchVerifier.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "ZkBatchVerifier"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/apps/PingPong.sol": {
+      "lastModificationDate": 1768881787050,
+      "contentHash": "d083d7cd3fd53e6cb7da6a801f86f9a7",
+      "sourceName": "src/apps/PingPong.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/IXDomainMessenger.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "PingPong"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/common/IXDomainMessenger.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "4a1452056bd29c2da69b5b1d58aa8bf8",
+      "sourceName": "src/common/IXDomainMessenger.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "IXDomainMessenger"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/common/XDomainMessenger.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "de40631e8b1e47abea5f1efd51efad4f",
+      "sourceName": "src/common/XDomainMessenger.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./IXDomainMessenger.sol",
+        "./LibErrors.sol",
+        "./LibAddress.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "XDomainMessenger"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/common/LibErrors.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "f5faf51e568db7ad0cc35a479f9f02de",
+      "sourceName": "src/common/LibErrors.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "LibErrors"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/common/LibAddress.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "c1a730326ecfde10c1078bd27b9b87bf",
+      "sourceName": "src/common/LibAddress.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "LibAddress"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1custom/L1CrossDomainMessenger.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "4d7717ebaee346ee0265c0b2e2920f4b",
+      "sourceName": "src/l1custom/L1CrossDomainMessenger.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/XDomainMessenger.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "L1CrossDomainMessenger"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/tokens/TestERC20.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "195ab2fe5874ec50b2dc80bcfd3fc96a",
+      "sourceName": "src/tokens/TestERC20.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/LibErrors.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "TestERC20"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1custom/L1SystemConfig.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "8639fbe0e8b0c69629b515a3fcc9de24",
+      "sourceName": "src/l1custom/L1SystemConfig.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/LibErrors.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "L1SystemConfig"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1custom/L1OutputOracle.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "7dc5d9887ee7ee87723ec43ef867ec31",
+      "sourceName": "src/l1custom/L1OutputOracle.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/LibErrors.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "L1OutputOracle"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1custom/L1OptimismPortal.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "201e4d11a959ec8293f9eb406719d9d6",
+      "sourceName": "src/l1custom/L1OptimismPortal.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/LibErrors.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "L1OptimismPortal"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/bridge/StandardBridge.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "3741c82ce867e234ce954d41f0fabde1",
+      "sourceName": "src/bridge/StandardBridge.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/IXDomainMessenger.sol",
+        "../common/LibErrors.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "IBridgeMintableERC20",
+        "IERC20Like",
+        "StandardBridge"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/bridge/BridgeMintableERC20.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "a10c6bf8a92155899edde5484b78c50f",
+      "sourceName": "src/bridge/BridgeMintableERC20.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/LibErrors.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "BridgeMintableERC20"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/common/ERC20.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "249b16c7751596f63b1dd7efcfacfb3d",
+      "sourceName": "src/common/ERC20.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "ERC20"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/NativeToken.sol": {
+      "lastModificationDate": 1768847477205,
+      "contentHash": "82935b2d682b5d79189ccc677018573a",
+      "sourceName": "src/l1/NativeToken.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/ERC20.sol",
+        "../common/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "NativeToken"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/common/Ownable.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "2df8b7eef7b29465ab435910b980ae1e",
+      "sourceName": "src/common/Ownable.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "Ownable"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/Treasury.sol": {
+      "lastModificationDate": 1768847484986,
+      "contentHash": "b55b0c02a77082b456aa9322971d571f",
+      "sourceName": "src/l1/Treasury.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol",
+        "./NativeToken.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "Treasury"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/ValidatorRegistry.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "1a660b4eb21599a52515462955f9bdb6",
+      "sourceName": "src/l1/ValidatorRegistry.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "ValidatorRegistry"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/UpgradeManager.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "eb69c5d92b198ff7877f26303e1af99a",
+      "sourceName": "src/l1/UpgradeManager.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "UpgradeManager"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/SystemConfig.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "d509877b26bcf6ea7c85a6612251f349",
+      "sourceName": "src/l1/SystemConfig.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "SystemConfig"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/RollupManager.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "321d969f53a48cb0a500e4c578683c77",
+      "sourceName": "src/l1/RollupManager.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol",
+        "./L2OutputOracle.sol",
+        "./Portal.sol",
+        "./Messenger.sol",
+        "./SystemConfig.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "RollupManager"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/L2OutputOracle.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "f20fe46a27a5405a41c260d9eef5497b",
+      "sourceName": "src/l1/L2OutputOracle.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "L2OutputOracle"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/Portal.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "07191095a3a124da1b3b1a787a737f95",
+      "sourceName": "src/l1/Portal.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "Portal"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/Messenger.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "03917ed3fdd8e8f14ffc07ae96d32bc1",
+      "sourceName": "src/l1/Messenger.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "Messenger"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/StakingManager.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "3d9c18d1c1b669f857eed805cf15fb3d",
+      "sourceName": "src/l1/StakingManager.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "StakingManager"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/SlashingManager.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "22d8a7b0d18a82e026e66be3761dfe7c",
+      "sourceName": "src/l1/SlashingManager.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol",
+        "./StakingManager.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "SlashingManager"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/RewardDistributor.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "e9fe17f3460a89ffefc55338ab8b5233",
+      "sourceName": "src/l1/RewardDistributor.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol",
+        "./NativeToken.sol",
+        "./StakingManager.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "RewardDistributor"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/PauseGuardian.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "e0c0bf68515f551585ddfd026c45b81a",
+      "sourceName": "src/l1/PauseGuardian.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "PauseGuardian"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/FeeMarket.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "2fb91334af4f73d5c392a4e25da1a88c",
+      "sourceName": "src/l1/FeeMarket.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "FeeMarket"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/Faucet.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "e81b851c923d7f8764fa93e158165a2a",
+      "sourceName": "src/l1/Faucet.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "Faucet"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/EmergencyShutdown.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "08ea8a6ab3e17ca021b0375e3fe10f88",
+      "sourceName": "src/l1/EmergencyShutdown.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "EmergencyShutdown"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/ChainConfig.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "769c622dc8c2bdacad4ac41b987ef6fa",
+      "sourceName": "src/l1/ChainConfig.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "ChainConfig"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/Admin.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "bf5a71d4bb672b38ea1ad2019baf9323",
+      "sourceName": "src/l1/Admin.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "Admin"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/governance/Governor.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "62e6c782f92e769ac910904cebb57f85",
+      "sourceName": "src/governance/Governor.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../common/Ownable.sol",
+        "../common/ERC20.sol",
+        "./ProposalExecutor.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "Governor"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/governance/ProposalExecutor.sol": {
+      "lastModificationDate": 1768880326928,
+      "contentHash": "04a142c0e10e26ff6828bfaf893fe78d",
+      "sourceName": "src/governance/ProposalExecutor.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "ProposalExecutor"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/DisputeGameFactory.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "b2b89d33ae835c374e7c03640d5b30ee",
+      "sourceName": "src/l1/DisputeGameFactory.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "DisputeGameFactory",
+        "IDisputeGame",
+        "IGameClone"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/GenesisConfig.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "ad698564edcacd30e36e6f6e12510d5a",
+      "sourceName": "src/l1/GenesisConfig.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "GenesisConfig"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1/SimpleDisputeGame.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "de304d28b68fe5fbe9f4fa83768faa71",
+      "sourceName": "src/l1/SimpleDisputeGame.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "SimpleDisputeGame"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l1custom/L1DisputeGameFactory.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "908ce82bade755f1058fbda6177f2f46",
+      "sourceName": "src/l1custom/L1DisputeGameFactory.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "L1DisputeGameFactory"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/l2/DisputeGameAddressBook.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "a0d7c9316ae265bf867a07b8f5175be7",
+      "sourceName": "src/l2/DisputeGameAddressBook.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "DisputeGameAddressBook"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/opstack/DummyL2OO.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "358a60c7a1f0934c25c9cd30c16f6f9d",
+      "sourceName": "src/opstack/DummyL2OO.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.17"
+      ],
+      "artifacts": [
+        "DummyL2OO"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/opstack/GasToken.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "c49907df20aec45d3e284632a0ddd114",
+      "sourceName": "src/opstack/GasToken.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.15"
+      ],
+      "artifacts": [
+        "GasToken"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/opstack/GuardPolicyStub.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "f77ece004044fd9d6dbe7d00530f8708",
+      "sourceName": "src/opstack/GuardPolicyStub.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "GuardPolicyStub"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/opstack/L2OutputOracleStub.sol": {
+      "lastModificationDate": 1768818330215,
+      "contentHash": "1f10e9b5aad779cf057f4ac83f9f3b6a",
+      "sourceName": "src/opstack/L2OutputOracleStub.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.17"
+      ],
+      "artifacts": [
+        "L2OutputOracle"
+      ]
+    }
+  }
+}
