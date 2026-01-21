@@ -6,6 +6,7 @@ import type { WalletService } from '../../services/wallet-store';
 import type { NftStore } from '../../services/nft-store';
 import { requirePermission } from '../../lib/rbac';
 import { env } from '../../config/env';
+import { ghostWalletRpcManager } from '../../services/rpc-manager';
 
 const erc721Iface = new Interface([
   'event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)',
@@ -21,11 +22,23 @@ const erc721Iface = new Interface([
 
 const accessControlIface = new Interface(['function grantRole(bytes32 role, address account)', 'function revokeRole(bytes32 role, address account)']);
 
-const rpcForChain = (chainId: 'l1' | 'l2' | 'l3', override?: string) => {
-  if (override) return override;
-  if (chainId === 'l1') return env.RPC_L1 || env.EXPLORER_RPC_URL || 'http://localhost:18545';
-  if (chainId === 'l3') return env.RPC_L3 || 'http://localhost:39545';
-  return env.RPC_L2 || env.EXPLORER_RPC_URL || 'http://localhost:18547';
+const normalizeChain = (chainId: 'l1' | 'l2' | 'l3') => {
+  if (chainId === 'l1') return 'l1' as const;
+  if (chainId === 'l3') return 'l3' as const;
+  return 'l2' as const;
+};
+
+const resolveProvider = (chainId: 'l1' | 'l2' | 'l3', override?: string) => {
+  if (!override) {
+    return ghostWalletRpcManager.getProvider(normalizeChain(chainId));
+  }
+  const pool = ghostWalletRpcManager.getPoolSnapshot();
+  const layerKey = chainId.toUpperCase() as 'L1' | 'L2' | 'L3';
+  const allowed = pool[layerKey] || [];
+  if (!allowed.find((endpoint) => endpoint.url === override)) {
+    throw new Error('rpc_override_not_in_registry');
+  }
+  return new JsonRpcProvider(override);
 };
 
 const parseTransferEvent = (logs: { address?: string; topics?: string[]; data?: string }[], contract: string) => {
@@ -47,11 +60,10 @@ const parseTransferEvent = (logs: { address?: string; topics?: string[]; data?: 
   return null;
 };
 
-const sendAdminTx = async (rpcUrl: string, to: string, data: string) => {
+const sendAdminTx = async (provider: JsonRpcProvider, to: string, data: string) => {
   if (!env.CONTRACT_ADMIN_KEY) {
     throw new Error('contract admin key not configured');
   }
-  const provider = new JsonRpcProvider(rpcUrl);
   const wallet = new Wallet(env.CONTRACT_ADMIN_KEY, provider);
   const tx = await wallet.sendTransaction({ to, data });
   return tx.hash;
@@ -81,12 +93,11 @@ export const buildNftRouter = (store: NftStore, ghostWallet: GhostWalletService,
       return;
     }
     const payload = parsed.data;
-    const rpcUrl = rpcForChain(payload.chainId, payload.rpc);
     let name = payload.name;
     let symbol = payload.symbol;
-    if ((!name || !symbol) && rpcUrl) {
+    if (!name || !symbol) {
       try {
-        const provider = new JsonRpcProvider(rpcUrl);
+        const provider = resolveProvider(payload.chainId, payload.rpc);
         const contract = new Contract(payload.address, erc721Iface.fragments, provider);
         const [fetchedName, fetchedSymbol] = await Promise.all([
           name ? Promise.resolve(name) : contract.name(),
@@ -147,13 +158,13 @@ export const buildNftRouter = (store: NftStore, ghostWallet: GhostWalletService,
       return;
     }
     const role = keccakId('MINTER_ROLE');
-    const rpcUrl = rpcForChain(resolvedChain, rpc);
     const data =
       action === 'grant'
         ? accessControlIface.encodeFunctionData('grantRole', [role, account])
         : accessControlIface.encodeFunctionData('revokeRole', [role, account]);
     try {
-      const txHash = await sendAdminTx(rpcUrl, resolvedAddress, data);
+      const provider = resolveProvider(resolvedChain, rpc);
+      const txHash = await sendAdminTx(provider, resolvedAddress, data);
       res.json({ ok: true, txHash });
     } catch (err) {
       res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
@@ -195,8 +206,7 @@ export const buildNftRouter = (store: NftStore, ghostWallet: GhostWalletService,
         amount: '0',
         data
       });
-      const rpcUrl = rpcForChain(resolvedChain, rpc);
-      const provider = new JsonRpcProvider(rpcUrl);
+      const provider = resolveProvider(resolvedChain, rpc);
       const receipt = await provider.waitForTransaction(txResult.tx, 1, 120_000);
       const transfer = receipt ? parseTransferEvent(receipt.logs as any[], resolvedAddress) : null;
       const mintedTokenId = transfer?.tokenId || (tokenId !== undefined ? String(tokenId) : undefined);

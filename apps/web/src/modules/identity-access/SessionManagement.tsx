@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { Badge, Button, Card } from '@ghostl/ui';
 import { resolveApiBase } from '../../lib/runtime';
 import { jsonWithCsrf } from '../../lib/csrf';
+import { apiRequest, type ApiError, formatApiError } from '../../lib/api';
+import { DataFetchErrorCard } from '../../components/DataFetchErrorCard';
 
 type SessionRecord = {
   id: string;
@@ -23,14 +25,22 @@ const API_URL = resolveApiBase();
 export function SessionManagement() {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [status, setStatus] = useState('');
+  const [error, setError] = useState<ApiError | null>(null);
 
   const load = async () => {
     setStatus('Loading sessions...');
+    setError(null);
     try {
-      const res = await fetch(`${API_URL}/api/admin/sessions`, { credentials: 'include' });
-      if (!res.ok) throw new Error(`Load failed ${res.status}`);
-      const data = await res.json();
-      const next = Array.isArray(data) ? data : (data.sessions as SessionRecord[]) || [];
+      const res = await apiRequest<SessionRecord[] | { sessions?: SessionRecord[] }>('/api/admin/sessions', {
+        baseUrl: API_URL
+      });
+      if (!res.ok) {
+        setError(res.error);
+        setStatus(formatApiError(res.error).hint);
+        return;
+      }
+      const data = res.data;
+      const next = Array.isArray(data) ? data : data.sessions || [];
       setSessions(next);
       setStatus('');
     } catch (err) {
@@ -46,12 +56,15 @@ export function SessionManagement() {
   const revoke = async (id: string) => {
     setStatus('Revoking session...');
     try {
-      const res = await fetch(`${API_URL}/api/admin/sessions/${id}/revoke`, {
-        method: 'POST',
-        headers: jsonWithCsrf(),
-        credentials: 'include'
+      const res = await apiRequest(`/api/admin/sessions/${id}/revoke`, {
+        baseUrl: API_URL,
+        init: { method: 'POST', headers: jsonWithCsrf() }
       });
-      if (!res.ok) throw new Error(`Revoke failed ${res.status}`);
+      if (!res.ok) {
+        const info = formatApiError(res.error);
+        setStatus(`${info.method} ${info.endpoint} · ${info.status} · ${info.hint}`);
+        return;
+      }
       await load();
       setStatus('Session revoked');
     } catch (err) {
@@ -63,6 +76,7 @@ export function SessionManagement() {
   return (
     <Card title="Active sessions" subtitle="Device-bound sessions and last activity">
       <div className="stack" style={{ gap: 8 }}>
+        {error && <DataFetchErrorCard title="Admin sessions" error={error} />}
         {status && <span className="muted">{status}</span>}
         {sessions.map((session) => (
           <div key={session.id} className="card" style={{ border: '1px solid var(--border)' }}>

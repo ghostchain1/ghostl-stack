@@ -31,7 +31,7 @@ data:
   GOVERNANCE_SERVICE_URL: "http://governance-service:7645"
   VALIDATOR_SERVICE_URL: "http://validator-service:7607"
   DEVOPS_SERVICE_URL: "http://upgrade-orchestrator-service:7623"
-  RPC_SERVICE_URL: "http://rpc-registry-service:8088"
+  RPC_REGISTRY_URL: "http://ghost-registry:8088/v1/endpoints"
   AI_SERVICE_URL: "http://anomaly-detection-service:7616"
   FORECASTING_SERVICE_URL: "http://forecasting-service:7617"
   EXPLAINABILITY_SERVICE_URL: "http://explainability-service:7632"

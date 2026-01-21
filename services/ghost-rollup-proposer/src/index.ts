@@ -6,8 +6,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 const PORT = Number(process.env.PORT || "7272");
-const RPC_SETTLEMENT = process.env.RPC_SETTLEMENT!;
-const RPC_CHILD = process.env.RPC_CHILD!;
+const registryUrl = process.env.RPC_REGISTRY_URL || "http://ghost-registry:8088/v1/endpoints";
+const registryTimeoutMs = Number(process.env.REGISTRY_TIMEOUT_MS || "1500");
+const registryRetries = Math.max(0, Number(process.env.REGISTRY_RETRY_COUNT || "2"));
+const registryCacheMs = Math.max(1000, Number(process.env.REGISTRY_CACHE_MS || "30000"));
+const registryCache: { data: any; expiresAt: number } = { data: null, expiresAt: 0 };
+const RPC_SETTLEMENT = process.env.RPC_SETTLEMENT || "";
+const RPC_CHILD = process.env.RPC_CHILD || "";
 const ROLLUP = process.env.ROLLUP_ADDRESS!;
 const PROPOSER_PRIVATE_KEY = process.env.PROPOSER_PRIVATE_KEY || "";
 const STATE_DIR = process.env.STATE_DIR || "/state";
@@ -22,15 +27,67 @@ const EXPECTED_SETTLEMENT_CHAIN_ID = parseChainIdEnv(process.env.EXPECTED_SETTLE
 const EXPECTED_CHILD_CHAIN_ID = parseChainIdEnv(process.env.EXPECTED_CHILD_CHAIN_ID, "EXPECTED_CHILD_CHAIN_ID");
 const EXPECTED_ROLLUP_CODE_HASH = parseCodeHashEnv(process.env.ROLLUP_CODE_HASH);
 
-if (!RPC_SETTLEMENT || !RPC_CHILD || !ROLLUP) {
+const fetchRegistry = async () => {
+  const now = Date.now();
+  if (registryCache.data && registryCache.expiresAt > now) return registryCache.data;
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= registryRetries; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), registryTimeoutMs);
+    try {
+      const res = await fetch(registryUrl, { signal: controller.signal });
+      if (!res.ok) throw new Error(`registry_http_${res.status}`);
+      const body = await res.json();
+      if (!body || !Array.isArray(body.chains)) throw new Error("registry_invalid");
+      registryCache.data = body;
+      registryCache.expiresAt = now + registryCacheMs;
+      return body;
+    } catch (err) {
+      lastErr = err;
+      if (attempt < registryRetries) {
+        await new Promise((r) => setTimeout(r, 150 * (attempt + 1)));
+      }
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+  throw lastErr || new Error("registry_unavailable");
+};
+
+const collectAllowed = (registry: any) => {
+  const urls = new Set<string>();
+  registry.chains.forEach((chain: any) => {
+    if (typeof chain.rpc === "string" && chain.rpc) urls.add(chain.rpc);
+    if (typeof chain.ws === "string" && chain.ws) urls.add(chain.ws);
+    if (Array.isArray(chain.rpcUrls)) chain.rpcUrls.forEach((url: string) => urls.add(url));
+    if (Array.isArray(chain.wsUrls)) chain.wsUrls.forEach((url: string) => urls.add(url));
+    if (Array.isArray(chain.endpoints)) chain.endpoints.forEach((endpoint: any) => endpoint.url && urls.add(endpoint.url));
+  });
+  return urls;
+};
+
+const resolveRpcOverrides = async () => {
+  if (!RPC_SETTLEMENT || !RPC_CHILD) {
+    throw new Error("missing_rpc_overrides");
+  }
+  const registry = await fetchRegistry();
+  const allowed = collectAllowed(registry);
+  if (!allowed.has(RPC_SETTLEMENT)) throw new Error("rpc_settlement_not_in_registry");
+  if (!allowed.has(RPC_CHILD)) throw new Error("rpc_child_not_in_registry");
+  return { settlement: RPC_SETTLEMENT, child: RPC_CHILD };
+};
+
+const { settlement: RPC_SETTLEMENT_RESOLVED, child: RPC_CHILD_RESOLVED } = await resolveRpcOverrides();
+
+if (!RPC_SETTLEMENT_RESOLVED || !RPC_CHILD_RESOLVED || !ROLLUP) {
   console.error("Missing env: RPC_SETTLEMENT, RPC_CHILD, ROLLUP_ADDRESS");
   process.exit(1);
 }
 const observeOnly = !PROPOSER_PRIVATE_KEY;
 
-const settlement = new ethers.JsonRpcProvider(RPC_SETTLEMENT, undefined, { polling: true });
+const settlement = new ethers.JsonRpcProvider(RPC_SETTLEMENT_RESOLVED, undefined, { polling: true });
 settlement.pollingInterval = 1000;
-const child = new ethers.JsonRpcProvider(RPC_CHILD, undefined, { polling: true });
+const child = new ethers.JsonRpcProvider(RPC_CHILD_RESOLVED, undefined, { polling: true });
 child.pollingInterval = 1000;
 
 const signer = observeOnly ? null : new ethers.NonceManager(new ethers.Wallet(PROPOSER_PRIVATE_KEY, settlement));

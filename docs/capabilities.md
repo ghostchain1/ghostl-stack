@@ -472,7 +472,7 @@ Dependencies: Prometheus (`PROM_URL`).
 | GET `/health` | Health check. | none | none | `{ ok: true, service: "rewards-service" }` |
 | GET `/rewards` | Reward summary. | none | none | `{ ok: true, rewards }` |
 
-### rpc-registry-service (PORT=8088)
+### ghost-registry (PORT=8088)
 
 | Endpoint | Description | Auth | Request schema | Response schema |
 | --- | --- | --- | --- | --- |

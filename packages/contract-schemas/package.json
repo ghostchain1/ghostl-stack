@@ -1,0 +1,13 @@
+{
+  "name": "@ghostl/contract-schemas",
+  "version": "0.0.1",
+  "private": true,
+  "main": "index.ts",
+  "types": "index.ts",
+  "dependencies": {
+    "zod": "^3.25.76"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

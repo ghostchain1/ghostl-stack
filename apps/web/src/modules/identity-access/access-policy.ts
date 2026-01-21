@@ -25,6 +25,7 @@ const policies: PolicyEntry[] = [
   { pattern: '/explorer', role: 'OPERATOR' },
   { pattern: '/observability', role: 'READONLY' },
   { pattern: '/contracts', role: 'OPERATOR' },
+  { pattern: '/tokens', role: 'OPERATOR' },
   { pattern: '/tokenomics', role: 'OPERATOR' },
   { pattern: '/stocks', role: 'OPERATOR' },
   { pattern: '/treasury', role: 'OPERATOR' },

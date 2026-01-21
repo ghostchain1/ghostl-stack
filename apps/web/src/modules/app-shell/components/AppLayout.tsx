@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { CommandPalette } from './CommandPalette';
 import { GlobalSearch } from './GlobalSearch';
@@ -13,6 +14,8 @@ import { useFeatureFlags } from '../services/FeatureFlagsService';
 import { useNetwork } from '../services/NetworkContextService';
 import { useTheme } from '../services/ThemeService';
 import { resolveApiBase } from '../../../lib/runtime';
+import { DataFetchErrorCard } from '../../../components/DataFetchErrorCard';
+import { apiRequest, type ApiError } from '../../../lib/api';
 
 type NavItem = { href: string; label: string; flag?: string };
 
@@ -93,10 +96,11 @@ const consoleNavSections: { title: string; items: NavItem[] }[] = [
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { user } = useSession();
+  const { user, error: sessionError } = useSession();
   const { isEnabled } = useFeatureFlags();
   const { current } = useNetwork();
   const { theme, toggleTheme } = useTheme();
+  const [logoutError, setLogoutError] = useState<ApiError | null>(null);
   const userRole = normalizeRole(user?.role);
   const isConsole = pathname?.startsWith('/console');
   const navSections = isConsole ? consoleNavSections : legacyNavSections;
@@ -171,9 +175,22 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   type="button"
                   onClick={async () => {
                     try {
-                      await fetch(`${resolveApiBase()}/api/auth/logout`, { method: 'POST', credentials: 'include' });
-                    } finally {
+                      const res = await apiRequest('/api/auth/logout', {
+                        baseUrl: resolveApiBase(),
+                        init: { method: 'POST' }
+                      });
+                      if (!res.ok) {
+                        setLogoutError(res.error);
+                        return;
+                      }
+                      setLogoutError(null);
                       window.location.href = '/login';
+                    } catch (err) {
+                      setLogoutError({
+                        message: err instanceof Error ? err.message : 'logout_failed',
+                        endpoint: `${resolveApiBase()}/api/auth/logout`,
+                        method: 'POST'
+                      });
                     }
                   }}
                 >
@@ -194,7 +211,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </div>
           ))}
         </div>
-        <main>{children}</main>
+        <main>
+          {sessionError && (
+            <div className="card-grid" style={{ marginBottom: 16 }}>
+              <DataFetchErrorCard title="Session" error={sessionError} />
+            </div>
+          )}
+          {logoutError && (
+            <div className="card-grid" style={{ marginBottom: 16 }}>
+              <DataFetchErrorCard title="Logout" error={logoutError} />
+            </div>
+          )}
+          {children}
+        </main>
       </div>
     </div>
   );

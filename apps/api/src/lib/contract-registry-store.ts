@@ -14,6 +14,9 @@ export type RegisteredContract = {
 
 const dataDir = process.env.DATA_DIR || 'data';
 const registryPath = path.join(dataDir, 'contracts-registry.json');
+const ensureDir = () => {
+  fs.mkdirSync(dataDir, { recursive: true });
+};
 
 const load = (): RegisteredContract[] => {
   if (!fs.existsSync(registryPath)) return [];
@@ -27,6 +30,7 @@ const load = (): RegisteredContract[] => {
 };
 
 const save = (contracts: RegisteredContract[]) => {
+  ensureDir();
   fs.writeFileSync(registryPath, JSON.stringify(contracts, null, 2));
 };
 

@@ -2,7 +2,15 @@
 
 import type { Proposal, Vote } from '@ghostl/types/governance';
 
-export function VoteTracking({ proposal, votes }: { proposal: Proposal; votes: Vote[] }) {
+export function VoteTracking({ proposal, votes }: { proposal?: Proposal | null; votes: Vote[] }) {
+  if (!proposal) {
+    return (
+      <div className="card">
+        <div style={{ fontWeight: 700, marginBottom: 6 }}>Vote tracking</div>
+        <div className="muted">No proposals available to track votes.</div>
+      </div>
+    );
+  }
   const quorumMet = votes.reduce((sum, v) => sum + v.weight, 0) >= proposal.quorum;
   return (
     <div className="card">

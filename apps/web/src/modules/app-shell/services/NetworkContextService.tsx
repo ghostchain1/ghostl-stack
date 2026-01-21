@@ -2,35 +2,28 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { ChainOverviewSchema, type ChainOverview } from '@ghostl/contract-schemas';
 import { resolveApiBase } from '../../../lib/runtime';
+import { apiRequest, type ApiError } from '../../../lib/api';
 
 export type NetworkConfig = { id: string; label: string; env: string; rpc?: string; chainId?: number };
-
-type RpcEndpoint = { url: string; protocol?: string };
-type RpcPoolResponse = { pool?: { L1?: RpcEndpoint[]; L2?: RpcEndpoint[]; L3?: RpcEndpoint[] } };
 
 const envLabel = process.env.NEXT_PUBLIC_ENV || 'local';
 const DEFAULT_NETWORKS: NetworkConfig[] = [
   {
     id: 'l1',
     label: 'GhostChain L1',
-    env: envLabel,
-    rpc: process.env.NEXT_PUBLIC_L1_RPC || 'http://localhost:18545',
-    chainId: Number(process.env.NEXT_PUBLIC_L1_CHAIN_ID || 14000101)
+    env: envLabel
   },
   {
     id: 'l2',
     label: 'GhostL2',
-    env: envLabel,
-    rpc: process.env.NEXT_PUBLIC_L2_RPC || 'http://localhost:18547',
-    chainId: Number(process.env.NEXT_PUBLIC_L2_CHAIN_ID || 901)
+    env: envLabel
   },
   {
     id: 'l3',
     label: 'GhostL3',
-    env: envLabel,
-    rpc: process.env.NEXT_PUBLIC_L3_RPC || 'http://localhost:39545',
-    chainId: Number(process.env.NEXT_PUBLIC_L3_CHAIN_ID || 903)
+    env: envLabel
   }
 ];
 
@@ -38,6 +31,7 @@ type NetworkContextValue = {
   networks: NetworkConfig[];
   current?: NetworkConfig;
   setNetwork: (id: string) => void;
+  error?: ApiError;
 };
 
 const STORAGE_KEY = 'ghostl.network';
@@ -51,6 +45,7 @@ const NetworkContext = createContext<NetworkContextValue>({
 export function NetworkProvider({ children }: { children: ReactNode }) {
   const [networks, setNetworks] = useState<NetworkConfig[]>(DEFAULT_NETWORKS);
   const [currentId, setCurrentId] = useState<string>(DEFAULT_NETWORKS[1].id);
+  const [error, setError] = useState<ApiError | null>(null);
 
   useEffect(() => {
     try {
@@ -66,20 +61,30 @@ export function NetworkProvider({ children }: { children: ReactNode }) {
 
     const loadPool = async () => {
       try {
-        const res = await fetch(`${resolveApiBase()}/rpc/pool`, { credentials: 'include' });
-        if (!res.ok) return;
-        const data = (await res.json()) as RpcPoolResponse;
-        if (!data.pool) return;
-        const pickUrl = (list?: RpcEndpoint[]) =>
-          list?.find((endpoint) => endpoint.protocol !== 'ws')?.url || list?.[0]?.url || '';
+        const res = await apiRequest<ChainOverview>('/chain', { baseUrl: resolveApiBase(), schema: ChainOverviewSchema });
+        if (!res.ok) {
+          setError(res.error);
+          return;
+        }
         const updated = DEFAULT_NETWORKS.map((network) => {
-          const poolKey = network.id === 'l1' ? 'L1' : network.id === 'l2' ? 'L2' : 'L3';
-          const rpc = pickUrl(data.pool?.[poolKey]) || network.rpc;
-          return { ...network, rpc };
+          const snapshot = res.data.chains.find((chain) => chain.id === network.id);
+          const chainId = snapshot?.rpc?.chainId ?? (snapshot?.info?.chainId ? Number(snapshot.info.chainId) : undefined);
+          return {
+            ...network,
+            env: snapshot?.info?.env || network.env,
+            rpc: snapshot?.rpc?.url,
+            chainId: Number.isFinite(chainId) ? chainId : undefined
+          };
         });
         if (active) setNetworks(updated);
+        setError(null);
       } catch {
-        // ignore
+        setError({
+          message: 'chain_overview_fetch_failed',
+          endpoint: `${resolveApiBase()}/chain`,
+          method: 'GET',
+          hint: 'Check ghost-api /chain endpoint and ensure ghost-registry is healthy.'
+        });
       }
     };
 
@@ -102,9 +107,10 @@ export function NetworkProvider({ children }: { children: ReactNode }) {
     () => ({
       networks,
       current: networks.find((n) => n.id === currentId) || networks[0],
-      setNetwork
+      setNetwork,
+      error: error || undefined
     }),
-    [networks, currentId]
+    [networks, currentId, error]
   );
 
   return <NetworkContext.Provider value={value}>{children}</NetworkContext.Provider>;

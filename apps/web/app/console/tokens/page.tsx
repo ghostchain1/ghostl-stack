@@ -1,1 +1,1 @@
-export { default } from '../../tokenomics/page';
+export { default } from '../../tokens/page';

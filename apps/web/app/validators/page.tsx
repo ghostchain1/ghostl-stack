@@ -3,18 +3,33 @@ import { ValidatorDetailCard } from '../../src/modules/validators/components/Val
 import { VotingPowerChart } from '../../src/modules/validators/components/VotingPowerChart';
 import { ParticipationPanel } from '../../src/modules/validators/components/ParticipationPanel';
 import type { Validator, SlashEvent } from '@ghostl/types/validators';
-import { apiFetch } from '../../src/lib/api';
+import type { ApiError } from '../../src/lib/api';
+import { serverApiRequest } from '../../src/lib/server-api';
+import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
 
 type RawValidator = Partial<Validator> & {
   proposerIndex?: number | string;
   byzantine?: number | string;
 };
 
-async function loadValidators(): Promise<Validator[]> {
-  const data = await apiFetch<{ validators?: RawValidator[] }>('/api/validators', {
-    fallback: { validators: [] }
-  });
-  return (data.validators || []).map((v) => {
+async function loadValidators(): Promise<{
+  validators: Validator[];
+  metrics: { missedBlocks?: number; participationRate?: number; lastProposer?: string } | null;
+  errors: Array<{ title: string; error: ApiError }>;
+}> {
+  const [validatorsRes, metricsRes] = await Promise.all([
+    serverApiRequest<{ validators?: RawValidator[] }>('/api/validators', { init: { cache: 'no-store' } }),
+    serverApiRequest<{ metrics?: { missedBlocks?: number; participationRate?: number; lastProposer?: string } }>(
+      '/api/validators/metrics',
+      { init: { cache: 'no-store' } }
+    )
+  ]);
+  const errors: Array<{ title: string; error: ApiError }> = [];
+  if (!validatorsRes.ok) errors.push({ title: 'Validators list', error: validatorsRes.error });
+  if (!metricsRes.ok) errors.push({ title: 'Validator metrics', error: metricsRes.error });
+
+  const list = validatorsRes.ok ? validatorsRes.data.validators || [] : [];
+  const validators = list.map((v) => {
     const powerSource = v.byzantine ?? v.proposerIndex ?? v.power ?? 0;
     return {
       id: v.id || v.address || 'unknown',
@@ -25,22 +40,30 @@ async function loadValidators(): Promise<Validator[]> {
       power: typeof powerSource === 'string' ? Number(powerSource) || 0 : Number(powerSource || 0)
     };
   });
+  const metrics = metricsRes.ok ? metricsRes.data.metrics || null : null;
+  return { validators, metrics, errors };
 }
 
-const mockParticipation = { finality: 'safe', participation: '95%', proposer: 'rotating' };
-
 export default async function ValidatorsPage() {
-  const validators = await loadValidators();
+  const { validators, metrics, errors } = await loadValidators();
   const target = validators[0];
   const slashes: SlashEvent[] = [];
+  const participation = metrics?.participationRate !== undefined ? `${Math.round(metrics.participationRate * 100)}%` : 'n/a';
+  const proposer = metrics?.lastProposer || 'n/a';
+  const panelMetrics = { finality: 'n/a', participation, proposer };
 
   return (
     <div className="content">
       <div className="card-grid">
-        <ValidatorsTable validators={validators} />
-        {target && <ValidatorDetailCard validator={target} missedBlocks={0} rewards="—" slashes={slashes} />}
-        <VotingPowerChart validators={validators} />
-        <ParticipationPanel metrics={mockParticipation} />
+        {errors.map((entry, idx) => (
+          <DataFetchErrorCard key={`${entry.title}-${idx}`} title={entry.title} error={entry.error} />
+        ))}
+        {errors.find((e) => e.title === 'Validators list') ? null : <ValidatorsTable validators={validators} />}
+        {errors.find((e) => e.title === 'Validator metrics') || !target ? null : (
+          <ValidatorDetailCard validator={target} missedBlocks={metrics?.missedBlocks} slashes={slashes} />
+        )}
+        {errors.find((e) => e.title === 'Validators list') ? null : <VotingPowerChart validators={validators} />}
+        {errors.find((e) => e.title === 'Validator metrics') ? null : <ParticipationPanel metrics={panelMetrics} />}
       </div>
     </div>
   );

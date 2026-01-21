@@ -13,6 +13,7 @@ import {
   type SwapRoute
 } from './api';
 import { resolveApiBase } from '../../lib/runtime';
+import { apiRequest, formatApiError, type ApiError } from '../../lib/api';
 import type { RpcEndpoint } from '@ghostl/types/integrations';
 
 type ChainConfig = {
@@ -58,13 +59,22 @@ export function useWallet() {
   const [externalTokens, setExternalTokens] = useState<TokenConfig[]>([]);
   const [swapAmount, setSwapAmount] = useState<string>('');
   const [chainConfigs, setChainConfigs] = useState<Record<SupportedChain, ChainConfig>>(baseChainConfigs);
+  const [rpcRegistryError, setRpcRegistryError] = useState<string>('');
+  const [tokenListError, setTokenListError] = useState<string>('');
+  const formatStatus = (error: ApiError) => {
+    const info = formatApiError(error);
+    return `${info.method} ${info.endpoint} | ${info.status} | ${info.hint}`;
+  };
 
   useEffect(() => {
     const loadRpcRegistry = async () => {
       try {
-        const res = await fetch(`${resolveApiBase()}/integrations/rpc`, { credentials: 'include' });
-        if (!res.ok) return;
-        const endpoints = (await res.json()) as RpcEndpoint[];
+        const res = await apiRequest<RpcEndpoint[]>('/integrations/rpc', { baseUrl: resolveApiBase() });
+        if (!res.ok) {
+          setRpcRegistryError(formatStatus(res.error));
+          return;
+        }
+        const endpoints = res.data;
         const next = { ...baseChainConfigs };
         const pickRpc = (chainId: number) =>
           endpoints.find((endpoint) => Number(endpoint.chainId) === chainId && endpoint.url?.startsWith('http'))?.url ||
@@ -73,8 +83,14 @@ export function useWallet() {
         next.l2.rpc = pickRpc(next.l2.id);
         next.l3.rpc = pickRpc(next.l3.id);
         setChainConfigs(next);
-      } catch {
-        // ignore
+        setRpcRegistryError('');
+      } catch (err) {
+        const info = formatApiError({
+          message: err instanceof Error ? err.message : 'rpc_registry_unreachable',
+          endpoint: `${resolveApiBase()}/integrations/rpc`,
+          method: 'GET'
+        });
+        setRpcRegistryError(`${info.method} ${info.endpoint} | ${info.status} | ${info.hint}`);
       }
     };
     loadRpcRegistry().catch(() => undefined);
@@ -147,9 +163,30 @@ export function useWallet() {
     const url = process.env.NEXT_PUBLIC_TOKEN_LIST_URL;
     if (!url) return;
     fetch(url)
-      .then((r) => r.json())
+      .then(async (r) => {
+        if (!r.ok) {
+          const info = formatApiError({
+            message: 'token_list_fetch_failed',
+            status: r.status,
+            endpoint: url,
+            method: 'GET',
+            hint: 'Check NEXT_PUBLIC_TOKEN_LIST_URL or token list service.'
+          });
+          throw new Error(`${info.method} ${info.endpoint} | ${info.status} | ${info.hint}`);
+        }
+        return r.json();
+      })
       .then((j) => {
-        if (!Array.isArray(j.tokens)) return;
+        if (!Array.isArray(j.tokens)) {
+          const info = formatApiError({
+            message: 'token_list_invalid_shape',
+            endpoint: url,
+            method: 'GET',
+            hint: 'Token list must include a tokens[] array.'
+          });
+          setTokenListError(`${info.method} ${info.endpoint} | ${info.status} | ${info.hint}`);
+          return;
+        }
         const mapped: TokenConfig[] = j.tokens
           .map((t: Record<string, unknown>) => {
             const chainId = Number(t.chainId as number | string | undefined);
@@ -170,8 +207,12 @@ export function useWallet() {
           })
           .filter(Boolean) as TokenConfig[];
         setExternalTokens(mapped);
+        setTokenListError('');
       })
-      .catch(() => undefined);
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : 'Token list fetch failed';
+        setTokenListError(message);
+      });
   }, []);
 
   const connect = useCallback(async () => {
@@ -369,6 +410,8 @@ export function useWallet() {
     setSlippageBps,
     selectedOutToken,
     setSelectedOutToken,
-    setActiveWallet
+    setActiveWallet,
+    rpcRegistryError,
+    tokenListError
   };
 }

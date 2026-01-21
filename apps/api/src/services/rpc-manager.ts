@@ -22,7 +22,10 @@ type RegistryResponse = {
     network?: 'mainnet' | 'testnet' | 'devnet';
     regions?: string[];
     nativeCurrency?: { name: string; symbol: string; decimals: number };
-    rpc?: { http?: string[]; ws?: string[] };
+    rpc?: { http?: string[]; ws?: string[] } | string;
+    ws?: string;
+    rpcUrls?: string[];
+    wsUrls?: string[];
     endpoints?: Array<{ url: string; protocol?: 'http' | 'ws' }>;
   }>;
 };
@@ -39,54 +42,7 @@ type Endpoint = {
   lastError: string | null;
 };
 
-const parseList = (value?: string) =>
-  (value || '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
-
 const nowIso = () => new Date().toISOString();
-
-const buildFallback = (): RegistryResponse => {
-  const l1 = parseList(env.RPC_L1);
-  const l1ws = parseList(process.env.RPC_L1_WS);
-  const l2 = parseList(env.RPC_L2);
-  const l2ws = parseList(process.env.RPC_L2_WS);
-  const l3 = parseList(env.RPC_L3);
-  const l3ws = parseList(process.env.RPC_L3_WS);
-  const chains: RegistryResponse['chains'] = [];
-  if (l1.length || l1ws.length) {
-    chains.push({
-      chainId: Number(process.env.RPC_L1_CHAIN_ID || process.env.GHOSTCHAIN_L1_CHAIN_ID || '14000101'),
-      name: 'GhostChain',
-      layer: 'L1',
-      regions: ['local'],
-      rpc: { http: l1, ws: l1ws },
-      chainType: 'settlement'
-    });
-  }
-  if (l2.length || l2ws.length) {
-    chains.push({
-      chainId: Number(process.env.RPC_L2_CHAIN_ID || process.env.GHOSTL2_CHAIN_ID || env.CHAIN_ID || '901'),
-      name: 'GhostL2',
-      layer: 'L2',
-      regions: ['local'],
-      rpc: { http: l2, ws: l2ws },
-      chainType: 'rollup'
-    });
-  }
-  if (l3.length || l3ws.length) {
-    chains.push({
-      chainId: Number(process.env.RPC_L3_CHAIN_ID || process.env.GHOSTL3_CHAIN_ID || '903'),
-      name: 'GhostL3',
-      layer: 'L3',
-      regions: ['local'],
-      rpc: { http: l3, ws: l3ws },
-      chainType: 'rollup'
-    });
-  }
-  return { chains };
-};
 
 const chainForLayer = (layer: ChainRef) => (layer === 'l1' ? 'L1' : layer === 'l2' ? 'L2' : 'L3');
 const normalizeLayer = (layer: ChainLayer | ChainRef) =>
@@ -102,9 +58,13 @@ const isValidRegistry = (payload: unknown): payload is RegistryResponse => {
     if (!Number.isFinite(entry.chainId)) return false;
     if (!entry.layer || !['L1', 'L2', 'L3'].includes(entry.layer)) return false;
     if (entry.rpc) {
-      if (entry.rpc.http && !Array.isArray(entry.rpc.http)) return false;
-      if (entry.rpc.ws && !Array.isArray(entry.rpc.ws)) return false;
+      if (typeof entry.rpc !== 'string') {
+        if (entry.rpc.http && !Array.isArray(entry.rpc.http)) return false;
+        if (entry.rpc.ws && !Array.isArray(entry.rpc.ws)) return false;
+      }
     }
+    if (entry.rpcUrls && !Array.isArray(entry.rpcUrls)) return false;
+    if (entry.wsUrls && !Array.isArray(entry.wsUrls)) return false;
     if (entry.endpoints && !Array.isArray(entry.endpoints)) return false;
     return true;
   });
@@ -245,11 +205,21 @@ export class GhostWalletRpcManager {
     (['l1', 'l2', 'l3'] as ChainRef[]).forEach((layer) => {
       const entry = data.chains.find((chain) => chain.layer === chainForLayer(layer));
       if (!entry) return;
-      const http = entry.rpc?.http || [];
-      const ws = entry.rpc?.ws || [];
+      const http: string[] = [];
+      const ws: string[] = [];
+      if (typeof entry.rpc === 'string' && entry.rpc) http.push(entry.rpc);
+      if (typeof entry.ws === 'string' && entry.ws) ws.push(entry.ws);
+      if (entry.rpcUrls?.length) http.push(...entry.rpcUrls);
+      if (entry.wsUrls?.length) ws.push(...entry.wsUrls);
+      if (entry.rpc && typeof entry.rpc !== 'string') {
+        if (entry.rpc.http) http.push(...entry.rpc.http);
+        if (entry.rpc.ws) ws.push(...entry.rpc.ws);
+      }
+      const httpUrls = Array.from(new Set(http.filter(Boolean)));
+      const wsUrls = Array.from(new Set(ws.filter(Boolean)));
       const endpointUrls = entry.endpoints || [];
       const endpoints: Endpoint[] = [
-        ...http.map((url) => ({
+        ...httpUrls.map((url) => ({
           chainId: entry.chainId,
           url,
           protocol: 'http' as const,
@@ -260,7 +230,7 @@ export class GhostWalletRpcManager {
           latencyMs: null,
           lastError: null
         })),
-        ...ws.map((url) => ({
+        ...wsUrls.map((url) => ({
           chainId: entry.chainId,
           url,
           protocol: 'ws' as const,
@@ -293,7 +263,7 @@ export class GhostWalletRpcManager {
   private async refresh() {
     if (!this.registryUrl) {
       this.registryAvailable = false;
-      this.initEndpoints(buildFallback());
+      this.endpoints = new Map();
       return;
     }
     try {
@@ -305,7 +275,7 @@ export class GhostWalletRpcManager {
       this.initEndpoints(body);
     } catch {
       this.registryAvailable = false;
-      this.initEndpoints(buildFallback());
+      this.endpoints = new Map();
     }
   }
 

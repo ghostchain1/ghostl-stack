@@ -1,27 +1,40 @@
 import { Card } from '@ghostl/ui';
 import type { Node, NodeMetrics } from '@ghostl/types/nodes';
-import { apiFetch } from '../../src/lib/api';
+import type { ApiError } from '../../src/lib/api';
+import { serverApiRequest } from '../../src/lib/server-api';
+import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
 import { NodeDetail } from '../../src/modules/nodes/components/NodeDetail';
 
 type NodeDetailRecord = Node & { metrics: NodeMetrics };
 
-const fallbackMetrics: NodeMetrics = { cpu: 0, mem: 0, disk: 0, peers: 0 };
 const DEVOPS_URL = process.env.NEXT_PUBLIC_DEVOPS_URL || 'http://localhost:7623';
 
-async function loadNodeDetails(): Promise<NodeDetailRecord[]> {
-  const list = await apiFetch<Node[]>('/nodes', { fallback: [] });
-  const enriched = await Promise.all(
-    list.map((node) =>
-      apiFetch<{ node: Node; metrics: NodeMetrics }>(`/nodes/${encodeURIComponent(node.id)}`, {
-        fallback: { node, metrics: fallbackMetrics }
-      }).then((res) => ({ ...node, ...(res?.node || {}), metrics: res?.metrics || fallbackMetrics }))
+async function loadNodeDetails(): Promise<{ nodes: NodeDetailRecord[]; errors: Array<{ title: string; error: ApiError }> }> {
+  const listRes = await serverApiRequest<Node[]>('/nodes', { init: { cache: 'no-store' } });
+  if (!listRes.ok) {
+    return { nodes: [], errors: [{ title: 'Nodes list', error: listRes.error }] };
+  }
+  const detailResults = await Promise.all(
+    listRes.data.map((node) =>
+      serverApiRequest<{ node: Node; metrics: NodeMetrics }>(`/nodes/${encodeURIComponent(node.id)}`, {
+        init: { cache: 'no-store' }
+      }).then((res) => ({ node, res }))
     )
   );
-  return enriched;
+  const nodes: NodeDetailRecord[] = [];
+  const errors: Array<{ title: string; error: ApiError }> = [];
+  detailResults.forEach(({ node, res }) => {
+    if (!res.ok) {
+      errors.push({ title: `Node detail ${node.id}`, error: res.error });
+      return;
+    }
+    nodes.push({ ...node, ...(res.data.node || {}), metrics: res.data.metrics });
+  });
+  return { nodes, errors };
 }
 
 export default async function NodesPage() {
-  const nodes = await loadNodeDetails();
+  const { nodes, errors } = await loadNodeDetails();
 
   return (
     <div className="content">
@@ -29,10 +42,13 @@ export default async function NodesPage() {
         Node actions are routed via DEVOPS orchestrator at {DEVOPS_URL}.
       </div>
       <div className="card-grid">
+        {errors.map((entry, idx) => (
+          <DataFetchErrorCard key={`${entry.title}-${idx}`} title={entry.title} error={entry.error} />
+        ))}
         {nodes.map((node) => (
           <NodeDetail key={node.id} node={node} metrics={node.metrics} />
         ))}
-        {!nodes.length && (
+        {!nodes.length && !errors.length && (
           <Card title="Nodes">
             <div className="muted">No nodes reported by /nodes API.</div>
           </Card>

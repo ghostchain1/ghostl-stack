@@ -18,6 +18,10 @@
 !.env.*.example
 !.env.sample
 !.env.*.sample
+# compliance local env
+services/ghost-compliance/.env
+services/ghost-compliance-worker/.env
+apps/ghost-ui/.env
 infra/opstack/.env
 infra/opstack/.env.local
 infra/opstack/.env.secrets

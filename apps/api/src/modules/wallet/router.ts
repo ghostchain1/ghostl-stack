@@ -3,13 +3,46 @@ import { z } from 'zod';
 import { ethers } from 'ethers';
 import type { GhostWalletService } from '../../services/ghostwallet';
 import { requirePermission } from '../../lib/rbac';
+import { ghostWalletRpcManager } from '../../services/rpc-manager';
 
 export const buildWalletRouter = (ghostWallet: GhostWalletService) => {
   const router = Router();
 
+  const resolveRegistryRpc = (chainId?: string, override?: string) => {
+    const pool = ghostWalletRpcManager.getPoolSnapshot();
+    const normalized = (chainId || '').trim().toLowerCase();
+    let layer: 'L1' | 'L2' | 'L3' | null = null;
+    if (normalized === 'l1') layer = 'L1';
+    if (normalized === 'l2') layer = 'L2';
+    if (normalized === 'l3') layer = 'L3';
+    const allLayers: Array<'L1' | 'L2' | 'L3'> = ['L1', 'L2', 'L3'];
+    if (!layer && override) {
+      const match = allLayers.find((key) => (pool[key] || []).some((endpoint) => endpoint.url === override));
+      layer = match || null;
+    }
+    if (!layer) {
+      layer = 'L2';
+    }
+    const endpoints = (pool[layer] || []).filter((endpoint) => endpoint.protocol === 'http');
+    if (!endpoints.length) {
+      return { error: 'rpc_unavailable' as const, layer };
+    }
+    if (override) {
+      const match = endpoints.find((endpoint) => endpoint.url === override);
+      if (!match) {
+        return { error: 'rpc_override_not_in_registry' as const, layer };
+      }
+      return { rpc: match.url, layer };
+    }
+    const order = { OK: 0, DEGRADED: 1, DOWN: 2 } as const;
+    const preferred = [...endpoints].sort((a, b) => order[a.status] - order[b.status])[0];
+    return { rpc: preferred.url, layer };
+  };
+
   router.get('/token/balance', requirePermission('wallets:read'), async (req, res) => {
     const schema = z.object({
-      rpc: z.string(),
+      rpc: z.string().optional(),
+      chainId: z.string().optional(),
       address: z.string(),
       token: z.string().optional()
     });
@@ -18,14 +51,24 @@ export const buildWalletRouter = (ghostWallet: GhostWalletService) => {
       res.status(400).json({ error: parsed.error.message });
       return;
     }
-    const { rpc, address, token } = parsed.data;
+    const { rpc, chainId, address, token } = parsed.data;
+    const resolved = resolveRegistryRpc(chainId, rpc);
+    if ('error' in resolved) {
+      const status = resolved.error === 'rpc_unavailable' ? 503 : 400;
+      res.status(status).json({ error: resolved.error, chainId: chainId || resolved.layer });
+      return;
+    }
     try {
       if (token) {
-        const erc20 = new ethers.Contract(token, ['function balanceOf(address) view returns (uint256)'], new ethers.JsonRpcProvider(rpc));
+        const erc20 = new ethers.Contract(
+          token,
+          ['function balanceOf(address) view returns (uint256)'],
+          new ethers.JsonRpcProvider(resolved.rpc)
+        );
         const bal = await erc20.balanceOf(address);
         res.json({ address, token, balance: bal.toString() });
       } else {
-        const provider = new ethers.JsonRpcProvider(rpc);
+        const provider = new ethers.JsonRpcProvider(resolved.rpc);
         const bal = await provider.getBalance(address);
         res.json({ address, balance: bal.toString() });
       }

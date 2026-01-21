@@ -6,6 +6,8 @@ import type { AnalyticsEvent, WebhookStatusSummary } from '@ghostl/types';
 import type { IntegrationDefinition, IntegrationInstance, IntegrationTestResult } from '@ghostl/types/integrations';
 import { resolveApiBase } from '../../lib/runtime';
 import { jsonWithCsrf } from '../../lib/csrf';
+import { apiRequest, type ApiError, formatApiError } from '../../lib/api';
+import { DataFetchErrorCard } from '../../components/DataFetchErrorCard';
 import { RpcEndpointManager } from './components/RpcEndpointManager';
 import type { RpcEndpoint } from '@ghostl/types/integrations';
 import { useSession } from '../identity-access/session';
@@ -56,6 +58,15 @@ export function IntegrationsControlCenter() {
   const [instanceEdits, setInstanceEdits] = useState<Record<string, Partial<IntegrationInstance>>>({});
   const [instanceConfigs, setInstanceConfigs] = useState<Record<string, Record<string, string>>>({});
   const [testResults, setTestResults] = useState<Record<string, IntegrationTestResult | null>>({});
+  const [errors, setErrors] = useState<Array<{ title: string; error: ApiError }>>([]);
+
+  const pushError = (title: string, error: ApiError) => {
+    setErrors((prev) => [...prev.filter((entry) => entry.title !== title), { title, error }]);
+  };
+
+  const clearError = (title: string) => {
+    setErrors((prev) => prev.filter((entry) => entry.title !== title));
+  };
 
   const definitionMap = useMemo(
     () => Object.fromEntries(definitions.map((def) => [def.id, def])),
@@ -66,18 +77,26 @@ export function IntegrationsControlCenter() {
     setStatus('Loading integrations...');
     try {
       const [defRes, instRes, rpcRes] = await Promise.all([
-        fetch(`${API_URL}/integrations/definitions`, { credentials: 'include' }),
-        fetch(`${API_URL}/integrations/instances`, { credentials: 'include' }),
-        fetch(`${API_URL}/integrations/rpc`, { credentials: 'include' })
+        apiRequest<IntegrationDefinition[]>('/integrations/definitions', { baseUrl: API_URL }),
+        apiRequest<IntegrationInstance[]>('/integrations/instances', { baseUrl: API_URL }),
+        apiRequest<RpcEndpoint[]>('/integrations/rpc', { baseUrl: API_URL })
       ]);
-      if (!defRes.ok || !instRes.ok) throw new Error('auth_required');
-      const defJson = (await defRes.json()) as IntegrationDefinition[];
-      const instJson = (await instRes.json()) as IntegrationInstance[];
-      const rpcJson = rpcRes.ok ? ((await rpcRes.json()) as RpcEndpoint[]) : [];
-      setDefinitions(defJson);
-      setInstances(instJson);
-      setRpcEndpoints(rpcJson);
-      setSelectedDefinitionId(defJson[0]?.id || '');
+      if (!defRes.ok) pushError('Integration definitions', defRes.error);
+      else {
+        clearError('Integration definitions');
+        setDefinitions(defRes.data);
+        setSelectedDefinitionId(defRes.data[0]?.id || '');
+      }
+      if (!instRes.ok) pushError('Integration instances', instRes.error);
+      else {
+        clearError('Integration instances');
+        setInstances(instRes.data);
+      }
+      if (!rpcRes.ok) pushError('RPC registry', rpcRes.error);
+      else {
+        clearError('RPC registry');
+        setRpcEndpoints(rpcRes.data);
+      }
       setStatus('');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to load integrations';
@@ -92,26 +111,25 @@ export function IntegrationsControlCenter() {
   useEffect(() => {
     if (!isAdmin) return;
     const loadActivity = async () => {
-      try {
-        const [eventsRes, webhookRes, deliveriesRes] = await Promise.all([
-          fetch(`${API_URL}/analytics/events?scope=integrations&limit=8`, { credentials: 'include' }),
-          fetch(`${API_URL}/webhooks/status`, { credentials: 'include' }),
-          fetch(`${API_URL}/webhooks/deliveries?limit=5`, { credentials: 'include' })
-        ]);
-        if (eventsRes.ok) {
-          const data = (await eventsRes.json()) as { events?: AnalyticsEvent[] };
-          setEvents(data.events || []);
-        }
-        if (webhookRes.ok) {
-          const data = (await webhookRes.json()) as WebhookStatusSummary;
-          setWebhookStatus(data);
-        }
-        if (deliveriesRes.ok) {
-          const data = (await deliveriesRes.json()) as { deliveries?: AnalyticsEvent[] };
-          setWebhookDeliveries(data.deliveries || []);
-        }
-      } catch {
-        // ignore
+      const [eventsRes, webhookRes, deliveriesRes] = await Promise.all([
+        apiRequest<{ events?: AnalyticsEvent[] }>('/analytics/events?scope=integrations&limit=8', { baseUrl: API_URL }),
+        apiRequest<WebhookStatusSummary>('/webhooks/status', { baseUrl: API_URL }),
+        apiRequest<{ deliveries?: AnalyticsEvent[] }>('/webhooks/deliveries?limit=5', { baseUrl: API_URL })
+      ]);
+      if (!eventsRes.ok) pushError('Integration analytics', eventsRes.error);
+      else {
+        clearError('Integration analytics');
+        setEvents(eventsRes.data.events || []);
+      }
+      if (!webhookRes.ok) pushError('Webhook status', webhookRes.error);
+      else {
+        clearError('Webhook status');
+        setWebhookStatus(webhookRes.data);
+      }
+      if (!deliveriesRes.ok) pushError('Webhook deliveries', deliveriesRes.error);
+      else {
+        clearError('Webhook deliveries');
+        setWebhookDeliveries(deliveriesRes.data.deliveries || []);
       }
     };
     loadActivity();
@@ -143,28 +161,34 @@ export function IntegrationsControlCenter() {
     });
     setStatus('Creating integration...');
     try {
-      const res = await fetch(`${API_URL}/integrations/instances`, {
-        method: 'POST',
-        headers: jsonWithCsrf(),
-        credentials: 'include',
-        body: JSON.stringify({
-          definitionId: selectedDefinitionId,
-          environment,
-          enabled,
-          config,
-          policy: {
-            timeoutMs: toNumber(policyInputs.timeoutMs, defaultPolicy.timeoutMs),
-            retries: toNumber(policyInputs.retries, defaultPolicy.retries),
-            backoffMs: toNumber(policyInputs.backoffMs, defaultPolicy.backoffMs),
-            rateLimitPerMin: toNumber(policyInputs.rateLimitPerMin, defaultPolicy.rateLimitPerMin),
-            circuitBreaker: {
-              enabled: policyInputs.circuitBreakerEnabled,
-              failOpen: policyInputs.circuitBreakerFailOpen
+      const res = await apiRequest('/integrations/instances', {
+        baseUrl: API_URL,
+        init: {
+          method: 'POST',
+          headers: jsonWithCsrf(),
+          body: JSON.stringify({
+            definitionId: selectedDefinitionId,
+            environment,
+            enabled,
+            config,
+            policy: {
+              timeoutMs: toNumber(policyInputs.timeoutMs, defaultPolicy.timeoutMs),
+              retries: toNumber(policyInputs.retries, defaultPolicy.retries),
+              backoffMs: toNumber(policyInputs.backoffMs, defaultPolicy.backoffMs),
+              rateLimitPerMin: toNumber(policyInputs.rateLimitPerMin, defaultPolicy.rateLimitPerMin),
+              circuitBreaker: {
+                enabled: policyInputs.circuitBreakerEnabled,
+                failOpen: policyInputs.circuitBreakerFailOpen
+              }
             }
-          }
-        })
+          })
+        }
       });
-      if (!res.ok) throw new Error(`Create failed ${res.status}`);
+      if (!res.ok) {
+        const info = formatApiError(res.error);
+        setStatus(`${info.method} ${info.endpoint} · ${info.status} · ${info.hint}`);
+        return;
+      }
       await load();
       setConfigInputs({});
       setStatus('Integration created');
@@ -183,18 +207,24 @@ export function IntegrationsControlCenter() {
       : undefined;
     setStatus('Updating integration...');
     try {
-      const res = await fetch(`${API_URL}/integrations/instances/${instance.id}`, {
-        method: 'PATCH',
-        headers: jsonWithCsrf(),
-        credentials: 'include',
-        body: JSON.stringify({
-          enabled: edits.enabled ?? instance.enabled,
-          environment: edits.environment ?? instance.environment,
-          policy: edits.policy ?? instance.policy,
-          config: configPayload
-        })
+      const res = await apiRequest(`/integrations/instances/${instance.id}`, {
+        baseUrl: API_URL,
+        init: {
+          method: 'PATCH',
+          headers: jsonWithCsrf(),
+          body: JSON.stringify({
+            enabled: edits.enabled ?? instance.enabled,
+            environment: edits.environment ?? instance.environment,
+            policy: edits.policy ?? instance.policy,
+            config: configPayload
+          })
+        }
       });
-      if (!res.ok) throw new Error(`Update failed ${res.status}`);
+      if (!res.ok) {
+        const info = formatApiError(res.error);
+        setStatus(`${info.method} ${info.endpoint} · ${info.status} · ${info.hint}`);
+        return;
+      }
       await load();
       setStatus('Integration updated');
     } catch (err) {
@@ -206,13 +236,19 @@ export function IntegrationsControlCenter() {
   const toggleInstance = async (instance: IntegrationInstance, next: boolean) => {
     setStatus(next ? 'Enabling integration...' : 'Disabling integration...');
     try {
-      const res = await fetch(`${API_URL}/integrations/instances/${instance.id}/enable`, {
-        method: 'POST',
-        headers: jsonWithCsrf(),
-        credentials: 'include',
-        body: JSON.stringify({ enabled: next })
+      const res = await apiRequest(`/integrations/instances/${instance.id}/enable`, {
+        baseUrl: API_URL,
+        init: {
+          method: 'POST',
+          headers: jsonWithCsrf(),
+          body: JSON.stringify({ enabled: next })
+        }
       });
-      if (!res.ok) throw new Error('Toggle failed');
+      if (!res.ok) {
+        const info = formatApiError(res.error);
+        setStatus(`${info.method} ${info.endpoint} · ${info.status} · ${info.hint}`);
+        return;
+      }
       await load();
       setStatus(next ? 'Integration enabled' : 'Integration disabled');
     } catch (err) {
@@ -224,13 +260,19 @@ export function IntegrationsControlCenter() {
   const testInstance = async (instance: IntegrationInstance) => {
     setStatus('Testing integration...');
     try {
-      const res = await fetch(`${API_URL}/integrations/instances/${instance.id}/test`, {
-        method: 'POST',
-        headers: jsonWithCsrf(),
-        credentials: 'include'
+      const res = await apiRequest<IntegrationTestResult>(`/integrations/instances/${instance.id}/test`, {
+        baseUrl: API_URL,
+        init: {
+          method: 'POST',
+          headers: jsonWithCsrf()
+        }
       });
-      if (!res.ok) throw new Error(`Test failed ${res.status}`);
-      const result = (await res.json()) as IntegrationTestResult;
+      if (!res.ok) {
+        const info = formatApiError(res.error);
+        setStatus(`${info.method} ${info.endpoint} · ${info.status} · ${info.hint}`);
+        return;
+      }
+      const result = res.data;
       setTestResults((prev) => ({ ...prev, [instance.id]: result }));
       await load();
       setStatus(result.ok ? 'Integration OK' : 'Integration failed');
@@ -243,6 +285,9 @@ export function IntegrationsControlCenter() {
   return (
     <div className="content">
       <div className="card-grid">
+        {errors.map((entry, idx) => (
+          <DataFetchErrorCard key={`${entry.title}-${idx}`} title={entry.title} error={entry.error} />
+        ))}
         <Card title="Integrations Control Center" subtitle="Definitions, instances, policy, and health">
           {status && <div className="muted">{status}</div>}
           {!definitions.length && <div className="muted">No definitions available.</div>}

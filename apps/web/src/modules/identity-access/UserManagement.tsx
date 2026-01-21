@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card } from '@ghostl/ui';
 import { resolveApiBase } from '../../lib/runtime';
 import { jsonWithCsrf } from '../../lib/csrf';
+import { apiRequest, type ApiError, formatApiError } from '../../lib/api';
+import { DataFetchErrorCard } from '../../components/DataFetchErrorCard';
 import type { Role } from './access-policy';
 
 const API_URL = resolveApiBase();
@@ -30,6 +32,7 @@ export function UserManagement() {
   });
   const [walletInputs, setWalletInputs] = useState<Record<string, string>>({});
   const [usernameInputs, setUsernameInputs] = useState<Record<string, string>>({});
+  const [loadError, setLoadError] = useState<ApiError | null>(null);
 
   const summary = useMemo(() => {
     const walletTotal = users.reduce((acc, u) => acc + (u.wallets?.length || 0), 0);
@@ -45,12 +48,16 @@ export function UserManagement() {
 
   const load = async () => {
     setStatus('Loading users...');
+    setLoadError(null);
     try {
-      const uRes = await fetch(`${API_URL}/users`, { credentials: 'include' });
-      if (!uRes.ok) throw new Error('auth_required');
-          const uJson = (await uRes.json()) as User[];
-          setUsers(uJson);
-          setStatus('');
+      const uRes = await apiRequest<User[]>('/users', { baseUrl: API_URL });
+      if (!uRes.ok) {
+        setLoadError(uRes.error);
+        setStatus(formatApiError(uRes.error).hint);
+        return;
+      }
+      setUsers(uRes.data);
+      setStatus('');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to load users';
       setStatus(msg);
@@ -68,18 +75,24 @@ export function UserManagement() {
     }
     setStatus('Creating user...');
     try {
-      const res = await fetch(`${API_URL}/users`, {
-        method: 'POST',
-        headers: jsonWithCsrf(),
-        credentials: 'include',
-        body: JSON.stringify({
-          email: newUser.email,
-          username: newUser.username ? newUser.username.trim() : undefined,
-          wallets: newUser.wallets ? newUser.wallets.split(',').map((w) => w.trim()) : [],
-          role: newUser.role
-        })
+      const res = await apiRequest('/users', {
+        baseUrl: API_URL,
+        init: {
+          method: 'POST',
+          headers: jsonWithCsrf(),
+          body: JSON.stringify({
+            email: newUser.email,
+            username: newUser.username ? newUser.username.trim() : undefined,
+            wallets: newUser.wallets ? newUser.wallets.split(',').map((w) => w.trim()) : [],
+            role: newUser.role
+          })
+        }
       });
-      if (!res.ok) throw new Error(`Create failed ${res.status}`);
+      if (!res.ok) {
+        const info = formatApiError(res.error);
+        setStatus(`${info.method} ${info.endpoint} · ${info.status} · ${info.hint}`);
+        return;
+      }
       await load();
       setNewUser({ email: '', username: '', wallets: '', role: 'READONLY' });
       flashStatus('User created');
@@ -92,13 +105,15 @@ export function UserManagement() {
   const updateUser = async (id: string, update: Partial<User>) => {
     setStatus('Updating user...');
     try {
-      const res = await fetch(`${API_URL}/users/${id}`, {
-        method: 'PATCH',
-        headers: jsonWithCsrf(),
-        credentials: 'include',
-        body: JSON.stringify(update)
+      const res = await apiRequest(`/users/${id}`, {
+        baseUrl: API_URL,
+        init: { method: 'PATCH', headers: jsonWithCsrf(), body: JSON.stringify(update) }
       });
-      if (!res.ok) throw new Error(`Update failed ${res.status}`);
+      if (!res.ok) {
+        const info = formatApiError(res.error);
+        setStatus(`${info.method} ${info.endpoint} · ${info.status} · ${info.hint}`);
+        return;
+      }
       await load();
       flashStatus('User updated');
     } catch (err) {
@@ -121,6 +136,7 @@ export function UserManagement() {
   return (
     <div className="stack" style={{ gap: 12 }}>
       <div className="card-grid">
+        {loadError && <DataFetchErrorCard title="Users list" error={loadError} />}
         <Card title="Users" subtitle="Total accounts">
           <div className="stack">
             <div style={{ fontSize: 28, fontWeight: 800 }}>{summary.users}</div>

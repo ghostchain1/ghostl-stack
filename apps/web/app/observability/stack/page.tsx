@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { Card, Badge } from '@ghostl/ui';
+import { ChainOverviewSchema, type ChainOverview } from '@ghostl/contract-schemas';
 import { resolveApiBase } from '../../../src/lib/runtime';
+import { apiRequest, type ApiError } from '../../../src/lib/api';
+import { DataFetchErrorCard } from '../../../src/components/DataFetchErrorCard';
 
 const API_URL = resolveApiBase();
 
@@ -11,38 +14,69 @@ type Overview = {
   head?: number;
   finalized?: number;
   lag?: number;
-  relayer: { finalized?: number; errors?: number; health?: Record<string, unknown> | null };
-  guard: { alerts?: number; deposits?: number; activeAlerts?: Record<string, unknown>[] };
+  relayer?: { finalized?: number; errors?: number };
+  guard?: { alerts?: number; deposits?: number; activeAlerts?: Record<string, unknown>[] };
 };
 
 export default function StackPage() {
   const [chain, setChain] = useState<'l2' | 'l3'>('l2');
   const [data, setData] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(false);
-  const fallback: Overview = {
-    chain,
-    head: 0,
-    finalized: 0,
-    lag: 0,
-    relayer: { finalized: 0, errors: 0, health: null },
-    guard: { alerts: 0, deposits: 0, activeAlerts: [] }
-  };
+  const [error, setError] = useState<ApiError | null>(null);
+  const fallback: Overview = { chain };
 
   const load = async (target: 'l2' | 'l3') => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch(`${API_URL}/stack/overview?chain=${target}`, { cache: 'no-cache' });
-      if (!res.ok) throw new Error('failed');
-      const json = (await res.json()) as Overview;
+      const res = await apiRequest<ChainOverview>('/chain', {
+        baseUrl: API_URL,
+        init: { cache: 'no-cache' },
+        schema: ChainOverviewSchema
+      });
+      if (!res.ok) {
+        setError(res.error);
+        setData(null);
+        return;
+      }
+      const snapshot = res.data.chains.find((entry) => entry.id === target);
+      if (!snapshot) {
+        setError({
+          message: 'chain_missing',
+          endpoint: `${API_URL}/chain`,
+          method: 'GET',
+          hint: 'Ghost-api /chain did not return this chain.'
+        });
+        setData(fallback);
+        return;
+      }
+      if (!snapshot.telemetry?.health) {
+        setError({
+          message: 'telemetry_unavailable',
+          endpoint: `${API_URL}/chain`,
+          method: 'GET',
+          hint: 'Telemetry is only available when the chain telemetry service is running.'
+        });
+        setData({ chain: target });
+        return;
+      }
+      const health = snapshot.telemetry.health;
+      const lag = snapshot.finalityLag ?? health.chain.head - health.chain.finalized;
       setData({
-        ...fallback,
-        ...json,
-        chain: json.chain || target,
-        relayer: { ...fallback.relayer, ...(json.relayer || {}) },
-        guard: { ...fallback.guard, ...(json.guard || {}), activeAlerts: json.guard?.activeAlerts || [] }
+        chain: target,
+        head: health.chain.head,
+        finalized: health.chain.finalized,
+        lag: Number.isFinite(lag) ? lag : undefined,
+        relayer: { finalized: health.relayer.finalized, errors: health.relayer.errors },
+        guard: { alerts: health.guard.alerts, deposits: health.guard.deposits, activeAlerts: [] }
       });
     } catch {
-      setData(fallback);
+      setError({
+        message: 'stack_fetch_failed',
+        endpoint: `${API_URL}/chain`,
+        method: 'GET'
+      });
+      setData(null);
     } finally {
       setLoading(false);
     }
@@ -63,19 +97,22 @@ export default function StackPage() {
         {loading && <span className="muted">Loading...</span>}
       </div>
       <div className="card-grid">
+        {error && <DataFetchErrorCard title="Stack overview" error={error} />}
         <Card title={`Head / Finalized (${chain})`} subtitle="op-gate">
           <div className="stack">
             <div className="spread">
               <span className="muted">Head</span>
-              <span>{data?.head ?? 0}</span>
+              <span>{data?.head ?? 'n/a'}</span>
             </div>
             <div className="spread">
               <span className="muted">Finalized</span>
-              <span>{data?.finalized ?? 0}</span>
+              <span>{data?.finalized ?? 'n/a'}</span>
             </div>
             <div className="spread">
               <span className="muted">Lag</span>
-              <Badge tone={(data?.lag || 0) > 5 ? 'warning' : 'default'}>{data?.lag ?? 0}</Badge>
+              <Badge tone={typeof data?.lag === 'number' && data.lag > 5 ? 'warning' : 'default'}>
+                {data?.lag ?? 'n/a'}
+              </Badge>
             </div>
           </div>
         </Card>
@@ -83,28 +120,28 @@ export default function StackPage() {
           <div className="stack">
             <div className="spread">
               <span className="muted">Finalized batches</span>
-              <span>{data?.relayer.finalized ?? 0}</span>
+              <span>{data?.relayer?.finalized ?? 'n/a'}</span>
             </div>
             <div className="spread">
               <span className="muted">Errors</span>
-              <Badge tone={data?.relayer.errors ? 'critical' : 'default'}>{data?.relayer.errors ?? 0}</Badge>
+              <Badge tone={data?.relayer?.errors ? 'critical' : 'default'}>{data?.relayer?.errors ?? 'n/a'}</Badge>
             </div>
-            <div className="muted">Health: {data?.relayer.health ? 'ok' : 'n/a'}</div>
+            <div className="muted">Health: {data?.relayer ? 'ok' : 'n/a'}</div>
           </div>
         </Card>
         <Card title="Guard" subtitle="alerts/deposits">
           <div className="stack">
             <div className="spread">
               <span className="muted">Deposits seen</span>
-              <span>{data?.guard.deposits ?? 0}</span>
+              <span>{data?.guard?.deposits ?? 'n/a'}</span>
             </div>
             <div className="spread">
               <span className="muted">Alerts total</span>
-              <Badge tone={data?.guard.alerts ? 'critical' : 'default'}>{data?.guard.alerts ?? 0}</Badge>
+              <Badge tone={data?.guard?.alerts ? 'critical' : 'default'}>{data?.guard?.alerts ?? 'n/a'}</Badge>
             </div>
             <div className="stack">
               <span className="muted">Active alerts</span>
-              {(data?.guard.activeAlerts || []).slice(0, 3).map((a: Record<string, unknown>, idx) => {
+              {(data?.guard?.activeAlerts || []).slice(0, 3).map((a: Record<string, unknown>, idx) => {
                 const reasons = Array.isArray(a.reasons) ? (a.reasons as string[]).join(', ') : undefined;
                 const label = reasons || (a.tx as string | undefined) || (a.from as string | undefined) || 'alert';
                 return (
@@ -113,7 +150,7 @@ export default function StackPage() {
                   </div>
                 );
               })}
-              {(data?.guard.activeAlerts?.length || 0) === 0 && <span className="muted">None</span>}
+              {(data?.guard?.activeAlerts?.length || 0) === 0 && <span className="muted">None</span>}
             </div>
           </div>
         </Card>
