@@ -5,6 +5,8 @@ import { Badge, Card, Button } from '@ghostl/ui';
 import { useSession } from '../../../src/modules/identity-access/session';
 import { resolveApiBase } from '../../../src/lib/runtime';
 import { jsonWithCsrf } from '../../../src/lib/csrf';
+import { apiRequest, type ApiError, formatApiError } from '../../../src/lib/api';
+import { DataFetchErrorCard } from '../../../src/components/DataFetchErrorCard';
 
 const API_URL = resolveApiBase();
 
@@ -30,7 +32,8 @@ export default function AlertsPage() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [policy, setPolicy] = useState<Policy | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ApiError | null>(null);
+  const [loadErrors, setLoadErrors] = useState<Array<{ title: string; error: ApiError }>>([]);
   const [modeInput, setModeInput] = useState(0);
   const [thresholdInput, setThresholdInput] = useState<number | ''>('');
   const [delayInput, setDelayInput] = useState<number | ''>('');
@@ -39,24 +42,26 @@ export default function AlertsPage() {
   const canWriteGuard = session.user?.role === 'ADMIN';
 
   const load = async () => {
-    const res = await fetch(`${API_URL}/observability/alerts`, { credentials: 'include' });
-    const data = await res.json();
-    setAlerts(data);
+    const res = await apiRequest<Alert[]>('/observability/alerts', { baseUrl: API_URL });
+    if (!res.ok) {
+      setLoadErrors((prev) => [{ title: 'Observability alerts', error: res.error }, ...prev]);
+      return;
+    }
+    setAlerts(res.data);
   };
 
   const loadPolicy = async () => {
-    try {
-      const res = await fetch(`${API_URL}/observability/guard/policy`, { credentials: 'include' });
-      if (res.ok) {
-        const p = await res.json();
-        setPolicy(p);
-      }
-    } catch {
+    const res = await apiRequest<Policy>('/observability/guard/policy', { baseUrl: API_URL });
+    if (!res.ok) {
+      setLoadErrors((prev) => [{ title: 'Guard policy', error: res.error }, ...prev]);
       setPolicy(null);
+      return;
     }
+    setPolicy(res.data);
   };
 
   useEffect(() => {
+    setLoadErrors([]);
     load();
     loadPolicy();
   }, []);
@@ -65,17 +70,22 @@ export default function AlertsPage() {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch(`${API_URL}/observability/guard/policy/${path}`, {
-        method: 'POST',
-        headers: jsonWithCsrf(),
-        credentials: 'include',
-        body: JSON.stringify(body)
+      const res = await apiRequest(`/observability/guard/policy/${path}`, {
+        baseUrl: API_URL,
+        init: {
+          method: 'POST',
+          headers: jsonWithCsrf(),
+          body: JSON.stringify(body)
+        }
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
       await loadPolicy();
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Failed to update policy';
-      setError(message);
+      setError({ message, endpoint: `${API_URL}/observability/guard/policy/${path}`, method: 'POST' });
     } finally {
       setBusy(false);
     }
@@ -84,6 +94,9 @@ export default function AlertsPage() {
   return (
     <div className="content">
       <div className="card-grid">
+        {loadErrors.map((entry, idx) => (
+          <DataFetchErrorCard key={`${entry.title}-${idx}`} title={entry.title} error={entry.error} />
+        ))}
         <Card title="Active alerts" subtitle={`${alerts.length} firing`}>
           <div className="stack">
             {alerts.length === 0 && <span className="muted">No active alerts</span>}
@@ -129,7 +142,11 @@ export default function AlertsPage() {
                 </Button>
               </div>
             </div>
-            {error && <span className="muted" style={{ color: '#f87171' }}>{error}</span>}
+            {error && (
+              <span className="muted" style={{ color: '#f87171' }}>
+                {`${formatApiError(error).method} ${formatApiError(error).endpoint} · ${formatApiError(error).status} · ${formatApiError(error).hint}`}
+              </span>
+            )}
             <div className="stack">
               <div className="spread">
                 <span className="muted">Threshold</span>

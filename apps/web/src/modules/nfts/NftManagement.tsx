@@ -4,12 +4,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card } from '@ghostl/ui';
 import { jsonWithCsrf } from '../../lib/csrf';
 import { resolveApiBase } from '../../lib/runtime';
+import { apiRequest, formatApiError, type ApiError } from '../../lib/api';
 import { normalizeRole, roleOrder } from '../identity-access/access-policy';
 import { useSession } from '../identity-access/session';
 import { fetchNftContracts, fetchNftTokens, type NftContract, type NftToken } from './services';
 import type { WalletRecord } from '@ghostl/types';
 
 const API_URL = resolveApiBase();
+const formatStatus = (error: ApiError) => {
+  const info = formatApiError(error);
+  return `${info.method} ${info.endpoint} | ${info.status} | ${info.hint}`;
+};
 
 type ContractForm = {
   address: string;
@@ -120,15 +125,18 @@ export function NftManagement() {
         setSelectedContractId(next[0].id);
       }
     } else {
-      setStatus(res.error.message || 'Failed to load contracts');
+      setStatus(formatStatus(res.error));
     }
   };
 
   const loadWallets = async () => {
     try {
-      const res = await fetch(`${API_URL}/wallets`, { credentials: 'include' });
-      if (!res.ok) throw new Error('wallets_failed');
-      const data = (await res.json()) as WalletRecord[];
+      const res = await apiRequest<WalletRecord[]>('/wallets', { baseUrl: API_URL });
+      if (!res.ok) {
+        setStatus(formatStatus(res.error));
+        return;
+      }
+      const data = res.data;
       setWallets(data);
     } catch (err) {
       setStatus(err instanceof Error ? err.message : 'Failed to load wallets');
@@ -146,7 +154,7 @@ export function NftManagement() {
       setTokens(res.data.tokens || []);
       setStatus('');
     } else {
-      setStatus(res.error.message || 'Failed to load tokens');
+      setStatus(formatStatus(res.error));
     }
     setLoadingTokens(false);
   };
@@ -174,25 +182,30 @@ export function NftManagement() {
     }
     setStatus('Registering contract...');
     try {
-      const res = await fetch(`${API_URL}/api/nfts/contracts`, {
-        method: 'POST',
-        headers: jsonWithCsrf(),
-        credentials: 'include',
-        body: JSON.stringify({
-          address: contractForm.address,
-          chainId: contractForm.chainId,
-          name: contractForm.name || undefined,
-          symbol: contractForm.symbol || undefined,
-          metadataUri: contractForm.metadataUri || undefined,
-          rpc: contractForm.rpc || undefined
-        })
+      const res = await apiRequest('/api/nfts/contracts', {
+        baseUrl: API_URL,
+        init: {
+          method: 'POST',
+          headers: jsonWithCsrf(),
+          body: JSON.stringify({
+            address: contractForm.address,
+            chainId: contractForm.chainId,
+            name: contractForm.name || undefined,
+            symbol: contractForm.symbol || undefined,
+            metadataUri: contractForm.metadataUri || undefined,
+            rpc: contractForm.rpc || undefined
+          })
+        }
       });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || 'Register failed');
+      if (!res.ok) throw res.error;
       setContractForm(defaultContractForm);
       await loadContracts();
       setStatus('Contract registered');
     } catch (err) {
+      if (err && typeof err === 'object' && 'message' in err) {
+        setStatus(formatStatus(err as ApiError));
+        return;
+      }
       setStatus(err instanceof Error ? err.message : 'Register failed');
     }
   };
@@ -208,21 +221,26 @@ export function NftManagement() {
     }
     setStatus('Updating minter role...');
     try {
-      const res = await fetch(`${API_URL}/api/nfts/minters`, {
-        method: 'POST',
-        headers: jsonWithCsrf(),
-        credentials: 'include',
-        body: JSON.stringify({
-          contractId: selectedContractId,
-          account: minterForm.account,
-          action: minterForm.action,
-          rpc: minterForm.rpc || undefined
-        })
+      const res = await apiRequest('/api/nfts/minters', {
+        baseUrl: API_URL,
+        init: {
+          method: 'POST',
+          headers: jsonWithCsrf(),
+          body: JSON.stringify({
+            contractId: selectedContractId,
+            account: minterForm.account,
+            action: minterForm.action,
+            rpc: minterForm.rpc || undefined
+          })
+        }
       });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || 'Minter update failed');
+      if (!res.ok) throw res.error;
       setStatus(`Minter ${minterForm.action}ed`);
     } catch (err) {
+      if (err && typeof err === 'object' && 'message' in err) {
+        setStatus(formatStatus(err as ApiError));
+        return;
+      }
       setStatus(err instanceof Error ? err.message : 'Minter update failed');
     }
   };
@@ -242,25 +260,30 @@ export function NftManagement() {
     }
     setStatus('Minting token...');
     try {
-      const res = await fetch(`${API_URL}/api/nfts/mint`, {
-        method: 'POST',
-        headers: jsonWithCsrf(),
-        credentials: 'include',
-        body: JSON.stringify({
-          contractId: selectedContractId,
-          walletId: activeWalletId,
-          to: mintForm.to,
-          tokenId: mintForm.tokenId || undefined,
-          tokenUri: mintForm.tokenUri || undefined,
-          rpc: mintForm.rpc || undefined
-        })
+      const res = await apiRequest('/api/nfts/mint', {
+        baseUrl: API_URL,
+        init: {
+          method: 'POST',
+          headers: jsonWithCsrf(),
+          body: JSON.stringify({
+            contractId: selectedContractId,
+            walletId: activeWalletId,
+            to: mintForm.to,
+            tokenId: mintForm.tokenId || undefined,
+            tokenUri: mintForm.tokenUri || undefined,
+            rpc: mintForm.rpc || undefined
+          })
+        }
       });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || 'Mint failed');
+      if (!res.ok) throw res.error;
       setMintForm(defaultMintForm);
       await loadTokens();
       setStatus('Token minted');
     } catch (err) {
+      if (err && typeof err === 'object' && 'message' in err) {
+        setStatus(formatStatus(err as ApiError));
+        return;
+      }
       setStatus(err instanceof Error ? err.message : 'Mint failed');
     }
   };
@@ -280,23 +303,28 @@ export function NftManagement() {
     }
     setStatus('Transferring token...');
     try {
-      const res = await fetch(`${API_URL}/api/nfts/transfer`, {
-        method: 'POST',
-        headers: jsonWithCsrf(),
-        credentials: 'include',
-        body: JSON.stringify({
-          contractId: selectedContractId,
-          walletId: activeWalletId,
-          to: transferForm.to,
-          tokenId: transferForm.tokenId
-        })
+      const res = await apiRequest('/api/nfts/transfer', {
+        baseUrl: API_URL,
+        init: {
+          method: 'POST',
+          headers: jsonWithCsrf(),
+          body: JSON.stringify({
+            contractId: selectedContractId,
+            walletId: activeWalletId,
+            to: transferForm.to,
+            tokenId: transferForm.tokenId
+          })
+        }
       });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || 'Transfer failed');
+      if (!res.ok) throw res.error;
       setTransferForm(defaultTransferForm);
       await loadTokens();
       setStatus('Token transferred');
     } catch (err) {
+      if (err && typeof err === 'object' && 'message' in err) {
+        setStatus(formatStatus(err as ApiError));
+        return;
+      }
       setStatus(err instanceof Error ? err.message : 'Transfer failed');
     }
   };
@@ -316,22 +344,27 @@ export function NftManagement() {
     }
     setStatus('Burning token...');
     try {
-      const res = await fetch(`${API_URL}/api/nfts/burn`, {
-        method: 'POST',
-        headers: jsonWithCsrf(),
-        credentials: 'include',
-        body: JSON.stringify({
-          contractId: selectedContractId,
-          walletId: activeWalletId,
-          tokenId: burnForm.tokenId
-        })
+      const res = await apiRequest('/api/nfts/burn', {
+        baseUrl: API_URL,
+        init: {
+          method: 'POST',
+          headers: jsonWithCsrf(),
+          body: JSON.stringify({
+            contractId: selectedContractId,
+            walletId: activeWalletId,
+            tokenId: burnForm.tokenId
+          })
+        }
       });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || 'Burn failed');
+      if (!res.ok) throw res.error;
       setBurnForm(defaultBurnForm);
       await loadTokens();
       setStatus('Token burned');
     } catch (err) {
+      if (err && typeof err === 'object' && 'message' in err) {
+        setStatus(formatStatus(err as ApiError));
+        return;
+      }
       setStatus(err instanceof Error ? err.message : 'Burn failed');
     }
   };

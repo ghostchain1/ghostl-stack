@@ -74,6 +74,19 @@ const respondAuthError = (res: Response, err: unknown) => {
   res.status(mapped.status).json(mapped);
 };
 
+const maskEmail = (value?: string | null) => {
+  const trimmed = value?.trim() || '';
+  if (!trimmed) return '';
+  const [user, domain] = trimmed.split('@');
+  if (!domain) return `${trimmed.slice(0, 2)}***`;
+  const prefix = user ? `${user.slice(0, 2)}***` : '***';
+  return `${prefix}@${domain}`;
+};
+
+const logAuthEvent = (level: 'info' | 'warn' | 'error', event: string, meta: Record<string, unknown>) => {
+  console.log(JSON.stringify({ ts: new Date().toISOString(), level, event, ...meta }));
+};
+
 export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
   const router = Router();
 
@@ -211,10 +224,24 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
     asyncHandler(async (req, res) => {
       const { email, password } = req.body as { email?: string; password?: string };
       if (!email || !password) {
+        logAuthEvent('warn', 'auth.login.invalid_payload', {
+          correlationId: req.correlationId,
+          path: req.path,
+          ip: req.ip,
+          userAgent: req.headers['user-agent']
+        });
         res.status(400).json({ error: 'email and password required' });
         return;
       }
       try {
+        logAuthEvent('info', 'auth.login.attempt', {
+          correlationId: req.correlationId,
+          path: req.path,
+          ip: req.ip,
+          userAgent: req.headers['user-agent'],
+          email: maskEmail(email),
+          method: 'password'
+        });
         const user = await deps.authService.loginWithPassword(email, password, requestContext(req));
         await rotateSession(req);
         const { csrfToken } = await attachSession(req, user, deps);
@@ -235,9 +262,21 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
           status: 'ok',
           payload: { email, method: 'password' }
         });
+        logAuthEvent('info', 'auth.login.success', {
+          correlationId: req.correlationId,
+          path: req.path,
+          actorId: user?.id,
+          email: maskEmail(email)
+        });
         if (csrfToken) setCsrfCookie(res, csrfToken);
         res.json({ user: { id: user.id, email: user.email, username: user.username, role: user.roles?.[0] } });
       } catch (err) {
+        logAuthEvent('error', 'auth.login.failure', {
+          correlationId: req.correlationId,
+          path: req.path,
+          email: maskEmail(email),
+          error: err instanceof Error ? err.message : 'login_failed'
+        });
         await deps.auditLogService.append({
           actorId: 'unknown',
           action: 'login:failed',
@@ -260,10 +299,24 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
     asyncHandler(async (req, res) => {
       const { email, password } = req.body as { email?: string; password?: string };
       if (!email || !password) {
+        logAuthEvent('warn', 'auth.login.invalid_payload', {
+          correlationId: req.correlationId,
+          path: req.path,
+          ip: req.ip,
+          userAgent: req.headers['user-agent']
+        });
         res.status(400).json({ error: 'email and password required' });
         return;
       }
       try {
+        logAuthEvent('info', 'auth.login.attempt', {
+          correlationId: req.correlationId,
+          path: req.path,
+          ip: req.ip,
+          userAgent: req.headers['user-agent'],
+          email: maskEmail(email),
+          method: 'password'
+        });
         const user = await deps.authService.loginWithPassword(email, password, requestContext(req));
         await rotateSession(req);
         const { permissions, csrfToken } = await attachSession(req, user, deps);
@@ -291,9 +344,21 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
           status: 'ok',
           payload: { email, method: 'password' }
         });
+        logAuthEvent('info', 'auth.login.success', {
+          correlationId: req.correlationId,
+          path: req.path,
+          actorId: user?.id,
+          email: maskEmail(email)
+        });
         if (csrfToken) setCsrfCookie(res, csrfToken);
         res.json({ session, user, permissions, csrfToken });
       } catch (err) {
+        logAuthEvent('error', 'auth.login.failure', {
+          correlationId: req.correlationId,
+          path: req.path,
+          email: maskEmail(email),
+          error: err instanceof Error ? err.message : 'login_failed'
+        });
         await deps.auditLogService.append({
           actorId: 'unknown',
           action: 'login:failed',

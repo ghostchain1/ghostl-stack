@@ -21,6 +21,7 @@ import type {
 } from '../modules/observability/services';
 import type { ReleaseService, ForkSchedulerService } from '../modules/devops/services';
 import type { Release, ForkEvent } from '@ghostl/types/devops';
+import { ghostWalletRpcManager } from './rpc-manager';
 
 const parsePromValue = (value?: [number, string]) => {
   if (!value) return undefined;
@@ -179,14 +180,36 @@ export const createLiveServices = (deps: {
   };
 
   const configuredNodes = readJsonEnv<Node[]>('NODE_INVENTORY');
-  const defaultNodes: Node[] = [
-    { id: 'ghostl1', type: 'full', host: 'localhost:18545', version: 'local', status: 'online' },
-    { id: 'ghostl2', type: 'validator', host: 'localhost:18547', version: 'local', status: 'online' },
-    { id: 'ghostl3', type: 'validator', host: 'localhost:39545', version: 'local', status: 'online' }
-  ];
+  const hostFromUrl = (value?: string) => {
+    if (!value) return '';
+    try {
+      return new URL(value).host;
+    } catch {
+      return '';
+    }
+  };
+
+  const buildRegistryNodes = (): Node[] => {
+    const pool = ghostWalletRpcManager.getPoolSnapshot();
+    const layers: Array<{ key: 'L1' | 'L2' | 'L3'; id: string; type: Node['type'] }> = [
+      { key: 'L1', id: 'ghostl1', type: 'full' },
+      { key: 'L2', id: 'ghostl2', type: 'validator' },
+      { key: 'L3', id: 'ghostl3', type: 'validator' }
+    ];
+    return layers
+      .map((layer) => {
+        const endpoints = pool[layer.key] || [];
+        const primary = endpoints.find((endpoint) => endpoint.protocol === 'http') || endpoints[0];
+        const host = hostFromUrl(primary?.url);
+        if (!host) return null;
+        return { id: layer.id, type: layer.type, host, version: 'registry', status: 'online' } as Node;
+      })
+      .filter((node): node is Node => Boolean(node));
+  };
   const listNodes = async (): Promise<Node[]> => {
     if (configuredNodes) return configuredNodes;
-    return defaultNodes;
+    const registryNodes = buildRegistryNodes();
+    return registryNodes;
   };
 
   const nodeInventoryService: NodeInventoryService = {

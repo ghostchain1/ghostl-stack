@@ -103,7 +103,11 @@ const registerLayer = async (layerKey: string) => {
   const errors: string[] = [];
   for (const entry of contracts) {
     try {
+      const meta = entry as { name?: string; address?: string; chainId?: number; abiHash?: string; version?: string };
       await postJson(`${apiBase}/api/contracts/register`, { contract: entry });
+      console.log(
+        `[registry] registered ${meta.name || "contract"} ${meta.address || ""} chainId=${meta.chainId ?? ""} layer=${layerKey} version=${meta.version || ""} abiHash=${meta.abiHash || ""}`
+      );
       if (verificationUrl) {
         await postJson(`${verificationUrl}/verifications`, {
           address: (entry as { address?: string }).address,
@@ -115,6 +119,9 @@ const registerLayer = async (layerKey: string) => {
       registered++;
     } catch (err) {
       failed++;
+      console.error(
+        `[registry] failed ${layerKey}: ${err instanceof Error ? err.message : String(err)}`
+      );
       errors.push(err instanceof Error ? err.message : String(err));
     }
   }

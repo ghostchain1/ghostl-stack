@@ -1,4 +1,6 @@
-import { apiFetch } from '../../src/lib/api';
+import type { ApiError } from '../../src/lib/api';
+import { serverApiRequest } from '../../src/lib/server-api';
+import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
 import type { KycApplicant, KycPolicy, KycProvider, KycSummary } from '@ghostl/types/kyc';
 import { KycDashboard } from '../../src/modules/kyc/KycDashboard';
 
@@ -24,28 +26,37 @@ const emptySummary: KycSummary = {
 };
 
 export default async function KycPage() {
-  const summary = await apiFetch<KycSummary>('/kyc/summary', { fallback: emptySummary }).catch(() => emptySummary);
-  const applicants = await apiFetch<KycApplicant[]>('/kyc/applicants', { fallback: [] }).catch(() => []);
-  const providers = await apiFetch<{ providers: KycProvider[] }>('/kyc/providers', { fallback: { providers: [] } })
-    .then((r) => r.providers || [])
-    .catch(() => []);
-  const policy = await apiFetch<KycPolicy>('/kyc/policy', { fallback: {
-    id: 'default',
-    requiredDocs: { individual: [], business: [] },
-    autoApproveMax: 0,
-    autoRejectMin: 100,
-    highRiskCountries: [],
-    pepRequiresReview: true,
-    sanctionsAutoReject: true
-  } }).catch(() => ({
-    id: 'default',
-    requiredDocs: { individual: [], business: [] },
-    autoApproveMax: 0,
-    autoRejectMin: 100,
-    highRiskCountries: [],
-    pepRequiresReview: true,
-    sanctionsAutoReject: true
-  }));
+  const [summaryRes, applicantsRes, providersRes, policyRes] = await Promise.all([
+    serverApiRequest<KycSummary>('/kyc/summary', { init: { cache: 'no-store' } }),
+    serverApiRequest<KycApplicant[]>('/kyc/applicants', { init: { cache: 'no-store' } }),
+    serverApiRequest<{ providers: KycProvider[] }>('/kyc/providers', { init: { cache: 'no-store' } }),
+    serverApiRequest<KycPolicy>('/kyc/policy', { init: { cache: 'no-store' } })
+  ]);
+
+  const errors: Array<{ title: string; error: ApiError }> = [];
+  if (!summaryRes.ok) errors.push({ title: 'KYC summary', error: summaryRes.error });
+  if (!applicantsRes.ok) errors.push({ title: 'KYC applicants', error: applicantsRes.error });
+  if (!providersRes.ok) errors.push({ title: 'KYC providers', error: providersRes.error });
+  if (!policyRes.ok) errors.push({ title: 'KYC policy', error: policyRes.error });
+
+  if (errors.length) {
+    return (
+      <div className="content">
+        <h2>KYC operations</h2>
+        <p className="muted">Queue, review, and approve GhostChain KYC applicants.</p>
+        <div className="card-grid">
+          {errors.map((entry, idx) => (
+            <DataFetchErrorCard key={`${entry.title}-${idx}`} title={entry.title} error={entry.error} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const summary = summaryRes.data;
+  const applicants = applicantsRes.data;
+  const providers = providersRes.data.providers || [];
+  const policy = policyRes.data;
 
   return (
     <div className="content">

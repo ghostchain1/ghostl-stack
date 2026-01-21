@@ -7,9 +7,11 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "ts-node src/server.ts",
+    "dev:inspect": "NODE_OPTIONS=--inspect=0.0.0.0:9229 ts-node src/server.ts",
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {
+    "@ghostl/contract-schemas": "0.0.1",
     "@ghostl/ghostwallet": "0.0.1",
     "@types/better-sqlite3": "^7.6.13",
     "argon2": "^0.41.1",

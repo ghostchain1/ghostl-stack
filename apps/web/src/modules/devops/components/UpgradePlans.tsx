@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { resolveApiBase } from '../../../lib/runtime';
 import { jsonWithCsrf } from '../../../lib/csrf';
+import { apiRequest, formatApiError, type ApiError } from '../../../lib/api';
+import { DataFetchErrorCard } from '../../../components/DataFetchErrorCard';
 
 type Step = {
   id: string;
@@ -21,18 +23,28 @@ type Plan = {
 };
 
 const API_BASE = resolveApiBase();
+const formatStatus = (error: ApiError) => {
+  const info = formatApiError(error);
+  return `${info.method} ${info.endpoint} | ${info.status} | ${info.hint}`;
+};
 
 export function UpgradePlans() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [error, setError] = useState<ApiError | null>(null);
 
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/v1/devops/upgrade-plans`, { credentials: 'include' });
-      const json = await res.json();
-      setPlans(json.plans || []);
+      const res = await apiRequest<{ plans?: Plan[] }>('/v1/devops/upgrade-plans', { baseUrl: API_BASE });
+      if (!res.ok) {
+        setPlans([]);
+        setError(res.error);
+        return;
+      }
+      setPlans(res.data.plans || []);
+      setError(null);
     } catch {
       setMessage('Failed to load plans');
     } finally {
@@ -52,14 +64,16 @@ export function UpgradePlans() {
         ? `${API_BASE}/v1/devops/upgrade-plans/${planId}/approve`
         : `${API_BASE}/v1/devops/upgrade-plans/${planId}/execute${action === 'dryrun' ? '?dryRun=1' : ''}`;
     try {
-      const res = await fetch(url, { method: 'POST', headers, credentials: 'include' });
-      const json = await res.json().catch(() => ({}));
+      const res = await apiRequest<Record<string, unknown>>(url, {
+        baseUrl: '',
+        init: { method: 'POST', headers }
+      });
       if (!res.ok) {
-        setMessage(`Action failed: ${json.error || res.status}`);
-      } else {
-        setMessage(`${action} ok`);
-        await load();
+        setMessage(formatStatus(res.error));
+        return;
       }
+      setMessage(`${action} ok`);
+      await load();
     } catch (e) {
       setMessage((e as Error).message);
     }
@@ -76,6 +90,7 @@ export function UpgradePlans() {
           Refresh
         </button>
       </div>
+      {error && <DataFetchErrorCard title="Upgrade plans" error={error} />}
       {message && <div className="muted" style={{ marginBottom: 8 }}>{message}</div>}
       <div className="stack" style={{ gap: 8 }}>
         {plans.map((p) => (

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { resolveApiBase } from '../../../lib/runtime';
+import { apiRequest, type ApiError } from '../../../lib/api';
+import { DataFetchErrorCard } from '../../../components/DataFetchErrorCard';
 
 type Metrics = {
   missedBlocks: number;
@@ -18,15 +20,24 @@ const API_BASE = resolveApiBase();
 export function ValidatorMetrics() {
   const [metrics, setMetrics] = useState<Metrics>({ missedBlocks: 0, finalityLag: 0 });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<ApiError | null>(null);
 
   const load = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch(`${API_BASE}/v1/api/validators/metrics`, { credentials: 'include' });
-      const json = await res.json();
-      setMetrics(json.metrics || { missedBlocks: 0, finalityLag: 0 });
-    } catch {
-      // ignore
+      const res = await apiRequest<{ metrics?: Metrics }>('/v1/api/validators/metrics', { baseUrl: API_BASE });
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      setMetrics(res.data.metrics || { missedBlocks: 0, finalityLag: 0 });
+    } catch (err) {
+      setError({
+        message: err instanceof Error ? err.message : 'validator_metrics_fetch_failed',
+        endpoint: `${API_BASE}/v1/api/validators/metrics`,
+        method: 'GET'
+      });
     } finally {
       setLoading(false);
     }
@@ -39,6 +50,7 @@ export function ValidatorMetrics() {
   return (
     <div className="card">
       <div style={{ fontWeight: 700, marginBottom: 8 }}>Validator metrics</div>
+      {error && <DataFetchErrorCard title="Validator metrics" error={error} />}
       {loading && <div className="muted">Loading...</div>}
       <div className="stack" style={{ gap: 6 }}>
         <div className="row" style={{ justifyContent: 'space-between' }}>

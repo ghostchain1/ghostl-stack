@@ -3,32 +3,95 @@ import { ForkScheduler } from '../../src/modules/devops/components/ForkScheduler
 import { FeatureFlagsPanel } from '../../src/modules/devops/components/FeatureFlagsPanel';
 import { UpgradeJobs } from '../../src/modules/devops/components/UpgradeJobs';
 import { RollbackHistory } from '../../src/modules/devops/components/RollbackHistory';
-import { apiFetch } from '../../src/lib/api';
+import type { ApiError } from '../../src/lib/api';
+import { serverApiRequest } from '../../src/lib/server-api';
+import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
 import type { Release, ForkEvent } from '@ghostl/types/devops';
 import { UpgradePlans } from '../../src/modules/devops/components/UpgradePlans';
 
 async function loadDevOps() {
-  const releases = await apiFetch<Release[]>('/devops/releases', { fallback: [] }).catch(() => []);
-  const forks = await apiFetch<ForkEvent[]>('/devops/forks', { fallback: [] }).catch(() => []);
-  return { releases, forks };
+  const [releasesRes, forksRes, flagsRes, upgradesRes, plansRes] = await Promise.all([
+    serverApiRequest<Release[]>('/devops/releases', { init: { cache: 'no-store' } }),
+    serverApiRequest<ForkEvent[]>('/devops/forks', { init: { cache: 'no-store' } }),
+    serverApiRequest<Array<{ key?: string; name?: string; enabled?: boolean; description?: string }>>(
+      '/app-shell/feature-flags',
+      { init: { cache: 'no-store' } }
+    ),
+    serverApiRequest<Array<{ id?: string; target?: string; status?: string; startedAt?: string }>>('/devops/upgrades', {
+      init: { cache: 'no-store' }
+    }),
+    serverApiRequest<Array<{ id: string; name: string; createdAt: string; updatedAt: string; rollbackOf?: string }>>(
+      '/devops/upgrade-plans',
+      { init: { cache: 'no-store' } }
+    )
+  ]);
+
+  const errors: Array<{ title: string; error: ApiError }> = [];
+  if (!releasesRes.ok) errors.push({ title: 'DevOps releases', error: releasesRes.error });
+  if (!forksRes.ok) errors.push({ title: 'DevOps forks', error: forksRes.error });
+  if (!flagsRes.ok) errors.push({ title: 'Feature flags', error: flagsRes.error });
+  if (!upgradesRes.ok) errors.push({ title: 'Upgrade jobs', error: upgradesRes.error });
+  if (!plansRes.ok) errors.push({ title: 'Upgrade plans', error: plansRes.error });
+
+  const releases = releasesRes.ok ? releasesRes.data : [];
+  const forks = forksRes.ok ? forksRes.data : [];
+  const flags = flagsRes.ok
+    ? flagsRes.data.map((flag, index) => ({
+        name: flag.name || flag.key || `flag-${index + 1}`,
+        enabled: Boolean(flag.enabled),
+        description: flag.description
+      }))
+    : [];
+  const jobs = upgradesRes.ok
+    ? upgradesRes.data.map((job, index) => ({
+        id: job.id || job.target || `upgrade-${index + 1}`,
+        target: job.target || 'unknown',
+        status:
+          job.status === 'running' || job.status === 'failed' || job.status === 'done' ? job.status : 'planned',
+        startedAt: job.startedAt
+      }))
+    : [];
+  const rollbacks = plansRes.ok
+    ? plansRes.data
+        .filter((plan) => plan.rollbackOf)
+        .map((plan) => ({
+          id: plan.id,
+          version: plan.name,
+          reason: `rollback of ${plan.rollbackOf}`,
+          time: plan.updatedAt || plan.createdAt
+        }))
+    : [];
+
+  return {
+    releases,
+    forks,
+    flags,
+    jobs,
+    rollbacks,
+    errors,
+    ok: {
+      releases: releasesRes.ok,
+      forks: forksRes.ok,
+      flags: flagsRes.ok,
+      jobs: upgradesRes.ok,
+      plans: plansRes.ok
+    }
+  };
 }
 
 export default async function DevOpsPage() {
-  const { releases, forks } = await loadDevOps();
-  const flags = [
-    { name: 'ai.beta', enabled: true },
-    { name: 'bridge.pause', enabled: false }
-  ];
-  const jobs = [{ id: 'job-1', target: 'op-node', status: 'planned' as const, startedAt: '' }];
-  const rollbacks = [{ id: 'rb-1', version: 'v0.1.0', reason: 'bad deploy', time: new Date().toISOString() }];
+  const { releases, forks, flags, jobs, rollbacks, errors, ok } = await loadDevOps();
   return (
     <div className="content">
       <div className="card-grid">
-        <ReleasePlanner releases={releases} />
-        <ForkScheduler forks={forks} />
-        <FeatureFlagsPanel flags={flags} />
-        <UpgradeJobs jobs={jobs} />
-        <RollbackHistory rollbacks={rollbacks} />
+        {errors.map((entry, idx) => (
+          <DataFetchErrorCard key={`${entry.title}-${idx}`} title={entry.title} error={entry.error} />
+        ))}
+        {ok.releases && <ReleasePlanner releases={releases} />}
+        {ok.forks && <ForkScheduler forks={forks} />}
+        {ok.flags && <FeatureFlagsPanel flags={flags} />}
+        {ok.jobs && <UpgradeJobs jobs={jobs} />}
+        {ok.plans && <RollbackHistory rollbacks={rollbacks} />}
         <UpgradePlans />
       </div>
     </div>

@@ -3,18 +3,75 @@ import http from "http";
 
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
-const rpcL1 = process.env.CLOCK_SYNC_RPC_L1 || process.env.RPC_L1 || "http://host.docker.internal:18545";
-const rpcL2 = process.env.CLOCK_SYNC_RPC_L2 || process.env.RPC_L2 || "http://host.docker.internal:18547";
-const rpcL3 = process.env.CLOCK_SYNC_RPC_L3 || process.env.RPC_L3 || "http://host.docker.internal:39545";
+const registryUrl = process.env.RPC_REGISTRY_URL || "http://ghost-registry:8088/v1/endpoints";
+const registryTimeoutMs = Number(process.env.REGISTRY_TIMEOUT_MS || 1500);
+const registryRetries = Math.max(0, Number(process.env.REGISTRY_RETRY_COUNT || 2));
+const registryCacheMs = Math.max(1000, Number(process.env.REGISTRY_CACHE_MS || 30000));
+const registryCache = { data: null, expiresAt: 0 };
+
+const fetchRegistry = async () => {
+  const now = Date.now();
+  if (registryCache.data && registryCache.expiresAt > now) return registryCache.data;
+  let lastErr;
+  for (let attempt = 0; attempt <= registryRetries; attempt += 1) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), registryTimeoutMs);
+    try {
+      const res = await fetch(registryUrl, { signal: controller.signal });
+      if (!res.ok) throw new Error(`registry_http_${res.status}`);
+      const body = await res.json();
+      if (!body || !Array.isArray(body.chains)) throw new Error("registry_invalid");
+      registryCache.data = body;
+      registryCache.expiresAt = now + registryCacheMs;
+      return body;
+    } catch (err) {
+      lastErr = err;
+      if (attempt < registryRetries) await sleep(150 * (attempt + 1));
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  throw lastErr || new Error("registry_unavailable");
+};
+
+const pickRpc = (chain) => {
+  if (!chain) return "";
+  if (typeof chain.rpc === "string" && chain.rpc) return chain.rpc;
+  if (Array.isArray(chain.rpcUrls) && chain.rpcUrls.length) return chain.rpcUrls[0];
+  if (Array.isArray(chain.endpoints)) {
+    const http = chain.endpoints.find((endpoint) => endpoint.protocol === "http");
+    if (http?.url) return http.url;
+  }
+  if (typeof chain.ws === "string" && chain.ws) return chain.ws;
+  if (Array.isArray(chain.wsUrls) && chain.wsUrls.length) return chain.wsUrls[0];
+  return "";
+};
+
+const resolveRpc = async (layer, override) => {
+  const registry = await fetchRegistry();
+  const chain = registry.chains.find((entry) => entry.layer === layer);
+  const allowed = new Set([
+    ...(typeof chain?.rpc === "string" && chain.rpc ? [chain.rpc] : []),
+    ...(Array.isArray(chain?.rpcUrls) ? chain.rpcUrls : []),
+    ...(Array.isArray(chain?.endpoints) ? chain.endpoints.map((endpoint) => endpoint.url) : [])
+  ]);
+  if (override) {
+    if (!allowed.has(override)) throw new Error("rpc_override_not_in_registry");
+    return override;
+  }
+  const rpc = pickRpc(chain);
+  if (!rpc) throw new Error(`rpc_missing_${layer.toLowerCase()}`);
+  return rpc;
+};
+
+let rpcL1 = "";
+let rpcL2 = "";
+let rpcL3 = "";
 const pollMs = Number(process.env.CLOCK_SYNC_INTERVAL_MS || 5000);
 const warnThreshold = Number(process.env.CLOCK_SYNC_DRIFT_THRESHOLD_SEC || 2);
 const listenPort = Number(process.env.PORT || 7690);
 
-const chains = [
-  { name: "ghostchain", rpc: rpcL1 },
-  { name: "ghost-l2", rpc: rpcL2 },
-  { name: "ghost-l3", rpc: rpcL3 }
-];
+let chains = [];
 
 const state = {};
 
@@ -131,8 +188,22 @@ function startServer() {
   server.listen(listenPort, () => log("info", `clock-sync listening on ${listenPort}`));
 }
 
-startServer();
-loop().catch((err) => {
-  log("error", `fatal: ${err?.stack || err}`);
-  process.exit(1);
-});
+async function init() {
+  try {
+    rpcL1 = await resolveRpc("L1", process.env.CLOCK_SYNC_RPC_L1);
+    rpcL2 = await resolveRpc("L2", process.env.CLOCK_SYNC_RPC_L2);
+    rpcL3 = await resolveRpc("L3", process.env.CLOCK_SYNC_RPC_L3);
+    chains = [
+      { name: "ghostchain", rpc: rpcL1 },
+      { name: "ghost-l2", rpc: rpcL2 },
+      { name: "ghost-l3", rpc: rpcL3 }
+    ];
+    startServer();
+    await loop();
+  } catch (err) {
+    log("error", `fatal: ${err?.stack || err}`);
+    process.exit(1);
+  }
+}
+
+init();

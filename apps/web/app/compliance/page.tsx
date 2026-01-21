@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { apiFetch } from '../../src/lib/api';
+import { apiRequest, type ApiError, formatApiError } from '../../src/lib/api';
 import { resolveApiBase } from '../../src/lib/runtime';
 import { jsonWithCsrf } from '../../src/lib/csrf';
+import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
 
 type ComplianceFinding = { id: string; area: string; severity: string; detail: string };
 type ComplianceReport = { id: string; period: string; status: string; generatedAt: string; controls?: string[]; findings?: ComplianceFinding[]; exportedAt?: string };
@@ -15,14 +16,26 @@ export default function CompliancePage() {
   const [logs, setLogs] = useState<ActionLog[]>([]);
   const [period, setPeriod] = useState('');
   const [message, setMessage] = useState('');
+  const [errors, setErrors] = useState<Array<{ title: string; error: ApiError }>>([]);
 
   useEffect(() => {
-    apiFetch<{ reports: ComplianceReport[] }>('/compliance/reports', { fallback: { reports: [] } })
-      .then((res) => setReports(res.reports || []))
-      .catch(() => undefined);
-    apiFetch<ActionLog[]>('/audit', { fallback: [] })
-      .then((data) => setLogs(data || []))
-      .catch(() => undefined);
+    const load = async () => {
+      const nextErrors: Array<{ title: string; error: ApiError }> = [];
+      const reportsRes = await apiRequest<{ reports: ComplianceReport[] }>('/compliance/reports');
+      if (!reportsRes.ok) {
+        nextErrors.push({ title: 'Compliance reports', error: reportsRes.error });
+      } else {
+        setReports(reportsRes.data.reports || []);
+      }
+      const logsRes = await apiRequest<ActionLog[]>('/audit');
+      if (!logsRes.ok) {
+        nextErrors.push({ title: 'Audit log', error: logsRes.error });
+      } else {
+        setLogs(logsRes.data || []);
+      }
+      setErrors(nextErrors);
+    };
+    load().catch(() => undefined);
   }, []);
 
   const csv = useMemo(() => {
@@ -35,6 +48,9 @@ export default function CompliancePage() {
   return (
     <div className="content">
       <div className="card-grid">
+        {errors.map((entry, idx) => (
+          <DataFetchErrorCard key={`${entry.title}-${idx}`} title={entry.title} error={entry.error} />
+        ))}
         <div className="card">
           <div style={{ fontWeight: 700, marginBottom: 8 }}>Compliance reports</div>
           <div className="stack" style={{ gap: 6 }}>
@@ -86,20 +102,22 @@ export default function CompliancePage() {
                 onClick={async () => {
                   setMessage('');
                   try {
-                    const res = await fetch(`${API_URL}/compliance/reports`, {
-                      method: 'POST',
-                      headers: jsonWithCsrf(),
-                      credentials: 'include',
-                      body: JSON.stringify({ period })
+                    const res = await apiRequest<{ report: ComplianceReport }>('/compliance/reports', {
+                      baseUrl: API_URL,
+                      init: {
+                        method: 'POST',
+                        headers: jsonWithCsrf(),
+                        body: JSON.stringify({ period })
+                      }
                     });
-                    const json = await res.json().catch(() => ({}));
                     if (!res.ok) {
-                      setMessage(json.error || `HTTP ${res.status}`);
-                    } else {
-                      setMessage('Report generated');
-                      setPeriod('');
-                      setReports((prev) => [...prev, json.report]);
+                      const info = formatApiError(res.error);
+                      setMessage(`POST ${info.endpoint} · ${info.status} · ${info.hint}`);
+                      return;
                     }
+                    setMessage('Report generated');
+                    setPeriod('');
+                    setReports((prev) => [...prev, res.data.report]);
                   } catch (e) {
                     setMessage((e as Error).message);
                   }

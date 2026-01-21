@@ -4,9 +4,16 @@ import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { z } from 'zod';
 import { Badge, Button, Card } from '@ghostl/ui';
-import { apiFetch } from '../../lib/api';
-import { rpcCall } from '../../lib/rpc';
-import { resolveApiBase } from '../../lib/runtime';
+import {
+  ChainOverviewSchema,
+  ExplorerSummarySchema,
+  ObservabilitySummarySchema,
+  type ChainOverview,
+  type ExplorerSummary,
+  type ObservabilitySummary
+} from '@ghostl/contract-schemas';
+import { apiRequest, type ApiError, formatApiError } from '../../lib/api';
+import { DataFetchErrorCard } from '../../components/DataFetchErrorCard';
 import { useSession } from '../identity-access/session';
 import { normalizeRole, roleOrder } from '../identity-access/access-policy';
 import { useNetwork } from '../app-shell/services/NetworkContextService';
@@ -18,6 +25,7 @@ type RpcSnapshot = {
   label: string;
   rpc: string;
   status: 'loading' | 'ok' | 'error';
+  error?: ApiError;
   chainId?: number;
   blockNumber?: number;
   gasPriceGwei?: number;
@@ -29,43 +37,10 @@ type ApiHealth = {
   dependencies?: Record<string, { ok?: boolean; url?: string }>;
 };
 
-type ChainStatus = {
-  info?: { chainId?: string; name?: string; env?: string; consensus?: string };
-  blockTimeMs?: number;
-  finalityLag?: number;
-};
-
-type StackOverview = {
-  chain?: string;
-  head?: number;
-  finalized?: number;
-  lag?: number;
-  relayer?: { finalized?: number; errors?: number };
-  guard?: { alerts?: number; deposits?: number };
-};
-
-type ExplorerTx = {
-  hash: string;
-  from: string;
-  to?: string | null;
-  value: string;
-  status?: string;
-  blockNumber?: string;
-  time?: string;
-};
-
-type ExplorerBlock = {
-  number: number;
-  txCount: number;
-  time: string;
-};
-
-type MempoolStatus = {
-  pending: number;
-  queued: number;
-  fairnessScore: number;
-  mevRisk: string;
-};
+type ExplorerTx = ExplorerSummary['txs'][number];
+type ExplorerBlock = ExplorerSummary['blocks'][number];
+type MempoolStatus = ExplorerSummary['mempool'];
+type ChainSnapshot = ChainOverview['chains'][number];
 
 type RiskScore = { label: string; score: number; reasons: string[] };
 
@@ -151,72 +126,14 @@ type WalletSummary = {
   status?: string;
 };
 
-type ExplorerTxsResponse = { txs: ExplorerTx[]; chain?: string };
-
-type ExplorerBlocksResponse = { blocks: ExplorerBlock[]; chain?: string };
-
 type NetworkIntelResponse = { status: NetworkIntel[] };
 
 type AlertSummary = { total: number; active: number };
-
-const mempoolSchema = z.object({
-  pending: z.number().int().nonnegative(),
-  queued: z.number().int().nonnegative(),
-  fairnessScore: z.number(),
-  mevRisk: z.string()
-});
-
-const explorerTxSchema = z.object({
-  hash: z.string(),
-  from: z.string(),
-  to: z.string().nullable().optional(),
-  value: z.string(),
-  status: z.string().optional(),
-  blockNumber: z.string().optional(),
-  time: z.string().optional()
-});
-
-const explorerTxsSchema = z.object({
-  txs: z.array(explorerTxSchema),
-  chain: z.string().optional()
-});
-
-const explorerBlockSchema = z.object({
-  number: z.number(),
-  txCount: z.number(),
-  time: z.string()
-});
-
-const explorerBlocksSchema = z.object({
-  blocks: z.array(explorerBlockSchema),
-  chain: z.string().optional()
-});
 
 const apiHealthSchema = z
   .object({
     status: z.string().optional(),
     dependencies: z.record(z.object({ ok: z.boolean().optional(), url: z.string().optional() })).optional()
-  })
-  .nullable();
-
-const chainStatusSchema = z
-  .object({
-    info: z
-      .object({ chainId: z.string().optional(), name: z.string().optional(), env: z.string().optional(), consensus: z.string().optional() })
-      .optional(),
-    blockTimeMs: z.number().optional(),
-    finalityLag: z.number().optional()
-  })
-  .nullable();
-
-const stackOverviewSchema = z
-  .object({
-    chain: z.string().optional(),
-    head: z.number().optional(),
-    finalized: z.number().optional(),
-    lag: z.number().optional(),
-    relayer: z.object({ finalized: z.number().optional(), errors: z.number().optional() }).optional(),
-    guard: z.object({ alerts: z.number().optional(), deposits: z.number().optional() }).optional()
   })
   .nullable();
 
@@ -374,18 +291,6 @@ const sparklinePath = (points: number[], width: number, height: number) => {
     .join(' ');
 };
 
-const safeFetch = async <T,>(path: string, schema: z.ZodType<T>, fallback: T): Promise<T> => {
-  try {
-    const res = await fetch(`${resolveApiBase()}${path}`, { credentials: 'include' });
-    if (!res.ok) return fallback;
-    const data = await res.json();
-    const parsed = schema.safeParse(data);
-    return parsed.success ? parsed.data : fallback;
-  } catch {
-    return fallback;
-  }
-};
-
 function Sparkline({ points, stroke }: { points: number[]; stroke: string }) {
   const width = 120;
   const height = 42;
@@ -450,11 +355,51 @@ export function OperatorOverview() {
   const [walletAddress, setWalletAddress] = useState('');
   const [walletIntel, setWalletIntel] = useState<WalletIntel | null>(null);
   const [apiHealth, setApiHealth] = useState<ApiHealth | null>(null);
-  const [chainStatus, setChainStatus] = useState<ChainStatus | null>(null);
-  const [stackOverview, setStackOverview] = useState<{ l2?: StackOverview | null; l3?: StackOverview | null }>({});
+  const [chainOverview, setChainOverview] = useState<ChainOverview | null>(null);
   const [alertSummary, setAlertSummary] = useState<AlertSummary>({ total: 0, active: 0 });
   const [status, setStatus] = useState('');
+  const [errors, setErrors] = useState<Record<string, { title: string; error: ApiError }>>({});
   const intelInFlight = useRef(new Set<string>());
+  const formatStatus = (error: ApiError) => {
+    const info = formatApiError(error);
+    return `${info.method} ${info.endpoint} | ${info.status} | ${info.hint}`;
+  };
+  const updateErrors = (updates: Record<string, { title: string; error?: ApiError | null }>) => {
+    setErrors((prev) => {
+      const next = { ...prev };
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value.error) {
+          next[key] = { title: value.title, error: value.error };
+        } else {
+          delete next[key];
+        }
+      });
+      return next;
+    });
+  };
+
+  const activeSnapshot = useMemo(
+    () => chainOverview?.chains.find((chain) => chain.id === activeChain),
+    [chainOverview, activeChain]
+  );
+  const rollupOverview = useMemo(() => {
+    const mapTelemetry = (snapshot?: ChainSnapshot | null) => {
+      const health = snapshot?.telemetry?.health;
+      if (!health) return null;
+      const lag = snapshot?.finalityLag ?? health.chain.head - health.chain.finalized;
+      return {
+        head: health.chain.head,
+        finalized: health.chain.finalized,
+        lag: Number.isFinite(lag) ? lag : undefined,
+        relayer: { errors: health.relayer.errors, finalized: health.relayer.finalized },
+        guard: { alerts: health.guard.alerts, deposits: health.guard.deposits }
+      };
+    };
+    return {
+      l2: mapTelemetry(chainOverview?.chains.find((chain) => chain.id === 'l2')),
+      l3: mapTelemetry(chainOverview?.chains.find((chain) => chain.id === 'l3'))
+    };
+  }, [chainOverview]);
 
   useEffect(() => {
     if (!networks.length) return;
@@ -474,60 +419,89 @@ export function OperatorOverview() {
     if (!networks.length) return;
     let active = true;
 
-    const loadRpc = async () => {
-      const results = await Promise.all(
-        networks.map(async (network) => {
-          if (!network.rpc) {
-            return { id: network.id, label: network.label, rpc: '', status: 'error' as const };
-          }
-          try {
-            const [chainHex, blockHex, gasHex, peerHex] = await Promise.all([
-              rpcCall<string>(network.rpc, 'eth_chainId'),
-              rpcCall<string>(network.rpc, 'eth_blockNumber'),
-              rpcCall<string>(network.rpc, 'eth_gasPrice'),
-              rpcCall<string>(network.rpc, 'net_peerCount')
-            ]);
-            const chainId = Number.parseInt(chainHex, 16);
-            const blockNumber = Number.parseInt(blockHex, 16);
-            const gasPrice = Number.parseInt(gasHex, 16);
-            const peers = Number.parseInt(peerHex, 16);
-            return {
-              id: network.id,
-              label: network.label,
-              rpc: network.rpc,
-              status: 'ok' as const,
-              chainId,
-              blockNumber,
-              gasPriceGwei: Number.isFinite(gasPrice) ? gasPrice / 1e9 : undefined,
-              peers: Number.isFinite(peers) ? peers : undefined
-            };
-          } catch {
-            return { id: network.id, label: network.label, rpc: network.rpc, status: 'error' as const };
-          }
-        })
-      );
-
+    const loadChainOverview = async () => {
+      const result = await apiRequest<ChainOverview>('/chain', { schema: ChainOverviewSchema });
       if (!active) return;
 
-      const nextSnapshots: Record<string, RpcSnapshot> = {};
-      results.forEach((snapshot) => {
-        nextSnapshots[snapshot.id] = snapshot;
-      });
-      setRpcSnapshots(nextSnapshots);
+      if (!result.ok) {
+        setChainOverview(null);
+        const fallback: Record<string, RpcSnapshot> = {};
+        networks.forEach((network) => {
+          fallback[network.id] = {
+            id: network.id,
+            label: network.label,
+            rpc: network.rpc || '',
+            status: 'error',
+            error: result.error
+          };
+        });
+        setRpcSnapshots(fallback);
+        updateErrors({
+          chainOverview: { title: 'Chain overview', error: result.error }
+        });
+        return;
+      }
 
+      setChainOverview(result.data);
+
+      const nextSnapshots: Record<string, RpcSnapshot> = {};
+      result.data.chains.forEach((chain) => {
+        const rpcError =
+          chain.rpc.status === 'error'
+            ? {
+                message: chain.rpc.error || 'rpc_probe_failed',
+                endpoint: chain.rpc.url || 'rpc://unassigned',
+                method: 'POST',
+                hint: chain.errors?.join(', ') || 'Check ghost-registry and RPC health.'
+              }
+            : undefined;
+        nextSnapshots[chain.id] = {
+          id: chain.id,
+          label: chain.label,
+          rpc: chain.rpc.url || '',
+          status: chain.rpc.status,
+          chainId: chain.rpc.chainId,
+          blockNumber: chain.rpc.blockNumber,
+          gasPriceGwei: chain.rpc.gasPriceGwei,
+          peers: chain.rpc.peers,
+          error: rpcError
+        };
+      });
+
+      networks.forEach((network) => {
+        if (!nextSnapshots[network.id]) {
+          nextSnapshots[network.id] = {
+            id: network.id,
+            label: network.label,
+            rpc: network.rpc || '',
+            status: 'error',
+            error: {
+              message: 'chain_missing',
+              endpoint: '/chain',
+              method: 'GET',
+              hint: 'Ghost-api /chain did not return this chain.'
+            }
+          };
+        }
+      });
+
+      setRpcSnapshots(nextSnapshots);
       setBlockHistory((prev) => {
         const next = { ...prev };
-        results.forEach((snapshot) => {
+        Object.values(nextSnapshots).forEach((snapshot) => {
           if (snapshot.blockNumber === undefined) return;
           const list = [...(next[snapshot.id] || []), snapshot.blockNumber].slice(-24);
           next[snapshot.id] = list;
         });
         return next;
       });
+      updateErrors({
+        chainOverview: { title: 'Chain overview', error: null }
+      });
     };
 
-    loadRpc();
-    const interval = setInterval(loadRpc, 15000);
+    loadChainOverview();
+    const interval = setInterval(loadChainOverview, 15000);
 
     return () => {
       active = false;
@@ -539,29 +513,33 @@ export function OperatorOverview() {
     let active = true;
 
     const loadApi = async () => {
-      const mempoolFallback = { pending: 0, queued: 0, fairnessScore: 0, mevRisk: 'unknown' };
-      const [health, chain, l2, l3, mempoolData, txsData, blocksData, alerts] = await Promise.all([
-        apiFetch<ApiHealth | null>('/health', { fallback: null, schema: apiHealthSchema }),
-        apiFetch<ChainStatus | null>('/chain/status', { fallback: null, schema: chainStatusSchema }),
-        apiFetch<StackOverview | null>('/stack/overview?chain=l2', { fallback: null, schema: stackOverviewSchema }),
-        apiFetch<StackOverview | null>('/stack/overview?chain=l3', { fallback: null, schema: stackOverviewSchema }),
-        safeFetch<MempoolStatus>(`/explorer/mempool?chain=${activeChain}`, mempoolSchema, mempoolFallback),
-        safeFetch<ExplorerTxsResponse>(`/explorer/txs?chain=${activeChain}&limit=8`, explorerTxsSchema, { txs: [] }),
-        safeFetch<ExplorerBlocksResponse>(`/explorer/blocks?chain=${activeChain}&limit=12`, explorerBlocksSchema, { blocks: [] }),
-        canReadOps ? apiFetch<Array<{ state?: string }>>('/observability/alerts', { fallback: [] }) : Promise.resolve([])
+      const [health, explorer, observability] = await Promise.all([
+        apiRequest<ApiHealth | null>('/health', { schema: apiHealthSchema }),
+        apiRequest<ExplorerSummary>(
+          `/explorer?chain=${activeChain}&blockLimit=12&txLimit=8`,
+          { schema: ExplorerSummarySchema }
+        ),
+        canReadOps
+          ? apiRequest<ObservabilitySummary>('/observability', { schema: ObservabilitySummarySchema })
+          : Promise.resolve({ ok: true as const, data: { alerts: [], dashboards: [], logs: [] } as ObservabilitySummary })
       ]);
 
       if (!active) return;
 
-      setApiHealth(health);
-      setChainStatus(chain);
-      setStackOverview({ l2, l3 });
-      setMempool(mempoolData);
-      setTxs(txsData.txs || []);
-      setBlocks(blocksData.blocks || []);
-      const total = Array.isArray(alerts) ? alerts.length : 0;
-      const activeAlerts = Array.isArray(alerts) ? alerts.filter((alert) => alert.state !== 'resolved').length : 0;
+      setApiHealth(health.ok ? health.data : null);
+      setMempool(explorer.ok ? explorer.data.mempool : null);
+      setTxs(explorer.ok ? explorer.data.txs || [] : []);
+      setBlocks(explorer.ok ? explorer.data.blocks || [] : []);
+      const alertsData = observability.ok ? observability.data.alerts : [];
+      const total = Array.isArray(alertsData) ? alertsData.length : 0;
+      const activeAlerts = Array.isArray(alertsData) ? alertsData.filter((alert) => alert.state !== 'resolved').length : 0;
       setAlertSummary({ total, active: activeAlerts });
+
+      updateErrors({
+        apiHealth: { title: 'API health', error: health.ok ? null : health.error },
+        explorer: { title: `Explorer ${activeChain.toUpperCase()}`, error: explorer.ok ? null : explorer.error },
+        observability: { title: 'Observability', error: canReadOps && !observability.ok ? observability.error : null }
+      });
     };
 
     loadApi();
@@ -578,15 +556,20 @@ export function OperatorOverview() {
 
     const loadAi = async () => {
       const [forecast, network, bridge] = await Promise.all([
-        apiFetch<Forecasting | null>(`/ai/forecasting?chain=${activeChain}`, { fallback: null, schema: forecastingSchema }),
-        apiFetch<NetworkIntelResponse>(`/ai/network-intel?chain=${activeChain}`, { fallback: { status: [] }, schema: networkIntelSchema }),
-        apiFetch<BridgeIntel | null>(`/ai/bridge-intel?chain=${activeChain}`, { fallback: null, schema: bridgeIntelSchema })
+        apiRequest<Forecasting | null>(`/ai/forecasting?chain=${activeChain}`, { schema: forecastingSchema }),
+        apiRequest<NetworkIntelResponse>(`/ai/network-intel?chain=${activeChain}`, { schema: networkIntelSchema }),
+        apiRequest<BridgeIntel | null>(`/ai/bridge-intel?chain=${activeChain}`, { schema: bridgeIntelSchema })
       ]);
 
       if (!active) return;
-      setForecasting(forecast);
-      setNetworkIntel(network?.status || []);
-      setBridgeIntel(bridge);
+      setForecasting(forecast.ok ? forecast.data : null);
+      setNetworkIntel(network.ok ? network.data.status || [] : []);
+      setBridgeIntel(bridge.ok ? bridge.data : null);
+      updateErrors({
+        aiForecasting: { title: `AI forecasting ${activeChain.toUpperCase()}`, error: forecast.ok ? null : forecast.error },
+        aiNetwork: { title: `AI network intel ${activeChain.toUpperCase()}`, error: network.ok ? null : network.error },
+        aiBridge: { title: `AI bridge intel ${activeChain.toUpperCase()}`, error: bridge.ok ? null : bridge.error }
+      });
     };
 
     loadAi();
@@ -603,9 +586,12 @@ export function OperatorOverview() {
     let active = true;
 
     const loadWallets = async () => {
-      const data = await apiFetch<WalletSummary[]>('/wallets', { fallback: [], schema: walletsSchema });
+      const result = await apiRequest<WalletSummary[]>('/wallets', { schema: walletsSchema });
       if (!active) return;
-      setWallets(data || []);
+      setWallets(result.ok ? result.data || [] : []);
+      updateErrors({
+        wallets: { title: 'Wallet inventory', error: result.ok ? null : result.error }
+      });
     };
 
     loadWallets();
@@ -634,14 +620,27 @@ export function OperatorOverview() {
     if (intelInFlight.current.has(hash)) return;
     intelInFlight.current.add(hash);
     if (!silent) setStatus('Running fraud detection...');
+    let clearStatus = true;
     try {
-      const intel = await apiFetch<TxIntel>(`/ai/tx-intel?chain=${activeChain}&txHash=${hash}`, { schema: txIntelSchema });
+      const intelResult = await apiRequest<TxIntel>(`/ai/tx-intel?chain=${activeChain}&txHash=${hash}`, {
+        schema: txIntelSchema
+      });
+      if (!intelResult.ok) {
+        if (!silent) setStatus(formatStatus(intelResult.error));
+        clearStatus = false;
+        return;
+      }
+      const intel = intelResult.data;
       setTxRiskMap((prev) => ({ ...prev, [hash]: intel.risk }));
       if (!silent) setTxIntelDetail(intel);
     } catch (err) {
-      if (!silent) setStatus(err instanceof Error ? err.message : 'AI scan failed');
+      if (!silent) {
+        const message = err instanceof Error ? err.message : 'AI scan failed';
+        setStatus(message);
+        clearStatus = false;
+      }
     } finally {
-      if (!silent) setStatus('');
+      if (!silent && clearStatus) setStatus('');
       intelInFlight.current.delete(hash);
     }
   };
@@ -649,16 +648,24 @@ export function OperatorOverview() {
   const runWalletIntel = async () => {
     if (!walletAddress) return;
     setStatus('Profiling wallet...');
+    let clearStatus = true;
     try {
-      const intel = await apiFetch<WalletIntel>(
+      const intelResult = await apiRequest<WalletIntel>(
         `/ai/wallet-intel?chain=${activeChain}&address=${encodeURIComponent(walletAddress)}`,
         { schema: walletIntelSchema }
       );
-      setWalletIntel(intel);
+      if (!intelResult.ok) {
+        setStatus(formatStatus(intelResult.error));
+        clearStatus = false;
+        return;
+      }
+      setWalletIntel(intelResult.data);
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'AI profile failed');
+      const message = err instanceof Error ? err.message : 'AI profile failed';
+      setStatus(message);
+      clearStatus = false;
     } finally {
-      setStatus('');
+      if (clearStatus) setStatus('');
     }
   };
 
@@ -768,6 +775,13 @@ export function OperatorOverview() {
           </div>
         </div>
       </section>
+      {Object.keys(errors).length > 0 && (
+        <section className="card-grid">
+          {Object.values(errors).map(({ title, error }) => (
+            <DataFetchErrorCard key={`${title}-${error.endpoint || 'unknown'}`} title={title} error={error} />
+          ))}
+        </section>
+      )}
 
       <section className="card reveal">
         <div className="spread">
@@ -800,6 +814,7 @@ export function OperatorOverview() {
                 </div>
                 <Sparkline points={blockHistory[network.id] || []} stroke="var(--accent)" />
                 <div className="muted">{network.rpc || 'RPC unassigned'}</div>
+                {snapshot?.error && <div className="muted">RPC error: {formatStatus(snapshot.error)}</div>}
               </div>
             );
           })}
@@ -1004,8 +1019,8 @@ export function OperatorOverview() {
         <Card title="Rollup settlement" subtitle="L2/L3 derivation flow">
           <div className="data-grid">
             {[
-              { label: 'GhostL2', data: stackOverview.l2 },
-              { label: 'GhostL3', data: stackOverview.l3 }
+              { label: 'GhostL2', data: rollupOverview.l2 },
+              { label: 'GhostL3', data: rollupOverview.l3 }
             ].map((item) => (
               <div key={item.label} className="data-card">
                 <div className="spread">
@@ -1055,8 +1070,12 @@ export function OperatorOverview() {
               ))}
               {!dependencies.length && <div className="muted">No service dependencies reported.</div>}
             </div>
-            <div className="muted">Environment: {chainStatus?.info?.env || 'local'} · Consensus: {chainStatus?.info?.consensus || '--'}</div>
-            <div className="muted">Block time: {formatMs(chainStatus?.blockTimeMs)} · Finality lag: {formatMs(chainStatus?.finalityLag)}</div>
+            <div className="muted">
+              Environment: {activeSnapshot?.info?.env || 'local'} · Consensus: {activeSnapshot?.info?.consensus || '--'}
+            </div>
+            <div className="muted">
+              Block time: {formatMs(activeSnapshot?.blockTimeMs)} · Finality lag: {formatMs(activeSnapshot?.finalityLag)}
+            </div>
           </div>
         </Card>
       </section>

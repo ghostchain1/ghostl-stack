@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import { JsonRpcProvider } from 'ethers';
 import { requirePermission } from '../../lib/rbac';
+import { ghostWalletRpcManager } from '../../services/rpc-manager';
 
 type ChainId = 'l1' | 'l2' | 'l3';
 
 type ChainConfig = {
   id: ChainId;
   label: string;
-  rpc: string;
 };
 
 const rpcCall = async <T>(provider: JsonRpcProvider, method: string, params: unknown[] = []) => {
@@ -15,7 +15,7 @@ const rpcCall = async <T>(provider: JsonRpcProvider, method: string, params: unk
 };
 
 const checkChain = async (cfg: ChainConfig) => {
-  const provider = new JsonRpcProvider(cfg.rpc);
+  const provider = ghostWalletRpcManager.getProvider(cfg.id);
   const [blockNumber, netVersion, syncing] = await Promise.all([
     provider.getBlockNumber(),
     rpcCall<string>(provider, 'eth_chainId'),

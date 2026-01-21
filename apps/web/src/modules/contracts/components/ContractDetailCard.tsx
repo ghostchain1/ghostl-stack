@@ -5,12 +5,17 @@ import type { Contract, ContractCallStats } from '@ghostl/types/contracts';
 export function ContractDetailCard({ contract, stats }: { contract: Contract; stats?: ContractCallStats }) {
   return (
     <div className="card">
-      <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <div style={{ fontWeight: 800 }}>{contract.name || contract.address.slice(0, 10)}</div>
-          <div className="mono">{contract.address}</div>
+      <div
+        className="row"
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}
+      >
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 800, wordBreak: 'break-word' }}>{contract.name || contract.address.slice(0, 10)}</div>
+          <div className="mono" style={{ overflowWrap: 'anywhere' }}>{contract.address}</div>
         </div>
-        <div className={`badge ${contract.verified ? 'ok' : 'warn'}`}>{contract.verified ? 'Verified' : 'Unverified'}</div>
+        <div className={`badge ${contract.verified ? 'ok' : 'warn'}`} style={{ whiteSpace: 'nowrap' }}>
+          {contract.verified ? 'Verified' : 'Unverified'}
+        </div>
       </div>
       <div className="muted" style={{ marginTop: 6 }}>
         Proxy: {contract.proxyType || 'none'} · Owner: {contract.owner || '—'}

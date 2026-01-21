@@ -245,6 +245,10 @@ a {
   gap: 16px;
 }
 
+.card-grid > * {
+  min-width: 0;
+}
+
 .card {
   background: linear-gradient(180deg, var(--panel), var(--panel-strong));
   border: 1px solid var(--border);
@@ -521,6 +525,27 @@ textarea {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.code-preview {
+  width: 100%;
+  max-height: 320px;
+  overflow: auto;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(5, 10, 16, 0.6);
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .table th,

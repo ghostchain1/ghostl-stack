@@ -5,6 +5,8 @@ import { Badge, Button, Card } from '@ghostl/ui';
 import type { AnalyticsEvent, WebhookStatusSummary } from '@ghostl/types';
 import { resolveApiBase } from '../../lib/runtime';
 import { useSession } from '../identity-access/session';
+import { apiRequest, type ApiError, formatApiError } from '../../lib/api';
+import { DataFetchErrorCard } from '../../components/DataFetchErrorCard';
 
 type ChainRef = 'l1' | 'l2' | 'l3';
 
@@ -134,6 +136,20 @@ export function AiCommandCenter() {
   const [bridgeIntel, setBridgeIntel] = useState<BridgeIntel | null>(null);
   const [governanceIntel, setGovernanceIntel] = useState<GovernanceIntel | null>(null);
   const [forecasting, setForecasting] = useState<Forecasting | null>(null);
+  const [errors, setErrors] = useState<Array<{ title: string; error: ApiError }>>([]);
+
+  const pushError = (title: string, error: ApiError) => {
+    setErrors((prev) => [...prev.filter((entry) => entry.title !== title), { title, error }]);
+  };
+
+  const clearError = (title: string) => {
+    setErrors((prev) => prev.filter((entry) => entry.title !== title));
+  };
+
+  const formatStatus = (error: ApiError) => {
+    const info = formatApiError(error);
+    return `${info.method} ${info.endpoint} · ${info.status} · ${info.hint}`;
+  };
 
   const chainEndpoints = useMemo(
     () => endpoints.filter((e) => (e.layer || '').toLowerCase() === chain),
@@ -141,14 +157,14 @@ export function AiCommandCenter() {
   );
 
   const loadEndpoints = async () => {
-    try {
-      const res = await fetch(`${API_URL}/integrations/rpc`, { credentials: 'include' });
-      if (!res.ok) return;
-      const data = (await res.json()) as Endpoint[];
-      setEndpoints(data);
-    } catch {
+    const res = await apiRequest<Endpoint[]>('/integrations/rpc', { baseUrl: API_URL });
+    if (!res.ok) {
+      pushError('RPC registry', res.error);
       setEndpoints([]);
+      return;
     }
+    clearError('RPC registry');
+    setEndpoints(res.data);
   };
 
   useEffect(() => {
@@ -162,26 +178,25 @@ export function AiCommandCenter() {
   useEffect(() => {
     if (!isAdmin) return;
     const loadActivity = async () => {
-      try {
-        const [eventsRes, webhookRes, deliveriesRes] = await Promise.all([
-          fetch(`${API_URL}/analytics/events?scope=ai&limit=8`, { credentials: 'include' }),
-          fetch(`${API_URL}/webhooks/status`, { credentials: 'include' }),
-          fetch(`${API_URL}/webhooks/deliveries?limit=5`, { credentials: 'include' })
-        ]);
-        if (eventsRes.ok) {
-          const data = (await eventsRes.json()) as { events?: AnalyticsEvent[] };
-          setEvents(data.events || []);
-        }
-        if (webhookRes.ok) {
-          const data = (await webhookRes.json()) as WebhookStatusSummary;
-          setWebhookStatus(data);
-        }
-        if (deliveriesRes.ok) {
-          const data = (await deliveriesRes.json()) as { deliveries?: AnalyticsEvent[] };
-          setWebhookDeliveries(data.deliveries || []);
-        }
-      } catch {
-        // ignore
+      const [eventsRes, webhookRes, deliveriesRes] = await Promise.all([
+        apiRequest<{ events?: AnalyticsEvent[] }>('/analytics/events?scope=ai&limit=8', { baseUrl: API_URL }),
+        apiRequest<WebhookStatusSummary>('/webhooks/status', { baseUrl: API_URL }),
+        apiRequest<{ deliveries?: AnalyticsEvent[] }>('/webhooks/deliveries?limit=5', { baseUrl: API_URL })
+      ]);
+      if (!eventsRes.ok) pushError('AI analytics events', eventsRes.error);
+      else {
+        clearError('AI analytics events');
+        setEvents(eventsRes.data.events || []);
+      }
+      if (!webhookRes.ok) pushError('Webhook status', webhookRes.error);
+      else {
+        clearError('Webhook status');
+        setWebhookStatus(webhookRes.data);
+      }
+      if (!deliveriesRes.ok) pushError('Webhook deliveries', deliveriesRes.error);
+      else {
+        clearError('Webhook deliveries');
+        setWebhookDeliveries(deliveriesRes.data.deliveries || []);
       }
     };
     loadActivity();
@@ -200,13 +215,15 @@ export function AiCommandCenter() {
     if (!txHash) return;
     setStatus('Running transaction intelligence...');
     try {
-      const res = await fetch(`${API_URL}/ai/tx-intel?chain=${chain}&txHash=${txHash}`, { credentials: 'include' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as TxIntel;
-      setTxIntel(data);
+      const res = await apiRequest<TxIntel>(`/ai/tx-intel?chain=${chain}&txHash=${txHash}`, { baseUrl: API_URL });
+      if (!res.ok) {
+        setStatus(formatStatus(res.error));
+        return;
+      }
+      setTxIntel(res.data);
       setStatus('');
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Failed');
+      setStatus(formatStatus(err as ApiError));
     }
   };
 
@@ -214,13 +231,15 @@ export function AiCommandCenter() {
     if (!walletAddress) return;
     setStatus('Running wallet intelligence...');
     try {
-      const res = await fetch(`${API_URL}/ai/wallet-intel?chain=${chain}&address=${walletAddress}`, { credentials: 'include' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as WalletIntel;
-      setWalletIntel(data);
+      const res = await apiRequest<WalletIntel>(`/ai/wallet-intel?chain=${chain}&address=${walletAddress}`, { baseUrl: API_URL });
+      if (!res.ok) {
+        setStatus(formatStatus(res.error));
+        return;
+      }
+      setWalletIntel(res.data);
       setStatus('');
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Failed');
+      setStatus(formatStatus(err as ApiError));
     }
   };
 
@@ -228,39 +247,45 @@ export function AiCommandCenter() {
     if (!contractAddress) return;
     setStatus('Running contract intelligence...');
     try {
-      const res = await fetch(`${API_URL}/ai/contract-intel?chain=${chain}&address=${contractAddress}`, { credentials: 'include' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as ContractIntel;
-      setContractIntel(data);
+      const res = await apiRequest<ContractIntel>(`/ai/contract-intel?chain=${chain}&address=${contractAddress}`, { baseUrl: API_URL });
+      if (!res.ok) {
+        setStatus(formatStatus(res.error));
+        return;
+      }
+      setContractIntel(res.data);
       setStatus('');
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Failed');
+      setStatus(formatStatus(err as ApiError));
     }
   };
 
   const runNetworkIntel = async () => {
     setStatus('Running network intelligence...');
     try {
-      const res = await fetch(`${API_URL}/ai/network-intel?chain=${chain}`, { credentials: 'include' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as { status: NetworkIntel[] };
-      setNetworkIntel(data.status || []);
+      const res = await apiRequest<{ status: NetworkIntel[] }>(`/ai/network-intel?chain=${chain}`, { baseUrl: API_URL });
+      if (!res.ok) {
+        setStatus(formatStatus(res.error));
+        return;
+      }
+      setNetworkIntel(res.data.status || []);
       setStatus('');
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Failed');
+      setStatus(formatStatus(err as ApiError));
     }
   };
 
   const runBridgeIntel = async () => {
     setStatus('Running bridge intelligence...');
     try {
-      const res = await fetch(`${API_URL}/ai/bridge-intel?chain=${chain}`, { credentials: 'include' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as BridgeIntel;
-      setBridgeIntel(data);
+      const res = await apiRequest<BridgeIntel>(`/ai/bridge-intel?chain=${chain}`, { baseUrl: API_URL });
+      if (!res.ok) {
+        setStatus(formatStatus(res.error));
+        return;
+      }
+      setBridgeIntel(res.data);
       setStatus('');
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Failed');
+      setStatus(formatStatus(err as ApiError));
     }
   };
 
@@ -268,29 +293,33 @@ export function AiCommandCenter() {
     if (!proposalId) return;
     setStatus('Running governance intelligence...');
     try {
-      const res = await fetch(
-        `${API_URL}/ai/governance-intel?chain=${chain}&proposalId=${encodeURIComponent(proposalId)}`,
-        { credentials: 'include' }
+      const res = await apiRequest<GovernanceIntel>(
+        `/ai/governance-intel?chain=${chain}&proposalId=${encodeURIComponent(proposalId)}`,
+        { baseUrl: API_URL }
       );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as GovernanceIntel;
-      setGovernanceIntel(data);
+      if (!res.ok) {
+        setStatus(formatStatus(res.error));
+        return;
+      }
+      setGovernanceIntel(res.data);
       setStatus('');
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Failed');
+      setStatus(formatStatus(err as ApiError));
     }
   };
 
   const runForecasting = async () => {
     setStatus('Running forecasts...');
     try {
-      const res = await fetch(`${API_URL}/ai/forecasting?chain=${chain}`, { credentials: 'include' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as Forecasting;
-      setForecasting(data);
+      const res = await apiRequest<Forecasting>(`/ai/forecasting?chain=${chain}`, { baseUrl: API_URL });
+      if (!res.ok) {
+        setStatus(formatStatus(res.error));
+        return;
+      }
+      setForecasting(res.data);
       setStatus('');
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Failed');
+      setStatus(formatStatus(err as ApiError));
     }
   };
 
@@ -298,6 +327,13 @@ export function AiCommandCenter() {
     <div className="content">
       <div className="card-grid">
         <Card title="AI Command Center" subtitle="GhostChain L1, GhostL2, GhostL3">
+          {errors.length > 0 && (
+            <div className="stack" style={{ marginBottom: 8 }}>
+              {errors.map((entry) => (
+                <DataFetchErrorCard key={entry.title} title={entry.title} error={entry.error} />
+              ))}
+            </div>
+          )}
           {status && <div className="muted">{status}</div>}
           <div className="row">
             <label className="muted">Chain</label>

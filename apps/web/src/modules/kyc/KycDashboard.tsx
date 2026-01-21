@@ -12,6 +12,7 @@ import type {
 } from '@ghostl/types/kyc';
 import { resolveApiBase } from '../../lib/runtime';
 import { jsonWithCsrf } from '../../lib/csrf';
+import { apiRequest, formatApiError, type ApiError } from '../../lib/api';
 
 const API_URL = resolveApiBase();
 
@@ -47,12 +48,11 @@ type Filters = {
 const fetchJson = async <T,>(path: string, options: Parameters<typeof fetch>[1] = {}): Promise<T> => {
   const method = (options.method || 'GET').toUpperCase();
   const headers = method === 'GET' || method === 'HEAD' ? options.headers : jsonWithCsrf(options.headers);
-  const res = await fetch(`${API_URL}${path}`, { credentials: 'include', ...options, headers });
+  const res = await apiRequest<T>(path, { baseUrl: API_URL, init: { ...options, headers } });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `HTTP ${res.status}`);
+    throw res.error;
   }
-  return (await res.json()) as T;
+  return res.data;
 };
 
 const formatStatus = (status: string) => status.replace(/_/g, ' ');
@@ -83,6 +83,13 @@ export function KycDashboard({ initialSummary, initialApplicants, initialProvide
     walletAddress: '',
     chainId: 'l2'
   });
+  const formatStatus = (err: unknown, fallback: string) => {
+    if (err && typeof err === 'object' && 'message' in err) {
+      const info = formatApiError(err as ApiError);
+      return `${info.method} ${info.endpoint} · ${info.status} · ${info.hint}`;
+    }
+    return fallback;
+  };
 
   const selected = useMemo(() => applicants.find((app) => app.id === selectedId) || null, [applicants, selectedId]);
 
@@ -118,13 +125,14 @@ export function KycDashboard({ initialSummary, initialApplicants, initialProvide
     try {
       await Promise.all([loadSummary(), loadApplicants(), loadProviders(), loadPolicy()]);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to refresh';
-      setStatus(msg);
+      setStatus(formatStatus(err, 'Failed to refresh'));
     }
   };
 
   useEffect(() => {
-    loadApplicants(filters).catch(() => undefined);
+    loadApplicants(filters).catch((err) => {
+      setStatus(formatStatus(err, 'Failed to load applicants'));
+    });
   }, [filters]);
 
   useEffect(() => {
@@ -150,7 +158,7 @@ export function KycDashboard({ initialSummary, initialApplicants, initialProvide
       await reloadAll();
       setStatus('Review submitted.');
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Review failed');
+      setStatus(formatStatus(err, 'Review failed'));
     }
   };
 
@@ -166,7 +174,7 @@ export function KycDashboard({ initialSummary, initialApplicants, initialProvide
       await reloadAll();
       setStatus('Reviewer assigned.');
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Assign failed');
+      setStatus(formatStatus(err, 'Assign failed'));
     }
   };
 
@@ -183,7 +191,7 @@ export function KycDashboard({ initialSummary, initialApplicants, initialProvide
       await reloadAll();
       setStatus('Document added.');
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Document add failed');
+      setStatus(formatStatus(err, 'Document add failed'));
     }
   };
 
@@ -206,7 +214,7 @@ export function KycDashboard({ initialSummary, initialApplicants, initialProvide
       await reloadAll();
       setStatus('Document updated.');
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Document review failed');
+      setStatus(formatStatus(err, 'Document review failed'));
     }
   };
 
@@ -225,7 +233,7 @@ export function KycDashboard({ initialSummary, initialApplicants, initialProvide
       await reloadAll();
       setStatus('Risk override applied.');
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Risk override failed');
+      setStatus(formatStatus(err, 'Risk override failed'));
     }
   };
 
@@ -241,7 +249,7 @@ export function KycDashboard({ initialSummary, initialApplicants, initialProvide
       await reloadAll();
       setStatus('Screening updated.');
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Screening update failed');
+      setStatus(formatStatus(err, 'Screening update failed'));
     }
   };
 
@@ -273,7 +281,7 @@ export function KycDashboard({ initialSummary, initialApplicants, initialProvide
       await reloadAll();
       setStatus('Applicant created.');
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Create failed');
+      setStatus(formatStatus(err, 'Create failed'));
     }
   };
 
