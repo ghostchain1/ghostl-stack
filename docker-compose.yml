@@ -48,7 +48,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: ["sh", "-lc", "npm ci && npm run migrate"]
+    command: ["sh", "-lc", "npm install && npm run migrate"]
     restart: "no"
 
   ghost-compliance:
