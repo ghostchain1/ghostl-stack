@@ -100,7 +100,7 @@ const run = async () => {
       decision.reasons,
       decision.requiredControls,
       decision.disclosures,
-      decision.matchedRules,
+      JSON.stringify(decision.matchedRules),
       bundleRow.rows[0].id,
       evidenceRow.rows[0].id,
       attestation

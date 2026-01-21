@@ -9,11 +9,13 @@ export type Comparator =
   | { contains: unknown }
   | { matches: string };
 
+export type LeafExpr = Record<string, Comparator | unknown>;
+
 export type WhenExpr =
   | { all: WhenExpr[] }
   | { any: WhenExpr[] }
   | { not: WhenExpr }
-  | Record<string, Comparator | unknown>;
+  | LeafExpr;
 
 export type PolicyEffect = {
   deny?: { reason: string; message?: string };

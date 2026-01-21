@@ -7,7 +7,7 @@ type PolicyBundle = {
     id: string;
     priority: number;
     appliesTo: { actions: string[] };
-    effect: unknown;
+    effect?: unknown;
   }>;
 };
 
