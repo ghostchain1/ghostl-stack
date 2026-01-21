@@ -1,4 +1,4 @@
-import Fastify from 'fastify';
+import Fastify, { type FastifyRequest } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
@@ -20,7 +20,7 @@ const app = Fastify({
 
 const roleOrder = { viewer: 0, analyst: 1, admin: 2 } as const;
 
-const buildRoleGuard = (role: keyof typeof roleOrder) => async (req: typeof app['request']): Promise<void> => {
+const buildRoleGuard = (role: keyof typeof roleOrder) => async (req: FastifyRequest): Promise<void> => {
   const user = (req as typeof req & { user?: { role?: string } }).user;
   if (!user?.role) {
     const err = new Error('unauthorized') as Error & { statusCode?: number };

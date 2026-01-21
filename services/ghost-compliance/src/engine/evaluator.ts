@@ -1,4 +1,4 @@
-import { DecisionInput, PolicyBundle, WhenExpr, Comparator } from './types';
+import { DecisionInput, PolicyBundle, WhenExpr, Comparator, LeafExpr } from './types';
 import { resolveMostRestrictive, Triggered } from './conflict';
 
 function getPath(obj: any, path: string): any {
@@ -50,7 +50,7 @@ function cmp(actual: any, c: Comparator): boolean {
   }
 }
 
-function evalLeaf(input: any, leaf: Record<string, any>): boolean {
+function evalLeaf(input: any, leaf: LeafExpr): boolean {
   for (const [path, rule] of Object.entries(leaf)) {
     const actual = getPath(input, path);
     if (isComparator(rule)) {
@@ -62,11 +62,20 @@ function evalLeaf(input: any, leaf: Record<string, any>): boolean {
   return true;
 }
 
+const isAll = (expr: WhenExpr): expr is { all: WhenExpr[] } =>
+  Array.isArray((expr as { all?: unknown }).all);
+
+const isAny = (expr: WhenExpr): expr is { any: WhenExpr[] } =>
+  Array.isArray((expr as { any?: unknown }).any);
+
+const isNot = (expr: WhenExpr): expr is { not: WhenExpr } =>
+  typeof (expr as { not?: unknown }).not !== 'undefined';
+
 function evalWhen(input: any, expr: WhenExpr): boolean {
-  if ('all' in expr) return expr.all.every((e) => evalWhen(input, e));
-  if ('any' in expr) return expr.any.some((e) => evalWhen(input, e));
-  if ('not' in expr) return !evalWhen(input, expr.not);
-  return evalLeaf(input, expr as Record<string, any>);
+  if (isAll(expr)) return expr.all.every((e: WhenExpr) => evalWhen(input, e));
+  if (isAny(expr)) return expr.any.some((e: WhenExpr) => evalWhen(input, e));
+  if (isNot(expr)) return !evalWhen(input, expr.not);
+  return evalLeaf(input, expr as LeafExpr);
 }
 
 export function evaluatePolicy(bundle: PolicyBundle, input: DecisionInput) {

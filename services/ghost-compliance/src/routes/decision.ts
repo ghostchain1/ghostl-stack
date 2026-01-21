@@ -62,7 +62,7 @@ export async function registerDecisionRoutes(app: FastifyInstance) {
       return reply.status(409).send({ error: 'policy_bundle_missing', service: 'ghost-compliance', hint: 'Activate a policy bundle first.' });
     }
 
-    const decision = evaluatePolicy(bundle, input);
+    const decision = evaluatePolicy(bundle.bundle, input);
     const attestation = decision.decision === 'allow' || decision.decision === 'allow_with_controls'
       ? await buildAttestation(input, input.resource)
       : null;
@@ -83,7 +83,7 @@ export async function registerDecisionRoutes(app: FastifyInstance) {
         decision.reasons,
         decision.requiredControls,
         decision.disclosures,
-        decision.matchedRules,
+        JSON.stringify(decision.matchedRules),
         bundle.meta.id,
         evidenceBundle.id,
         attestation
@@ -150,7 +150,7 @@ const createEvidenceBundle = async (
   subjectId: string,
   input: DecisionInput,
   decision: ReturnType<typeof evaluatePolicy>,
-  attestation: Awaited<ReturnType<typeof buildAttestation>>
+  attestation: Awaited<ReturnType<typeof buildAttestation>> | null
 ): Promise<{ id: string }> => {
   const prev = await query<{ hash: string }>(
     'SELECT hash FROM evidence_bundles WHERE subject_id = $1 ORDER BY created_at DESC LIMIT 1',

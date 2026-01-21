@@ -14,7 +14,7 @@ export async function withTransaction<T>(fn: (client: PoolClient) => Promise<T>)
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const result = await fn(client as unknown as Pool);
+    const result = await fn(client);
     await client.query('COMMIT');
     return result;
   } catch (err) {
