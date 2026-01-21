@@ -11,7 +11,8 @@ import { BridgeValidatorHealth } from '../../src/modules/observability/component
 import { ValidatorMetrics } from '../../src/modules/observability/components/ValidatorMetrics';
 import { SecurityControls } from '../../src/modules/observability/components/SecurityControls';
 import type { Alert, LogEvent } from '@ghostl/types/observability';
-import { apiFetch } from '../../src/lib/api';
+import { apiRequest, type ApiError } from '../../src/lib/api';
+import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
 
 type PromVector = { metric: Record<string, string>; value?: [number, string] };
 type Dashboard = { id: string; name: string; url: string };
@@ -29,32 +30,53 @@ export default function ObservabilityPage() {
     { target: string; channel: 'slack' | 'discord' | 'webhook' | 'email'; active: boolean }[]
   >([]);
   const [incidents, setIncidents] = useState<{ source: string; message?: string; severity?: string; time?: string; createdAt?: string }[]>([]);
+  const [errors, setErrors] = useState<Array<{ title: string; error: ApiError }>>([]);
 
   useEffect(() => {
-    apiFetch<Alert[]>('/observability/alerts', { fallback: [] }).then((a) => setAlerts(a));
-    apiFetch<LogEvent[]>('/observability/logs', { fallback: [] }).then((l) => setLogs(l));
-    apiFetch<PromVector[]>('/observability/metrics?q=up', { fallback: [] }).then((res) => {
-      if (!Array.isArray(res)) return;
-      const targets = res.map((entry) => ({
-        name: entry.metric.job || entry.metric.instance || 'target',
-        url: PROM_URL
-      }));
-      setMetrics(targets.length ? targets : [{ name: 'Prometheus', url: PROM_URL }]);
-    });
-    apiFetch<Dashboard[]>('/observability/dashboards', { fallback: [] }).then((res) => setDashboards(res));
-    apiFetch<{ id: string; type: string; target: string }[]>('/observability/channels', { fallback: [] }).then(
-      (channels) => {
-        const mapped = (channels || []).map((c) => ({
+    const load = async () => {
+      const nextErrors: Array<{ title: string; error: ApiError }> = [];
+      const alertsRes = await apiRequest<Alert[]>('/observability/alerts');
+      if (!alertsRes.ok) nextErrors.push({ title: 'Observability alerts', error: alertsRes.error });
+      else setAlerts(alertsRes.data);
+
+      const logsRes = await apiRequest<LogEvent[]>('/observability/logs');
+      if (!logsRes.ok) nextErrors.push({ title: 'Log stream', error: logsRes.error });
+      else setLogs(logsRes.data);
+
+      const metricsRes = await apiRequest<PromVector[]>('/observability/metrics?q=up');
+      if (!metricsRes.ok) {
+        nextErrors.push({ title: 'Prometheus metrics', error: metricsRes.error });
+      } else if (Array.isArray(metricsRes.data)) {
+        const targets = metricsRes.data.map((entry) => ({
+          name: entry.metric.job || entry.metric.instance || 'target',
+          url: PROM_URL
+        }));
+        setMetrics(targets.length ? targets : [{ name: 'Prometheus', url: PROM_URL }]);
+      }
+
+      const dashboardsRes = await apiRequest<Dashboard[]>('/observability/dashboards');
+      if (!dashboardsRes.ok) nextErrors.push({ title: 'Grafana dashboards', error: dashboardsRes.error });
+      else setDashboards(dashboardsRes.data);
+
+      const channelsRes = await apiRequest<{ id: string; type: string; target: string }[]>('/observability/channels');
+      if (!channelsRes.ok) {
+        nextErrors.push({ title: 'Notification routes', error: channelsRes.error });
+      } else {
+        const mapped = (channelsRes.data || []).map((c) => ({
           target: c.target,
           channel: (c.type as 'slack' | 'discord' | 'webhook' | 'email') || 'webhook',
           active: true
         }));
         setRoutes(mapped);
       }
-    );
-    apiFetch<{ incidents: any[] }>('/observability/incidents', { fallback: { incidents: [] } }).then((res) => {
-      setIncidents(res.incidents || []);
-    });
+
+      const incidentsRes = await apiRequest<{ incidents: any[] }>('/observability/incidents');
+      if (!incidentsRes.ok) nextErrors.push({ title: 'Incident timeline', error: incidentsRes.error });
+      else setIncidents(incidentsRes.data.incidents || []);
+
+      setErrors(nextErrors);
+    };
+    load().catch(() => undefined);
   }, []);
 
   return (
@@ -63,6 +85,9 @@ export default function ObservabilityPage() {
         Using PromQL: proposer={PROM_PROPOSER}, participation={PROM_PARTICIPATION}
       </div>
       <div className="card-grid">
+        {errors.map((entry, idx) => (
+          <DataFetchErrorCard key={`${entry.title}-${idx}`} title={entry.title} error={entry.error} />
+        ))}
         <MetricsPanel targets={metrics} />
         <DashboardsPanel dashboards={dashboards} />
         <LogsViewer events={logs} />

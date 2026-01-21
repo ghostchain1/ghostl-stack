@@ -11,6 +11,7 @@ import WebSocket from 'ws';
 import { Interface, JsonRpcProvider, Wallet } from 'ethers';
 import { z } from 'zod';
 import type { Transfer } from '@ghostl/types/bridge';
+import type { WalletRecord } from '@ghostl/types';
 import { buildAppShellRouter } from './modules/app-shell/router';
 import { buildIdentityAccessRouter } from './modules/identity-access/router';
 import { buildChainRouter } from './modules/chain/router';
@@ -51,6 +52,22 @@ import { createSessionStore } from './services/session-store';
 import { emitEvent, getEvents, getWebhookDeliveries, getWebhookSummary } from './lib/events';
 import { createContractJob, readContractJob, readContractJobLog } from './lib/contract-jobs';
 import { listContracts as listRegisteredContracts, registerContracts } from './lib/contract-registry-store';
+import {
+  AiSummarySchema,
+  BridgeSummarySchema,
+  ChainOverviewSchema,
+  ComplianceSummarySchema,
+  ContractsResponseSchema,
+  DevopsSummarySchema,
+  ExplorerSummarySchema,
+  GovernanceSummarySchema,
+  IntegrationsSummarySchema,
+  ObservabilitySummarySchema,
+  TokenomicsSummarySchema,
+  TreasurySummarySchema,
+  ValidatorsResponseSchema,
+  WalletsResponseSchema
+} from '@ghostl/contract-schemas';
 import './types/express';
 // Load environment variables from local env file when running locally (cwd may be repo root or apps/api)
 loadEnv({ path: path.join(process.cwd(), '.env.local') });
@@ -146,11 +163,14 @@ const parseCorsAllowlist = () => {
 };
 
 const resolveRepoRoot = () => {
-  const cwd = process.cwd();
-  if (fs.existsSync(path.join(cwd, 'contracts'))) return cwd;
-  const parent = path.resolve(cwd, '..');
-  if (fs.existsSync(path.join(parent, 'contracts'))) return parent;
-  return cwd;
+  let current = process.cwd();
+  for (let depth = 0; depth < 6; depth += 1) {
+    if (fs.existsSync(path.join(current, 'contracts'))) return current;
+    const parent = path.resolve(current, '..');
+    if (parent === current) break;
+    current = parent;
+  }
+  return process.cwd();
 };
 
 const repoRoot = resolveRepoRoot();
@@ -361,7 +381,10 @@ type RpcRegistryChain = {
   network?: string;
   rollup?: { parentChainId?: number };
   endpoints?: RpcRegistryEntry[];
-  rpc?: { http?: string[]; ws?: string[] };
+  rpc?: { http?: string[]; ws?: string[] } | string;
+  ws?: string;
+  rpcUrls?: string[];
+  wsUrls?: string[];
 };
 
 type RpcRegistryResponse = {
@@ -510,18 +533,6 @@ const normalizeRpcEndpoint = (entry: RpcRegistryEntry, source: string) => {
   };
 };
 
-const getTargetChainIds = () => {
-  const ids = new Set<string>();
-  ids.add('14000101');
-  ids.add('901');
-  ids.add('903');
-  if (env.CHAIN_ID) ids.add(env.CHAIN_ID);
-  if (process.env.GHOSTCHAIN_L1_CHAIN_ID) ids.add(process.env.GHOSTCHAIN_L1_CHAIN_ID);
-  if (process.env.GHOSTL2_CHAIN_ID) ids.add(process.env.GHOSTL2_CHAIN_ID);
-  if (process.env.GHOSTL3_CHAIN_ID) ids.add(process.env.GHOSTL3_CHAIN_ID);
-  return Array.from(ids);
-};
-
 const fetchRegistryEndpoints = async () => {
   const registryUrl = env.RPC_REGISTRY_URL || 'https://rpc.ghostchain.cloud/v1/endpoints';
   const res = await fetch(registryUrl);
@@ -541,44 +552,51 @@ const fetchRegistryEndpoints = async () => {
   const chainIds = new Set<string>();
   chains.forEach((chain) => {
     chainIds.add(String(chain.chainId));
-    if ((chain as { rpc?: { http?: string[]; ws?: string[] } }).rpc) {
-      const rpc = (chain as { rpc?: { http?: string[]; ws?: string[] } }).rpc || {};
-      (rpc.http || []).forEach((url) => {
-        endpoints.push({
-          url,
-          protocol: 'http',
-          chainId: chain.chainId,
-          name: chain.chainName || chain.name,
-          chain: {
-            chainId: chain.chainId,
-            name: chain.chainName || chain.name,
-            chainKey: chain.chainKey,
-            layer: chain.layer,
-            chainType: chain.chainType,
-            network: chain.network,
-            parentChainId: chain.rollup?.parentChainId
-          }
-        });
-      });
-      (rpc.ws || []).forEach((url) => {
-        endpoints.push({
-          url,
-          protocol: 'ws',
-          chainId: chain.chainId,
-          name: chain.chainName || chain.name,
-          chain: {
-            chainId: chain.chainId,
-            name: chain.chainName || chain.name,
-            chainKey: chain.chainKey,
-            layer: chain.layer,
-            chainType: chain.chainType,
-            network: chain.network,
-            parentChainId: chain.rollup?.parentChainId
-          }
-        });
-      });
-      return;
+    const rpcUrls: string[] = [];
+    const wsUrls: string[] = [];
+    const rpc = chain.rpc as { http?: string[]; ws?: string[] } | string | undefined;
+    if (typeof rpc === 'string' && rpc) rpcUrls.push(rpc);
+    if (typeof chain.ws === 'string' && chain.ws) wsUrls.push(chain.ws);
+    if (Array.isArray(chain.rpcUrls)) rpcUrls.push(...chain.rpcUrls);
+    if (Array.isArray(chain.wsUrls)) wsUrls.push(...chain.wsUrls);
+    if (rpc && typeof rpc !== 'string') {
+      if (Array.isArray(rpc.http)) rpcUrls.push(...rpc.http);
+      if (Array.isArray(rpc.ws)) wsUrls.push(...rpc.ws);
     }
+    Array.from(new Set(rpcUrls.filter(Boolean))).forEach((url) => {
+      endpoints.push({
+        url,
+        protocol: 'http',
+        chainId: chain.chainId,
+        name: chain.chainName || chain.name,
+        chain: {
+          chainId: chain.chainId,
+          name: chain.chainName || chain.name,
+          chainKey: chain.chainKey,
+          layer: chain.layer,
+          chainType: chain.chainType,
+          network: chain.network,
+          parentChainId: chain.rollup?.parentChainId
+        }
+      });
+    });
+    Array.from(new Set(wsUrls.filter(Boolean))).forEach((url) => {
+      endpoints.push({
+        url,
+        protocol: 'ws',
+        chainId: chain.chainId,
+        name: chain.chainName || chain.name,
+        chain: {
+          chainId: chain.chainId,
+          name: chain.chainName || chain.name,
+          chainKey: chain.chainKey,
+          layer: chain.layer,
+          chainType: chain.chainType,
+          network: chain.network,
+          parentChainId: chain.rollup?.parentChainId
+        }
+      });
+    });
     (chain.endpoints || []).forEach((endpoint) => {
       endpoints.push({
         ...endpoint,
@@ -617,38 +635,6 @@ const fetchRegistryEndpoints = async () => {
   return { endpoints: merged, chainIds: Array.from(chainIds) };
 };
 
-const fetchPublicChainEndpoints = async (chainIds: string[]) => {
-  const res = await fetch('https://chainid.network/chains.json');
-  if (!res.ok) return [] as unknown[];
-  const chains = (await res.json()) as {
-    chainId: number;
-    name: string;
-    rpc: string[];
-  }[];
-  const chainMap = new Map<string, { chainId: number; name: string; rpc: string[] }>();
-  chains.forEach((chain) => chainMap.set(String(chain.chainId), chain));
-  const endpoints: RpcRegistryEntry[] = [];
-  chainIds.forEach((id) => {
-    const chain = chainMap.get(id);
-    if (!chain) return;
-    chain.rpc
-      .filter((rpc) => rpc.startsWith('http'))
-      .slice(0, 2)
-      .forEach((rpcUrl) => {
-        endpoints.push({
-          url: rpcUrl,
-          chainId: chain.chainId,
-          name: chain.name,
-          type: 'public',
-          status: 'degraded'
-        });
-      });
-  });
-  return endpoints
-    .map((entry) => normalizeRpcEndpoint(entry, 'public'))
-    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
-};
-
 const layerForChainId = (chainId?: string) => {
   if (!chainId) return undefined;
   if (chainId === (process.env.GHOSTCHAIN_L1_CHAIN_ID || '14000101')) return 'L1';
@@ -663,83 +649,20 @@ const getRpcEndpoints = async () => {
     return rpcEndpointCache.endpoints;
   }
   const ttl = 5 * 60 * 1000 + Math.floor(Math.random() * 10 * 60 * 1000);
-  const targetChainIds = getTargetChainIds();
-  let registryEndpoints: Array<NonNullable<ReturnType<typeof normalizeRpcEndpoint>>> = [];
-  let registryChainIds: string[] = [];
+  let endpoints: Array<NonNullable<ReturnType<typeof normalizeRpcEndpoint>>> = [];
   try {
     const registry = (await withTimeout(fetchRegistryEndpoints(), 5000)) as {
       endpoints: Array<NonNullable<ReturnType<typeof normalizeRpcEndpoint>>>;
       chainIds: string[];
     };
-    registryEndpoints = registry.endpoints;
-    registryChainIds = registry.chainIds;
+    endpoints = registry.endpoints;
   } catch {
-    registryEndpoints = [];
+    endpoints = [];
   }
-  const chainIds = Array.from(new Set([...targetChainIds, ...registryChainIds]));
-  const registryByChain = new Map<string, number>();
-  registryEndpoints.forEach((endpoint) => {
-    if (endpoint?.chainId) {
-      registryByChain.set(endpoint.chainId, (registryByChain.get(endpoint.chainId) || 0) + 1);
-    }
-  });
-  const missingChainIds = chainIds.filter((id) => !registryByChain.get(id));
-  let publicEndpoints: Array<NonNullable<ReturnType<typeof normalizeRpcEndpoint>>> = [];
-  if (missingChainIds.length) {
-    try {
-      publicEndpoints = (await withTimeout(fetchPublicChainEndpoints(missingChainIds), 5000)) as Array<
-        NonNullable<ReturnType<typeof normalizeRpcEndpoint>>
-      >;
-    } catch {
-      publicEndpoints = [];
-    }
-  }
-  let endpoints = [...registryEndpoints, ...publicEndpoints].filter(Boolean) as Array<
-    NonNullable<ReturnType<typeof normalizeRpcEndpoint>>
-  >;
-  endpoints = endpoints.map((endpoint) => ({
+  endpoints = endpoints.filter(Boolean).map((endpoint) => ({
     ...endpoint,
     layer: endpoint?.layer || layerForChainId(endpoint?.chainId)
   }));
-  const existingChains = new Set(endpoints.map((endpoint) => endpoint?.chainId).filter(Boolean) as string[]);
-  const fallbackByChain: Record<string, { name: string; url: string }> = {
-    [process.env.GHOSTCHAIN_L1_CHAIN_ID || '14000101']: {
-      name: 'GhostChain L1',
-      url: env.RPC_L1 || 'http://localhost:18545'
-    },
-    [process.env.GHOSTL2_CHAIN_ID || env.CHAIN_ID || '901']: {
-      name: 'GhostL2',
-      url: env.RPC_L2 || servicesBase.explorerRpc
-    },
-    [process.env.GHOSTL3_CHAIN_ID || '903']: {
-      name: 'GhostL3',
-      url: env.RPC_L3 || 'http://localhost:39545'
-    }
-  };
-  chainIds.forEach((id) => {
-    if (existingChains.has(id)) return;
-    const fallback = fallbackByChain[id];
-    if (!fallback || !fallback.url) return;
-    endpoints.push({
-      id: crypto.createHash('sha256').update(`fallback-${id}-${fallback.url}`).digest('hex').slice(0, 12),
-      chainId: id,
-      chainKey: undefined,
-      chainName: fallback.name,
-      layer: id === (process.env.GHOSTCHAIN_L1_CHAIN_ID || '14000101') ? 'L1' : id === (process.env.GHOSTL2_CHAIN_ID || env.CHAIN_ID || '901') ? 'L2' : 'L3',
-      chainType: undefined,
-      network: undefined,
-      url: fallback.url,
-      type: 'public',
-      protocol: 'http',
-      auth: undefined,
-      region: 'local',
-      priority: undefined,
-      features: undefined,
-      latencyMs: undefined,
-      status: 'healthy',
-      lastCheckedAt: new Date().toISOString()
-    });
-  });
 
   const probeCandidates = endpoints.filter(
     (endpoint) => endpoint.url.startsWith('http') && endpoint.protocol !== 'ws'
@@ -772,23 +695,339 @@ const servicesBase = {
   governance: env.GOVERNANCE_SERVICE_URL,
   validators: env.VALIDATOR_SERVICE_URL,
   devops: env.DEVOPS_SERVICE_URL,
-  rpc: env.RPC_SERVICE_URL,
+  rpc: env.RPC_REGISTRY_URL,
   usage: env.USAGE_SERVICE_URL,
   webhooks: env.WEBHOOKS_SERVICE_URL,
   ai: env.AI_SERVICE_URL,
   forecasting: env.FORECASTING_SERVICE_URL,
   explainability: env.EXPLAINABILITY_SERVICE_URL,
-  explorerRpc: env.EXPLORER_RPC_URL || env.RPC_L2 || 'http://localhost:18547',
   swap: env.SWAP_SERVICE_URL
 };
 const ghostchainConfig = [
-  { id: 'l1' as const, label: 'GhostChain L1', rpc: env.RPC_L1 || 'http://localhost:18545' },
-  { id: 'l2' as const, label: 'GhostL2', rpc: env.RPC_L2 || servicesBase.explorerRpc },
-  { id: 'l3' as const, label: 'GhostL3', rpc: env.RPC_L3 || 'http://localhost:39545' }
+  { id: 'l1' as const, label: 'GhostChain L1' },
+  { id: 'l2' as const, label: 'GhostL2' },
+  { id: 'l3' as const, label: 'GhostL3' }
 ];
 const contractMetadata = {
   upgradeabilityQuery: env.CONTRACT_UPGRADEABILITY_QUERY || 'op_contract_upgradeability',
   pauseQuery: env.CONTRACT_PAUSE_QUERY || 'op_contract_paused'
+};
+const CONTRACT_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const contractRegistrationSchema = z.object({
+  name: z.string().min(1),
+  address: z
+    .string()
+    .regex(CONTRACT_ADDRESS_REGEX, { message: 'invalid_address' })
+    .refine((value) => value.toLowerCase() !== ZERO_ADDRESS, { message: 'zero_address' }),
+  chainId: z.coerce.number().int().positive(),
+  layer: z.enum(['l1', 'l2', 'l3']),
+  abi: z.array(z.unknown()).min(1),
+  abiHash: z.string().min(1),
+  version: z.string().min(1),
+  deployedAt: z.string().optional()
+});
+
+const logContractEvent = (level: 'info' | 'warn' | 'error', event: string, meta: Record<string, unknown>) => {
+  console.log(JSON.stringify({ ts: new Date().toISOString(), level, event, ...meta }));
+};
+
+type AbiResult =
+  | { ok: true; abi: unknown[] }
+  | { ok: false; error: 'abi_parse_failed' | 'abi_not_array' | 'abi_invalid' };
+
+const resolveAbi = (value: unknown): AbiResult => {
+  if (Array.isArray(value)) return { ok: true, abi: value };
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return { ok: true, abi: parsed };
+    } catch {
+      return { ok: false, error: 'abi_parse_failed' };
+    }
+    return { ok: false, error: 'abi_not_array' };
+  }
+  if (value === undefined || value === null) return { ok: true, abi: [] };
+  return { ok: false, error: 'abi_invalid' };
+};
+
+const normalizeContractEntry = (entry: Record<string, unknown>, index: number) => {
+  const layerRaw = String(entry.layer || entry.chain || 'l2').toLowerCase();
+  const layer = (layerRaw === 'l1' || layerRaw === 'l2' || layerRaw === 'l3' ? layerRaw : 'l2') as
+    | 'l1'
+    | 'l2'
+    | 'l3';
+  const abiResult = resolveAbi(entry.abi);
+  if (!abiResult.ok) {
+    return { ok: false as const, error: { index, reason: abiResult.error } };
+  }
+  const abi = abiResult.abi || [];
+  const abiHash =
+    typeof entry.abiHash === 'string' && entry.abiHash.trim().length > 0
+      ? entry.abiHash.trim()
+      : abi.length > 0
+        ? crypto.createHash('sha256').update(JSON.stringify(abi)).digest('hex')
+        : '';
+  const normalized = {
+    name: String(entry.name || entry.id || entry.address || '').trim(),
+    address: String(entry.address || '').trim(),
+    chainId: entry.chainId ?? entry.chain ?? 0,
+    layer,
+    abi,
+    abiHash,
+    version: String(entry.version || '0.0.1'),
+    deployedAt: entry.deployedAt ? String(entry.deployedAt) : undefined
+  };
+  const parsed = contractRegistrationSchema.safeParse(normalized);
+  if (!parsed.success) {
+    return {
+      ok: false as const,
+      error: { index, reason: 'validation_failed', details: parsed.error.flatten().fieldErrors }
+    };
+  }
+  return { ok: true as const, value: parsed.data };
+};
+
+const verifyContractsStored = (stored: Array<{ address: string; chainId: number }>, expected: Array<{ address: string; chainId: number }>) => {
+  const storedSet = new Set(stored.map((entry) => `${entry.address.toLowerCase()}-${entry.chainId}`));
+  const missing = expected.filter((entry) => !storedSet.has(`${entry.address.toLowerCase()}-${entry.chainId}`));
+  return { ok: missing.length === 0, missing };
+};
+
+type ContractSeedSource = { envKey: string; name: string; layer: 'l1' | 'l2' | 'l3' };
+
+const CONTRACT_SEED_SOURCES: ContractSeedSource[] = [
+  { envKey: 'BRIDGE_L2L3_ADDRESS', name: 'L2L3Bridge', layer: 'l2' },
+  { envKey: 'BRIDGE_ADDRESS', name: 'L2L3Bridge', layer: 'l2' },
+  { envKey: 'GUARD_POLICY_ADDRESS', name: 'GuardPolicy', layer: 'l2' },
+  { envKey: 'L2_TOKEN_ADDRESS', name: 'GhostTokenL2', layer: 'l2' },
+  { envKey: 'L1_ROLLUP_L2_ADDRESS', name: 'OptimisticRollup', layer: 'l1' },
+  { envKey: 'L2_ROLLUP_L3_ADDRESS', name: 'OptimisticRollup', layer: 'l2' },
+  { envKey: 'L3_INBOX_ADDRESS', name: 'L3Inbox', layer: 'l3' },
+  { envKey: 'L3_TOKEN_FACTORY_ADDRESS', name: 'L3BridgedTokenFactory', layer: 'l3' },
+  { envKey: 'L3_TOKEN_ADDRESS', name: 'L3BridgedToken', layer: 'l3' }
+];
+
+const artifactPathCache = new Map<string, string | null>();
+
+const parseEnvFile = (filePath: string) => {
+  if (!fs.existsSync(filePath)) return {};
+  const output: Record<string, string> = {};
+  const lines = fs.readFileSync(filePath, 'utf8').split(/\r?\n/);
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) return;
+    const idx = trimmed.indexOf('=');
+    if (idx === -1) return;
+    const key = trimmed.slice(0, idx).trim();
+    let value = trimmed.slice(idx + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    output[key] = value;
+  });
+  return output;
+};
+
+const collectSeedEnv = (...sources: Array<Record<string, string | undefined>>) => {
+  const result: Record<string, string> = {};
+  sources.forEach((source) => {
+    Object.entries(source).forEach(([key, value]) => {
+      if (typeof value === 'string' && value.length > 0) {
+        result[key] = value;
+      }
+    });
+  });
+  return result;
+};
+
+const loadSeedEnv = () => {
+  const stackEnvPath = path.join(repoRoot, 'services', 'stack.env');
+  const webEnvPath = path.join(repoRoot, 'apps', 'web', '.env.local');
+  return collectSeedEnv(parseEnvFile(stackEnvPath), parseEnvFile(webEnvPath), process.env);
+};
+
+const parseChainId = (value?: string) => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const numeric = trimmed.startsWith('0x') ? Number.parseInt(trimmed, 16) : Number(trimmed);
+  if (!Number.isFinite(numeric)) return null;
+  return numeric;
+};
+
+const resolveSeedChainId = (layer: 'l1' | 'l2' | 'l3', seedEnv: Record<string, string>) => {
+  const candidates =
+    layer === 'l1'
+      ? [seedEnv.NEXT_PUBLIC_L1_CHAIN_ID, seedEnv.L1_CHAIN_ID, seedEnv.CHAIN_ID_L1]
+      : layer === 'l2'
+        ? [
+            seedEnv.NEXT_PUBLIC_L2_CHAIN_ID,
+            seedEnv.L2_CHAIN_ID,
+            seedEnv.CHAIN_ID_L2,
+            seedEnv.CHAIN_ID,
+            env.CHAIN_ID
+          ]
+        : [seedEnv.NEXT_PUBLIC_L3_CHAIN_ID, seedEnv.L3_CHAIN_ID, seedEnv.CHAIN_ID_L3];
+  for (const candidate of candidates) {
+    const parsed = parseChainId(candidate);
+    if (parsed) return parsed;
+  }
+  return null;
+};
+
+const findArtifactPath = (contractName: string) => {
+  if (artifactPathCache.has(contractName)) return artifactPathCache.get(contractName) || null;
+  const artifactsRoot = path.join(contractsRoot, 'artifacts', 'src');
+  if (!fs.existsSync(artifactsRoot)) {
+    artifactPathCache.set(contractName, null);
+    return null;
+  }
+  const stack = [artifactsRoot];
+  while (stack.length) {
+    const dir = stack.pop();
+    if (!dir) continue;
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(fullPath);
+        continue;
+      }
+      if (entry.isFile() && entry.name === `${contractName}.json`) {
+        artifactPathCache.set(contractName, fullPath);
+        return fullPath;
+      }
+    }
+  }
+  artifactPathCache.set(contractName, null);
+  return null;
+};
+
+const readArtifactAbi = (contractName: string) => {
+  const artifactPath = findArtifactPath(contractName);
+  if (!artifactPath) return null;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(artifactPath, 'utf8')) as { abi?: unknown };
+    if (Array.isArray(parsed.abi)) return parsed.abi as unknown[];
+  } catch {
+    return null;
+  }
+  return null;
+};
+
+const loadDeploymentContracts = () => {
+  const entries: Array<Record<string, unknown>> = [];
+  const errors: Array<Record<string, unknown>> = [];
+  if (!fs.existsSync(contractsDeploymentsDir)) {
+    return { entries, errors };
+  }
+  const networks = fs.readdirSync(contractsDeploymentsDir, { withFileTypes: true }) as fs.Dirent[];
+  networks.forEach((entry) => {
+    if (!entry.isDirectory()) return;
+    const dir = path.join(contractsDeploymentsDir, entry.name);
+    fs.readdirSync(dir).forEach((file) => {
+      if (!file.endsWith('.json')) return;
+      const layer = file.replace('.json', '');
+      try {
+        const data = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8')) as {
+          contracts?: Array<Record<string, unknown>>;
+        };
+        if (!Array.isArray(data.contracts)) return;
+        data.contracts.forEach((contract) => {
+          if (!contract.layer && (layer === 'l1' || layer === 'l2' || layer === 'l3')) {
+            entries.push({ ...contract, layer });
+          } else {
+            entries.push(contract);
+          }
+        });
+      } catch (err) {
+        errors.push({
+          source: file,
+          error: err instanceof Error ? err.message : 'invalid_json'
+        });
+      }
+    });
+  });
+  return { entries, errors };
+};
+
+const buildSeedContractsFromDeployments = () => {
+  const { entries, errors } = loadDeploymentContracts();
+  const normalized: Array<z.infer<typeof contractRegistrationSchema>> = [];
+  const seen = new Set<string>();
+  entries.forEach((entry, index) => {
+    const result = normalizeContractEntry(entry, index);
+    if (!result.ok) {
+      errors.push(result.error);
+      return;
+    }
+    const key = `${result.value.address.toLowerCase()}-${result.value.chainId}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    normalized.push(result.value);
+  });
+  return { contracts: normalized, errors };
+};
+
+const buildSeedContractsFromEnv = () => {
+  const seedEnv = loadSeedEnv();
+  const version = seedEnv.CONTRACTS_VERSION || '0.0.1';
+  const contracts: Array<z.infer<typeof contractRegistrationSchema>> = [];
+  const errors: Array<Record<string, unknown>> = [];
+  const seen = new Set<string>();
+  let index = 0;
+  CONTRACT_SEED_SOURCES.forEach((source) => {
+    const address = seedEnv[source.envKey];
+    if (!address) return;
+    const chainId = resolveSeedChainId(source.layer, seedEnv);
+    if (!chainId) {
+      errors.push({ envKey: source.envKey, reason: 'chain_id_missing' });
+      return;
+    }
+    const abi = readArtifactAbi(source.name);
+    if (!abi) {
+      errors.push({ envKey: source.envKey, reason: 'abi_missing', contract: source.name });
+      return;
+    }
+    const abiHash = crypto.createHash('sha256').update(JSON.stringify(abi)).digest('hex');
+    const result = normalizeContractEntry(
+      {
+        name: source.name,
+        address,
+        chainId,
+        layer: source.layer,
+        abi,
+        abiHash,
+        version
+      },
+      index++
+    );
+    if (!result.ok) {
+      errors.push(result.error);
+      return;
+    }
+    const key = `${result.value.address.toLowerCase()}-${result.value.chainId}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    contracts.push(result.value);
+  });
+  return { contracts, errors };
+};
+
+const seedContractsRegistry = () => {
+  const fromDeployments = buildSeedContractsFromDeployments();
+  const fromEnv = buildSeedContractsFromEnv();
+  const contracts = [...fromDeployments.contracts, ...fromEnv.contracts];
+  const errors = [...fromDeployments.errors, ...fromEnv.errors];
+  if (!contracts.length) {
+    return { ok: false as const, error: 'no_seed_contracts', errors };
+  }
+  const stored = registerContracts(contracts);
+  return { ok: true as const, contracts, stored, errors };
 };
 const notificationChannels: NotificationChannel[] = [];
 if (env.SLACK_WEBHOOK_URL) {
@@ -1027,11 +1266,36 @@ const saveMarketData = (data: { tokens: MarketToken[] }) => {
 };
 let marketData = loadMarketData();
 
-const sendRawTx = async (to: string, data: string) => {
-  if (!env.CONTRACT_RPC_URL || !env.CONTRACT_ADMIN_KEY) {
-    throw new Error('contract tx not configured');
+const resolveContractProvider = () => {
+  const layer = env.CONTRACT_CHAIN === 'l1' ? 'L1' : env.CONTRACT_CHAIN === 'l3' ? 'L3' : 'L2';
+  const pool = ghostWalletRpcManager.getPoolSnapshot();
+  const endpoints = pool[layer].filter((endpoint) => endpoint.protocol === 'http');
+  if (!endpoints.length) {
+    throw new Error('contract_rpc_unavailable');
   }
-  const provider = new JsonRpcProvider(env.CONTRACT_RPC_URL);
+  const allowed = new Set(endpoints.map((endpoint) => endpoint.url));
+  if (env.CONTRACT_RPC_URL && !allowed.has(env.CONTRACT_RPC_URL)) {
+    throw new Error('contract_rpc_not_in_registry');
+  }
+  const order = { OK: 0, DEGRADED: 1, DOWN: 2 } as const;
+  const preferred = [...endpoints].sort((a, b) => order[a.status] - order[b.status])[0];
+  const rpcUrl = env.CONTRACT_RPC_URL || preferred.url;
+  return new JsonRpcProvider(rpcUrl);
+};
+
+const tryResolveContractProvider = () => {
+  try {
+    return resolveContractProvider();
+  } catch {
+    return null;
+  }
+};
+
+const sendRawTx = async (to: string, data: string) => {
+  if (!env.CONTRACT_ADMIN_KEY) {
+    throw new Error('contract admin key not configured');
+  }
+  const provider = resolveContractProvider();
   const wallet = new Wallet(env.CONTRACT_ADMIN_KEY, provider);
   const tx = await wallet.sendTransaction({ to, data });
   return tx.hash;
@@ -1039,7 +1303,7 @@ const sendRawTx = async (to: string, data: string) => {
 
 const sendContractTx = async (method: 'pause' | 'unpause', target = env.CONTRACT_TARGET_ADDRESS) => {
   if (!target) throw new Error('contract target not configured');
-  const provider = env.CONTRACT_RPC_URL ? new JsonRpcProvider(env.CONTRACT_RPC_URL) : undefined;
+  const provider = tryResolveContractProvider();
   if (provider) {
     try {
       const current = await provider.call({ to: target, data: pausableInterface.encodeFunctionData('paused') });
@@ -1084,9 +1348,9 @@ const executeUpgradeAction = async (action?: { type: string; payload?: Record<st
       const impl = payload.implementation as string;
       const admin = env.CONTRACT_PROXY_ADMIN_ADDRESS || proxy;
       if (!proxy || !impl) throw new Error('proxy/implementation required');
-      if (env.CONTRACT_RPC_URL) {
+      const provider = tryResolveContractProvider();
+      if (provider) {
         try {
-          const provider = new JsonRpcProvider(env.CONTRACT_RPC_URL);
           const slot = '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc';
           const storageReader = provider as unknown as {
             getStorageAt?: (address: string, slot: string) => Promise<string>;
@@ -1113,9 +1377,9 @@ const executeUpgradeAction = async (action?: { type: string; payload?: Record<st
       const target = (payload.address as string) || env.CONTRACT_TARGET_ADDRESS;
       const newOwner = payload.newOwner as string;
       if (!target || !newOwner) throw new Error('address/newOwner required');
-      if (env.CONTRACT_RPC_URL) {
+      const provider = tryResolveContractProvider();
+      if (provider) {
         try {
-          const provider = new JsonRpcProvider(env.CONTRACT_RPC_URL);
           const current = await provider.call({ to: target, data: ownableInterface.encodeFunctionData('owner') });
           const decoded = ownableInterface.decodeFunctionResult('owner', current)[0] as string;
           if (decoded.toLowerCase() === newOwner.toLowerCase()) return undefined;
@@ -1130,9 +1394,9 @@ const executeUpgradeAction = async (action?: { type: string; payload?: Record<st
       const target = (payload.address as string) || env.CONTRACT_TARGET_ADDRESS;
       const guardian = payload.guardian as string;
       if (!target || !guardian) throw new Error('address/guardian required');
-      if (env.CONTRACT_RPC_URL) {
+      const provider = tryResolveContractProvider();
+      if (provider) {
         try {
-          const provider = new JsonRpcProvider(env.CONTRACT_RPC_URL);
           const current = await provider.call({ to: target, data: guardianInterface.encodeFunctionData('guardian') });
           const decoded = guardianInterface.decodeFunctionResult('guardian', current)[0] as string;
           if (decoded.toLowerCase() === guardian.toLowerCase()) return undefined;
@@ -1218,6 +1482,69 @@ const fetchOk = async (url: string, timeoutMs = 2000) => {
   } finally {
     clearTimeout(timer);
   }
+};
+
+const ghostApiError = (res: express.Response, status: number, service: string, hint: string, error = 'SERVICE_UNAVAILABLE') => {
+  res.status(status).json({ error, service, hint });
+};
+
+const ghostApiSend = <T>(
+  res: express.Response,
+  schema: z.ZodType<T>,
+  payload: unknown,
+  service = 'ghost-api'
+) => {
+  const parsed = schema.safeParse(payload);
+  if (!parsed.success) {
+    ghostApiError(res, 502, service, parsed.error.message, 'INVALID_UPSTREAM');
+    return;
+  }
+  res.json(parsed.data);
+};
+
+const ghostApiFetch = async (url: string, service: string) => {
+  try {
+    const upstream = await fetch(url);
+    if (!upstream.ok) {
+      return {
+        ok: false as const,
+        status: upstream.status,
+        error: { error: 'SERVICE_UNAVAILABLE', service, hint: `status_${upstream.status}` }
+      };
+    }
+    const data = await upstream.json().catch(() => ({}));
+    return { ok: true as const, data };
+  } catch (err) {
+    return {
+      ok: false as const,
+      status: 502,
+      error: {
+        error: 'SERVICE_UNAVAILABLE',
+        service,
+        hint: err instanceof Error ? err.message : 'fetch_failed'
+      }
+    };
+  }
+};
+
+const createRateLimiter = (options: { windowMs: number; max: number }) => {
+  const hits = new Map<string, { count: number; resetAt: number }>();
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const key = req.session?.userId || req.ip || 'anonymous';
+    const now = Date.now();
+    const current = hits.get(key);
+    if (!current || current.resetAt <= now) {
+      hits.set(key, { count: 1, resetAt: now + options.windowMs });
+      next();
+      return;
+    }
+    current.count += 1;
+    if (current.count > options.max) {
+      ghostApiError(res, 429, 'ghost-api', `limit_${options.max}_per_${options.windowMs}ms`, 'RATE_LIMITED');
+      return;
+    }
+    next();
+  };
 };
 
 const allowAll: RequestHandler = (_req, _res, next) => next();
@@ -1354,31 +1681,511 @@ identityServicesPromise.then(async (identity) => {
   app.use(['/v1/wallets', '/wallets'], buildWalletAdminRouter(walletService, ghostWalletService));
   app.use(['/v1', '/'], buildTokenRouter(tokenService, walletService));
   app.use(['/v1', '/'], buildNftRouter(nftStore, ghostWalletService, walletService));
+
+  const sanitizeWallet = (wallet: WalletRecord) => {
+    const {
+      encryptedKey: _encryptedKey,
+      encryptedMnemonic: _encryptedMnemonic,
+      derivationPath: _derivationPath,
+      keyType: _keyType,
+      ...safe
+    } = wallet;
+    return safe;
+  };
+
+  const chainGuard = env.PUBLIC_CHAIN ? allowAll : requirePermission('chain:read');
+  const explorerGuard = env.PUBLIC_EXPLORER ? allowAll : requirePermission('explorer:read');
+  const ghostApiLimiter = createRateLimiter({ windowMs: 60_000, max: 120 });
+
+  app.get(['/v1/chain', '/chain'], chainGuard, ghostApiLimiter, async (_req, res) => {
+    const registryEndpoints = await getRpcEndpoints().catch(() => []);
+    const registryByLayer: Record<'L1' | 'L2' | 'L3', typeof registryEndpoints> = {
+      L1: [],
+      L2: [],
+      L3: []
+    };
+    registryEndpoints.forEach((endpoint) => {
+      const layer = endpoint.layer;
+      if (layer === 'L1' || layer === 'L2' || layer === 'L3') {
+        registryByLayer[layer].push(endpoint);
+      }
+    });
+
+    const pool = ghostWalletRpcManager.getPoolSnapshot();
+    const order = { OK: 0, DEGRADED: 1, DOWN: 2 } as const;
+    const chains = ([
+      { id: 'l1', label: 'GhostChain L1', layer: 'L1' },
+      { id: 'l2', label: 'GhostL2', layer: 'L2' },
+      { id: 'l3', label: 'GhostL3', layer: 'L3' }
+    ] as const).map(async (chain) => {
+      const errors: string[] = [];
+      const endpoints = (pool[chain.layer] || []).filter((endpoint) => endpoint.protocol === 'http');
+      const preferred = [...endpoints].sort((a, b) => order[a.status] - order[b.status])[0];
+      const registry = registryByLayer[chain.layer]?.[0];
+      const info = registry
+        ? {
+            chainId: registry.chainId,
+            name: registry.chainName,
+            env: registry.network,
+            consensus: registry.chainType
+          }
+        : undefined;
+      if (!registry) errors.push('registry_metadata_missing');
+      if (!preferred) {
+        errors.push('rpc_unavailable');
+      }
+      let rpcSnapshot: { url?: string; chainId?: number; blockNumber?: number; gasPriceGwei?: number; peers?: number; status: 'ok' | 'error'; error?: string } =
+        { url: preferred?.url, status: 'error' };
+      if (preferred) {
+        try {
+          const provider = new JsonRpcProvider(preferred.url);
+          const [chainIdHex, blockHex, gasHex, peerHex] = await Promise.all([
+            provider.send('eth_chainId', []),
+            provider.send('eth_blockNumber', []),
+            provider.send('eth_gasPrice', []),
+            provider.send('net_peerCount', [])
+          ]);
+          const chainId = parseInt(chainIdHex as string, 16);
+          const blockNumber = parseInt(blockHex as string, 16);
+          const gasPrice = parseInt(gasHex as string, 16);
+          const peers = parseInt(peerHex as string, 16);
+          rpcSnapshot = {
+            url: preferred.url,
+            chainId: Number.isFinite(chainId) ? chainId : undefined,
+            blockNumber: Number.isFinite(blockNumber) ? blockNumber : undefined,
+            gasPriceGwei: Number.isFinite(gasPrice) ? Math.round((gasPrice / 1e9) * 100) / 100 : undefined,
+            peers: Number.isFinite(peers) ? peers : undefined,
+            status: 'ok'
+          };
+        } catch (err) {
+          rpcSnapshot = {
+            url: preferred.url,
+            status: 'error',
+            error: err instanceof Error ? err.message : 'rpc_call_failed'
+          };
+          errors.push('rpc_probe_failed');
+        }
+      }
+
+      let telemetry;
+      let peers;
+      let blockTimeMs;
+      let finalityLag;
+      let reorgs;
+      if (chain.id === 'l2') {
+        try {
+          const [participation, latency, health, peerList, topology, blockTime, lag, reorgEvents] = await Promise.all([
+            liveServices.chain.consensusTelemetryService.getParticipationRate(),
+            liveServices.chain.consensusTelemetryService.getLatencyMetrics(),
+            liveServices.chain.consensusTelemetryService.getHealthSummary(),
+            liveServices.chain.peerGraphService.listPeers(),
+            liveServices.chain.peerGraphService.getTopology(),
+            liveServices.chain.chainStatusService.getBlockTimeMs(),
+            liveServices.chain.chainStatusService.getFinalityLag(),
+            liveServices.chain.chainStatusService.getReorgEvents(5)
+          ]);
+          telemetry = { participation, latency, health };
+          peers = { peers: peerList, topology };
+          blockTimeMs = blockTime;
+          finalityLag = lag;
+          reorgs = reorgEvents;
+        } catch (err) {
+          errors.push(err instanceof Error ? err.message : 'telemetry_failed');
+        }
+      } else {
+        errors.push('telemetry_unavailable');
+      }
+
+      return {
+        id: chain.id,
+        label: chain.label,
+        info,
+        blockTimeMs,
+        finalityLag,
+        reorgs,
+        telemetry,
+        peers,
+        rpc: rpcSnapshot,
+        errors: errors.length ? errors : undefined
+      };
+    });
+
+    const resolved = await Promise.all(chains);
+    ghostApiSend(res, ChainOverviewSchema, { chains: resolved }, 'chain');
+  });
+
+  app.get(['/v1/wallet', '/wallet'], requirePermission('wallets:read'), ghostApiLimiter, async (_req, res) => {
+    try {
+      const wallets = await walletService.list();
+      ghostApiSend(res, WalletsResponseSchema, { wallets: wallets.map((wallet) => sanitizeWallet(wallet)) }, 'wallets');
+    } catch (err) {
+      ghostApiError(res, 502, 'wallets', err instanceof Error ? err.message : 'wallets_list_failed');
+    }
+  });
+
+  app.get(['/v1/validators', '/validators'], requirePermission('validator:read'), ghostApiLimiter, async (_req, res) => {
+    if (!servicesBase.validators) {
+      ghostApiError(res, 503, 'validator-service', 'missing');
+      return;
+    }
+    const validatorsRes = await ghostApiFetch(`${servicesBase.validators}/validators`, 'validator-service');
+    if (!validatorsRes.ok) {
+      res.status(validatorsRes.status).json(validatorsRes.error);
+      return;
+    }
+    const validators = Array.isArray((validatorsRes.data as { validators?: unknown }).validators)
+      ? ((validatorsRes.data as { validators?: unknown[] }).validators as unknown[])
+      : [];
+    ghostApiSend(res, ValidatorsResponseSchema, { validators }, 'validator-service');
+  });
+
+  app.get(['/v1/bridge', '/bridge'], requirePermission('bridge:read'), ghostApiLimiter, async (_req, res) => {
+    if (!servicesBase.bridge || !servicesBase.transfers || !servicesBase.liquidity) {
+      ghostApiError(res, 503, 'bridge-service', 'missing');
+      return;
+    }
+    const [bridgesRes, transfersRes, poolsRes, signaturesRes] = await Promise.all([
+      ghostApiFetch(`${servicesBase.bridge}/bridges`, 'bridge-service'),
+      ghostApiFetch(`${servicesBase.transfers}/transfers`, 'transfer-lifecycle-service'),
+      ghostApiFetch(`${servicesBase.liquidity}/liquidity`, 'liquidity-service'),
+      ghostApiFetch(`${servicesBase.bridge}/bridges/signatures`, 'bridge-service')
+    ]);
+    const error = [bridgesRes, transfersRes, poolsRes, signaturesRes].find((entry) => !entry.ok);
+    if (error && !error.ok) {
+      res.status(error.status).json(error.error);
+      return;
+    }
+    const bridges = Array.isArray((bridgesRes.data as { bridges?: unknown }).bridges)
+      ? ((bridgesRes.data as { bridges?: unknown[] }).bridges as unknown[])
+      : [];
+    const transfers = Array.isArray((transfersRes.data as { transfers?: unknown }).transfers)
+      ? ((transfersRes.data as { transfers?: unknown[] }).transfers as unknown[])
+      : [];
+    const pools = Array.isArray((poolsRes.data as { pools?: unknown }).pools)
+      ? ((poolsRes.data as { pools?: unknown[] }).pools as unknown[])
+      : [];
+    const signatures = Array.isArray((signaturesRes.data as { signatures?: unknown }).signatures)
+      ? ((signaturesRes.data as { signatures?: unknown[] }).signatures as unknown[])
+      : [];
+    ghostApiSend(res, BridgeSummarySchema, { bridges, pools, transfers, signatures }, 'bridge-service');
+  });
+
+  app.get(['/v1/contracts', '/contracts'], requirePermission('contracts:read'), ghostApiLimiter, async (_req, res) => {
+    const correlationId = String(_req.correlationId || crypto.randomUUID());
+    const requestHeaders: Record<string, string> = { 'x-request-id': correlationId };
+    const registryRes = servicesBase.contracts
+      ? await ghostApiFetch(`${servicesBase.contracts}/contracts`, 'contract-registry-service')
+      : { ok: false as const, status: 503, error: { error: 'SERVICE_UNAVAILABLE', service: 'contract-registry-service', hint: 'missing' } };
+    if (!registryRes.ok) {
+      res.status(registryRes.status).json(registryRes.error);
+      return;
+    }
+    const riskRes = servicesBase.contractRisk
+      ? await ghostApiFetch(`${servicesBase.contractRisk}/risk`, 'contract-risk-service')
+      : { ok: true as const, data: { contracts: [] } };
+    if (!riskRes.ok) {
+      res.status(riskRes.status).json(riskRes.error);
+      return;
+    }
+    const registryContracts = Array.isArray((registryRes.data as { contracts?: unknown }).contracts)
+      ? ((registryRes.data as { contracts?: unknown[] }).contracts as Array<Record<string, unknown>>)
+      : [];
+    const risks = Array.isArray((riskRes.data as { contracts?: unknown }).contracts)
+      ? ((riskRes.data as { contracts?: unknown[] }).contracts as Array<Record<string, unknown>>)
+      : [];
+    const localRegistry = listRegisteredContracts();
+    const localAddressSet = new Set(localRegistry.map((entry) => entry.address.toLowerCase()));
+    const sourceContracts: Array<Record<string, unknown>> = [
+      ...registryContracts.filter((entry) => {
+        const address = typeof entry.address === 'string' ? entry.address.trim().toLowerCase() : '';
+        if (!address) return false;
+        return !localAddressSet.has(address);
+      }),
+      ...localRegistry.map((entry) => ({
+        id: entry.name,
+        name: entry.name,
+        address: entry.address,
+        registry: entry.address,
+        layer: entry.layer,
+        chainId: entry.chainId,
+        abi: entry.abi,
+        abiHash: entry.abiHash,
+        version: entry.version,
+        verified: true
+      }))
+    ];
+    const merged = sourceContracts.map((contract) => {
+      const address = typeof contract.address === 'string' ? contract.address : '';
+      const risk = risks.find((r) => (r.address as string | undefined)?.toLowerCase() === address.toLowerCase());
+      return {
+        address,
+        name: typeof contract.name === 'string' ? contract.name : undefined,
+        abi: contract.abi,
+        verified: Boolean(contract.verified),
+        proxyType: typeof contract.proxyType === 'string' ? contract.proxyType : undefined,
+        owner: typeof contract.owner === 'string' ? contract.owner : undefined,
+        layer: typeof contract.layer === 'string' ? contract.layer : undefined,
+        chainId: typeof contract.chainId === 'number' ? contract.chainId : undefined,
+        abiHash: typeof contract.abiHash === 'string' ? contract.abiHash : undefined,
+        version: typeof contract.version === 'string' ? contract.version : undefined,
+        risk
+      };
+    });
+    ghostApiSend(
+      res,
+      ContractsResponseSchema,
+      {
+        contracts: merged,
+        meta: {
+          registryCount: registryContracts.length,
+          localCount: localRegistry.length,
+          riskCount: risks.length
+        }
+      },
+      'contract-registry'
+    );
+  });
+
+  app.get(['/v1/tokenomics', '/tokenomics'], requirePermission('treasury:read'), ghostApiLimiter, async (_req, res) => {
+    if (!servicesBase.supply || !servicesBase.treasury || !servicesBase.feeModel || !servicesBase.payouts) {
+      ghostApiError(res, 503, 'tokenomics', 'missing');
+      return;
+    }
+    const [supplyRes, treasuryRes, feeModelRes, payoutsRes] = await Promise.all([
+      ghostApiFetch(`${servicesBase.supply}/supply`, 'supply-service'),
+      ghostApiFetch(`${servicesBase.treasury}/treasury`, 'treasury-service'),
+      ghostApiFetch(`${servicesBase.feeModel}/model`, 'fee-model-service'),
+      ghostApiFetch(`${servicesBase.payouts}/payouts`, 'payout-service')
+    ]);
+    const error = [supplyRes, treasuryRes, feeModelRes, payoutsRes].find((entry) => !entry.ok);
+    if (error && !error.ok) {
+      res.status(error.status).json(error.error);
+      return;
+    }
+    const supply = supplyRes.data as { supply?: string; emissions?: string };
+    const treasury = treasuryRes.data as { balance?: string };
+    const feeModel = feeModelRes.data as { baseFee?: string; targetGas?: string; mode?: string };
+    const payouts = Array.isArray((payoutsRes.data as { payouts?: unknown }).payouts)
+      ? ((payoutsRes.data as { payouts?: unknown[] }).payouts as unknown[])
+      : [];
+    const snapshots = [
+      {
+        total: supply.supply || '0',
+        circulating: supply.supply || '0',
+        burned: '0',
+        minted: supply.emissions || '0',
+        time: new Date().toISOString()
+      }
+    ];
+    ghostApiSend(res, TokenomicsSummarySchema, { snapshots, feeModel, payouts }, 'tokenomics');
+  });
+
+  app.get(['/v1/treasury', '/treasury'], requirePermission('treasury:read'), ghostApiLimiter, async (_req, res) => {
+    if (!servicesBase.treasury || !servicesBase.payouts) {
+      ghostApiError(res, 503, 'treasury-service', 'missing');
+      return;
+    }
+    const [treasuryRes, payoutsRes] = await Promise.all([
+      ghostApiFetch(`${servicesBase.treasury}/treasury`, 'treasury-service'),
+      ghostApiFetch(`${servicesBase.payouts}/payouts`, 'payout-service')
+    ]);
+    const error = [treasuryRes, payoutsRes].find((entry) => !entry.ok);
+    if (error && !error.ok) {
+      res.status(error.status).json(error.error);
+      return;
+    }
+    const balance = treasuryRes.data as { balance?: string };
+    const payouts = Array.isArray((payoutsRes.data as { payouts?: unknown }).payouts)
+      ? ((payoutsRes.data as { payouts?: unknown[] }).payouts as unknown[])
+      : [];
+    ghostApiSend(res, TreasurySummarySchema, { balance, proposals: treasuryProposals, payouts }, 'treasury-service');
+  });
+
+  app.get(['/v1/governance', '/governance'], requirePermission('governance:read'), ghostApiLimiter, async (_req, res) => {
+    if (!servicesBase.governance) {
+      ghostApiError(res, 503, 'governance-service', 'missing');
+      return;
+    }
+    const [proposalsRes, votesRes, queueRes, delegationsRes] = await Promise.all([
+      ghostApiFetch(`${servicesBase.governance}/proposals`, 'governance-service'),
+      ghostApiFetch(`${servicesBase.governance}/votes`, 'governance-service'),
+      ghostApiFetch(`${servicesBase.governance}/queue`, 'governance-service'),
+      ghostApiFetch(`${servicesBase.governance}/delegations`, 'governance-service')
+    ]);
+    const error = [proposalsRes, votesRes, queueRes, delegationsRes].find((entry) => !entry.ok);
+    if (error && !error.ok) {
+      res.status(error.status).json(error.error);
+      return;
+    }
+    const proposals = Array.isArray((proposalsRes.data as { proposals?: unknown }).proposals)
+      ? ((proposalsRes.data as { proposals?: unknown[] }).proposals as unknown[])
+      : [];
+    const votes = Array.isArray((votesRes.data as { votes?: unknown }).votes)
+      ? ((votesRes.data as { votes?: unknown[] }).votes as unknown[])
+      : [];
+    const queue = Array.isArray((queueRes.data as { queue?: unknown }).queue)
+      ? ((queueRes.data as { queue?: unknown[] }).queue as unknown[])
+      : [];
+    const delegations = Array.isArray((delegationsRes.data as { delegations?: unknown }).delegations)
+      ? ((delegationsRes.data as { delegations?: unknown[] }).delegations as unknown[])
+      : [];
+    ghostApiSend(res, GovernanceSummarySchema, { proposals, votes, queue, delegations }, 'governance-service');
+  });
+
+  app.get(['/v1/compliance', '/compliance'], requirePermission('iam:read'), ghostApiLimiter, async (_req, res) => {
+    ghostApiSend(res, ComplianceSummarySchema, { reports: complianceReports }, 'compliance');
+  });
+
+  app.get(['/v1/integration', '/integration'], requirePermission('integrations:read'), ghostApiLimiter, async (_req, res) => {
+    const integrations = await integrationsStorePromise;
+    ghostApiSend(
+      res,
+      IntegrationsSummarySchema,
+      { definitions: integrations.listDefinitions(), instances: integrations.listInstances() },
+      'integrations'
+    );
+  });
+
+  app.get(['/v1/devops', '/devops'], requirePermission('devops:read'), ghostApiLimiter, async (_req, res) => {
+    if (!servicesBase.devops) {
+      ghostApiError(res, 503, 'devops-service', 'missing');
+      return;
+    }
+    const [releasesRes, forksRes, upgradesRes] = await Promise.all([
+      ghostApiFetch(`${servicesBase.devops}/releases`, 'devops-service'),
+      ghostApiFetch(`${servicesBase.devops}/forks`, 'devops-service'),
+      ghostApiFetch(`${servicesBase.devops}/upgrades`, 'devops-service')
+    ]);
+    const error = [releasesRes, forksRes, upgradesRes].find((entry) => !entry.ok);
+    if (error && !error.ok) {
+      res.status(error.status).json(error.error);
+      return;
+    }
+    const releases = Array.isArray((releasesRes.data as { releases?: unknown }).releases)
+      ? ((releasesRes.data as { releases?: unknown[] }).releases as unknown[])
+      : [];
+    const forks = Array.isArray((forksRes.data as { forks?: unknown }).forks)
+      ? ((forksRes.data as { forks?: unknown[] }).forks as unknown[])
+      : [];
+    const upgrades = Array.isArray((upgradesRes.data as { upgrades?: unknown }).upgrades)
+      ? ((upgradesRes.data as { upgrades?: unknown[] }).upgrades as unknown[])
+      : [];
+    ghostApiSend(res, DevopsSummarySchema, { releases, forks, upgrades }, 'devops-service');
+  });
+
+  app.get(['/v1/observability', '/observability'], observabilityGuard, ghostApiLimiter, async (_req, res) => {
+    try {
+      const [alerts, dashboards, logs] = await Promise.all([
+        liveServices.observability.alertRulesService.list(),
+        liveServices.observability.metricsService.listDashboards(),
+        liveServices.observability.logsService.search('', 50)
+      ]);
+      ghostApiSend(res, ObservabilitySummarySchema, { alerts, dashboards, logs }, 'observability');
+    } catch (err) {
+      ghostApiError(res, 502, 'observability', err instanceof Error ? err.message : 'observability_summary_failed');
+    }
+  });
+
+  app.get(['/v1/ai', '/ai'], requirePermission('ai:read'), ghostApiLimiter, async (_req, res) => {
+    const status = servicesBase.ai && servicesBase.explainability ? 'ok' : 'degraded';
+    ghostApiSend(
+      res,
+      AiSummarySchema,
+      {
+        status,
+        modules: [
+          'tx-intel',
+          'wallet-intel',
+          'contract-intel',
+          'network-intel',
+          'bridge-intel',
+          'governance-intel',
+          'forecasting',
+          'explainability'
+        ],
+        lastUpdated: new Date().toISOString()
+      },
+      'ai'
+    );
+  });
+
+  app.get(['/v1/explorer', '/explorer'], explorerGuard, ghostApiLimiter, async (req, res) => {
+    const chain = typeof req.query.chain === 'string' ? req.query.chain : undefined;
+    const blockLimit = Math.min(Number(req.query.blockLimit) || 5, 20);
+    const txLimit = Math.min(Number(req.query.txLimit) || 10, 50);
+    try {
+      const latestHex = (await rpcCall<HexString>('eth_blockNumber', [], chain)) as HexString;
+      const latest = parseInt(latestHex, 16);
+      const blocks = await Promise.all(
+        Array.from({ length: blockLimit }, (_, i) => latest - i)
+          .filter((n) => n >= 0)
+          .map(async (num) => {
+            const block = (await rpcCall<RpcBlock>(
+              'eth_getBlockByNumber',
+              ['0x' + num.toString(16), true],
+              chain
+            )) as RpcBlock;
+            return {
+              number: parseInt(block.number, 16),
+              hash: block.hash || '',
+              proposer: block.miner,
+              txCount: Array.isArray(block.transactions) ? block.transactions.length : 0,
+              size: block.size ? parseInt(block.size, 16) : undefined,
+              time: new Date(parseInt(block.timestamp, 16) * 1000).toISOString()
+            };
+          })
+      );
+      const collected: ExplorerTx[] = [];
+      const maxDepth = Math.max(txLimit * 10, 200);
+      for (let num = latest; num >= 0 && collected.length < txLimit && latest - num <= maxDepth; num--) {
+        const block = (await rpcCall<RpcBlock>(
+          'eth_getBlockByNumber',
+          ['0x' + num.toString(16), true],
+          chain
+        )) as RpcBlock;
+        const blockTime = new Date(parseInt(block.timestamp, 16) * 1000).toISOString();
+        for (const t of block.transactions || []) {
+          if (collected.length >= txLimit) break;
+          const txObj = typeof t === 'string' ? await rpcCall<RpcTx>('eth_getTransactionByHash', [t], chain) : (t as RpcTx);
+          if (!txObj) continue;
+          collected.push({
+            hash: txObj.hash,
+            from: txObj.from,
+            to: txObj.to,
+            value: txObj.value,
+            gas: txObj.gas,
+            status: 'success',
+            nonce: txObj.nonce,
+            blockNumber: parseInt(block.number, 16).toString(),
+            time: blockTime
+          });
+        }
+      }
+      const status = (await rpcCall<Record<string, string>>('txpool_status', [], chain).catch(() => ({}))) || {};
+      const pending = status.pending ? parseInt(status.pending, 16) || 0 : 0;
+      const queued = status.queued ? parseInt(status.queued, 16) || 0 : 0;
+      const mempool = {
+        pending,
+        queued,
+        fairnessScore: Number((Math.max(0, 1 - pending / 1000)).toFixed(2)),
+        mevRisk: pending > 500 ? 'elevated' : 'low'
+      };
+      ghostApiSend(res, ExplorerSummarySchema, { blocks, txs: collected.slice(0, txLimit), mempool }, 'explorer');
+    } catch (err) {
+      ghostApiError(res, 502, 'explorer', err instanceof Error ? err.message : 'explorer_summary_failed');
+    }
+  });
 });
 
-const rpcUrls = {
-  l1: env.RPC_L1 || 'http://localhost:18545',
-  l2: env.RPC_L2 || servicesBase.explorerRpc,
-  l3: env.RPC_L3 || 'http://localhost:39545',
-  default: servicesBase.explorerRpc
-};
-const rpcForChain = (chain?: string) => {
-  if (chain === 'l1') return rpcUrls.l1;
-  if (chain === 'l3') return rpcUrls.l3;
-  if (chain === 'l2') return rpcUrls.l2;
-  return rpcUrls.default;
+const normalizeChain = (chain?: string) => {
+  if (chain === 'l1' || chain === 'L1') return 'l1' as const;
+  if (chain === 'l3' || chain === 'L3') return 'l3' as const;
+  return 'l2' as const;
 };
 
-const rpcCall = async <T = unknown>(method: string, params: unknown[] = [], rpcUrl = servicesBase.explorerRpc) => {
-  const res = await fetch(rpcUrl, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
-  });
-  if (!res.ok) throw new Error(`RPC ${method} failed: ${res.status}`);
-  const body = (await res.json()) as RpcResponse<T>;
-  if (body.error) throw new Error(body.error.message || 'rpc_error');
-  return body.result;
+const rpcCall = async <T = unknown>(method: string, params: unknown[] = [], chain?: string) => {
+  const target = normalizeChain(chain);
+  return ghostWalletRpcManager.withProvider(target, (provider) => provider.send(method, params) as Promise<T>);
 };
 
 app.get(['/v1/api/bridge', '/api/bridge'], requirePermission('bridge:read'), async (_req, res) => {
@@ -1545,15 +2352,69 @@ app.post(['/v1/api/bridge/fees', '/api/bridge/fees'], requirePermission('bridge:
   res.json(body);
 });
 
-app.get(['/v1/api/contracts', '/api/contracts'], requirePermission('contracts:read'), async (_req, res) => {
-  const registry = await proxyJson<{ contracts?: Array<Record<string, unknown>> }>(`${servicesBase.contracts}/contracts`, { contracts: [] });
-  const risks = await proxyJson<{ contracts?: Array<Record<string, unknown>> }>(`${servicesBase.contractRisk}/risk`, { contracts: [] });
+app.get(['/v1/api/contracts', '/api/contracts'], requirePermission('contracts:read'), async (req, res) => {
+  const correlationId = String(req.correlationId || crypto.randomUUID());
+  const requestHeaders: Record<string, string> = { 'x-request-id': correlationId };
+  const registry: { contracts?: Array<Record<string, unknown>> } = { contracts: [] };
+  const risks: { contracts?: Array<Record<string, unknown>> } = { contracts: [] };
+  let registryError: string | undefined;
+  let riskError: string | undefined;
+
+  if (!servicesBase.contracts) {
+    registryError = 'contracts_service_missing';
+  } else {
+    try {
+      const upstream = await fetch(`${servicesBase.contracts}/contracts`, {
+        headers: requestHeaders
+      });
+      if (!upstream.ok) {
+        registryError = `contracts_status_${upstream.status}`;
+      } else {
+        const body = (await upstream.json().catch(() => ({}))) as Record<string, unknown>;
+        const contractsValue = (body as { contracts?: unknown }).contracts;
+        if (Array.isArray(contractsValue)) registry.contracts = contractsValue as Array<Record<string, unknown>>;
+      }
+    } catch (err) {
+      registryError = err instanceof Error ? err.message : 'contracts_fetch_failed';
+    }
+  }
+  if (registryError) {
+    logContractEvent('warn', 'contracts.registry.fetch_failed', { correlationId, error: registryError });
+  }
+
+  if (!servicesBase.contractRisk) {
+    riskError = 'contract_risk_service_missing';
+  } else {
+    try {
+      const upstream = await fetch(`${servicesBase.contractRisk}/risk`, {
+        headers: requestHeaders
+      });
+      if (!upstream.ok) {
+        riskError = `contract_risk_status_${upstream.status}`;
+      } else {
+        const body = (await upstream.json().catch(() => ({}))) as Record<string, unknown>;
+        const contractsValue = (body as { contracts?: unknown }).contracts;
+        if (Array.isArray(contractsValue)) risks.contracts = contractsValue as Array<Record<string, unknown>>;
+      }
+    } catch (err) {
+      riskError = err instanceof Error ? err.message : 'contract_risk_fetch_failed';
+    }
+  }
+  if (riskError) {
+    logContractEvent('warn', 'contracts.risk.fetch_failed', { correlationId, error: riskError });
+  }
+
   const localRegistry = listRegisteredContracts();
+  const localAddressSet = new Set(localRegistry.map((entry) => entry.address.toLowerCase()));
   const pausedFlags = contractMetadata.pauseQuery ? await prometheus.query(contractMetadata.pauseQuery).catch(() => []) : [];
   const upgradeabilityFlags = contractMetadata.upgradeabilityQuery ? await prometheus.query(contractMetadata.upgradeabilityQuery).catch(() => []) : [];
 
   const sourceContracts: Array<Record<string, unknown>> = [
-    ...((registry.contracts || []) as Array<Record<string, unknown>>),
+    ...((registry.contracts || []) as Array<Record<string, unknown>>).filter((entry) => {
+      const address = typeof entry.address === 'string' ? entry.address.trim().toLowerCase() : '';
+      if (!address) return false;
+      return !localAddressSet.has(address);
+    }),
     ...localRegistry.map((entry) => ({
       id: entry.name,
       name: entry.name,
@@ -1563,7 +2424,8 @@ app.get(['/v1/api/contracts', '/api/contracts'], requirePermission('contracts:re
       chainId: entry.chainId,
       abi: entry.abi,
       abiHash: entry.abiHash,
-      version: entry.version
+      version: entry.version,
+      verified: true
     }))
   ];
 
@@ -1598,11 +2460,78 @@ app.get(['/v1/api/contracts', '/api/contracts'], requirePermission('contracts:re
         risk: risks.contracts?.find((r) => (r.address as string)?.toLowerCase() === address.toLowerCase())
       };
     }) || [];
-  res.json({ ok: true, networks: merged });
+  if (!merged.length) {
+    logContractEvent('warn', 'contracts.registry.empty', {
+      correlationId,
+      registryCount: registry.contracts?.length || 0,
+      localCount: localRegistry.length
+    });
+  }
+  res.json({
+    ok: true,
+    networks: merged,
+    meta: {
+      registryCount: registry.contracts?.length || 0,
+      localCount: localRegistry.length,
+      riskCount: risks.contracts?.length || 0,
+      registryError,
+      riskError
+    }
+  });
 });
 
 app.get(['/v1/api/contracts/state', '/api/contracts/state'], requirePermission('contracts:read'), async (_req, res) => {
   res.json({ ok: true, contracts: contractStates });
+});
+
+app.post(['/v1/api/contracts/seed', '/api/contracts/seed'], requirePermission('contracts:write'), async (req, res) => {
+  const correlationId = req.correlationId ?? crypto.randomUUID();
+  const result = seedContractsRegistry();
+  if (!result.ok) {
+    logContractEvent('warn', 'contracts.seed.empty', {
+      correlationId,
+      errors: result.errors.length
+    });
+    res.status(409).json({ error: 'no_seed_contracts', errors: result.errors });
+    return;
+  }
+  const verification = verifyContractsStored(
+    result.stored.map((entry) => ({ address: entry.address, chainId: entry.chainId })),
+    result.contracts.map((entry) => ({ address: entry.address, chainId: entry.chainId }))
+  );
+  const actorId = req.session?.userId || 'unknown';
+  logContractEvent('info', 'contracts.seeded', {
+    correlationId,
+    actorId,
+    registered: result.contracts.length,
+    storedCount: result.stored.length,
+    errors: result.errors.length
+  });
+  await auditLogService?.append({
+    actorId,
+    action: 'contracts:seed',
+    resource: 'contracts',
+    meta: {
+      correlationId,
+      registered: result.contracts.length,
+      storedCount: result.stored.length,
+      errors: result.errors.length
+    }
+  });
+  if (!verification.ok) {
+    logContractEvent('error', 'contracts.seed.mismatch', {
+      correlationId,
+      missing: verification.missing
+    });
+    res.status(500).json({ error: 'registry_mismatch', missing: verification.missing, errors: result.errors });
+    return;
+  }
+  res.json({
+    ok: true,
+    registeredCount: result.contracts.length,
+    storedCount: result.stored.length,
+    errors: result.errors
+  });
 });
 
 app.post(['/v1/api/contracts/register', '/api/contracts/register'], async (req, res) => {
@@ -1619,28 +2548,63 @@ app.post(['/v1/api/contracts/register', '/api/contracts/register'], async (req, 
       ? [body.contract]
       : [];
   if (!entries.length) {
+    logContractEvent('warn', 'contracts.register.missing', { correlationId: req.correlationId });
     res.status(400).json({ error: 'contract_required' });
     return;
   }
-  const normalized = entries.map((entry) => {
-    const layerRaw = String(entry.layer || 'l2');
-    const layer = (layerRaw === 'l1' || layerRaw === 'l2' || layerRaw === 'l3' ? layerRaw : 'l2') as
-      | 'l1'
-      | 'l2'
-      | 'l3';
-    return {
-      name: String(entry.name || entry.id || entry.address),
-      address: String(entry.address || ''),
-      chainId: Number(entry.chainId || 0),
-      layer,
-      abi: (entry.abi ?? []) as unknown,
-      abiHash: String(entry.abiHash || ''),
-      version: String(entry.version || '0.0.1'),
-      deployedAt: entry.deployedAt ? String(entry.deployedAt) : undefined
-    };
+  const normalized: Array<z.infer<typeof contractRegistrationSchema>> = [];
+  const errors: Array<Record<string, unknown>> = [];
+  entries.forEach((entry, index) => {
+    const result = normalizeContractEntry(entry, index);
+    if (result.ok) {
+      normalized.push(result.value);
+    } else {
+      errors.push(result.error);
+    }
   });
+  if (!normalized.length) {
+    logContractEvent('warn', 'contracts.register.invalid', {
+      correlationId: req.correlationId,
+      errors
+    });
+    res.status(400).json({ error: 'invalid_contracts', details: errors });
+    return;
+  }
   const stored = registerContracts(normalized);
-  res.json({ ok: true, contracts: stored });
+  const persisted = listRegisteredContracts();
+  const verification = verifyContractsStored(persisted, normalized);
+  const actorId = req.session?.userId || (hasContractsToken(req) ? 'contracts-token' : 'unknown');
+  logContractEvent('info', 'contracts.registered', {
+    correlationId: req.correlationId,
+    actorId,
+    count: normalized.length,
+    missing: verification.missing.length,
+    storedCount: stored.length,
+    persistedCount: persisted.length,
+    names: normalized.map((entry) => entry.name),
+    addresses: normalized.map((entry) => entry.address),
+    chainIds: normalized.map((entry) => entry.chainId),
+    versions: normalized.map((entry) => entry.version)
+  });
+  await auditLogService?.append({
+    actorId,
+    action: 'contracts:register',
+    resource: 'contracts',
+    meta: {
+      correlationId: req.correlationId,
+      count: normalized.length,
+      missing: verification.missing.length
+    }
+  });
+  if (!verification.ok) {
+    logContractEvent('error', 'contracts.register.mismatch', {
+      correlationId: req.correlationId,
+      missing: verification.missing
+    });
+    res.status(500).json({ error: 'registry_mismatch', missing: verification.missing });
+    return;
+  }
+  res.json({ ok: true, contracts: stored, verification: { ok: true, count: normalized.length } });
 });
 
 app.get(['/v1/api/contracts/deployments', '/api/contracts/deployments'], requirePermission('contracts:read'), async (_req, res) => {
@@ -2333,6 +3297,24 @@ app.get(['/v1/api/treasury/proposals', '/api/treasury/proposals'], requirePermis
   res.json({ ok: true, proposals: treasuryProposals });
 });
 
+app.get(['/v1/api/treasury/payouts', '/api/treasury/payouts'], requirePermission('treasury:read'), async (_req, res) => {
+  if (!servicesBase.payouts) {
+    res.status(503).json({ error: 'payout_service_missing' });
+    return;
+  }
+  try {
+    const upstream = await fetch(`${servicesBase.payouts}/payouts`);
+    const body = await upstream.json().catch(() => ({}));
+    if (!upstream.ok) {
+      res.status(upstream.status).json(body);
+      return;
+    }
+    res.json(body);
+  } catch (err) {
+    res.status(502).json({ error: err instanceof Error ? err.message : 'payout_fetch_failed' });
+  }
+});
+
 app.get(['/v1/devops/releases', '/devops/releases'], requirePermission('devops:read'), async (_req, res) => {
   const data = await proxyJson<{ releases?: unknown[] }>(`${servicesBase.devops}/releases`, { releases: [] });
   res.json(data.releases || []);
@@ -2499,9 +3481,23 @@ const integrationsWriteGuard = requirePermission('integrations:write');
 
 const ghostValidatorFallback = async () => {
   const items: Array<{ id: string; address: string; status: string; stake: string; commission: number; power: number }> = [];
+  const pool = ghostWalletRpcManager.getPoolSnapshot();
   for (const chain of ghostchainConfig) {
+    const layer = chain.id === 'l1' ? 'L1' : chain.id === 'l2' ? 'L2' : 'L3';
+    const endpoint = (pool[layer] || []).find((entry) => entry.protocol === 'http');
+    if (!endpoint) {
+      items.push({
+        id: `${chain.id}-validator`,
+        address: `ghost-${chain.id}`,
+        status: 'unknown',
+        stake: 'N/A',
+        commission: 0,
+        power: 0
+      });
+      continue;
+    }
     try {
-      const provider = new JsonRpcProvider(chain.rpc);
+      const provider = new JsonRpcProvider(endpoint.url);
       const block = await provider.getBlockNumber();
       items.push({
         id: `${chain.id}-validator`,
@@ -2730,15 +3726,18 @@ app.get(['/v1/observability/incidents', '/observability/incidents'], requirePerm
 app.get(['/v1/explorer/blocks', '/explorer/blocks'], explorerGuard, async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 10, 50);
   const chain = typeof req.query.chain === 'string' ? req.query.chain : undefined;
-  const rpcUrl = rpcForChain(chain);
   try {
-    const latestHex = (await rpcCall<HexString>('eth_blockNumber', [], rpcUrl)) as HexString;
+    const latestHex = (await rpcCall<HexString>('eth_blockNumber', [], chain)) as HexString;
     const latest = parseInt(latestHex, 16);
     const blocks = await Promise.all(
       Array.from({ length: limit }, (_, i) => latest - i)
         .filter((n) => n >= 0)
         .map(async (num) => {
-          const block = (await rpcCall<RpcBlock>('eth_getBlockByNumber', ['0x' + num.toString(16), true], rpcUrl)) as RpcBlock;
+          const block = (await rpcCall<RpcBlock>(
+            'eth_getBlockByNumber',
+            ['0x' + num.toString(16), true],
+            chain
+          )) as RpcBlock;
           return {
             number: parseInt(block.number, 16),
             hash: block.hash,
@@ -2757,11 +3756,10 @@ app.get(['/v1/explorer/blocks', '/explorer/blocks'], explorerGuard, async (req, 
 
 app.get(['/v1/explorer/mempool', '/explorer/mempool'], explorerGuard, async (req, res) => {
   const chain = typeof req.query.chain === 'string' ? req.query.chain : undefined;
-  const rpcUrl = rpcForChain(chain);
   let pending = 0;
   let queued = 0;
   try {
-    const status = (await rpcCall<Record<string, string>>('txpool_status', [], rpcUrl)) || {};
+    const status = (await rpcCall<Record<string, string>>('txpool_status', [], chain)) || {};
     pending = status.pending ? parseInt(status.pending, 16) || 0 : 0;
     queued = status.queued ? parseInt(status.queued, 16) || 0 : 0;
   } catch {
@@ -2778,20 +3776,23 @@ app.get(['/v1/explorer/mempool', '/explorer/mempool'], explorerGuard, async (req
 app.get(['/v1/explorer/txs', '/explorer/txs'], explorerGuard, async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 20, 100);
   const chain = typeof req.query.chain === 'string' ? req.query.chain : undefined;
-  const rpcUrl = rpcForChain(chain);
   try {
-    const latestHex = (await rpcCall<HexString>('eth_blockNumber', [], rpcUrl)) as HexString;
+    const latestHex = (await rpcCall<HexString>('eth_blockNumber', [], chain)) as HexString;
     const latest = parseInt(latestHex, 16);
     const collected: ExplorerTx[] = [];
     const maxDepth = Math.max(limit * 10, 500);
     for (let num = latest; num >= 0 && collected.length < limit && latest - num <= maxDepth; num--) {
-      const block = (await rpcCall<RpcBlock>('eth_getBlockByNumber', ['0x' + num.toString(16), true], rpcUrl)) as RpcBlock;
+      const block = (await rpcCall<RpcBlock>(
+        'eth_getBlockByNumber',
+        ['0x' + num.toString(16), true],
+        chain
+      )) as RpcBlock;
       const blockTime = new Date(parseInt(block.timestamp, 16) * 1000).toISOString();
       for (const t of block.transactions || []) {
         if (collected.length < limit) {
           let txObj: RpcTx | null = null;
           if (typeof t === 'string') {
-            txObj = (await rpcCall<RpcTx>('eth_getTransactionByHash', [t], rpcUrl)) || null;
+            txObj = (await rpcCall<RpcTx>('eth_getTransactionByHash', [t], chain)) || null;
           } else {
             txObj = t as RpcTx;
           }

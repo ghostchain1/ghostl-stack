@@ -7,6 +7,8 @@ import { resolveApiBase } from '../../lib/runtime';
 import { normalizeRole, roleOrder } from '../identity-access/access-policy';
 import { useSession } from '../identity-access/session';
 import { fetchStocks, type MarketToken, type MarketTokenInput, type StocksResponse } from './services';
+import { apiRequest, type ApiError, formatApiError } from '../../lib/api';
+import { DataFetchErrorCard } from '../../components/DataFetchErrorCard';
 
 const API_URL = resolveApiBase();
 
@@ -61,6 +63,7 @@ export function StocksDashboard() {
   const [data, setData] = useState<StocksResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
+  const [error, setError] = useState<ApiError | null>(null);
   const [tokenDrafts, setTokenDrafts] = useState<TokenDraft[]>([]);
 
   const load = async () => {
@@ -69,8 +72,11 @@ export function StocksDashboard() {
     if (res.ok) {
       setData(res.data);
       setStatus('');
+      setError(null);
     } else {
-      setStatus(res.error.message || 'Failed to load market data');
+      setError(res.error);
+      const info = formatApiError(res.error);
+      setStatus(`${info.method} ${info.endpoint} · ${info.status} · ${info.hint}`);
     }
     setLoading(false);
   };
@@ -118,25 +124,27 @@ export function StocksDashboard() {
       setStatus('Add at least one token with symbol and chain');
       return;
     }
-    try {
-      const res = await fetch(`${API_URL}/api/stocks/tokens`, {
+    const res = await apiRequest<{ tokens?: MarketToken[] }>('/api/stocks/tokens', {
+      baseUrl: API_URL,
+      init: {
         method: 'POST',
         headers: jsonWithCsrf(),
-        credentials: 'include',
         body: JSON.stringify({ tokens: payload })
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || 'Save failed');
-      setStatus('Tokens saved');
-      setData((prev) => (prev ? { ...prev, tokens: json.tokens || prev.tokens } : prev));
-    } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Save failed');
+      }
+    });
+    if (!res.ok) {
+      const info = formatApiError(res.error);
+      setStatus(`${info.method} ${info.endpoint} · ${info.status} · ${info.hint}`);
+      return;
     }
+    setStatus('Tokens saved');
+    setData((prev) => (prev ? { ...prev, tokens: res.data.tokens || prev.tokens } : prev));
   };
 
   return (
     <div className="content">
       <div className="card-grid">
+        {error && <DataFetchErrorCard title="Market data" error={error} />}
         <Card title="Treasury balance" subtitle="On-chain holdings">
           <div className="stack" style={{ gap: 6 }}>
             <div className="metric">

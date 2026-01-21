@@ -15,11 +15,11 @@ services:
     ports:
       - "29545:29545"
 
-  rpc-registry-service:
+  ghost-registry:
     <<: *host-gateway
     build:
-      context: ./rpc-registry-service
-    image: ghostl/rpc-registry-service:local
+      context: ./ghost-registry
+    image: ghostl/ghost-registry:local
     env_file:
       - ./stack.env
     environment:

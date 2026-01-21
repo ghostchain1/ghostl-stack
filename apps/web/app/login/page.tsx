@@ -4,8 +4,19 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { resolveApiBase } from '../../src/lib/runtime';
 import { jsonWithCsrf } from '../../src/lib/csrf';
+import { apiRequest, formatApiError } from '../../src/lib/api';
 
 const API_URL = resolveApiBase();
+const debugAuth = process.env.NEXT_PUBLIC_AUTH_DEBUG === 'true';
+
+const redactEmail = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  const [user, domain] = trimmed.split('@');
+  if (!domain) return `${trimmed.slice(0, 2)}***`;
+  const userPrefix = user ? `${user.slice(0, 2)}***` : '***';
+  return `${userPrefix}@${domain}`;
+};
 
 export default function LoginPage() {
   return (
@@ -34,32 +45,52 @@ function LoginClient() {
   const loginPassword = async () => {
     setStatus('Signing in...');
     try {
-      const res = await fetch(`${API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: jsonWithCsrf(),
-        credentials: 'include',
-        body: JSON.stringify({ email, password })
+      if (debugAuth) {
+        console.debug('[auth] login:start', { api: API_URL, returnTo, email: redactEmail(email) });
+      }
+      const res = await apiRequest('/api/auth/login', {
+        baseUrl: API_URL,
+        init: {
+          method: 'POST',
+          headers: jsonWithCsrf(),
+          body: JSON.stringify({ email, password })
+        }
       });
       if (res.ok) {
         setStatus('Success. Reloading...');
         window.location.href = returnTo;
         return;
       }
-      const err = await res.json().catch(() => ({}));
-      setStatus(`Failed: ${err.error || res.status}`);
+      const info = formatApiError(res.error);
+      console.error('[auth] login:failed', { status: info.status, error: info.message, endpoint: info.endpoint });
+      setStatus(`Failed: ${info.method} ${info.endpoint} · ${info.status} · ${info.hint}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Network error';
+      console.error('[auth] login:network-error', { message });
       setStatus(`Failed: ${message}`);
     }
   };
 
   useEffect(() => {
-    fetch(`${API_URL}/api/auth/me`, { credentials: 'include' })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((me) => {
-        if (me?.id) router.replace(returnTo);
+    if (debugAuth) {
+      console.debug('[auth] session:check', { api: API_URL, returnTo });
+    }
+    apiRequest('/api/auth/me', { baseUrl: API_URL })
+      .then((res) => {
+        if (res.ok && (res.data as { id?: string })?.id) router.replace(returnTo);
+        if (!res.ok) {
+          const info = formatApiError(res.error);
+          setStatus(`Failed: ${info.method} ${info.endpoint} · ${info.status} · ${info.hint}`);
+        }
+        if (debugAuth) {
+          console.debug('[auth] session:response', { ok: res.ok });
+        }
       })
-      .catch(() => undefined);
+      .catch((err) => {
+        if (debugAuth) {
+          console.debug('[auth] session:error', { message: err instanceof Error ? err.message : 'request_failed' });
+        }
+      });
   }, [returnTo, router]);
 
   return (

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { resolveApiBase } from '../../../lib/runtime';
+import { apiRequest, type ApiError } from '../../../lib/api';
+import { DataFetchErrorCard } from '../../../components/DataFetchErrorCard';
 
 type Incident = {
   source: string;
@@ -24,13 +26,26 @@ const badge = (sev?: string) => {
 export function BridgeValidatorHealth() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<ApiError | null>(null);
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${API_BASE}/observability/incidents`, { credentials: 'include' })
-      .then((r) => r.json())
-      .then((j) => setIncidents(j.incidents || []))
-      .catch(() => undefined)
+    apiRequest<{ incidents?: Incident[] }>('/observability/incidents', { baseUrl: API_BASE })
+      .then((res) => {
+        if (!res.ok) {
+          setError(res.error);
+          return;
+        }
+        setError(null);
+        setIncidents(res.data.incidents || []);
+      })
+      .catch((err) => {
+        setError({
+          message: err instanceof Error ? err.message : 'incidents_fetch_failed',
+          endpoint: `${API_BASE}/observability/incidents`,
+          method: 'GET'
+        });
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -46,6 +61,7 @@ export function BridgeValidatorHealth() {
   return (
     <div className="card">
       <div style={{ fontWeight: 700, marginBottom: 8 }}>Bridge & Validator Health</div>
+      {error && <DataFetchErrorCard title="Bridge/validator incidents" error={error} />}
       <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
         <span className="pill">Bridge warn {totals.bridgeWarn}</span>
         <span className="pill warn">Bridge crit {totals.bridgeCrit}</span>

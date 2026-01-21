@@ -5,9 +5,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 const PORT = Number(process.env.PORT || "7171");
-const RPC_L1 = process.env.RPC_L1 || "";
-const RPC_L2 = process.env.RPC_L2!;
-const RPC_L3 = process.env.RPC_L3!;
+const registryUrl = process.env.RPC_REGISTRY_URL || "http://ghost-registry:8088/v1/endpoints";
+const registryTimeoutMs = Number(process.env.REGISTRY_TIMEOUT_MS || "1500");
+const registryRetries = Math.max(0, Number(process.env.REGISTRY_RETRY_COUNT || "2"));
+const registryCacheMs = Math.max(1000, Number(process.env.REGISTRY_CACHE_MS || "30000"));
+const registryCache: { data: any; expiresAt: number } = { data: null, expiresAt: 0 };
 const BRIDGE = process.env.BRIDGE_L2L3_ADDRESS!;
 const L1_ROLLUP_L2 = process.env.L1_ROLLUP_L2_ADDRESS || "";
 const L2_ROLLUP_L3 = process.env.L2_ROLLUP_L3_ADDRESS || "";
@@ -18,6 +20,77 @@ const L2_RELAYER_PRIVATE_KEY = process.env.L2_RELAYER_PRIVATE_KEY || "";
 const STATE_DIR = process.env.STATE_DIR || "/state";
 const confirmationsRaw = Number(process.env.CONFIRMATIONS || "0");
 const CONFIRMATIONS = Number.isFinite(confirmationsRaw) && confirmationsRaw >= 0 ? Math.floor(confirmationsRaw) : 0;
+
+const fetchRegistry = async () => {
+  const now = Date.now();
+  if (registryCache.data && registryCache.expiresAt > now) return registryCache.data;
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= registryRetries; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), registryTimeoutMs);
+    try {
+      const res = await fetch(registryUrl, { signal: controller.signal });
+      if (!res.ok) throw new Error(`registry_http_${res.status}`);
+      const body = await res.json();
+      if (!body || !Array.isArray(body.chains)) throw new Error("registry_invalid");
+      registryCache.data = body;
+      registryCache.expiresAt = now + registryCacheMs;
+      return body;
+    } catch (err) {
+      lastErr = err;
+      if (attempt < registryRetries) {
+        await new Promise((r) => setTimeout(r, 150 * (attempt + 1)));
+      }
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+  throw lastErr || new Error("registry_unavailable");
+};
+
+const pickRpc = (chain: any) => {
+  if (!chain) return "";
+  if (typeof chain.rpc === "string" && chain.rpc) return chain.rpc;
+  if (Array.isArray(chain.rpcUrls) && chain.rpcUrls.length) return chain.rpcUrls[0];
+  if (Array.isArray(chain.endpoints)) {
+    const http = chain.endpoints.find((endpoint: any) => endpoint.protocol === "http");
+    if (http?.url) return http.url;
+  }
+  if (typeof chain.ws === "string" && chain.ws) return chain.ws;
+  if (Array.isArray(chain.wsUrls) && chain.wsUrls.length) return chain.wsUrls[0];
+  return "";
+};
+
+const resolveRpcUrls = async () => {
+  const registry = await fetchRegistry();
+  const chainL1 = registry.chains.find((entry: any) => entry.layer === "L1");
+  const chainL2 = registry.chains.find((entry: any) => entry.layer === "L2");
+  const chainL3 = registry.chains.find((entry: any) => entry.layer === "L3");
+  const overrides = {
+    l1: process.env.RPC_L1,
+    l2: process.env.RPC_L2,
+    l3: process.env.RPC_L3
+  };
+  const allowed = (chain: any) =>
+    new Set([
+      ...(typeof chain?.rpc === "string" && chain.rpc ? [chain.rpc] : []),
+      ...(Array.isArray(chain?.rpcUrls) ? chain.rpcUrls : []),
+      ...(Array.isArray(chain?.endpoints) ? chain.endpoints.map((endpoint: any) => endpoint.url) : [])
+    ]);
+  const l1Allowed = allowed(chainL1);
+  const l2Allowed = allowed(chainL2);
+  const l3Allowed = allowed(chainL3);
+  const l1 = overrides.l1 ? (l1Allowed.has(overrides.l1) ? overrides.l1 : "") : pickRpc(chainL1);
+  const l2 = overrides.l2 ? (l2Allowed.has(overrides.l2) ? overrides.l2 : "") : pickRpc(chainL2);
+  const l3 = overrides.l3 ? (l3Allowed.has(overrides.l3) ? overrides.l3 : "") : pickRpc(chainL3);
+  if (overrides.l1 && !l1) throw new Error("rpc_override_not_in_registry_l1");
+  if (overrides.l2 && !l2) throw new Error("rpc_override_not_in_registry_l2");
+  if (overrides.l3 && !l3) throw new Error("rpc_override_not_in_registry_l3");
+  if (!l2 || !l3) throw new Error("rpc_missing_l2_or_l3");
+  return { l1, l2, l3 };
+};
+
+const { l1: RPC_L1, l2: RPC_L2, l3: RPC_L3 } = await resolveRpcUrls();
 
 if (!RPC_L2 || !RPC_L3 || !BRIDGE || !L3_INBOX || !L3_TOKEN_FACTORY) {
   console.error("Missing env: RPC_L2, RPC_L3, BRIDGE_L2L3_ADDRESS, L3_INBOX_ADDRESS, L3_TOKEN_FACTORY_ADDRESS");

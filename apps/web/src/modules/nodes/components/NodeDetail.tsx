@@ -3,9 +3,14 @@
 import { useState } from 'react';
 import { resolveApiBase } from '../../../lib/runtime';
 import { jsonWithCsrf } from '../../../lib/csrf';
+import { apiRequest, formatApiError, type ApiError } from '../../../lib/api';
 import type { Node, NodeMetrics } from '@ghostl/types/nodes';
 
 const API_BASE = resolveApiBase();
+const formatStatus = (error: ApiError) => {
+  const info = formatApiError(error);
+  return `${info.method} ${info.endpoint} | ${info.status} | ${info.hint}`;
+};
 
 export function NodeDetail({ node, metrics }: { node: Node; metrics?: NodeMetrics }) {
   const [statusMsg, setStatusMsg] = useState('');
@@ -22,18 +27,19 @@ export function NodeDetail({ node, metrics }: { node: Node; metrics?: NodeMetric
       body = { version };
     }
     try {
-      const res = await fetch(`${API_BASE}/nodes/${encodeURIComponent(node.id)}/${action}`, {
-        method: 'POST',
-        headers: jsonWithCsrf(),
-        credentials: 'include',
-        body: body ? JSON.stringify(body) : undefined
+      const res = await apiRequest<{ version?: string }>(`/nodes/${encodeURIComponent(node.id)}/${action}`, {
+        baseUrl: API_BASE,
+        init: {
+          method: 'POST',
+          headers: jsonWithCsrf(),
+          body: body ? JSON.stringify(body) : undefined
+        }
       });
-      const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setStatusMsg(json.error || `Action failed (${res.status})`);
+        setStatusMsg(formatStatus(res.error));
         return;
       }
-      setStatusMsg(`${action} ok${json.version ? ` -> ${json.version}` : ''}`);
+      setStatusMsg(`${action} ok${res.data.version ? ` -> ${res.data.version}` : ''}`);
     } catch (e) {
       setStatusMsg((e as Error).message);
     }

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { resolveApiBase } from '../../lib/runtime';
 import { jsonWithCsrf } from '../../lib/csrf';
+import { apiRequest, type ApiError, formatApiError } from '../../lib/api';
+import { DataFetchErrorCard } from '../../components/DataFetchErrorCard';
 
 type Proposal = {
   id: string;
@@ -16,13 +18,19 @@ export function TreasuryApprovals() {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<ApiError | null>(null);
 
   const load = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch(`${API_BASE}/v1/api/treasury/proposals`, { credentials: 'include' });
-      const json = await res.json();
-      setProposals(json.proposals || []);
+      const res = await apiRequest<{ proposals?: Proposal[] }>('/v1/api/treasury/proposals', { baseUrl: API_BASE });
+      if (!res.ok) {
+        setError(res.error);
+        setProposals([]);
+        return;
+      }
+      setProposals(res.data.proposals || []);
     } catch {
       setMessage('Failed to load proposals');
     } finally {
@@ -37,19 +45,21 @@ export function TreasuryApprovals() {
   const approve = async (id: string) => {
     setMessage('');
     try {
-      const res = await fetch(`${API_BASE}/v1/api/treasury/approve`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: jsonWithCsrf(),
-        body: JSON.stringify({ proposalId: id, signer: 'ui' })
+      const res = await apiRequest<{ ok?: boolean }>('/v1/api/treasury/approve', {
+        baseUrl: API_BASE,
+        init: {
+          method: 'POST',
+          headers: jsonWithCsrf(),
+          body: JSON.stringify({ proposalId: id, signer: 'ui' })
+        }
       });
-      const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setMessage(json.error || `Approval failed ${res.status}`);
-      } else {
-        setMessage('Approved');
-        await load();
+        const info = formatApiError(res.error);
+        setMessage(`POST ${info.endpoint} · ${info.status} · ${info.hint}`);
+        return;
       }
+      setMessage('Approved');
+      await load();
     } catch (e) {
       setMessage((e as Error).message);
     }
@@ -58,6 +68,7 @@ export function TreasuryApprovals() {
   return (
     <div className="card">
       <div style={{ fontWeight: 700, marginBottom: 8 }}>Treasury approvals</div>
+      {error && <DataFetchErrorCard title="Treasury proposals" error={error} />}
       {message && <div className="muted" style={{ marginBottom: 6 }}>{message}</div>}
       <div className="stack" style={{ gap: 6 }}>
         {proposals.map((p) => (

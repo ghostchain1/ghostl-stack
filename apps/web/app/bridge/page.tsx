@@ -5,7 +5,8 @@ import { DisputesPanel } from '../../src/modules/bridge/components/DisputesPanel
 import { EmergencyControls } from '../../src/modules/bridge/components/EmergencyControls';
 import { BridgeMetrics } from '../../src/modules/bridge/components/BridgeMetrics';
 import type { Transfer } from '@ghostl/types/bridge';
-import { apiFetch } from '../../src/lib/api';
+import { serverApiRequest } from '../../src/lib/server-api';
+import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
 
 type RawBridge = {
   id?: string;
@@ -16,10 +17,16 @@ type RawBridge = {
 };
 
 async function loadBridge() {
-  const data = await apiFetch<{ networks?: RawBridge[]; transfers?: any[]; pools?: any[]; summary?: { pending: number; finalized: number; signaturesMissing: number } }>(
-    '/api/bridge',
-    { fallback: { networks: [] } }
-  );
+  const result = await serverApiRequest<{
+    networks?: RawBridge[];
+    transfers?: any[];
+    pools?: any[];
+    summary?: { pending: number; finalized: number; signaturesMissing: number };
+  }>('/api/bridge', { init: { cache: 'no-store' } });
+  if (!result.ok) {
+    return { error: result.error };
+  }
+  const data = result.data;
   const bridges = (data.networks || []).map((n) => ({
     id: n.id || 'unknown',
     src: 'l2',
@@ -46,7 +53,17 @@ async function loadBridge() {
 }
 
 export default async function BridgePage() {
-  const { bridges, transfers, pools, summary } = await loadBridge();
+  const data = await loadBridge();
+  if ('error' in data) {
+    return (
+      <div className="content">
+        <div className="card-grid">
+          <DataFetchErrorCard title="Bridge data" error={data.error} />
+        </div>
+      </div>
+    );
+  }
+  const { bridges, transfers, pools, summary } = data;
   const control = { paused: false, feeBps: 0, emergencyMode: false };
   return (
     <div className="content">

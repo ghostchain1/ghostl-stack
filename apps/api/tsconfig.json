@@ -12,6 +12,7 @@
     "src",
     "src/types/**/*.d.ts",
     "../../packages/types/**/*.ts",
+    "../../packages/contract-schemas/**/*.ts",
     "../../observability/**/*.ts"
   ]
 }

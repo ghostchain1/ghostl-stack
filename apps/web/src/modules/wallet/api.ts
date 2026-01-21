@@ -1,7 +1,12 @@
 import { resolveApiBase } from '../../lib/runtime';
 import { jsonWithCsrf } from '../../lib/csrf';
+import { apiRequest, formatApiError, type ApiError } from '../../lib/api';
 
 const API_URL = resolveApiBase();
+const formatStatus = (error: ApiError) => {
+  const info = formatApiError(error);
+  return `${info.method} ${info.endpoint} | ${info.status} | ${info.hint}`;
+};
 
 export async function bridgeTransfer(params: {
   walletId: string;
@@ -13,17 +18,18 @@ export async function bridgeTransfer(params: {
   gasPrice?: string;
   gasLimit?: string;
 }) {
-  const res = await fetch(`${API_URL}/wallet/bridge`, {
-    method: 'POST',
-    headers: jsonWithCsrf(),
-    credentials: 'include',
-    body: JSON.stringify(params)
+  const res = await apiRequest('/wallet/bridge', {
+    baseUrl: API_URL,
+    init: {
+      method: 'POST',
+      headers: jsonWithCsrf(),
+      body: JSON.stringify(params)
+    }
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Bridge failed: ${res.status}`);
+    throw new Error(formatStatus(res.error));
   }
-  return res.json();
+  return res.data as { tx?: string };
 }
 
 export async function getBalance(params: { rpc: string; address: string; token?: string }) {
@@ -32,12 +38,14 @@ export async function getBalance(params: { rpc: string; address: string; token?:
     address: params.address,
     ...(params.token ? { token: params.token } : {})
   });
-  const res = await fetch(`${API_URL}/wallet/token/balance?${query.toString()}`, { credentials: 'include' });
+  const res = await apiRequest<{ address: string; balance: string; token?: string }>(
+    `/wallet/token/balance?${query.toString()}`,
+    { baseUrl: API_URL }
+  );
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Balance failed: ${res.status}`);
+    throw new Error(formatStatus(res.error));
   }
-  return res.json() as Promise<{ address: string; balance: string; token?: string }>;
+  return res.data;
 }
 
 export async function sendFunds(params: {
@@ -52,17 +60,14 @@ export async function sendFunds(params: {
   maxPriorityFeePerGas?: string;
   data?: string;
 }) {
-  const res = await fetch(`${API_URL}/wallet/send`, {
-    method: 'POST',
-    headers: jsonWithCsrf(),
-    credentials: 'include',
-    body: JSON.stringify(params)
+  const res = await apiRequest<{ tx: string }>('/wallet/send', {
+    baseUrl: API_URL,
+    init: { method: 'POST', headers: jsonWithCsrf(), body: JSON.stringify(params) }
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Send failed: ${res.status}`);
+    throw new Error(formatStatus(res.error));
   }
-  return res.json() as Promise<{ tx: string }>;
+  return res.data;
 }
 
 export async function fundWallet(params: {
@@ -71,17 +76,14 @@ export async function fundWallet(params: {
   amount: string;
   data?: string;
 }) {
-  const res = await fetch(`${API_URL}/wallet/fund`, {
-    method: 'POST',
-    headers: jsonWithCsrf(),
-    credentials: 'include',
-    body: JSON.stringify(params)
+  const res = await apiRequest<{ tx: string; from?: string; to?: string; chainId?: string }>('/wallet/fund', {
+    baseUrl: API_URL,
+    init: { method: 'POST', headers: jsonWithCsrf(), body: JSON.stringify(params) }
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Fund failed: ${res.status}`);
+    throw new Error(formatStatus(res.error));
   }
-  return res.json() as Promise<{ tx: string; from?: string; to?: string; chainId?: string }>;
+  return res.data;
 }
 
 export async function swapTokens(params: {
@@ -92,17 +94,14 @@ export async function swapTokens(params: {
   amountIn: string;
   recipient: string;
 }) {
-  const res = await fetch(`${API_URL}/wallet/swap`, {
-    method: 'POST',
-    headers: jsonWithCsrf(),
-    credentials: 'include',
-    body: JSON.stringify(params)
+  const res = await apiRequest<{ tx: string; note?: string }>('/wallet/swap', {
+    baseUrl: API_URL,
+    init: { method: 'POST', headers: jsonWithCsrf(), body: JSON.stringify(params) }
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Swap failed: ${res.status}`);
+    throw new Error(formatStatus(res.error));
   }
-  return res.json() as Promise<{ tx: string; note?: string }>;
+  return res.data;
 }
 
 export type SwapRoute = {
@@ -121,12 +120,11 @@ export async function getSwapQuote(params: { tokenIn: string; tokenOut: string; 
     tokenOut: params.tokenOut,
     amount: params.amount
   });
-  const res = await fetch(`${API_URL}/swap/quote?${query.toString()}`, { credentials: 'include' });
+  const res = await apiRequest<{ routes?: SwapRoute[] }>(`/swap/quote?${query.toString()}`, { baseUrl: API_URL });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Quote failed: ${res.status}`);
+    throw new Error(formatStatus(res.error));
   }
-  return res.json() as Promise<{ routes?: SwapRoute[] }>;
+  return res.data;
 }
 
 export async function executeSwap(params: {
@@ -140,17 +138,14 @@ export async function executeSwap(params: {
   minAmountOut?: string;
   recipient: string;
 }) {
-  const res = await fetch(`${API_URL}/swap/execute`, {
-    method: 'POST',
-    headers: jsonWithCsrf(),
-    credentials: 'include',
-    body: JSON.stringify(params)
+  const res = await apiRequest<{ tx?: string; routeId?: string }>('/swap/execute', {
+    baseUrl: API_URL,
+    init: { method: 'POST', headers: jsonWithCsrf(), body: JSON.stringify(params) }
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Swap execute failed: ${res.status}`);
+    throw new Error(formatStatus(res.error));
   }
-  return res.json() as Promise<{ tx?: string; routeId?: string }>;
+  return res.data;
 }
 
 export async function getTxReceipt(params: { chainId: 'l1' | 'l2' | 'l3'; tx: string }) {
@@ -158,12 +153,7 @@ export async function getTxReceipt(params: { chainId: 'l1' | 'l2' | 'l3'; tx: st
     chainId: params.chainId,
     tx: params.tx
   });
-  const res = await fetch(`${API_URL}/wallet/tx/receipt?${query.toString()}`, { credentials: 'include' });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Receipt failed: ${res.status}`);
-  }
-  return res.json() as Promise<{
+  const res = await apiRequest<{
     status: 'pending' | 'confirmed';
     tx: string;
     chainId: string;
@@ -172,5 +162,9 @@ export async function getTxReceipt(params: { chainId: 'l1' | 'l2' | 'l3'; tx: st
     effectiveGasPrice?: string | null;
     from?: string;
     to?: string | null;
-  }>;
+  }>(`/wallet/tx/receipt?${query.toString()}`, { baseUrl: API_URL });
+  if (!res.ok) {
+    throw new Error(formatStatus(res.error));
+  }
+  return res.data;
 }

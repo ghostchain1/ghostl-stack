@@ -10,6 +10,7 @@ import type { WalletRecord, TokenRecord } from '@ghostl/types';
 import { resolveApiBase } from '../../src/lib/runtime';
 import { jsonWithCsrf } from '../../src/lib/csrf';
 import { fundWallet, getBalance as apiGetBalance, getTxReceipt } from '../../src/modules/wallet/api';
+import { apiRequest, formatApiError, type ApiError } from '../../src/lib/api';
 
 const API_URL = resolveApiBase();
 const bridgeAddress = process.env.NEXT_PUBLIC_BRIDGE_ADDRESS || '';
@@ -43,7 +44,9 @@ export function WalletClient() {
     setSlippageBps,
     selectedOutToken,
     setSelectedOutToken,
-    setActiveWallet
+    setActiveWallet,
+    rpcRegistryError,
+    tokenListError
   } = useWallet();
   const [to, setTo] = useState('');
   const [amount, setAmount] = useState('0.01');
@@ -96,6 +99,10 @@ export function WalletClient() {
   const selectedRouteObj = useMemo(() => swapRoutes[selectedRoute], [swapRoutes, selectedRoute]);
   const [bridgePlanStatus, setBridgePlanStatus] = useState('');
   const selectedWallet = useMemo(() => inventory.find((w) => w.id === selectedWalletId) || null, [inventory, selectedWalletId]);
+  const formatStatus = (error: ApiError) => {
+    const info = formatApiError(error);
+    return `${info.method} ${info.endpoint} · ${info.status} · ${info.hint}`;
+  };
 
   useEffect(() => {
     if (account && !bridgeRecipient) {
@@ -129,9 +136,12 @@ export function WalletClient() {
   const loadInventory = async () => {
     setInventoryStatus('Loading wallets...');
     try {
-      const res = await fetch(`${API_URL}/wallets`, { credentials: 'include' });
-      if (!res.ok) throw new Error(`Load failed ${res.status}`);
-      const data = (await res.json()) as WalletRecord[];
+      const res = await apiRequest<WalletRecord[]>('/wallets', { baseUrl: API_URL });
+      if (!res.ok) {
+        setInventoryStatus(formatStatus(res.error));
+        return;
+      }
+      const data = res.data;
       setInventory(data);
       setTokensInv(data);
       if (!selectedWalletId && data.length) {
@@ -164,9 +174,12 @@ export function WalletClient() {
       if (!selectedWalletId) return;
       setTokenStatus('Loading tokens...');
       try {
-        const res = await fetch(`${API_URL}/wallets/${selectedWalletId}/tokens`, { credentials: 'include' });
-        if (!res.ok) throw new Error(`Load failed ${res.status}`);
-        const data = (await res.json()) as TokenRecord[];
+        const res = await apiRequest<TokenRecord[]>(`/wallets/${selectedWalletId}/tokens`, { baseUrl: API_URL });
+        if (!res.ok) {
+          setTokenStatus(formatStatus(res.error));
+          return;
+        }
+        const data = res.data;
         setTokenList(data);
         setTokenStatus('');
       } catch (err) {
@@ -184,13 +197,18 @@ export function WalletClient() {
     }
     setInventoryStatus('Creating watch wallet...');
     try {
-      const res = await fetch(`${API_URL}/wallets`, {
-        method: 'POST',
-        headers: jsonWithCsrf(),
-        credentials: 'include',
-        body: JSON.stringify({ ...watchForm, ownerUserId: watchForm.ownerUserId || undefined })
+      const res = await apiRequest('/wallets', {
+        baseUrl: API_URL,
+        init: {
+          method: 'POST',
+          headers: jsonWithCsrf(),
+          body: JSON.stringify({ ...watchForm, ownerUserId: watchForm.ownerUserId || undefined })
+        }
       });
-      if (!res.ok) throw new Error(`Create failed ${res.status}`);
+      if (!res.ok) {
+        setInventoryStatus(formatStatus(res.error));
+        return;
+      }
       await loadInventory();
       setWatchForm({ ...watchForm, label: '', address: '' });
       setInventoryStatus('Watch wallet added');
@@ -208,14 +226,18 @@ export function WalletClient() {
     }
     setInventoryStatus('Creating custodial wallet...');
     try {
-      const res = await fetch(`${API_URL}/wallets/custodial`, {
-        method: 'POST',
-        headers: jsonWithCsrf(),
-        credentials: 'include',
-        body: JSON.stringify({ ...custodialForm, ownerUserId: custodialForm.ownerUserId || undefined })
+      const res = await apiRequest('/wallets/custodial', {
+        baseUrl: API_URL,
+        init: {
+          method: 'POST',
+          headers: jsonWithCsrf(),
+          body: JSON.stringify({ ...custodialForm, ownerUserId: custodialForm.ownerUserId || undefined })
+        }
       });
-      if (!res.ok) throw new Error(`Create failed ${res.status}`);
-      await res.json();
+      if (!res.ok) {
+        setInventoryStatus(formatStatus(res.error));
+        return;
+      }
       await loadInventory();
       setCustodialForm({ ...custodialForm, label: '' });
       setInventoryStatus('Custodial wallet created');
@@ -229,13 +251,17 @@ export function WalletClient() {
   const rotateManagedWallet = async (id: string) => {
     setInventoryStatus('Rotating key...');
     try {
-      const res = await fetch(`${API_URL}/wallets/${id}/rotate`, {
-        method: 'POST',
-        headers: jsonWithCsrf(),
-        credentials: 'include'
+      const res = await apiRequest(`/wallets/${id}/rotate`, {
+        baseUrl: API_URL,
+        init: {
+          method: 'POST',
+          headers: jsonWithCsrf()
+        }
       });
-      if (!res.ok) throw new Error(`Rotate failed ${res.status}`);
-      await res.json();
+      if (!res.ok) {
+        setInventoryStatus(formatStatus(res.error));
+        return;
+      }
       await loadInventory();
       setInventoryStatus('Key rotated');
       setTimeout(() => setInventoryStatus(''), 2000);
@@ -248,8 +274,14 @@ export function WalletClient() {
   const revokeWallet = async (id: string) => {
     setInventoryStatus('Revoking wallet...');
     try {
-      const res = await fetch(`${API_URL}/wallets/${id}`, { method: 'DELETE', headers: jsonWithCsrf(), credentials: 'include' });
-      if (!res.ok) throw new Error(`Revoke failed ${res.status}`);
+      const res = await apiRequest(`/wallets/${id}`, {
+        baseUrl: API_URL,
+        init: { method: 'DELETE', headers: jsonWithCsrf() }
+      });
+      if (!res.ok) {
+        setInventoryStatus(formatStatus(res.error));
+        return;
+      }
       await loadInventory();
       setInventoryStatus('Wallet revoked');
       setTimeout(() => setInventoryStatus(''), 2000);
@@ -276,19 +308,27 @@ export function WalletClient() {
     }
     setTokenStatus('Importing token...');
     try {
-      const res = await fetch(`${API_URL}/wallets/${selectedWalletId}/tokens/import`, {
-        method: 'POST',
-        headers: jsonWithCsrf(),
-        credentials: 'include',
-        body: JSON.stringify({ ...tokenForm, rpc: tokenForm.rpc || undefined })
+      const res = await apiRequest(`/wallets/${selectedWalletId}/tokens/import`, {
+        baseUrl: API_URL,
+        init: {
+          method: 'POST',
+          headers: jsonWithCsrf(),
+          body: JSON.stringify({ ...tokenForm, rpc: tokenForm.rpc || undefined })
+        }
       });
-      if (!res.ok) throw new Error(`Import failed ${res.status}`);
-      await res.json();
+      if (!res.ok) {
+        setTokenStatus(formatStatus(res.error));
+        return;
+      }
       setTokenForm((f) => ({ ...f, address: '' }));
       setTokenStatus('Token imported');
       setTimeout(() => setTokenStatus(''), 2000);
-      const resList = await fetch(`${API_URL}/wallets/${selectedWalletId}/tokens`, { credentials: 'include' });
-      if (resList.ok) setTokenList((await resList.json()) as TokenRecord[]);
+      const resList = await apiRequest<TokenRecord[]>(`/wallets/${selectedWalletId}/tokens`, { baseUrl: API_URL });
+      if (resList.ok) {
+        setTokenList(resList.data);
+      } else {
+        setTokenStatus(formatStatus(resList.error));
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Import failed';
       setTokenStatus(msg);
@@ -414,6 +454,8 @@ export function WalletClient() {
               ))}
             </div>
             {status && <span className="muted">{status}</span>}
+            {rpcRegistryError && <span className="muted">RPC registry: {rpcRegistryError}</span>}
+            {tokenListError && <span className="muted">Token list: {tokenListError}</span>}
             {!session.user && <span className="muted">Login required to use wallet actions.</span>}
           </div>
         </Card>

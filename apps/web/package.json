@@ -4,10 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "PORT=${PORT:-3200} next dev",
+    "dev:inspect": "NODE_OPTIONS=--inspect=0.0.0.0:9230 PORT=${PORT:-3200} next dev",
     "build": "next build",
     "start": "next start"
   },
   "dependencies": {
+    "@ghostl/contract-schemas": "0.0.1",
     "@ghostl/ui": "0.0.1",
     "ethers": "^6.13.2",
     "next": "^15.2.3",
