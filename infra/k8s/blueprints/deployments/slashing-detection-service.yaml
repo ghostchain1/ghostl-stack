@@ -1,0 +1,58 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "slashing-detection-service",
+    "labels": {
+      "app": "slashing-detection-service",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.services.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "slashing-detection-service"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "slashing-detection-service",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "slashing-detection-service",
+            "image": "ghostl/slashing-detection-service:local",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "PORT",
+                "value": "7620"
+              },
+              {
+                "name": "PROM_URL",
+                "value": "${PROM_URL}"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 7620,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

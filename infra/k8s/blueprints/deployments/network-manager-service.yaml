@@ -1,0 +1,82 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "network-manager-service",
+    "labels": {
+      "app": "network-manager-service",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.services.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "network-manager-service"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "network-manager-service",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "network-manager-service",
+            "image": "ghostl/network-manager-service:local",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "NETWORK_MANAGER_PORT",
+                "value": "${NETWORK_MANAGER_PORT:-7766}"
+              },
+              {
+                "name": "MONITOR_HOST",
+                "value": "${MONITOR_HOST:-host.docker.internal}"
+              },
+              {
+                "name": "MONITOR_RPC_L1",
+                "value": "${MONITOR_RPC_L1:-http://host.docker.internal:18545}"
+              },
+              {
+                "name": "MONITOR_RPC_L2",
+                "value": "${MONITOR_RPC_L2:-http://host.docker.internal:18547}"
+              },
+              {
+                "name": "MONITOR_RPC_L3",
+                "value": "${MONITOR_RPC_L3:-http://host.docker.internal:39545}"
+              },
+              {
+                "name": "MONITOR_PORTS",
+                "value": "${MONITOR_PORTS:-7070,7171,18545,18547,39545}"
+              },
+              {
+                "name": "MONITOR_HEALTH_ENDPOINTS",
+                "value": "${MONITOR_HEALTH_ENDPOINTS:-http://host.docker.internal:7070/health,http://host.docker.internal:7171/health}"
+              },
+              {
+                "name": "MONITOR_INTERVAL_MS",
+                "value": "${MONITOR_INTERVAL_MS:-10000}"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 7766,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

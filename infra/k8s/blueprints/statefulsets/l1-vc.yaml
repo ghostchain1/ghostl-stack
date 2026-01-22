@@ -1,0 +1,174 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "l1-vc",
+    "labels": {
+      "app": "l1-vc",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "l1-vc",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "l1-vc"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "l1-vc",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "l1-vc",
+            "image": "",
+            "command": [
+              "/bin/sh",
+              "/entrypoint-vc.sh"
+            ],
+            "args": null,
+            "env": [
+              {
+                "name": "LH_BEACON_NODES",
+                "value": "http://l1-bn:5052/"
+              }
+            ],
+            "ports": [],
+            "volumeMounts": [
+              {
+                "name": "l1_vc_data",
+                "mountPath": "/db"
+              },
+              {
+                "name": "${PWD}/beacon-data/data/keys",
+                "mountPath": "/validator_setup/validators"
+              },
+              {
+                "name": "${PWD}/beacon-data/data/secrets",
+                "mountPath": "/validator_setup/secrets"
+              },
+              {
+                "name": "${PWD}/beacon-data/config.yaml",
+                "mountPath": "/genesis/config.yaml"
+              },
+              {
+                "name": "${PWD}/beacon-data/deposit_contract_block.txt",
+                "mountPath": "/genesis/deposit_contract_block.txt"
+              },
+              {
+                "name": "${PWD}/../.devnet/genesis-l1.ssz",
+                "mountPath": "/genesis/genesis.ssz"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "l1_vc_data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "${PWD}/beacon-data/data/keys"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "${PWD}/beacon-data/data/secrets"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "${PWD}/beacon-data/config.yaml"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "${PWD}/beacon-data/deposit_contract_block.txt"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "${PWD}/../.devnet/genesis-l1.ssz"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "name": "opstack",
+  "networks": {
+    "default": {
+      "name": "opstack_default"
+    }
+  },
+  "services": {
+    "l1-mainnet-geth": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "command": "--syncmode snap --http --http.addr=0.0.0.0 --http.port=8545 --http.api=eth,net,web3,txpool --http.vhosts=\"*\" --http.corsdomain=\"*\" --ws --ws.addr=0.0.0.0 --ws.port=8546 --ws.api=eth,net,web3 --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts=\"*\" --datadir=/data --cache=4096 --maxpeers=50 --metrics --metrics.addr=0.0.0.0 --metrics.port=6060\n",
+      "cpus": "2.0",
+      "image": "ethereum/client-go:stable",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "8g",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "38545",
+          "target": 8545
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "38546",
+          "target": 8546
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "38551",
+          "target": 8551
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "38660",
+          "target": 6060
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "user": "0:0",
+      "volumes": [
+        {
+          "source": "l1-mainnet-geth-data",
+          "target": "/data",
+          "type": "volume",
+          "volume": {}
+        }
+      ]
+    }
+  },
+  "volumes": {
+    "l1-mainnet-geth-data": {
+      "name": "opstack_l1-mainnet-geth-data"
+    }
+  },
+  "x-logging": {
+    "driver": "json-file",
+    "options": {
+      "max-file": "3",
+      "max-size": "10m"
+    }
+  },
+  "x-security": {
+    "cap_drop": [
+      "ALL"
+    ],
+    "security_opt": [
+      "no-new-privileges:true"
+    ]
+  }
+}

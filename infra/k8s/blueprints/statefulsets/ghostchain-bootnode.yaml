@@ -1,0 +1,82 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "ghostchain-bootnode",
+    "labels": {
+      "app": "ghostchain-bootnode",
+      "role": "chain"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "true"
+    }
+  },
+  "spec": {
+    "serviceName": "ghostchain-bootnode",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "ghostchain-bootnode"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "ghostchain-bootnode",
+          "role": "chain"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "ghostchain-bootnode",
+            "image": "${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}",
+            "command": null,
+            "args": [
+              "bootnode",
+              "--nodekey",
+              "/config/boot.key",
+              "--addr",
+              ":30301"
+            ],
+            "env": [],
+            "ports": [
+              {
+                "containerPort": 30301,
+                "protocol": "UDP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "./data/bootnode",
+                "mountPath": "/config"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./data/bootnode"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "ghost-rollup-proposer",
+    "labels": {
+      "app": "ghost-rollup-proposer",
+      "role": "chain"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.services.yml",
+      "ghost.no_recreate": "true"
+    }
+  },
+  "spec": {
+    "serviceName": "ghost-rollup-proposer",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "ghost-rollup-proposer"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "ghost-rollup-proposer",
+          "role": "chain"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "ghost-rollup-proposer",
+            "image": "ghostl/ghost-rollup-proposer:local",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "PORT",
+                "value": "7272"
+              },
+              {
+                "name": "RPC_SETTLEMENT",
+                "value": "${RPC_L2}"
+              },
+              {
+                "name": "RPC_CHILD",
+                "value": "${RPC_L3}"
+              },
+              {
+                "name": "ROLLUP_ADDRESS",
+                "value": "${L2_ROLLUP_L3_ADDRESS}"
+              },
+              {
+                "name": "PROPOSER_PRIVATE_KEY",
+                "value": "${PROPOSER_PRIVATE_KEY}"
+              },
+              {
+                "name": "STATE_DIR",
+                "value": "/state"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 7272,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "./data",
+                "mountPath": "/state"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

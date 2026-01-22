@@ -1,0 +1,70 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "ai-monitor",
+    "labels": {
+      "app": "ai-monitor",
+      "role": "ai"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.ai.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "ai-monitor"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "ai-monitor",
+          "role": "ai"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "ai-monitor",
+            "image": "ghostl/ai-monitor:local",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "PORT",
+                "value": "7575"
+              },
+              {
+                "name": "RPC_L2",
+                "value": "${RPC_L2}"
+              },
+              {
+                "name": "GUARD_URL",
+                "value": "${GUARD_URL}"
+              },
+              {
+                "name": "ADMIN_TOKEN",
+                "value": "${BRIDGE_ADMIN_TOKEN}"
+              },
+              {
+                "name": "OBSERVE_ONLY",
+                "value": "1"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 7575,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

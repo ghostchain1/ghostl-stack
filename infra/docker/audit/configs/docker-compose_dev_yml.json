@@ -1,0 +1,121 @@
+{
+  "name": "ghostl-stack",
+  "networks": {
+    "default": {
+      "name": "ghostl-stack_default"
+    }
+  },
+  "services": {
+    "ghostl-api": {
+      "build": {
+        "context": ".",
+        "dockerfile": "apps/api/Dockerfile",
+        "target": "dev"
+      },
+      "env_file": [
+        {
+          "path": "./apps/api/.env.example",
+          "required": true
+        },
+        {
+          "path": "./services/stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "NODE_ENV=development",
+        "PORT=4000",
+        "CORS_ALLOW_ORIGINS=http://localhost:3200",
+        "SQLITE_DB_PATH=/app/apps/api/data/ghostl.db",
+        "AUTH_DB_PATH=/app/apps/api/data/ghostl.db",
+        "NFT_STORE_PATH=/app/apps/api/data/nfts.json",
+        "MARKET_DATA_FILE=/app/apps/api/data/market-data.json"
+      ],
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "4000",
+          "target": 4000
+        }
+      ],
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./",
+          "target": "/app",
+          "type": "bind"
+        },
+        {
+          "target": "/app/node_modules",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./apps/api/data",
+          "target": "/app/apps/api/data",
+          "type": "bind"
+        }
+      ]
+    },
+    "ghostl-web": {
+      "build": {
+        "context": ".",
+        "dockerfile": "apps/web/Dockerfile",
+        "target": "dev"
+      },
+      "depends_on": {
+        "ghostl-api": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "env_file": [
+        {
+          "path": "./apps/web/.env.example",
+          "required": true
+        }
+      ],
+      "environment": [
+        "NODE_ENV=development",
+        "PORT=3200",
+        "NEXT_PUBLIC_API_URL=http://localhost:4000",
+        "API_INTERNAL_URL=http://ghostl-api:4000"
+      ],
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "3200",
+          "target": 3200
+        }
+      ],
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./",
+          "target": "/app",
+          "type": "bind"
+        },
+        {
+          "target": "/app/node_modules",
+          "type": "volume",
+          "volume": {}
+        }
+      ]
+    }
+  }
+}

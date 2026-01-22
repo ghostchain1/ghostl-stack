@@ -1,0 +1,62 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "ghost-rpc-proxy",
+    "labels": {
+      "app": "ghost-rpc-proxy",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.services.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "ghost-rpc-proxy"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "ghost-rpc-proxy",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "ghost-rpc-proxy",
+            "image": "ghostl/ghost-rpc-proxy:local",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "PORT",
+                "value": "8546"
+              },
+              {
+                "name": "UPSTREAM_URL",
+                "value": "${UPSTREAM_URL}"
+              },
+              {
+                "name": "LOG_REQUESTS",
+                "value": "${LOG_REQUESTS}"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 8546,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "liquidity-service",
+    "labels": {
+      "app": "liquidity-service",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.services.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "liquidity-service"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "liquidity-service",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "liquidity-service",
+            "image": "ghostl/liquidity-service:local",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "PORT",
+                "value": "7606"
+              },
+              {
+                "name": "PROM_URL",
+                "value": "${PROM_URL}"
+              },
+              {
+                "name": "RPC_L2",
+                "value": "${RPC_L2}"
+              },
+              {
+                "name": "RPC_L3",
+                "value": "${RPC_L3}"
+              },
+              {
+                "name": "BRIDGE_ADDRESS",
+                "value": "${BRIDGE_ADDRESS}"
+              },
+              {
+                "name": "L2_TOKEN_ADDRESS",
+                "value": "${L2_TOKEN_ADDRESS}"
+              },
+              {
+                "name": "L3_TOKEN_ADDRESS",
+                "value": "${L3_TOKEN_ADDRESS}"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 7606,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

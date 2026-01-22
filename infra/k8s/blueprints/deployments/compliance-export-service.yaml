@@ -1,0 +1,54 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "compliance-export-service",
+    "labels": {
+      "app": "compliance-export-service",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.services.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "compliance-export-service"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "compliance-export-service",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "compliance-export-service",
+            "image": "ghostl/compliance-export-service:local",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "PORT",
+                "value": "7621"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 7621,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

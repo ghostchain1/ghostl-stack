@@ -1,0 +1,58 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "transfer-lifecycle-service",
+    "labels": {
+      "app": "transfer-lifecycle-service",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.services.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "transfer-lifecycle-service"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "transfer-lifecycle-service",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "transfer-lifecycle-service",
+            "image": "ghostl/transfer-lifecycle-service:local",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "PORT",
+                "value": "7605"
+              },
+              {
+                "name": "PROM_URL",
+                "value": "${PROM_URL}"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 7605,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

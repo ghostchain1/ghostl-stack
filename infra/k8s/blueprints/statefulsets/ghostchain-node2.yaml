@@ -1,0 +1,141 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "ghostchain-node2",
+    "labels": {
+      "app": "ghostchain-node2",
+      "role": "chain"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "true"
+    }
+  },
+  "spec": {
+    "serviceName": "ghostchain-node2",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "ghostchain-node2"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "ghostchain-node2",
+          "role": "chain"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "ghostchain-node2",
+            "image": "${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}",
+            "command": [
+              "/bin/sh",
+              "/config/run-node.sh"
+            ],
+            "args": null,
+            "env": [
+              {
+                "name": "CHAIN_ID",
+                "value": "14000101"
+              },
+              {
+                "name": "SIGNER_ADDRESS",
+                "value": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+              },
+              {
+                "name": "HTTP_PORT",
+                "value": "8545"
+              },
+              {
+                "name": "WS_PORT",
+                "value": "8546"
+              },
+              {
+                "name": "AUTH_PORT",
+                "value": "8551"
+              },
+              {
+                "name": "P2P_PORT",
+                "value": "30304"
+              },
+              {
+                "name": "METRICS_PORT",
+                "value": "6061"
+              }
+            ],
+            "ports": [],
+            "volumeMounts": [
+              {
+                "name": "./data/node2",
+                "mountPath": "/data"
+              },
+              {
+                "name": "./geth",
+                "mountPath": "/config"
+              },
+              {
+                "name": "./config/bootnode-enode.txt",
+                "mountPath": "/run/bootnode-enode.txt"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./data/node2"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "./geth"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "./config/bootnode-enode.txt"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "ghost-compliance",
+    "labels": {
+      "app": "ghost-compliance",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.services.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "ghost-compliance"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "ghost-compliance",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "ghost-compliance",
+            "image": "",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "ATTESTATION_EXPIRY_SECONDS",
+                "value": "900"
+              },
+              {
+                "name": "ATTESTATION_PRIVATE_KEY",
+                "value": "${COMPLIANCE_ATTESTATION_PRIVATE_KEY:-0x59c6995e998f97a5a0044966f094538e4b1a8d9d0f0b8a8c64d124b5e5d6fcbf}"
+              },
+              {
+                "name": "CORS_ORIGIN",
+                "value": "http://localhost:3200"
+              },
+              {
+                "name": "DATABASE_URL",
+                "value": "postgresql://ghost:${POSTGRES_PASSWORD:-ghostpass}@postgres:5432/ghost_compliance"
+              },
+              {
+                "name": "JWT_SECRET",
+                "value": "${COMPLIANCE_JWT_SECRET:-change-me}"
+              },
+              {
+                "name": "NODE_ENV",
+                "value": "production"
+              },
+              {
+                "name": "PORT",
+                "value": "8090"
+              },
+              {
+                "name": "REDIS_URL",
+                "value": "redis://redis:6379"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 8090,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

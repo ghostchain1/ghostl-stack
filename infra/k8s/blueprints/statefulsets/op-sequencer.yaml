@@ -1,0 +1,123 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "op-sequencer",
+    "labels": {
+      "app": "op-sequencer",
+      "role": "chain"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "true"
+    }
+  },
+  "spec": {
+    "serviceName": "op-sequencer",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "op-sequencer"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "op-sequencer",
+          "role": "chain"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "op-sequencer",
+            "image": "ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b",
+            "command": null,
+            "args": [
+              "op-node",
+              "--l1=${L1_RPC:-http://host.docker.internal:18545}",
+              "--l2=http://l2-geth:8551",
+              "--l2.jwt-secret=/config/jwt.txt",
+              "--rollup.config=/config/rollup.json",
+              "--rollup.l1-chain-config=/config/l1-chain.json",
+              "--rpc.addr=0.0.0.0",
+              "--rpc.port=9646",
+              "--l1.rpckind=basic",
+              "--l1.trustrpc",
+              "--p2p.disable",
+              "--l1.beacon.ignore",
+              "--sequencer.enabled",
+              "--sequencer.l1-confs=${SEQUENCER_L1_CONFS:-2}",
+              "--l1.runtime-config-reload-interval=0",
+              "--metrics.enabled",
+              "--metrics.addr=0.0.0.0",
+              "--metrics.port=7303"
+            ],
+            "env": [
+              {
+                "name": "OP_NODE_L1_BEACON_IGNORE",
+                "value": "1"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 9646,
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 7303,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "./data/op-sequencer",
+                "mountPath": "/data"
+              },
+              {
+                "name": "./config",
+                "mountPath": "/config"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./data/op-sequencer"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "./config"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

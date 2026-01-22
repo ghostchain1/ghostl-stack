@@ -1,0 +1,108 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "op-batcher-a",
+    "labels": {
+      "app": "op-batcher-a",
+      "role": "chain"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "true"
+    }
+  },
+  "spec": {
+    "serviceName": "op-batcher-a",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "op-batcher-a"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "op-batcher-a",
+          "role": "chain"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "op-batcher-a",
+            "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:devnet",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "OP_BATCHER_BATCH_TYPE",
+                "value": "null"
+              },
+              {
+                "name": "OP_BATCHER_L1_ETH_RPC",
+                "value": "http://l1:8545"
+              },
+              {
+                "name": "OP_BATCHER_L2_ETH_RPC",
+                "value": "http://l2-a:8545"
+              },
+              {
+                "name": "OP_BATCHER_MAX_CHANNEL_DURATION",
+                "value": "2"
+              },
+              {
+                "name": "OP_BATCHER_METRICS_ENABLED",
+                "value": "true"
+              },
+              {
+                "name": "OP_BATCHER_NUM_CONFIRMATIONS",
+                "value": "1"
+              },
+              {
+                "name": "OP_BATCHER_POLL_INTERVAL",
+                "value": "1s"
+              },
+              {
+                "name": "OP_BATCHER_PPROF_ENABLED",
+                "value": "true"
+              },
+              {
+                "name": "OP_BATCHER_ROLLUP_RPC",
+                "value": "http://op-node-a:8545"
+              },
+              {
+                "name": "OP_BATCHER_RPC_ENABLE_ADMIN",
+                "value": "true"
+              },
+              {
+                "name": "OP_BATCHER_SUB_SAFETY_MARGIN",
+                "value": "4"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 6060,
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 7300,
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 8545,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": []
+  }
+}

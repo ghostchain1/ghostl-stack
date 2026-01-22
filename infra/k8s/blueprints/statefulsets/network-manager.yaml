@@ -1,0 +1,76 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "network-manager",
+    "labels": {
+      "app": "network-manager",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "network-manager",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "network-manager"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "network-manager",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "network-manager",
+            "image": "alpine:3.19",
+            "command": [
+              "/bin/sh",
+              "-c"
+            ],
+            "args": [
+              "/usr/local/bin/network-manager.sh"
+            ],
+            "env": [],
+            "ports": [],
+            "volumeMounts": [
+              {
+                "name": "./bin/network-manager.sh",
+                "mountPath": "/usr/local/bin/network-manager.sh"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./bin/network-manager.sh"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

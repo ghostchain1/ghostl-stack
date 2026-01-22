@@ -1,0 +1,119 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "grafana",
+    "labels": {
+      "app": "grafana",
+      "role": "obs"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.obs.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "grafana",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "grafana"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "grafana",
+          "role": "obs"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "grafana",
+            "image": "grafana/grafana:10.4.2",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "GF_SECURITY_ADMIN_PASSWORD",
+                "value": "${GRAFANA_ADMIN_PASSWORD:-admin}"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 3000,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "grafana_data",
+                "mountPath": "/var/lib/grafana"
+              },
+              {
+                "name": "./grafana/provisioning",
+                "mountPath": "/etc/grafana/provisioning"
+              },
+              {
+                "name": "./grafana/dashboards",
+                "mountPath": "/var/lib/grafana/dashboards"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "grafana_data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "./grafana/provisioning"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "./grafana/dashboards"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

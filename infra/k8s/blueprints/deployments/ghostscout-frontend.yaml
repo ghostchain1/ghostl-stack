@@ -1,0 +1,82 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "ghostscout-frontend",
+    "labels": {
+      "app": "ghostscout-frontend",
+      "role": "ui"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.ui.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "ghostscout-frontend"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "ghostscout-frontend",
+          "role": "ui"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "ghostscout-frontend",
+            "image": "ghcr.io/blockscout/frontend:latest",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "HOST",
+                "value": "0.0.0.0"
+              },
+              {
+                "name": "NEXT_PUBLIC_API_HOST",
+                "value": "ghostscout:4000"
+              },
+              {
+                "name": "NEXT_PUBLIC_API_PROTOCOL",
+                "value": "http"
+              },
+              {
+                "name": "NEXT_PUBLIC_APP_HOST",
+                "value": "http://localhost:18640"
+              },
+              {
+                "name": "NEXT_PUBLIC_NETWORK_ICON",
+                "value": "https://raw.githubusercontent.com/blockscout/frontend/main/public/favicon.ico"
+              },
+              {
+                "name": "NEXT_PUBLIC_NETWORK_ID",
+                "value": "14000101"
+              },
+              {
+                "name": "NEXT_PUBLIC_NETWORK_NAME",
+                "value": "Ghostchain"
+              },
+              {
+                "name": "PORT",
+                "value": "3000"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 3000,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

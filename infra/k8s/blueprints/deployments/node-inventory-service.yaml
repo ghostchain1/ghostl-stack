@@ -1,0 +1,54 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "node-inventory-service",
+    "labels": {
+      "app": "node-inventory-service",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.services.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "node-inventory-service"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "node-inventory-service",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "node-inventory-service",
+            "image": "ghostl/node-inventory-service:local",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "PORT",
+                "value": "7622"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 7622,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}
