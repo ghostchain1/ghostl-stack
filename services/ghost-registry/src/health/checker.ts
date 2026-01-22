@@ -261,8 +261,8 @@ export class HealthChecker {
     const errors: Array<{ chain: string; error: string }> = [];
     const chains = chainConfig().map((chain) => {
       const region = regionFor([...chain.http, ...chain.ws]);
-      const network = networkFor();
-      const endpoints = [...chain.http, ...chain.ws].map((url) => {
+      const network: RegistryChain['network'] = networkFor();
+      const endpoints: NonNullable<RegistryChain['endpoints']> = [...chain.http, ...chain.ws].map((url) => {
         const health = this.health.get(`${chain.chainId}:${url}`);
         const status = health?.status === 'OK' ? 'healthy' : health?.status === 'DEGRADED' ? 'degraded' : 'down';
         return {
@@ -302,7 +302,7 @@ export class HealthChecker {
           .sort((a, b) => b - a)[0] || Date.now();
 
       const sortByHealth = (protocol: 'http' | 'ws') => {
-        const order = { healthy: 0, degraded: 1, down: 2 } as const;
+        const order: Record<RegistryChain['status'], number> = { healthy: 0, degraded: 1, down: 2 };
         return endpoints
           .filter((endpoint) => endpoint.protocol === protocol)
           .sort((a, b) => order[a.health.status] - order[b.health.status]);
@@ -311,6 +311,8 @@ export class HealthChecker {
       const httpPrimary = sortByHealth('http')[0]?.url || '';
       const wsPrimary = sortByHealth('ws')[0]?.url;
 
+      const registryType: RegistryChain['type'] = chain.layer === 'L1' ? 'execution' : 'rollup';
+
       return {
         chainName: chain.name,
         layer: chain.layer,
@@ -318,7 +320,7 @@ export class HealthChecker {
         rpc: httpPrimary || wsPrimary || '',
         ws: wsPrimary,
         region,
-        type: chain.layer === 'L1' ? 'execution' : 'rollup',
+        type: registryType,
         gasToken: chain.gasToken,
         status: chainStatus,
         lastChecked: new Date(lastChecked).toISOString(),
@@ -335,8 +337,8 @@ export class HealthChecker {
         endpoints,
         explorers: [],
         metadata: {
-          rpcStandard: 'ethereum',
-          evmCompatible: true,
+          rpcStandard: 'ethereum' as const,
+          evmCompatible: true as const,
           consensus: chain.layer === 'L1' ? 'PoS' : chain.layer === 'L2' ? 'OP Stack' : 'OP Stack L3'
         }
       };

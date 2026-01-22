@@ -1,0 +1,404 @@
+# Dependency Graphs
+
+Generated: 2026-01-21T19:37:25Z
+
+## Service Dependencies
+```mermaid
+%% Service dependencies (compose depends_on)
+graph LR
+  ai_clock_sync["ai-clock-sync"]
+  ai_monitor["ai-monitor"]
+  alertmanager["alertmanager"]
+  alerts_service["alerts-service"]
+  anomaly_detection_service["anomaly-detection-service"]
+  artifact_server["artifact-server"]
+  audit_log_service["audit-log-service"]
+  auth_service["auth-service"]
+  block_index_service["block-index-service"]
+  bridge_service["bridge-service"]
+  chain_status_service["chain-status-service"]
+  command_palette_service["command-palette-service"]
+  compliance_export_service["compliance-export-service"]
+  consensus_telemetry_service["consensus-telemetry-service"]
+  contract_registry_service["contract-registry-service"]
+  contract_risk_service["contract-risk-service"]
+  core_service["core-service"]
+  da_server["da-server"]
+  dispute_service["dispute-service"]
+  entity_tagging_service["entity-tagging-service"]
+  explainability_service["explainability-service"]
+  feature_flags_service["feature-flags-service"]
+  fee_model_service["fee-model-service"]
+  forecasting_service["forecasting-service"]
+  ghost_compliance["ghost-compliance"]
+  ghost_compliance_worker["ghost-compliance-worker"]
+  ghost_guard["ghost-guard"]
+  ghost_registry["ghost-registry"]
+  ghost_relayer["ghost-relayer"]
+  ghost_rollup_challenger["ghost-rollup-challenger"]
+  ghost_rollup_proposer["ghost-rollup-proposer"]
+  ghost_rpc_proxy["ghost-rpc-proxy"]
+  ghost_ui["ghost-ui"]
+  ghostchain_bootnode["ghostchain-bootnode"]
+  ghostchain_node1["ghostchain-node1"]
+  ghostchain_node2["ghostchain-node2"]
+  ghostchain_node3["ghostchain-node3"]
+  ghostchain_node4["ghostchain-node4"]
+  ghostl_api["ghostl-api"]
+  ghostl_web["ghostl-web"]
+  ghostscout["ghostscout"]
+  ghostscout_db["ghostscout-db"]
+  ghostscout_frontend["ghostscout-frontend"]
+  global_search_service["global-search-service"]
+  governance_service["governance-service"]
+  grafana["grafana"]
+  key_rotation_service["key-rotation-service"]
+  l1["l1"]
+  l1_bn["l1-bn"]
+  l1_mainnet_geth["l1-mainnet-geth"]
+  l1_vc["l1-vc"]
+  l2["l2"]
+  l2_a["l2-a"]
+  l2_b["l2-b"]
+  l2_geth["l2-geth"]
+  l3_geth["l3-geth"]
+  l3_op_batcher["l3-op-batcher"]
+  l3_op_challenger["l3-op-challenger"]
+  l3_op_node["l3-op-node"]
+  l3_op_proposer["l3-op-proposer"]
+  liquidity_service["liquidity-service"]
+  loki["loki"]
+  mempool_service["mempool-service"]
+  migrate["migrate"]
+  network_context_service["network-context-service"]
+  network_manager["network-manager"]
+  network_manager_service["network-manager-service"]
+  node_health_service["node-health-service"]
+  node_inventory_service["node-inventory-service"]
+  notifications_service["notifications-service"]
+  op_batcher["op-batcher"]
+  op_batcher_a["op-batcher-a"]
+  op_batcher_b["op-batcher-b"]
+  op_challenger["op-challenger"]
+  op_gate["op-gate"]
+  op_node["op-node"]
+  op_node_a["op-node-a"]
+  op_node_b["op-node-b"]
+  op_proposer["op-proposer"]
+  op_proposer_a["op-proposer-a"]
+  op_proposer_b["op-proposer-b"]
+  op_sequencer["op-sequencer"]
+  op_supervisor["op-supervisor"]
+  participation_service["participation-service"]
+  payout_service["payout-service"]
+  peer_graph_service["peer-graph-service"]
+  postgres["postgres"]
+  prometheus["prometheus"]
+  promtail["promtail"]
+  proxy_inspector_service["proxy-inspector-service"]
+  rbac_service["rbac-service"]
+  redis["redis"]
+  rewards_service["rewards-service"]
+  rpc_forward_l1_29545["rpc-forward-l1-29545"]
+  secrets_health_service["secrets-health-service"]
+  sentinel["sentinel"]
+  session_service["session-service"]
+  slashing_detection_service["slashing-detection-service"]
+  snapshot_service["snapshot-service"]
+  staking_service["staking-service"]
+  supply_service["supply-service"]
+  theme_service["theme-service"]
+  transfer_lifecycle_service["transfer-lifecycle-service"]
+  treasury_service["treasury-service"]
+  tx_index_service["tx-index-service"]
+  upgrade_orchestrator_service["upgrade-orchestrator-service"]
+  validator_service["validator-service"]
+  vector["vector"]
+  verification_service["verification-service"]
+  ai_monitor --> l2_geth
+  alerts_service --> prometheus
+  anomaly_detection_service --> prometheus
+  block_index_service --> prometheus
+  bridge_service --> prometheus
+  consensus_telemetry_service --> l2_geth
+  consensus_telemetry_service --> l3_geth
+  contract_registry_service --> l2_geth
+  contract_registry_service --> l3_geth
+  contract_registry_service --> prometheus
+  contract_risk_service --> prometheus
+  dispute_service --> prometheus
+  explainability_service --> prometheus
+  fee_model_service --> prometheus
+  forecasting_service --> prometheus
+  key_rotation_service --> prometheus
+  l3_geth --> l2_geth
+  l3_op_batcher --> l3_op_node
+  l3_op_node --> l3_geth
+  l3_op_proposer --> l3_op_node
+  liquidity_service --> l2_geth
+  liquidity_service --> l3_geth
+  liquidity_service --> prometheus
+  mempool_service --> prometheus
+  node_health_service --> l2_geth
+  node_health_service --> l3_geth
+  participation_service --> prometheus
+  payout_service --> prometheus
+  peer_graph_service --> l2_geth
+  peer_graph_service --> l3_geth
+  proxy_inspector_service --> prometheus
+  rewards_service --> prometheus
+  secrets_health_service --> prometheus
+  slashing_detection_service --> prometheus
+  staking_service --> prometheus
+  supply_service --> prometheus
+  transfer_lifecycle_service --> prometheus
+  treasury_service --> prometheus
+  tx_index_service --> prometheus
+  validator_service --> l2_geth
+  validator_service --> l3_geth
+  validator_service --> prometheus
+  ghostchain_node1 --> ghostchain_bootnode
+  ghostchain_node2 --> ghostchain_bootnode
+  ghostscout --> ghostchain_node1
+  ghostscout --> ghostscout_db
+  ghostscout_frontend --> ghostscout
+  ghost_guard --> l2_geth
+  grafana --> loki
+  grafana --> prometheus
+  l2_geth --> op_gate
+  op_batcher --> op_gate
+  op_batcher --> op_node
+  op_node --> l2_geth
+  op_proposer --> op_gate
+  op_proposer --> op_node
+  op_sequencer --> l2_geth
+  vector --> loki
+  ghost_compliance --> migrate
+  ghost_compliance --> postgres
+  ghost_compliance --> redis
+  ghost_compliance_worker --> ghost_compliance
+  ghost_ui --> ghost_compliance
+  migrate --> postgres
+  migrate --> redis
+  ghostl_web --> ghostl_api
+  grafana --> loki
+  grafana --> prometheus
+  vector --> loki
+  l3_op_challenger --> l3_op_node
+  op_challenger --> op_node
+  l1_bn --> l1
+  l1_vc --> l1
+  l1_vc --> l1_bn
+  l2_a --> op_supervisor
+  l2_b --> op_supervisor
+  op_batcher_a --> l1
+  op_batcher_a --> l2_a
+  op_batcher_a --> op_node_a
+  op_batcher_b --> l1
+  op_batcher_b --> l2_b
+  op_batcher_b --> op_node_b
+  op_node_a --> l1
+  op_node_a --> l1_bn
+  op_node_a --> l1_vc
+  op_node_a --> l2_a
+  op_node_a --> op_supervisor
+  op_node_b --> l1
+  op_node_b --> l1_bn
+  op_node_b --> l1_vc
+  op_node_b --> l2_b
+  op_node_b --> op_supervisor
+  op_proposer_a --> l1
+  op_proposer_a --> op_node_a
+  op_proposer_b --> l1
+  op_proposer_b --> op_node_b
+  op_supervisor --> l1
+  artifact_server --> l1
+  l1_bn --> l1
+  l1_vc --> l1
+  l1_vc --> l1_bn
+  op_batcher --> l1
+  op_batcher --> l2
+  op_batcher --> op_node
+  op_challenger --> l1
+  op_challenger --> l1_bn
+  op_challenger --> l2
+  op_challenger --> op_node
+  op_node --> l1
+  op_node --> l1_bn
+  op_node --> l1_vc
+  op_node --> l2
+  op_proposer --> l1
+  op_proposer --> l2
+  op_proposer --> op_node
+  class ghost_rollup_challenger chain;
+  class ghost_rollup_proposer chain;
+  class ghostchain_bootnode chain;
+  class ghostchain_node1 chain;
+  class ghostchain_node2 chain;
+  class ghostchain_node3 chain;
+  class ghostchain_node4 chain;
+  class l1_mainnet_geth chain;
+  class l2 chain;
+  class l2_a chain;
+  class l2_b chain;
+  class l2_geth chain;
+  class l3_geth chain;
+  class l3_op_batcher chain;
+  class l3_op_challenger chain;
+  class l3_op_node chain;
+  class l3_op_proposer chain;
+  class op_batcher chain;
+  class op_batcher_a chain;
+  class op_batcher_b chain;
+  class op_node chain;
+  class op_node_a chain;
+  class op_node_b chain;
+  class op_proposer chain;
+  class op_proposer_a chain;
+  class op_proposer_b chain;
+  class op_sequencer chain;
+  class validator_service chain;
+classDef chain stroke:#d97706,stroke-width:2px;
+
+```
+
+## UI -> API -> RPC Flow
+```mermaid
+%% UI -> API -> RPC flow
+graph TB
+  ai_clock_sync["ai-clock-sync"]
+  ai_monitor["ai-monitor"]
+  alertmanager["alertmanager"]
+  alerts_service["alerts-service"]
+  anomaly_detection_service["anomaly-detection-service"]
+  artifact_server["artifact-server"]
+  audit_log_service["audit-log-service"]
+  auth_service["auth-service"]
+  block_index_service["block-index-service"]
+  bridge_service["bridge-service"]
+  chain_status_service["chain-status-service"]
+  command_palette_service["command-palette-service"]
+  compliance_export_service["compliance-export-service"]
+  consensus_telemetry_service["consensus-telemetry-service"]
+  contract_registry_service["contract-registry-service"]
+  contract_risk_service["contract-risk-service"]
+  core_service["core-service"]
+  da_server["da-server"]
+  dispute_service["dispute-service"]
+  entity_tagging_service["entity-tagging-service"]
+  explainability_service["explainability-service"]
+  feature_flags_service["feature-flags-service"]
+  fee_model_service["fee-model-service"]
+  forecasting_service["forecasting-service"]
+  ghost_compliance["ghost-compliance"]
+  ghost_compliance_worker["ghost-compliance-worker"]
+  ghost_guard["ghost-guard"]
+  ghost_registry["ghost-registry"]
+  ghost_relayer["ghost-relayer"]
+  ghost_rollup_challenger["ghost-rollup-challenger"]
+  ghost_rollup_proposer["ghost-rollup-proposer"]
+  ghost_rpc_proxy["ghost-rpc-proxy"]
+  ghost_ui["ghost-ui"]
+  ghostchain_bootnode["ghostchain-bootnode"]
+  ghostchain_node1["ghostchain-node1"]
+  ghostchain_node2["ghostchain-node2"]
+  ghostchain_node3["ghostchain-node3"]
+  ghostchain_node4["ghostchain-node4"]
+  ghostl_api["ghostl-api"]
+  ghostl_web["ghostl-web"]
+  ghostscout["ghostscout"]
+  ghostscout_db["ghostscout-db"]
+  ghostscout_frontend["ghostscout-frontend"]
+  global_search_service["global-search-service"]
+  governance_service["governance-service"]
+  grafana["grafana"]
+  key_rotation_service["key-rotation-service"]
+  l1["l1"]
+  l1_bn["l1-bn"]
+  l1_mainnet_geth["l1-mainnet-geth"]
+  l1_vc["l1-vc"]
+  l2["l2"]
+  l2_a["l2-a"]
+  l2_b["l2-b"]
+  l2_geth["l2-geth"]
+  l3_geth["l3-geth"]
+  l3_op_batcher["l3-op-batcher"]
+  l3_op_challenger["l3-op-challenger"]
+  l3_op_node["l3-op-node"]
+  l3_op_proposer["l3-op-proposer"]
+  liquidity_service["liquidity-service"]
+  loki["loki"]
+  mempool_service["mempool-service"]
+  migrate["migrate"]
+  network_context_service["network-context-service"]
+  network_manager["network-manager"]
+  network_manager_service["network-manager-service"]
+  node_health_service["node-health-service"]
+  node_inventory_service["node-inventory-service"]
+  notifications_service["notifications-service"]
+  op_batcher["op-batcher"]
+  op_batcher_a["op-batcher-a"]
+  op_batcher_b["op-batcher-b"]
+  op_challenger["op-challenger"]
+  op_gate["op-gate"]
+  op_node["op-node"]
+  op_node_a["op-node-a"]
+  op_node_b["op-node-b"]
+  op_proposer["op-proposer"]
+  op_proposer_a["op-proposer-a"]
+  op_proposer_b["op-proposer-b"]
+  op_sequencer["op-sequencer"]
+  op_supervisor["op-supervisor"]
+  participation_service["participation-service"]
+  payout_service["payout-service"]
+  peer_graph_service["peer-graph-service"]
+  postgres["postgres"]
+  prometheus["prometheus"]
+  promtail["promtail"]
+  proxy_inspector_service["proxy-inspector-service"]
+  rbac_service["rbac-service"]
+  redis["redis"]
+  rewards_service["rewards-service"]
+  rpc_forward_l1_29545["rpc-forward-l1-29545"]
+  secrets_health_service["secrets-health-service"]
+  sentinel["sentinel"]
+  session_service["session-service"]
+  slashing_detection_service["slashing-detection-service"]
+  snapshot_service["snapshot-service"]
+  staking_service["staking-service"]
+  supply_service["supply-service"]
+  theme_service["theme-service"]
+  transfer_lifecycle_service["transfer-lifecycle-service"]
+  treasury_service["treasury-service"]
+  tx_index_service["tx-index-service"]
+  upgrade_orchestrator_service["upgrade-orchestrator-service"]
+  validator_service["validator-service"]
+  vector["vector"]
+  verification_service["verification-service"]
+  ghostl_web -->|http| ghostl_api
+  ghost_ui -->|http| ghost_compliance
+  ghostl_api -->|http| ghost_registry
+  ghostl_api -->|rpc| ghostchain_node1
+  ghostl_api -->|rpc| l2
+  ghostl_api -->|rpc| l3
+  ghost_registry -->|health| ghostchain_node1
+  ghost_registry -->|health| l2
+  ghost_registry -->|health| l3
+
+```
+
+## Observability Pipeline
+```mermaid
+%% Observability pipeline
+graph LR
+  prometheus --> grafana
+  ghostl_api --> loki
+  ghost_compliance --> loki
+  ghostl_web --> loki
+  prometheus --> alertmanager
+  alertmanager --> alerts_service
+```
+
+## Legend
+- Nodes with chain class: no-recreate / chain data services.
+- Edges show compose depends_on or heuristic runtime flows.

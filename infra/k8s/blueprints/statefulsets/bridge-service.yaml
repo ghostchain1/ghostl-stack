@@ -1,0 +1,93 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "bridge-service",
+    "labels": {
+      "app": "bridge-service",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.services.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "bridge-service",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "bridge-service"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "bridge-service",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "bridge-service",
+            "image": "ghostl/bridge-service:local",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "PORT",
+                "value": "7604"
+              },
+              {
+                "name": "PROM_URL",
+                "value": "${PROM_URL}"
+              },
+              {
+                "name": "ADMIN_TOKEN",
+                "value": "${BRIDGE_ADMIN_TOKEN}"
+              },
+              {
+                "name": "INCIDENTS_FILE",
+                "value": "/data/bridge-incidents.json"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 7604,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "./data",
+                "mountPath": "/data"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

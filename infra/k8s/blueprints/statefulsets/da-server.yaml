@@ -1,0 +1,76 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "da-server",
+    "labels": {
+      "app": "da-server",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "da-server",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "da-server"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "da-server",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "da-server",
+            "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/da-server:devnet",
+            "command": null,
+            "args": "da-server --file.path=/data --addr=0.0.0.0 --port=3100 --log.level=debug --generic-commitment=\"${ALTDA_GENERIC_DA}\"\n",
+            "env": [],
+            "ports": [
+              {
+                "containerPort": 3100,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "da_data",
+                "mountPath": "/data"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "da_data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

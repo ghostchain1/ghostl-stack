@@ -1,0 +1,71 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "sentinel",
+    "labels": {
+      "app": "sentinel",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "sentinel",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "sentinel"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "sentinel",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "sentinel",
+            "image": "quarry/sentinel",
+            "command": null,
+            "args": "sentinel --datadir=data --l1-rpc-http=http://l1:8545 --l1-rpc-ws=ws://l1:8546 --da-storage-uri=http://da-server:3100 --private-key=0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba --config=/rollup.json\n",
+            "env": [],
+            "ports": [],
+            "volumeMounts": [
+              {
+                "name": "${PWD}/../.devnet/rollup.json",
+                "mountPath": "/rollup.json"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "${PWD}/../.devnet/rollup.json"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "ghostchain-node1",
+    "labels": {
+      "app": "ghostchain-node1",
+      "role": "chain"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "true"
+    }
+  },
+  "spec": {
+    "serviceName": "ghostchain-node1",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "ghostchain-node1"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "ghostchain-node1",
+          "role": "chain"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "ghostchain-node1",
+            "image": "${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}",
+            "command": [
+              "/bin/sh",
+              "/config/run-node.sh"
+            ],
+            "args": null,
+            "env": [
+              {
+                "name": "CHAIN_ID",
+                "value": "14000101"
+              },
+              {
+                "name": "SIGNER_ADDRESS",
+                "value": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+              },
+              {
+                "name": "HTTP_PORT",
+                "value": "8545"
+              },
+              {
+                "name": "WS_PORT",
+                "value": "8546"
+              },
+              {
+                "name": "AUTH_PORT",
+                "value": "8551"
+              },
+              {
+                "name": "P2P_PORT",
+                "value": "30303"
+              },
+              {
+                "name": "METRICS_PORT",
+                "value": "6060"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 8545,
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 8546,
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 8551,
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 30303,
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 6060,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "./data/node1",
+                "mountPath": "/data"
+              },
+              {
+                "name": "./geth",
+                "mountPath": "/config"
+              },
+              {
+                "name": "./config/bootnode-enode.txt",
+                "mountPath": "/run/bootnode-enode.txt"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./data/node1"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "./geth"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "./config/bootnode-enode.txt"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

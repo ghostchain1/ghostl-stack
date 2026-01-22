@@ -1,0 +1,27 @@
+{{- range .Values.statefulServices }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .name }}
+spec:
+  serviceName: {{ .name }}
+  replicas: {{ .replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ .name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .name }}
+    spec:
+      containers:
+        - name: {{ .name }}
+          image: {{ .image }}
+          ports:
+            {{- range .ports }}
+            - containerPort: {{ . }}
+            {{- end }}
+  updateStrategy:
+    type: OnDelete
+---
+{{- end }}

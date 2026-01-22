@@ -1,0 +1,117 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "op-gate",
+    "labels": {
+      "app": "op-gate",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "op-gate",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "op-gate"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "op-gate",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "op-gate",
+            "image": "${OP_GATE_IMAGE:-local/op-gate:0.1.0}",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "ADMIN_TOKEN",
+                "value": "${GATE_ADMIN_TOKEN:-}"
+              },
+              {
+                "name": "ALLOW_INSECURE_ADMIN",
+                "value": "${GATE_ALLOW_INSECURE_ADMIN:-0}"
+              },
+              {
+                "name": "BATCH_SENDER_ADDRESS",
+                "value": "${BATCH_SENDER_ADDRESS:-}"
+              },
+              {
+                "name": "DEFAULT_DELAY_SECONDS",
+                "value": "${GATE_DEFAULT_DELAY_SECONDS:-0}"
+              },
+              {
+                "name": "GUARD_URL",
+                "value": "${GATE_GUARD_URL:-http://ghost-guard:7070}"
+              },
+              {
+                "name": "NODE_ENV",
+                "value": "production"
+              },
+              {
+                "name": "PORT",
+                "value": "${GATE_PORT:-8545}"
+              },
+              {
+                "name": "PROPOSER_ADDRESS",
+                "value": "${PROPOSER_ADDRESS:-}"
+              },
+              {
+                "name": "STATE_DIR",
+                "value": "/state"
+              },
+              {
+                "name": "UPSTREAM_RPC",
+                "value": "${GATE_UPSTREAM_RPC:-http://l2-geth:8545}"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 8545,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "op_gate_state",
+                "mountPath": "/state"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "op_gate_state"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "name": "ghost-ui",
+    "labels": {
+      "app": "ghost-ui"
+    }
+  },
+  "spec": {
+    "type": "LoadBalancer",
+    "selector": {
+      "app": "ghost-ui"
+    },
+    "ports": [
+      {
+        "port": "3200",
+        "targetPort": 3200,
+        "protocol": "TCP"
+      }
+    ]
+  }
+}

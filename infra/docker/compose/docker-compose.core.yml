@@ -1,0 +1,5566 @@
+{
+  "services": {
+    "l1-mainnet-geth": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "command": "--syncmode snap --http --http.addr=0.0.0.0 --http.port=8545 --http.api=eth,net,web3,txpool --http.vhosts=\"*\" --http.corsdomain=\"*\" --ws --ws.addr=0.0.0.0 --ws.port=8546 --ws.api=eth,net,web3 --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts=\"*\" --datadir=/data --cache=4096 --maxpeers=50 --metrics --metrics.addr=0.0.0.0 --metrics.port=6060\n",
+      "cpus": "2.0",
+      "image": "ethereum/client-go:stable",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "8g",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "38545",
+          "target": 8545
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "38546",
+          "target": 8546
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "38551",
+          "target": 8551
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "38660",
+          "target": 6060
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "user": "0:0",
+      "volumes": [
+        {
+          "source": "l1-mainnet-geth-data",
+          "target": "/data",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "l1-mainnet-geth",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "l1-mainnet-geth-data",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "network-manager": {
+      "command": [
+        "/usr/local/bin/network-manager.sh"
+      ],
+      "container_name": "opstack-network-manager",
+      "entrypoint": [
+        "/bin/sh",
+        "-c"
+      ],
+      "image": "alpine:3.19",
+      "network_mode": "host",
+      "pid": "host",
+      "restart": "unless-stopped",
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./bin/network-manager.sh",
+          "target": "/usr/local/bin/network-manager.sh",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "network-manager",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "./bin/network-manager.sh",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "ai-monitor": {
+      "build": {
+        "context": "../../services/ai-monitor",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "l2-geth": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "ADMIN_TOKEN": "${AI_MONITOR_ADMIN_TOKEN:-}",
+        "GUARD_URL": "${GUARD_URL:-http://ghost-guard:7070}",
+        "OBSERVE_ONLY": "${AI_MONITOR_OBSERVE_ONLY:-1}",
+        "RPC_L2": "http://l2-geth:8545"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7575/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/ai-monitor:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7575",
+          "target": 7575
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ai-monitor",
+        "com.ghost.k8s.role": "ai",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "alerts-service": {
+      "build": {
+        "context": "../../services/alerts-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7644/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/alerts-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "alerts-service",
+        "com.ghost.k8s.role": "obs",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "anomaly-detection-service": {
+      "build": {
+        "context": "../../services/anomaly-detection-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7616/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/anomaly-detection-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7616",
+          "target": 7616
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "anomaly-detection-service",
+        "com.ghost.k8s.role": "ai",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "audit-log-service": {
+      "build": {
+        "context": "../../services/audit-log-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "environment": {
+        "LOG_PATH": "/data/audit.log"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7641/health >/dev/null"
+        ]
+      },
+      "image": "local/audit-log-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./data/audit",
+          "target": "/data",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "audit-log-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "./data/audit",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "auth-service": {
+      "build": {
+        "context": "../../services/auth-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7639/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/auth-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "auth-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "block-index-service": {
+      "build": {
+        "context": "../../services/block-index-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7626/health >/dev/null"
+        ]
+      },
+      "image": "local/block-index-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "block-index-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "bridge-service": {
+      "build": {
+        "context": "../../services/bridge-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7604/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/bridge-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "bridge-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "chain-status-service": {
+      "build": {
+        "context": "../../services/chain-status-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7612/health >/dev/null"
+        ]
+      },
+      "image": "local/chain-status-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "chain-status-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "compliance-export-service": {
+      "build": {
+        "context": "../../services/compliance-export-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7621/health >/dev/null"
+        ]
+      },
+      "image": "local/compliance-export-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "compliance-export-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "consensus-telemetry-service": {
+      "build": {
+        "context": "../../services/consensus-telemetry-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "l2-geth": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "l3-geth": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "RPC_L2": "http://l2-geth:8545",
+        "RPC_L3": "http://l3-geth:8545"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7635/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/consensus-telemetry-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "consensus-telemetry-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "contract-registry-service": {
+      "build": {
+        "context": "../../services/contract-registry-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "l2-geth": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "l3-geth": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}",
+        "RPC_L2": "http://l2-geth:8545",
+        "RPC_L3": "http://l3-geth:8545"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7608/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/contract-registry-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "contract-registry-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "contract-risk-service": {
+      "build": {
+        "context": "../../services/contract-risk-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7609/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/contract-risk-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7609",
+          "target": 7609
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "contract-risk-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "dispute-service": {
+      "build": {
+        "context": "../../services/dispute-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7607/health >/dev/null"
+        ]
+      },
+      "image": "local/dispute-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "dispute-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "entity-tagging-service": {
+      "build": {
+        "context": "../../services/entity-tagging-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7627/health >/dev/null"
+        ]
+      },
+      "image": "local/entity-tagging-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "entity-tagging-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "explainability-service": {
+      "build": {
+        "context": "../../services/explainability-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7632/health >/dev/null"
+        ]
+      },
+      "image": "local/explainability-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7632",
+          "target": 7632
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "explainability-service",
+        "com.ghost.k8s.role": "ai",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "feature-flags-service": {
+      "build": {
+        "context": "../../services/feature-flags-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "environment": {
+        "FEATURE_FLAGS": "${FEATURE_FLAGS:-}"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7611/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/feature-flags-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "feature-flags-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "fee-model-service": {
+      "build": {
+        "context": "../../services/fee-model-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7615/health >/dev/null"
+        ]
+      },
+      "image": "local/fee-model-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "fee-model-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "forecasting-service": {
+      "build": {
+        "context": "../../services/forecasting-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7617/health >/dev/null"
+        ]
+      },
+      "image": "local/forecasting-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7617",
+          "target": 7617
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "forecasting-service",
+        "com.ghost.k8s.role": "ai",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "global-search-service": {
+      "build": {
+        "context": "../../services/global-search-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7637/health >/dev/null"
+        ]
+      },
+      "image": "local/global-search-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "global-search-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "governance-service": {
+      "build": {
+        "context": "../../services/governance-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7645/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/governance-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "governance-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "key-rotation-service": {
+      "build": {
+        "context": "../../services/key-rotation-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7619/health >/dev/null"
+        ]
+      },
+      "image": "local/key-rotation-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "key-rotation-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "l3-geth": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "command": [
+        "-c",
+        "set -e\nENODE_L2=\"enode://ee9270b480cc105aae5217e7d7fc175ea2a0e15fdda90947ecbfd23b89607f79c1a21890091ff13c058c12c6629c198c65d343db6164dc0a0d5a9310cd95cad6@l2-geth:30303\"\nif [ ! -d /data/geth ]; then\n  echo \"[l3-geth] initializing genesis...\"\n  geth init --datadir /data /config/genesis.json\nfi\necho \"[\\\"${L3_BOOTNODES:-$$ENODE_L2}\\\"]\" > /data/static-nodes.json\nexec geth \\\n  --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug \\\n  --http.vhosts=\"*\" \\\n  --ws --ws.addr=0.0.0.0 --ws.origins=\"*\" \\\n  --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts=\"*\" --authrpc.jwtsecret=/config/jwt.txt \\\n  --datadir=/data \\\n  --networkid=${L3_CHAIN_ID:-903} \\\n  --gcmode=archive \\\n  --bootnodes=${L3_BOOTNODES:-$$ENODE_L2} \\\n  --nodiscover \\\n  --rollup.disabletxpoolgossip=true\n"
+      ],
+      "cpus": "2.0",
+      "depends_on": {
+        "l2-geth": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "entrypoint": [
+        "/bin/sh"
+      ],
+      "healthcheck": {
+        "interval": "30s",
+        "retries": 3,
+        "start_period": "45s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:8545 >/dev/null"
+        ],
+        "timeout": "5s"
+      },
+      "image": "ghcr.io/ethereum-optimism/op-geth@sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "4g",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        "${L3_HOST_RPC:-39545}:8545"
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "user": "1000:1000",
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./l3/${L3_NAME:-ghostl3}/data",
+          "target": "/data",
+          "type": "bind"
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./l3/${L3_NAME:-ghostl3}/config",
+          "target": "/config",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "l3-geth",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "./l3/${L3_NAME:-ghostl3}/data,./l3/${L3_NAME:-ghostl3}/config",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "l3-op-batcher": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "command": [
+        "op-batcher",
+        "--l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}",
+        "--l2-eth-rpc=http://l3-geth:8545",
+        "--rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}",
+        "--private-key=${L3_BATCHER_KEY:-${BATCHER_KEY}}",
+        "--data-availability-type=${L3_DA_TYPE:-calldata}",
+        "--rpc.addr=0.0.0.0",
+        "--rpc.port=${L3_BATCHER_RPC_PORT:-18551}",
+        "--metrics.enabled",
+        "--metrics.addr=0.0.0.0",
+        "--metrics.port=${L3_METRICS_BATCHER_PORT:-8301}",
+        "--throttle.unsafe-da-bytes-lower-threshold=0"
+      ],
+      "cpus": "1.0",
+      "depends_on": {
+        "l3-op-node": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "L2OO_ADDRESS": "${L3_L2OO_ADDRESS:-0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512}"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "25s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:${L3_BATCHER_RPC_PORT:-18551} >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "ghcr.io/ethereum-optimism/op-batcher@sha256:21a2426a292a0d1b6c3665c9e07549df97d98e40edda6c880d34e22aefe279d2",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "1g",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        "${L3_BATCHER_HOST_PORT:-39551}:${L3_BATCHER_RPC_PORT:-18551}",
+        "${L3_METRICS_BATCHER_HOST_PORT:-8301}:${L3_METRICS_BATCHER_PORT:-8301}"
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "user": "1000:1000",
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./l3/${L3_NAME:-ghostl3}/config",
+          "target": "/config",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "l3-op-batcher",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "./l3/${L3_NAME:-ghostl3}/config",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "l3-op-node": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "command": [
+        "op-node",
+        "--l1=${L3_L1_RPC:-http://l2-geth:8545}",
+        "--l2=http://l3-geth:8551",
+        "--l2.jwt-secret=/config/jwt.txt",
+        "--rollup.config=/config/rollup.json",
+        "--rollup.l1-chain-config=/config/l1-chain.json",
+        "--rpc.addr=0.0.0.0",
+        "--rpc.port=${L3_ROLLUP_RPC_PORT:-19546}",
+        "--l1.rpckind=basic",
+        "--p2p.disable",
+        "--l1.beacon.ignore",
+        "--sequencer.enabled",
+        "--sequencer.l1-confs=${L3_SEQUENCER_L1_CONFS:-2}",
+        "--metrics.enabled",
+        "--metrics.addr=0.0.0.0",
+        "--metrics.port=${L3_METRICS_NODE_PORT:-8300}"
+      ],
+      "cpus": "1.5",
+      "depends_on": {
+        "l3-geth": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "OP_NODE_L1_BEACON_IGNORE": "1",
+        "OP_NODE_SEQUENCER_ENABLED": "1"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "25s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"optimism_syncStatus\",\"params\":[]}' http://localhost:${L3_ROLLUP_RPC_PORT:-19546} >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "2g",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        "${L3_ROLLUP_RPC_HOST_PORT:-39546}:${L3_ROLLUP_RPC_PORT:-19546}",
+        "${L3_METRICS_NODE_HOST_PORT:-8300}:${L3_METRICS_NODE_PORT:-8300}"
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "user": "1000:1000",
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./l3/${L3_NAME:-ghostl3}/data/op-node",
+          "target": "/data",
+          "type": "bind"
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./l3/${L3_NAME:-ghostl3}/config",
+          "target": "/config",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "l3-op-node",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "./l3/${L3_NAME:-ghostl3}/data/op-node,./l3/${L3_NAME:-ghostl3}/config",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "l3-op-proposer": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "command": [
+        "op-proposer",
+        "--l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}",
+        "--rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}",
+        "--game-factory-address=${L3_GAME_FACTORY_ADDRESS:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}",
+        "--proposal-interval=30s",
+        "--game-type=0",
+        "--private-key=${L3_PROPOSER_KEY:-${PROPOSER_KEY}}",
+        "--allow-non-finalized",
+        "--rpc.addr=0.0.0.0",
+        "--rpc.port=${L3_PROPOSER_RPC_PORT:-18560}",
+        "--metrics.enabled",
+        "--metrics.addr=0.0.0.0",
+        "--metrics.port=${L3_METRICS_PROPOSER_PORT:-8302}"
+      ],
+      "cpus": "1.0",
+      "depends_on": {
+        "l3-op-node": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "25s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:${L3_PROPOSER_RPC_PORT:-18560} >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "ghcr.io/ethereum-optimism/op-proposer@sha256:00590e36e37994eefd8bbc9a6498ad20c62b072b381d0b8cdb7293056e6e5b64",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "1g",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        "${L3_PROPOSER_HOST_PORT:-39560}:${L3_PROPOSER_RPC_PORT:-18560}",
+        "${L3_METRICS_PROPOSER_HOST_PORT:-8302}:${L3_METRICS_PROPOSER_PORT:-8302}"
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "user": "1000:1000",
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./l3/${L3_NAME:-ghostl3}/config",
+          "target": "/config",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "l3-op-proposer",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "./l3/${L3_NAME:-ghostl3}/config",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "liquidity-service": {
+      "build": {
+        "context": "../../services/liquidity-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "l2-geth": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "l3-geth": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "BRIDGE_ADDRESS": "${BRIDGE_ADDRESS:-0x0000000000000000000000000000000000000000}",
+        "L2_TOKEN_ADDRESS": "${L2_TOKEN_ADDRESS:-0x0000000000000000000000000000000000000000}",
+        "L3_TOKEN_ADDRESS": "${L3_TOKEN_ADDRESS:-0x0000000000000000000000000000000000000000}",
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}",
+        "RPC_L2": "http://l2-geth:8545",
+        "RPC_L3": "http://l3-geth:8545"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7606/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/liquidity-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "liquidity-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "mempool-service": {
+      "build": {
+        "context": "../../services/mempool-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7610/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/mempool-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "mempool-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "network-context-service": {
+      "build": {
+        "context": "../../services/network-context-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7633/health >/dev/null"
+        ]
+      },
+      "image": "local/network-context-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "network-context-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "node-health-service": {
+      "build": {
+        "context": "../../services/node-health-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "l2-geth": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "l3-geth": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "RPC_L2": "http://l2-geth:8545",
+        "RPC_L3": "http://l3-geth:8545"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7613/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/node-health-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "node-health-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "node-inventory-service": {
+      "build": {
+        "context": "../../services/node-inventory-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7622/health >/dev/null"
+        ]
+      },
+      "image": "local/node-inventory-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "node-inventory-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "notifications-service": {
+      "build": {
+        "context": "../../services/notifications-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7638/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/notifications-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "notifications-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "participation-service": {
+      "build": {
+        "context": "../../services/participation-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7603/health >/dev/null"
+        ]
+      },
+      "image": "local/participation-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "participation-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "payout-service": {
+      "build": {
+        "context": "../../services/payout-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7629/health >/dev/null"
+        ]
+      },
+      "image": "local/payout-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "payout-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "peer-graph-service": {
+      "build": {
+        "context": "../../services/peer-graph-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "l2-geth": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "l3-geth": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "RPC_L2": "http://l2-geth:8545",
+        "RPC_L3": "http://l3-geth:8545"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7636/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/peer-graph-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "peer-graph-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "proxy-inspector-service": {
+      "build": {
+        "context": "../../services/proxy-inspector-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7631/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/proxy-inspector-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "proxy-inspector-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "rbac-service": {
+      "build": {
+        "context": "../../services/rbac-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7640/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/rbac-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "rbac-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "rewards-service": {
+      "build": {
+        "context": "../../services/rewards-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7602/health >/dev/null"
+        ]
+      },
+      "image": "local/rewards-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "rewards-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "secrets-health-service": {
+      "build": {
+        "context": "../../services/secrets-health-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7618/health >/dev/null"
+        ]
+      },
+      "image": "local/secrets-health-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "secrets-health-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "session-service": {
+      "build": {
+        "context": "../../services/session-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7643/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/session-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "session-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "slashing-detection-service": {
+      "build": {
+        "context": "../../services/slashing-detection-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7620/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/slashing-detection-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "slashing-detection-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "snapshot-service": {
+      "build": {
+        "context": "../../services/snapshot-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7624/health >/dev/null"
+        ]
+      },
+      "image": "local/snapshot-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "snapshot-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "staking-service": {
+      "build": {
+        "context": "../../services/staking-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7601/health >/dev/null"
+        ]
+      },
+      "image": "local/staking-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "staking-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "supply-service": {
+      "build": {
+        "context": "../../services/supply-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7614/health >/dev/null"
+        ]
+      },
+      "image": "local/supply-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "supply-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "theme-service": {
+      "build": {
+        "context": "../../services/theme-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7634/health >/dev/null"
+        ]
+      },
+      "image": "local/theme-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "theme-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "transfer-lifecycle-service": {
+      "build": {
+        "context": "../../services/transfer-lifecycle-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7605/health >/dev/null"
+        ]
+      },
+      "image": "local/transfer-lifecycle-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "transfer-lifecycle-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "treasury-service": {
+      "build": {
+        "context": "../../services/treasury-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7628/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/treasury-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "treasury-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "tx-index-service": {
+      "build": {
+        "context": "../../services/tx-index-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7625/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/tx-index-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "tx-index-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "upgrade-orchestrator-service": {
+      "build": {
+        "context": "../../services/upgrade-orchestrator-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7623/health >/dev/null"
+        ]
+      },
+      "image": "local/upgrade-orchestrator-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "upgrade-orchestrator-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "validator-service": {
+      "build": {
+        "context": "../../services/validator-service",
+        "dockerfile": "Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.5",
+      "depends_on": {
+        "l2-geth": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "l3-geth": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "prometheus": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "PORT": 7600,
+        "PROM_URL": "${PROM_URL:-http://prometheus:9090}",
+        "RPC_L2": "http://l2-geth:8545",
+        "RPC_L3": "http://l3-geth:8545"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7600/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/validator-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "512m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "validator-service",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "verification-service": {
+      "build": {
+        "context": "../../services/verification-service",
+        "dockerfile": "../../services/common.Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.25",
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7630/health >/dev/null"
+        ]
+      },
+      "image": "local/verification-service:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "verification-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "ghostchain-node1": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "1.5",
+      "depends_on": {
+        "ghostchain-bootnode": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "entrypoint": [
+        "/bin/sh",
+        "/config/run-node.sh"
+      ],
+      "environment": [
+        "CHAIN_ID=14000101",
+        "SIGNER_ADDRESS=0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "HTTP_PORT=8545",
+        "WS_PORT=8546",
+        "AUTH_PORT=8551",
+        "P2P_PORT=30303",
+        "METRICS_PORT=6060"
+      ],
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 5,
+        "start_period": "25s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' --header 'Content-Type: application/json' http://localhost:8545 >/dev/null"
+        ],
+        "timeout": "5s"
+      },
+      "image": "${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "2g",
+      "networks": {
+        "ghostchain": {
+          "ipv4_address": "172.28.0.22"
+        }
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "18545",
+          "target": 8545
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "18546",
+          "target": 8546
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "18552",
+          "target": 8551
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "18551",
+          "target": 30303
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "18660",
+          "target": 6060
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./data/node1",
+          "target": "/data",
+          "type": "bind"
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./geth",
+          "target": "/config",
+          "type": "bind"
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./config/bootnode-enode.txt",
+          "target": "/run/bootnode-enode.txt",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ghostchain-node1",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "./data/node1,./geth,./config/bootnode-enode.txt",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "ghostchain-node2": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "1.5",
+      "depends_on": {
+        "ghostchain-bootnode": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "entrypoint": [
+        "/bin/sh",
+        "/config/run-node.sh"
+      ],
+      "environment": [
+        "CHAIN_ID=14000101",
+        "SIGNER_ADDRESS=0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+        "HTTP_PORT=8545",
+        "WS_PORT=8546",
+        "AUTH_PORT=8551",
+        "P2P_PORT=30304",
+        "METRICS_PORT=6061"
+      ],
+      "image": "${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "2g",
+      "networks": {
+        "ghostchain": {
+          "ipv4_address": "172.28.0.23"
+        }
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./data/node2",
+          "target": "/data",
+          "type": "bind"
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./geth",
+          "target": "/config",
+          "type": "bind"
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./config/bootnode-enode.txt",
+          "target": "/run/bootnode-enode.txt",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ghostchain-node2",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "./data/node2,./geth,./config/bootnode-enode.txt",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "ghostchain-node3": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "command": [
+        "BOOTNODES=$(tr '\\n' ',' </config/peers.txt | sed 's/,$//')\nexec besu \\\n  --data-path=/data \\\n  --genesis-file=/config/genesis.json \\\n  --p2p-port=30303 \\\n  --node-private-key-file=/config/keys/node3/key \\\n  --bootnodes=$${BOOTNODES}\n"
+      ],
+      "cpus": "1.0",
+      "entrypoint": [
+        "/bin/sh",
+        "-c"
+      ],
+      "image": "hyperledger/besu:24.12.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "2g",
+      "networks": {
+        "ghostchain": {
+          "ipv4_address": "172.28.0.13"
+        }
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./ibft/networkFiles",
+          "target": "/config",
+          "type": "bind"
+        },
+        {
+          "source": "ghostchain-node3-data",
+          "target": "/data",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ghostchain-node3",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "./ibft/networkFiles,ghostchain-node3-data",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "ghostchain-node4": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "command": [
+        "BOOTNODES=$(tr '\\n' ',' </config/peers.txt | sed 's/,$//')\nexec besu \\\n  --data-path=/data \\\n  --genesis-file=/config/genesis.json \\\n  --p2p-port=30303 \\\n  --node-private-key-file=/config/keys/node4/key \\\n  --bootnodes=$${BOOTNODES}\n"
+      ],
+      "cpus": "1.0",
+      "entrypoint": [
+        "/bin/sh",
+        "-c"
+      ],
+      "image": "hyperledger/besu:24.12.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "2g",
+      "networks": {
+        "ghostchain": {
+          "ipv4_address": "172.28.0.14"
+        }
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./ibft/networkFiles",
+          "target": "/config",
+          "type": "bind"
+        },
+        {
+          "source": "ghostchain-node4-data",
+          "target": "/data",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ghostchain-node4",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "./ibft/networkFiles,ghostchain-node4-data",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "ghostchain-bootnode": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "command": [
+        "bootnode",
+        "--nodekey",
+        "/config/boot.key",
+        "--addr",
+        ":30301"
+      ],
+      "cpus": "0.5",
+      "image": "${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "ghostchain": {
+          "ipv4_address": "172.28.0.21"
+        }
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "udp",
+          "published": "30301",
+          "target": 30301
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./data/bootnode",
+          "target": "/config",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ghostchain-bootnode",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "./data/bootnode",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "ghostscout": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "command": [
+        "start"
+      ],
+      "cpus": "1.5",
+      "depends_on": {
+        "ghostchain-node1": {
+          "condition": "service_started",
+          "required": true
+        },
+        "ghostscout-db": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "entrypoint": [
+        "/app/bin/blockscout"
+      ],
+      "environment": {
+        "API_ONLY": "true",
+        "BLOCKSCOUT_HOST": "0.0.0.0",
+        "COIN": "GHOST",
+        "DATABASE_URL": "postgres://postgres:postgres@ghostscout-db:5432/blockscout",
+        "DISABLE_EVISION": "true",
+        "ECTO_USE_SSL": "false",
+        "ETHEREUM_JSONRPC_HTTP_URL": "http://ghostchain-node1:8545",
+        "ETHEREUM_JSONRPC_TRACE_URL": "http://ghostchain-node1:8545",
+        "ETHEREUM_JSONRPC_WS_URL": "ws://ghostchain-node1:8546",
+        "LOG_LEVEL": "warn",
+        "NETWORK": "Ghostchain",
+        "PORT": 4000,
+        "SECRET_KEY_BASE": "6d31c6c2b8b7344f5f3d2421f3d8a42d9d27f9b4a7ad0b287f1aa4f8c6efb6d3",
+        "SUBNETWORK": "PoA"
+      },
+      "image": "blockscout/blockscout:latest",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "2g",
+      "networks": {
+        "ghostchain": {
+          "ipv4_address": "172.28.0.31"
+        }
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "18644",
+          "target": 4000
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ghostscout",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "ghostscout-db": {
+      "cap_add": [
+        "CHOWN",
+        "DAC_OVERRIDE",
+        "FOWNER",
+        "SETUID",
+        "SETGID"
+      ],
+      "cap_drop": [],
+      "command": [
+        "postgres",
+        "-c",
+        "max_connections=200"
+      ],
+      "cpus": "0.5",
+      "environment": {
+        "POSTGRES_DB": "blockscout",
+        "POSTGRES_PASSWORD": "postgres",
+        "POSTGRES_USER": "postgres"
+      },
+      "image": "postgres:15-alpine",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "1g",
+      "networks": {
+        "ghostchain": {
+          "ipv4_address": "172.28.0.30"
+        }
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "source": "ghostscout-db-data",
+          "target": "/var/lib/postgresql/data",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ghostscout-db",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "ghostscout-db-data",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "ghostscout-frontend": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.8",
+      "depends_on": {
+        "ghostscout": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "environment": {
+        "HOST": "0.0.0.0",
+        "NEXT_PUBLIC_API_HOST": "ghostscout:4000",
+        "NEXT_PUBLIC_API_PROTOCOL": "http",
+        "NEXT_PUBLIC_APP_HOST": "http://localhost:18640",
+        "NEXT_PUBLIC_NETWORK_ICON": "https://raw.githubusercontent.com/blockscout/frontend/main/public/favicon.ico",
+        "NEXT_PUBLIC_NETWORK_ID": "14000101",
+        "NEXT_PUBLIC_NETWORK_NAME": "Ghostchain",
+        "PORT": 3000
+      },
+      "image": "ghcr.io/blockscout/frontend:latest",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "1g",
+      "networks": {
+        "ghostchain": {
+          "ipv4_address": "172.28.0.32"
+        }
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "18640",
+          "target": 3000
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ghostscout-frontend",
+        "com.ghost.k8s.role": "ui",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "LoadBalancer"
+      }
+    },
+    "alertmanager": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "command": [
+        "--config.file=/etc/alertmanager/alertmanager.yml",
+        "--storage.path=/alertmanager"
+      ],
+      "cpus": "0.25",
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "15s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:9093/api/v2/status >/dev/null"
+        ],
+        "timeout": "5s"
+      },
+      "image": "${ALERTMANAGER_IMAGE:-prom/alertmanager@sha256:e13b6ed5cb929eeaee733479dce55e10eb3bc2e9c4586c705a4e8da41e5eacf5}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "9093",
+          "target": 9093
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./observability/alertmanager.yml",
+          "target": "/etc/alertmanager/alertmanager.yml",
+          "type": "bind"
+        },
+        {
+          "source": "alertmanager_data",
+          "target": "/alertmanager",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "alertmanager",
+        "com.ghost.k8s.role": "obs",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "./observability/alertmanager.yml,alertmanager_data",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "ghost-guard": {
+      "build": {
+        "context": "../../services/ghost-guard",
+        "dockerfile": "Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.5",
+      "depends_on": {
+        "l2-geth": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "ADMIN_TOKEN": "${GUARD_ADMIN_TOKEN:-}",
+        "ALERT_MIN_RISK": "${GUARD_ALERT_MIN_RISK:-70}",
+        "AUTO_ACTION": "${GUARD_AUTO_ACTION:-}",
+        "AUTO_PAUSE": "${GUARD_AUTO_PAUSE:-0}",
+        "AUTO_PAUSE_THRESHOLD": "${GUARD_AUTO_PAUSE_THRESHOLD:-90}",
+        "AUTO_QUARANTINE_THRESHOLD": "${GUARD_AUTO_QUARANTINE_THRESHOLD:-70}",
+        "BRIDGE_L2L3_ADDRESS": "${BRIDGE_L2L3_ADDRESS:-0x0000000000000000000000000000000000000000}",
+        "GRAPH_WINDOW_SECONDS": "${GUARD_GRAPH_WINDOW_SECONDS:-3600}",
+        "GUARD_POLICY_ADDRESS": "${GUARD_POLICY_ADDRESS:-}",
+        "PORT": 7070,
+        "PRIVATE_KEY": "${GUARD_PRIVATE_KEY:-}",
+        "QUARANTINE_DELAY_SECONDS": "${GUARD_QUARANTINE_DELAY_SECONDS:-30}",
+        "RATE_LIMIT_MAX": "${GUARD_RATE_LIMIT_MAX:-20}",
+        "RATE_LIMIT_WINDOW_MS": "${GUARD_RATE_LIMIT_WINDOW_MS:-1000}",
+        "RISK_WINDOW_SECONDS": "${GUARD_RISK_WINDOW_SECONDS:-300}",
+        "RPC_L2": "http://l2-geth:8545",
+        "STATE_DIR": "/state"
+      },
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7070/health >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "local/ghost-guard:${OPSTACK_IMAGE_TAG:-devnet}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "512m",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7070",
+          "target": 7070
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./data/guard",
+          "target": "/state",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ghost-guard",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "./data/guard",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "grafana": {
+      "env_file": [
+        {
+          "path": "monitoring/grafana.env",
+          "required": true
+        }
+      ],
+      "image": "grafana/grafana:11.1.0",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "3300",
+          "target": 3000
+        }
+      ],
+      "restart": "unless-stopped",
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./monitoring/grafana/provisioning/",
+          "target": "/etc/grafana/provisioning",
+          "type": "bind"
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./monitoring/grafana/dashboards",
+          "target": "/var/lib/grafana/dashboards",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "grafana",
+        "com.ghost.k8s.role": "obs",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "./monitoring/grafana/provisioning/,./monitoring/grafana/dashboards",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "l2-geth": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "command": [
+        "-c",
+        "set -e\nif [ ! -d /data/geth ]; then\n  echo \"[l2-geth] initializing genesis...\"\n  geth init --datadir /data /config/genesis-l2.json\nfi\nexec geth \\\n  --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug,txpool \\\n  --http.vhosts=\"*\" \\\n  --ws --ws.addr=0.0.0.0 --ws.origins=\"*\" \\\n  --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts=\"*\" --authrpc.jwtsecret=/config/jwt.txt\\\n  --datadir=/data \\\n  --networkid=${L2_CHAIN_ID:-901} \\\n  --gcmode=archive \\\n  --rollup.disabletxpoolgossip=true\n"
+      ],
+      "cpus": "2.0",
+      "depends_on": {
+        "op-gate": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "entrypoint": [
+        "/bin/sh"
+      ],
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "25s",
+        "test": [
+          "CMD-SHELL",
+          "geth attach --datadir /data --exec 'net.version' http://localhost:8545 >/dev/null 2>&1"
+        ],
+        "timeout": "10s"
+      },
+      "image": "ghcr.io/ethereum-optimism/op-geth@sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "4g",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "29547",
+          "target": 8545
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "user": "1000:1000",
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./data/l2-geth-new2",
+          "target": "/data",
+          "type": "bind"
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./config",
+          "target": "/config",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "l2-geth",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "./data/l2-geth-new2,./config",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "loki": {
+      "command": "-config.file=/etc/loki/config.yaml",
+      "image": "grafana/loki:3.1.1",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "3200",
+          "target": 3200
+        }
+      ],
+      "restart": "unless-stopped",
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./monitoring/loki",
+          "target": "/etc/loki",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "loki",
+        "com.ghost.k8s.role": "obs",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "./monitoring/loki",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "op-batcher": {
+      "build": {
+        "context": "../",
+        "dockerfile": "ops/docker/op-stack-go/Dockerfile",
+        "target": "op-batcher-target"
+      },
+      "depends_on": {
+        "l1": {
+          "condition": "service_started",
+          "required": true
+        },
+        "l2": {
+          "condition": "service_started",
+          "required": true
+        },
+        "op-node": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "environment": {
+        "OP_BATCHER_ALTDA_DA_SERVER": "http://da-server:3100",
+        "OP_BATCHER_ALTDA_DA_SERVICE": "${ALTDA_SERVICE}",
+        "OP_BATCHER_ALTDA_ENABLED": "${ALTDA_ENABLED}",
+        "OP_BATCHER_BATCH_TYPE": 1,
+        "OP_BATCHER_DATA_AVAILABILITY_TYPE": "${DA_TYPE}",
+        "OP_BATCHER_L1_ETH_RPC": "http://l1:8545",
+        "OP_BATCHER_L2_ETH_RPC": "http://l2:8545",
+        "OP_BATCHER_MAX_CHANNEL_DURATION": 2,
+        "OP_BATCHER_METRICS_ENABLED": "true",
+        "OP_BATCHER_MNEMONIC": "test test test test test test test test test test test junk",
+        "OP_BATCHER_NUM_CONFIRMATIONS": 1,
+        "OP_BATCHER_POLL_INTERVAL": "1s",
+        "OP_BATCHER_PPROF_ENABLED": "true",
+        "OP_BATCHER_ROLLUP_RPC": "http://op-node:8545",
+        "OP_BATCHER_RPC_ENABLE_ADMIN": "true",
+        "OP_BATCHER_SEQUENCER_HD_PATH": "m/44'/60'/0'/0/2",
+        "OP_BATCHER_SUB_SAFETY_MARGIN": 4
+      },
+      "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:devnet",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "6061",
+          "target": 6060
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7301",
+          "target": 7300
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "6545",
+          "target": 8545
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "op-batcher",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "op-gate": {
+      "build": {
+        "args": {
+          "NODE_IMAGE": "${OP_STACK_BASE_IMAGE:-node@sha256:40dc4b415c17b85bea9be05314b4a753f45a4e1716bb31c01182e6c53d51a654}"
+        },
+        "context": "./gate",
+        "dockerfile": "Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.5",
+      "environment": {
+        "ADMIN_TOKEN": "${GATE_ADMIN_TOKEN:-}",
+        "ALLOW_INSECURE_ADMIN": "${GATE_ALLOW_INSECURE_ADMIN:-0}",
+        "BATCH_SENDER_ADDRESS": "${BATCH_SENDER_ADDRESS:-}",
+        "DEFAULT_DELAY_SECONDS": "${GATE_DEFAULT_DELAY_SECONDS:-0}",
+        "GUARD_URL": "${GATE_GUARD_URL:-http://ghost-guard:7070}",
+        "NODE_ENV": "production",
+        "PORT": "${GATE_PORT:-8545}",
+        "PROPOSER_ADDRESS": "${PROPOSER_ADDRESS:-}",
+        "STATE_DIR": "/state",
+        "UPSTREAM_RPC": "${GATE_UPSTREAM_RPC:-http://l2-geth:8545}"
+      },
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "healthcheck": {
+        "interval": "15s",
+        "retries": 5,
+        "start_period": "15s",
+        "test": [
+          "CMD-SHELL",
+          "curl -sf http://localhost:8545/gate/status >/dev/null"
+        ],
+        "timeout": "5s"
+      },
+      "image": "${OP_GATE_IMAGE:-local/op-gate:0.1.0}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "512m",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "28546",
+          "target": 8545
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "user": "1000:1000",
+      "volumes": [
+        {
+          "source": "op_gate_state",
+          "target": "/state",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "working_dir": "/app",
+      "labels": {
+        "com.ghost.k8s.name": "op-gate",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "op_gate_state",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "op-node": {
+      "build": {
+        "context": "../",
+        "dockerfile": "ops/docker/op-stack-go/Dockerfile",
+        "target": "op-node-target"
+      },
+      "command": "op-node --l1=ws://l1:8546 --l1.beacon=http://l1-bn:5052 --l1.epoch-poll-interval=12s --l1.http-poll-interval=6s --l2=http://l2:8551 --l2.jwt-secret=/config/jwt-secret.txt --sequencer.enabled --sequencer.l1-confs=0 --verifier.l1-confs=0 --p2p.sequencer.key=8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba --rollup.config=/rollup.json --rpc.addr=0.0.0.0 --rpc.port=8545 --p2p.listen.ip=0.0.0.0 --p2p.listen.tcp=9003 --p2p.listen.udp=9003 --p2p.scoring.peers=light --p2p.ban.peers=true --p2p.priv.path=/config/p2p-node-key.txt --metrics.enabled --metrics.addr=0.0.0.0 --metrics.port=7300 --pprof.enabled --rpc.enable-admin --safedb.path=/db --altda.enabled=${ALTDA_ENABLED} --altda.da-service=${ALTDA_SERVICE} --altda.da-server=http://da-server:3100\n",
+      "depends_on": {
+        "l1": {
+          "condition": "service_started",
+          "required": true
+        },
+        "l1-bn": {
+          "condition": "service_started",
+          "required": true
+        },
+        "l1-vc": {
+          "condition": "service_started",
+          "required": true
+        },
+        "l2": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:devnet",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7545",
+          "target": 8545
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "9003",
+          "target": 9003
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7300",
+          "target": 7300
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "6060",
+          "target": 6060
+        }
+      ],
+      "volumes": [
+        {
+          "source": "safedb_data",
+          "target": "/db",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/p2p-sequencer-key.txt",
+          "target": "/config/p2p-sequencer-key.txt",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/p2p-node-key.txt",
+          "target": "/config/p2p-node-key.txt",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/test-jwt-secret.txt",
+          "target": "/config/jwt-secret.txt",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/../.devnet/rollup.json",
+          "target": "/rollup.json",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "op_log",
+          "target": "/op_log",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "op-node",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "safedb_data,${PWD}/p2p-sequencer-key.txt,${PWD}/p2p-node-key.txt,${PWD}/test-jwt-secret.txt,${PWD}/../.devnet/rollup.json,op_log",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "op-proposer": {
+      "build": {
+        "context": "../",
+        "dockerfile": "ops/docker/op-stack-go/Dockerfile",
+        "target": "op-proposer-target"
+      },
+      "depends_on": {
+        "l1": {
+          "condition": "service_started",
+          "required": true
+        },
+        "l2": {
+          "condition": "service_started",
+          "required": true
+        },
+        "op-node": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "environment": {
+        "OP_PROPOSER_ALLOW_NON_FINALIZED": "true",
+        "OP_PROPOSER_GAME_FACTORY_ADDRESS": "${DGF_ADDRESS}",
+        "OP_PROPOSER_GAME_TYPE": "${DG_TYPE}",
+        "OP_PROPOSER_L1_ETH_RPC": "http://l1:8545",
+        "OP_PROPOSER_L2OO_ADDRESS": "${L2OO_ADDRESS}",
+        "OP_PROPOSER_L2_OUTPUT_HD_PATH": "m/44'/60'/0'/0/1",
+        "OP_PROPOSER_METRICS_ENABLED": "true",
+        "OP_PROPOSER_MNEMONIC": "test test test test test test test test test test test junk",
+        "OP_PROPOSER_NUM_CONFIRMATIONS": 1,
+        "OP_PROPOSER_POLL_INTERVAL": "1s",
+        "OP_PROPOSER_PPROF_ENABLED": "true",
+        "OP_PROPOSER_PROPOSAL_INTERVAL": "${PROPOSAL_INTERVAL}",
+        "OP_PROPOSER_ROLLUP_RPC": "http://op-node:8545",
+        "OP_PROPOSER_RPC_ENABLE_ADMIN": "true"
+      },
+      "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-proposer:devnet",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "6062",
+          "target": 6060
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7302",
+          "target": 7300
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "6546",
+          "target": 8545
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "op-proposer",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "op-sequencer": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "command": [
+        "op-node",
+        "--l1=${L1_RPC:-http://host.docker.internal:18545}",
+        "--l2=http://l2-geth:8551",
+        "--l2.jwt-secret=/config/jwt.txt",
+        "--rollup.config=/config/rollup.json",
+        "--rollup.l1-chain-config=/config/l1-chain.json",
+        "--rpc.addr=0.0.0.0",
+        "--rpc.port=9646",
+        "--l1.rpckind=basic",
+        "--l1.trustrpc",
+        "--p2p.disable",
+        "--l1.beacon.ignore",
+        "--sequencer.enabled",
+        "--sequencer.l1-confs=${SEQUENCER_L1_CONFS:-2}",
+        "--l1.runtime-config-reload-interval=0",
+        "--metrics.enabled",
+        "--metrics.addr=0.0.0.0",
+        "--metrics.port=7303"
+      ],
+      "cpus": "1.5",
+      "depends_on": {
+        "l2-geth": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "OP_NODE_L1_BEACON_IGNORE": "1"
+      },
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "25s",
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"optimism_syncStatus\",\"params\":[]}' http://localhost:9646 >/dev/null"
+        ],
+        "timeout": "10s"
+      },
+      "image": "ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "2g",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "9646",
+          "target": 9646
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7303",
+          "target": 7303
+        }
+      ],
+      "profiles": [
+        "manual"
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "user": "1000:1000",
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./data/op-sequencer",
+          "target": "/data",
+          "type": "bind"
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./config",
+          "target": "/config",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "op-sequencer",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "./data/op-sequencer,./config",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "prometheus": {
+      "command": "--config.file=/etc/prometheus/prometheus.yml --log.level=debug",
+      "image": "prom/prometheus:latest",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "3090",
+          "target": 9090
+        }
+      ],
+      "restart": "unless-stopped",
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./monitoring/prometheus",
+          "target": "/etc/prometheus",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "prometheus",
+        "com.ghost.k8s.role": "obs",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "./monitoring/prometheus",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "vector": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "command": [
+        "--config",
+        "/etc/vector/vector.yaml"
+      ],
+      "cpus": "0.25",
+      "depends_on": {
+        "loki": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "environment": {
+        "VECTOR_LOG": "info"
+      },
+      "image": "${VECTOR_IMAGE:-timberio/vector:0.38.0-alpine}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "/var/run/docker.sock",
+          "target": "/var/run/docker.sock",
+          "type": "bind"
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "/var/lib/docker/containers",
+          "target": "/var/lib/docker/containers",
+          "type": "bind"
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./observability/vector/vector.yaml",
+          "target": "/etc/vector/vector.yaml",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "vector",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "/var/run/docker.sock,/var/lib/docker/containers,./observability/vector/vector.yaml",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      }
+    },
+    "l3-op-challenger": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "command": [
+        "op-challenger",
+        "--l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}",
+        "--rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}",
+        "--l2-eth-rpc=http://l3-geth:8545",
+        "--game-factory-address=${L3_GAME_FACTORY_ADDRESS:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}",
+        "--datadir=/data",
+        "--private-key=${L3_CHALLENGER_KEY:-${CHALLENGER_KEY:-}}",
+        "--trace-type=${L3_CHALLENGER_TRACE_TYPE:-cannon}",
+        "--cannon-rollup-config=/config/rollup.json",
+        "--cannon-l2-genesis=/config/genesis.json",
+        "--metrics.enabled",
+        "--metrics.addr=0.0.0.0",
+        "--metrics.port=${L3_CHALLENGER_METRICS_PORT:-8303}"
+      ],
+      "cpus": "0.75",
+      "depends_on": {
+        "l3-op-node": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "OP_CHALLENGER_CANNON_BIN": "${OP_CHALLENGER_CANNON_BIN:-/assets/cannon/cannon}",
+        "OP_CHALLENGER_CANNON_KONA_PRESTATE": "${OP_CHALLENGER_CANNON_KONA_PRESTATE:-/assets/op-program/prestate-mt64.bin.gz}",
+        "OP_CHALLENGER_CANNON_KONA_SERVER": "${OP_CHALLENGER_CANNON_KONA_SERVER:-/usr/local/bin/kona-host}",
+        "OP_CHALLENGER_CANNON_L2_GENESIS": "/config/genesis.json",
+        "OP_CHALLENGER_CANNON_PRESTATE": "${OP_CHALLENGER_CANNON_PRESTATE:-/assets/op-program/prestate-mt64.bin.gz}",
+        "OP_CHALLENGER_CANNON_ROLLUP_CONFIG": "/config/rollup.json",
+        "OP_CHALLENGER_CANNON_SERVER": "${OP_CHALLENGER_CANNON_SERVER:-/assets/op-program/op-program}",
+        "OP_CHALLENGER_DATADIR": "/data",
+        "OP_CHALLENGER_GAME_FACTORY_ADDRESS": "${L3_GAME_FACTORY_ADDRESS:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}",
+        "OP_CHALLENGER_L1_BEACON": "${L3_L1_BEACON_RPC:-${L3_L1_RPC:-http://l2-geth:8545}}",
+        "OP_CHALLENGER_L1_ETH_RPC": "${L3_L1_RPC:-http://l2-geth:8545}",
+        "OP_CHALLENGER_L1_GENESIS": "/config/l1-chain.json",
+        "OP_CHALLENGER_L2_ETH_RPC": "http://l3-geth:8545",
+        "OP_CHALLENGER_PRIVATE_KEY": "${L3_CHALLENGER_KEY:-${CHALLENGER_KEY:-}}",
+        "OP_CHALLENGER_ROLLUP_RPC": "http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}",
+        "OP_CHALLENGER_TRACE_TYPE": "${L3_CHALLENGER_TRACE_TYPE:-cannon}"
+      },
+      "image": "${OP_CHALLENGER_IMAGE:-local/op-challenger:${OPSTACK_IMAGE_TAG:-devnet}}",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "1g",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        "${L3_CHALLENGER_METRICS_HOST_PORT:-8303}:${L3_CHALLENGER_METRICS_PORT:-8303}"
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "user": "1000:1000",
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./l3/${L3_NAME:-ghostl3}/data/challenger",
+          "target": "/data",
+          "type": "bind"
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./l3/${L3_NAME:-ghostl3}/config/rollup.json",
+          "target": "/config/rollup.json",
+          "type": "bind"
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./l3/${L3_NAME:-ghostl3}/config/genesis.json",
+          "target": "/config/genesis.json",
+          "type": "bind"
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./l3/${L3_NAME:-ghostl3}/config/l1-chain.json",
+          "target": "/config/l1-chain.json",
+          "type": "bind"
+        },
+        {
+          "read_only": true,
+          "source": "${OP_CHALLENGER_ASSETS_DIR:-./optimism/op-program/bin}",
+          "target": "/assets/op-program",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./optimism/cannon/bin",
+          "target": "/assets/cannon",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "l3-op-challenger",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "./l3/${L3_NAME:-ghostl3}/data/challenger,./l3/${L3_NAME:-ghostl3}/config/rollup.json,./l3/${L3_NAME:-ghostl3}/config/genesis.json,./l3/${L3_NAME:-ghostl3}/config/l1-chain.json,${OP_CHALLENGER_ASSETS_DIR:-./optimism/op-program/bin},./optimism/cannon/bin",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "op-challenger": {
+      "build": {
+        "context": "../",
+        "dockerfile": "ops/docker/op-stack-go/Dockerfile",
+        "target": "op-challenger-target"
+      },
+      "depends_on": {
+        "l1": {
+          "condition": "service_started",
+          "required": true
+        },
+        "l1-bn": {
+          "condition": "service_started",
+          "required": true
+        },
+        "l2": {
+          "condition": "service_started",
+          "required": true
+        },
+        "op-node": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "environment": {
+        "OP_CHALLENGER_CANNON_BIN": "./cannon/bin/cannon",
+        "OP_CHALLENGER_CANNON_L2_GENESIS": "./.devnet/genesis-l2.json",
+        "OP_CHALLENGER_CANNON_PRESTATE": "/op-program/prestate.bin.gz",
+        "OP_CHALLENGER_CANNON_ROLLUP_CONFIG": "./.devnet/rollup.json",
+        "OP_CHALLENGER_CANNON_SERVER": "/op-program/op-program",
+        "OP_CHALLENGER_DATADIR": "/db",
+        "OP_CHALLENGER_GAME_FACTORY_ADDRESS": "${DGF_ADDRESS}",
+        "OP_CHALLENGER_HD_PATH": "m/44'/60'/0'/0/4",
+        "OP_CHALLENGER_L1_BEACON": "http://l1-bn:5052",
+        "OP_CHALLENGER_L1_ETH_RPC": "http://l1:8545",
+        "OP_CHALLENGER_L2_ETH_RPC": "http://l2:8545",
+        "OP_CHALLENGER_MNEMONIC": "test test test test test test test test test test test junk",
+        "OP_CHALLENGER_NUM_CONFIRMATIONS": 1,
+        "OP_CHALLENGER_ROLLUP_RPC": "http://op-node:8545",
+        "OP_CHALLENGER_TRACE_TYPE": "cannon,fast",
+        "OP_CHALLENGER_UNSAFE_ALLOW_INVALID_PRESTATE": "true"
+      },
+      "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-challenger:devnet",
+      "networks": {
+        "default": null
+      },
+      "volumes": [
+        {
+          "source": "challenger_data",
+          "target": "/db",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "../op-program/bin",
+          "target": "/op-program",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "op-challenger",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "challenger_data,../op-program/bin",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "l1": {
+      "build": {
+        "context": ".",
+        "dockerfile": "l1-geth.Dockerfile"
+      },
+      "environment": {
+        "GETH_MINER_RECOMMIT": "100ms"
+      },
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "8545",
+          "target": 8545
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "8546",
+          "target": 8546
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7060",
+          "target": 6060
+        }
+      ],
+      "volumes": [
+        {
+          "source": "l1_data",
+          "target": "/db",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/../.devnet/genesis-l1.json",
+          "target": "/genesis.json",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/test-jwt-secret.txt",
+          "target": "/config/jwt-secret.txt",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "l1",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "l1_data,${PWD}/../.devnet/genesis-l1.json,${PWD}/test-jwt-secret.txt",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "l1-bn": {
+      "build": {
+        "context": ".",
+        "dockerfile": "l1-lighthouse.Dockerfile"
+      },
+      "depends_on": {
+        "l1": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "entrypoint": [
+        "/bin/sh",
+        "/entrypoint-bn.sh"
+      ],
+      "environment": {
+        "LH_EXECUTION_ENDPOINT": "http://l1:8551"
+      },
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "9000",
+          "target": 9000
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "5052",
+          "target": 5052
+        }
+      ],
+      "volumes": [
+        {
+          "source": "l1_bn_data",
+          "target": "/db",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/test-jwt-secret.txt",
+          "target": "/config/jwt-secret.txt",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/beacon-data/config.yaml",
+          "target": "/genesis/config.yaml",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/beacon-data/deposit_contract_block.txt",
+          "target": "/genesis/deposit_contract_block.txt",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/../.devnet/genesis-l1.ssz",
+          "target": "/genesis/genesis.ssz",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "l1-bn",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "l1_bn_data,${PWD}/test-jwt-secret.txt,${PWD}/beacon-data/config.yaml,${PWD}/beacon-data/deposit_contract_block.txt,${PWD}/../.devnet/genesis-l1.ssz",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "l1-vc": {
+      "build": {
+        "context": ".",
+        "dockerfile": "l1-lighthouse.Dockerfile"
+      },
+      "depends_on": {
+        "l1": {
+          "condition": "service_started",
+          "required": true
+        },
+        "l1-bn": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "entrypoint": [
+        "/bin/sh",
+        "/entrypoint-vc.sh"
+      ],
+      "environment": {
+        "LH_BEACON_NODES": "http://l1-bn:5052/"
+      },
+      "networks": {
+        "default": null
+      },
+      "volumes": [
+        {
+          "source": "l1_vc_data",
+          "target": "/db",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/beacon-data/data/keys",
+          "target": "/validator_setup/validators",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/beacon-data/data/secrets",
+          "target": "/validator_setup/secrets",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/beacon-data/config.yaml",
+          "target": "/genesis/config.yaml",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/beacon-data/deposit_contract_block.txt",
+          "target": "/genesis/deposit_contract_block.txt",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/../.devnet/genesis-l1.ssz",
+          "target": "/genesis/genesis.ssz",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "l1-vc",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "l1_vc_data,${PWD}/beacon-data/data/keys,${PWD}/beacon-data/data/secrets,${PWD}/beacon-data/config.yaml,${PWD}/beacon-data/deposit_contract_block.txt,${PWD}/../.devnet/genesis-l1.ssz",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "l2-a": {
+      "build": {
+        "context": "../ops-bedrock/",
+        "dockerfile": "l2-op-geth-interop.Dockerfile"
+      },
+      "depends_on": {
+        "op-supervisor": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "entrypoint": [
+        "/bin/sh",
+        "/entrypoint.sh"
+      ],
+      "environment": {
+        "GETH_MINER_RECOMMIT": "100ms",
+        "GETH_ROLLUP_INTEROPRPC": "ws://op-supervisor:8545"
+      },
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "9145",
+          "target": 8545
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "8160",
+          "target": 6060
+        }
+      ],
+      "volumes": [
+        {
+          "source": "l2_a_data",
+          "target": "/db",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/../.devnet-interop/genesis/l2/900200/genesis.json",
+          "target": "/genesis.json",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/../ops-bedrock/test-jwt-secret.txt",
+          "target": "/config/jwt-secret.txt",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "l2-a",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "l2_a_data,${PWD}/../.devnet-interop/genesis/l2/900200/genesis.json,${PWD}/../ops-bedrock/test-jwt-secret.txt",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "l2-b": {
+      "build": {
+        "context": "../ops-bedrock/",
+        "dockerfile": "l2-op-geth-interop.Dockerfile"
+      },
+      "depends_on": {
+        "op-supervisor": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "entrypoint": [
+        "/bin/sh",
+        "/entrypoint.sh"
+      ],
+      "environment": {
+        "GETH_MINER_RECOMMIT": "100ms",
+        "GETH_ROLLUP_INTEROPRPC": "ws://op-supervisor:8545"
+      },
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "9245",
+          "target": 8545
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "8260",
+          "target": 6060
+        }
+      ],
+      "volumes": [
+        {
+          "source": "l2_b_data",
+          "target": "/db",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/../.devnet-interop/genesis/l2/900201/genesis.json",
+          "target": "/genesis.json",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/../ops-bedrock/test-jwt-secret.txt",
+          "target": "/config/jwt-secret.txt",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "l2-b",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "l2_b_data,${PWD}/../.devnet-interop/genesis/l2/900201/genesis.json,${PWD}/../ops-bedrock/test-jwt-secret.txt",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "op-batcher-a": {
+      "build": {
+        "context": "../",
+        "dockerfile": "ops/docker/op-stack-go/Dockerfile",
+        "target": "op-batcher-target"
+      },
+      "depends_on": {
+        "l1": {
+          "condition": "service_started",
+          "required": true
+        },
+        "l2-a": {
+          "condition": "service_started",
+          "required": true
+        },
+        "op-node-a": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "env_file": [
+        {
+          "path": "${PWD}/../.devnet-interop/env/l2/900200/op-batcher.env",
+          "required": true
+        }
+      ],
+      "environment": {
+        "OP_BATCHER_BATCH_TYPE": null,
+        "OP_BATCHER_L1_ETH_RPC": "http://l1:8545",
+        "OP_BATCHER_L2_ETH_RPC": "http://l2-a:8545",
+        "OP_BATCHER_MAX_CHANNEL_DURATION": 2,
+        "OP_BATCHER_METRICS_ENABLED": "true",
+        "OP_BATCHER_NUM_CONFIRMATIONS": 1,
+        "OP_BATCHER_POLL_INTERVAL": "1s",
+        "OP_BATCHER_PPROF_ENABLED": "true",
+        "OP_BATCHER_ROLLUP_RPC": "http://op-node-a:8545",
+        "OP_BATCHER_RPC_ENABLE_ADMIN": "true",
+        "OP_BATCHER_SUB_SAFETY_MARGIN": 4
+      },
+      "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:devnet",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "6161",
+          "target": 6060
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7101",
+          "target": 7300
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "6145",
+          "target": 8545
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "op-batcher-a",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "op-batcher-b": {
+      "build": {
+        "context": "../",
+        "dockerfile": "ops/docker/op-stack-go/Dockerfile",
+        "target": "op-batcher-target"
+      },
+      "depends_on": {
+        "l1": {
+          "condition": "service_started",
+          "required": true
+        },
+        "l2-b": {
+          "condition": "service_started",
+          "required": true
+        },
+        "op-node-b": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "env_file": [
+        {
+          "path": "${PWD}/../.devnet-interop/env/l2/900201/op-batcher.env",
+          "required": true
+        }
+      ],
+      "environment": {
+        "OP_BATCHER_BATCH_TYPE": null,
+        "OP_BATCHER_L1_ETH_RPC": "http://l1:8545",
+        "OP_BATCHER_L2_ETH_RPC": "http://l2-b:8545",
+        "OP_BATCHER_MAX_CHANNEL_DURATION": 2,
+        "OP_BATCHER_METRICS_ENABLED": "true",
+        "OP_BATCHER_NUM_CONFIRMATIONS": 1,
+        "OP_BATCHER_POLL_INTERVAL": "1s",
+        "OP_BATCHER_PPROF_ENABLED": "true",
+        "OP_BATCHER_ROLLUP_RPC": "http://op-node-b:8545",
+        "OP_BATCHER_RPC_ENABLE_ADMIN": "true",
+        "OP_BATCHER_SUB_SAFETY_MARGIN": 4
+      },
+      "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:devnet",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "6261",
+          "target": 6060
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7201",
+          "target": 7300
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "6245",
+          "target": 8545
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "op-batcher-b",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "op-node-a": {
+      "build": {
+        "context": "../",
+        "dockerfile": "ops/docker/op-stack-go/Dockerfile",
+        "target": "op-node-target"
+      },
+      "command": "op-node --l1=ws://l1:8546 --l1.beacon=http://l1-bn:5052 --l1.epoch-poll-interval=12s --l1.http-poll-interval=6s --l2=http://l2-a:8551 --l2.jwt-secret=/config/jwt-secret.txt --supervisor=http://op-supervisor:8545 --sequencer.enabled --sequencer.l1-confs=0 --verifier.l1-confs=0 --rollup.config=/rollup.json --rpc.addr=0.0.0.0 --rpc.port=8545 --p2p.listen.ip=0.0.0.0 --p2p.listen.tcp=9003 --p2p.listen.udp=9003 --p2p.scoring.peers=light --p2p.ban.peers=true --metrics.enabled --metrics.addr=0.0.0.0 --metrics.port=7300 --pprof.enabled --rpc.enable-admin --safedb.path=/db\n",
+      "depends_on": {
+        "l1": {
+          "condition": "service_started",
+          "required": true
+        },
+        "l1-bn": {
+          "condition": "service_started",
+          "required": true
+        },
+        "l1-vc": {
+          "condition": "service_started",
+          "required": true
+        },
+        "l2-a": {
+          "condition": "service_started",
+          "required": true
+        },
+        "op-supervisor": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "env_file": [
+        {
+          "path": "${PWD}/../.devnet-interop/env/l2/900200/op-node.env",
+          "required": true
+        }
+      ],
+      "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:devnet",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7145",
+          "target": 8545
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "9103",
+          "target": 9003
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7100",
+          "target": 7300
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "6160",
+          "target": 6060
+        }
+      ],
+      "volumes": [
+        {
+          "source": "safedb_a_data",
+          "target": "/db",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/../ops-bedrock/test-jwt-secret.txt",
+          "target": "/config/jwt-secret.txt",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/../.devnet-interop/genesis/l2/900200/rollup.json",
+          "target": "/rollup.json",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "op_log_a",
+          "target": "/op_log",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "op-node-a",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "safedb_a_data,${PWD}/../ops-bedrock/test-jwt-secret.txt,${PWD}/../.devnet-interop/genesis/l2/900200/rollup.json,op_log_a",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "op-node-b": {
+      "build": {
+        "context": "../",
+        "dockerfile": "ops/docker/op-stack-go/Dockerfile",
+        "target": "op-node-target"
+      },
+      "command": "op-node --l1=ws://l1:8546 --l1.beacon=http://l1-bn:5052 --l1.epoch-poll-interval=12s --l1.http-poll-interval=6s --l2=http://l2-b:8551 --l2.jwt-secret=/config/jwt-secret.txt --supervisor=http://op-supervisor:8545 --sequencer.enabled --sequencer.l1-confs=0 --verifier.l1-confs=0 --rollup.config=/rollup.json --rpc.addr=0.0.0.0 --rpc.port=8545 --p2p.listen.ip=0.0.0.0 --p2p.listen.tcp=9003 --p2p.listen.udp=9003 --p2p.scoring.peers=light --p2p.ban.peers=true --metrics.enabled --metrics.addr=0.0.0.0 --metrics.port=7300 --pprof.enabled --rpc.enable-admin --safedb.path=/db\n",
+      "depends_on": {
+        "l1": {
+          "condition": "service_started",
+          "required": true
+        },
+        "l1-bn": {
+          "condition": "service_started",
+          "required": true
+        },
+        "l1-vc": {
+          "condition": "service_started",
+          "required": true
+        },
+        "l2-b": {
+          "condition": "service_started",
+          "required": true
+        },
+        "op-supervisor": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "env_file": [
+        {
+          "path": "${PWD}/../.devnet-interop/env/l2/900201/op-node.env",
+          "required": true
+        }
+      ],
+      "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:devnet",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7245",
+          "target": 8545
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "9203",
+          "target": 9003
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7200",
+          "target": 7300
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "6260",
+          "target": 6060
+        }
+      ],
+      "volumes": [
+        {
+          "source": "safedb_b_data",
+          "target": "/db",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/../ops-bedrock/test-jwt-secret.txt",
+          "target": "/config/jwt-secret.txt",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/../.devnet-interop/genesis/l2/900201/rollup.json",
+          "target": "/rollup.json",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "op_log_b",
+          "target": "/op_log",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "op-node-b",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "safedb_b_data,${PWD}/../ops-bedrock/test-jwt-secret.txt,${PWD}/../.devnet-interop/genesis/l2/900201/rollup.json,op_log_b",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "op-proposer-a": {
+      "build": {
+        "context": "../",
+        "dockerfile": "ops/docker/op-stack-go/Dockerfile",
+        "target": "op-proposer-target"
+      },
+      "depends_on": {
+        "l1": {
+          "condition": "service_started",
+          "required": true
+        },
+        "op-node-a": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "env_file": [
+        {
+          "path": "${PWD}/../.devnet-interop/env/l2/900200/op-proposer.env",
+          "required": true
+        }
+      ],
+      "environment": {
+        "OP_PROPOSER_ALLOW_NON_FINALIZED": "true",
+        "OP_PROPOSER_GAME_TYPE": "254",
+        "OP_PROPOSER_L1_ETH_RPC": "http://l1:8545",
+        "OP_PROPOSER_METRICS_ENABLED": "true",
+        "OP_PROPOSER_NUM_CONFIRMATIONS": 1,
+        "OP_PROPOSER_POLL_INTERVAL": "1s",
+        "OP_PROPOSER_PPROF_ENABLED": "true",
+        "OP_PROPOSER_PROPOSAL_INTERVAL": "12s",
+        "OP_PROPOSER_ROLLUP_RPC": "http://op-node-a:8545",
+        "OP_PROPOSER_RPC_ENABLE_ADMIN": "true"
+      },
+      "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-proposer:devnet",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "6162",
+          "target": 6060
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7102",
+          "target": 7300
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "6146",
+          "target": 8545
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "op-proposer-a",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "op-proposer-b": {
+      "build": {
+        "context": "../",
+        "dockerfile": "ops/docker/op-stack-go/Dockerfile",
+        "target": "op-proposer-target"
+      },
+      "depends_on": {
+        "l1": {
+          "condition": "service_started",
+          "required": true
+        },
+        "op-node-b": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "env_file": [
+        {
+          "path": "${PWD}/../.devnet-interop/env/l2/900201/op-proposer.env",
+          "required": true
+        }
+      ],
+      "environment": {
+        "OP_PROPOSER_ALLOW_NON_FINALIZED": "true",
+        "OP_PROPOSER_GAME_TYPE": "254",
+        "OP_PROPOSER_L1_ETH_RPC": "http://l1:8545",
+        "OP_PROPOSER_METRICS_ENABLED": "true",
+        "OP_PROPOSER_NUM_CONFIRMATIONS": 1,
+        "OP_PROPOSER_POLL_INTERVAL": "1s",
+        "OP_PROPOSER_PPROF_ENABLED": "true",
+        "OP_PROPOSER_PROPOSAL_INTERVAL": "12s",
+        "OP_PROPOSER_ROLLUP_RPC": "http://op-node-b:8545",
+        "OP_PROPOSER_RPC_ENABLE_ADMIN": "true"
+      },
+      "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-proposer:devnet",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "6262",
+          "target": 6060
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7202",
+          "target": 7300
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "6246",
+          "target": 8545
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "op-proposer-b",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "op-supervisor": {
+      "build": {
+        "context": "../",
+        "dockerfile": "ops/docker/op-stack-go/Dockerfile",
+        "target": "op-supervisor-target"
+      },
+      "command": "op-supervisor --datadir=\"/db\" --dependency-set=\"/depset.json\" --l2-rpcs=\"\" --rpc.addr=\"0.0.0.0\" --rpc.port=8545 --rpc.enable-admin --l2-rpcs=\"ws://l2-a:8546,ws://l2-b:8546\"\n",
+      "depends_on": {
+        "l1": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "environment": {
+        "OP_SUPERVISOR_METRICS_ENABLED": "true"
+      },
+      "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-supervisor:devnet",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "9045",
+          "target": 8545
+        }
+      ],
+      "volumes": [
+        {
+          "source": "supervisor_data",
+          "target": "/db",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./depset.json",
+          "target": "/depset.json",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "op-supervisor",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "supervisor_data,./depset.json",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "promtail": {
+      "command": "-config.file=/etc/promtail/config.yaml",
+      "image": "grafana/promtail:3.1.1",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./monitoring/promtail",
+          "target": "/etc/promtail",
+          "type": "bind"
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "/var/run/docker.sock",
+          "target": "/var/run/docker.sock",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "promtail",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "./monitoring/promtail,/var/run/docker.sock",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "artifact-server": {
+      "depends_on": {
+        "l1": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "image": "nginx:1.25-alpine",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "8080",
+          "target": 80
+        }
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "read_only": true,
+          "source": "${PWD}/../.devnet/",
+          "target": "/usr/share/nginx/html",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "artifact-server",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "${PWD}/../.devnet/",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    },
+    "da-server": {
+      "build": {
+        "context": "../",
+        "dockerfile": "ops/docker/op-stack-go/Dockerfile",
+        "target": "da-server-target"
+      },
+      "command": "da-server --file.path=/data --addr=0.0.0.0 --port=3100 --log.level=debug --generic-commitment=\"${ALTDA_GENERIC_DA}\"\n",
+      "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/da-server:devnet",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "3100",
+          "target": 3100
+        }
+      ],
+      "volumes": [
+        {
+          "source": "da_data",
+          "target": "/data",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "da-server",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "da_data",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "l2": {
+      "build": {
+        "context": ".",
+        "dockerfile": "l2-op-geth.Dockerfile"
+      },
+      "entrypoint": [
+        "/bin/sh",
+        "/entrypoint.sh"
+      ],
+      "environment": {
+        "GETH_MINER_RECOMMIT": "100ms"
+      },
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "9545",
+          "target": 8545
+        },
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "8060",
+          "target": 6060
+        }
+      ],
+      "volumes": [
+        {
+          "source": "l2_data",
+          "target": "/db",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/../.devnet/genesis-l2.json",
+          "target": "/genesis.json",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "${PWD}/test-jwt-secret.txt",
+          "target": "/config/jwt-secret.txt",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "l2",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "l2_data,${PWD}/../.devnet/genesis-l2.json,${PWD}/test-jwt-secret.txt",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "sentinel": {
+      "command": "sentinel --datadir=data --l1-rpc-http=http://l1:8545 --l1-rpc-ws=ws://l1:8546 --da-storage-uri=http://da-server:3100 --private-key=0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba --config=/rollup.json\n",
+      "image": "quarry/sentinel",
+      "networks": {
+        "default": null
+      },
+      "volumes": [
+        {
+          "source": "${PWD}/../.devnet/rollup.json",
+          "target": "/rollup.json",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "sentinel",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "${PWD}/../.devnet/rollup.json",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    }
+  },
+  "networks": {
+    "default": {
+      "name": "ops-bedrock_default"
+    },
+    "ghostchain": {
+      "driver": "bridge",
+      "ipam": {
+        "config": [
+          {
+            "subnet": "172.28.0.0/16"
+          }
+        ]
+      },
+      "name": "ghostchain_ghostchain"
+    }
+  },
+  "volumes": {
+    "l1-mainnet-geth-data": {
+      "name": "opstack_l1-mainnet-geth-data"
+    },
+    "ghostchain-node1-data": {
+      "name": "ghostchain_ghostchain-node1-data"
+    },
+    "ghostchain-node2-data": {
+      "name": "ghostchain_ghostchain-node2-data"
+    },
+    "ghostchain-node3-data": {
+      "name": "ghostchain_ghostchain-node3-data"
+    },
+    "ghostchain-node4-data": {
+      "name": "ghostchain_ghostchain-node4-data"
+    },
+    "ghostscout-db-data": {
+      "name": "ghostchain_ghostscout-db-data"
+    },
+    "alertmanager_data": {
+      "name": "opstack_alertmanager_data"
+    },
+    "grafana_data": {
+      "name": "opstack_grafana_data"
+    },
+    "loki_data": {
+      "name": "opstack_loki_data"
+    },
+    "op_gate_state": {
+      "name": "opstack_op_gate_state"
+    },
+    "prometheus_data": {
+      "name": "opstack_prometheus_data"
+    },
+    "l1_bn_data": {
+      "name": "ops-bedrock_l1_bn_data"
+    },
+    "l1_data": {
+      "name": "ops-bedrock_l1_data"
+    },
+    "l1_vc_data": {
+      "name": "ops-bedrock_l1_vc_data"
+    },
+    "l2_a_data": {
+      "name": "interop-devnet_l2_a_data"
+    },
+    "l2_b_data": {
+      "name": "interop-devnet_l2_b_data"
+    },
+    "op_log_a": {
+      "name": "interop-devnet_op_log_a"
+    },
+    "op_log_b": {
+      "name": "interop-devnet_op_log_b"
+    },
+    "safedb_a_data": {
+      "name": "interop-devnet_safedb_a_data"
+    },
+    "safedb_b_data": {
+      "name": "interop-devnet_safedb_b_data"
+    },
+    "supervisor_data": {
+      "name": "interop-devnet_supervisor_data"
+    },
+    "challenger_data": {
+      "name": "ops-bedrock_challenger_data"
+    },
+    "da_data": {
+      "name": "ops-bedrock_da_data"
+    },
+    "l2_data": {
+      "name": "ops-bedrock_l2_data"
+    },
+    "op_log": {
+      "name": "ops-bedrock_op_log"
+    },
+    "safedb_data": {
+      "name": "ops-bedrock_safedb_data"
+    }
+  },
+  "x-ghost-source-files": [
+    "infra/opstack/docker-compose.mainnet-geth.yml",
+    "infra/opstack/docker-compose.network-manager.yml",
+    "infra/opstack/docker-compose.l3.yml",
+    "infra/ghostchain/docker-compose.ibft.yml",
+    "infra/ghostchain/docker-compose.eth.yml",
+    "infra/opstack/docker-compose.yml",
+    "infra/opstack/docker-compose.challengers.yml",
+    "infra/opstack/optimism-upstream/interop-devnet/docker-compose.yml",
+    "infra/opstack/optimism-upstream/ops-bedrock/docker-compose.yml"
+  ]
+}

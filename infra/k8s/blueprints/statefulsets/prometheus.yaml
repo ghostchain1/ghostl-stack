@@ -1,0 +1,117 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "prometheus",
+    "labels": {
+      "app": "prometheus",
+      "role": "obs"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.obs.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "prometheus",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "prometheus"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "prometheus",
+          "role": "obs"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "prometheus",
+            "image": "prom/prometheus:v2.51.2",
+            "command": null,
+            "args": [
+              "--config.file=/etc/prometheus/prometheus.yml",
+              "--storage.tsdb.path=/prometheus"
+            ],
+            "env": [],
+            "ports": [
+              {
+                "containerPort": 9090,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "./prometheus.yml",
+                "mountPath": "/etc/prometheus/prometheus.yml"
+              },
+              {
+                "name": "../alerts/alert_rules.yml",
+                "mountPath": "/etc/prometheus/alert_rules.yml"
+              },
+              {
+                "name": "prometheus_data",
+                "mountPath": "/prometheus"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./prometheus.yml"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "../alerts/alert_rules.yml"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "prometheus_data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

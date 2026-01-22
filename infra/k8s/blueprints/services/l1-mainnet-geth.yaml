@@ -1,0 +1,38 @@
+{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "name": "l1-mainnet-geth",
+    "labels": {
+      "app": "l1-mainnet-geth"
+    }
+  },
+  "spec": {
+    "type": "NodePort",
+    "selector": {
+      "app": "l1-mainnet-geth"
+    },
+    "ports": [
+      {
+        "port": "38545",
+        "targetPort": 8545,
+        "protocol": "TCP"
+      },
+      {
+        "port": "38546",
+        "targetPort": 8546,
+        "protocol": "TCP"
+      },
+      {
+        "port": "38551",
+        "targetPort": 8551,
+        "protocol": "TCP"
+      },
+      {
+        "port": "38660",
+        "targetPort": 6060,
+        "protocol": "TCP"
+      }
+    ]
+  }
+}

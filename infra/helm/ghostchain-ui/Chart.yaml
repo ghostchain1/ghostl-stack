@@ -1,0 +1,4 @@
+apiVersion: v2
+name: ghostchain-ui
+version: 0.1.0
+description: Plan-only Helm chart for ghostchain-ui

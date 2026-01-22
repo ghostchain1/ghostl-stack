@@ -1,0 +1,127 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "l1",
+    "labels": {
+      "app": "l1",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "l1",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "l1"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "l1",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "l1",
+            "image": "",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "GETH_MINER_RECOMMIT",
+                "value": "100ms"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 8545,
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 8546,
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 6060,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "l1_data",
+                "mountPath": "/db"
+              },
+              {
+                "name": "${PWD}/../.devnet/genesis-l1.json",
+                "mountPath": "/genesis.json"
+              },
+              {
+                "name": "${PWD}/test-jwt-secret.txt",
+                "mountPath": "/config/jwt-secret.txt"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "l1_data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "${PWD}/../.devnet/genesis-l1.json"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "${PWD}/test-jwt-secret.txt"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}
