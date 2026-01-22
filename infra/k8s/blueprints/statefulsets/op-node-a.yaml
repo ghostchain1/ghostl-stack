@@ -1,0 +1,145 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "op-node-a",
+    "labels": {
+      "app": "op-node-a",
+      "role": "chain"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "true"
+    }
+  },
+  "spec": {
+    "serviceName": "op-node-a",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "op-node-a"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "op-node-a",
+          "role": "chain"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "op-node-a",
+            "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:devnet",
+            "command": null,
+            "args": "op-node --l1=ws://l1:8546 --l1.beacon=http://l1-bn:5052 --l1.epoch-poll-interval=12s --l1.http-poll-interval=6s --l2=http://l2-a:8551 --l2.jwt-secret=/config/jwt-secret.txt --supervisor=http://op-supervisor:8545 --sequencer.enabled --sequencer.l1-confs=0 --verifier.l1-confs=0 --rollup.config=/rollup.json --rpc.addr=0.0.0.0 --rpc.port=8545 --p2p.listen.ip=0.0.0.0 --p2p.listen.tcp=9003 --p2p.listen.udp=9003 --p2p.scoring.peers=light --p2p.ban.peers=true --metrics.enabled --metrics.addr=0.0.0.0 --metrics.port=7300 --pprof.enabled --rpc.enable-admin --safedb.path=/db\n",
+            "env": [],
+            "ports": [
+              {
+                "containerPort": 8545,
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 9003,
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 7300,
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 6060,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "safedb_a_data",
+                "mountPath": "/db"
+              },
+              {
+                "name": "${PWD}/../ops-bedrock/test-jwt-secret.txt",
+                "mountPath": "/config/jwt-secret.txt"
+              },
+              {
+                "name": "${PWD}/../.devnet-interop/genesis/l2/900200/rollup.json",
+                "mountPath": "/rollup.json"
+              },
+              {
+                "name": "op_log_a",
+                "mountPath": "/op_log"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "safedb_a_data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "${PWD}/../ops-bedrock/test-jwt-secret.txt"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "${PWD}/../.devnet-interop/genesis/l2/900200/rollup.json"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "op_log_a"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

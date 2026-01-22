@@ -1,0 +1,58 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "forecasting-service",
+    "labels": {
+      "app": "forecasting-service",
+      "role": "ai"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.ai.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "forecasting-service"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "forecasting-service",
+          "role": "ai"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "forecasting-service",
+            "image": "ghostl/forecasting-service:local",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "PORT",
+                "value": "7617"
+              },
+              {
+                "name": "PROM_URL",
+                "value": "${PROM_URL}"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 7617,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

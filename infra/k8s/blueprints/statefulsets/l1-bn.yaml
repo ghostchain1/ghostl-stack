@@ -1,0 +1,164 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "l1-bn",
+    "labels": {
+      "app": "l1-bn",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "l1-bn",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "l1-bn"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "l1-bn",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "l1-bn",
+            "image": "",
+            "command": [
+              "/bin/sh",
+              "/entrypoint-bn.sh"
+            ],
+            "args": null,
+            "env": [
+              {
+                "name": "LH_EXECUTION_ENDPOINT",
+                "value": "http://l1:8551"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 9000,
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 5052,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "l1_bn_data",
+                "mountPath": "/db"
+              },
+              {
+                "name": "${PWD}/test-jwt-secret.txt",
+                "mountPath": "/config/jwt-secret.txt"
+              },
+              {
+                "name": "${PWD}/beacon-data/config.yaml",
+                "mountPath": "/genesis/config.yaml"
+              },
+              {
+                "name": "${PWD}/beacon-data/deposit_contract_block.txt",
+                "mountPath": "/genesis/deposit_contract_block.txt"
+              },
+              {
+                "name": "${PWD}/../.devnet/genesis-l1.ssz",
+                "mountPath": "/genesis/genesis.ssz"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "l1_bn_data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "${PWD}/test-jwt-secret.txt"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "${PWD}/beacon-data/config.yaml"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "${PWD}/beacon-data/deposit_contract_block.txt"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "${PWD}/../.devnet/genesis-l1.ssz"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

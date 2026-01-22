@@ -1,0 +1,130 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "l2-a",
+    "labels": {
+      "app": "l2-a",
+      "role": "chain"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "true"
+    }
+  },
+  "spec": {
+    "serviceName": "l2-a",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "l2-a"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "l2-a",
+          "role": "chain"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "l2-a",
+            "image": "",
+            "command": [
+              "/bin/sh",
+              "/entrypoint.sh"
+            ],
+            "args": null,
+            "env": [
+              {
+                "name": "GETH_MINER_RECOMMIT",
+                "value": "100ms"
+              },
+              {
+                "name": "GETH_ROLLUP_INTEROPRPC",
+                "value": "ws://op-supervisor:8545"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 8545,
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 6060,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "l2_a_data",
+                "mountPath": "/db"
+              },
+              {
+                "name": "${PWD}/../.devnet-interop/genesis/l2/900200/genesis.json",
+                "mountPath": "/genesis.json"
+              },
+              {
+                "name": "${PWD}/../ops-bedrock/test-jwt-secret.txt",
+                "mountPath": "/config/jwt-secret.txt"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "l2_a_data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "${PWD}/../.devnet-interop/genesis/l2/900200/genesis.json"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "${PWD}/../ops-bedrock/test-jwt-secret.txt"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

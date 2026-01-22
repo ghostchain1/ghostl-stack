@@ -1,0 +1,93 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "treasury-service",
+    "labels": {
+      "app": "treasury-service",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.services.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "treasury-service",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "treasury-service"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "treasury-service",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "treasury-service",
+            "image": "ghostl/treasury-service:local",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "PORT",
+                "value": "7628"
+              },
+              {
+                "name": "PROM_URL",
+                "value": "${PROM_URL}"
+              },
+              {
+                "name": "EXECUTION_APPROVAL_TOKEN",
+                "value": "${EXECUTION_APPROVAL_TOKEN}"
+              },
+              {
+                "name": "TREASURY_STATE_FILE",
+                "value": "/data/treasury-proposals.json"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 7628,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "./data",
+                "mountPath": "/data"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

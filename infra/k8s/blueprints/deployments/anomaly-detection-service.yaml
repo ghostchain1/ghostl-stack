@@ -1,0 +1,58 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "anomaly-detection-service",
+    "labels": {
+      "app": "anomaly-detection-service",
+      "role": "ai"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.ai.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "anomaly-detection-service"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "anomaly-detection-service",
+          "role": "ai"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "anomaly-detection-service",
+            "image": "ghostl/anomaly-detection-service:local",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "PORT",
+                "value": "7616"
+              },
+              {
+                "name": "PROM_URL",
+                "value": "${PROM_URL}"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 7616,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

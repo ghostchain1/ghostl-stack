@@ -1,0 +1,116 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "l3-op-node",
+    "labels": {
+      "app": "l3-op-node",
+      "role": "chain"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "true"
+    }
+  },
+  "spec": {
+    "serviceName": "l3-op-node",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "l3-op-node"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "l3-op-node",
+          "role": "chain"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "l3-op-node",
+            "image": "ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b",
+            "command": null,
+            "args": [
+              "op-node",
+              "--l1=${L3_L1_RPC:-http://l2-geth:8545}",
+              "--l2=http://l3-geth:8551",
+              "--l2.jwt-secret=/config/jwt.txt",
+              "--rollup.config=/config/rollup.json",
+              "--rollup.l1-chain-config=/config/l1-chain.json",
+              "--rpc.addr=0.0.0.0",
+              "--rpc.port=${L3_ROLLUP_RPC_PORT:-19546}",
+              "--l1.rpckind=basic",
+              "--p2p.disable",
+              "--l1.beacon.ignore",
+              "--sequencer.enabled",
+              "--sequencer.l1-confs=${L3_SEQUENCER_L1_CONFS:-2}",
+              "--metrics.enabled",
+              "--metrics.addr=0.0.0.0",
+              "--metrics.port=${L3_METRICS_NODE_PORT:-8300}"
+            ],
+            "env": [
+              {
+                "name": "OP_NODE_L1_BEACON_IGNORE",
+                "value": "1"
+              },
+              {
+                "name": "OP_NODE_SEQUENCER_ENABLED",
+                "value": "1"
+              }
+            ],
+            "ports": [],
+            "volumeMounts": [
+              {
+                "name": "./l3/${L3_NAME:-ghostl3}/data/op-node",
+                "mountPath": "/data"
+              },
+              {
+                "name": "./l3/${L3_NAME:-ghostl3}/config",
+                "mountPath": "/config"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./l3/${L3_NAME:-ghostl3}/data/op-node"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "./l3/${L3_NAME:-ghostl3}/config"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

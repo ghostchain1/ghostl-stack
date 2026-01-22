@@ -1,0 +1,155 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "op-challenger",
+    "labels": {
+      "app": "op-challenger",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "op-challenger",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "op-challenger"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "op-challenger",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "op-challenger",
+            "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-challenger:devnet",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "OP_CHALLENGER_CANNON_BIN",
+                "value": "./cannon/bin/cannon"
+              },
+              {
+                "name": "OP_CHALLENGER_CANNON_L2_GENESIS",
+                "value": "./.devnet/genesis-l2.json"
+              },
+              {
+                "name": "OP_CHALLENGER_CANNON_PRESTATE",
+                "value": "/op-program/prestate.bin.gz"
+              },
+              {
+                "name": "OP_CHALLENGER_CANNON_ROLLUP_CONFIG",
+                "value": "./.devnet/rollup.json"
+              },
+              {
+                "name": "OP_CHALLENGER_CANNON_SERVER",
+                "value": "/op-program/op-program"
+              },
+              {
+                "name": "OP_CHALLENGER_DATADIR",
+                "value": "/db"
+              },
+              {
+                "name": "OP_CHALLENGER_GAME_FACTORY_ADDRESS",
+                "value": "${DGF_ADDRESS}"
+              },
+              {
+                "name": "OP_CHALLENGER_HD_PATH",
+                "value": "m/44'/60'/0'/0/4"
+              },
+              {
+                "name": "OP_CHALLENGER_L1_BEACON",
+                "value": "http://l1-bn:5052"
+              },
+              {
+                "name": "OP_CHALLENGER_L1_ETH_RPC",
+                "value": "http://l1:8545"
+              },
+              {
+                "name": "OP_CHALLENGER_L2_ETH_RPC",
+                "value": "http://l2:8545"
+              },
+              {
+                "name": "OP_CHALLENGER_MNEMONIC",
+                "value": "test test test test test test test test test test test junk"
+              },
+              {
+                "name": "OP_CHALLENGER_NUM_CONFIRMATIONS",
+                "value": "1"
+              },
+              {
+                "name": "OP_CHALLENGER_ROLLUP_RPC",
+                "value": "http://op-node:8545"
+              },
+              {
+                "name": "OP_CHALLENGER_TRACE_TYPE",
+                "value": "cannon,fast"
+              },
+              {
+                "name": "OP_CHALLENGER_UNSAFE_ALLOW_INVALID_PRESTATE",
+                "value": "true"
+              }
+            ],
+            "ports": [],
+            "volumeMounts": [
+              {
+                "name": "challenger_data",
+                "mountPath": "/db"
+              },
+              {
+                "name": "../op-program/bin",
+                "mountPath": "/op-program"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "challenger_data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "../op-program/bin"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

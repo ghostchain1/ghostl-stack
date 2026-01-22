@@ -1,0 +1,98 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "alertmanager",
+    "labels": {
+      "app": "alertmanager",
+      "role": "obs"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.obs.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "alertmanager",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "alertmanager"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "alertmanager",
+          "role": "obs"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "alertmanager",
+            "image": "prom/alertmanager:v0.27.0",
+            "command": null,
+            "args": [
+              "--config.file=/etc/alertmanager/alertmanager.yml",
+              "--storage.path=/alertmanager"
+            ],
+            "env": [],
+            "ports": [
+              {
+                "containerPort": 9093,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "./alertmanager.yml",
+                "mountPath": "/etc/alertmanager/alertmanager.yml"
+              },
+              {
+                "name": "alertmanager_data",
+                "mountPath": "/alertmanager"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./alertmanager.yml"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "alertmanager_data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

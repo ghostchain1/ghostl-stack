@@ -1,0 +1,54 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "upgrade-orchestrator-service",
+    "labels": {
+      "app": "upgrade-orchestrator-service",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.services.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "upgrade-orchestrator-service"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "upgrade-orchestrator-service",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "upgrade-orchestrator-service",
+            "image": "ghostl/upgrade-orchestrator-service:local",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "PORT",
+                "value": "7623"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 7623,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

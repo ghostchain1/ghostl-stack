@@ -1,0 +1,95 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "ghostchain-node4",
+    "labels": {
+      "app": "ghostchain-node4",
+      "role": "chain"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "true"
+    }
+  },
+  "spec": {
+    "serviceName": "ghostchain-node4",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "ghostchain-node4"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "ghostchain-node4",
+          "role": "chain"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "ghostchain-node4",
+            "image": "hyperledger/besu:24.12.0",
+            "command": [
+              "/bin/sh",
+              "-c"
+            ],
+            "args": [
+              "BOOTNODES=$(tr '\\n' ',' </config/peers.txt | sed 's/,$//')\nexec besu \\\n  --data-path=/data \\\n  --genesis-file=/config/genesis.json \\\n  --p2p-port=30303 \\\n  --node-private-key-file=/config/keys/node4/key \\\n  --bootnodes=$${BOOTNODES}\n"
+            ],
+            "env": [],
+            "ports": [],
+            "volumeMounts": [
+              {
+                "name": "./ibft/networkFiles",
+                "mountPath": "/config"
+              },
+              {
+                "name": "ghostchain-node4-data",
+                "mountPath": "/data"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./ibft/networkFiles"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "ghostchain-node4-data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

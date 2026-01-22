@@ -1,0 +1,4 @@
+apiVersion: v2
+name: ghostchain-services
+version: 0.1.0
+description: Plan-only Helm chart for ghostchain-services

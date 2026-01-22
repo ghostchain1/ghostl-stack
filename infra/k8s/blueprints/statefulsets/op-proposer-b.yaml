@@ -1,0 +1,104 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "op-proposer-b",
+    "labels": {
+      "app": "op-proposer-b",
+      "role": "chain"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "true"
+    }
+  },
+  "spec": {
+    "serviceName": "op-proposer-b",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "op-proposer-b"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "op-proposer-b",
+          "role": "chain"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "op-proposer-b",
+            "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-proposer:devnet",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "OP_PROPOSER_ALLOW_NON_FINALIZED",
+                "value": "true"
+              },
+              {
+                "name": "OP_PROPOSER_GAME_TYPE",
+                "value": "254"
+              },
+              {
+                "name": "OP_PROPOSER_L1_ETH_RPC",
+                "value": "http://l1:8545"
+              },
+              {
+                "name": "OP_PROPOSER_METRICS_ENABLED",
+                "value": "true"
+              },
+              {
+                "name": "OP_PROPOSER_NUM_CONFIRMATIONS",
+                "value": "1"
+              },
+              {
+                "name": "OP_PROPOSER_POLL_INTERVAL",
+                "value": "1s"
+              },
+              {
+                "name": "OP_PROPOSER_PPROF_ENABLED",
+                "value": "true"
+              },
+              {
+                "name": "OP_PROPOSER_PROPOSAL_INTERVAL",
+                "value": "12s"
+              },
+              {
+                "name": "OP_PROPOSER_ROLLUP_RPC",
+                "value": "http://op-node-b:8545"
+              },
+              {
+                "name": "OP_PROPOSER_RPC_ENABLE_ADMIN",
+                "value": "true"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 6060,
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 7300,
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 8545,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": []
+  }
+}

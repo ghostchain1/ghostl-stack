@@ -1,0 +1,85 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "l3-op-proposer",
+    "labels": {
+      "app": "l3-op-proposer",
+      "role": "chain"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "true"
+    }
+  },
+  "spec": {
+    "serviceName": "l3-op-proposer",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "l3-op-proposer"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "l3-op-proposer",
+          "role": "chain"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "l3-op-proposer",
+            "image": "ghcr.io/ethereum-optimism/op-proposer@sha256:00590e36e37994eefd8bbc9a6498ad20c62b072b381d0b8cdb7293056e6e5b64",
+            "command": null,
+            "args": [
+              "op-proposer",
+              "--l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}",
+              "--rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}",
+              "--game-factory-address=${L3_GAME_FACTORY_ADDRESS:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}",
+              "--proposal-interval=30s",
+              "--game-type=0",
+              "--private-key=${L3_PROPOSER_KEY:-${PROPOSER_KEY}}",
+              "--allow-non-finalized",
+              "--rpc.addr=0.0.0.0",
+              "--rpc.port=${L3_PROPOSER_RPC_PORT:-18560}",
+              "--metrics.enabled",
+              "--metrics.addr=0.0.0.0",
+              "--metrics.port=${L3_METRICS_PROPOSER_PORT:-8302}"
+            ],
+            "env": [],
+            "ports": [],
+            "volumeMounts": [
+              {
+                "name": "./l3/${L3_NAME:-ghostl3}/config",
+                "mountPath": "/config"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./l3/${L3_NAME:-ghostl3}/config"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

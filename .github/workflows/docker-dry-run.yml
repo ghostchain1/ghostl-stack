@@ -1,0 +1,32 @@
+name: docker-dry-run
+
+on:
+  pull_request:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  docker-dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate unified compose files
+        run: |
+          docker compose -f infra/docker/compose/docker-compose.core.yml config
+          docker compose -f infra/docker/compose/docker-compose.services.yml config
+          docker compose -f infra/docker/compose/docker-compose.ui.yml config
+          docker compose -f infra/docker/compose/docker-compose.obs.yml config
+          docker compose -f infra/docker/compose/docker-compose.ai.yml config
+
+      - name: Compose diff safety checks
+        run: |
+          bash infra/docker/tests/compose-diff.sh
+
+      - name: Terraform plan (dry-run)
+        run: |
+          bash infra/terraform/terraform-plan.sh
+
+      - name: Helm template (dry-run)
+        run: |
+          bash infra/helm/helm-template.sh

@@ -1,0 +1,54 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "rpc-forward-l1-29545",
+    "labels": {
+      "app": "rpc-forward-l1-29545",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.services.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "rpc-forward-l1-29545"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "rpc-forward-l1-29545",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "rpc-forward-l1-29545",
+            "image": "alpine/socat@sha256:1edb826a9432ab0b0f8c865181fc278e48b792fc80bebfa0e19205cda71bbbd1",
+            "command": null,
+            "args": [
+              "-d",
+              "-d",
+              "TCP-LISTEN:29545,fork,reuseaddr",
+              "TCP:host.docker.internal:18545"
+            ],
+            "env": [],
+            "ports": [
+              {
+                "containerPort": 29545,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

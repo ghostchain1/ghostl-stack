@@ -1,0 +1,90 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "promtail",
+    "labels": {
+      "app": "promtail",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "promtail",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "promtail"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "promtail",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "promtail",
+            "image": "grafana/promtail:3.1.1",
+            "command": null,
+            "args": "-config.file=/etc/promtail/config.yaml",
+            "env": [],
+            "ports": [],
+            "volumeMounts": [
+              {
+                "name": "./monitoring/promtail",
+                "mountPath": "/etc/promtail"
+              },
+              {
+                "name": "/var/run/docker.sock",
+                "mountPath": "/var/run/docker.sock"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./monitoring/promtail"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "/var/run/docker.sock"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}
