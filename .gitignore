@@ -128,6 +128,10 @@ ops/docker/attestations/*
 !ops/docker/attestations/README.md
 ops/ai/anomaly/anomaly-report.json
 ops/ai/anomaly/model-metadata.json
+ops/ai/drift/baseline.json
+ops/ai/drift/drift-report.json
+ops/confidential/cca.json
+ops/onchain/notarization.json
 *.swp
 *.swo
 *.tmp
