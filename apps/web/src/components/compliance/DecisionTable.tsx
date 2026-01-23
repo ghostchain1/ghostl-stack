@@ -30,14 +30,14 @@ export function DecisionTable({ decisions }: { decisions: DecisionRow[] }) {
         <tbody>
           {decisions.map((d) => (
             <tr key={d.request_id}>
-              <td className="code">{d.request_id}</td>
+              <td className="mono">{d.request_id}</td>
               <td>{d.action}</td>
               <td>
-                <span className={`badge ${d.decision === 'deny' ? 'danger' : d.decision === 'allow_with_controls' ? 'warn' : ''}`}>
+                <span className={`badge ${d.decision === 'deny' ? 'bad' : d.decision === 'allow_with_controls' ? 'warn' : ''}`}>
                   {d.decision}
                 </span>
               </td>
-              <td className="code">{d.wallet_address.slice(0, 10)}…</td>
+              <td className="mono">{d.wallet_address.slice(0, 10)}…</td>
               <td>{d.chain_id}</td>
               <td className="muted">{d.reasons.join(', ') || '--'}</td>
               <td className="muted">{d.required_controls.join(', ') || '--'}</td>

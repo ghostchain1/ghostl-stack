@@ -39,7 +39,7 @@ export default async function KycPage() {
   if (!providersRes.ok) errors.push({ title: 'KYC providers', error: providersRes.error });
   if (!policyRes.ok) errors.push({ title: 'KYC policy', error: policyRes.error });
 
-  if (errors.length) {
+  if (!summaryRes.ok || !applicantsRes.ok || !providersRes.ok || !policyRes.ok) {
     return (
       <div className="content">
         <h2>KYC operations</h2>

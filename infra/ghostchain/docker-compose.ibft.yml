@@ -22,6 +22,11 @@ services:
         exec besu \
           --data-path=/data \
           --genesis-file=/config/genesis.json \
+          --p2p-host=172.28.0.11 \
+          --sync-min-peers=1 \
+          --miner-enabled \
+          --miner-coinbase=0x0194D70B789A4d0B01dE4A601f56E154e200Afe5 \
+          --min-gas-price=0 \
           --rpc-http-enabled \
           --rpc-http-host=0.0.0.0 \
           --rpc-http-api=ETH,NET,WEB3,IBFT,ADMIN,TXPOOL \
@@ -63,6 +68,11 @@ services:
         exec besu \
           --data-path=/data \
           --genesis-file=/config/genesis.json \
+          --p2p-host=172.28.0.12 \
+          --sync-min-peers=1 \
+          --miner-enabled \
+          --miner-coinbase=0x4Bb8E00bF2d6CDD6747cd773F674Ba9ECA42f4d2 \
+          --min-gas-price=0 \
           --p2p-port=30303 \
           --node-private-key-file=/config/keys/node2/key \
           --bootnodes=$${BOOTNODES}
@@ -87,6 +97,11 @@ services:
         exec besu \
           --data-path=/data \
           --genesis-file=/config/genesis.json \
+          --p2p-host=172.28.0.13 \
+          --sync-min-peers=1 \
+          --miner-enabled \
+          --miner-coinbase=0x94f02896c880AC1D264B14381471F9783b5B44D2 \
+          --min-gas-price=0 \
           --p2p-port=30303 \
           --node-private-key-file=/config/keys/node3/key \
           --bootnodes=$${BOOTNODES}
@@ -111,6 +126,11 @@ services:
         exec besu \
           --data-path=/data \
           --genesis-file=/config/genesis.json \
+          --p2p-host=172.28.0.14 \
+          --sync-min-peers=1 \
+          --miner-enabled \
+          --miner-coinbase=0xC25d312177d2E0c406EcC5025A0f98E0C13a93BD \
+          --min-gas-price=0 \
           --p2p-port=30303 \
           --node-private-key-file=/config/keys/node4/key \
           --bootnodes=$${BOOTNODES}

@@ -14,6 +14,7 @@ import {
 } from '@ghostl/contract-schemas';
 import { apiRequest, type ApiError, formatApiError } from '../../lib/api';
 import { DataFetchErrorCard } from '../../components/DataFetchErrorCard';
+import { ComplianceStatusBannerClient } from '../../components/compliance/ComplianceStatusBannerClient';
 import { useSession } from '../identity-access/session';
 import { normalizeRole, roleOrder } from '../identity-access/access-policy';
 import { useNetwork } from '../app-shell/services/NetworkContextService';
@@ -360,7 +361,7 @@ export function OperatorOverview() {
   const [status, setStatus] = useState('');
   const [errors, setErrors] = useState<Record<string, { title: string; error: ApiError }>>({});
   const intelInFlight = useRef(new Set<string>());
-  const formatStatus = (error: ApiError) => {
+  const formatErrorStatus = (error: ApiError) => {
     const info = formatApiError(error);
     return `${info.method} ${info.endpoint} | ${info.status} | ${info.hint}`;
   };
@@ -626,7 +627,7 @@ export function OperatorOverview() {
         schema: txIntelSchema
       });
       if (!intelResult.ok) {
-        if (!silent) setStatus(formatStatus(intelResult.error));
+        if (!silent) setStatus(formatErrorStatus(intelResult.error));
         clearStatus = false;
         return;
       }
@@ -655,7 +656,7 @@ export function OperatorOverview() {
         { schema: walletIntelSchema }
       );
       if (!intelResult.ok) {
-        setStatus(formatStatus(intelResult.error));
+        setStatus(formatErrorStatus(intelResult.error));
         clearStatus = false;
         return;
       }
@@ -743,6 +744,7 @@ export function OperatorOverview() {
 
   return (
     <div className="content">
+      <ComplianceStatusBannerClient />
       <section className="card hero reveal">
         <div className="hero-main">
           <div className="hero-badge">GhostChain L1 / GhostL2 / GhostL3</div>
@@ -814,7 +816,7 @@ export function OperatorOverview() {
                 </div>
                 <Sparkline points={blockHistory[network.id] || []} stroke="var(--accent)" />
                 <div className="muted">{network.rpc || 'RPC unassigned'}</div>
-                {snapshot?.error && <div className="muted">RPC error: {formatStatus(snapshot.error)}</div>}
+                {snapshot?.error && <div className="muted">RPC error: {formatErrorStatus(snapshot.error)}</div>}
               </div>
             );
           })}

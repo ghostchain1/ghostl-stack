@@ -35,3 +35,4 @@ Lightweight overview of the service stubs that back the dashboard modules. Most 
 Conventions:
 - Keep service README/config close to the service folder (same name) and expose a `/health` endpoint for `apps/api`.
 - Use `package.json` scripts (`dev`, `start`) that match the existing stubs so workspaces can orchestrate them uniformly later.
+- Build services sequentially to avoid resource contention: `./scripts/build-services-sequential.sh services/docker-compose.yml`.

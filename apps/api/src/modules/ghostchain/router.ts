@@ -39,9 +39,9 @@ export const buildGhostchainRouter = (chains: ChainConfig[]) => {
     async (_req, res) => {
       try {
         const results = await Promise.all(
-          chains
-            .filter((c) => !!c.rpc)
-            .map((c) => checkChain(c).catch((err) => ({ id: c.id, label: c.label, error: (err as Error).message })))
+          chains.map((c) =>
+            checkChain(c).catch((err) => ({ id: c.id, label: c.label, error: (err as Error).message }))
+          )
         );
         res.json({ ok: true, results });
       } catch (err) {
