@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "sampleBlocks": 20,
+  "severityThresholds": {
+    "warnReorderRate": 0.2,
+    "criticalReorderRate": 0.5,
+    "warnPriorityFeeSkew": 8.0,
+    "criticalPriorityFeeSkew": 15.0
+  }
+}

@@ -79,13 +79,31 @@ An anomaly report is generated at `ops/ai/anomaly/anomaly-report.json` with dete
 
 After recreate, the drift monitor records a baseline and produces `ops/ai/drift/drift-report.json`. CRITICAL drift triggers the kill-switch. Configure thresholds in `ops/ai/drift/drift-policy.json`.
 
+## MEV / Sequencer Monitoring
+
+The MEV monitor emits `ops/mev/mev-report.json` and flags ordering anomalies or extreme priority fee skew. CRITICAL severity triggers the kill-switch.
+
 ## Confidential Compute Attestation
 
 If SEV/TDX capabilities are detected, `ops/confidential/cca.json` is generated and hashed into the immutability attestation. If unavailable, the script records `supported=false`.
 
+## ZK Immutability Proofs
+
+The recreate script generates `ops/zk/immutability-proof.json` and `ops/zk/immutability-proof.verifier.json` using `circom` + `snarkjs`. The proof is submitted on-chain via a pre-signed raw transaction (`GHOST_ZK_VERIFY_RAW_TX`), and the receipt is stored at `ops/zk/immutability-proof.onchain.json`.
+
+Required env for ZK:
+- `ZK_PTAU_PATH` (Powers of Tau file)
+- `ZK_ENTROPY` (deterministic contribution seed)
+- `GHOST_ZK_VERIFY_RAW_TX` (pre-signed on-chain verification tx)
+- `ZK_ONCHAIN_REQUIRED=true|false` (default true)
+
 ## On-Chain Notarization
 
 The notarization helper computes a notarization hash and optionally submits a pre-signed transaction when `GHOST_NOTARIZATION_RAW_TX` is provided. Output is stored in `ops/onchain/notarization.json`.
+
+## Quorum Attestation
+
+Cross-region quorum attestations are aggregated from `ops/quorum/regions/*.json`. The aggregate is stored at `ops/quorum/quorum-attestation.json` and must satisfy `ops/quorum/quorum-policy.json` unless `QUORUM_REQUIRED=false`.
 
 ## Kill Switch
 
