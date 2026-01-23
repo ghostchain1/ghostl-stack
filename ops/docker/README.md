@@ -75,6 +75,18 @@ The recreate script writes `chain-state-merkle-proofs.json` and `chain-state-mer
 
 An anomaly report is generated at `ops/ai/anomaly/anomaly-report.json` with deterministic, rule-based severity classification. CRITICAL anomalies trigger the kill-switch and rollback.
 
+## Drift Monitoring
+
+After recreate, the drift monitor records a baseline and produces `ops/ai/drift/drift-report.json`. CRITICAL drift triggers the kill-switch. Configure thresholds in `ops/ai/drift/drift-policy.json`.
+
+## Confidential Compute Attestation
+
+If SEV/TDX capabilities are detected, `ops/confidential/cca.json` is generated and hashed into the immutability attestation. If unavailable, the script records `supported=false`.
+
+## On-Chain Notarization
+
+The notarization helper computes a notarization hash and optionally submits a pre-signed transaction when `GHOST_NOTARIZATION_RAW_TX` is provided. Output is stored in `ops/onchain/notarization.json`.
+
 ## Kill Switch
 
 Manual activation:

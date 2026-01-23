@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "rules": {
+    "maxHeightRegression": 0,
+    "maxLatencyMs": 1500,
+    "maxLatencyMultiplier": 3.0,
+    "allowRpcErrors": false
+  }
+}

@@ -11,6 +11,9 @@ NO_ROLLBACK="false"
 ROLLBACK_ARMED="false"
 SIGNING_METHOD=""
 ANOMALY_DIR="$ROOT_DIR/ops/ai/anomaly"
+DRIFT_DIR="$ROOT_DIR/ops/ai/drift"
+CONFIDENTIAL_DIR="$ROOT_DIR/ops/confidential"
+ONCHAIN_DIR="$ROOT_DIR/ops/onchain"
 
 usage() {
   cat <<'USAGE'
@@ -83,6 +86,7 @@ DID_PUB_PATH="${GHOST_DID_PUB_PATH:-$ATTEST_DIR/did-ed25519.pub.pem}"
 DID_DOC_PATH="$ATTEST_DIR/did-key.json"
 DID_VC_PATH="$ATTEST_DIR/immutability-vc.json"
 mkdir -p "$ANOMALY_DIR"
+mkdir -p "$DRIFT_DIR" "$CONFIDENTIAL_DIR" "$ONCHAIN_DIR"
 mkdir -p "$SNAPSHOT_DIR" "$SNAPSHOT_DIR/compose" "$SNAPSHOT_DIR/env" "$SNAPSHOT_DIR/inspect" "$SNAPSHOT_DIR/proofs" "$ATTEST_DIR"
 
 log "Snapshot directory: $SNAPSHOT_DIR"
@@ -915,6 +919,62 @@ if [[ "$ANOMALY_SEVERITY" == "CRITICAL" ]]; then
   abort "AI anomaly detection flagged CRITICAL severity."
 fi
 
+if [[ -x "$ROOT_DIR/ops/ai/drift/monitor.sh" ]]; then
+  "$ROOT_DIR/ops/ai/drift/monitor.sh" --mode "$MODE" --snapshot "$SNAPSHOT_DIR" --kill-switch || true
+fi
+
+if [[ -f "$DRIFT_DIR/baseline.json" ]]; then
+  cp "$DRIFT_DIR/baseline.json" "$SNAPSHOT_DIR/drift-baseline.json"
+fi
+if [[ -f "$DRIFT_DIR/drift-report.json" ]]; then
+  cp "$DRIFT_DIR/drift-report.json" "$SNAPSHOT_DIR/drift-report.json"
+fi
+
+if [[ ! -f "$SNAPSHOT_DIR/drift-baseline.json" || ! -f "$SNAPSHOT_DIR/drift-report.json" ]]; then
+  abort "Drift monitoring artifacts missing. Ensure ops/ai/drift/monitor.sh runs successfully."
+fi
+
+DRIFT_SEVERITY=$(python3 - "$DRIFT_DIR/drift-report.json" <<'PY'
+import json,sys,os
+if not os.path.isfile(sys.argv[1]):
+    print("INFO")
+    raise SystemExit(0)
+data=json.load(open(sys.argv[1]))
+print(data.get("severity","INFO"))
+PY
+)
+
+if [[ "$DRIFT_SEVERITY" == "CRITICAL" ]]; then
+  log "Drift monitor severity CRITICAL - activating kill switch."
+  "$ROOT_DIR/ops/security/kill-switch/activate.sh" --snapshot "$SNAPSHOT_DIR" --mode "$MODE" --reason "drift_critical" || true
+  abort "Drift monitoring flagged CRITICAL severity."
+fi
+
+if [[ -x "$ROOT_DIR/ops/confidential/collect-cca.sh" ]]; then
+  "$ROOT_DIR/ops/confidential/collect-cca.sh" --out "$CONFIDENTIAL_DIR/cca.json" || true
+  if [[ -f "$CONFIDENTIAL_DIR/cca.json" ]]; then
+    cp "$CONFIDENTIAL_DIR/cca.json" "$SNAPSHOT_DIR/confidential-cca.json"
+  fi
+fi
+
+if [[ ! -f "$SNAPSHOT_DIR/confidential-cca.json" ]]; then
+  python3 - "$SNAPSHOT_DIR/confidential-cca.json" <<'PY'
+import json,datetime,sys
+
+payload={
+  "timestamp": datetime.datetime.utcnow().isoformat()+"Z",
+  "supported": False,
+  "vendor": "unknown",
+  "sevMode": "none",
+  "tdxMode": "none",
+  "reason": "collector_unavailable",
+  "attestationType": "capability-scan",
+  "measurementHash": None
+}
+json.dump(payload,open(sys.argv[1],"w"),indent=2)
+PY
+fi
+
 python3 - "$SNAPSHOT_DIR/oci-image-provenance-post.json" "${rendered_configs[@]}" <<'PY'
 import hashlib,json,os,subprocess,sys
 
@@ -1086,6 +1146,9 @@ payload={
   "ociImageProvenance": sha256(os.path.join(os.getenv("ATTEST_DIR","."),"oci-image-provenance.json")),
   "anomalyReport": sha256(os.path.join(snap,"anomaly-report.json")),
   "anomalyModel": sha256(os.path.join(snap,"model-metadata.json")),
+  "driftBaseline": sha256(os.path.join(snap,"drift-baseline.json")),
+  "driftReport": sha256(os.path.join(snap,"drift-report.json")),
+  "confidentialCompute": sha256(os.path.join(snap,"confidential-cca.json")),
   "recreateScript": sha256(os.path.join(os.getenv("ROOT_DIR","."),"ops","docker","ghostctl-recreate.sh")),
   "containersPre": sha256(os.path.join(snap,"inspect","docker-ps.json")),
   "containersPost": sha256(os.path.join(snap,"inspect","docker-ps-post.json")),
@@ -1343,5 +1406,40 @@ payload["proof"]=proof
 
 json.dump(payload,open(out_path,"w"),indent=2)
 PY
+
+if [[ -x "$ROOT_DIR/ops/onchain/notarize.sh" ]]; then
+  if [[ -n "${GHOST_NOTARIZATION_RPC_URL:-}" ]]; then
+    "$ROOT_DIR/ops/onchain/notarize.sh" \
+      --attestation "$attestation_json" \
+      --merkle "$ATTEST_DIR/chain-state-merkle-proofs.json" \
+      --oci "$ATTEST_DIR/oci-image-provenance.json" \
+      --vc "$DID_VC_PATH" \
+      --out "$ONCHAIN_DIR/notarization.json" \
+      --rpc "$GHOST_NOTARIZATION_RPC_URL"
+  else
+    "$ROOT_DIR/ops/onchain/notarize.sh" \
+      --attestation "$attestation_json" \
+      --merkle "$ATTEST_DIR/chain-state-merkle-proofs.json" \
+      --oci "$ATTEST_DIR/oci-image-provenance.json" \
+      --vc "$DID_VC_PATH" \
+      --out "$ONCHAIN_DIR/notarization.json"
+  fi
+fi
+
+if [[ ! -f "$ONCHAIN_DIR/notarization.json" ]]; then
+  python3 - "$ONCHAIN_DIR/notarization.json" <<'PY'
+import json,datetime,sys
+payload={
+  "timestamp": datetime.datetime.utcnow().isoformat()+"Z",
+  "status": "skipped",
+  "note": "notarization_script_missing",
+  "txHash": None,
+  "blockNumber": None
+}
+json.dump(payload,open(sys.argv[1],"w"),indent=2)
+PY
+fi
+
+cp "$ONCHAIN_DIR/notarization.json" "$SNAPSHOT_DIR/notarization.json"
 
 log "Recreate complete. Attestation written to $ATTEST_DIR"
