@@ -19,7 +19,6 @@ services:
       - MARKET_DATA_FILE=/app/apps/api/data/market-data.json
     volumes:
       - ./:/app
-      - /app/node_modules
       - ./apps/api/data:/app/apps/api/data
 
   ghostl-web:
@@ -38,6 +37,5 @@ services:
       - API_INTERNAL_URL=http://ghostl-api:4000
     volumes:
       - ./:/app
-      - /app/node_modules
     depends_on:
       - ghostl-api
