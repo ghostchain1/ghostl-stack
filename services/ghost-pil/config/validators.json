@@ -1,0 +1,14 @@
+{
+  "validators": [
+    {
+      "id": "0x000000000000000000000000000000000000dEaD",
+      "chainId": 901,
+      "jurisdictionCode": "GLOBAL"
+    },
+    {
+      "id": "0x000000000000000000000000000000000000beef",
+      "chainId": 902,
+      "jurisdictionCode": "US"
+    }
+  ]
+}

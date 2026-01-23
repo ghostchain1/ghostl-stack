@@ -1,0 +1,43 @@
+{
+  "id": "00000000-0000-0000-0000-000000000103",
+  "jurisdictionCode": "UK",
+  "version": "2026.01",
+  "generatedBy": "AI",
+  "confidenceScore": 0.7,
+  "effectiveFrom": "2026-01-01T00:00:00Z",
+  "rules": [
+    {
+      "id": "UK-FCA-REGISTRATION-POSTURE",
+      "class": "AML_THRESHOLD_REQUIREMENT",
+      "actions": ["TRANSFER", "BRIDGE"],
+      "thresholds": { "usd": 5000 },
+      "effect": "WARN",
+      "reason": "FCA_AML_CTF"
+    },
+    {
+      "id": "UK-SANCTIONS-BLOCK",
+      "class": "SANCTIONS_BLOCK",
+      "actions": ["TRANSFER", "BRIDGE", "SWAP", "GOV_ACTION"],
+      "thresholds": { "severity": "HIGH" },
+      "effect": "BLOCK",
+      "reason": "UK_SANCTIONS_MATCH"
+    },
+    {
+      "id": "UK-HIGH-RISK-WARN",
+      "class": "HIGH_RISK_JURISDICTION_WARNING",
+      "actions": ["TRANSFER", "BRIDGE", "SWAP"],
+      "thresholds": { "riskTier": "HIGH" },
+      "effect": "WARN",
+      "reason": "HIGH_RISK_JURISDICTION"
+    }
+  ],
+  "sourceRefs": ["FCA-CRYPTO-2025", "UK-Sanctions-2026", "FATF-REC-2024"],
+  "simulationReport": {
+    "falsePositiveRate": 0.03,
+    "denialRate": 0.01,
+    "validatorImpact": "LOW",
+    "notes": "Advisory AML controls with sanctions blocks only."
+  },
+  "safeDefault": "ALLOW",
+  "status": "active"
+}

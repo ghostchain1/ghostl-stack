@@ -15,6 +15,8 @@ contract DeployGasToken is Script {
         uint8 decimals = uint8(vm.envOr("GAS_TOKEN_DECIMALS", uint256(18)));
         uint256 supply = vm.envOr("GAS_TOKEN_INITIAL_SUPPLY", uint256(1_000_000_000 ether));
         address recipient = vm.envOr("GAS_TOKEN_RECIPIENT", deployer);
+        console2.log("ChainId", block.chainid);
+        console2.log("Block gas limit", block.gaslimit);
 
         vm.startBroadcast(pk);
         GasToken token = new GasToken(name, symbol, decimals, supply, recipient);

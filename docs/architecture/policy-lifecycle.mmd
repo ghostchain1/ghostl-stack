@@ -1,0 +1,7 @@
+flowchart TB
+  Signal[Legal Signal] --> Draft[Policy Draft]
+  Draft --> Sim[Simulation]
+  Sim -->|Safe impact| Active[Activate Policy]
+  Sim -->|High impact| Review[Governance Review]
+  Active --> Audit[Audit + Metrics]
+  Audit -->|Regression| Rollback[Rollback]

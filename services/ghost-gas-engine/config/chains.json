@@ -1,0 +1,34 @@
+{
+  "chains": [
+    {
+      "key": "l1",
+      "chainId": 14000101,
+      "name": "GhostChain",
+      "type": "L1",
+      "rpcUrl": "http://host.docker.internal:18545",
+      "fallbackRpcUrls": [],
+      "wsUrl": "",
+      "gasTokenSymbol": "GHOST"
+    },
+    {
+      "key": "l2",
+      "chainId": 901,
+      "name": "GhostL2",
+      "type": "L2",
+      "rpcUrl": "http://host.docker.internal:18547",
+      "fallbackRpcUrls": [],
+      "wsUrl": "",
+      "gasTokenSymbol": "GL2GAS"
+    },
+    {
+      "key": "l3",
+      "chainId": 903,
+      "name": "GhostL3",
+      "type": "L3",
+      "rpcUrl": "http://host.docker.internal:39545",
+      "fallbackRpcUrls": [],
+      "wsUrl": "",
+      "gasTokenSymbol": "GL3GAS"
+    }
+  ]
+}

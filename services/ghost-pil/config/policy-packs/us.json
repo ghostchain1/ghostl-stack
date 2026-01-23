@@ -1,0 +1,43 @@
+{
+  "id": "00000000-0000-0000-0000-000000000101",
+  "jurisdictionCode": "US",
+  "version": "2026.01",
+  "generatedBy": "AI",
+  "confidenceScore": 0.74,
+  "effectiveFrom": "2026-01-01T00:00:00Z",
+  "rules": [
+    {
+      "id": "US-OFAC-BLOCK",
+      "class": "SANCTIONS_BLOCK",
+      "actions": ["TRANSFER", "BRIDGE", "SWAP", "GOV_ACTION"],
+      "thresholds": { "severity": "HIGH" },
+      "effect": "BLOCK",
+      "reason": "OFAC_MATCH"
+    },
+    {
+      "id": "US-FINCEN-AML-THRESHOLD",
+      "class": "AML_THRESHOLD_REQUIREMENT",
+      "actions": ["TRANSFER", "BRIDGE"],
+      "thresholds": { "usd": 10000 },
+      "effect": "WARN",
+      "reason": "AML_THRESHOLD"
+    },
+    {
+      "id": "US-HIGH-RISK-MONITOR",
+      "class": "HIGH_RISK_JURISDICTION_WARNING",
+      "actions": ["TRANSFER", "BRIDGE", "SWAP"],
+      "thresholds": { "riskTier": "HIGH" },
+      "effect": "WARN",
+      "reason": "HIGH_RISK_JURISDICTION"
+    }
+  ],
+  "sourceRefs": ["FinCEN-CTR-2011", "OFAC-2026-01", "FATF-REC-2024"],
+  "simulationReport": {
+    "falsePositiveRate": 0.03,
+    "denialRate": 0.01,
+    "validatorImpact": "LOW",
+    "notes": "Simulated against last 1,000 blocks with advisory-only enforcement."
+  },
+  "safeDefault": "ALLOW",
+  "status": "active"
+}

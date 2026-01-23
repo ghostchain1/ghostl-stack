@@ -95,65 +95,69 @@ const run = async () => {
     `SELECT id FROM compliance_decisions WHERE request_id = $1 LIMIT 1`,
     ['seed-request-1']
   );
-  if (existingDecision.rows[0]) {
-    await pool.end();
-    return;
+
+  if (!existingDecision.rows[0]) {
+    const decisionInput: DecisionInput = {
+      requestId: 'seed-request-1',
+      subject: {
+        type: 'wallet',
+        walletAddress: '0x0000000000000000000000000000000000000001',
+        chainId: '901',
+        userId: 'user-1',
+        residencyCountry: 'US',
+        kycLevel: '2'
+      },
+      action: 'TRANSFER',
+      resource: { amountUSD: 1500, token: 'GHOST' },
+      context: { ipCountry: 'US', counterpartyRisk: 0.2 }
+    };
+    const decision = evaluatePolicy(bundle, decisionInput);
+    const attestation = await buildAttestation(decisionInput, decisionInput.resource);
+
+    const evidenceArtifacts = {
+      requestId: decisionInput.requestId,
+      action: decisionInput.action,
+      subject: decisionInput.subject,
+      resource: decisionInput.resource,
+      context: decisionInput.context,
+      decision
+    };
+    const evidenceHash = sha256(JSON.stringify(evidenceArtifacts));
+    const evidenceRow = await pool.query(
+      `INSERT INTO evidence_bundles (subject_id, prev_hash, hash, artifacts)
+       VALUES ($1,$2,$3,$4) RETURNING id`,
+      [ensuredSubject.rows[0].id, null, evidenceHash, evidenceArtifacts]
+    );
+
+    const decisionRow = await pool.query(
+      `INSERT INTO compliance_decisions
+       (request_id, subject_id, action, resource, context, decision, reasons, required_controls, disclosures, matched_rules, policy_bundle_id, evidence_bundle_id, attestation)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+       ON CONFLICT (request_id) DO NOTHING
+       RETURNING id`,
+      [
+        decisionInput.requestId,
+        ensuredSubject.rows[0].id,
+        decisionInput.action,
+        decisionInput.resource,
+        decisionInput.context,
+        decision.decision,
+        decision.reasons,
+        decision.requiredControls,
+        decision.disclosures,
+        JSON.stringify(decision.matchedRules),
+        bundleRow.rows[0].id,
+        evidenceRow.rows[0].id,
+        attestation
+      ]
+    );
+
+    if (decisionRow.rows[0]) {
+      await pool.query('UPDATE evidence_bundles SET decision_id = $1 WHERE id = $2', [decisionRow.rows[0].id, evidenceRow.rows[0].id]);
+    } else {
+      await pool.query('DELETE FROM evidence_bundles WHERE id = $1', [evidenceRow.rows[0].id]);
+    }
   }
-
-  const decisionInput: DecisionInput = {
-    requestId: 'seed-request-1',
-    subject: {
-      type: 'wallet',
-      walletAddress: '0x0000000000000000000000000000000000000001',
-      chainId: '901',
-      userId: 'user-1',
-      residencyCountry: 'US',
-      kycLevel: '2'
-    },
-    action: 'TRANSFER',
-    resource: { amountUSD: 1500, token: 'GHOST' },
-    context: { ipCountry: 'US', counterpartyRisk: 0.2 }
-  };
-  const decision = evaluatePolicy(bundle, decisionInput);
-  const attestation = await buildAttestation(decisionInput, decisionInput.resource);
-
-  const evidenceArtifacts = {
-    requestId: decisionInput.requestId,
-    action: decisionInput.action,
-    subject: decisionInput.subject,
-    resource: decisionInput.resource,
-    context: decisionInput.context,
-    decision
-  };
-  const evidenceHash = sha256(JSON.stringify(evidenceArtifacts));
-  const evidenceRow = await pool.query(
-    `INSERT INTO evidence_bundles (subject_id, prev_hash, hash, artifacts)
-     VALUES ($1,$2,$3,$4) RETURNING id`,
-    [ensuredSubject.rows[0].id, null, evidenceHash, evidenceArtifacts]
-  );
-
-  const decisionRow = await pool.query(
-    `INSERT INTO compliance_decisions
-     (request_id, subject_id, action, resource, context, decision, reasons, required_controls, disclosures, matched_rules, policy_bundle_id, evidence_bundle_id, attestation)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
-    [
-      decisionInput.requestId,
-      ensuredSubject.rows[0].id,
-      decisionInput.action,
-      decisionInput.resource,
-      decisionInput.context,
-      decision.decision,
-      decision.reasons,
-      decision.requiredControls,
-      decision.disclosures,
-      JSON.stringify(decision.matchedRules),
-      bundleRow.rows[0].id,
-      evidenceRow.rows[0].id,
-      attestation
-    ]
-  );
-
-  await pool.query('UPDATE evidence_bundles SET decision_id = $1 WHERE id = $2', [decisionRow.rows[0].id, evidenceRow.rows[0].id]);
 
   const predictionSummary = 'Travel rule exposure rising in US AML updates.';
   const existingPrediction = await pool.query(

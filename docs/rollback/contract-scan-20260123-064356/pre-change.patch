@@ -1,0 +1,407 @@
+diff --git a/apps/docker-compose.dev.yml b/apps/docker-compose.dev.yml
+deleted file mode 100644
+index c45a8984..00000000
+--- a/apps/docker-compose.dev.yml
++++ /dev/null
+@@ -1,43 +0,0 @@
+-services:
+-  ghostl-api:
+-    build:
+-      context: .
+-      dockerfile: apps/api/Dockerfile
+-      target: dev
+-    ports:
+-      - "4000:4000"
+-    env_file:
+-      - ./apps/api/.env.example
+-      - ./services/stack.env
+-    environment:
+-      - NODE_ENV=development
+-      - PORT=4000
+-      - CORS_ALLOW_ORIGINS=http://localhost:3200
+-      - SQLITE_DB_PATH=/app/apps/api/data/ghostl.db
+-      - AUTH_DB_PATH=/app/apps/api/data/ghostl.db
+-      - NFT_STORE_PATH=/app/apps/api/data/nfts.json
+-      - MARKET_DATA_FILE=/app/apps/api/data/market-data.json
+-    volumes:
+-      - ./:/app
+-      - ./apps/api/data:/app/apps/api/data
+-
+-  ghostl-web:
+-    build:
+-      context: .
+-      dockerfile: apps/web/Dockerfile
+-      target: dev
+-    ports:
+-      - "3200:3200"
+-    env_file:
+-      - ./apps/web/.env.example
+-    environment:
+-      - NODE_ENV=development
+-      - PORT=3200
+-      - NEXT_PUBLIC_API_URL=http://localhost:4000
+-      - API_INTERNAL_URL=http://ghostl-api:4000
+-      - NEXT_PUBLIC_COMPLIANCE_URL=http://localhost:8090
+-      - COMPLIANCE_URL=http://ghost-compliance:8090
+-    volumes:
+-      - ./:/app
+-    depends_on:
+-      - ghostl-api
+diff --git a/apps/docker-compose.yml b/apps/docker-compose.yml
+deleted file mode 100644
+index 8aa14c91..00000000
+--- a/apps/docker-compose.yml
++++ /dev/null
+@@ -1,102 +0,0 @@
+-version: "3.9"
+-
+-name: ghostchain-compliance
+-
+-services:
+-  postgres:
+-    image: postgres:16-alpine
+-    environment:
+-      POSTGRES_DB: ghost_compliance
+-      POSTGRES_USER: ghost
+-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ghostpass}
+-    ports:
+-      - "5432:5432"
+-    volumes:
+-      - pg_data:/var/lib/postgresql/data
+-    healthcheck:
+-      test: ["CMD-SHELL", "pg_isready -U ghost -d ghost_compliance"]
+-      interval: 5s
+-      timeout: 3s
+-      retries: 20
+-
+-  redis:
+-    image: redis:7-alpine
+-    ports:
+-      - "6379:6379"
+-    command: ["redis-server", "--appendonly", "yes"]
+-    volumes:
+-      - redis_data:/data
+-    healthcheck:
+-      test: ["CMD", "redis-cli", "ping"]
+-      interval: 5s
+-      timeout: 3s
+-      retries: 20
+-
+-  migrate:
+-    image: node:22-alpine
+-    working_dir: /work
+-    volumes:
+-      - ./services/ghost-compliance:/work
+-    environment:
+-      DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:-ghostpass}@postgres:5432/ghost_compliance
+-      REDIS_URL: redis://redis:6379
+-      JWT_SECRET: ${COMPLIANCE_JWT_SECRET:-change-me}
+-      ATTESTATION_PRIVATE_KEY: ${COMPLIANCE_ATTESTATION_PRIVATE_KEY:-0x59c6995e998f97a5a0044966f094538e4b1a8d9d0f0b8a8c64d124b5e5d6fcbf}
+-      ATTESTATION_EXPIRY_SECONDS: 900
+-    depends_on:
+-      postgres:
+-        condition: service_healthy
+-      redis:
+-        condition: service_healthy
+-    command: ["sh", "-lc", "npm install && npm run migrate"]
+-    restart: "no"
+-
+-  ghost-compliance:
+-    build:
+-      context: ./services/ghost-compliance
+-    environment:
+-      NODE_ENV: production
+-      PORT: 8090
+-      DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:-ghostpass}@postgres:5432/ghost_compliance
+-      REDIS_URL: redis://redis:6379
+-      JWT_SECRET: ${COMPLIANCE_JWT_SECRET:-change-me}
+-      ATTESTATION_PRIVATE_KEY: ${COMPLIANCE_ATTESTATION_PRIVATE_KEY:-0x59c6995e998f97a5a0044966f094538e4b1a8d9d0f0b8a8c64d124b5e5d6fcbf}
+-      ATTESTATION_EXPIRY_SECONDS: 900
+-      CORS_ORIGIN: http://localhost:3200
+-    ports:
+-      - "8090:8090"
+-    depends_on:
+-      postgres:
+-        condition: service_healthy
+-      redis:
+-        condition: service_healthy
+-      migrate:
+-        condition: service_completed_successfully
+-    healthcheck:
+-      test:
+-        [
+-          "CMD-SHELL",
+-          "node -e \"fetch('http://localhost:8090/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+-        ]
+-      interval: 5s
+-      timeout: 3s
+-      retries: 20
+-
+-  ghost-compliance-worker:
+-    build:
+-      context: ./services/ghost-compliance-worker
+-    environment:
+-      NODE_ENV: production
+-      DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:-ghostpass}@postgres:5432/ghost_compliance
+-      REDIS_URL: redis://redis:6379
+-      COMPLIANCE_API_URL: http://ghost-compliance:8090
+-      PREDICT_INTERVAL_SECONDS: 60
+-    depends_on:
+-      ghost-compliance:
+-        condition: service_healthy
+-    restart: unless-stopped
+-
+-volumes:
+-  pg_data:
+-  redis_data:
+-
+diff --git a/infra/opstack/.env.sample b/infra/opstack/.env.sample
+index 11ba7771..fb05749b 100644
+--- a/infra/opstack/.env.sample
++++ b/infra/opstack/.env.sample
+@@ -50,8 +50,8 @@ L3_SEQUENCER_L1_CONFS=2
+ # Custom gas token (L2/L3). Used by infra/opstack/contracts/script/DeployL1.s.sol.
+ USE_CUSTOM_GAS_TOKEN=true
+ CUSTOM_GAS_TOKEN_ADDRESS=
+-GAS_TOKEN_NAME=GhostL2Gas
+-GAS_TOKEN_SYMBOL=GL2
++GAS_TOKEN_NAME=Ghost Token (L1)
++GAS_TOKEN_SYMBOL=GHOST
+ GAS_TOKEN_DECIMALS=18
+ GAS_TOKEN_INITIAL_SUPPLY=1000000000000000000000000000
+ GAS_TOKEN_RECIPIENT=
+diff --git a/infra/opstack/config/deploy-config.json b/infra/opstack/config/deploy-config.json
+index 4bb903ff..fac1dcb8 100644
+--- a/infra/opstack/config/deploy-config.json
++++ b/infra/opstack/config/deploy-config.json
+@@ -34,8 +34,8 @@
+   "gasPriceOracleOperatorFeeConstant": 0,
+   "useCustomGasToken": true,
+   "customGasTokenAddress": "0x8613A4029EaA95dA61AE65380aC2e7366451bF2b",
+-  "gasPayingTokenName": "Ghost L2 Gas",
+-  "gasPayingTokenSymbol": "GL2",
++  "gasPayingTokenName": "Ghost Token (L1)",
++  "gasPayingTokenSymbol": "GHOST",
+   "nativeAssetLiquidityAmount": "0x0",
+   "liquidityControllerOwner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+   "p2pSequencerAddress": "0x39f920a6cefe557b193bb5f301bb83737a56a4c8",
+diff --git a/infra/opstack/config/deploy-config.l3.json b/infra/opstack/config/deploy-config.l3.json
+index c6a2deb1..3655be23 100644
+--- a/infra/opstack/config/deploy-config.l3.json
++++ b/infra/opstack/config/deploy-config.l3.json
+@@ -34,8 +34,8 @@
+   "gasPriceOracleOperatorFeeConstant": 0,
+   "useCustomGasToken": true,
+   "customGasTokenAddress": "0x71C95911E9a5D330f4D621842EC243EE1343292e",
+-  "gasPayingTokenName": "Ghost L3 Gas",
+-  "gasPayingTokenSymbol": "GL3",
++  "gasPayingTokenName": "Ghost Token (L1)",
++  "gasPayingTokenSymbol": "GHOST",
+   "nativeAssetLiquidityAmount": "0x0",
+   "liquidityControllerOwner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+   "p2pSequencerAddress": "0x39f920a6cefe557b193bb5f301bb83737a56a4c8",
+diff --git a/infra/opstack/l3/op-intent/intent.json b/infra/opstack/l3/op-intent/intent.json
+index c5e1925e..d88da603 100644
+--- a/infra/opstack/l3/op-intent/intent.json
++++ b/infra/opstack/l3/op-intent/intent.json
+@@ -34,8 +34,8 @@
+   "gasPriceOracleOperatorFeeConstant": 0,
+   "useCustomGasToken": true,
+   "customGasTokenAddress": "0x71C95911E9a5D330f4D621842EC243EE1343292e",
+-  "gasPayingTokenName": "Ghost L3 Gas",
+-  "gasPayingTokenSymbol": "GL3",
++  "gasPayingTokenName": "Ghost Token (L1)",
++  "gasPayingTokenSymbol": "GHOST",
+   "nativeAssetLiquidityAmount": "0x0",
+   "liquidityControllerOwner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+   "p2pSequencerAddress": "0x39f920a6cefe557b193bb5f301bb83737a56a4c8",
+diff --git a/infra/opstack/l3/op-intent/intent.toml b/infra/opstack/l3/op-intent/intent.toml
+index afa347f1..3ad58bb9 100755
+--- a/infra/opstack/l3/op-intent/intent.toml
++++ b/infra/opstack/l3/op-intent/intent.toml
+@@ -29,8 +29,8 @@ l2ContractsLocator = "file:///home/ghost/ghostl-stack/infra/opstack/optimism/pac
+   useCustomGasToken = true
+   # Update this after deploying the L3 gas token on L2.
+   customGasTokenAddress = "0x71C95911E9a5D330f4D621842EC243EE1343292e"
+-  gasPayingTokenName = "Ghost L3 Gas"
+-  gasPayingTokenSymbol = "GL3"
++gasPayingTokenName = "Ghost Token (L1)"
++gasPayingTokenSymbol = "GHOST"
+   [chains.roles]
+     l1ProxyAdminOwner = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+     l2ProxyAdminOwner = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+diff --git a/infra/opstack/op-intent/intent.toml b/infra/opstack/op-intent/intent.toml
+index 5a84e216..dcf88ff6 100755
+--- a/infra/opstack/op-intent/intent.toml
++++ b/infra/opstack/op-intent/intent.toml
+@@ -29,8 +29,8 @@ l2ContractsLocator = "file:///home/ghost/ghostl-stack/infra/opstack/optimism/pac
+   useCustomGasToken = true
+   # Update this after deploying the L2 gas token on L1.
+   customGasTokenAddress = "0x8613A4029EaA95dA61AE65380aC2e7366451bF2b"
+-  gasPayingTokenName = "Ghost L2 Gas"
+-  gasPayingTokenSymbol = "GL2"
++gasPayingTokenName = "Ghost Token (L1)"
++gasPayingTokenSymbol = "GHOST"
+   [chains.roles]
+     l1ProxyAdminOwner = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+     l2ProxyAdminOwner = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+diff --git a/services/ghost-rollup-challenger/src/index.ts b/services/ghost-rollup-challenger/src/index.ts
+index 0502353b..ef648d75 100644
+--- a/services/ghost-rollup-challenger/src/index.ts
++++ b/services/ghost-rollup-challenger/src/index.ts
+@@ -18,6 +18,7 @@ const STATE_DIR = process.env.STATE_DIR || "/state";
+ const confirmationsRaw = Number(process.env.CONFIRMATIONS || "0");
+ const CONFIRMATIONS = Number.isFinite(confirmationsRaw) && confirmationsRaw >= 0 ? Math.floor(confirmationsRaw) : 0;
+ const DRY_RUN = process.env.CHALLENGER_DRY_RUN === "1";
++const ROLLUP_RETRY_MS = Math.max(1000, Number(process.env.ROLLUP_RETRY_MS || "5000"));
+ 
+ const fetchRegistry = async () => {
+   const now = Date.now();
+@@ -167,6 +168,9 @@ const metrics = {
+   lastChallenged: null as any
+ };
+ 
++let rollupReady = false;
++let lastRollupError: string | null = null;
++
+ let inFlight = false;
+ let state: State = await loadState();
+ 
+@@ -214,6 +218,7 @@ async function checkOneBatch(batchId: number) {
+ 
+ async function tick() {
+   if (inFlight) return;
++  if (!rollupReady) return;
+   inFlight = true;
+   try {
+     const len = Number(await rollup.batchesLength());
+@@ -237,6 +242,27 @@ async function tick() {
+   }
+ }
+ 
++async function waitForRollupReady() {
++  while (!rollupReady) {
++    try {
++      const code = await settlement.getCode(ROLLUP);
++      if (!code || code === "0x") {
++        throw new Error(`No code at rollup address ${ROLLUP} (set L2_ROLLUP_L3_ADDRESS to a deployed OptimisticRollup)`);
++      }
++      rollupReady = true;
++      lastRollupError = null;
++      console.log("[Startup] Rollup ready");
++      return;
++    } catch (e) {
++      lastRollupError = scrubError(e);
++      console.error("[Challenger] Rollup not ready:", lastRollupError);
++      await new Promise((r) => setTimeout(r, ROLLUP_RETRY_MS));
++    }
++  }
++}
++
++await waitForRollupReady();
++
+ tick();
+ setInterval(tick, 2000);
+ 
+@@ -272,6 +298,8 @@ app.get("/health", async (_req, res) => {
+       observeOnly,
+       settlementChainId,
+       childChainId,
++      rollupReady,
++      lastRollupError,
+       rollup: ROLLUP,
+       confirmations: CONFIRMATIONS,
+       nextBatchToCheck: state.nextBatchToCheck,
+@@ -305,6 +333,7 @@ app.get("/metrics/prom", (_req, res) => {
+   out += promLine("ghost_rollup_challenger_triggers_total", metrics.triggers);
+   out += promLine("ghost_rollup_challenger_trigger_errors_total", metrics.triggerErrors);
+   out += promLine("ghost_rollup_challenger_confirmations", CONFIRMATIONS);
++  out += promLine("ghost_rollup_challenger_rollup_ready", rollupReady ? 1 : 0);
+   res.send(out);
+ });
+ app.listen(PORT, () => console.log(`Ghost Rollup Challenger listening on :${PORT}`));
+diff --git a/services/ghost-rollup-proposer/src/index.ts b/services/ghost-rollup-proposer/src/index.ts
+index a964de08..4dba2b42 100644
+--- a/services/ghost-rollup-proposer/src/index.ts
++++ b/services/ghost-rollup-proposer/src/index.ts
+@@ -26,6 +26,7 @@ const CHALLENGE_PERIOD_SECONDS =
+ const EXPECTED_SETTLEMENT_CHAIN_ID = parseChainIdEnv(process.env.EXPECTED_SETTLEMENT_CHAIN_ID, "EXPECTED_SETTLEMENT_CHAIN_ID");
+ const EXPECTED_CHILD_CHAIN_ID = parseChainIdEnv(process.env.EXPECTED_CHILD_CHAIN_ID, "EXPECTED_CHILD_CHAIN_ID");
+ const EXPECTED_ROLLUP_CODE_HASH = parseCodeHashEnv(process.env.ROLLUP_CODE_HASH);
++const ROLLUP_RETRY_MS = Math.max(1000, Number(process.env.ROLLUP_RETRY_MS || "5000"));
+ 
+ const fetchRegistry = async () => {
+   const now = Date.now();
+@@ -179,6 +180,9 @@ const metrics = {
+   lastFinalized: null as any
+ };
+ 
++let rollupReady = false;
++let lastRollupError: string | null = null;
++
+ async function proposeNextBatch() {
+   if (observeOnly) return;
+   const latest = await child.getBlockNumber();
+@@ -262,7 +266,9 @@ async function assertChainId(provider: ethers.JsonRpcProvider, expected: bigint
+ 
+ async function assertRollupDeployment() {
+   const code = await settlement.getCode(ROLLUP);
+-  if (!code || code === "0x") throw new Error(`No code at rollup address ${ROLLUP}`);
++  if (!code || code === "0x") {
++    throw new Error(`No code at rollup address ${ROLLUP} (set L2_ROLLUP_L3_ADDRESS to a deployed OptimisticRollup)`);
++  }
+   const codeHash = ethers.keccak256(code);
+   if (EXPECTED_ROLLUP_CODE_HASH && codeHash.toLowerCase() !== EXPECTED_ROLLUP_CODE_HASH.toLowerCase()) {
+     throw new Error(`Rollup code hash mismatch: got ${codeHash}, expected ${EXPECTED_ROLLUP_CODE_HASH}`);
+@@ -286,16 +292,30 @@ async function bootstrapSafety() {
+   await assertChallengePeriod();
+ }
+ 
++async function waitForRollupReady() {
++  while (!rollupReady) {
++    try {
++      await bootstrapSafety();
++      rollupReady = true;
++      lastRollupError = null;
++      console.log("[Startup] Rollup ready");
++      return;
++    } catch (e) {
++      lastRollupError = scrubError(e);
++      console.error("[Proposer] Rollup not ready:", lastRollupError);
++      await new Promise((r) => setTimeout(r, ROLLUP_RETRY_MS));
++    }
++  }
++}
++
+ let inFlight = false;
+ let state: Cursor = await loadCursor();
+ 
+-await bootstrapSafety().catch((e) => {
+-  console.error("[Proposer] Startup failed:", scrubError(e));
+-  process.exit(1);
+-});
++await waitForRollupReady();
+ 
+ async function tick() {
+   if (inFlight) return;
++  if (!rollupReady) return;
+   inFlight = true;
+   try {
+     await proposeNextBatch();
+@@ -321,6 +341,8 @@ app.get("/health", async (_req: Request, res: Response) => {
+       observeOnly,
+       settlementChainId,
+       childChainId,
++      rollupReady,
++      lastRollupError,
+       rollup: ROLLUP,
+       confirmations: CONFIRMATIONS,
+       batchSize: BATCH_SIZE,
+@@ -354,6 +376,7 @@ app.get("/metrics/prom", (_req: Request, res: Response) => {
+   out += promLine("ghost_rollup_proposer_errors_total", metrics.errors);
+   out += promLine("ghost_rollup_proposer_batch_size", BATCH_SIZE);
+   out += promLine("ghost_rollup_proposer_challenge_period_seconds", CHALLENGE_PERIOD_SECONDS);
++  out += promLine("ghost_rollup_proposer_rollup_ready", rollupReady ? 1 : 0);
+   res.send(out);
+ });
+ app.listen(PORT, () => console.log(`Ghost Rollup Proposer listening on :${PORT}`));

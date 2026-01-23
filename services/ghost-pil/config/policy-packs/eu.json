@@ -1,0 +1,43 @@
+{
+  "id": "00000000-0000-0000-0000-000000000102",
+  "jurisdictionCode": "EU",
+  "version": "2026.01",
+  "generatedBy": "AI",
+  "confidenceScore": 0.71,
+  "effectiveFrom": "2026-01-01T00:00:00Z",
+  "rules": [
+    {
+      "id": "EU-SANCTIONS-BLOCK",
+      "class": "SANCTIONS_BLOCK",
+      "actions": ["TRANSFER", "BRIDGE", "SWAP", "GOV_ACTION"],
+      "thresholds": { "severity": "HIGH" },
+      "effect": "BLOCK",
+      "reason": "EU_SANCTIONS_MATCH"
+    },
+    {
+      "id": "EU-MICA-CASP-CONTROLS",
+      "class": "AML_THRESHOLD_REQUIREMENT",
+      "actions": ["TRANSFER", "BRIDGE"],
+      "thresholds": { "usd": 1000 },
+      "effect": "WARN",
+      "reason": "MICA_TRAVEL_RULE_INDICATOR"
+    },
+    {
+      "id": "EU-CONSUMER-PROTECTION",
+      "class": "TOKEN_RESTRICTION_BY_REGION",
+      "actions": ["SWAP", "MINT_NFT"],
+      "thresholds": { "riskTier": "HIGH" },
+      "effect": "WARN",
+      "reason": "CONSUMER_PROTECTION"
+    }
+  ],
+  "sourceRefs": ["MiCA-2024", "EU-Sanctions-2026", "FATF-REC-2024"],
+  "simulationReport": {
+    "falsePositiveRate": 0.04,
+    "denialRate": 0.012,
+    "validatorImpact": "LOW",
+    "notes": "Simulated with advisory travel-rule indicators; no blocking beyond sanctions."
+  },
+  "safeDefault": "ALLOW",
+  "status": "active"
+}

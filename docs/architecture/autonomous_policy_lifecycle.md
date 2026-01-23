@@ -1,0 +1,9 @@
+```mermaid
+flowchart TB
+  Signal[Legal Signal] --> Draft[Policy Draft]
+  Draft --> Sim[Simulation]
+  Sim -->|Impact OK| Activate[Activation]
+  Sim -->|Impact High| Review[Governance Review]
+  Activate --> Audit[Audit & Metrics]
+  Audit -->|Regression| Rollback[Rollback]
+```
