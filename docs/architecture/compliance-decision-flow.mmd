@@ -1,0 +1,11 @@
+sequenceDiagram
+  participant TX as Transaction
+  participant RPC as RPC Gateway
+  participant PIL as Policy Engine
+  participant REG as Compliance Registry
+  TX->>RPC: Submit
+  RPC->>PIL: Preflight evaluate
+  PIL->>REG: Load policy + jurisdiction
+  REG-->>PIL: Policy pack + jurisdiction
+  PIL-->>RPC: Decision (ALLOW/WARN/BLOCK)
+  RPC-->>TX: Allow or reject with correlationId

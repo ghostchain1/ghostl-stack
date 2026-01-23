@@ -1,0 +1,43 @@
+{
+  "jurisdictions": [
+    {
+      "code": "GLOBAL",
+      "name": "Global Baseline",
+      "region": "GLOBAL",
+      "regulatoryProfile": {
+        "amlLevel": 2,
+        "sanctionsStrictness": 2,
+        "cryptoClarity": 2,
+        "enforcementAggressiveness": 2,
+        "privacyTolerance": 3
+      },
+      "riskTier": "MEDIUM"
+    },
+    {
+      "code": "US",
+      "name": "United States",
+      "region": "NA",
+      "regulatoryProfile": {
+        "amlLevel": 4,
+        "sanctionsStrictness": 5,
+        "cryptoClarity": 3,
+        "enforcementAggressiveness": 4,
+        "privacyTolerance": 2
+      },
+      "riskTier": "HIGH"
+    },
+    {
+      "code": "EU",
+      "name": "European Union",
+      "region": "EU",
+      "regulatoryProfile": {
+        "amlLevel": 4,
+        "sanctionsStrictness": 4,
+        "cryptoClarity": 4,
+        "enforcementAggressiveness": 3,
+        "privacyTolerance": 3
+      },
+      "riskTier": "MEDIUM"
+    }
+  ]
+}

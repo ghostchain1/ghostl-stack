@@ -1,0 +1,6 @@
+flowchart LR
+  Validator[Validator Node] --> Score[Compliance Score Registry]
+  Score --> Rewards[Reward Multiplier]
+  Score --> SoftSlash[Soft Slashing]
+  PIL[Protocol Intelligence Layer] --> Score
+  Governance[Governance] --> Score

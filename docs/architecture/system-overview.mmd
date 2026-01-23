@@ -1,0 +1,11 @@
+flowchart LR
+  UI[Next.js UI] --> PIL[Protocol Intelligence Layer]
+  UI --> RPCGW[RPC Gateway]
+  PIL --> Registry[Compliance Registry]
+  PIL --> Signals[Legal Signals]
+  PIL --> Policies[Policy Packs]
+  RPCGW --> L1[GhostChain L1]
+  RPCGW --> L2[GhostL2]
+  RPCGW --> L3[GhostL3]
+  Policies --> Enforcement[Policy Engine]
+  Enforcement --> RPCGW
