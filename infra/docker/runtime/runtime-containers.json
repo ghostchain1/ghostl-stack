@@ -15,10 +15,10 @@
         "os": "linux"
       },
       "Ports": "0.0.0.0:3200->3200/tcp, [::]:3200->3200/tcp",
-      "RunningFor": "3 minutes ago",
+      "RunningFor": "6 minutes ago",
       "Size": "28.7kB (virtual 1.07GB)",
       "State": "running",
-      "Status": "Up 2 minutes"
+      "Status": "Up 6 minutes"
     },
     {
       "Command": "\"docker-entrypoint.s…\"",
@@ -117,7 +117,7 @@
       },
       "Ports": "0.0.0.0:18660->6060/tcp, [::]:18660->6060/tcp, 0.0.0.0:18545->8545/tcp, [::]:18545->8545/tcp, 0.0.0.0:18546->8546/tcp, [::]:18546->8546/tcp, 0.0.0.0:18551->30303/tcp, [::]:18551->30303/tcp",
       "RunningFor": "35 hours ago",
-      "Size": "337MB (virtual 891MB)",
+      "Size": "339MB (virtual 894MB)",
       "State": "running",
       "Status": "Up 13 hours (healthy)"
     },
@@ -180,7 +180,7 @@
       "RunningFor": "2 days ago",
       "Size": "8.19kB (virtual 49.3MB)",
       "State": "running",
-      "Status": "Up 24 seconds (health: starting)"
+      "Status": "Up About a minute (health: starting)"
     },
     {
       "Command": "\"docker-entrypoint.s…\"",
@@ -300,7 +300,7 @@
       "RunningFor": "3 days ago",
       "Size": "8.19kB (virtual 50.7MB)",
       "State": "running",
-      "Status": "Up 2 minutes (unhealthy)"
+      "Status": "Up 24 seconds (health: starting)"
     },
     {
       "Command": "\"op-node --l1=http:/…\"",
@@ -320,7 +320,7 @@
       "RunningFor": "3 days ago",
       "Size": "12.3kB (virtual 102MB)",
       "State": "restarting",
-      "Status": "Restarting (1) 16 seconds ago"
+      "Status": "Restarting (1) 54 seconds ago"
     },
     {
       "Command": "\"op-node --l1=http:/…\"",
@@ -340,7 +340,7 @@
       "RunningFor": "3 days ago",
       "Size": "12.3kB (virtual 102MB)",
       "State": "restarting",
-      "Status": "Restarting (1) 16 seconds ago"
+      "Status": "Restarting (1) 55 seconds ago"
     },
     {
       "Command": "\"/bin/sh -c 'set -e\\n…\"",
@@ -398,7 +398,7 @@
       },
       "Ports": "0.0.0.0:18644->4000/tcp, [::]:18644->4000/tcp",
       "RunningFor": "3 days ago",
-      "Size": "230MB (virtual 689MB)",
+      "Size": "248MB (virtual 707MB)",
       "State": "running",
       "Status": "Up 13 hours"
     },
@@ -491,7 +491,7 @@
       "Image": "e13b6ed5cb92",
       "Labels": "com.docker.compose.config-hash=116f1f087199ce36c6f638ca0ddb98de3dc73d06d399eb5399a0bcb3193a473a,com.docker.compose.container-number=1,com.docker.compose.depends_on=,com.docker.compose.image=sha256:e13b6ed5cb929eeaee733479dce55e10eb3bc2e9c4586c705a4e8da41e5eacf5,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=/home/ghost/ghostl-stack/infra/opstack/docker-compose.yml,com.docker.compose.project.working_dir=/home/ghost/ghostl-stack/infra/opstack,com.docker.compose.project=opstack,com.docker.compose.replace=alertmanager-1,com.docker.compose.service=alertmanager,com.docker.compose.version=5.0.0,desktop.docker.io/binds/1/Source=/home/ghost/ghostl-stack/infra/opstack/observability/alertmanager.yml,desktop.docker.io/binds/1/SourceKind=wsl2DistroFile,desktop.docker.io/binds/1/Target=/etc/alertmanager/alertmanager.yml,desktop.docker.io/ports.scheme=v2,desktop.docker.io/ports/9093/tcp=:9093,desktop.docker.io/wsl-distro=Ubuntu,maintainer=The Prometheus Authors <prometheus-developers@googlegroups.com>",
       "LocalVolumes": "1",
-      "Mounts": "opstack_alertm…,/run/desktop/m…",
+      "Mounts": "/run/desktop/m…,opstack_alertm…",
       "Names": "opstack-alertmanager-1",
       "Networks": "opstack_default",
       "Platform": {
@@ -3131,32 +3131,32 @@
           "FailingStreak": 0,
           "Log": [
             {
-              "Start": "2026-01-23T03:35:53.493223189Z",
-              "End": "2026-01-23T03:35:53.541423994Z",
+              "Start": "2026-01-23T03:39:31.410809222Z",
+              "End": "2026-01-23T03:39:31.449009285Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:58.54324882Z",
-              "End": "2026-01-23T03:35:58.614338257Z",
+              "Start": "2026-01-23T03:39:36.450037773Z",
+              "End": "2026-01-23T03:39:36.482129051Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:36:03.615112683Z",
-              "End": "2026-01-23T03:36:03.660578872Z",
+              "Start": "2026-01-23T03:39:41.48328737Z",
+              "End": "2026-01-23T03:39:41.521573516Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:36:08.662332212Z",
-              "End": "2026-01-23T03:36:08.724217025Z",
+              "Start": "2026-01-23T03:39:46.522387617Z",
+              "End": "2026-01-23T03:39:46.602554594Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:36:13.730322475Z",
-              "End": "2026-01-23T03:36:13.810333373Z",
+              "Start": "2026-01-23T03:39:51.603175335Z",
+              "End": "2026-01-23T03:39:51.640271724Z",
               "ExitCode": 0,
               "Output": ""
             }
@@ -4014,42 +4014,42 @@
         "Restarting": false,
         "OOMKilled": false,
         "Dead": false,
-        "Pid": 31642,
+        "Pid": 35901,
         "ExitCode": 0,
         "Error": "",
-        "StartedAt": "2026-01-23T03:35:48.674009469Z",
-        "FinishedAt": "2026-01-23T03:35:48.638648427Z",
+        "StartedAt": "2026-01-23T03:38:44.104014247Z",
+        "FinishedAt": "2026-01-23T03:38:44.078060009Z",
         "Health": {
           "Status": "starting",
-          "FailingStreak": 1,
+          "FailingStreak": 3,
           "Log": [
             {
-              "Start": "2026-01-23T03:35:54.013201412Z",
-              "End": "2026-01-23T03:35:54.053068941Z",
+              "Start": "2026-01-23T03:38:59.484141223Z",
+              "End": "2026-01-23T03:38:59.634174616Z",
               "ExitCode": 1,
               "Output": "wget: can't connect to remote host: Connection refused\n"
             },
             {
-              "Start": "2026-01-23T03:35:59.055114127Z",
-              "End": "2026-01-23T03:35:59.329862031Z",
+              "Start": "2026-01-23T03:39:04.63463663Z",
+              "End": "2026-01-23T03:39:04.664912794Z",
               "ExitCode": 1,
               "Output": "wget: can't connect to remote host: Connection refused\n"
             },
             {
-              "Start": "2026-01-23T03:36:04.331524435Z",
-              "End": "2026-01-23T03:36:04.377206843Z",
+              "Start": "2026-01-23T03:39:09.666110509Z",
+              "End": "2026-01-23T03:39:09.982847059Z",
               "ExitCode": 1,
               "Output": "wget: can't connect to remote host: Connection refused\n"
             },
             {
-              "Start": "2026-01-23T03:36:09.377754599Z",
-              "End": "2026-01-23T03:36:09.621528909Z",
+              "Start": "2026-01-23T03:39:29.980884555Z",
+              "End": "2026-01-23T03:39:30.116567735Z",
               "ExitCode": 1,
               "Output": "wget: can't connect to remote host: Connection refused\n"
             },
             {
-              "Start": "2026-01-23T03:36:14.622865706Z",
-              "End": "2026-01-23T03:36:14.886735825Z",
+              "Start": "2026-01-23T03:39:50.117317225Z",
+              "End": "2026-01-23T03:39:50.311104301Z",
               "ExitCode": 1,
               "Output": "wget: can't connect to remote host: Connection refused\n"
             }
@@ -4062,7 +4062,7 @@
       "HostsPath": "/var/lib/docker/containers/856d321566a6bb8b7d2e963b47885d0568b0b6c1bffd825934128e21b2eaca82/hosts",
       "LogPath": "/var/lib/docker/containers/856d321566a6bb8b7d2e963b47885d0568b0b6c1bffd825934128e21b2eaca82/856d321566a6bb8b7d2e963b47885d0568b0b6c1bffd825934128e21b2eaca82-json.log",
       "Name": "/opstack-op-proposer-1",
-      "RestartCount": 27,
+      "RestartCount": 28,
       "Driver": "overlayfs",
       "Platform": "linux",
       "MountLabel": "",
@@ -4269,8 +4269,8 @@
         "StopTimeout": 1
       },
       "NetworkSettings": {
-        "SandboxID": "7bcd0a19a16b539070b418557b0c31387e076a7af4e7d418d49a6685561f28f0",
-        "SandboxKey": "/var/run/docker/netns/7bcd0a19a16b",
+        "SandboxID": "4a172070cd86626b0108ac55a19854a0550e60c46ef1f3b674b246ac8210992c",
+        "SandboxKey": "/var/run/docker/netns/4a172070cd86",
         "Ports": {
           "7302/tcp": [
             {
@@ -4304,10 +4304,10 @@
             "DriverOpts": null,
             "GwPriority": 0,
             "NetworkID": "d4574ff388706011976171d713b92280d2de737e0a124ed875c3ba5f46132800",
-            "EndpointID": "481b56c70cf65ba8e5ea493fe85a77af695157f900ab7c13bdd30874b1b501bd",
+            "EndpointID": "1f297a60fd706dcfbc713055feb039ae33eae616f7271fd178656d5c311a6237",
             "Gateway": "172.18.0.1",
             "IPAddress": "172.18.0.12",
-            "MacAddress": "ce:e2:7c:20:47:d6",
+            "MacAddress": "ca:0e:17:6b:d4:60",
             "IPPrefixLen": 16,
             "IPv6Gateway": "",
             "GlobalIPv6Address": "",
@@ -4667,32 +4667,32 @@
           "FailingStreak": 0,
           "Log": [
             {
-              "Start": "2026-01-23T03:34:45.98530358Z",
-              "End": "2026-01-23T03:34:46.029450866Z",
+              "Start": "2026-01-23T03:38:26.457261949Z",
+              "End": "2026-01-23T03:38:26.568984254Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:06.028045985Z",
-              "End": "2026-01-23T03:35:06.073710841Z",
+              "Start": "2026-01-23T03:38:46.569772818Z",
+              "End": "2026-01-23T03:38:46.707471786Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:26.072336794Z",
-              "End": "2026-01-23T03:35:26.108434596Z",
+              "Start": "2026-01-23T03:39:06.706635313Z",
+              "End": "2026-01-23T03:39:06.739863517Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:46.109338247Z",
-              "End": "2026-01-23T03:35:46.15518585Z",
+              "Start": "2026-01-23T03:39:26.738539648Z",
+              "End": "2026-01-23T03:39:26.775264393Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:36:06.153789195Z",
-              "End": "2026-01-23T03:36:06.192944346Z",
+              "Start": "2026-01-23T03:39:46.777664624Z",
+              "End": "2026-01-23T03:39:46.842248461Z",
               "ExitCode": 0,
               "Output": ""
             }
@@ -5002,32 +5002,32 @@
           "FailingStreak": 0,
           "Log": [
             {
-              "Start": "2026-01-23T03:34:48.494513013Z",
-              "End": "2026-01-23T03:34:48.548538536Z",
+              "Start": "2026-01-23T03:38:29.374721474Z",
+              "End": "2026-01-23T03:38:29.561827197Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:08.54687723Z",
-              "End": "2026-01-23T03:35:08.578004699Z",
+              "Start": "2026-01-23T03:38:49.562576438Z",
+              "End": "2026-01-23T03:38:49.675335066Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:28.576650873Z",
-              "End": "2026-01-23T03:35:28.615420612Z",
+              "Start": "2026-01-23T03:39:09.674033628Z",
+              "End": "2026-01-23T03:39:09.790459526Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:48.61674742Z",
-              "End": "2026-01-23T03:35:48.716608274Z",
+              "Start": "2026-01-23T03:39:29.789145679Z",
+              "End": "2026-01-23T03:39:29.888765368Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:36:08.715904571Z",
-              "End": "2026-01-23T03:36:08.753918419Z",
+              "Start": "2026-01-23T03:39:49.890496228Z",
+              "End": "2026-01-23T03:39:50.11964105Z",
               "ExitCode": 0,
               "Output": ""
             }
@@ -5341,32 +5341,32 @@
           "FailingStreak": 0,
           "Log": [
             {
-              "Start": "2026-01-23T03:34:50.159489092Z",
-              "End": "2026-01-23T03:34:50.205615466Z",
+              "Start": "2026-01-23T03:38:30.709406075Z",
+              "End": "2026-01-23T03:38:30.747367184Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:10.203877238Z",
-              "End": "2026-01-23T03:35:10.27088774Z",
+              "Start": "2026-01-23T03:38:50.748780812Z",
+              "End": "2026-01-23T03:38:50.797321285Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:30.268794997Z",
-              "End": "2026-01-23T03:35:30.320103049Z",
+              "Start": "2026-01-23T03:39:10.797193691Z",
+              "End": "2026-01-23T03:39:10.83864533Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:50.320812035Z",
-              "End": "2026-01-23T03:35:50.358060253Z",
+              "Start": "2026-01-23T03:39:30.83765806Z",
+              "End": "2026-01-23T03:39:30.885058962Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:36:10.356576475Z",
-              "End": "2026-01-23T03:36:10.397995932Z",
+              "Start": "2026-01-23T03:39:50.88629373Z",
+              "End": "2026-01-23T03:39:50.925659145Z",
               "ExitCode": 0,
               "Output": ""
             }
@@ -5681,32 +5681,32 @@
           "FailingStreak": 0,
           "Log": [
             {
-              "Start": "2026-01-23T03:34:07.559098628Z",
-              "End": "2026-01-23T03:34:07.608823453Z",
+              "Start": "2026-01-23T03:37:37.870313522Z",
+              "End": "2026-01-23T03:37:37.914498941Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:34:37.606970751Z",
-              "End": "2026-01-23T03:34:37.661736194Z",
+              "Start": "2026-01-23T03:38:07.913128318Z",
+              "End": "2026-01-23T03:38:07.961178366Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:07.660915928Z",
-              "End": "2026-01-23T03:35:07.702601804Z",
+              "Start": "2026-01-23T03:38:37.959171016Z",
+              "End": "2026-01-23T03:38:37.992750081Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:37.700358568Z",
-              "End": "2026-01-23T03:35:37.73874722Z",
+              "Start": "2026-01-23T03:39:07.991385643Z",
+              "End": "2026-01-23T03:39:08.035514934Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:36:07.736878776Z",
-              "End": "2026-01-23T03:36:07.794396693Z",
+              "Start": "2026-01-23T03:39:38.034200735Z",
+              "End": "2026-01-23T03:39:38.071710248Z",
               "ExitCode": 0,
               "Output": ""
             }
@@ -5994,42 +5994,42 @@
         "Restarting": false,
         "OOMKilled": false,
         "Dead": false,
-        "Pid": 28419,
+        "Pid": 37130,
         "ExitCode": 0,
         "Error": "",
-        "StartedAt": "2026-01-23T03:33:33.340351472Z",
-        "FinishedAt": "2026-01-23T03:33:33.306380929Z",
+        "StartedAt": "2026-01-23T03:39:28.282059124Z",
+        "FinishedAt": "2026-01-23T03:39:28.259784138Z",
         "Health": {
-          "Status": "unhealthy",
-          "FailingStreak": 7,
+          "Status": "starting",
+          "FailingStreak": 1,
           "Log": [
             {
-              "Start": "2026-01-23T03:34:39.423394369Z",
-              "End": "2026-01-23T03:34:39.538141756Z",
+              "Start": "2026-01-23T03:39:33.506762929Z",
+              "End": "2026-01-23T03:39:33.550246823Z",
               "ExitCode": 1,
               "Output": "wget: can't connect to remote host: Connection refused\n"
             },
             {
-              "Start": "2026-01-23T03:34:59.53701136Z",
-              "End": "2026-01-23T03:34:59.698817336Z",
+              "Start": "2026-01-23T03:39:38.550593119Z",
+              "End": "2026-01-23T03:39:38.582654594Z",
               "ExitCode": 1,
               "Output": "wget: can't connect to remote host: Connection refused\n"
             },
             {
-              "Start": "2026-01-23T03:35:19.699444717Z",
-              "End": "2026-01-23T03:35:19.976914952Z",
+              "Start": "2026-01-23T03:39:43.584056481Z",
+              "End": "2026-01-23T03:39:43.657299707Z",
               "ExitCode": 1,
               "Output": "wget: can't connect to remote host: Connection refused\n"
             },
             {
-              "Start": "2026-01-23T03:35:39.975254191Z",
-              "End": "2026-01-23T03:35:40.146118403Z",
+              "Start": "2026-01-23T03:39:48.657825885Z",
+              "End": "2026-01-23T03:39:48.703029781Z",
               "ExitCode": 1,
               "Output": "wget: can't connect to remote host: Connection refused\n"
             },
             {
-              "Start": "2026-01-23T03:36:00.146369864Z",
-              "End": "2026-01-23T03:36:00.339264187Z",
+              "Start": "2026-01-23T03:39:53.702288768Z",
+              "End": "2026-01-23T03:39:53.788411957Z",
               "ExitCode": 1,
               "Output": "wget: can't connect to remote host: Connection refused\n"
             }
@@ -6042,7 +6042,7 @@
       "HostsPath": "/var/lib/docker/containers/4ffbf45524e66f44f187e5a88580ef860b2bd3260574eba8c9a53cbddb6bbb53/hosts",
       "LogPath": "/var/lib/docker/containers/4ffbf45524e66f44f187e5a88580ef860b2bd3260574eba8c9a53cbddb6bbb53/4ffbf45524e66f44f187e5a88580ef860b2bd3260574eba8c9a53cbddb6bbb53-json.log",
       "Name": "/opstack-op-batcher-1",
-      "RestartCount": 26,
+      "RestartCount": 28,
       "Driver": "overlayfs",
       "Platform": "linux",
       "MountLabel": "",
@@ -6251,8 +6251,8 @@
         "StopTimeout": 1
       },
       "NetworkSettings": {
-        "SandboxID": "aab83b25fed7fa22129401cca8b096431860f84c56c84d4e544ae04a0e7fba72",
-        "SandboxKey": "/var/run/docker/netns/aab83b25fed7",
+        "SandboxID": "ebd3a2375d6625fcd69e946a60524eb55f267340b305eeee6cd7c7337100f6a9",
+        "SandboxKey": "/var/run/docker/netns/ebd3a2375d66",
         "Ports": {
           "7301/tcp": [
             {
@@ -6286,10 +6286,10 @@
             "DriverOpts": null,
             "GwPriority": 0,
             "NetworkID": "d4574ff388706011976171d713b92280d2de737e0a124ed875c3ba5f46132800",
-            "EndpointID": "4a2e56cb0dac544361bae025a12c19878477d8801fff3920b7e0f9d94f9f3ce1",
+            "EndpointID": "1e65d40c7e1b05009ff61ca340851bbe415d9c7303a63673ae28a9ed56ce371e",
             "Gateway": "172.18.0.1",
             "IPAddress": "172.18.0.10",
-            "MacAddress": "66:4d:68:27:6e:4c",
+            "MacAddress": "62:2d:5d:29:8a:0e",
             "IPPrefixLen": 16,
             "IPv6Gateway": "",
             "GlobalIPv6Address": "",
@@ -6345,8 +6345,8 @@
         "Pid": 0,
         "ExitCode": 1,
         "Error": "",
-        "StartedAt": "2026-01-23T03:35:55.805073168Z",
-        "FinishedAt": "2026-01-23T03:35:56.666975989Z",
+        "StartedAt": "2026-01-23T03:38:57.445170065Z",
+        "FinishedAt": "2026-01-23T03:38:58.268394478Z",
         "Health": {
           "Status": "unhealthy",
           "FailingStreak": 0,
@@ -6390,7 +6390,7 @@
       "HostsPath": "/var/lib/docker/containers/f2870946eff3520ec6cfddbf3ee6268ce7a2fc06ddc384b2dc470b96a3d8c7f2/hosts",
       "LogPath": "/var/lib/docker/containers/f2870946eff3520ec6cfddbf3ee6268ce7a2fc06ddc384b2dc470b96a3d8c7f2/f2870946eff3520ec6cfddbf3ee6268ce7a2fc06ddc384b2dc470b96a3d8c7f2-json.log",
       "Name": "/opstack-op-sequencer-1",
-      "RestartCount": 93,
+      "RestartCount": 96,
       "Driver": "overlayfs",
       "Platform": "linux",
       "MountLabel": "",
@@ -6682,8 +6682,8 @@
         "Pid": 0,
         "ExitCode": 1,
         "Error": "",
-        "StartedAt": "2026-01-23T03:35:55.742058963Z",
-        "FinishedAt": "2026-01-23T03:35:56.500730422Z",
+        "StartedAt": "2026-01-23T03:38:57.180911145Z",
+        "FinishedAt": "2026-01-23T03:38:58.064873351Z",
         "Health": {
           "Status": "unhealthy",
           "FailingStreak": 0,
@@ -6727,7 +6727,7 @@
       "HostsPath": "/var/lib/docker/containers/ff218d53aa886b5bd955fcf756408985c214c76b75d415d2851d9bd695bd7fbc/hosts",
       "LogPath": "/var/lib/docker/containers/ff218d53aa886b5bd955fcf756408985c214c76b75d415d2851d9bd695bd7fbc/ff218d53aa886b5bd955fcf756408985c214c76b75d415d2851d9bd695bd7fbc-json.log",
       "Name": "/opstack-op-node-1",
-      "RestartCount": 93,
+      "RestartCount": 96,
       "Driver": "overlayfs",
       "Platform": "linux",
       "MountLabel": "",
@@ -7010,32 +7010,32 @@
           "FailingStreak": 0,
           "Log": [
             {
-              "Start": "2026-01-23T03:34:44.603829083Z",
-              "End": "2026-01-23T03:34:44.786468471Z",
+              "Start": "2026-01-23T03:38:26.706123875Z",
+              "End": "2026-01-23T03:38:27.5152909Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:04.784702596Z",
-              "End": "2026-01-23T03:35:04.941298532Z",
+              "Start": "2026-01-23T03:38:47.523309352Z",
+              "End": "2026-01-23T03:38:48.171692513Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:24.939220496Z",
-              "End": "2026-01-23T03:35:25.155550258Z",
+              "Start": "2026-01-23T03:39:08.170941052Z",
+              "End": "2026-01-23T03:39:08.342107379Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:45.156603503Z",
-              "End": "2026-01-23T03:35:45.355689955Z",
+              "Start": "2026-01-23T03:39:28.340660124Z",
+              "End": "2026-01-23T03:39:28.632598734Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:36:05.354341487Z",
-              "End": "2026-01-23T03:36:05.519668482Z",
+              "Start": "2026-01-23T03:39:48.633686465Z",
+              "End": "2026-01-23T03:39:48.810899762Z",
               "ExitCode": 0,
               "Output": ""
             }
@@ -8699,32 +8699,32 @@
           "FailingStreak": 0,
           "Log": [
             {
-              "Start": "2026-01-23T03:35:08.471151308Z",
-              "End": "2026-01-23T03:35:08.519663435Z",
+              "Start": "2026-01-23T03:38:39.660892253Z",
+              "End": "2026-01-23T03:38:39.776877605Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:23.518191519Z",
-              "End": "2026-01-23T03:35:23.569706986Z",
+              "Start": "2026-01-23T03:38:54.776879178Z",
+              "End": "2026-01-23T03:38:54.813959043Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:38.570343678Z",
-              "End": "2026-01-23T03:35:38.610692012Z",
+              "Start": "2026-01-23T03:39:09.814311389Z",
+              "End": "2026-01-23T03:39:10.168003627Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:53.609569614Z",
-              "End": "2026-01-23T03:35:53.666312711Z",
+              "Start": "2026-01-23T03:39:25.166316192Z",
+              "End": "2026-01-23T03:39:25.211066214Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:36:08.666658805Z",
-              "End": "2026-01-23T03:36:08.714442739Z",
+              "Start": "2026-01-23T03:39:40.21180467Z",
+              "End": "2026-01-23T03:39:40.268127694Z",
               "ExitCode": 0,
               "Output": ""
             }
@@ -9016,32 +9016,32 @@
           "FailingStreak": 0,
           "Log": [
             {
-              "Start": "2026-01-23T03:34:53.018341315Z",
-              "End": "2026-01-23T03:34:53.115992727Z",
+              "Start": "2026-01-23T03:38:33.903449946Z",
+              "End": "2026-01-23T03:38:34.011212571Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:13.116972622Z",
-              "End": "2026-01-23T03:35:13.166251657Z",
+              "Start": "2026-01-23T03:38:54.010300642Z",
+              "End": "2026-01-23T03:38:54.069669729Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:33.164538014Z",
-              "End": "2026-01-23T03:35:33.227004295Z",
+              "Start": "2026-01-23T03:39:14.071018904Z",
+              "End": "2026-01-23T03:39:14.115133151Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:53.225433996Z",
-              "End": "2026-01-23T03:35:53.273566795Z",
+              "Start": "2026-01-23T03:39:34.113399363Z",
+              "End": "2026-01-23T03:39:34.153353372Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:36:13.274017707Z",
-              "End": "2026-01-23T03:36:13.43236876Z",
+              "Start": "2026-01-23T03:39:54.151835979Z",
+              "End": "2026-01-23T03:39:54.270906691Z",
               "ExitCode": 0,
               "Output": ""
             }
@@ -9180,14 +9180,6 @@
       },
       "Mounts": [
         {
-          "Type": "bind",
-          "Source": "/run/desktop/mnt/host/wsl/docker-desktop-bind-mounts/Ubuntu/53f575b760b4bc7c1d59f7d0bde4e221f0e7d5ce1337b8079ea1bb9411df94e5",
-          "Destination": "/etc/alertmanager/alertmanager.yml",
-          "Mode": "ro",
-          "RW": false,
-          "Propagation": "rprivate"
-        },
-        {
           "Type": "volume",
           "Name": "opstack_alertmanager_data",
           "Source": "/var/lib/docker/volumes/opstack_alertmanager_data/_data",
@@ -9196,6 +9188,14 @@
           "Mode": "rw",
           "RW": true,
           "Propagation": ""
+        },
+        {
+          "Type": "bind",
+          "Source": "/run/desktop/mnt/host/wsl/docker-desktop-bind-mounts/Ubuntu/53f575b760b4bc7c1d59f7d0bde4e221f0e7d5ce1337b8079ea1bb9411df94e5",
+          "Destination": "/etc/alertmanager/alertmanager.yml",
+          "Mode": "ro",
+          "RW": false,
+          "Propagation": "rprivate"
         }
       ],
       "Config": {
@@ -9330,32 +9330,32 @@
           "FailingStreak": 0,
           "Log": [
             {
-              "Start": "2026-01-23T03:34:46.627818306Z",
-              "End": "2026-01-23T03:34:46.797089457Z",
+              "Start": "2026-01-23T03:38:27.367785124Z",
+              "End": "2026-01-23T03:38:27.616302334Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:06.795671801Z",
-              "End": "2026-01-23T03:35:06.832073973Z",
+              "Start": "2026-01-23T03:38:47.622240148Z",
+              "End": "2026-01-23T03:38:47.741299791Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:26.829888302Z",
-              "End": "2026-01-23T03:35:26.884398138Z",
+              "Start": "2026-01-23T03:39:07.740029092Z",
+              "End": "2026-01-23T03:39:07.786549577Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:46.884815141Z",
-              "End": "2026-01-23T03:35:47.017380894Z",
+              "Start": "2026-01-23T03:39:27.784988464Z",
+              "End": "2026-01-23T03:39:27.818762772Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:36:07.015337335Z",
-              "End": "2026-01-23T03:36:07.06533947Z",
+              "Start": "2026-01-23T03:39:47.819599807Z",
+              "End": "2026-01-23T03:39:47.976424782Z",
               "ExitCode": 0,
               "Output": ""
             }
@@ -9494,6 +9494,14 @@
       },
       "Mounts": [
         {
+          "Type": "bind",
+          "Source": "/home/ghost/ghostl-stack/infra/opstack/observability/loki/config.yml",
+          "Destination": "/etc/loki/config.yml",
+          "Mode": "ro",
+          "RW": false,
+          "Propagation": "rprivate"
+        },
+        {
           "Type": "volume",
           "Name": "opstack_loki_data",
           "Source": "/var/lib/docker/volumes/opstack_loki_data/_data",
@@ -9502,14 +9510,6 @@
           "Mode": "rw",
           "RW": true,
           "Propagation": ""
-        },
-        {
-          "Type": "bind",
-          "Source": "/home/ghost/ghostl-stack/infra/opstack/observability/loki/config.yml",
-          "Destination": "/etc/loki/config.yml",
-          "Mode": "ro",
-          "RW": false,
-          "Propagation": "rprivate"
         }
       ],
       "Config": {
@@ -11299,32 +11299,32 @@
           "FailingStreak": 0,
           "Log": [
             {
-              "Start": "2026-01-23T03:35:00.573666515Z",
-              "End": "2026-01-23T03:35:01.105595384Z",
+              "Start": "2026-01-23T03:38:38.413339017Z",
+              "End": "2026-01-23T03:38:38.931663401Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:16.106269473Z",
-              "End": "2026-01-23T03:35:16.585141512Z",
+              "Start": "2026-01-23T03:38:53.930605683Z",
+              "End": "2026-01-23T03:38:54.411489943Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:31.58298819Z",
-              "End": "2026-01-23T03:35:32.009795256Z",
+              "Start": "2026-01-23T03:39:09.416834531Z",
+              "End": "2026-01-23T03:39:10.319137836Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:47.010150231Z",
-              "End": "2026-01-23T03:35:47.850734794Z",
+              "Start": "2026-01-23T03:39:25.317777315Z",
+              "End": "2026-01-23T03:39:25.717982108Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:36:02.848772951Z",
-              "End": "2026-01-23T03:36:03.463188154Z",
+              "Start": "2026-01-23T03:39:40.71931124Z",
+              "End": "2026-01-23T03:39:41.22633077Z",
               "ExitCode": 0,
               "Output": ""
             }
@@ -11914,32 +11914,32 @@
           "FailingStreak": 0,
           "Log": [
             {
-              "Start": "2026-01-23T03:34:47.185065246Z",
-              "End": "2026-01-23T03:34:47.449506421Z",
+              "Start": "2026-01-23T03:38:28.315509931Z",
+              "End": "2026-01-23T03:38:28.597799525Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:07.448579275Z",
-              "End": "2026-01-23T03:35:07.504622521Z",
+              "Start": "2026-01-23T03:38:48.599104691Z",
+              "End": "2026-01-23T03:38:48.653197818Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:27.502714695Z",
-              "End": "2026-01-23T03:35:27.543668028Z",
+              "Start": "2026-01-23T03:39:08.651828079Z",
+              "End": "2026-01-23T03:39:08.704886095Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:47.544085081Z",
-              "End": "2026-01-23T03:35:47.692933427Z",
+              "Start": "2026-01-23T03:39:28.703355709Z",
+              "End": "2026-01-23T03:39:28.754458006Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:36:07.690842001Z",
-              "End": "2026-01-23T03:36:07.751786729Z",
+              "Start": "2026-01-23T03:39:48.755771077Z",
+              "End": "2026-01-23T03:39:48.80345217Z",
               "ExitCode": 0,
               "Output": ""
             }
@@ -12233,32 +12233,32 @@
           "FailingStreak": 0,
           "Log": [
             {
-              "Start": "2026-01-23T03:35:13.849356305Z",
-              "End": "2026-01-23T03:35:13.89651924Z",
+              "Start": "2026-01-23T03:38:45.15724348Z",
+              "End": "2026-01-23T03:38:45.236819434Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:28.895011917Z",
-              "End": "2026-01-23T03:35:29.034648305Z",
+              "Start": "2026-01-23T03:39:00.236383051Z",
+              "End": "2026-01-23T03:39:00.300631216Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:44.035097687Z",
-              "End": "2026-01-23T03:35:44.083030881Z",
+              "Start": "2026-01-23T03:39:15.301693568Z",
+              "End": "2026-01-23T03:39:15.348984163Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:59.089417436Z",
-              "End": "2026-01-23T03:35:59.254880352Z",
+              "Start": "2026-01-23T03:39:30.347165427Z",
+              "End": "2026-01-23T03:39:30.402965802Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:36:14.255965434Z",
-              "End": "2026-01-23T03:36:14.316235354Z",
+              "Start": "2026-01-23T03:39:45.403782435Z",
+              "End": "2026-01-23T03:39:45.452471308Z",
               "ExitCode": 0,
               "Output": ""
             }
@@ -12549,32 +12549,32 @@
           "FailingStreak": 0,
           "Log": [
             {
-              "Start": "2026-01-23T03:34:35.276988088Z",
-              "End": "2026-01-23T03:34:35.747041541Z",
+              "Start": "2026-01-23T03:38:21.65716216Z",
+              "End": "2026-01-23T03:38:22.003068446Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:34:55.74595161Z",
-              "End": "2026-01-23T03:34:56.25857917Z",
+              "Start": "2026-01-23T03:38:42.002074351Z",
+              "End": "2026-01-23T03:38:42.50807522Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:16.259304166Z",
-              "End": "2026-01-23T03:35:16.721453933Z",
+              "Start": "2026-01-23T03:39:02.507295345Z",
+              "End": "2026-01-23T03:39:02.92806628Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:36.719882133Z",
-              "End": "2026-01-23T03:35:37.235926988Z",
+              "Start": "2026-01-23T03:39:22.928922737Z",
+              "End": "2026-01-23T03:39:23.340676548Z",
               "ExitCode": 0,
               "Output": ""
             },
             {
-              "Start": "2026-01-23T03:35:57.233863545Z",
-              "End": "2026-01-23T03:35:58.211422208Z",
+              "Start": "2026-01-23T03:39:43.341996826Z",
+              "End": "2026-01-23T03:39:43.86400165Z",
               "ExitCode": 0,
               "Output": ""
             }
