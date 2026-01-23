@@ -13,6 +13,9 @@ Artifacts:
 - `immutability-vc.json`
 - `immutability-vc.payload.json`
 - `immutability-vc.sig`
+- `mev-report.json` (copied into snapshots)
+- `immutability-proof.json` and `immutability-proof.verifier.json` (copied into snapshots)
+- `immutability-proof.onchain.json` (copied into snapshots)
 - `confidential-cca.json` (copied into snapshots; source in `ops/confidential/cca.json`)
 - `drift-baseline.json` and `drift-report.json` (copied into snapshots; source in `ops/ai/drift/`)
 
