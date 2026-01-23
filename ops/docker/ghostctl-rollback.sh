@@ -103,6 +103,78 @@ for key,pre_entry in pre_map.items():
             raise SystemExit(f"Block height reduced for {key}")
 PY
 
+if [[ -f "$SNAPSHOT_DIR/chain-state-merkle-proofs.json" ]]; then
+  python3 - "$CHAIN_CONFIG_PATH" "$SNAPSHOT_DIR/chain-state-merkle-proofs.json" "$SNAPSHOT_DIR/chain-state-merkle-proofs-rollback.json" <<'PY'
+import json,sys,urllib.request
+
+chain_path=sys.argv[1]
+pre_path=sys.argv[2]
+out_path=sys.argv[3]
+
+chains=json.load(open(chain_path)).get("chains",[])
+pre=json.load(open(pre_path)).get("proofs",[])
+pre_map={p.get("chainKey"):p for p in pre}
+
+def rpc_call(url, method, params=None):
+    payload={"jsonrpc":"2.0","id":1,"method":method,"params":params or []}
+    data=json.dumps(payload).encode()
+    req=urllib.request.Request(url,data=data,headers={"Content-Type":"application/json"})
+    with urllib.request.urlopen(req,timeout=8) as resp:
+        return json.load(resp)
+
+proofs=[]
+for chain in chains:
+    url=chain.get("rpcUrl") or chain.get("rpc")
+    entry={"chainId":chain.get("chainId"),"chainKey":chain.get("key"),"rpcUrl":url}
+    if not url:
+        entry["error"]="missing_rpc"
+        proofs.append(entry)
+        continue
+    pre_entry=pre_map.get(chain.get("key"))
+    block_number=pre_entry.get("blockNumber") if pre_entry else None
+    if not block_number:
+        entry["error"]="missing_block"
+        proofs.append(entry)
+        continue
+    try:
+        block = rpc_call(url,"eth_getBlockByNumber",[block_number, False]).get("result")
+        if not block:
+            entry["error"]="block_not_found"
+            proofs.append(entry)
+            continue
+        entry["blockNumber"]=block_number
+        entry["blockHash"]=block.get("hash")
+        entry["stateRoot"]=block.get("stateRoot")
+        entry["receiptsRoot"]=block.get("receiptsRoot")
+    except Exception as exc:
+        entry["error"]=str(exc)
+    proofs.append(entry)
+
+json.dump({"proofs":proofs},open(out_path,"w"),indent=2)
+PY
+
+  python3 - "$SNAPSHOT_DIR/chain-state-merkle-proofs.json" "$SNAPSHOT_DIR/chain-state-merkle-proofs-rollback.json" <<'PY'
+import json,sys
+
+pre=json.load(open(sys.argv[1]))
+post=json.load(open(sys.argv[2]))
+
+pre_map={p.get("chainKey"):p for p in pre.get("proofs",[])}
+post_map={p.get("chainKey"):p for p in post.get("proofs",[])}
+
+for key,pre_entry in pre_map.items():
+    post_entry=post_map.get(key)
+    if not post_entry:
+        raise SystemExit(f"Missing rollback proof for {key}")
+    if pre_entry.get("blockHash") and post_entry.get("blockHash") and pre_entry["blockHash"]!=post_entry["blockHash"]:
+        raise SystemExit(f"Block hash changed for {key}")
+    if pre_entry.get("stateRoot") and post_entry.get("stateRoot") and pre_entry["stateRoot"]!=post_entry["stateRoot"]:
+        raise SystemExit(f"State root changed for {key}")
+    if pre_entry.get("receiptsRoot") and post_entry.get("receiptsRoot") and pre_entry["receiptsRoot"]!=post_entry["receiptsRoot"]:
+        raise SystemExit(f"Receipts root changed for {key}")
+PY
+fi
+
 python3 - "$SNAPSHOT_DIR/chain-data-map.json" "$SNAPSHOT_DIR/chain-data-fingerprints.json" <<'PY'
 import hashlib, json, os, sys
 

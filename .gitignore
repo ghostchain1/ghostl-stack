@@ -126,6 +126,8 @@ ops/docker/snapshots/*
 ops/docker/attestations/*
 !ops/docker/attestations/.gitkeep
 !ops/docker/attestations/README.md
+ops/ai/anomaly/anomaly-report.json
+ops/ai/anomaly/model-metadata.json
 *.swp
 *.swo
 *.tmp
