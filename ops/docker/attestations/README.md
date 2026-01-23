@@ -13,6 +13,8 @@ Artifacts:
 - `immutability-vc.json`
 - `immutability-vc.payload.json`
 - `immutability-vc.sig`
+- `confidential-cca.json` (copied into snapshots; source in `ops/confidential/cca.json`)
+- `drift-baseline.json` and `drift-report.json` (copied into snapshots; source in `ops/ai/drift/`)
 
 Verification (OpenSSL):
 ```
@@ -28,3 +30,5 @@ Verification (DID VC payload, OpenSSL):
 ```
 openssl pkeyutl -verify -pubin -inkey did-ed25519.pub.pem -rawin -in immutability-vc.payload.json -sigfile immutability-vc.sig
 ```
+
+On-chain notarization (optional) is recorded separately in `ops/onchain/notarization.json`.
