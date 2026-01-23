@@ -75,7 +75,7 @@ check_chain_containers() {
   fi
 
   for id in $ids; do
-    if docker ps -q | rg -q "$id"; then
+    if docker ps -q --no-trunc | rg -q "$id"; then
       pass "chain container still running: $id"
     else
       echo "WARN: chain container from snapshot not running: $id"
