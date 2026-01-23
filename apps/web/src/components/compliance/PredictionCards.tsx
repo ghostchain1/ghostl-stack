@@ -11,7 +11,7 @@ export function PredictionCards({ predictions }: { predictions: Prediction[] }) 
   return (
     <div className="card">
       <h3>AI Predictions</h3>
-      <div className="filter-row">
+      <div className="card-grid">
         {predictions.map((p) => (
           <div key={p.id} className="card" style={{ minWidth: 240 }}>
             <div className="badge">{p.jurisdiction}</div>

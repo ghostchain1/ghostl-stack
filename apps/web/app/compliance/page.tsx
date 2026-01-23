@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { apiRequest, type ApiError, formatApiError } from '../../src/lib/api';
 import { resolveApiBase } from '../../src/lib/runtime';
@@ -47,6 +48,32 @@ export default function CompliancePage() {
 
   return (
     <div className="content">
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div style={{ fontWeight: 700, marginBottom: 8 }}>Compliance Console</div>
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+          <Link className="button secondary" href="/compliance/overview">
+            Overview
+          </Link>
+          <Link className="button secondary" href="/compliance/decisions">
+            Decisions
+          </Link>
+          <Link className="button secondary" href="/compliance/policies">
+            Policies
+          </Link>
+          <Link className="button secondary" href="/compliance/laws">
+            Laws
+          </Link>
+          <Link className="button secondary" href="/compliance/predictions">
+            Predictions
+          </Link>
+          <Link className="button secondary" href="/compliance/evidence">
+            Evidence
+          </Link>
+          <Link className="button secondary" href="/compliance/controls">
+            Controls
+          </Link>
+        </div>
+      </div>
       <div className="card-grid">
         {errors.map((entry, idx) => (
           <DataFetchErrorCard key={`${entry.title}-${idx}`} title={entry.title} error={entry.error} />

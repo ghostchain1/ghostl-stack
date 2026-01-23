@@ -277,7 +277,7 @@ export function useWallet() {
           to: desiredRecipient,
           amount: parsed
         });
-        setBridgeHash(res.tx);
+        setBridgeHash(res.tx ?? '');
         setBridgeStatus('Transfer submitted');
         return res.tx;
       } catch (err) {

@@ -35,11 +35,17 @@ export function TokensConsole() {
     type: 'all',
     walletId: 'all'
   });
-  const [importForm, setImportForm] = useState({
+  const [importForm, setImportForm] = useState<{
+    walletId: string;
+    address: string;
+    chainId: 'l1' | 'l2' | 'l3';
+    type: 'erc20' | 'erc721' | 'erc1155';
+    rpc: string;
+  }>({
     walletId: '',
     address: '',
     chainId: 'l2',
-    type: 'erc20' as const,
+    type: 'erc20',
     rpc: ''
   });
 
@@ -58,7 +64,10 @@ export function TokensConsole() {
     setWalletsError(null);
     setImportForm((prev) => {
       if (prev.walletId || !next.length) return prev;
-      return { ...prev, walletId: next[0].id, chainId: next[0].chainId || prev.chainId };
+      const rawChainId = next[0].chainId;
+      const chainId =
+        rawChainId === 'l1' || rawChainId === 'l2' || rawChainId === 'l3' ? rawChainId : prev.chainId;
+      return { ...prev, walletId: next[0].id, chainId };
     });
     if (debugTokens) {
       console.debug('[tokens] wallets:loaded', { count: next.length });
@@ -160,7 +169,10 @@ export function TokensConsole() {
     setImportForm((prev) => ({
       ...prev,
       walletId,
-      chainId: wallet?.chainId || prev.chainId
+      chainId:
+        wallet?.chainId === 'l1' || wallet?.chainId === 'l2' || wallet?.chainId === 'l3'
+          ? wallet.chainId
+          : prev.chainId
     }));
   };
 
@@ -366,7 +378,12 @@ export function TokensConsole() {
                   <select
                     className="select"
                     value={importForm.chainId}
-                    onChange={(e) => setImportForm((prev) => ({ ...prev, chainId: e.target.value }))}
+                    onChange={(e) =>
+                      setImportForm((prev) => ({
+                        ...prev,
+                        chainId: e.target.value as 'l1' | 'l2' | 'l3'
+                      }))
+                    }
                   >
                     <option value="l1">GhostChain L1</option>
                     <option value="l2">GhostL2</option>

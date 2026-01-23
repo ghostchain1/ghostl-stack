@@ -263,6 +263,6 @@ Generated: 2026-01-21T19:34:44Z
 - infra/scripts/opstack/up-l2.sh
 - infra/scripts/opstack/up-l3.sh
 - infra/scripts/up.sh
-- observability/docs/README.md
-- observability/docs/deployment.md
+- docs/observability/README.md
+- docs/observability/deployment.md
 - scripts/update-containers-sequential.sh

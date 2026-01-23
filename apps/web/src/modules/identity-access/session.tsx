@@ -28,7 +28,7 @@ export function SessionProvider({ children, initial }: { children: ReactNode; in
           return;
         }
         const data = res.data;
-        const rawUser = data?.user ?? data;
+        const rawUser = data?.user;
         if (!rawUser?.id) {
           setState({ loading: false });
           return;
@@ -39,7 +39,7 @@ export function SessionProvider({ children, initial }: { children: ReactNode; in
             email: rawUser.email,
             username: rawUser.username,
             wallets: rawUser.wallets,
-            role: normalizeRole((rawUser as SessionUser).role ?? (data as { role?: Role }).role)
+            role: normalizeRole(rawUser.role ?? data.role)
           },
           loading: false
         });

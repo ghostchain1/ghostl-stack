@@ -15,7 +15,7 @@ export function EvidenceViewer({ evidence }: { evidence?: EvidenceBundle }) {
           <div className="muted">Bundle ID: {evidence.id}</div>
           <div className="muted">Prev hash: {evidence.prev_hash || 'genesis'}</div>
           <div className="muted">Hash: {evidence.hash}</div>
-          <pre className="code">{JSON.stringify(evidence.artifacts ?? {}, null, 2)}</pre>
+          <pre className="code-preview">{JSON.stringify(evidence.artifacts ?? {}, null, 2)}</pre>
         </div>
       ) : (
         <div className="muted">Select an evidence bundle to view details.</div>

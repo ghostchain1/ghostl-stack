@@ -10,7 +10,7 @@ docker compose up --build
 
 The stack boots:
 - Compliance API: http://localhost:8090
-- Compliance UI: http://localhost:3200
+- Compliance UI: http://localhost:3201
 - Postgres: localhost:5432
 - Redis: localhost:6379
 
@@ -27,7 +27,7 @@ Grafana: http://localhost:3001 (admin / ghost)
 
 - `services/ghost-compliance`: Fastify API, policy engine, audit + evidence.
 - `services/ghost-compliance-worker`: prediction worker.
-- `apps/ghost-ui`: Next.js compliance dashboard.
+- `apps/web`: Next.js dashboard (compliance console under `/compliance/*`).
 - `contracts/compliance`: Compliance oracle + guard contracts.
 
 ## Environment
@@ -69,8 +69,8 @@ npm run test
 UI e2e tests:
 
 ```bash
-cd apps/ghost-ui
-npm run test:e2e
+cd apps/web
+PLAYWRIGHT_BASE_URL=http://localhost:3201 npm run test:e2e
 ```
 
 ## Runbook
