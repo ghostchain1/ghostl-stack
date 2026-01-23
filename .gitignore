@@ -132,6 +132,14 @@ ops/ai/drift/baseline.json
 ops/ai/drift/drift-report.json
 ops/confidential/cca.json
 ops/onchain/notarization.json
+ops/mev/mev-report.json
+ops/zk/immutability-proof.json
+ops/zk/immutability-proof.verifier.json
+ops/zk/immutability-proof.onchain.json
+ops/zk/build/
+ops/zk/Verifier.sol
+ops/quorum/quorum-attestation.json
+ops/quorum/regions/*.json
 *.swp
 *.swo
 *.tmp

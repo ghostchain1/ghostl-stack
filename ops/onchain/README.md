@@ -14,6 +14,7 @@ GHOST_NOTARIZATION_RAW_TX=0x... \
   --merkle ./ops/docker/attestations/chain-state-merkle-proofs.json \
   --oci ./ops/docker/attestations/oci-image-provenance.json \
   --vc ./ops/docker/attestations/immutability-vc.json \
+  --zk ./ops/zk/immutability-proof.json \
   --out ./ops/onchain/notarization.json
 ```
 

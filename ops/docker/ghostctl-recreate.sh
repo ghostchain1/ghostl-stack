@@ -14,6 +14,12 @@ ANOMALY_DIR="$ROOT_DIR/ops/ai/anomaly"
 DRIFT_DIR="$ROOT_DIR/ops/ai/drift"
 CONFIDENTIAL_DIR="$ROOT_DIR/ops/confidential"
 ONCHAIN_DIR="$ROOT_DIR/ops/onchain"
+MEV_DIR="$ROOT_DIR/ops/mev"
+ZK_DIR="$ROOT_DIR/ops/zk"
+QUORUM_DIR="$ROOT_DIR/ops/quorum"
+ZK_PROVER_REQUIRED="${ZK_PROVER_REQUIRED:-true}"
+ZK_ONCHAIN_REQUIRED="${ZK_ONCHAIN_REQUIRED:-true}"
+QUORUM_REQUIRED="${QUORUM_REQUIRED:-true}"
 
 usage() {
   cat <<'USAGE'
@@ -86,7 +92,7 @@ DID_PUB_PATH="${GHOST_DID_PUB_PATH:-$ATTEST_DIR/did-ed25519.pub.pem}"
 DID_DOC_PATH="$ATTEST_DIR/did-key.json"
 DID_VC_PATH="$ATTEST_DIR/immutability-vc.json"
 mkdir -p "$ANOMALY_DIR"
-mkdir -p "$DRIFT_DIR" "$CONFIDENTIAL_DIR" "$ONCHAIN_DIR"
+mkdir -p "$DRIFT_DIR" "$CONFIDENTIAL_DIR" "$ONCHAIN_DIR" "$MEV_DIR" "$ZK_DIR" "$QUORUM_DIR"
 mkdir -p "$SNAPSHOT_DIR" "$SNAPSHOT_DIR/compose" "$SNAPSHOT_DIR/env" "$SNAPSHOT_DIR/inspect" "$SNAPSHOT_DIR/proofs" "$ATTEST_DIR"
 
 log "Snapshot directory: $SNAPSHOT_DIR"
@@ -975,6 +981,127 @@ json.dump(payload,open(sys.argv[1],"w"),indent=2)
 PY
 fi
 
+if [[ -x "$ROOT_DIR/ops/mev/mev-monitor.sh" ]]; then
+  "$ROOT_DIR/ops/mev/mev-monitor.sh" --mode "$MODE" --snapshot "$SNAPSHOT_DIR" --out "$MEV_DIR/mev-report.json" || true
+fi
+
+if [[ ! -f "$SNAPSHOT_DIR/mev-report.json" ]]; then
+  abort "MEV report missing. Ensure ops/mev/mev-monitor.sh succeeds."
+fi
+
+MEV_SEVERITY=$(python3 - "$SNAPSHOT_DIR/mev-report.json" <<'PY'
+import json,sys
+data=json.load(open(sys.argv[1]))
+print(data.get("severity","INFO"))
+PY
+)
+
+if [[ "$MEV_SEVERITY" == "CRITICAL" ]]; then
+  log "MEV monitor severity CRITICAL - activating kill switch."
+  "$ROOT_DIR/ops/security/kill-switch/activate.sh" --snapshot "$SNAPSHOT_DIR" --mode "$MODE" --reason "mev_critical" || true
+  abort "MEV monitoring flagged CRITICAL severity."
+fi
+
+python3 - "$SNAPSHOT_DIR/immutability-input.json" \
+  "$SNAPSHOT_DIR/chain-data-fingerprints.json" \
+  "$SNAPSHOT_DIR/chain-data-fingerprints-post.json" \
+  "$SNAPSHOT_DIR/chain-state-merkle-proofs.json" \
+  "$SNAPSHOT_DIR/chain-state-merkle-proofs-post.json" \
+  "$SNAPSHOT_DIR/gas-token.json" <<'PY'
+import hashlib,json,sys
+
+out_path=sys.argv[1]
+fp_pre_path=sys.argv[2]
+fp_post_path=sys.argv[3]
+merkle_pre_path=sys.argv[4]
+merkle_post_path=sys.argv[5]
+gas_path=sys.argv[6]
+
+def sha256(path):
+    h=hashlib.sha256()
+    with open(path,"rb") as f:
+        h.update(f.read())
+    return h.hexdigest()
+
+def split_u64(hexstr):
+    hexstr=hexstr.lower().replace("0x","")
+    hexstr=hexstr.zfill(64)
+    parts=[hexstr[i:i+16] for i in range(0,64,16)]
+    return [int(p,16) for p in parts]
+
+fp_pre=sha256(fp_pre_path)
+fp_post=sha256(fp_post_path)
+merkle_pre=sha256(merkle_pre_path)
+merkle_post=sha256(merkle_post_path)
+gas_pre=sha256(gas_path)
+gas_post=sha256(gas_path)
+
+payload={
+  "fp_pre": split_u64(fp_pre),
+  "fp_post": split_u64(fp_post),
+  "merkle_pre": split_u64(merkle_pre),
+  "merkle_post": split_u64(merkle_post),
+  "gas_pre": split_u64(gas_pre),
+  "gas_post": split_u64(gas_post)
+}
+
+json.dump(payload,open(out_path,"w"),indent=2)
+PY
+
+ZK_PROOF_PATH="$ZK_DIR/immutability-proof.json"
+ZK_VKEY_PATH="$ZK_DIR/immutability-proof.verifier.json"
+
+if [[ "$ZK_PROVER_REQUIRED" == "true" ]]; then
+  if [[ ! -x "$ROOT_DIR/ops/zk/prove.sh" ]]; then
+    abort "ZK prover script missing at ops/zk/prove.sh"
+  fi
+  "$ROOT_DIR/ops/zk/prove.sh" --input "$SNAPSHOT_DIR/immutability-input.json" --out-proof "$ZK_PROOF_PATH" --out-vkey "$ZK_VKEY_PATH"
+  if [[ ! -x "$ROOT_DIR/ops/zk/verify.sh" ]]; then
+    abort "ZK verify script missing at ops/zk/verify.sh"
+  fi
+  "$ROOT_DIR/ops/zk/verify.sh" --proof "$ZK_PROOF_PATH" --vkey "$ZK_VKEY_PATH"
+else
+  log "ZK_PROVER_REQUIRED is false; skipping ZK proof generation."
+fi
+
+if [[ ! -f "$ZK_PROOF_PATH" || ! -f "$ZK_VKEY_PATH" ]]; then
+  abort "ZK proof artifacts missing."
+fi
+
+cp "$ZK_PROOF_PATH" "$SNAPSHOT_DIR/immutability-proof.json"
+cp "$ZK_VKEY_PATH" "$SNAPSHOT_DIR/immutability-proof.verifier.json"
+
+if [[ -x "$ROOT_DIR/ops/zk/submit-proof.sh" ]]; then
+  "$ROOT_DIR/ops/zk/submit-proof.sh" --proof "$ZK_PROOF_PATH" --out "$ZK_DIR/immutability-proof.onchain.json"
+fi
+
+if [[ ! -f "$ZK_DIR/immutability-proof.onchain.json" ]]; then
+  python3 - "$ZK_DIR/immutability-proof.onchain.json" <<'PY'
+import json,datetime,sys
+payload={
+  "timestamp": datetime.datetime.utcnow().isoformat()+"Z",
+  "status": "skipped",
+  "note": "missing_submitter",
+  "txHash": None,
+  "blockNumber": None
+}
+json.dump(payload,open(sys.argv[1],"w"),indent=2)
+PY
+fi
+
+cp "$ZK_DIR/immutability-proof.onchain.json" "$SNAPSHOT_DIR/immutability-proof.onchain.json"
+
+ZK_ONCHAIN_STATUS=$(python3 - "$ZK_DIR/immutability-proof.onchain.json" <<'PY'
+import json,sys
+data=json.load(open(sys.argv[1]))
+print(data.get("status","skipped"))
+PY
+)
+
+if [[ "$ZK_ONCHAIN_REQUIRED" == "true" && "$ZK_ONCHAIN_STATUS" != "submitted" ]]; then
+  abort "ZK on-chain verification missing or not submitted."
+fi
+
 python3 - "$SNAPSHOT_DIR/oci-image-provenance-post.json" "${rendered_configs[@]}" <<'PY'
 import hashlib,json,os,subprocess,sys
 
@@ -1149,6 +1276,10 @@ payload={
   "driftBaseline": sha256(os.path.join(snap,"drift-baseline.json")),
   "driftReport": sha256(os.path.join(snap,"drift-report.json")),
   "confidentialCompute": sha256(os.path.join(snap,"confidential-cca.json")),
+  "mevReport": sha256(os.path.join(snap,"mev-report.json")),
+  "zkProof": sha256(os.path.join(snap,"immutability-proof.json")),
+  "zkVerifier": sha256(os.path.join(snap,"immutability-proof.verifier.json")),
+  "zkOnchain": sha256(os.path.join(snap,"immutability-proof.onchain.json")),
   "recreateScript": sha256(os.path.join(os.getenv("ROOT_DIR","."),"ops","docker","ghostctl-recreate.sh")),
   "containersPre": sha256(os.path.join(snap,"inspect","docker-ps.json")),
   "containersPost": sha256(os.path.join(snap,"inspect","docker-ps-post.json")),
@@ -1414,6 +1545,7 @@ if [[ -x "$ROOT_DIR/ops/onchain/notarize.sh" ]]; then
       --merkle "$ATTEST_DIR/chain-state-merkle-proofs.json" \
       --oci "$ATTEST_DIR/oci-image-provenance.json" \
       --vc "$DID_VC_PATH" \
+      --zk "$ZK_PROOF_PATH" \
       --out "$ONCHAIN_DIR/notarization.json" \
       --rpc "$GHOST_NOTARIZATION_RPC_URL"
   else
@@ -1422,6 +1554,7 @@ if [[ -x "$ROOT_DIR/ops/onchain/notarize.sh" ]]; then
       --merkle "$ATTEST_DIR/chain-state-merkle-proofs.json" \
       --oci "$ATTEST_DIR/oci-image-provenance.json" \
       --vc "$DID_VC_PATH" \
+      --zk "$ZK_PROOF_PATH" \
       --out "$ONCHAIN_DIR/notarization.json"
   fi
 fi
@@ -1441,5 +1574,40 @@ PY
 fi
 
 cp "$ONCHAIN_DIR/notarization.json" "$SNAPSHOT_DIR/notarization.json"
+
+if [[ -x "$ROOT_DIR/ops/quorum/quorum-attest.sh" ]]; then
+  "$ROOT_DIR/ops/quorum/quorum-attest.sh" \
+    --attestation "$attestation_json" \
+    --zk "$ZK_PROOF_PATH" \
+    --out "$QUORUM_DIR/quorum-attestation.json"
+fi
+
+if [[ ! -f "$QUORUM_DIR/quorum-attestation.json" ]]; then
+  abort "Quorum attestation missing."
+fi
+
+cp "$QUORUM_DIR/quorum-attestation.json" "$SNAPSHOT_DIR/quorum-attestation.json"
+
+QUORUM_STATUS=$(python3 - "$QUORUM_DIR/quorum-attestation.json" <<'PY'
+import json,sys
+data=json.load(open(sys.argv[1]))
+print(data.get("status","failed"))
+PY
+)
+
+QUORUM_SEVERITY=$(python3 - "$QUORUM_DIR/quorum-attestation.json" <<'PY'
+import json,sys
+data=json.load(open(sys.argv[1]))
+print(data.get("severity","CRITICAL"))
+PY
+)
+
+if [[ "$QUORUM_SEVERITY" == "CRITICAL" || "$QUORUM_STATUS" != "satisfied" ]]; then
+  if [[ "$QUORUM_REQUIRED" == "true" ]]; then
+    log "Quorum attestation failed - activating kill switch."
+    "$ROOT_DIR/ops/security/kill-switch/activate.sh" --snapshot "$SNAPSHOT_DIR" --mode "$MODE" --reason "quorum_failed" || true
+    abort "Quorum attestation not satisfied."
+  fi
+fi
 
 log "Recreate complete. Attestation written to $ATTEST_DIR"
