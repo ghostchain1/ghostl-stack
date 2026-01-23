@@ -1,0 +1,55 @@
+{
+  "policies": [
+    {
+      "chainKey": "l1",
+      "chainId": 14000101,
+      "chainName": "GhostChain",
+      "chainType": "L1",
+      "gasTokenSymbol": "GHOST",
+      "version": "2026.01.23",
+      "baseMultiplier": 1.6,
+      "maxGasLimit": 30000000,
+      "safetyMarginPercent": 20,
+      "retry": {
+        "maxRetries": 5,
+        "backoffMs": 1500,
+        "multiplierStep": 1.25
+      },
+      "sequencerAware": false
+    },
+    {
+      "chainKey": "l2",
+      "chainId": 901,
+      "chainName": "GhostL2",
+      "chainType": "L2",
+      "gasTokenSymbol": "GL2GAS",
+      "version": "2026.01.23",
+      "baseMultiplier": 1.4,
+      "maxGasLimit": 30000000,
+      "safetyMarginPercent": 15,
+      "retry": {
+        "maxRetries": 5,
+        "backoffMs": 1200,
+        "multiplierStep": 1.25
+      },
+      "sequencerAware": true
+    },
+    {
+      "chainKey": "l3",
+      "chainId": 903,
+      "chainName": "GhostL3",
+      "chainType": "L3",
+      "gasTokenSymbol": "GL3GAS",
+      "version": "2026.01.23",
+      "baseMultiplier": 1.3,
+      "maxGasLimit": 30000000,
+      "safetyMarginPercent": 12,
+      "retry": {
+        "maxRetries": 5,
+        "backoffMs": 1000,
+        "multiplierStep": 1.25
+      },
+      "sequencerAware": true
+    }
+  ]
+}

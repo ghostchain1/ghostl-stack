@@ -1,14 +1,14 @@
 {
   "genesis": {
     "l1": {
-      "hash": "0x05850556806e84059f6c681bf8202b9f19fc6a2790daaad850d356169e93b8a9",
-    "number": 0
-    },
-    "l2": {
-      "hash": "0x0011737835aa6583660ffe221cf15ed16321efd83858601bf1e4234cd389eae0",
+      "hash": "0xbbe1492afc43e4295f3b631b51b7dade7f9fa1450467a1f53475a61ffbebe8fc",
       "number": 0
     },
-    "l2_time": 1768613438,
+    "l2": {
+    "hash": "0x9edf2fd0e9ae0f7b777acd0c272832ae6b59b74feefc58ca7df2d1b37b43cc6b",
+      "number": 0
+    },
+    "l2_time": 1700000000,
     "system_config": {
       "batcherAddr": "0x32171083fd74f0423eab1192f04125d3a8f0b1c2",
       "overhead": "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -29,16 +29,16 @@
   "regolith_time": 0,
   "canyon_time": 0,
   "delta_time": 0,
-  "ecotone_time": 0,
-  "fjord_time": 0,
-  "granite_time": 0,
-  "holocene_time": 0,
-  "isthmus_time": 0,
-  "jovian_time": 0,
+  "ecotone_time": 4102444800,
+  "fjord_time": 4102444800,
+  "granite_time": 4102444800,
+  "holocene_time": 4102444800,
+  "isthmus_time": 4102444800,
+  "jovian_time": 4102444800,
   "batch_inbox_address": "0x1b832b51c08be5e326a84336e11fee41578583f9",
-  "deposit_contract_address": "0x181522bb19Ae83E9984c469f67DAe5602F0BC3de",
-  "l1_system_config_address": "0xd99F56E9571fF37a7785336c449Ef2Ee09018c6d",
-  "protocol_versions_address": "0x2d0adf1795389d6fB7d231ea5D282F1b19be5495",
+  "deposit_contract_address": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+  "l1_system_config_address": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+  "protocol_versions_address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
   "chain_op_config": {
     "eip1559Elasticity": 6,
     "eip1559Denominator": 50,

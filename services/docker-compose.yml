@@ -27,6 +27,215 @@ services:
     ports:
       - "18088:8088"
 
+  gas-engine-postgres:
+    <<: *host-gateway
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ghost_gas
+      POSTGRES_USER: ghost
+      POSTGRES_PASSWORD: ${GAS_ENGINE_DB_PASSWORD:-ghostpass}
+    ports:
+      - "5433:5432"
+    volumes:
+      - gas_engine_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghost -d ghost_gas"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  gas-engine-redis:
+    <<: *host-gateway
+    image: redis:7-alpine
+    ports:
+      - "6381:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - gas_engine_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  gas-engine-migrate:
+    <<: *host-gateway
+    image: node:22-alpine
+    working_dir: /work
+    volumes:
+      - ./ghost-gas-engine:/work
+    environment:
+      DATABASE_URL: postgresql://ghost:${GAS_ENGINE_DB_PASSWORD:-ghostpass}@gas-engine-postgres:5432/ghost_gas
+      REDIS_URL: redis://gas-engine-redis:6379
+      SEED_SAMPLE_DATA: ${GAS_ENGINE_SEED_SAMPLE_DATA:-true}
+      RPC_L1: ${RPC_L1}
+      RPC_L2: ${RPC_L2}
+      RPC_L3: ${RPC_L3}
+      GAS_TOKEN_L1: ${GAS_TOKEN_L1}
+      GAS_TOKEN_L2: ${GAS_TOKEN_L2}
+      GAS_TOKEN_L3: ${GAS_TOKEN_L3}
+    depends_on:
+      gas-engine-postgres:
+        condition: service_healthy
+      gas-engine-redis:
+        condition: service_healthy
+    command: ["sh", "-lc", "npm install && npm run migrate"]
+    restart: "no"
+
+  ghost-gas-engine:
+    <<: *host-gateway
+    build:
+      context: ./ghost-gas-engine
+    image: ghostl/ghost-gas-engine:local
+    env_file:
+      - ./stack.env
+    environment:
+      PORT: 3210
+      DATABASE_URL: postgresql://ghost:${GAS_ENGINE_DB_PASSWORD:-ghostpass}@gas-engine-postgres:5432/ghost_gas
+      REDIS_URL: redis://gas-engine-redis:6379
+      CHAINS_CONFIG_PATH: /app/config/chains.json
+      POLICIES_PATH: /app/config/gas-policies.json
+      SEED_SAMPLE_DATA: ${GAS_ENGINE_SEED_SAMPLE_DATA:-true}
+      RPC_L1: ${RPC_L1}
+      RPC_L2: ${RPC_L2}
+      RPC_L3: ${RPC_L3}
+      GAS_TOKEN_L1: ${GAS_TOKEN_L1}
+      GAS_TOKEN_L2: ${GAS_TOKEN_L2}
+      GAS_TOKEN_L3: ${GAS_TOKEN_L3}
+      SIGNER_PRIVATE_KEY: ${GAS_ENGINE_SIGNER_PRIVATE_KEY}
+      SIGNER_PRIVATE_KEY_L1: ${GAS_ENGINE_SIGNER_PRIVATE_KEY_L1}
+      SIGNER_PRIVATE_KEY_L2: ${GAS_ENGINE_SIGNER_PRIVATE_KEY_L2}
+      SIGNER_PRIVATE_KEY_L3: ${GAS_ENGINE_SIGNER_PRIVATE_KEY_L3}
+      ADMIN_TOKEN: ${GAS_ENGINE_ADMIN_TOKEN}
+    ports:
+      - "3210:3210"
+    depends_on:
+      gas-engine-postgres:
+        condition: service_healthy
+      gas-engine-redis:
+        condition: service_healthy
+      gas-engine-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - node -e "fetch('http://127.0.0.1:3210/health').then(r=>{if(!r.ok)process.exit(1);}).catch(()=>process.exit(1));"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  ghost-gas-engine-worker:
+    <<: *host-gateway
+    build:
+      context: ./ghost-gas-engine
+    image: ghostl/ghost-gas-engine:local
+    env_file:
+      - ./stack.env
+    environment:
+      DATABASE_URL: postgresql://ghost:${GAS_ENGINE_DB_PASSWORD:-ghostpass}@gas-engine-postgres:5432/ghost_gas
+      REDIS_URL: redis://gas-engine-redis:6379
+      CHAINS_CONFIG_PATH: /app/config/chains.json
+      POLICIES_PATH: /app/config/gas-policies.json
+      RPC_L1: ${RPC_L1}
+      RPC_L2: ${RPC_L2}
+      RPC_L3: ${RPC_L3}
+      GAS_TOKEN_L1: ${GAS_TOKEN_L1}
+      GAS_TOKEN_L2: ${GAS_TOKEN_L2}
+      GAS_TOKEN_L3: ${GAS_TOKEN_L3}
+      SIGNER_PRIVATE_KEY: ${GAS_ENGINE_SIGNER_PRIVATE_KEY}
+      SIGNER_PRIVATE_KEY_L1: ${GAS_ENGINE_SIGNER_PRIVATE_KEY_L1}
+      SIGNER_PRIVATE_KEY_L2: ${GAS_ENGINE_SIGNER_PRIVATE_KEY_L2}
+      SIGNER_PRIVATE_KEY_L3: ${GAS_ENGINE_SIGNER_PRIVATE_KEY_L3}
+    command: ["node", "dist/worker.js"]
+    depends_on:
+      ghost-gas-engine:
+        condition: service_healthy
+    restart: unless-stopped
+
+  pil-postgres:
+    <<: *host-gateway
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ghost_pil
+      POSTGRES_USER: ghost
+      POSTGRES_PASSWORD: ${PIL_DB_PASSWORD:-ghostpass}
+    ports:
+      - "5434:5432"
+    volumes:
+      - pil_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghost -d ghost_pil"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  pil-migrate:
+    <<: *host-gateway
+    image: node:22-alpine
+    working_dir: /work
+    volumes:
+      - ./ghost-pil:/work
+    environment:
+      DATABASE_URL: postgresql://ghost:${PIL_DB_PASSWORD:-ghostpass}@pil-postgres:5432/ghost_pil
+      PIL_SEED_SAMPLE_DATA: ${PIL_SEED_SAMPLE_DATA:-true}
+      PIL_REGISTRY_URL: http://ghost-registry:8088
+      PIL_CHAIN_CONFIG_PATH: /work/config/chains.json
+      PIL_JURISDICTIONS_PATH: /work/config/jurisdictions.json
+      PIL_LEGAL_SIGNALS_PATH: /work/config/legal-signals.json
+    depends_on:
+      pil-postgres:
+        condition: service_healthy
+    command: ["sh", "-lc", "npm install && npm run migrate"]
+    restart: "no"
+
+  ghost-pil:
+    <<: *host-gateway
+    build:
+      context: ./ghost-pil
+    image: ghostl/ghost-pil:local
+    env_file:
+      - ./stack.env
+    environment:
+      PORT: 3220
+      DATABASE_URL: postgresql://ghost:${PIL_DB_PASSWORD:-ghostpass}@pil-postgres:5432/ghost_pil
+      PIL_REGISTRY_URL: http://ghost-registry:8088
+      PIL_CHAIN_CONFIG_PATH: /app/config/chains.json
+      PIL_JURISDICTIONS_PATH: /app/config/jurisdictions.json
+      PIL_LEGAL_SIGNALS_PATH: /app/config/legal-signals.json
+    ports:
+      - "3220:3220"
+    depends_on:
+      pil-postgres:
+        condition: service_healthy
+      pil-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - node -e "fetch('http://127.0.0.1:3220/health').then(r=>{if(!r.ok)process.exit(1);}).catch(()=>process.exit(1));"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  ghost-pil-worker:
+    <<: *host-gateway
+    build:
+      context: ./ghost-pil
+    image: ghostl/ghost-pil:local
+    env_file:
+      - ./stack.env
+    environment:
+      DATABASE_URL: postgresql://ghost:${PIL_DB_PASSWORD:-ghostpass}@pil-postgres:5432/ghost_pil
+      PIL_REGISTRY_URL: http://ghost-registry:8088
+      PIL_CHAIN_CONFIG_PATH: /app/config/chains.json
+      PIL_JURISDICTIONS_PATH: /app/config/jurisdictions.json
+      PIL_LEGAL_SIGNALS_PATH: /app/config/legal-signals.json
+    command: ["node", "dist/worker.js"]
+    depends_on:
+      ghost-pil:
+        condition: service_healthy
+    restart: unless-stopped
+
   alerts-service:
     <<: *host-gateway
     build:
@@ -782,3 +991,8 @@ services:
 networks:
   default:
     name: ghostl-services
+
+volumes:
+  gas_engine_pg_data:
+  gas_engine_redis_data:
+  pil_pg_data:

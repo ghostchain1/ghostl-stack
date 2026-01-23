@@ -42,8 +42,21 @@ const legacyNavSections: { title: string; items: NavItem[] }[] = [
     items: [
       { href: '/observability', label: 'Overview' },
       { href: '/observability/alerts', label: 'Alerts', flag: 'observability.alerts' },
+      { href: '/observability/gas', label: 'Chain AI' },
       { href: '/observability/logs', label: 'Logs', flag: 'observability.grafana' },
       { href: '/observability/stack', label: 'Stack', flag: 'observability.grafana' }
+    ]
+  },
+  {
+    title: 'Protocol Intelligence',
+    items: [
+      { href: '/protocol/intelligence', label: 'Overview' },
+      { href: '/protocol/risk', label: 'Risk' },
+      { href: '/protocol/security', label: 'Security' },
+      { href: '/protocol/economics', label: 'Economics' },
+      { href: '/protocol/simulations', label: 'Simulations' },
+      { href: '/protocol/recommendations', label: 'Recommendations' },
+      { href: '/protocol/governance', label: 'Governance' }
     ]
   },
   {

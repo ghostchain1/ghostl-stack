@@ -78,7 +78,7 @@ export GAS_TOKEN_DECIMALS=18
 export GAS_TOKEN_INITIAL_SUPPLY=1000000000000000000000000000
 export GAS_TOKEN_RECIPIENT=0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
 forge script infra/opstack/contracts/script/DeployGasToken.s.sol:DeployGasToken \
-  --rpc-url http://localhost:18545 --broadcast
+  --rpc-url http://localhost:18545 --broadcast --gas-estimate-multiplier 2
 ```
 
 **Initialize L2 contracts with the gas token (requires redeploy):**
