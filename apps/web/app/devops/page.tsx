@@ -9,6 +9,8 @@ import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
 import type { Release, ForkEvent } from '@ghostl/types/devops';
 import { UpgradePlans } from '../../src/modules/devops/components/UpgradePlans';
 
+type UpgradeJob = { id: string; target: string; status: 'planned' | 'running' | 'failed' | 'done'; startedAt?: string };
+
 async function loadDevOps() {
   const [releasesRes, forksRes, flagsRes, upgradesRes, plansRes] = await Promise.all([
     serverApiRequest<Release[]>('/devops/releases', { init: { cache: 'no-store' } }),
@@ -42,14 +44,17 @@ async function loadDevOps() {
         description: flag.description
       }))
     : [];
-  const jobs = upgradesRes.ok
-    ? upgradesRes.data.map((job, index) => ({
-        id: job.id || job.target || `upgrade-${index + 1}`,
-        target: job.target || 'unknown',
-        status:
-          job.status === 'running' || job.status === 'failed' || job.status === 'done' ? job.status : 'planned',
-        startedAt: job.startedAt
-      }))
+  const jobs: UpgradeJob[] = upgradesRes.ok
+    ? upgradesRes.data.map((job, index) => {
+        const status: UpgradeJob['status'] =
+          job.status === 'running' || job.status === 'failed' || job.status === 'done' ? job.status : 'planned';
+        return {
+          id: job.id || job.target || `upgrade-${index + 1}`,
+          target: job.target || 'unknown',
+          status,
+          startedAt: job.startedAt
+        };
+      })
     : [];
   const rollbacks = plansRes.ok
     ? plansRes.data

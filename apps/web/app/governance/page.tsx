@@ -4,6 +4,7 @@ import { ExecutionQueue } from '../../src/modules/governance/components/Executio
 import { DelegationPanel } from '../../src/modules/governance/components/DelegationPanel';
 import { serverApiRequest } from '../../src/lib/server-api';
 import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
+import type { ApiError } from '../../src/lib/api';
 import type { Proposal, Vote } from '@ghostl/types/governance';
 
 type QueueStatus = 'queued' | 'executed' | 'canceled';
@@ -24,14 +25,13 @@ async function loadGovernance() {
       init: { cache: 'no-store' }
     })
   ]);
-  const errors = [
-    !proposalsRes.ok && { title: 'Governance proposals', error: proposalsRes.error },
-    !votesRes.ok && { title: 'Governance votes', error: votesRes.error },
-    !queueRes.ok && { title: 'Execution queue', error: queueRes.error },
-    !delegationsRes.ok && { title: 'Delegations', error: delegationsRes.error },
-    !snapshotRes.ok && { title: 'Snapshot feed', error: snapshotRes.error },
-    !forumRes.ok && { title: 'Governance forum', error: forumRes.error }
-  ].filter(Boolean) as Array<{ title: string; error: typeof proposalsRes extends { ok: false } ? typeof proposalsRes.error : never }>;
+  const errors: Array<{ title: string; error: ApiError }> = [];
+  if (!proposalsRes.ok) errors.push({ title: 'Governance proposals', error: proposalsRes.error });
+  if (!votesRes.ok) errors.push({ title: 'Governance votes', error: votesRes.error });
+  if (!queueRes.ok) errors.push({ title: 'Execution queue', error: queueRes.error });
+  if (!delegationsRes.ok) errors.push({ title: 'Delegations', error: delegationsRes.error });
+  if (!snapshotRes.ok) errors.push({ title: 'Snapshot feed', error: snapshotRes.error });
+  if (!forumRes.ok) errors.push({ title: 'Governance forum', error: forumRes.error });
 
   const proposals = proposalsRes.ok ? proposalsRes.data : [];
   const votes = votesRes.ok ? votesRes.data : [];

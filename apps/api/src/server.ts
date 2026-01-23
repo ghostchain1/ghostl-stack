@@ -392,7 +392,8 @@ type RpcRegistryResponse = {
   chains?: RpcRegistryChain[];
 };
 
-type RpcCache = { expiresAt: number; endpoints: unknown[] };
+type NormalizedRpcEndpoint = NonNullable<ReturnType<typeof normalizeRpcEndpoint>>;
+type RpcCache = { expiresAt: number; endpoints: NormalizedRpcEndpoint[] };
 let rpcEndpointCache: RpcCache | null = null;
 
 const withTimeout = async <T>(promise: Promise<T>, ms: number) => {
@@ -512,12 +513,14 @@ const normalizeRpcEndpoint = (entry: RpcRegistryEntry, source: string) => {
       : entry.auth && entry.auth !== 'none'
         ? 'private'
         : 'public';
+  const layer = entry.chain?.layer;
+  const normalizedLayer = layer === 'L1' || layer === 'L2' || layer === 'L3' ? layer : undefined;
   return {
     id,
     chainId: chainId ? String(chainId) : undefined,
     chainKey: entry.chain?.chainKey,
     chainName: entry.chain?.name || entry.name,
-    layer: entry.chain?.layer,
+    layer: normalizedLayer,
     chainType: entry.chain?.chainType,
     network: entry.chain?.network,
     url,
@@ -643,16 +646,16 @@ const layerForChainId = (chainId?: string) => {
   return undefined;
 };
 
-const getRpcEndpoints = async () => {
+const getRpcEndpoints = async (): Promise<NormalizedRpcEndpoint[]> => {
   const now = Date.now();
   if (rpcEndpointCache && rpcEndpointCache.expiresAt > now) {
     return rpcEndpointCache.endpoints;
   }
   const ttl = 5 * 60 * 1000 + Math.floor(Math.random() * 10 * 60 * 1000);
-  let endpoints: Array<NonNullable<ReturnType<typeof normalizeRpcEndpoint>>> = [];
+  let endpoints: NormalizedRpcEndpoint[] = [];
   try {
     const registry = (await withTimeout(fetchRegistryEndpoints(), 5000)) as {
-      endpoints: Array<NonNullable<ReturnType<typeof normalizeRpcEndpoint>>>;
+      endpoints: NormalizedRpcEndpoint[];
       chainIds: string[];
     };
     endpoints = registry.endpoints;
@@ -800,6 +803,7 @@ const CONTRACT_SEED_SOURCES: ContractSeedSource[] = [
   { envKey: 'BRIDGE_L2L3_ADDRESS', name: 'L2L3Bridge', layer: 'l2' },
   { envKey: 'BRIDGE_ADDRESS', name: 'L2L3Bridge', layer: 'l2' },
   { envKey: 'GUARD_POLICY_ADDRESS', name: 'GuardPolicy', layer: 'l2' },
+  { envKey: 'L1_TOKEN_ADDRESS', name: 'GhostTokenL1', layer: 'l1' },
   { envKey: 'L2_TOKEN_ADDRESS', name: 'GhostTokenL2', layer: 'l2' },
   { envKey: 'L1_ROLLUP_L2_ADDRESS', name: 'OptimisticRollup', layer: 'l1' },
   { envKey: 'L2_ROLLUP_L3_ADDRESS', name: 'OptimisticRollup', layer: 'l2' },
@@ -1698,13 +1702,16 @@ identityServicesPromise.then(async (identity) => {
   const ghostApiLimiter = createRateLimiter({ windowMs: 60_000, max: 120 });
 
   app.get(['/v1/chain', '/chain'], chainGuard, ghostApiLimiter, async (_req, res) => {
-    const registryEndpoints = await getRpcEndpoints().catch(() => []);
-    const registryByLayer: Record<'L1' | 'L2' | 'L3', typeof registryEndpoints> = {
+    const registryEndpoints = (await getRpcEndpoints().catch(
+      () => [] as NormalizedRpcEndpoint[]
+    )) as NormalizedRpcEndpoint[];
+    const registryByLayer: Record<'L1' | 'L2' | 'L3', NormalizedRpcEndpoint[]> = {
       L1: [],
       L2: [],
       L3: []
     };
     registryEndpoints.forEach((endpoint) => {
+      if (!endpoint) return;
       const layer = endpoint.layer;
       if (layer === 'L1' || layer === 'L2' || layer === 'L3') {
         registryByLayer[layer].push(endpoint);
@@ -2161,7 +2168,13 @@ identityServicesPromise.then(async (identity) => {
           });
         }
       }
-      const status = (await rpcCall<Record<string, string>>('txpool_status', [], chain).catch(() => ({}))) || {};
+      const status = (await rpcCall<{ pending?: string; queued?: string }>('txpool_status', [], chain).catch(
+        () =>
+          ({
+            pending: '0x0',
+            queued: '0x0'
+          } as { pending: string; queued: string })
+      )) as { pending?: string; queued?: string };
       const pending = status.pending ? parseInt(status.pending, 16) || 0 : 0;
       const queued = status.queued ? parseInt(status.queued, 16) || 0 : 0;
       const mempool = {

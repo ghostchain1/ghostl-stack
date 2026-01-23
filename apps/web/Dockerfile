@@ -1,8 +1,8 @@
 FROM node:22.21.0-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-COPY apps/*/package.json apps/*/package.json
-COPY packages/*/package.json packages/*/package.json
+COPY apps ./apps
+COPY packages ./packages
 RUN npm install --include-workspace-root --workspaces
 
 FROM deps AS dev

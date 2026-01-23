@@ -4,6 +4,9 @@ import { z } from 'zod';
 
 loadEnv({ path: path.join(process.cwd(), '.env.local') });
 
+const emptyToUndefined = (value: unknown) =>
+  typeof value === 'string' && value.trim() === '' ? undefined : value;
+
 const EnvSchema = z.object({
   SESSION_SECRET: z.string().min(1).default('dev-secret'),
   SESSION_STORE_PATH: z.string().default('.sessions'),
@@ -16,8 +19,8 @@ const EnvSchema = z.object({
   RELAYER_URL: z.string().url().default('http://localhost:7171'),
   GUARD_URL: z.string().url().default('http://localhost:7070'),
   GUARD_ADMIN_TOKEN: z.string().optional(),
-  LOKI_URL: z.string().url().optional(),
-  ALERTMANAGER_URL: z.string().url().optional(),
+  LOKI_URL: z.preprocess(emptyToUndefined, z.string().url().optional()),
+  ALERTMANAGER_URL: z.preprocess(emptyToUndefined, z.string().url().optional()),
   OBSERVABILITY_CRITICAL_LOG_PATH: z.string().default('./data/critical-logs.jsonl'),
   OBSERVABILITY_CRITICAL_LOG_SECRET: z.string().optional(),
   OBSERVABILITY_LOG_MAX_LIMIT: z.coerce.number().int().min(50).max(5000).default(500),
@@ -54,7 +57,7 @@ const EnvSchema = z.object({
   CONTRACT_PAUSE_QUERY: z.string().optional(),
   CONTRACT_STATE_FILE: z.string().optional(),
   CONTRACT_ADMIN_KEY: z.string().optional(),
-  CONTRACT_RPC_URL: z.string().url().optional(),
+  CONTRACT_RPC_URL: z.preprocess(emptyToUndefined, z.string().url().optional()),
   CONTRACT_CHAIN: z.enum(['l1', 'l2', 'l3']).default('l2'),
   CONTRACT_TARGET_ADDRESS: z.string().optional(),
   CONTRACT_PROXY_ADMIN_ADDRESS: z.string().optional(),
@@ -66,18 +69,18 @@ const EnvSchema = z.object({
   PAYOUT_SERVICE_URL: z.string().url().default('http://localhost:7629'),
   TREASURY_MULTISIG_THRESHOLD: z.coerce.number().int().min(1).max(10).default(2),
   TREASURY_MULTISIG_SIGNERS: z.string().optional(),
-  SLACK_WEBHOOK_URL: z.string().url().optional(),
-  DISCORD_WEBHOOK_URL: z.string().url().optional(),
-  ALERT_WEBHOOK_URL: z.string().url().optional(),
+  SLACK_WEBHOOK_URL: z.preprocess(emptyToUndefined, z.string().url().optional()),
+  DISCORD_WEBHOOK_URL: z.preprocess(emptyToUndefined, z.string().url().optional()),
+  ALERT_WEBHOOK_URL: z.preprocess(emptyToUndefined, z.string().url().optional()),
   ALERT_WEBHOOK_SECRET: z.string().optional(),
   BRIDGE_ADDRESS: z.string().optional(),
   BRIDGE_L2L3_ADDRESS: z.string().optional(),
   L1_ROLLUP_L2_ADDRESS: z.string().optional(),
   L2_ROLLUP_L3_ADDRESS: z.string().optional(),
   L3_INBOX_ADDRESS: z.string().optional(),
-  EMAIL_SMTP_URL: z.string().optional(),
-  EMAIL_FROM: z.string().email().optional(),
-  EMAIL_TO: z.string().email().optional(),
+  EMAIL_SMTP_URL: z.preprocess(emptyToUndefined, z.string().optional()),
+  EMAIL_FROM: z.preprocess(emptyToUndefined, z.string().email().optional()),
+  EMAIL_TO: z.preprocess(emptyToUndefined, z.string().email().optional()),
   EXECUTION_APPROVAL_TOKEN: z.string().optional(),
   EXECUTION_ALLOWLIST: z.string().optional(),
   EXECUTION_MAX_ACTIONS: z.coerce.number().int().min(1).max(50).default(10),
@@ -107,15 +110,15 @@ const EnvSchema = z.object({
   SNAPSHOT_SPACE: z.string().optional(),
   SNAPSHOT_API_URL: z.string().optional(),
   FORUM_URL: z.string().optional(),
-  VAULT_ADDR: z.string().url().optional(),
-  VAULT_HEALTH_URL: z.string().optional(),
+  VAULT_ADDR: z.preprocess(emptyToUndefined, z.string().url().optional()),
+  VAULT_HEALTH_URL: z.preprocess(emptyToUndefined, z.string().optional()),
   VAULT_TOKEN: z.string().optional(),
   HARDWARE_WALLET_REQUIRED: z
     .string()
     .transform((v) => v === 'true')
     .optional(),
   KYC_PROVIDER_NAME: z.string().optional(),
-  KYC_PROVIDER_URL: z.string().url().optional(),
+  KYC_PROVIDER_URL: z.preprocess(emptyToUndefined, z.string().url().optional()),
   KYC_PROVIDER_STATUS: z.enum(['connected', 'pending', 'error']).optional(),
   KYC_STORE_PATH: z.string().optional(),
   NFT_STORE_PATH: z.string().optional(),

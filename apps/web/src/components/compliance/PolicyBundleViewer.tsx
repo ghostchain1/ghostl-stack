@@ -22,7 +22,7 @@ export function PolicyBundleViewer({ bundle }: { bundle: PolicyBundle }) {
     <div className="card">
       <h3>Active policy bundle</h3>
       <div className="muted">{bundle.metadata.bundleId} · v{bundle.metadata.version}</div>
-      <div className="filter-row" style={{ marginTop: 12 }}>
+      <div className="row" style={{ marginTop: 12, gap: 8, flexWrap: 'wrap' }}>
         <div className="badge">
           Conflict: {bundle.defaults?.conflictStrategy || 'most_restrictive'}
         </div>

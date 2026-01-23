@@ -7,6 +7,7 @@ import { BridgeMetrics } from '../../src/modules/bridge/components/BridgeMetrics
 import type { Transfer } from '@ghostl/types/bridge';
 import { serverApiRequest } from '../../src/lib/server-api';
 import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
+import type { ApiError } from '../../src/lib/api';
 
 type RawBridge = {
   id?: string;
@@ -16,7 +17,16 @@ type RawBridge = {
   fees?: string;
 };
 
-async function loadBridge() {
+type BridgeLoadResult =
+  | { error: ApiError }
+  | {
+      bridges: Array<{ id: string; src: string; dst: string; status: string }>;
+      transfers: Transfer[];
+      pools: Array<{ id: string; chain: string; liquidity: string; fee: string }>;
+      summary?: { pending: number; finalized: number; signaturesMissing: number };
+    };
+
+async function loadBridge(): Promise<BridgeLoadResult> {
   const result = await serverApiRequest<{
     networks?: RawBridge[];
     transfers?: any[];

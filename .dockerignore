@@ -50,7 +50,5 @@ contracts
 contracts/**
 chains
 chains/**
-apps/ghost-ui
-apps/ghost-ui/**
 apps/worker
 apps/worker/**

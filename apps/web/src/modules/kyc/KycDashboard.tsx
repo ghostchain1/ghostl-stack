@@ -83,7 +83,7 @@ export function KycDashboard({ initialSummary, initialApplicants, initialProvide
     walletAddress: '',
     chainId: 'l2'
   });
-  const formatStatus = (err: unknown, fallback: string) => {
+  const formatError = (err: unknown, fallback: string) => {
     if (err && typeof err === 'object' && 'message' in err) {
       const info = formatApiError(err as ApiError);
       return `${info.method} ${info.endpoint} · ${info.status} · ${info.hint}`;
@@ -125,13 +125,13 @@ export function KycDashboard({ initialSummary, initialApplicants, initialProvide
     try {
       await Promise.all([loadSummary(), loadApplicants(), loadProviders(), loadPolicy()]);
     } catch (err) {
-      setStatus(formatStatus(err, 'Failed to refresh'));
+      setStatus(formatError(err, 'Failed to refresh'));
     }
   };
 
   useEffect(() => {
     loadApplicants(filters).catch((err) => {
-      setStatus(formatStatus(err, 'Failed to load applicants'));
+      setStatus(formatError(err, 'Failed to load applicants'));
     });
   }, [filters]);
 
@@ -158,7 +158,7 @@ export function KycDashboard({ initialSummary, initialApplicants, initialProvide
       await reloadAll();
       setStatus('Review submitted.');
     } catch (err) {
-      setStatus(formatStatus(err, 'Review failed'));
+      setStatus(formatError(err, 'Review failed'));
     }
   };
 
@@ -174,7 +174,7 @@ export function KycDashboard({ initialSummary, initialApplicants, initialProvide
       await reloadAll();
       setStatus('Reviewer assigned.');
     } catch (err) {
-      setStatus(formatStatus(err, 'Assign failed'));
+      setStatus(formatError(err, 'Assign failed'));
     }
   };
 
@@ -191,7 +191,7 @@ export function KycDashboard({ initialSummary, initialApplicants, initialProvide
       await reloadAll();
       setStatus('Document added.');
     } catch (err) {
-      setStatus(formatStatus(err, 'Document add failed'));
+      setStatus(formatError(err, 'Document add failed'));
     }
   };
 
@@ -214,7 +214,7 @@ export function KycDashboard({ initialSummary, initialApplicants, initialProvide
       await reloadAll();
       setStatus('Document updated.');
     } catch (err) {
-      setStatus(formatStatus(err, 'Document review failed'));
+      setStatus(formatError(err, 'Document review failed'));
     }
   };
 
@@ -233,7 +233,7 @@ export function KycDashboard({ initialSummary, initialApplicants, initialProvide
       await reloadAll();
       setStatus('Risk override applied.');
     } catch (err) {
-      setStatus(formatStatus(err, 'Risk override failed'));
+      setStatus(formatError(err, 'Risk override failed'));
     }
   };
 
@@ -249,7 +249,7 @@ export function KycDashboard({ initialSummary, initialApplicants, initialProvide
       await reloadAll();
       setStatus('Screening updated.');
     } catch (err) {
-      setStatus(formatStatus(err, 'Screening update failed'));
+      setStatus(formatError(err, 'Screening update failed'));
     }
   };
 
@@ -281,7 +281,7 @@ export function KycDashboard({ initialSummary, initialApplicants, initialProvide
       await reloadAll();
       setStatus('Applicant created.');
     } catch (err) {
-      setStatus(formatStatus(err, 'Create failed'));
+      setStatus(formatError(err, 'Create failed'));
     }
   };
 
