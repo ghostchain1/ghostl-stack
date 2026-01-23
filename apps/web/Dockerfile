@@ -3,7 +3,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/*/package.json apps/*/package.json
 COPY packages/*/package.json packages/*/package.json
-RUN npm ci --include-workspace-root
+RUN npm install --include-workspace-root --workspaces
 
 FROM deps AS dev
 WORKDIR /app
