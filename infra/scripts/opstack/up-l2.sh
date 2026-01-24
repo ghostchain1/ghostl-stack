@@ -114,7 +114,7 @@ if [ -n "$L1_GENESIS_HASH" ] && [ "$L1_GENESIS_HASH" != "null" ]; then
 fi
 
 # Bring up the stack (proposer omitted since L2OO is not deployed in this devnet).
-docker compose "${COMPOSE_ENV_ARGS[@]}" up -d l2-geth op-node op-sequencer op-batcher
+docker compose "${COMPOSE_ENV_ARGS[@]}" up -d l2-geth rpc-forward-l2-18547 op-node op-sequencer op-batcher
 
 echo "Waiting for L2 RPC..."
 for i in $(seq 1 60); do

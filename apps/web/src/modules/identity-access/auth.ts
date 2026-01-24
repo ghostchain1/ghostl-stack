@@ -1,10 +1,11 @@
 import type { NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
 import { normalizeRole, roleOrder, type Role } from './access-policy';
+import { resolveApiBase } from '../../lib/runtime';
 
 export type SessionUser = { id?: string; email?: string; username?: string; wallets?: string[]; role?: Role };
 
-const API_URL = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = resolveApiBase();
 
 export const getSessionUser = async (req?: NextRequest): Promise<{ user?: SessionUser }> => {
   try {

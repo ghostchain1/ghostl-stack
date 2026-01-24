@@ -1,5 +1,10 @@
+x-host-gateway: &host-gateway
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+
 services:
   ghostl-api:
+    <<: *host-gateway
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -8,6 +13,7 @@ services:
       - "4000:4000"
     env_file:
       - ./apps/api/.env.example
+      - ./apps/api/.env.docker
       - ./services/stack.env
     environment:
       - NODE_ENV=development
@@ -22,6 +28,7 @@ services:
       - ./apps/api/data:/app/apps/api/data
 
   ghostl-web:
+    <<: *host-gateway
     build:
       context: .
       dockerfile: apps/web/Dockerfile
@@ -30,18 +37,19 @@ services:
       - "3200:3200"
     env_file:
       - ./apps/web/.env.example
+      - ./apps/web/.env.docker
     environment:
       - NODE_ENV=development
       - PORT=3200
       - NEXT_PUBLIC_API_URL=http://localhost:4000
       - API_INTERNAL_URL=http://ghostl-api:4000
       - NEXT_PUBLIC_AI_CORE_URL=http://localhost:3210
-      - AI_CORE_URL=http://ghost-gas-engine:3210
+      - AI_CORE_URL=http://host.docker.internal:3210
       - NEXT_PUBLIC_GAS_ENGINE_URL=http://localhost:3210
-      - GAS_ENGINE_URL=http://ghost-gas-engine:3210
+      - GAS_ENGINE_URL=http://host.docker.internal:3210
       - GAS_ENGINE_ADMIN_TOKEN=${GAS_ENGINE_ADMIN_TOKEN}
       - NEXT_PUBLIC_PIL_URL=http://localhost:3220
-      - PIL_URL=http://ghost-pil:3220
+      - PIL_URL=http://host.docker.internal:3220
     volumes:
       - ./:/app
     depends_on:

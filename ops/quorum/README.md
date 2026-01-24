@@ -13,7 +13,8 @@ Run:
 ./ops/quorum/quorum-attest.sh \
   --attestation ./ops/docker/attestations/immutability-attestation.json \
   --zk ./ops/zk/immutability-proof.json \
-  --out ./ops/quorum/quorum-attestation.json
+  --out ./ops/quorum/quorum-attestation.json \
+  --selection ./ops/geo-risk/quorum-selection.json
 ```
 
 Set policy in `quorum-policy.json`.

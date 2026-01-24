@@ -12,14 +12,28 @@ ROLLBACK_ARMED="false"
 SIGNING_METHOD=""
 ANOMALY_DIR="$ROOT_DIR/ops/ai/anomaly"
 DRIFT_DIR="$ROOT_DIR/ops/ai/drift"
+THREAT_DIR="$ROOT_DIR/ops/ai/threat-model"
+COMPLIANCE_DIR="$ROOT_DIR/ops/compliance"
+GEO_RISK_DIR="$ROOT_DIR/ops/geo-risk"
 CONFIDENTIAL_DIR="$ROOT_DIR/ops/confidential"
 ONCHAIN_DIR="$ROOT_DIR/ops/onchain"
 MEV_DIR="$ROOT_DIR/ops/mev"
 ZK_DIR="$ROOT_DIR/ops/zk"
 QUORUM_DIR="$ROOT_DIR/ops/quorum"
+POLICY_DIR="$ROOT_DIR/ops/policy"
+GOVERNANCE_DIR="$ROOT_DIR/ops/governance"
+SATELLITE_DIR="$ROOT_DIR/ops/satellite"
+ZKML_DIR="$ROOT_DIR/ops/zkml"
 ZK_PROVER_REQUIRED="${ZK_PROVER_REQUIRED:-true}"
 ZK_ONCHAIN_REQUIRED="${ZK_ONCHAIN_REQUIRED:-true}"
 QUORUM_REQUIRED="${QUORUM_REQUIRED:-true}"
+ZK_RECURSION_REQUIRED="${ZK_RECURSION_REQUIRED:-true}"
+ZK_RECURSION_ONCHAIN_REQUIRED="${ZK_RECURSION_ONCHAIN_REQUIRED:-true}"
+CROSS_CHAIN_ANCHOR_REQUIRED="${CROSS_CHAIN_ANCHOR_REQUIRED:-true}"
+POLICY_SELF_HEAL_REQUIRED="${POLICY_SELF_HEAL_REQUIRED:-true}"
+GOVERNANCE_ENFORCEMENT_REQUIRED="${GOVERNANCE_ENFORCEMENT_REQUIRED:-true}"
+SATELLITE_REQUIRED="${SATELLITE_REQUIRED:-true}"
+ZKML_REQUIRED="${ZKML_REQUIRED:-true}"
 
 usage() {
   cat <<'USAGE'
@@ -91,8 +105,8 @@ DID_KEY_PATH="${GHOST_DID_KEY_PATH:-$ATTEST_DIR/did-ed25519.pem}"
 DID_PUB_PATH="${GHOST_DID_PUB_PATH:-$ATTEST_DIR/did-ed25519.pub.pem}"
 DID_DOC_PATH="$ATTEST_DIR/did-key.json"
 DID_VC_PATH="$ATTEST_DIR/immutability-vc.json"
-mkdir -p "$ANOMALY_DIR"
-mkdir -p "$DRIFT_DIR" "$CONFIDENTIAL_DIR" "$ONCHAIN_DIR" "$MEV_DIR" "$ZK_DIR" "$QUORUM_DIR"
+mkdir -p "$ANOMALY_DIR" "$THREAT_DIR" "$COMPLIANCE_DIR" "$GEO_RISK_DIR"
+mkdir -p "$DRIFT_DIR" "$CONFIDENTIAL_DIR" "$ONCHAIN_DIR" "$MEV_DIR" "$ZK_DIR" "$QUORUM_DIR" "$POLICY_DIR" "$GOVERNANCE_DIR" "$SATELLITE_DIR" "$ZKML_DIR"
 mkdir -p "$SNAPSHOT_DIR" "$SNAPSHOT_DIR/compose" "$SNAPSHOT_DIR/env" "$SNAPSHOT_DIR/inspect" "$SNAPSHOT_DIR/proofs" "$ATTEST_DIR"
 
 log "Snapshot directory: $SNAPSHOT_DIR"
@@ -505,6 +519,11 @@ def sha256(path):
         h.update(f.read())
     return h.hexdigest()
 
+def sha256_optional(path):
+    if not os.path.isfile(path):
+        return None
+    return sha256(path)
+
 def image_info(image):
     try:
         data=json.loads(subprocess.check_output(["docker","image","inspect",image],text=True))
@@ -850,7 +869,7 @@ findings=[]
 severity="INFO"
 
 def bump(level):
-    nonlocal severity
+    global severity
     order=["INFO","WARN","CRITICAL"]
     if order.index(level) > order.index(severity):
         severity=level
@@ -1002,6 +1021,15 @@ if [[ "$MEV_SEVERITY" == "CRITICAL" ]]; then
   abort "MEV monitoring flagged CRITICAL severity."
 fi
 
+if [[ -x "$ROOT_DIR/ops/geo-risk/select-quorum.sh" ]]; then
+  "$ROOT_DIR/ops/geo-risk/select-quorum.sh" --seed "$TIMESTAMP" --out "$GEO_RISK_DIR/quorum-selection.json"
+  cp "$GEO_RISK_DIR/quorum-selection.json" "$SNAPSHOT_DIR/quorum-selection.json"
+fi
+
+if [[ ! -f "$SNAPSHOT_DIR/quorum-selection.json" ]]; then
+  abort "Geo-risk quorum selection missing."
+fi
+
 python3 - "$SNAPSHOT_DIR/immutability-input.json" \
   "$SNAPSHOT_DIR/chain-data-fingerprints.json" \
   "$SNAPSHOT_DIR/chain-data-fingerprints-post.json" \
@@ -1100,6 +1128,35 @@ PY
 
 if [[ "$ZK_ONCHAIN_REQUIRED" == "true" && "$ZK_ONCHAIN_STATUS" != "submitted" ]]; then
   abort "ZK on-chain verification missing or not submitted."
+fi
+
+if [[ -x "$ROOT_DIR/ops/ai/threat-model/generate.sh" ]]; then
+  "$ROOT_DIR/ops/ai/threat-model/generate.sh" --mode "$MODE" --snapshot "$SNAPSHOT_DIR"
+fi
+
+if [[ ! -f "$SNAPSHOT_DIR/risk-summary.json" ]]; then
+  abort "Threat model risk summary missing."
+fi
+
+THREAT_SEVERITY=$(python3 - "$SNAPSHOT_DIR/risk-summary.json" <<'PY'
+import json,sys
+data=json.load(open(sys.argv[1]))
+print(data.get("severity","INFO"))
+PY
+)
+
+if [[ "$THREAT_SEVERITY" == "CRITICAL" ]]; then
+  log "Threat model severity CRITICAL - activating kill switch."
+  "$ROOT_DIR/ops/security/kill-switch/activate.sh" --snapshot "$SNAPSHOT_DIR" --mode "$MODE" --reason "threat_model_critical" || true
+  abort "Threat model flagged CRITICAL severity."
+fi
+
+if [[ -x "$ROOT_DIR/ops/compliance/bundle.sh" ]]; then
+  "$ROOT_DIR/ops/compliance/bundle.sh" --snapshot "$SNAPSHOT_DIR"
+fi
+
+if [[ ! -f "$SNAPSHOT_DIR/evidence-bundle.json" ]]; then
+  abort "Compliance evidence bundle missing."
 fi
 
 python3 - "$SNAPSHOT_DIR/oci-image-provenance-post.json" "${rendered_configs[@]}" <<'PY'
@@ -1277,6 +1334,10 @@ payload={
   "driftReport": sha256(os.path.join(snap,"drift-report.json")),
   "confidentialCompute": sha256(os.path.join(snap,"confidential-cca.json")),
   "mevReport": sha256(os.path.join(snap,"mev-report.json")),
+  "threatModel": sha256(os.path.join(snap,"risk-summary.json")),
+  "complianceEvidence": sha256(os.path.join(snap,"evidence-bundle.json")),
+  "geoRiskSelection": sha256(os.path.join(snap,"quorum-selection.json")),
+  "formalVerification": sha256_optional(os.path.join(snap,"formal-verification-report.json")),
   "zkProof": sha256(os.path.join(snap,"immutability-proof.json")),
   "zkVerifier": sha256(os.path.join(snap,"immutability-proof.verifier.json")),
   "zkOnchain": sha256(os.path.join(snap,"immutability-proof.onchain.json")),
@@ -1538,48 +1599,13 @@ payload["proof"]=proof
 json.dump(payload,open(out_path,"w"),indent=2)
 PY
 
-if [[ -x "$ROOT_DIR/ops/onchain/notarize.sh" ]]; then
-  if [[ -n "${GHOST_NOTARIZATION_RPC_URL:-}" ]]; then
-    "$ROOT_DIR/ops/onchain/notarize.sh" \
-      --attestation "$attestation_json" \
-      --merkle "$ATTEST_DIR/chain-state-merkle-proofs.json" \
-      --oci "$ATTEST_DIR/oci-image-provenance.json" \
-      --vc "$DID_VC_PATH" \
-      --zk "$ZK_PROOF_PATH" \
-      --out "$ONCHAIN_DIR/notarization.json" \
-      --rpc "$GHOST_NOTARIZATION_RPC_URL"
-  else
-    "$ROOT_DIR/ops/onchain/notarize.sh" \
-      --attestation "$attestation_json" \
-      --merkle "$ATTEST_DIR/chain-state-merkle-proofs.json" \
-      --oci "$ATTEST_DIR/oci-image-provenance.json" \
-      --vc "$DID_VC_PATH" \
-      --zk "$ZK_PROOF_PATH" \
-      --out "$ONCHAIN_DIR/notarization.json"
-  fi
-fi
-
-if [[ ! -f "$ONCHAIN_DIR/notarization.json" ]]; then
-  python3 - "$ONCHAIN_DIR/notarization.json" <<'PY'
-import json,datetime,sys
-payload={
-  "timestamp": datetime.datetime.utcnow().isoformat()+"Z",
-  "status": "skipped",
-  "note": "notarization_script_missing",
-  "txHash": None,
-  "blockNumber": None
-}
-json.dump(payload,open(sys.argv[1],"w"),indent=2)
-PY
-fi
-
-cp "$ONCHAIN_DIR/notarization.json" "$SNAPSHOT_DIR/notarization.json"
 
 if [[ -x "$ROOT_DIR/ops/quorum/quorum-attest.sh" ]]; then
   "$ROOT_DIR/ops/quorum/quorum-attest.sh" \
     --attestation "$attestation_json" \
     --zk "$ZK_PROOF_PATH" \
-    --out "$QUORUM_DIR/quorum-attestation.json"
+    --out "$QUORUM_DIR/quorum-attestation.json" \
+    --selection "$SNAPSHOT_DIR/quorum-selection.json"
 fi
 
 if [[ ! -f "$QUORUM_DIR/quorum-attestation.json" ]]; then
@@ -1609,5 +1635,416 @@ if [[ "$QUORUM_SEVERITY" == "CRITICAL" || "$QUORUM_STATUS" != "satisfied" ]]; th
     abort "Quorum attestation not satisfied."
   fi
 fi
+
+python3 - "$SNAPSHOT_DIR/recursive-input.json" \
+  "$SNAPSHOT_DIR/immutability-proof.json" \
+  "$SNAPSHOT_DIR/chain-state-merkle-proofs.json" \
+  "$SNAPSHOT_DIR/chain-state-merkle-proofs-post.json" \
+  "$SNAPSHOT_DIR/mev-report.json" \
+  "$SNAPSHOT_DIR/quorum-attestation.json" \
+  "$SNAPSHOT_DIR/evidence-bundle.json" \
+  "$SNAPSHOT_DIR/risk-summary.json" \
+  "$SNAPSHOT_DIR/drift-report.json" \
+  "$SNAPSHOT_DIR/anomaly-report.json" \
+  "$SNAPSHOT_DIR/quorum-selection.json" \
+  "$SNAPSHOT_DIR/gas-token.json" <<'PY'
+import hashlib,json,sys
+
+out_path=sys.argv[1]
+proof_path=sys.argv[2]
+merkle_pre=sys.argv[3]
+merkle_post=sys.argv[4]
+mev_path=sys.argv[5]
+quorum_path=sys.argv[6]
+evidence_path=sys.argv[7]
+risk_path=sys.argv[8]
+drift_path=sys.argv[9]
+anomaly_path=sys.argv[10]
+geo_path=sys.argv[11]
+gas_path=sys.argv[12]
+
+def sha256(path):
+    h=hashlib.sha256()
+    with open(path,"rb") as f:
+        h.update(f.read())
+    return h.hexdigest()
+
+def sha256_concat(paths):
+    h=hashlib.sha256()
+    for path in paths:
+        with open(path,"rb") as f:
+            h.update(f.read())
+    return h.hexdigest()
+
+def split_u64(hexstr):
+    hexstr=hexstr.lower().replace("0x","")
+    hexstr=hexstr.zfill(64)
+    parts=[hexstr[i:i+16] for i in range(0,64,16)]
+    return [int(p,16) for p in parts]
+
+fp_hash=sha256(proof_path)
+merkle_hash=sha256_concat([merkle_pre, merkle_post])
+mev_hash=sha256(mev_path)
+quorum_hash=sha256(quorum_path)
+compliance_hash=sha256_concat([evidence_path, risk_path, drift_path, anomaly_path, geo_path])
+gas_hash=sha256(gas_path)
+
+payload={
+  "fp_hash": split_u64(fp_hash),
+  "merkle_hash": split_u64(merkle_hash),
+  "mev_hash": split_u64(mev_hash),
+  "quorum_hash": split_u64(quorum_hash),
+  "compliance_hash": split_u64(compliance_hash),
+  "gas_hash": split_u64(gas_hash)
+}
+
+json.dump(payload,open(out_path,"w"),indent=2)
+PY
+
+if [[ -x "$ROOT_DIR/ops/zk/formal-verify.sh" ]]; then
+  "$ROOT_DIR/ops/zk/formal-verify.sh" \
+    --immutability-input "$SNAPSHOT_DIR/immutability-input.json" \
+    --recursive-input "$SNAPSHOT_DIR/recursive-input.json" \
+    --out "$ZK_DIR/formal-verification-report.json"
+  cp "$ZK_DIR/formal-verification-report.json" "$SNAPSHOT_DIR/formal-verification-report.json"
+fi
+
+if [[ ! -f "$SNAPSHOT_DIR/formal-verification-report.json" ]]; then
+  abort "Formal verification report missing."
+fi
+
+RECURSIVE_PROOF_PATH="$ZK_DIR/recursive-proof.json"
+RECURSIVE_VKEY_PATH="$ZK_DIR/recursive-verifier.json"
+
+if [[ "$ZK_RECURSION_REQUIRED" == "true" ]]; then
+  if [[ ! -x "$ROOT_DIR/ops/zk/recursive-prove.sh" ]]; then
+    abort "Recursive ZK prover missing at ops/zk/recursive-prove.sh"
+  fi
+  "$ROOT_DIR/ops/zk/recursive-prove.sh" --input "$SNAPSHOT_DIR/recursive-input.json" --out-proof "$RECURSIVE_PROOF_PATH" --out-vkey "$RECURSIVE_VKEY_PATH"
+  "$ROOT_DIR/ops/zk/verify.sh" --proof "$RECURSIVE_PROOF_PATH" --vkey "$RECURSIVE_VKEY_PATH"
+else
+  log "ZK_RECURSION_REQUIRED is false; skipping recursive proof."
+fi
+
+if [[ ! -f "$RECURSIVE_PROOF_PATH" || ! -f "$RECURSIVE_VKEY_PATH" ]]; then
+  abort "Recursive ZK proof artifacts missing."
+fi
+
+cp "$RECURSIVE_PROOF_PATH" "$SNAPSHOT_DIR/recursive-proof.json"
+cp "$RECURSIVE_VKEY_PATH" "$SNAPSHOT_DIR/recursive-verifier.json"
+
+if [[ -x "$ROOT_DIR/ops/zk/submit-recursive-proof.sh" ]]; then
+  "$ROOT_DIR/ops/zk/submit-recursive-proof.sh" --proof "$RECURSIVE_PROOF_PATH" --out "$ZK_DIR/recursive-proof.onchain.json"
+fi
+
+if [[ ! -f "$ZK_DIR/recursive-proof.onchain.json" ]]; then
+  python3 - "$ZK_DIR/recursive-proof.onchain.json" <<'PY'
+import json,datetime,sys
+payload={
+  "timestamp": datetime.datetime.utcnow().isoformat()+"Z",
+  "status": "skipped",
+  "note": "missing_submitter",
+  "txHash": None,
+  "blockNumber": None
+}
+json.dump(payload,open(sys.argv[1],"w"),indent=2)
+PY
+fi
+
+cp "$ZK_DIR/recursive-proof.onchain.json" "$SNAPSHOT_DIR/recursive-proof.onchain.json"
+
+RECURSIVE_ONCHAIN_STATUS=$(python3 - "$ZK_DIR/recursive-proof.onchain.json" <<'PY'
+import json,sys
+data=json.load(open(sys.argv[1]))
+print(data.get("status","skipped"))
+PY
+)
+
+if [[ "$ZK_RECURSION_ONCHAIN_REQUIRED" == "true" && "$RECURSIVE_ONCHAIN_STATUS" != "submitted" ]]; then
+  abort "Recursive ZK on-chain verification missing or not submitted."
+fi
+
+if [[ -x "$ROOT_DIR/ops/onchain/anchor-crosschain.sh" ]]; then
+  RPC_L1="${GHOST_ANCHOR_RPC_L1:-${GHOST_ANCHOR_RPC_URL_L1:-}}"
+  RPC_L2="${GHOST_ANCHOR_RPC_L2:-${GHOST_ANCHOR_RPC_URL_L2:-}}"
+  RPC_L3="${GHOST_ANCHOR_RPC_L3:-${GHOST_ANCHOR_RPC_URL_L3:-}}"
+  args=(--attestation "$attestation_json" --recursive "$RECURSIVE_PROOF_PATH" --out "$ONCHAIN_DIR/cross-chain-anchors.json")
+  if [[ -n "$RPC_L1" ]]; then args+=(--rpc-l1 "$RPC_L1"); fi
+  if [[ -n "$RPC_L2" ]]; then args+=(--rpc-l2 "$RPC_L2"); fi
+  if [[ -n "$RPC_L3" ]]; then args+=(--rpc-l3 "$RPC_L3"); fi
+  "$ROOT_DIR/ops/onchain/anchor-crosschain.sh" "${args[@]}"
+fi
+
+if [[ ! -f "$ONCHAIN_DIR/cross-chain-anchors.json" ]]; then
+  python3 - "$ONCHAIN_DIR/cross-chain-anchors.json" <<'PY'
+import json,datetime,sys
+payload={
+  "timestamp": datetime.datetime.utcnow().isoformat()+"Z",
+  "status": "skipped",
+  "severity": "WARN",
+  "note": "anchor_script_missing",
+  "chains": []
+}
+json.dump(payload,open(sys.argv[1],"w"),indent=2)
+PY
+fi
+
+cp "$ONCHAIN_DIR/cross-chain-anchors.json" "$SNAPSHOT_DIR/cross-chain-anchors.json"
+
+CROSS_CHAIN_STATUS=$(python3 - "$ONCHAIN_DIR/cross-chain-anchors.json" <<'PY'
+import json,sys
+data=json.load(open(sys.argv[1]))
+print(data.get("status","skipped"))
+PY
+)
+
+CROSS_CHAIN_SEVERITY=$(python3 - "$ONCHAIN_DIR/cross-chain-anchors.json" <<'PY'
+import json,sys
+data=json.load(open(sys.argv[1]))
+print(data.get("severity","WARN"))
+PY
+)
+
+if [[ "$CROSS_CHAIN_SEVERITY" == "CRITICAL" ]]; then
+  "$ROOT_DIR/ops/security/kill-switch/activate.sh" --snapshot "$SNAPSHOT_DIR" --mode "$MODE" --reason "cross_chain_anchor_failed" || true
+  abort "Cross-chain anchor severity CRITICAL."
+fi
+
+if [[ "$CROSS_CHAIN_ANCHOR_REQUIRED" == "true" && "$CROSS_CHAIN_STATUS" != "anchored" ]]; then
+  "$ROOT_DIR/ops/security/kill-switch/activate.sh" --snapshot "$SNAPSHOT_DIR" --mode "$MODE" --reason "cross_chain_anchor_required" || true
+  abort "Cross-chain anchoring is required but not anchored."
+fi
+
+if [[ -x "$ROOT_DIR/ops/policy/self-heal.sh" ]]; then
+  "$ROOT_DIR/ops/policy/self-heal.sh" --snapshot "$SNAPSHOT_DIR" --mode "$MODE"
+fi
+
+if [[ ! -f "$POLICY_DIR/policy-state.json" ]]; then
+  abort "Policy self-heal output missing."
+fi
+
+cp "$POLICY_DIR/policy-state.json" "$SNAPSHOT_DIR/policy-state.json"
+cp "$POLICY_DIR/healing-actions.json" "$SNAPSHOT_DIR/healing-actions.json" || true
+cp "$POLICY_DIR/self-heal-log.json" "$SNAPSHOT_DIR/self-heal-log.json" || true
+
+POLICY_SELF_HEAL_SEVERITY=$(python3 - "$POLICY_DIR/policy-state.json" <<'PY'
+import json,sys
+data=json.load(open(sys.argv[1]))
+print(data.get("severity","HEALTHY"))
+PY
+)
+
+if [[ "$POLICY_SELF_HEAL_REQUIRED" == "true" && "$POLICY_SELF_HEAL_SEVERITY" == "CRITICAL" ]]; then
+  "$ROOT_DIR/ops/security/kill-switch/activate.sh" --snapshot "$SNAPSHOT_DIR" --mode "$MODE" --reason "policy_self_heal_critical" || true
+  abort "Policy self-heal severity CRITICAL."
+fi
+
+if [[ -x "$ROOT_DIR/ops/satellite/sync.sh" ]]; then
+  "$ROOT_DIR/ops/satellite/sync.sh" --snapshot "$SNAPSHOT_DIR" --mode "$MODE"
+fi
+
+if [[ ! -f "$SATELLITE_DIR/offline-attestations.json" ]]; then
+  abort "Satellite offline attestation output missing."
+fi
+
+cp "$SATELLITE_DIR/offline-attestations.json" "$SNAPSHOT_DIR/offline-attestations.json"
+cp "$SATELLITE_DIR/sync-log.json" "$SNAPSHOT_DIR/sync-log.json" || true
+
+SATELLITE_STATUS=$(python3 - "$SATELLITE_DIR/offline-attestations.json" <<'PY'
+import json,sys
+data=json.load(open(sys.argv[1]))
+print(data.get("status","skipped"))
+PY
+)
+
+SATELLITE_SEVERITY=$(python3 - "$SATELLITE_DIR/offline-attestations.json" <<'PY'
+import json,sys
+data=json.load(open(sys.argv[1]))
+print(data.get("severity","WARN"))
+PY
+)
+
+if [[ "$SATELLITE_SEVERITY" == "CRITICAL" ]]; then
+  "$ROOT_DIR/ops/security/kill-switch/activate.sh" --snapshot "$SNAPSHOT_DIR" --mode "$MODE" --reason "satellite_critical" || true
+  abort "Satellite offline attestation severity CRITICAL."
+fi
+
+if [[ "$SATELLITE_REQUIRED" == "true" && "$SATELLITE_STATUS" != "synced" ]]; then
+  "$ROOT_DIR/ops/security/kill-switch/activate.sh" --snapshot "$SNAPSHOT_DIR" --mode "$MODE" --reason "satellite_required" || true
+  abort "Satellite attestations required but not synced."
+fi
+
+if [[ -x "$ROOT_DIR/ops/zkml/learn.sh" ]]; then
+  "$ROOT_DIR/ops/zkml/learn.sh" --snapshot "$SNAPSHOT_DIR" --mode "$MODE"
+fi
+
+if [[ ! -f "$ZKML_DIR/model-proof.json" ]]; then
+  abort "zkML model proof output missing."
+fi
+
+cp "$ZKML_DIR/model-proof.json" "$SNAPSHOT_DIR/zkml-model-proof.json"
+cp "$ZKML_DIR/policy-update.json" "$SNAPSHOT_DIR/zkml-policy-update.json" || true
+cp "$ZKML_DIR/learning-log.json" "$SNAPSHOT_DIR/zkml-learning-log.json" || true
+
+ZKML_STATUS=$(python3 - "$ZKML_DIR/model-proof.json" <<'PY'
+import json,sys
+data=json.load(open(sys.argv[1]))
+print(data.get("status","missing"))
+PY
+)
+
+if [[ "$ZKML_REQUIRED" == "true" && "$ZKML_STATUS" != "verified" ]]; then
+  "$ROOT_DIR/ops/security/kill-switch/activate.sh" --snapshot "$SNAPSHOT_DIR" --mode "$MODE" --reason "zkml_missing" || true
+  abort "zkML proof required but not verified."
+fi
+
+if [[ -x "$ROOT_DIR/ops/governance/enforce.sh" ]]; then
+  "$ROOT_DIR/ops/governance/enforce.sh" --snapshot "$SNAPSHOT_DIR" --mode "$MODE"
+fi
+
+if [[ ! -f "$GOVERNANCE_DIR/enforcement-log.json" ]]; then
+  abort "Governance enforcement log missing."
+fi
+
+cp "$GOVERNANCE_DIR/enforcement-log.json" "$SNAPSHOT_DIR/governance-enforcement.json"
+
+GOV_STATUS=$(python3 - "$GOVERNANCE_DIR/enforcement-log.json" <<'PY'
+import json,sys
+data=json.load(open(sys.argv[1]))
+print(data.get("status","FAILED"))
+PY
+)
+
+GOV_SEVERITY=$(python3 - "$GOVERNANCE_DIR/enforcement-log.json" <<'PY'
+import json,sys
+data=json.load(open(sys.argv[1]))
+print(data.get("severity","CRITICAL"))
+PY
+)
+
+if [[ "$GOV_SEVERITY" == "CRITICAL" ]]; then
+  "$ROOT_DIR/ops/security/kill-switch/activate.sh" --snapshot "$SNAPSHOT_DIR" --mode "$MODE" --reason "governance_critical" || true
+  abort "Governance enforcement severity CRITICAL."
+fi
+
+if [[ "$GOVERNANCE_ENFORCEMENT_REQUIRED" == "true" && "$GOV_STATUS" != "ENFORCED" ]]; then
+  "$ROOT_DIR/ops/security/kill-switch/activate.sh" --snapshot "$SNAPSHOT_DIR" --mode "$MODE" --reason "governance_required" || true
+  abort "Governance enforcement required but not enforced."
+fi
+
+if [[ -x "$ROOT_DIR/ops/onchain/notarize.sh" ]]; then
+  if [[ -n "${GHOST_NOTARIZATION_RPC_URL:-}" ]]; then
+    "$ROOT_DIR/ops/onchain/notarize.sh" \
+      --attestation "$attestation_json" \
+      --merkle "$ATTEST_DIR/chain-state-merkle-proofs.json" \
+      --oci "$ATTEST_DIR/oci-image-provenance.json" \
+      --vc "$DID_VC_PATH" \
+      --zk "$ZK_PROOF_PATH" \
+      --recursive "$RECURSIVE_PROOF_PATH" \
+      --out "$ONCHAIN_DIR/notarization.json" \
+      --rpc "$GHOST_NOTARIZATION_RPC_URL"
+  else
+    "$ROOT_DIR/ops/onchain/notarize.sh" \
+      --attestation "$attestation_json" \
+      --merkle "$ATTEST_DIR/chain-state-merkle-proofs.json" \
+      --oci "$ATTEST_DIR/oci-image-provenance.json" \
+      --vc "$DID_VC_PATH" \
+      --zk "$ZK_PROOF_PATH" \
+      --recursive "$RECURSIVE_PROOF_PATH" \
+      --out "$ONCHAIN_DIR/notarization.json"
+  fi
+fi
+
+if [[ ! -f "$ONCHAIN_DIR/notarization.json" ]]; then
+  python3 - "$ONCHAIN_DIR/notarization.json" <<'PY'
+import json,datetime,sys
+payload={
+  "timestamp": datetime.datetime.utcnow().isoformat()+"Z",
+  "status": "skipped",
+  "note": "notarization_script_missing",
+  "txHash": None,
+  "blockNumber": None
+}
+json.dump(payload,open(sys.argv[1],"w"),indent=2)
+PY
+fi
+
+cp "$ONCHAIN_DIR/notarization.json" "$SNAPSHOT_DIR/notarization.json"
+
+python3 - "$SNAPSHOT_DIR/final-report.json" "$SNAPSHOT_DIR" "$ATTEST_DIR" "$ONCHAIN_DIR/notarization.json" "$ROOT_DIR" <<'PY'
+import json,sys,os,datetime
+
+out_path=sys.argv[1]
+snap=sys.argv[2]
+attest_dir=sys.argv[3]
+notarize_path=sys.argv[4]
+root=sys.argv[5]
+
+def read(path, default=None):
+    if not os.path.isfile(path):
+        return default
+    with open(path) as f:
+        return json.load(f)
+
+report={
+  "timestamp": datetime.datetime.utcnow().isoformat()+"Z",
+  "snapshot": snap,
+  "gasToken": read(os.path.join(snap,"gas-token.json"),{}),
+  "chainDataFingerprints": os.path.join(snap,"chain-data-fingerprints.json"),
+  "chainStateProofs": os.path.join(attest_dir,"chain-state-merkle-proofs.json"),
+  "anomaly": read(os.path.join(snap,"anomaly-report.json"),{}),
+  "drift": read(os.path.join(snap,"drift-report.json"),{}),
+  "mev": read(os.path.join(snap,"mev-report.json"),{}),
+  "threatModel": read(os.path.join(snap,"risk-summary.json"),{}),
+  "complianceEvidence": os.path.join(snap,"evidence-bundle.json"),
+  "geoRiskSelection": read(os.path.join(snap,"quorum-selection.json"),{}),
+  "quorum": read(os.path.join(snap,"quorum-attestation.json"),{}),
+  "crossChainAnchors": read(os.path.join(snap,"cross-chain-anchors.json"),{}),
+  "policyState": read(os.path.join(snap,"policy-state.json"),{}),
+  "policyActions": read(os.path.join(snap,"healing-actions.json"),{}),
+  "policySelfHeal": read(os.path.join(snap,"self-heal-log.json"),{}),
+  "satellite": read(os.path.join(snap,"offline-attestations.json"),{}),
+  "governance": read(os.path.join(snap,"governance-enforcement.json"),{}),
+  "zkml": read(os.path.join(snap,"zkml-model-proof.json"),{}),
+  "zkImmutabilityProof": os.path.join(snap,"immutability-proof.json"),
+  "zkRecursiveProof": os.path.join(snap,"recursive-proof.json"),
+  "zkRecursiveOnchain": read(os.path.join(snap,"recursive-proof.onchain.json"),{}),
+  "formalVerification": read(os.path.join(snap,"formal-verification-report.json"),{}),
+  "notarization": read(notarize_path,{}),
+  "killSwitchStatus": read(os.path.join(root,"ops","security","kill-switch","status.json"),{}),
+  "rollbackCommand": f"./ops/docker/ghostctl-rollback.sh {snap}"
+}
+
+json.dump(report,open(out_path,"w"),indent=2)
+PY
+
+python3 - "$SNAPSHOT_DIR/final-report.json" "$SNAPSHOT_DIR/final-report.md" <<'PY'
+import json,sys
+
+data=json.load(open(sys.argv[1]))
+lines=[
+  "# Ghost Recreate Final Report",
+  f"- Snapshot: {data.get('snapshot')}",
+  f"- Gas token address: {data.get('gasToken',{}).get('address')}",
+  f"- Anomaly severity: {data.get('anomaly',{}).get('severity')}",
+  f"- Drift severity: {data.get('drift',{}).get('severity')}",
+  f"- MEV severity: {data.get('mev',{}).get('severity')}",
+  f"- Threat model severity: {data.get('threatModel',{}).get('severity')}",
+  f"- Quorum status: {data.get('quorum',{}).get('status')}",
+  f"- Cross-chain anchors: {data.get('crossChainAnchors',{}).get('status')}",
+  f"- Policy self-heal severity: {data.get('policyState',{}).get('severity')}",
+  f"- Satellite attestations: {data.get('satellite',{}).get('status')}",
+  f"- Governance enforcement: {data.get('governance',{}).get('status')}",
+  f"- zkML proof: {data.get('zkml',{}).get('status')}",
+  f"- Notarization status: {data.get('notarization',{}).get('status')}",
+  f"- Recursive proof on-chain: {data.get('zkRecursiveOnchain',{}).get('status')}",
+  "",
+  "## Rollback",
+  data.get("rollbackCommand","")
+]
+
+with open(sys.argv[2],"w") as f:
+    f.write("\n".join(lines))
+PY
 
 log "Recreate complete. Attestation written to $ATTEST_DIR"

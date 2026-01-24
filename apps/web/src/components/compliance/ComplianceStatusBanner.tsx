@@ -1,11 +1,10 @@
+import { resolveComplianceBase } from '../../lib/runtime';
+
 type ComplianceStatus = {
   ok?: boolean;
   status?: string;
   service?: string;
 };
-
-const resolveComplianceBase = () =>
-  process.env.COMPLIANCE_URL || process.env.NEXT_PUBLIC_COMPLIANCE_URL || 'http://localhost:8090';
 
 export async function ComplianceStatusBanner() {
   const baseUrl = resolveComplianceBase();
