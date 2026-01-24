@@ -12,12 +12,13 @@ import { ValidatorMetrics } from '../../src/modules/observability/components/Val
 import { SecurityControls } from '../../src/modules/observability/components/SecurityControls';
 import type { Alert, LogEvent } from '@ghostl/types/observability';
 import { apiRequest, type ApiError } from '../../src/lib/api';
+import { resolvePrometheusBase } from '../../src/lib/runtime';
 import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
 
 type PromVector = { metric: Record<string, string>; value?: [number, string] };
 type Dashboard = { id: string; name: string; url: string };
 
-const PROM_URL = process.env.NEXT_PUBLIC_PROMETHEUS_URL || 'http://localhost:9090';
+const PROM_URL = resolvePrometheusBase();
 const PROM_PROPOSER = process.env.NEXT_PUBLIC_PROM_PROPOSER_QUERY || 'op_gate_last_proposer';
 const PROM_PARTICIPATION = process.env.NEXT_PUBLIC_PROM_PARTICIPATION_QUERY || 'op_gate_participation_rate';
 

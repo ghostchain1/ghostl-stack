@@ -7,10 +7,11 @@ ZK=""
 OUT_PATH=""
 POLICY_PATH="$ROOT_DIR/ops/quorum/quorum-policy.json"
 REGIONS_DIR="$ROOT_DIR/ops/quorum/regions"
+SELECTION_PATH="$ROOT_DIR/ops/geo-risk/quorum-selection.json"
 
 usage() {
   cat <<'USAGE'
-Usage: quorum-attest.sh --attestation <path> --zk <path> --out <path> [--policy <path>]
+Usage: quorum-attest.sh --attestation <path> --zk <path> --out <path> [--policy <path>] [--selection <path>]
 USAGE
 }
 
@@ -20,6 +21,7 @@ while [[ $# -gt 0 ]]; do
     --zk) ZK="$2"; shift 2;;
     --out) OUT_PATH="$2"; shift 2;;
     --policy) POLICY_PATH="$2"; shift 2;;
+    --selection) SELECTION_PATH="$2"; shift 2;;
     -h|--help) usage; exit 0;;
     *) echo "Unknown argument: $1" >&2; exit 1;;
   esac
@@ -30,7 +32,7 @@ if [[ -z "$ATTEST" || -z "$ZK" || -z "$OUT_PATH" ]]; then
   exit 1
 fi
 
-python3 - "$ATTEST" "$ZK" "$POLICY_PATH" "$REGIONS_DIR" "$OUT_PATH" <<'PY'
+python3 - "$ATTEST" "$ZK" "$POLICY_PATH" "$REGIONS_DIR" "$OUT_PATH" "$SELECTION_PATH" <<'PY'
 import base64,hashlib,json,os,subprocess,sys,datetime
 
 attest=sys.argv[1]
@@ -38,11 +40,17 @@ zk=sys.argv[2]
 policy_path=sys.argv[3]
 regions_dir=sys.argv[4]
 out_path=sys.argv[5]
+selection_path=sys.argv[6]
 
 policy=json.load(open(policy_path))
 min_regions=int(policy.get("minRegions",3))
 require_sig=bool(policy.get("requireSignature",True))
 severity_on_failure=policy.get("severityOnFailure","CRITICAL")
+
+selected_regions=None
+if os.path.isfile(selection_path):
+    selection=json.load(open(selection_path))
+    selected_regions=selection.get("selectedRegions") or None
 
 def sha256(path):
     h=hashlib.sha256()
@@ -55,12 +63,13 @@ zk_hash=sha256(zk)
 
 regions=[]
 valid=0
-for name in sorted(os.listdir(regions_dir)):
-    if not name.endswith(".json"):
-        continue
+region_files=[f for f in sorted(os.listdir(regions_dir)) if f.endswith(".json")]
+for name in region_files:
     path=os.path.join(regions_dir,name)
     data=json.load(open(path))
     region=data.get("region") or name.replace(".json","")
+    if selected_regions and region not in selected_regions:
+        continue
     status="valid"
     issues=[]
     if data.get("attestationHash") != attest_hash:
@@ -123,6 +132,7 @@ payload={
   "validRegions": valid,
   "status": status,
   "severity": severity,
+  "selectedRegions": selected_regions,
   "regions": regions
 }
 

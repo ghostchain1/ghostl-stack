@@ -4,10 +4,11 @@ import type { ApiError } from '../../src/lib/api';
 import { serverApiRequest } from '../../src/lib/server-api';
 import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
 import { NodeDetail } from '../../src/modules/nodes/components/NodeDetail';
+import { resolveDevopsBase } from '../../src/lib/runtime';
 
 type NodeDetailRecord = Node & { metrics: NodeMetrics };
 
-const DEVOPS_URL = process.env.NEXT_PUBLIC_DEVOPS_URL || 'http://localhost:7623';
+const DEVOPS_URL = resolveDevopsBase();
 
 async function loadNodeDetails(): Promise<{ nodes: NodeDetailRecord[]; errors: Array<{ title: string; error: ApiError }> }> {
   const listRes = await serverApiRequest<Node[]>('/nodes', { init: { cache: 'no-store' } });

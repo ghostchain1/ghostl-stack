@@ -83,6 +83,23 @@ After recreate, the drift monitor records a baseline and produces `ops/ai/drift/
 
 The MEV monitor emits `ops/mev/mev-report.json` and flags ordering anomalies or extreme priority fee skew. CRITICAL severity triggers the kill-switch.
 
+## Threat Modeling (STRIDE / LINDDUN)
+
+Threat models are generated via `ops/ai/threat-model/generate.sh` and stored in the snapshot:
+- `stride-model.md`
+- `linddun-model.md`
+- `risk-summary.json`
+
+CRITICAL severity aborts the recreate pipeline.
+
+## Compliance Evidence Packaging (ISO/SOC)
+
+Evidence bundles are produced by `ops/compliance/bundle.sh` using `ops/compliance/controls-map.json`. Output is stored in the snapshot as `evidence-bundle.json`.
+
+## Geo-Risk Quorum Selection
+
+Geo-risk scoring and quorum rotation are handled via `ops/geo-risk/select-quorum.sh`, producing `quorum-selection.json`.
+
 ## Confidential Compute Attestation
 
 If SEV/TDX capabilities are detected, `ops/confidential/cca.json` is generated and hashed into the immutability attestation. If unavailable, the script records `supported=false`.
@@ -97,9 +114,72 @@ Required env for ZK:
 - `GHOST_ZK_VERIFY_RAW_TX` (pre-signed on-chain verification tx)
 - `ZK_ONCHAIN_REQUIRED=true|false` (default true)
 
+## Recursive ZK Proof
+
+After quorum attestation, a constant-size recursive proof is generated from immutability, MEV, quorum, compliance, and gas-token hashes. The proof is submitted on-chain with `GHOST_RECURSIVE_VERIFY_RAW_TX`.
+
+## Formal Verification
+
+The recreate pipeline runs `ops/zk/formal-verify.sh` to compile circuits, generate witnesses, and validate constraint correctness. Failures abort the run.
+
 ## On-Chain Notarization
 
-The notarization helper computes a notarization hash and optionally submits a pre-signed transaction when `GHOST_NOTARIZATION_RAW_TX` is provided. Output is stored in `ops/onchain/notarization.json`.
+The notarization helper computes a notarization hash (including the recursive proof) and optionally submits a pre-signed transaction when `GHOST_NOTARIZATION_RAW_TX` is provided. Output is stored in `ops/onchain/notarization.json`.
+
+## Cross-Chain Anchoring (L1/L2/L3)
+
+After the recursive proof is generated, `ghostctl-recreate.sh` calls `ops/onchain/anchor-crosschain.sh` to anchor the attestation bundle across L1/L2/L3. The anchor status is stored in `ops/onchain/cross-chain-anchors.json` and copied into the snapshot as `cross-chain-anchors.json`.
+
+Use:
+
+```
+GHOST_ANCHOR_L1_RAW_TX=0x... \
+GHOST_ANCHOR_L2_RAW_TX=0x... \
+GHOST_ANCHOR_L3_RAW_TX=0x... \
+./ops/onchain/anchor-crosschain.sh \
+  --attestation ./ops/docker/attestations/immutability-attestation.json \
+  --recursive ./ops/zk/recursive-proof.json \
+  --out ./ops/onchain/cross-chain-anchors.json
+```
+
+Anchoring is required by default. Set `CROSS_CHAIN_ANCHOR_REQUIRED=false` to allow a `skipped` status (not recommended in production).
+
+## Autonomous Policy Self-Healing
+
+`ghostctl-recreate.sh` runs `ops/policy/self-heal.sh` to evaluate policy state, attempt safe repairs, and emit:
+- `policy-state.json`
+- `healing-actions.json`
+- `self-heal-log.json`
+
+CRITICAL policy severity triggers the kill switch and aborts the recreate pipeline unless `POLICY_SELF_HEAL_REQUIRED=false`.
+
+## Satellite / Offline Quorum Nodes
+
+Offline attestations are synced via `ops/satellite/sync.sh`. The pipeline requires a `synced` status unless `SATELLITE_REQUIRED=false`.
+
+Artifacts:
+- `offline-attestations.json`
+- `sync-log.json`
+
+## zkML Policy Learning
+
+`ops/zkml/learn.sh` produces a policy update proposal and a zkML proof reference. If `ZKML_REQUIRED=true`, a `verified` proof is required (supply via `ZKML_PROOF_PATH`).
+
+Artifacts:
+- `zkml-model-proof.json`
+- `zkml-policy-update.json`
+- `zkml-learning-log.json`
+
+## Governance Enforcement
+
+`ops/governance/enforce.sh` enforces governance rules and can submit a governance event using a pre-signed raw transaction.
+
+Artifacts:
+- `governance-enforcement.json`
+
+Env:
+- `GHOST_GOVERNANCE_EVENT_RAW_TX`
+- `GHOST_GOVERNANCE_RPC_URL`
 
 ## Quorum Attestation
 
@@ -118,3 +198,9 @@ Release:
 ```
 ./ops/security/kill-switch/release.sh --mode prod --reason \"cleared\"
 ```
+
+## Final Report
+
+Each recreate run emits:
+- `ops/docker/snapshots/<timestamp>/final-report.json`
+- `ops/docker/snapshots/<timestamp>/final-report.md`

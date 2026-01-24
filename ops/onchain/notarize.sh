@@ -6,13 +6,14 @@ MERKLE=""
 OCI=""
 VC=""
 ZK=""
+RECURSIVE=""
 OUT_PATH=""
 RPC_URL=""
 RAW_TX="${GHOST_NOTARIZATION_RAW_TX:-}"
 
 usage() {
   cat <<'USAGE'
-Usage: notarize.sh --attestation <path> --merkle <path> --oci <path> --vc <path> --zk <path> --out <path> [--rpc <url>]
+Usage: notarize.sh --attestation <path> --merkle <path> --oci <path> --vc <path> --zk <path> --recursive <path> --out <path> [--rpc <url>]
 USAGE
 }
 
@@ -23,6 +24,7 @@ while [[ $# -gt 0 ]]; do
     --oci) OCI="$2"; shift 2;;
     --vc) VC="$2"; shift 2;;
     --zk) ZK="$2"; shift 2;;
+    --recursive) RECURSIVE="$2"; shift 2;;
     --out) OUT_PATH="$2"; shift 2;;
     --rpc) RPC_URL="$2"; shift 2;;
     -h|--help) usage; exit 0;;
@@ -30,7 +32,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$ATTEST" || -z "$MERKLE" || -z "$OCI" || -z "$VC" || -z "$ZK" || -z "$OUT_PATH" ]]; then
+if [[ -z "$ATTEST" || -z "$MERKLE" || -z "$OCI" || -z "$VC" || -z "$ZK" || -z "$RECURSIVE" || -z "$OUT_PATH" ]]; then
   echo "Missing required arguments." >&2
   exit 1
 fi
@@ -58,7 +60,7 @@ PY
 )
 fi
 
-python3 - "$ATTEST" "$MERKLE" "$OCI" "$VC" "$ZK" "$OUT_PATH" "$RPC_URL" "$RAW_TX" <<'PY'
+python3 - "$ATTEST" "$MERKLE" "$OCI" "$VC" "$ZK" "$RECURSIVE" "$OUT_PATH" "$RPC_URL" "$RAW_TX" <<'PY'
 import hashlib,json,sys,urllib.request,datetime
 
 attest=sys.argv[1]
@@ -66,9 +68,10 @@ merkle=sys.argv[2]
 oci=sys.argv[3]
 vc=sys.argv[4]
 zk=sys.argv[5]
-out_path=sys.argv[6]
-rpc_url=sys.argv[7] or ""
-raw_tx=sys.argv[8] or ""
+recursive=sys.argv[6]
+out_path=sys.argv[7]
+rpc_url=sys.argv[8] or ""
+raw_tx=sys.argv[9] or ""
 
 def sha256(path):
     h=hashlib.sha256()
@@ -76,13 +79,26 @@ def sha256(path):
         h.update(f.read())
     return h.hexdigest()
 
+attest_hash=sha256(attest)
+merkle_hash=sha256(merkle)
+oci_hash=sha256(oci)
+vc_hash=sha256(vc)
+zk_hash=sha256(zk)
+recursive_hash=sha256(recursive)
+
 payload_hash=hashlib.sha256(
-    (sha256(attest)+sha256(merkle)+sha256(oci)+sha256(vc)+sha256(zk)).encode()
+    (attest_hash+merkle_hash+oci_hash+vc_hash+zk_hash+recursive_hash).encode()
 ).hexdigest()
 
 result={
   "timestamp": datetime.datetime.utcnow().isoformat()+"Z",
   "notarizationHash": payload_hash,
+  "attestationHash": attest_hash,
+  "merkleHash": merkle_hash,
+  "ociHash": oci_hash,
+  "vcHash": vc_hash,
+  "zkHash": zk_hash,
+  "recursiveHash": recursive_hash,
   "status": "skipped",
   "txHash": None,
   "blockNumber": None,

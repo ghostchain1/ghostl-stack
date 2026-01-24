@@ -16,8 +16,15 @@ Artifacts:
 - `mev-report.json` (copied into snapshots)
 - `immutability-proof.json` and `immutability-proof.verifier.json` (copied into snapshots)
 - `immutability-proof.onchain.json` (copied into snapshots)
+- `recursive-proof.json` and `recursive-verifier.json` (copied into snapshots)
+- `recursive-proof.onchain.json` (copied into snapshots)
+- `formal-verification-report.json` (copied into snapshots)
+- `risk-summary.json` (STRIDE/LINDDUN summary, copied into snapshots)
+- `evidence-bundle.json` (ISO/SOC evidence bundle, copied into snapshots)
+- `quorum-selection.json` (geo-risk rotation, copied into snapshots)
 - `confidential-cca.json` (copied into snapshots; source in `ops/confidential/cca.json`)
 - `drift-baseline.json` and `drift-report.json` (copied into snapshots; source in `ops/ai/drift/`)
+- `cross-chain-anchors.json` (copied into snapshots; source in `ops/onchain/`)
 
 Verification (OpenSSL):
 ```

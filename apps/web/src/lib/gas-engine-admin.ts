@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUser, requireRole } from '../modules/identity-access/auth';
+import { resolveGasEngineBase } from './runtime';
 
-const GAS_ENGINE_URL =
-  process.env.AI_CORE_URL ||
-  process.env.NEXT_PUBLIC_AI_CORE_URL ||
-  process.env.GAS_ENGINE_URL ||
-  process.env.NEXT_PUBLIC_GAS_ENGINE_URL ||
-  'http://ghost-gas-engine:3210';
+const GAS_ENGINE_URL = resolveGasEngineBase();
 const ADMIN_TOKEN = process.env.GAS_ENGINE_ADMIN_TOKEN;
 
 export const ensureAdminSession = async (req: NextRequest): Promise<NextResponse | null> => {

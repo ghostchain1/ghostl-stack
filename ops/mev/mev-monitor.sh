@@ -76,7 +76,7 @@ overall_severity="INFO"
 reports=[]
 
 def bump(level):
-    nonlocal overall_severity
+    global overall_severity
     order=["INFO","WARN","CRITICAL"]
     if order.index(level) > order.index(overall_severity):
         overall_severity=level

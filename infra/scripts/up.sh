@@ -37,6 +37,10 @@ if [ ! -f "$COMPOSE_FILE" ]; then
   COMPOSE_DIR="$ROOT/services"
   COMPOSE_FILE="$COMPOSE_DIR/docker-compose.yml"
 fi
+COMPOSE_ARGS=(-f "$COMPOSE_FILE")
+if [ "$COMPOSE_DIR" = "$ROOT/services" ] && [ -f "$COMPOSE_DIR/stack.env" ]; then
+  COMPOSE_ARGS=(--env-file "$COMPOSE_DIR/stack.env" -f "$COMPOSE_FILE")
+fi
 SERVICES=(
   ghost-relayer
   ghost-rollup-proposer-l2
@@ -46,6 +50,6 @@ SERVICES=(
   prometheus
   grafana
 )
-docker compose -f "$COMPOSE_FILE" up -d --no-deps "${SERVICES[@]}"
+docker compose "${COMPOSE_ARGS[@]}" up -d --no-deps "${SERVICES[@]}"
 
 echo "Done. L1=$HOST_L1_RPC, L2=$HOST_L2_RPC${ENABLE_L3:+, L3=$HOST_L3_RPC}, Guard=$GUARD_PORT, Relayer=7171, ProposerL2=7272, ProposerL3=7373, ChallengerL2=7282, ChallengerL3=7383, Prometheus=9090, Grafana=3000"

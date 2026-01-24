@@ -111,8 +111,9 @@ cur_map={c.get("chainKey"):c for c in current.get("chains",[])}
 
 findings=[]
 severity="INFO"
+drift_types=set()
 def bump(level):
-    nonlocal severity
+    global severity
     order=["INFO","WARN","CRITICAL"]
     if order.index(level) > order.index(severity):
         severity=level
@@ -122,6 +123,7 @@ for key,base in base_map.items():
     if base.get("rpcChainId") and cur.get("rpcChainId") and base["rpcChainId"]!=cur["rpcChainId"]:
         findings.append({"chainKey": key, "issue": "chain_id_changed", "severity": "CRITICAL"})
         bump("CRITICAL")
+        drift_types.add("BEHAVIOR")
     if base.get("latestBlockNumber") and cur.get("latestBlockNumber"):
         try:
             base_block=int(base["latestBlockNumber"],16)
@@ -129,32 +131,39 @@ for key,base in base_map.items():
             if cur_block < base_block - rules.get("maxHeightRegression",0):
                 findings.append({"chainKey": key, "issue": "block_height_regression", "severity": "CRITICAL"})
                 bump("CRITICAL")
+                drift_types.add("DATA")
         except Exception:
             pass
     if base.get("baselineBlockHash") and cur.get("baselineBlockHash") and base["baselineBlockHash"]!=cur["baselineBlockHash"]:
         findings.append({"chainKey": key, "issue": "baseline_block_hash_changed", "severity": "CRITICAL"})
         bump("CRITICAL")
+        drift_types.add("DATA")
     if base.get("baselineStateRoot") and cur.get("baselineStateRoot") and base["baselineStateRoot"]!=cur["baselineStateRoot"]:
         findings.append({"chainKey": key, "issue": "baseline_state_root_changed", "severity": "CRITICAL"})
         bump("CRITICAL")
+        drift_types.add("DATA")
     if base.get("baselineReceiptsRoot") and cur.get("baselineReceiptsRoot") and base["baselineReceiptsRoot"]!=cur["baselineReceiptsRoot"]:
         findings.append({"chainKey": key, "issue": "baseline_receipts_root_changed", "severity": "CRITICAL"})
         bump("CRITICAL")
+        drift_types.add("DATA")
     if cur.get("error"):
         if not rules.get("allowRpcErrors", False):
             findings.append({"chainKey": key, "issue": "rpc_error", "severity": "WARN"})
             bump("WARN")
+            drift_types.add("BEHAVIOR")
     if base.get("latencyMs") and cur.get("latencyMs"):
         limit=rules.get("maxLatencyMs",1500)
         mult=rules.get("maxLatencyMultiplier",3.0)
         if cur["latencyMs"] > limit or cur["latencyMs"] > base["latencyMs"] * mult:
             findings.append({"chainKey": key, "issue": "rpc_latency_drift", "severity": "WARN"})
             bump("WARN")
+            drift_types.add("PERFORMANCE")
 
 report={
   "timestamp": current["timestamp"],
   "severity": severity,
   "findings": findings,
+  "driftTypes": sorted(drift_types) if drift_types else ["NONE"],
   "summary": "Drift evaluation completed"
 }
 json.dump(report,open(report_path,"w"),indent=2)

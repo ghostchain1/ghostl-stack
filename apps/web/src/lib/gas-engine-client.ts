@@ -1,17 +1,7 @@
 import { z } from 'zod';
+import { resolveGasEngineBase } from './runtime';
 
-const baseUrl = () => {
-  if (typeof window === 'undefined') {
-    return (
-      process.env.AI_CORE_URL ||
-      process.env.NEXT_PUBLIC_AI_CORE_URL ||
-      process.env.GAS_ENGINE_URL ||
-      process.env.NEXT_PUBLIC_GAS_ENGINE_URL ||
-      'http://ghost-gas-engine:3210'
-    );
-  }
-  return process.env.NEXT_PUBLIC_AI_CORE_URL || process.env.NEXT_PUBLIC_GAS_ENGINE_URL || 'http://localhost:3210';
-};
+const baseUrl = () => resolveGasEngineBase();
 
 const randomHex = () => {
   const uuid = globalThis.crypto?.randomUUID?.() || `${Math.random()}${Date.now()}`;
