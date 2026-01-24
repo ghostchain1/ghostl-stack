@@ -1,8 +1,9 @@
 import { cookies } from 'next/headers';
+import { resolveApiBase } from '../../lib/runtime';
 import type { SessionUser } from './session';
 import { normalizeRole } from './access-policy';
 
-const API_URL = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = resolveApiBase();
 
 export async function fetchServerSession(): Promise<{ user?: SessionUser }> {
   try {

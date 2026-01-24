@@ -1,12 +1,8 @@
 import { z } from 'zod';
 import { apiRequest, type ApiResult } from './api';
+import { resolvePilBase } from './runtime';
 
-const baseUrl = () => {
-  if (typeof window === 'undefined') {
-    return process.env.PIL_URL || process.env.NEXT_PUBLIC_PIL_URL || 'http://ghost-pil:3220';
-  }
-  return process.env.NEXT_PUBLIC_PIL_URL || 'http://localhost:3220';
-};
+const baseUrl = () => resolvePilBase();
 
 export const chainSchema = z.object({
   chainId: z.string(),

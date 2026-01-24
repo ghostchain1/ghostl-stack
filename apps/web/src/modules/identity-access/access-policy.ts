@@ -24,6 +24,7 @@ const policies: PolicyEntry[] = [
   { pattern: '/bridge', role: 'OPERATOR' },
   { pattern: '/explorer', role: 'OPERATOR' },
   { pattern: '/observability', role: 'READONLY' },
+  { pattern: '/connection-status', role: 'READONLY' },
   { pattern: '/protocol', role: 'READONLY' },
   { pattern: '/contracts', role: 'OPERATOR' },
   { pattern: '/tokens', role: 'OPERATOR' },

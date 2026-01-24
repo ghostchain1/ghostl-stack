@@ -41,6 +41,7 @@ const legacyNavSections: { title: string; items: NavItem[] }[] = [
     title: 'Observability',
     items: [
       { href: '/observability', label: 'Overview' },
+      { href: '/connection-status', label: 'Connection Status' },
       { href: '/observability/alerts', label: 'Alerts', flag: 'observability.alerts' },
       { href: '/observability/gas', label: 'Chain AI' },
       { href: '/observability/logs', label: 'Logs', flag: 'observability.grafana' },

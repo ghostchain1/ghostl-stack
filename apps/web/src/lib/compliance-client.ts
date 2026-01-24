@@ -1,11 +1,7 @@
 import { z } from 'zod';
+import { resolveComplianceBase } from './runtime';
 
-const baseUrl = () => {
-  if (typeof window === 'undefined') {
-    return process.env.COMPLIANCE_URL || process.env.NEXT_PUBLIC_COMPLIANCE_URL || 'http://ghost-compliance:8090';
-  }
-  return process.env.NEXT_PUBLIC_COMPLIANCE_URL || 'http://localhost:8090';
-};
+const baseUrl = () => resolveComplianceBase();
 
 const authToken = () => {
   if (typeof window !== 'undefined') return undefined;

@@ -6,7 +6,11 @@ ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 OP_DIR="$ROOT/infra/opstack"
 
 if [ -f "$OP_DIR/.env" ]; then
-  export $(grep -v '^#' "$OP_DIR/.env" | xargs -d '\n')
+  set -a
+  # shellcheck disable=SC1090
+  source "$OP_DIR/.env"
+  [ -f "$OP_DIR/.env.secrets" ] && source "$OP_DIR/.env.secrets"
+  set +a
 fi
 
 HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:18545}"

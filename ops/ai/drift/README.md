@@ -9,6 +9,11 @@ Artifacts (generated at runtime):
 Configuration:
 - `drift-policy.json`
 
+Drift types reported:
+- `DATA`
+- `BEHAVIOR`
+- `PERFORMANCE`
+
 Run manually:
 ```
 ./ops/ai/drift/monitor.sh --mode prod --snapshot ./ops/docker/snapshots/<timestamp>
