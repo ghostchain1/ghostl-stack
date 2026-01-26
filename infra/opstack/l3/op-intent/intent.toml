@@ -29,8 +29,8 @@ l2ContractsLocator = "file:///home/ghost/ghostl-stack/infra/opstack/optimism/pac
   useCustomGasToken = true
   # Update this after deploying the L3 gas token on L2.
   customGasTokenAddress = "0x71C95911E9a5D330f4D621842EC243EE1343292e"
-  gasPayingTokenName = "Ghost L3 Gas"
-  gasPayingTokenSymbol = "GL3"
+  gasPayingTokenName = "Ghost Token"
+  gasPayingTokenSymbol = "GHOST"
   [chains.roles]
     l1ProxyAdminOwner = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
     l2ProxyAdminOwner = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
@@ -41,6 +41,6 @@ l2ContractsLocator = "file:///home/ghost/ghostl-stack/infra/opstack/optimism/pac
     challenger = "0x5eeB010Fc727b32756354ebF391F8b926d264D7a"
   [chains.customGasToken]
     liquidityControllerOwner = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
-    name = "Ghost L3 Gas"
-    symbol = "GL3"
+    name = "Ghost Token"
+    symbol = "GHOST"
     decimals = 18

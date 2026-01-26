@@ -1,4 +1,4 @@
-import type { ProofInput, ProofVerification, ProofVerifier } from './types';
+import type { ProofInput, ProofVerification, ProofVerifier } from './types.js';
 
 const isHex = (value: string) => /^0x[0-9a-fA-F]{64}$/.test(value);
 

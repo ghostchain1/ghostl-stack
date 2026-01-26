@@ -7,7 +7,8 @@
       ],
       "image": "prom/alertmanager:v0.27.0",
       "networks": {
-        "default": null
+        "default": null,
+        "opstack_default": null
       },
       "ports": [
         {
@@ -280,6 +281,10 @@
   "networks": {
     "default": {
       "name": "infra_default"
+    },
+    "opstack_default": {
+      "external": true,
+      "name": "opstack_default"
     }
   },
   "volumes": {

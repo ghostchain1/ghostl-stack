@@ -252,7 +252,7 @@ const formatWei = (value?: string) => {
   try {
     const wei = BigInt(raw);
     const scaled = Number(wei / 10n ** 14n);
-    return `${(scaled / 1e4).toFixed(4)} ETH`;
+    return `${(scaled / 1e4).toFixed(4)} GHOST`;
   } catch {
     return value;
   }
@@ -265,7 +265,7 @@ const formatGwei = (value?: string) => {
   try {
     const wei = BigInt(raw);
     const gwei = Number(wei / 10n ** 9n);
-    return `${gwei.toFixed(2)} gwei`;
+    return `${gwei.toFixed(2)} gGHOST`;
   } catch {
     return value;
   }
@@ -807,7 +807,7 @@ export function OperatorOverview() {
                 <div className="metric">
                   <div className="metric-label">Gas price</div>
                   <div className="metric-value">
-                    {snapshot?.gasPriceGwei !== undefined ? `${snapshot.gasPriceGwei.toFixed(2)} gwei` : '--'}
+                    {snapshot?.gasPriceGwei !== undefined ? `${snapshot.gasPriceGwei.toFixed(2)} gGHOST` : '--'}
                   </div>
                 </div>
                 <div className="metric">

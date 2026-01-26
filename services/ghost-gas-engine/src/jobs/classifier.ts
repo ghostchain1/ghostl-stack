@@ -27,7 +27,9 @@ export const classifyFailure = (input: ClassificationInput): FailureClassificati
   const errorText = (input.error || '').toLowerCase();
   const outOfGas =
     includesAny(errorText, ['out of gas', 'intrinsic gas']) ||
-    (input.gasUsed !== null && input.gasLimit !== null && input.gasUsed >= input.gasLimit * BigInt(98) / BigInt(100));
+    (input.gasUsed != null &&
+      input.gasLimit != null &&
+      input.gasUsed >= input.gasLimit * BigInt(98) / BigInt(100));
 
   if (outOfGas) return 'OUT_OF_GAS';
 
@@ -39,7 +41,7 @@ export const classifyFailure = (input: ClassificationInput): FailureClassificati
 
   if (input.trace === null) return 'RPC_NODE_BUG';
 
-  if (input.estimatedGas && input.gasLimit && input.gasLimit > input.estimatedGas && input.receiptStatus === 0) {
+  if (input.estimatedGas != null && input.gasLimit != null && input.gasLimit > input.estimatedGas && input.receiptStatus === 0) {
     return 'CHAIN_CONFIG_BUG';
   }
 

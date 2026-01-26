@@ -10,7 +10,8 @@ transforms:
     inputs: [docker_logs]
     source: |
       .raw_message = .message
-      .timestamp = .timestamp ?? now()
+      if .timestamp != null { .event_time = .timestamp }
+      .timestamp = now()
       parsed = parse_json(.message) ?? {}
       if parsed != {} {
         .structured = parsed
@@ -18,14 +19,8 @@ transforms:
       .level = downcase(to_string(parsed.level) ?? "info")
       .component = to_string(parsed.component) ?? .container_name
       .event = to_string(parsed.event) ?? "log_event"
-      if match!(.component, r"(?i)l3") { .layer = "L3" }
-      else if match!(.component, r"(?i)l2") { .layer = "L2" }
-      else if match!(.component, r"(?i)l1|ghostchain") { .layer = "L1" }
-      else { .layer = "INFRA" }
-      if .layer == "L1" { .chain = "GhostChain" }
-      else if .layer == "L2" { .chain = "GhostL2" }
-      else if .layer == "L3" { .chain = "GhostL3" }
-      else { .chain = "Infrastructure" }
+      if match!(.component, r'(?i)l3') { .layer = "L3" } else if match!(.component, r'(?i)l2') { .layer = "L2" } else if match!(.component, r'(?i)l1|ghostchain') { .layer = "L1" } else { .layer = "INFRA" }
+      if .layer == "L1" { .chain = "GhostChain" } else if .layer == "L2" { .chain = "GhostL2" } else if .layer == "L3" { .chain = "GhostL3" } else { .chain = "Infrastructure" }
       if exists(parsed.trace_id) { .trace_id = parsed.trace_id }
       if exists(parsed.request_id) { .request_id = parsed.request_id }
       if exists(parsed.tx_hash) { .tx_hash = parsed.tx_hash }

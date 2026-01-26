@@ -159,30 +159,6 @@ services:
     mem_limit: 2g
     cpus: "1.5"
 
-  ghostscout-frontend:
-    image: ghcr.io/blockscout/frontend:latest
-    restart: unless-stopped
-    logging: *default-logging
-    depends_on:
-      - ghostscout
-    environment:
-      NEXT_PUBLIC_API_HOST: ghostscout:4000
-      NEXT_PUBLIC_API_PROTOCOL: http
-      NEXT_PUBLIC_APP_HOST: http://localhost:18640
-      NEXT_PUBLIC_NETWORK_NAME: Ghostchain
-      NEXT_PUBLIC_NETWORK_ID: "14000101"
-      NEXT_PUBLIC_NETWORK_ICON: https://raw.githubusercontent.com/blockscout/frontend/main/public/favicon.ico
-      PORT: 3000
-      HOST: 0.0.0.0
-    ports:
-      - "18640:3000"
-    networks:
-      ghostchain:
-        ipv4_address: 172.28.0.32
-    <<: *default-security
-    mem_limit: 1g
-    cpus: "0.8"
-
 networks:
   ghostchain:
     driver: bridge

@@ -1,8 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { config } from '../config';
-import { query, withTransaction } from '../db';
-import { runSimulation } from '../sim/engine';
+import { config } from '../config.js';
+import { query, withTransaction } from '../db/index.js';
+import { runSimulation } from '../sim/engine.js';
 
 const simulationRequestSchema = z.object({
   chainId: z.number().int(),

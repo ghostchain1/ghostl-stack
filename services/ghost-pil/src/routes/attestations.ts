@@ -1,8 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { query, withTransaction } from '../db';
-import { buildVerifier } from '../zk';
-import { attestationsRegistered } from '../telemetry/metrics';
+import { query, withTransaction } from '../db/index.js';
+import { buildVerifier } from '../zk/index.js';
+import { attestationsRegistered } from '../telemetry/metrics.js';
 
 const proofSchema = z.object({
   subjectHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/),
