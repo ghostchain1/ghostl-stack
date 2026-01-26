@@ -72,7 +72,7 @@ compose_priority() {
     *infra/ghostchain* ) echo 3;;
     *infra/opstack*/*l3*|*docker-compose.l3.yml* ) echo 5;;
     *infra/opstack* ) echo 4;;
-    *services/docker-compose.yml*|*core-service/docker-compose.yml* ) echo 6;;
+    *services/*/docker-compose.yml*|*core-service/docker-compose.yml* ) echo 6;;
     *docker-compose.dev.yml*|*docker-compose.yml* ) echo 7;;
     * ) echo 8;;
   esac

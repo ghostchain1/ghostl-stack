@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import type { DecisionInput, DecisionOutput, Jurisdiction, LegalSignal } from './types';
+import type { DecisionInput, DecisionOutput, Jurisdiction, LegalSignal } from './types.js';
 
 const riskRank: Record<Jurisdiction['riskTier'], number> = {
   LOW: 1,

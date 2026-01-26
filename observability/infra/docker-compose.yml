@@ -23,6 +23,9 @@ services:
       - prometheus_data:/prometheus
     ports:
       - 9090:9090
+    networks:
+      - default
+      - opstack_default
   alertmanager:
     image: prom/alertmanager:v0.27.0
     restart: unless-stopped
@@ -48,21 +51,12 @@ services:
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     ports:
       - 3000:3000
-  vector:
-    image: timberio/vector:0.38.0-alpine
-    restart: unless-stopped
-    depends_on:
-      - loki
-    environment:
-      VECTOR_LOG: info
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - ../collector/vector.yaml:/etc/vector/vector.yaml:ro
-    command: ["--config", "/etc/vector/vector.yaml"]
-
 volumes:
   loki_data: {}
   prometheus_data: {}
   grafana_data: {}
   alertmanager_data: {}
+
+networks:
+  opstack_default:
+    external: true

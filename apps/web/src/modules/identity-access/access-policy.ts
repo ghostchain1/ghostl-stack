@@ -26,6 +26,7 @@ const policies: PolicyEntry[] = [
   { pattern: '/observability', role: 'READONLY' },
   { pattern: '/connection-status', role: 'READONLY' },
   { pattern: '/protocol', role: 'READONLY' },
+  { pattern: '/compliance/transparency', role: 'READONLY' },
   { pattern: '/contracts', role: 'OPERATOR' },
   { pattern: '/tokens', role: 'OPERATOR' },
   { pattern: '/tokenomics', role: 'OPERATOR' },

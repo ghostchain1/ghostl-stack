@@ -3090,62 +3090,6 @@
         "com.ghost.k8s.service.type": "ClusterIP"
       }
     },
-    "ghostscout-frontend": {
-      "cap_drop": [
-        "ALL"
-      ],
-      "cpus": "0.8",
-      "depends_on": {
-        "ghostscout": {
-          "condition": "service_started",
-          "required": true
-        }
-      },
-      "environment": {
-        "HOST": "0.0.0.0",
-        "NEXT_PUBLIC_API_HOST": "ghostscout:4000",
-        "NEXT_PUBLIC_API_PROTOCOL": "http",
-        "NEXT_PUBLIC_APP_HOST": "http://localhost:18640",
-        "NEXT_PUBLIC_NETWORK_ICON": "https://raw.githubusercontent.com/blockscout/frontend/main/public/favicon.ico",
-        "NEXT_PUBLIC_NETWORK_ID": "14000101",
-        "NEXT_PUBLIC_NETWORK_NAME": "Ghostchain",
-        "PORT": 3000
-      },
-      "image": "ghcr.io/blockscout/frontend:latest",
-      "logging": {
-        "driver": "json-file",
-        "options": {
-          "max-file": "3",
-          "max-size": "10m"
-        }
-      },
-      "mem_limit": "1g",
-      "networks": {
-        "ghostchain": {
-          "ipv4_address": "172.28.0.32"
-        }
-      },
-      "ports": [
-        {
-          "mode": "ingress",
-          "protocol": "tcp",
-          "published": "18640",
-          "target": 3000
-        }
-      ],
-      "restart": "unless-stopped",
-      "security_opt": [
-        "no-new-privileges:true"
-      ],
-      "labels": {
-        "com.ghost.k8s.name": "ghostscout-frontend",
-        "com.ghost.k8s.role": "ui",
-        "com.ghost.k8s.stateful": "false",
-        "com.ghost.k8s.no_recreate": "false",
-        "com.ghost.k8s.volume.claim": "",
-        "com.ghost.k8s.service.type": "LoadBalancer"
-      }
-    },
     "alertmanager": {
       "cap_drop": [
         "ALL"

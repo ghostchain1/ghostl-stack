@@ -26,6 +26,9 @@ async function main() {
 
   const [deployer] = await ethers.getSigners();
   console.log(`Deployer: ${deployer.address}`);
+  const constitutionGovernance = process.env.CONSTITUTION_GOVERNANCE ?? deployer.address;
+  const constitutionVerifierAgent = process.env.CONSTITUTION_VERIFIER_AGENT ?? deployer.address;
+  const constitutionZkVerifier = process.env.CONSTITUTION_ZK_VERIFIER ?? ethers.ZeroAddress;
 
   const L1Messenger = await ethers.getContractFactory("L1CrossDomainMessenger");
   const messenger = await L1Messenger.deploy(childMessenger);
@@ -64,6 +67,15 @@ async function main() {
   await nft.waitForDeployment();
   console.log(`GhostNFT: ${nft.target as string}`);
 
+  const Constitution = await ethers.getContractFactory("GhostConstitution");
+  const constitution = await Constitution.deploy(
+    constitutionGovernance,
+    constitutionVerifierAgent,
+    constitutionZkVerifier
+  );
+  await constitution.waitForDeployment();
+  console.log(`GhostConstitution: ${constitution.target as string}`);
+
   const contracts = [
     { name: "L1CrossDomainMessenger", address: messenger.target as string },
     { name: "L1SystemConfig", address: systemConfig.target as string },
@@ -71,7 +83,8 @@ async function main() {
     { name: "L1OutputOracle", address: outputOracle.target as string },
     { name: "L1DisputeGameFactory", address: dgf.target as string },
     { name: "StandardBridge", address: l1Bridge.target as string },
-    { name: "GhostNFT", address: nft.target as string }
+    { name: "GhostNFT", address: nft.target as string },
+    { name: "GhostConstitution", address: constitution.target as string }
   ];
   const chainId = Number((await ethers.provider.getNetwork()).chainId);
   const enriched = await Promise.all(

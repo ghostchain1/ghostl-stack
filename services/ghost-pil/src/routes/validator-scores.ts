@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { query } from '../db';
+import { query } from '../db/index.js';
 
 export const registerValidatorScoreRoutes = (app: FastifyInstance) => {
   app.get('/v1/validators/scores', async () => {

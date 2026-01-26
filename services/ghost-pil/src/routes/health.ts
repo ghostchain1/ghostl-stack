@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { config } from '../config';
+import { config } from '../config.js';
 
 export const registerHealthRoutes = (app: FastifyInstance) => {
   app.get('/health', async () => ({

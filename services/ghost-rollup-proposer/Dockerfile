@@ -1,4 +1,5 @@
 FROM node:22-alpine AS base
+RUN apk add --no-cache bash curl
 WORKDIR /app
 # install full deps so ts-node is available from devDependencies
 COPY package*.json ./

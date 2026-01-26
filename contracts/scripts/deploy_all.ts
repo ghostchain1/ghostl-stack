@@ -174,6 +174,23 @@ async function main() {
   await recordDeployment("l1", "OptimisticRollup", l1RollupAddr, Number(l1Network.chainId));
   console.log("OptimisticRollup L2->L1 (L1):", l1RollupAddr);
 
+  console.log("== Deploy GhostConstitution on L1 ==");
+  const constitutionGovernance = process.env.CONSTITUTION_GOVERNANCE ?? (await l1Signer.getAddress());
+  const constitutionVerifierAgent =
+    process.env.CONSTITUTION_VERIFIER_AGENT ?? constitutionGovernance;
+  const constitutionZkVerifier = process.env.CONSTITUTION_ZK_VERIFIER ?? ethers.ZeroAddress;
+  const Constitution = await ethers.getContractFactory("GhostConstitution");
+  const constitution = await Constitution.connect(l1Signer).deploy(
+    constitutionGovernance,
+    constitutionVerifierAgent,
+    constitutionZkVerifier,
+    txOpts
+  );
+  await waitForDeployment(constitution, l1Provider, "GhostConstitution");
+  const constitutionAddr = await constitution.getAddress();
+  await recordDeployment("l1", "GhostConstitution", constitutionAddr, Number(l1Network.chainId));
+  console.log("GhostConstitution (L1):", constitutionAddr);
+
   console.log("== Deploy GhostNFT on L1 ==");
   const l1NftName = process.env.L1_NFT_NAME ?? "GhostChain NFT";
   const l1NftSymbol = process.env.L1_NFT_SYMBOL ?? "GL1NFT";

@@ -38,6 +38,19 @@
         "privacyTolerance": 3
       },
       "riskTier": "MEDIUM"
+    },
+    {
+      "code": "UK",
+      "name": "United Kingdom",
+      "region": "EU",
+      "regulatoryProfile": {
+        "amlLevel": 4,
+        "sanctionsStrictness": 4,
+        "cryptoClarity": 4,
+        "enforcementAggressiveness": 3,
+        "privacyTolerance": 3
+      },
+      "riskTier": "MEDIUM"
     }
   ]
 }

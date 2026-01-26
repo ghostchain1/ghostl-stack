@@ -388,8 +388,8 @@
       ]
     },
     "/home/ghost/ghostl-stack/contracts/src/GhostGasTokens.sol": {
-      "lastModificationDate": 1768818330187,
-      "contentHash": "492b57bb6829ba0ddb1f0653a1921115",
+      "lastModificationDate": 1769392985508,
+      "contentHash": "c0ff6aa8637cab4a1d0cd53cf575aa71",
       "sourceName": "src/GhostGasTokens.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -2605,6 +2605,43 @@
       ],
       "artifacts": [
         "L2OutputOracle"
+      ]
+    },
+    "/home/ghost/ghostl-stack/contracts/src/GhostConstitution.sol": {
+      "lastModificationDate": 1769399578741,
+      "contentHash": "617435652fdca4ccbdd80844a22830a2",
+      "sourceName": "src/GhostConstitution.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "GhostConstitution",
+        "IZKVerifier"
       ]
     }
   }

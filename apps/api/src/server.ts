@@ -4153,10 +4153,12 @@ app.use((err: Error, req: express.Request, res: express.Response, _next: express
   res.status(500).json({ error: 'internal_error', message: err.message, correlationId: req.correlationId });
 });
 
-const port = process.env.PORT || 4000;
-if (require.main === module) {
-  app.listen(port, () => {
-    console.log(`API listening on :${port}`);
+const port = Number(process.env.PORT) || 4000;
+const host = process.env.HOST || '0.0.0.0';
+const shouldListen = require.main === module || process.env.FORCE_LISTEN === 'true';
+if (shouldListen) {
+  app.listen(port, host, () => {
+    console.log(`API listening on ${host}:${port}`);
   });
 }
 

@@ -105,6 +105,7 @@ services:
         condition: service_healthy
     ports:
     - 29547:8545
+    - 29606:6060
     volumes:
     - ./data/l2-geth-new2:/data
     - ./config:/config:ro
@@ -117,8 +118,7 @@ services:
       \ --http.addr=0.0.0.0 --http.api=eth,net,web3,debug,txpool \\\n  --http.vhosts=\"\
       *\" \\\n  --ws --ws.addr=0.0.0.0 --ws.origins=\"*\" \\\n  --authrpc.addr=0.0.0.0\
       \ --authrpc.port=8551 --authrpc.vhosts=\"*\" --authrpc.jwtsecret=/config/jwt.txt\
-      \\\n  --datadir=/data \\\n  --networkid=${L2_CHAIN_ID:-901} \\\n  --gcmode=archive\
-      \ \\\n  --rollup.disabletxpoolgossip=true\n"
+      \\\n  --datadir=/data \\\n  --networkid=${L2_CHAIN_ID:-901} \\\n  --gcmode=archive \\\n  --metrics --metrics.addr=0.0.0.0 --metrics.port=6060 \\\n  --rollup.disabletxpoolgossip=true\n"
     healthcheck:
       test:
       - CMD-SHELL
@@ -168,6 +168,7 @@ services:
     - --l1=${L1_RPC:-http://host.docker.internal:18545}
     - --l2=http://l2-geth:8551
     - --l2.jwt-secret=/config/jwt.txt
+    - --log.level=debug
     - --rollup.config=/config/rollup.json
     - --rollup.l1-chain-config=/config/l1-chain.json
     - --rpc.addr=0.0.0.0
@@ -359,7 +360,7 @@ services:
     - --config.file=/etc/prometheus/prometheus.yml
     - --storage.tsdb.path=/prometheus
     ports:
-    - 9090:9090
+    - 9091:9090
     healthcheck:
       test:
       - CMD-SHELL
@@ -379,6 +380,7 @@ services:
     command:
     - --config.file=/etc/alertmanager/alertmanager.yml
     - --storage.path=/alertmanager
+    - --cluster.listen-address=
     volumes:
     - ./observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     - alertmanager_data:/alertmanager

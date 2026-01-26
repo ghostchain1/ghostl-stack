@@ -14,7 +14,10 @@ Read-only data plane for GhostChain L1/L2/L3 telemetry, jurisdiction modeling, a
 ## Local Run (Docker Compose)
 
 ```
-docker compose -f services/docker-compose.yml up -d pil-postgres ghost-pil ghost-pil-worker
+docker compose -f services/pil-postgres/docker-compose.yml up -d
+docker compose -f services/pil-migrate/docker-compose.yml up -d
+docker compose -f services/ghost-pil/docker-compose.yml up -d
+docker compose -f services/ghost-pil-worker/docker-compose.yml up -d
 ```
 
 ## Key Endpoints

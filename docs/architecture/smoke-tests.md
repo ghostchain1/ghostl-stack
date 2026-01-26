@@ -3,7 +3,10 @@
 ## Phase 1 - Data Plane
 
 - Start PIL stack:
-  - `docker compose -f services/docker-compose.yml up -d pil-postgres pil-migrate ghost-pil ghost-pil-worker`
+  - `docker compose -f services/pil-postgres/docker-compose.yml up -d`
+  - `docker compose -f services/pil-migrate/docker-compose.yml up -d`
+  - `docker compose -f services/ghost-pil/docker-compose.yml up -d`
+  - `docker compose -f services/ghost-pil-worker/docker-compose.yml up -d`
 - Verify health:
   - `curl http://localhost:3220/health`
   - `curl http://localhost:3220/v1/chains`

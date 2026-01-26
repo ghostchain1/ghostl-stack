@@ -1,6 +1,6 @@
-import { config, loadChains, type ChainConfig } from '../config';
-import { createGhostRpc } from '../rpc/ghost-rpc';
-import { pool } from '../db';
+import { config, loadChains, type ChainConfig } from '../config.js';
+import { createGhostRpc } from '../rpc/ghost-rpc.js';
+import { pool } from '../db/index.js';
 import {
   ingestTicks,
   rpcErrors,
@@ -9,7 +9,7 @@ import {
   receiptsIngested,
   tracesIngested,
   chainHead
-} from '../telemetry/metrics';
+} from '../telemetry/metrics.js';
 
 const hexToBigIntString = (value?: string | null) => {
   if (!value) return null;

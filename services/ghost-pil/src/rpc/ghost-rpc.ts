@@ -1,4 +1,4 @@
-import { config } from '../config';
+import { config } from '../config.js';
 
 export type RpcNamespace = 'eth' | 'ghost';
 
@@ -108,7 +108,7 @@ export class GhostRpc {
 
   async getFeeData(): Promise<{ gasPrice?: string; maxFeePerGas?: string; maxPriorityFeePerGas?: string }> {
     try {
-      const block = await this.call(this.method('getBlockByNumber'), ['latest', false]);
+      const block = await this.call<{ baseFeePerGas?: string }>(this.method('getBlockByNumber'), ['latest', false]);
       if (block?.baseFeePerGas) {
         const maxPriorityFeePerGas = '0x3b9aca00';
         const maxFeePerGas = block.baseFeePerGas;

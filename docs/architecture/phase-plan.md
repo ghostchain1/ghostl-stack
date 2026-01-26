@@ -30,7 +30,11 @@ Defaults:
 - Validator compliance economics integration (reward multipliers + soft slashing).
 
 ## Deploy commands
-- Phase 1: `docker compose -f services/docker-compose.yml up -d pil-postgres pil-migrate ghost-pil ghost-pil-worker`
+- Phase 1:
+  - `docker compose -f services/pil-postgres/docker-compose.yml up -d`
+  - `docker compose -f services/pil-migrate/docker-compose.yml up -d`
+  - `docker compose -f services/ghost-pil/docker-compose.yml up -d`
+  - `docker compose -f services/ghost-pil-worker/docker-compose.yml up -d`
 - Phase 2: enable simulation worker (future: `PIL_SIM_ENABLED=true`)
 - Phase 3: `PIL_ENABLED=true`, `PIL_WRITE_ENABLED=true`, `PIL_AUTONOMY_MODE=ASSISTED`
 - Phase 4: `PIL_AUTONOMY_MODE=AUTONOMOUS_STRICT`, governance approvals enabled

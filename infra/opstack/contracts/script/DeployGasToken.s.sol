@@ -10,8 +10,8 @@ contract DeployGasToken is Script {
         uint256 pk = vm.envUint("DEPLOYER_PK");
         address deployer = vm.addr(pk);
 
-        string memory name = vm.envOr("GAS_TOKEN_NAME", string("Ghost Gas"));
-        string memory symbol = vm.envOr("GAS_TOKEN_SYMBOL", string("GAS"));
+        string memory name = vm.envOr("GAS_TOKEN_NAME", string("Ghost Token"));
+        string memory symbol = vm.envOr("GAS_TOKEN_SYMBOL", string("GHOST"));
         uint8 decimals = uint8(vm.envOr("GAS_TOKEN_DECIMALS", uint256(18)));
         uint256 supply = vm.envOr("GAS_TOKEN_INITIAL_SUPPLY", uint256(1_000_000_000 ether));
         address recipient = vm.envOr("GAS_TOKEN_RECIPIENT", deployer);
