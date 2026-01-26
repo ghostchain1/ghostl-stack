@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { query } from '../db';
+import { query } from '../db/index.js';
 
 export const registerLegalSignalRoutes = (app: FastifyInstance) => {
   app.get('/v1/legal-signals', async (req) => {

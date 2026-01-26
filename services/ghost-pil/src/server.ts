@@ -2,22 +2,22 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
-import { config } from './config';
-import { metricsHandler } from './telemetry/metrics';
-import { registerHealthRoutes } from './routes/health';
-import { registerChainRoutes } from './routes/chains';
-import { registerIngestRoutes } from './routes/ingest';
-import { registerJurisdictionRoutes } from './routes/jurisdictions';
-import { registerLegalSignalRoutes } from './routes/legal-signals';
-import { registerSimulationRoutes } from './routes/simulations';
-import { registerRecommendationRoutes } from './routes/recommendations';
-import { registerMetricsSummaryRoutes } from './routes/metrics-summary';
-import { registerDecisionRoutes } from './routes/decisions';
-import { registerPolicyPackRoutes } from './routes/policy-packs';
-import { registerAttestationRoutes } from './routes/attestations';
-import { registerValidatorScoreRoutes } from './routes/validator-scores';
-import { registerPreflightRoutes } from './routes/preflight';
-import { closeDb } from './db';
+import { config } from './config.js';
+import { metricsHandler } from './telemetry/metrics.js';
+import { registerHealthRoutes } from './routes/health.js';
+import { registerChainRoutes } from './routes/chains.js';
+import { registerIngestRoutes } from './routes/ingest.js';
+import { registerJurisdictionRoutes } from './routes/jurisdictions.js';
+import { registerLegalSignalRoutes } from './routes/legal-signals.js';
+import { registerSimulationRoutes } from './routes/simulations.js';
+import { registerRecommendationRoutes } from './routes/recommendations.js';
+import { registerMetricsSummaryRoutes } from './routes/metrics-summary.js';
+import { registerDecisionRoutes } from './routes/decisions.js';
+import { registerPolicyPackRoutes } from './routes/policy-packs.js';
+import { registerAttestationRoutes } from './routes/attestations.js';
+import { registerValidatorScoreRoutes } from './routes/validator-scores.js';
+import { registerPreflightRoutes } from './routes/preflight.js';
+import { closeDb } from './db/index.js';
 
 const app = Fastify({
   logger: {

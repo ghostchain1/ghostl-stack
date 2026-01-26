@@ -72,6 +72,9 @@ export default function CompliancePage() {
           <Link className="button secondary" href="/compliance/controls">
             Controls
           </Link>
+          <Link className="button secondary" href="/compliance/transparency">
+            Transparency Portal
+          </Link>
         </div>
       </div>
       <div className="card-grid">

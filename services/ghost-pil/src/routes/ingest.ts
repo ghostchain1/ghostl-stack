@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
-import { config } from '../config';
-import { query } from '../db';
+import { config } from '../config.js';
+import { query } from '../db/index.js';
 
 export const registerIngestRoutes = (app: FastifyInstance) => {
   app.get('/v1/ingest/status', async () => {

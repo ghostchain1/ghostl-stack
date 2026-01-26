@@ -97,8 +97,8 @@ const regionFor = (urls: string[]) => {
 
 const gasTokenFor = (layer: 'L1' | 'L2' | 'L3') => {
   if (layer === 'L1') return process.env.GAS_TOKEN_L1 || 'GHOST';
-  if (layer === 'L2') return process.env.GAS_TOKEN_L2 || 'GL2GAS';
-  return process.env.GAS_TOKEN_L3 || 'GL3GAS';
+  if (layer === 'L2') return process.env.GAS_TOKEN_L2 || 'GHOST';
+  return process.env.GAS_TOKEN_L3 || 'GHOST';
 };
 
 const chainConfig = () => {

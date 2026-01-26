@@ -1,5 +1,6 @@
 # Simple clock drift monitor for Ghostchain, L2, and L3
 FROM node:22-alpine
+RUN apk add --no-cache bash curl
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm config set registry https://registry.npmjs.org \

@@ -6,7 +6,7 @@
 - Services: `services/*` (bridge, validator, governance, treasury, ghost-registry, observability-related, etc.).
 - Docker Compose files:
   - `docker-compose.dev.yml` (ghostl-web on 3200, ghostl-api on 4000).
-  - `services/docker-compose.yml` (service stack).
+  - `services/*/docker-compose.yml` (per-service stack).
   - `observability/infra/docker-compose.yml` (Prometheus/Grafana/Loki/Alertmanager).
   - `infra/opstack/*` and `infra/ghostchain/*` (chain/RPC stacks).
 
@@ -38,7 +38,7 @@
 - Bridge / Governance / Treasury / DevOps / Validators pages empty:
   - API proxies to service URLs (`servicesBase.*`) and uses `proxyJson` fallback to empty arrays on failure.
   - When services are down, API returns empty data with HTTP 200, so UI looks blank.
-  - Fix: run services in `services/docker-compose.yml` or change proxy behavior to emit errors (later phases).
+  - Fix: run per-service compose files under `services/*/docker-compose.yml` or change proxy behavior to emit errors (later phases).
 - Explorer / Wallet / Chain data empty:
   - RPC endpoints default to `localhost` or `host.docker.internal` (from `apps/api/.env.example` and `services/stack.env`).
   - If RPC nodes are not running or `host.docker.internal` is not resolvable, RPC calls fail or return zeros.

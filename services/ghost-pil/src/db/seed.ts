@@ -1,8 +1,8 @@
 import { readFileSync } from 'fs';
 import path from 'path';
-import { pool } from './index';
-import { config, loadChains } from '../config';
-import { buildSanctionsAdapter } from '../adapters/sanctions';
+import { pool } from './index.js';
+import { config, loadChains } from '../config.js';
+import { buildSanctionsAdapter } from '../adapters/sanctions.js';
 import { readdirSync } from 'fs';
 
 type JurisdictionSeed = {
@@ -203,7 +203,7 @@ async function seedRecommendation(chainId: number) {
     `INSERT INTO pil_recommendations (id, chain_id, recommendation_type, summary, rationale, risks, confidence, sim_run_ids, rollback_plan, required_approvals, status)
      VALUES ('00000000-0000-0000-0000-000000000030', $1, 'FEE_TUNING',
              'Increase base gas multiplier by 10%', 'Simulation shows lower OOG rate with minor fee impact',
-             ARRAY['fee_pressure'], 0.68, ARRAY['00000000-0000-0000-0000-000000000020'], 'Revert to v1 policy pack', 1, 'DRAFT')
+             ARRAY['fee_pressure'], 0.68, ARRAY['00000000-0000-0000-0000-000000000020']::uuid[], 'Revert to v1 policy pack', 1, 'DRAFT')
      ON CONFLICT DO NOTHING`,
     [chainId]
   );

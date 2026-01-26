@@ -1,9 +1,9 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { query, withTransaction } from '../db';
-import { evaluateDecision } from '../engine/evaluator';
-import type { Jurisdiction, LegalSignal, DecisionInput } from '../engine/types';
-import { complianceDecisions } from '../telemetry/metrics';
+import { query, withTransaction } from '../db/index.js';
+import { evaluateDecision } from '../engine/evaluator.js';
+import type { Jurisdiction, LegalSignal, DecisionInput } from '../engine/types.js';
+import { complianceDecisions } from '../telemetry/metrics.js';
 
 const inputSchema = z.object({
   requestId: z.string().optional(),

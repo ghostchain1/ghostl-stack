@@ -69,11 +69,11 @@ bash infra/scripts/opstack/reset.sh
 ## Custom gas tokens (L2/L3)
 GhostL2 and GhostL3 can use custom ERC20 gas tokens via `SystemConfig`. L1 (GhostChain) still uses the native chain asset for gas.
 
-**Deploy an L2 gas token on L1 (GhostChain):**
+**Deploy the GHOST gas token on L1 (GhostChain):**
 ```bash
 export DEPLOYER_PK=0x...                                   # funded on GhostChain
-export GAS_TOKEN_NAME=GhostL2Gas
-export GAS_TOKEN_SYMBOL=GL2
+export GAS_TOKEN_NAME="Ghost Token"
+export GAS_TOKEN_SYMBOL=GHOST
 export GAS_TOKEN_DECIMALS=18
 export GAS_TOKEN_INITIAL_SUPPLY=1000000000000000000000000000
 export GAS_TOKEN_RECIPIENT=0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
@@ -90,4 +90,4 @@ forge script infra/opstack/contracts/script/DeployL1.s.sol:DeployL1 \
 ```
 This sets `SystemConfig.gasPayingToken` at initialization. If the L2 SystemConfig proxy was already deployed, you must redeploy/reset L2.
 
-**For L3:** repeat the same flow on GhostL2 (deploy the token to L2, then run `DeployL1.s.sol` against the L2 RPC) with `GAS_TOKEN_NAME=GhostL3Gas` / `GAS_TOKEN_SYMBOL=GL3`.
+**For L3:** repeat the same flow on GhostL2 (deploy the token to L2, then run `DeployL1.s.sol` against the L2 RPC) with `GAS_TOKEN_NAME="Ghost Token"` / `GAS_TOKEN_SYMBOL=GHOST`.

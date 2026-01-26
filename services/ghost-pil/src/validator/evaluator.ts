@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
-import { config } from '../config';
-import { pool } from '../db';
+import { config } from '../config.js';
+import { pool } from '../db/index.js';
 
 export type ValidatorConfig = {
   id: string;

@@ -1,6 +1,6 @@
-import { config } from './config';
-import { startIngestLoop } from './ingest/runner';
-import { evaluateValidatorScores } from './validator/evaluator';
+import { config } from './config.js';
+import { startIngestLoop } from './ingest/runner.js';
+import { evaluateValidatorScores } from './validator/evaluator.js';
 
 if (!config.PIL_INGEST_ENABLED) {
   // eslint-disable-next-line no-console

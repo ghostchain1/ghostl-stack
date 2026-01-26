@@ -1,8 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { query, withTransaction } from '../db';
-import { evaluateDecision } from '../engine/evaluator';
-import type { Jurisdiction, LegalSignal } from '../engine/types';
+import { query, withTransaction } from '../db/index.js';
+import { evaluateDecision } from '../engine/evaluator.js';
+import type { Jurisdiction, LegalSignal } from '../engine/types.js';
 
 const preflightSchema = z.object({
   action: z.string(),

@@ -18,7 +18,7 @@
       "rpcUrl": "http://host.docker.internal:18547",
       "fallbackRpcUrls": [],
       "wsUrl": "",
-      "gasTokenSymbol": "GL2GAS"
+      "gasTokenSymbol": "GHOST"
     },
     {
       "key": "l3",
@@ -28,7 +28,7 @@
       "rpcUrl": "http://host.docker.internal:39545",
       "fallbackRpcUrls": [],
       "wsUrl": "",
-      "gasTokenSymbol": "GL3GAS"
+      "gasTokenSymbol": "GHOST"
     }
   ]
 }

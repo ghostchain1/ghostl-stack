@@ -155,8 +155,8 @@ contract DeployL1 is Script {
         cfg.disputeGameFinalityDelay = vm.envOr("PORTAL_DISPUTE_GAME_FINALITY_DELAY", uint256(0));
         cfg.useCustomGasToken = vm.envOr("USE_CUSTOM_GAS_TOKEN", false);
         cfg.customGasToken = vm.envOr("CUSTOM_GAS_TOKEN_ADDRESS", address(0));
-        cfg.gasTokenName = vm.envOr("GAS_TOKEN_NAME", string("Ghost L2 Gas"));
-        cfg.gasTokenSymbol = vm.envOr("GAS_TOKEN_SYMBOL", string("GL2"));
+        cfg.gasTokenName = vm.envOr("GAS_TOKEN_NAME", string("Ghost Token"));
+        cfg.gasTokenSymbol = vm.envOr("GAS_TOKEN_SYMBOL", string("GHOST"));
         cfg.gasTokenDecimals = uint8(vm.envOr("GAS_TOKEN_DECIMALS", uint256(18)));
         cfg.gasTokenInitialSupply = vm.envOr("GAS_TOKEN_INITIAL_SUPPLY", uint256(1_000_000_000 ether));
         cfg.gasTokenRecipient = vm.envOr("GAS_TOKEN_RECIPIENT", deployer);

@@ -1,8 +1,10 @@
+/* eslint-disable no-console */
 import { readFileSync, readdirSync } from 'fs';
 import path from 'path';
 import { pool } from './index.js';
 import { loadChains, loadPolicies } from '../config.js';
 
+const MIGRATION_TIMEOUT_MS = Number(process.env.MIGRATION_TIMEOUT_MS ?? 120000);
 const MIGRATIONS_DIR = path.join(process.cwd(), 'src', 'db', 'migrations');
 
 const seedDeploymentId = '00000000-0000-0000-0000-000000000001';
@@ -19,7 +21,28 @@ const seedAiDecisionId = '00000000-0000-0000-0000-000000000011';
 const seedAiActionId = '00000000-0000-0000-0000-000000000012';
 const seedGovId = '00000000-0000-0000-0000-000000000013';
 
-const run = async () => {
+const asJson = (value: unknown) => JSON.stringify(value);
+
+const withTimeout = async <T>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  }) as Promise<T>;
+};
+
+const closePool = async () => {
+  try {
+    await pool.end();
+    console.log('DB pool closed');
+  } catch (err) {
+    console.warn('DB pool close failed', err);
+  }
+};
+
+const seedOnce = async () => {
   const migrationFiles = readdirSync(MIGRATIONS_DIR)
     .filter((file) => file.endsWith('.sql'))
     .sort((a, b) => a.localeCompare(b));
@@ -66,7 +89,11 @@ const run = async () => {
       [
         seedSimulationId,
         'l1',
-        { from: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266', to: '0x0000000000000000000000000000000000000000', value: '0x0' },
+        asJson({
+          from: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266',
+          to: '0x0000000000000000000000000000000000000000',
+          value: '0x0'
+        }),
         210000,
         336000,
         30000000,
@@ -109,7 +136,7 @@ const run = async () => {
        ON CONFLICT (tx_hash) DO NOTHING`,
       [
         '0xseededtransactionhash000000000000000000000000000000000000000000000000000001',
-        { status: '0x1', gasUsed: '0x33450', blockNumber: '0x1' },
+        asJson({ status: '0x1', gasUsed: '0x33450', blockNumber: '0x1' }),
         1,
         210000,
         1000000000,
@@ -134,7 +161,7 @@ const run = async () => {
         210000,
         336000,
         3,
-        { reasons: ['history_stable', 'low_congestion'] },
+        asJson({ reasons: ['history_stable', 'low_congestion'] }),
         0.81
       ]
     );
@@ -142,7 +169,7 @@ const run = async () => {
     await pool.query(
       `INSERT INTO gas_autonomy_events (chain_key, event_type, payload)
        VALUES ($1,$2,$3)`,
-      ['l1', 'decide', { decisionId: seedDecisionId, note: 'seed decision' }]
+      ['l1', 'decide', asJson({ decisionId: seedDecisionId, note: 'seed decision' })]
     );
 
     await pool.query(
@@ -155,9 +182,9 @@ const run = async () => {
         'l1',
         0.18,
         0.18,
-        ['out_of_gas'],
+        asJson(['out_of_gas']),
         0.74,
-        { congestion: 0.2, failureRate: 0.1 }
+        asJson({ congestion: 0.2, failureRate: 0.1 })
       ]
     );
 
@@ -170,10 +197,10 @@ const run = async () => {
         seedPolicyHistoryId,
         'l1',
         '2026.01.23-seed',
-        { baseMultiplier: 1.6, safetyMarginPercent: 20 },
+        asJson({ baseMultiplier: 1.6, safetyMarginPercent: 20 }),
         'agent',
         'active',
-        { successRate: 0.9 }
+        asJson({ successRate: 0.9 })
       ]
     );
 
@@ -227,7 +254,7 @@ const run = async () => {
         120,
         'execution',
         'ALLOW',
-        { failureRate: 0.1, congestion: 0.2 }
+        asJson({ failureRate: 0.1, congestion: 0.2 })
       ]
     );
 
@@ -246,7 +273,7 @@ const run = async () => {
         0.78,
         seedPredictionId,
         seedDeploymentId,
-        { note: 'seed decision' }
+        asJson({ note: 'seed decision' })
       ]
     );
 
@@ -255,7 +282,7 @@ const run = async () => {
        (id, decision_id, chain_key, action_type, status, payload)
        VALUES ($1,$2,$3,$4,$5,$6)
        ON CONFLICT (id) DO NOTHING`,
-      [seedAiActionId, seedAiDecisionId, 'l1', 'ALLOW', 'executed', { note: 'seed action' }]
+      [seedAiActionId, seedAiDecisionId, 'l1', 'ALLOW', 'executed', asJson({ note: 'seed action' })]
     );
 
     await pool.query(
@@ -295,21 +322,38 @@ const run = async () => {
        (chain_key, max_risk, max_gas_limit, max_retries, allowed_actions)
        VALUES ($1,$2,$3,$4,$5)
        ON CONFLICT DO NOTHING`,
-      ['l1', 0.75, 30000000, 5, ['ALLOW', 'MODIFY', 'RETRY']]
+      ['l1', 0.75, 30000000, 5, asJson(['ALLOW', 'MODIFY', 'RETRY'])]
     );
 
     await pool.query(
       `INSERT INTO ai_core_events (chain_key, module, event_type, payload)
        VALUES ($1,$2,$3,$4)`,
-      ['l1', 'observe', 'seed_event', { note: 'seed ai core event' }]
+      ['l1', 'observe', 'seed_event', asJson({ note: 'seed ai core event' })]
     );
   }
-
-  await pool.end();
 };
 
-run().catch((err) => {
-  // eslint-disable-next-line no-console
-  console.error(err);
-  process.exit(1);
-});
+const run = async () => {
+  const started = Date.now();
+  let exitCode = 0;
+  const killer = setTimeout(() => {
+    console.error(`Seed watchdog exceeded ${MIGRATION_TIMEOUT_MS}ms - forcing exit(1)`);
+    void closePool().finally(() => process.exit(1));
+  }, MIGRATION_TIMEOUT_MS);
+  killer.unref?.();
+
+  try {
+    await withTimeout(seedOnce(), MIGRATION_TIMEOUT_MS, 'seed');
+    console.log(`Seed completed in ${Date.now() - started}ms`);
+  } catch (err) {
+    exitCode = 1;
+    console.error('Seed failed', err);
+  } finally {
+    clearTimeout(killer);
+    await closePool();
+  }
+
+  process.exit(exitCode);
+};
+
+void run();
