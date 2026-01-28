@@ -48,7 +48,7 @@ services:
     volumes:
       - ./data/node1:/data
       - ./geth:/config:ro
-      - ./data/bootnode/bootnode-enode.txt:/run/bootnode-enode.txt:ro
+      - ./data/bootnode:/run/bootnode:ro
     ports:
       - "18545:8545"
       - "18546:8546"
@@ -90,7 +90,7 @@ services:
     volumes:
       - ./data/node2:/data
       - ./geth:/config:ro
-      - ./data/bootnode/bootnode-enode.txt:/run/bootnode-enode.txt:ro
+      - ./data/bootnode:/run/bootnode:ro
     environment:
       - CHAIN_ID=14000101
       - SIGNER_ADDRESS=0x70997970c51812dc3a010c7d01b50e0d17dc79c8
