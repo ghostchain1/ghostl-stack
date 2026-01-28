@@ -2,7 +2,16 @@
 set -e
 
 DATADIR=/data
-ENODE=${BOOTNODE_ENODE:-$(cat /run/bootnode-enode.txt)}
+if [ -n "${BOOTNODE_ENODE:-}" ]; then
+  ENODE="$BOOTNODE_ENODE"
+elif [ -f /run/bootnode-enode.txt ]; then
+  ENODE="$(cat /run/bootnode-enode.txt)"
+elif [ -f /run/bootnode/bootnode-enode.txt ]; then
+  ENODE="$(cat /run/bootnode/bootnode-enode.txt)"
+else
+  echo "Bootnode enode file not found." >&2
+  exit 1
+fi
 CHAIN_ID_VAL=${CHAIN_ID:-14000101}
 SIGNER=${SIGNER_ADDRESS:-0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266}
 HTTP_PORT=${HTTP_PORT:-8545}
