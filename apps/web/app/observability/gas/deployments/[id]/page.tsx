@@ -28,8 +28,9 @@ type DeploymentInfo = {
 };
 
 export default function GasDeploymentPage() {
-  const params = useParams();
-  const deploymentId = typeof params.id === 'string' ? params.id : params.id?.[0];
+  const params = useParams<{ id?: string | string[] }>();
+  const idParam = params?.id;
+  const deploymentId = Array.isArray(idParam) ? idParam[0] : idParam;
   const { user } = useSession();
   const isAdmin = roleOrder[normalizeRole(user?.role)] >= roleOrder.ADMIN;
   const [deployment, setDeployment] = useState<DeploymentInfo['deployment']>(null);

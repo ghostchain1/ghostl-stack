@@ -53,7 +53,11 @@ export async function registerMetricsRoutes(app: FastifyInstance) {
     chainBugCounts.forEach((row) => chainBugTotal.labels(row.chain_key).set(Number(row.count)));
 
     const avgGasUsedRows = await query<{ chain_key: string; avg: string }>(
-      'SELECT chain_key, AVG(gas_used) as avg FROM gas_deployment_attempts WHERE gas_used IS NOT NULL GROUP BY chain_key'
+      `SELECT d.chain_key, AVG(a.gas_used) as avg
+       FROM gas_deployment_attempts a
+       JOIN gas_deployments d ON d.id = a.deployment_id
+       WHERE a.gas_used IS NOT NULL
+       GROUP BY d.chain_key`
     );
     avgGasUsed.reset();
     avgGasUsedRows.forEach((row) => avgGasUsed.labels(row.chain_key).set(Number(row.avg)));
@@ -104,10 +108,18 @@ export async function registerMetricsRoutes(app: FastifyInstance) {
        GROUP BY d.chain_key`
     );
     const outOfGas = await query<{ chain_key: string; count: string }>(
-      "SELECT chain_key, COUNT(*)::text as count FROM gas_deployment_attempts WHERE classification = 'OUT_OF_GAS' GROUP BY chain_key"
+      `SELECT d.chain_key, COUNT(*)::text as count
+       FROM gas_deployment_attempts a
+       JOIN gas_deployments d ON d.id = a.deployment_id
+       WHERE a.classification = 'OUT_OF_GAS'
+       GROUP BY d.chain_key`
     );
     const avgGasUsed = await query<{ chain_key: string; avg: string }>(
-      'SELECT chain_key, AVG(gas_used) as avg FROM gas_deployment_attempts WHERE gas_used IS NOT NULL GROUP BY chain_key'
+      `SELECT d.chain_key, AVG(a.gas_used) as avg
+       FROM gas_deployment_attempts a
+       JOIN gas_deployments d ON d.id = a.deployment_id
+       WHERE a.gas_used IS NOT NULL
+       GROUP BY d.chain_key`
     );
     const avgEstimate = await query<{ chain_key: string; avg: string }>(
       'SELECT chain_key, AVG(estimated_gas) as avg FROM gas_simulations GROUP BY chain_key'

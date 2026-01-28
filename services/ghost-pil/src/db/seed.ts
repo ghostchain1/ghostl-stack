@@ -38,6 +38,23 @@ async function runMigrations() {
 async function seedChains() {
   const chains = await loadChains();
   for (const chain of chains) {
+    const existingByKey = await pool.query(
+      'SELECT chain_id FROM pil_chains WHERE chain_key = $1',
+      [chain.key]
+    );
+    if (existingByKey.rowCount > 0) {
+      await pool.query(
+        `UPDATE pil_chains
+         SET name = $2,
+             type = $3,
+             gas_token_symbol = $4,
+             rpc_url_ref = $5,
+             updated_at = NOW()
+         WHERE chain_key = $1`,
+        [chain.key, chain.name, chain.type, chain.gasTokenSymbol, chain.rpcUrl]
+      );
+      continue;
+    }
     await pool.query(
       `INSERT INTO pil_chains (chain_id, chain_key, name, type, gas_token_symbol, rpc_url_ref)
        VALUES ($1, $2, $3, $4, $5, $6)

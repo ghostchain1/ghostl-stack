@@ -421,6 +421,64 @@ contract ChainConfigV2 is AccessManaged {
     }
 }
 
+/// @notice Execution layer config for VM + gas model + precompile registry.
+contract ExecutionConfigV2 is AccessManaged {
+    uint256 public chainId;
+    uint256 public blockGasLimit;
+    uint256 public baseFee;
+    uint256 public elasticityMultiplier;
+    uint256 public baseFeeMaxChangeDenominator;
+    address[] public precompiles;
+    mapping(address => bool) public isPrecompile;
+
+    event GasModelUpdated(
+        uint256 chainId,
+        uint256 blockGasLimit,
+        uint256 baseFee,
+        uint256 elasticityMultiplier,
+        uint256 baseFeeMaxChangeDenominator
+    );
+    event PrecompilesUpdated(address[] precompiles);
+
+    constructor(address admin_, uint256 chainId_, uint256 blockGasLimit_) AccessManaged(admin_) {
+        chainId = chainId_;
+        blockGasLimit = blockGasLimit_;
+        emit GasModelUpdated(chainId_, blockGasLimit_, 0, 0, 0);
+    }
+
+    function setGasModel(
+        uint256 chainId_,
+        uint256 blockGasLimit_,
+        uint256 baseFee_,
+        uint256 elasticityMultiplier_,
+        uint256 baseFeeMaxChangeDenominator_
+    ) external onlyAdmin {
+        chainId = chainId_;
+        blockGasLimit = blockGasLimit_;
+        baseFee = baseFee_;
+        elasticityMultiplier = elasticityMultiplier_;
+        baseFeeMaxChangeDenominator = baseFeeMaxChangeDenominator_;
+        emit GasModelUpdated(chainId_, blockGasLimit_, baseFee_, elasticityMultiplier_, baseFeeMaxChangeDenominator_);
+    }
+
+    function setPrecompiles(address[] calldata newPrecompiles) external onlyAdmin {
+        for (uint256 i = 0; i < precompiles.length; i++) {
+            isPrecompile[precompiles[i]] = false;
+        }
+        delete precompiles;
+        for (uint256 i = 0; i < newPrecompiles.length; i++) {
+            address addr = newPrecompiles[i];
+            precompiles.push(addr);
+            isPrecompile[addr] = true;
+        }
+        emit PrecompilesUpdated(newPrecompiles);
+    }
+
+    function precompileCount() external view returns (uint256) {
+        return precompiles.length;
+    }
+}
+
 contract UpgradeManagerV2 is AccessManaged {
     struct UpgradePlan {
         bytes32 versionHash;
@@ -1065,7 +1123,7 @@ contract FraudProofVerifier is AccessManaged {
 }
 
 // -----------------------------------
-// Checkpointing (PolyBFT-style) L2 -> L1
+// Checkpointing (L2/L3 roots → L1 anchoring)
 // -----------------------------------
 
 contract CheckpointManager is AccessManaged {
@@ -1377,6 +1435,7 @@ contract GovernorV2 is AccessManaged {
     mapping(uint256 => Proposal) public proposals;
     mapping(uint256 => mapping(address => bool)) public hasVoted;
     VotingEscrow public votingEscrow;
+    ProposalExecutorV2 public executor;
     uint256 public quorumVotes;
     uint64 public votingDelay;
     uint64 public votingPeriod;
@@ -1393,17 +1452,20 @@ contract GovernorV2 is AccessManaged {
     }
 
     event ProposalCreated(uint256 indexed id, address indexed proposer, address indexed target, uint64 eta);
+    event ProposalQueued(uint256 indexed id, uint64 eta);
     event ProposalExecuted(uint256 indexed id, address indexed target);
 
     constructor(
         address admin_,
         VotingEscrow votingEscrow_,
+        ProposalExecutorV2 executor_,
         uint256 quorumVotes_,
         uint64 votingDelay_,
         uint64 votingPeriod_,
         uint64 timelockDelay_
     ) AccessManaged(admin_) {
         votingEscrow = votingEscrow_;
+        executor = executor_;
         quorumVotes = quorumVotes_;
         votingDelay = votingDelay_;
         votingPeriod = votingPeriod_;
@@ -1432,20 +1494,27 @@ contract GovernorV2 is AccessManaged {
         }
     }
 
-    function queue(uint256 id) external onlyAdmin {
+    function queue(uint256 id) external {
         Proposal storage p = proposals[id];
         require(state(id) == ProposalState.Succeeded, "not succeeded");
         p.eta = uint64(block.timestamp + timelockDelay);
-        emit ProposalCreated(id, p.proposer, p.target, p.eta);
+        if (address(executor) != address(0)) {
+            executor.schedule(p.target, p.data, p.eta);
+        }
+        emit ProposalQueued(id, p.eta);
     }
 
-    function execute(uint256 id) external onlyAdmin {
+    function execute(uint256 id) external {
         Proposal storage p = proposals[id];
         require(state(id) == ProposalState.Queued, "not queued");
         require(block.timestamp >= p.eta, "eta");
         p.executed = true;
-        (bool ok, ) = p.target.call(p.data);
-        require(ok, "call failed");
+        if (address(executor) != address(0)) {
+            executor.execute(p.target, p.data);
+        } else {
+            (bool ok, ) = p.target.call(p.data);
+            require(ok, "call failed");
+        }
         emit ProposalExecuted(id, p.target);
     }
 
@@ -1750,6 +1819,7 @@ contract UpgradeableProxy {
     address public admin;
 
     event Upgraded(address indexed newImplementation);
+    event AdminTransferred(address indexed previousAdmin, address indexed newAdmin);
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "not admin");
@@ -1766,6 +1836,13 @@ contract UpgradeableProxy {
         require(implementation_ != address(0), "impl=0");
         implementation = implementation_;
         emit Upgraded(implementation_);
+    }
+
+    function transferAdmin(address newAdmin) external onlyAdmin {
+        require(newAdmin != address(0), "admin=0");
+        address prev = admin;
+        admin = newAdmin;
+        emit AdminTransferred(prev, newAdmin);
     }
 
     fallback() external payable {

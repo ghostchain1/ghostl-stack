@@ -39,9 +39,9 @@ const fetchAttemptStats = async (chainKey: string) => {
     avg_gas_used: string | null;
   }>(
     `SELECT COUNT(*)::text as total,
-            COUNT(*) FILTER (WHERE status <> 'success')::text as failures,
-            COUNT(*) FILTER (WHERE classification = 'OUT_OF_GAS')::text as out_of_gas,
-            AVG(gas_used)::text as avg_gas_used
+            COUNT(*) FILTER (WHERE a.status <> 'success')::text as failures,
+            COUNT(*) FILTER (WHERE a.classification = 'OUT_OF_GAS')::text as out_of_gas,
+            AVG(a.gas_used)::text as avg_gas_used
      FROM gas_deployment_attempts a
      JOIN gas_deployments d ON d.id = a.deployment_id
      WHERE d.chain_key = $1`,

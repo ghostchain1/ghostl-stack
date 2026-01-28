@@ -56,3 +56,28 @@ scrape_configs:
     metrics_path: /observability/logs/api/metrics
     static_configs:
       - targets: ["host.docker.internal:4000"]
+
+  - job_name: consensus-telemetry
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["consensus-telemetry-service:7635"]
+
+  - job_name: ai-monitor
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ai-monitor:7575"]
+
+  - job_name: ghost-gas-engine
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghost-gas-engine:3210"]
+
+  - job_name: ghost-compliance
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:8090"]
+
+  - job_name: ghost-pil
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:3220"]

@@ -216,6 +216,71 @@
       "security_opt": [
         "no-new-privileges:true"
       ]
+    },
+    "ghost-ai-attestor": {
+      "build": {
+        "context": "../../../services/ghost-ai-attestor",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=3310",
+        "AI_LAYER_DEFAULT=${AI_LAYER_DEFAULT:-2}",
+        "AI_MODEL_VERSION=${AI_MODEL_VERSION:-1}",
+        "AI_ATTESTATION_TTL_SECONDS=${AI_ATTESTATION_TTL_SECONDS:-3600}",
+        "AI_MIN_ATTEST_INTERVAL_SECONDS=${AI_MIN_ATTEST_INTERVAL_SECONDS:-15}",
+        "AI_NONCE_STORE_PATH=${AI_NONCE_STORE_PATH:-/data/ai-attestor-nonces.json}",
+        "AI_ATTESTOR_PRIVATE_KEY=${AI_ATTESTOR_PRIVATE_KEY}",
+        "AI_ATTESTOR_API_KEY=${AI_ATTESTOR_API_KEY}",
+        "AI_CORS_ALLOWED_ORIGINS=${AI_CORS_ALLOWED_ORIGINS}",
+        "AI_ALLOW_INSECURE_DEV=${AI_ALLOW_INSECURE_DEV}",
+        "RPC_URL_L1=${RPC_URL_L1}",
+        "RPC_URL_L2=${RPC_URL_L2}",
+        "RPC_URL_L3=${RPC_URL_L3}",
+        "RPC_L1=${RPC_L1}",
+        "RPC_L2=${RPC_L2}",
+        "RPC_L3=${RPC_L3}",
+        "AI_ORACLE_REGISTRY_ADDRESS_L1=${AI_ORACLE_REGISTRY_ADDRESS_L1}",
+        "AI_ORACLE_REGISTRY_ADDRESS_L2=${AI_ORACLE_REGISTRY_ADDRESS_L2}",
+        "AI_ORACLE_REGISTRY_ADDRESS_L3=${AI_ORACLE_REGISTRY_ADDRESS_L3}",
+        "AI_ATTESTATION_HUB_ADDRESS_L1=${AI_ATTESTATION_HUB_ADDRESS_L1}",
+        "AI_ATTESTATION_HUB_ADDRESS_L2=${AI_ATTESTATION_HUB_ADDRESS_L2}",
+        "AI_ATTESTATION_HUB_ADDRESS_L3=${AI_ATTESTATION_HUB_ADDRESS_L3}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/ghost-ai-attestor:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "3310",
+          "target": 3310
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ghost-ai-attestor",
+        "com.ghost.k8s.role": "ai",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        "ghost_ai_attestor_nonce_store:/data"
+      ]
     }
   },
   "networks": {
@@ -235,6 +300,9 @@
     }
   },
   "volumes": {
+    "ghost_ai_attestor_nonce_store": {
+      "name": "ghost_ai_attestor_nonce_store"
+    },
     "l1-mainnet-geth-data": {
       "name": "opstack_l1-mainnet-geth-data"
     },

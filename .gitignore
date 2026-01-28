@@ -85,6 +85,9 @@ services/**/data/
 # build artifacts
 apps/web/.next/
 **/.next/
+apps/web/.next-codex/
+apps/web/.next-ghost/
+apps/web/.next-local-*/
 dist/
 **/dist/
 

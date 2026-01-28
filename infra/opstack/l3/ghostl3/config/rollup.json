@@ -1,18 +1,18 @@
 {
   "genesis": {
     "l1": {
-      "hash": "0x9edf2fd0e9ae0f7b777acd0c272832ae6b59b74feefc58ca7df2d1b37b43cc6b",
-      "number": 0
+      "hash": "0x7e00c73fdccbafada9cfaf461ac5132b38945bc9562efb9ad2eb39ee3c40280b",
+      "number": 56
     },
     "l2": {
-      "hash": "0x68c6c02dc6a65d11eec8e537d83dc274c4a6c25fa87244708b9718b83968846e",
+      "hash": "0x8fcdb5e1b1daf7dfb14e22b8e8ea973e9e77923c1b472b7f8587a564eba6b281",
       "number": 0
     },
-    "l2_time": 1700005887,
+    "l2_time": 1769574346,
     "system_config": {
-      "batcherAddr": "0x32171083fd74f0423eab1192f04125d3a8f0b1c2",
+      "batcherAddr": "0xC1815FEE48bBb95Cf6b0D6d8d4FeE8B7cB5E016e",
       "overhead": "0x0000000000000000000000000000000000000000000000000000000000000000",
-      "scalar": "0x010000000000000000000000000000000000000000000000000c3c9d00000558",
+      "scalar": "0x0000000000000000000000000000000000000000000000000000000000000558",
       "gasLimit": 30000000,
       "eip1559Params": "0x0000000000000000",
       "operatorFeeParams": "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -21,7 +21,7 @@
     }
   },
   "block_time": 2,
-  "max_sequencer_drift": 600,
+  "max_sequencer_drift": 315360000,
   "seq_window_size": 3600,
   "channel_timeout": 300,
   "l1_chain_id": 901,

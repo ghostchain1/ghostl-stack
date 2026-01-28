@@ -1,6 +1,6 @@
 ## GhostChain PoS + L2/L3 Alignment Blueprint
 
-Practical spec for GhostChain L1 PoS (BFT) and how to compose finality with a PolyBFT-style L2 and OP Stack L3.
+Practical spec for GhostChain L1 PoS (BFT) and how to compose finality with **OP Stack L2** and **OP Stack L3**.
 
 ### L1 PoS (GhostChain)
 - Finality: BFT economic finality. Checkpoint finalized when ≥2/3 voting power attests.
@@ -11,11 +11,11 @@ Practical spec for GhostChain L1 PoS (BFT) and how to compose finality with a Po
 - Governance: timelocked param changes; PauseGuardian for narrow-scope halt (bridges, validator ops).
 - Contracts mapping: `ValidatorRegistryV2`, `StakingManagerV2` (shares, optional unbonding/jail), `SlashingManagerV2`, `RewardDistributorV2`, `TreasuryV2`, `EpochManager`, `ConsensusParams`, `GovernorV2` + `ProposalExecutorV2`, `PauseGuardianV2`.
 
-### L2 (PolyBFT-style) → L1
-- Validator set: derive from L1 stake receipts (preferred) or permissioned bootstrap.
-- Checkpoints: every 2–10 minutes submit `checkpointRoot` + sigs to L1. L1 verifies ≥2/3 voting power for the epoch.
-- Finality: L2 fast BFT; economically final once checkpoint is finalized on L1. Non-final checkpoints revert on L1 reorg.
-- Contracts: `CheckpointManager` on L1; L2 uses its BFT engine + bridge to post roots.
+### L2 (OP Stack) → L1
+- Sequencer/batcher: op-node/op-geth produce L2 blocks and batches.
+- Output roots: post to L1 `OutputOracle` and finalize via `FinalizationManager` after challenge window.
+- Finality: optimistic; economically final once output root is finalized on L1 (no successful dispute).
+- Contracts: `OutputOracle`, `FinalizationManager`, `DisputeGameFactoryV2` on L1.
 
 ### L3 (OP Stack-style) → L2
 - Sequencer: start centralized; batches to L2 every 1–10s.
@@ -25,12 +25,11 @@ Practical spec for GhostChain L1 PoS (BFT) and how to compose finality with a Po
 - Finality ladder: soft (sequencer) → settlement (batch on L2 + L2 finalized) → economic (output root unchallenged + L2 checkpoint finalized on L1).
 
 ### Key alignment decisions (recommended)
-1) L2 validators from L1 stake: yes (best security story).
-2) Checkpoint cadence L2→L1: 2–10 minutes, tuned for gas vs safety.
-3) L3 DA: post to L2 calldata/blobs.
-4) Sequencer decentralization: centralized now; plan PoS/committee later.
-5) Fault proofs: required for trustless; if absent, call out “trusted optimistic.”
-6) Withdrawals: L3→L2 follow L3 challenge; L2→L1 follow checkpoint finality.
+1) L2 output cadence L2→L1: 1–10 minutes, tuned for gas vs safety.
+2) L3 DA: post to L2 calldata/blobs.
+3) Sequencer decentralization: centralized now; plan PoS/committee later.
+4) Fault proofs: required for trustless; if absent, call out “trusted optimistic.”
+5) Withdrawals: L3→L2 follow L3 challenge; L2→L1 follow L1 output finality.
 
 ### Param suggestions (initial mainnet-ish)
 - Block time: 2s
@@ -39,13 +38,13 @@ Practical spec for GhostChain L1 PoS (BFT) and how to compose finality with a Po
 - Min validator stake: 50k–100k GHOST
 - Unbonding: 14 days
 - Slashing: double-sign 7.5%, surround 3%, downtime jail + 0.5%
-- L2 checkpoint cadence: 5 minutes
+- L2 output cadence: 5 minutes
 - L3 output cadence: 2 minutes; challenge window: 1–7 days (env-tuned)
 
 ### Message flows (happy path)
-- **L2 checkpoint:** L2 validators sign root → submit to L1 `CheckpointManager` with voting power sums → after L1 finality, checkpoint is authoritative.
+- **L2 output:** Sequencer/batcher post batches to L1 → proposer posts output root to `OutputOracle` → if unchallenged for window, `FinalizationManager` finalizes.
 - **L3 batch:** Sequencer posts batches to L2 → proposer posts output root to `OutputOracle` → if unchallenged for window, `FinalizationManager` finalizes; otherwise require clean dispute result.
-- **Withdrawals:** L3→L2 wait for L3 challenge/finalization; L2→L1 wait for checkpoint finalized on L1. Bridges should reference finalized roots.
+- **Withdrawals:** L3→L2 wait for L3 challenge/finalization; L2→L1 wait for L1 output finality. Bridges should reference finalized roots.
 
 ### Config template (env-driven)
 - L1: `EPOCH_LENGTH=1200`, `SLOT_TIME=2`, `MIN_STAKE_WEI=...`, `UNBONDING_PERIOD=1209600`, `SLASH_DOUBLE_BPS=750`, `SLASH_SURROUND_BPS=300`, `SLASH_DOWNTIME_BPS=50`, `TREASURY_ADDR=...`.
@@ -61,6 +60,9 @@ Practical spec for GhostChain L1 PoS (BFT) and how to compose finality with a Po
 
 ### Implementation hooks in repo
 - L1 PoS: extend `StakingManagerV2` unbonding params and hook downtime evidence into `SlashingManagerV2`; rotate sets via `EpochManager`.
-- L2 checkpoints: use `CheckpointManager` on L1; add L2 off-chain component to collect sigs and submit.
+- L2 outputs: use `OutputOracle`/`FinalizationManager` on L1; ensure proposers/challengers are configured.
 - L3 fault proofs: wire `FinalizationManager` to real dispute games and DA inclusion checks.
 - Deployment: use `contracts/scripts/deploy_futuristic_stack.ts` and surface the above params via env/config; register addresses in an `AddressBook` for services.
+
+### Legacy note
+PolyBFT L2 integration is archived in this repo; OP Stack is the active L2 path. See `infra/scripts/chains/init_polybft_l2.sh` for the retired entrypoint.

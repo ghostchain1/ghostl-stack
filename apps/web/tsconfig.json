@@ -24,12 +24,16 @@
     ]
   },
   "include": [
-    "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    "next-env.d.ts",
+    ".next-ghost/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    ".next",
+    ".next-codex",
+    ".next-ghost",
+    ".next-local-*"
   ]
 }

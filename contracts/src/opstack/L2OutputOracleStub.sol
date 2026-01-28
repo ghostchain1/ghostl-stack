@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.24;
 
 /// @dev Minimal L2 Output Oracle stub for local/devnet use only.
 ///      Ported from infra/opstack/contracts/L2OOStub.sol so Hardhat builds use a single source of truth.

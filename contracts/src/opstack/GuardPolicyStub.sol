@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
 /// @dev Minimal guard policy stub for dev/test. Not for production use.
 ///      Ported from infra/opstack/contracts/GuardPolicyStub.sol for a single canonical source.

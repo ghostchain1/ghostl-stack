@@ -21,6 +21,60 @@ const STATE_DIR = process.env.STATE_DIR || "/state";
 const confirmationsRaw = Number(process.env.CONFIRMATIONS || "0");
 const CONFIRMATIONS = Number.isFinite(confirmationsRaw) && confirmationsRaw >= 0 ? Math.floor(confirmationsRaw) : 0;
 
+const CANONICAL_GAS_TOKEN_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+const CANONICAL_GAS_TOKEN_SYMBOL = "GHOST";
+const minGasTokenBalanceRaw = process.env.CANONICAL_GAS_TOKEN_MIN_BALANCE || "1";
+let MIN_CANONICAL_GAS_TOKEN_BALANCE = 1n;
+try {
+  MIN_CANONICAL_GAS_TOKEN_BALANCE = BigInt(minGasTokenBalanceRaw);
+} catch {
+  MIN_CANONICAL_GAS_TOKEN_BALANCE = 1n;
+}
+const gasTokenCacheTtlMs = Math.max(1_000, Number(process.env.CANONICAL_GAS_TOKEN_CACHE_MS || "15000"));
+const gasTokenCache = new Map<string, { balance: bigint; checkedAt: number }>();
+const canonicalGasTokenAbi = [
+  "function balanceOf(address) view returns (uint256)",
+  "function symbol() view returns (string)"
+];
+
+const gasTokenCacheKey = (chainLabel: "l2" | "l3", account: string) => `${chainLabel}:${account.toLowerCase()}`;
+
+async function ensureGasTokenBalance(chainLabel: "l2" | "l3", provider: ethers.Provider, signer: ethers.Signer | null) {
+  if (!signer) return;
+  const account = await signer.getAddress();
+  const cacheKey = gasTokenCacheKey(chainLabel, account);
+  const cached = gasTokenCache.get(cacheKey);
+  const now = Date.now();
+  if (cached && now - cached.checkedAt < gasTokenCacheTtlMs) {
+    if (cached.balance < MIN_CANONICAL_GAS_TOKEN_BALANCE) {
+      throw new Error(
+        `insufficient ${CANONICAL_GAS_TOKEN_SYMBOL} balance on ${chainLabel} for relayer ${account}: ${cached.balance}`
+      );
+    }
+    return;
+  }
+  const token = new ethers.Contract(CANONICAL_GAS_TOKEN_ADDRESS, canonicalGasTokenAbi, provider);
+  let symbol = CANONICAL_GAS_TOKEN_SYMBOL;
+  try {
+    symbol = String(await token.symbol());
+  } catch {
+    symbol = CANONICAL_GAS_TOKEN_SYMBOL;
+  }
+  if (symbol !== CANONICAL_GAS_TOKEN_SYMBOL) {
+    throw new Error(
+      `canonical gas token symbol mismatch on ${chainLabel}: expected ${CANONICAL_GAS_TOKEN_SYMBOL}, got ${symbol}`
+    );
+  }
+  const balanceRaw = await token.balanceOf(account);
+  const balance = typeof balanceRaw === "bigint" ? balanceRaw : BigInt(String(balanceRaw));
+  gasTokenCache.set(cacheKey, { balance, checkedAt: now });
+  if (balance < MIN_CANONICAL_GAS_TOKEN_BALANCE) {
+    throw new Error(
+      `insufficient ${CANONICAL_GAS_TOKEN_SYMBOL} balance on ${chainLabel} for relayer ${account}: ${balance}`
+    );
+  }
+}
+
 const fetchRegistry = async () => {
   const now = Date.now();
   if (registryCache.data && registryCache.expiresAt > now) return registryCache.data;
@@ -396,6 +450,7 @@ async function handleFinalizedLog(log: ethers.Log) {
     const already = await inbox.processed(key);
     if (already) return;
 
+    await ensureGasTokenBalance("l3", l3Provider, l3Signer);
     const tx = await inbox.finalizeFromL2(from, to, amount, nonce);
     await tx.wait();
 
@@ -426,6 +481,7 @@ async function handleFinalizedLog(log: ethers.Log) {
       return;
     }
 
+    await ensureGasTokenBalance("l3", l3Provider, l3Signer);
     let l3TokenAddr = (await l3Factory.l3TokenForL2Token(token)) as string;
     if (!l3TokenAddr || l3TokenAddr === ethers.ZeroAddress) {
       if (observeOnly) {
@@ -511,6 +567,7 @@ async function tryFinalizeOne(p: PendingFinalize) {
     });
     if (!okOnL1) throw new Error("L2 block not finalized on L1 rollup");
 
+    await ensureGasTokenBalance("l2", l2Provider, l2Signer);
     if (p.kind === "DepositInitiated") {
       const k = msgKeyEth(p.from, p.to, BigInt(p.amount), BigInt(p.nonce));
       const t = (await l2Bridge.depositTime(k)) as bigint;
@@ -673,6 +730,7 @@ async function handleBurnLog(log: ethers.Log) {
   const already = await l2Bridge.erc20WithdrawProcessed(msgKeyErc20(l2Token, from, to, amount, nonce));
   if (already) return;
 
+  await ensureGasTokenBalance("l2", l2Provider, l2Signer);
   const tx = await l2Bridge.releaseERC20FromL3(l2Token, from, to, amount, nonce);
   await tx.wait();
 

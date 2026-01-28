@@ -62,8 +62,8 @@ async function main() {
   const ROOT = process.env.ROOT_DIR ?? path.resolve(__dirname, "..", "..");
   const version = process.env.CONTRACTS_VERSION ?? "0.0.1";
   // Default to OP Stack devnet ports (Anvil L1 :28545, op-geth L2 :29545). L3 is optional; keep overrideable.
-  const l2ChainId = Number(process.env.L2_CHAIN_ID ?? network.config.chainId ?? 901);
-  const l3ChainId = Number(process.env.L3_CHAIN_ID ?? 902);
+  const l2ChainId = Number(process.env.L2_CHAIN_ID ?? process.env.OP_L2_CHAIN_ID ?? network.config.chainId ?? 901);
+  const l3ChainId = Number(process.env.L3_CHAIN_ID ?? process.env.OP_L3_CHAIN_ID ?? 903);
   const challengePeriodSeconds = Number(process.env.CHALLENGE_PERIOD_SECONDS ?? 30);
   const rpcL1 = process.env.RPC_L1 ?? "http://localhost:28545";
   const rpcL2Public =
@@ -98,7 +98,12 @@ async function main() {
   };
 
   // Deploy policy + bridge on L2 (GhostL2)
+  const CANONICAL_GAS_TOKEN = process.env.CANONICAL_GAS_TOKEN ?? "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+  const l2TokenAddr = process.env.L2_TOKEN_ADDRESS ?? process.env.L2_TOKEN ?? CANONICAL_GAS_TOKEN;
   const l2 = await ethers.getSigners();
+  const l2Provider = l2[0].provider as ethers.JsonRpcProvider;
+  const l2TokenCode = await l2Provider.getCode(l2TokenAddr);
+  const l2TokenHasCode = !!l2TokenCode && l2TokenCode !== "0x";
 
   console.log(`Deploying to GhostL2 network (${network.name})...`);
   console.log("== Deploy GuardPolicy on L2 ==");
@@ -119,13 +124,13 @@ async function main() {
   console.log("GuardPolicy (L2):", policyAddr);
   console.log("L2L3Bridge (L2):", bridgeAddr);
 
-  console.log("== Deploy GhostTokenL2 on L2 ==");
-  const GhostToken = await ethers.getContractFactory("GhostTokenL2");
-  const l2Token = await GhostToken.connect(l2[0]).deploy(txOpts);
-  await waitForDeployment(l2Token, l2[0].provider as ethers.JsonRpcProvider, "GhostTokenL2");
-  const l2TokenAddr = await l2Token.getAddress();
-  await recordDeployment("l2", "GhostTokenL2", l2TokenAddr, l2ChainId);
-  console.log("GhostTokenL2 (L2):", l2TokenAddr);
+  if (!l2TokenHasCode) {
+    console.warn(
+      `No ERC20 bytecode at L2_TOKEN_ADDRESS=${l2TokenAddr}. Skipping default token deploy (canonical gas token is assumed).`
+    );
+  } else {
+    console.log(`Using existing L2 token at ${l2TokenAddr} (ERC20 bytecode detected).`);
+  }
 
   console.log("== Deploy GhostNFT on L2 ==");
   const GhostNFT = await ethers.getContractFactory("GhostNFT");
@@ -237,27 +242,37 @@ async function main() {
   await recordDeployment("l3", "GhostNFT", l3NftAddr, l3ChainId);
   console.log("GhostNFT (L3):", l3NftAddr);
 
-  // Deploy a default bridged token for the demo GhostTokenL2.
-  const l2Name = await l2Token.name();
-  const l2Symbol = await l2Token.symbol();
-  const l2Decimals = await l2Token.decimals();
-  const l3Name = `${l2Name} (L3)`;
-  const l3Symbol = `${l2Symbol}L3`;
-  const deployTokenTx = await factory.getOrDeployBridgedToken(l2TokenAddr, l3Name, l3Symbol, l2Decimals, txOpts);
-  const deployTokenRcpt = await deployTokenTx.wait();
-  const deployed = deployTokenRcpt?.logs
-    .map((l) => {
-      try {
-        return factory.interface.parseLog(l);
-      } catch {
-        return null;
+  // Deploy a default bridged token when the L2 token has ERC20 bytecode.
+  let l3TokenAddr = "";
+  if (l2TokenHasCode) {
+    try {
+      const l2Token = await ethers.getContractAt("ERC20", l2TokenAddr, l2[0]);
+      const l2Name = await l2Token.name();
+      const l2Symbol = await l2Token.symbol();
+      const l2Decimals = await l2Token.decimals();
+      const l3Name = `${l2Name} (L3)`;
+      const l3Symbol = `${l2Symbol}L3`;
+      const deployTokenTx = await factory.getOrDeployBridgedToken(l2TokenAddr, l3Name, l3Symbol, l2Decimals, txOpts);
+      const deployTokenRcpt = await deployTokenTx.wait();
+      const deployed = deployTokenRcpt?.logs
+        .map((l) => {
+          try {
+            return factory.interface.parseLog(l);
+          } catch {
+            return null;
+          }
+        })
+        .find((e) => e?.name === "BridgedTokenDeployed");
+      l3TokenAddr = String(deployed?.args?.l3Token ?? "");
+      console.log("L3BridgedToken (L3, default):", l3TokenAddr);
+      if (l3TokenAddr) {
+        await recordDeployment("l3", "L3BridgedToken", l3TokenAddr, l3ChainId);
       }
-    })
-    .find((e) => e?.name === "BridgedTokenDeployed");
-  const l3TokenAddr = String(deployed?.args?.l3Token ?? "");
-  console.log("L3BridgedToken (L3, default):", l3TokenAddr);
-  if (l3TokenAddr) {
-    await recordDeployment("l3", "L3BridgedToken", l3TokenAddr, l3ChainId);
+    } catch (err) {
+      console.warn("Skipping default L3 bridged token: unable to query L2 token metadata.", err);
+    }
+  } else {
+    console.warn("Skipping default L3 bridged token: no ERC20 bytecode at L2_TOKEN_ADDRESS.");
   }
 
   // Write addresses for ghost-guard env

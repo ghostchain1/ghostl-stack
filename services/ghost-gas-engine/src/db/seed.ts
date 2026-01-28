@@ -20,6 +20,9 @@ const seedPredictionId = '00000000-0000-0000-0000-000000000010';
 const seedAiDecisionId = '00000000-0000-0000-0000-000000000011';
 const seedAiActionId = '00000000-0000-0000-0000-000000000012';
 const seedGovId = '00000000-0000-0000-0000-000000000013';
+const seedFeeSampleId = '00000000-0000-0000-0000-000000000015';
+const seedFeeRecommendationId = '00000000-0000-0000-0000-000000000016';
+const seedSlashingEventId = '00000000-0000-0000-0000-000000000017';
 
 const asJson = (value: unknown) => JSON.stringify(value);
 
@@ -56,15 +59,74 @@ const seedOnce = async () => {
 
   for (const chain of chains) {
     await pool.query(
-      `INSERT INTO gas_chains (chain_key, chain_id, chain_name, chain_type, rpc_url, gas_token_symbol)
-       VALUES ($1,$2,$3,$4,$5,$6)
+      `INSERT INTO gas_chains (
+         chain_key,
+         chain_id,
+         chain_name,
+         chain_type,
+         rpc_url,
+         gas_token_symbol,
+         gas_token_address,
+         gas_token_name,
+         gas_token_decimals
+       )
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
        ON CONFLICT (chain_key) DO UPDATE
        SET chain_id = EXCLUDED.chain_id,
            chain_name = EXCLUDED.chain_name,
            chain_type = EXCLUDED.chain_type,
            rpc_url = EXCLUDED.rpc_url,
-           gas_token_symbol = EXCLUDED.gas_token_symbol`,
-      [chain.key, chain.chainId, chain.name, chain.type, chain.rpcUrl, chain.gasTokenSymbol]
+           gas_token_symbol = EXCLUDED.gas_token_symbol,
+           gas_token_address = EXCLUDED.gas_token_address,
+           gas_token_name = EXCLUDED.gas_token_name,
+           gas_token_decimals = EXCLUDED.gas_token_decimals`,
+      [
+        chain.key,
+        chain.chainId,
+        chain.name,
+        chain.type,
+        chain.rpcUrl,
+        chain.gasTokenSymbol,
+        chain.gasTokenAddress,
+        chain.gasTokenName ?? 'Ghost Token',
+        chain.gasTokenDecimals ?? 18
+      ]
+    );
+  }
+
+  const defaultFeePolicy = {
+    maxBaseFee: 2_000_000_000,
+    maxPriorityFee: 1_000_000_000,
+    spikeThresholdBps: 500,
+    windowSeconds: 300,
+    violationPenaltyBps: 1_000,
+    minBond: 10n * 10n ** 18n
+  };
+
+  for (const chain of chains) {
+    await pool.query(
+      `INSERT INTO gas_fee_policy
+         (chain_key, max_base_fee, max_priority_fee, spike_threshold_bps, window_seconds, violation_penalty_bps, min_bond, auto_exec_enabled)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       ON CONFLICT (chain_key) DO UPDATE
+       SET max_base_fee = EXCLUDED.max_base_fee,
+           max_priority_fee = EXCLUDED.max_priority_fee,
+           spike_threshold_bps = EXCLUDED.spike_threshold_bps,
+           window_seconds = EXCLUDED.window_seconds,
+           violation_penalty_bps = EXCLUDED.violation_penalty_bps,
+           min_bond = EXCLUDED.min_bond,
+           auto_exec_enabled = EXCLUDED.auto_exec_enabled,
+           updated_at = now()`,
+      [
+        chain.key,
+        defaultFeePolicy.maxBaseFee,
+        defaultFeePolicy.maxPriorityFee,
+        defaultFeePolicy.spikeThresholdBps,
+        defaultFeePolicy.windowSeconds,
+        defaultFeePolicy.violationPenaltyBps,
+        defaultFeePolicy.minBond.toString(),
+        false
+      ]
     );
   }
 
@@ -237,6 +299,61 @@ const seedOnce = async () => {
         'eth',
         true,
         null
+      ]
+    );
+
+    await pool.query(
+      `INSERT INTO gas_fee_samples
+         (id, chain_key, block_number, base_fee, priority_fee, gas_used_ratio, observed_at, source, raw)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+       ON CONFLICT (id) DO NOTHING`,
+      [
+        seedFeeSampleId,
+        'l1',
+        1,
+        1_000_000_000,
+        100_000_000,
+        0.15,
+        new Date().toISOString(),
+        'seed',
+        asJson({ note: 'seed fee sample' })
+      ]
+    );
+
+    await pool.query(
+      `INSERT INTO gas_fee_recommendations
+         (id, chain_key, recommended_base_fee, recommended_priority_fee, volatility_score, anomaly_score, drivers, policy_bounds)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       ON CONFLICT (id) DO NOTHING`,
+      [
+        seedFeeRecommendationId,
+        'l1',
+        1_200_000_000,
+        150_000_000,
+        0.12,
+        0.03,
+        asJson({ congestion: 0.2, volatility: 0.1, inclusionDelay: 0.05 }),
+        asJson({
+          maxBaseFee: defaultFeePolicy.maxBaseFee,
+          maxPriorityFee: defaultFeePolicy.maxPriorityFee
+        })
+      ]
+    );
+
+    await pool.query(
+      `INSERT INTO gas_slashing_events
+         (id, chain_key, operator, violation_id, reason_code, slash_amount, status, evidence)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       ON CONFLICT (id) DO NOTHING`,
+      [
+        seedSlashingEventId,
+        'l1',
+        '0x0000000000000000000000000000000000000001',
+        1,
+        1,
+        10n * 10n ** 18n,
+        'reported',
+        asJson({ reason: 'seed violation', chainId: 14000101 })
       ]
     );
 

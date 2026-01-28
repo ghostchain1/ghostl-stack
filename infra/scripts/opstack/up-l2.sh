@@ -22,6 +22,7 @@ HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
 L2_CONTAINER_RPC="${L2_CONTAINER_RPC:-http://localhost:8545}"
 TAG="${OPSTACK_IMAGE_TAG:-devnet}"
 GATE_IMAGE="${OP_GATE_IMAGE:-local/op-gate:0.1.0}"
+L1_ORIGIN_BLOCK="${L1_ORIGIN_BLOCK:-0x0}"
 
 echo "Checking required images for L1/L2..."
 missing=()
@@ -58,7 +59,7 @@ for i in $(seq 1 60); do
   fi
 done
 
-# Fetch L1 genesis block (block 0) so we stay pinned to a stable hash/timestamp.
+# Fetch L1 genesis block (block 0) for chain config validation.
 L1_GENESIS_JSON=""
 for i in $(seq 1 10); do
   set +e
@@ -75,17 +76,65 @@ if [ -z "$L1_GENESIS_JSON" ]; then
   exit 1
 fi
 L1_GENESIS_HASH=$(printf '%s' "$L1_GENESIS_JSON" | jq -r '.result.hash')
-L1_TS_HEX=$(printf '%s' "$L1_GENESIS_JSON" | jq -r '.result.timestamp')
-L1_TS_DEC=$((L1_TS_HEX))
-if [ "$L1_TS_DEC" -eq 0 ]; then
-  L1_TS_DEC=${FALLBACK_L1_GENESIS_TS:-1700000000}
-  L1_TS_HEX=$(printf '0x%x' "$L1_TS_DEC")
-  echo "L1 genesis timestamp missing; using fallback $L1_TS_HEX ($L1_TS_DEC)"
+L1_GENESIS_NUM_HEX=$(printf '%s' "$L1_GENESIS_JSON" | jq -r '.result.number')
+L1_GENESIS_NUM_DEC=$((L1_GENESIS_NUM_HEX))
+L1_GENESIS_TS_HEX=$(printf '%s' "$L1_GENESIS_JSON" | jq -r '.result.timestamp')
+if [ -z "$L1_GENESIS_TS_HEX" ] || [ "$L1_GENESIS_TS_HEX" = "null" ]; then
+  L1_GENESIS_TS_DEC=${FALLBACK_L1_GENESIS_TS:-1700000000}
+  L1_GENESIS_TS_HEX=$(printf '0x%x' "$L1_GENESIS_TS_DEC")
+  echo "L1 genesis timestamp missing; using fallback $L1_GENESIS_TS_HEX ($L1_GENESIS_TS_DEC)"
+else
+  # Accept a legitimate 0x0 timestamp instead of forcing a fallback.
+  L1_GENESIS_TS_DEC=$((L1_GENESIS_TS_HEX))
 fi
-if [ -n "$L1_GENESIS_HASH" ] && [ "$L1_GENESIS_HASH" != "null" ]; then
+
+# Determine which L1 block to anchor the rollup genesis to (default: block 0).
+if [ -z "$L1_ORIGIN_BLOCK" ]; then
+  L1_ORIGIN_BLOCK="0x0"
+fi
+if [ "$L1_ORIGIN_BLOCK" = "latest" ] || [ "$L1_ORIGIN_BLOCK" = "head" ]; then
+  L1_ORIGIN_TAG="latest"
+elif [[ "$L1_ORIGIN_BLOCK" =~ ^[0-9]+$ ]]; then
+  L1_ORIGIN_TAG=$(printf '0x%x' "$L1_ORIGIN_BLOCK")
+else
+  L1_ORIGIN_TAG="$L1_ORIGIN_BLOCK"
+fi
+
+L1_ORIGIN_JSON="$L1_GENESIS_JSON"
+if [ "$L1_ORIGIN_TAG" != "0x0" ] && [ "$L1_ORIGIN_TAG" != "0x00" ]; then
+  L1_ORIGIN_JSON=""
+  for i in $(seq 1 10); do
+    set +e
+    L1_ORIGIN_JSON=$(curl -fsS -X POST "$HOST_L1_RPC" -H 'Content-Type: application/json' --data "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_getBlockByNumber\",\"params\":[\"${L1_ORIGIN_TAG}\", false]}")
+    rc=$?
+    set -e
+    if [ "$rc" -eq 0 ] && [ -n "$L1_ORIGIN_JSON" ]; then
+      break
+    fi
+    sleep 1
+  done
+  if [ -z "$L1_ORIGIN_JSON" ]; then
+    echo "Failed to query L1 origin block (${L1_ORIGIN_TAG}) from $HOST_L1_RPC" >&2
+    exit 1
+  fi
+fi
+
+L1_ORIGIN_HASH=$(printf '%s' "$L1_ORIGIN_JSON" | jq -r '.result.hash')
+L1_ORIGIN_NUM_HEX=$(printf '%s' "$L1_ORIGIN_JSON" | jq -r '.result.number')
+L1_ORIGIN_NUM_DEC=$((L1_ORIGIN_NUM_HEX))
+L1_ORIGIN_TS_HEX=$(printf '%s' "$L1_ORIGIN_JSON" | jq -r '.result.timestamp')
+if [ -z "$L1_ORIGIN_TS_HEX" ] || [ "$L1_ORIGIN_TS_HEX" = "null" ]; then
+  L1_ORIGIN_TS_DEC=${FALLBACK_L2_GENESIS_TS:-1700000000}
+  L1_ORIGIN_TS_HEX=$(printf '0x%x' "$L1_ORIGIN_TS_DEC")
+  echo "L1 origin timestamp missing; using fallback $L1_ORIGIN_TS_HEX ($L1_ORIGIN_TS_DEC)"
+else
+  L1_ORIGIN_TS_DEC=$((L1_ORIGIN_TS_HEX))
+fi
+
+if [ -n "$L1_ORIGIN_HASH" ] && [ "$L1_ORIGIN_HASH" != "null" ]; then
   tmp_rollup=$(mktemp)
-  jq --arg hash "$L1_GENESIS_HASH" '.genesis.l1.hash = $hash' "$OP_DIR/config/rollup.json" >"$tmp_rollup" && mv "$tmp_rollup" "$OP_DIR/config/rollup.json"
-  echo "Set rollup genesis.l1.hash=$L1_GENESIS_HASH"
+  jq --arg hash "$L1_ORIGIN_HASH" --argjson num "$L1_ORIGIN_NUM_DEC" '.genesis.l1.hash = $hash | .genesis.l1.number = $num' "$OP_DIR/config/rollup.json" >"$tmp_rollup" && mv "$tmp_rollup" "$OP_DIR/config/rollup.json"
+  echo "Set rollup genesis.l1.hash=$L1_ORIGIN_HASH number=$L1_ORIGIN_NUM_DEC"
 
   # Keep l1-chain.json in sync with block 0 so op-node validation stays consistent.
   L1_DIFF=$(printf '%s' "$L1_GENESIS_JSON" | jq -r '.result.difficulty')
@@ -95,7 +144,7 @@ if [ -n "$L1_GENESIS_HASH" ] && [ "$L1_GENESIS_HASH" != "null" ]; then
   L1_NONCE=$(printf '%s' "$L1_GENESIS_JSON" | jq -r '.result.nonce')
   L1_BASEFEE=$(printf '%s' "$L1_GENESIS_JSON" | jq -r '.result.baseFeePerGas')
   tmp_l1=$(mktemp)
-  jq --arg ts "$L1_TS_HEX" --arg diff "$L1_DIFF" --arg gl "$L1_GAS_LIMIT" --arg extra "$L1_EXTRA" --arg mix "$L1_MIX" --arg nonce "$L1_NONCE" --arg base "$L1_BASEFEE" '
+  jq --arg ts "$L1_GENESIS_TS_HEX" --arg diff "$L1_DIFF" --arg gl "$L1_GAS_LIMIT" --arg extra "$L1_EXTRA" --arg mix "$L1_MIX" --arg nonce "$L1_NONCE" --arg base "$L1_BASEFEE" '
     .timestamp = $ts
     | .difficulty = $diff
     | .gasLimit = $gl
@@ -105,16 +154,22 @@ if [ -n "$L1_GENESIS_HASH" ] && [ "$L1_GENESIS_HASH" != "null" ]; then
     | .baseFeePerGas = $base
   ' "$OP_DIR/config/l1-chain.json" >"$tmp_l1" && mv "$tmp_l1" "$OP_DIR/config/l1-chain.json"
 
-  # Pin L2 genesis time to L1 genesis, not moving tip, to keep hashes stable across resets.
+  # Pin L2 genesis time to the chosen L1 origin (default: genesis), but avoid a 0 timestamp which op-node rejects.
+  L2_GENESIS_TS_DEC="$L1_ORIGIN_TS_DEC"
+  if [ "$L2_GENESIS_TS_DEC" -eq 0 ]; then
+    L2_GENESIS_TS_DEC=${FALLBACK_L2_GENESIS_TS:-1700000000}
+  fi
+  L2_GENESIS_TS_HEX=$(printf '0x%x' "$L2_GENESIS_TS_DEC")
   tmp_rollup_l2=$(mktemp)
-  jq --argjson l2time "$L1_TS_DEC" '.genesis.l2_time = $l2time' "$OP_DIR/config/rollup.json" >"$tmp_rollup_l2" && mv "$tmp_rollup_l2" "$OP_DIR/config/rollup.json"
+  jq --argjson l2time "$L2_GENESIS_TS_DEC" '.genesis.l2_time = $l2time' "$OP_DIR/config/rollup.json" >"$tmp_rollup_l2" && mv "$tmp_rollup_l2" "$OP_DIR/config/rollup.json"
   tmp_genesis_l2=$(mktemp)
-  jq --arg ts "$L1_TS_HEX" '.timestamp = $ts' "$OP_DIR/config/genesis-l2.json" >"$tmp_genesis_l2" && mv "$tmp_genesis_l2" "$OP_DIR/config/genesis-l2.json"
-  echo "Pinned L2 genesis timestamp to L1 genesis: $L1_TS_HEX ($L1_TS_DEC)"
+  jq --arg ts "$L2_GENESIS_TS_HEX" '.timestamp = $ts' "$OP_DIR/config/genesis-l2.json" >"$tmp_genesis_l2" && mv "$tmp_genesis_l2" "$OP_DIR/config/genesis-l2.json"
+  echo "Pinned L2 genesis timestamp to $L2_GENESIS_TS_HEX ($L2_GENESIS_TS_DEC)"
 fi
 
 # Bring up the stack (proposer omitted since L2OO is not deployed in this devnet).
-docker compose "${COMPOSE_ENV_ARGS[@]}" up -d l2-geth rpc-forward-l2-18547 op-node op-sequencer op-batcher
+# Option 2: op-sequencer is the only rollup node driving the engine.
+docker compose "${COMPOSE_ENV_ARGS[@]}" up -d l2-geth rpc-forward-l2-18547 op-sequencer op-batcher
 
 echo "Waiting for L2 RPC..."
 for i in $(seq 1 60); do

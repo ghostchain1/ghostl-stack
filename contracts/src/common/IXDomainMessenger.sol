@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
 interface IXDomainMessenger {
     function xDomainMessageSender() external view returns (address);
 
-    function sendMessage(address target, bytes calldata message, uint32 minGasLimit) external payable;
+    function sendMessage(address target, bytes calldata message, uint32 minGasLimit) external;
 
     function relayMessage(
         uint256 nonce,

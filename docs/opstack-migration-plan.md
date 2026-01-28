@@ -5,7 +5,7 @@ Detailed, ordered plan to move from Polygon Edge (IBFT) to OP Stack while keepin
 ## 1) Migration: Polygon Edge → OP Stack
 - Build and boot: `bash infra/scripts/opstack/build.sh`, `cp infra/opstack/.env.sample infra/opstack/.env`, `bash infra/scripts/opstack/keys/init.sh`, `bash infra/scripts/opstack/up.sh` (L1 `28545`, L2 `29545`).
 - Deploy contracts on OP L2 and emit service envs: `bash infra/scripts/opstack/deploy.sh` (uses Hardhat `ghostl2Op`; writes `.env` files under `services/`).
-- Align service RPCs with current ports so Guard/Relayer keep working: `RPC_L1=http://localhost:28545`, `RPC_L2=http://localhost:29545`, `RPC_L3` placeholder `http://localhost:39545` for future OP L3. Chain IDs: L1 `31337`, L2 `901`, L3 `902` (configurable in `infra/opstack/.env`).
+- Align service RPCs with current ports so Guard/Relayer keep working: `RPC_L1=http://localhost:28545`, `RPC_L2=http://localhost:29545`, `RPC_L3` placeholder `http://localhost:39545` for future OP L3. Chain IDs: L1 `14000101`, L2 `901`, L3 `903` (configurable in `infra/opstack/.env`).
 - Map Edge components to OP Stack: Edge validator → `op-node` + `op-geth`; Edge relayer → existing Ghost Relayer (adjust envs); Edge rollup proposer/challenger → OP `op-proposer`/`op-challenger` (container exists but disabled).
 - Observability/health: add op-* health endpoints to Prometheus/Grafana alongside existing dashboards (ports: op-node `9546`, batcher `8551`, proposer `8560`).
 - Data/reset: `bash infra/scripts/opstack/reset.sh` to clear `infra/opstack/data/*` when chain IDs or keys change.

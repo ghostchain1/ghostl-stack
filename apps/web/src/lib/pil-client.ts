@@ -10,6 +10,7 @@ export const chainSchema = z.object({
   name: z.string(),
   type: z.string(),
   gasTokenSymbol: z.string(),
+  gasTokenAddress: z.string().optional(),
   rpcUrlRef: z.string(),
   lastBlockNumber: z.string().nullable().optional(),
   lastBlockHash: z.string().nullable().optional(),

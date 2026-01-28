@@ -37,13 +37,16 @@ bash infra/scripts/opstack/up.sh -- --env-file .env --env-file .env.secrets
 # L1 RPC: http://localhost:18545
 # L2 RPC: http://localhost:29547 (direct) or http://localhost:18547 (forwarder)
 
-# 5) Deploy contracts to OP L2 and emit service env files
+# 5) Deploy contracts (L1 core + L2/L3 glue) and emit service env files
 bash infra/scripts/opstack/deploy.sh
 # Gate: `op-batcher` / `op-proposer` point at `op-gate` (host `28546`) for Guard-aware pause/delay/deny.
 
 # Optional: start observability (Prometheus + Grafana) in a separate shell
 docker compose --env-file infra/opstack/.env --env-file infra/opstack/.env.secrets \
   -f infra/opstack/docker-compose.yml --profile observability up -d prometheus grafana
+# Optional: start AI economics stack (ghost-gas-engine + postgres + redis + worker)
+docker compose --env-file infra/opstack/.env --env-file infra/opstack/.env.secrets \
+  -f infra/opstack/docker-compose.yml --profile ai up -d
 ```
 
 ## L2 + L3 stack and challengers
@@ -65,29 +68,26 @@ bash infra/scripts/opstack/reset.sh
 - L3 guard defaults are now fail-closed (`L3_GUARD_FAIL_OPEN=false` by default).
 - Healthchecks gate startup ordering; if you tweak ports, update the compose healthchecks accordingly.
 - L1 is external (GhostChain geth PoA on `http://localhost:18545`); make sure it is running before bringing up the OP Stack stack.
+- `deploy.sh` runs `contracts/scripts/deploy_futuristic_stack.ts` (staking/slashing/governance/treasury/native token stubs) before deploying OP contracts.
+- Set `TRANSFER_ADMIN_TO_GOVERNOR=true` to hand execution-layer configs (consensus/chain/genesis/execution) to governance after deploy.
+- Optional: `SECURITY_CHECKPOINTS=1 bash infra/scripts/opstack/deploy.sh` runs Foundry + Slither checks before deploying contracts.
+- For AI economics + governance dashboards, run `services/ghost-gas-engine` (metrics on `:3210`) and keep `ai-monitor` enabled. Prometheus scrapes both by default.
+- Set `BRIDGE_L2L3_ADDRESS`, `L2_OUTPUT_ORACLE_ADDRESS`, and `L3_OUTPUT_ORACLE_ADDRESS` in `.env` to enable bridge/oracle telemetry.
 
-## Custom gas tokens (L2/L3)
-GhostL2 and GhostL3 can use custom ERC20 gas tokens via `SystemConfig`. L1 (GhostChain) still uses the native chain asset for gas.
+## Canonical gas token (L1/L2/L3)
+All layers must use the single canonical GHOST token on GhostChain L1:
 
-**Deploy the GHOST gas token on L1 (GhostChain):**
-```bash
-export DEPLOYER_PK=0x...                                   # funded on GhostChain
-export GAS_TOKEN_NAME="Ghost Token"
-export GAS_TOKEN_SYMBOL=GHOST
-export GAS_TOKEN_DECIMALS=18
-export GAS_TOKEN_INITIAL_SUPPLY=1000000000000000000000000000
-export GAS_TOKEN_RECIPIENT=0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
-forge script infra/opstack/contracts/script/DeployGasToken.s.sol:DeployGasToken \
-  --rpc-url http://localhost:18545 --broadcast --gas-estimate-multiplier 2
+```text
+Ghost Token (GHOST)
+0x5FbDB2315678afecb367f032d93F642f64180aa3
 ```
 
-**Initialize L2 contracts with the gas token (requires redeploy):**
+Do not deploy per-layer gas tokens. The deploy scripts now enforce the canonical address.
+
+If the canonical token contract is not already deployed at the address above, the OP stack `DeployGasToken` script will revert.
+For local testing only, `deploy_futuristic_stack.ts` can deploy a `NativeTokenV2` when `ALLOW_NATIVE_TOKEN_DEPLOY=1`.
+
 ```bash
 export USE_CUSTOM_GAS_TOKEN=true
-export CUSTOM_GAS_TOKEN_ADDRESS=0xYourGasToken
-forge script infra/opstack/contracts/script/DeployL1.s.sol:DeployL1 \
-  --rpc-url http://localhost:18545 --broadcast
+export CUSTOM_GAS_TOKEN_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
 ```
-This sets `SystemConfig.gasPayingToken` at initialization. If the L2 SystemConfig proxy was already deployed, you must redeploy/reset L2.
-
-**For L3:** repeat the same flow on GhostL2 (deploy the token to L2, then run `DeployL1.s.sol` against the L2 RPC) with `GAS_TOKEN_NAME="Ghost Token"` / `GAS_TOKEN_SYMBOL=GHOST`.

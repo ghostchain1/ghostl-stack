@@ -48,7 +48,16 @@ const pickRpc = (chain) => {
 };
 
 const resolveRpc = async (layer, override) => {
-  const registry = await fetchRegistry();
+  let registry;
+  try {
+    registry = await fetchRegistry();
+  } catch (err) {
+    if (override) {
+      log("warn", `registry unavailable, using override for ${layer}`);
+      return override;
+    }
+    throw err;
+  }
   const chain = registry.chains.find((entry) => entry.layer === layer);
   const allowed = new Set([
     ...(typeof chain?.rpc === "string" && chain.rpc ? [chain.rpc] : []),

@@ -1,6 +1,24 @@
-import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
+import { HardhatUserConfig, subtask } from "hardhat/config";
+import { TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD } from "hardhat/builtin-tasks/task-names";
+import path from "path";
 import "dotenv/config";
+
+const disableTypechain =
+  process.env.HARDHAT_DISABLE_TYPECHAIN === "1" ||
+  process.env.HARDHAT_DISABLE_TYPECHAIN === "true";
+
+if (disableTypechain) {
+  // Load only the plugins we need, excluding TypeChain to avoid compile stalls.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  require("@nomicfoundation/hardhat-ethers");
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  require("@nomicfoundation/hardhat-chai-matchers");
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  require("@nomicfoundation/hardhat-verify");
+} else {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  require("@nomicfoundation/hardhat-toolbox");
+}
 
 const DEV_PRIVATE_KEY =
   process.env.DEPLOYER_PRIVATE_KEY ??
@@ -11,9 +29,9 @@ const EXTERNAL_DEPLOYER_KEY = process.env.DEPLOYER_PRIVATE_KEY
 const RPC_L1 = process.env.RPC_L1 ?? "http://localhost:18545";
 const RPC_L2 = process.env.RPC_L2 ?? "http://localhost:29545";
 const RPC_L3 = process.env.RPC_L3 ?? "http://localhost:39545";
-const L1_CHAIN_ID = Number(process.env.L1_CHAIN_ID ?? 1337);
+const L1_CHAIN_ID = Number(process.env.L1_CHAIN_ID ?? 14000101);
 const L2_CHAIN_ID = Number(process.env.L2_CHAIN_ID ?? 901);
-const L3_CHAIN_ID = Number(process.env.L3_CHAIN_ID ?? 902);
+const L3_CHAIN_ID = Number(process.env.L3_CHAIN_ID ?? 903);
 const POLYGON_RPC_URL = process.env.POLYGON_RPC_URL ?? "https://polygon-rpc.com";
 const POLYGON_AMOY_RPC_URL =
   process.env.POLYGON_AMOY_RPC_URL ?? "https://rpc-amoy.polygon.technology";
@@ -22,6 +40,10 @@ const OP_L2_RPC = process.env.OP_L2_RPC ?? "http://localhost:29545";
 const OP_L3_RPC = process.env.OP_L3_RPC ?? "http://localhost:39545";
 const OP_L2_CHAIN_ID = Number(process.env.OP_L2_CHAIN_ID ?? 901);
 const OP_L3_CHAIN_ID = Number(process.env.OP_L3_CHAIN_ID ?? 902);
+const ENABLE_VIA_IR = process.env.HARDHAT_VIA_IR !== "false";
+const USE_DOCKER_SOLC =
+  process.env.HARDHAT_USE_DOCKER_SOLC === "1" ||
+  process.env.HARDHAT_USE_DOCKER_SOLC === "true";
 
 const REQUEST_TIMEOUT_MS = 120_000;
 
@@ -29,13 +51,34 @@ const enableModelChecker = process.env.FORMAL_VERIFY === "true";
 const soliditySettings = enableModelChecker
   ? {
       optimizer: { enabled: true, runs: 200 },
+      viaIR: ENABLE_VIA_IR,
       modelChecker: {
         engine: "chc",
         timeout: 60_000,
-        targets: ["assert", "require"]
+        targets: ["assert", "overflow", "divByZero", "outOfBounds"]
       }
     }
-  : { optimizer: { enabled: true, runs: 200 } };
+  : { optimizer: { enabled: true, runs: 200 }, viaIR: ENABLE_VIA_IR };
+
+if (USE_DOCKER_SOLC) {
+  const dockerSolcDir = path.join(__dirname, "scripts", "solc-docker");
+  const dockerSolcByVersion: Record<string, string> = {
+    "0.8.24": path.join(dockerSolcDir, "solc-0.8.24.sh")
+  };
+
+  subtask(TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD).setAction(async (args, hre, runSuper) => {
+    const build = await runSuper(args);
+    const dockerPath = dockerSolcByVersion[args.solcVersion as string];
+    if (dockerPath) {
+      return {
+        ...build,
+        compilerPath: dockerPath,
+        isSolcJs: false
+      };
+    }
+    return build;
+  });
+}
 
 const config: HardhatUserConfig = {
   solidity: {

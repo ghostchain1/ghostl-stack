@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Button, Card } from '@ghostl/ui';
 import type { AnalyticsEvent, WebhookStatusSummary } from '@ghostl/types';
-import { resolveApiBase } from '../../lib/runtime';
+import { ethers, type InterfaceAbi } from 'ethers';
+import { resolveAiAttestorBase, resolveApiBase } from '../../lib/runtime';
 import { useSession } from '../identity-access/session';
 import { apiRequest, type ApiError, formatApiError } from '../../lib/api';
 import { DataFetchErrorCard } from '../../components/DataFetchErrorCard';
@@ -114,7 +115,123 @@ type Forecasting = {
   explainability: Explainability;
 };
 
+type AiContractKey = 'AIOracleRegistry' | 'AIAttestationHub' | 'PolicyGuard' | 'EvidenceAnchor';
+
+type AiAbiResponse = {
+  ok: boolean;
+  abis: Partial<Record<AiContractKey | 'AIAttestationTypes' | 'IRiskScoringHook', unknown[]>>;
+  addresses: Record<ChainRef, Partial<Record<AiContractKey | 'AIAttestationTypes' | 'IRiskScoringHook', string>>>;
+};
+
+type AiSignerInfo = {
+  address: string;
+  allowed: boolean;
+  signerType: number;
+  metadataURI: string;
+  addedAt: number;
+  disabledAt: number;
+  updatedAt: number;
+};
+
+type AiPolicySnapshot = {
+  riskThresholdBps: number;
+  minConfidence: number;
+  maxAttestationAgeSeconds: number;
+};
+
+type AiRiskSnapshot = {
+  subject: string;
+  layerId: number;
+  riskScoreBps: number;
+  confidence: number;
+  attestationId: string;
+  issuedAt: number;
+  expiresAt: number;
+};
+
+type AiEvidenceAnchor = {
+  index: number;
+  kind: string;
+  hash: string;
+  uri: string;
+  anchoredAt: number;
+  anchoredBy: string;
+};
+
+type AttestorLayerStatus = {
+  layer: number;
+  rpcUrl: string;
+  hubAddress: string | null;
+  registryAddress: string | null;
+  hasHub: boolean;
+  hasRegistry: boolean;
+  hasSigner: boolean;
+  signerAllowed: boolean | null;
+  chainId: string | null;
+  hubLayerId: number | null;
+  policy: AiPolicySnapshot | null;
+};
+
+type AttestorHealthResponse = {
+  ok: boolean;
+  service: string;
+  defaultLayer: number;
+  modelVersion: number;
+  ttlSeconds: number;
+  layers: AttestorLayerStatus[];
+};
+
+type AttestorConfigResponse = {
+  ok: boolean;
+  defaultLayer: number;
+  modelVersion: number;
+  ttlSeconds: number;
+  minAttestIntervalSeconds: number;
+  layers: AttestorLayerStatus[];
+};
+
+type AttestorOnChainRisk = {
+  riskScoreBps: number;
+  confidence: number;
+  attestationId: string;
+  issuedAt: number;
+  expiresAt: number;
+};
+
+type AttestorRiskResponse = {
+  ok: boolean;
+  subject: string;
+  layer: number;
+  computed: {
+    riskScoreBps: number;
+    confidence: number;
+    inputHash: string;
+    outputHash: string;
+    modelVersion: number;
+  };
+  onChain: AttestorOnChainRisk | null;
+};
+
+type AttestorSubmitResponse = {
+  ok: boolean;
+  layer: number;
+  subject: string;
+  signer: string;
+  attestationId: string;
+  txHash: string;
+  chainId: string;
+  nonce: string;
+  retried?: boolean;
+  risk: {
+    riskScoreBps: number;
+    confidence: number;
+    inputHash: string;
+    outputHash: string;
+  };
+};
+
 const API_URL = resolveApiBase();
+const ATTESTOR_URL = resolveAiAttestorBase();
 
 export function AiCommandCenter() {
   const session = useSession();
@@ -137,6 +254,29 @@ export function AiCommandCenter() {
   const [governanceIntel, setGovernanceIntel] = useState<GovernanceIntel | null>(null);
   const [forecasting, setForecasting] = useState<Forecasting | null>(null);
   const [errors, setErrors] = useState<Array<{ title: string; error: ApiError }>>([]);
+  const aiDefaultsAppliedRef = useRef<Record<ChainRef, boolean>>({ l1: false, l2: false, l3: false });
+  const [aiAbis, setAiAbis] = useState<AiAbiResponse['abis']>({});
+  const [aiAddressHints, setAiAddressHints] = useState<AiAbiResponse['addresses'] | null>(null);
+  const [aiRegistryAddress, setAiRegistryAddress] = useState('');
+  const [aiHubAddress, setAiHubAddress] = useState('');
+  const [aiGuardAddress, setAiGuardAddress] = useState('');
+  const [aiAnchorAddress, setAiAnchorAddress] = useState('');
+  const [aiSubject, setAiSubject] = useState('');
+  const [aiSigners, setAiSigners] = useState<AiSignerInfo[]>([]);
+  const [aiPolicies, setAiPolicies] = useState<AiPolicySnapshot | null>(null);
+  const [aiMode, setAiMode] = useState<'OFF' | 'ADVISORY' | 'ENFORCE' | ''>('');
+  const [aiRisk, setAiRisk] = useState<AiRiskSnapshot | null>(null);
+  const [aiAnchors, setAiAnchors] = useState<AiEvidenceAnchor[]>([]);
+  const [aiStatus, setAiStatus] = useState('');
+  const [aiError, setAiError] = useState('');
+  const [attestorSubject, setAttestorSubject] = useState('');
+  const [attestorApiKey, setAttestorApiKey] = useState('');
+  const [attestorHealth, setAttestorHealth] = useState<AttestorHealthResponse | null>(null);
+  const [attestorConfig, setAttestorConfig] = useState<AttestorConfigResponse | null>(null);
+  const [attestorRisk, setAttestorRisk] = useState<AttestorRiskResponse | null>(null);
+  const [attestorSubmission, setAttestorSubmission] = useState<AttestorSubmitResponse | null>(null);
+  const [attestorStatus, setAttestorStatus] = useState('');
+  const [attestorError, setAttestorError] = useState('');
 
   const pushError = (title: string, error: ApiError) => {
     setErrors((prev) => [...prev.filter((entry) => entry.title !== title), { title, error }]);
@@ -155,6 +295,17 @@ export function AiCommandCenter() {
     () => endpoints.filter((e) => (e.layer || '').toLowerCase() === chain),
     [endpoints, chain]
   );
+
+  const activeRpc = useMemo(() => {
+    const healthy = chainEndpoints.find((endpoint) => endpoint.status === 'healthy');
+    return (healthy || chainEndpoints[0])?.url || '';
+  }, [chainEndpoints]);
+
+  const layerId = chain === 'l1' ? 1 : chain === 'l2' ? 2 : 3;
+  const attestorLayerStatus = useMemo(() => {
+    const layers = attestorHealth?.layers || attestorConfig?.layers || [];
+    return layers.find((layer) => layer.layer === layerId) || null;
+  }, [attestorConfig, attestorHealth, layerId]);
 
   const loadEndpoints = async () => {
     const res = await apiRequest<Endpoint[]>('/integrations/rpc', { baseUrl: API_URL });
@@ -201,6 +352,53 @@ export function AiCommandCenter() {
     };
     loadActivity();
   }, [isAdmin]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadAiAbis = async () => {
+      try {
+        const res = await fetch('/api/ai/contracts', { cache: 'no-store' });
+        if (!res.ok) {
+          if (!cancelled) setAiError(`AI contracts ABI load failed: ${res.status}`);
+          return;
+        }
+        const payload = (await res.json()) as AiAbiResponse;
+        if (cancelled) return;
+        setAiAbis(payload.abis || {});
+        setAiAddressHints(payload.addresses || null);
+        setAiError('');
+      } catch (err) {
+        if (!cancelled) setAiError(err instanceof Error ? err.message : 'ai_contracts_load_failed');
+      }
+    };
+    loadAiAbis().catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!aiAddressHints) return;
+    if (aiDefaultsAppliedRef.current[chain]) return;
+    const hints = aiAddressHints[chain];
+    if (!hints) {
+      aiDefaultsAppliedRef.current[chain] = true;
+      return;
+    }
+    if (hints.AIOracleRegistry) {
+      setAiRegistryAddress((prev) => prev || hints.AIOracleRegistry || '');
+    }
+    if (hints.AIAttestationHub) {
+      setAiHubAddress((prev) => prev || hints.AIAttestationHub || '');
+    }
+    if (hints.PolicyGuard) {
+      setAiGuardAddress((prev) => prev || hints.PolicyGuard || '');
+    }
+    if (hints.EvidenceAnchor) {
+      setAiAnchorAddress((prev) => prev || hints.EvidenceAnchor || '');
+    }
+    aiDefaultsAppliedRef.current[chain] = true;
+  }, [aiAddressHints, chain]);
 
   const summarizeEvent = (event: AnalyticsEvent) => {
     const payload = event.payload || {};
@@ -323,6 +521,240 @@ export function AiCommandCenter() {
     }
   };
 
+  const policyKey = (key: string) => ethers.keccak256(ethers.toUtf8Bytes(key));
+  const modeLabels: Array<'OFF' | 'ADVISORY' | 'ENFORCE'> = ['OFF', 'ADVISORY', 'ENFORCE'];
+  const formatTs = (seconds: number) => (seconds > 0 ? new Date(seconds * 1000).toLocaleString() : 'n/a');
+
+  const loadAiPack = async () => {
+    if (!activeRpc) {
+      setAiError('No RPC endpoint available for this chain.');
+      return;
+    }
+    if (!aiAbis.AIOracleRegistry && !aiAbis.AIAttestationHub && !aiAbis.PolicyGuard && !aiAbis.EvidenceAnchor) {
+      setAiError('AI contract ABIs are not available yet. Run the ABI export step.');
+      return;
+    }
+
+    setAiStatus('Loading AI contract state...');
+    setAiError('');
+
+    try {
+      const provider = new ethers.JsonRpcProvider(activeRpc);
+
+      const registryAbi = aiAbis.AIOracleRegistry as InterfaceAbi | undefined;
+      const guardAbi = aiAbis.PolicyGuard as InterfaceAbi | undefined;
+      const hubAbi = aiAbis.AIAttestationHub as InterfaceAbi | undefined;
+      const anchorAbi = aiAbis.EvidenceAnchor as InterfaceAbi | undefined;
+
+      if (aiRegistryAddress && registryAbi) {
+        const registry = new ethers.Contract(aiRegistryAddress, registryAbi, provider);
+        const countRaw = (await registry.signerCount()) as bigint;
+        const count = Number(countRaw);
+        const limit = Math.min(count, 25);
+        const nextSigners: AiSignerInfo[] = [];
+        for (let i = 0; i < limit; i += 1) {
+          const signerAddress = (await registry.signerAt(i)) as string;
+          const info = (await registry.getSignerInfo(signerAddress)) as {
+            allowed: boolean;
+            signerType: bigint;
+            metadataURI: string;
+            addedAt: bigint;
+            disabledAt: bigint;
+            updatedAt: bigint;
+          };
+          nextSigners.push({
+            address: signerAddress,
+            allowed: Boolean(info.allowed),
+            signerType: Number(info.signerType || 0n),
+            metadataURI: info.metadataURI || '',
+            addedAt: Number(info.addedAt || 0n),
+            disabledAt: Number(info.disabledAt || 0n),
+            updatedAt: Number(info.updatedAt || 0n)
+          });
+        }
+        setAiSigners(nextSigners);
+
+        const [riskThresholdRaw, minConfidenceRaw, maxAgeRaw] = (await Promise.all([
+          registry.getPolicy(policyKey('ghostai.policy.risk.threshold.bps')),
+          registry.getPolicy(policyKey('ghostai.policy.min.confidence')),
+          registry.getPolicy(policyKey('ghostai.policy.max.attestation.age'))
+        ])) as [bigint, bigint, bigint];
+        setAiPolicies({
+          riskThresholdBps: Number(riskThresholdRaw || 0n),
+          minConfidence: Number(minConfidenceRaw || 0n),
+          maxAttestationAgeSeconds: Number(maxAgeRaw || 0n)
+        });
+      } else {
+        setAiSigners([]);
+        setAiPolicies(null);
+      }
+
+      if (aiGuardAddress && guardAbi) {
+        const guard = new ethers.Contract(aiGuardAddress, guardAbi, provider);
+        const modeRaw = (await guard.mode()) as bigint;
+        const modeIndex = Number(modeRaw);
+        setAiMode(modeLabels[modeIndex] || '');
+      } else {
+        setAiMode('');
+      }
+
+      if (aiHubAddress && hubAbi && aiSubject && ethers.isAddress(aiSubject)) {
+        const hub = new ethers.Contract(aiHubAddress, hubAbi, provider);
+        const result = (await hub.getLatestRisk(aiSubject, layerId)) as [bigint, bigint, string, bigint, bigint];
+        setAiRisk({
+          subject: aiSubject,
+          layerId,
+          riskScoreBps: Number(result[0] || 0n),
+          confidence: Number(result[1] || 0n),
+          attestationId: result[2] || '',
+          issuedAt: Number(result[3] || 0n),
+          expiresAt: Number(result[4] || 0n)
+        });
+      } else if (aiSubject && !ethers.isAddress(aiSubject)) {
+        setAiRisk(null);
+        setAiError('Subject address is not a valid EVM address.');
+      } else {
+        setAiRisk(null);
+      }
+
+      if (aiAnchorAddress && anchorAbi) {
+        const anchor = new ethers.Contract(aiAnchorAddress, anchorAbi, provider);
+        const totalRaw = (await anchor.anchorCount()) as bigint;
+        const total = Number(totalRaw);
+        const take = Math.min(total, 10);
+        const start = Math.max(0, total - take);
+        const nextAnchors: AiEvidenceAnchor[] = [];
+        for (let i = total - 1; i >= start; i -= 1) {
+          const record = (await anchor.anchorAt(i)) as {
+            kind: string;
+            hash: string;
+            uri: string;
+            anchoredAt: bigint;
+            anchoredBy: string;
+          };
+          nextAnchors.push({
+            index: i,
+            kind: record.kind,
+            hash: record.hash,
+            uri: record.uri,
+            anchoredAt: Number(record.anchoredAt || 0n),
+            anchoredBy: record.anchoredBy
+          });
+        }
+        setAiAnchors(nextAnchors);
+      } else {
+        setAiAnchors([]);
+      }
+
+      setAiStatus('');
+    } catch (err) {
+      setAiStatus('');
+      setAiError(err instanceof Error ? err.message : 'ai_contract_reads_failed');
+    }
+  };
+
+  const attestorHeaders = (json: boolean) => {
+    const headers: Record<string, string> = {};
+    if (json) headers['content-type'] = 'application/json';
+    if (attestorApiKey) headers['x-ghost-ai-key'] = attestorApiKey;
+    return headers;
+  };
+
+  const attestorRequest = async <T,>(path: string, init?: RequestInit): Promise<T> => {
+    const res = await fetch(`${ATTESTOR_URL}${path}`, {
+      ...init,
+      headers: {
+        ...(init?.headers || {}),
+        ...(init?.body ? attestorHeaders(true) : attestorHeaders(false))
+      }
+    });
+    const text = await res.text();
+    let data: unknown = null;
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { ok: false, error: text };
+      }
+    }
+    if (!res.ok) {
+      const message =
+        typeof data === 'object' && data && 'error' in data ? String((data as { error?: string }).error) : `attestor_http_${res.status}`;
+      throw new Error(message || `attestor_http_${res.status}`);
+    }
+    return data as T;
+  };
+
+  const loadAttestorStatus = async () => {
+    setAttestorStatus('Loading AI attestor status...');
+    setAttestorError('');
+    try {
+      const [health, cfg] = await Promise.all([
+        attestorRequest<AttestorHealthResponse>('/healthz'),
+        attestorRequest<AttestorConfigResponse>('/config')
+      ]);
+      setAttestorHealth(health);
+      setAttestorConfig(cfg);
+      setAttestorStatus('');
+    } catch (err) {
+      setAttestorStatus('');
+      setAttestorError(err instanceof Error ? err.message : 'attestor_status_failed');
+    }
+  };
+
+  const loadAttestorRisk = async () => {
+    const subject = attestorSubject.trim();
+    if (!subject || !ethers.isAddress(subject)) {
+      setAttestorError('Enter a valid subject address to load risk.');
+      return;
+    }
+    setAttestorStatus('Loading AI attestor risk...');
+    setAttestorError('');
+    try {
+      const response = await attestorRequest<AttestorRiskResponse>(`/risk/${subject}?layer=${layerId}`);
+      setAttestorRisk(response);
+      setAttestorStatus('');
+    } catch (err) {
+      setAttestorStatus('');
+      setAttestorError(err instanceof Error ? err.message : 'attestor_risk_failed');
+    }
+  };
+
+  const runAttestorAttest = async () => {
+    const subject = attestorSubject.trim();
+    if (!subject || !ethers.isAddress(subject)) {
+      setAttestorError('Enter a valid subject address before attesting.');
+      return;
+    }
+    setAttestorStatus('Submitting attestation...');
+    setAttestorError('');
+    try {
+      const response = await attestorRequest<AttestorSubmitResponse>('/attest', {
+        method: 'POST',
+        body: JSON.stringify({ subject, layer: layerId })
+      });
+      setAttestorSubmission(response);
+      setAttestorStatus('');
+      loadAttestorRisk().catch(() => undefined);
+    } catch (err) {
+      setAttestorStatus('');
+      setAttestorError(err instanceof Error ? err.message : 'attestor_submit_failed');
+    }
+  };
+
+  useEffect(() => {
+    loadAttestorStatus().catch(() => undefined);
+    // We refresh attestor status when the selected layer changes.
+  }, [chain]);
+
+  useEffect(() => {
+    if (!activeRpc) return;
+    if (!aiRegistryAddress && !aiHubAddress && !aiGuardAddress && !aiAnchorAddress) return;
+    loadAiPack().catch(() => undefined);
+    // We intentionally do not depend on aiSubject to avoid spamming reads while typing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeRpc, chain, aiRegistryAddress, aiHubAddress, aiGuardAddress, aiAnchorAddress, aiAbis]);
+
   return (
     <div className="content">
       <div className="card-grid">
@@ -354,6 +786,206 @@ export function AiCommandCenter() {
               </div>
             ))}
             {!chainEndpoints.length && <div className="muted">No RPC endpoints available.</div>}
+          </div>
+        </Card>
+        <Card title="AI Contract Pack" subtitle="Registry, Hub, Guard, Evidence">
+          {aiStatus && <div className="muted">{aiStatus}</div>}
+          {aiError && <div className="muted">AI pack: {aiError}</div>}
+          <div className="stack" style={{ gap: 6 }}>
+            <div className="row" style={{ justifyContent: 'space-between' }}>
+              <span className="muted">Active RPC</span>
+              <span className="mono">{activeRpc || 'n/a'}</span>
+            </div>
+            <div className="row" style={{ justifyContent: 'space-between' }}>
+              <span className="muted">Layer</span>
+              <span>L{layerId}</span>
+            </div>
+          </div>
+          <div className="stack" style={{ marginTop: 8 }}>
+            <input
+              className="input"
+              placeholder="AIOracleRegistry address"
+              value={aiRegistryAddress}
+              onChange={(e) => setAiRegistryAddress(e.target.value.trim())}
+            />
+            <input
+              className="input"
+              placeholder="AIAttestationHub address"
+              value={aiHubAddress}
+              onChange={(e) => setAiHubAddress(e.target.value.trim())}
+            />
+            <input
+              className="input"
+              placeholder="PolicyGuard address"
+              value={aiGuardAddress}
+              onChange={(e) => setAiGuardAddress(e.target.value.trim())}
+            />
+            <input
+              className="input"
+              placeholder="EvidenceAnchor address"
+              value={aiAnchorAddress}
+              onChange={(e) => setAiAnchorAddress(e.target.value.trim())}
+            />
+            <input
+              className="input"
+              placeholder="Subject address (for latest risk)"
+              value={aiSubject}
+              onChange={(e) => setAiSubject(e.target.value.trim())}
+            />
+            <Button onClick={loadAiPack}>Refresh AI Pack</Button>
+          </div>
+          <div className="stack" style={{ marginTop: 10 }}>
+            <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+              <Badge>{aiMode || 'mode: n/a'}</Badge>
+              {aiPolicies && (
+                <>
+                  <Badge tone="default">risk ≤ {aiPolicies.riskThresholdBps || 0} bps</Badge>
+                  <Badge tone="default">confidence ≥ {aiPolicies.minConfidence || 0}</Badge>
+                  <Badge tone="default">max age {aiPolicies.maxAttestationAgeSeconds || 0}s</Badge>
+                </>
+              )}
+            </div>
+
+            <div>
+              <div className="muted">Allowed signers (up to 25)</div>
+              {aiSigners.length === 0 && <div className="muted">No signers loaded.</div>}
+              {aiSigners.map((signer) => (
+                <div key={signer.address} className="row" style={{ justifyContent: 'space-between', gap: 8 }}>
+                  <span className="mono">{signer.address}</span>
+                  <span className="muted">
+                    type {signer.signerType} · {signer.allowed ? 'allowed' : 'disabled'}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div>
+              <div className="muted">Latest risk</div>
+              {!aiRisk && <div className="muted">Provide a subject + hub address to load risk.</div>}
+              {aiRisk && (
+                <div className="stack" style={{ gap: 4 }}>
+                  <div className="row" style={{ gap: 8 }}>
+                    <Badge tone="default">risk {aiRisk.riskScoreBps} bps</Badge>
+                    <Badge tone="default">confidence {aiRisk.confidence}</Badge>
+                  </div>
+                  <div className="muted mono">attestation {aiRisk.attestationId || 'n/a'}</div>
+                  <div className="muted">issued {formatTs(aiRisk.issuedAt)}</div>
+                  <div className="muted">expires {formatTs(aiRisk.expiresAt)}</div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <div className="muted">Evidence anchors (latest 10)</div>
+              {aiAnchors.length === 0 && <div className="muted">No anchors loaded.</div>}
+              {aiAnchors.map((anchor) => (
+                <div key={`${anchor.index}-${anchor.hash}`} className="stack" style={{ gap: 2 }}>
+                  <div className="row" style={{ justifyContent: 'space-between' }}>
+                    <span>#{anchor.index}</span>
+                    <span className="muted">{formatTs(anchor.anchoredAt)}</span>
+                  </div>
+                  <div className="mono">{anchor.kind}</div>
+                  <div className="mono">{anchor.hash}</div>
+                  {anchor.uri && <div className="muted">{anchor.uri}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+        <Card title="AI Attestor Service" subtitle="Off-chain attestations, on-chain verification">
+          {attestorStatus && <div className="muted">{attestorStatus}</div>}
+          {attestorError && <div className="muted">Attestor: {attestorError}</div>}
+          <div className="stack" style={{ gap: 6 }}>
+            <div className="row" style={{ justifyContent: 'space-between' }}>
+              <span className="muted">Attestor Base</span>
+              <span className="mono">{ATTESTOR_URL}</span>
+            </div>
+            <div className="row" style={{ justifyContent: 'space-between' }}>
+              <span className="muted">Layer</span>
+              <span>L{layerId}</span>
+            </div>
+            {attestorLayerStatus && (
+              <>
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <span className="muted">Chain ID</span>
+                  <span className="mono">{attestorLayerStatus.chainId || 'n/a'}</span>
+                </div>
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <span className="muted">Signer Allowed</span>
+                  <span>{attestorLayerStatus.signerAllowed === null ? 'unknown' : attestorLayerStatus.signerAllowed ? 'yes' : 'no'}</span>
+                </div>
+              </>
+            )}
+          </div>
+          {attestorLayerStatus?.policy && (
+            <div className="row" style={{ gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
+              <Badge tone="default">risk ≤ {attestorLayerStatus.policy.riskThresholdBps || 0} bps</Badge>
+              <Badge tone="default">confidence ≥ {attestorLayerStatus.policy.minConfidence || 0}</Badge>
+              <Badge tone="default">max age {attestorLayerStatus.policy.maxAttestationAgeSeconds || 0}s</Badge>
+            </div>
+          )}
+          <div className="stack" style={{ marginTop: 8 }}>
+            <input
+              className="input"
+              placeholder="Subject address for risk/attestation"
+              value={attestorSubject}
+              onChange={(e) => setAttestorSubject(e.target.value.trim())}
+            />
+            <input
+              className="input"
+              placeholder="Attestor API key (optional)"
+              value={attestorApiKey}
+              onChange={(e) => setAttestorApiKey(e.target.value.trim())}
+            />
+            <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+              <Button onClick={loadAttestorStatus}>Refresh Attestor</Button>
+              <Button onClick={loadAttestorRisk}>Load Risk</Button>
+              <Button onClick={runAttestorAttest}>Attest Now</Button>
+            </div>
+          </div>
+          <div className="stack" style={{ marginTop: 10, gap: 8 }}>
+            <div>
+              <div className="muted">Attestor risk</div>
+              {!attestorRisk && <div className="muted">Enter a subject address and load risk.</div>}
+              {attestorRisk && (
+                <div className="stack" style={{ gap: 4 }}>
+                  <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                    <Badge tone="default">risk {attestorRisk.computed.riskScoreBps} bps</Badge>
+                    <Badge tone="default">confidence {attestorRisk.computed.confidence}</Badge>
+                    <Badge tone="default">model v{attestorRisk.computed.modelVersion}</Badge>
+                  </div>
+                  <div className="muted mono">input {attestorRisk.computed.inputHash}</div>
+                  <div className="muted mono">output {attestorRisk.computed.outputHash}</div>
+                  {attestorRisk.onChain && (
+                    <div className="stack" style={{ gap: 2 }}>
+                      <div className="muted">On-chain latest</div>
+                      <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                        <Badge tone="default">risk {attestorRisk.onChain.riskScoreBps} bps</Badge>
+                        <Badge tone="default">confidence {attestorRisk.onChain.confidence}</Badge>
+                      </div>
+                      <div className="muted mono">attestation {attestorRisk.onChain.attestationId || 'n/a'}</div>
+                      <div className="muted">issued {formatTs(attestorRisk.onChain.issuedAt)}</div>
+                      <div className="muted">expires {formatTs(attestorRisk.onChain.expiresAt)}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div>
+              <div className="muted">Last submission</div>
+              {!attestorSubmission && <div className="muted">No attestations submitted from this UI yet.</div>}
+              {attestorSubmission && (
+                <div className="stack" style={{ gap: 2 }}>
+                  <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                    <Badge tone="default">nonce {attestorSubmission.nonce}</Badge>
+                    {attestorSubmission.retried && <Badge tone="default">retried</Badge>}
+                  </div>
+                  <div className="muted mono">attestation {attestorSubmission.attestationId}</div>
+                  <div className="muted mono">tx {attestorSubmission.txHash}</div>
+                  <div className="muted">chain {attestorSubmission.chainId}</div>
+                </div>
+              )}
+            </div>
           </div>
         </Card>
         <Card title="Transaction Intelligence" subtitle="Classify and score a transaction">

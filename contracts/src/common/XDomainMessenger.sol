@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
 import {IXDomainMessenger} from "./IXDomainMessenger.sol";
 import {LibErrors} from "./LibErrors.sol";
@@ -75,17 +75,17 @@ contract XDomainMessenger is IXDomainMessenger {
 
     /// @notice Send message "up" to parent chain messenger.
     /// In a real rollup you’d emit logs and have a relayer/prover pick them up.
-    function sendMessage(address target, bytes calldata message, uint32 minGasLimit) external payable {
+    function sendMessage(address target, bytes calldata message, uint32 minGasLimit) external {
         if (target == address(0)) revert LibErrors.ZeroAddress();
         // For "up" messaging we require a parent messenger configured.
         if (parentMessenger == address(0)) revert LibErrors.NotAuthorized();
 
         uint256 nonce = nextNonce++;
-        emit SentMessage(target, msg.sender, nonce, msg.value, minGasLimit, message);
+        emit SentMessage(target, msg.sender, nonce, 0, minGasLimit, message);
 
         // Call parent messenger to enqueue/record the message.
         // In real deployments, this "send" may be async; here it's a direct call for testnet/dev simplicity.
-        IXDomainMessenger(parentMessenger).relayMessage(nonce, msg.sender, target, msg.value, minGasLimit, message);
+        IXDomainMessenger(parentMessenger).relayMessage(nonce, msg.sender, target, 0, minGasLimit, message);
     }
 
     /// @notice Relay message "down" into this chain.
@@ -99,6 +99,7 @@ contract XDomainMessenger is IXDomainMessenger {
         bytes calldata message
     ) external onlyParentMessenger {
         if (target == address(0)) revert LibErrors.ZeroAddress();
+        if (value != 0) revert LibErrors.InvalidValue();
 
         bytes32 msgHash = keccak256(abi.encode(nonce, sender, target, value, message));
         if (relayed[msgHash]) revert LibErrors.AlreadyRelayed();
@@ -106,7 +107,7 @@ contract XDomainMessenger is IXDomainMessenger {
 
         // Uncomment for stricter behavior: require(target.isContract(), "target not contract");
         _xDomainSender = sender;
-        (bool ok, bytes memory ret) = target.call{value: value}(message);
+        (bool ok, bytes memory ret) = target.call(message);
         _xDomainSender = address(0);
 
         if (ok) {
@@ -118,5 +119,4 @@ contract XDomainMessenger is IXDomainMessenger {
         }
     }
 
-    receive() external payable {}
 }
