@@ -4,6 +4,10 @@ pragma solidity ^0.8.24;
 import "./ERC20.sol";
 
 contract GhostGasTokenBase is ERC20 {
+    /// @dev Canonical GhostChain gas token (L1) used across all layers.
+    address internal constant CANONICAL_GAS_TOKEN = 0x5FbDB2315678afecb367f032d93F642f64180aa3;
+    error CanonicalGasTokenOnly(address canonical);
+
     address public owner;
     mapping(address => bool) public minters;
 
@@ -26,10 +30,13 @@ contract GhostGasTokenBase is ERC20 {
         uint8 decimals_,
         uint256 initialSupply
     ) ERC20(name_, symbol_, decimals_) {
-        owner = msg.sender;
-        minters[msg.sender] = true;
-        if (initialSupply > 0) {
-            _mint(msg.sender, initialSupply);
+        // Per-layer gas token deployment is forbidden. Use the canonical L1 token address.
+        name_;
+        symbol_;
+        decimals_;
+        initialSupply;
+        if (msg.sender != CANONICAL_GAS_TOKEN) {
+            revert CanonicalGasTokenOnly(CANONICAL_GAS_TOKEN);
         }
     }
 

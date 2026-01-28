@@ -4,29 +4,29 @@ pragma solidity ^0.8.24;
 import "./TestBase.sol";
 import "../../src/l1/NativeToken.sol";
 import "../../src/l1/Treasury.sol";
-import "../../src/common/Ownable.sol";
 
 contract FuzzTreasury is TestBase {
     NativeToken private token;
     Treasury private treasury;
+    address private executor = address(0xB0B);
+    address private executorV2 = address(0xC0DE);
 
     function setUp() public payable {
         token = new NativeToken("Ghost", "GHOST");
-        treasury = new Treasury(token);
-        payable(address(treasury)).transfer(10 ether);
+        treasury = new Treasury(IERC20Balance(address(token)), executor, executorV2);
         token.mint(address(treasury), 1000 ether);
     }
 
-    function testFuzz_onlyOwnerWithdrawETH(uint256 amount) public {
-        vm.prank(address(0xBEEF));
-        vm.expectRevert(abi.encodeWithSelector(Ownable.NotOwner.selector));
-        treasury.withdrawETH(payable(address(0xBEEF)), amount);
+    function test_withdrawETHDisabled(uint256 amount) public {
+        vm.expectRevert(bytes("ETH disabled; use withdrawNative"));
+        treasury.withdrawETH(payable(address(this)), amount);
     }
 
-    function testFuzz_withdrawETHReducesBalance(uint256 amount) public {
-        uint256 bal = address(treasury).balance;
+    function testFuzz_withdrawNativeReducesBalance(uint256 amount) public {
+        uint256 bal = token.balanceOf(address(treasury));
         uint256 value = bal == 0 ? 0 : amount % bal;
-        treasury.withdrawETH(payable(address(this)), value);
-        assertEq(address(treasury).balance, bal - value, "eth balance mismatch");
+        vm.prank(executor);
+        treasury.withdrawNative(address(this), value);
+        assertEq(token.balanceOf(address(treasury)), bal - value, "native balance mismatch");
     }
 }

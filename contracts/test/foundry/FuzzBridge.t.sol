@@ -12,11 +12,14 @@ contract FuzzBridge is TestBase {
     GhostTokenL2 private token;
 
     address private relayer = address(0xB0B);
+    address private constant CANONICAL_GAS_TOKEN = 0x5FbDB2315678afecb367f032d93F642f64180aa3;
 
     function setUp() public {
         policy = new GuardPolicy();
         bridge = new L2L3Bridge(address(policy));
         bridge.setRelayer(relayer);
+        bridge.setRequireComplianceRoot(false);
+        vm.prank(CANONICAL_GAS_TOKEN);
         token = new GhostTokenL2();
         token.approve(address(bridge), type(uint256).max);
     }

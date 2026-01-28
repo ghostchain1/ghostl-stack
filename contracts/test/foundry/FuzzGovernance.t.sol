@@ -36,4 +36,12 @@ contract FuzzGovernance is TestBase {
         vm.expectRevert(abi.encodeWithSelector(Ownable.NotOwner.selector));
         governor.queue(0);
     }
+
+    function testQueueOrderEnforced() public {
+        governor.propose(address(0xCAFE), 0, hex"");
+        governor.propose(address(0xBEEF), 0, hex"");
+        governor.vote(1, true);
+        vm.expectRevert(bytes("queue mismatch"));
+        governor.queue(1);
+    }
 }

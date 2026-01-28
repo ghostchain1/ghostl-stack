@@ -77,7 +77,9 @@ contract Governor is Ownable {
         uint256 eta = block.timestamp + executor.delay();
         p.queued = true;
         // slither-disable-next-line unused-return
-        executor.queueTx(p.target, p.value, p.data);
+        require(executor.queueLength() == id, "queue mismatch");
+        uint256 queueId = executor.queueTx(p.target, p.value, p.data);
+        require(queueId == id, "queue mismatch");
         emit Queued(id, eta);
     }
 

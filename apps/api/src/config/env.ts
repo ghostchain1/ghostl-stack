@@ -18,6 +18,7 @@ const EnvSchema = z.object({
   GRAFANA_API_KEY: z.string().optional(),
   RELAYER_URL: z.string().url().default('http://localhost:7171'),
   GUARD_URL: z.string().url().default('http://localhost:7070'),
+  GAS_ENGINE_URL: z.string().url().default('http://localhost:3210'),
   GUARD_ADMIN_TOKEN: z.string().optional(),
   LOKI_URL: z.preprocess(emptyToUndefined, z.string().url().optional()),
   ALERTMANAGER_URL: z.preprocess(emptyToUndefined, z.string().url().optional()),

@@ -22,7 +22,7 @@ Recommendation carried into this repo: GhostL2 runs on OP Stack now, with a clea
 ## Consensus alignment (L1 → L2 → L3)
 
 1. **L1 finality** – GhostChain PoS publishes epochs/checkpoints, slashes misbehavior, and exposes `CheckpointManager`, `PauseGuardian`, and governance endpoints for L2/L3 to trust.
-2. **L2 finality** – The PolyBFT-style L2 uses OP Stack (op-node/op-sequencer) to produce fast BFT blocks, then posts checkpoint roots + dispute/finality data back to GhostChain L1 via the bridge stack (`BridgeRouter`, `TokenBridge`, `OutputOracle`, `FinalizationManager`).
+2. **L2 finality** – GhostL2 runs OP Stack (op-node/op-geth) to produce blocks and batches, then posts output roots + dispute/finality data back to GhostChain L1 via the bridge stack (`OutputOracle`, `FinalizationManager`, `DisputeGameFactoryV2`).
 3. **L3 finality** – OP Stack app-chains (ghost-l3) operate on the “soft finality” sequencer/batcher/proposer model, emit output roots + batches to L2, and rely on the L2 dispute/finality contracts to enforce correctness; withdraws follow the challenge window, then await the L2 checkpoint that was anchored to L1.
 
 This multi-layer ladder is documented in `docs/ghostchain-pos-alignment.md`; keep the `FUT_*` contract addresses in sync with your deploy script outputs so services can subscribe to the correct oracle/bridge endpoints.

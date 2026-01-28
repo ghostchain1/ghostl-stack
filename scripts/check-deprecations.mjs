@@ -7,6 +7,9 @@ import path from 'node:path';
 
 const execFileAsync = promisify(execFile);
 const rootDir = process.cwd();
+const DEFAULT_CMD_TIMEOUT_MS = Number(process.env.DEPRECATIONS_CMD_TIMEOUT_MS ?? 120000);
+const SKIP_NPM_AUDIT = process.env.DEPRECATIONS_SKIP_AUDIT === '1';
+const SKIP_FILE_SCAN = process.env.DEPRECATIONS_SKIP_FILE_SCAN === '1';
 
 const artifactsDir = path.join(rootDir, 'artifacts');
 await mkdir(artifactsDir, { recursive: true });
@@ -25,15 +28,22 @@ const addItem = (item) => {
   report.items.push(item);
 };
 
-const runCommand = async (cmd, args) => {
+const runCommand = async (cmd, args, options = {}) => {
+  const timeoutMs = Number(options.timeoutMs ?? DEFAULT_CMD_TIMEOUT_MS);
   try {
-    const { stdout, stderr } = await execFileAsync(cmd, args, { cwd: rootDir, maxBuffer: 10 * 1024 * 1024 });
+    const { stdout, stderr } = await execFileAsync(cmd, args, {
+      cwd: rootDir,
+      maxBuffer: 10 * 1024 * 1024,
+      timeout: timeoutMs
+    });
     return { stdout, stderr, code: 0 };
   } catch (error) {
+    const timedOut = error?.killed && error?.signal === 'SIGTERM';
     return {
       stdout: error.stdout ? String(error.stdout) : '',
       stderr: error.stderr ? String(error.stderr) : '',
-      code: typeof error.code === 'number' ? error.code : 1
+      code: typeof error.code === 'number' ? error.code : 1,
+      timedOut
     };
   }
 };
@@ -131,6 +141,10 @@ const listFiles = async (dir, collected) => {
 };
 
 const scanFiles = async () => {
+  if (SKIP_FILE_SCAN) {
+    report.checks.fileScan = { skipped: true };
+    return;
+  }
   const files = [];
   const rootFiles = ['package.json', 'tsconfig.base.json'];
   for (const file of rootFiles) {
@@ -322,8 +336,12 @@ const scanNpmOutdated = async () => {
 };
 
 const scanNpmAudit = async () => {
+  if (SKIP_NPM_AUDIT) {
+    report.checks.npmAudit = { code: 0, skipped: true };
+    return;
+  }
   const result = await runCommand('npm', ['audit', '--json']);
-  report.checks.npmAudit = { code: result.code };
+  report.checks.npmAudit = { code: result.code, timedOut: !!result.timedOut };
   const parsed = safeJsonParse(result.stdout);
   if (!parsed.ok) {
     report.checks.npmAudit.error = 'invalid-json';

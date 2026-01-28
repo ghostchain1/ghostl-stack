@@ -34,6 +34,8 @@ import {
   aiCoreDecisionSchema,
   aiCoreActionSchema,
   aiCoreFingerprintSchema,
+  gasMetricsResponseSchema,
+  slashingEventsResponseSchema,
   postGasAdminJson
 } from '../../../../src/lib/gas-engine-client';
 
@@ -49,6 +51,8 @@ type AiCorePrediction = z.infer<typeof aiCorePredictionSchema>;
 type AiCoreDecision = z.infer<typeof aiCoreDecisionSchema>;
 type AiCoreAction = z.infer<typeof aiCoreActionSchema>;
 type AiCoreFingerprint = z.infer<typeof aiCoreFingerprintSchema>;
+type GasMetrics = z.infer<typeof gasMetricsResponseSchema>;
+type SlashingEvents = z.infer<typeof slashingEventsResponseSchema>;
 
 type MetricsSummary = {
   deployments: { chain_key: string; status: string; count: string }[];
@@ -58,9 +62,31 @@ type MetricsSummary = {
   avgEstimate: { chain_key: string; avg: string | null }[];
 };
 
+const formatGwei = (value: unknown) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return 'n/a';
+  return `${(numeric / 1_000_000_000).toFixed(2)} gwei`;
+};
+
+const reasonLabel = (code?: number | null) => {
+  switch (code) {
+    case 1:
+      return 'Base fee above max';
+    case 2:
+      return 'Priority fee above max';
+    case 3:
+      return 'Fee spike';
+    case 4:
+      return 'Bond below minimum';
+    default:
+      return 'Policy violation';
+  }
+};
+
 export default function GasChainPage() {
-  const params = useParams();
-  const chainKey = typeof params.chainKey === 'string' ? params.chainKey : params.chainKey?.[0];
+  const params = useParams<{ chainKey?: string | string[] }>();
+  const chainKeyParam = params?.chainKey;
+  const chainKey = Array.isArray(chainKeyParam) ? chainKeyParam[0] : chainKeyParam;
   const { user } = useSession();
   const isAdmin = roleOrder[normalizeRole(user?.role)] >= roleOrder.ADMIN;
   const [chain, setChain] = useState<Chain | null>(null);
@@ -76,6 +102,8 @@ export default function GasChainPage() {
   const [aiDecisions, setAiDecisions] = useState<AiCoreDecision[]>([]);
   const [aiActions, setAiActions] = useState<AiCoreAction[]>([]);
   const [aiFingerprints, setAiFingerprints] = useState<AiCoreFingerprint[]>([]);
+  const [gasMetrics, setGasMetrics] = useState<GasMetrics | null>(null);
+  const [slashingEvents, setSlashingEvents] = useState<SlashingEvents | null>(null);
   const [errors, setErrors] = useState<Array<{ title: string; error: string }>>([]);
   const [adminError, setAdminError] = useState<string | null>(null);
 
@@ -94,6 +122,24 @@ export default function GasChainPage() {
     const metricsRes = await fetchGasJson('/v1/metrics/summary', metricsSummarySchema);
     if (!metricsRes.data) nextErrors.push({ title: 'Metrics summary', error: metricsRes.error || 'failed' });
     else setMetrics(metricsRes.data as MetricsSummary);
+
+    const gasMetricsRes = await fetchGasJson(`/v1/gas/metrics?chain=${chainKey}&limit=60`, gasMetricsResponseSchema);
+    if (!gasMetricsRes.data) {
+      if (!gasMetricsRes.error?.includes('HTTP 404')) {
+        nextErrors.push({ title: 'Gas telemetry', error: gasMetricsRes.error || 'failed' });
+      }
+    } else {
+      setGasMetrics(gasMetricsRes.data as GasMetrics);
+    }
+
+    const slashingRes = await fetchGasJson(`/v1/gas/slashing-events?chain=${chainKey}&limit=20`, slashingEventsResponseSchema);
+    if (!slashingRes.data) {
+      if (!slashingRes.error?.includes('HTTP 404')) {
+        nextErrors.push({ title: 'Slashing events', error: slashingRes.error || 'failed' });
+      }
+    } else {
+      setSlashingEvents(slashingRes.data as SlashingEvents);
+    }
 
     const deploymentsRes = await fetchGasJson(`/v1/deployments?limit=12&chainKey=${chainKey}`, deploymentsResponseSchema);
     if (!deploymentsRes.data) nextErrors.push({ title: 'Deployments', error: deploymentsRes.error || 'failed' });
@@ -223,6 +269,14 @@ export default function GasChainPage() {
     return { success, failed, outOfGas };
   }, [metrics, chainKey]);
 
+  const latestSample = gasMetrics?.samples[0];
+  const recommendation = gasMetrics?.recommendation;
+  const telemetryPolicy = gasMetrics?.policy;
+  const slashingCount = slashingEvents?.events.length ?? 0;
+  const latestSlashing = slashingEvents?.events[0];
+  const volatilityPct = recommendation ? `${(recommendation.volatilityScore * 100).toFixed(1)}%` : 'n/a';
+  const anomalyPct = recommendation ? `${(recommendation.anomalyScore * 100).toFixed(1)}%` : 'n/a';
+
   return (
     <div className="content">
       <div className="card-grid">
@@ -262,6 +316,57 @@ export default function GasChainPage() {
               <Link className="button secondary" href="/observability/gas">
                 Back to overview
               </Link>
+            </div>
+          </div>
+        </Card>
+        <Card title="GHOST gas telemetry" subtitle="Canonical gas token enforcement">
+          <div className="stack">
+            <div className="spread">
+              <span className="muted">Gas token</span>
+              <span>{chain?.gasTokenSymbol || 'GHOST'}</span>
+            </div>
+            <div className="spread">
+              <span className="muted">Token address</span>
+              <span className="truncate">
+                {chain?.gasTokenAddress || '0x5FbDB2315678afecb367f032d93F642f64180aa3'}
+              </span>
+            </div>
+            <div className="spread">
+              <span className="muted">Current base fee</span>
+              <span>{formatGwei(latestSample?.baseFee)}</span>
+            </div>
+            <div className="spread">
+              <span className="muted">Recommended base</span>
+              <span>{formatGwei(recommendation?.recommendedBaseFee)}</span>
+            </div>
+            <div className="spread">
+              <span className="muted">Recommended priority</span>
+              <span>{formatGwei(recommendation?.recommendedPriorityFee)}</span>
+            </div>
+            <div className="spread">
+              <span className="muted">Volatility / Anomaly</span>
+              <span>
+                {volatilityPct} / {anomalyPct}
+              </span>
+            </div>
+            <div className="spread">
+              <span className="muted">Policy max base</span>
+              <span>{formatGwei(telemetryPolicy?.maxBaseFee)}</span>
+            </div>
+            <div className="spread">
+              <span className="muted">Policy max priority</span>
+              <span>{formatGwei(telemetryPolicy?.maxPriorityFee)}</span>
+            </div>
+            <div className="spread">
+              <span className="muted">Spike threshold</span>
+              <span>{telemetryPolicy?.spikeThresholdBps ?? 'n/a'} bps</span>
+            </div>
+            <div className="spread">
+              <span className="muted">Slashing events</span>
+              <span>
+                {slashingCount}
+                {latestSlashing?.reasonCode ? ` · ${reasonLabel(latestSlashing.reasonCode)}` : ''}
+              </span>
             </div>
           </div>
         </Card>

@@ -165,21 +165,27 @@ describe("Futuristic stack primitives", () => {
     await escrow.waitForDeployment();
     await (await escrow.connect(voter).lock(ethers.parseEther("1000"), Math.floor(Date.now() / 1000) + 86400)).wait();
 
+    const Executor = await ethers.getContractFactory("ProposalExecutorV2");
+    const executor = await Executor.connect(admin).deploy(admin.address);
+    await executor.waitForDeployment();
+
     const Governor = await ethers.getContractFactory("GovernorV2");
     const governor = await Governor.connect(admin).deploy(
       admin.address,
       await escrow.getAddress(),
+      await executor.getAddress(),
       ethers.parseUnits("10"), // quorum
       0,
       5,
       1
     );
     await governor.waitForDeployment();
+    await (await executor.connect(admin).transferAdmin(await governor.getAddress())).wait();
 
     const AddressBook = await ethers.getContractFactory("AddressBook");
     const addressBook = await AddressBook.connect(admin).deploy(admin.address);
     await addressBook.waitForDeployment();
-    await (await addressBook.connect(admin).transferAdmin(await governor.getAddress())).wait();
+    await (await addressBook.connect(admin).transferAdmin(await executor.getAddress())).wait();
 
     const target = await addressBook.getAddress();
     const calldata = addressBook.interface.encodeFunctionData("setAddress", [ethers.id("demo"), voter.address]);

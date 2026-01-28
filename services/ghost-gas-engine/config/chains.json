@@ -8,7 +8,10 @@
       "rpcUrl": "http://host.docker.internal:18545",
       "fallbackRpcUrls": [],
       "wsUrl": "",
-      "gasTokenSymbol": "GHOST"
+      "gasTokenSymbol": "GHOST",
+      "gasTokenAddress": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "gasTokenDecimals": 18,
+      "gasTokenName": "Ghost Token"
     },
     {
       "key": "l2",
@@ -18,7 +21,10 @@
       "rpcUrl": "http://host.docker.internal:18547",
       "fallbackRpcUrls": [],
       "wsUrl": "",
-      "gasTokenSymbol": "GHOST"
+      "gasTokenSymbol": "GHOST",
+      "gasTokenAddress": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "gasTokenDecimals": 18,
+      "gasTokenName": "Ghost Token"
     },
     {
       "key": "l3",
@@ -28,7 +34,10 @@
       "rpcUrl": "http://host.docker.internal:39545",
       "fallbackRpcUrls": [],
       "wsUrl": "",
-      "gasTokenSymbol": "GHOST"
+      "gasTokenSymbol": "GHOST",
+      "gasTokenAddress": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "gasTokenDecimals": 18,
+      "gasTokenName": "Ghost Token"
     }
   ]
 }

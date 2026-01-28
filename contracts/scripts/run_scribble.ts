@@ -41,19 +41,26 @@ if (solFiles.length === 0) {
   throw new Error(`No Solidity files found under ${inputDir}`);
 }
 
-const args = ["scribble", "--input-mode", "source", "--output-mode", outputMode, "--base-path", root];
+const scribbleArgs = ["--input-mode", "source", "--output-mode", outputMode, "--base-path", root];
 if (compilerVersion) {
-  args.push("--compiler-version", compilerVersion);
+  scribbleArgs.push("--compiler-version", compilerVersion);
 }
 if (outputMode === "flat" || outputMode === "json") {
-  args.push("--output", outputPath);
+  scribbleArgs.push("--output", outputPath);
 }
 if (outputMode === "files") {
-  args.push("--utils-output-path", outputPath);
+  scribbleArgs.push("--utils-output-path", outputPath);
 }
-args.push("--solFiles", ...solFiles);
+scribbleArgs.push("--solFiles", ...solFiles);
 
-const result = spawnSync("npx", args, { cwd: root, stdio: "inherit" });
+const scribbleBin = process.env.SCRIBBLE_BIN;
+const cmd = scribbleBin ?? "npx";
+const cmdArgs = scribbleBin ? scribbleArgs : ["scribble", ...scribbleArgs];
+const result = spawnSync(cmd, cmdArgs, { cwd: root, stdio: "inherit" });
+if (result.error && (result.error as NodeJS.ErrnoException).code === "ENOENT") {
+  console.error("[scribble] Binary not found. Install via `npm --prefix contracts ci` or set SCRIBBLE_BIN.");
+  process.exit(1);
+}
 const summaryPath = path.join(root, "reports", "formal", "summary.json");
 writeFileSync(
   summaryPath,

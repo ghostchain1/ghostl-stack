@@ -13,9 +13,21 @@ const envSchema = z.object({
   RPC_L1: z.string().optional(),
   RPC_L2: z.string().optional(),
   RPC_L3: z.string().optional(),
+  CANONICAL_GAS_TOKEN_ADDRESS: z.string().default('0x5FbDB2315678afecb367f032d93F642f64180aa3'),
+  GAS_TOKEN_ADDRESS: z.string().optional(),
+  GAS_TOKEN_ADDRESS_L1: z.string().optional(),
+  GAS_TOKEN_ADDRESS_L2: z.string().optional(),
+  GAS_TOKEN_ADDRESS_L3: z.string().optional(),
   GAS_TOKEN_L1: z.string().optional(),
   GAS_TOKEN_L2: z.string().optional(),
   GAS_TOKEN_L3: z.string().optional(),
+  FEE_WATCHER_ENABLED: z.coerce.boolean().default(true),
+  FEE_WATCHER_INTERVAL_SECONDS: z.coerce.number().default(30),
+  FEE_WATCHER_WINDOW_SIZE: z.coerce.number().default(40),
+  FEE_WATCHER_SAFE_MODE: z.coerce.boolean().default(true),
+  FEE_POLICY_CONTRACT_L1: z.string().optional(),
+  FEE_POLICY_CONTRACT_L2: z.string().optional(),
+  FEE_POLICY_CONTRACT_L3: z.string().optional(),
   SIGNER_PRIVATE_KEY: z.string().optional(),
   SIGNER_PRIVATE_KEY_L1: z.string().optional(),
   SIGNER_PRIVATE_KEY_L2: z.string().optional(),
@@ -38,6 +50,27 @@ const envSchema = z.object({
   AUTONOMY_FORECAST_INTERVAL_SECONDS: z.coerce.number().default(120)
 });
 
+const CANONICAL_GAS_TOKEN_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+const CANONICAL_GAS_TOKEN_SYMBOL = 'GHOST';
+const CANONICAL_GAS_TOKEN_NAME = 'Ghost Token';
+const CANONICAL_GAS_TOKEN_DECIMALS = 18;
+
+const requireCanonicalAddress = (value: string | undefined, label: string) => {
+  const configured = value || config.CANONICAL_GAS_TOKEN_ADDRESS || CANONICAL_GAS_TOKEN_ADDRESS;
+  if (configured.toLowerCase() !== CANONICAL_GAS_TOKEN_ADDRESS.toLowerCase()) {
+    throw new Error(`${label} must be ${CANONICAL_GAS_TOKEN_ADDRESS}`);
+  }
+  return CANONICAL_GAS_TOKEN_ADDRESS;
+};
+
+const requireCanonicalSymbol = (value: string | undefined, label: string) => {
+  const configured = value || CANONICAL_GAS_TOKEN_SYMBOL;
+  if (configured !== CANONICAL_GAS_TOKEN_SYMBOL) {
+    throw new Error(`${label} must be ${CANONICAL_GAS_TOKEN_SYMBOL}`);
+  }
+  return CANONICAL_GAS_TOKEN_SYMBOL;
+};
+
 export type ChainConfig = {
   key: string;
   chainId: number;
@@ -46,6 +79,9 @@ export type ChainConfig = {
   rpcUrl: string;
   wsUrl?: string;
   gasTokenSymbol: string;
+  gasTokenAddress: string;
+  gasTokenName?: string;
+  gasTokenDecimals?: number;
   fallbackRpcUrls?: string[];
 };
 
@@ -77,6 +113,9 @@ const chainsSchema = z.object({
       rpcUrl: z.string(),
       wsUrl: z.string().optional(),
       gasTokenSymbol: z.string(),
+      gasTokenAddress: z.string(),
+      gasTokenName: z.string().optional(),
+      gasTokenDecimals: z.number().int().optional(),
       fallbackRpcUrls: z.array(z.string()).optional()
     })
   )
@@ -116,14 +155,27 @@ export const config = (() => {
 })();
 
 const applyEnvOverrides = (chains: ChainConfig[]): ChainConfig[] => {
+  const canonicalAddress = requireCanonicalAddress(config.GAS_TOKEN_ADDRESS, 'GAS_TOKEN_ADDRESS');
+  requireCanonicalAddress(config.GAS_TOKEN_ADDRESS_L1, 'GAS_TOKEN_ADDRESS_L1');
+  requireCanonicalAddress(config.GAS_TOKEN_ADDRESS_L2, 'GAS_TOKEN_ADDRESS_L2');
+  requireCanonicalAddress(config.GAS_TOKEN_ADDRESS_L3, 'GAS_TOKEN_ADDRESS_L3');
   return chains.map((chain) => {
     const key = chain.key.toLowerCase();
     if (key === 'l1' && config.RPC_L1) chain.rpcUrl = config.RPC_L1;
     if (key === 'l2' && config.RPC_L2) chain.rpcUrl = config.RPC_L2;
     if (key === 'l3' && config.RPC_L3) chain.rpcUrl = config.RPC_L3;
-    if (key === 'l1' && config.GAS_TOKEN_L1) chain.gasTokenSymbol = config.GAS_TOKEN_L1;
-    if (key === 'l2' && config.GAS_TOKEN_L2) chain.gasTokenSymbol = config.GAS_TOKEN_L2;
-    if (key === 'l3' && config.GAS_TOKEN_L3) chain.gasTokenSymbol = config.GAS_TOKEN_L3;
+    if (key === 'l1') chain.gasTokenSymbol = requireCanonicalSymbol(config.GAS_TOKEN_L1, 'GAS_TOKEN_L1');
+    if (key === 'l2') chain.gasTokenSymbol = requireCanonicalSymbol(config.GAS_TOKEN_L2, 'GAS_TOKEN_L2');
+    if (key === 'l3') chain.gasTokenSymbol = requireCanonicalSymbol(config.GAS_TOKEN_L3, 'GAS_TOKEN_L3');
+    if (chain.gasTokenSymbol !== CANONICAL_GAS_TOKEN_SYMBOL) {
+      throw new Error(`gasTokenSymbol must be ${CANONICAL_GAS_TOKEN_SYMBOL} for ${chain.key}`);
+    }
+    if (chain.gasTokenAddress.toLowerCase() !== CANONICAL_GAS_TOKEN_ADDRESS.toLowerCase()) {
+      throw new Error(`gasTokenAddress must be ${CANONICAL_GAS_TOKEN_ADDRESS} for ${chain.key}`);
+    }
+    chain.gasTokenAddress = canonicalAddress;
+    chain.gasTokenName = CANONICAL_GAS_TOKEN_NAME;
+    chain.gasTokenDecimals = CANONICAL_GAS_TOKEN_DECIMALS;
     return chain;
   });
 };

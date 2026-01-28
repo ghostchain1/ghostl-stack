@@ -13,6 +13,7 @@ contract BridgeEchidna {
     constructor() {
         policy = new GuardPolicy();
         bridge = new L2L3Bridge(address(policy));
+        bridge.setRequireComplianceRoot(false);
         token = new GhostTokenL2();
         token.approve(address(bridge), type(uint256).max);
     }

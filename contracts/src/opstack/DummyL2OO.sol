@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.24;
 
 /// @dev Dummy L2OO used for quick wiring/testing. Ported from infra/opstack/contracts/DummyL2OO.sol.
 contract DummyL2OO {

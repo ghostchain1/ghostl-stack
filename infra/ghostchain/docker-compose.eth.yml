@@ -16,11 +16,17 @@ services:
     restart: unless-stopped
     logging: *default-logging
     command:
-      - bootnode
-      - --nodekey
-      - /config/boot.key
-      - --addr
-      - :30301
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        if [ ! -f /config/boot.key ]; then
+          echo "[bootnode] Generating boot.key..."
+          bootnode -genkey /config/boot.key
+        fi
+        BOOT_ID="$(bootnode --nodekey /config/boot.key --writeaddress)"
+        echo "enode://$${BOOT_ID}@ghostchain-bootnode:30301" > /config/bootnode-enode.txt
+        exec bootnode --nodekey /config/boot.key --addr :30301
     volumes:
       - ./data/bootnode:/config
     ports:
@@ -42,7 +48,7 @@ services:
     volumes:
       - ./data/node1:/data
       - ./geth:/config:ro
-      - ./config/bootnode-enode.txt:/run/bootnode-enode.txt:ro
+      - ./data/bootnode/bootnode-enode.txt:/run/bootnode-enode.txt:ro
     ports:
       - "18545:8545"
       - "18546:8546"
@@ -84,7 +90,7 @@ services:
     volumes:
       - ./data/node2:/data
       - ./geth:/config:ro
-      - ./config/bootnode-enode.txt:/run/bootnode-enode.txt:ro
+      - ./data/bootnode/bootnode-enode.txt:/run/bootnode-enode.txt:ro
     environment:
       - CHAIN_ID=14000101
       - SIGNER_ADDRESS=0x70997970c51812dc3a010c7d01b50e0d17dc79c8

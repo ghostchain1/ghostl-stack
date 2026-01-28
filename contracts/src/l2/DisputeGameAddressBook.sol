@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
 /// @notice Optional L2 helper to publish the canonical L1 DisputeGameFactory address.
 contract DisputeGameAddressBook {

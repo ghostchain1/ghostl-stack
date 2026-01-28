@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity ^0.8.24;
 
 /// @notice Minimal stub that writes SystemConfig storage slots expected by op-node.
 /// Only slots used by the runtime-config fetch are populated: unsafe block signer,
@@ -26,39 +26,96 @@ contract MockSystemConfig {
         address l1StandardBridge,
         address optimismPortal,
         address optimismMintableERC20Factory,
-        address batchInbox
+        address batchInbox,
+        uint256 gasLimit,
+        uint256 baseFeeScalar,
+        uint256 blobBaseFeeScalar,
+        uint256 legacyScalar
     ) {
+        _writeConfig(
+            unsafeBlockSigner,
+            l1CrossDomainMessenger,
+            l1ERC721Bridge,
+            l1StandardBridge,
+            optimismPortal,
+            optimismMintableERC20Factory,
+            batchInbox,
+            gasLimit,
+            baseFeeScalar,
+            blobBaseFeeScalar,
+            legacyScalar
+        );
+    }
+
+    /// @notice Allow reconfiguration on devnets where the constructor address may collide.
+    function configure(
+        address unsafeBlockSigner,
+        address l1CrossDomainMessenger,
+        address l1ERC721Bridge,
+        address l1StandardBridge,
+        address optimismPortal,
+        address optimismMintableERC20Factory,
+        address batchInbox,
+        uint256 gasLimit,
+        uint256 baseFeeScalar,
+        uint256 blobBaseFeeScalar,
+        uint256 legacyScalar
+    ) external {
+        _writeConfig(
+            unsafeBlockSigner,
+            l1CrossDomainMessenger,
+            l1ERC721Bridge,
+            l1StandardBridge,
+            optimismPortal,
+            optimismMintableERC20Factory,
+            batchInbox,
+            gasLimit,
+            baseFeeScalar,
+            blobBaseFeeScalar,
+            legacyScalar
+        );
+    }
+
+    function _writeConfig(
+        address unsafeBlockSigner,
+        address l1CrossDomainMessenger,
+        address l1ERC721Bridge,
+        address l1StandardBridge,
+        address optimismPortal,
+        address optimismMintableERC20Factory,
+        address batchInbox,
+        uint256 gasLimit,
+        uint256 baseFeeScalar,
+        uint256 blobBaseFeeScalar,
+        uint256 legacyScalar
+    ) internal {
+        // Keep the gas scalar small on pre-ecotone chains to avoid txpool rollup-cost overflow.
+        uint256 legacyScalarValue = legacyScalar == 0 ? baseFeeScalar : legacyScalar;
+        uint256 gasLimit32 = gasLimit & type(uint32).max;
+        uint256 baseScalar32 = baseFeeScalar & type(uint32).max;
+        uint256 blobScalar32 = blobBaseFeeScalar & type(uint32).max;
+        uint256 packedGasConfig = (blobScalar32 << 64) | (baseScalar32 << 32) | gasLimit32;
+        bytes32 unsafeSlot = UNSAFE_BLOCK_SIGNER_SLOT;
+        bytes32 l1CrossDomainSlot = L1_CROSS_DOMAIN_MESSENGER_SLOT;
+        bytes32 l1ERC721Slot = L1_ERC_721_BRIDGE_SLOT;
+        bytes32 l1StandardBridgeSlot = L1_STANDARD_BRIDGE_SLOT;
+        bytes32 optimismPortalSlot = OPTIMISM_PORTAL_SLOT;
+        bytes32 optimismMintableSlot = OPTIMISM_MINTABLE_ERC20_FACTORY_SLOT;
+        bytes32 batchInboxSlot = BATCH_INBOX_SLOT;
+        bytes32 startBlockSlot = START_BLOCK_SLOT;
         assembly {
-            sstore(
-                0x271e99f2d36cac79a3a9f1fe69f495a159d8e16c2dd6ba1f467f4d55b9ee847c,
-                unsafeBlockSigner
-            )
-            sstore(
-                0xbaa3c43b5d396cf718bd66c3da433a6fc277cca2ca81dac2f11caa1e781d4fc3,
-                l1CrossDomainMessenger
-            )
-            sstore(
-                0x0dcd989bca4b19b8c2ae74a7aabae8ac9c881b26be7376cdb62def2e8b400ec8,
-                l1ERC721Bridge
-            )
-            sstore(
-                0x30be4f8a5bfad47f2a8523e8dd3ece4423a63832a6d65d44b2fc9e5c0943e56e,
-                l1StandardBridge
-            )
-            sstore(
-                0x0d6be3d611d0d7b2b80fc2476c2a7244d5b64bfac19b116a53dcfe70e5e2b14b,
-                optimismPortal
-            )
-            sstore(
-                0x9ad8f8575df2d5cfaa6ea0ddac1debe5e2292a82d21165f9cbcf8959a5f7e0b6,
-                optimismMintableERC20Factory
-            )
-            sstore(
-                0x1a38a21cf847f16e59ea25a2a3f44995e351f39fac5780298b2ee7d13b03ba30,
-                batchInbox
-            )
+            sstore(unsafeSlot, unsafeBlockSigner)
+            sstore(l1CrossDomainSlot, l1CrossDomainMessenger)
+            sstore(l1ERC721Slot, l1ERC721Bridge)
+            sstore(l1StandardBridgeSlot, l1StandardBridge)
+            sstore(optimismPortalSlot, optimismPortal)
+            sstore(optimismMintableSlot, optimismMintableERC20Factory)
+            sstore(batchInboxSlot, batchInbox)
+            // Gas config slots observed in SystemConfig storage layout.
+            sstore(0x66, legacyScalarValue)
+            sstore(0x68, packedGasConfig)
             // allow deriving from block 0
-            sstore(0x81a41a796a64ac2f6d8efe4c2384262c9f74bf126c62db8e4d8f1f9caffdb3a6, 0)
+            sstore(startBlockSlot, 0)
         }
     }
 }

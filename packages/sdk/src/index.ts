@@ -105,3 +105,5 @@ export function selectRpcForChain(endpoints: RpcEndpoint[], chainId: string, pro
     .filter((endpoint) => endpoint.chainId === chainId && (endpoint.protocol || 'http') === protocol)
     .sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100))[0];
 }
+
+export * from './ai/attestations';

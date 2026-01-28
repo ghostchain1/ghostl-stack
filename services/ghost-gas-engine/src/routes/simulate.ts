@@ -64,7 +64,8 @@ export async function registerSimulationRoutes(app: FastifyInstance) {
         chainId: chain.chainId,
         name: chain.name,
         type: chain.type,
-        gasTokenSymbol: chain.gasTokenSymbol
+        gasTokenSymbol: chain.gasTokenSymbol,
+        gasTokenAddress: chain.gasTokenAddress
       },
       policy,
       simulation: {

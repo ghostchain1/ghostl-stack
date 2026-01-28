@@ -17,13 +17,13 @@
 - [ ] Maintain clock discipline/slot timing and relay slashable evidence fast.
 - [ ] Monitor `ConsensusParams` and `EpochManager` values for tuning (block time, committee size, max validators).
 
-## 3. L2 PolyBFT integration
-- [ ] Use a PolyBFT-style L2 (GhostLayer2) with a small validator set derived from L1 stake or permissioned entry.
-- [ ] Configure checkpoint cadence (e.g., every 2–10 minutes) and signature aggregation.
-- [ ] Post `checkpointRoot` + signatures to L1 via `CheckpointManager`.
-- [ ] Keep bridges aware of checkpoint roots for withdrawals and fraud proofs.
+## 3. L2 OP Stack integration
+- [ ] Run op-node/op-geth (GhostL2) with sequencer + batcher + proposer.
+- [ ] Configure output cadence (e.g., every 2–10 minutes) and challenge window parameters.
+- [ ] Post output roots to L1 via `OutputOracle`; finalize via `FinalizationManager`.
+- [ ] Keep bridges aware of finalized output roots for withdrawals and fraud proofs.
 - [ ] Align rollup config genesis hash + timestamps with L1 (see `infra/scripts/opstack/up-l2.sh`).
-- [ ] Deploy `OutputOracle` / `FinalizationManager` on L2; connect `DisputeGameFactoryV2` game contracts.
+- [ ] Deploy `DisputeGameFactoryV2` games and wire challengers.
 
 ## 4. L3 OP Stack deployment
 - [ ] Run centralized sequencer/batcher/proposer on OP Stack pointing at L2 RPCs.
@@ -41,7 +41,7 @@
 - [ ] Document L3→L2 and L2→L1 withdrawal paths+timing relative to challenge windows and checkpoints.
 
 ## 6. Upgrade path (Phase 1→3)
-- [ ] **Phase 1 (Ship)**: deploy PoS + bridge + L2 PolyBFT + centralized L3 sequencer. Confirm default configs match blueprint.
+- [ ] **Phase 1 (Ship)**: deploy PoS + bridge + OP Stack L2 + centralized L3 sequencer. Confirm default configs match blueprint.
 - [ ] **Phase 2 (Harden)**: expand validator set, strengthen slashing and checkpoint monitoring, deploy real dispute games for L3.
 - [ ] **Phase 3 (Decentralize)**: derive L2 set from L1 stake, decentralize sequencer (shared/PoS), add external DA only with clear risk acknowledgments.
 

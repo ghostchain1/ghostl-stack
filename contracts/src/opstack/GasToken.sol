@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.24;
 
 /// @title GasToken
-/// @notice Minimal ERC20 to serve as a custom gas token. Deploy separately on each rollup
-///         (e.g., L2 and L3) with the desired name/symbol and initial supply.
-/// @dev    Ported from infra/opstack/contracts/GasToken.sol to centralize contract sources.
+/// @notice Deprecated: canonical gas token is fixed on L1 and must be reused across all layers.
+/// @dev    This contract must never be deployed on L2/L3. It only exists to preserve ABI references.
 contract GasToken {
+    address internal constant CANONICAL_GAS_TOKEN = 0x5FbDB2315678afecb367f032d93F642f64180aa3;
+    error CanonicalGasTokenOnly(address canonical);
+
     string public name;
     string public symbol;
     uint8 public immutable decimals;
@@ -24,10 +26,17 @@ contract GasToken {
         uint256 _initialSupply,
         address _recipient
     ) {
-        name = _name;
-        symbol = _symbol;
-        decimals = _decimals;
-        _mint(_recipient, _initialSupply);
+        _name;
+        _symbol;
+        _decimals;
+        _initialSupply;
+        _recipient;
+        name = "Ghost Token";
+        symbol = "GHOST";
+        decimals = 18;
+        if (msg.sender != CANONICAL_GAS_TOKEN) {
+            revert CanonicalGasTokenOnly(CANONICAL_GAS_TOKEN);
+        }
     }
 
     function approve(address spender, uint256 amount) external returns (bool) {

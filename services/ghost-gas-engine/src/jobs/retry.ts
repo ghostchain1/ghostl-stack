@@ -189,8 +189,8 @@ export const runRetryJob = async (job: RetryJob) => {
     if (!settings.enabled) return;
     const summary = await query<{ total: string; success: string; out_of_gas: string }>(
       `SELECT COUNT(*)::text as total,
-              COUNT(*) FILTER (WHERE status = 'success')::text as success,
-              COUNT(*) FILTER (WHERE classification = 'OUT_OF_GAS')::text as out_of_gas
+              COUNT(*) FILTER (WHERE a.status = 'success')::text as success,
+              COUNT(*) FILTER (WHERE a.classification = 'OUT_OF_GAS')::text as out_of_gas
        FROM gas_deployment_attempts a
        JOIN gas_deployments d ON d.id = a.deployment_id
        WHERE d.chain_key = $1`,

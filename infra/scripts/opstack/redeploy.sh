@@ -17,8 +17,8 @@ cd "$OP_DIR"
 docker compose down -v || true
 
 echo ">> Resetting data dirs..."
-rm -rf "$OP_DIR/data/l2-geth" "$OP_DIR/data/op-node"
-mkdir -p "$OP_DIR/data/l2-geth" "$OP_DIR/data/op-node"
+rm -rf "$OP_DIR/data/l2-geth" "$OP_DIR/data/op-node" "$OP_DIR/data/op-sequencer"
+mkdir -p "$OP_DIR/data/l2-geth" "$OP_DIR/data/op-node" "$OP_DIR/data/op-sequencer"
 
 echo ">> Starting stack..."
 bash "$ROOT/infra/scripts/opstack/up.sh"

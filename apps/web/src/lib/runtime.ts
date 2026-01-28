@@ -75,6 +75,15 @@ export const resolvePrometheusBase = () =>
 export const resolveDevopsBase = () =>
   resolveServiceUrl(process.env.DEVOPS_URL, process.env.NEXT_PUBLIC_DEVOPS_URL, 7623, 'http://localhost:7623');
 
+export const resolveAiAttestorBase = () =>
+  resolveServiceUrl(
+    process.env.AI_ATTESTOR_URL,
+    process.env.NEXT_PUBLIC_AI_ATTESTOR_URL,
+    3310,
+    'http://localhost:3310',
+    'http://ghost-ai-attestor:3310'
+  );
+
 export const resolveRpcEndpoints = () => ({
   l1: resolveRpcBase(process.env.L1_RPC || process.env.NEXT_PUBLIC_L1_RPC, 18545, 'http://localhost:18545'),
   l2: resolveRpcBase(process.env.L2_RPC || process.env.NEXT_PUBLIC_L2_RPC, 18547, 'http://localhost:18547'),

@@ -2,6 +2,7 @@ import { Worker } from 'bullmq';
 import { connection } from './jobs/queue.js';
 import { runRetryJob, type RetryJob } from './jobs/retry.js';
 import { startAiCoreLoop } from './ai-core/scheduler.js';
+import { startFeeWatcherLoop } from './fees/watcher.js';
 
 const worker = new Worker<RetryJob>(
   'gas-deployments',
@@ -20,3 +21,4 @@ worker.on('failed', (job, err) => {
 });
 
 startAiCoreLoop();
+startFeeWatcherLoop();

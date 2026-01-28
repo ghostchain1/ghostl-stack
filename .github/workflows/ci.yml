@@ -25,6 +25,12 @@ jobs:
       - name: Build apps
         run: npm run build
 
+      - name: Smoke - Consensus autonomy
+        run: bash scripts/smoke/consensus-autonomy.sh
+
+      - name: Smoke - AI stability (config gate)
+        run: bash scripts/smoke/ai-stability.sh
+
       - name: Contracts install + build
         working-directory: contracts
         run: |
@@ -57,6 +63,10 @@ jobs:
       - name: Formal - Echidna
         working-directory: contracts
         run: npm run formal:echidna
+
+      - name: Install Certora CLI
+        if: ${{ secrets.CERTORAKEY != '' }}
+        run: pip3 install certora-cli
 
       - name: Formal - Certora (optional)
         if: ${{ secrets.CERTORAKEY != '' }}

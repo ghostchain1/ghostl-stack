@@ -1,18 +1,18 @@
 {
   "genesis": {
     "l1": {
-      "hash": "0xbbe1492afc43e4295f3b631b51b7dade7f9fa1450467a1f53475a61ffbebe8fc",
-      "number": 0
+      "hash": "0xb30eac5663a759e736679f73175a71a7c793928f2bbc4388e00a0a306a13e2a5",
+      "number": 67237
     },
     "l2": {
-      "hash": "0x9edf2fd0e9ae0f7b777acd0c272832ae6b59b74feefc58ca7df2d1b37b43cc6b",
+      "hash": "0x65803eee6c4a787aca23264ecf8057a2322201de8d581b1a974133c1de06ea10",
       "number": 0
     },
-    "l2_time": 1700000000,
+    "l2_time": 1769574234,
     "system_config": {
-      "batcherAddr": "0x32171083fd74f0423eab1192f04125d3a8f0b1c2",
+      "batcherAddr": "0xC1815FEE48bBb95Cf6b0D6d8d4FeE8B7cB5E016e",
       "overhead": "0x0000000000000000000000000000000000000000000000000000000000000000",
-      "scalar": "0x010000000000000000000000000000000000000000000000000c3c9d00000558",
+      "scalar": "0x0000000000000000000000000000000000000000000000000000000000000558",
       "gasLimit": 30000000,
       "eip1559Params": "0x0000000000000000",
       "operatorFeeParams": "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -35,7 +35,7 @@
   "holocene_time": 4102444800,
   "isthmus_time": 4102444800,
   "jovian_time": 4102444800,
-  "batch_inbox_address": "0x1b832b51c08be5e326a84336e11fee41578583f9",
+  "batch_inbox_address": "0x1111111111111111111111111111111111111111",
   "deposit_contract_address": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
   "l1_system_config_address": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
   "protocol_versions_address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
