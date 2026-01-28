@@ -13,7 +13,7 @@ x-security: &default-security
 services:
   l3-geth:
     image: ghcr.io/ethereum-optimism/op-geth@sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0
-    user: "1000:1000"
+    user: 1000:1000
     restart: unless-stopped
     logging: *default-logging
     depends_on:
@@ -21,8 +21,9 @@ services:
         condition: service_healthy
     ports:
       - "${L3_HOST_RPC:-39545}:8545"
+      - "${L3_HOST_WS:-39548}:8546"
     volumes:
-      - ./l3/${L3_NAME:-ghostl3}/data:/data
+      - ./l3/${L3_NAME:-ghostl3}/data-${L3_CHAIN_ID:-903}:/data
       - ./l3/${L3_NAME:-ghostl3}/config:/config:ro
     entrypoint: ["/bin/sh"]
     command:
@@ -45,7 +46,8 @@ services:
           --gcmode=archive \
           --bootnodes=${L3_BOOTNODES:-$$ENODE_L2} \
           --nodiscover \
-          --rollup.disabletxpoolgossip=true
+          --rollup.enabletxpooladmission=true \
+          --rollup.disabletxpoolgossip=false
     healthcheck:
       test:
         [
@@ -62,14 +64,13 @@ services:
 
   l3-op-node:
     image: ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b
-    user: "1000:1000"
     restart: unless-stopped
     logging: *default-logging
     depends_on:
       l3-geth:
         condition: service_healthy
     volumes:
-      - ./l3/${L3_NAME:-ghostl3}/data/op-node:/data
+      - ./l3/${L3_NAME:-ghostl3}/data-${L3_CHAIN_ID:-903}/op-node:/data
       - ./l3/${L3_NAME:-ghostl3}/config:/config:ro
     environment:
       OP_NODE_L1_BEACON_IGNORE: "1"
@@ -311,8 +312,16 @@ services:
       l3-geth:
         condition: service_healthy
     environment:
+      RPC_L1: ${HOST_L1_RPC:-http://host.docker.internal:18545}
       RPC_L2: http://l2-geth:8545
       RPC_L3: http://l3-geth:8545
+      GOVERNOR_ADDRESS_L1: ${GOVERNOR_ADDRESS_L1:-}
+      PAUSE_GUARDIAN_ADDRESS: ${PAUSE_GUARDIAN_ADDRESS:-}
+      BRIDGE_L2L3_ADDRESS: ${BRIDGE_L2L3_ADDRESS:-}
+      L2_OUTPUT_ORACLE_ADDRESS: ${L2_OUTPUT_ORACLE_ADDRESS:-}
+      L3_OUTPUT_ORACLE_ADDRESS: ${L3_OUTPUT_ORACLE_ADDRESS:-}
+      L2_OUTPUT_ORACLE_RPC: ${L2_OUTPUT_ORACLE_RPC:-${HOST_L1_RPC:-http://host.docker.internal:18545}}
+      L3_OUTPUT_ORACLE_RPC: ${L3_OUTPUT_ORACLE_RPC:-${HOST_L2_RPC:-http://host.docker.internal:18547}}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:7613/health >/dev/null"]
       interval: 20s
@@ -433,8 +442,8 @@ services:
       RPC_L2: http://l2-geth:8545
       RPC_L3: http://l3-geth:8545
       BRIDGE_ADDRESS: ${BRIDGE_ADDRESS:-0x0000000000000000000000000000000000000000}
-      L2_TOKEN_ADDRESS: ${L2_TOKEN_ADDRESS:-0x0000000000000000000000000000000000000000}
-      L3_TOKEN_ADDRESS: ${L3_TOKEN_ADDRESS:-0x0000000000000000000000000000000000000000}
+      L2_TOKEN_ADDRESS: ${L2_TOKEN_ADDRESS:-0x5FbDB2315678afecb367f032d93F642f64180aa3}
+      L3_TOKEN_ADDRESS: ${L3_TOKEN_ADDRESS:-0x5FbDB2315678afecb367f032d93F642f64180aa3}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:7606/health >/dev/null"]
       interval: 20s

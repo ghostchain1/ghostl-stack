@@ -5,7 +5,7 @@ Configure the four OP Stack roles in this repo using the existing compose + env 
 ## Base env + keys
 - Copy the samples if you want a clean slate: `cp infra/opstack/.env.sample infra/opstack/.env` and `cp infra/opstack/.env.secrets.sample infra/opstack/.env.secrets`.
 - Rotate keys and addresses (writes into `.env`): `bash infra/scripts/opstack/keys/init.sh`.
-- Chain IDs + game factory addresses are already set for the current devnet: `L1_CHAIN_ID=31337`, `L2_CHAIN_ID=901`, `OP_L3_CHAIN_ID=7393`, `L2_GAME_FACTORY_ADDRESS`, and `L3_GAME_FACTORY_ADDRESS`. Override them in `.env` if you change deployments.
+- Chain IDs + game factory addresses are already set for the current devnet: `L1_CHAIN_ID=14000101`, `L2_CHAIN_ID=901`, `OP_L3_CHAIN_ID=903`, `L2_GAME_FACTORY_ADDRESS`, and `L3_GAME_FACTORY_ADDRESS`. Override them in `.env` if you change deployments.
 
 ## L2 roles (GhostLayer2)
 - Sequencer: enabled on `op-node` (`--sequencer.enabled`) with system config values in `infra/opstack/config/rollup.json` (`batcherAddr`, gas limits, chain IDs). Uses `SEQUENCER_ADDRESS` from `.env`.

@@ -266,11 +266,38 @@ async function handleSendRawTx(body) {
   };
 }
 
+async function handleBlobBaseFee(body) {
+  try {
+    const upstream = await forwardRpc(body);
+    if (!upstream?.error) return upstream;
+  } catch {
+    // Fall through to a safe default when the upstream RPC lacks blob support.
+  }
+  try {
+    const block = await forwardRpc({
+      jsonrpc: "2.0",
+      id: body.id ?? null,
+      method: "eth_getBlockByNumber",
+      params: ["latest", false]
+    });
+    const baseFee = block?.result?.baseFeePerGas;
+    if (baseFee) {
+      return { jsonrpc: "2.0", id: body.id ?? null, result: baseFee };
+    }
+  } catch {
+    // Ignore and return a minimal non-zero fee below.
+  }
+  return { jsonrpc: "2.0", id: body.id ?? null, result: "0x1" };
+}
+
 async function handleRpc(body) {
   metrics.rpcRequests += 1;
   const method = body.method;
   if (method === "eth_sendRawTransaction") {
     return handleSendRawTx(body);
+  }
+  if (method === "eth_blobBaseFee") {
+    return handleBlobBaseFee(body);
   }
   return forwardRpc(body);
 }

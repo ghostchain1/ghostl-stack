@@ -27,6 +27,7 @@ async function assertCode(provider: ethers.JsonRpcProvider, address: string, lab
 }
 
 async function main() {
+  const CANONICAL_GAS_TOKEN = process.env.CANONICAL_GAS_TOKEN ?? "0x5FbDB2315678afecb367f032d93F642f64180aa3";
   const gasLimit = BigInt(process.env.DEPLOY_GAS_LIMIT ?? "20000000");
   const maxFeePerGas = process.env.DEPLOY_MAX_FEE_PER_GAS ? BigInt(process.env.DEPLOY_MAX_FEE_PER_GAS) : undefined;
   const maxPriorityFeePerGas = process.env.DEPLOY_PRIORITY_FEE_PER_GAS
@@ -44,8 +45,8 @@ async function main() {
     "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
   const l2TokenAddr =
     process.env.L2_TOKEN_ADDRESS ??
-    process.env.L2_TOKEN ?? // fallback
-    "";
+    process.env.L2_TOKEN ??
+    CANONICAL_GAS_TOKEN;
   const existingL1Rollup = process.env.L1_ROLLUP_L2_ADDRESS;
   const existingL2Rollup = process.env.L2_ROLLUP_L3_ADDRESS;
   const existingInbox = process.env.L3_INBOX_ADDRESS;
@@ -53,7 +54,7 @@ async function main() {
   const existingL3Token = process.env.L3_TOKEN_ADDRESS;
 
   if (!l2TokenAddr) {
-    throw new Error("Missing L2_TOKEN_ADDRESS env (GhostTokenL2 address)");
+    throw new Error("Missing L2_TOKEN_ADDRESS env (ERC20 token address required).");
   }
 
   console.log("RPCs:", { l1Rpc, l2Rpc, l3Rpc });
@@ -82,7 +83,6 @@ async function main() {
   const rollupArtifact = await loadArtifact("OptimisticRollup");
   const inboxArtifact = await loadArtifact("L3Inbox");
   const factoryArtifact = await loadArtifact("L3BridgedTokenFactory");
-  const l2TokenArtifact = await loadArtifact("GhostTokenL2");
 
   const rollupFactoryL1 = new ethers.ContractFactory(
     rollupArtifact.abi,
@@ -153,35 +153,45 @@ async function main() {
 
   let l3TokenAddr = existingL3Token;
   if (!l3TokenAddr) {
-    console.log("== Deploy default L3 bridged token for GhostTokenL2 ==");
-    const l2Token = new ethers.Contract(l2TokenAddr, l2TokenArtifact.abi, l2Provider);
-    const l2Name = await l2Token.name();
-    const l2Symbol = await l2Token.symbol();
-    const l2Decimals = await l2Token.decimals();
-    const l3Name = `${l2Name} (L3)`;
-    const l3Symbol = `${l2Symbol}L3`;
-    const factory = new ethers.Contract(factoryAddr!, factoryArtifact.abi, l3Signer) as ethers.Contract & {
-      getOrDeployBridgedToken: (
-        l2Token: string,
-        name: string,
-        symbol: string,
-        decimals: number,
-        opts?: ethers.TransactionRequest
-      ) => Promise<ethers.ContractTransactionResponse>;
-    };
-    const deployTokenTx = await factory.getOrDeployBridgedToken(l2TokenAddr, l3Name, l3Symbol, l2Decimals, txOpts);
-    const deployTokenRcpt = await deployTokenTx.wait();
-    const deployed = deployTokenRcpt?.logs
-      .map((log: ethers.Log) => {
-        try {
-          return factory.interface.parseLog(log);
-        } catch {
-          return null;
-        }
-      })
-      .find((entry) => entry?.name === "BridgedTokenDeployed");
-    l3TokenAddr = String(deployed?.args?.l3Token ?? "");
-    console.log("L3BridgedToken (L3, default):", l3TokenAddr);
+    const l2TokenCode = await l2Provider.getCode(l2TokenAddr);
+    if (!l2TokenCode || l2TokenCode === "0x") {
+      console.warn(`No ERC20 bytecode at L2_TOKEN_ADDRESS=${l2TokenAddr}; skipping L3 bridged token deploy.`);
+    } else {
+      console.log("== Deploy default L3 bridged token for L2 ERC20 ==");
+      const erc20Abi = [
+        "function name() view returns (string)",
+        "function symbol() view returns (string)",
+        "function decimals() view returns (uint8)"
+      ];
+      const l2Token = new ethers.Contract(l2TokenAddr, erc20Abi, l2Provider);
+      const l2Name = await l2Token.name();
+      const l2Symbol = await l2Token.symbol();
+      const l2Decimals = await l2Token.decimals();
+      const l3Name = `${l2Name} (L3)`;
+      const l3Symbol = `${l2Symbol}L3`;
+      const factory = new ethers.Contract(factoryAddr!, factoryArtifact.abi, l3Signer) as ethers.Contract & {
+        getOrDeployBridgedToken: (
+          l2Token: string,
+          name: string,
+          symbol: string,
+          decimals: number,
+          opts?: ethers.TransactionRequest
+        ) => Promise<ethers.ContractTransactionResponse>;
+      };
+      const deployTokenTx = await factory.getOrDeployBridgedToken(l2TokenAddr, l3Name, l3Symbol, l2Decimals, txOpts);
+      const deployTokenRcpt = await deployTokenTx.wait();
+      const deployed = deployTokenRcpt?.logs
+        .map((log: ethers.Log) => {
+          try {
+            return factory.interface.parseLog(log);
+          } catch {
+            return null;
+          }
+        })
+        .find((entry) => entry?.name === "BridgedTokenDeployed");
+      l3TokenAddr = String(deployed?.args?.l3Token ?? "");
+      console.log("L3BridgedToken (L3, default):", l3TokenAddr);
+    }
   } else {
     await assertCode(l3Provider, l3TokenAddr, "L3 bridged token");
   }

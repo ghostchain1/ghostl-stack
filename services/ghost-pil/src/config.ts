@@ -28,6 +28,27 @@ const envSchema = z.object({
   PIL_SEED_SAMPLE_DATA: z.coerce.boolean().default(true)
 });
 
+const CANONICAL_GAS_TOKEN_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+const CANONICAL_GAS_TOKEN_SYMBOL = 'GHOST';
+const CANONICAL_GAS_TOKEN_NAME = 'Ghost Token';
+const CANONICAL_GAS_TOKEN_DECIMALS = 18;
+
+const ensureCanonicalAddress = (value: string | undefined) => {
+  const configured = value || CANONICAL_GAS_TOKEN_ADDRESS;
+  if (configured.toLowerCase() !== CANONICAL_GAS_TOKEN_ADDRESS.toLowerCase()) {
+    throw new Error(`gasTokenAddress must be ${CANONICAL_GAS_TOKEN_ADDRESS}`);
+  }
+  return CANONICAL_GAS_TOKEN_ADDRESS;
+};
+
+const ensureCanonicalSymbol = (value: string | undefined) => {
+  const configured = value || CANONICAL_GAS_TOKEN_SYMBOL;
+  if (configured !== CANONICAL_GAS_TOKEN_SYMBOL) {
+    throw new Error(`gasTokenSymbol must be ${CANONICAL_GAS_TOKEN_SYMBOL}`);
+  }
+  return CANONICAL_GAS_TOKEN_SYMBOL;
+};
+
 export type ChainConfig = {
   key: string;
   chainId: number;
@@ -35,6 +56,9 @@ export type ChainConfig = {
   type: 'L1' | 'L2' | 'L3';
   rpcUrl: string;
   gasTokenSymbol: string;
+  gasTokenAddress: string;
+  gasTokenName?: string;
+  gasTokenDecimals?: number;
 };
 
 const chainsSchema = z.object({
@@ -45,7 +69,10 @@ const chainsSchema = z.object({
       name: z.string(),
       type: z.enum(['L1', 'L2', 'L3']),
       rpcUrl: z.string(),
-      gasTokenSymbol: z.string()
+      gasTokenSymbol: z.string(),
+      gasTokenAddress: z.string(),
+      gasTokenName: z.string().optional(),
+      gasTokenDecimals: z.number().int().optional()
     })
   )
 });
@@ -81,7 +108,10 @@ const loadChainsFromRegistry = async (): Promise<ChainConfig[] | null> => {
       name: chain.chainName,
       type: chain.layer,
       rpcUrl: chain.rpc,
-      gasTokenSymbol: chain.gasToken || 'GHOST'
+      gasTokenSymbol: ensureCanonicalSymbol(chain.gasToken),
+      gasTokenAddress: ensureCanonicalAddress(chain.gasTokenAddress),
+      gasTokenName: CANONICAL_GAS_TOKEN_NAME,
+      gasTokenDecimals: CANONICAL_GAS_TOKEN_DECIMALS
     }));
   } catch {
     return null;
@@ -90,6 +120,12 @@ const loadChainsFromRegistry = async (): Promise<ChainConfig[] | null> => {
 
 export const loadChains = async (): Promise<ChainConfig[]> => {
   const registryChains = await loadChainsFromRegistry();
-  if (registryChains?.length) return registryChains;
-  return loadChainsFromFile();
+  const chains = registryChains?.length ? registryChains : loadChainsFromFile();
+  return chains.map((chain) => ({
+    ...chain,
+    gasTokenSymbol: ensureCanonicalSymbol(chain.gasTokenSymbol),
+    gasTokenAddress: ensureCanonicalAddress(chain.gasTokenAddress),
+    gasTokenName: CANONICAL_GAS_TOKEN_NAME,
+    gasTokenDecimals: CANONICAL_GAS_TOKEN_DECIMALS
+  }));
 };

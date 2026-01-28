@@ -34,6 +34,8 @@ import {
   aiCoreGovernanceSchema,
   aiCoreFingerprintSchema,
   aiCoreSuppressionRuleSchema,
+  gasMetricsResponseSchema,
+  slashingEventsResponseSchema,
   postGasAdminJson
 } from '../../../src/lib/gas-engine-client';
 
@@ -50,6 +52,8 @@ type AiCoreAction = z.infer<typeof aiCoreActionSchema>;
 type AiCoreGovernance = z.infer<typeof aiCoreGovernanceSchema>;
 type AiCoreFingerprint = z.infer<typeof aiCoreFingerprintSchema>;
 type AiCoreSuppressionRule = z.infer<typeof aiCoreSuppressionRuleSchema>;
+type GasMetrics = z.infer<typeof gasMetricsResponseSchema>;
+type SlashingEvents = z.infer<typeof slashingEventsResponseSchema>;
 
 type MetricsSummary = {
   deployments: { chain_key: string; status: string; count: string }[];
@@ -61,6 +65,12 @@ type MetricsSummary = {
 
 const countFor = (rows: { chain_key: string; count: string }[], chainKey: string) =>
   Number(rows.find((row) => row.chain_key === chainKey)?.count || 0);
+
+const formatGwei = (value: unknown) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return 'n/a';
+  return `${(numeric / 1_000_000_000).toFixed(2)} gwei`;
+};
 
 export default function GasOverviewPage() {
   const { user } = useSession();
@@ -79,6 +89,8 @@ export default function GasOverviewPage() {
   const [aiGovernance, setAiGovernance] = useState<AiCoreGovernance[]>([]);
   const [aiFingerprints, setAiFingerprints] = useState<AiCoreFingerprint[]>([]);
   const [aiSuppression, setAiSuppression] = useState<AiCoreSuppressionRule[]>([]);
+  const [gasMetricsByChain, setGasMetricsByChain] = useState<Record<string, GasMetrics>>({});
+  const [slashingByChain, setSlashingByChain] = useState<Record<string, SlashingEvents>>({});
   const [errors, setErrors] = useState<Array<{ title: string; error: string }>>([]);
   const [adminError, setAdminError] = useState<string | null>(null);
 
@@ -86,8 +98,51 @@ export default function GasOverviewPage() {
     const nextErrors: Array<{ title: string; error: string }> = [];
 
     const chainsRes = await fetchGasJson('/v1/chains', chainsResponseSchema);
-    if (!chainsRes.data) nextErrors.push({ title: 'Chains', error: chainsRes.error || 'failed' });
-    else setChains(chainsRes.data.chains);
+    let chainList: Chain[] = [];
+    if (!chainsRes.data) {
+      nextErrors.push({ title: 'Chains', error: chainsRes.error || 'failed' });
+    } else {
+      chainList = chainsRes.data.chains;
+      setChains(chainList);
+
+      const gasMetricEntries = await Promise.all(
+        chainList.map(async (chain) => {
+          const res = await fetchGasJson(`/v1/gas/metrics?chain=${chain.key}&limit=30`, gasMetricsResponseSchema);
+          return [chain.key, res] as const;
+        })
+      );
+
+      const gasMetricMap: Record<string, GasMetrics> = {};
+      for (const [key, res] of gasMetricEntries) {
+        if (!res.data) {
+          if (!res.error?.includes('HTTP 404')) {
+            nextErrors.push({ title: `Gas metrics (${key})`, error: res.error || 'failed' });
+          }
+          continue;
+        }
+        gasMetricMap[key] = res.data as GasMetrics;
+      }
+      setGasMetricsByChain(gasMetricMap);
+
+      const slashingEntries = await Promise.all(
+        chainList.map(async (chain) => {
+          const res = await fetchGasJson(`/v1/gas/slashing-events?chain=${chain.key}&limit=10`, slashingEventsResponseSchema);
+          return [chain.key, res] as const;
+        })
+      );
+
+      const slashingMap: Record<string, SlashingEvents> = {};
+      for (const [key, res] of slashingEntries) {
+        if (!res.data) {
+          if (!res.error?.includes('HTTP 404')) {
+            nextErrors.push({ title: `Slashing events (${key})`, error: res.error || 'failed' });
+          }
+          continue;
+        }
+        slashingMap[key] = res.data as SlashingEvents;
+      }
+      setSlashingByChain(slashingMap);
+    }
 
     const policiesRes = await fetchGasJson('/v1/policies', policiesResponseSchema);
     if (!policiesRes.data) nextErrors.push({ title: 'Policies', error: policiesRes.error || 'failed' });
@@ -499,6 +554,13 @@ export default function GasOverviewPage() {
           const attempts = metrics ? countFor(metrics.attempts, chain.key) : 0;
           const avgGasUsed = metrics?.avgGasUsed.find((row) => row.chain_key === chain.key)?.avg;
           const avgEstimate = metrics?.avgEstimate.find((row) => row.chain_key === chain.key)?.avg;
+          const gasMetrics = gasMetricsByChain[chain.key];
+          const slashing = slashingByChain[chain.key];
+          const latestSample = gasMetrics?.samples[0];
+          const recommendation = gasMetrics?.recommendation;
+          const slashingCount = slashing?.events.length ?? 0;
+          const volatilityPct = recommendation ? `${(recommendation.volatilityScore * 100).toFixed(1)}%` : 'n/a';
+          const anomalyPct = recommendation ? `${(recommendation.anomalyScore * 100).toFixed(1)}%` : 'n/a';
 
           return (
             <Card
@@ -532,6 +594,24 @@ export default function GasOverviewPage() {
                 <div className="spread">
                   <span className="muted">Avg estimate</span>
                   <span>{avgEstimate ? Number(avgEstimate).toFixed(0) : 'n/a'}</span>
+                </div>
+                <div className="spread">
+                  <span className="muted">Current base fee</span>
+                  <span>{formatGwei(latestSample?.baseFee)}</span>
+                </div>
+                <div className="spread">
+                  <span className="muted">Recommended base</span>
+                  <span>{formatGwei(recommendation?.recommendedBaseFee)}</span>
+                </div>
+                <div className="spread">
+                  <span className="muted">Volatility / Anomaly</span>
+                  <span>
+                    {volatilityPct} / {anomalyPct}
+                  </span>
+                </div>
+                <div className="spread">
+                  <span className="muted">Slashing events</span>
+                  <span>{slashingCount}</span>
                 </div>
                 <div className="spread">
                   <Badge tone={failedCount > 0 ? 'warning' : 'success'}>

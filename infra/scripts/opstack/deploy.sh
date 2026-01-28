@@ -34,8 +34,14 @@ if [ ! -d node_modules ]; then
   npm ci --no-audit --no-fund
 fi
 
+if [ "${SECURITY_CHECKPOINTS:-0}" = "1" ]; then
+  echo "Running security checkpoints (foundry + slither)..."
+  npm run test:foundry
+  npm run formal:slither
+fi
+
 echo "Deploying GhostChain PoS/L1 stack and bridging glue..."
-npm run deploy:futuristic
+HARDHAT_VIA_IR=${HARDHAT_VIA_IR:-true} npm run deploy:futuristic
 
 echo "Deploying OP devnet contracts (network: ghostl2Op)..."
 npm run deploy:op

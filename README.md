@@ -71,6 +71,23 @@ bash infra/scripts/up_polybft.sh
 bash infra/scripts/doctor.sh
 ```
 
+## Ops maintenance (cleanup + diagrams + k8s blueprint)
+
+```bash
+# snapshot (config + runtime inventory)
+ops/scripts/snapshot.sh
+
+# cleanup plan (dry-run)
+ops/cleanup-agent/cleanup.sh --plan
+
+# cleanup apply (requires explicit enforcement)
+GHOST_CLEANUP_ENFORCE=true ops/cleanup-agent/cleanup.sh --apply
+
+# diagrams + k8s blueprint from the latest report
+ops/scripts/generate-diagrams.sh --report ops/reports/cleanup-report-<timestamp>.json
+ops/scripts/generate-k8s-blueprint.sh --report ops/reports/cleanup-report-<timestamp>.json
+```
+
 ## Create service keys (Guard/Relayer/Proposers)
 
 This generates fresh private keys (saved only into ignored `.env` files), funds the addresses on L1/L2/L3 from the default dev account, and restarts services:

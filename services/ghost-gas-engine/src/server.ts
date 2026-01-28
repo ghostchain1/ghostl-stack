@@ -11,6 +11,7 @@ import { registerDeploymentRoutes } from './routes/deployments.js';
 import { registerMetricsRoutes } from './routes/metrics.js';
 import { registerAutonomyRoutes } from './routes/autonomy.js';
 import { registerAiCoreRoutes } from './routes/ai-core.js';
+import { registerGasRoutes } from './routes/gas.js';
 
 const app = Fastify({
   logger: {
@@ -48,6 +49,7 @@ await registerDeploymentRoutes(app);
 await registerMetricsRoutes(app);
 await registerAutonomyRoutes(app);
 await registerAiCoreRoutes(app);
+await registerGasRoutes(app);
 
 app.listen({ port: config.PORT, host: '0.0.0.0' }).catch((err) => {
   app.log.error(err);

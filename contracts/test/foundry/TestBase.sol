@@ -3,11 +3,16 @@ pragma solidity ^0.8.24;
 
 interface Vm {
     function prank(address) external;
+    function expectRevert() external;
     function expectRevert(bytes calldata) external;
     function assume(bool) external;
     function warp(uint256) external;
     function sign(uint256, bytes32) external returns (uint8, bytes32, bytes32);
     function addr(uint256) external returns (address);
+    function store(address target, bytes32 slot, bytes32 value) external;
+    function readFile(string calldata path) external view returns (string memory);
+    function mockCall(address target, bytes calldata data, bytes calldata returnData) external;
+    function ffi(string[] calldata) external returns (bytes memory);
 }
 
 abstract contract TestBase {

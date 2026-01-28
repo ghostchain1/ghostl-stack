@@ -7,6 +7,11 @@ if (!process.env.CERTORAKEY) {
 }
 
 const root = path.resolve(__dirname, "..");
+const check = spawnSync("certoraRun", ["--version"], { stdio: "pipe" });
+if (check.error && (check.error as NodeJS.ErrnoException).code === "ENOENT") {
+  console.error("[certora] certoraRun not found. Install the Certora CLI (e.g., `pip3 install certora-cli`).");
+  process.exit(1);
+}
 const result = spawnSync("certoraRun", ["formal/certora/certora.conf"], {
   cwd: root,
   stdio: "inherit",

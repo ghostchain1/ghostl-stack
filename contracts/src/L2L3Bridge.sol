@@ -3,12 +3,15 @@ pragma solidity ^0.8.24;
 
 import "./GuardPolicy.sol";
 import "./ERC20.sol";
+import "./compliance/ComplianceProofGuard.sol";
 
 // slither-disable-next-line locked-ether
 contract L2L3Bridge {
     GuardPolicy public policy;
+    ComplianceProofGuard public complianceGuard;
     address public owner;
     address public relayer;
+    bool public requireComplianceRoot = true;
 
     // (actor, amount, nonce) => timestamp deposit initiated
     mapping(bytes32 => uint256) public depositTime;
@@ -22,6 +25,8 @@ contract L2L3Bridge {
     event ERC20Finalized(address indexed token, address indexed from, address indexed to, uint256 amount, uint256 nonce);
     event ERC20WithdrawReleased(address indexed token, address indexed from, address indexed to, uint256 amount, uint256 nonce);
     event PolicyChanged(address indexed policy);
+    event ComplianceGuardChanged(address indexed guard);
+    event ComplianceRootRequirementUpdated(bool required);
     event RelayerChanged(address indexed relayer);
 
     modifier onlyOwner() {
@@ -45,13 +50,23 @@ contract L2L3Bridge {
         emit RelayerChanged(relayerAddr);
     }
 
+    function setComplianceGuard(address guardAddr) external onlyOwner {
+        complianceGuard = ComplianceProofGuard(guardAddr);
+        emit ComplianceGuardChanged(guardAddr);
+    }
+
+    function setRequireComplianceRoot(bool required) external onlyOwner {
+        requireComplianceRoot = required;
+        emit ComplianceRootRequirementUpdated(required);
+    }
+
     modifier onlyRelayer() {
         require(msg.sender == relayer, "not relayer");
         _;
     }
 
     /// User deposits on L2 to mint/release on L3 (offchain relayer can mirror on the other chain).
-    function depositToL3(address to, uint256 amount, uint256 nonce) external payable {
+    function depositToL3(address to, uint256 amount, uint256 nonce) external {
         // In MVP we just emit an event; funds handling can be added later (ERC20 escrow etc).
         bytes32 key = keccak256(abi.encode(msg.sender, to, amount, nonce));
         // slither-disable-next-line incorrect-equality
@@ -77,6 +92,13 @@ contract L2L3Bridge {
         bytes32 key = keccak256(abi.encode(from, to, amount, nonce));
         uint256 t = depositTime[key];
         require(t != 0, "no deposit");
+        ComplianceProofGuard guard = complianceGuard;
+        if (requireComplianceRoot) {
+            require(address(guard) != address(0), "compliance guard=0");
+            guard.enforceLatestRoot();
+        } else if (address(guard) != address(0)) {
+            guard.enforceLatestRoot();
+        }
 
         (bool ok, uint256 waitSeconds) = policy.check(from, amount);
         require(ok, "blocked by policy");
@@ -94,6 +116,13 @@ contract L2L3Bridge {
         bytes32 key = keccak256(abi.encode(token, from, to, amount, nonce));
         uint256 t = erc20DepositTime[key];
         require(t != 0, "no deposit");
+        ComplianceProofGuard guard = complianceGuard;
+        if (requireComplianceRoot) {
+            require(address(guard) != address(0), "compliance guard=0");
+            guard.enforceLatestRoot();
+        } else if (address(guard) != address(0)) {
+            guard.enforceLatestRoot();
+        }
 
         (bool ok, uint256 waitSeconds) = policy.check(from, amount);
         require(ok, "blocked by policy");
@@ -113,6 +142,13 @@ contract L2L3Bridge {
         bytes32 key = keccak256(abi.encode(token, from, to, amount, nonce));
         require(!erc20WithdrawProcessed[key], "already");
         erc20WithdrawProcessed[key] = true;
+        ComplianceProofGuard guard = complianceGuard;
+        if (requireComplianceRoot) {
+            require(address(guard) != address(0), "compliance guard=0");
+            guard.enforceLatestRoot();
+        } else if (address(guard) != address(0)) {
+            guard.enforceLatestRoot();
+        }
 
         (bool ok, uint256 waitSeconds) = policy.check(from, amount);
         require(ok, "blocked by policy");

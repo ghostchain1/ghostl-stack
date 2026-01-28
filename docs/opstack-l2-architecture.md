@@ -52,7 +52,7 @@
 - Health: op-node RPC `eth_syncing=false`, batcher/proposer RPC live, Guard `/health`, Relayer `/health`.
 
 ## Environment & Keys (devnet)
-- L2 chainId 901, L3 chainId 7393. L1 (Anvil) chainId 31337.
+- L2 chainId 901, L3 chainId 903 (ghostl3 default). L1 chainId 14000101.
 - Role keys (L2):
   - Sequencer: 0x39F920a6CefE557B193BB5f301bb83737A56A4C8
   - Batcher:   0x32171083fD74F0423eAB1192F04125d3a8f0B1C2

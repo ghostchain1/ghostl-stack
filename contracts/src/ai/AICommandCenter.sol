@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {AIGovernanceEscalation} from "./AIGovernanceEscalation.sol";
+import {EvidenceBundle} from "./EvidenceBundle.sol";
+import {ConstitutionalGuard} from "../common/ConstitutionalGuard.sol";
 import {Ownable} from "../common/Ownable.sol";
 
 /// @notice Executes AI-attested decisions with feed-verified inputs and guarded actions.
@@ -98,6 +101,15 @@ contract AICommandCenter is Ownable {
     bytes32 private immutable cachedDomainSeparator;
     uint256 private executionGuard;
 
+    address public governor;
+    address public timelock;
+    EvidenceBundle public evidenceBundle;
+    ConstitutionalGuard public constitutionalGuard;
+    AIGovernanceEscalation public escalationModule;
+    mapping(address => mapping(bytes4 => uint16)) public actionRiskBps;
+
+    bytes32 internal constant ACTION_AI_COMMAND = keccak256("ghost.ai.command.execute");
+
     event LayerOracleUpdated(uint8 indexed layer, address indexed oracle, bool allowed);
     event LayerDigestUpdated(uint8 indexed layer, bytes32 digest, uint64 blockNumber, uint64 updatedAt, address oracle);
     event OffchainOracleUpdated(address indexed oracle, bool allowed);
@@ -118,6 +130,25 @@ contract AICommandCenter is Ownable {
     event ActionPolicyUpdated(address indexed target, bytes4 indexed selector, ActionPolicy policy);
     event DecisionExecuted(bytes32 indexed decisionHash, address indexed target, bytes4 indexed selector, uint64 gasLimit);
     event PausedSet(bool paused);
+    event GovernanceConfigUpdated(address indexed governor, address indexed timelock);
+    event EvidenceBundleUpdated(address indexed bundle);
+    event ConstitutionalGuardUpdated(address indexed guard);
+    event EscalationModuleUpdated(address indexed module);
+    event ActionRiskUpdated(address indexed target, bytes4 indexed selector, uint16 riskScoreBps);
+
+    modifier onlyGovernance() {
+        require(msg.sender == governor || (timelock != address(0) && msg.sender == timelock), "NOT_EXECUTOR");
+        _;
+    }
+
+    modifier onlyGovernanceOrBootstrap() {
+        if (governor == address(0)) {
+            require(msg.sender == owner, "bootstrap only");
+        } else {
+            require(msg.sender == governor || (timelock != address(0) && msg.sender == timelock), "NOT_EXECUTOR");
+        }
+        _;
+    }
 
     modifier onlyOracle(uint8 layer) {
         require(layerOracles[layer][msg.sender], "not oracle");
@@ -145,6 +176,34 @@ contract AICommandCenter is Ownable {
         maxLayerAge[L1] = 10 minutes;
         maxLayerAge[L2] = 10 minutes;
         maxLayerAge[L3] = 10 minutes;
+    }
+
+    function setGovernance(address governor_, address timelock_) external onlyOwner {
+        require(governor_ != address(0), "governor=0");
+        governor = governor_;
+        timelock = timelock_;
+        emit GovernanceConfigUpdated(governor_, timelock_);
+    }
+
+    function setEvidenceBundle(EvidenceBundle bundle) external onlyGovernanceOrBootstrap {
+        evidenceBundle = bundle;
+        emit EvidenceBundleUpdated(address(bundle));
+    }
+
+    function setConstitutionalGuard(ConstitutionalGuard guard) external onlyGovernanceOrBootstrap {
+        constitutionalGuard = guard;
+        emit ConstitutionalGuardUpdated(address(guard));
+    }
+
+    function setEscalationModule(AIGovernanceEscalation module) external onlyGovernanceOrBootstrap {
+        escalationModule = module;
+        emit EscalationModuleUpdated(address(module));
+    }
+
+    function setActionRiskBps(address target, bytes4 selector, uint16 riskScoreBps) external onlyGovernance {
+        require(riskScoreBps <= 10_000, "risk>10000");
+        actionRiskBps[target][selector] = riskScoreBps;
+        emit ActionRiskUpdated(target, selector, riskScoreBps);
     }
 
     function setSigner(address signer, bool allowed) external onlyOwner {
@@ -265,6 +324,48 @@ contract AICommandCenter is Ownable {
         _precheckDecision(decision);
         bytes32 decisionHash = _hashDecision(decision);
         _consumeDecision(decisionHash, signatures);
+        bytes32 actionHash = keccak256(
+            abi.encode(
+                ACTION_AI_COMMAND,
+                decisionHash,
+                decision.target,
+                decision.selector,
+                keccak256(decision.data),
+                decision.gasLimit
+            )
+        );
+        ConstitutionalGuard guard = constitutionalGuard;
+        require(address(guard) != address(0), "constitution guard=0");
+        guard.checkAICommand(actionHash, msg.sender, decision.data);
+
+        EvidenceBundle bundle = evidenceBundle;
+        require(address(bundle) != address(0), "evidence bundle=0");
+        EvidenceBundle.Bundle memory evidence = EvidenceBundle.Bundle({
+            policyHash: actionHash,
+            decisionHash: decisionHash,
+            modelHash: decision.modelId,
+            executionHash: keccak256(
+                abi.encode(decision.target, decision.selector, keccak256(decision.data), decision.gasLimit)
+            ),
+            timestamp: block.timestamp,
+            chainId: block.chainid,
+            emitter: address(this)
+        });
+        (bytes32 bundleId, ) = bundle.recordBundle(evidence, bytes(""));
+
+        AIGovernanceEscalation escalation = escalationModule;
+        if (address(escalation) != address(0)) {
+            uint16 riskScoreBps = actionRiskBps[decision.target][decision.selector];
+            escalation.submitIntent(
+                bundleId,
+                riskScoreBps,
+                uint16(decision.confidenceBps),
+                decision.target,
+                0,
+                abi.encodePacked(decision.selector, decision.data)
+            );
+        }
+
         _executeAction(decision, decisionHash);
         return decisionHash;
     }

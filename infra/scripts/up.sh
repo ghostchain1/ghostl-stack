@@ -36,6 +36,13 @@ if [ ! -f "$COMPOSE_FILE" ]; then
   # Fallback to the services compose bundle when the devcontainer scaffold is absent (e.g., local checkout).
   COMPOSE_DIR="$ROOT/services"
   COMPOSE_FILE="$COMPOSE_DIR/docker-compose.yml"
+  if [ ! -f "$COMPOSE_FILE" ]; then
+    COMPOSE_FILE="$COMPOSE_DIR/docker-compose.legacy.yml"
+  fi
+fi
+if [ ! -f "$COMPOSE_FILE" ]; then
+  echo "Missing services compose file (expected $ROOT/.devcontainer/docker-compose.yml or $ROOT/services/docker-compose{.legacy}.yml)." >&2
+  exit 1
 fi
 COMPOSE_ARGS=(-f "$COMPOSE_FILE")
 if [ "$COMPOSE_DIR" = "$ROOT/services" ] && [ -f "$COMPOSE_DIR/stack.env" ]; then
@@ -43,13 +50,26 @@ if [ "$COMPOSE_DIR" = "$ROOT/services" ] && [ -f "$COMPOSE_DIR/stack.env" ]; the
 fi
 SERVICES=(
   ghost-relayer
+  ghost-rollup-proposer
   ghost-rollup-proposer-l2
   ghost-rollup-proposer-l3
+  ghost-rollup-challenger
   ghost-rollup-challenger-l2
   ghost-rollup-challenger-l3
   prometheus
   grafana
 )
-docker compose "${COMPOSE_ARGS[@]}" up -d --no-deps "${SERVICES[@]}"
+available_services=$(docker compose "${COMPOSE_ARGS[@]}" config --services)
+start_services=()
+for svc in "${SERVICES[@]}"; do
+  if printf '%s\n' "$available_services" | grep -qx "$svc"; then
+    start_services+=("$svc")
+  fi
+done
+if [ "${#start_services[@]}" -eq 0 ]; then
+  echo "No matching services found in $COMPOSE_FILE (wanted: ${SERVICES[*]})." >&2
+  exit 1
+fi
+docker compose "${COMPOSE_ARGS[@]}" up -d --no-deps "${start_services[@]}"
 
 echo "Done. L1=$HOST_L1_RPC, L2=$HOST_L2_RPC${ENABLE_L3:+, L3=$HOST_L3_RPC}, Guard=$GUARD_PORT, Relayer=7171, ProposerL2=7272, ProposerL3=7373, ChallengerL2=7282, ChallengerL3=7383, Prometheus=9090, Grafana=3000"

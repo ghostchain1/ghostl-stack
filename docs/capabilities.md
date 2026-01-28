@@ -406,7 +406,10 @@ Dependencies: Prometheus (`PROM_URL`).
 | --- | --- | --- | --- | --- |
 | GET `/health` | Health check. | none | none | `{ ok: true }` |
 | GET `/status` | Network status. | none | none | `{ ok: true, status }` |
-| POST `/remediate/dry-run` | Remediation dry run. | none | `{ targets }` | `{ ok: true, plan }` |
+| GET `/policy` | Action policy. | none | none | `{ ok: true, policy }` |
+| POST `/policy` | Update action policy. | `x-execution-token` | `ActionPolicy` | `{ ok: true, policy }` |
+| POST `/remediate/dry-run` | Remediation dry run. | none | `{ actions }` | `{ ok: true, plan }` |
+| POST `/remediate/execute` | Execute approved plan. | `x-execution-token` | `{ plan }` | `{ ok: true, results, evidencePath }` |
 
 ### node-health-service (PORT=7613)
 

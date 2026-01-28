@@ -1,10 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "../ai/EvidenceBundle.sol";
+import "../common/ConstitutionalGuard.sol";
+import "../compliance/ComplianceProofGuard.sol";
+
 /// @notice Minimal timelock-style executor used by Governor.
 contract ProposalExecutor {
     address public governor;
     uint256 public delay;
+    EvidenceBundle public evidenceBundle;
+    ConstitutionalGuard public constitutionalGuard;
+    ComplianceProofGuard public complianceGuard;
+
+    bytes32 internal constant ACTION_GOVERNANCE = keccak256("ghost.governance.execute");
 
     struct QueuedTx {
         address target;
@@ -19,9 +28,21 @@ contract ProposalExecutor {
     event GovernorUpdated(address indexed governor);
     event Queued(uint256 indexed id, address indexed target, uint256 value, bytes data, uint256 eta);
     event Executed(uint256 indexed id, bytes result);
+    event EvidenceBundleUpdated(address indexed bundle);
+    event ConstitutionalGuardUpdated(address indexed guard);
+    event ComplianceGuardUpdated(address indexed guard);
 
     modifier onlyGovernor() {
         require(msg.sender == governor, "not governor");
+        _;
+    }
+
+    modifier onlyGovernorOrBootstrap() {
+        if (governor == address(0)) {
+            require(msg.sender == tx.origin, "bootstrap only");
+        } else {
+            require(msg.sender == governor, "not governor");
+        }
         _;
     }
 
@@ -37,6 +58,21 @@ contract ProposalExecutor {
         emit GovernorUpdated(_gov);
     }
 
+    function setEvidenceBundle(EvidenceBundle bundle) external onlyGovernorOrBootstrap {
+        evidenceBundle = bundle;
+        emit EvidenceBundleUpdated(address(bundle));
+    }
+
+    function setConstitutionalGuard(ConstitutionalGuard guard) external onlyGovernorOrBootstrap {
+        constitutionalGuard = guard;
+        emit ConstitutionalGuardUpdated(address(guard));
+    }
+
+    function setComplianceGuard(ComplianceProofGuard guard) external onlyGovernorOrBootstrap {
+        complianceGuard = guard;
+        emit ComplianceGuardUpdated(address(guard));
+    }
+
     function queueTx(address target, uint256 value, bytes calldata data) external onlyGovernor returns (uint256 id) {
         uint256 eta = block.timestamp + delay;
         id = queue.length;
@@ -49,9 +85,31 @@ contract ProposalExecutor {
         QueuedTx storage txData = queue[id];
         require(!txData.executed, "executed");
         require(block.timestamp >= txData.eta, "eta not reached");
+        ComplianceProofGuard compliance = complianceGuard;
+        if (address(compliance) != address(0)) {
+            compliance.enforceLatestRoot();
+        }
+        ConstitutionalGuard guard = constitutionalGuard;
+        require(address(guard) != address(0), "constitution guard=0");
+        bytes32 actionHash = keccak256(
+            abi.encode(ACTION_GOVERNANCE, id, txData.target, txData.value, keccak256(txData.data), txData.eta)
+        );
+        guard.checkGovernance(actionHash, msg.sender, txData.data);
         txData.executed = true;
         (bool ok, bytes memory res) = txData.target.call{value: txData.value}(txData.data);
         require(ok, "exec failed");
+        EvidenceBundle bundle = evidenceBundle;
+        require(address(bundle) != address(0), "evidence bundle=0");
+        EvidenceBundle.Bundle memory evidence = EvidenceBundle.Bundle({
+            policyHash: actionHash,
+            decisionHash: keccak256(abi.encode(id, txData.eta)),
+            modelHash: bytes32(0),
+            executionHash: keccak256(abi.encode(txData.target, txData.value, keccak256(txData.data))),
+            timestamp: block.timestamp,
+            chainId: block.chainid,
+            emitter: address(this)
+        });
+        bundle.recordBundle(evidence, bytes(""));
         emit Executed(id, res);
         return res;
     }

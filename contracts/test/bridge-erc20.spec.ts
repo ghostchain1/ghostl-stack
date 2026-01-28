@@ -1,6 +1,13 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
+const deployTestToken = async (owner: { address: string }) => {
+  const Token = await ethers.getContractFactory("TestERC20");
+  const token = await Token.connect(owner).deploy("Ghost Token (L2)", "GHOSTL2", 18);
+  await token.waitForDeployment();
+  return token;
+};
+
 describe("ERC20 bridge (MVP)", function () {
   it("escrows on L2, mints on L3, burns and releases back to L2", async function () {
     const [owner, user, relayer] = await ethers.getSigners();
@@ -13,13 +20,13 @@ describe("ERC20 bridge (MVP)", function () {
     const bridge = await Bridge.connect(owner).deploy(await policy.getAddress());
     await bridge.waitForDeployment();
     await (await bridge.connect(owner).setRelayer(relayer.address)).wait();
-
-    const L2Token = await ethers.getContractFactory("GhostTokenL2");
-    const l2Token = await L2Token.connect(owner).deploy();
-    await l2Token.waitForDeployment();
+    await (await bridge.connect(owner).setRequireComplianceRoot(false)).wait();
 
     const amount = ethers.parseEther("1");
     const nonce = 1n;
+
+    const l2Token = await deployTestToken(owner);
+    await (await l2Token.connect(owner).mint(owner.address, amount)).wait();
 
     await (await l2Token.connect(owner).transfer(user.address, amount)).wait();
     expect(await l2Token.balanceOf(user.address)).to.equal(amount);
@@ -92,13 +99,13 @@ describe("ERC20 bridge (MVP)", function () {
     const bridge = await Bridge.connect(owner).deploy(await policy.getAddress());
     await bridge.waitForDeployment();
     await (await bridge.connect(owner).setRelayer(relayer.address)).wait();
-
-    const L2Token = await ethers.getContractFactory("GhostTokenL2");
-    const l2Token = await L2Token.connect(owner).deploy();
-    await l2Token.waitForDeployment();
+    await (await bridge.connect(owner).setRequireComplianceRoot(false)).wait();
 
     const amount = ethers.parseEther("1");
     const nonce = 2n;
+
+    const l2Token = await deployTestToken(owner);
+    await (await l2Token.connect(owner).mint(owner.address, amount)).wait();
 
     await (await l2Token.connect(owner).transfer(user.address, amount)).wait();
     await (await l2Token.connect(user).approve(await bridge.getAddress(), amount)).wait();

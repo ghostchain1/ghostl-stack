@@ -80,6 +80,26 @@ services:
       timeout: 3s
       retries: 20
 
+  ghost-compliance-worker:
+    build:
+      context: ./services/ghost-compliance-worker
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:-ghostpass}@postgres:5432/ghost_compliance
+      REDIS_URL: redis://redis:6379
+      COMPLIANCE_API_URL: http://ghost-compliance:8090
+      PREDICT_INTERVAL_SECONDS: 60
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      ghost-compliance:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   pg_data:
   redis_data:

@@ -1,6 +1,8 @@
 # Ghostchain L1 (local dev chain)
 
-The L1 for this stack is a standalone Ghostchain instance (dev geth) running on chainId 1337. It is independent of Ethereum mainnet/sepolia and is the base security layer for the broader GhostChain PoS + OP Stack blueprint described in `docs/ghostchain-pos-alignment.md`.
+The L1 for this stack is a standalone Ghostchain instance (dev geth) running on chainId **14000101**. It is independent of Ethereum mainnet/sepolia and is the base security layer for the broader GhostChain PoS + OP Stack blueprint described in `docs/ghostchain-pos-alignment.md`.
+
+> Note: the **devnet consensus engine is Clique (PoA)** for fast local iterations. The **PoS blueprint** is expressed in contracts under `contracts/src/futuristic` and can be activated in a production client later.
 
 ## PoS Blueprint Highlights
 
@@ -14,9 +16,13 @@ GhostChain L1 implements a BFT-style PoS with the following defaults:
 
 Contracts that mirror this blueprint reside in `contracts/src/futuristic`: `StakingManagerV2`, `ValidatorRegistryV2`, `SlashingManagerV2`, `RewardDistributorV2`, `EpochManager`, `CheckpointManager`, `GovernanceToken/GovernorV2`, and allied automation/oracle contracts.
 
+## Execution + Networking (Devnet)
+- **L1:** geth provides block structure, P2P networking, and state transition; chain params live in `infra/opstack/config/l1-chain.json`.
+- **L2/L3:** op-geth/op-node provide execution + networking; rollup params live in `infra/opstack/config/rollup.json` and `infra/opstack/l3/<name>/config/rollup.json`.
+
 ## Alignment with L2/L3
 
-* **L2 (PolyBFT)** anchors to this L1 via checkpoints every 2–10 minutes (`CheckpointManager`). The L2 rollup derives its validator set from L1 staking or a permissioned subset and publishes checkpoint roots back to L1.
+* **L2 (OP Stack)** anchors to this L1 as an optimistic rollup: op-node/op-geth produce batches, and output roots + dispute data finalize via `OutputOracle`/`FinalizationManager`.
 * **L3 (OP Stack)** settles to L2: sequencer batches → L2 batches, output roots go to `OutputOracle`/`FinalizationManager`, and disputes run via `DisputeGameFactoryV2`.
 * **Finality ladder:** L3 soft → L2 settlement → L1 economic finality. Withdrawals depend on the challenge windows configured on L2/L3.
 
@@ -24,9 +30,9 @@ For the full blueprint, see `docs/ghostchain-pos-alignment.md`, which includes r
 
 - RPC (inside compose): `http://l1:8545`
 - RPC (host): `http://localhost:18545`
-- Chain ID: `1337`
+- Chain ID: `14000101`
 - Config files: `infra/opstack/config/l1-chain.json` (chain params), `infra/opstack/config/l1-genesis.json`
-- Rollup config points to Ghostchain L1 via `infra/opstack/config/rollup.json` (l1_chain_id=1337, genesis hash matches Ghostchain).
+- Rollup config points to Ghostchain L1 via `infra/opstack/config/rollup.json` (l1_chain_id=14000101, genesis hash matches Ghostchain).
 
 Running:
 ```bash

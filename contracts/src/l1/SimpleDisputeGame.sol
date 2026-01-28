@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
 /// @notice Minimal placeholder dispute game implementation. Not a full OP fault game,
 ///         but sufficient to unblock factory.version() / create() plumbing and give

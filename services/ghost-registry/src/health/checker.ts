@@ -11,6 +11,9 @@ export type RegistryChain = {
   region: string;
   type: 'execution' | 'rollup';
   gasToken: string;
+  gasTokenAddress?: string;
+  gasTokenName?: string;
+  gasTokenDecimals?: number;
   status: 'healthy' | 'degraded' | 'down';
   lastChecked: string;
   rpcUrls?: string[];
@@ -95,13 +98,34 @@ const regionFor = (urls: string[]) => {
   return 'global';
 };
 
+const CANONICAL_GAS_TOKEN_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+const CANONICAL_GAS_TOKEN_SYMBOL = 'GHOST';
+const CANONICAL_GAS_TOKEN_NAME = 'Ghost Token';
+const CANONICAL_GAS_TOKEN_DECIMALS = 18;
+
+const requireCanonicalSymbol = (value: string | undefined, label: string) => {
+  if (value && value !== CANONICAL_GAS_TOKEN_SYMBOL) {
+    throw new Error(`${label} must be ${CANONICAL_GAS_TOKEN_SYMBOL}`);
+  }
+  return CANONICAL_GAS_TOKEN_SYMBOL;
+};
+
+const canonicalGasTokenAddress = () => {
+  const configured = process.env.GAS_TOKEN_ADDRESS || CANONICAL_GAS_TOKEN_ADDRESS;
+  if (configured.toLowerCase() !== CANONICAL_GAS_TOKEN_ADDRESS.toLowerCase()) {
+    throw new Error(`GAS_TOKEN_ADDRESS must be ${CANONICAL_GAS_TOKEN_ADDRESS}`);
+  }
+  return CANONICAL_GAS_TOKEN_ADDRESS;
+};
+
 const gasTokenFor = (layer: 'L1' | 'L2' | 'L3') => {
-  if (layer === 'L1') return process.env.GAS_TOKEN_L1 || 'GHOST';
-  if (layer === 'L2') return process.env.GAS_TOKEN_L2 || 'GHOST';
-  return process.env.GAS_TOKEN_L3 || 'GHOST';
+  if (layer === 'L1') return requireCanonicalSymbol(process.env.GAS_TOKEN_L1, 'GAS_TOKEN_L1');
+  if (layer === 'L2') return requireCanonicalSymbol(process.env.GAS_TOKEN_L2, 'GAS_TOKEN_L2');
+  return requireCanonicalSymbol(process.env.GAS_TOKEN_L3, 'GAS_TOKEN_L3');
 };
 
 const chainConfig = () => {
+  const gasTokenAddress = canonicalGasTokenAddress();
   const l1Http = parseList(process.env.RPC_L1);
   const l1Ws = parseList(process.env.RPC_L1_WS);
   const l2Http = parseList(process.env.RPC_L2);
@@ -122,6 +146,7 @@ const chainConfig = () => {
     http: string[];
     ws: string[];
     gasToken: string;
+    gasTokenAddress: string;
   }> = [];
   chains.push({
     chainId: l1Id,
@@ -131,7 +156,8 @@ const chainConfig = () => {
     type: 'settlement',
     http: l1Http,
     ws: l1Ws,
-    gasToken: gasTokenFor('L1')
+    gasToken: gasTokenFor('L1'),
+    gasTokenAddress
   });
   chains.push({
     chainId: l2Id,
@@ -141,7 +167,8 @@ const chainConfig = () => {
     type: 'rollup',
     http: l2Http,
     ws: l2Ws,
-    gasToken: gasTokenFor('L2')
+    gasToken: gasTokenFor('L2'),
+    gasTokenAddress
   });
   chains.push({
     chainId: l3Id,
@@ -151,7 +178,8 @@ const chainConfig = () => {
     type: 'rollup',
     http: l3Http,
     ws: l3Ws,
-    gasToken: gasTokenFor('L3')
+    gasToken: gasTokenFor('L3'),
+    gasTokenAddress
   });
   return chains;
 };
@@ -322,6 +350,9 @@ export class HealthChecker {
         region,
         type: registryType,
         gasToken: chain.gasToken,
+        gasTokenAddress: chain.gasTokenAddress,
+        gasTokenName: CANONICAL_GAS_TOKEN_NAME,
+        gasTokenDecimals: CANONICAL_GAS_TOKEN_DECIMALS,
         status: chainStatus,
         lastChecked: new Date(lastChecked).toISOString(),
         rpcUrls: chain.http,
@@ -330,9 +361,9 @@ export class HealthChecker {
         chainType: chain.type,
         network,
         nativeCurrency: {
-          name: chain.gasToken,
-          symbol: chain.gasToken,
-          decimals: 18
+          name: CANONICAL_GAS_TOKEN_NAME,
+          symbol: CANONICAL_GAS_TOKEN_SYMBOL,
+          decimals: CANONICAL_GAS_TOKEN_DECIMALS
         },
         endpoints,
         explorers: [],

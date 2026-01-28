@@ -20,7 +20,6 @@ import "@eth-optimism-bedrock/src/dispute/lib/Types.sol";
 import "@eth-optimism-bedrock/src/universal/Proxy.sol";
 import "@eth-optimism-bedrock/src/universal/ProxyAdmin.sol";
 import "@eth-optimism-bedrock/src/universal/interfaces/ICrossDomainMessenger.sol";
-import "../GasToken.sol";
 
 /// @notice Minimal placeholder dispute game so the factory has code to point at.
 contract DummyFaultDisputeGame is IDisputeGame {
@@ -81,6 +80,8 @@ contract DummyFaultDisputeGame is IDisputeGame {
 /// WARNING: This is a pared-down script; it skips advanced wiring (superchain config, interop, anchors).
 /// Adjust params to your network before broadcasting.
 contract DeployL1 is Script {
+    address internal constant CANONICAL_GAS_TOKEN = 0x5FbDB2315678afecb367f032d93F642f64180aa3;
+
     struct Deployed {
         ProxyAdmin proxyAdmin;
         Proxy superchainConfigProxy;
@@ -153,9 +154,9 @@ contract DeployL1 is Script {
         cfg.l2ooFinalizationPeriod = vm.envOr("L2OO_FINALIZATION_PERIOD", uint256(2));
         cfg.proofMaturityDelay = vm.envOr("PORTAL_PROOF_MATURITY_DELAY", uint256(0));
         cfg.disputeGameFinalityDelay = vm.envOr("PORTAL_DISPUTE_GAME_FINALITY_DELAY", uint256(0));
-        cfg.useCustomGasToken = vm.envOr("USE_CUSTOM_GAS_TOKEN", false);
-        cfg.customGasToken = vm.envOr("CUSTOM_GAS_TOKEN_ADDRESS", address(0));
-        cfg.gasTokenName = vm.envOr("GAS_TOKEN_NAME", string("Ghost Token"));
+        cfg.useCustomGasToken = vm.envOr("USE_CUSTOM_GAS_TOKEN", true);
+        cfg.customGasToken = vm.envOr("CUSTOM_GAS_TOKEN_ADDRESS", CANONICAL_GAS_TOKEN);
+        cfg.gasTokenName = vm.envOr("GAS_TOKEN_NAME", string("Ghost Token (L1)"));
         cfg.gasTokenSymbol = vm.envOr("GAS_TOKEN_SYMBOL", string("GHOST"));
         cfg.gasTokenDecimals = uint8(vm.envOr("GAS_TOKEN_DECIMALS", uint256(18)));
         cfg.gasTokenInitialSupply = vm.envOr("GAS_TOKEN_INITIAL_SUPPLY", uint256(1_000_000_000 ether));
@@ -182,21 +183,29 @@ contract DeployL1 is Script {
         deployed.l2OutputOracleProxy = new Proxy(address(deployed.proxyAdmin));
         deployed.disputeGameFactoryProxy = new Proxy(address(deployed.proxyAdmin));
 
-        if (cfg.useCustomGasToken && cfg.gasTokenDecimals != 18) {
+        if (!cfg.useCustomGasToken) {
+            revert("canonical gas token required");
+        }
+        if (cfg.customGasToken != CANONICAL_GAS_TOKEN) {
+            revert("non-canonical gas token");
+        }
+        if (keccak256(bytes(cfg.gasTokenName)) != keccak256(bytes("Ghost Token (L1)"))) {
+            revert("GasToken name must be Ghost Token (L1)");
+        }
+        if (keccak256(bytes(cfg.gasTokenSymbol)) != keccak256(bytes("GHOST"))) {
+            revert("GasToken symbol must be GHOST");
+        }
+        if (cfg.gasTokenDecimals != 18) {
             revert("GasToken decimals must be 18");
         }
-
-        address gasTokenAddress = cfg.customGasToken;
-        if (cfg.useCustomGasToken && gasTokenAddress == address(0)) {
-            GasToken gasToken = new GasToken(
-                cfg.gasTokenName,
-                cfg.gasTokenSymbol,
-                cfg.gasTokenDecimals,
-                cfg.gasTokenInitialSupply,
-                cfg.gasTokenRecipient
-            );
-            gasTokenAddress = address(gasToken);
+        if (cfg.gasTokenInitialSupply != 1_000_000_000 ether) {
+            revert("GasToken supply must be 1,000,000,000 GHOST");
         }
+        if (cfg.gasTokenRecipient != 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266) {
+            revert("GasToken recipient must be canonical deployer");
+        }
+
+        address gasTokenAddress = CANONICAL_GAS_TOKEN;
         deployed.gasToken = gasTokenAddress;
 
         // Initialize SuperchainConfig

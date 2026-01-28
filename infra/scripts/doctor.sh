@@ -84,4 +84,19 @@ print_http http://localhost:9090/-/ready
 wait_http http://localhost:3000/api/health grafana >/dev/null || true
 print_http http://localhost:3000/api/health
 
+wait_http http://localhost:7575/health ai-monitor >/dev/null || true
+print_http http://localhost:7575/health
+
+wait_http http://localhost:3210/ready ghost-gas-engine >/dev/null || true
+print_http http://localhost:3210/ready
+wait_http http://localhost:3210/metrics ghost-gas-engine-metrics >/dev/null || true
+
+wait_http http://localhost:8090/health ghost-compliance >/dev/null || true
+print_http http://localhost:8090/health
+wait_http http://localhost:8090/metrics ghost-compliance-metrics >/dev/null || true
+
+wait_http http://localhost:3220/health ghost-pil >/dev/null || true
+print_http http://localhost:3220/health
+wait_http http://localhost:3220/metrics ghost-pil-metrics >/dev/null || true
+
 echo "OK"

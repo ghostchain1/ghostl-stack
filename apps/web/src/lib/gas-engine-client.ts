@@ -25,7 +25,10 @@ export const chainSchema = z.object({
   name: z.string(),
   type: z.enum(['L1', 'L2', 'L3']),
   rpcUrl: z.string(),
-  gasTokenSymbol: z.string()
+  gasTokenSymbol: z.string(),
+  gasTokenAddress: z.string().optional(),
+  gasTokenName: z.string().optional(),
+  gasTokenDecimals: z.number().int().optional()
 });
 
 export const chainsResponseSchema = z.object({
@@ -358,6 +361,75 @@ export const aiCorePolicyConstraintsSchema = z.object({
 
 export const aiCorePolicyConstraintsResponseSchema = z.object({
   constraints: aiCorePolicyConstraintsSchema.nullable()
+});
+
+const numericLike = z.union([z.number(), z.string()]);
+
+export const gasUnitsSchema = z.object({
+  gasTokenSymbol: z.string(),
+  gasTokenAddress: z.string(),
+  gasTokenDecimals: z.number().int()
+});
+
+export const gasFeePolicySchema = z.object({
+  chainKey: z.string(),
+  maxBaseFee: z.number(),
+  maxPriorityFee: z.number(),
+  spikeThresholdBps: z.number(),
+  windowSeconds: z.number(),
+  violationPenaltyBps: z.number(),
+  minBond: z.number(),
+  autoExecEnabled: z.boolean()
+});
+
+export const gasRecommendationSchema = z.object({
+  recommendedBaseFee: numericLike,
+  recommendedPriorityFee: numericLike,
+  volatilityScore: z.number(),
+  anomalyScore: z.number(),
+  drivers: z.preprocess((value) => value ?? {}, z.record(z.number())),
+  policyBounds: z.preprocess((value) => value ?? {}, z.record(z.number())),
+  createdAt: z.string()
+});
+
+export const gasRecommendationResponseSchema = z.object({
+  chain: chainSchema,
+  policy: gasFeePolicySchema,
+  recommendation: gasRecommendationSchema,
+  units: gasUnitsSchema
+});
+
+export const gasSampleSchema = z.object({
+  blockNumber: numericLike.nullable().optional(),
+  baseFee: numericLike.nullable().optional(),
+  priorityFee: numericLike.nullable().optional(),
+  gasUsedRatio: z.number().nullable(),
+  observedAt: z.string(),
+  source: z.string()
+});
+
+export const gasMetricsResponseSchema = z.object({
+  chain: chainSchema,
+  policy: gasFeePolicySchema,
+  recommendation: gasRecommendationSchema.nullable(),
+  samples: z.array(gasSampleSchema),
+  units: gasUnitsSchema
+});
+
+export const slashingEventSchema = z.object({
+  operator: z.string().nullable().optional(),
+  violationId: numericLike.nullable().optional(),
+  reasonCode: z.number().nullable().optional(),
+  slashAmount: numericLike.nullable().optional(),
+  status: z.string(),
+  evidence: z.preprocess((value) => value ?? {}, z.record(z.any())),
+  createdAt: z.string()
+});
+
+export const slashingEventsResponseSchema = z.object({
+  chain: chainSchema,
+  events: z.array(slashingEventSchema),
+  units: gasUnitsSchema
 });
 
 export const deploymentDetailSchema = z.object({

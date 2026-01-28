@@ -16,7 +16,7 @@ if [ -f "$OP_DIR/.env.secrets" ]; then
 fi
 
 cd "$OP_DIR"
-docker compose "${COMPOSE_ENV_ARGS[@]}" stop l2-geth op-node op-batcher op-proposer >/dev/null 2>&1 || true
-docker compose "${COMPOSE_ENV_ARGS[@]}" rm -f l2-geth op-node op-batcher op-proposer >/dev/null 2>&1 || true
+docker compose "${COMPOSE_ENV_ARGS[@]}" stop l2-geth op-node op-sequencer op-batcher op-proposer >/dev/null 2>&1 || true
+docker compose "${COMPOSE_ENV_ARGS[@]}" rm -f l2-geth op-node op-sequencer op-batcher op-proposer >/dev/null 2>&1 || true
 
 echo "Stopped OP Stack L1/L2"

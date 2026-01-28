@@ -23,6 +23,7 @@ import { createStubServices } from './stubs';
 import { PrometheusClient } from './clients/prometheus';
 import { GrafanaClient } from './clients/grafana';
 import { RelayerClient } from './clients/relayer';
+import { GasEngineClient } from './clients/gas-engine';
 import { createLiveServices } from './services/live';
 import { createPersistentIdentityServices } from './services/auth-store';
 import { LokiClient } from './clients/loki';
@@ -30,6 +31,7 @@ import { GuardClient } from './clients/guard';
 import { AlertmanagerClient } from './clients/alertmanager';
 import type { AlertmanagerAlert } from './clients/alertmanager';
 import { buildStackRouter } from './modules/stack/router';
+import { buildGasRouter } from './modules/gas/router';
 import { buildWalletRouter } from './modules/wallet/router';
 import { buildNftRouter } from './modules/nft/router';
 import { env } from './config/env';
@@ -308,11 +310,13 @@ const prometheusUrl = env.PROMETHEUS_URL;
 const grafanaUrl = env.GRAFANA_URL;
 const relayerUrl = env.RELAYER_URL;
 const guardUrl = env.GUARD_URL;
+const gasEngineUrl = env.GAS_ENGINE_URL;
 const lokiUrl = env.LOKI_URL || 'http://localhost:3100';
 const alertmanagerUrl = env.ALERTMANAGER_URL || 'http://localhost:9093';
 const prometheus = new PrometheusClient(prometheusUrl);
 const grafana = new GrafanaClient(grafanaUrl, env.GRAFANA_API_KEY);
 const relayer = new RelayerClient(relayerUrl);
+const gasEngine = gasEngineUrl ? new GasEngineClient(gasEngineUrl) : undefined;
 const loki = lokiUrl ? new LokiClient(lokiUrl) : undefined;
 const guard = guardUrl ? new GuardClient(guardUrl, env.GUARD_ADMIN_TOKEN) : undefined;
 const alertmanager = alertmanagerUrl ? new AlertmanagerClient(alertmanagerUrl) : undefined;
@@ -799,17 +803,34 @@ const verifyContractsStored = (stored: Array<{ address: string; chainId: number 
 
 type ContractSeedSource = { envKey: string; name: string; layer: 'l1' | 'l2' | 'l3' };
 
+const CANONICAL_GAS_TOKEN_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+const CANONICAL_GAS_TOKEN_SYMBOL = 'GHOST';
+
+const ensureCanonicalGasTokenAddress = (label: string, value?: string) => {
+  if (value && value.toLowerCase() !== CANONICAL_GAS_TOKEN_ADDRESS.toLowerCase()) {
+    throw new Error(`${label} must be ${CANONICAL_GAS_TOKEN_ADDRESS}`);
+  }
+  return CANONICAL_GAS_TOKEN_ADDRESS;
+};
+
+const ensureCanonicalGasTokenSymbol = (label: string, value?: string) => {
+  if (value && value !== CANONICAL_GAS_TOKEN_SYMBOL) {
+    throw new Error(`${label} must be ${CANONICAL_GAS_TOKEN_SYMBOL}`);
+  }
+  return CANONICAL_GAS_TOKEN_SYMBOL;
+};
+
 const CONTRACT_SEED_SOURCES: ContractSeedSource[] = [
   { envKey: 'BRIDGE_L2L3_ADDRESS', name: 'L2L3Bridge', layer: 'l2' },
   { envKey: 'BRIDGE_ADDRESS', name: 'L2L3Bridge', layer: 'l2' },
   { envKey: 'GUARD_POLICY_ADDRESS', name: 'GuardPolicy', layer: 'l2' },
-  { envKey: 'L1_TOKEN_ADDRESS', name: 'GhostTokenL1', layer: 'l1' },
-  { envKey: 'L2_TOKEN_ADDRESS', name: 'GhostTokenL2', layer: 'l2' },
+  { envKey: 'L1_TOKEN_ADDRESS', name: 'ERC20', layer: 'l1' },
+  { envKey: 'L2_TOKEN_ADDRESS', name: 'ERC20', layer: 'l2' },
   { envKey: 'L1_ROLLUP_L2_ADDRESS', name: 'OptimisticRollup', layer: 'l1' },
   { envKey: 'L2_ROLLUP_L3_ADDRESS', name: 'OptimisticRollup', layer: 'l2' },
   { envKey: 'L3_INBOX_ADDRESS', name: 'L3Inbox', layer: 'l3' },
   { envKey: 'L3_TOKEN_FACTORY_ADDRESS', name: 'L3BridgedTokenFactory', layer: 'l3' },
-  { envKey: 'L3_TOKEN_ADDRESS', name: 'L3BridgedToken', layer: 'l3' }
+  { envKey: 'L3_TOKEN_ADDRESS', name: 'ERC20', layer: 'l3' }
 ];
 
 const artifactPathCache = new Map<string, string | null>();
@@ -851,7 +872,26 @@ const collectSeedEnv = (...sources: Array<Record<string, string | undefined>>) =
 const loadSeedEnv = () => {
   const stackEnvPath = path.join(repoRoot, 'services', 'stack.env');
   const webEnvPath = path.join(repoRoot, 'apps', 'web', '.env.local');
-  return collectSeedEnv(parseEnvFile(stackEnvPath), parseEnvFile(webEnvPath), process.env);
+  const seedEnv = collectSeedEnv(parseEnvFile(stackEnvPath), parseEnvFile(webEnvPath), process.env);
+
+  // Canonical gas token lock: any override must match the immutable L1 address/symbol.
+  const canonicalAddress = ensureCanonicalGasTokenAddress(
+    'CANONICAL_GAS_TOKEN_ADDRESS',
+    seedEnv.CANONICAL_GAS_TOKEN_ADDRESS || seedEnv.GAS_TOKEN_ADDRESS
+  );
+  seedEnv.CANONICAL_GAS_TOKEN_ADDRESS = canonicalAddress;
+  seedEnv.GAS_TOKEN_ADDRESS = ensureCanonicalGasTokenAddress('GAS_TOKEN_ADDRESS', seedEnv.GAS_TOKEN_ADDRESS);
+  seedEnv.GAS_TOKEN_ADDRESS_L1 = ensureCanonicalGasTokenAddress('GAS_TOKEN_ADDRESS_L1', seedEnv.GAS_TOKEN_ADDRESS_L1);
+  seedEnv.GAS_TOKEN_ADDRESS_L2 = ensureCanonicalGasTokenAddress('GAS_TOKEN_ADDRESS_L2', seedEnv.GAS_TOKEN_ADDRESS_L2);
+  seedEnv.GAS_TOKEN_ADDRESS_L3 = ensureCanonicalGasTokenAddress('GAS_TOKEN_ADDRESS_L3', seedEnv.GAS_TOKEN_ADDRESS_L3);
+  seedEnv.L1_TOKEN_ADDRESS = ensureCanonicalGasTokenAddress('L1_TOKEN_ADDRESS', seedEnv.L1_TOKEN_ADDRESS);
+  seedEnv.L2_TOKEN_ADDRESS = ensureCanonicalGasTokenAddress('L2_TOKEN_ADDRESS', seedEnv.L2_TOKEN_ADDRESS);
+  seedEnv.L3_TOKEN_ADDRESS = ensureCanonicalGasTokenAddress('L3_TOKEN_ADDRESS', seedEnv.L3_TOKEN_ADDRESS);
+  seedEnv.GAS_TOKEN_L1 = ensureCanonicalGasTokenSymbol('GAS_TOKEN_L1', seedEnv.GAS_TOKEN_L1);
+  seedEnv.GAS_TOKEN_L2 = ensureCanonicalGasTokenSymbol('GAS_TOKEN_L2', seedEnv.GAS_TOKEN_L2);
+  seedEnv.GAS_TOKEN_L3 = ensureCanonicalGasTokenSymbol('GAS_TOKEN_L3', seedEnv.GAS_TOKEN_L3);
+
+  return seedEnv;
 };
 
 const parseChainId = (value?: string) => {
@@ -1579,6 +1619,11 @@ app.use(
     guard,
     relayer
   })
+);
+app.use(
+  ['/v1/gas', '/gas'],
+  env.PUBLIC_STACK ? allowAll : requirePermission('chain:read'),
+  buildGasRouter({ gasEngine })
 );
 ghostWalletServicePromise.then((ghostWalletService) => {
   app.use(['/v1/wallet', '/wallet'], buildWalletRouter(ghostWalletService));
