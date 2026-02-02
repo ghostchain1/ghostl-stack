@@ -31,4 +31,8 @@ abstract contract TestBase {
     function assertEq(address a, address b, string memory message) internal {
         require(a == b, message);
     }
+
+    function assertEq(bytes32 a, bytes32 b, string memory message) internal {
+        require(a == b, message);
+    }
 }

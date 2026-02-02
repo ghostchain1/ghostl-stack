@@ -63,9 +63,44 @@ if (mode === "invariant") {
   forgeArgs.push("--match-test", "invariant_");
 }
 
+const extractFirstJsonObject = (text: string): string | null => {
+  const start = text.indexOf("{");
+  if (start === -1) return null;
+  let level = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = start; i < text.length; i += 1) {
+    const ch = text[i];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\\\") {
+        escaped = true;
+      } else if (ch === "\"") {
+        inString = false;
+      }
+      continue;
+    }
+    if (ch === "\"") {
+      inString = true;
+      continue;
+    }
+    if (ch === "{") {
+      level += 1;
+    } else if (ch === "}") {
+      level -= 1;
+      if (level === 0) {
+        return text.slice(start, i + 1);
+      }
+    }
+  }
+  return null;
+};
+
 const result = spawnSync("forge", forgeArgs, {
   cwd: root,
   stdio: "pipe",
+  maxBuffer: 50 * 1024 * 1024,
   env: {
     ...process.env,
     FOUNDRY_FUZZ_SEED: "0x2a",
@@ -74,8 +109,10 @@ const result = spawnSync("forge", forgeArgs, {
   }
 });
 if (result.stdout && result.stdout.length) {
-  writeFileSync(path.join(reportsDir, "last.json"), result.stdout);
-  process.stdout.write(result.stdout);
+  const stdoutText = result.stdout.toString();
+  const jsonText = extractFirstJsonObject(stdoutText);
+  writeFileSync(path.join(reportsDir, "last.json"), jsonText ?? stdoutText);
+  process.stdout.write(stdoutText);
 }
 if (result.stderr && result.stderr.length) {
   process.stderr.write(result.stderr);
