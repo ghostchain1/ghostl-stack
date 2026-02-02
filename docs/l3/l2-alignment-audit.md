@@ -23,6 +23,8 @@ This audit is derived from current configs under `infra/opstack/l3/ghostl3/confi
 
 From `infra/opstack/l3/ghostl3/config/rollup.json`:
 
+- `genesis.l1.number`: `56` (parent L2 block number at L3 genesis)
+- `genesis.l1.hash`: `0x710ece4f93b537b9f78d5fe121e2135e5f27914624fb451466552c933dabaf6a`
 - `batch_inbox_address`: `0x21b6ffeecf77ac42acc5b30b515b50be293f5ddb`
 - `deposit_contract_address`: `0xbCF26943C0197d2eE0E5D05c716Be60cc2761508`
 - `l1_system_config_address`: `0x712516e61C8B383dF4A63CFe83d7701Bce54B03e`
@@ -48,6 +50,7 @@ Bridge helpers (parent L2):
 
 - L3 genesis chain ID `903` matches rollup `l2_chain_id` and env `L3_CHAIN_ID`.
 - Parent (L2) chain ID `901` matches rollup `l1_chain_id`, l1-chain.json, and env `PARENT_L2_CHAIN_ID`.
+- `l1-chain.json` mirrors the parent L2 genesis data but omits `gasToken` for op-node compatibility; rollup validation keys off `genesis.l1.number` + `genesis.l1.hash`.
 
 ## Gaps / validations to enforce
 
