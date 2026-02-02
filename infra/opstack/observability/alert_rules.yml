@@ -17,3 +17,45 @@ groups:
         annotations:
           summary: "Error rate spike detected"
           description: "Error or consensus-risk logs are spiking above normal thresholds."
+  - name: ghost-opstack-l2
+    rules:
+      - alert: OpNodeL1HeadStalled
+        expr: time() - op_node_default_refs_time{layer="l1",type="l1_head"} > 120
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "L1 head updates stalled in op-node"
+          description: "op-node has not observed a new L1 head within 2 minutes."
+      - alert: OpNodeDerivationErrors
+        expr: increase(op_node_default_derivation_errors_total[5m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "L2 derivation errors detected"
+          description: "op-node derivation errors are increasing; investigate L1/L2 connectivity."
+      - alert: OpNodeL1ReorgDetected
+        expr: increase(op_node_default_l1_reorg_depth_count[10m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "L1 reorg detected by op-node"
+          description: "op-node observed L1 reorg activity; verify L1 stability."
+      - alert: OpBatcherIdle
+        expr: op_batcher_default_last_batcher_tx_unix{stage="success"} > 0 and (time() - op_batcher_default_last_batcher_tx_unix{stage="success"} > 900)
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Batcher idle"
+          description: "op-batcher has not submitted a successful batch for over 15 minutes."
+      - alert: OpProposerIdle
+        expr: op_proposer_default_txmgr_last_publish_unix > 0 and (time() - op_proposer_default_txmgr_last_publish_unix > 900)
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Proposer idle"
+          description: "op-proposer has not published an output for over 15 minutes."
