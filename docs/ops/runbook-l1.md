@@ -44,6 +44,21 @@ infra/ghostchain/scripts/down.sh
 - Rotate validator keys only via the approved key-rotation playbook.
 - Re-run `infra/scripts/doctor-l1.sh` after any config change.
 
+## Evidence pack (latest)
+
+- Timestamp: `20260202T154243Z`
+- SHA256: `ec870e6eb031ce8be0bcccfab284b5216f90b6a3f6f117c5f7e2a4d484fd83e8`
+- Artifact: `infra/evidence/out/evidence-pack-l1-20260202T154243Z.zip`
+
+```bash
+sha256sum -c infra/evidence/out/evidence-pack-l1-20260202T154243Z.zip.sha256
+```
+
+## Post go/no-go cleanup
+
+- Archive the evidence pack to long-term storage.
+- Prune older `infra/evidence/out` bundles after confirming backups.
+
 ## Submodule PRs
 
 ```
