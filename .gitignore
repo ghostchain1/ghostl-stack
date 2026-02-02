@@ -147,6 +147,7 @@ ops/quorum/regions/*.json
 ops/ai/threat-model/stride-model.md
 ops/ai/threat-model/linddun-model.md
 ops/ai/threat-model/risk-summary.json
+infra/evidence/out/
 ops/geo-risk/quorum-selection.json
 ops/compliance/evidence-bundle.json
 ops/zk/recursive-proof.json
