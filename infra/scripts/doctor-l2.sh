@@ -40,6 +40,8 @@ OP_SEQUENCER_METRICS_URL="${OP_SEQUENCER_METRICS_URL:-http://localhost:7303/metr
 OP_BATCHER_METRICS_URL="${OP_BATCHER_METRICS_URL:-http://localhost:7301/metrics}"
 OP_PROPOSER_METRICS_URL="${OP_PROPOSER_METRICS_URL:-http://localhost:7302/metrics}"
 L2_CHALLENGER_METRICS_URL="${L2_CHALLENGER_METRICS_URL:-http://localhost:${L2_CHALLENGER_METRICS_HOST_PORT:-7303}/metrics}"
+AI_MONITOR_URL="${AI_MONITOR_URL:-http://localhost:7575/health}"
+AI_MONITOR_REQUIRED="${AI_MONITOR_REQUIRED:-0}"
 
 L2_MAX_L1_DERIVATION_LAG="${L2_MAX_L1_DERIVATION_LAG:-128}"
 L2_MAX_L2_SAFE_LAG="${L2_MAX_L2_SAFE_LAG:-256}"
@@ -419,6 +421,19 @@ for url in "$L2_GETH_METRICS_URL" "$OP_NODE_METRICS_URL" "$OP_SEQUENCER_METRICS_
   fi
   echo "OK: metrics reachable: $url"
 done
+
+if [ "$AI_MONITOR_REQUIRED" = "1" ]; then
+  if ! curl -fsS --max-time 4 "$AI_MONITOR_URL" >/dev/null 2>&1; then
+    fail "ai-monitor not reachable at $AI_MONITOR_URL"
+  fi
+  echo "OK: ai-monitor reachable"
+else
+  if curl -fsS --max-time 2 "$AI_MONITOR_URL" >/dev/null 2>&1; then
+    echo "OK: ai-monitor reachable"
+  else
+    echo "OK: ai-monitor check skipped (AI_MONITOR_REQUIRED=0)"
+  fi
+fi
 
 if [ "$L2_REQUIRE_L2_PROGRESS" = "1" ]; then
   NOW_TS="$(date +%s)"

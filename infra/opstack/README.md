@@ -45,7 +45,7 @@ bash infra/scripts/opstack/deploy.sh
 # Optional: start observability (Prometheus + Grafana) in a separate shell
 docker compose --env-file infra/opstack/.env --env-file infra/opstack/.env.secrets \
   -f infra/opstack/docker-compose.yml --profile observability up -d prometheus grafana
-# Optional: start AI economics stack (ghost-gas-engine + postgres + redis + worker)
+# Optional: start AI economics + monitor stack (ghost-gas-engine + postgres + redis + worker + ai-monitor)
 docker compose --env-file infra/opstack/.env --env-file infra/opstack/.env.secrets \
   -f infra/opstack/docker-compose.yml --profile ai up -d
 ```
