@@ -33,7 +33,7 @@ HOST_L2_RPC="${HOST_L2_RPC:-${PARENT_L2_RPC:-http://localhost:29547}}"
 HOST_L3_RPC="${HOST_L3_RPC:-${L3_RPC:-http://localhost:39545}}"
 L3_ROLLUP_RPC="${L3_ROLLUP_RPC:-http://localhost:${L3_ROLLUP_RPC_HOST_PORT:-39546}}"
 
-L3_GETH_METRICS_URL="${L3_GETH_METRICS_URL:-http://localhost:39545/debug/metrics/prometheus}"
+L3_GETH_METRICS_URL="${L3_GETH_METRICS_URL:-http://localhost:${L3_GETH_METRICS_HOST_PORT:-39606}/debug/metrics/prometheus}"
 L3_OP_NODE_METRICS_URL="${L3_OP_NODE_METRICS_URL:-http://localhost:${L3_METRICS_NODE_HOST_PORT:-8300}/metrics}"
 L3_BATCHER_METRICS_URL="${L3_BATCHER_METRICS_URL:-http://localhost:${L3_METRICS_BATCHER_HOST_PORT:-8301}/metrics}"
 L3_PROPOSER_METRICS_URL="${L3_PROPOSER_METRICS_URL:-http://localhost:${L3_METRICS_PROPOSER_HOST_PORT:-8302}/metrics}"
@@ -277,6 +277,129 @@ if ! jsonrpc "$L3_ROLLUP_RPC" optimism_syncStatus >/dev/null 2>&1; then
 fi
 
 echo "OK: rollup RPC reachable"
+
+ROLLUP_L1_HASH="$(read_json "$L3_ROLLUP_JSON" genesis.l1.hash)"
+ROLLUP_L1_NUM="$(read_json "$L3_ROLLUP_JSON" genesis.l1.number)"
+ROLLUP_L2_HASH="$(read_json "$L3_ROLLUP_JSON" genesis.l2.hash)"
+ROLLUP_L2_NUM="$(read_json "$L3_ROLLUP_JSON" genesis.l2.number)"
+
+if [ -n "$ROLLUP_L1_HASH" ] && [ "$ROLLUP_L1_HASH" != "null" ]; then
+  l1_num="${ROLLUP_L1_NUM:-0}"
+  l1_hex="$(python3 - <<'PY' "$l1_num"
+import sys
+num = int(sys.argv[1]) if sys.argv[1] else 0
+print(hex(num))
+PY
+)"
+  L2_BLOCK_RAW="$(jsonrpc_params "$HOST_L2_RPC" "eth_getBlockByNumber" "[\"$l1_hex\", false]" || true)"
+  L2_BLOCK_HASH="$(json_result_field "$L2_BLOCK_RAW" "hash" || true)"
+  if [ -z "$L2_BLOCK_HASH" ]; then
+    fail "failed to fetch parent L2 block $l1_num from $HOST_L2_RPC"
+  fi
+  if [ -n "$L2_BLOCK_HASH" ] && [ "$L2_BLOCK_HASH" != "$ROLLUP_L1_HASH" ]; then
+    fail "rollup.json parent block hash mismatch (rollup=$ROLLUP_L1_HASH rpc=$L2_BLOCK_HASH)"
+  fi
+  echo "OK: rollup parent block hash matches"
+else
+  warn "rollup.json genesis.l1.hash not set"
+fi
+
+if [ -n "$ROLLUP_L2_HASH" ] && [ "$ROLLUP_L2_HASH" != "null" ]; then
+  l2_num="${ROLLUP_L2_NUM:-0}"
+  l2_hex="$(python3 - <<'PY' "$l2_num"
+import sys
+num = int(sys.argv[1]) if sys.argv[1] else 0
+print(hex(num))
+PY
+)"
+  L3_BLOCK_RAW="$(jsonrpc_params "$HOST_L3_RPC" "eth_getBlockByNumber" "[\"$l2_hex\", false]" || true)"
+  L3_BLOCK_HASH="$(json_result_field "$L3_BLOCK_RAW" "hash" || true)"
+  if [ -z "$L3_BLOCK_HASH" ]; then
+    fail "failed to fetch L3 block $l2_num from $HOST_L3_RPC"
+  fi
+  if [ -n "$L3_BLOCK_HASH" ] && [ "$L3_BLOCK_HASH" != "$ROLLUP_L2_HASH" ]; then
+    fail "rollup.json L3 block hash mismatch (rollup=$ROLLUP_L2_HASH rpc=$L3_BLOCK_HASH)"
+  fi
+  echo "OK: rollup L3 block hash matches"
+else
+  warn "rollup.json genesis.l2.hash not set"
+fi
+
+SYNC_RAW="$(jsonrpc "$L3_ROLLUP_RPC" "optimism_syncStatus" || true)"
+SYNC_HEAD_L1_NUM="$(python3 - <<'PY' "$SYNC_RAW"
+import json, sys
+raw = sys.argv[1]
+data = json.loads(raw).get("result", {}) if raw else {}
+print(data.get("head_l1", {}).get("number", 0))
+PY
+)"
+SYNC_CUR_L1_NUM="$(python3 - <<'PY' "$SYNC_RAW"
+import json, sys
+raw = sys.argv[1]
+data = json.loads(raw).get("result", {}) if raw else {}
+print(data.get("current_l1", {}).get("number", 0))
+PY
+)"
+SYNC_SAFE_L3_NUM="$(python3 - <<'PY' "$SYNC_RAW"
+import json, sys
+raw = sys.argv[1]
+data = json.loads(raw).get("result", {}) if raw else {}
+print(data.get("safe_l2", {}).get("number", 0))
+PY
+)"
+SYNC_UNSAFE_L3_NUM="$(python3 - <<'PY' "$SYNC_RAW"
+import json, sys
+raw = sys.argv[1]
+data = json.loads(raw).get("result", {}) if raw else {}
+print(data.get("unsafe_l2", {}).get("number", 0))
+PY
+)"
+
+if [ "$SYNC_HEAD_L1_NUM" -gt 0 ]; then
+  if [ "$SYNC_UNSAFE_L3_NUM" -gt 0 ]; then
+    if [ "$SYNC_CUR_L1_NUM" -gt 0 ]; then
+      L1_LAG=$((SYNC_HEAD_L1_NUM - SYNC_CUR_L1_NUM))
+      if [ "$L1_LAG" -gt "$L3_MAX_PARENT_DERIVATION_LAG" ]; then
+        if [ "$L3_REQUIRE_L3_PROGRESS" = "1" ]; then
+          fail "parent derivation lag too high (head=$SYNC_HEAD_L1_NUM current=$SYNC_CUR_L1_NUM lag=$L1_LAG > $L3_MAX_PARENT_DERIVATION_LAG)"
+        else
+          warn "parent derivation lag too high (head=$SYNC_HEAD_L1_NUM current=$SYNC_CUR_L1_NUM lag=$L1_LAG > $L3_MAX_PARENT_DERIVATION_LAG)"
+        fi
+      else
+        echo "OK: parent derivation lag within threshold"
+      fi
+    else
+      if [ "$L3_REQUIRE_L3_PROGRESS" = "1" ]; then
+        warn "current_l1 is zero; op-node has not derived parent L2 yet"
+      else
+        echo "OK: parent derivation lag check skipped (L3_REQUIRE_L3_PROGRESS=0)"
+      fi
+    fi
+    if [ "$SYNC_SAFE_L3_NUM" -gt 0 ]; then
+      SAFE_LAG=$((SYNC_UNSAFE_L3_NUM - SYNC_SAFE_L3_NUM))
+      if [ "$SAFE_LAG" -gt "$L3_MAX_L3_SAFE_LAG" ]; then
+        if [ "$L3_REQUIRE_L3_PROGRESS" = "1" ]; then
+          fail "L3 safe lag too high (unsafe=$SYNC_UNSAFE_L3_NUM safe=$SYNC_SAFE_L3_NUM lag=$SAFE_LAG > $L3_MAX_L3_SAFE_LAG)"
+        else
+          warn "L3 safe lag too high (unsafe=$SYNC_UNSAFE_L3_NUM safe=$SYNC_SAFE_L3_NUM lag=$SAFE_LAG > $L3_MAX_L3_SAFE_LAG)"
+        fi
+      else
+        echo "OK: L3 safe lag within threshold"
+      fi
+    else
+      if [ "$L3_REQUIRE_L3_PROGRESS" = "1" ]; then
+        warn "safe_l2 is zero; no safe L3 blocks observed yet"
+      else
+        echo "OK: L3 safe lag check skipped (L3_REQUIRE_L3_PROGRESS=0)"
+      fi
+    fi
+  else
+    if [ "$L3_REQUIRE_L3_PROGRESS" = "1" ]; then
+      fail "L3 unsafe head is zero; no L3 progress detected"
+    fi
+    echo "OK: L3 progress check skipped (L3_REQUIRE_L3_PROGRESS=0)"
+  fi
+fi
 
 if [ -n "${L3_PORTAL_ADDRESS:-}" ]; then
   portal_code="$(json_result "$(jsonrpc_params "$HOST_L2_RPC" eth_getCode "[\"$L3_PORTAL_ADDRESS\",\"latest\"]" || true)")"
