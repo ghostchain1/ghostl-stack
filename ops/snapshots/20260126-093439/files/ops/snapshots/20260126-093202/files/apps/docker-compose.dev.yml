@@ -1,0 +1,110 @@
+services:
+  ghostl-api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+      target: dev
+    ports:
+      - "4000:4000"
+    env_file:
+      - ./api/.env.example
+      - ../services/stack.env
+    environment:
+      - NODE_ENV=development
+      - PORT=4000
+      - FORCE_LISTEN=true
+      - TS_NODE_TRANSPILE_ONLY=true
+      - CORS_ALLOW_ORIGINS=http://localhost:3200
+      - SQLITE_DB_PATH=/app/apps/api/data/ghostl.db
+      - AUTH_DB_PATH=/app/apps/api/data/ghostl.db
+      - NFT_DB_PATH=/app/apps/api/data/nfts.db
+      - NFT_STORE_PATH=/app/apps/api/data/nfts.json
+      - MARKET_DATA_FILE=/app/apps/api/data/market-data.json
+      - TREASURY_STATE_FILE=/app/apps/api/data/treasury-proposals.json
+    networks:
+      - default
+      - ghost_net
+      - ghostchain-compliance_default
+    volumes:
+      - ../:/app
+      - ./api/data:/app/apps/api/data
+
+  ghostl-web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      target: dev
+    ports:
+      - "3200:3200"
+    env_file:
+      - ./web/.env.example
+    environment:
+      - NODE_ENV=development
+      - PORT=3200
+      - NEXT_PUBLIC_API_URL=http://localhost:4000
+      - API_INTERNAL_URL=http://ghostl-api:4000
+      - NEXT_PUBLIC_COMPLIANCE_URL=http://localhost:8090
+      - COMPLIANCE_URL=http://ghost-compliance:8090
+      - NEXT_PUBLIC_AI_CORE_URL=http://localhost:3210
+      - AI_CORE_URL=http://ghost-gas-engine:3210
+      - NEXT_PUBLIC_GAS_ENGINE_URL=http://localhost:3210
+      - GAS_ENGINE_URL=http://ghost-gas-engine:3210
+      - GAS_ENGINE_ADMIN_TOKEN=${GAS_ENGINE_ADMIN_TOKEN:-change-me}
+      - NEXT_PUBLIC_PIL_URL=http://localhost:3220
+      - PIL_URL=http://ghost-pil:3220
+    networks:
+      - default
+      - ghost_net
+      - ghostchain-compliance_default
+    volumes:
+      - ../:/app
+    depends_on:
+      - ghostl-api
+
+  ghostl-worker:
+    image: node:22.21.0-bookworm-slim
+    working_dir: /app
+    command: ["npm", "run", "dev", "-w", "apps/worker"]
+    ports:
+      - "7310:7310"
+    environment:
+      - NODE_ENV=development
+      - WORKER_HEARTBEAT_INTERVAL_MS=30000
+      - WORKER_HEALTH_PORT=7310
+      - WORKER_HEALTHCHECK_URLS=http://ghostl-api:4000/health,http://ghost-compliance:8090/health,http://ghost-gas-engine:3210/health,http://ghost-pil:3220/health,http://ghost-registry:8088/health
+      - WORKER_HEALTHCHECK_INTERVAL_MS=20000
+      - WORKER_HEALTHCHECK_TIMEOUT_MS=4000
+      - WORKER_REDIS_URL=redis://ghostl-worker-redis:6379
+      - WORKER_QUEUE_ENABLED=true
+      - WORKER_QUEUE_NAME=ghostl-worker
+      - WORKER_QUEUE_MODE=strict
+      - WORKER_QUEUE_CONCURRENCY=2
+      - WORKER_QUEUE_ALLOWED_JOBS=sync-compliance-cache
+      - WORKER_COMPLIANCE_CACHE_PATH=/app/apps/worker/data/compliance-cache.json
+    networks:
+      - default
+      - ghost_net
+      - ghostchain-compliance_default
+    volumes:
+      - ../:/app
+
+  ghostl-worker-redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - ghostl_worker_redis_data:/data
+
+networks:
+  ghost_net:
+    external: true
+  ghostchain-compliance_default:
+    external: true
+
+volumes:
+  ghostl_worker_redis_data:

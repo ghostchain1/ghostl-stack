@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "ui_routes": {
+    "portal": "/compliance/transparency"
+  },
+  "sections": {
+    "constitution_status": {"type": "object"},
+    "supply_and_burn_ledger": {"type": "array"},
+    "governance_proposals": {"type": "array"},
+    "sequencer_revenue": {"type": "array"},
+    "zk_proof_verification": {"type": "array"},
+    "evidence_packs": {"type": "array"}
+  },
+  "endpoints": {
+    "compliance": ["/v1/policies", "/v1/policies/active", "/v1/laws", "/v1/predictions"]
+  },
+  "artifacts": [
+    "docs/ghostchain/charter.md",
+    "docs/ghostchain/burn_reconciliation_report.md",
+    "docs/ghostchain/ratification-package.md",
+    "docs/ghostchain/sequencer_payout_proof.md",
+    "docs/ghostchain/ledger_verification_guide.md",
+    "docs/ghostchain/regulator-whitepaper.md"
+  ],
+  "sources": ["onchain", "indexer", "ops"],
+  "notes": "Read-only transparency portal schema."
+}

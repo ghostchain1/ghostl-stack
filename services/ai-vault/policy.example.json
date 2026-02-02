@@ -1,0 +1,24 @@
+{
+  "allow": [
+    { "pathPrefix": "/v1/ghostchain", "methods": ["GET", "LIST"] },
+    { "pathPrefix": "/v1/secret", "methods": ["GET", "LIST"] }
+  ],
+  "deny": [
+    { "pathPrefix": "/v1/secret/prod", "methods": ["PUT", "DELETE"] }
+  ],
+  "rotate": [
+    {
+      "mount": "ghostchain",
+      "path": "l1",
+      "kvVersion": 2,
+      "keys": ["jwtsecret"],
+      "encoding": "base64",
+      "intervalMinutes": 1440
+    }
+  ],
+  "anomaly": {
+    "rateLimitPerMinute": 120,
+    "burst": 40,
+    "blockMs": 300000
+  }
+}

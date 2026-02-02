@@ -1,0 +1,115 @@
+{
+  "name": "ghost-relayer",
+  "networks": {
+    "ghost_net": {
+      "name": "ghost_net",
+      "ipam": {},
+      "external": true
+    },
+    "opstack_default": {
+      "name": "opstack_default",
+      "ipam": {},
+      "external": true
+    }
+  },
+  "services": {
+    "ghost-relayer": {
+      "build": {
+        "context": "/home/ghost/ghostl-stack/services/ghost-relayer",
+        "dockerfile": "Dockerfile"
+      },
+      "command": null,
+      "container_name": "ghost_ghost-relayer",
+      "deploy": {
+        "resources": {
+          "limits": {
+            "cpus": 2,
+            "memory": "4294967296"
+          },
+          "reservations": {
+            "cpus": 0.5,
+            "memory": "536870912"
+          }
+        },
+        "placement": {}
+      },
+      "entrypoint": [
+        "/bin/bash",
+        "/entrypoint.sh"
+      ],
+      "environment": {
+        "BRIDGE_L2L3_ADDRESS": "0xc63d2a04762529edB649d7a4cC3E57A0085e8544",
+        "L1_ROLLUP_L2_ADDRESS": "0x7F6D5d1bDFB4b281374285510A845cb140d4367b",
+        "L2_RELAYER_PRIVATE_KEY": "",
+        "L2_ROLLUP_L3_ADDRESS": "0xBa3e08b4753E68952031102518379ED2fDADcA30",
+        "L2_TOKEN_ADDRESS": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "L3_INBOX_ADDRESS": "0x71C95911E9a5D330f4D621842EC243EE1343292e",
+        "L3_TOKEN_ADDRESS": "",
+        "L3_TOKEN_FACTORY_ADDRESS": "0x948B3c65b89DF0B4894ABE91E6D02FE579834F8F",
+        "PORT": "7171",
+        "RELAYER_PRIVATE_KEY": "",
+        "RPC_L1": "http://host.docker.internal:28545",
+        "RPC_L2": "http://host.docker.internal:29547",
+        "RPC_L3": "http://host.docker.internal:39545",
+        "START_BLOCK": "",
+        "STATE_DIR": "/state"
+      },
+      "extra_hosts": [
+        "host.docker.internal=host-gateway"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "/healthcheck.sh"
+        ],
+        "timeout": "5s",
+        "interval": "10s",
+        "retries": 10,
+        "start_period": "20s"
+      },
+      "image": "ghostl/ghost-relayer:local",
+      "networks": {
+        "ghost_net": null,
+        "opstack_default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 7171,
+          "published": "7171",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "stop_grace_period": "30s",
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/services/ghost-relayer/data",
+          "target": "/state",
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/services/ghost-relayer/data",
+          "target": "/data",
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/services/ghost-relayer/entrypoint.sh",
+          "target": "/entrypoint.sh",
+          "read_only": true,
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/services/ghost-relayer/healthcheck.sh",
+          "target": "/healthcheck.sh",
+          "read_only": true,
+          "bind": {}
+        }
+      ]
+    }
+  }
+}

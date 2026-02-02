@@ -1,0 +1,2 @@
+time="2026-02-02T13:25:15Z" level=warning msg="/home/ghost/ghostl-stack/ops/snapshots/20260126-100048/files/backups/ghostscout-legacy/ghostscout/docker/docker-compose.ghostscout.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+env file /home/ghost/ghostl-stack/ops/snapshots/20260126-100048/files/backups/ghostscout-legacy/ghostscout/env/l3.env not found: stat /home/ghost/ghostl-stack/ops/snapshots/20260126-100048/files/backups/ghostscout-legacy/ghostscout/env/l3.env: no such file or directory

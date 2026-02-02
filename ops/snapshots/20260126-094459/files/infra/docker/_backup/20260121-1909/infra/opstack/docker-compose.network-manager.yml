@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  network-manager:
+    image: alpine:3.19
+    container_name: opstack-network-manager
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    volumes:
+      - ./bin/network-manager.sh:/usr/local/bin/network-manager.sh:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["/usr/local/bin/network-manager.sh"]
+    # Runs as root inside the host namespaces so it can reap stray docker-proxy processes.

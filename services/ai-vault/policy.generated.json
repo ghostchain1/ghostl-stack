@@ -1,0 +1,33 @@
+{
+  "allow": [
+    {
+      "pathPrefix": "/v1/ghostchain/data/services",
+      "methods": [
+        "GET",
+        "LIST"
+      ]
+    },
+    {
+      "pathPrefix": "/v1/ghostchain/metadata/services",
+      "methods": [
+        "GET",
+        "LIST"
+      ]
+    }
+  ],
+  "deny": [
+    {
+      "pathPrefix": "/v1/secret/prod",
+      "methods": [
+        "PUT",
+        "DELETE"
+      ]
+    }
+  ],
+  "rotate": [],
+  "anomaly": {
+    "rateLimitPerMinute": 120,
+    "burst": 40,
+    "blockMs": 300000
+  }
+}

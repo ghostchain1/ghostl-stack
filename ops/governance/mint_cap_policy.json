@@ -1,0 +1,8 @@
+{
+  "max_total_supply": 1200000000,
+  "annual_mint_cap": 20000000,
+  "emergency_mint_cap": 5000000,
+  "governance_required": true,
+  "status": "draft",
+  "notes": "Mint caps enforced by governance and verifier."
+}

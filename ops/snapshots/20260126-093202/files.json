@@ -1,0 +1,222 @@
+[
+  {
+    "source": "/home/ghost/ghostl-stack/apps/docker-compose.dev.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/apps/docker-compose.dev.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/apps/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/apps/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/apps/docker-compose.dev.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/apps/docker-compose.dev.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/apps/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/apps/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/core-service/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/core-service/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/docker-compose.dev.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/docker-compose.dev.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/core-service/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/core-service/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/docker-compose.dev.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/docker-compose.dev.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.eth.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.eth.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.ibft.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.ibft.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.challengers.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.challengers.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.l3.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.l3.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.mainnet-geth.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.mainnet-geth.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.network-manager.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.network-manager.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/opstack/optimism-upstream/interop-devnet/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/opstack/optimism-upstream/interop-devnet/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/opstack/optimism-upstream/ops-bedrock/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/opstack/optimism-upstream/ops-bedrock/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/observability/infra/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/observability/infra/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/services/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/services/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/docker/compose/docker-compose.ai.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/compose/docker-compose.ai.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/docker/compose/docker-compose.core.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/compose/docker-compose.core.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/docker/compose/docker-compose.obs.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/compose/docker-compose.obs.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/docker/compose/docker-compose.services.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/compose/docker-compose.services.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/docker/compose/docker-compose.ui.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/compose/docker-compose.ui.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/ghostchain/docker-compose.eth.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/ghostchain/docker-compose.eth.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/ghostchain/docker-compose.ibft.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/ghostchain/docker-compose.ibft.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/docker-compose.challengers.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/opstack/docker-compose.challengers.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/docker-compose.l3.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/opstack/docker-compose.l3.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/docker-compose.mainnet-geth.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/opstack/docker-compose.mainnet-geth.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/docker-compose.network-manager.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/opstack/docker-compose.network-manager.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/opstack/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/optimism-upstream/interop-devnet/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/opstack/optimism-upstream/interop-devnet/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/optimism-upstream/ops-bedrock/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/opstack/optimism-upstream/ops-bedrock/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/observability/infra/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/observability/infra/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/services/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/services/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/backups/ghostscout-legacy/ghostscout/docker/docker-compose.ghostscout.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/ghostscout-legacy/ghostscout/docker/docker-compose.ghostscout.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/core-service/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/core-service/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/docker-compose.dev.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/docker-compose.dev.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/core-service/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/infra/docker/_backup/20260121-1909/core-service/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/docker-compose.dev.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/infra/docker/_backup/20260121-1909/docker-compose.dev.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/infra/docker/_backup/20260121-1909/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.eth.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.eth.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.ibft.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.ibft.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.challengers.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.challengers.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.l3.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.l3.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.mainnet-geth.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.mainnet-geth.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.network-manager.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.network-manager.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/infra/opstack/optimism-upstream/interop-devnet/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/infra/docker/_backup/20260121-1909/infra/opstack/optimism-upstream/interop-devnet/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/infra/opstack/optimism-upstream/ops-bedrock/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/infra/docker/_backup/20260121-1909/infra/opstack/optimism-upstream/ops-bedrock/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/observability/infra/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/infra/docker/_backup/20260121-1909/observability/infra/docker-compose.yml"
+  },
+  {
+    "source": "/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/services/docker-compose.yml",
+    "dest": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/infra/docker/_backup/20260121-1909/services/docker-compose.yml"
+  }
+]

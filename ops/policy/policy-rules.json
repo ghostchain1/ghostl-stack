@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "requirements": {
+    "minProviders": 2,
+    "requireCrossChainAnchors": true,
+    "requireGasToken": true,
+    "requireQuorumSelection": true,
+    "requireEvidenceBundle": true,
+    "requireThreatModel": true
+  }
+}

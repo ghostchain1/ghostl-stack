@@ -1,0 +1,13 @@
+time="2026-02-02T13:25:20Z" level=warning msg="The \"RPC_L2\" variable is not set. Defaulting to a blank string."
+time="2026-02-02T13:25:20Z" level=warning msg="The \"RPC_L3\" variable is not set. Defaulting to a blank string."
+time="2026-02-02T13:25:20Z" level=warning msg="The \"L2_ROLLUP_L3_ADDRESS\" variable is not set. Defaulting to a blank string."
+time="2026-02-02T13:25:20Z" level=warning msg="The \"CHALLENGER_PRIVATE_KEY\" variable is not set. Defaulting to a blank string."
+time="2026-02-02T13:25:20Z" level=warning msg="The \"PROM_URL\" variable is not set. Defaulting to a blank string."
+time="2026-02-02T13:25:20Z" level=warning msg="The \"RPC_L2\" variable is not set. Defaulting to a blank string."
+time="2026-02-02T13:25:20Z" level=warning msg="The \"RPC_L3\" variable is not set. Defaulting to a blank string."
+time="2026-02-02T13:25:20Z" level=warning msg="The \"BATCHER_KEY\" variable is not set. Defaulting to a blank string."
+time="2026-02-02T13:25:20Z" level=warning msg="The \"ALTDA_GENERIC_DA\" variable is not set. Defaulting to a blank string."
+time="2026-02-02T13:25:20Z" level=warning msg="The \"DGF_ADDRESS\" variable is not set. Defaulting to a blank string."
+time="2026-02-02T13:25:20Z" level=warning msg="The \"BATCHER_KEY\" variable is not set. Defaulting to a blank string."
+time="2026-02-02T13:25:20Z" level=warning msg="The \"PROPOSER_KEY\" variable is not set. Defaulting to a blank string."
+service "op-node-a" refers to undefined volume /home/ghost/ghostl-stack/../ops-bedrock/test-jwt-secret.txt: invalid compose project

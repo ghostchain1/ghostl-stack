@@ -1,0 +1,2 @@
+time="2026-02-02T13:41:31Z" level=warning msg="/home/ghost/ghostl-stack/services/ghost-ai-attestor/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+env file /home/ghost/ghostl-stack/services/ghost-ai-attestor/.env not found: stat /home/ghost/ghostl-stack/services/ghost-ai-attestor/.env: no such file or directory

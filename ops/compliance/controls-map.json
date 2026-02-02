@@ -1,0 +1,38 @@
+{
+  "version": "1.0.0",
+  "controls": [
+    {
+      "id": "SOC2-CC7.2",
+      "description": "Change management and integrity verification",
+      "artifacts": [
+        "ops/docker/attestations/immutability-attestation.json",
+        "ops/docker/attestations/oci-image-provenance.json"
+      ]
+    },
+    {
+      "id": "ISO27001-A.12.4",
+      "description": "Logging and monitoring",
+      "artifacts": [
+        "ops/ai/anomaly/anomaly-report.json",
+        "ops/ai/drift/drift-report.json",
+        "ops/mev/mev-report.json"
+      ]
+    },
+    {
+      "id": "ISO27001-A.12.5",
+      "description": "Operational change control",
+      "artifacts": [
+        "ops/security/kill-switch/status.json",
+        "ops/docker/snapshots"
+      ]
+    },
+    {
+      "id": "SOC2-CC6.6",
+      "description": "Evidence of access controls and attestations",
+      "artifacts": [
+        "ops/docker/attestations/immutability-vc.json",
+        "ops/docker/attestations/immutability-attestation.sig"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "name": "gas-engine-migrate",
+  "networks": {
+    "ghost_net": {
+      "name": "ghost_net",
+      "ipam": {},
+      "external": true
+    }
+  },
+  "services": {
+    "gas-engine-migrate": {
+      "build": {
+        "context": "/home/ghost/ghostl-stack/services/gas-engine-migrate",
+        "dockerfile": "Dockerfile"
+      },
+      "command": [
+        "sh",
+        "-lc",
+        "npm install \u0026\u0026 npm run migrate"
+      ],
+      "container_name": "ghost_gas-engine-migrate",
+      "deploy": {
+        "resources": {
+          "limits": {
+            "cpus": 2,
+            "memory": "4294967296"
+          },
+          "reservations": {
+            "cpus": 0.5,
+            "memory": "536870912"
+          }
+        },
+        "placement": {}
+      },
+      "entrypoint": [
+        "/bin/bash",
+        "/entrypoint.sh"
+      ],
+      "environment": {
+        "DATABASE_URL": "postgresql://ghost:ghostpass@gas-engine-postgres:5432/ghost_gas",
+        "DEPENDENCY_HOSTS": "gas-engine-postgres:5432 gas-engine-redis:6379",
+        "DEPENDENCY_INTERVAL_SEC": "5",
+        "DEPENDENCY_TIMEOUT_SEC": "120",
+        "GAS_TOKEN_L1": "",
+        "GAS_TOKEN_L2": "",
+        "GAS_TOKEN_L3": "",
+        "HEALTHCHECK_CMD": "kill -0 1",
+        "REDIS_URL": "redis://gas-engine-redis:6379",
+        "RPC_L1": "",
+        "RPC_L2": "",
+        "RPC_L3": "",
+        "SEED_SAMPLE_DATA": "true"
+      },
+      "extra_hosts": [
+        "host.docker.internal=host-gateway"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "/healthcheck.sh"
+        ],
+        "timeout": "5s",
+        "interval": "10s",
+        "retries": 10,
+        "start_period": "20s"
+      },
+      "image": "ghostl/gas-engine-migrate:local",
+      "networks": {
+        "ghost_net": null
+      },
+      "restart": "no",
+      "stop_grace_period": "30s",
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/services/ghost-gas-engine",
+          "target": "/work",
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/services/gas-engine-migrate/data",
+          "target": "/data",
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/services/gas-engine-migrate/entrypoint.sh",
+          "target": "/entrypoint.sh",
+          "read_only": true,
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/services/gas-engine-migrate/healthcheck.sh",
+          "target": "/healthcheck.sh",
+          "read_only": true,
+          "bind": {}
+        }
+      ],
+      "working_dir": "/work"
+    }
+  }
+}

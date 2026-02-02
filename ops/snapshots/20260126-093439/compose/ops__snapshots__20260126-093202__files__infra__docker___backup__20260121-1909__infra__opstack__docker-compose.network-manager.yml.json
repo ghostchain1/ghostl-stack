@@ -1,0 +1,28 @@
+{
+  "name": "opstack",
+  "services": {
+    "network-manager": {
+      "command": [
+        "/usr/local/bin/network-manager.sh"
+      ],
+      "container_name": "opstack-network-manager",
+      "entrypoint": [
+        "/bin/sh",
+        "-c"
+      ],
+      "image": "alpine:3.19",
+      "network_mode": "host",
+      "pid": "host",
+      "restart": "unless-stopped",
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/infra/docker/_backup/20260121-1909/infra/opstack/bin/network-manager.sh",
+          "target": "/usr/local/bin/network-manager.sh",
+          "read_only": true,
+          "bind": {}
+        }
+      ]
+    }
+  }
+}

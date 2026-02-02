@@ -1,0 +1,11 @@
+sentinel
+l1
+artifact-server
+l1-bn
+l1-vc
+l2
+op-node
+op-batcher
+da-server
+op-challenger
+op-proposer

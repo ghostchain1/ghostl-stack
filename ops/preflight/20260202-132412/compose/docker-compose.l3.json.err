@@ -1,0 +1,3 @@
+time="2026-02-02T13:25:21Z" level=warning msg="The \"BATCHER_KEY\" variable is not set. Defaulting to a blank string."
+time="2026-02-02T13:25:21Z" level=warning msg="The \"PROPOSER_KEY\" variable is not set. Defaulting to a blank string."
+service "key-rotation-service" depends on undefined service "prometheus": invalid compose project
