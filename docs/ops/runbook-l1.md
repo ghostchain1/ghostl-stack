@@ -44,6 +44,13 @@ infra/ghostchain/scripts/down.sh
 - Rotate validator keys only via the approved key-rotation playbook.
 - Re-run `infra/scripts/doctor-l1.sh` after any config change.
 
+## Submodule PRs
+
+```
+op-geth: https://github.com/ghostchain1/op-geth/pull/1
+optimism: https://github.com/ghostchain1/optimism/pull/1
+```
+
 ## Go/No-Go gate
 
 ```bash
