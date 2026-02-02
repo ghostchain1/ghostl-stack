@@ -169,6 +169,13 @@ Key tools:
 * `infra/scripts/up.sh`
 * `infra/scripts/preflight:opstack`
 
+Recent submodule PRs:
+
+```
+op-geth: https://github.com/ghostchain1/op-geth/pull/1
+optimism: https://github.com/ghostchain1/optimism/pull/1
+```
+
 ---
 
 ## 🐳 Docker & Deployment
