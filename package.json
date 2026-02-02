@@ -47,6 +47,10 @@
   },
   "overrides": {
     "diff": "^8.0.3",
+    "fast-xml-parser": "^5.3.4",
+    "@aws-sdk/xml-builder": {
+      "fast-xml-parser": "5.3.4"
+    },
     "ts-node": {
       "diff": "^8.0.3"
     }

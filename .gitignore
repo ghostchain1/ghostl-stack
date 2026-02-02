@@ -216,5 +216,10 @@ infra/k8s/**/api-secret.yaml
 dump.rdb
 appendonly.aof
 
+# security scan outputs
+license-report.json
+contracts/license-report.json
+sbom.spdx.json
+
 # allow committed dev keys for local Ghostchain
 !infra/ghostchain/geth/keys/*.key

@@ -82,3 +82,69 @@ jobs:
       - name: Relayer install
         working-directory: services/ghost-relayer
         run: npm ci
+
+  security:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.21.0
+
+      - name: Install workspace deps
+        run: npm ci
+
+      - name: Dependency audit (workspace)
+        run: npm audit --audit-level=high --omit=dev
+
+      - name: Dependency audit (contracts)
+        working-directory: contracts
+        run: npm audit --audit-level=high --omit=dev
+
+      - name: Install contracts deps
+        working-directory: contracts
+        run: npm ci
+
+      - name: License policy
+        run: |
+          npx --yes license-checker --production --json --out license-report.json
+          node scripts/security/license-policy.mjs license-report.json
+          npx --yes license-checker --json --out contracts/license-report.json --start contracts
+          node scripts/security/license-policy.mjs contracts/license-report.json
+
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: --redact --verbose --exit-code 1 --config=.gitleaks.toml --log-opts="--max-count=1"
+
+      - name: SAST (Semgrep)
+        run: |
+          pip3 install semgrep
+          semgrep scan --config scripts/security/semgrep.yml --severity ERROR --error apps packages services contracts
+
+      - name: Container scan (Trivy)
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          security-checks: vuln
+          skip-dirs: node_modules,contracts/node_modules,dist,artifacts,cache,backups,infra/opstack,infra/ghostchain/data
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.spdx.json
