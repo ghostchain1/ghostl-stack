@@ -9,12 +9,13 @@ export const registerChainRoutes = (app: FastifyInstance) => {
       name: string;
       type: string;
       gas_token_symbol: string;
+      gas_token_address: string;
       rpc_url_ref: string;
       last_block_number: string | null;
       last_block_hash: string | null;
       last_ingested_at: string | null;
     }>(
-      `SELECT c.chain_id, c.chain_key, c.name, c.type, c.gas_token_symbol, c.rpc_url_ref,
+      `SELECT c.chain_id, c.chain_key, c.name, c.type, c.gas_token_symbol, c.gas_token_address, c.rpc_url_ref,
               s.last_block_number, s.last_block_hash, s.last_ingested_at
        FROM pil_chains c
        LEFT JOIN pil_chain_state s ON c.chain_id = s.chain_id
@@ -27,6 +28,7 @@ export const registerChainRoutes = (app: FastifyInstance) => {
         name: row.name,
         type: row.type,
         gasTokenSymbol: row.gas_token_symbol,
+        gasTokenAddress: row.gas_token_address,
         rpcUrlRef: row.rpc_url_ref,
         lastBlockNumber: row.last_block_number,
         lastBlockHash: row.last_block_hash,

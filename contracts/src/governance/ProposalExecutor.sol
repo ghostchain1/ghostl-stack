@@ -28,6 +28,7 @@ contract ProposalExecutor {
     event GovernorUpdated(address indexed governor);
     event Queued(uint256 indexed id, address indexed target, uint256 value, bytes data, uint256 eta);
     event Executed(uint256 indexed id, bytes result);
+    event ExecutedBatch(address indexed caller, uint256 count);
     event EvidenceBundleUpdated(address indexed bundle);
     event ConstitutionalGuardUpdated(address indexed guard);
     event ComplianceGuardUpdated(address indexed guard);
@@ -43,6 +44,11 @@ contract ProposalExecutor {
         } else {
             require(msg.sender == governor, "not governor");
         }
+        _;
+    }
+
+    modifier onlyGovernorOrSelf() {
+        require(msg.sender == governor || msg.sender == address(this), "not governor/self");
         _;
     }
 
@@ -78,6 +84,22 @@ contract ProposalExecutor {
         id = queue.length;
         queue.push(QueuedTx({target: target, value: value, data: data, eta: eta, executed: false}));
         emit Queued(id, target, value, data, eta);
+    }
+
+    /// @notice Execute a batch of actions as a single queued transaction.
+    function executeBatch(address[] calldata targets, uint256[] calldata values, bytes[] calldata datas)
+        external
+        onlyGovernorOrSelf
+        returns (bytes[] memory results)
+    {
+        require(targets.length == values.length && targets.length == datas.length, "batch length mismatch");
+        results = new bytes[](targets.length);
+        for (uint256 i = 0; i < targets.length; i++) {
+            (bool ok, bytes memory res) = targets[i].call{value: values[i]}(datas[i]);
+            require(ok, "batch exec failed");
+            results[i] = res;
+        }
+        emit ExecutedBatch(msg.sender, targets.length);
     }
 
     /// #if_succeeds {:msg "only governor execute"} msg.sender == governor;

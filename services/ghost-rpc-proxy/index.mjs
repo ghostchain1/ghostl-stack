@@ -3,6 +3,19 @@ import http from "node:http";
 const PORT = Number(process.env.PORT || "8546");
 const UPSTREAM_URL = process.env.UPSTREAM_URL || "http://anvil:8545";
 const LOG_REQUESTS = process.env.LOG_REQUESTS === "1";
+const RPC_AUTH_TOKEN = process.env.RPC_AUTH_TOKEN || "";
+const RPC_REQUIRE_AUTH = process.env.RPC_REQUIRE_AUTH === "1";
+const RPC_SENSITIVE_METHODS = (process.env.RPC_SENSITIVE_METHODS || "personal_,debug_,txpool_,admin_")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+const RPC_RATE_LIMIT_PER_MINUTE = Number(process.env.RPC_RATE_LIMIT_PER_MINUTE || "120");
+const RPC_RATE_LIMIT_BURST = Number(process.env.RPC_RATE_LIMIT_BURST || "40");
+const RPC_RATE_WINDOW_MS = Number(process.env.RPC_RATE_WINDOW_MS || "60000");
+const RPC_CORS_ORIGINS = (process.env.RPC_CORS_ORIGINS || "http://localhost,http://127.0.0.1")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 const checksumAccounts = new Map([
   ["0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266", "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"],
@@ -21,6 +34,23 @@ function json(res, code, obj) {
   res.statusCode = code;
   res.setHeader("content-type", "application/json");
   res.end(JSON.stringify(obj));
+}
+
+function allowOrigin(origin) {
+  if (!origin) return false;
+  if (RPC_CORS_ORIGINS.includes("*")) return true;
+  return RPC_CORS_ORIGINS.includes(origin);
+}
+
+function setCors(res, origin) {
+  if (!origin) return;
+  if (allowOrigin(origin)) {
+    res.setHeader("access-control-allow-origin", origin);
+    res.setHeader("access-control-allow-credentials", "true");
+    res.setHeader("access-control-allow-headers", "content-type,authorization,x-rpc-auth");
+    res.setHeader("access-control-allow-methods", "POST,OPTIONS");
+    res.setHeader("vary", "Origin");
+  }
 }
 
 async function readBody(req) {
@@ -62,9 +92,83 @@ function describeRpcCall(method, params) {
   return extra ? ` (${extra})` : "";
 }
 
+const rateState = new Map();
+const metricState = {
+  requests: 0,
+  rateLimited: 0,
+  authFailed: 0
+};
+
+function getClientIp(req) {
+  const fwd = req.headers["x-forwarded-for"];
+  if (typeof fwd === "string" && fwd.length > 0) return fwd.split(",")[0].trim();
+  return req.socket.remoteAddress || "unknown";
+}
+
+function rateLimitOk(req) {
+  if (RPC_RATE_LIMIT_PER_MINUTE <= 0) return true;
+  const now = Date.now();
+  const ip = getClientIp(req);
+  const entry = rateState.get(ip) || { count: 0, burst: 0, resetAt: now + RPC_RATE_WINDOW_MS, burstResetAt: now + 5000 };
+  if (now > entry.resetAt) {
+    entry.count = 0;
+    entry.resetAt = now + RPC_RATE_WINDOW_MS;
+  }
+  if (now > entry.burstResetAt) {
+    entry.burst = 0;
+    entry.burstResetAt = now + 5000;
+  }
+  entry.count += 1;
+  if (entry.count > RPC_RATE_LIMIT_PER_MINUTE) {
+    entry.burst += 1;
+    if (entry.burst > RPC_RATE_LIMIT_BURST) {
+      rateState.set(ip, entry);
+      return false;
+    }
+  }
+  rateState.set(ip, entry);
+  return true;
+}
+
+function methodRequiresAuth(method) {
+  if (RPC_REQUIRE_AUTH) return true;
+  if (!method) return false;
+  return RPC_SENSITIVE_METHODS.some((prefix) => method.startsWith(prefix));
+}
+
+function hasAuth(req) {
+  if (!RPC_AUTH_TOKEN) return true;
+  const auth = req.headers.authorization || "";
+  const token = typeof auth === "string" && auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+  const headerToken = req.headers["x-rpc-auth"];
+  return token === RPC_AUTH_TOKEN || headerToken === RPC_AUTH_TOKEN;
+}
+
 const server = http.createServer(async (req, res) => {
+  const origin = req.headers.origin;
+  setCors(res, origin);
+
+  if (req.method === "OPTIONS") {
+    res.statusCode = 204;
+    return res.end();
+  }
   if (req.method === "GET" && req.url === "/health") return json(res, 200, { ok: true, upstream: UPSTREAM_URL });
+  if (req.method === "GET" && req.url === "/metrics") {
+    res.statusCode = 200;
+    res.setHeader("content-type", "text/plain");
+    return res.end(
+      [
+        `ghost_rpc_proxy_requests_total ${metricState.requests}`,
+        `ghost_rpc_proxy_rate_limited_total ${metricState.rateLimited}`,
+        `ghost_rpc_proxy_auth_failed_total ${metricState.authFailed}`
+      ].join("\n") + "\n"
+    );
+  }
   if (req.method !== "POST") return json(res, 405, { ok: false, error: "POST only" });
+  if (!rateLimitOk(req)) {
+    metricState.rateLimited += 1;
+    return json(res, 429, { ok: false, error: "rate_limited" });
+  }
 
   let body;
   try {
@@ -92,6 +196,12 @@ const server = http.createServer(async (req, res) => {
   } else if (payload && typeof payload === "object" && "id" in payload && "method" in payload) {
     methodById.set(payload.id, payload.method);
     methods.push(payload.method);
+  }
+
+  const needsAuth = methods.some((m) => methodRequiresAuth(m));
+  if (needsAuth && !hasAuth(req)) {
+    metricState.authFailed += 1;
+    return json(res, 401, { ok: false, error: "auth_required" });
   }
 
   if (LOG_REQUESTS && methods.length) {
@@ -139,6 +249,7 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  metricState.requests += 1;
   res.statusCode = upstreamRes.status;
   res.setHeader("content-type", ct);
   res.end(out);

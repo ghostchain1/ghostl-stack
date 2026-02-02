@@ -20,6 +20,18 @@ app.get("/logs", (_req, res) => {
   }
 });
 
+app.post("/logs", (req, res) => {
+  const entry = req.body || {};
+  const line = JSON.stringify({ ts: new Date().toISOString(), ...entry });
+  try {
+    fs.mkdirSync(path.dirname(LOG_PATH), { recursive: true });
+    fs.appendFileSync(LOG_PATH, `${line}\n`, "utf-8");
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err?.message || String(err) });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`[audit-log-service] listening on :${PORT}, log=${LOG_PATH}`);
 });

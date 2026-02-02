@@ -22,6 +22,7 @@
     "preflight:opstack": "bash infra/scripts/opstack/preflight-3layer.sh infra/opstack/.env infra/opstack/.env.l3",
     "env:sync:opstack": "bash infra/scripts/opstack/sync-env-from-l1-deployments.sh infra/opstack/.env",
     "env:sync:opstack:l3": "bash infra/scripts/opstack/sync-env-from-l2-deployments.sh infra/opstack/.env.l3",
+    "env:sync:l1": "bash infra/scripts/env-sync-l1.sh",
     "opstack:check": "npm run env:sync:opstack && npm run env:sync:opstack:l3 && npm run preflight:opstack",
     "phase2:formal": "npm --prefix contracts run formal:slither && npm --prefix contracts run formal:scribble && npm --prefix contracts run formal:echidna && npm --prefix contracts run test:invariant",
     "phase2:preflight": "DEPRECATIONS_CMD_TIMEOUT_MS=60000 DEPRECATIONS_SKIP_FILE_SCAN=1 npm run deprecations:check && NODE_OPTIONS=--max_old_space_size=4096 HARDHAT_VIA_IR=true HARDHAT_USE_DOCKER_SOLC=1 npm --prefix contracts run build && bash scripts/pil/smoke-phase2.sh"

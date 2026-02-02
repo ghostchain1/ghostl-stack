@@ -5,6 +5,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 OP_DIR="$ROOT/infra/opstack"
 
+# Allow callers (e.g., containerized runs) to override host RPCs even if .env sets them.
+HOST_L1_RPC_OVERRIDE="${HOST_L1_RPC:-}"
+HOST_L2_RPC_OVERRIDE="${HOST_L2_RPC:-}"
+HOST_L3_RPC_OVERRIDE="${HOST_L3_RPC:-}"
+
 if [ -f "$OP_DIR/.env" ]; then
   set -a
   # shellcheck disable=SC1090
@@ -12,6 +17,10 @@ if [ -f "$OP_DIR/.env" ]; then
   [ -f "$OP_DIR/.env.secrets" ] && source "$OP_DIR/.env.secrets"
   set +a
 fi
+
+[ -n "$HOST_L1_RPC_OVERRIDE" ] && HOST_L1_RPC="$HOST_L1_RPC_OVERRIDE"
+[ -n "$HOST_L2_RPC_OVERRIDE" ] && HOST_L2_RPC="$HOST_L2_RPC_OVERRIDE"
+[ -n "$HOST_L3_RPC_OVERRIDE" ] && HOST_L3_RPC="$HOST_L3_RPC_OVERRIDE"
 
 HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:18545}"
 HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"

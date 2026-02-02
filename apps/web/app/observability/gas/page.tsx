@@ -38,6 +38,12 @@ import {
   slashingEventsResponseSchema,
   postGasAdminJson
 } from '../../../src/lib/gas-engine-client';
+import { CopyButton } from '../../../src/components/CopyButton';
+
+const formatAddress = (value?: string) => {
+  if (!value) return '';
+  return `${value.slice(0, 6)}…${value.slice(-4)}`;
+};
 
 type Chain = z.infer<typeof chainSchema>;
 type Policy = z.infer<typeof policySchema>;
@@ -566,13 +572,22 @@ export default function GasOverviewPage() {
             <Card
               key={chain.key}
               title={`${chain.name} (${chain.type})`}
-              subtitle={`Chain ID ${chain.chainId} · Gas ${chain.gasTokenSymbol}`}
+              subtitle={`Chain ID ${chain.chainId} · Gas ${chain.gasTokenSymbol}${chain.gasTokenAddress ? ` · ${formatAddress(chain.gasTokenAddress)}` : ''}`}
             >
               <div className="stack">
-                <div className="spread">
-                  <span className="muted">Policy multiplier</span>
-                  <span>{policy?.baseMultiplier ?? 'n/a'}</span>
-                </div>
+              <div className="spread">
+                <span className="muted">Policy multiplier</span>
+                <span>{policy?.baseMultiplier ?? 'n/a'}</span>
+              </div>
+              <div className="spread">
+                <span className="muted">Gas token address</span>
+                <span className="row" style={{ alignItems: 'center', gap: 8 }}>
+                  <span className="mono" title={chain.gasTokenAddress || ''}>
+                    {chain.gasTokenAddress || '0x5FbDB2315678afecb367f032d93F642f64180aa3'}
+                  </span>
+                  <CopyButton value={chain.gasTokenAddress || '0x5FbDB2315678afecb367f032d93F642f64180aa3'} />
+                </span>
+              </div>
                 <div className="spread">
                   <span className="muted">Max gas limit</span>
                   <span>{policy?.maxGasLimit ?? 'n/a'}</span>

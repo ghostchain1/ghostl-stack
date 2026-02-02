@@ -18,7 +18,7 @@ services:
       dockerfile: Dockerfile
       args:
         NODE_IMAGE: ${OP_STACK_BASE_IMAGE:-node@sha256:40dc4b415c17b85bea9be05314b4a753f45a4e1716bb31c01182e6c53d51a654}
-    user: 1000:1000
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     working_dir: /app
     restart: unless-stopped
     logging: *id003
@@ -39,6 +39,46 @@ services:
     - ./data/op-gate-state:/state
     ports:
     - 28546:8545
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - curl -sf http://localhost:8545/gate/status >/dev/null
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    mem_limit: 512m
+    cpus: '0.5'
+  op-gate-l1:
+    cap_drop: *id001
+    security_opt: *id002
+    image: ${OP_GATE_IMAGE:-local/op-gate:0.1.0}
+    build:
+      context: ./gate
+      dockerfile: Dockerfile
+      args:
+        NODE_IMAGE: ${OP_STACK_BASE_IMAGE:-node@sha256:40dc4b415c17b85bea9be05314b4a753f45a4e1716bb31c01182e6c53d51a654}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
+    working_dir: /app
+    restart: unless-stopped
+    logging: *id003
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    environment:
+      NODE_ENV: production
+      PORT: ${GATE_L1_PORT:-8545}
+      UPSTREAM_RPC: ${GATE_L1_UPSTREAM_RPC:-http://l1-rpc-proxy:18546}
+      STATE_DIR: /state
+      ADMIN_TOKEN: ${GATE_L1_ADMIN_TOKEN:-${GATE_ADMIN_TOKEN:-}}
+      ALLOW_INSECURE_ADMIN: ${GATE_L1_ALLOW_INSECURE_ADMIN:-${GATE_ALLOW_INSECURE_ADMIN:-0}}
+      DEFAULT_DELAY_SECONDS: ${GATE_L1_DEFAULT_DELAY_SECONDS:-0}
+      GUARD_URL: ${GATE_L1_GUARD_URL:-${GATE_GUARD_URL:-http://ghost-guard:7070}}
+      BATCH_SENDER_ADDRESS: ${BATCH_SENDER_ADDRESS:-}
+      PROPOSER_ADDRESS: ${PROPOSER_ADDRESS:-}
+    volumes:
+    - ./data/op-gate-l1-state:/state
+    ports:
+    - 28547:8545
     healthcheck:
       test:
       - CMD-SHELL
@@ -242,12 +282,29 @@ services:
         condition: service_healthy
     environment:
       PORT: 7070
+      RPC_L1: http://l1-rpc-proxy:18546
       RPC_L2: http://l2-geth:8545
+      RPC_L3: ${HOST_L3_RPC:-http://host.docker.internal:39545}
       BRIDGE_L2L3_ADDRESS: ${BRIDGE_L2L3_ADDRESS:-0x0000000000000000000000000000000000000000}
       GUARD_POLICY_ADDRESS: ${GUARD_POLICY_ADDRESS:-}
       PRIVATE_KEY: ${GUARD_PRIVATE_KEY:-}
       ADMIN_TOKEN: ${GUARD_ADMIN_TOKEN:-}
       STATE_DIR: /state
+      AI_GUARDIAN_L1_ADDRESS: ${AI_GUARDIAN_L1_ADDRESS:-}
+      AI_GUARDIAN_L2_ADDRESS: ${AI_GUARDIAN_L2_ADDRESS:-}
+      AI_GUARDIAN_L3_ADDRESS: ${AI_GUARDIAN_L3_ADDRESS:-}
+      AI_SIGNER_PRIVATE_KEY: ${AI_SIGNER_PRIVATE_KEY:-}
+      AI_CONSENSUS_MODE: ${AI_CONSENSUS_MODE:-enforce}
+      AI_CONSENSUS_FAIL_OPEN: ${AI_CONSENSUS_FAIL_OPEN:-0}
+      AI_MODEL_ID: ${AI_MODEL_ID:-GHOST_AI_CONSENSUS_V1}
+      AI_CONFIDENCE_BPS: ${AI_CONFIDENCE_BPS:-9000}
+      AI_ATTEST_TTL_SECONDS: ${AI_ATTEST_TTL_SECONDS:-300}
+      AI_RISK_REVIEW_BPS: ${AI_RISK_REVIEW_BPS:-5000}
+      AI_RISK_BLOCK_BPS: ${AI_RISK_BLOCK_BPS:-8000}
+      AI_REVIEW_DELAY_SECONDS: ${AI_REVIEW_DELAY_SECONDS:-60}
+      AI_WAIT_CONFIRMATIONS: ${AI_WAIT_CONFIRMATIONS:-0}
+      AI_DEFAULT_LAYER: ${AI_DEFAULT_LAYER:-l2}
+      AI_ROLE_LAYER_MAP: ${AI_ROLE_LAYER_MAP:-}
       AUTO_PAUSE: ${GUARD_AUTO_PAUSE:-0}
       AUTO_ACTION: ${GUARD_AUTO_ACTION:-}
       QUARANTINE_DELAY_SECONDS: ${GUARD_QUARANTINE_DELAY_SECONDS:-30}
@@ -275,8 +332,8 @@ services:
   l2-geth:
     cap_drop: *id001
     security_opt: *id002
-    image: ghcr.io/ethereum-optimism/op-geth@sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0
-    user: 1000:1000
+    image: local/op-geth:${OPSTACK_IMAGE_TAG:-local}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     restart: unless-stopped
     logging: *id003
     depends_on:
@@ -319,11 +376,13 @@ services:
     depends_on:
       l2-geth:
         condition: service_healthy
+      op-gate:
+        condition: service_healthy
     command:
     - -d
     - -d
     - TCP-LISTEN:18547,fork,reuseaddr
-    - TCP:l2-geth:8545
+    - TCP:op-gate:8545
     ports:
     - 18547:18547
     mem_limit: 64m
@@ -358,8 +417,8 @@ services:
   op-node:
     cap_drop: *id001
     security_opt: *id002
-    image: ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b
-    user: 1000:1000
+    image: local/op-node:${OPSTACK_IMAGE_TAG:-local}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     restart: unless-stopped
     logging: *id003
     extra_hosts:
@@ -409,8 +468,8 @@ services:
   op-sequencer:
     cap_drop: *id001
     security_opt: *id002
-    image: ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b
-    user: 1000:1000
+    image: local/op-node:${OPSTACK_IMAGE_TAG:-local}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     restart: unless-stopped
     logging: *id003
     extra_hosts:
@@ -463,8 +522,8 @@ services:
   op-batcher:
     cap_drop: *id001
     security_opt: *id002
-    image: ghcr.io/ethereum-optimism/op-batcher@sha256:21a2426a292a0d1b6c3665c9e07549df97d98e40edda6c880d34e22aefe279d2
-    user: 1000:1000
+    image: local/op-batcher:${OPSTACK_IMAGE_TAG:-local}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     restart: unless-stopped
     logging: *id003
     extra_hosts:
@@ -473,6 +532,8 @@ services:
       op-sequencer:
         condition: service_healthy
       op-gate:
+        condition: service_healthy
+      op-gate-l1:
         condition: service_healthy
       l1-rpc-proxy:
         condition: service_healthy
@@ -486,7 +547,7 @@ services:
       OP_BATCHER_SUB_SAFETY_MARGIN: ${OP_BATCHER_SUB_SAFETY_MARGIN:-4}
     command:
     - op-batcher
-    - --l1-eth-rpc=${L1_RPC_DOCKER:-http://host.docker.internal:18545}
+    - --l1-eth-rpc=http://op-gate-l1:8545
     - --l2-eth-rpc=http://l2-geth:8545
     - --rollup-rpc=http://op-sequencer:9646
     - --private-key=${BATCHER_KEY}
@@ -514,8 +575,8 @@ services:
   op-proposer:
     cap_drop: *id001
     security_opt: *id002
-    image: ghcr.io/ethereum-optimism/op-proposer@sha256:00590e36e37994eefd8bbc9a6498ad20c62b072b381d0b8cdb7293056e6e5b64
-    user: 1000:1000
+    image: local/op-proposer:${OPSTACK_IMAGE_TAG:-local}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     restart: unless-stopped
     logging: *id003
     extra_hosts:
@@ -525,13 +586,15 @@ services:
         condition: service_healthy
       op-gate:
         condition: service_healthy
+      op-gate-l1:
+        condition: service_healthy
       l1-rpc-proxy:
         condition: service_healthy
     environment:
       PROPOSER_KEY: ${PROPOSER_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
     command:
     - op-proposer
-    - --l1-eth-rpc=${L1_RPC_DOCKER:-http://host.docker.internal:18545}
+    - --l1-eth-rpc=http://op-gate-l1:8545
     - --rollup-rpc=http://op-sequencer:9646
     - --l2oo-address=${L2OO_ADDRESS:-0x3C8841ddf731d168b0B4FFB633995281DaE8bc3D}
     - --private-key=${PROPOSER_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}

@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { Card, Badge } from '@ghostl/ui';
 import { z } from 'zod';
 import { DataFetchErrorCard } from '../../../../src/components/DataFetchErrorCard';
+import { CopyButton } from '../../../../src/components/CopyButton';
 import { useSession } from '../../../../src/modules/identity-access/session';
 import { normalizeRole, roleOrder } from '../../../../src/modules/identity-access/access-policy';
 import {
@@ -283,7 +284,14 @@ export default function GasChainPage() {
         {errors.map((entry, idx) => (
           <DataFetchErrorCard key={`${entry.title}-${idx}`} title={entry.title} error={{ message: entry.error }} />
         ))}
-        <Card title={chain ? `${chain.name} gas policy` : 'Chain policy'} subtitle={chain ? `Gas ${chain.gasTokenSymbol}` : 'Loading'}>
+        <Card
+          title={chain ? `${chain.name} gas policy` : 'Chain policy'}
+          subtitle={
+            chain
+              ? `Gas ${chain.gasTokenSymbol}${chain.gasTokenAddress ? ` · ${chain.gasTokenAddress.slice(0, 6)}…${chain.gasTokenAddress.slice(-4)}` : ''}`
+              : 'Loading'
+          }
+        >
           <div className="stack">
             <div className="spread">
               <span className="muted">Chain</span>
@@ -327,8 +335,20 @@ export default function GasChainPage() {
             </div>
             <div className="spread">
               <span className="muted">Token address</span>
-              <span className="truncate">
-                {chain?.gasTokenAddress || '0x5FbDB2315678afecb367f032d93F642f64180aa3'}
+              <span className="row" style={{ alignItems: 'center', gap: 8 }}>
+                <span className="truncate">
+                  {chain?.gasTokenAddress || '0x5FbDB2315678afecb367f032d93F642f64180aa3'}
+                </span>
+                <CopyButton value={chain?.gasTokenAddress || '0x5FbDB2315678afecb367f032d93F642f64180aa3'} />
+              </span>
+            </div>
+            <div className="spread">
+              <span className="muted">Canonical address (full)</span>
+              <span className="row" style={{ alignItems: 'center', gap: 8 }}>
+                <span className="mono" title={chain?.gasTokenAddress || ''}>
+                  {chain?.gasTokenAddress || '0x5FbDB2315678afecb367f032d93F642f64180aa3'}
+                </span>
+                <CopyButton value={chain?.gasTokenAddress || '0x5FbDB2315678afecb367f032d93F642f64180aa3'} />
               </span>
             </div>
             <div className="spread">

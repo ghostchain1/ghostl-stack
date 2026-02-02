@@ -2,8 +2,18 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-IMG="${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}"
-CHAIN_ID="${CHAIN_ID:-14000101}"
+ENV_FILE="$ROOT/.env.l1"
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  set +a
+fi
+
+IMG="${L1_GETH_IMAGE:-${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}}"
+CHAIN_ID="${L1_CHAIN_ID:-${CHAIN_ID:-14000101}}"
+BOOTNODE_IP="${L1_BOOTNODE_IP:-${BOOTNODE_IP:-172.28.0.21}}"
+BOOTNODE_PORT="${L1_BOOTNODE_PORT:-${BOOTNODE_PORT:-30301}}"
 
 BOOTNODE_DIR="$ROOT/data/bootnode"
 NODE1_DIR="$ROOT/data/node1"
@@ -23,7 +33,7 @@ fi
 
 echo "[init] Deriving bootnode enode..."
 BOOT_ID="$(docker run --rm -v "$BOOTNODE_DIR":/data "$IMG" bootnode --nodekey /data/boot.key --writeaddress)"
-echo "enode://$BOOT_ID@ghostchain-bootnode:30301" >"$BOOT_ENODE_FILE"
+echo "enode://$BOOT_ID@$BOOTNODE_IP:$BOOTNODE_PORT" >"$BOOT_ENODE_FILE"
 echo "[init] Bootnode enode written to $BOOT_ENODE_FILE"
 
 init_node() {
