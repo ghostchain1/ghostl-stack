@@ -43,3 +43,10 @@ infra/ghostchain/scripts/down.sh
 
 - Rotate validator keys only via the approved key-rotation playbook.
 - Re-run `infra/scripts/doctor-l1.sh` after any config change.
+
+## Go/No-Go gate
+
+```bash
+# Final release gate checks
+infra/scripts/gates/l1-go-no-go.sh
+```
