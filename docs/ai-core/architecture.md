@@ -37,3 +37,25 @@ Ghost Chain AI Core is the intelligence layer for GhostChain (L1), GhostL2, and 
 - Decisions are bounded by policy constraints.
 - Modes control autonomy level: observe-only → advisory → assisted → autonomous.
 - Every action is logged and traceable to an AI core decision.
+
+## Governance-Locked Autonomy (L1)
+Autonomous actions are constrained by on-chain policy and governance tiers:
+- **Tier 0:** observe-only (no writes).
+- **Tier 1:** auto-mitigate safe actions (restart/throttle) after governance ratification.
+- **Tier 2:** parameter changes (fees/limits) require governance proposal + timelock.
+- **Tier 3:** critical actions (key rotation, validator set) require multisig + governance + timelock.
+
+Policy enforcement is anchored by the L1 `AgentGovernancePolicy` registry:
+- Actions are keyed as `keccak256(abi.encodePacked(target, selector))`.
+- Policies include tier, cooldown, approvals required, scope, and evidence hash.
+- `AICommandCenter` can optionally enforce and record policy actions via `setPolicyRegistry`.
+
+Proposal builder:
+- `contracts/scripts/ai/build_ai_action_ratification.ts` generates deterministic calldata with evidence hash for ratifying an action policy.
+
+Devnet verification (L1):
+1. Deploy `AgentGovernancePolicy` and `AICommandCenter`.
+2. Call `AgentGovernancePolicy.setExecutor(AICommandCenter, true)`.
+3. Call `AICommandCenter.setPolicyRegistry(policyRegistry, role, true, true)`.
+4. Generate a ratification proposal with `build_ai_action_ratification.ts` and queue via governance.
+5. Verify `AgentGovernancePolicy.canExecute(role, action, approvals, hasEvidence)` returns `true`.
