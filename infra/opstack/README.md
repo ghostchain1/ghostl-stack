@@ -19,9 +19,10 @@ bash infra/scripts/opstack/build.sh
 docker build -t ${OP_GATE_IMAGE:-local/op-gate:0.1.0} -f infra/opstack/gate/Dockerfile infra/opstack/gate
 
 # 2) Configure env/keys (keep secrets in .env.secrets)
-cp infra/opstack/.env.sample infra/opstack/.env            # non-secret config
-cp infra/opstack/.env.secrets.sample infra/opstack/.env.secrets  # keys; do not commit
-bash infra/scripts/opstack/keys/init.sh                     # regenerates keys/addresses
+cp infra/opstack/.env.l2.example infra/opstack/.env.l2            # canonical non-secret config
+cp infra/opstack/.env.secrets.sample infra/opstack/.env.secrets   # keys; do not commit
+bash infra/scripts/opstack/keys/init.sh                           # regenerates keys/addresses
+bash infra/scripts/env-sync-l2.sh                                 # renders infra/opstack/.env
 # Optional: point GATE_GUARD_URL at your Ghost Guard instance (default host:7070).
 
 # Optional: validate bind-mount paths before boot
