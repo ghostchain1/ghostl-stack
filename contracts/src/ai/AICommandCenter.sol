@@ -6,6 +6,11 @@ import {EvidenceBundle} from "./EvidenceBundle.sol";
 import {ConstitutionalGuard} from "../common/ConstitutionalGuard.sol";
 import {Ownable} from "../common/Ownable.sol";
 
+interface IAgentGovernancePolicy {
+    function isActionAllowed(bytes32 role, bytes32 action) external view returns (bool);
+    function recordAction(bytes32 role, bytes32 action) external;
+}
+
 /// @notice Executes AI-attested decisions with feed-verified inputs and guarded actions.
 contract AICommandCenter is Ownable {
     uint8 public constant L1 = 1;
@@ -107,8 +112,13 @@ contract AICommandCenter is Ownable {
     ConstitutionalGuard public constitutionalGuard;
     AIGovernanceEscalation public escalationModule;
     mapping(address => mapping(bytes4 => uint16)) public actionRiskBps;
+    address public policyRegistry;
+    bytes32 public policyRole;
+    bool public enforcePolicyRegistry;
+    bool public recordPolicyRegistry;
 
     bytes32 internal constant ACTION_AI_COMMAND = keccak256("ghost.ai.command.execute");
+    bytes32 internal constant DEFAULT_POLICY_ROLE = keccak256("ghost.ai.commander");
 
     event LayerOracleUpdated(uint8 indexed layer, address indexed oracle, bool allowed);
     event LayerDigestUpdated(uint8 indexed layer, bytes32 digest, uint64 blockNumber, uint64 updatedAt, address oracle);
@@ -135,6 +145,7 @@ contract AICommandCenter is Ownable {
     event ConstitutionalGuardUpdated(address indexed guard);
     event EscalationModuleUpdated(address indexed module);
     event ActionRiskUpdated(address indexed target, bytes4 indexed selector, uint16 riskScoreBps);
+    event PolicyRegistryUpdated(address indexed registry, bytes32 indexed role, bool enforce, bool record);
 
     modifier onlyGovernance() {
         require(msg.sender == governor || (timelock != address(0) && msg.sender == timelock), "NOT_EXECUTOR");
@@ -176,6 +187,7 @@ contract AICommandCenter is Ownable {
         maxLayerAge[L1] = 10 minutes;
         maxLayerAge[L2] = 10 minutes;
         maxLayerAge[L3] = 10 minutes;
+        policyRole = DEFAULT_POLICY_ROLE;
     }
 
     function setGovernance(address governor_, address timelock_) external onlyOwner {
@@ -198,6 +210,20 @@ contract AICommandCenter is Ownable {
     function setEscalationModule(AIGovernanceEscalation module) external onlyGovernanceOrBootstrap {
         escalationModule = module;
         emit EscalationModuleUpdated(address(module));
+    }
+
+    function setPolicyRegistry(address registry, bytes32 role, bool enforce, bool record) external onlyGovernanceOrBootstrap {
+        if (registry == address(0)) {
+            require(!enforce && !record, "policy registry required");
+        }
+        if (registry != address(0)) {
+            require(role != bytes32(0), "role=0");
+        }
+        policyRegistry = registry;
+        policyRole = role == bytes32(0) ? policyRole : role;
+        enforcePolicyRegistry = enforce;
+        recordPolicyRegistry = record;
+        emit PolicyRegistryUpdated(registry, policyRole, enforce, record);
     }
 
     function setActionRiskBps(address target, bytes4 selector, uint16 riskScoreBps) external onlyGovernance {
@@ -324,6 +350,7 @@ contract AICommandCenter is Ownable {
         _precheckDecision(decision);
         bytes32 decisionHash = _hashDecision(decision);
         _consumeDecision(decisionHash, signatures);
+        _enforcePolicyRegistry(decision.target, decision.selector);
         bytes32 actionHash = keccak256(
             abi.encode(
                 ACTION_AI_COMMAND,
@@ -404,6 +431,18 @@ contract AICommandCenter is Ownable {
         (bool ok, ) = decision.target.call{gas: gasLimit}(payload);
         require(ok, "call failed");
         emit DecisionExecuted(decisionHash, decision.target, decision.selector, gasLimit);
+    }
+
+    function _enforcePolicyRegistry(address target, bytes4 selector) internal {
+        address registry = policyRegistry;
+        if (registry == address(0)) return;
+        bytes32 actionId = keccak256(abi.encodePacked(target, selector));
+        if (enforcePolicyRegistry) {
+            require(IAgentGovernancePolicy(registry).isActionAllowed(policyRole, actionId), "policy");
+        }
+        if (recordPolicyRegistry) {
+            IAgentGovernancePolicy(registry).recordAction(policyRole, actionId);
+        }
     }
 
     function _requiredConfidence(bytes32 modelId) internal view returns (uint32) {
