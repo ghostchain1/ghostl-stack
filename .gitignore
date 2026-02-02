@@ -66,7 +66,9 @@ infra/opstack/data/l1-geth-new/
 infra/opstack/data/op-node/
 infra/opstack/data/op-sequencer/
 infra/opstack/data/guard/
+infra/opstack/data/l2-geth-*/
 infra/opstack/l3/ghostl3/data/
+infra/opstack/l3/ghostl3/data-*/
 /infra/opstack/optimism/
 infra/opstack/infra/opstack/optimism/
 apps/api/data/
