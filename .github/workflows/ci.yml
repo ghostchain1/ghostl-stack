@@ -134,7 +134,19 @@ jobs:
           severity: HIGH,CRITICAL
           exit-code: "1"
           security-checks: vuln
-          skip-dirs: node_modules,contracts/node_modules,dist,artifacts,cache,backups,infra/ghostchain/data
+          skip-dirs: node_modules,contracts/node_modules,dist,artifacts,cache,backups,ops/snapshots,ops/preflight,contracts/out-codex,contracts/cache-codex,infra/ghostchain/data
+          skip-files: contracts/reports/formal/scribble/scribble.json,contracts/artifacts/build-info/*.json,infra/opstack/op-geth/signer/fourbyte/4byte.json
+
+      - name: Secret scan (Trivy)
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          exit-code: "1"
+          security-checks: secret
+          trivy-config: trivy-secret.yaml
+          skip-dirs: node_modules,contracts/node_modules,dist,artifacts,cache,backups,ops/snapshots,ops/preflight,contracts/out-codex,contracts/cache-codex,infra/ghostchain/data
+          skip-files: contracts/reports/formal/scribble/scribble.json,contracts/artifacts/build-info/*.json,infra/opstack/op-geth/signer/fourbyte/4byte.json
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
