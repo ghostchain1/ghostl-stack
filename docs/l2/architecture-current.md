@@ -88,6 +88,11 @@ flowchart LR
 - op-proposer metrics: `http://localhost:7302/metrics`
 - op-sequencer metrics: `http://localhost:7303/metrics`
 
+## Reliability controls
+
+- `infra/scripts/doctor-l2.sh` now validates L1 derivation lag, L2 safe lag, and batcher/proposer activity (configurable via `.env.l2` thresholds).
+- Prometheus alert rules in `infra/opstack/observability/alert_rules.yml` cover L1 head stalls, derivation errors, L1 reorg signals, batcher idle, and proposer idle.
+
 ## Known constraints
 
 - `infra/opstack/config/rollup.json` chain IDs are null in repo; `up-l2.sh` rewrites rollup genesis fields at runtime.
