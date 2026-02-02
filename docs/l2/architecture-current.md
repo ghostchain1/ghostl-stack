@@ -25,6 +25,7 @@ This document reflects the *current* Ghost L2 implementation as defined in repo 
 | Challenger (optional) | `op-challenger` | metrics only (default 7303) | Enabled via overlay compose. Uses cannon/Kona assets. |
 | Gate (L2) | `op-gate` | 28546 | Guard-aware RPC proxy for L2 operations. |
 | Gate (L1) | `op-gate-l1` | 28547 | Guard-aware RPC proxy for L1 operations. |
+| AI monitor (optional) | `ai-monitor` | 7575 | AI health monitor for L2 metrics/logs, optional auto-actions. |
 | L1 RPC proxy | `l1-rpc-proxy` | 18546 | Forwards to host L1 RPC. |
 | L2 RPC forwarder | `rpc-forward-l2-18547` | 18547 | Forwards to `op-gate` for local RPC compatibility. |
 
@@ -87,11 +88,21 @@ flowchart LR
 - op-batcher metrics: `http://localhost:7301/metrics`
 - op-proposer metrics: `http://localhost:7302/metrics`
 - op-sequencer metrics: `http://localhost:7303/metrics`
+- ai-monitor metrics: `http://localhost:7575/metrics`
 
 ## Reliability controls
 
 - `infra/scripts/doctor-l2.sh` now validates L1 derivation lag, L2 safe lag, and batcher/proposer activity (configurable via `.env.l2` thresholds).
 - Prometheus alert rules in `infra/opstack/observability/alert_rules.yml` cover L1 head stalls, derivation errors, L1 reorg signals, batcher idle, and proposer idle.
+
+## Playbooks
+
+- `infra/playbooks/l2/batcher_down.md`
+- `infra/playbooks/l2/proposer_lag.md`
+- `infra/playbooks/l2/output_oracle_stalled.md`
+- `infra/playbooks/l2/bridge_desync.md`
+- `infra/playbooks/l2/gas_spike.md`
+- `infra/playbooks/l2/vault_issue.md`
 
 ## Known constraints
 

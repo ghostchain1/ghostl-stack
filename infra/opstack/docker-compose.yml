@@ -329,6 +329,44 @@ services:
       start_period: 20s
     mem_limit: 512m
     cpus: '0.5'
+  ai-monitor:
+    cap_drop: *id001
+    security_opt: *id002
+    build:
+      context: ../../services/ai-monitor
+      dockerfile: ../../services/common.Dockerfile
+    image: local/ai-monitor:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    stop_grace_period: 30s
+    logging: *id003
+    depends_on:
+      l2-geth:
+        condition: service_healthy
+      op-node:
+        condition: service_healthy
+    environment:
+      PORT: 7575
+      RPC_L2: http://l2-geth:8545
+      RPC_URL: http://l2-geth:8545
+      GUARD_URL: ${GUARD_URL:-${GATE_GUARD_URL:-http://ghost-guard:7070}}
+      ADMIN_TOKEN: ${AI_MONITOR_ADMIN_TOKEN:-}
+      OBSERVE_ONLY: ${AI_MONITOR_OBSERVE_ONLY:-1}
+      SIMULATION_ENABLED: ${AI_MONITOR_SIMULATION_ENABLED:-0}
+      TARGET_LAYER: ${AI_MONITOR_LAYER_L2:-L2}
+    ports:
+    - 7575:7575
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:7575/health >/dev/null
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    mem_limit: 256m
+    cpus: '0.25'
+    profiles:
+    - ai
   l2-geth:
     cap_drop: *id001
     security_opt: *id002
