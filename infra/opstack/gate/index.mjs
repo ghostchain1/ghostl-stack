@@ -191,6 +191,7 @@ async function handleSendRawTx(body) {
     return { jsonrpc: "2.0", id: body.id ?? null, error: { code: -32602, message: `invalid raw tx: ${e?.message ?? e}` } };
   }
 
+  const dataHex = tx.data ?? "0x";
   const txSummary = {
     hash: tx.hash,
     from: tx.from ? ethers.getAddress(tx.from) : null,
@@ -199,7 +200,9 @@ async function handleSendRawTx(body) {
     type: tx.type,
     value: tx.value?.toString() ?? "0",
     gasLimit: tx.gasLimit?.toString() ?? null,
-    dataLength: tx.data ? tx.data.length / 2 - 1 : 0
+    dataLength: dataHex.length > 2 ? dataHex.length / 2 - 1 : 0,
+    dataHash: ethers.keccak256(dataHex),
+    selector: dataHex.length >= 10 ? dataHex.slice(0, 10) : "0x00000000"
   };
 
   let role = "unknown";

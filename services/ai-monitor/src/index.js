@@ -12,6 +12,7 @@ const GUARD_URL = env.GUARD_URL || "http://host.docker.internal:7070";
 const ADMIN_TOKEN = env.ADMIN_TOKEN || "";
 const PORT = Number(env.PORT || 7575);
 const OBSERVE_ONLY = env.OBSERVE_ONLY === "1";
+const SIMULATION_ENABLED = env.SIMULATION_ENABLED === "1";
 const TARGET_LAYER = String(env.TARGET_LAYER || "L2").toUpperCase();
 const THROTTLE_THRESHOLD = Number(env.THROTTLE_THRESHOLD || 70);
 const PAUSE_THRESHOLD = Number(env.PAUSE_THRESHOLD || 90);
@@ -28,6 +29,12 @@ const LOW_PEER_PENALTY = Number(env.LOW_PEER_PENALTY || 15);
 const app = express();
 app.use(express.json());
 
+const logEvent = (level, message, extra = {}) => {
+  const payload = { ts: new Date().toISOString(), level, message, layer: TARGET_LAYER, ...extra };
+  // eslint-disable-next-line no-console
+  console.log(JSON.stringify(payload));
+};
+
 const registry = new client.Registry();
 client.collectDefaultMetrics({ register: registry });
 const riskGauge = new client.Gauge({ name: "ai_monitor_risk_score", help: "Latest risk score 0-100" });
@@ -38,6 +45,11 @@ const headLagGauge = new client.Gauge({ name: "ai_monitor_head_lag_seconds", hel
 const peerGauge = new client.Gauge({ name: "ai_monitor_peer_count", help: "Latest peer count" });
 const syncingGauge = new client.Gauge({ name: "ai_monitor_syncing", help: "1 if syncing" });
 const reorgCounter = new client.Counter({ name: "ai_monitor_reorgs_total", help: "Detected head reorgs" });
+const incidentGauge = new client.Gauge({
+  name: "ai_monitor_incident_active",
+  help: "Active incident flags by type",
+  labelNames: ["type"]
+});
 registry.registerMetric(riskGauge);
 registry.registerMetric(anomalyGauge);
 registry.registerMetric(congestionGauge);
@@ -46,6 +58,7 @@ registry.registerMetric(headLagGauge);
 registry.registerMetric(peerGauge);
 registry.registerMetric(syncingGauge);
 registry.registerMetric(reorgCounter);
+registry.registerMetric(incidentGauge);
 
 const headers = ADMIN_TOKEN ? { "content-type": "application/json", "x-admin-token": ADMIN_TOKEN } : { "content-type": "application/json" };
 
@@ -99,6 +112,19 @@ const resolveRpc = async () => {
 let rpcL2 = "";
 let lastHeadNumber = null;
 let lastHeadHash = null;
+let lastStatus = {
+  updatedAt: null,
+  risk: 0,
+  anomaly: 0,
+  congestion: 0,
+  headLag: 0,
+  peers: 0,
+  syncing: false,
+  incidents: [],
+  recommendedAction: "none",
+  recommendedFix: ""
+};
+let simulation = null;
 
 const parseHexNumber = (value, fallback = 0) => {
   if (value === null || value === undefined) return fallback;
@@ -142,17 +168,18 @@ async function maybeAdjustPolicy(score, congestion) {
     const secs = Math.min(MAX_DELAY_MS / 1000, 10);
     await setDelay(secs);
     actionGauge.set(2);
-    return;
+    return "pause";
   }
   if (score >= THROTTLE_THRESHOLD || congestion >= THROTTLE_THRESHOLD) {
     const factor = Math.min(1, Math.max(score, congestion) / 100);
     const delayMs = Math.min(MAX_DELAY_MS, Math.max(BASE_DELAY_MS, BASE_DELAY_MS * factor * 2));
     await setDelay(Math.round(delayMs / 1000));
     actionGauge.set(1);
-    return;
+    return "delay";
   }
   // Clear delay if low risk.
   await setDelay(0);
+  return "none";
 }
 
 function computeScores(latestBlock) {
@@ -170,17 +197,49 @@ function computeScores(latestBlock) {
   return { risk, congestion, txCount, gasRatio };
 }
 
+function classifyIncidents({ syncing, headLag, peers, reorged, rpcError }) {
+  const incidents = [];
+  if (rpcError) incidents.push("rpc_unreachable");
+  if (syncing) incidents.push("syncing");
+  if (headLag > HEAD_LAG_THRESHOLD_SEC) incidents.push("stale_head");
+  if (peers < MIN_PEERS) incidents.push("low_peers");
+  if (reorged) incidents.push("reorg_detected");
+  return incidents;
+}
+
+function recommendFix(incidents) {
+  if (!incidents.length) return "";
+  if (incidents.includes("rpc_unreachable")) return "Check RPC proxy/container health, restart node if needed.";
+  if (incidents.includes("syncing")) return "Node syncing; verify disk IO and peer connectivity.";
+  if (incidents.includes("stale_head")) return "Investigate node lag; check CPU/memory and peer count.";
+  if (incidents.includes("low_peers")) return "Check P2P connectivity and firewall rules.";
+  if (incidents.includes("reorg_detected")) return "Investigate validator health and network stability.";
+  return "";
+}
+
 async function loop() {
   try {
-    const latestBlock = await rpc("eth_getBlockByNumber", ["latest", true]);
-    const peersRaw = await rpc("net_peerCount");
-    const syncing = await rpc("eth_syncing");
+    let latestBlock;
+    let peersRaw = "0x0";
+    let syncing = false;
+    let rpcError = false;
+    if (simulation?.active) {
+      latestBlock = simulation.latestBlock;
+      peersRaw = simulation.peersRaw ?? "0x0";
+      syncing = simulation.syncing ?? false;
+    } else {
+      latestBlock = await rpc("eth_getBlockByNumber", ["latest", true]);
+      peersRaw = await rpc("net_peerCount");
+      syncing = await rpc("eth_syncing");
+    }
     const peers = parseHexNumber(peersRaw, 0);
     const headNumber = parseHexNumber(latestBlock.number, null);
     const headHash = latestBlock.hash || null;
+    let reorged = false;
     if (headNumber !== null && lastHeadNumber !== null) {
       if (headNumber < lastHeadNumber || (headNumber === lastHeadNumber && headHash && headHash !== lastHeadHash)) {
         reorgCounter.inc();
+        reorged = true;
       }
     }
     lastHeadNumber = headNumber;
@@ -203,9 +262,43 @@ async function loop() {
     const risk = Math.min(100, Math.max(congestionRisk, anomaly));
     riskGauge.set(risk);
     congestionGauge.set(congestion);
-    await maybeAdjustPolicy(risk, congestion);
+    const incidents = classifyIncidents({ syncing: syncing && syncing !== false, headLag, peers, reorged, rpcError });
+    incidentGauge.reset();
+    incidents.forEach((type) => incidentGauge.labels(type).set(1));
+    const action = await maybeAdjustPolicy(risk, congestion);
+    const recommendedAction = action === "pause" ? "throttle_hard" : action === "delay" ? "throttle" : "observe";
+    const recommendedFix = recommendFix(incidents);
+    lastStatus = {
+      updatedAt: new Date().toISOString(),
+      risk,
+      anomaly,
+      congestion,
+      headLag,
+      peers,
+      syncing: syncing && syncing !== false,
+      incidents,
+      recommendedAction,
+      recommendedFix
+    };
+    if (incidents.length) {
+      logEvent("warn", "incidents_detected", { incidents, risk, anomaly, congestion, action: recommendedAction });
+    }
   } catch (e) {
-    console.error("[ai-monitor] loop error:", e?.message || e);
+    lastStatus = {
+      updatedAt: new Date().toISOString(),
+      risk: 100,
+      anomaly: 100,
+      congestion: 0,
+      headLag: 0,
+      peers: 0,
+      syncing: false,
+      incidents: ["rpc_unreachable"],
+      recommendedAction: "throttle",
+      recommendedFix: "Check RPC proxy/container health, restart node if needed."
+    };
+    incidentGauge.reset();
+    incidentGauge.labels("rpc_unreachable").set(1);
+    logEvent("error", "loop_error", { error: e?.message || String(e) });
   } finally {
     setTimeout(loop, LOOP_MS);
   }
@@ -222,6 +315,43 @@ app.get("/health", (_req, res) => {
   });
 });
 
+app.get("/status", (_req, res) => {
+  res.json({
+    ok: true,
+    layer: TARGET_LAYER,
+    observeOnly: OBSERVE_ONLY,
+    simulationEnabled: SIMULATION_ENABLED,
+    status: lastStatus
+  });
+});
+
+app.post("/simulate", (req, res) => {
+  if (!SIMULATION_ENABLED) return res.status(403).json({ ok: false, error: "simulation_disabled" });
+  const body = req.body || {};
+  const durationSec = Number(body.durationSec || 30);
+  simulation = {
+    active: true,
+    expiresAt: Date.now() + durationSec * 1000,
+    latestBlock: body.latestBlock || {
+      number: body.headNumber ?? "0x0",
+      hash: body.headHash ?? "0x0",
+      timestamp: body.headTimestamp ?? "0x0",
+      gasUsed: body.gasUsed ?? "0x0",
+      gasLimit: body.gasLimit ?? "0x1",
+      transactions: body.transactions ?? []
+    },
+    peersRaw: body.peersRaw ?? "0x0",
+    syncing: body.syncing ?? false
+  };
+  res.json({ ok: true, simulation });
+});
+
+setInterval(() => {
+  if (simulation?.active && simulation.expiresAt <= Date.now()) {
+    simulation = null;
+  }
+}, 1000);
+
 app.get("/metrics", async (_req, res) => {
   res.set("Content-Type", registry.contentType);
   res.end(await registry.metrics());
@@ -231,13 +361,16 @@ async function init() {
   try {
     rpcL2 = await resolveRpc();
     app.listen(PORT, () => {
-      console.log(
-        `[ai-monitor] listening on ${PORT}, layer=${TARGET_LAYER}, polling ${rpcL2}, guard=${GUARD_URL}, observeOnly=${OBSERVE_ONLY}`
-      );
+      logEvent("info", "ai_monitor_listen", {
+        port: PORT,
+        rpc: rpcL2,
+        guard: GUARD_URL,
+        observeOnly: OBSERVE_ONLY
+      });
       loop();
     });
   } catch (err) {
-    console.error("[ai-monitor] registry error:", err?.message || err);
+    logEvent("error", "registry_error", { error: err?.message || String(err) });
     process.exit(1);
   }
 }

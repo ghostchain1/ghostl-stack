@@ -27,12 +27,15 @@ const loadJson = <T>(filePath: string): T => JSON.parse(readFileSync(filePath, '
 
 const migrationsPath = path.join(process.cwd(), 'src', 'db', 'migrations', '001_init.sql');
 const validatorMigrationsPath = path.join(process.cwd(), 'src', 'db', 'migrations', '002_validator_economics.sql');
+const gasTokenMigrationPath = path.join(process.cwd(), 'src', 'db', 'migrations', '003_add_gas_token_address.sql');
 
 async function runMigrations() {
   const sql = readFileSync(migrationsPath, 'utf-8');
   await pool.query(sql);
   const validatorSql = readFileSync(validatorMigrationsPath, 'utf-8');
   await pool.query(validatorSql);
+  const gasTokenSql = readFileSync(gasTokenMigrationPath, 'utf-8');
+  await pool.query(gasTokenSql);
 }
 
 async function seedChains() {
@@ -42,30 +45,32 @@ async function seedChains() {
       'SELECT chain_id FROM pil_chains WHERE chain_key = $1',
       [chain.key]
     );
-    if (existingByKey.rowCount > 0) {
+    if ((existingByKey.rowCount ?? 0) > 0) {
       await pool.query(
         `UPDATE pil_chains
          SET name = $2,
              type = $3,
              gas_token_symbol = $4,
-             rpc_url_ref = $5,
+             gas_token_address = $5,
+             rpc_url_ref = $6,
              updated_at = NOW()
          WHERE chain_key = $1`,
-        [chain.key, chain.name, chain.type, chain.gasTokenSymbol, chain.rpcUrl]
+        [chain.key, chain.name, chain.type, chain.gasTokenSymbol, chain.gasTokenAddress, chain.rpcUrl]
       );
       continue;
     }
     await pool.query(
-      `INSERT INTO pil_chains (chain_id, chain_key, name, type, gas_token_symbol, rpc_url_ref)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO pil_chains (chain_id, chain_key, name, type, gas_token_symbol, gas_token_address, rpc_url_ref)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        ON CONFLICT (chain_id) DO UPDATE
        SET chain_key = EXCLUDED.chain_key,
            name = EXCLUDED.name,
            type = EXCLUDED.type,
            gas_token_symbol = EXCLUDED.gas_token_symbol,
+           gas_token_address = EXCLUDED.gas_token_address,
            rpc_url_ref = EXCLUDED.rpc_url_ref,
            updated_at = NOW()` ,
-      [chain.chainId, chain.key, chain.name, chain.type, chain.gasTokenSymbol, chain.rpcUrl]
+      [chain.chainId, chain.key, chain.name, chain.type, chain.gasTokenSymbol, chain.gasTokenAddress, chain.rpcUrl]
     );
   }
 }

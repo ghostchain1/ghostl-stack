@@ -52,10 +52,12 @@ async function main() {
   const MAX_PRIORITY_FEE_PER_GAS = process.env.DEPLOY_PRIORITY_FEE_PER_GAS
     ? BigInt(process.env.DEPLOY_PRIORITY_FEE_PER_GAS)
     : undefined;
+  const L3_GAS_PRICE = process.env.DEPLOY_L3_GAS_PRICE ? BigInt(process.env.DEPLOY_L3_GAS_PRICE) : undefined;
   const txOpts =
     MAX_FEE_PER_GAS !== undefined && MAX_PRIORITY_FEE_PER_GAS !== undefined
       ? { gasLimit: GAS_LIMIT, maxFeePerGas: MAX_FEE_PER_GAS, maxPriorityFeePerGas: MAX_PRIORITY_FEE_PER_GAS }
       : { gasLimit: GAS_LIMIT };
+  const l3TxOpts = L3_GAS_PRICE !== undefined ? { gasLimit: GAS_LIMIT, gasPrice: L3_GAS_PRICE } : txOpts;
   console.log(
     `Using GAS_LIMIT=${GAS_LIMIT.toString()} maxFeePerGas=${MAX_FEE_PER_GAS ?? "default"} priorityFee=${MAX_PRIORITY_FEE_PER_GAS ?? "default"}`
   );
@@ -163,6 +165,9 @@ async function main() {
   // - L3 batches posted to L2 (GhostL2)
   const l1Provider = new ethers.JsonRpcProvider(rpcL1);
   const l1Signer = new ethers.Wallet(relayerKey, l1Provider);
+  const l1Address = await l1Signer.getAddress();
+  let l1Nonce = await l1Provider.getTransactionCount(l1Address, "pending");
+  const nextL1Nonce = () => l1Nonce++;
 
   const Rollup = await ethers.getContractFactory("OptimisticRollup");
 
@@ -170,8 +175,8 @@ async function main() {
   const l1Rollup = await Rollup.connect(l1Signer).deploy(
     l2ChainId,
     challengePeriodSeconds,
-    await l1Signer.getAddress(),
-    txOpts
+    l1Address,
+    { ...txOpts, nonce: nextL1Nonce() }
   );
   await waitForDeployment(l1Rollup, l1Provider, "OptimisticRollup L2->L1");
   const l1RollupAddr = await l1Rollup.getAddress();
@@ -189,7 +194,7 @@ async function main() {
     constitutionGovernance,
     constitutionVerifierAgent,
     constitutionZkVerifier,
-    txOpts
+    { ...txOpts, nonce: nextL1Nonce() }
   );
   await waitForDeployment(constitution, l1Provider, "GhostConstitution");
   const constitutionAddr = await constitution.getAddress();
@@ -199,7 +204,10 @@ async function main() {
   console.log("== Deploy GhostNFT on L1 ==");
   const l1NftName = process.env.L1_NFT_NAME ?? "GhostChain NFT";
   const l1NftSymbol = process.env.L1_NFT_SYMBOL ?? "GL1NFT";
-  const l1Nft = await GhostNFT.connect(l1Signer).deploy(l1NftName, l1NftSymbol, txOpts);
+  const l1Nft = await GhostNFT.connect(l1Signer).deploy(l1NftName, l1NftSymbol, {
+    ...txOpts,
+    nonce: nextL1Nonce()
+  });
   await waitForDeployment(l1Nft, l1Provider, "GhostNFT L1");
   const l1NftAddr = await l1Nft.getAddress();
   await recordDeployment("l1", "GhostNFT", l1NftAddr, Number(l1Network.chainId));
@@ -219,7 +227,7 @@ async function main() {
 
   console.log("== Deploy L3Inbox on L3 ==");
   const Inbox = await ethers.getContractFactory("L3Inbox");
-  const inbox = await Inbox.connect(l3Signer).deploy(relayerAddr, txOpts);
+  const inbox = await Inbox.connect(l3Signer).deploy(relayerAddr, l3TxOpts);
   await waitForDeployment(inbox, l3Provider, "L3Inbox");
   const inboxAddr = await inbox.getAddress();
   await recordDeployment("l3", "L3Inbox", inboxAddr, l3ChainId);
@@ -227,7 +235,7 @@ async function main() {
 
   console.log("== Deploy L3BridgedTokenFactory on L3 ==");
   const Factory = await ethers.getContractFactory("L3BridgedTokenFactory");
-  const factory = await Factory.connect(l3Signer).deploy(relayerAddr, txOpts);
+  const factory = await Factory.connect(l3Signer).deploy(relayerAddr, l3TxOpts);
   await waitForDeployment(factory, l3Provider, "L3BridgedTokenFactory");
   const factoryAddr = await factory.getAddress();
   await recordDeployment("l3", "L3BridgedTokenFactory", factoryAddr, l3ChainId);
@@ -236,7 +244,7 @@ async function main() {
   console.log("== Deploy GhostNFT on L3 ==");
   const l3NftName = process.env.L3_NFT_NAME ?? "GhostL3 NFT";
   const l3NftSymbol = process.env.L3_NFT_SYMBOL ?? "GL3NFT";
-  const l3Nft = await GhostNFT.connect(l3Signer).deploy(l3NftName, l3NftSymbol, txOpts);
+  const l3Nft = await GhostNFT.connect(l3Signer).deploy(l3NftName, l3NftSymbol, l3TxOpts);
   await waitForDeployment(l3Nft, l3Provider, "GhostNFT L3");
   const l3NftAddr = await l3Nft.getAddress();
   await recordDeployment("l3", "GhostNFT", l3NftAddr, l3ChainId);
@@ -246,13 +254,19 @@ async function main() {
   let l3TokenAddr = "";
   if (l2TokenHasCode) {
     try {
-      const l2Token = await ethers.getContractAt("ERC20", l2TokenAddr, l2[0]);
+      const l2Token = await ethers.getContractAt("src/common/ERC20.sol:ERC20", l2TokenAddr, l2[0]);
       const l2Name = await l2Token.name();
       const l2Symbol = await l2Token.symbol();
       const l2Decimals = await l2Token.decimals();
       const l3Name = `${l2Name} (L3)`;
       const l3Symbol = `${l2Symbol}L3`;
-      const deployTokenTx = await factory.getOrDeployBridgedToken(l2TokenAddr, l3Name, l3Symbol, l2Decimals, txOpts);
+      const deployTokenTx = await factory.getOrDeployBridgedToken(
+        l2TokenAddr,
+        l3Name,
+        l3Symbol,
+        l2Decimals,
+        l3TxOpts
+      );
       const deployTokenRcpt = await deployTokenTx.wait();
       const deployed = deployTokenRcpt?.logs
         .map((l) => {
@@ -279,11 +293,27 @@ async function main() {
   const envPath = path.join(ROOT, "services/ghost-guard/.env");
   const env = [
     `PORT=7070`,
+    `RPC_L1=${rpcL1}`,
     `RPC_L2=${rpcL2Public}`,
     `RPC_L3=${rpcL3Public}`,
     `GUARD_POLICY_ADDRESS=${policyAddr}`,
     `BRIDGE_L2L3_ADDRESS=${bridgeAddr}`,
     `PRIVATE_KEY=`,
+    `AI_SIGNER_PRIVATE_KEY=`,
+    `AI_GUARDIAN_L1_ADDRESS=`,
+    `AI_GUARDIAN_L2_ADDRESS=`,
+    `AI_GUARDIAN_L3_ADDRESS=`,
+    `AI_CONSENSUS_MODE=enforce`,
+    `AI_CONSENSUS_FAIL_OPEN=0`,
+    `AI_MODEL_ID=GHOST_AI_CONSENSUS_V1`,
+    `AI_CONFIDENCE_BPS=9000`,
+    `AI_ATTEST_TTL_SECONDS=300`,
+    `AI_RISK_REVIEW_BPS=5000`,
+    `AI_RISK_BLOCK_BPS=8000`,
+    `AI_REVIEW_DELAY_SECONDS=60`,
+    `AI_WAIT_CONFIRMATIONS=0`,
+    `AI_DEFAULT_LAYER=l2`,
+    `AI_ROLE_LAYER_MAP=batcher:l1,proposer:l1`,
     `GRAPH_WINDOW_SECONDS=3600`,
     `ALERT_MIN_RISK=70`,
     `ADMIN_TOKEN=`,

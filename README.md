@@ -1,258 +1,253 @@
-# ghostl-stack (Codespaces)
+# 👻 GhostL‑Stack
 
-Brings up:
-- L1 (GhostChain): Ethereum-clone geth devnet (chainId 14000101) on :18545
-- GhostL2: Shibarium-clone (OP Stack L2 on GhostChain) on :18547 (forwarder) / :29547 (direct)
-- GhostL3: OP Stack L3 rollup on GhostL2 on :39545
-- Ghost Guard API on :7070
-- Ghost Relayer API on :7171
-- Prometheus on :9090
-- Grafana on :3000 (admin/admin)
+**GhostL‑Stack** is the canonical monorepo for the **GhostChain Sovereign Blockchain System** — a production‑grade, AI‑native, multi‑layer blockchain architecture consisting of:
 
-## Architecture (quick model)
-- GhostChain = Ethereum clone (L1 settlement layer)
-- GhostL2 = Shibarium clone (OP Stack L2 on GhostChain)
-- GhostL3 = OP Stack L3 on GhostL2
-- Full flow: `docs/ghostchain-architecture.md`
-- Diagram: `docs/ghostchain-architecture.mmd`
+* **GhostChain (L1)** — Ethereum‑compatible base chain
+* **GhostL2 (L2)** — OP‑Stack rollup anchored to GhostChain
+* **GhostL3 (L3)** — OP‑Stack rollup anchored to GhostL2
 
-## Repo layout
-- `apps/api`: Express API that fronts the service stubs.
-- `apps/web`: Next.js dashboard (App Router) that talks to `apps/api`.
-- `apps/worker`: background jobs/indexers/alerts scaffold.
-- `packages/types`, `packages/ui`: shared contracts and UI primitives.
-- `packages/sdk`: chain ops helper library (RPC/health/ops).
-- `packages/config`: shared config/schema presets placeholder.
-- `services/`: service stubs grouped by domain (see `services/README.md`).
-- `infra/`: docker/devcontainer scripts, OP Stack infra, and helper scripts.
-- `contracts/`: Solidity + Foundry artifacts.
-- `chains/`: Polygon Edge chain configs (data dirs are ignored).
-- `docs/`: architecture notes, deployment guides, and checklists (see `docs/README.md`).
-- `core-service/`, `dashboard/`: supporting Go service and command dashboard.
+This repository is designed to be **diff‑only evolvable**, **governance‑locked**, **AI‑assisted**, and **court / regulator‑ready**.
 
-## Docs & checklists
-- Docs index: `docs/README.md`
-- Dev + VS Code checklists: `docs/checklists/README.md`
-- Full-stack blueprint: `docs/ghostchain-management.md`
-- L3-on-L2 deployment checklist: `docs/opstack-l3-testnet-deployment-checklist.md`
+---
 
-## Environment
-- API: copy `apps/api/.env.example` to `apps/api/.env.local` (aligns with `apps/api/src/config/env.ts`).
-- Web: copy `apps/web/.env.example` to `apps/web/.env.local`.
-- OP Stack scripts still expect `infra/opstack/.env` and `infra/opstack/.env.l3` (see shortcuts below).
+## 🌌 High‑Level Architecture
 
-## OP Stack L3-on-L2 Testnet Checklist
+```
+┌───────────────────────────────────────────┐
+│                GhostChain L1              │
+│  (EVM, GHOST Gas, Governance, Treasury)   │
+└───────────────▲───────────────────────────┘
+                │ OptimismPortal / Oracles
+┌───────────────┴───────────────────────────┐
+│                GhostL2 (OP Stack)         │
+│  op-geth · op-node · batcher · proposer   │
+└───────────────▲───────────────────────────┘
+                │ L3 Output Oracle
+┌───────────────┴───────────────────────────┐
+│                GhostL3 (OP Stack)         │
+│  App‑specific execution & scaling layer   │
+└───────────────────────────────────────────┘
 
-Use the battle-tested deployment checklist (with preflight script) for GhostL3 → GhostL2 → GhostChain:
-- `docs/opstack-l3-testnet-deployment-checklist.md`
-- Shortcut commands:
-  - `npm run env:sync:opstack` to pull L1 deployment addresses into `infra/opstack/.env`
-  - `npm run env:sync:opstack:l3` to pull parent L2 deployment addresses into `infra/opstack/.env.l3` (if `config/l2-deployments.json` exists or you pass a path)
-  - `npm run preflight:opstack` to validate RPCs, chain IDs, oracles, portals, bridges, and data dirs
-  - `npm run opstack:check` to run env sync + preflight in one go
-- Optional: if you have a parent L2 deployment artifact for L3, sync it into `infra/opstack/.env.l3`:
-  - `bash infra/scripts/opstack/sync-env-from-l2-deployments.sh infra/opstack/.env.l3 /path/to/l2-deployments.json`
-  - Note: `config/l2-deployments.json` currently holds generated placeholder addresses—replace with real L2 deployment output before production/preflight.
-
-## Start
-```bash
-bash infra/scripts/up.sh
+Supporting Layers:
+- AI / Protocol Intelligence
+- Governance & Treasury
+- Compliance & Evidence
+- Observability (Prometheus/Grafana)
 ```
 
-## Start (PolyBFT L2 anchored on L1)
+---
 
-```bash
-bash infra/scripts/up_polybft.sh
+## 📁 Repository Layout
+
+```
+/home/ghost/ghostl-stack
+├── apps/                # User‑facing apps (Next.js, dashboards, explorers)
+├── services/            # Backend microservices (AI, governance, treasury, relayers)
+├── contracts/           # Solidity smart contracts (L1/L2/L3)
+├── infra/               # Docker, OP‑Stack, scripts, env management
+│   ├── opstack/
+│   ├── docker/
+│   ├── scripts/
+│   └── monitoring/
+├── packages/            # Shared SDKs, UI libs, config packages
+├── docs/                # Architecture, governance, whitepapers, evidence
+├── .codex/              # Codex automation inputs, logs, ratification blocks
+├── docker-compose.yml   # Canonical devnet composition
+└── README.md
 ```
 
-## Production-style health check
+---
 
-```bash
-bash infra/scripts/doctor.sh
+## ⛓️ Blockchain Layers
+
+### GhostChain (L1)
+
+* Ethereum‑compatible execution
+* **Canonical gas token:** GHOST (ERC‑20)
+* Custom governance (no OpenZeppelin Governor)
+* Treasury & slashing logic
+* Compliance‑aware hooks
+
+**Ghost Token (L1)**
+
+* Contract: `0x5FbDB2315678afecb367f032d93F642f64180aa3`
+* Symbol: `GHOST` (ERC‑20, 18 decimals)
+* Genesis mint: `1,000,000,000` GHOST to `0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266`
+* L2/L3 gas token: **GHOST** (L1 ERC‑20 address above)
+
+**Key contracts:**
+
+* `Governor.sol`
+* `ProposalExecutor.sol`
+* `FutureStack.sol`
+
+---
+
+### GhostL2 (OP Stack)
+
+* Uses `op-geth`, `op-node`, `op-batcher`, `op-proposer`
+* Anchored to GhostChain via OptimismPortal
+* OutputOracle verified during preflight
+* Uses GHOST as canonical gas
+
+Ports (default devnet):
+
+* L1 RPC: `18545`
+* L2 RPC: `29547`
+
+---
+
+### GhostL3 (OP Stack)
+
+* Anchored to GhostL2
+* Independent execution domain
+* App‑specific scaling & experimentation
+
+Ports:
+
+* L3 RPC: `39545`
+
+---
+
+## 🤖 AI & Protocol Intelligence
+
+GhostL‑Stack is **AI‑native by design**:
+
+* Transaction classification & risk scoring
+* Fraud detection & explainability (SHAP)
+* Gas optimization (Ghost Gas Engine)
+* Self‑healing automation (governance‑approved)
+* AI‑written proposals (human‑ratified)
+
+AI services live under:
+
+```
+/services/ai-*
+/services/protocol-intelligence
 ```
 
-## Ops maintenance (cleanup + diagrams + k8s blueprint)
+### AI Vault (Secrets Gateway)
 
-```bash
-# snapshot (config + runtime inventory)
-ops/scripts/snapshot.sh
+`ai-vault` is the policy-enforcing, AI-assisted Vault gateway that monitors and controls secret access.
 
-# cleanup plan (dry-run)
-ops/cleanup-agent/cleanup.sh --plan
+- Runs via `services/docker-compose.legacy.yml`
+- Services root path: `/home/ghost/ghostl-stack/services`
+- Mounted into the container read-only at `/services`
+- Container `SERVICES_ROOT` defaults to `/services`
+- Override host path with `SERVICES_ROOT` in `services/stack.env`
 
-# cleanup apply (requires explicit enforcement)
-GHOST_CLEANUP_ENFORCE=true ops/cleanup-agent/cleanup.sh --apply
+See `docs/ai-vault.md` for setup and policy details.
 
-# diagrams + k8s blueprint from the latest report
-ops/scripts/generate-diagrams.sh --report ops/reports/cleanup-report-<timestamp>.json
-ops/scripts/generate-k8s-blueprint.sh --report ops/reports/cleanup-report-<timestamp>.json
+---
+
+## 🏛️ Governance & Treasury
+
+* On‑chain proposal execution
+* Treasury ratification proposals
+* Formal invariants (math + Solidity)
+* Slashing tied to GHOST fees
+* Court‑ready cryptographic evidence packs
+
+Governance rules:
+
+* **Diff‑only evolution**
+* **No chain resets**
+* **Sequential service wiring**
+* **Fail‑fast preflight checks**
+
+---
+
+## 📊 Observability & Ops
+
+* Prometheus metrics across all layers
+* Grafana dashboards (auto‑imported)
+* Health checks & doctor scripts
+
+Key tools:
+
+* `infra/scripts/doctor.sh`
+* `infra/scripts/up.sh`
+* `infra/scripts/preflight:opstack`
+
+---
+
+## 🐳 Docker & Deployment
+
+* ARM64‑first (WSL2, GCP T2A)
+* Multi‑stage builds
+* One container per responsibility
+* Duplicate containers avoided by design
+
+Start devnet:
+
+```
+docker compose up -d
 ```
 
-## Create service keys (Guard/Relayer/Proposers)
+---
 
-This generates fresh private keys (saved only into ignored `.env` files), funds the addresses on L1/L2/L3 from the default dev account, and restarts services:
+## 🧪 Testing & Safety
 
-```bash
-bash infra/scripts/keys/init.sh
+* Hardhat + Foundry
+* Gas token enforcement tests
+* Chain‑ID uniqueness checks
+* Oracle bytecode verification
+
+Any failure:
+
+* STOP
+* FIX
+* CONTINUE ONLY AFTER SUCCESS
+
+---
+
+## 🧬 Codex Automation
+
+All major changes are driven via **Codex Final Evolution Prompts**:
+
+* Diff‑only execution
+* Governance‑locked steps
+* Ratification blocks
+* On‑chain notarization (planned)
+
+Location:
+
+```
+/.codex/
 ```
 
-## Optimistic Rollup (L2→L1, L3→L2)
+---
 
-During `bash infra/scripts/up.sh`, the deploy step generates:
-- `services/ghost-rollup-proposer/.env.l2` (posts L2 batches to L1)
-- `services/ghost-rollup-proposer/.env.l3` (posts L3 batches to L2)
+## 🌍 Environments
 
-This matches the dev architecture:
-- **L2 is “settled” on L1** via `OptimisticRollup` on Anvil
-- **L3 is “settled” on L2** via `OptimisticRollup` on GhostL2
+* Devnet (local Docker)
+* Testnet (GCP)
+* Mainnet (planned, governance‑locked)
 
-Set `PROPOSER_PRIVATE_KEY` in those env files to enable batch posting + finalization.
-Challengers are also generated:
-- `services/ghost-rollup-challenger/.env.l2` and `.env.l3` (optional)
+---
 
-## Ops UI
+## 🚀 Current Status
 
-- Ghost Guard UI: `http://localhost:7070/`
-- Relayer UI proxy: `http://localhost:7070/proxy/relayer-health`
-- Grafana: `http://localhost:3000/` (Prometheus is auto-provisioned)
-- Command dashboard: `cd dashboard && npm start` (devcontainer preloads `SAFE_CONTRACTS`, override with `SAFE_CONTRACTS=0xabc:Ops Safe,...` for real multisigs)
+* ✅ L1/L2/L3 built, wired, and tested
+* ✅ Canonical GHOST gas enforced
+* ✅ OP‑Stack preflight passing (L1/L2)
+* ⚠️ L3 OutputOracle wiring in progress
+* 🧠 AI services integrated (expanding)
 
-## Chains
+---
 
-Legacy Polygon Edge chain data lives under `chains/` and is initialized automatically by `infra/scripts/up.sh`.
-For the current OP Stack path, use `infra/opstack` and the GhostChain → GhostL2 → GhostL3 flow above.
+## 🧾 Philosophy
 
-### Premine a funded key (enforcement)
+GhostL‑Stack is not just a blockchain.
 
-If you want Ghost Guard / Relayer to send transactions, premine a wallet in `chains/l2/chain.json` (and optionally `chains/l3/chain.json`), then reset:
+It is a **sovereign protocol operating system** — auditable, evolvable, intelligent, and accountable.
 
-```bash
-cd contracts
-node -e "const {Wallet}=require('ethers'); const w=Wallet.createRandom(); console.log('ADDRESS=',w.address); console.log('PRIVATE_KEY=',w.privateKey);"
-cd ..
-bash infra/scripts/chains/premine.sh 0xYourAddress --l3
-bash infra/scripts/reset.sh
-bash infra/scripts/up.sh
-```
+> *"Code is law — but evidence is power."*
 
-## Demo (emit a deposit event)
+---
 
-```bash
-bash infra/scripts/demo-deposit.sh
-```
+## 📜 License
 
-## Demo (finalize last deposit)
+Proprietary / Governance‑controlled
 
-```bash
-bash infra/scripts/demo-finalize.sh
-```
-
-## Demo (relay to L3)
-
-```bash
-cd .devcontainer
-RELAYER_PRIVATE_KEY=0xac0974... docker compose up -d --force-recreate ghost-relayer
-cd ..
-bash infra/scripts/demo-relay.sh
-```
-
-## Demo (ERC20 bridge)
-
-```bash
-bash infra/scripts/demo-relay-erc20.sh
-```
-
-## Demo (optimistic L2->L1 -> L2 finalize -> L3 mint)
-
-```bash
-bash infra/scripts/demo-optimistic-erc20.sh
-```
-
-## Demo (ERC20 withdraw back to L2)
-
-```bash
-bash infra/scripts/demo-withdraw-erc20.sh
-```
-
-Notes:
-- `ghost-relayer` uses `RELAYER_PRIVATE_KEY` for L3 mints; for L2 releases it uses `L2_RELAYER_PRIVATE_KEY` if set, otherwise falls back to `RELAYER_PRIVATE_KEY`.
-
-## Relayer health
-
-```bash
-curl -sS http://localhost:7171/health
-```
-
-## Enable enforcement (optional)
-
-By default Ghost Guard runs in observe-only mode (no `PRIVATE_KEY`).
-
-```bash
-cd .devcontainer
-PRIVATE_KEY=... docker compose up -d --force-recreate ghost-guard
-```
-
-## Policy controls (requires enforcement)
-
-If `ADMIN_TOKEN` is set (recommended), add `-H 'x-admin-token: ...'` to write requests.
-
-```bash
-# allow / delay / pause
-curl -sS -X POST http://localhost:7070/policy/mode -H 'content-type: application/json' -H 'x-admin-token: ...' -d '{"mode":0}'
-
-# adjust risk threshold (0..100) to unblock high-risk deposits during demos
-curl -sS -X POST http://localhost:7070/policy/threshold -H 'content-type: application/json' -H 'x-admin-token: ...' -d '{"threshold":100}'
-
-# optional: set a fixed delay (seconds) before finalize
-curl -sS -X POST http://localhost:7070/policy/delay -H 'content-type: application/json' -H 'x-admin-token: ...' -d '{"seconds":30}'
-```
-
-## Allowlist / blocklist (optional)
-
-Set `ADMIN_TOKEN` when starting `ghost-guard` to protect all write endpoints (`/policy/*` and `/lists/*`), then:
-
-```bash
-curl -sS http://localhost:7070/lists
-curl -sS -X POST http://localhost:7070/lists/allow -H 'content-type: application/json' -H 'x-admin-token: ...' -d '{"address":"0x..."}'
-curl -sS -X POST http://localhost:7070/lists/block -H 'content-type: application/json' -H 'x-admin-token: ...' -d '{"address":"0x..."}'
-curl -sS -X POST http://localhost:7070/lists/remove -H 'content-type: application/json' -H 'x-admin-token: ...' -d '{"address":"0x..."}'
-```
-
-Lists are stored in a docker volume mounted at `/state` in the `ghost-guard` container.
-
-If you really want to run without auth locally, set `ALLOW_INSECURE_ADMIN=1` for `ghost-guard`.
-
-## Restart safety
-
-Both `ghost-guard` and `ghost-relayer` persist a block cursor in `/state/cursor.json` so they can resume after restarts.
-
-## Dev prerequisites
-
-- `docker` + Docker Compose
-- Node.js + npm
-- `git-lfs` (repo has an LFS `pre-push` hook; Codespaces installs it via devcontainer feature)
-  - If you hit the hook error locally: `bash infra/scripts/git_lfs_fix.sh`
-- Polygonscan verification (Polygon / Amoy):
-  - Set `POLYGONSCAN_API_KEY`, `POLYGON_RPC_URL` (mainnet) and/or `POLYGON_AMOY_RPC_URL`, plus `DEPLOYER_PRIVATE_KEY`.
-  - Example (mainnet): `cd contracts && POLYGONSCAN_API_KEY=... POLYGON_RPC_URL=... DEPLOYER_PRIVATE_KEY=... npx hardhat verify --network polygon 0xYourDeployedAddress`
-
-## Codespaces rebuild notes
-
-- Devcontainer pins Polygon Edge to `0xpolygon/polygon-edge:1.3.2` (latest tags can break chain data and health checks).
-- Git LFS is installed via a devcontainer feature; `infra/scripts/git_lfs_fix.sh` now supports both `apt` and `apk` if you run locally outside Codespaces.
-
-## Config files
-
-- `services/ghost-guard/.env` is generated by `contracts/scripts/deploy_all.ts` during `bash infra/scripts/up.sh`.
-- Use `services/ghost-guard/.env.example` as a template if you want to run Ghost Guard without running the deploy step.
-
-## Reset
-
-```bash
-bash infra/scripts/reset.sh
-```
-
-## Notes
-
-* Contracts deploy to GhostL2.
-* services/ghost-guard reads bridge events and can pause via GuardPolicy (requires PRIVATE_KEY).
+Unauthorized forks without ratification are invalid by definition.

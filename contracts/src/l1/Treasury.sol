@@ -19,6 +19,9 @@ contract Treasury is Governed {
 
     event WithdrawETH(address indexed to, uint256 amount);
     event WithdrawNative(address indexed to, uint256 amount);
+    event LegacyWithdrawalsFrozen(bool frozen);
+
+    bool public legacyWithdrawalsFrozen;
 
     constructor(IERC20Balance _native, address governor_, address timelock_) Governed(governor_, timelock_) {
         _enforceCanonical(address(_native));
@@ -45,8 +48,21 @@ contract Treasury is Governed {
     /// #if_succeeds {:msg "only owner withdraw native"} msg.sender == owner;
     /// #if_succeeds {:msg "native balance decreases"} native.balanceOf(address(this)) == old(native.balanceOf(address(this))) - amount;
     function withdrawNative(address to, uint256 amount) external onlyGovernance {
+        require(!legacyWithdrawalsFrozen, "legacy withdrawals frozen");
         require(native.transfer(to, amount), "transfer failed");
         emit WithdrawNative(to, amount);
+    }
+
+    function withdrawNativeAll(address to) external onlyGovernance {
+        require(!legacyWithdrawalsFrozen, "legacy withdrawals frozen");
+        uint256 balance = native.balanceOf(address(this));
+        require(native.transfer(to, balance), "transfer failed");
+        emit WithdrawNative(to, balance);
+    }
+
+    function setLegacyWithdrawalsFrozen(bool frozen) external onlyGovernance {
+        legacyWithdrawalsFrozen = frozen;
+        emit LegacyWithdrawalsFrozen(frozen);
     }
 
     function gasTokenAddress() external pure returns (address) {

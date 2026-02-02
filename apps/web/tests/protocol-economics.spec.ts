@@ -5,4 +5,5 @@ test('protocol economics shows gas tokens', async ({ page }) => {
   await expect(page.locator('text=Gas Tokens')).toBeVisible();
   await expect(page.locator('text=Validator Compliance')).toBeVisible();
   await expect(page.locator('text=GHOST')).toBeVisible();
+  await expect(page.locator('text=0x5FbD')).toBeVisible();
 });

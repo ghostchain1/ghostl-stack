@@ -45,16 +45,56 @@ async function main() {
 
     console.log(`[governance-only] token=${tokenAddress} delay=${delaySeconds}s`);
     const executor = await deploy<Deployable>("ProposalExecutor", [delaySeconds]);
-    const governor = await deploy<Deployable>("Governor", [tokenAddress, executor.getAddress()]);
+    const executorAddress = await executor.getAddress();
+    emitEnv("PROPOSAL_EXECUTOR", executorAddress);
+
+    const evidenceAnchor = await deploy<Deployable>("EvidenceAnchor", [ethers.ZeroAddress, ethers.ZeroAddress]);
+    const evidenceBundle = await deploy<Deployable>("EvidenceBundle", [
+      executorAddress,
+      ethers.ZeroAddress,
+      await evidenceAnchor.getAddress()
+    ]);
+    if ((evidenceAnchor as any).setGovernance) {
+      await (await (evidenceAnchor as any).setGovernance(await evidenceBundle.getAddress(), ethers.ZeroAddress)).wait();
+    }
+    const constitution = await deploy<Deployable>("GhostConstitution", [deployer.address, ethers.ZeroAddress, ethers.ZeroAddress]);
+    const constitutionalGuard = await deploy<Deployable>("ConstitutionalGuard", [
+      executorAddress,
+      ethers.ZeroAddress,
+      await constitution.getAddress()
+    ]);
+
+    await (await (executor as any).setEvidenceBundle(await evidenceBundle.getAddress())).wait();
+    await (await (executor as any).setConstitutionalGuard(await constitutionalGuard.getAddress())).wait();
+
+    emitEnv("EVIDENCE_ANCHOR", await evidenceAnchor.getAddress());
+    emitEnv("EVIDENCE_BUNDLE", await evidenceBundle.getAddress());
+    emitEnv("CONSTITUTION", await constitution.getAddress());
+    emitEnv("CONSTITUTIONAL_GUARD", await constitutionalGuard.getAddress());
+
+    const governor = await deploy<Deployable>("Governor", [tokenAddress, executorAddress]);
     const upgradeManager = await deploy<any>("UpgradeManager");
+    if (upgradeManager?.setEvidenceBundle) {
+      await (await upgradeManager.setEvidenceBundle(await evidenceBundle.getAddress())).wait();
+    }
+    if (upgradeManager?.setConstitutionalGuard) {
+      await (await upgradeManager.setConstitutionalGuard(await constitutionalGuard.getAddress())).wait();
+    }
+    if (upgradeManager?.setGovernance) {
+      await (await upgradeManager.setGovernance(executorAddress, ethers.ZeroAddress)).wait();
+    }
     if (upgradeManager?.transferOwnership) {
-      await (await upgradeManager.transferOwnership(await executor.getAddress())).wait();
+      await (await upgradeManager.transferOwnership(executorAddress)).wait();
       console.log(`UpgradeManager ownership transferred to ProposalExecutor`);
     }
 
     console.log("\nGovernance-only deployment complete.");
     console.log(`Governor: ${await governor.getAddress()}`);
-    console.log(`ProposalExecutor: ${await executor.getAddress()}`);
+    console.log(`ProposalExecutor: ${executorAddress}`);
+    console.log(`GhostConstitution: ${await constitution.getAddress()}`);
+    console.log(`ConstitutionalGuard: ${await constitutionalGuard.getAddress()}`);
+    console.log(`EvidenceAnchor: ${await evidenceAnchor.getAddress()}`);
+    console.log(`EvidenceBundle: ${await evidenceBundle.getAddress()}`);
     console.log(`UpgradeManager: ${await upgradeManager.getAddress()}`);
     return;
   }
