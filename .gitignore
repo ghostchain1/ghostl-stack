@@ -165,6 +165,7 @@ ops/zkml/model-proof.json
 ops/zkml/policy-update.json
 ops/zkml/learning-log.json
 ops/governance/enforcement-log.json
+ops/governance/ai-policy-proposal.json
 *.swp
 *.swo
 *.tmp

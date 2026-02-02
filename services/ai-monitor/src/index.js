@@ -1,5 +1,6 @@
 import express from "express";
 import client from "prom-client";
+import { Interface, ethers } from "ethers";
 
 const env = process.env;
 const registryUrl = env.RPC_REGISTRY_URL || "http://ghost-registry:8088/v1/endpoints";
@@ -18,6 +19,15 @@ const RPC_L1 = env.RPC_L1 || "";
 const OP_NODE_RPC_URL = env.OP_NODE_RPC_URL || "";
 const OP_BATCHER_METRICS_URL = env.OP_BATCHER_METRICS_URL || "";
 const OP_PROPOSER_METRICS_URL = env.OP_PROPOSER_METRICS_URL || "";
+const POLICY_REGISTRY_ADDRESS = env.POLICY_REGISTRY_ADDRESS || "";
+const POLICY_REGISTRY_RPC = env.POLICY_REGISTRY_RPC || RPC_L1 || "";
+const POLICY_ROLE = env.POLICY_ROLE || "L2_AI_MONITOR";
+const POLICY_ACTION_THROTTLE = env.POLICY_ACTION_THROTTLE || "L2_AI_THROTTLE";
+const POLICY_ACTION_PAUSE = env.POLICY_ACTION_PAUSE || "L2_AI_PAUSE";
+const POLICY_APPROVALS_PROVIDED = Math.max(0, Number(env.POLICY_APPROVALS_PROVIDED || 0));
+const POLICY_HAS_EVIDENCE = env.POLICY_HAS_EVIDENCE === "1";
+const POLICY_REQUIRED = env.POLICY_REQUIRED ? env.POLICY_REQUIRED === "1" : !OBSERVE_ONLY;
+const POLICY_CACHE_MS = Math.max(1000, Number(env.POLICY_CACHE_MS || 10000));
 const THROTTLE_THRESHOLD = Number(env.THROTTLE_THRESHOLD || 70);
 const PAUSE_THRESHOLD = Number(env.PAUSE_THRESHOLD || 90);
 const BASE_DELAY_MS = Number(env.BASE_DELAY_MS || 2000);
@@ -64,6 +74,11 @@ const incidentGauge = new client.Gauge({
   help: "Active incident flags by type",
   labelNames: ["type"]
 });
+const policyGauge = new client.Gauge({
+  name: "ai_monitor_policy_allowed",
+  help: "Policy registry allow/deny status by action",
+  labelNames: ["action"]
+});
 registry.registerMetric(riskGauge);
 registry.registerMetric(anomalyGauge);
 registry.registerMetric(congestionGauge);
@@ -74,8 +89,62 @@ registry.registerMetric(peerGauge);
 registry.registerMetric(syncingGauge);
 registry.registerMetric(reorgCounter);
 registry.registerMetric(incidentGauge);
+registry.registerMetric(policyGauge);
 
 const headers = ADMIN_TOKEN ? { "content-type": "application/json", "x-admin-token": ADMIN_TOKEN } : { "content-type": "application/json" };
+
+const policyIface = new Interface(["function canExecute(bytes32,bytes32,uint16,bool) view returns (bool)"]);
+const policyCache = new Map();
+
+const normalizePolicyId = (value, label) => {
+  if (!value) return null;
+  if (ethers.isHexString(value, 32)) return value;
+  try {
+    return ethers.id(value);
+  } catch (err) {
+    logEvent("warn", "policy_hash_error", { label, value, error: err?.message || String(err) });
+    return null;
+  }
+};
+
+const cachePolicyResult = (key, allowed) => {
+  policyCache.set(key, { allowed, expiresAt: Date.now() + POLICY_CACHE_MS });
+};
+
+const readPolicyCache = (key) => {
+  const entry = policyCache.get(key);
+  if (!entry) return null;
+  if (entry.expiresAt <= Date.now()) {
+    policyCache.delete(key);
+    return null;
+  }
+  return entry.allowed;
+};
+
+const policyAllows = async (actionValue) => {
+  if (!POLICY_REGISTRY_ADDRESS || !POLICY_REGISTRY_RPC) {
+    return POLICY_REQUIRED ? false : true;
+  }
+  const roleHash = normalizePolicyId(POLICY_ROLE, "role");
+  const actionHash = normalizePolicyId(actionValue, "action");
+  if (!roleHash || !actionHash) return POLICY_REQUIRED ? false : true;
+  const cacheKey = `${roleHash}:${actionHash}`;
+  const cached = readPolicyCache(cacheKey);
+  if (cached !== null) return cached;
+  const data = policyIface.encodeFunctionData("canExecute", [
+    roleHash,
+    actionHash,
+    POLICY_APPROVALS_PROVIDED,
+    POLICY_HAS_EVIDENCE
+  ]);
+  const result = await rpcRequest(POLICY_REGISTRY_RPC, "eth_call", [
+    { to: POLICY_REGISTRY_ADDRESS, data },
+    "latest"
+  ]);
+  const allowed = ethers.getBigInt(result) > 0n;
+  cachePolicyResult(cacheKey, allowed);
+  return allowed;
+};
 
 const fetchRegistry = async () => {
   const now = Date.now();
@@ -211,16 +280,18 @@ async function setDelay(seconds) {
   });
 }
 
-async function maybeAdjustPolicy(score, congestion) {
+async function maybeAdjustPolicy(score, congestion, policyAllowed) {
   actionGauge.set(0);
   if (score >= PAUSE_THRESHOLD) {
     // For now, use a high delay instead of hard pause to avoid mode flapping.
+    if (!policyAllowed.pause) return "none";
     const secs = Math.min(MAX_DELAY_MS / 1000, 10);
     await setDelay(secs);
     actionGauge.set(2);
     return "pause";
   }
   if (score >= THROTTLE_THRESHOLD || congestion >= THROTTLE_THRESHOLD) {
+    if (!policyAllowed.throttle) return "none";
     const factor = Math.min(1, Math.max(score, congestion) / 100);
     const delayMs = Math.min(MAX_DELAY_MS, Math.max(BASE_DELAY_MS, BASE_DELAY_MS * factor * 2));
     await setDelay(Math.round(delayMs / 1000));
@@ -228,7 +299,9 @@ async function maybeAdjustPolicy(score, congestion) {
     return "delay";
   }
   // Clear delay if low risk.
-  await setDelay(0);
+  if (policyAllowed.throttle) {
+    await setDelay(0);
+  }
   return "none";
 }
 
@@ -259,7 +332,9 @@ function classifyIncidents({
   batcherStalled,
   proposerStalled,
   batcherMetricsError,
-  proposerMetricsError
+  proposerMetricsError,
+  policyDenied,
+  policyUnavailable
 }) {
   const incidents = [];
   if (rpcError) incidents.push("l2_rpc_unreachable");
@@ -274,6 +349,8 @@ function classifyIncidents({
   if (proposerStalled) incidents.push("proposer_stalled");
   if (batcherMetricsError) incidents.push("batcher_metrics_unreachable");
   if (proposerMetricsError) incidents.push("proposer_metrics_unreachable");
+  if (policyUnavailable) incidents.push("policy_registry_unreachable");
+  if (policyDenied) incidents.push("policy_denied");
   return incidents;
 }
 
@@ -291,6 +368,8 @@ function recommendFix(incidents) {
   if (incidents.includes("proposer_stalled")) return "Restart op-proposer and verify proposer key/L1 RPC.";
   if (incidents.includes("batcher_metrics_unreachable")) return "Check op-batcher metrics endpoint or container health.";
   if (incidents.includes("proposer_metrics_unreachable")) return "Check op-proposer metrics endpoint or container health.";
+  if (incidents.includes("policy_registry_unreachable")) return "Check L1 policy registry RPC/address and network connectivity.";
+  if (incidents.includes("policy_denied")) return "AI action blocked by on-chain policy; submit governance proposal to adjust.";
   return "";
 }
 
@@ -307,6 +386,8 @@ async function loop() {
     let proposerStalled = false;
     let batcherMetricsError = false;
     let proposerMetricsError = false;
+    let policyDenied = false;
+    let policyUnavailable = false;
     if (simulation?.active) {
       latestBlock = simulation.latestBlock;
       peersRaw = simulation.peersRaw ?? "0x0";
@@ -410,6 +491,24 @@ async function loop() {
     const risk = Math.min(100, Math.max(congestionRisk, anomaly));
     riskGauge.set(risk);
     congestionGauge.set(congestion);
+    let policyAllowed = { throttle: true, pause: true };
+    if (!OBSERVE_ONLY && (POLICY_REQUIRED || POLICY_REGISTRY_ADDRESS)) {
+      try {
+        const [throttleAllowed, pauseAllowed] = await Promise.all([
+          policyAllows(POLICY_ACTION_THROTTLE),
+          policyAllows(POLICY_ACTION_PAUSE)
+        ]);
+        policyAllowed = { throttle: throttleAllowed, pause: pauseAllowed };
+        if (!throttleAllowed || !pauseAllowed) policyDenied = true;
+      } catch (err) {
+        policyUnavailable = true;
+        policyAllowed = { throttle: !POLICY_REQUIRED, pause: !POLICY_REQUIRED };
+        logEvent("warn", "policy_check_failed", { error: err?.message || String(err) });
+      }
+    }
+    policyGauge.labels("throttle").set(policyAllowed.throttle ? 1 : 0);
+    policyGauge.labels("pause").set(policyAllowed.pause ? 1 : 0);
+
     const incidents = classifyIncidents({
       syncing: syncing && syncing !== false,
       headLag,
@@ -422,11 +521,13 @@ async function loop() {
       batcherStalled,
       proposerStalled,
       batcherMetricsError,
-      proposerMetricsError
+      proposerMetricsError,
+      policyDenied,
+      policyUnavailable
     });
     incidentGauge.reset();
     incidents.forEach((type) => incidentGauge.labels(type).set(1));
-    const action = await maybeAdjustPolicy(risk, congestion);
+    const action = await maybeAdjustPolicy(risk, congestion, policyAllowed);
     const recommendedAction = action === "pause" ? "throttle_hard" : action === "delay" ? "throttle" : "observe";
     const recommendedFix = recommendFix(incidents);
     lastStatus = {
@@ -444,7 +545,15 @@ async function loop() {
       batcherStalled,
       proposerStalled,
       l1RpcError,
-      opNodeError
+      opNodeError,
+      policy: {
+        required: POLICY_REQUIRED,
+        registry: POLICY_REGISTRY_ADDRESS || null,
+        role: POLICY_ROLE,
+        throttleAllowed: policyAllowed.throttle,
+        pauseAllowed: policyAllowed.pause,
+        lastCheckAt: new Date().toISOString()
+      }
     };
     if (incidents.length) {
       logEvent("warn", "incidents_detected", { incidents, risk, anomaly, congestion, action: recommendedAction });
@@ -477,7 +586,9 @@ app.get("/health", (_req, res) => {
     guard: GUARD_URL,
     observeOnly: OBSERVE_ONLY,
     layer: TARGET_LAYER,
-    rpcOverride: Boolean(rpcOverride)
+    rpcOverride: Boolean(rpcOverride),
+    policyRegistry: POLICY_REGISTRY_ADDRESS || null,
+    policyRequired: POLICY_REQUIRED
   });
 });
 

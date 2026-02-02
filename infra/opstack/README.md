@@ -24,6 +24,7 @@ cp infra/opstack/.env.secrets.sample infra/opstack/.env.secrets   # keys; do not
 bash infra/scripts/opstack/keys/init.sh                           # regenerates keys/addresses
 bash infra/scripts/env-sync-l2.sh                                 # renders infra/opstack/.env
 # Optional: point GATE_GUARD_URL at your Ghost Guard instance (default host:7070).
+# Optional: set POLICY_REGISTRY_ADDRESS and POLICY_ROLE to enable governance-locked AI actions.
 
 # Optional: validate bind-mount paths before boot
 bash infra/scripts/opstack/validate-mounts.sh l2
@@ -73,6 +74,7 @@ bash infra/scripts/opstack/reset.sh
 - Set `TRANSFER_ADMIN_TO_GOVERNOR=true` to hand execution-layer configs (consensus/chain/genesis/execution) to governance after deploy.
 - Optional: `SECURITY_CHECKPOINTS=1 bash infra/scripts/opstack/deploy.sh` runs Foundry + Slither checks before deploying contracts.
 - For AI economics + governance dashboards, run `services/ghost-gas-engine` (metrics on `:3210`) and keep `ai-monitor` enabled. Prometheus scrapes both by default.
+- If `AI_MONITOR_OBSERVE_ONLY=0`, set `POLICY_REGISTRY_ADDRESS` to the L1 `AgentGovernancePolicy` registry. The L2 doctor will fail closed without it.
 - Set `BRIDGE_L2L3_ADDRESS`, `L2_OUTPUT_ORACLE_ADDRESS`, and `L3_OUTPUT_ORACLE_ADDRESS` in `.env` to enable bridge/oracle telemetry.
 
 ## Canonical gas token (L1/L2/L3)

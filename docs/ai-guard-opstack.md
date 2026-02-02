@@ -18,7 +18,8 @@
    - **Pause finalization**: proposer checks Guard mode before finalize; skip when paused.
    - **Adaptive thresholds**: raise/lower Guard risk threshold based on congestion/backlog.
 4) Contracts (future)
-   - On-chain policy registry for batcher/proposer to read (optional).
+   - On-chain policy registry (L1 `AgentGovernancePolicy`) required for AI actions.
+   - AI monitor only executes tier-1 actions when policy allows.
    - Multisig/AI co-sign for high-risk finalize (optional).
 
 ## Minimal Hook Changes
@@ -37,6 +38,7 @@
   - `GUARD_DELAY_MAX_SEC`, `GUARD_PAUSE_MODE`
 - Guard/AI:
   - `OBSERVE_ONLY=0` to allow actions.
+  - `POLICY_REGISTRY_ADDRESS`, `POLICY_ROLE`, `POLICY_ACTION_THROTTLE`, `POLICY_ACTION_PAUSE`
   - Thresholds: `THROTTLE_THRESHOLD`, `PAUSE_THRESHOLD`, `BASE_DELAY_MS`, `MAX_DELAY_MS`.
 
 ## Rollout Steps
