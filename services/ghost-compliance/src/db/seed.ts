@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import path from 'path';
-import { pool } from './index';
+import { closeDb, pool } from './index';
 import { parsePolicyBundle } from '../engine/parser';
 import { evaluatePolicy } from '../engine/evaluator';
 import { buildAttestation } from '../attest/attestation';
@@ -172,7 +172,7 @@ const run = async () => {
     );
   }
 
-  await pool.end();
+  await closeDb();
 };
 
 const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');

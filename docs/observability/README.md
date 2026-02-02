@@ -14,4 +14,5 @@ Contents:
 UI:
 - /observability/logs in apps/web provides the interactive console.
 - /observability/logs/api in apps/api serves query, stream, aggregate, incidents, insights, and metrics endpoints.
- - observability/infra/docker-compose.yml is a standalone observability stack.
+- observability/infra/docker-compose.yml is a standalone observability stack.
+- Grafana dashboards live in `observability/infra/grafana/dashboards/` (including `ghostchain-l1-health.json`).

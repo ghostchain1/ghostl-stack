@@ -7,7 +7,7 @@ GhostChain is an Ethereum-compatible L1. GhostL2 is a Shibarium-style OP Stack L
 ### GhostChain (L1, Ethereum clone)
 - Geth PoA devnet (chainId `14000101`) and final settlement layer.
 - Hosts OP Stack L1 contracts for GhostL2 (SystemConfig, OptimismPortal, bridges, L2OutputOracle or DisputeGameFactory).
-- Native gas asset is branded as GhostToken (`GTK`).
+- Native gas asset is GHOST (ERC‑20) on L1.
 
 ### GhostL2 (L2, Shibarium clone)
 - OP Stack rollup on GhostChain (sequencer in `op-node`, execution in `l2-geth`).
@@ -19,6 +19,12 @@ GhostChain is an Ethereum-compatible L1. GhostL2 is a Shibarium-style OP Stack L
 - OP Stack L3 (separate `op-node` + `l3-geth`).
 - Batcher posts L3 data to GhostL2; proposer posts outputs or dispute games to GhostL2.
 - Optional ERC20 gas token configured via `SystemConfig` (deployed on GhostL2).
+
+Canonical gas token (L1 ERC‑20):
+- Contract: `0x5FbDB2315678afecb367f032d93F642f64180aa3`
+- Symbol: `GHOST`
+- Genesis mint: `1,000,000,000` GHOST to `0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266`
+- L2/L3 gas token source: L1 ERC‑20 address above
 
 ## Sequencers and tx pools
 - Each layer has its own sequencer and txpool; they do not share state.

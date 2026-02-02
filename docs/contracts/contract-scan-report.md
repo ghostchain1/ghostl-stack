@@ -27,6 +27,12 @@
 - No contract changes; no storage collisions or OP Stack breakage introduced.
 - Gas token configuration unchanged by this task.
 
+Canonical gas token (L1 ERC‑20):
+- Contract: `0x5FbDB2315678afecb367f032d93F642f64180aa3`
+- Symbol: `GHOST`
+- Genesis mint: `1,000,000,000` GHOST to `0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266`
+- L2/L3 gas token source: L1 ERC‑20 address above
+
 ## AI Optimization
 - Not applicable (no new contracts).
 

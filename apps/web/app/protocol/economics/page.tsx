@@ -1,4 +1,5 @@
 import { DataFetchErrorCard } from '../../../src/components/DataFetchErrorCard';
+import { CopyButton } from '../../../src/components/CopyButton';
 import type { ApiError } from '../../../src/lib/api';
 import { fetchPil, chainsResponseSchema, metricsSummarySchema, validatorScoresResponseSchema } from '../../../src/lib/pil-client';
 
@@ -19,6 +20,10 @@ export default async function ProtocolEconomicsPage() {
   if (!validatorsRes.ok) {
     errors.push({ title: 'Validator scores', error: { ...validatorsRes.error, endpoint: '/v1/validators/scores', method: 'GET' } });
   }
+  const formatAddress = (value?: string) => {
+    if (!value) return 'n/a';
+    return `${value.slice(0, 6)}…${value.slice(-4)}`;
+  };
 
   return (
     <div className="content">
@@ -42,6 +47,7 @@ export default async function ProtocolEconomicsPage() {
                   <th>Chain</th>
                   <th>Type</th>
                   <th>Gas Token</th>
+                  <th>Gas Token Address</th>
                   <th>Latest Block</th>
                 </tr>
               </thead>
@@ -52,12 +58,18 @@ export default async function ProtocolEconomicsPage() {
                       <td>{chain.name}</td>
                       <td>{chain.type}</td>
                       <td>{chain.gasTokenSymbol}</td>
+                      <td className="mono" title={chain.gasTokenAddress || ''}>
+                        <span className="row" style={{ alignItems: 'center', gap: 8 }}>
+                          <span>{formatAddress(chain.gasTokenAddress)}</span>
+                          {chain.gasTokenAddress && <CopyButton value={chain.gasTokenAddress} />}
+                        </span>
+                      </td>
                       <td className="mono">{chain.lastBlockNumber || 'n/a'}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="muted">No chain data available.</td>
+                    <td colSpan={5} className="muted">No chain data available.</td>
                   </tr>
                 )}
               </tbody>

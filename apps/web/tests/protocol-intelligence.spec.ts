@@ -5,4 +5,5 @@ test('protocol intelligence shows chains and ingest', async ({ page }) => {
   await expect(page.locator('text=Protocol Intelligence Overview')).toBeVisible();
   await expect(page.locator('text=GhostChain')).toBeVisible();
   await expect(page.locator('text=Ingest Configuration')).toBeVisible();
+  await expect(page.locator('text=0x5FbD')).toBeVisible();
 });

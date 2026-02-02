@@ -37,16 +37,17 @@ const toTimestamp = (hex?: string | null) => {
 
 const ensureChain = async (chain: ChainConfig) => {
   await pool.query(
-    `INSERT INTO pil_chains (chain_id, chain_key, name, type, gas_token_symbol, rpc_url_ref)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO pil_chains (chain_id, chain_key, name, type, gas_token_symbol, gas_token_address, rpc_url_ref)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      ON CONFLICT (chain_id) DO UPDATE
      SET chain_key = EXCLUDED.chain_key,
          name = EXCLUDED.name,
          type = EXCLUDED.type,
          gas_token_symbol = EXCLUDED.gas_token_symbol,
+         gas_token_address = EXCLUDED.gas_token_address,
          rpc_url_ref = EXCLUDED.rpc_url_ref,
          updated_at = NOW()` ,
-    [chain.chainId, chain.key, chain.name, chain.type, chain.gasTokenSymbol, chain.rpcUrl]
+    [chain.chainId, chain.key, chain.name, chain.type, chain.gasTokenSymbol, chain.gasTokenAddress, chain.rpcUrl]
   );
 };
 

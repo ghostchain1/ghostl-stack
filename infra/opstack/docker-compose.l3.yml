@@ -12,8 +12,8 @@ x-security: &default-security
 
 services:
   l3-geth:
-    image: ghcr.io/ethereum-optimism/op-geth@sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0
-    user: 1000:1000
+    image: local/op-geth:${OPSTACK_IMAGE_TAG:-local}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     restart: unless-stopped
     logging: *default-logging
     depends_on:
@@ -63,7 +63,7 @@ services:
     cpus: "2.0"
 
   l3-op-node:
-    image: ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b
+    image: local/op-node:${OPSTACK_IMAGE_TAG:-local}
     restart: unless-stopped
     logging: *default-logging
     depends_on:
@@ -106,18 +106,20 @@ services:
     cpus: "1.5"
 
   l3-op-batcher:
-    image: ghcr.io/ethereum-optimism/op-batcher@sha256:21a2426a292a0d1b6c3665c9e07549df97d98e40edda6c880d34e22aefe279d2
+    image: local/op-batcher:${OPSTACK_IMAGE_TAG:-local}
     user: "1000:1000"
     restart: unless-stopped
     logging: *default-logging
     depends_on:
       l3-op-node:
         condition: service_healthy
+      op-gate:
+        condition: service_healthy
     environment:
       L2OO_ADDRESS: "${L3_L2OO_ADDRESS:-0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512}"
     command:
       - op-batcher
-      - --l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}
+      - --l1-eth-rpc=${L3_L1_RPC:-http://op-gate:8545}
       - --l2-eth-rpc=http://l3-geth:8545
       - --rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}
       - --private-key=${L3_BATCHER_KEY:-${BATCHER_KEY}}
@@ -144,16 +146,18 @@ services:
     cpus: "1.0"
 
   l3-op-proposer:
-    image: ghcr.io/ethereum-optimism/op-proposer@sha256:00590e36e37994eefd8bbc9a6498ad20c62b072b381d0b8cdb7293056e6e5b64
+    image: local/op-proposer:${OPSTACK_IMAGE_TAG:-local}
     user: "1000:1000"
     restart: unless-stopped
     logging: *default-logging
     depends_on:
       l3-op-node:
         condition: service_healthy
+      op-gate:
+        condition: service_healthy
     command:
       - op-proposer
-      - --l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}
+      - --l1-eth-rpc=${L3_L1_RPC:-http://op-gate:8545}
       - --rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}
       - --game-factory-address=${L3_GAME_FACTORY_ADDRESS:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}
       - --proposal-interval=30s

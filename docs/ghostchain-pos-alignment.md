@@ -41,6 +41,12 @@ Practical spec for GhostChain L1 PoS (BFT) and how to compose finality with **OP
 - L2 output cadence: 5 minutes
 - L3 output cadence: 2 minutes; challenge window: 1–7 days (env-tuned)
 
+Canonical gas token (L1 ERC‑20):
+- Contract: `0x5FbDB2315678afecb367f032d93F642f64180aa3`
+- Symbol: `GHOST`
+- Genesis mint: `1,000,000,000` GHOST to `0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266`
+- L2/L3 gas token source: L1 ERC‑20 address above
+
 ### Message flows (happy path)
 - **L2 output:** Sequencer/batcher post batches to L1 → proposer posts output root to `OutputOracle` → if unchallenged for window, `FinalizationManager` finalizes.
 - **L3 batch:** Sequencer posts batches to L2 → proposer posts output root to `OutputOracle` → if unchallenged for window, `FinalizationManager` finalizes; otherwise require clean dispute result.

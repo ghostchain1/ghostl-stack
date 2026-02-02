@@ -6,6 +6,7 @@ const PORT = Number(process.env.PORT || 7628);
 const PROM_URL = process.env.PROM_URL || "http://localhost:9090";
 const APPROVAL_TOKEN = process.env.EXECUTION_APPROVAL_TOKEN || "";
 const APPROVAL_FILE = process.env.TREASURY_STATE_FILE || path.join(process.cwd(), "data", "treasury-proposals.json");
+const OBSERVABILITY_FILE = process.env.TREASURY_OBSERVABILITY_FILE || path.join(process.cwd(), "data", "treasury-observability.json");
 
 const app = express();
 app.use(express.json());
@@ -34,6 +35,60 @@ app.get("/treasury", async (_req, res) => {
   } catch (e) {
     res.status(500).json({ ok: false, error: e?.message || String(e) });
   }
+});
+
+const loadObservability = () => {
+  try {
+    const raw = fs.readFileSync(OBSERVABILITY_FILE, "utf-8");
+    return JSON.parse(raw);
+  } catch {
+    return {
+      healthScore: 0.5,
+      runwayDays: 0,
+      riskPosture: "unknown",
+      policyCompliance: false,
+      proposalHistory: [],
+      rebalancingHistory: [],
+      federationTreaties: []
+    };
+  }
+};
+
+app.get("/treasury/overview", (_req, res) => {
+  const data = loadObservability();
+  res.json({ ok: true, ...data });
+});
+
+app.get("/treasury/proposals", (_req, res) => {
+  const data = loadObservability();
+  res.json({ ok: true, proposals: data.proposalHistory || [] });
+});
+
+app.get("/treasury/rebalances", (_req, res) => {
+  const data = loadObservability();
+  res.json({ ok: true, rebalances: data.rebalancingHistory || [] });
+});
+
+app.get("/treasury/federation", (_req, res) => {
+  const data = loadObservability();
+  res.json({ ok: true, treaties: data.federationTreaties || [] });
+});
+
+app.get("/metrics", (_req, res) => {
+  const data = loadObservability();
+  const health = Number(data.healthScore || 0);
+  const runway = Number(data.runwayDays || 0);
+  const risk = typeof data.riskScore === "number" ? data.riskScore : 0;
+  const compliance = data.policyCompliance ? 1 : 0;
+  res.type("text/plain");
+  res.send(
+    [
+      `treasury_health_score ${health}`,
+      `treasury_runway_days ${runway}`,
+      `treasury_risk_score ${risk}`,
+      `treasury_policy_compliance ${compliance}`
+    ].join("\n")
+  );
 });
 
 const loadApprovals = () => {
