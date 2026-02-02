@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ ! -d .git ]; then
+  echo "git-safe must run from a repo root" >&2
+  exit 1
+fi
+
+LOCK_FILE=".git/index.lock"
+
+if [ -f "$LOCK_FILE" ]; then
+  # Only remove the lock if no git process is active for this repo.
+  if pgrep -f "git.*$(pwd)" >/dev/null 2>&1; then
+    echo "git-safe: index.lock exists and git process is active; refusing to remove" >&2
+    exit 1
+  fi
+  echo "git-safe: removing stale $LOCK_FILE"
+  rm -f "$LOCK_FILE"
+fi
+
+exec git "$@"

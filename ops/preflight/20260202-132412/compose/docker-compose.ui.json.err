@@ -1,0 +1,1 @@
+service "ghost-ui" depends on undefined service "ghost-compliance": invalid compose project

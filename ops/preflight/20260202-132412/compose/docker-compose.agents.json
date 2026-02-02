@@ -1,0 +1,324 @@
+{
+  "name": "ghostchain-agents",
+  "networks": {
+    "default": {
+      "name": "ghostchain-agents_default",
+      "ipam": {}
+    }
+  },
+  "services": {
+    "agent-registry": {
+      "build": {
+        "context": "/home/ghost/ghostl-stack/services/agent-registry-service",
+        "dockerfile": "Dockerfile"
+      },
+      "command": null,
+      "entrypoint": null,
+      "environment": {
+        "AGENT_HEARTBEAT_STORE": "/data/agent-heartbeats.json",
+        "AGENT_POLICY_CONTRACT": "0x5eb3Bc0a489C5A8288765d2336659EbCA68FCd00",
+        "AGENT_POLICY_RPC_URL": "http://host.docker.internal:28545",
+        "AGENT_POLICY_STORE": "/data/agent-policy.json",
+        "AGENT_REGISTRY_CONTRACT": "0x36C02dA8a0983159322a80FFE9F24b1acfF8B570",
+        "AGENT_REGISTRY_RPC_URL": "http://host.docker.internal:28545",
+        "AGENT_REGISTRY_STORE": "/data/agent-registry.json",
+        "PORT": "7701"
+      },
+      "extra_hosts": [
+        "host.docker.internal=host-gateway"
+      ],
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 7701,
+          "published": "7701",
+          "protocol": "tcp"
+        }
+      ],
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "agent_registry_data",
+          "target": "/data",
+          "volume": {}
+        }
+      ]
+    },
+    "auditor-agent": {
+      "build": {
+        "context": "/home/ghost/ghostl-stack/services/agent-node",
+        "dockerfile": "Dockerfile"
+      },
+      "command": null,
+      "depends_on": {
+        "agent-registry": {
+          "condition": "service_started",
+          "required": true
+        },
+        "evidence-service": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "entrypoint": null,
+      "environment": {
+        "AGENT_ID": "auditor-1",
+        "AGENT_REGISTRY_URL": "http://agent-registry:7701",
+        "AGENT_ROLE": "auditor",
+        "EVIDENCE_URL": "http://evidence-service:7641",
+        "GOVERNANCE_POLICY_REQUIRED": "true",
+        "PORT": "7702"
+      },
+      "networks": {
+        "default": null
+      }
+    },
+    "coder-agent": {
+      "build": {
+        "context": "/home/ghost/ghostl-stack/services/agent-node",
+        "dockerfile": "Dockerfile"
+      },
+      "command": null,
+      "depends_on": {
+        "agent-registry": {
+          "condition": "service_started",
+          "required": true
+        },
+        "evidence-service": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "entrypoint": null,
+      "environment": {
+        "AGENT_ID": "coder-1",
+        "AGENT_REGISTRY_URL": "http://agent-registry:7701",
+        "AGENT_ROLE": "coder",
+        "EVIDENCE_URL": "http://evidence-service:7641",
+        "GOVERNANCE_POLICY_REQUIRED": "true",
+        "PORT": "7702"
+      },
+      "networks": {
+        "default": null
+      }
+    },
+    "docs-agent": {
+      "build": {
+        "context": "/home/ghost/ghostl-stack/services/agent-node",
+        "dockerfile": "Dockerfile"
+      },
+      "command": null,
+      "depends_on": {
+        "agent-registry": {
+          "condition": "service_started",
+          "required": true
+        },
+        "evidence-service": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "entrypoint": null,
+      "environment": {
+        "AGENT_ID": "docs-1",
+        "AGENT_REGISTRY_URL": "http://agent-registry:7701",
+        "AGENT_ROLE": "docs",
+        "EVIDENCE_URL": "http://evidence-service:7641",
+        "GOVERNANCE_POLICY_REQUIRED": "true",
+        "PORT": "7702"
+      },
+      "networks": {
+        "default": null
+      }
+    },
+    "evidence-service": {
+      "build": {
+        "context": "/home/ghost/ghostl-stack/services/audit-log-service",
+        "dockerfile": "Dockerfile"
+      },
+      "command": null,
+      "entrypoint": null,
+      "environment": {
+        "AUDIT_LOG_PATH": "/data/agent-evidence.log",
+        "PORT": "7641"
+      },
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 7641,
+          "published": "7641",
+          "protocol": "tcp"
+        }
+      ],
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "evidence_data",
+          "target": "/data",
+          "volume": {}
+        }
+      ]
+    },
+    "governance-service": {
+      "build": {
+        "context": "/home/ghost/ghostl-stack/services/governance-service",
+        "dockerfile": "Dockerfile"
+      },
+      "command": null,
+      "entrypoint": null,
+      "environment": {
+        "EXECUTOR_ADDRESS": "0x84eA74d481Ee0A5332c457a4d796187F6Ba67fEB",
+        "GOVERNANCE_LAYER": "L1",
+        "GOVERNOR_ADDRESS": "0x70e0bA845a1A0F2DA3359C97E0285013525FFC49",
+        "PORT": "7645",
+        "RPC_L1": "http://host.docker.internal:28545"
+      },
+      "extra_hosts": [
+        "host.docker.internal=host-gateway"
+      ],
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 7645,
+          "published": "7645",
+          "protocol": "tcp"
+        }
+      ]
+    },
+    "ops-agent": {
+      "build": {
+        "context": "/home/ghost/ghostl-stack/services/agent-node",
+        "dockerfile": "Dockerfile"
+      },
+      "command": null,
+      "depends_on": {
+        "agent-registry": {
+          "condition": "service_started",
+          "required": true
+        },
+        "evidence-service": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "entrypoint": null,
+      "environment": {
+        "AGENT_ID": "ops-1",
+        "AGENT_REGISTRY_URL": "http://agent-registry:7701",
+        "AGENT_ROLE": "ops",
+        "EVIDENCE_URL": "http://evidence-service:7641",
+        "GOVERNANCE_POLICY_REQUIRED": "true",
+        "PORT": "7702"
+      },
+      "networks": {
+        "default": null
+      }
+    },
+    "planner-agent": {
+      "build": {
+        "context": "/home/ghost/ghostl-stack/services/agent-node",
+        "dockerfile": "Dockerfile"
+      },
+      "command": null,
+      "depends_on": {
+        "agent-registry": {
+          "condition": "service_started",
+          "required": true
+        },
+        "evidence-service": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "entrypoint": null,
+      "environment": {
+        "AGENT_ID": "planner-1",
+        "AGENT_REGISTRY_URL": "http://agent-registry:7701",
+        "AGENT_ROLE": "planner",
+        "EVIDENCE_URL": "http://evidence-service:7641",
+        "GOVERNANCE_POLICY_REQUIRED": "true",
+        "PORT": "7702"
+      },
+      "networks": {
+        "default": null
+      }
+    },
+    "router-agent": {
+      "build": {
+        "context": "/home/ghost/ghostl-stack/services/agent-node",
+        "dockerfile": "Dockerfile"
+      },
+      "command": null,
+      "depends_on": {
+        "agent-registry": {
+          "condition": "service_started",
+          "required": true
+        },
+        "evidence-service": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "entrypoint": null,
+      "environment": {
+        "AGENT_ID": "router-1",
+        "AGENT_REGISTRY_URL": "http://agent-registry:7701",
+        "AGENT_ROLE": "router",
+        "EVIDENCE_URL": "http://evidence-service:7641",
+        "GOVERNANCE_POLICY_REQUIRED": "true",
+        "PORT": "7702"
+      },
+      "networks": {
+        "default": null
+      }
+    },
+    "watchdog-agent": {
+      "build": {
+        "context": "/home/ghost/ghostl-stack/services/agent-node",
+        "dockerfile": "Dockerfile"
+      },
+      "command": null,
+      "depends_on": {
+        "agent-registry": {
+          "condition": "service_started",
+          "required": true
+        },
+        "evidence-service": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "entrypoint": null,
+      "environment": {
+        "AGENT_ID": "watchdog-1",
+        "AGENT_REGISTRY_URL": "http://agent-registry:7701",
+        "AGENT_ROLE": "watchdog",
+        "EVIDENCE_URL": "http://evidence-service:7641",
+        "GOVERNANCE_POLICY_REQUIRED": "true",
+        "PORT": "7702",
+        "WATCHDOG_INTERVAL_MS": "15000",
+        "WATCHDOG_TARGETS": "http://router-agent:7702/health, http://planner-agent:7702/health, http://coder-agent:7702/health, http://auditor-agent:7702/health, http://docs-agent:7702/health, http://ops-agent:7702/health"
+      },
+      "networks": {
+        "default": null
+      }
+    }
+  },
+  "volumes": {
+    "agent_registry_data": {
+      "name": "ghostchain-agents_agent_registry_data"
+    },
+    "evidence_data": {
+      "name": "ghostchain-agents_evidence_data"
+    }
+  }
+}

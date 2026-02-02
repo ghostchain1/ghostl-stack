@@ -1,0 +1,47 @@
+version: '3.9'
+services:
+  ghostscout-db:
+    container_name: ghost_ghostscout-db
+    image: postgres:16-alpine
+    build:
+      context: .
+    env_file:
+    - .env
+    entrypoint:
+    - /bin/bash
+    - /entrypoint.sh
+    command:
+    - postgres
+    - -c
+    - max_connections=200
+    environment:
+      POSTGRES_USER: ghostscout
+      POSTGRES_PASSWORD: ${GHOSTSCOUT_DB_PASSWORD:-ghostpass}
+      POSTGRES_DB: ghostscout_l1
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4g
+        reservations:
+          cpus: '0.5'
+          memory: 512m
+    volumes:
+    - ./data:/var/lib/postgresql/data
+    - ./data:/docker-entrypoint-initdb.d/create_dbs.sql:ro
+    - ./data:/data
+    networks:
+    - ghost_net
+networks:
+  ghost_net:
+    external: true

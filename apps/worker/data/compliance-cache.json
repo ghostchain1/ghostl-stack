@@ -1,0 +1,37 @@
+{
+  "generatedAt": "2026-01-25T21:33:23.636Z",
+  "since": "2026-01-25T21:33:22.928Z",
+  "status": "ok",
+  "endpoints": [
+    {
+      "url": "http://ghostl-api:4000/health",
+      "ok": true,
+      "status": 200,
+      "latencyMs": 253
+    },
+    {
+      "url": "http://ghost-compliance:8090/health",
+      "ok": true,
+      "status": 200,
+      "latencyMs": 18
+    },
+    {
+      "url": "http://ghost-gas-engine:3210/health",
+      "ok": true,
+      "status": 200,
+      "latencyMs": 2
+    },
+    {
+      "url": "http://ghost-pil:3220/health",
+      "ok": true,
+      "status": 200,
+      "latencyMs": 12
+    },
+    {
+      "url": "http://ghost-registry:8088/health",
+      "ok": true,
+      "status": 200,
+      "latencyMs": 56
+    }
+  ]
+}

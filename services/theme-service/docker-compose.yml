@@ -1,0 +1,50 @@
+# stack-group: infra
+# role: theme-service
+# ports: 7634:7634
+# volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
+version: '3.9'
+services:
+  theme-service:
+    container_name: ghost_theme-service
+    image: ghostl/theme-service:local
+    build:
+      context: .
+    env_file:
+    - .env
+    entrypoint:
+    - /bin/bash
+    - /entrypoint.sh
+    environment:
+    - PORT=7634
+    - UI_THEME=${UI_THEME}
+    ports:
+    - 7634:7634
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4g
+        reservations:
+          cpus: '0.5'
+          memory: 512m
+    volumes:
+    - ./data:/data
+    - ./entrypoint.sh:/entrypoint.sh:ro
+    - ./healthcheck.sh:/healthcheck.sh:ro
+    networks:
+    - ghost_net
+networks:
+  ghost_net:
+    external: true

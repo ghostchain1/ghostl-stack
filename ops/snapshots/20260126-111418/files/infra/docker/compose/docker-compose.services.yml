@@ -1,0 +1,2771 @@
+{
+  "services": {
+    "ai-clock-sync": {
+      "build": {
+        "context": "./ai-clock-sync",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7690",
+        "CLOCK_SYNC_RPC_L1",
+        "CLOCK_SYNC_RPC_L2",
+        "CLOCK_SYNC_RPC_L3",
+        "CLOCK_SYNC_INTERVAL_MS",
+        "CLOCK_SYNC_DRIFT_THRESHOLD_SEC"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/ai-clock-sync:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7690",
+          "target": 7690
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ai-clock-sync",
+        "com.ghost.k8s.role": "ai",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "ai-monitor": {
+      "build": {
+        "context": "./ai-monitor",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7575",
+        "RPC_L2=${RPC_L2}",
+        "GUARD_URL=${GUARD_URL}",
+        "ADMIN_TOKEN=${BRIDGE_ADMIN_TOKEN}",
+        "OBSERVE_ONLY=1"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/ai-monitor:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7575",
+          "target": 7575
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ai-monitor",
+        "com.ghost.k8s.role": "ai",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "alerts-service": {
+      "build": {
+        "context": "./alerts-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7644",
+        "PROM_URL=${PROM_URL}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/alerts-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7644",
+          "target": 7644
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "alerts-service",
+        "com.ghost.k8s.role": "obs",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "anomaly-detection-service": {
+      "build": {
+        "context": "./anomaly-detection-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7616",
+        "PROM_URL=${PROM_URL}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/anomaly-detection-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7616",
+          "target": 7616
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "anomaly-detection-service",
+        "com.ghost.k8s.role": "ai",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "audit-log-service": {
+      "build": {
+        "context": "./audit-log-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7641",
+        "AUDIT_LOG_PATH=/data/audit.log"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/audit-log-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7641",
+          "target": 7641
+        }
+      ],
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./data",
+          "target": "/data",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "audit-log-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "./data",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "auth-service": {
+      "build": {
+        "context": "./auth-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7639"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/auth-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7639",
+          "target": 7639
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "auth-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "block-index-service": {
+      "build": {
+        "context": "./block-index-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7626",
+        "PROM_URL=${PROM_URL}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/block-index-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7626",
+          "target": 7626
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "block-index-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "bridge-service": {
+      "build": {
+        "context": "./bridge-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7604",
+        "PROM_URL=${PROM_URL}",
+        "ADMIN_TOKEN=${BRIDGE_ADMIN_TOKEN}",
+        "INCIDENTS_FILE=/data/bridge-incidents.json"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/bridge-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7604",
+          "target": 7604
+        }
+      ],
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./data",
+          "target": "/data",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "bridge-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "./data",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "chain-status-service": {
+      "build": {
+        "context": "./chain-status-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7612",
+        "RPC_L2=${RPC_L2}",
+        "RPC_L3=${RPC_L3}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/chain-status-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7612",
+          "target": 7612
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "chain-status-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "command-palette-service": {
+      "build": {
+        "context": "./command-palette-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7642"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/command-palette-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7642",
+          "target": 7642
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "command-palette-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "compliance-export-service": {
+      "build": {
+        "context": "./compliance-export-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7621"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/compliance-export-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7621",
+          "target": 7621
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "compliance-export-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "consensus-telemetry-service": {
+      "build": {
+        "context": "./consensus-telemetry-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7635",
+        "RPC_L2=${RPC_L2}",
+        "RPC_L3=${RPC_L3}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/consensus-telemetry-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7635",
+          "target": 7635
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "consensus-telemetry-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "contract-registry-service": {
+      "build": {
+        "context": "./contract-registry-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7608",
+        "PROM_URL=${PROM_URL}",
+        "RPC_L2=${RPC_L2}",
+        "RPC_L3=${RPC_L3}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/contract-registry-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7608",
+          "target": 7608
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "contract-registry-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "contract-risk-service": {
+      "build": {
+        "context": "./contract-risk-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7609",
+        "PROM_URL=${PROM_URL}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/contract-risk-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7609",
+          "target": 7609
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "contract-risk-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "dispute-service": {
+      "build": {
+        "context": "./dispute-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7607",
+        "PROM_URL=${PROM_URL}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/dispute-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7607",
+          "target": 7607
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "dispute-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "entity-tagging-service": {
+      "build": {
+        "context": "./entity-tagging-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7627"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/entity-tagging-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7627",
+          "target": 7627
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "entity-tagging-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "explainability-service": {
+      "build": {
+        "context": "./explainability-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7632",
+        "PROM_URL=${PROM_URL}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/explainability-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7632",
+          "target": 7632
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "explainability-service",
+        "com.ghost.k8s.role": "ai",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "feature-flags-service": {
+      "build": {
+        "context": "./feature-flags-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7611",
+        "FEATURE_FLAGS=${FEATURE_FLAGS}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/feature-flags-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7611",
+          "target": 7611
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "feature-flags-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "fee-model-service": {
+      "build": {
+        "context": "./fee-model-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7615",
+        "PROM_URL=${PROM_URL}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/fee-model-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7615",
+          "target": 7615
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "fee-model-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "forecasting-service": {
+      "build": {
+        "context": "./forecasting-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7617",
+        "PROM_URL=${PROM_URL}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/forecasting-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7617",
+          "target": 7617
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "forecasting-service",
+        "com.ghost.k8s.role": "ai",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "ghost-registry": {
+      "build": {
+        "context": "./ghost-registry",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=8088"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/ghost-registry:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "18088",
+          "target": 8088
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ghost-registry",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "ghost-relayer": {
+      "build": {
+        "context": "./ghost-relayer",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7171",
+        "RPC_L1=${RPC_L1}",
+        "RPC_L2=${RPC_L2}",
+        "RPC_L3=${RPC_L3}",
+        "BRIDGE_L2L3_ADDRESS=${BRIDGE_L2L3_ADDRESS}",
+        "L1_ROLLUP_L2_ADDRESS=${L1_ROLLUP_L2_ADDRESS}",
+        "L2_ROLLUP_L3_ADDRESS=${L2_ROLLUP_L3_ADDRESS}",
+        "L3_INBOX_ADDRESS=${L3_INBOX_ADDRESS}",
+        "L3_TOKEN_FACTORY_ADDRESS=${L3_TOKEN_FACTORY_ADDRESS}",
+        "RELAYER_PRIVATE_KEY=${RELAYER_PRIVATE_KEY}",
+        "L2_RELAYER_PRIVATE_KEY=${L2_RELAYER_PRIVATE_KEY}",
+        "STATE_DIR=/state"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "healthcheck": {
+        "interval": "15s",
+        "retries": 5,
+        "test": [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7171/health').then(r=>{if(!r.ok)process.exit(1);return r.json();}).then(j=>{if(!j.ok)process.exit(1);}).catch(()=>process.exit(1));\""
+        ],
+        "timeout": "5s"
+      },
+      "image": "ghostl/ghost-relayer:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7171",
+          "target": 7171
+        }
+      ],
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./data",
+          "target": "/state",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ghost-relayer",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "./data",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "ghost-rollup-challenger": {
+      "build": {
+        "context": "./ghost-rollup-challenger",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7282",
+        "RPC_SETTLEMENT=${RPC_L2}",
+        "RPC_CHILD=${RPC_L3}",
+        "ROLLUP_ADDRESS=${L2_ROLLUP_L3_ADDRESS}",
+        "CHALLENGER_PRIVATE_KEY=${CHALLENGER_PRIVATE_KEY}",
+        "STATE_DIR=/state"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/ghost-rollup-challenger:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7282",
+          "target": 7282
+        }
+      ],
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./data",
+          "target": "/state",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ghost-rollup-challenger",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "./data",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "ghost-rollup-proposer": {
+      "build": {
+        "context": "./ghost-rollup-proposer",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7272",
+        "RPC_SETTLEMENT=${RPC_L2}",
+        "RPC_CHILD=${RPC_L3}",
+        "ROLLUP_ADDRESS=${L2_ROLLUP_L3_ADDRESS}",
+        "PROPOSER_PRIVATE_KEY=${PROPOSER_PRIVATE_KEY}",
+        "STATE_DIR=/state"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/ghost-rollup-proposer:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7272",
+          "target": 7272
+        }
+      ],
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./data",
+          "target": "/state",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ghost-rollup-proposer",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "./data",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "ghost-rpc-proxy": {
+      "build": {
+        "context": "./ghost-rpc-proxy",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=8546",
+        "UPSTREAM_URL=${UPSTREAM_URL}",
+        "LOG_REQUESTS=${LOG_REQUESTS}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/ghost-rpc-proxy:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "8546",
+          "target": 8546
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ghost-rpc-proxy",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "global-search-service": {
+      "build": {
+        "context": "./global-search-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7637"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/global-search-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7637",
+          "target": 7637
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "global-search-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "governance-service": {
+      "build": {
+        "context": "./governance-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7645"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/governance-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7645",
+          "target": 7645
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "governance-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "key-rotation-service": {
+      "build": {
+        "context": "./key-rotation-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7619",
+        "PROM_URL=${PROM_URL}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/key-rotation-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7619",
+          "target": 7619
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "key-rotation-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "liquidity-service": {
+      "build": {
+        "context": "./liquidity-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7606",
+        "PROM_URL=${PROM_URL}",
+        "RPC_L2=${RPC_L2}",
+        "RPC_L3=${RPC_L3}",
+        "BRIDGE_ADDRESS=${BRIDGE_ADDRESS}",
+        "L2_TOKEN_ADDRESS=${L2_TOKEN_ADDRESS}",
+        "L3_TOKEN_ADDRESS=${L3_TOKEN_ADDRESS}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/liquidity-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7606",
+          "target": 7606
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "liquidity-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "mempool-service": {
+      "build": {
+        "context": "./mempool-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7610",
+        "PROM_URL=${PROM_URL}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/mempool-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7610",
+          "target": 7610
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "mempool-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "network-context-service": {
+      "build": {
+        "context": "./network-context-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7633",
+        "RPC_L2=${RPC_L2}",
+        "RPC_L3=${RPC_L3}",
+        "NET_ENV=${NET_ENV}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/network-context-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7633",
+          "target": 7633
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "network-context-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "network-manager-service": {
+      "build": {
+        "context": "./network-manager-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "NETWORK_MANAGER_PORT=${NETWORK_MANAGER_PORT:-7766}",
+        "MONITOR_HOST=${MONITOR_HOST:-host.docker.internal}",
+        "MONITOR_RPC_L1=${MONITOR_RPC_L1:-http://host.docker.internal:18545}",
+        "MONITOR_RPC_L2=${MONITOR_RPC_L2:-http://host.docker.internal:18547}",
+        "MONITOR_RPC_L3=${MONITOR_RPC_L3:-http://host.docker.internal:39545}",
+        "MONITOR_PORTS=${MONITOR_PORTS:-7070,7171,18545,18547,39545}",
+        "MONITOR_HEALTH_ENDPOINTS=${MONITOR_HEALTH_ENDPOINTS:-http://host.docker.internal:7070/health,http://host.docker.internal:7171/health}",
+        "MONITOR_INTERVAL_MS=${MONITOR_INTERVAL_MS:-10000}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "healthcheck": {
+        "interval": "20s",
+        "retries": 5,
+        "test": [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:'+(process.env.NETWORK_MANAGER_PORT||'7766')+'/health').then(r=>{if(!r.ok)process.exit(1);return r.json();}).then(j=>{if(!j.ok)process.exit(1);}).catch(()=>process.exit(1));\""
+        ],
+        "timeout": "5s"
+      },
+      "image": "ghostl/network-manager-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7766",
+          "target": 7766
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "network-manager-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "node-health-service": {
+      "build": {
+        "context": "./node-health-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7613",
+        "RPC_L2=${RPC_L2}",
+        "RPC_L3=${RPC_L3}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/node-health-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7613",
+          "target": 7613
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "node-health-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "node-inventory-service": {
+      "build": {
+        "context": "./node-inventory-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7622"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/node-inventory-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7622",
+          "target": 7622
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "node-inventory-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "notifications-service": {
+      "build": {
+        "context": "./notifications-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7638"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/notifications-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7638",
+          "target": 7638
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "notifications-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "participation-service": {
+      "build": {
+        "context": "./participation-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7603",
+        "PROM_URL=${PROM_URL}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/participation-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7603",
+          "target": 7603
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "participation-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "payout-service": {
+      "build": {
+        "context": "./payout-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7629"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/payout-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7629",
+          "target": 7629
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "payout-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "peer-graph-service": {
+      "build": {
+        "context": "./peer-graph-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7636",
+        "RPC_L2=${RPC_L2}",
+        "RPC_L3=${RPC_L3}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/peer-graph-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7636",
+          "target": 7636
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "peer-graph-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "proxy-inspector-service": {
+      "build": {
+        "context": "./proxy-inspector-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7631",
+        "PROM_URL=${PROM_URL}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/proxy-inspector-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7631",
+          "target": 7631
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "proxy-inspector-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "rbac-service": {
+      "build": {
+        "context": "./rbac-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7640"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/rbac-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7640",
+          "target": 7640
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "rbac-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "rewards-service": {
+      "build": {
+        "context": "./rewards-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7602",
+        "PROM_URL=${PROM_URL}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/rewards-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7602",
+          "target": 7602
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "rewards-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "rpc-forward-l1-29545": {
+      "command": [
+        "-d",
+        "-d",
+        "TCP-LISTEN:29545,fork,reuseaddr",
+        "TCP:host.docker.internal:18545"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "alpine/socat@sha256:1edb826a9432ab0b0f8c865181fc278e48b792fc80bebfa0e19205cda71bbbd1",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "29545",
+          "target": 29545
+        }
+      ],
+      "restart": "unless-stopped",
+      "labels": {
+        "com.ghost.k8s.name": "rpc-forward-l1-29545",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "secrets-health-service": {
+      "build": {
+        "context": "./secrets-health-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7618",
+        "PROM_URL=${PROM_URL}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/secrets-health-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7618",
+          "target": 7618
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "secrets-health-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "session-service": {
+      "build": {
+        "context": "./session-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7643"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/session-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7643",
+          "target": 7643
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "session-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "slashing-detection-service": {
+      "build": {
+        "context": "./slashing-detection-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7620",
+        "PROM_URL=${PROM_URL}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/slashing-detection-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7620",
+          "target": 7620
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "slashing-detection-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "snapshot-service": {
+      "build": {
+        "context": "./snapshot-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7624"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/snapshot-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7624",
+          "target": 7624
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "snapshot-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "staking-service": {
+      "build": {
+        "context": "./staking-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7601",
+        "PROM_URL=${PROM_URL}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/staking-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7601",
+          "target": 7601
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "staking-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "supply-service": {
+      "build": {
+        "context": "./supply-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7614",
+        "PROM_URL=${PROM_URL}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/supply-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7614",
+          "target": 7614
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "supply-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "theme-service": {
+      "build": {
+        "context": "./theme-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7634",
+        "UI_THEME=${UI_THEME}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/theme-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7634",
+          "target": 7634
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "theme-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "transfer-lifecycle-service": {
+      "build": {
+        "context": "./transfer-lifecycle-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7605",
+        "PROM_URL=${PROM_URL}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/transfer-lifecycle-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7605",
+          "target": 7605
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "transfer-lifecycle-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "treasury-service": {
+      "build": {
+        "context": "./treasury-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7628",
+        "PROM_URL=${PROM_URL}",
+        "EXECUTION_APPROVAL_TOKEN=${EXECUTION_APPROVAL_TOKEN}",
+        "TREASURY_STATE_FILE=/data/treasury-proposals.json"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/treasury-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7628",
+          "target": 7628
+        }
+      ],
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./data",
+          "target": "/data",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "treasury-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "./data",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "tx-index-service": {
+      "build": {
+        "context": "./tx-index-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7625",
+        "PROM_URL=${PROM_URL}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/tx-index-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7625",
+          "target": 7625
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "tx-index-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "upgrade-orchestrator-service": {
+      "build": {
+        "context": "./upgrade-orchestrator-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7623"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/upgrade-orchestrator-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7623",
+          "target": 7623
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "upgrade-orchestrator-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "validator-service": {
+      "build": {
+        "context": "./validator-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7600",
+        "PROM_URL=${PROM_URL}",
+        "RPC_L2=${RPC_L2}",
+        "RPC_L3=${RPC_L3}"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/validator-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7600",
+          "target": 7600
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "validator-service",
+        "com.ghost.k8s.role": "chain",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "true",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "verification-service": {
+      "build": {
+        "context": "./verification-service",
+        "dockerfile": "Dockerfile"
+      },
+      "env_file": [
+        {
+          "path": "./stack.env",
+          "required": true
+        }
+      ],
+      "environment": [
+        "PORT=7630"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "ghostl/verification-service:local",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "7630",
+          "target": 7630
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "verification-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "ghost-compliance": {
+      "build": {
+        "context": "./services/ghost-compliance",
+        "dockerfile": "Dockerfile"
+      },
+      "depends_on": {
+        "migrate": {
+          "condition": "service_completed_successfully",
+          "required": true
+        },
+        "postgres": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "redis": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "ATTESTATION_EXPIRY_SECONDS": 900,
+        "ATTESTATION_PRIVATE_KEY": "${COMPLIANCE_ATTESTATION_PRIVATE_KEY:-0x59c6995e998f97a5a0044966f094538e4b1a8d9d0f0b8a8c64d124b5e5d6fcbf}",
+        "CORS_ORIGIN": "http://localhost:3200",
+        "DATABASE_URL": "postgresql://ghost:${POSTGRES_PASSWORD:-ghostpass}@postgres:5432/ghost_compliance",
+        "JWT_SECRET": "${COMPLIANCE_JWT_SECRET:-change-me}",
+        "NODE_ENV": "production",
+        "PORT": 8090,
+        "REDIS_URL": "redis://redis:6379"
+      },
+      "healthcheck": {
+        "interval": "5s",
+        "retries": 20,
+        "test": [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:8090/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ],
+        "timeout": "3s"
+      },
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "8090",
+          "target": 8090
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ghost-compliance",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "ghost-compliance-worker": {
+      "build": {
+        "context": "./services/ghost-compliance-worker",
+        "dockerfile": "Dockerfile"
+      },
+      "depends_on": {
+        "ghost-compliance": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "COMPLIANCE_API_URL": "http://ghost-compliance:8090",
+        "DATABASE_URL": "postgresql://ghost:${POSTGRES_PASSWORD:-ghostpass}@postgres:5432/ghost_compliance",
+        "NODE_ENV": "production",
+        "PREDICT_INTERVAL_SECONDS": 60,
+        "REDIS_URL": "redis://redis:6379"
+      },
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "labels": {
+        "com.ghost.k8s.name": "ghost-compliance-worker",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "ghost-ui": {
+      "build": {
+        "context": "./apps/ghost-ui",
+        "dockerfile": "Dockerfile"
+      },
+      "depends_on": {
+        "ghost-compliance": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "COMPLIANCE_ANALYST_JWT": "${COMPLIANCE_ANALYST_JWT:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJnaG9zdC11aSIsInJvbGUiOiJhbmFseXN0In0.Hry8Kl3wdOufLjxTZ_A9NLSXVk_gReEKNH3gWP2lYdg}",
+        "COMPLIANCE_URL": "http://ghost-compliance:8090",
+        "NEXT_PUBLIC_COMPLIANCE_URL": "http://localhost:8090",
+        "NODE_ENV": "production",
+        "PORT": 3200
+      },
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "3200",
+          "target": 3200
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ghost-ui",
+        "com.ghost.k8s.role": "ui",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "LoadBalancer"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "migrate": {
+      "command": [
+        "sh",
+        "-lc",
+        "npm install && npm run migrate"
+      ],
+      "depends_on": {
+        "postgres": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "redis": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "ATTESTATION_EXPIRY_SECONDS": 900,
+        "ATTESTATION_PRIVATE_KEY": "${COMPLIANCE_ATTESTATION_PRIVATE_KEY:-0x59c6995e998f97a5a0044966f094538e4b1a8d9d0f0b8a8c64d124b5e5d6fcbf}",
+        "DATABASE_URL": "postgresql://ghost:${POSTGRES_PASSWORD:-ghostpass}@postgres:5432/ghost_compliance",
+        "JWT_SECRET": "${COMPLIANCE_JWT_SECRET:-change-me}",
+        "REDIS_URL": "redis://redis:6379"
+      },
+      "image": "node:22-alpine",
+      "networks": {
+        "default": null
+      },
+      "restart": "no",
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./services/ghost-compliance",
+          "target": "/work",
+          "type": "bind"
+        }
+      ],
+      "working_dir": "/work",
+      "labels": {
+        "com.ghost.k8s.name": "migrate",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "./services/ghost-compliance",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "postgres": {
+      "environment": {
+        "POSTGRES_DB": "ghost_compliance",
+        "POSTGRES_PASSWORD": "${POSTGRES_PASSWORD:-ghostpass}",
+        "POSTGRES_USER": "ghost"
+      },
+      "healthcheck": {
+        "interval": "5s",
+        "retries": 20,
+        "test": [
+          "CMD-SHELL",
+          "pg_isready -U ghost -d ghost_compliance"
+        ],
+        "timeout": "3s"
+      },
+      "image": "postgres:16-alpine",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "5432",
+          "target": 5432
+        }
+      ],
+      "volumes": [
+        {
+          "source": "pg_data",
+          "target": "/var/lib/postgresql/data",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "postgres",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "pg_data",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "redis": {
+      "command": [
+        "redis-server",
+        "--appendonly",
+        "yes"
+      ],
+      "healthcheck": {
+        "interval": "5s",
+        "retries": 20,
+        "test": [
+          "CMD",
+          "redis-cli",
+          "ping"
+        ],
+        "timeout": "3s"
+      },
+      "image": "redis:7-alpine",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "6379",
+          "target": 6379
+        }
+      ],
+      "volumes": [
+        {
+          "source": "redis_data",
+          "target": "/data",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "redis",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "redis_data",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "core-service": {
+      "build": {
+        "context": ".",
+        "dockerfile": "Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": "0.5",
+      "environment": [
+        "PORT=8080"
+      ],
+      "healthcheck": {
+        "interval": "30s",
+        "retries": 3,
+        "start_period": "40s",
+        "test": [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/healthz"
+        ],
+        "timeout": "10s"
+      },
+      "mem_limit": "256m",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "8080",
+          "target": 8080
+        }
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "core-service",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "NodePort"
+      }
+    }
+  },
+  "networks": {
+    "default": {
+      "name": "core-service_default"
+    }
+  },
+  "volumes": {
+    "pg_data": {
+      "name": "ghostchain-compliance_pg_data"
+    },
+    "redis_data": {
+      "name": "ghostchain-compliance_redis_data"
+    }
+  },
+  "x-ghost-source-files": [
+    "services/docker-compose.yml",
+    "docker-compose.yml",
+    "core-service/docker-compose.yml"
+  ]
+}

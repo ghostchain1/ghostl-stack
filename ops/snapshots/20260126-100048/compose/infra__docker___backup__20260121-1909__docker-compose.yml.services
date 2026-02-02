@@ -1,0 +1,6 @@
+postgres
+redis
+migrate
+ghost-compliance
+ghost-compliance-worker
+ghost-ui

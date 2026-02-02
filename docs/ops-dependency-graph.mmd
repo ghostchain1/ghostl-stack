@@ -1,0 +1,57 @@
+flowchart TD
+  subgraph L1["GhostChain L1 (geth clique PoA)"]
+    L1Boot[bootnode]
+    L1Geth[(geth node1)]
+  end
+
+  subgraph L2["GhostL2 OP Stack"]
+    L2Geth[(op-geth)]
+    L2Node[op-node]
+    L2Batcher[op-batcher]
+    L2Proposer[op-proposer]
+    Gate[op-gate JSON-RPC proxy]
+  end
+
+  subgraph L3["GhostL3 OP Stack"]
+    L3Geth[(l3-op-geth)]
+    L3Node[l3-op-node]
+    L3Batcher[l3-op-batcher]
+    L3Proposer[l3-op-proposer]
+  end
+
+  subgraph Services["Control Plane / Services"]
+    Guard[AI/Guard/Telemetry services]
+    Relayer[Relayers + Compliance services]
+    Explorer[GhostScout explorers]
+  end
+
+  subgraph Observability["Observability"]
+    Prom[Prometheus]
+    Grafana[Grafana]
+  end
+
+  L1Boot --> L1Geth
+  L1Geth --> L2Node
+  L2Node --> L2Geth
+  L2Batcher --> Gate
+  L2Proposer --> Gate
+  Gate --> L1Geth
+
+  L2Geth --> L3Node
+  L3Node --> L3Geth
+  L3Batcher --> L3Geth
+  L3Proposer --> L3Geth
+
+  Guard --> Gate
+  Relayer --> L1Geth
+  Relayer --> L2Geth
+  Relayer --> L3Geth
+  Explorer --> L1Geth
+  Explorer --> L2Geth
+  Explorer --> L3Geth
+
+  L1Geth --> Prom
+  L2Geth --> Prom
+  L3Geth --> Prom
+  Gate --> Prom
+  Prom --> Grafana

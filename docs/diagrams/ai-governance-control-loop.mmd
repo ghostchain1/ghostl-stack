@@ -1,0 +1,25 @@
+flowchart LR
+  Gov[Governor / Timelock]\n(Governance Authority)
+  Registry[AIOracleRegistry]
+  Hub[AIAttestationHub]
+  Guard[PolicyGuard]
+  Target[Protocol Control Plane]\n(e.g., SlashingManager.setFeePolicy)
+  Bypass[Explicit Governance Bypass]
+  Evidence[EvidenceAnchor]
+  UI[UI / Services]\n(read-only visibility)
+
+  Gov -->|configure signers + policies| Registry
+  Gov -->|set mode / bypass lists| Guard
+  Gov -->|anchor model cards + reports| Evidence
+
+  Registry -->|allowlist + thresholds| Hub
+  Hub -->|latest attestations| Guard
+
+  Guard -->|ENFORCE blocks| Target
+  Guard -->|ADVISORY logs| Target
+  Gov -->|override path| Bypass --> Target
+
+  Hub -->|events| UI
+  Registry -->|signers + policies| UI
+  Guard -->|mode + evaluations| UI
+  Evidence -->|anchored hashes| UI

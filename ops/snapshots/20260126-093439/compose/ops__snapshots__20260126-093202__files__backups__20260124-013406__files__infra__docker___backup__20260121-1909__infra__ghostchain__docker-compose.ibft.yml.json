@@ -1,0 +1,253 @@
+{
+  "name": "ghostchain",
+  "networks": {
+    "ghostchain": {
+      "name": "ghostchain_ghostchain",
+      "driver": "bridge",
+      "ipam": {
+        "config": [
+          {
+            "subnet": "172.28.0.0/16"
+          }
+        ]
+      }
+    }
+  },
+  "services": {
+    "ghostchain-node1": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 1,
+      "command": [
+        "BOOTNODES=$$(tr '\\n' ',' \u003c/config/peers.txt | sed 's/,$$//')\nexec besu \\\n  --data-path=/data \\\n  --genesis-file=/config/genesis.json \\\n  --rpc-http-enabled \\\n  --rpc-http-host=0.0.0.0 \\\n  --rpc-http-api=ETH,NET,WEB3,IBFT,ADMIN,TXPOOL \\\n  --host-allowlist=\"*\" \\\n  --rpc-http-cors-origins=\"*\" \\\n  --p2p-port=30303 \\\n  --rpc-http-port=8545 \\\n  --rpc-ws-enabled \\\n  --rpc-ws-host=0.0.0.0 \\\n  --rpc-ws-port=8546 \\\n  --metrics-enabled \\\n  --metrics-host=0.0.0.0 \\\n  --metrics-port=6060 \\\n  --node-private-key-file=/config/keys/node1/key \\\n  --bootnodes=$${BOOTNODES}\n"
+      ],
+      "entrypoint": [
+        "/bin/sh",
+        "-c"
+      ],
+      "image": "hyperledger/besu:24.12.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "2147483648",
+      "networks": {
+        "ghostchain": {
+          "ipv4_address": "172.28.0.11"
+        }
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 8545,
+          "published": "18545",
+          "protocol": "tcp"
+        },
+        {
+          "mode": "ingress",
+          "target": 8546,
+          "published": "18546",
+          "protocol": "tcp"
+        },
+        {
+          "mode": "ingress",
+          "target": 30303,
+          "published": "18551",
+          "protocol": "tcp"
+        },
+        {
+          "mode": "ingress",
+          "target": 6060,
+          "published": "18660",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/ghostchain/ibft/networkFiles",
+          "target": "/config",
+          "bind": {}
+        },
+        {
+          "type": "volume",
+          "source": "ghostchain-node1-data",
+          "target": "/data",
+          "volume": {}
+        }
+      ]
+    },
+    "ghostchain-node2": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 1,
+      "command": [
+        "BOOTNODES=$$(tr '\\n' ',' \u003c/config/peers.txt | sed 's/,$$//')\nexec besu \\\n  --data-path=/data \\\n  --genesis-file=/config/genesis.json \\\n  --p2p-port=30303 \\\n  --node-private-key-file=/config/keys/node2/key \\\n  --bootnodes=$${BOOTNODES}\n"
+      ],
+      "entrypoint": [
+        "/bin/sh",
+        "-c"
+      ],
+      "image": "hyperledger/besu:24.12.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "2147483648",
+      "networks": {
+        "ghostchain": {
+          "ipv4_address": "172.28.0.12"
+        }
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/ghostchain/ibft/networkFiles",
+          "target": "/config",
+          "bind": {}
+        },
+        {
+          "type": "volume",
+          "source": "ghostchain-node2-data",
+          "target": "/data",
+          "volume": {}
+        }
+      ]
+    },
+    "ghostchain-node3": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 1,
+      "command": [
+        "BOOTNODES=$$(tr '\\n' ',' \u003c/config/peers.txt | sed 's/,$$//')\nexec besu \\\n  --data-path=/data \\\n  --genesis-file=/config/genesis.json \\\n  --p2p-port=30303 \\\n  --node-private-key-file=/config/keys/node3/key \\\n  --bootnodes=$${BOOTNODES}\n"
+      ],
+      "entrypoint": [
+        "/bin/sh",
+        "-c"
+      ],
+      "image": "hyperledger/besu:24.12.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "2147483648",
+      "networks": {
+        "ghostchain": {
+          "ipv4_address": "172.28.0.13"
+        }
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/ghostchain/ibft/networkFiles",
+          "target": "/config",
+          "bind": {}
+        },
+        {
+          "type": "volume",
+          "source": "ghostchain-node3-data",
+          "target": "/data",
+          "volume": {}
+        }
+      ]
+    },
+    "ghostchain-node4": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 1,
+      "command": [
+        "BOOTNODES=$$(tr '\\n' ',' \u003c/config/peers.txt | sed 's/,$$//')\nexec besu \\\n  --data-path=/data \\\n  --genesis-file=/config/genesis.json \\\n  --p2p-port=30303 \\\n  --node-private-key-file=/config/keys/node4/key \\\n  --bootnodes=$${BOOTNODES}\n"
+      ],
+      "entrypoint": [
+        "/bin/sh",
+        "-c"
+      ],
+      "image": "hyperledger/besu:24.12.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "2147483648",
+      "networks": {
+        "ghostchain": {
+          "ipv4_address": "172.28.0.14"
+        }
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/backups/20260124-013406/files/infra/docker/_backup/20260121-1909/infra/ghostchain/ibft/networkFiles",
+          "target": "/config",
+          "bind": {}
+        },
+        {
+          "type": "volume",
+          "source": "ghostchain-node4-data",
+          "target": "/data",
+          "volume": {}
+        }
+      ]
+    }
+  },
+  "volumes": {
+    "ghostchain-node1-data": {
+      "name": "ghostchain_ghostchain-node1-data"
+    },
+    "ghostchain-node2-data": {
+      "name": "ghostchain_ghostchain-node2-data"
+    },
+    "ghostchain-node3-data": {
+      "name": "ghostchain_ghostchain-node3-data"
+    },
+    "ghostchain-node4-data": {
+      "name": "ghostchain_ghostchain-node4-data"
+    }
+  },
+  "x-logging": {
+    "driver": "json-file",
+    "options": {
+      "max-file": "3",
+      "max-size": "10m"
+    }
+  },
+  "x-security": {
+    "cap_drop": [
+      "ALL"
+    ],
+    "security_opt": [
+      "no-new-privileges:true"
+    ]
+  }
+}

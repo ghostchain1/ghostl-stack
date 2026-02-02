@@ -1,0 +1,10 @@
+{
+  "model": "eip1559-dynamic",
+  "base_burn_percent": 35,
+  "max_burn_percent": 70,
+  "min_burn_percent": 10,
+  "congestion_multiplier": true,
+  "governance_required": true,
+  "status": "draft",
+  "notes": "Deterministic burn curve definition. Applied via governance only."
+}

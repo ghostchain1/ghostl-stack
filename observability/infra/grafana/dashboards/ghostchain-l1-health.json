@@ -1,0 +1,155 @@
+{
+  "uid": "ghostchain-l1-health",
+  "title": "GhostChain L1 Health",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "15s",
+  "panels": [
+    {
+      "type": "row",
+      "title": "AI Monitor Signals",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+    {
+      "type": "timeseries",
+      "title": "AI Monitor Risk + Anomaly",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "ai_monitor_risk_score{job=\"ai-monitor-l1\"}", "legendFormat": "risk" },
+        { "expr": "ai_monitor_anomaly_score{job=\"ai-monitor-l1\"}", "legendFormat": "anomaly" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 1 }
+    },
+    {
+      "type": "timeseries",
+      "title": "AI Monitor Congestion",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "ai_monitor_congestion_score{job=\"ai-monitor-l1\"}", "legendFormat": "congestion" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 1 }
+    },
+    {
+      "type": "timeseries",
+      "title": "AI Monitor Head Lag (s)",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "ai_monitor_head_lag_seconds{job=\"ai-monitor-l1\"}", "legendFormat": "head lag" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "AI Monitor Peer Count",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "ai_monitor_peer_count{job=\"ai-monitor-l1\"}", "legendFormat": "peers" }
+      ],
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "AI Monitor Active Incidents",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "ai_monitor_incident_active{job=\"ai-monitor-l1\"}", "legendFormat": "{{type}}" }
+      ],
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 8 }
+    },
+    {
+      "type": "row",
+      "title": "Consensus Telemetry (L1)",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 15 }
+    },
+    {
+      "type": "stat",
+      "title": "L1 Layer Up",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "ghost_consensus_layer_up{layer=\"L1\"}", "legendFormat": "up" }
+      ],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "none" }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 16 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Head Age (s)",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "ghost_consensus_layer_head_age_seconds{layer=\"L1\"}", "legendFormat": "head age" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 9, "x": 6, "y": 16 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Block Time (s)",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "ghost_consensus_layer_block_time_seconds{layer=\"L1\"}", "legendFormat": "block time" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 9, "x": 15, "y": 16 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Peer Count + Syncing",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "ghost_consensus_layer_peer_count{layer=\"L1\"}", "legendFormat": "peers" },
+        { "expr": "ghost_consensus_layer_syncing{layer=\"L1\"}", "legendFormat": "syncing" }
+      ],
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 21 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Safe + Finalized Blocks",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "ghost_consensus_layer_safe_block{layer=\"L1\"}", "legendFormat": "safe" },
+        { "expr": "ghost_consensus_layer_finalized_block{layer=\"L1\"}", "legendFormat": "finalized" }
+      ],
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 21 }
+    },
+    {
+      "type": "row",
+      "title": "RPC Proxy",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 }
+    },
+    {
+      "type": "timeseries",
+      "title": "RPC Requests Rate",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "rate(ghost_rpc_proxy_requests_total[5m])", "legendFormat": "requests/s" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 28 }
+    },
+    {
+      "type": "timeseries",
+      "title": "RPC Rate Limited",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "rate(ghost_rpc_proxy_rate_limited_total[5m])", "legendFormat": "rate limited/s" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 28 }
+    },
+    {
+      "type": "timeseries",
+      "title": "RPC Auth Failures",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "rate(ghost_rpc_proxy_auth_failed_total[5m])", "legendFormat": "auth failed/s" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 28 }
+    }
+  ],
+  "time": { "from": "now-30m", "to": "now" },
+  "timepicker": { "refresh_intervals": ["10s", "30s", "1m", "5m", "15m"] }
+}

@@ -1,0 +1,211 @@
+{
+  "name": "ghostchain-compliance",
+  "networks": {
+    "default": {
+      "name": "ghostchain-compliance_default",
+      "ipam": {}
+    }
+  },
+  "services": {
+    "ghost-compliance": {
+      "build": {
+        "context": "/home/ghost/ghostl-stack/backups/20260124-013406/files/apps/services/ghost-compliance",
+        "dockerfile": "Dockerfile"
+      },
+      "command": null,
+      "depends_on": {
+        "migrate": {
+          "condition": "service_completed_successfully",
+          "required": true
+        },
+        "postgres": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "redis": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "entrypoint": null,
+      "environment": {
+        "ATTESTATION_EXPIRY_SECONDS": "900",
+        "ATTESTATION_PRIVATE_KEY": "0x59c6995e998f97a5a0044966f094538e4b1a8d9d0f0b8a8c64d124b5e5d6fcbf",
+        "CORS_ORIGIN": "http://localhost:3200",
+        "DATABASE_URL": "postgresql://ghost:ghostpass@postgres:5432/ghost_compliance",
+        "JWT_SECRET": "change-me",
+        "NODE_ENV": "production",
+        "PORT": "8090",
+        "REDIS_URL": "redis://redis:6379"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:8090/health').then(r=\u003er.ok?process.exit(0):process.exit(1)).catch(()=\u003eprocess.exit(1))\""
+        ],
+        "timeout": "3s",
+        "interval": "5s",
+        "retries": 20
+      },
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 8090,
+          "published": "8090",
+          "protocol": "tcp"
+        }
+      ]
+    },
+    "ghost-compliance-worker": {
+      "build": {
+        "context": "/home/ghost/ghostl-stack/backups/20260124-013406/files/apps/services/ghost-compliance-worker",
+        "dockerfile": "Dockerfile"
+      },
+      "command": null,
+      "depends_on": {
+        "ghost-compliance": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "entrypoint": null,
+      "environment": {
+        "COMPLIANCE_API_URL": "http://ghost-compliance:8090",
+        "DATABASE_URL": "postgresql://ghost:ghostpass@postgres:5432/ghost_compliance",
+        "NODE_ENV": "production",
+        "PREDICT_INTERVAL_SECONDS": "60",
+        "REDIS_URL": "redis://redis:6379"
+      },
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped"
+    },
+    "migrate": {
+      "command": [
+        "sh",
+        "-lc",
+        "npm install \u0026\u0026 npm run migrate"
+      ],
+      "depends_on": {
+        "postgres": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "redis": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "entrypoint": null,
+      "environment": {
+        "ATTESTATION_EXPIRY_SECONDS": "900",
+        "ATTESTATION_PRIVATE_KEY": "0x59c6995e998f97a5a0044966f094538e4b1a8d9d0f0b8a8c64d124b5e5d6fcbf",
+        "DATABASE_URL": "postgresql://ghost:ghostpass@postgres:5432/ghost_compliance",
+        "JWT_SECRET": "change-me",
+        "REDIS_URL": "redis://redis:6379"
+      },
+      "image": "node:22-alpine",
+      "networks": {
+        "default": null
+      },
+      "restart": "no",
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/apps/services/ghost-compliance",
+          "target": "/work",
+          "bind": {}
+        }
+      ],
+      "working_dir": "/work"
+    },
+    "postgres": {
+      "command": null,
+      "entrypoint": null,
+      "environment": {
+        "POSTGRES_DB": "ghost_compliance",
+        "POSTGRES_PASSWORD": "ghostpass",
+        "POSTGRES_USER": "ghost"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "pg_isready -U ghost -d ghost_compliance"
+        ],
+        "timeout": "3s",
+        "interval": "5s",
+        "retries": 20
+      },
+      "image": "postgres:16-alpine",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 5432,
+          "published": "5432",
+          "protocol": "tcp"
+        }
+      ],
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "pg_data",
+          "target": "/var/lib/postgresql/data",
+          "volume": {}
+        }
+      ]
+    },
+    "redis": {
+      "command": [
+        "redis-server",
+        "--appendonly",
+        "yes"
+      ],
+      "entrypoint": null,
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "redis-cli",
+          "ping"
+        ],
+        "timeout": "3s",
+        "interval": "5s",
+        "retries": 20
+      },
+      "image": "redis:7-alpine",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 6379,
+          "published": "6379",
+          "protocol": "tcp"
+        }
+      ],
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "redis_data",
+          "target": "/data",
+          "volume": {}
+        }
+      ]
+    }
+  },
+  "volumes": {
+    "pg_data": {
+      "name": "ghostchain-compliance_pg_data"
+    },
+    "redis_data": {
+      "name": "ghostchain-compliance_redis_data"
+    }
+  }
+}

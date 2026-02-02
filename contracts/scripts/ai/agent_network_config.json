@@ -1,0 +1,78 @@
+{
+  "rolePolicies": [
+    { "role": "router", "policyHash": "policy:router", "enabled": true },
+    { "role": "planner", "policyHash": "policy:planner", "enabled": true },
+    { "role": "coder", "policyHash": "policy:coder", "enabled": true },
+    { "role": "auditor", "policyHash": "policy:auditor", "enabled": true },
+    { "role": "docs", "policyHash": "policy:docs", "enabled": true },
+    { "role": "ops", "policyHash": "policy:ops", "enabled": true },
+    { "role": "watchdog", "policyHash": "policy:watchdog", "enabled": true }
+  ],
+  "actionPermissions": [
+    { "role": "router", "action": "route.task", "allowed": true },
+    { "role": "planner", "action": "plan.task", "allowed": true },
+    { "role": "coder", "action": "code.change", "allowed": true },
+    { "role": "auditor", "action": "audit.review", "allowed": true },
+    { "role": "docs", "action": "docs.write", "allowed": true },
+    { "role": "ops", "action": "ops.run", "allowed": true },
+    { "role": "watchdog", "action": "watchdog.healthcheck", "allowed": true },
+    { "role": "router", "action": "unknown", "allowed": true },
+    { "role": "planner", "action": "unknown", "allowed": true },
+    { "role": "coder", "action": "unknown", "allowed": true },
+    { "role": "auditor", "action": "unknown", "allowed": true },
+    { "role": "docs", "action": "unknown", "allowed": true },
+    { "role": "ops", "action": "unknown", "allowed": true },
+    { "role": "watchdog", "action": "unknown", "allowed": true }
+  ],
+  "agents": [
+    {
+      "agentId": "router-1",
+      "operator": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "role": "router",
+      "policyHash": "policy:router",
+      "metadataURI": "ghost://agents/router-1"
+    },
+    {
+      "agentId": "planner-1",
+      "operator": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "role": "planner",
+      "policyHash": "policy:planner",
+      "metadataURI": "ghost://agents/planner-1"
+    },
+    {
+      "agentId": "coder-1",
+      "operator": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "role": "coder",
+      "policyHash": "policy:coder",
+      "metadataURI": "ghost://agents/coder-1"
+    },
+    {
+      "agentId": "auditor-1",
+      "operator": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "role": "auditor",
+      "policyHash": "policy:auditor",
+      "metadataURI": "ghost://agents/auditor-1"
+    },
+    {
+      "agentId": "docs-1",
+      "operator": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "role": "docs",
+      "policyHash": "policy:docs",
+      "metadataURI": "ghost://agents/docs-1"
+    },
+    {
+      "agentId": "ops-1",
+      "operator": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "role": "ops",
+      "policyHash": "policy:ops",
+      "metadataURI": "ghost://agents/ops-1"
+    },
+    {
+      "agentId": "watchdog-1",
+      "operator": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "role": "watchdog",
+      "policyHash": "policy:watchdog",
+      "metadataURI": "ghost://agents/watchdog-1"
+    }
+  ]
+}

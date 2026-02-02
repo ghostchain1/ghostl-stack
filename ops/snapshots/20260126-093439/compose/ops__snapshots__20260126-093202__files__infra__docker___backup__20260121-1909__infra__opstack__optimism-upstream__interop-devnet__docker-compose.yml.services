@@ -1,0 +1,16 @@
+l1
+l1-bn
+op-supervisor
+l2-b
+l1-vc
+op-node-b
+op-proposer-b
+prometheus
+grafana
+l2-a
+op-node-a
+op-batcher-a
+op-batcher-b
+promtail
+loki
+op-proposer-a

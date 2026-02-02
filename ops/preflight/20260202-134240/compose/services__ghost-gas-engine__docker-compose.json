@@ -1,0 +1,205 @@
+{
+  "name": "ghost-gas-engine",
+  "networks": {
+    "ghost_net": {
+      "name": "ghost_net",
+      "ipam": {},
+      "external": true
+    }
+  },
+  "services": {
+    "ghost-gas-engine": {
+      "build": {
+        "context": "/home/ghost/ghostl-stack/services/ghost-gas-engine",
+        "dockerfile": "Dockerfile"
+      },
+      "command": [
+        "node",
+        "dist/server.js"
+      ],
+      "container_name": "ghost_ghost-gas-engine",
+      "deploy": {
+        "resources": {
+          "limits": {
+            "cpus": 2,
+            "memory": "4294967296"
+          },
+          "reservations": {
+            "cpus": 0.5,
+            "memory": "536870912"
+          }
+        },
+        "placement": {}
+      },
+      "entrypoint": [
+        "/bin/bash",
+        "/entrypoint.sh"
+      ],
+      "environment": {
+        "ADMIN_TOKEN": "e0752f4f7066d139f0f2e943549f45093ecca72525bc0e4ed745a99276bf1449",
+        "ALLOW_PUBLIC_SIGNUP": "true",
+        "AUTH_DB_PATH": "/data/auth.db",
+        "AUTONOMY_ENABLED": "true",
+        "AUTONOMY_FORECAST_INTERVAL_SECONDS": "120",
+        "AUTONOMY_MAX_GAS": "30000000",
+        "AUTONOMY_MAX_RETRIES": "5",
+        "AUTONOMY_MAX_RISK": "0.65",
+        "AUTONOMY_MODE": "ASSISTED",
+        "AUTONOMY_POLICY_LOCK": "false",
+        "AUTONOMY_POLICY_MAX_DELTA": "0.08",
+        "BOOTSTRAP_ADMIN_EMAIL": "admin@ghostchain.cloud",
+        "BOOTSTRAP_ADMIN_PASSWORD": "ghostl-admin",
+        "BOOTSTRAP_OWNER_EMAILS": "admin@ghostchain.cloud",
+        "BOOTSTRAP_OWNER_PASSWORD": "ghostl-admin",
+        "BRIDGE_ADDRESS": "0x15375553c3ea219810bf52f3f9a6df5facc75a37",
+        "BRIDGE_ADMIN_TOKEN": "d1b772d08edb0d9b9afca0e686e60d7744f5496add8c914ea0b7f2f900a245f6",
+        "BRIDGE_L2L3_ADDRESS": "0x15375553c3ea219810bf52f3f9a6df5facc75a37",
+        "CHAINS_CONFIG_PATH": "/app/config/chains.json",
+        "CHALLENGER_PRIVATE_KEY": "0x0771c53ae122b3ab8b9c14ca37b1bebec3e9f03aa61dd466cf43db5a8551cc6d",
+        "CLOCK_SYNC_DRIFT_THRESHOLD_SEC": "2",
+        "CLOCK_SYNC_INTERVAL_MS": "5000",
+        "CLOCK_SYNC_RPC_L1": "http://host.docker.internal:18545",
+        "CLOCK_SYNC_RPC_L2": "http://host.docker.internal:18547",
+        "CLOCK_SYNC_RPC_L3": "http://host.docker.internal:39545",
+        "DATABASE_URL": "postgresql://ghost:ghostpass@gas-engine-postgres:5432/ghost_gas",
+        "DEPENDENCY_HOSTS": "gas-engine-postgres:5432 gas-engine-redis:6379",
+        "DEPENDENCY_INTERVAL_SEC": "5",
+        "DEPENDENCY_TIMEOUT_SEC": "120",
+        "EXECUTION_APPROVAL_TOKEN": "66be94129945742f51095eaff770def12a1233fba3aa4c23ef533bc9bed8d7c2",
+        "FEATURE_FLAGS": "observability,bridge,ai-monitor",
+        "GAS_ENGINE_ADMIN_TOKEN": "e0752f4f7066d139f0f2e943549f45093ecca72525bc0e4ed745a99276bf1449",
+        "GAS_ENGINE_DB_PASSWORD": "ghostpass",
+        "GAS_ENGINE_SEED_SAMPLE_DATA": "true",
+        "GAS_ENGINE_SIGNER_PRIVATE_KEY": "0x22fbe27dcc83dfcd3751bbebd6a411a82e86bb3cccc45cbd5a80cb23e74072ec",
+        "GAS_ENGINE_SIGNER_PRIVATE_KEY_L1": "0xa572ba3df63c295071c8b18e9c7d1ac38b156c2a4eda7e457194fab55c4fd423",
+        "GAS_ENGINE_SIGNER_PRIVATE_KEY_L2": "0xea7e2951d11961c77d35126a9863fd1c3e41af07e756e7f0b4cc882f8f1fb8ac",
+        "GAS_ENGINE_SIGNER_PRIVATE_KEY_L3": "0xd8a0b2092a43f0d167e6c25fc0a8e28b9902b8eb30ccc4b2b16cb2048906cca4",
+        "GAS_TOKEN_L1": "GHOST",
+        "GAS_TOKEN_L2": "GHOST",
+        "GAS_TOKEN_L3": "GHOST",
+        "GHOSTWALLET_DERIVATION_PATH": "m/44'/60'/0'/0/0",
+        "GHOSTWALLET_MASTER_KEY": "0000000000000000000000000000000000000000000000000000000000000000",
+        "GOVERNANCE_CONTRACT_ADDRESS": "",
+        "GUARD_APPROVAL_TOKEN": "911ec4742d943a1fba9dee9b76e25227d865723cb393d1c7e9e2840a3e144adb",
+        "GUARD_POLICY_ADDRESS": "",
+        "GUARD_URL": "http://host.docker.internal:7070",
+        "HEALTHCHECK_CMD": "curl -sf --max-time 3 http://127.0.0.1:3210/health",
+        "HEALTHCHECK_URL": "http://127.0.0.1:3210/ready",
+        "INTEGRATIONS_MASTER_KEY": "",
+        "L1_CHAIN_ID": "14000101",
+        "L1_ROLLUP_L2_ADDRESS": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "L1_TOKEN_ADDRESS": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "L2_RELAYER_PRIVATE_KEY": "0x60a1d3af6e7d68933eeeb3cf568ec34f68c5c3de4386d22094a1299094fc0863",
+        "L2_ROLLUP_L3_ADDRESS": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "L2_TOKEN_ADDRESS": "0x5C7c905B505f0Cf40Ab6600d05e677F717916F6B",
+        "L3_INBOX_ADDRESS": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "L3_TOKEN_ADDRESS": "0xbD2e71Fc7122b85B42441bfCd82aFD86224540d2",
+        "L3_TOKEN_FACTORY_ADDRESS": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+        "LOG_REQUESTS": "0",
+        "MARKET_DATA_FILE": "/data/market-data.json",
+        "MARKET_DEFAULT_TOKENS": "[{\"symbol\":\"GHOST\",\"chainId\":\"l1\",\"priceUsd\":\"1.00\",\"change24h\":\"0.0\",\"marketCapUsd\":\"0\"},{\"symbol\":\"GHOST\",\"chainId\":\"l2\",\"priceUsd\":\"0.15\",\"change24h\":\"0.0\",\"marketCapUsd\":\"0\"},{\"symbol\":\"GHOST\",\"chainId\":\"l3\",\"priceUsd\":\"0.05\",\"change24h\":\"0.0\",\"marketCapUsd\":\"0\"}]",
+        "MIGRATION_TIMEOUT_MS": "120000",
+        "MONITOR_HEALTH_ENDPOINTS": "http://ghost-relayer:7171/health",
+        "MONITOR_HOST": "host.docker.internal",
+        "MONITOR_INTERVAL_MS": "10000",
+        "MONITOR_PORTS": "7070,7171,18545,18547,39545",
+        "MONITOR_RPC_L1": "http://host.docker.internal:18545",
+        "MONITOR_RPC_L2": "http://host.docker.internal:18547",
+        "MONITOR_RPC_L3": "http://host.docker.internal:39545",
+        "NETWORK_MANAGER_PORT": "7766",
+        "NET_ENV": "dev",
+        "NFT_DB_PATH": "/data/nfts.db",
+        "NFT_STORE_PATH": "/data/nfts.json",
+        "OWNER_EMAILS": "admin@ghostchain.cloud",
+        "PIL_APPROVAL_REQUIRED": "true",
+        "PIL_AUTONOMY_MODE": "ADVISORY",
+        "PIL_DB_PASSWORD": "ghostpass",
+        "PIL_ENABLED": "false",
+        "PIL_RPC_NAMESPACE": "",
+        "PIL_SEED_SAMPLE_DATA": "true",
+        "PIL_SIM_ENABLED": "false",
+        "PIL_VALIDATOR_EVAL_ENABLED": "false",
+        "PIL_VALIDATOR_EVAL_INTERVAL_SECONDS": "300",
+        "PIL_WRITE_ENABLED": "false",
+        "POLICIES_PATH": "/app/config/gas-policies.json",
+        "PORT": "3210",
+        "PROM_URL": "http://host.docker.internal:9090",
+        "PROPOSER_PRIVATE_KEY": "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+        "READINESS_FILE": "/tmp/ghost_gas_engine_migrated",
+        "REDIS_URL": "redis://gas-engine-redis:6379",
+        "RELAYER_PRIVATE_KEY": "0xbfea9ffa5054137d86ff2cd84b808555e0e87fe8677b162f69d2743e84a3319d",
+        "RPC_L1": "http://host.docker.internal:18545",
+        "RPC_L1_WS": "",
+        "RPC_L2": "http://host.docker.internal:18547",
+        "RPC_L2_WS": "",
+        "RPC_L3": "http://host.docker.internal:39545",
+        "RPC_L3_WS": "",
+        "RPC_REGISTRY_URL": "http://ghost-registry:8088/v1/endpoints",
+        "RUN_MIGRATIONS": "1",
+        "SEED_SAMPLE_DATA": "true",
+        "SESSION_SECRET": "dev-secret",
+        "SESSION_TTL_MS": "1800000",
+        "SETUP_TOKEN": "change-me",
+        "SIGNER_PRIVATE_KEY": "0x22fbe27dcc83dfcd3751bbebd6a411a82e86bb3cccc45cbd5a80cb23e74072ec",
+        "SIGNER_PRIVATE_KEY_L1": "0xa572ba3df63c295071c8b18e9c7d1ac38b156c2a4eda7e457194fab55c4fd423",
+        "SIGNER_PRIVATE_KEY_L2": "0xea7e2951d11961c77d35126a9863fd1c3e41af07e756e7f0b4cc882f8f1fb8ac",
+        "SIGNER_PRIVATE_KEY_L3": "0xd8a0b2092a43f0d167e6c25fc0a8e28b9902b8eb30ccc4b2b16cb2048906cca4",
+        "STAKING_CONTRACT_ADDRESS": "",
+        "TREASURY_STATE_FILE": "/data/treasury-proposals.json",
+        "UI_THEME": "dark",
+        "UPSTREAM_URL": "http://host.docker.internal:18547",
+        "VAULT_ADDR": "http://localhost:8200",
+        "VAULT_TOKEN": ""
+      },
+      "extra_hosts": [
+        "host.docker.internal=host-gateway"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "/healthcheck.sh"
+        ],
+        "timeout": "5s",
+        "interval": "10s",
+        "retries": 10,
+        "start_period": "20s"
+      },
+      "image": "ghostl/ghost-gas-engine:local",
+      "networks": {
+        "ghost_net": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 3210,
+          "published": "3210",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "stop_grace_period": "30s",
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/services/ghost-gas-engine/data",
+          "target": "/data",
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/services/ghost-gas-engine/entrypoint.sh",
+          "target": "/entrypoint.sh",
+          "read_only": true,
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/services/ghost-gas-engine/healthcheck.sh",
+          "target": "/healthcheck.sh",
+          "read_only": true,
+          "bind": {}
+        }
+      ]
+    }
+  }
+}

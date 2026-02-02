@@ -1,0 +1,48 @@
+services:
+  ghostl-api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: dev
+    ports:
+      - "4000:4000"
+    env_file:
+      - ./apps/api/.env.example
+      - ./services/stack.env
+    environment:
+      - NODE_ENV=development
+      - PORT=4000
+      - CORS_ALLOW_ORIGINS=http://localhost:3200
+      - SQLITE_DB_PATH=/app/apps/api/data/ghostl.db
+      - AUTH_DB_PATH=/app/apps/api/data/ghostl.db
+      - NFT_STORE_PATH=/app/apps/api/data/nfts.json
+      - MARKET_DATA_FILE=/app/apps/api/data/market-data.json
+    volumes:
+      - ./:/app
+      - ./apps/api/data:/app/apps/api/data
+
+  ghostl-web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: dev
+    ports:
+      - "3200:3200"
+    env_file:
+      - ./apps/web/.env.example
+    environment:
+      - NODE_ENV=development
+      - PORT=3200
+      - NEXT_PUBLIC_API_URL=http://localhost:4000
+      - API_INTERNAL_URL=http://ghostl-api:4000
+      - NEXT_PUBLIC_AI_CORE_URL=http://localhost:3210
+      - AI_CORE_URL=http://ghost-gas-engine:3210
+      - NEXT_PUBLIC_GAS_ENGINE_URL=http://localhost:3210
+      - GAS_ENGINE_URL=http://ghost-gas-engine:3210
+      - GAS_ENGINE_ADMIN_TOKEN=${GAS_ENGINE_ADMIN_TOKEN}
+      - NEXT_PUBLIC_PIL_URL=http://localhost:3220
+      - PIL_URL=http://ghost-pil:3220
+    volumes:
+      - ./:/app
+    depends_on:
+      - ghostl-api
