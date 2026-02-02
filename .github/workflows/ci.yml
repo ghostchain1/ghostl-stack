@@ -134,7 +134,7 @@ jobs:
           severity: HIGH,CRITICAL
           exit-code: "1"
           security-checks: vuln
-          skip-dirs: node_modules,contracts/node_modules,dist,artifacts,cache,backups,infra/opstack,infra/ghostchain/data
+          skip-dirs: node_modules,contracts/node_modules,dist,artifacts,cache,backups,infra/ghostchain/data
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
