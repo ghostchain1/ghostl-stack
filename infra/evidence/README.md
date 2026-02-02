@@ -27,3 +27,21 @@ infra/scripts/evidence-pack-l1.sh --verify
 
 - Do not place secrets in this folder; only non-secret metadata is allowed.
 - Update the templates before generating production evidence packs.
+
+# L2 Evidence Pack
+
+The L2 evidence pack captures OP Stack config, governance artifacts, and provenance hashes for Ghost L2.
+
+Generate:
+
+```bash
+infra/scripts/evidence-pack-l2.sh
+```
+
+For reproducible output:
+
+```bash
+EVIDENCE_TIMESTAMP=20260202T000000Z \
+EVIDENCE_EPOCH=1769980800 \
+infra/scripts/evidence-pack-l2.sh --verify
+```
