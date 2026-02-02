@@ -12,6 +12,10 @@ const RPC_SENSITIVE_METHODS = (process.env.RPC_SENSITIVE_METHODS || "personal_,d
 const RPC_RATE_LIMIT_PER_MINUTE = Number(process.env.RPC_RATE_LIMIT_PER_MINUTE || "120");
 const RPC_RATE_LIMIT_BURST = Number(process.env.RPC_RATE_LIMIT_BURST || "40");
 const RPC_RATE_WINDOW_MS = Number(process.env.RPC_RATE_WINDOW_MS || "60000");
+const RPC_RATE_LIMIT_ALLOWLIST = (process.env.RPC_RATE_LIMIT_ALLOWLIST || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 const RPC_CORS_ORIGINS = (process.env.RPC_CORS_ORIGINS || "http://localhost,http://127.0.0.1")
   .split(",")
   .map((s) => s.trim())
@@ -105,10 +109,17 @@ function getClientIp(req) {
   return req.socket.remoteAddress || "unknown";
 }
 
+function isAllowlisted(ip) {
+  if (!ip) return false;
+  if (RPC_RATE_LIMIT_ALLOWLIST.length === 0) return false;
+  return RPC_RATE_LIMIT_ALLOWLIST.includes(ip);
+}
+
 function rateLimitOk(req) {
   if (RPC_RATE_LIMIT_PER_MINUTE <= 0) return true;
   const now = Date.now();
   const ip = getClientIp(req);
+  if (isAllowlisted(ip)) return true;
   const entry = rateState.get(ip) || { count: 0, burst: 0, resetAt: now + RPC_RATE_WINDOW_MS, burstResetAt: now + 5000 };
   if (now > entry.resetAt) {
     entry.count = 0;

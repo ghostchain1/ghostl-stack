@@ -16,6 +16,8 @@ Use this index to find the right runbook or reference quickly.
   - `l2-roadmap.md`, `opstack-migration-plan.md`, `zk-upgrade.md`: forward-looking plans and upgrade paths.
 - **Security & secrets**
   - `SECRETS.md`: where secrets live, how to populate `.env`, and what never belongs in git.
+- **Operations**
+  - `ops/README.md`: ops directory guide and links to runbooks/release tooling.
 - **Checklists & templates**
   - `checklists/README.md`: consolidated pointers to dev and Ops checklists.
   - `ghostchain-management.md`: full-stack blueprint for the L1/L2/L3 management system (users, wallets, validators, observability).
