@@ -58,6 +58,15 @@ EVIDENCE_EPOCH=1769980800 \
 infra/scripts/evidence-pack-l2.sh --verify
 ```
 
+Latest artifact:
+- Timestamp: `20260202T175423Z`
+- SHA256: `ceae22f729333fbc23efdb7859f6a4a8fdcdb5182c1553443a84d14aae65959d`
+- Artifact: `infra/evidence/out/evidence-pack-l2-20260202T175423Z.zip`
+
+```bash
+sha256sum -c infra/evidence/out/evidence-pack-l2-20260202T175423Z.zip.sha256
+```
+
 ## Go/No-Go gate
 
 ```bash
