@@ -41,6 +41,12 @@ OP_BATCHER_METRICS_URL="${OP_BATCHER_METRICS_URL:-http://localhost:7301/metrics}
 OP_PROPOSER_METRICS_URL="${OP_PROPOSER_METRICS_URL:-http://localhost:7302/metrics}"
 L2_CHALLENGER_METRICS_URL="${L2_CHALLENGER_METRICS_URL:-http://localhost:${L2_CHALLENGER_METRICS_HOST_PORT:-7303}/metrics}"
 
+L2_MAX_L1_DERIVATION_LAG="${L2_MAX_L1_DERIVATION_LAG:-128}"
+L2_MAX_L2_SAFE_LAG="${L2_MAX_L2_SAFE_LAG:-256}"
+L2_MAX_PROPOSER_IDLE_SECONDS="${L2_MAX_PROPOSER_IDLE_SECONDS:-900}"
+L2_MAX_BATCHER_IDLE_SECONDS="${L2_MAX_BATCHER_IDLE_SECONDS:-900}"
+L2_REQUIRE_L2_PROGRESS="${L2_REQUIRE_L2_PROGRESS:-0}"
+
 L2_SECRETS_SOURCE="${L2_SECRETS_SOURCE:-dev}"
 L2_SECRETS_DIR="${L2_SECRETS_DIR:-$ROOT_DIR/infra/opstack/secrets}"
 ALLOW_DEV_SECRETS="${ALLOW_DEV_SECRETS:-0}"
@@ -111,6 +117,30 @@ else:
 if value is None:
     value = ""
 print(value)
+PY
+}
+
+metric_value() {
+  local url="$1"
+  local metric="$2"
+  curl -fsS --max-time 4 "$url" | awk -v m="$metric" '$1 == m {print $2; exit}'
+}
+
+metric_value_with_label() {
+  local url="$1"
+  local metric="$2"
+  local label="$3"
+  curl -fsS --max-time 4 "$url" | awk -v m="$metric" -v l="$label" '$1 ~ "^"m"\\{" && $1 ~ l {print $2; exit}'
+}
+
+to_int() {
+  python3 - <<'PY' "$1"
+import sys
+raw = sys.argv[1]
+try:
+    print(int(float(raw)))
+except Exception:
+    print(0)
 PY
 }
 hex_to_dec() {
@@ -287,12 +317,137 @@ fi
 
 echo "OK: op-node/op-sequencer RPC reachable"
 
+SYNC_RAW="$(jsonrpc "$OP_NODE_RPC" "optimism_syncStatus" || true)"
+SEQ_SYNC_RAW="$(jsonrpc "$OP_SEQUENCER_RPC" "optimism_syncStatus" || true)"
+SYNC_HEAD_L1="$(json_result_field "$SYNC_RAW" "head_l1" || true)"
+SYNC_CUR_L1="$(json_result_field "$SYNC_RAW" "current_l1" || true)"
+SYNC_SAFE_L2="$(json_result_field "$SYNC_RAW" "safe_l2" || true)"
+SYNC_UNSAFE_L2="$(json_result_field "$SYNC_RAW" "unsafe_l2" || true)"
+
+SYNC_HEAD_L1_NUM="$(python3 - <<'PY' "$SYNC_RAW"
+import json, sys
+raw = sys.argv[1]
+data = json.loads(raw).get("result", {}) if raw else {}
+print(data.get("head_l1", {}).get("number", 0))
+PY
+)"
+SYNC_CUR_L1_NUM="$(python3 - <<'PY' "$SYNC_RAW"
+import json, sys
+raw = sys.argv[1]
+data = json.loads(raw).get("result", {}) if raw else {}
+print(data.get("current_l1", {}).get("number", 0))
+PY
+)"
+SYNC_SAFE_L2_NUM="$(python3 - <<'PY' "$SYNC_RAW"
+import json, sys
+raw = sys.argv[1]
+data = json.loads(raw).get("result", {}) if raw else {}
+print(data.get("safe_l2", {}).get("number", 0))
+PY
+)"
+SYNC_UNSAFE_L2_NUM="$(python3 - <<'PY' "$SYNC_RAW"
+import json, sys
+raw = sys.argv[1]
+data = json.loads(raw).get("result", {}) if raw else {}
+print(data.get("unsafe_l2", {}).get("number", 0))
+PY
+)"
+
+SEQ_CROSS_UNSAFE_L2_NUM="$(python3 - <<'PY' "$SEQ_SYNC_RAW"
+import json, sys
+raw = sys.argv[1]
+data = json.loads(raw).get("result", {}) if raw else {}
+print(data.get("cross_unsafe_l2", {}).get("number", 0))
+PY
+)"
+
+SEQ_UNSAFE_L2_NUM="$(python3 - <<'PY' "$SEQ_SYNC_RAW"
+import json, sys
+raw = sys.argv[1]
+data = json.loads(raw).get("result", {}) if raw else {}
+print(data.get("unsafe_l2", {}).get("number", 0))
+PY
+)"
+
+EFFECTIVE_UNSAFE_L2_NUM="$SYNC_UNSAFE_L2_NUM"
+if [ "$EFFECTIVE_UNSAFE_L2_NUM" -eq 0 ] && [ "$SEQ_UNSAFE_L2_NUM" -gt 0 ]; then
+  EFFECTIVE_UNSAFE_L2_NUM="$SEQ_UNSAFE_L2_NUM"
+fi
+if [ "$EFFECTIVE_UNSAFE_L2_NUM" -eq 0 ] && [ "$SEQ_CROSS_UNSAFE_L2_NUM" -gt 0 ]; then
+  EFFECTIVE_UNSAFE_L2_NUM="$SEQ_CROSS_UNSAFE_L2_NUM"
+fi
+
+if [ "$SYNC_HEAD_L1_NUM" -gt 0 ]; then
+  if [ "$EFFECTIVE_UNSAFE_L2_NUM" -gt 0 ]; then
+    if [ "$SYNC_CUR_L1_NUM" -gt 0 ]; then
+      L1_LAG=$((SYNC_HEAD_L1_NUM - SYNC_CUR_L1_NUM))
+      if [ "$L1_LAG" -gt "$L2_MAX_L1_DERIVATION_LAG" ]; then
+        fail "L1 derivation lag too high (head=$SYNC_HEAD_L1_NUM current=$SYNC_CUR_L1_NUM lag=$L1_LAG > $L2_MAX_L1_DERIVATION_LAG)"
+      fi
+      echo "OK: L1 derivation lag within threshold"
+    else
+      if [ "$L2_REQUIRE_L2_PROGRESS" = "1" ]; then
+        warn "current_l1 is zero; op-node has not derived L1 yet"
+      else
+        echo "OK: L1 derivation lag check skipped (L2_REQUIRE_L2_PROGRESS=0)"
+      fi
+    fi
+    if [ "$SYNC_SAFE_L2_NUM" -gt 0 ]; then
+      SAFE_LAG=$((EFFECTIVE_UNSAFE_L2_NUM - SYNC_SAFE_L2_NUM))
+      if [ "$SAFE_LAG" -gt "$L2_MAX_L2_SAFE_LAG" ]; then
+        fail "L2 safe lag too high (unsafe=$SYNC_UNSAFE_L2_NUM safe=$SYNC_SAFE_L2_NUM lag=$SAFE_LAG > $L2_MAX_L2_SAFE_LAG)"
+      fi
+      echo "OK: L2 safe lag within threshold"
+    else
+      if [ "$L2_REQUIRE_L2_PROGRESS" = "1" ]; then
+        warn "safe_l2 is zero; no safe L2 blocks observed yet"
+      else
+        echo "OK: L2 safe lag check skipped (L2_REQUIRE_L2_PROGRESS=0)"
+      fi
+    fi
+  else
+    if [ "$L2_REQUIRE_L2_PROGRESS" = "1" ]; then
+      fail "L2 unsafe head is zero; no L2 progress detected"
+    fi
+    echo "OK: L2 progress check skipped (L2_REQUIRE_L2_PROGRESS=0)"
+  fi
+fi
+
 for url in "$L2_GETH_METRICS_URL" "$OP_NODE_METRICS_URL" "$OP_SEQUENCER_METRICS_URL" "$OP_BATCHER_METRICS_URL" "$OP_PROPOSER_METRICS_URL"; do
   if ! curl -fsS --max-time 4 "$url" >/dev/null 2>&1; then
     fail "metrics endpoint not reachable: $url"
   fi
   echo "OK: metrics reachable: $url"
 done
+
+if [ "$L2_REQUIRE_L2_PROGRESS" = "1" ]; then
+  NOW_TS="$(date +%s)"
+  LAST_BATCH_SUCCESS="$(metric_value_with_label "$OP_BATCHER_METRICS_URL" "op_batcher_default_last_batcher_tx_unix" "stage=\\\"success\\\"" || true)"
+  LAST_BATCH_SUCCESS_INT="$(to_int "${LAST_BATCH_SUCCESS:-0}")"
+  if [ "$LAST_BATCH_SUCCESS_INT" -gt 0 ]; then
+    BATCH_IDLE=$((NOW_TS - LAST_BATCH_SUCCESS_INT))
+    if [ "$BATCH_IDLE" -gt "$L2_MAX_BATCHER_IDLE_SECONDS" ]; then
+      fail "batcher idle for ${BATCH_IDLE}s (threshold ${L2_MAX_BATCHER_IDLE_SECONDS}s)"
+    fi
+    echo "OK: batcher activity within threshold"
+  else
+    fail "batcher has not submitted a successful tx yet"
+  fi
+
+  LAST_PROPOSER_PUBLISH="$(metric_value "$OP_PROPOSER_METRICS_URL" "op_proposer_default_txmgr_last_publish_unix" || true)"
+  LAST_PROPOSER_PUBLISH_INT="$(to_int "${LAST_PROPOSER_PUBLISH:-0}")"
+  if [ "$LAST_PROPOSER_PUBLISH_INT" -gt 0 ]; then
+    PROPOSER_IDLE=$((NOW_TS - LAST_PROPOSER_PUBLISH_INT))
+    if [ "$PROPOSER_IDLE" -gt "$L2_MAX_PROPOSER_IDLE_SECONDS" ]; then
+      fail "proposer idle for ${PROPOSER_IDLE}s (threshold ${L2_MAX_PROPOSER_IDLE_SECONDS}s)"
+    fi
+    echo "OK: proposer activity within threshold"
+  else
+    fail "proposer has not published an output yet"
+  fi
+else
+  echo "OK: batcher/proposer idle checks skipped (L2_REQUIRE_L2_PROGRESS=0)"
+fi
 
 if [ "$CHALLENGER_REQUIRED" = "1" ]; then
   if ! curl -fsS --max-time 4 "$L2_CHALLENGER_METRICS_URL" >/dev/null 2>&1; then

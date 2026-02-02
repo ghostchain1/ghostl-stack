@@ -335,6 +335,7 @@ services:
     image: local/op-geth:${OPSTACK_IMAGE_TAG:-local}
     user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     restart: unless-stopped
+    stop_grace_period: 45s
     logging: *id003
     depends_on:
       op-gate:
@@ -420,6 +421,7 @@ services:
     image: local/op-node:${OPSTACK_IMAGE_TAG:-local}
     user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     restart: unless-stopped
+    stop_grace_period: 30s
     logging: *id003
     extra_hosts:
     - host.docker.internal:host-gateway
@@ -471,6 +473,7 @@ services:
     image: local/op-node:${OPSTACK_IMAGE_TAG:-local}
     user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     restart: unless-stopped
+    stop_grace_period: 30s
     logging: *id003
     extra_hosts:
     - host.docker.internal:host-gateway
@@ -525,6 +528,7 @@ services:
     image: local/op-batcher:${OPSTACK_IMAGE_TAG:-local}
     user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     restart: unless-stopped
+    stop_grace_period: 30s
     logging: *id003
     extra_hosts:
     - host.docker.internal:host-gateway
@@ -578,6 +582,7 @@ services:
     image: local/op-proposer:${OPSTACK_IMAGE_TAG:-local}
     user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     restart: unless-stopped
+    stop_grace_period: 30s
     logging: *id003
     extra_hosts:
     - host.docker.internal:host-gateway
