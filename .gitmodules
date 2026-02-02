@@ -12,4 +12,4 @@
 
 [submodule "infra/opstack/optimism-upstream"]
 	path = infra/opstack/optimism-upstream
-	url = https://github.com/ethereum-optimism/optimism.git
+	url = git@github.com:ghostchain1/optimism.git
