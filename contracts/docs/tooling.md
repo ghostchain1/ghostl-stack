@@ -1,5 +1,10 @@
 # Contract Tooling
 
+## Toolchain versions
+
+- Node.js: `>=22.21.0 <23` (see `contracts/package.json` engines)
+- Foundry: `>=1.5.1` recommended for fuzz/invariant runs
+
 ## Solidity baseline
 
 GhostChain Solidity Baseline: `^0.8.24` (MANDATORY)
