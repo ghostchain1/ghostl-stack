@@ -68,6 +68,14 @@ From `infra/opstack/.env`:
 - `GOVERNOR_ADDRESS_L1=0xE5BD5bDC03371fB239956dbbF40bD185D6c2ea28`
 - `EXECUTOR_ADDRESS_L1=0xAd5d57aD9bB17d34Debb88566ab2F5dB879Cc46F`
 
+## Policy registry alignment
+
+From `infra/opstack/.env`:
+
+- `POLICY_REGISTRY_ADDRESS=<set to L1 AgentGovernancePolicy>`
+- `POLICY_REGISTRY_RPC=<L1 RPC>`
+- `POLICY_ROLE=L2_AI_MONITOR`
+
 ## Alignment gaps / notes
 
 - `infra/opstack/config/rollup.json` contains `l1.chain_id` and `l2.chain_id` as `null` in repo; `up-l2.sh` updates rollup genesis fields at runtime. Consider persisting chain IDs during Phase 2 if desired.

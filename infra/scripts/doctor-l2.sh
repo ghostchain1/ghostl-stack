@@ -42,6 +42,10 @@ OP_PROPOSER_METRICS_URL="${OP_PROPOSER_METRICS_URL:-http://localhost:7302/metric
 L2_CHALLENGER_METRICS_URL="${L2_CHALLENGER_METRICS_URL:-http://localhost:${L2_CHALLENGER_METRICS_HOST_PORT:-7303}/metrics}"
 AI_MONITOR_URL="${AI_MONITOR_URL:-http://localhost:7575/health}"
 AI_MONITOR_REQUIRED="${AI_MONITOR_REQUIRED:-0}"
+AI_MONITOR_OBSERVE_ONLY="${AI_MONITOR_OBSERVE_ONLY:-1}"
+POLICY_REGISTRY_ADDRESS="${POLICY_REGISTRY_ADDRESS:-}"
+POLICY_REGISTRY_RPC="${POLICY_REGISTRY_RPC:-$HOST_L1_RPC}"
+POLICY_REQUIRED="${POLICY_REQUIRED:-1}"
 
 L2_MAX_L1_DERIVATION_LAG="${L2_MAX_L1_DERIVATION_LAG:-128}"
 L2_MAX_L2_SAFE_LAG="${L2_MAX_L2_SAFE_LAG:-256}"
@@ -201,6 +205,16 @@ if ! docker compose version >/dev/null 2>&1; then
 fi
 
 echo "OK: docker/compose reachable"
+
+if [ "$AI_MONITOR_OBSERVE_ONLY" != "1" ] && [ "$POLICY_REQUIRED" = "1" ]; then
+  if [ -z "$POLICY_REGISTRY_ADDRESS" ]; then
+    fail "policy registry required for autonomous actions (set POLICY_REGISTRY_ADDRESS)"
+  fi
+  if [ -z "$POLICY_REGISTRY_RPC" ]; then
+    fail "policy registry RPC missing (set POLICY_REGISTRY_RPC or HOST_L1_RPC)"
+  fi
+  echo "OK: policy registry configured for autonomous actions"
+fi
 
 if [ "$L2_SECRETS_SOURCE" = "vault" ]; then
   if [ -z "$VAULT_ADDR" ] || { [ -z "$VAULT_TOKEN" ] && { [ -z "$VAULT_ROLE_ID" ] || [ -z "$VAULT_SECRET_ID" ]; }; }; then

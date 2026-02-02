@@ -1,0 +1,26 @@
+{
+  "role": "L2_AI_MONITOR",
+  "policyHash": "0x0000000000000000000000000000000000000000000000000000000000000001",
+  "enabled": true,
+  "executors": [],
+  "actions": [
+    {
+      "name": "L2_AI_THROTTLE",
+      "tier": 1,
+      "cooldownSeconds": 30,
+      "approvalsRequired": 0,
+      "evidenceRequired": false,
+      "scope": "L2",
+      "evidenceHash": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "name": "L2_AI_PAUSE",
+      "tier": 1,
+      "cooldownSeconds": 120,
+      "approvalsRequired": 1,
+      "evidenceRequired": true,
+      "scope": "L2",
+      "evidenceHash": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ]
+}

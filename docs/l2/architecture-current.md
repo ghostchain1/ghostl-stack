@@ -25,7 +25,7 @@ This document reflects the *current* Ghost L2 implementation as defined in repo 
 | Challenger (optional) | `op-challenger` | metrics only (default 7303) | Enabled via overlay compose. Uses cannon/Kona assets. |
 | Gate (L2) | `op-gate` | 28546 | Guard-aware RPC proxy for L2 operations. |
 | Gate (L1) | `op-gate-l1` | 28547 | Guard-aware RPC proxy for L1 operations. |
-| AI monitor (optional) | `ai-monitor` | 7575 | AI health monitor for L2 metrics/logs, optional auto-actions. |
+| AI monitor (optional) | `ai-monitor` | 7575 | AI health monitor for L2 metrics/logs, optional auto-actions gated by L1 policy registry. |
 | L1 RPC proxy | `l1-rpc-proxy` | 18546 | Forwards to host L1 RPC. |
 | L2 RPC forwarder | `rpc-forward-l2-18547` | 18547 | Forwards to `op-gate` for local RPC compatibility. |
 
