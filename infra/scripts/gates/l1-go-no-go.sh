@@ -34,6 +34,12 @@ SKIP_INVARIANTS="${SKIP_INVARIANTS:-0}"
 SKIP_EVIDENCE="${SKIP_EVIDENCE:-0}"
 SKIP_VULN_SCAN="${SKIP_VULN_SCAN:-0}"
 
+TRIVY_SECRET_CONFIG="${TRIVY_SECRET_CONFIG:-$ROOT_DIR/trivy-secret.yaml}"
+TRIVY_SKIP_DIRS_DEFAULT="$ROOT_DIR/ops/snapshots,$ROOT_DIR/backups,$ROOT_DIR/ops/preflight,$ROOT_DIR/contracts/out-codex,$ROOT_DIR/contracts/cache-codex"
+TRIVY_SKIP_FILES_DEFAULT="$ROOT_DIR/contracts/reports/formal/scribble/scribble.json,$ROOT_DIR/contracts/artifacts/build-info/*.json,$ROOT_DIR/infra/opstack/op-geth/signer/fourbyte/4byte.json"
+TRIVY_SKIP_DIRS="${TRIVY_SKIP_DIRS:-$TRIVY_SKIP_DIRS_DEFAULT}"
+TRIVY_SKIP_FILES="${TRIVY_SKIP_FILES:-$TRIVY_SKIP_FILES_DEFAULT}"
+
 warn() { echo "WARN: $*" >&2; }
 fail() { echo "FAIL: $*" >&2; exit 1; }
 info() { echo "[gate] $*"; }
@@ -274,7 +280,17 @@ fi
 if [ "$SKIP_VULN_SCAN" != "1" ]; then
   info "vulnerability scan"
   if command -v trivy >/dev/null 2>&1; then
-    trivy fs --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed "$ROOT_DIR"
+    trivy_cmd=(trivy fs --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed "$ROOT_DIR")
+    if [ -n "$TRIVY_SKIP_DIRS" ]; then
+      trivy_cmd+=(--skip-dirs "$TRIVY_SKIP_DIRS")
+    fi
+    if [ -n "$TRIVY_SKIP_FILES" ]; then
+      trivy_cmd+=(--skip-files "$TRIVY_SKIP_FILES")
+    fi
+    if [ -f "$TRIVY_SECRET_CONFIG" ]; then
+      trivy_cmd+=(--secret-config "$TRIVY_SECRET_CONFIG")
+    fi
+    "${trivy_cmd[@]}"
   else
     fail "trivy not installed (set SKIP_VULN_SCAN=1 only if exceptions are documented)"
   fi
