@@ -3,6 +3,8 @@
 - `l1-threat-model.md`: L1 threat model and controls.
 - `l1-hardening-checklist.md`: Hardening checklist for L1 ops.
 - `l1-invariants.md`: Formal L1 invariants and enforcement map.
+- `l2-threat-model.md`: L2 threat model and controls.
+- `l2-hardening-checklist.md`: Hardening checklist for L2 ops.
 - `ssh-onchain-notary.md`: SSH notarization workflow.
 
 ## Scanning configuration
