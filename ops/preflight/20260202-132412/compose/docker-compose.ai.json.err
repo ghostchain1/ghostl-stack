@@ -1,0 +1,7 @@
+time="2026-02-02T13:25:20Z" level=warning msg="The \"RPC_L2\" variable is not set. Defaulting to a blank string."
+time="2026-02-02T13:25:20Z" level=warning msg="The \"GUARD_URL\" variable is not set. Defaulting to a blank string."
+time="2026-02-02T13:25:20Z" level=warning msg="The \"BRIDGE_ADMIN_TOKEN\" variable is not set. Defaulting to a blank string."
+time="2026-02-02T13:25:20Z" level=warning msg="The \"PROM_URL\" variable is not set. Defaulting to a blank string."
+time="2026-02-02T13:25:20Z" level=warning msg="The \"PROM_URL\" variable is not set. Defaulting to a blank string."
+time="2026-02-02T13:25:20Z" level=warning msg="The \"PROM_URL\" variable is not set. Defaulting to a blank string."
+env file /home/ghost/ghostl-stack/ops/snapshots/20260126-112312/files/infra/docker/compose/stack.env not found: stat /home/ghost/ghostl-stack/ops/snapshots/20260126-112312/files/infra/docker/compose/stack.env: no such file or directory

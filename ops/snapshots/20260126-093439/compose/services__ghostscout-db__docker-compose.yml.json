@@ -1,0 +1,111 @@
+{
+  "name": "ghostscout-db",
+  "networks": {
+    "ghostchain_ghostchain": {
+      "name": "ghostchain_ghostchain",
+      "ipam": {},
+      "external": true
+    },
+    "opstack_default": {
+      "name": "opstack_default",
+      "ipam": {},
+      "external": true
+    }
+  },
+  "services": {
+    "ghostscout-db": {
+      "build": {
+        "context": "/home/ghost/ghostl-stack/services/ghostscout-db",
+        "dockerfile": "Dockerfile"
+      },
+      "command": [
+        "postgres",
+        "-c",
+        "max_connections=200"
+      ],
+      "container_name": "ghost_ghostscout-db",
+      "deploy": {
+        "resources": {
+          "limits": {
+            "cpus": 2,
+            "memory": "4294967296"
+          },
+          "reservations": {
+            "cpus": 0.5,
+            "memory": "536870912"
+          }
+        },
+        "placement": {}
+      },
+      "entrypoint": null,
+      "environment": {
+        "HEALTHCHECK_CMD": "pg_isready -U ghostscout -d ghostscout_l1",
+        "POSTGRES_DB": "ghostscout_l1",
+        "POSTGRES_PASSWORD": "ghostpass",
+        "POSTGRES_USER": "ghostscout"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "/healthcheck.sh"
+        ],
+        "timeout": "5s",
+        "interval": "10s",
+        "retries": 10,
+        "start_period": "20s"
+      },
+      "image": "ghostl/ghostscout-db:local",
+      "networks": {
+        "ghostchain_ghostchain": {
+          "aliases": [
+            "ghostscout-postgres",
+            "ghostscout-db"
+          ]
+        },
+        "opstack_default": {
+          "aliases": [
+            "ghostscout-postgres",
+            "ghostscout-db"
+          ]
+        }
+      },
+      "restart": "unless-stopped",
+      "stop_grace_period": "30s",
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/services/ghostscout-db/data",
+          "target": "/var/lib/postgresql/data",
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/services/ghostscout-db/init/create_dbs.sql",
+          "target": "/docker-entrypoint-initdb.d/create_dbs.sql",
+          "read_only": true,
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/services/ghostscout-db/data",
+          "target": "/data",
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/services/ghostscout-db/entrypoint.sh",
+          "target": "/entrypoint.sh",
+          "read_only": true,
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/services/ghostscout-db/healthcheck.sh",
+          "target": "/healthcheck.sh",
+          "read_only": true,
+          "bind": {}
+        }
+      ]
+    }
+  }
+}

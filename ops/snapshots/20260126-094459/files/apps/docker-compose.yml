@@ -1,0 +1,102 @@
+version: "3.9"
+
+name: ghostchain-compliance
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ghost_compliance
+      POSTGRES_USER: ghost
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ghostpass}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghost -d ghost_compliance"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    image: node:22-alpine
+    working_dir: /work
+    volumes:
+      - ./services/ghost-compliance:/work
+    environment:
+      DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:-ghostpass}@postgres:5432/ghost_compliance
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${COMPLIANCE_JWT_SECRET:-change-me}
+      ATTESTATION_PRIVATE_KEY: ${COMPLIANCE_ATTESTATION_PRIVATE_KEY:-0x59c6995e998f97a5a0044966f094538e4b1a8d9d0f0b8a8c64d124b5e5d6fcbf}
+      ATTESTATION_EXPIRY_SECONDS: 900
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["sh", "-lc", "npm install && npm run migrate"]
+    restart: "no"
+
+  ghost-compliance:
+    build:
+      context: ./services/ghost-compliance
+    environment:
+      NODE_ENV: production
+      PORT: 8090
+      DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:-ghostpass}@postgres:5432/ghost_compliance
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${COMPLIANCE_JWT_SECRET:-change-me}
+      ATTESTATION_PRIVATE_KEY: ${COMPLIANCE_ATTESTATION_PRIVATE_KEY:-0x59c6995e998f97a5a0044966f094538e4b1a8d9d0f0b8a8c64d124b5e5d6fcbf}
+      ATTESTATION_EXPIRY_SECONDS: 900
+      CORS_ORIGIN: http://localhost:3200
+    ports:
+      - "8090:8090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:8090/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  ghost-compliance-worker:
+    build:
+      context: ./services/ghost-compliance-worker
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:-ghostpass}@postgres:5432/ghost_compliance
+      REDIS_URL: redis://redis:6379
+      COMPLIANCE_API_URL: http://ghost-compliance:8090
+      PREDICT_INTERVAL_SECONDS: 60
+    depends_on:
+      ghost-compliance:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+  redis_data:
+

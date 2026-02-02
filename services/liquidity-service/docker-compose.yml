@@ -1,0 +1,55 @@
+# stack-group: infra
+# role: liquidity-service
+# ports: 7606:7606
+# volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
+version: '3.9'
+services:
+  liquidity-service:
+    container_name: ghost_liquidity-service
+    image: ghostl/liquidity-service:local
+    build:
+      context: .
+    env_file:
+    - .env
+    entrypoint:
+    - /bin/bash
+    - /entrypoint.sh
+    environment:
+    - PORT=7606
+    - PROM_URL=${PROM_URL}
+    - RPC_L2=${RPC_L2}
+    - RPC_L3=${RPC_L3}
+    - BRIDGE_ADDRESS=${BRIDGE_ADDRESS}
+    - L2_TOKEN_ADDRESS=${L2_TOKEN_ADDRESS}
+    - L3_TOKEN_ADDRESS=${L3_TOKEN_ADDRESS}
+    ports:
+    - 7606:7606
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4g
+        reservations:
+          cpus: '0.5'
+          memory: 512m
+    volumes:
+    - ./data:/data
+    - ./entrypoint.sh:/entrypoint.sh:ro
+    - ./healthcheck.sh:/healthcheck.sh:ro
+    networks:
+    - ghost_net
+networks:
+  ghost_net:
+    external: true

@@ -1,0 +1,225 @@
+{
+  "services": {
+    "ghost-ui": {
+      "build": {
+        "context": "./apps/ghost-ui",
+        "dockerfile": "Dockerfile"
+      },
+      "depends_on": {
+        "ghost-compliance": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "COMPLIANCE_ANALYST_JWT": "${COMPLIANCE_ANALYST_JWT:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJnaG9zdC11aSIsInJvbGUiOiJhbmFseXN0In0.Hry8Kl3wdOufLjxTZ_A9NLSXVk_gReEKNH3gWP2lYdg}",
+        "COMPLIANCE_URL": "http://ghost-compliance:8090",
+        "NEXT_PUBLIC_COMPLIANCE_URL": "http://localhost:8090",
+        "NODE_ENV": "production",
+        "PORT": 3200
+      },
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "3200",
+          "target": 3200
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ghost-ui",
+        "com.ghost.k8s.role": "ui",
+        "com.ghost.k8s.stateful": "false",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "",
+        "com.ghost.k8s.service.type": "LoadBalancer"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "ghostl-web": {
+      "build": {
+        "context": ".",
+        "dockerfile": "apps/web/Dockerfile",
+        "target": "dev"
+      },
+      "depends_on": {
+        "ghostl-api": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "env_file": [
+        {
+          "path": "./apps/web/.env.example",
+          "required": true
+        }
+      ],
+      "environment": [
+        "NODE_ENV=development",
+        "PORT=3200",
+        "NEXT_PUBLIC_API_URL=http://localhost:4000",
+        "API_INTERNAL_URL=http://ghostl-api:4000"
+      ],
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "3200",
+          "target": 3200
+        }
+      ],
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "./",
+          "target": "/app",
+          "type": "bind"
+        },
+        {
+          "target": "/app/node_modules",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "ghostl-web",
+        "com.ghost.k8s.role": "ui",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "./",
+        "com.ghost.k8s.service.type": "LoadBalancer"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    }
+  },
+  "networks": {
+    "default": {
+      "name": "ops-bedrock_default"
+    },
+    "ghostchain": {
+      "driver": "bridge",
+      "ipam": {
+        "config": [
+          {
+            "subnet": "172.28.0.0/16"
+          }
+        ]
+      },
+      "name": "ghostchain_ghostchain"
+    }
+  },
+  "volumes": {
+    "l1-mainnet-geth-data": {
+      "name": "opstack_l1-mainnet-geth-data"
+    },
+    "ghostchain-node1-data": {
+      "name": "ghostchain_ghostchain-node1-data"
+    },
+    "ghostchain-node2-data": {
+      "name": "ghostchain_ghostchain-node2-data"
+    },
+    "ghostchain-node3-data": {
+      "name": "ghostchain_ghostchain-node3-data"
+    },
+    "ghostchain-node4-data": {
+      "name": "ghostchain_ghostchain-node4-data"
+    },
+    "ghostscout-db-data": {
+      "name": "ghostchain_ghostscout-db-data"
+    },
+    "alertmanager_data": {
+      "name": "infra_alertmanager_data"
+    },
+    "grafana_data": {
+      "name": "infra_grafana_data"
+    },
+    "loki_data": {
+      "name": "infra_loki_data"
+    },
+    "op_gate_state": {
+      "name": "opstack_op_gate_state"
+    },
+    "prometheus_data": {
+      "name": "infra_prometheus_data"
+    },
+    "pg_data": {
+      "name": "ghostchain-compliance_pg_data"
+    },
+    "redis_data": {
+      "name": "ghostchain-compliance_redis_data"
+    },
+    "l1_bn_data": {
+      "name": "ops-bedrock_l1_bn_data"
+    },
+    "l1_data": {
+      "name": "ops-bedrock_l1_data"
+    },
+    "l1_vc_data": {
+      "name": "ops-bedrock_l1_vc_data"
+    },
+    "l2_a_data": {
+      "name": "interop-devnet_l2_a_data"
+    },
+    "l2_b_data": {
+      "name": "interop-devnet_l2_b_data"
+    },
+    "op_log_a": {
+      "name": "interop-devnet_op_log_a"
+    },
+    "op_log_b": {
+      "name": "interop-devnet_op_log_b"
+    },
+    "safedb_a_data": {
+      "name": "interop-devnet_safedb_a_data"
+    },
+    "safedb_b_data": {
+      "name": "interop-devnet_safedb_b_data"
+    },
+    "supervisor_data": {
+      "name": "interop-devnet_supervisor_data"
+    },
+    "challenger_data": {
+      "name": "ops-bedrock_challenger_data"
+    },
+    "da_data": {
+      "name": "ops-bedrock_da_data"
+    },
+    "l2_data": {
+      "name": "ops-bedrock_l2_data"
+    },
+    "op_log": {
+      "name": "ops-bedrock_op_log"
+    },
+    "safedb_data": {
+      "name": "ops-bedrock_safedb_data"
+    }
+  },
+  "x-ghost-source-files": [
+    "infra/opstack/docker-compose.mainnet-geth.yml",
+    "infra/opstack/docker-compose.network-manager.yml",
+    "infra/opstack/docker-compose.l3.yml",
+    "services/docker-compose.yml",
+    "infra/ghostchain/docker-compose.ibft.yml",
+    "infra/ghostchain/docker-compose.eth.yml",
+    "infra/opstack/docker-compose.yml",
+    "docker-compose.yml",
+    "core-service/docker-compose.yml",
+    "docker-compose.dev.yml",
+    "observability/infra/docker-compose.yml",
+    "infra/opstack/docker-compose.challengers.yml",
+    "infra/opstack/optimism-upstream/interop-devnet/docker-compose.yml",
+    "infra/opstack/optimism-upstream/ops-bedrock/docker-compose.yml"
+  ]
+}

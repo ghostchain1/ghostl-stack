@@ -1,0 +1,138 @@
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-security: &default-security
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  ghostchain-node1:
+    image: hyperledger/besu:24.12.0
+    restart: unless-stopped
+    logging: *default-logging
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        BOOTNODES=$(tr '\n' ',' </config/peers.txt | sed 's/,$//')
+        exec besu \
+          --data-path=/data \
+          --genesis-file=/config/genesis.json \
+          --rpc-http-enabled \
+          --rpc-http-host=0.0.0.0 \
+          --rpc-http-api=ETH,NET,WEB3,IBFT,ADMIN,TXPOOL \
+          --host-allowlist="*" \
+          --rpc-http-cors-origins="*" \
+          --p2p-port=30303 \
+          --rpc-http-port=8545 \
+          --rpc-ws-enabled \
+          --rpc-ws-host=0.0.0.0 \
+          --rpc-ws-port=8546 \
+          --metrics-enabled \
+          --metrics-host=0.0.0.0 \
+          --metrics-port=6060 \
+          --node-private-key-file=/config/keys/node1/key \
+          --bootnodes=$${BOOTNODES}
+    volumes:
+      - ./ibft/networkFiles:/config
+      - ghostchain-node1-data:/data
+    ports:
+      - "18545:8545"
+      - "18546:8546"
+      - "18551:30303"
+      - "18660:6060"
+    networks:
+      ghostchain:
+        ipv4_address: 172.28.0.11
+    <<: *default-security
+    mem_limit: 2g
+    cpus: "1.0"
+
+  ghostchain-node2:
+    image: hyperledger/besu:24.12.0
+    restart: unless-stopped
+    logging: *default-logging
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        BOOTNODES=$(tr '\n' ',' </config/peers.txt | sed 's/,$//')
+        exec besu \
+          --data-path=/data \
+          --genesis-file=/config/genesis.json \
+          --p2p-port=30303 \
+          --node-private-key-file=/config/keys/node2/key \
+          --bootnodes=$${BOOTNODES}
+    volumes:
+      - ./ibft/networkFiles:/config
+      - ghostchain-node2-data:/data
+    networks:
+      ghostchain:
+        ipv4_address: 172.28.0.12
+    <<: *default-security
+    mem_limit: 2g
+    cpus: "1.0"
+
+  ghostchain-node3:
+    image: hyperledger/besu:24.12.0
+    restart: unless-stopped
+    logging: *default-logging
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        BOOTNODES=$(tr '\n' ',' </config/peers.txt | sed 's/,$//')
+        exec besu \
+          --data-path=/data \
+          --genesis-file=/config/genesis.json \
+          --p2p-port=30303 \
+          --node-private-key-file=/config/keys/node3/key \
+          --bootnodes=$${BOOTNODES}
+    volumes:
+      - ./ibft/networkFiles:/config
+      - ghostchain-node3-data:/data
+    networks:
+      ghostchain:
+        ipv4_address: 172.28.0.13
+    <<: *default-security
+    mem_limit: 2g
+    cpus: "1.0"
+
+  ghostchain-node4:
+    image: hyperledger/besu:24.12.0
+    restart: unless-stopped
+    logging: *default-logging
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        BOOTNODES=$(tr '\n' ',' </config/peers.txt | sed 's/,$//')
+        exec besu \
+          --data-path=/data \
+          --genesis-file=/config/genesis.json \
+          --p2p-port=30303 \
+          --node-private-key-file=/config/keys/node4/key \
+          --bootnodes=$${BOOTNODES}
+    volumes:
+      - ./ibft/networkFiles:/config
+      - ghostchain-node4-data:/data
+    networks:
+      ghostchain:
+        ipv4_address: 172.28.0.14
+    <<: *default-security
+    mem_limit: 2g
+    cpus: "1.0"
+
+volumes:
+  ghostchain-node1-data:
+  ghostchain-node2-data:
+  ghostchain-node3-data:
+  ghostchain-node4-data:
+
+networks:
+  ghostchain:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

@@ -1,0 +1,1578 @@
+ghostl-stack/
+    |-- .github/
+    |   |-- ISSUE_TEMPLATE/
+    |   |   `-- dev-checklist.md
+    |   `-- workflows/
+    |       |-- ci.yml
+    |       |-- docker-dry-run.yml
+    |       `-- docker-publish.yml
+    |-- .vscode/
+    |   |-- launch.json
+    |   `-- settings.json
+    |-- apps/
+    |   |-- api/
+    |   |   |-- data/
+    |   |   |-- src/
+    |   |   |-- .env.docker
+    |   |   |-- .env.example
+    |   |   |-- .env.local
+    |   |   |-- .env.local.example
+    |   |   |-- .eslintrc.json
+    |   |   |-- Dockerfile
+    |   |   |-- package.json
+    |   |   `-- tsconfig.json
+    |   |-- web/
+    |   |   |-- .next/
+    |   |   |-- app/
+    |   |   |-- pages/
+    |   |   |-- public/
+    |   |   |-- src/
+    |   |   |-- tests/
+    |   |   |-- .env.docker
+    |   |   |-- .env.example
+    |   |   |-- .env.local
+    |   |   |-- .env.local.example
+    |   |   |-- .eslintrc.json
+    |   |   |-- Dockerfile
+    |   |   |-- middleware.ts
+    |   |   |-- next-env.d.ts
+    |   |   |-- next.config.js
+    |   |   |-- package.json
+    |   |   |-- playwright.config.ts
+    |   |   |-- proxy.ts
+    |   |   `-- tsconfig.json
+    |   |-- worker/
+    |   |   |-- data/
+    |   |   |-- src/
+    |   |   |-- package.json
+    |   |   `-- tsconfig.json
+    |   |-- docker-compose.dev.yml
+    |   `-- docker-compose.yml
+    |-- chains/
+    |   |-- l2/
+    |   |   `-- data/
+    |   `-- l3/
+    |       `-- data/
+    |-- contracts/
+    |   |-- .foundry-cache/
+    |   |   `-- solidity-files-cache.json
+    |   |-- .foundry-cache-local/
+    |   |   `-- solidity-files-cache.json
+    |   |-- .foundry-out/
+    |   |   |-- build-info/
+    |   |   |-- ERC20.sol/
+    |   |   |-- NativeToken.sol/
+    |   |   |-- Ownable.sol/
+    |   |   |-- Treasury.sol/
+    |   |   `-- TreasuryEchidna.sol/
+    |   |-- .foundry-out-local/
+    |   |   |-- Admin.sol/
+    |   |   |-- AIAttestationBase.sol/
+    |   |   |-- AICommandCenter.sol/
+    |   |   |-- AIGuardian.t.sol/
+    |   |   |-- AIGuardianL1.sol/
+    |   |   |-- AIGuardianL2.sol/
+    |   |   |-- AIGuardianL3.sol/
+    |   |   |-- AILayerGuardian.sol/
+    |   |   |-- BridgeMintableERC20.sol/
+    |   |   |-- build-info/
+    |   |   |-- ChainConfig.sol/
+    |   |   |-- common/
+    |   |   |-- DisputeGameAddressBook.sol/
+    |   |   |-- DisputeGameFactory.sol/
+    |   |   |-- DummyL2OO.sol/
+    |   |   |-- EmergencyShutdown.sol/
+    |   |   |-- ERC20.sol/
+    |   |   |-- Faucet.sol/
+    |   |   |-- FeeMarket.sol/
+    |   |   |-- FutureStack.sol/
+    |   |   |-- FuzzBridge.t.sol/
+    |   |   |-- FuzzGhostToken.t.sol/
+    |   |   |-- FuzzGovernance.t.sol/
+    |   |   |-- FuzzNativeToken.t.sol/
+    |   |   |-- FuzzRollup.t.sol/
+    |   |   |-- FuzzTreasury.t.sol/
+    |   |   |-- GasToken.sol/
+    |   |   |-- GenesisConfig.sol/
+    |   |   |-- GhostGasTokens.sol/
+    |   |   |-- GhostNFT.sol/
+    |   |   |-- GhostTokenL2.sol/
+    |   |   |-- Governor.sol/
+    |   |   |-- GuardPolicy.sol/
+    |   |   |-- GuardPolicyStub.sol/
+    |   |   |-- IAITransactionGuard.sol/
+    |   |   |-- InvariantBridge.t.sol/
+    |   |   |-- IXDomainMessenger.sol/
+    |   |   |-- L1CrossDomainMessenger.sol/
+    |   |   |-- L1DisputeGameFactory.sol/
+    |   |   |-- L1OptimismPortal.sol/
+    |   |   |-- L1OutputOracle.sol/
+    |   |   |-- L1SystemConfig.sol/
+    |   |   |-- L2L3Bridge.sol/
+    |   |   |-- L2OutputOracle.sol/
+    |   |   |-- L2OutputOracleStub.sol/
+    |   |   |-- L3BridgedToken.sol/
+    |   |   |-- L3BridgedTokenFactory.sol/
+    |   |   |-- L3Inbox.sol/
+    |   |   |-- LibAddress.sol/
+    |   |   |-- LibErrors.sol/
+    |   |   |-- Merkle.sol/
+    |   |   |-- Messenger.sol/
+    |   |   |-- MockDisputeGameFactory.sol/
+    |   |   |-- MockL2OutputOracle.sol/
+    |   |   |-- MockSystemConfig.sol/
+    |   |   |-- NativeToken.sol/
+    |   |   |-- OptimisticRollup.sol/
+    |   |   |-- Ownable.sol/
+    |   |   |-- PauseGuardian.sol/
+    |   |   |-- PingPong.sol/
+    |   |   |-- Portal.sol/
+    |   |   |-- ProposalExecutor.sol/
+    |   |   |-- RewardDistributor.sol/
+    |   |   |-- RollupManager.sol/
+    |   |   |-- SimpleDisputeGame.sol/
+    |   |   |-- SlashingManager.sol/
+    |   |   |-- StakeToken.sol/
+    |   |   |-- StakingManager.sol/
+    |   |   |-- StandardBridge.sol/
+    |   |   |-- SystemConfig.sol/
+    |   |   |-- TestBase.sol/
+    |   |   |-- TestERC20.sol/
+    |   |   |-- Treasury.sol/
+    |   |   |-- UpgradeManager.sol/
+    |   |   |-- ValidatorRegistry.sol/
+    |   |   |-- XDomainMessenger.sol/
+    |   |   `-- ZkBatchVerifier.sol/
+    |   |-- .hardhat-cache/
+    |   |   `-- solidity-files-cache.json
+    |   |-- compliance/
+    |   |   |-- script/
+    |   |   |-- src/
+    |   |   |-- test/
+    |   |   |-- foundry.toml
+    |   |   `-- README.md
+    |   |-- deployments/
+    |   |   |-- ghostl2/
+    |   |   `-- ghostl2Op/
+    |   |-- docs/
+    |   |   |-- hierarchical-bridge.md
+    |   |   `-- tooling.md
+    |   |-- formal/
+    |   |   |-- certora/
+    |   |   |-- echidna/
+    |   |   |-- scribble/
+    |   |   |-- README.md
+    |   |   |-- scribble.config.json
+    |   |   `-- slither.config.json
+    |   |-- out/
+    |   |   |-- build-info/
+    |   |   |-- ERC20.sol/
+    |   |   |-- NativeToken.sol/
+    |   |   |-- Ownable.sol/
+    |   |   |-- Treasury.sol/
+    |   |   `-- TreasuryEchidna.sol/
+    |   |-- reports/
+    |   |   |-- formal/
+    |   |   `-- foundry/
+    |   |-- scripts/
+    |   |   |-- configure_roles.ts
+    |   |   |-- demo_balance_l2.ts
+    |   |   |-- demo_balance_l3.ts
+    |   |   |-- demo_burn_erc20_l3.ts
+    |   |   |-- demo_deposit.ts
+    |   |   |-- demo_deposit_erc20.ts
+    |   |   |-- demo_finalize.ts
+    |   |   |-- demo_finalize_erc20.ts
+    |   |   |-- deploy-bridge-mintable.ts
+    |   |   |-- deploy-custom-l1.ts
+    |   |   |-- deploy-messenger.ts
+    |   |   |-- deploy-pingpong.ts
+    |   |   |-- deploy-standard-bridge.ts
+    |   |   |-- deploy-test-erc20.ts
+    |   |   |-- deploy_ai_layers.ts
+    |   |   |-- deploy_all.ts
+    |   |   |-- deploy_futuristic_stack.ts
+    |   |   |-- deploy_l3_stubs.ts
+    |   |   |-- deploy_l3_stubs_raw.js
+    |   |   |-- deploy_mock_systemconfig.ts
+    |   |   |-- deploy_one_click.ts
+    |   |   |-- deploy_rollups_manual.ts
+    |   |   |-- deploy_stake_token.ts
+    |   |   |-- fund_addresses.ts
+    |   |   |-- generate_diagrams.ts
+    |   |   |-- one_click_testnet.ts
+    |   |   |-- run_certora.ts
+    |   |   |-- run_echidna.ts
+    |   |   |-- run_formal_verification.ts
+    |   |   |-- run_foundry_tests.ts
+    |   |   |-- run_scribble.ts
+    |   |   `-- run_slither.ts
+    |   |-- src/
+    |   |   |-- ai/
+    |   |   |-- apps/
+    |   |   |-- bridge/
+    |   |   |-- common/
+    |   |   |-- futuristic/
+    |   |   |-- governance/
+    |   |   |-- l1/
+    |   |   |-- l1custom/
+    |   |   |-- l2/
+    |   |   |-- l3/
+    |   |   |-- nft/
+    |   |   |-- opstack/
+    |   |   |-- tokens/
+    |   |   |-- ERC20.sol
+    |   |   |-- GhostConstitution.sol
+    |   |   |-- GhostGasTokens.sol
+    |   |   |-- GhostTokenL2.sol
+    |   |   |-- GuardPolicy.sol
+    |   |   |-- L2L3Bridge.sol
+    |   |   |-- L3BridgedToken.sol
+    |   |   |-- L3BridgedTokenFactory.sol
+    |   |   |-- L3Inbox.sol
+    |   |   |-- Merkle.sol
+    |   |   |-- MockDisputeGameFactory.sol
+    |   |   |-- MockL2OutputOracle.sol
+    |   |   |-- MockSystemConfig.sol
+    |   |   |-- OptimisticRollup.sol
+    |   |   |-- StakeToken.sol
+    |   |   `-- ZkBatchVerifier.sol
+    |   |-- test/
+    |   |   |-- foundry/
+    |   |   |-- bridge-erc20.spec.ts
+    |   |   `-- futuristic-stack.spec.ts
+    |   |-- typechain-types/
+    |   |   |-- ai/
+    |   |   |-- apps/
+    |   |   |-- bridge/
+    |   |   |-- common/
+    |   |   |-- factories/
+    |   |   |-- futuristic/
+    |   |   |-- GhostConstitution.sol/
+    |   |   |-- GhostGasTokens.sol/
+    |   |   |-- governance/
+    |   |   |-- l1/
+    |   |   |-- l1custom/
+    |   |   |-- l2/
+    |   |   |-- l3/
+    |   |   |-- nft/
+    |   |   |-- opstack/
+    |   |   |-- tokens/
+    |   |   |-- common.ts
+    |   |   |-- ERC20.ts
+    |   |   |-- GhostTokenL2.ts
+    |   |   |-- GuardPolicy.ts
+    |   |   |-- hardhat.d.ts
+    |   |   |-- index.ts
+    |   |   |-- L2L3Bridge.ts
+    |   |   |-- L3BridgedToken.ts
+    |   |   |-- L3BridgedTokenFactory.ts
+    |   |   |-- L3Inbox.ts
+    |   |   |-- MockDisputeGameFactory.ts
+    |   |   |-- MockL2OutputOracle.ts
+    |   |   |-- MockSystemConfig.ts
+    |   |   |-- OptimisticRollup.ts
+    |   |   |-- StakeToken.ts
+    |   |   `-- ZkBatchVerifier.ts
+    |   |-- .gitignore
+    |   |-- foundry.toml
+    |   |-- hardhat.config.ts
+    |   |-- package-lock.json
+    |   |-- package.json
+    |   `-- tsconfig.json
+    |-- core-service/
+    |   |-- .github/
+    |   |   `-- workflows/
+    |   |-- cmd/
+    |   |   `-- core-service/
+    |   |-- internal/
+    |   |   |-- config/
+    |   |   |-- metrics/
+    |   |   `-- server/
+    |   |-- pkg/
+    |   |   |-- logging/
+    |   |   `-- version/
+    |   |-- .gitignore
+    |   |-- docker-compose.yml
+    |   |-- Dockerfile
+    |   |-- go.mod
+    |   |-- go.sum
+    |   |-- LICENSE
+    |   |-- Makefile
+    |   `-- README.md
+    |-- docs/
+    |   |-- ai-core/
+    |   |   |-- architecture.md
+    |   |   |-- autonomy-modes.md
+    |   |   |-- operator-playbook.md
+    |   |   `-- safety-guarantees.md
+    |   |-- architecture/
+    |   |   |-- autonomous_policy_lifecycle.md
+    |   |   |-- autonomous_policy_lifecycle.mmd
+    |   |   |-- compliance-decision-flow.mmd
+    |   |   |-- compliance_decision_flow.md
+    |   |   |-- compliance_decision_flow.mmd
+    |   |   |-- ghostchain-compliance-whitepaper.md
+    |   |   |-- locked-execution-plan.md
+    |   |   |-- phase-plan.md
+    |   |   |-- policy-lifecycle.mmd
+    |   |   |-- README.md
+    |   |   |-- smoke-tests.md
+    |   |   |-- system-overview.mmd
+    |   |   |-- system_overview.md
+    |   |   |-- system_overview.mmd
+    |   |   |-- validator-economics.mmd
+    |   |   |-- validator_compliance_economics.md
+    |   |   |-- validator_compliance_economics.mmd
+    |   |   `-- zk-compliance.md
+    |   |-- checklists/
+    |   |   |-- DEV_CHECKLIST.md
+    |   |   |-- ghostchain-consensus-blueprint.md
+    |   |   |-- README.md
+    |   |   |-- VS_CODE_CHECKLIST.md
+    |   |   `-- WALLET_SYSTEM.md
+    |   |-- contracts/
+    |   |   |-- diagrams/
+    |   |   |-- contract-scan-report.md
+    |   |   |-- dependency-graph.json
+    |   |   |-- dependency-graph.md
+    |   |   |-- ghostchain-interactions.md
+    |   |   |-- ghostchain-interactions.mmd
+    |   |   |-- missing-contracts.json
+    |   |   |-- missing-contracts.md
+    |   |   `-- README.md
+    |   |-- ghostchain/
+    |   |   |-- charter.md
+    |   |   |-- declaration.md
+    |   |   |-- ratification-package.md
+    |   |   `-- regulator-whitepaper.md
+    |   |-- observability/
+    |   |   |-- architecture.md
+    |   |   |-- deployment.md
+    |   |   |-- log-schema.md
+    |   |   `-- README.md
+    |   |-- pil/
+    |   |   `-- README.md
+    |   |-- rollback/
+    |   |   `-- contract-scan-20260123-064356/
+    |   |-- ai-guard-opstack.md
+    |   |-- capabilities.md
+    |   |-- dashboard-architecture.md
+    |   |-- ghostchain-architecture.md
+    |   |-- ghostchain-architecture.mmd
+    |   |-- ghostchain-ibft.md
+    |   |-- ghostchain-l1.md
+    |   |-- ghostchain-l2-recommendation.md
+    |   |-- ghostchain-management.md
+    |   |-- ghostchain-opstack-blueprint.md
+    |   |-- ghostchain-pos-alignment.md
+    |   |-- ghostchain-wiring.md
+    |   |-- l2-roadmap.md
+    |   |-- opstack-l1-mainnet-geth.md
+    |   |-- opstack-l2-architecture.md
+    |   |-- opstack-l2-l3-stack.md
+    |   |-- opstack-l3-testnet-deployment-checklist.md
+    |   |-- opstack-migration-plan.md
+    |   |-- opstack-role-config.md
+    |   |-- PHASE0_AUDIT.md
+    |   |-- production-readiness.md
+    |   |-- README.md
+    |   |-- route-map-and-services.md
+    |   |-- SECRETS.md
+    |   `-- zk-upgrade.md
+    |-- infra/
+    |   |-- docker/
+    |   |   |-- _backup/
+    |   |   |-- audit/
+    |   |   |-- build/
+    |   |   |-- compose/
+    |   |   |-- runtime/
+    |   |   |-- tests/
+    |   |   |-- k8s-migration.md
+    |   |   |-- rollback.README.md
+    |   |   `-- rollback.sh
+    |   |-- ghostchain/
+    |   |   |-- config/
+    |   |   |-- data/
+    |   |   |-- geth/
+    |   |   |-- ibft/
+    |   |   |-- scripts/
+    |   |   |-- docker-compose.eth.yml
+    |   |   |-- docker-compose.ibft.yml
+    |   |   `-- README.md
+    |   |-- helm/
+    |   |   |-- ghostchain-core/
+    |   |   |-- ghostchain-observability/
+    |   |   |-- ghostchain-services/
+    |   |   |-- ghostchain-ui/
+    |   |   `-- helm-template.sh
+    |   |-- k8s/
+    |   |   |-- base/
+    |   |   |-- blueprints/
+    |   |   |-- migration/
+    |   |   |-- prod/
+    |   |   |-- staging/
+    |   |   `-- README.md
+    |   |-- observability/
+    |   |   |-- grafana/
+    |   |   `-- prometheus/
+    |   |-- opstack/
+    |   |   |-- bin/
+    |   |   |-- broadcast/
+    |   |   |-- config/
+    |   |   |-- contracts/
+    |   |   |-- data/
+    |   |   |-- gate/
+    |   |   |-- infra/
+    |   |   |-- l3/
+    |   |   |-- observability/
+    |   |   |-- op-deployer-state/
+    |   |   |-- op-geth/
+    |   |   |-- op-intent/
+    |   |   |-- optimism/
+    |   |   |-- optimism-upstream/
+    |   |   |-- .env
+    |   |   |-- .env.example
+    |   |   |-- .env.l3
+    |   |   |-- .env.l3.example
+    |   |   |-- .env.mainnet.example
+    |   |   |-- .env.sample
+    |   |   |-- .env.secrets
+    |   |   |-- .env.secrets.sample
+    |   |   |-- .env.sepolia.example
+    |   |   |-- alloc_merged.json
+    |   |   |-- docker-compose.challengers.yml
+    |   |   |-- docker-compose.l3.yml
+    |   |   |-- docker-compose.mainnet-geth.yml
+    |   |   |-- docker-compose.network-manager.yml
+    |   |   |-- docker-compose.yml
+    |   |   |-- foundry.toml
+    |   |   `-- README.md
+    |   |-- scripts/
+    |   |   |-- chains/
+    |   |   |-- keys/
+    |   |   |-- opstack/
+    |   |   |-- wallet/
+    |   |   |-- analyze_creation_log.py
+    |   |   |-- demo-deposit-erc20.sh
+    |   |   |-- demo-deposit.sh
+    |   |   |-- demo-finalize-erc20.sh
+    |   |   |-- demo-finalize.sh
+    |   |   |-- demo-optimistic-erc20.sh
+    |   |   |-- demo-relay-erc20.sh
+    |   |   |-- demo-relay.sh
+    |   |   |-- demo-withdraw-erc20.sh
+    |   |   |-- doctor.sh
+    |   |   |-- down.sh
+    |   |   |-- git_lfs_fix.sh
+    |   |   |-- install_deps.sh
+    |   |   |-- reset.sh
+    |   |   |-- up-full.sh
+    |   |   `-- up.sh
+    |   |-- terraform/
+    |   |   |-- eks/
+    |   |   |-- gke/
+    |   |   `-- terraform-plan.sh
+    |   `-- opstack-migration.md
+    |-- observability/
+    |   |-- ai/
+    |   |   |-- anomaly_detection.ts
+    |   |   |-- incident_summarizer.ts
+    |   |   `-- root_cause_analysis.ts
+    |   |-- alerts/
+    |   |   `-- alert_rules.yml
+    |   |-- api/
+    |   |   `-- openapi.yaml
+    |   |-- collector/
+    |   |   `-- vector.yaml
+    |   |-- docs/
+    |   |-- infra/
+    |   |   |-- grafana/
+    |   |   |-- k8s/
+    |   |   |-- systemd/
+    |   |   |-- alertmanager.yml
+    |   |   |-- docker-compose.yml
+    |   |   `-- prometheus.yml
+    |   |-- normalizer/
+    |   |   `-- README.md
+    |   |-- storage/
+    |   |   |-- loki-config.yml
+    |   |   `-- loki-s3-config.yml
+    |   |-- ui/
+    |   |   `-- README.md
+    |   `-- compliance-prometheus.yml
+    |-- ops/
+    |   |-- ai/
+    |   |   |-- anomaly/
+    |   |   |-- drift/
+    |   |   `-- threat-model/
+    |   |-- compliance/
+    |   |   |-- bundle.sh
+    |   |   |-- controls-map.json
+    |   |   `-- README.md
+    |   |-- confidential/
+    |   |   |-- collect-cca.sh
+    |   |   `-- README.md
+    |   |-- docker/
+    |   |   |-- attestations/
+    |   |   |-- snapshots/
+    |   |   |-- ghostctl-recreate.sh
+    |   |   |-- ghostctl-rollback.sh
+    |   |   `-- README.md
+    |   |-- geo-risk/
+    |   |   |-- quorum-selection.json
+    |   |   |-- README.md
+    |   |   |-- region-scores.json
+    |   |   `-- select-quorum.sh
+    |   |-- governance/
+    |   |   |-- enforce.sh
+    |   |   |-- governance-rules.json
+    |   |   `-- README.md
+    |   |-- k8s/
+    |   |   `-- compose-annotations.md
+    |   |-- mev/
+    |   |   |-- mev-monitor-config.json
+    |   |   |-- mev-monitor.sh
+    |   |   `-- README.md
+    |   |-- onchain/
+    |   |   |-- anchor-crosschain.sh
+    |   |   |-- notarize.sh
+    |   |   `-- README.md
+    |   |-- policy/
+    |   |   |-- policy-rules.json
+    |   |   |-- README.md
+    |   |   `-- self-heal.sh
+    |   |-- quorum/
+    |   |   |-- regions/
+    |   |   |-- quorum-attest.sh
+    |   |   |-- quorum-policy.json
+    |   |   `-- README.md
+    |   |-- satellite/
+    |   |   |-- README.md
+    |   |   `-- sync.sh
+    |   |-- scripts/
+    |   |   |-- apply_step.sh
+    |   |   |-- preflight.sh
+    |   |   |-- rollback.sh
+    |   |   |-- snapshot.sh
+    |   |   `-- verify.sh
+    |   |-- security/
+    |   |   `-- kill-switch/
+    |   |-- zk/
+    |   |   |-- circuit/
+    |   |   |-- inputs/
+    |   |   |-- keys/
+    |   |   |-- export-verifier.sh
+    |   |   |-- formal-verify.sh
+    |   |   |-- prove.sh
+    |   |   |-- README.md
+    |   |   |-- recursive-prove.sh
+    |   |   |-- submit-proof.sh
+    |   |   |-- submit-recursive-proof.sh
+    |   |   `-- verify.sh
+    |   |-- zkml/
+    |   |   |-- learn.sh
+    |   |   `-- README.md
+    |   |-- STACK_AUDIT.md
+    |   |-- STACK_CANONICAL.yml
+    |   `-- STACK_PLAN.md
+    |-- packages/
+    |   |-- config/
+    |   |   |-- index.ts
+    |   |   |-- package.json
+    |   |   `-- README.md
+    |   |-- contract-schemas/
+    |   |   |-- index.ts
+    |   |   `-- package.json
+    |   |-- ghostchain-sdk/
+    |   |   |-- src/
+    |   |   |-- package.json
+    |   |   `-- tsconfig.json
+    |   |-- ghostwallet/
+    |   |   |-- src/
+    |   |   |-- package.json
+    |   |   `-- tsconfig.json
+    |   |-- sdk/
+    |   |   |-- src/
+    |   |   |-- package.json
+    |   |   `-- tsconfig.json
+    |   |-- types/
+    |   |   |-- ai.ts
+    |   |   |-- app.ts
+    |   |   |-- auth.ts
+    |   |   |-- bridge.ts
+    |   |   |-- chain.ts
+    |   |   |-- contracts.ts
+    |   |   |-- devops.ts
+    |   |   |-- events.ts
+    |   |   |-- explorer.ts
+    |   |   |-- governance.ts
+    |   |   |-- index.ts
+    |   |   |-- integrations.ts
+    |   |   |-- kyc.ts
+    |   |   |-- nfts.ts
+    |   |   |-- nodes.ts
+    |   |   |-- observability.ts
+    |   |   |-- package.json
+    |   |   |-- security.ts
+    |   |   |-- tokenomics.ts
+    |   |   |-- tokens.ts
+    |   |   |-- validators.ts
+    |   |   `-- wallets.ts
+    |   `-- ui/
+    |       |-- src/
+    |       `-- package.json
+    |-- scripts/
+    |   |-- health/
+    |   |   |-- baseline_report.md
+    |   |   |-- check-config.sh
+    |   |   |-- preflight.sh
+    |   |   `-- smoke-e2e.sh
+    |   |-- pil/
+    |   |   |-- smoke-phase1.sh
+    |   |   |-- smoke-phase2.sh
+    |   |   |-- smoke-phase3.sh
+    |   |   `-- smoke-phase4.sh
+    |   |-- rollback/
+    |   |   `-- rollback.sh
+    |   |-- run/
+    |   |   |-- down.sh
+    |   |   |-- restart-sequential.sh
+    |   |   `-- up.sh
+    |   |-- build-services-sequential.sh
+    |   |-- check-deprecations.mjs
+    |   |-- node-check.mjs
+    |   `-- update-containers-sequential.sh
+    |-- services/
+    |   |-- .docker/
+    |   |   `-- config.json
+    |   |-- ai-clock-sync/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   |-- index.js
+    |   |   |-- package-lock.json
+    |   |   `-- package.json
+    |   |-- ai-monitor/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- .env.example
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   |-- package-lock.json
+    |   |   `-- package.json
+    |   |-- alerts-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- anomaly-detection-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- audit-log-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- auth-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- block-index-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- bridge-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   |-- package-lock.json
+    |   |   `-- package.json
+    |   |-- chain-status-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- command-palette-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- compliance-export-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- consensus-telemetry-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- contract-registry-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- contract-risk-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- data/
+    |   |   |-- bridge-incidents.json
+    |   |   |-- cursor.json
+    |   |   |-- l2_cursor.json
+    |   |   |-- l3_cursor.json
+    |   |   |-- pending.json
+    |   |   `-- state.json
+    |   |-- dispute-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- entity-tagging-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- explainability-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- feature-flags-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- fee-model-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- forecasting-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- gas-engine-migrate/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   `-- healthcheck.sh
+    |   |-- gas-engine-postgres/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   `-- healthcheck.sh
+    |   |-- gas-engine-redis/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   `-- healthcheck.sh
+    |   |-- ghost-compliance/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- test/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- .env.example
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   |-- package-lock.json
+    |   |   |-- package.json
+    |   |   |-- README.md
+    |   |   `-- tsconfig.json
+    |   |-- ghost-compliance-worker/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- .env.example
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   |-- package.json
+    |   |   |-- README.md
+    |   |   `-- tsconfig.json
+    |   |-- ghost-gas-engine/
+    |   |   |-- config/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- .env.example
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   |-- package-lock.json
+    |   |   |-- package.json
+    |   |   |-- README.md
+    |   |   `-- tsconfig.json
+    |   |-- ghost-gas-engine-worker/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   `-- healthcheck.sh
+    |   |-- ghost-guard/
+    |   |-- ghost-pil/
+    |   |   |-- config/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- .env.example
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   |-- package-lock.json
+    |   |   |-- package.json
+    |   |   |-- README.md
+    |   |   `-- tsconfig.json
+    |   |-- ghost-pil-worker/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   `-- healthcheck.sh
+    |   |-- ghost-registry/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   |-- package-lock.json
+    |   |   |-- package.json
+    |   |   |-- README.md
+    |   |   `-- tsconfig.json
+    |   |-- ghost-relayer/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- .env.example
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   |-- package-lock.json
+    |   |   |-- package.json
+    |   |   `-- tsconfig.json
+    |   |-- ghost-rollup-challenger/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- .env.example
+    |   |   |-- .env.l2
+    |   |   |-- .env.l3
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   |-- package-lock.json
+    |   |   |-- package.json
+    |   |   `-- tsconfig.json
+    |   |-- ghost-rollup-proposer/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- .env.example
+    |   |   |-- .env.l2
+    |   |   |-- .env.l3
+    |   |   |-- .env.prod.l2.example
+    |   |   |-- .env.prod.l3.example
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   |-- package-lock.json
+    |   |   |-- package.json
+    |   |   `-- tsconfig.json
+    |   |-- ghost-rpc-proxy/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- index.mjs
+    |   |-- ghostscout/
+    |   |   `-- init/
+    |   |-- ghostscout-db/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- init/
+    |   |   |-- rollback/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   `-- healthcheck.sh
+    |   |-- ghostscout-frontend-l1/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   `-- healthcheck.sh
+    |   |-- ghostscout-frontend-l2/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   `-- healthcheck.sh
+    |   |-- ghostscout-frontend-l3/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   `-- healthcheck.sh
+    |   |-- ghostscout-l1/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   `-- healthcheck.sh
+    |   |-- ghostscout-l2/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   `-- healthcheck.sh
+    |   |-- ghostscout-l3/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   `-- healthcheck.sh
+    |   |-- global-search-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- governance-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- key-rotation-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- liquidity-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- mempool-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- network-context-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   |-- package-lock.json
+    |   |   `-- package.json
+    |   |-- network-manager-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .dockerignore
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- node-health-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- node-inventory-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- notifications-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- participation-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- payout-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- peer-graph-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- pil-migrate/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   `-- healthcheck.sh
+    |   |-- pil-postgres/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   `-- healthcheck.sh
+    |   |-- proxy-inspector-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- rbac-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- rewards-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- rpc-forward-l1-29545/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   `-- healthcheck.sh
+    |   |-- secrets-health-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- session-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- slashing-detection-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- snapshot-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- staking-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- supply-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- theme-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- transfer-lifecycle-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- treasury-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- tx-index-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- upgrade-orchestrator-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- validator-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- verification-service/
+    |   |   |-- data/
+    |   |   |-- governance/
+    |   |   |-- rollback/
+    |   |   |-- src/
+    |   |   |-- verification/
+    |   |   |-- .env
+    |   |   |-- docker-compose.yml
+    |   |   |-- Dockerfile
+    |   |   |-- entrypoint.sh
+    |   |   |-- healthcheck.sh
+    |   |   `-- package.json
+    |   |-- .env
+    |   |-- common.Dockerfile
+    |   |-- docker-compose.legacy.yml
+    |   |-- ghostl-stack.code-workspace
+    |   |-- port-forward-7070.sh
+    |   |-- README.md
+    |   |-- stack.env
+    |   `-- stack.env.example
+    |-- .dockerignore
+    |-- .env
+    |-- .env.example
+    |-- .gitattributes
+    |-- .gitignore
+    |-- .gitmodules
+    |-- .nvmrc
+    |-- .prettierignore
+    |-- .prettierrc
+    |-- alloc_merged.json
+    |-- dev-stack.sh
+    |-- docker-compose.dev.yml
+    |-- docker-compose.yml
+    |-- ecosystem.config.cjs
+    |-- eslint.config.mjs
+    |-- LICENSE
+    |-- package-lock.json
+    |-- package.json
+    |-- README.md
+    |-- README_COMPLIANCE.md
+    |-- tmp-deploy-l3.js
+    |-- tsconfig.base.json
+    |-- update-report.json
+    `-- update-report.md

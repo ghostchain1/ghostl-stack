@@ -1,0 +1,852 @@
+{
+  "name": "opstack",
+  "networks": {
+    "default": {
+      "name": "opstack_default",
+      "ipam": {}
+    }
+  },
+  "services": {
+    "alertmanager": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 0.25,
+      "command": [
+        "--config.file=/etc/alertmanager/alertmanager.yml",
+        "--storage.path=/alertmanager"
+      ],
+      "entrypoint": null,
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:9093/api/v2/status \u003e/dev/null"
+        ],
+        "timeout": "5s",
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "15s"
+      },
+      "image": "prom/alertmanager@sha256:e13b6ed5cb929eeaee733479dce55e10eb3bc2e9c4586c705a4e8da41e5eacf5",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "268435456",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 9093,
+          "published": "9093",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/observability/alertmanager.yml",
+          "target": "/etc/alertmanager/alertmanager.yml",
+          "read_only": true,
+          "bind": {}
+        },
+        {
+          "type": "volume",
+          "source": "alertmanager_data",
+          "target": "/alertmanager",
+          "volume": {}
+        }
+      ]
+    },
+    "ghost-guard": {
+      "build": {
+        "context": "/home/ghost/ghostl-stack/backups/20260124-013406/files/services/ghost-guard",
+        "dockerfile": "Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 0.5,
+      "command": null,
+      "depends_on": {
+        "l2-geth": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "entrypoint": null,
+      "environment": {
+        "ADMIN_TOKEN": "",
+        "ALERT_MIN_RISK": "70",
+        "AUTO_ACTION": "",
+        "AUTO_PAUSE": "0",
+        "AUTO_PAUSE_THRESHOLD": "90",
+        "AUTO_QUARANTINE_THRESHOLD": "70",
+        "BRIDGE_L2L3_ADDRESS": "0x2fc631e4B3018258759C52AF169200213e84ABab",
+        "GRAPH_WINDOW_SECONDS": "3600",
+        "GUARD_POLICY_ADDRESS": "",
+        "PORT": "7070",
+        "PRIVATE_KEY": "",
+        "QUARANTINE_DELAY_SECONDS": "30",
+        "RATE_LIMIT_MAX": "20",
+        "RATE_LIMIT_WINDOW_MS": "1000",
+        "RISK_WINDOW_SECONDS": "300",
+        "RPC_L2": "http://l2-geth:8545",
+        "STATE_DIR": "/state"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7070/health \u003e/dev/null"
+        ],
+        "timeout": "10s",
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "20s"
+      },
+      "image": "local/ghost-guard:local",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "536870912",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 7070,
+          "published": "7070",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/data/guard",
+          "target": "/state",
+          "bind": {}
+        }
+      ]
+    },
+    "grafana": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 0.5,
+      "command": null,
+      "depends_on": {
+        "loki": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "prometheus": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "entrypoint": null,
+      "environment": {
+        "GF_SECURITY_ADMIN_PASSWORD": "admin",
+        "PROMETHEUS_URL": "http://prometheus:9090"
+      },
+      "image": "grafana/grafana:11.2.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "536870912",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 3000,
+          "published": "3000",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "grafana_data",
+          "target": "/var/lib/grafana",
+          "volume": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/observability/grafana/provisioning",
+          "target": "/etc/grafana/provisioning",
+          "read_only": true,
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/observability/grafana/dashboards",
+          "target": "/var/lib/grafana/dashboards",
+          "read_only": true,
+          "bind": {}
+        }
+      ]
+    },
+    "l2-geth": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 2,
+      "command": [
+        "-c",
+        "set -e\nif [ ! -d /data/geth ]; then\n  echo \"[l2-geth] initializing genesis...\"\n  geth init --datadir /data /config/genesis-l2.json\nfi\nexec geth \\\n  --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug,txpool \\\n  --http.vhosts=\"*\" \\\n  --ws --ws.addr=0.0.0.0 --ws.origins=\"*\" \\\n  --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts=\"*\" --authrpc.jwtsecret=/config/jwt.txt\\\n  --datadir=/data \\\n  --networkid=901 \\\n  --gcmode=archive \\\n  --rollup.disabletxpoolgossip=true\n"
+      ],
+      "depends_on": {
+        "op-gate": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "entrypoint": [
+        "/bin/sh"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "geth attach --datadir /data --exec 'net.version' http://localhost:8545 \u003e/dev/null 2\u003e\u00261"
+        ],
+        "timeout": "10s",
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "25s"
+      },
+      "image": "ghcr.io/ethereum-optimism/op-geth@sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "4294967296",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 8545,
+          "published": "29547",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "user": "1000:1000",
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/data/l2-geth-new2",
+          "target": "/data",
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/config",
+          "target": "/config",
+          "read_only": true,
+          "bind": {}
+        }
+      ]
+    },
+    "loki": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 0.5,
+      "command": [
+        "-config.file=/etc/loki/config.yml"
+      ],
+      "entrypoint": null,
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:3100/ready \u003e/dev/null"
+        ],
+        "timeout": "5s",
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "15s"
+      },
+      "image": "grafana/loki@sha256:8b5bd7748d0e4da66cd741ac276e485517514af0bea32167e27c0e1a95bcf8aa",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "536870912",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 3100,
+          "published": "3100",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/observability/loki/config.yml",
+          "target": "/etc/loki/config.yml",
+          "read_only": true,
+          "bind": {}
+        },
+        {
+          "type": "volume",
+          "source": "loki_data",
+          "target": "/loki",
+          "volume": {}
+        }
+      ]
+    },
+    "op-batcher": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 1,
+      "command": [
+        "op-batcher",
+        "--l1-eth-rpc=http://172.18.0.1:18545",
+        "--l2-eth-rpc=http://l2-geth:8545",
+        "--rollup-rpc=http://op-node:9546",
+        "--private-key=0x47d93ba7d5959c111b415b697b05ee481d4e630ae8554024f123d27aa4726630",
+        "--rpc.addr=0.0.0.0",
+        "--rpc.port=8551",
+        "--throttle.unsafe-da-bytes-lower-threshold=0",
+        "--metrics.enabled",
+        "--metrics.addr=0.0.0.0",
+        "--metrics.port=7301"
+      ],
+      "depends_on": {
+        "op-gate": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "op-node": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "entrypoint": null,
+      "environment": {
+        "L2OO_ADDRESS": "0xC7981C4AB397E174964C0A927a4dE71143A09708",
+        "OP_BATCHER_DATA_AVAILABILITY_TYPE": "calldata",
+        "OP_BATCHER_MAX_CHANNEL_DURATION": "2",
+        "OP_BATCHER_NUM_CONFIRMATIONS": "1",
+        "OP_BATCHER_POLL_INTERVAL": "1s",
+        "OP_BATCHER_RPC_ENABLE_ADMIN": "true",
+        "OP_BATCHER_SUB_SAFETY_MARGIN": "4"
+      },
+      "extra_hosts": [
+        "host.docker.internal=host-gateway"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:8551 \u003e/dev/null"
+        ],
+        "timeout": "10s",
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "25s"
+      },
+      "image": "ghcr.io/ethereum-optimism/op-batcher@sha256:21a2426a292a0d1b6c3665c9e07549df97d98e40edda6c880d34e22aefe279d2",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "1073741824",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 8551,
+          "published": "8551",
+          "protocol": "tcp"
+        },
+        {
+          "mode": "ingress",
+          "target": 7301,
+          "published": "7301",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "user": "1000:1000",
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/config",
+          "target": "/config",
+          "read_only": true,
+          "bind": {}
+        }
+      ]
+    },
+    "op-gate": {
+      "build": {
+        "context": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/gate",
+        "dockerfile": "Dockerfile",
+        "args": {
+          "NODE_IMAGE": "node:22-alpine3.19"
+        }
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 0.5,
+      "command": null,
+      "entrypoint": null,
+      "environment": {
+        "ADMIN_TOKEN": "",
+        "ALLOW_INSECURE_ADMIN": "0",
+        "BATCH_SENDER_ADDRESS": "0xC1815FEE48bBb95Cf6b0D6d8d4FeE8B7cB5E016e",
+        "DEFAULT_DELAY_SECONDS": "0",
+        "GUARD_URL": "http://ghost-guard:7070",
+        "NODE_ENV": "production",
+        "PORT": "8545",
+        "PROPOSER_ADDRESS": "0x67392bb63483C52F39b948C645f145E9c88e1B09",
+        "STATE_DIR": "/state",
+        "UPSTREAM_RPC": "http://l2-geth:8545"
+      },
+      "extra_hosts": [
+        "host.docker.internal=host-gateway"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "curl -sf http://localhost:8545/gate/status \u003e/dev/null"
+        ],
+        "timeout": "5s",
+        "interval": "15s",
+        "retries": 5,
+        "start_period": "15s"
+      },
+      "image": "local/op-gate:0.1.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "536870912",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 8545,
+          "published": "28546",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "user": "1000:1000",
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "op_gate_state",
+          "target": "/state",
+          "volume": {}
+        }
+      ],
+      "working_dir": "/app"
+    },
+    "op-node": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 1.5,
+      "command": [
+        "op-node",
+        "--l1=http://172.18.0.1:18545",
+        "--l2=http://l2-geth:8551",
+        "--l2.jwt-secret=/config/jwt.txt",
+        "--rollup.config=/config/rollup.json",
+        "--rollup.l1-chain-config=/config/l1-chain.json",
+        "--rpc.addr=0.0.0.0",
+        "--rpc.port=9546",
+        "--l1.rpckind=basic",
+        "--l1.trustrpc",
+        "--p2p.disable",
+        "--l1.beacon.ignore",
+        "--sequencer.enabled",
+        "--sequencer.l1-confs=6",
+        "--l1.runtime-config-reload-interval=0",
+        "--metrics.enabled",
+        "--metrics.addr=0.0.0.0",
+        "--metrics.port=7300"
+      ],
+      "depends_on": {
+        "l2-geth": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "entrypoint": null,
+      "extra_hosts": [
+        "host.docker.internal=host-gateway"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"optimism_syncStatus\",\"params\":[]}' http://localhost:9546 \u003e/dev/null"
+        ],
+        "timeout": "10s",
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "25s"
+      },
+      "image": "ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "2147483648",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 9546,
+          "published": "9546",
+          "protocol": "tcp"
+        },
+        {
+          "mode": "ingress",
+          "target": 7300,
+          "published": "7300",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "user": "1000:1000",
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/data/op-node",
+          "target": "/data",
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/config",
+          "target": "/config",
+          "read_only": true,
+          "bind": {}
+        }
+      ]
+    },
+    "op-proposer": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 1,
+      "command": [
+        "op-proposer",
+        "--l1-eth-rpc=http://172.18.0.1:18545",
+        "--rollup-rpc=http://op-node:9546",
+        "--l2oo-address=0xC7981C4AB397E174964C0A927a4dE71143A09708",
+        "--private-key=0x9b83a17e31793bfe2ce35845f29b2a588386c0db0bd3f6d322ba123c78de44f2",
+        "--allow-non-finalized",
+        "--txmgr.send-timeout=30s",
+        "--txmgr.retry-interval=3s",
+        "--rpc.addr=0.0.0.0",
+        "--rpc.port=8560",
+        "--metrics.enabled",
+        "--metrics.addr=0.0.0.0",
+        "--metrics.port=7302"
+      ],
+      "depends_on": {
+        "op-gate": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "op-node": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "entrypoint": null,
+      "environment": {
+        "PROPOSER_KEY": "0x9b83a17e31793bfe2ce35845f29b2a588386c0db0bd3f6d322ba123c78de44f2"
+      },
+      "extra_hosts": [
+        "host.docker.internal=host-gateway"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:7302/metrics \u003e/dev/null"
+        ],
+        "timeout": "10s",
+        "interval": "20s",
+        "retries": 6,
+        "start_period": "25s"
+      },
+      "image": "ghcr.io/ethereum-optimism/op-proposer@sha256:00590e36e37994eefd8bbc9a6498ad20c62b072b381d0b8cdb7293056e6e5b64",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "1073741824",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 8560,
+          "published": "8560",
+          "protocol": "tcp"
+        },
+        {
+          "mode": "ingress",
+          "target": 7302,
+          "published": "7302",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "user": "1000:1000",
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/config",
+          "target": "/config",
+          "read_only": true,
+          "bind": {}
+        }
+      ]
+    },
+    "prometheus": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 0.5,
+      "command": [
+        "--config.file=/etc/prometheus/prometheus.yml",
+        "--storage.tsdb.path=/prometheus"
+      ],
+      "entrypoint": null,
+      "extra_hosts": [
+        "host.docker.internal=host-gateway"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:9090/-/healthy \u003e/dev/null"
+        ],
+        "timeout": "5s",
+        "interval": "15s",
+        "retries": 6,
+        "start_period": "15s"
+      },
+      "image": "prom/prometheus:v2.53.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "536870912",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 9090,
+          "published": "9090",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/observability/prometheus.yml",
+          "target": "/etc/prometheus/prometheus.yml",
+          "read_only": true,
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/observability/alert_rules.yml",
+          "target": "/etc/prometheus/alert_rules.yml",
+          "read_only": true,
+          "bind": {}
+        },
+        {
+          "type": "volume",
+          "source": "prometheus_data",
+          "target": "/prometheus",
+          "volume": {}
+        }
+      ]
+    },
+    "vector": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 0.25,
+      "command": [
+        "--config",
+        "/etc/vector/vector.yaml"
+      ],
+      "depends_on": {
+        "loki": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "entrypoint": null,
+      "environment": {
+        "VECTOR_LOG": "info"
+      },
+      "image": "timberio/vector:0.38.0-alpine",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "268435456",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/var/run/docker.sock",
+          "target": "/var/run/docker.sock",
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/var/lib/docker/containers",
+          "target": "/var/lib/docker/containers",
+          "read_only": true,
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/backups/20260124-013406/files/infra/opstack/observability/vector/vector.yaml",
+          "target": "/etc/vector/vector.yaml",
+          "read_only": true,
+          "bind": {}
+        }
+      ]
+    }
+  },
+  "volumes": {
+    "alertmanager_data": {
+      "name": "opstack_alertmanager_data"
+    },
+    "grafana_data": {
+      "name": "opstack_grafana_data"
+    },
+    "loki_data": {
+      "name": "opstack_loki_data"
+    },
+    "op_gate_state": {
+      "name": "opstack_op_gate_state"
+    },
+    "prometheus_data": {
+      "name": "opstack_prometheus_data"
+    }
+  },
+  "x-logging": {
+    "driver": "json-file",
+    "options": {
+      "max-file": "3",
+      "max-size": "10m"
+    }
+  },
+  "x-security": {
+    "cap_drop": [
+      "ALL"
+    ],
+    "security_opt": [
+      "no-new-privileges:true"
+    ]
+  }
+}

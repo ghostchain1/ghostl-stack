@@ -1,0 +1,233 @@
+version: "3.9"
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  ghostscout-db:
+    image: postgres:16-alpine
+    container_name: ghostscout-postgres
+    restart: unless-stopped
+    logging: *default-logging
+    command: ["postgres", "-c", "max_connections=200"]
+    environment:
+      POSTGRES_USER: ghostscout
+      POSTGRES_PASSWORD: ${GHOSTSCOUT_DB_PASSWORD:-ghostpass}
+      POSTGRES_DB: ghostscout_l1
+    volumes:
+      - ghostscout_db_data:/var/lib/postgresql/data
+      - ../init/create_dbs.sql:/docker-entrypoint-initdb.d/create_dbs.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghostscout -d ghostscout_l1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - ghostchain
+      - opstack
+
+  ghostscout-legacy-l1:
+    image: blockscout/blockscout:latest
+    container_name: ghostscout-legacy-l1
+    restart: unless-stopped
+    logging: *default-logging
+    env_file:
+      - ../env/l1.env
+    entrypoint: ["/app/bin/blockscout"]
+    command: ["start"]
+    environment:
+      DATABASE_URL: postgres://ghostscout:${GHOSTSCOUT_DB_PASSWORD:-ghostpass}@ghostscout-postgres:5432/ghostscout_l1
+      ECTO_USE_SSL: "false"
+      POOL_SIZE: ${GHOSTSCOUT_POOL_SIZE:-10}
+      POOL_SIZE_API: ${GHOSTSCOUT_POOL_SIZE_API:-10}
+      ACCOUNT_POOL_SIZE: ${GHOSTSCOUT_ACCOUNT_POOL_SIZE:-10}
+      MUD_POOL_SIZE: ${GHOSTSCOUT_MUD_POOL_SIZE:-10}
+      BLOCKSCOUT_HOST: 0.0.0.0
+      PORT: 4000
+      SECRET_KEY_BASE: ${GHOSTSCOUT_SECRET_KEY_BASE_L1:-6d31c6c2b8b7344f5f3d2421f3d8a42d9d27f9b4a7ad0b287f1aa4f8c6efb6d3}
+      DISABLE_EVISION: "true"
+      LOG_LEVEL: warn
+    depends_on:
+      ghostscout-db:
+        condition: service_healthy
+    ports:
+      - "${GHOSTSCOUT_L1_PORT:-18641}:4000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4000/api/v2/stats >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    networks:
+      - ghostchain
+      - opstack
+
+  ghostscout-l2:
+    image: blockscout/blockscout:latest
+    container_name: ghostscout-l2
+    restart: unless-stopped
+    logging: *default-logging
+    env_file:
+      - ../env/l2.env
+    entrypoint: ["/app/bin/blockscout"]
+    command: ["start"]
+    environment:
+      DATABASE_URL: postgres://ghostscout:${GHOSTSCOUT_DB_PASSWORD:-ghostpass}@ghostscout-postgres:5432/ghostscout_l2
+      ECTO_USE_SSL: "false"
+      POOL_SIZE: ${GHOSTSCOUT_POOL_SIZE:-10}
+      POOL_SIZE_API: ${GHOSTSCOUT_POOL_SIZE_API:-10}
+      ACCOUNT_POOL_SIZE: ${GHOSTSCOUT_ACCOUNT_POOL_SIZE:-10}
+      MUD_POOL_SIZE: ${GHOSTSCOUT_MUD_POOL_SIZE:-10}
+      BLOCKSCOUT_HOST: 0.0.0.0
+      PORT: 4000
+      SECRET_KEY_BASE: ${GHOSTSCOUT_SECRET_KEY_BASE_L2:-1c9f9b0d27d9c76a8c5f4b2e1d0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a}
+      DISABLE_EVISION: "true"
+      LOG_LEVEL: warn
+    depends_on:
+      ghostscout-db:
+        condition: service_healthy
+    ports:
+      - "${GHOSTSCOUT_L2_PORT:-18642}:4000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4000/api/v2/stats >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    networks:
+      - ghostchain
+      - opstack
+
+  ghostscout-legacy-l3:
+    image: blockscout/blockscout:latest
+    container_name: ghostscout-legacy-l3
+    restart: unless-stopped
+    logging: *default-logging
+    env_file:
+      - ../env/l3.env
+    entrypoint: ["/app/bin/blockscout"]
+    command: ["start"]
+    environment:
+      DATABASE_URL: postgres://ghostscout:${GHOSTSCOUT_DB_PASSWORD:-ghostpass}@ghostscout-postgres:5432/ghostscout_l3
+      ECTO_USE_SSL: "false"
+      POOL_SIZE: ${GHOSTSCOUT_POOL_SIZE:-10}
+      POOL_SIZE_API: ${GHOSTSCOUT_POOL_SIZE_API:-10}
+      ACCOUNT_POOL_SIZE: ${GHOSTSCOUT_ACCOUNT_POOL_SIZE:-10}
+      MUD_POOL_SIZE: ${GHOSTSCOUT_MUD_POOL_SIZE:-10}
+      BLOCKSCOUT_HOST: 0.0.0.0
+      PORT: 4000
+      SECRET_KEY_BASE: ${GHOSTSCOUT_SECRET_KEY_BASE_L3:-7f5d1a3b9e2c6d4f8a1b0c9d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8}
+      DISABLE_EVISION: "true"
+      LOG_LEVEL: warn
+    depends_on:
+      ghostscout-db:
+        condition: service_healthy
+    ports:
+      - "${GHOSTSCOUT_L3_PORT:-18643}:4000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4000/api/v2/stats >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    networks:
+      - ghostchain
+      - opstack
+
+  ghostscout-frontend-l1:
+    image: ghcr.io/blockscout/frontend:latest
+    container_name: ghostscout-frontend-l1
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - ghostscout-legacy-l1
+    environment:
+      NEXT_PUBLIC_API_HOST: ghostscout-legacy-l1:4000
+      NEXT_PUBLIC_API_PROTOCOL: http
+      NEXT_PUBLIC_APP_HOST: http://localhost:${GHOSTSCOUT_L1_UI_PORT:-18651}
+      NEXT_PUBLIC_NETWORK_NAME: GhostChain
+      NEXT_PUBLIC_NETWORK_ID: "14000101"
+      NEXT_PUBLIC_NETWORK_ICON: https://raw.githubusercontent.com/blockscout/frontend/main/public/favicon.ico
+      PORT: 3000
+      HOST: 0.0.0.0
+    ports:
+      - "${GHOSTSCOUT_L1_UI_PORT:-18651}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "for ip in $$(hostname -i); do wget -qO- http://$$ip:3000/ >/dev/null && exit 0; done; exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    networks:
+      - ghostchain
+      - opstack
+
+  ghostscout-frontend-l2:
+    image: ghcr.io/blockscout/frontend:latest
+    container_name: ghostscout-frontend-l2
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - ghostscout-l2
+    environment:
+      NEXT_PUBLIC_API_HOST: ghostscout-l2:4000
+      NEXT_PUBLIC_API_PROTOCOL: http
+      NEXT_PUBLIC_APP_HOST: http://localhost:${GHOSTSCOUT_L2_UI_PORT:-18652}
+      NEXT_PUBLIC_NETWORK_NAME: GhostL2
+      NEXT_PUBLIC_NETWORK_ID: "901"
+      NEXT_PUBLIC_NETWORK_ICON: https://raw.githubusercontent.com/blockscout/frontend/main/public/favicon.ico
+      PORT: 3000
+      HOST: 0.0.0.0
+    ports:
+      - "${GHOSTSCOUT_L2_UI_PORT:-18652}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "for ip in $$(hostname -i); do wget -qO- http://$$ip:3000/ >/dev/null && exit 0; done; exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    networks:
+      - ghostchain
+      - opstack
+
+  ghostscout-frontend-l3:
+    image: ghcr.io/blockscout/frontend:latest
+    container_name: ghostscout-frontend-l3
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - ghostscout-legacy-l3
+    environment:
+      NEXT_PUBLIC_API_HOST: ghostscout-legacy-l3:4000
+      NEXT_PUBLIC_API_PROTOCOL: http
+      NEXT_PUBLIC_APP_HOST: http://localhost:${GHOSTSCOUT_L3_UI_PORT:-18653}
+      NEXT_PUBLIC_NETWORK_NAME: GhostL3
+      NEXT_PUBLIC_NETWORK_ID: "903"
+      NEXT_PUBLIC_NETWORK_ICON: https://raw.githubusercontent.com/blockscout/frontend/main/public/favicon.ico
+      PORT: 3000
+      HOST: 0.0.0.0
+    ports:
+      - "${GHOSTSCOUT_L3_UI_PORT:-18653}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "for ip in $$(hostname -i); do wget -qO- http://$$ip:3000/ >/dev/null && exit 0; done; exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    networks:
+      - ghostchain
+      - opstack
+
+networks:
+  ghostchain:
+    external: true
+    name: ${GHOSTCHAIN_NETWORK:-ghostchain_ghostchain}
+  opstack:
+    external: true
+    name: ${OPSTACK_NETWORK:-opstack_default}
+
+volumes:
+  ghostscout_db_data:

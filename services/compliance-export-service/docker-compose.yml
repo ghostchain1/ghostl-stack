@@ -1,0 +1,49 @@
+# stack-group: infra
+# role: compliance-export-service
+# ports: 7621:7621
+# volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
+version: '3.9'
+services:
+  compliance-export-service:
+    container_name: ghost_compliance-export-service
+    image: ghostl/compliance-export-service:local
+    build:
+      context: .
+    env_file:
+    - .env
+    entrypoint:
+    - /bin/bash
+    - /entrypoint.sh
+    environment:
+    - PORT=7621
+    ports:
+    - 7621:7621
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4g
+        reservations:
+          cpus: '0.5'
+          memory: 512m
+    volumes:
+    - ./data:/data
+    - ./entrypoint.sh:/entrypoint.sh:ro
+    - ./healthcheck.sh:/healthcheck.sh:ro
+    networks:
+    - ghost_net
+networks:
+  ghost_net:
+    external: true

@@ -1,0 +1,199 @@
+{
+  "name": "infra",
+  "networks": {
+    "default": {
+      "name": "infra_default",
+      "ipam": {}
+    },
+    "opstack_default": {
+      "name": "opstack_default",
+      "ipam": {},
+      "external": true
+    }
+  },
+  "services": {
+    "alertmanager": {
+      "command": [
+        "--config.file=/etc/alertmanager/alertmanager.yml",
+        "--storage.path=/alertmanager",
+        "--cluster.listen-address="
+      ],
+      "entrypoint": null,
+      "image": "prom/alertmanager:v0.27.0",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 9093,
+          "published": "9093",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/observability/infra/alertmanager.yml",
+          "target": "/etc/alertmanager/alertmanager.yml",
+          "read_only": true,
+          "bind": {}
+        },
+        {
+          "type": "volume",
+          "source": "alertmanager_data",
+          "target": "/alertmanager",
+          "volume": {}
+        }
+      ]
+    },
+    "grafana": {
+      "command": null,
+      "depends_on": {
+        "loki": {
+          "condition": "service_started",
+          "required": true
+        },
+        "prometheus": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "entrypoint": null,
+      "environment": {
+        "GF_SECURITY_ADMIN_PASSWORD": "admin"
+      },
+      "image": "grafana/grafana:10.4.2",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 3000,
+          "published": "3000",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "grafana_data",
+          "target": "/var/lib/grafana",
+          "volume": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/observability/infra/grafana/provisioning",
+          "target": "/etc/grafana/provisioning",
+          "read_only": true,
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/observability/infra/grafana/dashboards",
+          "target": "/var/lib/grafana/dashboards",
+          "read_only": true,
+          "bind": {}
+        }
+      ]
+    },
+    "loki": {
+      "command": [
+        "-config.file=/etc/loki/config.yml"
+      ],
+      "entrypoint": null,
+      "image": "grafana/loki:2.9.5",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 3100,
+          "published": "3100",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/observability/storage/loki-config.yml",
+          "target": "/etc/loki/config.yml",
+          "read_only": true,
+          "bind": {}
+        },
+        {
+          "type": "volume",
+          "source": "loki_data",
+          "target": "/loki",
+          "volume": {}
+        }
+      ]
+    },
+    "prometheus": {
+      "command": [
+        "--config.file=/etc/prometheus/prometheus.yml",
+        "--storage.tsdb.path=/prometheus",
+        "--web.enable-lifecycle"
+      ],
+      "entrypoint": null,
+      "extra_hosts": [
+        "host.docker.internal=host-gateway"
+      ],
+      "image": "prom/prometheus:v2.51.2",
+      "networks": {
+        "default": null,
+        "opstack_default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 9090,
+          "published": "9090",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/observability/infra/prometheus.yml",
+          "target": "/etc/prometheus/prometheus.yml",
+          "read_only": true,
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/observability/alerts/alert_rules.yml",
+          "target": "/etc/prometheus/alert_rules.yml",
+          "read_only": true,
+          "bind": {}
+        },
+        {
+          "type": "volume",
+          "source": "prometheus_data",
+          "target": "/prometheus",
+          "volume": {}
+        }
+      ]
+    }
+  },
+  "volumes": {
+    "alertmanager_data": {
+      "name": "infra_alertmanager_data"
+    },
+    "grafana_data": {
+      "name": "infra_grafana_data"
+    },
+    "loki_data": {
+      "name": "infra_loki_data"
+    },
+    "prometheus_data": {
+      "name": "infra_prometheus_data"
+    }
+  }
+}

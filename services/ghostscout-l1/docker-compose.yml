@@ -1,0 +1,64 @@
+# stack-group: apps
+# role: ghostscout-l1
+# ports: ${GHOSTSCOUT_L1_PORT:-18641}:4000
+# volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
+version: '3.9'
+services:
+  ghostscout-l1:
+    container_name: ghost_ghostscout-l1
+    image: ghostl/ghostscout-l1:local
+    build:
+      context: .
+    env_file:
+    - .env
+    entrypoint:
+    - /bin/bash
+    - /entrypoint.sh
+    command:
+    - /app/bin/blockscout
+    - start
+    environment:
+      DATABASE_URL: postgres://ghostscout:${GHOSTSCOUT_DB_PASSWORD:-ghostpass}@ghostscout-postgres:5432/ghostscout_l1
+      ECTO_USE_SSL: 'false'
+      POOL_SIZE: ${GHOSTSCOUT_POOL_SIZE:-30}
+      POOL_SIZE_API: ${GHOSTSCOUT_POOL_SIZE_API:-30}
+      ACCOUNT_POOL_SIZE: ${GHOSTSCOUT_ACCOUNT_POOL_SIZE:-15}
+      MUD_POOL_SIZE: ${GHOSTSCOUT_MUD_POOL_SIZE:-15}
+      DATABASE_QUEUE_TARGET: ${GHOSTSCOUT_DB_QUEUE_TARGET:-2000}
+      BLOCKSCOUT_HOST: 0.0.0.0
+      PORT: 4000
+      SECRET_KEY_BASE: ${GHOSTSCOUT_SECRET_KEY_BASE_L1:-6d31c6c2b8b7344f5f3d2421f3d8a42d9d27f9b4a7ad0b287f1aa4f8c6efb6d3}
+      DISABLE_EVISION: 'true'
+      LOG_LEVEL: warn
+    ports:
+    - ${GHOSTSCOUT_L1_PORT:-18641}:4000
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4g
+        reservations:
+          cpus: '0.5'
+          memory: 512m
+    volumes:
+    - ./data:/data
+    - ./entrypoint.sh:/entrypoint.sh:ro
+    - ./healthcheck.sh:/healthcheck.sh:ro
+    networks:
+    - ghostchain_ghostchain
+    - opstack_default
+networks:
+  ghostchain_ghostchain:
+    external: true
+  opstack_default:
+    external: true

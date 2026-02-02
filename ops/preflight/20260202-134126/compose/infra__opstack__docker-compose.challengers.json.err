@@ -1,0 +1,1 @@
+service "participation-service" depends on undefined service "prometheus": invalid compose project

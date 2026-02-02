@@ -1,0 +1,9 @@
+services:
+  ai-vault:
+    container_name: ghost_ai-vault
+    build:
+      context: .
+    image: ghostl/ai-vault:local
+    ports:
+      - "7710:7710"
+    restart: unless-stopped

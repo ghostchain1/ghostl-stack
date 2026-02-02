@@ -1,0 +1,40 @@
+{
+  "enforceFlagEnv": "GHOST_CLEANUP_ENFORCE",
+  "allowStopRunning": false,
+  "chainDataKeywords": [
+    "geth",
+    "op-geth",
+    "op-node",
+    "chaindata",
+    "datadir",
+    "execution",
+    "consensus",
+    "polygon-edge",
+    "rollup",
+    "jwt",
+    "genesis",
+    "db"
+  ],
+  "volumeAllowlist": [],
+  "networkAllowlist": [],
+  "containerAllowlist": [],
+  "composeGlobs": ["docker-compose*.yml", "compose*.yml"],
+  "composeExcludeGlobs": [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/dist/**",
+    "**/cache/**",
+    "**/data/**"
+  ],
+  "roles": {
+    "l1": ["l1", "ghostchain", "bootnode", "geth"],
+    "l2": ["l2", "op-geth", "op-node"],
+    "l3": ["l3", "l3-op", "l3-"],
+    "sequencer": ["sequencer"],
+    "proposer": ["proposer"],
+    "batcher": ["batcher"],
+    "explorer": ["explorer", "ghostscout", "blockscout"],
+    "metrics": ["prometheus", "grafana", "loki", "alertmanager"],
+    "db": ["postgres", "redis", "mysql", "db"]
+  }
+}

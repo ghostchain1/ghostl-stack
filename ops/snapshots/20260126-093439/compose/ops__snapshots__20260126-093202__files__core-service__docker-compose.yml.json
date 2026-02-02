@@ -1,0 +1,55 @@
+{
+  "name": "core-service",
+  "networks": {
+    "default": {
+      "name": "core-service_default",
+      "ipam": {}
+    }
+  },
+  "services": {
+    "core-service": {
+      "build": {
+        "context": "/home/ghost/ghostl-stack/ops/snapshots/20260126-093202/files/core-service",
+        "dockerfile": "Dockerfile"
+      },
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 0.5,
+      "command": null,
+      "entrypoint": null,
+      "environment": {
+        "PORT": "8080"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/healthz"
+        ],
+        "timeout": "10s",
+        "interval": "30s",
+        "retries": 3,
+        "start_period": "40s"
+      },
+      "mem_limit": "268435456",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 8080,
+          "published": "8080",
+          "protocol": "tcp"
+        }
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    }
+  }
+}

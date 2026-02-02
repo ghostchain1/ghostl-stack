@@ -1,0 +1,12 @@
+rules:
+  - id: js-insecure-tls-reject-unauthorized
+    pattern: "rejectUnauthorized: false"
+    message: "Insecure TLS configuration: rejectUnauthorized set to false."
+    severity: ERROR
+    languages: [javascript, typescript]
+
+  - id: js-node-tls-reject-unauthorized-env
+    pattern: "NODE_TLS_REJECT_UNAUTHORIZED"
+    message: "Disabling TLS verification via NODE_TLS_REJECT_UNAUTHORIZED is forbidden."
+    severity: ERROR
+    languages: [javascript, typescript]

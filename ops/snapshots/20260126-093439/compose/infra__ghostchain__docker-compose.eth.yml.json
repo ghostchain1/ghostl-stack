@@ -1,0 +1,255 @@
+{
+  "name": "ghostchain",
+  "networks": {
+    "ghostchain": {
+      "name": "ghostchain_ghostchain",
+      "driver": "bridge",
+      "ipam": {
+        "config": [
+          {
+            "subnet": "172.28.0.0/16"
+          }
+        ]
+      }
+    }
+  },
+  "services": {
+    "ghostchain-bootnode": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 0.5,
+      "command": [
+        "bootnode",
+        "--nodekey",
+        "/config/boot.key",
+        "--addr",
+        ":30301"
+      ],
+      "entrypoint": null,
+      "image": "ethereum/client-go:alltools-v1.13.14",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "268435456",
+      "networks": {
+        "ghostchain": {
+          "ipv4_address": "172.28.0.21"
+        }
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 30301,
+          "published": "30301",
+          "protocol": "udp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/infra/ghostchain/data/bootnode",
+          "target": "/config",
+          "bind": {}
+        }
+      ]
+    },
+    "ghostchain-node1": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 1.5,
+      "command": null,
+      "depends_on": {
+        "ghostchain-bootnode": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "entrypoint": [
+        "/bin/sh",
+        "/config/run-node.sh"
+      ],
+      "environment": {
+        "AUTH_PORT": "8551",
+        "CHAIN_ID": "14000101",
+        "HTTP_PORT": "8545",
+        "METRICS_PORT": "6060",
+        "P2P_PORT": "30303",
+        "SIGNER_ADDRESS": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "WS_PORT": "8546"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "wget -qO- --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' --header 'Content-Type: application/json' http://localhost:8545 \u003e/dev/null"
+        ],
+        "timeout": "5s",
+        "interval": "20s",
+        "retries": 5,
+        "start_period": "25s"
+      },
+      "image": "ethereum/client-go:alltools-v1.13.14",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "2147483648",
+      "networks": {
+        "ghostchain": {
+          "ipv4_address": "172.28.0.22"
+        }
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "target": 8545,
+          "published": "18545",
+          "protocol": "tcp"
+        },
+        {
+          "mode": "ingress",
+          "target": 8546,
+          "published": "18546",
+          "protocol": "tcp"
+        },
+        {
+          "mode": "ingress",
+          "target": 8551,
+          "published": "18552",
+          "protocol": "tcp"
+        },
+        {
+          "mode": "ingress",
+          "target": 30303,
+          "published": "18551",
+          "protocol": "tcp"
+        },
+        {
+          "mode": "ingress",
+          "target": 6060,
+          "published": "18660",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/infra/ghostchain/data/node1",
+          "target": "/data",
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/infra/ghostchain/geth",
+          "target": "/config",
+          "read_only": true,
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/infra/ghostchain/config/bootnode-enode.txt",
+          "target": "/run/bootnode-enode.txt",
+          "read_only": true,
+          "bind": {}
+        }
+      ]
+    },
+    "ghostchain-node2": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 1.5,
+      "command": null,
+      "depends_on": {
+        "ghostchain-bootnode": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "entrypoint": [
+        "/bin/sh",
+        "/config/run-node.sh"
+      ],
+      "environment": {
+        "AUTH_PORT": "8551",
+        "CHAIN_ID": "14000101",
+        "HTTP_PORT": "8545",
+        "METRICS_PORT": "6061",
+        "P2P_PORT": "30304",
+        "SIGNER_ADDRESS": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+        "WS_PORT": "8546"
+      },
+      "image": "ethereum/client-go:alltools-v1.13.14",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "2147483648",
+      "networks": {
+        "ghostchain": {
+          "ipv4_address": "172.28.0.23"
+        }
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/infra/ghostchain/data/node2",
+          "target": "/data",
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/infra/ghostchain/geth",
+          "target": "/config",
+          "read_only": true,
+          "bind": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/ghost/ghostl-stack/infra/ghostchain/config/bootnode-enode.txt",
+          "target": "/run/bootnode-enode.txt",
+          "read_only": true,
+          "bind": {}
+        }
+      ]
+    }
+  },
+  "x-logging": {
+    "driver": "json-file",
+    "options": {
+      "max-file": "3",
+      "max-size": "10m"
+    }
+  },
+  "x-security": {
+    "cap_drop": [
+      "ALL"
+    ],
+    "security_opt": [
+      "no-new-privileges:true"
+    ]
+  }
+}
