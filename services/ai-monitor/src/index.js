@@ -14,17 +14,30 @@ const PORT = Number(env.PORT || 7575);
 const OBSERVE_ONLY = env.OBSERVE_ONLY === "1";
 const SIMULATION_ENABLED = env.SIMULATION_ENABLED === "1";
 const TARGET_LAYER = String(env.TARGET_LAYER || "L2").toUpperCase();
+const RPC_L1 = env.RPC_L1 || "";
+const OP_NODE_RPC_URL = env.OP_NODE_RPC_URL || "";
+const OP_BATCHER_METRICS_URL = env.OP_BATCHER_METRICS_URL || "";
+const OP_PROPOSER_METRICS_URL = env.OP_PROPOSER_METRICS_URL || "";
 const THROTTLE_THRESHOLD = Number(env.THROTTLE_THRESHOLD || 70);
 const PAUSE_THRESHOLD = Number(env.PAUSE_THRESHOLD || 90);
 const BASE_DELAY_MS = Number(env.BASE_DELAY_MS || 2000);
 const MAX_DELAY_MS = Number(env.MAX_DELAY_MS || 8000);
 const LOOP_MS = Number(env.LOOP_MS || 5000);
 const HEAD_LAG_THRESHOLD_SEC = Number(env.HEAD_LAG_THRESHOLD_SEC || 30);
+const L1_HEAD_LAG_THRESHOLD_SEC = Number(env.L1_HEAD_LAG_THRESHOLD_SEC || 120);
+const BATCHER_IDLE_THRESHOLD_SEC = Number(env.BATCHER_IDLE_THRESHOLD_SEC || 900);
+const PROPOSER_IDLE_THRESHOLD_SEC = Number(env.PROPOSER_IDLE_THRESHOLD_SEC || 900);
 const MIN_PEERS = Number(env.MIN_PEERS || 1);
 const REORG_PENALTY = Number(env.REORG_PENALTY || 15);
 const STALE_PENALTY = Number(env.STALE_PENALTY || 25);
 const SYNCING_PENALTY = Number(env.SYNCING_PENALTY || 20);
 const LOW_PEER_PENALTY = Number(env.LOW_PEER_PENALTY || 15);
+const L1_RPC_PENALTY = Number(env.L1_RPC_PENALTY || 30);
+const OP_NODE_PENALTY = Number(env.OP_NODE_PENALTY || 25);
+const BATCHER_STALL_PENALTY = Number(env.BATCHER_STALL_PENALTY || 20);
+const PROPOSER_STALL_PENALTY = Number(env.PROPOSER_STALL_PENALTY || 20);
+const METRICS_PENALTY = Number(env.METRICS_PENALTY || 10);
+const DEPENDENCY_TIMEOUT_MS = Number(env.DEPENDENCY_TIMEOUT_MS || 1500);
 
 const app = express();
 app.use(express.json());
@@ -42,6 +55,7 @@ const anomalyGauge = new client.Gauge({ name: "ai_monitor_anomaly_score", help: 
 const congestionGauge = new client.Gauge({ name: "ai_monitor_congestion_score", help: "Latest congestion score 0-100" });
 const actionGauge = new client.Gauge({ name: "ai_monitor_last_action", help: "0=none,1=delay,2=pause" });
 const headLagGauge = new client.Gauge({ name: "ai_monitor_head_lag_seconds", help: "Head lag in seconds" });
+const l1HeadLagGauge = new client.Gauge({ name: "ai_monitor_l1_head_lag_seconds", help: "L1 head lag in seconds" });
 const peerGauge = new client.Gauge({ name: "ai_monitor_peer_count", help: "Latest peer count" });
 const syncingGauge = new client.Gauge({ name: "ai_monitor_syncing", help: "1 if syncing" });
 const reorgCounter = new client.Counter({ name: "ai_monitor_reorgs_total", help: "Detected head reorgs" });
@@ -55,6 +69,7 @@ registry.registerMetric(anomalyGauge);
 registry.registerMetric(congestionGauge);
 registry.registerMetric(actionGauge);
 registry.registerMetric(headLagGauge);
+registry.registerMetric(l1HeadLagGauge);
 registry.registerMetric(peerGauge);
 registry.registerMetric(syncingGauge);
 registry.registerMetric(reorgCounter);
@@ -140,17 +155,52 @@ const parseHexNumber = (value, fallback = 0) => {
   return fallback;
 };
 
-async function rpc(method, params = []) {
-  const res = await fetch(rpcL2, {
+async function rpcRequest(url, method, params = []) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), DEPENDENCY_TIMEOUT_MS);
+  const res = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
+    signal: controller.signal,
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params })
   });
+  clearTimeout(timeout);
   if (!res.ok) throw new Error(`RPC ${method} status ${res.status}`);
   const body = await res.json();
   if (body.error) throw new Error(`RPC ${method} error: ${body.error.message || body.error}`);
   return body.result;
 }
+
+async function rpc(method, params = []) {
+  return rpcRequest(rpcL2, method, params);
+}
+
+const parseMetricValue = (text, name, labelMatcher = "") => {
+  const lines = text.split("\n");
+  for (const line of lines) {
+    if (!line || line.startsWith("#")) continue;
+    if (!line.startsWith(name)) continue;
+    if (labelMatcher && !line.includes(labelMatcher)) continue;
+    const parts = line.trim().split(/\s+/);
+    const value = parts[parts.length - 1];
+    const parsed = Number(value);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  return null;
+};
+
+const fetchMetricValue = async (url, name, labelMatcher = "") => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), DEPENDENCY_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error(`metrics_status_${res.status}`);
+    const text = await res.text();
+    return parseMetricValue(text, name, labelMatcher);
+  } finally {
+    clearTimeout(timeout);
+  }
+};
 
 async function setDelay(seconds) {
   if (OBSERVE_ONLY) return;
@@ -197,23 +247,50 @@ function computeScores(latestBlock) {
   return { risk, congestion, txCount, gasRatio };
 }
 
-function classifyIncidents({ syncing, headLag, peers, reorged, rpcError }) {
+function classifyIncidents({
+  syncing,
+  headLag,
+  peers,
+  reorged,
+  rpcError,
+  l1RpcError,
+  opNodeError,
+  l1HeadLag,
+  batcherStalled,
+  proposerStalled,
+  batcherMetricsError,
+  proposerMetricsError
+}) {
   const incidents = [];
-  if (rpcError) incidents.push("rpc_unreachable");
+  if (rpcError) incidents.push("l2_rpc_unreachable");
+  if (l1RpcError) incidents.push("l1_rpc_unreachable");
+  if (opNodeError) incidents.push("op_node_unreachable");
   if (syncing) incidents.push("syncing");
-  if (headLag > HEAD_LAG_THRESHOLD_SEC) incidents.push("stale_head");
+  if (headLag > HEAD_LAG_THRESHOLD_SEC) incidents.push("l2_head_stale");
+  if (l1HeadLag > L1_HEAD_LAG_THRESHOLD_SEC) incidents.push("l1_head_stale");
   if (peers < MIN_PEERS) incidents.push("low_peers");
   if (reorged) incidents.push("reorg_detected");
+  if (batcherStalled) incidents.push("batcher_stalled");
+  if (proposerStalled) incidents.push("proposer_stalled");
+  if (batcherMetricsError) incidents.push("batcher_metrics_unreachable");
+  if (proposerMetricsError) incidents.push("proposer_metrics_unreachable");
   return incidents;
 }
 
 function recommendFix(incidents) {
   if (!incidents.length) return "";
-  if (incidents.includes("rpc_unreachable")) return "Check RPC proxy/container health, restart node if needed.";
+  if (incidents.includes("l2_rpc_unreachable")) return "Check L2 RPC proxy/container health, restart L2 node if needed.";
+  if (incidents.includes("l1_rpc_unreachable")) return "Check L1 RPC proxy/container health and network connectivity.";
+  if (incidents.includes("op_node_unreachable")) return "Check op-node health and restart if needed.";
   if (incidents.includes("syncing")) return "Node syncing; verify disk IO and peer connectivity.";
-  if (incidents.includes("stale_head")) return "Investigate node lag; check CPU/memory and peer count.";
+  if (incidents.includes("l2_head_stale")) return "Investigate L2 node lag; check CPU/memory and peer count.";
+  if (incidents.includes("l1_head_stale")) return "Investigate L1 RPC lag and op-node derivation.";
   if (incidents.includes("low_peers")) return "Check P2P connectivity and firewall rules.";
   if (incidents.includes("reorg_detected")) return "Investigate validator health and network stability.";
+  if (incidents.includes("batcher_stalled")) return "Restart op-batcher and verify batcher key/L1 RPC.";
+  if (incidents.includes("proposer_stalled")) return "Restart op-proposer and verify proposer key/L1 RPC.";
+  if (incidents.includes("batcher_metrics_unreachable")) return "Check op-batcher metrics endpoint or container health.";
+  if (incidents.includes("proposer_metrics_unreachable")) return "Check op-proposer metrics endpoint or container health.";
   return "";
 }
 
@@ -223,6 +300,13 @@ async function loop() {
     let peersRaw = "0x0";
     let syncing = false;
     let rpcError = false;
+    let l1RpcError = false;
+    let opNodeError = false;
+    let l1HeadLag = 0;
+    let batcherStalled = false;
+    let proposerStalled = false;
+    let batcherMetricsError = false;
+    let proposerMetricsError = false;
     if (simulation?.active) {
       latestBlock = simulation.latestBlock;
       peersRaw = simulation.peersRaw ?? "0x0";
@@ -249,12 +333,76 @@ async function loop() {
     const nowSec = Math.floor(Date.now() / 1000);
     const headLag = headTs ? Math.max(0, nowSec - headTs) : 0;
 
+    if (RPC_L1) {
+      try {
+        await rpcRequest(RPC_L1, "eth_chainId");
+      } catch {
+        l1RpcError = true;
+      }
+    }
+
+    if (OP_NODE_RPC_URL) {
+      try {
+        const status = await rpcRequest(OP_NODE_RPC_URL, "optimism_syncStatus");
+        const headL1Ts = parseHexNumber(status?.head_l1?.timestamp, 0);
+        if (headL1Ts > 0) {
+          l1HeadLag = Math.max(0, nowSec - headL1Ts);
+        } else if (headLag > 0) {
+          l1HeadLag = headLag;
+        }
+      } catch {
+        opNodeError = true;
+      }
+    }
+
+    if (OP_BATCHER_METRICS_URL) {
+      try {
+        const lastBatch = await fetchMetricValue(
+          OP_BATCHER_METRICS_URL,
+          "op_batcher_default_last_batcher_tx_unix",
+          'stage="success"'
+        );
+        if (!lastBatch || Number.isNaN(lastBatch)) {
+          batcherStalled = true;
+        } else {
+          const idle = Math.max(0, nowSec - Math.floor(lastBatch));
+          if (idle > BATCHER_IDLE_THRESHOLD_SEC) batcherStalled = true;
+        }
+      } catch {
+        batcherMetricsError = true;
+      }
+    }
+
+    if (OP_PROPOSER_METRICS_URL) {
+      try {
+        const lastPublish = await fetchMetricValue(
+          OP_PROPOSER_METRICS_URL,
+          "op_proposer_default_txmgr_last_publish_unix"
+        );
+        if (!lastPublish || Number.isNaN(lastPublish)) {
+          proposerStalled = true;
+        } else {
+          const idle = Math.max(0, nowSec - Math.floor(lastPublish));
+          if (idle > PROPOSER_IDLE_THRESHOLD_SEC) proposerStalled = true;
+        }
+      } catch {
+        proposerMetricsError = true;
+      }
+    }
+
     let anomaly = 0;
     if (syncing && syncing !== false) anomaly = Math.min(100, anomaly + SYNCING_PENALTY);
     if (headLag > HEAD_LAG_THRESHOLD_SEC) anomaly = Math.min(100, anomaly + STALE_PENALTY);
+    if (l1HeadLag > L1_HEAD_LAG_THRESHOLD_SEC) anomaly = Math.min(100, anomaly + STALE_PENALTY);
     if (peers < MIN_PEERS) anomaly = Math.min(100, anomaly + LOW_PEER_PENALTY);
+    if (l1RpcError) anomaly = Math.min(100, anomaly + L1_RPC_PENALTY);
+    if (opNodeError) anomaly = Math.min(100, anomaly + OP_NODE_PENALTY);
+    if (batcherStalled) anomaly = Math.min(100, anomaly + BATCHER_STALL_PENALTY);
+    if (proposerStalled) anomaly = Math.min(100, anomaly + PROPOSER_STALL_PENALTY);
+    if (batcherMetricsError || proposerMetricsError) anomaly = Math.min(100, anomaly + METRICS_PENALTY);
     anomalyGauge.set(anomaly);
     headLagGauge.set(headLag);
+    l1HeadLagGauge.set(l1HeadLag);
     peerGauge.set(peers);
     syncingGauge.set(syncing && syncing !== false ? 1 : 0);
 
@@ -262,7 +410,20 @@ async function loop() {
     const risk = Math.min(100, Math.max(congestionRisk, anomaly));
     riskGauge.set(risk);
     congestionGauge.set(congestion);
-    const incidents = classifyIncidents({ syncing: syncing && syncing !== false, headLag, peers, reorged, rpcError });
+    const incidents = classifyIncidents({
+      syncing: syncing && syncing !== false,
+      headLag,
+      peers,
+      reorged,
+      rpcError,
+      l1RpcError,
+      opNodeError,
+      l1HeadLag,
+      batcherStalled,
+      proposerStalled,
+      batcherMetricsError,
+      proposerMetricsError
+    });
     incidentGauge.reset();
     incidents.forEach((type) => incidentGauge.labels(type).set(1));
     const action = await maybeAdjustPolicy(risk, congestion);
@@ -274,11 +435,16 @@ async function loop() {
       anomaly,
       congestion,
       headLag,
+      l1HeadLag,
       peers,
       syncing: syncing && syncing !== false,
       incidents,
       recommendedAction,
-      recommendedFix
+      recommendedFix,
+      batcherStalled,
+      proposerStalled,
+      l1RpcError,
+      opNodeError
     };
     if (incidents.length) {
       logEvent("warn", "incidents_detected", { incidents, risk, anomaly, congestion, action: recommendedAction });
