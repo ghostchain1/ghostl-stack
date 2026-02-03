@@ -26,7 +26,48 @@ const DESCRIPTION =
   process.env.CONSTITUTION_DESCRIPTION ||
   "Ratify GhostChain AI Constitutional Proposal v1";
 
-const PROPOSAL_ID_RAW = process.env.CONSTITUTION_PROPOSAL_ID;
+const DEFAULT_STACK_ENV = path.join(repoRoot, "services", "stack.env");
+const DEFAULT_REPORT_PATH = path.join(
+  repoRoot,
+  "contracts",
+  "reports",
+  "ai_constitutional_proposal_id.json"
+);
+
+const loadEnvFile = (filePath: string) => {
+  if (!fs.existsSync(filePath)) return {};
+  const content = fs.readFileSync(filePath, "utf8");
+  const lines = content.split(/\r?\n/);
+  const out: Record<string, string> = {};
+  for (const line of lines) {
+    if (!line || line.trim().startsWith("#")) continue;
+    const idx = line.indexOf("=");
+    if (idx === -1) continue;
+    const key = line.slice(0, idx).trim();
+    const value = line.slice(idx + 1).trim();
+    if (!key) continue;
+    out[key] = value;
+  }
+  return out;
+};
+
+const envFilePath = process.env.STACK_ENV_FILE || DEFAULT_STACK_ENV;
+const fileEnv = loadEnvFile(envFilePath);
+const readEnv = (key: string) => process.env[key] ?? fileEnv[key];
+
+const readProposalId = () => {
+  const raw = readEnv("CONSTITUTION_PROPOSAL_ID");
+  if (raw) return raw;
+  if (fs.existsSync(DEFAULT_REPORT_PATH)) {
+    const payload = JSON.parse(fs.readFileSync(DEFAULT_REPORT_PATH, "utf8"));
+    if (payload?.proposalId !== undefined) {
+      return String(payload.proposalId);
+    }
+  }
+  return "";
+};
+
+const PROPOSAL_ID_RAW = readProposalId();
 if (!PROPOSAL_ID_RAW) {
   throw new Error("missing_CONSTITUTION_PROPOSAL_ID");
 }
@@ -35,12 +76,32 @@ if (!Number.isFinite(PROPOSAL_ID) || PROPOSAL_ID < 0) {
   throw new Error(`invalid_CONSTITUTION_PROPOSAL_ID:${PROPOSAL_ID_RAW}`);
 }
 
-const PROPOSAL_ADDRESS = process.env.AI_CONSTITUTION_PROPOSAL_ADDRESS || "";
+const DEFAULT_DEPLOYMENT_PATH = path.join(
+  repoRoot,
+  "contracts",
+  "reports",
+  "ai_constitutional_deployment.json"
+);
+
+const resolveProposalAddress = () => {
+  const fromEnv = readEnv("AI_CONSTITUTION_PROPOSAL_ADDRESS") || "";
+  if (ethers.isAddress(fromEnv)) return fromEnv;
+  if (fs.existsSync(DEFAULT_DEPLOYMENT_PATH)) {
+    const payload = JSON.parse(fs.readFileSync(DEFAULT_DEPLOYMENT_PATH, "utf8"));
+    if (payload?.address && ethers.isAddress(payload.address)) {
+      return payload.address;
+    }
+  }
+  return "";
+};
+
+const PROPOSAL_ADDRESS = resolveProposalAddress();
 if (!ethers.isAddress(PROPOSAL_ADDRESS)) {
   throw new Error("missing_or_invalid_AI_CONSTITUTION_PROPOSAL_ADDRESS");
 }
 
-const EXECUTOR_ADDRESS = process.env.PROPOSAL_EXECUTOR_ADDRESS;
+const EXECUTOR_ADDRESS =
+  process.env.PROPOSAL_EXECUTOR_ADDRESS || readEnv("AI_CONSTITUTION_EXECUTOR");
 const EXECUTOR_MODE = process.env.PROPOSAL_EXECUTOR_MODE as ExecutorMode | undefined;
 
 const readConstitution = () => {
@@ -55,7 +116,7 @@ const readConstitution = () => {
 };
 
 const constitutionDoc = readConstitution();
-const constitutionHash = process.env.CONSTITUTION_HASH || constitutionDoc.sha256;
+const constitutionHash = readEnv("CONSTITUTION_HASH") || constitutionDoc.sha256;
 if (!ethers.isHexString(constitutionHash, 32)) {
   throw new Error(`invalid_CONSTITUTION_HASH:${constitutionHash}`);
 }
