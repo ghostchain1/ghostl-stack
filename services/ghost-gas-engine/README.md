@@ -38,6 +38,20 @@ AUTONOMY_MAX_RETRIES=5
 AUTONOMY_POLICY_LOCK=false
 AUTONOMY_POLICY_MAX_DELTA=0.08
 AUTONOMY_FORECAST_INTERVAL_SECONDS=120
+AI_EVIDENCE_OUTPUT_DIR=/app/data/evidence
+AI_EVIDENCE_AUTO_COMMIT=false
+AI_EVIDENCE_KIND=ghost.ai.policy
+AI_EVIDENCE_VAULT_ADDRESS=
+AI_EVIDENCE_VAULT_RPC=
+AI_EVIDENCE_SUBMITTER_KEY=
+AI_EVIDENCE_SIGNER_SET_HASH=
+AI_EVIDENCE_THRESHOLD=1
+AI_POLICY_REGISTRY_ADDRESS=
+AI_POLICY_REGISTRY_RPC=
+AI_PROPOSAL_EXECUTOR_ADDRESS=
+AI_PROPOSAL_EXECUTOR_RPC=
+AI_POLICY_UPDATE_TTL_SECONDS=3600
+AI_PROPOSAL_OUTPUT_DIR=/app/data/proposals
 ```
 
 Autonomy modes: `OBSERVE_ONLY`, `ADVISORY`, `ASSISTED`, `AUTONOMOUS`, `AUTONOMOUS_STRICT`.
@@ -117,7 +131,9 @@ Admin-only (requires `x-admin-token`):
 Admin-only:
 `POST /v1/ai-core/policy-constraints`
 `POST /v1/ai-core/governance/:id/ack`
+`POST /v1/ai-core/policy-proposals`
 
 ## Notes
 - The worker consumes retry jobs via Redis and runs the AI core loop on interval.
 - `SEED_SAMPLE_DATA=false` disables sample rows for production.
+- `POST /v1/ai-core/policy-proposals` builds a deterministic evidence bundle + policy update payload for the on-chain `AIProposalExecutor`.

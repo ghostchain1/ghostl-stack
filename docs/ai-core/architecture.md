@@ -54,6 +54,15 @@ Policy enforcement is anchored by the L1 `AgentGovernancePolicy` registry for ac
 - Policies include tier, cooldown, approvals required, scope, and evidence hash.
 - `AICommandCenter` can optionally enforce and record policy actions via `setPolicyRegistry`.
 
+## Evidence + Proposal Pipeline
+- `ghost-gas-engine` can emit deterministic evidence bundles and proposal payloads for `AIProposalExecutor`.
+- Admin endpoint: `POST /v1/ai-core/policy-proposals` generates:
+  - `evidenceHash` + `metadataHash`
+  - `PolicyUpdate` payload (policyKey/value/nonce/issuedAt/validUntil)
+  - `updateHash` + EIP-712 digest for signer quorum
+- Evidence bundles can be written to disk (`AI_EVIDENCE_OUTPUT_DIR`) and optionally committed to `EvidenceVault`
+  (`AI_EVIDENCE_AUTO_COMMIT=true` + vault RPC + submitter key).
+
 L1 devnet governance deployment (chainId `14000101`, 0xd59fe5):
 - Constitution hash: `0x1b3c479b7f8f1a6e67ac40798d56bde7509c68d7760c17a14fc7ba9cc907f816`
 - AIConstitutionalProposal: `0xDC11f7E700A4c898AE5CAddB1082cFfa76512aDD`
