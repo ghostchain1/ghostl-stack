@@ -13,3 +13,6 @@
 [submodule "infra/opstack/optimism-upstream"]
 	path = infra/opstack/optimism-upstream
 	url = git@github.com:ghostchain1/optimism.git
+[submodule "contracts/lib/forge-std"]
+	path = contracts/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
