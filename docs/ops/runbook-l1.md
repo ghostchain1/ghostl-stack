@@ -8,6 +8,17 @@ grep -n "FAIL" /var/log/ghostchain/l1.log || true
 infra/scripts/doctor-l1.sh
 ```
 
+## Constitutional governance verification (devnet)
+
+```bash
+RPC_L1=$(rg -n "^RPC_L1=" -m1 services/stack.env | cut -d= -f2- | sed 's/host.docker.internal/localhost/')
+AI_CONSTITUTION_PROPOSAL_ADDRESS=$(rg -n "^AI_CONSTITUTION_PROPOSAL_ADDRESS=" -m1 services/stack.env | cut -d= -f2-)
+GOVERNOR_ADDRESS_L1=$(rg -n "^GOVERNOR_ADDRESS_L1=" -m1 services/stack.env | cut -d= -f2-)
+CONSTITUTION_HASH=$(rg -n "^CONSTITUTION_HASH=" -m1 services/stack.env | cut -d= -f2-)
+
+NODE_PATH=contracts/node_modules node -e "const {ethers}=require('ethers'); const rpc=process.env.RPC_L1; const proposal=process.env.AI_CONSTITUTION_PROPOSAL_ADDRESS; const governor=process.env.GOVERNOR_ADDRESS_L1; const expected=process.env.CONSTITUTION_HASH?.toLowerCase(); const provider=new ethers.JsonRpcProvider(rpc); const propAbi=['function ratified() view returns (bool)','function ratifiedAt() view returns (uint64)','function activatesAt() view returns (uint64)','function constitutionHash() view returns (bytes32)','function ratificationProposalId() view returns (uint256)']; const govAbi=['function proposalsLength() view returns (uint256)']; (async()=>{ const [chainId, code] = await Promise.all([provider.getNetwork(), provider.getCode(proposal)]); const prop=new ethers.Contract(proposal, propAbi, provider); const gov=new ethers.Contract(governor, govAbi, provider); const [ratified, ratifiedAt, activatesAt, constitutionHash, proposalId, proposalsLength] = await Promise.all([prop.ratified(), prop.ratifiedAt(), prop.activatesAt(), prop.constitutionHash(), prop.ratificationProposalId(), gov.proposalsLength()]); console.log('chainId', Number(chainId.chainId)); console.log('codePresent', code !== '0x'); console.log('constitutionHash', constitutionHash); console.log('matchesHash', expected ? (constitutionHash.toLowerCase() === expected) : 'unknown'); console.log('ratified', ratified); console.log('ratificationProposalId', proposalId.toString()); console.log('ratifiedAt', ratifiedAt.toString()); console.log('activatesAt', activatesAt.toString()); console.log('governorProposalsLength', proposalsLength.toString()); })();"
+```
+
 ## Core endpoints
 
 - RPC: `HOST_L1_RPC`
