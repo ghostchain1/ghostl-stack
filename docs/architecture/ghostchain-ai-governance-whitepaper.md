@@ -1,6 +1,6 @@
 # GhostChain AI Governance Whitepaper
 
-Version: 1.0
+Version: 1.1
 Date: 2026-02-03
 
 ## Executive summary
@@ -45,11 +45,11 @@ Authority boundaries:
 
 2. Proposal creation (off-chain)
    - A deterministic policy update payload is generated.
-   - Evidence bundle is hashed and optionally committed on-chain.
+   - Evidence bundle is hashed, includes explainability metadata, and is committed on-chain.
 
 3. Ratification (on-chain)
-   - Governance validates a proposal and signs for execution.
-   - The proposal is executed through an on-chain executor with checks.
+   - Governance validates a proposal and signs for execution (EIP-712 signatures).
+   - The proposal is executed through an on-chain executor with quorum and invariant checks.
 
 4. Enforcement (validator)
    - Validators read active policies from on-chain registries.
@@ -60,9 +60,9 @@ Authority boundaries:
 Evidence is recorded as immutable hashes and linked to proposals:
 
 - Evidence bundles are hashed with deterministic serialization.
-- Evidence hashes are committed to on-chain vaults where applicable.
-- Proposals reference evidence hashes and policy versions.
-- Operator runbooks archive evidence bundles and proposal payloads.
+- Evidence hashes are committed to on-chain vaults with proposal linkage.
+- Proposals reference evidence hashes, inputs hashes, and policy versions.
+- Operator runbooks archive evidence bundles, proposal payloads, and signer sets.
 
 This ensures a complete audit trail for every policy update.
 
@@ -70,10 +70,11 @@ This ensures a complete audit trail for every policy update.
 
 For each AI policy proposal:
 
-- Rationale and expected impact are recorded in metadata.
-- Simulation inputs and results are recorded in evidence bundles.
+- Rationale and expected impact are recorded in explainability metadata.
+- Simulation inputs and results are recorded in evidence bundles with inputs hashes.
 - A rollback plan is required for any change with non-trivial impact.
 - Human review is mandatory prior to on-chain ratification.
+- Proposals missing explainability or signature quorum are rejected.
 
 Dispute and appeal:
 
@@ -94,10 +95,10 @@ Key risks and mitigations:
 
 Auditors can reproduce and verify governance actions by:
 
-1. Fetching the proposal payload (evidence hash, policy key, value, timestamps).
-2. Verifying the evidence bundle hash matches the proposal metadata.
-3. Verifying signatures and quorum thresholds on-chain.
-4. Replaying simulations using the recorded inputs.
+1. Fetching the proposal payload (evidence hash, inputs hash, policy key, value, timestamps).
+2. Verifying the evidence bundle hash matches the on-chain EvidenceVault record.
+3. Verifying EIP-712 signatures and quorum thresholds on-chain.
+4. Replaying simulations using the recorded inputs hash and inputs bundle.
 5. Confirming policy state in the on-chain registry matches the proposal.
 
 ## Evidence appendix
@@ -112,8 +113,8 @@ Evidence locations used by runbooks:
 Each evidence artifact includes:
 
 - Policy key and policy version
-- Evidence hash and metadata hash
-- Simulation references and timestamps
+- Evidence hash, metadata hash, and inputs hash
+- Explainability summary and simulation references
 - Proposal identifiers and signature set
 
 ## Cryptographic glossary
@@ -134,5 +135,7 @@ Primary components:
 - AI proposal generation: `services/ghost-gas-engine`
 - AI monitoring and gating: `services/ai-monitor`
 - Runbooks: `docs/ops/runbook-l1.md`, `docs/ops/runbook-l2.md`, `docs/ops/runbook-l3.md`
+- Ratification workflow: `docs/ai-core/ratification.md`
+- Ratification package: `docs/ghostchain/ratification-package.md`
 
 This whitepaper is intended to be self-contained and court-ready. It provides both operational and cryptographic verification steps to prove every policy action is governed, bounded, and reproducible.
