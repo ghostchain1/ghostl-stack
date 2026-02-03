@@ -2,6 +2,9 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+if [ -d "/home/ghost/.foundry/bin" ]; then
+  export PATH="/home/ghost/.foundry/bin:$PATH"
+fi
 
 log() {
   printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"
