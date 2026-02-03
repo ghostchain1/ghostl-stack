@@ -288,6 +288,32 @@ export async function registerAiCoreRoutes(app: FastifyInstance) {
     const issuedAt = parsed.data.issuedAt ?? Math.floor(Date.now() / 1000);
     const validFor = parsed.data.validForSeconds ?? config.AI_POLICY_UPDATE_TTL_SECONDS;
     const validUntil = issuedAt + validFor;
+    const policyCheckpointHash = config.CHAIN_POLICY_CHECKPOINT_HASH;
+    if (config.CHAIN_POLICY_REQUIRED && !policyCheckpointHash) {
+      reply.code(400).send({ error: 'missing_policy_checkpoint', hint: 'Set CHAIN_POLICY_CHECKPOINT_HASH.' });
+      return;
+    }
+    const policyCheckpoint = policyCheckpointHash
+      ? {
+          hash: policyCheckpointHash,
+          layer: config.CHAIN_POLICY_CHECKPOINT_LAYER || 'L1',
+          registryAddress: config.CHAIN_POLICY_REGISTRY_ADDRESS || null,
+          capturedAt: new Date().toISOString()
+        }
+      : null;
+    const metadata = { ...(parsed.data.metadata ?? {}) } as Record<string, unknown>;
+    const providedCheckpoint = metadata.policyCheckpoint;
+    if (providedCheckpoint && policyCheckpointHash) {
+      const providedHash =
+        typeof providedCheckpoint === 'string'
+          ? providedCheckpoint
+          : (providedCheckpoint as { hash?: string }).hash;
+      if (providedHash && providedHash !== policyCheckpointHash) {
+        reply.code(400).send({ error: 'policy_checkpoint_mismatch', hint: 'Upstream checkpoint hash mismatch.' });
+        return;
+      }
+    }
+    delete metadata.policyCheckpoint;
 
     const { bundle, evidenceHash, metadataHash } = buildEvidenceBundle({
       kind,
@@ -298,8 +324,9 @@ export async function registerAiCoreRoutes(app: FastifyInstance) {
       emergency,
       issuedAt: new Date(issuedAt * 1000).toISOString(),
       source: 'ghost-gas-engine',
+      policyCheckpoint,
       explainability: parsed.data.explainability,
-      metadata: parsed.data.metadata ?? {},
+      metadata,
       simulation: parsed.data.simulation ?? null
     });
 

@@ -12,6 +12,12 @@ export type EvidenceBundle = {
   emergency: boolean;
   issuedAt: string;
   source: string;
+  policyCheckpoint?: {
+    hash: string;
+    layer: string;
+    registryAddress?: string | null;
+    capturedAt?: string;
+  } | null;
   explainability: {
     rationale: string;
     assumptions: string[];
@@ -49,6 +55,7 @@ export const buildEvidenceBundle = (input: {
   emergency: boolean;
   issuedAt: string;
   source: string;
+  policyCheckpoint?: EvidenceBundle['policyCheckpoint'];
   explainability: EvidenceBundle["explainability"];
   metadata?: Record<string, unknown>;
   simulation?: Record<string, unknown> | null;
@@ -56,11 +63,13 @@ export const buildEvidenceBundle = (input: {
 }) => {
   const metadata = input.metadata ?? {};
   const explainability = input.explainability;
+  const policyCheckpoint = input.policyCheckpoint ?? null;
   const inputsHash = hashJson({
     explainability,
     metadata,
     simulation: input.simulation ?? null,
-    prediction: input.prediction ?? null
+    prediction: input.prediction ?? null,
+    policyCheckpoint
   });
   const bundle: EvidenceBundle = {
     version: '2',
@@ -72,6 +81,7 @@ export const buildEvidenceBundle = (input: {
     emergency: input.emergency,
     issuedAt: input.issuedAt,
     source: input.source,
+    ...(policyCheckpoint ? { policyCheckpoint } : {}),
     explainability,
     metadata,
     simulation: input.simulation ?? null,
