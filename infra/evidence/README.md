@@ -46,6 +46,24 @@ EVIDENCE_EPOCH=1769980800 \
 infra/scripts/evidence-pack-l2.sh --verify
 ```
 
+# L3 Evidence Pack
+
+The L3 evidence pack captures OP Stack L3 config, governance artifacts, and provenance hashes for Ghost L3.
+
+Generate:
+
+```bash
+infra/scripts/evidence-pack-l3.sh
+```
+
+For reproducible output:
+
+```bash
+EVIDENCE_TIMESTAMP=20260202T000000Z \
+EVIDENCE_EPOCH=1769980800 \
+infra/scripts/evidence-pack-l3.sh --verify
+```
+
 # AI Governance Evidence Pack
 
 The AI governance evidence pack captures the constitutional whitepaper, invariants registry,
