@@ -1,0 +1,15 @@
+{
+  "address": "0xFD471836031dc5108809D173A067e8486B9047A3",
+  "chainId": 14000101,
+  "governor": "0x5f3f1dBD7B74C6B46e8c44f98792A1dAf8d69154",
+  "executor": "0x0E801D84Fa97b50751Dbf25036d067dCf18858bF",
+  "supermajorityBps": 6667,
+  "quorumBps": 5000,
+  "activationDelaySeconds": 172800,
+  "maxAuthorityBps": 1500,
+  "emergencyScope": "0xc9b50c83c94869e7a205568e22f61925f0fed07ff0c49d06d515d9bfc3f371bc",
+  "emergencyExpirySeconds": 86400,
+  "deployedBy": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "txHash": "0x692c5f2536aacad0819693cd6621fe3640c77c6cbb4d3ee5209002b3a5d1fbe3",
+  "deployedAt": "2026-02-03T09:53:11.031Z"
+}
