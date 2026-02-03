@@ -183,3 +183,25 @@ Result: PASS
 Notes:
 - Added policy delay, emergency expiry, and rollback invariants to `docs/security/ai-governance-invariants.yaml`
 - Tests updated in `contracts/test/invariants/AIConstitution.invariant.t.sol`
+
+## 2026-02-03 Phase 3 Discovery (AI Consensus Plane)
+
+Commands:
+
+```
+ls -la services
+ls -la ops/ai
+sed -n '1,200p' docs/ai-core/architecture.md
+sed -n '1,200p' services/ai-monitor/src/index.js
+```
+
+Findings:
+- AI core runtime today is centered on `services/ghost-gas-engine` (API + worker) with Postgres/Redis per `docs/ai-core/architecture.md`.
+- Policy gating is already present in `services/ai-monitor` (AgentGovernancePolicy `canExecute` checks + chain policy registry checks).
+- AI/ops service surface includes: `ai-monitor`, `ai-clock-sync`, `ghost-ai-attestor`, `anomaly-detection-service`, `consensus-telemetry-service`, `network-manager-service`, `treasury-ai`, `treasury-evidence`.
+- Evidence generation exists for treasury (`services/treasury-evidence`) but is not yet wired to policy proposal flow for AI governance actions.
+
+Gaps to close in Phase 3 implementation:
+- Deterministic simulation + evidence hash pipeline for policy actions (EvidenceVault commits + AIProposalExecutor linkage).
+- Unified AI proposal builder that binds simulation/evidence hashes to on-chain policy changes.
+- Action execution path that records evidence/attestation before any Tier 1+ action (non-observe mode).
