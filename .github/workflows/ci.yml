@@ -31,6 +31,9 @@ jobs:
       - name: Smoke - AI stability (config gate)
         run: bash scripts/smoke/ai-stability.sh
 
+      - name: Smoke - Federation invariants
+        run: bash scripts/smoke/federation-invariants.sh
+
       - name: Smoke - AI core proposal endpoint
         working-directory: services/ghost-gas-engine
         run: |

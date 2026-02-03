@@ -108,3 +108,21 @@ invariants:
         - PolicyRegistry.rollbackPolicy
       tests:
         - contracts/test/invariants/AIConstitution.invariant.t.sol:test_rollback_within_window
+
+  - id: AI-INV-009
+    title: Cross-chain policy inheritance is required for L2/L3
+    description: >
+      L2 and L3 must be configured to reference upstream chain policy registries
+      and fail closed when required values are missing.
+    enforcement:
+      operational:
+        - scripts/smoke/federation-invariants.sh
+
+  - id: AI-INV-010
+    title: Federation checkpoint exports are deterministic
+    description: >
+      Policy checkpoint exports must produce a deterministic hash for audit and
+      cross-chain evidence anchoring.
+    enforcement:
+      operational:
+        - contracts/scripts/governance/export_policy_checkpoint.ts

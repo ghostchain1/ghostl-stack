@@ -221,6 +221,13 @@ Updates:
 - Added `contracts/scripts/governance/export_policy_checkpoint.ts` and `infra/scripts/federation/export-policy-checkpoint.sh` to export deterministic policy checkpoints.
 - Updated L2/L3 governance autonomy docs with chain policy inheritance settings.
 - Added federation checkpoint calls to L1/L2/L3 runbooks and ops index.
+
+## 2026-02-03 Phase 7 Testing, Audit, and Failure Modes
+
+Updates:
+- Added federation smoke test `scripts/smoke/federation-invariants.sh` and wired it into CI.
+- Added CHAIN_POLICY_* env entries to L2/L3 env examples to enforce upstream policy inheritance.
+- Added federation invariants to `docs/security/ai-governance-invariants.yaml`.
 - AI/ops service surface includes: `ai-monitor`, `ai-clock-sync`, `ghost-ai-attestor`, `anomaly-detection-service`, `consensus-telemetry-service`, `network-manager-service`, `treasury-ai`, `treasury-evidence`.
 - Evidence generation exists for treasury (`services/treasury-evidence`) but is not yet wired to policy proposal flow for AI governance actions.
 
