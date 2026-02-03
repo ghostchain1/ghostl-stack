@@ -130,6 +130,10 @@ services:
     - PORT=7577
     - RPC_L2=${RPC_L2}
     - RPC_URL=${RPC_L3}
+    - RPC_L1=${RPC_L2}
+    - OP_NODE_RPC_URL=${OP_NODE_RPC_URL_L3:-http://l3-op-node:19546}
+    - OP_BATCHER_METRICS_URL=${OP_BATCHER_METRICS_URL_L3:-http://l3-op-batcher:8301/metrics}
+    - OP_PROPOSER_METRICS_URL=${OP_PROPOSER_METRICS_URL_L3:-http://l3-op-proposer:8302/metrics}
     - GUARD_URL=${GUARD_URL}
     - ADMIN_TOKEN=${BRIDGE_ADMIN_TOKEN}
     - OBSERVE_ONLY=1

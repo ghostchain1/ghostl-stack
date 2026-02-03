@@ -48,6 +48,11 @@ const BATCHER_STALL_PENALTY = Number(env.BATCHER_STALL_PENALTY || 20);
 const PROPOSER_STALL_PENALTY = Number(env.PROPOSER_STALL_PENALTY || 20);
 const METRICS_PENALTY = Number(env.METRICS_PENALTY || 10);
 const DEPENDENCY_TIMEOUT_MS = Number(env.DEPENDENCY_TIMEOUT_MS || 1500);
+const LAYER_TAG = TARGET_LAYER.toLowerCase();
+const LAYER_RPC_INCIDENT = `${LAYER_TAG}_rpc_unreachable`;
+const LAYER_HEAD_STALE = `${LAYER_TAG}_head_stale`;
+const PARENT_RPC_INCIDENT = `${LAYER_TAG}_parent_rpc_unreachable`;
+const PARENT_HEAD_STALE = `${LAYER_TAG}_parent_head_stale`;
 
 const app = express();
 app.use(express.json());
@@ -337,12 +342,12 @@ function classifyIncidents({
   policyUnavailable
 }) {
   const incidents = [];
-  if (rpcError) incidents.push("l2_rpc_unreachable");
-  if (l1RpcError) incidents.push("l1_rpc_unreachable");
+  if (rpcError) incidents.push(LAYER_RPC_INCIDENT);
+  if (l1RpcError) incidents.push(PARENT_RPC_INCIDENT);
   if (opNodeError) incidents.push("op_node_unreachable");
   if (syncing) incidents.push("syncing");
-  if (headLag > HEAD_LAG_THRESHOLD_SEC) incidents.push("l2_head_stale");
-  if (l1HeadLag > L1_HEAD_LAG_THRESHOLD_SEC) incidents.push("l1_head_stale");
+  if (headLag > HEAD_LAG_THRESHOLD_SEC) incidents.push(LAYER_HEAD_STALE);
+  if (l1HeadLag > L1_HEAD_LAG_THRESHOLD_SEC) incidents.push(PARENT_HEAD_STALE);
   if (peers < MIN_PEERS) incidents.push("low_peers");
   if (reorged) incidents.push("reorg_detected");
   if (batcherStalled) incidents.push("batcher_stalled");
@@ -356,16 +361,16 @@ function classifyIncidents({
 
 function recommendFix(incidents) {
   if (!incidents.length) return "";
-  if (incidents.includes("l2_rpc_unreachable")) return "Check L2 RPC proxy/container health, restart L2 node if needed.";
-  if (incidents.includes("l1_rpc_unreachable")) return "Check L1 RPC proxy/container health and network connectivity.";
+  if (incidents.includes(LAYER_RPC_INCIDENT)) return `Check ${TARGET_LAYER} RPC proxy/container health, restart node if needed.`;
+  if (incidents.includes(PARENT_RPC_INCIDENT)) return `Check ${TARGET_LAYER} parent RPC and network connectivity.`;
   if (incidents.includes("op_node_unreachable")) return "Check op-node health and restart if needed.";
   if (incidents.includes("syncing")) return "Node syncing; verify disk IO and peer connectivity.";
-  if (incidents.includes("l2_head_stale")) return "Investigate L2 node lag; check CPU/memory and peer count.";
-  if (incidents.includes("l1_head_stale")) return "Investigate L1 RPC lag and op-node derivation.";
+  if (incidents.includes(LAYER_HEAD_STALE)) return `Investigate ${TARGET_LAYER} node lag; check CPU/memory and peer count.`;
+  if (incidents.includes(PARENT_HEAD_STALE)) return `Investigate ${TARGET_LAYER} parent RPC lag and op-node derivation.`;
   if (incidents.includes("low_peers")) return "Check P2P connectivity and firewall rules.";
   if (incidents.includes("reorg_detected")) return "Investigate validator health and network stability.";
-  if (incidents.includes("batcher_stalled")) return "Restart op-batcher and verify batcher key/L1 RPC.";
-  if (incidents.includes("proposer_stalled")) return "Restart op-proposer and verify proposer key/L1 RPC.";
+  if (incidents.includes("batcher_stalled")) return "Restart op-batcher and verify batcher key/parent RPC.";
+  if (incidents.includes("proposer_stalled")) return "Restart op-proposer and verify proposer key/parent RPC.";
   if (incidents.includes("batcher_metrics_unreachable")) return "Check op-batcher metrics endpoint or container health.";
   if (incidents.includes("proposer_metrics_unreachable")) return "Check op-proposer metrics endpoint or container health.";
   if (incidents.includes("policy_registry_unreachable")) return "Check L1 policy registry RPC/address and network connectivity.";
@@ -567,12 +572,12 @@ async function loop() {
       headLag: 0,
       peers: 0,
       syncing: false,
-      incidents: ["rpc_unreachable"],
+      incidents: [LAYER_RPC_INCIDENT],
       recommendedAction: "throttle",
       recommendedFix: "Check RPC proxy/container health, restart node if needed."
     };
     incidentGauge.reset();
-    incidentGauge.labels("rpc_unreachable").set(1);
+    incidentGauge.labels(LAYER_RPC_INCIDENT).set(1);
     logEvent("error", "loop_error", { error: e?.message || String(e) });
   } finally {
     setTimeout(loop, LOOP_MS);
