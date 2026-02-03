@@ -141,3 +141,11 @@ Admin-only:
 - The worker consumes retry jobs via Redis and runs the AI core loop on interval.
 - `SEED_SAMPLE_DATA=false` disables sample rows for production.
 - `POST /v1/ai-core/policy-proposals` builds a deterministic evidence bundle + policy update payload for the on-chain `AIProposalExecutor`.
+- Required fields for `/v1/ai-core/policy-proposals`: `chainKey`, `policyKey`, `value`, `explainability`.
+- `explainability` must include:
+  - `rationale` (why the change is needed)
+  - `assumptions` (list of assumptions)
+  - `expectedImpact` (impact summary)
+  - `rollbackPlan` (how to revert)
+  - `confidence` (0-1)
+  - `modelVersion` (optional)

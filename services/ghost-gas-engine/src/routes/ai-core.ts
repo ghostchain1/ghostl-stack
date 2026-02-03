@@ -39,6 +39,14 @@ const proposalSchema = z.object({
   value: z.union([z.string(), z.number()]),
   emergency: z.boolean().optional(),
   kind: z.string().optional(),
+  explainability: z.object({
+    rationale: z.string().min(1),
+    assumptions: z.array(z.string()).default([]),
+    expectedImpact: z.string().min(1),
+    rollbackPlan: z.string().min(1),
+    confidence: z.number().min(0).max(1),
+    modelVersion: z.string().optional()
+  }),
   metadata: z.record(z.any()).optional(),
   simulation: z.record(z.any()).optional(),
   proposalId: z.number().int().nonnegative().optional(),
@@ -290,6 +298,7 @@ export async function registerAiCoreRoutes(app: FastifyInstance) {
       emergency,
       issuedAt: new Date(issuedAt * 1000).toISOString(),
       source: 'ghost-gas-engine',
+      explainability: parsed.data.explainability,
       metadata: parsed.data.metadata ?? {},
       simulation: parsed.data.simulation ?? null
     });
