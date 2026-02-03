@@ -60,6 +60,10 @@ const envSchema = z.object({
   AI_POLICY_REGISTRY_RPC: z.string().optional(),
   AI_PROPOSAL_EXECUTOR_ADDRESS: z.string().optional(),
   AI_PROPOSAL_EXECUTOR_RPC: z.string().optional(),
+  AI_PROPOSAL_SIGNER_KEYS: z.string().optional(),
+  AI_PROPOSAL_MIN_SIGNATURES: z.coerce.number().default(0),
+  AI_PROPOSAL_AUTO_SUBMIT: z.coerce.boolean().default(false),
+  AI_PROPOSAL_SUBMITTER_KEY: z.string().optional(),
   AI_POLICY_UPDATE_TTL_SECONDS: z.coerce.number().default(3600),
   AI_PROPOSAL_OUTPUT_DIR: z.string().optional()
 });

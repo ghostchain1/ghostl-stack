@@ -232,3 +232,28 @@ npm --prefix services/ghost-gas-engine run build
 ```
 
 Result: PASS
+
+## 2026-02-03 Phase 3 Implementation (Signer Quorum + Auto Submit)
+
+Changes:
+- Added signer + submit utilities in `services/ghost-gas-engine/src/ai-core/signing.ts`.
+- Policy proposal endpoint now emits signatures (EIP-712 digest) and optionally submits to `AIProposalExecutor`.
+- New env controls for signer keys + auto-submit in `services/ghost-gas-engine/.env.example`.
+
+Commands:
+
+```
+npm --prefix services/ghost-gas-engine run build
+~/.foundry/bin/forge test --match-path test/foundry/AIProposalExecutor.t.sol
+```
+
+Result: PASS (with compiler warnings only)
+
+Notes:
+- Added `testEmergencyUpdateRecordsMetadataHash` to `contracts/test/foundry/AIProposalExecutor.t.sol`
+- Updated operator playbook with policy proposal steps.
+
+## 2026-02-03 Phase 4 Start (Ops Runbook Update)
+
+Changes:
+- Added policy proposal + evidence runbook steps to `docs/ai-core/operator-playbook.md`.
