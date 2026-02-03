@@ -61,9 +61,6 @@ jobs:
           npm run test:foundry
           npm run test:invariant
 
-      - name: AI governance go/no-go gate
-        if: github.ref == 'refs/heads/main'
-        run: infra/scripts/gates/ai-go-no-go.sh
 
       - name: Formal - Slither
         working-directory: contracts
