@@ -38,6 +38,8 @@ services:
       MIGRATION_TIMEOUT_MS: 120000
       READINESS_FILE: /tmp/ghost_gas_engine_migrated
       HEALTHCHECK_URL: http://127.0.0.1:3210/ready
+      AI_EVIDENCE_OUTPUT_DIR: ${AI_EVIDENCE_OUTPUT_DIR:-/data/evidence}
+      AI_PROPOSAL_OUTPUT_DIR: ${AI_PROPOSAL_OUTPUT_DIR:-/data/proposals}
     ports:
     - 3210:3210
     extra_hosts:

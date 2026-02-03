@@ -30,4 +30,8 @@
   ```bash
   infra/scripts/evidence-pack-l2.sh
   ```
+- Preserve AI evidence bundles:
+  - `services/ghost-gas-engine/data/evidence`
+  - `services/ghost-gas-engine/data/proposals`
+  - `services/ai-monitor/data/evidence`
 - File postmortem and attach AI monitor incident logs.

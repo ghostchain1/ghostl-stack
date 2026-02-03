@@ -14,6 +14,10 @@
    - `EmergencyShutdown.trigger("<reason>")`
 2) Notify on-call and open incident ticket.
 3) Capture evidence (logs, metrics, chain state hashes).
+4) Preserve AI evidence bundles:
+   - `services/ghost-gas-engine/data/evidence`
+   - `services/ghost-gas-engine/data/proposals`
+   - `services/ai-monitor/data/evidence`
 
 ## Triage checklist
 
