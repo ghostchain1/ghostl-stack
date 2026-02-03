@@ -121,3 +121,20 @@ Notes:
 - Queue tx: `0x3371397f0caa6c49c39afabfb398b877a6041f43deb61a11d9e5b6ea8098e1e9`
 - Timelock delay: 600s (rerun execute after ETA)
 - Reports: `contracts/reports/ai_constitutional_vote.json`, `contracts/reports/ai_constitutional_execution.json`
+
+## 2026-02-03 Constitutional Ratification Execute Attempt (Devnet)
+
+Commands:
+
+```
+cd contracts
+npx hardhat run --network anvil scripts/governance/permit_ai_constitutional_action.ts
+npx hardhat run --network anvil scripts/governance/queue_execute_ai_constitutional_ratification.ts
+npx hardhat run --network anvil scripts/governance/check_ai_constitutional_status.ts
+```
+
+Result: Execution reverted (AlreadyRatified)
+
+Notes:
+- Action permit tx recorded in `contracts/reports/ai_constitutional_action_permit.json`
+- `AIConstitutionalProposal.ratified=true` (skip execution; contract already ratified)
