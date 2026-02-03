@@ -1,5 +1,5 @@
 {
-  "proposalId": "2",
+  "proposalId": "3",
   "governor": "0xdbC43Ba45381e02825b14322cDdd15eC4B3164E6",
   "voter": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
   "support": true,
@@ -7,5 +7,5 @@
   "againstVotes": "0",
   "queued": false,
   "executed": false,
-  "recordedAt": "2026-02-03T16:27:19.531Z"
+  "recordedAt": "2026-02-03T17:01:03.532Z"
 }
