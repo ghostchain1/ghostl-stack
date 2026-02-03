@@ -6,6 +6,7 @@
 - `l2-threat-model.md`: L2 threat model and controls.
 - `l2-hardening-checklist.md`: Hardening checklist for L2 ops.
 - `l2-invariants.md`: Formal L2 invariants and enforcement map.
+- `ai-governance-invariants.yaml`: Machine-readable invariants registry for AI governance primitives.
 - `ssh-onchain-notary.md`: SSH notarization workflow.
 
 ## Scanning configuration
