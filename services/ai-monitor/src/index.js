@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import express from "express";
 import client from "prom-client";
 import { Interface, ethers } from "ethers";
@@ -25,6 +27,7 @@ const POLICY_ROLE = env.POLICY_ROLE || "L2_AI_MONITOR";
 const POLICY_ACTION_THROTTLE = env.POLICY_ACTION_THROTTLE || "L2_AI_THROTTLE";
 const POLICY_ACTION_PAUSE = env.POLICY_ACTION_PAUSE || "L2_AI_PAUSE";
 const POLICY_APPROVALS_PROVIDED = Math.max(0, Number(env.POLICY_APPROVALS_PROVIDED || 0));
+const POLICY_HAS_EVIDENCE_RAW = env.POLICY_HAS_EVIDENCE;
 const POLICY_HAS_EVIDENCE = env.POLICY_HAS_EVIDENCE === "1";
 const POLICY_REQUIRED = env.POLICY_REQUIRED ? env.POLICY_REQUIRED === "1" : !OBSERVE_ONLY;
 const POLICY_CACHE_MS = Math.max(1000, Number(env.POLICY_CACHE_MS || 10000));
@@ -52,6 +55,9 @@ const BATCHER_STALL_PENALTY = Number(env.BATCHER_STALL_PENALTY || 20);
 const PROPOSER_STALL_PENALTY = Number(env.PROPOSER_STALL_PENALTY || 20);
 const METRICS_PENALTY = Number(env.METRICS_PENALTY || 10);
 const DEPENDENCY_TIMEOUT_MS = Number(env.DEPENDENCY_TIMEOUT_MS || 1500);
+const ACTION_EVIDENCE_ENABLED = env.ACTION_EVIDENCE_ENABLED === "1";
+const ACTION_EVIDENCE_OUTPUT_DIR = env.ACTION_EVIDENCE_OUTPUT_DIR || "";
+const ACTION_EVIDENCE_KIND = env.ACTION_EVIDENCE_KIND || "ghost.ai.monitor.action";
 const LAYER_TAG = TARGET_LAYER.toLowerCase();
 const LAYER_RPC_INCIDENT = `${LAYER_TAG}_rpc_unreachable`;
 const LAYER_HEAD_STALE = `${LAYER_TAG}_head_stale`;
@@ -65,6 +71,63 @@ const logEvent = (level, message, extra = {}) => {
   const payload = { ts: new Date().toISOString(), level, message, layer: TARGET_LAYER, ...extra };
   // eslint-disable-next-line no-console
   console.log(JSON.stringify(payload));
+};
+
+const stableStringify = (value) => {
+  if (value === null || value === undefined) return "null";
+  if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  if (typeof value === "object") {
+    const entries = Object.entries(value)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b));
+    return `{${entries.map(([key, val]) => `${JSON.stringify(key)}:${stableStringify(val)}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+};
+
+const hashJson = (value) => ethers.keccak256(ethers.toUtf8Bytes(stableStringify(value)));
+
+const writeEvidenceFile = (bundle, evidenceHash) => {
+  if (!ACTION_EVIDENCE_OUTPUT_DIR) return null;
+  fs.mkdirSync(ACTION_EVIDENCE_OUTPUT_DIR, { recursive: true });
+  const filePath = path.join(ACTION_EVIDENCE_OUTPUT_DIR, `action-evidence-${TARGET_LAYER}-${evidenceHash}.json`);
+  fs.writeFileSync(filePath, JSON.stringify(bundle, null, 2), "utf8");
+  return filePath;
+};
+
+const buildActionEvidence = (actionType, context) => {
+  if (!ACTION_EVIDENCE_ENABLED) return null;
+  const issuedAt = context?.blockTimestamp
+    ? new Date(context.blockTimestamp * 1000).toISOString()
+    : new Date().toISOString();
+  const bundle = {
+    version: "1",
+    kind: ACTION_EVIDENCE_KIND,
+    layer: TARGET_LAYER,
+    action: actionType,
+    policyRole: POLICY_ROLE,
+    policyAction: actionType === "pause" ? POLICY_ACTION_PAUSE : POLICY_ACTION_THROTTLE,
+    risk: context?.risk,
+    congestion: context?.congestion,
+    anomaly: context?.anomaly,
+    headLag: context?.headLag,
+    l1HeadLag: context?.l1HeadLag,
+    peers: context?.peers,
+    incidents: context?.incidents || [],
+    headNumber: context?.headNumber,
+    headHash: context?.headHash,
+    issuedAt
+  };
+  const evidenceHash = hashJson(bundle);
+  const metadataHash = hashJson({ actionType, layer: TARGET_LAYER, issuedAt });
+  const outputPath = writeEvidenceFile(bundle, evidenceHash);
+  return { bundle, evidenceHash, metadataHash, outputPath };
+};
+
+const resolveHasEvidence = (evidence) => {
+  if (POLICY_HAS_EVIDENCE_RAW === "1") return true;
+  if (POLICY_HAS_EVIDENCE_RAW === "0") return false;
+  return Boolean(evidence?.evidenceHash);
 };
 
 const registry = new client.Registry();
@@ -136,21 +199,22 @@ const readPolicyCache = (key) => {
   return entry.allowed;
 };
 
-const policyAllows = async (actionValue) => {
+const policyAllows = async (actionValue, hasEvidenceOverride) => {
   if (!POLICY_REGISTRY_ADDRESS || !POLICY_REGISTRY_RPC) {
     return POLICY_REQUIRED ? false : true;
   }
   const roleHash = normalizePolicyId(POLICY_ROLE, "role");
   const actionHash = normalizePolicyId(actionValue, "action");
   if (!roleHash || !actionHash) return POLICY_REQUIRED ? false : true;
-  const cacheKey = `${roleHash}:${actionHash}`;
+  const hasEvidence = typeof hasEvidenceOverride === "boolean" ? hasEvidenceOverride : POLICY_HAS_EVIDENCE;
+  const cacheKey = `${roleHash}:${actionHash}:${hasEvidence ? 1 : 0}:${POLICY_APPROVALS_PROVIDED}`;
   const cached = readPolicyCache(cacheKey);
   if (cached !== null) return cached;
   const data = policyIface.encodeFunctionData("canExecute", [
     roleHash,
     actionHash,
     POLICY_APPROVALS_PROVIDED,
-    POLICY_HAS_EVIDENCE
+    hasEvidence
   ]);
   const result = await rpcRequest(POLICY_REGISTRY_RPC, "eth_call", [
     { to: POLICY_REGISTRY_ADDRESS, data },
@@ -321,18 +385,46 @@ async function setDelay(seconds) {
   });
 }
 
-async function maybeAdjustPolicy(score, congestion, policyAllowed) {
+async function maybeAdjustPolicy(score, congestion, policyAllowed, context) {
   actionGauge.set(0);
   if (score >= PAUSE_THRESHOLD) {
     // For now, use a high delay instead of hard pause to avoid mode flapping.
-    if (!policyAllowed.pause) return "none";
+    const evidence = buildActionEvidence("pause", context);
+    const hasEvidence = resolveHasEvidence(evidence);
+    let pauseAllowed = policyAllowed.pause;
+    if (!pauseAllowed && ACTION_EVIDENCE_ENABLED) {
+      pauseAllowed = await policyAllows(POLICY_ACTION_PAUSE, hasEvidence);
+    }
+    if (!pauseAllowed) {
+      if (evidence?.evidenceHash) {
+        logEvent("warn", "policy_denied_action", { action: "pause", evidenceHash: evidence.evidenceHash });
+      }
+      return "none";
+    }
+    if (evidence?.outputPath) {
+      logEvent("info", "action_evidence_written", { action: "pause", path: evidence.outputPath });
+    }
     const secs = Math.min(MAX_DELAY_MS / 1000, 10);
     await setDelay(secs);
     actionGauge.set(2);
     return "pause";
   }
   if (score >= THROTTLE_THRESHOLD || congestion >= THROTTLE_THRESHOLD) {
-    if (!policyAllowed.throttle) return "none";
+    const evidence = buildActionEvidence("delay", context);
+    const hasEvidence = resolveHasEvidence(evidence);
+    let throttleAllowed = policyAllowed.throttle;
+    if (!throttleAllowed && ACTION_EVIDENCE_ENABLED) {
+      throttleAllowed = await policyAllows(POLICY_ACTION_THROTTLE, hasEvidence);
+    }
+    if (!throttleAllowed) {
+      if (evidence?.evidenceHash) {
+        logEvent("warn", "policy_denied_action", { action: "delay", evidenceHash: evidence.evidenceHash });
+      }
+      return "none";
+    }
+    if (evidence?.outputPath) {
+      logEvent("info", "action_evidence_written", { action: "delay", path: evidence.outputPath });
+    }
     const factor = Math.min(1, Math.max(score, congestion) / 100);
     const delayMs = Math.min(MAX_DELAY_MS, Math.max(BASE_DELAY_MS, BASE_DELAY_MS * factor * 2));
     await setDelay(Math.round(delayMs / 1000));
@@ -584,7 +676,19 @@ async function loop() {
     });
     incidentGauge.reset();
     incidents.forEach((type) => incidentGauge.labels(type).set(1));
-    const action = await maybeAdjustPolicy(risk, congestion, policyAllowed);
+    const evidenceContext = {
+      risk,
+      congestion,
+      anomaly,
+      headLag,
+      l1HeadLag,
+      peers,
+      incidents,
+      headNumber: latestBlock?.number ?? null,
+      headHash: latestBlock?.hash ?? null,
+      blockTimestamp: parseHexNumber(latestBlock?.timestamp, 0)
+    };
+    const action = await maybeAdjustPolicy(risk, congestion, policyAllowed, evidenceContext);
     const recommendedAction = action === "pause" ? "throttle_hard" : action === "delay" ? "throttle" : "observe";
     const recommendedFix = recommendFix(incidents);
     lastStatus = {

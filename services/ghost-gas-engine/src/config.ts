@@ -47,7 +47,21 @@ const envSchema = z.object({
   AUTONOMY_MAX_RETRIES: z.coerce.number().default(5),
   AUTONOMY_POLICY_LOCK: z.coerce.boolean().default(false),
   AUTONOMY_POLICY_MAX_DELTA: z.coerce.number().default(0.08),
-  AUTONOMY_FORECAST_INTERVAL_SECONDS: z.coerce.number().default(120)
+  AUTONOMY_FORECAST_INTERVAL_SECONDS: z.coerce.number().default(120),
+  AI_EVIDENCE_OUTPUT_DIR: z.string().optional(),
+  AI_EVIDENCE_AUTO_COMMIT: z.coerce.boolean().default(false),
+  AI_EVIDENCE_KIND: z.string().default('ghost.ai.policy'),
+  AI_EVIDENCE_VAULT_ADDRESS: z.string().optional(),
+  AI_EVIDENCE_VAULT_RPC: z.string().optional(),
+  AI_EVIDENCE_SUBMITTER_KEY: z.string().optional(),
+  AI_EVIDENCE_SIGNER_SET_HASH: z.string().optional(),
+  AI_EVIDENCE_THRESHOLD: z.coerce.number().default(1),
+  AI_POLICY_REGISTRY_ADDRESS: z.string().optional(),
+  AI_POLICY_REGISTRY_RPC: z.string().optional(),
+  AI_PROPOSAL_EXECUTOR_ADDRESS: z.string().optional(),
+  AI_PROPOSAL_EXECUTOR_RPC: z.string().optional(),
+  AI_POLICY_UPDATE_TTL_SECONDS: z.coerce.number().default(3600),
+  AI_PROPOSAL_OUTPUT_DIR: z.string().optional()
 });
 
 const CANONICAL_GAS_TOKEN_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';

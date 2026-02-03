@@ -205,3 +205,30 @@ Gaps to close in Phase 3 implementation:
 - Deterministic simulation + evidence hash pipeline for policy actions (EvidenceVault commits + AIProposalExecutor linkage).
 - Unified AI proposal builder that binds simulation/evidence hashes to on-chain policy changes.
 - Action execution path that records evidence/attestation before any Tier 1+ action (non-observe mode).
+
+## 2026-02-03 Phase 3 Implementation (Evidence + Proposal Wiring)
+
+Changes:
+- Added evidence bundle + hash utilities in `services/ghost-gas-engine/src/ai-core/evidence.ts`.
+- Added AIProposalExecutor update builder in `services/ghost-gas-engine/src/ai-core/proposal.ts`.
+- New admin endpoint `POST /v1/ai-core/policy-proposals` to build evidence + policy update payloads.
+- `ai-monitor` now emits deterministic action evidence bundles and rechecks policy gates with evidence hashes.
+- Updated AI core docs + service env examples.
+
+Files:
+- `services/ghost-gas-engine/src/ai-core/evidence.ts`
+- `services/ghost-gas-engine/src/ai-core/proposal.ts`
+- `services/ghost-gas-engine/src/routes/ai-core.ts`
+- `services/ghost-gas-engine/.env.example`
+- `services/ghost-gas-engine/README.md`
+- `services/ai-monitor/src/index.js`
+- `services/ai-monitor/.env.example`
+- `docs/ai-core/architecture.md`
+
+Command:
+
+```
+npm --prefix services/ghost-gas-engine run build
+```
+
+Result: PASS
