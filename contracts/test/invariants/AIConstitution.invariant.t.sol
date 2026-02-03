@@ -2,10 +2,27 @@
 pragma solidity ^0.8.24;
 
 import "../foundry/TestBase.sol";
+import "../../src/common/ERC20.sol";
 import "../../src/governance/AIConstitutionalProposal.sol";
 import "../../src/governance/PolicyRegistry.sol";
 import "../../src/governance/EvidenceVault.sol";
 import "../../src/governance/AIProposalExecutor.sol";
+
+contract MockGovernanceToken is ERC20 {
+    constructor() ERC20("Governance", "GOV", 18) {}
+
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
+}
+
+contract MockGovernor {
+    address public votingToken;
+
+    constructor(address token_) {
+        votingToken = token_;
+    }
+}
 
 contract AIConstitutionInvariantTest is TestBase {
     bytes32 private constant CONSTITUTION_HASH = keccak256("ghost.ai.constitution.v1");
@@ -15,6 +32,8 @@ contract AIConstitutionInvariantTest is TestBase {
     EvidenceVault private vault;
     AIProposalExecutor private executor;
     AIConstitutionalProposal private proposal;
+    MockGovernanceToken private govToken;
+    MockGovernor private governor;
 
     function setUp() public {
         registry = new PolicyRegistry(address(this), address(0), CONSTITUTION_HASH);
@@ -29,8 +48,12 @@ contract AIConstitutionInvariantTest is TestBase {
 
         registry.setPolicySetting(POLICY_KEY, 1, 100, 0, 3600, 0, true, true);
 
+        govToken = new MockGovernanceToken();
+        govToken.mint(address(this), 1_000_000 ether);
+        governor = new MockGovernor(address(govToken));
+
         proposal = new AIConstitutionalProposal(
-            address(this),
+            address(governor),
             address(this),
             6667,
             5000,
