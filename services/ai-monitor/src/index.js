@@ -28,6 +28,10 @@ const POLICY_APPROVALS_PROVIDED = Math.max(0, Number(env.POLICY_APPROVALS_PROVID
 const POLICY_HAS_EVIDENCE = env.POLICY_HAS_EVIDENCE === "1";
 const POLICY_REQUIRED = env.POLICY_REQUIRED ? env.POLICY_REQUIRED === "1" : !OBSERVE_ONLY;
 const POLICY_CACHE_MS = Math.max(1000, Number(env.POLICY_CACHE_MS || 10000));
+const CHAIN_POLICY_REGISTRY_ADDRESS = env.CHAIN_POLICY_REGISTRY_ADDRESS || "";
+const CHAIN_POLICY_REGISTRY_RPC = env.CHAIN_POLICY_REGISTRY_RPC || POLICY_REGISTRY_RPC || RPC_L1 || "";
+const CHAIN_POLICY_REQUIRED = env.CHAIN_POLICY_REQUIRED ? env.CHAIN_POLICY_REQUIRED === "1" : false;
+const CHAIN_POLICY_CACHE_MS = Math.max(1000, Number(env.CHAIN_POLICY_CACHE_MS || 15000));
 const THROTTLE_THRESHOLD = Number(env.THROTTLE_THRESHOLD || 70);
 const PAUSE_THRESHOLD = Number(env.PAUSE_THRESHOLD || 90);
 const BASE_DELAY_MS = Number(env.BASE_DELAY_MS || 2000);
@@ -84,6 +88,10 @@ const policyGauge = new client.Gauge({
   help: "Policy registry allow/deny status by action",
   labelNames: ["action"]
 });
+const chainPolicyGauge = new client.Gauge({
+  name: "ai_monitor_chain_policy_registry_ok",
+  help: "Chain policy registry reachable and has bytecode (1=ok,0=fail)"
+});
 registry.registerMetric(riskGauge);
 registry.registerMetric(anomalyGauge);
 registry.registerMetric(congestionGauge);
@@ -95,11 +103,13 @@ registry.registerMetric(syncingGauge);
 registry.registerMetric(reorgCounter);
 registry.registerMetric(incidentGauge);
 registry.registerMetric(policyGauge);
+registry.registerMetric(chainPolicyGauge);
 
 const headers = ADMIN_TOKEN ? { "content-type": "application/json", "x-admin-token": ADMIN_TOKEN } : { "content-type": "application/json" };
 
 const policyIface = new Interface(["function canExecute(bytes32,bytes32,uint16,bool) view returns (bool)"]);
 const policyCache = new Map();
+const chainPolicyCache = { ok: null, missing: false, expiresAt: 0 };
 
 const normalizePolicyId = (value, label) => {
   if (!value) return null;
@@ -149,6 +159,32 @@ const policyAllows = async (actionValue) => {
   const allowed = ethers.getBigInt(result) > 0n;
   cachePolicyResult(cacheKey, allowed);
   return allowed;
+};
+
+const checkChainPolicyRegistry = async () => {
+  if (!CHAIN_POLICY_REGISTRY_ADDRESS || !CHAIN_POLICY_REGISTRY_RPC) {
+    return { ok: !CHAIN_POLICY_REQUIRED, missing: false };
+  }
+  const now = Date.now();
+  if (chainPolicyCache.expiresAt > now && chainPolicyCache.ok !== null) {
+    return { ok: chainPolicyCache.ok, missing: chainPolicyCache.missing };
+  }
+  try {
+    const code = await rpcRequest(CHAIN_POLICY_REGISTRY_RPC, "eth_getCode", [
+      CHAIN_POLICY_REGISTRY_ADDRESS,
+      "latest"
+    ]);
+    const missing = !code || code === "0x";
+    chainPolicyCache.ok = !missing;
+    chainPolicyCache.missing = missing;
+    chainPolicyCache.expiresAt = now + CHAIN_POLICY_CACHE_MS;
+    return { ok: !missing, missing };
+  } catch {
+    chainPolicyCache.ok = false;
+    chainPolicyCache.missing = false;
+    chainPolicyCache.expiresAt = now + CHAIN_POLICY_CACHE_MS;
+    return { ok: false, missing: false };
+  }
 };
 
 const fetchRegistry = async () => {
@@ -339,7 +375,9 @@ function classifyIncidents({
   batcherMetricsError,
   proposerMetricsError,
   policyDenied,
-  policyUnavailable
+  policyUnavailable,
+  chainPolicyUnavailable,
+  chainPolicyMissing
 }) {
   const incidents = [];
   if (rpcError) incidents.push(LAYER_RPC_INCIDENT);
@@ -356,6 +394,8 @@ function classifyIncidents({
   if (proposerMetricsError) incidents.push("proposer_metrics_unreachable");
   if (policyUnavailable) incidents.push("policy_registry_unreachable");
   if (policyDenied) incidents.push("policy_denied");
+  if (chainPolicyUnavailable) incidents.push("chain_policy_registry_unreachable");
+  if (chainPolicyMissing) incidents.push("chain_policy_registry_missing");
   return incidents;
 }
 
@@ -375,6 +415,8 @@ function recommendFix(incidents) {
   if (incidents.includes("proposer_metrics_unreachable")) return "Check op-proposer metrics endpoint or container health.";
   if (incidents.includes("policy_registry_unreachable")) return "Check L1 policy registry RPC/address and network connectivity.";
   if (incidents.includes("policy_denied")) return "AI action blocked by on-chain policy; submit governance proposal to adjust.";
+  if (incidents.includes("chain_policy_registry_unreachable")) return "Check chain policy registry RPC/address and network connectivity.";
+  if (incidents.includes("chain_policy_registry_missing")) return "Chain policy registry missing bytecode; verify deployment address.";
   return "";
 }
 
@@ -393,6 +435,8 @@ async function loop() {
     let proposerMetricsError = false;
     let policyDenied = false;
     let policyUnavailable = false;
+    let chainPolicyUnavailable = false;
+    let chainPolicyMissing = false;
     if (simulation?.active) {
       latestBlock = simulation.latestBlock;
       peersRaw = simulation.peersRaw ?? "0x0";
@@ -513,6 +557,12 @@ async function loop() {
     }
     policyGauge.labels("throttle").set(policyAllowed.throttle ? 1 : 0);
     policyGauge.labels("pause").set(policyAllowed.pause ? 1 : 0);
+    if (CHAIN_POLICY_REGISTRY_ADDRESS || CHAIN_POLICY_REQUIRED) {
+      const chainPolicy = await checkChainPolicyRegistry();
+      chainPolicyUnavailable = !chainPolicy.ok;
+      chainPolicyMissing = chainPolicy.missing;
+    }
+    chainPolicyGauge.set(!chainPolicyUnavailable && !chainPolicyMissing ? 1 : 0);
 
     const incidents = classifyIncidents({
       syncing: syncing && syncing !== false,
@@ -528,7 +578,9 @@ async function loop() {
       batcherMetricsError,
       proposerMetricsError,
       policyDenied,
-      policyUnavailable
+      policyUnavailable,
+      chainPolicyUnavailable,
+      chainPolicyMissing
     });
     incidentGauge.reset();
     incidents.forEach((type) => incidentGauge.labels(type).set(1));
@@ -557,7 +609,10 @@ async function loop() {
         role: POLICY_ROLE,
         throttleAllowed: policyAllowed.throttle,
         pauseAllowed: policyAllowed.pause,
-        lastCheckAt: new Date().toISOString()
+        lastCheckAt: new Date().toISOString(),
+        chainPolicyRegistry: CHAIN_POLICY_REGISTRY_ADDRESS || null,
+        chainPolicyRequired: CHAIN_POLICY_REQUIRED,
+        chainPolicyOk: !chainPolicyUnavailable && !chainPolicyMissing
       }
     };
     if (incidents.length) {
@@ -593,7 +648,9 @@ app.get("/health", (_req, res) => {
     layer: TARGET_LAYER,
     rpcOverride: Boolean(rpcOverride),
     policyRegistry: POLICY_REGISTRY_ADDRESS || null,
-    policyRequired: POLICY_REQUIRED
+    policyRequired: POLICY_REQUIRED,
+    chainPolicyRegistry: CHAIN_POLICY_REGISTRY_ADDRESS || null,
+    chainPolicyRequired: CHAIN_POLICY_REQUIRED
   });
 });
 
