@@ -1,13 +1,13 @@
 {
-  "proposalId": "1",
+  "proposalId": "2",
   "governor": "0xdbC43Ba45381e02825b14322cDdd15eC4B3164E6",
   "executor": "0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650",
   "queued": true,
   "executed": false,
-  "queueTxHash": "0x3371397f0caa6c49c39afabfb398b877a6041f43deb61a11d9e5b6ea8098e1e9",
+  "queueTxHash": null,
   "executeTxHash": null,
-  "eta": "1770124375",
-  "now": "1770123775",
-  "executeError": "eta_not_reached:600s",
-  "recordedAt": "2026-02-03T13:02:55.333Z"
+  "eta": "1770136651",
+  "now": "1770136881",
+  "executeError": null,
+  "recordedAt": "2026-02-03T16:41:21.574Z"
 }
