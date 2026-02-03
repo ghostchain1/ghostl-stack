@@ -21,6 +21,11 @@ abstract contract TestBase {
 
     receive() external payable {}
 
+    struct FuzzSelector {
+        address addr;
+        bytes4[] selectors;
+    }
+
     function assertTrue(bool value, string memory message) internal {
         require(value, message);
     }
@@ -35,5 +40,46 @@ abstract contract TestBase {
 
     function assertEq(bytes32 a, bytes32 b, string memory message) internal {
         require(a == b, message);
+    }
+
+    // Forge invariant hooks (return empty to silence warnings).
+    function targetArtifacts() public pure returns (string[] memory) {
+        return new string[](0);
+    }
+
+    function targetArtifactSelectors() public pure returns (FuzzSelector[] memory) {
+        return new FuzzSelector[](0);
+    }
+
+    function excludeArtifacts() public pure returns (string[] memory) {
+        return new string[](0);
+    }
+
+    function targetSenders() public pure returns (address[] memory) {
+        return new address[](0);
+    }
+
+    function excludeSenders() public pure returns (address[] memory) {
+        return new address[](0);
+    }
+
+    function targetContracts() public pure returns (address[] memory) {
+        return new address[](0);
+    }
+
+    function excludeContracts() public pure returns (address[] memory) {
+        return new address[](0);
+    }
+
+    function targetInterfaces() public pure returns (bytes4[] memory) {
+        return new bytes4[](0);
+    }
+
+    function targetSelectors() public pure returns (FuzzSelector[] memory) {
+        return new FuzzSelector[](0);
+    }
+
+    function excludeSelectors() public pure returns (FuzzSelector[] memory) {
+        return new FuzzSelector[](0);
     }
 }
