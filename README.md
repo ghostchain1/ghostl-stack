@@ -162,6 +162,8 @@ Governance rules:
 
 * Evidence pack index: `docs/evidence/README.md`
 * Artifacts are generated under `infra/evidence/out` and verified via the `.sha256` files.
+* AI governance evidence pack: `infra/scripts/evidence-pack-ai-governance.sh`
+* AI governance release gate workflow: `.github/workflows/ai-governance-gate.yml`
 
 ---
 
