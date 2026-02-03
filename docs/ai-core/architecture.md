@@ -62,6 +62,9 @@ Policy enforcement is anchored by the L1 `AgentGovernancePolicy` registry for ac
   - `updateHash` + EIP-712 digest for signer quorum
 - Evidence bundles can be written to disk (`AI_EVIDENCE_OUTPUT_DIR`) and optionally committed to `EvidenceVault`
   (`AI_EVIDENCE_AUTO_COMMIT=true` + vault RPC + submitter key).
+- Optional signer quorum flow:
+  - Configure `AI_PROPOSAL_SIGNER_KEYS` to emit EIP-712 signatures for the `PolicyUpdate` digest.
+  - Set `AI_PROPOSAL_AUTO_SUBMIT=true` + `AI_PROPOSAL_SUBMITTER_KEY` to broadcast `executePolicyUpdate`.
 
 L1 devnet governance deployment (chainId `14000101`, 0xd59fe5):
 - Constitution hash: `0x1b3c479b7f8f1a6e67ac40798d56bde7509c68d7760c17a14fc7ba9cc907f816`
