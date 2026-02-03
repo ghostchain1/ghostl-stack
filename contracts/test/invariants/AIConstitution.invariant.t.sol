@@ -31,6 +31,7 @@ contract AIConstitutionInvariantTest is TestBase {
     bytes32 private constant POLICY_KEY_DISABLED = keccak256("ghost.ai.policy.disabled");
     bytes32 private constant POLICY_KEY_EMERGENCY = keccak256("ghost.ai.policy.emergency");
     bytes32 private constant POLICY_KEY_ROLLBACK = keccak256("ghost.ai.policy.rollback");
+    bytes32 private constant POLICY_KEY_NO_EMERGENCY = keccak256("ghost.ai.policy.no_emergency");
 
     PolicyRegistry private registry;
     EvidenceVault private vault;
@@ -55,6 +56,7 @@ contract AIConstitutionInvariantTest is TestBase {
         registry.setPolicySetting(POLICY_KEY_DISABLED, 0, 0, 0, 0, 0, false, false);
         registry.setPolicySetting(POLICY_KEY_EMERGENCY, 1, 100, 0, 120, 0, true, true);
         registry.setPolicySetting(POLICY_KEY_ROLLBACK, 1, 100, 0, 0, 120, true, true);
+        registry.setPolicySetting(POLICY_KEY_NO_EMERGENCY, 1, 100, 0, 0, 0, true, true);
 
         govToken = new MockGovernanceToken();
         govToken.mint(address(this), 1_000_000 ether);
@@ -125,6 +127,11 @@ contract AIConstitutionInvariantTest is TestBase {
         assertTrue(registry.isEmergencyActive(POLICY_KEY_EMERGENCY), "emergency active");
         vm.warp(block.timestamp + 121);
         assertTrue(!registry.isEmergencyActive(POLICY_KEY_EMERGENCY), "emergency expired");
+    }
+
+    function test_emergency_scope_rejected() public {
+        vm.expectRevert(bytes("emergency expiry=0"));
+        registry.setEmergencyPolicy(POLICY_KEY_NO_EMERGENCY, 20, bytes32("evidence"));
     }
 
     function test_rollback_within_window() public {
