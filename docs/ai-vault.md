@@ -12,7 +12,29 @@
 
 ```bash
 cp services/ai-vault/.env.example services/ai-vault/.env
-docker compose -f services/docker-compose.legacy.yml up -d ai-vault
+docker compose -f services/docker-compose.legacy.yml up -d ai-vault-dev
+```
+
+## Dev Vault (local)
+
+For local testing, you can run a disposable Vault dev server via compose:
+
+```bash
+docker compose -f services/docker-compose.legacy.yml up -d ai-vault-dev
+```
+
+Use `ai-vault` only for hardened/production profiles with non-dev Vault.
+
+Defaults:
+
+- `VAULT_ADDR=http://host.docker.internal:8200` (from containers) or `http://localhost:8200` (from host)
+- `VAULT_DEV_ROOT_TOKEN_ID=ghost-dev-root`
+
+To seed ai-clock-sync overrides into Vault:
+
+```bash
+VAULT_ADDR=http://localhost:8200 VAULT_TOKEN=ghost-dev-root \
+  services/ai-clock-sync/verification/vault-seed.sh
 ```
 
 ## Core env
