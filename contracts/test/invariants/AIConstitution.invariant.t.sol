@@ -151,4 +151,38 @@ contract AIConstitutionInvariantTest is TestBase {
         vm.expectRevert(AIProposalExecutor.InvalidUpdate.selector);
         executor.executePolicyUpdate(update, new bytes[](0), bytes32("kind"), 0);
     }
+
+    function test_executor_rejects_stale_update() public {
+        AIProposalExecutor.PolicyUpdate memory update = AIProposalExecutor.PolicyUpdate({
+            policyKey: POLICY_KEY,
+            value: 10,
+            evidenceHash: bytes32("evidence"),
+            metadataHash: bytes32("meta"),
+            nonce: 2,
+            issuedAt: uint64(block.timestamp - 31 minutes),
+            validUntil: uint64(block.timestamp + 1 hours),
+            emergency: false
+        });
+
+        vm.expectRevert(AIProposalExecutor.UpdateStale.selector);
+        executor.executePolicyUpdate(update, new bytes[](0), bytes32("kind"), 0);
+    }
+
+    function test_executor_requires_quorum() public {
+        executor.setMinApprovals(2);
+        AIProposalExecutor.PolicyUpdate memory update = AIProposalExecutor.PolicyUpdate({
+            policyKey: POLICY_KEY,
+            value: 10,
+            evidenceHash: bytes32("evidence"),
+            metadataHash: bytes32("meta"),
+            nonce: 3,
+            issuedAt: uint64(block.timestamp),
+            validUntil: uint64(block.timestamp + 1 hours),
+            emergency: false
+        });
+
+        vm.prank(address(0xBEEF));
+        vm.expectRevert(AIProposalExecutor.QuorumNotMet.selector);
+        executor.executePolicyUpdate(update, new bytes[](0), bytes32("kind"), 0);
+    }
 }

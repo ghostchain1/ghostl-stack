@@ -126,3 +126,27 @@ invariants:
     enforcement:
       operational:
         - contracts/scripts/governance/export_policy_checkpoint.ts
+
+  - id: AI-INV-011
+    title: Policy update recency
+    description: >
+      Policy updates must be recent and within the max update age window.
+    math: |
+      ∀ update: now − issuedAt(update) ≤ maxUpdateAge
+    enforcement:
+      solidity:
+        - AIProposalExecutor.executePolicyUpdate
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_executor_rejects_stale_update
+
+  - id: AI-INV-012
+    title: Quorum required for non-governance updates
+    description: >
+      Non-governance callers must provide enough approvals to satisfy minApprovals.
+    math: |
+      ∀ update: caller ∉ {governor, timelock} ⇒ approvals(update) ≥ minApprovals
+    enforcement:
+      solidity:
+        - AIProposalExecutor.executePolicyUpdate
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_executor_requires_quorum
