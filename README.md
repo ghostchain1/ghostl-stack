@@ -158,6 +158,13 @@ Governance rules:
 
 ---
 
+## 📚 Evidence Packs
+
+* Evidence pack index: `docs/evidence/README.md`
+* Artifacts are generated under `infra/evidence/out` and verified via the `.sha256` files.
+
+---
+
 ## 📊 Observability & Ops
 
 * Prometheus metrics across all layers
