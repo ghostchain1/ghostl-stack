@@ -9,3 +9,4 @@
 - `locked-execution-plan.md`: locked phase plan with deploy/rollback commands
 - `smoke-tests.md`: smoke tests per phase
 - `ghostchain-compliance-whitepaper.md`: regulator-facing document
+- `ghostchain-ai-governance-whitepaper.md`: court-ready AI governance whitepaper
