@@ -212,6 +212,7 @@ Updates:
 Updates:
 - Added `docs/architecture/ghostchain-ai-governance-whitepaper.md` with authority model, evidence chain, and reproducibility steps.
 - Linked the new whitepaper in `docs/architecture/README.md`.
+- Added runbook references to store the whitepaper hash alongside evidence packs for L1/L2/L3.
 - AI/ops service surface includes: `ai-monitor`, `ai-clock-sync`, `ghost-ai-attestor`, `anomaly-detection-service`, `consensus-telemetry-service`, `network-manager-service`, `treasury-ai`, `treasury-evidence`.
 - Evidence generation exists for treasury (`services/treasury-evidence`) but is not yet wired to policy proposal flow for AI governance actions.
 

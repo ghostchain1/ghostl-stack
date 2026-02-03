@@ -52,3 +52,13 @@ tar -czf infra/evidence/out/ai-evidence-l3-$(date -u +%Y%m%dT%H%M%SZ).tgz \
   services/ghost-gas-engine/data/proposals \
   services/ai-monitor/data/evidence
 ```
+
+## Phase 5 evidence references
+
+- Whitepaper: `docs/architecture/ghostchain-ai-governance-whitepaper.md`
+- Store a deterministic hash alongside the evidence pack:
+
+```bash
+sha256sum docs/architecture/ghostchain-ai-governance-whitepaper.md | \
+  tee infra/evidence/out/ai-governance-whitepaper-l3-$(date -u +%Y%m%dT%H%M%SZ).sha256
+```
