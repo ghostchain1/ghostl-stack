@@ -88,6 +88,16 @@ tar -czf infra/evidence/out/ai-evidence-l1-$(date -u +%Y%m%dT%H%M%SZ).tgz \
 sha256sum -c infra/evidence/out/evidence-pack-l1-20260203T123126Z.zip.sha256
 ```
 
+## Phase 5 evidence references
+
+- Whitepaper: `docs/architecture/ghostchain-ai-governance-whitepaper.md`
+- Store a deterministic hash alongside the evidence pack:
+
+```bash
+sha256sum docs/architecture/ghostchain-ai-governance-whitepaper.md | \
+  tee infra/evidence/out/ai-governance-whitepaper-l1-$(date -u +%Y%m%dT%H%M%SZ).sha256
+```
+
 ## Post go/no-go cleanup
 
 - Archive the evidence pack to long-term storage.

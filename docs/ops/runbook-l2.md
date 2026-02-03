@@ -82,6 +82,16 @@ Latest artifact:
 sha256sum -c infra/evidence/out/evidence-pack-l2-20260202T175423Z.zip.sha256
 ```
 
+## Phase 5 evidence references
+
+- Whitepaper: `docs/architecture/ghostchain-ai-governance-whitepaper.md`
+- Store a deterministic hash alongside the evidence pack:
+
+```bash
+sha256sum docs/architecture/ghostchain-ai-governance-whitepaper.md | \
+  tee infra/evidence/out/ai-governance-whitepaper-l2-$(date -u +%Y%m%dT%H%M%SZ).sha256
+```
+
 ## Go/No-Go gate
 
 ```bash
