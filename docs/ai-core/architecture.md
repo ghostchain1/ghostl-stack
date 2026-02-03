@@ -54,6 +54,11 @@ Policy enforcement is anchored by the L1 `AgentGovernancePolicy` registry for ac
 - Policies include tier, cooldown, approvals required, scope, and evidence hash.
 - `AICommandCenter` can optionally enforce and record policy actions via `setPolicyRegistry`.
 
+Deterministic enforcement hooks (L1):
+- `ProposalExecutor.execute()` enforces `ConstitutionalGuard.checkGovernance()` before any queued action.
+- `AIProposalExecutor.executePolicyUpdate()` invokes `ConstitutionalGuard.checkGovernance()` for policy updates.
+- `PolicyRegistry` emits `PolicyCheckpoint` events consumed by downstream validators/services.
+
 ## Cross-Chain Federation
 L1 is the constitutional root for chain-wide policy. L2 and L3 inherit constraints from upstream
 policy registries and must refuse actions if upstream policy is missing. See
@@ -73,7 +78,7 @@ policy registries and must refuse actions if upstream policy is missing. See
 
 L1 devnet governance deployment (chainId `14000101`, 0xd59fe5):
 - Constitution hash: `0x1b3c479b7f8f1a6e67ac40798d56bde7509c68d7760c17a14fc7ba9cc907f816`
-- AIConstitutionalProposal: `0xDC11f7E700A4c898AE5CAddB1082cFfa76512aDD`
+- AIConstitutionalProposal: `0x07882Ae1ecB7429a84f1D53048d35c4bB2056877`
 - Governor: `0xdbC43Ba45381e02825b14322cDdd15eC4B3164E6`
 - Executor: `0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650`
 - PolicyRegistry (chain policy): `0x1c85638e118b37167e9298c2268758e058DdfDA0`
