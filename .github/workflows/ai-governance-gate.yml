@@ -2,8 +2,10 @@ name: AI Governance Gate
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'
+  schedule:
+    - cron: '0 3 * * *'
   workflow_dispatch:
 
 jobs:
