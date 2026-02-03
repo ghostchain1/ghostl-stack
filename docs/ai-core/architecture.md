@@ -54,6 +54,23 @@ Policy enforcement is anchored by the L1 `AgentGovernancePolicy` registry for ac
 - Policies include tier, cooldown, approvals required, scope, and evidence hash.
 - `AICommandCenter` can optionally enforce and record policy actions via `setPolicyRegistry`.
 
+L1 devnet governance deployment (chainId `14000101`, 0xd59fe5):
+- Constitution hash: `0x1b3c479b7f8f1a6e67ac40798d56bde7509c68d7760c17a14fc7ba9cc907f816`
+- AIConstitutionalProposal: `0xDC11f7E700A4c898AE5CAddB1082cFfa76512aDD`
+- Governor: `0xdbC43Ba45381e02825b14322cDdd15eC4B3164E6`
+- Executor: `0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650`
+- PolicyRegistry (chain policy): `0x1c85638e118b37167e9298c2268758e058DdfDA0`
+- EvidenceVault: `0xC9a43158891282A2B1475592D5719c001986Aaec`
+- AIProposalExecutor: `0x367761085BF3C12e5DA2Df99AC6E1a824612b8fb`
+- AgentGovernancePolicy (action policy): `0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf`
+- AgentRegistry: `0x36C02dA8a0983159322a80FFE9F24b1acfF8B570`
+
+Source of truth:
+- `services/stack.env`
+- `contracts/reports/ai_constitutional_deployment.json`
+- `contracts/reports/ai_constitutional_proposal.json`
+- `contracts/reports/ai_constitutional_proposal_id.json`
+
 Proposal builder:
 - `contracts/scripts/ai/build_ai_action_ratification.ts` generates deterministic calldata with evidence hash for ratifying an action policy.
 

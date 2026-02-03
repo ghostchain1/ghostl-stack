@@ -18,7 +18,7 @@ This document shall become the supreme constitutional authority of GhostChain up
 Upon ratification, the following hash shall represent the authoritative version of this Constitution:
 
 ```
-CONSTITUTION_HASH = <TO_BE_COMPUTED_AT_RATIFICATION>
+CONSTITUTION_HASH = 0x1b3c479b7f8f1a6e67ac40798d56bde7509c68d7760c17a14fc7ba9cc907f816
 ```
 
 ### Signatories (Human Authority)
@@ -40,8 +40,8 @@ This Constitution becomes effective immediately after timelock completion.
 
 This Constitution supersedes all prior protocol rules, policies, and informal practices. All future evolution of GhostChain must occur through amendments to this document.
 
-Document Status: Pending Ratification  
-Version: 1.0 (Ratification Candidate)  
+Document Status: Devnet ratified (2026-02-03). Production ratification pending.  
+Version: 1.0 (Ratified on devnet)  
 Canonical Authority: Human Governance
 
 ## Ratification Package (Steps 1-5)
@@ -53,8 +53,17 @@ The canonical text of this document (Parts I-IV inclusive) shall be hashed using
 ```
 ALGORITHM: SHA-256
 CANONICAL_TEXT_SCOPE: Parts I-IV (inclusive)
-CONSTITUTION_HASH: <COMPUTE_AT_RATIFICATION>
+CONSTITUTION_HASH: 0x1b3c479b7f8f1a6e67ac40798d56bde7509c68d7760c17a14fc7ba9cc907f816
 ```
+
+Devnet on-chain binding evidence (L1):
+- AIConstitutionalProposal: `0xDC11f7E700A4c898AE5CAddB1082cFfa76512aDD`
+- Governor: `0xdbC43Ba45381e02825b14322cDdd15eC4B3164E6`
+- Executor: `0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650`
+- Proposal ID: `0`
+- Proposal tx: `0xa8a8128883a93dc3b828ed772cd848724bc08e0257df5516b71c3addb0585f19`
+- Ratified at: `2026-02-03 10:19:01Z`
+- Activates at: `2026-02-05 10:19:01Z`
 
 On-chain binding evidence must be captured in:
 
@@ -144,8 +153,8 @@ A regulator-ready package shall include:
 Purpose:
 To enable independent assessment by regulators, auditors, courts, or partners without requiring protocol modification.
 
-Ratification Status: In Progress  
-Next Action: Compute constitution hash and initiate governance vote
+Ratification Status: Devnet ratified; production pending  
+Next Action: Produce production ratification vote and timelock activation
 
 ### Step 6 - Final Attestations
 
