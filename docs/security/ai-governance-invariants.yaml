@@ -1,0 +1,69 @@
+version: 1
+scope: ghostchain-l1-ai-governance
+status: draft
+constitution_hash_source: docs/ghostchain/charter.md
+source_of_truth:
+  - contracts/src/governance/AIConstitutionalProposal.sol
+  - contracts/src/governance/PolicyRegistry.sol
+  - contracts/src/governance/EvidenceVault.sol
+  - contracts/src/governance/AIProposalExecutor.sol
+invariants:
+  - id: AI-INV-001
+    title: Constitution hash is immutable across governance primitives
+    description: >
+      All AI governance primitives must bind to the same constitution hash and never mutate it
+      after deployment.
+    enforcement:
+      solidity:
+        - AIConstitutionalProposal.constitutionHash
+        - PolicyRegistry.constitutionHash
+        - EvidenceVault.constitutionHash
+        - AIProposalExecutor.constitutionHash
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:invariant_constitution_hashes_match
+
+  - id: AI-INV-002
+    title: AI cannot influence fork choice, finality, or block ordering
+    description: >
+      The constitutional proposal must permanently forbid AI control over fork choice,
+      block ordering, or finality paths.
+    enforcement:
+      solidity:
+        - AIConstitutionalProposal.forbiddenAction(FORBIDDEN_FORK_CHOICE)
+        - AIConstitutionalProposal.forbiddenAction(FORBIDDEN_BLOCK_ORDERING)
+        - AIConstitutionalProposal.forbiddenAction(FORBIDDEN_FINALITY)
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:invariant_forbidden_actions
+
+  - id: AI-INV-003
+    title: Evidence must be authorized and non-zero
+    description: >
+      EvidenceVault must reject zero hashes and any caller that is not governance, timelock,
+      or an approved submitter.
+    enforcement:
+      solidity:
+        - EvidenceVault.recordEvidence
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_evidence_requires_auth
+
+  - id: AI-INV-004
+    title: Policy updates respect bounds and enabled flags
+    description: >
+      PolicyRegistry must reject updates when the policy key is disabled or the value
+      is out of bounds.
+    enforcement:
+      solidity:
+        - PolicyRegistry.validatePolicy
+        - PolicyRegistry.queuePolicy
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_policy_bounds_enforced
+
+  - id: AI-INV-005
+    title: Policy updates require evidence hash
+    description: >
+      AIProposalExecutor must reject policy updates with missing evidence hash.
+    enforcement:
+      solidity:
+        - AIProposalExecutor.executePolicyUpdate
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_executor_requires_evidence

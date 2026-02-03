@@ -1,0 +1,91 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import "../foundry/TestBase.sol";
+import "../../src/governance/AIConstitutionalProposal.sol";
+import "../../src/governance/PolicyRegistry.sol";
+import "../../src/governance/EvidenceVault.sol";
+import "../../src/governance/AIProposalExecutor.sol";
+
+contract AIConstitutionInvariantTest is TestBase {
+    bytes32 private constant CONSTITUTION_HASH = keccak256("ghost.ai.constitution.v1");
+    bytes32 private constant POLICY_KEY = keccak256("ghost.ai.policy.sample");
+
+    PolicyRegistry private registry;
+    EvidenceVault private vault;
+    AIProposalExecutor private executor;
+    AIConstitutionalProposal private proposal;
+
+    function setUp() public {
+        registry = new PolicyRegistry(address(this), address(0), CONSTITUTION_HASH);
+        vault = new EvidenceVault(address(this), address(0), CONSTITUTION_HASH);
+        executor = new AIProposalExecutor(address(this), address(0), CONSTITUTION_HASH);
+
+        executor.setPolicyRegistry(registry);
+        executor.setEvidenceVault(vault);
+        vault.setSubmitter(address(executor), true);
+        executor.setMinApprovals(1);
+        executor.setSignerSetHash(keccak256("signers"));
+
+        registry.setPolicySetting(POLICY_KEY, 1, 100, 0, 3600, 0, true, true);
+
+        proposal = new AIConstitutionalProposal(
+            address(this),
+            address(this),
+            6667,
+            5000,
+            1,
+            1500,
+            keccak256("scope"),
+            3600
+        );
+    }
+
+    function invariant_constitution_hashes_match() public {
+        assertEq(registry.constitutionHash(), CONSTITUTION_HASH, "registry hash");
+        assertEq(vault.constitutionHash(), CONSTITUTION_HASH, "vault hash");
+        assertEq(executor.constitutionHash(), CONSTITUTION_HASH, "executor hash");
+    }
+
+    function invariant_forbidden_actions() public {
+        assertTrue(proposal.forbiddenAction(proposal.FORBIDDEN_FORK_CHOICE()), "fork choice forbidden");
+        assertTrue(proposal.forbiddenAction(proposal.FORBIDDEN_BLOCK_ORDERING()), "block ordering forbidden");
+        assertTrue(proposal.forbiddenAction(proposal.FORBIDDEN_FINALITY()), "finality forbidden");
+    }
+
+    function test_evidence_requires_auth() public {
+        vm.prank(address(0xBEEF));
+        vm.expectRevert(EvidenceVault.NotAuthorized.selector);
+        vault.recordEvidence(bytes32("kind"), bytes32("hash"), POLICY_KEY, 1, 0, bytes32("signers"), 1, bytes32("meta"));
+
+        vm.expectRevert(EvidenceVault.InvalidEvidence.selector);
+        vault.recordEvidence(bytes32(0), bytes32("hash"), POLICY_KEY, 1, 0, bytes32("signers"), 1, bytes32("meta"));
+
+        bytes32 recordId =
+            vault.recordEvidence(bytes32("kind"), bytes32("hash"), POLICY_KEY, 1, 0, bytes32("signers"), 1, bytes32("meta"));
+        assertTrue(vault.recordExists(bytes32("hash")), "evidence recorded");
+        EvidenceVault.EvidenceRecord memory rec = vault.getRecord(recordId);
+        assertEq(rec.policyKey, POLICY_KEY, "policy key recorded");
+    }
+
+    function test_policy_bounds_enforced() public {
+        vm.expectRevert(PolicyRegistry.PolicyBounds.selector);
+        registry.queuePolicy(POLICY_KEY, 101, bytes32("evidence"));
+    }
+
+    function test_executor_requires_evidence() public {
+        AIProposalExecutor.PolicyUpdate memory update = AIProposalExecutor.PolicyUpdate({
+            policyKey: POLICY_KEY,
+            value: 10,
+            evidenceHash: bytes32(0),
+            metadataHash: bytes32("meta"),
+            nonce: 1,
+            issuedAt: uint64(block.timestamp),
+            validUntil: uint64(block.timestamp + 1 hours),
+            emergency: false
+        });
+
+        vm.expectRevert(AIProposalExecutor.InvalidUpdate.selector);
+        executor.executePolicyUpdate(update, new bytes[](0), bytes32("kind"), 0);
+    }
+}
