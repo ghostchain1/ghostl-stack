@@ -22,6 +22,23 @@ POLICY_REQUIRED=1
 
 When `POLICY_REQUIRED=1` and `AI_MONITOR_OBSERVE_ONLY=0`, `infra/scripts/doctor-l2.sh` will fail if the registry or RPC is missing.
 
+## Chain policy inheritance (Federation)
+L2 must also reference the L1 chain policy registry for global constraints:
+
+```
+CHAIN_POLICY_REGISTRY_ADDRESS=0x<L1 PolicyRegistry>
+CHAIN_POLICY_REGISTRY_RPC=http://localhost:18545
+CHAIN_POLICY_REQUIRED=1
+```
+
+Export the L1 policy checkpoint for audit trail:
+
+```bash
+POLICY_CHECKPOINT_NETWORK=anvil \
+POLICY_CHECKPOINT_LAYER=L1 \
+infra/scripts/federation/export-policy-checkpoint.sh
+```
+
 ## Proposal Builder (Policy Updates)
 Use the policy proposal builder to generate deterministic calldata bundles for L1 governance:
 

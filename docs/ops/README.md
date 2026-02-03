@@ -12,4 +12,5 @@
 - `incident-response-l1.md`: severity levels, triage, and postmortem steps.
 - `incident-response-l2.md`: L2 severity levels, triage, and postmortem steps.
 - `infra/scripts/gates/l1-go-no-go.sh`: final pre-release gate checks for L1 readiness.
+- `infra/scripts/federation/export-policy-checkpoint.sh`: emit cross-chain policy checkpoints for federation audits.
 - `../evidence/README.md`: latest evidence pack index and verification commands.
