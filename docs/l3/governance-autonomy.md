@@ -22,6 +22,23 @@ POLICY_REQUIRED=1
 
 When `POLICY_REQUIRED=1` and `OBSERVE_ONLY=0`, the AI monitor will block any action if the registry or RPC is missing.
 
+## Chain policy inheritance (Federation)
+L3 must reference the L2 chain policy registry for global constraints:
+
+```
+CHAIN_POLICY_REGISTRY_ADDRESS=0x<L2 PolicyRegistry>
+CHAIN_POLICY_REGISTRY_RPC=http://localhost:9545
+CHAIN_POLICY_REQUIRED=1
+```
+
+Export the L2 policy checkpoint for audit trail:
+
+```bash
+POLICY_CHECKPOINT_NETWORK=ghostl2 \
+POLICY_CHECKPOINT_LAYER=L2 \
+infra/scripts/federation/export-policy-checkpoint.sh
+```
+
 ## Proposal builder (policy updates)
 Use the policy proposal builder to generate deterministic calldata bundles for **L2** governance:
 

@@ -82,6 +82,14 @@ Latest artifact:
 sha256sum -c infra/evidence/out/evidence-pack-l2-20260202T175423Z.zip.sha256
 ```
 
+## Federation policy checkpoint
+
+```bash
+POLICY_CHECKPOINT_NETWORK=anvil \
+POLICY_CHECKPOINT_LAYER=L1 \
+infra/scripts/federation/export-policy-checkpoint.sh
+```
+
 ## Phase 5 evidence references
 
 - Whitepaper: `docs/architecture/ghostchain-ai-governance-whitepaper.md`

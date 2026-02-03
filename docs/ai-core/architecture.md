@@ -54,6 +54,11 @@ Policy enforcement is anchored by the L1 `AgentGovernancePolicy` registry for ac
 - Policies include tier, cooldown, approvals required, scope, and evidence hash.
 - `AICommandCenter` can optionally enforce and record policy actions via `setPolicyRegistry`.
 
+## Cross-Chain Federation
+L1 is the constitutional root for chain-wide policy. L2 and L3 inherit constraints from upstream
+policy registries and must refuse actions if upstream policy is missing. See
+`docs/ai-core/federation.md` for export commands and invariants.
+
 ## Evidence + Proposal Pipeline
 - `ghost-gas-engine` can emit deterministic evidence bundles and proposal payloads for `AIProposalExecutor`.
 - Admin endpoint: `POST /v1/ai-core/policy-proposals` generates:
