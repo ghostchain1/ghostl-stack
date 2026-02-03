@@ -1,0 +1,123 @@
+{
+  "version": 1,
+  "scope": "ghostchain-l1-ai-governance",
+  "source": "docs/security/ai-governance-invariants.yaml",
+  "invariants": [
+    {
+      "id": "AI-INV-001",
+      "title": "Constitution hash immutability",
+      "math": "forall c in {PolicyRegistry,EvidenceVault,AIProposalExecutor,AIConstitutionalProposal}: constitutionHash(c)=H",
+      "solidity": [
+        "AIConstitutionalProposal.constitutionHash",
+        "PolicyRegistry.constitutionHash",
+        "EvidenceVault.constitutionHash",
+        "AIProposalExecutor.constitutionHash"
+      ],
+      "tests": [
+        "contracts/test/invariants/AIConstitution.invariant.t.sol:invariant_constitution_hashes_match"
+      ]
+    },
+    {
+      "id": "AI-INV-002",
+      "title": "Forbidden AI control over fork choice/finality",
+      "math": "forbidden(fork_choice)=true and forbidden(block_ordering)=true and forbidden(finality)=true",
+      "solidity": [
+        "AIConstitutionalProposal.forbiddenAction"
+      ],
+      "tests": [
+        "contracts/test/invariants/AIConstitution.invariant.t.sol:invariant_forbidden_actions"
+      ]
+    },
+    {
+      "id": "AI-INV-003",
+      "title": "Evidence authorization and non-zero",
+      "math": "evidenceHash!=0 and submitter in {governor,timelock,approved}",
+      "solidity": [
+        "EvidenceVault.recordEvidence"
+      ],
+      "tests": [
+        "contracts/test/invariants/AIConstitution.invariant.t.sol:test_evidence_requires_auth"
+      ]
+    },
+    {
+      "id": "AI-INV-004",
+      "title": "Policy bounds and enabled flags",
+      "math": "enabled(key)=false -> reject; min<=value<=max when hasBounds",
+      "solidity": [
+        "PolicyRegistry.validatePolicy",
+        "PolicyRegistry.queuePolicy"
+      ],
+      "tests": [
+        "contracts/test/invariants/AIConstitution.invariant.t.sol:test_policy_bounds_enforced",
+        "contracts/test/invariants/AIConstitution.invariant.t.sol:test_policy_disabled_rejected"
+      ]
+    },
+    {
+      "id": "AI-INV-005",
+      "title": "Policy updates require evidence",
+      "math": "evidenceHash(update)=0 -> reject",
+      "solidity": [
+        "AIProposalExecutor.executePolicyUpdate"
+      ],
+      "tests": [
+        "contracts/test/invariants/AIConstitution.invariant.t.sol:test_executor_requires_evidence"
+      ]
+    },
+    {
+      "id": "AI-INV-006",
+      "title": "Activation delay enforced",
+      "math": "activate(key) only if now>=activatesAt(key)",
+      "solidity": [
+        "PolicyRegistry.activatePolicy"
+      ],
+      "tests": [
+        "contracts/test/invariants/AIConstitution.invariant.t.sol:test_activation_delay_enforced"
+      ]
+    },
+    {
+      "id": "AI-INV-007",
+      "title": "Emergency expiry enforced",
+      "math": "emergency_active(key) -> now<=expiresAt(key)",
+      "solidity": [
+        "PolicyRegistry.setEmergencyPolicy",
+        "PolicyRegistry.isEmergencyActive"
+      ],
+      "tests": [
+        "contracts/test/invariants/AIConstitution.invariant.t.sol:test_emergency_expiry_enforced"
+      ]
+    },
+    {
+      "id": "AI-INV-008",
+      "title": "Rollback within window",
+      "math": "rollback(key) -> now<=lastActivatedAt(key)+rollbackWindow(key)",
+      "solidity": [
+        "PolicyRegistry.rollbackPolicy"
+      ],
+      "tests": [
+        "contracts/test/invariants/AIConstitution.invariant.t.sol:test_rollback_within_window"
+      ]
+    },
+    {
+      "id": "AI-INV-011",
+      "title": "Policy update recency",
+      "math": "now-issuedAt(update)<=maxUpdateAge",
+      "solidity": [
+        "AIProposalExecutor.executePolicyUpdate"
+      ],
+      "tests": [
+        "contracts/test/invariants/AIConstitution.invariant.t.sol:test_executor_rejects_stale_update"
+      ]
+    },
+    {
+      "id": "AI-INV-012",
+      "title": "Quorum required for non-governance updates",
+      "math": "caller not in {governor,timelock} -> approvals>=minApprovals",
+      "solidity": [
+        "AIProposalExecutor.executePolicyUpdate"
+      ],
+      "tests": [
+        "contracts/test/invariants/AIConstitution.invariant.t.sol:test_executor_requires_quorum"
+      ]
+    }
+  ]
+}
