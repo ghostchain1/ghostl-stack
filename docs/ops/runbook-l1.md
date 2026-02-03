@@ -1,5 +1,7 @@
 # L1 Operations Runbook
 
+Evidence index: `docs/evidence/README.md`
+
 ## Quick checks
 
 ```bash
