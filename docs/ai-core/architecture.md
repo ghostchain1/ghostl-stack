@@ -71,6 +71,7 @@ policy registries and must refuse actions if upstream policy is missing. See
   - `evidenceHash` + `metadataHash`
   - `PolicyUpdate` payload (policyKey/value/nonce/issuedAt/validUntil)
   - `updateHash` + EIP-712 digest for signer quorum
+- `explainability` is required in policy proposals (rationale, assumptions, expectedImpact, rollbackPlan, confidence, modelVersion).
 - Evidence bundles can be written to disk (`AI_EVIDENCE_OUTPUT_DIR`) and optionally committed to `EvidenceVault`
   (`AI_EVIDENCE_AUTO_COMMIT=true` + vault RPC + submitter key).
 - Optional signer quorum flow:
