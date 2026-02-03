@@ -1,0 +1,11 @@
+{
+  "proposalId": "1",
+  "governor": "0xdbC43Ba45381e02825b14322cDdd15eC4B3164E6",
+  "voter": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "support": true,
+  "forVotes": "1000000000000000000000000000",
+  "againstVotes": "0",
+  "queued": false,
+  "executed": false,
+  "recordedAt": "2026-02-03T13:02:43.325Z"
+}

@@ -226,5 +226,8 @@ license-report.json
 contracts/license-report.json
 sbom.spdx.json
 
+# opstack local geth logs
+infra/opstack/data/l2-geth-901/geth/nodes/LOG
+
 # allow committed dev keys for local Ghostchain
 !infra/ghostchain/geth/keys/*.key
