@@ -37,6 +37,7 @@ Ghost Chain AI Core is the intelligence layer for GhostChain (L1), GhostL2, and 
 - Decisions are bounded by policy constraints.
 - Modes control autonomy level: observe-only → advisory → assisted → autonomous.
 - Every action is logged and traceable to an AI core decision.
+- Formal invariants: `docs/ai-core/invariants.md`.
 
 ## Governance-Locked Autonomy (L1)
 Autonomous actions are constrained by on-chain policy and governance tiers:
