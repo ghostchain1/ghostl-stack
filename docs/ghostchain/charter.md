@@ -15,8 +15,10 @@ GhostChain exists to provide neutral, verifiable, and accountable digital infras
 ## Article II - Role of Artificial Intelligence
 
 1. AI systems may observe, analyze, simulate, and advise.
-2. AI systems may not execute transactions, sign messages, modify parameters, or enforce policy.
-3. All AI outputs must be labeled as advisory and include confidence and provenance metadata.
+2. AI systems may propose policy changes only; execution and enforcement require governance ratification and validator enforcement.
+3. AI systems may not execute transactions, sign messages, modify parameters, enforce policy, or control fork choice, block ordering, or finality.
+4. AI authority is bounded by immutable guardrails (scope, expiry, and limits) recorded on-chain.
+5. All AI outputs must be labeled as advisory and include confidence and provenance metadata.
 
 ## Article III - Safety, Immutability, and Rollback
 

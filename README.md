@@ -130,7 +130,8 @@ AI services live under:
 
 `ai-vault` is the policy-enforcing, AI-assisted Vault gateway that monitors and controls secret access.
 
-- Runs via `services/docker-compose.legacy.yml`
+- Use `ai-vault-dev` for local/dev runs via `services/docker-compose.legacy.yml`
+- Use `ai-vault` for hardened/production profiles
 - Services root path: `/home/ghost/ghostl-stack/services`
 - Mounted into the container read-only at `/services`
 - Container `SERVICES_ROOT` defaults to `/services`
