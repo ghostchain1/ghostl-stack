@@ -74,3 +74,15 @@ CHAIN_POLICY_REQUIRED=1
 
 These settings ensure the AI monitor refuses to act if the upstream policy registry is missing
 or unreachable.
+
+For policy proposals (ghost-gas-engine) to include upstream checkpoints:
+
+```
+CHAIN_POLICY_REQUIRED=1
+CHAIN_POLICY_CHECKPOINT_HASH=0x<checkpoint hash>
+CHAIN_POLICY_CHECKPOINT_LAYER=L1
+CHAIN_POLICY_REGISTRY_ADDRESS=0x<L1 PolicyRegistry>
+```
+
+Set `CHAIN_POLICY_CHECKPOINT_HASH` using the export script output, and refresh it whenever a new
+checkpoint is issued.

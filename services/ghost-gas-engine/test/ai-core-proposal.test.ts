@@ -106,4 +106,46 @@ describe('ai-core policy proposals', () => {
       }
     );
   });
+
+  it('requires upstream policy checkpoint when federation is enforced', async () => {
+    const { chainsPath, policiesPath } = makeTempConfig();
+    await withEnv(
+      {
+        DATABASE_URL: 'postgres://ghost:ghostpass@localhost:5432/ghost',
+        CHAINS_CONFIG_PATH: chainsPath,
+        POLICIES_PATH: policiesPath,
+        ADMIN_TOKEN: 'test-token',
+        CHAIN_POLICY_REQUIRED: '1'
+      },
+      async () => {
+        vi.resetModules();
+        const { registerAiCoreRoutes } = await import('../src/routes/ai-core.ts');
+        const app = Fastify();
+        await registerAiCoreRoutes(app);
+
+        const response = await app.inject({
+          method: 'POST',
+          url: '/v1/ai-core/policy-proposals',
+          headers: { 'x-admin-token': 'test-token' },
+          payload: {
+            chainKey: 'l2',
+            policyKey: 'gas_limit',
+            value: 30_000_000,
+            explainability: {
+              rationale: 'Federation requires upstream checkpoint.',
+              assumptions: [],
+              expectedImpact: 'Prevent unanchored proposals.',
+              rollbackPlan: 'Provide checkpoint hash and retry.',
+              confidence: 0.7
+            }
+          }
+        });
+
+        expect(response.statusCode).toBe(400);
+        expect(response.json().error).toBe('missing_policy_checkpoint');
+
+        await app.close();
+      }
+    );
+  });
 });

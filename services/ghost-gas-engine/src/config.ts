@@ -65,7 +65,11 @@ const envSchema = z.object({
   AI_PROPOSAL_AUTO_SUBMIT: z.coerce.boolean().default(false),
   AI_PROPOSAL_SUBMITTER_KEY: z.string().optional(),
   AI_POLICY_UPDATE_TTL_SECONDS: z.coerce.number().default(3600),
-  AI_PROPOSAL_OUTPUT_DIR: z.string().optional()
+  AI_PROPOSAL_OUTPUT_DIR: z.string().optional(),
+  CHAIN_POLICY_REQUIRED: z.coerce.boolean().default(false),
+  CHAIN_POLICY_CHECKPOINT_HASH: z.string().optional(),
+  CHAIN_POLICY_CHECKPOINT_LAYER: z.string().default('L1'),
+  CHAIN_POLICY_REGISTRY_ADDRESS: z.string().optional()
 });
 
 const CANONICAL_GAS_TOKEN_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
