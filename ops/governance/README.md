@@ -25,3 +25,13 @@ cp ops/governance/ai-policy-l2.sample.json ops/governance/ai-policy-l2.json
 POLICY_REGISTRY_ADDRESS=0x... \
 node scripts/propose_ai_policy.mjs
 ```
+
+## AI Policy Registry (L3)
+Ghost L3 policy is anchored on L2. Use the same proposal builder, but point it at the L2 registry and the L3 policy config:
+
+```
+cp ops/governance/ai-policy-l3.sample.json ops/governance/ai-policy-l3.json
+AI_POLICY_CONFIG=ops/governance/ai-policy-l3.json \
+POLICY_REGISTRY_ADDRESS=0x... \
+node scripts/propose_ai_policy.mjs
+```
