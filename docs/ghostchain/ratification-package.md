@@ -131,6 +131,22 @@ governor hash:
 0xb164267dfacd514dbb08880858194c6456edd113227e12c8540e685bf7414d20
 ```
 
+### Phase 0 - Vote, Queue, Execute (Governor Flow)
+
+Submit a vote, then queue and execute the proposal (subject to timelock delay).
+
+```bash
+cd contracts
+npx hardhat run --network anvil scripts/governance/vote_ai_constitutional_ratification.ts
+npx hardhat run --network anvil scripts/governance/queue_execute_ai_constitutional_ratification.ts
+```
+
+Reports:
+- `contracts/reports/ai_constitutional_vote.json`
+- `contracts/reports/ai_constitutional_execution.json`
+
+If execution reports `eta_not_reached`, wait for the timelock delay and rerun the queue/execute script.
+
 ### Step 2 - Governance Ratification Proposal (Template)
 
 Title: Ratify the GhostChain Constitutional Charter v1.0
