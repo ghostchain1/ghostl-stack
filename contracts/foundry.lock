@@ -1,0 +1,17 @@
+{
+  "../core-service": {
+    "rev": "6a98d338641e8944bf357ac7249e86de020ff2ee"
+  },
+  "../infra/opstack/op-geth": {
+    "rev": "5ec82e8253feac2e40dfcbdd48890b09b9c16090"
+  },
+  "../infra/opstack/optimism-upstream": {
+    "rev": "ae22494c84cef3bd9cbbd483d397d4193298d8e9"
+  },
+  "lib/forge-std": {
+    "tag": {
+      "name": "v1.14.0",
+      "rev": "1801b0541f4fda118a10798fd3486bb7051c5dd6"
+    }
+  }
+}

@@ -45,7 +45,11 @@ Autonomous actions are constrained by on-chain policy and governance tiers:
 - **Tier 2:** parameter changes (fees/limits) require governance proposal + timelock.
 - **Tier 3:** critical actions (key rotation, validator set) require multisig + governance + timelock.
 
-Policy enforcement is anchored by the L1 `AgentGovernancePolicy` registry:
+Policy enforcement is anchored by the L1 `AgentGovernancePolicy` registry for action-level controls and the
+`PolicyRegistry` for chain-wide constraints:
+- `PolicyRegistry` stores bounded policy values with activation delays, emergency expiry, and checkpoints.
+- `AIProposalExecutor` validates quorum signatures, records evidence in `EvidenceVault`, and applies policy updates.
+- `EvidenceVault` commits hashes for simulations, explanations, and attestations with signer metadata.
 - Actions are keyed as `keccak256(abi.encodePacked(target, selector))`.
 - Policies include tier, cooldown, approvals required, scope, and evidence hash.
 - `AICommandCenter` can optionally enforce and record policy actions via `setPolicyRegistry`.

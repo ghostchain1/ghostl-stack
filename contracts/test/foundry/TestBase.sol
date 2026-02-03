@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 interface Vm {
     function prank(address) external;
     function expectRevert() external;
+    function expectRevert(bytes4) external;
     function expectRevert(bytes calldata) external;
     function assume(bool) external;
     function warp(uint256) external;

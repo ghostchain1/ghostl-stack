@@ -34,6 +34,11 @@ async function main() {
     const tokenAddress =
       process.env.GOVERNANCE_TOKEN_ADDRESS ?? process.env.GOVERNANCE_TOKEN ?? "0x5FbDB2315678afecb367f032d93F642f64180aa3";
     const delaySeconds = Number(process.env.GOVERNANCE_DELAY_SECONDS ?? 600);
+    const constitutionHashRaw = process.env.CONSTITUTION_HASH ?? process.env.AI_CONSTITUTION_HASH ?? "";
+    if (!constitutionHashRaw || !ethers.isHexString(constitutionHashRaw, 32)) {
+      throw new Error("CONSTITUTION_HASH (32-byte hex) is required for governance-only deployments.");
+    }
+    const constitutionHash = constitutionHashRaw;
     const provider = deployer.provider;
     if (!provider) {
       throw new Error("Missing provider for governance-only deployment");
@@ -67,10 +72,29 @@ async function main() {
     await (await (executor as any).setEvidenceBundle(await evidenceBundle.getAddress())).wait();
     await (await (executor as any).setConstitutionalGuard(await constitutionalGuard.getAddress())).wait();
 
+    const evidenceVault = await deploy<Deployable>("EvidenceVault", [deployer.address, ethers.ZeroAddress, constitutionHash]);
+    const policyRegistry = await deploy<Deployable>("PolicyRegistry", [deployer.address, ethers.ZeroAddress, constitutionHash]);
+    const aiProposalExecutor = await deploy<Deployable>("AIProposalExecutor", [
+      deployer.address,
+      ethers.ZeroAddress,
+      constitutionHash
+    ]);
+    await (await (aiProposalExecutor as any).setPolicyRegistry(await policyRegistry.getAddress())).wait();
+    await (await (aiProposalExecutor as any).setEvidenceVault(await evidenceVault.getAddress())).wait();
+    await (await (aiProposalExecutor as any).setConstitutionalGuard(await constitutionalGuard.getAddress())).wait();
+    await (await (evidenceVault as any).setSubmitter(await aiProposalExecutor.getAddress(), true)).wait();
+    await (await (policyRegistry as any).setGovernance(await aiProposalExecutor.getAddress(), ethers.ZeroAddress)).wait();
+    await (await (aiProposalExecutor as any).setGovernance(executorAddress, ethers.ZeroAddress)).wait();
+    await (await (evidenceVault as any).setGovernance(executorAddress, ethers.ZeroAddress)).wait();
+
     emitEnv("EVIDENCE_ANCHOR", await evidenceAnchor.getAddress());
     emitEnv("EVIDENCE_BUNDLE", await evidenceBundle.getAddress());
     emitEnv("CONSTITUTION", await constitution.getAddress());
     emitEnv("CONSTITUTIONAL_GUARD", await constitutionalGuard.getAddress());
+    emitEnv("CONSTITUTION_HASH", constitutionHash);
+    emitEnv("EVIDENCE_VAULT", await evidenceVault.getAddress());
+    emitEnv("POLICY_REGISTRY", await policyRegistry.getAddress());
+    emitEnv("AI_PROPOSAL_EXECUTOR", await aiProposalExecutor.getAddress());
 
     const governor = await deploy<Deployable>("Governor", [tokenAddress, executorAddress]);
     const upgradeManager = await deploy<any>("UpgradeManager");
@@ -95,6 +119,9 @@ async function main() {
     console.log(`ConstitutionalGuard: ${await constitutionalGuard.getAddress()}`);
     console.log(`EvidenceAnchor: ${await evidenceAnchor.getAddress()}`);
     console.log(`EvidenceBundle: ${await evidenceBundle.getAddress()}`);
+    console.log(`EvidenceVault: ${await evidenceVault.getAddress()}`);
+    console.log(`PolicyRegistry: ${await policyRegistry.getAddress()}`);
+    console.log(`AIProposalExecutor: ${await aiProposalExecutor.getAddress()}`);
     console.log(`UpgradeManager: ${await upgradeManager.getAddress()}`);
     return;
   }
