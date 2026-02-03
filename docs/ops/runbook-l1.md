@@ -57,12 +57,12 @@ infra/ghostchain/scripts/down.sh
 
 ## Evidence pack (latest)
 
-- Timestamp: `20260202T154243Z`
-- SHA256: `ec870e6eb031ce8be0bcccfab284b5216f90b6a3f6f117c5f7e2a4d484fd83e8`
-- Artifact: `infra/evidence/out/evidence-pack-l1-20260202T154243Z.zip`
+- Timestamp: `20260203T123126Z`
+- SHA256: `6876f1ba4e815c3b98ce8b92befd98a9a8370dbe983510a6c54f1aeb68cd3f65`
+- Artifact: `infra/evidence/out/evidence-pack-l1-20260203T123126Z.zip`
 
 ```bash
-sha256sum -c infra/evidence/out/evidence-pack-l1-20260202T154243Z.zip.sha256
+sha256sum -c infra/evidence/out/evidence-pack-l1-20260203T123126Z.zip.sha256
 ```
 
 ## Post go/no-go cleanup
