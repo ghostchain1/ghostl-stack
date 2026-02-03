@@ -213,6 +213,14 @@ Updates:
 - Added `docs/architecture/ghostchain-ai-governance-whitepaper.md` with authority model, evidence chain, and reproducibility steps.
 - Linked the new whitepaper in `docs/architecture/README.md`.
 - Added runbook references to store the whitepaper hash alongside evidence packs for L1/L2/L3.
+
+## 2026-02-03 Phase 6 Cross-Chain AI Federation
+
+Updates:
+- Added `docs/ai-core/federation.md` to document L1→L2→L3 policy checkpoint flow and invariants.
+- Added `contracts/scripts/governance/export_policy_checkpoint.ts` and `infra/scripts/federation/export-policy-checkpoint.sh` to export deterministic policy checkpoints.
+- Updated L2/L3 governance autonomy docs with chain policy inheritance settings.
+- Added federation checkpoint calls to L1/L2/L3 runbooks and ops index.
 - AI/ops service surface includes: `ai-monitor`, `ai-clock-sync`, `ghost-ai-attestor`, `anomaly-detection-service`, `consensus-telemetry-service`, `network-manager-service`, `treasury-ai`, `treasury-evidence`.
 - Evidence generation exists for treasury (`services/treasury-evidence`) but is not yet wired to policy proposal flow for AI governance actions.
 

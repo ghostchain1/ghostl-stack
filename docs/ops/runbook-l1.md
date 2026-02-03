@@ -64,6 +64,13 @@ infra/ghostchain/scripts/down.sh
 
 - Rotate validator keys only via the approved key-rotation playbook.
 - Re-run `infra/scripts/doctor-l1.sh` after any config change.
+- Export the L1 policy checkpoint for federation audits:
+
+```bash
+POLICY_CHECKPOINT_NETWORK=anvil \
+POLICY_CHECKPOINT_LAYER=L1 \
+infra/scripts/federation/export-policy-checkpoint.sh
+```
 
 ## AI evidence retention
 

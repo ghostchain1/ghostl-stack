@@ -53,6 +53,14 @@ tar -czf infra/evidence/out/ai-evidence-l3-$(date -u +%Y%m%dT%H%M%SZ).tgz \
   services/ai-monitor/data/evidence
 ```
 
+## Federation policy checkpoint
+
+```bash
+POLICY_CHECKPOINT_NETWORK=ghostl2 \
+POLICY_CHECKPOINT_LAYER=L2 \
+infra/scripts/federation/export-policy-checkpoint.sh
+```
+
 ## Phase 5 evidence references
 
 - Whitepaper: `docs/architecture/ghostchain-ai-governance-whitepaper.md`
