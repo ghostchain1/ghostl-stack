@@ -27,6 +27,10 @@ contract MockGovernor {
 contract AIConstitutionInvariantTest is TestBase {
     bytes32 private constant CONSTITUTION_HASH = keccak256("ghost.ai.constitution.v1");
     bytes32 private constant POLICY_KEY = keccak256("ghost.ai.policy.sample");
+    bytes32 private constant POLICY_KEY_DELAY = keccak256("ghost.ai.policy.delay");
+    bytes32 private constant POLICY_KEY_DISABLED = keccak256("ghost.ai.policy.disabled");
+    bytes32 private constant POLICY_KEY_EMERGENCY = keccak256("ghost.ai.policy.emergency");
+    bytes32 private constant POLICY_KEY_ROLLBACK = keccak256("ghost.ai.policy.rollback");
 
     PolicyRegistry private registry;
     EvidenceVault private vault;
@@ -47,6 +51,10 @@ contract AIConstitutionInvariantTest is TestBase {
         executor.setSignerSetHash(keccak256("signers"));
 
         registry.setPolicySetting(POLICY_KEY, 1, 100, 0, 3600, 0, true, true);
+        registry.setPolicySetting(POLICY_KEY_DELAY, 1, 100, 3600, 0, 0, true, true);
+        registry.setPolicySetting(POLICY_KEY_DISABLED, 0, 0, 0, 0, 0, false, false);
+        registry.setPolicySetting(POLICY_KEY_EMERGENCY, 1, 100, 0, 120, 0, true, true);
+        registry.setPolicySetting(POLICY_KEY_ROLLBACK, 1, 100, 0, 0, 120, true, true);
 
         govToken = new MockGovernanceToken();
         govToken.mint(address(this), 1_000_000 ether);
@@ -94,6 +102,38 @@ contract AIConstitutionInvariantTest is TestBase {
     function test_policy_bounds_enforced() public {
         vm.expectRevert(PolicyRegistry.PolicyBounds.selector);
         registry.queuePolicy(POLICY_KEY, 101, bytes32("evidence"));
+    }
+
+    function test_policy_disabled_rejected() public {
+        vm.expectRevert(PolicyRegistry.PolicyDisabled.selector);
+        registry.queuePolicy(POLICY_KEY_DISABLED, 0, bytes32("evidence"));
+    }
+
+    function test_activation_delay_enforced() public {
+        registry.queuePolicy(POLICY_KEY_DELAY, 10, bytes32("evidence"));
+        vm.expectRevert(PolicyRegistry.ActivationNotReady.selector);
+        registry.activatePolicy(POLICY_KEY_DELAY);
+
+        vm.warp(block.timestamp + 3600);
+        registry.activatePolicy(POLICY_KEY_DELAY);
+        (PolicyRegistry.PolicyValue memory current,,) = registry.getPolicy(POLICY_KEY_DELAY);
+        assertEq(current.value, 10, "activation value");
+    }
+
+    function test_emergency_expiry_enforced() public {
+        registry.setEmergencyPolicy(POLICY_KEY_EMERGENCY, 20, bytes32("evidence"));
+        assertTrue(registry.isEmergencyActive(POLICY_KEY_EMERGENCY), "emergency active");
+        vm.warp(block.timestamp + 121);
+        assertTrue(!registry.isEmergencyActive(POLICY_KEY_EMERGENCY), "emergency expired");
+    }
+
+    function test_rollback_within_window() public {
+        registry.applyPolicy(POLICY_KEY_ROLLBACK, 10, bytes32("ev1"));
+        registry.applyPolicy(POLICY_KEY_ROLLBACK, 20, bytes32("ev2"));
+        vm.warp(block.timestamp + 60);
+        registry.rollbackPolicy(POLICY_KEY_ROLLBACK);
+        (PolicyRegistry.PolicyValue memory current,,) = registry.getPolicy(POLICY_KEY_ROLLBACK);
+        assertEq(current.value, 10, "rolled back");
     }
 
     function test_executor_requires_evidence() public {

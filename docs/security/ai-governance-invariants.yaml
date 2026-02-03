@@ -51,12 +51,16 @@ invariants:
     description: >
       PolicyRegistry must reject updates when the policy key is disabled or the value
       is out of bounds.
+    math: |
+      ∀ key,value: enabled(key)=false ⇒ reject
+      ∀ key,value: hasBounds(key) ⇒ min(key) ≤ value ≤ max(key)
     enforcement:
       solidity:
         - PolicyRegistry.validatePolicy
         - PolicyRegistry.queuePolicy
       tests:
         - contracts/test/invariants/AIConstitution.invariant.t.sol:test_policy_bounds_enforced
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_policy_disabled_rejected
 
   - id: AI-INV-005
     title: Policy updates require evidence hash
@@ -67,3 +71,40 @@ invariants:
         - AIProposalExecutor.executePolicyUpdate
       tests:
         - contracts/test/invariants/AIConstitution.invariant.t.sol:test_executor_requires_evidence
+
+  - id: AI-INV-006
+    title: Activation delay must be enforced
+    description: >
+      Policies with activation delays cannot be activated before their scheduled activation time.
+    math: |
+      ∀ key: activate(key) only if now ≥ activatesAt(key)
+    enforcement:
+      solidity:
+        - PolicyRegistry.activatePolicy
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_activation_delay_enforced
+
+  - id: AI-INV-007
+    title: Emergency policy expiry
+    description: >
+      Emergency policy overrides must expire after their configured expiry window.
+    math: |
+      ∀ key: emergency_active(key) ⇒ now ≤ expiresAt(key)
+    enforcement:
+      solidity:
+        - PolicyRegistry.setEmergencyPolicy
+        - PolicyRegistry.isEmergencyActive
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_emergency_expiry_enforced
+
+  - id: AI-INV-008
+    title: Rollback allowed only within rollback window
+    description: >
+      Rollback must only be permitted within the configured rollback window following activation.
+    math: |
+      ∀ key: rollback(key) ⇒ now ≤ lastActivatedAt(key) + rollbackWindow(key)
+    enforcement:
+      solidity:
+        - PolicyRegistry.rollbackPolicy
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_rollback_within_window
