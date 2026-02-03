@@ -138,3 +138,19 @@ Result: Execution reverted (AlreadyRatified)
 Notes:
 - Action permit tx recorded in `contracts/reports/ai_constitutional_action_permit.json`
 - `AIConstitutionalProposal.ratified=true` (skip execution; contract already ratified)
+
+## 2026-02-03 Constitutional Ratification Clean Slate (Devnet)
+
+Command:
+
+```
+cd contracts
+npx hardhat run --network anvil scripts/governance/propose_ai_constitutional_ratification.ts
+```
+
+Result: New proposal id recorded (no execution required; already ratified)
+
+Notes:
+- Proposal id: `2`
+- Proposal tx: `0xa15ff364d5bf555a203365d6da128bb769c7086d9b00ce9665e415c2fd7e3318`
+- Reports: `contracts/reports/ai_constitutional_proposal_id.json`, `contracts/reports/ai_constitutional_proposal.json`
