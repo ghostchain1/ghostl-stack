@@ -1,0 +1,78 @@
+{
+  "generatedAt": "2026-02-03T13:56:41.432Z",
+  "chainId": 14000101,
+  "stackEnv": "/home/ghost/ghostl-stack/services/stack.env",
+  "addresses": {
+    "aiProposalExecutor": "0x367761085BF3C12e5DA2Df99AC6E1a824612b8fb",
+    "evidenceVault": "0xC9a43158891282A2B1475592D5719c001986Aaec",
+    "chainPolicyRegistry": "0x1c85638e118b37167e9298c2268758e058DdfDA0",
+    "agentPolicyRegistry": "0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf",
+    "expectedConstitutionHash": "0x1b3c479b7f8f1a6e67ac40798d56bde7509c68d7760c17a14fc7ba9cc907f816"
+  },
+  "checks": {
+    "policyRegistry": {
+      "address": "0x1c85638e118b37167e9298c2268758e058DdfDA0",
+      "codePresent": true,
+      "constitutionHash": "0x1b3c479b7f8f1a6e67ac40798d56bde7509c68d7760c17a14fc7ba9cc907f816",
+      "governor": "0x367761085BF3C12e5DA2Df99AC6E1a824612b8fb",
+      "timelock": "0x0000000000000000000000000000000000000000",
+      "governorMatchesExpected": false,
+      "matchesConstitution": true
+    },
+    "evidenceVault": {
+      "address": "0xC9a43158891282A2B1475592D5719c001986Aaec",
+      "codePresent": true,
+      "constitutionHash": "0x1b3c479b7f8f1a6e67ac40798d56bde7509c68d7760c17a14fc7ba9cc907f816",
+      "governor": "0xf4B146FbA71F41E0592668ffbF264F1D186b2Ca8",
+      "timelock": "0x0000000000000000000000000000000000000000",
+      "governorMatchesExpected": false,
+      "submitterAllowed": true,
+      "matchesConstitution": true
+    },
+    "aiProposalExecutor": {
+      "address": "0x367761085BF3C12e5DA2Df99AC6E1a824612b8fb",
+      "codePresent": true,
+      "constitutionHash": "0x1b3c479b7f8f1a6e67ac40798d56bde7509c68d7760c17a14fc7ba9cc907f816",
+      "governor": "0xf4B146FbA71F41E0592668ffbF264F1D186b2Ca8",
+      "timelock": "0x0000000000000000000000000000000000000000",
+      "governorMatchesExpected": false,
+      "policyRegistry": "0x1c85638e118b37167e9298c2268758e058DdfDA0",
+      "evidenceVault": "0xC9a43158891282A2B1475592D5719c001986Aaec",
+      "constitutionalGuard": "0x2B0d36FACD61B71CC05ab8F3D2355ec3631C0dd5",
+      "minApprovals": "1",
+      "signerSetHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "maxUpdateAge": "1800",
+      "matchesConstitution": true,
+      "governorExecutorProbe": {
+        "delay": "600",
+        "queueLength": "0"
+      }
+    },
+    "constitutionalGuard": {
+      "address": "0x2B0d36FACD61B71CC05ab8F3D2355ec3631C0dd5",
+      "codePresent": true,
+      "constitution": "0xD84379CEae14AA33C123Af12424A37803F885889",
+      "constitutionLocked": true,
+      "governor": "0xf4B146FbA71F41E0592668ffbF264F1D186b2Ca8",
+      "timelock": "0x0000000000000000000000000000000000000000"
+    },
+    "ghostConstitution": {
+      "address": "0xD84379CEae14AA33C123Af12424A37803F885889",
+      "governance": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "verifierAgent": "0x0000000000000000000000000000000000000000",
+      "zkVerifier": "0x0000000000000000000000000000000000000000"
+    },
+    "agentPolicyRegistry": {
+      "address": "0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf",
+      "codePresent": true,
+      "governor": "0xE5BD5bDC03371fB239956dbbF40bD185D6c2ea28",
+      "timelock": "0xAd5d57aD9bB17d34Debb88566ab2F5dB879Cc46F",
+      "rolePolicy": {
+        "roleHash": "0xb37059a29ddcacafd3b0473223d610c63f939cb39f9ee4c7fb5a73e6c986d930",
+        "policyHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "enabled": false,
+        "updatedAt": "0"
+      }
+    }
+  }
+}
