@@ -150,3 +150,31 @@ invariants:
         - AIProposalExecutor.executePolicyUpdate
       tests:
         - contracts/test/invariants/AIConstitution.invariant.t.sol:test_executor_requires_quorum
+
+  - id: AI-INV-013
+    title: Governance bypass requires governance authority
+    description: >
+      PolicyGuard governance bypass is limited to governance or timelock executors.
+    enforcement:
+      solidity:
+        - PolicyGuard.governanceBypass
+      tests:
+        - contracts/test/foundry/AIAttestationHubPolicyGuard.t.sol:testGovernanceBypassRestricted
+
+  - id: AI-INV-014
+    title: Emergency scope requires enabled emergency window
+    description: >
+      Emergency policy updates are rejected when the policy key has no emergency expiry configured.
+    enforcement:
+      solidity:
+        - PolicyRegistry.setEmergencyPolicy
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_emergency_scope_rejected
+
+  - id: AI-INV-015
+    title: Federated proposals require upstream checkpoint hash
+    description: >
+      When federation is enforced, AI proposals must include the upstream policy checkpoint hash.
+    enforcement:
+      operational:
+        - services/ghost-gas-engine/test/ai-core-proposal.test.ts:requires upstream policy checkpoint when federation is enforced
