@@ -103,3 +103,21 @@ Notes:
 - Policy registry confirmed on L1 devnet: `0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf` (RPC `http://localhost:18545`)
 - Invariant tests completed cleanly (selector warnings removed)
 - Trivy vuln+secret scan completed clean; license collection warnings for missing npm/pnpm installs in upstream libraries
+
+## 2026-02-03 Constitutional Ratification (Devnet)
+
+Commands:
+
+```
+cd contracts
+npx hardhat run --network anvil scripts/governance/vote_ai_constitutional_ratification.ts
+npx hardhat run --network anvil scripts/governance/queue_execute_ai_constitutional_ratification.ts
+```
+
+Result: Queued; execution delayed by timelock
+
+Notes:
+- Vote tx: `0x183ee271af6903d5cef517c67f782ba06512b9c45bbf9230c35b5f659f0edd15`
+- Queue tx: `0x3371397f0caa6c49c39afabfb398b877a6041f43deb61a11d9e5b6ea8098e1e9`
+- Timelock delay: 600s (rerun execute after ETA)
+- Reports: `contracts/reports/ai_constitutional_vote.json`, `contracts/reports/ai_constitutional_execution.json`
