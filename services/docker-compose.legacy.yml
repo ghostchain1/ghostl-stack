@@ -255,7 +255,7 @@ services:
       context: ./ai-clock-sync
     image: ghostl/ai-clock-sync:local
     env_file:
-      - ./stack.env
+      - ./ai-clock-sync/.env
     environment:
       - PORT=7690
       - CLOCK_SYNC_RPC_L1
@@ -263,8 +263,29 @@ services:
       - CLOCK_SYNC_RPC_L3
       - CLOCK_SYNC_INTERVAL_MS
       - CLOCK_SYNC_DRIFT_THRESHOLD_SEC
+      - RPC_TIMEOUT_MS
+      - PROXY_TIMEOUT_MS
+      - METRICS_PATH
+      - REGISTRY_TIMEOUT_MS
+      - REGISTRY_RETRY_COUNT
+      - REGISTRY_CACHE_MS
     ports:
       - "7690:7690"
+
+  ai-vault-dev:
+    <<: *host-gateway
+    image: hashicorp/vault:1.16.3
+    command:
+      - server
+      - -dev
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID:-ghost-dev-root}
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "8200:8200"
+    restart: unless-stopped
 
   ai-vault:
     <<: *host-gateway

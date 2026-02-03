@@ -172,6 +172,11 @@ data:
         metrics_path: /observability/logs/api/metrics
         static_configs:
           - targets: ["host.docker.internal:4000"]
+
+      - job_name: ai-clock-sync
+        metrics_path: /metrics
+        static_configs:
+          - targets: ["host.docker.internal:7690"]
   alert_rules.yml: |
     groups:
       - name: ghost-observability-logs

@@ -582,8 +582,18 @@ Dependencies: Prometheus (`PROM_URL`).
 | GET `/health` | Health check. | none | none | `{ ok: true }` |
 | GET `/metrics` | AI monitor metrics. | none | none | Prometheus-style metrics |
 
+### ai-clock-sync (PORT=7690)
+
+| Endpoint | Description | Auth | Request schema | Response schema |
+| --- | --- | --- | --- | --- |
+| GET `/` (or `/health`) | Status + drift snapshot for all chains. | none | none | `{ status, thresholdSeconds, state }` |
+| GET `/metrics` | Clock sync metrics (Prometheus). | none | none | Prometheus-style metrics |
+| POST `/l1` | JSON-RPC proxy to L1. | `Authorization: Bearer $CLOCK_SYNC_PROXY_TOKEN` or `X-Clock-Sync-Token` if token set | JSON-RPC | JSON-RPC response |
+| POST `/l2` | JSON-RPC proxy to L2. | `Authorization: Bearer $CLOCK_SYNC_PROXY_TOKEN` or `X-Clock-Sync-Token` if token set | JSON-RPC | JSON-RPC response |
+| POST `/l3` | JSON-RPC proxy to L3. | `Authorization: Bearer $CLOCK_SYNC_PROXY_TOKEN` or `X-Clock-Sync-Token` if token set | JSON-RPC | JSON-RPC response |
+
 ## Missing endpoints for UI requirements
 
 All UI console pages are wired only to existing endpoints listed above; no additional endpoints were required.
 
-## Non-HTTP services (no Express routes in `services/*/src`)\n\n- `services/ai-clock-sync` (no HTTP entrypoint)\n- `services/ghost-guard` (no HTTP entrypoint)\n- `services/ghost-rpc-proxy` (no HTTP entrypoint)
+## Non-HTTP services (no Express routes in `services/*/src`)\n\n- `services/ghost-guard` (no HTTP entrypoint)\n- `services/ghost-rpc-proxy` (no HTTP entrypoint)
