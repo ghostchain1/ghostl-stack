@@ -198,6 +198,14 @@ sed -n '1,200p' services/ai-monitor/src/index.js
 Findings:
 - AI core runtime today is centered on `services/ghost-gas-engine` (API + worker) with Postgres/Redis per `docs/ai-core/architecture.md`.
 - Policy gating is already present in `services/ai-monitor` (AgentGovernancePolicy `canExecute` checks + chain policy registry checks).
+
+## 2026-02-03 Phase 4 Evidence Retention + AI Core Smoke
+
+Updates:
+- Compose defaults now route AI evidence/proposal output to `/data` volumes for `ghost-gas-engine` and `ai-monitor`.
+- Runbooks now include AI evidence retention steps for L1/L2/L3 and incident response.
+- CI adds a smoke test that injects `POST /v1/ai-core/policy-proposals` via Fastify + mocks.
+- AI monitor now enables action evidence capture by default (override with `ACTION_EVIDENCE_ENABLED=0`).
 - AI/ops service surface includes: `ai-monitor`, `ai-clock-sync`, `ghost-ai-attestor`, `anomaly-detection-service`, `consensus-telemetry-service`, `network-manager-service`, `treasury-ai`, `treasury-evidence`.
 - Evidence generation exists for treasury (`services/treasury-evidence`) but is not yet wired to policy proposal flow for AI governance actions.
 

@@ -65,6 +65,19 @@ infra/ghostchain/scripts/down.sh
 - Rotate validator keys only via the approved key-rotation playbook.
 - Re-run `infra/scripts/doctor-l1.sh` after any config change.
 
+## AI evidence retention
+
+- Archive AI policy evidence: `services/ghost-gas-engine/data/evidence`
+- Archive AI policy proposals: `services/ghost-gas-engine/data/proposals`
+- Archive AI monitor action evidence: `services/ai-monitor/data/evidence`
+
+```bash
+tar -czf infra/evidence/out/ai-evidence-l1-$(date -u +%Y%m%dT%H%M%SZ).tgz \
+  services/ghost-gas-engine/data/evidence \
+  services/ghost-gas-engine/data/proposals \
+  services/ai-monitor/data/evidence
+```
+
 ## Evidence pack (latest)
 
 - Timestamp: `20260203T123126Z`

@@ -31,6 +31,12 @@ jobs:
       - name: Smoke - AI stability (config gate)
         run: bash scripts/smoke/ai-stability.sh
 
+      - name: Smoke - AI core proposal endpoint
+        working-directory: services/ghost-gas-engine
+        run: |
+          npm ci
+          npm test
+
       - name: Contracts install + build
         working-directory: contracts
         run: |
