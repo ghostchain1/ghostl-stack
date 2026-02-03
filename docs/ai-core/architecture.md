@@ -74,6 +74,8 @@ policy registries and must refuse actions if upstream policy is missing. See
 - `explainability` is required in policy proposals (rationale, assumptions, expectedImpact, rollbackPlan, confidence, modelVersion).
 - Evidence bundles can be written to disk (`AI_EVIDENCE_OUTPUT_DIR`) and optionally committed to `EvidenceVault`
   (`AI_EVIDENCE_AUTO_COMMIT=true` + vault RPC + submitter key).
+- When `CHAIN_POLICY_REQUIRED=1`, evidence bundles include the upstream policy checkpoint hash to preserve
+  cross-layer lineage.
 - Optional signer quorum flow:
   - Configure `AI_PROPOSAL_SIGNER_KEYS` to emit EIP-712 signatures for the `PolicyUpdate` digest.
   - Set `AI_PROPOSAL_AUTO_SUBMIT=true` + `AI_PROPOSAL_SUBMITTER_KEY` to broadcast `executePolicyUpdate`.
