@@ -206,6 +206,12 @@ Updates:
 - Runbooks now include AI evidence retention steps for L1/L2/L3 and incident response.
 - CI adds a smoke test that injects `POST /v1/ai-core/policy-proposals` via Fastify + mocks.
 - AI monitor now enables action evidence capture by default (override with `ACTION_EVIDENCE_ENABLED=0`).
+
+## 2026-02-03 Phase 5 Court-Ready AI Governance Whitepaper
+
+Updates:
+- Added `docs/architecture/ghostchain-ai-governance-whitepaper.md` with authority model, evidence chain, and reproducibility steps.
+- Linked the new whitepaper in `docs/architecture/README.md`.
 - AI/ops service surface includes: `ai-monitor`, `ai-clock-sync`, `ghost-ai-attestor`, `anomaly-detection-service`, `consensus-telemetry-service`, `network-manager-service`, `treasury-ai`, `treasury-evidence`.
 - Evidence generation exists for treasury (`services/treasury-evidence`) but is not yet wired to policy proposal flow for AI governance actions.
 
