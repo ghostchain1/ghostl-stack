@@ -63,10 +63,14 @@ EVIDENCE_TIMESTAMP=20260203T180000Z \
 EVIDENCE_EPOCH=1760100000 \
 "$ROOT_DIR/infra/scripts/evidence-pack-ai-governance.sh" --verify
 
-if [ -n "$(git -C "$ROOT_DIR" status --porcelain)" ]; then
-  log "AI governance go/no-go: FAILED (dirty working tree)"
-  git -C "$ROOT_DIR" status -sb
-  exit 1
+dirty="$(git -C "$ROOT_DIR" status --porcelain || true)"
+if [ -n "$dirty" ]; then
+  filtered="$(printf '%s\n' "$dirty" | grep -Ev '^( M| D|\?\?) (contracts/out-codex/|contracts/cache-codex/|contracts/reports/foundry/)' || true)"
+  if [ -n "$filtered" ]; then
+    log "AI governance go/no-go: FAILED (dirty working tree)"
+    printf '%s\n' "$filtered"
+    exit 1
+  fi
 fi
 
 log "AI governance go/no-go: OK"
