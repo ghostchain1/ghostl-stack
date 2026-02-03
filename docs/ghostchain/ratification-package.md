@@ -86,6 +86,35 @@ A signed manifest shall accompany the hash, containing:
 - Signatory identities
 - Verification instructions
 
+### Phase 0 - Calldata Generation (AIConstitutionalProposal)
+
+Generate the on-chain ratification calldata (and optional executor bundle) using the canonical script.
+
+Required inputs (in `services/stack.env` or environment overrides):
+- `CONSTITUTION_PROPOSAL_ID` (governance proposal id)
+- `AI_CONSTITUTION_PROPOSAL_ADDRESS` (deployed AIConstitutionalProposal)
+- `CONSTITUTION_HASH` (defaults to `docs/ghostchain/charter.md` SHA-256 if unset)
+- `AI_CONSTITUTION_EXECUTOR` (optional; executor/timelock address)
+
+Optional overrides:
+- `STACK_ENV_FILE` (alternate env file path)
+- `CONSTITUTION_DOC_PATH` (alternate constitution document path)
+- `CONSTITUTION_DESCRIPTION` (proposal description text)
+- `AI_CONSTITUTION_PROPOSAL_OUTPUT` (output json path)
+- `PROPOSAL_EXECUTOR_MODE` (executor mode, if supported)
+
+Command:
+
+```bash
+cd contracts
+npx ts-node scripts/governance/build_ai_constitutional_proposal.ts
+```
+
+Outputs:
+- `contracts/reports/ai_constitutional_proposal.json`
+  - `ratificationTx.data` (direct calldata)
+  - `executor.calldata` (if `AI_CONSTITUTION_EXECUTOR` provided)
+
 ### Step 2 - Governance Ratification Proposal (Template)
 
 Title: Ratify the GhostChain Constitutional Charter v1.0
