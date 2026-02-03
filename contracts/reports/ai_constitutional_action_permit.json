@@ -1,0 +1,17 @@
+{
+  "proposalId": "1",
+  "executor": "0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650",
+  "constitutionalGuard": "0x922D6956C99E12DFeB3224DEA977D0939758A1Fe",
+  "constitution": "0xB0D4afd8879eD9F52b28595d31B441D079B2Ca07",
+  "governance": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "actionHash": "0xdf1db6faef434e5ffcfc144a22898cc9b95e796d377325c7edc328f0a0d06755",
+  "queue": {
+    "target": "0xDC11f7E700A4c898AE5CAddB1082cFfa76512aDD",
+    "value": "0",
+    "eta": "1770124375",
+    "dataHash": "0xea7c7e9286a0cdd0c4570863890267f0014cf89e8baa6985fa4e0b887b8e1009"
+  },
+  "txHash": "0x4bd833eab00a93ddea08f5373ef8d9997a070946e80dd2386df98470f1318f4d",
+  "blockNumber": 123375,
+  "recordedAt": "2026-02-03T13:41:11.069Z"
+}

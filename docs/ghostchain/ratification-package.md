@@ -147,6 +147,25 @@ Reports:
 
 If execution reports `eta_not_reached`, wait for the timelock delay and rerun the queue/execute script.
 
+Bootstrap permit (devnet only):
+If the ProposalExecutor is guarded by `ConstitutionalGuard`, the governance action must be permitted in `GhostConstitution` before execution.
+
+```bash
+cd contracts
+npx hardhat run --network anvil scripts/governance/permit_ai_constitutional_action.ts
+```
+
+Report:
+- `contracts/reports/ai_constitutional_action_permit.json`
+
+Status check:
+```bash
+cd contracts
+npx hardhat run --network anvil scripts/governance/check_ai_constitutional_status.ts
+```
+
+If `ratified=true`, skip execution (the contract is already ratified and will revert on re-execution).
+
 ### Step 2 - Governance Ratification Proposal (Template)
 
 Title: Ratify the GhostChain Constitutional Charter v1.0
