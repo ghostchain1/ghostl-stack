@@ -118,6 +118,39 @@
       "tests": [
         "contracts/test/invariants/AIConstitution.invariant.t.sol:test_executor_requires_quorum"
       ]
+    },
+    {
+      "id": "AI-INV-013",
+      "title": "Governance bypass requires governance authority",
+      "math": "governanceBypass(subject, action) only if caller in {governor, timelock}",
+      "solidity": [
+        "PolicyGuard.governanceBypass"
+      ],
+      "tests": [
+        "contracts/test/foundry/AIAttestationHubPolicyGuard.t.sol:testGovernanceBypassRestricted"
+      ]
+    },
+    {
+      "id": "AI-INV-014",
+      "title": "Emergency scope requires enabled emergency window",
+      "math": "emergencyExpiry(key)=0 -> reject emergency policy update",
+      "solidity": [
+        "PolicyRegistry.setEmergencyPolicy"
+      ],
+      "tests": [
+        "contracts/test/invariants/AIConstitution.invariant.t.sol:test_emergency_scope_rejected"
+      ]
+    },
+    {
+      "id": "AI-INV-015",
+      "title": "Federated proposals require upstream checkpoint hash",
+      "math": "CHAIN_POLICY_REQUIRED=1 -> checkpointHash provided",
+      "solidity": [
+        "services/ghost-gas-engine/src/routes/ai-core.ts"
+      ],
+      "tests": [
+        "services/ghost-gas-engine/test/ai-core-proposal.test.ts:requires upstream policy checkpoint when federation is enforced"
+      ]
     }
   ]
 }

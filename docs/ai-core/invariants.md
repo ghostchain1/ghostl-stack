@@ -82,6 +82,24 @@ machine-readable mappings.
   approvals(update) ≥ minApprovals
 ```
 
+### AI-INV-013 — Governance bypass requires governance authority
+
+```
+governanceBypass(subject, action) only if caller ∈ {governor, timelock}
+```
+
+### AI-INV-014 — Emergency scope requires enabled emergency window
+
+```
+emergencyExpiry(key) = 0 ⇒ reject emergency policy update
+```
+
+### AI-INV-015 — Federated proposals require upstream checkpoint hash
+
+```
+CHAIN_POLICY_REQUIRED = 1 ⇒ checkpointHash provided
+```
+
 ## Enforcement Map (Solidity + Tests)
 
 - `contracts/src/governance/PolicyRegistry.sol`
