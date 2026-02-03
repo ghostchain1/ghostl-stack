@@ -44,6 +44,19 @@ infra/scripts/opstack/down-l2.sh
 - Ensure `POLICY_REGISTRY_ADDRESS` is set in `infra/opstack/.env`.
 - If `AI_MONITOR_OBSERVE_ONLY=0`, doctor-l2 fails closed.
 
+## AI evidence retention
+
+- Archive AI policy evidence: `services/ghost-gas-engine/data/evidence`
+- Archive AI policy proposals: `services/ghost-gas-engine/data/proposals`
+- Archive AI monitor action evidence: `services/ai-monitor/data/evidence`
+
+```bash
+tar -czf infra/evidence/out/ai-evidence-l2-$(date -u +%Y%m%dT%H%M%SZ).tgz \
+  services/ghost-gas-engine/data/evidence \
+  services/ghost-gas-engine/data/proposals \
+  services/ai-monitor/data/evidence
+```
+
 ## Evidence pack (latest)
 
 Generate:
