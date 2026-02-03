@@ -164,6 +164,32 @@ To enable independent assessment by regulators, auditors, courts, or partners wi
 Ratification Status: Devnet ratified; production pending  
 Next Action: Produce production ratification vote and timelock activation
 
+### Production Ratification Checklist
+
+1. Confirm `CONSTITUTION_HASH` matches the production charter text and is pinned in `services/stack.env`.
+2. Deploy `AIConstitutionalProposal` on production L1 and record:
+   - contract address
+   - deployment tx hash
+   - deployer address
+3. Submit governance proposal via production governor:
+   - proposal id
+   - proposal tx hash
+4. Ensure quorum and supermajority thresholds are met.
+5. Queue proposal in the executor/timelock and wait for delay to elapse.
+6. Execute the proposal and verify:
+   - `ratified()` returns `true`
+   - `constitutionHash()` matches canonical hash
+   - `activatesAt()` equals ratifiedAt + activationDelay
+7. Update the following artifacts:
+   - `contracts/reports/ai_constitutional_deployment.json`
+   - `contracts/reports/ai_constitutional_proposal.json`
+   - `contracts/reports/ai_constitutional_proposal_id.json`
+   - `docs/ghostchain/ratification-package.md`
+8. Archive signatures and evidence:
+   - `docs/ghostchain/constitution_binding.sig`
+   - `docs/ghostchain/constitution_events.md`
+9. Re-run `infra/scripts/gates/l1-go-no-go.sh` and archive the evidence pack.
+
 ### Step 6 - Final Attestations
 
 Upon ratification and proof publication, the following attestations must be signed:
