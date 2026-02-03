@@ -5,13 +5,13 @@ Artifacts live in `infra/evidence/out` and are not committed to git.
 
 | Layer | Timestamp | Artifact | SHA256 |
 | --- | --- | --- | --- |
-| L1 | `20260203T123126Z` | `infra/evidence/out/evidence-pack-l1-20260203T123126Z.zip` | `6876f1ba4e815c3b98ce8b92befd98a9a8370dbe983510a6c54f1aeb68cd3f65` |
+| L1 | `20260203T124932Z` | `infra/evidence/out/evidence-pack-l1-20260203T124932Z.zip` | `29f0fab9115ca51405c03ed7e35a6901a1de350ba1328875da6a4197ae7d34dc` |
 | L2 | `20260202T175423Z` | `infra/evidence/out/evidence-pack-l2-20260202T175423Z.zip` | `ceae22f729333fbc23efdb7859f6a4a8fdcdb5182c1553443a84d14aae65959d` |
 | L3 | - | not generated | - |
 
 Verify:
 
 ```bash
-sha256sum -c infra/evidence/out/evidence-pack-l1-20260203T123126Z.zip.sha256
+sha256sum -c infra/evidence/out/evidence-pack-l1-20260203T124932Z.zip.sha256
 sha256sum -c infra/evidence/out/evidence-pack-l2-20260202T175423Z.zip.sha256
 ```
