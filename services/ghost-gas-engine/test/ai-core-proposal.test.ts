@@ -84,7 +84,15 @@ describe('ai-core policy proposals', () => {
           payload: {
             chainKey: 'l2',
             policyKey: 'gas_limit',
-            value: 30_000_000
+            value: 30_000_000,
+            explainability: {
+              rationale: 'Congestion trending higher than policy ceiling.',
+              assumptions: ['RPC latency within 200ms', 'Base fee remains stable'],
+              expectedImpact: 'Reduce failed transactions during peak usage.',
+              rollbackPlan: 'Revert to previous policy after 1 hour if congestion clears.',
+              confidence: 0.71,
+              modelVersion: 'risk-forecast-v1'
+            }
           }
         });
 

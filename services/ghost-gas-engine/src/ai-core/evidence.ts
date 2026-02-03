@@ -12,9 +12,18 @@ export type EvidenceBundle = {
   emergency: boolean;
   issuedAt: string;
   source: string;
+  explainability: {
+    rationale: string;
+    assumptions: string[];
+    expectedImpact: string;
+    rollbackPlan: string;
+    confidence: number;
+    modelVersion?: string | null;
+  };
   metadata: Record<string, unknown>;
   simulation?: Record<string, unknown> | null;
   prediction?: Record<string, unknown> | null;
+  inputsHash: string;
 };
 
 export const stableStringify = (value: unknown): string => {
@@ -40,13 +49,21 @@ export const buildEvidenceBundle = (input: {
   emergency: boolean;
   issuedAt: string;
   source: string;
+  explainability: EvidenceBundle["explainability"];
   metadata?: Record<string, unknown>;
   simulation?: Record<string, unknown> | null;
   prediction?: Record<string, unknown> | null;
 }) => {
   const metadata = input.metadata ?? {};
+  const explainability = input.explainability;
+  const inputsHash = hashJson({
+    explainability,
+    metadata,
+    simulation: input.simulation ?? null,
+    prediction: input.prediction ?? null
+  });
   const bundle: EvidenceBundle = {
-    version: '1',
+    version: '2',
     kind: input.kind,
     chainKey: input.chainKey,
     chainId: input.chainId,
@@ -55,9 +72,11 @@ export const buildEvidenceBundle = (input: {
     emergency: input.emergency,
     issuedAt: input.issuedAt,
     source: input.source,
+    explainability,
     metadata,
     simulation: input.simulation ?? null,
-    prediction: input.prediction ?? null
+    prediction: input.prediction ?? null,
+    inputsHash
   };
   const evidenceHash = hashJson(bundle);
   const metadataHash = hashJson(metadata);
