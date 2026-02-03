@@ -6,9 +6,10 @@
 - `l3-op-proposer`: `http://l3-op-proposer:8302/metrics`
 - `l3-op-geth`: `http://l3-geth:6060/metrics`
 - `ai-monitor-l3`: `http://host.docker.internal:7577/metrics`
+- `ai-clock-sync`: `http://host.docker.internal:7690/metrics`
 
 ## Grafana dashboards
-- **opstack-observability**: includes an L3 row with event rate, channel input bytes, batcher/proposer idle time, and AI monitor incidents.
+- **opstack-observability**: includes an L3 row with event rate, channel input bytes, batcher/proposer idle time, AI monitor incidents, and clock-sync drift.
 
 ## AI monitor configuration (L3)
 Set these in `services/ai-monitor/.env` (or in your orchestrator):
