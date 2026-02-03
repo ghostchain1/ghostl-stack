@@ -27,7 +27,8 @@ or submit an override via `/v1/autonomy/override`.
    - Set `AI_PROPOSAL_MIN_SIGNATURES` to enforce a minimum count.
 4. Auto-submit (optional):
    - Set `AI_PROPOSAL_AUTO_SUBMIT=true`, `AI_PROPOSAL_SUBMITTER_KEY`, and `AI_PROPOSAL_EXECUTOR_RPC`.
-   - Verify the on-chain execution and EvidenceVault record.
+- Verify the on-chain execution and EvidenceVault record.
+- Follow `docs/ai-core/ratification.md` for the policy proposal → quorum → submission flow.
 
 ## Handle Repeated Failures
 - Inspect fingerprints: `GET /v1/ai-core/fingerprints`
