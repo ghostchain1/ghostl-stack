@@ -198,8 +198,11 @@ if [ -d "$L2_DATA_DIR" ]; then
 fi
 if [ "$synced_l1_chain" -ne 1 ] && [ -f "$OP_DIR/config/genesis-l2.json" ]; then
   cp "$OP_DIR/config/genesis-l2.json" "$L3_L1_CHAIN_JSON"
+  # op-node for L3 does not accept config.gasToken in l1-chain.json; strip if present.
+  tmp_l3_l1=$(mktemp)
+  jq 'del(.config.gasToken)' "$L3_L1_CHAIN_JSON" >"$tmp_l3_l1" && mv "$tmp_l3_l1" "$L3_L1_CHAIN_JSON"
   chmod 644 "$L3_L1_CHAIN_JSON" || true
-  echo "Synced L3 l1-chain.json from config/genesis-l2.json."
+  echo "Synced L3 l1-chain.json from config/genesis-l2.json (gasToken stripped)."
 fi
 
 if [ -d "$L3_DATA_DIR/geth" ] && [ "$L3_CHAIN_CONFIG_CHANGED" -eq 1 ]; then
