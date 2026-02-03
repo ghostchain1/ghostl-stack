@@ -77,6 +77,7 @@ policy registries and must refuse actions if upstream policy is missing. See
 - Optional signer quorum flow:
   - Configure `AI_PROPOSAL_SIGNER_KEYS` to emit EIP-712 signatures for the `PolicyUpdate` digest.
   - Set `AI_PROPOSAL_AUTO_SUBMIT=true` + `AI_PROPOSAL_SUBMITTER_KEY` to broadcast `executePolicyUpdate`.
+- Full ratification runbook: `docs/ai-core/ratification.md`.
 
 L1 devnet governance deployment (chainId `14000101`, 0xd59fe5):
 - Constitution hash: `0x1b3c479b7f8f1a6e67ac40798d56bde7509c68d7760c17a14fc7ba9cc907f816`
