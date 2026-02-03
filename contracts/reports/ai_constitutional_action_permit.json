@@ -1,17 +1,17 @@
 {
-  "proposalId": "2",
+  "proposalId": "3",
   "executor": "0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650",
   "constitutionalGuard": "0x922D6956C99E12DFeB3224DEA977D0939758A1Fe",
   "constitution": "0xB0D4afd8879eD9F52b28595d31B441D079B2Ca07",
   "governance": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "actionHash": "0x457193cdefd58dff9298037d69561ef8bb4d41a3efda360d971b988d510fb4f9",
+  "actionHash": "0xd7c0ce0bbf39e6aab067e54d07c3cc33dbd6d2863e58addc118a18d1205de812",
   "queue": {
-    "target": "0xDC11f7E700A4c898AE5CAddB1082cFfa76512aDD",
+    "target": "0x07882Ae1ecB7429a84f1D53048d35c4bB2056877",
     "value": "0",
-    "eta": "1770136651",
-    "dataHash": "0xb9715cabbf50876eca891ba1da369af292e5315d8fb0e75e6826e383dcce7c65"
+    "eta": "1770138675",
+    "dataHash": "0x5579aff09ff0d00f7e9bac9e35193cd605ad7bb11a928f89681070d009b322b0"
   },
-  "txHash": "0xb6fc6c15780c56aa0546000ef8b2036903a51d853fee52ed06cc7e6dc8b65179",
-  "blockNumber": 128757,
-  "recordedAt": "2026-02-03T16:40:35.335Z"
+  "txHash": "0xd2299f258ddfa19788d1f0a069ff6c8eb9275a9de0b434469c2741d748b4e16b",
+  "blockNumber": 129383,
+  "recordedAt": "2026-02-03T17:01:27.341Z"
 }
