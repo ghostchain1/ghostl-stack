@@ -36,6 +36,14 @@ scrape_configs:
         target_label: network
         replacement: l3
 
+  - job_name: l3-op-geth
+    static_configs:
+      - targets: ["l3-geth:6060"]
+    metric_relabel_configs:
+      - source_labels: [instance]
+        target_label: network
+        replacement: l3
+
   - job_name: l3-op-batcher
     static_configs:
       - targets: ["l3-op-batcher:8301"]
