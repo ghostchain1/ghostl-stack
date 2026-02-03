@@ -40,3 +40,11 @@ or submit an override via `/v1/autonomy/override`.
 2. Review classification and trace data.
 3. If TOOLING_BUG, validate Foundry flags and raw transaction path.
 4. If CHAIN_CONFIG_BUG, review gas policy and RPC node configuration.
+
+## Go/No-Go Gate
+
+Run the AI governance gate before production changes:
+
+```bash
+infra/scripts/gates/ai-go-no-go.sh
+```
