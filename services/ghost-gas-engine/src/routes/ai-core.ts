@@ -372,26 +372,31 @@ export async function registerAiCoreRoutes(app: FastifyInstance) {
     let signatures: Array<{ signer: string; signature: string }> = [];
     const signerKeys =
       config.AI_PROPOSAL_SIGNER_KEYS?.split(',').map((key) => key.trim()).filter(Boolean) ?? [];
+    const minRequired = config.AI_PROPOSAL_MIN_SIGNATURES || 0;
     if (digest && signerKeys.length) {
       signatures = signDigest(digest, signerKeys);
-      const minRequired = config.AI_PROPOSAL_MIN_SIGNATURES || 0;
-      if (minRequired > 0 && signatures.length < minRequired) {
-        reply.code(400).send({
-          error: 'insufficient_signatures',
-          required: minRequired,
-          provided: signatures.length
-        });
-        return;
-      }
+    }
+    if (minRequired > 0 && signatures.length < minRequired) {
+      reply.code(400).send({
+        error: 'insufficient_signatures',
+        required: minRequired,
+        provided: signatures.length
+      });
+      return;
     }
 
     let submitResult: Record<string, unknown> | null = null;
     if (config.AI_PROPOSAL_AUTO_SUBMIT) {
-      if (!executor || !config.AI_PROPOSAL_EXECUTOR_RPC || !config.AI_PROPOSAL_SUBMITTER_KEY) {
-        submitResult = { error: 'missing_executor_submit_config' };
+      if (minRequired <= 0) {
+        submitResult = { error: 'min_signatures_required' };
+      } else if (!signerKeys.length) {
+        submitResult = { error: 'missing_signer_keys' };
       } else if (!signatures.length) {
         submitResult = { error: 'missing_signatures' };
-      } else {
+      } else if (!executor || !config.AI_PROPOSAL_EXECUTOR_RPC || !config.AI_PROPOSAL_SUBMITTER_KEY) {
+        submitResult = { error: 'missing_executor_submit_config' };
+      }
+      if (!submitResult) {
         try {
           submitResult = await submitPolicyUpdate({
             rpcUrl: config.AI_PROPOSAL_EXECUTOR_RPC,
