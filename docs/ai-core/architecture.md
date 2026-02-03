@@ -64,12 +64,21 @@ L1 devnet governance deployment (chainId `14000101`, 0xd59fe5):
 - AIProposalExecutor: `0x367761085BF3C12e5DA2Df99AC6E1a824612b8fb`
 - AgentGovernancePolicy (action policy): `0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf`
 - AgentRegistry: `0x36C02dA8a0983159322a80FFE9F24b1acfF8B570`
+- Policy executor (governor for PolicyRegistry/EvidenceVault/AIProposalExecutor): `0xf4B146FbA71F41E0592668ffbF264F1D186b2Ca8` (delay 600s)
 
 Source of truth:
 - `services/stack.env`
 - `contracts/reports/ai_constitutional_deployment.json`
 - `contracts/reports/ai_constitutional_proposal.json`
 - `contracts/reports/ai_constitutional_proposal_id.json`
+- `contracts/reports/policy_primitives_status.json`
+
+Verification:
+
+```bash
+cd contracts
+npx hardhat run --network anvil scripts/governance/check_policy_primitives.ts
+```
 
 Proposal builder:
 - `contracts/scripts/ai/build_ai_action_ratification.ts` generates deterministic calldata with evidence hash for ratifying an action policy.

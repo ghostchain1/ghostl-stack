@@ -154,3 +154,17 @@ Notes:
 - Proposal id: `2`
 - Proposal tx: `0xa15ff364d5bf555a203365d6da128bb769c7086d9b00ce9665e415c2fd7e3318`
 - Reports: `contracts/reports/ai_constitutional_proposal_id.json`, `contracts/reports/ai_constitutional_proposal.json`
+
+## 2026-02-03 Policy Primitive Wiring Check (Devnet)
+
+Command:
+
+```
+cd contracts
+npx hardhat run --network anvil scripts/governance/check_policy_primitives.ts
+```
+
+Result: PASS (policy primitives wired; see report)
+
+Notes:
+- Report: `contracts/reports/policy_primitives_status.json`
