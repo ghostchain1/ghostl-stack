@@ -65,6 +65,14 @@ Devnet on-chain binding evidence (L1):
 - Ratified at: `2026-02-03 10:19:01Z`
 - Activates at: `2026-02-05 10:19:01Z`
 
+Verification checklist (devnet):
+1. Code present at `AIConstitutionalProposal` address (eth_getCode != 0x).
+2. `constitutionHash()` matches the canonical hash above.
+3. `ratified()` returns `true` and `ratificationProposalId()` returns `0`.
+4. `ratifiedAt()` and `activatesAt()` match the timestamps above.
+5. Governor `proposalsLength()` is `>= 1` and proposal `0` exists.
+6. Addresses match `services/stack.env` and the reports in `contracts/reports/`.
+
 On-chain binding evidence must be captured in:
 
 - docs/ghostchain/constitution_binding.sig
