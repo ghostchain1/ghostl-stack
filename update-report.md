@@ -87,3 +87,19 @@ Rollback: rolled_back
 ```
 
 ```
+
+## 2026-02-03 L1 Phase 9 Gate
+
+Command:
+
+```
+bash infra/scripts/gates/l1-go-no-go.sh
+```
+
+Result: PASS
+
+Notes:
+- Evidence pack generated: `infra/evidence/out/evidence-pack-l1-20260203T123126Z.zip`
+- Policy registry confirmed on L1 devnet: `0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf` (RPC `http://localhost:18545`)
+- Invariant tests completed with non-fatal Foundry warnings for target selectors/artifacts/senders/contracts/interfaces
+- Trivy vuln+secret scan completed clean; license collection warnings for missing npm/pnpm installs in upstream libraries
