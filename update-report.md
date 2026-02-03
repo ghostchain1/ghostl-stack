@@ -168,3 +168,18 @@ Result: PASS (policy primitives wired; see report)
 
 Notes:
 - Report: `contracts/reports/policy_primitives_status.json`
+
+## 2026-02-03 AI Governance Invariants (Phase 2)
+
+Command:
+
+```
+cd contracts
+npm run test:invariant
+```
+
+Result: PASS
+
+Notes:
+- Added policy delay, emergency expiry, and rollback invariants to `docs/security/ai-governance-invariants.yaml`
+- Tests updated in `contracts/test/invariants/AIConstitution.invariant.t.sol`
