@@ -11,6 +11,11 @@ interface IAgentGovernancePolicy {
     function recordAction(bytes32 role, bytes32 action) external;
 }
 
+interface IAIModelLock {
+    function frozen() external view returns (bool);
+    function isModelAllowed(bytes32 modelId) external view returns (bool);
+}
+
 /// @notice Executes AI-attested decisions with feed-verified inputs and guarded actions.
 contract AICommandCenter is Ownable {
     uint8 public constant L1 = 1;
@@ -86,6 +91,7 @@ contract AICommandCenter is Ownable {
     mapping(bytes32 => uint32) public modelMinConfidenceBps;
     mapping(bytes32 => bytes32) public modelInputSchemaHash;
     mapping(bytes32 => bytes32) public modelOutputSchemaHash;
+    IAIModelLock public modelLock;
     mapping(address => mapping(bytes4 => ActionPolicy)) public actionPolicies;
     mapping(bytes32 => uint64) public lastActionAt;
     mapping(bytes32 => bool) public usedDecisions;
@@ -140,6 +146,7 @@ contract AICommandCenter is Ownable {
     event ActionPolicyUpdated(address indexed target, bytes4 indexed selector, ActionPolicy policy);
     event DecisionExecuted(bytes32 indexed decisionHash, address indexed target, bytes4 indexed selector, uint64 gasLimit);
     event PausedSet(bool paused);
+    event ModelLockUpdated(address indexed modelLock);
     event GovernanceConfigUpdated(address indexed governor, address indexed timelock);
     event EvidenceBundleUpdated(address indexed bundle);
     event ConstitutionalGuardUpdated(address indexed guard);
@@ -224,6 +231,11 @@ contract AICommandCenter is Ownable {
         enforcePolicyRegistry = enforce;
         recordPolicyRegistry = record;
         emit PolicyRegistryUpdated(registry, policyRole, enforce, record);
+    }
+
+    function setModelLock(IAIModelLock modelLock_) external onlyGovernanceOrBootstrap {
+        modelLock = modelLock_;
+        emit ModelLockUpdated(address(modelLock_));
     }
 
     function setActionRiskBps(address target, bytes4 selector, uint16 riskScoreBps) external onlyGovernance {
@@ -404,7 +416,13 @@ contract AICommandCenter is Ownable {
         require(decision.validUntil >= block.timestamp, "expired");
         require(decision.issuedAt <= block.timestamp, "future");
         require(block.timestamp - decision.issuedAt <= maxDecisionAge, "stale");
-        require(allowedModels[decision.modelId], "model not allowed");
+        IAIModelLock lock = modelLock;
+        if (address(lock) != address(0)) {
+            require(!lock.frozen(), "frozen");
+            require(lock.isModelAllowed(decision.modelId), "model not allowed");
+        } else {
+            require(allowedModels[decision.modelId], "model not allowed");
+        }
         require(decision.confidenceBps >= _requiredConfidence(decision.modelId), "low confidence");
         if (requireOffchainDigest) {
             _checkOffchainDigest(decision.offchainDigest);

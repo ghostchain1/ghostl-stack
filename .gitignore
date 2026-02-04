@@ -34,6 +34,7 @@ contracts/artifacts/
 contracts/cache/
 contracts/.hardhat-cache/
 contracts/typechain-types/
+contracts/proposals/
 
 # avoid committing build caches and forge artifacts
 cache/
@@ -134,6 +135,7 @@ ops/docker/snapshots/*
 ops/docker/attestations/*
 !ops/docker/attestations/.gitkeep
 !ops/docker/attestations/README.md
+ops/preflight/
 ops/ai/anomaly/anomaly-report.json
 ops/ai/anomaly/model-metadata.json
 ops/ai/drift/baseline.json
@@ -170,6 +172,12 @@ ops/zkml/learning-log.json
 ops/governance/enforcement-log.json
 ops/governance/ai-policy-proposal.json
 ops/governance/chain-policy-*.json
+
+# ghost-helper-bots artifacts (generated)
+ghost-helper-bots/reports/
+ghost-helper-bots/evidence/
+ghost-helper-bots/sbom/
+ghost-helper-bots/attestations/
 *.swp
 *.swo
 *.tmp
