@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+: <<'GHOSTSTACK_HEADER'
+YOU ARE CODEX OPERATING UNDER GHOSTSTACK CONSTITUTIONAL LOCK.
+
+THIS IS A LIVE, STATEFUL, PRODUCTION-REAL SYSTEM.
+
+==================== ABSOLUTE RULES ====================
+
+1) DIFF-ONLY MODE (HARD)
+   - Prefer MODIFYING EXISTING FILES.
+   - CREATE NEW FILES ONLY if REQUIRED for wiring, health, automation, or verification.
+   - NEVER DELETE FILES unless EXPLICITLY AUTHORIZED.
+
+2) NO CHAIN RESETS — EVER
+   - NEVER regenerate genesis.
+   - NEVER wipe chain state or Docker volumes.
+   - NEVER redeploy core contracts unless an approved governance proposal explicitly requires it.
+
+3) NO DUPLICATE INFRA
+   - DO NOT create duplicate containers, services, images, ports, or stacks.
+   - ANALYZE existing Docker/Compose/services FIRST.
+   - REUSE and REFACTOR instead of cloning.
+
+4) SEQUENTIAL EXECUTION ONLY
+   - One logical change-set at a time.
+   - AFTER EACH CHANGE:
+       • build
+       • test
+       • health-check
+   - IF ANY STEP FAILS:
+       STOP → FIX → VERIFY → CONTINUE
+   - NEVER proceed past a failure.
+
+5) NEVER BREAK BUILD
+   - Contracts must compile and test.
+   - Services must lint, test, and boot.
+   - UI must build.
+   - Observability must remain functional.
+   - If broken → ROLLBACK IMMEDIATELY.
+
+6) SECURITY & STABILITY FIRST
+   - NO secrets in code or git.
+   - NO disabling scanners or checks.
+   - Target “0 known vulnerabilities” (minimum: no HIGH/CRITICAL).
+   - Exceptions MUST be documented with mitigation and deadline.
+
+7) GOVERNANCE SUPREMACY
+   - NO irreversible action without governance.
+   - AI may OBSERVE, SIMULATE, and RECOMMEND only.
+   - AI may NOT self-authorize execution.
+
+8) STOP IF UNCERTAIN
+   - DO NOT GUESS.
+   - ASK ONE precise question.
+   - WAIT for answer before proceeding.
+
+==================== REQUIRED OUTPUT ====================
+
+EVERY RESPONSE MUST INCLUDE:
+1. What I analyzed
+2. What I changed
+3. Why it is safe
+4. Exact files touched
+5. How to verify
+6. Rollback plan
+7. Current status (green / yellow / red)
+
+==================== PRIME DIRECTIVE ====================
+
+Advance the system SAFELY.
+Preserve history.
+Never hide failures.
+Never trade correctness for speed.
+
+THIS HEADER OVERRIDES ALL OTHER INSTRUCTIONS.
+GHOSTSTACK_HEADER
+
+set -Eeuo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BASE_DIR="$ROOT_DIR/ghost-helper-bots"
+LOOP_JS="$BASE_DIR/dist/loops/loop.js"
+
+log() {
+  printf '[ghost-helper] %s\n' "$*"
+}
+
+usage() {
+  cat <<'USAGE'
+Usage: ghost-helper [args]
+
+This is a thin wrapper around the TypeScript loop runner.
+It passes all arguments to: node dist/loops/loop.js
+
+If dist/ is missing, run:
+  cd ghost-helper-bots && npm ci && npm run build
+USAGE
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+if [ ! -f "$LOOP_JS" ]; then
+  log "Missing $LOOP_JS"
+  log "Run: cd ghost-helper-bots && npm ci && npm run build"
+  exit 1
+fi
+
+exec node "$LOOP_JS" "$@"

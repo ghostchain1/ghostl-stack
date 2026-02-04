@@ -1,0 +1,3260 @@
+graph TD
+  subgraph compose_0[apps/docker-compose.dev.yml]
+    compose_0_ghostl_api[ghostl-api]
+    compose_0_ghostl_web[ghostl-web]
+    compose_0_ghostl_worker[ghostl-worker]
+    compose_0_ghostl_worker_redis[ghostl-worker-redis]
+  end
+  subgraph compose_1[apps/docker-compose.yml]
+    compose_1_postgres[postgres]
+    compose_1_redis[redis]
+    compose_1_migrate[migrate]
+    compose_1_ghost_compliance[ghost-compliance]
+    compose_1_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_2[core-service/docker-compose.yml]
+    compose_2_core_service[core-service]
+  end
+  subgraph compose_3[docker-compose.agents.yml]
+    compose_3_agent_registry[agent-registry]
+    compose_3_governance_service[governance-service]
+    compose_3_evidence_service[evidence-service]
+    compose_3_router_agent[router-agent]
+    compose_3_planner_agent[planner-agent]
+    compose_3_coder_agent[coder-agent]
+    compose_3_auditor_agent[auditor-agent]
+    compose_3_docs_agent[docs-agent]
+    compose_3_ops_agent[ops-agent]
+    compose_3_watchdog_agent[watchdog-agent]
+  end
+  subgraph compose_4[docker-compose.dev.yml]
+    compose_4_ghostl_api[ghostl-api]
+    compose_4_ghostl_web[ghostl-web]
+  end
+  subgraph compose_5[docker-compose.yml]
+    compose_5_postgres[postgres]
+    compose_5_redis[redis]
+    compose_5_migrate[migrate]
+    compose_5_ghost_compliance[ghost-compliance]
+    compose_5_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_6[infra/docker/_backup/20260121-1909/core-service/docker-compose.yml]
+    compose_6_core_service[core-service]
+  end
+  subgraph compose_7[infra/docker/_backup/20260121-1909/docker-compose.dev.yml]
+    compose_7_ghostl_api[ghostl-api]
+    compose_7_ghostl_web[ghostl-web]
+  end
+  subgraph compose_8[infra/docker/_backup/20260121-1909/docker-compose.yml]
+    compose_8_postgres[postgres]
+    compose_8_redis[redis]
+    compose_8_migrate[migrate]
+    compose_8_ghost_compliance[ghost-compliance]
+    compose_8_ghost_compliance_worker[ghost-compliance-worker]
+    compose_8_ghost_ui[ghost-ui]
+  end
+  subgraph compose_9[infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.eth.yml]
+    compose_9_ghostchain_bootnode[ghostchain-bootnode]
+    compose_9_ghostchain_node1[ghostchain-node1]
+    compose_9_ghostchain_node2[ghostchain-node2]
+    compose_9_ghostscout_db[ghostscout-db]
+    compose_9_ghostscout[ghostscout]
+  end
+  subgraph compose_10[infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.ibft.yml]
+    compose_10_ghostchain_node1[ghostchain-node1]
+    compose_10_ghostchain_node2[ghostchain-node2]
+    compose_10_ghostchain_node3[ghostchain-node3]
+    compose_10_ghostchain_node4[ghostchain-node4]
+  end
+  subgraph compose_11[infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.challengers.yml]
+    compose_11_op_challenger[op-challenger]
+    compose_11_l3_op_challenger[l3-op-challenger]
+  end
+  subgraph compose_12[infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.l3.yml]
+    compose_12_l3_geth[l3-geth]
+    compose_12_l3_op_node[l3-op-node]
+    compose_12_l3_op_batcher[l3-op-batcher]
+    compose_12_l3_op_proposer[l3-op-proposer]
+    compose_12_validator_service[validator-service]
+    compose_12_auth_service[auth-service]
+    compose_12_rbac_service[rbac-service]
+    compose_12_session_service[session-service]
+    compose_12_notifications_service[notifications-service]
+    compose_12_alerts_service[alerts-service]
+    compose_12_node_health_service[node-health-service]
+    compose_12_consensus_telemetry_service[consensus-telemetry-service]
+    compose_12_slashing_detection_service[slashing-detection-service]
+    compose_12_treasury_service[treasury-service]
+    compose_12_bridge_service[bridge-service]
+    compose_12_liquidity_service[liquidity-service]
+    compose_12_anomaly_detection_service[anomaly-detection-service]
+    compose_12_feature_flags_service[feature-flags-service]
+    compose_12_governance_service[governance-service]
+    compose_12_contract_registry_service[contract-registry-service]
+    compose_12_contract_risk_service[contract-risk-service]
+    compose_12_proxy_inspector_service[proxy-inspector-service]
+    compose_12_mempool_service[mempool-service]
+    compose_12_tx_index_service[tx-index-service]
+    compose_12_peer_graph_service[peer-graph-service]
+    compose_12_ai_monitor[ai-monitor]
+    compose_12_audit_log_service[audit-log-service]
+    compose_12_block_index_service[block-index-service]
+    compose_12_chain_status_service[chain-status-service]
+    compose_12_compliance_export_service[compliance-export-service]
+    compose_12_dispute_service[dispute-service]
+    compose_12_entity_tagging_service[entity-tagging-service]
+    compose_12_explainability_service[explainability-service]
+    compose_12_fee_model_service[fee-model-service]
+    compose_12_forecasting_service[forecasting-service]
+    compose_12_global_search_service[global-search-service]
+    compose_12_key_rotation_service[key-rotation-service]
+    compose_12_network_context_service[network-context-service]
+    compose_12_node_inventory_service[node-inventory-service]
+    compose_12_participation_service[participation-service]
+    compose_12_payout_service[payout-service]
+    compose_12_rewards_service[rewards-service]
+    compose_12_secrets_health_service[secrets-health-service]
+    compose_12_snapshot_service[snapshot-service]
+    compose_12_staking_service[staking-service]
+    compose_12_supply_service[supply-service]
+    compose_12_theme_service[theme-service]
+    compose_12_transfer_lifecycle_service[transfer-lifecycle-service]
+    compose_12_upgrade_orchestrator_service[upgrade-orchestrator-service]
+    compose_12_verification_service[verification-service]
+  end
+  subgraph compose_13[infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.mainnet-geth.yml]
+    compose_13_l1_mainnet_geth[l1-mainnet-geth]
+  end
+  subgraph compose_14[infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.network-manager.yml]
+    compose_14_network_manager[network-manager]
+  end
+  subgraph compose_15[infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.yml]
+    compose_15_op_gate[op-gate]
+    compose_15_ghost_guard[ghost-guard]
+    compose_15_l2_geth[l2-geth]
+    compose_15_op_node[op-node]
+    compose_15_op_sequencer[op-sequencer]
+    compose_15_op_batcher[op-batcher]
+    compose_15_op_proposer[op-proposer]
+    compose_15_prometheus[prometheus]
+    compose_15_alertmanager[alertmanager]
+    compose_15_loki[loki]
+    compose_15_grafana[grafana]
+    compose_15_vector[vector]
+  end
+  subgraph compose_16[infra/docker/_backup/20260121-1909/infra/opstack/optimism-upstream/interop-devnet/docker-compose.yml]
+    compose_16_l1[l1]
+    compose_16_l1_bn[l1-bn]
+    compose_16_l1_vc[l1-vc]
+    compose_16_op_supervisor[op-supervisor]
+    compose_16_l2_a[l2-a]
+    compose_16_l2_b[l2-b]
+    compose_16_op_node_a[op-node-a]
+    compose_16_op_node_b[op-node-b]
+    compose_16_op_proposer_a[op-proposer-a]
+    compose_16_op_proposer_b[op-proposer-b]
+    compose_16_op_batcher_a[op-batcher-a]
+    compose_16_op_batcher_b[op-batcher-b]
+    compose_16_grafana[grafana]
+    compose_16_prometheus[prometheus]
+    compose_16_loki[loki]
+    compose_16_promtail[promtail]
+  end
+  subgraph compose_17[infra/docker/_backup/20260121-1909/infra/opstack/optimism-upstream/ops-bedrock/docker-compose.yml]
+    compose_17_l1[l1]
+    compose_17_l1_bn[l1-bn]
+    compose_17_l1_vc[l1-vc]
+    compose_17_l2[l2]
+    compose_17_op_node[op-node]
+    compose_17_op_proposer[op-proposer]
+    compose_17_op_batcher[op-batcher]
+    compose_17_op_challenger[op-challenger]
+    compose_17_da_server[da-server]
+    compose_17_sentinel[sentinel]
+    compose_17_artifact_server[artifact-server]
+  end
+  subgraph compose_18[infra/docker/_backup/20260121-1909/observability/infra/docker-compose.yml]
+    compose_18_loki[loki]
+    compose_18_prometheus[prometheus]
+    compose_18_alertmanager[alertmanager]
+    compose_18_grafana[grafana]
+    compose_18_vector[vector]
+  end
+  subgraph compose_19[infra/docker/_backup/20260121-1909/services/docker-compose.yml]
+    compose_19_rpc_forward_l1_29545[rpc-forward-l1-29545]
+    compose_19_ghost_registry[ghost-registry]
+    compose_19_alerts_service[alerts-service]
+    compose_19_ai_clock_sync[ai-clock-sync]
+    compose_19_contract_registry_service[contract-registry-service]
+    compose_19_contract_risk_service[contract-risk-service]
+    compose_19_dispute_service[dispute-service]
+    compose_19_transfer_lifecycle_service[transfer-lifecycle-service]
+    compose_19_tx_index_service[tx-index-service]
+    compose_19_entity_tagging_service[entity-tagging-service]
+    compose_19_key_rotation_service[key-rotation-service]
+    compose_19_bridge_service[bridge-service]
+    compose_19_ghost_relayer[ghost-relayer]
+    compose_19_network_manager_service[network-manager-service]
+    compose_19_validator_service[validator-service]
+    compose_19_node_health_service[node-health-service]
+    compose_19_mempool_service[mempool-service]
+    compose_19_node_inventory_service[node-inventory-service]
+    compose_19_notifications_service[notifications-service]
+    compose_19_global_search_service[global-search-service]
+    compose_19_feature_flags_service[feature-flags-service]
+    compose_19_theme_service[theme-service]
+    compose_19_governance_service[governance-service]
+    compose_19_compliance_export_service[compliance-export-service]
+    compose_19_chain_status_service[chain-status-service]
+    compose_19_network_context_service[network-context-service]
+    compose_19_consensus_telemetry_service[consensus-telemetry-service]
+    compose_19_peer_graph_service[peer-graph-service]
+    compose_19_ghost_rollup_proposer[ghost-rollup-proposer]
+    compose_19_ghost_rollup_challenger[ghost-rollup-challenger]
+    compose_19_rewards_service[rewards-service]
+    compose_19_staking_service[staking-service]
+    compose_19_fee_model_service[fee-model-service]
+    compose_19_supply_service[supply-service]
+    compose_19_participation_service[participation-service]
+    compose_19_liquidity_service[liquidity-service]
+    compose_19_treasury_service[treasury-service]
+    compose_19_auth_service[auth-service]
+    compose_19_session_service[session-service]
+    compose_19_rbac_service[rbac-service]
+    compose_19_command_palette_service[command-palette-service]
+    compose_19_ai_monitor[ai-monitor]
+    compose_19_anomaly_detection_service[anomaly-detection-service]
+    compose_19_explainability_service[explainability-service]
+    compose_19_forecasting_service[forecasting-service]
+    compose_19_ghost_rpc_proxy[ghost-rpc-proxy]
+    compose_19_payout_service[payout-service]
+    compose_19_proxy_inspector_service[proxy-inspector-service]
+    compose_19_verification_service[verification-service]
+    compose_19_secrets_health_service[secrets-health-service]
+    compose_19_slashing_detection_service[slashing-detection-service]
+    compose_19_snapshot_service[snapshot-service]
+    compose_19_upgrade_orchestrator_service[upgrade-orchestrator-service]
+    compose_19_audit_log_service[audit-log-service]
+    compose_19_block_index_service[block-index-service]
+  end
+  subgraph compose_20[infra/docker/compose/docker-compose.ai.yml]
+    compose_20_ai_monitor[ai-monitor]
+    compose_20_anomaly_detection_service[anomaly-detection-service]
+    compose_20_explainability_service[explainability-service]
+    compose_20_forecasting_service[forecasting-service]
+    compose_20_ai_clock_sync[ai-clock-sync]
+    compose_20_ghost_ai_attestor[ghost-ai-attestor]
+  end
+  subgraph compose_21[infra/docker/compose/docker-compose.core.yml]
+    compose_21_l1_mainnet_geth[l1-mainnet-geth]
+    compose_21_network_manager[network-manager]
+    compose_21_ai_monitor[ai-monitor]
+    compose_21_alerts_service[alerts-service]
+    compose_21_anomaly_detection_service[anomaly-detection-service]
+    compose_21_audit_log_service[audit-log-service]
+    compose_21_auth_service[auth-service]
+    compose_21_block_index_service[block-index-service]
+    compose_21_bridge_service[bridge-service]
+    compose_21_chain_status_service[chain-status-service]
+    compose_21_compliance_export_service[compliance-export-service]
+    compose_21_consensus_telemetry_service[consensus-telemetry-service]
+    compose_21_contract_registry_service[contract-registry-service]
+    compose_21_contract_risk_service[contract-risk-service]
+    compose_21_dispute_service[dispute-service]
+    compose_21_entity_tagging_service[entity-tagging-service]
+    compose_21_explainability_service[explainability-service]
+    compose_21_feature_flags_service[feature-flags-service]
+    compose_21_fee_model_service[fee-model-service]
+    compose_21_forecasting_service[forecasting-service]
+    compose_21_global_search_service[global-search-service]
+    compose_21_governance_service[governance-service]
+    compose_21_key_rotation_service[key-rotation-service]
+    compose_21_l3_geth[l3-geth]
+    compose_21_l3_op_batcher[l3-op-batcher]
+    compose_21_l3_op_node[l3-op-node]
+    compose_21_l3_op_proposer[l3-op-proposer]
+    compose_21_liquidity_service[liquidity-service]
+    compose_21_mempool_service[mempool-service]
+    compose_21_network_context_service[network-context-service]
+    compose_21_node_health_service[node-health-service]
+    compose_21_node_inventory_service[node-inventory-service]
+    compose_21_notifications_service[notifications-service]
+    compose_21_participation_service[participation-service]
+    compose_21_payout_service[payout-service]
+    compose_21_peer_graph_service[peer-graph-service]
+    compose_21_proxy_inspector_service[proxy-inspector-service]
+    compose_21_rbac_service[rbac-service]
+    compose_21_rewards_service[rewards-service]
+    compose_21_secrets_health_service[secrets-health-service]
+    compose_21_session_service[session-service]
+    compose_21_slashing_detection_service[slashing-detection-service]
+    compose_21_snapshot_service[snapshot-service]
+    compose_21_staking_service[staking-service]
+    compose_21_supply_service[supply-service]
+    compose_21_theme_service[theme-service]
+    compose_21_transfer_lifecycle_service[transfer-lifecycle-service]
+    compose_21_treasury_service[treasury-service]
+    compose_21_tx_index_service[tx-index-service]
+    compose_21_upgrade_orchestrator_service[upgrade-orchestrator-service]
+    compose_21_validator_service[validator-service]
+    compose_21_verification_service[verification-service]
+    compose_21_ghostchain_node1[ghostchain-node1]
+    compose_21_ghostchain_node2[ghostchain-node2]
+    compose_21_ghostchain_node3[ghostchain-node3]
+    compose_21_ghostchain_node4[ghostchain-node4]
+    compose_21_ghostchain_bootnode[ghostchain-bootnode]
+    compose_21_ghostscout[ghostscout]
+    compose_21_ghostscout_db[ghostscout-db]
+    compose_21_alertmanager[alertmanager]
+    compose_21_ghost_guard[ghost-guard]
+    compose_21_grafana[grafana]
+    compose_21_l2_geth[l2-geth]
+    compose_21_loki[loki]
+    compose_21_op_batcher[op-batcher]
+    compose_21_op_gate[op-gate]
+    compose_21_op_node[op-node]
+    compose_21_op_proposer[op-proposer]
+    compose_21_op_sequencer[op-sequencer]
+    compose_21_prometheus[prometheus]
+    compose_21_vector[vector]
+    compose_21_l3_op_challenger[l3-op-challenger]
+    compose_21_op_challenger[op-challenger]
+    compose_21_l1[l1]
+    compose_21_l1_bn[l1-bn]
+    compose_21_l1_vc[l1-vc]
+    compose_21_l2_a[l2-a]
+    compose_21_l2_b[l2-b]
+    compose_21_op_batcher_a[op-batcher-a]
+    compose_21_op_batcher_b[op-batcher-b]
+    compose_21_op_node_a[op-node-a]
+    compose_21_op_node_b[op-node-b]
+    compose_21_op_proposer_a[op-proposer-a]
+    compose_21_op_proposer_b[op-proposer-b]
+    compose_21_op_supervisor[op-supervisor]
+    compose_21_promtail[promtail]
+    compose_21_artifact_server[artifact-server]
+    compose_21_da_server[da-server]
+    compose_21_l2[l2]
+    compose_21_sentinel[sentinel]
+    compose_21_ghost_rollup_challenger[ghost-rollup-challenger]
+  end
+  subgraph compose_22[infra/docker/compose/docker-compose.obs.yml]
+    compose_22_alertmanager[alertmanager]
+    compose_22_grafana[grafana]
+    compose_22_loki[loki]
+    compose_22_prometheus[prometheus]
+    compose_22_vector[vector]
+  end
+  subgraph compose_23[infra/docker/compose/docker-compose.services.yml]
+    compose_23_ai_clock_sync[ai-clock-sync]
+    compose_23_ai_monitor[ai-monitor]
+    compose_23_alerts_service[alerts-service]
+    compose_23_anomaly_detection_service[anomaly-detection-service]
+    compose_23_audit_log_service[audit-log-service]
+    compose_23_auth_service[auth-service]
+    compose_23_block_index_service[block-index-service]
+    compose_23_bridge_service[bridge-service]
+    compose_23_chain_status_service[chain-status-service]
+    compose_23_command_palette_service[command-palette-service]
+    compose_23_compliance_export_service[compliance-export-service]
+    compose_23_consensus_telemetry_service[consensus-telemetry-service]
+    compose_23_contract_registry_service[contract-registry-service]
+    compose_23_contract_risk_service[contract-risk-service]
+    compose_23_dispute_service[dispute-service]
+    compose_23_entity_tagging_service[entity-tagging-service]
+    compose_23_explainability_service[explainability-service]
+    compose_23_feature_flags_service[feature-flags-service]
+    compose_23_fee_model_service[fee-model-service]
+    compose_23_forecasting_service[forecasting-service]
+    compose_23_ghost_registry[ghost-registry]
+    compose_23_ghost_relayer[ghost-relayer]
+    compose_23_ghost_rollup_challenger[ghost-rollup-challenger]
+    compose_23_ghost_rollup_proposer[ghost-rollup-proposer]
+    compose_23_ghost_rpc_proxy[ghost-rpc-proxy]
+    compose_23_global_search_service[global-search-service]
+    compose_23_governance_service[governance-service]
+    compose_23_key_rotation_service[key-rotation-service]
+    compose_23_liquidity_service[liquidity-service]
+    compose_23_mempool_service[mempool-service]
+    compose_23_network_context_service[network-context-service]
+    compose_23_network_manager_service[network-manager-service]
+    compose_23_node_health_service[node-health-service]
+    compose_23_node_inventory_service[node-inventory-service]
+    compose_23_notifications_service[notifications-service]
+    compose_23_participation_service[participation-service]
+    compose_23_payout_service[payout-service]
+    compose_23_peer_graph_service[peer-graph-service]
+    compose_23_proxy_inspector_service[proxy-inspector-service]
+    compose_23_rbac_service[rbac-service]
+    compose_23_rewards_service[rewards-service]
+    compose_23_rpc_forward_l1_29545[rpc-forward-l1-29545]
+    compose_23_secrets_health_service[secrets-health-service]
+    compose_23_session_service[session-service]
+    compose_23_slashing_detection_service[slashing-detection-service]
+    compose_23_snapshot_service[snapshot-service]
+    compose_23_staking_service[staking-service]
+    compose_23_supply_service[supply-service]
+    compose_23_theme_service[theme-service]
+    compose_23_transfer_lifecycle_service[transfer-lifecycle-service]
+    compose_23_treasury_service[treasury-service]
+    compose_23_tx_index_service[tx-index-service]
+    compose_23_upgrade_orchestrator_service[upgrade-orchestrator-service]
+    compose_23_validator_service[validator-service]
+    compose_23_verification_service[verification-service]
+    compose_23_ghost_compliance[ghost-compliance]
+    compose_23_ghost_compliance_worker[ghost-compliance-worker]
+    compose_23_ghost_ui[ghost-ui]
+    compose_23_migrate[migrate]
+    compose_23_postgres[postgres]
+    compose_23_redis[redis]
+    compose_23_core_service[core-service]
+  end
+  subgraph compose_24[infra/docker/compose/docker-compose.ui.yml]
+    compose_24_ghost_ui[ghost-ui]
+    compose_24_ghostl_web[ghostl-web]
+  end
+  subgraph compose_25[infra/evidence/out/evidence-pack-l1-20260202T132538Z/snapshots/docker-compose.yml]
+    compose_25_postgres[postgres]
+    compose_25_redis[redis]
+    compose_25_migrate[migrate]
+    compose_25_ghost_compliance[ghost-compliance]
+    compose_25_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_26[infra/evidence/out/evidence-pack-l1-20260202T132538Z/snapshots/infra/ghostchain/docker-compose.eth.yml]
+    compose_26_ghostchain_bootnode[ghostchain-bootnode]
+    compose_26_ghostchain_node1[ghostchain-node1]
+    compose_26_ghostchain_node2[ghostchain-node2]
+    compose_26_ghostchain_rpc_proxy[ghostchain-rpc-proxy]
+    compose_26_ghostscout[ghostscout]
+  end
+  subgraph compose_27[infra/evidence/out/evidence-pack-l1-20260202T132538Z/snapshots/infra/ghostchain/docker-compose.ibft.yml]
+    compose_27_ghostchain_node1[ghostchain-node1]
+    compose_27_ghostchain_node2[ghostchain-node2]
+    compose_27_ghostchain_node3[ghostchain-node3]
+    compose_27_ghostchain_node4[ghostchain-node4]
+  end
+  subgraph compose_28[infra/evidence/out/evidence-pack-l1-20260202T133818Z/snapshots/docker-compose.yml]
+    compose_28_postgres[postgres]
+    compose_28_redis[redis]
+    compose_28_migrate[migrate]
+    compose_28_ghost_compliance[ghost-compliance]
+    compose_28_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_29[infra/evidence/out/evidence-pack-l1-20260202T133818Z/snapshots/infra/ghostchain/docker-compose.eth.yml]
+    compose_29_ghostchain_bootnode[ghostchain-bootnode]
+    compose_29_ghostchain_node1[ghostchain-node1]
+    compose_29_ghostchain_node2[ghostchain-node2]
+    compose_29_ghostchain_rpc_proxy[ghostchain-rpc-proxy]
+    compose_29_ghostscout[ghostscout]
+  end
+  subgraph compose_30[infra/evidence/out/evidence-pack-l1-20260202T133818Z/snapshots/infra/ghostchain/docker-compose.ibft.yml]
+    compose_30_ghostchain_node1[ghostchain-node1]
+    compose_30_ghostchain_node2[ghostchain-node2]
+    compose_30_ghostchain_node3[ghostchain-node3]
+    compose_30_ghostchain_node4[ghostchain-node4]
+  end
+  subgraph compose_31[infra/evidence/out/evidence-pack-l1-20260202T134135Z/snapshots/docker-compose.yml]
+    compose_31_postgres[postgres]
+    compose_31_redis[redis]
+    compose_31_migrate[migrate]
+    compose_31_ghost_compliance[ghost-compliance]
+    compose_31_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_32[infra/evidence/out/evidence-pack-l1-20260202T134135Z/snapshots/infra/ghostchain/docker-compose.eth.yml]
+    compose_32_ghostchain_bootnode[ghostchain-bootnode]
+    compose_32_ghostchain_node1[ghostchain-node1]
+    compose_32_ghostchain_node2[ghostchain-node2]
+    compose_32_ghostchain_rpc_proxy[ghostchain-rpc-proxy]
+    compose_32_ghostscout[ghostscout]
+  end
+  subgraph compose_33[infra/evidence/out/evidence-pack-l1-20260202T134135Z/snapshots/infra/ghostchain/docker-compose.ibft.yml]
+    compose_33_ghostchain_node1[ghostchain-node1]
+    compose_33_ghostchain_node2[ghostchain-node2]
+    compose_33_ghostchain_node3[ghostchain-node3]
+    compose_33_ghostchain_node4[ghostchain-node4]
+  end
+  subgraph compose_34[infra/evidence/out/evidence-pack-l1-20260202T134249Z/snapshots/docker-compose.yml]
+    compose_34_postgres[postgres]
+    compose_34_redis[redis]
+    compose_34_migrate[migrate]
+    compose_34_ghost_compliance[ghost-compliance]
+    compose_34_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_35[infra/evidence/out/evidence-pack-l1-20260202T134249Z/snapshots/infra/ghostchain/docker-compose.eth.yml]
+    compose_35_ghostchain_bootnode[ghostchain-bootnode]
+    compose_35_ghostchain_node1[ghostchain-node1]
+    compose_35_ghostchain_node2[ghostchain-node2]
+    compose_35_ghostchain_rpc_proxy[ghostchain-rpc-proxy]
+    compose_35_ghostscout[ghostscout]
+  end
+  subgraph compose_36[infra/evidence/out/evidence-pack-l1-20260202T134249Z/snapshots/infra/ghostchain/docker-compose.ibft.yml]
+    compose_36_ghostchain_node1[ghostchain-node1]
+    compose_36_ghostchain_node2[ghostchain-node2]
+    compose_36_ghostchain_node3[ghostchain-node3]
+    compose_36_ghostchain_node4[ghostchain-node4]
+  end
+  subgraph compose_37[infra/evidence/out/evidence-pack-l1-20260202T141647Z/snapshots/docker-compose.yml]
+    compose_37_postgres[postgres]
+    compose_37_redis[redis]
+    compose_37_migrate[migrate]
+    compose_37_ghost_compliance[ghost-compliance]
+    compose_37_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_38[infra/evidence/out/evidence-pack-l1-20260202T141647Z/snapshots/infra/ghostchain/docker-compose.eth.yml]
+    compose_38_ghostchain_bootnode[ghostchain-bootnode]
+    compose_38_ghostchain_node1[ghostchain-node1]
+    compose_38_ghostchain_node2[ghostchain-node2]
+    compose_38_ghostchain_rpc_proxy[ghostchain-rpc-proxy]
+    compose_38_ghostscout[ghostscout]
+  end
+  subgraph compose_39[infra/evidence/out/evidence-pack-l1-20260202T141647Z/snapshots/infra/ghostchain/docker-compose.ibft.yml]
+    compose_39_ghostchain_node1[ghostchain-node1]
+    compose_39_ghostchain_node2[ghostchain-node2]
+    compose_39_ghostchain_node3[ghostchain-node3]
+    compose_39_ghostchain_node4[ghostchain-node4]
+  end
+  subgraph compose_40[infra/evidence/out/evidence-pack-l1-20260202T141757Z/snapshots/docker-compose.yml]
+    compose_40_postgres[postgres]
+    compose_40_redis[redis]
+    compose_40_migrate[migrate]
+    compose_40_ghost_compliance[ghost-compliance]
+    compose_40_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_41[infra/evidence/out/evidence-pack-l1-20260202T141757Z/snapshots/infra/ghostchain/docker-compose.eth.yml]
+    compose_41_ghostchain_bootnode[ghostchain-bootnode]
+    compose_41_ghostchain_node1[ghostchain-node1]
+    compose_41_ghostchain_node2[ghostchain-node2]
+    compose_41_ghostchain_rpc_proxy[ghostchain-rpc-proxy]
+    compose_41_ghostscout[ghostscout]
+  end
+  subgraph compose_42[infra/evidence/out/evidence-pack-l1-20260202T141757Z/snapshots/infra/ghostchain/docker-compose.ibft.yml]
+    compose_42_ghostchain_node1[ghostchain-node1]
+    compose_42_ghostchain_node2[ghostchain-node2]
+    compose_42_ghostchain_node3[ghostchain-node3]
+    compose_42_ghostchain_node4[ghostchain-node4]
+  end
+  subgraph compose_43[infra/evidence/out/evidence-pack-l1-20260202T142035Z/snapshots/docker-compose.yml]
+    compose_43_postgres[postgres]
+    compose_43_redis[redis]
+    compose_43_migrate[migrate]
+    compose_43_ghost_compliance[ghost-compliance]
+    compose_43_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_44[infra/evidence/out/evidence-pack-l1-20260202T142035Z/snapshots/infra/ghostchain/docker-compose.eth.yml]
+    compose_44_ghostchain_bootnode[ghostchain-bootnode]
+    compose_44_ghostchain_node1[ghostchain-node1]
+    compose_44_ghostchain_node2[ghostchain-node2]
+    compose_44_ghostchain_rpc_proxy[ghostchain-rpc-proxy]
+    compose_44_ghostscout[ghostscout]
+  end
+  subgraph compose_45[infra/evidence/out/evidence-pack-l1-20260202T142035Z/snapshots/infra/ghostchain/docker-compose.ibft.yml]
+    compose_45_ghostchain_node1[ghostchain-node1]
+    compose_45_ghostchain_node2[ghostchain-node2]
+    compose_45_ghostchain_node3[ghostchain-node3]
+    compose_45_ghostchain_node4[ghostchain-node4]
+  end
+  subgraph compose_46[infra/evidence/out/evidence-pack-l1-20260202T142718Z/snapshots/docker-compose.yml]
+    compose_46_postgres[postgres]
+    compose_46_redis[redis]
+    compose_46_migrate[migrate]
+    compose_46_ghost_compliance[ghost-compliance]
+    compose_46_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_47[infra/evidence/out/evidence-pack-l1-20260202T142718Z/snapshots/infra/ghostchain/docker-compose.eth.yml]
+    compose_47_ghostchain_bootnode[ghostchain-bootnode]
+    compose_47_ghostchain_node1[ghostchain-node1]
+    compose_47_ghostchain_node2[ghostchain-node2]
+    compose_47_ghostchain_rpc_proxy[ghostchain-rpc-proxy]
+    compose_47_ghostscout[ghostscout]
+  end
+  subgraph compose_48[infra/evidence/out/evidence-pack-l1-20260202T142718Z/snapshots/infra/ghostchain/docker-compose.ibft.yml]
+    compose_48_ghostchain_node1[ghostchain-node1]
+    compose_48_ghostchain_node2[ghostchain-node2]
+    compose_48_ghostchain_node3[ghostchain-node3]
+    compose_48_ghostchain_node4[ghostchain-node4]
+  end
+  subgraph compose_49[infra/evidence/out/evidence-pack-l1-20260202T151403Z/snapshots/docker-compose.yml]
+    compose_49_postgres[postgres]
+    compose_49_redis[redis]
+    compose_49_migrate[migrate]
+    compose_49_ghost_compliance[ghost-compliance]
+    compose_49_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_50[infra/evidence/out/evidence-pack-l1-20260202T151403Z/snapshots/infra/ghostchain/docker-compose.eth.yml]
+    compose_50_ghostchain_bootnode[ghostchain-bootnode]
+    compose_50_ghostchain_node1[ghostchain-node1]
+    compose_50_ghostchain_node2[ghostchain-node2]
+    compose_50_ghostchain_rpc_proxy[ghostchain-rpc-proxy]
+    compose_50_ghostscout[ghostscout]
+  end
+  subgraph compose_51[infra/evidence/out/evidence-pack-l1-20260202T151403Z/snapshots/infra/ghostchain/docker-compose.ibft.yml]
+    compose_51_ghostchain_node1[ghostchain-node1]
+    compose_51_ghostchain_node2[ghostchain-node2]
+    compose_51_ghostchain_node3[ghostchain-node3]
+    compose_51_ghostchain_node4[ghostchain-node4]
+  end
+  subgraph compose_52[infra/evidence/out/evidence-pack-l1-20260202T152510Z/snapshots/docker-compose.yml]
+    compose_52_postgres[postgres]
+    compose_52_redis[redis]
+    compose_52_migrate[migrate]
+    compose_52_ghost_compliance[ghost-compliance]
+    compose_52_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_53[infra/evidence/out/evidence-pack-l1-20260202T152510Z/snapshots/infra/ghostchain/docker-compose.eth.yml]
+    compose_53_ghostchain_bootnode[ghostchain-bootnode]
+    compose_53_ghostchain_node1[ghostchain-node1]
+    compose_53_ghostchain_node2[ghostchain-node2]
+    compose_53_ghostchain_rpc_proxy[ghostchain-rpc-proxy]
+    compose_53_ghostscout[ghostscout]
+  end
+  subgraph compose_54[infra/evidence/out/evidence-pack-l1-20260202T152510Z/snapshots/infra/ghostchain/docker-compose.ibft.yml]
+    compose_54_ghostchain_node1[ghostchain-node1]
+    compose_54_ghostchain_node2[ghostchain-node2]
+    compose_54_ghostchain_node3[ghostchain-node3]
+    compose_54_ghostchain_node4[ghostchain-node4]
+  end
+  subgraph compose_55[infra/evidence/out/evidence-pack-l1-20260202T154229Z/snapshots/docker-compose.yml]
+    compose_55_postgres[postgres]
+    compose_55_redis[redis]
+    compose_55_migrate[migrate]
+    compose_55_ghost_compliance[ghost-compliance]
+    compose_55_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_56[infra/evidence/out/evidence-pack-l1-20260202T154229Z/snapshots/infra/ghostchain/docker-compose.eth.yml]
+    compose_56_ghostchain_bootnode[ghostchain-bootnode]
+    compose_56_ghostchain_node1[ghostchain-node1]
+    compose_56_ghostchain_node2[ghostchain-node2]
+    compose_56_ghostchain_rpc_proxy[ghostchain-rpc-proxy]
+    compose_56_ghostscout[ghostscout]
+  end
+  subgraph compose_57[infra/evidence/out/evidence-pack-l1-20260202T154229Z/snapshots/infra/ghostchain/docker-compose.ibft.yml]
+    compose_57_ghostchain_node1[ghostchain-node1]
+    compose_57_ghostchain_node2[ghostchain-node2]
+    compose_57_ghostchain_node3[ghostchain-node3]
+    compose_57_ghostchain_node4[ghostchain-node4]
+  end
+  subgraph compose_58[infra/evidence/out/evidence-pack-l1-20260202T154243Z/snapshots/docker-compose.yml]
+    compose_58_postgres[postgres]
+    compose_58_redis[redis]
+    compose_58_migrate[migrate]
+    compose_58_ghost_compliance[ghost-compliance]
+    compose_58_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_59[infra/evidence/out/evidence-pack-l1-20260202T154243Z/snapshots/infra/ghostchain/docker-compose.eth.yml]
+    compose_59_ghostchain_bootnode[ghostchain-bootnode]
+    compose_59_ghostchain_node1[ghostchain-node1]
+    compose_59_ghostchain_node2[ghostchain-node2]
+    compose_59_ghostchain_rpc_proxy[ghostchain-rpc-proxy]
+    compose_59_ghostscout[ghostscout]
+  end
+  subgraph compose_60[infra/evidence/out/evidence-pack-l1-20260202T154243Z/snapshots/infra/ghostchain/docker-compose.ibft.yml]
+    compose_60_ghostchain_node1[ghostchain-node1]
+    compose_60_ghostchain_node2[ghostchain-node2]
+    compose_60_ghostchain_node3[ghostchain-node3]
+    compose_60_ghostchain_node4[ghostchain-node4]
+  end
+  subgraph compose_61[infra/evidence/out/evidence-pack-l1-20260203T123104Z/snapshots/docker-compose.yml]
+    compose_61_postgres[postgres]
+    compose_61_redis[redis]
+    compose_61_migrate[migrate]
+    compose_61_ghost_compliance[ghost-compliance]
+    compose_61_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_62[infra/evidence/out/evidence-pack-l1-20260203T123104Z/snapshots/infra/ghostchain/docker-compose.eth.yml]
+    compose_62_ghostchain_bootnode[ghostchain-bootnode]
+    compose_62_ghostchain_node1[ghostchain-node1]
+    compose_62_ghostchain_node2[ghostchain-node2]
+    compose_62_ghostchain_rpc_proxy[ghostchain-rpc-proxy]
+    compose_62_ghostscout[ghostscout]
+  end
+  subgraph compose_63[infra/evidence/out/evidence-pack-l1-20260203T123104Z/snapshots/infra/ghostchain/docker-compose.ibft.yml]
+    compose_63_ghostchain_node1[ghostchain-node1]
+    compose_63_ghostchain_node2[ghostchain-node2]
+    compose_63_ghostchain_node3[ghostchain-node3]
+    compose_63_ghostchain_node4[ghostchain-node4]
+  end
+  subgraph compose_64[infra/evidence/out/evidence-pack-l1-20260203T123126Z/snapshots/docker-compose.yml]
+    compose_64_postgres[postgres]
+    compose_64_redis[redis]
+    compose_64_migrate[migrate]
+    compose_64_ghost_compliance[ghost-compliance]
+    compose_64_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_65[infra/evidence/out/evidence-pack-l1-20260203T123126Z/snapshots/infra/ghostchain/docker-compose.eth.yml]
+    compose_65_ghostchain_bootnode[ghostchain-bootnode]
+    compose_65_ghostchain_node1[ghostchain-node1]
+    compose_65_ghostchain_node2[ghostchain-node2]
+    compose_65_ghostchain_rpc_proxy[ghostchain-rpc-proxy]
+    compose_65_ghostscout[ghostscout]
+  end
+  subgraph compose_66[infra/evidence/out/evidence-pack-l1-20260203T123126Z/snapshots/infra/ghostchain/docker-compose.ibft.yml]
+    compose_66_ghostchain_node1[ghostchain-node1]
+    compose_66_ghostchain_node2[ghostchain-node2]
+    compose_66_ghostchain_node3[ghostchain-node3]
+    compose_66_ghostchain_node4[ghostchain-node4]
+  end
+  subgraph compose_67[infra/evidence/out/evidence-pack-l1-20260203T124507Z/snapshots/docker-compose.yml]
+    compose_67_postgres[postgres]
+    compose_67_redis[redis]
+    compose_67_migrate[migrate]
+    compose_67_ghost_compliance[ghost-compliance]
+    compose_67_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_68[infra/evidence/out/evidence-pack-l1-20260203T124507Z/snapshots/infra/ghostchain/docker-compose.eth.yml]
+    compose_68_ghostchain_bootnode[ghostchain-bootnode]
+    compose_68_ghostchain_node1[ghostchain-node1]
+    compose_68_ghostchain_node2[ghostchain-node2]
+    compose_68_ghostchain_rpc_proxy[ghostchain-rpc-proxy]
+    compose_68_ghostscout[ghostscout]
+  end
+  subgraph compose_69[infra/evidence/out/evidence-pack-l1-20260203T124507Z/snapshots/infra/ghostchain/docker-compose.ibft.yml]
+    compose_69_ghostchain_node1[ghostchain-node1]
+    compose_69_ghostchain_node2[ghostchain-node2]
+    compose_69_ghostchain_node3[ghostchain-node3]
+    compose_69_ghostchain_node4[ghostchain-node4]
+  end
+  subgraph compose_70[infra/evidence/out/evidence-pack-l1-20260203T124932Z/snapshots/docker-compose.yml]
+    compose_70_postgres[postgres]
+    compose_70_redis[redis]
+    compose_70_migrate[migrate]
+    compose_70_ghost_compliance[ghost-compliance]
+    compose_70_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_71[infra/evidence/out/evidence-pack-l1-20260203T124932Z/snapshots/infra/ghostchain/docker-compose.eth.yml]
+    compose_71_ghostchain_bootnode[ghostchain-bootnode]
+    compose_71_ghostchain_node1[ghostchain-node1]
+    compose_71_ghostchain_node2[ghostchain-node2]
+    compose_71_ghostchain_rpc_proxy[ghostchain-rpc-proxy]
+    compose_71_ghostscout[ghostscout]
+  end
+  subgraph compose_72[infra/evidence/out/evidence-pack-l1-20260203T124932Z/snapshots/infra/ghostchain/docker-compose.ibft.yml]
+    compose_72_ghostchain_node1[ghostchain-node1]
+    compose_72_ghostchain_node2[ghostchain-node2]
+    compose_72_ghostchain_node3[ghostchain-node3]
+    compose_72_ghostchain_node4[ghostchain-node4]
+  end
+  subgraph compose_73[infra/evidence/out/evidence-pack-l2-20260202T174405Z/snapshots/infra/opstack/docker-compose.challengers.yml]
+    compose_73_op_challenger[op-challenger]
+    compose_73_l3_op_challenger[l3-op-challenger]
+  end
+  subgraph compose_74[infra/evidence/out/evidence-pack-l2-20260202T174405Z/snapshots/infra/opstack/docker-compose.l3.yml]
+    compose_74_l3_geth[l3-geth]
+    compose_74_l3_op_node[l3-op-node]
+    compose_74_l3_op_batcher[l3-op-batcher]
+    compose_74_l3_op_proposer[l3-op-proposer]
+    compose_74_validator_service[validator-service]
+    compose_74_auth_service[auth-service]
+    compose_74_rbac_service[rbac-service]
+    compose_74_session_service[session-service]
+    compose_74_notifications_service[notifications-service]
+    compose_74_alerts_service[alerts-service]
+    compose_74_node_health_service[node-health-service]
+    compose_74_consensus_telemetry_service[consensus-telemetry-service]
+    compose_74_slashing_detection_service[slashing-detection-service]
+    compose_74_treasury_service[treasury-service]
+    compose_74_bridge_service[bridge-service]
+    compose_74_liquidity_service[liquidity-service]
+    compose_74_anomaly_detection_service[anomaly-detection-service]
+    compose_74_feature_flags_service[feature-flags-service]
+    compose_74_governance_service[governance-service]
+    compose_74_contract_registry_service[contract-registry-service]
+    compose_74_contract_risk_service[contract-risk-service]
+    compose_74_proxy_inspector_service[proxy-inspector-service]
+    compose_74_mempool_service[mempool-service]
+    compose_74_tx_index_service[tx-index-service]
+    compose_74_peer_graph_service[peer-graph-service]
+    compose_74_ai_monitor[ai-monitor]
+    compose_74_audit_log_service[audit-log-service]
+    compose_74_block_index_service[block-index-service]
+    compose_74_chain_status_service[chain-status-service]
+    compose_74_compliance_export_service[compliance-export-service]
+    compose_74_dispute_service[dispute-service]
+    compose_74_entity_tagging_service[entity-tagging-service]
+    compose_74_explainability_service[explainability-service]
+    compose_74_fee_model_service[fee-model-service]
+    compose_74_forecasting_service[forecasting-service]
+    compose_74_global_search_service[global-search-service]
+    compose_74_key_rotation_service[key-rotation-service]
+    compose_74_network_context_service[network-context-service]
+    compose_74_node_inventory_service[node-inventory-service]
+    compose_74_participation_service[participation-service]
+    compose_74_payout_service[payout-service]
+    compose_74_rewards_service[rewards-service]
+    compose_74_secrets_health_service[secrets-health-service]
+    compose_74_snapshot_service[snapshot-service]
+    compose_74_staking_service[staking-service]
+    compose_74_supply_service[supply-service]
+    compose_74_theme_service[theme-service]
+    compose_74_transfer_lifecycle_service[transfer-lifecycle-service]
+    compose_74_upgrade_orchestrator_service[upgrade-orchestrator-service]
+    compose_74_verification_service[verification-service]
+  end
+  subgraph compose_75[infra/evidence/out/evidence-pack-l2-20260202T174405Z/snapshots/infra/opstack/docker-compose.yml]
+    compose_75_op_gate[op-gate]
+    compose_75_op_gate_l1[op-gate-l1]
+    compose_75_gas_engine_postgres[gas-engine-postgres]
+    compose_75_gas_engine_redis[gas-engine-redis]
+    compose_75_ghost_gas_engine[ghost-gas-engine]
+    compose_75_ghost_gas_engine_worker[ghost-gas-engine-worker]
+    compose_75_ghost_guard[ghost-guard]
+    compose_75_ai_monitor[ai-monitor]
+    compose_75_l2_geth[l2-geth]
+    compose_75_rpc_forward_l2_18547[rpc-forward-l2-18547]
+    compose_75_l1_rpc_proxy[l1-rpc-proxy]
+    compose_75_op_node[op-node]
+    compose_75_op_sequencer[op-sequencer]
+    compose_75_op_batcher[op-batcher]
+    compose_75_op_proposer[op-proposer]
+    compose_75_prometheus[prometheus]
+    compose_75_alertmanager[alertmanager]
+    compose_75_loki[loki]
+    compose_75_grafana[grafana]
+    compose_75_vector[vector]
+  end
+  subgraph compose_76[infra/evidence/out/evidence-pack-l2-20260202T174830Z/snapshots/infra/opstack/docker-compose.challengers.yml]
+    compose_76_op_challenger[op-challenger]
+    compose_76_l3_op_challenger[l3-op-challenger]
+  end
+  subgraph compose_77[infra/evidence/out/evidence-pack-l2-20260202T174830Z/snapshots/infra/opstack/docker-compose.l3.yml]
+    compose_77_l3_geth[l3-geth]
+    compose_77_l3_op_node[l3-op-node]
+    compose_77_l3_op_batcher[l3-op-batcher]
+    compose_77_l3_op_proposer[l3-op-proposer]
+    compose_77_validator_service[validator-service]
+    compose_77_auth_service[auth-service]
+    compose_77_rbac_service[rbac-service]
+    compose_77_session_service[session-service]
+    compose_77_notifications_service[notifications-service]
+    compose_77_alerts_service[alerts-service]
+    compose_77_node_health_service[node-health-service]
+    compose_77_consensus_telemetry_service[consensus-telemetry-service]
+    compose_77_slashing_detection_service[slashing-detection-service]
+    compose_77_treasury_service[treasury-service]
+    compose_77_bridge_service[bridge-service]
+    compose_77_liquidity_service[liquidity-service]
+    compose_77_anomaly_detection_service[anomaly-detection-service]
+    compose_77_feature_flags_service[feature-flags-service]
+    compose_77_governance_service[governance-service]
+    compose_77_contract_registry_service[contract-registry-service]
+    compose_77_contract_risk_service[contract-risk-service]
+    compose_77_proxy_inspector_service[proxy-inspector-service]
+    compose_77_mempool_service[mempool-service]
+    compose_77_tx_index_service[tx-index-service]
+    compose_77_peer_graph_service[peer-graph-service]
+    compose_77_ai_monitor[ai-monitor]
+    compose_77_audit_log_service[audit-log-service]
+    compose_77_block_index_service[block-index-service]
+    compose_77_chain_status_service[chain-status-service]
+    compose_77_compliance_export_service[compliance-export-service]
+    compose_77_dispute_service[dispute-service]
+    compose_77_entity_tagging_service[entity-tagging-service]
+    compose_77_explainability_service[explainability-service]
+    compose_77_fee_model_service[fee-model-service]
+    compose_77_forecasting_service[forecasting-service]
+    compose_77_global_search_service[global-search-service]
+    compose_77_key_rotation_service[key-rotation-service]
+    compose_77_network_context_service[network-context-service]
+    compose_77_node_inventory_service[node-inventory-service]
+    compose_77_participation_service[participation-service]
+    compose_77_payout_service[payout-service]
+    compose_77_rewards_service[rewards-service]
+    compose_77_secrets_health_service[secrets-health-service]
+    compose_77_snapshot_service[snapshot-service]
+    compose_77_staking_service[staking-service]
+    compose_77_supply_service[supply-service]
+    compose_77_theme_service[theme-service]
+    compose_77_transfer_lifecycle_service[transfer-lifecycle-service]
+    compose_77_upgrade_orchestrator_service[upgrade-orchestrator-service]
+    compose_77_verification_service[verification-service]
+  end
+  subgraph compose_78[infra/evidence/out/evidence-pack-l2-20260202T174830Z/snapshots/infra/opstack/docker-compose.yml]
+    compose_78_op_gate[op-gate]
+    compose_78_op_gate_l1[op-gate-l1]
+    compose_78_gas_engine_postgres[gas-engine-postgres]
+    compose_78_gas_engine_redis[gas-engine-redis]
+    compose_78_ghost_gas_engine[ghost-gas-engine]
+    compose_78_ghost_gas_engine_worker[ghost-gas-engine-worker]
+    compose_78_ghost_guard[ghost-guard]
+    compose_78_ai_monitor[ai-monitor]
+    compose_78_l2_geth[l2-geth]
+    compose_78_rpc_forward_l2_18547[rpc-forward-l2-18547]
+    compose_78_l1_rpc_proxy[l1-rpc-proxy]
+    compose_78_op_node[op-node]
+    compose_78_op_sequencer[op-sequencer]
+    compose_78_op_batcher[op-batcher]
+    compose_78_op_proposer[op-proposer]
+    compose_78_prometheus[prometheus]
+    compose_78_alertmanager[alertmanager]
+    compose_78_loki[loki]
+    compose_78_grafana[grafana]
+    compose_78_vector[vector]
+  end
+  subgraph compose_79[infra/evidence/out/evidence-pack-l2-20260202T175423Z/snapshots/infra/opstack/docker-compose.challengers.yml]
+    compose_79_op_challenger[op-challenger]
+    compose_79_l3_op_challenger[l3-op-challenger]
+  end
+  subgraph compose_80[infra/evidence/out/evidence-pack-l2-20260202T175423Z/snapshots/infra/opstack/docker-compose.l3.yml]
+    compose_80_l3_geth[l3-geth]
+    compose_80_l3_op_node[l3-op-node]
+    compose_80_l3_op_batcher[l3-op-batcher]
+    compose_80_l3_op_proposer[l3-op-proposer]
+    compose_80_validator_service[validator-service]
+    compose_80_auth_service[auth-service]
+    compose_80_rbac_service[rbac-service]
+    compose_80_session_service[session-service]
+    compose_80_notifications_service[notifications-service]
+    compose_80_alerts_service[alerts-service]
+    compose_80_node_health_service[node-health-service]
+    compose_80_consensus_telemetry_service[consensus-telemetry-service]
+    compose_80_slashing_detection_service[slashing-detection-service]
+    compose_80_treasury_service[treasury-service]
+    compose_80_bridge_service[bridge-service]
+    compose_80_liquidity_service[liquidity-service]
+    compose_80_anomaly_detection_service[anomaly-detection-service]
+    compose_80_feature_flags_service[feature-flags-service]
+    compose_80_governance_service[governance-service]
+    compose_80_contract_registry_service[contract-registry-service]
+    compose_80_contract_risk_service[contract-risk-service]
+    compose_80_proxy_inspector_service[proxy-inspector-service]
+    compose_80_mempool_service[mempool-service]
+    compose_80_tx_index_service[tx-index-service]
+    compose_80_peer_graph_service[peer-graph-service]
+    compose_80_ai_monitor[ai-monitor]
+    compose_80_audit_log_service[audit-log-service]
+    compose_80_block_index_service[block-index-service]
+    compose_80_chain_status_service[chain-status-service]
+    compose_80_compliance_export_service[compliance-export-service]
+    compose_80_dispute_service[dispute-service]
+    compose_80_entity_tagging_service[entity-tagging-service]
+    compose_80_explainability_service[explainability-service]
+    compose_80_fee_model_service[fee-model-service]
+    compose_80_forecasting_service[forecasting-service]
+    compose_80_global_search_service[global-search-service]
+    compose_80_key_rotation_service[key-rotation-service]
+    compose_80_network_context_service[network-context-service]
+    compose_80_node_inventory_service[node-inventory-service]
+    compose_80_participation_service[participation-service]
+    compose_80_payout_service[payout-service]
+    compose_80_rewards_service[rewards-service]
+    compose_80_secrets_health_service[secrets-health-service]
+    compose_80_snapshot_service[snapshot-service]
+    compose_80_staking_service[staking-service]
+    compose_80_supply_service[supply-service]
+    compose_80_theme_service[theme-service]
+    compose_80_transfer_lifecycle_service[transfer-lifecycle-service]
+    compose_80_upgrade_orchestrator_service[upgrade-orchestrator-service]
+    compose_80_verification_service[verification-service]
+  end
+  subgraph compose_81[infra/evidence/out/evidence-pack-l2-20260202T175423Z/snapshots/infra/opstack/docker-compose.yml]
+    compose_81_op_gate[op-gate]
+    compose_81_op_gate_l1[op-gate-l1]
+    compose_81_gas_engine_postgres[gas-engine-postgres]
+    compose_81_gas_engine_redis[gas-engine-redis]
+    compose_81_ghost_gas_engine[ghost-gas-engine]
+    compose_81_ghost_gas_engine_worker[ghost-gas-engine-worker]
+    compose_81_ghost_guard[ghost-guard]
+    compose_81_ai_monitor[ai-monitor]
+    compose_81_l2_geth[l2-geth]
+    compose_81_rpc_forward_l2_18547[rpc-forward-l2-18547]
+    compose_81_l1_rpc_proxy[l1-rpc-proxy]
+    compose_81_op_node[op-node]
+    compose_81_op_sequencer[op-sequencer]
+    compose_81_op_batcher[op-batcher]
+    compose_81_op_proposer[op-proposer]
+    compose_81_prometheus[prometheus]
+    compose_81_alertmanager[alertmanager]
+    compose_81_loki[loki]
+    compose_81_grafana[grafana]
+    compose_81_vector[vector]
+  end
+  subgraph compose_82[infra/evidence/out/evidence-pack-l2-20260203T190449Z/snapshots/infra/opstack/docker-compose.challengers.yml]
+    compose_82_op_challenger[op-challenger]
+    compose_82_l3_op_challenger[l3-op-challenger]
+  end
+  subgraph compose_83[infra/evidence/out/evidence-pack-l2-20260203T190449Z/snapshots/infra/opstack/docker-compose.l3.yml]
+    compose_83_l3_geth[l3-geth]
+    compose_83_l3_op_node[l3-op-node]
+    compose_83_l3_op_batcher[l3-op-batcher]
+    compose_83_l3_op_proposer[l3-op-proposer]
+    compose_83_validator_service[validator-service]
+    compose_83_auth_service[auth-service]
+    compose_83_rbac_service[rbac-service]
+    compose_83_session_service[session-service]
+    compose_83_notifications_service[notifications-service]
+    compose_83_alerts_service[alerts-service]
+    compose_83_node_health_service[node-health-service]
+    compose_83_consensus_telemetry_service[consensus-telemetry-service]
+    compose_83_slashing_detection_service[slashing-detection-service]
+    compose_83_treasury_service[treasury-service]
+    compose_83_bridge_service[bridge-service]
+    compose_83_liquidity_service[liquidity-service]
+    compose_83_anomaly_detection_service[anomaly-detection-service]
+    compose_83_feature_flags_service[feature-flags-service]
+    compose_83_governance_service[governance-service]
+    compose_83_contract_registry_service[contract-registry-service]
+    compose_83_contract_risk_service[contract-risk-service]
+    compose_83_proxy_inspector_service[proxy-inspector-service]
+    compose_83_mempool_service[mempool-service]
+    compose_83_tx_index_service[tx-index-service]
+    compose_83_peer_graph_service[peer-graph-service]
+    compose_83_audit_log_service[audit-log-service]
+    compose_83_block_index_service[block-index-service]
+    compose_83_chain_status_service[chain-status-service]
+    compose_83_compliance_export_service[compliance-export-service]
+    compose_83_dispute_service[dispute-service]
+    compose_83_entity_tagging_service[entity-tagging-service]
+    compose_83_explainability_service[explainability-service]
+    compose_83_fee_model_service[fee-model-service]
+    compose_83_forecasting_service[forecasting-service]
+    compose_83_global_search_service[global-search-service]
+    compose_83_key_rotation_service[key-rotation-service]
+    compose_83_network_context_service[network-context-service]
+    compose_83_node_inventory_service[node-inventory-service]
+    compose_83_participation_service[participation-service]
+    compose_83_payout_service[payout-service]
+    compose_83_rewards_service[rewards-service]
+    compose_83_secrets_health_service[secrets-health-service]
+    compose_83_snapshot_service[snapshot-service]
+    compose_83_staking_service[staking-service]
+    compose_83_supply_service[supply-service]
+    compose_83_theme_service[theme-service]
+    compose_83_transfer_lifecycle_service[transfer-lifecycle-service]
+    compose_83_upgrade_orchestrator_service[upgrade-orchestrator-service]
+    compose_83_verification_service[verification-service]
+  end
+  subgraph compose_84[infra/evidence/out/evidence-pack-l2-20260203T190449Z/snapshots/infra/opstack/docker-compose.yml]
+    compose_84_op_gate[op-gate]
+    compose_84_op_gate_l1[op-gate-l1]
+    compose_84_gas_engine_postgres[gas-engine-postgres]
+    compose_84_gas_engine_redis[gas-engine-redis]
+    compose_84_ghost_gas_engine[ghost-gas-engine]
+    compose_84_ghost_gas_engine_worker[ghost-gas-engine-worker]
+    compose_84_ghost_guard[ghost-guard]
+    compose_84_ai_monitor[ai-monitor]
+    compose_84_l2_geth[l2-geth]
+    compose_84_rpc_forward_l2_18547[rpc-forward-l2-18547]
+    compose_84_l1_rpc_proxy[l1-rpc-proxy]
+    compose_84_op_node[op-node]
+    compose_84_op_sequencer[op-sequencer]
+    compose_84_op_batcher[op-batcher]
+    compose_84_op_proposer[op-proposer]
+    compose_84_prometheus[prometheus]
+    compose_84_alertmanager[alertmanager]
+    compose_84_loki[loki]
+    compose_84_grafana[grafana]
+    compose_84_vector[vector]
+  end
+  subgraph compose_85[infra/evidence/out/evidence-pack-l2-20260203T191413Z/snapshots/infra/opstack/docker-compose.challengers.yml]
+    compose_85_op_challenger[op-challenger]
+    compose_85_l3_op_challenger[l3-op-challenger]
+  end
+  subgraph compose_86[infra/evidence/out/evidence-pack-l2-20260203T191413Z/snapshots/infra/opstack/docker-compose.l3.yml]
+    compose_86_l3_geth[l3-geth]
+    compose_86_l3_op_node[l3-op-node]
+    compose_86_l3_op_batcher[l3-op-batcher]
+    compose_86_l3_op_proposer[l3-op-proposer]
+    compose_86_validator_service[validator-service]
+    compose_86_auth_service[auth-service]
+    compose_86_rbac_service[rbac-service]
+    compose_86_session_service[session-service]
+    compose_86_notifications_service[notifications-service]
+    compose_86_alerts_service[alerts-service]
+    compose_86_node_health_service[node-health-service]
+    compose_86_consensus_telemetry_service[consensus-telemetry-service]
+    compose_86_slashing_detection_service[slashing-detection-service]
+    compose_86_treasury_service[treasury-service]
+    compose_86_bridge_service[bridge-service]
+    compose_86_liquidity_service[liquidity-service]
+    compose_86_anomaly_detection_service[anomaly-detection-service]
+    compose_86_feature_flags_service[feature-flags-service]
+    compose_86_governance_service[governance-service]
+    compose_86_contract_registry_service[contract-registry-service]
+    compose_86_contract_risk_service[contract-risk-service]
+    compose_86_proxy_inspector_service[proxy-inspector-service]
+    compose_86_mempool_service[mempool-service]
+    compose_86_tx_index_service[tx-index-service]
+    compose_86_peer_graph_service[peer-graph-service]
+    compose_86_audit_log_service[audit-log-service]
+    compose_86_block_index_service[block-index-service]
+    compose_86_chain_status_service[chain-status-service]
+    compose_86_compliance_export_service[compliance-export-service]
+    compose_86_dispute_service[dispute-service]
+    compose_86_entity_tagging_service[entity-tagging-service]
+    compose_86_explainability_service[explainability-service]
+    compose_86_fee_model_service[fee-model-service]
+    compose_86_forecasting_service[forecasting-service]
+    compose_86_global_search_service[global-search-service]
+    compose_86_key_rotation_service[key-rotation-service]
+    compose_86_network_context_service[network-context-service]
+    compose_86_node_inventory_service[node-inventory-service]
+    compose_86_participation_service[participation-service]
+    compose_86_payout_service[payout-service]
+    compose_86_rewards_service[rewards-service]
+    compose_86_secrets_health_service[secrets-health-service]
+    compose_86_snapshot_service[snapshot-service]
+    compose_86_staking_service[staking-service]
+    compose_86_supply_service[supply-service]
+    compose_86_theme_service[theme-service]
+    compose_86_transfer_lifecycle_service[transfer-lifecycle-service]
+    compose_86_upgrade_orchestrator_service[upgrade-orchestrator-service]
+    compose_86_verification_service[verification-service]
+  end
+  subgraph compose_87[infra/evidence/out/evidence-pack-l2-20260203T191413Z/snapshots/infra/opstack/docker-compose.yml]
+    compose_87_op_gate[op-gate]
+    compose_87_op_gate_l1[op-gate-l1]
+    compose_87_gas_engine_postgres[gas-engine-postgres]
+    compose_87_gas_engine_redis[gas-engine-redis]
+    compose_87_ghost_gas_engine[ghost-gas-engine]
+    compose_87_ghost_gas_engine_worker[ghost-gas-engine-worker]
+    compose_87_ghost_guard[ghost-guard]
+    compose_87_ai_monitor[ai-monitor]
+    compose_87_l2_geth[l2-geth]
+    compose_87_rpc_forward_l2_18547[rpc-forward-l2-18547]
+    compose_87_l1_rpc_proxy[l1-rpc-proxy]
+    compose_87_op_node[op-node]
+    compose_87_op_sequencer[op-sequencer]
+    compose_87_op_batcher[op-batcher]
+    compose_87_op_proposer[op-proposer]
+    compose_87_prometheus[prometheus]
+    compose_87_alertmanager[alertmanager]
+    compose_87_loki[loki]
+    compose_87_grafana[grafana]
+    compose_87_vector[vector]
+  end
+  subgraph compose_88[infra/evidence/out/evidence-pack-l2-20260203T191748Z/snapshots/infra/opstack/docker-compose.challengers.yml]
+    compose_88_op_challenger[op-challenger]
+    compose_88_l3_op_challenger[l3-op-challenger]
+  end
+  subgraph compose_89[infra/evidence/out/evidence-pack-l2-20260203T191748Z/snapshots/infra/opstack/docker-compose.l3.yml]
+    compose_89_l3_geth[l3-geth]
+    compose_89_l3_op_node[l3-op-node]
+    compose_89_l3_op_batcher[l3-op-batcher]
+    compose_89_l3_op_proposer[l3-op-proposer]
+    compose_89_validator_service[validator-service]
+    compose_89_auth_service[auth-service]
+    compose_89_rbac_service[rbac-service]
+    compose_89_session_service[session-service]
+    compose_89_notifications_service[notifications-service]
+    compose_89_alerts_service[alerts-service]
+    compose_89_node_health_service[node-health-service]
+    compose_89_consensus_telemetry_service[consensus-telemetry-service]
+    compose_89_slashing_detection_service[slashing-detection-service]
+    compose_89_treasury_service[treasury-service]
+    compose_89_bridge_service[bridge-service]
+    compose_89_liquidity_service[liquidity-service]
+    compose_89_anomaly_detection_service[anomaly-detection-service]
+    compose_89_feature_flags_service[feature-flags-service]
+    compose_89_governance_service[governance-service]
+    compose_89_contract_registry_service[contract-registry-service]
+    compose_89_contract_risk_service[contract-risk-service]
+    compose_89_proxy_inspector_service[proxy-inspector-service]
+    compose_89_mempool_service[mempool-service]
+    compose_89_tx_index_service[tx-index-service]
+    compose_89_peer_graph_service[peer-graph-service]
+    compose_89_audit_log_service[audit-log-service]
+    compose_89_block_index_service[block-index-service]
+    compose_89_chain_status_service[chain-status-service]
+    compose_89_compliance_export_service[compliance-export-service]
+    compose_89_dispute_service[dispute-service]
+    compose_89_entity_tagging_service[entity-tagging-service]
+    compose_89_explainability_service[explainability-service]
+    compose_89_fee_model_service[fee-model-service]
+    compose_89_forecasting_service[forecasting-service]
+    compose_89_global_search_service[global-search-service]
+    compose_89_key_rotation_service[key-rotation-service]
+    compose_89_network_context_service[network-context-service]
+    compose_89_node_inventory_service[node-inventory-service]
+    compose_89_participation_service[participation-service]
+    compose_89_payout_service[payout-service]
+    compose_89_rewards_service[rewards-service]
+    compose_89_secrets_health_service[secrets-health-service]
+    compose_89_snapshot_service[snapshot-service]
+    compose_89_staking_service[staking-service]
+    compose_89_supply_service[supply-service]
+    compose_89_theme_service[theme-service]
+    compose_89_transfer_lifecycle_service[transfer-lifecycle-service]
+    compose_89_upgrade_orchestrator_service[upgrade-orchestrator-service]
+    compose_89_verification_service[verification-service]
+  end
+  subgraph compose_90[infra/evidence/out/evidence-pack-l2-20260203T191748Z/snapshots/infra/opstack/docker-compose.yml]
+    compose_90_op_gate[op-gate]
+    compose_90_op_gate_l1[op-gate-l1]
+    compose_90_gas_engine_postgres[gas-engine-postgres]
+    compose_90_gas_engine_redis[gas-engine-redis]
+    compose_90_ghost_gas_engine[ghost-gas-engine]
+    compose_90_ghost_gas_engine_worker[ghost-gas-engine-worker]
+    compose_90_ghost_guard[ghost-guard]
+    compose_90_ai_monitor[ai-monitor]
+    compose_90_l2_geth[l2-geth]
+    compose_90_rpc_forward_l2_18547[rpc-forward-l2-18547]
+    compose_90_l1_rpc_proxy[l1-rpc-proxy]
+    compose_90_op_node[op-node]
+    compose_90_op_sequencer[op-sequencer]
+    compose_90_op_batcher[op-batcher]
+    compose_90_op_proposer[op-proposer]
+    compose_90_prometheus[prometheus]
+    compose_90_alertmanager[alertmanager]
+    compose_90_loki[loki]
+    compose_90_grafana[grafana]
+    compose_90_vector[vector]
+  end
+  subgraph compose_91[infra/evidence/out/evidence-pack-l2-20260203T192332Z/snapshots/infra/opstack/docker-compose.challengers.yml]
+    compose_91_op_challenger[op-challenger]
+    compose_91_l3_op_challenger[l3-op-challenger]
+  end
+  subgraph compose_92[infra/evidence/out/evidence-pack-l2-20260203T192332Z/snapshots/infra/opstack/docker-compose.l3.yml]
+    compose_92_l3_geth[l3-geth]
+    compose_92_l3_op_node[l3-op-node]
+    compose_92_l3_op_batcher[l3-op-batcher]
+    compose_92_l3_op_proposer[l3-op-proposer]
+    compose_92_validator_service[validator-service]
+    compose_92_auth_service[auth-service]
+    compose_92_rbac_service[rbac-service]
+    compose_92_session_service[session-service]
+    compose_92_notifications_service[notifications-service]
+    compose_92_alerts_service[alerts-service]
+    compose_92_node_health_service[node-health-service]
+    compose_92_consensus_telemetry_service[consensus-telemetry-service]
+    compose_92_slashing_detection_service[slashing-detection-service]
+    compose_92_treasury_service[treasury-service]
+    compose_92_bridge_service[bridge-service]
+    compose_92_liquidity_service[liquidity-service]
+    compose_92_anomaly_detection_service[anomaly-detection-service]
+    compose_92_feature_flags_service[feature-flags-service]
+    compose_92_governance_service[governance-service]
+    compose_92_contract_registry_service[contract-registry-service]
+    compose_92_contract_risk_service[contract-risk-service]
+    compose_92_proxy_inspector_service[proxy-inspector-service]
+    compose_92_mempool_service[mempool-service]
+    compose_92_tx_index_service[tx-index-service]
+    compose_92_peer_graph_service[peer-graph-service]
+    compose_92_audit_log_service[audit-log-service]
+    compose_92_block_index_service[block-index-service]
+    compose_92_chain_status_service[chain-status-service]
+    compose_92_compliance_export_service[compliance-export-service]
+    compose_92_dispute_service[dispute-service]
+    compose_92_entity_tagging_service[entity-tagging-service]
+    compose_92_explainability_service[explainability-service]
+    compose_92_fee_model_service[fee-model-service]
+    compose_92_forecasting_service[forecasting-service]
+    compose_92_global_search_service[global-search-service]
+    compose_92_key_rotation_service[key-rotation-service]
+    compose_92_network_context_service[network-context-service]
+    compose_92_node_inventory_service[node-inventory-service]
+    compose_92_participation_service[participation-service]
+    compose_92_payout_service[payout-service]
+    compose_92_rewards_service[rewards-service]
+    compose_92_secrets_health_service[secrets-health-service]
+    compose_92_snapshot_service[snapshot-service]
+    compose_92_staking_service[staking-service]
+    compose_92_supply_service[supply-service]
+    compose_92_theme_service[theme-service]
+    compose_92_transfer_lifecycle_service[transfer-lifecycle-service]
+    compose_92_upgrade_orchestrator_service[upgrade-orchestrator-service]
+    compose_92_verification_service[verification-service]
+  end
+  subgraph compose_93[infra/evidence/out/evidence-pack-l2-20260203T192332Z/snapshots/infra/opstack/docker-compose.yml]
+    compose_93_op_gate[op-gate]
+    compose_93_op_gate_l1[op-gate-l1]
+    compose_93_gas_engine_postgres[gas-engine-postgres]
+    compose_93_gas_engine_redis[gas-engine-redis]
+    compose_93_ghost_gas_engine[ghost-gas-engine]
+    compose_93_ghost_gas_engine_worker[ghost-gas-engine-worker]
+    compose_93_ghost_guard[ghost-guard]
+    compose_93_ai_monitor[ai-monitor]
+    compose_93_l2_geth[l2-geth]
+    compose_93_rpc_forward_l2_18547[rpc-forward-l2-18547]
+    compose_93_l1_rpc_proxy[l1-rpc-proxy]
+    compose_93_op_node[op-node]
+    compose_93_op_sequencer[op-sequencer]
+    compose_93_op_batcher[op-batcher]
+    compose_93_op_proposer[op-proposer]
+    compose_93_prometheus[prometheus]
+    compose_93_alertmanager[alertmanager]
+    compose_93_loki[loki]
+    compose_93_grafana[grafana]
+    compose_93_vector[vector]
+  end
+  subgraph compose_94[infra/evidence/out/evidence-pack-l3-20260203T190609Z/snapshots/infra/opstack/docker-compose.l3.yml]
+    compose_94_l3_geth[l3-geth]
+    compose_94_l3_op_node[l3-op-node]
+    compose_94_l3_op_batcher[l3-op-batcher]
+    compose_94_l3_op_proposer[l3-op-proposer]
+    compose_94_validator_service[validator-service]
+    compose_94_auth_service[auth-service]
+    compose_94_rbac_service[rbac-service]
+    compose_94_session_service[session-service]
+    compose_94_notifications_service[notifications-service]
+    compose_94_alerts_service[alerts-service]
+    compose_94_node_health_service[node-health-service]
+    compose_94_consensus_telemetry_service[consensus-telemetry-service]
+    compose_94_slashing_detection_service[slashing-detection-service]
+    compose_94_treasury_service[treasury-service]
+    compose_94_bridge_service[bridge-service]
+    compose_94_liquidity_service[liquidity-service]
+    compose_94_anomaly_detection_service[anomaly-detection-service]
+    compose_94_feature_flags_service[feature-flags-service]
+    compose_94_governance_service[governance-service]
+    compose_94_contract_registry_service[contract-registry-service]
+    compose_94_contract_risk_service[contract-risk-service]
+    compose_94_proxy_inspector_service[proxy-inspector-service]
+    compose_94_mempool_service[mempool-service]
+    compose_94_tx_index_service[tx-index-service]
+    compose_94_peer_graph_service[peer-graph-service]
+    compose_94_audit_log_service[audit-log-service]
+    compose_94_block_index_service[block-index-service]
+    compose_94_chain_status_service[chain-status-service]
+    compose_94_compliance_export_service[compliance-export-service]
+    compose_94_dispute_service[dispute-service]
+    compose_94_entity_tagging_service[entity-tagging-service]
+    compose_94_explainability_service[explainability-service]
+    compose_94_fee_model_service[fee-model-service]
+    compose_94_forecasting_service[forecasting-service]
+    compose_94_global_search_service[global-search-service]
+    compose_94_key_rotation_service[key-rotation-service]
+    compose_94_network_context_service[network-context-service]
+    compose_94_node_inventory_service[node-inventory-service]
+    compose_94_participation_service[participation-service]
+    compose_94_payout_service[payout-service]
+    compose_94_rewards_service[rewards-service]
+    compose_94_secrets_health_service[secrets-health-service]
+    compose_94_snapshot_service[snapshot-service]
+    compose_94_staking_service[staking-service]
+    compose_94_supply_service[supply-service]
+    compose_94_theme_service[theme-service]
+    compose_94_transfer_lifecycle_service[transfer-lifecycle-service]
+    compose_94_upgrade_orchestrator_service[upgrade-orchestrator-service]
+    compose_94_verification_service[verification-service]
+  end
+  subgraph compose_95[infra/evidence/out/evidence-pack-l3-20260203T190609Z/snapshots/infra/opstack/docker-compose.yml]
+    compose_95_op_gate[op-gate]
+    compose_95_op_gate_l1[op-gate-l1]
+    compose_95_gas_engine_postgres[gas-engine-postgres]
+    compose_95_gas_engine_redis[gas-engine-redis]
+    compose_95_ghost_gas_engine[ghost-gas-engine]
+    compose_95_ghost_gas_engine_worker[ghost-gas-engine-worker]
+    compose_95_ghost_guard[ghost-guard]
+    compose_95_ai_monitor[ai-monitor]
+    compose_95_l2_geth[l2-geth]
+    compose_95_rpc_forward_l2_18547[rpc-forward-l2-18547]
+    compose_95_l1_rpc_proxy[l1-rpc-proxy]
+    compose_95_op_node[op-node]
+    compose_95_op_sequencer[op-sequencer]
+    compose_95_op_batcher[op-batcher]
+    compose_95_op_proposer[op-proposer]
+    compose_95_prometheus[prometheus]
+    compose_95_alertmanager[alertmanager]
+    compose_95_loki[loki]
+    compose_95_grafana[grafana]
+    compose_95_vector[vector]
+  end
+  subgraph compose_96[infra/evidence/out/evidence-pack-l3-20260203T191530Z/snapshots/infra/opstack/docker-compose.l3.yml]
+    compose_96_l3_geth[l3-geth]
+    compose_96_l3_op_node[l3-op-node]
+    compose_96_l3_op_batcher[l3-op-batcher]
+    compose_96_l3_op_proposer[l3-op-proposer]
+    compose_96_validator_service[validator-service]
+    compose_96_auth_service[auth-service]
+    compose_96_rbac_service[rbac-service]
+    compose_96_session_service[session-service]
+    compose_96_notifications_service[notifications-service]
+    compose_96_alerts_service[alerts-service]
+    compose_96_node_health_service[node-health-service]
+    compose_96_consensus_telemetry_service[consensus-telemetry-service]
+    compose_96_slashing_detection_service[slashing-detection-service]
+    compose_96_treasury_service[treasury-service]
+    compose_96_bridge_service[bridge-service]
+    compose_96_liquidity_service[liquidity-service]
+    compose_96_anomaly_detection_service[anomaly-detection-service]
+    compose_96_feature_flags_service[feature-flags-service]
+    compose_96_governance_service[governance-service]
+    compose_96_contract_registry_service[contract-registry-service]
+    compose_96_contract_risk_service[contract-risk-service]
+    compose_96_proxy_inspector_service[proxy-inspector-service]
+    compose_96_mempool_service[mempool-service]
+    compose_96_tx_index_service[tx-index-service]
+    compose_96_peer_graph_service[peer-graph-service]
+    compose_96_audit_log_service[audit-log-service]
+    compose_96_block_index_service[block-index-service]
+    compose_96_chain_status_service[chain-status-service]
+    compose_96_compliance_export_service[compliance-export-service]
+    compose_96_dispute_service[dispute-service]
+    compose_96_entity_tagging_service[entity-tagging-service]
+    compose_96_explainability_service[explainability-service]
+    compose_96_fee_model_service[fee-model-service]
+    compose_96_forecasting_service[forecasting-service]
+    compose_96_global_search_service[global-search-service]
+    compose_96_key_rotation_service[key-rotation-service]
+    compose_96_network_context_service[network-context-service]
+    compose_96_node_inventory_service[node-inventory-service]
+    compose_96_participation_service[participation-service]
+    compose_96_payout_service[payout-service]
+    compose_96_rewards_service[rewards-service]
+    compose_96_secrets_health_service[secrets-health-service]
+    compose_96_snapshot_service[snapshot-service]
+    compose_96_staking_service[staking-service]
+    compose_96_supply_service[supply-service]
+    compose_96_theme_service[theme-service]
+    compose_96_transfer_lifecycle_service[transfer-lifecycle-service]
+    compose_96_upgrade_orchestrator_service[upgrade-orchestrator-service]
+    compose_96_verification_service[verification-service]
+  end
+  subgraph compose_97[infra/evidence/out/evidence-pack-l3-20260203T191530Z/snapshots/infra/opstack/docker-compose.yml]
+    compose_97_op_gate[op-gate]
+    compose_97_op_gate_l1[op-gate-l1]
+    compose_97_gas_engine_postgres[gas-engine-postgres]
+    compose_97_gas_engine_redis[gas-engine-redis]
+    compose_97_ghost_gas_engine[ghost-gas-engine]
+    compose_97_ghost_gas_engine_worker[ghost-gas-engine-worker]
+    compose_97_ghost_guard[ghost-guard]
+    compose_97_ai_monitor[ai-monitor]
+    compose_97_l2_geth[l2-geth]
+    compose_97_rpc_forward_l2_18547[rpc-forward-l2-18547]
+    compose_97_l1_rpc_proxy[l1-rpc-proxy]
+    compose_97_op_node[op-node]
+    compose_97_op_sequencer[op-sequencer]
+    compose_97_op_batcher[op-batcher]
+    compose_97_op_proposer[op-proposer]
+    compose_97_prometheus[prometheus]
+    compose_97_alertmanager[alertmanager]
+    compose_97_loki[loki]
+    compose_97_grafana[grafana]
+    compose_97_vector[vector]
+  end
+  subgraph compose_98[infra/evidence/out/evidence-pack-l3-20260203T191630Z/snapshots/infra/opstack/docker-compose.l3.yml]
+    compose_98_l3_geth[l3-geth]
+    compose_98_l3_op_node[l3-op-node]
+    compose_98_l3_op_batcher[l3-op-batcher]
+    compose_98_l3_op_proposer[l3-op-proposer]
+    compose_98_validator_service[validator-service]
+    compose_98_auth_service[auth-service]
+    compose_98_rbac_service[rbac-service]
+    compose_98_session_service[session-service]
+    compose_98_notifications_service[notifications-service]
+    compose_98_alerts_service[alerts-service]
+    compose_98_node_health_service[node-health-service]
+    compose_98_consensus_telemetry_service[consensus-telemetry-service]
+    compose_98_slashing_detection_service[slashing-detection-service]
+    compose_98_treasury_service[treasury-service]
+    compose_98_bridge_service[bridge-service]
+    compose_98_liquidity_service[liquidity-service]
+    compose_98_anomaly_detection_service[anomaly-detection-service]
+    compose_98_feature_flags_service[feature-flags-service]
+    compose_98_governance_service[governance-service]
+    compose_98_contract_registry_service[contract-registry-service]
+    compose_98_contract_risk_service[contract-risk-service]
+    compose_98_proxy_inspector_service[proxy-inspector-service]
+    compose_98_mempool_service[mempool-service]
+    compose_98_tx_index_service[tx-index-service]
+    compose_98_peer_graph_service[peer-graph-service]
+    compose_98_audit_log_service[audit-log-service]
+    compose_98_block_index_service[block-index-service]
+    compose_98_chain_status_service[chain-status-service]
+    compose_98_compliance_export_service[compliance-export-service]
+    compose_98_dispute_service[dispute-service]
+    compose_98_entity_tagging_service[entity-tagging-service]
+    compose_98_explainability_service[explainability-service]
+    compose_98_fee_model_service[fee-model-service]
+    compose_98_forecasting_service[forecasting-service]
+    compose_98_global_search_service[global-search-service]
+    compose_98_key_rotation_service[key-rotation-service]
+    compose_98_network_context_service[network-context-service]
+    compose_98_node_inventory_service[node-inventory-service]
+    compose_98_participation_service[participation-service]
+    compose_98_payout_service[payout-service]
+    compose_98_rewards_service[rewards-service]
+    compose_98_secrets_health_service[secrets-health-service]
+    compose_98_snapshot_service[snapshot-service]
+    compose_98_staking_service[staking-service]
+    compose_98_supply_service[supply-service]
+    compose_98_theme_service[theme-service]
+    compose_98_transfer_lifecycle_service[transfer-lifecycle-service]
+    compose_98_upgrade_orchestrator_service[upgrade-orchestrator-service]
+    compose_98_verification_service[verification-service]
+  end
+  subgraph compose_99[infra/evidence/out/evidence-pack-l3-20260203T191630Z/snapshots/infra/opstack/docker-compose.yml]
+    compose_99_op_gate[op-gate]
+    compose_99_op_gate_l1[op-gate-l1]
+    compose_99_gas_engine_postgres[gas-engine-postgres]
+    compose_99_gas_engine_redis[gas-engine-redis]
+    compose_99_ghost_gas_engine[ghost-gas-engine]
+    compose_99_ghost_gas_engine_worker[ghost-gas-engine-worker]
+    compose_99_ghost_guard[ghost-guard]
+    compose_99_ai_monitor[ai-monitor]
+    compose_99_l2_geth[l2-geth]
+    compose_99_rpc_forward_l2_18547[rpc-forward-l2-18547]
+    compose_99_l1_rpc_proxy[l1-rpc-proxy]
+    compose_99_op_node[op-node]
+    compose_99_op_sequencer[op-sequencer]
+    compose_99_op_batcher[op-batcher]
+    compose_99_op_proposer[op-proposer]
+    compose_99_prometheus[prometheus]
+    compose_99_alertmanager[alertmanager]
+    compose_99_loki[loki]
+    compose_99_grafana[grafana]
+    compose_99_vector[vector]
+  end
+  subgraph compose_100[infra/evidence/out/evidence-pack-l3-20260203T191811Z/snapshots/infra/opstack/docker-compose.l3.yml]
+    compose_100_l3_geth[l3-geth]
+    compose_100_l3_op_node[l3-op-node]
+    compose_100_l3_op_batcher[l3-op-batcher]
+    compose_100_l3_op_proposer[l3-op-proposer]
+    compose_100_validator_service[validator-service]
+    compose_100_auth_service[auth-service]
+    compose_100_rbac_service[rbac-service]
+    compose_100_session_service[session-service]
+    compose_100_notifications_service[notifications-service]
+    compose_100_alerts_service[alerts-service]
+    compose_100_node_health_service[node-health-service]
+    compose_100_consensus_telemetry_service[consensus-telemetry-service]
+    compose_100_slashing_detection_service[slashing-detection-service]
+    compose_100_treasury_service[treasury-service]
+    compose_100_bridge_service[bridge-service]
+    compose_100_liquidity_service[liquidity-service]
+    compose_100_anomaly_detection_service[anomaly-detection-service]
+    compose_100_feature_flags_service[feature-flags-service]
+    compose_100_governance_service[governance-service]
+    compose_100_contract_registry_service[contract-registry-service]
+    compose_100_contract_risk_service[contract-risk-service]
+    compose_100_proxy_inspector_service[proxy-inspector-service]
+    compose_100_mempool_service[mempool-service]
+    compose_100_tx_index_service[tx-index-service]
+    compose_100_peer_graph_service[peer-graph-service]
+    compose_100_audit_log_service[audit-log-service]
+    compose_100_block_index_service[block-index-service]
+    compose_100_chain_status_service[chain-status-service]
+    compose_100_compliance_export_service[compliance-export-service]
+    compose_100_dispute_service[dispute-service]
+    compose_100_entity_tagging_service[entity-tagging-service]
+    compose_100_explainability_service[explainability-service]
+    compose_100_fee_model_service[fee-model-service]
+    compose_100_forecasting_service[forecasting-service]
+    compose_100_global_search_service[global-search-service]
+    compose_100_key_rotation_service[key-rotation-service]
+    compose_100_network_context_service[network-context-service]
+    compose_100_node_inventory_service[node-inventory-service]
+    compose_100_participation_service[participation-service]
+    compose_100_payout_service[payout-service]
+    compose_100_rewards_service[rewards-service]
+    compose_100_secrets_health_service[secrets-health-service]
+    compose_100_snapshot_service[snapshot-service]
+    compose_100_staking_service[staking-service]
+    compose_100_supply_service[supply-service]
+    compose_100_theme_service[theme-service]
+    compose_100_transfer_lifecycle_service[transfer-lifecycle-service]
+    compose_100_upgrade_orchestrator_service[upgrade-orchestrator-service]
+    compose_100_verification_service[verification-service]
+  end
+  subgraph compose_101[infra/evidence/out/evidence-pack-l3-20260203T191811Z/snapshots/infra/opstack/docker-compose.yml]
+    compose_101_op_gate[op-gate]
+    compose_101_op_gate_l1[op-gate-l1]
+    compose_101_gas_engine_postgres[gas-engine-postgres]
+    compose_101_gas_engine_redis[gas-engine-redis]
+    compose_101_ghost_gas_engine[ghost-gas-engine]
+    compose_101_ghost_gas_engine_worker[ghost-gas-engine-worker]
+    compose_101_ghost_guard[ghost-guard]
+    compose_101_ai_monitor[ai-monitor]
+    compose_101_l2_geth[l2-geth]
+    compose_101_rpc_forward_l2_18547[rpc-forward-l2-18547]
+    compose_101_l1_rpc_proxy[l1-rpc-proxy]
+    compose_101_op_node[op-node]
+    compose_101_op_sequencer[op-sequencer]
+    compose_101_op_batcher[op-batcher]
+    compose_101_op_proposer[op-proposer]
+    compose_101_prometheus[prometheus]
+    compose_101_alertmanager[alertmanager]
+    compose_101_loki[loki]
+    compose_101_grafana[grafana]
+    compose_101_vector[vector]
+  end
+  subgraph compose_102[infra/evidence/out/evidence-pack-l3-20260203T192351Z/snapshots/infra/opstack/docker-compose.l3.yml]
+    compose_102_l3_geth[l3-geth]
+    compose_102_l3_op_node[l3-op-node]
+    compose_102_l3_op_batcher[l3-op-batcher]
+    compose_102_l3_op_proposer[l3-op-proposer]
+    compose_102_validator_service[validator-service]
+    compose_102_auth_service[auth-service]
+    compose_102_rbac_service[rbac-service]
+    compose_102_session_service[session-service]
+    compose_102_notifications_service[notifications-service]
+    compose_102_alerts_service[alerts-service]
+    compose_102_node_health_service[node-health-service]
+    compose_102_consensus_telemetry_service[consensus-telemetry-service]
+    compose_102_slashing_detection_service[slashing-detection-service]
+    compose_102_treasury_service[treasury-service]
+    compose_102_bridge_service[bridge-service]
+    compose_102_liquidity_service[liquidity-service]
+    compose_102_anomaly_detection_service[anomaly-detection-service]
+    compose_102_feature_flags_service[feature-flags-service]
+    compose_102_governance_service[governance-service]
+    compose_102_contract_registry_service[contract-registry-service]
+    compose_102_contract_risk_service[contract-risk-service]
+    compose_102_proxy_inspector_service[proxy-inspector-service]
+    compose_102_mempool_service[mempool-service]
+    compose_102_tx_index_service[tx-index-service]
+    compose_102_peer_graph_service[peer-graph-service]
+    compose_102_audit_log_service[audit-log-service]
+    compose_102_block_index_service[block-index-service]
+    compose_102_chain_status_service[chain-status-service]
+    compose_102_compliance_export_service[compliance-export-service]
+    compose_102_dispute_service[dispute-service]
+    compose_102_entity_tagging_service[entity-tagging-service]
+    compose_102_explainability_service[explainability-service]
+    compose_102_fee_model_service[fee-model-service]
+    compose_102_forecasting_service[forecasting-service]
+    compose_102_global_search_service[global-search-service]
+    compose_102_key_rotation_service[key-rotation-service]
+    compose_102_network_context_service[network-context-service]
+    compose_102_node_inventory_service[node-inventory-service]
+    compose_102_participation_service[participation-service]
+    compose_102_payout_service[payout-service]
+    compose_102_rewards_service[rewards-service]
+    compose_102_secrets_health_service[secrets-health-service]
+    compose_102_snapshot_service[snapshot-service]
+    compose_102_staking_service[staking-service]
+    compose_102_supply_service[supply-service]
+    compose_102_theme_service[theme-service]
+    compose_102_transfer_lifecycle_service[transfer-lifecycle-service]
+    compose_102_upgrade_orchestrator_service[upgrade-orchestrator-service]
+    compose_102_verification_service[verification-service]
+  end
+  subgraph compose_103[infra/evidence/out/evidence-pack-l3-20260203T192351Z/snapshots/infra/opstack/docker-compose.yml]
+    compose_103_op_gate[op-gate]
+    compose_103_op_gate_l1[op-gate-l1]
+    compose_103_gas_engine_postgres[gas-engine-postgres]
+    compose_103_gas_engine_redis[gas-engine-redis]
+    compose_103_ghost_gas_engine[ghost-gas-engine]
+    compose_103_ghost_gas_engine_worker[ghost-gas-engine-worker]
+    compose_103_ghost_guard[ghost-guard]
+    compose_103_ai_monitor[ai-monitor]
+    compose_103_l2_geth[l2-geth]
+    compose_103_rpc_forward_l2_18547[rpc-forward-l2-18547]
+    compose_103_l1_rpc_proxy[l1-rpc-proxy]
+    compose_103_op_node[op-node]
+    compose_103_op_sequencer[op-sequencer]
+    compose_103_op_batcher[op-batcher]
+    compose_103_op_proposer[op-proposer]
+    compose_103_prometheus[prometheus]
+    compose_103_alertmanager[alertmanager]
+    compose_103_loki[loki]
+    compose_103_grafana[grafana]
+    compose_103_vector[vector]
+  end
+  subgraph compose_104[infra/ghostchain/docker-compose.eth.yml]
+    compose_104_ghostchain_bootnode[ghostchain-bootnode]
+    compose_104_ghostchain_node1[ghostchain-node1]
+    compose_104_ghostchain_node2[ghostchain-node2]
+    compose_104_ghostchain_rpc_proxy[ghostchain-rpc-proxy]
+    compose_104_ghostscout[ghostscout]
+  end
+  subgraph compose_105[infra/ghostchain/docker-compose.ibft.yml]
+    compose_105_ghostchain_node1[ghostchain-node1]
+    compose_105_ghostchain_node2[ghostchain-node2]
+    compose_105_ghostchain_node3[ghostchain-node3]
+    compose_105_ghostchain_node4[ghostchain-node4]
+  end
+  subgraph compose_106[infra/opstack/docker-compose.challengers.yml]
+    compose_106_op_challenger[op-challenger]
+    compose_106_l3_op_challenger[l3-op-challenger]
+  end
+  subgraph compose_107[infra/opstack/docker-compose.l3.yml]
+    compose_107_l3_geth[l3-geth]
+    compose_107_l3_op_node[l3-op-node]
+    compose_107_l3_op_batcher[l3-op-batcher]
+    compose_107_l3_op_proposer[l3-op-proposer]
+    compose_107_validator_service[validator-service]
+    compose_107_auth_service[auth-service]
+    compose_107_rbac_service[rbac-service]
+    compose_107_session_service[session-service]
+    compose_107_notifications_service[notifications-service]
+    compose_107_alerts_service[alerts-service]
+    compose_107_node_health_service[node-health-service]
+    compose_107_consensus_telemetry_service[consensus-telemetry-service]
+    compose_107_slashing_detection_service[slashing-detection-service]
+    compose_107_treasury_service[treasury-service]
+    compose_107_bridge_service[bridge-service]
+    compose_107_liquidity_service[liquidity-service]
+    compose_107_anomaly_detection_service[anomaly-detection-service]
+    compose_107_feature_flags_service[feature-flags-service]
+    compose_107_governance_service[governance-service]
+    compose_107_contract_registry_service[contract-registry-service]
+    compose_107_contract_risk_service[contract-risk-service]
+    compose_107_proxy_inspector_service[proxy-inspector-service]
+    compose_107_mempool_service[mempool-service]
+    compose_107_tx_index_service[tx-index-service]
+    compose_107_peer_graph_service[peer-graph-service]
+    compose_107_audit_log_service[audit-log-service]
+    compose_107_block_index_service[block-index-service]
+    compose_107_chain_status_service[chain-status-service]
+    compose_107_compliance_export_service[compliance-export-service]
+    compose_107_dispute_service[dispute-service]
+    compose_107_entity_tagging_service[entity-tagging-service]
+    compose_107_explainability_service[explainability-service]
+    compose_107_fee_model_service[fee-model-service]
+    compose_107_forecasting_service[forecasting-service]
+    compose_107_global_search_service[global-search-service]
+    compose_107_key_rotation_service[key-rotation-service]
+    compose_107_network_context_service[network-context-service]
+    compose_107_node_inventory_service[node-inventory-service]
+    compose_107_participation_service[participation-service]
+    compose_107_payout_service[payout-service]
+    compose_107_rewards_service[rewards-service]
+    compose_107_secrets_health_service[secrets-health-service]
+    compose_107_snapshot_service[snapshot-service]
+    compose_107_staking_service[staking-service]
+    compose_107_supply_service[supply-service]
+    compose_107_theme_service[theme-service]
+    compose_107_transfer_lifecycle_service[transfer-lifecycle-service]
+    compose_107_upgrade_orchestrator_service[upgrade-orchestrator-service]
+    compose_107_verification_service[verification-service]
+  end
+  subgraph compose_108[infra/opstack/docker-compose.mainnet-geth.yml]
+    compose_108_l1_mainnet_geth[l1-mainnet-geth]
+  end
+  subgraph compose_109[infra/opstack/docker-compose.network-manager.yml]
+    compose_109_network_manager[network-manager]
+  end
+  subgraph compose_110[infra/opstack/docker-compose.yml]
+    compose_110_op_gate[op-gate]
+    compose_110_op_gate_l1[op-gate-l1]
+    compose_110_gas_engine_postgres[gas-engine-postgres]
+    compose_110_gas_engine_redis[gas-engine-redis]
+    compose_110_ghost_gas_engine[ghost-gas-engine]
+    compose_110_ghost_gas_engine_worker[ghost-gas-engine-worker]
+    compose_110_ghost_guard[ghost-guard]
+    compose_110_ai_monitor[ai-monitor]
+    compose_110_l2_geth[l2-geth]
+    compose_110_rpc_forward_l2_18547[rpc-forward-l2-18547]
+    compose_110_l1_rpc_proxy[l1-rpc-proxy]
+    compose_110_op_node[op-node]
+    compose_110_op_sequencer[op-sequencer]
+    compose_110_op_batcher[op-batcher]
+    compose_110_op_proposer[op-proposer]
+    compose_110_prometheus[prometheus]
+    compose_110_alertmanager[alertmanager]
+    compose_110_loki[loki]
+    compose_110_grafana[grafana]
+    compose_110_vector[vector]
+  end
+  subgraph compose_111[infra/opstack/optimism-upstream/interop-devnet/docker-compose.yml]
+    compose_111_l1[l1]
+    compose_111_l1_bn[l1-bn]
+    compose_111_l1_vc[l1-vc]
+    compose_111_op_supervisor[op-supervisor]
+    compose_111_l2_a[l2-a]
+    compose_111_l2_b[l2-b]
+    compose_111_op_node_a[op-node-a]
+    compose_111_op_node_b[op-node-b]
+    compose_111_op_proposer_a[op-proposer-a]
+    compose_111_op_proposer_b[op-proposer-b]
+    compose_111_op_batcher_a[op-batcher-a]
+    compose_111_op_batcher_b[op-batcher-b]
+    compose_111_grafana[grafana]
+    compose_111_prometheus[prometheus]
+    compose_111_loki[loki]
+    compose_111_promtail[promtail]
+  end
+  subgraph compose_112[infra/opstack/optimism-upstream/ops-bedrock/docker-compose.yml]
+    compose_112_l1[l1]
+    compose_112_l1_bn[l1-bn]
+    compose_112_l1_vc[l1-vc]
+    compose_112_l2[l2]
+    compose_112_op_node[op-node]
+    compose_112_op_proposer[op-proposer]
+    compose_112_op_batcher[op-batcher]
+    compose_112_op_challenger[op-challenger]
+    compose_112_da_server[da-server]
+    compose_112_sentinel[sentinel]
+    compose_112_artifact_server[artifact-server]
+  end
+  subgraph compose_113[observability/infra/docker-compose.yml]
+    compose_113_loki[loki]
+    compose_113_prometheus[prometheus]
+    compose_113_alertmanager[alertmanager]
+    compose_113_grafana[grafana]
+  end
+  subgraph compose_114[services/ai-clock-sync/docker-compose.yml]
+    compose_114_ai_clock_sync[ai-clock-sync]
+  end
+  subgraph compose_115[services/ai-clock-sync/rollback/20260125-132116/docker-compose.yml]
+    compose_115_ai_clock_sync[ai-clock-sync]
+  end
+  subgraph compose_116[services/ai-clock-sync/rollback/20260125-132244/docker-compose.yml]
+    compose_116_ai_clock_sync[ai-clock-sync]
+  end
+  subgraph compose_117[services/ai-clock-sync/rollback/20260125-132411/docker-compose.yml]
+    compose_117_ai_clock_sync[ai-clock-sync]
+  end
+  subgraph compose_118[services/ai-monitor/docker-compose.yml]
+    compose_118_ai_monitor[ai-monitor]
+    compose_118_ai_monitor_l1[ai-monitor-l1]
+    compose_118_ai_monitor_l3[ai-monitor-l3]
+  end
+  subgraph compose_119[services/ai-monitor/rollback/20260125-132116/docker-compose.yml]
+    compose_119_ai_monitor[ai-monitor]
+  end
+  subgraph compose_120[services/ai-monitor/rollback/20260125-132244/docker-compose.yml]
+    compose_120_ai_monitor[ai-monitor]
+  end
+  subgraph compose_121[services/ai-monitor/rollback/20260125-132411/docker-compose.yml]
+    compose_121_ai_monitor[ai-monitor]
+  end
+  subgraph compose_122[services/ai-vault/docker-compose.yml]
+    compose_122_ai_vault[ai-vault]
+  end
+  subgraph compose_123[services/alerts-service/docker-compose.yml]
+    compose_123_alerts_service[alerts-service]
+  end
+  subgraph compose_124[services/alerts-service/rollback/20260125-132116/docker-compose.yml]
+    compose_124_alerts_service[alerts-service]
+  end
+  subgraph compose_125[services/alerts-service/rollback/20260125-132244/docker-compose.yml]
+    compose_125_alerts_service[alerts-service]
+  end
+  subgraph compose_126[services/alerts-service/rollback/20260125-132411/docker-compose.yml]
+    compose_126_alerts_service[alerts-service]
+  end
+  subgraph compose_127[services/anomaly-detection-service/docker-compose.yml]
+    compose_127_anomaly_detection_service[anomaly-detection-service]
+  end
+  subgraph compose_128[services/anomaly-detection-service/rollback/20260125-132116/docker-compose.yml]
+    compose_128_anomaly_detection_service[anomaly-detection-service]
+  end
+  subgraph compose_129[services/anomaly-detection-service/rollback/20260125-132244/docker-compose.yml]
+    compose_129_anomaly_detection_service[anomaly-detection-service]
+  end
+  subgraph compose_130[services/anomaly-detection-service/rollback/20260125-132411/docker-compose.yml]
+    compose_130_anomaly_detection_service[anomaly-detection-service]
+  end
+  subgraph compose_131[services/audit-log-service/docker-compose.yml]
+    compose_131_audit_log_service[audit-log-service]
+  end
+  subgraph compose_132[services/audit-log-service/rollback/20260125-132116/docker-compose.yml]
+    compose_132_audit_log_service[audit-log-service]
+  end
+  subgraph compose_133[services/audit-log-service/rollback/20260125-132244/docker-compose.yml]
+    compose_133_audit_log_service[audit-log-service]
+  end
+  subgraph compose_134[services/audit-log-service/rollback/20260125-132411/docker-compose.yml]
+    compose_134_audit_log_service[audit-log-service]
+  end
+  subgraph compose_135[services/auth-service/docker-compose.yml]
+    compose_135_auth_service[auth-service]
+  end
+  subgraph compose_136[services/auth-service/rollback/20260125-132116/docker-compose.yml]
+    compose_136_auth_service[auth-service]
+  end
+  subgraph compose_137[services/auth-service/rollback/20260125-132244/docker-compose.yml]
+    compose_137_auth_service[auth-service]
+  end
+  subgraph compose_138[services/auth-service/rollback/20260125-132411/docker-compose.yml]
+    compose_138_auth_service[auth-service]
+  end
+  subgraph compose_139[services/block-index-service/docker-compose.yml]
+    compose_139_block_index_service[block-index-service]
+  end
+  subgraph compose_140[services/block-index-service/rollback/20260125-132116/docker-compose.yml]
+    compose_140_block_index_service[block-index-service]
+  end
+  subgraph compose_141[services/block-index-service/rollback/20260125-132244/docker-compose.yml]
+    compose_141_block_index_service[block-index-service]
+  end
+  subgraph compose_142[services/block-index-service/rollback/20260125-132411/docker-compose.yml]
+    compose_142_block_index_service[block-index-service]
+  end
+  subgraph compose_143[services/bridge-service/docker-compose.yml]
+    compose_143_bridge_service[bridge-service]
+  end
+  subgraph compose_144[services/bridge-service/rollback/20260125-132116/docker-compose.yml]
+    compose_144_bridge_service[bridge-service]
+  end
+  subgraph compose_145[services/bridge-service/rollback/20260125-132244/docker-compose.yml]
+    compose_145_bridge_service[bridge-service]
+  end
+  subgraph compose_146[services/bridge-service/rollback/20260125-132411/docker-compose.yml]
+    compose_146_bridge_service[bridge-service]
+  end
+  subgraph compose_147[services/chain-status-service/docker-compose.yml]
+    compose_147_chain_status_service[chain-status-service]
+  end
+  subgraph compose_148[services/chain-status-service/rollback/20260125-132116/docker-compose.yml]
+    compose_148_chain_status_service[chain-status-service]
+  end
+  subgraph compose_149[services/chain-status-service/rollback/20260125-132244/docker-compose.yml]
+    compose_149_chain_status_service[chain-status-service]
+  end
+  subgraph compose_150[services/chain-status-service/rollback/20260125-132411/docker-compose.yml]
+    compose_150_chain_status_service[chain-status-service]
+  end
+  subgraph compose_151[services/command-palette-service/docker-compose.yml]
+    compose_151_command_palette_service[command-palette-service]
+  end
+  subgraph compose_152[services/command-palette-service/rollback/20260125-132116/docker-compose.yml]
+    compose_152_command_palette_service[command-palette-service]
+  end
+  subgraph compose_153[services/command-palette-service/rollback/20260125-132244/docker-compose.yml]
+    compose_153_command_palette_service[command-palette-service]
+  end
+  subgraph compose_154[services/command-palette-service/rollback/20260125-132411/docker-compose.yml]
+    compose_154_command_palette_service[command-palette-service]
+  end
+  subgraph compose_155[services/compliance-export-service/docker-compose.yml]
+    compose_155_compliance_export_service[compliance-export-service]
+  end
+  subgraph compose_156[services/compliance-export-service/rollback/20260125-132116/docker-compose.yml]
+    compose_156_compliance_export_service[compliance-export-service]
+  end
+  subgraph compose_157[services/compliance-export-service/rollback/20260125-132244/docker-compose.yml]
+    compose_157_compliance_export_service[compliance-export-service]
+  end
+  subgraph compose_158[services/compliance-export-service/rollback/20260125-132411/docker-compose.yml]
+    compose_158_compliance_export_service[compliance-export-service]
+  end
+  subgraph compose_159[services/consensus-telemetry-service/docker-compose.yml]
+    compose_159_consensus_telemetry_service[consensus-telemetry-service]
+  end
+  subgraph compose_160[services/consensus-telemetry-service/rollback/20260125-132116/docker-compose.yml]
+    compose_160_consensus_telemetry_service[consensus-telemetry-service]
+  end
+  subgraph compose_161[services/consensus-telemetry-service/rollback/20260125-132244/docker-compose.yml]
+    compose_161_consensus_telemetry_service[consensus-telemetry-service]
+  end
+  subgraph compose_162[services/consensus-telemetry-service/rollback/20260125-132411/docker-compose.yml]
+    compose_162_consensus_telemetry_service[consensus-telemetry-service]
+  end
+  subgraph compose_163[services/contract-registry-service/docker-compose.yml]
+    compose_163_contract_registry_service[contract-registry-service]
+  end
+  subgraph compose_164[services/contract-registry-service/rollback/20260125-132116/docker-compose.yml]
+    compose_164_contract_registry_service[contract-registry-service]
+  end
+  subgraph compose_165[services/contract-registry-service/rollback/20260125-132244/docker-compose.yml]
+    compose_165_contract_registry_service[contract-registry-service]
+  end
+  subgraph compose_166[services/contract-registry-service/rollback/20260125-132411/docker-compose.yml]
+    compose_166_contract_registry_service[contract-registry-service]
+  end
+  subgraph compose_167[services/contract-risk-service/docker-compose.yml]
+    compose_167_contract_risk_service[contract-risk-service]
+  end
+  subgraph compose_168[services/contract-risk-service/rollback/20260125-132116/docker-compose.yml]
+    compose_168_contract_risk_service[contract-risk-service]
+  end
+  subgraph compose_169[services/contract-risk-service/rollback/20260125-132244/docker-compose.yml]
+    compose_169_contract_risk_service[contract-risk-service]
+  end
+  subgraph compose_170[services/contract-risk-service/rollback/20260125-132411/docker-compose.yml]
+    compose_170_contract_risk_service[contract-risk-service]
+  end
+  subgraph compose_171[services/dispute-service/docker-compose.yml]
+    compose_171_dispute_service[dispute-service]
+  end
+  subgraph compose_172[services/dispute-service/rollback/20260125-132116/docker-compose.yml]
+    compose_172_dispute_service[dispute-service]
+  end
+  subgraph compose_173[services/dispute-service/rollback/20260125-132244/docker-compose.yml]
+    compose_173_dispute_service[dispute-service]
+  end
+  subgraph compose_174[services/dispute-service/rollback/20260125-132411/docker-compose.yml]
+    compose_174_dispute_service[dispute-service]
+  end
+  subgraph compose_175[services/docker-compose.legacy.yml]
+    compose_175_rpc_forward_l1_29545[rpc-forward-l1-29545]
+    compose_175_ghost_registry[ghost-registry]
+    compose_175_gas_engine_postgres[gas-engine-postgres]
+    compose_175_gas_engine_redis[gas-engine-redis]
+    compose_175_gas_engine_migrate[gas-engine-migrate]
+    compose_175_ghost_gas_engine[ghost-gas-engine]
+    compose_175_ghost_gas_engine_worker[ghost-gas-engine-worker]
+    compose_175_pil_postgres[pil-postgres]
+    compose_175_pil_migrate[pil-migrate]
+    compose_175_ghost_pil[ghost-pil]
+    compose_175_ghost_pil_worker[ghost-pil-worker]
+    compose_175_alerts_service[alerts-service]
+    compose_175_ai_clock_sync[ai-clock-sync]
+    compose_175_ai_vault_dev[ai-vault-dev]
+    compose_175_ai_vault[ai-vault]
+    compose_175_contract_registry_service[contract-registry-service]
+    compose_175_contract_risk_service[contract-risk-service]
+    compose_175_dispute_service[dispute-service]
+    compose_175_transfer_lifecycle_service[transfer-lifecycle-service]
+    compose_175_tx_index_service[tx-index-service]
+    compose_175_entity_tagging_service[entity-tagging-service]
+    compose_175_key_rotation_service[key-rotation-service]
+    compose_175_bridge_service[bridge-service]
+    compose_175_ghost_relayer[ghost-relayer]
+    compose_175_network_manager_service[network-manager-service]
+    compose_175_validator_service[validator-service]
+    compose_175_node_health_service[node-health-service]
+    compose_175_mempool_service[mempool-service]
+    compose_175_node_inventory_service[node-inventory-service]
+    compose_175_notifications_service[notifications-service]
+    compose_175_global_search_service[global-search-service]
+    compose_175_feature_flags_service[feature-flags-service]
+    compose_175_theme_service[theme-service]
+    compose_175_governance_service[governance-service]
+    compose_175_compliance_export_service[compliance-export-service]
+    compose_175_chain_status_service[chain-status-service]
+    compose_175_network_context_service[network-context-service]
+    compose_175_consensus_telemetry_service[consensus-telemetry-service]
+    compose_175_peer_graph_service[peer-graph-service]
+    compose_175_ghost_rollup_proposer[ghost-rollup-proposer]
+    compose_175_ghost_rollup_challenger[ghost-rollup-challenger]
+    compose_175_rewards_service[rewards-service]
+    compose_175_staking_service[staking-service]
+    compose_175_fee_model_service[fee-model-service]
+    compose_175_supply_service[supply-service]
+    compose_175_participation_service[participation-service]
+    compose_175_liquidity_service[liquidity-service]
+    compose_175_treasury_service[treasury-service]
+    compose_175_auth_service[auth-service]
+    compose_175_session_service[session-service]
+    compose_175_rbac_service[rbac-service]
+    compose_175_command_palette_service[command-palette-service]
+    compose_175_ai_monitor[ai-monitor]
+    compose_175_anomaly_detection_service[anomaly-detection-service]
+    compose_175_explainability_service[explainability-service]
+    compose_175_forecasting_service[forecasting-service]
+    compose_175_ghost_rpc_proxy[ghost-rpc-proxy]
+    compose_175_payout_service[payout-service]
+    compose_175_proxy_inspector_service[proxy-inspector-service]
+    compose_175_verification_service[verification-service]
+    compose_175_secrets_health_service[secrets-health-service]
+    compose_175_slashing_detection_service[slashing-detection-service]
+    compose_175_snapshot_service[snapshot-service]
+    compose_175_upgrade_orchestrator_service[upgrade-orchestrator-service]
+    compose_175_audit_log_service[audit-log-service]
+    compose_175_block_index_service[block-index-service]
+  end
+  subgraph compose_176[services/entity-tagging-service/docker-compose.yml]
+    compose_176_entity_tagging_service[entity-tagging-service]
+  end
+  subgraph compose_177[services/entity-tagging-service/rollback/20260125-132116/docker-compose.yml]
+    compose_177_entity_tagging_service[entity-tagging-service]
+  end
+  subgraph compose_178[services/entity-tagging-service/rollback/20260125-132244/docker-compose.yml]
+    compose_178_entity_tagging_service[entity-tagging-service]
+  end
+  subgraph compose_179[services/entity-tagging-service/rollback/20260125-132411/docker-compose.yml]
+    compose_179_entity_tagging_service[entity-tagging-service]
+  end
+  subgraph compose_180[services/explainability-service/docker-compose.yml]
+    compose_180_explainability_service[explainability-service]
+  end
+  subgraph compose_181[services/explainability-service/rollback/20260125-132116/docker-compose.yml]
+    compose_181_explainability_service[explainability-service]
+  end
+  subgraph compose_182[services/explainability-service/rollback/20260125-132244/docker-compose.yml]
+    compose_182_explainability_service[explainability-service]
+  end
+  subgraph compose_183[services/explainability-service/rollback/20260125-132411/docker-compose.yml]
+    compose_183_explainability_service[explainability-service]
+  end
+  subgraph compose_184[services/feature-flags-service/docker-compose.yml]
+    compose_184_feature_flags_service[feature-flags-service]
+  end
+  subgraph compose_185[services/feature-flags-service/rollback/20260125-132116/docker-compose.yml]
+    compose_185_feature_flags_service[feature-flags-service]
+  end
+  subgraph compose_186[services/feature-flags-service/rollback/20260125-132244/docker-compose.yml]
+    compose_186_feature_flags_service[feature-flags-service]
+  end
+  subgraph compose_187[services/feature-flags-service/rollback/20260125-132411/docker-compose.yml]
+    compose_187_feature_flags_service[feature-flags-service]
+  end
+  subgraph compose_188[services/fee-model-service/docker-compose.yml]
+    compose_188_fee_model_service[fee-model-service]
+  end
+  subgraph compose_189[services/fee-model-service/rollback/20260125-132116/docker-compose.yml]
+    compose_189_fee_model_service[fee-model-service]
+  end
+  subgraph compose_190[services/fee-model-service/rollback/20260125-132244/docker-compose.yml]
+    compose_190_fee_model_service[fee-model-service]
+  end
+  subgraph compose_191[services/fee-model-service/rollback/20260125-132411/docker-compose.yml]
+    compose_191_fee_model_service[fee-model-service]
+  end
+  subgraph compose_192[services/forecasting-service/docker-compose.yml]
+    compose_192_forecasting_service[forecasting-service]
+  end
+  subgraph compose_193[services/forecasting-service/rollback/20260125-132116/docker-compose.yml]
+    compose_193_forecasting_service[forecasting-service]
+  end
+  subgraph compose_194[services/forecasting-service/rollback/20260125-132244/docker-compose.yml]
+    compose_194_forecasting_service[forecasting-service]
+  end
+  subgraph compose_195[services/forecasting-service/rollback/20260125-132411/docker-compose.yml]
+    compose_195_forecasting_service[forecasting-service]
+  end
+  subgraph compose_196[services/gas-engine-migrate/docker-compose.yml]
+    compose_196_gas_engine_migrate[gas-engine-migrate]
+  end
+  subgraph compose_197[services/gas-engine-migrate/rollback/20260125-132116/docker-compose.yml]
+    compose_197_gas_engine_migrate[gas-engine-migrate]
+  end
+  subgraph compose_198[services/gas-engine-migrate/rollback/20260125-132244/docker-compose.yml]
+    compose_198_gas_engine_migrate[gas-engine-migrate]
+  end
+  subgraph compose_199[services/gas-engine-migrate/rollback/20260125-132411/docker-compose.yml]
+    compose_199_gas_engine_migrate[gas-engine-migrate]
+  end
+  subgraph compose_200[services/gas-engine-postgres/docker-compose.yml]
+    compose_200_gas_engine_postgres[gas-engine-postgres]
+  end
+  subgraph compose_201[services/gas-engine-postgres/rollback/20260125-132116/docker-compose.yml]
+    compose_201_gas_engine_postgres[gas-engine-postgres]
+  end
+  subgraph compose_202[services/gas-engine-postgres/rollback/20260125-132244/docker-compose.yml]
+    compose_202_gas_engine_postgres[gas-engine-postgres]
+  end
+  subgraph compose_203[services/gas-engine-postgres/rollback/20260125-132411/docker-compose.yml]
+    compose_203_gas_engine_postgres[gas-engine-postgres]
+  end
+  subgraph compose_204[services/gas-engine-redis/docker-compose.yml]
+    compose_204_gas_engine_redis[gas-engine-redis]
+  end
+  subgraph compose_205[services/gas-engine-redis/rollback/20260125-132116/docker-compose.yml]
+    compose_205_gas_engine_redis[gas-engine-redis]
+  end
+  subgraph compose_206[services/gas-engine-redis/rollback/20260125-132244/docker-compose.yml]
+    compose_206_gas_engine_redis[gas-engine-redis]
+  end
+  subgraph compose_207[services/gas-engine-redis/rollback/20260125-132411/docker-compose.yml]
+    compose_207_gas_engine_redis[gas-engine-redis]
+  end
+  subgraph compose_208[services/ghost-ai-attestor/docker-compose.yml]
+    compose_208_ghost_ai_attestor[ghost-ai-attestor]
+  end
+  subgraph compose_209[services/ghost-compliance-worker/docker-compose.yml]
+    compose_209_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_210[services/ghost-compliance-worker/rollback/20260125-132116/docker-compose.yml]
+    compose_210_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_211[services/ghost-compliance-worker/rollback/20260125-132244/docker-compose.yml]
+    compose_211_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_212[services/ghost-compliance-worker/rollback/20260125-132411/docker-compose.yml]
+    compose_212_ghost_compliance_worker[ghost-compliance-worker]
+  end
+  subgraph compose_213[services/ghost-compliance/docker-compose.yml]
+    compose_213_ghost_compliance[ghost-compliance]
+  end
+  subgraph compose_214[services/ghost-compliance/rollback/20260125-132116/docker-compose.yml]
+    compose_214_ghost_compliance[ghost-compliance]
+  end
+  subgraph compose_215[services/ghost-compliance/rollback/20260125-132244/docker-compose.yml]
+    compose_215_ghost_compliance[ghost-compliance]
+  end
+  subgraph compose_216[services/ghost-compliance/rollback/20260125-132411/docker-compose.yml]
+    compose_216_ghost_compliance[ghost-compliance]
+  end
+  subgraph compose_217[services/ghost-gas-engine-worker/docker-compose.yml]
+    compose_217_ghost_gas_engine_worker[ghost-gas-engine-worker]
+  end
+  subgraph compose_218[services/ghost-gas-engine-worker/rollback/20260125-132244/docker-compose.yml]
+    compose_218_ghost_gas_engine_worker[ghost-gas-engine-worker]
+  end
+  subgraph compose_219[services/ghost-gas-engine-worker/rollback/20260125-132411/docker-compose.yml]
+    compose_219_ghost_gas_engine_worker[ghost-gas-engine-worker]
+  end
+  subgraph compose_220[services/ghost-gas-engine/docker-compose.yml]
+    compose_220_ghost_gas_engine[ghost-gas-engine]
+  end
+  subgraph compose_221[services/ghost-gas-engine/rollback/20260125-132116/docker-compose.yml]
+    compose_221_ghost_gas_engine[ghost-gas-engine]
+  end
+  subgraph compose_222[services/ghost-gas-engine/rollback/20260125-132244/docker-compose.yml]
+    compose_222_ghost_gas_engine[ghost-gas-engine]
+  end
+  subgraph compose_223[services/ghost-gas-engine/rollback/20260125-132411/docker-compose.yml]
+    compose_223_ghost_gas_engine[ghost-gas-engine]
+  end
+  subgraph compose_224[services/ghost-pil-worker/docker-compose.yml]
+    compose_224_ghost_pil_worker[ghost-pil-worker]
+  end
+  subgraph compose_225[services/ghost-pil-worker/rollback/20260125-132411/docker-compose.yml]
+    compose_225_ghost_pil_worker[ghost-pil-worker]
+  end
+  subgraph compose_226[services/ghost-pil/docker-compose.yml]
+    compose_226_ghost_pil[ghost-pil]
+  end
+  subgraph compose_227[services/ghost-pil/rollback/20260125-132411/docker-compose.yml]
+    compose_227_ghost_pil[ghost-pil]
+  end
+  subgraph compose_228[services/ghost-registry/docker-compose.yml]
+    compose_228_ghost_registry[ghost-registry]
+  end
+  subgraph compose_229[services/ghost-registry/rollback/20260125-132411/docker-compose.yml]
+    compose_229_ghost_registry[ghost-registry]
+  end
+  subgraph compose_230[services/ghost-relayer/docker-compose.yml]
+    compose_230_ghost_relayer[ghost-relayer]
+  end
+  subgraph compose_231[services/ghost-relayer/rollback/20260125-132411/docker-compose.yml]
+    compose_231_ghost_relayer[ghost-relayer]
+  end
+  subgraph compose_232[services/ghost-rollup-challenger/docker-compose.yml]
+    compose_232_ghost_rollup_challenger[ghost-rollup-challenger]
+  end
+  subgraph compose_233[services/ghost-rollup-challenger/rollback/20260125-132411/docker-compose.yml]
+    compose_233_ghost_rollup_challenger[ghost-rollup-challenger]
+  end
+  subgraph compose_234[services/ghost-rollup-proposer/docker-compose.yml]
+    compose_234_ghost_rollup_proposer[ghost-rollup-proposer]
+  end
+  subgraph compose_235[services/ghost-rollup-proposer/rollback/20260125-132411/docker-compose.yml]
+    compose_235_ghost_rollup_proposer[ghost-rollup-proposer]
+  end
+  subgraph compose_236[services/ghost-rpc-proxy/docker-compose.yml]
+    compose_236_ghost_rpc_proxy[ghost-rpc-proxy]
+  end
+  subgraph compose_237[services/ghost-rpc-proxy/rollback/20260125-132411/docker-compose.yml]
+    compose_237_ghost_rpc_proxy[ghost-rpc-proxy]
+  end
+  subgraph compose_238[services/ghostscout-db/docker-compose.yml]
+    compose_238_ghostscout_db[ghostscout-db]
+  end
+  subgraph compose_239[services/ghostscout-db/rollback/20260125-132411/docker-compose.yml]
+    compose_239_ghostscout_db[ghostscout-db]
+  end
+  subgraph compose_240[services/ghostscout-frontend-l1/docker-compose.yml]
+    compose_240_ghostscout_frontend_l1[ghostscout-frontend-l1]
+  end
+  subgraph compose_241[services/ghostscout-frontend-l2/docker-compose.yml]
+    compose_241_ghostscout_frontend_l2[ghostscout-frontend-l2]
+  end
+  subgraph compose_242[services/ghostscout-frontend-l3/docker-compose.yml]
+    compose_242_ghostscout_frontend_l3[ghostscout-frontend-l3]
+  end
+  subgraph compose_243[services/ghostscout-l1/docker-compose.yml]
+    compose_243_ghostscout_l1[ghostscout-l1]
+  end
+  subgraph compose_244[services/ghostscout-l2/docker-compose.yml]
+    compose_244_ghostscout_l2[ghostscout-l2]
+  end
+  subgraph compose_245[services/ghostscout-l3/docker-compose.yml]
+    compose_245_ghostscout_l3[ghostscout-l3]
+  end
+  subgraph compose_246[services/global-search-service/docker-compose.yml]
+    compose_246_global_search_service[global-search-service]
+  end
+  subgraph compose_247[services/governance-service/docker-compose.yml]
+    compose_247_governance_service[governance-service]
+  end
+  subgraph compose_248[services/key-rotation-service/docker-compose.yml]
+    compose_248_key_rotation_service[key-rotation-service]
+  end
+  subgraph compose_249[services/liquidity-service/docker-compose.yml]
+    compose_249_liquidity_service[liquidity-service]
+  end
+  subgraph compose_250[services/mempool-service/docker-compose.yml]
+    compose_250_mempool_service[mempool-service]
+  end
+  subgraph compose_251[services/network-context-service/docker-compose.yml]
+    compose_251_network_context_service[network-context-service]
+  end
+  subgraph compose_252[services/network-manager-service/docker-compose.yml]
+    compose_252_network_manager_service[network-manager-service]
+  end
+  subgraph compose_253[services/node-health-service/docker-compose.yml]
+    compose_253_node_health_service[node-health-service]
+  end
+  subgraph compose_254[services/node-inventory-service/docker-compose.yml]
+    compose_254_node_inventory_service[node-inventory-service]
+  end
+  subgraph compose_255[services/notifications-service/docker-compose.yml]
+    compose_255_notifications_service[notifications-service]
+  end
+  subgraph compose_256[services/participation-service/docker-compose.yml]
+    compose_256_participation_service[participation-service]
+  end
+  subgraph compose_257[services/payout-service/docker-compose.yml]
+    compose_257_payout_service[payout-service]
+  end
+  subgraph compose_258[services/peer-graph-service/docker-compose.yml]
+    compose_258_peer_graph_service[peer-graph-service]
+  end
+  subgraph compose_259[services/pil-migrate/docker-compose.yml]
+    compose_259_pil_migrate[pil-migrate]
+  end
+  subgraph compose_260[services/pil-postgres/docker-compose.yml]
+    compose_260_pil_postgres[pil-postgres]
+  end
+  subgraph compose_261[services/proxy-inspector-service/docker-compose.yml]
+    compose_261_proxy_inspector_service[proxy-inspector-service]
+  end
+  subgraph compose_262[services/rbac-service/docker-compose.yml]
+    compose_262_rbac_service[rbac-service]
+  end
+  subgraph compose_263[services/rewards-service/docker-compose.yml]
+    compose_263_rewards_service[rewards-service]
+  end
+  subgraph compose_264[services/rpc-forward-l1-29545/docker-compose.yml]
+    compose_264_rpc_forward_l1_29545[rpc-forward-l1-29545]
+  end
+  subgraph compose_265[services/secrets-health-service/docker-compose.yml]
+    compose_265_secrets_health_service[secrets-health-service]
+  end
+  subgraph compose_266[services/session-service/docker-compose.yml]
+    compose_266_session_service[session-service]
+  end
+  subgraph compose_267[services/slashing-detection-service/docker-compose.yml]
+    compose_267_slashing_detection_service[slashing-detection-service]
+  end
+  subgraph compose_268[services/snapshot-service/docker-compose.yml]
+    compose_268_snapshot_service[snapshot-service]
+  end
+  subgraph compose_269[services/staking-service/docker-compose.yml]
+    compose_269_staking_service[staking-service]
+  end
+  subgraph compose_270[services/supply-service/docker-compose.yml]
+    compose_270_supply_service[supply-service]
+  end
+  subgraph compose_271[services/theme-service/docker-compose.yml]
+    compose_271_theme_service[theme-service]
+  end
+  subgraph compose_272[services/transfer-lifecycle-service/docker-compose.yml]
+    compose_272_transfer_lifecycle_service[transfer-lifecycle-service]
+  end
+  subgraph compose_273[services/treasury-service/docker-compose.yml]
+    compose_273_treasury_service[treasury-service]
+  end
+  subgraph compose_274[services/tx-index-service/docker-compose.yml]
+    compose_274_tx_index_service[tx-index-service]
+  end
+  subgraph compose_275[services/upgrade-orchestrator-service/docker-compose.yml]
+    compose_275_upgrade_orchestrator_service[upgrade-orchestrator-service]
+  end
+  subgraph compose_276[services/validator-service/docker-compose.yml]
+    compose_276_validator_service[validator-service]
+  end
+  subgraph compose_277[services/verification-service/docker-compose.yml]
+    compose_277_verification_service[verification-service]
+  end
+  compose_0_ghostl_web --> compose_0_ghostl_api
+  compose_1_migrate --> compose_1_postgres
+  compose_1_migrate --> compose_1_redis
+  compose_1_ghost_compliance --> compose_1_postgres
+  compose_1_ghost_compliance --> compose_1_redis
+  compose_1_ghost_compliance --> compose_1_migrate
+  compose_1_ghost_compliance_worker --> compose_1_ghost_compliance
+  compose_3_router_agent --> compose_3_agent_registry
+  compose_3_router_agent --> compose_3_evidence_service
+  compose_3_planner_agent --> compose_3_agent_registry
+  compose_3_planner_agent --> compose_3_evidence_service
+  compose_3_coder_agent --> compose_3_agent_registry
+  compose_3_coder_agent --> compose_3_evidence_service
+  compose_3_auditor_agent --> compose_3_agent_registry
+  compose_3_auditor_agent --> compose_3_evidence_service
+  compose_3_docs_agent --> compose_3_agent_registry
+  compose_3_docs_agent --> compose_3_evidence_service
+  compose_3_ops_agent --> compose_3_agent_registry
+  compose_3_ops_agent --> compose_3_evidence_service
+  compose_3_watchdog_agent --> compose_3_agent_registry
+  compose_3_watchdog_agent --> compose_3_evidence_service
+  compose_4_ghostl_web --> compose_4_ghostl_api
+  compose_5_migrate --> compose_5_postgres
+  compose_5_migrate --> compose_5_redis
+  compose_5_ghost_compliance --> compose_5_postgres
+  compose_5_ghost_compliance --> compose_5_redis
+  compose_5_ghost_compliance --> compose_5_migrate
+  compose_5_ghost_compliance_worker --> compose_5_postgres
+  compose_5_ghost_compliance_worker --> compose_5_redis
+  compose_5_ghost_compliance_worker --> compose_5_migrate
+  compose_5_ghost_compliance_worker --> compose_5_ghost_compliance
+  compose_7_ghostl_web --> compose_7_ghostl_api
+  compose_8_migrate --> compose_8_postgres
+  compose_8_migrate --> compose_8_redis
+  compose_8_ghost_compliance --> compose_8_postgres
+  compose_8_ghost_compliance --> compose_8_redis
+  compose_8_ghost_compliance --> compose_8_migrate
+  compose_8_ghost_compliance_worker --> compose_8_ghost_compliance
+  compose_8_ghost_ui --> compose_8_ghost_compliance
+  compose_9_ghostchain_node1 --> compose_9_ghostchain_bootnode
+  compose_9_ghostchain_node2 --> compose_9_ghostchain_bootnode
+  compose_9_ghostscout --> compose_9_ghostscout_db
+  compose_9_ghostscout --> compose_9_ghostchain_node1
+  compose_12_l3_op_node --> compose_12_l3_geth
+  compose_12_l3_op_batcher --> compose_12_l3_op_node
+  compose_12_l3_op_proposer --> compose_12_l3_op_node
+  compose_12_validator_service --> compose_12_l3_geth
+  compose_12_node_health_service --> compose_12_l3_geth
+  compose_12_consensus_telemetry_service --> compose_12_l3_geth
+  compose_12_liquidity_service --> compose_12_l3_geth
+  compose_12_contract_registry_service --> compose_12_l3_geth
+  compose_12_peer_graph_service --> compose_12_l3_geth
+  compose_15_ghost_guard --> compose_15_l2_geth
+  compose_15_l2_geth --> compose_15_op_gate
+  compose_15_op_node --> compose_15_l2_geth
+  compose_15_op_sequencer --> compose_15_l2_geth
+  compose_15_op_batcher --> compose_15_op_node
+  compose_15_op_batcher --> compose_15_op_gate
+  compose_15_op_proposer --> compose_15_op_node
+  compose_15_op_proposer --> compose_15_op_gate
+  compose_15_grafana --> compose_15_prometheus
+  compose_15_grafana --> compose_15_loki
+  compose_15_vector --> compose_15_loki
+  compose_16_l1_bn --> compose_16_l1
+  compose_16_l1_vc --> compose_16_l1
+  compose_16_l1_vc --> compose_16_l1_bn
+  compose_16_op_supervisor --> compose_16_l1
+  compose_16_l2_a --> compose_16_op_supervisor
+  compose_16_l2_b --> compose_16_op_supervisor
+  compose_16_op_node_a --> compose_16_l1
+  compose_16_op_node_a --> compose_16_l1_bn
+  compose_16_op_node_a --> compose_16_l1_vc
+  compose_16_op_node_a --> compose_16_l2_a
+  compose_16_op_node_a --> compose_16_op_supervisor
+  compose_16_op_node_b --> compose_16_l1
+  compose_16_op_node_b --> compose_16_l1_bn
+  compose_16_op_node_b --> compose_16_l1_vc
+  compose_16_op_node_b --> compose_16_l2_b
+  compose_16_op_node_b --> compose_16_op_supervisor
+  compose_16_op_proposer_a --> compose_16_l1
+  compose_16_op_proposer_a --> compose_16_op_node_a
+  compose_16_op_proposer_b --> compose_16_l1
+  compose_16_op_proposer_b --> compose_16_op_node_b
+  compose_16_op_batcher_a --> compose_16_l1
+  compose_16_op_batcher_a --> compose_16_l2_a
+  compose_16_op_batcher_a --> compose_16_op_node_a
+  compose_16_op_batcher_b --> compose_16_l1
+  compose_16_op_batcher_b --> compose_16_l2_b
+  compose_16_op_batcher_b --> compose_16_op_node_b
+  compose_17_l1_bn --> compose_17_l1
+  compose_17_l1_vc --> compose_17_l1
+  compose_17_l1_vc --> compose_17_l1_bn
+  compose_17_op_node --> compose_17_l1
+  compose_17_op_node --> compose_17_l1_bn
+  compose_17_op_node --> compose_17_l1_vc
+  compose_17_op_node --> compose_17_l2
+  compose_17_op_proposer --> compose_17_l1
+  compose_17_op_proposer --> compose_17_l2
+  compose_17_op_proposer --> compose_17_op_node
+  compose_17_op_batcher --> compose_17_l1
+  compose_17_op_batcher --> compose_17_l2
+  compose_17_op_batcher --> compose_17_op_node
+  compose_17_op_challenger --> compose_17_l1
+  compose_17_op_challenger --> compose_17_l1_bn
+  compose_17_op_challenger --> compose_17_l2
+  compose_17_op_challenger --> compose_17_op_node
+  compose_17_artifact_server --> compose_17_l1
+  compose_18_grafana --> compose_18_prometheus
+  compose_18_grafana --> compose_18_loki
+  compose_18_vector --> compose_18_loki
+  compose_21_ai_monitor --> compose_21_l2_geth
+  compose_21_alerts_service --> compose_21_prometheus
+  compose_21_anomaly_detection_service --> compose_21_prometheus
+  compose_21_block_index_service --> compose_21_prometheus
+  compose_21_bridge_service --> compose_21_prometheus
+  compose_21_consensus_telemetry_service --> compose_21_l2_geth
+  compose_21_consensus_telemetry_service --> compose_21_l3_geth
+  compose_21_contract_registry_service --> compose_21_l2_geth
+  compose_21_contract_registry_service --> compose_21_l3_geth
+  compose_21_contract_registry_service --> compose_21_prometheus
+  compose_21_contract_risk_service --> compose_21_prometheus
+  compose_21_dispute_service --> compose_21_prometheus
+  compose_21_explainability_service --> compose_21_prometheus
+  compose_21_fee_model_service --> compose_21_prometheus
+  compose_21_forecasting_service --> compose_21_prometheus
+  compose_21_key_rotation_service --> compose_21_prometheus
+  compose_21_l3_geth --> compose_21_l2_geth
+  compose_21_l3_op_batcher --> compose_21_l3_op_node
+  compose_21_l3_op_node --> compose_21_l3_geth
+  compose_21_l3_op_proposer --> compose_21_l3_op_node
+  compose_21_liquidity_service --> compose_21_l2_geth
+  compose_21_liquidity_service --> compose_21_l3_geth
+  compose_21_liquidity_service --> compose_21_prometheus
+  compose_21_mempool_service --> compose_21_prometheus
+  compose_21_node_health_service --> compose_21_l2_geth
+  compose_21_node_health_service --> compose_21_l3_geth
+  compose_21_participation_service --> compose_21_prometheus
+  compose_21_payout_service --> compose_21_prometheus
+  compose_21_peer_graph_service --> compose_21_l2_geth
+  compose_21_peer_graph_service --> compose_21_l3_geth
+  compose_21_proxy_inspector_service --> compose_21_prometheus
+  compose_21_rewards_service --> compose_21_prometheus
+  compose_21_secrets_health_service --> compose_21_prometheus
+  compose_21_slashing_detection_service --> compose_21_prometheus
+  compose_21_staking_service --> compose_21_prometheus
+  compose_21_supply_service --> compose_21_prometheus
+  compose_21_transfer_lifecycle_service --> compose_21_prometheus
+  compose_21_treasury_service --> compose_21_prometheus
+  compose_21_tx_index_service --> compose_21_prometheus
+  compose_21_ghostchain_node2 --> compose_21_ghostchain_bootnode
+  compose_21_ghostscout --> compose_21_ghostchain_node1
+  compose_21_ghostscout --> compose_21_ghostscout_db
+  compose_21_ghost_guard --> compose_21_l2_geth
+  compose_21_l2_geth --> compose_21_op_gate
+  compose_21_op_batcher --> compose_21_op_gate
+  compose_21_op_batcher --> compose_21_op_node
+  compose_21_op_node --> compose_21_l2_geth
+  compose_21_op_proposer --> compose_21_op_gate
+  compose_21_op_proposer --> compose_21_op_node
+  compose_21_op_sequencer --> compose_21_l2_geth
+  compose_21_vector --> compose_21_loki
+  compose_21_l3_op_challenger --> compose_21_l3_op_node
+  compose_21_op_challenger --> compose_21_l1
+  compose_21_op_challenger --> compose_21_l1_bn
+  compose_21_op_challenger --> compose_21_l2
+  compose_21_op_challenger --> compose_21_op_node
+  compose_21_l1_bn --> compose_21_l1
+  compose_21_l1_vc --> compose_21_l1
+  compose_21_l1_vc --> compose_21_l1_bn
+  compose_21_l2_a --> compose_21_op_supervisor
+  compose_21_l2_b --> compose_21_op_supervisor
+  compose_21_op_batcher_a --> compose_21_l1
+  compose_21_op_batcher_a --> compose_21_l2_a
+  compose_21_op_batcher_a --> compose_21_op_node_a
+  compose_21_op_batcher_b --> compose_21_l1
+  compose_21_op_batcher_b --> compose_21_l2_b
+  compose_21_op_batcher_b --> compose_21_op_node_b
+  compose_21_op_node_a --> compose_21_l1
+  compose_21_op_node_a --> compose_21_l1_bn
+  compose_21_op_node_a --> compose_21_l1_vc
+  compose_21_op_node_a --> compose_21_l2_a
+  compose_21_op_node_a --> compose_21_op_supervisor
+  compose_21_op_node_b --> compose_21_l1
+  compose_21_op_node_b --> compose_21_l1_bn
+  compose_21_op_node_b --> compose_21_l1_vc
+  compose_21_op_node_b --> compose_21_l2_b
+  compose_21_op_node_b --> compose_21_op_supervisor
+  compose_21_op_proposer_a --> compose_21_l1
+  compose_21_op_proposer_a --> compose_21_op_node_a
+  compose_21_op_proposer_b --> compose_21_l1
+  compose_21_op_proposer_b --> compose_21_op_node_b
+  compose_21_op_supervisor --> compose_21_l1
+  compose_21_artifact_server --> compose_21_l1
+  compose_22_grafana --> compose_22_loki
+  compose_22_grafana --> compose_22_prometheus
+  compose_22_vector --> compose_22_loki
+  compose_23_ghost_compliance --> compose_23_migrate
+  compose_23_ghost_compliance --> compose_23_postgres
+  compose_23_ghost_compliance --> compose_23_redis
+  compose_23_ghost_compliance_worker --> compose_23_ghost_compliance
+  compose_23_ghost_ui --> compose_23_ghost_compliance
+  compose_23_migrate --> compose_23_postgres
+  compose_23_migrate --> compose_23_redis
+  compose_25_migrate --> compose_25_postgres
+  compose_25_migrate --> compose_25_redis
+  compose_25_ghost_compliance --> compose_25_postgres
+  compose_25_ghost_compliance --> compose_25_redis
+  compose_25_ghost_compliance --> compose_25_migrate
+  compose_25_ghost_compliance_worker --> compose_25_postgres
+  compose_25_ghost_compliance_worker --> compose_25_redis
+  compose_25_ghost_compliance_worker --> compose_25_migrate
+  compose_25_ghost_compliance_worker --> compose_25_ghost_compliance
+  compose_26_ghostchain_node1 --> compose_26_ghostchain_bootnode
+  compose_26_ghostchain_node2 --> compose_26_ghostchain_bootnode
+  compose_26_ghostchain_rpc_proxy --> compose_26_ghostchain_node1
+  compose_26_ghostscout --> compose_26_ghostchain_node1
+  compose_28_migrate --> compose_28_postgres
+  compose_28_migrate --> compose_28_redis
+  compose_28_ghost_compliance --> compose_28_postgres
+  compose_28_ghost_compliance --> compose_28_redis
+  compose_28_ghost_compliance --> compose_28_migrate
+  compose_28_ghost_compliance_worker --> compose_28_postgres
+  compose_28_ghost_compliance_worker --> compose_28_redis
+  compose_28_ghost_compliance_worker --> compose_28_migrate
+  compose_28_ghost_compliance_worker --> compose_28_ghost_compliance
+  compose_29_ghostchain_node1 --> compose_29_ghostchain_bootnode
+  compose_29_ghostchain_node2 --> compose_29_ghostchain_bootnode
+  compose_29_ghostchain_rpc_proxy --> compose_29_ghostchain_node1
+  compose_29_ghostscout --> compose_29_ghostchain_node1
+  compose_31_migrate --> compose_31_postgres
+  compose_31_migrate --> compose_31_redis
+  compose_31_ghost_compliance --> compose_31_postgres
+  compose_31_ghost_compliance --> compose_31_redis
+  compose_31_ghost_compliance --> compose_31_migrate
+  compose_31_ghost_compliance_worker --> compose_31_postgres
+  compose_31_ghost_compliance_worker --> compose_31_redis
+  compose_31_ghost_compliance_worker --> compose_31_migrate
+  compose_31_ghost_compliance_worker --> compose_31_ghost_compliance
+  compose_32_ghostchain_node1 --> compose_32_ghostchain_bootnode
+  compose_32_ghostchain_node2 --> compose_32_ghostchain_bootnode
+  compose_32_ghostchain_rpc_proxy --> compose_32_ghostchain_node1
+  compose_32_ghostscout --> compose_32_ghostchain_node1
+  compose_34_migrate --> compose_34_postgres
+  compose_34_migrate --> compose_34_redis
+  compose_34_ghost_compliance --> compose_34_postgres
+  compose_34_ghost_compliance --> compose_34_redis
+  compose_34_ghost_compliance --> compose_34_migrate
+  compose_34_ghost_compliance_worker --> compose_34_postgres
+  compose_34_ghost_compliance_worker --> compose_34_redis
+  compose_34_ghost_compliance_worker --> compose_34_migrate
+  compose_34_ghost_compliance_worker --> compose_34_ghost_compliance
+  compose_35_ghostchain_node1 --> compose_35_ghostchain_bootnode
+  compose_35_ghostchain_node2 --> compose_35_ghostchain_bootnode
+  compose_35_ghostchain_rpc_proxy --> compose_35_ghostchain_node1
+  compose_35_ghostscout --> compose_35_ghostchain_node1
+  compose_37_migrate --> compose_37_postgres
+  compose_37_migrate --> compose_37_redis
+  compose_37_ghost_compliance --> compose_37_postgres
+  compose_37_ghost_compliance --> compose_37_redis
+  compose_37_ghost_compliance --> compose_37_migrate
+  compose_37_ghost_compliance_worker --> compose_37_postgres
+  compose_37_ghost_compliance_worker --> compose_37_redis
+  compose_37_ghost_compliance_worker --> compose_37_migrate
+  compose_37_ghost_compliance_worker --> compose_37_ghost_compliance
+  compose_38_ghostchain_node1 --> compose_38_ghostchain_bootnode
+  compose_38_ghostchain_node2 --> compose_38_ghostchain_bootnode
+  compose_38_ghostchain_rpc_proxy --> compose_38_ghostchain_node1
+  compose_38_ghostscout --> compose_38_ghostchain_node1
+  compose_40_migrate --> compose_40_postgres
+  compose_40_migrate --> compose_40_redis
+  compose_40_ghost_compliance --> compose_40_postgres
+  compose_40_ghost_compliance --> compose_40_redis
+  compose_40_ghost_compliance --> compose_40_migrate
+  compose_40_ghost_compliance_worker --> compose_40_postgres
+  compose_40_ghost_compliance_worker --> compose_40_redis
+  compose_40_ghost_compliance_worker --> compose_40_migrate
+  compose_40_ghost_compliance_worker --> compose_40_ghost_compliance
+  compose_41_ghostchain_node1 --> compose_41_ghostchain_bootnode
+  compose_41_ghostchain_node2 --> compose_41_ghostchain_bootnode
+  compose_41_ghostchain_rpc_proxy --> compose_41_ghostchain_node1
+  compose_41_ghostscout --> compose_41_ghostchain_node1
+  compose_43_migrate --> compose_43_postgres
+  compose_43_migrate --> compose_43_redis
+  compose_43_ghost_compliance --> compose_43_postgres
+  compose_43_ghost_compliance --> compose_43_redis
+  compose_43_ghost_compliance --> compose_43_migrate
+  compose_43_ghost_compliance_worker --> compose_43_postgres
+  compose_43_ghost_compliance_worker --> compose_43_redis
+  compose_43_ghost_compliance_worker --> compose_43_migrate
+  compose_43_ghost_compliance_worker --> compose_43_ghost_compliance
+  compose_44_ghostchain_node1 --> compose_44_ghostchain_bootnode
+  compose_44_ghostchain_node2 --> compose_44_ghostchain_bootnode
+  compose_44_ghostchain_rpc_proxy --> compose_44_ghostchain_node1
+  compose_44_ghostscout --> compose_44_ghostchain_node1
+  compose_46_migrate --> compose_46_postgres
+  compose_46_migrate --> compose_46_redis
+  compose_46_ghost_compliance --> compose_46_postgres
+  compose_46_ghost_compliance --> compose_46_redis
+  compose_46_ghost_compliance --> compose_46_migrate
+  compose_46_ghost_compliance_worker --> compose_46_postgres
+  compose_46_ghost_compliance_worker --> compose_46_redis
+  compose_46_ghost_compliance_worker --> compose_46_migrate
+  compose_46_ghost_compliance_worker --> compose_46_ghost_compliance
+  compose_47_ghostchain_node1 --> compose_47_ghostchain_bootnode
+  compose_47_ghostchain_node2 --> compose_47_ghostchain_bootnode
+  compose_47_ghostchain_rpc_proxy --> compose_47_ghostchain_node1
+  compose_47_ghostscout --> compose_47_ghostchain_node1
+  compose_49_migrate --> compose_49_postgres
+  compose_49_migrate --> compose_49_redis
+  compose_49_ghost_compliance --> compose_49_postgres
+  compose_49_ghost_compliance --> compose_49_redis
+  compose_49_ghost_compliance --> compose_49_migrate
+  compose_49_ghost_compliance_worker --> compose_49_postgres
+  compose_49_ghost_compliance_worker --> compose_49_redis
+  compose_49_ghost_compliance_worker --> compose_49_migrate
+  compose_49_ghost_compliance_worker --> compose_49_ghost_compliance
+  compose_50_ghostchain_node1 --> compose_50_ghostchain_bootnode
+  compose_50_ghostchain_node2 --> compose_50_ghostchain_bootnode
+  compose_50_ghostchain_rpc_proxy --> compose_50_ghostchain_node1
+  compose_50_ghostscout --> compose_50_ghostchain_node1
+  compose_52_migrate --> compose_52_postgres
+  compose_52_migrate --> compose_52_redis
+  compose_52_ghost_compliance --> compose_52_postgres
+  compose_52_ghost_compliance --> compose_52_redis
+  compose_52_ghost_compliance --> compose_52_migrate
+  compose_52_ghost_compliance_worker --> compose_52_postgres
+  compose_52_ghost_compliance_worker --> compose_52_redis
+  compose_52_ghost_compliance_worker --> compose_52_migrate
+  compose_52_ghost_compliance_worker --> compose_52_ghost_compliance
+  compose_53_ghostchain_node1 --> compose_53_ghostchain_bootnode
+  compose_53_ghostchain_node2 --> compose_53_ghostchain_bootnode
+  compose_53_ghostchain_rpc_proxy --> compose_53_ghostchain_node1
+  compose_53_ghostscout --> compose_53_ghostchain_node1
+  compose_55_migrate --> compose_55_postgres
+  compose_55_migrate --> compose_55_redis
+  compose_55_ghost_compliance --> compose_55_postgres
+  compose_55_ghost_compliance --> compose_55_redis
+  compose_55_ghost_compliance --> compose_55_migrate
+  compose_55_ghost_compliance_worker --> compose_55_postgres
+  compose_55_ghost_compliance_worker --> compose_55_redis
+  compose_55_ghost_compliance_worker --> compose_55_migrate
+  compose_55_ghost_compliance_worker --> compose_55_ghost_compliance
+  compose_56_ghostchain_node1 --> compose_56_ghostchain_bootnode
+  compose_56_ghostchain_node2 --> compose_56_ghostchain_bootnode
+  compose_56_ghostchain_rpc_proxy --> compose_56_ghostchain_node1
+  compose_56_ghostscout --> compose_56_ghostchain_node1
+  compose_58_migrate --> compose_58_postgres
+  compose_58_migrate --> compose_58_redis
+  compose_58_ghost_compliance --> compose_58_postgres
+  compose_58_ghost_compliance --> compose_58_redis
+  compose_58_ghost_compliance --> compose_58_migrate
+  compose_58_ghost_compliance_worker --> compose_58_postgres
+  compose_58_ghost_compliance_worker --> compose_58_redis
+  compose_58_ghost_compliance_worker --> compose_58_migrate
+  compose_58_ghost_compliance_worker --> compose_58_ghost_compliance
+  compose_59_ghostchain_node1 --> compose_59_ghostchain_bootnode
+  compose_59_ghostchain_node2 --> compose_59_ghostchain_bootnode
+  compose_59_ghostchain_rpc_proxy --> compose_59_ghostchain_node1
+  compose_59_ghostscout --> compose_59_ghostchain_node1
+  compose_61_migrate --> compose_61_postgres
+  compose_61_migrate --> compose_61_redis
+  compose_61_ghost_compliance --> compose_61_postgres
+  compose_61_ghost_compliance --> compose_61_redis
+  compose_61_ghost_compliance --> compose_61_migrate
+  compose_61_ghost_compliance_worker --> compose_61_postgres
+  compose_61_ghost_compliance_worker --> compose_61_redis
+  compose_61_ghost_compliance_worker --> compose_61_migrate
+  compose_61_ghost_compliance_worker --> compose_61_ghost_compliance
+  compose_62_ghostchain_node1 --> compose_62_ghostchain_bootnode
+  compose_62_ghostchain_node2 --> compose_62_ghostchain_bootnode
+  compose_62_ghostchain_rpc_proxy --> compose_62_ghostchain_node1
+  compose_62_ghostscout --> compose_62_ghostchain_node1
+  compose_64_migrate --> compose_64_postgres
+  compose_64_migrate --> compose_64_redis
+  compose_64_ghost_compliance --> compose_64_postgres
+  compose_64_ghost_compliance --> compose_64_redis
+  compose_64_ghost_compliance --> compose_64_migrate
+  compose_64_ghost_compliance_worker --> compose_64_postgres
+  compose_64_ghost_compliance_worker --> compose_64_redis
+  compose_64_ghost_compliance_worker --> compose_64_migrate
+  compose_64_ghost_compliance_worker --> compose_64_ghost_compliance
+  compose_65_ghostchain_node1 --> compose_65_ghostchain_bootnode
+  compose_65_ghostchain_node2 --> compose_65_ghostchain_bootnode
+  compose_65_ghostchain_rpc_proxy --> compose_65_ghostchain_node1
+  compose_65_ghostscout --> compose_65_ghostchain_node1
+  compose_67_migrate --> compose_67_postgres
+  compose_67_migrate --> compose_67_redis
+  compose_67_ghost_compliance --> compose_67_postgres
+  compose_67_ghost_compliance --> compose_67_redis
+  compose_67_ghost_compliance --> compose_67_migrate
+  compose_67_ghost_compliance_worker --> compose_67_postgres
+  compose_67_ghost_compliance_worker --> compose_67_redis
+  compose_67_ghost_compliance_worker --> compose_67_migrate
+  compose_67_ghost_compliance_worker --> compose_67_ghost_compliance
+  compose_68_ghostchain_node1 --> compose_68_ghostchain_bootnode
+  compose_68_ghostchain_node2 --> compose_68_ghostchain_bootnode
+  compose_68_ghostchain_rpc_proxy --> compose_68_ghostchain_node1
+  compose_68_ghostscout --> compose_68_ghostchain_node1
+  compose_70_migrate --> compose_70_postgres
+  compose_70_migrate --> compose_70_redis
+  compose_70_ghost_compliance --> compose_70_postgres
+  compose_70_ghost_compliance --> compose_70_redis
+  compose_70_ghost_compliance --> compose_70_migrate
+  compose_70_ghost_compliance_worker --> compose_70_postgres
+  compose_70_ghost_compliance_worker --> compose_70_redis
+  compose_70_ghost_compliance_worker --> compose_70_migrate
+  compose_70_ghost_compliance_worker --> compose_70_ghost_compliance
+  compose_71_ghostchain_node1 --> compose_71_ghostchain_bootnode
+  compose_71_ghostchain_node2 --> compose_71_ghostchain_bootnode
+  compose_71_ghostchain_rpc_proxy --> compose_71_ghostchain_node1
+  compose_71_ghostscout --> compose_71_ghostchain_node1
+  compose_74_l3_op_node --> compose_74_l3_geth
+  compose_74_l3_op_batcher --> compose_74_l3_op_node
+  compose_74_l3_op_proposer --> compose_74_l3_op_node
+  compose_74_validator_service --> compose_74_l3_geth
+  compose_74_node_health_service --> compose_74_l3_geth
+  compose_74_consensus_telemetry_service --> compose_74_l3_geth
+  compose_74_liquidity_service --> compose_74_l3_geth
+  compose_74_contract_registry_service --> compose_74_l3_geth
+  compose_74_peer_graph_service --> compose_74_l3_geth
+  compose_75_ghost_gas_engine --> compose_75_gas_engine_postgres
+  compose_75_ghost_gas_engine --> compose_75_gas_engine_redis
+  compose_75_ghost_gas_engine_worker --> compose_75_gas_engine_postgres
+  compose_75_ghost_gas_engine_worker --> compose_75_gas_engine_redis
+  compose_75_ghost_gas_engine_worker --> compose_75_ghost_gas_engine
+  compose_75_ghost_guard --> compose_75_l2_geth
+  compose_75_ai_monitor --> compose_75_l2_geth
+  compose_75_ai_monitor --> compose_75_op_node
+  compose_75_l2_geth --> compose_75_op_gate
+  compose_75_rpc_forward_l2_18547 --> compose_75_l2_geth
+  compose_75_rpc_forward_l2_18547 --> compose_75_op_gate
+  compose_75_op_node --> compose_75_l2_geth
+  compose_75_op_node --> compose_75_l1_rpc_proxy
+  compose_75_op_sequencer --> compose_75_l2_geth
+  compose_75_op_sequencer --> compose_75_l1_rpc_proxy
+  compose_75_op_batcher --> compose_75_op_sequencer
+  compose_75_op_batcher --> compose_75_op_gate
+  compose_75_op_batcher --> compose_75_op_gate_l1
+  compose_75_op_batcher --> compose_75_l1_rpc_proxy
+  compose_75_op_proposer --> compose_75_op_sequencer
+  compose_75_op_proposer --> compose_75_op_gate
+  compose_75_op_proposer --> compose_75_op_gate_l1
+  compose_75_op_proposer --> compose_75_l1_rpc_proxy
+  compose_75_grafana --> compose_75_prometheus
+  compose_75_grafana --> compose_75_loki
+  compose_75_vector --> compose_75_loki
+  compose_77_l3_op_node --> compose_77_l3_geth
+  compose_77_l3_op_batcher --> compose_77_l3_op_node
+  compose_77_l3_op_proposer --> compose_77_l3_op_node
+  compose_77_validator_service --> compose_77_l3_geth
+  compose_77_node_health_service --> compose_77_l3_geth
+  compose_77_consensus_telemetry_service --> compose_77_l3_geth
+  compose_77_liquidity_service --> compose_77_l3_geth
+  compose_77_contract_registry_service --> compose_77_l3_geth
+  compose_77_peer_graph_service --> compose_77_l3_geth
+  compose_78_ghost_gas_engine --> compose_78_gas_engine_postgres
+  compose_78_ghost_gas_engine --> compose_78_gas_engine_redis
+  compose_78_ghost_gas_engine_worker --> compose_78_gas_engine_postgres
+  compose_78_ghost_gas_engine_worker --> compose_78_gas_engine_redis
+  compose_78_ghost_gas_engine_worker --> compose_78_ghost_gas_engine
+  compose_78_ghost_guard --> compose_78_l2_geth
+  compose_78_ai_monitor --> compose_78_l2_geth
+  compose_78_ai_monitor --> compose_78_op_node
+  compose_78_l2_geth --> compose_78_op_gate
+  compose_78_rpc_forward_l2_18547 --> compose_78_l2_geth
+  compose_78_rpc_forward_l2_18547 --> compose_78_op_gate
+  compose_78_op_node --> compose_78_l2_geth
+  compose_78_op_node --> compose_78_l1_rpc_proxy
+  compose_78_op_sequencer --> compose_78_l2_geth
+  compose_78_op_sequencer --> compose_78_l1_rpc_proxy
+  compose_78_op_batcher --> compose_78_op_sequencer
+  compose_78_op_batcher --> compose_78_op_gate
+  compose_78_op_batcher --> compose_78_op_gate_l1
+  compose_78_op_batcher --> compose_78_l1_rpc_proxy
+  compose_78_op_proposer --> compose_78_op_sequencer
+  compose_78_op_proposer --> compose_78_op_gate
+  compose_78_op_proposer --> compose_78_op_gate_l1
+  compose_78_op_proposer --> compose_78_l1_rpc_proxy
+  compose_78_grafana --> compose_78_prometheus
+  compose_78_grafana --> compose_78_loki
+  compose_78_vector --> compose_78_loki
+  compose_80_l3_op_node --> compose_80_l3_geth
+  compose_80_l3_op_batcher --> compose_80_l3_op_node
+  compose_80_l3_op_proposer --> compose_80_l3_op_node
+  compose_80_validator_service --> compose_80_l3_geth
+  compose_80_node_health_service --> compose_80_l3_geth
+  compose_80_consensus_telemetry_service --> compose_80_l3_geth
+  compose_80_liquidity_service --> compose_80_l3_geth
+  compose_80_contract_registry_service --> compose_80_l3_geth
+  compose_80_peer_graph_service --> compose_80_l3_geth
+  compose_81_ghost_gas_engine --> compose_81_gas_engine_postgres
+  compose_81_ghost_gas_engine --> compose_81_gas_engine_redis
+  compose_81_ghost_gas_engine_worker --> compose_81_gas_engine_postgres
+  compose_81_ghost_gas_engine_worker --> compose_81_gas_engine_redis
+  compose_81_ghost_gas_engine_worker --> compose_81_ghost_gas_engine
+  compose_81_ghost_guard --> compose_81_l2_geth
+  compose_81_ai_monitor --> compose_81_l2_geth
+  compose_81_ai_monitor --> compose_81_op_node
+  compose_81_l2_geth --> compose_81_op_gate
+  compose_81_rpc_forward_l2_18547 --> compose_81_l2_geth
+  compose_81_rpc_forward_l2_18547 --> compose_81_op_gate
+  compose_81_op_node --> compose_81_l2_geth
+  compose_81_op_node --> compose_81_l1_rpc_proxy
+  compose_81_op_sequencer --> compose_81_l2_geth
+  compose_81_op_sequencer --> compose_81_l1_rpc_proxy
+  compose_81_op_batcher --> compose_81_op_sequencer
+  compose_81_op_batcher --> compose_81_op_gate
+  compose_81_op_batcher --> compose_81_op_gate_l1
+  compose_81_op_batcher --> compose_81_l1_rpc_proxy
+  compose_81_op_proposer --> compose_81_op_sequencer
+  compose_81_op_proposer --> compose_81_op_gate
+  compose_81_op_proposer --> compose_81_op_gate_l1
+  compose_81_op_proposer --> compose_81_l1_rpc_proxy
+  compose_81_grafana --> compose_81_prometheus
+  compose_81_grafana --> compose_81_loki
+  compose_81_vector --> compose_81_loki
+  compose_83_l3_op_node --> compose_83_l3_geth
+  compose_83_l3_op_batcher --> compose_83_l3_op_node
+  compose_83_l3_op_proposer --> compose_83_l3_op_node
+  compose_83_validator_service --> compose_83_l3_geth
+  compose_83_node_health_service --> compose_83_l3_geth
+  compose_83_consensus_telemetry_service --> compose_83_l3_geth
+  compose_83_liquidity_service --> compose_83_l3_geth
+  compose_83_contract_registry_service --> compose_83_l3_geth
+  compose_83_peer_graph_service --> compose_83_l3_geth
+  compose_84_ghost_gas_engine --> compose_84_gas_engine_postgres
+  compose_84_ghost_gas_engine --> compose_84_gas_engine_redis
+  compose_84_ghost_gas_engine_worker --> compose_84_gas_engine_postgres
+  compose_84_ghost_gas_engine_worker --> compose_84_gas_engine_redis
+  compose_84_ghost_gas_engine_worker --> compose_84_ghost_gas_engine
+  compose_84_ghost_guard --> compose_84_l2_geth
+  compose_84_ai_monitor --> compose_84_l2_geth
+  compose_84_ai_monitor --> compose_84_op_node
+  compose_84_l2_geth --> compose_84_op_gate
+  compose_84_rpc_forward_l2_18547 --> compose_84_l2_geth
+  compose_84_rpc_forward_l2_18547 --> compose_84_op_gate
+  compose_84_op_node --> compose_84_l2_geth
+  compose_84_op_node --> compose_84_l1_rpc_proxy
+  compose_84_op_sequencer --> compose_84_l2_geth
+  compose_84_op_sequencer --> compose_84_l1_rpc_proxy
+  compose_84_op_batcher --> compose_84_op_sequencer
+  compose_84_op_batcher --> compose_84_op_gate
+  compose_84_op_batcher --> compose_84_op_gate_l1
+  compose_84_op_batcher --> compose_84_l1_rpc_proxy
+  compose_84_op_proposer --> compose_84_op_sequencer
+  compose_84_op_proposer --> compose_84_op_gate
+  compose_84_op_proposer --> compose_84_op_gate_l1
+  compose_84_op_proposer --> compose_84_l1_rpc_proxy
+  compose_84_grafana --> compose_84_prometheus
+  compose_84_grafana --> compose_84_loki
+  compose_84_vector --> compose_84_loki
+  compose_86_l3_op_node --> compose_86_l3_geth
+  compose_86_l3_op_batcher --> compose_86_l3_op_node
+  compose_86_l3_op_proposer --> compose_86_l3_op_node
+  compose_86_validator_service --> compose_86_l3_geth
+  compose_86_node_health_service --> compose_86_l3_geth
+  compose_86_consensus_telemetry_service --> compose_86_l3_geth
+  compose_86_liquidity_service --> compose_86_l3_geth
+  compose_86_contract_registry_service --> compose_86_l3_geth
+  compose_86_peer_graph_service --> compose_86_l3_geth
+  compose_87_ghost_gas_engine --> compose_87_gas_engine_postgres
+  compose_87_ghost_gas_engine --> compose_87_gas_engine_redis
+  compose_87_ghost_gas_engine_worker --> compose_87_gas_engine_postgres
+  compose_87_ghost_gas_engine_worker --> compose_87_gas_engine_redis
+  compose_87_ghost_gas_engine_worker --> compose_87_ghost_gas_engine
+  compose_87_ghost_guard --> compose_87_l2_geth
+  compose_87_ai_monitor --> compose_87_l2_geth
+  compose_87_ai_monitor --> compose_87_op_node
+  compose_87_l2_geth --> compose_87_op_gate
+  compose_87_rpc_forward_l2_18547 --> compose_87_l2_geth
+  compose_87_rpc_forward_l2_18547 --> compose_87_op_gate
+  compose_87_op_node --> compose_87_l2_geth
+  compose_87_op_node --> compose_87_l1_rpc_proxy
+  compose_87_op_sequencer --> compose_87_l2_geth
+  compose_87_op_sequencer --> compose_87_l1_rpc_proxy
+  compose_87_op_batcher --> compose_87_op_sequencer
+  compose_87_op_batcher --> compose_87_op_gate
+  compose_87_op_batcher --> compose_87_op_gate_l1
+  compose_87_op_batcher --> compose_87_l1_rpc_proxy
+  compose_87_op_proposer --> compose_87_op_sequencer
+  compose_87_op_proposer --> compose_87_op_gate
+  compose_87_op_proposer --> compose_87_op_gate_l1
+  compose_87_op_proposer --> compose_87_l1_rpc_proxy
+  compose_87_grafana --> compose_87_prometheus
+  compose_87_grafana --> compose_87_loki
+  compose_87_vector --> compose_87_loki
+  compose_89_l3_op_node --> compose_89_l3_geth
+  compose_89_l3_op_batcher --> compose_89_l3_op_node
+  compose_89_l3_op_proposer --> compose_89_l3_op_node
+  compose_89_validator_service --> compose_89_l3_geth
+  compose_89_node_health_service --> compose_89_l3_geth
+  compose_89_consensus_telemetry_service --> compose_89_l3_geth
+  compose_89_liquidity_service --> compose_89_l3_geth
+  compose_89_contract_registry_service --> compose_89_l3_geth
+  compose_89_peer_graph_service --> compose_89_l3_geth
+  compose_90_ghost_gas_engine --> compose_90_gas_engine_postgres
+  compose_90_ghost_gas_engine --> compose_90_gas_engine_redis
+  compose_90_ghost_gas_engine_worker --> compose_90_gas_engine_postgres
+  compose_90_ghost_gas_engine_worker --> compose_90_gas_engine_redis
+  compose_90_ghost_gas_engine_worker --> compose_90_ghost_gas_engine
+  compose_90_ghost_guard --> compose_90_l2_geth
+  compose_90_ai_monitor --> compose_90_l2_geth
+  compose_90_ai_monitor --> compose_90_op_node
+  compose_90_l2_geth --> compose_90_op_gate
+  compose_90_rpc_forward_l2_18547 --> compose_90_l2_geth
+  compose_90_rpc_forward_l2_18547 --> compose_90_op_gate
+  compose_90_op_node --> compose_90_l2_geth
+  compose_90_op_node --> compose_90_l1_rpc_proxy
+  compose_90_op_sequencer --> compose_90_l2_geth
+  compose_90_op_sequencer --> compose_90_l1_rpc_proxy
+  compose_90_op_batcher --> compose_90_op_sequencer
+  compose_90_op_batcher --> compose_90_op_gate
+  compose_90_op_batcher --> compose_90_op_gate_l1
+  compose_90_op_batcher --> compose_90_l1_rpc_proxy
+  compose_90_op_proposer --> compose_90_op_sequencer
+  compose_90_op_proposer --> compose_90_op_gate
+  compose_90_op_proposer --> compose_90_op_gate_l1
+  compose_90_op_proposer --> compose_90_l1_rpc_proxy
+  compose_90_grafana --> compose_90_prometheus
+  compose_90_grafana --> compose_90_loki
+  compose_90_vector --> compose_90_loki
+  compose_92_l3_op_node --> compose_92_l3_geth
+  compose_92_l3_op_batcher --> compose_92_l3_op_node
+  compose_92_l3_op_proposer --> compose_92_l3_op_node
+  compose_92_validator_service --> compose_92_l3_geth
+  compose_92_node_health_service --> compose_92_l3_geth
+  compose_92_consensus_telemetry_service --> compose_92_l3_geth
+  compose_92_liquidity_service --> compose_92_l3_geth
+  compose_92_contract_registry_service --> compose_92_l3_geth
+  compose_92_peer_graph_service --> compose_92_l3_geth
+  compose_93_ghost_gas_engine --> compose_93_gas_engine_postgres
+  compose_93_ghost_gas_engine --> compose_93_gas_engine_redis
+  compose_93_ghost_gas_engine_worker --> compose_93_gas_engine_postgres
+  compose_93_ghost_gas_engine_worker --> compose_93_gas_engine_redis
+  compose_93_ghost_gas_engine_worker --> compose_93_ghost_gas_engine
+  compose_93_ghost_guard --> compose_93_l2_geth
+  compose_93_ai_monitor --> compose_93_l2_geth
+  compose_93_ai_monitor --> compose_93_op_node
+  compose_93_l2_geth --> compose_93_op_gate
+  compose_93_rpc_forward_l2_18547 --> compose_93_l2_geth
+  compose_93_rpc_forward_l2_18547 --> compose_93_op_gate
+  compose_93_op_node --> compose_93_l2_geth
+  compose_93_op_node --> compose_93_l1_rpc_proxy
+  compose_93_op_sequencer --> compose_93_l2_geth
+  compose_93_op_sequencer --> compose_93_l1_rpc_proxy
+  compose_93_op_batcher --> compose_93_op_sequencer
+  compose_93_op_batcher --> compose_93_op_gate
+  compose_93_op_batcher --> compose_93_op_gate_l1
+  compose_93_op_batcher --> compose_93_l1_rpc_proxy
+  compose_93_op_proposer --> compose_93_op_sequencer
+  compose_93_op_proposer --> compose_93_op_gate
+  compose_93_op_proposer --> compose_93_op_gate_l1
+  compose_93_op_proposer --> compose_93_l1_rpc_proxy
+  compose_93_grafana --> compose_93_prometheus
+  compose_93_grafana --> compose_93_loki
+  compose_93_vector --> compose_93_loki
+  compose_94_l3_op_node --> compose_94_l3_geth
+  compose_94_l3_op_batcher --> compose_94_l3_op_node
+  compose_94_l3_op_proposer --> compose_94_l3_op_node
+  compose_94_validator_service --> compose_94_l3_geth
+  compose_94_node_health_service --> compose_94_l3_geth
+  compose_94_consensus_telemetry_service --> compose_94_l3_geth
+  compose_94_liquidity_service --> compose_94_l3_geth
+  compose_94_contract_registry_service --> compose_94_l3_geth
+  compose_94_peer_graph_service --> compose_94_l3_geth
+  compose_95_ghost_gas_engine --> compose_95_gas_engine_postgres
+  compose_95_ghost_gas_engine --> compose_95_gas_engine_redis
+  compose_95_ghost_gas_engine_worker --> compose_95_gas_engine_postgres
+  compose_95_ghost_gas_engine_worker --> compose_95_gas_engine_redis
+  compose_95_ghost_gas_engine_worker --> compose_95_ghost_gas_engine
+  compose_95_ghost_guard --> compose_95_l2_geth
+  compose_95_ai_monitor --> compose_95_l2_geth
+  compose_95_ai_monitor --> compose_95_op_node
+  compose_95_l2_geth --> compose_95_op_gate
+  compose_95_rpc_forward_l2_18547 --> compose_95_l2_geth
+  compose_95_rpc_forward_l2_18547 --> compose_95_op_gate
+  compose_95_op_node --> compose_95_l2_geth
+  compose_95_op_node --> compose_95_l1_rpc_proxy
+  compose_95_op_sequencer --> compose_95_l2_geth
+  compose_95_op_sequencer --> compose_95_l1_rpc_proxy
+  compose_95_op_batcher --> compose_95_op_sequencer
+  compose_95_op_batcher --> compose_95_op_gate
+  compose_95_op_batcher --> compose_95_op_gate_l1
+  compose_95_op_batcher --> compose_95_l1_rpc_proxy
+  compose_95_op_proposer --> compose_95_op_sequencer
+  compose_95_op_proposer --> compose_95_op_gate
+  compose_95_op_proposer --> compose_95_op_gate_l1
+  compose_95_op_proposer --> compose_95_l1_rpc_proxy
+  compose_95_grafana --> compose_95_prometheus
+  compose_95_grafana --> compose_95_loki
+  compose_95_vector --> compose_95_loki
+  compose_96_l3_op_node --> compose_96_l3_geth
+  compose_96_l3_op_batcher --> compose_96_l3_op_node
+  compose_96_l3_op_proposer --> compose_96_l3_op_node
+  compose_96_validator_service --> compose_96_l3_geth
+  compose_96_node_health_service --> compose_96_l3_geth
+  compose_96_consensus_telemetry_service --> compose_96_l3_geth
+  compose_96_liquidity_service --> compose_96_l3_geth
+  compose_96_contract_registry_service --> compose_96_l3_geth
+  compose_96_peer_graph_service --> compose_96_l3_geth
+  compose_97_ghost_gas_engine --> compose_97_gas_engine_postgres
+  compose_97_ghost_gas_engine --> compose_97_gas_engine_redis
+  compose_97_ghost_gas_engine_worker --> compose_97_gas_engine_postgres
+  compose_97_ghost_gas_engine_worker --> compose_97_gas_engine_redis
+  compose_97_ghost_gas_engine_worker --> compose_97_ghost_gas_engine
+  compose_97_ghost_guard --> compose_97_l2_geth
+  compose_97_ai_monitor --> compose_97_l2_geth
+  compose_97_ai_monitor --> compose_97_op_node
+  compose_97_l2_geth --> compose_97_op_gate
+  compose_97_rpc_forward_l2_18547 --> compose_97_l2_geth
+  compose_97_rpc_forward_l2_18547 --> compose_97_op_gate
+  compose_97_op_node --> compose_97_l2_geth
+  compose_97_op_node --> compose_97_l1_rpc_proxy
+  compose_97_op_sequencer --> compose_97_l2_geth
+  compose_97_op_sequencer --> compose_97_l1_rpc_proxy
+  compose_97_op_batcher --> compose_97_op_sequencer
+  compose_97_op_batcher --> compose_97_op_gate
+  compose_97_op_batcher --> compose_97_op_gate_l1
+  compose_97_op_batcher --> compose_97_l1_rpc_proxy
+  compose_97_op_proposer --> compose_97_op_sequencer
+  compose_97_op_proposer --> compose_97_op_gate
+  compose_97_op_proposer --> compose_97_op_gate_l1
+  compose_97_op_proposer --> compose_97_l1_rpc_proxy
+  compose_97_grafana --> compose_97_prometheus
+  compose_97_grafana --> compose_97_loki
+  compose_97_vector --> compose_97_loki
+  compose_98_l3_op_node --> compose_98_l3_geth
+  compose_98_l3_op_batcher --> compose_98_l3_op_node
+  compose_98_l3_op_proposer --> compose_98_l3_op_node
+  compose_98_validator_service --> compose_98_l3_geth
+  compose_98_node_health_service --> compose_98_l3_geth
+  compose_98_consensus_telemetry_service --> compose_98_l3_geth
+  compose_98_liquidity_service --> compose_98_l3_geth
+  compose_98_contract_registry_service --> compose_98_l3_geth
+  compose_98_peer_graph_service --> compose_98_l3_geth
+  compose_99_ghost_gas_engine --> compose_99_gas_engine_postgres
+  compose_99_ghost_gas_engine --> compose_99_gas_engine_redis
+  compose_99_ghost_gas_engine_worker --> compose_99_gas_engine_postgres
+  compose_99_ghost_gas_engine_worker --> compose_99_gas_engine_redis
+  compose_99_ghost_gas_engine_worker --> compose_99_ghost_gas_engine
+  compose_99_ghost_guard --> compose_99_l2_geth
+  compose_99_ai_monitor --> compose_99_l2_geth
+  compose_99_ai_monitor --> compose_99_op_node
+  compose_99_l2_geth --> compose_99_op_gate
+  compose_99_rpc_forward_l2_18547 --> compose_99_l2_geth
+  compose_99_rpc_forward_l2_18547 --> compose_99_op_gate
+  compose_99_op_node --> compose_99_l2_geth
+  compose_99_op_node --> compose_99_l1_rpc_proxy
+  compose_99_op_sequencer --> compose_99_l2_geth
+  compose_99_op_sequencer --> compose_99_l1_rpc_proxy
+  compose_99_op_batcher --> compose_99_op_sequencer
+  compose_99_op_batcher --> compose_99_op_gate
+  compose_99_op_batcher --> compose_99_op_gate_l1
+  compose_99_op_batcher --> compose_99_l1_rpc_proxy
+  compose_99_op_proposer --> compose_99_op_sequencer
+  compose_99_op_proposer --> compose_99_op_gate
+  compose_99_op_proposer --> compose_99_op_gate_l1
+  compose_99_op_proposer --> compose_99_l1_rpc_proxy
+  compose_99_grafana --> compose_99_prometheus
+  compose_99_grafana --> compose_99_loki
+  compose_99_vector --> compose_99_loki
+  compose_100_l3_op_node --> compose_100_l3_geth
+  compose_100_l3_op_batcher --> compose_100_l3_op_node
+  compose_100_l3_op_proposer --> compose_100_l3_op_node
+  compose_100_validator_service --> compose_100_l3_geth
+  compose_100_node_health_service --> compose_100_l3_geth
+  compose_100_consensus_telemetry_service --> compose_100_l3_geth
+  compose_100_liquidity_service --> compose_100_l3_geth
+  compose_100_contract_registry_service --> compose_100_l3_geth
+  compose_100_peer_graph_service --> compose_100_l3_geth
+  compose_101_ghost_gas_engine --> compose_101_gas_engine_postgres
+  compose_101_ghost_gas_engine --> compose_101_gas_engine_redis
+  compose_101_ghost_gas_engine_worker --> compose_101_gas_engine_postgres
+  compose_101_ghost_gas_engine_worker --> compose_101_gas_engine_redis
+  compose_101_ghost_gas_engine_worker --> compose_101_ghost_gas_engine
+  compose_101_ghost_guard --> compose_101_l2_geth
+  compose_101_ai_monitor --> compose_101_l2_geth
+  compose_101_ai_monitor --> compose_101_op_node
+  compose_101_l2_geth --> compose_101_op_gate
+  compose_101_rpc_forward_l2_18547 --> compose_101_l2_geth
+  compose_101_rpc_forward_l2_18547 --> compose_101_op_gate
+  compose_101_op_node --> compose_101_l2_geth
+  compose_101_op_node --> compose_101_l1_rpc_proxy
+  compose_101_op_sequencer --> compose_101_l2_geth
+  compose_101_op_sequencer --> compose_101_l1_rpc_proxy
+  compose_101_op_batcher --> compose_101_op_sequencer
+  compose_101_op_batcher --> compose_101_op_gate
+  compose_101_op_batcher --> compose_101_op_gate_l1
+  compose_101_op_batcher --> compose_101_l1_rpc_proxy
+  compose_101_op_proposer --> compose_101_op_sequencer
+  compose_101_op_proposer --> compose_101_op_gate
+  compose_101_op_proposer --> compose_101_op_gate_l1
+  compose_101_op_proposer --> compose_101_l1_rpc_proxy
+  compose_101_grafana --> compose_101_prometheus
+  compose_101_grafana --> compose_101_loki
+  compose_101_vector --> compose_101_loki
+  compose_102_l3_op_node --> compose_102_l3_geth
+  compose_102_l3_op_batcher --> compose_102_l3_op_node
+  compose_102_l3_op_proposer --> compose_102_l3_op_node
+  compose_102_validator_service --> compose_102_l3_geth
+  compose_102_node_health_service --> compose_102_l3_geth
+  compose_102_consensus_telemetry_service --> compose_102_l3_geth
+  compose_102_liquidity_service --> compose_102_l3_geth
+  compose_102_contract_registry_service --> compose_102_l3_geth
+  compose_102_peer_graph_service --> compose_102_l3_geth
+  compose_103_ghost_gas_engine --> compose_103_gas_engine_postgres
+  compose_103_ghost_gas_engine --> compose_103_gas_engine_redis
+  compose_103_ghost_gas_engine_worker --> compose_103_gas_engine_postgres
+  compose_103_ghost_gas_engine_worker --> compose_103_gas_engine_redis
+  compose_103_ghost_gas_engine_worker --> compose_103_ghost_gas_engine
+  compose_103_ghost_guard --> compose_103_l2_geth
+  compose_103_ai_monitor --> compose_103_l2_geth
+  compose_103_ai_monitor --> compose_103_op_node
+  compose_103_l2_geth --> compose_103_op_gate
+  compose_103_rpc_forward_l2_18547 --> compose_103_l2_geth
+  compose_103_rpc_forward_l2_18547 --> compose_103_op_gate
+  compose_103_op_node --> compose_103_l2_geth
+  compose_103_op_node --> compose_103_l1_rpc_proxy
+  compose_103_op_sequencer --> compose_103_l2_geth
+  compose_103_op_sequencer --> compose_103_l1_rpc_proxy
+  compose_103_op_batcher --> compose_103_op_sequencer
+  compose_103_op_batcher --> compose_103_op_gate
+  compose_103_op_batcher --> compose_103_op_gate_l1
+  compose_103_op_batcher --> compose_103_l1_rpc_proxy
+  compose_103_op_proposer --> compose_103_op_sequencer
+  compose_103_op_proposer --> compose_103_op_gate
+  compose_103_op_proposer --> compose_103_op_gate_l1
+  compose_103_op_proposer --> compose_103_l1_rpc_proxy
+  compose_103_grafana --> compose_103_prometheus
+  compose_103_grafana --> compose_103_loki
+  compose_103_vector --> compose_103_loki
+  compose_104_ghostchain_node1 --> compose_104_ghostchain_bootnode
+  compose_104_ghostchain_node2 --> compose_104_ghostchain_bootnode
+  compose_104_ghostchain_rpc_proxy --> compose_104_ghostchain_node1
+  compose_104_ghostscout --> compose_104_ghostchain_node1
+  compose_107_l3_op_node --> compose_107_l3_geth
+  compose_107_l3_op_batcher --> compose_107_l3_op_node
+  compose_107_l3_op_proposer --> compose_107_l3_op_node
+  compose_107_validator_service --> compose_107_l3_geth
+  compose_107_node_health_service --> compose_107_l3_geth
+  compose_107_consensus_telemetry_service --> compose_107_l3_geth
+  compose_107_liquidity_service --> compose_107_l3_geth
+  compose_107_contract_registry_service --> compose_107_l3_geth
+  compose_107_peer_graph_service --> compose_107_l3_geth
+  compose_110_ghost_gas_engine --> compose_110_gas_engine_postgres
+  compose_110_ghost_gas_engine --> compose_110_gas_engine_redis
+  compose_110_ghost_gas_engine_worker --> compose_110_gas_engine_postgres
+  compose_110_ghost_gas_engine_worker --> compose_110_gas_engine_redis
+  compose_110_ghost_gas_engine_worker --> compose_110_ghost_gas_engine
+  compose_110_ghost_guard --> compose_110_l2_geth
+  compose_110_ai_monitor --> compose_110_l2_geth
+  compose_110_ai_monitor --> compose_110_op_node
+  compose_110_l2_geth --> compose_110_op_gate
+  compose_110_rpc_forward_l2_18547 --> compose_110_l2_geth
+  compose_110_rpc_forward_l2_18547 --> compose_110_op_gate
+  compose_110_op_node --> compose_110_l2_geth
+  compose_110_op_node --> compose_110_l1_rpc_proxy
+  compose_110_op_sequencer --> compose_110_l2_geth
+  compose_110_op_sequencer --> compose_110_l1_rpc_proxy
+  compose_110_op_batcher --> compose_110_op_sequencer
+  compose_110_op_batcher --> compose_110_op_gate
+  compose_110_op_batcher --> compose_110_op_gate_l1
+  compose_110_op_batcher --> compose_110_l1_rpc_proxy
+  compose_110_op_proposer --> compose_110_op_sequencer
+  compose_110_op_proposer --> compose_110_op_gate
+  compose_110_op_proposer --> compose_110_op_gate_l1
+  compose_110_op_proposer --> compose_110_l1_rpc_proxy
+  compose_110_grafana --> compose_110_prometheus
+  compose_110_grafana --> compose_110_loki
+  compose_110_vector --> compose_110_loki
+  compose_111_l1_bn --> compose_111_l1
+  compose_111_l1_vc --> compose_111_l1
+  compose_111_l1_vc --> compose_111_l1_bn
+  compose_111_op_supervisor --> compose_111_l1
+  compose_111_l2_a --> compose_111_op_supervisor
+  compose_111_l2_b --> compose_111_op_supervisor
+  compose_111_op_node_a --> compose_111_l1
+  compose_111_op_node_a --> compose_111_l1_bn
+  compose_111_op_node_a --> compose_111_l1_vc
+  compose_111_op_node_a --> compose_111_l2_a
+  compose_111_op_node_a --> compose_111_op_supervisor
+  compose_111_op_node_b --> compose_111_l1
+  compose_111_op_node_b --> compose_111_l1_bn
+  compose_111_op_node_b --> compose_111_l1_vc
+  compose_111_op_node_b --> compose_111_l2_b
+  compose_111_op_node_b --> compose_111_op_supervisor
+  compose_111_op_proposer_a --> compose_111_l1
+  compose_111_op_proposer_a --> compose_111_op_node_a
+  compose_111_op_proposer_b --> compose_111_l1
+  compose_111_op_proposer_b --> compose_111_op_node_b
+  compose_111_op_batcher_a --> compose_111_l1
+  compose_111_op_batcher_a --> compose_111_l2_a
+  compose_111_op_batcher_a --> compose_111_op_node_a
+  compose_111_op_batcher_b --> compose_111_l1
+  compose_111_op_batcher_b --> compose_111_l2_b
+  compose_111_op_batcher_b --> compose_111_op_node_b
+  compose_112_l1_bn --> compose_112_l1
+  compose_112_l1_vc --> compose_112_l1
+  compose_112_l1_vc --> compose_112_l1_bn
+  compose_112_op_node --> compose_112_l1
+  compose_112_op_node --> compose_112_l1_bn
+  compose_112_op_node --> compose_112_l1_vc
+  compose_112_op_node --> compose_112_l2
+  compose_112_op_proposer --> compose_112_l1
+  compose_112_op_proposer --> compose_112_l2
+  compose_112_op_proposer --> compose_112_op_node
+  compose_112_op_batcher --> compose_112_l1
+  compose_112_op_batcher --> compose_112_l2
+  compose_112_op_batcher --> compose_112_op_node
+  compose_112_op_challenger --> compose_112_l1
+  compose_112_op_challenger --> compose_112_l1_bn
+  compose_112_op_challenger --> compose_112_l2
+  compose_112_op_challenger --> compose_112_op_node
+  compose_112_artifact_server --> compose_112_l1
+  compose_113_grafana --> compose_113_prometheus
+  compose_113_grafana --> compose_113_loki
+  compose_175_gas_engine_migrate --> compose_175_gas_engine_postgres
+  compose_175_gas_engine_migrate --> compose_175_gas_engine_redis
+  compose_175_ghost_gas_engine --> compose_175_gas_engine_postgres
+  compose_175_ghost_gas_engine --> compose_175_gas_engine_redis
+  compose_175_ghost_gas_engine --> compose_175_gas_engine_migrate
+  compose_175_ghost_gas_engine_worker --> compose_175_ghost_gas_engine
+  compose_175_pil_migrate --> compose_175_pil_postgres
+  compose_175_ghost_pil --> compose_175_pil_postgres
+  compose_175_ghost_pil --> compose_175_pil_migrate
+  compose_175_ghost_pil_worker --> compose_175_ghost_pil
