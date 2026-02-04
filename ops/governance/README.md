@@ -35,3 +35,19 @@ AI_POLICY_CONFIG=ops/governance/ai-policy-l3.json \
 POLICY_REGISTRY_ADDRESS=0x... \
 node scripts/propose_ai_policy.mjs
 ```
+
+## Automation Capability Policy (PolicyRegistry)
+Use `scripts/propose_policy_capability.mjs` to generate proposal calldata for enabling a capability key in `PolicyRegistry`:
+
+```
+POLICY_REGISTRY_ADDRESS=0x... \
+CAPABILITY=CAP_AUTOMATION_SCHEDULE \
+CAPABILITY_VALUE=1 \
+node scripts/propose_policy_capability.mjs
+```
+
+By default, the script emits two calls:
+1) `setPolicySetting` (min/max/activation delay/bounds)
+2) `applyPolicy` to set the capability value
+
+If your PolicyRegistry uses a non-zero activation delay, the capability will queue and require a follow-up `activatePolicy` transaction after the delay.
