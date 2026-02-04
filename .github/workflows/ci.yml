@@ -23,6 +23,8 @@ jobs:
           sudo mv trivy /usr/local/bin/trivy
 
       - name: Trivy secret scan (tracked repo)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           trivy fs \
             --timeout 10m \

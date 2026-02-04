@@ -25,6 +25,8 @@ jobs:
           sudo mv trivy /usr/local/bin/trivy
 
       - name: Trivy filesystem scan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           trivy fs \
             --timeout 20m \
