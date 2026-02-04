@@ -86,6 +86,6 @@ export const resolveAiAttestorBase = () =>
 
 export const resolveRpcEndpoints = () => ({
   l1: resolveRpcBase(process.env.L1_RPC || process.env.NEXT_PUBLIC_L1_RPC, 18545, 'http://localhost:18545'),
-  l2: resolveRpcBase(process.env.L2_RPC || process.env.NEXT_PUBLIC_L2_RPC, 18547, 'http://localhost:18547'),
+  l2: resolveRpcBase(process.env.L2_RPC || process.env.NEXT_PUBLIC_L2_RPC, 29547, 'http://localhost:29547'),
   l3: resolveRpcBase(process.env.L3_RPC || process.env.NEXT_PUBLIC_L3_RPC, 39545, 'http://localhost:39545')
 });

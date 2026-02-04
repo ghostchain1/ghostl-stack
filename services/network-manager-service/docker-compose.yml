@@ -31,9 +31,9 @@ services:
     - NETWORK_MANAGER_PORT=${NETWORK_MANAGER_PORT:-7766}
     - MONITOR_HOST=${MONITOR_HOST:-host.docker.internal}
     - MONITOR_RPC_L1=${MONITOR_RPC_L1:-http://host.docker.internal:18545}
-    - MONITOR_RPC_L2=${MONITOR_RPC_L2:-http://host.docker.internal:18547}
+    - MONITOR_RPC_L2=${MONITOR_RPC_L2:-http://host.docker.internal:29547}
     - MONITOR_RPC_L3=${MONITOR_RPC_L3:-http://host.docker.internal:39545}
-    - MONITOR_PORTS=${MONITOR_PORTS:-7070,7171,18545,18547,39545}
+    - MONITOR_PORTS=${MONITOR_PORTS:-7070,7171,18545,29547,39545}
     - MONITOR_HEALTH_ENDPOINTS=${MONITOR_HEALTH_ENDPOINTS:-http://host.docker.internal:7070/health,http://host.docker.internal:7171/health}
     - MONITOR_INTERVAL_MS=${MONITOR_INTERVAL_MS:-10000}
     ports:

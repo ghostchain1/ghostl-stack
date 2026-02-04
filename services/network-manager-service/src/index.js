@@ -13,7 +13,7 @@ const registryTimeoutMs = Number(process.env.REGISTRY_TIMEOUT_MS || "1500");
 const registryRetries = Math.max(0, Number(process.env.REGISTRY_RETRY_COUNT || "2"));
 const registryCacheMs = Math.max(1000, Number(process.env.REGISTRY_CACHE_MS || "30000"));
 const registryCache = { data: null, expiresAt: 0 };
-const PORTS = (process.env.MONITOR_PORTS || "7070,7171,18545,18547,39545")
+const PORTS = (process.env.MONITOR_PORTS || "7070,7171,18545,29547,39545")
   .split(",")
   .map((p) => Number(p.trim()))
   .filter(Boolean);

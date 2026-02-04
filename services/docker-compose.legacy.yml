@@ -26,6 +26,13 @@ services:
       - PORT=8088
     ports:
       - "18088:8088"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-8088}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   gas-engine-postgres:
     <<: *host-gateway
@@ -109,6 +116,8 @@ services:
       ADMIN_TOKEN: ${GAS_ENGINE_ADMIN_TOKEN}
     ports:
       - "3210:3210"
+    volumes:
+      - ./ghost-gas-engine/config:/app/config:ro
     depends_on:
       gas-engine-postgres:
         condition: service_healthy
@@ -147,10 +156,19 @@ services:
       SIGNER_PRIVATE_KEY_L2: ${GAS_ENGINE_SIGNER_PRIVATE_KEY_L2}
       SIGNER_PRIVATE_KEY_L3: ${GAS_ENGINE_SIGNER_PRIVATE_KEY_L3}
     command: ["node", "dist/worker.js"]
+    volumes:
+      - ./ghost-gas-engine/config:/app/config:ro
     depends_on:
       ghost-gas-engine:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - ps | grep -q '[d]ist/worker.js'
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   pil-postgres:
     <<: *host-gateway
@@ -248,6 +266,13 @@ services:
       - PROM_URL=${PROM_URL}
     ports:
       - "7644:7644"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7644}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   ai-clock-sync:
     <<: *host-gateway
@@ -326,6 +351,13 @@ services:
       - RPC_L3=${RPC_L3}
     ports:
       - "7608:7608"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7608}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   contract-risk-service:
     <<: *host-gateway
@@ -390,6 +422,13 @@ services:
       - PORT=7627
     ports:
       - "7627:7627"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7627}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   key-rotation-service:
     <<: *host-gateway
@@ -420,6 +459,13 @@ services:
       - "7604:7604"
     volumes:
       - ./data:/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7604}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   ghost-relayer:
     <<: *host-gateway
@@ -464,9 +510,9 @@ services:
       - NETWORK_MANAGER_PORT=${NETWORK_MANAGER_PORT:-7766}
       - MONITOR_HOST=${MONITOR_HOST:-host.docker.internal}
       - MONITOR_RPC_L1=${MONITOR_RPC_L1:-http://host.docker.internal:18545}
-      - MONITOR_RPC_L2=${MONITOR_RPC_L2:-http://host.docker.internal:18547}
+      - MONITOR_RPC_L2=${MONITOR_RPC_L2:-http://host.docker.internal:29547}
       - MONITOR_RPC_L3=${MONITOR_RPC_L3:-http://host.docker.internal:39545}
-      - MONITOR_PORTS=${MONITOR_PORTS:-7070,7171,18545,18547,39545}
+      - MONITOR_PORTS=${MONITOR_PORTS:-7070,7171,18545,29547,39545}
       - MONITOR_HEALTH_ENDPOINTS=${MONITOR_HEALTH_ENDPOINTS:-http://host.docker.internal:7070/health,http://host.docker.internal:7171/health}
       - MONITOR_INTERVAL_MS=${MONITOR_INTERVAL_MS:-10000}
     ports:
@@ -493,6 +539,13 @@ services:
       - RPC_L3=${RPC_L3}
     ports:
       - "7600:7600"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7600}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   node-health-service:
     <<: *host-gateway
@@ -507,6 +560,13 @@ services:
       - RPC_L3=${RPC_L3}
     ports:
       - "7613:7613"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7613}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   mempool-service:
     <<: *host-gateway
@@ -520,6 +580,13 @@ services:
       - PROM_URL=${PROM_URL}
     ports:
       - "7610:7610"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7610}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   node-inventory-service:
     <<: *host-gateway
@@ -532,6 +599,13 @@ services:
       - PORT=7622
     ports:
       - "7622:7622"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7622}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   notifications-service:
     <<: *host-gateway
@@ -544,6 +618,13 @@ services:
       - PORT=7638
     ports:
       - "7638:7638"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7638}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   global-search-service:
     <<: *host-gateway
@@ -556,6 +637,13 @@ services:
       - PORT=7637
     ports:
       - "7637:7637"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7637}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   feature-flags-service:
     <<: *host-gateway
@@ -569,6 +657,13 @@ services:
       - FEATURE_FLAGS=${FEATURE_FLAGS}
     ports:
       - "7611:7611"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7611}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   theme-service:
     <<: *host-gateway
@@ -582,6 +677,13 @@ services:
       - UI_THEME=${UI_THEME}
     ports:
       - "7634:7634"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7634}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   governance-service:
     <<: *host-gateway
@@ -594,6 +696,13 @@ services:
       - PORT=7645
     ports:
       - "7645:7645"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7645}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   compliance-export-service:
     <<: *host-gateway
@@ -606,6 +715,13 @@ services:
       - PORT=7621
     ports:
       - "7621:7621"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7621}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   chain-status-service:
     <<: *host-gateway
@@ -620,6 +736,13 @@ services:
       - RPC_L3=${RPC_L3}
     ports:
       - "7612:7612"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7612}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   network-context-service:
     <<: *host-gateway
@@ -635,6 +758,13 @@ services:
       - NET_ENV=${NET_ENV}
     ports:
       - "7633:7633"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7633}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   consensus-telemetry-service:
     <<: *host-gateway
@@ -649,6 +779,13 @@ services:
       - RPC_L3=${RPC_L3}
     ports:
       - "7635:7635"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7635}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   peer-graph-service:
     <<: *host-gateway
@@ -663,6 +800,13 @@ services:
       - RPC_L3=${RPC_L3}
     ports:
       - "7636:7636"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7636}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   ghost-rollup-proposer:
     <<: *host-gateway
@@ -682,6 +826,13 @@ services:
       - ./data:/state
     ports:
       - "7272:7272"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7272}/health" || curl -sf "http://127.0.0.1:${PORT:-7272}/" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   ghost-rollup-challenger:
     <<: *host-gateway
@@ -701,6 +852,13 @@ services:
       - ./data:/state
     ports:
       - "7282:7282"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7282}/health" || curl -sf "http://127.0.0.1:${PORT:-7282}/" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   rewards-service:
     <<: *host-gateway
@@ -714,6 +872,13 @@ services:
       - PROM_URL=${PROM_URL}
     ports:
       - "7602:7602"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7602}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   staking-service:
     <<: *host-gateway
@@ -727,6 +892,13 @@ services:
       - PROM_URL=${PROM_URL}
     ports:
       - "7601:7601"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7601}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   fee-model-service:
     <<: *host-gateway
@@ -740,6 +912,13 @@ services:
       - PROM_URL=${PROM_URL}
     ports:
       - "7615:7615"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7615}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   supply-service:
     <<: *host-gateway
@@ -753,6 +932,13 @@ services:
       - PROM_URL=${PROM_URL}
     ports:
       - "7614:7614"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7614}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   participation-service:
     <<: *host-gateway
@@ -766,6 +952,13 @@ services:
       - PROM_URL=${PROM_URL}
     ports:
       - "7603:7603"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7603}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   liquidity-service:
     <<: *host-gateway
@@ -784,6 +977,13 @@ services:
       - L3_TOKEN_ADDRESS=${L3_TOKEN_ADDRESS}
     ports:
       - "7606:7606"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7606}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   treasury-service:
     <<: *host-gateway
@@ -801,6 +1001,13 @@ services:
       - ./data:/data
     ports:
       - "7628:7628"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7628}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   auth-service:
     <<: *host-gateway
@@ -813,6 +1020,13 @@ services:
       - PORT=7639
     ports:
       - "7639:7639"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7639}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   session-service:
     <<: *host-gateway
@@ -825,6 +1039,13 @@ services:
       - PORT=7643
     ports:
       - "7643:7643"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7643}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   rbac-service:
     <<: *host-gateway
@@ -837,6 +1058,13 @@ services:
       - PORT=7640
     ports:
       - "7640:7640"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7640}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   command-palette-service:
     <<: *host-gateway
@@ -849,9 +1077,18 @@ services:
       - PORT=7642
     ports:
       - "7642:7642"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7642}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   ai-monitor:
     <<: *host-gateway
+    profiles:
+      - legacy-ai-monitor
     build:
       context: ./ai-monitor
     image: ghostl/ai-monitor:local
@@ -904,6 +1141,13 @@ services:
       - PROM_URL=${PROM_URL}
     ports:
       - "7617:7617"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7617}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   ghost-rpc-proxy:
     <<: *host-gateway
@@ -943,6 +1187,13 @@ services:
       - PROM_URL=${PROM_URL}
     ports:
       - "7631:7631"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7631}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   verification-service:
     <<: *host-gateway
@@ -955,6 +1206,13 @@ services:
       - PORT=7630
     ports:
       - "7630:7630"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7630}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   secrets-health-service:
     <<: *host-gateway
@@ -993,6 +1251,13 @@ services:
       - PORT=7624
     ports:
       - "7624:7624"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7624}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   upgrade-orchestrator-service:
     <<: *host-gateway
@@ -1005,6 +1270,13 @@ services:
       - PORT=7623
     ports:
       - "7623:7623"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7623}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   audit-log-service:
     <<: *host-gateway
@@ -1020,6 +1292,13 @@ services:
       - ./data:/data
     ports:
       - "7641:7641"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7641}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   block-index-service:
     <<: *host-gateway
@@ -1033,6 +1312,13 @@ services:
       - PROM_URL=${PROM_URL}
     ports:
       - "7626:7626"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7626}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
 networks:
   default:
