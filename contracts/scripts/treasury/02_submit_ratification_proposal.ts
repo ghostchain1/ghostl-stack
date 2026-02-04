@@ -3,9 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { ethers } from "ethers";
 
-const DEV_PRIVATE_KEY =
-  process.env.DEPLOYER_PRIVATE_KEY ??
-  "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
 
 const RPC_L1 = process.env.RPC_L1 ?? "http://localhost:18545";
 const GOVERNOR_ADDRESS = process.env.GOVERNOR_ADDRESS;
@@ -22,6 +20,9 @@ function requireAddress(name: string, value: string | undefined) {
 }
 
 async function main() {
+  if (!DEPLOYER_PRIVATE_KEY) {
+    throw new Error("missing_DEPLOYER_PRIVATE_KEY");
+  }
   if (!fs.existsSync(INPUT_PATH)) {
     throw new Error(`proposal_file_missing:${INPUT_PATH}`);
   }
@@ -30,7 +31,7 @@ async function main() {
 
   const governor = requireAddress("GOVERNOR_ADDRESS", GOVERNOR_ADDRESS);
   const provider = new ethers.JsonRpcProvider(RPC_L1);
-  const signer = new ethers.Wallet(DEV_PRIVATE_KEY, provider);
+  const signer = new ethers.Wallet(DEPLOYER_PRIVATE_KEY, provider);
   const governorContract = new ethers.Contract(
     governor,
     ["function propose(address target,uint256 value,bytes data) external returns (uint256)"],

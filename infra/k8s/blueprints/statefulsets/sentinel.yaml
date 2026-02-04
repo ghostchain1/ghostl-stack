@@ -37,7 +37,7 @@
             "name": "sentinel",
             "image": "quarry/sentinel",
             "command": null,
-            "args": "sentinel --datadir=data --l1-rpc-http=http://l1:8545 --l1-rpc-ws=ws://l1:8546 --da-storage-uri=http://da-server:3100 --private-key=0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba --config=/rollup.json\n",
+            "args": "sentinel --datadir=data --l1-rpc-http=http://l1:8545 --l1-rpc-ws=ws://l1:8546 --da-storage-uri=http://da-server:3100 --private-key=${SENTINEL_PRIVATE_KEY:-} --config=/rollup.json\n",
             "env": [],
             "ports": [],
             "volumeMounts": [

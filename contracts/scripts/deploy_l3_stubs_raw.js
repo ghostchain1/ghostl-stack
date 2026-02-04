@@ -1,7 +1,11 @@
 const { ethers } = require("ethers");
 const fs = require("fs");
 const rpc = process.env.RPC_L2 || "http://l2-geth:8545";
-const pk = process.env.DEPLOYER_PRIVATE_KEY || "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+const pk = process.env.DEPLOYER_PRIVATE_KEY;
+if (!pk) {
+  console.error("Missing DEPLOYER_PRIVATE_KEY (refusing to use a built-in dev key)");
+  process.exit(1);
+}
 const provider = new ethers.JsonRpcProvider(rpc);
 const signer = new ethers.Wallet(pk, provider);
 async function main() {

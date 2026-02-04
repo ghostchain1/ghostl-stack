@@ -1,2 +1,0 @@
-time="2026-02-02T13:25:20Z" level=warning msg="The \"GAS_ENGINE_ADMIN_TOKEN\" variable is not set. Defaulting to a blank string."
-env file /home/ghost/ghostl-stack/ops/snapshots/20260126-112312/files/apps/api/.env.example not found: stat /home/ghost/ghostl-stack/ops/snapshots/20260126-112312/files/apps/api/.env.example: no such file or directory

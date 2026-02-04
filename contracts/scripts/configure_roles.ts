@@ -1,8 +1,6 @@
 import { ethers } from "ethers";
 
-const DEV_PRIVATE_KEY =
-  process.env.DEPLOYER_PRIVATE_KEY ??
-  "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
 
 const RPC_L1 = process.env.RPC_L1 ?? "http://localhost:8545";
 const RPC_L2 = process.env.RPC_L2 ?? "http://localhost:9545";
@@ -25,13 +23,16 @@ function requireAddr(name: string, value: string) {
 }
 
 async function main() {
+  if (!DEPLOYER_PRIVATE_KEY) {
+    throw new Error("Missing DEPLOYER_PRIVATE_KEY (refusing to use a built-in dev key)");
+  }
   const l1 = new ethers.JsonRpcProvider(RPC_L1);
   const l2 = new ethers.JsonRpcProvider(RPC_L2);
   const l3 = new ethers.JsonRpcProvider(RPC_L3);
 
-  const ownerL1 = new ethers.Wallet(DEV_PRIVATE_KEY, l1);
-  const ownerL2 = new ethers.Wallet(DEV_PRIVATE_KEY, l2);
-  const ownerL3 = new ethers.Wallet(DEV_PRIVATE_KEY, l3);
+  const ownerL1 = new ethers.Wallet(DEPLOYER_PRIVATE_KEY, l1);
+  const ownerL2 = new ethers.Wallet(DEPLOYER_PRIVATE_KEY, l2);
+  const ownerL3 = new ethers.Wallet(DEPLOYER_PRIVATE_KEY, l3);
 
   const l1RollupAddr = requireAddr("L1_ROLLUP_L2_ADDRESS", L1_ROLLUP_L2);
   const l2RollupAddr = requireAddr("L2_ROLLUP_L3_ADDRESS", L2_ROLLUP_L3);
@@ -100,4 +101,3 @@ main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
-

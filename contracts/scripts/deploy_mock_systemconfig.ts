@@ -2,11 +2,11 @@ import { ethers } from "hardhat";
 
 async function main() {
   const l2Provider = new ethers.JsonRpcProvider(process.env.RPC_L2 ?? "http://localhost:29545");
-  const signer = new ethers.Wallet(
-    process.env.DEPLOYER_PRIVATE_KEY ??
-      "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
-    l2Provider
-  );
+  const deployerKey = process.env.DEPLOYER_PRIVATE_KEY;
+  if (!deployerKey) {
+    throw new Error("missing_DEPLOYER_PRIVATE_KEY");
+  }
+  const signer = new ethers.Wallet(deployerKey, l2Provider);
 
   const unsafeBlockSigner = process.env.UNSAFE_BLOCK_SIGNER ?? "0xc17ebfc8421667bd832090dce4cc8bca1fdef654";
   const l1CrossDomainMessenger = process.env.L1_XDM ?? "0xea7cfd038c520128c244426766fb7d10804002f5";

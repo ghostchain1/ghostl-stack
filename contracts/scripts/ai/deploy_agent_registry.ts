@@ -1,9 +1,7 @@
 /* eslint-disable no-console */
 import { ethers } from "ethers";
 
-const DEV_PRIVATE_KEY =
-  process.env.DEPLOYER_PRIVATE_KEY ??
-  "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
 const RPC_L1 = process.env.RPC_L1 ?? "http://localhost:18545";
 
 const GOVERNOR_ADDRESS = process.env.GOVERNOR_ADDRESS ?? "";
@@ -13,8 +11,11 @@ async function main() {
   if (!ethers.isAddress(GOVERNOR_ADDRESS)) {
     throw new Error("GOVERNOR_ADDRESS required");
   }
+  if (!DEPLOYER_PRIVATE_KEY) {
+    throw new Error("DEPLOYER_PRIVATE_KEY required (refusing to use a built-in dev key)");
+  }
   const provider = new ethers.JsonRpcProvider(RPC_L1);
-  const signer = new ethers.Wallet(DEV_PRIVATE_KEY, provider);
+  const signer = new ethers.Wallet(DEPLOYER_PRIVATE_KEY, provider);
   const artifact = await import(
     "../../artifacts/src/ai/AgentRegistry.sol/AgentRegistry.json",
     { assert: { type: "json" } }
