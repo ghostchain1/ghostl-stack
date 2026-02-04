@@ -37,6 +37,7 @@ require_file "$ROOT_DIR/docs/ai-core/ratification.md" || missing=1
 require_file "$ROOT_DIR/docs/ai-core/federation.md" || missing=1
 require_file "$ROOT_DIR/docs/ai-core/failure-mode-drills.md" || missing=1
 require_file "$ROOT_DIR/docs/ghostchain/ratification-package.md" || missing=1
+require_file "$ROOT_DIR/docs/ai/AI_TOOLCHAIN.md" || missing=1
 
 log "AI governance scripts"
 require_exec "$ROOT_DIR/infra/scripts/evidence-pack-ai-governance.sh" || missing=1
