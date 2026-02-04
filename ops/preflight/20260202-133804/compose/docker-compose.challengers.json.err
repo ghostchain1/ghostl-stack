@@ -1,1 +1,0 @@
-service "l3-op-challenger" depends on undefined service "l3-op-node": invalid compose project

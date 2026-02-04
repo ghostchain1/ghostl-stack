@@ -20,12 +20,9 @@ if (disableTypechain) {
   require("@nomicfoundation/hardhat-toolbox");
 }
 
-const DEV_PRIVATE_KEY =
-  process.env.DEPLOYER_PRIVATE_KEY ??
-  "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
-const EXTERNAL_DEPLOYER_KEY = process.env.DEPLOYER_PRIVATE_KEY
-  ? [process.env.DEPLOYER_PRIVATE_KEY]
-  : [];
+const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
+const LOCAL_ACCOUNTS = DEPLOYER_PRIVATE_KEY ? [DEPLOYER_PRIVATE_KEY] : [];
+const EXTERNAL_DEPLOYER_KEY = LOCAL_ACCOUNTS;
 const RPC_L1 = process.env.RPC_L1 ?? "http://localhost:18545";
 const RPC_L2 = process.env.RPC_L2 ?? "http://localhost:29545";
 const RPC_L3 = process.env.RPC_L3 ?? "http://localhost:39545";
@@ -93,35 +90,35 @@ const config: HardhatUserConfig = {
     anvil: {
       url: RPC_L1,
       chainId: L1_CHAIN_ID,
-      accounts: [DEV_PRIVATE_KEY],
+      accounts: LOCAL_ACCOUNTS,
       timeout: REQUEST_TIMEOUT_MS,
       gasPrice: 1_000_000_000
     },
     ghostl2: {
       url: RPC_L2,
       chainId: L2_CHAIN_ID,
-      accounts: [DEV_PRIVATE_KEY],
+      accounts: LOCAL_ACCOUNTS,
       timeout: REQUEST_TIMEOUT_MS,
       gasPrice: 1_000_000_000
     },
     ghostl3: {
       url: RPC_L3,
       chainId: L3_CHAIN_ID,
-      accounts: [DEV_PRIVATE_KEY],
+      accounts: LOCAL_ACCOUNTS,
       timeout: REQUEST_TIMEOUT_MS,
       gasPrice: 1_000_000_000
     },
     ghostl2Op: {
       url: OP_L2_RPC,
       chainId: OP_L2_CHAIN_ID,
-      accounts: [DEV_PRIVATE_KEY],
+      accounts: LOCAL_ACCOUNTS,
       timeout: REQUEST_TIMEOUT_MS,
       gasPrice: 1_000_000_000
     },
     ghostl3Op: {
       url: OP_L3_RPC,
       chainId: OP_L3_CHAIN_ID,
-      accounts: [DEV_PRIVATE_KEY],
+      accounts: LOCAL_ACCOUNTS,
       timeout: REQUEST_TIMEOUT_MS,
       gasPrice: 1_000_000_000
     },

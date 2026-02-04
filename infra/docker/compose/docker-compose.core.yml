@@ -2997,7 +2997,7 @@
         "LOG_LEVEL": "warn",
         "NETWORK": "Ghostchain",
         "PORT": 4000,
-        "SECRET_KEY_BASE": "6d31c6c2b8b7344f5f3d2421f3d8a42d9d27f9b4a7ad0b287f1aa4f8c6efb6d3",
+        "SECRET_KEY_BASE": "${GHOSTSCOUT_SECRET_KEY_BASE_L1:-}",
         "SUBNETWORK": "PoA"
       },
       "image": "blockscout/blockscout:latest",
@@ -3685,7 +3685,7 @@
         "--rollup-rpc=http://op-node:9546",
         "--game-factory-address=${GAME_FACTORY_ADDRESS:-0x9464a29028c32c33975AC1FB48D6192B6e46DB9e}",
         "--proposal-interval=${PROPOSAL_INTERVAL:-30s}",
-        "--private-key=${PROPOSER_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}",
+        "--private-key=${PROPOSER_KEY:-}",
         "--allow-non-finalized",
         "--txmgr.send-timeout=30s",
         "--txmgr.retry-interval=3s",
@@ -3708,7 +3708,7 @@
       },
       "environment": {
         "GAME_FACTORY_ADDRESS": "${GAME_FACTORY_ADDRESS:-0x9464a29028c32c33975AC1FB48D6192B6e46DB9e}",
-        "PROPOSER_KEY": "${PROPOSER_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}"
+        "PROPOSER_KEY": "${PROPOSER_KEY:-}"
       },
       "extra_hosts": [
         "host.docker.internal:host-gateway"
@@ -5258,7 +5258,7 @@
       ]
     },
     "sentinel": {
-      "command": "sentinel --datadir=data --l1-rpc-http=http://l1:8545 --l1-rpc-ws=ws://l1:8546 --da-storage-uri=http://da-server:3100 --private-key=0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba --config=/rollup.json\n",
+      "command": "sentinel --datadir=data --l1-rpc-http=http://l1:8545 --l1-rpc-ws=ws://l1:8546 --da-storage-uri=http://da-server:3100 --private-key=${SENTINEL_PRIVATE_KEY:-} --config=/rollup.json\n",
       "image": "quarry/sentinel",
       "networks": {
         "default": null

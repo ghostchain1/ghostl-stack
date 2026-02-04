@@ -44,7 +44,7 @@ if [ "$L2_SECRETS_SOURCE" = "dev" ]; then
     echo "Missing $SECRETS_FILE. Copy from infra/opstack/.env.secrets.sample and edit values." >&2
     exit 1
   fi
-  if printf '%s\n' "$(cat "$SECRETS_FILE")" | rg -n "(changeme|change-me|example|0xaaaa|0xdddd|0xeeee)" >/dev/null 2>&1; then
+  if printf '%s\n' "$(cat "$SECRETS_FILE")" | rg -n "(changeme|change-me|example|REPLACE_ME|0xaaaa|0xdddd|0xeeee)" >/dev/null 2>&1; then
     echo "Weak default detected in secrets file. Refusing to continue." >&2
     exit 1
   fi

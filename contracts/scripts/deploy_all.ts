@@ -146,10 +146,10 @@ async function main() {
 
   // Deploy inbox on L3 (GhostL3) using the same dev key by default.
   const l3Rpc = rpcL3Public;
-  const relayerKey =
-    process.env.RELAYER_PRIVATE_KEY ??
-    process.env.DEPLOYER_PRIVATE_KEY ??
-    "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+  const relayerKey = process.env.RELAYER_PRIVATE_KEY ?? process.env.DEPLOYER_PRIVATE_KEY;
+  if (!relayerKey) {
+    throw new Error("Missing RELAYER_PRIVATE_KEY (or DEPLOYER_PRIVATE_KEY) for L1/L3 deployments");
+  }
 
   const l3Provider = new ethers.JsonRpcProvider(l3Rpc);
   const l3Signer = new ethers.Wallet(relayerKey, l3Provider);

@@ -12,7 +12,7 @@
         }
       },
       "environment": {
-        "COMPLIANCE_ANALYST_JWT": "${COMPLIANCE_ANALYST_JWT:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJnaG9zdC11aSIsInJvbGUiOiJhbmFseXN0In0.Hry8Kl3wdOufLjxTZ_A9NLSXVk_gReEKNH3gWP2lYdg}",
+        "COMPLIANCE_ANALYST_JWT": "${COMPLIANCE_ANALYST_JWT:-}",
         "COMPLIANCE_URL": "http://ghost-compliance:8090",
         "NEXT_PUBLIC_COMPLIANCE_URL": "http://localhost:8090",
         "NODE_ENV": "production",

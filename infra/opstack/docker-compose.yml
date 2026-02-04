@@ -650,13 +650,13 @@ services:
       l1-rpc-proxy:
         condition: service_healthy
     environment:
-      PROPOSER_KEY: ${PROPOSER_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
+      PROPOSER_KEY: ${PROPOSER_KEY:-}
     command:
     - op-proposer
     - --l1-eth-rpc=http://op-gate-l1:8545
     - --rollup-rpc=http://op-sequencer:9646
     - --l2oo-address=${L2OO_ADDRESS:-0x3C8841ddf731d168b0B4FFB633995281DaE8bc3D}
-    - --private-key=${PROPOSER_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
+    - --private-key=${PROPOSER_KEY:-}
     - --allow-non-finalized
     - --txmgr.send-timeout=30s
     - --txmgr.retry-interval=3s

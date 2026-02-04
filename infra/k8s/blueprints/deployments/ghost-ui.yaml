@@ -36,7 +36,7 @@
             "env": [
               {
                 "name": "COMPLIANCE_ANALYST_JWT",
-                "value": "${COMPLIANCE_ANALYST_JWT:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJnaG9zdC11aSIsInJvbGUiOiJhbmFseXN0In0.Hry8Kl3wdOufLjxTZ_A9NLSXVk_gReEKNH3gWP2lYdg}"
+                "value": "${COMPLIANCE_ANALYST_JWT:-}"
               },
               {
                 "name": "COMPLIANCE_URL",
