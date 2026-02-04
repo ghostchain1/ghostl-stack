@@ -18,7 +18,7 @@
       "chainId": 901,
       "name": "GhostL2",
       "type": "L2",
-      "rpcUrl": "http://host.docker.internal:18547",
+      "rpcUrl": "http://host.docker.internal:29547",
       "fallbackRpcUrls": [],
       "wsUrl": "",
       "gasTokenSymbol": "GHOST",

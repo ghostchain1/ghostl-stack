@@ -30,7 +30,7 @@ services:
       GOVERNOR_ADDRESS: ${GOVERNOR_ADDRESS:-0x70e0bA845a1A0F2DA3359C97E0285013525FFC49}
       EXECUTOR_ADDRESS: ${EXECUTOR_ADDRESS:-0x84eA74d481Ee0A5332c457a4d796187F6Ba67fEB}
     ports:
-      - "7645:7645"
+      - "17645:7645"
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -41,7 +41,7 @@ services:
       PORT: 7641
       AUDIT_LOG_PATH: /data/agent-evidence.log
     ports:
-      - "7641:7641"
+      - "17641:7641"
     volumes:
       - evidence_data:/data
 
