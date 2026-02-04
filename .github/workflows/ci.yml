@@ -24,7 +24,8 @@ jobs:
 
       - name: Trivy secret scan (tracked repo)
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Prefer a dedicated PAT if configured; otherwise use the built-in workflow token.
+          GITHUB_TOKEN: ${{ secrets.TRIVY_GITHUB_TOKEN || github.token }}
         run: |
           trivy fs \
             --timeout 10m \
