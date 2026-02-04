@@ -1,5 +1,6 @@
 # Ops Runbooks
 
+- `../checklists/WHAT_YOU_CAN_RUN_TODAY.md`: one-page “what to run today” checklist (doctors, gates, bridge E2E, evidence, scans).
 - `deployment-modes-l1.md`: local/staging/prod requirements and environment settings.
 - `deployment-modes-l2.md`: local/staging/prod requirements for L2 (OP Stack).
 - `runbook-l1.md`: day-2 operational checks and procedures.

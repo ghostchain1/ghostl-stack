@@ -53,4 +53,4 @@ If you use any auxiliary tool at all, record it in your evidence package (prompt
 - **Secret scanning:** CI blocks merges when Trivy secret scanning detects committed secrets.
 - **No tracked secrets:** `.env`, key material, JWT secrets, backups/snapshots are expected to be untracked (see `.gitignore` and the `.example` templates).
 - **AI governance go/no-go:** scheduled/tag gate validates governance artifacts and evidence-pack reproducibility (`infra/scripts/gates/ai-go-no-go.sh`).
-
+- **Operator checklist:** day-0/day-1 commands are consolidated in `docs/checklists/WHAT_YOU_CAN_RUN_TODAY.md`.

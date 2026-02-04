@@ -1,6 +1,6 @@
-# Ghostchain (Ethereum-compatible, config-only geth)
+# GhostChain (Ethereum-compatible, config-only geth)
 
-This folder now runs Ghostchain as a clique PoA chain on stock geth (no forked client). It ships with bootnode + 2 signers, deterministic keys, and helper scripts.
+This folder runs GhostChain (the main Autonomous Layer 1 blockchain) as a clique PoA chain on stock geth (no forked client). It ships with bootnode + 2 signers, deterministic keys, and helper scripts.
 
 ## Run it
 ```bash

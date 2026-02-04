@@ -92,7 +92,7 @@ flowchart LR
 
 ## Reliability controls
 
-- `infra/scripts/doctor-l2.sh` now validates L1 derivation lag, L2 safe lag, and batcher/proposer activity (configurable via `.env.l2` thresholds).
+- `infra/scripts/doctor-l2.sh` validates L2 execution progress (when `L2_REQUIRE_L2_PROGRESS=1`), L1 derivation lag, L2 safe lag, and batcher/proposer activity (configurable via `.env.l2` thresholds). Progress gating samples `eth_blockNumber` over time (`L2_PROGRESS_SAMPLE_SECONDS`, `L2_PROGRESS_MIN_DELTA`).
 - Prometheus alert rules in `infra/opstack/observability/alert_rules.yml` cover L1 head stalls, derivation errors, L1 reorg signals, batcher idle, and proposer idle.
 
 ## Playbooks

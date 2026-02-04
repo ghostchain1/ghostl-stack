@@ -5,7 +5,7 @@ Evidence index: `docs/evidence/README.md`
 ## Quick checks
 
 ```bash
-infra/scripts/doctor-l3.sh
+bash infra/scripts/doctor-l3.sh
 ```
 
 ## Core endpoints

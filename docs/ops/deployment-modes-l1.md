@@ -75,5 +75,5 @@ This document defines the required settings for local, staging, and production L
 Run after each deploy (all modes):
 
 ```bash
-infra/scripts/doctor-l1.sh
+bash infra/scripts/doctor-l1.sh
 ```

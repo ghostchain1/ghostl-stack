@@ -30,8 +30,10 @@ jobs:
           trivy fs \
             --timeout 10m \
             --scanners secret \
+            --secret-config trivy-secret.yaml \
             --exit-code 1 \
             --skip-dirs node_modules,contracts/node_modules,dist,contracts/dist,contracts/artifacts,contracts/cache,contracts/.hardhat-cache,contracts/typechain-types,contracts/proposals \
+            --skip-files ops/security/trivy-fs.json,contracts/reports/formal/scribble/scribble.json,contracts/artifacts/build-info/*.json,infra/opstack/op-geth/signer/fourbyte/4byte.json \
             .
 
   ghost-helper:

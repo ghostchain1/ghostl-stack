@@ -1,6 +1,6 @@
-# Ghostchain L1 (local dev chain)
+# GhostChain L1 (local dev chain)
 
-The L1 for this stack is a standalone Ghostchain instance (dev geth) running on chainId **14000101**. It is independent of Ethereum mainnet/sepolia and is the base security layer for the broader GhostChain PoS + OP Stack blueprint described in `docs/ghostchain-pos-alignment.md`.
+GhostChain is the main Autonomous Layer 1 blockchain in this stack. For local development, we run a standalone GhostChain instance (dev geth) on chainId **14000101**. It is independent of Ethereum mainnet/sepolia and is the base security layer for the broader GhostChain PoS + OP Stack blueprint described in `docs/ghostchain-pos-alignment.md`.
 
 > Note: the **devnet consensus engine is Clique (PoA)** for fast local iterations. The **PoS blueprint** is expressed in contracts under `contracts/src/futuristic` and can be activated in a production client later.
 
@@ -32,11 +32,11 @@ For the full blueprint, see `docs/ghostchain-pos-alignment.md`, which includes r
 - RPC (host): `http://localhost:18545`
 - Chain ID: `14000101`
 - Config files: `infra/opstack/config/l1-chain.json` (chain params), `infra/opstack/config/l1-genesis.json`
-- Rollup config points to Ghostchain L1 via `infra/opstack/config/rollup.json` (l1_chain_id=14000101, genesis hash matches Ghostchain).
+- Rollup config points to GhostChain L1 via `infra/opstack/config/rollup.json` (l1_chain_id=14000101, genesis hash matches GhostChain).
 
 Running:
 ```bash
 docker compose -f infra/opstack/docker-compose.yml up -d l1
 ```
 
-If you want to regenerate Ghostchain with a new chainId or genesis, update `infra/opstack/config/l1-chain.json` and `infra/opstack/config/l1-genesis.json`, clear `infra/opstack/data/l1-geth*`, and restart the stack.
+If you want to regenerate GhostChain with a new chainId or genesis, update `infra/opstack/config/l1-chain.json` and `infra/opstack/config/l1-genesis.json`, clear `infra/opstack/data/l1-geth*`, and restart the stack.

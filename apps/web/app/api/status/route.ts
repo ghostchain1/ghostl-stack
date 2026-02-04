@@ -46,6 +46,14 @@ const fetchWithTimeout = async (url: string, init: RequestInit, timeoutMs: numbe
 
 const stringifyError = (error: unknown) => (error instanceof Error ? error.message : 'request_failed');
 
+const isMethodNotFound = (error?: string) => {
+  const msg = String(error || '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+  return msg.includes('method not found') || msg.includes('does not exist') || msg.includes('not available');
+};
+
 const checkHealth = async (id: string, name: string, baseUrl: string, path = '/health'): Promise<ServiceStatus> => {
   const url = `${baseUrl}${path}`;
   const { res, error, latencyMs } = await fetchWithTimeout(url, { method: 'GET' }, 2500);
@@ -75,11 +83,18 @@ const rpcCall = async (url: string, method: string) => {
   return { ok: res.ok, result: payload?.result, latencyMs };
 };
 
+const rpcBlockNumber = async (url: string) => {
+  const gst = await rpcCall(url, 'gst_blockNumber');
+  if (gst.ok) return gst;
+  if (!isMethodNotFound(gst.error)) return gst;
+  return await rpcCall(url, 'eth_blockNumber');
+};
+
 const checkChain = async (key: ChainStatus['key'], rpc: string): Promise<ChainStatus> => {
   if (!rpc) {
     return { key, rpc, ok: false, error: 'rpc_url_missing' };
   }
-  const [chainId, blockNumber] = await Promise.all([rpcCall(rpc, 'eth_chainId'), rpcCall(rpc, 'eth_blockNumber')]);
+  const [chainId, blockNumber] = await Promise.all([rpcCall(rpc, 'eth_chainId'), rpcBlockNumber(rpc)]);
   const ok = chainId.ok && blockNumber.ok;
   const latencyMs = Math.max(chainId.latencyMs || 0, blockNumber.latencyMs || 0);
   return {

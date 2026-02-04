@@ -10,7 +10,7 @@ export default tseslint.config(
       '**/node_modules/**',
       'dist/**',
       'out/**',
-      'apps/web/.next/**',
+      'apps/web/.next*/**',
       'cache/**',
       'chains/**/data/**',
       'infra/opstack/**/data/**'
@@ -44,6 +44,7 @@ export default tseslint.config(
       ...nextPlugin.configs.recommended.rules,
       ...(prettier.rules || {}),
       'next/no-html-link-for-pages': 'off',
+      'no-undef': 'off',
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
