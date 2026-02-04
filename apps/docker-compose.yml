@@ -41,7 +41,7 @@ services:
       DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:-ghostpass}@postgres:5432/ghost_compliance
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${COMPLIANCE_JWT_SECRET:-change-me}
-      ATTESTATION_PRIVATE_KEY: ${COMPLIANCE_ATTESTATION_PRIVATE_KEY:-0x59c6995e998f97a5a0044966f094538e4b1a8d9d0f0b8a8c64d124b5e5d6fcbf}
+      ATTESTATION_PRIVATE_KEY: ${COMPLIANCE_ATTESTATION_PRIVATE_KEY:-}
       ATTESTATION_EXPIRY_SECONDS: 900
     depends_on:
       postgres:
@@ -60,7 +60,7 @@ services:
       DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:-ghostpass}@postgres:5432/ghost_compliance
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${COMPLIANCE_JWT_SECRET:-change-me}
-      ATTESTATION_PRIVATE_KEY: ${COMPLIANCE_ATTESTATION_PRIVATE_KEY:-0x59c6995e998f97a5a0044966f094538e4b1a8d9d0f0b8a8c64d124b5e5d6fcbf}
+      ATTESTATION_PRIVATE_KEY: ${COMPLIANCE_ATTESTATION_PRIVATE_KEY:-}
       ATTESTATION_EXPIRY_SECONDS: 900
       CORS_ORIGIN: http://localhost:3200
     ports:
@@ -99,4 +99,3 @@ services:
 volumes:
   pg_data:
   redis_data:
-

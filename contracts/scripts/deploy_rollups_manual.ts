@@ -39,10 +39,10 @@ async function main() {
   const l2ChainId = Number(process.env.L2_CHAIN_ID ?? "901");
   const l3ChainId = Number(process.env.L3_CHAIN_ID ?? "902");
   const challengePeriodSeconds = Number(process.env.CHALLENGE_PERIOD_SECONDS ?? "30");
-  const relayerKey =
-    process.env.RELAYER_PRIVATE_KEY ??
-    process.env.DEPLOYER_PRIVATE_KEY ??
-    "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+  const relayerKey = process.env.RELAYER_PRIVATE_KEY ?? process.env.DEPLOYER_PRIVATE_KEY;
+  if (!relayerKey) {
+    throw new Error("Missing RELAYER_PRIVATE_KEY (or DEPLOYER_PRIVATE_KEY) for rollup deployments");
+  }
   const l2TokenAddr =
     process.env.L2_TOKEN_ADDRESS ??
     process.env.L2_TOKEN ??

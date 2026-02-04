@@ -87,7 +87,9 @@ infra/ghostchain/logs/
 infra/ghostchain/config/bootnode-enode.txt
 infra/ghostchain/ghostl2/data/
 infra/ghostchain/**/logs/
-infra/ghostchain/**/geth/
+# geth runtime data lives under infra/ghostchain/data (keep infra/ghostchain/geth templates tracked)
+infra/ghostchain/data/**/geth/
+infra/ghostchain/data/**/keystore/
 
 # runtime state snapshots
 services/data/state.json
@@ -104,10 +106,11 @@ dist/
 
 .git/gc.log
 
-# logs
+# logs (runtime)
 *.log
-logs/
-**/logs/
+/logs/
+infra/**/logs/
+services/**/logs/
 
 # coverage
 coverage/
@@ -140,8 +143,9 @@ ops/docker/snapshots/*
 ops/docker/attestations/*
 !ops/docker/attestations/.gitkeep
 !ops/docker/attestations/README.md
+ops/snapshots/
 ops/preflight/
-ops/security/
+ops/security/**/status.json
 ops/ai/anomaly/anomaly-report.json
 ops/ai/anomaly/model-metadata.json
 ops/ai/drift/baseline.json
@@ -190,6 +194,10 @@ ghost-helper-bots/attestations/
 *.bak
 *~
 
+# temp scripts
+tmp-*.js
+tmp-*.ts
+
 # local shell env
 .envrc
 .direnv/
@@ -206,7 +214,6 @@ ghost-helper-bots/attestations/
 *.p12
 *.jks
 *.keystore
-*keystore*
 *.enc
 *.der
 *.csr
@@ -249,11 +256,25 @@ certs/
 .docker/
 infra/k8s/**/api-secret.yaml
 
+# engine API JWT secrets (local-only)
+**/config/jwt.txt
+!**/config/jwt.txt.example
+
+# opstack local keystore/password material (local-only)
+infra/opstack/config/l1-keystore/
+infra/opstack/config/l1-keystore-password
+infra/opstack/config/l1-keystore-geth/password.txt
+
+# ghostchain local geth account password (local-only)
+infra/ghostchain/geth/password.txt
+
 # backups (often contain envs/keys)
 backups/
 infra/docker/_backup/
 infra/docker/runtime/
+infra/docker/audit/
 infra/opstack/backups-*/
+docs/rollback/
 
 # terraform state (contains secrets)
 .terraform/

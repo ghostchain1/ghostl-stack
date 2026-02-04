@@ -1,9 +1,0 @@
-ghostchain-compliance_pg_data
-ghostchain-compliance_redis_data
-ghostchain_ghostchain-node1-data
-ghostchain_ghostscout-db-data
-opstack_alertmanager_data
-opstack_grafana_data
-opstack_loki_data
-opstack_op_gate_state
-opstack_prometheus_data

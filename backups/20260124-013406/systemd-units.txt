@@ -1,1 +1,0 @@
-/home/ghost/ghostl-stack/observability/infra/systemd/observability-stack.service

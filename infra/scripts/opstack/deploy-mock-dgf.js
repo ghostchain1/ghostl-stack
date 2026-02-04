@@ -14,7 +14,11 @@ const L1_RPC = process.env.L1_RPC || "http://localhost:18545";
 const L2_RPC = process.env.L2_RPC || "http://localhost:29547";
 const L1_CHAIN_ID = process.env.L1_CHAIN_ID ? Number(process.env.L1_CHAIN_ID) : 14000101;
 const L2_CHAIN_ID = process.env.L2_CHAIN_ID ? Number(process.env.L2_CHAIN_ID) : 901;
-const DEFAULT_PK = process.env.PRIVATE_KEY || "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"; // hardhat default
+const DEFAULT_PK = process.env.DEPLOYER_PRIVATE_KEY || process.env.PRIVATE_KEY;
+if (!DEFAULT_PK) {
+  console.error("Missing DEPLOYER_PRIVATE_KEY (or PRIVATE_KEY) for deployment");
+  process.exit(1);
+}
 
 async function fundAndDeploy(rpcUrl, label, chainId) {
   const provider = new ethers.JsonRpcProvider(rpcUrl, { chainId, name: `${label.toLowerCase()}-chain` });

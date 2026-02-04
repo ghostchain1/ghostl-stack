@@ -6,11 +6,11 @@ import crypto from "node:crypto";
 async function main() {
   const rpc = process.env.RPC_L2 ?? "http://localhost:29545";
   const provider = new ethers.JsonRpcProvider(rpc);
-  const signer = new ethers.Wallet(
-    process.env.DEPLOYER_PRIVATE_KEY ??
-      "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
-    provider
-  );
+  const deployerKey = process.env.DEPLOYER_PRIVATE_KEY;
+  if (!deployerKey) {
+    throw new Error("missing_DEPLOYER_PRIVATE_KEY");
+  }
+  const signer = new ethers.Wallet(deployerKey, provider);
 
   console.log("Deploying L3 stubs from", await signer.getAddress(), "to", rpc);
   const net = await provider.getNetwork();
