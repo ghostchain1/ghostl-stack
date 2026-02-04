@@ -21,6 +21,13 @@ const RPC_CORS_ORIGINS = (process.env.RPC_CORS_ORIGINS || "http://localhost,http
   .map((s) => s.trim())
   .filter(Boolean);
 
+const RPC_ENABLE_GST_NAMESPACE = process.env.RPC_ENABLE_GST_NAMESPACE ? process.env.RPC_ENABLE_GST_NAMESPACE === "1" : true;
+const RPC_DEPRECATE_ETH_NAMESPACE = process.env.RPC_DEPRECATE_ETH_NAMESPACE === "1";
+const RPC_REJECT_ETH_NAMESPACE = process.env.RPC_REJECT_ETH_NAMESPACE === "1";
+
+const RPC_ALIAS_AUDIT_LOG_URL = process.env.RPC_ALIAS_AUDIT_LOG_URL || "";
+const RPC_ALIAS_AUDIT_LOG_TIMEOUT_MS = Number(process.env.RPC_ALIAS_AUDIT_LOG_TIMEOUT_MS || "750");
+
 const checksumAccounts = new Map([
   ["0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266", "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"],
   ["0x70997970c51812dc3a010c7d01b50e0d17dc79c8", "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"],
@@ -100,7 +107,9 @@ const rateState = new Map();
 const metricState = {
   requests: 0,
   rateLimited: 0,
-  authFailed: 0
+  authFailed: 0,
+  aliasUsed: 0,
+  aliasUsedByPair: new Map()
 };
 
 function getClientIp(req) {
@@ -155,6 +164,37 @@ function hasAuth(req) {
   return token === RPC_AUTH_TOKEN || headerToken === RPC_AUTH_TOKEN;
 }
 
+const METHOD_CANONICAL_MAP = new Map([["eth_blockNumber", "gst_blockNumber"]]);
+const METHOD_UPSTREAM_MAP = new Map([["gst_blockNumber", "eth_blockNumber"]]);
+
+function normalizeRpcMethod(method) {
+  if (!method || typeof method !== "string") return { canonical: "", upstream: "", aliasFrom: "" };
+  if (!RPC_ENABLE_GST_NAMESPACE) return { canonical: method, upstream: method, aliasFrom: "" };
+
+  const canonical = METHOD_CANONICAL_MAP.get(method) || method;
+  const upstream = METHOD_UPSTREAM_MAP.get(canonical) || canonical;
+  const aliasFrom = method !== canonical ? method : "";
+  return { canonical, upstream, aliasFrom };
+}
+
+async function postAuditLog(entry) {
+  if (!RPC_ALIAS_AUDIT_LOG_URL) return;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), RPC_ALIAS_AUDIT_LOG_TIMEOUT_MS);
+  try {
+    await fetch(RPC_ALIAS_AUDIT_LOG_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(entry),
+      signal: controller.signal
+    });
+  } catch {
+    // best-effort
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 const server = http.createServer(async (req, res) => {
   const origin = req.headers.origin;
   setCors(res, origin);
@@ -167,11 +207,19 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && req.url === "/metrics") {
     res.statusCode = 200;
     res.setHeader("content-type", "text/plain");
+    const aliasByPairLines = [];
+    for (const [key, count] of metricState.aliasUsedByPair.entries()) {
+      const [from, to] = key.split("->");
+      if (!from || !to) continue;
+      aliasByPairLines.push(`ghost_rpc_proxy_alias_used_by_pair_total{from=\"${from}\",to=\"${to}\"} ${count}`);
+    }
     return res.end(
       [
         `ghost_rpc_proxy_requests_total ${metricState.requests}`,
         `ghost_rpc_proxy_rate_limited_total ${metricState.rateLimited}`,
-        `ghost_rpc_proxy_auth_failed_total ${metricState.authFailed}`
+        `ghost_rpc_proxy_auth_failed_total ${metricState.authFailed}`,
+        `ghost_rpc_proxy_alias_used_total ${metricState.aliasUsed}`,
+        ...aliasByPairLines
       ].join("\n") + "\n"
     );
   }
@@ -197,22 +245,63 @@ const server = http.createServer(async (req, res) => {
 
   const methodById = new Map();
   const methods = [];
+  const aliasEvents = [];
+  let anyEthNamespaceUsed = false;
   if (Array.isArray(payload)) {
     for (const msg of payload) {
       if (msg && typeof msg === "object" && "id" in msg && "method" in msg) {
         methodById.set(msg.id, msg.method);
         methods.push(msg.method);
+        if (typeof msg.method === "string" && msg.method.startsWith("eth_")) anyEthNamespaceUsed = true;
       }
     }
   } else if (payload && typeof payload === "object" && "id" in payload && "method" in payload) {
     methodById.set(payload.id, payload.method);
     methods.push(payload.method);
+    if (typeof payload.method === "string" && payload.method.startsWith("eth_")) anyEthNamespaceUsed = true;
   }
 
   const needsAuth = methods.some((m) => methodRequiresAuth(m));
   if (needsAuth && !hasAuth(req)) {
     metricState.authFailed += 1;
     return json(res, 401, { ok: false, error: "auth_required" });
+  }
+
+  // Apply RPC namespace remaps (eth_* compatibility -> gst_* canonical) at the proxy boundary.
+  const normalizeOne = (msg, clientIp) => {
+    if (!msg || typeof msg !== "object" || typeof msg.method !== "string") return { msg, reject: false, canonical: "" };
+    const { canonical, upstream, aliasFrom } = normalizeRpcMethod(msg.method);
+    if (!canonical || !upstream) return { msg, reject: false, canonical: "" };
+    if (RPC_REJECT_ETH_NAMESPACE && aliasFrom && aliasFrom.startsWith("eth_")) {
+      return { msg, reject: true, canonical };
+    }
+    if (aliasFrom) {
+      const ts = new Date().toISOString();
+      aliasEvents.push({ ts, client: clientIp, from: aliasFrom, to: canonical, event: "rpc_alias_used" });
+    }
+    return { msg: { ...msg, method: upstream }, reject: false, canonical };
+  };
+
+  const clientIp = getClientIp(req);
+  const normalizedMeta = Array.isArray(payload) ? payload.map((m) => normalizeOne(m, clientIp)) : [normalizeOne(payload, clientIp)];
+  const normalized = Array.isArray(payload) ? normalizedMeta.map((m) => m.msg) : normalizedMeta[0].msg;
+
+  // If configured, warn on legacy eth_* usage without breaking compatibility.
+  if (RPC_DEPRECATE_ETH_NAMESPACE && anyEthNamespaceUsed) {
+    res.setHeader("x-ghost-rpc-warning", "eth_* namespace deprecated; use gst_*");
+  }
+
+  // Hard reject eth_* namespace (opt-in) without touching upstream clients.
+  if (RPC_REJECT_ETH_NAMESPACE) {
+    const rejected = normalizedMeta.filter((m) => m.reject);
+    if (rejected.length) {
+      const errOne = (m) => ({
+        jsonrpc: "2.0",
+        id: m?.msg?.id ?? null,
+        error: { code: -32000, message: `eth_* namespace rejected; use ${m?.canonical || "gst_*"}` }
+      });
+      return json(res, 200, Array.isArray(payload) ? rejected.map(errOne) : errOne(rejected[0]));
+    }
   }
 
   if (LOG_REQUESTS && methods.length) {
@@ -228,7 +317,19 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  const patched = patchRequestPayload(payload);
+  // Patch request payload after normalization.
+  const patched = patchRequestPayload(normalized);
+
+  if (aliasEvents.length) {
+    metricState.aliasUsed += aliasEvents.length;
+    for (const ev of aliasEvents) {
+      const key = `${ev.from}->${ev.to}`;
+      metricState.aliasUsedByPair.set(key, (metricState.aliasUsedByPair.get(key) || 0) + 1);
+      // eslint-disable-next-line no-console
+      console.log(JSON.stringify(ev));
+      void postAuditLog(ev);
+    }
+  }
 
   let upstreamRes;
   try {

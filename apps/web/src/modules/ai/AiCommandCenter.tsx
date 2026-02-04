@@ -752,7 +752,6 @@ export function AiCommandCenter() {
     if (!aiRegistryAddress && !aiHubAddress && !aiGuardAddress && !aiAnchorAddress) return;
     loadAiPack().catch(() => undefined);
     // We intentionally do not depend on aiSubject to avoid spamming reads while typing.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeRpc, chain, aiRegistryAddress, aiHubAddress, aiGuardAddress, aiAnchorAddress, aiAbis]);
 
   return (

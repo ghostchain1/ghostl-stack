@@ -26,6 +26,7 @@ POLICY_REGISTRY_RPC="${POLICY_REGISTRY_RPC:-$HOST_L1_RPC}"
 L2_GO_NO_GO_LOAD_SECONDS="${L2_GO_NO_GO_LOAD_SECONDS:-10}"
 L2_GO_NO_GO_RESTART_CHECK="${L2_GO_NO_GO_RESTART_CHECK:-0}"
 L2_GO_NO_GO_REQUIRE_SCANS="${L2_GO_NO_GO_REQUIRE_SCANS:-0}"
+L2_GO_NO_GO_REQUIRE_PROGRESS="${L2_GO_NO_GO_REQUIRE_PROGRESS:-}"
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 warn() { echo "WARN: $*" >&2; }
@@ -42,7 +43,19 @@ echo "[l2-go-no-go] starting"
 command -v curl >/dev/null 2>&1 || fail "curl missing"
 
 echo "[l2-go-no-go] doctor"
-"$ROOT_DIR/infra/scripts/doctor-l2.sh"
+effective_env="$(printf '%s' "${STACK_ENV:-${L2_ENV:-dev}}" | tr '[:upper:]' '[:lower:]')"
+if [ -z "$L2_GO_NO_GO_REQUIRE_PROGRESS" ]; then
+  case "$effective_env" in
+    prod|production|staging) L2_GO_NO_GO_REQUIRE_PROGRESS=1 ;;
+    *) L2_GO_NO_GO_REQUIRE_PROGRESS=0 ;;
+  esac
+fi
+
+if [ "$L2_GO_NO_GO_REQUIRE_PROGRESS" = "1" ]; then
+  L2_REQUIRE_L2_PROGRESS=1 "$ROOT_DIR/infra/scripts/doctor-l2.sh"
+else
+  "$ROOT_DIR/infra/scripts/doctor-l2.sh"
+fi
 
 echo "[l2-go-no-go] rpc stability"
 for i in $(seq 1 "$L2_GO_NO_GO_LOAD_SECONDS"); do
@@ -83,8 +96,8 @@ if [ "$L2_GO_NO_GO_REQUIRE_SCANS" = "1" ]; then
   echo "[l2-go-no-go] vulnerability scans"
   command -v trivy >/dev/null 2>&1 || fail "trivy missing"
   trivy fs --scanners vuln --exit-code 1 --severity HIGH,CRITICAL \
-    --skip-dirs node_modules,contracts/node_modules,dist,artifacts,cache,backups,ops/snapshots,ops/preflight,contracts/out-codex,contracts/cache-codex,infra/ghostchain/data \
-    --skip-files contracts/reports/formal/scribble/scribble.json,contracts/artifacts/build-info/*.json,infra/opstack/op-geth/signer/fourbyte/4byte.json \
+    --skip-dirs **/node_modules,dist,contracts/dist,contracts/artifacts,contracts/cache,contracts/.hardhat-cache,contracts/typechain-types,contracts/proposals,contracts/.foundry-out,contracts/.foundry-cache,contracts/.foundry-out-local,contracts/.foundry-cache-local,artifacts,cache,backups,ops/snapshots,ops/preflight,contracts/out-codex,contracts/cache-codex,infra/ghostchain/data,infra/ghostchain/secrets,infra/opstack/data,infra/opstack/broadcast,infra/opstack/secrets,infra/opstack/l3/secrets,chains/l2/data,chains/l3/data \
+    --skip-files ops/security/trivy-fs.json,contracts/reports/formal/scribble/scribble.json,contracts/artifacts/build-info/*.json,infra/opstack/op-geth/signer/fourbyte/4byte.json \
     "$ROOT_DIR"
 fi
 

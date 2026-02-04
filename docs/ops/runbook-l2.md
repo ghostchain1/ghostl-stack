@@ -5,7 +5,7 @@ Evidence index: `docs/evidence/README.md`
 ## Quick checks
 
 ```bash
-infra/scripts/doctor-l2.sh
+bash infra/scripts/doctor-l2.sh
 ```
 
 ## Core endpoints
@@ -103,5 +103,5 @@ sha256sum docs/architecture/ghostchain-ai-governance-whitepaper.md | \
 ## Go/No-Go gate
 
 ```bash
-infra/scripts/gates/l2-go-no-go.sh
+bash infra/scripts/gates/l2-go-no-go.sh
 ```

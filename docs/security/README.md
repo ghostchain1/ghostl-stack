@@ -13,5 +13,7 @@
 
 - Gitleaks uses `.gitleaks.toml` for allowlisting non-secret on-chain addresses and generated paths.
 - Semgrep uses `scripts/security/semgrep.yml` for baseline SAST rules (expand as needed).
-- Trivy CI scans L1+L2+L3 for vulnerabilities and secrets.
-- `trivy-secret.yaml` defines allow rules for large generated artifacts.
+- Trivy CI scans the tracked repo for secrets and runs nightly filesystem scans for vuln/secret/misconfig.
+- `trivy-secret.yaml` defines Trivy secret-scanner allow rules for generated/large artifacts (loaded by default, or via `--secret-config trivy-secret.yaml`).
+- For faster scans, use `--skip-dirs` / `--skip-files` (see `ops/scripts/scan.sh` and `infra/scripts/gates/l1-go-no-go.sh`).
+- Local scan runner: `bash ops/scripts/scan.sh` (writes `ops/security/trivy-fs.json`).

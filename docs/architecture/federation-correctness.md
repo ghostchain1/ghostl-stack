@@ -26,7 +26,7 @@ Run:
 bash infra/scripts/federation-check.sh
 ```
 
-## E2E Bridge Tests (TODO)
+## E2E Bridge Tests
 Script: `infra/scripts/bridge-e2e.sh`
 
 Modes:
@@ -55,8 +55,8 @@ TODOs:
   - `infra/scripts/doctor-l1.sh`
   - `infra/scripts/doctor-l2.sh`
   - `infra/scripts/doctor-l3.sh`
-- E2E bridge tests pass (TODO).
+- E2E bridge tests pass.
 
 ## Notes
 - Parent sync lag is derived from block timestamps and is a proxy for output lag.
-- Replace TODOs once bridge test harness is implemented.
+- `bridge-e2e.sh` is intentionally minimal; use it as a smoke test, not a full audit harness.

@@ -12,7 +12,7 @@
    ```bash
    infra/scripts/release-l1.sh --mode=staging --tag=l1-<version>
    ```
-2) **Deploy to staging** and run smoke tests (script runs `doctor-l1.sh`).
+2) **Deploy to staging** and run smoke tests (script runs `bash infra/scripts/doctor-l1.sh`).
 3) **Manual promotion** to production after staging sign-off.
 4) **Monitor** metrics + logs for 30–60 minutes.
 

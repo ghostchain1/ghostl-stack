@@ -2,6 +2,8 @@ import http from "node:http";
 
 const upstreamUrl = process.env.UPSTREAM_URL || "http://host.docker.internal:18545";
 const port = Number.parseInt(process.env.PORT || "18546", 10);
+const fallbackSafeFinalizedToLatest =
+  (process.env.L1_RPC_PROXY_FALLBACK_SAFE_FINALIZED_TO_LATEST || "1") === "1";
 
 async function postJson(url, payload) {
   const res = await fetch(url, {
@@ -31,6 +33,16 @@ async function blobBaseFeeResponse(id) {
 async function handleOne(reqBody) {
   if (reqBody?.method === "eth_blobBaseFee") {
     return blobBaseFeeResponse(reqBody.id ?? null);
+  }
+  // Some dev L1 RPCs don't support "safe"/"finalized" block tags; OP Stack components may poll them.
+  // In such environments, fall back to "latest" to keep derivation/sequencing moving.
+  if (
+    fallbackSafeFinalizedToLatest &&
+    reqBody?.method === "eth_getBlockByNumber" &&
+    Array.isArray(reqBody?.params) &&
+    (reqBody.params[0] === "safe" || reqBody.params[0] === "finalized")
+  ) {
+    return postJson(upstreamUrl, { ...reqBody, params: ["latest", reqBody.params[1] ?? false] });
   }
   return postJson(upstreamUrl, reqBody);
 }
