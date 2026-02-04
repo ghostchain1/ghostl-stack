@@ -214,6 +214,11 @@ ghost-helper-bots/attestations/
 *.token
 *.secret
 *.secrets
+.vault-token
+.npmrc
+.npmrc.*
+**/.npmrc
+**/.npmrc.*
 .certs/
 .secrets/
 secrets/
@@ -223,10 +228,40 @@ certs/
 .aws/
 .gcloud/
 .azure/
+**/.certs/
+**/.secrets/
+**/secrets/
+**/certs/
+**/.ssh/
+**/.gnupg/
+**/.aws/
+**/.gcloud/
+**/.azure/
+**/keystore/
+**/jwtsecret
+**/jwtsecret.*
+**/nodekey
+**/nodekey.*
+**/keys/**/key
+**/keys/**/key.pub
 .netrc
 .pypirc
 .docker/
 infra/k8s/**/api-secret.yaml
+
+# backups (often contain envs/keys)
+backups/
+infra/docker/_backup/
+infra/docker/runtime/
+infra/opstack/backups-*/
+
+# terraform state (contains secrets)
+.terraform/
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
 
 # databases / local stores
 *.sqlite
@@ -245,6 +280,3 @@ sbom.spdx.json
 
 # opstack local geth logs
 infra/opstack/data/l2-geth-901/geth/nodes/LOG
-
-# allow committed dev keys for local Ghostchain
-!infra/ghostchain/geth/keys/*.key
