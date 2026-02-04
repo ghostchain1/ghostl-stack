@@ -17,6 +17,63 @@ set -a
 source "$ENV_FILE"
 set +a
 
+read_json_field() {
+  local file="$1"
+  local key="$2"
+  python3 - <<'PY' "$file" "$key"
+import json, sys
+path = sys.argv[1]
+key = sys.argv[2]
+with open(path, "r", encoding="utf-8") as f:
+    data = json.load(f)
+for part in key.split("."):
+    if isinstance(data, dict) and part in data:
+        data = data[part]
+    else:
+        data = None
+        break
+print("" if data is None else data)
+PY
+}
+
+upsert_env_kv() {
+  local file="$1"
+  local key="$2"
+  local value="$3"
+
+  if rg -n "^${key}=" "$file" >/dev/null 2>&1; then
+    python3 - <<'PY' "$file" "$key" "$value"
+import io, os, sys
+path, key, value = sys.argv[1], sys.argv[2], sys.argv[3]
+out = []
+with open(path, "r", encoding="utf-8") as f:
+    for line in f:
+        if line.startswith(key + "="):
+            out.append(f"{key}={value}\n")
+        else:
+            out.append(line)
+with open(path, "w", encoding="utf-8") as f:
+    f.writelines(out)
+PY
+  else
+    printf '\n%s=%s\n' "$key" "$value" >>"$file"
+  fi
+}
+
+L3_NAME="${L3_NAME:-ghostl3}"
+L3_ROLLUP_JSON="${L3_ROLLUP_JSON:-$ROOT_DIR/infra/opstack/l3/${L3_NAME}/config/rollup.json}"
+if [ -f "$L3_ROLLUP_JSON" ]; then
+  rollup_batch_inbox="$(read_json_field "$L3_ROLLUP_JSON" "batch_inbox_address")"
+  if [ -n "$rollup_batch_inbox" ] && [ "$rollup_batch_inbox" != "null" ]; then
+    if [ -z "${BATCH_INBOX_ADDRESS:-}" ] || [ "${BATCH_INBOX_ADDRESS,,}" != "${rollup_batch_inbox,,}" ]; then
+      # Keep a single source of truth: rollup.json. Update ENV_FILE so doctors/gates don't drift.
+      upsert_env_kv "$ENV_FILE" "BATCH_INBOX_ADDRESS" "$rollup_batch_inbox"
+      export BATCH_INBOX_ADDRESS="$rollup_batch_inbox"
+      echo "OK: synced BATCH_INBOX_ADDRESS from rollup.json ($L3_ROLLUP_JSON)"
+    fi
+  fi
+fi
+
 require_var() {
   local name="$1"
   local value="${!name:-}"

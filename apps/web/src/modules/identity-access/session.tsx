@@ -56,7 +56,6 @@ export function SessionProvider({ children, initial }: { children: ReactNode; in
         });
         return;
       }
-      setState({ loading: false });
     };
     load();
   }, [initial]);

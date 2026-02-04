@@ -1,4 +1,15 @@
-import type { RpcEndpoint } from '@ghostl/types/integrations';
+// Local RpcEndpoint type to avoid importing source files outside this package's rootDir
+export type RpcEndpoint = {
+  id: string;
+  chainId: string;
+  chainName?: string;
+  layer?: string;
+  url: string;
+  type?: 'public' | 'private' | string;
+  status?: 'healthy' | 'unhealthy' | string;
+  protocol?: 'http' | 'ws';
+  priority?: number;
+};
 
 export type ChainRef = { id: string; name: string; rpcUrl: string; kind: 'L1' | 'L2' | 'L3' };
 export type WalletRef = { id: string; label: string; address: string; chainId: string; kind: 'watch' | 'external' | 'custodial' };
@@ -28,16 +39,39 @@ const rpcCall = async <T>(rpcUrl: string, method: string, params: unknown[] = []
     body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
   });
   if (!res.ok) throw new Error(`rpc_${method}_failed`);
-  const body = (await res.json()) as { result?: T; error?: { message?: string } };
-  if (body.error) throw new Error(body.error.message || 'rpc_error');
+  const body = (await res.json()) as { result?: T; error?: { message?: string; code?: number } };
+  if (body.error) {
+    const err = new Error(body.error.message || 'rpc_error') as Error & { code?: number };
+    err.code = body.error.code;
+    throw err;
+  }
   return body.result as T;
 };
+
+function isMethodNotFound(err: unknown): boolean {
+  const code = typeof (err as { code?: unknown })?.code === 'number' ? (err as { code: number }).code : undefined;
+  if (code === -32601) return true;
+  const msg = String((err as { message?: unknown })?.message ?? err)
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+  return msg.includes('method not found') || msg.includes('does not exist') || msg.includes('not available');
+}
+
+async function rpcCanonicalBlockNumber(rpcUrl: string): Promise<string> {
+  try {
+    return await rpcCall<string>(rpcUrl, 'gst_blockNumber');
+  } catch (err) {
+    if (!isMethodNotFound(err)) throw err;
+    return await rpcCall<string>(rpcUrl, 'eth_blockNumber');
+  }
+}
 
 // RPC health check using JSON-RPC.
 export async function checkRpcHealth(rpcUrl: string): Promise<HealthStatus> {
   const started = Date.now();
   try {
-    const blockHex = await rpcCall<string>(rpcUrl, 'eth_blockNumber');
+    const blockHex = await rpcCanonicalBlockNumber(rpcUrl);
     const peerHex = await rpcCall<string>(rpcUrl, 'net_peerCount');
     const syncing = await rpcCall<boolean | { startingBlock?: string }>(rpcUrl, 'eth_syncing').then((r) => r !== false);
     const clientVersion = await rpcCall<string>(rpcUrl, 'web3_clientVersion');

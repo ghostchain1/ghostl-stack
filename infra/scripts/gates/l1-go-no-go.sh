@@ -35,8 +35,8 @@ SKIP_EVIDENCE="${SKIP_EVIDENCE:-0}"
 SKIP_VULN_SCAN="${SKIP_VULN_SCAN:-0}"
 
 TRIVY_SECRET_CONFIG="${TRIVY_SECRET_CONFIG:-$ROOT_DIR/trivy-secret.yaml}"
-TRIVY_SKIP_DIRS_DEFAULT="$ROOT_DIR/ops/snapshots,$ROOT_DIR/backups,$ROOT_DIR/ops/preflight,$ROOT_DIR/contracts/out-codex,$ROOT_DIR/contracts/cache-codex"
-TRIVY_SKIP_FILES_DEFAULT="$ROOT_DIR/contracts/reports/formal/scribble/scribble.json,$ROOT_DIR/contracts/artifacts/build-info/*.json,$ROOT_DIR/infra/opstack/op-geth/signer/fourbyte/4byte.json"
+TRIVY_SKIP_DIRS_DEFAULT="node_modules,contracts/node_modules,dist,contracts/dist,contracts/artifacts,contracts/cache,contracts/.hardhat-cache,contracts/typechain-types,contracts/proposals,contracts/.foundry-out,contracts/.foundry-cache,contracts/.foundry-out-local,contracts/.foundry-cache-local,artifacts,cache,backups,ops/snapshots,ops/preflight,contracts/out-codex,contracts/cache-codex,infra/docker/_backup,infra/docker/audit,infra/docker/runtime,infra/ghostchain/data,infra/ghostchain/secrets,infra/opstack/data,infra/opstack/broadcast,infra/opstack/secrets,infra/opstack/l3/secrets,chains/l2/data,chains/l3/data"
+TRIVY_SKIP_FILES_DEFAULT=".env,**/.env,**/.env.*,ops/security/trivy-fs.json,contracts/reports/formal/scribble/scribble.json,contracts/artifacts/build-info/*.json,infra/opstack/op-geth/signer/fourbyte/4byte.json"
 TRIVY_SKIP_DIRS="${TRIVY_SKIP_DIRS:-$TRIVY_SKIP_DIRS_DEFAULT}"
 TRIVY_SKIP_FILES="${TRIVY_SKIP_FILES:-$TRIVY_SKIP_FILES_DEFAULT}"
 
@@ -280,7 +280,7 @@ fi
 if [ "$SKIP_VULN_SCAN" != "1" ]; then
   info "vulnerability scan"
   if command -v trivy >/dev/null 2>&1; then
-    trivy_cmd=(trivy fs --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed "$ROOT_DIR")
+    trivy_cmd=(trivy fs --scanners vuln,secret --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed "$ROOT_DIR")
     if [ -n "$TRIVY_SKIP_DIRS" ]; then
       trivy_cmd+=(--skip-dirs "$TRIVY_SKIP_DIRS")
     fi

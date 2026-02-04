@@ -20,6 +20,7 @@ Use this index to find the right runbook or reference quickly.
   - `ops/README.md`: ops directory guide and links to runbooks/release tooling.
 - **Checklists & templates**
   - `checklists/README.md`: consolidated pointers to dev and Ops checklists.
+  - `checklists/WHAT_YOU_CAN_RUN_TODAY.md`: what to run today (doctors → gates → bridge E2E → evidence/scans).
   - `ghostchain-management.md`: full-stack blueprint for the L1/L2/L3 management system (users, wallets, validators, observability).
   - `ghostchain-wiring.md`: how to point the stack at live GhostChain RPCs and services.
 

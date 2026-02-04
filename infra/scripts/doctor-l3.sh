@@ -58,6 +58,8 @@ L3_MAX_L3_SAFE_LAG="${L3_MAX_L3_SAFE_LAG:-256}"
 L3_MAX_PROPOSER_IDLE_SECONDS="${L3_MAX_PROPOSER_IDLE_SECONDS:-900}"
 L3_MAX_BATCHER_IDLE_SECONDS="${L3_MAX_BATCHER_IDLE_SECONDS:-900}"
 L3_REQUIRE_L3_PROGRESS="${L3_REQUIRE_L3_PROGRESS:-0}"
+L3_PROGRESS_SAMPLE_SECONDS="${L3_PROGRESS_SAMPLE_SECONDS:-15}"
+L3_PROGRESS_MIN_DELTA="${L3_PROGRESS_MIN_DELTA:-1}"
 
 warn() { echo "WARN: $*" >&2; }
 fail() { echo "FAIL: $*" >&2; exit 1; }
@@ -153,6 +155,44 @@ if raw.startswith("0x"):
 else:
     print(raw)
 PY
+}
+
+rpc_block_number_dec() {
+  local url="$1"
+  local bn_hex
+  bn_hex="$(json_result "$(jsonrpc "$url" eth_blockNumber || true)" || true)"
+  if [ -z "$bn_hex" ]; then
+    echo ""
+    return 1
+  fi
+  hex_to_dec "$bn_hex"
+}
+
+require_execution_progress() {
+  local url="$1"
+  local sleep_s="$2"
+  local min_delta="$3"
+
+  local a b delta
+  a="$(rpc_block_number_dec "$url" || true)"
+  if [ -z "$a" ]; then
+    fail "failed to fetch eth_blockNumber from $url"
+  fi
+  sleep "$sleep_s"
+  b="$(rpc_block_number_dec "$url" || true)"
+  if [ -z "$b" ]; then
+    fail "failed to fetch eth_blockNumber from $url (2nd sample)"
+  fi
+
+  if [ "$b" -lt "$a" ]; then
+    fail "L3 execution head regressed (sample1=$a sample2=$b)"
+  fi
+  delta=$((b - a))
+  if [ "$delta" -lt "$min_delta" ]; then
+    fail "no L3 execution progress detected (sample1=$a sample2=$b delta=$delta, expected >=$min_delta over ${sleep_s}s)"
+  fi
+
+  echo "OK: L3 execution progressing (sample1=$a sample2=$b delta=$delta over ${sleep_s}s)"
 }
 
 read_json() {
@@ -271,6 +311,17 @@ if [ -n "$ROLLUP_L1_CHAIN_ID" ] && [ "$ROLLUP_L1_CHAIN_ID" != "$L2_CHAIN_ID_DEC"
 fi
 
 echo "OK: chain IDs aligned"
+
+if [ "$L3_REQUIRE_L3_PROGRESS" = "1" ]; then
+  require_execution_progress "$HOST_L3_RPC" "$L3_PROGRESS_SAMPLE_SECONDS" "$L3_PROGRESS_MIN_DELTA"
+else
+  l3_bn_dec="$(rpc_block_number_dec "$HOST_L3_RPC" || true)"
+  if [ -n "$l3_bn_dec" ]; then
+    echo "OK: L3 execution head (eth_blockNumber)=${l3_bn_dec} (progress check skipped: L3_REQUIRE_L3_PROGRESS=0)"
+  else
+    warn "failed to fetch eth_blockNumber from $HOST_L3_RPC"
+  fi
+fi
 
 if ! jsonrpc "$L3_ROLLUP_RPC" optimism_syncStatus >/dev/null 2>&1; then
   fail "op-node RPC not reachable at $L3_ROLLUP_RPC"
@@ -395,9 +446,11 @@ if [ "$SYNC_HEAD_L1_NUM" -gt 0 ]; then
     fi
   else
     if [ "$L3_REQUIRE_L3_PROGRESS" = "1" ]; then
-      fail "L3 unsafe head is zero; no L3 progress detected"
+      # Some stacks report zeros for optimism_syncStatus while execution blocks are advancing.
+      # For progress gating, we rely on eth_blockNumber delta (checked earlier).
+      warn "optimism_syncStatus reports unsafe_l2=0; skipping derivation/safe-lag checks"
     fi
-    echo "OK: L3 progress check skipped (L3_REQUIRE_L3_PROGRESS=0)"
+    echo "OK: derivation/safe-lag checks skipped (insufficient syncStatus data)"
   fi
 fi
 
@@ -478,14 +531,6 @@ if curl -fsS --max-time 4 "$L3_PROPOSER_METRICS_URL" >/dev/null 2>&1; then
     if [ "$idle_secs" -gt "$L3_MAX_PROPOSER_IDLE_SECONDS" ]; then
       warn "proposer idle for ${idle_secs}s (threshold ${L3_MAX_PROPOSER_IDLE_SECONDS}s)"
     fi
-  fi
-fi
-
-if [ "$L3_REQUIRE_L3_PROGRESS" = "1" ]; then
-  l3_block_hex="$(json_result "$(jsonrpc "$HOST_L3_RPC" eth_blockNumber || true)")"
-  l3_block_dec="$(hex_to_dec "$l3_block_hex")"
-  if [ "$l3_block_dec" -le 0 ]; then
-    fail "L3 unsafe head is zero; no L3 progress detected yet"
   fi
 fi
 

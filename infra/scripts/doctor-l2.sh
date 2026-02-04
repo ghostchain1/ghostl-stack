@@ -52,6 +52,8 @@ L2_MAX_L2_SAFE_LAG="${L2_MAX_L2_SAFE_LAG:-256}"
 L2_MAX_PROPOSER_IDLE_SECONDS="${L2_MAX_PROPOSER_IDLE_SECONDS:-900}"
 L2_MAX_BATCHER_IDLE_SECONDS="${L2_MAX_BATCHER_IDLE_SECONDS:-900}"
 L2_REQUIRE_L2_PROGRESS="${L2_REQUIRE_L2_PROGRESS:-0}"
+L2_PROGRESS_SAMPLE_SECONDS="${L2_PROGRESS_SAMPLE_SECONDS:-15}"
+L2_PROGRESS_MIN_DELTA="${L2_PROGRESS_MIN_DELTA:-1}"
 
 L2_SECRETS_SOURCE="${L2_SECRETS_SOURCE:-dev}"
 L2_SECRETS_DIR="${L2_SECRETS_DIR:-$ROOT_DIR/infra/opstack/secrets}"
@@ -158,6 +160,44 @@ if raw.startswith("0x"):
 else:
     print(raw)
 PY
+}
+
+rpc_block_number_dec() {
+  local url="$1"
+  local bn_hex
+  bn_hex="$(json_result "$(jsonrpc "$url" eth_blockNumber || true)" || true)"
+  if [ -z "$bn_hex" ]; then
+    echo ""
+    return 1
+  fi
+  hex_to_dec "$bn_hex"
+}
+
+require_execution_progress() {
+  local url="$1"
+  local sleep_s="$2"
+  local min_delta="$3"
+
+  local a b delta
+  a="$(rpc_block_number_dec "$url" || true)"
+  if [ -z "$a" ]; then
+    fail "failed to fetch eth_blockNumber from $url"
+  fi
+  sleep "$sleep_s"
+  b="$(rpc_block_number_dec "$url" || true)"
+  if [ -z "$b" ]; then
+    fail "failed to fetch eth_blockNumber from $url (2nd sample)"
+  fi
+
+  if [ "$b" -lt "$a" ]; then
+    fail "L2 execution head regressed (sample1=$a sample2=$b)"
+  fi
+  delta=$((b - a))
+  if [ "$delta" -lt "$min_delta" ]; then
+    fail "no L2 execution progress detected (sample1=$a sample2=$b delta=$delta, expected >=$min_delta over ${sleep_s}s)"
+  fi
+
+  echo "OK: L2 execution progressing (sample1=$a sample2=$b delta=$delta over ${sleep_s}s)"
 }
 
 read_json() {
@@ -294,6 +334,17 @@ else
   fail "L1 RPC not reachable at $HOST_L1_RPC"
 fi
 
+if [ "$L2_REQUIRE_L2_PROGRESS" = "1" ]; then
+  require_execution_progress "$HOST_L2_RPC" "$L2_PROGRESS_SAMPLE_SECONDS" "$L2_PROGRESS_MIN_DELTA"
+else
+  l2_bn_dec="$(rpc_block_number_dec "$HOST_L2_RPC" || true)"
+  if [ -n "$l2_bn_dec" ]; then
+    echo "OK: L2 execution head (eth_blockNumber)=${l2_bn_dec} (progress check skipped: L2_REQUIRE_L2_PROGRESS=0)"
+  else
+    warn "failed to fetch eth_blockNumber from $HOST_L2_RPC"
+  fi
+fi
+
 ROLLUP_L1_HASH="$(read_json "$L2_ROLLUP_JSON" "genesis.l1.hash")"
 ROLLUP_L2_HASH="$(read_json "$L2_ROLLUP_JSON" "genesis.l2.hash")"
 if [ -n "$ROLLUP_L1_HASH" ] && [ "$ROLLUP_L1_HASH" != "null" ]; then
@@ -423,9 +474,11 @@ if [ "$SYNC_HEAD_L1_NUM" -gt 0 ]; then
     fi
   else
     if [ "$L2_REQUIRE_L2_PROGRESS" = "1" ]; then
-      fail "L2 unsafe head is zero; no L2 progress detected"
+      # Some stacks report zeros for optimism_syncStatus while execution blocks are advancing.
+      # For progress gating, we rely on eth_blockNumber delta (checked earlier).
+      warn "optimism_syncStatus reports unsafe_l2=0; skipping derivation/safe-lag checks"
     fi
-    echo "OK: L2 progress check skipped (L2_REQUIRE_L2_PROGRESS=0)"
+    echo "OK: derivation/safe-lag checks skipped (insufficient syncStatus data)"
   fi
 fi
 

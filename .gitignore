@@ -145,6 +145,8 @@ ops/docker/attestations/*
 !ops/docker/attestations/README.md
 ops/snapshots/
 ops/preflight/
+ops/security/trivy-fs.json
+trivy-fs.json
 ops/security/**/status.json
 ops/ai/anomaly/anomaly-report.json
 ops/ai/anomaly/model-metadata.json

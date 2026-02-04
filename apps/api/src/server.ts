@@ -1923,8 +1923,6 @@ identityServicesPromise.then(async (identity) => {
   });
 
   app.get(['/v1/contracts', '/contracts'], requirePermission('contracts:read'), ghostApiLimiter, async (_req, res) => {
-    const correlationId = String(_req.correlationId || crypto.randomUUID());
-    const requestHeaders: Record<string, string> = { 'x-request-id': correlationId };
     const registryRes = servicesBase.contracts
       ? await ghostApiFetch(`${servicesBase.contracts}/contracts`, 'contract-registry-service')
       : { ok: false as const, status: 503, error: { error: 'SERVICE_UNAVAILABLE', service: 'contract-registry-service', hint: 'missing' } };
@@ -2015,7 +2013,6 @@ identityServicesPromise.then(async (identity) => {
       return;
     }
     const supply = supplyRes.data as { supply?: string; emissions?: string };
-    const treasury = treasuryRes.data as { balance?: string };
     const feeModel = feeModelRes.data as { baseFee?: string; targetGas?: string; mode?: string };
     const payouts = Array.isArray((payoutsRes.data as { payouts?: unknown }).payouts)
       ? ((payoutsRes.data as { payouts?: unknown[] }).payouts as unknown[])

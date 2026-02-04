@@ -7,7 +7,7 @@ Evidence index: `docs/evidence/README.md`
 ```bash
 # L1 health
 grep -n "FAIL" /var/log/ghostchain/l1.log || true
-infra/scripts/doctor-l1.sh
+bash infra/scripts/doctor-l1.sh
 ```
 
 ## Constitutional governance verification (devnet)
@@ -121,5 +121,5 @@ optimism: https://github.com/ghostchain1/optimism/pull/1
 
 ```bash
 # Final release gate checks
-infra/scripts/gates/l1-go-no-go.sh
+bash infra/scripts/gates/l1-go-no-go.sh
 ```

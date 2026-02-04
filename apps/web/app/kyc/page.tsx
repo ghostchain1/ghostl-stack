@@ -4,27 +4,6 @@ import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
 import type { KycApplicant, KycPolicy, KycProvider, KycSummary } from '@ghostl/types/kyc';
 import { KycDashboard } from '../../src/modules/kyc/KycDashboard';
 
-const emptySummary: KycSummary = {
-  total: 0,
-  byStatus: {
-    pending: 0,
-    in_review: 0,
-    approved: 0,
-    rejected: 0,
-    needs_more_info: 0,
-    expired: 0
-  },
-  byRisk: {
-    low: 0,
-    medium: 0,
-    high: 0,
-    critical: 0
-  },
-  pendingDocs: 0,
-  escalations: 0,
-  avgReviewHours: 0
-};
-
 export default async function KycPage() {
   const [summaryRes, applicantsRes, providersRes, policyRes] = await Promise.all([
     serverApiRequest<KycSummary>('/kyc/summary', { init: { cache: 'no-store' } }),

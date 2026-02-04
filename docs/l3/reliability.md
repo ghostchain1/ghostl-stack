@@ -20,12 +20,12 @@ Use `infra/scripts/doctor-l3.sh` to validate parent derivation and safe/unsafe h
 
 - `L3_MAX_PARENT_DERIVATION_LAG` (default 128 blocks)
 - `L3_MAX_L3_SAFE_LAG` (default 256 blocks)
-- `L3_REQUIRE_L3_PROGRESS=1` to fail fast when L3 head is zero or sync status is missing
+- `L3_REQUIRE_L3_PROGRESS=1` to fail fast when L3 execution stops progressing (samples `eth_blockNumber` over time; tune via `L3_PROGRESS_SAMPLE_SECONDS`, `L3_PROGRESS_MIN_DELTA`)
 
 Example:
 
 ```bash
-L3_REQUIRE_L3_PROGRESS=1 infra/scripts/doctor-l3.sh
+L3_REQUIRE_L3_PROGRESS=1 bash infra/scripts/doctor-l3.sh
 ```
 
 ## L3 metrics and activity
@@ -43,4 +43,4 @@ To validate Phase 3 in practice, restart any one of `l3-op-node`, `l3-op-batcher
 
 - `doctor-l3.sh` reports chain ID alignment + parent derivation within thresholds
 - Rollup RPC responds to `optimism_syncStatus`
-- L3 progresses beyond block 0 when `L3_REQUIRE_L3_PROGRESS=1`
+- L3 shows block height progress over time when `L3_REQUIRE_L3_PROGRESS=1`

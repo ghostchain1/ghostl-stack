@@ -91,20 +91,43 @@ const rpcChainId = async (url: string, timeoutMs: number) => {
 };
 
 const rpcBlockNumber = async (url: string, timeoutMs: number) => {
+  const isMethodNotFound = (err: unknown) => {
+    const code = typeof (err as { code?: unknown })?.code === 'number' ? (err as { code: number }).code : undefined;
+    if (code === -32601) return true;
+    const msg = String((err as { message?: unknown })?.message ?? err)
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+    return msg.includes('method not found') || msg.includes('does not exist') || msg.includes('not available');
+  };
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] }),
-      signal: controller.signal
-    });
-    if (!res.ok) throw new Error(`http_${res.status}`);
-    const body = (await res.json()) as { result?: string; error?: { message?: string } };
-    if (body.error) throw new Error(body.error.message || 'rpc_error');
-    if (!body.result) throw new Error('missing_blockNumber');
-    return parseInt(body.result, 16);
+    const call = async (method: string) => {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params: [] }),
+        signal: controller.signal
+      });
+      if (!res.ok) throw new Error(`http_${res.status}`);
+      const body = (await res.json()) as { result?: string; error?: { message?: string; code?: number } };
+      if (body.error) {
+        const err = new Error(body.error.message || 'rpc_error') as Error & { code?: number };
+        err.code = body.error.code;
+        throw err;
+      }
+      if (!body.result) throw new Error('missing_blockNumber');
+      return parseInt(body.result, 16);
+    };
+
+    try {
+      return await call('gst_blockNumber');
+    } catch (err) {
+      if (!isMethodNotFound(err)) throw err;
+      return await call('eth_blockNumber');
+    }
   } finally {
     clearTimeout(timer);
   }
@@ -148,34 +171,66 @@ const wsChainId = async (url: string, timeoutMs: number) =>
 const wsBlockNumber = async (url: string, timeoutMs: number) =>
   new Promise<number>((resolve, reject) => {
     const socket = new WebSocket(url);
+    const isMethodNotFound = (err: unknown) => {
+      const code = typeof (err as { code?: unknown })?.code === 'number' ? (err as { code: number }).code : undefined;
+      if (code === -32601) return true;
+      const msg = String((err as { message?: unknown })?.message ?? err)
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+      return msg.includes('method not found') || msg.includes('does not exist') || msg.includes('not available');
+    };
+
+    const send = (method: string, id: number) => socket.send(JSON.stringify({ jsonrpc: '2.0', id, method, params: [] }));
+
     const timer = setTimeout(() => {
       socket.close();
       reject(new Error('ws_timeout'));
     }, timeoutMs);
+
+    const cleanup = () => {
+      clearTimeout(timer);
+      socket.close();
+    };
+
+    let triedEth = false;
     socket.onopen = () => {
-      socket.send(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] }));
+      send('gst_blockNumber', 1);
     };
     socket.onmessage = (event) => {
-      clearTimeout(timer);
       try {
-        const data = JSON.parse(String(event.data)) as { result?: string; error?: { message?: string } };
+        const data = JSON.parse(String(event.data)) as { result?: string; error?: { message?: string; code?: number } };
         if (data.error) {
-          reject(new Error(data.error.message || 'rpc_error'));
+          const err = new Error(data.error.message || 'rpc_error') as Error & { code?: number };
+          err.code = data.error.code;
+          if (!triedEth && isMethodNotFound(err)) {
+            triedEth = true;
+            try {
+              send('eth_blockNumber', 2);
+            } catch (sendErr) {
+              cleanup();
+              reject(sendErr instanceof Error ? sendErr : new Error('ws_error'));
+            }
+            return;
+          }
+          cleanup();
+          reject(err);
           return;
         }
         if (!data.result) {
+          cleanup();
           reject(new Error('missing_blockNumber'));
           return;
         }
+        cleanup();
         resolve(parseInt(data.result, 16));
       } catch (err) {
+        cleanup();
         reject(err instanceof Error ? err : new Error('ws_error'));
-      } finally {
-        socket.close();
       }
     };
     socket.onerror = () => {
-      clearTimeout(timer);
+      cleanup();
       reject(new Error('ws_error'));
     };
   });
