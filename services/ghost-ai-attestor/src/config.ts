@@ -26,7 +26,7 @@ export type AttestorConfig = {
 
 const DEFAULT_RPC_URLS: Record<GhostLayer, string> = {
   1: "http://localhost:18545",
-  2: "http://localhost:18547",
+  2: "http://localhost:29547",
   3: "http://localhost:39545"
 };
 
@@ -109,4 +109,3 @@ export const loadConfig = (): AttestorConfig => {
     allowInsecureDev: (process.env.AI_ALLOW_INSECURE_DEV || "true").toLowerCase() !== "false"
   };
 };
-

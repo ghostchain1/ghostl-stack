@@ -332,7 +332,7 @@ services:
       L2_OUTPUT_ORACLE_ADDRESS: ${L2_OUTPUT_ORACLE_ADDRESS:-}
       L3_OUTPUT_ORACLE_ADDRESS: ${L3_OUTPUT_ORACLE_ADDRESS:-}
       L2_OUTPUT_ORACLE_RPC: ${L2_OUTPUT_ORACLE_RPC:-${HOST_L1_RPC:-http://host.docker.internal:18545}}
-      L3_OUTPUT_ORACLE_RPC: ${L3_OUTPUT_ORACLE_RPC:-${HOST_L2_RPC:-http://host.docker.internal:18547}}
+      L3_OUTPUT_ORACLE_RPC: ${L3_OUTPUT_ORACLE_RPC:-${HOST_L2_RPC:-http://host.docker.internal:29547}}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:7613/health >/dev/null"]
       interval: 20s
