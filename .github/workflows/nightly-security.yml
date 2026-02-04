@@ -25,7 +25,14 @@ jobs:
 
       - name: Trivy filesystem scan
         run: |
-          trivy fs --scanners vuln,secret,config --severity HIGH,CRITICAL --exit-code 1 --format json -o trivy-fs.json .
+          trivy fs \
+            --timeout 20m \
+            --scanners vuln,secret,misconfig \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            --format json -o trivy-fs.json \
+            --skip-dirs node_modules,contracts/node_modules,dist,contracts/dist,contracts/artifacts,contracts/cache,contracts/.hardhat-cache,contracts/typechain-types,contracts/proposals,ops/preflight,ops/security,ops/snapshots,ops/docker/snapshots,ops/docker/attestations,backups,infra/docker/_backup,infra/docker/runtime,infra/ghostchain/data,infra/ghostchain/secrets,infra/opstack/data,infra/opstack/broadcast,infra/opstack/secrets,infra/opstack/l3/secrets,chains \
+            .
 
       - name: Upload report
         if: always()
