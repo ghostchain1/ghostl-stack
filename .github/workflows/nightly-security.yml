@@ -1,0 +1,35 @@
+name: Nightly Security
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Trivy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget
+          wget -qO- https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.56.2_Linux-64bit.tar.gz | tar zx
+          sudo mv trivy /usr/local/bin/trivy
+
+      - name: Trivy filesystem scan
+        run: |
+          trivy fs --scanners vuln,secret,config --severity HIGH,CRITICAL --exit-code 1 --format json -o trivy-fs.json .
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-security
+          path: trivy-fs.json
