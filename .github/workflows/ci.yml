@@ -6,7 +6,33 @@ on:
     branches: [ main, master ]
 
 jobs:
+  repo-security:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Trivy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget
+          TRIVY_VERSION="0.69.0"
+          wget -qO- "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" | tar zx
+          sudo mv trivy /usr/local/bin/trivy
+
+      - name: Trivy secret scan (tracked repo)
+        run: |
+          trivy fs \
+            --timeout 10m \
+            --scanners secret \
+            --exit-code 1 \
+            --skip-dirs node_modules,contracts/node_modules,dist,contracts/dist,contracts/artifacts,contracts/cache,contracts/.hardhat-cache,contracts/typechain-types,contracts/proposals \
+            .
+
   ghost-helper:
+    needs: [repo-security]
     runs-on: ubuntu-latest
     permissions:
       contents: read
