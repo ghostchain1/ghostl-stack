@@ -7,7 +7,7 @@ async function main() {
     throw new Error("Missing env L2_TOKEN_ADDRESS/DEMO_ACCOUNT (source services/ghost-guard/.env first)");
   }
 
-  const token = await ethers.getContractAt("ERC20", tokenAddress);
+  const token = await ethers.getContractAt("src/common/ERC20.sol:ERC20", tokenAddress);
   const bal = await token.balanceOf(account);
   console.log("token:", tokenAddress);
   console.log("account:", account);
@@ -18,4 +18,3 @@ main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
-

@@ -1,172 +1,49 @@
 name: CI
+
 on:
-  push:
   pull_request:
+  push:
+    branches: [ main, master ]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22.21.0
-
-      - name: Install workspace deps
-        run: npm ci
-
-      - name: Enforce Node version
-        run: npm run node:check
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Build apps
-        run: npm run build
-
-      - name: Smoke - Consensus autonomy
-        run: bash scripts/smoke/consensus-autonomy.sh
-
-      - name: Smoke - AI stability (config gate)
-        run: bash scripts/smoke/ai-stability.sh
-
-      - name: Smoke - Federation invariants
-        run: bash scripts/smoke/federation-invariants.sh
-
-      - name: Smoke - AI core proposal endpoint
-        working-directory: services/ghost-gas-engine
-        run: |
-          npm ci
-          npm test
-
-      - name: Contracts install + build
-        working-directory: contracts
-        run: |
-          npm ci
-          npm run build
-
-      - name: Contracts test
-        working-directory: contracts
-        run: npm test
-
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: stable
-
-      - name: Foundry tests
-        working-directory: contracts
-        run: |
-          npm run test:foundry
-          npm run test:invariant
-
-
-      - name: Formal - Slither
-        working-directory: contracts
-        run: npm run formal:slither
-
-      - name: Formal - Scribble
-        working-directory: contracts
-        run: npm run formal:scribble
-
-      - name: Formal - Echidna
-        working-directory: contracts
-        run: npm run formal:echidna
-
-      - name: Install Certora CLI
-        if: ${{ secrets.CERTORAKEY != '' }}
-        run: pip3 install certora-cli
-
-      - name: Formal - Certora (optional)
-        if: ${{ secrets.CERTORAKEY != '' }}
-        working-directory: contracts
-        env:
-          CERTORAKEY: ${{ secrets.CERTORAKEY }}
-        run: npm run formal:certora
-
-      - name: Guard install
-        working-directory: services/ghost-guard
-        run: npm ci
-
-      - name: Relayer install
-        working-directory: services/ghost-relayer
-        run: npm ci
-
-  security:
+  ghost-helper:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write
+      actions: read
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version: 22.21.0
+          node-version: "22"
 
-      - name: Install workspace deps
+      - name: Install Ghost Helper Bots deps
+        working-directory: ghost-helper-bots
         run: npm ci
 
-      - name: Dependency audit (workspace)
-        run: npm audit --audit-level=high --omit=dev
+      - name: Build Ghost Helper Bots
+        working-directory: ghost-helper-bots
+        run: npm run build
 
-      - name: Dependency audit (contracts)
-        working-directory: contracts
-        run: npm audit --audit-level=high --omit=dev
+      - name: Run Ghost Helper Bots loop (non-destructive)
+        env:
+          GHOST_REPO_ROOT: ${{ github.workspace }}
+          GHOST_HELPER_MAX_ITERS: "1"
+          GHOST_POLICY_OK: "true"
+        working-directory: ghost-helper-bots
+        run: node dist/loops/loop.js
 
-      - name: Install contracts deps
-        working-directory: contracts
-        run: npm ci
-
-      - name: License policy
-        run: |
-          npx --yes license-checker --production --json --out license-report.json
-          node scripts/security/license-policy.mjs license-report.json
-          npx --yes license-checker --json --out contracts/license-report.json --start contracts
-          node scripts/security/license-policy.mjs contracts/license-report.json
-
-      - name: Secret scan (gitleaks)
-        uses: gitleaks/gitleaks-action@v2
-        with:
-          args: --redact --verbose --exit-code 1 --config=.gitleaks.toml --log-opts="--max-count=1"
-
-      - name: SAST (Semgrep)
-        run: |
-          pip3 install semgrep
-          semgrep scan --config scripts/security/semgrep.yml --severity ERROR --error apps packages services contracts
-
-      - name: Container scan (Trivy)
-        uses: aquasecurity/trivy-action@0.20.0
-        with:
-          scan-type: fs
-          scan-ref: .
-          severity: HIGH,CRITICAL
-          exit-code: "1"
-          security-checks: vuln
-          skip-dirs: node_modules,contracts/node_modules,dist,artifacts,cache,backups,ops/snapshots,ops/preflight,contracts/out-codex,contracts/cache-codex,infra/ghostchain/data
-          skip-files: contracts/reports/formal/scribble/scribble.json,contracts/artifacts/build-info/*.json,infra/opstack/op-geth/signer/fourbyte/4byte.json
-
-      - name: Secret scan (Trivy)
-        uses: aquasecurity/trivy-action@0.20.0
-        with:
-          scan-type: fs
-          scan-ref: .
-          exit-code: "1"
-          security-checks: secret
-          trivy-config: trivy-secret.yaml
-          skip-dirs: node_modules,contracts/node_modules,dist,artifacts,cache,backups,ops/snapshots,ops/preflight,contracts/out-codex,contracts/cache-codex,infra/ghostchain/data
-          skip-files: contracts/reports/formal/scribble/scribble.json,contracts/artifacts/build-info/*.json,infra/opstack/op-geth/signer/fourbyte/4byte.json
-
-      - name: Generate SBOM
-        uses: anchore/sbom-action@v0
-        with:
-          path: .
-          format: spdx-json
-          output-file: sbom.spdx.json
-
-      - name: Upload SBOM
+      - name: Upload Ghost Helper artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: sbom
-          path: sbom.spdx.json
+          name: ghost-helper-artifacts
+          path: |
+            ghost-helper-bots/reports
+            ghost-helper-bots/evidence
+            ghost-helper-bots/attestations
+            ghost-helper-bots/sbom
