@@ -96,6 +96,34 @@ curl -s -X POST http://localhost:7766/remediate/dry-run \
   -d '{"actions":[{"type":"op_gate_mode","target":"l2","mode":"pause"}]}'
 ```
 
+## Docker hosting (local / single box)
+
+This repo includes a convenience compose file that brings up the autonomy control-plane services together:
+
+```bash
+docker compose -f docker-compose.autonomy.yml up -d --build
+```
+
+Services exposed on the host:
+- `ghost-registry`: `http://localhost:18088/health` (registry API: `/v1/endpoints`)
+- `network-context-service`: `http://localhost:7633/health` (`/context`)
+- `consensus-telemetry-service`: `http://localhost:7635/health` (`/consensus`, `/metrics`)
+- `network-manager-service`: `http://localhost:7766/health` (`/status`, `/policy`, `/remediate/*`)
+
+Defaults assume your L1/L2/L3 and `op-gate` are reachable via `host.docker.internal` (override as needed):
+- `RPC_L1`, `RPC_L2`, `RPC_L3`
+- `OP_NODE_L2_RPC`, `OP_NODE_L3_RPC`
+- `OP_GATE_URL`
+
+Execution remains **disabled by default**. To enable actuation, provide (names only):
+- `AUTONOMY_EXECUTION_ENABLED=true`, `EXECUTION_APPROVAL_TOKEN`
+- `OP_GATE_ADMIN_TOKEN`
+- `GOVERNANCE_RPC_L1`, `GOVERNOR_ADDRESS_L1`, `EVIDENCE_ANCHOR_ADDRESS`, `PAUSE_GUARDIAN_ADDRESS`
+- `ACTION_APPROVER_ADDRESSES`, `ACTION_APPROVAL_THRESHOLD`
+
+Docker restart actions also require socket access:
+- `DOCKER_ACTIONS_ENABLED=true` and `DOCKER_GROUP_ID` matching your host Docker socket group.
+
 ## Notes
 - Execution is **disabled by default** and fails closed if governance or pause guardian is not configured.
 - Docker restart actions are blocked unless explicitly enabled and allowlisted.

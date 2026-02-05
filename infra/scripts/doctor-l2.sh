@@ -415,6 +415,31 @@ echo "OK: op-node/op-sequencer RPC reachable"
 
 SYNC_RAW="$(jsonrpc "$OP_NODE_RPC" "optimism_syncStatus" || true)"
 SEQ_SYNC_RAW="$(jsonrpc "$OP_SEQUENCER_RPC" "optimism_syncStatus" || true)"
+
+# If the sequencer is stopped, L2 can accept txs into the txpool but will not produce new blocks.
+# This breaks E2E bridging and any progress-gated environments.
+SEQ_ACTIVE_RAW="$(jsonrpc "$OP_SEQUENCER_RPC" "admin_sequencerActive" || true)"
+SEQ_ACTIVE_VAL="$(json_result "$SEQ_ACTIVE_RAW" || true)"
+# json_result prints python booleans as "True"/"False"; normalize for bash checks.
+SEQ_ACTIVE_VAL="$(printf '%s' "$SEQ_ACTIVE_VAL" | tr '[:upper:]' '[:lower:]')"
+if [ "$SEQ_ACTIVE_VAL" = "true" ]; then
+  echo "OK: op-sequencer active"
+elif [ "$SEQ_ACTIVE_VAL" = "false" ]; then
+  SEQ_UNSAFE_HASH="$(python3 - <<'PY' "$SEQ_SYNC_RAW"
+import json, sys
+raw = sys.argv[1]
+data = json.loads(raw).get("result", {}) if raw else {}
+print(data.get("unsafe_l2", {}).get("hash", ""))
+PY
+)"
+  warn "op-sequencer is STOPPED (admin_sequencerActive=false)"
+  warn "Start it with (unsafe head hash): ${SEQ_UNSAFE_HASH:-<unknown>}"
+  warn "curl -fsS -X POST \"$OP_SEQUENCER_RPC\" -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"admin_startSequencer\",\"params\":[\"${SEQ_UNSAFE_HASH:-0x0000000000000000000000000000000000000000000000000000000000000000}\"]}'"
+  fail "sequencer stopped"
+else
+  warn "admin_sequencerActive unavailable on op-sequencer RPC; cannot assert sequencer is running"
+fi
+
 SYNC_HEAD_L1="$(json_result_field "$SYNC_RAW" "head_l1" || true)"
 SYNC_CUR_L1="$(json_result_field "$SYNC_RAW" "current_l1" || true)"
 SYNC_SAFE_L2="$(json_result_field "$SYNC_RAW" "safe_l2" || true)"

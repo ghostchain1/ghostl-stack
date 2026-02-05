@@ -144,15 +144,31 @@ const pickRpc = (chain: any) => {
 };
 
 const resolveRpcUrls = async () => {
-  const registry = await fetchRegistry();
-  const chainL1 = registry.chains.find((entry: any) => entry.layer === "L1");
-  const chainL2 = registry.chains.find((entry: any) => entry.layer === "L2");
-  const chainL3 = registry.chains.find((entry: any) => entry.layer === "L3");
   const overrides = {
     l1: process.env.RPC_L1,
     l2: process.env.RPC_L2,
     l3: process.env.RPC_L3
   };
+
+  // Production should prefer the RPC registry for allowlisting and discovery.
+  // For local/dev, make the registry an optimization: fall back to explicit env overrides if the registry is down/slow.
+  let registry: any;
+  try {
+    registry = await fetchRegistry();
+  } catch (e) {
+    if (overrides.l2 && overrides.l3) {
+      const msg = `[Startup] RPC registry unavailable; falling back to explicit RPC_L* overrides. err=${String(
+        (e as any)?.message ?? e
+      )}`;
+      console.warn(msg);
+      return { l1: overrides.l1 || "", l2: overrides.l2, l3: overrides.l3 };
+    }
+    throw e;
+  }
+
+  const chainL1 = registry.chains.find((entry: any) => entry.layer === "L1");
+  const chainL2 = registry.chains.find((entry: any) => entry.layer === "L2");
+  const chainL3 = registry.chains.find((entry: any) => entry.layer === "L3");
   const allowed = (chain: any) =>
     new Set([
       ...(typeof chain?.rpc === "string" && chain.rpc ? [chain.rpc] : []),
@@ -257,6 +273,9 @@ const metrics = {
   finalizedSeen: 0,
   erc20FinalizedSeen: 0,
   burnsSeen: 0,
+  releaseAttempts: 0,
+  releaseBlockedRollup: 0,
+  releaseErrors: 0,
   finalizeAttempts: 0,
   finalizeSuccess: 0,
   finalizeBlockedPolicy: 0,
@@ -419,7 +438,27 @@ type PendingFinalize =
       firstSeen: number;
       lastAttempt: number | null;
       attempts: number;
+    }
+  | {
+      kind: "BurnInitiated";
+      key: string;
+      l2Token: string;
+      from: string;
+      to: string;
+      amount: string;
+      nonce: string;
+      l3BlockNumber: number;
+      l3BlockHash: string;
+      firstSeen: number;
+      lastAttempt: number | null;
+      attempts: number;
+      l3Tx: string;
     };
+
+type PendingKind = PendingFinalize["kind"];
+function pendingId(kind: PendingKind, key: string): string {
+  return `${kind}:${key.toLowerCase()}`;
+}
 
 const pendingByKey = new Map<string, PendingFinalize>();
 const pendingPath = path.join(STATE_DIR, "pending.json");
@@ -429,7 +468,15 @@ async function loadPending() {
     const raw = await fs.readFile(pendingPath, "utf8");
     const parsed = JSON.parse(raw) as { pending?: Array<PendingFinalize> };
     for (const p of parsed.pending ?? []) {
-      if (p && typeof p.key === "string" && p.key.startsWith("0x")) pendingByKey.set(p.key, p);
+      const kind = (p as any)?.kind;
+      const key = (p as any)?.key;
+      if (
+        (kind === "DepositInitiated" || kind === "ERC20DepositInitiated" || kind === "BurnInitiated") &&
+        typeof key === "string" &&
+        key.startsWith("0x")
+      ) {
+        pendingByKey.set(pendingId(kind, key), p);
+      }
     }
   } catch {
     // ignore
@@ -441,6 +488,16 @@ async function savePending() {
   const tmp = `${pendingPath}.tmp`;
   await fs.writeFile(tmp, JSON.stringify({ pending: Array.from(pendingByKey.values()) }, null, 2) + "\n", "utf8");
   await fs.rename(tmp, pendingPath);
+}
+
+let pendingSaveChain = Promise.resolve();
+async function savePendingLocked() {
+  const run = async () => savePending();
+  const p = pendingSaveChain.then(run, run);
+  pendingSaveChain = p.catch(() => {
+    // Intentionally swallow to keep the chain alive for subsequent saves.
+  });
+  return p;
 }
 
 function scrubEthersError(e: any): string {
@@ -466,7 +523,7 @@ async function handleFinalizedLog(log: ethers.Log) {
 
     const key = msgKeyEth(from, to, amount, nonce);
     lastSeen = { kind: "Finalized", from, to, amount: amount.toString(), nonce: nonce.toString(), key, l2Tx: log.transactionHash };
-    pendingByKey.delete(key);
+    pendingByKey.delete(pendingId("DepositInitiated", key));
 
     if (observeOnly) {
       const msg = `[Relayer] Observe-only saw Finalized key=${key} l2Tx=${log.transactionHash}`;
@@ -500,7 +557,7 @@ async function handleFinalizedLog(log: ethers.Log) {
 
     const key = msgKeyErc20(token, from, to, amount, nonce);
     lastSeen = { kind: "ERC20Finalized", token, from, to, amount: amount.toString(), nonce: nonce.toString(), key, l2Tx: log.transactionHash };
-    pendingByKey.delete(key);
+    pendingByKey.delete(pendingId("ERC20DepositInitiated", key));
 
     if (observeOnly) {
       const msg = `[Relayer] Observe-only saw ERC20Finalized key=${key} l2Tx=${log.transactionHash}`;
@@ -580,12 +637,58 @@ const l3TokenIface = new ethers.Interface(l3TokenAbi);
 async function tryFinalizeOne(p: PendingFinalize) {
   if (!l2Signer) return;
   const now = Date.now();
+  const id = pendingId(p.kind, p.key);
   // simple backoff to avoid spamming the chain on delay/policy/rollup gating
   const backoffMs = Math.min(60_000, 1500 * Math.max(1, Math.min(20, p.attempts + 1)));
   if (p.lastAttempt && now - p.lastAttempt < backoffMs) return;
 
   try {
-    metrics.finalizeAttempts += 1;
+    if (p.kind === "BurnInitiated") metrics.releaseAttempts += 1;
+    else metrics.finalizeAttempts += 1;
+
+    if (p.kind === "BurnInitiated") {
+      if (REQUIRE_L3_FINALITY_ON_L2) {
+        const okOnL2 = await verifyFinalizedBatchContainsBlock({
+          rollup: l2Rollup,
+          settlementName: "l2",
+          childProvider: l3Provider,
+          childBlockNumber: p.l3BlockNumber,
+          childBlockHash: p.l3BlockHash
+        });
+        if (!okOnL2) throw new Error("L3 block not finalized on L2 rollup");
+      }
+
+      const already = await l2Bridge.erc20WithdrawProcessed(
+        msgKeyErc20(p.l2Token, p.from, p.to, BigInt(p.amount), BigInt(p.nonce))
+      );
+      if (already) {
+        pendingByKey.delete(id);
+        return;
+      }
+
+      await ensureGasTokenBalance("l2", l2Provider, l2Signer);
+      const tx = await l2Bridge.releaseERC20FromL3(p.l2Token, p.from, p.to, BigInt(p.amount), BigInt(p.nonce));
+      await tx.wait();
+
+      pendingByKey.delete(id);
+      metrics.releasedToL2 += 1;
+      const msg = `[Relayer] Released ERC20 to L2 key=${p.key} l3Tx=${p.l3Tx} l2Tx=${tx.hash}`;
+      console.log(msg);
+      lastRelayed = {
+        kind: "ERC20WithdrawReleased",
+        l2Token: p.l2Token,
+        from: p.from,
+        to: p.to,
+        amount: p.amount,
+        nonce: p.nonce,
+        key: p.key,
+        l3Tx: p.l3Tx,
+        l2Tx: tx.hash
+      };
+      pushLog("info", msg, lastRelayed);
+      return;
+    }
+
     if (REQUIRE_L2_FINALITY_ON_L1) {
       const okOnL1 = await verifyFinalizedBatchContainsBlock({
         rollup: l1Rollup,
@@ -602,7 +705,7 @@ async function tryFinalizeOne(p: PendingFinalize) {
       const k = msgKeyEth(p.from, p.to, BigInt(p.amount), BigInt(p.nonce));
       const t = (await l2Bridge.depositTime(k)) as bigint;
       if (t === 0n) {
-        pendingByKey.delete(p.key);
+        pendingByKey.delete(id);
         return;
       }
       const tx = await l2Bridge.finalizeToL3(p.from, p.to, BigInt(p.amount), BigInt(p.nonce));
@@ -617,7 +720,7 @@ async function tryFinalizeOne(p: PendingFinalize) {
     const k = msgKeyErc20(p.token, p.from, p.to, BigInt(p.amount), BigInt(p.nonce));
     const t = (await l2Bridge.erc20DepositTime(k)) as bigint;
     if (t === 0n) {
-      pendingByKey.delete(p.key);
+      pendingByKey.delete(id);
       return;
     }
     const tx = await l2Bridge.finalizeERC20ToL3(p.token, p.from, p.to, BigInt(p.amount), BigInt(p.nonce));
@@ -631,6 +734,17 @@ async function tryFinalizeOne(p: PendingFinalize) {
     p.attempts += 1;
     const err = scrubEthersError(e);
     const kind = classifyFinalizeError(err);
+    if (p.kind === "BurnInitiated") {
+      if (kind === "rollup") metrics.releaseBlockedRollup += 1;
+      else metrics.releaseErrors += 1;
+
+      if (p.attempts === 1 || p.attempts % 10 === 0) {
+        const msg = `[Relayer] Release blocked key=${p.key} kind=${kind} attempts=${p.attempts} err=${err}`;
+        pushLog("warn", msg);
+      }
+      return;
+    }
+
     if (kind === "policy") metrics.finalizeBlockedPolicy += 1;
     else if (kind === "rollup") metrics.finalizeBlockedRollup += 1;
     else metrics.finalizeErrors += 1;
@@ -662,8 +776,9 @@ async function handleDepositLog(log: ethers.Log) {
 
     lastSeen = { kind: "DepositInitiated", from, to, amount: amount.toString(), nonce: nonce.toString(), key, l2Tx: log.transactionHash };
 
-    if (!pendingByKey.has(key)) {
-      pendingByKey.set(key, {
+    const id = pendingId("DepositInitiated", key);
+    if (!pendingByKey.has(id)) {
+      pendingByKey.set(id, {
         kind: "DepositInitiated",
         key,
         from,
@@ -698,8 +813,9 @@ async function handleDepositLog(log: ethers.Log) {
 
     lastSeen = { kind: "ERC20DepositInitiated", token, from, to, amount: amount.toString(), nonce: nonce.toString(), key, l2Tx: log.transactionHash };
 
-    if (!pendingByKey.has(key)) {
-      pendingByKey.set(key, {
+    const id = pendingId("ERC20DepositInitiated", key);
+    if (!pendingByKey.has(id)) {
+      pendingByKey.set(id, {
         kind: "ERC20DepositInitiated",
         key,
         token,
@@ -717,58 +833,74 @@ async function handleDepositLog(log: ethers.Log) {
   }
 }
 
-async function handleBurnLog(log: ethers.Log) {
+async function handleBurnLog(log: ethers.Log): Promise<boolean> {
   const parsed = l3TokenIface.parseLog(log);
-  if (!parsed) return;
+  if (!parsed) return false;
   metrics.burnsSeen += 1;
   const l2Token = parsed.args[0] as string;
   const from = parsed.args[1] as string;
   const to = parsed.args[2] as string;
   const amount = parsed.args[3] as bigint;
   const nonce = parsed.args[4] as bigint;
-  const key = parsed.args[5] as string;
+  const eventKey = parsed.args[5] as string;
+  const key = msgKeyErc20(l2Token, from, to, amount, nonce);
 
-  lastSeen = { kind: "BurnInitiated", l2Token, from, to, amount: amount.toString(), nonce: nonce.toString(), key, l3Tx: log.transactionHash };
+  lastSeen = {
+    kind: "BurnInitiated",
+    l2Token,
+    from,
+    to,
+    amount: amount.toString(),
+    nonce: nonce.toString(),
+    key,
+    eventKey,
+    l3Tx: log.transactionHash
+  };
 
-  if (!l2Signer) {
-    const msg = `[Relayer] Observe-only (missing L2 signer key) saw BurnInitiated key=${key} l3Tx=${log.transactionHash}`;
-    console.log(msg);
-    pushLog("warn", msg, { l2Token });
-    return;
+  if (eventKey.toLowerCase() !== key.toLowerCase()) {
+    const msg = `[Relayer] BurnInitiated key mismatch eventKey=${eventKey} computed=${key}`;
+    console.warn(msg);
+    pushLog("warn", msg, { l2Token, l3Tx: log.transactionHash });
   }
 
   const expectedL3Token = (await l3Factory.l3TokenForL2Token(l2Token)) as string;
-  if (!expectedL3Token || expectedL3Token === ethers.ZeroAddress) return;
-  if (ethers.getAddress(expectedL3Token) !== ethers.getAddress(log.address)) return;
+  if (!expectedL3Token || expectedL3Token === ethers.ZeroAddress) return false;
+  if (ethers.getAddress(expectedL3Token) !== ethers.getAddress(log.address)) return false;
 
   const l3BlockNumber = Number(log.blockNumber);
   let l3BlockHash = String(log.blockHash ?? "");
   if (!l3BlockHash) {
     const blk = await l3Provider.getBlock(l3BlockNumber);
-    if (!blk?.hash) return;
+    if (!blk?.hash) return false;
     l3BlockHash = blk.hash;
   }
-  const okOnL2 = await verifyFinalizedBatchContainsBlock({
-    rollup: REQUIRE_L3_FINALITY_ON_L2 ? l2Rollup : null,
-    settlementName: "l2",
-    childProvider: l3Provider,
-    childBlockNumber: l3BlockNumber,
-    childBlockHash: l3BlockHash
-  });
-  if (!okOnL2) return;
 
-  const already = await l2Bridge.erc20WithdrawProcessed(msgKeyErc20(l2Token, from, to, amount, nonce));
-  if (already) return;
+  const already = await l2Bridge.erc20WithdrawProcessed(key);
+  if (already) {
+    pendingByKey.delete(pendingId("BurnInitiated", key));
+    return true;
+  }
 
-  await ensureGasTokenBalance("l2", l2Provider, l2Signer);
-  const tx = await l2Bridge.releaseERC20FromL3(l2Token, from, to, amount, nonce);
-  await tx.wait();
-
-  lastRelayed = { kind: "ERC20WithdrawReleased", l2Token, from, to, amount: amount.toString(), nonce: nonce.toString(), key, l3Tx: log.transactionHash, l2Tx: tx.hash };
-  metrics.releasedToL2 += 1;
-  const msg = `[Relayer] Released ERC20 to L2 key=${key} l3Tx=${log.transactionHash} l2Tx=${tx.hash}`;
-  console.log(msg);
-  pushLog("info", msg, lastRelayed);
+  const id = pendingId("BurnInitiated", key);
+  if (!pendingByKey.has(id)) {
+    pendingByKey.set(id, {
+      kind: "BurnInitiated",
+      key,
+      l2Token,
+      from,
+      to,
+      amount: amount.toString(),
+      nonce: nonce.toString(),
+      l3BlockNumber,
+      l3BlockHash,
+      firstSeen: Date.now(),
+      lastAttempt: null,
+      attempts: 0,
+      l3Tx: log.transactionHash
+    });
+    return true;
+  }
+  return false;
 }
 
 async function pollL2Once() {
@@ -825,7 +957,7 @@ async function pollL2Once() {
 
     nextL2BlockToScan = scanTo + 1;
     await saveCursor("l2", { nextBlockToScan: nextL2BlockToScan });
-    await savePending();
+    await savePendingLocked();
   } catch (e) {
     console.error("[Relayer] Poll failed:", e);
     pushLog("error", "[Relayer] Poll failed", { error: String(e) });
@@ -887,8 +1019,13 @@ async function pollL3Once() {
     });
     metrics.l3LogsSeen += logs.length;
 
+    let pendingTouched = false;
     for (const log of logs) {
-      await handleBurnLog(log);
+      pendingTouched = (await handleBurnLog(log)) || pendingTouched;
+    }
+    if (pendingTouched) {
+      // Persist pending burns before advancing the cursor (so rollup gating never drops withdrawals).
+      await savePendingLocked();
     }
 
     nextL3BlockToScan = scanTo + 1;
