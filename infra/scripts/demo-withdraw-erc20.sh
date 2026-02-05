@@ -134,6 +134,52 @@ if [ "$GATING_L3_FINALITY_ON_L2" = "true" ]; then
 fi
 RELAYER_WAIT_SECONDS="${RELAYER_WAIT_SECONDS:-$WAIT_DEFAULT_SECONDS}"
 
+# If rollup finality gating is enabled and we have enough info, estimate a safer default wait
+# based on the current rollup proposer lag. This keeps E2E from flaking when the proposer starts behind.
+if [ "$GATING_L3_FINALITY_ON_L2" = "true" ] && [ -z "${RELAYER_WAIT_SECONDS_EXPLICIT:-}" ]; then
+  if command -v jq >/dev/null 2>&1; then
+    if [ -n "${L2_ROLLUP_L3_ADDRESS:-}" ] && [ -n "${RPC_L2_EFFECTIVE:-}" ] && [ -n "${RPC_L3_EFFECTIVE:-}" ]; then
+      ESTIMATE="$(
+        ETHERS_MODULE="$ETHERS_MODULE" RPC_L2="$RPC_L2_EFFECTIVE" RPC_L3="$RPC_L3_EFFECTIVE" ROLLUP="$L2_ROLLUP_L3_ADDRESS" node - <<'NODE'
+const { JsonRpcProvider, Contract } = require(process.env.ETHERS_MODULE);
+
+const l2 = new JsonRpcProvider(process.env.RPC_L2);
+const l3 = new JsonRpcProvider(process.env.RPC_L3);
+const rollup = new Contract(
+  process.env.ROLLUP,
+  [
+    "function batchesLength() view returns (uint256)",
+    "function batches(uint256) view returns (uint256 startBlock,uint256 endBlock,bytes32 root,uint256 proposedAt,bool challenged,bool finalized,bool invalidated)",
+    "function challengePeriodSeconds() view returns (uint256)"
+  ],
+  l2
+);
+
+(async () => {
+  const l3Head = await l3.getBlockNumber();
+  const len = Number(await rollup.batchesLength());
+  const last = await rollup.batches(len - 1);
+  const end = Number(last.endBlock);
+  const cp = Number(await rollup.challengePeriodSeconds());
+  const diff = Math.max(0, l3Head - end);
+  // Conservative: assume net catch-up of ~1 block/s. Add challenge period + slack.
+  const est = Math.min(1800, Math.max(180, diff * 2 + cp + 30));
+  process.stdout.write(JSON.stringify({ l3Head, rollupEnd: end, diff, challengePeriodSeconds: cp, waitSeconds: est }));
+})().catch(() => {});
+NODE
+      )"
+      if [ -n "$ESTIMATE" ]; then
+        EST_WAIT="$(echo "$ESTIMATE" | jq -r '.waitSeconds // empty' 2>/dev/null || true)"
+        if [ -n "$EST_WAIT" ]; then
+          if [ "$RELAYER_WAIT_SECONDS" -lt "$EST_WAIT" ]; then
+            RELAYER_WAIT_SECONDS="$EST_WAIT"
+          fi
+        fi
+      fi
+    fi
+  fi
+fi
+
 echo "Waiting for relayer to release on L2 (nonce=$EXPECTED_NONCE, wait=${RELAYER_WAIT_SECONDS}s, l3FinalityOnL2=$GATING_L3_FINALITY_ON_L2)..."
 for i in $(seq 1 "$RELAYER_WAIT_SECONDS"); do
   HEALTH="$(curl -sS http://localhost:7171/health || true)"

@@ -36,7 +36,7 @@ case "$MODE" in
 	    DEPOSIT_SCRIPT="$ROOT_DIR/infra/scripts/demo-deposit-erc20.sh"
 	    WITHDRAW_SCRIPT="$ROOT_DIR/infra/scripts/demo-withdraw-erc20.sh"
 
-	    if [[ ! -x "$DEPOSIT_SCRIPT" || ! -x "$WITHDRAW_SCRIPT" ]]; then
+	    if [[ ! -f "$DEPOSIT_SCRIPT" || ! -f "$WITHDRAW_SCRIPT" ]]; then
 	      echo "Missing required L2<->L3 demo scripts" >&2
 	      exit 1
 	    fi
@@ -95,7 +95,7 @@ case "$MODE" in
     DEPOSIT_SCRIPT="$ROOT_DIR/infra/scripts/demo-deposit-l1l2-erc20.sh"
     WITHDRAW_SCRIPT="$ROOT_DIR/infra/scripts/demo-withdraw-l1l2-erc20.sh"
 
-    if [[ ! -x "$DEPOSIT_SCRIPT" || ! -x "$WITHDRAW_SCRIPT" ]]; then
+    if [[ ! -f "$DEPOSIT_SCRIPT" || ! -f "$WITHDRAW_SCRIPT" ]]; then
       echo "Missing required L1<->L2 demo scripts" >&2
       exit 1
     fi
