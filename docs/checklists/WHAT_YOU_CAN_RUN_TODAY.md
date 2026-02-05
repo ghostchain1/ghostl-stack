@@ -136,11 +136,17 @@ This checklist is **safe by default** (no transactions) unless a step is explici
     ALLOW_DEV_SECRETS=1 bash infra/scripts/doctor-l2.sh
     ```
   - **Pass:** Ends with `[doctor-l2] OK`; metrics endpoints reachable; contract checks pass if deployments JSONs are present.
-  - **Likely fails:** `Dev secrets blocked`; L2 execution not progressing when `L2_REQUIRE_L2_PROGRESS=1` (delta-based check); op-node RPC unreachable (`OP_NODE_RPC`); L1 derivation lag too high; batcher/proposer idle past thresholds.
+  - **Likely fails:** `Dev secrets blocked`; **sequencer stopped** (`admin_sequencerActive=false`); L2 execution not progressing when `L2_REQUIRE_L2_PROGRESS=1` (delta-based check); op-node RPC unreachable (`OP_NODE_RPC`); L1 derivation lag too high; batcher/proposer idle past thresholds.
   - **Debug:**
     ```bash
     curl -fsS http://localhost:9546 -H 'content-type: application/json' \
       -d '{"jsonrpc":"2.0","id":1,"method":"optimism_syncStatus","params":[]}' | head -c 200; echo
+    curl -fsS http://localhost:9646 -H 'content-type: application/json' \
+      -d '{"jsonrpc":"2.0","id":1,"method":"admin_sequencerActive","params":[]}'
+    UNSAFE_HEAD_HASH="$(curl -fsS http://localhost:9646 -H 'content-type: application/json' \
+      -d '{"jsonrpc":"2.0","id":1,"method":"optimism_syncStatus","params":[]}' | jq -r '.result.unsafe_l2.hash')"
+    curl -fsS http://localhost:9646 -H 'content-type: application/json' \
+      -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"admin_startSequencer\",\"params\":[\"${UNSAFE_HEAD_HASH}\"]}"
     curl -fsS http://localhost:7300/metrics | head -n 5
     curl -fsS http://localhost:7301/metrics | head -n 5
     curl -fsS http://localhost:7302/metrics | head -n 5

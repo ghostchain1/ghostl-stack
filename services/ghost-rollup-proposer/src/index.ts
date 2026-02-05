@@ -184,7 +184,16 @@ async function proposeNextBatch() {
   const latest = await child.getBlockNumber();
   const scanTo = Math.max(0, latest - CONFIRMATIONS);
 
-  if (state.nextChildBlock == null) {
+  // Keep our cursor aligned with on-chain rollup state.
+  // This avoids getting wedged on restarts (e.g., when rollup already has batches but our cursor is missing/stale).
+  const rollupLen = Number(await rollup.batchesLength());
+  if (rollupLen > 0) {
+    const last = await rollup.batches(rollupLen - 1);
+    if (Boolean(last.invalidated)) {
+      throw new Error(`latest rollup batch invalidated (batchId=${rollupLen - 1}); cannot propose further batches`);
+    }
+    state.nextChildBlock = Number(last.endBlock) + 1;
+  } else if (state.nextChildBlock == null) {
     // Start slightly behind latest to avoid empty early history.
     state.nextChildBlock = Math.max(0, scanTo - 50);
   }

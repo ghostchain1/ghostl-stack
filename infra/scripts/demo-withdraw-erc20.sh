@@ -121,8 +121,21 @@ LAST_WITHDRAW_PATH="$ROOT_DIR/.tmp/last_withdraw_erc20.json"
 EXPECTED_NONCE="$(jq -r '.nonce' "$LAST_WITHDRAW_PATH")"
 EXPECTED_AMOUNT_WEI="$(jq -r '.amountWei' "$LAST_WITHDRAW_PATH")"
 
-echo "Waiting for relayer to release on L2 (nonce=$EXPECTED_NONCE)..."
-for i in $(seq 1 60); do
+WAIT_DEFAULT_SECONDS=60
+GATING_L3_FINALITY_ON_L2="false"
+if command -v curl >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+  HEALTH_FLAGS="$(curl -sS http://localhost:7171/health || true)"
+  GATING_L3_FINALITY_ON_L2="$(echo "$HEALTH_FLAGS" | jq -r '.rollupGating.l3FinalityOnL2 // false' 2>/dev/null || true)"
+fi
+if [ "$GATING_L3_FINALITY_ON_L2" = "true" ]; then
+  # With rollup finality gating enabled, withdraw release can take:
+  # confirmations on child chain + propose interval + challenge period.
+  WAIT_DEFAULT_SECONDS=180
+fi
+RELAYER_WAIT_SECONDS="${RELAYER_WAIT_SECONDS:-$WAIT_DEFAULT_SECONDS}"
+
+echo "Waiting for relayer to release on L2 (nonce=$EXPECTED_NONCE, wait=${RELAYER_WAIT_SECONDS}s, l3FinalityOnL2=$GATING_L3_FINALITY_ON_L2)..."
+for i in $(seq 1 "$RELAYER_WAIT_SECONDS"); do
   HEALTH="$(curl -sS http://localhost:7171/health || true)"
   KIND="$(echo "$HEALTH" | jq -r '.lastRelayed.kind // empty' 2>/dev/null || true)"
   NONCE="$(echo "$HEALTH" | jq -r '.lastRelayed.nonce // empty' 2>/dev/null || true)"
@@ -141,6 +154,7 @@ NONCE="$(echo "$HEALTH" | jq -r '.lastRelayed.nonce // empty' 2>/dev/null || tru
 AMOUNT="$(echo "$HEALTH" | jq -r '.lastRelayed.amount // empty' 2>/dev/null || true)"
 if [ "$KIND" != "ERC20WithdrawReleased" ] || [ "$NONCE" != "$EXPECTED_NONCE" ] || [ "$AMOUNT" != "$EXPECTED_AMOUNT_WEI" ]; then
   echo "Timed out waiting for relayer to release ERC20 on L2." >&2
+  echo "Hint: set RELAYER_WAIT_SECONDS=180 (or higher) when rollup finality gating is enabled." >&2
   echo "$HEALTH" | jq . || true
   exit 1
 fi
