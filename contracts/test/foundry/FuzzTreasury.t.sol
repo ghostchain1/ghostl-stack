@@ -19,7 +19,7 @@ contract FuzzTreasury is TestBase {
 
     function test_withdrawETHDisabled(uint256 amount) public {
         vm.expectRevert(bytes("ETH disabled; use withdrawNative"));
-        treasury.withdrawETH(payable(address(this)), amount);
+        treasury.withdrawETH(address(this), amount);
     }
 
     function testFuzz_withdrawNativeReducesBalance(uint256 amount) public {

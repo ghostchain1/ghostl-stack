@@ -111,6 +111,7 @@ contract TreasuryPolicy is Governed {
 
     function currentEpochSpent() public view returns (uint256 spent, uint256 start) {
         if (block.timestamp >= epochStart + epochLength) {
+            // slither-disable-next-line weak-prng
             return (0, block.timestamp - (block.timestamp % epochLength));
         }
         return (epochSpent, epochStart);
@@ -164,6 +165,9 @@ contract TreasuryPolicy is Governed {
             emit EpochRolled(start);
         }
         if (amount > 0) {
+            if (spent + amount > epochBudget) {
+                revert BudgetViolation(spent, amount, epochBudget);
+            }
             epochSpent = spent + amount;
         }
     }

@@ -1,6 +1,6 @@
 {
   "tool": "slither",
+  "updatedAt": "2026-02-05T16:49:48.419Z",
   "issues": 0,
-  "totalFindings": 0,
-  "updatedAt": "2026-01-28T07:16:27.303Z"
+  "totalFindings": 320
 }

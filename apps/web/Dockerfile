@@ -27,4 +27,5 @@ COPY --from=builder /app/apps/web/package.json ./apps/web/package.json
 COPY --from=builder /app/apps/web/next.config.js ./apps/web/next.config.js
 WORKDIR /app/apps/web
 EXPOSE 3200
+USER node
 CMD ["npm", "run", "start"]

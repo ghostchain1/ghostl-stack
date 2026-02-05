@@ -281,6 +281,7 @@ infra/docker/runtime/
 infra/docker/audit/
 infra/opstack/backups-*/
 docs/rollback/
+tools/ghostcontrol/secrets/
 
 # terraform state (contains secrets)
 .terraform/

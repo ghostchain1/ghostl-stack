@@ -13,10 +13,23 @@ spec:
       labels:
         app: ghostl-api
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: api
           image: ghcr.io/ghostchain1/ghostl-api:latest
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 4000
           envFrom:
@@ -27,6 +40,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+            - name: tmp
+              mountPath: /tmp
           readinessProbe:
             httpGet:
               path: /health
@@ -43,3 +58,5 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: ghostl-api-data
+        - name: tmp
+          emptyDir: {}

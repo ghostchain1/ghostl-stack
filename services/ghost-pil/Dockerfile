@@ -14,4 +14,6 @@ RUN npm run build
 
 EXPOSE 3220
 
+RUN chown -R node:node /app
+USER node
 CMD ["node", "dist/server.js"]

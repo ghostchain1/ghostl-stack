@@ -7,6 +7,7 @@
 - `interchain-outbound-sequence.mmd`: Phase 1 outbound interchain sequence (policy-gated)
 - `phase3-containers.md`: Phase 3 least-privilege containers + internal/interchain network segmentation
 - `phase4-governance.md`: Phase 4 on-chain governance (quorum governor) + `InterchainAuthorization` allowlists/caps/halts
+- `phase5-security.md`: Phase 5 static analysis, invariants, and scanning gates
 - `compliance_decision_flow.mmd` / `compliance_decision_flow.md`: preflight decision sequence
 - `autonomous_policy_lifecycle.mmd` / `autonomous_policy_lifecycle.md`: autonomous policy lifecycle
 - `validator_compliance_economics.mmd` / `validator_compliance_economics.md`: validator compliance economics
