@@ -6,6 +6,7 @@ MODE="${BRIDGE_E2E_MODE:-l2l3}"
 RUN="false"
 AMOUNT="${DEMO_AMOUNT_ETH:-1}"
 RELAYER_HEALTH_URL="${RELAYER_HEALTH_URL:-http://localhost:7171/health}"
+STACK_ENV_FILE="${STACK_ENV_FILE:-$ROOT_DIR/services/stack.env}"
 
 usage() {
   cat <<'USAGE'
@@ -27,6 +28,54 @@ done
 
 log() { printf '[bridge-e2e] %s\n' "$*"; }
 
+warn() { printf '[bridge-e2e][WARN] %s\n' "$*" >&2; }
+
+rpc() {
+  local url="$1" method="$2" params="${3:-[]}"
+  curl -sS -H 'content-type: application/json' \
+    --data "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"${method}\",\"params\":${params}}" \
+    "$url"
+}
+
+normalize_rpc_url() {
+  local url="$1"
+  # When running on the host, `host.docker.internal` may not resolve on Linux.
+  if [[ "$url" == *host.docker.internal* ]] && ! getent hosts host.docker.internal >/dev/null 2>&1; then
+    url="${url/host.docker.internal/127.0.0.1}"
+  fi
+  printf '%s' "$url"
+}
+
+code_len() {
+  local url="$1" addr="$2"
+  rpc "$url" eth_getCode "[\"$addr\",\"latest\"]" | python3 - <<'PY'
+import json,sys
+j=json.load(sys.stdin)
+code=j.get("result","") or ""
+print(max(0, len(code)-2) if code.startswith("0x") else len(code))
+PY
+}
+
+hex_to_int() {
+  python3 - <<'PY'
+import sys
+s=sys.stdin.read().strip()
+try:
+  print(int(s,16))
+except Exception:
+  print("")
+PY
+}
+
+maybe_source_stack_env() {
+  if [[ -f "$STACK_ENV_FILE" ]]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "$STACK_ENV_FILE"
+    set +a
+  fi
+}
+
 if [[ "$RUN" != "true" ]]; then
   log "Dry run. Use --run to execute.";
 fi
@@ -47,6 +96,7 @@ case "$MODE" in
     if [[ "$RUN" == "true" ]]; then
       command -v curl >/dev/null 2>&1 || { echo "Missing required binary: curl" >&2; exit 1; }
       command -v jq >/dev/null 2>&1 || { echo "Missing required binary: jq" >&2; exit 1; }
+      maybe_source_stack_env
 
       if curl -sS "$RELAYER_HEALTH_URL" | jq -e '.observeOnly == true' >/dev/null 2>&1; then
         echo "Relayer is observe-only; configure relayer signing keys (e.g., RELAYER_PRIVATE_KEY) and restart ghost-relayer." >&2
@@ -65,7 +115,7 @@ case "$MODE" in
       EXPECTED_AMOUNT_WEI="$(jq -r '.amountWei' "$LAST_DEPOSIT_PATH")"
 
       log "Waiting for relayer to mint on L3 (nonce=$EXPECTED_NONCE)..."
-      for i in $(seq 1 60); do
+      for i in $(seq 1 120); do
         HEALTH="$(curl -sS "$RELAYER_HEALTH_URL" || true)"
         KIND="$(echo "$HEALTH" | jq -r '.lastRelayed.kind // empty' 2>/dev/null || true)"
         NONCE="$(echo "$HEALTH" | jq -r '.lastRelayed.nonce // empty' 2>/dev/null || true)"
@@ -85,6 +135,23 @@ case "$MODE" in
       if [[ "$KIND" != "ERC20Finalized" || "$NONCE" != "$EXPECTED_NONCE" || "$AMOUNT_WEI" != "$EXPECTED_AMOUNT_WEI" ]]; then
         echo "Timed out waiting for ERC20 relay/mint on L3." >&2
         curl -sS "$RELAYER_HEALTH_URL" | jq . || true
+
+        # Targeted diagnostics (no secrets):
+        if [[ -n "${RPC_L3:-}" && -n "${L3_TOKEN_FACTORY_ADDRESS:-}" && -n "${L3_INBOX_ADDRESS:-}" ]]; then
+          RPC_L3_EFF="$(normalize_rpc_url "$RPC_L3")"
+          warn "Checking L3 contract visibility via RPC_L3=$RPC_L3_EFF"
+          L3_CHAIN_ID_HEX="$(rpc "$RPC_L3_EFF" eth_chainId "[]" | jq -r '.result // empty' 2>/dev/null || true)"
+          L3_CHAIN_ID="$(printf '%s' "$L3_CHAIN_ID_HEX" | hex_to_int)"
+          L3_HEAD_HEX="$(rpc "$RPC_L3_EFF" eth_blockNumber "[]" | jq -r '.result // empty' 2>/dev/null || true)"
+          L3_HEAD="$(printf '%s' "$L3_HEAD_HEX" | hex_to_int)"
+          warn "L3 chainId=$L3_CHAIN_ID head=$L3_HEAD"
+          warn "L3 tokenFactory codeLen=$(code_len "$RPC_L3_EFF" "$L3_TOKEN_FACTORY_ADDRESS") addr=$L3_TOKEN_FACTORY_ADDRESS"
+          warn "L3 inbox codeLen=$(code_len "$RPC_L3_EFF" "$L3_INBOX_ADDRESS") addr=$L3_INBOX_ADDRESS"
+          warn "If codeLen=0 here, the relayer is pointed at an RPC that does not have the deployed contracts."
+          warn "Fix: restart ghost-relayer on the OP Stack docker network and use docker RPCs (RPC_L3_DOCKER=http://l3-geth:8545)."
+        else
+          warn "Missing RPC_L3/L3_TOKEN_FACTORY_ADDRESS/L3_INBOX_ADDRESS for diagnostics (source services/stack.env)."
+        fi
         exit 1
       fi
 
