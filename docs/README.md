@@ -10,6 +10,10 @@ Use this index to find the right runbook or reference quickly.
   - `opstack-l1-mainnet-geth.md`: L1 geth config for OP Stack anchoring.
 - **Architecture & design**
   - `dashboard-architecture.md`: UI + service layout for the operator dashboard.
+  - `architecture/interchain-flow.md`: Phase 1 Low Balancer interchain flow (L1→L2→L3→external) + non-bypass governance rules.
+  - `architecture/interchain-policy-layer.md`: Phase 2 AI Risk Engine + policy gates + Liquidity/Bridge Routers (governance-non-bypassable).
+  - `architecture/phase3-containers.md`: Phase 3 hardened Docker/Compose (non-root, internal vs interchain networks, secrets via files).
+  - `architecture/phase4-governance.md`: Phase 4 governance/contracts (quorum governor + `InterchainAuthorization` allowlists/caps/halts).
   - `route-map-and-services.md`: page-to-service mapping for every module.
   - `opstack-l2-architecture.md`, `opstack-l2-l3-stack.md`: L2/L3 stack diagrams and data flow.
   - `ghostchain-ibft.md`, `ghostchain-l1.md`, `ghostchain-opstack-blueprint.md`, `ghostchain-l2-recommendation.md`: chain design notes and recommended configs.

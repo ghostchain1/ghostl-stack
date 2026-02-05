@@ -5,6 +5,18 @@ import client from "prom-client";
 import { Interface, ethers } from "ethers";
 
 const env = process.env;
+const readSecret = (key) => {
+  const filePath = env[`${key}_FILE`];
+  if (filePath) {
+    try {
+      const value = fs.readFileSync(filePath, "utf8").trim();
+      if (value) return value;
+    } catch {
+      // ignore
+    }
+  }
+  return env[key] || "";
+};
 const registryUrl = env.RPC_REGISTRY_URL || "http://ghost-registry:8088/v1/endpoints";
 const rpcOverride = env.RPC_URL || env.RPC_L2 || env.RPC_L1 || env.RPC_L3 || "";
 const registryTimeoutMs = Number(env.REGISTRY_TIMEOUT_MS || 1500);
@@ -12,7 +24,7 @@ const registryRetries = Math.max(0, Number(env.REGISTRY_RETRY_COUNT || 2));
 const registryCacheMs = Math.max(1000, Number(env.REGISTRY_CACHE_MS || 30000));
 const registryCache = { data: null, expiresAt: 0 };
 const GUARD_URL = env.GUARD_URL || "http://host.docker.internal:7070";
-const ADMIN_TOKEN = env.ADMIN_TOKEN || "";
+const ADMIN_TOKEN = readSecret("ADMIN_TOKEN");
 const PORT = Number(env.PORT || 7575);
 const OBSERVE_ONLY = env.OBSERVE_ONLY === "1";
 const SIMULATION_ENABLED = env.SIMULATION_ENABLED === "1";
