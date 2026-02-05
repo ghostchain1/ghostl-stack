@@ -6,7 +6,20 @@ on:
     branches: [ main, master ]
 
 jobs:
+  rpc-namespace:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enforce gst_* Canonical RPC Namespace
+        run: |
+          bash ops/scripts/check-no-eth-rpc.sh
+
   repo-security:
+    needs: [rpc-namespace]
     runs-on: ubuntu-latest
     permissions:
       contents: read
