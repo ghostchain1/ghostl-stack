@@ -164,8 +164,42 @@ function hasAuth(req) {
   return token === RPC_AUTH_TOKEN || headerToken === RPC_AUTH_TOKEN;
 }
 
-const METHOD_CANONICAL_MAP = new Map([["eth_blockNumber", "gst_blockNumber"]]);
-const METHOD_UPSTREAM_MAP = new Map([["gst_blockNumber", "eth_blockNumber"]]);
+// GhostChain RPC namespace remap.
+//
+// Canonical: gst_*
+// Compatibility alias: eth_*
+//
+// Note: Upstream execution clients (geth/op-geth) only implement eth_* today,
+// so we map gst_* back to eth_* when forwarding upstream.
+const METHOD_CANONICAL_MAP = new Map([
+  ["eth_blockNumber", "gst_blockNumber"],
+  ["eth_chainId", "gst_chainId"],
+  ["eth_getBalance", "gst_getBalance"],
+  ["eth_getTransactionCount", "gst_getTransactionCount"],
+  ["eth_getBlockByNumber", "gst_getBlockByNumber"],
+  ["eth_getBlockByHash", "gst_getBlockByHash"],
+  ["eth_getCode", "gst_getCode"],
+  ["eth_call", "gst_call"],
+  ["eth_estimateGas", "gst_estimateGas"],
+  ["eth_gasPrice", "gst_gasPrice"],
+  ["eth_feeHistory", "gst_feeHistory"],
+  ["eth_maxPriorityFeePerGas", "gst_maxPriorityFeePerGas"]
+]);
+
+const METHOD_UPSTREAM_MAP = new Map([
+  ["gst_blockNumber", "eth_blockNumber"],
+  ["gst_chainId", "eth_chainId"],
+  ["gst_getBalance", "eth_getBalance"],
+  ["gst_getTransactionCount", "eth_getTransactionCount"],
+  ["gst_getBlockByNumber", "eth_getBlockByNumber"],
+  ["gst_getBlockByHash", "eth_getBlockByHash"],
+  ["gst_getCode", "eth_getCode"],
+  ["gst_call", "eth_call"],
+  ["gst_estimateGas", "eth_estimateGas"],
+  ["gst_gasPrice", "eth_gasPrice"],
+  ["gst_feeHistory", "eth_feeHistory"],
+  ["gst_maxPriorityFeePerGas", "eth_maxPriorityFeePerGas"]
+]);
 
 function normalizeRpcMethod(method) {
   if (!method || typeof method !== "string") return { canonical: "", upstream: "", aliasFrom: "" };
