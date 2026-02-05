@@ -58,13 +58,21 @@ function isMethodNotFound(err: unknown): boolean {
   return msg.includes('method not found') || msg.includes('does not exist') || msg.includes('not available');
 }
 
-async function rpcCanonicalBlockNumber(rpcUrl: string): Promise<string> {
+async function rpcCanonicalMethod<T>(rpcUrl: string, gstMethod: string, ethMethod: string, params: unknown[] = []): Promise<T> {
   try {
-    return await rpcCall<string>(rpcUrl, 'gst_blockNumber');
+    return await rpcCall<T>(rpcUrl, gstMethod, params);
   } catch (err) {
     if (!isMethodNotFound(err)) throw err;
-    return await rpcCall<string>(rpcUrl, 'eth_blockNumber');
+    return await rpcCall<T>(rpcUrl, ethMethod, params);
   }
+}
+
+async function rpcCanonicalBlockNumber(rpcUrl: string): Promise<string> {
+  return rpcCanonicalMethod<string>(rpcUrl, 'gst_blockNumber', 'eth_blockNumber');
+}
+
+async function rpcCanonicalChainId(rpcUrl: string): Promise<string> {
+  return rpcCanonicalMethod<string>(rpcUrl, 'gst_chainId', 'eth_chainId');
 }
 
 // RPC health check using JSON-RPC.
@@ -72,6 +80,8 @@ export async function checkRpcHealth(rpcUrl: string): Promise<HealthStatus> {
   const started = Date.now();
   try {
     const blockHex = await rpcCanonicalBlockNumber(rpcUrl);
+    // Prefer gst_chainId when available (falls back to eth_chainId).
+    void rpcCanonicalChainId(rpcUrl).catch(() => undefined);
     const peerHex = await rpcCall<string>(rpcUrl, 'net_peerCount');
     const syncing = await rpcCall<boolean | { startingBlock?: string }>(rpcUrl, 'eth_syncing').then((r) => r !== false);
     const clientVersion = await rpcCall<string>(rpcUrl, 'web3_clientVersion');
