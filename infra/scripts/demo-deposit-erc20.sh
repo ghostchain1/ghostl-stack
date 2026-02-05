@@ -3,6 +3,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
+unset NODE_OPTIONS
+
 ENV_FILE="$ROOT_DIR/services/ghost-guard/.env"
 if [ ! -f "$ENV_FILE" ]; then
   echo "Missing $ENV_FILE (run: bash infra/scripts/up.sh)"

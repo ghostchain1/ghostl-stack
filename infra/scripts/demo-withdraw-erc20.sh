@@ -3,6 +3,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
+unset NODE_OPTIONS
+
 GUARD_ENV="$ROOT_DIR/services/ghost-guard/.env"
 RELAYER_ENV="$ROOT_DIR/services/ghost-relayer/.env"
 
@@ -109,7 +111,11 @@ echo "Using L2_TOKEN_ADDRESS=$L2_TOKEN_ADDRESS"
 echo "Using L3_TOKEN_ADDRESS=$L3_TOKEN_ADDRESS"
 echo "Account=$DEPOSITOR"
 
-if curl -sS http://localhost:7171/health | jq -e '.observeOnly == true' >/dev/null; then
+HEALTH_BASE="$(curl -fsS --retry 5 --retry-delay 1 --retry-all-errors http://localhost:7171/health)" || {
+  echo "Relayer health endpoint not reachable at http://localhost:7171/health" >&2
+  exit 1
+}
+if echo "$HEALTH_BASE" | jq -e '.observeOnly == true' >/dev/null; then
   echo "Relayer is observe-only; set RELAYER_PRIVATE_KEY (and optionally L2_RELAYER_PRIVATE_KEY) and restart ghost-relayer."
   exit 1
 fi
@@ -124,7 +130,7 @@ EXPECTED_AMOUNT_WEI="$(jq -r '.amountWei' "$LAST_WITHDRAW_PATH")"
 WAIT_DEFAULT_SECONDS=60
 GATING_L3_FINALITY_ON_L2="false"
 if command -v curl >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
-  HEALTH_FLAGS="$(curl -sS http://localhost:7171/health || true)"
+  HEALTH_FLAGS="$(curl -fsS --retry 3 --retry-delay 1 --retry-all-errors http://localhost:7171/health || true)"
   GATING_L3_FINALITY_ON_L2="$(echo "$HEALTH_FLAGS" | jq -r '.rollupGating.l3FinalityOnL2 // false' 2>/dev/null || true)"
 fi
 if [ "$GATING_L3_FINALITY_ON_L2" = "true" ]; then

@@ -4,6 +4,8 @@ set -euo pipefail
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 STACK_ENV_FILE="$ROOT_DIR/services/stack.env"
 
+unset NODE_OPTIONS
+
 if [ ! -f "$STACK_ENV_FILE" ]; then
   echo "Missing $STACK_ENV_FILE" >&2
   exit 1
