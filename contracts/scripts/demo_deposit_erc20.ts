@@ -16,7 +16,8 @@ async function main() {
   const amountWei = ethers.parseEther(amountEth);
   const nonce = BigInt(process.env.DEMO_NONCE ?? Math.floor(Date.now() / 1000).toString());
 
-  const token = await ethers.getContractAt("ERC20", tokenAddress, signer);
+  // Disambiguate between multiple ERC20 artifacts in this repo.
+  const token = await ethers.getContractAt("src/common/ERC20.sol:ERC20", tokenAddress, signer);
   const bridge = await ethers.getContractAt("L2L3Bridge", bridgeAddress, signer);
 
   const approveTx = await token.approve(bridgeAddress, amountWei);

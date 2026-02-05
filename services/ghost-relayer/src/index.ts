@@ -21,14 +21,26 @@ const STATE_DIR = process.env.STATE_DIR || "/state";
 const confirmationsRaw = Number(process.env.CONFIRMATIONS || "0");
 const CONFIRMATIONS = Number.isFinite(confirmationsRaw) && confirmationsRaw >= 0 ? Math.floor(confirmationsRaw) : 0;
 
-const CANONICAL_GAS_TOKEN_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
-const CANONICAL_GAS_TOKEN_SYMBOL = "GHOST";
-const minGasTokenBalanceRaw = process.env.CANONICAL_GAS_TOKEN_MIN_BALANCE || "1";
+const REQUIRE_L2_FINALITY_ON_L1 =
+  (process.env.RELAYER_REQUIRE_L2_FINALITY_ON_L1 || "false").toLowerCase() === "true";
+const REQUIRE_L3_FINALITY_ON_L2 =
+  (process.env.RELAYER_REQUIRE_L3_FINALITY_ON_L2 || "false").toLowerCase() === "true";
+
+type CanonicalGasTokenMode = "native" | "erc20";
+
+// In this stack, L2/L3 commonly use the native gas token (ETH) for fees.
+// We keep an optional "canonical gas token" balance gate for production,
+// but default it to "native" + zero-minimum so dev relaying doesn't wedge.
+const CANONICAL_GAS_TOKEN_MODE = (process.env.CANONICAL_GAS_TOKEN_MODE || "native") as CanonicalGasTokenMode;
+const CANONICAL_GAS_TOKEN_ADDRESS =
+  process.env.CANONICAL_GAS_TOKEN_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+const CANONICAL_GAS_TOKEN_SYMBOL = process.env.CANONICAL_GAS_TOKEN_SYMBOL || "GHOST";
+const minGasTokenBalanceRaw = process.env.CANONICAL_GAS_TOKEN_MIN_BALANCE || "0";
 let MIN_CANONICAL_GAS_TOKEN_BALANCE = 1n;
 try {
   MIN_CANONICAL_GAS_TOKEN_BALANCE = BigInt(minGasTokenBalanceRaw);
 } catch {
-  MIN_CANONICAL_GAS_TOKEN_BALANCE = 1n;
+  MIN_CANONICAL_GAS_TOKEN_BALANCE = 0n;
 }
 const gasTokenCacheTtlMs = Math.max(1_000, Number(process.env.CANONICAL_GAS_TOKEN_CACHE_MS || "15000"));
 const gasTokenCache = new Map<string, { balance: bigint; checkedAt: number }>();
@@ -41,6 +53,7 @@ const gasTokenCacheKey = (chainLabel: "l2" | "l3", account: string) => `${chainL
 
 async function ensureGasTokenBalance(chainLabel: "l2" | "l3", provider: ethers.Provider, signer: ethers.Signer | null) {
   if (!signer) return;
+  if (MIN_CANONICAL_GAS_TOKEN_BALANCE === 0n) return;
   const account = await signer.getAddress();
   const cacheKey = gasTokenCacheKey(chainLabel, account);
   const cached = gasTokenCache.get(cacheKey);
@@ -53,20 +66,35 @@ async function ensureGasTokenBalance(chainLabel: "l2" | "l3", provider: ethers.P
     }
     return;
   }
-  const token = new ethers.Contract(CANONICAL_GAS_TOKEN_ADDRESS, canonicalGasTokenAbi, provider);
-  let symbol = CANONICAL_GAS_TOKEN_SYMBOL;
-  try {
-    symbol = String(await token.symbol());
-  } catch {
-    symbol = CANONICAL_GAS_TOKEN_SYMBOL;
+  let balance: bigint;
+  if (CANONICAL_GAS_TOKEN_MODE === "native") {
+    balance = await provider.getBalance(account);
+  } else if (CANONICAL_GAS_TOKEN_MODE === "erc20") {
+    // Fail loudly on misconfig rather than returning empty "0x" results.
+    const code = await provider.getCode(CANONICAL_GAS_TOKEN_ADDRESS);
+    if (!code || code === "0x") {
+      throw new Error(
+        `canonical gas token contract missing on ${chainLabel}: address=${CANONICAL_GAS_TOKEN_ADDRESS}`
+      );
+    }
+    const token = new ethers.Contract(CANONICAL_GAS_TOKEN_ADDRESS, canonicalGasTokenAbi, provider);
+    let symbol = CANONICAL_GAS_TOKEN_SYMBOL;
+    try {
+      symbol = String(await token.symbol());
+    } catch {
+      symbol = CANONICAL_GAS_TOKEN_SYMBOL;
+    }
+    if (symbol !== CANONICAL_GAS_TOKEN_SYMBOL) {
+      throw new Error(
+        `canonical gas token symbol mismatch on ${chainLabel}: expected ${CANONICAL_GAS_TOKEN_SYMBOL}, got ${symbol}`
+      );
+    }
+    const balanceRaw = await token.balanceOf(account);
+    balance = typeof balanceRaw === "bigint" ? balanceRaw : BigInt(String(balanceRaw));
+  } else {
+    throw new Error(`unsupported CANONICAL_GAS_TOKEN_MODE=${String(CANONICAL_GAS_TOKEN_MODE)}`);
   }
-  if (symbol !== CANONICAL_GAS_TOKEN_SYMBOL) {
-    throw new Error(
-      `canonical gas token symbol mismatch on ${chainLabel}: expected ${CANONICAL_GAS_TOKEN_SYMBOL}, got ${symbol}`
-    );
-  }
-  const balanceRaw = await token.balanceOf(account);
-  const balance = typeof balanceRaw === "bigint" ? balanceRaw : BigInt(String(balanceRaw));
+
   gasTokenCache.set(cacheKey, { balance, checkedAt: now });
   if (balance < MIN_CANONICAL_GAS_TOKEN_BALANCE) {
     throw new Error(
@@ -558,14 +586,16 @@ async function tryFinalizeOne(p: PendingFinalize) {
 
   try {
     metrics.finalizeAttempts += 1;
-    const okOnL1 = await verifyFinalizedBatchContainsBlock({
-      rollup: l1Rollup,
-      settlementName: "l1",
-      childProvider: l2Provider,
-      childBlockNumber: p.l2BlockNumber,
-      childBlockHash: p.l2BlockHash
-    });
-    if (!okOnL1) throw new Error("L2 block not finalized on L1 rollup");
+    if (REQUIRE_L2_FINALITY_ON_L1) {
+      const okOnL1 = await verifyFinalizedBatchContainsBlock({
+        rollup: l1Rollup,
+        settlementName: "l1",
+        childProvider: l2Provider,
+        childBlockNumber: p.l2BlockNumber,
+        childBlockHash: p.l2BlockHash
+      });
+      if (!okOnL1) throw new Error("L2 block not finalized on L1 rollup");
+    }
 
     await ensureGasTokenBalance("l2", l2Provider, l2Signer);
     if (p.kind === "DepositInitiated") {
@@ -719,7 +749,7 @@ async function handleBurnLog(log: ethers.Log) {
     l3BlockHash = blk.hash;
   }
   const okOnL2 = await verifyFinalizedBatchContainsBlock({
-    rollup: l2Rollup,
+    rollup: REQUIRE_L3_FINALITY_ON_L2 ? l2Rollup : null,
     settlementName: "l2",
     childProvider: l3Provider,
     childBlockNumber: l3BlockNumber,
@@ -751,7 +781,20 @@ async function pollL2Once() {
     if (nextL2BlockToScan == null) {
       const lookback = 100;
       const defaultStart = Math.max(0, scanTo - lookback);
-      nextL2BlockToScan = START_BLOCK != null && Number.isFinite(START_BLOCK) ? Math.max(0, Math.floor(START_BLOCK)) : defaultStart;
+      nextL2BlockToScan =
+        START_BLOCK != null && Number.isFinite(START_BLOCK) ? Math.max(0, Math.floor(START_BLOCK)) : defaultStart;
+    } else if (nextL2BlockToScan > latest + 500) {
+      // If the chain has been reset/re-deployed but our cursor is persisted, we can end up permanently skipping scans.
+      // Reset to a safe lookback window instead of requiring operators to delete /state.
+      const lookback = 100;
+      const defaultStart = Math.max(0, scanTo - lookback);
+      const resetTo =
+        START_BLOCK != null && Number.isFinite(START_BLOCK) ? Math.max(0, Math.floor(START_BLOCK)) : defaultStart;
+      const msg = `[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=${nextL2BlockToScan} -> ${resetTo} (latest=${latest})`;
+      console.warn(msg);
+      pushLog("warn", msg, { latest, scanTo, resetTo, nextL2BlockToScan });
+      nextL2BlockToScan = resetTo;
+      await saveCursor("l2", { nextBlockToScan: nextL2BlockToScan });
     }
     if (nextL2BlockToScan > scanTo) return;
 
@@ -822,7 +865,18 @@ async function pollL3Once() {
     if (nextL3BlockToScan == null) {
       const lookback = 100;
       const defaultStart = Math.max(0, scanTo - lookback);
-      nextL3BlockToScan = START_BLOCK != null && Number.isFinite(START_BLOCK) ? Math.max(0, Math.floor(START_BLOCK)) : defaultStart;
+      nextL3BlockToScan =
+        START_BLOCK != null && Number.isFinite(START_BLOCK) ? Math.max(0, Math.floor(START_BLOCK)) : defaultStart;
+    } else if (nextL3BlockToScan > latest + 500) {
+      const lookback = 100;
+      const defaultStart = Math.max(0, scanTo - lookback);
+      const resetTo =
+        START_BLOCK != null && Number.isFinite(START_BLOCK) ? Math.max(0, Math.floor(START_BLOCK)) : defaultStart;
+      const msg = `[Relayer] L3 cursor ahead of head; resetting nextBlockToScan=${nextL3BlockToScan} -> ${resetTo} (latest=${latest})`;
+      console.warn(msg);
+      pushLog("warn", msg, { latest, scanTo, resetTo, nextL3BlockToScan });
+      nextL3BlockToScan = resetTo;
+      await saveCursor("l3", { nextBlockToScan: nextL3BlockToScan });
     }
     if (nextL3BlockToScan > scanTo) return;
 
@@ -870,8 +924,8 @@ app.get("/health", async (_req, res) => {
       confirmations: CONFIRMATIONS,
       bridge: BRIDGE,
       rollupGating: {
-        l2FinalityOnL1: Boolean(l1Rollup),
-        l3FinalityOnL2: Boolean(l2Rollup),
+        l2FinalityOnL1: REQUIRE_L2_FINALITY_ON_L1 && Boolean(l1Rollup),
+        l3FinalityOnL2: REQUIRE_L3_FINALITY_ON_L2 && Boolean(l2Rollup),
         l1RollupL2: L1_ROLLUP_L2 || null,
         l2RollupL3: L2_ROLLUP_L3 || null
       },

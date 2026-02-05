@@ -103,6 +103,14 @@ async function main() {
   const CANONICAL_GAS_TOKEN = process.env.CANONICAL_GAS_TOKEN ?? "0x5FbDB2315678afecb367f032d93F642f64180aa3";
   const l2TokenAddr = process.env.L2_TOKEN_ADDRESS ?? process.env.L2_TOKEN ?? CANONICAL_GAS_TOKEN;
   const l2 = await ethers.getSigners();
+  if (!l2.length) {
+    throw new Error(
+      `No signers available for network=${network.name}. Set DEPLOYER_PRIVATE_KEY (or configure hardhat network accounts).`
+    );
+  }
+  if (!l2[0].provider) {
+    throw new Error(`Signer has no provider for network=${network.name}. Check your Hardhat RPC URL config.`);
+  }
   const l2Provider = l2[0].provider as ethers.JsonRpcProvider;
   const l2TokenCode = await l2Provider.getCode(l2TokenAddr);
   const l2TokenHasCode = !!l2TokenCode && l2TokenCode !== "0x";
@@ -159,6 +167,15 @@ async function main() {
   const setRelayerTx = await bridge.setRelayer(relayerAddr, txOpts);
   await waitForReceipt(l2[0].provider as ethers.JsonRpcProvider, setRelayerTx.hash, "Bridge.setRelayer");
   console.log("Bridge relayer (L2):", relayerAddr);
+
+  // The bridge defaults to strict compliance gating. For local devnets, disable this by default so E2E flows work
+  // out-of-the-box. Production/staging should set BRIDGE_REQUIRE_COMPLIANCE_ROOT=true and configure a real guard.
+  const requireComplianceRoot = (process.env.BRIDGE_REQUIRE_COMPLIANCE_ROOT ?? "false") === "true";
+  if (!requireComplianceRoot) {
+    console.log("== Disable L2L3Bridge compliance root requirement (dev default) ==");
+    const tx = await bridge.setRequireComplianceRoot(false, txOpts);
+    await waitForReceipt(l2[0].provider as ethers.JsonRpcProvider, tx.hash, "Bridge.setRequireComplianceRoot(false)");
+  }
 
   // Deploy optimistic settlement contracts:
   // - L2 batches posted to L1 (Anvil)
@@ -402,7 +419,11 @@ async function main() {
 
   const writeLayer = async (layer: "l1" | "l2" | "l3") => {
     const filePath = path.join(outputDir, `${layer}.json`);
-    await fs.writeFile(filePath, JSON.stringify({ network: network.name, layer, contracts: deployments[layer] }, null, 2));
+    // Write via a temp file + rename so we can replace root-owned files as long as the directory is writable.
+    // (Deleting/replacing files is governed by directory perms; opening an existing root-owned file for write is not.)
+    const tmpPath = `${filePath}.tmp-${process.pid}-${Date.now()}`;
+    await fs.writeFile(tmpPath, JSON.stringify({ network: network.name, layer, contracts: deployments[layer] }, null, 2));
+    await fs.rename(tmpPath, filePath);
     console.log("Wrote:", filePath);
   };
   await writeLayer("l1");
@@ -414,7 +435,12 @@ async function main() {
     l2: { rollup: l2RollupAddr, chainId: l2ChainId },
     l3: { inbox: inboxAddr, factory: factoryAddr, chainId: l3ChainId }
   };
-  await fs.writeFile(path.join(outputDir, "rollup-config.json"), JSON.stringify(rollupConfig, null, 2));
+  {
+    const filePath = path.join(outputDir, "rollup-config.json");
+    const tmpPath = `${filePath}.tmp-${process.pid}-${Date.now()}`;
+    await fs.writeFile(tmpPath, JSON.stringify(rollupConfig, null, 2));
+    await fs.rename(tmpPath, filePath);
+  }
   const chainsRoot = path.resolve(ROOT, "chains");
   await fs.mkdir(path.join(chainsRoot, "l2"), { recursive: true });
   await fs.mkdir(path.join(chainsRoot, "l3"), { recursive: true });

@@ -1,6 +1,7 @@
 import { ethers } from "hardhat";
 
 const L2_FACTORY_DEFAULT = "0x4200000000000000000000000000000000000012";
+const CREATED_TOPIC0 = ethers.id("OptimismMintableERC20Created(address,address,address)");
 
 async function main() {
   const l1Token = process.env.L1_TOKEN_ADDRESS;
@@ -33,6 +34,35 @@ async function main() {
     } catch {
       // fall through to create
     }
+  }
+
+  // Some devnets already have a deterministic OptimismMintableERC20 deployed for this remote token.
+  // Avoid a CREATE2 collision revert by discovering an existing deployment via factory event logs.
+  try {
+    const latest = await l2Provider.getBlockNumber();
+    const lookback = Number(process.env.DEMO_LOG_LOOKBACK ?? "50000");
+    const fromBlock = Math.max(0, latest - lookback);
+    const remoteTopic = ethers.zeroPadValue(l1Token, 32);
+    const logs = await l2Provider.getLogs({
+      address: l2Factory,
+      fromBlock,
+      toBlock: "latest",
+      topics: [CREATED_TOPIC0, null, remoteTopic]
+    });
+    if (logs.length > 0) {
+      const FactoryAbi = [
+        "event OptimismMintableERC20Created(address indexed localToken, address indexed remoteToken, address deployer)"
+      ];
+      const iface = new ethers.Interface(FactoryAbi);
+      const parsed = iface.parseLog(logs[logs.length - 1]);
+      const localToken = parsed?.args?.localToken as string | undefined;
+      if (localToken) {
+        console.log(`L2_TOKEN_ADDRESS=${localToken}`);
+        return;
+      }
+    }
+  } catch {
+    // fall through to create
   }
 
   let name = process.env.L1_TOKEN_NAME ?? "Ghost L1 Token";

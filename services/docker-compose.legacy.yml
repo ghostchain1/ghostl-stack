@@ -458,7 +458,7 @@ services:
     ports:
       - "7604:7604"
     volumes:
-      - ./data:/data
+      - ./.state/bridge-service:/data
     healthcheck:
       test:
         - CMD-SHELL
@@ -488,7 +488,7 @@ services:
       - L2_RELAYER_PRIVATE_KEY=${L2_RELAYER_PRIVATE_KEY}
       - STATE_DIR=/state
     volumes:
-      - ./data:/state
+      - ./.state/ghost-relayer:/state
     ports:
       - "7171:7171"
     healthcheck:
@@ -823,7 +823,7 @@ services:
       - PROPOSER_PRIVATE_KEY=${PROPOSER_PRIVATE_KEY}
       - STATE_DIR=/state
     volumes:
-      - ./data:/state
+      - ./.state/ghost-rollup-proposer:/state
     ports:
       - "7272:7272"
     healthcheck:
@@ -849,7 +849,7 @@ services:
       - CHALLENGER_PRIVATE_KEY=${CHALLENGER_PRIVATE_KEY}
       - STATE_DIR=/state
     volumes:
-      - ./data:/state
+      - ./.state/ghost-rollup-challenger:/state
     ports:
       - "7282:7282"
     healthcheck:
@@ -998,7 +998,7 @@ services:
       - EXECUTION_APPROVAL_TOKEN=${EXECUTION_APPROVAL_TOKEN}
       - TREASURY_STATE_FILE=/data/treasury-proposals.json
     volumes:
-      - ./data:/data
+      - ./.state/treasury-service:/data
     ports:
       - "7628:7628"
     healthcheck:
@@ -1289,7 +1289,7 @@ services:
       - PORT=7641
       - AUDIT_LOG_PATH=/data/audit.log
     volumes:
-      - ./data:/data
+      - ./.state/audit-log-service:/data
     ports:
       - "7641:7641"
     healthcheck:

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Foundry tooling (forge/cast) is typically installed via foundryup into $HOME/.foundry/bin.
+export PATH="$HOME/.foundry/bin:$PATH"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 OP_DIR="$ROOT/infra/opstack"

@@ -4,7 +4,7 @@
   "contracts": [
     {
       "name": "L3Inbox",
-      "address": "0x71C95911E9a5D330f4D621842EC243EE1343292e",
+      "address": "0x1c591412262B88A292C437499bE433Ad2446F66c",
       "chainId": 903,
       "layer": "l3",
       "abi": [
@@ -184,11 +184,11 @@
       ],
       "abiHash": "6f991402a6bc70c42c5dc1a17f3ef4fa035b747006c6777177424981d2fba142",
       "version": "0.0.1",
-      "deployedAt": "2026-02-02T08:10:11.555Z"
+      "deployedAt": "2026-02-05T03:14:20+00:00"
     },
     {
       "name": "L3BridgedTokenFactory",
-      "address": "0x948B3c65b89DF0B4894ABE91E6D02FE579834F8F",
+      "address": "0x0c460bCAD4F61CC52D8a70a6048A2A637befe872",
       "chainId": 903,
       "layer": "l3",
       "abi": [
@@ -406,7 +406,7 @@
       ],
       "abiHash": "eb7ddda39de32bd9e9c2d1b0e4922040fb66f4fb5fb76de40aa32f891df3cbb2",
       "version": "0.0.1",
-      "deployedAt": "2026-02-02T08:10:14.194Z"
+      "deployedAt": "2026-02-05T03:14:20+00:00"
     },
     {
       "name": "GhostNFT",
