@@ -299,6 +299,22 @@ port_listening() {
   fi
 }
 
+extract_port() {
+  # Accepts either a raw port ("39545") or a URL ("http://localhost:39545").
+  # Returns a numeric port or empty string if it can't be derived.
+  local raw="$1"
+  if [ -z "$raw" ]; then
+    echo ""
+    return 0
+  fi
+  if printf '%s' "$raw" | grep -Eq '^[0-9]+$'; then
+    echo "$raw"
+    return 0
+  fi
+  # shellcheck disable=SC2001
+  printf '%s' "$raw" | sed -nE 's#^https?://[^:/]+:([0-9]+)(/.*)?$#\1#p'
+}
+
 echo "[doctor-l3] starting"
 
 need_bin curl
@@ -352,8 +368,9 @@ else
   echo "OK: dev secrets allowed"
 fi
 
-if ! port_listening "${L3_HOST_RPC:-39545}"; then
-  warn "L3 host RPC port not listening: ${L3_HOST_RPC:-39545}"
+L3_HOST_RPC_PORT="$(extract_port "${L3_HOST_RPC:-${HOST_L3_RPC:-39545}}")"
+if [ -n "$L3_HOST_RPC_PORT" ] && ! port_listening "$L3_HOST_RPC_PORT"; then
+  warn "L3 host RPC port not listening: ${L3_HOST_RPC_PORT} (url=${HOST_L3_RPC})"
 fi
 if ! port_listening "${L3_ROLLUP_RPC_HOST_PORT:-39546}"; then
   warn "L3 rollup RPC port not listening: ${L3_ROLLUP_RPC_HOST_PORT:-39546}"
