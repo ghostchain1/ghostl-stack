@@ -20,6 +20,16 @@ if [ -f "$L3_SECRETS_FILE" ]; then
   set +a
 fi
 
+# Prefer the canonical stack-level env if present (this repo is migrating to stack.env as source of truth).
+# Do not echo secrets; this is only to populate addresses/flags consistently across scripts.
+STACK_ENV_FILE="$ROOT_DIR/services/stack.env"
+if [ -f "$STACK_ENV_FILE" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$STACK_ENV_FILE"
+  set +a
+fi
+
 L3_NAME="${L3_NAME:-ghostl3}"
 L3_CHAIN_ID="${L3_CHAIN_ID:-903}"
 
@@ -41,6 +51,14 @@ L3_CHALLENGER_METRICS_URL="${L3_CHALLENGER_METRICS_URL:-http://localhost:${L3_CH
 
 AI_MONITOR_URL="${AI_MONITOR_URL:-http://localhost:7575/health}"
 AI_MONITOR_REQUIRED="${AI_MONITOR_REQUIRED:-0}"
+
+RELAYER_REQUIRE_L3_FINALITY_ON_L2="${RELAYER_REQUIRE_L3_FINALITY_ON_L2:-false}"
+ROLLUP_GATING_L3_FINALITY_ON_L2="$(printf '%s' "$RELAYER_REQUIRE_L3_FINALITY_ON_L2" | tr '[:upper:]' '[:lower:]')"
+L2_ROLLUP_L3_ADDRESS="${L2_ROLLUP_L3_ADDRESS:-}"
+L3_ROLLUP_PROPOSER_HEALTH_URL="${L3_ROLLUP_PROPOSER_HEALTH_URL:-http://localhost:7272/health}"
+L3_ROLLUP_PROGRESS_SAMPLE_SECONDS="${L3_ROLLUP_PROGRESS_SAMPLE_SECONDS:-15}"
+L3_ROLLUP_PROGRESS_MIN_DELTA="${L3_ROLLUP_PROGRESS_MIN_DELTA:-1}"
+L3_MAX_ROLLUP_LAG="${L3_MAX_ROLLUP_LAG:-512}"
 
 L3_SECRETS_SOURCE="${L3_SECRETS_SOURCE:-dev}"
 L3_SECRETS_DIR="${L3_SECRETS_DIR:-$ROOT_DIR/infra/opstack/secrets}"
@@ -166,6 +184,64 @@ rpc_block_number_dec() {
     return 1
   fi
   hex_to_dec "$bn_hex"
+}
+
+rollup_proposer_health() {
+  curl -fsS --max-time 4 "$L3_ROLLUP_PROPOSER_HEALTH_URL" 2>/dev/null || return 1
+}
+
+json_field() {
+  python3 - <<'PY' "$1" "$2"
+import json, sys
+raw = sys.argv[1]
+key = sys.argv[2]
+if not raw:
+    sys.exit(1)
+try:
+    data = json.loads(raw)
+except Exception:
+    sys.exit(1)
+cur = data
+for part in key.split("."):
+    if isinstance(cur, dict) and part in cur:
+        cur = cur[part]
+    else:
+        cur = None
+        break
+if cur is None:
+    print("")
+elif isinstance(cur, bool):
+    print("true" if cur else "false")
+else:
+    print(cur)
+PY
+}
+
+require_rollup_progress() {
+  local sleep_s="$1"
+  local min_delta="$2"
+
+  local a_raw b_raw a b delta
+  a_raw="$(rollup_proposer_health || true)"
+  a="$(json_field "$a_raw" "nextChildBlock" || true)"
+  if [ -z "$a" ]; then
+    fail "rollup proposer health missing nextChildBlock ($L3_ROLLUP_PROPOSER_HEALTH_URL)"
+  fi
+  sleep "$sleep_s"
+  b_raw="$(rollup_proposer_health || true)"
+  b="$(json_field "$b_raw" "nextChildBlock" || true)"
+  if [ -z "$b" ]; then
+    fail "rollup proposer health missing nextChildBlock (2nd sample) ($L3_ROLLUP_PROPOSER_HEALTH_URL)"
+  fi
+  # nextChildBlock is end+1
+  if [ "$b" -lt "$a" ]; then
+    fail "rollup proposer cursor regressed (sample1=$a sample2=$b)"
+  fi
+  delta=$((b - a))
+  if [ "$delta" -lt "$min_delta" ]; then
+    fail "no rollup proposer progress detected (sample1=$a sample2=$b delta=$delta over ${sleep_s}s)"
+  fi
+  echo "OK: rollup proposer progressing (nextChildBlock sample1=$a sample2=$b delta=$delta over ${sleep_s}s)"
 }
 
 require_execution_progress() {
@@ -429,10 +505,16 @@ if [ "$SYNC_HEAD_L1_NUM" -gt 0 ]; then
     if [ "$SYNC_SAFE_L3_NUM" -gt 0 ]; then
       SAFE_LAG=$((SYNC_UNSAFE_L3_NUM - SYNC_SAFE_L3_NUM))
       if [ "$SAFE_LAG" -gt "$L3_MAX_L3_SAFE_LAG" ]; then
-        if [ "$L3_REQUIRE_L3_PROGRESS" = "1" ]; then
-          fail "L3 safe lag too high (unsafe=$SYNC_UNSAFE_L3_NUM safe=$SYNC_SAFE_L3_NUM lag=$SAFE_LAG > $L3_MAX_L3_SAFE_LAG)"
+        # When finality is gated on the parent L2 via an OptimisticRollup contract, "safe" here is not the
+        # same as "finalized on L2". In that mode we gate finality via the rollup proposer/contract instead.
+        if [ "$ROLLUP_GATING_L3_FINALITY_ON_L2" = "true" ]; then
+          warn "L3 safe lag high (unsafe=$SYNC_UNSAFE_L3_NUM safe=$SYNC_SAFE_L3_NUM lag=$SAFE_LAG > $L3_MAX_L3_SAFE_LAG) (ignored due to rollup finality gating)"
         else
-          warn "L3 safe lag too high (unsafe=$SYNC_UNSAFE_L3_NUM safe=$SYNC_SAFE_L3_NUM lag=$SAFE_LAG > $L3_MAX_L3_SAFE_LAG)"
+          if [ "$L3_REQUIRE_L3_PROGRESS" = "1" ]; then
+            fail "L3 safe lag too high (unsafe=$SYNC_UNSAFE_L3_NUM safe=$SYNC_SAFE_L3_NUM lag=$SAFE_LAG > $L3_MAX_L3_SAFE_LAG)"
+          else
+            warn "L3 safe lag too high (unsafe=$SYNC_UNSAFE_L3_NUM safe=$SYNC_SAFE_L3_NUM lag=$SAFE_LAG > $L3_MAX_L3_SAFE_LAG)"
+          fi
         fi
       else
         echo "OK: L3 safe lag within threshold"
@@ -497,6 +579,62 @@ fi
 
 echo "OK: parent L2 contract bytecode checks passed"
 
+if [ "$ROLLUP_GATING_L3_FINALITY_ON_L2" = "true" ]; then
+  if [ -z "$L2_ROLLUP_L3_ADDRESS" ]; then
+    if [ "$L3_REQUIRE_L3_PROGRESS" = "1" ]; then
+      fail "rollup gating enabled but L2_ROLLUP_L3_ADDRESS missing"
+    else
+      warn "rollup gating enabled but L2_ROLLUP_L3_ADDRESS missing"
+    fi
+  else
+    # Use the rollup proposer (off-chain) as the primary source of truth for on-chain finality progress.
+    # It already validates contract state and keeps an aligned cursor, so doctor checks can be lightweight.
+    RH_RAW="$(rollup_proposer_health || true)"
+    RH_OK="$(json_field "$RH_RAW" "ok" || true)"
+    RH_OBSERVE_ONLY="$(json_field "$RH_RAW" "observeOnly" || true)"
+    RH_NEXT="$(json_field "$RH_RAW" "nextChildBlock" || true)"
+    if [ "$RH_OK" != "true" ] || [ -z "$RH_NEXT" ]; then
+      if [ "$L3_REQUIRE_L3_PROGRESS" = "1" ]; then
+        fail "rollup proposer not reachable/healthy at $L3_ROLLUP_PROPOSER_HEALTH_URL"
+      else
+        warn "rollup proposer not reachable/healthy at $L3_ROLLUP_PROPOSER_HEALTH_URL"
+      fi
+    else
+      if [ "$L3_REQUIRE_L3_PROGRESS" = "1" ] && [ "$RH_OBSERVE_ONLY" = "true" ]; then
+        fail "rollup proposer is observe-only (cannot propose/finalize batches) but rollup gating is enabled"
+      fi
+
+      L3_HEAD="$(rpc_block_number_dec "$HOST_L3_RPC" || true)"
+      if [ -n "$L3_HEAD" ]; then
+        # nextChildBlock is end+1; if it is 0, we treat end as -1 (no batches).
+        if [ "$RH_NEXT" -gt 0 ]; then
+          ROLLUP_END=$((RH_NEXT - 1))
+        else
+          ROLLUP_END=0
+        fi
+        ROLLUP_LAG=$((L3_HEAD - ROLLUP_END))
+        if [ "$ROLLUP_LAG" -lt 0 ]; then ROLLUP_LAG=0; fi
+
+        if [ "$ROLLUP_LAG" -gt "$L3_MAX_ROLLUP_LAG" ]; then
+          if [ "$L3_REQUIRE_L3_PROGRESS" = "1" ]; then
+            fail "rollup finality lag too high (l3_head=$L3_HEAD rollup_end=$ROLLUP_END lag=$ROLLUP_LAG > $L3_MAX_ROLLUP_LAG)"
+          else
+            warn "rollup finality lag too high (l3_head=$L3_HEAD rollup_end=$ROLLUP_END lag=$ROLLUP_LAG > $L3_MAX_ROLLUP_LAG)"
+          fi
+        else
+          echo "OK: rollup finality lag within threshold (l3_head=$L3_HEAD rollup_end=$ROLLUP_END lag=$ROLLUP_LAG)"
+        fi
+      fi
+
+      if [ "$L3_REQUIRE_L3_PROGRESS" = "1" ]; then
+        require_rollup_progress "$L3_ROLLUP_PROGRESS_SAMPLE_SECONDS" "$L3_ROLLUP_PROGRESS_MIN_DELTA"
+      else
+        echo "OK: rollup proposer progress check skipped (L3_REQUIRE_L3_PROGRESS=0)"
+      fi
+    fi
+  fi
+fi
+
 if [ "$AI_MONITOR_REQUIRED" = "1" ]; then
   if ! curl -fsS "$AI_MONITOR_URL" >/dev/null 2>&1; then
     fail "ai-monitor not reachable at $AI_MONITOR_URL"
@@ -505,7 +643,17 @@ if [ "$AI_MONITOR_REQUIRED" = "1" ]; then
 fi
 
 # Metrics (soft checks)
-for metric_url in "$L3_GETH_METRICS_URL" "$L3_OP_NODE_METRICS_URL" "$L3_BATCHER_METRICS_URL" "$L3_PROPOSER_METRICS_URL"; do
+# NOTE: In this repo, L3 "finality on L2" is implemented via `ghost-rollup-proposer` (port 7272),
+# not the OP Stack output proposer (default port 8302). If rollup gating is enabled, we treat 8302
+# as optional and include the rollup proposer health endpoint instead.
+metric_urls=( "$L3_GETH_METRICS_URL" "$L3_OP_NODE_METRICS_URL" "$L3_BATCHER_METRICS_URL" )
+if [ "$ROLLUP_GATING_L3_FINALITY_ON_L2" = "true" ]; then
+  metric_urls+=( "$L3_ROLLUP_PROPOSER_HEALTH_URL" )
+else
+  metric_urls+=( "$L3_PROPOSER_METRICS_URL" )
+fi
+
+for metric_url in "${metric_urls[@]}"; do
   if ! curl -fsS --max-time 4 "$metric_url" >/dev/null 2>&1; then
     warn "metrics endpoint not reachable: $metric_url"
   fi
@@ -523,13 +671,39 @@ if curl -fsS --max-time 4 "$L3_BATCHER_METRICS_URL" >/dev/null 2>&1; then
   fi
 fi
 
-if curl -fsS --max-time 4 "$L3_PROPOSER_METRICS_URL" >/dev/null 2>&1; then
-  proposer_idle="$(metric_value "$L3_PROPOSER_METRICS_URL" op_proposer_last_submitted_output_timestamp 2>/dev/null || true)"
-  if [ -n "$proposer_idle" ]; then
-    now_ts="$(date +%s)"
-    idle_secs=$(( now_ts - ${proposer_idle%.*} ))
-    if [ "$idle_secs" -gt "$L3_MAX_PROPOSER_IDLE_SECONDS" ]; then
-      warn "proposer idle for ${idle_secs}s (threshold ${L3_MAX_PROPOSER_IDLE_SECONDS}s)"
+if [ "$ROLLUP_GATING_L3_FINALITY_ON_L2" = "true" ]; then
+  if curl -fsS --max-time 4 "$L3_ROLLUP_PROPOSER_HEALTH_URL" >/dev/null 2>&1; then
+    rh="$(rollup_proposer_health || true)"
+    last_tick_ms="$(json_field "$rh" "metrics.lastTickFinishedAt" || true)"
+    if [ -n "$last_tick_ms" ]; then
+      now_ts="$(date +%s)"
+      last_tick_ts="$(python3 - <<'PY' "$last_tick_ms"
+import sys
+try:
+    print(int(int(sys.argv[1]) / 1000))
+except Exception:
+    print(0)
+PY
+)"
+      if [ "$last_tick_ts" -gt 0 ]; then
+        idle_secs=$(( now_ts - last_tick_ts ))
+      else
+        idle_secs=0
+      fi
+      if [ "$idle_secs" -gt "$L3_MAX_PROPOSER_IDLE_SECONDS" ]; then
+        warn "rollup proposer idle for ${idle_secs}s (threshold ${L3_MAX_PROPOSER_IDLE_SECONDS}s)"
+      fi
+    fi
+  fi
+else
+  if curl -fsS --max-time 4 "$L3_PROPOSER_METRICS_URL" >/dev/null 2>&1; then
+    proposer_idle="$(metric_value "$L3_PROPOSER_METRICS_URL" op_proposer_last_submitted_output_timestamp 2>/dev/null || true)"
+    if [ -n "$proposer_idle" ]; then
+      now_ts="$(date +%s)"
+      idle_secs=$(( now_ts - ${proposer_idle%.*} ))
+      if [ "$idle_secs" -gt "$L3_MAX_PROPOSER_IDLE_SECONDS" ]; then
+        warn "proposer idle for ${idle_secs}s (threshold ${L3_MAX_PROPOSER_IDLE_SECONDS}s)"
+      fi
     fi
   fi
 fi
