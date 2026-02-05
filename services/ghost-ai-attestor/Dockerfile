@@ -14,6 +14,9 @@ COPY entrypoint.sh /entrypoint.sh
 COPY healthcheck.sh /healthcheck.sh
 RUN chmod +x /entrypoint.sh /healthcheck.sh
 
+RUN chown -R node:node /app
+USER node
+
 ENV TS_NODE_TRANSPILE_ONLY=1
 ENV PORT=3310
 
@@ -21,4 +24,3 @@ EXPOSE 3310
 
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
 CMD ["node", "--loader", "ts-node/esm", "--no-warnings", "--experimental-specifier-resolution=node", "src/server.ts"]
-

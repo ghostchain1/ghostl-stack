@@ -147,7 +147,7 @@ contract PolicyRegistry is Governed {
 
     function applyPolicy(bytes32 key, uint256 value, bytes32 evidenceHash) external onlyGovernance returns (bool activated) {
         uint64 activatesAt = queuePolicyByGovernance(key, value, evidenceHash);
-        if (activatesAt == uint64(block.timestamp)) {
+        if (activatesAt <= uint64(block.timestamp)) {
             _activatePolicy(key);
             return true;
         }

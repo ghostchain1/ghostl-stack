@@ -107,6 +107,7 @@ contract ProposalExecutor {
         QueuedTx storage txData = queue[id];
         require(!txData.executed, "executed");
         require(block.timestamp >= txData.eta, "eta not reached");
+        txData.executed = true;
         ComplianceProofGuard compliance = complianceGuard;
         if (address(compliance) != address(0)) {
             compliance.enforceLatestRoot();
@@ -117,7 +118,6 @@ contract ProposalExecutor {
             abi.encode(ACTION_GOVERNANCE, id, txData.target, txData.value, keccak256(txData.data), txData.eta)
         );
         guard.checkGovernance(actionHash, msg.sender, txData.data);
-        txData.executed = true;
         (bool ok, bytes memory res) = txData.target.call{value: txData.value}(txData.data);
         require(ok, "exec failed");
         EvidenceBundle bundle = evidenceBundle;

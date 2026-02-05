@@ -98,6 +98,7 @@ contract SSHAccessRegistry is Governed {
         onlyGovernance
     {
         Grant storage g = grants[serverId][principalHash][pubkeyHash];
+        // slither-disable-next-line incorrect-equality
         if (g.grantedAt == 0) revert GrantMissing();
         g.revoked = true;
         g.revokeReasonHash = reasonHash;
@@ -106,6 +107,7 @@ contract SSHAccessRegistry is Governed {
 
     function isAuthorized(bytes32 serverId, bytes32 principalHash, bytes32 pubkeyHash) public view returns (bool) {
         Grant memory g = grants[serverId][principalHash][pubkeyHash];
+        // slither-disable-next-line incorrect-equality
         if (g.grantedAt == 0) return false;
         if (g.revoked) return false;
         if (g.expiresAt != 0 && block.timestamp > g.expiresAt) return false;

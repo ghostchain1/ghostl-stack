@@ -145,7 +145,7 @@ contract TreasuryController is Governed {
         if (action.actionType == TreasuryTypes.ActionType.TRANSFER) {
             _enforceNoCircular(action.target);
             if (action.asset == address(0)) {
-                vault.transferETH(payable(action.target), action.amount);
+                vault.transferETH(action.target, action.amount);
             } else {
                 vault.transferERC20(action.asset, action.target, action.amount);
             }
@@ -163,7 +163,7 @@ contract TreasuryController is Governed {
             if (address(routerRef) == address(0)) revert FederationRouterUnset();
             _enforceNoCircular(action.target);
             if (action.asset == address(0)) {
-                vault.transferETH(payable(action.target), action.amount);
+                vault.transferETH(action.target, action.amount);
             } else {
                 vault.transferERC20(action.asset, action.target, action.amount);
             }

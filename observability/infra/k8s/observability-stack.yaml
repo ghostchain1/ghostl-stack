@@ -9,15 +9,16 @@ metadata:
 data:
   vector.yaml: |
     sources:
-      docker_logs:
-        type: docker_logs
-        docker_host: "unix:///var/run/docker.sock"
-        exclude_containers:
-          - vector
+      k8s_file_logs:
+        type: file
+        include:
+          - /var/log/containers/*.log
+        exclude:
+          - /var/log/containers/vector-*.log
     transforms:
       enrich_logs:
         type: remap
-        inputs: [docker_logs]
+        inputs: [k8s_file_logs]
         source: |
           .raw_message = .message
           if .timestamp != null { .event_time = .timestamp }
@@ -515,10 +516,20 @@ spec:
       labels:
         app: loki
     spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: loki
           image: grafana/loki:2.9.5
           args: ["-config.file=/etc/loki/loki-config.yml"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 3100
           volumeMounts:
@@ -526,11 +537,15 @@ spec:
               mountPath: /etc/loki
             - name: loki-data
               mountPath: /loki
+            - name: tmp
+              mountPath: /tmp
       volumes:
         - name: loki-config
           configMap:
             name: observability-loki-config
         - name: loki-data
+          emptyDir: {}
+        - name: tmp
           emptyDir: {}
 ---
 apiVersion: v1
@@ -558,10 +573,20 @@ spec:
       labels:
         app: prometheus
     spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: prometheus
           image: prom/prometheus:v2.51.2
           args: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 9090
           volumeMounts:
@@ -569,11 +594,15 @@ spec:
               mountPath: /etc/prometheus
             - name: prom-data
               mountPath: /prometheus
+            - name: tmp
+              mountPath: /tmp
       volumes:
         - name: prom-config
           configMap:
             name: observability-prometheus-config
         - name: prom-data
+          emptyDir: {}
+        - name: tmp
           emptyDir: {}
 ---
 apiVersion: v1
@@ -601,10 +630,20 @@ spec:
       labels:
         app: alertmanager
     spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: alertmanager
           image: prom/alertmanager:v0.27.0
           args: ["--config.file=/etc/alertmanager/alertmanager.yml", "--storage.path=/alertmanager"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 9093
           volumeMounts:
@@ -612,11 +651,15 @@ spec:
               mountPath: /etc/alertmanager
             - name: alertmanager-data
               mountPath: /alertmanager
+            - name: tmp
+              mountPath: /tmp
       volumes:
         - name: alertmanager-config
           configMap:
             name: observability-alertmanager-config
         - name: alertmanager-data
+          emptyDir: {}
+        - name: tmp
           emptyDir: {}
 ---
 apiVersion: v1
@@ -644,9 +687,19 @@ spec:
       labels:
         app: grafana
     spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: grafana
           image: grafana/grafana:10.4.2
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 3000
           volumeMounts:
@@ -658,6 +711,8 @@ spec:
               mountPath: /etc/grafana/provisioning/dashboards
             - name: grafana-dashboards
               mountPath: /var/lib/grafana/dashboards
+            - name: tmp
+              mountPath: /tmp
       volumes:
         - name: grafana-data
           emptyDir: {}
@@ -670,6 +725,8 @@ spec:
         - name: grafana-dashboards
           configMap:
             name: observability-grafana-dashboards
+        - name: tmp
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -696,20 +753,46 @@ spec:
       labels:
         app: vector
     spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: vector
           image: timberio/vector:0.38.0-alpine
           args: ["--config", "/etc/vector/vector.yaml"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           volumeMounts:
             - name: vector-config
               mountPath: /etc/vector
-            - name: docker-socket
-              mountPath: /var/run/docker.sock
+            - name: vector-data
+              mountPath: /var/lib/vector
+            - name: tmp
+              mountPath: /tmp
+            - name: varlog-containers
+              mountPath: /var/log/containers
+              readOnly: true
+            - name: varlog-pods
+              mountPath: /var/log/pods
+              readOnly: true
       volumes:
         - name: vector-config
           configMap:
             name: observability-vector-config
-        - name: docker-socket
+        - name: vector-data
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+        - name: varlog-containers
           hostPath:
-            path: /var/run/docker.sock
-            type: Socket
+            path: /var/log/containers
+            type: Directory
+        - name: varlog-pods
+          hostPath:
+            path: /var/log/pods
+            type: Directory

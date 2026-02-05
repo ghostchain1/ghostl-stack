@@ -101,8 +101,11 @@ contract AgentRegistry is Governed {
 
     function isAgentActive(bytes32 agentId, uint64 maxAgeSeconds) external view returns (bool) {
         Agent memory agent = agents[agentId];
+        // slither-disable-next-line incorrect-equality
         if (!agent.enabled || agent.registeredAt == 0) return false;
+        // slither-disable-next-line incorrect-equality
         if (maxAgeSeconds == 0) return agent.enabled;
+        // slither-disable-next-line incorrect-equality
         if (agent.lastHeartbeat == 0) return false;
         return block.timestamp <= agent.lastHeartbeat + maxAgeSeconds;
     }

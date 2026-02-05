@@ -176,10 +176,10 @@ contract SlashingManager is Governed {
 
     function _executeSlash(uint256 violationId, address staker, uint256 amount, uint8 reasonCode) internal {
         uint256 chainId = violationId != 0 ? violations[violationId].chainId : block.chainid;
-        staking.slash(staker, amount);
         if (violationId != 0) {
             violations[violationId].slashed = true;
         }
+        staking.slash(staker, amount);
         emit Slashed(staker, amount, reasonCode, violationId);
         emit OperatorSlashed(staker, chainId, amount, reasonCode, violationId);
     }

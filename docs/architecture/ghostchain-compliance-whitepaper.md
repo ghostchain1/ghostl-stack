@@ -24,5 +24,25 @@ Validators are never penalized for user behavior. Compliance scores are based on
 ## 8) Auditability & Transparency
 Every decision and policy activation is logged with inputs, outcomes, and versioned policy references. Rollback procedures are built into the control plane to reverse policy activation if regressions are detected.
 
-## 9) Limitations & Legal Disclaimers
+## 9) Governance & Non-Bypassable Controls
+
+GhostChain’s compliance and interchain controls are **governance-locked** and designed to be **non-bypassable**:
+
+- **On-chain authority:** policy registries and interchain allowlists/caps are owned by a timelocked executor and can be changed only via quorum-governed proposals.
+- **No AI override:** AI services can propose risk assessments and policy updates, but execution requires on-chain ratification and quorum.
+- **Emergency controls with due process:** emergency actions are time-bounded (expiry) and reversible; full-state changes still require governance proposals.
+
+This model ensures enforcement is consistent, attributable, and resistant to unilateral operator or AI action.
+
+## 10) Security & Assurance
+
+GhostChain uses layered assurance:
+
+- **Formal invariants:** core invariants (e.g., treasury reserve/budget and governance-only execution paths) are specified and fuzzed/invariant-tested.
+- **Static analysis:** smart contracts are analyzed with SAST tooling; findings are triaged under a “no critical vulnerabilities” gate.
+- **Secret and misconfiguration scanning:** repository and deployment manifests are scanned for secrets and high/critical misconfigurations.
+
+Reproducibility is supported through deterministic runbooks, evidence packs, and artifact hashing (see `docs/evidence/README.md` and `docs/architecture/phase5-security.md`).
+
+## 11) Limitations & Legal Disclaimers
 This document is technical in nature and does not constitute legal advice. Compliance outcomes depend on the accuracy of policy inputs, signal quality, and operator configuration. Jurisdictional requirements may change, requiring continuous updates and governance oversight.

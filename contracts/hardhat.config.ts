@@ -1,5 +1,6 @@
 import { HardhatUserConfig, subtask } from "hardhat/config";
 import { TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD } from "hardhat/builtin-tasks/task-names";
+import os from "os";
 import path from "path";
 import "dotenv/config";
 
@@ -41,6 +42,10 @@ const ENABLE_VIA_IR = process.env.HARDHAT_VIA_IR !== "false";
 const USE_DOCKER_SOLC =
   process.env.HARDHAT_USE_DOCKER_SOLC === "1" ||
   process.env.HARDHAT_USE_DOCKER_SOLC === "true";
+const FORCE_WASM_SOLC =
+  process.env.HARDHAT_FORCE_WASM_SOLC === "1" ||
+  process.env.HARDHAT_FORCE_WASM_SOLC === "true" ||
+  process.arch !== "x64";
 
 const REQUEST_TIMEOUT_MS = 120_000;
 
@@ -57,14 +62,40 @@ const soliditySettings = enableModelChecker
     }
   : { optimizer: { enabled: true, runs: 200 }, viaIR: ENABLE_VIA_IR };
 
-if (USE_DOCKER_SOLC) {
-  const dockerSolcDir = path.join(__dirname, "scripts", "solc-docker");
-  const dockerSolcByVersion: Record<string, string> = {
-    "0.8.24": path.join(dockerSolcDir, "solc-0.8.24.sh")
-  };
+const resolveHardhatWasmSolcPath = (version: string): string | undefined => {
+  const cacheDir = path.join(os.homedir(), ".cache", "hardhat-nodejs", "compilers-v2", "wasm");
+  const listPath = path.join(cacheDir, "list.json");
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const list = require(listPath) as { releases?: Record<string, string> };
+    const compilerFile = list?.releases?.[version];
+    if (!compilerFile) return undefined;
+    return path.join(cacheDir, compilerFile);
+  } catch {
+    return undefined;
+  }
+};
 
-  subtask(TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD).setAction(async (args, hre, runSuper) => {
-    const build = await runSuper(args);
+const dockerSolcDir = path.join(__dirname, "scripts", "solc-docker");
+const dockerSolcByVersion: Record<string, string> = {
+  "0.8.24": path.join(dockerSolcDir, "solc-0.8.24.sh")
+};
+
+subtask(TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD).setAction(async (args, hre, runSuper) => {
+  const build = await runSuper(args);
+
+  if (FORCE_WASM_SOLC) {
+    const wasmPath = resolveHardhatWasmSolcPath(args.solcVersion as string);
+    if (wasmPath) {
+      return {
+        ...build,
+        compilerPath: wasmPath,
+        isSolcJs: true
+      };
+    }
+  }
+
+  if (USE_DOCKER_SOLC) {
     const dockerPath = dockerSolcByVersion[args.solcVersion as string];
     if (dockerPath) {
       return {
@@ -73,9 +104,10 @@ if (USE_DOCKER_SOLC) {
         isSolcJs: false
       };
     }
-    return build;
-  });
-}
+  }
+
+  return build;
+});
 
 const config: HardhatUserConfig = {
   solidity: {

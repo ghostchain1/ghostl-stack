@@ -116,8 +116,10 @@ contract AgentGovernancePolicy is Governed {
         if (approvalsProvided < actionPolicy.approvalsRequired) return false;
         if (actionPolicy.evidenceRequired && !hasEvidence) return false;
         uint64 cooldownSeconds = actionPolicy.cooldownSeconds;
+        // slither-disable-next-line incorrect-equality
         if (cooldownSeconds == 0) return true;
         uint64 lastAt = lastActionAt[role][action];
+        // slither-disable-next-line incorrect-equality
         if (lastAt == 0) return true;
         return block.timestamp >= lastAt + cooldownSeconds;
     }

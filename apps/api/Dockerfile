@@ -30,4 +30,5 @@ COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
 COPY --from=builder /app/packages ./packages
 WORKDIR /app/apps/api
 EXPOSE 4000
+USER node
 CMD ["node", "dist/server.js"]

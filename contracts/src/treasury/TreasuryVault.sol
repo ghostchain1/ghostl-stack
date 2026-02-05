@@ -39,9 +39,9 @@ contract TreasuryVault {
         emit AssetTransferred(token, to, amount);
     }
 
-    function transferETH(address payable to, uint256 amount) external onlyController {
+    function transferETH(address to, uint256 amount) external onlyController {
         require(to != address(0), "to=0");
-        (bool ok, ) = to.call{value: amount}("");
+        (bool ok, ) = payable(to).call{value: amount}("");
         require(ok, "eth transfer failed");
         emit AssetTransferred(address(0), to, amount);
     }
