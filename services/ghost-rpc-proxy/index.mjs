@@ -1,9 +1,22 @@
 import http from "node:http";
+import fs from "node:fs";
 
 const PORT = Number(process.env.PORT || "8546");
 const UPSTREAM_URL = process.env.UPSTREAM_URL || "http://anvil:8545";
 const LOG_REQUESTS = process.env.LOG_REQUESTS === "1";
-const RPC_AUTH_TOKEN = process.env.RPC_AUTH_TOKEN || "";
+const readSecret = (key) => {
+  const filePath = process.env[`${key}_FILE`];
+  if (filePath) {
+    try {
+      const value = fs.readFileSync(filePath, "utf8").trim();
+      if (value) return value;
+    } catch {
+      // ignore
+    }
+  }
+  return process.env[key] || "";
+};
+const RPC_AUTH_TOKEN = readSecret("RPC_AUTH_TOKEN");
 const RPC_REQUIRE_AUTH = process.env.RPC_REQUIRE_AUTH === "1";
 const RPC_SENSITIVE_METHODS = (process.env.RPC_SENSITIVE_METHODS || "personal_,debug_,txpool_,admin_")
   .split(",")
