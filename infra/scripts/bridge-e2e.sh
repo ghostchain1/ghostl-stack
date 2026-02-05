@@ -8,6 +8,8 @@ AMOUNT="${DEMO_AMOUNT_ETH:-1}"
 RELAYER_HEALTH_URL="${RELAYER_HEALTH_URL:-http://localhost:7171/health}"
 STACK_ENV_FILE="${STACK_ENV_FILE:-$ROOT_DIR/services/stack.env}"
 
+unset NODE_OPTIONS
+
 usage() {
   cat <<'USAGE'
 Usage: bridge-e2e.sh [--mode l1l2|l2l3] [--run] [--amount N]
@@ -97,8 +99,11 @@ case "$MODE" in
       command -v curl >/dev/null 2>&1 || { echo "Missing required binary: curl" >&2; exit 1; }
       command -v jq >/dev/null 2>&1 || { echo "Missing required binary: jq" >&2; exit 1; }
       maybe_source_stack_env
-
-      if curl -sS "$RELAYER_HEALTH_URL" | jq -e '.observeOnly == true' >/dev/null 2>&1; then
+      HEALTH_BASE="$(curl -fsS --retry 5 --retry-delay 1 --retry-all-errors "$RELAYER_HEALTH_URL")" || {
+        echo "Relayer health endpoint not reachable at $RELAYER_HEALTH_URL" >&2
+        exit 1
+      }
+      if echo "$HEALTH_BASE" | jq -e '.observeOnly == true' >/dev/null 2>&1; then
         echo "Relayer is observe-only; configure relayer signing keys (e.g., RELAYER_PRIVATE_KEY) and restart ghost-relayer." >&2
         exit 1
 	      fi
