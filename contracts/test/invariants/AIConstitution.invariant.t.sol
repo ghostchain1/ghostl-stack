@@ -160,6 +160,8 @@ contract AIConstitutionInvariantTest is TestBase {
     }
 
     function test_executor_rejects_stale_update() public {
+        // Ensure `block.timestamp - 31 minutes` cannot underflow in low-timestamp test environments.
+        vm.warp(31 minutes + 1);
         AIProposalExecutor.PolicyUpdate memory update = AIProposalExecutor.PolicyUpdate({
             policyKey: POLICY_KEY,
             value: 10,

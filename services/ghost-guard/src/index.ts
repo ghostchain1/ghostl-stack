@@ -11,6 +11,7 @@ import {
   toUtf8Bytes,
   formatEther
 } from "ethers";
+import { readFileSync } from "node:fs";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import process from "node:process";
@@ -19,7 +20,19 @@ const env = process.env;
 
 const PORT = Number(env.PORT || 7070);
 const STATE_DIR = env.STATE_DIR || "/state";
-const ADMIN_TOKEN = env.ADMIN_TOKEN || "";
+const readSecret = (key: string): string => {
+  const filePath = env[`${key}_FILE`] || "";
+  if (filePath) {
+    try {
+      const value = readFileSync(filePath, "utf8").trim();
+      if (value) return value;
+    } catch {
+      // ignore
+    }
+  }
+  return env[key] || "";
+};
+const ADMIN_TOKEN = readSecret("ADMIN_TOKEN");
 const ALLOW_INSECURE_ADMIN = env.ALLOW_INSECURE_ADMIN === "1";
 
 const RPC_L1 = env.RPC_L1 || "";
@@ -27,8 +40,8 @@ const RPC_L2 = env.RPC_L2 || "";
 const RPC_L3 = env.RPC_L3 || "";
 
 const GUARD_POLICY_ADDRESS = env.GUARD_POLICY_ADDRESS || "";
-const POLICY_PRIVATE_KEY = env.PRIVATE_KEY || "";
-const AI_PRIVATE_KEY = env.AI_SIGNER_PRIVATE_KEY || env.PRIVATE_KEY || "";
+const POLICY_PRIVATE_KEY = readSecret("PRIVATE_KEY");
+const AI_PRIVATE_KEY = readSecret("AI_SIGNER_PRIVATE_KEY") || POLICY_PRIVATE_KEY;
 
 const AI_GUARDIAN_L1 = env.AI_GUARDIAN_L1_ADDRESS || "";
 const AI_GUARDIAN_L2 = env.AI_GUARDIAN_L2_ADDRESS || "";

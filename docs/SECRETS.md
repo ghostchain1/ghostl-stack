@@ -7,3 +7,9 @@
 - **Transport**: Always use TLS for secret retrieval; avoid passing secrets via CLI arguments (use env or files with tight permissions).
 - **Auditing**: Emit audit entries for secret reads/writes/rotations in `audit-log-service`; include actor, purpose, and correlation ID.
 - **Build/CI**: CI jobs should consume secrets from the CI store, not from repo files. Fail fast if required secrets are missing.
+
+## Containers (Phase 3)
+
+For hardened Docker deployments, prefer file-based secrets (`*_FILE`) via Docker secrets or bind mounts:
+- Example compose: `docker-compose.phase3.yml` + `docker-compose.phase3.secrets.yml`
+- Setup guide: `infra/docker/secrets.example/README.md`

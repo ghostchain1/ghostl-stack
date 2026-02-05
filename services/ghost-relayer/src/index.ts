@@ -15,8 +15,20 @@ const L1_ROLLUP_L2 = process.env.L1_ROLLUP_L2_ADDRESS || "";
 const L2_ROLLUP_L3 = process.env.L2_ROLLUP_L3_ADDRESS || "";
 const L3_INBOX = process.env.L3_INBOX_ADDRESS!;
 const L3_TOKEN_FACTORY = process.env.L3_TOKEN_FACTORY_ADDRESS!;
-const RELAYER_PRIVATE_KEY = process.env.RELAYER_PRIVATE_KEY || "";
-const L2_RELAYER_PRIVATE_KEY = process.env.L2_RELAYER_PRIVATE_KEY || "";
+const readSecret = async (key: string): Promise<string> => {
+  const filePath = process.env[`${key}_FILE`] || "";
+  if (filePath) {
+    try {
+      const value = String(await fs.readFile(filePath, "utf8")).trim();
+      if (value) return value;
+    } catch {
+      // ignore
+    }
+  }
+  return process.env[key] || "";
+};
+const RELAYER_PRIVATE_KEY = await readSecret("RELAYER_PRIVATE_KEY");
+const L2_RELAYER_PRIVATE_KEY = await readSecret("L2_RELAYER_PRIVATE_KEY");
 const STATE_DIR = process.env.STATE_DIR || "/state";
 const confirmationsRaw = Number(process.env.CONFIRMATIONS || "0");
 const CONFIRMATIONS = Number.isFinite(confirmationsRaw) && confirmationsRaw >= 0 ? Math.floor(confirmationsRaw) : 0;

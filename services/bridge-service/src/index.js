@@ -5,7 +5,19 @@ import path from "path";
 
 const PORT = Number(process.env.PORT || 7604);
 const PROM_URL = process.env.PROM_URL || "http://localhost:9090";
-const AUTH_TOKEN = process.env.ADMIN_TOKEN || "";
+const readSecret = (key) => {
+  const filePath = process.env[`${key}_FILE`];
+  if (filePath) {
+    try {
+      const value = fs.readFileSync(filePath, "utf8").trim();
+      if (value) return value;
+    } catch {
+      // ignore
+    }
+  }
+  return process.env[key] || "";
+};
+const AUTH_TOKEN = readSecret("ADMIN_TOKEN");
 const INCIDENTS_FILE = process.env.INCIDENTS_FILE || path.join(process.cwd(), "data", "bridge-incidents.json");
 
 const parseCorsAllowlist = () => {

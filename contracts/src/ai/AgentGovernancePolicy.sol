@@ -129,7 +129,9 @@ contract AgentGovernancePolicy is Governed {
         uint64 cooldownSeconds = actionPolicy.cooldownSeconds;
         if (cooldownSeconds != 0) {
             uint64 lastAt = lastActionAt[role][action];
-            require(block.timestamp >= lastAt + cooldownSeconds, "cooldown");
+            if (lastAt != 0) {
+                require(block.timestamp >= lastAt + cooldownSeconds, "cooldown");
+            }
         }
         lastActionAt[role][action] = uint64(block.timestamp);
         emit ActionRecorded(role, action, msg.sender, lastActionAt[role][action]);

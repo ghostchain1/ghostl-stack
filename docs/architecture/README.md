@@ -1,6 +1,12 @@
 # Architecture Diagrams
 
 - `system_overview.mmd` / `system_overview.md`: system overview (UI, policy engine, RPC gateway, chains)
+- `interchain-flow.md` / `interchain-flow.mmd`: Phase 1 interchain flow (L1→L2→L3→Low Balancer→external) + non-bypass governance rules
+- `interchain-policy-layer.md` / `interchain-policy-layer.mmd`: Phase 2 AI Risk Engine + policy gates + routers for Low Balancer interchain access
+- `interchain-policy-gates-sequence.mmd`: Phase 2 policy gating sequence (outbound)
+- `interchain-outbound-sequence.mmd`: Phase 1 outbound interchain sequence (policy-gated)
+- `phase3-containers.md`: Phase 3 least-privilege containers + internal/interchain network segmentation
+- `phase4-governance.md`: Phase 4 on-chain governance (quorum governor) + `InterchainAuthorization` allowlists/caps/halts
 - `compliance_decision_flow.mmd` / `compliance_decision_flow.md`: preflight decision sequence
 - `autonomous_policy_lifecycle.mmd` / `autonomous_policy_lifecycle.md`: autonomous policy lifecycle
 - `validator_compliance_economics.mmd` / `validator_compliance_economics.md`: validator compliance economics
