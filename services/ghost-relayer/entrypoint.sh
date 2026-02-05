@@ -1,6 +1,13 @@
 #!/bin/bash
 set -euo pipefail
 
+# Prefer docker-network RPC endpoints when explicitly provided.
+# This avoids the `host.docker.internal -> published port -> NAT -> container` loop,
+# which can cause confusing mismatches for contract code visibility.
+if [ -n "${RPC_L1_DOCKER:-}" ]; then export RPC_L1="${RPC_L1_DOCKER}"; fi
+if [ -n "${RPC_L2_DOCKER:-}" ]; then export RPC_L2="${RPC_L2_DOCKER}"; fi
+if [ -n "${RPC_L3_DOCKER:-}" ]; then export RPC_L3="${RPC_L3_DOCKER}"; fi
+
 if [ -n "${DEPENDENCY_HOSTS:-}" ]; then
   echo "Waiting for dependencies..."
   timeout_sec=${DEPENDENCY_TIMEOUT_SEC:-120}

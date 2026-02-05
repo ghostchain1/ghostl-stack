@@ -479,6 +479,9 @@ services:
       - RPC_L1=${RPC_L1}
       - RPC_L2=${RPC_L2}
       - RPC_L3=${RPC_L3}
+      # Prefer docker-network RPCs when available (see services/ghost-relayer/entrypoint.sh).
+      - RPC_L2_DOCKER=${RPC_L2_DOCKER:-http://l2-geth:8545}
+      - RPC_L3_DOCKER=${RPC_L3_DOCKER:-http://l3-geth:8545}
       - BRIDGE_L2L3_ADDRESS=${BRIDGE_L2L3_ADDRESS}
       - L1_ROLLUP_L2_ADDRESS=${L1_ROLLUP_L2_ADDRESS}
       - L2_ROLLUP_L3_ADDRESS=${L2_ROLLUP_L3_ADDRESS}
@@ -491,6 +494,9 @@ services:
       - ./.state/ghost-relayer:/state
     ports:
       - "7171:7171"
+    networks:
+      - default
+      - opstack_default
     healthcheck:
       test:
         - CMD-SHELL
@@ -1323,6 +1329,8 @@ services:
 networks:
   default:
     name: ghostl-services
+  opstack_default:
+    external: true
 
 volumes:
   gas_engine_pg_data:
