@@ -85,6 +85,7 @@ This checklist is **safe by default** (no transactions) unless a step is explici
     ```
   - **Pass:** Scripts exit `0` and print `Bridge E2E complete`; relayer reports the expected nonce/amount.
   - **Likely fails:** Relayer is observe-only; missing bridge env files; RPC endpoints not reachable.
+  - **Common L2<->L3 failure mode:** ERC20 relay/mint times out because the relayer is pointed at an RPC endpoint that does not see the deployed L3 contracts (e.g., `eth_getCode(L3_TOKEN_FACTORY_ADDRESS)=0x`). If this happens, `bridge-e2e.sh` prints a targeted diagnostic (chainId/head + code lengths) and the recommended fix.
   - **Debug:**
     ```bash
     curl -fsS http://localhost:7171/health | jq .
@@ -314,13 +315,19 @@ This checklist is **safe by default** (no transactions) unless a step is explici
     bash infra/scripts/bridge-e2e.sh --mode l2l3 --run --amount 1
     ```
   - **Pass:** Script exits `0`; relayer reports last relayed nonce/amount; balances update.
-  - **Likely fails:** Relayer observe-only; relayer not running; missing `services/ghost-guard/.env` or `services/ghost-relayer/.env`.
+  - **Likely fails:**
+    - Relayer observe-only or relayer not running.
+    - Relayer cannot see L3 contracts (wrong RPC wiring; `eth_getCode` for `L3_TOKEN_FACTORY_ADDRESS` / `L3_INBOX_ADDRESS` is `0x`).
+    - Rollup finality gating blocks until `ghost-rollup-proposer` advances (expected in rollup-gated mode).
   - **Debug:**
     ```bash
     curl -fsS http://localhost:7171/health | jq .
     bash infra/scripts/doctor-l2.sh || true
     bash infra/scripts/doctor-l3.sh || true
     ```
+  - **Recommended wiring (prevents NAT/port mismatches):** run `ghost-relayer` on the OP Stack docker network and point it at docker DNS RPC endpoints:
+    - set `RPC_L2_DOCKER=http://l2-geth:8545` and `RPC_L3_DOCKER=http://l3-geth:8545` (local only; `services/stack.env` is gitignored)
+    - restart `ghost-relayer` after changing env
 
 ## 5) ERC20 demo flows you can wire into E2E
 
