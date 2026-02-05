@@ -519,19 +519,16 @@ if [ "$SYNC_HEAD_L1_NUM" -gt 0 ]; then
         echo "OK: parent derivation lag check skipped (L3_REQUIRE_L3_PROGRESS=0)"
       fi
     fi
-    if [ "$SYNC_SAFE_L3_NUM" -gt 0 ]; then
+    if [ "$ROLLUP_GATING_L3_FINALITY_ON_L2" = "true" ]; then
+      # In rollup-gated mode, OP Stack "safe" head is not our finality signal.
+      echo "OK: OP safe-lag check skipped (rollup finality gating enabled)"
+    elif [ "$SYNC_SAFE_L3_NUM" -gt 0 ]; then
       SAFE_LAG=$((SYNC_UNSAFE_L3_NUM - SYNC_SAFE_L3_NUM))
       if [ "$SAFE_LAG" -gt "$L3_MAX_L3_SAFE_LAG" ]; then
-        # When finality is gated on the parent L2 via an OptimisticRollup contract, "safe" here is not the
-        # same as "finalized on L2". In that mode we gate finality via the rollup proposer/contract instead.
-        if [ "$ROLLUP_GATING_L3_FINALITY_ON_L2" = "true" ]; then
-          warn "L3 safe lag high (unsafe=$SYNC_UNSAFE_L3_NUM safe=$SYNC_SAFE_L3_NUM lag=$SAFE_LAG > $L3_MAX_L3_SAFE_LAG) (ignored due to rollup finality gating)"
+        if [ "$L3_REQUIRE_L3_PROGRESS" = "1" ]; then
+          fail "L3 safe lag too high (unsafe=$SYNC_UNSAFE_L3_NUM safe=$SYNC_SAFE_L3_NUM lag=$SAFE_LAG > $L3_MAX_L3_SAFE_LAG)"
         else
-          if [ "$L3_REQUIRE_L3_PROGRESS" = "1" ]; then
-            fail "L3 safe lag too high (unsafe=$SYNC_UNSAFE_L3_NUM safe=$SYNC_SAFE_L3_NUM lag=$SAFE_LAG > $L3_MAX_L3_SAFE_LAG)"
-          else
-            warn "L3 safe lag too high (unsafe=$SYNC_UNSAFE_L3_NUM safe=$SYNC_SAFE_L3_NUM lag=$SAFE_LAG > $L3_MAX_L3_SAFE_LAG)"
-          fi
+          warn "L3 safe lag too high (unsafe=$SYNC_UNSAFE_L3_NUM safe=$SYNC_SAFE_L3_NUM lag=$SAFE_LAG > $L3_MAX_L3_SAFE_LAG)"
         fi
       else
         echo "OK: L3 safe lag within threshold"
