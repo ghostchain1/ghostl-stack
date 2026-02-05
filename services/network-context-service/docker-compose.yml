@@ -9,6 +9,17 @@ services:
     image: ghostl/network-context-service:local
     build:
       context: .
+      args:
+        VCS_REF: ${VCS_REF:-unknown}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+    user: "1000:1000"
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    read_only: true
+    tmpfs:
+    - /tmp
     env_file:
     - .env
     entrypoint:
@@ -16,9 +27,6 @@ services:
     - /entrypoint.sh
     environment:
     - PORT=7633
-    - RPC_L2=${RPC_L2}
-    - RPC_L3=${RPC_L3}
-    - NET_ENV=${NET_ENV}
     ports:
     - 7633:7633
     extra_hosts:

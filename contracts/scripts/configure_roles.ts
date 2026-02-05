@@ -14,6 +14,7 @@ const L3_FACTORY = process.env.L3_TOKEN_FACTORY_ADDRESS!;
 const L3_TOKEN = process.env.L3_TOKEN_ADDRESS!;
 
 const RELAYER_ADDRESS = process.env.RELAYER_ADDRESS!;
+const L2_RELAYER_ADDRESS = process.env.L2_RELAYER_ADDRESS || "";
 const PROPOSER_L2_ON_L1 = process.env.PROPOSER_L2_ON_L1_ADDRESS!;
 const PROPOSER_L3_ON_L2 = process.env.PROPOSER_L3_ON_L2_ADDRESS!;
 
@@ -42,6 +43,7 @@ async function main() {
   const tokenAddr = requireAddr("L3_TOKEN_ADDRESS", L3_TOKEN);
 
   const relayerAddr = requireAddr("RELAYER_ADDRESS", RELAYER_ADDRESS);
+  const l2RelayerAddr = L2_RELAYER_ADDRESS ? requireAddr("L2_RELAYER_ADDRESS", L2_RELAYER_ADDRESS) : relayerAddr;
   const proposerL2 = requireAddr("PROPOSER_L2_ON_L1_ADDRESS", PROPOSER_L2_ON_L1);
   const proposerL3 = requireAddr("PROPOSER_L3_ON_L2_ADDRESS", PROPOSER_L3_ON_L2);
 
@@ -70,10 +72,11 @@ async function main() {
     console.log("Set L2 rollup proposer:", proposerL3, "tx=", tx.hash);
   }
 
-  if (ethers.getAddress(await bridge.relayer()) !== relayerAddr) {
-    const tx = await bridge.setRelayer(relayerAddr);
+  // L2 bridge lives on the settlement chain (L2). Allow a dedicated L2 relayer key/address.
+  if (ethers.getAddress(await bridge.relayer()) !== l2RelayerAddr) {
+    const tx = await bridge.setRelayer(l2RelayerAddr);
     await tx.wait();
-    console.log("Set L2 bridge relayer:", relayerAddr, "tx=", tx.hash);
+    console.log("Set L2 bridge relayer:", l2RelayerAddr, "tx=", tx.hash);
   }
 
   if (ethers.getAddress(await inbox.relayer()) !== relayerAddr) {
