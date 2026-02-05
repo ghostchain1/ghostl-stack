@@ -18,5 +18,7 @@ RUN npm prune --omit=dev
 ENV PORT=3210
 EXPOSE 3210
 
+RUN chown -R node:node /app
+USER node
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "dist/server.js"]

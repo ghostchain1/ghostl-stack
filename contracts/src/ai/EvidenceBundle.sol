@@ -74,11 +74,11 @@ contract EvidenceBundle is Governed {
 
         EvidenceAnchor anchor = evidenceAnchor;
         if (address(anchor) != address(0) && !bundleAnchored[bundleId]) {
+            bundleAnchored[bundleId] = true;
             string memory uri = extra.length == 0 ? "" : abi.decode(extra, (string));
             uint256 index = anchor.anchor(BUNDLE_KIND, bundleId, uri);
             anchorId = bytes32(index);
             bundleAnchorId[bundleId] = anchorId;
-            bundleAnchored[bundleId] = true;
         } else {
             anchorId = bundleAnchorId[bundleId];
         }

@@ -69,11 +69,11 @@ contract UpgradeManager is Ownable {
         UpgradeProposal storage p = proposals[id];
         require(!p.executed, "executed");
         require(block.timestamp >= p.activateAt, "too early");
+        p.executed = true;
         ConstitutionalGuard guard = constitutionalGuard;
         require(address(guard) != address(0), "constitution guard=0");
         bytes32 actionHash = keccak256(abi.encode(ACTION_UPGRADE, id, p.implHash, p.activateAt));
         guard.checkUpgrade(actionHash, msg.sender, abi.encode(p.implHash, p.activateAt));
-        p.executed = true;
         EvidenceBundle bundle = evidenceBundle;
         require(address(bundle) != address(0), "evidence bundle=0");
         EvidenceBundle.Bundle memory evidence = EvidenceBundle.Bundle({

@@ -39,7 +39,7 @@ contract Treasury is Governed {
     }
 
     /// @dev ETH is not a supported gas asset on GhostChain.
-    function withdrawETH(address payable to, uint256 amount) external pure {
+    function withdrawETH(address to, uint256 amount) external pure {
         to; // silence unused parameter warnings in strict tooling
         amount;
         revert("ETH disabled; use withdrawNative");

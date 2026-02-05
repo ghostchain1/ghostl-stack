@@ -9,4 +9,6 @@ RUN npm config set registry https://registry.npmjs.org \
   && npm ci --omit=dev --no-audit --no-fund
 COPY index.js ./
 ENV NODE_ENV=production
+RUN chown -R node:node /app
+USER node
 CMD ["node", "index.js"]

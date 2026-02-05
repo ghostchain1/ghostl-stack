@@ -6,6 +6,8 @@ COPY package*.json ./
 RUN npm install
 COPY tsconfig.json ./tsconfig.json
 COPY src ./src
+RUN chown -R node:node /app
+USER node
 EXPOSE 7282
 # Use ts-node loader in ESM mode; skip type checking for speed.
 ENV TS_NODE_TRANSPILE_ONLY=1
