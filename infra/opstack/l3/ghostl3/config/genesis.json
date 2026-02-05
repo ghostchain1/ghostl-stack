@@ -33,10 +33,11 @@
       "eip1559Elasticity": 6,
       "eip1559Denominator": 50,
       "eip1559DenominatorCanyon": 250
-    }
+    },
+    "gasToken": "0x5FbDB2315678afecb367f032d93F642f64180aa3"
   },
   "nonce": "0x0",
-  "timestamp": "0x697ff6f6",
+  "timestamp": "0x69836cbe",
   "extraData": "0x01000000fa000000060000000000000000",
   "gasLimit": "0x1c9c380",
   "difficulty": "0x0",

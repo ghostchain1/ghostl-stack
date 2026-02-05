@@ -1,19 +1,26 @@
 #!/usr/bin/env bash
-# Populate infra/opstack/.env with L1 contract addresses from config/l1-deployments.json.
+# Populate infra/opstack/.env with L1 contract addresses from a deployments JSON.
 # Only fills variables that are missing or set to a zero address.
 #
 # Usage:
 #   bash infra/scripts/opstack/sync-env-from-l1-deployments.sh [env-file] [deployments-json]
 # Defaults:
 #   env-file: infra/opstack/.env
-#   deployments-json: infra/opstack/config/l1-deployments.json
+#   deployments-json: infra/opstack/config/l1-deployments.custom.json (if present), otherwise infra/opstack/config/l1-deployments.json
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
 ENV_FILE="${1:-$REPO_ROOT/infra/opstack/.env}"
-DEPLOY_JSON="${2:-$REPO_ROOT/infra/opstack/config/l1-deployments.json}"
+DEFAULT_CUSTOM="$REPO_ROOT/infra/opstack/config/l1-deployments.custom.json"
+DEFAULT_PROXY="$REPO_ROOT/infra/opstack/config/l1-deployments.json"
+if [ -f "$DEFAULT_CUSTOM" ]; then
+  DEFAULT_DEPLOY_JSON="$DEFAULT_CUSTOM"
+else
+  DEFAULT_DEPLOY_JSON="$DEFAULT_PROXY"
+fi
+DEPLOY_JSON="${2:-$DEFAULT_DEPLOY_JSON}"
 
 if [ ! -f "$ENV_FILE" ]; then
   echo "env file not found: $ENV_FILE" >&2
@@ -34,14 +41,15 @@ deploy_path = pathlib.Path(sys.argv[2])
 data = json.loads(deploy_path.read_text())
 
 mapping = {
-    "L2_PORTAL_ADDRESS": data.get("OptimismPortalProxy"),
-    "OPTIMISM_PORTAL_ADDRESS": data.get("OptimismPortalProxy"),
-    "L2_SYSTEM_CONFIG_ADDRESS": data.get("SystemConfigProxy"),
-    "SYSTEM_CONFIG_ADDRESS": data.get("SystemConfigProxy"),
-    "L2_GAME_FACTORY_ADDRESS": data.get("DisputeGameFactoryProxy"),
-    "L2_OUTPUT_ORACLE_ADDRESS": data.get("L2OutputOracleProxy"),
-    "L1_STANDARD_BRIDGE_ADDRESS": data.get("L1StandardBridgeProxy"),
-    "L1_CROSS_DOMAIN_MESSENGER_ADDRESS": data.get("L1CrossDomainMessengerProxy"),
+    # Some deploy pipelines emit proxied addresses (e.g. *Proxy), others emit direct addresses.
+    "L2_PORTAL_ADDRESS": data.get("OptimismPortalProxy") or data.get("OptimismPortal"),
+    "OPTIMISM_PORTAL_ADDRESS": data.get("OptimismPortalProxy") or data.get("OptimismPortal"),
+    "L2_SYSTEM_CONFIG_ADDRESS": data.get("SystemConfigProxy") or data.get("SystemConfig"),
+    "SYSTEM_CONFIG_ADDRESS": data.get("SystemConfigProxy") or data.get("SystemConfig"),
+    "L2_GAME_FACTORY_ADDRESS": data.get("DisputeGameFactoryProxy") or data.get("DisputeGameFactory"),
+    "L2_OUTPUT_ORACLE_ADDRESS": data.get("L2OutputOracleProxy") or data.get("L1OutputOracle"),
+    "L1_STANDARD_BRIDGE_ADDRESS": data.get("L1StandardBridgeProxy") or data.get("L1StandardBridge"),
+    "L1_CROSS_DOMAIN_MESSENGER_ADDRESS": data.get("L1CrossDomainMessengerProxy") or data.get("L1CrossDomainMessenger"),
 }
 
 def is_zero(val: str) -> bool:

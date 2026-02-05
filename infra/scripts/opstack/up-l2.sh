@@ -165,11 +165,17 @@ if [ -n "$L1_ORIGIN_HASH" ] && [ "$L1_ORIGIN_HASH" != "null" ]; then
   tmp_genesis_l2=$(mktemp)
   jq --arg ts "$L2_GENESIS_TS_HEX" '.timestamp = $ts' "$OP_DIR/config/genesis-l2.json" >"$tmp_genesis_l2" && mv "$tmp_genesis_l2" "$OP_DIR/config/genesis-l2.json"
   echo "Pinned L2 genesis timestamp to $L2_GENESIS_TS_HEX ($L2_GENESIS_TS_DEC)"
+
+  # Keep checksum file in sync so `doctor-l2.sh` can detect intentional config changes deterministically.
+  (
+    cd "$OP_DIR/config"
+    sha256sum genesis-l2.json rollup.json > checksums.txt
+  )
 fi
 
-# Bring up the stack (proposer omitted since L2OO is not deployed in this devnet).
-# Option 2: op-sequencer is the only rollup node driving the engine.
-docker compose "${COMPOSE_ENV_ARGS[@]}" up -d l2-geth rpc-forward-l2-18547 op-sequencer op-batcher
+# Bring up the execution client first so we can record the genesis hash into rollup.json
+# before starting op-node/op-sequencer (which validates the L2 genesis hash on boot).
+docker compose "${COMPOSE_ENV_ARGS[@]}" up -d l2-geth rpc-forward-l2-18547
 
 echo "Waiting for L2 RPC..."
 for i in $(seq 1 60); do
@@ -197,6 +203,14 @@ if [ -n "$L2_GENESIS_HASH" ] && [ "$L2_GENESIS_HASH" != "null" ]; then
   tmp_rollup_l2_hash=$(mktemp)
   jq --arg hash "$L2_GENESIS_HASH" '.genesis.l2.hash = $hash' "$OP_DIR/config/rollup.json" >"$tmp_rollup_l2_hash" && mv "$tmp_rollup_l2_hash" "$OP_DIR/config/rollup.json"
   echo "Set rollup genesis.l2.hash=$L2_GENESIS_HASH"
+
+  (
+    cd "$OP_DIR/config"
+    sha256sum genesis-l2.json rollup.json > checksums.txt
+  )
 fi
+
+# Start the rollup node + batcher only after rollup.json is pinned to the live genesis.
+docker compose "${COMPOSE_ENV_ARGS[@]}" up -d --force-recreate op-node op-sequencer op-batcher op-proposer
 
 echo "OP Stack L2 up (external L1). L1=$HOST_L1_RPC L2=$HOST_L2_RPC"

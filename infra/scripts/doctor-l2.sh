@@ -26,7 +26,13 @@ L2_ROLLUP_JSON="${L2_ROLLUP_JSON:-$L2_CONFIG_DIR/rollup.json}"
 L2_GENESIS_JSON="${L2_GENESIS_JSON:-$L2_CONFIG_DIR/genesis-l2.json}"
 L1_CHAIN_JSON="${L1_CHAIN_JSON:-$L2_CONFIG_DIR/l1-chain.json}"
 L2_CHECKSUMS_FILE="${L2_CHECKSUMS_FILE:-$L2_CONFIG_DIR/checksums.txt}"
-L1_DEPLOYMENTS_JSON="${L1_DEPLOYMENTS_JSON:-$L2_CONFIG_DIR/l1-deployments.json}"
+if [ -z "${L1_DEPLOYMENTS_JSON:-}" ]; then
+  if [ -f "$L2_CONFIG_DIR/l1-deployments.custom.json" ]; then
+    L1_DEPLOYMENTS_JSON="$L2_CONFIG_DIR/l1-deployments.custom.json"
+  else
+    L1_DEPLOYMENTS_JSON="$L2_CONFIG_DIR/l1-deployments.json"
+  fi
+fi
 L2_DEPLOYMENTS_JSON="${L2_DEPLOYMENTS_JSON:-$L2_CONFIG_DIR/l2-deployments.json}"
 
 HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:18545}"
@@ -52,6 +58,7 @@ L2_MAX_L2_SAFE_LAG="${L2_MAX_L2_SAFE_LAG:-256}"
 L2_MAX_PROPOSER_IDLE_SECONDS="${L2_MAX_PROPOSER_IDLE_SECONDS:-900}"
 L2_MAX_BATCHER_IDLE_SECONDS="${L2_MAX_BATCHER_IDLE_SECONDS:-900}"
 L2_REQUIRE_L2_PROGRESS="${L2_REQUIRE_L2_PROGRESS:-0}"
+L2_REQUIRE_BRIDGE_WIRING="${L2_REQUIRE_BRIDGE_WIRING:-0}"
 L2_PROGRESS_SAMPLE_SECONDS="${L2_PROGRESS_SAMPLE_SECONDS:-15}"
 L2_PROGRESS_MIN_DELTA="${L2_PROGRESS_MIN_DELTA:-1}"
 
@@ -160,6 +167,20 @@ if raw.startswith("0x"):
 else:
     print(raw)
 PY
+}
+
+abi_decode_address() {
+  local word="$1"
+  if [ -z "$word" ] || [ "$word" = "null" ] || [ "$word" = "0x" ]; then
+    echo ""
+    return 1
+  fi
+  word="${word#0x}"
+  if [ "${#word}" -lt 40 ]; then
+    echo ""
+    return 1
+  fi
+  echo "0x${word: -40}"
 }
 
 rpc_block_number_dec() {
@@ -346,17 +367,25 @@ else
 fi
 
 ROLLUP_L1_HASH="$(read_json "$L2_ROLLUP_JSON" "genesis.l1.hash")"
+ROLLUP_L1_NUM="$(read_json "$L2_ROLLUP_JSON" "genesis.l1.number")"
 ROLLUP_L2_HASH="$(read_json "$L2_ROLLUP_JSON" "genesis.l2.hash")"
 if [ -n "$ROLLUP_L1_HASH" ] && [ "$ROLLUP_L1_HASH" != "null" ]; then
-  L1_BLOCK0_RAW="$(jsonrpc_params "$HOST_L1_RPC" "eth_getBlockByNumber" '["0x0", false]' || true)"
-  L1_BLOCK0_HASH="$(json_result_field "$L1_BLOCK0_RAW" "hash" || true)"
-  if [ -z "$L1_BLOCK0_HASH" ]; then
-    fail "failed to fetch L1 genesis block from $HOST_L1_RPC"
+  l1_num="${ROLLUP_L1_NUM:-0}"
+  l1_hex="$(python3 - <<'PY' "$l1_num"
+import sys
+num = int(sys.argv[1]) if sys.argv[1] else 0
+print(hex(num))
+PY
+)"
+  L1_BLOCK_RAW="$(jsonrpc_params "$HOST_L1_RPC" "eth_getBlockByNumber" "[\"$l1_hex\", false]" || true)"
+  L1_BLOCK_HASH="$(json_result_field "$L1_BLOCK_RAW" "hash" || true)"
+  if [ -z "$L1_BLOCK_HASH" ]; then
+    fail "failed to fetch L1 origin block ${l1_num} from $HOST_L1_RPC"
   fi
-  if [ -n "$L1_BLOCK0_HASH" ] && [ "$L1_BLOCK0_HASH" != "$ROLLUP_L1_HASH" ]; then
-    fail "rollup.json L1 genesis hash mismatch (rollup=$ROLLUP_L1_HASH rpc=$L1_BLOCK0_HASH)"
+  if [ -n "$L1_BLOCK_HASH" ] && [ "$L1_BLOCK_HASH" != "$ROLLUP_L1_HASH" ]; then
+    fail "rollup.json L1 origin hash mismatch at block ${l1_num} (rollup=$ROLLUP_L1_HASH rpc=$L1_BLOCK_HASH)"
   fi
-  echo "OK: rollup L1 genesis hash matches"
+  echo "OK: rollup L1 origin hash matches"
 else
   warn "rollup.json genesis.l1.hash not set"
 fi
@@ -550,28 +579,36 @@ if [ -f "$L1_DEPLOYMENTS_JSON" ]; then
 import json, sys
 with open(sys.argv[1], "r", encoding="utf-8") as f:
     data = json.load(f)
-print(data.get(sys.argv[2], ""))
+keys = [k.strip() for k in sys.argv[2].split(",") if k.strip()]
+for k in keys:
+    v = data.get(k, "")
+    if v and v != "null":
+        print(v)
+        break
+else:
+    print("")
 PY
   }
-  dgf_addr="$(read_addr "DisputeGameFactoryProxy")"
+  dgf_addr="$(read_addr "DisputeGameFactoryProxy,DisputeGameFactory")"
   dgf_code=""
   if [ -n "$dgf_addr" ] && [ "$dgf_addr" != "null" ]; then
     dgf_raw="$(jsonrpc_params "$HOST_L1_RPC" "eth_getCode" "[\"$dgf_addr\", \"latest\"]" || true)"
     dgf_code="$(json_result "$dgf_raw" || true)"
   fi
   contracts=(
-    SystemConfigProxy
-    OptimismPortalProxy
-    L2OutputOracleProxy
-    DisputeGameFactoryProxy
-    L1StandardBridgeProxy
-    L1CrossDomainMessengerProxy
-    L1Erc721BridgeProxy
+    "SystemConfigProxy,SystemConfig"
+    "OptimismPortalProxy,OptimismPortal"
+    "L2OutputOracleProxy,L1OutputOracle"
+    "DisputeGameFactoryProxy,DisputeGameFactory"
+    "L1StandardBridgeProxy,L1StandardBridge"
+    "L1CrossDomainMessengerProxy,L1CrossDomainMessenger"
+    "L1Erc721BridgeProxy,L1Erc721Bridge"
   )
-  for name in "${contracts[@]}"; do
-    addr="$(read_addr "$name")"
+  for name_keys in "${contracts[@]}"; do
+    name="${name_keys%%,*}"
+    addr="$(read_addr "$name_keys")"
     if [ -z "$addr" ] || [ "$addr" = "null" ]; then
-      warn "missing address for $name in l1-deployments.json"
+      warn "missing address for $name in $L1_DEPLOYMENTS_JSON"
       continue
     fi
     code_raw="$(jsonrpc_params "$HOST_L1_RPC" "eth_getCode" "[\"$addr\", \"latest\"]" || true)"
@@ -623,6 +660,37 @@ PY
   done
 else
   warn "missing l1-deployments.json; skipping L1 contract checks"
+fi
+
+# Ensure L2-side predeploys are wired to the expected L1 bridge + messenger.
+# When these addresses diverge, deposits will be derived but cross-domain relay will revert.
+if [ -n "${L1_CROSS_DOMAIN_MESSENGER_ADDRESS:-}" ]; then
+  l2_xdm="0x4200000000000000000000000000000000000007"
+  raw="$(jsonrpc_params "$HOST_L2_RPC" "eth_call" "[{\"to\":\"$l2_xdm\",\"data\":\"0xa7119869\"},\"latest\"]" || true)"
+  word="$(json_result "$raw" || true)"
+  onchain="$(abi_decode_address "$word" || true)"
+  if [ -n "$onchain" ] && [ "${onchain,,}" != "${L1_CROSS_DOMAIN_MESSENGER_ADDRESS,,}" ]; then
+    msg="L2 CrossDomainMessenger expects L1 messenger $onchain, but L1_CROSS_DOMAIN_MESSENGER_ADDRESS=$L1_CROSS_DOMAIN_MESSENGER_ADDRESS (bridging will fail)"
+    if [ "$L2_REQUIRE_BRIDGE_WIRING" = "1" ]; then
+      fail "$msg"
+    else
+      warn "$msg (set L2_REQUIRE_BRIDGE_WIRING=1 to fail closed)"
+    fi
+  fi
+fi
+if [ -n "${L1_STANDARD_BRIDGE_ADDRESS:-}" ]; then
+  l2_bridge="0x4200000000000000000000000000000000000010"
+  raw="$(jsonrpc_params "$HOST_L2_RPC" "eth_call" "[{\"to\":\"$l2_bridge\",\"data\":\"0x36c717c1\"},\"latest\"]" || true)"
+  word="$(json_result "$raw" || true)"
+  onchain="$(abi_decode_address "$word" || true)"
+  if [ -n "$onchain" ] && [ "${onchain,,}" != "${L1_STANDARD_BRIDGE_ADDRESS,,}" ]; then
+    msg="L2 StandardBridge expects L1 bridge $onchain, but L1_STANDARD_BRIDGE_ADDRESS=$L1_STANDARD_BRIDGE_ADDRESS (bridging will fail)"
+    if [ "$L2_REQUIRE_BRIDGE_WIRING" = "1" ]; then
+      fail "$msg"
+    else
+      warn "$msg (set L2_REQUIRE_BRIDGE_WIRING=1 to fail closed)"
+    fi
+  fi
 fi
 
 if [ "${USE_CUSTOM_GAS_TOKEN:-}" = "true" ]; then

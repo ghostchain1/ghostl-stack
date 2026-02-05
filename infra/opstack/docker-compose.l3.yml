@@ -35,20 +35,22 @@ services:
         ENODE_L2="enode://ee9270b480cc105aae5217e7d7fc175ea2a0e15fdda90947ecbfd23b89607f79c1a21890091ff13c058c12c6629c198c65d343db6164dc0a0d5a9310cd95cad6@l2-geth:30303"
         if [ ! -d /data/geth ]; then
           echo "[l3-geth] initializing genesis..."
-          geth init --datadir /data /config/genesis.json
+          geth init --state.scheme=hash --datadir /data /config/genesis.json
         fi
         echo "[\"${L3_BOOTNODES:-$$ENODE_L2}\"]" > /data/static-nodes.json
         exec geth \
-          --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug \
+          --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug,txpool \
           --http.vhosts="*" \
           --ws --ws.addr=0.0.0.0 --ws.origins="*" \
           --metrics --metrics.addr=0.0.0.0 --metrics.port=${L3_GETH_METRICS_PORT:-6060} \
           --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts="*" --authrpc.jwtsecret=/config/jwt.txt \
           --datadir=/data \
           --networkid=${L3_CHAIN_ID:-903} \
+          --state.scheme=hash \
           --gcmode=archive \
           --bootnodes=${L3_BOOTNODES:-$$ENODE_L2} \
           --nodiscover \
+          --rollup.computependingblock=true \
           --rollup.enabletxpooladmission=true \
           --rollup.disabletxpoolgossip=false
     healthcheck:

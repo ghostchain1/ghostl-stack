@@ -18,7 +18,28 @@ fi
 set -a
 # shellcheck disable=SC1090
 source "$ENV_FILE"
+
+# Prefer the canonical stack-level env if present (this repo is migrating to stack.env as source of truth).
+STACK_ENV="$ROOT_DIR/services/stack.env"
+if [ -f "$STACK_ENV" ]; then
+  # shellcheck disable=SC1090
+  source "$STACK_ENV"
+fi
 set +a
+
+OPSTACK_SECRETS="$ROOT_DIR/infra/opstack/.env.secrets"
+if [ -f "$OPSTACK_SECRETS" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$OPSTACK_SECRETS"
+  set +a
+fi
+
+FINALIZER_KEY="${L2_RELAYER_PRIVATE_KEY:-${DEPLOYER_PRIVATE_KEY:-}}"
+if [ -z "${FINALIZER_KEY:-}" ]; then
+  echo "Missing L2_RELAYER_PRIVATE_KEY or DEPLOYER_PRIVATE_KEY (expected from services/stack.env or infra/opstack/.env.secrets)" >&2
+  exit 1
+fi
 
 DEMO_TOKEN="$(jq -r '.token' "$LAST_DEPOSIT_PATH")"
 DEMO_FROM="$(jq -r '.from' "$LAST_DEPOSIT_PATH")"
@@ -34,6 +55,7 @@ echo "  amountWei=$DEMO_AMOUNT_WEI"
 echo "  nonce=$DEMO_NONCE"
 
 cd "$ROOT_DIR/contracts"
+DEPLOYER_PRIVATE_KEY="$FINALIZER_KEY" \
 DEMO_TOKEN="$DEMO_TOKEN" \
 DEMO_FROM="$DEMO_FROM" \
 DEMO_TO="$DEMO_TO" \

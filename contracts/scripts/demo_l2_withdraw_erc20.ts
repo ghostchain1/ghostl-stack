@@ -18,18 +18,28 @@ async function main() {
   const amountWei = ethers.parseEther(amountEth);
   const minGasLimit = BigInt(process.env.DEMO_MIN_GAS ?? "200000");
 
-  const StandardBridgeAbi = [
-    "function bridgeERC20(address localToken,address remoteToken,address to,uint256 amount,uint32 minGasLimit,bytes data)"
+  // For L1-native tokens represented as OptimismMintableERC20 on L2, withdrawals are initiated via
+  // L2StandardBridge.withdrawTo(_l2Token, _to, _amount, _minGasLimit, _extraData).
+  const MintableAbi = ["function l1Token() view returns (address)"];
+  const mintable = new ethers.Contract(localToken, MintableAbi, signer);
+  const mappedL1 = (await mintable.l1Token()) as string;
+  if (mappedL1.toLowerCase() !== remoteToken.toLowerCase()) {
+    throw new Error(
+      `L2 token ${localToken} maps to L1 token ${mappedL1}, expected ${remoteToken}. Check L1_TOKEN_ADDRESS/L2_TOKEN_ADDRESS.`
+    );
+  }
+
+  const L2StandardBridgeAbi = [
+    "function withdrawTo(address l2Token,address to,uint256 amount,uint32 minGasLimit,bytes extraData)"
   ];
-  const bridge = new ethers.Contract(bridgeAddress, StandardBridgeAbi, signer);
-  const tx = await bridge.bridgeERC20(
-    localToken,
-    remoteToken,
-    to,
-    amountWei,
-    Number(minGasLimit),
-    "0x"
-  );
+  const bridge = new ethers.Contract(bridgeAddress, L2StandardBridgeAbi, signer);
+
+  const minGasLimit32 = Number(minGasLimit);
+  if (!Number.isSafeInteger(minGasLimit32) || minGasLimit32 < 0 || minGasLimit32 > 0xffffffff) {
+    throw new Error(`DEMO_MIN_GAS must fit uint32, got ${minGasLimit.toString()}`);
+  }
+
+  const tx = await bridge.withdrawTo(localToken, to, amountWei, minGasLimit32, "0x");
 
   console.log("bridge:", bridgeAddress);
   console.log("from:", signer.address);

@@ -32,15 +32,14 @@ if [[ "$RUN" != "true" ]]; then
 fi
 
 case "$MODE" in
-  l2l3)
-    DEPOSIT_SCRIPT="$ROOT_DIR/infra/scripts/demo-deposit-erc20.sh"
-    WITHDRAW_SCRIPT="$ROOT_DIR/infra/scripts/demo-withdraw-erc20.sh"
-    RELAY_SCRIPT="$ROOT_DIR/infra/scripts/demo-finalize-erc20.sh"
+	  l2l3)
+	    DEPOSIT_SCRIPT="$ROOT_DIR/infra/scripts/demo-deposit-erc20.sh"
+	    WITHDRAW_SCRIPT="$ROOT_DIR/infra/scripts/demo-withdraw-erc20.sh"
 
-    if [[ ! -x "$DEPOSIT_SCRIPT" || ! -x "$WITHDRAW_SCRIPT" || ! -x "$RELAY_SCRIPT" ]]; then
-      echo "Missing required L2<->L3 demo scripts" >&2
-      exit 1
-    fi
+	    if [[ ! -x "$DEPOSIT_SCRIPT" || ! -x "$WITHDRAW_SCRIPT" ]]; then
+	      echo "Missing required L2<->L3 demo scripts" >&2
+	      exit 1
+	    fi
 
     log "L2<->L3 bridge E2E (ERC20)"
     log "Deposit -> Relay -> Withdraw"
@@ -52,14 +51,13 @@ case "$MODE" in
       if curl -sS "$RELAYER_HEALTH_URL" | jq -e '.observeOnly == true' >/dev/null 2>&1; then
         echo "Relayer is observe-only; configure relayer signing keys (e.g., RELAYER_PRIVATE_KEY) and restart ghost-relayer." >&2
         exit 1
-      fi
+	      fi
 
-      DEMO_AMOUNT_ETH="$AMOUNT" bash "$DEPOSIT_SCRIPT"
-      DEMO_AMOUNT_ETH="$AMOUNT" bash "$RELAY_SCRIPT"
+	      DEMO_AMOUNT_ETH="$AMOUNT" bash "$DEPOSIT_SCRIPT"
 
-      LAST_DEPOSIT_PATH="$ROOT_DIR/.tmp/last_deposit_erc20.json"
-      if [[ ! -f "$LAST_DEPOSIT_PATH" ]]; then
-        echo "Missing $LAST_DEPOSIT_PATH (deposit step did not produce an ERC20 receipt)" >&2
+	      LAST_DEPOSIT_PATH="$ROOT_DIR/.tmp/last_deposit_erc20.json"
+	      if [[ ! -f "$LAST_DEPOSIT_PATH" ]]; then
+	        echo "Missing $LAST_DEPOSIT_PATH (deposit step did not produce an ERC20 receipt)" >&2
         exit 1
       fi
 
