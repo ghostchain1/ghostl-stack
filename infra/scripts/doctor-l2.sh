@@ -20,6 +20,16 @@ if [ -f "$L2_SECRETS_FILE" ]; then
   set +a
 fi
 
+# Prefer the canonical stack-level env if present (this repo is migrating to stack.env as source of truth).
+# Do not echo secrets; this is only to populate addresses/flags consistently across scripts.
+STACK_ENV_FILE="$ROOT_DIR/services/stack.env"
+if [ -f "$STACK_ENV_FILE" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$STACK_ENV_FILE"
+  set +a
+fi
+
 L2_COMPOSE_FILE="${L2_COMPOSE_FILE:-$ROOT_DIR/infra/opstack/docker-compose.yml}"
 L2_CONFIG_DIR="${L2_CONFIG_DIR:-$ROOT_DIR/infra/opstack/config}"
 L2_ROLLUP_JSON="${L2_ROLLUP_JSON:-$L2_CONFIG_DIR/rollup.json}"
@@ -52,6 +62,14 @@ AI_MONITOR_OBSERVE_ONLY="${AI_MONITOR_OBSERVE_ONLY:-1}"
 POLICY_REGISTRY_ADDRESS="${POLICY_REGISTRY_ADDRESS:-}"
 POLICY_REGISTRY_RPC="${POLICY_REGISTRY_RPC:-$HOST_L1_RPC}"
 POLICY_REQUIRED="${POLICY_REQUIRED:-1}"
+
+RELAYER_REQUIRE_L2_FINALITY_ON_L1="${RELAYER_REQUIRE_L2_FINALITY_ON_L1:-false}"
+ROLLUP_GATING_L2_FINALITY_ON_L1="$(printf '%s' "$RELAYER_REQUIRE_L2_FINALITY_ON_L1" | tr '[:upper:]' '[:lower:]')"
+L1_ROLLUP_L2_ADDRESS="${L1_ROLLUP_L2_ADDRESS:-}"
+L2_ROLLUP_PROPOSER_HEALTH_URL="${L2_ROLLUP_PROPOSER_HEALTH_URL:-}"
+L2_ROLLUP_PROGRESS_SAMPLE_SECONDS="${L2_ROLLUP_PROGRESS_SAMPLE_SECONDS:-15}"
+L2_ROLLUP_PROGRESS_MIN_DELTA="${L2_ROLLUP_PROGRESS_MIN_DELTA:-1}"
+L2_MAX_ROLLUP_LAG="${L2_MAX_ROLLUP_LAG:-512}"
 
 L2_MAX_L1_DERIVATION_LAG="${L2_MAX_L1_DERIVATION_LAG:-128}"
 L2_MAX_L2_SAFE_LAG="${L2_MAX_L2_SAFE_LAG:-256}"
@@ -192,6 +210,67 @@ rpc_block_number_dec() {
     return 1
   fi
   hex_to_dec "$bn_hex"
+}
+
+rollup_proposer_health() {
+  if [ -z "$L2_ROLLUP_PROPOSER_HEALTH_URL" ]; then
+    return 1
+  fi
+  curl -fsS --max-time 4 "$L2_ROLLUP_PROPOSER_HEALTH_URL" 2>/dev/null || return 1
+}
+
+json_field() {
+  python3 - <<'PY' "$1" "$2"
+import json, sys
+raw = sys.argv[1]
+key = sys.argv[2]
+if not raw:
+    sys.exit(1)
+try:
+    data = json.loads(raw)
+except Exception:
+    sys.exit(1)
+cur = data
+for part in key.split("."):
+    if isinstance(cur, dict) and part in cur:
+        cur = cur[part]
+    else:
+        cur = None
+        break
+if cur is None:
+    print("")
+elif isinstance(cur, bool):
+    print("true" if cur else "false")
+else:
+    print(cur)
+PY
+}
+
+require_rollup_progress() {
+  local sleep_s="$1"
+  local min_delta="$2"
+
+  local a_raw b_raw a b delta
+  a_raw="$(rollup_proposer_health || true)"
+  a="$(json_field "$a_raw" "nextChildBlock" || true)"
+  if [ -z "$a" ]; then
+    fail "rollup proposer health missing nextChildBlock ($L2_ROLLUP_PROPOSER_HEALTH_URL)"
+  fi
+  sleep "$sleep_s"
+  b_raw="$(rollup_proposer_health || true)"
+  b="$(json_field "$b_raw" "nextChildBlock" || true)"
+  if [ -z "$b" ]; then
+    fail "rollup proposer health missing nextChildBlock (2nd sample) ($L2_ROLLUP_PROPOSER_HEALTH_URL)"
+  fi
+  # nextChildBlock is end+1
+  if [ "$b" -lt "$a" ]; then
+    fail "rollup proposer cursor regressed (sample1=$a sample2=$b)"
+  fi
+  delta=$((b - a))
+  if [ "$delta" -lt "$min_delta" ]; then
+    fail "no rollup proposer progress detected (sample1=$a sample2=$b delta=$delta over ${sleep_s}s)"
+  fi
+  echo "OK: rollup proposer progressing (nextChildBlock sample1=$a sample2=$b delta=$delta over ${sleep_s}s)"
 }
 
 require_execution_progress() {
@@ -516,9 +595,21 @@ if [ "$SYNC_HEAD_L1_NUM" -gt 0 ]; then
     if [ "$SYNC_SAFE_L2_NUM" -gt 0 ]; then
       SAFE_LAG=$((EFFECTIVE_UNSAFE_L2_NUM - SYNC_SAFE_L2_NUM))
       if [ "$SAFE_LAG" -gt "$L2_MAX_L2_SAFE_LAG" ]; then
-        fail "L2 safe lag too high (unsafe=$SYNC_UNSAFE_L2_NUM safe=$SYNC_SAFE_L2_NUM lag=$SAFE_LAG > $L2_MAX_L2_SAFE_LAG)"
+        # If "finality on L1" is implemented via a separate rollup contract, OP safe head is not the finality signal.
+        # In that mode, gate finality via the rollup proposer/contract instead.
+        if [ "$ROLLUP_GATING_L2_FINALITY_ON_L1" = "true" ]; then
+          warn "L2 safe lag high (unsafe=$SYNC_UNSAFE_L2_NUM safe=$SYNC_SAFE_L2_NUM lag=$SAFE_LAG > $L2_MAX_L2_SAFE_LAG) (ignored due to rollup finality gating)"
+        else
+          if [ "$L2_REQUIRE_L2_PROGRESS" = "1" ]; then
+            fail "L2 safe lag too high (unsafe=$SYNC_UNSAFE_L2_NUM safe=$SYNC_SAFE_L2_NUM lag=$SAFE_LAG > $L2_MAX_L2_SAFE_LAG)"
+          else
+            warn "L2 safe lag too high (unsafe=$SYNC_UNSAFE_L2_NUM safe=$SYNC_SAFE_L2_NUM lag=$SAFE_LAG > $L2_MAX_L2_SAFE_LAG)"
+          fi
+        fi
       fi
-      echo "OK: L2 safe lag within threshold"
+      if [ "$SAFE_LAG" -le "$L2_MAX_L2_SAFE_LAG" ]; then
+        echo "OK: L2 safe lag within threshold"
+      fi
     else
       if [ "$L2_REQUIRE_L2_PROGRESS" = "1" ]; then
         warn "safe_l2 is zero; no safe L2 blocks observed yet"
@@ -536,7 +627,16 @@ if [ "$SYNC_HEAD_L1_NUM" -gt 0 ]; then
   fi
 fi
 
-for url in "$L2_GETH_METRICS_URL" "$OP_NODE_METRICS_URL" "$OP_SEQUENCER_METRICS_URL" "$OP_BATCHER_METRICS_URL" "$OP_PROPOSER_METRICS_URL"; do
+metric_urls=( "$L2_GETH_METRICS_URL" "$OP_NODE_METRICS_URL" "$OP_SEQUENCER_METRICS_URL" "$OP_BATCHER_METRICS_URL" )
+if [ "$ROLLUP_GATING_L2_FINALITY_ON_L1" = "true" ]; then
+  if [ -n "$L2_ROLLUP_PROPOSER_HEALTH_URL" ]; then
+    metric_urls+=( "$L2_ROLLUP_PROPOSER_HEALTH_URL" )
+  fi
+else
+  metric_urls+=( "$OP_PROPOSER_METRICS_URL" )
+fi
+
+for url in "${metric_urls[@]}"; do
   if ! curl -fsS --max-time 4 "$url" >/dev/null 2>&1; then
     fail "metrics endpoint not reachable: $url"
   fi
@@ -740,6 +840,65 @@ if [ "${USE_CUSTOM_GAS_TOKEN:-}" = "true" ]; then
     echo "OK: genesis gasToken set"
   fi
   echo "OK: custom gas token deployed"
+fi
+
+if [ "$ROLLUP_GATING_L2_FINALITY_ON_L1" = "true" ]; then
+  if [ -z "$L1_ROLLUP_L2_ADDRESS" ]; then
+    if [ "$L2_REQUIRE_L2_PROGRESS" = "1" ]; then
+      fail "rollup gating enabled but L1_ROLLUP_L2_ADDRESS missing"
+    else
+      warn "rollup gating enabled but L1_ROLLUP_L2_ADDRESS missing"
+    fi
+  elif [ -z "$L2_ROLLUP_PROPOSER_HEALTH_URL" ]; then
+    if [ "$L2_REQUIRE_L2_PROGRESS" = "1" ]; then
+      fail "rollup gating enabled but L2_ROLLUP_PROPOSER_HEALTH_URL missing"
+    else
+      warn "rollup gating enabled but L2_ROLLUP_PROPOSER_HEALTH_URL missing"
+    fi
+  else
+    RH_RAW="$(rollup_proposer_health || true)"
+    RH_OK="$(json_field "$RH_RAW" "ok" || true)"
+    RH_OBSERVE_ONLY="$(json_field "$RH_RAW" "observeOnly" || true)"
+    RH_NEXT="$(json_field "$RH_RAW" "nextChildBlock" || true)"
+    if [ "$RH_OK" != "true" ] || [ -z "$RH_NEXT" ]; then
+      if [ "$L2_REQUIRE_L2_PROGRESS" = "1" ]; then
+        fail "rollup proposer not reachable/healthy at $L2_ROLLUP_PROPOSER_HEALTH_URL"
+      else
+        warn "rollup proposer not reachable/healthy at $L2_ROLLUP_PROPOSER_HEALTH_URL"
+      fi
+    else
+      if [ "$L2_REQUIRE_L2_PROGRESS" = "1" ] && [ "$RH_OBSERVE_ONLY" = "true" ]; then
+        fail "rollup proposer is observe-only (cannot propose/finalize batches) but rollup gating is enabled"
+      fi
+
+      L2_HEAD="$(rpc_block_number_dec "$HOST_L2_RPC" || true)"
+      if [ -n "$L2_HEAD" ]; then
+        if [ "$RH_NEXT" -gt 0 ]; then
+          ROLLUP_END=$((RH_NEXT - 1))
+        else
+          ROLLUP_END=0
+        fi
+        ROLLUP_LAG=$((L2_HEAD - ROLLUP_END))
+        if [ "$ROLLUP_LAG" -lt 0 ]; then ROLLUP_LAG=0; fi
+
+        if [ "$ROLLUP_LAG" -gt "$L2_MAX_ROLLUP_LAG" ]; then
+          if [ "$L2_REQUIRE_L2_PROGRESS" = "1" ]; then
+            fail "rollup finality lag too high (l2_head=$L2_HEAD rollup_end=$ROLLUP_END lag=$ROLLUP_LAG > $L2_MAX_ROLLUP_LAG)"
+          else
+            warn "rollup finality lag too high (l2_head=$L2_HEAD rollup_end=$ROLLUP_END lag=$ROLLUP_LAG > $L2_MAX_ROLLUP_LAG)"
+          fi
+        else
+          echo "OK: rollup finality lag within threshold (l2_head=$L2_HEAD rollup_end=$ROLLUP_END lag=$ROLLUP_LAG)"
+        fi
+      fi
+
+      if [ "$L2_REQUIRE_L2_PROGRESS" = "1" ]; then
+        require_rollup_progress "$L2_ROLLUP_PROGRESS_SAMPLE_SECONDS" "$L2_ROLLUP_PROGRESS_MIN_DELTA"
+      else
+        echo "OK: rollup proposer progress check skipped (L2_REQUIRE_L2_PROGRESS=0)"
+      fi
+    fi
+  fi
 fi
 
 echo "[doctor-l2] OK"
