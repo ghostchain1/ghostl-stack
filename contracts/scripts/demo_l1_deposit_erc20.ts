@@ -26,15 +26,20 @@ async function main() {
   }
 
   const StandardBridgeAbi = [
-    "function bridgeERC20(address localToken,address remoteToken,address to,uint256 amount,uint32 minGasLimit,bytes data)"
+    "function depositERC20To(address l1Token,address l2Token,address to,uint256 amount,uint32 minGasLimit,bytes extraData)"
   ];
   const bridge = new ethers.Contract(bridgeAddress, StandardBridgeAbi, signer);
-  const tx = await bridge.bridgeERC20(
+  const minGasLimit32 = Number(minGasLimit);
+  if (!Number.isSafeInteger(minGasLimit32) || minGasLimit32 < 0 || minGasLimit32 > 0xffffffff) {
+    throw new Error(`DEMO_MIN_GAS must fit uint32, got ${minGasLimit.toString()}`);
+  }
+
+  const tx = await bridge.depositERC20To(
     localToken,
     remoteToken,
     to,
     amountWei,
-    Number(minGasLimit),
+    minGasLimit32,
     "0x"
   );
 

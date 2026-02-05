@@ -1,10 +1,10 @@
 {
-  "OptimismPortalProxy": "0xbCF26943C0197d2eE0E5D05c716Be60cc2761508",
-  "SystemConfigProxy": "0x712516e61C8B383dF4A63CFe83d7701Bce54B03e",
-  "DisputeGameFactoryProxy": "0x05Aa229Aec102f78CE0E852A812a388F076Aa555",
-  "L2OutputOracleProxy": "0x0Cf17D5DcDA9cF25889cEc9ae5610B0FB9725F65",
-  "L1StandardBridgeProxy": "0x2fc631e4B3018258759C52AF169200213e84ABab",
-  "L1CrossDomainMessengerProxy": "0xAfe1b5bdEbD4ae65AF2024738bf0735fbb65d44b",
+  "OptimismPortalProxy": "0x59F2f1fCfE2474fD5F0b9BA1E73ca90b143Eb8d0",
+  "SystemConfigProxy": "0xbCF26943C0197d2eE0E5D05c716Be60cc2761508",
+  "DisputeGameFactoryProxy": "0x0b48aF34f4c854F5ae1A3D587da471FeA45bAD52",
+  "L2OutputOracleProxy": "0x05Aa229Aec102f78CE0E852A812a388F076Aa555",
+  "L1StandardBridgeProxy": "0x1275D096B9DBf2347bD2a131Fb6BDaB0B4882487",
+  "L1CrossDomainMessengerProxy": "0xC6bA8C3233eCF65B761049ef63466945c362EdD2",
   "__meta": {
     "rpc": "http://localhost:29547",
     "chainId": 901,

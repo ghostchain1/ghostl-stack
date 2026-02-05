@@ -16,11 +16,98 @@ set -a
 source "$GUARD_ENV"
 # shellcheck disable=SC1090
 source "$RELAYER_ENV"
+
+# Prefer the canonical stack-level env if present (this repo is migrating to stack.env as source of truth).
+STACK_ENV="$ROOT_DIR/services/stack.env"
+if [ -f "$STACK_ENV" ]; then
+  # shellcheck disable=SC1090
+  source "$STACK_ENV"
+fi
 set +a
+
+# When running on the host (not inside Docker), `host.docker.internal` may not resolve on Linux.
+# Prefer localhost-mapped RPC ports unless the user explicitly overrides with a usable URL.
+RPC_L2_EFFECTIVE="${RPC_L2:-http://127.0.0.1:29547}"
+RPC_L3_EFFECTIVE="${RPC_L3:-http://127.0.0.1:39545}"
+case "$RPC_L2_EFFECTIVE" in
+  *host.docker.internal*) RPC_L2_EFFECTIVE="http://127.0.0.1:29547" ;;
+esac
+case "$RPC_L3_EFFECTIVE" in
+  *host.docker.internal*) RPC_L3_EFFECTIVE="http://127.0.0.1:39545" ;;
+esac
+
+OPSTACK_SECRETS="$ROOT_DIR/infra/opstack/.env.secrets"
+if [ -f "$OPSTACK_SECRETS" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$OPSTACK_SECRETS"
+  set +a
+fi
+
+if [ -z "${DEPLOYER_PRIVATE_KEY:-}" ]; then
+  echo "Missing DEPLOYER_PRIVATE_KEY (expected in infra/opstack/.env.secrets or env)" >&2
+  exit 1
+fi
+
+ETHERS_MODULE="$ROOT_DIR/contracts/node_modules/ethers"
+if [ ! -d "$ETHERS_MODULE" ]; then
+  echo "Missing ethers module at $ETHERS_MODULE (run: cd contracts && npm ci)" >&2
+  exit 1
+fi
+
+DEPOSITOR="$(
+  ETHERS_MODULE="$ETHERS_MODULE" PK="$DEPLOYER_PRIVATE_KEY" node -e '
+    const { Wallet } = require(process.env.ETHERS_MODULE);
+    process.stdout.write(new Wallet(process.env.PK).address);
+  '
+)"
+
+LAST_DEPOSIT_PATH="$ROOT_DIR/.tmp/last_deposit_erc20.json"
+if [ -f "$LAST_DEPOSIT_PATH" ]; then
+  # Prefer the last deposit token so withdraw always targets the same ERC20 pair.
+  L2_TOKEN_ADDRESS="$(jq -r '.token' "$LAST_DEPOSIT_PATH")"
+  DEPOSITOR="$(jq -r '.from' "$LAST_DEPOSIT_PATH")"
+fi
+
+if [ -z "${L2_TOKEN_ADDRESS:-}" ]; then
+  echo "Missing L2_TOKEN_ADDRESS (source services/ghost-guard/.env) and no $LAST_DEPOSIT_PATH present." >&2
+  exit 1
+fi
+
+if [ -z "${L3_TOKEN_FACTORY_ADDRESS:-}" ]; then
+  echo "Missing L3_TOKEN_FACTORY_ADDRESS (source services/ghost-relayer/.env)." >&2
+  exit 1
+fi
+
+# Resolve the bridged L3 token for this L2 token via the on-chain factory.
+L3_TOKEN_ADDRESS="$(
+  ETHERS_MODULE="$ETHERS_MODULE" RPC_L3="$RPC_L3_EFFECTIVE" FACTORY="$L3_TOKEN_FACTORY_ADDRESS" L2TOKEN="$L2_TOKEN_ADDRESS" node -e '
+    const { JsonRpcProvider, Contract, getAddress } = require(process.env.ETHERS_MODULE);
+    const provider = new JsonRpcProvider(process.env.RPC_L3);
+    const factory = new Contract(
+      process.env.FACTORY,
+      ["function l3TokenForL2Token(address) view returns (address)"],
+      provider
+    );
+    factory
+      .l3TokenForL2Token(process.env.L2TOKEN)
+      .then((a) => process.stdout.write(getAddress(a)))
+      .catch(() => process.stdout.write(""));
+  '
+)"
+
+if [ -z "$L3_TOKEN_ADDRESS" ] || [ "$L3_TOKEN_ADDRESS" = "0x0000000000000000000000000000000000000000" ]; then
+  echo "Unable to resolve L3 token for L2 token $L2_TOKEN_ADDRESS via factory $L3_TOKEN_FACTORY_ADDRESS." >&2
+  echo "Hint: run a deposit first (bridge-e2e --mode l2l3 --run) to trigger token deployment." >&2
+  exit 1
+fi
 
 DEMO_AMOUNT_ETH="${DEMO_AMOUNT_ETH:-1}"
 
 echo "Demo withdraw ERC20 (burn on L3 -> release on L2) amount=${DEMO_AMOUNT_ETH}"
+echo "Using L2_TOKEN_ADDRESS=$L2_TOKEN_ADDRESS"
+echo "Using L3_TOKEN_ADDRESS=$L3_TOKEN_ADDRESS"
+echo "Account=$DEPOSITOR"
 
 if curl -sS http://localhost:7171/health | jq -e '.observeOnly == true' >/dev/null; then
   echo "Relayer is observe-only; set RELAYER_PRIVATE_KEY (and optionally L2_RELAYER_PRIVATE_KEY) and restart ghost-relayer."
@@ -28,7 +115,7 @@ if curl -sS http://localhost:7171/health | jq -e '.observeOnly == true' >/dev/nu
 fi
 
 cd "$ROOT_DIR/contracts"
-DEMO_AMOUNT_ETH="$DEMO_AMOUNT_ETH" npx hardhat run --network ghostl3Op scripts/demo_burn_erc20_l3.ts
+DEMO_AMOUNT_ETH="$DEMO_AMOUNT_ETH" L3_TOKEN_ADDRESS="$L3_TOKEN_ADDRESS" npx hardhat run --network ghostl3Op scripts/demo_burn_erc20_l3.ts
 
 LAST_WITHDRAW_PATH="$ROOT_DIR/.tmp/last_withdraw_erc20.json"
 EXPECTED_NONCE="$(jq -r '.nonce' "$LAST_WITHDRAW_PATH")"
@@ -48,7 +135,17 @@ for i in $(seq 1 60); do
   sleep 1
 done
 
+HEALTH="$(curl -sS http://localhost:7171/health || true)"
+KIND="$(echo "$HEALTH" | jq -r '.lastRelayed.kind // empty' 2>/dev/null || true)"
+NONCE="$(echo "$HEALTH" | jq -r '.lastRelayed.nonce // empty' 2>/dev/null || true)"
+AMOUNT="$(echo "$HEALTH" | jq -r '.lastRelayed.amount // empty' 2>/dev/null || true)"
+if [ "$KIND" != "ERC20WithdrawReleased" ] || [ "$NONCE" != "$EXPECTED_NONCE" ] || [ "$AMOUNT" != "$EXPECTED_AMOUNT_WEI" ]; then
+  echo "Timed out waiting for relayer to release ERC20 on L2." >&2
+  echo "$HEALTH" | jq . || true
+  exit 1
+fi
+
 echo "L2 balance:"
-DEMO_ACCOUNT=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 L2_TOKEN_ADDRESS="$L2_TOKEN_ADDRESS" npx hardhat run --network ghostl2Op scripts/demo_balance_l2.ts
+DEMO_ACCOUNT="$DEPOSITOR" L2_TOKEN_ADDRESS="$L2_TOKEN_ADDRESS" npx hardhat run --network ghostl2Op scripts/demo_balance_l2.ts
 echo "L3 balance:"
-DEMO_ACCOUNT=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 L3_TOKEN_ADDRESS="$L3_TOKEN_ADDRESS" npx hardhat run --network ghostl3Op scripts/demo_balance_l3.ts
+DEMO_ACCOUNT="$DEPOSITOR" L3_TOKEN_ADDRESS="$L3_TOKEN_ADDRESS" npx hardhat run --network ghostl3Op scripts/demo_balance_l3.ts

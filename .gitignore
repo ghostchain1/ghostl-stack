@@ -94,6 +94,7 @@ infra/ghostchain/data/**/keystore/
 # runtime state snapshots
 services/data/state.json
 services/**/data/
+services/.state/
 
 # build artifacts
 apps/web/.next/

@@ -8,6 +8,9 @@
 # Requires: bash, jq, curl, cast (foundry).
 set -euo pipefail
 
+# Foundry tooling (cast) is typically installed via foundryup into $HOME/.foundry/bin.
+export PATH="$HOME/.foundry/bin:$PATH"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 

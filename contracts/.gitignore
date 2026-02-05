@@ -7,3 +7,5 @@
 /.foundry-cache-local/
 /.hardhat-cache/
 /out-codex/
+/cache-codex/
+/reports/foundry/
