@@ -106,7 +106,7 @@ This checklist is **safe by default** (no transactions) unless a step is explici
   - **Likely fails:** `Dev secrets blocked`; RPC not reachable (`HOST_L1_RPC`); metrics not reachable (`L1_METRICS_PROM_URL`); genesis/run-script checksum mismatch.
   - **Debug:**
     ```bash
-    docker compose -f infra/ghostchain/docker-compose.eth.yml ps
+    docker compose -f infra/ghostchain/docker-compose.l1.yml ps
     ss -lnt | rg ':18545|:18660' || true
     curl -fsS http://localhost:18545 -H 'content-type: application/json' \
       -d '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}'
