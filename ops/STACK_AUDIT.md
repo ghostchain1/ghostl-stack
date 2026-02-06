@@ -5,7 +5,7 @@ Generated: 2026-01-23T18:55:00Z
 ## Runtime Snapshot (Docker)
 
 ### Compose projects (docker compose ls)
-- `ghostchain`: `restarting(2), running(4)` (config files include `/infra/ghostchain/docker-compose.eth.yml` plus a backup path)
+- `ghostchain`: `restarting(2), running(4)` (config files include `/infra/ghostchain/docker-compose.l1.yml` plus a backup path)
 - `opstack`: `running(5)` (`/infra/opstack/docker-compose.yml`)
 
 ### Running containers (highlights)
@@ -34,7 +34,7 @@ Generated: 2026-01-23T18:55:00Z
 - RPC WS: `ws://localhost:18546`
 - AuthRPC: `http://localhost:18552`
 - Metrics: `http://localhost:18660`
-- Chain ID: `14000101` (from `infra/ghostchain/docker-compose.eth.yml`)
+- Chain ID: `14000101` (from `infra/ghostchain/docker-compose.l1.yml`)
 
 ### GhostL2 (OP Stack)
 - RPC HTTP (L2 geth): `http://localhost:29547`
@@ -51,7 +51,7 @@ Generated: 2026-01-23T18:55:00Z
 ## Detected Miswirings / Drift
 
 1) **GhostChain compose drift**
-   - Running `ghostchain` project references a backup compose file path (`/infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.eth.yml`) instead of the repo copy. This is a configuration drift risk.
+   - Running `ghostchain` project references a backup compose file path (`/infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.<legacy>.yml`) instead of the repo copy. This is a configuration drift risk.
 
 2) **GhostChain bootnode restart loop**
    - `ghostchain-ghostchain-bootnode-1` is in continuous restart. Likely missing or invalid `boot.key` or data path mismatch.

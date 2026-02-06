@@ -264,7 +264,7 @@ fi
 
 if [ "$SKIP_RESTART_CHECK" != "1" ]; then
   info "restart resilience check"
-  L1_COMPOSE_FILE="${L1_COMPOSE_FILE:-$ROOT_DIR/infra/ghostchain/docker-compose.eth.yml}"
+  L1_COMPOSE_FILE="${L1_COMPOSE_FILE:-$ROOT_DIR/infra/ghostchain/docker-compose.l1.yml}"
   check_restart_policy "$L1_COMPOSE_FILE" "ghostchain-node1"
   check_restart_policy "$L1_COMPOSE_FILE" "ghostchain-rpc-proxy"
 else
