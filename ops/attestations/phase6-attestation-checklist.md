@@ -1,6 +1,6 @@
 # Phase 6 Attestation Checklist (dry-run / harness)
 
-Generated: `2026-02-05T20:33:43Z`  
+Generated: `2026-02-06T04:06:13Z`  
 Repo: `ghostl-stack`  
 Revision: run `git rev-parse HEAD` (branch: `main`)
 
@@ -43,6 +43,15 @@ For the complete list, run `git status -uall`.
 
 ## Go/No-Go gate results
 
+## Clean-run refresh (single-SHA baseline)
+
+The repository was consolidated into a single clean baseline commit:
+
+- Baseline commit: `6bc989d0d886efe79c28c64628eea5bff25b92a1`
+- Baseline tag: `phase2-6-lock-2026-02-06`
+
+After tagging, the Phase 6 gates were re-run on `2026-02-06` with a **clean** working tree. The refreshed evidence packs below record `git.dirty=false` in `provenance/provenance.json`.
+
 ### L1 gate: **PASS (dry-run)**
 
 Command:
@@ -64,6 +73,11 @@ Skipped / not verifiable here:
 - Monitoring endpoints (`SKIP_MONITORING=1`, `SKIP_AI_MONITOR=1`)
 - Policy registry runtime validation (`SKIP_POLICY_REGISTRY=1`)
 
+Clean-run evidence (Feb 6):
+
+- `infra/evidence/out/evidence-pack-l1-20260206T034922Z.zip`
+- SHA256: `a94a294e2eadcc9d2d1f8215dbc38ce31862f96c00dfdc7d866831234efbbc3d`
+
 ### L2 gate: **PASS (dry-run)**
 
 Command:
@@ -81,6 +95,11 @@ Skipped / not verifiable here:
 
 - Docker daemon check (`L2_DOCTOR_SKIP_DOCKER=1`)
 - Runtime/RPC checks (`L2_GO_NO_GO_SKIP_RUNTIME=1`, `L2_DOCTOR_SKIP_RUNTIME=1`)
+
+Clean-run evidence (Feb 6):
+
+- `infra/evidence/out/evidence-pack-l2-20260206T035002Z.zip`
+- SHA256: `86c27514b5f90cbcfabc27aa40fcdc6253e5c32ac1fd37ee2c2663e058e9a600`
 
 ### L3 gate: **PASS (dry-run)**
 
@@ -100,6 +119,11 @@ Skipped / not verifiable here:
 - Docker daemon check (`L3_DOCTOR_SKIP_DOCKER=1`)
 - Runtime/RPC checks (`L3_GO_NO_GO_SKIP_RUNTIME=1`, `L3_DOCTOR_SKIP_RUNTIME=1`)
 
+Clean-run evidence (Feb 6):
+
+- `infra/evidence/out/evidence-pack-l3-20260206T035019Z.zip`
+- SHA256: `03830112e02108dab78cf464075e2857e94c3bac6c3e2c710739262715faef3e`
+
 ### AI governance gate: **PASS (docs + tests)**
 
 Command:
@@ -116,7 +140,7 @@ Executed (verified):
 
 Notes:
 
-- Dirty-tree enforcement was bypassed to allow harness patch iteration (`AI_GO_NO_GO_ALLOW_DIRTY=1`).
+- Clean-run note: AI go/no-go was also re-run with dirty-tree enforcement enabled (`AI_GO_NO_GO_ALLOW_DIRTY=0`).
 
 ## Static analysis & scan summaries (what we can validate offline)
 
@@ -125,6 +149,11 @@ Notes:
 - **Trivy filesystem scan:** `ops/security/trivy-fs.json`
   - `CreatedAt: 2026-02-05T20:27:42.882072293Z`
   - Parsed counts: `vulnerabilities=0`, `misconfigurations=0`, `secrets=0`, `licenses=0`
+
+AI evidence pack reproducibility (clean baseline + current workspace state):
+
+- `EVIDENCE_TIMESTAMP=20260203T180000Z EVIDENCE_EPOCH=1760100000 infra/scripts/evidence-pack-ai-governance.sh --verify`
+- Output: `Reproducible evidence pack hash: 03367c8b3778c6f717233fefa1173a7a06f65d1e72c8128d3cd1e68a2ec0abd1`
 
 ## “Governance cannot be overridden” — verified vs not verified (in this environment)
 
