@@ -1,7 +1,7 @@
 # Phase 6 Attestation (Harness / Dry-Run)
 
-Generated (UTC): `2026-02-06T11:04:58Z`
-Tested git SHA: `7486dd2c240958719a0d828bb07dc38ce1d81c3c`
+Generated (UTC): `2026-02-06T11:32:56Z`
+Tested git SHA: `90cece4a07d4dfbfa3e7a99e6500d87faad8047b`
 
 This attestation captures **what can be verified inside this Codex harness** (where some runtime capabilities are restricted). It is intended to be reproducible from a single git checkout.
 
@@ -56,6 +56,30 @@ This attestation captures **what can be verified inside this Codex harness** (wh
 - Outcome: **SKIPPED**
 - Notes:
   - Skips outside CI when docker is blocked; strict mode fails and writes `contracts/reports/formal/summary.json`.
+
+### GST leakage gate
+
+- Command:
+  - `npm run gst:leakage`
+- Outcome: **OK**
+- Notes:
+  - Enforces no user-facing legacy ETH/Ethereum/Ether/ENS `.eth` leakage outside an allowlist.
+
+### GST constitution proposal calldata
+
+- Command:
+  - `npm --prefix contracts run proposal:gst-constitution`
+- Outcome: **OK**
+- Notes:
+  - Generates deterministic calldata evidence at `docs/gst-migration/PROPOSAL-CALLDATA.json`.
+
+### GST invariant test
+
+- Command:
+  - `cd contracts && forge test --match-path test/GSTInvariant.t.sol`
+- Outcome: **OK**
+- Notes:
+  - Ensures canonical token metadata stays locked and checks a small set of front-door config/docs for forbidden branding.
 
 ### AI governance go/no-go
 
