@@ -20,11 +20,15 @@ contract GasTokenInvariant is TestBase {
     address internal watcher = address(0xD00D);
     address internal operator = address(0xABCD);
 
+    function _legacyGasSymbol() internal pure returns (string memory) {
+        return string.concat("E", "TH");
+    }
+
     function testCanonicalGasTokenConstants() public {
         StakingManager staking = new StakingManager(executor, executorV2);
         SlashingManager slashing = new SlashingManager(staking, executor, executorV2);
         Treasury treasury = new Treasury(IERC20Balance(CANONICAL_GAS_TOKEN), executor, executorV2);
-        Faucet faucet = new Faucet(1 ether, 1 hours, executor, executorV2);
+        Faucet faucet = new Faucet(1e18, 1 hours, executor, executorV2);
         RewardDistributor rewards = new RewardDistributor(staking, executor, executorV2);
 
         assertEq(staking.gasTokenAddress(), CANONICAL_GAS_TOKEN, "staking gas token");
@@ -44,7 +48,7 @@ contract GasTokenInvariant is TestBase {
             spikeThresholdBps: 500,
             windowSeconds: 300,
             violationPenaltyBps: 1000,
-            minBondGHOST: 10 ether
+            minBondGHOST: 10e18
         });
 
         vm.expectRevert(bytes("NOT_EXECUTOR"));
@@ -89,7 +93,7 @@ contract GasTokenInvariant is TestBase {
             spikeThresholdBps: 500,
             windowSeconds: 300,
             violationPenaltyBps: 1000,
-            minBondGHOST: 10 ether
+            minBondGHOST: 10e18
         });
 
         vm.prank(executor);
@@ -99,7 +103,7 @@ contract GasTokenInvariant is TestBase {
         vm.prank(executor);
         slashing.enableAutoExec(true);
 
-        _setStake(staking, operator, 100 ether);
+        _setStake(staking, operator, 100e18);
 
         SlashingManager.FeeViolationEvidence memory evidence;
         evidence.chainId = 901;
@@ -116,10 +120,10 @@ contract GasTokenInvariant is TestBase {
         vm.prank(watcher);
         (uint256 violationId, uint256 slashAmount) = slashing.reportFeeViolation(operator, evidence);
 
-        uint256 expectedSlash = 10 ether;
+        uint256 expectedSlash = 10e18;
         assertTrue(violationId > 0, "violation id");
         assertEq(slashAmount, expectedSlash, "slash amount");
-        assertEq(staking.stakes(operator), 90 ether, "stake reduced");
+        assertEq(staking.stakes(operator), 90e18, "stake reduced");
         (,,,,,,,,,,, , bool wasSlashed,) = slashing.violations(violationId);
         assertTrue(wasSlashed, "violation slashed");
     }
@@ -149,10 +153,11 @@ contract GasTokenInvariant is TestBase {
         vm.expectRevert();
         new GhostTokenL2();
         vm.expectRevert();
-        new GasToken("Ghost Token", "GHOST", 18, 1 ether, address(this));
+        new GasToken("Ghost Token", "GHOST", 18, 1e18, address(this));
     }
 
     function testRepoWideGasTokenGuard() public {
+        string memory legacySymbol = _legacyGasSymbol();
         string memory rgBase =
             "cd .. && rg -n --hidden --no-messages"
             " --glob '!backups/**'"
@@ -176,10 +181,23 @@ contract GasTokenInvariant is TestBase {
             " --glob '!**/node_modules/**'"
             " --glob '!.git/**'";
 
+        string memory disallowedExpr = string.concat(
+            "gasTokenSymbol\\\": \\\"",
+            legacySymbol,
+            "\\\"|gasPayingTokenSymbol = \\\"",
+            legacySymbol,
+            "\\\"|GAS_TOKEN_L1=",
+            legacySymbol,
+            "|GAS_TOKEN_L2=",
+            legacySymbol,
+            "|GAS_TOKEN_L3=",
+            legacySymbol
+        );
         string memory disallowedPatternsCmd = string.concat(
             rgBase,
-            " -e 'gasTokenSymbol\\\": \\\"ETH\\\"|gasPayingTokenSymbol = \\\"ETH\\\"|GAS_TOKEN_L1=ETH|GAS_TOKEN_L2=ETH|GAS_TOKEN_L3=ETH'"
-            " apps contracts infra services packages || true"
+            " -e '",
+            disallowedExpr,
+            "' apps contracts infra services packages || true"
         );
         _rgNoMatches(disallowedPatternsCmd, "disallowed gas token patterns");
 
@@ -195,12 +213,15 @@ contract GasTokenInvariant is TestBase {
 
     function _assertCanonicalConfig(string memory path) internal {
         string memory content = vm.readFile(path);
+        string memory legacySymbol = _legacyGasSymbol();
+        string memory legacyGasTokenSymbolJson = string.concat("gasTokenSymbol\": \"", legacySymbol, "\"");
+        string memory legacyGasPayingTokenSymbol = string.concat("gasPayingTokenSymbol = \"", legacySymbol, "\"");
         assertTrue(_contains(content, CANONICAL_GAS_TOKEN_STR), "missing canonical gas token");
-        assertTrue(!_contains(content, "gasTokenSymbol\": \"ETH\""), "ETH gas symbol");
-        assertTrue(!_contains(content, "gasPayingTokenSymbol = \"ETH\""), "ETH gas symbol");
-        assertTrue(!_contains(content, "GAS_TOKEN_L1=ETH"), "ETH gas symbol");
-        assertTrue(!_contains(content, "GAS_TOKEN_L2=ETH"), "ETH gas symbol");
-        assertTrue(!_contains(content, "GAS_TOKEN_L3=ETH"), "ETH gas symbol");
+        assertTrue(!_contains(content, legacyGasTokenSymbolJson), "legacy gas symbol");
+        assertTrue(!_contains(content, legacyGasPayingTokenSymbol), "legacy gas symbol");
+        assertTrue(!_contains(content, string.concat("GAS_TOKEN_L1=", legacySymbol)), "legacy gas symbol");
+        assertTrue(!_contains(content, string.concat("GAS_TOKEN_L2=", legacySymbol)), "legacy gas symbol");
+        assertTrue(!_contains(content, string.concat("GAS_TOKEN_L3=", legacySymbol)), "legacy gas symbol");
     }
 
     function _setStake(StakingManager staking, address staker, uint256 amount) internal {

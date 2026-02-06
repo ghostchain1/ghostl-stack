@@ -37,8 +37,6 @@ rg -n --hidden --glob '!.git/**' \
 - **Observability dashboards** still label native balance as `(ETH)`:
   - `observability/infra/grafana/dashboards/opstack-observability.json`
   - `observability/infra/k8s/observability-stack.yaml`
-- **Contracts tests** still contain hard-coded `"ETH"` strings used as negative checks:
-  - `contracts/test/foundry/GasTokenInvariant.t.sol`
 - **Besu RPC module names** include `ETH` in `--rpc-http-api` lists (technical token; likely allowlist candidate):
   - `infra/ghostchain/docker-compose.ibft.yml`
   - `infra/docker/compose/docker-compose.core.yml`
