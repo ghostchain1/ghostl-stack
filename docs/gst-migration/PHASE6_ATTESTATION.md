@@ -1,7 +1,7 @@
 # Phase 6 Attestation (Harness / Dry-Run)
 
-Generated (UTC): `2026-02-06T08:47:47Z`
-Tested git SHA: `46c103f91f6b596e3bfbd3703435e40945a2c79e`
+Generated (UTC): `2026-02-06T11:04:58Z`
+Tested git SHA: `7486dd2c240958719a0d828bb07dc38ce1d81c3c`
 
 This attestation captures **what can be verified inside this Codex harness** (where some runtime capabilities are restricted). It is intended to be reproducible from a single git checkout.
 
@@ -22,6 +22,7 @@ This attestation captures **what can be verified inside this Codex harness** (wh
 - Notes:
   - Confirms required binaries are present and required env files exist.
   - Skips docker runtime capture and RPC reachability checks due to `--dry-run`.
+  - Compose validation warning: `docker-compose.phase3.secrets.yml` is invalid (`ghost-relayer` has no image/build).
 
 ### L1 go/no-go (dry-run via skip flags)
 
@@ -55,6 +56,14 @@ This attestation captures **what can be verified inside this Codex harness** (wh
 - Outcome: **SKIPPED**
 - Notes:
   - Skips outside CI when docker is blocked; strict mode fails and writes `contracts/reports/formal/summary.json`.
+
+### AI governance go/no-go
+
+- Command:
+  - `bash infra/scripts/gates/ai-go-no-go.sh`
+- Outcome: **OK**
+- Notes:
+  - Runs federation and failure-mode smoke checks plus Foundry invariant tests.
 
 ## Not verified in this harness
 
