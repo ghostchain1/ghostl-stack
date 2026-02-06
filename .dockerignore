@@ -52,3 +52,9 @@ chains
 chains/**
 apps/worker
 apps/worker/**
+
+# Allow building the Liquidity Gravity Engine router image from repo root context.
+!services/liquidity-router
+!services/liquidity-router/**
+!services/liquidity-prover
+!services/liquidity-prover/**
