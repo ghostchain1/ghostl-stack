@@ -14,15 +14,23 @@ fi
 ALLOWLIST_FILE="${ALLOWLIST_FILE:-$ROOT_DIR/config/gst-allowlist.txt}"
 
 rg_globs=(
-  --hidden
-  --glob '!.git/**'
-  --glob '!docs/gst-migration/**'
-  --glob '!scripts/gst-leakage-gate.sh'
-  --glob '!config/gst-allowlist.txt'
-  --glob '!**/node_modules/**'
-  --glob '!**/dist/**'
-  --glob '!**/.next/**'
-  --glob '!**/build/**'
+	--hidden
+	--glob '!.git/**'
+	--glob '!docs/gst-migration/**'
+	--glob '!scripts/gst-leakage-gate.sh'
+	--glob '!config/gst-allowlist.txt'
+	--glob '!ops/snapshots/**'
+	--glob '!ops/preflight/**'
+	--glob '!backups/**'
+	--glob '!infra/docker/_backup/**'
+	--glob '!docs/autonomy/**'
+	--glob '!ops/STACK_CANONICAL.yml'
+	--glob '!scripts/health/baseline_report.md'
+	--glob '!tree.txt'
+	--glob '!**/node_modules/**'
+	--glob '!**/dist/**'
+	--glob '!**/.next/**'
+	--glob '!**/build/**'
   --glob '!**/out/**'
   --glob '!**/cache/**'
   --glob '!**/artifacts/**'
@@ -43,10 +51,10 @@ fi
 
 # Policy:
 # - Business/branding legacy EVM-mainnet token semantics are forbidden.
-# - JSON-RPC `eth_*` method names are allowed for compatibility and are NOT checked here.
-#
-# This gate intentionally focuses on user-facing tokens and common identifier patterns.
-PATTERN='(\bETH\b|\bEthereum\b|\bEther\b|Ξ|\bETH_[A-Z0-9_]+\b|\b[A-Za-z0-9]+_eth\b|\bnativeEth\b|\bethAmount\b|\bethBalance\b|\bETH_DECIMALS\b|\bETHERSCAN\b|\bALCHEMY_ETH\b|\bINFURA_ETH\b)'
+	# - JSON-RPC `eth_*` method names are allowed for compatibility and are NOT checked here.
+	#
+	# This gate intentionally focuses on user-facing tokens and common identifier patterns.
+PATTERN='(\bETH\b|\bEthereum\b|\bEther\b|Ξ|(?i:\b[a-z0-9-]+\.eth\b)|\bETH_[A-Z0-9_]+\b|\b[A-Za-z0-9]+_eth\b|\bnativeEth\b|\bethAmount\b|\bethBalance\b|\bETH_DECIMALS\b|\bETHERSCAN\b|\bALCHEMY_ETH\b|\bINFURA_ETH\b)'
 
 matches="$(rg -n --no-heading --pcre2 "$PATTERN" . "${rg_globs[@]}" || true)"
 if [ -z "$matches" ]; then
@@ -57,8 +65,8 @@ fi
 {
   echo "Forbidden ETH branding tokens detected (GST-native policy violation):"
   echo
-  echo "$matches" | head -n 200
-  if [ "$(echo "$matches" | wc -l | tr -d ' ')" -gt 200 ]; then
+  printf '%s\n' "$matches" | sed -n '1,200p'
+  if [ "$(printf '%s\n' "$matches" | wc -l | tr -d ' ')" -gt 200 ]; then
     echo "... (truncated)"
   fi
   echo

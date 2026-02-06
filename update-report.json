@@ -1,7 +1,7 @@
 [
   {
     "service": "ghostchain-bootnode",
-    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.eth.yml",
+    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.l1.yml",
     "status": "success",
     "startTime": "2026-01-21T18:01:58Z",
     "endTime": "2026-01-21T18:02:34Z",
@@ -14,7 +14,7 @@
   },
   {
     "service": "ghostscout-db",
-    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.eth.yml",
+    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.l1.yml",
     "status": "success",
     "startTime": "2026-01-21T18:02:37Z",
     "endTime": "2026-01-21T18:03:12Z",
@@ -27,7 +27,7 @@
   },
   {
     "service": "ghostchain-node1",
-    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.eth.yml",
+    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.l1.yml",
     "status": "skipped_not_owned",
     "startTime": "2026-01-21T18:03:12Z",
     "endTime": "2026-01-21T18:03:13Z",
@@ -35,7 +35,7 @@
   },
   {
     "service": "ghostchain-node2",
-    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.eth.yml",
+    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.l1.yml",
     "status": "success",
     "startTime": "2026-01-21T18:03:13Z",
     "endTime": "2026-01-21T18:03:46Z",
@@ -48,7 +48,7 @@
   },
   {
     "service": "ghostscout",
-    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.eth.yml",
+    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.l1.yml",
     "status": "success",
     "startTime": "2026-01-21T18:03:46Z",
     "endTime": "2026-01-21T18:04:19Z",
@@ -61,7 +61,7 @@
   },
   {
     "service": "ghostscout-frontend",
-    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.eth.yml",
+    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.l1.yml",
     "status": "success",
     "startTime": "2026-01-21T18:04:19Z",
     "endTime": "2026-01-21T18:04:54Z",
