@@ -26,9 +26,32 @@ function isDockerDaemonUnavailable(message: string) {
     haystack.includes("got permission denied while trying to connect to the docker daemon socket") ||
     haystack.includes("cannot connect to the docker daemon") ||
     haystack.includes("is the docker daemon running") ||
-    haystack.includes("dial unix") &&
+    (haystack.includes("dial unix") &&
       haystack.includes("docker.sock") &&
-      (haystack.includes("permission denied") || haystack.includes("operation not permitted"))
+      (haystack.includes("permission denied") ||
+        haystack.includes("operation not permitted") ||
+        haystack.includes("no such file or directory"))) ||
+    (haystack.includes("error during connect") && haystack.includes("docker.sock"))
+  );
+}
+
+function isDockerImageFetchUnavailable(message: string) {
+  const haystack = message.toLowerCase();
+  return (
+    haystack.includes("unable to find image") ||
+    haystack.includes("pull access denied") ||
+    haystack.includes("requested access to the resource is denied") ||
+    haystack.includes("manifest unknown") ||
+    haystack.includes("no such host") ||
+    haystack.includes("temporary failure in name resolution") ||
+    haystack.includes("dial tcp") ||
+    haystack.includes("i/o timeout") ||
+    haystack.includes("tls handshake timeout") ||
+    haystack.includes("context deadline exceeded") ||
+    haystack.includes("network is unreachable") ||
+    haystack.includes("proxyconnect tcp") ||
+    haystack.includes("connection refused") ||
+    haystack.includes("connection reset by peer")
   );
 }
 
@@ -66,8 +89,8 @@ if (dockerVersion.error && (dockerVersion.error as NodeJS.ErrnoException).code =
   skip("docker not found; install Docker to run Slither");
 }
 if (dockerVersion.status !== 0) {
-  const stderr = dockerVersion.stderr ?? "";
-  if (stderr && isDockerDaemonUnavailable(stderr)) {
+  const out = `${dockerVersion.stdout ?? ""}\n${dockerVersion.stderr ?? ""}`.trim();
+  if (out && isDockerDaemonUnavailable(out)) {
     skip("docker daemon not reachable; cannot run Slither in this environment");
   }
   writeSummary({ issues: null, error: `docker version failed (exit ${dockerVersion.status ?? "unknown"})` });
@@ -152,9 +175,15 @@ try {
     process.stderr.write(result.stderr);
   }
   if (!result.stdout || result.stdout.length === 0) {
-    const stderr = result.stderr ?? "";
-    if (stderr && isDockerDaemonUnavailable(stderr)) {
+    const out = `${result.stdout ?? ""}\n${result.stderr ?? ""}`.trim();
+    if (out && isDockerDaemonUnavailable(out)) {
       skip("docker daemon not reachable; cannot run Slither in this environment");
+    }
+    if (out && isDockerImageFetchUnavailable(out)) {
+      skip("unable to fetch Slither image (network/registry unavailable); cannot run Slither in this environment");
+    }
+    if (result.status === 125) {
+      skip("docker run failed; cannot run Slither in this environment");
     }
     writeSummary({ issues: null, error: `slither produced no JSON output (exit ${result.status ?? "unknown"})` });
     process.exit(result.status ?? 1);
