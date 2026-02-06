@@ -170,7 +170,7 @@ Not verified here (requires real runtime integration):
 
 - [ ] Live RPC health/load/restart behavior for L1/L2/L3 nodes.
 - [ ] Docker-compose runtime launch correctness and network isolation enforcement under real container runtime.
-- [ ] Bridge/interop execution against external chains (Ethereum/Bitcoin/etc) with real RPCs and finality.
+- [ ] Bridge/interop execution against external chains (e.g., Bitcoin and external EVM chains) with real RPCs and finality.
 
 ## Decision (this environment)
 
