@@ -307,7 +307,7 @@
             "GAS_ENGINE_SIGNER_PRIVATE_KEY_L1": "",
             "GAS_ENGINE_SIGNER_PRIVATE_KEY_L2": "",
             "GAS_ENGINE_SIGNER_PRIVATE_KEY_L3": "",
-            "GAS_PRICE_MODEL": "eth_fee_history",
+            "GAS_PRICE_MODEL": "rpc_fee_history",
             "GAS_TOKEN_L1": "<redacted>",
             "GAS_TOKEN_L2": "<redacted>",
             "GAS_TOKEN_L3": "<redacted>",

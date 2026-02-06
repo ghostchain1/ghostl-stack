@@ -59,6 +59,12 @@ if [ "$L2_GO_NO_GO_SKIP_RUNTIME" = "1" ]; then
   warn "runtime checks skipped (L2_GO_NO_GO_SKIP_RUNTIME=1)"
 fi
 
+if ! docker version --format '{{.Server.Version}}' >/dev/null 2>&1; then
+  if [ -z "${L2_DOCTOR_SKIP_DOCKER:-}" ]; then
+    export L2_DOCTOR_SKIP_DOCKER=1
+  fi
+fi
+
 if [ "$L2_GO_NO_GO_REQUIRE_PROGRESS" = "1" ]; then
   L2_REQUIRE_L2_PROGRESS=1 "$ROOT_DIR/infra/scripts/doctor-l2.sh"
 else

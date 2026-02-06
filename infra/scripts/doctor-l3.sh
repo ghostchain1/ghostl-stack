@@ -103,6 +103,23 @@ need_bin() {
   command -v "$1" >/dev/null 2>&1 || fail "missing required binary: $1"
 }
 
+is_docker_daemon_unavailable() {
+  local msg="${1:-}"
+  msg="$(printf '%s' "$msg" | tr '[:upper:]' '[:lower:]')"
+  case "$msg" in
+    *"permission denied while trying to connect to the docker api"* ) return 0 ;;
+    *"permission denied while trying to connect to the docker daemon socket"* ) return 0 ;;
+    *"got permission denied while trying to connect to the docker daemon socket"* ) return 0 ;;
+    *"cannot connect to the docker daemon"* ) return 0 ;;
+    *"is the docker daemon running"* ) return 0 ;;
+    *"error during connect"*docker.sock* ) return 0 ;;
+    *dial\ unix*docker.sock*permission\ denied* ) return 0 ;;
+    *dial\ unix*docker.sock*operation\ not\ permitted* ) return 0 ;;
+    *dial\ unix*docker.sock*no\ such\ file\ or\ directory* ) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 jsonrpc() {
   local url="$1"
   local method="$2"
@@ -338,21 +355,45 @@ need_bin curl
 need_bin sha256sum
 need_bin python3
 
+DOCKER_AVAILABLE=1
 if ! command -v docker >/dev/null 2>&1; then
-  skip_or_fail "docker not installed"
-fi
-if [ "$L3_DOCTOR_SKIP_DOCKER" != "1" ]; then
-  if ! docker version --format '{{.Server.Version}}' >/dev/null 2>&1; then
-    skip_or_fail "docker daemon/socket not reachable"
+  if [ "$L3_DOCTOR_SKIP_DOCKER" = "1" ]; then
+    DOCKER_AVAILABLE=0
+    warn "docker not installed (L3_DOCTOR_SKIP_DOCKER=1)"
+  else
+    skip_or_fail "docker not installed"
   fi
-else
+fi
+if [ "$DOCKER_AVAILABLE" = "1" ] && [ "$L3_DOCTOR_SKIP_DOCKER" != "1" ]; then
+  docker_out=""
+  if ! docker_out="$(docker version --format '{{.Server.Version}}' 2>&1)"; then
+    if is_docker_daemon_unavailable "$docker_out"; then
+      if [ "$L3_DOCTOR_SKIP_DOCKER" = "1" ]; then
+        DOCKER_AVAILABLE=0
+        warn "docker daemon/socket not reachable (L3_DOCTOR_SKIP_DOCKER=1)"
+      else
+        skip_or_fail "docker daemon/socket not reachable"
+      fi
+    else
+      skip_or_fail "docker version failed"
+    fi
+  fi
+elif [ "$L3_DOCTOR_SKIP_DOCKER" = "1" ]; then
+  DOCKER_AVAILABLE=0
   warn "docker daemon check skipped (L3_DOCTOR_SKIP_DOCKER=1)"
 fi
-if ! docker compose version >/dev/null 2>&1; then
+
+COMPOSE_AVAILABLE=0
+if [ "$DOCKER_AVAILABLE" = "1" ] && docker compose version >/dev/null 2>&1; then
+  COMPOSE_AVAILABLE=1
+elif [ "$L3_DOCTOR_SKIP_DOCKER" != "1" ]; then
   fail "docker compose not available"
 fi
-
-echo "OK: docker/compose reachable"
+if [ "$DOCKER_AVAILABLE" = "1" ] && [ "$COMPOSE_AVAILABLE" = "1" ]; then
+  echo "OK: docker/compose reachable"
+else
+  warn "docker/compose unavailable; docker-dependent checks will be skipped"
+fi
 
 if [ ! -f "$L3_ROLLUP_JSON" ]; then
   fail "missing rollup config: $L3_ROLLUP_JSON"
