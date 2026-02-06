@@ -1,7 +1,7 @@
 # Phase 6 Attestation (Harness / Dry-Run)
 
-Generated (UTC): `2026-02-06T13:07:10Z`
-Tested git SHA: `git rev-parse HEAD` (at time of run)
+Generated (UTC): `2026-02-06T13:22:14Z`
+Tested git ref: ``
 
 This attestation captures **what can be verified inside this Codex harness** (where some runtime capabilities are restricted). It is intended to be reproducible from a single git checkout.
 
@@ -10,7 +10,7 @@ This attestation captures **what can be verified inside this Codex harness** (wh
 - Docker Engine **socket/API access is blocked** from this harness (`docker info` / `docker version` return permission errors).
   - Result: docker-dependent checks are **SKIPPED** outside CI.
   - In CI / strict mode (`CI=1` or `SLITHER_STRICT=1`), these checks are expected to **FAIL hard** with an error summary.
-- No live L1/L2/L3 RPC endpoints are assumed to be running in this harness.
+- No live L1/L2/L3 RPC endpoints are assumed to be running in this harness. Runtime reachability/stability checks require the networks to be running and reachable.
 
 ## Gates executed (dry-run / best-effort)
 
@@ -108,3 +108,8 @@ From the repo root on a machine with full runtime access:
 3. Strict mode (CI-like):
    - `CI=1 bash ops/scripts/preflight.sh --json`
    - `SLITHER_STRICT=1 npm --prefix contracts run formal:slither`
+
+4. Live runtime verification (requires running networks):
+   - L1: `bash infra/scripts/gates/l1-go-no-go.sh`
+   - L2: `bash infra/scripts/gates/l2-go-no-go.sh`
+   - L3: `bash infra/scripts/gates/l3-go-no-go.sh`

@@ -61,6 +61,12 @@ if [ "$L3_GO_NO_GO_SKIP_RUNTIME" = "1" ]; then
   warn "runtime checks skipped (L3_GO_NO_GO_SKIP_RUNTIME=1)"
 fi
 
+if ! docker version --format '{{.Server.Version}}' >/dev/null 2>&1; then
+  if [ -z "${L3_DOCTOR_SKIP_DOCKER:-}" ]; then
+    export L3_DOCTOR_SKIP_DOCKER=1
+  fi
+fi
+
 if [ "$L3_GO_NO_GO_REQUIRE_PROGRESS" = "1" ]; then
   L3_REQUIRE_L3_PROGRESS=1 "$ROOT_DIR/infra/scripts/doctor-l3.sh"
 else
