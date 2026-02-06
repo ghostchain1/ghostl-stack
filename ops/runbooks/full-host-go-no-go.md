@@ -32,6 +32,9 @@ This repo can run “dry-run” gates in restricted harnesses, but that does **n
 
 From repo root:
 
+0) Optional: use the “no-skips” runner (recommended):
+   - `ops/runbooks/full-host-go-no-go.sh`
+
 1) L1 gate:
    - `bash infra/scripts/gates/l1-go-no-go.sh`
 
@@ -70,4 +73,3 @@ Expected:
   - the evidence packs present (even partial)
   - `git rev-parse HEAD` and `git status`
 - Fix, then re-run **all** gates to avoid partial “green” states.
-
