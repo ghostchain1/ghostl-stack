@@ -8,6 +8,7 @@ interface Vm {
     function expectRevert(bytes calldata) external;
     function assume(bool) external;
     function warp(uint256) external;
+    function deal(address who, uint256 newBalance) external;
     function sign(uint256, bytes32) external returns (uint8, bytes32, bytes32);
     function addr(uint256) external returns (address);
     function store(address target, bytes32 slot, bytes32 value) external;
