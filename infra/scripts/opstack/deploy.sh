@@ -46,7 +46,7 @@ fi
 if [ "${SECURITY_CHECKPOINTS:-0}" = "1" ]; then
   echo "Running security checkpoints (foundry + slither)..."
   npm run test:foundry
-  npm run formal:slither
+  SLITHER_STRICT=1 npm run formal:slither
 fi
 
 echo "Deploying GhostChain PoS/L1 stack and bridging glue..."
