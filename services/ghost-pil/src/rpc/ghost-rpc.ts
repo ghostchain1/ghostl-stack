@@ -122,8 +122,16 @@ export class GhostRpc {
   }
 }
 
+const resolveForcedNamespace = (value: typeof config.PIL_RPC_NAMESPACE | undefined): RpcNamespace | null => {
+  if (!value) return null;
+  if (value === 'evm') return 'eth';
+  if (value === 'eth' || value === 'ghost') return value;
+  return null;
+};
+
 const detectNamespace = async (rpcUrl: string): Promise<RpcNamespace> => {
-  if (config.PIL_RPC_NAMESPACE) return config.PIL_RPC_NAMESPACE;
+  const forced = resolveForcedNamespace(config.PIL_RPC_NAMESPACE);
+  if (forced) return forced;
   try {
     const res = await fetch(rpcUrl, {
       method: 'POST',
