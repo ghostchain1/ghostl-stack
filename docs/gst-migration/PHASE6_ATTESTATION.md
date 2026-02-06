@@ -1,7 +1,7 @@
 # Phase 6 Attestation (Harness / Dry-Run)
 
-Generated (UTC): `2026-02-06T11:32:56Z`
-Tested git SHA: `90cece4a07d4dfbfa3e7a99e6500d87faad8047b`
+Generated (UTC): `2026-02-06T13:07:10Z`
+Tested git SHA: `git rev-parse HEAD` (at time of run)
 
 This attestation captures **what can be verified inside this Codex harness** (where some runtime capabilities are restricted). It is intended to be reproducible from a single git checkout.
 
@@ -53,9 +53,10 @@ This attestation captures **what can be verified inside this Codex harness** (wh
 
 - Command:
   - `npm --prefix contracts run formal:slither`
-- Outcome: **SKIPPED**
+- Outcome: **OK**
 - Notes:
-  - Skips outside CI when docker is blocked; strict mode fails and writes `contracts/reports/formal/summary.json`.
+  - `SLITHER_RUNNER=auto` prefers Docker but will fall back to a local `slither` binary if Docker is unavailable.
+  - Strict mode (`CI=1` or `SLITHER_STRICT=1`) still fails hard when Slither cannot run and writes `contracts/reports/formal/summary.json`.
 
 ### GST leakage gate
 
@@ -94,7 +95,7 @@ This attestation captures **what can be verified inside this Codex harness** (wh
 
 - Live RPC stability, restart resilience, and monitoring target checks against running L1/L2/L3.
 - Trivy vulnerability scanning.
-- Full formal pipelines (Slither JSON findings, Echidna, Scribble) when Docker is required but blocked.
+- Full formal pipelines (Echidna, Scribble) when Docker is required but blocked.
 
 ## Reproduce
 
