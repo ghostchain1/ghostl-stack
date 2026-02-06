@@ -23,9 +23,11 @@ contract ComplianceOracleTest is Test {
         uint256 expiry = block.timestamp + 300;
 
         bytes32 digest = keccak256(abi.encodePacked(subject, action, paramsHash, expiry, block.chainid));
-        bytes32 ethSigned = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
+        bytes32 signedHash = keccak256(
+            abi.encodePacked(hex"19457468657265756d205369676e6564204d6573736167653a0a3332", digest)
+        );
 
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPk, ethSigned);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPk, signedHash);
         bytes memory sig = abi.encodePacked(r, s, v);
 
         bool ok = oracle.isValidAttestation(subject, action, paramsHash, expiry, sig);
