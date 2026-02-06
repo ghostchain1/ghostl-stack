@@ -66,7 +66,7 @@ run_gate "l1-go-no-go" bash infra/scripts/gates/l1-go-no-go.sh
 run_gate "l2-go-no-go" bash infra/scripts/gates/l2-go-no-go.sh
 run_gate "l3-go-no-go" bash infra/scripts/gates/l3-go-no-go.sh
 
-run_gate "slither" npm --prefix contracts run formal:slither
+run_gate "slither" env SLITHER_STRICT=1 npm --prefix contracts run formal:slither
 python3 - <<'PY'
 import json
 path="contracts/reports/formal/summary.json"
@@ -90,4 +90,3 @@ run_gate "ai-go-no-go" bash infra/scripts/gates/ai-go-no-go.sh
 log "All full-host gates passed."
 log "Evidence packs: ${ROOT_DIR}/infra/evidence/out"
 log "Run logs: ${out_dir}/*-${timestamp}.log"
-
