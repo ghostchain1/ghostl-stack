@@ -25,6 +25,7 @@
     "formal:echidna": "ts-node scripts/run_echidna.ts",
     "formal:certora": "ts-node scripts/run_certora.ts",
     "verify:formal": "ts-node scripts/run_formal_verification.ts",
+    "proposal:gst-constitution": "ts-node scripts/build-gst-constitution-proposal.ts",
     "pragmas:check": "node -r ts-node/register ../scripts/check_pragmas.ts",
     "test": "hardhat test",
     "test:foundry": "ts-node scripts/run_foundry_tests.ts --mode default",
