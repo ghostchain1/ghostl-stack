@@ -5430,7 +5430,7 @@
     "infra/opstack/docker-compose.network-manager.yml",
     "infra/opstack/docker-compose.l3.yml",
     "infra/ghostchain/docker-compose.ibft.yml",
-    "infra/ghostchain/docker-compose.eth.yml",
+    "infra/ghostchain/docker-compose.l1.yml",
     "infra/opstack/docker-compose.yml",
     "infra/opstack/docker-compose.challengers.yml",
     "infra/opstack/optimism-upstream/interop-devnet/docker-compose.yml",

@@ -8,8 +8,8 @@
 ## Immediate mitigation
 1. Check proxy health: `curl -s http://localhost:18545/health`
 2. Restart proxy and node1:
-   - `docker compose -f infra/ghostchain/docker-compose.eth.yml up -d --build ghostchain-rpc-proxy`
-   - `docker compose -f infra/ghostchain/docker-compose.eth.yml restart ghostchain-node1`
+   - `docker compose -f infra/ghostchain/docker-compose.l1.yml up -d --build ghostchain-rpc-proxy`
+   - `docker compose -f infra/ghostchain/docker-compose.l1.yml restart ghostchain-node1`
 
 ## Permanent fix
 - Verify CORS/vhosts in `.env.l1` and regenerate `.env` via `env-sync-l1.sh`.

@@ -12,7 +12,7 @@ if [ -f "$L1_ENV_FILE" ]; then
   set +a
 fi
 
-L1_COMPOSE_FILE="${L1_COMPOSE_FILE:-$ROOT_DIR/infra/ghostchain/docker-compose.eth.yml}"
+L1_COMPOSE_FILE="${L1_COMPOSE_FILE:-$ROOT_DIR/infra/ghostchain/docker-compose.l1.yml}"
 L1_GENESIS_PATH="${L1_GENESIS_PATH:-$ROOT_DIR/infra/ghostchain/geth/genesis.json}"
 L1_RUN_SCRIPT="${L1_RUN_SCRIPT:-$ROOT_DIR/infra/ghostchain/geth/run-node.sh}"
 L1_KEY_DIR="${L1_KEY_DIR:-$ROOT_DIR/infra/ghostchain/geth/keys}"

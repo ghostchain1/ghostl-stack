@@ -6,5 +6,5 @@ bash "$ROOT/../scripts/env-sync-l1.sh"
 bash "$ROOT/scripts/init.sh"
 
 echo "[up] Starting Ghostchain geth stack..."
-docker compose -f "$ROOT/docker-compose.eth.yml" up -d
-docker compose -f "$ROOT/docker-compose.eth.yml" ps
+docker compose -f "$ROOT/docker-compose.l1.yml" up -d
+docker compose -f "$ROOT/docker-compose.l1.yml" ps
