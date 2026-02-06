@@ -19,14 +19,8 @@ rg_globs=(
 	--glob '!docs/gst-migration/**'
 	--glob '!scripts/gst-leakage-gate.sh'
 	--glob '!config/gst-allowlist.txt'
-	--glob '!ops/snapshots/**'
-	--glob '!ops/preflight/**'
 	--glob '!backups/**'
 	--glob '!infra/docker/_backup/**'
-	--glob '!docs/autonomy/**'
-	--glob '!ops/STACK_CANONICAL.yml'
-	--glob '!scripts/health/baseline_report.md'
-	--glob '!tree.txt'
 	--glob '!**/node_modules/**'
 	--glob '!**/dist/**'
 	--glob '!**/.next/**'
@@ -57,6 +51,13 @@ fi
 PATTERN='(\bETH\b|\bEthereum\b|\bEther\b|Ξ|(?i:\b[a-z0-9-]+\.eth\b)|\bETH_[A-Z0-9_]+\b|\b[A-Za-z0-9]+_eth\b|\bnativeEth\b|\bethAmount\b|\bethBalance\b|\bETH_DECIMALS\b|\bETHERSCAN\b|\bALCHEMY_ETH\b|\bINFURA_ETH\b)'
 
 matches="$(rg -n --no-heading --pcre2 "$PATTERN" . "${rg_globs[@]}" || true)"
+if [ -n "$matches" ]; then
+  # Allowlist a handful of technical-only occurrences that are not business/branding semantics.
+  #
+  # Hyperledger Besu uses `ETH` as the RPC module name in `--rpc-http-api=...` lists.
+  # We still forbid other uses of `ETH` in strings/identifiers.
+  matches="$(printf '%s\n' "$matches" | rg -v --pcre2 '(--rpc-http-api=|rpc-http-api[:=]\\s*)ETH(,|\\b)' || true)"
+fi
 if [ -z "$matches" ]; then
   log "OK: no forbidden ETH branding tokens found."
   exit 0
