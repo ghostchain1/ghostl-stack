@@ -375,7 +375,7 @@ data:
         },
         {
           "type": "stat",
-          "title": "Batcher balance (ETH)",
+          "title": "Batcher balance (GST)",
           "gridPos": {"h": 6, "w": 6, "x": 18, "y": 8},
           "targets": [
             {
@@ -384,7 +384,7 @@ data:
             }
           ],
           "options": {"reduceOptions": {"calcs": ["last"], "fields": ""}},
-          "fieldConfig": {"defaults": {"unit": "eth"}, "overrides": []}
+          "fieldConfig": {"defaults": {"unit": "none"}, "overrides": []}
         },
     
         {
