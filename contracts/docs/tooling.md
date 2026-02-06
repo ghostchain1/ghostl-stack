@@ -20,7 +20,7 @@ GhostChain Solidity Baseline: `^0.8.24` (MANDATORY)
 ### Formal tool setup
 
 - Slither: requires a working Docker daemon (the script runs Slither in a container). If Docker is unavailable, the runner prints `SKIPPED` and exits `0` outside CI. Set `SLITHER_STRICT=1` to fail hard (CI does this implicitly).
-- Echidna: requires Docker (default) or a local `echidna-test` binary. Set `ECHIDNA_USE_DOCKER=false` to use local.
+- Echidna: requires Docker (default) or a local `echidna-test` binary. If Docker is unavailable, the runner prints `SKIPPED` and exits `0` outside CI. Set `ECHIDNA_STRICT=1` to fail hard (CI does this implicitly). Set `ECHIDNA_USE_DOCKER=false` to use local.
 - Scribble: installed via `npm --prefix contracts ci` (uses `npx scribble`).
 - Certora: install the CLI (e.g. `pip3 install certora-cli`) and set `CERTORAKEY`.
 
