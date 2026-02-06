@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, renameSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
@@ -26,7 +26,9 @@ function isDockerDaemonUnavailable(message: string) {
     haystack.includes("got permission denied while trying to connect to the docker daemon socket") ||
     haystack.includes("cannot connect to the docker daemon") ||
     haystack.includes("is the docker daemon running") ||
-    haystack.includes("dial unix") && haystack.includes("docker.sock") && haystack.includes("permission denied")
+    haystack.includes("dial unix") &&
+      haystack.includes("docker.sock") &&
+      (haystack.includes("permission denied") || haystack.includes("operation not permitted"))
   );
 }
 
@@ -107,6 +109,7 @@ if (!hasBuildInfo) {
 }
 
 const slitherReport = path.join(reports, "slither.json");
+const slitherReportTmp = `${slitherReport}.tmp`;
 
 const args = [
   "run",
@@ -156,10 +159,6 @@ try {
     writeSummary({ issues: null, error: `slither produced no JSON output (exit ${result.status ?? "unknown"})` });
     process.exit(result.status ?? 1);
   }
-  if (existsSync(slitherReport)) {
-    unlinkSync(slitherReport);
-  }
-  writeFileSync(slitherReport, result.stdout);
 
   const raw = result.stdout;
   const parsed = JSON.parse(raw) as {
@@ -167,6 +166,21 @@ try {
     error?: string | null;
     results?: { detectors?: Array<{ check?: string; impact?: string }> };
   };
+
+  // Only replace the existing report once we have valid JSON.
+  if (existsSync(slitherReportTmp)) {
+    unlinkSync(slitherReportTmp);
+  }
+  writeFileSync(slitherReportTmp, raw);
+  try {
+    renameSync(slitherReportTmp, slitherReport);
+  } catch {
+    if (existsSync(slitherReport)) {
+      unlinkSync(slitherReport);
+    }
+    renameSync(slitherReportTmp, slitherReport);
+  }
+
   if (parsed.success === false) {
     writeSummary({ issues: null, error: parsed.error ?? "slither failed" });
     process.exit(1);
@@ -183,7 +197,8 @@ try {
   }).length;
   writeSummary({ issues: blockingCount, totalFindings: detectors.length });
   process.exit(blockingCount > 0 ? 1 : 0);
-} catch {
-  writeSummary({ issues: null });
+} catch (error) {
+  const message = error instanceof Error ? error.message : "unknown error";
+  writeSummary({ issues: null, error: `slither runner failed: ${message}` });
   process.exit(1);
 }
