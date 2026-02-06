@@ -169,7 +169,7 @@ export USE_CUSTOM_GAS_TOKEN="true"
 export CUSTOM_GAS_TOKEN_ADDRESS="$CANONICAL_GAS_TOKEN"
 
 if [ "${USE_CUSTOM_GAS_TOKEN,,}" != "true" ]; then
-  echo "Custom gas token is required; refusing ETH gas fallback." >&2
+  echo "Custom gas token is required; refusing non-GST gas fallback." >&2
   exit 1
 fi
 

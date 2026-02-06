@@ -97,7 +97,7 @@ docker compose stop --no-deps ghost-rollup-challenger-l2 ghost-rollup-challenger
 HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:18545}"
 HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
 HOST_L3_RPC="${HOST_L3_RPC:-http://localhost:39545}"
-FUND_AMOUNT_ETH="${FUND_AMOUNT_ETH:-10}"
+FUND_AMOUNT_GST="${FUND_AMOUNT_GST:-${FUND_AMOUNT_ETH:-10}}"
 
 rpc_ready() {
   local url="$1"
@@ -120,12 +120,12 @@ fund_list="$(
 
 (
   cd "$ROOT_DIR/contracts"
-  FUND_AMOUNT_ETH="$FUND_AMOUNT_ETH" FUND_ADDRESSES_JSON="$fund_list" RPC_L1="$HOST_L1_RPC" \
+  FUND_AMOUNT_GST="$FUND_AMOUNT_GST" FUND_ADDRESSES_JSON="$fund_list" RPC_L1="$HOST_L1_RPC" \
     npx hardhat run --network anvil scripts/fund_addresses.ts >/dev/null
-  FUND_AMOUNT_ETH="$FUND_AMOUNT_ETH" FUND_ADDRESSES_JSON="$fund_list" OP_L2_RPC="$HOST_L2_RPC" \
+  FUND_AMOUNT_GST="$FUND_AMOUNT_GST" FUND_ADDRESSES_JSON="$fund_list" OP_L2_RPC="$HOST_L2_RPC" \
     npx hardhat run --network ghostl2Op scripts/fund_addresses.ts >/dev/null
   if rpc_ready "$HOST_L3_RPC"; then
-    FUND_AMOUNT_ETH="$FUND_AMOUNT_ETH" FUND_ADDRESSES_JSON="$fund_list" OP_L3_RPC="$HOST_L3_RPC" \
+    FUND_AMOUNT_GST="$FUND_AMOUNT_GST" FUND_ADDRESSES_JSON="$fund_list" OP_L3_RPC="$HOST_L3_RPC" \
       npx hardhat run --network ghostl3Op scripts/fund_addresses.ts >/dev/null
   else
     echo "Skipping L3 funding (RPC not reachable at $HOST_L3_RPC)"
