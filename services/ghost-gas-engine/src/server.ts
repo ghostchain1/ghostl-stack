@@ -38,7 +38,8 @@ app.register(rateLimit, { max: 200, timeWindow: '1 minute' });
 
 app.setErrorHandler((error, _req, reply) => {
   const status = (error as Error & { statusCode?: number }).statusCode || 500;
-  reply.code(status).send({ error: error.message || 'request_failed' });
+  const message = error instanceof Error && error.message ? error.message : 'request_failed';
+  reply.code(status).send({ error: message });
 });
 
 await registerHealthRoutes(app);

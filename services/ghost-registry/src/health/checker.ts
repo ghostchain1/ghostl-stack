@@ -43,7 +43,7 @@ export type RegistryChain = {
   }>;
   explorers?: Array<{ name: string; url: string; standard: 'EIP3091' }>;
   metadata?: {
-    rpcStandard: 'ethereum';
+    rpcStandard: 'evm';
     evmCompatible: true;
     consensus: string;
   };
@@ -368,7 +368,7 @@ export class HealthChecker {
         endpoints,
         explorers: [],
         metadata: {
-          rpcStandard: 'ethereum' as const,
+          rpcStandard: 'evm' as const,
           evmCompatible: true as const,
           consensus: chain.layer === 'L1' ? 'PoS' : chain.layer === 'L2' ? 'OP Stack' : 'OP Stack L3'
         }

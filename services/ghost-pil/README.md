@@ -9,7 +9,7 @@ Read-only data plane for GhostChain L1/L2/L3 telemetry, jurisdiction modeling, a
 - `PIL_WRITE_ENABLED` (default: false)
 - `PIL_APPROVAL_REQUIRED` (default: true)
 - `PIL_INGEST_ENABLED` (default: true): Enables RPC ingestion loop.
-- `PIL_RPC_NAMESPACE` (optional): Force `eth` or `ghost` RPC method namespace.
+- `PIL_RPC_NAMESPACE` (optional): Force `evm` or `ghost` RPC method namespace (legacy `eth` accepted for backward compatibility).
 
 ## Local Run (Docker Compose)
 
