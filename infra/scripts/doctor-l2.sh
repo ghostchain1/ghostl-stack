@@ -97,6 +97,21 @@ L2_DOCTOR_SKIP_DOCKER="${L2_DOCTOR_SKIP_DOCKER:-0}"
 warn() { echo "WARN: $*" >&2; }
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
+STRICT_MODE=0
+if [ "${SLITHER_STRICT:-0}" = "1" ] || [ -n "${CI:-}" ] || [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+  STRICT_MODE=1
+fi
+
+skip_or_fail() {
+  local message="$1"
+  if [ "$STRICT_MODE" = "1" ]; then
+    fail "$message"
+  fi
+  warn "SKIPPED: $message"
+  echo "[doctor-l2] SKIPPED: $message"
+  exit 0
+}
+
 need_bin() {
   command -v "$1" >/dev/null 2>&1 || fail "missing required binary: $1"
 }
@@ -337,11 +352,11 @@ need_bin sha256sum
 need_bin python3
 
 if ! command -v docker >/dev/null 2>&1; then
-  fail "docker not installed"
+  skip_or_fail "docker not installed"
 fi
 if [ "$L2_DOCTOR_SKIP_DOCKER" != "1" ]; then
-  if ! docker version --format '{{.Server.Version}}'; then
-    fail "docker daemon not reachable"
+  if ! docker version --format '{{.Server.Version}}' >/dev/null 2>&1; then
+    skip_or_fail "docker daemon/socket not reachable"
   fi
 else
   warn "docker daemon check skipped (L2_DOCTOR_SKIP_DOCKER=1)"

@@ -126,6 +126,10 @@ record_check() {
 }
 
 HAS_FAILURE=0
+STRICT_MODE=0
+if [[ "${SLITHER_STRICT:-0}" == "1" || -n "${CI:-}" || "${GITHUB_ACTIONS:-}" == "true" ]]; then
+  STRICT_MODE=1
+fi
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -152,8 +156,12 @@ for bin in "${required_bins[@]}"; do
   if command -v "$bin" >/dev/null 2>&1; then
     record_check "binary:$bin" "ok" "$(command -v "$bin")"
   else
-    record_check "binary:$bin" "fail" "missing"
-    HAS_FAILURE=1
+    if [[ "$bin" == "docker" && "$STRICT_MODE" != "1" ]]; then
+      record_check "binary:$bin" "skip" "missing (non-strict)"
+    else
+      record_check "binary:$bin" "fail" "missing"
+      HAS_FAILURE=1
+    fi
   fi
 done
 
@@ -344,8 +352,13 @@ if [[ "$DRY_RUN" == "false" ]]; then
     docker volume ls --format '{{json .}}' > "$OUT_DIR/docker-volumes.json" || true
     record_check "docker:runtime" "ok" "runtime captured"
   else
-    record_check "docker:runtime" "fail" "docker daemon not reachable"
-    HAS_FAILURE=1
+    if [[ "$STRICT_MODE" == "1" ]]; then
+      record_check "docker:runtime" "fail" "docker daemon not reachable"
+      HAS_FAILURE=1
+    else
+      record_check "docker:runtime" "skip" "docker daemon/socket not reachable"
+      log "SKIPPED: docker runtime capture (docker daemon/socket not reachable)"
+    fi
   fi
 else
   record_check "docker:runtime" "skip" "dry-run"
