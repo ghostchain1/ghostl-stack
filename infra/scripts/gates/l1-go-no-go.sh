@@ -45,6 +45,68 @@ warn() { echo "WARN: $*" >&2; }
 fail() { echo "FAIL: $*" >&2; exit 1; }
 info() { echo "[gate] $*"; }
 
+STRICT_MODE=0
+if [ "${SLITHER_STRICT:-0}" = "1" ] || [ -n "${CI:-}" ] || [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+  STRICT_MODE=1
+fi
+
+is_docker_daemon_unavailable() {
+  local msg="${1:-}"
+  msg="$(printf '%s' "$msg" | tr '[:upper:]' '[:lower:]')"
+  case "$msg" in
+    *"permission denied while trying to connect to the docker api"* ) return 0 ;;
+    *"permission denied while trying to connect to the docker daemon socket"* ) return 0 ;;
+    *"got permission denied while trying to connect to the docker daemon socket"* ) return 0 ;;
+    *"cannot connect to the docker daemon"* ) return 0 ;;
+    *"is the docker daemon running"* ) return 0 ;;
+    *"error during connect"*docker.sock* ) return 0 ;;
+    *dial\ unix*docker.sock*permission\ denied* ) return 0 ;;
+    *dial\ unix*docker.sock*operation\ not\ permitted* ) return 0 ;;
+    *dial\ unix*docker.sock*no\ such\ file\ or\ directory* ) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+write_error_summary() {
+  local error="$1"
+  local detail="${2:-}"
+  local out_dir="$ROOT_DIR/ops/preflight/$(date -u +%Y%m%d-%H%M%S)"
+  local out_file="$out_dir/l1-go-no-go-error.json"
+  mkdir -p "$out_dir"
+  python3 - "$error" "$detail" >"$out_file" <<'PY'
+import datetime
+import json
+import os
+import sys
+
+error = sys.argv[1] if len(sys.argv) > 1 else ""
+detail = sys.argv[2] if len(sys.argv) > 2 else ""
+
+payload = {
+    "gate": "l1-go-no-go",
+    "updatedAt": datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+    "strict": os.environ.get("SLITHER_STRICT") == "1" or bool(os.environ.get("CI")) or os.environ.get("GITHUB_ACTIONS") == "true",
+    "error": error,
+    "detail": detail,
+}
+print(json.dumps(payload, indent=2, sort_keys=True))
+PY
+  warn "error summary written: ${out_file#$ROOT_DIR/}"
+}
+
+skip_or_fail() {
+  local message="$1"
+  local detail="${2:-}"
+  if [ "$STRICT_MODE" = "1" ]; then
+    write_error_summary "$message" "$detail"
+    fail "$message"
+  fi
+  warn "SKIPPED: $message"
+  info "SKIPPED: $message"
+  info "Hint: run on a host with Docker daemon access, or set SLITHER_STRICT=1 to fail hard."
+  exit 0
+}
+
 need_bin() {
   command -v "$1" >/dev/null 2>&1 || fail "missing required binary: $1"
 }
@@ -152,8 +214,12 @@ need_bin python3
 need_bin docker
 
 if [ "$SKIP_DOCKER_CHECK" != "1" ]; then
-  if ! docker version --format '{{.Server.Version}}'; then
-    fail "docker daemon not reachable"
+  docker_version_out=""
+  if ! docker_version_out="$(docker version --format '{{.Server.Version}}' 2>&1)"; then
+    if is_docker_daemon_unavailable "$docker_version_out"; then
+      skip_or_fail "docker daemon/socket not reachable" "$docker_version_out"
+    fi
+    fail "docker version failed: ${docker_version_out:-unknown error}"
   fi
 else
   warn "docker daemon check skipped (SKIP_DOCKER_CHECK=1)"
