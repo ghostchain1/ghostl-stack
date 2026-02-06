@@ -34,6 +34,7 @@ SKIP_INVARIANTS="${SKIP_INVARIANTS:-0}"
 SKIP_EVIDENCE="${SKIP_EVIDENCE:-0}"
 SKIP_VULN_SCAN="${SKIP_VULN_SCAN:-0}"
 SKIP_DOCKER_CHECK="${SKIP_DOCKER_CHECK:-0}"
+TRIVY_IMAGE_SCAN="${TRIVY_IMAGE_SCAN:-0}"
 
 TRIVY_SECRET_CONFIG="${TRIVY_SECRET_CONFIG:-$ROOT_DIR/trivy-secret.yaml}"
 TRIVY_SKIP_DIRS_DEFAULT="node_modules,contracts/node_modules,dist,contracts/dist,contracts/artifacts,contracts/cache,contracts/.hardhat-cache,contracts/typechain-types,contracts/proposals,contracts/.foundry-out,contracts/.foundry-cache,contracts/.foundry-out-local,contracts/.foundry-cache-local,artifacts,cache,backups,ops/snapshots,ops/preflight,contracts/out-codex,contracts/cache-codex,contracts/out-slither,contracts/cache-slither,infra/docker/_backup,infra/docker/audit,infra/docker/runtime,infra/ghostchain/data,infra/ghostchain/secrets,infra/opstack/data,infra/opstack/broadcast,infra/opstack/secrets,infra/opstack/l3/secrets,chains/l2/data,chains/l3/data"
@@ -213,19 +214,31 @@ need_bin curl
 need_bin python3
 need_bin docker
 
+DOCKER_AVAILABLE=1
 if [ "$SKIP_DOCKER_CHECK" != "1" ]; then
   docker_version_out=""
   if ! docker_version_out="$(docker version --format '{{.Server.Version}}' 2>&1)"; then
     if is_docker_daemon_unavailable "$docker_version_out"; then
-      skip_or_fail "docker daemon/socket not reachable" "$docker_version_out"
+      if [ "$STRICT_MODE" = "1" ]; then
+        skip_or_fail "docker daemon/socket not reachable" "$docker_version_out"
+      fi
+      DOCKER_AVAILABLE=0
+      warn "docker daemon/socket not reachable; continuing with RPC/HTTP checks only"
+    else
+      fail "docker version failed: ${docker_version_out:-unknown error}"
     fi
-    fail "docker version failed: ${docker_version_out:-unknown error}"
   fi
 else
+  DOCKER_AVAILABLE=0
   warn "docker daemon check skipped (SKIP_DOCKER_CHECK=1)"
 fi
-if ! docker compose version >/dev/null 2>&1; then
-  fail "docker compose not available"
+
+if [ "$DOCKER_AVAILABLE" = "1" ]; then
+  if ! docker compose version >/dev/null 2>&1; then
+    fail "docker compose not available"
+  fi
+else
+  warn "docker compose checks will be skipped (no daemon access)"
 fi
 
 if ! command -v forge >/dev/null 2>&1; then
@@ -235,6 +248,9 @@ if ! command -v forge >/dev/null 2>&1; then
 fi
 
 info "running doctor-l1"
+if [ "$DOCKER_AVAILABLE" != "1" ]; then
+  export L1_DOCTOR_SKIP_DOCKER=1
+fi
 "$ROOT_DIR/infra/scripts/doctor-l1.sh"
 
 if [ "$SKIP_RPC_LOAD" != "1" ]; then
@@ -264,9 +280,13 @@ fi
 
 if [ "$SKIP_RESTART_CHECK" != "1" ]; then
   info "restart resilience check"
-  L1_COMPOSE_FILE="${L1_COMPOSE_FILE:-$ROOT_DIR/infra/ghostchain/docker-compose.l1.yml}"
-  check_restart_policy "$L1_COMPOSE_FILE" "ghostchain-node1"
-  check_restart_policy "$L1_COMPOSE_FILE" "ghostchain-rpc-proxy"
+  if [ "$DOCKER_AVAILABLE" != "1" ]; then
+    warn "restart resilience check skipped (docker daemon/socket unavailable)"
+  else
+    L1_COMPOSE_FILE="${L1_COMPOSE_FILE:-$ROOT_DIR/infra/ghostchain/docker-compose.l1.yml}"
+    check_restart_policy "$L1_COMPOSE_FILE" "ghostchain-node1"
+    check_restart_policy "$L1_COMPOSE_FILE" "ghostchain-rpc-proxy"
+  fi
 else
   warn "restart resilience check skipped"
 fi
@@ -363,6 +383,14 @@ if [ "$SKIP_VULN_SCAN" != "1" ]; then
       trivy_cmd+=(--secret-config "$TRIVY_SECRET_CONFIG")
     fi
     "${trivy_cmd[@]}"
+    if [ "$TRIVY_IMAGE_SCAN" = "1" ]; then
+      info "vulnerability scan (container images)"
+      if [ "$DOCKER_AVAILABLE" != "1" ]; then
+        warn "image scan skipped (docker daemon/socket unavailable)"
+      else
+        "$ROOT_DIR/infra/scripts/security/trivy-image-scan.sh" "${ROOT_DIR}/infra/docker/compose/docker-compose.core.yml"
+      fi
+    fi
   else
     fail "trivy not installed (set SKIP_VULN_SCAN=1 only if exceptions are documented)"
   fi

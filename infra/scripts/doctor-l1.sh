@@ -63,6 +63,23 @@ need_bin() {
   command -v "$1" >/dev/null 2>&1 || fail "missing required binary: $1"
 }
 
+is_docker_daemon_unavailable() {
+  local msg="${1:-}"
+  msg="$(printf '%s' "$msg" | tr '[:upper:]' '[:lower:]')"
+  case "$msg" in
+    *"permission denied while trying to connect to the docker api"* ) return 0 ;;
+    *"permission denied while trying to connect to the docker daemon socket"* ) return 0 ;;
+    *"got permission denied while trying to connect to the docker daemon socket"* ) return 0 ;;
+    *"cannot connect to the docker daemon"* ) return 0 ;;
+    *"is the docker daemon running"* ) return 0 ;;
+    *"error during connect"*docker.sock* ) return 0 ;;
+    *dial\ unix*docker.sock*permission\ denied* ) return 0 ;;
+    *dial\ unix*docker.sock*operation\ not\ permitted* ) return 0 ;;
+    *dial\ unix*docker.sock*no\ such\ file\ or\ directory* ) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 jsonrpc() {
   local url="$1"
   local method="$2"
@@ -118,20 +135,45 @@ need_bin curl
 need_bin sha256sum
 need_bin python3
 
+DOCKER_AVAILABLE=1
 if ! command -v docker >/dev/null 2>&1; then
-  skip_or_fail "docker not installed"
-fi
-if [ "$L1_DOCTOR_SKIP_DOCKER" != "1" ]; then
-  if ! docker version --format '{{.Server.Version}}' >/dev/null 2>&1; then
-    skip_or_fail "docker daemon/socket not reachable"
+  if [ "$L1_DOCTOR_SKIP_DOCKER" = "1" ]; then
+    DOCKER_AVAILABLE=0
+    warn "docker not installed (L1_DOCTOR_SKIP_DOCKER=1)"
+  else
+    skip_or_fail "docker not installed"
   fi
-else
+fi
+if [ "$DOCKER_AVAILABLE" = "1" ] && [ "$L1_DOCTOR_SKIP_DOCKER" != "1" ]; then
+  docker_out=""
+  if ! docker_out="$(docker version --format '{{.Server.Version}}' 2>&1)"; then
+    if is_docker_daemon_unavailable "$docker_out"; then
+      if [ "$L1_DOCTOR_SKIP_DOCKER" = "1" ]; then
+        DOCKER_AVAILABLE=0
+        warn "docker daemon/socket not reachable (L1_DOCTOR_SKIP_DOCKER=1)"
+      else
+        skip_or_fail "docker daemon/socket not reachable"
+      fi
+    else
+      skip_or_fail "docker version failed"
+    fi
+  fi
+elif [ "$L1_DOCTOR_SKIP_DOCKER" = "1" ]; then
+  DOCKER_AVAILABLE=0
   warn "docker daemon check skipped (L1_DOCTOR_SKIP_DOCKER=1)"
 fi
-if ! docker compose version >/dev/null 2>&1; then
+
+COMPOSE_AVAILABLE=0
+if [ "$DOCKER_AVAILABLE" = "1" ] && docker compose version >/dev/null 2>&1; then
+  COMPOSE_AVAILABLE=1
+elif [ "$L1_DOCTOR_SKIP_DOCKER" != "1" ]; then
   fail "docker compose not available"
 fi
-echo "OK: docker/compose reachable"
+if [ "$DOCKER_AVAILABLE" = "1" ] && [ "$COMPOSE_AVAILABLE" = "1" ]; then
+  echo "OK: docker/compose reachable"
+else
+  warn "docker/compose unavailable; docker-dependent checks will be skipped"
+fi
 
 if [ "$L1_SECRETS_SOURCE" = "vault" ]; then
   if [ -z "$VAULT_ADDR" ] || { [ -z "$VAULT_TOKEN" ] && { [ -z "$VAULT_ROLE_ID" ] || [ -z "$VAULT_SECRET_ID" ]; }; }; then
@@ -202,10 +244,14 @@ if [ "$KEYS_FOUND" -eq 0 ]; then
   fail "no validator keys found in $L1_KEY_DIR"
 fi
 
-if ! docker compose -f "$L1_COMPOSE_FILE" config >/dev/null 2>&1; then
-  fail "compose config invalid for $L1_COMPOSE_FILE"
+if [ "$COMPOSE_AVAILABLE" = "1" ]; then
+  if ! docker compose -f "$L1_COMPOSE_FILE" config >/dev/null 2>&1; then
+    fail "compose config invalid for $L1_COMPOSE_FILE"
+  fi
+  echo "OK: compose config valid"
+else
+  warn "compose config validation skipped (docker compose unavailable)"
 fi
-echo "OK: compose config valid"
 
 if [ "$L1_DOCTOR_SKIP_RUNTIME" = "1" ]; then
   warn "runtime checks skipped (L1_DOCTOR_SKIP_RUNTIME=1)"

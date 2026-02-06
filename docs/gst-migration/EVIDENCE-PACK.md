@@ -1,7 +1,7 @@
 # GST-Native Evidence Pack
 
-Generated (UTC): `2026-02-06T13:07:10Z`
-Tested git SHA: `git rev-parse HEAD` (at time of run)
+Generated (UTC): `2026-02-06T13:22:14Z`
+Tested git ref: ``
 
 This document summarizes **what we can verify in this harness** and the key artifacts produced for the GST-native migration.
 
