@@ -20,7 +20,7 @@ This document defines the **Phase 1** target architecture for interchain operati
 
 1) Accepts **intents** originating on **L3** (e.g., “bridge asset X to chain Y”).
 2) Evaluates intents through a **non-bypassable Policy+Authz Gate** rooted in **L1** policy + governance.
-3) Routes allowed intents to **approved bridge adapters** for Ethereum/Bitcoin/other ecosystems.
+3) Routes allowed intents to **approved bridge adapters** for external EVM/Bitcoin/other ecosystems.
 4) Emits **evidence** (decision inputs + receipts) and anchors hashes upstream for auditability.
 
 Low Balancer is intentionally split into:
@@ -75,7 +75,7 @@ flowchart LR
   %% External ecosystems
   %% -----------------------
   subgraph EXT["External chains / ecosystems"]
-    ETH["Ethereum (EVM)"]
+    EVM_EXT["External EVM chain"]
     BTC["Bitcoin (UTXO)"]
     OTH["Others (EVM/non‑EVM)"]
   end
@@ -105,7 +105,7 @@ flowchart LR
   Bridge --> Exec
 
   %% Egress to external chains
-  Exec -->|"bridge / lock / mint"| ETH
+  Exec -->|"bridge / lock / mint"| EVM_EXT
   Exec -->|"custody / proofs"| BTC
   Exec -->|"adapter"| OTH
 

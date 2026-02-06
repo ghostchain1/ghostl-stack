@@ -15,7 +15,7 @@ Recommendation carried into this repo: GhostL2 runs on OP Stack now, with a clea
 
 ## Rollout phases
 1) Today: Polygon Edge (IBFT) devnet for fast prototyping + GhostL3 demos.
-2) Production L2: GhostL2 = OP Stack optimistic rollup on Ethereum (EigenDA/Celestia later).
+2) Production L2: GhostL2 = OP Stack optimistic rollup settling on GhostChain L1 (EigenDA/Celestia later).
 3) L3: OP Stack app-chains on GhostL2 with per-app AI policies.
 4) ZK upgrade: add validity proofs to OP batches (Polygon CDK/zkEVM-style) without rewriting the stack.
 

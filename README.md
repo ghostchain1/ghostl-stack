@@ -2,7 +2,7 @@
 
 **GhostL‑Stack** is the canonical monorepo for the **GhostChain Sovereign Blockchain System** — a production‑grade, AI‑native, multi‑layer blockchain architecture consisting of:
 
-* **GhostChain (L1)** — main Autonomous Layer 1 blockchain (Ethereum‑compatible base chain)
+* **GhostChain (L1)** — main Autonomous Layer 1 blockchain (EVM‑compatible base chain)
 * **GhostL2 (L2)** — OP‑Stack rollup anchored to GhostChain
 * **GhostL3 (L3)** — OP‑Stack rollup anchored to GhostL2
 
@@ -62,7 +62,7 @@ Supporting Layers:
 
 ### GhostChain (L1)
 
-* Ethereum‑compatible execution
+* EVM‑compatible execution
 * **Main Autonomous Layer 1 blockchain** (governance‑locked, AI‑assisted ops)
 * **Canonical gas token:** GHOST (ERC‑20)
 * Custom governance (no OpenZeppelin Governor)
