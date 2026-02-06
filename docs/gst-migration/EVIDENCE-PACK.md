@@ -1,7 +1,7 @@
 # GST-Native Evidence Pack
 
-Generated (UTC): `2026-02-06T11:36:16Z`
-Tested git SHA: `55a7edcf355bb68dbacb2e7f2d262c65a38c2662`
+Generated (UTC): `2026-02-06T13:07:10Z`
+Tested git SHA: `git rev-parse HEAD` (at time of run)
 
 This document summarizes **what we can verify in this harness** and the key artifacts produced for the GST-native migration.
 
@@ -9,6 +9,8 @@ This document summarizes **what we can verify in this harness** and the key arti
 
 - Branding leakage gate (GST-native):
   - `npm run gst:leakage` → **OK**
+- Slither (formal):
+  - `npm --prefix contracts run formal:slither` → **OK**
 - Governance proposal calldata (deterministic):
   - `npm --prefix contracts run proposal:gst-constitution` → **OK**
   - Artifact: `docs/gst-migration/PROPOSAL-CALLDATA.json`
@@ -25,7 +27,7 @@ This document summarizes **what we can verify in this harness** and the key arti
 
 ## Known harness limitations / skips
 
-- Docker daemon/socket access is blocked; docker-based scans (e.g., Slither container runs) SKIP outside strict mode.
+- Docker daemon/socket access is blocked; docker-based scans SKIP outside strict mode.
 - No live L1/L2/L3 RPCs are assumed running, so runtime checks are skipped in dry-run modes.
 
 ## Enforcement policy artifacts

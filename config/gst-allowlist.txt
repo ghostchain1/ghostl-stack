@@ -4,7 +4,3 @@
 # Generated formal artifacts (contain legacy strings in embedded metadata).
 contracts/reports/formal/slither.json
 contracts/reports/formal/scribble/scribble.json
-
-# Hyperledger Besu uses `ETH` as the RPC module name; this is not a business/branding concept.
-infra/ghostchain/docker-compose.ibft.yml
-infra/docker/compose/docker-compose.core.yml
