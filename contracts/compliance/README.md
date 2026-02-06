@@ -40,7 +40,7 @@ paramsHash is computed off-chain from resource details (e.g. `keccak256(abi.enco
 digest = keccak256(abi.encodePacked(subject, action, paramsHash, expiry, chainId))
 ```
 
-The oracle verifies the Ethereum Signed Message hash of `digest`.
+The oracle verifies the EIP-191 signed message hash of `digest`.
 `subject` is the wallet address, `action` is a bytes32 identifier (e.g. keccak256("TRANSFER")).
 
 ## ZK Proof Hashes
