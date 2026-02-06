@@ -19,6 +19,8 @@ This folder provides runnable scaffolding for Slither, Scribble, Echidna, and op
 
 - Run: `npm run formal:echidna`
 - Output: `contracts/reports/formal/echidna.json`
+- Requires a working Docker daemon by default. If Docker is unavailable, the script will **skip** in non-CI mode.
+  - Force strict behavior: `ECHIDNA_STRICT=1 npm run formal:echidna`
 - Harnesses live in `contracts/formal/echidna`.
 
 ## Certora (optional)
