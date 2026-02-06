@@ -7,7 +7,7 @@
 
 ## Phases
 1) Current: Polygon Edge / IBFT for local + GhostL3 prototyping; AI monitor/Guard wired in; relayers and rollup services running.
-2) Production L2: GhostL2 = OP Stack optimistic rollup settling on Ethereum; data on L1 (EigenDA/Celestia later); fraud proofs + AI Guard on finalize.
+2) Production L2: GhostL2 = OP Stack optimistic rollup settling on GhostChain L1; data on L1 (EigenDA/Celestia later); fraud proofs + AI Guard on finalize.
 3) App-chains: OP Stack L3s settling on GhostL2 (cheap gas, custom policies per app).
 4) ZK Finality Upgrade: add validity proofs (Polygon CDK/zkEVM-style) to OP batches; no rewrite required.
 
@@ -28,7 +28,7 @@
 | L2         | OP Stack (Optimistic Rollup)   |
 | L3         | OP Stack (app chains)          |
 | Dev Chain  | Polygon Edge (current)         |
-| Settlement | Ethereum                       |
+| Settlement | GhostChain L1                  |
 | DA (later) | EigenDA / Celestia             |
 | Contracts  | Solidity                       |
 | AI Guard   | Node + on-chain policy hooks   |

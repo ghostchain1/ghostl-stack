@@ -1,10 +1,10 @@
 # GhostChain Architecture (L1/L2/L3)
 
-GhostChain is an Ethereum-compatible L1. GhostL2 is a Shibarium-style OP Stack L2 that settles to GhostChain. GhostL3 is an OP Stack L3 that settles to GhostL2.
+GhostChain is an EVM-compatible L1. GhostL2 is a Shibarium-style OP Stack L2 that settles to GhostChain. GhostL3 is an OP Stack L3 that settles to GhostL2.
 
 ## Layers
 
-### GhostChain (L1, Ethereum clone)
+### GhostChain (L1, EVM clone)
 - Geth PoA devnet (chainId `14000101`) and final settlement layer.
 - Hosts OP Stack L1 contracts for GhostL2 (SystemConfig, OptimismPortal, bridges, L2OutputOracle or DisputeGameFactory).
 - Native gas asset is GHOST (ERC‑20) on L1.
@@ -41,7 +41,7 @@ Canonical gas token (L1 ERC‑20):
 ## Diagram
 ```mermaid
 flowchart TD
-  subgraph L1["GhostChain (L1, Ethereum clone)"]
+  subgraph L1["GhostChain (L1, EVM clone)"]
     L1Exec["Geth execution + consensus"]
     L1Contracts["OP Stack L1 contracts<br/>SystemConfig, OptimismPortal, L2OO or DGF"]
   end

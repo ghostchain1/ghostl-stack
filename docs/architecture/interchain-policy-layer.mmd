@@ -43,7 +43,7 @@ flowchart TD
   %% External ecosystems
   %% -----------------------
   subgraph EXT["External chains / ecosystems"]
-    ETH["Ethereum (EVM)"]
+    EVM_EXT["External EVM chain"]
     BTC["Bitcoin (UTXO)"]
     OTH["Others (EVM/non‑EVM)"]
   end
@@ -76,7 +76,7 @@ flowchart TD
   Bridge -->|"approved adapter"| Exec
 
   %% External execution
-  Exec -->|"submit tx/proof"| ETH
+  Exec -->|"submit tx/proof"| EVM_EXT
   Exec -->|"submit tx/proof"| BTC
   Exec -->|"submit tx/proof"| OTH
 
@@ -84,4 +84,3 @@ flowchart TD
   Exec --> Audit
   Audit -->|"evidenceHash"| EV
   EV -->|"auditable record"| Policy
-
