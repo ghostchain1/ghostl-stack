@@ -3406,7 +3406,7 @@ app.get(['/v1/governance/delegations', '/governance/delegations'], requirePermis
 });
 
 app.get(['/v1/governance/snapshot', '/governance/snapshot'], requirePermission('governance:read'), async (_req, res) => {
-  const space = env.SNAPSHOT_SPACE || 'ghostldao.eth';
+  const space = env.SNAPSHOT_SPACE || 'ghostldao';
   const api = env.SNAPSHOT_API_URL || 'https://hub.snapshot.org/graphql';
   let proposals: { id: string; title: string; status: string; link: string }[] = [];
   try {

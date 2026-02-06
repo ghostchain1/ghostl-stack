@@ -3,12 +3,12 @@ set -euo pipefail
 
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-DEMO_AMOUNT_ETH="${DEMO_AMOUNT_ETH:-1}"
+DEMO_AMOUNT_GST="${DEMO_AMOUNT_GST:-${DEMO_AMOUNT_ETH:-1}}"
 
-echo "Demo ERC20 relay (amount=${DEMO_AMOUNT_ETH} tokens)"
+echo "Demo ERC20 relay (amount=${DEMO_AMOUNT_GST} tokens)"
 echo "Requires relayer running with RELAYER_PRIVATE_KEY to mint on L3."
 
-DEMO_AMOUNT_ETH="$DEMO_AMOUNT_ETH" bash "$ROOT_DIR/infra/scripts/demo-deposit-erc20.sh"
+DEMO_AMOUNT_GST="$DEMO_AMOUNT_GST" bash "$ROOT_DIR/infra/scripts/demo-deposit-erc20.sh"
 bash "$ROOT_DIR/infra/scripts/demo-finalize-erc20.sh"
 
 LAST_DEPOSIT_PATH="$ROOT_DIR/.tmp/last_deposit_erc20.json"
@@ -32,4 +32,3 @@ done
 echo "Timed out waiting for ERC20 relay."
 curl -sS http://localhost:7171/health | jq .
 exit 1
-

@@ -15,7 +15,7 @@ contract TreasuryEchidna {
         token.mint(address(treasury), 1000 ether);
     }
 
-    function echidna_cannot_overdraw_eth() public returns (bool) {
+    function echidna_cannot_overdraw_gst() public returns (bool) {
         try treasury.withdrawETH(payable(address(this)), 2 ether) {
             return false;
         } catch {

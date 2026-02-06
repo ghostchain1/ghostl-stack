@@ -40,7 +40,7 @@ const REQUIRE_L3_FINALITY_ON_L2 =
 
 type CanonicalGasTokenMode = "native" | "erc20";
 
-// In this stack, L2/L3 commonly use the native gas token (ETH) for fees.
+// In this stack, L2/L3 commonly use the native gas token (GST) for fees.
 // We keep an optional "canonical gas token" balance gate for production,
 // but default it to "native" + zero-minimum so dev relaying doesn't wedge.
 const CANONICAL_GAS_TOKEN_MODE = (process.env.CANONICAL_GAS_TOKEN_MODE || "native") as CanonicalGasTokenMode;
