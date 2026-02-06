@@ -35,8 +35,10 @@ const RPC_CORS_ORIGINS = (process.env.RPC_CORS_ORIGINS || "http://localhost,http
   .filter(Boolean);
 
 const RPC_ENABLE_GST_NAMESPACE = process.env.RPC_ENABLE_GST_NAMESPACE ? process.env.RPC_ENABLE_GST_NAMESPACE === "1" : true;
-const RPC_DEPRECATE_ETH_NAMESPACE = process.env.RPC_DEPRECATE_ETH_NAMESPACE === "1";
-const RPC_REJECT_ETH_NAMESPACE = process.env.RPC_REJECT_ETH_NAMESPACE === "1";
+const RPC_DEPRECATE_LEGACY_NAMESPACE =
+  process.env.RPC_DEPRECATE_LEGACY_NAMESPACE === "1" || process.env.RPC_DEPRECATE_ETH_NAMESPACE === "1";
+const RPC_REJECT_LEGACY_NAMESPACE =
+  process.env.RPC_REJECT_LEGACY_NAMESPACE === "1" || process.env.RPC_REJECT_ETH_NAMESPACE === "1";
 
 const RPC_ALIAS_AUDIT_LOG_URL = process.env.RPC_ALIAS_AUDIT_LOG_URL || "";
 const RPC_ALIAS_AUDIT_LOG_TIMEOUT_MS = Number(process.env.RPC_ALIAS_AUDIT_LOG_TIMEOUT_MS || "750");
@@ -319,7 +321,7 @@ const server = http.createServer(async (req, res) => {
     if (!msg || typeof msg !== "object" || typeof msg.method !== "string") return { msg, reject: false, canonical: "" };
     const { canonical, upstream, aliasFrom } = normalizeRpcMethod(msg.method);
     if (!canonical || !upstream) return { msg, reject: false, canonical: "" };
-    if (RPC_REJECT_ETH_NAMESPACE && aliasFrom && aliasFrom.startsWith("eth_")) {
+    if (RPC_REJECT_LEGACY_NAMESPACE && aliasFrom && aliasFrom.startsWith("eth_")) {
       return { msg, reject: true, canonical };
     }
     if (aliasFrom) {
@@ -333,19 +335,19 @@ const server = http.createServer(async (req, res) => {
   const normalizedMeta = Array.isArray(payload) ? payload.map((m) => normalizeOne(m, clientIp)) : [normalizeOne(payload, clientIp)];
   const normalized = Array.isArray(payload) ? normalizedMeta.map((m) => m.msg) : normalizedMeta[0].msg;
 
-  // If configured, warn on legacy eth_* usage without breaking compatibility.
-  if (RPC_DEPRECATE_ETH_NAMESPACE && anyEthNamespaceUsed) {
-    res.setHeader("x-ghost-rpc-warning", "eth_* namespace deprecated; use gst_*");
+  // If configured, warn on legacy namespace usage without breaking compatibility.
+  if (RPC_DEPRECATE_LEGACY_NAMESPACE && anyEthNamespaceUsed) {
+    res.setHeader("x-ghost-rpc-warning", "legacy namespace deprecated; use gst_*");
   }
 
   // Hard reject eth_* namespace (opt-in) without touching upstream clients.
-  if (RPC_REJECT_ETH_NAMESPACE) {
+  if (RPC_REJECT_LEGACY_NAMESPACE) {
     const rejected = normalizedMeta.filter((m) => m.reject);
     if (rejected.length) {
       const errOne = (m) => ({
         jsonrpc: "2.0",
         id: m?.msg?.id ?? null,
-        error: { code: -32000, message: `eth_* namespace rejected; use ${m?.canonical || "gst_*"}` }
+        error: { code: -32000, message: `legacy namespace rejected; use ${m?.canonical || "gst_*"}` }
       });
       return json(res, 200, Array.isArray(payload) ? rejected.map(errOne) : errOne(rejected[0]));
     }

@@ -14,7 +14,7 @@ const envSchema = z.object({
   PIL_REGISTRY_URL: z.string().optional(),
   PIL_LEGAL_SIGNALS_PATH: z.string().default(path.join(process.cwd(), 'config', 'legal-signals.json')),
   PIL_JURISDICTIONS_PATH: z.string().default(path.join(process.cwd(), 'config', 'jurisdictions.json')),
-  PIL_RPC_NAMESPACE: z.enum(['eth', 'ghost']).optional(),
+  PIL_RPC_NAMESPACE: z.enum(['evm', 'ghost', 'eth']).optional(),
   PIL_VALIDATOR_CONFIG_PATH: z.string().default(path.join(process.cwd(), 'config', 'validators.json')),
   PIL_VALIDATOR_EVAL_ENABLED: z.coerce.boolean().default(false),
   PIL_VALIDATOR_EVAL_INTERVAL_SECONDS: z.coerce.number().default(300),
