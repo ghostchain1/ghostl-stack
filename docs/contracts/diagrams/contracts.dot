@@ -1138,13 +1138,13 @@ subgraph "clusterIERC20Balance" {
   "IERC20Balance.transfer" [ label = "transfer" ];
 }
 
-subgraph "clusterTreasury" {
-  graph [ label = "Treasury", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
-  "Treasury.<Constructor>" [ label = "<Constructor>", color = "green" ];
-  "Treasury.<Receive Native>" [ label = "<Receive Native>", color = "blue" ];
-  "Treasury.withdrawETH" [ label = "withdrawETH", color = "blue" ];
-  "Treasury.withdrawNative" [ label = "withdrawNative", color = "blue" ];
-}
+  subgraph "clusterTreasury" {
+	  graph [ label = "Treasury", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+	  "Treasury.<Constructor>" [ label = "<Constructor>", color = "green" ];
+	  "Treasury.<Receive Native>" [ label = "<Receive Native>", color = "blue" ];
+	  "Treasury.withdrawLegacyValue" [ label = "withdrawLegacyValue", color = "blue" ];
+	  "Treasury.withdrawNative" [ label = "withdrawNative", color = "blue" ];
+	}
 
 subgraph "clusterUpgradeManager" {
   graph [ label = "UpgradeManager", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
@@ -1562,7 +1562,7 @@ subgraph "clusterimpl" {
   "StakingManager.payable";
   "SystemConfig.setBatcher";
   "SystemConfig.setUnsafeBlockSigner";
-  "Treasury.withdrawETH";
+	  "Treasury.withdrawLegacyValue";
   "Treasury.withdrawNative";
   "IERC20Balance.transfer";
   "ValidatorRegistry.addValidator";
@@ -1875,8 +1875,8 @@ subgraph "clusterimpl" {
   "StakingManager.unstake" -> "StakingManager.payable" [ color = "green" ];
   "SystemConfig.setBatcher" -> "Ownable.address" [ color = "green" ];
   "SystemConfig.setUnsafeBlockSigner" -> "Ownable.address" [ color = "green" ];
-  "Treasury.withdrawETH" -> "Ownable.address" [ color = "green" ];
-  "Treasury.withdrawETH" -> "to.transfer" [ color = "orange" ];
+	  "Treasury.withdrawLegacyValue" -> "Ownable.address" [ color = "green" ];
+	  "Treasury.withdrawLegacyValue" -> "to.transfer" [ color = "orange" ];
   "Treasury.withdrawNative" -> "IERC20Balance.transfer" [ color = "orange" ];
   "ValidatorRegistry.addValidator" -> "Ownable.address" [ color = "green" ];
   "L1CrossDomainMessenger.<Constructor>" -> "XDomainMessenger.address" [ color = "green" ];
