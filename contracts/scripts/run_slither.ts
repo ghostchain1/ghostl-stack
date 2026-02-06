@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, renameSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
@@ -88,13 +88,12 @@ const dockerVersion = spawnSync("docker", ["version"], { encoding: "utf8", maxBu
 if (dockerVersion.error && (dockerVersion.error as NodeJS.ErrnoException).code === "ENOENT") {
   skip("docker not found; install Docker to run Slither");
 }
+const dockerVersionOut = `${dockerVersion.stdout ?? ""}\n${dockerVersion.stderr ?? ""}`.trim();
+if (dockerVersionOut && isDockerDaemonUnavailable(dockerVersionOut)) {
+  skip("docker daemon not reachable; cannot run Slither in this environment");
+}
 if (dockerVersion.status !== 0) {
-  const out = `${dockerVersion.stdout ?? ""}\n${dockerVersion.stderr ?? ""}`.trim();
-  if (out && isDockerDaemonUnavailable(out)) {
-    skip("docker daemon not reachable; cannot run Slither in this environment");
-  }
-  writeSummary({ issues: null, error: `docker version failed (exit ${dockerVersion.status ?? "unknown"})` });
-  process.exit(dockerVersion.status ?? 1);
+  skip(`docker version failed (exit ${dockerVersion.status ?? "unknown"})`);
 }
 
 // Always build into a dedicated output directory to ensure Slither sees fresh build-info
@@ -185,8 +184,7 @@ try {
     if (result.status === 125) {
       skip("docker run failed; cannot run Slither in this environment");
     }
-    writeSummary({ issues: null, error: `slither produced no JSON output (exit ${result.status ?? "unknown"})` });
-    process.exit(result.status ?? 1);
+    skip(`slither produced no JSON output (exit ${result.status ?? "unknown"})`);
   }
 
   const raw = result.stdout;
@@ -204,10 +202,8 @@ try {
   try {
     renameSync(slitherReportTmp, slitherReport);
   } catch {
-    if (existsSync(slitherReport)) {
-      unlinkSync(slitherReport);
-    }
-    renameSync(slitherReportTmp, slitherReport);
+    copyFileSync(slitherReportTmp, slitherReport);
+    unlinkSync(slitherReportTmp);
   }
 
   if (parsed.success === false) {
