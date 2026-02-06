@@ -69,7 +69,7 @@ Generated: 2026-02-04T02:23:32Z
 - ghost-ui
   - ports: 3200:3200
 
-## infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.eth.yml
+## infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.l1.yml
 - ghostchain-bootnode
   - ports: 30301:30301/udp
 - ghostchain-node1
@@ -757,7 +757,7 @@ Generated: 2026-02-04T02:23:32Z
   - ports: 8090:8090
   - healthcheck URLs: http://localhost:8090/health
 
-## infra/evidence/out/evidence-pack-l1-20260202T132538Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+## infra/evidence/out/evidence-pack-l1-20260202T132538Z/snapshots/infra/ghostchain/docker-compose.l1.yml
 - ghostchain-bootnode
   - ports: ${L1_BOOTNODE_PORT:-30301}:30301/udp
 - ghostchain-node1
@@ -782,7 +782,7 @@ Generated: 2026-02-04T02:23:32Z
   - ports: 8090:8090
   - healthcheck URLs: http://localhost:8090/health
 
-## infra/evidence/out/evidence-pack-l1-20260202T133818Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+## infra/evidence/out/evidence-pack-l1-20260202T133818Z/snapshots/infra/ghostchain/docker-compose.l1.yml
 - ghostchain-bootnode
   - ports: ${L1_BOOTNODE_PORT:-30301}:30301/udp
 - ghostchain-node1
@@ -807,7 +807,7 @@ Generated: 2026-02-04T02:23:32Z
   - ports: 8090:8090
   - healthcheck URLs: http://localhost:8090/health
 
-## infra/evidence/out/evidence-pack-l1-20260202T134135Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+## infra/evidence/out/evidence-pack-l1-20260202T134135Z/snapshots/infra/ghostchain/docker-compose.l1.yml
 - ghostchain-bootnode
   - ports: ${L1_BOOTNODE_PORT:-30301}:30301/udp
 - ghostchain-node1
@@ -832,7 +832,7 @@ Generated: 2026-02-04T02:23:32Z
   - ports: 8090:8090
   - healthcheck URLs: http://localhost:8090/health
 
-## infra/evidence/out/evidence-pack-l1-20260202T134249Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+## infra/evidence/out/evidence-pack-l1-20260202T134249Z/snapshots/infra/ghostchain/docker-compose.l1.yml
 - ghostchain-bootnode
   - ports: ${L1_BOOTNODE_PORT:-30301}:30301/udp
 - ghostchain-node1
@@ -857,7 +857,7 @@ Generated: 2026-02-04T02:23:32Z
   - ports: 8090:8090
   - healthcheck URLs: http://localhost:8090/health
 
-## infra/evidence/out/evidence-pack-l1-20260202T141647Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+## infra/evidence/out/evidence-pack-l1-20260202T141647Z/snapshots/infra/ghostchain/docker-compose.l1.yml
 - ghostchain-bootnode
   - ports: ${L1_BOOTNODE_PORT:-30301}:30301/udp
 - ghostchain-node1
@@ -882,7 +882,7 @@ Generated: 2026-02-04T02:23:32Z
   - ports: 8090:8090
   - healthcheck URLs: http://localhost:8090/health
 
-## infra/evidence/out/evidence-pack-l1-20260202T141757Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+## infra/evidence/out/evidence-pack-l1-20260202T141757Z/snapshots/infra/ghostchain/docker-compose.l1.yml
 - ghostchain-bootnode
   - ports: ${L1_BOOTNODE_PORT:-30301}:30301/udp
 - ghostchain-node1
@@ -907,7 +907,7 @@ Generated: 2026-02-04T02:23:32Z
   - ports: 8090:8090
   - healthcheck URLs: http://localhost:8090/health
 
-## infra/evidence/out/evidence-pack-l1-20260202T142035Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+## infra/evidence/out/evidence-pack-l1-20260202T142035Z/snapshots/infra/ghostchain/docker-compose.l1.yml
 - ghostchain-bootnode
   - ports: ${L1_BOOTNODE_PORT:-30301}:30301/udp
 - ghostchain-node1
@@ -932,7 +932,7 @@ Generated: 2026-02-04T02:23:32Z
   - ports: 8090:8090
   - healthcheck URLs: http://localhost:8090/health
 
-## infra/evidence/out/evidence-pack-l1-20260202T142718Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+## infra/evidence/out/evidence-pack-l1-20260202T142718Z/snapshots/infra/ghostchain/docker-compose.l1.yml
 - ghostchain-bootnode
   - ports: ${L1_BOOTNODE_PORT:-30301}:30301/udp
 - ghostchain-node1
@@ -957,7 +957,7 @@ Generated: 2026-02-04T02:23:32Z
   - ports: 8090:8090
   - healthcheck URLs: http://localhost:8090/health
 
-## infra/evidence/out/evidence-pack-l1-20260202T151403Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+## infra/evidence/out/evidence-pack-l1-20260202T151403Z/snapshots/infra/ghostchain/docker-compose.l1.yml
 - ghostchain-bootnode
   - ports: ${L1_BOOTNODE_PORT:-30301}:30301/udp
 - ghostchain-node1
@@ -982,7 +982,7 @@ Generated: 2026-02-04T02:23:32Z
   - ports: 8090:8090
   - healthcheck URLs: http://localhost:8090/health
 
-## infra/evidence/out/evidence-pack-l1-20260202T152510Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+## infra/evidence/out/evidence-pack-l1-20260202T152510Z/snapshots/infra/ghostchain/docker-compose.l1.yml
 - ghostchain-bootnode
   - ports: ${L1_BOOTNODE_PORT:-30301}:30301/udp
 - ghostchain-node1
@@ -1007,7 +1007,7 @@ Generated: 2026-02-04T02:23:32Z
   - ports: 8090:8090
   - healthcheck URLs: http://localhost:8090/health
 
-## infra/evidence/out/evidence-pack-l1-20260202T154229Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+## infra/evidence/out/evidence-pack-l1-20260202T154229Z/snapshots/infra/ghostchain/docker-compose.l1.yml
 - ghostchain-bootnode
   - ports: ${L1_BOOTNODE_PORT:-30301}:30301/udp
 - ghostchain-node1
@@ -1032,7 +1032,7 @@ Generated: 2026-02-04T02:23:32Z
   - ports: 8090:8090
   - healthcheck URLs: http://localhost:8090/health
 
-## infra/evidence/out/evidence-pack-l1-20260202T154243Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+## infra/evidence/out/evidence-pack-l1-20260202T154243Z/snapshots/infra/ghostchain/docker-compose.l1.yml
 - ghostchain-bootnode
   - ports: ${L1_BOOTNODE_PORT:-30301}:30301/udp
 - ghostchain-node1
@@ -1057,7 +1057,7 @@ Generated: 2026-02-04T02:23:32Z
   - ports: 8090:8090
   - healthcheck URLs: http://localhost:8090/health
 
-## infra/evidence/out/evidence-pack-l1-20260203T123104Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+## infra/evidence/out/evidence-pack-l1-20260203T123104Z/snapshots/infra/ghostchain/docker-compose.l1.yml
 - ghostchain-bootnode
   - ports: ${L1_BOOTNODE_PORT:-30301}:30301/udp
 - ghostchain-node1
@@ -1082,7 +1082,7 @@ Generated: 2026-02-04T02:23:32Z
   - ports: 8090:8090
   - healthcheck URLs: http://localhost:8090/health
 
-## infra/evidence/out/evidence-pack-l1-20260203T123126Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+## infra/evidence/out/evidence-pack-l1-20260203T123126Z/snapshots/infra/ghostchain/docker-compose.l1.yml
 - ghostchain-bootnode
   - ports: ${L1_BOOTNODE_PORT:-30301}:30301/udp
 - ghostchain-node1
@@ -1107,7 +1107,7 @@ Generated: 2026-02-04T02:23:32Z
   - ports: 8090:8090
   - healthcheck URLs: http://localhost:8090/health
 
-## infra/evidence/out/evidence-pack-l1-20260203T124507Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+## infra/evidence/out/evidence-pack-l1-20260203T124507Z/snapshots/infra/ghostchain/docker-compose.l1.yml
 - ghostchain-bootnode
   - ports: ${L1_BOOTNODE_PORT:-30301}:30301/udp
 - ghostchain-node1
@@ -1132,7 +1132,7 @@ Generated: 2026-02-04T02:23:32Z
   - ports: 8090:8090
   - healthcheck URLs: http://localhost:8090/health
 
-## infra/evidence/out/evidence-pack-l1-20260203T124932Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+## infra/evidence/out/evidence-pack-l1-20260203T124932Z/snapshots/infra/ghostchain/docker-compose.l1.yml
 - ghostchain-bootnode
   - ports: ${L1_BOOTNODE_PORT:-30301}:30301/udp
 - ghostchain-node1
@@ -3095,7 +3095,7 @@ Generated: 2026-02-04T02:23:32Z
 - grafana
   - ports: 3000:3000
 
-## infra/ghostchain/docker-compose.eth.yml
+## infra/ghostchain/docker-compose.l1.yml
 - ghostchain-bootnode
   - ports: ${L1_BOOTNODE_PORT:-30301}:30301/udp
 - ghostchain-node1

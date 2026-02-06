@@ -397,7 +397,7 @@ ghostl-stack/
     |   |   |-- geth/
     |   |   |-- ibft/
     |   |   |-- scripts/
-    |   |   |-- docker-compose.eth.yml
+    |   |   |-- docker-compose.l1.yml
     |   |   |-- docker-compose.ibft.yml
     |   |   `-- README.md
     |   |-- helm/
