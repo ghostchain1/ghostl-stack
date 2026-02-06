@@ -29,6 +29,7 @@ L3_GO_NO_GO_LOAD_SECONDS="${L3_GO_NO_GO_LOAD_SECONDS:-10}"
 L3_GO_NO_GO_RESTART_CHECK="${L3_GO_NO_GO_RESTART_CHECK:-0}"
 L3_GO_NO_GO_REQUIRE_SCANS="${L3_GO_NO_GO_REQUIRE_SCANS:-0}"
 L3_GO_NO_GO_REQUIRE_PROGRESS="${L3_GO_NO_GO_REQUIRE_PROGRESS:-}"
+L3_GO_NO_GO_SKIP_RUNTIME="${L3_GO_NO_GO_SKIP_RUNTIME:-0}"
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 warn() { echo "WARN: $*" >&2; }
@@ -53,37 +54,46 @@ if [ -z "$L3_GO_NO_GO_REQUIRE_PROGRESS" ]; then
   esac
 fi
 
+if [ "$L3_GO_NO_GO_SKIP_RUNTIME" = "1" ]; then
+  if [ -z "${L3_DOCTOR_SKIP_RUNTIME:-}" ]; then
+    export L3_DOCTOR_SKIP_RUNTIME=1
+  fi
+  warn "runtime checks skipped (L3_GO_NO_GO_SKIP_RUNTIME=1)"
+fi
+
 if [ "$L3_GO_NO_GO_REQUIRE_PROGRESS" = "1" ]; then
   L3_REQUIRE_L3_PROGRESS=1 "$ROOT_DIR/infra/scripts/doctor-l3.sh"
 else
   "$ROOT_DIR/infra/scripts/doctor-l3.sh"
 fi
 
-echo "[l3-go-no-go] rpc stability"
-for i in $(seq 1 "$L3_GO_NO_GO_LOAD_SECONDS"); do
-  jsonrpc "$HOST_L3_RPC" "eth_blockNumber" >/dev/null || fail "L3 RPC unstable"
-  sleep 1
-done
+if [ "$L3_GO_NO_GO_SKIP_RUNTIME" != "1" ]; then
+  echo "[l3-go-no-go] rpc stability"
+  for i in $(seq 1 "$L3_GO_NO_GO_LOAD_SECONDS"); do
+    jsonrpc "$HOST_L3_RPC" "eth_blockNumber" >/dev/null || fail "L3 RPC unstable"
+    sleep 1
+  done
 
-echo "[l3-go-no-go] parent l2 rpc"
-jsonrpc "$PARENT_L2_RPC" "eth_chainId" >/dev/null || fail "Parent L2 RPC unreachable"
+  echo "[l3-go-no-go] parent l2 rpc"
+  jsonrpc "$PARENT_L2_RPC" "eth_chainId" >/dev/null || fail "Parent L2 RPC unreachable"
 
-echo "[l3-go-no-go] ai monitor"
-curl -fsS "$AI_MONITOR_URL" >/dev/null || warn "AI monitor not reachable"
+  echo "[l3-go-no-go] ai monitor"
+  curl -fsS "$AI_MONITOR_URL" >/dev/null || warn "AI monitor not reachable"
 
-echo "[l3-go-no-go] policy registry"
-if [ -z "$POLICY_REGISTRY_ADDRESS" ]; then
-  warn "policy registry address missing"
-else
-  if ! jsonrpc "$POLICY_REGISTRY_RPC" "eth_chainId" >/dev/null; then
-    fail "policy registry RPC unreachable"
+  echo "[l3-go-no-go] policy registry"
+  if [ -z "$POLICY_REGISTRY_ADDRESS" ]; then
+    warn "policy registry address missing"
+  else
+    if ! jsonrpc "$POLICY_REGISTRY_RPC" "eth_chainId" >/dev/null; then
+      fail "policy registry RPC unreachable"
+    fi
   fi
-fi
 
-echo "[l3-go-no-go] chain policy registry"
-if [ -n "$CHAIN_POLICY_REGISTRY_ADDRESS" ]; then
-  if ! jsonrpc "$CHAIN_POLICY_REGISTRY_RPC" "eth_chainId" >/dev/null; then
-    fail "chain policy registry RPC unreachable"
+  echo "[l3-go-no-go] chain policy registry"
+  if [ -n "$CHAIN_POLICY_REGISTRY_ADDRESS" ]; then
+    if ! jsonrpc "$CHAIN_POLICY_REGISTRY_RPC" "eth_chainId" >/dev/null; then
+      fail "chain policy registry RPC unreachable"
+    fi
   fi
 fi
 
@@ -111,10 +121,14 @@ if [ "$L3_GO_NO_GO_REQUIRE_SCANS" = "1" ]; then
 fi
 
 if [ "$L3_GO_NO_GO_RESTART_CHECK" = "1" ]; then
-  echo "[l3-go-no-go] restart resilience (l3-op-node)"
-  docker compose -f "$ROOT_DIR/infra/opstack/docker-compose.l3.yml" restart l3-op-node
-  sleep 5
-  jsonrpc "$HOST_L3_RPC" "eth_chainId" >/dev/null || fail "L3 RPC did not recover after restart"
+  if [ "$L3_GO_NO_GO_SKIP_RUNTIME" = "1" ]; then
+    warn "restart resilience check skipped (L3_GO_NO_GO_SKIP_RUNTIME=1)"
+  else
+    echo "[l3-go-no-go] restart resilience (l3-op-node)"
+    docker compose -f "$ROOT_DIR/infra/opstack/docker-compose.l3.yml" restart l3-op-node
+    sleep 5
+    jsonrpc "$HOST_L3_RPC" "eth_chainId" >/dev/null || fail "L3 RPC did not recover after restart"
+  fi
 fi
 
 echo "[l3-go-no-go] OK"

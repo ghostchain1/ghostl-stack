@@ -1,0 +1,36 @@
+```mermaid
+flowchart TB
+  %% ========== USERS ==========
+  U[Operator / DevOps / Governance] --> UI[ghostcontrol-ui (Next.js)]
+  UI -->|HTTP| API[ghostcontrol-api (Control Plane API)]
+
+  %% ========== CONTROL PLANE ==========
+  API --> Q[(redis queue)]
+  API --> AUD[(postgres audit db)]
+
+  %% Planner & Policy
+  Q --> PL[ghostcontrol-planner]
+  PL --> POL[ghostcontrol-policy]
+  PL -->|Signed Action Bundle| API
+
+  %% ========== DATA PLANE ==========
+  subgraph DataPlane[Data Plane: Signals]
+    RPC[L1/L2/L3 RPC Probes] --> ING[ghostcontrol-ingest]
+  end
+  ING --> AUD
+  ING --> Q
+
+  %% ========== ACTION PLANE ==========
+  API -->|dispatch action bundle| RUN[ghostcontrol-runner]
+  RUN --> SOCKPROXY[docker-socket-proxy (restricted)]
+  SOCKPROXY --> DOCKER[(Docker Engine)]
+  RUN --> REPO[/Repo workspace mount/]
+  RUN -->|evidence| AUD
+  RUN -->|evidence| API
+
+  %% ========== SAFETY ==========
+  POL --> AUD
+  RUN -->|post-verify| API
+  API --> UI
+```
+

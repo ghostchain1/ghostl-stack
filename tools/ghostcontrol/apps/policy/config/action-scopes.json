@@ -1,0 +1,12 @@
+{
+  "workspaceRootAllowPrefixes": ["/workspace"],
+  "dockerServiceAllowlist": [
+    "ghostcontrol-ui",
+    "ghostcontrol-api",
+    "ghostcontrol-policy",
+    "ghostcontrol-planner",
+    "ghostcontrol-ingest",
+    "ghostcontrol-runner"
+  ]
+}
+

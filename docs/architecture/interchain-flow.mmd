@@ -1,0 +1,81 @@
+flowchart LR
+  %% ============================================================
+  %% Interchain Flow (Phase 1): L1 → L2 → L3 → Low Balancer → Out
+  %%
+  %% Key rule: NO bypass of Ghost governance authority.
+  %% All interchain egress must pass through governed authorization + policy gates.
+  %% ============================================================
+
+  %% -----------------------
+  %% Ghost settlement ladder
+  %% -----------------------
+  subgraph L1["GhostChain (L1) — constitutional root"]
+    Gov["Governor + Timelock"]
+    Policy["PolicyRegistry (root)"]
+    Pause["PauseGuardian"]
+    Authz["InterchainAuthorization"]
+  end
+
+  subgraph L2["GhostL2 (L2) — OP Stack anchored to L1"]
+    L2Exec["op-geth + op-node"]
+    L2Final["L2 finality window\n(outputs + disputes on L1)"]
+  end
+
+  subgraph L3["GhostL3 (L3) — OP Stack anchored to L2"]
+    L3Exec["l3-geth + l3-op-node"]
+    L3Final["L3 finality window\n(outputs + disputes on L2)"]
+    LBRouter["Low Balancer Router (L3)\n(intent escrow + accounting)"]
+  end
+
+  %% -----------------------
+  %% Low Balancer plane
+  %% -----------------------
+  subgraph LB["Low Balancer — interchain liquidity hub"]
+    Gate["Policy + Authz Gate\n(non-bypassable)"]
+    Liq["Liquidity Router\n(routes + caps)"]
+    Bridge["Bridge Router\n(adapter registry)"]
+    Exec["Executor / Relayer\n(offchain)"]
+    Evidence["Evidence + Audit\n(hash anchored upstream)"]
+  end
+
+  %% -----------------------
+  %% External ecosystems
+  %% -----------------------
+  subgraph EXT["External chains / ecosystems"]
+    ETH["Ethereum (EVM)"]
+    BTC["Bitcoin (UTXO)"]
+    OTH["Others (EVM/non‑EVM)"]
+  end
+
+  %% Governance authority
+  Gov --> Policy
+  Gov --> Pause
+  Gov --> Authz
+
+  %% Policy / authz flow (federated checkpoints)
+  Policy -. "policy checkpoints\n(L1→L2→L3)" .-> L2Exec
+  Policy -. "policy checkpoints\n(L1→L2→L3)" .-> L3Exec
+  Authz -. "allowlists + caps" .-> Gate
+  Pause -. "emergency halt" .-> Gate
+
+  %% Settlement ladder
+  L1 -->|"anchors"| L2Exec
+  L2Exec -->|"anchors"| L3Exec
+  L2Final --- L2Exec
+  L3Final --- L3Exec
+
+  %% L3 → Low Balancer intents
+  L3Exec -->|"user/app txs"| LBRouter
+  LBRouter -->|"intent"| Gate
+  Gate -->|"allowed"| Liq
+  Liq --> Bridge
+  Bridge --> Exec
+
+  %% Egress to external chains
+  Exec -->|"bridge / lock / mint"| ETH
+  Exec -->|"custody / proofs"| BTC
+  Exec -->|"adapter"| OTH
+
+  %% Evidence anchoring
+  Exec --> Evidence
+  Evidence -. "evidenceHash" .-> Policy

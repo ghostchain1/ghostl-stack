@@ -1,0 +1,32 @@
+sequenceDiagram
+  autonumber
+  participant User
+  participant L3 as GhostL3 (LowBalancerRouter)
+  participant Gate as Policy+Authz Gate
+  participant L1 as GhostChain L1 (Gov + PolicyRegistry)
+  participant Exec as Low Balancer Executor
+  participant Adapter as Bridge Adapter
+  participant Ext as External Chain
+  participant Evidence as Evidence/Audit
+
+  User->>L3: bridgeOut(asset, amount, dstChain, dstAddress)
+  L3->>Gate: checkIntent(intentHash, policyCheckpoint)
+  Gate->>L1: read effective policies + caps
+  alt Not allowed
+    Gate-->>L3: deny(reason)
+    L3-->>User: revert / reject
+  else Allowed
+    Gate-->>L3: allow(constraints)
+    L3-->>Exec: emit IntentCreated(intentHash, constraints)
+    Exec->>Adapter: execute(intentHash, constraints)
+    Adapter->>Ext: submit tx / proof
+    Ext-->>Adapter: confirmations / finality
+    Adapter-->>Exec: receipt(txid/proof, status)
+    Exec->>Evidence: write decision + proofs
+    Evidence-->>L1: anchor evidenceHash (on-chain or vault)
+    Exec->>L3: finalizeIntent(intentHash, receipt)
+    L3-->>User: credit/mint OR mark pending
+  end
+
+  Note over L3,Gate: No component may bypass Gate for interchain egress.
+

@@ -27,6 +27,7 @@ L2_GO_NO_GO_LOAD_SECONDS="${L2_GO_NO_GO_LOAD_SECONDS:-10}"
 L2_GO_NO_GO_RESTART_CHECK="${L2_GO_NO_GO_RESTART_CHECK:-0}"
 L2_GO_NO_GO_REQUIRE_SCANS="${L2_GO_NO_GO_REQUIRE_SCANS:-0}"
 L2_GO_NO_GO_REQUIRE_PROGRESS="${L2_GO_NO_GO_REQUIRE_PROGRESS:-}"
+L2_GO_NO_GO_SKIP_RUNTIME="${L2_GO_NO_GO_SKIP_RUNTIME:-0}"
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 warn() { echo "WARN: $*" >&2; }
@@ -51,30 +52,39 @@ if [ -z "$L2_GO_NO_GO_REQUIRE_PROGRESS" ]; then
   esac
 fi
 
+if [ "$L2_GO_NO_GO_SKIP_RUNTIME" = "1" ]; then
+  if [ -z "${L2_DOCTOR_SKIP_RUNTIME:-}" ]; then
+    export L2_DOCTOR_SKIP_RUNTIME=1
+  fi
+  warn "runtime checks skipped (L2_GO_NO_GO_SKIP_RUNTIME=1)"
+fi
+
 if [ "$L2_GO_NO_GO_REQUIRE_PROGRESS" = "1" ]; then
   L2_REQUIRE_L2_PROGRESS=1 "$ROOT_DIR/infra/scripts/doctor-l2.sh"
 else
   "$ROOT_DIR/infra/scripts/doctor-l2.sh"
 fi
 
-echo "[l2-go-no-go] rpc stability"
-for i in $(seq 1 "$L2_GO_NO_GO_LOAD_SECONDS"); do
-  jsonrpc "$HOST_L2_RPC" "eth_blockNumber" >/dev/null || fail "L2 RPC unstable"
-  sleep 1
-done
+if [ "$L2_GO_NO_GO_SKIP_RUNTIME" != "1" ]; then
+  echo "[l2-go-no-go] rpc stability"
+  for i in $(seq 1 "$L2_GO_NO_GO_LOAD_SECONDS"); do
+    jsonrpc "$HOST_L2_RPC" "eth_blockNumber" >/dev/null || fail "L2 RPC unstable"
+    sleep 1
+  done
 
-echo "[l2-go-no-go] l1 rpc"
-jsonrpc "$HOST_L1_RPC" "eth_chainId" >/dev/null || fail "L1 RPC unreachable"
+  echo "[l2-go-no-go] l1 rpc"
+  jsonrpc "$HOST_L1_RPC" "eth_chainId" >/dev/null || fail "L1 RPC unreachable"
 
-echo "[l2-go-no-go] ai monitor"
-curl -fsS "$AI_MONITOR_URL" >/dev/null || fail "AI monitor not reachable"
+  echo "[l2-go-no-go] ai monitor"
+  curl -fsS "$AI_MONITOR_URL" >/dev/null || fail "AI monitor not reachable"
 
-echo "[l2-go-no-go] governance policy registry"
-if [ -z "$POLICY_REGISTRY_ADDRESS" ]; then
-  warn "policy registry address missing"
-else
-  if ! jsonrpc "$POLICY_REGISTRY_RPC" "eth_chainId" >/dev/null; then
-    fail "policy registry RPC unreachable"
+  echo "[l2-go-no-go] governance policy registry"
+  if [ -z "$POLICY_REGISTRY_ADDRESS" ]; then
+    warn "policy registry address missing"
+  else
+    if ! jsonrpc "$POLICY_REGISTRY_RPC" "eth_chainId" >/dev/null; then
+      fail "policy registry RPC unreachable"
+    fi
   fi
 fi
 
@@ -102,10 +112,14 @@ if [ "$L2_GO_NO_GO_REQUIRE_SCANS" = "1" ]; then
 fi
 
 if [ "$L2_GO_NO_GO_RESTART_CHECK" = "1" ]; then
+  if [ "$L2_GO_NO_GO_SKIP_RUNTIME" = "1" ]; then
+    warn "restart resilience check skipped (L2_GO_NO_GO_SKIP_RUNTIME=1)"
+  else
   echo "[l2-go-no-go] restart resilience (op-node)"
   docker compose -f "$ROOT_DIR/infra/opstack/docker-compose.yml" restart op-node
   sleep 5
   jsonrpc "$HOST_L2_RPC" "eth_chainId" >/dev/null || fail "L2 RPC did not recover after restart"
+  fi
 fi
 
 echo "[l2-go-no-go] OK"

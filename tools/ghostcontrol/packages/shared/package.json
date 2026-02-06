@@ -1,0 +1,19 @@
+{
+  "name": "@ghostcontrol/shared",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "node --watch dist/index.js",
+    "lint": "echo \"(optional) add eslint\"",
+    "test": "echo \"(optional) add tests\""
+  },
+  "dependencies": {
+    "pino": "^9.6.0",
+    "zod": "^3.25.76"
+  }
+}
+
