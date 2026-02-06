@@ -33,7 +33,8 @@ contract GSTInvariantTest is Test {
     function test_no_forbidden_branding_in_frontdoor_configs() external view {
         // Intentionally keep this file list small to avoid scanning large generated artifacts.
         string[4] memory paths = [
-            string("../services/stack.env"),
+            // Scan the tracked template rather than the local secret env file.
+            string("../services/stack.env.example"),
             string("../package.json"),
             string("../infra/docker/compose/stack.env"),
             string("../docs/architecture/phase3-containers.md")

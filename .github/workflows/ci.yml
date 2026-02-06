@@ -41,6 +41,25 @@ jobs:
         run: |
           forge test --match-path test/GSTInvariant.t.sol
 
+  contracts-lge-tests:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Run Liquidity Gravity Engine tests (Foundry)
+        working-directory: contracts
+        run: |
+          forge test --match-path 'test/foundry/*LiquidityGravityEngine*.t.sol'
+
   repo-security:
     needs: [rpc-namespace]
     runs-on: ubuntu-latest
