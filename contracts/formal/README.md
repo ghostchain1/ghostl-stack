@@ -6,6 +6,8 @@ This folder provides runnable scaffolding for Slither, Scribble, Echidna, and op
 
 - Run: `npm run formal:slither`
 - Output: `contracts/reports/formal/slither.json`
+- Requires a working Docker daemon. If Docker is unavailable, the script will **skip** in non-CI mode.
+  - Force strict behavior: `SLITHER_STRICT=1 npm run formal:slither`
 
 ## Scribble (instrumentation)
 
