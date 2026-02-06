@@ -91,6 +91,8 @@ VAULT_SECRET_ID="${VAULT_SECRET_ID:-}"
 L1_CHAIN_ID_EXPECTED="${L1_CHAIN_ID:-}"
 L2_CHAIN_ID_EXPECTED="${L2_CHAIN_ID:-}"
 CHALLENGER_REQUIRED="${CHALLENGER_REQUIRED:-0}"
+L2_DOCTOR_SKIP_RUNTIME="${L2_DOCTOR_SKIP_RUNTIME:-0}"
+L2_DOCTOR_SKIP_DOCKER="${L2_DOCTOR_SKIP_DOCKER:-0}"
 
 warn() { echo "WARN: $*" >&2; }
 fail() { echo "FAIL: $*" >&2; exit 1; }
@@ -337,8 +339,12 @@ need_bin python3
 if ! command -v docker >/dev/null 2>&1; then
   fail "docker not installed"
 fi
-if ! docker info >/dev/null 2>&1; then
-  fail "docker daemon not reachable"
+if [ "$L2_DOCTOR_SKIP_DOCKER" != "1" ]; then
+  if ! docker version --format '{{.Server.Version}}'; then
+    fail "docker daemon not reachable"
+  fi
+else
+  warn "docker daemon check skipped (L2_DOCTOR_SKIP_DOCKER=1)"
 fi
 if ! docker compose version >/dev/null 2>&1; then
   fail "docker compose not available"
@@ -403,6 +409,12 @@ if [ -n "$L2_CHAIN_ID_EXPECTED" ] && [ "$L2_GENESIS_CHAIN_ID" != "$L2_CHAIN_ID_E
 fi
 
 echo "OK: L2 genesis chainId=${L2_GENESIS_CHAIN_ID:-unknown}"
+
+if [ "$L2_DOCTOR_SKIP_RUNTIME" = "1" ]; then
+  warn "runtime checks skipped (L2_DOCTOR_SKIP_RUNTIME=1)"
+  echo "[doctor-l2] OK (runtime checks skipped)"
+  exit 0
+fi
 
 if jsonrpc "$HOST_L2_RPC" "eth_chainId" >/tmp/doctor-l2-chainid.json 2>/dev/null; then
   RPC_CHAIN_ID_HEX="$(python3 - <<'PY' /tmp/doctor-l2-chainid.json

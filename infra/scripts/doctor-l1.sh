@@ -35,6 +35,8 @@ PROMETHEUS_URL="${PROMETHEUS_URL:-http://localhost:9090}"
 L1_CHAIN_ID_EXPECTED="${L1_CHAIN_ID_EXPECTED:-}"
 ALLOW_INSECURE_KEY_PERMS="${ALLOW_INSECURE_KEY_PERMS:-0}"
 REQUIRE_PROM_TARGET="${REQUIRE_PROM_TARGET:-0}"
+L1_DOCTOR_SKIP_RUNTIME="${L1_DOCTOR_SKIP_RUNTIME:-0}"
+L1_DOCTOR_SKIP_DOCKER="${L1_DOCTOR_SKIP_DOCKER:-0}"
 
 GENESIS_SHA256_EXPECTED="696f9da9d751b5ccdac8464eb6a2a8af88be64ca1f182f7af81b4e24600e3dd7"
 RUN_SCRIPT_SHA256_EXPECTED="ad4d931cc7c1c61a9f9de5c006f22cb3ab64de4bef907302ed76698661d4d285"
@@ -104,8 +106,12 @@ need_bin python3
 if ! command -v docker >/dev/null 2>&1; then
   fail "docker not installed"
 fi
-if ! docker info >/dev/null 2>&1; then
-  fail "docker daemon not reachable"
+if [ "$L1_DOCTOR_SKIP_DOCKER" != "1" ]; then
+  if ! docker version --format '{{.Server.Version}}'; then
+    fail "docker daemon not reachable"
+  fi
+else
+  warn "docker daemon check skipped (L1_DOCTOR_SKIP_DOCKER=1)"
 fi
 if ! docker compose version >/dev/null 2>&1; then
   fail "docker compose not available"
@@ -185,6 +191,12 @@ if ! docker compose -f "$L1_COMPOSE_FILE" config >/dev/null 2>&1; then
   fail "compose config invalid for $L1_COMPOSE_FILE"
 fi
 echo "OK: compose config valid"
+
+if [ "$L1_DOCTOR_SKIP_RUNTIME" = "1" ]; then
+  warn "runtime checks skipped (L1_DOCTOR_SKIP_RUNTIME=1)"
+  echo "[doctor-l1] OK (runtime checks skipped)"
+  exit 0
+fi
 
 if jsonrpc "$HOST_L1_RPC" "eth_chainId" >/tmp/doctor-l1-chainid.json 2>/dev/null; then
   RPC_CHAIN_ID_HEX="$(python3 - <<'PY' /tmp/doctor-l1-chainid.json

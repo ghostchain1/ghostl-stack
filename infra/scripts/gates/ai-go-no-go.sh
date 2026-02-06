@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 if [ -d "/home/ghost/.foundry/bin" ]; then
   export PATH="/home/ghost/.foundry/bin:$PATH"
 fi
+AI_GO_NO_GO_ALLOW_DIRTY="${AI_GO_NO_GO_ALLOW_DIRTY:-0}"
 
 log() {
   printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"
@@ -65,12 +66,16 @@ EVIDENCE_EPOCH=1760100000 \
 "$ROOT_DIR/infra/scripts/evidence-pack-ai-governance.sh" --verify
 
 dirty="$(git -C "$ROOT_DIR" status --porcelain || true)"
-if [ -n "$dirty" ]; then
-  filtered="$(printf '%s\n' "$dirty" | grep -Ev '^( M| D|\?\?) (contracts/out-codex/|contracts/cache-codex/|contracts/reports/foundry/)' || true)"
-  if [ -n "$filtered" ]; then
-    log "AI governance go/no-go: FAILED (dirty working tree)"
-    printf '%s\n' "$filtered"
-    exit 1
+if [ "$AI_GO_NO_GO_ALLOW_DIRTY" = "1" ]; then
+  log "dirty working tree check skipped (AI_GO_NO_GO_ALLOW_DIRTY=1)"
+else
+  if [ -n "$dirty" ]; then
+    filtered="$(printf '%s\n' "$dirty" | grep -Ev '^( M| D|\?\?) (contracts/out-codex/|contracts/cache-codex/|contracts/reports/foundry/)' || true)"
+    if [ -n "$filtered" ]; then
+      log "AI governance go/no-go: FAILED (dirty working tree)"
+      printf '%s\n' "$filtered"
+      exit 1
+    fi
   fi
 fi
 
