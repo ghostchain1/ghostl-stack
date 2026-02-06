@@ -101,6 +101,35 @@
       }
     }
   ],
+  "cleanRunRefresh": {
+    "baselineCommit": "6bc989d0d886efe79c28c64628eea5bff25b92a1",
+    "baselineTag": "phase2-6-lock-2026-02-06",
+    "ranAt": "2026-02-06",
+    "evidencePacks": [
+      {
+        "name": "l1",
+        "zip": "infra/evidence/out/evidence-pack-l1-20260206T034922Z.zip",
+        "sha256": "a94a294e2eadcc9d2d1f8215dbc38ce31862f96c00dfdc7d866831234efbbc3d",
+        "provenance": "infra/evidence/out/evidence-pack-l1-20260206T034922Z/provenance/provenance.json"
+      },
+      {
+        "name": "l2",
+        "zip": "infra/evidence/out/evidence-pack-l2-20260206T035002Z.zip",
+        "sha256": "86c27514b5f90cbcfabc27aa40fcdc6253e5c32ac1fd37ee2c2663e058e9a600",
+        "provenance": "infra/evidence/out/evidence-pack-l2-20260206T035002Z/provenance/provenance.json"
+      },
+      {
+        "name": "l3",
+        "zip": "infra/evidence/out/evidence-pack-l3-20260206T035019Z.zip",
+        "sha256": "03830112e02108dab78cf464075e2857e94c3bac6c3e2c710739262715faef3e",
+        "provenance": "infra/evidence/out/evidence-pack-l3-20260206T035019Z/provenance/provenance.json"
+      }
+    ],
+    "aiEvidencePackReproducibility": {
+      "command": "EVIDENCE_TIMESTAMP=20260203T180000Z EVIDENCE_EPOCH=1760100000 infra/scripts/evidence-pack-ai-governance.sh --verify",
+      "reproducibleZipSha256": "03367c8b3778c6f717233fefa1173a7a06f65d1e72c8128d3cd1e68a2ec0abd1"
+    }
+  },
   "scanSummaries": {
     "foundryInvariants": {
       "summary": "contracts/reports/foundry/summary.json",
