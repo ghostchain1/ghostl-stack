@@ -11,8 +11,8 @@ async function main() {
 
   const [signer] = await ethers.getSigners();
   const to = process.env.DEMO_TO ?? signer.address;
-  const amountEth = process.env.DEMO_AMOUNT_ETH ?? "100";
-  const amountWei = ethers.parseEther(amountEth);
+  const amountGst = process.env.DEMO_AMOUNT_GST ?? process.env.DEMO_AMOUNT_ETH ?? "100";
+  const amountWei = ethers.parseEther(amountGst);
   const nonce = BigInt(process.env.DEMO_NONCE ?? Math.floor(Date.now() / 1000).toString());
 
   const bridge = await ethers.getContractAt("L2L3Bridge", bridgeAddress, signer);
@@ -21,7 +21,7 @@ async function main() {
   console.log("bridge:", bridgeAddress);
   console.log("from:", signer.address);
   console.log("to:", to);
-  console.log("amountEth:", amountEth);
+  console.log("amountGst:", amountGst);
   console.log("nonce:", nonce.toString());
   console.log("tx:", tx.hash);
 

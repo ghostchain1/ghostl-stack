@@ -18,8 +18,8 @@ function parseAddresses(): Array<string> {
 }
 
 async function main() {
-  const amountEth = process.env.FUND_AMOUNT_ETH || "10";
-  const amountWei = ethers.parseEther(amountEth);
+  const amountGst = process.env.FUND_AMOUNT_GST || process.env.FUND_AMOUNT_ETH || "10";
+  const amountWei = ethers.parseEther(amountGst);
   const addrs = parseAddresses();
   if (addrs.length === 0) {
     console.log("No addresses to fund.");
@@ -30,7 +30,9 @@ async function main() {
   const from = await signer.getAddress();
   const net = await signer.provider!.getNetwork();
 
-  console.log(`Funding ${addrs.length} addresses on chainId=${net.chainId.toString()} from=${from} amountEth=${amountEth}`);
+  console.log(
+    `Funding ${addrs.length} addresses on chainId=${net.chainId.toString()} from=${from} amountGst=${amountGst}`
+  );
   for (const to of addrs) {
     const tx = await signer.sendTransaction({ to, value: amountWei });
     await tx.wait();
@@ -42,4 +44,3 @@ main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
-

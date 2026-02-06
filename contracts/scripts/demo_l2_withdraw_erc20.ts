@@ -14,8 +14,8 @@ async function main() {
 
   const [signer] = await ethers.getSigners();
   const to = process.env.DEMO_TO ?? signer.address;
-  const amountEth = process.env.DEMO_AMOUNT_ETH ?? "1";
-  const amountWei = ethers.parseEther(amountEth);
+  const amountGst = process.env.DEMO_AMOUNT_GST ?? process.env.DEMO_AMOUNT_ETH ?? "1";
+  const amountWei = ethers.parseEther(amountGst);
   const minGasLimit = BigInt(process.env.DEMO_MIN_GAS ?? "200000");
 
   // For L1-native tokens represented as OptimismMintableERC20 on L2, withdrawals are initiated via
@@ -44,7 +44,7 @@ async function main() {
   console.log("bridge:", bridgeAddress);
   console.log("from:", signer.address);
   console.log("to:", to);
-  console.log("amountEth:", amountEth);
+  console.log("amountGst:", amountGst);
   console.log("tx:", tx.hash);
 
   const timeoutMs = Number(process.env.DEMO_TX_TIMEOUT_MS ?? "60000");
