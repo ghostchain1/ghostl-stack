@@ -3,7 +3,7 @@
 OP Stack L2 (GhostL2) devnet that aligns with the GhostChain blueprint: Optimistic now, hybrid OP + ZK later, with AI Guard/Relayer hooks on top.
 
 ## What runs
-- L1: GhostChain geth PoA devnet (Ethereum clone) on `18545`
+- L1: GhostChain geth PoA devnet (EVM clone) on `18545`
 - L2: GhostL2 (Shibarium clone) op-geth + op-node + op-batcher + op-proposer on `29547` (direct) / `18547` (guarded via op-gate)
 - L3: GhostL3 OP Stack L3 on GhostL2 on `39545` (when `docker-compose.l3.yml` is running)
 - `op-gate` guards L2 RPC and `op-gate-l1` guards L1 submissions for batcher/proposer; both can be driven by Ghost Guard (metrics on `28546/metrics/prom`, `28547/metrics/prom`).

@@ -272,7 +272,9 @@ contract SlashingManager is Governed {
             v := byte(0, mload(add(signature, 0x60)))
         }
         if (v < 27) v += 27;
-        bytes32 ethSigned = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
-        return ecrecover(ethSigned, v, r, s);
+        bytes32 signedHash = keccak256(
+            abi.encodePacked(hex"19457468657265756d205369676e6564204d6573736167653a0a3332", digest)
+        );
+        return ecrecover(signedHash, v, r, s);
     }
 }

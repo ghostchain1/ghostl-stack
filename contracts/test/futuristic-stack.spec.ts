@@ -26,7 +26,7 @@ describe("Futuristic stack primitives", () => {
     const pool = await staking.pools(admin.address);
     expect(pool.totalStake).to.equal(stakeAmount);
 
-    // Slash 2 ETH to treasury
+    // Slash 2 GST to treasury
     await expect(slashing.connect(admin).slash(admin.address, ethers.parseEther("2"), "downtime")).to.emit(
       slashing,
       "Slashed"

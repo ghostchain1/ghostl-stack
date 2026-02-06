@@ -33,7 +33,7 @@ contract StakingManager is Governed {
         emit SlashManagerUpdated(manager);
     }
 
-    /// @notice Stakes the caller's full allowance to avoid ETH-based staking paths.
+    /// @notice Stakes the caller's full allowance to avoid non-canonical staking paths.
     function stake() external {
         uint256 allowance = gasToken.allowance(msg.sender, address(this));
         require(allowance > 0, "no allowance");

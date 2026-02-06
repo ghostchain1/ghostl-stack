@@ -17,7 +17,6 @@ contract Treasury is Governed {
 
     IERC20Balance public immutable native;
 
-    event WithdrawETH(address indexed to, uint256 amount);
     event WithdrawNative(address indexed to, uint256 amount);
     event LegacyWithdrawalsFrozen(bool frozen);
 
@@ -38,11 +37,11 @@ contract Treasury is Governed {
         }
     }
 
-    /// @dev ETH is not a supported gas asset on GhostChain.
-    function withdrawETH(address to, uint256 amount) external pure {
+    /// @dev Legacy withdrawal path is not supported; use withdrawNative.
+    function withdrawLegacyValue(address to, uint256 amount) external pure {
         to; // silence unused parameter warnings in strict tooling
         amount;
-        revert("ETH disabled; use withdrawNative");
+        revert("legacy withdrawal disabled; use withdrawNative");
     }
 
     /// #if_succeeds {:msg "only owner withdraw native"} msg.sender == owner;

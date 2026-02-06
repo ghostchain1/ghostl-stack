@@ -1,4 +1,4 @@
-# GhostChain (Ethereum-compatible, config-only geth)
+# GhostChain (EVM-compatible, config-only geth)
 
 This folder runs GhostChain (the main Autonomous Layer 1 blockchain) as a clique PoA chain on stock geth (no forked client). It ships with bootnode + 2 signers, deterministic keys, and helper scripts.
 
