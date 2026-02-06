@@ -22,7 +22,7 @@ Best L2 stack for GhostChain today and forward: **OP Stack (Optimism Stack) → 
 
 ## Phased Architecture
 - **Phase 1 (now):** Polygon Edge / IBFT for local dev, AI Guard prototype, relayers, GhostL3 testing. ✅
-- **Phase 2 (prod L2):** OP Stack optimistic rollup on Ethereum; data on Ethereum (EigenDA later); fraud proofs + AI guard on finalize; governance via AI + multisig/DAO.
+- **Phase 2 (prod L2):** OP Stack optimistic rollup settling on GhostChain L1; data on L1 (EigenDA later); fraud proofs + AI guard on finalize; governance via AI + multisig/DAO.
 - **Phase 3 (L3s):** OP Stack L3s on GhostL2 (GhostPay, GhostVyb, gaming, etc.), ultra-cheap gas, custom AI rules.
 - **Phase 4 (ZK finality upgrade):** add validity proofs to OP batches (Polygon CDK/zkEVM); hybrid optimistic→ZK finality; no execution rewrite.
 
@@ -32,7 +32,7 @@ Best L2 stack for GhostChain today and forward: **OP Stack (Optimism Stack) → 
 | L2 Framework | OP Stack                |
 | L3 Framework | OP Stack (app chains)   |
 | Dev Chain    | Polygon Edge            |
-| Settlement   | Ethereum                |
+| Settlement   | GhostChain L1           |
 | DA (future)  | EigenDA / Celestia      |
 | Contracts    | Solidity                |
 | AI Guard     | Node + on-chain policy  |

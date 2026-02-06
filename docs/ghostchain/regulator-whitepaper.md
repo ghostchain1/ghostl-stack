@@ -6,7 +6,7 @@ GhostChain is a constitutionally governed blockchain infrastructure designed to 
 
 ## System Architecture Overview
 
-- Layer 1: GhostChain (Ethereum-compatible base layer)
+- Layer 1: GhostChain (EVM-compatible base layer)
 - Layer 2 and 3: Optimistic rollup-based scaling layers
 - Explorer and Intelligence: GhostScout, Protocol Intelligence Layer
 - Governance: On-chain voting with off-chain analysis and timelocks
