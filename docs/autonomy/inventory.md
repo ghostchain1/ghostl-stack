@@ -448,7 +448,7 @@ Generated: 2026-02-04T02:23:32Z
 - infra/docker/_backup/20260121-1909/core-service/docker-compose.yml: 1 services
 - infra/docker/_backup/20260121-1909/docker-compose.dev.yml: 2 services
 - infra/docker/_backup/20260121-1909/docker-compose.yml: 6 services
-- infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.eth.yml: 5 services
+- infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.l1.yml: 5 services
 - infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.ibft.yml: 4 services
 - infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.challengers.yml: 2 services
 - infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.l3.yml: 50 services
@@ -465,52 +465,52 @@ Generated: 2026-02-04T02:23:32Z
 - infra/docker/compose/docker-compose.services.yml: 62 services
 - infra/docker/compose/docker-compose.ui.yml: 2 services
 - infra/evidence/out/evidence-pack-l1-20260202T132538Z/snapshots/docker-compose.yml: 5 services
-- infra/evidence/out/evidence-pack-l1-20260202T132538Z/snapshots/infra/ghostchain/docker-compose.eth.yml: 5 services
+- infra/evidence/out/evidence-pack-l1-20260202T132538Z/snapshots/infra/ghostchain/docker-compose.l1.yml: 5 services
 - infra/evidence/out/evidence-pack-l1-20260202T132538Z/snapshots/infra/ghostchain/docker-compose.ibft.yml: 4 services
 - infra/evidence/out/evidence-pack-l1-20260202T133818Z/snapshots/docker-compose.yml: 5 services
-- infra/evidence/out/evidence-pack-l1-20260202T133818Z/snapshots/infra/ghostchain/docker-compose.eth.yml: 5 services
+- infra/evidence/out/evidence-pack-l1-20260202T133818Z/snapshots/infra/ghostchain/docker-compose.l1.yml: 5 services
 - infra/evidence/out/evidence-pack-l1-20260202T133818Z/snapshots/infra/ghostchain/docker-compose.ibft.yml: 4 services
 - infra/evidence/out/evidence-pack-l1-20260202T134135Z/snapshots/docker-compose.yml: 5 services
-- infra/evidence/out/evidence-pack-l1-20260202T134135Z/snapshots/infra/ghostchain/docker-compose.eth.yml: 5 services
+- infra/evidence/out/evidence-pack-l1-20260202T134135Z/snapshots/infra/ghostchain/docker-compose.l1.yml: 5 services
 - infra/evidence/out/evidence-pack-l1-20260202T134135Z/snapshots/infra/ghostchain/docker-compose.ibft.yml: 4 services
 - infra/evidence/out/evidence-pack-l1-20260202T134249Z/snapshots/docker-compose.yml: 5 services
-- infra/evidence/out/evidence-pack-l1-20260202T134249Z/snapshots/infra/ghostchain/docker-compose.eth.yml: 5 services
+- infra/evidence/out/evidence-pack-l1-20260202T134249Z/snapshots/infra/ghostchain/docker-compose.l1.yml: 5 services
 - infra/evidence/out/evidence-pack-l1-20260202T134249Z/snapshots/infra/ghostchain/docker-compose.ibft.yml: 4 services
 - infra/evidence/out/evidence-pack-l1-20260202T141647Z/snapshots/docker-compose.yml: 5 services
-- infra/evidence/out/evidence-pack-l1-20260202T141647Z/snapshots/infra/ghostchain/docker-compose.eth.yml: 5 services
+- infra/evidence/out/evidence-pack-l1-20260202T141647Z/snapshots/infra/ghostchain/docker-compose.l1.yml: 5 services
 - infra/evidence/out/evidence-pack-l1-20260202T141647Z/snapshots/infra/ghostchain/docker-compose.ibft.yml: 4 services
 - infra/evidence/out/evidence-pack-l1-20260202T141757Z/snapshots/docker-compose.yml: 5 services
-- infra/evidence/out/evidence-pack-l1-20260202T141757Z/snapshots/infra/ghostchain/docker-compose.eth.yml: 5 services
+- infra/evidence/out/evidence-pack-l1-20260202T141757Z/snapshots/infra/ghostchain/docker-compose.l1.yml: 5 services
 - infra/evidence/out/evidence-pack-l1-20260202T141757Z/snapshots/infra/ghostchain/docker-compose.ibft.yml: 4 services
 - infra/evidence/out/evidence-pack-l1-20260202T142035Z/snapshots/docker-compose.yml: 5 services
-- infra/evidence/out/evidence-pack-l1-20260202T142035Z/snapshots/infra/ghostchain/docker-compose.eth.yml: 5 services
+- infra/evidence/out/evidence-pack-l1-20260202T142035Z/snapshots/infra/ghostchain/docker-compose.l1.yml: 5 services
 - infra/evidence/out/evidence-pack-l1-20260202T142035Z/snapshots/infra/ghostchain/docker-compose.ibft.yml: 4 services
 - infra/evidence/out/evidence-pack-l1-20260202T142718Z/snapshots/docker-compose.yml: 5 services
-- infra/evidence/out/evidence-pack-l1-20260202T142718Z/snapshots/infra/ghostchain/docker-compose.eth.yml: 5 services
+- infra/evidence/out/evidence-pack-l1-20260202T142718Z/snapshots/infra/ghostchain/docker-compose.l1.yml: 5 services
 - infra/evidence/out/evidence-pack-l1-20260202T142718Z/snapshots/infra/ghostchain/docker-compose.ibft.yml: 4 services
 - infra/evidence/out/evidence-pack-l1-20260202T151403Z/snapshots/docker-compose.yml: 5 services
-- infra/evidence/out/evidence-pack-l1-20260202T151403Z/snapshots/infra/ghostchain/docker-compose.eth.yml: 5 services
+- infra/evidence/out/evidence-pack-l1-20260202T151403Z/snapshots/infra/ghostchain/docker-compose.l1.yml: 5 services
 - infra/evidence/out/evidence-pack-l1-20260202T151403Z/snapshots/infra/ghostchain/docker-compose.ibft.yml: 4 services
 - infra/evidence/out/evidence-pack-l1-20260202T152510Z/snapshots/docker-compose.yml: 5 services
-- infra/evidence/out/evidence-pack-l1-20260202T152510Z/snapshots/infra/ghostchain/docker-compose.eth.yml: 5 services
+- infra/evidence/out/evidence-pack-l1-20260202T152510Z/snapshots/infra/ghostchain/docker-compose.l1.yml: 5 services
 - infra/evidence/out/evidence-pack-l1-20260202T152510Z/snapshots/infra/ghostchain/docker-compose.ibft.yml: 4 services
 - infra/evidence/out/evidence-pack-l1-20260202T154229Z/snapshots/docker-compose.yml: 5 services
-- infra/evidence/out/evidence-pack-l1-20260202T154229Z/snapshots/infra/ghostchain/docker-compose.eth.yml: 5 services
+- infra/evidence/out/evidence-pack-l1-20260202T154229Z/snapshots/infra/ghostchain/docker-compose.l1.yml: 5 services
 - infra/evidence/out/evidence-pack-l1-20260202T154229Z/snapshots/infra/ghostchain/docker-compose.ibft.yml: 4 services
 - infra/evidence/out/evidence-pack-l1-20260202T154243Z/snapshots/docker-compose.yml: 5 services
-- infra/evidence/out/evidence-pack-l1-20260202T154243Z/snapshots/infra/ghostchain/docker-compose.eth.yml: 5 services
+- infra/evidence/out/evidence-pack-l1-20260202T154243Z/snapshots/infra/ghostchain/docker-compose.l1.yml: 5 services
 - infra/evidence/out/evidence-pack-l1-20260202T154243Z/snapshots/infra/ghostchain/docker-compose.ibft.yml: 4 services
 - infra/evidence/out/evidence-pack-l1-20260203T123104Z/snapshots/docker-compose.yml: 5 services
-- infra/evidence/out/evidence-pack-l1-20260203T123104Z/snapshots/infra/ghostchain/docker-compose.eth.yml: 5 services
+- infra/evidence/out/evidence-pack-l1-20260203T123104Z/snapshots/infra/ghostchain/docker-compose.l1.yml: 5 services
 - infra/evidence/out/evidence-pack-l1-20260203T123104Z/snapshots/infra/ghostchain/docker-compose.ibft.yml: 4 services
 - infra/evidence/out/evidence-pack-l1-20260203T123126Z/snapshots/docker-compose.yml: 5 services
-- infra/evidence/out/evidence-pack-l1-20260203T123126Z/snapshots/infra/ghostchain/docker-compose.eth.yml: 5 services
+- infra/evidence/out/evidence-pack-l1-20260203T123126Z/snapshots/infra/ghostchain/docker-compose.l1.yml: 5 services
 - infra/evidence/out/evidence-pack-l1-20260203T123126Z/snapshots/infra/ghostchain/docker-compose.ibft.yml: 4 services
 - infra/evidence/out/evidence-pack-l1-20260203T124507Z/snapshots/docker-compose.yml: 5 services
-- infra/evidence/out/evidence-pack-l1-20260203T124507Z/snapshots/infra/ghostchain/docker-compose.eth.yml: 5 services
+- infra/evidence/out/evidence-pack-l1-20260203T124507Z/snapshots/infra/ghostchain/docker-compose.l1.yml: 5 services
 - infra/evidence/out/evidence-pack-l1-20260203T124507Z/snapshots/infra/ghostchain/docker-compose.ibft.yml: 4 services
 - infra/evidence/out/evidence-pack-l1-20260203T124932Z/snapshots/docker-compose.yml: 5 services
-- infra/evidence/out/evidence-pack-l1-20260203T124932Z/snapshots/infra/ghostchain/docker-compose.eth.yml: 5 services
+- infra/evidence/out/evidence-pack-l1-20260203T124932Z/snapshots/infra/ghostchain/docker-compose.l1.yml: 5 services
 - infra/evidence/out/evidence-pack-l1-20260203T124932Z/snapshots/infra/ghostchain/docker-compose.ibft.yml: 4 services
 - infra/evidence/out/evidence-pack-l2-20260202T174405Z/snapshots/infra/opstack/docker-compose.challengers.yml: 2 services
 - infra/evidence/out/evidence-pack-l2-20260202T174405Z/snapshots/infra/opstack/docker-compose.l3.yml: 50 services
@@ -543,7 +543,7 @@ Generated: 2026-02-04T02:23:32Z
 - infra/evidence/out/evidence-pack-l3-20260203T191811Z/snapshots/infra/opstack/docker-compose.yml: 20 services
 - infra/evidence/out/evidence-pack-l3-20260203T192351Z/snapshots/infra/opstack/docker-compose.l3.yml: 49 services
 - infra/evidence/out/evidence-pack-l3-20260203T192351Z/snapshots/infra/opstack/docker-compose.yml: 20 services
-- infra/ghostchain/docker-compose.eth.yml: 5 services
+- infra/ghostchain/docker-compose.l1.yml: 5 services
 - infra/ghostchain/docker-compose.ibft.yml: 4 services
 - infra/opstack/docker-compose.challengers.yml: 2 services
 - infra/opstack/docker-compose.l3.yml: 49 services
@@ -1124,5 +1124,5 @@ ghostchain-compliance-redis-1	Up 2 days (healthy)	0.0.0.0:6379->6379/tcp, [::]:6
 
 ### docker compose ls
 ```
-[{"Name":"ai-monitor","Status":"running(2)","ConfigFiles":"/home/ghost/ghostl-stack/services/ai-monitor/docker-compose.yml"},{"Name":"ghostchain","Status":"running(4)","ConfigFiles":"/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.eth.yml"},{"Name":"ghostchain-agents","Status":"running(10)","ConfigFiles":"/home/ghost/ghostl-stack/docker-compose.agents.yml"},{"Name":"ghostchain-compliance","Status":"running(4)","ConfigFiles":"/home/ghost/ghostl-stack/docker-compose.yml"},{"Name":"infra","Status":"running(4)","ConfigFiles":"/home/ghost/ghostl-stack/observability/infra/docker-compose.yml"},{"Name":"opstack","Status":"running(14)","ConfigFiles":"/home/ghost/ghostl-stack/infra/opstack/docker-compose.yml,/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml"},{"Name":"services","Status":"running(63)","ConfigFiles":"/home/ghost/ghostl-stack/services/docker-compose.legacy.yml"}]
+[{"Name":"ai-monitor","Status":"running(2)","ConfigFiles":"/home/ghost/ghostl-stack/services/ai-monitor/docker-compose.yml"},{"Name":"ghostchain","Status":"running(4)","ConfigFiles":"/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.l1.yml"},{"Name":"ghostchain-agents","Status":"running(10)","ConfigFiles":"/home/ghost/ghostl-stack/docker-compose.agents.yml"},{"Name":"ghostchain-compliance","Status":"running(4)","ConfigFiles":"/home/ghost/ghostl-stack/docker-compose.yml"},{"Name":"infra","Status":"running(4)","ConfigFiles":"/home/ghost/ghostl-stack/observability/infra/docker-compose.yml"},{"Name":"opstack","Status":"running(14)","ConfigFiles":"/home/ghost/ghostl-stack/infra/opstack/docker-compose.yml,/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml"},{"Name":"services","Status":"running(63)","ConfigFiles":"/home/ghost/ghostl-stack/services/docker-compose.legacy.yml"}]
 ```

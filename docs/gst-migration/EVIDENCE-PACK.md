@@ -32,6 +32,8 @@ This document summarizes **what we can verify in this harness** and the key arti
 
 - Leakage gate script: `scripts/gst-leakage-gate.sh`
 - Allowlist (must remain small/justified): `config/gst-allowlist.txt`
+- Notes:
+  - Gate includes first-party generated artifacts (e.g., `ops/preflight/**`, `ops/snapshots/**`) and permits Hyperledger Besu’s technical `--rpc-http-api=ETH,...` module token.
 
 ## Attestation checklist
 

@@ -64,6 +64,7 @@ This attestation captures **what can be verified inside this Codex harness** (wh
 - Outcome: **OK**
 - Notes:
   - Enforces no user-facing legacy ETH/Ethereum/Ether/ENS `.eth` leakage outside an allowlist.
+  - Includes first-party generated artifacts (e.g., `ops/preflight/**`, `ops/snapshots/**`) and permits Hyperledger Besu’s technical `--rpc-http-api=ETH,...` module token.
 
 ### GST constitution proposal calldata
 
