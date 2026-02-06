@@ -1,0 +1,233 @@
+services:
+  ghostcontrol-ui:
+    build:
+      context: ../..
+      dockerfile: apps/ui/Dockerfile
+    environment:
+      - PORT=3000
+      - GHOSTCONTROL_API_URL=http://ghostcontrol-api:8080
+      - NEXT_PUBLIC_GHOSTCONTROL_API=http://localhost:7401
+      - GHOSTCONTROL_TOKEN=${GHOSTCONTROL_TOKEN:-}
+    ports:
+      - "7400:3000"
+    depends_on:
+      - ghostcontrol-api
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: ["ALL"]
+    user: "10001:10001"
+    networks: [ghostcontrol_net]
+
+  ghostcontrol-api:
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - DATABASE_URL=postgresql://ghostcontrol:ghostcontrol@ghostcontrol-db:5432/ghostcontrol
+      - REDIS_URL=redis://ghostcontrol-redis:6379
+      - GHOSTCONTROL_TOKEN=${GHOSTCONTROL_TOKEN:-}
+      - L1_RPC=${L1_RPC:-}
+      - L2_RPC=${L2_RPC:-}
+      - L3_RPC=${L3_RPC:-}
+    ports:
+      - "7401:8080"
+    depends_on:
+      - ghostcontrol-db
+      - ghostcontrol-redis
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: ["ALL"]
+    user: "10001:10001"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks: [ghostcontrol_net]
+
+  ghostcontrol-policy:
+    build:
+      context: ../..
+      dockerfile: apps/policy/Dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=8082
+      - RISK_ALLOWLIST_PATH=/app/apps/policy/config/risk-allowlist.json
+      - ACTION_SCOPES_PATH=/app/apps/policy/config/action-scopes.json
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: ["ALL"]
+    user: "10001:10001"
+    networks: [ghostcontrol_net]
+
+  ghostcontrol-planner:
+    build:
+      context: ../..
+      dockerfile: apps/planner/Dockerfile
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://ghostcontrol:ghostcontrol@ghostcontrol-db:5432/ghostcontrol
+      - REDIS_URL=redis://ghostcontrol-redis:6379
+      - API_URL=http://ghostcontrol-api:8080
+      - POLICY_URL=http://ghostcontrol-policy:8082
+      - SIGNING_PRIVATE_KEY_PATH=/run/secrets/ghostcontrol_signing_priv
+      - SIGNING_KEY_ID=dev
+      - GHOSTCONTROL_TOKEN=${GHOSTCONTROL_TOKEN:-}
+    depends_on:
+      - ghostcontrol-db
+      - ghostcontrol-redis
+      - ghostcontrol-api
+      - ghostcontrol-policy
+    secrets:
+      - ghostcontrol_signing_priv
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: ["ALL"]
+    user: "10001:10001"
+    networks: [ghostcontrol_net]
+
+  ghostcontrol-ingest:
+    build:
+      context: ../..
+      dockerfile: apps/ingest/Dockerfile
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://ghostcontrol:ghostcontrol@ghostcontrol-db:5432/ghostcontrol
+      - REDIS_URL=redis://ghostcontrol-redis:6379
+      - PROBE_INTERVAL_MS=${PROBE_INTERVAL_MS:-15000}
+      - L1_RPC=${L1_RPC:-}
+      - L2_RPC=${L2_RPC:-}
+      - L3_RPC=${L3_RPC:-}
+    depends_on:
+      - ghostcontrol-db
+      - ghostcontrol-redis
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: ["ALL"]
+    user: "10001:10001"
+    networks: [ghostcontrol_net]
+
+  ghostcontrol-runner:
+    build:
+      context: ../..
+      dockerfile: apps/runner/Dockerfile
+    environment:
+      - NODE_ENV=production
+      - API_URL=http://ghostcontrol-api:8080
+      - POLICY_URL=http://ghostcontrol-policy:8082
+      - REDIS_URL=redis://ghostcontrol-redis:6379
+      - DOCKER_HOST=tcp://docker-socket-proxy:2375
+      - WORKSPACE=/workspace
+      - RUNNER_MODE=${RUNNER_MODE:-SAFE}
+      - SIGNING_PUBLIC_KEY_PATH=/run/secrets/ghostcontrol_signing_pub
+      - SIGNING_KEY_ID=dev
+      - GHOSTCONTROL_TOKEN=${GHOSTCONTROL_TOKEN:-}
+      - L1_RPC=${L1_RPC:-}
+      - L2_RPC=${L2_RPC:-}
+      - L3_RPC=${L3_RPC:-}
+    depends_on:
+      - ghostcontrol-api
+      - ghostcontrol-policy
+      - ghostcontrol-redis
+      - docker-socket-proxy
+    secrets:
+      - ghostcontrol_signing_pub
+    volumes:
+      - ../../../..:/workspace:rw
+      - ghostcontrol_evidence:/evidence:rw
+    read_only: false
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: ["ALL"]
+    user: "10001:10001"
+    networks: [ghostcontrol_net]
+
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    environment:
+      - CONTAINERS=1
+      - IMAGES=1
+      - NETWORKS=1
+      - VOLUMES=0
+      - SERVICES=0
+      - TASKS=0
+      - NODES=0
+      - SYSTEM=0
+      - INFO=1
+      - PING=1
+      - EVENTS=1
+      - AUTH=0
+      - SECRETS=0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: ["ALL"]
+    networks: [ghostcontrol_net]
+
+  ghostcontrol-db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=ghostcontrol
+      - POSTGRES_USER=ghostcontrol
+      - POSTGRES_PASSWORD=ghostcontrol
+    volumes:
+      - ghostcontrol_db:/var/lib/postgresql/data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: ["ALL"]
+    networks: [ghostcontrol_net]
+
+  ghostcontrol-redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - ghostcontrol_redis:/data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: ["ALL"]
+    networks: [ghostcontrol_net]
+
+networks:
+  ghostcontrol_net:
+    driver: bridge
+
+volumes:
+  ghostcontrol_db:
+  ghostcontrol_redis:
+  ghostcontrol_evidence:
+
+secrets:
+  ghostcontrol_signing_pub:
+    file: ../../secrets/signing.pub
+  ghostcontrol_signing_priv:
+    file: ../../secrets/signing.key
+

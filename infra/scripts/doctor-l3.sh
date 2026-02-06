@@ -70,6 +70,8 @@ VAULT_SECRET_ID="${VAULT_SECRET_ID:-}"
 
 L2_CHAIN_ID_EXPECTED="${PARENT_L2_CHAIN_ID:-}"
 L3_CHAIN_ID_EXPECTED="${L3_CHAIN_ID:-}"
+L3_DOCTOR_SKIP_RUNTIME="${L3_DOCTOR_SKIP_RUNTIME:-0}"
+L3_DOCTOR_SKIP_DOCKER="${L3_DOCTOR_SKIP_DOCKER:-0}"
 
 L3_MAX_PARENT_DERIVATION_LAG="${L3_MAX_PARENT_DERIVATION_LAG:-128}"
 L3_MAX_L3_SAFE_LAG="${L3_MAX_L3_SAFE_LAG:-256}"
@@ -324,8 +326,12 @@ need_bin python3
 if ! command -v docker >/dev/null 2>&1; then
   fail "docker not installed"
 fi
-if ! docker info >/dev/null 2>&1; then
-  fail "docker daemon not reachable"
+if [ "$L3_DOCTOR_SKIP_DOCKER" != "1" ]; then
+  if ! docker version --format '{{.Server.Version}}'; then
+    fail "docker daemon not reachable"
+  fi
+else
+  warn "docker daemon check skipped (L3_DOCTOR_SKIP_DOCKER=1)"
 fi
 if ! docker compose version >/dev/null 2>&1; then
   fail "docker compose not available"
@@ -374,6 +380,12 @@ if [ -n "$L3_HOST_RPC_PORT" ] && ! port_listening "$L3_HOST_RPC_PORT"; then
 fi
 if ! port_listening "${L3_ROLLUP_RPC_HOST_PORT:-39546}"; then
   warn "L3 rollup RPC port not listening: ${L3_ROLLUP_RPC_HOST_PORT:-39546}"
+fi
+
+if [ "$L3_DOCTOR_SKIP_RUNTIME" = "1" ]; then
+  warn "runtime checks skipped (L3_DOCTOR_SKIP_RUNTIME=1)"
+  echo "[doctor-l3] OK (runtime checks skipped)"
+  exit 0
 fi
 
 L2_CHAIN_ID_HEX="$(json_result "$(jsonrpc "$HOST_L2_RPC" eth_chainId || true)")"

@@ -1,0 +1,17 @@
+node_modules
+dist
+.next
+.turbo
+.env
+.env.*
+
+# Evidence (dev-only)
+evidence
+
+# Secrets (dev-only; do not commit real keys)
+secrets/signing.key
+secrets/signing.pub
+secrets/*.pem
+secrets/*.key
+secrets/*.crt
+

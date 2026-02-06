@@ -1,0 +1,28 @@
+{
+  "name": "@ghostcontrol/ui",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "PORT=${PORT:-3000} next dev",
+    "build": "next build",
+    "start": "PORT=${PORT:-3000} next start",
+    "lint": "echo \"(optional) add eslint\"",
+    "test": "echo \"(optional) add tests\""
+  },
+  "dependencies": {
+    "@ghostcontrol/sdk": "workspace:*",
+    "next": "^15.2.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "5.6.3"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}
+

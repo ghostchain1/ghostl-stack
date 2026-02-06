@@ -1,0 +1,261 @@
+name: ghostl-autonomy
+
+services:
+  ghost-registry:
+    build:
+      context: ./services/ghost-registry
+    image: ghostl/ghost-registry:local
+    user: "1000:1000"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      PORT: 8088
+      NET_ENV: ${NET_ENV:-dev}
+      RPC_L1: ${RPC_L1:-http://ghost-mapper:18545}
+      RPC_L2: ${RPC_L2:-http://ghost-mapper:29547}
+      RPC_L3: ${RPC_L3:-http://ghost-mapper:39545}
+      RPC_L1_WS: ${RPC_L1_WS:-}
+      RPC_L2_WS: ${RPC_L2_WS:-}
+      RPC_L3_WS: ${RPC_L3_WS:-}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - "${AUTONOMY_GHOST_REGISTRY_HOST_PORT:-28088}:8088"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:8088/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  network-context-service:
+    build:
+      context: ./services/network-context-service
+      args:
+        VCS_REF: ${VCS_REF:-unknown}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+    image: ghostl/network-context-service:local
+    user: "1000:1000"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    depends_on:
+      ghost-registry:
+        condition: service_healthy
+    environment:
+      PORT: 7633
+      NET_ENV: ${NET_ENV:-dev}
+      RPC_REGISTRY_URL: http://ghost-registry:8088/v1/endpoints
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - "${AUTONOMY_NETWORK_CONTEXT_HOST_PORT:-17633}:7633"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7633/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  consensus-telemetry-service:
+    build:
+      context: ./services/consensus-telemetry-service
+      args:
+        VCS_REF: ${VCS_REF:-unknown}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+    image: ghostl/consensus-telemetry-service:local
+    user: "1000:1000"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    depends_on:
+      ghost-registry:
+        condition: service_healthy
+    environment:
+      PORT: 7635
+      NET_ENV: ${NET_ENV:-dev}
+      RPC_REGISTRY_URL: http://ghost-registry:8088/v1/endpoints
+      RPC_L1: ${RPC_L1:-http://ghost-mapper:18545}
+      RPC_L2: ${RPC_L2:-http://ghost-mapper:29547}
+      RPC_L3: ${RPC_L3:-http://ghost-mapper:39545}
+      OP_NODE_L2_RPC: ${OP_NODE_L2_RPC:-http://ghost-mapper:9546}
+      OP_NODE_L3_RPC: ${OP_NODE_L3_RPC:-http://ghost-mapper:39546}
+      EVIDENCE_DIR: /data/evidence
+      PROPOSAL_DIR: /data/proposals
+      FINALITY_STATE_PATH: /data/finality-state.json
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - "${AUTONOMY_CONSENSUS_TELEMETRY_HOST_PORT:-17635}:7635"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    volumes:
+      - ./services/consensus-telemetry-service/data:/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7635/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  network-manager-service:
+    build:
+      context: ./services/network-manager-service
+      args:
+        VCS_REF: ${VCS_REF:-unknown}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+    image: ghostl/network-manager-service:local
+    user: "1000:1000"
+    group_add:
+      - ${DOCKER_GROUP_ID:-999}
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    depends_on:
+      ghost-registry:
+        condition: service_healthy
+      consensus-telemetry-service:
+        condition: service_healthy
+    environment:
+      NETWORK_MANAGER_PORT: 7766
+      NET_ENV: ${NET_ENV:-dev}
+      RPC_REGISTRY_URL: http://ghost-registry:8088/v1/endpoints
+      CONSENSUS_TELEMETRY_URL: http://consensus-telemetry-service:7635/consensus
+      MONITOR_HOST: ${MONITOR_HOST:-host.docker.internal}
+      MONITOR_PORTS: ${MONITOR_PORTS:-7070,7171,18545,29547,39545}
+      MONITOR_HEALTH_ENDPOINTS: ${MONITOR_HEALTH_ENDPOINTS:-http://host.docker.internal:7070/health,http://host.docker.internal:7171/health}
+      MONITOR_INTERVAL_MS: ${MONITOR_INTERVAL_MS:-10000}
+      OP_GATE_URL: ${OP_GATE_URL:-http://ghost-mapper:28546}
+      OP_GATE_URL_L3: ${OP_GATE_URL_L3:-}
+      OP_GATE_ADMIN_TOKEN: ${OP_GATE_ADMIN_TOKEN:-}
+      AUTONOMY_EXECUTION_ENABLED: ${AUTONOMY_EXECUTION_ENABLED:-false}
+      AUTONOMY_KILL_SWITCH: ${AUTONOMY_KILL_SWITCH:-false}
+      AUTONOMY_PROD_LOCK: ${AUTONOMY_PROD_LOCK:-true}
+      REQUIRE_TELEMETRY: ${REQUIRE_TELEMETRY:-true}
+      REQUIRE_GOVERNANCE: ${REQUIRE_GOVERNANCE:-true}
+      REQUIRE_PAUSE_GUARDIAN: ${REQUIRE_PAUSE_GUARDIAN:-true}
+      EXECUTION_APPROVAL_TOKEN: ${EXECUTION_APPROVAL_TOKEN:-}
+      ACTION_APPROVER_ADDRESSES: ${ACTION_APPROVER_ADDRESSES:-}
+      ACTION_APPROVAL_THRESHOLD: ${ACTION_APPROVAL_THRESHOLD:-2}
+      GOVERNANCE_RPC_L1: ${GOVERNANCE_RPC_L1:-http://ghost-mapper:18545}
+      GOVERNOR_ADDRESS_L1: ${GOVERNOR_ADDRESS_L1:-}
+      EVIDENCE_ANCHOR_ADDRESS: ${EVIDENCE_ANCHOR_ADDRESS:-}
+      PAUSE_GUARDIAN_ADDRESS: ${PAUSE_GUARDIAN_ADDRESS:-}
+      ACTION_POLICY_PATH: /data/action-policy.json
+      EVIDENCE_DIR: /data/evidence
+      DOCKER_ACTIONS_ENABLED: ${DOCKER_ACTIONS_ENABLED:-false}
+      DOCKER_SOCKET_PATH: /var/run/docker.sock
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - "${AUTONOMY_NETWORK_MANAGER_HOST_PORT:-17766}:7766"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    volumes:
+      - ./services/network-manager-service/data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:'+(process.env.NETWORK_MANAGER_PORT||'7766')+'/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  ghost-mapper:
+    build:
+      context: ./services/ghost-mapper
+      args:
+        VCS_REF: ${VCS_REF:-unknown}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+    image: ghostl/ghost-mapper:local
+    user: "1000:1000"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      PORT: 7780
+      SERVICE_NAME: ghost-mapper
+      MAPPER_CONFIG_PATH: /data/mappings.json
+      MAPPER_PERSIST_ENABLED: ${GHOST_MAPPER_PERSIST_ENABLED:-true}
+      MAPPER_EXECUTION_ENABLED: ${GHOST_MAPPER_EXECUTION_ENABLED:-false}
+      MAPPER_ADMIN_TOKEN: ${GHOST_MAPPER_ADMIN_TOKEN:-}
+      MAPPER_BIND_ADDRESS: ${GHOST_MAPPER_BIND_ADDRESS:-0.0.0.0}
+      MAPPER_CONNECT_TIMEOUT_MS: ${GHOST_MAPPER_CONNECT_TIMEOUT_MS:-5000}
+      MAPPER_IDLE_TIMEOUT_MS: ${GHOST_MAPPER_IDLE_TIMEOUT_MS:-300000}
+      MAPPER_MAX_ACTIVE_MAPPINGS: ${GHOST_MAPPER_MAX_ACTIVE_MAPPINGS:-100}
+      MAPPER_ALLOW_LOW_PORTS: ${GHOST_MAPPER_ALLOW_LOW_PORTS:-false}
+      LOG_REQUESTS: ${GHOST_MAPPER_LOG_REQUESTS:-0}
+      LOG_CONNECTIONS: ${GHOST_MAPPER_LOG_CONNECTIONS:-0}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - "${GHOST_MAPPER_HOST_PORT:-17780}:7780"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    volumes:
+      - ./services/ghost-mapper/data:/data
+    networks:
+      - default
+      - ghost_net
+      - opstack_default
+      - ghostchain
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7780/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+networks:
+  ghost_net:
+    external: true
+  opstack_default:
+    external: true
+  ghostchain:
+    external: true
+    name: ghostchain_ghostchain

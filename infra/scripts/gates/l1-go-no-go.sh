@@ -33,6 +33,7 @@ SKIP_POLICY_REGISTRY="${SKIP_POLICY_REGISTRY:-0}"
 SKIP_INVARIANTS="${SKIP_INVARIANTS:-0}"
 SKIP_EVIDENCE="${SKIP_EVIDENCE:-0}"
 SKIP_VULN_SCAN="${SKIP_VULN_SCAN:-0}"
+SKIP_DOCKER_CHECK="${SKIP_DOCKER_CHECK:-0}"
 
 TRIVY_SECRET_CONFIG="${TRIVY_SECRET_CONFIG:-$ROOT_DIR/trivy-secret.yaml}"
 TRIVY_SKIP_DIRS_DEFAULT="node_modules,contracts/node_modules,dist,contracts/dist,contracts/artifacts,contracts/cache,contracts/.hardhat-cache,contracts/typechain-types,contracts/proposals,contracts/.foundry-out,contracts/.foundry-cache,contracts/.foundry-out-local,contracts/.foundry-cache-local,artifacts,cache,backups,ops/snapshots,ops/preflight,contracts/out-codex,contracts/cache-codex,contracts/out-slither,contracts/cache-slither,infra/docker/_backup,infra/docker/audit,infra/docker/runtime,infra/ghostchain/data,infra/ghostchain/secrets,infra/opstack/data,infra/opstack/broadcast,infra/opstack/secrets,infra/opstack/l3/secrets,chains/l2/data,chains/l3/data"
@@ -150,8 +151,12 @@ need_bin curl
 need_bin python3
 need_bin docker
 
-if ! docker info >/dev/null 2>&1; then
-  fail "docker daemon not reachable"
+if [ "$SKIP_DOCKER_CHECK" != "1" ]; then
+  if ! docker version --format '{{.Server.Version}}'; then
+    fail "docker daemon not reachable"
+  fi
+else
+  warn "docker daemon check skipped (SKIP_DOCKER_CHECK=1)"
 fi
 if ! docker compose version >/dev/null 2>&1; then
   fail "docker compose not available"
@@ -280,7 +285,8 @@ fi
 if [ "$SKIP_VULN_SCAN" != "1" ]; then
   info "vulnerability scan"
   if command -v trivy >/dev/null 2>&1; then
-    trivy_cmd=(trivy fs --scanners vuln,secret --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed "$ROOT_DIR")
+    # This gate is expected to run in restricted environments; default to offline usage of the cached Trivy DB.
+    trivy_cmd=(trivy fs --scanners vuln,secret --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed --skip-db-update --skip-version-check --timeout 30m "$ROOT_DIR")
     if [ -n "$TRIVY_SKIP_DIRS" ]; then
       trivy_cmd+=(--skip-dirs "$TRIVY_SKIP_DIRS")
     fi

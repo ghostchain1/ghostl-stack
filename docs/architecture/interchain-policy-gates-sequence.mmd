@@ -1,0 +1,53 @@
+sequenceDiagram
+  autonumber
+  participant User
+  participant L3 as GhostL3 (LowBalancerRouter)
+  participant Exec as Low Balancer Executor
+  participant PE as Policy Engine
+  participant PR as L1 PolicyRegistry
+  participant AGP as L1 AgentGovernancePolicy
+  participant PG as L3 PolicyGuard
+  participant Pause as L1 PauseGuardian
+  participant LR as Liquidity Router
+  participant BR as Bridge Router
+  participant Adapter as Bridge Adapter
+  participant Ext as External Chain
+  participant EV as L1 EvidenceVault
+
+  User->>L3: bridgeOut(intent)
+  L3-->>Exec: IntentCreated(intentHash, intent)
+
+  Exec->>PE: evaluate(intent)
+
+  par Constitutional safety
+    PE->>Pause: paused()?
+  and Chain-wide bounds
+    PE->>PR: effectivePolicy(keys...)
+  and Agent action permission
+    PE->>AGP: canExecute(role, action, approvals, evidence)
+  and AI risk gate (governance-set mode)
+    PE->>PG: checkPolicy(subject=Exec, action=BRIDGE_OUT)
+  end
+
+  alt Any gate denies
+    PE-->>Exec: DENY(reason + requiredNextStep)
+    Exec-->>L3: markIntentDenied(intentHash, reason)
+    L3-->>User: reject / hold
+  else Allowed (possibly with constraints)
+    PE-->>Exec: ALLOW(constraints)
+    Exec->>LR: buildRoute(intent, constraints)
+    LR-->>Exec: routePlan
+    Exec->>BR: selectAdapter(routePlan, constraints)
+    BR-->>Exec: adapter + txPlan
+    Exec->>Adapter: execute(txPlan)
+    Adapter->>Ext: submit tx / proof
+    Ext-->>Adapter: confirmations / finality
+    Adapter-->>Exec: receipt(txid/proof, status)
+    Exec->>EV: recordEvidence(evidenceHash)
+    Exec-->>L3: finalizeIntent(intentHash, receipt, evidenceHash)
+    L3-->>User: complete / mint / release
+  end
+
+  Note over Exec,PE: Fail closed if PR/AGP/PG/Pause are unreachable when required.
+  Note over PE,PG: AI cannot bypass governance; PG enforcement mode is governance-controlled.
+
