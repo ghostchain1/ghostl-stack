@@ -1,0 +1,57 @@
+{
+  "uid": "lge-overview",
+  "title": "Liquidity Gravity Engine (LGE)",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Settlement Lag (seconds)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "lge_settlement_lag_seconds",
+          "legendFormat": "adapter={{adapter}}"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Adapter Breaker State",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "lge_breaker_state",
+          "legendFormat": "adapter={{adapter}}"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Yield Settled (counter)",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum by (adapter, asset) (increase(lge_yield_settled_total[5m]))",
+          "legendFormat": "adapter={{adapter}} asset={{asset}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Liquidity Gravity Index (heuristic)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "lge_liquidity_gravity_index",
+          "legendFormat": "adapter={{adapter}} asset={{asset}}"
+        }
+      ]
+    }
+  ]
+}

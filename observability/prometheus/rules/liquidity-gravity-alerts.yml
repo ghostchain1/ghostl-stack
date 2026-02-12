@@ -1,0 +1,29 @@
+groups:
+  - name: liquidity-gravity
+    rules:
+      - alert: LGESettlementLagHigh
+        expr: lge_settlement_lag_seconds > 3600
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "LGE settlement lag high"
+          description: "Adapter {{ $labels.adapter }} settlement lag is {{ $value }}s (> 3600s)."
+
+      - alert: LGEAdapterPaused
+        expr: lge_breaker_state == 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "LGE adapter paused"
+          description: "Adapter {{ $labels.adapter }} is paused by circuit breaker."
+
+      - alert: LGEPolicyViolations
+        expr: increase(lge_policy_violations_total[10m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "LGE policy violations detected"
+          description: "Router detected policy violations in last 10m."
