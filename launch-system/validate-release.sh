@@ -15,7 +15,7 @@ ROOT="$(repo_root)"
 required_paths=(
   "${ROOT}/infra/ghostchain/geth/genesis.json"
   "${ROOT}/infra/ghostchain/docker-compose.l1.yml"
-  "${ROOT}/infra/ghostchain/.env.l1"
+  "${ROOT}/infra/ghostchain/.env"
 )
 
 for p in "${required_paths[@]}"; do
@@ -24,4 +24,3 @@ done
 
 log "validate: repo_root=${ROOT}"
 log "validate: ok"
-
