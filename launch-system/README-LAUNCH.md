@@ -27,6 +27,12 @@ sudo -u ghost bash -lc './launch-system/build-release.sh --release-id <release-i
 sudo -u ghost bash -lc './launch-system/seal-release.sh --release-id <release-id>'
 ```
 
+Notes:
+
+- `seal-release.sh` populates `images.lock` by pulling/building the DEVNET compose stack and recording immutable image IDs + repo digests (when available).
+- Deploy scripts run `docker compose up ... --no-build` to enforce “no builds outside DEVNET”.
+- Optional (recommended for production/airgapped): `HYPERGHOST_BUNDLE_IMAGES=1` when sealing to embed `images/docker-images.tar.gz` (deploy scripts auto-load it if present).
+
 ## Phase 2: Transfer artifacts (DEVNET → TESTNET/MAINNET)
 
 Testnet:
@@ -106,4 +112,3 @@ qemu+ssh://administrator@<HYPERVISOR_PUBLIC_IP>/system
 Permissions required on hypervisor:
 
 - `administrator` in `libvirt` and `kvm` groups
-
