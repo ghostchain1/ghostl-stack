@@ -3,7 +3,10 @@ name: docker-dry-run
 on:
   pull_request:
   push:
-    branches: [ main, master ]
+    branches:
+      - main
+      - master
+      - brand/**
 
 jobs:
   docker-dry-run:
