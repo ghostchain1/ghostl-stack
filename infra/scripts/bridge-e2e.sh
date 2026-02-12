@@ -50,23 +50,24 @@ normalize_rpc_url() {
 
 code_len() {
   local url="$1" addr="$2"
-  rpc "$url" eth_getCode "[\"$addr\",\"latest\"]" | python3 - <<'PY'
-import json,sys
-j=json.load(sys.stdin)
-code=j.get("result","") or ""
-print(max(0, len(code)-2) if code.startswith("0x") else len(code))
-PY
+  rpc "$url" eth_getCode "[\"$addr\",\"latest\"]" | python3 -c 'import json,sys
+raw=sys.stdin.read()
+code=""
+try:
+  j=json.loads(raw)
+  code=j.get("result","") or ""
+except Exception:
+  code=""
+print(max(0, len(code)-2) if code.startswith("0x") else len(code))'
 }
 
 hex_to_int() {
-  python3 - <<'PY'
-import sys
+  python3 -c 'import sys
 s=sys.stdin.read().strip()
 try:
   print(int(s,16))
 except Exception:
-  print("")
-PY
+  print("")'
 }
 
 maybe_source_stack_env() {

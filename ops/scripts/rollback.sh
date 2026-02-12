@@ -7,6 +7,9 @@ STOP_UNKNOWN="false"
 HEALTH_CHECK="false"
 HEALTH_TIMEOUT=300
 
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT_DIR}/scripts/lib/docker.sh"
+
 usage() {
   cat <<'USAGE'
 Usage: rollback.sh [--stop-unknown] [--health-check] [--timeout <seconds>] /path/to/ops/snapshots/<timestamp>
@@ -64,7 +67,7 @@ PY
 
 log "Files restored. Restarting affected compose services."
 
-if ! docker info >/dev/null 2>&1; then
+if ! hg_docker info >/dev/null 2>&1; then
   log "Docker not available; skipping restart."
   exit 0
 fi
@@ -89,14 +92,14 @@ with open(sys.argv[1],"r") as fh:
 print("\n".join(names))
 PY
 )
-  mapfile -t current_containers < <(docker ps -a --format '{{.Names}}')
+  mapfile -t current_containers < <(hg_docker ps -a --format '{{.Names}}')
   for name in "${current_containers[@]}"; do
     if [[ -z "$name" ]]; then
       continue
     fi
     if [[ ! " ${snapshot_containers[*]} " =~ " ${name} " ]]; then
       log "Stopping unknown container: $name"
-      docker stop "$name" >/dev/null 2>&1 || true
+      hg_docker stop "$name" >/dev/null 2>&1 || true
     fi
   done
 fi
@@ -108,8 +111,8 @@ check_health() {
   start=$(date +%s)
   while true; do
     local status health
-    status=$(docker inspect --format '{{.State.Status}}' "$container_id" 2>/dev/null || echo "")
-    health=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$container_id" 2>/dev/null || echo "")
+    status=$(hg_docker inspect --format '{{.State.Status}}' "$container_id" 2>/dev/null || echo "")
+    health=$(hg_docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$container_id" 2>/dev/null || echo "")
     if [[ "$status" == "running" ]]; then
       if [[ -z "$health" || "$health" == "healthy" ]]; then
         return 0
@@ -172,9 +175,9 @@ if [[ -d "$compose_dir" ]]; then
     while IFS= read -r service; do
       [[ -n "$service" ]] || continue
       log "Restarting $service from $compose_path"
-      docker compose --project-directory "$compose_dir_path" -f "$compose_path" up -d --no-deps "$service" || true
+      hg_docker compose --project-directory "$compose_dir_path" -f "$compose_path" up -d --no-deps "$service" || true
       if [[ "$HEALTH_CHECK" == "true" ]]; then
-        cid=$(docker compose --project-directory "$compose_dir_path" -f "$compose_path" ps -q "$service" 2>/dev/null || true)
+        cid=$(hg_docker compose --project-directory "$compose_dir_path" -f "$compose_path" ps -q "$service" 2>/dev/null || true)
         if [[ -n "$cid" ]]; then
           restarted_containers+=("$cid")
         fi

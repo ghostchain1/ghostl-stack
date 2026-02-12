@@ -6,6 +6,10 @@ ROOT_DIR="${ROOT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)}"
 TMP_DIR="$ROOT_DIR/.tmp"
 OP_ENV="$ROOT_DIR/infra/opstack/.env"
 
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT_DIR}/scripts/lib/docker.sh"
+hg_require_docker_compose
+
 need_cmd() {
   command -v "$1" >/dev/null 2>&1 || { echo "Missing required command: $1" >&2; exit 1; }
 }
@@ -13,7 +17,6 @@ need_cmd() {
 need_cmd node
 need_cmd jq
 need_cmd perl
-need_cmd docker
 need_cmd curl
 
 guard_env="$ROOT_DIR/services/ghost-guard/.env"
@@ -91,8 +94,8 @@ echo "  challenger(l3->l2): $challenger_l3_addr"
 
 echo "Pausing proposers during funding (avoids nonce collisions)..."
 cd "$ROOT_DIR/.devcontainer"
-docker compose stop --no-deps ghost-rollup-proposer-l2 ghost-rollup-proposer-l3 >/dev/null 2>&1 || true
-docker compose stop --no-deps ghost-rollup-challenger-l2 ghost-rollup-challenger-l3 >/dev/null 2>&1 || true
+hg_docker compose stop --no-deps ghost-rollup-proposer-l2 ghost-rollup-proposer-l3 >/dev/null 2>&1 || true
+hg_docker compose stop --no-deps ghost-rollup-challenger-l2 ghost-rollup-challenger-l3 >/dev/null 2>&1 || true
 
 HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:18545}"
 HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
@@ -142,7 +145,7 @@ fund_list="$(
 )
 
 echo "Restarting services to pick up updated env..."
-docker compose up -d --no-deps --force-recreate \
+hg_docker compose up -d --no-deps --force-recreate \
   ghost-guard ghost-relayer \
   ghost-rollup-proposer-l2 ghost-rollup-proposer-l3 \
   ghost-rollup-challenger-l2 ghost-rollup-challenger-l3 >/dev/null

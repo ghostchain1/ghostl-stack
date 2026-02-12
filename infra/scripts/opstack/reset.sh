@@ -7,6 +7,10 @@ OP_DIR="$ROOT/infra/opstack"
 L3_NAME="${L3_NAME:-ghostl3}"
 L2_CHAIN_ID="${L2_CHAIN_ID:-901}"
 
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT}/scripts/lib/docker.sh"
+hg_docker_init
+
 # Data directory locations (keep in sync with docker-compose.yml)
 L2_DATA_DIR="${OP_DIR}/data/l2-geth-${L2_CHAIN_ID}"
 OP_NODE_DATA_DIR="${OP_DIR}/data/op-node"
@@ -26,14 +30,14 @@ chown_data_dir() {
   if [ ! -d "$target" ]; then
     return 0
   fi
-  docker run --rm -v "${target}:/data" busybox chown -R "${HOST_UID}:${HOST_GID}" /data >/dev/null 2>&1 || true
+  hg_docker run --rm -v "${target}:/data" busybox chown -R "${HOST_UID}:${HOST_GID}" /data >/dev/null 2>&1 || true
 }
 
 wipe_data_dir() {
   local target="$1"
   mkdir -p "$target"
   # Use a throwaway root container to ensure we can delete files even if they were created as root.
-  docker run --rm -v "${target}:/data" busybox sh -c "rm -rf /data/*" >/dev/null 2>&1 || true
+  hg_docker run --rm -v "${target}:/data" busybox sh -c "rm -rf /data/*" >/dev/null 2>&1 || true
   chown "${HOST_UID}:${HOST_GID}" "$target" >/dev/null 2>&1 || true
 }
 

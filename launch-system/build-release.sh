@@ -61,19 +61,89 @@ cp -a "${GENESIS_SRC}" "${REL_DIR}/genesis.l1.json"
 cp -a "${COMPOSE_L1_SRC}" "${REL_DIR}/docker-compose.testnet.yml"
 cp -a "${COMPOSE_L1_SRC}" "${REL_DIR}/docker-compose.mainnet.yml"
 
-cp -a "${ENV_L1_SRC}" "${REL_DIR}/env.testnet"
-printf '\nHYPERGHOST_ENV=testnet\n' >> "${REL_DIR}/env.testnet"
+OVERLAY_TESTNET="${ROOT}/environments/testnet/ghostchain.env"
+OVERLAY_MAINNET="${ROOT}/environments/mainnet/ghostchain.env"
 
-cp -a "${ENV_L1_SRC}" "${REL_DIR}/env.mainnet"
-printf '\nHYPERGHOST_ENV=mainnet\n' >> "${REL_DIR}/env.mainnet"
+render_env() {
+  local base_env="$1"
+  local overlay_env="$2"
+  local out="$3"
+  local env_name="$4"
+
+  [ -f "${base_env}" ] || die "missing_base_env:${base_env}"
+  [ -f "${overlay_env}" ] || die "missing_overlay_env:${overlay_env}"
+
+  {
+    cat "${base_env}"
+    printf '\n# --- overlay (%s): %s ---\n' "${env_name}" "${overlay_env}"
+    cat "${overlay_env}"
+    printf '\nHYPERGHOST_ENV=%s\n' "${env_name}"
+  } > "${out}"
+}
+
+render_env "${ENV_L1_SRC}" "${OVERLAY_TESTNET}" "${REL_DIR}/env.testnet" testnet
+
+render_env "${ENV_L1_SRC}" "${OVERLAY_MAINNET}" "${REL_DIR}/env.mainnet" mainnet
 
 L1_CHAIN_ID="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], "r", encoding="utf-8"))["config"]["chainId"])' "${REL_DIR}/genesis.l1.json")"
+
+env_int() {
+  python3 - "$1" "$2" <<'PY'
+import sys
+
+path = sys.argv[1]
+key = sys.argv[2]
+
+def get_int(path: str, key: str):
+    try:
+        fh = open(path, "r", encoding="utf-8")
+    except FileNotFoundError:
+        return None
+    with fh:
+        for raw in fh:
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            if k.strip() != key:
+                continue
+            v = v.strip().strip('"').strip("'")
+            if not v:
+                return None
+            try:
+                return int(v, 0)
+            except Exception:
+                return None
+    return None
+
+val = get_int(path, key)
+if val is None:
+    raise SystemExit(1)
+print(val)
+PY
+}
+
+OPSTACK_ENV="${ROOT}/infra/opstack/.env"
+OPSTACK_ENV_L3="${ROOT}/infra/opstack/.env.l3"
+L2_CHAIN_ID="$(env_int "${OPSTACK_ENV}" L2_CHAIN_ID 2>/dev/null || true)"
+L3_CHAIN_ID="$(env_int "${OPSTACK_ENV}" OP_L3_CHAIN_ID 2>/dev/null || true)"
+if [ -z "${L2_CHAIN_ID}" ]; then
+  L2_CHAIN_ID="901"
+  log "build: warn: missing infra/opstack/.env:L2_CHAIN_ID; using ${L2_CHAIN_ID}"
+fi
+if [ -z "${L3_CHAIN_ID}" ]; then
+  L3_CHAIN_ID="$(env_int "${OPSTACK_ENV_L3}" L3_CHAIN_ID 2>/dev/null || true)"
+fi
+if [ -z "${L3_CHAIN_ID}" ]; then
+  L3_CHAIN_ID="903"
+  log "build: warn: missing infra/opstack/.env:OP_L3_CHAIN_ID and infra/opstack/.env.l3:L3_CHAIN_ID; using ${L3_CHAIN_ID}"
+fi
 
 cat > "${REL_DIR}/rollup.l2.json" <<JSON
 {
   \"note\": \"placeholder (generate from opstack tooling)\",
   \"environment\": \"testnet/mainnet\",
-  \"chain_id\": 901,
+  \"chain_id\": ${L2_CHAIN_ID},
   \"l1_chain_id\": ${L1_CHAIN_ID}
 }
 JSON
@@ -82,7 +152,8 @@ cat > "${REL_DIR}/rollup.l3.json" <<JSON
 {
   \"note\": \"placeholder (generate from opstack tooling)\",
   \"environment\": \"testnet/mainnet\",
-  \"chain_id\": 903,
+  \"chain_id\": ${L3_CHAIN_ID},
+  \"parent_chain_id\": ${L2_CHAIN_ID},
   \"l1_chain_id\": ${L1_CHAIN_ID}
 }
 JSON

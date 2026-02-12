@@ -4,13 +4,12 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COMPOSE_FILE="${ROOT_DIR}/infra/docker/liquidity-gravity/docker-compose.yml"
 
-if ! command -v docker >/dev/null 2>&1; then
-  echo "docker not found"
-  exit 1
-fi
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT_DIR}/scripts/lib/docker.sh"
+hg_require_docker_compose
 
 echo "[LGE] Compose services:"
-docker compose -f "${COMPOSE_FILE}" ps
+hg_docker compose -f "${COMPOSE_FILE}" ps
 
 echo "[LGE] Health checks:"
 curl -fsS "http://localhost:7607/health" | jq -r '.' 2>/dev/null || curl -fsS "http://localhost:7607/health" || true

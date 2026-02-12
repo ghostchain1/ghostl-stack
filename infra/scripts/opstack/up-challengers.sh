@@ -5,6 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 OP_DIR="$ROOT/infra/opstack"
 
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT}/scripts/lib/docker.sh"
+hg_require_docker_compose
+
 if [ ! -f "$OP_DIR/.env" ]; then
   echo "Missing $OP_DIR/.env (copy .env.sample and set keys/addresses)" >&2
   exit 1
@@ -41,6 +45,6 @@ if [ -f "$OP_DIR/.env.secrets" ]; then
 fi
 
 echo "Starting challenger services: ${SERVICES[*]}"
-docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" up -d --no-deps "${SERVICES[@]}"
+hg_docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" up -d --no-deps "${SERVICES[@]}"
 
 echo "Challengers are starting. Metrics: L2=${L2_CHALLENGER_METRICS_HOST_PORT:-7303} L3=${L3_CHALLENGER_METRICS_HOST_PORT:-8303}"

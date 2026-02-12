@@ -6,6 +6,10 @@ ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 OP_DIR="$ROOT/infra/opstack"
 CFG_DIR="$OP_DIR/config"
 
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT}/scripts/lib/docker.sh"
+hg_require_docker_compose
+
 echo ">> Verifying rollup/genesis checksums..."
 if ! (cd "$CFG_DIR" && sha256sum -c checksums.txt); then
   echo "Checksum validation failed. Update $CFG_DIR/checksums.txt after regenerating configs." >&2
@@ -14,7 +18,7 @@ fi
 
 echo ">> Stopping OP Stack devnet..."
 cd "$OP_DIR"
-docker compose down -v || true
+hg_docker compose down -v || true
 
 echo ">> Resetting data dirs..."
 rm -rf "$OP_DIR/data/l2-geth" "$OP_DIR/data/op-node" "$OP_DIR/data/op-sequencer"
