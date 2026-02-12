@@ -53,7 +53,7 @@ printf '%s' "${remote_hostname}" | grep -Eq "${HOST_RE}" || die "remote_hostname
 remote_dir="/opt/ghoststack/releases/${RELEASE_ID}"
 
 log "push: rsync -> ${SSH_TARGET}:${remote_dir}"
-rsync -a --delete "${REL_DIR}/" "${SSH_TARGET}:${remote_dir}/"
+rsync -a --delete --rsync-path="sudo rsync" "${REL_DIR}/" "${SSH_TARGET}:${remote_dir}/"
 
 log "push: verify checksums on remote"
 ssh -o BatchMode=yes "${SSH_TARGET}" "cd '${remote_dir}' && sha256sum -c checksums.txt >/dev/null"
