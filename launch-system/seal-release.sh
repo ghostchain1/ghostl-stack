@@ -34,6 +34,8 @@ require_cmd sha256sum
 require_cmd find
 require_cmd sort
 require_cmd awk
+require_cmd sudo
+require_cmd docker
 
 "${SCRIPT_DIR}/validate-release.sh"
 
@@ -47,6 +49,118 @@ done
 
 GIT_COMMIT="$(git -C "${ROOT}" rev-parse --short HEAD)"
 CREATED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+# Populate images.lock with immutable IDs/digests (DEVNET only).
+# Targets must deploy with --no-build.
+COMPOSE_SRC="${ROOT}/infra/ghostchain/docker-compose.l1.yml"
+ENV_SRC="${ROOT}/infra/ghostchain/.env"
+
+log "seal: images.lock: pulling images (devnet)"
+sudo -n docker compose -f "${COMPOSE_SRC}" --env-file "${ENV_SRC}" pull --ignore-pull-failures || true
+
+log "seal: images.lock: building local images (devnet)"
+sudo -n docker compose -f "${COMPOSE_SRC}" --env-file "${ENV_SRC}" build || true
+
+log "seal: images.lock: inspecting images"
+HG_RELEASE_ID="${RELEASE_ID}" HG_COMPOSE_SRC="${COMPOSE_SRC}" HG_ENV_SRC="${ENV_SRC}" python3 - <<'PY' > "${REL_DIR}/images.lock"
+import json
+import os
+import subprocess
+import sys
+from datetime import datetime, timezone
+
+release_id = os.environ["HG_RELEASE_ID"]
+compose_src = os.environ["HG_COMPOSE_SRC"]
+env_src = os.environ["HG_ENV_SRC"]
+
+def run(cmd: list[str]) -> str:
+    p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if p.returncode != 0:
+        raise RuntimeError(f"cmd_failed rc={p.returncode} cmd={cmd} stderr={p.stderr.strip()}")
+    return p.stdout
+
+images_raw = run(
+    [
+        "sudo",
+        "-n",
+        "docker",
+        "compose",
+        "-f",
+        compose_src,
+        "--env-file",
+        env_src,
+        "config",
+        "--images",
+    ]
+)
+
+images: list[str] = []
+seen: set[str] = set()
+for line in images_raw.splitlines():
+    img = line.strip()
+    if not img:
+        continue
+    if img in seen:
+        continue
+    seen.add(img)
+    images.append(img)
+
+items: list[dict] = []
+missing: list[str] = []
+for img in images:
+    p = subprocess.run(
+        ["sudo", "-n", "docker", "image", "inspect", img],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if p.returncode != 0:
+        missing.append(img)
+        continue
+
+    info = json.loads(p.stdout)[0]
+    items.append(
+        {
+            "image": img,
+            "id": info.get("Id", ""),
+            "repo_tags": info.get("RepoTags") or [],
+            "repo_digests": info.get("RepoDigests") or [],
+        }
+    )
+
+if missing:
+    raise SystemExit("missing_images:" + ",".join(missing))
+
+lock = {
+    "release_id": release_id,
+    "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    "compose_source": compose_src,
+    "env_source": env_src,
+    "images": items,
+}
+sys.stdout.write(json.dumps(lock, indent=2, sort_keys=True) + "\n")
+PY
+
+if [ "${HYPERGHOST_BUNDLE_IMAGES:-0}" = "1" ]; then
+  require_cmd gzip
+  mkdir -p "${REL_DIR}/images"
+
+  HG_REL_DIR="${REL_DIR}" python3 - <<'PY' > "${REL_DIR}/images/images.txt"
+import json
+import os
+from pathlib import Path
+
+rel_dir = Path(os.environ["HG_REL_DIR"])
+lock = json.loads((rel_dir / "images.lock").read_text(encoding="utf-8"))
+for item in lock.get("images", []):
+    img = (item.get("image") or "").strip()
+    if img:
+        print(img)
+PY
+
+  log "seal: images.bundle: ${REL_DIR}/images/docker-images.tar.gz"
+  sudo -n docker save $(tr '\n' ' ' < "${REL_DIR}/images/images.txt") | gzip -1 > "${REL_DIR}/images/docker-images.tar.gz"
+fi
 
 REL_ID_BYTES32="$(keccak256_str "${RELEASE_ID}")"
 GENESIS_HASH="$(keccak256_file "${REL_DIR}/genesis.l1.json")"
@@ -209,7 +323,7 @@ cat > "${REL_DIR}/attestations/image-digest-attestation.txt" <<TXT
 release_id=${RELEASE_ID}
 images_lock_keccak256=${IMAGES_LOCK_HASH}
 created_at_utc=${CREATED_AT}
-note=populate images.lock with immutable digests before production
+note=images.lock populated during sealing (image IDs + repo digests when available)
 TXT
 
 cat > "${REL_DIR}/scripts/validate-release.sh" <<'SH'
@@ -253,8 +367,12 @@ mkdir -p "${DATA_ROOT}/l1" "${DATA_ROOT}/l2" "${DATA_ROOT}/l3"
 cd "${REL_DIR}"
 sha256sum -c checksums.txt >/dev/null
 
+cp -a env.testnet .env
+if [ -f "${REL_DIR}/images/docker-images.tar.gz" ]; then
+  gzip -dc "${REL_DIR}/images/docker-images.tar.gz" | docker load
+fi
 docker compose -f docker-compose.testnet.yml --env-file env.testnet config >/dev/null
-docker compose -f docker-compose.testnet.yml --env-file env.testnet up -d
+docker compose -f docker-compose.testnet.yml --env-file env.testnet up -d --no-build
 echo "deployed:${ENV}"
 SH
 chmod 750 "${REL_DIR}/scripts/deploy-testnet.sh"
@@ -314,8 +432,12 @@ mkdir -p "${DATA_ROOT}/l1" "${DATA_ROOT}/l2" "${DATA_ROOT}/l3"
 cd "${REL_DIR}"
 sha256sum -c checksums.txt >/dev/null
 
+cp -a env.mainnet .env
+if [ -f "${REL_DIR}/images/docker-images.tar.gz" ]; then
+  gzip -dc "${REL_DIR}/images/docker-images.tar.gz" | docker load
+fi
 docker compose -f docker-compose.mainnet.yml --env-file env.mainnet config >/dev/null
-docker compose -f docker-compose.mainnet.yml --env-file env.mainnet up -d
+docker compose -f docker-compose.mainnet.yml --env-file env.mainnet up -d --no-build
 
 mkdir -p "${REL_DIR}/governance"
 cat > "${REL_DIR}/governance/launch-proof.txt" <<EOF

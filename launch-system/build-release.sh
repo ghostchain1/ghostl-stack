@@ -55,7 +55,7 @@ mkdir -p "${REL_DIR}/attestations" "${REL_DIR}/scripts" "${REL_DIR}/governance/a
 
 GENESIS_SRC="${ROOT}/infra/ghostchain/geth/genesis.json"
 COMPOSE_L1_SRC="${ROOT}/infra/ghostchain/docker-compose.l1.yml"
-ENV_L1_SRC="${ROOT}/infra/ghostchain/.env.l1"
+ENV_L1_SRC="${ROOT}/infra/ghostchain/.env"
 
 cp -a "${GENESIS_SRC}" "${REL_DIR}/genesis.l1.json"
 cp -a "${COMPOSE_L1_SRC}" "${REL_DIR}/docker-compose.testnet.yml"
