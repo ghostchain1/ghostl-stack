@@ -7,6 +7,9 @@ STRICT="false"
 FAILURES=0
 RUN_L1_DOCTOR="${RUN_L1_DOCTOR:-0}"
 
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT_DIR}/scripts/lib/docker.sh"
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --strict) STRICT="true"; shift;;
@@ -74,9 +77,9 @@ PY
 }
 
 log "Docker runtime"
-docker ps --format '{{.Names}} {{.Status}}' || true
+hg_docker ps --format '{{.Names}} {{.Status}}' || true
 
-docker compose ls --format json || true
+hg_docker compose ls --format json || true
 
 if [[ "$RUN_L1_DOCTOR" == "1" && -x "$ROOT_DIR/infra/scripts/doctor-l1.sh" ]]; then
   log "Running L1 doctor"
@@ -89,11 +92,12 @@ if [[ "$RUN_L1_DOCTOR" == "1" && -x "$ROOT_DIR/infra/scripts/doctor-l1.sh" ]]; t
 fi
 
 log "Compose project status"
-for project in $(docker compose ls --format json | python3 -c 'import json,sys; data=json.load(sys.stdin); print(" ".join([p["Name"] for p in data]))' 2>/dev/null); do
+projects="$(hg_docker compose ls --format json 2>/dev/null | python3 -c 'import json,sys; data=json.load(sys.stdin); print(\" \".join([p[\"Name\"] for p in data]))' 2>/dev/null || true)"
+for project in $projects; do
   log "Project: $project"
-  docker compose -p "$project" ps --format json || true
-  docker compose -p "$project" ps || true
-  done
+  hg_docker compose -p "$project" ps --format json || true
+  hg_docker compose -p "$project" ps || true
+done
 
 L1_URL=$(get_chain_url l1)
 L2_URL=$(get_chain_url l2)
@@ -284,10 +288,10 @@ check_http "ghostscout-ui-l1" "http://localhost:18651"
 check_http "ghostscout-ui-l2" "http://localhost:18652"
 check_http "ghostscout-ui-l3" "http://localhost:18653"
 
-if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+if hg_docker info >/dev/null 2>&1; then
   log "Explorer DB checks"
-  if docker ps --format '{{.Names}}' | grep -q '^ghost_ghostscout-db$'; then
-    if docker exec ghost_ghostscout-db pg_isready -U ghostscout >/dev/null 2>&1; then
+  if hg_docker ps --format '{{.Names}}' | grep -q '^ghost_ghostscout-db$'; then
+    if hg_docker exec ghost_ghostscout-db pg_isready -U ghostscout >/dev/null 2>&1; then
       log "ghostscout-db: ok"
     else
       log "ghostscout-db: failed"
@@ -302,8 +306,9 @@ fi
 
 log "Log scan (fatal patterns)"
 patterns='panic|fatal|cannot connect|unauthorized|chainId mismatch|jwt'
-for name in $(docker ps --format '{{.Names}}'); do
-  if docker logs --tail 200 "$name" 2>/dev/null | grep -Eqi "$patterns"; then
+mapfile -t containers < <(hg_docker ps --format '{{.Names}}' 2>/dev/null || true)
+for name in "${containers[@]}"; do
+  if hg_docker logs --tail 200 "$name" 2>/dev/null | grep -Eqi "$patterns"; then
     log "WARN: fatal pattern in $name"
   fi
 done

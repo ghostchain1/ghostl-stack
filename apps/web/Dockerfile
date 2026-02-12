@@ -1,9 +1,12 @@
 FROM node:22.21.0-bookworm-slim AS deps
 WORKDIR /app
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 make g++ \
+  && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
-COPY apps ./apps
-COPY packages ./packages
-RUN npm install --include-workspace-root --workspaces
+COPY apps/*/package.json apps/*/package.json
+COPY packages/*/package.json packages/*/package.json
+RUN npm ci --include-workspace-root --workspaces
 
 FROM deps AS dev
 WORKDIR /app

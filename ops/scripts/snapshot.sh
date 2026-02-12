@@ -5,6 +5,9 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SNAP_DIR=""
 REQUIRE_DOCKER="false"
 
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT_DIR}/scripts/lib/docker.sh"
+
 usage() {
   cat <<'USAGE'
 Usage: snapshot.sh [--out <dir>] [--require-docker]
@@ -38,24 +41,21 @@ extra_files=(
   "$ROOT_DIR/services/stack.env"
   "$ROOT_DIR/services/.docker/config.json"
 )
-DOCKER_TIMEOUT="${DOCKER_INFO_TIMEOUT:-5}"
 COMPOSE_TIMEOUT="${COMPOSE_CONFIG_TIMEOUT:-5}"
 TIMEOUT_BIN="$(command -v timeout || true)"
+
 HAS_DOCKER="false"
-if command -v docker >/dev/null 2>&1; then
-  if [[ -n "$TIMEOUT_BIN" ]]; then
-    if "$TIMEOUT_BIN" "${DOCKER_TIMEOUT}s" docker info >/dev/null 2>&1; then
-      HAS_DOCKER="true"
-    fi
+if [[ "$REQUIRE_DOCKER" == "true" ]]; then
+  if hg_docker_init; then
+    HAS_DOCKER="true"
   else
-    if docker info >/dev/null 2>&1; then
-      HAS_DOCKER="true"
-    fi
+    echo "Docker not available; refusing to snapshot with --require-docker." >&2
+    exit 1
   fi
-fi
-if [[ "$HAS_DOCKER" != "true" && "$REQUIRE_DOCKER" == "true" ]]; then
-  echo "Docker not available; refusing to snapshot with --require-docker." >&2
-  exit 1
+else
+  if hg_docker_init >/dev/null 2>&1; then
+    HAS_DOCKER="true"
+  fi
 fi
 
 python3 - "$SNAP_DIR/files.json" <<'PY'
@@ -81,7 +81,7 @@ render_compose() {
   local dir="$2"
   shift 2
   local -a files=("$@")
-  local -a compose_cmd=(docker compose --project-directory "$dir")
+  local -a compose_cmd=("${HG_DOCKER_CMD[@]}" compose --project-directory "$dir")
   local cf
   for cf in "${files[@]}"; do
     compose_cmd+=(-f "$cf")
@@ -201,19 +201,19 @@ PY
 
 if [[ "$HAS_DOCKER" == "true" ]]; then
   log "Capturing Docker inventory"
-  docker ps -a --format '{{json .}}' > "$SNAP_DIR/inspect/docker-ps.json"
-  docker images --format '{{json .}}' > "$SNAP_DIR/inspect/docker-images.json"
-  docker volume ls --format '{{json .}}' > "$SNAP_DIR/inspect/docker-volumes.json"
-  docker network ls --format '{{json .}}' > "$SNAP_DIR/inspect/docker-networks.json"
-  mapfile -t containers < <(docker ps -a -q)
+  hg_docker ps -a --format '{{json .}}' > "$SNAP_DIR/inspect/docker-ps.json"
+  hg_docker images --format '{{json .}}' > "$SNAP_DIR/inspect/docker-images.json"
+  hg_docker volume ls --format '{{json .}}' > "$SNAP_DIR/inspect/docker-volumes.json"
+  hg_docker network ls --format '{{json .}}' > "$SNAP_DIR/inspect/docker-networks.json"
+  mapfile -t containers < <(hg_docker ps -a -q)
   if [[ ${#containers[@]} -gt 0 ]]; then
-    docker inspect "${containers[@]}" > "$SNAP_DIR/inspect/docker-inspect.json"
+    hg_docker inspect "${containers[@]}" > "$SNAP_DIR/inspect/docker-inspect.json"
   else
     echo '[]' > "$SNAP_DIR/inspect/docker-inspect.json"
   fi
-  mapfile -t volumes < <(docker volume ls -q)
+  mapfile -t volumes < <(hg_docker volume ls -q)
   if [[ ${#volumes[@]} -gt 0 ]]; then
-    docker volume inspect "${volumes[@]}" > "$SNAP_DIR/inspect/docker-volume-inspect.json"
+    hg_docker volume inspect "${volumes[@]}" > "$SNAP_DIR/inspect/docker-volume-inspect.json"
   else
     echo '[]' > "$SNAP_DIR/inspect/docker-volume-inspect.json"
   fi

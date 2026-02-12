@@ -5,6 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 OP_DIR="$ROOT/infra/opstack"
 
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT}/scripts/lib/docker.sh"
+hg_require_docker_compose
+
 if [ ! -f "$OP_DIR/.env" ]; then
   echo "Missing $OP_DIR/.env (copy .env.sample and set keys/chain IDs)" >&2
   exit 1
@@ -27,7 +31,7 @@ L1_ORIGIN_BLOCK="${L1_ORIGIN_BLOCK:-0x0}"
 echo "Checking required images for L1/L2..."
 missing=()
 for img in "local/op-geth:${TAG}" "local/op-node:${TAG}" "local/op-batcher:${TAG}" "local/op-proposer:${TAG}" "${GATE_IMAGE}"; do
-  if ! docker image inspect "$img" >/dev/null 2>&1; then
+  if ! hg_docker image inspect "$img" >/dev/null 2>&1; then
     missing+=("$img")
   fi
 done
@@ -175,7 +179,7 @@ fi
 
 # Bring up the execution client first so we can record the genesis hash into rollup.json
 # before starting op-node/op-sequencer (which validates the L2 genesis hash on boot).
-docker compose "${COMPOSE_ENV_ARGS[@]}" up -d l2-geth rpc-forward-l2-18547
+hg_docker compose "${COMPOSE_ENV_ARGS[@]}" up -d l2-geth rpc-forward-l2-18547
 
 echo "Waiting for L2 RPC..."
 for i in $(seq 1 60); do
@@ -183,7 +187,7 @@ for i in $(seq 1 60); do
     echo "OK: $HOST_L2_RPC"
     break
   fi
-  if docker compose "${COMPOSE_ENV_ARGS[@]}" exec -T l2-geth wget -qO- --header='content-type: application/json' --post-data='{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "$L2_CONTAINER_RPC" >/dev/null 2>&1; then
+  if hg_docker compose "${COMPOSE_ENV_ARGS[@]}" exec -T l2-geth wget -qO- --header='content-type: application/json' --post-data='{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "$L2_CONTAINER_RPC" >/dev/null 2>&1; then
     echo "OK (container RPC): $L2_CONTAINER_RPC"
     break
   fi
@@ -195,7 +199,7 @@ for i in $(seq 1 60); do
 done
 
 echo "Recording L2 genesis hash into rollup config..."
-L2_GENESIS_HASH=$(docker compose "${COMPOSE_ENV_ARGS[@]}" exec -T l2-geth wget -qO- --header='content-type: application/json' --post-data='{"jsonrpc":"2.0","id":1,"method":"eth_getBlockByNumber","params":["0x0", false]}' "$L2_CONTAINER_RPC" | jq -r '.result.hash' || true)
+L2_GENESIS_HASH=$(hg_docker compose "${COMPOSE_ENV_ARGS[@]}" exec -T l2-geth wget -qO- --header='content-type: application/json' --post-data='{"jsonrpc":"2.0","id":1,"method":"eth_getBlockByNumber","params":["0x0", false]}' "$L2_CONTAINER_RPC" | jq -r '.result.hash' || true)
 if [ -z "$L2_GENESIS_HASH" ] || [ "$L2_GENESIS_HASH" = "null" ]; then
   L2_GENESIS_HASH=$(curl -fsS -X POST "$HOST_L2_RPC" -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_getBlockByNumber","params":["0x0", false]}' | jq -r '.result.hash' || true)
 fi
@@ -211,6 +215,6 @@ if [ -n "$L2_GENESIS_HASH" ] && [ "$L2_GENESIS_HASH" != "null" ]; then
 fi
 
 # Start the rollup node + batcher only after rollup.json is pinned to the live genesis.
-docker compose "${COMPOSE_ENV_ARGS[@]}" up -d --force-recreate op-node op-sequencer op-batcher op-proposer
+hg_docker compose "${COMPOSE_ENV_ARGS[@]}" up -d --force-recreate op-node op-sequencer op-batcher op-proposer
 
 echo "OP Stack L2 up (external L1). L1=$HOST_L1_RPC L2=$HOST_L2_RPC"

@@ -25,6 +25,30 @@ jobs:
         run: |
           bash scripts/gst-leakage-gate.sh
 
+  shellcheck:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          shellcheck --version
+
+      - name: ShellCheck (core scripts)
+        run: |
+          set -euo pipefail
+          ( git ls-files -z '*.sh' \
+              | tr '\0' '\n' \
+              | grep -E '^(dev-stack\\.sh|scripts/|ops/scripts/|launch-system/|infra/ghostchain/ibft/|infra/scripts/)' \
+              || true ) \
+            | xargs -r shellcheck -S error
+
   node-lint-build:
     needs: [rpc-namespace]
     runs-on: ubuntu-latest

@@ -176,6 +176,10 @@ cp -a "${SCRIPT_DIR}/lib/hashutil.py" "${REL_DIR}/scripts/lib/hashutil.py"
 cp -a "${SCRIPT_DIR}/lib/ethrpc.py" "${REL_DIR}/scripts/lib/ethrpc.py"
 chmod 750 "${REL_DIR}/scripts/lib/hashutil.py" "${REL_DIR}/scripts/lib/ethrpc.py"
 
+# Copy docker helper so deploy scripts can run even when the user is not in the `docker` group.
+cp -a "${ROOT}/scripts/lib/docker.sh" "${REL_DIR}/scripts/lib/docker.sh"
+chmod 750 "${REL_DIR}/scripts/lib/docker.sh"
+
 # Copy DR helpers into the sealed bundle (to be installed under /opt/ghoststack/dr on target VMs).
 cp -a "${SCRIPT_DIR}/dr/." "${REL_DIR}/dr/"
 chmod 750 "${REL_DIR}/dr/"*.sh 2>/dev/null || true
@@ -360,6 +364,10 @@ case "${REL_DIR}/" in
   *) echo "refusing: must deploy from ${PREFIX}<release-id> (got ${REL_DIR})" >&2; exit 1;;
 esac
 
+# shellcheck source=lib/docker.sh
+. "${REL_DIR}/scripts/lib/docker.sh"
+hg_require_docker_compose
+
 ENV=testnet
 DATA_ROOT="/data/${ENV}"
 mkdir -p "${DATA_ROOT}/l1" "${DATA_ROOT}/l2" "${DATA_ROOT}/l3"
@@ -369,10 +377,10 @@ sha256sum -c checksums.txt >/dev/null
 
 cp -a env.testnet .env
 if [ -f "${REL_DIR}/images/docker-images.tar.gz" ]; then
-  gzip -dc "${REL_DIR}/images/docker-images.tar.gz" | docker load
+  gzip -dc "${REL_DIR}/images/docker-images.tar.gz" | hg_docker load
 fi
-docker compose -f docker-compose.testnet.yml --env-file env.testnet config >/dev/null
-docker compose -f docker-compose.testnet.yml --env-file env.testnet up -d --no-build
+hg_docker compose -f docker-compose.testnet.yml --env-file env.testnet config >/dev/null
+hg_docker compose -f docker-compose.testnet.yml --env-file env.testnet up -d --no-build
 echo "deployed:${ENV}"
 SH
 chmod 750 "${REL_DIR}/scripts/deploy-testnet.sh"
@@ -395,7 +403,10 @@ set -euo pipefail
 
 REL_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." >/dev/null 2>&1 && pwd)"
 cd "${REL_DIR}"
-docker compose -f docker-compose.testnet.yml --env-file env.testnet down
+# shellcheck source=lib/docker.sh
+. "${REL_DIR}/scripts/lib/docker.sh"
+hg_require_docker_compose
+hg_docker compose -f docker-compose.testnet.yml --env-file env.testnet down
 echo "rolled_back:testnet (containers stopped)"
 SH
 chmod 750 "${REL_DIR}/scripts/rollback-testnet.sh"
@@ -413,6 +424,10 @@ esac
 
 : "${RPC_L1:?set RPC_L1 (e.g. http://127.0.0.1:18545)}"
 : "${MAINNET_LAUNCH_GATE_ADDRESS:?set MAINNET_LAUNCH_GATE_ADDRESS (0x...)}"
+
+# shellcheck source=lib/docker.sh
+. "${REL_DIR}/scripts/lib/docker.sh"
+hg_require_docker_compose
 
 release_id_b32="$(jq -r .release_id_bytes32 "${REL_DIR}/governance/launch-hashes.json")"
 manifest_hash="$(jq -r .manifest_hash "${REL_DIR}/governance/launch-hashes.json")"
@@ -434,10 +449,10 @@ sha256sum -c checksums.txt >/dev/null
 
 cp -a env.mainnet .env
 if [ -f "${REL_DIR}/images/docker-images.tar.gz" ]; then
-  gzip -dc "${REL_DIR}/images/docker-images.tar.gz" | docker load
+  gzip -dc "${REL_DIR}/images/docker-images.tar.gz" | hg_docker load
 fi
-docker compose -f docker-compose.mainnet.yml --env-file env.mainnet config >/dev/null
-docker compose -f docker-compose.mainnet.yml --env-file env.mainnet up -d --no-build
+hg_docker compose -f docker-compose.mainnet.yml --env-file env.mainnet config >/dev/null
+hg_docker compose -f docker-compose.mainnet.yml --env-file env.mainnet up -d --no-build
 
 mkdir -p "${REL_DIR}/governance"
 cat > "${REL_DIR}/governance/launch-proof.txt" <<EOF
@@ -465,7 +480,10 @@ set -euo pipefail
 
 REL_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." >/dev/null 2>&1 && pwd)"
 cd "${REL_DIR}"
-docker compose -f docker-compose.mainnet.yml --env-file env.mainnet down
+# shellcheck source=lib/docker.sh
+. "${REL_DIR}/scripts/lib/docker.sh"
+hg_require_docker_compose
+hg_docker compose -f docker-compose.mainnet.yml --env-file env.mainnet down
 echo "rolled_back:mainnet (containers stopped)"
 SH
 chmod 750 "${REL_DIR}/scripts/rollback-mainnet.sh"
