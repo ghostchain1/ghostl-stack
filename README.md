@@ -58,6 +58,12 @@ Supporting Layers:
 
 ---
 
+## 🧰 Dev Setup
+
+See `docs/DEV_SETUP.md` for prerequisites, bootstrap instructions, and local bring-up commands.
+
+---
+
 ## ⛓️ Blockchain Layers
 
 ### GhostChain (L1)

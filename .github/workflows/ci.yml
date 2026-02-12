@@ -3,7 +3,10 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [ main, master ]
+    branches:
+      - main
+      - master
+      - brand/**
 
 jobs:
   rpc-namespace:
@@ -21,6 +24,54 @@ jobs:
       - name: Enforce GST-native branding (no legacy leakage)
         run: |
           bash scripts/gst-leakage-gate.sh
+
+  node-lint-build:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.22.0"
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  contracts-hardhat-compile:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.22.0"
+          cache: npm
+          cache-dependency-path: contracts/package-lock.json
+
+      - name: Install contracts deps
+        working-directory: contracts
+        run: npm ci
+
+      - name: Compile (Hardhat)
+        working-directory: contracts
+        run: npm run build
 
   contracts-gst-invariant:
     needs: [rpc-namespace]
