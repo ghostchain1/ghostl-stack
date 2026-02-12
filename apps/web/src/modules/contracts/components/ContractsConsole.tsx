@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
 import { resolveApiBase } from '../../../lib/runtime';
 import { apiRequest, formatApiError, type ApiError } from '../../../lib/api';
 import { jsonWithCsrf } from '../../../lib/csrf';
@@ -435,12 +436,24 @@ export function ContractsConsole() {
         return (
           <div key={file.name} className="card">
             <div style={{ fontWeight: 700, marginBottom: 8 }}>{file.name}</div>
-            {isImage && <img src={href} alt={file.name} style={{ maxWidth: '100%' }} />}
+            {isImage && (
+              <Image
+                alt={file.name}
+                src={href}
+                loader={({ src }) => src}
+                unoptimized
+                width={1200}
+                height={800}
+                style={{ maxWidth: '100%', height: 'auto' }}
+              />
+            )}
             {!isImage && isText && (
               <pre className="code-preview">{snippet || (error ? `Preview failed: ${error}` : 'Loading preview...')}</pre>
             )}
             {!isImage && !isText && <div className="muted">Preview not available</div>}
-            <a className="button secondary" href={href} target="_blank" rel="noreferrer">Open</a>
+            <a className="button secondary" href={href} target="_blank" rel="noreferrer">
+              Open
+            </a>
           </div>
         );
       })}

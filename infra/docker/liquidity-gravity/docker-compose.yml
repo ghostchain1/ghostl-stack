@@ -1,0 +1,217 @@
+x-health-defaults: &health_defaults
+  interval: 10s
+  timeout: 5s
+  retries: 10
+  start_period: 20s
+
+services:
+  ghostchain-l1:
+    image: ghcr.io/foundry-rs/foundry:stable
+    container_name: lge_ghostchain_l1_anvil
+    command: >
+      anvil
+      --host 0.0.0.0
+      --port 8545
+      --chain-id 14000101
+      --accounts 20
+      --balance 1000000
+      --block-time 2
+    ports:
+      - "18545:8545"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 4g
+    networks:
+      - lge_net
+    healthcheck:
+      <<: *health_defaults
+      test: ["CMD-SHELL", "cast block-number --rpc-url http://127.0.0.1:8545 >/dev/null 2>&1 || exit 1"]
+
+  external-evm:
+    image: ghcr.io/foundry-rs/foundry:stable
+    container_name: lge_external_evm_anvil
+    command: >
+      anvil
+      --host 0.0.0.0
+      --port 8545
+      --chain-id 137
+      --accounts 20
+      --balance 1000000
+      --block-time 2
+    ports:
+      - "38545:8545"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 4g
+    networks:
+      - lge_net
+    healthcheck:
+      <<: *health_defaults
+      test: ["CMD-SHELL", "cast block-number --rpc-url http://127.0.0.1:8545 >/dev/null 2>&1 || exit 1"]
+
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: lge_vault_dev
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID:-dev-root-token}
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1g
+    networks:
+      - lge_net
+    healthcheck:
+      <<: *health_defaults
+      test: ["CMD", "vault", "status", "-address=http://127.0.0.1:8200"]
+
+  liquidity-router:
+    build:
+      context: ../../..
+      dockerfile: services/liquidity-router/Dockerfile
+    image: ghostl/liquidity-router:local
+    container_name: lge_liquidity_router
+    env_file:
+      - ../../../services/stack.env
+    environment:
+      PORT: 7607
+      AUDIT_DIR: /audit
+      RPC_L1: http://ghostchain-l1:8545
+      LGE_EXTERNAL_RPC: http://external-evm:8545
+      # Safety: default dry-run unless explicitly enabled.
+      LGE_WRITE_ENABLED: ${LGE_WRITE_ENABLED:-0}
+    ports:
+      - "7607:7607"
+    volumes:
+      - ../../../artifacts/audit/liquidity-router:/audit
+    depends_on:
+      ghostchain-l1:
+        condition: service_healthy
+      external-evm:
+        condition: service_healthy
+      prometheus:
+        condition: service_started
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks:
+      - lge_net
+      - obs_net
+    healthcheck:
+      <<: *health_defaults
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:7607/health >/dev/null 2>&1 || exit 1"]
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1g
+
+  liquidity-prover:
+    profiles: ["zk"]
+    build:
+      context: ../../..
+      dockerfile: services/liquidity-prover/Dockerfile
+    image: ghostl/liquidity-prover:local
+    container_name: lge_liquidity_prover
+    env_file:
+      - ../../../services/stack.env
+    environment:
+      PORT: 7611
+    ports:
+      - "7611:7611"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks:
+      - lge_net
+      - obs_net
+    healthcheck:
+      <<: *health_defaults
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:7611/health >/dev/null 2>&1 || exit 1"]
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512m
+
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    container_name: lge_prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2g
+    networks:
+      - obs_net
+    healthcheck:
+      <<: *health_defaults
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9090/-/ready >/dev/null 2>&1 || exit 1"]
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: lge_grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2g
+    networks:
+      - obs_net
+    healthcheck:
+      <<: *health_defaults
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health >/dev/null 2>&1 || exit 1"]
+
+networks:
+  lge_net:
+    driver: bridge
+  obs_net:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+  grafana_data:

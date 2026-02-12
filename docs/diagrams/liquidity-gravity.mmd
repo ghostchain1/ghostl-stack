@@ -1,0 +1,74 @@
+flowchart LR
+    %% =========================
+    %% GhostChain Liquidity Gravity Engine
+    %% =========================
+
+    subgraph L1["GhostChain L1 (Sovereign Ledger)"]
+        Vault[LoadBalancerVault]
+        Registry[AdapterRegistry]
+        Policy[PolicyRegistry]
+        Oracle[SettlementOracle]
+        Router[RewardRouter]
+        Breaker[CircuitBreaker]
+    end
+
+    subgraph AI["AI Autonomous Off-Chain System"]
+        Risk[AI Risk Engine]
+        Strategy[AI Strategy Engine]
+        Exec[Execution Manager]
+        Settle[Settlement Manager]
+        Watchdog[Self-Healing Watchdog]
+    end
+
+    subgraph EXT["External Execution Chains"]
+        ETH[Ethereum]
+        BTC[Bitcoin]
+        SOL[Solana]
+        OTHER[Other Chains]
+    end
+
+    subgraph REWARD["GhostChain Value Reinjection"]
+        LP[Protocol-Owned Liquidity Pools]
+        Burn[Buyback + Burn]
+        Val[Validator / Sequencer Rewards]
+    end
+
+    %% =========================
+    %% Capital Deployment Flow
+    %% =========================
+    Vault -->|Lock Principal| Registry
+    Registry -->|Approve Adapter| Exec
+    Policy -->|Enforce Limits| Exec
+
+    Risk --> Strategy
+    Strategy --> Exec
+
+    Exec -->|Deploy Capital| ETH
+    Exec -->|Deploy Capital| BTC
+    Exec -->|Deploy Capital| SOL
+    Exec -->|Deploy Capital| OTHER
+
+    %% =========================
+    %% Yield & Settlement Flow
+    %% =========================
+    ETH -->|Yield / Fees| Settle
+    BTC -->|Yield / Fees| Settle
+    SOL -->|Yield / Fees| Settle
+    OTHER -->|Yield / Fees| Settle
+
+    Settle -->|Settlement Proof| Oracle
+    Oracle -->|Verified Yield| Router
+
+    %% =========================
+    %% Reinjection Paths
+    %% =========================
+    Router -->|Liquidity Injection| LP
+    Router -->|Buyback| Burn
+    Router -->|Rewards| Val
+
+    %% =========================
+    %% Safety & Autonomy
+    %% =========================
+    Watchdog -->|Pause / Slash| Breaker
+    Breaker --> Vault
+    Breaker --> Exec
