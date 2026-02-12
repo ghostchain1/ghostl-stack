@@ -5,10 +5,9 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SERVICE_ROOT="${ROOT_DIR}/services"
 shift || true
 
-if ! command -v docker >/dev/null 2>&1; then
-  echo "docker is required" >&2
-  exit 1
-fi
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT_DIR}/scripts/lib/docker.sh"
+hg_require_docker_compose
 
 if [ ! -d "$SERVICE_ROOT" ]; then
   echo "Service root not found: $SERVICE_ROOT" >&2
@@ -28,11 +27,11 @@ for file in "${COMPOSE_FILES[@]}"; do
   svc_dir="$(dirname "$file")"
   svc_name="$(basename "$svc_dir")"
   echo "----> Building $svc_name"
-  docker compose -f "$file" build "$@"
+  hg_docker compose -f "$file" build "$@"
   echo "<---- Built $svc_name"
   echo
   sleep 1
-  if docker compose -f "$file" ps >/dev/null 2>&1; then
+  if hg_docker compose -f "$file" ps >/dev/null 2>&1; then
     :
   fi
 done

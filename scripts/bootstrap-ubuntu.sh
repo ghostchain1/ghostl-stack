@@ -31,7 +31,12 @@ sudo apt-get install -y \
   gnupg \
   build-essential \
   git \
+  git-lfs \
   jq
+
+if command -v git-lfs >/dev/null 2>&1; then
+  git lfs install >/dev/null 2>&1 || true
+fi
 
 echo "[bootstrap] Ensuring Node.js meets repo requirements..." >&2
 if command -v node >/dev/null 2>&1; then
@@ -88,4 +93,3 @@ LGE dev bring-up:
   - bash scripts/up-liquidity-gravity.sh
   - then follow docs/RUNBOOK.md
 EOF
-

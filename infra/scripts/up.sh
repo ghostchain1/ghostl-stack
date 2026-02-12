@@ -4,6 +4,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 OP_DIR="$ROOT/infra/opstack"
 
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT}/scripts/lib/docker.sh"
+hg_require_docker_compose
+
 if [ ! -f "$OP_DIR/.env" ]; then
   echo "Missing $OP_DIR/.env (copy .env.sample and run infra/scripts/opstack/keys/init.sh)" >&2
   exit 1
@@ -59,7 +63,7 @@ SERVICES=(
   prometheus
   grafana
 )
-available_services=$(docker compose "${COMPOSE_ARGS[@]}" config --services)
+available_services=$(hg_docker compose "${COMPOSE_ARGS[@]}" config --services)
 start_services=()
 for svc in "${SERVICES[@]}"; do
   if printf '%s\n' "$available_services" | grep -qx "$svc"; then
@@ -70,6 +74,6 @@ if [ "${#start_services[@]}" -eq 0 ]; then
   echo "No matching services found in $COMPOSE_FILE (wanted: ${SERVICES[*]})." >&2
   exit 1
 fi
-docker compose "${COMPOSE_ARGS[@]}" up -d --no-deps "${start_services[@]}"
+hg_docker compose "${COMPOSE_ARGS[@]}" up -d --no-deps "${start_services[@]}"
 
 echo "Done. L1=$HOST_L1_RPC, L2=$HOST_L2_RPC${ENABLE_L3:+, L3=$HOST_L3_RPC}, Guard=$GUARD_PORT, Relayer=7171, ProposerL2=7272, ProposerL3=7373, ChallengerL2=7282, ChallengerL3=7383, Prometheus=9090, Grafana=3000"

@@ -96,6 +96,9 @@ SUMMARY_JSON="$OUT_DIR/summary.json"
 
 mkdir -p "$OUT_DIR/compose"
 
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT_DIR}/scripts/lib/docker.sh"
+
 log() {
   printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"
 }
@@ -168,6 +171,8 @@ done
 if command -v docker >/dev/null 2>&1; then
   if docker compose version >/dev/null 2>&1; then
     record_check "binary:docker-compose" "ok" "docker compose"
+  elif command -v sudo >/dev/null 2>&1 && sudo -n true >/dev/null 2>&1 && sudo -n docker compose version >/dev/null 2>&1; then
+    record_check "binary:docker-compose" "ok" "sudo -n docker compose"
   else
     record_check "binary:docker-compose" "fail" "docker compose unavailable"
     HAS_FAILURE=1
@@ -345,11 +350,11 @@ else
 fi
 
 if [[ "$DRY_RUN" == "false" ]]; then
-  if docker info >/dev/null 2>&1; then
-    docker ps --format '{{json .}}' > "$OUT_DIR/docker-ps.json" || true
-    docker compose ls --format json > "$OUT_DIR/compose-projects.json" || true
-    docker network ls --format '{{json .}}' > "$OUT_DIR/docker-networks.json" || true
-    docker volume ls --format '{{json .}}' > "$OUT_DIR/docker-volumes.json" || true
+  if hg_docker info >/dev/null 2>&1; then
+    hg_docker ps --format '{{json .}}' > "$OUT_DIR/docker-ps.json" || true
+    hg_docker compose ls --format json > "$OUT_DIR/compose-projects.json" || true
+    hg_docker network ls --format '{{json .}}' > "$OUT_DIR/docker-networks.json" || true
+    hg_docker volume ls --format '{{json .}}' > "$OUT_DIR/docker-volumes.json" || true
     record_check "docker:runtime" "ok" "runtime captured"
   else
     if [[ "$STRICT_MODE" == "1" ]]; then
@@ -364,8 +369,8 @@ else
   record_check "docker:runtime" "skip" "dry-run"
 fi
 
-if docker info >/dev/null 2>&1; then
-  if docker compose version >/dev/null 2>&1; then
+if hg_docker info >/dev/null 2>&1; then
+  if hg_docker compose version >/dev/null 2>&1; then
     while IFS= read -r file; do
       rel="${file#$ROOT_DIR/}"
       slug="${rel//\//__}"
@@ -373,19 +378,19 @@ if docker info >/dev/null 2>&1; then
       if [[ "$rel" == "infra/opstack/docker-compose.challengers.yml" ]]; then
         base="$ROOT_DIR/infra/opstack/docker-compose.yml"
         l3="$ROOT_DIR/infra/opstack/docker-compose.l3.yml"
-        if ! docker compose -f "$base" -f "$l3" -f "$file" config --format json > "$out" 2>"$out.err"; then
+        if ! hg_docker compose -f "$base" -f "$l3" -f "$file" config --format json > "$out" 2>"$out.err"; then
           log "compose config failed for $rel (see $out.err)"
         fi
         continue
       fi
       if [[ "$rel" == "infra/opstack/docker-compose.l3.yml" ]]; then
         base="$ROOT_DIR/infra/opstack/docker-compose.yml"
-        if ! docker compose -f "$base" -f "$file" config --format json > "$out" 2>"$out.err"; then
+        if ! hg_docker compose -f "$base" -f "$file" config --format json > "$out" 2>"$out.err"; then
           log "compose config failed for $rel (see $out.err)"
         fi
         continue
       fi
-      if ! docker compose -f "$file" config --format json > "$out" 2>"$out.err"; then
+      if ! hg_docker compose -f "$file" config --format json > "$out" 2>"$out.err"; then
         log "compose config failed for $rel (see $out.err)"
       fi
     done < "$OUT_DIR/compose-files.txt"
@@ -416,14 +421,16 @@ if [[ "$DRY_RUN" == "false" && ${#rpc_results[@]} -gt 0 ]]; then
     resp="$(curl -sS --max-time 5 -H 'Content-Type: application/json' \
       --data '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' \
       "$url" 2>/dev/null || true)"
-    chain_id="$(printf '%s' "$resp" | python3 - <<'PY'
-import json, sys
-raw = sys.stdin.read()
+    chain_id="$(RPC_RESP="$resp" python3 - <<'PY'
+import json
+import os
+
+raw = os.environ.get("RPC_RESP", "") or ""
 try:
     data = json.loads(raw)
-    print(data.get('result', ''))
+    print(data.get("result", "") or "")
 except Exception:
-    print('')
+    print("")
 PY
 )"
     if [ -n "$chain_id" ]; then

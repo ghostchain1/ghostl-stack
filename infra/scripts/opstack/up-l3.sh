@@ -10,6 +10,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 OP_DIR="$ROOT/infra/opstack"
 
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT}/scripts/lib/docker.sh"
+hg_require_docker_compose
+
 if [ ! -f "$OP_DIR/.env" ]; then
   echo "Missing $OP_DIR/.env (copy .env.sample and set keys/chain IDs)" >&2
   exit 1
@@ -89,7 +93,7 @@ check_required_code() {
 
 echo "Ensuring L2 RPC is reachable for L3 settlement..."
 if ! curl -fsS -X POST "$HOST_L2_RPC" -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' >/dev/null 2>&1; then
-  if ! docker compose -f "$OP_DIR/docker-compose.yml" --env-file "$OP_DIR/.env" exec -T l2-geth wget -qO- --header='content-type: application/json' --post-data='{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "$L2_CONTAINER_RPC" >/dev/null 2>&1; then
+  if ! hg_docker compose -f "$OP_DIR/docker-compose.yml" --env-file "$OP_DIR/.env" exec -T l2-geth wget -qO- --header='content-type: application/json' --post-data='{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "$L2_CONTAINER_RPC" >/dev/null 2>&1; then
     echo "L2 RPC $HOST_L2_RPC is not reachable; start L1/L2 first (infra/scripts/opstack/up-l2.sh)." >&2
     exit 1
   fi
@@ -180,7 +184,7 @@ if [ -d "$L2_DATA_DIR" ]; then
   cp -a "$L2_DATA_DIR/." "$tmp_dir/" 2>/dev/null
   copy_rc=$?
   set -e
-  if [ "$copy_rc" -eq 0 ] && docker run --rm -v "$tmp_dir":/data \
+  if [ "$copy_rc" -eq 0 ] && hg_docker run --rm -v "$tmp_dir":/data \
     ghcr.io/ethereum-optimism/op-geth@sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0 \
     --verbosity 0 dumpgenesis --datadir /data >"$tmp_genesis" 2>/dev/null; then
     if jq -e '.config.chainId' "$tmp_genesis" >/dev/null 2>&1; then
@@ -196,7 +200,7 @@ if [ -d "$L2_DATA_DIR" ]; then
     echo "Warning: failed to snapshot L2 data dir; falling back to genesis-l2.json." >&2
   fi
   # The snapshot may include root-owned files; clear via docker to avoid permission errors.
-  docker run --rm -v "$tmp_dir":/data alpine sh -lc 'rm -rf /data/* /data/.[!.]* /data/..?* || true' >/dev/null 2>&1 || true
+  hg_docker run --rm -v "$tmp_dir":/data alpine sh -lc 'rm -rf /data/* /data/.[!.]* /data/..?* || true' >/dev/null 2>&1 || true
   rm -rf "$tmp_dir" || true
 fi
 if [ "$synced_l1_chain" -ne 1 ] && [ -f "$OP_DIR/config/genesis-l2.json" ]; then
@@ -226,7 +230,7 @@ if [ -f "$OP_DIR/.env.secrets" ]; then
   COMPOSE_ENV_ARGS+=(--env-file "$OP_DIR/.env.secrets")
 fi
 # --no-deps prevents auto-starting L1/L2; assume up-l2.sh already ran.
-docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" up -d --no-deps \
+hg_docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" up -d --no-deps \
   l3-geth
 
 echo "Waiting for L3 RPC..."
@@ -235,7 +239,7 @@ for i in $(seq 1 60); do
     echo "OK: $HOST_L3_RPC"
     break
   fi
-  if docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" exec -T l3-geth wget -qO- --header='content-type: application/json' --post-data='{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "$L3_CONTAINER_RPC" >/dev/null 2>&1; then
+  if hg_docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" exec -T l3-geth wget -qO- --header='content-type: application/json' --post-data='{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "$L3_CONTAINER_RPC" >/dev/null 2>&1; then
     echo "OK (container RPC): $L3_CONTAINER_RPC"
     break
   fi
@@ -249,7 +253,7 @@ done
 echo "Recording L3 genesis hash into rollup config..."
 L3_GENESIS_HASH=$(curl -fsS -X POST "$HOST_L3_RPC" -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_getBlockByNumber","params":["0x0", false]}' | jq -r '.result.hash' || true)
 if [ -z "$L3_GENESIS_HASH" ] || [ "$L3_GENESIS_HASH" = "null" ]; then
-  L3_GENESIS_HASH=$(docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" exec -T l3-geth wget -qO- --header='content-type: application/json' --post-data='{"jsonrpc":"2.0","id":1,"method":"eth_getBlockByNumber","params":["0x0", false]}' "$L3_CONTAINER_RPC" | jq -r '.result.hash' || true)
+  L3_GENESIS_HASH=$(hg_docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" exec -T l3-geth wget -qO- --header='content-type: application/json' --post-data='{"jsonrpc":"2.0","id":1,"method":"eth_getBlockByNumber","params":["0x0", false]}' "$L3_CONTAINER_RPC" | jq -r '.result.hash' || true)
 fi
 if [ -n "$L3_GENESIS_HASH" ] && [ "$L3_GENESIS_HASH" != "null" ] && [ -f "$L3_ROLLUP_JSON" ]; then
   # OP-node expects genesis.l2_time to be the parent L2 genesis timestamp, not the L3 timestamp.
@@ -267,7 +271,7 @@ if [ "$RESET_L3_OP_NODE" = "1" ] && [ -d "$L3_OP_NODE_DIR" ]; then
   mkdir -p "$L3_OP_NODE_DIR"
   echo "Reset L3 op-node data dir (backup: $L3_DATA_DIR/op-node.bak-$ts)."
 fi
-docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" up -d --no-deps --force-recreate \
+hg_docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" up -d --no-deps --force-recreate \
   l3-op-node l3-op-batcher
 
 echo "OP Stack L3 up. L3=$HOST_L3_RPC"

@@ -4,10 +4,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COMPOSE_FILE="${ROOT_DIR}/infra/docker/liquidity-gravity/docker-compose.yml"
 
-if ! command -v docker >/dev/null 2>&1; then
-  echo "docker not found"
-  exit 1
-fi
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT_DIR}/scripts/lib/docker.sh"
+hg_require_docker_compose
 
 PROFILE_ARGS=()
 if [[ "${1:-}" == "--zk" ]]; then
@@ -17,7 +16,7 @@ fi
 echo "[LGE] Using compose file: ${COMPOSE_FILE}"
 echo "[LGE] Safety: this script will NOT remove volumes or reset chains."
 
-docker compose -f "${COMPOSE_FILE}" "${PROFILE_ARGS[@]}" up -d
+hg_docker compose -f "${COMPOSE_FILE}" "${PROFILE_ARGS[@]}" up -d
 
 echo "[LGE] Up. Check:"
 echo "  - Router:    http://localhost:7607/health"
