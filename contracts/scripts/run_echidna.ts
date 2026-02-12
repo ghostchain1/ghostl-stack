@@ -75,24 +75,26 @@ const args = useDocker
   ? [
       "run",
       "--rm",
+      "--user",
+      `${process.getuid?.() ?? 1000}:${process.getgid?.() ?? 1000}`,
+      "-e",
+      "HOME=/tmp",
       "-v",
       `${root}:/src`,
+      "-w",
+      "/src",
       "trailofbits/echidna",
       "echidna-test",
       "--config",
       "/src/formal/echidna/echidna.yaml",
       "--format",
-      "json",
-      "--solc-version",
-      solcVersion
+      "json"
     ].concat(targets.map((t) => `/src/${t}`))
   : [
       "--config",
       configPath,
       "--format",
-      "json",
-      "--solc-version",
-      solcVersion
+      "json"
     ].concat(targets.map((t) => path.join(root, t)));
 
 const result = spawnSync(useDocker ? "docker" : "echidna-test", args, {

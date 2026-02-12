@@ -3,19 +3,15 @@ pragma solidity ^0.8.24;
 
 import "../../src/GuardPolicy.sol";
 import "../../src/L2L3Bridge.sol";
-import "../../src/GhostTokenL2.sol";
 
 contract BridgeEchidna {
     GuardPolicy private policy;
     L2L3Bridge private bridge;
-    GhostTokenL2 private token;
 
     constructor() {
         policy = new GuardPolicy();
         bridge = new L2L3Bridge(address(policy));
         bridge.setRequireComplianceRoot(false);
-        token = new GhostTokenL2();
-        token.approve(address(bridge), type(uint256).max);
     }
 
     function echidna_replay_protection() public returns (bool) {
