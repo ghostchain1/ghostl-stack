@@ -69,6 +69,7 @@ services:
 
   l3-op-node:
     image: local/op-node:${OPSTACK_IMAGE_TAG:-local}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     restart: unless-stopped
     stop_grace_period: 60s
     logging: *default-logging
@@ -113,7 +114,7 @@ services:
 
   l3-op-batcher:
     image: local/op-batcher:${OPSTACK_IMAGE_TAG:-local}
-    user: "1000:1000"
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     restart: unless-stopped
     stop_grace_period: 60s
     logging: *default-logging
@@ -154,7 +155,7 @@ services:
 
   l3-op-proposer:
     image: local/op-proposer:${OPSTACK_IMAGE_TAG:-local}
-    user: "1000:1000"
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     restart: unless-stopped
     stop_grace_period: 60s
     logging: *default-logging
