@@ -52,111 +52,107 @@ fi
 
 log "build: creating ${REL_DIR}"
 mkdir -p "${REL_DIR}/attestations" "${REL_DIR}/scripts" "${REL_DIR}/governance/attestations"
+mkdir -p "${REL_DIR}/infra/ghostchain" "${REL_DIR}/infra/opstack" "${REL_DIR}/infra/docker"
 
 GENESIS_SRC="${ROOT}/infra/ghostchain/geth/genesis.json"
-COMPOSE_L1_SRC="${ROOT}/infra/ghostchain/docker-compose.l1.yml"
+L1_GETH_DIR="${ROOT}/infra/ghostchain/geth"
+L1_COMPOSE_SRC="${ROOT}/infra/ghostchain/docker-compose.l1.yml"
 ENV_L1_SRC="${ROOT}/infra/ghostchain/.env"
 
+OPSTACK_COMPOSE_L2_SRC="${ROOT}/infra/opstack/docker-compose.yml"
+OPSTACK_COMPOSE_L3_SRC="${ROOT}/infra/opstack/docker-compose.l3.yml"
+OPSTACK_COMPOSE_CHALLENGERS_SRC="${ROOT}/infra/opstack/docker-compose.challengers.yml"
+OPSTACK_CONFIG_DIR="${ROOT}/infra/opstack/config"
+OPSTACK_L3_CONFIG_DIR="${ROOT}/infra/opstack/l3/ghostl3/config"
+
+PHASE3_COMPOSE_SRC="${ROOT}/docker-compose.phase3.yml"
+PHASE3_SECRETS_COMPOSE_SRC="${ROOT}/docker-compose.phase3.secrets.yml"
+GHOST_MAPPER_CFG_DIR="${ROOT}/infra/docker/ghost-mapper"
+
 cp -a "${GENESIS_SRC}" "${REL_DIR}/genesis.l1.json"
-cp -a "${COMPOSE_L1_SRC}" "${REL_DIR}/docker-compose.testnet.yml"
-cp -a "${COMPOSE_L1_SRC}" "${REL_DIR}/docker-compose.mainnet.yml"
+L1_CHAIN_ID="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], "r", encoding="utf-8"))["config"]["chainId"])' "${REL_DIR}/genesis.l1.json")"
+
+# L1 (GhostChain)
+mkdir -p "${REL_DIR}/infra/ghostchain"
+cp -a "${L1_COMPOSE_SRC}" "${REL_DIR}/infra/ghostchain/docker-compose.l1.yml"
+cp -a "${L1_GETH_DIR}" "${REL_DIR}/infra/ghostchain/geth"
+
+# OP Stack (L2 + L3)
+mkdir -p "${REL_DIR}/infra/opstack"
+cp -a "${OPSTACK_COMPOSE_L2_SRC}" "${REL_DIR}/infra/opstack/docker-compose.yml"
+cp -a "${OPSTACK_COMPOSE_L3_SRC}" "${REL_DIR}/infra/opstack/docker-compose.l3.yml"
+cp -a "${OPSTACK_COMPOSE_CHALLENGERS_SRC}" "${REL_DIR}/infra/opstack/docker-compose.challengers.yml"
+cp -a "${OPSTACK_CONFIG_DIR}" "${REL_DIR}/infra/opstack/config"
+mkdir -p "${REL_DIR}/infra/opstack/l3/ghostl3"
+cp -a "${OPSTACK_L3_CONFIG_DIR}" "${REL_DIR}/infra/opstack/l3/ghostl3/config"
+
+# Do not copy ignored JWT secrets into the release bundle.
+rm -f "${REL_DIR}/infra/opstack/config/jwt.txt" "${REL_DIR}/infra/opstack/l3/ghostl3/config/jwt.txt" 2>/dev/null || true
+
+# Challenger assets (binaries are populated during sealing)
+mkdir -p "${REL_DIR}/infra/opstack/optimism/op-program/bin" "${REL_DIR}/infra/opstack/optimism/cannon/bin"
+cat > "${REL_DIR}/infra/opstack/optimism/README.md" <<'MD'
+# Optimism Challenger Assets
+
+This directory is populated during release sealing (DEVNET only) with minimal
+challenger runtime binaries:
+
+- op-program
+- cannon
+MD
+
+# Services (Phase 3)
+cp -a "${PHASE3_COMPOSE_SRC}" "${REL_DIR}/docker-compose.phase3.yml"
+cp -a "${PHASE3_SECRETS_COMPOSE_SRC}" "${REL_DIR}/docker-compose.phase3.secrets.yml"
+mkdir -p "${REL_DIR}/infra/docker"
+cp -a "${GHOST_MAPPER_CFG_DIR}" "${REL_DIR}/infra/docker/ghost-mapper"
 
 OVERLAY_TESTNET="${ROOT}/environments/testnet/ghostchain.env"
 OVERLAY_MAINNET="${ROOT}/environments/mainnet/ghostchain.env"
 
 render_env() {
-  local base_env="$1"
-  local overlay_env="$2"
-  local out="$3"
-  local env_name="$4"
+  local overlay_env="$1"
+  local out="$2"
+  local env_name="$3"
 
-  [ -f "${base_env}" ] || die "missing_base_env:${base_env}"
   [ -f "${overlay_env}" ] || die "missing_overlay_env:${overlay_env}"
 
+  # Derive chain IDs from the canonical rollup configs (tracked), not from local secret env files.
+  local l2_rollup_src="${ROOT}/infra/opstack/config/rollup.json"
+  local l3_rollup_src="${ROOT}/infra/opstack/l3/ghostl3/config/rollup.json"
+  [ -f "${l2_rollup_src}" ] || die "missing_rollup_l2:${l2_rollup_src}"
+  [ -f "${l3_rollup_src}" ] || die "missing_rollup_l3:${l3_rollup_src}"
+
+  local l2_chain_id
+  local l3_chain_id
+  l2_chain_id="$(python3 -c 'import json,sys; print(int(json.load(open(sys.argv[1], "r", encoding="utf-8"))["l2_chain_id"]))' "${l2_rollup_src}")"
+  l3_chain_id="$(python3 -c 'import json,sys; print(int(json.load(open(sys.argv[1], "r", encoding="utf-8"))["l2_chain_id"]))' "${l3_rollup_src}")"
+
   {
-    cat "${base_env}"
+    cat "${ENV_L1_SRC}"
+    printf '\n# --- base: %s ---\n' "${ROOT}/infra/opstack/.env.example"
+    cat "${ROOT}/infra/opstack/.env.example"
+    printf '\n# --- base: %s ---\n' "${ROOT}/infra/opstack/.env.l3.example"
+    cat "${ROOT}/infra/opstack/.env.l3.example"
     printf '\n# --- overlay (%s): %s ---\n' "${env_name}" "${overlay_env}"
     cat "${overlay_env}"
     printf '\nHYPERGHOST_ENV=%s\n' "${env_name}"
+    printf 'NET_ENV=%s\n' "${env_name}"
+    printf 'STACK_ENV=%s\n' "${env_name}"
+    printf 'OPSTACK_IMAGE_TAG=%s\n' "${RELEASE_ID}"
+    printf 'L1_CHAIN_ID=%s\n' "${L1_CHAIN_ID}"
+    printf 'L2_CHAIN_ID=%s\n' "${l2_chain_id}"
+    printf 'L3_CHAIN_ID=%s\n' "${l3_chain_id}"
   } > "${out}"
 }
 
-render_env "${ENV_L1_SRC}" "${OVERLAY_TESTNET}" "${REL_DIR}/env.testnet" testnet
+render_env "${OVERLAY_TESTNET}" "${REL_DIR}/env.testnet" testnet
 
-render_env "${ENV_L1_SRC}" "${OVERLAY_MAINNET}" "${REL_DIR}/env.mainnet" mainnet
+render_env "${OVERLAY_MAINNET}" "${REL_DIR}/env.mainnet" mainnet
 
-L1_CHAIN_ID="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], "r", encoding="utf-8"))["config"]["chainId"])' "${REL_DIR}/genesis.l1.json")"
-
-env_int() {
-  python3 - "$1" "$2" <<'PY'
-import sys
-
-path = sys.argv[1]
-key = sys.argv[2]
-
-def get_int(path: str, key: str):
-    try:
-        fh = open(path, "r", encoding="utf-8")
-    except FileNotFoundError:
-        return None
-    with fh:
-        for raw in fh:
-            line = raw.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            k, v = line.split("=", 1)
-            if k.strip() != key:
-                continue
-            v = v.strip().strip('"').strip("'")
-            if not v:
-                return None
-            try:
-                return int(v, 0)
-            except Exception:
-                return None
-    return None
-
-val = get_int(path, key)
-if val is None:
-    raise SystemExit(1)
-print(val)
-PY
-}
-
-OPSTACK_ENV="${ROOT}/infra/opstack/.env"
-OPSTACK_ENV_L3="${ROOT}/infra/opstack/.env.l3"
-L2_CHAIN_ID="$(env_int "${OPSTACK_ENV}" L2_CHAIN_ID 2>/dev/null || true)"
-L3_CHAIN_ID="$(env_int "${OPSTACK_ENV}" OP_L3_CHAIN_ID 2>/dev/null || true)"
-if [ -z "${L2_CHAIN_ID}" ]; then
-  L2_CHAIN_ID="901"
-  log "build: warn: missing infra/opstack/.env:L2_CHAIN_ID; using ${L2_CHAIN_ID}"
-fi
-if [ -z "${L3_CHAIN_ID}" ]; then
-  L3_CHAIN_ID="$(env_int "${OPSTACK_ENV_L3}" L3_CHAIN_ID 2>/dev/null || true)"
-fi
-if [ -z "${L3_CHAIN_ID}" ]; then
-  L3_CHAIN_ID="903"
-  log "build: warn: missing infra/opstack/.env:OP_L3_CHAIN_ID and infra/opstack/.env.l3:L3_CHAIN_ID; using ${L3_CHAIN_ID}"
-fi
-
-cat > "${REL_DIR}/rollup.l2.json" <<JSON
-{
-  \"note\": \"placeholder (generate from opstack tooling)\",
-  \"environment\": \"testnet/mainnet\",
-  \"chain_id\": ${L2_CHAIN_ID},
-  \"l1_chain_id\": ${L1_CHAIN_ID}
-}
-JSON
-
-cat > "${REL_DIR}/rollup.l3.json" <<JSON
-{
-  \"note\": \"placeholder (generate from opstack tooling)\",
-  \"environment\": \"testnet/mainnet\",
-  \"chain_id\": ${L3_CHAIN_ID},
-  \"parent_chain_id\": ${L2_CHAIN_ID},
-  \"l1_chain_id\": ${L1_CHAIN_ID}
-}
-JSON
+# Release-canonical rollup configs (used for sealing + governance hashes)
+cp -a "${ROOT}/infra/opstack/config/rollup.json" "${REL_DIR}/rollup.l2.json"
+cp -a "${ROOT}/infra/opstack/l3/ghostl3/config/rollup.json" "${REL_DIR}/rollup.l3.json"
 
 cat > "${REL_DIR}/images.lock" <<'LOCK'
 {
