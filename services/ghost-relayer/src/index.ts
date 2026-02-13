@@ -33,10 +33,12 @@ const STATE_DIR = process.env.STATE_DIR || "/state";
 const confirmationsRaw = Number(process.env.CONFIRMATIONS || "0");
 const CONFIRMATIONS = Number.isFinite(confirmationsRaw) && confirmationsRaw >= 0 ? Math.floor(confirmationsRaw) : 0;
 
+// Default to safety: require rollup-finality on the parent chain when rollup addresses are configured.
+// Operators can explicitly disable via env for local iteration.
 const REQUIRE_L2_FINALITY_ON_L1 =
-  (process.env.RELAYER_REQUIRE_L2_FINALITY_ON_L1 || "false").toLowerCase() === "true";
+  (process.env.RELAYER_REQUIRE_L2_FINALITY_ON_L1 || "true").toLowerCase() === "true";
 const REQUIRE_L3_FINALITY_ON_L2 =
-  (process.env.RELAYER_REQUIRE_L3_FINALITY_ON_L2 || "false").toLowerCase() === "true";
+  (process.env.RELAYER_REQUIRE_L3_FINALITY_ON_L2 || "true").toLowerCase() === "true";
 
 type CanonicalGasTokenMode = "native" | "erc20";
 

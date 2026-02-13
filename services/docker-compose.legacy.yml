@@ -505,6 +505,48 @@ services:
       timeout: 5s
       retries: 5
 
+  preconfirm-l2-service:
+    <<: *host-gateway
+    build:
+      context: ./preconfirm-service
+    image: ghostl/preconfirm-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7691
+      - RPC_URL=${RPC_L2}
+      - LAYER=l2
+    ports:
+      - "7691:7691"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7691}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  preconfirm-l3-service:
+    <<: *host-gateway
+    build:
+      context: ./preconfirm-service
+    image: ghostl/preconfirm-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7692
+      - RPC_URL=${RPC_L3}
+      - LAYER=l3
+    ports:
+      - "7692:7692"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7692}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
   network-manager-service:
     <<: *host-gateway
     build:
