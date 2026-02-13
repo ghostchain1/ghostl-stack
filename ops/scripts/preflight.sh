@@ -390,6 +390,13 @@ if hg_docker info >/dev/null 2>&1; then
         fi
         continue
       fi
+      if [[ "$rel" == "docker-compose.phase3.secrets.yml" ]]; then
+        base="$ROOT_DIR/docker-compose.phase3.yml"
+        if ! hg_docker compose -f "$base" -f "$file" config --format json > "$out" 2>"$out.err"; then
+          log "compose config failed for $rel (see $out.err)"
+        fi
+        continue
+      fi
       if ! hg_docker compose -f "$file" config --format json > "$out" 2>"$out.err"; then
         log "compose config failed for $rel (see $out.err)"
       fi
