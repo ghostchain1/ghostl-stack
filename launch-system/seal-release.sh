@@ -36,12 +36,23 @@ require_cmd sort
 require_cmd awk
 require_cmd sudo
 require_cmd docker
+require_cmd date
 
 "${SCRIPT_DIR}/validate-release.sh"
 
 ROOT="$(repo_root)"
 REL_DIR="${ROOT}/releases/${RELEASE_ID}"
 [ -d "${REL_DIR}" ] || die "missing_release_dir:${REL_DIR}"
+
+if [ -f "${REL_DIR}/manifest.json" ]; then
+  status="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], "r", encoding="utf-8")).get("status",""))' "${REL_DIR}/manifest.json" 2>/dev/null || true)"
+  if [ "${status}" = "sealed" ] && [ "${HYPERGHOST_ALLOW_RESEAL:-0}" != "1" ]; then
+    die "release_already_sealed:${REL_DIR}"
+  fi
+fi
+if [ -f "${REL_DIR}/checksums.txt" ] && [ "${HYPERGHOST_ALLOW_RESEAL:-0}" != "1" ]; then
+  die "release_already_sealed:${REL_DIR}"
+fi
 
 required_release_paths=(
   "${REL_DIR}/genesis.l1.json"
@@ -97,8 +108,28 @@ extract_challenger_assets() {
   chmod 755 "${op_program_out}" "${cannon_out}" 2>/dev/null || true
 }
 
-GIT_COMMIT="$(git -C "${ROOT}" rev-parse --short HEAD)"
-CREATED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+MANIFEST_SRC="${REL_DIR}/manifest.json"
+MANIFEST_RELEASE_ID=""
+MANIFEST_GIT_COMMIT=""
+MANIFEST_CREATED_AT=""
+if [ -f "${MANIFEST_SRC}" ]; then
+  MANIFEST_RELEASE_ID="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], "r", encoding="utf-8")).get("release_id",""))' "${MANIFEST_SRC}" 2>/dev/null || true)"
+  MANIFEST_GIT_COMMIT="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], "r", encoding="utf-8")).get("git_commit",""))' "${MANIFEST_SRC}" 2>/dev/null || true)"
+  MANIFEST_CREATED_AT="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], "r", encoding="utf-8")).get("created_at_utc",""))' "${MANIFEST_SRC}" 2>/dev/null || true)"
+fi
+
+if [ -n "${MANIFEST_RELEASE_ID}" ] && [ "${MANIFEST_RELEASE_ID}" != "${RELEASE_ID}" ]; then
+  die "release_id_mismatch:manifest=${MANIFEST_RELEASE_ID}:arg=${RELEASE_ID}"
+fi
+
+GIT_COMMIT_CURRENT="$(git -C "${ROOT}" rev-parse --short HEAD)"
+if [ -n "${MANIFEST_GIT_COMMIT}" ] && [ "${MANIFEST_GIT_COMMIT}" != "${GIT_COMMIT_CURRENT}" ]; then
+  die "repo_head_mismatch:built=${MANIFEST_GIT_COMMIT}:current=${GIT_COMMIT_CURRENT}"
+fi
+
+GIT_COMMIT="${MANIFEST_GIT_COMMIT:-${GIT_COMMIT_CURRENT}}"
+CREATED_AT="${MANIFEST_CREATED_AT:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
+SEALED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 # Populate images.lock with immutable IDs/digests (DEVNET only).
 # Targets must deploy with --no-build.
@@ -110,15 +141,53 @@ OPSTACK_COMPOSE_L3_SRC="${ROOT}/infra/opstack/docker-compose.l3.yml"
 OPSTACK_COMPOSE_CHALLENGERS_SRC="${ROOT}/infra/opstack/docker-compose.challengers.yml"
 PHASE3_COMPOSE_SRC="${ROOT}/docker-compose.phase3.yml"
 
+REL_L1_COMPOSE_SRC="${REL_DIR}/infra/ghostchain/docker-compose.l1.yml"
+REL_OPSTACK_COMPOSE_L2_SRC="${REL_DIR}/infra/opstack/docker-compose.yml"
+REL_OPSTACK_COMPOSE_L3_SRC="${REL_DIR}/infra/opstack/docker-compose.l3.yml"
+REL_OPSTACK_COMPOSE_CHALLENGERS_SRC="${REL_DIR}/infra/opstack/docker-compose.challengers.yml"
+REL_PHASE3_COMPOSE_SRC="${REL_DIR}/docker-compose.phase3.yml"
+
+assert_same_file() {
+  local root_src="$1"
+  local rel_copy="$2"
+
+  [ -f "${root_src}" ] || die "missing_root_file:${root_src}"
+  [ -f "${rel_copy}" ] || die "missing_release_file:${rel_copy##${REL_DIR}/}"
+
+  local root_hash=""
+  local rel_hash=""
+  root_hash="$(sha256sum "${root_src}" | awk '{print $1}')"
+  rel_hash="$(sha256sum "${rel_copy}" | awk '{print $1}')"
+  if [ "${root_hash}" != "${rel_hash}" ]; then
+    die "release_snapshot_mismatch:${rel_copy##${REL_DIR}/}"
+  fi
+}
+
+log "seal: verifying release snapshot matches repo sources"
+assert_same_file "${L1_COMPOSE_SRC}" "${REL_L1_COMPOSE_SRC}"
+assert_same_file "${OPSTACK_COMPOSE_L2_SRC}" "${REL_OPSTACK_COMPOSE_L2_SRC}"
+assert_same_file "${OPSTACK_COMPOSE_L3_SRC}" "${REL_OPSTACK_COMPOSE_L3_SRC}"
+assert_same_file "${OPSTACK_COMPOSE_CHALLENGERS_SRC}" "${REL_OPSTACK_COMPOSE_CHALLENGERS_SRC}"
+assert_same_file "${PHASE3_COMPOSE_SRC}" "${REL_PHASE3_COMPOSE_SRC}"
+
+PHASE3_PROFILES="${PHASE3_PROFILES-interchain}"
+phase3_profile_args=()
+if [ -n "${PHASE3_PROFILES}" ]; then
+  for p in ${PHASE3_PROFILES//,/ }; do
+    [ -n "${p}" ] || continue
+    phase3_profile_args+=(--profile "${p}")
+  done
+fi
+
 log "seal: images.lock: pulling images (devnet)"
 sudo -n docker compose -f "${L1_COMPOSE_SRC}" --env-file "${ENV_SRC}" pull --ignore-pull-failures || true
 sudo -n docker compose -f "${OPSTACK_COMPOSE_L2_SRC}" -f "${OPSTACK_COMPOSE_L3_SRC}" -f "${OPSTACK_COMPOSE_CHALLENGERS_SRC}" --env-file "${ENV_SRC}" pull --ignore-pull-failures || true
-sudo -n docker compose -f "${PHASE3_COMPOSE_SRC}" --env-file "${ENV_SRC}" pull --ignore-pull-failures || true
+sudo -n docker compose -f "${PHASE3_COMPOSE_SRC}" "${phase3_profile_args[@]}" --env-file "${ENV_SRC}" pull --ignore-pull-failures || true
 
 log "seal: images.lock: building local images (devnet)"
 sudo -n docker compose -f "${L1_COMPOSE_SRC}" --env-file "${ENV_SRC}" build || true
 sudo -n docker compose -f "${OPSTACK_COMPOSE_L2_SRC}" -f "${OPSTACK_COMPOSE_L3_SRC}" -f "${OPSTACK_COMPOSE_CHALLENGERS_SRC}" --env-file "${ENV_SRC}" build || true
-sudo -n docker compose -f "${PHASE3_COMPOSE_SRC}" --env-file "${ENV_SRC}" build || true
+sudo -n docker compose -f "${PHASE3_COMPOSE_SRC}" "${phase3_profile_args[@]}" --env-file "${ENV_SRC}" build || true
 
 log "seal: images.lock: building opstack core images (devnet)"
 OPSTACK_IMAGE_TAG="${RELEASE_ID}" bash "${ROOT}/infra/scripts/opstack/build.sh"
@@ -132,6 +201,7 @@ for p in \
 done
 
 log "seal: images.lock: inspecting images"
+HG_ROOT="${ROOT}" \
 HG_RELEASE_ID="${RELEASE_ID}" \
 HG_ENV_SRC="${ENV_SRC}" \
 HG_L1_COMPOSE_SRC="${L1_COMPOSE_SRC}" \
@@ -139,6 +209,7 @@ HG_OPSTACK_COMPOSE_L2_SRC="${OPSTACK_COMPOSE_L2_SRC}" \
 HG_OPSTACK_COMPOSE_L3_SRC="${OPSTACK_COMPOSE_L3_SRC}" \
 HG_OPSTACK_COMPOSE_CHALLENGERS_SRC="${OPSTACK_COMPOSE_CHALLENGERS_SRC}" \
 HG_PHASE3_COMPOSE_SRC="${PHASE3_COMPOSE_SRC}" \
+HG_PHASE3_PROFILES="${PHASE3_PROFILES}" \
 python3 - <<'PY' > "${REL_DIR}/images.lock"
 import json
 import os
@@ -146,6 +217,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 
+root = os.environ["HG_ROOT"]
 release_id = os.environ["HG_RELEASE_ID"]
 env_src = os.environ["HG_ENV_SRC"]
 l1_compose = os.environ["HG_L1_COMPOSE_SRC"]
@@ -153,6 +225,9 @@ opstack_l2 = os.environ["HG_OPSTACK_COMPOSE_L2_SRC"]
 opstack_l3 = os.environ["HG_OPSTACK_COMPOSE_L3_SRC"]
 opstack_chall = os.environ["HG_OPSTACK_COMPOSE_CHALLENGERS_SRC"]
 phase3 = os.environ["HG_PHASE3_COMPOSE_SRC"]
+phase3_profiles = [
+    p for p in os.environ.get("HG_PHASE3_PROFILES", "").replace(",", " ").split() if p
+]
 
 def run(cmd: list[str]) -> str:
     p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -161,17 +236,18 @@ def run(cmd: list[str]) -> str:
     return p.stdout
 
 compose_sets: list[dict] = [
-    {"name": "l1", "files": [l1_compose]},
-    {"name": "opstack", "files": [opstack_l2, opstack_l3, opstack_chall]},
-    {"name": "phase3", "files": [phase3]},
+    {"name": "l1", "files": [l1_compose], "profiles": []},
+    {"name": "opstack", "files": [opstack_l2, opstack_l3, opstack_chall], "profiles": []},
+    {"name": "phase3", "files": [phase3], "profiles": phase3_profiles},
 ]
 
-images: list[str] = []
 seen: set[str] = set()
 for spec in compose_sets:
     cmd = ["sudo", "-n", "docker", "compose"]
     for f in spec["files"]:
         cmd += ["-f", f]
+    for profile in spec.get("profiles") or []:
+        cmd += ["--profile", profile]
     cmd += ["--env-file", env_src, "config", "--images"]
     images_raw = run(cmd)
     for line in images_raw.splitlines():
@@ -181,7 +257,8 @@ for spec in compose_sets:
         if img in seen:
             continue
         seen.add(img)
-        images.append(img)
+
+images = sorted(seen)
 
 items: list[dict] = []
 missing: list[str] = []
@@ -201,19 +278,29 @@ for img in images:
         {
             "image": img,
             "id": info.get("Id", ""),
-            "repo_tags": info.get("RepoTags") or [],
-            "repo_digests": info.get("RepoDigests") or [],
+            "repo_tags": sorted(info.get("RepoTags") or []),
+            "repo_digests": sorted(info.get("RepoDigests") or []),
         }
     )
 
 if missing:
-    raise SystemExit("missing_images:" + ",".join(missing))
+    raise SystemExit("missing_images:" + ",".join(sorted(missing)))
+
+compose_sets_out: list[dict] = []
+for spec in compose_sets:
+    compose_sets_out.append(
+        {
+            "name": spec["name"],
+            "files": [os.path.relpath(f, root) for f in spec["files"]],
+            "profiles": spec.get("profiles") or [],
+        }
+    )
 
 lock = {
     "release_id": release_id,
     "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-    "env_source": env_src,
-    "compose_sets": compose_sets,
+    "env_source": os.path.basename(env_src),
+    "compose_sets": compose_sets_out,
     "images": items,
 }
 sys.stdout.write(json.dumps(lock, indent=2, sort_keys=True) + "\n")
@@ -298,6 +385,7 @@ cat > "${REL_DIR}/manifest.json" <<JSON
   "release_id_bytes32": "${REL_ID_BYTES32}",
   "git_commit": "${GIT_COMMIT}",
   "created_at_utc": "${CREATED_AT}",
+  "sealed_at_utc": "${SEALED_AT}",
   "status": "sealed",
   "hashes": {
     "genesis_l1_keccak256": "${GENESIS_HASH}",
@@ -319,7 +407,8 @@ cat > "${REL_DIR}/governance/launch-hashes.json" <<JSON
   "rollup_hash_l2": "${ROLLUP_L2_HASH}",
   "rollup_hash_l3": "${ROLLUP_L3_HASH}",
   "images_lock_hash": "${IMAGES_LOCK_HASH}",
-  "created_at_utc": "${CREATED_AT}"
+  "created_at_utc": "${CREATED_AT}",
+  "sealed_at_utc": "${SEALED_AT}"
 }
 JSON
 
@@ -398,13 +487,15 @@ chmod 750 "${REL_DIR}/governance/verify-onchain-authorization.sh"
 cat > "${REL_DIR}/attestations/genesis-attestation.txt" <<TXT
 release_id=${RELEASE_ID}
 genesis_l1_keccak256=${GENESIS_HASH}
-created_at_utc=${CREATED_AT}
+created_at_utc=${SEALED_AT}
+release_created_at_utc=${CREATED_AT}
 TXT
 
 cat > "${REL_DIR}/attestations/image-digest-attestation.txt" <<TXT
 release_id=${RELEASE_ID}
 images_lock_keccak256=${IMAGES_LOCK_HASH}
-created_at_utc=${CREATED_AT}
+created_at_utc=${SEALED_AT}
+release_created_at_utc=${CREATED_AT}
 note=images.lock populated during sealing (image IDs + repo digests when available)
 TXT
 
@@ -591,8 +682,15 @@ phase3_files=(-f docker-compose.phase3.yml)
 if [ "${PHASE3_WITH_SECRETS:-0}" = "1" ]; then
   phase3_files+=(-f docker-compose.phase3.secrets.yml)
 fi
-hg_docker compose "${phase3_files[@]}" --env-file "env.${ENV}" config >/dev/null
-hg_docker compose "${phase3_files[@]}" --env-file "env.${ENV}" up -d --no-build
+phase3_profiles=()
+if [ -n "${PHASE3_PROFILES:-}" ]; then
+  for p in ${PHASE3_PROFILES//,/ }; do
+    [ -n "${p}" ] || continue
+    phase3_profiles+=(--profile "${p}")
+  done
+fi
+hg_docker compose "${phase3_files[@]}" "${phase3_profiles[@]}" --env-file "env.${ENV}" config >/dev/null
+hg_docker compose "${phase3_files[@]}" "${phase3_profiles[@]}" --env-file "env.${ENV}" up -d --no-build
 echo "deployed:${ENV}"
 SH
 chmod 750 "${REL_DIR}/scripts/deploy-testnet.sh"
@@ -632,7 +730,18 @@ cp -a "env.${ENV}" ".env" 2>/dev/null || true
 cp -a "env.${ENV}" "infra/ghostchain/.env" 2>/dev/null || true
 cp -a "env.${ENV}" "infra/opstack/.env" 2>/dev/null || true
 
-hg_docker compose -f docker-compose.phase3.yml --env-file "env.${ENV}" down || true
+phase3_files=(-f docker-compose.phase3.yml)
+if [ "${PHASE3_WITH_SECRETS:-0}" = "1" ]; then
+  phase3_files+=(-f docker-compose.phase3.secrets.yml)
+fi
+phase3_profiles=()
+if [ -n "${PHASE3_PROFILES:-}" ]; then
+  for p in ${PHASE3_PROFILES//,/ }; do
+    [ -n "${p}" ] || continue
+    phase3_profiles+=(--profile "${p}")
+  done
+fi
+hg_docker compose "${phase3_files[@]}" "${phase3_profiles[@]}" --env-file "env.${ENV}" down || true
 (
   cd "${REL_DIR}/infra/opstack"
   hg_docker compose -f docker-compose.yml -f docker-compose.l3.yml -f docker-compose.challengers.yml --env-file .env --project-name ghostchain-opstack down || true
@@ -796,8 +905,15 @@ phase3_files=(-f docker-compose.phase3.yml)
 if [ "${PHASE3_WITH_SECRETS:-0}" = "1" ]; then
   phase3_files+=(-f docker-compose.phase3.secrets.yml)
 fi
-hg_docker compose "${phase3_files[@]}" --env-file "env.${ENV}" config >/dev/null
-hg_docker compose "${phase3_files[@]}" --env-file "env.${ENV}" up -d --no-build
+phase3_profiles=()
+if [ -n "${PHASE3_PROFILES:-}" ]; then
+  for p in ${PHASE3_PROFILES//,/ }; do
+    [ -n "${p}" ] || continue
+    phase3_profiles+=(--profile "${p}")
+  done
+fi
+hg_docker compose "${phase3_files[@]}" "${phase3_profiles[@]}" --env-file "env.${ENV}" config >/dev/null
+hg_docker compose "${phase3_files[@]}" "${phase3_profiles[@]}" --env-file "env.${ENV}" up -d --no-build
 
 mkdir -p "${REL_DIR}/governance"
 cat > "${REL_DIR}/governance/launch-proof.txt" <<EOF
@@ -846,7 +962,18 @@ cp -a "env.${ENV}" ".env" 2>/dev/null || true
 cp -a "env.${ENV}" "infra/ghostchain/.env" 2>/dev/null || true
 cp -a "env.${ENV}" "infra/opstack/.env" 2>/dev/null || true
 
-hg_docker compose -f docker-compose.phase3.yml --env-file "env.${ENV}" down || true
+phase3_files=(-f docker-compose.phase3.yml)
+if [ "${PHASE3_WITH_SECRETS:-0}" = "1" ]; then
+  phase3_files+=(-f docker-compose.phase3.secrets.yml)
+fi
+phase3_profiles=()
+if [ -n "${PHASE3_PROFILES:-}" ]; then
+  for p in ${PHASE3_PROFILES//,/ }; do
+    [ -n "${p}" ] || continue
+    phase3_profiles+=(--profile "${p}")
+  done
+fi
+hg_docker compose "${phase3_files[@]}" "${phase3_profiles[@]}" --env-file "env.${ENV}" down || true
 (
   cd "${REL_DIR}/infra/opstack"
   hg_docker compose -f docker-compose.yml -f docker-compose.l3.yml -f docker-compose.challengers.yml --env-file .env --project-name ghostchain-opstack down || true
