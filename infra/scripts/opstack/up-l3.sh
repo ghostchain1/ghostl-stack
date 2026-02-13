@@ -33,6 +33,8 @@ source "$OP_DIR/.env"
 [ -f "$OP_DIR/.env.secrets" ] && source "$OP_DIR/.env.secrets"
 # Load the L3-specific env so chain-id-scoped paths stay consistent.
 source "$L3_ENV_FILE"
+# Overlay dynamic L3 deployment addresses written by deploy-l3.sh (optional).
+[ -f "$OP_DIR/.env.l3" ] && source "$OP_DIR/.env.l3"
 set +a
 
 HOST_L3_RPC="${HOST_L3_RPC:-http://localhost:39545}"
