@@ -425,7 +425,9 @@ services:
   rpc-forward-l2-18547:
     cap_drop: *id001
     security_opt: *id002
-    image: alpine/socat@sha256:1edb826a9432ab0b0f8c865181fc278e48b792fc80bebfa0e19205cda71bbbd1
+    image: ${OPSTACK_RPC_FORWARD_IMAGE:-local/rpc-forward:0.1.0}
+    build:
+      context: ./rpc-forward
     restart: unless-stopped
     logging: *id003
     depends_on:

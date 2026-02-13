@@ -200,7 +200,7 @@ if [ -d "$L2_DATA_DIR" ]; then
     echo "Warning: failed to snapshot L2 data dir; falling back to genesis-l2.json." >&2
   fi
   # The snapshot may include root-owned files; clear via docker to avoid permission errors.
-  hg_docker run --rm -v "$tmp_dir":/data alpine sh -lc 'rm -rf /data/* /data/.[!.]* /data/..?* || true' >/dev/null 2>&1 || true
+  hg_docker run --rm -v "$tmp_dir":/data alpine:3.20 sh -lc 'rm -rf /data/* /data/.[!.]* /data/..?* || true' >/dev/null 2>&1 || true
   rm -rf "$tmp_dir" || true
 fi
 if [ "$synced_l1_chain" -ne 1 ] && [ -f "$OP_DIR/config/genesis-l2.json" ]; then
