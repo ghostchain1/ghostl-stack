@@ -20,7 +20,7 @@
       "daFootprintGasScalar": 0
     }
   },
-  "block_time": 2,
+  "block_time": 1,
   "max_sequencer_drift": 600,
   "seq_window_size": 3600,
   "channel_timeout": 300,
