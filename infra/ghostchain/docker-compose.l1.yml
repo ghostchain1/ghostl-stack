@@ -13,7 +13,7 @@ x-security: &default-security
 services:
   ghostchain-bootnode:
     image: ${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}
-    user: "1000:1000"
+    user: "${L1_UID:-1000}:${L1_GID:-1000}"
     restart: unless-stopped
     logging: *default-logging
     command:
@@ -43,7 +43,7 @@ services:
 
   ghostchain-node1:
     image: ${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}
-    user: "1000:1000"
+    user: "${L1_UID:-1000}:${L1_GID:-1000}"
     restart: unless-stopped
     logging: *default-logging
     depends_on:
@@ -96,7 +96,7 @@ services:
 
   ghostchain-node2:
     image: ${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}
-    user: "1000:1000"
+    user: "${L1_UID:-1000}:${L1_GID:-1000}"
     restart: unless-stopped
     logging: *default-logging
     depends_on:
