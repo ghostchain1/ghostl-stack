@@ -30,14 +30,14 @@ chown_data_dir() {
   if [ ! -d "$target" ]; then
     return 0
   fi
-  hg_docker run --rm -v "${target}:/data" busybox chown -R "${HOST_UID}:${HOST_GID}" /data >/dev/null 2>&1 || true
+  hg_docker run --rm -v "${target}:/data" alpine:3.20 chown -R "${HOST_UID}:${HOST_GID}" /data >/dev/null 2>&1 || true
 }
 
 wipe_data_dir() {
   local target="$1"
   mkdir -p "$target"
   # Use a throwaway root container to ensure we can delete files even if they were created as root.
-  hg_docker run --rm -v "${target}:/data" busybox sh -c "rm -rf /data/*" >/dev/null 2>&1 || true
+  hg_docker run --rm -v "${target}:/data" alpine:3.20 sh -c "rm -rf /data/*" >/dev/null 2>&1 || true
   chown "${HOST_UID}:${HOST_GID}" "$target" >/dev/null 2>&1 || true
 }
 
