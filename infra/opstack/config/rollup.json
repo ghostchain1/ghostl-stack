@@ -14,10 +14,7 @@
       "overhead": "0x0000000000000000000000000000000000000000000000000000000000000000",
       "scalar": "0x0000000000000000000000000000000000000000000000000000000000000558",
       "gasLimit": 30000000,
-      "eip1559Params": "0x0000000000000000",
-      "operatorFeeParams": "0x0000000000000000000000000000000000000000000000000000000000000000",
-      "minBaseFee": 0,
-      "daFootprintGasScalar": 0
+      "eip1559Params": "0x0000000000000000"
     }
   },
   "block_time": 1,
@@ -33,15 +30,8 @@
   "fjord_time": 4102444800,
   "granite_time": 4102444800,
   "holocene_time": 4102444800,
-  "isthmus_time": 4102444800,
-  "jovian_time": 4102444800,
   "batch_inbox_address": "0x1111111111111111111111111111111111111111",
   "deposit_contract_address": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
   "l1_system_config_address": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-  "protocol_versions_address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-  "chain_op_config": {
-    "eip1559Elasticity": 6,
-    "eip1559Denominator": 50,
-    "eip1559DenominatorCanyon": 250
-  }
+  "protocol_versions_address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
 }
