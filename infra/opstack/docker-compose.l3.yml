@@ -87,7 +87,6 @@ services:
       - --l2=http://l3-geth:8551
       - --l2.jwt-secret=/config/jwt.txt
       - --rollup.config=/config/rollup.json
-      - --rollup.l1-chain-config=/config/l1-chain.json
       - --rpc.addr=0.0.0.0
       - --rpc.port=${L3_ROLLUP_RPC_PORT:-19546}
       - --l1.rpckind=basic
