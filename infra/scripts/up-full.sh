@@ -63,14 +63,18 @@ wait_rpc "$HOST_L1_RPC" "L1 RPC"
 echo "Starting OP Stack L2..."
 bash "$ROOT/infra/scripts/opstack/up-l2.sh"
 
-if [ "$ENABLE_L3" = "1" ]; then
-  echo "Starting OP Stack L3..."
-  bash "$ROOT/infra/scripts/opstack/up-l3.sh"
-fi
-
 if [ "$SKIP_DEPLOY" != "1" ]; then
   echo "Deploying contracts + syncing service envs..."
   bash "$ROOT/infra/scripts/opstack/deploy.sh"
+  if [ "$ENABLE_L3" = "1" ]; then
+    echo "Deploying L3 parent contracts on L2..."
+    bash "$ROOT/infra/scripts/opstack/deploy-l3.sh"
+  fi
+fi
+
+if [ "$ENABLE_L3" = "1" ]; then
+  echo "Starting OP Stack L3..."
+  bash "$ROOT/infra/scripts/opstack/up-l3.sh"
 fi
 
 if [ "$START_SERVICES" = "1" ]; then
