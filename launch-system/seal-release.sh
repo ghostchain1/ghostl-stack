@@ -43,26 +43,103 @@ ROOT="$(repo_root)"
 REL_DIR="${ROOT}/releases/${RELEASE_ID}"
 [ -d "${REL_DIR}" ] || die "missing_release_dir:${REL_DIR}"
 
-for f in genesis.l1.json rollup.l2.json rollup.l3.json env.testnet env.mainnet docker-compose.testnet.yml docker-compose.mainnet.yml images.lock; do
-  [ -f "${REL_DIR}/${f}" ] || die "missing_release_file:${f}"
+required_release_paths=(
+  "${REL_DIR}/genesis.l1.json"
+  "${REL_DIR}/rollup.l2.json"
+  "${REL_DIR}/rollup.l3.json"
+  "${REL_DIR}/env.testnet"
+  "${REL_DIR}/env.mainnet"
+  "${REL_DIR}/images.lock"
+
+  # L1
+  "${REL_DIR}/infra/ghostchain/docker-compose.l1.yml"
+  "${REL_DIR}/infra/ghostchain/geth/run-node.sh"
+
+  # L2/L3
+  "${REL_DIR}/infra/opstack/docker-compose.yml"
+  "${REL_DIR}/infra/opstack/docker-compose.l3.yml"
+  "${REL_DIR}/infra/opstack/docker-compose.challengers.yml"
+  "${REL_DIR}/infra/opstack/config/rollup.json"
+  "${REL_DIR}/infra/opstack/config/genesis-l2.json"
+  "${REL_DIR}/infra/opstack/config/l1-chain.json"
+  "${REL_DIR}/infra/opstack/l3/ghostl3/config/rollup.json"
+  "${REL_DIR}/infra/opstack/l3/ghostl3/config/genesis.json"
+  "${REL_DIR}/infra/opstack/l3/ghostl3/config/l1-chain.json"
+
+  # Services
+  "${REL_DIR}/docker-compose.phase3.yml"
+  "${REL_DIR}/docker-compose.phase3.secrets.yml"
+  "${REL_DIR}/infra/docker/ghost-mapper/mappings.phase3.hostports.json"
+)
+
+for p in "${required_release_paths[@]}"; do
+  [ -f "${p}" ] || die "missing_release_file:${p##${REL_DIR}/}"
 done
+
+extract_challenger_assets() {
+  local tag="$1"
+  local image="local/op-challenger:${tag}"
+
+  local op_program_out="${REL_DIR}/infra/opstack/optimism/op-program/bin/op-program"
+  local cannon_out="${REL_DIR}/infra/opstack/optimism/cannon/bin/cannon"
+
+  mkdir -p "$(dirname "${op_program_out}")" "$(dirname "${cannon_out}")"
+
+  log "seal: extracting challenger assets from ${image}"
+  (
+    set -euo pipefail
+    cid="$(sudo -n docker create "${image}")"
+    trap 'sudo -n docker rm -f "${cid}" >/dev/null 2>&1 || true' EXIT
+    sudo -n docker cp "${cid}:/usr/local/bin/op-program" "${op_program_out}"
+    sudo -n docker cp "${cid}:/usr/local/bin/cannon" "${cannon_out}"
+  )
+
+  chmod 755 "${op_program_out}" "${cannon_out}" 2>/dev/null || true
+}
 
 GIT_COMMIT="$(git -C "${ROOT}" rev-parse --short HEAD)"
 CREATED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 # Populate images.lock with immutable IDs/digests (DEVNET only).
 # Targets must deploy with --no-build.
-COMPOSE_SRC="${ROOT}/infra/ghostchain/docker-compose.l1.yml"
-ENV_SRC="${ROOT}/infra/ghostchain/.env"
+ENV_SRC="${REL_DIR}/env.testnet"
+
+L1_COMPOSE_SRC="${ROOT}/infra/ghostchain/docker-compose.l1.yml"
+OPSTACK_COMPOSE_L2_SRC="${ROOT}/infra/opstack/docker-compose.yml"
+OPSTACK_COMPOSE_L3_SRC="${ROOT}/infra/opstack/docker-compose.l3.yml"
+OPSTACK_COMPOSE_CHALLENGERS_SRC="${ROOT}/infra/opstack/docker-compose.challengers.yml"
+PHASE3_COMPOSE_SRC="${ROOT}/docker-compose.phase3.yml"
 
 log "seal: images.lock: pulling images (devnet)"
-sudo -n docker compose -f "${COMPOSE_SRC}" --env-file "${ENV_SRC}" pull --ignore-pull-failures || true
+sudo -n docker compose -f "${L1_COMPOSE_SRC}" --env-file "${ENV_SRC}" pull --ignore-pull-failures || true
+sudo -n docker compose -f "${OPSTACK_COMPOSE_L2_SRC}" -f "${OPSTACK_COMPOSE_L3_SRC}" -f "${OPSTACK_COMPOSE_CHALLENGERS_SRC}" --env-file "${ENV_SRC}" pull --ignore-pull-failures || true
+sudo -n docker compose -f "${PHASE3_COMPOSE_SRC}" --env-file "${ENV_SRC}" pull --ignore-pull-failures || true
 
 log "seal: images.lock: building local images (devnet)"
-sudo -n docker compose -f "${COMPOSE_SRC}" --env-file "${ENV_SRC}" build || true
+sudo -n docker compose -f "${L1_COMPOSE_SRC}" --env-file "${ENV_SRC}" build || true
+sudo -n docker compose -f "${OPSTACK_COMPOSE_L2_SRC}" -f "${OPSTACK_COMPOSE_L3_SRC}" -f "${OPSTACK_COMPOSE_CHALLENGERS_SRC}" --env-file "${ENV_SRC}" build || true
+sudo -n docker compose -f "${PHASE3_COMPOSE_SRC}" --env-file "${ENV_SRC}" build || true
+
+log "seal: images.lock: building opstack core images (devnet)"
+OPSTACK_IMAGE_TAG="${RELEASE_ID}" bash "${ROOT}/infra/scripts/opstack/build.sh"
+
+extract_challenger_assets "${RELEASE_ID}"
+
+for p in \
+  "${REL_DIR}/infra/opstack/optimism/op-program/bin/op-program" \
+  "${REL_DIR}/infra/opstack/optimism/cannon/bin/cannon"; do
+  [ -f "${p}" ] || die "missing_release_file:${p##${REL_DIR}/}"
+done
 
 log "seal: images.lock: inspecting images"
-HG_RELEASE_ID="${RELEASE_ID}" HG_COMPOSE_SRC="${COMPOSE_SRC}" HG_ENV_SRC="${ENV_SRC}" python3 - <<'PY' > "${REL_DIR}/images.lock"
+HG_RELEASE_ID="${RELEASE_ID}" \
+HG_ENV_SRC="${ENV_SRC}" \
+HG_L1_COMPOSE_SRC="${L1_COMPOSE_SRC}" \
+HG_OPSTACK_COMPOSE_L2_SRC="${OPSTACK_COMPOSE_L2_SRC}" \
+HG_OPSTACK_COMPOSE_L3_SRC="${OPSTACK_COMPOSE_L3_SRC}" \
+HG_OPSTACK_COMPOSE_CHALLENGERS_SRC="${OPSTACK_COMPOSE_CHALLENGERS_SRC}" \
+HG_PHASE3_COMPOSE_SRC="${PHASE3_COMPOSE_SRC}" \
+python3 - <<'PY' > "${REL_DIR}/images.lock"
 import json
 import os
 import subprocess
@@ -70,8 +147,12 @@ import sys
 from datetime import datetime, timezone
 
 release_id = os.environ["HG_RELEASE_ID"]
-compose_src = os.environ["HG_COMPOSE_SRC"]
 env_src = os.environ["HG_ENV_SRC"]
+l1_compose = os.environ["HG_L1_COMPOSE_SRC"]
+opstack_l2 = os.environ["HG_OPSTACK_COMPOSE_L2_SRC"]
+opstack_l3 = os.environ["HG_OPSTACK_COMPOSE_L3_SRC"]
+opstack_chall = os.environ["HG_OPSTACK_COMPOSE_CHALLENGERS_SRC"]
+phase3 = os.environ["HG_PHASE3_COMPOSE_SRC"]
 
 def run(cmd: list[str]) -> str:
     p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -79,31 +160,28 @@ def run(cmd: list[str]) -> str:
         raise RuntimeError(f"cmd_failed rc={p.returncode} cmd={cmd} stderr={p.stderr.strip()}")
     return p.stdout
 
-images_raw = run(
-    [
-        "sudo",
-        "-n",
-        "docker",
-        "compose",
-        "-f",
-        compose_src,
-        "--env-file",
-        env_src,
-        "config",
-        "--images",
-    ]
-)
+compose_sets: list[dict] = [
+    {"name": "l1", "files": [l1_compose]},
+    {"name": "opstack", "files": [opstack_l2, opstack_l3, opstack_chall]},
+    {"name": "phase3", "files": [phase3]},
+]
 
 images: list[str] = []
 seen: set[str] = set()
-for line in images_raw.splitlines():
-    img = line.strip()
-    if not img:
-        continue
-    if img in seen:
-        continue
-    seen.add(img)
-    images.append(img)
+for spec in compose_sets:
+    cmd = ["sudo", "-n", "docker", "compose"]
+    for f in spec["files"]:
+        cmd += ["-f", f]
+    cmd += ["--env-file", env_src, "config", "--images"]
+    images_raw = run(cmd)
+    for line in images_raw.splitlines():
+        img = line.strip()
+        if not img:
+            continue
+        if img in seen:
+            continue
+        seen.add(img)
+        images.append(img)
 
 items: list[dict] = []
 missing: list[str] = []
@@ -134,8 +212,8 @@ if missing:
 lock = {
     "release_id": release_id,
     "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-    "compose_source": compose_src,
     "env_source": env_src,
+    "compose_sets": compose_sets,
     "images": items,
 }
 sys.stdout.write(json.dumps(lock, indent=2, sort_keys=True) + "\n")
@@ -337,7 +415,30 @@ set -euo pipefail
 REL_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." >/dev/null 2>&1 && pwd)"
 
 cd "${REL_DIR}"
-for f in manifest.json genesis.l1.json rollup.l2.json rollup.l3.json images.lock env.testnet env.mainnet docker-compose.testnet.yml docker-compose.mainnet.yml checksums.txt; do
+for f in \
+  manifest.json \
+  genesis.l1.json \
+  rollup.l2.json \
+  rollup.l3.json \
+  images.lock \
+  env.testnet \
+  env.mainnet \
+  docker-compose.phase3.yml \
+  docker-compose.phase3.secrets.yml \
+  infra/ghostchain/docker-compose.l1.yml \
+  infra/opstack/docker-compose.yml \
+  infra/opstack/docker-compose.l3.yml \
+  infra/opstack/docker-compose.challengers.yml \
+  infra/opstack/config/rollup.json \
+  infra/opstack/config/genesis-l2.json \
+  infra/opstack/config/l1-chain.json \
+  infra/opstack/l3/ghostl3/config/rollup.json \
+  infra/opstack/l3/ghostl3/config/genesis.json \
+  infra/opstack/l3/ghostl3/config/l1-chain.json \
+  infra/opstack/optimism/op-program/bin/op-program \
+  infra/opstack/optimism/cannon/bin/cannon \
+  infra/docker/ghost-mapper/mappings.phase3.hostports.json \
+  checksums.txt; do
   [ -f "${f}" ] || { echo "missing:${f}" >&2; exit 1; }
 done
 
@@ -370,17 +471,128 @@ hg_require_docker_compose
 
 ENV=testnet
 DATA_ROOT="/data/${ENV}"
-mkdir -p "${DATA_ROOT}/l1" "${DATA_ROOT}/l2" "${DATA_ROOT}/l3"
+
+ensure_symlink() {
+  local target="$1"
+  local link="$2"
+
+  if [ -L "$link" ]; then
+    ln -sfn "$target" "$link"
+    return
+  fi
+  if [ -e "$link" ]; then
+    echo "refusing: ${link} exists and is not a symlink" >&2
+    exit 1
+  fi
+  ln -s "$target" "$link"
+}
+
+env_get() {
+  local key="$1"
+  local def="${2:-}"
+  local file="${3:-${REL_DIR}/env.${ENV}}"
+
+  if [ -f "$file" ]; then
+    local val=""
+    val="$(grep -E "^${key}=" "$file" | tail -n 1 | cut -d= -f2- || true)"
+    val="${val%$'\r'}"
+    val="${val%\"}"; val="${val#\"}"
+    val="${val%\'}"; val="${val#\'}"
+    if [ -n "$val" ]; then
+      printf '%s' "$val"
+      return
+    fi
+  fi
+  printf '%s' "$def"
+}
+
+ensure_jwt_hex_file() {
+  local path="$1"
+  if [ -f "$path" ]; then
+    return
+  fi
+  mkdir -p "$(dirname "$path")"
+  python3 - <<'PY' > "$path"
+import secrets
+print(secrets.token_hex(32))
+PY
+  chmod 600 "$path" || true
+}
+
+mkdir -p "${DATA_ROOT}/l1" "${DATA_ROOT}/l2" "${DATA_ROOT}/l3" "${DATA_ROOT}/services"
+mkdir -p "${DATA_ROOT}/secrets/l1" "${DATA_ROOT}/secrets/opstack" "${DATA_ROOT}/secrets/services"
 
 cd "${REL_DIR}"
 sha256sum -c checksums.txt >/dev/null
 
-cp -a env.testnet .env
+# Root env file is used for compose interpolation defaults.
+cp -a "env.${ENV}" ".env"
+
+# Component-local env files (some compose stacks use env_file: ./.env).
+cp -a "env.${ENV}" "infra/ghostchain/.env"
+cp -a "env.${ENV}" "infra/opstack/.env"
+
+# Persist data/secrets under /data/<env>, not inside the release bundle.
+ensure_symlink "${DATA_ROOT}/l1" "infra/ghostchain/data"
+ensure_symlink "${DATA_ROOT}/secrets/l1" "infra/ghostchain/secrets"
+ensure_symlink "${DATA_ROOT}/l2" "infra/opstack/data"
+ensure_symlink "${DATA_ROOT}/services" "services"
+mkdir -p "infra/docker"
+ensure_symlink "${DATA_ROOT}/secrets/services" "infra/docker/secrets"
+
+L3_NAME="$(env_get L3_NAME ghostl3)"
+L3_CHAIN_ID="$(env_get L3_CHAIN_ID 903)"
+L3_DATA_PROFILE="$(env_get L3_DATA_PROFILE "")"
+suffix=""
+if [ -n "${L3_DATA_PROFILE}" ]; then
+  suffix="-${L3_DATA_PROFILE}"
+fi
+
+if [ ! -d "infra/opstack/l3/${L3_NAME}/config" ]; then
+  echo "missing_l3_config_dir: infra/opstack/l3/${L3_NAME}/config" >&2
+  exit 1
+fi
+
+mkdir -p "${DATA_ROOT}/l3/${L3_NAME}"
+mkdir -p "infra/opstack/l3/${L3_NAME}"
+ensure_symlink "${DATA_ROOT}/l3/${L3_NAME}/data-${L3_CHAIN_ID}${suffix}" "infra/opstack/l3/${L3_NAME}/data-${L3_CHAIN_ID}${suffix}"
+ensure_symlink "${DATA_ROOT}/l3/${L3_NAME}/data" "infra/opstack/l3/${L3_NAME}/data"
+
+# JWT secrets (generate if missing; keep the canonical copy under /data).
+ensure_jwt_hex_file "${DATA_ROOT}/secrets/l1/jwtsecret"
+ensure_jwt_hex_file "${DATA_ROOT}/secrets/opstack/jwt.l2.txt"
+ensure_jwt_hex_file "${DATA_ROOT}/secrets/opstack/jwt.l3.txt"
+
+cp -a "${DATA_ROOT}/secrets/opstack/jwt.l2.txt" "infra/opstack/config/jwt.txt"
+chmod 600 "infra/opstack/config/jwt.txt" || true
+cp -a "${DATA_ROOT}/secrets/opstack/jwt.l3.txt" "infra/opstack/l3/${L3_NAME}/config/jwt.txt"
+chmod 600 "infra/opstack/l3/${L3_NAME}/config/jwt.txt" || true
+
 if [ -f "${REL_DIR}/images/docker-images.tar.gz" ]; then
   gzip -dc "${REL_DIR}/images/docker-images.tar.gz" | hg_docker load
 fi
-hg_docker compose -f docker-compose.testnet.yml --env-file env.testnet config >/dev/null
-hg_docker compose -f docker-compose.testnet.yml --env-file env.testnet up -d --no-build
+
+# L1
+(
+  cd "${REL_DIR}/infra/ghostchain"
+  hg_docker compose -f docker-compose.l1.yml --env-file .env --project-name ghostchain-l1 config >/dev/null
+  hg_docker compose -f docker-compose.l1.yml --env-file .env --project-name ghostchain-l1 up -d --no-build
+)
+
+# L2 + L3 + challengers
+(
+  cd "${REL_DIR}/infra/opstack"
+  hg_docker compose -f docker-compose.yml -f docker-compose.l3.yml -f docker-compose.challengers.yml --env-file .env --project-name ghostchain-opstack config >/dev/null
+  hg_docker compose -f docker-compose.yml -f docker-compose.l3.yml -f docker-compose.challengers.yml --env-file .env --project-name ghostchain-opstack up -d --no-build
+)
+
+# Services (Phase 3)
+phase3_files=(-f docker-compose.phase3.yml)
+if [ "${PHASE3_WITH_SECRETS:-0}" = "1" ]; then
+  phase3_files+=(-f docker-compose.phase3.secrets.yml)
+fi
+hg_docker compose "${phase3_files[@]}" --env-file "env.${ENV}" config >/dev/null
+hg_docker compose "${phase3_files[@]}" --env-file "env.${ENV}" up -d --no-build
 echo "deployed:${ENV}"
 SH
 chmod 750 "${REL_DIR}/scripts/deploy-testnet.sh"
@@ -390,10 +602,19 @@ cat > "${REL_DIR}/scripts/validate-testnet.sh" <<'SH'
 set -euo pipefail
 
 : "${RPC_L1:=http://127.0.0.1:18545}"
+: "${RPC_L2:=http://127.0.0.1:29547}"
+: "${RPC_L3:=http://127.0.0.1:39545}"
 
-out="$(curl -fsS -H 'Content-Type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_chainId\",\"params\":[]}' \"${RPC_L1}\")"
-chain_id_hex="$(printf '%s' \"${out}\" | jq -r .result)"
-echo "chain_id=${chain_id_hex}"
+rpc_chain_id() {
+  local url="$1"
+  local out
+  out="$(curl -fsS -H 'Content-Type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_chainId\",\"params\":[]}' \"${url}\")"
+  printf '%s' "${out}" | jq -r .result
+}
+
+echo "chain_id_l1=$(rpc_chain_id "${RPC_L1}")"
+echo "chain_id_l2=$(rpc_chain_id "${RPC_L2}")"
+echo "chain_id_l3=$(rpc_chain_id "${RPC_L3}")"
 SH
 chmod 750 "${REL_DIR}/scripts/validate-testnet.sh"
 
@@ -406,7 +627,20 @@ cd "${REL_DIR}"
 # shellcheck source=lib/docker.sh
 . "${REL_DIR}/scripts/lib/docker.sh"
 hg_require_docker_compose
-hg_docker compose -f docker-compose.testnet.yml --env-file env.testnet down
+ENV=testnet
+cp -a "env.${ENV}" ".env" 2>/dev/null || true
+cp -a "env.${ENV}" "infra/ghostchain/.env" 2>/dev/null || true
+cp -a "env.${ENV}" "infra/opstack/.env" 2>/dev/null || true
+
+hg_docker compose -f docker-compose.phase3.yml --env-file "env.${ENV}" down || true
+(
+  cd "${REL_DIR}/infra/opstack"
+  hg_docker compose -f docker-compose.yml -f docker-compose.l3.yml -f docker-compose.challengers.yml --env-file .env --project-name ghostchain-opstack down || true
+)
+(
+  cd "${REL_DIR}/infra/ghostchain"
+  hg_docker compose -f docker-compose.l1.yml --env-file .env --project-name ghostchain-l1 down || true
+)
 echo "rolled_back:testnet (containers stopped)"
 SH
 chmod 750 "${REL_DIR}/scripts/rollback-testnet.sh"
@@ -442,17 +676,128 @@ fi
 
 ENV=mainnet
 DATA_ROOT="/data/${ENV}"
-mkdir -p "${DATA_ROOT}/l1" "${DATA_ROOT}/l2" "${DATA_ROOT}/l3"
+
+ensure_symlink() {
+  local target="$1"
+  local link="$2"
+
+  if [ -L "$link" ]; then
+    ln -sfn "$target" "$link"
+    return
+  fi
+  if [ -e "$link" ]; then
+    echo "refusing: ${link} exists and is not a symlink" >&2
+    exit 1
+  fi
+  ln -s "$target" "$link"
+}
+
+env_get() {
+  local key="$1"
+  local def="${2:-}"
+  local file="${3:-${REL_DIR}/env.${ENV}}"
+
+  if [ -f "$file" ]; then
+    local val=""
+    val="$(grep -E "^${key}=" "$file" | tail -n 1 | cut -d= -f2- || true)"
+    val="${val%$'\r'}"
+    val="${val%\"}"; val="${val#\"}"
+    val="${val%\'}"; val="${val#\'}"
+    if [ -n "$val" ]; then
+      printf '%s' "$val"
+      return
+    fi
+  fi
+  printf '%s' "$def"
+}
+
+ensure_jwt_hex_file() {
+  local path="$1"
+  if [ -f "$path" ]; then
+    return
+  fi
+  mkdir -p "$(dirname "$path")"
+  python3 - <<'PY' > "$path"
+import secrets
+print(secrets.token_hex(32))
+PY
+  chmod 600 "$path" || true
+}
+
+mkdir -p "${DATA_ROOT}/l1" "${DATA_ROOT}/l2" "${DATA_ROOT}/l3" "${DATA_ROOT}/services"
+mkdir -p "${DATA_ROOT}/secrets/l1" "${DATA_ROOT}/secrets/opstack" "${DATA_ROOT}/secrets/services"
 
 cd "${REL_DIR}"
 sha256sum -c checksums.txt >/dev/null
 
-cp -a env.mainnet .env
+# Root env file is used for compose interpolation defaults.
+cp -a "env.${ENV}" ".env"
+
+# Component-local env files (some compose stacks use env_file: ./.env).
+cp -a "env.${ENV}" "infra/ghostchain/.env"
+cp -a "env.${ENV}" "infra/opstack/.env"
+
+# Persist data/secrets under /data/<env>, not inside the release bundle.
+ensure_symlink "${DATA_ROOT}/l1" "infra/ghostchain/data"
+ensure_symlink "${DATA_ROOT}/secrets/l1" "infra/ghostchain/secrets"
+ensure_symlink "${DATA_ROOT}/l2" "infra/opstack/data"
+ensure_symlink "${DATA_ROOT}/services" "services"
+mkdir -p "infra/docker"
+ensure_symlink "${DATA_ROOT}/secrets/services" "infra/docker/secrets"
+
+L3_NAME="$(env_get L3_NAME ghostl3)"
+L3_CHAIN_ID="$(env_get L3_CHAIN_ID 903)"
+L3_DATA_PROFILE="$(env_get L3_DATA_PROFILE "")"
+suffix=""
+if [ -n "${L3_DATA_PROFILE}" ]; then
+  suffix="-${L3_DATA_PROFILE}"
+fi
+
+if [ ! -d "infra/opstack/l3/${L3_NAME}/config" ]; then
+  echo "missing_l3_config_dir: infra/opstack/l3/${L3_NAME}/config" >&2
+  exit 1
+fi
+
+mkdir -p "${DATA_ROOT}/l3/${L3_NAME}"
+mkdir -p "infra/opstack/l3/${L3_NAME}"
+ensure_symlink "${DATA_ROOT}/l3/${L3_NAME}/data-${L3_CHAIN_ID}${suffix}" "infra/opstack/l3/${L3_NAME}/data-${L3_CHAIN_ID}${suffix}"
+ensure_symlink "${DATA_ROOT}/l3/${L3_NAME}/data" "infra/opstack/l3/${L3_NAME}/data"
+
+# JWT secrets (generate if missing; keep the canonical copy under /data).
+ensure_jwt_hex_file "${DATA_ROOT}/secrets/l1/jwtsecret"
+ensure_jwt_hex_file "${DATA_ROOT}/secrets/opstack/jwt.l2.txt"
+ensure_jwt_hex_file "${DATA_ROOT}/secrets/opstack/jwt.l3.txt"
+
+cp -a "${DATA_ROOT}/secrets/opstack/jwt.l2.txt" "infra/opstack/config/jwt.txt"
+chmod 600 "infra/opstack/config/jwt.txt" || true
+cp -a "${DATA_ROOT}/secrets/opstack/jwt.l3.txt" "infra/opstack/l3/${L3_NAME}/config/jwt.txt"
+chmod 600 "infra/opstack/l3/${L3_NAME}/config/jwt.txt" || true
+
 if [ -f "${REL_DIR}/images/docker-images.tar.gz" ]; then
   gzip -dc "${REL_DIR}/images/docker-images.tar.gz" | hg_docker load
 fi
-hg_docker compose -f docker-compose.mainnet.yml --env-file env.mainnet config >/dev/null
-hg_docker compose -f docker-compose.mainnet.yml --env-file env.mainnet up -d --no-build
+
+# L1
+(
+  cd "${REL_DIR}/infra/ghostchain"
+  hg_docker compose -f docker-compose.l1.yml --env-file .env --project-name ghostchain-l1 config >/dev/null
+  hg_docker compose -f docker-compose.l1.yml --env-file .env --project-name ghostchain-l1 up -d --no-build
+)
+
+# L2 + L3 + challengers
+(
+  cd "${REL_DIR}/infra/opstack"
+  hg_docker compose -f docker-compose.yml -f docker-compose.l3.yml -f docker-compose.challengers.yml --env-file .env --project-name ghostchain-opstack config >/dev/null
+  hg_docker compose -f docker-compose.yml -f docker-compose.l3.yml -f docker-compose.challengers.yml --env-file .env --project-name ghostchain-opstack up -d --no-build
+)
+
+# Services (Phase 3)
+phase3_files=(-f docker-compose.phase3.yml)
+if [ "${PHASE3_WITH_SECRETS:-0}" = "1" ]; then
+  phase3_files+=(-f docker-compose.phase3.secrets.yml)
+fi
+hg_docker compose "${phase3_files[@]}" --env-file "env.${ENV}" config >/dev/null
+hg_docker compose "${phase3_files[@]}" --env-file "env.${ENV}" up -d --no-build
 
 mkdir -p "${REL_DIR}/governance"
 cat > "${REL_DIR}/governance/launch-proof.txt" <<EOF
@@ -470,7 +815,20 @@ chmod 750 "${REL_DIR}/scripts/deploy-mainnet.sh"
 cat > "${REL_DIR}/scripts/validate-mainnet.sh" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
-echo "TODO: add RPC latency, peer count, block time checks"
+: "${RPC_L1:=http://127.0.0.1:18545}"
+: "${RPC_L2:=http://127.0.0.1:29547}"
+: "${RPC_L3:=http://127.0.0.1:39545}"
+
+rpc_chain_id() {
+  local url="$1"
+  local out
+  out="$(curl -fsS -H 'Content-Type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_chainId\",\"params\":[]}' \"${url}\")"
+  printf '%s' "${out}" | jq -r .result
+}
+
+echo "chain_id_l1=$(rpc_chain_id "${RPC_L1}")"
+echo "chain_id_l2=$(rpc_chain_id "${RPC_L2}")"
+echo "chain_id_l3=$(rpc_chain_id "${RPC_L3}")"
 SH
 chmod 750 "${REL_DIR}/scripts/validate-mainnet.sh"
 
@@ -483,7 +841,20 @@ cd "${REL_DIR}"
 # shellcheck source=lib/docker.sh
 . "${REL_DIR}/scripts/lib/docker.sh"
 hg_require_docker_compose
-hg_docker compose -f docker-compose.mainnet.yml --env-file env.mainnet down
+ENV=mainnet
+cp -a "env.${ENV}" ".env" 2>/dev/null || true
+cp -a "env.${ENV}" "infra/ghostchain/.env" 2>/dev/null || true
+cp -a "env.${ENV}" "infra/opstack/.env" 2>/dev/null || true
+
+hg_docker compose -f docker-compose.phase3.yml --env-file "env.${ENV}" down || true
+(
+  cd "${REL_DIR}/infra/opstack"
+  hg_docker compose -f docker-compose.yml -f docker-compose.l3.yml -f docker-compose.challengers.yml --env-file .env --project-name ghostchain-opstack down || true
+)
+(
+  cd "${REL_DIR}/infra/ghostchain"
+  hg_docker compose -f docker-compose.l1.yml --env-file .env --project-name ghostchain-l1 down || true
+)
 echo "rolled_back:mainnet (containers stopped)"
 SH
 chmod 750 "${REL_DIR}/scripts/rollback-mainnet.sh"
