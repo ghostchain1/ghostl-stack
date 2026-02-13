@@ -11,13 +11,16 @@ hg_docker_init
 
 TAG="${OPSTACK_IMAGE_TAG:-devnet}"
 
-echo "Building local OP Stack images (op-geth, op-node, op-batcher, op-proposer) with tag '${TAG}'..."
+echo "Building local OP Stack images (op-geth, op-node, op-batcher, op-proposer, op-challenger) with tag '${TAG}'..."
 
 echo "-> op-geth"
 hg_docker build -t "local/op-geth:${TAG}" "$OP_DIR/op-geth"
 
-DOCKERFILE="$OP_DIR/optimism/ops/docker/op-stack-go/Dockerfile"
-CONTEXT="$OP_DIR/optimism"
+DOCKERFILE="$OP_DIR/docker/op-stack-go.Dockerfile"
+CONTEXT="$OP_DIR/optimism-upstream"
+
+[ -f "$DOCKERFILE" ] || { echo "missing_dockerfile:${DOCKERFILE}" >&2; exit 1; }
+[ -d "$CONTEXT" ] || { echo "missing_build_context:${CONTEXT}" >&2; exit 1; }
 
 build_target() {
   local target="$1"
@@ -29,6 +32,7 @@ build_target() {
 build_target op-node-target "local/op-node:${TAG}"
 build_target op-batcher-target "local/op-batcher:${TAG}"
 build_target op-proposer-target "local/op-proposer:${TAG}"
+build_target op-challenger-target "local/op-challenger:${TAG}"
 
 echo "Images ready:"
 hg_docker images | grep "local/op-" | awk '{printf("  %s:%s\n", $1, $2)}'
