@@ -31,7 +31,8 @@ required_paths=(
   "${ROOT}/infra/opstack/op-geth/Dockerfile"
   "${ROOT}/infra/opstack/optimism-upstream/go.mod"
   "${ROOT}/infra/opstack/optimism-upstream/third_party/archiver/go.mod"
-  "${ROOT}/infra/opstack/docker/op-stack-go.Dockerfile"
+  "${ROOT}/infra/opstack/optimism-upstream/ops/docker/op-stack-go/Dockerfile"
+  "${ROOT}/infra/opstack/optimism-upstream/ops/docker/op-stack-go/Dockerfile.dockerignore"
 
   # Services (Phase 3 hardened container topology)
   "${ROOT}/docker-compose.phase3.yml"

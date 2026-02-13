@@ -16,8 +16,8 @@ echo "Building local OP Stack images (op-geth, op-node, op-batcher, op-proposer,
 echo "-> op-geth"
 hg_docker build -t "local/op-geth:${TAG}" "$OP_DIR/op-geth"
 
-DOCKERFILE="$OP_DIR/docker/op-stack-go.Dockerfile"
 CONTEXT="$OP_DIR/optimism-upstream"
+DOCKERFILE="$CONTEXT/ops/docker/op-stack-go/Dockerfile"
 
 [ -f "$DOCKERFILE" ] || { echo "missing_dockerfile:${DOCKERFILE}" >&2; exit 1; }
 [ -d "$CONTEXT" ] || { echo "missing_build_context:${CONTEXT}" >&2; exit 1; }
