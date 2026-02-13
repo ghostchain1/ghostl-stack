@@ -863,6 +863,9 @@ services:
     build:
       context: ./ghost-rollup-proposer
     image: ghostl/ghost-rollup-proposer:local
+    depends_on:
+      ghost-registry:
+        condition: service_healthy
     env_file:
       - ./stack.env
     environment:
@@ -889,6 +892,9 @@ services:
     build:
       context: ./ghost-rollup-challenger
     image: ghostl/ghost-rollup-challenger:local
+    depends_on:
+      ghost-registry:
+        condition: service_healthy
     env_file:
       - ./stack.env
     environment:

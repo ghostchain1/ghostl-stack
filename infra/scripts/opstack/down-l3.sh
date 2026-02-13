@@ -29,9 +29,9 @@ if [ -f "$OP_DIR/.env.secrets" ]; then
 fi
 
 cd "$OP_DIR"
-hg_docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" stop --no-deps \
+hg_docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" stop \
   l3-geth l3-op-node l3-op-batcher l3-op-proposer >/dev/null 2>&1 || true
-hg_docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" rm -f --no-deps \
+hg_docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" rm -f \
   l3-geth l3-op-node l3-op-batcher l3-op-proposer >/dev/null 2>&1 || true
 
 echo "Stopped OP Stack L3 ($L3_NAME)"

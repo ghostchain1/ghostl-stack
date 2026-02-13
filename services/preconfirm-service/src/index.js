@@ -18,7 +18,7 @@ const PRECONFIRM_TTL_MS = Number.isFinite(ttlMsRaw) ? Math.max(500, Math.floor(t
 
 const GUARD_EVAL_URL =
   process.env.GUARD_EVAL_URL ||
-  (process.env.GUARD_URL ? `${String(process.env.GUARD_URL).replace(/\\/$/, "")}/gate/eval` : "");
+  (process.env.GUARD_URL ? `${String(process.env.GUARD_URL).replace(/\/$/, "")}/gate/eval` : "");
 const guardFailOpen = (process.env.GUARD_FAIL_OPEN || "0").toLowerCase() === "1" || (process.env.GUARD_FAIL_OPEN || "").toLowerCase() === "true";
 
 const rpcTimeoutMs = Math.max(500, Number(process.env.RPC_TIMEOUT_MS || "12000"));
@@ -338,4 +338,3 @@ app.listen(PORT, "0.0.0.0", () => {
     `[preconfirm-service] listening on :${PORT} layer=${LAYER_ID} rpc=${RPC_URL} observeOnly=${observeOnly} guard=${Boolean(GUARD_EVAL_URL)}`
   );
 });
-
