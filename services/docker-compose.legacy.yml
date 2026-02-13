@@ -5,7 +5,9 @@ x-host-gateway: &host-gateway
 services:
   rpc-forward-l1-29545:
     <<: *host-gateway
-    image: alpine/socat@sha256:1edb826a9432ab0b0f8c865181fc278e48b792fc80bebfa0e19205cda71bbbd1
+    image: ghostl/rpc-forward-l1-29545:local
+    build:
+      context: ./rpc-forward-l1-29545
     restart: unless-stopped
     command:
       - -d
