@@ -4,7 +4,7 @@ Minimal hashing utilities for GhostStack release sealing.
 
 Goals:
 - No external Python deps.
-- Provide Keccak-256 (Ethereum) and SHA-256 for files/strings.
+- Provide Keccak-256 and SHA-256 for files/strings.
 """
 
 from __future__ import annotations
@@ -166,4 +166,3 @@ def main(argv: list[str]) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))
-
