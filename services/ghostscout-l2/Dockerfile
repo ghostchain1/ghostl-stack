@@ -10,4 +10,6 @@ RUN if command -v apk >/dev/null 2>&1; then \
       echo "No supported package manager found." >&2; \
       exit 1; \
     fi
+COPY entrypoint.sh /entrypoint.sh
+COPY healthcheck.sh /healthcheck.sh
 USER blockscout

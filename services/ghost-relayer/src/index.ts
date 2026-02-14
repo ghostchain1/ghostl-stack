@@ -54,7 +54,7 @@ type CanonicalGasTokenMode = "native" | "erc20";
 const CANONICAL_GAS_TOKEN_MODE = (process.env.CANONICAL_GAS_TOKEN_MODE || "native") as CanonicalGasTokenMode;
 const CANONICAL_GAS_TOKEN_ADDRESS =
   process.env.CANONICAL_GAS_TOKEN_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3";
-const CANONICAL_GAS_TOKEN_SYMBOL = process.env.CANONICAL_GAS_TOKEN_SYMBOL || "GHOST";
+const CANONICAL_GAS_TOKEN_SYMBOL = process.env.CANONICAL_GAS_TOKEN_SYMBOL || "GST";
 const minGasTokenBalanceRaw = process.env.CANONICAL_GAS_TOKEN_MIN_BALANCE || "0";
 let MIN_CANONICAL_GAS_TOKEN_BALANCE = 1n;
 try {

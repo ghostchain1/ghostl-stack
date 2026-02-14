@@ -12,7 +12,7 @@ x-security: &default-security
 
 services:
   ghostchain-bootnode:
-    image: ${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}
+    image: ${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}
     user: "${L1_UID:-1000}:${L1_GID:-1000}"
     restart: unless-stopped
     logging: *default-logging
@@ -42,7 +42,7 @@ services:
     cpus: "0.5"
 
   ghostchain-node1:
-    image: ${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}
+    image: ${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}
     user: "${L1_UID:-1000}:${L1_GID:-1000}"
     restart: unless-stopped
     logging: *default-logging
@@ -95,7 +95,7 @@ services:
     stop_grace_period: 30s
 
   ghostchain-node2:
-    image: ${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}
+    image: ${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}
     user: "${L1_UID:-1000}:${L1_GID:-1000}"
     restart: unless-stopped
     logging: *default-logging
@@ -178,23 +178,24 @@ services:
       - legacy
     depends_on:
       - ghostchain-node1
-    entrypoint: ["/app/bin/blockscout"]
-    command: ["start"]
+    entrypoint: ["/bin/sh", "/config/ghostscout-entrypoint.sh"]
     environment:
       DATABASE_URL: postgres://ghostscout:${GHOSTSCOUT_DB_PASSWORD:-ghostpass}@ghostscout-postgres:5432/ghostscout_l1
       ECTO_USE_SSL: "false"
-      ETHEREUM_JSONRPC_HTTP_URL: http://ghostchain-node1:8545
-      ETHEREUM_JSONRPC_TRACE_URL: http://ghostchain-node1:8545
-      ETHEREUM_JSONRPC_WS_URL: ws://ghostchain-node1:8546
+      GST_JSONRPC_HTTP_URL: http://ghostchain-node1:8545
+      GST_JSONRPC_TRACE_URL: http://ghostchain-node1:8545
+      GST_JSONRPC_WS_URL: ws://ghostchain-node1:8546
       BLOCKSCOUT_HOST: 0.0.0.0
       PORT: 4000
       NETWORK: Ghostchain
       SUBNETWORK: PoA
-      COIN: GHOST
+      COIN: GST
       SECRET_KEY_BASE: ${GHOSTSCOUT_SECRET_KEY_BASE_L1:-}
       DISABLE_EVISION: "true"
       API_ONLY: "true"
       LOG_LEVEL: warn
+    volumes:
+      - ./scripts/ghostscout-entrypoint.sh:/config/ghostscout-entrypoint.sh:ro
     ports:
       - "18644:4000"
     networks:

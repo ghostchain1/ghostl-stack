@@ -21,9 +21,9 @@ contract GSTInvariantTest is Test {
         assertEq(l3.decimals(), 18);
         assertEq(legacyL2.decimals(), 18);
 
-        assertEq(l2.symbol(), "GHOST");
-        assertEq(l3.symbol(), "GHOST");
-        assertEq(legacyL2.symbol(), "GHOST");
+        assertEq(l2.symbol(), "GST");
+        assertEq(l3.symbol(), "GST");
+        assertEq(legacyL2.symbol(), "GST");
 
         assertEq(l2.name(), "Ghost Token");
         assertEq(l3.name(), "Ghost Token");

@@ -8,7 +8,7 @@ contract GhostTokenL2 is ERC20 {
     address internal constant CANONICAL_GAS_TOKEN = 0x5FbDB2315678afecb367f032d93F642f64180aa3;
     error CanonicalGasTokenOnly(address canonical);
 
-    constructor() ERC20("Ghost Token", "GHOST", 18) {
+    constructor() ERC20("Ghost Token", "GST", 18) {
         if (msg.sender != CANONICAL_GAS_TOKEN) {
             revert CanonicalGasTokenOnly(CANONICAL_GAS_TOKEN);
         }
