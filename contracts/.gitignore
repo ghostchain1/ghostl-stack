@@ -8,6 +8,8 @@
 /.hardhat-cache/
 /out-codex/
 /cache-codex/
+/out-legacy/
+/cache-legacy/
 /out-slither/
 /cache-slither/
 /reports/foundry/
