@@ -35,7 +35,7 @@
         "containers": [
           {
             "name": "l3-op-proposer",
-            "image": "ghcr.io/ethereum-optimism/op-proposer@sha256:00590e36e37994eefd8bbc9a6498ad20c62b072b381d0b8cdb7293056e6e5b64",
+            "image": "local/op-proposer:${OPSTACK_IMAGE_TAG:-local}",
             "command": null,
             "args": [
               "op-proposer",

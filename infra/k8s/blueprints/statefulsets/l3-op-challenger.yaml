@@ -94,16 +94,8 @@
                 "value": "${L3_L1_BEACON_RPC:-${L3_L1_RPC:-http://l2-geth:8545}}"
               },
               {
-                "name": "OP_CHALLENGER_L1_ETH_RPC",
-                "value": "${L3_L1_RPC:-http://l2-geth:8545}"
-              },
-              {
                 "name": "OP_CHALLENGER_L1_GENESIS",
                 "value": "/config/l1-chain.json"
-              },
-              {
-                "name": "OP_CHALLENGER_L2_ETH_RPC",
-                "value": "http://l3-geth:8545"
               },
               {
                 "name": "OP_CHALLENGER_PRIVATE_KEY",

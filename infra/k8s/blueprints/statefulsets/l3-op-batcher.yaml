@@ -35,7 +35,7 @@
         "containers": [
           {
             "name": "l3-op-batcher",
-            "image": "ghcr.io/ethereum-optimism/op-batcher@sha256:21a2426a292a0d1b6c3665c9e07549df97d98e40edda6c880d34e22aefe279d2",
+            "image": "local/op-batcher:${OPSTACK_IMAGE_TAG:-local}",
             "command": null,
             "args": [
               "op-batcher",
