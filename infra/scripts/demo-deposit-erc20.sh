@@ -42,7 +42,7 @@ if [ ! -d "$ETHERS_MODULE" ]; then
   exit 1
 fi
 
-DEMO_AMOUNT_GST="${DEMO_AMOUNT_GST:-${DEMO_AMOUNT_ETH:-1}}"
+DEMO_AMOUNT_GST="${DEMO_AMOUNT_GST:-1}"
 
 # Allow an explicit demo token override (useful when the configured token has no faucet/mint).
 TOKEN_ADDRESS="${DEMO_L2_TOKEN_ADDRESS:-${L2_TOKEN_ADDRESS:-}}"
