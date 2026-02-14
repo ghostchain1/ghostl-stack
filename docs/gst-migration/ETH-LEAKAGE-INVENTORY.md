@@ -5,6 +5,8 @@ Repo: `/home/ghost/ghostl-stack`
 Branch: `brand/gst-native`
 Revision: `e5a0fbcb1973212cb183ba1fd4f725fd8215a3c9`
 
+NOTE: This file contains **historical scan snapshots**. For current repo state, see the latest section: **Refresh: 2026-02-14**.
+
 This inventory flags **GST-native branding leaks** where “ETH / Ethereum / Ether / .eth / unit=eth / *_eth / *_ETH_*” appears in first-party code/config/docs.
 
 Notes:
@@ -187,3 +189,218 @@ These are not “source of truth” configs, but they will trip any naive `grep`
 - `ops/snapshots/**`, `ops/preflight/**` (captured compose renders)
 - `infra/docker/audit/**` (inventory snapshots)
 - `update-report.json`, `update-report.md` (logs and scan excerpts)
+
+---
+
+## Refresh: 2026-02-14 (post-Phase0)
+
+Captured at: `2026-02-14T13:07:10Z`
+Repo: `/home/ghost/ghostl-stack`
+Branch: `brand/gst-native`
+Revision: `3204773edf01ab6de4b2337ab74df67cd0b249b1`
+
+This refresh focuses on **first-party configs + services + contracts + docs** and intentionally excludes high-noise vendored/build-output paths.
+
+### What was scanned (refresh)
+
+High-signal scan roots:
+
+- `infra/ghostchain/**`
+- `infra/opstack/**` (compose/manifests only; vendored code excluded below)
+- `infra/docker/compose/**`
+- `infra/k8s/**`
+- `services/**`
+- `apps/**`
+- `contracts/src/**`, `contracts/scripts/**`, `contracts/test/**`
+- `docs/**` (excluding migration/evidence/autonomy docs)
+- `ops/**`
+- `launch-system/**`
+
+Excluded (vendored / generated / noise):
+
+- `.git/**`
+- `**/node_modules/**`
+- `**/dist/**`
+- `contracts/lib/**`
+- `contracts/{out,cache,.foundry-out,reports}/**`
+- `infra/opstack/op-geth/**`
+- `infra/opstack/optimism-upstream/**`
+- `docs/gst-migration/**` (this report corpus)
+- `docs/evidence/**`
+- `docs/autonomy/**`
+- `infra/evidence/**`
+- `ops/{snapshots,preflight}/**`
+- `ghost-helper-bots/**`
+- `releases/**`, `backups/**`
+
+Patterns used (refresh):
+
+- Branding: `\\bETH\\b`, `(?i:\\bethereum\\b)`, `\\bEther\\b`, `Ξ`
+- ENS-style domains only: `(?i:\\b[a-z0-9-]+\\.eth\\b)` (avoids `.eth` property false positives)
+- Env/config keys: `ETHEREUM_JSONRPC_*`, `OP_*_ETH_RPC`
+- Identifiers: `_eth`, `\\bETH_`, `LGE_DEPOSIT_ETH`, `DEMO_AMOUNT_ETH`, `FUND_AMOUNT_ETH`
+- Observability: Grafana `"unit": "eth"`
+
+### Findings (refresh; grouped by L1/L2/L3 + services)
+
+Severity legend (same as above):
+
+- **CRITICAL**: user-facing “ETH/Ethereum/Ether/.eth/unit=eth” semantics
+- **HIGH**: identifiers/config keys that embed ETH semantics (`*_ETH_*`, `*_eth`, `amountEth`, etc.)
+- **ALLOWED (technical)**: JSON-RPC namespace/method compatibility (`eth_*`) that must remain for interoperability, but should not leak into product branding
+
+#### GhostChain L1
+
+- **HIGH** — upstream image naming uses `ethereum/*`:
+  ```text
+  infra/ghostchain/.env:3:GETH_IMAGE=ethereum/client-go:alltools-v1.13.14
+  infra/ghostchain/.env.l1:8:L1_GETH_IMAGE=ethereum/client-go:alltools-v1.13.14
+  infra/ghostchain/docker-compose.l1.yml:15:    image: ${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}
+  infra/ghostchain/docker-compose.l1.yml:45:    image: ${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}
+  infra/ghostchain/docker-compose.l1.yml:98:    image: ${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}
+  ```
+
+- **HIGH** — Blockscout env keys are Ethereum-branded (Blockscout convention):
+  ```text
+  infra/ghostchain/docker-compose.l1.yml:186:      ETHEREUM_JSONRPC_HTTP_URL: http://ghostchain-node1:8545
+  infra/ghostchain/docker-compose.l1.yml:187:      ETHEREUM_JSONRPC_TRACE_URL: http://ghostchain-node1:8545
+  infra/ghostchain/docker-compose.l1.yml:188:      ETHEREUM_JSONRPC_WS_URL: ws://ghostchain-node1:8546
+  ```
+
+- **ALLOWED (technical)** — Besu RPC module list includes `ETH` (module name, not currency):
+  ```text
+  infra/ghostchain/docker-compose.ibft.yml:32:          --rpc-http-api=ETH,NET,WEB3,IBFT,ADMIN,TXPOOL \
+  ```
+
+- **HIGH** — K8s blueprints also embed `ethereum/*` image names:
+  ```text
+  infra/k8s/blueprints/statefulsets/ghostchain-bootnode.yaml:38:            "image": "${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}",
+  infra/k8s/blueprints/statefulsets/ghostchain-node1.yaml:38:            "image": "${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}",
+  ```
+
+#### GhostL2
+
+- **HIGH** — OP Stack env var keys embed ETH semantics:
+  ```text
+  infra/opstack/docker-compose.challengers.yml:30:      OP_CHALLENGER_L1_ETH_RPC: ${L1_RPC:-http://l1:8545}
+  infra/opstack/docker-compose.challengers.yml:32:      OP_CHALLENGER_L2_ETH_RPC: http://l2-geth:8545
+  infra/docker/compose/docker-compose.core.yml:4559:        "OP_BATCHER_L1_ETH_RPC": "http://l1:8545",
+  infra/docker/compose/docker-compose.core.yml:4560:        "OP_BATCHER_L2_ETH_RPC": "http://l2-a:8545",
+  infra/k8s/blueprints/statefulsets/op-batcher.yaml:63:                "name": "OP_BATCHER_L1_ETH_RPC",
+  infra/k8s/blueprints/statefulsets/op-proposer.yaml:55:                "name": "OP_PROPOSER_L1_ETH_RPC",
+  ```
+
+- **HIGH** — external-chain geth uses Ethereum-branded upstream image:
+  ```text
+  infra/opstack/docker-compose.mainnet-geth.yml:15:    image: ethereum/client-go:stable
+  ```
+
+- **HIGH** — upstream registry naming includes `ethereum-optimism`:
+  ```text
+  infra/k8s/blueprints/statefulsets/l2-geth.yaml:38:            "image": "ghcr.io/ethereum-optimism/op-geth@sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0",
+  infra/k8s/blueprints/statefulsets/op-sequencer.yaml:38:            "image": "ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b",
+  ```
+
+#### GhostL3
+
+- **HIGH** — OP Stack challenger env var keys embed ETH semantics:
+  ```text
+  infra/opstack/docker-compose.challengers.yml:82:      OP_CHALLENGER_L1_ETH_RPC: ${L3_L1_RPC:-http://l2-geth:8545}
+  infra/opstack/docker-compose.challengers.yml:84:      OP_CHALLENGER_L2_ETH_RPC: http://l3-geth:8545
+  infra/k8s/blueprints/statefulsets/l3-op-challenger.yaml:97:                "name": "OP_CHALLENGER_L1_ETH_RPC",
+  infra/k8s/blueprints/statefulsets/l3-op-challenger.yaml:105:                "name": "OP_CHALLENGER_L2_ETH_RPC",
+  ```
+
+- **HIGH** — upstream registry naming includes `ethereum-optimism`:
+  ```text
+  infra/k8s/blueprints/statefulsets/l3-geth.yaml:38:            "image": "ghcr.io/ethereum-optimism/op-geth@sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0",
+  infra/k8s/blueprints/statefulsets/l3-op-node.yaml:38:            "image": "ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b",
+  ```
+
+#### Services
+
+- **HIGH** — Blockscout `.env` uses Ethereum-branded env keys:
+  ```text
+  services/ghostscout-l1/.env:3:ETHEREUM_JSONRPC_HTTP_URL=http://ghostchain-node1:8545
+  services/ghostscout-l1/.env:4:ETHEREUM_JSONRPC_TRACE_URL=http://ghostchain-node1:8545
+  services/ghostscout-l1/.env:5:ETHEREUM_JSONRPC_WS_URL=ws://ghostchain-node1:8546
+  services/ghostscout-l2/.env:3:ETHEREUM_JSONRPC_HTTP_URL=http://l2-geth:8545
+  services/ghostscout-l2/.env:4:ETHEREUM_JSONRPC_TRACE_URL=http://l2-geth:8545
+  services/ghostscout-l2/.env:5:ETHEREUM_JSONRPC_WS_URL=ws://l2-geth:8546
+  services/ghostscout-l3/.env:3:ETHEREUM_JSONRPC_HTTP_URL=http://l3-geth:8545
+  services/ghostscout-l3/.env:4:ETHEREUM_JSONRPC_TRACE_URL=http://l3-geth:8545
+  services/ghostscout-l3/.env:5:ETHEREUM_JSONRPC_WS_URL=ws://l3-geth:8546
+  ```
+
+- **HIGH** — external chain list includes `ethereum` label:
+  ```text
+  services/stack.env:241:EXTERNAL_CHAINS=ethereum,polygon,optimism
+  ```
+
+- **CRITICAL/HIGH** — narrative refers to “ETH-like settlement”:
+  ```text
+  services/stack.env:274:# - Use an ERC20 address or 'native' for ETH-like settlement on L1.
+  ```
+
+#### Contracts
+
+- **HIGH** — env var name embeds ETH semantics:
+  ```text
+  contracts/scripts/lge_demo_deposit_native.ts:13:  const amountEthRaw = process.env.LGE_DEPOSIT_ETH;
+  ```
+
+- **HIGH** — demo env vars still accept `*_ETH` as compatibility aliases:
+  ```text
+  contracts/scripts/demo_deposit.ts:14:  const amountGst = process.env.DEMO_AMOUNT_GST ?? process.env.DEMO_AMOUNT_ETH ?? "100";
+  contracts/scripts/demo_l1_deposit_erc20.ts:17:  const amountGst = process.env.DEMO_AMOUNT_GST ?? process.env.DEMO_AMOUNT_ETH ?? "1";
+  contracts/scripts/demo_l2_withdraw_erc20.ts:17:  const amountGst = process.env.DEMO_AMOUNT_GST ?? process.env.DEMO_AMOUNT_ETH ?? "1";
+  contracts/scripts/fund_addresses.ts:21:  const amountGst = process.env.FUND_AMOUNT_GST || process.env.FUND_AMOUNT_ETH || "10";
+  ```
+
+- **HIGH** — comments/error strings still say ETH/eth:
+  ```text
+  contracts/test/foundry/LiquidityGravityEngine.t.sol:247:        // Enable native asset (ETH) support.
+  contracts/src/tokens/WrappedNativeToken.sol:6:/// @notice WETH-like wrapper for the native gas token (ETH in dev).
+  contracts/src/treasury/TreasuryVault.sol:45:        require(ok, "eth transfer failed");
+  contracts/src/liquidity/LoadBalancerVault.sol:344:            // - msg.value == amount: escrow forwarded native ETH
+  contracts/src/liquidity/BridgeEscrow.sol:163:        // Avoid forwarding ETH directly (Slither: arbitrary-send-eth). Instead, forward wrapped native to the vault and let the
+  contracts/src/liquidity/SettlementOracle.sol:366:                require(ok, "fee eth");
+  ```
+
+- **HIGH** — build helper scripts use `ethereum/solc` upstream image:
+  ```text
+  contracts/scripts/solc-docker/solc-0.8.15.sh:5:IMAGE="ethereum/solc:${VERSION}"
+  ```
+
+#### Docs
+
+- **CRITICAL** — diagram uses Ethereum/ETH nodes:
+  ```text
+  docs/diagrams/liquidity-gravity.mmd:24:        ETH[Ethereum]
+  docs/diagrams/liquidity-gravity.mmd:46:    Exec -->|Deploy Capital| ETH
+  docs/diagrams/liquidity-gravity.mmd:54:    ETH -->|Yield / Fees| Settle
+  ```
+
+- **HIGH** — runbook example still uses `LGE_DEPOSIT_ETH`:
+  ```text
+  docs/RUNBOOK.md:21:   - `cd contracts && RPC_L1=http://localhost:18545 L1_CHAIN_ID=14000101 DEPLOYER_PRIVATE_KEY=<anvil-key> LGE_VAULT_ADDRESS=<vault> LGE_DEPOSIT_ETH=10 npx hardhat run --network anvil scripts/lge_demo_deposit_native.ts`
+  ```
+
+#### Ops / Launch System
+
+- **HIGH** — launch-system utilities/docs say “Ethereum”:
+  ```text
+  launch-system/lib/hashutil.py:7:- Provide Keccak-256 (Ethereum) and SHA-256 for files/strings.
+  launch-system/lib/ethrpc.py:3:Tiny JSON-RPC helper for Ethereum-compatible chains.
+  launch-system/LAUNCH-READINESS.md:24:- Keccak-256 implementation validated against Ethereum known vector (`keccak256("")`).
+  ```
+
+- **HIGH (generated snapshot)** — ops canonical render still includes `ethereum/*` image names:
+  ```text
+  ops/STACK_CANONICAL.yml:8173:          "image": "ethereum/client-go:alltools-v1.13.14",
+  ```
+
+### Notes (refresh)
+
+- `.eth` domains were only found under vendored libs (e.g., `contracts/lib/**`) and historical migration/evidence outputs.
+- The earlier 2026-02-06 snapshot flagged ETH strings in observability assets; current `observability/**` appears GST-branded.
