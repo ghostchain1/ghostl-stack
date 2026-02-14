@@ -2,6 +2,6 @@
 set -euo pipefail
 
 VERSION="0.8.17"
-IMAGE="ethereum/solc:${VERSION}"
+IMAGE="${SOLC_IMAGE:-ghostl/solc:${VERSION}}"
 
 exec docker run --rm -i "$IMAGE" "$@"
