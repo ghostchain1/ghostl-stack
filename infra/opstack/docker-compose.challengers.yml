@@ -77,9 +77,7 @@ services:
       - ${OP_CHALLENGER_ASSETS_DIR:-./optimism/op-program/bin}:/assets/op-program:ro
       - ./optimism/cannon/bin:/assets/cannon:ro
     environment:
-      OP_CHALLENGER_L1_ETH_RPC: ${L3_L1_RPC:-http://l2-geth:8545}
       OP_CHALLENGER_ROLLUP_RPC: http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}
-      OP_CHALLENGER_L2_ETH_RPC: http://l3-geth:8545
       OP_CHALLENGER_GAME_FACTORY_ADDRESS: ${L3_GAME_FACTORY_ADDRESS:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}
       OP_CHALLENGER_PRIVATE_KEY: ${L3_CHALLENGER_KEY:-${CHALLENGER_KEY:-}}
       OP_CHALLENGER_DATADIR: /data
