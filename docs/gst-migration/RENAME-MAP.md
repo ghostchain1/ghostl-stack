@@ -72,3 +72,44 @@ These must not be treated as “ETH business semantics”:
 - JSON-RPC method prefix: `eth_` (e.g., `eth_getBalance`)
 - JSON-RPC module name: `eth`
 - EVM unit names: `wei`, `gwei` (keep, but UI labels should show GST)
+
+---
+
+## Refresh: 2026-02-14 (rev 3204773e)
+
+This section updates the Phase 2 rename plan based on the current head and current ETH/Ethereum leakage hotspots.
+
+### Infra / Chains (L1/L2/L3)
+
+| Current | Proposed | Notes |
+|---|---|---|
+| `ethereum/client-go:*` image refs (e.g. `infra/ghostchain/.env`, `infra/ghostchain/docker-compose.l1.yml`) | `ghostl/geth:*` (mirrored/retagged) | Keep runtime identical; remove Ethereum-branded image name from first-party config. |
+| `ghcr.io/ethereum-optimism/*` image refs in k8s blueprints | Mirror to `ghcr.io/ghostl/*` (or internal registry) | This is upstream naming; avoid product configs referencing `ethereum-*` registries if “Ethereum” is considered forbidden branding. |
+| `OP_*_ETH_RPC` env keys (compose, k8s, rendered compose) | Canonical: `OP_*_{L1,L2}_RPC` (or `OP_*_RPC`) + runtime export legacy keys | OP Stack expects `*_ETH_RPC`. Keep compatibility by exporting legacy keys inside entrypoint wrappers while presenting GST-native keys to operators. |
+| Besu `--rpc-http-api=ETH,...` | Allowlist exact token in leakage gate | It’s a technical module name, not currency. Don’t attempt to rename; gate should permit this exact pattern. |
+| `infra/opstack/docker-compose.mainnet-geth.yml` uses `ethereum/client-go:stable` | Mirror to `ghostl/geth:stable` | Treat as “external chain dependency”; still remove Ethereum-branded image string from first-party config. |
+
+### Services
+
+| Current | Proposed | Notes |
+|---|---|---|
+| `ETHEREUM_JSONRPC_{HTTP,TRACE,WS}_URL` (Blockscout env) | Canonical: `GST_JSONRPC_{HTTP,TRACE,WS}_URL` + map to Blockscout keys at runtime | Blockscout conventions require `ETHEREUM_JSONRPC_*`. Keep inside service wiring only; don’t expose as top-level operator knobs. |
+| `EXTERNAL_CHAINS=ethereum,polygon,optimism` | `EXTERNAL_CHAINS=mainnet,polygon,optimism` (map `mainnet` → Ethereum internally) | Removes the literal `ethereum` token from env/config while preserving meaning. |
+| “ETH-like settlement” wording | “native settlement” / “EVM-like settlement” | Avoid ETH branding in docs/config comments. |
+
+### Contracts + Scripts
+
+| Current | Proposed | Notes |
+|---|---|---|
+| `LGE_DEPOSIT_ETH` | `LGE_DEPOSIT_GST` (support `LGE_DEPOSIT_ETH` as legacy alias for one release) | Remove ETH semantics from env keys; preserve a soft migration window. |
+| `DEMO_AMOUNT_ETH`, `FUND_AMOUNT_ETH` (legacy aliases) | Deprecate and remove after grace period; keep `*_GST` canonical | Already partially migrated (GST canonical, ETH fallback). Phase 2 should decide the deprecation schedule and implement warnings. |
+| Contract comments / revert strings containing `ETH` or `eth` | Replace with `GST` or `native` wording | E.g. “native gas token”, “native send/transfer”, “legacy namespace”, etc. Avoid leaking `eth` in revert strings. |
+| `ethereum/solc:*` in `contracts/scripts/solc-docker/*` | Mirror to internal `ghostl/solc:*` | Same rationale as geth images: keep upstream but remove branding strings from first-party scripts. |
+
+### Docs / Diagrams / Launch System
+
+| Current | Proposed | Notes |
+|---|---|---|
+| Mermaid node `ETH[Ethereum]` | `GST[Ghost Token]` (or neutral `L1`) | Diagrams should match canonical GST-native branding. |
+| Runbook examples using `LGE_DEPOSIT_ETH` | Use `LGE_DEPOSIT_GST` | Keep legacy alias mentioned only in migration docs if needed. |
+| `launch-system/lib/ethrpc.py` + “Ethereum-compatible” strings | `evmrpc.py` + “EVM-compatible” | Keep a tiny shim file (old import path) if internal scripts depend on `ethrpc.py`. |
