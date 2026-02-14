@@ -32,6 +32,12 @@ const L2_RELAYER_PRIVATE_KEY = await readSecret("L2_RELAYER_PRIVATE_KEY");
 const STATE_DIR = process.env.STATE_DIR || "/state";
 const confirmationsRaw = Number(process.env.CONFIRMATIONS || "0");
 const CONFIRMATIONS = Number.isFinite(confirmationsRaw) && confirmationsRaw >= 0 ? Math.floor(confirmationsRaw) : 0;
+const logBlockChunkRaw = Number(process.env.RELAYER_LOG_BLOCK_CHUNK || process.env.RELAYER_LOG_CHUNK_SIZE || "250");
+const RELAYER_LOG_BLOCK_CHUNK =
+  Number.isFinite(logBlockChunkRaw) && logBlockChunkRaw > 0 ? Math.floor(logBlockChunkRaw) : 250;
+const maxGetLogsSplitsRaw = Number(process.env.RELAYER_GET_LOGS_MAX_SPLITS || "24");
+const RELAYER_GET_LOGS_MAX_SPLITS =
+  Number.isFinite(maxGetLogsSplitsRaw) && maxGetLogsSplitsRaw >= 0 ? Math.floor(maxGetLogsSplitsRaw) : 24;
 
 // Default to safety: require rollup-finality on the parent chain when rollup addresses are configured.
 // Operators can explicitly disable via env for local iteration.
@@ -242,6 +248,7 @@ const l3FactoryAbi = [
 const l3TokenAbi = [
   "function mintFromL2(address from, address to, uint256 amount, uint256 nonce) external",
   "function processed(bytes32 key) view returns (bool)",
+  "function burned(bytes32 key) view returns (bool)",
   "function l2Token() view returns (address)",
   "event BurnInitiated(address indexed l2Token, address indexed from, address indexed to, uint256 amount, uint256 nonce, bytes32 key)"
 ];
@@ -457,6 +464,7 @@ type PendingFinalize =
       kind: "BurnInitiated";
       key: string;
       l2Token: string;
+      l3Token?: string;
       from: string;
       to: string;
       amount: string;
@@ -661,6 +669,42 @@ async function tryFinalizeOne(p: PendingFinalize) {
     else metrics.finalizeAttempts += 1;
 
     if (p.kind === "BurnInitiated") {
+      // If the withdrawal is already processed on L2, drop it without doing any rollup checks.
+      const already = await l2Bridge.erc20WithdrawProcessed(
+        msgKeyErc20(p.l2Token, p.from, p.to, BigInt(p.amount), BigInt(p.nonce))
+      );
+      if (already) {
+        pendingByKey.delete(id);
+        return;
+      }
+
+      // Drop stale burns (reorged out) before doing rollup finality checks.
+      // The L2 bridge has no onchain proof requirement for burns; the relayer must not "release" unless
+      // the burn is still present on L3 and economically final.
+      const l3TokenAddr = p.l3Token || ((await l3Factory.l3TokenForL2Token(p.l2Token)) as string);
+      if (!l3TokenAddr || l3TokenAddr === ethers.ZeroAddress) {
+        const msg = `[Relayer] Missing L3 token for burn key=${p.key} l2Token=${p.l2Token}`;
+        pushLog("warn", msg);
+        throw new Error("Missing L3 token for burn");
+      }
+
+      const l3Code = await l3Provider.getCode(l3TokenAddr);
+      if (!l3Code || l3Code === "0x") {
+        pendingByKey.delete(id);
+        const msg = `[Relayer] Dropping BurnInitiated (no L3 token code) key=${p.key} l3Token=${l3TokenAddr}`;
+        pushLog("warn", msg);
+        return;
+      }
+
+      const l3Token = new ethers.Contract(l3TokenAddr, l3TokenAbi, l3Provider);
+      const stillBurned = (await l3Token.burned(p.key)) as boolean;
+      if (!stillBurned) {
+        pendingByKey.delete(id);
+        const msg = `[Relayer] Dropping BurnInitiated (burn no longer present) key=${p.key} l3Token=${l3TokenAddr}`;
+        pushLog("warn", msg);
+        return;
+      }
+
       if (REQUIRE_L3_FINALITY_ON_L2) {
         const okOnL2 = await verifyFinalizedBatchContainsBlock({
           rollup: l2Rollup,
@@ -670,14 +714,6 @@ async function tryFinalizeOne(p: PendingFinalize) {
           childBlockHash: p.l3BlockHash
         });
         if (!okOnL2) throw new Error("L3 block not finalized on L2 rollup");
-      }
-
-      const already = await l2Bridge.erc20WithdrawProcessed(
-        msgKeyErc20(p.l2Token, p.from, p.to, BigInt(p.amount), BigInt(p.nonce))
-      );
-      if (already) {
-        pendingByKey.delete(id);
-        return;
       }
 
       await ensureGasTokenBalance("l2", l2Provider, l2Signer);
@@ -703,6 +739,22 @@ async function tryFinalizeOne(p: PendingFinalize) {
       return;
     }
 
+    // Drop stale pending entries (reorged out or already consumed) before doing rollup finality checks.
+    // With low confirmations it's common to see logs from the unsafe head that later disappear.
+    if (p.kind === "DepositInitiated") {
+      const t = (await l2Bridge.depositTime(p.key)) as bigint;
+      if (t === 0n) {
+        pendingByKey.delete(id);
+        return;
+      }
+    } else {
+      const t = (await l2Bridge.erc20DepositTime(p.key)) as bigint;
+      if (t === 0n) {
+        pendingByKey.delete(id);
+        return;
+      }
+    }
+
     if (REQUIRE_L2_FINALITY_ON_L1) {
       const okOnL1 = await verifyFinalizedBatchContainsBlock({
         rollup: l1Rollup,
@@ -716,12 +768,6 @@ async function tryFinalizeOne(p: PendingFinalize) {
 
     await ensureGasTokenBalance("l2", l2Provider, l2Signer);
     if (p.kind === "DepositInitiated") {
-      const k = msgKeyEth(p.from, p.to, BigInt(p.amount), BigInt(p.nonce));
-      const t = (await l2Bridge.depositTime(k)) as bigint;
-      if (t === 0n) {
-        pendingByKey.delete(id);
-        return;
-      }
       const tx = await l2Bridge.finalizeToL3(p.from, p.to, BigInt(p.amount), BigInt(p.nonce));
       await tx.wait();
       metrics.finalizeSuccess += 1;
@@ -731,12 +777,6 @@ async function tryFinalizeOne(p: PendingFinalize) {
       return;
     }
 
-    const k = msgKeyErc20(p.token, p.from, p.to, BigInt(p.amount), BigInt(p.nonce));
-    const t = (await l2Bridge.erc20DepositTime(k)) as bigint;
-    if (t === 0n) {
-      pendingByKey.delete(id);
-      return;
-    }
     const tx = await l2Bridge.finalizeERC20ToL3(p.token, p.from, p.to, BigInt(p.amount), BigInt(p.nonce));
     await tx.wait();
     metrics.finalizeSuccess += 1;
@@ -862,6 +902,7 @@ async function handleBurnLog(log: ethers.Log): Promise<boolean> {
   lastSeen = {
     kind: "BurnInitiated",
     l2Token,
+    l3Token: log.address,
     from,
     to,
     amount: amount.toString(),
@@ -901,6 +942,7 @@ async function handleBurnLog(log: ethers.Log): Promise<boolean> {
       kind: "BurnInitiated",
       key,
       l2Token,
+      l3Token: log.address,
       from,
       to,
       amount: amount.toString(),
@@ -915,6 +957,50 @@ async function handleBurnLog(log: ethers.Log): Promise<boolean> {
     return true;
   }
   return false;
+}
+
+type NumericLogFilter = {
+  address?: string | Array<string>;
+  topics?: Array<string | Array<string> | null>;
+  fromBlock: number;
+  toBlock: number;
+  blockHash?: never;
+};
+
+function isSplitableGetLogsError(e: any): boolean {
+  const msg = String(e?.shortMessage ?? e?.reason ?? e?.message ?? e);
+  const lower = msg.toLowerCase();
+  if (lower.includes("timed out") || lower.includes("timeout")) return true;
+  if (lower.includes("more than") && lower.includes("results")) return true;
+  if (lower.includes("too many") && lower.includes("logs")) return true;
+  if (lower.includes("response") && lower.includes("too large")) return true;
+  if (lower.includes("log") && lower.includes("limit")) return true;
+
+  const inner = e?.error;
+  const innerMsg = String(inner?.message ?? "");
+  if (inner?.code === -32002) return true; // geth/parity request timed out
+  if (innerMsg.toLowerCase().includes("timed out")) return true;
+  if (innerMsg.toLowerCase().includes("timeout")) return true;
+  return false;
+}
+
+async function getLogsSplit(
+  provider: ethers.JsonRpcProvider,
+  filter: NumericLogFilter,
+  splitsRemaining: number = RELAYER_GET_LOGS_MAX_SPLITS
+): Promise<Array<ethers.Log>> {
+  try {
+    return await provider.getLogs(filter as any);
+  } catch (e) {
+    if (!isSplitableGetLogsError(e)) throw e;
+    if (splitsRemaining <= 0) throw e;
+    if (filter.fromBlock >= filter.toBlock) throw e;
+
+    const mid = Math.floor((filter.fromBlock + filter.toBlock) / 2);
+    const left = await getLogsSplit(provider, { ...filter, toBlock: mid }, splitsRemaining - 1);
+    const right = await getLogsSplit(provider, { ...filter, fromBlock: mid + 1 }, splitsRemaining - 1);
+    return left.concat(right);
+  }
 }
 
 async function pollL2Once() {
@@ -944,18 +1030,28 @@ async function pollL2Once() {
     }
     if (nextL2BlockToScan > scanTo) return;
 
-    const logs = await l2Provider.getLogs({
-      address: BRIDGE,
-      fromBlock: nextL2BlockToScan,
-      toBlock: scanTo,
-      topics: [[depositTopic, erc20DepositTopic, finalizedTopic, erc20FinalizedTopic]]
-    });
-    metrics.l2LogsSeen += logs.length;
+    while (nextL2BlockToScan <= scanTo) {
+      const chunkTo = Math.min(scanTo, nextL2BlockToScan + RELAYER_LOG_BLOCK_CHUNK - 1);
+      const logs = await getLogsSplit(l2Provider, {
+        address: BRIDGE,
+        fromBlock: nextL2BlockToScan,
+        toBlock: chunkTo,
+        topics: [[depositTopic, erc20DepositTopic, finalizedTopic, erc20FinalizedTopic]]
+      });
+      metrics.l2LogsSeen += logs.length;
 
-    for (const log of logs) {
-      const topic0 = log.topics[0] ?? "";
-      if (topic0 === depositTopic || topic0 === erc20DepositTopic) await handleDepositLog(log);
-      else await handleFinalizedLog(log);
+      for (const log of logs) {
+        const topic0 = log.topics[0] ?? "";
+        if (topic0 === depositTopic || topic0 === erc20DepositTopic) await handleDepositLog(log);
+        else await handleFinalizedLog(log);
+      }
+
+      if (logs.length > 0) {
+        await savePendingLocked();
+      }
+
+      nextL2BlockToScan = chunkTo + 1;
+      await saveCursor("l2", { nextBlockToScan: nextL2BlockToScan });
     }
 
     // Attempt a few pending finalizations each pass (policy gated in-contract).
@@ -968,9 +1064,6 @@ async function pollL2Once() {
         if (i >= maxPerTick) break;
       }
     }
-
-    nextL2BlockToScan = scanTo + 1;
-    await saveCursor("l2", { nextBlockToScan: nextL2BlockToScan });
     await savePendingLocked();
   } catch (e) {
     console.error("[Relayer] Poll failed:", e);
@@ -1026,24 +1119,27 @@ async function pollL3Once() {
     }
     if (nextL3BlockToScan > scanTo) return;
 
-    const logs = await l3Provider.getLogs({
-      fromBlock: nextL3BlockToScan,
-      toBlock: scanTo,
-      topics: [burnTopic]
-    });
-    metrics.l3LogsSeen += logs.length;
+    while (nextL3BlockToScan <= scanTo) {
+      const chunkTo = Math.min(scanTo, nextL3BlockToScan + RELAYER_LOG_BLOCK_CHUNK - 1);
+      const logs = await getLogsSplit(l3Provider, {
+        fromBlock: nextL3BlockToScan,
+        toBlock: chunkTo,
+        topics: [burnTopic]
+      });
+      metrics.l3LogsSeen += logs.length;
 
-    let pendingTouched = false;
-    for (const log of logs) {
-      pendingTouched = (await handleBurnLog(log)) || pendingTouched;
-    }
-    if (pendingTouched) {
-      // Persist pending burns before advancing the cursor (so rollup gating never drops withdrawals).
-      await savePendingLocked();
-    }
+      let pendingTouched = false;
+      for (const log of logs) {
+        pendingTouched = (await handleBurnLog(log)) || pendingTouched;
+      }
+      if (pendingTouched) {
+        // Persist pending burns before advancing the cursor (so rollup gating never drops withdrawals).
+        await savePendingLocked();
+      }
 
-    nextL3BlockToScan = scanTo + 1;
-    await saveCursor("l3", { nextBlockToScan: nextL3BlockToScan });
+      nextL3BlockToScan = chunkTo + 1;
+      await saveCursor("l3", { nextBlockToScan: nextL3BlockToScan });
+    }
   } catch (e) {
     console.error("[Relayer] L3 poll failed:", e);
     pushLog("error", "[Relayer] L3 poll failed", { error: String(e) });
