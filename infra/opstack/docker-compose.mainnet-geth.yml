@@ -12,7 +12,7 @@ x-security: &default-security
 
 services:
   l1-mainnet-geth:
-    image: ethereum/client-go:stable
+    image: ghostl/geth:stable
     restart: unless-stopped
     user: "0:0"
     logging: *default-logging
