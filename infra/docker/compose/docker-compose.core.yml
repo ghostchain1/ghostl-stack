@@ -6,7 +6,7 @@
       ],
       "command": "--syncmode snap --http --http.addr=0.0.0.0 --http.port=8545 --http.api=eth,net,web3,txpool --http.vhosts=\"*\" --http.corsdomain=\"*\" --ws --ws.addr=0.0.0.0 --ws.port=8546 --ws.api=eth,net,web3 --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts=\"*\" --datadir=/data --cache=4096 --maxpeers=50 --metrics --metrics.addr=0.0.0.0 --metrics.port=6060\n",
       "cpus": "2.0",
-      "image": "ethereum/client-go:stable",
+      "image": "ghostl/geth:stable",
       "logging": {
         "driver": "json-file",
         "options": {
@@ -2757,7 +2757,7 @@
         "P2P_PORT=30304",
         "METRICS_PORT=6061"
       ],
-      "image": "${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}",
+      "image": "${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}",
       "logging": {
         "driver": "json-file",
         "options": {
@@ -2926,7 +2926,7 @@
         ":30301"
       ],
       "cpus": "0.5",
-      "image": "${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}",
+      "image": "${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}",
       "logging": {
         "driver": "json-file",
         "options": {
@@ -4125,6 +4125,7 @@
           "required": true
         }
       },
+      "command": "op-challenger --l1-eth-rpc=http://l1:8545 --l2-eth-rpc=http://l2:8545 --rollup-rpc=http://op-node:8545\n",
       "environment": {
         "OP_CHALLENGER_CANNON_BIN": "./cannon/bin/cannon",
         "OP_CHALLENGER_CANNON_L2_GENESIS": "./.devnet/genesis-l2.json",
@@ -4135,8 +4136,6 @@
         "OP_CHALLENGER_GAME_FACTORY_ADDRESS": "${DGF_ADDRESS}",
         "OP_CHALLENGER_HD_PATH": "m/44'/60'/0'/0/4",
         "OP_CHALLENGER_L1_BEACON": "http://l1-bn:5052",
-        "OP_CHALLENGER_L1_ETH_RPC": "http://l1:8545",
-        "OP_CHALLENGER_L2_ETH_RPC": "http://l2:8545",
         "OP_CHALLENGER_MNEMONIC": "test test test test test test test test test test test junk",
         "OP_CHALLENGER_NUM_CONFIRMATIONS": 1,
         "OP_CHALLENGER_ROLLUP_RPC": "http://op-node:8545",
@@ -4554,10 +4553,9 @@
           "required": true
         }
       ],
+      "command": "op-batcher --l1-eth-rpc=http://l1:8545 --l2-eth-rpc=http://l2-a:8545 --rollup-rpc=http://op-node-a:8545\n",
       "environment": {
         "OP_BATCHER_BATCH_TYPE": null,
-        "OP_BATCHER_L1_ETH_RPC": "http://l1:8545",
-        "OP_BATCHER_L2_ETH_RPC": "http://l2-a:8545",
         "OP_BATCHER_MAX_CHANNEL_DURATION": 2,
         "OP_BATCHER_METRICS_ENABLED": "true",
         "OP_BATCHER_NUM_CONFIRMATIONS": 1,
@@ -4629,10 +4627,9 @@
           "required": true
         }
       ],
+      "command": "op-batcher --l1-eth-rpc=http://l1:8545 --l2-eth-rpc=http://l2-b:8545 --rollup-rpc=http://op-node-b:8545\n",
       "environment": {
         "OP_BATCHER_BATCH_TYPE": null,
-        "OP_BATCHER_L1_ETH_RPC": "http://l1:8545",
-        "OP_BATCHER_L2_ETH_RPC": "http://l2-b:8545",
         "OP_BATCHER_MAX_CHANNEL_DURATION": 2,
         "OP_BATCHER_METRICS_ENABLED": "true",
         "OP_BATCHER_NUM_CONFIRMATIONS": 1,
@@ -4906,10 +4903,10 @@
           "required": true
         }
       ],
+      "command": "op-proposer --l1-eth-rpc=http://l1:8545 --rollup-rpc=http://op-node-a:8545\n",
       "environment": {
         "OP_PROPOSER_ALLOW_NON_FINALIZED": "true",
         "OP_PROPOSER_GAME_TYPE": "254",
-        "OP_PROPOSER_L1_ETH_RPC": "http://l1:8545",
         "OP_PROPOSER_METRICS_ENABLED": "true",
         "OP_PROPOSER_NUM_CONFIRMATIONS": 1,
         "OP_PROPOSER_POLL_INTERVAL": "1s",
@@ -4976,10 +4973,10 @@
           "required": true
         }
       ],
+      "command": "op-proposer --l1-eth-rpc=http://l1:8545 --rollup-rpc=http://op-node-b:8545\n",
       "environment": {
         "OP_PROPOSER_ALLOW_NON_FINALIZED": "true",
         "OP_PROPOSER_GAME_TYPE": "254",
-        "OP_PROPOSER_L1_ETH_RPC": "http://l1:8545",
         "OP_PROPOSER_METRICS_ENABLED": "true",
         "OP_PROPOSER_NUM_CONFIRMATIONS": 1,
         "OP_PROPOSER_POLL_INTERVAL": "1s",
