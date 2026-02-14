@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-DEMO_AMOUNT_GST="${DEMO_AMOUNT_GST:-${DEMO_AMOUNT_ETH:-1}}"
+DEMO_AMOUNT_GST="${DEMO_AMOUNT_GST:-1}"
 
 echo "Demo ERC20 relay (amount=${DEMO_AMOUNT_GST} tokens)"
 echo "Requires relayer running with RELAYER_PRIVATE_KEY to mint on L3."

@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-DEMO_AMOUNT_GST="${DEMO_AMOUNT_GST:-${DEMO_AMOUNT_ETH:-1}}"
+DEMO_AMOUNT_GST="${DEMO_AMOUNT_GST:-1}"
 
 echo "Demo optimistic ERC20 bridge (L2 escrow -> L1 finalize window -> L2 finalize -> L3 mint)"
 echo "Requires:"

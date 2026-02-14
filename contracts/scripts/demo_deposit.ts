@@ -11,7 +11,7 @@ async function main() {
 
   const [signer] = await ethers.getSigners();
   const to = process.env.DEMO_TO ?? signer.address;
-  const amountGst = process.env.DEMO_AMOUNT_GST ?? process.env.DEMO_AMOUNT_ETH ?? "100";
+  const amountGst = process.env.DEMO_AMOUNT_GST ?? "100";
   const amountWei = ethers.parseEther(amountGst);
   const nonce = BigInt(process.env.DEMO_NONCE ?? Math.floor(Date.now() / 1000).toString());
 

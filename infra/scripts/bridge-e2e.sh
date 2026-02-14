@@ -4,7 +4,7 @@ set -Eeuo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 MODE="${BRIDGE_E2E_MODE:-l2l3}"
 RUN="false"
-AMOUNT="${DEMO_AMOUNT_GST:-${DEMO_AMOUNT_ETH:-1}}"
+AMOUNT="${DEMO_AMOUNT_GST:-1}"
 RELAYER_HEALTH_URL="${RELAYER_HEALTH_URL:-http://localhost:7171/health}"
 STACK_ENV_FILE="${STACK_ENV_FILE:-$ROOT_DIR/services/stack.env}"
 

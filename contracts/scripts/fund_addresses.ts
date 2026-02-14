@@ -18,7 +18,7 @@ function parseAddresses(): Array<string> {
 }
 
 async function main() {
-  const amountGst = process.env.FUND_AMOUNT_GST || process.env.FUND_AMOUNT_ETH || "10";
+  const amountGst = process.env.FUND_AMOUNT_GST || "10";
   const amountWei = ethers.parseEther(amountGst);
   const addrs = parseAddresses();
   if (addrs.length === 0) {

@@ -104,7 +104,7 @@ if [ -z "$L3_TOKEN_ADDRESS" ] || [ "$L3_TOKEN_ADDRESS" = "0x00000000000000000000
   exit 1
 fi
 
-DEMO_AMOUNT_GST="${DEMO_AMOUNT_GST:-${DEMO_AMOUNT_ETH:-1}}"
+DEMO_AMOUNT_GST="${DEMO_AMOUNT_GST:-1}"
 
 echo "Demo withdraw ERC20 (burn on L3 -> release on L2) amount=${DEMO_AMOUNT_GST}"
 echo "Using L2_TOKEN_ADDRESS=$L2_TOKEN_ADDRESS"
