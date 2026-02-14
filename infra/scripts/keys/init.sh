@@ -100,7 +100,7 @@ hg_docker compose stop --no-deps ghost-rollup-challenger-l2 ghost-rollup-challen
 HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:18545}"
 HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
 HOST_L3_RPC="${HOST_L3_RPC:-http://localhost:39545}"
-FUND_AMOUNT_GST="${FUND_AMOUNT_GST:-${FUND_AMOUNT_ETH:-10}}"
+FUND_AMOUNT_GST="${FUND_AMOUNT_GST:-10}"
 
 rpc_ready() {
   local url="$1"

@@ -14,7 +14,7 @@ async function main() {
 
   const [signer] = await ethers.getSigners();
   const to = process.env.DEMO_TO ?? signer.address;
-  const amountGst = process.env.DEMO_AMOUNT_GST ?? process.env.DEMO_AMOUNT_ETH ?? "1";
+  const amountGst = process.env.DEMO_AMOUNT_GST ?? "1";
   const amountWei = ethers.parseEther(amountGst);
   const minGasLimit = BigInt(process.env.DEMO_MIN_GAS ?? "200000");
 

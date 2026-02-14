@@ -10,7 +10,7 @@ function getEnv(name: string, fallback?: string) {
 async function main() {
   const vaultAddress = getEnv("LGE_VAULT_ADDRESS");
   const amountWeiRaw = process.env.LGE_DEPOSIT_WEI;
-  const amountGstRaw = process.env.LGE_DEPOSIT_GST ?? process.env.LGE_DEPOSIT_ETH;
+  const amountGstRaw = process.env.LGE_DEPOSIT_GST;
   const amountWei = amountWeiRaw
     ? BigInt(amountWeiRaw)
     : amountGstRaw
