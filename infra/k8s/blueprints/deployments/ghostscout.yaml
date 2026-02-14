@@ -30,11 +30,13 @@
         "containers": [
           {
             "name": "ghostscout",
-            "image": "blockscout/blockscout:latest",
+            "image": "ghostl/ghostscout-l1:local",
             "command": [
-              "/app/bin/blockscout"
+              "/bin/bash",
+              "/entrypoint.sh"
             ],
             "args": [
+              "/app/bin/blockscout",
               "start"
             ],
             "env": [
@@ -48,7 +50,7 @@
               },
               {
                 "name": "COIN",
-                "value": "GHOST"
+                "value": "GST"
               },
               {
                 "name": "DATABASE_URL",
@@ -63,15 +65,15 @@
                 "value": "false"
               },
               {
-                "name": "ETHEREUM_JSONRPC_HTTP_URL",
+                "name": "GST_JSONRPC_HTTP_URL",
                 "value": "http://ghostchain-node1:8545"
               },
               {
-                "name": "ETHEREUM_JSONRPC_TRACE_URL",
+                "name": "GST_JSONRPC_TRACE_URL",
                 "value": "http://ghostchain-node1:8545"
               },
               {
-                "name": "ETHEREUM_JSONRPC_WS_URL",
+                "name": "GST_JSONRPC_WS_URL",
                 "value": "ws://ghostchain-node1:8546"
               },
               {
