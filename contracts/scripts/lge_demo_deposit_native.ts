@@ -10,11 +10,11 @@ function getEnv(name: string, fallback?: string) {
 async function main() {
   const vaultAddress = getEnv("LGE_VAULT_ADDRESS");
   const amountWeiRaw = process.env.LGE_DEPOSIT_WEI;
-  const amountEthRaw = process.env.LGE_DEPOSIT_ETH;
+  const amountGstRaw = process.env.LGE_DEPOSIT_GST ?? process.env.LGE_DEPOSIT_ETH;
   const amountWei = amountWeiRaw
     ? BigInt(amountWeiRaw)
-    : amountEthRaw
-      ? ethers.parseEther(amountEthRaw)
+    : amountGstRaw
+      ? ethers.parseEther(amountGstRaw)
       : ethers.parseEther("10");
 
   const [signer] = await ethers.getSigners();
@@ -32,4 +32,3 @@ main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
-

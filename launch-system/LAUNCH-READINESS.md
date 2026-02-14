@@ -21,7 +21,7 @@ Generated on: 2026-02-12
 ## Validations Performed
 
 - Script syntax validated (`bash -n`) on DEVNET.
-- Keccak-256 implementation validated against Ethereum known vector (`keccak256("")`).
+- Keccak-256 implementation validated against known vector (`keccak256("")`).
 - Sample sealed release(s) generated under `releases/local-*`.
 
 ## Blocking Issues / Gaps
@@ -47,4 +47,3 @@ Generated on: 2026-02-12
    - `docker save` artifacts shipped with the release
 4) Generate and push a release to TESTNET; deploy and validate.
 5) Generate a governance proposal and authorize a MAINNET release; deploy and validate.
-

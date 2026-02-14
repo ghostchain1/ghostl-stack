@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Tiny JSON-RPC helper for Ethereum-compatible chains.
+Tiny JSON-RPC helper for EVM-compatible chains.
 
 No external deps.
 
@@ -147,4 +147,3 @@ def main(argv: list[str]) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))
-

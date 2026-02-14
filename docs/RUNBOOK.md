@@ -18,7 +18,7 @@ This runbook covers the dev deployment and operational workflow for the Liquidit
 3. Update `services/stack.env` with the printed `LGE_*_ADDRESS` values and restart the router:
    - `docker compose -f infra/docker/liquidity-gravity/docker-compose.yml restart liquidity-router`
 4. Deposit native liquidity into the vault (dev):
-   - `cd contracts && RPC_L1=http://localhost:18545 L1_CHAIN_ID=14000101 DEPLOYER_PRIVATE_KEY=<anvil-key> LGE_VAULT_ADDRESS=<vault> LGE_DEPOSIT_ETH=10 npx hardhat run --network anvil scripts/lge_demo_deposit_native.ts`
+   - `cd contracts && RPC_L1=http://localhost:18545 L1_CHAIN_ID=14000101 DEPLOYER_PRIVATE_KEY=<anvil-key> LGE_VAULT_ADDRESS=<vault> LGE_DEPOSIT_GST=10 npx hardhat run --network anvil scripts/lge_demo_deposit_native.ts`
 5. Open dashboards:
    - Grafana and Prometheus endpoints printed by the compose stack.
 
