@@ -2968,6 +2968,7 @@
         "ALL"
       ],
       "command": [
+        "/app/bin/blockscout",
         "start"
       ],
       "cpus": "1.5",
@@ -2982,25 +2983,26 @@
         }
       },
       "entrypoint": [
-        "/app/bin/blockscout"
+        "/bin/bash",
+        "/entrypoint.sh"
       ],
       "environment": {
         "API_ONLY": "true",
         "BLOCKSCOUT_HOST": "0.0.0.0",
-        "COIN": "GHOST",
+        "COIN": "GST",
         "DATABASE_URL": "postgres://postgres:postgres@ghostscout-db:5432/blockscout",
         "DISABLE_EVISION": "true",
         "ECTO_USE_SSL": "false",
-        "ETHEREUM_JSONRPC_HTTP_URL": "http://ghostchain-node1:8545",
-        "ETHEREUM_JSONRPC_TRACE_URL": "http://ghostchain-node1:8545",
-        "ETHEREUM_JSONRPC_WS_URL": "ws://ghostchain-node1:8546",
+        "GST_JSONRPC_HTTP_URL": "http://ghostchain-node1:8545",
+        "GST_JSONRPC_TRACE_URL": "http://ghostchain-node1:8545",
+        "GST_JSONRPC_WS_URL": "ws://ghostchain-node1:8546",
         "LOG_LEVEL": "warn",
-        "NETWORK": "Ghostchain",
+        "NETWORK": "GhostChain",
         "PORT": 4000,
         "SECRET_KEY_BASE": "${GHOSTSCOUT_SECRET_KEY_BASE_L1:-}",
-        "SUBNETWORK": "PoA"
+        "SUBNETWORK": "L1"
       },
-      "image": "blockscout/blockscout:latest",
+      "image": "ghostl/ghostscout-l1:local",
       "logging": {
         "driver": "json-file",
         "options": {
