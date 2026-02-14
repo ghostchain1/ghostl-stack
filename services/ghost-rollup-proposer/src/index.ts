@@ -26,6 +26,9 @@ const CHALLENGE_PERIOD_SECONDS =
 const EXPECTED_SETTLEMENT_CHAIN_ID = parseChainIdEnv(process.env.EXPECTED_SETTLEMENT_CHAIN_ID, "EXPECTED_SETTLEMENT_CHAIN_ID");
 const EXPECTED_CHILD_CHAIN_ID = parseChainIdEnv(process.env.EXPECTED_CHILD_CHAIN_ID, "EXPECTED_CHILD_CHAIN_ID");
 const EXPECTED_ROLLUP_CODE_HASH = parseCodeHashEnv(process.env.ROLLUP_CODE_HASH);
+const childHeadTagRaw = (process.env.CHILD_HEAD_TAG || process.env.ROLLUP_CHILD_HEAD_TAG || "safe").toLowerCase();
+const CHILD_HEAD_TAG: "safe" | "finalized" | "latest" =
+  childHeadTagRaw === "finalized" ? "finalized" : childHeadTagRaw === "latest" ? "latest" : "safe";
 
 const fetchRegistry = async () => {
   const now = Date.now();
@@ -169,6 +172,20 @@ function merkleRoot(leaves: Array<string>): string {
   return level[0]!;
 }
 
+async function getStableChildHeadNumber(): Promise<number> {
+  if (CHILD_HEAD_TAG !== "latest") {
+    try {
+      const blk = await child.getBlock(CHILD_HEAD_TAG);
+      const n = blk?.number;
+      if (typeof n === "number" && Number.isFinite(n) && n >= 0) return Math.floor(n);
+    } catch (e) {
+      console.warn(`[Proposer] Failed to fetch child head tag=${CHILD_HEAD_TAG}; falling back to latest-confirmations`, scrubError(e));
+    }
+  }
+  const latest = await child.getBlockNumber();
+  return Math.max(0, latest - CONFIRMATIONS);
+}
+
 const metrics = {
   startedAt: Date.now(),
   observeOnly,
@@ -181,8 +198,7 @@ const metrics = {
 
 async function proposeNextBatch() {
   if (observeOnly) return;
-  const latest = await child.getBlockNumber();
-  const scanTo = Math.max(0, latest - CONFIRMATIONS);
+  const scanTo = await getStableChildHeadNumber();
 
   // Keep our cursor aligned with on-chain rollup state.
   // This avoids getting wedged on restarts (e.g., when rollup already has batches but our cursor is missing/stale).
@@ -311,7 +327,24 @@ async function tick() {
     await finalizeSome();
   } catch (e) {
     metrics.errors += 1;
-    console.error("[Proposer] Tick failed:", scrubError(e));
+    const err = scrubError(e);
+    console.error("[Proposer] Tick failed:", err);
+    // If we get out-of-sync with the chain's current nonce (common after restarts or when other tooling
+    // submits transactions from the same key), reset the NonceManager so the next tick re-reads nonce.
+    const lower = err.toLowerCase();
+    if (
+      !observeOnly &&
+      signer &&
+      (lower.includes("nonce has already been used") ||
+        lower.includes("nonce too low") ||
+        (lower.includes("nonce") && lower.includes("already")))
+    ) {
+      try {
+        (signer as any).reset?.();
+      } catch {
+        // ignore
+      }
+    }
   } finally {
     inFlight = false;
   }
@@ -331,6 +364,7 @@ app.get("/health", async (_req: Request, res: Response) => {
       settlementChainId,
       childChainId,
       rollup: ROLLUP,
+      childHeadTag: CHILD_HEAD_TAG,
       confirmations: CONFIRMATIONS,
       batchSize: BATCH_SIZE,
       challengePeriodSeconds: CHALLENGE_PERIOD_SECONDS,

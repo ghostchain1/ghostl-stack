@@ -125,6 +125,13 @@ services:
         condition: service_healthy
     environment:
       L2OO_ADDRESS: "${L3_L2OO_ADDRESS:-0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512}"
+      # Match L2 batcher defaults: without a max channel duration, L3 "safe" head can stall for a long time
+      # (no more batches posted to the parent), which blocks L3->L2 economic finality + withdrawals.
+      OP_BATCHER_MAX_CHANNEL_DURATION: ${L3_OP_BATCHER_MAX_CHANNEL_DURATION:-2}
+      OP_BATCHER_NUM_CONFIRMATIONS: ${L3_OP_BATCHER_NUM_CONFIRMATIONS:-1}
+      OP_BATCHER_POLL_INTERVAL: ${L3_OP_BATCHER_POLL_INTERVAL:-1s}
+      OP_BATCHER_RPC_ENABLE_ADMIN: ${L3_OP_BATCHER_RPC_ENABLE_ADMIN:-true}
+      OP_BATCHER_SUB_SAFETY_MARGIN: ${L3_OP_BATCHER_SUB_SAFETY_MARGIN:-4}
     command:
       - op-batcher
       - --l1-eth-rpc=${L3_L1_RPC:-http://op-gate:8545}
@@ -145,7 +152,8 @@ services:
       - "${L3_BATCHER_HOST_PORT:-39551}:${L3_BATCHER_RPC_PORT:-18551}"
       - "${L3_METRICS_BATCHER_HOST_PORT:-8301}:${L3_METRICS_BATCHER_PORT:-8301}"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:${L3_BATCHER_RPC_PORT:-18551} >/dev/null"]
+      # Avoid spamming logs with JSON-RPC methods that op-batcher doesn't implement.
+      test: ["CMD-SHELL", "wget -qO- http://localhost:${L3_METRICS_BATCHER_PORT:-8301}/metrics >/dev/null"]
       interval: 20s
       timeout: 10s
       retries: 6

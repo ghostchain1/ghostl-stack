@@ -17,6 +17,9 @@ const CHALLENGER_PRIVATE_KEY = process.env.CHALLENGER_PRIVATE_KEY || "";
 const STATE_DIR = process.env.STATE_DIR || "/state";
 const confirmationsRaw = Number(process.env.CONFIRMATIONS || "0");
 const CONFIRMATIONS = Number.isFinite(confirmationsRaw) && confirmationsRaw >= 0 ? Math.floor(confirmationsRaw) : 0;
+const childHeadTagRaw = (process.env.CHILD_HEAD_TAG || process.env.ROLLUP_CHILD_HEAD_TAG || "safe").toLowerCase();
+const CHILD_HEAD_TAG: "safe" | "finalized" | "latest" =
+  childHeadTagRaw === "finalized" ? "finalized" : childHeadTagRaw === "latest" ? "latest" : "safe";
 const DRY_RUN = process.env.CHALLENGER_DRY_RUN === "1";
 
 const fetchRegistry = async () => {
@@ -153,6 +156,23 @@ function scrubError(e: any) {
   return String(e?.shortMessage ?? e?.reason ?? e?.message ?? e);
 }
 
+async function getStableChildHeadNumber(): Promise<number> {
+  if (CHILD_HEAD_TAG !== "latest") {
+    try {
+      const blk = await child.getBlock(CHILD_HEAD_TAG);
+      const n = blk?.number;
+      if (typeof n === "number" && Number.isFinite(n) && n >= 0) return Math.floor(n);
+    } catch (e) {
+      console.warn(
+        `[Challenger] Failed to fetch child head tag=${CHILD_HEAD_TAG}; falling back to latest-confirmations`,
+        scrubError(e)
+      );
+    }
+  }
+  const latest = await child.getBlockNumber();
+  return Math.max(0, latest - CONFIRMATIONS);
+}
+
 const metrics = {
   startedAt: Date.now(),
   observeOnly,
@@ -183,8 +203,7 @@ async function checkOneBatch(batchId: number) {
   if (finalized || invalidated) return;
   if (challenged) return;
 
-  const latest = await child.getBlockNumber();
-  const scanTo = Math.max(0, latest - CONFIRMATIONS);
+  const scanTo = await getStableChildHeadNumber();
   if (end > scanTo) return; // don't challenge until the child range is stable enough
 
   const leaves: Array<string> = [];
@@ -273,6 +292,7 @@ app.get("/health", async (_req, res) => {
       settlementChainId,
       childChainId,
       rollup: ROLLUP,
+      childHeadTag: CHILD_HEAD_TAG,
       confirmations: CONFIRMATIONS,
       nextBatchToCheck: state.nextBatchToCheck,
       metrics

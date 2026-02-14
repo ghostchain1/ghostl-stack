@@ -6,6 +6,10 @@ Lightweight overview of the service stubs that back the dashboard modules. Most 
 - `ghost-guard`, `ghost-relayer`, `ghost-rollup-proposer`, `ghost-rollup-challenger`, `ghost-rpc-proxy`: enforcement, relaying, and rollup batch posting to parent chains.
 - `bridge-service`, `transfer-lifecycle-service`, `liquidity-service`, `dispute-service`: bridge state, transfers, pools, and dispute/fraud handling.
 
+Ops helpers:
+- `scripts/reset-rollup-state.sh`: reset proposer/challenger cursors (L2 and/or L3) and restart the containers.
+- `ghost-relayer`: tune `RELAYER_LOG_BLOCK_CHUNK` (default `250`) if your RPC times out on large `eth_getLogs` ranges.
+
 ## Chain, nodes, and ops
 - `chain-status-service`, `consensus-telemetry-service`, `peer-graph-service`: chain health, consensus metrics, and peer topology.
 - `node-inventory-service`, `node-health-service`: node catalog + liveness/resource probes.
@@ -36,3 +40,6 @@ Conventions:
 - Keep service README/config close to the service folder (same name) and expose a `/health` endpoint for `apps/api`.
 - Use `package.json` scripts (`dev`, `start`) that match the existing stubs so workspaces can orchestrate them uniformly later.
 - Build services sequentially to avoid resource contention: `./scripts/build-services-sequential.sh`.
+
+Local bringup (recommended):
+`cd services && sudo docker compose --env-file stack.env -f docker-compose.legacy.yml up -d`
