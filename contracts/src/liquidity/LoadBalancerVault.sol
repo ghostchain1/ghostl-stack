@@ -341,7 +341,7 @@ contract LoadBalancerVault is Governed, ReentrancyGuard {
 
         if (asset == address(0)) {
             // Two safe paths:
-            // - msg.value == amount: escrow forwarded native ETH
+            // - msg.value == amount: escrow forwarded native token
             // - msg.value == 0: escrow forwarded wrapped native; unwrap it here so the canonical asset is native
             assetTotals[asset].idle += amount;
         } else {
@@ -369,7 +369,7 @@ contract LoadBalancerVault is Governed, ReentrancyGuard {
         require(to != address(0), "to=0");
         if (asset == address(0)) {
             (bool ok, ) = payable(to).call{value: amount}("");
-            require(ok, "eth send");
+            require(ok, "native send");
         } else {
             require(IERC20Vault(asset).transfer(to, amount), "transfer");
         }

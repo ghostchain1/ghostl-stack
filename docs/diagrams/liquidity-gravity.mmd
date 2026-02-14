@@ -21,7 +21,7 @@ flowchart LR
     end
 
     subgraph EXT["External Execution Chains"]
-        ETH[Ethereum]
+        MAINNET[EVM Mainnet]
         BTC[Bitcoin]
         SOL[Solana]
         OTHER[Other Chains]
@@ -43,7 +43,7 @@ flowchart LR
     Risk --> Strategy
     Strategy --> Exec
 
-    Exec -->|Deploy Capital| ETH
+    Exec -->|Deploy Capital| MAINNET
     Exec -->|Deploy Capital| BTC
     Exec -->|Deploy Capital| SOL
     Exec -->|Deploy Capital| OTHER
@@ -51,7 +51,7 @@ flowchart LR
     %% =========================
     %% Yield & Settlement Flow
     %% =========================
-    ETH -->|Yield / Fees| Settle
+    MAINNET -->|Yield / Fees| Settle
     BTC -->|Yield / Fees| Settle
     SOL -->|Yield / Fees| Settle
     OTHER -->|Yield / Fees| Settle

@@ -160,7 +160,7 @@ contract BridgeEscrow is Governed {
         address wn = wrappedNative;
         if (wn == address(0)) revert WrappedNativeNotSet();
 
-        // Avoid forwarding ETH directly (Slither: arbitrary-send-eth). Instead, forward wrapped native to the vault and let the
+        // Avoid forwarding native value directly (Slither: arbitrary-send-eth). Instead, forward wrapped native to the vault and let the
         // vault unwrap as part of unwind accounting for asset==address(0).
         require(IERC20Escrow(wn).transfer(vaultRef, amount), "transfer");
         ILoadBalancerVaultEscrowReceiver(vaultRef).unwindFromEscrow(adapterId, address(0), amount, strategyId);

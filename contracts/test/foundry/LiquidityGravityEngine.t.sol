@@ -244,7 +244,7 @@ contract LiquidityGravityEngineTest is TestBase {
         ) = _deployStack(1 days);
         _token;
 
-        // Enable native asset (ETH) support.
+        // Enable native asset support.
         vm.prank(GOVERNOR);
         vault.configureAsset(
             address(0),

@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import "../common/ERC20.sol";
 
-/// @notice WETH-like wrapper for the native gas token (ETH in dev).
+/// @notice Wrapped-native token for the chain's native gas token.
 /// @dev Intended for bridge-escrow custody of native principal. Production should use the canonical wrapped-native token.
 contract WrappedNativeToken is ERC20 {
     event Deposited(address indexed from, uint256 amount);
@@ -28,4 +28,3 @@ contract WrappedNativeToken is ERC20 {
         emit Withdrawn(msg.sender, amount);
     }
 }
-
