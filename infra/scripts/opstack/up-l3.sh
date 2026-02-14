@@ -37,6 +37,8 @@ source "$L3_ENV_FILE"
 [ -f "$OP_DIR/.env.l3" ] && source "$OP_DIR/.env.l3"
 set +a
 
+OP_GETH_IMAGE="${OP_GETH_IMAGE:-local/op-geth:${OPSTACK_IMAGE_TAG:-local}}"
+
 HOST_L3_RPC="${HOST_L3_RPC:-http://localhost:39545}"
 HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
 L2_CONTAINER_RPC="${L2_CONTAINER_RPC:-http://localhost:8545}"
@@ -187,7 +189,7 @@ if [ -d "$L2_DATA_DIR" ]; then
   copy_rc=$?
   set -e
   if [ "$copy_rc" -eq 0 ] && hg_docker run --rm -v "$tmp_dir":/data \
-    ghcr.io/ethereum-optimism/op-geth@sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0 \
+    "$OP_GETH_IMAGE" \
     --verbosity 0 dumpgenesis --datadir /data >"$tmp_genesis" 2>/dev/null; then
     if jq -e '.config.chainId' "$tmp_genesis" >/dev/null 2>&1; then
       mv "$tmp_genesis" "$L3_L1_CHAIN_JSON"
