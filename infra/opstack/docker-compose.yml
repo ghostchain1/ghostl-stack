@@ -275,6 +275,7 @@ services:
       context: ../../services/ghost-guard
       dockerfile: Dockerfile
     image: local/ghost-guard:${OPSTACK_IMAGE_TAG:-devnet}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     restart: unless-stopped
     logging: *id003
     depends_on:
@@ -284,7 +285,8 @@ services:
       PORT: 7070
       RPC_L1: http://l1-rpc-proxy:18546
       RPC_L2: http://l2-geth:8545
-      RPC_L3: ${HOST_L3_RPC:-http://host.docker.internal:39545}
+      # Prefer docker-network RPCs when L3 is running (avoids localhost-from-container mistakes).
+      RPC_L3: ${L3_ARCHIVE_RPC:-${HOST_L3_RPC:-http://host.docker.internal:39545}}
       BRIDGE_L2L3_ADDRESS: ${BRIDGE_L2L3_ADDRESS:-0x0000000000000000000000000000000000000000}
       GUARD_POLICY_ADDRESS: ${GUARD_POLICY_ADDRESS:-}
       PRIVATE_KEY: ${GUARD_PRIVATE_KEY:-}
@@ -611,7 +613,8 @@ services:
     - --private-key=${BATCHER_KEY}
     - --rpc.addr=0.0.0.0
     - --rpc.port=8551
-    - --throttle.unsafe-da-bytes-lower-threshold=0
+    # op-geth in this stack does not expose miner_setMaxDASize; disable DA throttling.
+    - --throttle-interval=0
     - --metrics.enabled
     - --metrics.addr=0.0.0.0
     - --metrics.port=7301
@@ -655,12 +658,13 @@ services:
     - op-proposer
     - --l1-eth-rpc=http://op-gate-l1:8545
     - --rollup-rpc=http://op-sequencer:9646
-    - --l2oo-address=${L2OO_ADDRESS:-0x3C8841ddf731d168b0B4FFB633995281DaE8bc3D}
-    - --poll-interval=${OP_PROPOSER_POLL_INTERVAL:-1s}
+    # Fault-proofs mode (DisputeGameFactory). Safer than legacy L2OutputOracle polling.
+    - --game-factory-address=${L2_GAME_FACTORY_ADDRESS:-0x8A791620dd6260079BF849Dc5567aDC3F2FdC318}
+    - --proposal-interval=${PROPOSAL_INTERVAL:-30s}
+    - --game-type=0
     - --private-key=${PROPOSER_KEY:-}
     - --allow-non-finalized
     - --txmgr.send-timeout=30s
-    - --txmgr.retry-interval=3s
     - --rpc.addr=0.0.0.0
     - --rpc.port=8560
     - --metrics.enabled

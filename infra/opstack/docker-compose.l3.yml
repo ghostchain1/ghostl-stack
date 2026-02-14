@@ -137,7 +137,8 @@ services:
       - --metrics.enabled
       - --metrics.addr=0.0.0.0
       - --metrics.port=${L3_METRICS_BATCHER_PORT:-8301}
-      - --throttle.unsafe-da-bytes-lower-threshold=0
+      # Disable DA throttling in local dev: our geth does not expose miner_setMaxDASize.
+      - --throttle-interval=0
     volumes:
       - ./l3/${L3_NAME:-ghostl3}/config:/config:ro
     ports:
