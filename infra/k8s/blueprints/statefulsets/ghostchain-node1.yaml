@@ -35,7 +35,7 @@
         "containers": [
           {
             "name": "ghostchain-node1",
-            "image": "${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}",
+            "image": "${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}",
             "command": [
               "/bin/sh",
               "/config/run-node.sh"

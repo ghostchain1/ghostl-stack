@@ -15,7 +15,7 @@ fi
 . "${REPO_ROOT}/scripts/lib/docker.sh"
 hg_docker_init
 
-IMG="${L1_GETH_IMAGE:-${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}}"
+IMG="${L1_GETH_IMAGE:-${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}}"
 CHAIN_ID="${L1_CHAIN_ID:-${CHAIN_ID:-14000101}}"
 BOOTNODE_IP="${L1_BOOTNODE_IP:-${BOOTNODE_IP:-172.28.0.21}}"
 BOOTNODE_PORT="${L1_BOOTNODE_PORT:-${BOOTNODE_PORT:-30301}}"
