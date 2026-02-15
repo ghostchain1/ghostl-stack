@@ -20,6 +20,7 @@
     "lint": "eslint apps packages --ext .ts,.tsx",
     "node:check": "node scripts/node-check.mjs",
     "gst:leakage": "bash scripts/gst-leakage-gate.sh",
+    "gst:symbol": "bash scripts/gst-symbol-gate.sh",
     "preflight:opstack": "bash infra/scripts/opstack/preflight-3layer.sh infra/opstack/.env infra/opstack/.env.l3",
     "env:sync:opstack": "bash infra/scripts/opstack/sync-env-from-l1-deployments.sh infra/opstack/.env",
     "env:sync:opstack:l3": "bash infra/scripts/opstack/sync-env-from-l2-deployments.sh infra/opstack/.env.l3",
