@@ -65,7 +65,7 @@ const POLICY_NATIVE_TOKEN_SYMBOL_HASH = ethers.id('ghost.policy.native.token.sym
 const POLICY_NATIVE_TOKEN_NAME_HASH = ethers.id('ghost.policy.native.token.name.hash');
 
 const EVIDENCE_HASH = ethers.id('ghost.evidence.gst_constitution.v1');
-const SYMBOL = 'GHOST';
+const SYMBOL = 'GST';
 const NAME = 'Ghost Token';
 
 function main() {

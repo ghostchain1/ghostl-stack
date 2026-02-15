@@ -156,8 +156,8 @@ contract DeployL1 is Script {
         cfg.disputeGameFinalityDelay = vm.envOr("PORTAL_DISPUTE_GAME_FINALITY_DELAY", uint256(0));
         cfg.useCustomGasToken = vm.envOr("USE_CUSTOM_GAS_TOKEN", true);
         cfg.customGasToken = vm.envOr("CUSTOM_GAS_TOKEN_ADDRESS", CANONICAL_GAS_TOKEN);
-        cfg.gasTokenName = vm.envOr("GAS_TOKEN_NAME", string("Ghost Token (L1)"));
-        cfg.gasTokenSymbol = vm.envOr("GAS_TOKEN_SYMBOL", string("GHOST"));
+        cfg.gasTokenName = vm.envOr("GAS_TOKEN_NAME", string("Ghost Token"));
+        cfg.gasTokenSymbol = vm.envOr("GAS_TOKEN_SYMBOL", string("GST"));
         cfg.gasTokenDecimals = uint8(vm.envOr("GAS_TOKEN_DECIMALS", uint256(18)));
         cfg.gasTokenInitialSupply = vm.envOr("GAS_TOKEN_INITIAL_SUPPLY", uint256(1_000_000_000 ether));
         cfg.gasTokenRecipient = vm.envOr("GAS_TOKEN_RECIPIENT", deployer);
@@ -189,17 +189,17 @@ contract DeployL1 is Script {
         if (cfg.customGasToken != CANONICAL_GAS_TOKEN) {
             revert("non-canonical gas token");
         }
-        if (keccak256(bytes(cfg.gasTokenName)) != keccak256(bytes("Ghost Token (L1)"))) {
-            revert("GasToken name must be Ghost Token (L1)");
+        if (keccak256(bytes(cfg.gasTokenName)) != keccak256(bytes("Ghost Token"))) {
+            revert("GasToken name must be Ghost Token");
         }
-        if (keccak256(bytes(cfg.gasTokenSymbol)) != keccak256(bytes("GHOST"))) {
-            revert("GasToken symbol must be GHOST");
+        if (keccak256(bytes(cfg.gasTokenSymbol)) != keccak256(bytes("GST"))) {
+            revert("GasToken symbol must be GST");
         }
         if (cfg.gasTokenDecimals != 18) {
             revert("GasToken decimals must be 18");
         }
         if (cfg.gasTokenInitialSupply != 1_000_000_000 ether) {
-            revert("GasToken supply must be 1,000,000,000 GHOST");
+            revert("GasToken supply must be 1,000,000,000 GST");
         }
         if (cfg.gasTokenRecipient != 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266) {
             revert("GasToken recipient must be canonical deployer");

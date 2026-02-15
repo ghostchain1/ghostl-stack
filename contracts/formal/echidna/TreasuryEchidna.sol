@@ -9,7 +9,7 @@ contract TreasuryEchidna {
     Treasury private treasury;
 
     constructor() payable {
-        token = new NativeToken("Ghost", "GHOST");
+        token = new NativeToken("Ghost Token", "GST");
         treasury = new Treasury(IERC20Balance(address(token)), address(this), address(0));
         token.mint(address(treasury), 1000e18);
     }

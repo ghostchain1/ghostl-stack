@@ -7,7 +7,7 @@ contract TokenEchidna {
     NativeToken private token;
 
     constructor() {
-        token = new NativeToken("Ghost", "GHOST");
+        token = new NativeToken("Ghost Token", "GST");
     }
 
     function echidna_supply_nonzero() public view returns (bool) {
