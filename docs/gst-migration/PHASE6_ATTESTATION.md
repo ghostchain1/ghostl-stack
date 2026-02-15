@@ -1,15 +1,15 @@
 # Phase 6 Attestation (Harness / Dry-Run)
 
-Generated (UTC): `2026-02-15T01:48:27Z`
-Tested git ref: `92b76663111384d42447608e0f9b4f717bd67296`
+Generated (UTC): `2026-02-15T04:49:27Z`
+Tested git ref: `(worktree)`
 
 This attestation captures **what can be verified inside this Codex harness** (where some runtime capabilities are restricted). It is intended to be reproducible from a single git checkout.
 
 ## Environment constraints observed
 
-- Docker Engine **socket/API access is blocked** from this harness (`docker info` / `docker version` return permission errors).
-  - Result: docker-dependent checks are **SKIPPED** outside CI.
-  - In CI / strict mode (`CI=1` or `SLITHER_STRICT=1`), these checks are expected to **FAIL hard** with an error summary.
+- Docker Engine is installed but not usable as the current user (`docker info` / `docker version` return permission errors).
+  - This VM supports passwordless `sudo -n docker`, and scripts that fall back to `sudo -n docker` can run docker-based checks locally.
+  - In strict mode, checks still fail hard when Docker is unavailable and write an error summary (e.g., `contracts/reports/formal/summary.json`).
 - No live L1/L2/L3 RPC endpoints are assumed to be running in this harness. Runtime reachability/stability checks require the networks to be running and reachable.
 
 ## Gates executed (dry-run / best-effort)
@@ -53,10 +53,26 @@ This attestation captures **what can be verified inside this Codex harness** (wh
 
 - Command:
   - `npm --prefix contracts run formal:slither`
-- Outcome: **SKIPPED** (docker socket blocked; no local slither binary detected)
+- Outcome: **OK** (uses `sudo -n docker` fallback when needed)
 - Notes:
   - `SLITHER_RUNNER=auto` prefers Docker but will fall back to a local `slither` binary if Docker is unavailable.
   - Strict mode (`CI=1` or `SLITHER_STRICT=1`) still fails hard when Slither cannot run and writes `contracts/reports/formal/summary.json`.
+
+### Echidna (formal)
+
+- Command:
+  - `npm --prefix contracts run formal:echidna`
+- Outcome: **OK** (uses `sudo -n docker` fallback when needed)
+- Notes:
+  - Writes `contracts/reports/formal/echidna.json` and updates the corpus directory.
+
+### Scribble (formal)
+
+- Command:
+  - `npm --prefix contracts run formal:scribble`
+- Outcome: **OK**
+- Notes:
+  - Refreshes the LFS-backed Scribble report at `contracts/reports/formal/scribble/scribble.json`.
 
 ### GST leakage gate
 
@@ -103,7 +119,6 @@ This attestation captures **what can be verified inside this Codex harness** (wh
 
 - Live RPC stability, restart resilience, and monitoring target checks against running L1/L2/L3.
 - Trivy vulnerability scanning.
-- Full formal pipelines (Echidna, Scribble) when Docker is required but blocked.
 
 ## Reproduce
 

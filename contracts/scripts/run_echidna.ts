@@ -2,6 +2,8 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
+import { resolveDockerCmd } from "./docker_cmd";
+
 const root = path.resolve(__dirname, "..");
 const reports = path.join(root, "reports", "formal");
 mkdirSync(reports, { recursive: true });
@@ -56,8 +58,13 @@ function skip(message: string): never {
   process.exit(0);
 }
 
+const docker = useDocker ? resolveDockerCmd() : null;
+
 if (useDocker) {
-  const dockerVersion = spawnSync("docker", ["version"], { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
+  const dockerVersion = spawnSync(docker!.cmd, [...docker!.args, "version"], {
+    encoding: "utf8",
+    maxBuffer: 16 * 1024 * 1024
+  });
   if (dockerVersion.error && (dockerVersion.error as NodeJS.ErrnoException).code === "ENOENT") {
     skip("docker not found; install Docker to run Echidna (or set ECHIDNA_USE_DOCKER=false for a local echidna-test)");
   }
@@ -97,7 +104,7 @@ const args = useDocker
       "json"
     ].concat(targets.map((t) => path.join(root, t)));
 
-const result = spawnSync(useDocker ? "docker" : "echidna-test", args, {
+const result = spawnSync(useDocker ? docker!.cmd : "echidna-test", useDocker ? [...docker!.args, ...args] : args, {
   encoding: "utf8",
   maxBuffer: 256 * 1024 * 1024
 });
