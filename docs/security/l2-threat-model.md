@@ -38,7 +38,7 @@ This threat model covers Ghost L2 (OP Stack) infrastructure, rollup services, ba
 
 ### Gas token drift
 - **Threats:** non-GST token used as gas, token mismatch across layers.
-- **Controls:** canonical GHOST token enforcement in deploy scripts, doctor checks.
+- **Controls:** canonical GST token enforcement in deploy scripts, doctor checks.
 - **Monitoring:** config checksums, gas token telemetry, governance enforcement.
 
 ### Supply-chain attacks

@@ -28,7 +28,7 @@ This module provides **wallet creation, import, token discovery, and management*
 
 ### Supported Assets
 - [ ] Native coin (GhostChain gas token / per-layer gas token)
-- [ ] Canonical GHOST (ERC‑20) at `0x5FbDB2315678afecb367f032d93F642f64180aa3` (L1 source for L2/L3 gas)
+- [ ] Canonical GST (ERC‑20) at `0x5FbDB2315678afecb367f032d93F642f64180aa3` (L1 source for L2/L3 gas)
 - [ ] ERC-20 tokens
 - [ ] ERC-721 NFTs
 - [ ] ERC-1155 multi-tokens

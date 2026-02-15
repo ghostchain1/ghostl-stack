@@ -906,7 +906,7 @@ if [ "${USE_CUSTOM_GAS_TOKEN:-}" = "true" ]; then
   fi
   GENESIS_GAS_TOKEN="$(read_json "$L2_GENESIS_JSON" "config.gasToken")"
   if [ -z "$GENESIS_GAS_TOKEN" ] || [ "$GENESIS_GAS_TOKEN" = "null" ]; then
-    warn "genesis-l2.json config.gasToken is null; ensure SystemConfig enforces GHOST"
+    warn "genesis-l2.json config.gasToken is null; ensure SystemConfig enforces GST"
   else
     echo "OK: genesis gasToken set"
   fi

@@ -8374,7 +8374,7 @@
           "environment": {
             "API_ONLY": "true",
             "BLOCKSCOUT_HOST": "0.0.0.0",
-            "COIN": "GHOST",
+            "COIN": "GST",
             "DATABASE_URL": "postgres://postgres:<redacted>@ghostscout-db:5432/blockscout",
             "DISABLE_EVISION": "true",
             "ECTO_USE_SSL": "false",

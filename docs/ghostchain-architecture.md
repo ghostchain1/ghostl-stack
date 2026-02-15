@@ -7,7 +7,7 @@ GhostChain is an EVM-compatible L1. GhostL2 is a Shibarium-style OP Stack L2 tha
 ### GhostChain (L1, EVM clone)
 - Geth PoA devnet (chainId `14000101`) and final settlement layer.
 - Hosts OP Stack L1 contracts for GhostL2 (SystemConfig, OptimismPortal, bridges, L2OutputOracle or DisputeGameFactory).
-- Native gas asset is GHOST (ERC‑20) on L1.
+- Native gas asset is GST (ERC‑20) on L1.
 
 ### GhostL2 (L2, Shibarium clone)
 - OP Stack rollup on GhostChain (sequencer in `op-node`, execution in `l2-geth`).
@@ -22,8 +22,8 @@ GhostChain is an EVM-compatible L1. GhostL2 is a Shibarium-style OP Stack L2 tha
 
 Canonical gas token (L1 ERC‑20):
 - Contract: `0x5FbDB2315678afecb367f032d93F642f64180aa3`
-- Symbol: `GHOST`
-- Genesis mint: `1,000,000,000` GHOST to `0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266`
+- Symbol: `GST`
+- Genesis mint: `1,000,000,000` GST to `0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266`
 - L2/L3 gas token source: L1 ERC‑20 address above
 
 ## Sequencers and tx pools

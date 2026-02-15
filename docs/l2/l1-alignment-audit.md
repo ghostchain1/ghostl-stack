@@ -56,7 +56,7 @@ From `infra/opstack/.env`:
 
 - `USE_CUSTOM_GAS_TOKEN=true`
 - `CUSTOM_GAS_TOKEN_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3`
-- `GAS_TOKEN_SYMBOL=GHOST`
+- `GAS_TOKEN_SYMBOL=GST`
 
 `infra/opstack/config/genesis-l2.json` now sets `config.gasToken=0x5FbDB2315678afecb367f032d93F642f64180aa3`, matching the L1 gas token configuration. This is validated in `doctor-l2.sh`.
 

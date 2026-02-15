@@ -156,6 +156,7 @@ async function main() {
   const GENESIS_RAW = process.env.GENESIS_RAW ?? "0x";
   const canonicalGasToken =
     process.env.CANONICAL_GAS_TOKEN_ADDRESS ??
+    process.env.GST_TOKEN_ADDRESS ??
     process.env.GHOST_TOKEN_ADDRESS ??
     "0x5FbDB2315678afecb367f032d93F642f64180aa3";
   const allowNativeDeploy = process.env.ALLOW_NATIVE_TOKEN_DEPLOY === "1";
@@ -212,7 +213,7 @@ async function main() {
     } else {
       throw new Error(
         `Canonical gas token not found at ${canonicalGasToken}. ` +
-          `Set CANONICAL_GAS_TOKEN_ADDRESS/GHOST_TOKEN_ADDRESS to a deployed ERC20 ` +
+          `Set CANONICAL_GAS_TOKEN_ADDRESS/GST_TOKEN_ADDRESS (legacy: GHOST_TOKEN_ADDRESS) to a deployed ERC20 ` +
           `or set ALLOW_NATIVE_TOKEN_DEPLOY=1 to deploy NativeTokenV2.`
       );
     }
@@ -221,7 +222,9 @@ async function main() {
     nativeTokenAddress = await native.getAddress();
     console.log(`[token] Deployed NativeTokenV2 at ${nativeTokenAddress}`);
   } else {
-    throw new Error("Missing CANONICAL_GAS_TOKEN_ADDRESS/GHOST_TOKEN_ADDRESS and ALLOW_NATIVE_TOKEN_DEPLOY is false.");
+    throw new Error(
+      "Missing CANONICAL_GAS_TOKEN_ADDRESS/GST_TOKEN_ADDRESS (legacy: GHOST_TOKEN_ADDRESS) and ALLOW_NATIVE_TOKEN_DEPLOY is false."
+    );
   }
   const feeMarket = await deploy<Deployable>("FeeMarketV2", [
     deployer.address,

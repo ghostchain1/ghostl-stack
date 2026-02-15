@@ -18,8 +18,8 @@ Set `NEXT_PUBLIC_PIL_URL` (client) and `PIL_URL` (server) to the ghost-pil API b
 
 Canonical gas token (L1 ERC‑20):
 - Contract: `0x5FbDB2315678afecb367f032d93F642f64180aa3`
-- Symbol: `GHOST`
-- Genesis mint: `1,000,000,000` GHOST to `0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266`
+- Symbol: `GST`
+- Genesis mint: `1,000,000,000` GST to `0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266`
 - L2/L3 gas token source: L1 ERC‑20 address above
 
 ## Safety Defaults
