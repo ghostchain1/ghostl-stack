@@ -331,6 +331,124 @@ services:
       start_period: 20s
     mem_limit: 512m
     cpus: '0.5'
+  ghost-rpc-proxy-l1:
+    cap_drop: *id001
+    security_opt: *id002
+    build:
+      context: ../../services/ghost-rpc-proxy
+      dockerfile: Dockerfile
+    image: local/ghost-rpc-proxy:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *id003
+    depends_on:
+      l1-rpc-proxy:
+        condition: service_healthy
+    environment:
+      PORT: 8546
+      UPSTREAM_URL: http://l1-rpc-proxy:18546
+      RPC_ENABLE_GST_NAMESPACE: '1'
+      RPC_DEPRECATE_LEGACY_NAMESPACE: '1'
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - "curl -sf http://localhost:8546 -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"gst_chainId\",\"params\":[]}' >/dev/null"
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 15s
+    mem_limit: 128m
+    cpus: '0.25'
+  ghost-rpc-proxy-l2:
+    cap_drop: *id001
+    security_opt: *id002
+    build:
+      context: ../../services/ghost-rpc-proxy
+      dockerfile: Dockerfile
+    image: local/ghost-rpc-proxy:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *id003
+    depends_on:
+      l2-geth:
+        condition: service_healthy
+    environment:
+      PORT: 8546
+      UPSTREAM_URL: http://l2-geth:8545
+      RPC_ENABLE_GST_NAMESPACE: '1'
+      RPC_DEPRECATE_LEGACY_NAMESPACE: '1'
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - "curl -sf http://localhost:8546 -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"gst_chainId\",\"params\":[]}' >/dev/null"
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 15s
+    mem_limit: 128m
+    cpus: '0.25'
+  ghost-rpc-proxy-l3:
+    cap_drop: *id001
+    security_opt: *id002
+    build:
+      context: ../../services/ghost-rpc-proxy
+      dockerfile: Dockerfile
+    image: local/ghost-rpc-proxy:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *id003
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    environment:
+      PORT: 8546
+      # Prefer docker-network L3 RPC when running 3-layer stack; override with L3_ARCHIVE_RPC if needed.
+      UPSTREAM_URL: ${L3_ARCHIVE_RPC:-http://l3-geth:8545}
+      RPC_ENABLE_GST_NAMESPACE: '1'
+      RPC_DEPRECATE_LEGACY_NAMESPACE: '1'
+    mem_limit: 128m
+    cpus: '0.25'
+  hyper-ghost-supervisor:
+    cap_drop: *id001
+    security_opt: *id002
+    build:
+      context: ../../services/hyper-ghost-supervisor
+      dockerfile: Dockerfile
+    image: local/hyper-ghost-supervisor:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *id003
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    depends_on:
+      ghost-rpc-proxy-l1:
+        condition: service_healthy
+      ghost-rpc-proxy-l2:
+        condition: service_healthy
+    environment:
+      HG_ENV: ${HG_ENV:-${OPSTACK_IMAGE_TAG:-devnet}}
+      HG_BIND: 0.0.0.0
+      HG_PORT: 7077
+      HG_DB_PATH: /var/lib/ghost/incident.db
+      HG_ARTIFACT_DIR: /var/lib/ghost/hgop
+      HG_DB_MIGRATE: '1'
+      HG_DB_SEED_DEMO: ${HG_DB_SEED_DEMO:-1}
+      HGOP_EXEC_ENABLED: ${HGOP_EXEC_ENABLED:-0}
+      HGOP_APPROVAL_TOKEN: ${HGOP_APPROVAL_TOKEN:-}
+      HG_ATTESTOR_PRIVATE_KEY: ${HG_ATTESTOR_PRIVATE_KEY:-}
+      L1_RPC_URL: http://ghost-rpc-proxy-l1:8546
+      L2_RPC_URL: http://ghost-rpc-proxy-l2:8546
+      L3_RPC_URL: http://ghost-rpc-proxy-l3:8546
+      HG_PROBE_URLS: ${HG_PROBE_URLS:-}
+    ports:
+    - 7077:7077
+    volumes:
+    - hyperghost_data:/var/lib/ghost
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:7077/health >/dev/null
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    mem_limit: 256m
+    cpus: '0.25'
   ai-monitor:
     cap_drop: *id001
     security_opt: *id002
@@ -804,6 +922,7 @@ services:
     cpus: '0.25'
 volumes:
   op_gate_state: null
+  hyperghost_data: null
   prometheus_data: null
   grafana_data: null
   alertmanager_data: null
