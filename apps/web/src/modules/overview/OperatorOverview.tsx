@@ -262,14 +262,14 @@ const formatGwei = (value?: string) => {
   if (!value) return '--';
   const raw = value.startsWith('0x') ? value : /^\d+$/.test(value) ? `0x${BigInt(value).toString(16)}` : value;
   if (!raw.startsWith('0x')) return value;
-  try {
-    const wei = BigInt(raw);
-    const gwei = Number(wei / 10n ** 9n);
-    return `${gwei.toFixed(2)} gGHOST`;
-  } catch {
-    return value;
-  }
-};
+	  try {
+	    const wei = BigInt(raw);
+	    const gwei = Number(wei / 10n ** 9n);
+	    return `${gwei.toFixed(2)} gGST`;
+	  } catch {
+	    return value;
+	  }
+	};
 
 const riskTone = (label?: string) => {
   if (!label) return 'default' as const;
@@ -806,10 +806,10 @@ export function OperatorOverview() {
                 </div>
                 <div className="metric">
                   <div className="metric-label">Gas price</div>
-                  <div className="metric-value">
-                    {snapshot?.gasPriceGwei !== undefined ? `${snapshot.gasPriceGwei.toFixed(2)} gGHOST` : '--'}
-                  </div>
-                </div>
+	                  <div className="metric-value">
+	                    {snapshot?.gasPriceGwei !== undefined ? `${snapshot.gasPriceGwei.toFixed(2)} gGST` : '--'}
+	                  </div>
+	                </div>
                 <div className="metric">
                   <div className="metric-label">Peers</div>
                   <div className="metric-value">{formatNumber(snapshot?.peers)}</div>
