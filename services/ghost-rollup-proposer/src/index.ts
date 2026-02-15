@@ -30,6 +30,20 @@ const childHeadTagRaw = (process.env.CHILD_HEAD_TAG || process.env.ROLLUP_CHILD_
 const CHILD_HEAD_TAG: "safe" | "finalized" | "latest" =
   childHeadTagRaw === "finalized" ? "finalized" : childHeadTagRaw === "latest" ? "latest" : "safe";
 
+function clampInt(raw: string | undefined, fallback: number, min: number, max: number, label: string): number {
+  if (raw == null || raw === "") return fallback;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) {
+    console.warn(`[Startup] Ignoring invalid ${label}=${raw}`);
+    return fallback;
+  }
+  return Math.max(min, Math.min(max, Math.floor(n)));
+}
+
+const RPC_TIMEOUT_MS = clampInt(process.env.RPC_TIMEOUT_MS, 15_000, 1_000, 300_000, "RPC_TIMEOUT_MS");
+const TX_WAIT_TIMEOUT_MS = clampInt(process.env.TX_WAIT_TIMEOUT_MS, 60_000, 5_000, 600_000, "TX_WAIT_TIMEOUT_MS");
+const WATCHDOG_STALL_MS = clampInt(process.env.WATCHDOG_STALL_MS, 300_000, 10_000, 3_600_000, "WATCHDOG_STALL_MS");
+
 const fetchRegistry = async () => {
   const now = Date.now();
   if (registryCache.data && registryCache.expiresAt > now) return registryCache.data;
@@ -88,10 +102,16 @@ if (!RPC_SETTLEMENT_RESOLVED || !RPC_CHILD_RESOLVED || !ROLLUP) {
 }
 const observeOnly = !PROPOSER_PRIVATE_KEY;
 
-const settlement = new ethers.JsonRpcProvider(RPC_SETTLEMENT_RESOLVED, undefined, { polling: true });
-settlement.pollingInterval = 1000;
-const child = new ethers.JsonRpcProvider(RPC_CHILD_RESOLVED, undefined, { polling: true });
-child.pollingInterval = 1000;
+function makeProvider(url: string): ethers.JsonRpcProvider {
+  const req = new ethers.FetchRequest(url);
+  req.timeout = RPC_TIMEOUT_MS;
+  const p = new ethers.JsonRpcProvider(req, undefined, { polling: true });
+  p.pollingInterval = 1000;
+  return p;
+}
+
+const settlement = makeProvider(RPC_SETTLEMENT_RESOLVED);
+const child = makeProvider(RPC_CHILD_RESOLVED);
 
 const signer = observeOnly ? null : new ethers.NonceManager(new ethers.Wallet(PROPOSER_PRIVATE_KEY, settlement));
 
@@ -189,6 +209,11 @@ async function getStableChildHeadNumber(): Promise<number> {
 const metrics = {
   startedAt: Date.now(),
   observeOnly,
+  lastTickStartedAt: 0,
+  lastTickFinishedAt: 0,
+  lastTickError: null as null | string,
+  lastProposedAt: 0,
+  lastFinalizedAt: 0,
   proposals: 0,
   finalizations: 0,
   errors: 0,
@@ -227,7 +252,8 @@ async function proposeNextBatch() {
   const root = merkleRoot(leaves);
 
   const tx = await rollup.proposeBatch(start, end, root);
-  const rcpt = await tx.wait();
+  const rcpt = await tx.wait(1, TX_WAIT_TIMEOUT_MS);
+  if (!rcpt) throw new Error(`tx not mined within timeout (tx=${tx.hash})`);
 
   const batchId = (() => {
     for (const l of rcpt!.logs) {
@@ -242,6 +268,7 @@ async function proposeNextBatch() {
   })();
 
   metrics.proposals += 1;
+  metrics.lastProposedAt = Date.now();
   metrics.lastProposed = { batchId, start, end, root, tx: tx.hash };
   state.nextChildBlock = end + 1;
   await saveCursor(state);
@@ -262,11 +289,14 @@ async function finalizeSome() {
     if (nowSec < proposedAt + CHALLENGE_PERIOD_SECONDS) continue;
     try {
       const tx = await rollup.finalizeBatch(i);
-      await tx.wait();
+      const rcpt = await tx.wait(1, TX_WAIT_TIMEOUT_MS);
+      if (!rcpt) continue;
       metrics.finalizations += 1;
+      metrics.lastFinalizedAt = Date.now();
       metrics.lastFinalized = { batchId: i, tx: tx.hash };
-    } catch {
-      // ignore
+    } catch (e) {
+      metrics.errors += 1;
+      console.error("[Proposer] Finalize failed:", scrubError(e));
     }
   }
 }
@@ -322,12 +352,15 @@ await bootstrapSafety().catch((e) => {
 async function tick() {
   if (inFlight) return;
   inFlight = true;
+  metrics.lastTickStartedAt = Date.now();
+  metrics.lastTickError = null;
   try {
     await proposeNextBatch();
     await finalizeSome();
   } catch (e) {
     metrics.errors += 1;
     const err = scrubError(e);
+    metrics.lastTickError = err;
     console.error("[Proposer] Tick failed:", err);
     // If we get out-of-sync with the chain's current nonce (common after restarts or when other tooling
     // submits transactions from the same key), reset the NonceManager so the next tick re-reads nonce.
@@ -346,12 +379,21 @@ async function tick() {
       }
     }
   } finally {
+    metrics.lastTickFinishedAt = Date.now();
     inFlight = false;
   }
 }
 
 tick();
 setInterval(tick, 2000);
+
+setInterval(() => {
+  if (!inFlight || !metrics.lastTickStartedAt) return;
+  const stalledMs = Date.now() - metrics.lastTickStartedAt;
+  if (stalledMs <= WATCHDOG_STALL_MS) return;
+  console.error(`[Watchdog] Tick stalled for ${stalledMs}ms (threshold=${WATCHDOG_STALL_MS}ms). Exiting for restart.`);
+  process.exit(1);
+}, 5_000);
 
 const app = express();
 app.get("/health", async (_req: Request, res: Response) => {
@@ -361,6 +403,9 @@ app.get("/health", async (_req: Request, res: Response) => {
     res.json({
       ok: true,
       observeOnly,
+      rpcTimeoutMs: RPC_TIMEOUT_MS,
+      txWaitTimeoutMs: TX_WAIT_TIMEOUT_MS,
+      watchdogStallMs: WATCHDOG_STALL_MS,
       settlementChainId,
       childChainId,
       rollup: ROLLUP,
