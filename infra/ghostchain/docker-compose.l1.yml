@@ -64,6 +64,7 @@ services:
     environment:
       - CHAIN_ID=${L1_CHAIN_ID:-14000101}
       - SIGNER_ADDRESS=0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+      - MINING_ENABLED=${L1_NODE1_MINING_ENABLED:-1}
       - HTTP_PORT=8545
       - WS_PORT=8546
       - AUTH_PORT=8551
@@ -112,6 +113,7 @@ services:
     environment:
       - CHAIN_ID=${L1_CHAIN_ID:-14000101}
       - SIGNER_ADDRESS=0x70997970c51812dc3a010c7d01b50e0d17dc79c8
+      - MINING_ENABLED=${L1_NODE2_MINING_ENABLED:-1}
       - HTTP_PORT=8545
       - WS_PORT=8546
       - AUTH_PORT=8551

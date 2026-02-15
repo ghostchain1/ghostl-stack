@@ -14,6 +14,7 @@ else
 fi
 CHAIN_ID_VAL=${CHAIN_ID:-14000101}
 SIGNER=${SIGNER_ADDRESS:-0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266}
+MINING_ENABLED=${MINING_ENABLED:-1}
 HTTP_PORT=${HTTP_PORT:-8545}
 WS_PORT=${WS_PORT:-8546}
 AUTH_PORT=${AUTH_PORT:-8551}
@@ -32,6 +33,13 @@ if [ ! -d "$DATADIR/geth" ]; then
   exit 1
 fi
 
+MINING_ARGS=""
+case "$MINING_ENABLED" in
+  1|true|TRUE|yes|YES)
+    MINING_ARGS="--mine --miner.etherbase=$SIGNER --unlock $SIGNER --password /config/password.txt --allow-insecure-unlock"
+    ;;
+esac
+
 exec geth \
   --datadir "$DATADIR" \
   --networkid "$CHAIN_ID_VAL" \
@@ -45,10 +53,6 @@ exec geth \
   --ipcdisable \
   --bootnodes "$ENODE" \
   --port "$P2P_PORT" \
-  --mine \
-  --miner.etherbase="$SIGNER" \
-  --unlock "$SIGNER" \
-  --password /config/password.txt \
-  --allow-insecure-unlock \
+  $MINING_ARGS \
   --metrics --metrics.addr=0.0.0.0 --metrics.port="$METRICS_PORT" \
   --verbosity=3
