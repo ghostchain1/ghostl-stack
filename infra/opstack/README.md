@@ -78,10 +78,10 @@ bash infra/scripts/opstack/reset.sh
 - Set `BRIDGE_L2L3_ADDRESS`, `L2_OUTPUT_ORACLE_ADDRESS`, and `L3_OUTPUT_ORACLE_ADDRESS` in `.env` to enable bridge/oracle telemetry.
 
 ## Canonical gas token (L1/L2/L3)
-All layers must use the single canonical GHOST token on GhostChain L1:
+All layers must use the single canonical GST token on GhostChain L1:
 
 ```text
-Ghost Token (GHOST)
+Ghost Token (GST)
 0x5FbDB2315678afecb367f032d93F642f64180aa3
 ```
 

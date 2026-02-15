@@ -5,7 +5,7 @@ import "../common/Governed.sol";
 import "../ai/PolicyGuard.sol";
 import "./StakingManager.sol";
 
-/// @notice Coordinates fee-policy slashing events in canonical GHOST units.
+/// @notice Coordinates fee-policy slashing events in canonical GST units.
 contract SlashingManager is Governed {
     address internal constant CANONICAL_GAS_TOKEN = 0x5FbDB2315678afecb367f032d93F642f64180aa3;
     uint256 internal constant BPS_DENOMINATOR = 10_000;
