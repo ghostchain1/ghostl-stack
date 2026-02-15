@@ -91,11 +91,12 @@ const guardDuration = new promClient.Histogram({
 let cachedChainId = null; // number
 let chainIdFetchedAt = 0;
 const chainIdCacheMs = Math.max(1_000, Number(process.env.CHAIN_ID_CACHE_MS || "30000"));
+const CHAIN_ID_METHOD = process.env.CHAIN_ID_METHOD || "gst_chainId";
 
 async function fetchChainId() {
   const now = Date.now();
   if (cachedChainId && now - chainIdFetchedAt < chainIdCacheMs) return cachedChainId;
-  const raw = await rpcRequest("eth_chainId", []);
+  const raw = await rpcRequest(CHAIN_ID_METHOD, []);
   const hex = raw?.result;
   if (typeof hex === "string" && hex.startsWith("0x")) {
     const id = Number.parseInt(hex, 16);
