@@ -11,7 +11,7 @@ interface IERC20GasToken {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
 }
 
-/// @notice Minimal staking manager to track GHOST-denominated bonds for validators/operators.
+/// @notice Minimal staking manager to track GST-denominated bonds for validators/operators.
 contract StakingManager is Governed, IVotingPower {
     address internal constant CANONICAL_GAS_TOKEN = 0x5FbDB2315678afecb367f032d93F642f64180aa3;
 

@@ -9,7 +9,7 @@ interface IERC20FaucetToken {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
 }
 
-/// @notice Canonical GHOST faucet with a per-address cooldown to seed devnet wallets.
+/// @notice Canonical GST faucet with a per-address cooldown to seed devnet wallets.
 contract Faucet is Governed {
     address internal constant CANONICAL_GAS_TOKEN = 0x5FbDB2315678afecb367f032d93F642f64180aa3;
 
