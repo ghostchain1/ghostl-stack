@@ -338,8 +338,9 @@ mkdir -p "${REL_DIR}/dr"
 
 # Copy python helpers into the sealed bundle so TESTNET/MAINNET can verify without the devnet working tree.
 cp -a "${SCRIPT_DIR}/lib/hashutil.py" "${REL_DIR}/scripts/lib/hashutil.py"
+cp -a "${SCRIPT_DIR}/lib/evmrpc.py" "${REL_DIR}/scripts/lib/evmrpc.py"
 cp -a "${SCRIPT_DIR}/lib/ethrpc.py" "${REL_DIR}/scripts/lib/ethrpc.py"
-chmod 750 "${REL_DIR}/scripts/lib/hashutil.py" "${REL_DIR}/scripts/lib/ethrpc.py"
+chmod 750 "${REL_DIR}/scripts/lib/hashutil.py" "${REL_DIR}/scripts/lib/evmrpc.py" "${REL_DIR}/scripts/lib/ethrpc.py"
 
 # Copy docker helper so deploy scripts can run even when the user is not in the `docker` group.
 cp -a "${ROOT}/scripts/lib/docker.sh" "${REL_DIR}/scripts/lib/docker.sh"
@@ -476,7 +477,7 @@ REL_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." >/dev/null 2>&1 && pwd)"
 release_id_b32="$(jq -r .release_id_bytes32 "${REL_DIR}/governance/launch-hashes.json")"
 manifest_hash="$(jq -r .manifest_hash "${REL_DIR}/governance/launch-hashes.json")"
 
-python3 "${REL_DIR}/scripts/lib/ethrpc.py" is-launch-authorized \
+python3 "${REL_DIR}/scripts/lib/evmrpc.py" is-launch-authorized \
   --rpc "${RPC_L1}" \
   --gate "${MAINNET_LAUNCH_GATE_ADDRESS}" \
   --release-id-bytes32 "${release_id_b32}" \
@@ -775,7 +776,7 @@ hg_require_docker_compose
 release_id_b32="$(jq -r .release_id_bytes32 "${REL_DIR}/governance/launch-hashes.json")"
 manifest_hash="$(jq -r .manifest_hash "${REL_DIR}/governance/launch-hashes.json")"
 
-authorized="$(python3 "${REL_DIR}/scripts/lib/ethrpc.py" is-launch-authorized --rpc "${RPC_L1}" --gate "${MAINNET_LAUNCH_GATE_ADDRESS}" --release-id-bytes32 "${release_id_b32}" --manifest-hash-bytes32 "${manifest_hash}")"
+authorized="$(python3 "${REL_DIR}/scripts/lib/evmrpc.py" is-launch-authorized --rpc "${RPC_L1}" --gate "${MAINNET_LAUNCH_GATE_ADDRESS}" --release-id-bytes32 "${release_id_b32}" --manifest-hash-bytes32 "${manifest_hash}")"
 
 if [ "${authorized}" != "true" ]; then
   echo "MAINNET DEPLOY BLOCKED: No on-chain authorization found for release-id + manifestHash." >&2
