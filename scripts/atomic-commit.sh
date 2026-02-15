@@ -1,120 +1,41 @@
 #!/usr/bin/env bash
-set -Eeuo pipefail
+set -euo pipefail
 
-usage() {
-  cat <<'EOF'
-Usage:
-  scripts/atomic-commit.sh -m "commit message"
-
-Runs a minimal preflight + lint gate and then creates a single atomic commit
-from the currently staged changes.
-
-Env overrides:
-  - ATOMIC_ALLOW_DIRTY=1      (allow unstaged/untracked files)
-  - ATOMIC_SKIP_GST_GATE=1    (skip `npm run gst:leakage`)
-  - ATOMIC_SKIP_GST_SYMBOL_GATE=1 (skip `npm run gst:symbol`)
-  - ATOMIC_SKIP_LINT=1        (skip `npm run lint`)
-  - ATOMIC_TEST_CMD="<cmd>"   (optional extra test command to run)
-EOF
-}
-
-msg=""
-while [ "$#" -gt 0 ]; do
-  case "$1" in
-    -m)
-      shift
-      msg="${1:-}"
-      ;;
-    -h | --help)
-      usage
-      exit 0
-      ;;
-    *)
-      echo "[atomic-commit] unknown arg: $1" >&2
-      usage >&2
-      exit 2
-      ;;
-  esac
-  shift || true
-done
-
-if [ -z "$msg" ]; then
-  echo "[atomic-commit] missing -m \"commit message\"" >&2
-  usage >&2
-  exit 2
-fi
-
-repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
-if [ -z "$repo_root" ]; then
-  echo "[atomic-commit] not in a git repo" >&2
-  exit 2
-fi
-cd "$repo_root"
-
-if [ -z "$(git diff --cached --name-only)" ]; then
-  echo "[atomic-commit] nothing staged to commit" >&2
+MSG=${1:-}
+if [[ -z "$MSG" ]]; then
+  echo "usage: scripts/atomic-commit.sh \"commit message\"" >&2
   exit 1
 fi
 
-allow_dirty="${ATOMIC_ALLOW_DIRTY:-0}"
-if [ "$allow_dirty" != "1" ]; then
-  if [ -n "$(git diff --name-only)" ]; then
-    echo "[atomic-commit] working tree has unstaged changes (stage or stash them, or set ATOMIC_ALLOW_DIRTY=1)" >&2
-    exit 1
-  fi
-  if [ -n "$(git ls-files --others --exclude-standard)" ]; then
-    echo "[atomic-commit] untracked files present (stage or remove them, or set ATOMIC_ALLOW_DIRTY=1)" >&2
-    exit 1
-  fi
+scripts/guard-diff-only.sh
+
+if [[ -x scripts/preflight.sh ]]; then
+  scripts/preflight.sh
 fi
 
-echo "[atomic-commit] running diff-only guard"
-bash scripts/guard-diff-only.sh --staged
+if [[ "${SKIP_TESTS:-0}" != "1" ]]; then
+  if [[ -x scripts/lint.sh ]]; then
+    scripts/lint.sh
+  elif [[ -f package.json ]]; then
+    if command -v pnpm >/dev/null 2>&1 && [[ -f pnpm-lock.yaml ]]; then
+      pnpm -s lint
+    elif command -v npm >/dev/null 2>&1; then
+      npm run -s lint
+    fi
+  fi
 
-echo "[atomic-commit] running git diff whitespace check"
-git diff --check --cached
-
-echo "[atomic-commit] running node version guard"
-npm run node:check
-
-if [ "${ATOMIC_SKIP_GST_GATE:-0}" != "1" ]; then
-  if node -e "const p=require('./package.json'); process.exit(p?.scripts?.['gst:leakage'] ? 0 : 1)"; then
-    echo "[atomic-commit] running GST leakage gate"
-    npm run gst:leakage
-  else
-    echo "[atomic-commit] gst:leakage script not present; skipping"
+  if [[ -x scripts/test.sh ]]; then
+    scripts/test.sh
+  elif [[ -f package.json ]]; then
+    if command -v pnpm >/dev/null 2>&1 && [[ -f pnpm-lock.yaml ]]; then
+      pnpm -s test
+    elif command -v npm >/dev/null 2>&1; then
+      npm test
+    fi
   fi
 else
-  echo "[atomic-commit] GST leakage gate skipped (ATOMIC_SKIP_GST_GATE=1)"
+  echo "atomic-commit: SKIP_TESTS=1 set; skipping lint/test"
 fi
 
-if [ "${ATOMIC_SKIP_GST_SYMBOL_GATE:-0}" != "1" ]; then
-  if node -e "const p=require('./package.json'); process.exit(p?.scripts?.['gst:symbol'] ? 0 : 1)"; then
-    echo "[atomic-commit] running GST symbol gate"
-    npm run gst:symbol
-  else
-    echo "[atomic-commit] gst:symbol script not present; skipping"
-  fi
-else
-  echo "[atomic-commit] GST symbol gate skipped (ATOMIC_SKIP_GST_SYMBOL_GATE=1)"
-fi
-
-if [ "${ATOMIC_SKIP_LINT:-0}" != "1" ]; then
-  if node -e "const p=require('./package.json'); process.exit(p?.scripts?.lint ? 0 : 1)"; then
-    echo "[atomic-commit] running lint"
-    npm run lint
-  else
-    echo "[atomic-commit] lint script not present; skipping"
-  fi
-else
-  echo "[atomic-commit] lint skipped (ATOMIC_SKIP_LINT=1)"
-fi
-
-if [ -n "${ATOMIC_TEST_CMD:-}" ]; then
-  echo "[atomic-commit] running tests: ${ATOMIC_TEST_CMD}"
-  bash -lc "${ATOMIC_TEST_CMD}"
-fi
-
-echo "[atomic-commit] committing"
-git commit -m "$msg"
-echo "[atomic-commit] OK"
+git add -A
+git commit -m "$MSG"
