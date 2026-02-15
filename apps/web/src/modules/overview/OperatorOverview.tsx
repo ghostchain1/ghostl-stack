@@ -252,7 +252,7 @@ const formatWei = (value?: string) => {
   try {
     const wei = BigInt(raw);
     const scaled = Number(wei / 10n ** 14n);
-    return `${(scaled / 1e4).toFixed(4)} GHOST`;
+    return `${(scaled / 1e4).toFixed(4)} GST`;
   } catch {
     return value;
   }
