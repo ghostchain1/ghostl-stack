@@ -13,3 +13,4 @@
 /out-slither/
 /cache-slither/
 /reports/foundry/
+/reports/formal/echidna-corpus/covered.*

@@ -1,7 +1,7 @@
 # GST-Native Evidence Pack
 
-Generated (UTC): `2026-02-15T01:36:22Z`
-Tested git ref: `62d5969251b2853c8cb185fec7972507bacc8fd3`
+Generated (UTC): `2026-02-15T04:49:27Z`
+Tested git ref: `(worktree)`
 
 This document summarizes **what we can verify in this harness** and the key artifacts produced for the GST-native migration.
 
@@ -12,7 +12,11 @@ This document summarizes **what we can verify in this harness** and the key arti
 - Legacy symbol gate (GST-native):
   - `npm run gst:symbol` → **OK**
 - Slither (formal):
-  - `npm --prefix contracts run formal:slither` → **SKIPPED** (docker socket blocked; no local slither binary detected)
+  - `npm --prefix contracts run formal:slither` → **OK** (uses `sudo -n docker` fallback when needed)
+- Echidna (formal):
+  - `npm --prefix contracts run formal:echidna` → **OK**
+- Scribble (formal):
+  - `npm --prefix contracts run formal:scribble` → **OK**
 - Governance proposal calldata (deterministic):
   - `npm --prefix contracts run proposal:gst-constitution` → **OK**
   - Artifact: `docs/gst-migration/PROPOSAL-CALLDATA.json`
@@ -29,7 +33,7 @@ This document summarizes **what we can verify in this harness** and the key arti
 
 ## Known harness limitations / skips
 
-- Docker daemon/socket access is blocked; docker-based scans SKIP outside strict mode.
+- Docker Engine is not usable as the current user; scripts that support `sudo -n docker` can still run docker-based checks.
 - No live L1/L2/L3 RPCs are assumed running, so runtime checks are skipped in dry-run modes.
 
 ## Enforcement policy artifacts
