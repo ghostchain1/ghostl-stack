@@ -3,6 +3,8 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync, u
 import os from "node:os";
 import path from "node:path";
 
+import { resolveDockerCmd } from "./docker_cmd";
+
 const root = path.resolve(__dirname, "..");
 const reports = path.join(root, "reports", "formal");
 mkdirSync(reports, { recursive: true });
@@ -200,7 +202,11 @@ function runSlitherLocal(slitherBin: string) {
 }
 
 function runSlitherDocker() {
-  const dockerVersion = spawnSync("docker", ["version"], { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
+  const docker = resolveDockerCmd();
+  const dockerVersion = spawnSync(docker.cmd, [...docker.args, "version"], {
+    encoding: "utf8",
+    maxBuffer: 16 * 1024 * 1024
+  });
   if (dockerVersion.error && (dockerVersion.error as NodeJS.ErrnoException).code === "ENOENT") {
     throw new RunnerUnavailableError("docker", "docker not found; install Docker to run Slither");
   }
@@ -215,6 +221,8 @@ function runSlitherDocker() {
   const args = [
     "run",
     "--rm",
+    "--user",
+    `${process.getuid?.() ?? 1000}:${process.getgid?.() ?? 1000}`,
     "-e",
     "NPM_CONFIG_UPDATE_NOTIFIER=false",
     "-e",
@@ -244,7 +252,7 @@ function runSlitherDocker() {
     "-"
   ];
 
-  const result = spawnSync("docker", args, { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
+  const result = spawnSync(docker.cmd, [...docker.args, ...args], { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
   if (result.error && (result.error as NodeJS.ErrnoException).code === "ENOENT") {
     throw new RunnerUnavailableError("docker", "docker not found; install Docker to run Slither");
   }
