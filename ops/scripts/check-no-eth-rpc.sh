@@ -69,12 +69,16 @@ ALLOW_RE="($(IFS='|'; echo "${ALLOW_PATHS[*]}"))"
 findings=()
 for method in "${FORBIDDEN_METHODS[@]}"; do
   while IFS= read -r line; do
-    # Format: path<TAB>method<TAB>line
+    # Format: path<TAB>method<TAB>snippet
+    # Note: do NOT include line numbers in the baseline comparison. Line numbers are inherently unstable
+    # and cause false positives when files change for unrelated reasons.
     path="${line%%:*}"
     if [[ "$path" =~ $ALLOW_RE ]]; then
       continue
     fi
-    findings+=("${path}\t${method}\t${line#*:}")
+    rest="${line#*:}"      # "<lineno>:<text>"
+    snippet="${rest#*:}"   # "<text>" (lineno stripped)
+    findings+=("${path}\t${method}\t${snippet}")
   done < <(
     rg -n --no-heading --fixed-strings "$method" "${SEARCH_DIRS[@]}" \
       --glob '!**/node_modules/**' \
@@ -122,7 +126,19 @@ fi
 current="$(mktemp)"
 baseline="$(mktemp)"
 printf '%b\n' "${findings[@]}" | sort -u >"$current"
-sort -u "$BASELINE_FILE" >"$baseline"
+# Normalize baseline to avoid false positives from line-number drift.
+# Baseline format is: path<TAB>method<TAB><lineno>:<snippet>
+awk -F'\t' '{
+  # Re-join 3..NF to preserve tabs in snippets (rare, but possible).
+  prefix = $1 "\t" $2 "\t"
+  rest = ""
+  for (i = 3; i <= NF; i++) {
+    if (i > 3) rest = rest "\t"
+    rest = rest $i
+  }
+  sub(/^[0-9]+:/, "", rest)
+  print prefix rest
+}' "$BASELINE_FILE" | sort -u >"$baseline"
 
 new="$(comm -13 "$baseline" "$current" || true)"
 if [ -z "$new" ]; then
