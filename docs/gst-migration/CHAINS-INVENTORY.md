@@ -20,13 +20,13 @@ This inventory records the canonical **L1/L2/L3 chain surfaces** (configs, RPC e
 | Host Metrics | `http://localhost:18660` |
 
 Explorer / indexer surfaces:
-- `infra/ghostchain/docker-compose.l1.yml`: `ghostscout` (Blockscout) uses `ETHEREUM_JSONRPC_*` env keys and `COIN=GHOST` (profile `legacy`, API-only, port `18644`).
-- `services/ghostscout-l1/.env`: uses `ETHEREUM_JSONRPC_*`, `COIN=GHOST`, `CHAIN_ID=14000101` (compose `services/ghostscout-l1/docker-compose.yml`, port `18641`).
+- `infra/ghostchain/docker-compose.l1.yml`: `ghostscout` (Blockscout) uses `ETHEREUM_JSONRPC_*` env keys and `COIN=GST` (profile `legacy`, API-only, port `18644`).
+- `services/ghostscout-l1/.env`: uses `ETHEREUM_JSONRPC_*`, `COIN=GST`, `CHAIN_ID=14000101` (compose `services/ghostscout-l1/docker-compose.yml`, port `18641`).
 
 Native currency metadata touchpoints (non-exhaustive):
-- Blockscout/ghostscout uses `COIN` for the displayed symbol (currently `GHOST`).
-- `services/ghost-registry/src/health/checker.ts` defines canonical gas token metadata (currently `GHOST` / `Ghost Token` / `18`).
-- `services/ghost-gas-engine/config/chains.json` repeats the gas token metadata for L1/L2/L3 (currently `GHOST`).
+- Blockscout/ghostscout uses `COIN` for the displayed symbol (currently `GST`).
+- `services/ghost-registry/src/health/checker.ts` defines canonical gas token metadata (currently `GST` / `Ghost Token` / `18`).
+- `services/ghost-gas-engine/config/chains.json` repeats the gas token metadata for L1/L2/L3 (currently `GST`).
 
 ## GhostL2 (L2, OP Stack)
 
@@ -43,7 +43,7 @@ Native currency metadata touchpoints (non-exhaustive):
 | sequencer op-node RPC | `http://localhost:9646` |
 
 Explorer / indexer surfaces:
-- `services/ghostscout-l2/.env`: uses `ETHEREUM_JSONRPC_*`, `COIN=GHOST`, `CHAIN_ID=901` (compose `services/ghostscout-l2/docker-compose.yml`, port `18642`).
+- `services/ghostscout-l2/.env`: uses `ETHEREUM_JSONRPC_*`, `COIN=GST`, `CHAIN_ID=901` (compose `services/ghostscout-l2/docker-compose.yml`, port `18642`).
 
 Notes:
 - OP Stack custom gas token is encoded by `config.gasToken` in the L2 genesis; symbol/name are surfaced by services/UIs and explorer configs.
@@ -62,9 +62,9 @@ Notes:
 | l3 op-node rollup RPC | `http://localhost:39546` |
 
 Explorer / indexer surfaces:
-- `services/ghostscout-l3/.env`: uses `ETHEREUM_JSONRPC_*`, `COIN=GHOST`, `CHAIN_ID=903` (compose `services/ghostscout-l3/docker-compose.yml`, port `18643`).
+- `services/ghostscout-l3/.env`: uses `ETHEREUM_JSONRPC_*`, `COIN=GST`, `CHAIN_ID=903` (compose `services/ghostscout-l3/docker-compose.yml`, port `18643`).
 
 ## UI Surfaces
 
-- `apps/web/src/modules/overview/OperatorOverview.tsx` renders values as `GHOST` / `gGHOST` today (this is branding, not RPC-method namespace).
+- `apps/web/src/modules/overview/OperatorOverview.tsx` renders values as `GST` / `gGST` today (this is branding, not RPC-method namespace).
 - `apps/web/.env.example` and `apps/web/.env.local.example` define public RPC endpoints for L1/L2/L3.

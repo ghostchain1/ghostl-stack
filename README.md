@@ -15,7 +15,7 @@ This repository is designed to be **diff‑only evolvable**, **governance‑lock
 ```
 ┌───────────────────────────────────────────┐
 │                GhostChain L1              │
-│  (EVM, GHOST Gas, Governance, Treasury)   │
+│  (EVM, GST Gas, Governance, Treasury)     │
 └───────────────▲───────────────────────────┘
                 │ OptimismPortal / Oracles
 ┌───────────────┴───────────────────────────┐
@@ -70,7 +70,7 @@ See `docs/DEV_SETUP.md` for prerequisites, bootstrap instructions, and local bri
 
 * EVM‑compatible execution
 * **Main Autonomous Layer 1 blockchain** (governance‑locked, AI‑assisted ops)
-* **Canonical gas token:** GHOST (ERC‑20)
+* **Canonical gas token:** GST (ERC‑20)
 * Custom governance (no OpenZeppelin Governor)
 * Treasury & slashing logic
 * Compliance‑aware hooks
@@ -78,9 +78,9 @@ See `docs/DEV_SETUP.md` for prerequisites, bootstrap instructions, and local bri
 **Ghost Token (L1)**
 
 * Contract: `0x5FbDB2315678afecb367f032d93F642f64180aa3`
-* Symbol: `GHOST` (ERC‑20, 18 decimals)
-* Genesis mint: `1,000,000,000` GHOST to `0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266`
-* L2/L3 gas token: **GHOST** (L1 ERC‑20 address above)
+* Symbol: `GST` (ERC‑20, 18 decimals)
+* Genesis mint: `1,000,000,000` GST to `0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266`
+* L2/L3 gas token: **GST** (L1 ERC‑20 address above)
 
 **Key contracts:**
 
@@ -95,7 +95,7 @@ See `docs/DEV_SETUP.md` for prerequisites, bootstrap instructions, and local bri
 * Uses `op-geth`, `op-node`, `op-batcher`, `op-proposer`
 * Anchored to GhostChain via OptimismPortal
 * OutputOracle verified during preflight
-* Uses GHOST as canonical gas
+* Uses GST as canonical gas
 
 Ports (default devnet):
 
@@ -153,7 +153,7 @@ See `docs/ai-vault.md` for setup and policy details.
 * On‑chain proposal execution
 * Treasury ratification proposals
 * Formal invariants (math + Solidity)
-* Slashing tied to GHOST fees
+* Slashing tied to GST fees
 * Court‑ready cryptographic evidence packs
 
 Governance rules:
@@ -254,7 +254,7 @@ Location:
 ## 🚀 Current Status
 
 * ✅ L1/L2/L3 built, wired, and tested
-* ✅ Canonical GHOST gas enforced
+* ✅ Canonical GST gas enforced
 * ✅ OP‑Stack preflight passing (L1/L2)
 * ⚠️ L3 OutputOracle wiring in progress
 * 🧠 AI services integrated (expanding)

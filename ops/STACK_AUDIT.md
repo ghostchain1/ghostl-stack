@@ -66,7 +66,7 @@ Generated: 2026-01-23T18:55:00Z
    - L3 chain ID varies between `902` and `903` across env + genesis. Must be normalized before bringing L3 online.
 
 6) **Gas token drift**
-   - Updated config now sets `GAS_TOKEN_L2=GHOST` and `GAS_TOKEN_L3=GHOST` to align with the L1 `GHOST` token. Verify runtime overrides match.
+   - Updated config now sets `GAS_TOKEN_L2=GST` and `GAS_TOKEN_L3=GST` to align with the L1 `GST` token. Verify runtime overrides match.
 
 ## Observability Wiring
 
