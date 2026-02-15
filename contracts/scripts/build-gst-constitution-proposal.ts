@@ -186,7 +186,7 @@ function main() {
   }
 
   fs.mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
-  fs.writeFileSync(OUTPUT_PATH, JSON.stringify(payload, null, 2), 'utf8');
+  fs.writeFileSync(OUTPUT_PATH, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
 
   console.log('[gst-constitution] calls:', calls.length);
   console.log('[gst-constitution] output:', OUTPUT_PATH);
