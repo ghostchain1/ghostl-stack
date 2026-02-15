@@ -1,8 +1,8 @@
 # Chains Inventory (Phase 0 — Read-only)
 
 Repo root: `/home/ghost/ghostl-stack`
-Captured at: `2026-02-14T12:31:08Z`
-Baseline commit: `4a264824e4103220f88e75f0242666815180b35b`
+Captured at: `2026-02-15T21:38:46.053847Z`
+Baseline commit: `5aa4c5a4256b6c0e93581ce11a7f050a67f043c4`
 
 This inventory records the canonical **L1/L2/L3 chain surfaces** (configs, RPC endpoints, explorers, and native currency display touchpoints) to support a repo-wide GST migration. It intentionally makes **no configuration changes**.
 
