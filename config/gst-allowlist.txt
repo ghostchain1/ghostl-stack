@@ -4,3 +4,6 @@
 # Generated formal artifacts (contain legacy strings in embedded metadata).
 contracts/reports/formal/slither.json
 contracts/reports/formal/scribble/scribble.json
+
+# Generated snapshot (contains upstream image/import identifiers).
+ops/STACK_CANONICAL.yml
