@@ -1,161 +1,2462 @@
-# Services Inventory (Phase 0 — Read-only)
+# Services Inventory
 
-Repo root: `/home/ghost/ghostl-stack`
-Captured at: `2026-02-14T12:31:08Z`
-Baseline commit: `4a264824e4103220f88e75f0242666815180b35b`
-
-This inventory is derived from docker-compose definitions across the repo (canonical compose locations only).
-
-Compose scan patterns:
-- `docker-compose*.yml`, `compose*.yml`
-- `apps/docker-compose*.yml`
-- `core-service/docker-compose.yml`
-- `infra/ghostchain/docker-compose*.yml`
-- `infra/opstack/docker-compose*.yml`
-- `observability/infra/docker-compose*.yml`
-- `services/docker-compose*.yml`
-- `services/*/docker-compose.yml`
-
-Total compose files found: **97**
-Total unique service names: **133**
+Generated: 2026-02-15T21:37:37.000136Z
 
 Notes:
-- `Domain` is heuristic (based on service name/image/path).
-- `ETH_JSONRPC` in `RPC` means the service uses Blockscout-style `ETHEREUM_JSONRPC_*` env keys (likely an ETH leakage to remediate in Phase 2).
-- `Metrics` is a hint (either `env` = has METRICS* env keys, or a common metrics port like `6060`, `7300`, `8300`, `9090`).
+- Excludes backups/, releases/, ops/, node_modules/, dist/, .tmp/ for signal-to-noise.
+- Service details are derived from docker compose config (JSON).
 
-| Domain | Service | Image/Build | Ports | Networks | Deps | Env files | Env key hints | Vols | HC | Metrics | DB | Migrations | RPC | Sources |
-|---|---|---|---|---|---|---|---|---:|:--:|---|---|---|---|---|
-| AI Agents | `agent-registry` | ctx:services/agent-registry-service | 7701:7701 |  |  |  | AGENT_POLICY_RPC_URL,AGENT_REGISTRY_RPC_URL | 1 | no |  |  |  |  | docker-compose.agents.yml |
-| AI Agents | `ai-clock-sync` | ghostl/ai-clock-sync:local | 7690:7690 | ghost_net,opstack_default |  | ./ai-clock-sync/.env,.env | CLOCK_SYNC_RPC_L1,CLOCK_SYNC_RPC_L2,CLOCK_SYNC_RPC_L3,METRICS_PATH,RPC_TIMEOUT_MS | 3 | yes | env |  |  |  | services/ai-clock-sync/docker-compose.yml,services/docker-compose.legacy.yml |
-| AI Agents | `ai-monitor` | ghostl/ai-monitor:local | 7575:7575 | ghost_internal,ghost_net,opstack_default | ghost-guard,ghost-registry,l2-geth,...(+1) | ./stack.env,.env | ADMIN_TOKEN,ADMIN_TOKEN_FILE,CHAIN_POLICY_CACHE_MS,CHAIN_POLICY_REGISTRY_ADDRESS,CHAIN_POLICY_REGISTRY_RPC,CHAIN_POLICY_REQUIRED,...(+8) | 4 | yes | env |  |  | L1+L2 | docker-compose.phase3.secrets.yml,docker-compose.phase3.yml,...(+3) |
-| AI Agents | `ai-monitor-l1` | ghostl/ai-monitor:local | 7576:7576 | ghost_net,opstack_default |  | .env | ADMIN_TOKEN,CHAIN_POLICY_CACHE_MS,CHAIN_POLICY_REGISTRY_ADDRESS,CHAIN_POLICY_REGISTRY_RPC,CHAIN_POLICY_REQUIRED,POLICY_REGISTRY_RPC,...(+2) | 3 | yes |  |  |  | L2 | services/ai-monitor/docker-compose.yml |
-| AI Agents | `ai-monitor-l3` | ghostl/ai-monitor:local | 7577:7577 | ghost_net,opstack_default |  | .env | ADMIN_TOKEN,CHAIN_POLICY_CACHE_MS,CHAIN_POLICY_REGISTRY_ADDRESS,CHAIN_POLICY_REGISTRY_RPC,CHAIN_POLICY_REQUIRED,OP_BATCHER_METRICS_URL,...(+6) | 3 | yes | env |  |  | L1+L2 | services/ai-monitor/docker-compose.yml |
-| AI Agents | `ai-vault` | ghostl/ai-vault:local | 7710:7710 |  |  | ./stack.env | AI_VAULT_BLOCK_MS,AI_VAULT_BURST_LIMIT,AI_VAULT_DEFAULT_DECISION,AI_VAULT_EXECUTE,AI_VAULT_FORWARD_CLIENT_TOKEN,AI_VAULT_POLICY_PATH,...(+4) | 1 | no |  |  |  |  | services/ai-vault/docker-compose.yml,services/docker-compose.legacy.yml |
-| AI Agents | `ai-vault-dev` | hashicorp/vault:1.16.3 | 8200:8200 |  |  |  | VAULT_DEV_LISTEN_ADDRESS,VAULT_DEV_ROOT_TOKEN_ID | 0 | no |  |  |  |  | services/docker-compose.legacy.yml |
-| AI Agents | `coder-agent` | ctx:services/agent-node |  |  | agent-registry,evidence-service |  |  | 0 | no |  |  |  |  | docker-compose.agents.yml |
-| AI Agents | `docs-agent` | ctx:services/agent-node |  |  | agent-registry,evidence-service |  |  | 0 | no |  |  |  |  | docker-compose.agents.yml |
-| AI Agents | `ghost-ai-attestor` | ghostl/ghost-ai-attestor:local | 3310:3310 | ghost_net |  |  |  | 3 | yes |  |  |  |  | services/ghost-ai-attestor/docker-compose.yml |
-| AI Agents | `ops-agent` | ctx:services/agent-node |  |  | agent-registry,evidence-service |  |  | 0 | no |  |  |  |  | docker-compose.agents.yml |
-| AI Agents | `planner-agent` | ctx:services/agent-node |  |  | agent-registry,evidence-service |  |  | 0 | no |  |  |  |  | docker-compose.agents.yml |
-| AI Agents | `router-agent` | ctx:services/agent-node |  |  | agent-registry,evidence-service |  |  | 0 | no |  |  |  |  | docker-compose.agents.yml |
-| AI Agents | `watchdog-agent` | ctx:services/agent-node |  |  | agent-registry,evidence-service |  |  | 0 | no |  |  |  |  | docker-compose.agents.yml |
-| Bridge/Relayer | `bridge-service` | ghostl/bridge-service:local | 7604:7604 | ghost_internal,ghost_net | ghost-mapper,prometheus | ./stack.env,.env | ADMIN_TOKEN,ADMIN_TOKEN_FILE,PROM_URL | 5 | yes |  |  |  |  | docker-compose.phase3.secrets.yml,docker-compose.phase3.yml,...(+3) |
-| Bridge/Relayer | `dispute-service` | local/dispute-service:${OPSTACK_IMAGE_TAG:-devnet} | 7607:7607 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/dispute-service/docker-compose.yml,...(+1) |
-| Bridge/Relayer | `ghost-relayer` | ghostl/ghost-relayer:local | 7171:7171 | default,ghost_internal,ghost_net,...(+1) | ghost-mapper,ghost-registry | ./stack.env,.env | CANONICAL_GAS_TOKEN_ADDRESS,CANONICAL_GAS_TOKEN_MIN_BALANCE,CANONICAL_GAS_TOKEN_MODE,CANONICAL_GAS_TOKEN_SYMBOL,L2_RELAYER_PRIVATE_KEY,L2_RELAYER_PRIVATE_KEY_FILE,...(+9) | 6 | yes |  |  |  | L1+L2+L3 | docker-compose.phase3.secrets.yml,docker-compose.phase3.yml,...(+2) |
-| Bridge/Relayer | `ghost-rollup-challenger` | ghostl/ghost-rollup-challenger:local | 7282:7282 | ghost_net,opstack_default | ghost-registry | ./stack.env,.env | CHALLENGER_PRIVATE_KEY,RPC_CHILD,RPC_SETTLEMENT | 5 | yes |  |  |  |  | services/docker-compose.legacy.yml,services/ghost-rollup-challenger/docker-compose.yml |
-| Bridge/Relayer | `ghost-rollup-challenger-l2` | ghostl/ghost-rollup-challenger:local | 7283:7283 |  | ghost-registry | ./stack.env | CHALLENGER_PRIVATE_KEY,RPC_CHILD,RPC_SETTLEMENT | 1 | yes |  |  |  |  | services/docker-compose.legacy.yml |
-| Bridge/Relayer | `ghost-rollup-proposer` | ghostl/ghost-rollup-proposer:local | 7272:7272 | ghost_net,opstack_default | ghost-registry | ./stack.env,.env | PROPOSER_PRIVATE_KEY,RPC_CHILD,RPC_SETTLEMENT | 5 | yes |  |  |  |  | services/docker-compose.legacy.yml,services/ghost-rollup-proposer/docker-compose.yml |
-| Bridge/Relayer | `ghost-rollup-proposer-l2` | ghostl/ghost-rollup-proposer:local | 7273:7273 |  | ghost-registry | ./stack.env | PROPOSER_PRIVATE_KEY,RPC_CHILD,RPC_SETTLEMENT | 1 | yes |  |  |  |  | services/docker-compose.legacy.yml |
-| Bridge/Relayer | `l3-op-batcher` | local/op-batcher:${OPSTACK_IMAGE_TAG:-local} | ${L3_BATCHER_HOST_PORT:-39551}:${L3_BATCHER_RPC_PORT:-18551},${L3_METRICS_BATCHER_HOST_PORT:-8301}:${L3_METRICS_BATCHER_PORT:-8301} |  | l3-op-node,op-gate |  | OP_BATCHER_RPC_ENABLE_ADMIN | 1 | yes | 8301 |  |  |  | infra/opstack/docker-compose.l3.yml |
-| Bridge/Relayer | `l3-op-challenger` | ${OP_CHALLENGER_IMAGE:-local/op-challenger:${OPSTACK_IMAGE_TAG:-devnet}} | ${L3_CHALLENGER_METRICS_HOST_PORT:-8303}:${L3_CHALLENGER_METRICS_PORT:-8303} |  | l3-op-node |  | OP_CHALLENGER_L1_ETH_RPC,OP_CHALLENGER_L2_ETH_RPC,OP_CHALLENGER_PRIVATE_KEY,OP_CHALLENGER_ROLLUP_RPC | 6 | no |  |  |  |  | infra/opstack/docker-compose.challengers.yml |
-| Bridge/Relayer | `l3-op-proposer` | local/op-proposer:${OPSTACK_IMAGE_TAG:-local} | ${L3_METRICS_PROPOSER_HOST_PORT:-8302}:${L3_METRICS_PROPOSER_PORT:-8302},${L3_PROPOSER_HOST_PORT:-39560}:${L3_PROPOSER_RPC_PORT:-18560} |  | l3-op-node,op-gate |  |  | 1 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml |
-| Bridge/Relayer | `op-batcher` | local/op-batcher:${OPSTACK_IMAGE_TAG:-local} | 7301:7301,8551:8551 |  | l1-rpc-proxy,op-gate,op-gate-l1,...(+1) |  | OP_BATCHER_RPC_ENABLE_ADMIN | 1 | yes | 7301 |  |  |  | infra/opstack/docker-compose.yml |
-| Bridge/Relayer | `op-challenger` | ${OP_CHALLENGER_IMAGE:-local/op-challenger:${OPSTACK_IMAGE_TAG:-devnet}} | ${L2_CHALLENGER_METRICS_HOST_PORT:-7303}:${L2_CHALLENGER_METRICS_PORT:-7303} |  | op-node |  | OP_CHALLENGER_L1_ETH_RPC,OP_CHALLENGER_L2_ETH_RPC,OP_CHALLENGER_PRIVATE_KEY,OP_CHALLENGER_ROLLUP_RPC | 6 | no |  |  |  |  | infra/opstack/docker-compose.challengers.yml |
-| Bridge/Relayer | `op-proposer` | local/op-proposer:${OPSTACK_IMAGE_TAG:-local} | 7302:7302,8560:8560 |  | l1-rpc-proxy,op-gate,op-gate-l1,...(+1) |  | PROPOSER_KEY | 1 | yes |  |  |  |  | infra/opstack/docker-compose.yml |
-| Chain Core | `alerts-service` | local/alerts-service:${OPSTACK_IMAGE_TAG:-devnet} | 7644:7644 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/alerts-service/docker-compose.yml,...(+1) |
-| Chain Core | `auth-service` | local/auth-service:${OPSTACK_IMAGE_TAG:-devnet} | 7639:7639 | ghost_net |  | ./stack.env,.env |  | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/auth-service/docker-compose.yml,...(+1) |
-| Chain Core | `chain-status-service` | local/chain-status-service:${OPSTACK_IMAGE_TAG:-devnet} | 7612:7612 | ghost_net |  | ./stack.env,.env | RPC_L2,RPC_L3 | 3 | yes |  |  |  | L2+L3 | infra/opstack/docker-compose.l3.yml,services/chain-status-service/docker-compose.yml,...(+1) |
-| Chain Core | `consensus-telemetry-service` | ghostl/consensus-telemetry-service:local | ${AUTONOMY_CONSENSUS_TELEMETRY_HOST_PORT:-17635}:7635,7635:7635 | ghost_net | ghost-registry,l2-geth,l3-geth | ./stack.env,.env | OP_NODE_L2_RPC,OP_NODE_L3_RPC,RPC_L1,RPC_L2,RPC_L3,RPC_REGISTRY_URL | 4 | yes |  |  |  | L1+L2+L3 | docker-compose.autonomy.yml,infra/opstack/docker-compose.l3.yml,...(+2) |
-| Chain Core | `contract-registry-service` | local/contract-registry-service:${OPSTACK_IMAGE_TAG:-devnet} | 7608:7608 | ghost_net | l2-geth,l3-geth,prometheus | ./stack.env,.env | PROM_URL,RPC_L2,RPC_L3 | 3 | yes |  |  |  | L2+L3 | infra/opstack/docker-compose.l3.yml,services/contract-registry-service/docker-compose.yml,...(+1) |
-| Chain Core | `core-service` | ctx:core-service | 8080:8080 |  |  |  |  | 0 | yes |  |  |  |  | core-service/docker-compose.yml |
-| Chain Core | `entity-tagging-service` | local/entity-tagging-service:${OPSTACK_IMAGE_TAG:-devnet} | 7627:7627 | ghost_net |  | ./stack.env,.env |  | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `explainability-service` | local/explainability-service:${OPSTACK_IMAGE_TAG:-devnet} | 7632:7632 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `feature-flags-service` | local/feature-flags-service:${OPSTACK_IMAGE_TAG:-devnet} | 7611:7611 | ghost_net |  | ./stack.env,.env |  | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `forecasting-service` | local/forecasting-service:${OPSTACK_IMAGE_TAG:-devnet} | 7617:7617 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `gas-engine-migrate` | node:22-alpine |  | ghost_net | gas-engine-postgres,gas-engine-redis | .env | DATABASE_URL,GAS_TOKEN_L1,GAS_TOKEN_L2,GAS_TOKEN_L3,REDIS_URL,RPC_L1,...(+2) | 5 | yes |  | postgres |  | L1+L2+L3 | services/docker-compose.legacy.yml,services/gas-engine-migrate/docker-compose.yml |
-| Chain Core | `gas-engine-postgres` | ghostl/gas-engine-postgres:local | 5433:5432 | ghost_net |  | .env | POSTGRES_DB,POSTGRES_PASSWORD,POSTGRES_USER | 6 | yes |  | postgres |  |  | infra/opstack/docker-compose.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `gas-engine-redis` | ghostl/gas-engine-redis:local | 6381:6379 | ghost_net |  | .env |  | 7 | yes |  | redis |  |  | infra/opstack/docker-compose.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `ghost-gas-engine` | ghostl/ghost-gas-engine:local | 3210:3210 | ghost_net | gas-engine-migrate,gas-engine-postgres,gas-engine-redis | ./stack.env,.env | ADMIN_TOKEN,CHAINS_CONFIG_PATH,CHAIN_POLICY_CHECKPOINT_HASH,CHAIN_POLICY_CHECKPOINT_LAYER,CHAIN_POLICY_REGISTRY_ADDRESS,CHAIN_POLICY_REQUIRED,...(+12) | 7 | yes |  | postgres | services/ghost-gas-engine/src/db/migrations | L1+L2+L3 | infra/opstack/docker-compose.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `ghost-gas-engine-worker` | ghostl/ghost-gas-engine:local |  | ghost_net | gas-engine-postgres,gas-engine-redis,ghost-gas-engine | ./stack.env,.env | CHAINS_CONFIG_PATH,DATABASE_URL,GAS_TOKEN_L1,GAS_TOKEN_L2,GAS_TOKEN_L3,REDIS_URL,...(+7) | 7 | yes |  | postgres | services/ghost-gas-engine/src/db/migrations | L1+L2+L3 | infra/opstack/docker-compose.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `ghost-guard` | ghostl/ghost-guard:local | 7070:7070 | ghost_internal | ghost-mapper,l2-geth |  | ADMIN_TOKEN,ADMIN_TOKEN_FILE,AI_SIGNER_PRIVATE_KEY,AI_SIGNER_PRIVATE_KEY_FILE,PRIVATE_KEY,PRIVATE_KEY_FILE,...(+3) | 2 | yes |  |  |  | L1+L2+L3 | docker-compose.phase3.secrets.yml,docker-compose.phase3.yml,...(+1) |
-| Chain Core | `ghost-mapper` | ghostl/ghost-mapper:local | ${GHOST_MAPPER_HOST_PORT:-17780}:7780,7780:7780 | default,ghost_interchain,ghost_internal,...(+3) |  | .env | MAPPER_ADMIN_TOKEN | 5 | yes |  |  |  |  | docker-compose.autonomy.yml,docker-compose.phase3.yml,...(+1) |
-| Chain Core | `ghost-pil` | ghostl/ghost-pil:local | 3220:3220 | ghost_net | pil-migrate,pil-postgres | ./stack.env,.env | DATABASE_URL,PIL_CHAIN_CONFIG_PATH | 3 | yes |  | postgres | services/ghost-pil/src/db/migrations |  | services/docker-compose.legacy.yml,services/ghost-pil/docker-compose.yml |
-| Chain Core | `ghost-pil-worker` | ghostl/ghost-pil:local |  | ghost_net | ghost-pil | ./stack.env,.env | DATABASE_URL,PIL_CHAIN_CONFIG_PATH | 3 | yes |  | postgres | services/ghost-pil/src/db/migrations |  | services/docker-compose.legacy.yml,services/ghost-pil-worker/docker-compose.yml |
-| Chain Core | `ghost-registry` | ghostl/ghost-registry:local | ${AUTONOMY_GHOST_REGISTRY_HOST_PORT:-28088}:8088,18088:8088 | ghost_internal,ghost_net | ghost-mapper | ./stack.env,.env | RPC_L1,RPC_L1_WS,RPC_L2,RPC_L2_WS,RPC_L3,RPC_L3_WS | 3 | yes |  |  |  | L1+L2+L3 | docker-compose.autonomy.yml,docker-compose.phase3.yml,...(+2) |
-| Chain Core | `ghost-rpc-proxy` | ghostl/ghost-rpc-proxy:local | 8546:8546 | ghost_net,opstack_default |  | ./stack.env,.env |  | 3 | yes |  |  |  |  | services/docker-compose.legacy.yml,services/ghost-rpc-proxy/docker-compose.yml |
-| Chain Core | `ghostchain-bootnode` | ${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14} | ${L1_BOOTNODE_PORT:-30301}:30301/udp | ghostchain |  | ./.env |  | 1 | no |  |  |  |  | infra/ghostchain/docker-compose.l1.yml |
-| Chain Core | `ghostchain-node1` | hyperledger/besu:24.12.0 | ${L1_METRICS_PORT:-18660}:6060,${L1_P2P_PORT:-18551}:30303,${L1_RPC_AUTH_PORT:-18552}:8551,...(+5) | ghostchain | ghostchain-bootnode | ./.env | AUTHRPC_VHOSTS,CHAIN_ID,METRICS_PORT | 6 | yes | env |  |  |  | infra/ghostchain/docker-compose.ibft.yml,infra/ghostchain/docker-compose.l1.yml |
-| Chain Core | `ghostchain-node2` | hyperledger/besu:24.12.0 |  | ghostchain | ghostchain-bootnode | ./.env | AUTHRPC_VHOSTS,CHAIN_ID,METRICS_PORT | 6 | no | env |  |  |  | infra/ghostchain/docker-compose.ibft.yml,infra/ghostchain/docker-compose.l1.yml |
-| Chain Core | `ghostchain-node3` | hyperledger/besu:24.12.0 |  | ghostchain |  |  |  | 2 | no |  |  |  |  | infra/ghostchain/docker-compose.ibft.yml |
-| Chain Core | `ghostchain-node4` | hyperledger/besu:24.12.0 |  | ghostchain |  |  |  | 2 | no |  |  |  |  | infra/ghostchain/docker-compose.ibft.yml |
-| Chain Core | `ghostchain-rpc-proxy` | ghostl/ghost-rpc-proxy:local | ${L1_RPC_HTTP_PORT:-18545}:8545 | ghostchain | ghostchain-node1 | ./.env | RPC_AUTH_TOKEN,RPC_CORS_ORIGINS,RPC_RATE_LIMIT_ALLOWLIST,RPC_RATE_LIMIT_BURST,RPC_RATE_LIMIT_PER_MINUTE,RPC_RATE_WINDOW_MS,...(+2) | 0 | yes |  |  |  |  | infra/ghostchain/docker-compose.l1.yml |
-| Chain Core | `ghostl-api` | ctx:. df:apps/api/Dockerfile | 4000:4000 | default,ghost_net,ghostchain-compliance_default |  | ../services/stack.env,./api/.env.example,...(+3) |  | 4 | no |  |  |  |  | apps/docker-compose.dev.yml,docker-compose.dev.yml |
-| Chain Core | `ghostl-worker` | node:22.21.0-bookworm-slim | 7310:7310 | default,ghost_net,ghostchain-compliance_default |  |  | WORKER_REDIS_URL | 1 | no |  |  |  |  | apps/docker-compose.dev.yml |
-| Chain Core | `ghostl-worker-redis` | redis:7-alpine |  |  |  |  |  | 1 | yes |  | redis |  |  | apps/docker-compose.dev.yml |
-| Chain Core | `global-search-service` | local/global-search-service:${OPSTACK_IMAGE_TAG:-devnet} | 7637:7637 | ghost_net |  | ./stack.env,.env |  | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `key-rotation-service` | local/key-rotation-service:${OPSTACK_IMAGE_TAG:-devnet} | 7619:7619 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `l1-mainnet-geth` | ethereum/client-go:stable | 38545:8545,38546:8546,38551:8551,...(+1) |  |  |  |  | 1 | no | 6060 |  |  |  | infra/opstack/docker-compose.mainnet-geth.yml |
-| Chain Core | `l1-rpc-proxy` | node:22-alpine |  |  |  |  |  | 1 | yes |  |  |  |  | infra/opstack/docker-compose.yml |
-| Chain Core | `l2-geth` | local/op-geth:${OPSTACK_IMAGE_TAG:-local} | ${L2_HOST_WS:-29548}:8546,29547:8545,29606:6060 |  | op-gate |  |  | 2 | yes | 6060 |  |  |  | infra/opstack/docker-compose.yml |
-| Chain Core | `l3-geth` | local/op-geth:${OPSTACK_IMAGE_TAG:-local} | ${L3_GETH_METRICS_HOST_PORT:-39606}:${L3_GETH_METRICS_PORT:-6060},${L3_HOST_RPC:-39545}:8545,${L3_HOST_WS:-39548}:8546 |  | l2-geth |  |  | 2 | yes | 6060 |  |  |  | infra/opstack/docker-compose.l3.yml |
-| Chain Core | `l3-op-node` | local/op-node:${OPSTACK_IMAGE_TAG:-local} | ${L3_METRICS_NODE_HOST_PORT:-8300}:${L3_METRICS_NODE_PORT:-8300},${L3_ROLLUP_RPC_HOST_PORT:-39546}:${L3_ROLLUP_RPC_PORT:-19546} |  | l3-geth |  |  | 2 | yes | 8300 |  |  |  | infra/opstack/docker-compose.l3.yml |
-| Chain Core | `mempool-service` | local/mempool-service:${OPSTACK_IMAGE_TAG:-devnet} | 7610:7610 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `migrate` | node:22-alpine |  |  | postgres,redis |  | ATTESTATION_PRIVATE_KEY,DATABASE_URL,REDIS_URL | 1 | no |  | postgres |  |  | apps/docker-compose.yml,docker-compose.yml |
-| Chain Core | `network-context-service` | ghostl/network-context-service:local | ${AUTONOMY_NETWORK_CONTEXT_HOST_PORT:-17633}:7633,7633:7633 | ghost_net | ghost-registry | ./stack.env,.env | RPC_L2,RPC_L3,RPC_REGISTRY_URL | 3 | yes |  |  |  | L2+L3 | docker-compose.autonomy.yml,infra/opstack/docker-compose.l3.yml,...(+2) |
-| Chain Core | `network-manager` | alpine:3.19 |  |  |  |  |  | 1 | no |  |  |  |  | infra/opstack/docker-compose.network-manager.yml |
-| Chain Core | `network-manager-service` | ghostl/network-manager-service:local | ${AUTONOMY_NETWORK_MANAGER_HOST_PORT:-17766}:7766,7766:7766 | ghost_net,opstack_default | consensus-telemetry-service,ghost-registry | ./stack.env,.env | EXECUTION_APPROVAL_TOKEN,GOVERNANCE_RPC_L1,MONITOR_RPC_L1,MONITOR_RPC_L2,MONITOR_RPC_L3,OP_GATE_ADMIN_TOKEN,...(+1) | 5 | yes |  |  |  |  | docker-compose.autonomy.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `node-health-service` | local/node-health-service:${OPSTACK_IMAGE_TAG:-devnet} | 7613:7613 | ghost_net | l2-geth,l3-geth | ./stack.env,.env | L2_OUTPUT_ORACLE_RPC,L3_OUTPUT_ORACLE_RPC,RPC_L1,RPC_L2,RPC_L3 | 3 | yes |  |  |  | L1+L2+L3 | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `node-inventory-service` | local/node-inventory-service:${OPSTACK_IMAGE_TAG:-devnet} | 7622:7622 | ghost_net |  | ./stack.env,.env |  | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `notifications-service` | local/notifications-service:${OPSTACK_IMAGE_TAG:-devnet} | 7638:7638 | ghost_net |  | ./stack.env,.env |  | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `op-gate` | ${OP_GATE_IMAGE:-local/op-gate:0.1.0} | 28546:8545 |  |  |  | ADMIN_TOKEN,UPSTREAM_RPC | 1 | yes |  |  |  |  | infra/opstack/docker-compose.yml |
-| Chain Core | `op-gate-l1` | ${OP_GATE_IMAGE:-local/op-gate:0.1.0} | 28547:8545 |  |  |  | ADMIN_TOKEN,UPSTREAM_RPC | 1 | yes |  |  |  |  | infra/opstack/docker-compose.yml |
-| Chain Core | `op-node` | local/op-node:${OPSTACK_IMAGE_TAG:-local} | 7300:7300,9546:9546 |  | l1-rpc-proxy,l2-geth |  |  | 2 | yes | 7300 |  |  |  | infra/opstack/docker-compose.yml |
-| Chain Core | `op-sequencer` | local/op-node:${OPSTACK_IMAGE_TAG:-local} | 7303:7303,9646:9646 |  | l1-rpc-proxy,l2-geth |  |  | 2 | yes |  |  |  |  | infra/opstack/docker-compose.yml |
-| Chain Core | `participation-service` | local/participation-service:${OPSTACK_IMAGE_TAG:-devnet} | 7603:7603 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `peer-graph-service` | local/peer-graph-service:${OPSTACK_IMAGE_TAG:-devnet} | 7636:7636 | ghost_net | l2-geth,l3-geth | ./stack.env,.env | RPC_L2,RPC_L3 | 3 | yes |  |  |  | L2+L3 | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `pil-migrate` | node:22-alpine |  | ghost_net | pil-postgres | .env | DATABASE_URL,PIL_CHAIN_CONFIG_PATH | 5 | yes |  | postgres |  |  | services/docker-compose.legacy.yml,services/pil-migrate/docker-compose.yml |
-| Chain Core | `pil-postgres` | postgres:16-alpine | 5434:5432 | ghost_net |  | .env | POSTGRES_DB,POSTGRES_PASSWORD,POSTGRES_USER | 4 | yes |  | postgres |  |  | services/docker-compose.legacy.yml,services/pil-postgres/docker-compose.yml |
-| Chain Core | `postgres` | postgres:16-alpine | 5432:5432 |  |  |  | POSTGRES_DB,POSTGRES_PASSWORD,POSTGRES_USER | 1 | yes |  | postgres |  |  | apps/docker-compose.yml,docker-compose.yml |
-| Chain Core | `preconfirm-l2-service` | ghostl/preconfirm-service:local | 7691:7691 |  |  | ./stack.env | RPC_URL | 0 | yes |  |  |  |  | services/docker-compose.legacy.yml |
-| Chain Core | `preconfirm-l3-service` | ghostl/preconfirm-service:local | 7692:7692 |  |  | ./stack.env | RPC_URL | 0 | yes |  |  |  |  | services/docker-compose.legacy.yml |
-| Chain Core | `preconfirm-service` | ghostl/preconfirm-service:local | 7691:7691 | ghost_net |  | .env |  | 0 | yes |  |  |  |  | services/preconfirm-service/docker-compose.yml |
-| Chain Core | `proxy-inspector-service` | local/proxy-inspector-service:${OPSTACK_IMAGE_TAG:-devnet} | 7631:7631 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `rbac-service` | local/rbac-service:${OPSTACK_IMAGE_TAG:-devnet} | 7640:7640 | ghost_net |  | ./stack.env,.env |  | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `redis` | redis:7-alpine | 6379:6379 |  |  |  |  | 1 | yes |  | redis |  |  | apps/docker-compose.yml,docker-compose.yml |
-| Chain Core | `rpc-forward-l1-29545` | ghostl/rpc-forward-l1-29545:local | 29545:29545 | ghost_net |  | .env |  | 3 | yes |  |  |  |  | services/docker-compose.legacy.yml,services/rpc-forward-l1-29545/docker-compose.yml |
-| Chain Core | `rpc-forward-l2-18547` | ${OPSTACK_RPC_FORWARD_IMAGE:-local/rpc-forward:0.1.0} | 18547:18547 |  | l2-geth,op-gate |  |  | 0 | no |  |  |  |  | infra/opstack/docker-compose.yml |
-| Chain Core | `secrets-health-service` | local/secrets-health-service:${OPSTACK_IMAGE_TAG:-devnet} | 7618:7618 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `session-service` | local/session-service:${OPSTACK_IMAGE_TAG:-devnet} | 7643:7643 | ghost_net |  | ./stack.env,.env |  | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `snapshot-service` | local/snapshot-service:${OPSTACK_IMAGE_TAG:-devnet} | 7624:7624 | ghost_net |  | ./stack.env,.env |  | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `staking-service` | local/staking-service:${OPSTACK_IMAGE_TAG:-devnet} | 7601:7601 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `theme-service` | local/theme-service:${OPSTACK_IMAGE_TAG:-devnet} | 7634:7634 | ghost_net |  | ./stack.env,.env |  | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `transfer-lifecycle-service` | local/transfer-lifecycle-service:${OPSTACK_IMAGE_TAG:-devnet} | 7605:7605 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `upgrade-orchestrator-service` | local/upgrade-orchestrator-service:${OPSTACK_IMAGE_TAG:-devnet} | 7623:7623 | ghost_net |  | ./stack.env,.env |  | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `validator-service` | local/validator-service:${OPSTACK_IMAGE_TAG:-devnet} | 7600:7600 | ghost_net | l2-geth,l3-geth,prometheus | ./stack.env,.env | PROM_URL,RPC_L2,RPC_L3 | 3 | yes |  |  |  | L2+L3 | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Chain Core | `vector` | ${VECTOR_IMAGE:-timberio/vector:0.38.0-alpine} |  |  | loki |  |  | 3 | no |  |  |  |  | infra/opstack/docker-compose.yml |
-| Chain Core | `verification-service` | local/verification-service:${OPSTACK_IMAGE_TAG:-devnet} | 7630:7630 | ghost_net |  | ./stack.env,.env |  | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Compliance/KYC | `anomaly-detection-service` | local/anomaly-detection-service:${OPSTACK_IMAGE_TAG:-devnet} | 7616:7616 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/anomaly-detection-service/docker-compose.yml,...(+1) |
-| Compliance/KYC | `audit-log-service` | local/audit-log-service:${OPSTACK_IMAGE_TAG:-devnet} | 7641:7641 | ghost_net |  | ./stack.env,.env |  | 5 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/audit-log-service/docker-compose.yml,...(+1) |
-| Compliance/KYC | `auditor-agent` | ctx:services/agent-node |  |  | agent-registry,evidence-service |  |  | 0 | no |  |  |  |  | docker-compose.agents.yml |
-| Compliance/KYC | `compliance-export-service` | local/compliance-export-service:${OPSTACK_IMAGE_TAG:-devnet} | 7621:7621 | ghost_net |  | ./stack.env,.env |  | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/compliance-export-service/docker-compose.yml,...(+1) |
-| Compliance/KYC | `contract-risk-service` | local/contract-risk-service:${OPSTACK_IMAGE_TAG:-devnet} | 7609:7609 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/contract-risk-service/docker-compose.yml,...(+1) |
-| Compliance/KYC | `evidence-service` | ctx:services/audit-log-service | 17641:7641 |  |  |  |  | 1 | no |  |  |  |  | docker-compose.agents.yml |
-| Compliance/KYC | `ghost-compliance` | ghostl/ghost-compliance:local | 8090:8090 | ghostchain-compliance_default | migrate,postgres,redis | .env | ATTESTATION_PRIVATE_KEY,DATABASE_URL,REDIS_URL | 3 | yes |  | postgres |  |  | apps/docker-compose.yml,docker-compose.yml,...(+1) |
-| Compliance/KYC | `ghost-compliance-worker` | ghostl/ghost-compliance-worker:local |  | ghostchain-compliance_default | ghost-compliance,migrate,postgres,...(+1) | .env | DATABASE_URL,REDIS_URL | 3 | yes |  | postgres |  |  | apps/docker-compose.yml,docker-compose.yml,...(+1) |
-| Compliance/KYC | `slashing-detection-service` | local/slashing-detection-service:${OPSTACK_IMAGE_TAG:-devnet} | 7620:7620 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Compliance/KYC | `treasury-evidence` | ghostl/treasury-evidence:local |  | ghost_net |  | .env |  | 1 | no |  |  |  |  | services/treasury-evidence/docker-compose.yml |
-| Governance | `governance-service` | local/governance-service:${OPSTACK_IMAGE_TAG:-devnet} | 17645:7645,7645:7645 | ghost_net |  | ./stack.env,.env | RPC_L1 | 3 | yes |  |  |  | L1 | docker-compose.agents.yml,infra/opstack/docker-compose.l3.yml,...(+2) |
-| Indexing/Explorer | `block-index-service` | local/block-index-service:${OPSTACK_IMAGE_TAG:-devnet} | 7626:7626 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/block-index-service/docker-compose.yml,...(+1) |
-| Indexing/Explorer | `ghostscout` | blockscout/blockscout:latest | 18644:4000 | ghostchain | ghostchain-node1 |  | COIN,DATABASE_URL,ETHEREUM_JSONRPC_HTTP_URL,ETHEREUM_JSONRPC_TRACE_URL,ETHEREUM_JSONRPC_WS_URL,SECRET_KEY_BASE | 0 | no |  | postgres |  | ETH_JSONRPC | infra/ghostchain/docker-compose.l1.yml |
-| Indexing/Explorer | `ghostscout-db` | ghostl/ghostscout-db:local |  | ghostchain_ghostchain,opstack_default |  | .env | POSTGRES_DB,POSTGRES_PASSWORD,POSTGRES_USER | 5 | yes |  | postgres |  |  | services/ghostscout-db/docker-compose.yml |
-| Indexing/Explorer | `ghostscout-frontend-l1` | ghostl/ghostscout-frontend-l1:local | ${GHOSTSCOUT_L1_UI_PORT:-18651}:3000 | ghostchain_ghostchain,opstack_default |  | .env |  | 3 | yes |  |  |  |  | services/ghostscout-frontend-l1/docker-compose.yml |
-| Indexing/Explorer | `ghostscout-frontend-l2` | ghostl/ghostscout-frontend-l2:local | ${GHOSTSCOUT_L2_UI_PORT:-18652}:3000 | ghostchain_ghostchain,opstack_default |  | .env |  | 3 | yes |  |  |  |  | services/ghostscout-frontend-l2/docker-compose.yml |
-| Indexing/Explorer | `ghostscout-frontend-l3` | ghostl/ghostscout-frontend-l3:local | ${GHOSTSCOUT_L3_UI_PORT:-18653}:3000 | ghostchain_ghostchain,opstack_default |  | .env |  | 3 | yes |  |  |  |  | services/ghostscout-frontend-l3/docker-compose.yml |
-| Indexing/Explorer | `ghostscout-l1` | ghostl/ghostscout-l1:local | ${GHOSTSCOUT_L1_PORT:-18641}:4000 | ghostchain_ghostchain,opstack_default |  | .env | DATABASE_QUEUE_TARGET,DATABASE_URL,SECRET_KEY_BASE | 3 | yes |  | postgres |  |  | services/ghostscout-l1/docker-compose.yml |
-| Indexing/Explorer | `ghostscout-l2` | ghostl/ghostscout-l2:local | ${GHOSTSCOUT_L2_PORT:-18642}:4000 | ghostchain_ghostchain,opstack_default |  | .env | DATABASE_URL,SECRET_KEY_BASE | 5 | yes |  | postgres |  |  | services/ghostscout-l2/docker-compose.yml |
-| Indexing/Explorer | `ghostscout-l3` | ghostl/ghostscout-l3:local | ${GHOSTSCOUT_L3_PORT:-18643}:4000 | ghostchain_ghostchain,opstack_default |  | .env | DATABASE_URL,SECRET_KEY_BASE | 5 | yes |  | postgres |  |  | services/ghostscout-l3/docker-compose.yml |
-| Indexing/Explorer | `tx-index-service` | local/tx-index-service:${OPSTACK_IMAGE_TAG:-devnet} | 7625:7625 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Observability | `alertmanager` | ${ALERTMANAGER_IMAGE:-prom/alertmanager@sha256:e13b6ed5cb929eeaee733479dce55e10eb3bc2e9c4586c705a4e8da41e5eacf5} | 9093:9093 |  |  |  |  | 3 | yes | 9093 |  |  |  | infra/opstack/docker-compose.yml,observability/infra/docker-compose.yml |
-| Observability | `grafana` | ${GRAFANA_IMAGE:-grafana/grafana@sha256:408afb9726de5122b00a2576763a8a57a3c86d5b0eff5305bc994ceb3eb96c3f} | 3000:3000 |  | loki,prometheus |  | PROMETHEUS_URL | 5 | no |  |  |  |  | infra/opstack/docker-compose.yml,observability/infra/docker-compose.yml |
-| Observability | `loki` | ${LOKI_IMAGE:-grafana/loki@sha256:8b5bd7748d0e4da66cd741ac276e485517514af0bea32167e27c0e1a95bcf8aa} | 3100:3100 |  |  |  |  | 3 | yes |  |  |  |  | infra/opstack/docker-compose.yml,observability/infra/docker-compose.yml |
-| Observability | `prometheus` | ${PROMETHEUS_IMAGE:-prom/prometheus@sha256:075b1ba2c4ebb04bc3a6ab86c06ec8d8099f8fda1c96ef6d104d9bb1def1d8bc} | 9090:9090,9091:9090 | default,opstack_default |  |  |  | 5 | yes | 9090 |  |  |  | infra/opstack/docker-compose.yml,observability/infra/docker-compose.yml |
-| Treasury/Tokenomics | `fee-model-service` | local/fee-model-service:${OPSTACK_IMAGE_TAG:-devnet} | 7615:7615 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Treasury/Tokenomics | `payout-service` | local/payout-service:${OPSTACK_IMAGE_TAG:-devnet} | 7629:7629 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Treasury/Tokenomics | `rewards-service` | local/rewards-service:${OPSTACK_IMAGE_TAG:-devnet} | 7602:7602 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Treasury/Tokenomics | `supply-service` | local/supply-service:${OPSTACK_IMAGE_TAG:-devnet} | 7614:7614 | ghost_net | prometheus | ./stack.env,.env | PROM_URL | 3 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Treasury/Tokenomics | `treasury-ai` | ghostl/treasury-ai:local | 7630:7630 | ghost_net |  | .env |  | 1 | yes |  |  |  |  | services/treasury-ai/docker-compose.yml |
-| Treasury/Tokenomics | `treasury-service` | local/treasury-service:${OPSTACK_IMAGE_TAG:-devnet} | 7628:7628 | ghost_net | prometheus | ./stack.env,.env | EXECUTION_APPROVAL_TOKEN,PROM_URL | 4 | yes |  |  |  |  | infra/opstack/docker-compose.l3.yml,services/docker-compose.legacy.yml,...(+1) |
-| Wallet/UI | `command-palette-service` | ghostl/command-palette-service:local | 7642:7642 | ghost_net |  | ./stack.env,.env |  | 3 | yes |  |  |  |  | services/command-palette-service/docker-compose.yml,services/docker-compose.legacy.yml |
-| Wallet/UI | `ghostl-web` | ctx:. df:apps/web/Dockerfile | 3200:3200 | default,ghost_net,ghostchain-compliance_default | ghostl-api | ./apps/web/.env.docker,./apps/web/.env.example,...(+1) | GAS_ENGINE_ADMIN_TOKEN,GAS_ENGINE_URL,NEXT_PUBLIC_GAS_ENGINE_URL | 2 | no |  |  |  |  | apps/docker-compose.dev.yml,docker-compose.dev.yml |
-| Wallet/UI | `liquidity-service` | ghostl/liquidity-service:local | 7606:7606 | ghost_internal,ghost_net | ghost-mapper,ghost-registry,l2-geth,...(+2) | ./stack.env,.env | L2_TOKEN_ADDRESS,L3_TOKEN_ADDRESS,PROM_URL,RPC_L2,RPC_L3,RPC_REGISTRY_URL | 3 | yes |  |  |  | L2+L3 | docker-compose.phase3.yml,infra/opstack/docker-compose.l3.yml,...(+2) |
+## apps/docker-compose.dev.yml
+- ghostl-api | ports=4000->4000/tcp | env_files=none | volumes=2 | healthcheck=no | networks=default,ghost_net,ghostchain-compliance_default
+- ghostl-web | ports=3200->3200/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default,ghost_net,ghostchain-compliance_default
+- ghostl-worker | ports=7310->7310/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default,ghost_net,ghostchain-compliance_default
+- ghostl-worker-redis | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## apps/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## core-service/docker-compose.yml
+- core-service | ports=8080->8080/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+
+## docker-compose.agents.yml
+- agent-registry | ports=7701->7701/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+- auditor-agent | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- coder-agent | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- docs-agent | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- evidence-service | ports=17641->7641/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+- governance-service | ports=17645->7645/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- ops-agent | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- planner-agent | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- router-agent | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- watchdog-agent | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+
+## docker-compose.autonomy.yml
+- consensus-telemetry-service | ports=17635->7635/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- ghost-mapper | ports=17780->7780/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default,ghost_net,ghostchain,opstack_default
+- ghost-registry | ports=28088->8088/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- network-context-service | ports=17633->7633/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- network-manager-service | ports=17766->7766/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+
+## docker-compose.dev.yml
+- ghostl-api | ports=4000->4000/tcp | env_files=none | volumes=2 | healthcheck=no | networks=default
+- ghostl-web | ports=3200->3200/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+
+## docker-compose.phase3.secrets.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/docker-compose.phase3.secrets.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## docker-compose.phase3.yml
+- ai-monitor | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_internal
+- bridge-service | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_internal
+- ghost-guard | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_internal
+- ghost-mapper | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_interchain,ghost_internal
+- ghost-registry | ports=none | env_files=none | volumes=0 | healthcheck=yes | networks=ghost_internal
+- liquidity-service | ports=none | env_files=none | volumes=0 | healthcheck=yes | networks=ghost_internal
+
+## docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/docker/_backup/20260121-1909/core-service/docker-compose.yml
+- core-service | ports=8080->8080/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+
+## infra/docker/_backup/20260121-1909/docker-compose.dev.yml
+- ghostl-api | ports=4000->4000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- ghostl-web | ports=3200->3200/tcp | env_files=none | volumes=2 | healthcheck=no | networks=default
+
+## infra/docker/_backup/20260121-1909/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- ghost-ui | ports=3200->3200/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.eth.yml
+- ghostchain-bootnode | ports=30301->30301/udp | env_files=none | volumes=1 | healthcheck=no | networks=ghostchain
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18552->8551/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=ghostchain
+- ghostscout | ports=18644->4000/tcp | env_files=none | volumes=0 | healthcheck=no | networks=ghostchain
+- ghostscout-db | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=ghostchain
+
+## infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.mainnet-geth.yml
+- l1-mainnet-geth | ports=38545->8545/tcp,38546->8546/tcp,38551->8551/tcp,38660->6060/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+
+## infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.network-manager.yml
+- network-manager | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+
+## infra/docker/_backup/20260121-1909/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l2-geth | ports=29547->8545/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- prometheus | ports=9090->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/docker/_backup/20260121-1909/infra/opstack/optimism-upstream/interop-devnet/docker-compose.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/infra/opstack/optimism-upstream/interop-devnet/docker-compose.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/docker/_backup/20260121-1909/infra/opstack/optimism-upstream/ops-bedrock/docker-compose.yml
+- artifact-server | ports=8080->80/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+- da-server | ports=3100->3100/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+- l1 | ports=8545->8545/tcp,8546->8546/tcp,7060->6060/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-bn | ports=9000->9000/tcp,5052->5052/tcp | env_files=none | volumes=5 | healthcheck=no | networks=default
+- l1-vc | ports=none | env_files=none | volumes=6 | healthcheck=no | networks=default
+- l2 | ports=9545->8545/tcp,8060->6060/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- op-batcher | ports=6061->6060/tcp,7301->7300/tcp,6545->8545/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- op-challenger | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=default
+- op-node | ports=7545->8545/tcp,9003->9003/tcp,7300->7300/tcp,6060->6060/tcp | env_files=none | volumes=6 | healthcheck=no | networks=default
+- op-proposer | ports=6062->6060/tcp,7302->7300/tcp,6546->8545/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- sentinel | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+
+## infra/docker/_backup/20260121-1909/observability/infra/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=no | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=no | networks=default
+- prometheus | ports=9090->9090/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/docker/_backup/20260121-1909/services/docker-compose.yml
+- ai-clock-sync | ports=7690->7690/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- ai-monitor | ports=7575->7575/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- alerts-service | ports=7644->7644/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- anomaly-detection-service | ports=7616->7616/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- audit-log-service | ports=7641->7641/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+- auth-service | ports=7639->7639/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- block-index-service | ports=7626->7626/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- bridge-service | ports=7604->7604/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+- chain-status-service | ports=7612->7612/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- command-palette-service | ports=7642->7642/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- compliance-export-service | ports=7621->7621/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- consensus-telemetry-service | ports=7635->7635/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- contract-registry-service | ports=7608->7608/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- contract-risk-service | ports=7609->7609/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- dispute-service | ports=7607->7607/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- entity-tagging-service | ports=7627->7627/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- explainability-service | ports=7632->7632/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- feature-flags-service | ports=7611->7611/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- fee-model-service | ports=7615->7615/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- forecasting-service | ports=7617->7617/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- ghost-registry | ports=18088->8088/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- ghost-relayer | ports=7171->7171/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- ghost-rollup-challenger | ports=7282->7282/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+- ghost-rollup-proposer | ports=7272->7272/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+- ghost-rpc-proxy | ports=8546->8546/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- global-search-service | ports=7637->7637/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- governance-service | ports=7645->7645/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- key-rotation-service | ports=7619->7619/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- liquidity-service | ports=7606->7606/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- mempool-service | ports=7610->7610/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- network-context-service | ports=7633->7633/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- network-manager-service | ports=7766->7766/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- node-health-service | ports=7613->7613/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- node-inventory-service | ports=7622->7622/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- notifications-service | ports=7638->7638/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- participation-service | ports=7603->7603/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- payout-service | ports=7629->7629/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- peer-graph-service | ports=7636->7636/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- proxy-inspector-service | ports=7631->7631/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- rbac-service | ports=7640->7640/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- rewards-service | ports=7602->7602/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- rpc-forward-l1-29545 | ports=29545->29545/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- secrets-health-service | ports=7618->7618/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- session-service | ports=7643->7643/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- slashing-detection-service | ports=7620->7620/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- snapshot-service | ports=7624->7624/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- staking-service | ports=7601->7601/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- supply-service | ports=7614->7614/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- theme-service | ports=7634->7634/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- transfer-lifecycle-service | ports=7605->7605/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- treasury-service | ports=7628->7628/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+- tx-index-service | ports=7625->7625/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- upgrade-orchestrator-service | ports=7623->7623/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- validator-service | ports=7600->7600/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- verification-service | ports=7630->7630/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+
+## infra/docker/compose/docker-compose.ai.yml
+- ai-clock-sync | ports=7690->7690/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- ai-monitor | ports=7575->7575/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- anomaly-detection-service | ports=7616->7616/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- explainability-service | ports=7632->7632/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- forecasting-service | ports=7617->7617/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- ghost-ai-attestor | ports=3310->3310/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+
+## infra/docker/compose/docker-compose.core.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/docker/compose/docker-compose.obs.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=no | networks=default,opstack_default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=no | networks=default
+- prometheus | ports=9090->9090/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/docker/compose/docker-compose.services.yml
+- ai-clock-sync | ports=7690->7690/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- ai-monitor | ports=7575->7575/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- alerts-service | ports=7644->7644/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- anomaly-detection-service | ports=7616->7616/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- audit-log-service | ports=7641->7641/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+- auth-service | ports=7639->7639/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- block-index-service | ports=7626->7626/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- bridge-service | ports=7604->7604/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+- chain-status-service | ports=7612->7612/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- command-palette-service | ports=7642->7642/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- compliance-export-service | ports=7621->7621/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- consensus-telemetry-service | ports=7635->7635/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- contract-registry-service | ports=7608->7608/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- contract-risk-service | ports=7609->7609/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- core-service | ports=8080->8080/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- dispute-service | ports=7607->7607/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- entity-tagging-service | ports=7627->7627/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- explainability-service | ports=7632->7632/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- feature-flags-service | ports=7611->7611/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- fee-model-service | ports=7615->7615/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- forecasting-service | ports=7617->7617/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- ghost-registry | ports=18088->8088/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- ghost-relayer | ports=7171->7171/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- ghost-rollup-challenger | ports=7282->7282/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+- ghost-rollup-proposer | ports=7272->7272/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+- ghost-rpc-proxy | ports=8546->8546/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- ghost-ui | ports=3200->3200/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- global-search-service | ports=7637->7637/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- governance-service | ports=7645->7645/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- key-rotation-service | ports=7619->7619/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- liquidity-service | ports=7606->7606/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- mempool-service | ports=7610->7610/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- network-context-service | ports=7633->7633/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- network-manager-service | ports=7766->7766/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- node-health-service | ports=7613->7613/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- node-inventory-service | ports=7622->7622/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- notifications-service | ports=7638->7638/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- participation-service | ports=7603->7603/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- payout-service | ports=7629->7629/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- peer-graph-service | ports=7636->7636/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- proxy-inspector-service | ports=7631->7631/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- rbac-service | ports=7640->7640/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- rewards-service | ports=7602->7602/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- rpc-forward-l1-29545 | ports=29545->29545/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- secrets-health-service | ports=7618->7618/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- session-service | ports=7643->7643/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- slashing-detection-service | ports=7620->7620/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- snapshot-service | ports=7624->7624/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- staking-service | ports=7601->7601/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- supply-service | ports=7614->7614/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- theme-service | ports=7634->7634/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- transfer-lifecycle-service | ports=7605->7605/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- treasury-service | ports=7628->7628/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+- tx-index-service | ports=7625->7625/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- upgrade-orchestrator-service | ports=7623->7623/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- validator-service | ports=7600->7600/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- verification-service | ports=7630->7630/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+
+## infra/docker/compose/docker-compose.ui.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.ui.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/docker/liquidity-gravity/docker-compose.yml
+- external-evm | ports=38545->8545/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=lge_net
+- ghostchain-l1 | ports=18545->8545/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=lge_net
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=obs_net
+- liquidity-router | ports=7607->7607/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=lge_net,obs_net
+- prometheus | ports=9090->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=obs_net
+- vault | ports=8200->8200/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=lge_net
+
+## infra/evidence/out/evidence-pack-l1-20260202T132538Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260202T132538Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260202T132538Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260202T132538Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260202T133818Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260202T133818Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260202T133818Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260202T133818Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260202T134135Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260202T134135Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260202T134135Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260202T134135Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260202T134249Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260202T134249Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260202T134249Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260202T134249Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260202T141647Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260202T141647Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260202T141647Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260202T141647Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260202T141757Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260202T141757Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260202T141757Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260202T141757Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260202T142035Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260202T142035Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260202T142035Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260202T142035Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260202T142718Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260202T142718Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260202T142718Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260202T142718Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260202T151403Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260202T151403Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260202T151403Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260202T151403Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260202T152510Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260202T152510Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260202T152510Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260202T152510Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260202T154229Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260202T154229Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260202T154229Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260202T154229Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260202T154243Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260202T154243Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260202T154243Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260202T154243Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260203T123104Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260203T123104Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260203T123104Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260203T123104Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260203T123126Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260203T123126Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260203T123126Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260203T123126Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260203T124507Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260203T124507Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260203T124507Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260203T124507Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260203T124932Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260203T124932Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260203T124932Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260203T124932Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260204T120111Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260204T120111Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260204T120111Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260204T120111Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260204T144822Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260204T144822Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260204T144822Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260204T144822Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260205T032500Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260205T032500Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260205T032500Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260205T032500Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260205T032808Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260205T032808Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260205T032808Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260205T032808Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260205T202132Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260205T202132Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260205T202132Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260205T202132Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260205T202235Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260205T202235Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260205T202235Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260205T202235Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260206T034922Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260206T034922Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260206T034922Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260206T034922Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260206T042556Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260206T042556Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260206T042556Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260206T042556Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260206T101044Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260206T101044Z/snapshots/infra/ghostchain/docker-compose.eth.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260206T101044Z/snapshots/infra/ghostchain/docker-compose.eth.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260206T101044Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260215T031416Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260215T031416Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260215T031416Z/snapshots/infra/ghostchain/docker-compose.l1.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260215T031416Z/snapshots/infra/ghostchain/docker-compose.l1.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260215T032332Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260215T032332Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260215T032332Z/snapshots/infra/ghostchain/docker-compose.l1.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260215T032332Z/snapshots/infra/ghostchain/docker-compose.l1.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260215T032811Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260215T032811Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260215T032811Z/snapshots/infra/ghostchain/docker-compose.l1.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260215T032811Z/snapshots/infra/ghostchain/docker-compose.l1.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260215T034050Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260215T034050Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260215T034050Z/snapshots/infra/ghostchain/docker-compose.l1.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260215T034050Z/snapshots/infra/ghostchain/docker-compose.l1.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260215T035311Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260215T035311Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260215T035311Z/snapshots/infra/ghostchain/docker-compose.l1.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260215T035311Z/snapshots/infra/ghostchain/docker-compose.l1.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260215T123335Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260215T123335Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260215T123335Z/snapshots/infra/ghostchain/docker-compose.l1.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260215T123335Z/snapshots/infra/ghostchain/docker-compose.l1.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260215T125902Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260215T125902Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260215T125902Z/snapshots/infra/ghostchain/docker-compose.l1.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260215T125902Z/snapshots/infra/ghostchain/docker-compose.l1.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l1-20260215T162807Z/snapshots/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-compliance-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- postgres | ports=5432->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- redis | ports=6379->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+
+## infra/evidence/out/evidence-pack-l1-20260215T162807Z/snapshots/infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/evidence/out/evidence-pack-l1-20260215T162807Z/snapshots/infra/ghostchain/docker-compose.l1.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l1-20260215T162807Z/snapshots/infra/ghostchain/docker-compose.l1.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260202T174405Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260202T174405Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260202T174405Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260202T174405Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260202T174405Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260202T174830Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260202T174830Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260202T174830Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260202T174830Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260202T174830Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260202T175423Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260202T175423Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260202T175423Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260202T175423Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260202T175423Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260203T190449Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260203T190449Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260203T190449Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260203T190449Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260203T190449Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260203T191413Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260203T191413Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260203T191413Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260203T191413Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260203T191413Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260203T191748Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260203T191748Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260203T191748Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260203T191748Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260203T191748Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260203T192332Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260203T192332Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260203T192332Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260203T192332Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260203T192332Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260204T120157Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260204T120157Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260204T120157Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260204T120157Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260204T120157Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260204T144910Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260204T144910Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260204T144910Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260204T144910Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260204T144910Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260205T032739Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260205T032739Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260205T032739Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260205T032739Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260205T032739Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260205T083126Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260205T083126Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260205T083126Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260205T083126Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260205T083126Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260205T202334Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260205T202334Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260205T202334Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260205T202334Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260205T202334Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260206T035002Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260206T035002Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260206T035002Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260206T035002Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260206T035002Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260206T042637Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260206T042637Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260206T042637Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260206T042637Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260206T042637Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260206T084616Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260206T084616Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260206T084616Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260206T084616Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260206T084616Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260206T110243Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260206T110243Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260206T110243Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260206T110243Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260206T110243Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260206T113048Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260206T113048Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260206T113048Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260206T113048Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260206T113048Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260206T113831Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260206T113831Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260206T113831Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260206T113831Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260206T113831Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260206T132035Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260206T132035Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260206T132035Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260206T132035Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260206T132035Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260215T035902Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260215T035902Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260215T035902Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260215T035902Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260215T035902Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260215T122448Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260215T122448Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260215T122448Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260215T122448Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260215T122448Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260215T163250Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260215T163250Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260215T163250Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260215T163250Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260215T163250Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l2-20260215T171542Z/snapshots/infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260215T171542Z/snapshots/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260215T171542Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l2-20260215T171542Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l2-20260215T171542Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260203T190609Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260203T190609Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260203T190609Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260203T191530Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260203T191530Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260203T191530Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260203T191630Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260203T191630Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260203T191630Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260203T191811Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260203T191811Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260203T191811Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260203T192351Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260203T192351Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260203T192351Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260204T120216Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260204T120216Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260204T120216Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260204T144930Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260204T144930Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260204T144930Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260205T032758Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260205T032758Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260205T032758Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260205T082205Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260205T082205Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260205T082205Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260205T082621Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260205T082621Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260205T082621Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260205T092216Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260205T092216Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260205T092216Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260205T202400Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260205T202400Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260205T202400Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260206T035019Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260206T035019Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260206T035019Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260206T042653Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260206T042653Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260206T042653Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260206T084638Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260206T084638Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260206T084638Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260206T110305Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260206T110305Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260206T110305Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260206T113106Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260206T113106Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260206T113106Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260206T113849Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260206T113849Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260206T113849Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260206T132053Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260206T132053Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260206T132053Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260215T040314Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260215T040314Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260215T040314Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260215T122908Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260215T122908Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260215T122908Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260215T163649Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260215T163649Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260215T163649Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/evidence/out/evidence-pack-l3-20260215T171933Z/snapshots/infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/evidence/out/evidence-pack-l3-20260215T171933Z/snapshots/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/evidence/out/evidence-pack-l3-20260215T171933Z/snapshots/infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/ghostchain/docker-compose.ibft.yml
+- ghostchain-node1 | ports=18545->8545/tcp,18546->8546/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node3 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+- ghostchain-node4 | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostchain
+
+## infra/ghostchain/docker-compose.l1.yml
+- ghostchain-bootnode | ports=30301->30301/udp | env_files=none | volumes=1 | healthcheck=no | networks=ghostchain
+- ghostchain-node1 | ports=18546->8546/tcp,18552->8551/tcp,18551->30303/tcp,18660->6060/tcp | env_files=none | volumes=4 | healthcheck=yes | networks=ghostchain
+- ghostchain-node2 | ports=none | env_files=none | volumes=4 | healthcheck=no | networks=ghostchain
+- ghostchain-rpc-proxy | ports=18545->8545/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=ghostchain
+
+## infra/opstack/docker-compose.challengers.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/opstack/docker-compose.challengers.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/opstack/docker-compose.l3.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/opstack/docker-compose.mainnet-geth.yml
+- l1-mainnet-geth | ports=38545->8545/tcp,38546->8546/tcp,38551->8551/tcp,38660->6060/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+
+## infra/opstack/docker-compose.network-manager.yml
+- network-manager | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+
+## infra/opstack/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- ghost-guard | ports=7070->7070/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- ghost-rpc-proxy-l1 | ports=none | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-rpc-proxy-l2 | ports=none | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-rpc-proxy-l3 | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- hyper-ghost-supervisor | ports=7077->7077/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l1-rpc-proxy | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- l2-geth | ports=29547->8545/tcp,29548->8546/tcp,29606->6060/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-batcher | ports=8551->8551/tcp,7301->7301/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate | ports=28546->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-gate-l1 | ports=28547->8545/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-node | ports=9546->9546/tcp,7300->7300/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- op-proposer | ports=8560->8560/tcp,7302->7302/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- op-sequencer | ports=9646->9646/tcp,7303->7303/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=default
+- prometheus | ports=9091->9090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=default
+- rpc-forward-l2-18547 | ports=18547->18547/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- vector | ports=none | env_files=none | volumes=3 | healthcheck=no | networks=default
+
+## infra/opstack/optimism-upstream/interop-devnet/docker-compose.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/infra/opstack/optimism-upstream/interop-devnet/docker-compose.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## infra/opstack/optimism-upstream/ops-bedrock/docker-compose.yml
+- artifact-server | ports=8080->80/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+- da-server | ports=3100->3100/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+- l1 | ports=8545->8545/tcp,8546->8546/tcp,7060->6060/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- l1-bn | ports=9000->9000/tcp,5052->5052/tcp | env_files=none | volumes=5 | healthcheck=no | networks=default
+- l1-vc | ports=none | env_files=none | volumes=6 | healthcheck=no | networks=default
+- l2 | ports=9545->8545/tcp,8060->6060/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- op-batcher | ports=6061->6060/tcp,7301->7300/tcp,6545->8545/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- op-challenger | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=default
+- op-node | ports=7545->8545/tcp,9003->9003/tcp,7300->7300/tcp,6060->6060/tcp | env_files=none | volumes=6 | healthcheck=no | networks=default
+- op-proposer | ports=6062->6060/tcp,7302->7300/tcp,6546->8545/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- sentinel | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+
+## observability/infra/docker-compose.yml
+- alertmanager | ports=9093->9093/tcp | env_files=none | volumes=2 | healthcheck=no | networks=default
+- grafana | ports=3000->3000/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default
+- loki | ports=3100->3100/tcp | env_files=none | volumes=2 | healthcheck=no | networks=default
+- prometheus | ports=9090->9090/tcp | env_files=none | volumes=3 | healthcheck=no | networks=default,opstack_default
+
+## services/ai-clock-sync/docker-compose.yml
+- ai-clock-sync | ports=7690->7690/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net,opstack_default
+
+## services/ai-clock-sync/rollback/20260125-131922/docker-compose.yml
+- error: failed to render compose config (Command '['docker', 'compose', '-f', '/home/ghost/ghostl-stack/services/ai-clock-sync/rollback/20260125-131922/docker-compose.yml', 'config', '--format', 'json']' returned non-zero exit status 1.)
+
+## services/ai-clock-sync/rollback/20260125-132116/docker-compose.yml
+- ai-clock-sync | ports=7690->7690/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ai-clock-sync/rollback/20260125-132244/docker-compose.yml
+- ai-clock-sync | ports=7690->7690/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ai-clock-sync/rollback/20260125-132411/docker-compose.yml
+- ai-clock-sync | ports=7690->7690/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ai-monitor/docker-compose.yml
+- ai-monitor-l1 | ports=7576->7576/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net,opstack_default
+- ai-monitor-l3 | ports=7577->7577/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net,opstack_default
+
+## services/ai-monitor/rollback/20260125-132116/docker-compose.yml
+- ai-monitor | ports=7575->7575/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ai-monitor/rollback/20260125-132244/docker-compose.yml
+- ai-monitor | ports=7575->7575/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ai-monitor/rollback/20260125-132411/docker-compose.yml
+- ai-monitor | ports=7575->7575/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ai-vault/docker-compose.yml
+- ai-vault | ports=7710->7710/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+
+## services/alerts-service/docker-compose.yml
+- alerts-service | ports=7644->7644/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/alerts-service/rollback/20260125-132116/docker-compose.yml
+- alerts-service | ports=7644->7644/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/alerts-service/rollback/20260125-132244/docker-compose.yml
+- alerts-service | ports=7644->7644/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/alerts-service/rollback/20260125-132411/docker-compose.yml
+- alerts-service | ports=7644->7644/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/anomaly-detection-service/docker-compose.yml
+- anomaly-detection-service | ports=7616->7616/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/anomaly-detection-service/rollback/20260125-132116/docker-compose.yml
+- anomaly-detection-service | ports=7616->7616/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/anomaly-detection-service/rollback/20260125-132244/docker-compose.yml
+- anomaly-detection-service | ports=7616->7616/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/anomaly-detection-service/rollback/20260125-132411/docker-compose.yml
+- anomaly-detection-service | ports=7616->7616/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/audit-log-service/docker-compose.yml
+- audit-log-service | ports=7641->7641/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/audit-log-service/rollback/20260125-132116/docker-compose.yml
+- audit-log-service | ports=7641->7641/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/audit-log-service/rollback/20260125-132244/docker-compose.yml
+- audit-log-service | ports=7641->7641/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/audit-log-service/rollback/20260125-132411/docker-compose.yml
+- audit-log-service | ports=7641->7641/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/auth-service/docker-compose.yml
+- auth-service | ports=7639->7639/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/auth-service/rollback/20260125-132116/docker-compose.yml
+- auth-service | ports=7639->7639/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/auth-service/rollback/20260125-132244/docker-compose.yml
+- auth-service | ports=7639->7639/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/auth-service/rollback/20260125-132411/docker-compose.yml
+- auth-service | ports=7639->7639/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/block-index-service/docker-compose.yml
+- block-index-service | ports=7626->7626/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/block-index-service/rollback/20260125-132116/docker-compose.yml
+- block-index-service | ports=7626->7626/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/block-index-service/rollback/20260125-132244/docker-compose.yml
+- block-index-service | ports=7626->7626/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/block-index-service/rollback/20260125-132411/docker-compose.yml
+- block-index-service | ports=7626->7626/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/bridge-service/docker-compose.yml
+- bridge-service | ports=7604->7604/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/bridge-service/rollback/20260125-132116/docker-compose.yml
+- bridge-service | ports=7604->7604/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/bridge-service/rollback/20260125-132244/docker-compose.yml
+- bridge-service | ports=7604->7604/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/bridge-service/rollback/20260125-132411/docker-compose.yml
+- bridge-service | ports=7604->7604/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/chain-status-service/docker-compose.yml
+- chain-status-service | ports=7612->7612/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/chain-status-service/rollback/20260125-132116/docker-compose.yml
+- chain-status-service | ports=7612->7612/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/chain-status-service/rollback/20260125-132244/docker-compose.yml
+- chain-status-service | ports=7612->7612/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/chain-status-service/rollback/20260125-132411/docker-compose.yml
+- chain-status-service | ports=7612->7612/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/command-palette-service/docker-compose.yml
+- command-palette-service | ports=7642->7642/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/command-palette-service/rollback/20260125-132116/docker-compose.yml
+- command-palette-service | ports=7642->7642/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/command-palette-service/rollback/20260125-132244/docker-compose.yml
+- command-palette-service | ports=7642->7642/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/command-palette-service/rollback/20260125-132411/docker-compose.yml
+- command-palette-service | ports=7642->7642/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/compliance-export-service/docker-compose.yml
+- compliance-export-service | ports=7621->7621/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/compliance-export-service/rollback/20260125-132116/docker-compose.yml
+- compliance-export-service | ports=7621->7621/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/compliance-export-service/rollback/20260125-132244/docker-compose.yml
+- compliance-export-service | ports=7621->7621/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/compliance-export-service/rollback/20260125-132411/docker-compose.yml
+- compliance-export-service | ports=7621->7621/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/consensus-telemetry-service/docker-compose.yml
+- consensus-telemetry-service | ports=7635->7635/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/consensus-telemetry-service/rollback/20260125-132116/docker-compose.yml
+- consensus-telemetry-service | ports=7635->7635/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/consensus-telemetry-service/rollback/20260125-132244/docker-compose.yml
+- consensus-telemetry-service | ports=7635->7635/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/consensus-telemetry-service/rollback/20260125-132411/docker-compose.yml
+- consensus-telemetry-service | ports=7635->7635/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/contract-registry-service/docker-compose.yml
+- contract-registry-service | ports=7608->7608/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/contract-registry-service/rollback/20260125-132116/docker-compose.yml
+- contract-registry-service | ports=7608->7608/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/contract-registry-service/rollback/20260125-132244/docker-compose.yml
+- contract-registry-service | ports=7608->7608/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/contract-registry-service/rollback/20260125-132411/docker-compose.yml
+- contract-registry-service | ports=7608->7608/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/contract-risk-service/docker-compose.yml
+- contract-risk-service | ports=7609->7609/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/contract-risk-service/rollback/20260125-132116/docker-compose.yml
+- contract-risk-service | ports=7609->7609/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/contract-risk-service/rollback/20260125-132244/docker-compose.yml
+- contract-risk-service | ports=7609->7609/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/contract-risk-service/rollback/20260125-132411/docker-compose.yml
+- contract-risk-service | ports=7609->7609/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/dispute-service/docker-compose.yml
+- dispute-service | ports=7607->7607/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/dispute-service/rollback/20260125-132116/docker-compose.yml
+- dispute-service | ports=7607->7607/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/dispute-service/rollback/20260125-132244/docker-compose.yml
+- dispute-service | ports=7607->7607/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/dispute-service/rollback/20260125-132411/docker-compose.yml
+- dispute-service | ports=7607->7607/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/docker-compose.legacy.yml
+- ai-clock-sync | ports=7690->7690/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- ai-vault | ports=7710->7710/tcp | env_files=none | volumes=1 | healthcheck=no | networks=default
+- ai-vault-dev | ports=8200->8200/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- alerts-service | ports=7644->7644/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- anomaly-detection-service | ports=7616->7616/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- audit-log-service | ports=7641->7641/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- auth-service | ports=7639->7639/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- block-index-service | ports=7626->7626/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- bridge-service | ports=7604->7604/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- chain-status-service | ports=7612->7612/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- command-palette-service | ports=7642->7642/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- compliance-export-service | ports=7621->7621/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- consensus-telemetry-service | ports=7635->7635/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- contract-registry-service | ports=7608->7608/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- contract-risk-service | ports=7609->7609/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- dispute-service | ports=7607->7607/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- entity-tagging-service | ports=7627->7627/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- explainability-service | ports=7632->7632/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- feature-flags-service | ports=7611->7611/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- fee-model-service | ports=7615->7615/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- forecasting-service | ports=7617->7617/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- gas-engine-migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- gas-engine-postgres | ports=5433->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- gas-engine-redis | ports=6381->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- ghost-gas-engine | ports=3210->3210/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- ghost-gas-engine-worker | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- ghost-pil | ports=3220->3220/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-pil-worker | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=default
+- ghost-registry | ports=18088->8088/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- ghost-relayer | ports=7171->7171/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default,opstack_default
+- ghost-rollup-challenger | ports=7282->7282/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- ghost-rollup-challenger-l2 | ports=7283->7283/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- ghost-rollup-proposer | ports=7272->7272/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- ghost-rollup-proposer-l2 | ports=7273->7273/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- ghost-rpc-proxy | ports=8546->8546/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- global-search-service | ports=7637->7637/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- governance-service | ports=7645->7645/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- key-rotation-service | ports=7619->7619/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- liquidity-service | ports=7606->7606/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- mempool-service | ports=7610->7610/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- network-context-service | ports=7633->7633/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- network-manager-service | ports=7766->7766/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- node-health-service | ports=7613->7613/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- node-inventory-service | ports=7622->7622/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- notifications-service | ports=7638->7638/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- participation-service | ports=7603->7603/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- payout-service | ports=7629->7629/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- peer-graph-service | ports=7636->7636/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- pil-migrate | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=default
+- pil-postgres | ports=5434->5432/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- preconfirm-l2-service | ports=7691->7691/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- preconfirm-l3-service | ports=7692->7692/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- proxy-inspector-service | ports=7631->7631/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- rbac-service | ports=7640->7640/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- rewards-service | ports=7602->7602/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- rpc-forward-l1-29545 | ports=29545->29545/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- secrets-health-service | ports=7618->7618/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- session-service | ports=7643->7643/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- slashing-detection-service | ports=7620->7620/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- snapshot-service | ports=7624->7624/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- staking-service | ports=7601->7601/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- supply-service | ports=7614->7614/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- theme-service | ports=7634->7634/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- transfer-lifecycle-service | ports=7605->7605/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- treasury-service | ports=7628->7628/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=default
+- tx-index-service | ports=7625->7625/tcp | env_files=none | volumes=0 | healthcheck=no | networks=default
+- upgrade-orchestrator-service | ports=7623->7623/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- validator-service | ports=7600->7600/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+- verification-service | ports=7630->7630/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=default
+
+## services/entity-tagging-service/docker-compose.yml
+- entity-tagging-service | ports=7627->7627/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/entity-tagging-service/rollback/20260125-132116/docker-compose.yml
+- entity-tagging-service | ports=7627->7627/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/entity-tagging-service/rollback/20260125-132244/docker-compose.yml
+- entity-tagging-service | ports=7627->7627/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/entity-tagging-service/rollback/20260125-132411/docker-compose.yml
+- entity-tagging-service | ports=7627->7627/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/explainability-service/docker-compose.yml
+- explainability-service | ports=7632->7632/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/explainability-service/rollback/20260125-132116/docker-compose.yml
+- explainability-service | ports=7632->7632/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/explainability-service/rollback/20260125-132244/docker-compose.yml
+- explainability-service | ports=7632->7632/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/explainability-service/rollback/20260125-132411/docker-compose.yml
+- explainability-service | ports=7632->7632/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/feature-flags-service/docker-compose.yml
+- feature-flags-service | ports=7611->7611/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/feature-flags-service/rollback/20260125-132116/docker-compose.yml
+- feature-flags-service | ports=7611->7611/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/feature-flags-service/rollback/20260125-132244/docker-compose.yml
+- feature-flags-service | ports=7611->7611/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/feature-flags-service/rollback/20260125-132411/docker-compose.yml
+- feature-flags-service | ports=7611->7611/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/fee-model-service/docker-compose.yml
+- fee-model-service | ports=7615->7615/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/fee-model-service/rollback/20260125-132116/docker-compose.yml
+- fee-model-service | ports=7615->7615/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/fee-model-service/rollback/20260125-132244/docker-compose.yml
+- fee-model-service | ports=7615->7615/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/fee-model-service/rollback/20260125-132411/docker-compose.yml
+- fee-model-service | ports=7615->7615/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/forecasting-service/docker-compose.yml
+- forecasting-service | ports=7617->7617/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/forecasting-service/rollback/20260125-132116/docker-compose.yml
+- forecasting-service | ports=7617->7617/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/forecasting-service/rollback/20260125-132244/docker-compose.yml
+- forecasting-service | ports=7617->7617/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/forecasting-service/rollback/20260125-132411/docker-compose.yml
+- forecasting-service | ports=7617->7617/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/gas-engine-migrate/docker-compose.yml
+- gas-engine-migrate | ports=none | env_files=none | volumes=4 | healthcheck=yes | networks=ghost_net
+
+## services/gas-engine-migrate/rollback/20260125-132116/docker-compose.yml
+- gas-engine-migrate | ports=none | env_files=none | volumes=2 | healthcheck=yes | networks=ghost_net
+
+## services/gas-engine-migrate/rollback/20260125-132244/docker-compose.yml
+- gas-engine-migrate | ports=none | env_files=none | volumes=2 | healthcheck=yes | networks=ghost_net
+
+## services/gas-engine-migrate/rollback/20260125-132411/docker-compose.yml
+- gas-engine-migrate | ports=none | env_files=none | volumes=2 | healthcheck=yes | networks=ghost_net
+
+## services/gas-engine-postgres/docker-compose.yml
+- gas-engine-postgres | ports=5433->5432/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/gas-engine-postgres/rollback/20260125-132116/docker-compose.yml
+- gas-engine-postgres | ports=5433->5432/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=ghost_net
+
+## services/gas-engine-postgres/rollback/20260125-132244/docker-compose.yml
+- gas-engine-postgres | ports=5433->5432/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=ghost_net
+
+## services/gas-engine-postgres/rollback/20260125-132411/docker-compose.yml
+- gas-engine-postgres | ports=5433->5432/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=ghost_net
+
+## services/gas-engine-redis/docker-compose.yml
+- gas-engine-redis | ports=6381->6379/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/gas-engine-redis/rollback/20260125-132116/docker-compose.yml
+- gas-engine-redis | ports=6381->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/gas-engine-redis/rollback/20260125-132244/docker-compose.yml
+- gas-engine-redis | ports=6381->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/gas-engine-redis/rollback/20260125-132411/docker-compose.yml
+- gas-engine-redis | ports=6381->6379/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-ai-attestor/docker-compose.yml
+- ghost-ai-attestor | ports=3310->3310/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-compliance/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghostchain-compliance_default
+
+## services/ghost-compliance/rollback/20260125-132116/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-compliance/rollback/20260125-132244/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-compliance/rollback/20260125-132411/docker-compose.yml
+- ghost-compliance | ports=8090->8090/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-compliance-worker/docker-compose.yml
+- ghost-compliance-worker | ports=none | env_files=none | volumes=3 | healthcheck=yes | networks=ghostchain-compliance_default
+
+## services/ghost-compliance-worker/rollback/20260125-132116/docker-compose.yml
+- ghost-compliance-worker | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-compliance-worker/rollback/20260125-132244/docker-compose.yml
+- ghost-compliance-worker | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-compliance-worker/rollback/20260125-132411/docker-compose.yml
+- ghost-compliance-worker | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-gas-engine/docker-compose.yml
+- ghost-gas-engine | ports=3210->3210/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-gas-engine/rollback/20260125-132116/docker-compose.yml
+- ghost-gas-engine | ports=3210->3210/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-gas-engine/rollback/20260125-132244/docker-compose.yml
+- ghost-gas-engine | ports=3210->3210/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-gas-engine/rollback/20260125-132411/docker-compose.yml
+- ghost-gas-engine | ports=3210->3210/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-gas-engine-worker/docker-compose.yml
+- ghost-gas-engine-worker | ports=none | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-gas-engine-worker/rollback/20260125-132244/docker-compose.yml
+- ghost-gas-engine-worker | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-gas-engine-worker/rollback/20260125-132411/docker-compose.yml
+- ghost-gas-engine-worker | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-mapper/docker-compose.yml
+- ghost-mapper | ports=7780->7780/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net,opstack_default
+
+## services/ghost-pil/docker-compose.yml
+- ghost-pil | ports=3220->3220/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-pil/rollback/20260125-132411/docker-compose.yml
+- ghost-pil | ports=3220->3220/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-pil-worker/docker-compose.yml
+- ghost-pil-worker | ports=none | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-pil-worker/rollback/20260125-132411/docker-compose.yml
+- ghost-pil-worker | ports=none | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-registry/docker-compose.yml
+- ghost-registry | ports=18088->8088/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-registry/rollback/20260125-132411/docker-compose.yml
+- ghost-registry | ports=18088->8088/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-relayer/docker-compose.yml
+- ghost-relayer | ports=7171->7171/tcp | env_files=none | volumes=4 | healthcheck=yes | networks=ghost_net,opstack_default
+
+## services/ghost-relayer/rollback/20260125-132411/docker-compose.yml
+- ghost-relayer | ports=7171->7171/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-rollup-challenger/docker-compose.yml
+- ghost-rollup-challenger | ports=7282->7282/tcp | env_files=none | volumes=4 | healthcheck=yes | networks=ghost_net,opstack_default
+
+## services/ghost-rollup-challenger/rollback/20260125-132411/docker-compose.yml
+- ghost-rollup-challenger | ports=7282->7282/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-rollup-proposer/docker-compose.yml
+- ghost-rollup-proposer | ports=7272->7272/tcp | env_files=none | volumes=4 | healthcheck=yes | networks=ghost_net,opstack_default
+
+## services/ghost-rollup-proposer/rollback/20260125-132411/docker-compose.yml
+- ghost-rollup-proposer | ports=7272->7272/tcp | env_files=none | volumes=2 | healthcheck=yes | networks=ghost_net
+
+## services/ghost-rpc-proxy/docker-compose.yml
+- ghost-rpc-proxy | ports=8546->8546/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net,opstack_default
+
+## services/ghost-rpc-proxy/rollback/20260125-132411/docker-compose.yml
+- ghost-rpc-proxy | ports=8546->8546/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/ghostscout-db/docker-compose.yml
+- ghostscout-db | ports=none | env_files=none | volumes=5 | healthcheck=yes | networks=ghostchain_ghostchain,opstack_default
+
+## services/ghostscout-db/rollback/20260125-132411/docker-compose.yml
+- ghostscout-db | ports=none | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/ghostscout-frontend-l1/docker-compose.yml
+- ghostscout-frontend-l1 | ports=18651->3000/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghostchain_ghostchain,opstack_default
+
+## services/ghostscout-frontend-l2/docker-compose.yml
+- ghostscout-frontend-l2 | ports=18652->3000/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghostchain_ghostchain,opstack_default
+
+## services/ghostscout-frontend-l3/docker-compose.yml
+- ghostscout-frontend-l3 | ports=18653->3000/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghostchain_ghostchain,opstack_default
+
+## services/ghostscout-l1/docker-compose.yml
+- ghostscout-l1 | ports=18641->4000/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghostchain_ghostchain,opstack_default
+
+## services/ghostscout-l2/docker-compose.yml
+- ghostscout-l2 | ports=18642->4000/tcp | env_files=none | volumes=5 | healthcheck=yes | networks=ghostchain_ghostchain,opstack_default
+
+## services/ghostscout-l3/docker-compose.yml
+- ghostscout-l3 | ports=18643->4000/tcp | env_files=none | volumes=5 | healthcheck=yes | networks=ghostchain_ghostchain,opstack_default
+
+## services/global-search-service/docker-compose.yml
+- global-search-service | ports=7637->7637/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/governance-service/docker-compose.yml
+- governance-service | ports=7645->7645/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/key-rotation-service/docker-compose.yml
+- key-rotation-service | ports=7619->7619/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/liquidity-service/docker-compose.yml
+- liquidity-service | ports=7606->7606/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/mempool-service/docker-compose.yml
+- mempool-service | ports=7610->7610/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/network-context-service/docker-compose.yml
+- network-context-service | ports=7633->7633/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/network-manager-service/docker-compose.yml
+- network-manager-service | ports=7766->7766/tcp | env_files=none | volumes=4 | healthcheck=yes | networks=ghost_net,opstack_default
+
+## services/node-health-service/docker-compose.yml
+- node-health-service | ports=7613->7613/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/node-inventory-service/docker-compose.yml
+- node-inventory-service | ports=7622->7622/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/notifications-service/docker-compose.yml
+- notifications-service | ports=7638->7638/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/participation-service/docker-compose.yml
+- participation-service | ports=7603->7603/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/payout-service/docker-compose.yml
+- payout-service | ports=7629->7629/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/peer-graph-service/docker-compose.yml
+- peer-graph-service | ports=7636->7636/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/pil-migrate/docker-compose.yml
+- pil-migrate | ports=none | env_files=none | volumes=4 | healthcheck=yes | networks=ghost_net
+
+## services/pil-postgres/docker-compose.yml
+- pil-postgres | ports=5434->5432/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/preconfirm-service/docker-compose.yml
+- preconfirm-service | ports=7691->7691/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=ghost_net
+
+## services/proxy-inspector-service/docker-compose.yml
+- proxy-inspector-service | ports=7631->7631/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/rbac-service/docker-compose.yml
+- rbac-service | ports=7640->7640/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/rewards-service/docker-compose.yml
+- rewards-service | ports=7602->7602/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/rpc-forward-l1-29545/docker-compose.yml
+- rpc-forward-l1-29545 | ports=29545->29545/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/secrets-health-service/docker-compose.yml
+- secrets-health-service | ports=7618->7618/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/session-service/docker-compose.yml
+- session-service | ports=7643->7643/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/slashing-detection-service/docker-compose.yml
+- slashing-detection-service | ports=7620->7620/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/snapshot-service/docker-compose.yml
+- snapshot-service | ports=7624->7624/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/staking-service/docker-compose.yml
+- staking-service | ports=7601->7601/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/supply-service/docker-compose.yml
+- supply-service | ports=7614->7614/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/theme-service/docker-compose.yml
+- theme-service | ports=7634->7634/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/transfer-lifecycle-service/docker-compose.yml
+- transfer-lifecycle-service | ports=7605->7605/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/treasury-ai/docker-compose.yml
+- treasury-ai | ports=7630->7630/tcp | env_files=none | volumes=1 | healthcheck=yes | networks=ghost_net
+
+## services/treasury-evidence/docker-compose.yml
+- treasury-evidence | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=ghost_net
+
+## services/treasury-service/docker-compose.yml
+- treasury-service | ports=7628->7628/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/tx-index-service/docker-compose.yml
+- tx-index-service | ports=7625->7625/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/upgrade-orchestrator-service/docker-compose.yml
+- upgrade-orchestrator-service | ports=7623->7623/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/validator-service/docker-compose.yml
+- validator-service | ports=7600->7600/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## services/verification-service/docker-compose.yml
+- verification-service | ports=7630->7630/tcp | env_files=none | volumes=3 | healthcheck=yes | networks=ghost_net
+
+## tools/ghostcontrol/infra/compose/docker-compose.yml
+- docker-socket-proxy | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=ghostcontrol_net
+- ghostcontrol-api | ports=7401->8080/tcp | env_files=none | volumes=0 | healthcheck=yes | networks=ghostcontrol_net
+- ghostcontrol-db | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=ghostcontrol_net
+- ghostcontrol-ingest | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=ghostcontrol_net
+- ghostcontrol-planner | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=ghostcontrol_net
+- ghostcontrol-policy | ports=none | env_files=none | volumes=0 | healthcheck=no | networks=ghostcontrol_net
+- ghostcontrol-redis | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=ghostcontrol_net
+- ghostcontrol-runner | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostcontrol_net
+- ghostcontrol-ui | ports=7400->3000/tcp | env_files=none | volumes=0 | healthcheck=no | networks=ghostcontrol_net
+
