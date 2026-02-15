@@ -4,6 +4,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="${ROOT_DIR:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 
+# shellcheck source=scripts/lib/docker.sh
+. "$ROOT_DIR/scripts/lib/docker.sh"
+
 L2_ENV_FILE="${L2_ENV_FILE:-$ROOT_DIR/infra/opstack/.env.l2}"
 L2_SECRETS_FILE="${L2_SECRETS_FILE:-$ROOT_DIR/infra/opstack/.env.secrets}"
 
@@ -379,7 +382,7 @@ if ! command -v docker >/dev/null 2>&1; then
 fi
 if [ "$DOCKER_AVAILABLE" = "1" ] && [ "$L2_DOCTOR_SKIP_DOCKER" != "1" ]; then
   docker_out=""
-  if ! docker_out="$(docker version --format '{{.Server.Version}}' 2>&1)"; then
+  if ! docker_out="$(hg_docker version --format '{{.Server.Version}}' 2>&1)"; then
     if is_docker_daemon_unavailable "$docker_out"; then
       if [ "$L2_DOCTOR_SKIP_DOCKER" = "1" ]; then
         DOCKER_AVAILABLE=0
@@ -397,7 +400,7 @@ elif [ "$L2_DOCTOR_SKIP_DOCKER" = "1" ]; then
 fi
 
 COMPOSE_AVAILABLE=0
-if [ "$DOCKER_AVAILABLE" = "1" ] && docker compose version >/dev/null 2>&1; then
+if [ "$DOCKER_AVAILABLE" = "1" ] && hg_docker compose version >/dev/null 2>&1; then
   COMPOSE_AVAILABLE=1
 elif [ "$L2_DOCTOR_SKIP_DOCKER" != "1" ]; then
   fail "docker compose not available"
@@ -454,7 +457,7 @@ fi
 echo "OK: rollup/genesis checksums verified"
 
 if [ "$COMPOSE_AVAILABLE" = "1" ]; then
-  if ! docker compose -f "$L2_COMPOSE_FILE" config >/dev/null 2>&1; then
+  if ! hg_docker compose -f "$L2_COMPOSE_FILE" config >/dev/null 2>&1; then
     fail "compose config invalid for $L2_COMPOSE_FILE"
   fi
   echo "OK: compose config valid"
