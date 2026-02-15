@@ -28,9 +28,10 @@ rg_globs=(
   --glob '!**/out/**'
   --glob '!**/cache/**'
   --glob '!**/artifacts/**'
-  --glob '!infra/opstack/optimism-upstream/**'
+	--glob '!infra/opstack/optimism-upstream/**'
   --glob '!infra/opstack/op-geth/**'
   --glob '!contracts/lib/**'
+  --glob '!**/package-lock.json'
 )
 
 if [ -f "$ALLOWLIST_FILE" ]; then
@@ -48,7 +49,7 @@ fi
 	# - JSON-RPC `eth_*` method names are allowed for compatibility and are NOT checked here.
 	#
 	# This gate intentionally focuses on user-facing tokens and common identifier patterns.
-PATTERN='(\bETH\b|\bEthereum\b|\bEther\b|Ξ|(?i:\b[a-z0-9-]+\.eth\b)|\bETH_[A-Z0-9_]+\b|\b[A-Za-z0-9]+_eth\b|\bnativeEth\b|\bethAmount\b|\bethBalance\b|\bETH_DECIMALS\b|\bETHERSCAN\b|\bALCHEMY_ETH\b|\bINFURA_ETH\b)'
+PATTERN='(\bETH\b|(?i:\bethereum\b)|\bEther\b|Ξ|(?i:\b[a-z0-9-]+\.eth\b)|\bETH_[A-Z0-9_]+\b|\b[A-Z0-9_]+_ETH\b|\b[A-Za-z0-9]+_eth\b|\bnativeEth\b|\bethAmount\b|\bethBalance\b|\bETH_DECIMALS\b|\bETHERSCAN\b|\bALCHEMY_ETH\b|\bINFURA_ETH\b)'
 
 matches="$(rg -n --no-heading --pcre2 "$PATTERN" . "${rg_globs[@]}" || true)"
 if [ -n "$matches" ]; then
@@ -56,7 +57,9 @@ if [ -n "$matches" ]; then
   #
   # Hyperledger Besu uses `ETH` as the RPC module name in `--rpc-http-api=...` lists.
   # We still forbid other uses of `ETH` in strings/identifiers.
-  matches="$(printf '%s\n' "$matches" | rg -v --pcre2 '(--rpc-http-api=|rpc-http-api[:=]\\s*)ETH(,|\\b)' || true)"
+  matches="$(printf '%s\n' "$matches" | rg -v --pcre2 '(--rpc-http-api=|rpc-http-api[:=]\s*)ETH(,|\b)' || true)"
+  # Allow technical dependency import paths that are not branding semantics.
+  matches="$(printf '%s\n' "$matches" | rg -v --pcre2 'github\.com/ethereum(-optimism)?/' || true)"
 fi
 if [ -z "$matches" ]; then
   log "OK: no forbidden ETH branding tokens found."
