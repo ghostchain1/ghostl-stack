@@ -25,6 +25,10 @@ jobs:
         run: |
           bash scripts/gst-leakage-gate.sh
 
+      - name: Enforce GST symbol (no legacy symbol)
+        run: |
+          bash scripts/gst-symbol-gate.sh
+
   shellcheck:
     needs: [rpc-namespace]
     runs-on: ubuntu-latest
