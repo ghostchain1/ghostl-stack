@@ -93,6 +93,34 @@ jobs:
       - name: Build
         run: npm run build
 
+  hyper-ghost-supervisor:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.22.0"
+          cache: npm
+          cache-dependency-path: services/hyper-ghost-supervisor/package-lock.json
+
+      - name: Install deps
+        working-directory: services/hyper-ghost-supervisor
+        run: npm ci
+
+      - name: Build
+        working-directory: services/hyper-ghost-supervisor
+        run: npm run build
+
+      - name: Test
+        working-directory: services/hyper-ghost-supervisor
+        run: npm test
+
   contracts-hardhat-compile:
     needs: [rpc-namespace]
     runs-on: ubuntu-latest

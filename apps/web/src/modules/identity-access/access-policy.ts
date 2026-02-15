@@ -55,6 +55,9 @@ const policies: PolicyEntry[] = [
   { pattern: '/api/gas-engine', role: 'ADMIN' },
   { pattern: '/api/admin', role: 'ADMIN' },
   { pattern: '/api/webhooks', role: 'ADMIN' },
+  { pattern: '/api/hyperghost/execute', role: 'ADMIN' },
+  { pattern: '/api/hyperghost', role: 'OPERATOR', methods: ['POST', 'PUT', 'PATCH', 'DELETE'] },
+  { pattern: '/api/hyperghost', role: 'READONLY' },
   { pattern: '/api/analytics', role: 'ADMIN', methods: ['GET', 'HEAD'] },
   { pattern: '/api/analytics', role: 'READONLY' }
 ];
