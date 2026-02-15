@@ -43,6 +43,14 @@ function clampInt(raw: string | undefined, fallback: number, min: number, max: n
 const RPC_TIMEOUT_MS = clampInt(process.env.RPC_TIMEOUT_MS, 15_000, 1_000, 300_000, "RPC_TIMEOUT_MS");
 const TX_WAIT_TIMEOUT_MS = clampInt(process.env.TX_WAIT_TIMEOUT_MS, 60_000, 5_000, 600_000, "TX_WAIT_TIMEOUT_MS");
 const WATCHDOG_STALL_MS = clampInt(process.env.WATCHDOG_STALL_MS, 300_000, 10_000, 3_600_000, "WATCHDOG_STALL_MS");
+const CATCHUP_LAG_THRESHOLD = clampInt(process.env.CATCHUP_LAG_THRESHOLD, 5_000, 0, 10_000_000, "CATCHUP_LAG_THRESHOLD");
+const CATCHUP_BATCH_SIZE = clampInt(
+  process.env.CATCHUP_BATCH_SIZE,
+  Math.min(200, BATCH_SIZE * 10),
+  BATCH_SIZE,
+  50_000,
+  "CATCHUP_BATCH_SIZE"
+);
 
 const fetchRegistry = async () => {
   const now = Date.now();
@@ -241,7 +249,9 @@ async function proposeNextBatch() {
   if (state.nextChildBlock > scanTo) return;
 
   const start = state.nextChildBlock;
-  const end = Math.min(scanTo, start + BATCH_SIZE - 1);
+  const remaining = Math.max(0, scanTo - start + 1);
+  const effectiveBatchSize = remaining > CATCHUP_LAG_THRESHOLD ? CATCHUP_BATCH_SIZE : BATCH_SIZE;
+  const end = Math.min(scanTo, start + effectiveBatchSize - 1);
 
   const leaves: Array<string> = [];
   for (let n = start; n <= end; n++) {
@@ -406,6 +416,8 @@ app.get("/health", async (_req: Request, res: Response) => {
       rpcTimeoutMs: RPC_TIMEOUT_MS,
       txWaitTimeoutMs: TX_WAIT_TIMEOUT_MS,
       watchdogStallMs: WATCHDOG_STALL_MS,
+      catchupLagThreshold: CATCHUP_LAG_THRESHOLD,
+      catchupBatchSize: CATCHUP_BATCH_SIZE,
       settlementChainId,
       childChainId,
       rollup: ROLLUP,
