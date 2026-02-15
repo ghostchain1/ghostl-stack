@@ -51,6 +51,7 @@ const CATCHUP_BATCH_SIZE = clampInt(
   50_000,
   "CATCHUP_BATCH_SIZE"
 );
+const BLOCK_FETCH_PARALLELISM = clampInt(process.env.BLOCK_FETCH_PARALLELISM, 20, 1, 200, "BLOCK_FETCH_PARALLELISM");
 
 const fetchRegistry = async () => {
   const now = Date.now();
@@ -201,6 +202,28 @@ function merkleRoot(leaves: Array<string>): string {
   return level[0]!;
 }
 
+async function fetchChildLeaves(start: number, end: number): Promise<Array<string>> {
+  const count = Math.max(0, end - start + 1);
+  if (count === 0) return [];
+
+  const hashes = new Array<string>(count);
+  let next = start;
+  const workers = Array.from({ length: Math.min(BLOCK_FETCH_PARALLELISM, count) }, async () => {
+    while (true) {
+      const n = next;
+      if (n > end) return;
+      next += 1;
+
+      const b = await child.getBlock(n);
+      if (!b?.hash) throw new Error(`missing block hash for child block ${n}`);
+      hashes[n - start] = b.hash;
+    }
+  });
+  await Promise.all(workers);
+
+  return hashes.map((h, i) => hashLeaf(start + i, h));
+}
+
 async function getStableChildHeadNumber(): Promise<number> {
   if (CHILD_HEAD_TAG !== "latest") {
     try {
@@ -269,12 +292,7 @@ async function proposeNextBatch() {
   const effectiveBatchSize = remaining > CATCHUP_LAG_THRESHOLD ? CATCHUP_BATCH_SIZE : BATCH_SIZE;
   const end = Math.min(scanTo, start + effectiveBatchSize - 1);
 
-  const leaves: Array<string> = [];
-  for (let n = start; n <= end; n++) {
-    const b = await child.getBlock(n);
-    if (!b?.hash) throw new Error(`missing block hash for child block ${n}`);
-    leaves.push(hashLeaf(n, b.hash));
-  }
+  const leaves = await fetchChildLeaves(start, end);
   const root = merkleRoot(leaves);
 
   const tx = await rollup.proposeBatch(start, end, root, { nonce: latest });
@@ -429,6 +447,7 @@ app.get("/health", async (_req: Request, res: Response) => {
       watchdogStallMs: WATCHDOG_STALL_MS,
       catchupLagThreshold: CATCHUP_LAG_THRESHOLD,
       catchupBatchSize: CATCHUP_BATCH_SIZE,
+      blockFetchParallelism: BLOCK_FETCH_PARALLELISM,
       settlementChainId,
       childChainId,
       rollup: ROLLUP,
