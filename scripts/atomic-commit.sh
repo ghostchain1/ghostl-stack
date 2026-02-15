@@ -12,6 +12,7 @@ from the currently staged changes.
 Env overrides:
   - ATOMIC_ALLOW_DIRTY=1      (allow unstaged/untracked files)
   - ATOMIC_SKIP_GST_GATE=1    (skip `npm run gst:leakage`)
+  - ATOMIC_SKIP_GST_SYMBOL_GATE=1 (skip `npm run gst:symbol`)
   - ATOMIC_SKIP_LINT=1        (skip `npm run lint`)
   - ATOMIC_TEST_CMD="<cmd>"   (optional extra test command to run)
 EOF
@@ -85,6 +86,17 @@ if [ "${ATOMIC_SKIP_GST_GATE:-0}" != "1" ]; then
   fi
 else
   echo "[atomic-commit] GST leakage gate skipped (ATOMIC_SKIP_GST_GATE=1)"
+fi
+
+if [ "${ATOMIC_SKIP_GST_SYMBOL_GATE:-0}" != "1" ]; then
+  if node -e "const p=require('./package.json'); process.exit(p?.scripts?.['gst:symbol'] ? 0 : 1)"; then
+    echo "[atomic-commit] running GST symbol gate"
+    npm run gst:symbol
+  else
+    echo "[atomic-commit] gst:symbol script not present; skipping"
+  fi
+else
+  echo "[atomic-commit] GST symbol gate skipped (ATOMIC_SKIP_GST_SYMBOL_GATE=1)"
 fi
 
 if [ "${ATOMIC_SKIP_LINT:-0}" != "1" ]; then
