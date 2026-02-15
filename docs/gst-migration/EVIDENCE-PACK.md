@@ -1,7 +1,7 @@
 # GST-Native Evidence Pack
 
-Generated (UTC): `2026-02-06T13:22:14Z`
-Tested git ref: ``
+Generated (UTC): `2026-02-15T01:36:22Z`
+Tested git ref: `62d5969251b2853c8cb185fec7972507bacc8fd3`
 
 This document summarizes **what we can verify in this harness** and the key artifacts produced for the GST-native migration.
 
@@ -9,6 +9,8 @@ This document summarizes **what we can verify in this harness** and the key arti
 
 - Branding leakage gate (GST-native):
   - `npm run gst:leakage` → **OK**
+- Legacy symbol gate (GST-native):
+  - `npm run gst:symbol` → **OK**
 - Slither (formal):
   - `npm --prefix contracts run formal:slither` → **OK**
 - Governance proposal calldata (deterministic):
@@ -33,6 +35,7 @@ This document summarizes **what we can verify in this harness** and the key arti
 ## Enforcement policy artifacts
 
 - Leakage gate script: `scripts/gst-leakage-gate.sh`
+- Symbol gate script: `scripts/gst-symbol-gate.sh`
 - Allowlist (must remain small/justified): `config/gst-allowlist.txt`
 - Notes:
   - Gate includes first-party generated artifacts (e.g., `ops/preflight/**`, `ops/snapshots/**`) and permits Hyperledger Besu’s technical `--rpc-http-api=ETH,...` module token.
