@@ -12,7 +12,7 @@ This document summarizes **what we can verify in this harness** and the key arti
 - Legacy symbol gate (GST-native):
   - `npm run gst:symbol` → **OK**
 - Slither (formal):
-  - `npm --prefix contracts run formal:slither` → **OK**
+  - `npm --prefix contracts run formal:slither` → **SKIPPED** (docker socket blocked; no local slither binary detected)
 - Governance proposal calldata (deterministic):
   - `npm --prefix contracts run proposal:gst-constitution` → **OK**
   - Artifact: `docs/gst-migration/PROPOSAL-CALLDATA.json`
