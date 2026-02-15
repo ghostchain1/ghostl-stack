@@ -1,7 +1,7 @@
 # Phase 6 Attestation (Harness / Dry-Run)
 
-Generated (UTC): `2026-02-06T13:22:14Z`
-Tested git ref: ``
+Generated (UTC): `2026-02-15T01:48:27Z`
+Tested git ref: `92b76663111384d42447608e0f9b4f717bd67296`
 
 This attestation captures **what can be verified inside this Codex harness** (where some runtime capabilities are restricted). It is intended to be reproducible from a single git checkout.
 
@@ -53,7 +53,7 @@ This attestation captures **what can be verified inside this Codex harness** (wh
 
 - Command:
   - `npm --prefix contracts run formal:slither`
-- Outcome: **OK**
+- Outcome: **SKIPPED** (docker socket blocked; no local slither binary detected)
 - Notes:
   - `SLITHER_RUNNER=auto` prefers Docker but will fall back to a local `slither` binary if Docker is unavailable.
   - Strict mode (`CI=1` or `SLITHER_STRICT=1`) still fails hard when Slither cannot run and writes `contracts/reports/formal/summary.json`.
@@ -66,6 +66,14 @@ This attestation captures **what can be verified inside this Codex harness** (wh
 - Notes:
   - Enforces no user-facing legacy ETH/Ethereum/Ether/ENS `.eth` leakage outside an allowlist.
   - Includes first-party generated artifacts (e.g., `ops/preflight/**`, `ops/snapshots/**`) and permits Hyperledger Besu’s technical `--rpc-http-api=ETH,...` module token.
+
+### GST symbol gate
+
+- Command:
+  - `npm run gst:symbol`
+- Outcome: **OK**
+- Notes:
+  - Enforces no legacy `GHOST` symbol tokens in first-party, user-facing tracked surfaces.
 
 ### GST constitution proposal calldata
 
