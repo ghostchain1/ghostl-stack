@@ -181,9 +181,9 @@ services:
       RPC_L1: ${HOST_L1_RPC:-http://host.docker.internal:18545}
       RPC_L2: ${HOST_L2_RPC:-http://host.docker.internal:29547}
       RPC_L3: ${HOST_L3_RPC:-http://host.docker.internal:39545}
-      GAS_TOKEN_L1: ${GAS_TOKEN_L1:-GHOST}
-      GAS_TOKEN_L2: ${GAS_TOKEN_L2:-GHOST}
-      GAS_TOKEN_L3: ${GAS_TOKEN_L3:-GHOST}
+      GAS_TOKEN_L1: ${GAS_TOKEN_L1:-GST}
+      GAS_TOKEN_L2: ${GAS_TOKEN_L2:-GST}
+      GAS_TOKEN_L3: ${GAS_TOKEN_L3:-GST}
       SIGNER_PRIVATE_KEY: ${GAS_ENGINE_SIGNER_PRIVATE_KEY:-}
       SIGNER_PRIVATE_KEY_L1: ${GAS_ENGINE_SIGNER_PRIVATE_KEY_L1:-}
       SIGNER_PRIVATE_KEY_L2: ${GAS_ENGINE_SIGNER_PRIVATE_KEY_L2:-}
@@ -243,9 +243,9 @@ services:
       RPC_L1: ${HOST_L1_RPC:-http://host.docker.internal:18545}
       RPC_L2: ${HOST_L2_RPC:-http://host.docker.internal:29547}
       RPC_L3: ${HOST_L3_RPC:-http://host.docker.internal:39545}
-      GAS_TOKEN_L1: ${GAS_TOKEN_L1:-GHOST}
-      GAS_TOKEN_L2: ${GAS_TOKEN_L2:-GHOST}
-      GAS_TOKEN_L3: ${GAS_TOKEN_L3:-GHOST}
+      GAS_TOKEN_L1: ${GAS_TOKEN_L1:-GST}
+      GAS_TOKEN_L2: ${GAS_TOKEN_L2:-GST}
+      GAS_TOKEN_L3: ${GAS_TOKEN_L3:-GST}
       SIGNER_PRIVATE_KEY: ${GAS_ENGINE_SIGNER_PRIVATE_KEY:-}
       SIGNER_PRIVATE_KEY_L1: ${GAS_ENGINE_SIGNER_PRIVATE_KEY_L1:-}
       SIGNER_PRIVATE_KEY_L2: ${GAS_ENGINE_SIGNER_PRIVATE_KEY_L2:-}
