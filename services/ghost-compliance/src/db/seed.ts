@@ -108,7 +108,7 @@ const run = async () => {
         kycLevel: '2'
       },
       action: 'TRANSFER',
-      resource: { amountUSD: 1500, token: 'GHOST' },
+      resource: { amountUSD: 1500, token: 'GST' },
       context: { ipCountry: 'US', counterpartyRisk: 0.2 }
     };
     const decision = evaluatePolicy(bundle, decisionInput);
