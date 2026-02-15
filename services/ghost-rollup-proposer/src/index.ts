@@ -121,7 +121,8 @@ function makeProvider(url: string): ethers.JsonRpcProvider {
 const settlement = makeProvider(RPC_SETTLEMENT_RESOLVED);
 const child = makeProvider(RPC_CHILD_RESOLVED);
 
-const signer = observeOnly ? null : new ethers.NonceManager(new ethers.Wallet(PROPOSER_PRIVATE_KEY, settlement));
+const wallet = observeOnly ? null : new ethers.Wallet(PROPOSER_PRIVATE_KEY, settlement);
+const walletAddress = wallet?.address || "";
 
 const rollupAbi = [
   "function proposeBatch(uint256 startBlock, uint256 endBlock, bytes32 root) external returns (uint256)",
@@ -132,7 +133,7 @@ const rollupAbi = [
   "event BatchProposed(uint256 indexed batchId, uint256 indexed startBlock, uint256 indexed endBlock, bytes32 root)",
   "event BatchFinalized(uint256 indexed batchId)"
 ];
-const rollup = new ethers.Contract(ROLLUP, rollupAbi, signer ?? settlement);
+const rollup = new ethers.Contract(ROLLUP, rollupAbi, wallet ?? settlement);
 
 type Cursor = { nextChildBlock: number | null };
 const cursorPath = path.join(STATE_DIR, "cursor.json");
@@ -229,8 +230,23 @@ const metrics = {
   lastFinalized: null as any
 };
 
+async function getNonceState(): Promise<{ latest: number; pending: number }> {
+  if (observeOnly || !walletAddress) return { latest: 0, pending: 0 };
+  const [latest, pending] = await Promise.all([
+    settlement.getTransactionCount(walletAddress, "latest"),
+    settlement.getTransactionCount(walletAddress, "pending"),
+  ]);
+  return { latest, pending };
+}
+
 async function proposeNextBatch() {
   if (observeOnly) return;
+  const { latest, pending } = await getNonceState();
+  if (pending > latest) {
+    // Do not enqueue future nonces; wait for the in-flight tx to be mined or dropped.
+    console.log(`[Proposer] Pending tx detected (latestNonce=${latest} pendingNonce=${pending}); skipping propose`);
+    return;
+  }
   const scanTo = await getStableChildHeadNumber();
 
   // Keep our cursor aligned with on-chain rollup state.
@@ -261,7 +277,8 @@ async function proposeNextBatch() {
   }
   const root = merkleRoot(leaves);
 
-  const tx = await rollup.proposeBatch(start, end, root);
+  const tx = await rollup.proposeBatch(start, end, root, { nonce: latest });
+  console.log(`[Proposer] Propose sent tx=${tx.hash} nonce=${tx.nonce} start=${start} end=${end}`);
   const rcpt = await tx.wait(1, TX_WAIT_TIMEOUT_MS);
   if (!rcpt) throw new Error(`tx not mined within timeout (tx=${tx.hash})`);
 
@@ -286,6 +303,11 @@ async function proposeNextBatch() {
 
 async function finalizeSome() {
   if (observeOnly) return;
+  const { latest, pending } = await getNonceState();
+  if (pending > latest) {
+    console.log(`[Proposer] Pending tx detected (latestNonce=${latest} pendingNonce=${pending}); skipping finalize`);
+    return;
+  }
   const len = Number(await rollup.batchesLength());
   const nowSec = Math.floor(Date.now() / 1000);
   const max = Math.min(len, 30);
@@ -298,15 +320,20 @@ async function finalizeSome() {
     if (finalized || invalidated || challenged) continue;
     if (nowSec < proposedAt + CHALLENGE_PERIOD_SECONDS) continue;
     try {
-      const tx = await rollup.finalizeBatch(i);
+      const ns = await getNonceState();
+      if (ns.pending > ns.latest) break;
+      const tx = await rollup.finalizeBatch(i, { nonce: ns.latest });
+      console.log(`[Proposer] Finalize sent tx=${tx.hash} nonce=${tx.nonce} batchId=${i}`);
       const rcpt = await tx.wait(1, TX_WAIT_TIMEOUT_MS);
       if (!rcpt) continue;
       metrics.finalizations += 1;
       metrics.lastFinalizedAt = Date.now();
       metrics.lastFinalized = { batchId: i, tx: tx.hash };
+      break;
     } catch (e) {
       metrics.errors += 1;
       console.error("[Proposer] Finalize failed:", scrubError(e));
+      break;
     }
   }
 }
@@ -372,22 +399,6 @@ async function tick() {
     const err = scrubError(e);
     metrics.lastTickError = err;
     console.error("[Proposer] Tick failed:", err);
-    // If we get out-of-sync with the chain's current nonce (common after restarts or when other tooling
-    // submits transactions from the same key), reset the NonceManager so the next tick re-reads nonce.
-    const lower = err.toLowerCase();
-    if (
-      !observeOnly &&
-      signer &&
-      (lower.includes("nonce has already been used") ||
-        lower.includes("nonce too low") ||
-        (lower.includes("nonce") && lower.includes("already")))
-    ) {
-      try {
-        (signer as any).reset?.();
-      } catch {
-        // ignore
-      }
-    }
   } finally {
     metrics.lastTickFinishedAt = Date.now();
     inFlight = false;
