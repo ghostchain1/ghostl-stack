@@ -1,0 +1,19 @@
+groups:
+  - name: ghost-observability-logs
+    rules:
+      - alert: GhostCriticalLogs
+        expr: increase(ghost_observability_log_events_total{severity=~"CRITICAL|SLASHING_RISK|SECURITY_EVENT"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical observability logs detected"
+          description: "Critical, slashing-risk, or security log events observed in the last 5 minutes."
+      - alert: GhostErrorRateSpike
+        expr: increase(ghost_observability_log_events_total{severity=~"ERROR|CONSENSUS_RISK"}[5m]) > 25
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Error rate spike detected"
+          description: "Error or consensus-risk logs are spiking above normal thresholds."
