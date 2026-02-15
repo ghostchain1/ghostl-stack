@@ -60,6 +60,8 @@ if [ -n "$matches" ]; then
   matches="$(printf '%s\n' "$matches" | rg -v --pcre2 '(--rpc-http-api=|rpc-http-api[:=]\s*)ETH(,|\b)' || true)"
   # Allow technical dependency import paths that are not branding semantics.
   matches="$(printf '%s\n' "$matches" | rg -v --pcre2 'github\.com/ethereum(-optimism)?/' || true)"
+  # Allow upstream Docker image references (technical dependency, not user-facing branding).
+  matches="$(printf '%s\n' "$matches" | rg -v --pcre2 'ethereum/client-go[:@]' || true)"
 fi
 if [ -z "$matches" ]; then
   log "OK: no forbidden ETH branding tokens found."
