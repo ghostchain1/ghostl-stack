@@ -1,0 +1,16 @@
+[Unit]
+Description=Ghost Bots (GST enforcement + incident DB)
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+Type=simple
+User=ghost
+WorkingDirectory=/home/ghost/ghostl-stack
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 /opt/ghost-bots/core/orchestrator.py --loop --interval 300 --db /opt/ghost-bots/db/incidents.sqlite
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
