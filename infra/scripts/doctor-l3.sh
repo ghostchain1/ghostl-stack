@@ -4,6 +4,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="${ROOT_DIR:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 
+# shellcheck source=scripts/lib/docker.sh
+. "$ROOT_DIR/scripts/lib/docker.sh"
+
 L3_ENV_FILE="${L3_ENV_FILE:-$ROOT_DIR/infra/opstack/.env.l3}"
 L3_SECRETS_FILE="${L3_SECRETS_FILE:-$ROOT_DIR/infra/opstack/.env.secrets}"
 
@@ -366,7 +369,7 @@ if ! command -v docker >/dev/null 2>&1; then
 fi
 if [ "$DOCKER_AVAILABLE" = "1" ] && [ "$L3_DOCTOR_SKIP_DOCKER" != "1" ]; then
   docker_out=""
-  if ! docker_out="$(docker version --format '{{.Server.Version}}' 2>&1)"; then
+  if ! docker_out="$(hg_docker version --format '{{.Server.Version}}' 2>&1)"; then
     if is_docker_daemon_unavailable "$docker_out"; then
       if [ "$L3_DOCTOR_SKIP_DOCKER" = "1" ]; then
         DOCKER_AVAILABLE=0
@@ -384,7 +387,7 @@ elif [ "$L3_DOCTOR_SKIP_DOCKER" = "1" ]; then
 fi
 
 COMPOSE_AVAILABLE=0
-if [ "$DOCKER_AVAILABLE" = "1" ] && docker compose version >/dev/null 2>&1; then
+if [ "$DOCKER_AVAILABLE" = "1" ] && hg_docker compose version >/dev/null 2>&1; then
   COMPOSE_AVAILABLE=1
 elif [ "$L3_DOCTOR_SKIP_DOCKER" != "1" ]; then
   fail "docker compose not available"

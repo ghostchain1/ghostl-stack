@@ -5,6 +5,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="${ROOT_DIR:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 L1_ENV_FILE="${L1_ENV_FILE:-$ROOT_DIR/infra/ghostchain/.env.l1}"
 
+# shellcheck source=scripts/lib/docker.sh
+. "$ROOT_DIR/scripts/lib/docker.sh"
+
 if [ -f "$L1_ENV_FILE" ]; then
   set -a
   # shellcheck disable=SC1090
@@ -146,7 +149,7 @@ if ! command -v docker >/dev/null 2>&1; then
 fi
 if [ "$DOCKER_AVAILABLE" = "1" ] && [ "$L1_DOCTOR_SKIP_DOCKER" != "1" ]; then
   docker_out=""
-  if ! docker_out="$(docker version --format '{{.Server.Version}}' 2>&1)"; then
+  if ! docker_out="$(hg_docker version --format '{{.Server.Version}}' 2>&1)"; then
     if is_docker_daemon_unavailable "$docker_out"; then
       if [ "$L1_DOCTOR_SKIP_DOCKER" = "1" ]; then
         DOCKER_AVAILABLE=0
@@ -164,7 +167,7 @@ elif [ "$L1_DOCTOR_SKIP_DOCKER" = "1" ]; then
 fi
 
 COMPOSE_AVAILABLE=0
-if [ "$DOCKER_AVAILABLE" = "1" ] && docker compose version >/dev/null 2>&1; then
+if [ "$DOCKER_AVAILABLE" = "1" ] && hg_docker compose version >/dev/null 2>&1; then
   COMPOSE_AVAILABLE=1
 elif [ "$L1_DOCTOR_SKIP_DOCKER" != "1" ]; then
   fail "docker compose not available"
@@ -245,7 +248,7 @@ if [ "$KEYS_FOUND" -eq 0 ]; then
 fi
 
 if [ "$COMPOSE_AVAILABLE" = "1" ]; then
-  if ! docker compose -f "$L1_COMPOSE_FILE" config >/dev/null 2>&1; then
+  if ! hg_docker compose -f "$L1_COMPOSE_FILE" config >/dev/null 2>&1; then
     fail "compose config invalid for $L1_COMPOSE_FILE"
   fi
   echo "OK: compose config valid"
