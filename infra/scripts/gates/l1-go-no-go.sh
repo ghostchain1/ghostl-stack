@@ -4,6 +4,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 L1_ENV_FILE="${L1_ENV_FILE:-$ROOT_DIR/infra/ghostchain/.env.l1}"
 
+# shellcheck source=scripts/lib/docker.sh
+. "$ROOT_DIR/scripts/lib/docker.sh"
+
 if [ -f "$L1_ENV_FILE" ]; then
   set -a
   # shellcheck disable=SC1090
@@ -188,14 +191,16 @@ check_restart_policy() {
   local compose_file="$1"
   local service="$2"
   local cid
-  cid="$(docker compose -f "$compose_file" ps -q "$service" 2>/dev/null || true)"
+  cid="$(
+    hg_docker compose --project-directory "$(dirname "$compose_file")" -f "$compose_file" ps -q "$service" 2>/dev/null || true
+  )"
   if [ -z "$cid" ]; then
     fail "service $service not running for compose $compose_file"
   fi
   local policy status health
-  policy="$(docker inspect -f '{{.HostConfig.RestartPolicy.Name}}' "$cid" 2>/dev/null || true)"
-  status="$(docker inspect -f '{{.State.Status}}' "$cid" 2>/dev/null || true)"
-  health="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$cid" 2>/dev/null || true)"
+  policy="$(hg_docker inspect -f '{{.HostConfig.RestartPolicy.Name}}' "$cid" 2>/dev/null || true)"
+  status="$(hg_docker inspect -f '{{.State.Status}}' "$cid" 2>/dev/null || true)"
+  health="$(hg_docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$cid" 2>/dev/null || true)"
   if [ "$policy" = "no" ] || [ -z "$policy" ]; then
     fail "service $service restart policy not set (got '$policy')"
   fi
@@ -217,7 +222,7 @@ need_bin docker
 DOCKER_AVAILABLE=1
 if [ "$SKIP_DOCKER_CHECK" != "1" ]; then
   docker_version_out=""
-  if ! docker_version_out="$(docker version --format '{{.Server.Version}}' 2>&1)"; then
+  if ! docker_version_out="$(hg_docker version --format '{{.Server.Version}}' 2>&1)"; then
     if is_docker_daemon_unavailable "$docker_version_out"; then
       if [ "$STRICT_MODE" = "1" ]; then
         skip_or_fail "docker daemon/socket not reachable" "$docker_version_out"
@@ -234,7 +239,7 @@ else
 fi
 
 if [ "$DOCKER_AVAILABLE" = "1" ]; then
-  if ! docker compose version >/dev/null 2>&1; then
+  if ! hg_docker compose version >/dev/null 2>&1; then
     fail "docker compose not available"
   fi
 else
