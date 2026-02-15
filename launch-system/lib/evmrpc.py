@@ -95,7 +95,7 @@ def eth_call(cfg: RpcConfig, to_addr: str, data_hex: str, block: str = "latest")
         raise ValueError("data_must_be_0x")
     result = rpc_call(cfg, "eth_call", [{"to": to_addr, "data": data_hex}, block])
     if not isinstance(result, str) or not result.startswith("0x"):
-        raise RuntimeError("unexpected_eth_call_result")
+        raise RuntimeError("unexpected_rpc_call_result")
     return result
 
 
