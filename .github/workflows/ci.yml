@@ -49,9 +49,25 @@ jobs:
           set -euo pipefail
           ( git ls-files -z '*.sh' \
               | tr '\0' '\n' \
-              | grep -E '^(dev-stack\\.sh|scripts/|ops/scripts/|launch-system/|infra/ghostchain/ibft/|infra/scripts/)' \
+              | grep -E '^(dev-stack\\.sh|scripts/|ops/scripts/|ops/ghost-bots/|launch-system/|infra/ghostchain/ibft/|infra/scripts/)' \
               || true ) \
             | xargs -r shellcheck -S error
+
+  ghost-bots-python:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python syntax check (ops/ghost-bots)
+        run: |
+          python3 -m py_compile \
+            ops/ghost-bots/core/*.py \
+            ops/ghost-bots/plugins/*.py \
+            ops/ghost-bots/dashboards/*.py
 
   node-lint-build:
     needs: [rpc-namespace]
