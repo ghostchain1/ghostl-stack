@@ -19,7 +19,7 @@ const makeTempConfig = () => {
     JSON.stringify(
       {
         chains: [
-          { key: 'l2', chainId: 901, name: 'GhostL2', type: 'L2', rpcUrl: 'http://l2', gasTokenSymbol: 'GHOST', gasTokenAddress: CANONICAL }
+          { key: 'l2', chainId: 901, name: 'GhostL2', type: 'L2', rpcUrl: 'http://l2', gasTokenSymbol: 'GST', gasTokenAddress: CANONICAL }
         ]
       },
       null,
@@ -36,7 +36,7 @@ const makeTempConfig = () => {
             chainId: 901,
             chainName: 'GhostL2',
             chainType: 'L2',
-            gasTokenSymbol: 'GHOST',
+            gasTokenSymbol: 'GST',
             version: 'v1',
             baseMultiplier: 1,
             maxGasLimit: 30_000_000,

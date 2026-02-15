@@ -14,9 +14,9 @@ const makeTempConfig = () => {
     JSON.stringify(
       {
         chains: [
-          { key: 'l1', chainId: 14000101, name: 'GhostChain', type: 'L1', rpcUrl: 'http://l1', gasTokenSymbol: 'GHOST', gasTokenAddress: CANONICAL },
-          { key: 'l2', chainId: 901, name: 'GhostL2', type: 'L2', rpcUrl: 'http://l2', gasTokenSymbol: 'GHOST', gasTokenAddress: CANONICAL },
-          { key: 'l3', chainId: 903, name: 'GhostL3', type: 'L3', rpcUrl: 'http://l3', gasTokenSymbol: 'GHOST', gasTokenAddress: CANONICAL }
+          { key: 'l1', chainId: 14000101, name: 'GhostChain', type: 'L1', rpcUrl: 'http://l1', gasTokenSymbol: 'GST', gasTokenAddress: CANONICAL },
+          { key: 'l2', chainId: 901, name: 'GhostL2', type: 'L2', rpcUrl: 'http://l2', gasTokenSymbol: 'GST', gasTokenAddress: CANONICAL },
+          { key: 'l3', chainId: 903, name: 'GhostL3', type: 'L3', rpcUrl: 'http://l3', gasTokenSymbol: 'GST', gasTokenAddress: CANONICAL }
         ]
       },
       null,
@@ -33,7 +33,7 @@ const makeTempConfig = () => {
             chainId: 14000101,
             chainName: 'GhostChain',
             chainType: 'L1',
-            gasTokenSymbol: 'GHOST',
+            gasTokenSymbol: 'GST',
             version: 'v1',
             baseMultiplier: 1,
             maxGasLimit: 30_000_000,
