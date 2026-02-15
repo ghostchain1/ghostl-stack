@@ -483,6 +483,7 @@ app.get("/metrics/prom", (_req: Request, res: Response) => {
   out += promLine("ghost_rollup_proposer_finalizations_total", metrics.finalizations);
   out += promLine("ghost_rollup_proposer_errors_total", metrics.errors);
   out += promLine("ghost_rollup_proposer_batch_size", BATCH_SIZE);
+  out += promLine("ghost_rollup_proposer_block_fetch_parallelism", BLOCK_FETCH_PARALLELISM);
   out += promLine("ghost_rollup_proposer_challenge_period_seconds", CHALLENGE_PERIOD_SECONDS);
   res.send(out);
 });
