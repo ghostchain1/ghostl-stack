@@ -875,6 +875,7 @@ services:
       - ROLLUP_ADDRESS=${L2_ROLLUP_L3_ADDRESS}
       - PROPOSER_PRIVATE_KEY=${PROPOSER_PRIVATE_KEY}
       # Catch-up tuning: L3 can start far behind; increase batch size and parallelism to reduce lag faster.
+      - CATCHUP_LAG_THRESHOLD=${L3_ROLLUP_CATCHUP_LAG_THRESHOLD:-512}
       - CATCHUP_BATCH_SIZE=${L3_ROLLUP_CATCHUP_BATCH_SIZE:-1000}
       - BLOCK_FETCH_PARALLELISM=${L3_ROLLUP_BLOCK_FETCH_PARALLELISM:-50}
       - STATE_DIR=/state
