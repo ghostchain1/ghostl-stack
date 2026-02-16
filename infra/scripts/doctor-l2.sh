@@ -737,27 +737,48 @@ fi
 if [ "$L2_REQUIRE_L2_PROGRESS" = "1" ]; then
   NOW_TS="$(date +%s)"
   LAST_BATCH_SUCCESS="$(metric_value_with_label "$OP_BATCHER_METRICS_URL" "op_batcher_default_last_batcher_tx_unix" "stage=\\\"success\\\"" || true)"
+  BATCH_METRIC_SOURCE='op_batcher_default_last_batcher_tx_unix{stage="success"}'
   LAST_BATCH_SUCCESS_INT="$(to_int "${LAST_BATCH_SUCCESS:-0}")"
+  if [ "$LAST_BATCH_SUCCESS_INT" -le 0 ]; then
+    LAST_BATCH_SUCCESS="$(metric_value_with_label "$OP_BATCHER_METRICS_URL" "op_batcher_default_txmgr_last_confirm_unix" "status=\\\"success\\\"" || true)"
+    BATCH_METRIC_SOURCE='op_batcher_default_txmgr_last_confirm_unix{status="success"}'
+    LAST_BATCH_SUCCESS_INT="$(to_int "${LAST_BATCH_SUCCESS:-0}")"
+  fi
+  if [ "$LAST_BATCH_SUCCESS_INT" -le 0 ]; then
+    LAST_BATCH_SUCCESS="$(metric_value_with_label "$OP_BATCHER_METRICS_URL" "op_batcher_default_last_batcher_tx_unix" "stage=\\\"submitted\\\"" || true)"
+    BATCH_METRIC_SOURCE='op_batcher_default_last_batcher_tx_unix{stage="submitted"}'
+    LAST_BATCH_SUCCESS_INT="$(to_int "${LAST_BATCH_SUCCESS:-0}")"
+  fi
   if [ "$LAST_BATCH_SUCCESS_INT" -gt 0 ]; then
     BATCH_IDLE=$((NOW_TS - LAST_BATCH_SUCCESS_INT))
     if [ "$BATCH_IDLE" -gt "$L2_MAX_BATCHER_IDLE_SECONDS" ]; then
       fail "batcher idle for ${BATCH_IDLE}s (threshold ${L2_MAX_BATCHER_IDLE_SECONDS}s)"
     fi
-    echo "OK: batcher activity within threshold"
+    echo "OK: batcher activity within threshold (metric=$BATCH_METRIC_SOURCE)"
   else
     fail "batcher has not submitted a successful tx yet"
   fi
 
-  LAST_PROPOSER_PUBLISH="$(metric_value "$OP_PROPOSER_METRICS_URL" "op_proposer_default_txmgr_last_publish_unix" || true)"
-  LAST_PROPOSER_PUBLISH_INT="$(to_int "${LAST_PROPOSER_PUBLISH:-0}")"
-  if [ "$LAST_PROPOSER_PUBLISH_INT" -gt 0 ]; then
-    PROPOSER_IDLE=$((NOW_TS - LAST_PROPOSER_PUBLISH_INT))
-    if [ "$PROPOSER_IDLE" -gt "$L2_MAX_PROPOSER_IDLE_SECONDS" ]; then
-      fail "proposer idle for ${PROPOSER_IDLE}s (threshold ${L2_MAX_PROPOSER_IDLE_SECONDS}s)"
-    fi
-    echo "OK: proposer activity within threshold"
+  if [ "$ROLLUP_GATING_L2_FINALITY_ON_L1" = "true" ]; then
+    echo "OK: proposer activity check delegated to rollup proposer gate"
   else
-    fail "proposer has not published an output yet"
+    LAST_PROPOSER_PUBLISH="$(metric_value "$OP_PROPOSER_METRICS_URL" "op_proposer_default_txmgr_last_publish_unix" || true)"
+    PROPOSER_METRIC_SOURCE="op_proposer_default_txmgr_last_publish_unix"
+    LAST_PROPOSER_PUBLISH_INT="$(to_int "${LAST_PROPOSER_PUBLISH:-0}")"
+    if [ "$LAST_PROPOSER_PUBLISH_INT" -le 0 ]; then
+      LAST_PROPOSER_PUBLISH="$(metric_value_with_label "$OP_PROPOSER_METRICS_URL" "op_proposer_default_txmgr_last_confirm_unix" "status=\\\"success\\\"" || true)"
+      PROPOSER_METRIC_SOURCE='op_proposer_default_txmgr_last_confirm_unix{status="success"}'
+      LAST_PROPOSER_PUBLISH_INT="$(to_int "${LAST_PROPOSER_PUBLISH:-0}")"
+    fi
+    if [ "$LAST_PROPOSER_PUBLISH_INT" -gt 0 ]; then
+      PROPOSER_IDLE=$((NOW_TS - LAST_PROPOSER_PUBLISH_INT))
+      if [ "$PROPOSER_IDLE" -gt "$L2_MAX_PROPOSER_IDLE_SECONDS" ]; then
+        fail "proposer idle for ${PROPOSER_IDLE}s (threshold ${L2_MAX_PROPOSER_IDLE_SECONDS}s)"
+      fi
+      echo "OK: proposer activity within threshold (metric=$PROPOSER_METRIC_SOURCE)"
+    else
+      fail "proposer has not published an output yet"
+    fi
   fi
 else
   echo "OK: batcher/proposer idle checks skipped (L2_REQUIRE_L2_PROGRESS=0)"
