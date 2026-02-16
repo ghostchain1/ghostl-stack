@@ -4,6 +4,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -59,6 +61,48 @@ def _run_gate_cmd(name: str, cmd: list[str], cwd: Path, out_dir: Path) -> dict[s
     return {"gate": name, "ok": record["ok"], "outputPath": str(out_path), "required": True}
 
 
+def _build_compose_validation_targets(compose_files: list[Path]) -> list[dict[str, Any]]:
+    by_name = {p.name: p for p in compose_files}
+    used: set[str] = set()
+    targets: list[dict[str, Any]] = []
+
+    overlay_re = re.compile(r"^docker-compose\.(.+)\.secrets\.ya?ml$")
+
+    for compose_file in sorted(compose_files, key=lambda p: p.name):
+        m = overlay_re.match(compose_file.name)
+        if not m:
+            continue
+        stem = m.group(1)
+        base = by_name.get(f"docker-compose.{stem}.yml") or by_name.get(f"docker-compose.{stem}.yaml")
+        if base:
+            targets.append(
+                {
+                    "label": f"{base.name}+{compose_file.name}",
+                    "files": [base, compose_file],
+                    "required": True,
+                }
+            )
+            used.add(base.name)
+            used.add(compose_file.name)
+        else:
+            targets.append(
+                {
+                    "label": compose_file.name,
+                    "files": [compose_file],
+                    "required": False,
+                    "skipReason": "overlay without matching base compose file",
+                }
+            )
+            used.add(compose_file.name)
+
+    for compose_file in sorted(compose_files, key=lambda p: p.name):
+        if compose_file.name in used:
+            continue
+        targets.append({"label": compose_file.name, "files": [compose_file], "required": True})
+
+    return targets
+
+
 def _run_compose_gate(repo_root: Path, out_dir: Path) -> dict[str, Any]:
     compose_files = sorted(repo_root.glob("docker-compose*.yml")) + sorted(repo_root.glob("docker-compose*.yaml"))
     compose_files = [p for p in compose_files if p.is_file()]
@@ -71,9 +115,27 @@ def _run_compose_gate(repo_root: Path, out_dir: Path) -> dict[str, Any]:
         )
         return {"gate": "compose_config", "ok": True, "outputPath": str(out_path), "required": False}
 
+    validation_targets = _build_compose_validation_targets(compose_files)
     results: list[dict[str, Any]] = []
     ok = True
-    for compose_file in compose_files:
+    for target in validation_targets:
+        files = [Path(f) for f in target["files"]]
+        required = bool(target.get("required", True))
+        skip_reason = str(target.get("skipReason") or "")
+        if skip_reason:
+            results.append(
+                {
+                    "target": str(target["label"]),
+                    "files": [str(p) for p in files],
+                    "ok": True,
+                    "skipped": True,
+                    "required": required,
+                    "reason": skip_reason,
+                }
+            )
+            continue
+
+        compose_args = " ".join(f"-f {shlex.quote(str(p))}" for p in files)
         cmd = [
             "bash",
             "-lc",
@@ -81,18 +143,20 @@ def _run_compose_gate(repo_root: Path, out_dir: Path) -> dict[str, Any]:
                 "set -euo pipefail; "
                 f"source {repo_root}/scripts/lib/docker.sh; "
                 "hg_docker_init >/dev/null; "
-                f"hg_docker compose -f {compose_file} config >/dev/null"
+                f"hg_docker compose {compose_args} config >/dev/null"
             ),
         ]
         proc = subprocess.run(cmd, cwd=str(repo_root), capture_output=True, text=True)
         entry = {
-            "file": str(compose_file),
+            "target": str(target["label"]),
+            "files": [str(p) for p in files],
             "ok": proc.returncode == 0,
             "exitCode": proc.returncode,
+            "required": required,
             "stderr": (proc.stderr or "")[-4000:],
             "stdout": (proc.stdout or "")[-4000:],
         }
-        if not entry["ok"]:
+        if not entry["ok"] and required:
             ok = False
         results.append(entry)
 
