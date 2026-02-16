@@ -359,6 +359,12 @@ def _run_dashboard_json_validation(repo_root: Path, out_dir: Path, *, enabled: b
     return {"gate": "dashboard_json_validation", "ok": ok, "outputPath": str(out_path), "required": True}
 
 
+def _skip_gate(out_dir: Path, gate_name: str, reason: str) -> dict[str, Any]:
+    out_path = out_dir / f"{gate_name}.json"
+    _write_log(out_path, {"gate": gate_name, "ok": True, "skipped": True, "reason": reason})
+    return {"gate": gate_name, "ok": True, "outputPath": str(out_path), "required": False}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Verify a patch candidate and store gate results.")
     ap.add_argument("--patch-id", type=int, default=0, help="Patch candidate id. 0 runs ad-hoc verification.")
@@ -367,6 +373,8 @@ def main() -> int:
     ap.add_argument("--repo-root", default=None)
     ap.add_argument("--skip-service-tests", action="store_true")
     ap.add_argument("--skip-forge", action="store_true")
+    ap.add_argument("--skip-rpc-smoke", action="store_true")
+    ap.add_argument("--skip-compose", action="store_true")
     ap.add_argument("--gate-timeout-seconds", type=int, default=int(os.environ.get("GHOST_BOTS_GATE_TIMEOUT_SEC", "180")))
     ap.add_argument(
         "--service-test-timeout-seconds",
@@ -411,7 +419,10 @@ def main() -> int:
             timeout_seconds=args.gate_timeout_seconds,
         )
     )
-    results.append(_run_compose_gate(repo_root, out_dir, timeout_seconds=args.gate_timeout_seconds))
+    if args.skip_compose:
+        results.append(_skip_gate(out_dir, "compose_config", "disabled by flag"))
+    else:
+        results.append(_run_compose_gate(repo_root, out_dir, timeout_seconds=args.gate_timeout_seconds))
     results.append(
         _run_service_tests(
             repo_root,
@@ -421,7 +432,10 @@ def main() -> int:
         )
     )
     results.append(_run_forge(repo_root, out_dir, skip=args.skip_forge, timeout_seconds=args.forge_timeout_seconds))
-    results.extend(_run_rpc_smoke(out_dir))
+    if args.skip_rpc_smoke:
+        results.append(_skip_gate(out_dir, "rpc_smoke", "disabled by flag"))
+    else:
+        results.extend(_run_rpc_smoke(out_dir))
     results.append(_run_dashboard_json_validation(repo_root, out_dir, enabled=touches_dashboards))
 
     overall_ok = all(bool(r["ok"]) for r in results if bool(r.get("required", True)))

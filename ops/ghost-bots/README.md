@@ -38,6 +38,8 @@ Optional env toggles for approval-loop verification runtime:
 
 - `GHOST_BOTS_SKIP_SERVICE_TESTS=1`
 - `GHOST_BOTS_SKIP_FORGE=1`
+- `GHOST_BOTS_SKIP_RPC_SMOKE=1`
+- `GHOST_BOTS_SKIP_COMPOSE=1`
 - `GHOST_BOTS_GATE_TIMEOUT_SEC=<seconds>`
 - `GHOST_BOTS_SERVICE_TEST_TIMEOUT_SEC=<seconds>`
 - `GHOST_BOTS_FORGE_TIMEOUT_SEC=<seconds>`
@@ -70,6 +72,17 @@ python3 ops/ghost-bots/plugins/verify_patch.py \
   --gate-timeout-seconds 180 \
   --service-test-timeout-seconds 900 \
   --forge-timeout-seconds 900
+```
+
+Skip runtime-dependent checks (useful in CI smoke mode):
+
+```bash
+python3 ops/ghost-bots/plugins/verify_patch.py \
+  --patch-id 0 \
+  --skip-service-tests \
+  --skip-forge \
+  --skip-rpc-smoke \
+  --skip-compose
 ```
 
 Artifacts:
