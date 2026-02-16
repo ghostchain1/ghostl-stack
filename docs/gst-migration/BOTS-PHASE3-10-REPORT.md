@@ -233,3 +233,20 @@ git revert <phase9_commit_sha>
 - Continuous loop + daily report: complete
   - `ops/ghost-bots/plugins/daily_report.py`
   - `ops/ghost-bots/systemd/ghost-bots.service`
+
+## Follow-up Validation (2026-02-16)
+
+Issue fixed:
+- `verify_patch` previously validated `docker-compose.phase3.secrets.yml` as a standalone project and failed.
+- Compose gate now auto-pairs secrets overlays with their base file:
+  - `docker-compose.phase3.yml + docker-compose.phase3.secrets.yml`
+
+Evidence:
+- `python3 ops/ghost-bots/plugins/verify_patch.py --patch-id 2 --skip-service-tests --skip-forge`
+  - exit code `0`
+  - summary artifact: `ops/ghost-bots/reports/verify/2/2026-02-16T09-09-02+00-00/summary.json`
+- Approval flow succeeded:
+  - deployment row `ok=1`
+  - notes include branch + commit:
+    - `gst/botfix/1-2-gst-leakage-gate`
+    - `ff768c06b90c91ce940afbbf1e1bde2406c566d1`
