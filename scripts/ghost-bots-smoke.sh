@@ -26,4 +26,7 @@ GHOST_BOTS_SKIP_DOCKER_HEALTH=1 \
 GHOST_BOTS_SKIP_RPC_HEALTH=1 \
 python3 ops/ghost-bots/core/orchestrator.py --once
 
+echo "[ghost-bots-smoke] artifacts"
+ls -1 ops/ghost-bots/reports | sed 's/^/[ghost-bots-smoke]   /'
+
 echo "[ghost-bots-smoke] done"

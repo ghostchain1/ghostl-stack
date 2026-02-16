@@ -58,6 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -65,6 +66,15 @@ jobs:
       - name: Ghost Bots smoke (non-runtime)
         run: |
           bash scripts/ghost-bots-smoke.sh
+
+      - name: Upload Ghost Bots smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghost-bots-smoke-artifacts
+          path: |
+            ops/ghost-bots/reports
+          if-no-files-found: warn
 
   node-lint-build:
     needs: [rpc-namespace]
