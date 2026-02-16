@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 
 import Fastify from "fastify";
 import { z } from "zod";
@@ -13,6 +14,30 @@ import {
 } from "@ghostcontrol/shared";
 
 const logger = createLogger({ name: "ghostcontrol-policy" });
+const localRequire = createRequire(import.meta.url);
+type PolicyEval = (input: {
+  content: string;
+  source?: string;
+  contextTags?: string[];
+}) => { ok: boolean; violations: Array<{ reason: string; line: number; column: number }> };
+
+let evaluateGstPolicy: PolicyEval = () => ({ ok: true, violations: [] });
+try {
+  const loaded = localRequire("../../../../../services/ai-policy/gst_policy.cjs") as {
+    evaluateGstPolicy?: PolicyEval;
+  };
+  if (typeof loaded.evaluateGstPolicy === "function") {
+    evaluateGstPolicy = loaded.evaluateGstPolicy;
+  }
+} catch (error) {
+  logger.warn({ err: error }, "gst_policy_module_unavailable");
+}
+
+const evaluatePolicy: PolicyEval = (input: {
+    content: string;
+    source?: string;
+    contextTags?: string[];
+  }) => evaluateGstPolicy(input);
 
 const EnvSchema = z.object({
   PORT: z.coerce.number().int().positive().default(8082),
@@ -93,6 +118,23 @@ async function main() {
     const cfg = allowlist[mode];
     const reasons: string[] = [];
 
+    const aiPolicyPayload = JSON.stringify({
+      riskMode: parsed.data.riskMode,
+      scope: parsed.data.scope,
+      actions: parsed.data.actions,
+      gates: parsed.data.gates
+    });
+    const aiPolicyCheck = evaluatePolicy({
+      content: aiPolicyPayload,
+      source: "ghostcontrol.policy.evaluate",
+      contextTags: ["ai_patch", "pr_diff"]
+    });
+    if (!aiPolicyCheck.ok) {
+      for (const v of aiPolicyCheck.violations.slice(0, 5)) {
+        reasons.push(`gst_policy_violation:${v.reason}:${v.line}:${v.column}`);
+      }
+    }
+
     const allowedWorkspace = scopes.workspaceRootAllowPrefixes.some((p) =>
       parsed.data.scope.workspaceRoot.startsWith(p),
     );
@@ -143,4 +185,3 @@ main().catch((err) => {
   logger.error({ err }, "policy_failed");
   process.exit(1);
 });
-

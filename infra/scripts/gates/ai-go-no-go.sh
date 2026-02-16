@@ -32,6 +32,7 @@ missing=0
 log "GST-native leakage gates"
 "$ROOT_DIR/scripts/gst-leakage-gate.sh" || missing=1
 "$ROOT_DIR/scripts/gst-symbol-gate.sh" || missing=1
+"$ROOT_DIR/scripts/gst-ai-policy-gate.sh" || missing=1
 
 log "AI governance docs and artifacts"
 require_file "$ROOT_DIR/docs/architecture/ghostchain-ai-governance-whitepaper.md" || missing=1
