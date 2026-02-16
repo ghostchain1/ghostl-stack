@@ -6,6 +6,7 @@ This is a conservative ops helper that:
 - runs GST policy gates (`scripts/gst-leakage-gate.sh`, `scripts/gst-symbol-gate.sh`)
 - records failures as de-duplicated incidents in a local SQLite DB
 - seeds ranked patch candidates (proposals only)
+- stores patch verifications, approvals, and deployment audit rows
 - serves a minimal local incident dashboard
 
 Non-goals (by design):
@@ -27,6 +28,17 @@ DB default: `ops/ghost-bots/db/incidents.sqlite` (ignored by git).
 python3 ops/ghost-bots/core/orchestrator.py --loop --interval 300
 ```
 
+Loop mode also:
+
+- updates `ops/ghost-bots/reports/daily_health.md`
+- writes policy snapshots (`gst_leakage_latest.json`, `gst_symbol_latest.json`)
+- checks for `ops/ghost-bots/APPROVE_NEXT_PATCH` and, when present, runs atomic approval flow
+
+Optional env toggles for approval-loop verification runtime:
+
+- `GHOST_BOTS_SKIP_SERVICE_TESTS=1`
+- `GHOST_BOTS_SKIP_FORGE=1`
+
 ## Dashboard
 
 ```bash
@@ -40,6 +52,45 @@ API endpoints:
 - `GET /api/incidents`
 - `GET /api/incidents/<id>`
 - `GET /api/summary` (System Health + GST Compliance)
+
+## Verify Patch Candidate
+
+```bash
+python3 ops/ghost-bots/plugins/verify_patch.py --patch-id 2
+```
+
+Artifacts:
+
+- `ops/ghost-bots/reports/verify/<patch_id>/<timestamp>/summary.json`
+- gate output logs in the same directory
+- rows inserted into `verifications`
+
+## Approval Token + Atomic Commit
+
+Create `ops/ghost-bots/APPROVE_NEXT_PATCH`:
+
+```text
+patch_id=2
+note=approved for bot commit
+```
+
+Then either:
+
+- let loop mode consume it automatically, or
+- run explicitly:
+
+```bash
+python3 ops/ghost-bots/plugins/apply_patch_atomic.py
+```
+
+This flow:
+
+- inserts an `approvals` row
+- re-runs verification gates
+- creates branch `gst/botfix/<incident>-<patch>-<title>`
+- commits with `gst(bot): fix ... [incident:<id>] [patch:<id>]`
+- inserts a `deployments` row
+- deletes the approval token file on success
 
 ## Install To /opt (Optional)
 
