@@ -1,5 +1,26 @@
 # GST Migration Baseline
 
+## Refresh Snapshot (2026-02-16)
+
+- Date (UTC): `2026-02-16T12:03:00Z`
+- Branch: `brand/gst-native`
+- Commit: `2521fb523`
+- Git status: `## brand/gst-native...origin/brand/gst-native`
+
+### Phase 0 Scan Gates (read-only)
+
+- Guard scripts present:
+  - `scripts/guard-diff-only.sh`
+  - `scripts/atomic-commit.sh`
+- Inventory artifacts refreshed:
+  - `docs/gst-migration/CHAINS-INVENTORY.md`
+  - `docs/gst-migration/SERVICES-INVENTORY.md`
+  - `docs/gst-migration/SERVICES-INVENTORY.tsv`
+- Live chain probes (technical `eth_*` compatibility calls only):
+  - `L1 http://127.0.0.1:18545 -> eth_chainId 0xd59fe5, eth_blockNumber 0x5fdd9`
+  - `L2 http://127.0.0.1:29547 -> eth_chainId 0x385, eth_blockNumber 0x3b05f`
+  - `L3 http://127.0.0.1:39545 -> eth_chainId 0x387, eth_blockNumber 0x3adae`
+
 Date: 2026-02-15T21:36:11+00:00
 
 ## Repo

@@ -1,5 +1,64 @@
 # Services Inventory
 
+## Refresh (2026-02-16, Phase 0 rerun)
+
+Scan scope:
+- Compose manifests: root `docker-compose*.yml`, `apps/`, `infra/ghostchain/`, `infra/opstack/`, `infra/docker/compose/`, `observability/infra/`, `services/*/docker-compose.yml`, `tools/ghostcontrol/infra/compose/`
+- Source trees: `services/**`, `apps/**`, `packages/**`, `contracts/**`, `tools/**`, `infra/**`
+- Excluded: `rollback/`, `backups/`, `_backup/`, `releases/`, `node_modules/`, `dist/`, vendor upstream OP repos
+
+Canonical per-service runtime matrix (ports/env/volumes/healthcheck/metrics/DB/RPC deps):
+- `docs/gst-migration/SERVICES-INVENTORY.tsv`
+- Rows: `144` first-party/active service IDs
+- Columns:
+  - `service`
+  - `compose_files`
+  - `ports`
+  - `volumes`
+  - `healthcheck`
+  - `chain_dependencies`
+  - `db_env`
+  - `metrics_env`
+
+Compose parse exceptions observed (needs layered compose invocation or missing build metadata):
+- `docker-compose.phase3.secrets.yml`
+- `infra/opstack/docker-compose.challengers.yml`
+- `infra/opstack/docker-compose.l3.yml` (valid when overlaid with `infra/opstack/docker-compose.yml`)
+- `infra/docker/compose/docker-compose.core.yml`
+- `infra/docker/compose/docker-compose.ui.yml`
+
+Domain grouping (for GST migration sequencing):
+
+### Chain Core
+`ghost-rpc-proxy`, `ghost-rpc-proxy-l1`, `ghost-rpc-proxy-l2`, `ghost-rpc-proxy-l3`, `ghostchain-bootnode`, `ghostchain-l1`, `ghostchain-node1`, `ghostchain-node2`, `ghostchain-node3`, `ghostchain-node4`, `ghostchain-rpc-proxy`, `l1-rpc-proxy`, `l2-geth`, `op-batcher`, `op-gate`, `op-gate-l1`, `op-node`, `op-proposer`, `op-sequencer`, `rpc-forward-l1-29545`, `rpc-forward-l2-18547`
+
+### Governance
+`ghostcontrol-planner`, `ghostcontrol-policy`, `governance-service`, `hyper-ghost-supervisor`, `network-manager`, `network-manager-service`, `upgrade-orchestrator-service`
+
+### Bridge/Relayer
+`bridge-service`, `ghost-relayer`, `ghost-rollup-challenger`, `ghost-rollup-challenger-l2`, `ghost-rollup-proposer`, `ghost-rollup-proposer-l2`, `liquidity-router`, `liquidity-service`, `preconfirm-l2-service`, `preconfirm-l3-service`, `preconfirm-service`
+
+### Wallet/UI
+`command-palette-service`, `ghost-ui`, `ghostcontrol-ui`, `ghostl-web`, `proxy-inspector-service`, `theme-service`
+
+### Indexing/Explorer
+`block-index-service`, `ghost-mapper`, `ghostscout-db`, `ghostscout-frontend-l1`, `ghostscout-frontend-l2`, `ghostscout-frontend-l3`, `ghostscout-l1`, `ghostscout-l2`, `ghostscout-l3`, `global-search-service`, `network-context-service`, `node-inventory-service`, `tx-index-service`
+
+### Compliance/KYC
+`auth-service`, `compliance-export-service`, `contract-registry-service`, `contract-risk-service`, `dispute-service`, `entity-tagging-service`, `ghost-compliance`, `ghost-compliance-worker`, `rbac-service`, `secrets-health-service`, `session-service`, `verification-service`
+
+### Treasury/Tokenomics
+`fee-model-service`, `mempool-service`, `participation-service`, `payout-service`, `rewards-service`, `snapshot-service`, `staking-service`, `supply-service`, `treasury-ai`, `treasury-evidence`, `treasury-service`
+
+### Observability
+`alertmanager`, `alerts-service`, `consensus-telemetry-service`, `grafana`, `loki`, `node-health-service`, `notifications-service`, `prometheus`, `vector`
+
+### AI Agents
+`agent-registry`, `ai-clock-sync`, `ai-monitor`, `ai-monitor-l1`, `ai-monitor-l3`, `ai-vault`, `ai-vault-dev`, `anomaly-detection-service`, `auditor-agent`, `coder-agent`, `docs-agent`, `explainability-service`, `forecasting-service`, `ghost-ai-attestor`, `ghost-guard`, `ops-agent`, `planner-agent`, `router-agent`, `watchdog-agent`
+
+### Unclassified (needs Phase 3 domain finalization)
+`audit-log-service`, `chain-status-service`, `core-service`, `docker-socket-proxy`, `evidence-service`, `external-evm`, `feature-flags-service`, `gas-engine-migrate`, `gas-engine-postgres`, `gas-engine-redis`, `ghost-gas-engine`, `ghost-gas-engine-worker`, `ghost-pil`, `ghost-pil-worker`, `ghost-registry`, `ghostcontrol-api`, `ghostcontrol-db`, `ghostcontrol-ingest`, `ghostcontrol-redis`, `ghostcontrol-runner`, `ghostl-api`, `ghostl-worker`, `ghostl-worker-redis`, `key-rotation-service`, `l1-mainnet-geth`, `migrate`, `peer-graph-service`, `pil-migrate`, `pil-postgres`, `postgres`, `redis`, `slashing-detection-service`, `transfer-lifecycle-service`, `validator-service`, `vault`
+
 Generated: 2026-02-15T21:37:37.000136Z
 
 Notes:
@@ -2459,4 +2518,3 @@ Notes:
 - ghostcontrol-redis | ports=none | env_files=none | volumes=1 | healthcheck=no | networks=ghostcontrol_net
 - ghostcontrol-runner | ports=none | env_files=none | volumes=2 | healthcheck=no | networks=ghostcontrol_net
 - ghostcontrol-ui | ports=7400->3000/tcp | env_files=none | volumes=0 | healthcheck=no | networks=ghostcontrol_net
-
