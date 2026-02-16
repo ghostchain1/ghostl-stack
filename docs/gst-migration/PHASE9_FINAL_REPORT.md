@@ -49,6 +49,8 @@ L2_GO_NO_GO_SKIP_RUNTIME=1 L2_DOCTOR_SKIP_RUNTIME=1 L2_DOCTOR_SKIP_DOCKER=1 bash
 L2_DOCTOR_SKIP_RUNTIME=1 L2_DOCTOR_SKIP_DOCKER=1 bash infra/scripts/doctor-l2.sh
 L3_GO_NO_GO_SKIP_RUNTIME=1 L3_DOCTOR_SKIP_RUNTIME=1 L3_DOCTOR_SKIP_DOCKER=1 bash infra/scripts/gates/l3-go-no-go.sh
 bash ops/scripts/preflight.sh --dry-run --json >/tmp/ops-preflight.json
+L2_GO_NO_GO_SKIP_RUNTIME=1 L2_DOCTOR_SKIP_RUNTIME=1 L2_DOCTOR_SKIP_DOCKER=1 L2_GO_NO_GO_INVARIANT_MODE=full bash infra/scripts/gates/l2-go-no-go.sh
+L3_GO_NO_GO_SKIP_RUNTIME=1 L3_DOCTOR_SKIP_RUNTIME=1 L3_DOCTOR_SKIP_DOCKER=1 L3_GO_NO_GO_INVARIANT_MODE=full bash infra/scripts/gates/l3-go-no-go.sh
 ```
 
 ## 4. Expected Output
@@ -57,6 +59,7 @@ bash ops/scripts/preflight.sh --dry-run --json >/tmp/ops-preflight.json
 - Foundry GST invariant suite passes.
 - Dashboard JSON validates and compose configs resolve.
 - L1/L2/L3 smoke gates pass in reduced-runtime mode.
+- L2/L3 smoke gates also pass with `full` invariant mode in this harness.
 
 ## 5. Rollback Plan (Git-Based)
 
