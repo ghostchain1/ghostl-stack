@@ -3,8 +3,8 @@
 ## Refresh (2026-02-16, Phase 0 rerun)
 
 Repo root: `/home/ghost/ghostl-stack`  
-Captured at: `2026-02-16T12:03:00Z`  
-Baseline commit (HEAD): `2521fb523`
+Captured at: `2026-02-16T15:53:51Z`  
+Baseline commit (HEAD): `25def7909`
 
 ### GhostChain (L1)
 
@@ -37,7 +37,7 @@ Baseline commit (HEAD): `2521fb523`
 - Native currency metadata surfaces:
   - Genesis gas token address in `infra/opstack/config/genesis-l2.json` (`config.gasToken`)
   - Canonical metadata in registry/API/engine remains `GST / Ghost Token / 18`
-  - Drift found in OP env branding: `infra/opstack/.env` and `infra/opstack/.env.l2` still define `GAS_TOKEN_SYMBOL=GHOST` and `GAS_TOKEN_NAME=\"Ghost Token (L1)\"`
+  - OP env branding is GST-aligned: `infra/opstack/.env` and `infra/opstack/.env.l2` define `GAS_TOKEN_SYMBOL=GST` and `GAS_TOKEN_NAME=\"Ghost Token\"`
 - RPC endpoints:
   - External: `http://localhost:29547`, `ws://localhost:29548`, rollup RPC `http://localhost:9546`
   - Guarded/externalized: `http://localhost:18547` (forwarder), `http://localhost:28546` (`op-gate`)
@@ -77,8 +77,10 @@ Baseline commit (HEAD): `2521fb523`
 
 ### Chain-Level Notes for Phase 2
 
-- L1/L2/L3 user-facing currency metadata is mostly GST-native already.
-- Primary remaining Phase 2 chain-branding drift is in OP env token labels (`GHOST` vs `GST`) and Blockscout legacy `ETHEREUM_JSONRPC_*` compatibility variables.
+- L1/L2/L3 user-facing currency metadata is GST-native.
+- Remaining ETH-token hits are technical compatibility surfaces only:
+  - Blockscout runtime env bridge keys (`ETHEREUM_JSONRPC_*`) set from GST-prefixed upstream keys in entrypoint shims.
+  - RPC module namespaces and `eth_*` JSON-RPC method names.
 
 Repo root: `/home/ghost/ghostl-stack`
 Captured at: `2026-02-15T21:38:46.053847Z`
