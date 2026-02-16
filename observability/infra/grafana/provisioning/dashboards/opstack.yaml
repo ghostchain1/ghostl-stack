@@ -9,3 +9,11 @@ providers:
     editable: true
     options:
       path: /var/lib/grafana/dashboards
+  - name: gst
+    orgId: 1
+    folder: "GST"
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/gst-dashboards
