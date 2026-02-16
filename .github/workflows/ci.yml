@@ -62,31 +62,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Python syntax check (ops/ghost-bots)
+      - name: Ghost Bots smoke (non-runtime)
         run: |
-          python3 -m py_compile \
-            ops/ghost-bots/core/*.py \
-            ops/ghost-bots/plugins/*.py \
-            ops/ghost-bots/dashboards/*.py
-
-      - name: Verify patch smoke (non-runtime mode)
-        run: |
-          python3 ops/ghost-bots/plugins/verify_patch.py \
-            --patch-id 0 \
-            --skip-service-tests \
-            --skip-forge \
-            --skip-rpc-smoke \
-            --skip-compose \
-            --gate-timeout-seconds 60 \
-            --service-test-timeout-seconds 60 \
-            --forge-timeout-seconds 60
-
-      - name: Orchestrator smoke (non-runtime mode)
-        env:
-          GHOST_BOTS_SKIP_DOCKER_HEALTH: "1"
-          GHOST_BOTS_SKIP_RPC_HEALTH: "1"
-        run: |
-          python3 ops/ghost-bots/core/orchestrator.py --once
+          bash scripts/ghost-bots-smoke.sh
 
   node-lint-build:
     needs: [rpc-namespace]
