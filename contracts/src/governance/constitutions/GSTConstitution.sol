@@ -7,7 +7,7 @@ pragma solidity ^0.8.24;
 contract GSTConstitution {
     // Clause identifiers (offchain-readable, onchain-addressable).
     bytes32 public constant CLAUSE_GST_NATIVE_ONLY = keccak256("ghost.constitution.gst_native_only.v1");
-    bytes32 public constant CLAUSE_NO_ETH_BRANDING = keccak256("ghost.constitution.no_eth_branding.v1");
+    bytes32 public constant CLAUSE_NO_LEGACY_BRANDING = keccak256("ghost.constitution.no_legacy_branding.v1");
 
     // PolicyRegistry keys (uint256 values).
     bytes32 public constant POLICY_GST_NATIVE_ONLY = keccak256("ghost.policy.native.gst_only");
