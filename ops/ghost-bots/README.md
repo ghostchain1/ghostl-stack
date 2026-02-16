@@ -35,6 +35,12 @@ python3 ops/ghost-bots/dashboards/server.py --db ops/ghost-bots/db/incidents.sql
 
 Then open: `http://127.0.0.1:8088`
 
+API endpoints:
+
+- `GET /api/incidents`
+- `GET /api/incidents/<id>`
+- `GET /api/summary` (System Health + GST Compliance)
+
 ## Install To /opt (Optional)
 
 ```bash
@@ -55,3 +61,4 @@ sudo systemctl enable --now ghost-bots
 
 - Docker calls go through `scripts/lib/docker.sh` (`hg_docker`) so the bots can run on hosts where the user is not in the `docker` group.
 - RPC checks use `eth_*` JSON-RPC methods for compatibility; native currency branding is enforced elsewhere.
+- `plugins/ingest_signal.py` can ingest external failures into the incident DB while preserving dedupe fingerprints.

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime
 import hashlib
 import os
 from pathlib import Path
@@ -29,7 +30,7 @@ def main() -> int:
     host = (parsed.hostname or "unknown").replace(":", "_")
     if parsed.port:
         host = f"{host}_{parsed.port}"
-    day = os.environ.get("GHOST_BOTS_DAY") or __import__("datetime").datetime.utcnow().strftime("%Y-%m-%d")
+    day = os.environ.get("GHOST_BOTS_DAY") or datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
     h = hashlib.sha256(args.url.encode("utf-8")).hexdigest()[:16]
 
     out_dir = cache_dir / host / day
