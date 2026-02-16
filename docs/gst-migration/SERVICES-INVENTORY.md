@@ -59,10 +59,12 @@ Domain grouping (for GST migration sequencing):
 ### Unclassified (needs Phase 3 domain finalization)
 `audit-log-service`, `chain-status-service`, `core-service`, `docker-socket-proxy`, `evidence-service`, `external-evm`, `feature-flags-service`, `gas-engine-migrate`, `gas-engine-postgres`, `gas-engine-redis`, `ghost-gas-engine`, `ghost-gas-engine-worker`, `ghost-pil`, `ghost-pil-worker`, `ghost-registry`, `ghostcontrol-api`, `ghostcontrol-db`, `ghostcontrol-ingest`, `ghostcontrol-redis`, `ghostcontrol-runner`, `ghostl-api`, `ghostl-worker`, `ghostl-worker-redis`, `key-rotation-service`, `l1-mainnet-geth`, `migrate`, `peer-graph-service`, `pil-migrate`, `pil-postgres`, `postgres`, `redis`, `slashing-detection-service`, `transfer-lifecycle-service`, `validator-service`, `vault`
 
-Generated: 2026-02-15T21:37:37.000136Z
+Generated: 2026-02-16T15:53:51Z
 
 Notes:
-- Excludes backups/, releases/, ops/, node_modules/, dist/, .tmp/ for signal-to-noise.
+- Canonical Phase 0 service matrix is the TSV file above (`144` active services).
+- Historical compose dumps retained below this section may include backup/rollback paths from older inventory runs.
+
 - Service details are derived from docker compose config (JSON).
 
 ## apps/docker-compose.dev.yml
