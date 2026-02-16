@@ -941,6 +941,8 @@ services:
       - RPC_CHILD=${RPC_L2}
       - ROLLUP_ADDRESS=${L1_ROLLUP_L2_ADDRESS}
       - PROPOSER_PRIVATE_KEY=${PROPOSER_PRIVATE_KEY}
+      # Keep L2 economic finality progress resilient to transient OP safe-head stalls.
+      - ROLLUP_CHILD_HEAD_TAG=${L2_ROLLUP_CHILD_HEAD_TAG:-latest}
       # Catch-up tuning: keep L2 economic finality close to L1 even after restarts.
       - CATCHUP_LAG_THRESHOLD=${L2_ROLLUP_CATCHUP_LAG_THRESHOLD:-512}
       - CATCHUP_BATCH_SIZE=${L2_ROLLUP_CATCHUP_BATCH_SIZE:-1000}
