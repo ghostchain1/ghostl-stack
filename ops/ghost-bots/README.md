@@ -22,6 +22,12 @@ python3 ops/ghost-bots/core/orchestrator.py --once
 
 DB default: `ops/ghost-bots/db/incidents.sqlite` (ignored by git).
 
+Quick non-runtime smoke (CI/local):
+
+```bash
+bash scripts/ghost-bots-smoke.sh
+```
+
 ## Run Loop
 
 ```bash
