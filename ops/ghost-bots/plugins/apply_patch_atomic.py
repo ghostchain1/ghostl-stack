@@ -49,6 +49,14 @@ def _run(cmd: list[str], *, cwd: Path, check: bool = True) -> subprocess.Complet
     return subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True, check=check)
 
 
+def _list_dirty_entries(repo_root: Path) -> list[str]:
+    proc = _run(["git", "status", "--porcelain"], cwd=repo_root, check=False)
+    if proc.returncode != 0:
+        return ["<unable to read git status>"]
+    lines = [line.rstrip() for line in (proc.stdout or "").splitlines() if line.strip()]
+    return lines
+
+
 def _parse_approval_file(path: Path) -> dict[str, str]:
     text = path.read_text(encoding="utf-8").strip()
     if not text:
@@ -162,6 +170,39 @@ def main() -> int:
     schema_path = Path(args.schema).resolve()
 
     patch_id, note, approval_path = _parse_patch_id_from_args(args)
+    dirty_entries = _list_dirty_entries(repo_root)
+    if dirty_entries:
+        dirty_preview = "; ".join(dirty_entries[:20])
+        with connect(db_path) as conn:
+            init_schema(conn, schema_path)
+            get_patch(conn, patch_id)
+            insert_approval(
+                conn,
+                patch_id=patch_id,
+                approver=str(args.approver),
+                decision="blocked",
+                note=f"blocked dirty worktree: {note}".strip(),
+            )
+            update_patch_status(conn, patch_id, "blocked_dirty_worktree")
+            insert_deployment(
+                conn,
+                patch_id=patch_id,
+                method="atomic_commit",
+                ok=False,
+                notes=f"blocked: dirty worktree ({len(dirty_entries)} entries): {dirty_preview}",
+            )
+        _archive_approval_file(approval_path, "failed")
+        print(
+            json.dumps(
+                {
+                    "ok": False,
+                    "reason": "dirty_worktree",
+                    "dirtyEntries": dirty_entries[:20],
+                },
+                ensure_ascii=True,
+            )
+        )
+        return 1
 
     with connect(db_path) as conn:
         init_schema(conn, schema_path)
