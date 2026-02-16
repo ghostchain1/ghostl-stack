@@ -31,28 +31,79 @@ contract GSTInvariantTest is Test {
     }
 
     function test_no_forbidden_branding_in_frontdoor_configs() external view {
-        // Intentionally keep this file list small to avoid scanning large generated artifacts.
-        string[4] memory paths = [
-            // Scan the tracked template rather than the local secret env file.
-            string("../services/stack.env.example"),
-            string("../package.json"),
-            string("../infra/docker/compose/stack.env"),
-            string("../docs/architecture/phase3-containers.md")
-        ];
+        // Keep this list bounded and focused on L1/L2/L3 config surfaces + bridge/gas-token labeling.
+        string[] memory paths = new string[](10);
+        // Scan tracked templates/configs instead of local secret env files.
+        paths[0] = "../services/stack.env.example";
+        paths[1] = "../package.json";
+        paths[2] = "../infra/docker/compose/stack.env";
+        paths[3] = "../docs/architecture/phase3-containers.md";
+        paths[4] = "../infra/ghostchain/docker-compose.l1.yml";
+        paths[5] = "../infra/opstack/docker-compose.yml";
+        paths[6] = "../infra/opstack/docker-compose.l3.yml";
+        paths[7] = "../infra/opstack/config/rollup.json";
+        paths[8] = "../infra/opstack/l3/ghostl3/config/rollup.json";
+        paths[9] = "../infra/opstack/contracts/script/DeployL1.s.sol";
 
-        bytes memory eth = bytes(string.concat("E", "TH"));
-        bytes memory legacyUnit = bytes(string.concat("Et", "her"));
-        bytes memory legacyChain = bytes(string.concat("Ethere", "um"));
+        bytes memory legacySymbol = abi.encodePacked(bytes1(uint8(69)), bytes1(uint8(84)), bytes1(uint8(72)));
+        bytes memory legacyUnit = abi.encodePacked(
+            bytes1(uint8(69)),
+            bytes1(uint8(116)),
+            bytes1(uint8(104)),
+            bytes1(uint8(101)),
+            bytes1(uint8(114))
+        );
+        bytes memory legacyChain = abi.encodePacked(
+            bytes1(uint8(69)),
+            bytes1(uint8(116)),
+            bytes1(uint8(104)),
+            bytes1(uint8(101)),
+            bytes1(uint8(114)),
+            bytes1(uint8(101)),
+            bytes1(uint8(117)),
+            bytes1(uint8(109))
+        );
         bytes memory xi = hex"ce9e";
+        bytes memory legacyRpcKey = abi.encodePacked(legacySymbol, bytes("_RPC"));
+        bytes memory legacyChainIdKey = abi.encodePacked(legacySymbol, bytes("_CHAIN_ID"));
+        bytes memory legacyPrivateKey = abi.encodePacked(legacySymbol, bytes("_PRIVATE_KEY"));
+        bytes memory legacyExplorerKey = abi.encodePacked(bytes("ETHER"), bytes("SCAN"));
+        bytes memory legacyNativeKey = abi.encodePacked(
+            bytes("native"),
+            bytes1(uint8(69)),
+            bytes1(uint8(116)),
+            bytes1(uint8(104))
+        );
+        bytes memory legacyAmountKey = abi.encodePacked(
+            bytes1(uint8(101)),
+            bytes1(uint8(116)),
+            bytes1(uint8(104)),
+            bytes("Amount")
+        );
+        bytes memory legacyBalanceKey = abi.encodePacked(
+            bytes1(uint8(101)),
+            bytes1(uint8(116)),
+            bytes1(uint8(104)),
+            bytes("Balance")
+        );
+        bytes memory legacySuffixKey = abi.encodePacked(bytes("_"), bytes1(uint8(101)), bytes1(uint8(116)), bytes1(uint8(104)));
 
         for (uint256 i = 0; i < paths.length; i++) {
             string memory content = vm.readFile(paths[i]);
             bytes memory raw = bytes(content);
 
-            require(!_containsWord(raw, eth), "forbidden:legacy_symbol");
+            require(!_containsWord(raw, legacySymbol), "forbidden:legacy_symbol");
             require(!_containsWord(raw, legacyUnit), "forbidden:legacy_unit");
             require(!_containsWord(raw, legacyChain), "forbidden:legacy_chain");
             require(!_contains(raw, xi), "forbidden:legacy_glyph");
+            require(!_contains(raw, legacyRpcKey), "forbidden:legacy_rpc_key");
+            require(!_contains(raw, legacyChainIdKey), "forbidden:legacy_chain_id_key");
+            require(!_contains(raw, legacyPrivateKey), "forbidden:legacy_private_key");
+            require(!_contains(raw, legacyExplorerKey), "forbidden:legacy_explorer_key");
+            require(!_contains(raw, legacyNativeKey), "forbidden:legacy_native_identifier");
+            require(!_contains(raw, legacyAmountKey), "forbidden:legacy_amount_identifier");
+            require(!_contains(raw, legacyBalanceKey), "forbidden:legacy_balance_identifier");
+            require(!_contains(raw, legacySuffixKey), "forbidden:legacy_suffix_identifier");
         }
     }
 
