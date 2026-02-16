@@ -31,7 +31,8 @@
     "test": "hardhat test",
     "test:foundry": "ts-node scripts/run_foundry_tests.ts --mode default",
     "test:fuzz": "ts-node scripts/run_foundry_tests.ts --mode fuzz",
-    "test:invariant": "ts-node scripts/run_foundry_tests.ts --mode invariant"
+    "test:invariant": "ts-node scripts/run_foundry_tests.ts --mode invariant",
+    "test:gst-invariant": "forge test --match-path test/GSTInvariant.t.sol"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",

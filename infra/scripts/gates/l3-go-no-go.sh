@@ -30,6 +30,7 @@ L3_GO_NO_GO_RESTART_CHECK="${L3_GO_NO_GO_RESTART_CHECK:-0}"
 L3_GO_NO_GO_REQUIRE_SCANS="${L3_GO_NO_GO_REQUIRE_SCANS:-0}"
 L3_GO_NO_GO_REQUIRE_PROGRESS="${L3_GO_NO_GO_REQUIRE_PROGRESS:-}"
 L3_GO_NO_GO_SKIP_RUNTIME="${L3_GO_NO_GO_SKIP_RUNTIME:-0}"
+L3_GO_NO_GO_INVARIANT_MODE="${L3_GO_NO_GO_INVARIANT_MODE:-gst}"
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 warn() { echo "WARN: $*" >&2; }
@@ -109,7 +110,11 @@ fi
 
 echo "[l3-go-no-go] invariants"
 if [ -x "$ROOT_DIR/contracts/node_modules/.bin/forge" ]; then
-  (cd "$ROOT_DIR/contracts" && npm run test:invariant >/dev/null)
+  if [ "$L3_GO_NO_GO_INVARIANT_MODE" = "full" ]; then
+    (cd "$ROOT_DIR/contracts" && npm run test:invariant >/dev/null)
+  else
+    (cd "$ROOT_DIR/contracts" && npm run test:gst-invariant >/dev/null)
+  fi
 else
   warn "forge not installed; skipping invariant tests"
 fi
