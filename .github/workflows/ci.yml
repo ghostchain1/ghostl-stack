@@ -69,6 +69,18 @@ jobs:
             ops/ghost-bots/plugins/*.py \
             ops/ghost-bots/dashboards/*.py
 
+      - name: Verify patch smoke (non-runtime mode)
+        run: |
+          python3 ops/ghost-bots/plugins/verify_patch.py \
+            --patch-id 0 \
+            --skip-service-tests \
+            --skip-forge \
+            --skip-rpc-smoke \
+            --skip-compose \
+            --gate-timeout-seconds 60 \
+            --service-test-timeout-seconds 60 \
+            --forge-timeout-seconds 60
+
   node-lint-build:
     needs: [rpc-namespace]
     runs-on: ubuntu-latest

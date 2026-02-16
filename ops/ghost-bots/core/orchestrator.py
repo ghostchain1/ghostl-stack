@@ -127,6 +127,10 @@ def _maybe_apply_approved_patch(repo_root: Path, db_path: Path, schema_path: Pat
         cmd.append("--skip-service-tests")
     if os.environ.get("GHOST_BOTS_SKIP_FORGE") == "1":
         cmd.append("--skip-forge")
+    if os.environ.get("GHOST_BOTS_SKIP_RPC_SMOKE") == "1":
+        cmd.append("--skip-rpc-smoke")
+    if os.environ.get("GHOST_BOTS_SKIP_COMPOSE") == "1":
+        cmd.append("--skip-compose")
 
     proc = subprocess.run(cmd, cwd=str(repo_root), capture_output=True, text=True)
     out = {
