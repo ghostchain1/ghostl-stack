@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 CODE_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(CODE_ROOT))
@@ -46,19 +46,69 @@ def _write_log(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
 
 
-def _run_gate_cmd(name: str, cmd: list[str], cwd: Path, out_dir: Path) -> dict[str, Any]:
-    proc = subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True)
+def _as_text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        try:
+            return value.decode("utf-8", errors="replace")
+        except Exception:
+            return str(value)
+    return str(value)
+
+
+def _run_command(cmd: list[str], *, cwd: Path, timeout_seconds: Optional[int]) -> dict[str, Any]:
+    try:
+        proc = subprocess.run(
+            cmd,
+            cwd=str(cwd),
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds if timeout_seconds and timeout_seconds > 0 else None,
+        )
+        return {
+            "timedOut": False,
+            "exitCode": proc.returncode,
+            "stdout": _as_text(proc.stdout),
+            "stderr": _as_text(proc.stderr),
+        }
+    except subprocess.TimeoutExpired as e:
+        return {
+            "timedOut": True,
+            "exitCode": 124,
+            "stdout": _as_text(e.stdout),
+            "stderr": _as_text(e.stderr),
+        }
+
+
+def _run_gate_cmd(
+    name: str,
+    cmd: list[str],
+    cwd: Path,
+    out_dir: Path,
+    *,
+    timeout_seconds: Optional[int],
+) -> dict[str, Any]:
+    outcome = _run_command(cmd, cwd=cwd, timeout_seconds=timeout_seconds)
     out_path = out_dir / f"{name}.json"
+    ok = (not bool(outcome["timedOut"])) and int(outcome["exitCode"]) == 0
     record = {
         "gate": name,
-        "ok": proc.returncode == 0,
-        "exitCode": proc.returncode,
+        "ok": ok,
+        "timedOut": bool(outcome["timedOut"]),
+        "timeoutSeconds": timeout_seconds,
+        "exitCode": int(outcome["exitCode"]),
         "command": cmd,
-        "stdout": (proc.stdout or "")[-12000:],
-        "stderr": (proc.stderr or "")[-12000:],
+        "stdout": str(outcome["stdout"])[-12000:],
+        "stderr": str(outcome["stderr"])[-12000:],
     }
     _write_log(out_path, record)
-    return {"gate": name, "ok": record["ok"], "outputPath": str(out_path), "required": True}
+    return {
+        "gate": name,
+        "ok": record["ok"],
+        "outputPath": str(out_path),
+        "required": True,
+    }
 
 
 def _build_compose_validation_targets(compose_files: list[Path]) -> list[dict[str, Any]]:
@@ -103,7 +153,7 @@ def _build_compose_validation_targets(compose_files: list[Path]) -> list[dict[st
     return targets
 
 
-def _run_compose_gate(repo_root: Path, out_dir: Path) -> dict[str, Any]:
+def _run_compose_gate(repo_root: Path, out_dir: Path, *, timeout_seconds: Optional[int]) -> dict[str, Any]:
     compose_files = sorted(repo_root.glob("docker-compose*.yml")) + sorted(repo_root.glob("docker-compose*.yaml"))
     compose_files = [p for p in compose_files if p.is_file()]
 
@@ -146,15 +196,18 @@ def _run_compose_gate(repo_root: Path, out_dir: Path) -> dict[str, Any]:
                 f"hg_docker compose {compose_args} config >/dev/null"
             ),
         ]
-        proc = subprocess.run(cmd, cwd=str(repo_root), capture_output=True, text=True)
+        outcome = _run_command(cmd, cwd=repo_root, timeout_seconds=timeout_seconds)
+        ok_target = (not bool(outcome["timedOut"])) and int(outcome["exitCode"]) == 0
         entry = {
             "target": str(target["label"]),
             "files": [str(p) for p in files],
-            "ok": proc.returncode == 0,
-            "exitCode": proc.returncode,
+            "ok": ok_target,
+            "timedOut": bool(outcome["timedOut"]),
+            "timeoutSeconds": timeout_seconds,
+            "exitCode": int(outcome["exitCode"]),
             "required": required,
-            "stderr": (proc.stderr or "")[-4000:],
-            "stdout": (proc.stdout or "")[-4000:],
+            "stderr": str(outcome["stderr"])[-4000:],
+            "stdout": str(outcome["stdout"])[-4000:],
         }
         if not entry["ok"] and required:
             ok = False
@@ -164,7 +217,13 @@ def _run_compose_gate(repo_root: Path, out_dir: Path) -> dict[str, Any]:
     return {"gate": "compose_config", "ok": ok, "outputPath": str(out_path), "required": True}
 
 
-def _run_service_tests(repo_root: Path, out_dir: Path, *, skip: bool) -> dict[str, Any]:
+def _run_service_tests(
+    repo_root: Path,
+    out_dir: Path,
+    *,
+    skip: bool,
+    timeout_seconds: Optional[int],
+) -> dict[str, Any]:
     out_path = out_dir / "service_tests.json"
     pkg_path = repo_root / "package.json"
     if skip:
@@ -190,22 +249,31 @@ def _run_service_tests(repo_root: Path, out_dir: Path, *, skip: bool) -> dict[st
         _write_log(out_path, {"gate": "service_tests", "ok": False, "reason": "no package manager available"})
         return {"gate": "service_tests", "ok": False, "outputPath": str(out_path), "required": True}
 
-    proc = subprocess.run(cmd, cwd=str(repo_root), capture_output=True, text=True)
+    outcome = _run_command(cmd, cwd=repo_root, timeout_seconds=timeout_seconds)
+    ok = (not bool(outcome["timedOut"])) and int(outcome["exitCode"]) == 0
     _write_log(
         out_path,
         {
             "gate": "service_tests",
-            "ok": proc.returncode == 0,
-            "exitCode": proc.returncode,
+            "ok": ok,
+            "timedOut": bool(outcome["timedOut"]),
+            "timeoutSeconds": timeout_seconds,
+            "exitCode": int(outcome["exitCode"]),
             "command": cmd,
-            "stdout": (proc.stdout or "")[-16000:],
-            "stderr": (proc.stderr or "")[-16000:],
+            "stdout": str(outcome["stdout"])[-16000:],
+            "stderr": str(outcome["stderr"])[-16000:],
         },
     )
-    return {"gate": "service_tests", "ok": proc.returncode == 0, "outputPath": str(out_path), "required": True}
+    return {"gate": "service_tests", "ok": ok, "outputPath": str(out_path), "required": True}
 
 
-def _run_forge(repo_root: Path, out_dir: Path, *, skip: bool) -> dict[str, Any]:
+def _run_forge(
+    repo_root: Path,
+    out_dir: Path,
+    *,
+    skip: bool,
+    timeout_seconds: Optional[int],
+) -> dict[str, Any]:
     out_path = out_dir / "forge_test.json"
     contracts_dir = repo_root / "contracts"
     if skip:
@@ -220,18 +288,21 @@ def _run_forge(repo_root: Path, out_dir: Path, *, skip: bool) -> dict[str, Any]:
         _write_log(out_path, {"gate": "forge_test", "ok": False, "reason": "forge command not found"})
         return {"gate": "forge_test", "ok": False, "outputPath": str(out_path), "required": True}
 
-    proc = subprocess.run(["forge", "test", "-q"], cwd=str(contracts_dir), capture_output=True, text=True)
+    outcome = _run_command(["forge", "test", "-q"], cwd=contracts_dir, timeout_seconds=timeout_seconds)
+    ok = (not bool(outcome["timedOut"])) and int(outcome["exitCode"]) == 0
     _write_log(
         out_path,
         {
             "gate": "forge_test",
-            "ok": proc.returncode == 0,
-            "exitCode": proc.returncode,
-            "stdout": (proc.stdout or "")[-16000:],
-            "stderr": (proc.stderr or "")[-16000:],
+            "ok": ok,
+            "timedOut": bool(outcome["timedOut"]),
+            "timeoutSeconds": timeout_seconds,
+            "exitCode": int(outcome["exitCode"]),
+            "stdout": str(outcome["stdout"])[-16000:],
+            "stderr": str(outcome["stderr"])[-16000:],
         },
     )
-    return {"gate": "forge_test", "ok": proc.returncode == 0, "outputPath": str(out_path), "required": True}
+    return {"gate": "forge_test", "ok": ok, "outputPath": str(out_path), "required": True}
 
 
 def _run_rpc_smoke(out_dir: Path) -> list[dict[str, Any]]:
@@ -296,6 +367,13 @@ def main() -> int:
     ap.add_argument("--repo-root", default=None)
     ap.add_argument("--skip-service-tests", action="store_true")
     ap.add_argument("--skip-forge", action="store_true")
+    ap.add_argument("--gate-timeout-seconds", type=int, default=int(os.environ.get("GHOST_BOTS_GATE_TIMEOUT_SEC", "180")))
+    ap.add_argument(
+        "--service-test-timeout-seconds",
+        type=int,
+        default=int(os.environ.get("GHOST_BOTS_SERVICE_TEST_TIMEOUT_SEC", "900")),
+    )
+    ap.add_argument("--forge-timeout-seconds", type=int, default=int(os.environ.get("GHOST_BOTS_FORGE_TIMEOUT_SEC", "900")))
     args = ap.parse_args()
 
     repo_root = Path(args.repo_root).resolve() if args.repo_root else resolve_repo_root()
@@ -315,11 +393,34 @@ def main() -> int:
 
     touches_dashboards = any(("grafana" in f or "dashboard" in f) for f in patch_files)
     results: list[dict[str, Any]] = []
-    results.append(_run_gate_cmd("gst_leakage_gate", ["bash", "scripts/gst-leakage-gate.sh"], repo_root, out_dir))
-    results.append(_run_gate_cmd("gst_symbol_gate", ["bash", "scripts/gst-symbol-gate.sh"], repo_root, out_dir))
-    results.append(_run_compose_gate(repo_root, out_dir))
-    results.append(_run_service_tests(repo_root, out_dir, skip=args.skip_service_tests))
-    results.append(_run_forge(repo_root, out_dir, skip=args.skip_forge))
+    results.append(
+        _run_gate_cmd(
+            "gst_leakage_gate",
+            ["bash", "scripts/gst-leakage-gate.sh"],
+            repo_root,
+            out_dir,
+            timeout_seconds=args.gate_timeout_seconds,
+        )
+    )
+    results.append(
+        _run_gate_cmd(
+            "gst_symbol_gate",
+            ["bash", "scripts/gst-symbol-gate.sh"],
+            repo_root,
+            out_dir,
+            timeout_seconds=args.gate_timeout_seconds,
+        )
+    )
+    results.append(_run_compose_gate(repo_root, out_dir, timeout_seconds=args.gate_timeout_seconds))
+    results.append(
+        _run_service_tests(
+            repo_root,
+            out_dir,
+            skip=args.skip_service_tests,
+            timeout_seconds=args.service_test_timeout_seconds,
+        )
+    )
+    results.append(_run_forge(repo_root, out_dir, skip=args.skip_forge, timeout_seconds=args.forge_timeout_seconds))
     results.extend(_run_rpc_smoke(out_dir))
     results.append(_run_dashboard_json_validation(repo_root, out_dir, enabled=touches_dashboards))
 
