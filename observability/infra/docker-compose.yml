@@ -21,6 +21,7 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ../alerts/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - ../alerts/gst_metric_rules.yml:/etc/prometheus/gst_metric_rules.yml:ro
       - prometheus_data:/prometheus
     ports:
       - 9090:9090
