@@ -46,10 +46,10 @@ fi
 
 # Policy:
 # - Business/branding legacy EVM-mainnet token semantics are forbidden.
-	# - JSON-RPC `eth_*` method names are allowed for compatibility and are NOT checked here.
-	#
-	# This gate intentionally focuses on user-facing tokens and common identifier patterns.
-PATTERN='(\bETH\b|(?i:\bethereum\b)|\bEther\b|Ξ|(?i:\b[a-z0-9-]+\.eth\b)|\bETH_[A-Z0-9_]+\b|\b[A-Z0-9_]+_ETH\b|\b[A-Za-z0-9]+_eth\b|\bnativeEth\b|\bethAmount\b|\bethBalance\b|\bETH_DECIMALS\b|\bETHERSCAN\b|\bALCHEMY_ETH\b|\bINFURA_ETH\b)'
+# - JSON-RPC `eth_*` method names are allowed for compatibility and are NOT checked here.
+#
+# This gate intentionally focuses on user-facing tokens and common identifier patterns.
+PATTERN='(\bETH\b|(?i:\bethereum\b)|\bEther\b|Ξ|(?i:\b[a-z0-9-]+\.eth\b)|\bETH_[A-Z0-9_]+\b|\b[A-Z0-9_]+_ETH\b|\b[A-Za-z0-9_]+_eth\b|(?<![A-Za-z0-9])_eth\b|\bnativeEth\b|\bethAmount\b|\bethBalance\b|\bETH_DECIMALS\b|\bETHERSCAN\b|\bALCHEMY_ETH\b|\bINFURA_ETH\b)'
 
 matches="$(rg -n --no-heading --pcre2 "$PATTERN" . "${rg_globs[@]}" || true)"
 if [ -n "$matches" ]; then

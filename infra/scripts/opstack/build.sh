@@ -11,6 +11,10 @@ hg_docker_init
 
 TAG="${OPSTACK_IMAGE_TAG:-devnet}"
 
+echo "Enforcing GST-native leakage gates before image build..."
+bash "${ROOT}/scripts/gst-leakage-gate.sh"
+bash "${ROOT}/scripts/gst-symbol-gate.sh"
+
 echo "Building local OP Stack images (op-geth, op-node, op-batcher, op-proposer, op-challenger) with tag '${TAG}'..."
 
 echo "-> op-geth"
