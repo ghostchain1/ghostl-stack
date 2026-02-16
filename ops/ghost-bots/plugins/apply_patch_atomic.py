@@ -127,6 +127,16 @@ def _archive_approval_file(path: Path, suffix: str) -> None:
     path.rename(target)
 
 
+def _env_int(name: str, default: int) -> int:
+    raw = os.environ.get(name)
+    if raw is None or raw.strip() == "":
+        return default
+    try:
+        return int(raw.strip())
+    except ValueError:
+        return default
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Apply approved patch candidate and commit atomically.")
     ap.add_argument("--patch-id", type=int, default=0, help="Patch candidate id. If omitted, read approval token.")
@@ -138,6 +148,13 @@ def main() -> int:
     ap.add_argument("--approver", default=os.environ.get("USER", "ghost"))
     ap.add_argument("--skip-service-tests", action="store_true")
     ap.add_argument("--skip-forge", action="store_true")
+    ap.add_argument("--gate-timeout-seconds", type=int, default=_env_int("GHOST_BOTS_GATE_TIMEOUT_SEC", 0))
+    ap.add_argument(
+        "--service-test-timeout-seconds",
+        type=int,
+        default=_env_int("GHOST_BOTS_SERVICE_TEST_TIMEOUT_SEC", 0),
+    )
+    ap.add_argument("--forge-timeout-seconds", type=int, default=_env_int("GHOST_BOTS_FORGE_TIMEOUT_SEC", 0))
     args = ap.parse_args()
 
     repo_root = Path(args.repo_root).resolve() if args.repo_root else resolve_repo_root()
@@ -176,6 +193,12 @@ def main() -> int:
         verify_cmd.append("--skip-service-tests")
     if args.skip_forge:
         verify_cmd.append("--skip-forge")
+    if int(args.gate_timeout_seconds) > 0:
+        verify_cmd.extend(["--gate-timeout-seconds", str(args.gate_timeout_seconds)])
+    if int(args.service_test_timeout_seconds) > 0:
+        verify_cmd.extend(["--service-test-timeout-seconds", str(args.service_test_timeout_seconds)])
+    if int(args.forge_timeout_seconds) > 0:
+        verify_cmd.extend(["--forge-timeout-seconds", str(args.forge_timeout_seconds)])
 
     verify_proc = _run(verify_cmd, cwd=repo_root, check=False)
     if verify_proc.returncode != 0:

@@ -38,6 +38,9 @@ Optional env toggles for approval-loop verification runtime:
 
 - `GHOST_BOTS_SKIP_SERVICE_TESTS=1`
 - `GHOST_BOTS_SKIP_FORGE=1`
+- `GHOST_BOTS_GATE_TIMEOUT_SEC=<seconds>`
+- `GHOST_BOTS_SERVICE_TEST_TIMEOUT_SEC=<seconds>`
+- `GHOST_BOTS_FORGE_TIMEOUT_SEC=<seconds>`
 
 ## Dashboard
 
@@ -57,6 +60,16 @@ API endpoints:
 
 ```bash
 python3 ops/ghost-bots/plugins/verify_patch.py --patch-id 2
+```
+
+Timeout flags:
+
+```bash
+python3 ops/ghost-bots/plugins/verify_patch.py \
+  --patch-id 2 \
+  --gate-timeout-seconds 180 \
+  --service-test-timeout-seconds 900 \
+  --forge-timeout-seconds 900
 ```
 
 Artifacts:
