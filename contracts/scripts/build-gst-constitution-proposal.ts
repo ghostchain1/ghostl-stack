@@ -60,6 +60,11 @@ const POLICY_REGISTRY_ABI = [
 ] as const;
 
 const POLICY_GST_NATIVE_ONLY = ethers.id('ghost.policy.native.gst_only');
+const POLICY_GST_ONLY_L1_L2_L3 = ethers.id('ghost.policy.native.gst_l1_l2_l3_only');
+const POLICY_NO_LEGACY_BRANDING_SURFACES = ethers.id('ghost.policy.branding.no_legacy_eth_surface');
+const POLICY_REQUIRE_GST_LEAKAGE_GATE = ethers.id('ghost.policy.release.gst_leakage_gate_required');
+const POLICY_REQUIRE_GST_INVARIANTS = ethers.id('ghost.policy.release.gst_invariant_test_required');
+const POLICY_NATIVE_METADATA_GOVERNANCE_ONLY = ethers.id('ghost.policy.native.metadata_governance_only');
 const POLICY_NATIVE_TOKEN_DECIMALS = ethers.id('ghost.policy.native.token.decimals');
 const POLICY_NATIVE_TOKEN_SYMBOL_HASH = ethers.id('ghost.policy.native.token.symbol.hash');
 const POLICY_NATIVE_TOKEN_NAME_HASH = ethers.id('ghost.policy.native.token.name.hash');
@@ -67,6 +72,23 @@ const POLICY_NATIVE_TOKEN_NAME_HASH = ethers.id('ghost.policy.native.token.name.
 const EVIDENCE_HASH = ethers.id('ghost.evidence.gst_constitution.v1');
 const SYMBOL = 'GST';
 const NAME = 'Ghost Token';
+type ProposalCall = ReturnType<typeof buildCall>;
+
+function pushBooleanPolicy(calls: ProposalCall[], policyRegistry: string, policyKey: string) {
+  calls.push(
+    buildCall(policyRegistry, POLICY_REGISTRY_ABI, 'setPolicySetting', [
+      policyKey,
+      1n,
+      1n,
+      0,
+      0,
+      0,
+      true,
+      true
+    ])
+  );
+  calls.push(buildCall(policyRegistry, POLICY_REGISTRY_ABI, 'applyPolicy', [policyKey, 1n, EVIDENCE_HASH]));
+}
 
 function main() {
   const envFromFile = parseEnvFile(STACK_ENV_PATH);
@@ -82,22 +104,15 @@ function main() {
       ? requireAddress('EXECUTOR_ADDRESS_L1', envFromFile.EXECUTOR_ADDRESS_L1)
       : null;
 
-  const calls = [];
+  const calls: ProposalCall[] = [];
 
-  // Enforce GST-only native token semantics (bool = 1).
-  calls.push(
-    buildCall(policyRegistry, POLICY_REGISTRY_ABI, 'setPolicySetting', [
-      POLICY_GST_NATIVE_ONLY,
-      1n,
-      1n,
-      0,
-      0,
-      0,
-      true,
-      true
-    ])
-  );
-  calls.push(buildCall(policyRegistry, POLICY_REGISTRY_ABI, 'applyPolicy', [POLICY_GST_NATIVE_ONLY, 1n, EVIDENCE_HASH]));
+  // Enforce GST-native constitutional policies (bool = 1).
+  pushBooleanPolicy(calls, policyRegistry, POLICY_GST_NATIVE_ONLY);
+  pushBooleanPolicy(calls, policyRegistry, POLICY_GST_ONLY_L1_L2_L3);
+  pushBooleanPolicy(calls, policyRegistry, POLICY_NO_LEGACY_BRANDING_SURFACES);
+  pushBooleanPolicy(calls, policyRegistry, POLICY_REQUIRE_GST_LEAKAGE_GATE);
+  pushBooleanPolicy(calls, policyRegistry, POLICY_REQUIRE_GST_INVARIANTS);
+  pushBooleanPolicy(calls, policyRegistry, POLICY_NATIVE_METADATA_GOVERNANCE_ONLY);
 
   // Lock decimals to 18 (min=max=18).
   calls.push(
@@ -164,6 +179,11 @@ function main() {
     evidenceHash: EVIDENCE_HASH,
     policies: {
       gstNativeOnly: POLICY_GST_NATIVE_ONLY,
+      gstOnlyL1L2L3: POLICY_GST_ONLY_L1_L2_L3,
+      noLegacyBrandingSurfaces: POLICY_NO_LEGACY_BRANDING_SURFACES,
+      requireGstLeakageGate: POLICY_REQUIRE_GST_LEAKAGE_GATE,
+      requireGstInvariants: POLICY_REQUIRE_GST_INVARIANTS,
+      nativeMetadataGovernanceOnly: POLICY_NATIVE_METADATA_GOVERNANCE_ONLY,
       decimals: POLICY_NATIVE_TOKEN_DECIMALS,
       symbolHash: POLICY_NATIVE_TOKEN_SYMBOL_HASH,
       nameHash: POLICY_NATIVE_TOKEN_NAME_HASH
