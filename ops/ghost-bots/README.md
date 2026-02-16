@@ -122,6 +122,12 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now ghost-bots
 ```
 
+The bundled unit sets timeout defaults for verification gates:
+
+- `GHOST_BOTS_GATE_TIMEOUT_SEC=180`
+- `GHOST_BOTS_SERVICE_TEST_TIMEOUT_SEC=900`
+- `GHOST_BOTS_FORGE_TIMEOUT_SEC=900`
+
 ## Notes
 
 - Docker calls go through `scripts/lib/docker.sh` (`hg_docker`) so the bots can run on hosts where the user is not in the `docker` group.
