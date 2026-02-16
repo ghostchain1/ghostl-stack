@@ -1,5 +1,54 @@
 # ETH Leakage Inventory (Phase 1 — Read-only)
 
+## Refresh (2026-02-16, targeted first-party scan)
+
+Generated: `2026-02-16T12:03:00Z`
+
+Targeted scan paths:
+- `apps`, `services`, `packages`, `contracts/src`, `contracts/test`
+- `infra/ghostchain`, `infra/opstack/config`, `infra/opstack/.env*`, selected OP compose files
+- `observability`, `docs/ghostchain`, `docs/l2`, `docs/l3`, `docs/observability`
+- `config`, `environments`, `scripts`, `tools`, `core-service`, root env/compose files
+
+Exclusions:
+- `node_modules`, `dist`, `out`, `cache`, `rollback`, `backups`, `releases`
+- `contracts/lib`, vendor OP upstream trees, and prior `docs/gst-migration/**` reports
+
+Forbidden token pattern set:
+- `_eth`, `ETH_*`, `ETHEREUM_*`, `*_ETH`, `ethAmount`, `ethBalance`, `nativeEth`, `Ether`, `Ethereum`, `Ξ`, `ETH_RPC`, `ETH_CHAIN_ID`, `ETH_PRIVATE_KEY`, `ETHERSCAN_*`
+
+Result summary (`58` hits total):
+- `GhostChain L1`: `15`
+- `GhostL2`: `6`
+- `GhostL3`: `6`
+- `service:stack.env`: `1`
+- `other` (technical/tests/gate patterns): `30`
+
+### GhostChain L1
+- `infra/ghostchain/.env.l1.example:7` (`ethereum/client-go` image tag)
+- `infra/ghostchain/scripts/ghostscout-entrypoint.sh:5-12` (`ETHEREUM_JSONRPC_*` compatibility export keys)
+- `contracts/src/l1/Messenger.sol:7` (`locked-ether` slither directive)
+- `contracts/src/l1/Portal.sol:7` (`locked-ether` slither directive)
+- `services/ghostscout-l1/entrypoint.sh:5-12` (`ETHEREUM_JSONRPC_*` compatibility export keys)
+
+### GhostL2
+- `services/ghostscout-l2/entrypoint.sh:5-12` (`ETHEREUM_JSONRPC_*` compatibility export keys)
+
+### GhostL3
+- `services/ghostscout-l3/entrypoint.sh:5-12` (`ETHEREUM_JSONRPC_*` compatibility export keys)
+
+### Services
+- `services/stack.env:241` `EXTERNAL_CHAINS=ethereum,polygon,optimism`
+
+### Other (triage-required but mostly technical)
+- `scripts/gst-leakage-gate.sh:52,62,64` (gate regex definition/filters intentionally mention ETH patterns)
+- `contracts/src/governance/constitutions/GSTConstitution.sol:10` (`no_eth_branding` clause identifier)
+- Solidity `ether` units in test/contract code (e.g. `contracts/test/foundry/LowBalancerGovernor.t.sol`, `contracts/test/foundry/FuzzGovernance.t.sol`) and `locked-ether` analyzer comments
+
+### Allowed Technical Exception Audit (`eth_*` RPC namespace)
+- `eth_*` usage remains present in technical RPC contexts only (health checks, SDK/API probes, proxy method remaps).
+- No business-facing `ETH_RPC`, `ETH_CHAIN_ID`, `ETH_PRIVATE_KEY`, or `ETHERSCAN_*` config keys found in targeted first-party scope.
+
 Generated: 2026-02-15T21:53:01+00:00
 
 Notes:
@@ -1054,4 +1103,3 @@ contracts/typechain-types/governance/constitutions/GSTConstitution.ts:129:  CLAU
 contracts/typechain-types/governance/constitutions/GSTConstitution.ts:147:    nameOrSignature: "CLAUSE_NO_ETH_BRANDING"
 contracts/license-report.json:36:    "publisher": "EthereumJS Team",
 contracts/license-report.json:43:    "publisher": "EthereumJS Team",
-

@@ -1,77 +1,102 @@
 # Rename Map (Phase 1 — Proposed)
 
-Generated: 2026-02-15T21:53:01+00:00
+Generated: 2026-02-16T12:03:00Z
 
-## Environment Keys
-- ETH_ADDR -> GST_ADDR
-- ETH_ADDRESS -> GST_ADDRESS
-- ETH_ASSET -> GST_ASSET
-- ETH_ASSET_DATA -> GST_ASSET_DATA
-- ETH_BIGNUMBER_ROUNDING_MODE -> GST_BIGNUMBER_ROUNDING_MODE
-- ETH_BLK_MULTIPLIER -> GST_BLK_MULTIPLIER
-- ETH_CAP -> GST_CAP
-- ETH_CLEAR -> GST_CLEAR
-- ETH_CONTRACT_ADDRESS -> GST_CONTRACT_ADDRESS
-- ETH_CRWDTOKEN -> GST_CRWDTOKEN
-- ETH_DECIMALS -> GST_DECIMALS
-- ETH_DECIMALS_FACTOR -> GST_DECIMALS_FACTOR
-- ETH_DEPS -> GST_DEPS
-- ETH_EUR -> GST_EUR
-- ETH_EURCENT -> GST_EURCENT
-- ETH_FUND -> GST_FUND
-- ETH_FUND_DEPOSIT -> GST_FUND_DEPOSIT
-- ETH_HARD_CAP -> GST_HARD_CAP
-- ETH_HEROCOIN -> GST_HEROCOIN
-- ETH_ILK -> GST_ILK
-- ETH_JOIN_ADDRESS -> GST_JOIN_ADDRESS
-- ETH_JWT_SECRET -> GST_JWT_SECRET
-- ETH_LIMIT -> GST_LIMIT
-- ETH_LIQUIDITY -> GST_LIQUIDITY
-- ETH_LOCKBOX -> GST_LOCKBOX
-- ETH_MAG -> GST_MAG
-- ETH_MAX_GOAL -> GST_MAX_GOAL
-- ETH_MAX_LIMIT -> GST_MAX_LIMIT
-- ETH_MIN_GOAL -> GST_MIN_GOAL
-- ETH_MIN_LIMIT -> GST_MIN_LIMIT
-- ETH_PADDING -> GST_PADDING
-- ETH_PER_LARE -> GST_PER_LARE
-- ETH_PER_TOKEN -> GST_PER_TOKEN
-- ETH_POLLING_TIMEOUT -> GST_POLLING_TIMEOUT
-- ETH_PREFIX -> GST_PREFIX
-- ETH_PRICE -> GST_PRICE
-- ETH_PRICE_USD -> GST_PRICE_USD
-- ETH_QCO -> GST_QCO
-- ETH_RECEIVED_CAP -> GST_RECEIVED_CAP
-- ETH_RECEIVED_MIN -> GST_RECEIVED_MIN
-- ETH_RPC_JWT_SECRET -> GST_RPC_JWT_SECRET
-- ETH_RPC_URL -> GST_RPC_URL
-- ETH_SIG -> GST_SIG
-- ETH_SIGNATURE_LENGTH -> GST_SIGNATURE_LENGTH
-- ETH_SIGN_PREFIX -> GST_SIGN_PREFIX
-- ETH_SIGN_TYPED_DATA_ARGHASH -> GST_SIGN_TYPED_DATA_ARGHASH
-- ETH_TLD_LABEL -> GST_TLD_LABEL
-- ETH_TLD_NODE -> GST_TLD_NODE
-- ETH_TOKEN -> GST_TOKEN
-- ETH_TOKEN_ADDRESS -> GST_TOKEN_ADDRESS
-- ETH_TOKEN_EXCHANGE_RATIO -> GST_TOKEN_EXCHANGE_RATIO
-- ETH_TOKEN_PLACEHOLDER_ADDRESS -> GST_TOKEN_PLACEHOLDER_ADDRESS
-- ETH_TO_QST_TOKEN_RATE -> GST_TO_QST_TOKEN_RATE
-- ETH_TO_WEI -> GST_TO_WEI
-- ETH_TRANSFER_FAILED -> GST_TRANSFER_FAILED
-- ETH_UNITS -> GST_UNITS
-- ETH_USD -> GST_USD
-- ETH_USD_EXCHANGE_CENTS -> GST_USD_EXCHANGE_CENTS
-- ETH_USD_EXCHANGE_RATE_IN_CENTS -> GST_USD_EXCHANGE_RATE_IN_CENTS
-- ETH_VANILLA -> GST_VANILLA
-- ETH_VAULT -> GST_VAULT
-- ETH_VTA -> GST_VTA
-- ETH_YFEED -> GST_YFEED
+This map is scoped to **first-party GhostStack paths** and split into:
+- `detected_current`: key/value currently present and targeted for migration or explicit allowlist
+- `forward_rule`: required rename rule to enforce during Phase 2/3
 
-## Identifier Renames (common patterns)
-- *_eth -> *_gst
-- ETH_DECIMALS -> GST_DECIMALS
-- ethAmount -> gstAmount
-- ethBalance -> gstBalance
-- nativeEth -> nativeGst
-- Ethereum -> GhostChain (branding)
-- Ether -> Ghost Token (branding)
+## GhostChain L1
+
+### detected_current
+- `infra/ghostchain/scripts/ghostscout-entrypoint.sh`
+  - `ETHEREUM_JSONRPC_HTTP_URL`
+  - `ETHEREUM_JSONRPC_TRACE_URL`
+  - `ETHEREUM_JSONRPC_WS_URL`
+- `services/ghostscout-l1/entrypoint.sh`
+  - `ETHEREUM_JSONRPC_HTTP_URL`
+  - `ETHEREUM_JSONRPC_TRACE_URL`
+  - `ETHEREUM_JSONRPC_WS_URL`
+- `infra/ghostchain/.env.l1.example`
+  - `L1_GETH_IMAGE=ethereum/client-go:...`
+
+### forward_rule
+- Runtime compatibility shim variables (Blockscout):
+  - `ETHEREUM_JSONRPC_HTTP_URL -> GHOSTSCOUT_UPSTREAM_HTTP_URL` (internal alias)
+  - `ETHEREUM_JSONRPC_TRACE_URL -> GHOSTSCOUT_UPSTREAM_TRACE_URL` (internal alias)
+  - `ETHEREUM_JSONRPC_WS_URL -> GHOSTSCOUT_UPSTREAM_WS_URL` (internal alias)
+  - Keep one-way assignment to legacy keys only inside entrypoint bootstrap code.
+- Image branding:
+  - `ethereum/client-go` reference is technical vendor naming; keep only under explicit allowlist comment in gate config.
+
+## GhostL2
+
+### detected_current
+- `services/ghostscout-l2/entrypoint.sh`
+  - `ETHEREUM_JSONRPC_HTTP_URL`
+  - `ETHEREUM_JSONRPC_TRACE_URL`
+  - `ETHEREUM_JSONRPC_WS_URL`
+- `infra/opstack/.env`
+  - `GAS_TOKEN_SYMBOL=GHOST`
+  - `GAS_TOKEN_NAME="Ghost Token (L1)"`
+- `infra/opstack/.env.l2`
+  - `GAS_TOKEN_SYMBOL=GHOST`
+  - `GAS_TOKEN_NAME="Ghost Token (L1)"`
+
+### forward_rule
+- Explorer runtime shim keys same as L1 (`ETHEREUM_JSONRPC_* -> GHOSTSCOUT_UPSTREAM_*`).
+- OP token branding normalization:
+  - `GAS_TOKEN_SYMBOL: GHOST -> GST`
+  - `GAS_TOKEN_NAME: "Ghost Token (L1)" -> "Ghost Token"`
+
+## GhostL3
+
+### detected_current
+- `services/ghostscout-l3/entrypoint.sh`
+  - `ETHEREUM_JSONRPC_HTTP_URL`
+  - `ETHEREUM_JSONRPC_TRACE_URL`
+  - `ETHEREUM_JSONRPC_WS_URL`
+
+### forward_rule
+- Explorer runtime shim keys same as L1/L2 (`ETHEREUM_JSONRPC_* -> GHOSTSCOUT_UPSTREAM_*`).
+
+## Cross-Service / Shared
+
+### detected_current
+- `services/stack.env`
+  - `EXTERNAL_CHAINS=ethereum,polygon,optimism`
+- `contracts/src/governance/constitutions/GSTConstitution.sol`
+  - `CLAUSE_NO_ETH_BRANDING` / `ghost.constitution.no_eth_branding.v1`
+
+### forward_rule
+- External chain label normalization:
+  - `ethereum -> evm-mainnet` (or `external-evm-l1`; choose one canonical label)
+- Governance identifier cleanup (optional but preferred for lexical gate hygiene):
+  - `CLAUSE_NO_ETH_BRANDING -> CLAUSE_NO_LEGACY_BRANDING`
+  - `ghost.constitution.no_eth_branding.v1 -> ghost.constitution.no_legacy_branding.v1`
+
+## DTO / API / DB / Metrics Renames
+
+### detected_current
+- No `ethAmount`, `ethBalance`, `nativeEth`, `*_eth` DTO/API/DB field names found in targeted first-party scope.
+- No `ETH_RPC`, `ETH_CHAIN_ID`, `ETH_PRIVATE_KEY`, `ETHERSCAN_*` env keys found in targeted first-party scope.
+
+### forward_rule
+- Identifiers:
+  - `*_eth -> *_gst`
+  - `ethAmount -> gstAmount`
+  - `ethBalance -> gstBalance`
+  - `nativeEth -> nativeGst`
+- Config keys:
+  - `ETH_RPC -> GST_L1_RPC` (or `GHOSTCHAIN_RPC`)
+  - `ETH_CHAIN_ID -> GHOSTCHAIN_CHAIN_ID`
+  - `ETH_PRIVATE_KEY -> GST_SIGNER_PRIVATE_KEY`
+- Metrics:
+  - `*_eth_* -> *_gst_*`
+  - canonical metrics family: `ghostchain_gst_*`
+
+## Allowlist Candidates (explicit justification required)
+
+- Technical JSON-RPC method namespace usage: `eth_*`.
+- Solidity denomination keyword `ether` in code/tests where it denotes `1e18` unit semantics, not user-facing branding.
+- Third-party/runtime compatibility variables required by upstream components (e.g., Blockscout `ETHEREUM_JSONRPC_*`) only when hidden behind GST-native wrapper env.
