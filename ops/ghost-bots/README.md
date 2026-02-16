@@ -40,6 +40,8 @@ Optional env toggles for approval-loop verification runtime:
 - `GHOST_BOTS_SKIP_FORGE=1`
 - `GHOST_BOTS_SKIP_RPC_SMOKE=1`
 - `GHOST_BOTS_SKIP_COMPOSE=1`
+- `GHOST_BOTS_SKIP_DOCKER_HEALTH=1` (orchestrator only)
+- `GHOST_BOTS_SKIP_RPC_HEALTH=1` (orchestrator only)
 - `GHOST_BOTS_GATE_TIMEOUT_SEC=<seconds>`
 - `GHOST_BOTS_SERVICE_TEST_TIMEOUT_SEC=<seconds>`
 - `GHOST_BOTS_FORGE_TIMEOUT_SEC=<seconds>`
