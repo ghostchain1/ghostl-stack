@@ -162,6 +162,72 @@ def insert_patch_candidate(
     return int(cur.lastrowid)
 
 
+def get_patch(conn: sqlite3.Connection, patch_id: int) -> dict[str, Any]:
+    row = conn.execute("SELECT * FROM patches WHERE id = ?", (patch_id,)).fetchone()
+    if not row:
+        raise KeyError(f"patch not found: {patch_id}")
+    return dict(row)
+
+
+def update_patch_status(conn: sqlite3.Connection, patch_id: int, status: str) -> None:
+    conn.execute("UPDATE patches SET status = ? WHERE id = ?", (status, patch_id))
+    conn.commit()
+
+
+def insert_verification(
+    conn: sqlite3.Connection,
+    *,
+    patch_id: int,
+    gate_name: str,
+    ok: bool,
+    output_path: str,
+    ts: Optional[str] = None,
+) -> int:
+    ts_val = ts or utc_now_iso()
+    cur = conn.execute(
+        "INSERT INTO verifications (patch_id, ts, gate_name, ok, output_path) VALUES (?, ?, ?, ?, ?)",
+        (patch_id, ts_val, gate_name, 1 if ok else 0, output_path),
+    )
+    conn.commit()
+    return int(cur.lastrowid)
+
+
+def insert_approval(
+    conn: sqlite3.Connection,
+    *,
+    patch_id: int,
+    approver: str,
+    decision: str,
+    note: str = "",
+    ts: Optional[str] = None,
+) -> int:
+    ts_val = ts or utc_now_iso()
+    cur = conn.execute(
+        "INSERT INTO approvals (patch_id, ts, approver, decision, note) VALUES (?, ?, ?, ?, ?)",
+        (patch_id, ts_val, approver, decision, note),
+    )
+    conn.commit()
+    return int(cur.lastrowid)
+
+
+def insert_deployment(
+    conn: sqlite3.Connection,
+    *,
+    patch_id: int,
+    method: str,
+    ok: bool,
+    notes: str = "",
+    ts: Optional[str] = None,
+) -> int:
+    ts_val = ts or utc_now_iso()
+    cur = conn.execute(
+        "INSERT INTO deployments (patch_id, ts, method, ok, notes) VALUES (?, ?, ?, ?, ?)",
+        (patch_id, ts_val, method, 1 if ok else 0, notes),
+    )
+    conn.commit()
+    return int(cur.lastrowid)
+
+
 def get_open_incidents(conn: sqlite3.Connection, limit: int = 200) -> list[dict[str, Any]]:
     rows = conn.execute(
         "SELECT * FROM incidents WHERE status != 'closed' ORDER BY last_seen DESC LIMIT ?",

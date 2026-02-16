@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -24,6 +25,7 @@ from core.db import (  # noqa: E402
 )
 from core.fingerprint import stable_fingerprint  # noqa: E402
 from core.ranker import PatchCandidate, score  # noqa: E402
+from plugins.daily_report import write_daily_report  # noqa: E402
 from plugins.gst_gate import check_gst_leakage, check_gst_symbol  # noqa: E402
 from plugins.patchsmith import candidates_for_incident  # noqa: E402
 from plugins.sentinel import check_docker_health, check_rpc  # noqa: E402
@@ -67,6 +69,77 @@ def _incident_fingerprint(kind: str, title: str, subsystem: str, chain_layer: st
             "chain_layer": chain_layer,
             "service": service,
         }
+    )
+
+
+def _approval_file_path() -> Path:
+    env = os.environ.get("GHOST_BOTS_APPROVAL_FILE")
+    if env:
+        return Path(env).resolve()
+    return (CODE_ROOT / "APPROVE_NEXT_PATCH").resolve()
+
+
+def _write_gate_reports(checks: list[Any], ts: str) -> None:
+    leakage = next((c for c in checks if c.kind == "gst_leakage_gate"), None)
+    symbol = next((c for c in checks if c.kind == "gst_symbol_gate"), None)
+    if leakage:
+        out = {
+            "ts": ts,
+            "ok": bool(leakage.ok),
+            "summary": leakage.summary,
+            "payload": leakage.payload,
+        }
+        (CODE_ROOT / "reports" / "gst_leakage_latest.json").write_text(
+            json.dumps(out, ensure_ascii=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+    if symbol:
+        out = {
+            "ts": ts,
+            "ok": bool(symbol.ok),
+            "summary": symbol.summary,
+            "payload": symbol.payload,
+        }
+        (CODE_ROOT / "reports" / "gst_symbol_latest.json").write_text(
+            json.dumps(out, ensure_ascii=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+
+def _maybe_apply_approved_patch(repo_root: Path, db_path: Path, schema_path: Path) -> None:
+    approval = _approval_file_path()
+    if not approval.exists():
+        return
+
+    cmd = [
+        "python3",
+        str(CODE_ROOT / "plugins" / "apply_patch_atomic.py"),
+        "--approval-file",
+        str(approval),
+        "--db",
+        str(db_path),
+        "--schema",
+        str(schema_path),
+        "--repo-root",
+        str(repo_root),
+    ]
+    if os.environ.get("GHOST_BOTS_SKIP_SERVICE_TESTS") == "1":
+        cmd.append("--skip-service-tests")
+    if os.environ.get("GHOST_BOTS_SKIP_FORGE") == "1":
+        cmd.append("--skip-forge")
+
+    proc = subprocess.run(cmd, cwd=str(repo_root), capture_output=True, text=True)
+    out = {
+        "ts": utc_now_iso(),
+        "approvalFile": str(approval),
+        "ok": proc.returncode == 0,
+        "exitCode": proc.returncode,
+        "stdout": (proc.stdout or "")[-8000:],
+        "stderr": (proc.stderr or "")[-8000:],
+    }
+    (CODE_ROOT / "reports" / "last_approval_action.json").write_text(
+        json.dumps(out, ensure_ascii=True, indent=2) + "\n",
+        encoding="utf-8",
     )
 
 
@@ -124,6 +197,7 @@ def run_once(*, repo_root: Path, db_path: Path, schema_path: Path) -> dict[str, 
 
     now = utc_now_iso()
     failures = [c for c in checks if not c.ok]
+    _write_gate_reports(checks, now)
 
     with connect(db_path) as conn:
         init_schema(conn, schema_path)
@@ -162,7 +236,9 @@ def run_once(*, repo_root: Path, db_path: Path, schema_path: Path) -> dict[str, 
                 ps_fp = _incident_fingerprint("docker_ps_failed", "Docker daemon not reachable", "runtime", "", "docker")
                 close_incident_if_open(conn, ps_fp)
 
-        export = {"ts": now, "failures": len(failures)}
+        open_count_row = conn.execute("SELECT COUNT(*) AS n FROM incidents WHERE status != 'closed'").fetchone()
+        open_count = int(open_count_row["n"] if open_count_row else 0)
+        export = {"ts": now, "failures": len(failures), "openIncidentCount": open_count}
         export_path = CODE_ROOT / "reports/incident_export.json"
         export_path.write_text(json.dumps(export, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
 
@@ -192,12 +268,27 @@ def main() -> int:
         report = run_once(repo_root=repo_root, db_path=db_path, schema_path=schema_path)
         out_path = CODE_ROOT / "reports/last_run.json"
         out_path.write_text(json.dumps(report, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+        write_daily_report(
+            db_path=db_path,
+            schema_path=schema_path,
+            last_run_path=out_path,
+            out_path=CODE_ROOT / "reports" / "daily_health.md",
+        )
         print(f"wrote {out_path}")
         return 0 if len(report["failures"]) == 0 else 1
 
     while True:
         try:
-            run_once(repo_root=repo_root, db_path=db_path, schema_path=schema_path)
+            report = run_once(repo_root=repo_root, db_path=db_path, schema_path=schema_path)
+            out_path = CODE_ROOT / "reports/last_run.json"
+            out_path.write_text(json.dumps(report, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+            write_daily_report(
+                db_path=db_path,
+                schema_path=schema_path,
+                last_run_path=out_path,
+                out_path=CODE_ROOT / "reports" / "daily_health.md",
+            )
+            _maybe_apply_approved_patch(repo_root, db_path, schema_path)
         except Exception as e:
             # Orchestrator should not crash-loop without emitting something.
             err_path = CODE_ROOT / "reports/last_error.txt"
