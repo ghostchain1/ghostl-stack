@@ -250,3 +250,7 @@ Evidence:
   - notes include branch + commit:
     - `gst/botfix/1-2-gst-leakage-gate`
     - `ff768c06b90c91ce940afbbf1e1bde2406c566d1`
+
+Hardening update:
+- Approval commit flow now blocks on dirty worktrees to prevent accidental inclusion of unrelated local changes.
+- Blocking events are persisted in DB (`approvals` + `deployments`) and approval token is archived as `.failed`.

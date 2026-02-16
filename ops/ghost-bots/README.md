@@ -104,6 +104,7 @@ This flow:
 - commits with `gst(bot): fix ... [incident:<id>] [patch:<id>]`
 - inserts a `deployments` row
 - deletes the approval token file on success
+- blocks execution if the git worktree is dirty (to prevent accidental commits of unrelated local changes)
 
 ## Install To /opt (Optional)
 
