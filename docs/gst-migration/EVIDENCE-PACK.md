@@ -1,6 +1,6 @@
 # GST-Native Evidence Pack
 
-Generated (UTC): `2026-02-16T13:26:05Z`
+Generated (UTC): `2026-02-16T13:33:42Z`
 Tested git ref: `brand/gst-native`
 
 ## Before / After counts
@@ -39,8 +39,10 @@ Tested git ref: `brand/gst-native`
 - L1/L2/L3 smoke (best effort in restricted harness):
   - `SKIP_* ... bash infra/scripts/gates/l1-go-no-go.sh` → **OK**
   - `L2_GO_NO_GO_SKIP_RUNTIME=1 L2_DOCTOR_SKIP_RUNTIME=1 L2_DOCTOR_SKIP_DOCKER=1 bash infra/scripts/gates/l2-go-no-go.sh` → **OK** (`L2_GO_NO_GO_INVARIANT_MODE=gst` default)
+  - `L2_GO_NO_GO_SKIP_RUNTIME=1 L2_DOCTOR_SKIP_RUNTIME=1 L2_DOCTOR_SKIP_DOCKER=1 L2_GO_NO_GO_INVARIANT_MODE=full bash infra/scripts/gates/l2-go-no-go.sh` → **OK**
   - `L2_DOCTOR_SKIP_RUNTIME=1 L2_DOCTOR_SKIP_DOCKER=1 bash infra/scripts/doctor-l2.sh` → **OK**
   - `L3_GO_NO_GO_SKIP_RUNTIME=1 L3_DOCTOR_SKIP_RUNTIME=1 L3_DOCTOR_SKIP_DOCKER=1 bash infra/scripts/gates/l3-go-no-go.sh` → **OK** (`L3_GO_NO_GO_INVARIANT_MODE=gst` default)
+  - `L3_GO_NO_GO_SKIP_RUNTIME=1 L3_DOCTOR_SKIP_RUNTIME=1 L3_DOCTOR_SKIP_DOCKER=1 L3_GO_NO_GO_INVARIANT_MODE=full bash infra/scripts/gates/l3-go-no-go.sh` → **OK**
   - `bash ops/scripts/preflight.sh --dry-run --json` → **OK**
 
 ## Governance calldata evidence
@@ -70,4 +72,4 @@ Tested git ref: `brand/gst-native`
 | Foundry invariant regression | Green | `contracts/test/GSTInvariant.t.sol` passing |
 | GST observability dashboards | Green | `grafana/dashboards/gst-*.json` + compose/provisioning wiring |
 | AI policy enforcement | Green | `services/ai-policy/gst_policy.ts` + Hyper Ghost/GhostControl/preflight wiring |
-| L2/L3 go/no-go GST invariant enforcement in this harness | Green | Reduced-runtime L2/L3 gates pass with dedicated GST invariant mode |
+| L2/L3 go/no-go invariant enforcement in this harness | Green | Reduced-runtime and full invariant modes both pass in this harness |
