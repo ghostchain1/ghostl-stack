@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
@@ -12,6 +13,63 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(CODE_ROOT))
 
 from core.db import connect, get_incident_detail, get_open_incidents  # noqa: E402
+
+
+def _load_last_run() -> dict:
+    path = CODE_ROOT / "reports/last_run.json"
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _check_bucket(checks: list[dict], kind: str, layer: str | None = None) -> dict:
+    for c in checks:
+        if str(c.get("kind")) != kind:
+            continue
+        if layer is not None and str(c.get("chain_layer") or "") != layer:
+            continue
+        return {
+            "ok": bool(c.get("ok")),
+            "title": str(c.get("title") or ""),
+            "summary": str(c.get("summary") or ""),
+        }
+    return {"ok": False, "title": "", "summary": "missing check"}
+
+
+def _build_summary(db_path: Path) -> dict:
+    last = _load_last_run()
+    checks = list(last.get("checks") or [])
+
+    with connect(db_path) as conn:
+        open_inc = get_open_incidents(conn)
+
+    rpc_by_layer = {
+        "L1": _check_bucket(checks, "rpc_health", "L1"),
+        "L2": _check_bucket(checks, "rpc_health", "L2"),
+        "L3": _check_bucket(checks, "rpc_health", "L3"),
+    }
+    docker = _check_bucket(checks, "docker_health")
+    gst_leakage = _check_bucket(checks, "gst_leakage_gate")
+    gst_symbol = _check_bucket(checks, "gst_symbol_gate")
+
+    return {
+        "ts": str(last.get("ts") or ""),
+        "systemHealth": {
+            "docker": docker,
+            "rpc": rpc_by_layer,
+        },
+        "gstCompliance": {
+            "leakageGate": gst_leakage,
+            "symbolGate": gst_symbol,
+        },
+        "openIncidentCount": len(open_inc),
+        "env": {
+            "host": os.uname().nodename if hasattr(os, "uname") else "",
+        },
+    }
 
 
 def main() -> int:
@@ -73,6 +131,10 @@ def main() -> int:
                     return
 
                 self._send_json({"incident": inc})
+                return
+
+            if p.path == "/api/summary":
+                self._send_json(_build_summary(db_path))
                 return
 
             self._send_json({"error": "not found"}, code=404)
