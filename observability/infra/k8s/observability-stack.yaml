@@ -121,6 +121,7 @@ data:
     
     rule_files:
       - /etc/prometheus/alert_rules.yml
+      - /etc/prometheus/gst_metric_rules.yml
     
     alerting:
       alertmanagers:
@@ -198,6 +199,52 @@ data:
             annotations:
               summary: "Error rate spike detected"
               description: "Error or consensus-risk logs are spiking above normal thresholds."
+  gst_metric_rules.yml: |
+    groups:
+      - name: gst-canonical-recording
+        rules:
+          - record: ghostchain_gst_fees_total
+            labels:
+              layer: L1
+              service: ghost-relayer
+            expr: sum(ghost_relayer_finalized_total{layer=~"l1|L1"}) or vector(0)
+          - record: ghostchain_gst_fees_total
+            labels:
+              layer: L2
+              service: ghost-relayer
+            expr: sum(ghost_relayer_finalized_total{layer=~"l2|L2"}) or vector(0)
+          - record: ghostchain_gst_fees_total
+            labels:
+              layer: L3
+              service: ghost-relayer
+            expr: sum(ghost_relayer_finalized_total{layer=~"l3|L3"}) or vector(0)
+          - record: ghostchain_gst_burned_total
+            labels:
+              layer: L1
+              service: supply-service
+            expr: sum(ghost_observability_log_events_total{event=~"(?i).*burn.*"}) or vector(0)
+          - record: ghostchain_gst_burned_total
+            labels:
+              layer: L2
+              service: supply-service
+            expr: vector(0)
+          - record: ghostchain_gst_burned_total
+            labels:
+              layer: L3
+              service: supply-service
+            expr: vector(0)
+          - record: ghostchain_gst_supply
+            labels:
+              layer: L1
+            expr: sum(token_supply_total) or vector(0)
+          - record: ghostchain_gst_supply
+            labels:
+              layer: L2
+            expr: vector(0)
+          - record: ghostchain_gst_supply
+            labels:
+              layer: L3
+            expr: vector(0)
 ---
 apiVersion: v1
 kind: ConfigMap
