@@ -168,6 +168,17 @@ for bin in "${required_bins[@]}"; do
   fi
 done
 
+if [[ -x "$ROOT_DIR/scripts/gst-ai-policy-gate.sh" ]]; then
+  if "$ROOT_DIR/scripts/gst-ai-policy-gate.sh"; then
+    record_check "gate:gst-ai-policy" "ok" "diff policy scan passed"
+  else
+    record_check "gate:gst-ai-policy" "fail" "diff policy scan failed"
+    HAS_FAILURE=1
+  fi
+else
+  record_check "gate:gst-ai-policy" "skip" "gate script missing"
+fi
+
 if command -v docker >/dev/null 2>&1; then
   if docker compose version >/dev/null 2>&1; then
     record_check "binary:docker-compose" "ok" "docker compose"
