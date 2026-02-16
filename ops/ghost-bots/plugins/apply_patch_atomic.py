@@ -156,6 +156,8 @@ def main() -> int:
     ap.add_argument("--approver", default=os.environ.get("USER", "ghost"))
     ap.add_argument("--skip-service-tests", action="store_true")
     ap.add_argument("--skip-forge", action="store_true")
+    ap.add_argument("--skip-rpc-smoke", action="store_true")
+    ap.add_argument("--skip-compose", action="store_true")
     ap.add_argument("--gate-timeout-seconds", type=int, default=_env_int("GHOST_BOTS_GATE_TIMEOUT_SEC", 0))
     ap.add_argument(
         "--service-test-timeout-seconds",
@@ -234,6 +236,10 @@ def main() -> int:
         verify_cmd.append("--skip-service-tests")
     if args.skip_forge:
         verify_cmd.append("--skip-forge")
+    if args.skip_rpc_smoke:
+        verify_cmd.append("--skip-rpc-smoke")
+    if args.skip_compose:
+        verify_cmd.append("--skip-compose")
     if int(args.gate_timeout_seconds) > 0:
         verify_cmd.extend(["--gate-timeout-seconds", str(args.gate_timeout_seconds)])
     if int(args.service_test_timeout_seconds) > 0:
