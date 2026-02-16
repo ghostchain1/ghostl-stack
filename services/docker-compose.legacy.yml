@@ -874,8 +874,8 @@ services:
       - RPC_CHILD=${RPC_L3}
       - ROLLUP_ADDRESS=${L2_ROLLUP_L3_ADDRESS}
       - PROPOSER_PRIVATE_KEY=${PROPOSER_PRIVATE_KEY}
-      # For sub-second soft confirmations, propose against latest-confirmations instead of OP "safe".
-      - ROLLUP_CHILD_HEAD_TAG=latest
+      # For sub-second soft confirmations, default to latest-confirmations instead of OP "safe".
+      - ROLLUP_CHILD_HEAD_TAG=${L3_ROLLUP_CHILD_HEAD_TAG:-latest}
       # Catch-up tuning: L3 can start far behind; increase batch size and parallelism to reduce lag faster.
       - CATCHUP_LAG_THRESHOLD=${L3_ROLLUP_CATCHUP_LAG_THRESHOLD:-512}
       - CATCHUP_BATCH_SIZE=${L3_ROLLUP_CATCHUP_BATCH_SIZE:-1000}
@@ -910,7 +910,7 @@ services:
       - ROLLUP_ADDRESS=${L2_ROLLUP_L3_ADDRESS}
       - CHALLENGER_PRIVATE_KEY=${CHALLENGER_PRIVATE_KEY}
       # Keep challenger stability assumptions aligned with proposer (latest-confirmations).
-      - ROLLUP_CHILD_HEAD_TAG=latest
+      - ROLLUP_CHILD_HEAD_TAG=${L3_ROLLUP_CHILD_HEAD_TAG:-latest}
       - STATE_DIR=/state
     volumes:
       - ./.state/ghost-rollup-challenger:/state
