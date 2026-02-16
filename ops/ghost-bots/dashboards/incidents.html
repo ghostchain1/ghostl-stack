@@ -20,11 +20,24 @@
       .sev-high { background: #991b1b; color: #fff; }
       .sev-medium { background: #9a3412; color: #fff; }
       .sev-low { background: #1f2937; color: #fff; }
+      .ok-true { color: #065f46; font-weight: 600; }
+      .ok-false { color: #991b1b; font-weight: 600; }
     </style>
   </head>
   <body>
     <h1>Ghost Bots Incidents</h1>
     <div class="muted">Local dashboard. Source of truth: incidents SQLite DB.</div>
+
+    <div class="row" style="margin-top: 16px;">
+      <div class="col">
+        <h2 style="margin: 0 0 8px;">System Health</h2>
+        <div id="system-health" class="muted">Loading...</div>
+      </div>
+      <div class="col">
+        <h2 style="margin: 0 0 8px;">GST Compliance</h2>
+        <div id="gst-compliance" class="muted">Loading...</div>
+      </div>
+    </div>
 
     <div class="row" style="margin-top: 16px;">
       <div class="col">
@@ -50,6 +63,7 @@
     </div>
 
     <script>
+      const okClass = (v) => (v ? 'ok-true' : 'ok-false');
       const sevClass = (s) => {
         const v = String(s || '').toLowerCase();
         if (v === 'critical') return 'sev-critical';
@@ -57,6 +71,33 @@
         if (v === 'medium') return 'sev-medium';
         return 'sev-low';
       };
+
+      async function loadSummary() {
+        const res = await fetch('/api/summary');
+        const s = await res.json();
+
+        const docker = s.systemHealth?.docker || {};
+        const rpc = s.systemHealth?.rpc || {};
+        const l1 = rpc.L1 || {};
+        const l2 = rpc.L2 || {};
+        const l3 = rpc.L3 || {};
+        const leakage = s.gstCompliance?.leakageGate || {};
+        const symbol = s.gstCompliance?.symbolGate || {};
+
+        document.getElementById('system-health').innerHTML = `
+          <div><span class="${okClass(!!docker.ok)}">docker=${docker.ok ? 'ok' : 'fail'}</span> <span class="muted">${docker.summary || ''}</span></div>
+          <div><span class="${okClass(!!l1.ok)}">L1 rpc=${l1.ok ? 'ok' : 'fail'}</span> <span class="muted">${l1.summary || ''}</span></div>
+          <div><span class="${okClass(!!l2.ok)}">L2 rpc=${l2.ok ? 'ok' : 'fail'}</span> <span class="muted">${l2.summary || ''}</span></div>
+          <div><span class="${okClass(!!l3.ok)}">L3 rpc=${l3.ok ? 'ok' : 'fail'}</span> <span class="muted">${l3.summary || ''}</span></div>
+          <div class="muted" style="margin-top: 6px;">open incidents=${s.openIncidentCount || 0}</div>
+        `;
+
+        document.getElementById('gst-compliance').innerHTML = `
+          <div><span class="${okClass(!!leakage.ok)}">leakage gate=${leakage.ok ? 'pass' : 'fail'}</span> <span class="muted">${leakage.summary || ''}</span></div>
+          <div><span class="${okClass(!!symbol.ok)}">symbol gate=${symbol.ok ? 'pass' : 'fail'}</span> <span class="muted">${symbol.summary || ''}</span></div>
+          <div class="muted" style="margin-top: 6px;">last run=${s.ts || '(unknown)'}</div>
+        `;
+      }
 
       async function loadIncidents() {
         const res = await fetch('/api/incidents');
@@ -102,10 +143,15 @@
         `;
       }
 
+      loadSummary().catch((e) => {
+        document.getElementById('system-health').textContent = String(e);
+      });
+
       loadIncidents().catch((e) => {
         document.getElementById('detail').textContent = String(e);
       });
 
+      setInterval(() => loadSummary().catch(() => {}), 15000);
       setInterval(() => loadIncidents().catch(() => {}), 15000);
     </script>
   </body>
