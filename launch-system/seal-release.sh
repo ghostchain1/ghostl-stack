@@ -44,6 +44,10 @@ ROOT="$(repo_root)"
 REL_DIR="${ROOT}/releases/${RELEASE_ID}"
 [ -d "${REL_DIR}" ] || die "missing_release_dir:${REL_DIR}"
 
+log "seal: enforcing GST-native leakage gates"
+bash "${ROOT}/scripts/gst-leakage-gate.sh"
+bash "${ROOT}/scripts/gst-symbol-gate.sh"
+
 if [ -f "${REL_DIR}/manifest.json" ]; then
   status="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], "r", encoding="utf-8")).get("status",""))' "${REL_DIR}/manifest.json" 2>/dev/null || true)"
   if [ "${status}" = "sealed" ] && [ "${HYPERGHOST_ALLOW_RESEAL:-0}" != "1" ]; then

@@ -219,6 +219,10 @@ need_bin curl
 need_bin python3
 need_bin docker
 
+info "enforcing GST-native leakage gates"
+"$ROOT_DIR/scripts/gst-leakage-gate.sh"
+"$ROOT_DIR/scripts/gst-symbol-gate.sh"
+
 DOCKER_AVAILABLE=1
 if [ "$SKIP_DOCKER_CHECK" != "1" ]; then
   docker_version_out=""
