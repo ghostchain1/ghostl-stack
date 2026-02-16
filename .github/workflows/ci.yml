@@ -81,6 +81,13 @@ jobs:
             --service-test-timeout-seconds 60 \
             --forge-timeout-seconds 60
 
+      - name: Orchestrator smoke (non-runtime mode)
+        env:
+          GHOST_BOTS_SKIP_DOCKER_HEALTH: "1"
+          GHOST_BOTS_SKIP_RPC_HEALTH: "1"
+        run: |
+          python3 ops/ghost-bots/core/orchestrator.py --once
+
   node-lint-build:
     needs: [rpc-namespace]
     runs-on: ubuntu-latest

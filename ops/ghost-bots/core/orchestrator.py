@@ -28,7 +28,7 @@ from core.ranker import PatchCandidate, score  # noqa: E402
 from plugins.daily_report import write_daily_report  # noqa: E402
 from plugins.gst_gate import check_gst_leakage, check_gst_symbol  # noqa: E402
 from plugins.patchsmith import candidates_for_incident  # noqa: E402
-from plugins.sentinel import check_docker_health, check_rpc  # noqa: E402
+from plugins.sentinel import CheckResult, check_docker_health, check_rpc  # noqa: E402
 
 
 def resolve_repo_root() -> Path:
@@ -69,6 +69,27 @@ def _incident_fingerprint(kind: str, title: str, subsystem: str, chain_layer: st
             "chain_layer": chain_layer,
             "service": service,
         }
+    )
+
+
+def _skipped_check(
+    *,
+    kind: str,
+    title: str,
+    subsystem: str,
+    chain_layer: str,
+    service: str,
+    reason: str,
+) -> CheckResult:
+    return CheckResult(
+        ok=True,
+        kind=kind,
+        title=title,
+        summary=f"skipped: {reason}",
+        subsystem=subsystem,
+        chain_layer=chain_layer,
+        service=service,
+        payload={"skipped": True, "reason": reason},
     )
 
 
@@ -186,14 +207,60 @@ def _maybe_seed_patch_candidates(conn, incident_id: int, incident_kind: str) -> 
 
 def run_once(*, repo_root: Path, db_path: Path, schema_path: Path) -> dict[str, Any]:
     checks = []
+    skip_docker_health = os.environ.get("GHOST_BOTS_SKIP_DOCKER_HEALTH") == "1"
+    skip_rpc_health = os.environ.get("GHOST_BOTS_SKIP_RPC_HEALTH") == "1"
 
     # Runtime health.
-    checks.append(check_docker_health(str(repo_root)))
+    if skip_docker_health:
+        checks.append(
+            _skipped_check(
+                kind="docker_health",
+                title="Docker container health",
+                subsystem="runtime",
+                chain_layer="",
+                service="docker",
+                reason="GHOST_BOTS_SKIP_DOCKER_HEALTH=1",
+            )
+        )
+    else:
+        checks.append(check_docker_health(str(repo_root)))
 
     # Chain RPC health.
-    checks.append(check_rpc("http://localhost:18545", layer="L1", expected_chain_id=14000101))
-    checks.append(check_rpc("http://localhost:29547", layer="L2", expected_chain_id=901))
-    checks.append(check_rpc("http://localhost:39545", layer="L3", expected_chain_id=903))
+    if skip_rpc_health:
+        checks.append(
+            _skipped_check(
+                kind="rpc_health",
+                title="L1 RPC health",
+                subsystem="rpc",
+                chain_layer="L1",
+                service="rpc",
+                reason="GHOST_BOTS_SKIP_RPC_HEALTH=1",
+            )
+        )
+        checks.append(
+            _skipped_check(
+                kind="rpc_health",
+                title="L2 RPC health",
+                subsystem="rpc",
+                chain_layer="L2",
+                service="rpc",
+                reason="GHOST_BOTS_SKIP_RPC_HEALTH=1",
+            )
+        )
+        checks.append(
+            _skipped_check(
+                kind="rpc_health",
+                title="L3 RPC health",
+                subsystem="rpc",
+                chain_layer="L3",
+                service="rpc",
+                reason="GHOST_BOTS_SKIP_RPC_HEALTH=1",
+            )
+        )
+    else:
+        checks.append(check_rpc("http://localhost:18545", layer="L1", expected_chain_id=14000101))
+        checks.append(check_rpc("http://localhost:29547", layer="L2", expected_chain_id=901))
+        checks.append(check_rpc("http://localhost:39545", layer="L3", expected_chain_id=903))
 
     # Repo policy gates.
     checks.append(check_gst_leakage(str(repo_root)))
