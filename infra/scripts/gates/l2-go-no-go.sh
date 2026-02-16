@@ -43,6 +43,10 @@ echo "[l2-go-no-go] starting"
 
 command -v curl >/dev/null 2>&1 || fail "curl missing"
 
+echo "[l2-go-no-go] enforcing GST-native leakage gates"
+"$ROOT_DIR/scripts/gst-leakage-gate.sh"
+"$ROOT_DIR/scripts/gst-symbol-gate.sh"
+
 echo "[l2-go-no-go] doctor"
 effective_env="$(printf '%s' "${STACK_ENV:-${L2_ENV:-dev}}" | tr '[:upper:]' '[:lower:]')"
 if [ -z "$L2_GO_NO_GO_REQUIRE_PROGRESS" ]; then

@@ -14,6 +14,10 @@ if [ ! -d "$SERVICE_ROOT" ]; then
   exit 1
 fi
 
+echo "Enforcing GST-native gates before build"
+bash "${ROOT_DIR}/scripts/gst-leakage-gate.sh"
+bash "${ROOT_DIR}/scripts/gst-symbol-gate.sh"
+
 mapfile -t COMPOSE_FILES < <(find "$SERVICE_ROOT" -mindepth 2 -maxdepth 2 -name docker-compose.yml -type f | sort)
 
 if [ ${#COMPOSE_FILES[@]} -eq 0 ]; then
