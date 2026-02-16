@@ -1,53 +1,58 @@
 # ETH Leakage Inventory (Phase 1 — Read-only)
 
-## Refresh (2026-02-16, targeted first-party scan)
+## Refresh (2026-02-16, targeted first-party rerun)
 
-Generated: `2026-02-16T12:03:00Z`
+Generated: `2026-02-16T15:53:51Z`
 
 Targeted scan paths:
-- `apps`, `services`, `packages`, `contracts/src`, `contracts/test`
-- `infra/ghostchain`, `infra/opstack/config`, `infra/opstack/.env*`, selected OP compose files
-- `observability`, `docs/ghostchain`, `docs/l2`, `docs/l3`, `docs/observability`
-- `config`, `environments`, `scripts`, `tools`, `core-service`, root env/compose files
+- `infra/ghostchain`, `infra/opstack/config`, `infra/opstack/l3`, `infra/scripts`, `config`
+- `services`, `apps`, `packages`, `contracts/src`, `observability`
+- root compose/env manifests in repository scope
 
 Exclusions:
-- `node_modules`, `dist`, `out`, `cache`, `rollback`, `backups`, `releases`
-- `contracts/lib`, vendor OP upstream trees, and prior `docs/gst-migration/**` reports
+- `docs/gst-migration/**` (report recursion), `node_modules`, `dist`, `.next`, `build`, `out`, `cache`, `artifacts`
+- `backups/**`, `infra/docker/_backup/**`
+- vendor/upstream trees: `infra/opstack/op-geth/**`, `infra/opstack/optimism-upstream/**`, `infra/opstack/optimism/**`
+- `contracts/lib/**`, `contracts/reports/formal/**`
 
 Forbidden token pattern set:
 - `_eth`, `ETH_*`, `ETHEREUM_*`, `*_ETH`, `ethAmount`, `ethBalance`, `nativeEth`, `Ether`, `Ethereum`, `Ξ`, `ETH_RPC`, `ETH_CHAIN_ID`, `ETH_PRIVATE_KEY`, `ETHERSCAN_*`
 
-Result summary (`58` hits total):
-- `GhostChain L1`: `15`
-- `GhostL2`: `6`
-- `GhostL3`: `6`
-- `service:stack.env`: `1`
-- `other` (technical/tests/gate patterns): `30`
+Result summary (`33` hits total):
+- `GhostChain L1`: `14` (all technical compatibility)
+- `GhostL2`: `6` (all technical compatibility)
+- `GhostL3`: `6` (all technical compatibility)
+- `Services/shared`: `7` (all technical compatibility)
+- Blocking/business ETH leakage: `0`
 
 ### GhostChain L1
-- `infra/ghostchain/.env.l1.example:7` (`ethereum/client-go` image tag)
-- `infra/ghostchain/scripts/ghostscout-entrypoint.sh:5-12` (`ETHEREUM_JSONRPC_*` compatibility export keys)
-- `contracts/src/l1/Messenger.sol:7` (`locked-ether` slither directive)
-- `contracts/src/l1/Portal.sol:7` (`locked-ether` slither directive)
-- `services/ghostscout-l1/entrypoint.sh:5-12` (`ETHEREUM_JSONRPC_*` compatibility export keys)
+- `infra/ghostchain/.env.l1.example:7` uses upstream vendor image tag `ethereum/client-go` (technical dependency naming).
+- `infra/ghostchain/docker-compose.ibft.yml:32` includes `--rpc-http-api=ETH,...` (RPC module namespace compatibility).
+- `infra/ghostchain/scripts/ghostscout-entrypoint.sh` maps GST-prefixed env (`GHOSTSCOUT_UPSTREAM_*`) into Blockscout-required `ETHEREUM_JSONRPC_*`.
+- `services/ghostscout-l1/entrypoint.sh` has the same compatibility mapping.
 
 ### GhostL2
-- `services/ghostscout-l2/entrypoint.sh:5-12` (`ETHEREUM_JSONRPC_*` compatibility export keys)
+- `services/ghostscout-l2/entrypoint.sh` maps GST-prefixed env into Blockscout-required `ETHEREUM_JSONRPC_*`.
 
 ### GhostL3
-- `services/ghostscout-l3/entrypoint.sh:5-12` (`ETHEREUM_JSONRPC_*` compatibility export keys)
+- `services/ghostscout-l3/entrypoint.sh` maps GST-prefixed env into Blockscout-required `ETHEREUM_JSONRPC_*`.
 
-### Services
-- `services/stack.env:241` `EXTERNAL_CHAINS=ethereum,polygon,optimism`
-
-### Other (triage-required but mostly technical)
-- `scripts/gst-leakage-gate.sh:52,62,64` (gate regex definition/filters intentionally mention ETH patterns)
-- `contracts/src/governance/constitutions/GSTConstitution.sol:10` (`no_eth_branding` clause identifier)
-- Solidity `ether` units in test/contract code (e.g. `contracts/test/foundry/LowBalancerGovernor.t.sol`, `contracts/test/foundry/FuzzGovernance.t.sol`) and `locked-ether` analyzer comments
+### Services / Shared
+- `infra/scripts/chains/deploy_l2oo.sh` contains Go imports under `github.com/ethereum*` namespace (upstream package names).
+- `infra/docker/compose/docker-compose.core.yml` contains one Besu `--rpc-http-api=ETH,...` module list entry.
 
 ### Allowed Technical Exception Audit (`eth_*` RPC namespace)
-- `eth_*` usage remains present in technical RPC contexts only (health checks, SDK/API probes, proxy method remaps).
-- No business-facing `ETH_RPC`, `ETH_CHAIN_ID`, `ETH_PRIVATE_KEY`, or `ETHERSCAN_*` config keys found in targeted first-party scope.
+- `eth_*` method usage remains in technical RPC probe/transport contexts only.
+- First-party targeted scan produced **no** matches for:
+  - `ETH_RPC`
+  - `ETH_CHAIN_ID`
+  - `ETH_PRIVATE_KEY`
+  - `ETHERSCAN_*`
+  - `ethAmount`
+  - `ethBalance`
+  - `nativeEth`
+  - `_eth` identifiers
+- Gate check result: `scripts/gst-leakage-gate.sh` => `OK`.
 
 Generated: 2026-02-15T21:53:01+00:00
 
