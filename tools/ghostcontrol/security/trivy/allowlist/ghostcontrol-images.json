@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "generated_at": "2026-02-16T00:00:00Z",
+  "entries": [
+    {
+      "id": "CVE-2026-0861",
+      "severity": "HIGH",
+      "image_patterns": [
+        "^compose-ghostcontrol-api$",
+        "^compose-ghostcontrol-ui$"
+      ],
+      "expires_on": "2026-03-31",
+      "justification": "Upstream glibc vulnerability has no fixed version in the selected hardened runtime image at scan time.",
+      "compensating_controls": [
+        "Runtime containers run as non-root with no-new-privileges and dropped Linux capabilities.",
+        "Image gate is enforced on every iteration and fails on any non-allowlisted HIGH/CRITICAL finding.",
+        "Exception is time-bounded and must be reviewed before expiry."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "types": ["node"]
+  },
+  "include": [
+    "orchestrator/**/*.ts",
+    "incidents/**/*.ts",
+    "patches/**/*.ts",
+    "evidence/**/*.ts",
+    "guards/**/*.ts",
+    "governance/**/*.ts",
+    "deploy/**/*.ts",
+    "observability/**/*.ts",
+    "tests/**/*.ts",
+    "types/**/*.d.ts"
+  ],
+  "exclude": [
+    "evidence/backups/**/*.ts"
+  ]
+}

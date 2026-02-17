@@ -1,5 +1,9 @@
-FROM node:22-bullseye-slim AS build
+FROM node:22-bookworm-slim AS build
 WORKDIR /app
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
 RUN corepack enable
 
@@ -10,11 +14,11 @@ COPY apps ./apps
 RUN pnpm install
 RUN pnpm --filter @ghostcontrol/api... build
 
-FROM node:22-bullseye-slim AS runtime
+FROM gcr.io/distroless/nodejs22-debian12 AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=build /app /app
 
-USER 10001:10001
-CMD ["node", "apps/api/dist/index.js"]
+USER 1001:1001
+CMD ["apps/api/dist/index.js"]
