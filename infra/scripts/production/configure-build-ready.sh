@@ -578,6 +578,7 @@ run_step "doctor-l3" env \
   STACK_ENV_FILE="$STACK_ENV_FILE_ACTIVE" \
   L3_SECRETS_SOURCE="$SECRETS_SOURCE" \
   ALLOW_DEV_SECRETS="$ALLOW_DEV_SECRETS_VALUE" \
+  L3_AUTO_RECOVER_ON_STALL="$([ "$MODE" = "dev" ] && echo 0 || echo 1)" \
   L3_REQUIRE_L3_PROGRESS="$([ "$MODE" = "dev" ] && echo 0 || echo 1)" \
   bash "$ROOT_DIR/infra/scripts/doctor-l3.sh"
 
@@ -610,6 +611,7 @@ if [ "$SKIP_GATES" != "1" ]; then
     STACK_ENV_FILE="$STACK_ENV_FILE_ACTIVE" \
     L3_SECRETS_SOURCE="$SECRETS_SOURCE" \
     ALLOW_DEV_SECRETS="$ALLOW_DEV_SECRETS_VALUE" \
+    L3_AUTO_RECOVER_ON_STALL="$([ "$MODE" = "dev" ] && echo 0 || echo 1)" \
     L3_GO_NO_GO_REQUIRE_SCANS="$([ "$MODE" = "dev" ] && echo 0 || echo 1)" \
     L3_GO_NO_GO_REQUIRE_PROGRESS="$([ "$MODE" = "dev" ] && echo 0 || echo 1)" \
     bash "$ROOT_DIR/infra/scripts/gates/l3-go-no-go.sh"

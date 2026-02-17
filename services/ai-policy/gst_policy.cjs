@@ -18,7 +18,10 @@ const camelAmount = `${lowerTri}Amount`;
 const camelBalance = `${lowerTri}Balance`;
 const scannerKey = `${upperTri}ERSCAN`;
 const rpcPrefix = `${lowerTri}_`;
-const allowedRpcMethods = new Set([`${rpcPrefix}chainId`]);
+const allowedRpcMethods = new Set([
+  `${rpcPrefix}chainId`,
+  `${rpcPrefix}blockNumber`
+]);
 
 const escapeForRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
