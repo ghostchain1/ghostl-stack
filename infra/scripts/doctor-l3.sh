@@ -83,6 +83,8 @@ L3_MAX_BATCHER_IDLE_SECONDS="${L3_MAX_BATCHER_IDLE_SECONDS:-900}"
 L3_REQUIRE_L3_PROGRESS="${L3_REQUIRE_L3_PROGRESS:-0}"
 L3_PROGRESS_SAMPLE_SECONDS="${L3_PROGRESS_SAMPLE_SECONDS:-15}"
 L3_PROGRESS_MIN_DELTA="${L3_PROGRESS_MIN_DELTA:-1}"
+L3_AUTO_RECOVER_ON_STALL="${L3_AUTO_RECOVER_ON_STALL:-0}"
+L3_AUTO_RECOVER_COOLDOWN_SECONDS="${L3_AUTO_RECOVER_COOLDOWN_SECONDS:-8}"
 
 warn() { echo "WARN: $*" >&2; }
 fail() { echo "FAIL: $*" >&2; exit 1; }
@@ -302,10 +304,71 @@ require_execution_progress() {
   fi
   delta=$((b - a))
   if [ "$delta" -lt "$min_delta" ]; then
+    if attempt_l3_auto_recovery "$url" "$sleep_s" "$min_delta"; then
+      return 0
+    fi
     fail "no L3 execution progress detected (sample1=$a sample2=$b delta=$delta, expected >=$min_delta over ${sleep_s}s)"
   fi
 
   echo "OK: L3 execution progressing (sample1=$a sample2=$b delta=$delta over ${sleep_s}s)"
+}
+
+attempt_l3_auto_recovery() {
+  local url="$1"
+  local sleep_s="$2"
+  local min_delta="$3"
+
+  if [ "$L3_AUTO_RECOVER_ON_STALL" != "1" ]; then
+    return 1
+  fi
+  if [ "${DOCKER_AVAILABLE:-0}" != "1" ] || [ "${COMPOSE_AVAILABLE:-0}" != "1" ]; then
+    warn "L3 auto-recovery requested but docker/compose is unavailable"
+    return 1
+  fi
+
+  local compose_args=("-f" "$ROOT_DIR/infra/opstack/docker-compose.l3.yml")
+  if [ -f "$ROOT_DIR/infra/opstack/.env" ]; then
+    compose_args+=("--env-file" "$ROOT_DIR/infra/opstack/.env")
+  fi
+  if [ -f "$L3_ENV_FILE" ]; then
+    compose_args+=("--env-file" "$L3_ENV_FILE")
+  fi
+  if [ -f "$L3_SECRETS_FILE" ]; then
+    compose_args+=("--env-file" "$L3_SECRETS_FILE")
+  fi
+
+  warn "L3 execution stalled; attempting one-time auto-recovery restart (l3-geth, l3-op-node, l3-op-batcher)"
+  if ! hg_docker compose "${compose_args[@]}" restart l3-geth l3-op-node l3-op-batcher >/dev/null 2>&1; then
+    warn "L3 auto-recovery restart failed"
+    return 1
+  fi
+
+  sleep "$L3_AUTO_RECOVER_COOLDOWN_SECONDS"
+
+  local ra rb rdelta
+  ra="$(rpc_block_number_dec "$url" || true)"
+  if [ -z "$ra" ]; then
+    warn "L3 auto-recovery could not fetch eth_blockNumber after restart"
+    return 1
+  fi
+  sleep "$sleep_s"
+  rb="$(rpc_block_number_dec "$url" || true)"
+  if [ -z "$rb" ]; then
+    warn "L3 auto-recovery could not fetch second eth_blockNumber sample"
+    return 1
+  fi
+  if [ "$rb" -lt "$ra" ]; then
+    warn "L3 auto-recovery observed head regression (sample1=$ra sample2=$rb)"
+    return 1
+  fi
+  rdelta=$((rb - ra))
+  if [ "$rdelta" -lt "$min_delta" ]; then
+    warn "L3 auto-recovery did not restore progress (sample1=$ra sample2=$rb delta=$rdelta, expected >=$min_delta)"
+    return 1
+  fi
+
+  echo "OK: L3 execution recovered after restart (sample1=$ra sample2=$rb delta=$rdelta over ${sleep_s}s)"
+  return 0
 }
 
 read_json() {
