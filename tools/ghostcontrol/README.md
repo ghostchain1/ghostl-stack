@@ -13,9 +13,16 @@ Quick start:
 3) Open:
    - UI: `http://localhost:7400`
    - API: `http://localhost:7401/health`
+4) Optional continuous event loop:
+   - `pnpm ghostloop:watch`
+5) Optional persistent host service:
+   - `pnpm ghostloop:watch:install-systemd`
+6) Optional manual failure remediation probe:
+   - `pnpm ghostloop:watch:recover`
+7) Optional live-fire resilience drill:
+   - `pnpm ghostloop:watch:drill`
 
 Docs:
 - `docs/architecture.mmd`
 - `docs/security.md`
 - `docs/runbooks.md`
-

@@ -1,0 +1,33 @@
+global:
+  scrape_interval: 15s
+scrape_configs:
+  - job_name: 'ghostcontrol-api'
+    static_configs:
+      - targets:
+          - 'ghostcontrol-api:8080'
+        labels:
+          layer: 'control'
+  - job_name: 'ghostcontrol-policy'
+    static_configs:
+      - targets:
+          - 'ghostcontrol-policy:8082'
+        labels:
+          layer: 'control'
+  - job_name: 'ghostcontrol-ingest'
+    static_configs:
+      - targets:
+          - 'ghostcontrol-ingest:8083'
+        labels:
+          layer: 'control'
+  - job_name: 'ghostcontrol-planner'
+    static_configs:
+      - targets:
+          - 'ghostcontrol-planner:8084'
+        labels:
+          layer: 'control'
+  - job_name: 'ghostcontrol-runner'
+    static_configs:
+      - targets:
+          - 'ghostcontrol-runner:8085'
+        labels:
+          layer: 'control'

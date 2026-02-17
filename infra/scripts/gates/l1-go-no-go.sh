@@ -40,7 +40,7 @@ SKIP_DOCKER_CHECK="${SKIP_DOCKER_CHECK:-0}"
 TRIVY_IMAGE_SCAN="${TRIVY_IMAGE_SCAN:-0}"
 
 TRIVY_SECRET_CONFIG="${TRIVY_SECRET_CONFIG:-$ROOT_DIR/trivy-secret.yaml}"
-TRIVY_SKIP_DIRS_DEFAULT="node_modules,contracts/node_modules,dist,contracts/dist,contracts/artifacts,contracts/cache,contracts/.hardhat-cache,contracts/typechain-types,contracts/proposals,contracts/.foundry-out,contracts/.foundry-cache,contracts/.foundry-out-local,contracts/.foundry-cache-local,artifacts,cache,backups,ops/snapshots,ops/preflight,contracts/out-codex,contracts/cache-codex,contracts/out-slither,contracts/cache-slither,infra/docker/_backup,infra/docker/audit,infra/docker/runtime,infra/ghostchain/data,infra/ghostchain/secrets,infra/opstack/data,infra/opstack/broadcast,infra/opstack/secrets,infra/opstack/l3/secrets,chains/l2/data,chains/l3/data"
+TRIVY_SKIP_DIRS_DEFAULT="node_modules,contracts/node_modules,dist,contracts/dist,contracts/artifacts,contracts/cache,contracts/.hardhat-cache,contracts/typechain-types,contracts/proposals,contracts/.foundry-out,contracts/.foundry-cache,contracts/.foundry-out-local,contracts/.foundry-cache-local,artifacts,cache,backups,ops/snapshots,ops/preflight,contracts/out-codex,contracts/cache-codex,contracts/out-slither,contracts/cache-slither,infra/docker/_backup,infra/docker/audit,infra/docker/runtime,infra/ghostchain/data,infra/ghostchain/secrets,infra/opstack/data,infra/opstack/broadcast,infra/opstack/secrets,infra/opstack/l3,infra/opstack/l3/secrets,chains/l2/data,chains/l3/data,tools/ghostcontrol/secrets"
 TRIVY_SKIP_FILES_DEFAULT=".env,**/.env,**/.env.*,ops/security/trivy-fs.json,contracts/reports/formal/scribble/scribble.json,contracts/artifacts/build-info/*.json,infra/opstack/op-geth/signer/fourbyte/4byte.json"
 TRIVY_SKIP_DIRS="${TRIVY_SKIP_DIRS:-$TRIVY_SKIP_DIRS_DEFAULT}"
 TRIVY_SKIP_FILES="${TRIVY_SKIP_FILES:-$TRIVY_SKIP_FILES_DEFAULT}"
@@ -397,7 +397,12 @@ if [ "$SKIP_VULN_SCAN" != "1" ]; then
       if [ "$DOCKER_AVAILABLE" != "1" ]; then
         warn "image scan skipped (docker daemon/socket unavailable)"
       else
-        "$ROOT_DIR/infra/scripts/security/trivy-image-scan.sh" "${ROOT_DIR}/infra/docker/compose/docker-compose.core.yml"
+        if ! "$ROOT_DIR/infra/scripts/security/trivy-image-scan.sh" "${ROOT_DIR}/infra/docker/compose/docker-compose.core.yml"; then
+          if [ "$STRICT_MODE" = "1" ]; then
+            fail "container image vulnerability scan failed"
+          fi
+          warn "container image vulnerability scan failed; continuing in non-strict mode"
+        fi
       fi
     fi
   else

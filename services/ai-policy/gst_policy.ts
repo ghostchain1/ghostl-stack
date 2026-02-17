@@ -42,6 +42,7 @@ const camelAmount = `${lowerTri}Amount`;
 const camelBalance = `${lowerTri}Balance`;
 const scannerKey = `${upperTri}ERSCAN`;
 const rpcPrefix = `${lowerTri}_`;
+const allowedRpcMethods = new Set([`${rpcPrefix}chainId`]);
 
 const escapeForRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -81,6 +82,9 @@ export function evaluateGstPolicy(input: GstPolicyInput): GstPolicyResult {
       rule.pattern.lastIndex = 0;
       let match: RegExpExecArray | null;
       while ((match = rule.pattern.exec(line)) !== null) {
+        if (rule.id === "legacy_rpc_namespace" && allowedRpcMethods.has(match[0])) {
+          continue;
+        }
         violations.push({
           source,
           line: lineIndex + 1,

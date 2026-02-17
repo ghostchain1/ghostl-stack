@@ -1,6 +1,6 @@
 import { Queue } from "bullmq";
 import Fastify from "fastify";
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 import { z } from "zod";
 
 import { getPrismaClient } from "@ghostcontrol/db";
@@ -10,6 +10,9 @@ import {
   createLogger,
   sha256ForObject,
 } from "@ghostcontrol/shared";
+import { readEventCycleIncidentSummary } from "./event_cycle_incidents.js";
+import { readLockContentionMitigationSummary } from "./lock_contention.js";
+import { readRpcPreflightMitigationSummary } from "./rpc_preflight.js";
 
 const logger = createLogger({ name: "ghostcontrol-api" });
 
@@ -21,9 +24,15 @@ const EnvSchema = z.object({
   L1_RPC: z.string().optional(),
   L2_RPC: z.string().optional(),
   L3_RPC: z.string().optional(),
+  GHOSTCONTROL_EVIDENCE_LOG_DIR: z.string().optional(),
+  GHOSTCONTROL_INCIDENT_DB_PATH: z.string().optional(),
+  GHOSTCONTROL_EVENT_CYCLE_OPEN_WARN_THRESHOLD: z.coerce.number().int().positive().default(1),
 });
 
 const env = EnvSchema.parse(process.env);
+const evidenceLogDir = env.GHOSTCONTROL_EVIDENCE_LOG_DIR ??
+  "/home/ghost/ghostl-stack/tools/ghostcontrol/evidence/logs";
+const incidentDbPath = env.GHOSTCONTROL_INCIDENT_DB_PATH ?? "/incidents/incidents.db";
 
 const prisma = getPrismaClient();
 const redis = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
@@ -34,6 +43,10 @@ const actionRequestsQueue = new Queue("action-requests", {
 const actionBundlesQueue = new Queue("action-bundles", {
   connection: redis,
 });
+
+function toJsonValue(value: unknown): any {
+  return value as any;
+}
 
 function requireToken() {
   return async function preHandler(req: { url: string; headers: any }, reply: any) {
@@ -112,15 +125,19 @@ async function main() {
   });
 
   app.get("/status", async () => {
-    const [incidentCount, actionRequestCount] = await Promise.all([
+    const [incidentCount, actionRequestCount, l1, l2, l3, lockContention, rpcPreflight, eventCycleIncidents] = await Promise.all([
       prisma.incident.count(),
       prisma.actionRequest.count(),
-    ]);
-
-    const [l1, l2, l3] = await Promise.all([
       probeRpc(env.L1_RPC),
       probeRpc(env.L2_RPC),
       probeRpc(env.L3_RPC),
+      readLockContentionMitigationSummary({ logDir: evidenceLogDir, limit: 20 }),
+      readRpcPreflightMitigationSummary({ logDir: evidenceLogDir, limit: 20 }),
+      readEventCycleIncidentSummary({
+        dbPath: incidentDbPath,
+        limit: 20,
+        openWarnThreshold: env.GHOSTCONTROL_EVENT_CYCLE_OPEN_WARN_THRESHOLD,
+      }),
     ]);
 
     return {
@@ -131,7 +148,47 @@ async function main() {
         actionRequests: actionRequestCount,
       },
       rpc: { l1, l2, l3 },
+      lockContention,
+      rpcPreflight,
+      eventCycleIncidents,
       uptimeMs: Math.floor(process.uptime() * 1000),
+    };
+  });
+
+  app.get("/governance/lock-contention", async () => {
+    const lockContention = await readLockContentionMitigationSummary({
+      logDir: evidenceLogDir,
+      limit: 40,
+    });
+    return {
+      ok: true,
+      service: "ghostcontrol-api",
+      lockContention,
+    };
+  });
+
+  app.get("/governance/rpc-preflight", async () => {
+    const rpcPreflight = await readRpcPreflightMitigationSummary({
+      logDir: evidenceLogDir,
+      limit: 40,
+    });
+    return {
+      ok: true,
+      service: "ghostcontrol-api",
+      rpcPreflight,
+    };
+  });
+
+  app.get("/governance/event-cycle-incidents", async () => {
+    const eventCycleIncidents = await readEventCycleIncidentSummary({
+      dbPath: incidentDbPath,
+      limit: 40,
+      openWarnThreshold: env.GHOSTCONTROL_EVENT_CYCLE_OPEN_WARN_THRESHOLD,
+    });
+    return {
+      ok: true,
+      service: "ghostcontrol-api",
+      eventCycleIncidents,
     };
   });
 
@@ -163,8 +220,8 @@ async function main() {
         requestedBy: parsed.data.requestedBy,
         reason: parsed.data.reason ?? null,
         riskMode: parsed.data.riskMode,
-        scope: parsed.data.scope,
-        requestedActions: parsed.data.requestedActions,
+        scope: toJsonValue(parsed.data.scope),
+        requestedActions: toJsonValue(parsed.data.requestedActions),
         status: "queued",
       },
     });
@@ -209,11 +266,11 @@ async function main() {
         id: b.id,
         expiresAt: new Date(b.expiresAt),
         riskMode: b.riskMode,
-        scope: b.scope,
-        actions: b.actions,
-        gates: b.gates,
-        rollback: b.rollback,
-        evidencePlan: b.evidencePlan,
+        scope: toJsonValue(b.scope),
+        actions: toJsonValue(b.actions),
+        gates: toJsonValue(b.gates),
+        rollback: toJsonValue(b.rollback),
+        evidencePlan: toJsonValue(b.evidencePlan),
         algorithm: parsed.data.algorithm,
         keyId: parsed.data.keyId,
         signatureB64: parsed.data.signatureB64,
@@ -221,11 +278,11 @@ async function main() {
       update: {
         expiresAt: new Date(b.expiresAt),
         riskMode: b.riskMode,
-        scope: b.scope,
-        actions: b.actions,
-        gates: b.gates,
-        rollback: b.rollback,
-        evidencePlan: b.evidencePlan,
+        scope: toJsonValue(b.scope),
+        actions: toJsonValue(b.actions),
+        gates: toJsonValue(b.gates),
+        rollback: toJsonValue(b.rollback),
+        evidencePlan: toJsonValue(b.evidencePlan),
         algorithm: parsed.data.algorithm,
         keyId: parsed.data.keyId,
         signatureB64: parsed.data.signatureB64,

@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import crypto from "node:crypto";
 
 import { Worker } from "bullmq";
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 import { z } from "zod";
 
 import { getPrismaClient } from "@ghostcontrol/db";
@@ -41,7 +41,7 @@ async function policyAllows(params: {
   actions: z.infer<typeof ProposedActionSchema>[];
   gates: any[];
 }): Promise<{ allowed: true } | { allowed: false; reasons: string[] }> {
-  const res = await fetch(`${env.POLICY_URL.replace(/\\/+$/, "")}/policy/evaluate`, {
+  const res = await fetch(`${env.POLICY_URL.replace(/\/+$/, "")}/policy/evaluate`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(params),
@@ -61,7 +61,7 @@ function apiHeaders(): Record<string, string> {
 }
 
 async function submitSignedBundle(signedBundle: any): Promise<boolean> {
-  const res = await fetch(`${env.API_URL.replace(/\\/+$/, "")}/actions/submit`, {
+  const res = await fetch(`${env.API_URL.replace(/\/+$/, "")}/actions/submit`, {
     method: "POST",
     headers: apiHeaders(),
     body: JSON.stringify(signedBundle),
@@ -217,4 +217,3 @@ main().catch((err) => {
   logger.error({ err }, "planner_failed");
   process.exit(1);
 });
-

@@ -1,5 +1,7 @@
 import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
+import path from "node:path";
 
 import Fastify from "fastify";
 import { z } from "zod";
@@ -22,15 +24,32 @@ type PolicyEval = (input: {
 }) => { ok: boolean; violations: Array<{ reason: string; line: number; column: number }> };
 
 let evaluateGstPolicy: PolicyEval = () => ({ ok: true, violations: [] });
-try {
-  const loaded = localRequire("../../../../../services/ai-policy/gst_policy.cjs") as {
-    evaluateGstPolicy?: PolicyEval;
-  };
-  if (typeof loaded.evaluateGstPolicy === "function") {
-    evaluateGstPolicy = loaded.evaluateGstPolicy;
+let gstPolicyLoaded = false;
+const gstPolicyCandidates = [
+  "/app/apps/policy/gst_policy.cjs",
+  "/app/services/ai-policy/gst_policy.cjs",
+  path.resolve(process.cwd(), "apps/policy/gst_policy.cjs"),
+  path.resolve(process.cwd(), "services/ai-policy/gst_policy.cjs"),
+  path.resolve(process.cwd(), "../../services/ai-policy/gst_policy.cjs"),
+  path.resolve(process.cwd(), "../../../services/ai-policy/gst_policy.cjs"),
+];
+
+for (const candidate of gstPolicyCandidates) {
+  if (!existsSync(candidate)) continue;
+  try {
+    const loaded = localRequire(candidate) as { evaluateGstPolicy?: PolicyEval };
+    if (typeof loaded.evaluateGstPolicy === "function") {
+      evaluateGstPolicy = loaded.evaluateGstPolicy;
+      gstPolicyLoaded = true;
+      break;
+    }
+  } catch (error) {
+    logger.warn({ err: error, candidate }, "gst_policy_module_load_failed");
   }
-} catch (error) {
-  logger.warn({ err: error }, "gst_policy_module_unavailable");
+}
+
+if (!gstPolicyLoaded) {
+  logger.warn({ candidates: gstPolicyCandidates }, "gst_policy_module_unavailable");
 }
 
 const evaluatePolicy: PolicyEval = (input: {
@@ -115,8 +134,12 @@ async function main() {
 
     const mode = parsed.data.riskMode;
     const tier = RiskTier[mode] ?? 99;
-    const cfg = allowlist[mode];
+    const cfg = allowlist[mode] ?? {
+      actions: [],
+      gateCommandPrefixes: [],
+    };
     const reasons: string[] = [];
+    if (!allowlist[mode]) reasons.push(`risk_mode_not_configured:${mode}`);
 
     const aiPolicyPayload = JSON.stringify({
       riskMode: parsed.data.riskMode,

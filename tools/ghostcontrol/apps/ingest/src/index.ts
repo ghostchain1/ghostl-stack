@@ -1,5 +1,5 @@
 import { Queue } from "bullmq";
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 import { z } from "zod";
 
 import { getPrismaClient } from "@ghostcontrol/db";
@@ -137,4 +137,3 @@ main().catch((err) => {
   logger.error({ err }, "ingest_failed");
   process.exit(1);
 });
-
