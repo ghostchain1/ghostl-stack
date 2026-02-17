@@ -1,0 +1,92 @@
+{
+  "routes": [
+    {
+      "from": "l2",
+      "to": "l1",
+      "integration": "ghostchain-core-bridge",
+      "via": "direct"
+    },
+    {
+      "from": "l3",
+      "to": "l2",
+      "integration": "ghostl2-gateway",
+      "via": "l2"
+    },
+    {
+      "from": "l3",
+      "to": "l1",
+      "integration": "ghostchain-settlement",
+      "via": "l2"
+    }
+  ],
+  "containers": [
+    {
+      "name": "ghostcontrol-ui",
+      "user": "1001:1001",
+      "privileged": false,
+      "healthcheck": true,
+      "readOnlyRootFs": true
+    },
+    {
+      "name": "ghostcontrol-api",
+      "user": "1001:1001",
+      "privileged": false,
+      "healthcheck": true,
+      "readOnlyRootFs": true
+    },
+    {
+      "name": "ghostcontrol-policy",
+      "user": "1001:1001",
+      "privileged": false,
+      "healthcheck": true,
+      "readOnlyRootFs": true
+    },
+    {
+      "name": "ghostcontrol-ingest",
+      "user": "1001:1001",
+      "privileged": false,
+      "healthcheck": true,
+      "readOnlyRootFs": true
+    },
+    {
+      "name": "ghostcontrol-planner",
+      "user": "1001:1001",
+      "privileged": false,
+      "healthcheck": true,
+      "readOnlyRootFs": true
+    },
+    {
+      "name": "ghostcontrol-runner",
+      "user": "1001:1001",
+      "privileged": false,
+      "healthcheck": true,
+      "readOnlyRootFs": false
+    },
+    {
+      "name": "docker-socket-proxy",
+      "user": "65534:65534",
+      "privileged": false,
+      "healthcheck": true,
+      "readOnlyRootFs": true
+    },
+    {
+      "name": "ghostcontrol-db",
+      "user": "70:70",
+      "privileged": false,
+      "healthcheck": true,
+      "readOnlyRootFs": false
+    },
+    {
+      "name": "ghostcontrol-redis",
+      "user": "999:999",
+      "privileged": false,
+      "healthcheck": true,
+      "readOnlyRootFs": false
+    }
+  ],
+  "governance": {
+    "target": "devnet",
+    "proposalApproved": false,
+    "constitutionalGateEnabled": true
+  }
+}

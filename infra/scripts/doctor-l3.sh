@@ -25,7 +25,7 @@ fi
 
 # Prefer the canonical stack-level env if present (this repo is migrating to stack.env as source of truth).
 # Do not echo secrets; this is only to populate addresses/flags consistently across scripts.
-STACK_ENV_FILE="$ROOT_DIR/services/stack.env"
+STACK_ENV_FILE="${STACK_ENV_FILE:-$ROOT_DIR/services/stack.env}"
 if [ -f "$STACK_ENV_FILE" ]; then
   set -a
   # shellcheck disable=SC1090

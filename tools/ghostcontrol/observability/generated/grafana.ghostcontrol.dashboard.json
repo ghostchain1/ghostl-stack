@@ -1,0 +1,179 @@
+{
+  "uid": "ghostcontrol-main",
+  "title": "GhostControl Runtime",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15s",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "ghostcontrol-api health",
+      "id": 1,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "up{job=\"ghostcontrol-api\"}",
+          "legendFormat": "ghostcontrol-api"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "ghostcontrol-api latency",
+      "id": 2,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"ghostcontrol-api\"}[5m]))",
+          "legendFormat": "ghostcontrol-api"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "ghostcontrol-policy health",
+      "id": 3,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "up{job=\"ghostcontrol-policy\"}",
+          "legendFormat": "ghostcontrol-policy"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "ghostcontrol-policy latency",
+      "id": 4,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"ghostcontrol-policy\"}[5m]))",
+          "legendFormat": "ghostcontrol-policy"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "ghostcontrol-ingest health",
+      "id": 5,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "up{job=\"ghostcontrol-ingest\"}",
+          "legendFormat": "ghostcontrol-ingest"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "ghostcontrol-ingest latency",
+      "id": 6,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "targets": [
+        {
+          "expr": "rate(process_cpu_seconds_total{job=\"ghostcontrol-ingest\"}[5m])",
+          "legendFormat": "ghostcontrol-ingest"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "ghostcontrol-planner health",
+      "id": 7,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "up{job=\"ghostcontrol-planner\"}",
+          "legendFormat": "ghostcontrol-planner"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "ghostcontrol-planner latency",
+      "id": 8,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "targets": [
+        {
+          "expr": "rate(process_cpu_seconds_total{job=\"ghostcontrol-planner\"}[5m])",
+          "legendFormat": "ghostcontrol-planner"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "ghostcontrol-runner health",
+      "id": 9,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "targets": [
+        {
+          "expr": "up{job=\"ghostcontrol-runner\"}",
+          "legendFormat": "ghostcontrol-runner"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "ghostcontrol-runner latency",
+      "id": 10,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "targets": [
+        {
+          "expr": "rate(process_cpu_seconds_total{job=\"ghostcontrol-runner\"}[5m])",
+          "legendFormat": "ghostcontrol-runner"
+        }
+      ]
+    }
+  ]
+}

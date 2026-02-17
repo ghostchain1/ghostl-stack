@@ -7,6 +7,8 @@ dist
 
 # Evidence (dev-only)
 evidence
+incidents/*.db
+incidents/*.db-*
 
 # Secrets (dev-only; do not commit real keys)
 secrets/signing.key
@@ -14,4 +16,3 @@ secrets/signing.pub
 secrets/*.pem
 secrets/*.key
 secrets/*.crt
-

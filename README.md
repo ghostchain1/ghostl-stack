@@ -209,6 +209,12 @@ Start devnet:
 docker compose up -d
 ```
 
+Production bootstrap + readiness (Vault-backed):
+
+```bash
+npm run configure:build:ready
+```
+
 ---
 
 ## 🧪 Testing & Safety

@@ -1,0 +1,16 @@
+[Unit]
+Description=GhostControl Event Watchdog Healthcheck
+After=ghostcontrol-event-watchdog.service
+Requires=ghostcontrol-event-watchdog.service
+OnFailure=ghostcontrol-event-watchdog-recovery.service
+
+[Service]
+Type=oneshot
+User=ghost
+Group=ghost
+WorkingDirectory=/home/ghost/ghostl-stack/tools/ghostcontrol
+Environment=GHOSTCONTROL_WATCHDOG_STATUS_PATH=/home/ghost/ghostl-stack/tools/ghostcontrol/evidence/logs/event-watchdog.status.json
+Environment=GHOSTCONTROL_WATCHDOG_MAX_STALE_SECONDS=120
+ExecStart=/usr/bin/node --experimental-strip-types /home/ghost/ghostl-stack/tools/ghostcontrol/orchestrator/watchdog_healthcheck.ts
+StandardOutput=append:/home/ghost/ghostl-stack/tools/ghostcontrol/evidence/logs/event-watchdog-health.log
+StandardError=append:/home/ghost/ghostl-stack/tools/ghostcontrol/evidence/logs/event-watchdog-health.log
