@@ -6,17 +6,17 @@
   "governanceTimelock": "0x0000000000000000000000000000000000000000",
   "enforceHierarchicalFinality": true,
   "oracles": {
-    "l1": "0x88E341F36Cc2922b9f1EA1f5A51558319E6Af1a3",
-    "l2": "0x2C001131e99c79e6dDF9f099F2101e9535172Db1",
-    "l3": "0x58817798e96537118D813aeee3B3bFCaaec48BB6"
+    "l1": "0x0DD643Af9D341e9AA19AbBdbe0a15301DA1464CD",
+    "l2": "0x59c0C9fc67D788C7a32002126e547D7F66D75d36",
+    "l3": "0x6430473df3ef1318bf7579239f5da8D52724bb97"
   },
   "wiring": {
     "bridge": null,
     "rollupL2L1": "0xad32D5C2Da9f4159C4cc98686C005852b3905355",
     "rollupL3L2": null,
     "rollupL2ParentOracle": "0x2C001131e99c79e6dDF9f099F2101e9535172Db1",
-    "rollupL3ParentOracle": "0x58817798e96537118D813aeee3B3bFCaaec48BB6",
+    "rollupL3ParentOracle": "0x6430473df3ef1318bf7579239f5da8D52724bb97",
     "skipped": []
   },
-  "generatedAt": "2026-02-18T03:54:21.204Z"
+  "generatedAt": "2026-02-18T10:42:21.406Z"
 }
