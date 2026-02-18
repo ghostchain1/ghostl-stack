@@ -370,7 +370,6 @@ fi
 [ -f "$ROOT_DIR/infra/opstack/.env.l2" ] || die "missing infra/opstack/.env.l2"
 [ -f "$ROOT_DIR/infra/opstack/.env.l3" ] || die "missing infra/opstack/.env.l3"
 [ -f "$ROOT_DIR/infra/ghostchain/.env.l1" ] || die "missing infra/ghostchain/.env.l1"
-[ -f "$ROOT_DIR/services/stack.env" ] || die "missing services/stack.env"
 
 log "Mode: $MODE"
 log "Secrets source: $SECRETS_SOURCE"
@@ -391,6 +390,7 @@ fi
 run_step "env-sync-l1" env ALLOW_DEV_SECRETS="$ALLOW_DEV_SECRETS_VALUE" bash "$ROOT_DIR/infra/scripts/env-sync-l1.sh"
 run_step "env-sync-l2" env ALLOW_DEV_SECRETS="$ALLOW_DEV_SECRETS_VALUE" bash "$ROOT_DIR/infra/scripts/env-sync-l2.sh"
 run_step "env-sync-l3" env ALLOW_DEV_SECRETS="$ALLOW_DEV_SECRETS_VALUE" bash "$ROOT_DIR/infra/scripts/env-sync-l3.sh"
+run_step "env-sync-stack" env STACK_ENV_REQUIRED=1 STACK_ENV_CREATE_IF_MISSING=1 bash "$ROOT_DIR/infra/scripts/env-sync-stack.sh"
 
 L1_ENV_FILE_ACTIVE="$SUMMARY_DIR/.env.l1.override"
 L2_ENV_FILE_ACTIVE="$SUMMARY_DIR/.env.l2.override"

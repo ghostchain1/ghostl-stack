@@ -45,4 +45,4 @@ Conventions:
 - Build services sequentially to avoid resource contention: `./scripts/build-services-sequential.sh`.
 
 Local bringup (recommended):
-`cd services && sudo docker compose --env-file stack.env -f docker-compose.legacy.yml up -d`
+`bash infra/scripts/env-sync-stack.sh && cd services && sudo docker compose --env-file stack.env -f docker-compose.legacy.yml up -d`

@@ -32,6 +32,7 @@ fi
 # Prefer the canonical stack-level env if present (this repo is migrating to stack.env as source of truth).
 # Do not echo secrets; this is only to populate addresses/flags consistently across scripts.
 STACK_ENV_FILE="${STACK_ENV_FILE:-$ROOT_DIR/services/stack.env}"
+STACK_ENV_REQUIRED=0 STACK_ENV_CREATE_IF_MISSING=0 bash "$ROOT_DIR/infra/scripts/env-sync-stack.sh" >/dev/null
 if [ -f "$STACK_ENV_FILE" ]; then
   set -a
   # shellcheck disable=SC1090
