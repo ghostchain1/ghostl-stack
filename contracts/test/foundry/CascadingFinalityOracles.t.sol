@@ -7,6 +7,10 @@ import "../../src/governance/bridge/L1FinalityOracle.sol";
 import "../../src/governance/bridge/L2FinalityOracle.sol";
 import "../../src/governance/bridge/L3FinalityOracle.sol";
 
+interface IL1FinalityHaltAdmin {
+    function setFinalityHalted(bool halted) external;
+}
+
 contract CascadingFinalityOraclesTest is TestBase {
     address private constant GOVERNOR = address(0xB0B);
     address private constant TIMELOCK = address(0xBEEF);
@@ -193,7 +197,7 @@ contract CascadingFinalityOraclesTest is TestBase {
         bytes32 l3Root = keccak256("l3-root-halt");
 
         vm.prank(TIMELOCK);
-        l1Oracle.setFinalityHalted(true);
+        IL1FinalityHaltAdmin(address(l1Oracle)).setFinalityHalted(true);
         assertTrue(l2Oracle.isFinalityHalted(), "l2 sees l1 halt");
         assertTrue(l3Oracle.isFinalityHalted(), "l3 sees l1 halt");
 
