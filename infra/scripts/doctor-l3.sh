@@ -61,6 +61,7 @@ L2_ROLLUP_L3_ADDRESS="${L2_ROLLUP_L3_ADDRESS:-}"
 L3_ROLLUP_PROPOSER_HEALTH_URL="${L3_ROLLUP_PROPOSER_HEALTH_URL:-http://localhost:7272/health}"
 L3_ROLLUP_PROGRESS_SAMPLE_SECONDS="${L3_ROLLUP_PROGRESS_SAMPLE_SECONDS:-15}"
 L3_ROLLUP_PROGRESS_MIN_DELTA="${L3_ROLLUP_PROGRESS_MIN_DELTA:-1}"
+L3_ROLLUP_PROGRESS_MAX_WAIT_SECONDS="${L3_ROLLUP_PROGRESS_MAX_WAIT_SECONDS:-60}"
 L3_MAX_ROLLUP_LAG="${L3_MAX_ROLLUP_LAG:-512}"
 
 L3_SECRETS_SOURCE="${L3_SECRETS_SOURCE:-dev}"
@@ -259,28 +260,44 @@ PY
 require_rollup_progress() {
   local sleep_s="$1"
   local min_delta="$2"
+  local max_wait_s waited
 
   local a_raw b_raw a b delta
+  max_wait_s="$(to_int "${L3_ROLLUP_PROGRESS_MAX_WAIT_SECONDS:-$sleep_s}")"
+  if [ "$max_wait_s" -le 0 ] || [ "$max_wait_s" -lt "$sleep_s" ]; then
+    max_wait_s="$sleep_s"
+  fi
+  waited=0
+
   a_raw="$(rollup_proposer_health || true)"
   a="$(json_field "$a_raw" "nextChildBlock" || true)"
   if [ -z "$a" ]; then
     fail "rollup proposer health missing nextChildBlock ($L3_ROLLUP_PROPOSER_HEALTH_URL)"
   fi
-  sleep "$sleep_s"
-  b_raw="$(rollup_proposer_health || true)"
-  b="$(json_field "$b_raw" "nextChildBlock" || true)"
-  if [ -z "$b" ]; then
-    fail "rollup proposer health missing nextChildBlock (2nd sample) ($L3_ROLLUP_PROPOSER_HEALTH_URL)"
-  fi
-  # nextChildBlock is end+1
-  if [ "$b" -lt "$a" ]; then
-    fail "rollup proposer cursor regressed (sample1=$a sample2=$b)"
-  fi
-  delta=$((b - a))
-  if [ "$delta" -lt "$min_delta" ]; then
-    fail "no rollup proposer progress detected (sample1=$a sample2=$b delta=$delta over ${sleep_s}s)"
-  fi
-  echo "OK: rollup proposer progressing (nextChildBlock sample1=$a sample2=$b delta=$delta over ${sleep_s}s)"
+
+  while [ "$waited" -lt "$max_wait_s" ]; do
+    sleep "$sleep_s"
+    waited=$((waited + sleep_s))
+    b_raw="$(rollup_proposer_health || true)"
+    b="$(json_field "$b_raw" "nextChildBlock" || true)"
+    if [ -z "$b" ]; then
+      fail "rollup proposer health missing nextChildBlock (elapsed=${waited}s) ($L3_ROLLUP_PROPOSER_HEALTH_URL)"
+    fi
+    # nextChildBlock is end+1
+    if [ "$b" -lt "$a" ]; then
+      fail "rollup proposer cursor regressed (sample1=$a sample2=$b)"
+    fi
+    delta=$((b - a))
+    if [ "$delta" -ge "$min_delta" ]; then
+      echo "OK: rollup proposer progressing (nextChildBlock sample1=$a sample2=$b delta=$delta over ${waited}s)"
+      return 0
+    fi
+    if [ "$waited" -lt "$max_wait_s" ]; then
+      warn "rollup proposer delta below threshold after ${waited}s (delta=$delta, expected >=$min_delta); retrying"
+    fi
+  done
+
+  fail "no rollup proposer progress detected (sample1=$a sample2=$b delta=$delta over ${waited}s, expected >=$min_delta)"
 }
 
 require_execution_progress() {
