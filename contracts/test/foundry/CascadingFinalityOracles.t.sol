@@ -118,6 +118,10 @@ contract CascadingFinalityOraclesTest is TestBase {
         l2Oracle.recordFinalizedL2Root(parentL2Root, 201, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l2-2"));
         vm.prank(GOVERNOR);
         l2Oracle.recordFinalizedL2Root(altParentL2Root, 202, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l2-3"));
+        vm.prank(GOVERNOR);
+        evidenceStore.setReporter(address(l3Oracle), true);
+        vm.prank(GOVERNOR);
+        l3Oracle.setEvidenceRootStore(evidenceStore);
 
         vm.prank(TIMELOCK);
         vm.expectRevert(abi.encodeWithSelector(L3FinalityOracle.L2CanonicalRootUnavailable.selector, uint256(777)));
@@ -148,6 +152,19 @@ contract CascadingFinalityOraclesTest is TestBase {
             POLICY_HASH,
             keccak256("proof-l3-canonical-mismatch")
         );
+
+        bytes32 l3DivergenceEvidence = keccak256("l3-parent-divergence-evidence");
+        vm.prank(TIMELOCK);
+        bool l3Reported = l3Oracle.reportParentL2CanonicalDivergence(202, parentL2Root, l3DivergenceEvidence);
+        assertTrue(l3Reported, "l3 parent divergence evidence reported");
+        assertTrue(
+            evidenceStore.knownRootByKind(l3Oracle.KIND_L3_PARENT_CANONICAL_DIVERGENCE(), l3DivergenceEvidence),
+            "l3 parent divergence evidence anchored"
+        );
+
+        vm.prank(GOVERNOR);
+        bool l3NoConflict = l3Oracle.reportParentL2CanonicalDivergence(201, parentL2Root, l3DivergenceEvidence);
+        assertTrue(!l3NoConflict, "canonical parent is not divergence");
 
         vm.prank(TIMELOCK);
         l3Oracle.recordFinalizedL3Root(
