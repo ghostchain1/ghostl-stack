@@ -1,4 +1,5 @@
 {
-  "rollup": "0xBa3e08b4753E68952031102518379ED2fDADcA30",
-  "chainId": 901
+  "rollup": "0x9Fe28b717aDE38BA99E32c45BE3Ee4291f2E338B",
+  "chainId": 901,
+  "parentFinalityOracle": "0xDeBD0Bc00932E8b5bEfF65053989B0687c894b5F"
 }
