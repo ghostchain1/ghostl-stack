@@ -97,9 +97,9 @@ const SIGNAL_FILTER_OPTIONS: ReadonlyArray<{ key: SignalFilter; label: string }>
 export default async function IncidentsPage({
   searchParams,
 }: {
-  searchParams?: Promise<SearchParamsRecord> | SearchParamsRecord;
+  searchParams?: Promise<SearchParamsRecord>;
 }) {
-  const resolvedSearchParams = await Promise.resolve(searchParams ?? {});
+  const resolvedSearchParams = (await searchParams) ?? {};
   const statusFilter = statusFilterFromParam(firstSearchParamValue(resolvedSearchParams.status));
   const signalFilter = signalFilterFromParam(firstSearchParamValue(resolvedSearchParams.signal));
   const [incidents, eventCycleIncidents] = await Promise.all([
