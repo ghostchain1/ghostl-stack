@@ -9,6 +9,12 @@ ROOT_DIR="${ROOT_DIR:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 
 L3_ENV_FILE="${L3_ENV_FILE:-$ROOT_DIR/infra/opstack/.env.l3}"
 L3_SECRETS_FILE="${L3_SECRETS_FILE:-$ROOT_DIR/infra/opstack/.env.secrets}"
+CLI_L3_SECRETS_SOURCE="${L3_SECRETS_SOURCE-}"
+CLI_ALLOW_DEV_SECRETS="${ALLOW_DEV_SECRETS-}"
+CLI_VAULT_ADDR="${VAULT_ADDR-}"
+CLI_VAULT_TOKEN="${VAULT_TOKEN-}"
+CLI_VAULT_ROLE_ID="${VAULT_ROLE_ID-}"
+CLI_VAULT_SECRET_ID="${VAULT_SECRET_ID-}"
 
 if [ -f "$L3_ENV_FILE" ]; then
   set -a
@@ -31,6 +37,25 @@ if [ -f "$STACK_ENV_FILE" ]; then
   # shellcheck disable=SC1090
   source "$STACK_ENV_FILE"
   set +a
+fi
+
+if [ -n "${CLI_L3_SECRETS_SOURCE:-}" ]; then
+  L3_SECRETS_SOURCE="$CLI_L3_SECRETS_SOURCE"
+fi
+if [ -n "${CLI_ALLOW_DEV_SECRETS:-}" ]; then
+  ALLOW_DEV_SECRETS="$CLI_ALLOW_DEV_SECRETS"
+fi
+if [ -n "${CLI_VAULT_ADDR:-}" ]; then
+  VAULT_ADDR="$CLI_VAULT_ADDR"
+fi
+if [ -n "${CLI_VAULT_TOKEN:-}" ]; then
+  VAULT_TOKEN="$CLI_VAULT_TOKEN"
+fi
+if [ -n "${CLI_VAULT_ROLE_ID:-}" ]; then
+  VAULT_ROLE_ID="$CLI_VAULT_ROLE_ID"
+fi
+if [ -n "${CLI_VAULT_SECRET_ID:-}" ]; then
+  VAULT_SECRET_ID="$CLI_VAULT_SECRET_ID"
 fi
 
 L3_NAME="${L3_NAME:-ghostl3}"
