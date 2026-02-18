@@ -25,3 +25,9 @@ Then watch evidence:
 
 - `GET http://localhost:7401/evidence`
 
+AI consensus safety toggle:
+
+- Config: `tools/ghostcontrol/guards/config/ai-consensus-safety-mode.json`
+- Operational notes: `tools/ghostcontrol/docs/ai-consensus-safety-mode.md`
+- Cascading finality config: `tools/ghostcontrol/guards/config/cascading-finality-safe-mode.json`
+- Cascading finality notes: `tools/ghostcontrol/docs/cascading-finality-safe-mode.md`

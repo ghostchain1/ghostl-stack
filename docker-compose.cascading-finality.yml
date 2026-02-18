@@ -1,0 +1,28 @@
+name: ghostl-cascading-finality
+
+services:
+  ghost-ai-consensus:
+    build:
+      context: ./services/ghost-ai-consensus
+    image: ghostl/ghost-ai-consensus:local
+    environment:
+      PORT: 7715
+      AI_MODEL_HASH: ${AI_MODEL_HASH:-ghost-ai-consensus-model-v1}
+      AI_REVIEW_THRESHOLD: ${AI_REVIEW_THRESHOLD:-65}
+      AI_BLOCK_THRESHOLD: ${AI_BLOCK_THRESHOLD:-90}
+    ports:
+      - "17715:7715"
+
+  ghostchain-bridge-hub:
+    build:
+      context: ./services/ghostchain-bridge-hub
+    image: ghostl/ghostchain-bridge-hub:local
+    environment:
+      PORT: 7720
+      EXTERNAL_CHAIN_ALLOWLIST: ${EXTERNAL_CHAIN_ALLOWLIST:-}
+      ADMIN_TOKEN: ${BRIDGE_HUB_ADMIN_TOKEN:-}
+      BRIDGE_HUB_DATA_DIR: /data
+    ports:
+      - "17720:7720"
+    volumes:
+      - ./services/ghostchain-bridge-hub/data:/data

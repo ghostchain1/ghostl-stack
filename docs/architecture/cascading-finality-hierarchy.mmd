@@ -1,0 +1,40 @@
+flowchart TB
+  external["External Chains"]
+  bridgeHub["GhostChain BridgeHub (L1 only)"]
+
+  subgraph l1["GhostL1 (Sovereign Root)"]
+    l1Chain["GhostChain L1"]
+    l1Oracle["L1FinalityOracle"]
+    l1Rollup["OptimisticRollup (L2->L1)"]
+  end
+
+  subgraph l2["GhostL2 Settlement Layer"]
+    l2Chain["GhostL2"]
+    l2Oracle["L2FinalityOracle"]
+    l3Oracle["L3FinalityOracle"]
+    bridge["L2L3Bridge"]
+    l2Rollup["OptimisticRollup (L3->L2)"]
+  end
+
+  subgraph l3["GhostL3 Execution Layer"]
+    l3Chain["GhostL3"]
+  end
+
+  external --> bridgeHub --> l1Chain
+  l1Chain --> l2Chain --> l3Chain
+
+  l1Oracle --> l2Oracle --> l3Oracle
+  l2Oracle -. requires L1-finalized L2 roots .-> l2Chain
+  l3Oracle -. requires L2 + embedded L1 proof .-> l3Chain
+
+  l2Oracle --> l1Rollup
+  l3Oracle --> l2Rollup
+  l2Oracle --> bridge
+  l3Oracle --> bridge
+
+  classDef sovereign fill:#fef3c7,stroke:#92400e,stroke-width:2px,color:#111827;
+  classDef rollup fill:#dcfce7,stroke:#166534,color:#111827;
+  classDef oracle fill:#dbeafe,stroke:#1d4ed8,color:#111827;
+  class l1Chain,bridgeHub sovereign;
+  class l1Rollup,l2Rollup,bridge rollup;
+  class l1Oracle,l2Oracle,l3Oracle oracle;

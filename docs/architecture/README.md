@@ -17,3 +17,5 @@
 - `smoke-tests.md`: smoke tests per phase
 - `ghostchain-compliance-whitepaper.md`: regulator-facing document
 - `ghostchain-ai-governance-whitepaper.md`: court-ready AI governance whitepaper
+- `ai-consensus-ghostchain-hub.md`: deterministic AI consensus + GhostChain-only hub routing specification
+- `cascading-finality-hierarchy.md` / `cascading-finality-hierarchy.mmd`: hierarchical rollup finality model (`L3 -> L2 -> L1`) with sovereign L1 root enforcement
