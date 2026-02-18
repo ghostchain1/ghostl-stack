@@ -86,6 +86,8 @@ L2_REQUIRE_L2_PROGRESS="${L2_REQUIRE_L2_PROGRESS:-0}"
 L2_REQUIRE_BRIDGE_WIRING="${L2_REQUIRE_BRIDGE_WIRING:-0}"
 L2_PROGRESS_SAMPLE_SECONDS="${L2_PROGRESS_SAMPLE_SECONDS:-15}"
 L2_PROGRESS_MIN_DELTA="${L2_PROGRESS_MIN_DELTA:-1}"
+L2_AUTO_RECOVER_ON_STALL="${L2_AUTO_RECOVER_ON_STALL:-0}"
+L2_AUTO_RECOVER_COOLDOWN_SECONDS="${L2_AUTO_RECOVER_COOLDOWN_SECONDS:-8}"
 
 L2_SECRETS_SOURCE="${L2_SECRETS_SOURCE:-dev}"
 L2_SECRETS_DIR="${L2_SECRETS_DIR:-$ROOT_DIR/infra/opstack/secrets}"
@@ -331,14 +333,68 @@ require_execution_progress() {
   fi
 
   if [ "$b" -lt "$a" ]; then
+    if attempt_l2_auto_recovery "$url" "$sleep_s" "$min_delta" "head_regressed"; then
+      return 0
+    fi
     fail "L2 execution head regressed (sample1=$a sample2=$b)"
   fi
   delta=$((b - a))
   if [ "$delta" -lt "$min_delta" ]; then
+    if attempt_l2_auto_recovery "$url" "$sleep_s" "$min_delta" "stalled"; then
+      return 0
+    fi
     fail "no L2 execution progress detected (sample1=$a sample2=$b delta=$delta, expected >=$min_delta over ${sleep_s}s)"
   fi
 
   echo "OK: L2 execution progressing (sample1=$a sample2=$b delta=$delta over ${sleep_s}s)"
+}
+
+attempt_l2_auto_recovery() {
+  local url="$1"
+  local sleep_s="$2"
+  local min_delta="$3"
+  local reason="${4:-stalled}"
+
+  if [ "$L2_AUTO_RECOVER_ON_STALL" != "1" ]; then
+    return 1
+  fi
+  if [ "${DOCKER_AVAILABLE:-0}" != "1" ] || [ "${COMPOSE_AVAILABLE:-0}" != "1" ]; then
+    warn "L2 auto-recovery requested but docker/compose is unavailable"
+    return 1
+  fi
+
+  warn "L2 execution ${reason}; attempting one-time auto-recovery restart (l2-geth, op-node, op-sequencer, op-batcher)"
+  if ! hg_docker compose -f "$L2_COMPOSE_FILE" restart l2-geth op-node op-sequencer op-batcher >/dev/null 2>&1; then
+    warn "L2 auto-recovery restart failed"
+    return 1
+  fi
+
+  sleep "$L2_AUTO_RECOVER_COOLDOWN_SECONDS"
+
+  local ra rb rdelta
+  ra="$(rpc_block_number_dec "$url" || true)"
+  if [ -z "$ra" ]; then
+    warn "L2 auto-recovery could not fetch eth_blockNumber after restart"
+    return 1
+  fi
+  sleep "$sleep_s"
+  rb="$(rpc_block_number_dec "$url" || true)"
+  if [ -z "$rb" ]; then
+    warn "L2 auto-recovery could not fetch second eth_blockNumber sample"
+    return 1
+  fi
+  if [ "$rb" -lt "$ra" ]; then
+    warn "L2 auto-recovery observed head regression (sample1=$ra sample2=$rb)"
+    return 1
+  fi
+  rdelta=$((rb - ra))
+  if [ "$rdelta" -lt "$min_delta" ]; then
+    warn "L2 auto-recovery did not restore progress (sample1=$ra sample2=$rb delta=$rdelta, expected >=$min_delta)"
+    return 1
+  fi
+
+  echo "OK: L2 execution recovered after restart (sample1=$ra sample2=$rb delta=$rdelta over ${sleep_s}s)"
+  return 0
 }
 
 read_json() {
