@@ -2,9 +2,16 @@
   "services": {
     "alertmanager": {
       "command": [
-        "--config.file=/etc/alertmanager/alertmanager.yml",
-        "--storage.path=/alertmanager"
+        "sed -e \"s|\\$${ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL}|$${ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL}|g\" -e \"s|\\$${ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL}|$${ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL}|g\" /etc/alertmanager/alertmanager.yml > /tmp/alertmanager.rendered.yml && exec alertmanager --config.file=/tmp/alertmanager.rendered.yml --storage.path=/alertmanager"
       ],
+      "entrypoint": [
+        "/bin/sh",
+        "-lc"
+      ],
+      "environment": {
+        "ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL": "${ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL:-http://host.docker.internal:19093/alert-hooks/sovereignty-critical}",
+        "ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL": "${ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL:-http://host.docker.internal:19093/alert-hooks/sovereignty-warning}"
+      },
       "image": "prom/alertmanager:v0.27.0",
       "networks": {
         "default": null,
