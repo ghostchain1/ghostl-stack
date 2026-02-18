@@ -4,6 +4,32 @@ import crypto from "node:crypto";
 import { promises as fs } from "node:fs";
 
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
+
+function parseBool(value: string | undefined, fallback: boolean): boolean {
+  if (value === undefined) return fallback;
+  return TRUE_VALUES.has(value.trim().toLowerCase());
+}
+
+function normalizeAddress(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (!ethers.isAddress(trimmed)) {
+    throw new Error(`invalid address: ${trimmed}`);
+  }
+  return ethers.getAddress(trimmed);
+}
+
+function ensureBytes32(value: string | undefined, label: string): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (!ethers.isHexString(trimmed, 32)) {
+    throw new Error(`${label} must be a 32-byte hex value`);
+  }
+  return trimmed;
+}
 
 async function waitForReceipt(
   provider: ethers.JsonRpcProvider,
@@ -67,6 +93,27 @@ async function main() {
   const l2ChainId = Number(process.env.L2_CHAIN_ID ?? process.env.OP_L2_CHAIN_ID ?? network.config.chainId ?? 901);
   const l3ChainId = Number(process.env.L3_CHAIN_ID ?? process.env.OP_L3_CHAIN_ID ?? 903);
   const challengePeriodSeconds = Number(process.env.CHALLENGE_PERIOD_SECONDS ?? 30);
+  const enableCascadingFinality = parseBool(process.env.ENABLE_CASCADING_FINALITY, true);
+  const enforceHierarchicalFinality = parseBool(process.env.ENFORCE_HIERARCHICAL_FINALITY, true);
+  const autoAcceptPolicyHash = parseBool(process.env.AUTO_ACCEPT_POLICY_HASH, true);
+  const aiPolicyHash = ensureBytes32(process.env.AI_POLICY_HASH, "AI_POLICY_HASH");
+  const governanceExecutorOverride = normalizeAddress(process.env.GOVERNANCE_EXECUTOR);
+  const governanceTimelock = normalizeAddress(process.env.GOVERNANCE_TIMELOCK) ?? ethers.ZeroAddress;
+  const l1RollupParentOracleEnv = normalizeAddress(
+    process.env.L1_ROLLUP_PARENT_ORACLE ??
+      process.env.ROLLUP_L2_PARENT_ORACLE_ADDRESS ??
+      process.env.ROLLUP_L2_PARENT_ORACLE
+  );
+  const l2RollupParentOracleEnv = normalizeAddress(
+    process.env.L2_ROLLUP_PARENT_ORACLE ??
+      process.env.ROLLUP_L3_PARENT_ORACLE_ADDRESS ??
+      process.env.ROLLUP_L3_PARENT_ORACLE
+  );
+  let l1FinalityOracleAddr = normalizeAddress(process.env.L1_FINALITY_ORACLE_ADDRESS) ?? "";
+  let l2FinalityOracleAddr = normalizeAddress(process.env.L2_FINALITY_ORACLE_ADDRESS) ?? "";
+  let l3FinalityOracleAddr = normalizeAddress(process.env.L3_FINALITY_ORACLE_ADDRESS) ?? "";
+  let l1RollupParentOracleAddr = l1RollupParentOracleEnv ?? "";
+  let l2RollupParentOracleAddr = l2RollupParentOracleEnv ?? "";
   const rpcL1 = process.env.RPC_L1 ?? "http://localhost:28545";
   const rpcL2Public =
     process.env.RPC_L2 ??
@@ -75,6 +122,9 @@ async function main() {
 
   console.log(
     `Config -> L2 chainId=${l2ChainId}, L3 chainId=${l3ChainId}, challengePeriodSeconds=${challengePeriodSeconds}`
+  );
+  console.log(
+    `Cascading finality -> enabled=${enableCascadingFinality} enforce=${enforceHierarchicalFinality} aiPolicyHash=${aiPolicyHash ?? "none"}`
   );
   const outputDir = process.env.OUTPUT_DIR ?? path.resolve(__dirname, "..", "deployments", network.name);
   await fs.mkdir(outputDir, { recursive: true });
@@ -162,6 +212,8 @@ async function main() {
   const l3Provider = new ethers.JsonRpcProvider(l3Rpc);
   const l3Signer = new ethers.Wallet(relayerKey, l3Provider);
   const relayerAddr = await l3Signer.getAddress();
+  let l3Nonce = await l3Provider.getTransactionCount(relayerAddr, "pending");
+  const nextL3Nonce = () => l3Nonce++;
 
   console.log("== Set bridge relayer on L2 ==");
   const setRelayerTx = await bridge.setRelayer(relayerAddr, txOpts);
@@ -242,9 +294,144 @@ async function main() {
   await recordDeployment("l2", "OptimisticRollup", l2RollupAddr, l2ChainId);
   console.log("OptimisticRollup L3->L2 (L2):", l2RollupAddr);
 
+  if (enableCascadingFinality) {
+    const governanceExecutor = governanceExecutorOverride ?? (await l2[0].getAddress());
+    console.log("== Deploy/Wire Cascading Finality Oracles on L2 ==");
+    console.log("Cascading governance:", { executor: governanceExecutor, timelock: governanceTimelock });
+
+    const L1FinalityOracle = await ethers.getContractFactory("L1FinalityOracle");
+    const L2FinalityOracle = await ethers.getContractFactory("L2FinalityOracle");
+    const L3FinalityOracle = await ethers.getContractFactory("L3FinalityOracle");
+
+    if (l1FinalityOracleAddr) {
+      const code = await l2Provider.getCode(l1FinalityOracleAddr);
+      if (!code || code === "0x") {
+        throw new Error(`No bytecode at L1_FINALITY_ORACLE_ADDRESS on L2 network: ${l1FinalityOracleAddr}`);
+      }
+    } else {
+      const l1FinalityOracle = await L1FinalityOracle.connect(l2[0]).deploy(governanceExecutor, governanceTimelock, txOpts);
+      await waitForDeployment(l1FinalityOracle, l2Provider, "L1FinalityOracle");
+      l1FinalityOracleAddr = await l1FinalityOracle.getAddress();
+      console.log("L1FinalityOracle (L2):", l1FinalityOracleAddr);
+    }
+
+    if (l2FinalityOracleAddr) {
+      const code = await l2Provider.getCode(l2FinalityOracleAddr);
+      if (!code || code === "0x") {
+        throw new Error(`No bytecode at L2_FINALITY_ORACLE_ADDRESS on L2 network: ${l2FinalityOracleAddr}`);
+      }
+    } else {
+      const l2FinalityOracle = await L2FinalityOracle.connect(l2[0]).deploy(
+        governanceExecutor,
+        governanceTimelock,
+        l1FinalityOracleAddr,
+        txOpts
+      );
+      await waitForDeployment(l2FinalityOracle, l2Provider, "L2FinalityOracle");
+      l2FinalityOracleAddr = await l2FinalityOracle.getAddress();
+      console.log("L2FinalityOracle (L2):", l2FinalityOracleAddr);
+    }
+
+    if (l3FinalityOracleAddr) {
+      const code = await l2Provider.getCode(l3FinalityOracleAddr);
+      if (!code || code === "0x") {
+        throw new Error(`No bytecode at L3_FINALITY_ORACLE_ADDRESS on L2 network: ${l3FinalityOracleAddr}`);
+      }
+    } else {
+      const l3FinalityOracle = await L3FinalityOracle.connect(l2[0]).deploy(
+        governanceExecutor,
+        governanceTimelock,
+        l1FinalityOracleAddr,
+        l2FinalityOracleAddr,
+        txOpts
+      );
+      await waitForDeployment(l3FinalityOracle, l2Provider, "L3FinalityOracle");
+      l3FinalityOracleAddr = await l3FinalityOracle.getAddress();
+      console.log("L3FinalityOracle (L2):", l3FinalityOracleAddr);
+    }
+
+    await recordDeployment("l2", "L1FinalityOracle", l1FinalityOracleAddr, l2ChainId);
+    await recordDeployment("l2", "L2FinalityOracle", l2FinalityOracleAddr, l2ChainId);
+    await recordDeployment("l2", "L3FinalityOracle", l3FinalityOracleAddr, l2ChainId);
+
+    if (aiPolicyHash && autoAcceptPolicyHash) {
+      const l1FinalityOracle = await ethers.getContractAt("L1FinalityOracle", l1FinalityOracleAddr, l2[0]);
+      const accepted = await (l1FinalityOracle as any).acceptedPolicyHash(aiPolicyHash);
+      if (!accepted) {
+        const tx = await (l1FinalityOracle as any).setAcceptedPolicyHash(aiPolicyHash, true, txOpts);
+        await waitForReceipt(l2Provider, tx.hash, "L1FinalityOracle.setAcceptedPolicyHash");
+        console.log("Accepted AI policy hash on L1FinalityOracle:", aiPolicyHash);
+      }
+    }
+
+    const currentBridgeL2Oracle = ethers.getAddress(await bridge.l2FinalityOracle());
+    if (currentBridgeL2Oracle !== l2FinalityOracleAddr) {
+      const tx = await bridge.setL2FinalityOracle(l2FinalityOracleAddr, txOpts);
+      await waitForReceipt(l2Provider, tx.hash, "L2L3Bridge.setL2FinalityOracle");
+    }
+
+    const currentBridgeL3Oracle = ethers.getAddress(await bridge.l3FinalityOracle());
+    if (currentBridgeL3Oracle !== l3FinalityOracleAddr) {
+      const tx = await bridge.setL3FinalityOracle(l3FinalityOracleAddr, txOpts);
+      await waitForReceipt(l2Provider, tx.hash, "L2L3Bridge.setL3FinalityOracle");
+    }
+
+    const currentBridgeEnforcement = Boolean(await bridge.enforceHierarchicalFinality());
+    if (currentBridgeEnforcement !== enforceHierarchicalFinality) {
+      const tx = await bridge.setEnforceHierarchicalFinality(enforceHierarchicalFinality, txOpts);
+      await waitForReceipt(l2Provider, tx.hash, "L2L3Bridge.setEnforceHierarchicalFinality");
+    }
+
+    l2RollupParentOracleAddr = l2RollupParentOracleAddr || l3FinalityOracleAddr;
+    const l2ParentCode = await l2Provider.getCode(l2RollupParentOracleAddr);
+    if (!l2ParentCode || l2ParentCode === "0x") {
+      throw new Error(`No bytecode at L2 rollup parent finality oracle on L2 network: ${l2RollupParentOracleAddr}`);
+    }
+    const currentL2ParentOracle = ethers.getAddress(await l2Rollup.parentFinalityOracle());
+    if (currentL2ParentOracle !== l2RollupParentOracleAddr) {
+      const tx = await l2Rollup.setParentFinalityOracle(l2RollupParentOracleAddr, txOpts);
+      await waitForReceipt(l2Provider, tx.hash, "OptimisticRollup(L3->L2).setParentFinalityOracle");
+    }
+
+    l1RollupParentOracleAddr = l1RollupParentOracleAddr || l2FinalityOracleAddr;
+    const l1ParentCode = await l1Provider.getCode(l1RollupParentOracleAddr);
+    if (!l1ParentCode || l1ParentCode === "0x") {
+      if (l1RollupParentOracleEnv) {
+        throw new Error(`No bytecode at configured L1 rollup parent finality oracle on L1: ${l1RollupParentOracleAddr}`);
+      }
+      console.warn(
+        "Skipping L1 rollup parent oracle wiring: no oracle bytecode on L1 at",
+        l1RollupParentOracleAddr,
+        "(set L1_ROLLUP_PARENT_ORACLE for L1-local oracle)"
+      );
+      l1RollupParentOracleAddr = "";
+    } else {
+      const currentL1ParentOracle = ethers.getAddress(await l1Rollup.parentFinalityOracle());
+      if (currentL1ParentOracle !== l1RollupParentOracleAddr) {
+        // If L1/L2 share RPC+key in dev, refresh nonce to avoid drift from L2 transactions.
+        l1Nonce = await l1Provider.getTransactionCount(l1Address, "pending");
+        const tx = await l1Rollup.setParentFinalityOracle(l1RollupParentOracleAddr, {
+          ...txOpts,
+          nonce: nextL1Nonce()
+        });
+        await waitForReceipt(l1Provider, tx.hash, "OptimisticRollup(L2->L1).setParentFinalityOracle");
+      }
+    }
+
+    console.log("Cascading finality wiring complete:", {
+      l1FinalityOracleAddr,
+      l2FinalityOracleAddr,
+      l3FinalityOracleAddr,
+      l1RollupParentOracleAddr: l1RollupParentOracleAddr || null,
+      l2RollupParentOracleAddr
+    });
+  }
+
   console.log("== Deploy L3Inbox on L3 ==");
+  // If L2/L3 share RPC+key in dev, refresh nonce to avoid drift from L2 transactions.
+  l3Nonce = await l3Provider.getTransactionCount(relayerAddr, "pending");
   const Inbox = await ethers.getContractFactory("L3Inbox");
-  const inbox = await Inbox.connect(l3Signer).deploy(relayerAddr, l3TxOpts);
+  const inbox = await Inbox.connect(l3Signer).deploy(relayerAddr, { ...l3TxOpts, nonce: nextL3Nonce() });
   await waitForDeployment(inbox, l3Provider, "L3Inbox");
   const inboxAddr = await inbox.getAddress();
   await recordDeployment("l3", "L3Inbox", inboxAddr, l3ChainId);
@@ -252,7 +439,7 @@ async function main() {
 
   console.log("== Deploy L3BridgedTokenFactory on L3 ==");
   const Factory = await ethers.getContractFactory("L3BridgedTokenFactory");
-  const factory = await Factory.connect(l3Signer).deploy(relayerAddr, l3TxOpts);
+  const factory = await Factory.connect(l3Signer).deploy(relayerAddr, { ...l3TxOpts, nonce: nextL3Nonce() });
   await waitForDeployment(factory, l3Provider, "L3BridgedTokenFactory");
   const factoryAddr = await factory.getAddress();
   await recordDeployment("l3", "L3BridgedTokenFactory", factoryAddr, l3ChainId);
@@ -261,7 +448,10 @@ async function main() {
   console.log("== Deploy GhostNFT on L3 ==");
   const l3NftName = process.env.L3_NFT_NAME ?? "GhostL3 NFT";
   const l3NftSymbol = process.env.L3_NFT_SYMBOL ?? "GL3NFT";
-  const l3Nft = await GhostNFT.connect(l3Signer).deploy(l3NftName, l3NftSymbol, l3TxOpts);
+  const l3Nft = await GhostNFT.connect(l3Signer).deploy(l3NftName, l3NftSymbol, {
+    ...l3TxOpts,
+    nonce: nextL3Nonce()
+  });
   await waitForDeployment(l3Nft, l3Provider, "GhostNFT L3");
   const l3NftAddr = await l3Nft.getAddress();
   await recordDeployment("l3", "GhostNFT", l3NftAddr, l3ChainId);
@@ -282,7 +472,7 @@ async function main() {
         l3Name,
         l3Symbol,
         l2Decimals,
-        l3TxOpts
+        { ...l3TxOpts, nonce: nextL3Nonce() }
       );
       const deployTokenRcpt = await deployTokenTx.wait();
       const deployed = deployTokenRcpt?.logs
@@ -315,6 +505,12 @@ async function main() {
     `RPC_L3=${rpcL3Public}`,
     `GUARD_POLICY_ADDRESS=${policyAddr}`,
     `BRIDGE_L2L3_ADDRESS=${bridgeAddr}`,
+    `ENABLE_CASCADING_FINALITY=${enableCascadingFinality ? 1 : 0}`,
+    `ENFORCE_HIERARCHICAL_FINALITY=${enforceHierarchicalFinality ? 1 : 0}`,
+    `L1_FINALITY_ORACLE_ADDRESS=${l1FinalityOracleAddr}`,
+    `L2_FINALITY_ORACLE_ADDRESS=${l2FinalityOracleAddr}`,
+    `L3_FINALITY_ORACLE_ADDRESS=${l3FinalityOracleAddr}`,
+    `AI_POLICY_HASH=${aiPolicyHash ?? ""}`,
     `PRIVATE_KEY=`,
     `AI_SIGNER_PRIVATE_KEY=`,
     `AI_GUARDIAN_L1_ADDRESS=`,
@@ -349,8 +545,15 @@ async function main() {
     `RPC_L2=${rpcL2Public}`,
     `RPC_L3=${rpcL3Public}`,
     `BRIDGE_L2L3_ADDRESS=${bridgeAddr}`,
+    `ENABLE_CASCADING_FINALITY=${enableCascadingFinality ? 1 : 0}`,
+    `L1_FINALITY_ORACLE_ADDRESS=${l1FinalityOracleAddr}`,
+    `L2_FINALITY_ORACLE_ADDRESS=${l2FinalityOracleAddr}`,
+    `L3_FINALITY_ORACLE_ADDRESS=${l3FinalityOracleAddr}`,
+    `AI_POLICY_HASH=${aiPolicyHash ?? ""}`,
     `L1_ROLLUP_L2_ADDRESS=${l1RollupAddr}`,
+    `L1_ROLLUP_PARENT_ORACLE=${l1RollupParentOracleAddr}`,
     `L2_ROLLUP_L3_ADDRESS=${l2RollupAddr}`,
+    `L2_ROLLUP_PARENT_ORACLE=${l2RollupParentOracleAddr}`,
     `L3_INBOX_ADDRESS=${inboxAddr}`,
     `L3_TOKEN_FACTORY_ADDRESS=${factoryAddr}`,
     `L3_TOKEN_ADDRESS=${l3TokenAddr}`,
@@ -431,15 +634,54 @@ async function main() {
   await writeLayer("l3");
 
   const rollupConfig = {
-    l1: { rollup: l1RollupAddr, chainId: Number(l1Network.chainId) },
-    l2: { rollup: l2RollupAddr, chainId: l2ChainId },
-    l3: { inbox: inboxAddr, factory: factoryAddr, chainId: l3ChainId }
+    l1: { rollup: l1RollupAddr, chainId: Number(l1Network.chainId), parentFinalityOracle: l1RollupParentOracleAddr || null },
+    l2: { rollup: l2RollupAddr, chainId: l2ChainId, parentFinalityOracle: l2RollupParentOracleAddr || null },
+    l3: { inbox: inboxAddr, factory: factoryAddr, chainId: l3ChainId },
+    cascadingFinality: {
+      enabled: enableCascadingFinality,
+      enforceHierarchicalFinality,
+      aiPolicyHash: aiPolicyHash ?? null,
+      l1FinalityOracle: l1FinalityOracleAddr || null,
+      l2FinalityOracle: l2FinalityOracleAddr || null,
+      l3FinalityOracle: l3FinalityOracleAddr || null
+    }
   };
   {
     const filePath = path.join(outputDir, "rollup-config.json");
     const tmpPath = `${filePath}.tmp-${process.pid}-${Date.now()}`;
     await fs.writeFile(tmpPath, JSON.stringify(rollupConfig, null, 2));
     await fs.rename(tmpPath, filePath);
+  }
+  if (enableCascadingFinality) {
+    const cascadingFinalityConfig = {
+      network: network.name,
+      chainIdL1: Number(l1Network.chainId),
+      chainIdL2: l2ChainId,
+      chainIdL3: l3ChainId,
+      enforceHierarchicalFinality,
+      aiPolicyHash: aiPolicyHash ?? null,
+      oracles: {
+        l1: l1FinalityOracleAddr || null,
+        l2: l2FinalityOracleAddr || null,
+        l3: l3FinalityOracleAddr || null
+      },
+      rollups: {
+        l2OnL1: l1RollupAddr,
+        l2OnL1ParentOracle: l1RollupParentOracleAddr || null,
+        l3OnL2: l2RollupAddr,
+        l3OnL2ParentOracle: l2RollupParentOracleAddr || null
+      },
+      bridge: {
+        l2L3Bridge: bridgeAddr,
+        l2FinalityOracle: l2FinalityOracleAddr || null,
+        l3FinalityOracle: l3FinalityOracleAddr || null
+      }
+    };
+    const filePath = path.join(outputDir, "cascading-finality.json");
+    const tmpPath = `${filePath}.tmp-${process.pid}-${Date.now()}`;
+    await fs.writeFile(tmpPath, JSON.stringify(cascadingFinalityConfig, null, 2));
+    await fs.rename(tmpPath, filePath);
+    console.log("Wrote:", filePath);
   }
   const chainsRoot = path.resolve(ROOT, "chains");
   await fs.mkdir(path.join(chainsRoot, "l2"), { recursive: true });
