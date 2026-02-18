@@ -1,0 +1,35 @@
+{
+  "network": "ghostl2",
+  "chainId": 901,
+  "deployer": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+  "governanceExecutor": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+  "governanceTimelock": "0x0000000000000000000000000000000000000000",
+  "enforceHierarchicalFinality": true,
+  "oracles": {
+    "l1": "0x7B3Be2dDDdDf9A0a3fE1DC57B98980F662C3a422",
+    "l2": "0x650aEF4b63095e4EDe581BC79CdeA927e3ba553A",
+    "l3": "0x87F850cbC2cFfac086F20d0d7307E12d06fA2127"
+  },
+  "wiring": {
+    "bridge": "0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2",
+    "rollupL2L1": "0xE1D07FaaC467934daEb276d57aebFb07c3Ef10D9",
+    "rollupL3L2": "0x130A46b6E41DB6E1e18fb9c759F223c459190e90",
+    "rollupL2ParentOracle": "0x2C001131e99c79e6dDF9f099F2101e9535172Db1",
+    "rollupL3ParentOracle": "0x87F850cbC2cFfac086F20d0d7307E12d06fA2127",
+    "skipped": [
+      {
+        "target": "bridge",
+        "reason": "contract is ABI-incompatible with cascading finality bridge interface"
+      },
+      {
+        "target": "rollupL2L1",
+        "reason": "address has no bytecode on selected network"
+      },
+      {
+        "target": "rollupL3L2",
+        "reason": "contract is ABI-incompatible with OptimisticRollup parent-finality interface"
+      }
+    ]
+  },
+  "generatedAt": "2026-02-18T04:06:18.369Z"
+}
