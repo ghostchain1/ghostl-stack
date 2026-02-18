@@ -5,6 +5,10 @@ import "./TestBase.sol";
 import "../../src/consensus-governance/GhostChainBridgeHub.sol";
 import "../../src/governance/bridge/L1FinalityOracle.sol";
 
+interface IL1FinalityHaltAdmin {
+    function setFinalityHalted(bool halted) external;
+}
+
 contract GhostChainBridgeHubTest is TestBase {
     address private constant GOVERNOR = address(0xB0B);
     address private constant TIMELOCK = address(0xBEEF);
@@ -131,7 +135,7 @@ contract GhostChainBridgeHubTest is TestBase {
         vm.prank(GOVERNOR);
         l1Oracle.setAcceptedPolicyHash(POLICY_HASH, true);
         vm.prank(TIMELOCK);
-        l1Oracle.setFinalityHalted(true);
+        IL1FinalityHaltAdmin(address(l1Oracle)).setFinalityHalted(true);
         assertTrue(hub.isReadOnlyMode(), "readonly via l1 halt");
 
         vm.prank(OPERATOR);
