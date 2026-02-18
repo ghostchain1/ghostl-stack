@@ -42,6 +42,40 @@ contract CascadingFinalityOraclesTest is TestBase {
         l2Oracle.recordFinalizedL2Root(l2Root, 200, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l2"));
 
         assertTrue(l2Oracle.isFinalizedOnL1(l2Root), "l2 finalized on l1");
+        assertEq(l2Oracle.canonicalRootByL2Block(200), l2Root, "l2 canonical root bound");
+    }
+
+    function testL2RejectsCanonicalRootConflictAndSupportsDivergenceEvidence() public {
+        vm.prank(GOVERNOR);
+        l1Oracle.setAcceptedPolicyHash(POLICY_HASH, true);
+        vm.prank(GOVERNOR);
+        l1Oracle.recordFinalizedBlock(100, L1_BLOCK_HASH, L1_QC_HASH, POLICY_HASH);
+
+        bytes32 canonicalRoot = keccak256("l2-root-canonical");
+        bytes32 conflictingRoot = keccak256("l2-root-conflict");
+        bytes32 evidenceHash = keccak256("l2-divergence-evidence");
+
+        vm.prank(GOVERNOR);
+        l2Oracle.recordFinalizedL2Root(canonicalRoot, 250, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l2-canonical"));
+
+        vm.prank(TIMELOCK);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                L2FinalityOracle.L2CanonicalRootMismatch.selector,
+                uint256(250),
+                canonicalRoot,
+                conflictingRoot
+            )
+        );
+        l2Oracle.recordFinalizedL2Root(conflictingRoot, 250, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l2-conflict"));
+
+        vm.prank(GOVERNOR);
+        bool reported = l2Oracle.reportCanonicalRootDivergence(250, conflictingRoot, evidenceHash);
+        assertTrue(reported, "divergence evidence reported");
+
+        vm.prank(TIMELOCK);
+        bool noConflict = l2Oracle.reportCanonicalRootDivergence(250, canonicalRoot, evidenceHash);
+        assertTrue(!noConflict, "canonical root is not divergence");
     }
 
     function testL3RequiresParentL2FinalizedOnL1() public {
