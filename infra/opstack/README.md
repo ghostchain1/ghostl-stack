@@ -75,7 +75,7 @@ bash infra/scripts/opstack/reset.sh
 - Optional: `SECURITY_CHECKPOINTS=1 bash infra/scripts/opstack/deploy.sh` runs Foundry + Slither checks before deploying contracts.
 - For AI economics + governance dashboards, run `services/ghost-gas-engine` (metrics on `:3210`) and keep `ai-monitor` enabled. Prometheus scrapes both by default.
 - If `AI_MONITOR_OBSERVE_ONLY=0`, set `POLICY_REGISTRY_ADDRESS` to the L1 `AgentGovernancePolicy` registry. The L2 doctor will fail closed without it.
-- Set `BRIDGE_L2L3_ADDRESS`, `L2_OUTPUT_ORACLE_ADDRESS`, and `L3_OUTPUT_ORACLE_ADDRESS` in `.env` to enable bridge/oracle telemetry.
+- Set `BRIDGE_L2L3_ADDRESS`, `L1_ROLLUP_L2_ADDRESS`, `L2_ROLLUP_L3_ADDRESS`, `L1_ROLLUP_PARENT_ORACLE`, `L1_FINALITY_ORACLE_ADDRESS`, `L2_FINALITY_ORACLE_ADDRESS`, and `L3_FINALITY_ORACLE_ADDRESS` in `.env` for cascading-finality telemetry and enforcement wiring.
 
 ## Canonical gas token (L1/L2/L3)
 All layers must use the single canonical GST token on GhostChain L1:
