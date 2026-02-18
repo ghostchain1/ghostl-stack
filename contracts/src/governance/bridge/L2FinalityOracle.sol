@@ -2,12 +2,14 @@
 pragma solidity ^0.8.24;
 
 import "../../common/Governed.sol";
+import "../../consensus-governance/ConsensusEvidenceRootStore.sol";
 import "./IFederationFinalityVerifier.sol";
 import "./L1FinalityOracle.sol";
 
 /// @notice L2 finality oracle. A L2 root is accepted only if anchored to an L1-finalized block.
 contract L2FinalityOracle is Governed, IFederationFinalityVerifier {
     uint256 public constant SOURCE_DOMAIN_ID = 2;
+    bytes32 public constant KIND_L2_CANONICAL_DIVERGENCE = keccak256("ghost.consensus.l2.canonical.divergence");
 
     struct FinalizedL2Root {
         bytes32 l2StateRoot;
@@ -21,12 +23,14 @@ contract L2FinalityOracle is Governed, IFederationFinalityVerifier {
     }
 
     L1FinalityOracle public l1FinalityOracle;
+    ConsensusEvidenceRootStore public evidenceRootStore;
 
     mapping(bytes32 => FinalizedL2Root) public finalizedL2Roots;
     mapping(uint256 => bytes32) public canonicalRootByL2Block;
     mapping(bytes32 => bool) public acceptedProofHash;
 
     event L1FinalityOracleUpdated(address indexed oracle);
+    event EvidenceRootStoreUpdated(address indexed evidenceRootStore);
     event L2CanonicalRootBound(uint256 indexed l2BlockNumber, bytes32 indexed l2StateRoot, uint256 indexed l1BlockNumber);
     event L2CanonicalDivergenceReported(
         uint256 indexed l2BlockNumber,
@@ -42,6 +46,9 @@ contract L2FinalityOracle is Governed, IFederationFinalityVerifier {
         bytes32 l1BlockHash,
         bytes32 aiPolicyHash,
         bytes32 finalityProofHash
+    );
+    event L2CanonicalDivergenceAnchored(
+        uint256 indexed l2BlockNumber, bytes32 indexed evidenceHash, bytes32 indexed metadataHash, uint32 version
     );
 
     error InvalidRoot();
@@ -63,6 +70,11 @@ contract L2FinalityOracle is Governed, IFederationFinalityVerifier {
         require(address(l1FinalityOracle_) != address(0), "l1Oracle=0");
         l1FinalityOracle = l1FinalityOracle_;
         emit L1FinalityOracleUpdated(address(l1FinalityOracle_));
+    }
+
+    function setEvidenceRootStore(ConsensusEvidenceRootStore evidenceRootStore_) external onlyGovernance {
+        evidenceRootStore = evidenceRootStore_;
+        emit EvidenceRootStoreUpdated(address(evidenceRootStore_));
     }
 
     function recordFinalizedL2Root(
@@ -123,6 +135,15 @@ contract L2FinalityOracle is Governed, IFederationFinalityVerifier {
         if (canonicalRoot == conflictingRoot) return false;
 
         emit L2CanonicalDivergenceReported(l2BlockNumber, canonicalRoot, conflictingRoot, evidenceHash, msg.sender);
+
+        ConsensusEvidenceRootStore store = evidenceRootStore;
+        if (address(store) != address(0)) {
+            bytes32 metadataHash = keccak256(abi.encode(l2BlockNumber, canonicalRoot, conflictingRoot));
+            uint32 version = store.recordEvidenceRootByReporter(
+                KIND_L2_CANONICAL_DIVERGENCE, evidenceHash, 0, 0, metadataHash
+            );
+            emit L2CanonicalDivergenceAnchored(l2BlockNumber, evidenceHash, metadataHash, version);
+        }
         return true;
     }
 

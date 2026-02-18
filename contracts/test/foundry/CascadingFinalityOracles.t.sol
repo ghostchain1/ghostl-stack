@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "./TestBase.sol";
+import "../../src/consensus-governance/ConsensusEvidenceRootStore.sol";
 import "../../src/governance/bridge/L1FinalityOracle.sol";
 import "../../src/governance/bridge/L2FinalityOracle.sol";
 import "../../src/governance/bridge/L3FinalityOracle.sol";
@@ -17,11 +18,13 @@ contract CascadingFinalityOraclesTest is TestBase {
     L1FinalityOracle private l1Oracle;
     L2FinalityOracle private l2Oracle;
     L3FinalityOracle private l3Oracle;
+    ConsensusEvidenceRootStore private evidenceStore;
 
     function setUp() public {
         l1Oracle = new L1FinalityOracle(GOVERNOR, TIMELOCK);
         l2Oracle = new L2FinalityOracle(GOVERNOR, TIMELOCK, l1Oracle);
         l3Oracle = new L3FinalityOracle(GOVERNOR, TIMELOCK, l1Oracle, l2Oracle);
+        evidenceStore = new ConsensusEvidenceRootStore(GOVERNOR, TIMELOCK);
     }
 
     function testL2RequiresL1Finality() public {
@@ -58,6 +61,11 @@ contract CascadingFinalityOraclesTest is TestBase {
         vm.prank(GOVERNOR);
         l2Oracle.recordFinalizedL2Root(canonicalRoot, 250, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l2-canonical"));
 
+        vm.prank(GOVERNOR);
+        evidenceStore.setReporter(address(l2Oracle), true);
+        vm.prank(GOVERNOR);
+        l2Oracle.setEvidenceRootStore(evidenceStore);
+
         vm.prank(TIMELOCK);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -72,6 +80,10 @@ contract CascadingFinalityOraclesTest is TestBase {
         vm.prank(GOVERNOR);
         bool reported = l2Oracle.reportCanonicalRootDivergence(250, conflictingRoot, evidenceHash);
         assertTrue(reported, "divergence evidence reported");
+        assertTrue(
+            evidenceStore.knownRootByKind(l2Oracle.KIND_L2_CANONICAL_DIVERGENCE(), evidenceHash),
+            "divergence evidence anchored"
+        );
 
         vm.prank(TIMELOCK);
         bool noConflict = l2Oracle.reportCanonicalRootDivergence(250, canonicalRoot, evidenceHash);

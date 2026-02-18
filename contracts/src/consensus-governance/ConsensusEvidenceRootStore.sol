@@ -17,6 +17,7 @@ contract ConsensusEvidenceRootStore is Governed {
 
     mapping(bytes32 => EvidenceRoot) public latestRootByKind;
     mapping(bytes32 => mapping(bytes32 => bool)) public knownRootByKind;
+    mapping(address => bool) public reporters;
 
     event EvidenceRootRecorded(
         bytes32 indexed kind,
@@ -27,10 +28,12 @@ contract ConsensusEvidenceRootStore is Governed {
         bytes32 metadataHash,
         address recorder
     );
+    event ReporterUpdated(address indexed reporter, bool allowed);
 
     error InvalidKind();
     error InvalidRoot();
     error InvalidValidityRange();
+    error UnauthorizedReporter(address reporter);
 
     constructor(address governor_, address timelock_) Governed(governor_, timelock_) {}
 
@@ -39,6 +42,33 @@ contract ConsensusEvidenceRootStore is Governed {
         onlyGovernance
         returns (uint32 version)
     {
+        return _recordEvidenceRoot(kind, root, validFrom, validUntil, metadataHash, msg.sender);
+    }
+
+    function setReporter(address reporter, bool allowed) external onlyGovernance {
+        reporters[reporter] = allowed;
+        emit ReporterUpdated(reporter, allowed);
+    }
+
+    function recordEvidenceRootByReporter(
+        bytes32 kind,
+        bytes32 root,
+        uint64 validFrom,
+        uint64 validUntil,
+        bytes32 metadataHash
+    ) external returns (uint32 version) {
+        if (!reporters[msg.sender]) revert UnauthorizedReporter(msg.sender);
+        return _recordEvidenceRoot(kind, root, validFrom, validUntil, metadataHash, msg.sender);
+    }
+
+    function _recordEvidenceRoot(
+        bytes32 kind,
+        bytes32 root,
+        uint64 validFrom,
+        uint64 validUntil,
+        bytes32 metadataHash,
+        address recorder
+    ) internal returns (uint32 version) {
         if (kind == bytes32(0)) revert InvalidKind();
         if (root == bytes32(0)) revert InvalidRoot();
 
@@ -55,11 +85,11 @@ contract ConsensusEvidenceRootStore is Governed {
             validFrom: startsAt,
             validUntil: validUntil,
             metadataHash: metadataHash,
-            recorder: msg.sender
+            recorder: recorder
         });
         knownRootByKind[kind][root] = true;
 
-        emit EvidenceRootRecorded(kind, root, version, startsAt, validUntil, metadataHash, msg.sender);
+        emit EvidenceRootRecorded(kind, root, version, startsAt, validUntil, metadataHash, recorder);
     }
 
     function isRootActive(bytes32 kind, bytes32 root) external view returns (bool) {
