@@ -228,7 +228,7 @@ contract SlashingManager is Governed {
         return 0;
     }
 
-    function _validateEvidence(address operator, FeeViolationEvidence memory evidence) internal view {
+    function _validateEvidence(address operator, FeeViolationEvidence memory evidence) internal pure {
         require(evidence.chainId != 0, "chainId=0");
         require(evidence.blockEnd >= evidence.blockStart, "block range");
         require(evidence.attestor != address(0), "attestor=0");
