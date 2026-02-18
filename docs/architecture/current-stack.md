@@ -1,6 +1,6 @@
 # Current Stack (L1/L2/L3)
 
-Last updated: 2026-02-04
+Last updated: 2026-02-18
 
 ## Sources of Truth (files)
 - `infra/opstack/.env`
@@ -25,18 +25,22 @@ Last updated: 2026-02-04
 - Host RPC: `http://localhost:29547` (from `infra/opstack/.env` `HOST_L2_RPC`)
 - Chain ID: `901` (from `infra/opstack/.env` `L2_CHAIN_ID`)
 - OP components (compose): `op-geth`, `op-node`, `op-batcher`, `op-proposer`, `op-challenger`
-- Output oracle (L2->L1): `L2_OUTPUT_ORACLE_ADDRESS=0x1275D096B9DBf2347bD2a131Fb6BDaB0B4882487`
-- L1 standard bridge: `0xC6bA8C3233eCF65B761049ef63466945c362EdD2`
-- L1 cross-domain messenger: `0x59F2f1fCfE2474fD5F0b9BA1E73ca90b143Eb8d0`
+- Output oracle (L2->L1): `L2_OUTPUT_ORACLE_ADDRESS=0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6`
+- L1 standard bridge: `0xa513E6E4b8f2a923D98304ec87F64353C4D5C853`
+- L1 cross-domain messenger: `0x0165878A594ca255338adfa4d48449f69242Eb8F`
 
 ### L3 (OP Stack anchored to L2)
 - Host RPC: `http://localhost:39545` (from `infra/opstack/.env` `HOST_L3_RPC`)
 - Chain ID: `903` (from `infra/opstack/.env` `OP_L3_CHAIN_ID`)
 - Parent L2 RPC: `http://localhost:29547` (from `infra/opstack/.env.l3` `PARENT_L2_RPC`)
-- L3 system config: `0x712516e61C8B383dF4A63CFe83d7701Bce54B03e`
-- L3 portal: `0xbCF26943C0197d2eE0E5D05c716Be60cc2761508`
-- L3 dispute game factory: `0x05Aa229Aec102f78CE0E852A812a388F076Aa555`
-- L3 L2OO address: `0x1275D096B9DBf2347bD2a131Fb6BDaB0B4882487`
+- L3 inbox: `0x8464135c8F25Da09e49BC8782676a84730C318bC`
+- L3 token factory: `0x71C95911E9a5D330f4D621842EC243EE1343292e`
+- L2->L3 rollup: `0x130A46b6E41DB6E1e18fb9c759F223c459190e90`
+- L2->L3 bridge (services): `0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2`
+- Cascading finality oracles on L2:
+  - `L1_FINALITY_ORACLE_ADDRESS=0x7B3Be2dDDdDf9A0a3fE1DC57B98980F662C3a422`
+  - `L2_FINALITY_ORACLE_ADDRESS=0x650aEF4b63095e4EDe581BC79CdeA927e3ba553A`
+  - `L3_FINALITY_ORACLE_ADDRESS=0x87F850cbC2cFfac086F20d0d7307E12d06fA2127`
 
 ## AI / Governance Services
 - AI monitor service: `services/ai-monitor`
