@@ -9,6 +9,10 @@ import "../../src/governance/bridge/L1FinalityOracle.sol";
 import "../../src/governance/bridge/L2FinalityOracle.sol";
 import "../../src/governance/bridge/L3FinalityOracle.sol";
 
+interface IL1FinalityHaltAdmin {
+    function setFinalityHalted(bool halted) external;
+}
+
 contract L2L3BridgeCascadingFinalityTest is TestBase {
     address private constant GOVERNOR = address(0xB0B);
     address private constant TIMELOCK = address(0xBEEF);
@@ -111,7 +115,7 @@ contract L2L3BridgeCascadingFinalityTest is TestBase {
         bridge.depositToL3(address(this), 1 ether, 77);
 
         vm.prank(GOVERNOR);
-        l1Oracle.setFinalityHalted(true);
+        IL1FinalityHaltAdmin(address(l1Oracle)).setFinalityHalted(true);
 
         vm.prank(RELAYER);
         vm.expectRevert(bytes("L1_FINALITY_HALTED"));
