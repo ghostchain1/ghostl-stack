@@ -59,3 +59,59 @@ groups:
         annotations:
           summary: "Proposer idle"
           description: "op-proposer has not published an output for over 15 minutes."
+
+  - name: ghost-cascading-finality
+    rules:
+      - alert: GhostConsensusTelemetryDown
+        expr: up{job="consensus-telemetry"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Consensus telemetry is down"
+          description: "Prometheus cannot scrape consensus-telemetry for more than 2 minutes."
+
+      - alert: GhostLayerUnhealthy
+        expr: ghost_consensus_layer_up{layer=~"L1|L2|L3"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Ghost layer unhealthy"
+          description: "Layer {{ $labels.layer }} is not reporting healthy consensus telemetry."
+
+      - alert: GhostCascadingFinalityLag
+        expr: ghost_consensus_op_lag_blocks{layer=~"L2|L3",type="safe_finalized"} > 240
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Cascading finality lag elevated"
+          description: "Layer {{ $labels.layer }} safe->finalized lag is {{ $value }} blocks for over 5 minutes."
+
+      - alert: GhostSettlementAgeHigh
+        expr: ghost_consensus_output_oracle_age_seconds{layer=~"L2|L3"} > 900
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Settlement age high"
+          description: "Layer {{ $labels.layer }} output oracle age is {{ $value }} seconds."
+
+      - alert: GhostBridgeFinalizeStalled
+        expr: ghost_consensus_bridge_oldest_pending_age_seconds > 1800 and ghost_consensus_bridge_oldest_pending_age_seconds != -1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Bridge finalization backlog is stale"
+          description: "Oldest pending L2->L3 bridge item exceeds 30 minutes."
+
+      - alert: GhostSovereigntyViolationSignal
+        expr: max by (layer, type) (ghost_consensus_incident{type=~"bridge_finalize_without_deposit|oracle_block_mismatch|oracle_index_mismatch|oracle_zero_root|oracle_output_missing"}) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Sovereignty violation signal"
+          description: "Incident {{ $labels.type }} is active on {{ $labels.layer }} and requires immediate triage."
