@@ -23,9 +23,18 @@ contract L2FinalityOracle is Governed, IFederationFinalityVerifier {
     L1FinalityOracle public l1FinalityOracle;
 
     mapping(bytes32 => FinalizedL2Root) public finalizedL2Roots;
+    mapping(uint256 => bytes32) public canonicalRootByL2Block;
     mapping(bytes32 => bool) public acceptedProofHash;
 
     event L1FinalityOracleUpdated(address indexed oracle);
+    event L2CanonicalRootBound(uint256 indexed l2BlockNumber, bytes32 indexed l2StateRoot, uint256 indexed l1BlockNumber);
+    event L2CanonicalDivergenceReported(
+        uint256 indexed l2BlockNumber,
+        bytes32 indexed canonicalRoot,
+        bytes32 indexed conflictingRoot,
+        bytes32 evidenceHash,
+        address reporter
+    );
     event L2RootFinalized(
         bytes32 indexed l2StateRoot,
         uint256 indexed l2BlockNumber,
@@ -40,6 +49,9 @@ contract L2FinalityOracle is Governed, IFederationFinalityVerifier {
     error InvalidProofHash();
     error L1BlockNotFinalized(uint256 blockNumber, bytes32 blockHash);
     error PolicyHashMismatch(bytes32 aiPolicyHash);
+    error L2CanonicalRootMismatch(uint256 l2BlockNumber, bytes32 canonicalRoot, bytes32 conflictingRoot);
+    error CanonicalRootUnavailable(uint256 l2BlockNumber);
+    error InvalidEvidenceHash();
 
     constructor(address governor_, address timelock_, L1FinalityOracle l1FinalityOracle_) Governed(governor_, timelock_) {
         require(address(l1FinalityOracle_) != address(0), "l1Oracle=0");
@@ -72,6 +84,14 @@ contract L2FinalityOracle is Governed, IFederationFinalityVerifier {
             revert PolicyHashMismatch(aiPolicyHash);
         }
 
+        bytes32 canonicalRoot = canonicalRootByL2Block[l2BlockNumber];
+        if (canonicalRoot == bytes32(0)) {
+            canonicalRootByL2Block[l2BlockNumber] = l2StateRoot;
+            emit L2CanonicalRootBound(l2BlockNumber, l2StateRoot, l1BlockNumber);
+        } else if (canonicalRoot != l2StateRoot) {
+            revert L2CanonicalRootMismatch(l2BlockNumber, canonicalRoot, l2StateRoot);
+        }
+
         finalizedL2Roots[l2StateRoot] = FinalizedL2Root({
             l2StateRoot: l2StateRoot,
             l2BlockNumber: l2BlockNumber,
@@ -86,6 +106,24 @@ contract L2FinalityOracle is Governed, IFederationFinalityVerifier {
         acceptedProofHash[finalityProofHash] = true;
 
         emit L2RootFinalized(l2StateRoot, l2BlockNumber, l1BlockNumber, l1BlockHash, aiPolicyHash, finalityProofHash);
+    }
+
+    /// @notice Records divergence evidence when a proposed root conflicts with the canonical root for an L2 block.
+    /// @dev Returns true when a divergence was reported, false if the provided root equals the canonical root.
+    function reportCanonicalRootDivergence(uint256 l2BlockNumber, bytes32 conflictingRoot, bytes32 evidenceHash)
+        external
+        onlyGovernance
+        returns (bool)
+    {
+        if (conflictingRoot == bytes32(0)) revert InvalidRoot();
+        if (evidenceHash == bytes32(0)) revert InvalidEvidenceHash();
+
+        bytes32 canonicalRoot = canonicalRootByL2Block[l2BlockNumber];
+        if (canonicalRoot == bytes32(0)) revert CanonicalRootUnavailable(l2BlockNumber);
+        if (canonicalRoot == conflictingRoot) return false;
+
+        emit L2CanonicalDivergenceReported(l2BlockNumber, canonicalRoot, conflictingRoot, evidenceHash, msg.sender);
+        return true;
     }
 
     function isFinalizedOnL1(bytes32 l2StateRoot) external view returns (bool) {
