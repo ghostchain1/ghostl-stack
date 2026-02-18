@@ -19,3 +19,15 @@ fs_permissions = [
   { access = "read", path = "../infra" },
   { access = "read", path = "../services" }
 ]
+
+# GhostChain L1 may run a pre-Shanghai EVM; this profile disables via-IR and
+# targets a pre-Shanghai EVM version to avoid PUSH0 bytecode.
+[profile.legacy]
+out = "out-legacy"
+cache_path = "cache-legacy"
+build_info_path = "out-legacy/build-info"
+test_failures_file = "cache-legacy/test-failures"
+fuzz = { runs = 128, failure_persist_dir = "cache-legacy/fuzz" }
+invariant = { runs = 64, failure_persist_dir = "cache-legacy/invariant" }
+via_ir = false
+evm_version = "paris"

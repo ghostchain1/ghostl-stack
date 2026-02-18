@@ -8,7 +8,7 @@ interface IERC20RewardToken {
     function transfer(address to, uint256 amount) external returns (bool);
 }
 
-/// @notice Distributes canonical GHOST tokens to stakers based on share snapshots (naive implementation).
+/// @notice Distributes canonical GST tokens to stakers based on share snapshots (naive implementation).
 contract RewardDistributor is Governed {
     address internal constant CANONICAL_GAS_TOKEN = 0x5FbDB2315678afecb367f032d93F642f64180aa3;
 

@@ -5,6 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 OP_DIR="$ROOT/infra/opstack"
 
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT}/scripts/lib/docker.sh"
+hg_require_docker_compose
+
 L3_NAME="${L3_NAME:-ghostl3}"
 L3_ENV_FILE="$OP_DIR/l3/$L3_NAME/.env"
 
@@ -25,9 +29,9 @@ if [ -f "$OP_DIR/.env.secrets" ]; then
 fi
 
 cd "$OP_DIR"
-docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" stop --no-deps \
+hg_docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" stop \
   l3-geth l3-op-node l3-op-batcher l3-op-proposer >/dev/null 2>&1 || true
-docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" rm -f --no-deps \
+hg_docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" rm -f \
   l3-geth l3-op-node l3-op-batcher l3-op-proposer >/dev/null 2>&1 || true
 
 echo "Stopped OP Stack L3 ($L3_NAME)"

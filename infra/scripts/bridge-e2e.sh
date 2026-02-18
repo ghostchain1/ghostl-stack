@@ -4,7 +4,7 @@ set -Eeuo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 MODE="${BRIDGE_E2E_MODE:-l2l3}"
 RUN="false"
-AMOUNT="${DEMO_AMOUNT_ETH:-1}"
+AMOUNT="${DEMO_AMOUNT_GST:-1}"
 RELAYER_HEALTH_URL="${RELAYER_HEALTH_URL:-http://localhost:7171/health}"
 STACK_ENV_FILE="${STACK_ENV_FILE:-$ROOT_DIR/services/stack.env}"
 
@@ -50,23 +50,24 @@ normalize_rpc_url() {
 
 code_len() {
   local url="$1" addr="$2"
-  rpc "$url" eth_getCode "[\"$addr\",\"latest\"]" | python3 - <<'PY'
-import json,sys
-j=json.load(sys.stdin)
-code=j.get("result","") or ""
-print(max(0, len(code)-2) if code.startswith("0x") else len(code))
-PY
+  rpc "$url" eth_getCode "[\"$addr\",\"latest\"]" | python3 -c 'import json,sys
+raw=sys.stdin.read()
+code=""
+try:
+  j=json.loads(raw)
+  code=j.get("result","") or ""
+except Exception:
+  code=""
+print(max(0, len(code)-2) if code.startswith("0x") else len(code))'
 }
 
 hex_to_int() {
-  python3 - <<'PY'
-import sys
+  python3 -c 'import sys
 s=sys.stdin.read().strip()
 try:
   print(int(s,16))
 except Exception:
-  print("")
-PY
+  print("")'
 }
 
 maybe_source_stack_env() {
@@ -108,7 +109,7 @@ case "$MODE" in
         exit 1
 	      fi
 
-	      DEMO_AMOUNT_ETH="$AMOUNT" bash "$DEPOSIT_SCRIPT"
+	      DEMO_AMOUNT_GST="$AMOUNT" bash "$DEPOSIT_SCRIPT"
 
 	      LAST_DEPOSIT_PATH="$ROOT_DIR/.tmp/last_deposit_erc20.json"
 	      if [[ ! -f "$LAST_DEPOSIT_PATH" ]]; then
@@ -160,7 +161,7 @@ case "$MODE" in
         exit 1
       fi
 
-      DEMO_AMOUNT_ETH="$AMOUNT" bash "$WITHDRAW_SCRIPT"
+      DEMO_AMOUNT_GST="$AMOUNT" bash "$WITHDRAW_SCRIPT"
     fi
     ;;
   l1l2)
@@ -176,8 +177,8 @@ case "$MODE" in
     log "Deposit -> Withdraw"
 
     if [[ "$RUN" == "true" ]]; then
-      DEMO_AMOUNT_ETH="$AMOUNT" bash "$DEPOSIT_SCRIPT"
-      DEMO_AMOUNT_ETH="$AMOUNT" bash "$WITHDRAW_SCRIPT"
+      DEMO_AMOUNT_GST="$AMOUNT" bash "$DEPOSIT_SCRIPT"
+      DEMO_AMOUNT_GST="$AMOUNT" bash "$WITHDRAW_SCRIPT"
     fi
     ;;
   *)

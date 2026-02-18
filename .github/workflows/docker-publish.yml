@@ -26,6 +26,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Enforce GST-native gates
+        run: |
+          bash scripts/gst-leakage-gate.sh
+          bash scripts/gst-symbol-gate.sh
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 

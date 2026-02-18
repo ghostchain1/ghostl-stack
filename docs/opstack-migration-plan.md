@@ -26,7 +26,7 @@ Detailed, ordered plan to move from Polygon Edge (IBFT) to OP Stack while keepin
 - Docs: short README under `infra/opstack/l3/` describing how to mint/bridge a token via Ghost Relayer between L2↔L3.
 
 ## 4) Whitepaper L2 architecture section (outline)
-- Core stack: OP Stack optimistic rollup on Ethereum, batcher/proposer/challenger roles, fraud window, DA (Ethereum calldata today; EigenDA/Celestia option later).
+- Core stack: OP Stack optimistic rollup settling on GhostChain L1, batcher/proposer/challenger roles, fraud window, DA (L1 calldata today; EigenDA/Celestia option later).
 - AI governance: Guard risk scoring on deposits/txs, batch gating before proposal, delayed finalize, auto-quarantine path, and challenger automation based on Guard verdicts.
 - L3 composition: OP Stack app-chains on GhostL2, each with per-app policies and fees; Relayer/Guard act across L2↔L3 bridges.
 - Upgrade path: Hybrid OP+ZK where OP batches gain validity proofs (Polygon CDK/zkEVM) without changing dapps; sequencer remains under Ghost governance; data availability swaps pluggable.

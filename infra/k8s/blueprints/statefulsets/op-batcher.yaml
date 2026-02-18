@@ -36,8 +36,14 @@
           {
             "name": "op-batcher",
             "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:devnet",
-            "command": null,
-            "args": null,
+            "command": [
+              "op-batcher"
+            ],
+            "args": [
+              "--l1-eth-rpc=http://l1:8545",
+              "--l2-eth-rpc=http://l2:8545",
+              "--rollup-rpc=http://op-node:8545"
+            ],
             "env": [
               {
                 "name": "OP_BATCHER_ALTDA_DA_SERVER",
@@ -58,14 +64,6 @@
               {
                 "name": "OP_BATCHER_DATA_AVAILABILITY_TYPE",
                 "value": "${DA_TYPE}"
-              },
-              {
-                "name": "OP_BATCHER_L1_ETH_RPC",
-                "value": "http://l1:8545"
-              },
-              {
-                "name": "OP_BATCHER_L2_ETH_RPC",
-                "value": "http://l2:8545"
               },
               {
                 "name": "OP_BATCHER_MAX_CHANNEL_DURATION",

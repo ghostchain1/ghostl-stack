@@ -104,9 +104,9 @@ if [ -z "$L3_TOKEN_ADDRESS" ] || [ "$L3_TOKEN_ADDRESS" = "0x00000000000000000000
   exit 1
 fi
 
-DEMO_AMOUNT_ETH="${DEMO_AMOUNT_ETH:-1}"
+DEMO_AMOUNT_GST="${DEMO_AMOUNT_GST:-1}"
 
-echo "Demo withdraw ERC20 (burn on L3 -> release on L2) amount=${DEMO_AMOUNT_ETH}"
+echo "Demo withdraw ERC20 (burn on L3 -> release on L2) amount=${DEMO_AMOUNT_GST}"
 echo "Using L2_TOKEN_ADDRESS=$L2_TOKEN_ADDRESS"
 echo "Using L3_TOKEN_ADDRESS=$L3_TOKEN_ADDRESS"
 echo "Account=$DEPOSITOR"
@@ -121,7 +121,7 @@ if echo "$HEALTH_BASE" | jq -e '.observeOnly == true' >/dev/null; then
 fi
 
 cd "$ROOT_DIR/contracts"
-DEMO_AMOUNT_ETH="$DEMO_AMOUNT_ETH" L3_TOKEN_ADDRESS="$L3_TOKEN_ADDRESS" npx hardhat run --network ghostl3Op scripts/demo_burn_erc20_l3.ts
+DEMO_AMOUNT_GST="$DEMO_AMOUNT_GST" L3_TOKEN_ADDRESS="$L3_TOKEN_ADDRESS" npx hardhat run --network ghostl3Op scripts/demo_burn_erc20_l3.ts
 
 LAST_WITHDRAW_PATH="$ROOT_DIR/.tmp/last_withdraw_erc20.json"
 EXPECTED_NONCE="$(jq -r '.nonce' "$LAST_WITHDRAW_PATH")"

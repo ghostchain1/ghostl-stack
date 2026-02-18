@@ -35,7 +35,7 @@
         "containers": [
           {
             "name": "l3-op-node",
-            "image": "ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b",
+            "image": "local/op-node:${OPSTACK_IMAGE_TAG:-local}",
             "command": null,
             "args": [
               "op-node",

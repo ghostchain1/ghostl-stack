@@ -2,7 +2,7 @@
 
 |Service|Image/Build|Method|Arch Support|Notes|
 |---|---|---|---|---|
-|l1-mainnet-geth|ethereum/client-go:stable|pull|unknown|no-recreate|
+|l1-mainnet-geth|ghostl/geth:stable|pull|unknown|no-recreate|
 |network-manager|alpine:3.19|pull|unknown||
 |ai-monitor|local/ai-monitor:${OPSTACK_IMAGE_TAG:-devnet}|pull|unknown||
 |alerts-service|local/alerts-service:${OPSTACK_IMAGE_TAG:-devnet}|pull|unknown||
@@ -25,10 +25,10 @@
 |global-search-service|local/global-search-service:${OPSTACK_IMAGE_TAG:-devnet}|pull|unknown||
 |governance-service|local/governance-service:${OPSTACK_IMAGE_TAG:-devnet}|pull|unknown||
 |key-rotation-service|local/key-rotation-service:${OPSTACK_IMAGE_TAG:-devnet}|pull|unknown||
-|l3-geth|ghcr.io/ethereum-optimism/op-geth@sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0|pull|unknown|no-recreate|
-|l3-op-batcher|ghcr.io/ethereum-optimism/op-batcher@sha256:21a2426a292a0d1b6c3665c9e07549df97d98e40edda6c880d34e22aefe279d2|pull|unknown|no-recreate|
-|l3-op-node|ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b|pull|unknown|no-recreate|
-|l3-op-proposer|ghcr.io/ethereum-optimism/op-proposer@sha256:00590e36e37994eefd8bbc9a6498ad20c62b072b381d0b8cdb7293056e6e5b64|pull|unknown|no-recreate|
+|l3-geth|local/op-geth:${OPSTACK_IMAGE_TAG:-local}|pull|unknown|no-recreate|
+|l3-op-batcher|local/op-batcher:${OPSTACK_IMAGE_TAG:-local}|pull|unknown|no-recreate|
+|l3-op-node|local/op-node:${OPSTACK_IMAGE_TAG:-local}|pull|unknown|no-recreate|
+|l3-op-proposer|local/op-proposer:${OPSTACK_IMAGE_TAG:-local}|pull|unknown|no-recreate|
 |liquidity-service|local/liquidity-service:${OPSTACK_IMAGE_TAG:-devnet}|pull|unknown||
 |mempool-service|local/mempool-service:${OPSTACK_IMAGE_TAG:-devnet}|pull|unknown||
 |network-context-service|local/network-context-service:${OPSTACK_IMAGE_TAG:-devnet}|pull|unknown||
@@ -113,22 +113,22 @@
 |ghostchain-node2|hyperledger/besu:24.12.0|pull|unknown|no-recreate|
 |ghostchain-node3|hyperledger/besu:24.12.0|pull|unknown|no-recreate|
 |ghostchain-node4|hyperledger/besu:24.12.0|pull|unknown|no-recreate|
-|ghostchain-bootnode|${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}|pull|unknown|no-recreate|
-|ghostchain-node1|${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}|pull|unknown|no-recreate|
-|ghostchain-node2|${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}|pull|unknown|no-recreate|
+|ghostchain-bootnode|${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}|pull|unknown|no-recreate|
+|ghostchain-node1|${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}|pull|unknown|no-recreate|
+|ghostchain-node2|${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}|pull|unknown|no-recreate|
 |ghostscout|blockscout/blockscout:latest|pull|unknown||
 |ghostscout-db|postgres:15-alpine|pull|unknown||
 |ghostscout-frontend|ghcr.io/blockscout/frontend:latest|pull|unknown||
 |alertmanager|${ALERTMANAGER_IMAGE:-prom/alertmanager@sha256:e13b6ed5cb929eeaee733479dce55e10eb3bc2e9c4586c705a4e8da41e5eacf5}|pull|unknown||
 |ghost-guard|local/ghost-guard:${OPSTACK_IMAGE_TAG:-devnet}|pull|unknown||
 |grafana|${GRAFANA_IMAGE:-grafana/grafana@sha256:408afb9726de5122b00a2576763a8a57a3c86d5b0eff5305bc994ceb3eb96c3f}|pull|unknown||
-|l2-geth|ghcr.io/ethereum-optimism/op-geth@sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0|pull|unknown|no-recreate|
+|l2-geth|local/op-geth:${OPSTACK_IMAGE_TAG:-local}|pull|unknown|no-recreate|
 |loki|${LOKI_IMAGE:-grafana/loki@sha256:8b5bd7748d0e4da66cd741ac276e485517514af0bea32167e27c0e1a95bcf8aa}|pull|unknown||
-|op-batcher|ghcr.io/ethereum-optimism/op-batcher@sha256:21a2426a292a0d1b6c3665c9e07549df97d98e40edda6c880d34e22aefe279d2|pull|unknown|no-recreate|
+|op-batcher|local/op-batcher:${OPSTACK_IMAGE_TAG:-local}|pull|unknown|no-recreate|
 |op-gate|${OP_GATE_IMAGE:-local/op-gate:0.1.0}|pull|unknown||
-|op-node|ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b|pull|unknown|no-recreate|
-|op-proposer|ghcr.io/ethereum-optimism/op-proposer@sha256:00590e36e37994eefd8bbc9a6498ad20c62b072b381d0b8cdb7293056e6e5b64|pull|unknown|no-recreate|
-|op-sequencer|ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b|pull|unknown|no-recreate|
+|op-node|local/op-node:${OPSTACK_IMAGE_TAG:-local}|pull|unknown|no-recreate|
+|op-proposer|local/op-proposer:${OPSTACK_IMAGE_TAG:-local}|pull|unknown|no-recreate|
+|op-sequencer|local/op-node:${OPSTACK_IMAGE_TAG:-local}|pull|unknown|no-recreate|
 |prometheus|${PROMETHEUS_IMAGE:-prom/prometheus@sha256:075b1ba2c4ebb04bc3a6ab86c06ec8d8099f8fda1c96ef6d104d9bb1def1d8bc}|pull|unknown||
 |vector|${VECTOR_IMAGE:-timberio/vector:0.38.0-alpine}|pull|unknown||
 |ghost-compliance|build:{"context":"./services/ghost-compliance","dockerfile":"Dockerfile"}|build|unknown||

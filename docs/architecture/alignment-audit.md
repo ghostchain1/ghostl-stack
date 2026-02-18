@@ -1,6 +1,6 @@
 # Alignment Audit (L1/L2/L3)
 
-Last updated: 2026-02-04
+Last updated: 2026-02-18
 
 ## Inputs
 - `infra/opstack/.env`
@@ -26,14 +26,18 @@ Last updated: 2026-02-04
   - TODO: populate once L2/L3 governance deployments are complete.
 
 ## Bridge / Oracle / System Contracts (from env)
-- L2 Output Oracle: `0x1275D096B9DBf2347bD2a131Fb6BDaB0B4882487`
-- L3 L2OO (L3 output oracle on L2): `0x1275D096B9DBf2347bD2a131Fb6BDaB0B4882487`
-- L1 Standard Bridge: `0xC6bA8C3233eCF65B761049ef63466945c362EdD2`
-- L1 CrossDomain Messenger: `0x59F2f1fCfE2474fD5F0b9BA1E73ca90b143Eb8d0`
-- L3 Portal: `0xbCF26943C0197d2eE0E5D05c716Be60cc2761508`
-- L3 SystemConfig: `0x712516e61C8B383dF4A63CFe83d7701Bce54B03e`
-- L3 DisputeGameFactory: `0x05Aa229Aec102f78CE0E852A812a388F076Aa555`
-- Bridge L2->L3 (services env): `0x15375553c3ea219810bf52f3f9a6df5facc75a37`
+- L2 Output Oracle: `0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6`
+- L1 Standard Bridge: `0xa513E6E4b8f2a923D98304ec87F64353C4D5C853`
+- L1 CrossDomain Messenger: `0x0165878A594ca255338adfa4d48449f69242Eb8F`
+- Bridge L2->L3: `0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2`
+- L1 rollup (L2->L1): `0xad32D5C2Da9f4159C4cc98686C005852b3905355`
+- L1 rollup parent oracle: `0x2C001131e99c79e6dDF9f099F2101e9535172Db1`
+- L2 rollup (L3->L2): `0x130A46b6E41DB6E1e18fb9c759F223c459190e90`
+- L1 finality oracle on L2: `0x7B3Be2dDDdDf9A0a3fE1DC57B98980F662C3a422`
+- L2 finality oracle: `0x650aEF4b63095e4EDe581BC79CdeA927e3ba553A`
+- L3 finality oracle: `0x87F850cbC2cFfac086F20d0d7307E12d06fA2127`
+- L3 inbox: `0x8464135c8F25Da09e49BC8782676a84730C318bC`
+- L3 token factory: `0x71C95911E9a5D330f4D621842EC243EE1343292e`
 
 ## Policy Registry
 - Policy registry address: `0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf`

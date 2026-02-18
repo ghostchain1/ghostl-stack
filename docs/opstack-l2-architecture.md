@@ -1,12 +1,12 @@
 # GhostChain OP Stack L2 Architecture (Whitepaper Draft)
 
 ## Overview
-- GhostL2 is an OP Stack chain settling on Ethereum L1. GhostL3 app-chains settle on GhostL2.
+- GhostL2 is an OP Stack chain settling on GhostChain L1. GhostL3 app-chains settle on GhostL2.
 - Threat model assumes adversarial sequencers/proposers; AI Guard sits in the control plane to score and gate batches before L1 publication and to trigger challengers.
 - Roadmap: Optimistic fraud proofs first; optional ZK finality added later (Polygon CDK/zkEVM style proofs of OP batches).
 
 ## Components
-- L1 (Ethereum): OptimismPortal, L1StandardBridge, SystemConfig, DisputeGameFactory, AnchorStateRegistry.
+- L1 (GhostChain): OptimismPortal, L1StandardBridge, SystemConfig, DisputeGameFactory, AnchorStateRegistry.
 - L2 (GhostL2): op-geth execution, op-node, op-batcher, op-proposer, op-gate (Guard shim), Guard service (scoring/policy), relayer, challenger (optional in current devnet).
 - L3 (GhostL3s): OP Stack app chains settling on GhostL2; each with op-geth/op-node/op-batcher/op-proposer and their own Guard/Relayer wiring.
 

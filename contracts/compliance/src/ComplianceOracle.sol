@@ -5,6 +5,8 @@ contract ComplianceOracle {
     address public signer;
     address public owner;
 
+    bytes private constant EIP191_PREFIX_32 = hex"19457468657265756d205369676e6564204d6573736167653a0a3332";
+
     error Unauthorized();
 
     constructor(address initialSigner) {
@@ -21,8 +23,8 @@ contract ComplianceOracle {
         signer = nextSigner;
     }
 
-    function getEthSignedMessageHash(bytes32 digest) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
+    function getEip191MessageHash(bytes32 digest) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(EIP191_PREFIX_32, digest));
     }
 
     function isValidAttestation(
@@ -41,9 +43,9 @@ contract ComplianceOracle {
     }
 
     function recoverSigner(bytes32 digest, bytes calldata signature) public pure returns (address) {
-        bytes32 ethSigned = getEthSignedMessageHash(digest);
+        bytes32 signedHash = getEip191MessageHash(digest);
         (bytes32 r, bytes32 s, uint8 v) = splitSignature(signature);
-        return ecrecover(ethSigned, v, r, s);
+        return ecrecover(signedHash, v, r, s);
     }
 
     function splitSignature(bytes calldata signature) public pure returns (bytes32 r, bytes32 s, uint8 v) {

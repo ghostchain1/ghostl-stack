@@ -12,14 +12,14 @@ contract FuzzTreasury is TestBase {
     address private executorV2 = address(0xC0DE);
 
     function setUp() public payable {
-        token = new NativeToken("Ghost", "GHOST");
+        token = new NativeToken("Ghost Token", "GST");
         treasury = new Treasury(IERC20Balance(address(token)), executor, executorV2);
-        token.mint(address(treasury), 1000 ether);
+        token.mint(address(treasury), 1000e18);
     }
 
-    function test_withdrawETHDisabled(uint256 amount) public {
-        vm.expectRevert(bytes("ETH disabled; use withdrawNative"));
-        treasury.withdrawETH(address(this), amount);
+    function test_withdrawLegacyValueDisabled(uint256 amount) public {
+        vm.expectRevert(bytes("legacy withdrawal disabled; use withdrawNative"));
+        treasury.withdrawLegacyValue(address(this), amount);
     }
 
     function testFuzz_withdrawNativeReducesBalance(uint256 amount) public {

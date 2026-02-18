@@ -43,7 +43,7 @@ export type RegistryChain = {
   }>;
   explorers?: Array<{ name: string; url: string; standard: 'EIP3091' }>;
   metadata?: {
-    rpcStandard: 'ethereum';
+    rpcStandard: 'evm';
     evmCompatible: true;
     consensus: string;
   };
@@ -99,7 +99,7 @@ const regionFor = (urls: string[]) => {
 };
 
 const CANONICAL_GAS_TOKEN_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
-const CANONICAL_GAS_TOKEN_SYMBOL = 'GHOST';
+const CANONICAL_GAS_TOKEN_SYMBOL = 'GST';
 const CANONICAL_GAS_TOKEN_NAME = 'Ghost Token';
 const CANONICAL_GAS_TOKEN_DECIMALS = 18;
 
@@ -368,7 +368,7 @@ export class HealthChecker {
         endpoints,
         explorers: [],
         metadata: {
-          rpcStandard: 'ethereum' as const,
+          rpcStandard: 'evm' as const,
           evmCompatible: true as const,
           consensus: chain.layer === 'L1' ? 'PoS' : chain.layer === 'L2' ? 'OP Stack' : 'OP Stack L3'
         }

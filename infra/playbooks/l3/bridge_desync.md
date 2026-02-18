@@ -14,7 +14,7 @@
 
 ## Permanent fix
 - Reconcile L2/L3 SystemConfig and portal addresses.
-- Ensure gas token policy matches L2 (GHOST if enforced).
+- Ensure gas token policy matches L2 (GST if enforced).
 - Re-run bridge tests after any config change.
 
 ## Verification

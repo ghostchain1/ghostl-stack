@@ -65,12 +65,12 @@ contract GhostGasTokenBase is ERC20 {
 
 contract GhostGasTokenL2 is GhostGasTokenBase {
     constructor(uint256 initialSupply)
-        GhostGasTokenBase("Ghost Token", "GHOST", 18, initialSupply)
+        GhostGasTokenBase("Ghost Token", "GST", 18, initialSupply)
     {}
 }
 
 contract GhostGasTokenL3 is GhostGasTokenBase {
     constructor(uint256 initialSupply)
-        GhostGasTokenBase("Ghost Token", "GHOST", 18, initialSupply)
+        GhostGasTokenBase("Ghost Token", "GST", 18, initialSupply)
     {}
 }

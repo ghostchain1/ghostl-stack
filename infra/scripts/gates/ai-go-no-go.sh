@@ -29,6 +29,15 @@ require_exec() {
 
 missing=0
 
+log "GST-native leakage gates"
+"$ROOT_DIR/scripts/gst-leakage-gate.sh" || missing=1
+"$ROOT_DIR/scripts/gst-symbol-gate.sh" || missing=1
+if [ "$AI_GO_NO_GO_ALLOW_DIRTY" = "1" ]; then
+  log "AI diff policy gate skipped (AI_GO_NO_GO_ALLOW_DIRTY=1)"
+else
+  "$ROOT_DIR/scripts/gst-ai-policy-gate.sh" || missing=1
+fi
+
 log "AI governance docs and artifacts"
 require_file "$ROOT_DIR/docs/architecture/ghostchain-ai-governance-whitepaper.md" || missing=1
 require_file "$ROOT_DIR/docs/ai-core/invariants.md" || missing=1

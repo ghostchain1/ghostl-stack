@@ -42,7 +42,7 @@ if [ ! -d "$ETHERS_MODULE" ]; then
   exit 1
 fi
 
-DEMO_AMOUNT_ETH="${DEMO_AMOUNT_ETH:-1}"
+DEMO_AMOUNT_GST="${DEMO_AMOUNT_GST:-1}"
 
 # Allow an explicit demo token override (useful when the configured token has no faucet/mint).
 TOKEN_ADDRESS="${DEMO_L2_TOKEN_ADDRESS:-${L2_TOKEN_ADDRESS:-}}"
@@ -52,7 +52,7 @@ if [ -z "$TOKEN_ADDRESS" ]; then
 fi
 
 DEMO_AMOUNT_WEI="$(
-  ETHERS_MODULE="$ETHERS_MODULE" AMT="$DEMO_AMOUNT_ETH" node -e '
+  ETHERS_MODULE="$ETHERS_MODULE" AMT="$DEMO_AMOUNT_GST" node -e '
     const { parseEther } = require(process.env.ETHERS_MODULE);
     process.stdout.write(parseEther(process.env.AMT).toString());
   '
@@ -102,7 +102,7 @@ fi
 echo "Using BRIDGE_L2L3_ADDRESS=$BRIDGE_L2L3_ADDRESS"
 echo "Using L2_TOKEN_ADDRESS=$TOKEN_ADDRESS"
 echo "Depositor=$DEPOSITOR"
-echo "Sending demo ERC20 deposit (amount=${DEMO_AMOUNT_ETH} tokens)..."
+echo "Sending demo ERC20 deposit (amount=${DEMO_AMOUNT_GST} tokens)..."
 
 cd "$ROOT_DIR/contracts"
-DEMO_AMOUNT_ETH="$DEMO_AMOUNT_ETH" L2_TOKEN_ADDRESS="$TOKEN_ADDRESS" npx hardhat run --network ghostl2Op scripts/demo_deposit_erc20.ts
+DEMO_AMOUNT_GST="$DEMO_AMOUNT_GST" L2_TOKEN_ADDRESS="$TOKEN_ADDRESS" npx hardhat run --network ghostl2Op scripts/demo_deposit_erc20.ts

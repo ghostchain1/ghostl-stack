@@ -60,6 +60,13 @@ services/ghost-rollup-challenger/.env.l3
 .tmp/
 .gomodcache/
 
+# local releases (generated)
+releases/local-*/
+
+# python bytecode
+**/__pycache__/
+*.pyc
+
 # forge broadcast artifacts
 infra/opstack/broadcast/
 

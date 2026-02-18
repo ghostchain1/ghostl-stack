@@ -327,11 +327,11 @@ export default function GasChainPage() {
             </div>
           </div>
         </Card>
-        <Card title="GHOST gas telemetry" subtitle="Canonical gas token enforcement">
+        <Card title="GST gas telemetry" subtitle="Canonical gas token enforcement">
           <div className="stack">
             <div className="spread">
               <span className="muted">Gas token</span>
-              <span>{chain?.gasTokenSymbol || 'GHOST'}</span>
+              <span>{chain?.gasTokenSymbol || 'GST'}</span>
             </div>
             <div className="spread">
               <span className="muted">Token address</span>

@@ -14,7 +14,7 @@ This harness supports **dry-run validation** (code + static gates) but cannot re
 
 - live RPC health/load/restart behavior (L1/L2/L3)
 - docker runtime launch correctness and network isolation under a real daemon
-- external bridge execution to Ethereum/Bitcoin/etc
+- external bridge execution to external chains (e.g., Bitcoin, external EVM chains)
 
 See the attestation artifacts for the precise scope.
 
@@ -46,4 +46,3 @@ To obtain a production-grade decision, run on a real host:
 Concrete walk-through (contracts + tests + invariants):
 
 - `docs/security/governance-non-bypassability.md`
-

@@ -3,7 +3,7 @@
 OP Stack L2 (GhostL2) devnet that aligns with the GhostChain blueprint: Optimistic now, hybrid OP + ZK later, with AI Guard/Relayer hooks on top.
 
 ## What runs
-- L1: GhostChain geth PoA devnet (Ethereum clone) on `18545`
+- L1: GhostChain geth PoA devnet (EVM clone) on `18545`
 - L2: GhostL2 (Shibarium clone) op-geth + op-node + op-batcher + op-proposer on `29547` (direct) / `18547` (guarded via op-gate)
 - L3: GhostL3 OP Stack L3 on GhostL2 on `39545` (when `docker-compose.l3.yml` is running)
 - `op-gate` guards L2 RPC and `op-gate-l1` guards L1 submissions for batcher/proposer; both can be driven by Ghost Guard (metrics on `28546/metrics/prom`, `28547/metrics/prom`).
@@ -75,13 +75,13 @@ bash infra/scripts/opstack/reset.sh
 - Optional: `SECURITY_CHECKPOINTS=1 bash infra/scripts/opstack/deploy.sh` runs Foundry + Slither checks before deploying contracts.
 - For AI economics + governance dashboards, run `services/ghost-gas-engine` (metrics on `:3210`) and keep `ai-monitor` enabled. Prometheus scrapes both by default.
 - If `AI_MONITOR_OBSERVE_ONLY=0`, set `POLICY_REGISTRY_ADDRESS` to the L1 `AgentGovernancePolicy` registry. The L2 doctor will fail closed without it.
-- Set `BRIDGE_L2L3_ADDRESS`, `L2_OUTPUT_ORACLE_ADDRESS`, and `L3_OUTPUT_ORACLE_ADDRESS` in `.env` to enable bridge/oracle telemetry.
+- Set `BRIDGE_L2L3_ADDRESS`, `L1_ROLLUP_L2_ADDRESS`, `L2_ROLLUP_L3_ADDRESS`, `L1_ROLLUP_PARENT_ORACLE`, `L1_FINALITY_ORACLE_ADDRESS`, `L2_FINALITY_ORACLE_ADDRESS`, and `L3_FINALITY_ORACLE_ADDRESS` in `.env` for cascading-finality telemetry and enforcement wiring.
 
 ## Canonical gas token (L1/L2/L3)
-All layers must use the single canonical GHOST token on GhostChain L1:
+All layers must use the single canonical GST token on GhostChain L1:
 
 ```text
-Ghost Token (GHOST)
+Ghost Token (GST)
 0x5FbDB2315678afecb367f032d93F642f64180aa3
 ```
 

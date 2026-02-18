@@ -1,13 +1,13 @@
 # GhostChain Architecture (L1/L2/L3)
 
-GhostChain is an Ethereum-compatible L1. GhostL2 is a Shibarium-style OP Stack L2 that settles to GhostChain. GhostL3 is an OP Stack L3 that settles to GhostL2.
+GhostChain is an EVM-compatible L1. GhostL2 is a Shibarium-style OP Stack L2 that settles to GhostChain. GhostL3 is an OP Stack L3 that settles to GhostL2.
 
 ## Layers
 
-### GhostChain (L1, Ethereum clone)
+### GhostChain (L1, EVM clone)
 - Geth PoA devnet (chainId `14000101`) and final settlement layer.
 - Hosts OP Stack L1 contracts for GhostL2 (SystemConfig, OptimismPortal, bridges, L2OutputOracle or DisputeGameFactory).
-- Native gas asset is GHOST (ERC‑20) on L1.
+- Native gas asset is GST (ERC‑20) on L1.
 
 ### GhostL2 (L2, Shibarium clone)
 - OP Stack rollup on GhostChain (sequencer in `op-node`, execution in `l2-geth`).
@@ -22,8 +22,8 @@ GhostChain is an Ethereum-compatible L1. GhostL2 is a Shibarium-style OP Stack L
 
 Canonical gas token (L1 ERC‑20):
 - Contract: `0x5FbDB2315678afecb367f032d93F642f64180aa3`
-- Symbol: `GHOST`
-- Genesis mint: `1,000,000,000` GHOST to `0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266`
+- Symbol: `GST`
+- Genesis mint: `1,000,000,000` GST to `0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266`
 - L2/L3 gas token source: L1 ERC‑20 address above
 
 ## Sequencers and tx pools
@@ -41,7 +41,7 @@ Canonical gas token (L1 ERC‑20):
 ## Diagram
 ```mermaid
 flowchart TD
-  subgraph L1["GhostChain (L1, Ethereum clone)"]
+  subgraph L1["GhostChain (L1, EVM clone)"]
     L1Exec["Geth execution + consensus"]
     L1Contracts["OP Stack L1 contracts<br/>SystemConfig, OptimismPortal, L2OO or DGF"]
   end

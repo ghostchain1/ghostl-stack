@@ -42,7 +42,7 @@ flowchart LR
   %% External ecosystems
   %% -----------------------
   subgraph EXT["External chains / ecosystems"]
-    ETH["Ethereum (EVM)"]
+    EVM_EXT["External EVM chain"]
     BTC["Bitcoin (UTXO)"]
     OTH["Others (EVM/non‑EVM)"]
   end
@@ -72,7 +72,7 @@ flowchart LR
   Bridge --> Exec
 
   %% Egress to external chains
-  Exec -->|"bridge / lock / mint"| ETH
+  Exec -->|"bridge / lock / mint"| EVM_EXT
   Exec -->|"custody / proofs"| BTC
   Exec -->|"adapter"| OTH
 

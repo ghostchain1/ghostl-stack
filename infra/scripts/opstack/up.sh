@@ -4,6 +4,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT}/scripts/lib/docker.sh"
+hg_require_docker_compose
+
 HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:18545}"
 HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
 HOST_L3_RPC="${HOST_L3_RPC:-http://localhost:39545}"
@@ -52,7 +56,7 @@ if [ "$ENABLE_AI" = "1" ]; then
   if [ -f "$OP_DIR/.env.secrets" ]; then
     COMPOSE_ENV_ARGS+=(--env-file "$OP_DIR/.env.secrets")
   fi
-  docker compose -f "$OP_DIR/docker-compose.yml" "${COMPOSE_ENV_ARGS[@]}" --profile ai up -d \
+  hg_docker compose -f "$OP_DIR/docker-compose.yml" "${COMPOSE_ENV_ARGS[@]}" --profile ai up -d \
     gas-engine-postgres gas-engine-redis ghost-gas-engine ghost-gas-engine-worker
 else
   echo "Skipping AI profile services (ENABLE_AI=0)"

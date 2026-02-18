@@ -36,8 +36,17 @@
           {
             "name": "op-proposer",
             "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-proposer:devnet",
-            "command": null,
-            "args": null,
+            "command": [
+              "op-proposer"
+            ],
+            "args": [
+              "--l1-eth-rpc=http://l1:8545",
+              "--rollup-rpc=http://op-node:8545",
+              "--game-factory-address=${DGF_ADDRESS}",
+              "--proposal-interval=${PROPOSAL_INTERVAL}",
+              "--game-type=${DG_TYPE}",
+              "--allow-non-finalized"
+            ],
             "env": [
               {
                 "name": "OP_PROPOSER_ALLOW_NON_FINALIZED",
@@ -50,10 +59,6 @@
               {
                 "name": "OP_PROPOSER_GAME_TYPE",
                 "value": "${DG_TYPE}"
-              },
-              {
-                "name": "OP_PROPOSER_L1_ETH_RPC",
-                "value": "http://l1:8545"
               },
               {
                 "name": "OP_PROPOSER_L2OO_ADDRESS",

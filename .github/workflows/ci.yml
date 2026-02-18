@@ -3,7 +3,10 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [ main, master ]
+    branches:
+      - main
+      - master
+      - brand/**
 
 jobs:
   rpc-namespace:
@@ -14,9 +17,184 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install ripgrep
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ripgrep
+          rg --version
+
       - name: Enforce gst_* Canonical RPC Namespace
         run: |
           bash ops/scripts/check-no-eth-rpc.sh
+
+      - name: Enforce GST-native branding (no legacy leakage)
+        run: |
+          bash scripts/gst-leakage-gate.sh
+
+      - name: Enforce GST symbol (no legacy symbol)
+        run: |
+          bash scripts/gst-symbol-gate.sh
+
+  shellcheck:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          shellcheck --version
+
+      - name: ShellCheck (core scripts)
+        run: |
+          set -euo pipefail
+          ( git ls-files -z '*.sh' \
+              | tr '\0' '\n' \
+              | grep -E '^(dev-stack\\.sh|scripts/|ops/scripts/|ops/ghost-bots/|launch-system/|infra/ghostchain/ibft/|infra/scripts/)' \
+              || true ) \
+            | xargs -r shellcheck -S error
+
+  ghost-bots-python:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ghost Bots smoke (non-runtime)
+        run: |
+          bash scripts/ghost-bots-smoke.sh
+
+      - name: Upload Ghost Bots smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghost-bots-smoke-artifacts
+          path: |
+            ops/ghost-bots/reports
+          if-no-files-found: warn
+
+  node-lint-build:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.22.0"
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  hyper-ghost-supervisor:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.22.0"
+          cache: npm
+          cache-dependency-path: services/hyper-ghost-supervisor/package-lock.json
+
+      - name: Install deps
+        working-directory: services/hyper-ghost-supervisor
+        run: npm ci
+
+      - name: Build
+        working-directory: services/hyper-ghost-supervisor
+        run: npm run build
+
+      - name: Test
+        working-directory: services/hyper-ghost-supervisor
+        run: npm test
+
+  contracts-hardhat-compile:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.22.0"
+          cache: npm
+          cache-dependency-path: contracts/package-lock.json
+
+      - name: Install contracts deps
+        working-directory: contracts
+        run: npm ci
+
+      - name: Compile (Hardhat)
+        working-directory: contracts
+        run: npm run build
+
+  contracts-gst-invariant:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Run GST invariant (Foundry)
+        working-directory: contracts
+        run: |
+          forge test --match-path test/GSTInvariant.t.sol
+
+  contracts-lge-tests:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Run Liquidity Gravity Engine tests (Foundry)
+        working-directory: contracts
+        run: |
+          forge test --match-path 'test/foundry/*LiquidityGravityEngine*.t.sol'
 
   repo-security:
     needs: [rpc-namespace]
@@ -79,7 +257,7 @@ jobs:
           GHOST_HELPER_MAX_ITERS: "1"
           GHOST_POLICY_OK: "true"
         working-directory: ghost-helper-bots
-        run: node dist/loops/loop.js
+        run: node dist/loops/loop.js --mode analyze --maxIters 1
 
       - name: Upload Ghost Helper artifacts
         if: always()

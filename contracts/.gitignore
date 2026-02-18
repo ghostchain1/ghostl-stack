@@ -8,6 +8,9 @@
 /.hardhat-cache/
 /out-codex/
 /cache-codex/
+/out-legacy/
+/cache-legacy/
 /out-slither/
 /cache-slither/
 /reports/foundry/
+/reports/formal/echidna-corpus/covered.*

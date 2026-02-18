@@ -21,7 +21,7 @@ const AUTO_EXEC_ENABLED = (process.env.AUTO_EXEC_ENABLED ?? 'false') === 'true';
 const EXECUTOR_ADDRESS = process.env.PROPOSAL_EXECUTOR_ADDRESS;
 const EXECUTOR_MODE = process.env.PROPOSAL_EXECUTOR_MODE as ExecutorMode | undefined;
 const PROPOSE_VIA_EXECUTOR = (process.env.PROPOSE_VIA_EXECUTOR ?? 'false') === 'true';
-const DESCRIPTION = process.env.PROPOSAL_DESCRIPTION ?? 'Update slashing controls (GHOST)';
+const DESCRIPTION = process.env.PROPOSAL_DESCRIPTION ?? 'Update slashing controls (GST)';
 
 function requireAddress(name: string, value: string | undefined) {
   if (!value || !ethers.isAddress(value)) {

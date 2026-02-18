@@ -13,8 +13,8 @@ GhostChain exposes `gst_*` methods as the **canonical** namespace.
 ### Controls (env vars)
 
 - `RPC_ENABLE_GST_NAMESPACE=1` (default): enable namespace remaps and alias logging
-- `RPC_DEPRECATE_ETH_NAMESPACE=1`: set `x-ghost-rpc-warning` header on requests that include `eth_*`
-- `RPC_REJECT_ETH_NAMESPACE=1`: hard-reject `eth_*` aliases when a canonical `gst_*` exists (do **not** enable until all internal callers migrated)
+- `RPC_DEPRECATE_LEGACY_NAMESPACE=1`: set `x-ghost-rpc-warning` header on requests that include legacy `eth_*` methods (alias supported for backward compatibility)
+- `RPC_REJECT_LEGACY_NAMESPACE=1`: hard-reject legacy `eth_*` aliases when a canonical `gst_*` exists (do **not** enable until all internal callers migrated)
 
 ## Supported canonical remaps
 
@@ -29,4 +29,3 @@ The proxy currently canonicalizes (non-exhaustive):
 - `eth_feeHistory` → `gst_feeHistory`
 
 If you need additional `gst_*` coverage, extend the maps in `services/ghost-rpc-proxy/index.mjs`.
-

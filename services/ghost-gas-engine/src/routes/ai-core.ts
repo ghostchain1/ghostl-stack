@@ -424,19 +424,25 @@ export async function registerAiCoreRoutes(app: FastifyInstance) {
         submitResult = { error: 'missing_executor_submit_config' };
       }
       if (!submitResult) {
-        try {
-          submitResult = await submitPolicyUpdate({
-            rpcUrl: config.AI_PROPOSAL_EXECUTOR_RPC,
-            executorAddress: executor,
-            submitterKey: config.AI_PROPOSAL_SUBMITTER_KEY,
-            update,
-            signatures: signatures.map((sig) => sig.signature),
-            evidenceKind: kind,
-            proposalId: parsed.data.proposalId ?? 0
-          });
-        } catch (err) {
-          const message = (err as Error)?.message;
-          submitResult = { error: message || String(err) };
+        const rpcUrl = config.AI_PROPOSAL_EXECUTOR_RPC;
+        const submitterKey = config.AI_PROPOSAL_SUBMITTER_KEY;
+        if (!executor || !rpcUrl || !submitterKey) {
+          submitResult = { error: 'missing_executor_submit_config' };
+        } else {
+          try {
+            submitResult = await submitPolicyUpdate({
+              rpcUrl,
+              executorAddress: executor,
+              submitterKey,
+              update,
+              signatures: signatures.map((sig) => sig.signature),
+              evidenceKind: kind,
+              proposalId: parsed.data.proposalId ?? 0
+            });
+          } catch (err) {
+            const message = (err as Error)?.message;
+            submitResult = { error: message || String(err) };
+          }
         }
       }
     }

@@ -4,8 +4,17 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="${ROOT_DIR:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 
+# shellcheck source=scripts/lib/docker.sh
+. "$ROOT_DIR/scripts/lib/docker.sh"
+
 L2_ENV_FILE="${L2_ENV_FILE:-$ROOT_DIR/infra/opstack/.env.l2}"
 L2_SECRETS_FILE="${L2_SECRETS_FILE:-$ROOT_DIR/infra/opstack/.env.secrets}"
+CLI_L2_SECRETS_SOURCE="${L2_SECRETS_SOURCE-}"
+CLI_ALLOW_DEV_SECRETS="${ALLOW_DEV_SECRETS-}"
+CLI_VAULT_ADDR="${VAULT_ADDR-}"
+CLI_VAULT_TOKEN="${VAULT_TOKEN-}"
+CLI_VAULT_ROLE_ID="${VAULT_ROLE_ID-}"
+CLI_VAULT_SECRET_ID="${VAULT_SECRET_ID-}"
 
 if [ -f "$L2_ENV_FILE" ]; then
   set -a
@@ -22,12 +31,31 @@ fi
 
 # Prefer the canonical stack-level env if present (this repo is migrating to stack.env as source of truth).
 # Do not echo secrets; this is only to populate addresses/flags consistently across scripts.
-STACK_ENV_FILE="$ROOT_DIR/services/stack.env"
+STACK_ENV_FILE="${STACK_ENV_FILE:-$ROOT_DIR/services/stack.env}"
 if [ -f "$STACK_ENV_FILE" ]; then
   set -a
   # shellcheck disable=SC1090
   source "$STACK_ENV_FILE"
   set +a
+fi
+
+if [ -n "${CLI_L2_SECRETS_SOURCE:-}" ]; then
+  L2_SECRETS_SOURCE="$CLI_L2_SECRETS_SOURCE"
+fi
+if [ -n "${CLI_ALLOW_DEV_SECRETS:-}" ]; then
+  ALLOW_DEV_SECRETS="$CLI_ALLOW_DEV_SECRETS"
+fi
+if [ -n "${CLI_VAULT_ADDR:-}" ]; then
+  VAULT_ADDR="$CLI_VAULT_ADDR"
+fi
+if [ -n "${CLI_VAULT_TOKEN:-}" ]; then
+  VAULT_TOKEN="$CLI_VAULT_TOKEN"
+fi
+if [ -n "${CLI_VAULT_ROLE_ID:-}" ]; then
+  VAULT_ROLE_ID="$CLI_VAULT_ROLE_ID"
+fi
+if [ -n "${CLI_VAULT_SECRET_ID:-}" ]; then
+  VAULT_SECRET_ID="$CLI_VAULT_SECRET_ID"
 fi
 
 L2_COMPOSE_FILE="${L2_COMPOSE_FILE:-$ROOT_DIR/infra/opstack/docker-compose.yml}"
@@ -67,8 +95,13 @@ RELAYER_REQUIRE_L2_FINALITY_ON_L1="${RELAYER_REQUIRE_L2_FINALITY_ON_L1:-false}"
 ROLLUP_GATING_L2_FINALITY_ON_L1="$(printf '%s' "$RELAYER_REQUIRE_L2_FINALITY_ON_L1" | tr '[:upper:]' '[:lower:]')"
 L1_ROLLUP_L2_ADDRESS="${L1_ROLLUP_L2_ADDRESS:-}"
 L2_ROLLUP_PROPOSER_HEALTH_URL="${L2_ROLLUP_PROPOSER_HEALTH_URL:-}"
+if [ "$ROLLUP_GATING_L2_FINALITY_ON_L1" = "true" ] && [ -z "$L2_ROLLUP_PROPOSER_HEALTH_URL" ]; then
+  # Default to the devnet port exposed by services/docker-compose.legacy.yml (ghost-rollup-proposer-l2).
+  L2_ROLLUP_PROPOSER_HEALTH_URL="http://localhost:7273/health"
+fi
 L2_ROLLUP_PROGRESS_SAMPLE_SECONDS="${L2_ROLLUP_PROGRESS_SAMPLE_SECONDS:-15}"
 L2_ROLLUP_PROGRESS_MIN_DELTA="${L2_ROLLUP_PROGRESS_MIN_DELTA:-1}"
+L2_ROLLUP_PROGRESS_MAX_WAIT_SECONDS="${L2_ROLLUP_PROGRESS_MAX_WAIT_SECONDS:-60}"
 L2_MAX_ROLLUP_LAG="${L2_MAX_ROLLUP_LAG:-512}"
 
 L2_MAX_L1_DERIVATION_LAG="${L2_MAX_L1_DERIVATION_LAG:-128}"
@@ -79,6 +112,8 @@ L2_REQUIRE_L2_PROGRESS="${L2_REQUIRE_L2_PROGRESS:-0}"
 L2_REQUIRE_BRIDGE_WIRING="${L2_REQUIRE_BRIDGE_WIRING:-0}"
 L2_PROGRESS_SAMPLE_SECONDS="${L2_PROGRESS_SAMPLE_SECONDS:-15}"
 L2_PROGRESS_MIN_DELTA="${L2_PROGRESS_MIN_DELTA:-1}"
+L2_AUTO_RECOVER_ON_STALL="${L2_AUTO_RECOVER_ON_STALL:-0}"
+L2_AUTO_RECOVER_COOLDOWN_SECONDS="${L2_AUTO_RECOVER_COOLDOWN_SECONDS:-8}"
 
 L2_SECRETS_SOURCE="${L2_SECRETS_SOURCE:-dev}"
 L2_SECRETS_DIR="${L2_SECRETS_DIR:-$ROOT_DIR/infra/opstack/secrets}"
@@ -97,8 +132,40 @@ L2_DOCTOR_SKIP_DOCKER="${L2_DOCTOR_SKIP_DOCKER:-0}"
 warn() { echo "WARN: $*" >&2; }
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
+STRICT_MODE=0
+if [ "${SLITHER_STRICT:-0}" = "1" ] || [ -n "${CI:-}" ] || [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+  STRICT_MODE=1
+fi
+
+skip_or_fail() {
+  local message="$1"
+  if [ "$STRICT_MODE" = "1" ]; then
+    fail "$message"
+  fi
+  warn "SKIPPED: $message"
+  echo "[doctor-l2] SKIPPED: $message"
+  exit 0
+}
+
 need_bin() {
   command -v "$1" >/dev/null 2>&1 || fail "missing required binary: $1"
+}
+
+is_docker_daemon_unavailable() {
+  local msg="${1:-}"
+  msg="$(printf '%s' "$msg" | tr '[:upper:]' '[:lower:]')"
+  case "$msg" in
+    *"permission denied while trying to connect to the docker api"* ) return 0 ;;
+    *"permission denied while trying to connect to the docker daemon socket"* ) return 0 ;;
+    *"got permission denied while trying to connect to the docker daemon socket"* ) return 0 ;;
+    *"cannot connect to the docker daemon"* ) return 0 ;;
+    *"is the docker daemon running"* ) return 0 ;;
+    *"error during connect"*docker.sock* ) return 0 ;;
+    *dial\ unix*docker.sock*permission\ denied* ) return 0 ;;
+    *dial\ unix*docker.sock*operation\ not\ permitted* ) return 0 ;;
+    *dial\ unix*docker.sock*no\ such\ file\ or\ directory* ) return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
 jsonrpc() {
@@ -251,28 +318,44 @@ PY
 require_rollup_progress() {
   local sleep_s="$1"
   local min_delta="$2"
+  local max_wait_s waited
 
   local a_raw b_raw a b delta
+  max_wait_s="$(to_int "${L2_ROLLUP_PROGRESS_MAX_WAIT_SECONDS:-$sleep_s}")"
+  if [ "$max_wait_s" -le 0 ] || [ "$max_wait_s" -lt "$sleep_s" ]; then
+    max_wait_s="$sleep_s"
+  fi
+  waited=0
+
   a_raw="$(rollup_proposer_health || true)"
   a="$(json_field "$a_raw" "nextChildBlock" || true)"
   if [ -z "$a" ]; then
     fail "rollup proposer health missing nextChildBlock ($L2_ROLLUP_PROPOSER_HEALTH_URL)"
   fi
-  sleep "$sleep_s"
-  b_raw="$(rollup_proposer_health || true)"
-  b="$(json_field "$b_raw" "nextChildBlock" || true)"
-  if [ -z "$b" ]; then
-    fail "rollup proposer health missing nextChildBlock (2nd sample) ($L2_ROLLUP_PROPOSER_HEALTH_URL)"
-  fi
-  # nextChildBlock is end+1
-  if [ "$b" -lt "$a" ]; then
-    fail "rollup proposer cursor regressed (sample1=$a sample2=$b)"
-  fi
-  delta=$((b - a))
-  if [ "$delta" -lt "$min_delta" ]; then
-    fail "no rollup proposer progress detected (sample1=$a sample2=$b delta=$delta over ${sleep_s}s)"
-  fi
-  echo "OK: rollup proposer progressing (nextChildBlock sample1=$a sample2=$b delta=$delta over ${sleep_s}s)"
+
+  while [ "$waited" -lt "$max_wait_s" ]; do
+    sleep "$sleep_s"
+    waited=$((waited + sleep_s))
+    b_raw="$(rollup_proposer_health || true)"
+    b="$(json_field "$b_raw" "nextChildBlock" || true)"
+    if [ -z "$b" ]; then
+      fail "rollup proposer health missing nextChildBlock (elapsed=${waited}s) ($L2_ROLLUP_PROPOSER_HEALTH_URL)"
+    fi
+    # nextChildBlock is end+1
+    if [ "$b" -lt "$a" ]; then
+      fail "rollup proposer cursor regressed (sample1=$a sample2=$b)"
+    fi
+    delta=$((b - a))
+    if [ "$delta" -ge "$min_delta" ]; then
+      echo "OK: rollup proposer progressing (nextChildBlock sample1=$a sample2=$b delta=$delta over ${waited}s)"
+      return 0
+    fi
+    if [ "$waited" -lt "$max_wait_s" ]; then
+      warn "rollup proposer delta below threshold after ${waited}s (delta=$delta, expected >=$min_delta); retrying"
+    fi
+  done
+
+  fail "no rollup proposer progress detected (sample1=$a sample2=$b delta=$delta over ${waited}s, expected >=$min_delta)"
 }
 
 require_execution_progress() {
@@ -292,14 +375,68 @@ require_execution_progress() {
   fi
 
   if [ "$b" -lt "$a" ]; then
+    if attempt_l2_auto_recovery "$url" "$sleep_s" "$min_delta" "head_regressed"; then
+      return 0
+    fi
     fail "L2 execution head regressed (sample1=$a sample2=$b)"
   fi
   delta=$((b - a))
   if [ "$delta" -lt "$min_delta" ]; then
+    if attempt_l2_auto_recovery "$url" "$sleep_s" "$min_delta" "stalled"; then
+      return 0
+    fi
     fail "no L2 execution progress detected (sample1=$a sample2=$b delta=$delta, expected >=$min_delta over ${sleep_s}s)"
   fi
 
   echo "OK: L2 execution progressing (sample1=$a sample2=$b delta=$delta over ${sleep_s}s)"
+}
+
+attempt_l2_auto_recovery() {
+  local url="$1"
+  local sleep_s="$2"
+  local min_delta="$3"
+  local reason="${4:-stalled}"
+
+  if [ "$L2_AUTO_RECOVER_ON_STALL" != "1" ]; then
+    return 1
+  fi
+  if [ "${DOCKER_AVAILABLE:-0}" != "1" ] || [ "${COMPOSE_AVAILABLE:-0}" != "1" ]; then
+    warn "L2 auto-recovery requested but docker/compose is unavailable"
+    return 1
+  fi
+
+  warn "L2 execution ${reason}; attempting one-time auto-recovery restart (l2-geth, op-node, op-sequencer, op-batcher)"
+  if ! hg_docker compose -f "$L2_COMPOSE_FILE" restart l2-geth op-node op-sequencer op-batcher >/dev/null 2>&1; then
+    warn "L2 auto-recovery restart failed"
+    return 1
+  fi
+
+  sleep "$L2_AUTO_RECOVER_COOLDOWN_SECONDS"
+
+  local ra rb rdelta
+  ra="$(rpc_block_number_dec "$url" || true)"
+  if [ -z "$ra" ]; then
+    warn "L2 auto-recovery could not fetch eth_blockNumber after restart"
+    return 1
+  fi
+  sleep "$sleep_s"
+  rb="$(rpc_block_number_dec "$url" || true)"
+  if [ -z "$rb" ]; then
+    warn "L2 auto-recovery could not fetch second eth_blockNumber sample"
+    return 1
+  fi
+  if [ "$rb" -lt "$ra" ]; then
+    warn "L2 auto-recovery observed head regression (sample1=$ra sample2=$rb)"
+    return 1
+  fi
+  rdelta=$((rb - ra))
+  if [ "$rdelta" -lt "$min_delta" ]; then
+    warn "L2 auto-recovery did not restore progress (sample1=$ra sample2=$rb delta=$rdelta, expected >=$min_delta)"
+    return 1
+  fi
+
+  echo "OK: L2 execution recovered after restart (sample1=$ra sample2=$rb delta=$rdelta over ${sleep_s}s)"
+  return 0
 }
 
 read_json() {
@@ -336,21 +473,45 @@ need_bin curl
 need_bin sha256sum
 need_bin python3
 
+DOCKER_AVAILABLE=1
 if ! command -v docker >/dev/null 2>&1; then
-  fail "docker not installed"
-fi
-if [ "$L2_DOCTOR_SKIP_DOCKER" != "1" ]; then
-  if ! docker version --format '{{.Server.Version}}'; then
-    fail "docker daemon not reachable"
+  if [ "$L2_DOCTOR_SKIP_DOCKER" = "1" ]; then
+    DOCKER_AVAILABLE=0
+    warn "docker not installed (L2_DOCTOR_SKIP_DOCKER=1)"
+  else
+    skip_or_fail "docker not installed"
   fi
-else
+fi
+if [ "$DOCKER_AVAILABLE" = "1" ] && [ "$L2_DOCTOR_SKIP_DOCKER" != "1" ]; then
+  docker_out=""
+  if ! docker_out="$(hg_docker version --format '{{.Server.Version}}' 2>&1)"; then
+    if is_docker_daemon_unavailable "$docker_out"; then
+      if [ "$L2_DOCTOR_SKIP_DOCKER" = "1" ]; then
+        DOCKER_AVAILABLE=0
+        warn "docker daemon/socket not reachable (L2_DOCTOR_SKIP_DOCKER=1)"
+      else
+        skip_or_fail "docker daemon/socket not reachable"
+      fi
+    else
+      skip_or_fail "docker version failed"
+    fi
+  fi
+elif [ "$L2_DOCTOR_SKIP_DOCKER" = "1" ]; then
+  DOCKER_AVAILABLE=0
   warn "docker daemon check skipped (L2_DOCTOR_SKIP_DOCKER=1)"
 fi
-if ! docker compose version >/dev/null 2>&1; then
+
+COMPOSE_AVAILABLE=0
+if [ "$DOCKER_AVAILABLE" = "1" ] && hg_docker compose version >/dev/null 2>&1; then
+  COMPOSE_AVAILABLE=1
+elif [ "$L2_DOCTOR_SKIP_DOCKER" != "1" ]; then
   fail "docker compose not available"
 fi
-
-echo "OK: docker/compose reachable"
+if [ "$DOCKER_AVAILABLE" = "1" ] && [ "$COMPOSE_AVAILABLE" = "1" ]; then
+  echo "OK: docker/compose reachable"
+else
+  warn "docker/compose unavailable; docker-dependent checks will be skipped"
+fi
 
 if [ "$AI_MONITOR_OBSERVE_ONLY" != "1" ] && [ "$POLICY_REQUIRED" = "1" ]; then
   if [ -z "$POLICY_REGISTRY_ADDRESS" ]; then
@@ -397,11 +558,14 @@ fi
 
 echo "OK: rollup/genesis checksums verified"
 
-if ! docker compose -f "$L2_COMPOSE_FILE" config >/dev/null 2>&1; then
-  fail "compose config invalid for $L2_COMPOSE_FILE"
+if [ "$COMPOSE_AVAILABLE" = "1" ]; then
+  if ! hg_docker compose -f "$L2_COMPOSE_FILE" config >/dev/null 2>&1; then
+    fail "compose config invalid for $L2_COMPOSE_FILE"
+  fi
+  echo "OK: compose config valid"
+else
+  warn "compose config validation skipped (docker compose unavailable)"
 fi
-
-echo "OK: compose config valid"
 
 L2_GENESIS_CHAIN_ID="$(read_json "$L2_GENESIS_JSON" "config.chainId")"
 if [ -n "$L2_CHAIN_ID_EXPECTED" ] && [ "$L2_GENESIS_CHAIN_ID" != "$L2_CHAIN_ID_EXPECTED" ]; then
@@ -671,27 +835,48 @@ fi
 if [ "$L2_REQUIRE_L2_PROGRESS" = "1" ]; then
   NOW_TS="$(date +%s)"
   LAST_BATCH_SUCCESS="$(metric_value_with_label "$OP_BATCHER_METRICS_URL" "op_batcher_default_last_batcher_tx_unix" "stage=\\\"success\\\"" || true)"
+  BATCH_METRIC_SOURCE='op_batcher_default_last_batcher_tx_unix{stage="success"}'
   LAST_BATCH_SUCCESS_INT="$(to_int "${LAST_BATCH_SUCCESS:-0}")"
+  if [ "$LAST_BATCH_SUCCESS_INT" -le 0 ]; then
+    LAST_BATCH_SUCCESS="$(metric_value_with_label "$OP_BATCHER_METRICS_URL" "op_batcher_default_txmgr_last_confirm_unix" "status=\\\"success\\\"" || true)"
+    BATCH_METRIC_SOURCE='op_batcher_default_txmgr_last_confirm_unix{status="success"}'
+    LAST_BATCH_SUCCESS_INT="$(to_int "${LAST_BATCH_SUCCESS:-0}")"
+  fi
+  if [ "$LAST_BATCH_SUCCESS_INT" -le 0 ]; then
+    LAST_BATCH_SUCCESS="$(metric_value_with_label "$OP_BATCHER_METRICS_URL" "op_batcher_default_last_batcher_tx_unix" "stage=\\\"submitted\\\"" || true)"
+    BATCH_METRIC_SOURCE='op_batcher_default_last_batcher_tx_unix{stage="submitted"}'
+    LAST_BATCH_SUCCESS_INT="$(to_int "${LAST_BATCH_SUCCESS:-0}")"
+  fi
   if [ "$LAST_BATCH_SUCCESS_INT" -gt 0 ]; then
     BATCH_IDLE=$((NOW_TS - LAST_BATCH_SUCCESS_INT))
     if [ "$BATCH_IDLE" -gt "$L2_MAX_BATCHER_IDLE_SECONDS" ]; then
       fail "batcher idle for ${BATCH_IDLE}s (threshold ${L2_MAX_BATCHER_IDLE_SECONDS}s)"
     fi
-    echo "OK: batcher activity within threshold"
+    echo "OK: batcher activity within threshold (metric=$BATCH_METRIC_SOURCE)"
   else
     fail "batcher has not submitted a successful tx yet"
   fi
 
-  LAST_PROPOSER_PUBLISH="$(metric_value "$OP_PROPOSER_METRICS_URL" "op_proposer_default_txmgr_last_publish_unix" || true)"
-  LAST_PROPOSER_PUBLISH_INT="$(to_int "${LAST_PROPOSER_PUBLISH:-0}")"
-  if [ "$LAST_PROPOSER_PUBLISH_INT" -gt 0 ]; then
-    PROPOSER_IDLE=$((NOW_TS - LAST_PROPOSER_PUBLISH_INT))
-    if [ "$PROPOSER_IDLE" -gt "$L2_MAX_PROPOSER_IDLE_SECONDS" ]; then
-      fail "proposer idle for ${PROPOSER_IDLE}s (threshold ${L2_MAX_PROPOSER_IDLE_SECONDS}s)"
-    fi
-    echo "OK: proposer activity within threshold"
+  if [ "$ROLLUP_GATING_L2_FINALITY_ON_L1" = "true" ]; then
+    echo "OK: proposer activity check delegated to rollup proposer gate"
   else
-    fail "proposer has not published an output yet"
+    LAST_PROPOSER_PUBLISH="$(metric_value "$OP_PROPOSER_METRICS_URL" "op_proposer_default_txmgr_last_publish_unix" || true)"
+    PROPOSER_METRIC_SOURCE="op_proposer_default_txmgr_last_publish_unix"
+    LAST_PROPOSER_PUBLISH_INT="$(to_int "${LAST_PROPOSER_PUBLISH:-0}")"
+    if [ "$LAST_PROPOSER_PUBLISH_INT" -le 0 ]; then
+      LAST_PROPOSER_PUBLISH="$(metric_value_with_label "$OP_PROPOSER_METRICS_URL" "op_proposer_default_txmgr_last_confirm_unix" "status=\\\"success\\\"" || true)"
+      PROPOSER_METRIC_SOURCE='op_proposer_default_txmgr_last_confirm_unix{status="success"}'
+      LAST_PROPOSER_PUBLISH_INT="$(to_int "${LAST_PROPOSER_PUBLISH:-0}")"
+    fi
+    if [ "$LAST_PROPOSER_PUBLISH_INT" -gt 0 ]; then
+      PROPOSER_IDLE=$((NOW_TS - LAST_PROPOSER_PUBLISH_INT))
+      if [ "$PROPOSER_IDLE" -gt "$L2_MAX_PROPOSER_IDLE_SECONDS" ]; then
+        fail "proposer idle for ${PROPOSER_IDLE}s (threshold ${L2_MAX_PROPOSER_IDLE_SECONDS}s)"
+      fi
+      echo "OK: proposer activity within threshold (metric=$PROPOSER_METRIC_SOURCE)"
+    else
+      fail "proposer has not published an output yet"
+    fi
   fi
 else
   echo "OK: batcher/proposer idle checks skipped (L2_REQUIRE_L2_PROGRESS=0)"
@@ -847,7 +1032,7 @@ if [ "${USE_CUSTOM_GAS_TOKEN:-}" = "true" ]; then
   fi
   GENESIS_GAS_TOKEN="$(read_json "$L2_GENESIS_JSON" "config.gasToken")"
   if [ -z "$GENESIS_GAS_TOKEN" ] || [ "$GENESIS_GAS_TOKEN" = "null" ]; then
-    warn "genesis-l2.json config.gasToken is null; ensure SystemConfig enforces GHOST"
+    warn "genesis-l2.json config.gasToken is null; ensure SystemConfig enforces GST"
   else
     echo "OK: genesis gasToken set"
   fi

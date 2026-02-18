@@ -78,7 +78,8 @@ const legacyNavSections: { title: string; items: NavItem[] }[] = [
       { href: '/kyc', label: 'KYC' },
       { href: '/devops', label: 'DevOps' },
       { href: '/integrations', label: 'Integrations' },
-      { href: '/ai', label: 'AI' }
+      { href: '/ai', label: 'AI' },
+      { href: '/ai/hyperghost', label: 'Hyper Ghost' }
     ]
   },
   {

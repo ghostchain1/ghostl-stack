@@ -1,0 +1,26 @@
+[Unit]
+Description=GhostControl Event Watchdog
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ghost
+Group=ghost
+WorkingDirectory=/home/ghost/ghostl-stack/tools/ghostcontrol
+Environment=GHOSTCONTROL_PROMETHEUS_URL=http://localhost:9090
+Environment=GHOSTCONTROL_WATCH_INTERVAL_MS=20000
+Environment=GHOSTCONTROL_WATCH_COOLDOWN_MS=45000
+Environment=GHOSTCONTROL_WATCH_HEARTBEAT_LOG_INTERVAL_MS=60000
+Environment=GHOSTCONTROL_WATCHDOG_STATUS_PATH=/home/ghost/ghostl-stack/tools/ghostcontrol/evidence/logs/event-watchdog.status.json
+ExecStartPre=/usr/bin/mkdir -p /home/ghost/ghostl-stack/tools/ghostcontrol/evidence/logs
+ExecStart=/usr/bin/node --experimental-strip-types /home/ghost/ghostl-stack/tools/ghostcontrol/orchestrator/event_watchdog.ts
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=30
+StandardOutput=append:/home/ghost/ghostl-stack/tools/ghostcontrol/evidence/logs/event-watchdog.log
+StandardError=append:/home/ghost/ghostl-stack/tools/ghostcontrol/evidence/logs/event-watchdog.log
+
+[Install]
+WantedBy=multi-user.target

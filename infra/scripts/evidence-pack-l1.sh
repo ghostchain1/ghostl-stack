@@ -62,15 +62,15 @@ build_pack() {
     "${work_dir}/keys" \
     "${work_dir}/provenance"
 
-  local snapshots=(
-    "docker-compose.yml"
-    "infra/ghostchain/docker-compose.eth.yml"
-    "infra/ghostchain/docker-compose.ibft.yml"
-    "infra/ghostchain/config"
-    "infra/ghostchain/README.md"
-    "infra/scripts/doctor-l1.sh"
-    ".env.example"
-  )
+	  local snapshots=(
+	    "docker-compose.yml"
+	    "infra/ghostchain/docker-compose.l1.yml"
+	    "infra/ghostchain/docker-compose.ibft.yml"
+	    "infra/ghostchain/config"
+	    "infra/ghostchain/README.md"
+	    "infra/scripts/doctor-l1.sh"
+	    ".env.example"
+	  )
 
   for item in "${snapshots[@]}"; do
     if [ -e "${ROOT_DIR}/${item}" ]; then

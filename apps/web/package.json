@@ -3,9 +3,9 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "PORT=${PORT:-3200} next dev",
-    "dev:inspect": "NODE_OPTIONS=--inspect=0.0.0.0:9230 PORT=${PORT:-3200} next dev",
-    "build": "next build",
+    "dev": "PORT=${PORT:-3200} NEXT_IGNORE_INCORRECT_LOCKFILE=1 next dev",
+    "dev:inspect": "NODE_OPTIONS=--inspect=0.0.0.0:9230 PORT=${PORT:-3200} NEXT_IGNORE_INCORRECT_LOCKFILE=1 next dev",
+    "build": "NEXT_IGNORE_INCORRECT_LOCKFILE=1 next build",
     "start": "next start",
     "test:e2e": "playwright test"
   },
@@ -13,7 +13,7 @@
     "@ghostl/contract-schemas": "0.0.1",
     "@ghostl/ui": "0.0.1",
     "ethers": "^6.13.2",
-    "next": "^15.2.3",
+    "next": "15.5.11",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^3.25.76"

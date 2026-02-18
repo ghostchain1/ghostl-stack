@@ -6,18 +6,21 @@ SERVICE_DIR="$ROOT_DIR/services/network-manager-service"
 IMAGE_NAME="${IMAGE_NAME:-ghostl/network-manager-service:local}"
 OUTPUT_DIR="${OUTPUT_DIR:-$ROOT_DIR/ops/reports/provenance}"
 
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT_DIR}/scripts/lib/docker.sh"
+
 VCS_REF="$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || echo unknown)"
 BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 mkdir -p "$OUTPUT_DIR"
 
-docker build \
+hg_docker build \
   --build-arg VCS_REF="$VCS_REF" \
   --build-arg BUILD_DATE="$BUILD_DATE" \
   -t "$IMAGE_NAME" \
   "$SERVICE_DIR"
 
-IMAGE_INSPECT="$(docker image inspect "$IMAGE_NAME" --format '{{json .}}')"
+IMAGE_INSPECT="$(hg_docker image inspect "$IMAGE_NAME" --format '{{json .}}')"
 IMAGE_ID="$(echo "$IMAGE_INSPECT" | node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync(0,"utf8"));console.log(d.Id)')"
 IMAGE_DIGEST="$(echo "$IMAGE_INSPECT" | node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync(0,"utf8"));const repo=(d.RepoDigests||[])[0]||"";console.log(repo)')"
 

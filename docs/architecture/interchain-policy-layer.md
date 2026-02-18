@@ -208,7 +208,7 @@ flowchart TD
   end
 
   subgraph EXT["External chains / ecosystems"]
-    ETH["Ethereum (EVM)"]
+    EVM_EXT["External EVM chain"]
     BTC["Bitcoin (UTXO)"]
     OTH["Others (EVM/non‑EVM)"]
   end
@@ -236,7 +236,7 @@ flowchart TD
   Liq --> Bridge
   Bridge -->|"approved adapter"| Exec
 
-  Exec -->|"submit tx/proof"| ETH
+  Exec -->|"submit tx/proof"| EVM_EXT
   Exec -->|"submit tx/proof"| BTC
   Exec -->|"submit tx/proof"| OTH
 

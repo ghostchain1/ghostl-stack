@@ -36,20 +36,18 @@
           {
             "name": "op-batcher-b",
             "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:devnet",
-            "command": null,
-            "args": null,
+            "command": [
+              "op-batcher"
+            ],
+            "args": [
+              "--l1-eth-rpc=http://l1:8545",
+              "--l2-eth-rpc=http://l2-b:8545",
+              "--rollup-rpc=http://op-node-b:8545"
+            ],
             "env": [
               {
                 "name": "OP_BATCHER_BATCH_TYPE",
                 "value": "null"
-              },
-              {
-                "name": "OP_BATCHER_L1_ETH_RPC",
-                "value": "http://l1:8545"
-              },
-              {
-                "name": "OP_BATCHER_L2_ETH_RPC",
-                "value": "http://l2-b:8545"
               },
               {
                 "name": "OP_BATCHER_MAX_CHANNEL_DURATION",
