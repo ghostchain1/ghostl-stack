@@ -836,10 +836,17 @@ services:
     image: ${ALERTMANAGER_IMAGE:-prom/alertmanager@sha256:e13b6ed5cb929eeaee733479dce55e10eb3bc2e9c4586c705a4e8da41e5eacf5}
     restart: unless-stopped
     logging: *id003
+    entrypoint:
+    - /bin/sh
+    - -lc
     command:
-    - --config.file=/etc/alertmanager/alertmanager.yml
-    - --storage.path=/alertmanager
-    - --cluster.listen-address=
+    - sed -e "s|\$${ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL}|$${ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL}|g"
+      -e "s|\$${ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL}|$${ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL}|g"
+      /etc/alertmanager/alertmanager.yml > /tmp/alertmanager.rendered.yml && exec alertmanager
+      --config.file=/tmp/alertmanager.rendered.yml --storage.path=/alertmanager --cluster.listen-address=
+    environment:
+      ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL: ${ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL:-http://host.docker.internal:19093/alert-hooks/sovereignty-critical}
+      ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL: ${ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL:-http://host.docker.internal:19093/alert-hooks/sovereignty-warning}
     volumes:
     - ./observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     - alertmanager_data:/alertmanager
