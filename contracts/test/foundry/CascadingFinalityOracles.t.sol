@@ -182,4 +182,40 @@ contract CascadingFinalityOraclesTest is TestBase {
         assertTrue(l3Oracle.isParentL2FinalizedOnL1(parentL2Root), "parent l2 finalized on l1");
         assertEq(l3Oracle.parentL2Block(l3Root), 201, "parent l2 block bound");
     }
+
+    function testL1HaltPropagatesToL2AndL3Finality() public {
+        vm.prank(GOVERNOR);
+        l1Oracle.setAcceptedPolicyHash(POLICY_HASH, true);
+        vm.prank(GOVERNOR);
+        l1Oracle.recordFinalizedBlock(100, L1_BLOCK_HASH, L1_QC_HASH, POLICY_HASH);
+
+        bytes32 l2Root = keccak256("l2-root-halt");
+        bytes32 l3Root = keccak256("l3-root-halt");
+
+        vm.prank(TIMELOCK);
+        l1Oracle.setFinalityHalted(true);
+        assertTrue(l2Oracle.isFinalityHalted(), "l2 sees l1 halt");
+        assertTrue(l3Oracle.isFinalityHalted(), "l3 sees l1 halt");
+
+        vm.prank(GOVERNOR);
+        vm.expectRevert(L2FinalityOracle.L1FinalityHalted.selector);
+        l2Oracle.recordFinalizedL2Root(l2Root, 400, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l2-halt"));
+
+        vm.prank(TIMELOCK);
+        vm.expectRevert(L3FinalityOracle.L1FinalityHalted.selector);
+        l3Oracle.recordFinalizedL3Root(
+            l3Root,
+            500,
+            l2Root,
+            400,
+            100,
+            L1_BLOCK_HASH,
+            POLICY_HASH,
+            keccak256("proof-l3-halt")
+        );
+
+        vm.prank(TIMELOCK);
+        vm.expectRevert(L3FinalityOracle.L1FinalityHalted.selector);
+        l3Oracle.reportParentL2CanonicalDivergence(400, l2Root, keccak256("l3-halt-divergence"));
+    }
 }

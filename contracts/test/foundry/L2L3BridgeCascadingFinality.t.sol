@@ -106,6 +106,18 @@ contract L2L3BridgeCascadingFinalityTest is TestBase {
         );
     }
 
+    function testBridgeFinalityPathBlockedWhenL1FinalityHalted() public {
+        _recordL1AndL2Finality();
+        bridge.depositToL3(address(this), 1 ether, 77);
+
+        vm.prank(GOVERNOR);
+        l1Oracle.setFinalityHalted(true);
+
+        vm.prank(RELAYER);
+        vm.expectRevert(bytes("L1_FINALITY_HALTED"));
+        bridge.finalizeToL3WithFinality(address(this), address(this), 1 ether, 77, l2Root);
+    }
+
     function _recordL1AndL2Finality() internal {
         vm.prank(GOVERNOR);
         l1Oracle.setAcceptedPolicyHash(POLICY_HASH, true);

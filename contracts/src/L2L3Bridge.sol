@@ -7,11 +7,13 @@ import "./compliance/ComplianceProofGuard.sol";
 
 interface IL2FinalityOracle {
     function isFinalizedOnL1(bytes32 l2StateRoot) external view returns (bool);
+    function isFinalityHalted() external view returns (bool);
 }
 
 interface IL3FinalityOracle {
     function isFinalizedOnL2(bytes32 l3StateRoot) external view returns (bool);
     function isParentL2FinalizedOnL1(bytes32 parentL2StateRoot) external view returns (bool);
+    function isFinalityHalted() external view returns (bool);
 }
 
 // slither-disable-next-line locked-ether
@@ -228,6 +230,7 @@ contract L2L3Bridge {
     function _enforceL2Finality(bytes32 l2StateRoot) internal view {
         if (!enforceHierarchicalFinality) return;
         require(address(l2FinalityOracle) != address(0), "L2_FINALITY_ORACLE_MISSING");
+        require(!l2FinalityOracle.isFinalityHalted(), "L1_FINALITY_HALTED");
         require(l2StateRoot != bytes32(0), "L2_STATE_ROOT_REQUIRED");
         require(l2FinalityOracle.isFinalizedOnL1(l2StateRoot), "L2_NOT_FINALIZED_ON_L1");
     }
@@ -235,6 +238,7 @@ contract L2L3Bridge {
     function _enforceL3Finality(bytes32 l3StateRoot, bytes32 parentL2StateRoot) internal view {
         if (!enforceHierarchicalFinality) return;
         require(address(l3FinalityOracle) != address(0), "L3_FINALITY_ORACLE_MISSING");
+        require(!l3FinalityOracle.isFinalityHalted(), "L1_FINALITY_HALTED");
         require(l3StateRoot != bytes32(0), "L3_STATE_ROOT_REQUIRED");
         require(parentL2StateRoot != bytes32(0), "L2_PARENT_ROOT_REQUIRED");
         require(l3FinalityOracle.isFinalizedOnL2(l3StateRoot), "L3_NOT_FINALIZED_ON_L2");

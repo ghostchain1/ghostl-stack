@@ -59,6 +59,7 @@ contract L2FinalityOracle is Governed, IFederationFinalityVerifier {
     error L2CanonicalRootMismatch(uint256 l2BlockNumber, bytes32 canonicalRoot, bytes32 conflictingRoot);
     error CanonicalRootUnavailable(uint256 l2BlockNumber);
     error InvalidEvidenceHash();
+    error L1FinalityHalted();
 
     constructor(address governor_, address timelock_, L1FinalityOracle l1FinalityOracle_) Governed(governor_, timelock_) {
         require(address(l1FinalityOracle_) != address(0), "l1Oracle=0");
@@ -85,6 +86,7 @@ contract L2FinalityOracle is Governed, IFederationFinalityVerifier {
         bytes32 aiPolicyHash,
         bytes32 finalityProofHash
     ) external onlyGovernance {
+        if (l1FinalityOracle.isFinalityHalted()) revert L1FinalityHalted();
         if (l2StateRoot == bytes32(0)) revert InvalidRoot();
         if (aiPolicyHash == bytes32(0)) revert InvalidPolicyHash();
         if (finalityProofHash == bytes32(0)) revert InvalidProofHash();
@@ -127,6 +129,7 @@ contract L2FinalityOracle is Governed, IFederationFinalityVerifier {
         onlyGovernance
         returns (bool)
     {
+        if (l1FinalityOracle.isFinalityHalted()) revert L1FinalityHalted();
         if (conflictingRoot == bytes32(0)) revert InvalidRoot();
         if (evidenceHash == bytes32(0)) revert InvalidEvidenceHash();
 
@@ -161,6 +164,10 @@ contract L2FinalityOracle is Governed, IFederationFinalityVerifier {
 
     function isPolicyHashAccepted(bytes32 aiPolicyHash) external view returns (bool) {
         return l1FinalityOracle.isPolicyHashAccepted(aiPolicyHash);
+    }
+
+    function isFinalityHalted() external view returns (bool) {
+        return l1FinalityOracle.isFinalityHalted();
     }
 
     function verifyFinality(uint256 sourceDomainId, bytes32 finalityProofHash) external view override returns (bool) {
