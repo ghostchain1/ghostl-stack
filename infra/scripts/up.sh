@@ -18,6 +18,8 @@ source "$OP_DIR/.env"
 [ -f "$OP_DIR/.env.secrets" ] && source "$OP_DIR/.env.secrets"
 set +a
 
+bash "$ROOT/infra/scripts/env-sync-stack.sh"
+
 HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:18545}"
 HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
 HOST_L3_RPC="${HOST_L3_RPC:-http://localhost:39545}"
