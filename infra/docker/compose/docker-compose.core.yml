@@ -3097,8 +3097,11 @@
         "ALL"
       ],
       "command": [
-        "--config.file=/etc/alertmanager/alertmanager.yml",
-        "--storage.path=/alertmanager"
+        "sed -e \"s|\\$${ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL}|$${ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL}|g\" -e \"s|\\$${ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL}|$${ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL}|g\" /etc/alertmanager/alertmanager.yml > /tmp/alertmanager.rendered.yml && exec alertmanager --config.file=/tmp/alertmanager.rendered.yml --storage.path=/alertmanager"
+      ],
+      "entrypoint": [
+        "/bin/sh",
+        "-lc"
       ],
       "cpus": "0.25",
       "healthcheck": {
@@ -3112,6 +3115,10 @@
         "timeout": "5s"
       },
       "image": "${ALERTMANAGER_IMAGE:-prom/alertmanager@sha256:e13b6ed5cb929eeaee733479dce55e10eb3bc2e9c4586c705a4e8da41e5eacf5}",
+      "environment": {
+        "ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL": "${ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL:-http://host.docker.internal:19093/alert-hooks/sovereignty-critical}",
+        "ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL": "${ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL:-http://host.docker.internal:19093/alert-hooks/sovereignty-warning}"
+      },
       "logging": {
         "driver": "json-file",
         "options": {

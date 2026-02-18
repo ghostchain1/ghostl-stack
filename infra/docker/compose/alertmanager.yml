@@ -33,11 +33,11 @@ receivers:
   - name: dev-null
   - name: sovereignty-critical-webhook
     webhook_configs:
-      - url: http://host.docker.internal:19093/alert-hooks/sovereignty-critical
+      - url: ${ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL}
         send_resolved: true
         max_alerts: 0
   - name: sovereignty-warning-webhook
     webhook_configs:
-      - url: http://host.docker.internal:19093/alert-hooks/sovereignty-warning
+      - url: ${ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL}
         send_resolved: true
         max_alerts: 0
