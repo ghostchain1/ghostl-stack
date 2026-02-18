@@ -4,6 +4,10 @@ pragma solidity ^0.8.24;
 import "../common/Governed.sol";
 import "../governance/InterchainAuthorization.sol";
 
+interface IFinalityHaltOracle {
+    function isFinalityHalted() external view returns (bool);
+}
+
 /// @notice Canonical GhostChain hub: L2/L3 can post roots to L1; only L1 can trigger external-chain egress.
 contract GhostChainBridgeHub is Governed {
     uint8 public constant LAYER_L1 = 1;
@@ -33,6 +37,9 @@ contract GhostChainBridgeHub is Governed {
     }
 
     InterchainAuthorization public authorization;
+    IFinalityHaltOracle public l1FinalityOracle;
+    bool public manualReadOnlyMode;
+    bytes32 public readOnlyReasonHash;
 
     mapping(address => bool) public operators;
     mapping(uint8 => bool) public layerRootPostingEnabled;
@@ -45,6 +52,8 @@ contract GhostChainBridgeHub is Governed {
 
     event OperatorUpdated(address indexed operator, bool allowed);
     event AuthorizationUpdated(address indexed authorization);
+    event L1FinalityOracleUpdated(address indexed oracle);
+    event ReadOnlyModeUpdated(bool enabled, bytes32 reasonHash, address indexed executor);
     event LayerRootPostingUpdated(uint8 indexed layer, bool enabled);
     event ExternalChainAllowedUpdated(uint256 indexed chainId, bool allowed);
     event LayerRootRecorded(uint8 indexed layer, bytes32 indexed root, uint64 sourceBlockNumber, bytes32 evidenceHash, address recorder);
@@ -68,6 +77,7 @@ contract GhostChainBridgeHub is Governed {
     error L3RequiresParentL2Root();
     error L2ParentRootNotRecorded(bytes32 parentL2Root);
     error RootAlreadyRecorded(bytes32 root);
+    error ReadOnlyModeActive();
     error OnlyGhostChainEgress(uint8 sourceLayer);
     error ExternalChainNotAllowed(uint256 chainId);
     error OutboundAlreadyExecuted(bytes32 messageId);
@@ -90,6 +100,17 @@ contract GhostChainBridgeHub is Governed {
         emit AuthorizationUpdated(address(authorization_));
     }
 
+    function setL1FinalityOracle(IFinalityHaltOracle l1FinalityOracle_) external onlyGovernance {
+        l1FinalityOracle = l1FinalityOracle_;
+        emit L1FinalityOracleUpdated(address(l1FinalityOracle_));
+    }
+
+    function setReadOnlyMode(bool enabled, bytes32 reasonHash) external onlyGovernance {
+        manualReadOnlyMode = enabled;
+        readOnlyReasonHash = reasonHash;
+        emit ReadOnlyModeUpdated(enabled, reasonHash, msg.sender);
+    }
+
     function setOperator(address operator, bool allowed) external onlyGovernance {
         operators[operator] = allowed;
         emit OperatorUpdated(operator, allowed);
@@ -107,10 +128,18 @@ contract GhostChainBridgeHub is Governed {
         emit ExternalChainAllowedUpdated(chainId, allowed);
     }
 
+    function isReadOnlyMode() public view returns (bool) {
+        if (manualReadOnlyMode) return true;
+        IFinalityHaltOracle oracle = l1FinalityOracle;
+        if (address(oracle) == address(0)) return false;
+        return oracle.isFinalityHalted();
+    }
+
     function recordLayerRoot(uint8 layer, bytes32 root, uint64 sourceBlockNumber, bytes32 evidenceHash)
         external
         onlyOperatorOrGovernance
     {
+        _enforceWritableMode();
         if (layer != LAYER_L2 && layer != LAYER_L3) revert InvalidLayer(layer);
         if (layer == LAYER_L3) revert L3RequiresParentL2Root();
         if (!layerRootPostingEnabled[layer]) revert PostingDisabled(layer);
@@ -136,6 +165,7 @@ contract GhostChainBridgeHub is Governed {
         uint64 sourceBlockNumber,
         bytes32 evidenceHash
     ) external onlyOperatorOrGovernance {
+        _enforceWritableMode();
         if (!layerRootPostingEnabled[LAYER_L3]) revert PostingDisabled(LAYER_L3);
         if (l3Root == bytes32(0)) revert InvalidRoot();
         if (parentL2Root == bytes32(0)) revert InvalidRoot();
@@ -163,6 +193,7 @@ contract GhostChainBridgeHub is Governed {
         onlyOperatorOrGovernance
         returns (bytes32 messageId)
     {
+        _enforceWritableMode();
         if (sourceLayer != LAYER_L1) revert OnlyGhostChainEgress(sourceLayer);
         if (!externalChainAllowed[destinationChainId]) revert ExternalChainNotAllowed(destinationChainId);
         require(amount > 0, "amount=0");
@@ -206,6 +237,7 @@ contract GhostChainBridgeHub is Governed {
     }
 
     function markOutboundExecuted(bytes32 messageId, bytes32 externalTxHash) external onlyOperatorOrGovernance {
+        _enforceWritableMode();
         OutboundMessage storage message = outboundMessages[messageId];
         if (message.queuedAt == 0) revert OutboundMissing(messageId);
         if (message.executed) revert OutboundAlreadyExecuted(messageId);
@@ -228,5 +260,10 @@ contract GhostChainBridgeHub is Governed {
 
     function computeLayerRootId(uint8 layer, bytes32 root) public pure returns (bytes32) {
         return keccak256(abi.encode(layer, root));
+    }
+
+    function _enforceWritableMode() internal view {
+        if (msg.sender == governor || msg.sender == timelock) return;
+        if (isReadOnlyMode()) revert ReadOnlyModeActive();
     }
 }
