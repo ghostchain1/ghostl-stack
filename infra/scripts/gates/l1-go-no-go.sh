@@ -3,6 +3,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 L1_ENV_FILE="${L1_ENV_FILE:-$ROOT_DIR/infra/ghostchain/.env.l1}"
+STACK_ENV_FILE="${STACK_ENV_FILE:-$ROOT_DIR/services/stack.env}"
+STACK_ENV_MODE="$(printf '%s' "${STACK_ENV:-${L1_MODE:-dev}}" | tr '[:upper:]' '[:lower:]')"
 
 # shellcheck source=scripts/lib/docker.sh
 . "$ROOT_DIR/scripts/lib/docker.sh"
@@ -15,12 +17,14 @@ if [ -f "$L1_ENV_FILE" ]; then
 fi
 
 HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:18545}"
+HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
+HOST_L3_RPC="${HOST_L3_RPC:-http://localhost:39545}"
 L1_METRICS_PROM_URL="${L1_METRICS_PROM_URL:-http://localhost:18660/debug/metrics/prometheus}"
 PROMETHEUS_URL="${PROMETHEUS_URL:-http://localhost:9090}"
 L1_METRICS_PROM_TARGET="${L1_METRICS_PROM_TARGET:-http://host.docker.internal:18660/debug/metrics/prometheus}"
 AI_MONITOR_HEALTH_URL="${AI_MONITOR_HEALTH_URL:-http://localhost:7576/health}"
 AI_MONITOR_METRICS_URL="${AI_MONITOR_METRICS_URL:-http://localhost:7576/metrics}"
-POLICY_REGISTRY_ENV_FILE="${POLICY_REGISTRY_ENV_FILE:-$ROOT_DIR/services/stack.env}"
+POLICY_REGISTRY_ENV_FILE="${POLICY_REGISTRY_ENV_FILE:-$STACK_ENV_FILE}"
 POLICY_REGISTRY_ADDRESS="${POLICY_REGISTRY_ADDRESS:-}"
 POLICY_REGISTRY_RPC="${POLICY_REGISTRY_RPC:-}"
 
@@ -37,6 +41,10 @@ SKIP_INVARIANTS="${SKIP_INVARIANTS:-0}"
 SKIP_EVIDENCE="${SKIP_EVIDENCE:-0}"
 SKIP_VULN_SCAN="${SKIP_VULN_SCAN:-0}"
 SKIP_DOCKER_CHECK="${SKIP_DOCKER_CHECK:-0}"
+SKIP_CASCADING_ORACLE_CHECK="${SKIP_CASCADING_ORACLE_CHECK:-0}"
+SKIP_POLICY_HASH_COMMIT="${SKIP_POLICY_HASH_COMMIT:-0}"
+SKIP_GOVERNANCE_APPROVAL="${SKIP_GOVERNANCE_APPROVAL:-0}"
+SKIP_CASCADING_FINALITY="${SKIP_CASCADING_FINALITY:-0}"
 TRIVY_IMAGE_SCAN="${TRIVY_IMAGE_SCAN:-0}"
 
 TRIVY_SECRET_CONFIG="${TRIVY_SECRET_CONFIG:-$ROOT_DIR/trivy-secret.yaml}"
@@ -115,6 +123,20 @@ need_bin() {
   command -v "$1" >/dev/null 2>&1 || fail "missing required binary: $1"
 }
 
+is_truthy() {
+  case "$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')" in
+    1 | true | yes | on) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+is_production_mode() {
+  case "$STACK_ENV_MODE" in
+    prod | production) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 jsonrpc() {
   local url="$1"
   local method="$2"
@@ -135,7 +157,59 @@ get_code() {
 read_env_value() {
   local file="$1"
   local key="$2"
-  grep -E "^${key}=" "$file" | tail -n1 | cut -d= -f2- | tr -d '\"'
+  grep -E "^${key}=" "$file" 2>/dev/null | tail -n1 | cut -d= -f2- | tr -d '\"' || true
+}
+
+read_stack_env_value() {
+  local key="$1"
+  if [ -f "$STACK_ENV_FILE" ]; then
+    read_env_value "$STACK_ENV_FILE" "$key"
+  else
+    echo ""
+  fi
+}
+
+is_zero_address() {
+  local value="$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')"
+  [ "$value" = "0x0000000000000000000000000000000000000000" ]
+}
+
+is_valid_address() {
+  local value="${1:-}"
+  [[ "$value" =~ ^0x[0-9a-fA-F]{40}$ ]]
+}
+
+is_valid_bytes32() {
+  local value="${1:-}"
+  [[ "$value" =~ ^0x[0-9a-fA-F]{64}$ ]]
+}
+
+extract_code_hex() {
+  local json_payload="${1:-}"
+  printf '%s' "$json_payload" | python3 -c 'import json,sys; print((json.load(sys.stdin) or {}).get("result",""))' 2>/dev/null || true
+}
+
+has_contract_code() {
+  local rpc_url="$1"
+  local address="$2"
+  local code_json code_hex
+  code_json="$(get_code "$rpc_url" "$address" 2>/dev/null || true)"
+  code_hex="$(extract_code_hex "$code_json")"
+  [ -n "$code_hex" ] && [ "$code_hex" != "0x" ]
+}
+
+resolve_contract_rpc() {
+  local address="$1"
+  local preferred_rpc="${2:-}"
+  local candidate
+  for candidate in "$preferred_rpc" "$HOST_L2_RPC" "$HOST_L1_RPC" "$HOST_L3_RPC"; do
+    [ -n "$candidate" ] || continue
+    if has_contract_code "$candidate" "$address"; then
+      echo "$candidate"
+      return 0
+    fi
+  done
+  return 1
 }
 
 resolve_policy_registry_address() {
@@ -338,6 +412,92 @@ else
   warn "AI monitor check skipped"
 fi
 
+l1_finality_oracle_rpc=""
+
+if [ "$SKIP_CASCADING_ORACLE_CHECK" != "1" ]; then
+  info "cascading finality oracle deployment check"
+  l1_finality_oracle_address="${L1_FINALITY_ORACLE_ADDRESS:-$(read_stack_env_value L1_FINALITY_ORACLE_ADDRESS)}"
+  l2_finality_oracle_address="${L2_FINALITY_ORACLE_ADDRESS:-$(read_stack_env_value L2_FINALITY_ORACLE_ADDRESS)}"
+  l3_finality_oracle_address="${L3_FINALITY_ORACLE_ADDRESS:-$(read_stack_env_value L3_FINALITY_ORACLE_ADDRESS)}"
+
+  l1_finality_oracle_rpc_pref="${L1_FINALITY_ORACLE_RPC:-$(read_stack_env_value L1_FINALITY_ORACLE_RPC)}"
+  l2_finality_oracle_rpc_pref="${L2_FINALITY_ORACLE_RPC:-$(read_stack_env_value L2_FINALITY_ORACLE_RPC)}"
+  l3_finality_oracle_rpc_pref="${L3_FINALITY_ORACLE_RPC:-$(read_stack_env_value L3_FINALITY_ORACLE_RPC)}"
+
+  for oracle_label in L1 L2 L3; do
+    oracle_address_var="$(printf '%s\n' "$oracle_label" | tr '[:upper:]' '[:lower:]')_finality_oracle_address"
+    oracle_address="${!oracle_address_var:-}"
+    if [ -z "$oracle_address" ]; then
+      fail "${oracle_label}_FINALITY_ORACLE_ADDRESS missing (set in ${STACK_ENV_FILE#$ROOT_DIR/})"
+    fi
+    if ! is_valid_address "$oracle_address" || is_zero_address "$oracle_address"; then
+      fail "${oracle_label}_FINALITY_ORACLE_ADDRESS invalid: $oracle_address"
+    fi
+  done
+
+  l1_finality_oracle_rpc="$(resolve_contract_rpc "$l1_finality_oracle_address" "$l1_finality_oracle_rpc_pref" || true)"
+  l2_finality_oracle_rpc="$(resolve_contract_rpc "$l2_finality_oracle_address" "$l2_finality_oracle_rpc_pref" || true)"
+  l3_finality_oracle_rpc="$(resolve_contract_rpc "$l3_finality_oracle_address" "$l3_finality_oracle_rpc_pref" || true)"
+
+  [ -n "$l1_finality_oracle_rpc" ] || fail "L1FinalityOracle not deployed at $l1_finality_oracle_address on known RPC endpoints"
+  [ -n "$l2_finality_oracle_rpc" ] || fail "L2FinalityOracle not deployed at $l2_finality_oracle_address on known RPC endpoints"
+  [ -n "$l3_finality_oracle_rpc" ] || fail "L3FinalityOracle not deployed at $l3_finality_oracle_address on known RPC endpoints"
+
+  info "L1FinalityOracle deployed: $l1_finality_oracle_address (rpc $l1_finality_oracle_rpc)"
+  info "L2FinalityOracle deployed: $l2_finality_oracle_address (rpc $l2_finality_oracle_rpc)"
+  info "L3FinalityOracle deployed: $l3_finality_oracle_address (rpc $l3_finality_oracle_rpc)"
+else
+  warn "cascading oracle deployment check skipped"
+fi
+
+if [ "$SKIP_POLICY_HASH_COMMIT" != "1" ]; then
+  info "AI policy hash commitment check"
+  ai_policy_hash="${AI_POLICY_HASH:-$(read_stack_env_value AI_POLICY_HASH)}"
+  if [ -z "$ai_policy_hash" ]; then
+    if is_production_mode; then
+      fail "AI_POLICY_HASH missing for production go-live gate"
+    fi
+    warn "AI_POLICY_HASH missing; policy commitment check downgraded in non-production mode"
+  elif ! is_valid_bytes32 "$ai_policy_hash"; then
+    fail "AI_POLICY_HASH must be 32-byte hex (got: $ai_policy_hash)"
+  else
+    if [ -z "$l1_finality_oracle_rpc" ] || [ -z "${l1_finality_oracle_address:-}" ]; then
+      fail "cannot verify AI policy hash: L1 finality oracle context unresolved"
+    fi
+    if ! command -v cast >/dev/null 2>&1; then
+      if is_production_mode; then
+        fail "cast not installed; cannot verify acceptedPolicyHash on L1FinalityOracle"
+      fi
+      warn "cast not installed; skipping on-chain policy hash verification in non-production mode"
+    else
+      policy_accepted="$(
+        cast call "$l1_finality_oracle_address" "acceptedPolicyHash(bytes32)(bool)" "$ai_policy_hash" \
+          --rpc-url "$l1_finality_oracle_rpc" 2>/dev/null || true
+      )"
+      if [ "$policy_accepted" != "true" ]; then
+        fail "AI policy hash not accepted by L1FinalityOracle ($ai_policy_hash)"
+      fi
+      info "AI policy hash accepted by L1FinalityOracle: $ai_policy_hash"
+    fi
+  fi
+else
+  warn "AI policy hash commitment check skipped"
+fi
+
+if [ "$SKIP_GOVERNANCE_APPROVAL" != "1" ]; then
+  info "governance approval check"
+  governance_vote_approved="${GOVERNANCE_VOTE_APPROVED:-$(read_stack_env_value GOVERNANCE_VOTE_APPROVED)}"
+  if is_truthy "$governance_vote_approved"; then
+    info "Governance vote approved flag is set"
+  elif is_production_mode; then
+    fail "GOVERNANCE_VOTE_APPROVED is not set for production go-live gate"
+  else
+    warn "GOVERNANCE_VOTE_APPROVED not set; tolerated in non-production mode"
+  fi
+else
+  warn "governance approval check skipped"
+fi
+
 if [ "$SKIP_POLICY_REGISTRY" != "1" ]; then
   info "policy registry check"
   policy_addr="$(resolve_policy_registry_address)"
@@ -353,6 +513,25 @@ if [ "$SKIP_POLICY_REGISTRY" != "1" ]; then
   info "policy registry deployed: $policy_addr (rpc $policy_rpc)"
 else
   warn "policy registry check skipped"
+fi
+
+if [ "$SKIP_CASCADING_FINALITY" != "1" ]; then
+  info "cascading finality validation tests"
+  if command -v forge >/dev/null 2>&1; then
+    (
+      cd "$ROOT_DIR/contracts"
+      forge test --match-path test/foundry/CascadingFinalityOracles.t.sol >/dev/null
+      forge test --match-path test/foundry/L2L3BridgeCascadingFinality.t.sol >/dev/null
+      forge test --match-path test/foundry/GhostChainBridgeHub.t.sol >/dev/null
+    )
+    info "cascading finality tests passed"
+  elif is_production_mode; then
+    fail "forge not installed; cannot run cascading finality validation tests"
+  else
+    warn "forge not installed; skipping cascading finality validation tests in non-production mode"
+  fi
+else
+  warn "cascading finality validation tests skipped"
 fi
 
 if [ "$SKIP_INVARIANTS" != "1" ]; then
