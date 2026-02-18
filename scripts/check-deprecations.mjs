@@ -130,7 +130,20 @@ const listFiles = async (dir, collected) => {
   }
   for (const entry of entries) {
     if (entry.isDirectory()) {
-      if (['node_modules', '.git', '.next', 'dist', 'out', 'coverage', 'cache', 'artifacts', 'tmp', 'data', 'logs', 'chaindata'].includes(entry.name)) {
+      const skipDirs = new Set([
+        'node_modules',
+        '.git',
+        'dist',
+        'out',
+        'coverage',
+        'cache',
+        'artifacts',
+        'tmp',
+        'data',
+        'logs',
+        'chaindata'
+      ]);
+      if (skipDirs.has(entry.name) || entry.name === '.next' || entry.name.startsWith('.next-')) {
         continue;
       }
       await listFiles(path.join(dir, entry.name), collected);
@@ -240,13 +253,20 @@ const scanFiles = async () => {
     const workspaceName = workspaceForPath(relPath);
 
     if (nextWorkspaceNames.has(workspaceName) && /^middleware\./.test(baseName)) {
-      addItem({
-        workspace: workspaceName,
-        category: 'config',
-        location: relPath,
-        action: 'fix',
-        replacement: 'proxy file convention'
-      });
+      // Next.js expects middleware at repo root. We enforce a proxy-file convention to keep the real logic isolated,
+      // but do not flag files that already follow that convention.
+      const contents = await readFile(filePath, 'utf8');
+      const looksLikeProxy =
+        /from\s+['"]\.\/proxy['"]/.test(contents) && /\bexport\s*\{\s*config\s*\}/.test(contents);
+      if (!looksLikeProxy) {
+        addItem({
+          workspace: workspaceName,
+          category: 'config',
+          location: relPath,
+          action: 'fix',
+          replacement: 'proxy file convention'
+        });
+      }
       continue;
     }
 

@@ -5,11 +5,14 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 OP_ENV="$ROOT/infra/opstack/.env"
 STACK_ENV="$ROOT/services/stack.env"
 
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT}/scripts/lib/docker.sh"
+hg_require_docker_compose
+
 need_cmd() {
   command -v "$1" >/dev/null 2>&1 || { echo "Missing required command: $1" >&2; exit 1; }
 }
 
-need_cmd docker
 need_cmd curl
 
 if [ ! -f "$OP_ENV" ]; then
@@ -61,6 +64,10 @@ echo "Starting OP Stack L2..."
 bash "$ROOT/infra/scripts/opstack/up-l2.sh"
 
 if [ "$ENABLE_L3" = "1" ]; then
+  if [ "$SKIP_DEPLOY" != "1" ]; then
+    echo "Deploying L3 parent contracts on L2..."
+    bash "$ROOT/infra/scripts/opstack/deploy-l3.sh"
+  fi
   echo "Starting OP Stack L3..."
   bash "$ROOT/infra/scripts/opstack/up-l3.sh"
 fi
@@ -84,12 +91,12 @@ if [ "$START_SERVICES" = "1" ]; then
     exit 1
   fi
   echo "Starting services..."
-  docker compose --env-file "$STACK_ENV" -f "$SERVICES_COMPOSE" up -d
+  hg_docker compose --env-file "$STACK_ENV" -f "$SERVICES_COMPOSE" up -d
 fi
 
 if [ "$START_COMPLIANCE" = "1" ]; then
   echo "Starting compliance service..."
-  docker compose -f "$ROOT/docker-compose.yml" up -d
+  hg_docker compose -f "$ROOT/docker-compose.yml" up -d
 fi
 
 if [ "$START_APPS" = "1" ]; then
@@ -98,7 +105,7 @@ if [ "$START_APPS" = "1" ]; then
     exit 1
   fi
   echo "Starting API + web..."
-  docker compose --env-file "$STACK_ENV" -f "$ROOT/docker-compose.dev.yml" up -d
+  hg_docker compose --env-file "$STACK_ENV" -f "$ROOT/docker-compose.dev.yml" up -d
 fi
 
 if [ "$RUN_DOCTOR" = "1" ]; then

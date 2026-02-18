@@ -1,0 +1,341 @@
+import "dotenv/config";
+import express from "express";
+import promClient from "prom-client";
+import { ethers } from "ethers";
+import fs from "node:fs";
+
+const PORT = Number(process.env.PORT || "7691");
+const RPC_URL = process.env.RPC_URL || process.env.RPC || "";
+const LAYER_RAW = process.env.LAYER || "l2";
+
+const PRECONFIRM_NAME = process.env.PRECONFIRM_EIP712_NAME || "GhostPreconfirm";
+const PRECONFIRM_VERSION = process.env.PRECONFIRM_EIP712_VERSION || "1";
+const PRECONFIRM_VERIFYING_CONTRACT =
+  process.env.PRECONFIRM_EIP712_VERIFYING_CONTRACT || "0x0000000000000000000000000000000000000000";
+
+const ttlMsRaw = Number(process.env.PRECONFIRM_TTL_MS || "5000");
+const PRECONFIRM_TTL_MS = Number.isFinite(ttlMsRaw) ? Math.max(500, Math.floor(ttlMsRaw)) : 5000;
+
+const GUARD_EVAL_URL =
+  process.env.GUARD_EVAL_URL ||
+  (process.env.GUARD_URL ? `${String(process.env.GUARD_URL).replace(/\/$/, "")}/gate/eval` : "");
+const guardFailOpen = (process.env.GUARD_FAIL_OPEN || "0").toLowerCase() === "1" || (process.env.GUARD_FAIL_OPEN || "").toLowerCase() === "true";
+
+const rpcTimeoutMs = Math.max(500, Number(process.env.RPC_TIMEOUT_MS || "12000"));
+const guardTimeoutMs = Math.max(200, Number(process.env.GUARD_TIMEOUT_MS || "1500"));
+
+function parseLayer(raw) {
+  const v = String(raw || "").toLowerCase();
+  if (v === "1" || v === "l1") return 1;
+  if (v === "2" || v === "l2") return 2;
+  if (v === "3" || v === "l3") return 3;
+  return 2;
+}
+
+const LAYER_ID = parseLayer(LAYER_RAW);
+
+function readSecret(key) {
+  const filePath = process.env[`${key}_FILE`] || "";
+  if (filePath) {
+    try {
+      const value = String(fs.readFileSync(filePath, "utf8")).trim();
+      if (value) return value;
+    } catch {
+      // ignore
+    }
+  }
+  return process.env[key] || "";
+}
+
+function selectSigningKey() {
+  const primary = readSecret("PRECONFIRM_SIGNER_PRIVATE_KEY");
+  if (primary) return primary;
+  if (LAYER_ID === 2) return readSecret("PRECONFIRM_SIGNER_PRIVATE_KEY_L2");
+  if (LAYER_ID === 3) return readSecret("PRECONFIRM_SIGNER_PRIVATE_KEY_L3");
+  return "";
+}
+
+const SIGNER_PRIVATE_KEY = selectSigningKey();
+const observeOnly = !SIGNER_PRIVATE_KEY;
+const signer = observeOnly ? null : new ethers.Wallet(SIGNER_PRIVATE_KEY);
+
+if (!RPC_URL) {
+  console.error("Missing required env: RPC_URL");
+  process.exit(1);
+}
+
+const register = new promClient.Registry();
+promClient.collectDefaultMetrics({ register });
+
+const metricsPrefix = "ghost_preconfirm";
+const requestCounter = new promClient.Counter({
+  name: `${metricsPrefix}_requests_total`,
+  help: "total preconfirm requests",
+  labelNames: ["layer", "result"],
+  registers: [register]
+});
+const rpcDuration = new promClient.Histogram({
+  name: `${metricsPrefix}_rpc_duration_seconds`,
+  help: "json-rpc request duration",
+  labelNames: ["method"],
+  buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10],
+  registers: [register]
+});
+const guardDuration = new promClient.Histogram({
+  name: `${metricsPrefix}_guard_duration_seconds`,
+  help: "guard eval duration",
+  buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2],
+  registers: [register]
+});
+
+let cachedChainId = null; // number
+let chainIdFetchedAt = 0;
+const chainIdCacheMs = Math.max(1_000, Number(process.env.CHAIN_ID_CACHE_MS || "30000"));
+const CHAIN_ID_METHOD = process.env.CHAIN_ID_METHOD || "gst_chainId";
+
+async function fetchChainId() {
+  const now = Date.now();
+  if (cachedChainId && now - chainIdFetchedAt < chainIdCacheMs) return cachedChainId;
+  const raw = await rpcRequest(CHAIN_ID_METHOD, []);
+  const hex = raw?.result;
+  if (typeof hex === "string" && hex.startsWith("0x")) {
+    const id = Number.parseInt(hex, 16);
+    if (Number.isFinite(id) && id > 0) {
+      cachedChainId = id;
+      chainIdFetchedAt = now;
+      return id;
+    }
+  }
+  return cachedChainId;
+}
+
+async function rpcRequest(method, params) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), rpcTimeoutMs);
+  const end = rpcDuration.labels(method).startTimer();
+  try {
+    const res = await fetch(RPC_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      signal: controller.signal,
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params })
+    });
+    const body = await res.json().catch(async () => ({ error: { message: await res.text().catch(() => "bad_json") } }));
+    return body;
+  } finally {
+    clearTimeout(timer);
+    end();
+  }
+}
+
+async function guardEval(context) {
+  if (!GUARD_EVAL_URL) return null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), guardTimeoutMs);
+  const end = guardDuration.startTimer();
+  try {
+    const res = await fetch(GUARD_EVAL_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      signal: controller.signal,
+      body: JSON.stringify(context)
+    });
+    if (!res.ok) throw new Error(`guard_http_${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+    end();
+  }
+}
+
+function txSummaryFromRawTx(raw) {
+  const tx = ethers.Transaction.from(raw);
+  const dataHex = tx.data ?? "0x";
+  const selector = dataHex.startsWith("0x") && dataHex.length >= 10 ? dataHex.slice(0, 10) : "0x00000000";
+  return {
+    tx,
+    summary: {
+      hash: tx.hash,
+      from: tx.from ? ethers.getAddress(tx.from) : null,
+      to: tx.to ? ethers.getAddress(tx.to) : null,
+      nonce: tx.nonce,
+      type: tx.type,
+      value: tx.value?.toString?.() ?? String(tx.value ?? "0"),
+      gasLimit: tx.gasLimit?.toString?.() ?? null,
+      dataLength: dataHex.length > 2 ? dataHex.length / 2 - 1 : 0,
+      dataHash: ethers.keccak256(dataHex),
+      selector,
+      chainId: tx.chainId ? Number(tx.chainId) : null
+    }
+  };
+}
+
+function json(res, code, obj) {
+  res.status(code).set("content-type", "application/json").send(JSON.stringify(obj));
+}
+
+const app = express();
+app.use(express.json({ limit: "1mb" }));
+
+app.get("/health", async (_req, res) => {
+  let chainId = null;
+  try {
+    chainId = await fetchChainId();
+  } catch {
+    chainId = cachedChainId;
+  }
+  json(res, 200, {
+    ok: true,
+    observeOnly,
+    signer: signer ? await signer.getAddress() : null,
+    rpcUrl: RPC_URL,
+    chainId,
+    layer: LAYER_ID,
+    guard: { enabled: Boolean(GUARD_EVAL_URL), failOpen: guardFailOpen },
+    ttlMs: PRECONFIRM_TTL_MS
+  });
+});
+
+app.get("/metrics", async (_req, res) => {
+  res.setHeader("content-type", register.contentType);
+  res.end(await register.metrics());
+});
+
+app.post("/v1/preconfirm", async (req, res) => {
+  const rawTx = req.body?.rawTx || req.body?.raw || req.body?.tx;
+  if (!rawTx || typeof rawTx !== "string" || !rawTx.startsWith("0x")) {
+    requestCounter.labels(String(LAYER_ID), "bad_request").inc();
+    return json(res, 400, { ok: false, error: "missing_rawTx" });
+  }
+
+  let parsed;
+  try {
+    parsed = txSummaryFromRawTx(rawTx);
+  } catch (err) {
+    requestCounter.labels(String(LAYER_ID), "bad_request").inc();
+    return json(res, 400, { ok: false, error: "invalid_rawTx", message: err?.message || String(err) });
+  }
+
+  const txHash = parsed.summary.hash;
+
+  let guardDecision = null;
+  if (GUARD_EVAL_URL) {
+    try {
+      guardDecision = await guardEval({ role: "preconfirm", layer: LAYER_ID, tx: parsed.summary });
+      const action = String(guardDecision?.action || "allow").toLowerCase();
+      if (action !== "allow") {
+        const retryAt = guardDecision?.retryAt ?? null;
+        requestCounter.labels(String(LAYER_ID), action).inc();
+        const status = action === "delay" ? 429 : 403;
+        return json(res, status, {
+          ok: false,
+          action,
+          reason: guardDecision?.reason || "guard",
+          retryAt,
+          guard: guardDecision
+        });
+      }
+    } catch (err) {
+      guardDecision = { action: "error", reason: "guard_unreachable", message: err?.message || String(err) };
+      if (!guardFailOpen) {
+        requestCounter.labels(String(LAYER_ID), "guard_error").inc();
+        return json(res, 503, { ok: false, error: "guard_unreachable", guard: guardDecision });
+      }
+    }
+  }
+
+  let rpcResult;
+  try {
+    rpcResult = await rpcRequest("eth_sendRawTransaction", [rawTx]);
+  } catch (err) {
+    requestCounter.labels(String(LAYER_ID), "rpc_error").inc();
+    return json(res, 502, { ok: false, error: "rpc_error", message: err?.message || String(err) });
+  }
+
+  if (rpcResult?.error) {
+    requestCounter.labels(String(LAYER_ID), "rpc_error").inc();
+    return json(res, 502, { ok: false, error: "rpc_error", rpc: rpcResult.error });
+  }
+
+  const rpcTxHash = rpcResult?.result;
+  if (typeof rpcTxHash !== "string" || !rpcTxHash.startsWith("0x")) {
+    requestCounter.labels(String(LAYER_ID), "rpc_error").inc();
+    return json(res, 502, { ok: false, error: "rpc_invalid_response", rpc: rpcResult });
+  }
+
+  const issuedAt = Math.floor(Date.now() / 1000);
+  const expiresAt = Math.floor((Date.now() + PRECONFIRM_TTL_MS) / 1000);
+
+  let chainId = null;
+  try {
+    chainId = await fetchChainId();
+  } catch {
+    chainId = cachedChainId;
+  }
+  if (!chainId && parsed.summary.chainId) chainId = parsed.summary.chainId;
+
+  if (chainId && parsed.summary.chainId && chainId !== parsed.summary.chainId) {
+    // Upstream may still accept the tx hash, but the signature would be ambiguous across chains.
+    requestCounter.labels(String(LAYER_ID), "chain_mismatch").inc();
+    return json(res, 400, {
+      ok: false,
+      error: "chain_id_mismatch",
+      txChainId: parsed.summary.chainId,
+      rpcChainId: chainId,
+      txHash,
+      rpcTxHash
+    });
+  }
+
+  const payload = {
+    txHash,
+    issuedAt,
+    expiresAt,
+    layer: LAYER_ID
+  };
+
+  let signature = null;
+  let digest = null;
+  let signerAddress = null;
+  if (signer && chainId) {
+    const domain = {
+      name: PRECONFIRM_NAME,
+      version: PRECONFIRM_VERSION,
+      chainId,
+      verifyingContract: PRECONFIRM_VERIFYING_CONTRACT
+    };
+    const types = {
+      Preconfirm: [
+        { name: "txHash", type: "bytes32" },
+        { name: "issuedAt", type: "uint256" },
+        { name: "expiresAt", type: "uint256" },
+        { name: "layer", type: "uint8" }
+      ]
+    };
+    digest = ethers.TypedDataEncoder.hash(domain, types, payload);
+    signature = await signer.signTypedData(domain, types, payload);
+    signerAddress = await signer.getAddress();
+  }
+
+  requestCounter.labels(String(LAYER_ID), "ok").inc();
+  return json(res, 200, {
+    ok: true,
+    observeOnly,
+    txHash,
+    rpcTxHash,
+    chainId,
+    layer: LAYER_ID,
+    issuedAt,
+    expiresAt,
+    signer: signerAddress,
+    digest,
+    signature,
+    guard: guardDecision
+  });
+});
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(
+    `[preconfirm-service] listening on :${PORT} layer=${LAYER_ID} rpc=${RPC_URL} observeOnly=${observeOnly} guard=${Boolean(GUARD_EVAL_URL)}`
+  );
+});

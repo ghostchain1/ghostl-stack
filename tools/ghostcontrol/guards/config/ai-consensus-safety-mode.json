@@ -1,0 +1,24 @@
+{
+  "aiConsensus": {
+    "enabled": true,
+    "mode": "audit",
+    "failOpen": false,
+    "fallback": "classic-deterministic-policy",
+    "epochBoundaryOnly": true,
+    "policyHashRequired": true,
+    "evidencePackRequiredForActions": true,
+    "bridgeHubEnforced": true,
+    "sourceLayerRequiredForExternalEgress": 1,
+    "reproReplayRequired": true,
+    "approvalPath": {
+      "onChainProposalRequired": true,
+      "constitutionalGateRequired": true,
+      "requiredFields": [
+        "auditEvidenceRoot",
+        "aiRiskSummaryHash",
+        "buildAttestationRoot",
+        "rollbackPlanHash"
+      ]
+    }
+  }
+}

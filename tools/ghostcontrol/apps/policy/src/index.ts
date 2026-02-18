@@ -1,4 +1,7 @@
 import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { createRequire } from "node:module";
+import path from "node:path";
 
 import Fastify from "fastify";
 import { z } from "zod";
@@ -13,6 +16,47 @@ import {
 } from "@ghostcontrol/shared";
 
 const logger = createLogger({ name: "ghostcontrol-policy" });
+const localRequire = createRequire(import.meta.url);
+type PolicyEval = (input: {
+  content: string;
+  source?: string;
+  contextTags?: string[];
+}) => { ok: boolean; violations: Array<{ reason: string; line: number; column: number }> };
+
+let evaluateGstPolicy: PolicyEval = () => ({ ok: true, violations: [] });
+let gstPolicyLoaded = false;
+const gstPolicyCandidates = [
+  "/app/apps/policy/gst_policy.cjs",
+  "/app/services/ai-policy/gst_policy.cjs",
+  path.resolve(process.cwd(), "apps/policy/gst_policy.cjs"),
+  path.resolve(process.cwd(), "services/ai-policy/gst_policy.cjs"),
+  path.resolve(process.cwd(), "../../services/ai-policy/gst_policy.cjs"),
+  path.resolve(process.cwd(), "../../../services/ai-policy/gst_policy.cjs"),
+];
+
+for (const candidate of gstPolicyCandidates) {
+  if (!existsSync(candidate)) continue;
+  try {
+    const loaded = localRequire(candidate) as { evaluateGstPolicy?: PolicyEval };
+    if (typeof loaded.evaluateGstPolicy === "function") {
+      evaluateGstPolicy = loaded.evaluateGstPolicy;
+      gstPolicyLoaded = true;
+      break;
+    }
+  } catch (error) {
+    logger.warn({ err: error, candidate }, "gst_policy_module_load_failed");
+  }
+}
+
+if (!gstPolicyLoaded) {
+  logger.warn({ candidates: gstPolicyCandidates }, "gst_policy_module_unavailable");
+}
+
+const evaluatePolicy: PolicyEval = (input: {
+    content: string;
+    source?: string;
+    contextTags?: string[];
+  }) => evaluateGstPolicy(input);
 
 const EnvSchema = z.object({
   PORT: z.coerce.number().int().positive().default(8082),
@@ -90,8 +134,29 @@ async function main() {
 
     const mode = parsed.data.riskMode;
     const tier = RiskTier[mode] ?? 99;
-    const cfg = allowlist[mode];
+    const cfg = allowlist[mode] ?? {
+      actions: [],
+      gateCommandPrefixes: [],
+    };
     const reasons: string[] = [];
+    if (!allowlist[mode]) reasons.push(`risk_mode_not_configured:${mode}`);
+
+    const aiPolicyPayload = JSON.stringify({
+      riskMode: parsed.data.riskMode,
+      scope: parsed.data.scope,
+      actions: parsed.data.actions,
+      gates: parsed.data.gates
+    });
+    const aiPolicyCheck = evaluatePolicy({
+      content: aiPolicyPayload,
+      source: "ghostcontrol.policy.evaluate",
+      contextTags: ["ai_patch", "pr_diff"]
+    });
+    if (!aiPolicyCheck.ok) {
+      for (const v of aiPolicyCheck.violations.slice(0, 5)) {
+        reasons.push(`gst_policy_violation:${v.reason}:${v.line}:${v.column}`);
+      }
+    }
 
     const allowedWorkspace = scopes.workspaceRootAllowPrefixes.some((p) =>
       parsed.data.scope.workspaceRoot.startsWith(p),
@@ -143,4 +208,3 @@ main().catch((err) => {
   logger.error({ err }, "policy_failed");
   process.exit(1);
 });
-

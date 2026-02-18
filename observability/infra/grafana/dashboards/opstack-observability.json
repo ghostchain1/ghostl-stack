@@ -131,7 +131,7 @@
     },
     {
       "type": "stat",
-      "title": "Batcher balance (ETH)",
+      "title": "Batcher balance (GST)",
       "gridPos": {
         "h": 6,
         "w": 6,
@@ -157,7 +157,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "eth"
+          "unit": "none"
         },
         "overrides": []
       }

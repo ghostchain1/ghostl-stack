@@ -804,7 +804,7 @@ const verifyContractsStored = (stored: Array<{ address: string; chainId: number 
 type ContractSeedSource = { envKey: string; name: string; layer: 'l1' | 'l2' | 'l3' };
 
 const CANONICAL_GAS_TOKEN_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
-const CANONICAL_GAS_TOKEN_SYMBOL = 'GHOST';
+const CANONICAL_GAS_TOKEN_SYMBOL = 'GST';
 
 const ensureCanonicalGasTokenAddress = (label: string, value?: string) => {
   if (value && value.toLowerCase() !== CANONICAL_GAS_TOKEN_ADDRESS.toLowerCase()) {
@@ -3406,7 +3406,7 @@ app.get(['/v1/governance/delegations', '/governance/delegations'], requirePermis
 });
 
 app.get(['/v1/governance/snapshot', '/governance/snapshot'], requirePermission('governance:read'), async (_req, res) => {
-  const space = env.SNAPSHOT_SPACE || 'ghostldao.eth';
+  const space = env.SNAPSHOT_SPACE || 'ghostldao';
   const api = env.SNAPSHOT_API_URL || 'https://hub.snapshot.org/graphql';
   let proposals: { id: string; title: string; status: string; link: string }[] = [];
   try {

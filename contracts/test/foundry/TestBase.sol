@@ -8,6 +8,7 @@ interface Vm {
     function expectRevert(bytes calldata) external;
     function assume(bool) external;
     function warp(uint256) external;
+    function deal(address who, uint256 newBalance) external;
     function sign(uint256, bytes32) external returns (uint8, bytes32, bytes32);
     function addr(uint256) external returns (address);
     function store(address target, bytes32 slot, bytes32 value) external;
@@ -43,43 +44,43 @@ abstract contract TestBase {
     }
 
     // Forge invariant hooks (return empty to silence warnings).
-    function targetArtifacts() public pure returns (string[] memory) {
+    function targetArtifacts() public pure virtual returns (string[] memory) {
         return new string[](0);
     }
 
-    function targetArtifactSelectors() public pure returns (FuzzSelector[] memory) {
+    function targetArtifactSelectors() public pure virtual returns (FuzzSelector[] memory) {
         return new FuzzSelector[](0);
     }
 
-    function excludeArtifacts() public pure returns (string[] memory) {
+    function excludeArtifacts() public pure virtual returns (string[] memory) {
         return new string[](0);
     }
 
-    function targetSenders() public pure returns (address[] memory) {
+    function targetSenders() public pure virtual returns (address[] memory) {
         return new address[](0);
     }
 
-    function excludeSenders() public pure returns (address[] memory) {
+    function excludeSenders() public pure virtual returns (address[] memory) {
         return new address[](0);
     }
 
-    function targetContracts() public pure returns (address[] memory) {
+    function targetContracts() public pure virtual returns (address[] memory) {
         return new address[](0);
     }
 
-    function excludeContracts() public pure returns (address[] memory) {
+    function excludeContracts() public pure virtual returns (address[] memory) {
         return new address[](0);
     }
 
-    function targetInterfaces() public pure returns (bytes4[] memory) {
+    function targetInterfaces() public pure virtual returns (bytes4[] memory) {
         return new bytes4[](0);
     }
 
-    function targetSelectors() public pure returns (FuzzSelector[] memory) {
+    function targetSelectors() public pure virtual returns (FuzzSelector[] memory) {
         return new FuzzSelector[](0);
     }
 
-    function excludeSelectors() public pure returns (FuzzSelector[] memory) {
+    function excludeSelectors() public pure virtual returns (FuzzSelector[] memory) {
         return new FuzzSelector[](0);
     }
 }

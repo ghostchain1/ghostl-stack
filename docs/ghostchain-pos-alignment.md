@@ -35,7 +35,7 @@ Practical spec for GhostChain L1 PoS (BFT) and how to compose finality with **OP
 - Block time: 2s
 - Epoch length: 1200 blocks (~40m)
 - Committee size: 64–128 attesters/block
-- Min validator stake: 50k–100k GHOST
+- Min validator stake: 50k–100k GST
 - Unbonding: 14 days
 - Slashing: double-sign 7.5%, surround 3%, downtime jail + 0.5%
 - L2 output cadence: 5 minutes
@@ -43,8 +43,8 @@ Practical spec for GhostChain L1 PoS (BFT) and how to compose finality with **OP
 
 Canonical gas token (L1 ERC‑20):
 - Contract: `0x5FbDB2315678afecb367f032d93F642f64180aa3`
-- Symbol: `GHOST`
-- Genesis mint: `1,000,000,000` GHOST to `0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266`
+- Symbol: `GST`
+- Genesis mint: `1,000,000,000` GST to `0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266`
 - L2/L3 gas token source: L1 ERC‑20 address above
 
 ### Message flows (happy path)

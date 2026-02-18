@@ -1,0 +1,21 @@
+{
+  "name": "ghostchain-bridge-hub",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node dist/server.js",
+    "build": "tsc --outDir dist",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.10.2",
+    "typescript": "5.6.3"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

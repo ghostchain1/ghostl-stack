@@ -48,7 +48,7 @@ infra/ghostchain/scripts/down.sh
 ## Common issues
 
 ### RPC unreachable
-- Confirm container status: `docker compose -f infra/ghostchain/docker-compose.eth.yml ps`
+- Confirm container status: `docker compose -f infra/ghostchain/docker-compose.l1.yml ps`
 - Check bind ports: `ss -lnt | rg 18545`
 - Validate chain ID: `curl -fsS http://localhost:18545 -H content-type:application/json -d '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}'`
 

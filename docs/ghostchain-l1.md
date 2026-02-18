@@ -1,6 +1,6 @@
 # GhostChain L1 (local dev chain)
 
-GhostChain is the main Autonomous Layer 1 blockchain in this stack. For local development, we run a standalone GhostChain instance (dev geth) on chainId **14000101**. It is independent of Ethereum mainnet/sepolia and is the base security layer for the broader GhostChain PoS + OP Stack blueprint described in `docs/ghostchain-pos-alignment.md`.
+GhostChain is the main Autonomous Layer 1 blockchain in this stack. For local development, we run a standalone GhostChain instance (dev geth) on chainId **14000101**. It is independent of public upstream networks and is the base security layer for the broader GhostChain PoS + OP Stack blueprint described in `docs/ghostchain-pos-alignment.md`.
 
 > Note: the **devnet consensus engine is Clique (PoA)** for fast local iterations. The **PoS blueprint** is expressed in contracts under `contracts/src/futuristic` and can be activated in a production client later.
 

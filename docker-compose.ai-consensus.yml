@@ -1,0 +1,70 @@
+name: ghost-ai-consensus
+
+services:
+  ghost-ai-consensus:
+    build:
+      context: ./services/ghost-ai-consensus
+    image: ghostl/ghost-ai-consensus:local
+    environment:
+      PORT: 7715
+      AI_MODEL_HASH: ${AI_MODEL_HASH:-ghost-ai-consensus-model-v1}
+      AI_ALLOWLIST: ${AI_ALLOWLIST:-}
+      AI_DENYLIST: ${AI_DENYLIST:-}
+      AI_MAX_FEE_PER_GAS: ${AI_MAX_FEE_PER_GAS:-2000000000}
+      AI_MAX_CALLDATA_BYTES: ${AI_MAX_CALLDATA_BYTES:-8192}
+      AI_REVIEW_THRESHOLD: ${AI_REVIEW_THRESHOLD:-65}
+      AI_BLOCK_THRESHOLD: ${AI_BLOCK_THRESHOLD:-90}
+      RPC_L1: ${RPC_L1:-http://host.docker.internal:18545}
+      RPC_L2: ${RPC_L2:-http://host.docker.internal:29547}
+      RPC_L3: ${RPC_L3:-http://host.docker.internal:39545}
+      L1_CHAIN_ID: ${L1_CHAIN_ID:-14000101}
+      L2_CHAIN_ID: ${L2_CHAIN_ID:-901}
+      L3_CHAIN_ID: ${L3_CHAIN_ID:-903}
+    ports:
+      - "17715:7715"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7715/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - ghost_internal
+
+  ghostchain-bridge-hub:
+    build:
+      context: ./services/ghostchain-bridge-hub
+    image: ghostl/ghostchain-bridge-hub:local
+    environment:
+      PORT: 7720
+      ADMIN_TOKEN: ${BRIDGE_HUB_ADMIN_TOKEN:-}
+      EXTERNAL_CHAIN_ALLOWLIST: ${BRIDGE_HUB_EXTERNAL_CHAIN_ALLOWLIST:-1,42161,10,8453}
+      RPC_L1: ${RPC_L1:-http://host.docker.internal:18545}
+      L1_CHAIN_ID: ${L1_CHAIN_ID:-14000101}
+    ports:
+      - "17720:7720"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7720/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - ghost_internal
+      - ghost_interchain
+
+networks:
+  ghost_internal:
+  ghost_interchain:

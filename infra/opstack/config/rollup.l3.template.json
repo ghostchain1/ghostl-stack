@@ -14,13 +14,10 @@
       "overhead": "0x0000000000000000000000000000000000000000000000000000000000000000",
       "scalar": "0x010000000000000000000000000000000000000000000000000c3c9d00000558",
       "gasLimit": 30000000,
-      "eip1559Params": "0x0000000000000000",
-      "operatorFeeParams": "0x0000000000000000000000000000000000000000000000000000000000000000",
-      "minBaseFee": 0,
-      "daFootprintGasScalar": 0
+      "eip1559Params": "0x0000000000000000"
     }
   },
-  "block_time": 2,
+  "block_time": 1,
   "max_sequencer_drift": 600,
   "seq_window_size": 3600,
   "channel_timeout": 300,
@@ -33,8 +30,6 @@
   "fjord_time": 0,
   "granite_time": 0,
   "holocene_time": 0,
-  "isthmus_time": 0,
-  "jovian_time": 0,
   "batch_inbox_address": "0x0000000000000000000000000000000000000000",
   "deposit_contract_address": "0xREPLACE_PARENT_L2_PORTAL",
   "l1_system_config_address": "0xREPLACE_PARENT_L2_SYSTEM_CONFIG",

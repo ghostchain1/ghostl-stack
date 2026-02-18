@@ -21,7 +21,7 @@ This folder contains Solidity stubs/interfaces for a full GhostChain-class stack
 - Tokens are minimal ERC20/721-like stubs to keep compilation simple; add full logic where required.
 - Upgrade-sensitive duplicates are suffixed with `V2`; map them to existing deployments when replacing older contracts.
 - Many functions emit events and store config but intentionally omit business logic; fill in validation and token accounting per spec.
-- The `deploy_futuristic_stack.ts` script expects a canonical gas token at `CANONICAL_GAS_TOKEN_ADDRESS` or `GHOST_TOKEN_ADDRESS`. Set `ALLOW_NATIVE_TOKEN_DEPLOY=1` only if you explicitly want to deploy `NativeTokenV2` for local testing.
+- The `deploy_futuristic_stack.ts` script expects a canonical gas token at `CANONICAL_GAS_TOKEN_ADDRESS` or `GST_TOKEN_ADDRESS` (legacy: `GHOST_TOKEN_ADDRESS`). Set `ALLOW_NATIVE_TOKEN_DEPLOY=1` only if you explicitly want to deploy `NativeTokenV2` for local testing.
 - AI security modules (`AISecurityOracle`, `AnomalyDetector`, `TransactionClassifier`, `KeeperRegistry`, `AutonomousExecutor`, `PredictiveGasManager`) are deployed and registered in the `AddressBook` during the futuristic stack deploy.
 
 ### Suggested next steps

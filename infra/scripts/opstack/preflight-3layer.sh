@@ -101,6 +101,10 @@ need_cmd jq
 need_cmd curl
 need_cmd cast
 
+echo "Enforcing GST-native leakage gates..."
+bash "$REPO_ROOT/scripts/gst-leakage-gate.sh"
+bash "$REPO_ROOT/scripts/gst-symbol-gate.sh"
+
 FAILED=0
 
 set -a

@@ -38,6 +38,9 @@ require_var L1_METRICS_PORT
 require_var L1_SECRETS_SOURCE
 require_var L1_SECRETS_DIR
 
+HOST_UID="${L1_UID:-$(id -u)}"
+HOST_GID="${L1_GID:-$(id -g)}"
+
 if [ "$L1_SECRETS_SOURCE" = "dev" ]; then
   if [ "${ALLOW_DEV_SECRETS:-0}" != "1" ]; then
     echo "Dev secrets are blocked. Set ALLOW_DEV_SECRETS=1 for local-only use." >&2
@@ -76,6 +79,8 @@ if [ "$L1_SECRETS_SOURCE" = "vault" ]; then
 fi
 
 cat >"$DERIVED_ENV" <<EOF
+L1_UID=$HOST_UID
+L1_GID=$HOST_GID
 GETH_IMAGE=$L1_GETH_IMAGE
 CHAIN_ID=$L1_CHAIN_ID
 BOOTNODE_IP=$L1_BOOTNODE_IP

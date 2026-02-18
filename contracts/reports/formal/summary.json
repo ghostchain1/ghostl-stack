@@ -1,6 +1,5 @@
 {
-  "tool": "slither",
-  "updatedAt": "2026-02-05T16:49:48.419Z",
-  "issues": 0,
-  "totalFindings": 320
+  "tool": "scribble",
+  "status": "ok",
+  "updatedAt": "2026-02-15T04:44:59.216Z"
 }

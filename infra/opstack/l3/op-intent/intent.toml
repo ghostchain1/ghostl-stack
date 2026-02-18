@@ -30,7 +30,7 @@ l2ContractsLocator = "file:///home/ghost/ghostl-stack/infra/opstack/optimism/pac
   # Canonical gas token inherited from L2/L1 (do not redeploy per layer).
   customGasTokenAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
   gasPayingTokenName = "Ghost Token"
-  gasPayingTokenSymbol = "GHOST"
+  gasPayingTokenSymbol = "GST"
   [chains.roles]
     l1ProxyAdminOwner = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
     l2ProxyAdminOwner = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
@@ -42,5 +42,5 @@ l2ContractsLocator = "file:///home/ghost/ghostl-stack/infra/opstack/optimism/pac
   [chains.customGasToken]
     liquidityControllerOwner = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
     name = "Ghost Token"
-    symbol = "GHOST"
+    symbol = "GST"
     decimals = 18

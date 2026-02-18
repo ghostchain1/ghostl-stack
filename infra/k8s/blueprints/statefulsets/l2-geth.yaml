@@ -35,7 +35,7 @@
         "containers": [
           {
             "name": "l2-geth",
-            "image": "ghcr.io/ethereum-optimism/op-geth@sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0",
+            "image": "local/op-geth:${OPSTACK_IMAGE_TAG:-local}",
             "command": [
               "/bin/sh"
             ],

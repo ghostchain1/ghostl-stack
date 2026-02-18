@@ -26,6 +26,32 @@ const CHALLENGE_PERIOD_SECONDS =
 const EXPECTED_SETTLEMENT_CHAIN_ID = parseChainIdEnv(process.env.EXPECTED_SETTLEMENT_CHAIN_ID, "EXPECTED_SETTLEMENT_CHAIN_ID");
 const EXPECTED_CHILD_CHAIN_ID = parseChainIdEnv(process.env.EXPECTED_CHILD_CHAIN_ID, "EXPECTED_CHILD_CHAIN_ID");
 const EXPECTED_ROLLUP_CODE_HASH = parseCodeHashEnv(process.env.ROLLUP_CODE_HASH);
+const childHeadTagRaw = (process.env.CHILD_HEAD_TAG || process.env.ROLLUP_CHILD_HEAD_TAG || "safe").toLowerCase();
+const CHILD_HEAD_TAG: "safe" | "finalized" | "latest" =
+  childHeadTagRaw === "finalized" ? "finalized" : childHeadTagRaw === "latest" ? "latest" : "safe";
+
+function clampInt(raw: string | undefined, fallback: number, min: number, max: number, label: string): number {
+  if (raw == null || raw === "") return fallback;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) {
+    console.warn(`[Startup] Ignoring invalid ${label}=${raw}`);
+    return fallback;
+  }
+  return Math.max(min, Math.min(max, Math.floor(n)));
+}
+
+const RPC_TIMEOUT_MS = clampInt(process.env.RPC_TIMEOUT_MS, 15_000, 1_000, 300_000, "RPC_TIMEOUT_MS");
+const TX_WAIT_TIMEOUT_MS = clampInt(process.env.TX_WAIT_TIMEOUT_MS, 60_000, 5_000, 600_000, "TX_WAIT_TIMEOUT_MS");
+const WATCHDOG_STALL_MS = clampInt(process.env.WATCHDOG_STALL_MS, 300_000, 10_000, 3_600_000, "WATCHDOG_STALL_MS");
+const CATCHUP_LAG_THRESHOLD = clampInt(process.env.CATCHUP_LAG_THRESHOLD, 5_000, 0, 10_000_000, "CATCHUP_LAG_THRESHOLD");
+const CATCHUP_BATCH_SIZE = clampInt(
+  process.env.CATCHUP_BATCH_SIZE,
+  Math.min(200, BATCH_SIZE * 10),
+  BATCH_SIZE,
+  50_000,
+  "CATCHUP_BATCH_SIZE"
+);
+const BLOCK_FETCH_PARALLELISM = clampInt(process.env.BLOCK_FETCH_PARALLELISM, 20, 1, 200, "BLOCK_FETCH_PARALLELISM");
 
 const fetchRegistry = async () => {
   const now = Date.now();
@@ -85,12 +111,19 @@ if (!RPC_SETTLEMENT_RESOLVED || !RPC_CHILD_RESOLVED || !ROLLUP) {
 }
 const observeOnly = !PROPOSER_PRIVATE_KEY;
 
-const settlement = new ethers.JsonRpcProvider(RPC_SETTLEMENT_RESOLVED, undefined, { polling: true });
-settlement.pollingInterval = 1000;
-const child = new ethers.JsonRpcProvider(RPC_CHILD_RESOLVED, undefined, { polling: true });
-child.pollingInterval = 1000;
+function makeProvider(url: string): ethers.JsonRpcProvider {
+  const req = new ethers.FetchRequest(url);
+  req.timeout = RPC_TIMEOUT_MS;
+  const p = new ethers.JsonRpcProvider(req, undefined, { polling: true });
+  p.pollingInterval = 1000;
+  return p;
+}
 
-const signer = observeOnly ? null : new ethers.NonceManager(new ethers.Wallet(PROPOSER_PRIVATE_KEY, settlement));
+const settlement = makeProvider(RPC_SETTLEMENT_RESOLVED);
+const child = makeProvider(RPC_CHILD_RESOLVED);
+
+const wallet = observeOnly ? null : new ethers.Wallet(PROPOSER_PRIVATE_KEY, settlement);
+const walletAddress = wallet?.address || "";
 
 const rollupAbi = [
   "function proposeBatch(uint256 startBlock, uint256 endBlock, bytes32 root) external returns (uint256)",
@@ -101,7 +134,7 @@ const rollupAbi = [
   "event BatchProposed(uint256 indexed batchId, uint256 indexed startBlock, uint256 indexed endBlock, bytes32 root)",
   "event BatchFinalized(uint256 indexed batchId)"
 ];
-const rollup = new ethers.Contract(ROLLUP, rollupAbi, signer ?? settlement);
+const rollup = new ethers.Contract(ROLLUP, rollupAbi, wallet ?? settlement);
 
 type Cursor = { nextChildBlock: number | null };
 const cursorPath = path.join(STATE_DIR, "cursor.json");
@@ -169,9 +202,50 @@ function merkleRoot(leaves: Array<string>): string {
   return level[0]!;
 }
 
+async function fetchChildLeaves(start: number, end: number): Promise<Array<string>> {
+  const count = Math.max(0, end - start + 1);
+  if (count === 0) return [];
+
+  const hashes = new Array<string>(count);
+  let next = start;
+  const workers = Array.from({ length: Math.min(BLOCK_FETCH_PARALLELISM, count) }, async () => {
+    while (true) {
+      const n = next;
+      if (n > end) return;
+      next += 1;
+
+      const b = await child.getBlock(n);
+      if (!b?.hash) throw new Error(`missing block hash for child block ${n}`);
+      hashes[n - start] = b.hash;
+    }
+  });
+  await Promise.all(workers);
+
+  return hashes.map((h, i) => hashLeaf(start + i, h));
+}
+
+async function getStableChildHeadNumber(): Promise<number> {
+  if (CHILD_HEAD_TAG !== "latest") {
+    try {
+      const blk = await child.getBlock(CHILD_HEAD_TAG);
+      const n = blk?.number;
+      if (typeof n === "number" && Number.isFinite(n) && n >= 0) return Math.floor(n);
+    } catch (e) {
+      console.warn(`[Proposer] Failed to fetch child head tag=${CHILD_HEAD_TAG}; falling back to latest-confirmations`, scrubError(e));
+    }
+  }
+  const latest = await child.getBlockNumber();
+  return Math.max(0, latest - CONFIRMATIONS);
+}
+
 const metrics = {
   startedAt: Date.now(),
   observeOnly,
+  lastTickStartedAt: 0,
+  lastTickFinishedAt: 0,
+  lastTickError: null as null | string,
+  lastProposedAt: 0,
+  lastFinalizedAt: 0,
   proposals: 0,
   finalizations: 0,
   errors: 0,
@@ -179,10 +253,24 @@ const metrics = {
   lastFinalized: null as any
 };
 
+async function getNonceState(): Promise<{ latest: number; pending: number }> {
+  if (observeOnly || !walletAddress) return { latest: 0, pending: 0 };
+  const [latest, pending] = await Promise.all([
+    settlement.getTransactionCount(walletAddress, "latest"),
+    settlement.getTransactionCount(walletAddress, "pending"),
+  ]);
+  return { latest, pending };
+}
+
 async function proposeNextBatch() {
   if (observeOnly) return;
-  const latest = await child.getBlockNumber();
-  const scanTo = Math.max(0, latest - CONFIRMATIONS);
+  const { latest, pending } = await getNonceState();
+  if (pending > latest) {
+    // Do not enqueue future nonces; wait for the in-flight tx to be mined or dropped.
+    console.log(`[Proposer] Pending tx detected (latestNonce=${latest} pendingNonce=${pending}); skipping propose`);
+    return;
+  }
+  const scanTo = await getStableChildHeadNumber();
 
   // Keep our cursor aligned with on-chain rollup state.
   // This avoids getting wedged on restarts (e.g., when rollup already has batches but our cursor is missing/stale).
@@ -200,18 +288,17 @@ async function proposeNextBatch() {
   if (state.nextChildBlock > scanTo) return;
 
   const start = state.nextChildBlock;
-  const end = Math.min(scanTo, start + BATCH_SIZE - 1);
+  const remaining = Math.max(0, scanTo - start + 1);
+  const effectiveBatchSize = remaining > CATCHUP_LAG_THRESHOLD ? CATCHUP_BATCH_SIZE : BATCH_SIZE;
+  const end = Math.min(scanTo, start + effectiveBatchSize - 1);
 
-  const leaves: Array<string> = [];
-  for (let n = start; n <= end; n++) {
-    const b = await child.getBlock(n);
-    if (!b?.hash) throw new Error(`missing block hash for child block ${n}`);
-    leaves.push(hashLeaf(n, b.hash));
-  }
+  const leaves = await fetchChildLeaves(start, end);
   const root = merkleRoot(leaves);
 
-  const tx = await rollup.proposeBatch(start, end, root);
-  const rcpt = await tx.wait();
+  const tx = await rollup.proposeBatch(start, end, root, { nonce: latest });
+  console.log(`[Proposer] Propose sent tx=${tx.hash} nonce=${tx.nonce} start=${start} end=${end}`);
+  const rcpt = await tx.wait(1, TX_WAIT_TIMEOUT_MS);
+  if (!rcpt) throw new Error(`tx not mined within timeout (tx=${tx.hash})`);
 
   const batchId = (() => {
     for (const l of rcpt!.logs) {
@@ -226,6 +313,7 @@ async function proposeNextBatch() {
   })();
 
   metrics.proposals += 1;
+  metrics.lastProposedAt = Date.now();
   metrics.lastProposed = { batchId, start, end, root, tx: tx.hash };
   state.nextChildBlock = end + 1;
   await saveCursor(state);
@@ -233,6 +321,11 @@ async function proposeNextBatch() {
 
 async function finalizeSome() {
   if (observeOnly) return;
+  const { latest, pending } = await getNonceState();
+  if (pending > latest) {
+    console.log(`[Proposer] Pending tx detected (latestNonce=${latest} pendingNonce=${pending}); skipping finalize`);
+    return;
+  }
   const len = Number(await rollup.batchesLength());
   const nowSec = Math.floor(Date.now() / 1000);
   const max = Math.min(len, 30);
@@ -245,12 +338,20 @@ async function finalizeSome() {
     if (finalized || invalidated || challenged) continue;
     if (nowSec < proposedAt + CHALLENGE_PERIOD_SECONDS) continue;
     try {
-      const tx = await rollup.finalizeBatch(i);
-      await tx.wait();
+      const ns = await getNonceState();
+      if (ns.pending > ns.latest) break;
+      const tx = await rollup.finalizeBatch(i, { nonce: ns.latest });
+      console.log(`[Proposer] Finalize sent tx=${tx.hash} nonce=${tx.nonce} batchId=${i}`);
+      const rcpt = await tx.wait(1, TX_WAIT_TIMEOUT_MS);
+      if (!rcpt) continue;
       metrics.finalizations += 1;
+      metrics.lastFinalizedAt = Date.now();
       metrics.lastFinalized = { batchId: i, tx: tx.hash };
-    } catch {
-      // ignore
+      break;
+    } catch (e) {
+      metrics.errors += 1;
+      console.error("[Proposer] Finalize failed:", scrubError(e));
+      break;
     }
   }
 }
@@ -306,19 +407,32 @@ await bootstrapSafety().catch((e) => {
 async function tick() {
   if (inFlight) return;
   inFlight = true;
+  metrics.lastTickStartedAt = Date.now();
+  metrics.lastTickError = null;
   try {
     await proposeNextBatch();
     await finalizeSome();
   } catch (e) {
     metrics.errors += 1;
-    console.error("[Proposer] Tick failed:", scrubError(e));
+    const err = scrubError(e);
+    metrics.lastTickError = err;
+    console.error("[Proposer] Tick failed:", err);
   } finally {
+    metrics.lastTickFinishedAt = Date.now();
     inFlight = false;
   }
 }
 
 tick();
 setInterval(tick, 2000);
+
+setInterval(() => {
+  if (!inFlight || !metrics.lastTickStartedAt) return;
+  const stalledMs = Date.now() - metrics.lastTickStartedAt;
+  if (stalledMs <= WATCHDOG_STALL_MS) return;
+  console.error(`[Watchdog] Tick stalled for ${stalledMs}ms (threshold=${WATCHDOG_STALL_MS}ms). Exiting for restart.`);
+  process.exit(1);
+}, 5_000);
 
 const app = express();
 app.get("/health", async (_req: Request, res: Response) => {
@@ -328,9 +442,16 @@ app.get("/health", async (_req: Request, res: Response) => {
     res.json({
       ok: true,
       observeOnly,
+      rpcTimeoutMs: RPC_TIMEOUT_MS,
+      txWaitTimeoutMs: TX_WAIT_TIMEOUT_MS,
+      watchdogStallMs: WATCHDOG_STALL_MS,
+      catchupLagThreshold: CATCHUP_LAG_THRESHOLD,
+      catchupBatchSize: CATCHUP_BATCH_SIZE,
+      blockFetchParallelism: BLOCK_FETCH_PARALLELISM,
       settlementChainId,
       childChainId,
       rollup: ROLLUP,
+      childHeadTag: CHILD_HEAD_TAG,
       confirmations: CONFIRMATIONS,
       batchSize: BATCH_SIZE,
       challengePeriodSeconds: CHALLENGE_PERIOD_SECONDS,
@@ -362,6 +483,7 @@ app.get("/metrics/prom", (_req: Request, res: Response) => {
   out += promLine("ghost_rollup_proposer_finalizations_total", metrics.finalizations);
   out += promLine("ghost_rollup_proposer_errors_total", metrics.errors);
   out += promLine("ghost_rollup_proposer_batch_size", BATCH_SIZE);
+  out += promLine("ghost_rollup_proposer_block_fetch_parallelism", BLOCK_FETCH_PARALLELISM);
   out += promLine("ghost_rollup_proposer_challenge_period_seconds", CHALLENGE_PERIOD_SECONDS);
   res.send(out);
 });

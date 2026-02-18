@@ -59,7 +59,8 @@ app.addHook('onRequest', async (req) => {
 
 app.setErrorHandler((err, _req, reply) => {
   const status = (err as { statusCode?: number }).statusCode || 500;
-  reply.status(status).send({ error: err.message || 'internal_error' });
+  const message = err instanceof Error ? err.message : 'internal_error';
+  reply.status(status).send({ error: message || 'internal_error' });
 });
 
 app.get('/health', async () => ({ status: 'ok' }));

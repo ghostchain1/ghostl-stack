@@ -32,7 +32,7 @@ contract GasToken {
         _initialSupply;
         _recipient;
         name = "Ghost Token";
-        symbol = "GHOST";
+        symbol = "GST";
         decimals = 18;
         if (msg.sender != CANONICAL_GAS_TOKEN) {
             revert CanonicalGasTokenOnly(CANONICAL_GAS_TOKEN);

@@ -27,7 +27,7 @@ This document captures the Phase 0 scan for consensus autonomy work. No behavior
 - Root stacks: `docker-compose.yml`, `docker-compose.dev.yml`
 - Core service stack: `core-service/docker-compose.yml`
 - OP Stack: `infra/opstack/docker-compose.yml`, `infra/opstack/docker-compose.l3.yml`, `infra/opstack/docker-compose.challengers.yml`, `infra/opstack/docker-compose.network-manager.yml`, `infra/opstack/docker-compose.mainnet-geth.yml`
-- L1 geth PoA: `infra/ghostchain/docker-compose.eth.yml` (legacy IBFT in `infra/ghostchain/docker-compose.ibft.yml`)
+- L1 geth PoA: `infra/ghostchain/docker-compose.l1.yml` (legacy IBFT in `infra/ghostchain/docker-compose.ibft.yml`)
 - Observability: `observability/infra/docker-compose.yml` and OP Stack observability profile in `infra/opstack/docker-compose.yml`
 - Service stacks: `services/*/docker-compose.yml` (numerous microservices; see `services/`)
 - App stacks: `apps/docker-compose.yml`, `apps/docker-compose.dev.yml`

@@ -9,8 +9,8 @@ OP_ENV="$ROOT_DIR/infra/opstack/.env"
 
 usage() {
   cat <<'EOF' >&2
-Usage: bash infra/scripts/chains/premine.sh <addr> [addr2 ...] [--amount ETH] [--no-l3]
-  --amount ETH  amount to send to each address (default: 10)
+Usage: bash infra/scripts/chains/premine.sh <addr> [addr2 ...] [--amount GST] [--no-l3]
+  --amount GST  amount to send to each address (default: 10)
   --no-l3       skip L3 funding even if L3 RPC is reachable
 EOF
 }
@@ -78,16 +78,16 @@ fund_json="$(to_json_array "${addrs[@]}")"
 cd "$ROOT_DIR/contracts"
 
 echo "Funding addresses on L1 (${RPC_L1})..."
-FUND_AMOUNT_ETH="$amount" FUND_ADDRESSES_JSON="$fund_json" RPC_L1="$RPC_L1" \
+FUND_AMOUNT_GST="$amount" FUND_ADDRESSES_JSON="$fund_json" RPC_L1="$RPC_L1" \
   npx hardhat run --network anvil scripts/fund_addresses.ts >/dev/null
 
 echo "Funding addresses on L2 (${OP_L2_RPC})..."
-FUND_AMOUNT_ETH="$amount" FUND_ADDRESSES_JSON="$fund_json" OP_L2_RPC="$OP_L2_RPC" \
+FUND_AMOUNT_GST="$amount" FUND_ADDRESSES_JSON="$fund_json" OP_L2_RPC="$OP_L2_RPC" \
   npx hardhat run --network ghostl2Op scripts/fund_addresses.ts >/dev/null
 
 if [ $fund_l3 -eq 1 ] && rpc_ready "$OP_L3_RPC"; then
   echo "Funding addresses on L3 (${OP_L3_RPC})..."
-  FUND_AMOUNT_ETH="$amount" FUND_ADDRESSES_JSON="$fund_json" OP_L3_RPC="$OP_L3_RPC" \
+  FUND_AMOUNT_GST="$amount" FUND_ADDRESSES_JSON="$fund_json" OP_L3_RPC="$OP_L3_RPC" \
     npx hardhat run --network ghostl3Op scripts/fund_addresses.ts >/dev/null
 else
   echo "Skipping L3 funding (disabled or RPC unreachable at $OP_L3_RPC)."

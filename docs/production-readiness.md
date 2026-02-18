@@ -2,6 +2,59 @@
 
 Use this as a hardening playbook before promoting the stack beyond devnet.
 
+## Automated configure + build + readiness gate
+
+Use the orchestration script to run environment sync, OP Stack preflight, build, doctors, and go/no-go gates as one flow.
+
+```bash
+# Production (Vault-backed, fail-closed defaults)
+npm run configure:build:ready
+
+# Temporary OP-only fallback (keeps build/gates, temporarily disables RELAYER_REQUIRE_L2_FINALITY_ON_L1 when proposer health is unavailable)
+npm run configure:build:ready:op-only
+
+# Staging
+npm run configure:build:staging
+
+# Dev (dev secrets allowed)
+npm run configure:build:dev
+```
+
+Direct script usage:
+
+```bash
+bash infra/scripts/production/configure-build-ready.sh --mode=production --secrets=vault
+```
+
+Useful flags:
+
+- `--install-deps`: run `npm ci` (root + contracts) before checks.
+- `--start-stack`: start stack with `infra/scripts/up-full.sh`.
+- `--build-services`: build service images (`npm run build:services`).
+- `--bridge-dry-runs`: run bridge E2E dry-runs after gates.
+- `--skip-build`, `--skip-gates`, `--skip-ai-gate`: targeted skips for controlled troubleshooting.
+- `--allow-dirty`: permit dirty git tree for AI gate (not recommended outside dev).
+- `--allow-finality-fallback`: temporary production/staging fallback to proceed with `RELAYER_REQUIRE_L2_FINALITY_ON_L1=false` when rollup proposer health is unavailable.
+- `--dry-run`: print planned commands only.
+
+Vault credential discovery supports:
+
+- `VAULT_ENV_FILE` (contains `VAULT_ADDR` plus token or AppRole values)
+- `VAULT_TOKEN_FILE` (token first line)
+- `VAULT_ROLE_ID_FILE` and `VAULT_SECRET_ID_FILE`
+
+Example:
+
+```bash
+VAULT_ENV_FILE=/secure/vault.env npm run configure:build:ready
+# or
+VAULT_ADDR=http://localhost:8200 VAULT_TOKEN_FILE=/secure/vault.token npm run configure:build:ready:op-only
+```
+
+Each run writes a summary artifact to:
+
+- `ops/preflight/<timestamp>/production-bootstrap-summary.json`
+
 ## Configuration & secrets
 - Store all env in a secrets manager (Vault/SSM/Secrets Manager); never bake keys into images or compose files.
 - Define per-env presets: `staging`, `prod` (RPC URLs, chain IDs, confirmations, challenge windows, SAFE_CONTRACTS, admin tokens).

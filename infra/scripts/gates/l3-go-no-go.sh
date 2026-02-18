@@ -30,6 +30,7 @@ L3_GO_NO_GO_RESTART_CHECK="${L3_GO_NO_GO_RESTART_CHECK:-0}"
 L3_GO_NO_GO_REQUIRE_SCANS="${L3_GO_NO_GO_REQUIRE_SCANS:-0}"
 L3_GO_NO_GO_REQUIRE_PROGRESS="${L3_GO_NO_GO_REQUIRE_PROGRESS:-}"
 L3_GO_NO_GO_SKIP_RUNTIME="${L3_GO_NO_GO_SKIP_RUNTIME:-0}"
+L3_GO_NO_GO_INVARIANT_MODE="${L3_GO_NO_GO_INVARIANT_MODE:-gst}"
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 warn() { echo "WARN: $*" >&2; }
@@ -45,6 +46,10 @@ echo "[l3-go-no-go] starting"
 
 command -v curl >/dev/null 2>&1 || fail "curl missing"
 
+echo "[l3-go-no-go] enforcing GST-native leakage gates"
+"$ROOT_DIR/scripts/gst-leakage-gate.sh"
+"$ROOT_DIR/scripts/gst-symbol-gate.sh"
+
 echo "[l3-go-no-go] doctor"
 effective_env="$(printf '%s' "${STACK_ENV:-${L3_ENV:-dev}}" | tr '[:upper:]' '[:lower:]')"
 if [ -z "$L3_GO_NO_GO_REQUIRE_PROGRESS" ]; then
@@ -59,6 +64,12 @@ if [ "$L3_GO_NO_GO_SKIP_RUNTIME" = "1" ]; then
     export L3_DOCTOR_SKIP_RUNTIME=1
   fi
   warn "runtime checks skipped (L3_GO_NO_GO_SKIP_RUNTIME=1)"
+fi
+
+if ! docker version --format '{{.Server.Version}}' >/dev/null 2>&1; then
+  if [ -z "${L3_DOCTOR_SKIP_DOCKER:-}" ]; then
+    export L3_DOCTOR_SKIP_DOCKER=1
+  fi
 fi
 
 if [ "$L3_GO_NO_GO_REQUIRE_PROGRESS" = "1" ]; then
@@ -99,7 +110,11 @@ fi
 
 echo "[l3-go-no-go] invariants"
 if [ -x "$ROOT_DIR/contracts/node_modules/.bin/forge" ]; then
-  (cd "$ROOT_DIR/contracts" && npm run test:invariant >/dev/null)
+  if [ "$L3_GO_NO_GO_INVARIANT_MODE" = "full" ]; then
+    (cd "$ROOT_DIR/contracts" && npm run test:invariant >/dev/null)
+  else
+    (cd "$ROOT_DIR/contracts" && npm run test:gst-invariant >/dev/null)
+  fi
 else
   warn "forge not installed; skipping invariant tests"
 fi

@@ -1,0 +1,371 @@
+# GST Migration Baseline
+
+## Refresh Snapshot (2026-02-16, rerun)
+
+- Date (UTC): `2026-02-16T15:53:51Z`
+- Branch: `brand/gst-native`
+- Commit: `25def7909`
+- Git status: `## brand/gst-native...origin/brand/gst-native`
+
+### Phase 0 Scan Gates (read-only)
+
+- Guard scripts present:
+  - `scripts/guard-diff-only.sh`
+  - `scripts/atomic-commit.sh`
+- Inventory artifacts refreshed:
+  - `docs/gst-migration/CHAINS-INVENTORY.md`
+  - `docs/gst-migration/SERVICES-INVENTORY.md`
+  - `docs/gst-migration/SERVICES-INVENTORY.tsv`
+- Live chain probes (technical `eth_*` compatibility calls only):
+  - `L1 http://127.0.0.1:18545 -> eth_chainId 0xd59fe5, eth_blockNumber 0x6181b`
+  - `L2 http://127.0.0.1:29547 -> eth_chainId 0x385, eth_blockNumber 0x3e50d`
+  - `L3 http://127.0.0.1:39545 -> eth_chainId 0x387, eth_blockNumber 0x3e25c`
+
+Date: 2026-02-15T21:36:11+00:00
+
+## Repo
+- Path: /home/ghost/ghostl-stack
+- Branch: brand/gst-native
+- Commit: 5aa4c5a42
+- Git status: ## brand/gst-native...origin/brand/gst-native
+
+## System
+- OS: Ubuntu 24.04.3 LTS
+- Kernel: Linux ghostchain-devnet 6.8.0-94-generic #96-Ubuntu SMP PREEMPT_DYNAMIC Fri Jan  9 20:36:55 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+
+## Tooling
+- node: v22.22.0
+- npm: 10.9.4
+- pnpm: not-installed
+- docker: Docker version 28.2.2, build 28.2.2-0ubuntu1~24.04.1
+- docker compose: Docker Compose version 2.37.1+ds1-0ubuntu2~24.04.1
+- forge: forge Version: 1.5.1-stable
+- git: git version 2.43.0
+
+## Containers (docker ps)
+```
+opstack-hyper-ghost-supervisor-1	local/hyper-ghost-supervisor:local	Up 56 minutes (unhealthy)
+opstack-ghost-rpc-proxy-l3-1	local/ghost-rpc-proxy:local	Up 56 minutes
+opstack-ghost-rpc-proxy-l1-1	local/ghost-rpc-proxy:local	Up 57 minutes (healthy)
+opstack-ghost-rpc-proxy-l2-1	local/ghost-rpc-proxy:local	Up 57 minutes (healthy)
+services-ghost-rollup-proposer-1	ghostl/ghost-rollup-proposer:local	Up 2 hours (healthy)
+services-ghost-rollup-challenger-1	ghostl/ghost-rollup-challenger:local	Up 2 hours (healthy)
+services-ghost-rollup-proposer-l2-1	ghostl/ghost-rollup-proposer:local	Up 3 hours (healthy)
+opstack-op-batcher-1	local/op-batcher:local	Up 6 hours (healthy)
+opstack-op-sequencer-1	local/op-node:local	Up 6 hours (healthy)
+opstack-op-node-1	local/op-node:local	Up 6 hours (healthy)
+ghostchain-ghostchain-node2-1	ethereum/client-go:alltools-v1.13.14	Up 7 hours
+ghost_ai-monitor-l3	ghostl/ai-monitor:local	Up 18 hours (healthy)
+ghost_ai-monitor	ghostl/ai-monitor:local	Up 18 hours (healthy)
+ghost_ai-monitor-l1	ghostl/ai-monitor:local	Up 18 hours (healthy)
+compose-vector-1	timberio/vector:0.38.0-alpine	Up 18 hours
+compose-grafana-1	grafana/grafana:10.4.2	Up 18 hours
+compose-prometheus-1	prom/prometheus:v2.51.2	Up 18 hours
+compose-alertmanager-1	prom/alertmanager:v0.27.0	Up 18 hours
+ghostl-stack-ghostl-web-1	ghostl-stack-ghostl-web	Up 19 hours
+opstack-l3-op-batcher-1	local/op-batcher:local	Up 19 hours (healthy)
+opstack-l3-op-node-1	local/op-node:local	Up 19 hours (healthy)
+opstack-op-proposer-1	local/op-proposer:local	Up 19 hours (healthy)
+ghostchain-compliance-ghost-compliance-worker-1	ghostchain-compliance-ghost-compliance-worker	Up 19 hours
+ghostchain-compliance-ghost-compliance-1	ghostchain-compliance-ghost-compliance	Up 19 hours (healthy)
+ghostchain-compliance-redis-1	redis:7-alpine	Up 19 hours (healthy)
+ghostchain-compliance-postgres-1	postgres:16-alpine	Up 19 hours (healthy)
+services-ghost-rollup-challenger-l2-1	ghostl/ghost-rollup-challenger:local	Up 19 hours (healthy)
+services-ghost-gas-engine-worker-1	ghostl/ghost-gas-engine:local	Up 19 hours (healthy)
+services-ghost-pil-worker-1	ghostl/ghost-pil:local	Up 19 hours
+services-ghost-gas-engine-1	ghostl/ghost-gas-engine:local	Up 19 hours (healthy)
+services-snapshot-service-1	ghostl/snapshot-service:local	Up 19 hours (healthy)
+services-node-health-service-1	ghostl/node-health-service:local	Up 19 hours (healthy)
+services-mempool-service-1	ghostl/mempool-service:local	Up 19 hours (healthy)
+services-transfer-lifecycle-service-1	ghostl/transfer-lifecycle-service:local	Up 19 hours
+services-theme-service-1	ghostl/theme-service:local	Up 19 hours (healthy)
+services-forecasting-service-1	ghostl/forecasting-service:local	Up 19 hours (healthy)
+services-contract-risk-service-1	ghostl/contract-risk-service:local	Up 19 hours
+services-node-inventory-service-1	ghostl/node-inventory-service:local	Up 19 hours (healthy)
+services-anomaly-detection-service-1	ghostl/anomaly-detection-service:local	Up 19 hours
+services-upgrade-orchestrator-service-1	ghostl/upgrade-orchestrator-service:local	Up 19 hours (healthy)
+services-payout-service-1	ghostl/payout-service:local	Up 19 hours
+services-alerts-service-1	ghostl/alerts-service:local	Up 19 hours (healthy)
+services-bridge-service-1	ghostl/bridge-service:local	Up 19 hours (healthy)
+services-ghost-relayer-1	ghostl/ghost-relayer:local	Up 19 hours (healthy)
+services-network-context-service-1	ghostl/network-context-service:local	Up 19 hours (healthy)
+services-consensus-telemetry-service-1	ghostl/consensus-telemetry-service:local	Up 19 hours (healthy)
+services-ghost-pil-1	ghostl/ghost-pil:local	Up 19 hours (healthy)
+services-compliance-export-service-1	ghostl/compliance-export-service:local	Up 19 hours (healthy)
+services-explainability-service-1	ghostl/explainability-service:local	Up 19 hours
+services-auth-service-1	ghostl/auth-service:local	Up 19 hours (healthy)
+services-notifications-service-1	ghostl/notifications-service:local	Up 19 hours (healthy)
+services-chain-status-service-1	ghostl/chain-status-service:local	Up 19 hours (healthy)
+services-audit-log-service-1	ghostl/audit-log-service:local	Up 19 hours (healthy)
+services-supply-service-1	ghostl/supply-service:local	Up 19 hours (healthy)
+services-slashing-detection-service-1	ghostl/slashing-detection-service:local	Up 19 hours
+services-treasury-service-1	ghostl/treasury-service:local	Up 19 hours (healthy)
+services-preconfirm-l2-service-1	ghostl/preconfirm-service:local	Up 19 hours (healthy)
+services-ai-vault-1	ghostl/ai-vault:local	Up 19 hours
+services-session-service-1	ghostl/session-service:local	Up 19 hours (healthy)
+services-liquidity-service-1	ghostl/liquidity-service:local	Up 19 hours (healthy)
+services-key-rotation-service-1	ghostl/key-rotation-service:local	Up 19 hours
+services-secrets-health-service-1	ghostl/secrets-health-service:local	Up 19 hours
+services-network-manager-service-1	ghostl/network-manager-service:local	Up 19 hours (healthy)
+services-contract-registry-service-1	ghostl/contract-registry-service:local	Up 19 hours (healthy)
+services-command-palette-service-1	ghostl/command-palette-service:local	Up 19 hours (healthy)
+services-tx-index-service-1	ghostl/tx-index-service:local	Up 19 hours
+services-ghost-registry-1	ghostl/ghost-registry:local	Up 19 hours (healthy)
+services-global-search-service-1	ghostl/global-search-service:local	Up 19 hours (healthy)
+services-fee-model-service-1	ghostl/fee-model-service:local	Up 19 hours (healthy)
+services-ghost-rpc-proxy-1	ghostl/ghost-rpc-proxy:local	Up 19 hours
+services-feature-flags-service-1	ghostl/feature-flags-service:local	Up 19 hours (healthy)
+services-rewards-service-1	ghostl/rewards-service:local	Up 19 hours (healthy)
+services-block-index-service-1	ghostl/block-index-service:local	Up 19 hours (healthy)
+services-preconfirm-l3-service-1	ghostl/preconfirm-service:local	Up 19 hours (healthy)
+services-governance-service-1	ghostl/governance-service:local	Up 19 hours (healthy)
+services-validator-service-1	ghostl/validator-service:local	Up 19 hours (healthy)
+services-rbac-service-1	ghostl/rbac-service:local	Up 19 hours (healthy)
+services-participation-service-1	ghostl/participation-service:local	Up 19 hours (healthy)
+services-peer-graph-service-1	ghostl/peer-graph-service:local	Up 19 hours (healthy)
+services-entity-tagging-service-1	ghostl/entity-tagging-service:local	Up 19 hours (healthy)
+services-verification-service-1	ghostl/verification-service:local	Up 19 hours (healthy)
+services-dispute-service-1	ghostl/dispute-service:local	Up 19 hours
+services-staking-service-1	ghostl/staking-service:local	Up 19 hours (healthy)
+services-proxy-inspector-service-1	ghostl/proxy-inspector-service:local	Up 19 hours (healthy)
+opstack-ghost-guard-1	local/ghost-guard:local	Up 43 hours (healthy)
+opstack-l3-geth-1	local/op-geth:local	Up 2 days (healthy)
+opstack-l2-geth-1	local/op-geth:local	Up 2 days (healthy)
+services-ai-vault-dev-1	hashicorp/vault:1.16.3	Up 2 days
+services-pil-postgres-1	postgres:16-alpine	Up 2 days (healthy)
+services-gas-engine-redis-1	redis:7-alpine	Up 2 days (healthy)
+services-ai-clock-sync-1	ghostl/ai-clock-sync:local	Up 2 days
+services-rpc-forward-l1-29545-1	ghostl/rpc-forward-l1-29545:local	Up 2 days
+services-gas-engine-postgres-1	postgres:16-alpine	Up 2 days (healthy)
+opstack-op-gate-l1-1	local/op-gate:0.1.0	Up 2 days (healthy)
+opstack-l1-rpc-proxy-1	node:22-alpine	Up 2 days (healthy)
+opstack-rpc-forward-l2-18547-1	local/rpc-forward:0.1.0	Up 2 days
+opstack-op-gate-1	local/op-gate:0.1.0	Up 2 days (healthy)
+ghostchain-ghostchain-rpc-proxy-1	ghostl/ghost-rpc-proxy:local	Up 2 days (healthy)
+ghostchain-ghostchain-node1-1	ethereum/client-go:alltools-v1.13.14	Up 2 days (healthy)
+ghostchain-ghostchain-bootnode-1	ethereum/client-go:alltools-v1.13.14	Up 2 days
+```
+
+## Listening Ports (ss -lntup)
+```
+udp UNCONN 0      0                     0.0.0.0:30301 0.0.0.0:* users:(("docker-proxy",pid=322025,fd=7))                 
+udp UNCONN 0      0                  127.0.0.54:53    0.0.0.0:* users:(("systemd-resolve",pid=210670,fd=16))             
+udp UNCONN 0      0               127.0.0.53%lo:53    0.0.0.0:* users:(("systemd-resolve",pid=210670,fd=14))             
+udp UNCONN 0      0      192.168.122.205%enp2s0:68    0.0.0.0:* users:(("systemd-network",pid=210718,fd=25))             
+udp UNCONN 0      0                        [::]:30301    [::]:* users:(("docker-proxy",pid=322031,fd=7))                 
+tcp LISTEN 0      4096                127.0.0.1:35517 0.0.0.0:* users:(("containerd",pid=210613,fd=9))                   
+tcp LISTEN 0      4096                  0.0.0.0:29606 0.0.0.0:* users:(("docker-proxy",pid=1052631,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:29545 0.0.0.0:* users:(("docker-proxy",pid=619681,fd=7))                 
+tcp LISTEN 0      4096                  0.0.0.0:29547 0.0.0.0:* users:(("docker-proxy",pid=1052645,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:29548 0.0.0.0:* users:(("docker-proxy",pid=1052660,fd=7))                
+tcp LISTEN 0      511                 127.0.0.1:43211 0.0.0.0:* users:(("node",pid=2553661,fd=21))                       
+tcp LISTEN 0      4096                  0.0.0.0:5433  0.0.0.0:* users:(("docker-proxy",pid=624257,fd=7))                 
+tcp LISTEN 0      4096                  0.0.0.0:5432  0.0.0.0:* users:(("docker-proxy",pid=3612313,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:5434  0.0.0.0:* users:(("docker-proxy",pid=620053,fd=7))                 
+tcp LISTEN 0      4096                  0.0.0.0:7077  0.0.0.0:* users:(("docker-proxy",pid=2288403,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7070  0.0.0.0:* users:(("docker-proxy",pid=3933663,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:39606 0.0.0.0:* users:(("docker-proxy",pid=1112485,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:39545 0.0.0.0:* users:(("docker-proxy",pid=1112499,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:39546 0.0.0.0:* users:(("docker-proxy",pid=3684975,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:39548 0.0.0.0:* users:(("docker-proxy",pid=1112515,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:39551 0.0.0.0:* users:(("docker-proxy",pid=3685777,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:6379  0.0.0.0:* users:(("docker-proxy",pid=3612283,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:6381  0.0.0.0:* users:(("docker-proxy",pid=623049,fd=7))                 
+tcp LISTEN 0      4096                  0.0.0.0:8090  0.0.0.0:* users:(("docker-proxy",pid=3613344,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7766  0.0.0.0:* users:(("docker-proxy",pid=3591366,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7691  0.0.0.0:* users:(("docker-proxy",pid=3592347,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7690  0.0.0.0:* users:(("docker-proxy",pid=623785,fd=7))                 
+tcp LISTEN 0      4096                  0.0.0.0:7692  0.0.0.0:* users:(("docker-proxy",pid=3591663,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7710  0.0.0.0:* users:(("docker-proxy",pid=3591505,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7617  0.0.0.0:* users:(("docker-proxy",pid=3592166,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7616  0.0.0.0:* users:(("docker-proxy",pid=3591055,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7619  0.0.0.0:* users:(("docker-proxy",pid=3591872,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7618  0.0.0.0:* users:(("docker-proxy",pid=3591328,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7621  0.0.0.0:* users:(("docker-proxy",pid=3591254,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7620  0.0.0.0:* users:(("docker-proxy",pid=3590978,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7623  0.0.0.0:* users:(("docker-proxy",pid=3590521,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7622  0.0.0.0:* users:(("docker-proxy",pid=3591788,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7625  0.0.0.0:* users:(("docker-proxy",pid=3591998,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7624  0.0.0.0:* users:(("docker-proxy",pid=3592088,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7627  0.0.0.0:* users:(("docker-proxy",pid=3591752,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7626  0.0.0.0:* users:(("docker-proxy",pid=3592132,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7629  0.0.0.0:* users:(("docker-proxy",pid=3589431,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7628  0.0.0.0:* users:(("docker-proxy",pid=3590663,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7631  0.0.0.0:* users:(("docker-proxy",pid=3592248,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7630  0.0.0.0:* users:(("docker-proxy",pid=3590895,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7633  0.0.0.0:* users:(("docker-proxy",pid=3592209,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7632  0.0.0.0:* users:(("docker-proxy",pid=3589780,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7635  0.0.0.0:* users:(("docker-proxy",pid=3591626,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7634  0.0.0.0:* users:(("docker-proxy",pid=3592396,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7637  0.0.0.0:* users:(("docker-proxy",pid=3590741,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7636  0.0.0.0:* users:(("docker-proxy",pid=3591439,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7639  0.0.0.0:* users:(("docker-proxy",pid=3589128,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7638  0.0.0.0:* users:(("docker-proxy",pid=3591130,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7641  0.0.0.0:* users:(("docker-proxy",pid=3591405,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7640  0.0.0.0:* users:(("docker-proxy",pid=3588878,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7643  0.0.0.0:* users:(("docker-proxy",pid=3590385,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7642  0.0.0.0:* users:(("docker-proxy",pid=3591909,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7645  0.0.0.0:* users:(("docker-proxy",pid=3587841,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7644  0.0.0.0:* users:(("docker-proxy",pid=3590470,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7601  0.0.0.0:* users:(("docker-proxy",pid=3590097,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7600  0.0.0.0:* users:(("docker-proxy",pid=3591193,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7603  0.0.0.0:* users:(("docker-proxy",pid=3588429,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7602  0.0.0.0:* users:(("docker-proxy",pid=3591712,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7605  0.0.0.0:* users:(("docker-proxy",pid=3591943,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7604  0.0.0.0:* users:(("docker-proxy",pid=3591819,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7607  0.0.0.0:* users:(("docker-proxy",pid=3591473,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7606  0.0.0.0:* users:(("docker-proxy",pid=3591541,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7609  0.0.0.0:* users:(("docker-proxy",pid=3589915,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7608  0.0.0.0:* users:(("docker-proxy",pid=3592057,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7611  0.0.0.0:* users:(("docker-proxy",pid=3590173,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7610  0.0.0.0:* users:(("docker-proxy",pid=3587967,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7613  0.0.0.0:* users:(("docker-proxy",pid=3591576,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7612  0.0.0.0:* users:(("docker-proxy",pid=3590238,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7615  0.0.0.0:* users:(("docker-proxy",pid=3590831,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7614  0.0.0.0:* users:(("docker-proxy",pid=3588170,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7575  0.0.0.0:* users:(("docker-proxy",pid=3953236,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7577  0.0.0.0:* users:(("docker-proxy",pid=3956927,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7576  0.0.0.0:* users:(("docker-proxy",pid=3791262,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7301  0.0.0.0:* users:(("docker-proxy",pid=105414,fd=7))                 
+tcp LISTEN 0      4096                  0.0.0.0:7300  0.0.0.0:* users:(("docker-proxy",pid=70756,fd=7))                  
+tcp LISTEN 0      4096                  0.0.0.0:7303  0.0.0.0:* users:(("docker-proxy",pid=70817,fd=7))                  
+tcp LISTEN 0      4096                  0.0.0.0:7302  0.0.0.0:* users:(("docker-proxy",pid=3681916,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7273  0.0.0.0:* users:(("docker-proxy",pid=1399654,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7272  0.0.0.0:* users:(("docker-proxy",pid=1707533,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7283  0.0.0.0:* users:(("docker-proxy",pid=3593622,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7282  0.0.0.0:* users:(("docker-proxy",pid=1707568,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:7171  0.0.0.0:* users:(("docker-proxy",pid=3592313,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:9090  0.0.0.0:* users:(("docker-proxy",pid=3770464,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:9093  0.0.0.0:* users:(("docker-proxy",pid=3770418,fd=7))                
+tcp LISTEN 0      511                 127.0.0.1:39787 0.0.0.0:* users:(("node",pid=5322,fd=60))                          
+tcp LISTEN 0      4096                  0.0.0.0:8546  0.0.0.0:* users:(("docker-proxy",pid=3590027,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:8551  0.0.0.0:* users:(("docker-proxy",pid=105431,fd=7))                 
+tcp LISTEN 0      4096                  0.0.0.0:8560  0.0.0.0:* users:(("docker-proxy",pid=3681931,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:8301  0.0.0.0:* users:(("docker-proxy",pid=3685762,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:8300  0.0.0.0:* users:(("docker-proxy",pid=3684959,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:8200  0.0.0.0:* users:(("docker-proxy",pid=623252,fd=7))                 
+tcp LISTEN 0      4096                  0.0.0.0:22    0.0.0.0:* users:(("sshd",pid=210663,fd=3),("systemd",pid=1,fd=83)) 
+tcp LISTEN 0      4096                  0.0.0.0:18088 0.0.0.0:* users:(("docker-proxy",pid=3590594,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:9646  0.0.0.0:* users:(("docker-proxy",pid=70833,fd=7))                  
+tcp LISTEN 0      4096                  0.0.0.0:9546  0.0.0.0:* users:(("docker-proxy",pid=70772,fd=7))                  
+tcp LISTEN 0      511                 127.0.0.1:40415 0.0.0.0:* users:(("node",pid=2565784,fd=57))                       
+tcp LISTEN 0      511                 127.0.0.1:37607 0.0.0.0:* users:(("node",pid=4575,fd=21))                          
+tcp LISTEN 0      4096                  0.0.0.0:3000  0.0.0.0:* users:(("docker-proxy",pid=3770669,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:18660 0.0.0.0:* users:(("docker-proxy",pid=322194,fd=7))                 
+tcp LISTEN 0      4096                  0.0.0.0:18545 0.0.0.0:* users:(("docker-proxy",pid=322343,fd=7))                 
+tcp LISTEN 0      4096                  0.0.0.0:18547 0.0.0.0:* users:(("docker-proxy",pid=333714,fd=7))                 
+tcp LISTEN 0      4096                  0.0.0.0:18546 0.0.0.0:* users:(("docker-proxy",pid=322208,fd=7))                 
+tcp LISTEN 0      4096                  0.0.0.0:18551 0.0.0.0:* users:(("docker-proxy",pid=322236,fd=7))                 
+tcp LISTEN 0      4096                  0.0.0.0:18552 0.0.0.0:* users:(("docker-proxy",pid=322223,fd=7))                 
+tcp LISTEN 0      4096                  0.0.0.0:28547 0.0.0.0:* users:(("docker-proxy",pid=334033,fd=7))                 
+tcp LISTEN 0      4096                  0.0.0.0:28546 0.0.0.0:* users:(("docker-proxy",pid=333263,fd=7))                 
+tcp LISTEN 0      4096               127.0.0.54:53    0.0.0.0:* users:(("systemd-resolve",pid=210670,fd=17))             
+tcp LISTEN 0      4096                  0.0.0.0:3200  0.0.0.0:* users:(("docker-proxy",pid=3697570,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:3210  0.0.0.0:* users:(("docker-proxy",pid=3592737,fd=7))                
+tcp LISTEN 0      4096                  0.0.0.0:3220  0.0.0.0:* users:(("docker-proxy",pid=3592586,fd=7))                
+tcp LISTEN 0      4096            127.0.0.53%lo:53    0.0.0.0:* users:(("systemd-resolve",pid=210670,fd=15))             
+tcp LISTEN 0      4096                     [::]:29606    [::]:* users:(("docker-proxy",pid=1052637,fd=7))                
+tcp LISTEN 0      4096                     [::]:29545    [::]:* users:(("docker-proxy",pid=619691,fd=7))                 
+tcp LISTEN 0      4096                     [::]:29547    [::]:* users:(("docker-proxy",pid=1052652,fd=7))                
+tcp LISTEN 0      4096                     [::]:29548    [::]:* users:(("docker-proxy",pid=1052667,fd=7))                
+tcp LISTEN 0      4096                     [::]:5433     [::]:* users:(("docker-proxy",pid=624263,fd=7))                 
+tcp LISTEN 0      4096                     [::]:5432     [::]:* users:(("docker-proxy",pid=3612320,fd=7))                
+tcp LISTEN 0      4096                     [::]:5434     [::]:* users:(("docker-proxy",pid=620075,fd=7))                 
+tcp LISTEN 0      4096                     [::]:7077     [::]:* users:(("docker-proxy",pid=2288410,fd=7))                
+tcp LISTEN 0      4096                     [::]:7070     [::]:* users:(("docker-proxy",pid=3933669,fd=7))                
+tcp LISTEN 0      4096                     [::]:39606    [::]:* users:(("docker-proxy",pid=1112492,fd=7))                
+tcp LISTEN 0      4096                     [::]:39545    [::]:* users:(("docker-proxy",pid=1112506,fd=7))                
+tcp LISTEN 0      4096                     [::]:39546    [::]:* users:(("docker-proxy",pid=3684984,fd=7))                
+tcp LISTEN 0      4096                     [::]:39548    [::]:* users:(("docker-proxy",pid=1112523,fd=7))                
+tcp LISTEN 0      4096                     [::]:39551    [::]:* users:(("docker-proxy",pid=3685785,fd=7))                
+tcp LISTEN 0      4096                     [::]:6379     [::]:* users:(("docker-proxy",pid=3612289,fd=7))                
+tcp LISTEN 0      4096                     [::]:6381     [::]:* users:(("docker-proxy",pid=623057,fd=7))                 
+tcp LISTEN 0      4096                     [::]:8090     [::]:* users:(("docker-proxy",pid=3613350,fd=7))                
+tcp LISTEN 0      4096                     [::]:7766     [::]:* users:(("docker-proxy",pid=3591372,fd=7))                
+tcp LISTEN 0      4096                     [::]:7691     [::]:* users:(("docker-proxy",pid=3592355,fd=7))                
+tcp LISTEN 0      4096                     [::]:7690     [::]:* users:(("docker-proxy",pid=623794,fd=7))                 
+tcp LISTEN 0      4096                     [::]:7692     [::]:* users:(("docker-proxy",pid=3591678,fd=7))                
+tcp LISTEN 0      4096                     [::]:7710     [::]:* users:(("docker-proxy",pid=3591513,fd=7))                
+tcp LISTEN 0      4096                     [::]:7617     [::]:* users:(("docker-proxy",pid=3592175,fd=7))                
+tcp LISTEN 0      4096                     [::]:7616     [::]:* users:(("docker-proxy",pid=3591066,fd=7))                
+tcp LISTEN 0      4096                     [::]:7619     [::]:* users:(("docker-proxy",pid=3591879,fd=7))                
+tcp LISTEN 0      4096                     [::]:7618     [::]:* users:(("docker-proxy",pid=3591337,fd=7))                
+tcp LISTEN 0      4096                     [::]:7621     [::]:* users:(("docker-proxy",pid=3591271,fd=7))                
+tcp LISTEN 0      4096                     [::]:7620     [::]:* users:(("docker-proxy",pid=3591000,fd=7))                
+tcp LISTEN 0      4096                     [::]:7623     [::]:* users:(("docker-proxy",pid=3590536,fd=7))                
+tcp LISTEN 0      4096                     [::]:7622     [::]:* users:(("docker-proxy",pid=3591795,fd=7))                
+tcp LISTEN 0      4096                     [::]:7625     [::]:* users:(("docker-proxy",pid=3592009,fd=7))                
+tcp LISTEN 0      4096                     [::]:7624     [::]:* users:(("docker-proxy",pid=3592095,fd=7))                
+tcp LISTEN 0      4096                     [::]:7627     [::]:* users:(("docker-proxy",pid=3591759,fd=7))                
+tcp LISTEN 0      4096                     [::]:7626     [::]:* users:(("docker-proxy",pid=3592139,fd=7))                
+tcp LISTEN 0      4096                     [::]:7629     [::]:* users:(("docker-proxy",pid=3589470,fd=7))                
+tcp LISTEN 0      4096                     [::]:7628     [::]:* users:(("docker-proxy",pid=3590672,fd=7))                
+tcp LISTEN 0      4096                     [::]:7631     [::]:* users:(("docker-proxy",pid=3592255,fd=7))                
+tcp LISTEN 0      4096                     [::]:7630     [::]:* users:(("docker-proxy",pid=3590906,fd=7))                
+tcp LISTEN 0      4096                     [::]:7633     [::]:* users:(("docker-proxy",pid=3592215,fd=7))                
+tcp LISTEN 0      4096                     [::]:7632     [::]:* users:(("docker-proxy",pid=3589797,fd=7))                
+tcp LISTEN 0      4096                     [::]:7635     [::]:* users:(("docker-proxy",pid=3591632,fd=7))                
+tcp LISTEN 0      4096                     [::]:7634     [::]:* users:(("docker-proxy",pid=3592404,fd=7))                
+tcp LISTEN 0      4096                     [::]:7637     [::]:* users:(("docker-proxy",pid=3590752,fd=7))                
+tcp LISTEN 0      4096                     [::]:7636     [::]:* users:(("docker-proxy",pid=3591445,fd=7))                
+tcp LISTEN 0      4096                     [::]:7639     [::]:* users:(("docker-proxy",pid=3589193,fd=7))                
+tcp LISTEN 0      4096                     [::]:7638     [::]:* users:(("docker-proxy",pid=3591141,fd=7))                
+tcp LISTEN 0      4096                     [::]:7641     [::]:* users:(("docker-proxy",pid=3591412,fd=7))                
+tcp LISTEN 0      4096                     [::]:7640     [::]:* users:(("docker-proxy",pid=3588896,fd=7))                
+tcp LISTEN 0      4096                     [::]:7643     [::]:* users:(("docker-proxy",pid=3590395,fd=7))                
+tcp LISTEN 0      4096                     [::]:7642     [::]:* users:(("docker-proxy",pid=3591916,fd=7))                
+tcp LISTEN 0      4096                     [::]:7645     [::]:* users:(("docker-proxy",pid=3587856,fd=7))                
+tcp LISTEN 0      4096                     [::]:7644     [::]:* users:(("docker-proxy",pid=3590482,fd=7))                
+tcp LISTEN 0      4096                     [::]:7601     [::]:* users:(("docker-proxy",pid=3590113,fd=7))                
+tcp LISTEN 0      4096                     [::]:7600     [::]:* users:(("docker-proxy",pid=3591202,fd=7))                
+tcp LISTEN 0      4096                     [::]:7603     [::]:* users:(("docker-proxy",pid=3588450,fd=7))                
+tcp LISTEN 0      4096                     [::]:7602     [::]:* users:(("docker-proxy",pid=3591725,fd=7))                
+tcp LISTEN 0      4096                     [::]:7605     [::]:* users:(("docker-proxy",pid=3591950,fd=7))                
+tcp LISTEN 0      4096                     [::]:7604     [::]:* users:(("docker-proxy",pid=3591836,fd=7))                
+tcp LISTEN 0      4096                     [::]:7607     [::]:* users:(("docker-proxy",pid=3591480,fd=7))                
+tcp LISTEN 0      4096                     [::]:7606     [::]:* users:(("docker-proxy",pid=3591547,fd=7))                
+tcp LISTEN 0      4096                     [::]:7609     [::]:* users:(("docker-proxy",pid=3589927,fd=7))                
+tcp LISTEN 0      4096                     [::]:7608     [::]:* users:(("docker-proxy",pid=3592065,fd=7))                
+tcp LISTEN 0      4096                     [::]:7611     [::]:* users:(("docker-proxy",pid=3590178,fd=7))                
+tcp LISTEN 0      4096                     [::]:7610     [::]:* users:(("docker-proxy",pid=3587982,fd=7))                
+tcp LISTEN 0      4096                     [::]:7613     [::]:* users:(("docker-proxy",pid=3591582,fd=7))                
+tcp LISTEN 0      4096                     [::]:7612     [::]:* users:(("docker-proxy",pid=3590246,fd=7))                
+tcp LISTEN 0      4096                     [::]:7615     [::]:* users:(("docker-proxy",pid=3590840,fd=7))                
+tcp LISTEN 0      4096                     [::]:7614     [::]:* users:(("docker-proxy",pid=3588192,fd=7))                
+tcp LISTEN 0      4096                     [::]:7575     [::]:* users:(("docker-proxy",pid=3953243,fd=7))                
+tcp LISTEN 0      4096                     [::]:7577     [::]:* users:(("docker-proxy",pid=3956933,fd=7))                
+tcp LISTEN 0      4096                     [::]:7576     [::]:* users:(("docker-proxy",pid=3791267,fd=7))                
+tcp LISTEN 0      4096                     [::]:7301     [::]:* users:(("docker-proxy",pid=105421,fd=7))                 
+tcp LISTEN 0      4096                     [::]:7300     [::]:* users:(("docker-proxy",pid=70764,fd=7))                  
+tcp LISTEN 0      4096                     [::]:7303     [::]:* users:(("docker-proxy",pid=70825,fd=7))                  
+tcp LISTEN 0      4096                     [::]:7302     [::]:* users:(("docker-proxy",pid=3681923,fd=7))                
+tcp LISTEN 0      4096                     [::]:7273     [::]:* users:(("docker-proxy",pid=1399662,fd=7))                
+tcp LISTEN 0      4096                     [::]:7272     [::]:* users:(("docker-proxy",pid=1707540,fd=7))                
+tcp LISTEN 0      4096                     [::]:7283     [::]:* users:(("docker-proxy",pid=3593631,fd=7))                
+tcp LISTEN 0      4096                     [::]:7282     [::]:* users:(("docker-proxy",pid=1707575,fd=7))                
+tcp LISTEN 0      4096                     [::]:7171     [::]:* users:(("docker-proxy",pid=3592321,fd=7))                
+tcp LISTEN 0      4096                     [::]:9090     [::]:* users:(("docker-proxy",pid=3770471,fd=7))                
+tcp LISTEN 0      4096                     [::]:9093     [::]:* users:(("docker-proxy",pid=3770432,fd=7))                
+tcp LISTEN 0      4096                     [::]:8546     [::]:* users:(("docker-proxy",pid=3590040,fd=7))                
+tcp LISTEN 0      4096                     [::]:8551     [::]:* users:(("docker-proxy",pid=105438,fd=7))                 
+tcp LISTEN 0      4096                     [::]:8560     [::]:* users:(("docker-proxy",pid=3681937,fd=7))                
+tcp LISTEN 0      4096                     [::]:8301     [::]:* users:(("docker-proxy",pid=3685769,fd=7))                
+tcp LISTEN 0      4096                     [::]:8300     [::]:* users:(("docker-proxy",pid=3684966,fd=7))                
+tcp LISTEN 0      4096                     [::]:8200     [::]:* users:(("docker-proxy",pid=623278,fd=7))                 
+tcp LISTEN 0      4096                     [::]:22       [::]:* users:(("sshd",pid=210663,fd=4),("systemd",pid=1,fd=102))
+tcp LISTEN 0      4096                     [::]:18088    [::]:* users:(("docker-proxy",pid=3590606,fd=7))                
+tcp LISTEN 0      4096                     [::]:9646     [::]:* users:(("docker-proxy",pid=70839,fd=7))                  
+tcp LISTEN 0      4096                     [::]:9546     [::]:* users:(("docker-proxy",pid=70779,fd=7))                  
+tcp LISTEN 0      4096                     [::]:3000     [::]:* users:(("docker-proxy",pid=3770677,fd=7))                
+tcp LISTEN 0      4096                     [::]:18660    [::]:* users:(("docker-proxy",pid=322201,fd=7))                 
+tcp LISTEN 0      4096                     [::]:18545    [::]:* users:(("docker-proxy",pid=322351,fd=7))                 
+tcp LISTEN 0      4096                     [::]:18547    [::]:* users:(("docker-proxy",pid=333721,fd=7))                 
+tcp LISTEN 0      4096                     [::]:18546    [::]:* users:(("docker-proxy",pid=322217,fd=7))                 
+tcp LISTEN 0      4096                     [::]:18551    [::]:* users:(("docker-proxy",pid=322245,fd=7))                 
+tcp LISTEN 0      4096                     [::]:18552    [::]:* users:(("docker-proxy",pid=322230,fd=7))                 
+tcp LISTEN 0      4096                     [::]:28547    [::]:* users:(("docker-proxy",pid=334039,fd=7))                 
+tcp LISTEN 0      4096                     [::]:28546    [::]:* users:(("docker-proxy",pid=333270,fd=7))                 
+tcp LISTEN 0      4096                     [::]:3200     [::]:* users:(("docker-proxy",pid=3697577,fd=7))                
+tcp LISTEN 0      4096                     [::]:3210     [::]:* users:(("docker-proxy",pid=3592743,fd=7))                
+tcp LISTEN 0      4096                     [::]:3220     [::]:* users:(("docker-proxy",pid=3592593,fd=7))                
+```

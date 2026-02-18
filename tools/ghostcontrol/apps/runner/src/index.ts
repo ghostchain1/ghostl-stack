@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { Worker } from "bullmq";
 import Docker from "dockerode";
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 import { z } from "zod";
 
 import {
@@ -42,7 +42,7 @@ const EvaluateResponseSchema = z.object({
 });
 
 function parseDockerHost(dockerHost: string): { host: string; port: number } {
-  const m = dockerHost.match(/^tcp:\\/\\/([^:]+):(\\d+)$/);
+  const m = dockerHost.match(/^tcp:\/\/([^:]+):(\d+)$/);
   if (!m) return { host: "docker-socket-proxy", port: 2375 };
   return { host: m[1], port: Number(m[2]) };
 }
@@ -57,7 +57,7 @@ function apiHeaders(): Record<string, string> {
 }
 
 async function policyAllows(bundle: any): Promise<{ allowed: true } | { allowed: false; reasons: string[] }> {
-  const res = await fetch(`${env.POLICY_URL.replace(/\\/+$/, "")}/policy/evaluate`, {
+  const res = await fetch(`${env.POLICY_URL.replace(/\/+$/, "")}/policy/evaluate`, {
     method: "POST",
     headers: apiHeaders(),
     body: JSON.stringify({
@@ -76,7 +76,7 @@ async function policyAllows(bundle: any): Promise<{ allowed: true } | { allowed:
 }
 
 async function postEvidence(payload: unknown) {
-  const res = await fetch(`${env.API_URL.replace(/\\/+$/, "")}/evidence`, {
+  const res = await fetch(`${env.API_URL.replace(/\/+$/, "")}/evidence`, {
     method: "POST",
     headers: apiHeaders(),
     body: JSON.stringify(payload),
@@ -303,4 +303,3 @@ main().catch((err) => {
   logger.error({ err }, "runner_failed");
   process.exit(1);
 });
-

@@ -1,0 +1,4 @@
+# Runtime incident DB (never commit)
+incidents.sqlite*
+!.gitignore
+!schema.sql

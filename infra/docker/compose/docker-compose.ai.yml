@@ -394,7 +394,7 @@
     "infra/opstack/docker-compose.l3.yml",
     "services/docker-compose.yml",
     "infra/ghostchain/docker-compose.ibft.yml",
-    "infra/ghostchain/docker-compose.eth.yml",
+    "infra/ghostchain/docker-compose.l1.yml",
     "infra/opstack/docker-compose.yml",
     "docker-compose.yml",
     "core-service/docker-compose.yml",

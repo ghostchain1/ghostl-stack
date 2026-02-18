@@ -1,0 +1,12 @@
+[Unit]
+Description=Run GhostControl Event Watchdog Healthcheck Every Minute
+
+[Timer]
+OnBootSec=45s
+OnUnitActiveSec=60s
+AccuracySec=5s
+Unit=ghostcontrol-event-watchdog-healthcheck.service
+Persistent=true
+
+[Install]
+WantedBy=timers.target

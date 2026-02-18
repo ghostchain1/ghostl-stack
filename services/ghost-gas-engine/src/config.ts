@@ -9,7 +9,7 @@ const envSchema = z.object({
   REDIS_URL: z.string().default('redis://redis:6379'),
   CHAINS_CONFIG_PATH: z.string().default(path.join(process.cwd(), 'config', 'chains.json')),
   POLICIES_PATH: z.string().default(path.join(process.cwd(), 'config', 'gas-policies.json')),
-  GHOST_RPC_NAMESPACE: z.enum(['auto', 'eth', 'ghost']).default('auto'),
+  GHOST_RPC_NAMESPACE: z.enum(['auto', 'evm', 'ghost', 'eth']).default('auto'),
   RPC_L1: z.string().optional(),
   RPC_L2: z.string().optional(),
   RPC_L3: z.string().optional(),
@@ -73,7 +73,7 @@ const envSchema = z.object({
 });
 
 const CANONICAL_GAS_TOKEN_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
-const CANONICAL_GAS_TOKEN_SYMBOL = 'GHOST';
+const CANONICAL_GAS_TOKEN_SYMBOL = 'GST';
 const CANONICAL_GAS_TOKEN_NAME = 'Ghost Token';
 const CANONICAL_GAS_TOKEN_DECIMALS = 18;
 
@@ -173,7 +173,12 @@ export const config = (() => {
     console.error('Invalid environment configuration', issues);
     throw new Error('Invalid environment configuration');
   }
-  return parsed.data;
+  const data = parsed.data;
+  const normalizedRpcNamespace = data.GHOST_RPC_NAMESPACE === 'evm' ? 'eth' : data.GHOST_RPC_NAMESPACE;
+  return {
+    ...data,
+    GHOST_RPC_NAMESPACE: normalizedRpcNamespace as 'auto' | 'eth' | 'ghost'
+  };
 })();
 
 const applyEnvOverrides = (chains: ChainConfig[]): ChainConfig[] => {

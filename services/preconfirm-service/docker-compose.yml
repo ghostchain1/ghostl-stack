@@ -1,0 +1,33 @@
+# stack-group: rpc
+# role: preconfirm-service
+# ports: 7691:7691
+version: '3.9'
+services:
+  preconfirm-service:
+    container_name: ghost_preconfirm-service
+    image: ghostl/preconfirm-service:local
+    build:
+      context: .
+    env_file:
+      - .env
+    environment:
+      - PORT=7691
+    ports:
+      - "7691:7691"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:7691/health >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - ghost_net
+
+networks:
+  ghost_net:
+    external: true
+

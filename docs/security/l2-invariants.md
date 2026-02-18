@@ -5,7 +5,7 @@
 - AI actions must be ratified by L1 policy (`AgentGovernancePolicy.canExecute`).
 
 ## Gas token
-- L2 must use the canonical GHOST token address for gas (no per-layer token deployments).
+- L2 must use the canonical GST token address for gas (no per-layer token deployments).
 - Any attempt to deploy per-layer gas tokens must revert.
 
 ## Bridge-facing invariants

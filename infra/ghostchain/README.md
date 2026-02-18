@@ -1,4 +1,4 @@
-# GhostChain (Ethereum-compatible, config-only geth)
+# GhostChain (EVM-compatible, config-only geth)
 
 This folder runs GhostChain (the main Autonomous Layer 1 blockchain) as a clique PoA chain on stock geth (no forked client). It ships with bootnode + 2 signers, deterministic keys, and helper scripts.
 
@@ -32,7 +32,7 @@ Chain config:
 - Genesis: `geth/genesis.json` (London on, Shanghai/Cancun pushed far out to avoid clique blob/withdrawal edge cases)
 
 Compose files:
-- `docker-compose.eth.yml` — default geth PoA stack (bootnode + node1 + node2)
+- `docker-compose.l1.yml` — default geth PoA stack (bootnode + node1 + node2)
 - `docker-compose.ibft.yml` — legacy Besu IBFT (kept for reference; stopped by default)
 - GhostScout explorer is included (Blockscout) + Postgres DB
 

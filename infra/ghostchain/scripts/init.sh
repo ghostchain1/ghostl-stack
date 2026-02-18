@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$ROOT/../.." && pwd)"
 ENV_FILE="$ROOT/.env.l1"
 if [ -f "$ENV_FILE" ]; then
   set -a
@@ -10,7 +11,11 @@ if [ -f "$ENV_FILE" ]; then
   set +a
 fi
 
-IMG="${L1_GETH_IMAGE:-${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}}"
+# shellcheck source=scripts/lib/docker.sh
+. "${REPO_ROOT}/scripts/lib/docker.sh"
+hg_docker_init
+
+IMG="${L1_GETH_IMAGE:-${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}}"
 CHAIN_ID="${L1_CHAIN_ID:-${CHAIN_ID:-14000101}}"
 BOOTNODE_IP="${L1_BOOTNODE_IP:-${BOOTNODE_IP:-172.28.0.21}}"
 BOOTNODE_PORT="${L1_BOOTNODE_PORT:-${BOOTNODE_PORT:-30301}}"
@@ -34,12 +39,12 @@ if [ ! -f "$BOOTNODE_DIR/boot.key" ]; then
     chmod 600 "$BOOTNODE_DIR/boot.key"
   else
     echo "[init] Generating bootnode key..."
-    docker run --rm -v "$BOOTNODE_DIR":/data "$IMG" bootnode -genkey /data/boot.key
+    hg_docker run --rm -v "$BOOTNODE_DIR":/data "$IMG" bootnode -genkey /data/boot.key
   fi
 fi
 
 echo "[init] Deriving bootnode enode..."
-BOOT_ID="$(docker run --rm -v "$BOOTNODE_DIR":/data "$IMG" bootnode --nodekey /data/boot.key --writeaddress)"
+BOOT_ID="$(hg_docker run --rm -v "$BOOTNODE_DIR":/data "$IMG" bootnode --nodekey /data/boot.key --writeaddress)"
 echo "enode://$BOOT_ID@$BOOTNODE_IP:$BOOTNODE_PORT" >"$BOOT_ENODE_FILE"
 echo "[init] Bootnode enode written to $BOOT_ENODE_FILE"
 
@@ -95,7 +100,7 @@ init_node() {
   fi
 
   echo "[init] Initializing $name..."
-  docker run --rm \
+  hg_docker run --rm \
     -v "$dir":/data \
     -v "$ROOT/geth":/config:ro \
     -v "$KEYS_DIR":/keys:ro \
