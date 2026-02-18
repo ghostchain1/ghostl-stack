@@ -49,46 +49,87 @@ async function main() {
       return false;
     }
 
-    const a = await analyzer(cfg);
-    state.artifacts!["analysis"] = a.reportMd;
-    state.artifacts!["fixPlan"] = a.evidenceJson;
-    saveState();
+    const runAnalyze = async () => {
+      state.stage = "analyze";
+      const a = await analyzer(cfg);
+      state.artifacts!["analysis"] = a.reportMd;
+      state.artifacts!["fixPlan"] = a.evidenceJson;
+      saveState();
+      return a;
+    };
 
-    state.stage = "fix";
-    const f = await fixer(cfg, argv.fixPlan || a.evidenceJson);
-    state.artifacts!["fix"] = f.reportMd;
-    saveState();
-    if (!f.ok) return false;
+    const runFix = async (fixPlanPath?: string) => {
+      state.stage = "fix";
+      const f = await fixer(cfg, fixPlanPath);
+      state.artifacts!["fix"] = f.reportMd;
+      saveState();
+      return f.ok;
+    };
 
-    state.stage = "build";
-    const b = await builder(cfg);
-    state.artifacts!["build"] = b.reportMd;
-    saveState();
-    if (!b.ok) return false;
+    const runBuild = async () => {
+      state.stage = "build";
+      const b = await builder(cfg);
+      state.artifacts!["build"] = b.reportMd;
+      saveState();
+      return b.ok;
+    };
 
-    state.stage = "verify";
-    const v = await verifier(cfg);
-    state.artifacts!["verify"] = v.reportMd;
-    saveState();
-    if (!v.ok) return false;
+    const runVerify = async () => {
+      state.stage = "verify";
+      const v = await verifier(cfg);
+      state.artifacts!["verify"] = v.reportMd;
+      saveState();
+      return v.ok;
+    };
 
-    state.stage = "remediate";
-    const r = await remediator(cfg);
-    state.artifacts!["remediate"] = r.reportMd;
-    saveState();
-    if (!r.ok) return false;
+    const runRemediate = async () => {
+      state.stage = "remediate";
+      const r = await remediator(cfg);
+      state.artifacts!["remediate"] = r.reportMd;
+      saveState();
+      return r.ok;
+    };
 
-    state.stage = "attest";
-    const at = await attestor(cfg);
-    state.artifacts!["attest"] = at.reportMd;
-    saveState();
-    if (!at.ok) return false;
+    const runAttest = async () => {
+      state.stage = "attest";
+      const at = await attestor(cfg);
+      state.artifacts!["attest"] = at.reportMd;
+      saveState();
+      return at.ok;
+    };
 
-    state.stage = "automate";
-    const au = await automator(cfg);
-    state.artifacts!["automate"] = au.reportMd;
-    saveState();
-    if (!au.ok) return false;
+    const runAutomate = async () => {
+      state.stage = "automate";
+      const au = await automator(cfg);
+      state.artifacts!["automate"] = au.reportMd;
+      saveState();
+      return au.ok;
+    };
+
+    if (argv.mode === "analyze") {
+      await runAnalyze();
+    } else if (argv.mode === "fix") {
+      const a = await runAnalyze();
+      if (!(await runFix(argv.fixPlan || a.evidenceJson))) return false;
+    } else if (argv.mode === "build") {
+      if (!(await runBuild())) return false;
+    } else if (argv.mode === "verify") {
+      if (!(await runVerify())) return false;
+    } else if (argv.mode === "remediate") {
+      if (!(await runRemediate())) return false;
+    } else if (argv.mode === "attest") {
+      if (!(await runAttest())) return false;
+    } else if (argv.mode === "automate") {
+      if (!(await runAutomate())) return false;
+    } else {
+      const a = await runAnalyze();
+      if (!(await runFix(argv.fixPlan || a.evidenceJson))) return false;
+      if (!(await runBuild())) return false;
+      if (!(await runVerify())) return false;
+      if (!(await runRemediate())) return false;
+      if (!(await runAttest())) return false;
+      if (!(await runAutomate())) return false;
+    }
 
     state.stage = "done";
     saveState();

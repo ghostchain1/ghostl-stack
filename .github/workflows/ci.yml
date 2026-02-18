@@ -257,7 +257,7 @@ jobs:
           GHOST_HELPER_MAX_ITERS: "1"
           GHOST_POLICY_OK: "true"
         working-directory: ghost-helper-bots
-        run: node dist/loops/loop.js
+        run: node dist/loops/loop.js --mode analyze --maxIters 1
 
       - name: Upload Ghost Helper artifacts
         if: always()
