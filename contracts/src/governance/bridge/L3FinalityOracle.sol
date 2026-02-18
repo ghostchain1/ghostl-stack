@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "../../common/Governed.sol";
+import "../../consensus-governance/ConsensusEvidenceRootStore.sol";
 import "./IFederationFinalityVerifier.sol";
 import "./L1FinalityOracle.sol";
 import "./L2FinalityOracle.sol";
@@ -9,6 +10,8 @@ import "./L2FinalityOracle.sol";
 /// @notice L3 finality oracle enforcing cascading finality: L3 root -> L2 root -> L1 finalized block.
 contract L3FinalityOracle is Governed, IFederationFinalityVerifier {
     uint256 public constant SOURCE_DOMAIN_ID = 3;
+    bytes32 public constant KIND_L3_PARENT_CANONICAL_DIVERGENCE =
+        keccak256("ghost.consensus.l3.parent.l2.canonical.divergence");
 
     struct FinalizedL3Root {
         bytes32 l3StateRoot;
@@ -25,12 +28,14 @@ contract L3FinalityOracle is Governed, IFederationFinalityVerifier {
 
     L1FinalityOracle public l1FinalityOracle;
     L2FinalityOracle public l2FinalityOracle;
+    ConsensusEvidenceRootStore public evidenceRootStore;
 
     mapping(bytes32 => FinalizedL3Root) public finalizedL3Roots;
     mapping(bytes32 => bool) public acceptedProofHash;
 
     event L1FinalityOracleUpdated(address indexed oracle);
     event L2FinalityOracleUpdated(address indexed oracle);
+    event EvidenceRootStoreUpdated(address indexed evidenceRootStore);
     event L3RootFinalized(
         bytes32 indexed l3StateRoot,
         uint256 indexed l3BlockNumber,
@@ -41,10 +46,21 @@ contract L3FinalityOracle is Governed, IFederationFinalityVerifier {
         bytes32 aiPolicyHash,
         bytes32 finalityProofHash
     );
+    event L3ParentCanonicalDivergenceReported(
+        uint256 indexed parentL2BlockNumber,
+        bytes32 indexed canonicalParentRoot,
+        bytes32 indexed providedParentRoot,
+        bytes32 evidenceHash,
+        address reporter
+    );
+    event L3ParentCanonicalDivergenceAnchored(
+        uint256 indexed parentL2BlockNumber, bytes32 indexed evidenceHash, bytes32 indexed metadataHash, uint32 version
+    );
 
     error InvalidRoot();
     error InvalidPolicyHash();
     error InvalidProofHash();
+    error InvalidEvidenceHash();
     error L2ParentNotFinalizedOnL1(bytes32 parentL2StateRoot);
     error L2CanonicalRootUnavailable(uint256 l2BlockNumber);
     error L2ParentBlockCanonicalMismatch(uint256 l2BlockNumber, bytes32 canonicalRoot, bytes32 providedParentRoot);
@@ -75,6 +91,11 @@ contract L3FinalityOracle is Governed, IFederationFinalityVerifier {
         require(address(l2FinalityOracle_) != address(0), "l2Oracle=0");
         l2FinalityOracle = l2FinalityOracle_;
         emit L2FinalityOracleUpdated(address(l2FinalityOracle_));
+    }
+
+    function setEvidenceRootStore(ConsensusEvidenceRootStore evidenceRootStore_) external onlyGovernance {
+        evidenceRootStore = evidenceRootStore_;
+        emit EvidenceRootStoreUpdated(address(evidenceRootStore_));
     }
 
     function recordFinalizedL3Root(
@@ -134,6 +155,35 @@ contract L3FinalityOracle is Governed, IFederationFinalityVerifier {
             aiPolicyHash,
             finalityProofHash
         );
+    }
+
+    /// @notice Records divergence evidence when a proposed L3 parent root conflicts with canonical L2 root for the block.
+    /// @dev Returns true when divergence was reported, false if provided parent equals canonical root.
+    function reportParentL2CanonicalDivergence(uint256 parentL2BlockNumber, bytes32 providedParentRoot, bytes32 evidenceHash)
+        external
+        onlyGovernance
+        returns (bool)
+    {
+        if (providedParentRoot == bytes32(0)) revert InvalidRoot();
+        if (evidenceHash == bytes32(0)) revert InvalidEvidenceHash();
+
+        bytes32 canonicalParentRoot = l2FinalityOracle.canonicalRootByL2Block(parentL2BlockNumber);
+        if (canonicalParentRoot == bytes32(0)) revert L2CanonicalRootUnavailable(parentL2BlockNumber);
+        if (canonicalParentRoot == providedParentRoot) return false;
+
+        emit L3ParentCanonicalDivergenceReported(
+            parentL2BlockNumber, canonicalParentRoot, providedParentRoot, evidenceHash, msg.sender
+        );
+
+        ConsensusEvidenceRootStore store = evidenceRootStore;
+        if (address(store) != address(0)) {
+            bytes32 metadataHash = keccak256(abi.encode(parentL2BlockNumber, canonicalParentRoot, providedParentRoot));
+            uint32 version = store.recordEvidenceRootByReporter(
+                KIND_L3_PARENT_CANONICAL_DIVERGENCE, evidenceHash, 0, 0, metadataHash
+            );
+            emit L3ParentCanonicalDivergenceAnchored(parentL2BlockNumber, evidenceHash, metadataHash, version);
+        }
+        return true;
     }
 
     function isFinalizedOnL2(bytes32 l3StateRoot) external view returns (bool) {
