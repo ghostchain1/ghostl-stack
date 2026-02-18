@@ -29,6 +29,10 @@ contract GhostChainBridgeHubTest is TestBase {
         assertTrue(hub.hasLayerRoot(LAYER_L2, l2Root), "l2 root recorded");
 
         vm.prank(OPERATOR);
+        vm.expectRevert(abi.encodeWithSelector(GhostChainBridgeHub.RootAlreadyRecorded.selector, l2Root));
+        hub.recordLayerRoot(LAYER_L2, l2Root, 124, keccak256("evidence-duplicate"));
+
+        vm.prank(OPERATOR);
         bytes32 messageId = hub.queueOutboundMessage(
             LAYER_L1,
             42161,
@@ -56,6 +60,7 @@ contract GhostChainBridgeHubTest is TestBase {
 
         bytes32 l2Root = keccak256("l2-root-parent");
         bytes32 l3Root = keccak256("l3-root-child");
+        bytes32 l2RootAlt = keccak256("l2-root-alt");
 
         vm.prank(OPERATOR);
         vm.expectRevert(abi.encodeWithSelector(GhostChainBridgeHub.L3RequiresParentL2Root.selector));
@@ -67,9 +72,15 @@ contract GhostChainBridgeHubTest is TestBase {
 
         vm.prank(OPERATOR);
         hub.recordLayerRoot(LAYER_L2, l2Root, 123, keccak256("l2-evidence"));
+        vm.prank(OPERATOR);
+        hub.recordLayerRoot(LAYER_L2, l2RootAlt, 124, keccak256("l2-evidence-alt"));
 
         vm.prank(OPERATOR);
         hub.recordL3LayerRoot(l3Root, l2Root, 202, keccak256("l3-evidence-linked"));
+
+        vm.prank(OPERATOR);
+        vm.expectRevert(abi.encodeWithSelector(GhostChainBridgeHub.RootAlreadyRecorded.selector, l3Root));
+        hub.recordL3LayerRoot(l3Root, l2RootAlt, 203, keccak256("l3-evidence-relinked"));
 
         assertTrue(hub.hasLayerRoot(LAYER_L3, l3Root), "l3 root recorded");
         assertEq(hub.l3ParentL2Roots(l3Root), l2Root, "l3 parent linked");

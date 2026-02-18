@@ -67,6 +67,7 @@ contract GhostChainBridgeHub is Governed {
     error InvalidRoot();
     error L3RequiresParentL2Root();
     error L2ParentRootNotRecorded(bytes32 parentL2Root);
+    error RootAlreadyRecorded(bytes32 root);
     error OnlyGhostChainEgress(uint8 sourceLayer);
     error ExternalChainNotAllowed(uint256 chainId);
     error OutboundAlreadyExecuted(bytes32 messageId);
@@ -116,6 +117,7 @@ contract GhostChainBridgeHub is Governed {
         if (root == bytes32(0)) revert InvalidRoot();
 
         bytes32 rootId = computeLayerRootId(layer, root);
+        if (layerRootRecords[rootId].recordedAt != 0) revert RootAlreadyRecorded(root);
         layerRootRecords[rootId] = LayerRootRecord({
             root: root,
             sourceBlockNumber: sourceBlockNumber,
@@ -142,6 +144,7 @@ contract GhostChainBridgeHub is Governed {
         if (layerRootRecords[parentRootId].recordedAt == 0) revert L2ParentRootNotRecorded(parentL2Root);
 
         bytes32 l3RootId = computeLayerRootId(LAYER_L3, l3Root);
+        if (layerRootRecords[l3RootId].recordedAt != 0) revert RootAlreadyRecorded(l3Root);
         layerRootRecords[l3RootId] = LayerRootRecord({
             root: l3Root,
             sourceBlockNumber: sourceBlockNumber,
