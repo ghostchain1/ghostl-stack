@@ -7,8 +7,11 @@ cd "$ROOT_DIR"
 log() { printf '[check-no-eth-rpc] %s\n' "$*"; }
 fail() { printf '[check-no-eth-rpc][FAIL] %s\n' "$*" >&2; exit 1; }
 
-if ! command -v rg >/dev/null 2>&1; then
-  fail "missing required binary: rg (ripgrep)"
+HAS_RG=0
+if command -v rg >/dev/null 2>&1; then
+  HAS_RG=1
+else
+  log "WARN: rg (ripgrep) not found; using grep fallback (slower)"
 fi
 
 # Baseline mode: fail only on *new* occurrences compared to the tracked baseline.
@@ -66,20 +69,9 @@ ALLOW_PATHS=(
 
 ALLOW_RE="($(IFS='|'; echo "${ALLOW_PATHS[*]}"))"
 
-findings=()
-for method in "${FORBIDDEN_METHODS[@]}"; do
-  while IFS= read -r line; do
-    # Format: path<TAB>method<TAB>snippet
-    # Note: do NOT include line numbers in the baseline comparison. Line numbers are inherently unstable
-    # and cause false positives when files change for unrelated reasons.
-    path="${line%%:*}"
-    if [[ "$path" =~ $ALLOW_RE ]]; then
-      continue
-    fi
-    rest="${line#*:}"      # "<lineno>:<text>"
-    snippet="${rest#*:}"   # "<text>" (lineno stripped)
-    findings+=("${path}\t${method}\t${snippet}")
-  done < <(
+search_for_method() {
+  local method="$1"
+  if [ "$HAS_RG" -eq 1 ]; then
     rg -n --no-heading --fixed-strings "$method" "${SEARCH_DIRS[@]}" \
       --glob '!**/node_modules/**' \
       --glob '!**/dist/**' \
@@ -103,8 +95,48 @@ for method in "${FORBIDDEN_METHODS[@]}"; do
       --glob '!**/*.toml' \
       --glob '!**/*.env*' \
       --glob '!**/*.sh' \
+      || true
+    return
+  fi
+
+  grep -R -n -I --no-messages --fixed-strings "$method" "${SEARCH_DIRS[@]}" \
+    --exclude-dir='.*' \
+    --exclude-dir='node_modules' \
+    --exclude-dir='dist' \
+    --exclude-dir='.next' \
+    --exclude-dir='build' \
+    --exclude-dir='out' \
+    --exclude-dir='cache' \
+    --exclude-dir='artifacts' \
+    --exclude-dir='rollback' \
+    --exclude='*.md' \
+    --exclude='*.json' \
+    --exclude='*.lock' \
+    --exclude='*.log' \
+    --exclude='*.txt' \
+    --exclude='*.yml' \
+    --exclude='*.yaml' \
+    --exclude='*.toml' \
+    --exclude='*.env*' \
+    --exclude='*.sh' \
+    --exclude='.*' \
     || true
-  )
+}
+
+findings=()
+for method in "${FORBIDDEN_METHODS[@]}"; do
+  while IFS= read -r line; do
+    # Format: path<TAB>method<TAB>snippet
+    # Note: do NOT include line numbers in the baseline comparison. Line numbers are inherently unstable
+    # and cause false positives when files change for unrelated reasons.
+    path="${line%%:*}"
+    if [[ "$path" =~ $ALLOW_RE ]]; then
+      continue
+    fi
+    rest="${line#*:}"      # "<lineno>:<text>"
+    snippet="${rest#*:}"   # "<text>" (lineno stripped)
+    findings+=("${path}\t${method}\t${snippet}")
+  done < <(search_for_method "$method")
 done
 
 if [[ "$MODE" == "--print" ]]; then
