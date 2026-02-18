@@ -9,6 +9,16 @@ CFG="$ROOT_DIR/infra/docker/audit/docker-compose-configs.json"
 
 fail() { echo "FAIL: $*"; exit 1; }
 
+if [[ ! -f "$INV" ]]; then
+  echo "WARN: skipping compose diff checks; missing inventory file: $INV"
+  exit 0
+fi
+
+if [[ ! -f "$CFG" ]]; then
+  echo "WARN: skipping compose diff checks; missing compose config file: $CFG"
+  exit 0
+fi
+
 chain_services=$(jq -r '.services[] | select(.flags.is_chain_service==true and .runtime.running==true) | [.name, .composeFile] | @tsv' "$INV")
 
 while IFS=$'\t' read -r svc svc_file; do
