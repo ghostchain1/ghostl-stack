@@ -6,6 +6,11 @@ ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 OP_DIR="$ROOT/infra/opstack"
 L3_NAME="${L3_NAME:-ghostl3}"
 L2_CHAIN_ID="${L2_CHAIN_ID:-901}"
+L3_CHAIN_ID="${L3_CHAIN_ID:-903}"
+
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT}/scripts/lib/docker.sh"
+hg_docker_init
 
 # Data directory locations (keep in sync with docker-compose.yml)
 L2_DATA_DIR="${OP_DIR}/data/l2-geth-${L2_CHAIN_ID}"
@@ -26,14 +31,29 @@ chown_data_dir() {
   if [ ! -d "$target" ]; then
     return 0
   fi
-  docker run --rm -v "${target}:/data" busybox chown -R "${HOST_UID}:${HOST_GID}" /data >/dev/null 2>&1 || true
+  hg_docker run --rm -v "${target}:/data" alpine:3.20 chown -R "${HOST_UID}:${HOST_GID}" /data >/dev/null 2>&1 || true
+}
+
+get_l3_chain_id_for_dir() {
+  local l3_dir="$1"
+  local env_file="$l3_dir/.env"
+  local cid=""
+
+  if [ -f "$env_file" ]; then
+    cid="$(grep -E '^L3_CHAIN_ID=' "$env_file" | head -n1 | cut -d= -f2-)"
+  fi
+  if [ -z "$cid" ]; then
+    cid="$L3_CHAIN_ID"
+  fi
+
+  echo "$cid"
 }
 
 wipe_data_dir() {
   local target="$1"
   mkdir -p "$target"
   # Use a throwaway root container to ensure we can delete files even if they were created as root.
-  docker run --rm -v "${target}:/data" busybox sh -c "rm -rf /data/*" >/dev/null 2>&1 || true
+  hg_docker run --rm -v "${target}:/data" alpine:3.20 sh -c "rm -rf /data/*" >/dev/null 2>&1 || true
   chown "${HOST_UID}:${HOST_GID}" "$target" >/dev/null 2>&1 || true
 }
 
@@ -44,7 +64,9 @@ chown_data_dir "$OP_BATCHER_DATA_DIR"
 chown_data_dir "$OP_PROPOSER_DATA_DIR"
 if compgen -G "$OP_DIR/l3/*" >/dev/null; then
   for l3_dir in "$OP_DIR"/l3/*; do
+    l3_chain_id="$(get_l3_chain_id_for_dir "$l3_dir")"
     chown_data_dir "$l3_dir/data"
+    chown_data_dir "$l3_dir/data-${l3_chain_id}"
     chown_data_dir "$l3_dir/data/op-node"
     chown_data_dir "$l3_dir/data/op-batcher"
     chown_data_dir "$l3_dir/data/op-proposer"
@@ -62,7 +84,9 @@ chown_data_dir "$OP_BATCHER_DATA_DIR"
 chown_data_dir "$OP_PROPOSER_DATA_DIR"
 if compgen -G "$OP_DIR/l3/*" >/dev/null; then
   for l3_dir in "$OP_DIR"/l3/*; do
+    l3_chain_id="$(get_l3_chain_id_for_dir "$l3_dir")"
     chown_data_dir "$l3_dir/data"
+    chown_data_dir "$l3_dir/data-${l3_chain_id}"
     chown_data_dir "$l3_dir/data/op-node"
     chown_data_dir "$l3_dir/data/op-batcher"
     chown_data_dir "$l3_dir/data/op-proposer"
@@ -78,7 +102,9 @@ wipe_data_dir "$OP_PROPOSER_DATA_DIR"
 if compgen -G "$OP_DIR/l3/*" >/dev/null; then
   for l3_dir in "$OP_DIR"/l3/*; do
     if [ -d "$l3_dir" ]; then
+      l3_chain_id="$(get_l3_chain_id_for_dir "$l3_dir")"
       wipe_data_dir "$l3_dir/data"
+      wipe_data_dir "$l3_dir/data-${l3_chain_id}"
       wipe_data_dir "$l3_dir/data/op-node"
       wipe_data_dir "$l3_dir/data/op-batcher"
       wipe_data_dir "$l3_dir/data/op-proposer"

@@ -1,4 +1,4 @@
-FROM node:22-bullseye-slim AS build
+FROM node:22-bookworm-slim AS build
 WORKDIR /app
 
 RUN corepack enable
@@ -10,12 +10,12 @@ COPY apps ./apps
 RUN pnpm install
 RUN pnpm --filter @ghostcontrol/ui... build
 
-FROM node:22-bullseye-slim AS runtime
+FROM gcr.io/distroless/nodejs22-debian12 AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=build /app /app
 
-USER 10001:10001
+USER 1001:1001
 WORKDIR /app/apps/ui
-CMD ["node", "../../node_modules/next/dist/bin/next", "start", "-p", "3000"]
+CMD ["node_modules/next/dist/bin/next", "start", "-p", "3000"]

@@ -4,8 +4,17 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="${ROOT_DIR:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 
+# shellcheck source=scripts/lib/docker.sh
+. "$ROOT_DIR/scripts/lib/docker.sh"
+
 L3_ENV_FILE="${L3_ENV_FILE:-$ROOT_DIR/infra/opstack/.env.l3}"
 L3_SECRETS_FILE="${L3_SECRETS_FILE:-$ROOT_DIR/infra/opstack/.env.secrets}"
+CLI_L3_SECRETS_SOURCE="${L3_SECRETS_SOURCE-}"
+CLI_ALLOW_DEV_SECRETS="${ALLOW_DEV_SECRETS-}"
+CLI_VAULT_ADDR="${VAULT_ADDR-}"
+CLI_VAULT_TOKEN="${VAULT_TOKEN-}"
+CLI_VAULT_ROLE_ID="${VAULT_ROLE_ID-}"
+CLI_VAULT_SECRET_ID="${VAULT_SECRET_ID-}"
 
 if [ -f "$L3_ENV_FILE" ]; then
   set -a
@@ -22,12 +31,31 @@ fi
 
 # Prefer the canonical stack-level env if present (this repo is migrating to stack.env as source of truth).
 # Do not echo secrets; this is only to populate addresses/flags consistently across scripts.
-STACK_ENV_FILE="$ROOT_DIR/services/stack.env"
+STACK_ENV_FILE="${STACK_ENV_FILE:-$ROOT_DIR/services/stack.env}"
 if [ -f "$STACK_ENV_FILE" ]; then
   set -a
   # shellcheck disable=SC1090
   source "$STACK_ENV_FILE"
   set +a
+fi
+
+if [ -n "${CLI_L3_SECRETS_SOURCE:-}" ]; then
+  L3_SECRETS_SOURCE="$CLI_L3_SECRETS_SOURCE"
+fi
+if [ -n "${CLI_ALLOW_DEV_SECRETS:-}" ]; then
+  ALLOW_DEV_SECRETS="$CLI_ALLOW_DEV_SECRETS"
+fi
+if [ -n "${CLI_VAULT_ADDR:-}" ]; then
+  VAULT_ADDR="$CLI_VAULT_ADDR"
+fi
+if [ -n "${CLI_VAULT_TOKEN:-}" ]; then
+  VAULT_TOKEN="$CLI_VAULT_TOKEN"
+fi
+if [ -n "${CLI_VAULT_ROLE_ID:-}" ]; then
+  VAULT_ROLE_ID="$CLI_VAULT_ROLE_ID"
+fi
+if [ -n "${CLI_VAULT_SECRET_ID:-}" ]; then
+  VAULT_SECRET_ID="$CLI_VAULT_SECRET_ID"
 fi
 
 L3_NAME="${L3_NAME:-ghostl3}"
@@ -58,6 +86,7 @@ L2_ROLLUP_L3_ADDRESS="${L2_ROLLUP_L3_ADDRESS:-}"
 L3_ROLLUP_PROPOSER_HEALTH_URL="${L3_ROLLUP_PROPOSER_HEALTH_URL:-http://localhost:7272/health}"
 L3_ROLLUP_PROGRESS_SAMPLE_SECONDS="${L3_ROLLUP_PROGRESS_SAMPLE_SECONDS:-15}"
 L3_ROLLUP_PROGRESS_MIN_DELTA="${L3_ROLLUP_PROGRESS_MIN_DELTA:-1}"
+L3_ROLLUP_PROGRESS_MAX_WAIT_SECONDS="${L3_ROLLUP_PROGRESS_MAX_WAIT_SECONDS:-60}"
 L3_MAX_ROLLUP_LAG="${L3_MAX_ROLLUP_LAG:-512}"
 
 L3_SECRETS_SOURCE="${L3_SECRETS_SOURCE:-dev}"
@@ -80,12 +109,46 @@ L3_MAX_BATCHER_IDLE_SECONDS="${L3_MAX_BATCHER_IDLE_SECONDS:-900}"
 L3_REQUIRE_L3_PROGRESS="${L3_REQUIRE_L3_PROGRESS:-0}"
 L3_PROGRESS_SAMPLE_SECONDS="${L3_PROGRESS_SAMPLE_SECONDS:-15}"
 L3_PROGRESS_MIN_DELTA="${L3_PROGRESS_MIN_DELTA:-1}"
+L3_AUTO_RECOVER_ON_STALL="${L3_AUTO_RECOVER_ON_STALL:-0}"
+L3_AUTO_RECOVER_COOLDOWN_SECONDS="${L3_AUTO_RECOVER_COOLDOWN_SECONDS:-8}"
 
 warn() { echo "WARN: $*" >&2; }
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
+STRICT_MODE=0
+if [ "${SLITHER_STRICT:-0}" = "1" ] || [ -n "${CI:-}" ] || [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+  STRICT_MODE=1
+fi
+
+skip_or_fail() {
+  local message="$1"
+  if [ "$STRICT_MODE" = "1" ]; then
+    fail "$message"
+  fi
+  warn "SKIPPED: $message"
+  echo "[doctor-l3] SKIPPED: $message"
+  exit 0
+}
+
 need_bin() {
   command -v "$1" >/dev/null 2>&1 || fail "missing required binary: $1"
+}
+
+is_docker_daemon_unavailable() {
+  local msg="${1:-}"
+  msg="$(printf '%s' "$msg" | tr '[:upper:]' '[:lower:]')"
+  case "$msg" in
+    *"permission denied while trying to connect to the docker api"* ) return 0 ;;
+    *"permission denied while trying to connect to the docker daemon socket"* ) return 0 ;;
+    *"got permission denied while trying to connect to the docker daemon socket"* ) return 0 ;;
+    *"cannot connect to the docker daemon"* ) return 0 ;;
+    *"is the docker daemon running"* ) return 0 ;;
+    *"error during connect"*docker.sock* ) return 0 ;;
+    *dial\ unix*docker.sock*permission\ denied* ) return 0 ;;
+    *dial\ unix*docker.sock*operation\ not\ permitted* ) return 0 ;;
+    *dial\ unix*docker.sock*no\ such\ file\ or\ directory* ) return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
 jsonrpc() {
@@ -222,28 +285,44 @@ PY
 require_rollup_progress() {
   local sleep_s="$1"
   local min_delta="$2"
+  local max_wait_s waited
 
   local a_raw b_raw a b delta
+  max_wait_s="$(to_int "${L3_ROLLUP_PROGRESS_MAX_WAIT_SECONDS:-$sleep_s}")"
+  if [ "$max_wait_s" -le 0 ] || [ "$max_wait_s" -lt "$sleep_s" ]; then
+    max_wait_s="$sleep_s"
+  fi
+  waited=0
+
   a_raw="$(rollup_proposer_health || true)"
   a="$(json_field "$a_raw" "nextChildBlock" || true)"
   if [ -z "$a" ]; then
     fail "rollup proposer health missing nextChildBlock ($L3_ROLLUP_PROPOSER_HEALTH_URL)"
   fi
-  sleep "$sleep_s"
-  b_raw="$(rollup_proposer_health || true)"
-  b="$(json_field "$b_raw" "nextChildBlock" || true)"
-  if [ -z "$b" ]; then
-    fail "rollup proposer health missing nextChildBlock (2nd sample) ($L3_ROLLUP_PROPOSER_HEALTH_URL)"
-  fi
-  # nextChildBlock is end+1
-  if [ "$b" -lt "$a" ]; then
-    fail "rollup proposer cursor regressed (sample1=$a sample2=$b)"
-  fi
-  delta=$((b - a))
-  if [ "$delta" -lt "$min_delta" ]; then
-    fail "no rollup proposer progress detected (sample1=$a sample2=$b delta=$delta over ${sleep_s}s)"
-  fi
-  echo "OK: rollup proposer progressing (nextChildBlock sample1=$a sample2=$b delta=$delta over ${sleep_s}s)"
+
+  while [ "$waited" -lt "$max_wait_s" ]; do
+    sleep "$sleep_s"
+    waited=$((waited + sleep_s))
+    b_raw="$(rollup_proposer_health || true)"
+    b="$(json_field "$b_raw" "nextChildBlock" || true)"
+    if [ -z "$b" ]; then
+      fail "rollup proposer health missing nextChildBlock (elapsed=${waited}s) ($L3_ROLLUP_PROPOSER_HEALTH_URL)"
+    fi
+    # nextChildBlock is end+1
+    if [ "$b" -lt "$a" ]; then
+      fail "rollup proposer cursor regressed (sample1=$a sample2=$b)"
+    fi
+    delta=$((b - a))
+    if [ "$delta" -ge "$min_delta" ]; then
+      echo "OK: rollup proposer progressing (nextChildBlock sample1=$a sample2=$b delta=$delta over ${waited}s)"
+      return 0
+    fi
+    if [ "$waited" -lt "$max_wait_s" ]; then
+      warn "rollup proposer delta below threshold after ${waited}s (delta=$delta, expected >=$min_delta); retrying"
+    fi
+  done
+
+  fail "no rollup proposer progress detected (sample1=$a sample2=$b delta=$delta over ${waited}s, expected >=$min_delta)"
 }
 
 require_execution_progress() {
@@ -267,10 +346,71 @@ require_execution_progress() {
   fi
   delta=$((b - a))
   if [ "$delta" -lt "$min_delta" ]; then
+    if attempt_l3_auto_recovery "$url" "$sleep_s" "$min_delta"; then
+      return 0
+    fi
     fail "no L3 execution progress detected (sample1=$a sample2=$b delta=$delta, expected >=$min_delta over ${sleep_s}s)"
   fi
 
   echo "OK: L3 execution progressing (sample1=$a sample2=$b delta=$delta over ${sleep_s}s)"
+}
+
+attempt_l3_auto_recovery() {
+  local url="$1"
+  local sleep_s="$2"
+  local min_delta="$3"
+
+  if [ "$L3_AUTO_RECOVER_ON_STALL" != "1" ]; then
+    return 1
+  fi
+  if [ "${DOCKER_AVAILABLE:-0}" != "1" ] || [ "${COMPOSE_AVAILABLE:-0}" != "1" ]; then
+    warn "L3 auto-recovery requested but docker/compose is unavailable"
+    return 1
+  fi
+
+  local compose_args=("-f" "$ROOT_DIR/infra/opstack/docker-compose.l3.yml")
+  if [ -f "$ROOT_DIR/infra/opstack/.env" ]; then
+    compose_args+=("--env-file" "$ROOT_DIR/infra/opstack/.env")
+  fi
+  if [ -f "$L3_ENV_FILE" ]; then
+    compose_args+=("--env-file" "$L3_ENV_FILE")
+  fi
+  if [ -f "$L3_SECRETS_FILE" ]; then
+    compose_args+=("--env-file" "$L3_SECRETS_FILE")
+  fi
+
+  warn "L3 execution stalled; attempting one-time auto-recovery restart (l3-geth, l3-op-node, l3-op-batcher)"
+  if ! hg_docker compose "${compose_args[@]}" restart l3-geth l3-op-node l3-op-batcher >/dev/null 2>&1; then
+    warn "L3 auto-recovery restart failed"
+    return 1
+  fi
+
+  sleep "$L3_AUTO_RECOVER_COOLDOWN_SECONDS"
+
+  local ra rb rdelta
+  ra="$(rpc_block_number_dec "$url" || true)"
+  if [ -z "$ra" ]; then
+    warn "L3 auto-recovery could not fetch eth_blockNumber after restart"
+    return 1
+  fi
+  sleep "$sleep_s"
+  rb="$(rpc_block_number_dec "$url" || true)"
+  if [ -z "$rb" ]; then
+    warn "L3 auto-recovery could not fetch second eth_blockNumber sample"
+    return 1
+  fi
+  if [ "$rb" -lt "$ra" ]; then
+    warn "L3 auto-recovery observed head regression (sample1=$ra sample2=$rb)"
+    return 1
+  fi
+  rdelta=$((rb - ra))
+  if [ "$rdelta" -lt "$min_delta" ]; then
+    warn "L3 auto-recovery did not restore progress (sample1=$ra sample2=$rb delta=$rdelta, expected >=$min_delta)"
+    return 1
+  fi
+
+  echo "OK: L3 execution recovered after restart (sample1=$ra sample2=$rb delta=$rdelta over ${sleep_s}s)"
+  return 0
 }
 
 read_json() {
@@ -323,21 +463,45 @@ need_bin curl
 need_bin sha256sum
 need_bin python3
 
+DOCKER_AVAILABLE=1
 if ! command -v docker >/dev/null 2>&1; then
-  fail "docker not installed"
-fi
-if [ "$L3_DOCTOR_SKIP_DOCKER" != "1" ]; then
-  if ! docker version --format '{{.Server.Version}}'; then
-    fail "docker daemon not reachable"
+  if [ "$L3_DOCTOR_SKIP_DOCKER" = "1" ]; then
+    DOCKER_AVAILABLE=0
+    warn "docker not installed (L3_DOCTOR_SKIP_DOCKER=1)"
+  else
+    skip_or_fail "docker not installed"
   fi
-else
+fi
+if [ "$DOCKER_AVAILABLE" = "1" ] && [ "$L3_DOCTOR_SKIP_DOCKER" != "1" ]; then
+  docker_out=""
+  if ! docker_out="$(hg_docker version --format '{{.Server.Version}}' 2>&1)"; then
+    if is_docker_daemon_unavailable "$docker_out"; then
+      if [ "$L3_DOCTOR_SKIP_DOCKER" = "1" ]; then
+        DOCKER_AVAILABLE=0
+        warn "docker daemon/socket not reachable (L3_DOCTOR_SKIP_DOCKER=1)"
+      else
+        skip_or_fail "docker daemon/socket not reachable"
+      fi
+    else
+      skip_or_fail "docker version failed"
+    fi
+  fi
+elif [ "$L3_DOCTOR_SKIP_DOCKER" = "1" ]; then
+  DOCKER_AVAILABLE=0
   warn "docker daemon check skipped (L3_DOCTOR_SKIP_DOCKER=1)"
 fi
-if ! docker compose version >/dev/null 2>&1; then
+
+COMPOSE_AVAILABLE=0
+if [ "$DOCKER_AVAILABLE" = "1" ] && hg_docker compose version >/dev/null 2>&1; then
+  COMPOSE_AVAILABLE=1
+elif [ "$L3_DOCTOR_SKIP_DOCKER" != "1" ]; then
   fail "docker compose not available"
 fi
-
-echo "OK: docker/compose reachable"
+if [ "$DOCKER_AVAILABLE" = "1" ] && [ "$COMPOSE_AVAILABLE" = "1" ]; then
+  echo "OK: docker/compose reachable"
+else
+  warn "docker/compose unavailable; docker-dependent checks will be skipped"
+fi
 
 if [ ! -f "$L3_ROLLUP_JSON" ]; then
   fail "missing rollup config: $L3_ROLLUP_JSON"

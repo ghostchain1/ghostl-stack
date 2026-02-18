@@ -3,7 +3,7 @@
 Below is a battle-tested, testnet-ready deployment checklist for a 3-layer OP Stack hierarchy:
 
 ```
-L3 (GhostLayer3) → L2 (GhostLayer2) → L1 (GhostLayer1 / Ethereum-compatible)
+L3 (GhostLayer3) → L2 (GhostLayer2) → L1 (GhostLayer1 / EVM-compatible)
 ```
 
 This is written so you can literally check boxes and avoid the proposer / oracle / bridge failures you’ve been hitting.
@@ -70,7 +70,7 @@ npm run env:sync:opstack:l3
   * L1 deployer
   * L2 deployer
   * L3 deployer
-* [ ] ETH for:
+* [ ] GST for:
   * L1 contract deployments
   * L2 & L3 proposer gas
 * [ ] Private keys stored securely (Vault / env)

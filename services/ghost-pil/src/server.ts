@@ -31,7 +31,8 @@ app.register(rateLimit, { max: 300, timeWindow: '1 minute' });
 
 app.setErrorHandler((err, _req, reply) => {
   const status = (err as { statusCode?: number }).statusCode || 500;
-  reply.status(status).send({ error: err.message || 'internal_error' });
+  const message = err instanceof Error ? err.message : 'internal_error';
+  reply.status(status).send({ error: message || 'internal_error' });
 });
 
 app.get('/metrics', async (_req, reply) => {

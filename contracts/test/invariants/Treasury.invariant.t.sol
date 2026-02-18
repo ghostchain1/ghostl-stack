@@ -33,6 +33,7 @@ contract TreasuryInvariantTest is TestBase {
     PolicyViolationGuard private guard;
     TreasuryController private controller;
 
+    address private constant GOVERNOR = address(0xA11CE);
     address private constant recipient = address(0xBEEF);
 
     function setUp() public {
@@ -40,22 +41,36 @@ contract TreasuryInvariantTest is TestBase {
         uint256 nonce = vmExt.getNonce(address(this));
         address payable predictedVault = payable(_computeCreateAddress(address(this), nonce + 1));
 
-        controller = new TreasuryController(address(this), address(0), TreasuryVault(predictedVault));
+        controller = new TreasuryController(GOVERNOR, address(0), TreasuryVault(predictedVault));
         vault = new TreasuryVault(address(controller));
-        policy = new TreasuryPolicy(address(this), address(0));
-        receipts = new TreasuryReceipts(address(this), address(0));
-        guard = new PolicyViolationGuard(address(this), address(0));
+        policy = new TreasuryPolicy(GOVERNOR, address(0));
+        receipts = new TreasuryReceipts(GOVERNOR, address(0));
+        guard = new PolicyViolationGuard(GOVERNOR, address(0));
 
+        vm.prank(GOVERNOR);
         policy.configurePolicy(1_000 ether, 5_000 ether, 1 days, 7_500, true);
+        vm.prank(GOVERNOR);
         policy.setController(address(controller), true);
+        vm.prank(GOVERNOR);
         receipts.setController(address(controller), true);
+        vm.prank(GOVERNOR);
         guard.setPolicy(policy);
+        vm.prank(GOVERNOR);
         guard.setReceipts(receipts);
+        vm.prank(GOVERNOR);
         guard.setController(address(controller));
+        vm.prank(GOVERNOR);
         controller.setComponents(policy, guard, receipts, TreasuryRouter(address(0)), FederationRouter(address(0)));
 
         token = new MockToken();
         token.mint(address(vault), 20_000 ether);
+    }
+
+    function targetSenders() public pure override returns (address[] memory senders) {
+        // Prevent invariant fuzzing from exercising governance-only setters (which would trivialize invariants).
+        senders = new address[](2);
+        senders[0] = address(0xB0B);
+        senders[1] = address(0xCAFE);
     }
 
     function invariant_reserve_floor() public {
@@ -96,6 +111,7 @@ contract TreasuryInvariantTest is TestBase {
             treatyId: bytes32(0)
         });
 
+        vm.prank(GOVERNOR);
         controller.execute(action);
         assertTrue(policy.epochSpent() <= policy.epochBudget(), "budget exceeded");
         assertTrue(vault.balanceOf(address(token)) >= policy.minReserve(), "reserve breached");
@@ -123,6 +139,7 @@ contract TreasuryInvariantTest is TestBase {
         });
 
         vm.expectRevert();
+        vm.prank(GOVERNOR);
         controller.execute(action);
     }
 

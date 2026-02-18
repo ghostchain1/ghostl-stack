@@ -6,6 +6,9 @@ REPORT_JSON="$ROOT_DIR/update-report.json"
 REPORT_MD="$ROOT_DIR/update-report.md"
 REPORT_NDJSON="$(mktemp)"
 
+# shellcheck source=scripts/lib/docker.sh
+. "${ROOT_DIR}/scripts/lib/docker.sh"
+
 log() {
   printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"
 }
@@ -15,17 +18,17 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if ! docker info >/dev/null 2>&1; then
+if ! hg_docker info >/dev/null 2>&1; then
   echo "Docker daemon is not running. Start Docker and re-run." >&2
   exit 1
 fi
 
-ARCH="$(docker info --format '{{.Architecture}}' 2>/dev/null || uname -m)"
+ARCH="$(hg_docker info --format '{{.Architecture}}' 2>/dev/null || uname -m)"
 log "Host architecture: ${ARCH}"
 
 ABORT=0
 
-mapfile -t running_config_files < <(docker ps --format '{{.Label "com.docker.compose.project.config_files"}}' | tr ',' '\n' | sed '/^$/d' | sort -u)
+mapfile -t running_config_files < <(hg_docker ps --format '{{.Label "com.docker.compose.project.config_files"}}' | tr ',' '\n' | sed '/^$/d' | sort -u)
 
 config_in_running() {
   local file="$1"
@@ -157,8 +160,8 @@ check_health() {
 
   while true; do
     local status health
-    status=$(docker inspect --format '{{.State.Status}}' "$container_id" 2>/dev/null || echo "")
-    health=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$container_id" 2>/dev/null || echo "")
+    status=$(hg_docker inspect --format '{{.State.Status}}' "$container_id" 2>/dev/null || echo "")
+    health=$(hg_docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$container_id" 2>/dev/null || echo "")
 
     if [[ "$status" == "running" ]]; then
       if [[ -z "$health" || "$health" == "healthy" ]]; then
@@ -182,7 +185,7 @@ check_logs_stable() {
   local container_id="$1"
   sleep 30
   local logs
-  logs=$(docker logs --since 60s --tail=200 "$container_id" 2>&1 || true)
+  logs=$(hg_docker logs --since 60s --tail=200 "$container_id" 2>&1 || true)
   if echo "$logs" | rg -i "panic|fatal|segmentation fault|uncaught|unhandled|crash|exit code" | rg -vi "connection to client lost|terminating connection due to administrator command" >/dev/null; then
     return 1
   fi
@@ -192,7 +195,7 @@ check_logs_stable() {
 has_fatal_logs() {
   local container_id="$1"
   local logs
-  logs=$(docker logs --since 60s --tail=200 "$container_id" 2>&1 || true)
+  logs=$(hg_docker logs --since 60s --tail=200 "$container_id" 2>&1 || true)
   if echo "$logs" | rg -i "panic|fatal|segmentation fault|uncaught|unhandled|crash|exit code" | rg -vi "connection to client lost|terminating connection due to administrator command" >/dev/null; then
     return 0
   fi
@@ -211,7 +214,7 @@ update_service() {
   start_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
   local container_id
-  container_id=$(docker compose --project-directory "$dir" "${compose_args[@]}" ps -q "$service" 2>/dev/null || true)
+  container_id=$(hg_docker compose --project-directory "$dir" "${compose_args[@]}" ps -q "$service" 2>/dev/null || true)
   if [[ -z "$container_id" ]]; then
     status="skipped_not_running"
     end_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -234,7 +237,7 @@ PY
   fi
 
   local config_files file_real file_base
-  config_files=$(docker inspect --format '{{ index .Config.Labels "com.docker.compose.project.config_files"}}' "$container_id" 2>/dev/null || echo "")
+  config_files=$(hg_docker inspect --format '{{ index .Config.Labels "com.docker.compose.project.config_files"}}' "$container_id" 2>/dev/null || echo "")
   file_real=$(realpath "$file" 2>/dev/null || echo "$file")
   file_base=$(basename "$file")
   if [[ -n "$config_files" && "$config_files" != *"$file_real"* && "$config_files" != *"$file_base"* ]]; then
@@ -259,9 +262,9 @@ PY
   fi
 
   local pre_status pre_health pre_log_excerpt
-  pre_status=$(docker inspect --format '{{.State.Status}}' "$container_id" 2>/dev/null || echo "")
-  pre_health=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$container_id" 2>/dev/null || echo "")
-  pre_log_excerpt=$(docker logs --tail=200 "$container_id" 2>&1 | tail -n 200 || true)
+  pre_status=$(hg_docker inspect --format '{{.State.Status}}' "$container_id" 2>/dev/null || echo "")
+  pre_health=$(hg_docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$container_id" 2>/dev/null || echo "")
+  pre_log_excerpt=$(hg_docker logs --tail=200 "$container_id" 2>&1 | tail -n 200 || true)
 
   if [[ "$pre_status" != "running" || "$pre_health" == "unhealthy" ]] || has_fatal_logs "$container_id"; then
     status="skipped_unhealthy"
@@ -285,8 +288,8 @@ PY
   fi
 
   local old_image_id old_image_ref
-  old_image_id=$(docker inspect --format '{{.Image}}' "$container_id" 2>/dev/null || echo "")
-  old_image_ref=$(docker inspect --format '{{.Config.Image}}' "$container_id" 2>/dev/null || echo "")
+  old_image_id=$(hg_docker inspect --format '{{.Image}}' "$container_id" 2>/dev/null || echo "")
+  old_image_ref=$(hg_docker inspect --format '{{.Config.Image}}' "$container_id" 2>/dev/null || echo "")
 
   local meta image_ref has_build
   meta=$(service_meta "$config_file" "$service")
@@ -299,16 +302,16 @@ PY
   log "Updating $service from $image_ref"
 
   if [[ -n "$image_ref" ]]; then
-    docker pull "$image_ref" >/dev/null
+    hg_docker pull "$image_ref" >/dev/null
   fi
 
   if [[ "$has_build" == "1" ]]; then
-    docker compose --project-directory "$dir" "${compose_args[@]}" up -d --no-deps --build "$service" >/dev/null
+    hg_docker compose --project-directory "$dir" "${compose_args[@]}" up -d --no-deps --build "$service" >/dev/null
   else
-    docker compose --project-directory "$dir" "${compose_args[@]}" up -d --no-deps "$service" >/dev/null
+    hg_docker compose --project-directory "$dir" "${compose_args[@]}" up -d --no-deps "$service" >/dev/null
   fi
 
-  container_id=$(docker compose --project-directory "$dir" "${compose_args[@]}" ps -q "$service" 2>/dev/null || true)
+  container_id=$(hg_docker compose --project-directory "$dir" "${compose_args[@]}" ps -q "$service" 2>/dev/null || true)
   if [[ -z "$container_id" ]]; then
     status="failed"
   else
@@ -323,14 +326,14 @@ PY
     log "Failure detected for $service, attempting rollback"
     rollback_status="rollback_failed"
     if [[ -n "$old_image_id" && -n "$old_image_ref" ]]; then
-      docker image tag "$old_image_id" "$old_image_ref" >/dev/null 2>&1 || true
+      hg_docker image tag "$old_image_id" "$old_image_ref" >/dev/null 2>&1 || true
     fi
     if [[ "$has_build" == "1" ]]; then
-      docker compose --project-directory "$dir" "${compose_args[@]}" up -d --no-deps --build "$service" >/dev/null 2>&1 || true
+      hg_docker compose --project-directory "$dir" "${compose_args[@]}" up -d --no-deps --build "$service" >/dev/null 2>&1 || true
     else
-      docker compose --project-directory "$dir" "${compose_args[@]}" up -d --no-deps "$service" >/dev/null 2>&1 || true
+      hg_docker compose --project-directory "$dir" "${compose_args[@]}" up -d --no-deps "$service" >/dev/null 2>&1 || true
     fi
-    container_id=$(docker compose --project-directory "$dir" "${compose_args[@]}" ps -q "$service" 2>/dev/null || true)
+    container_id=$(hg_docker compose --project-directory "$dir" "${compose_args[@]}" ps -q "$service" 2>/dev/null || true)
     if [[ -n "$container_id" ]] && check_health "$container_id" 120; then
       rollback_status="rolled_back"
       status="rolled_back"
@@ -339,9 +342,9 @@ PY
 
   end_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)
   local new_image_ref new_image_id log_excerpt
-  new_image_ref=$(docker inspect --format '{{.Config.Image}}' "$container_id" 2>/dev/null || echo "")
-  new_image_id=$(docker inspect --format '{{.Image}}' "$container_id" 2>/dev/null || echo "")
-  log_excerpt=$(docker logs --tail=200 "$container_id" 2>&1 | tail -n 200 || true)
+  new_image_ref=$(hg_docker inspect --format '{{.Config.Image}}' "$container_id" 2>/dev/null || echo "")
+  new_image_id=$(hg_docker inspect --format '{{.Image}}' "$container_id" 2>/dev/null || echo "")
+  log_excerpt=$(hg_docker logs --tail=200 "$container_id" 2>&1 | tail -n 200 || true)
 
   record_entry "$(LOG_EXCERPT_B64="$(printf '%s' "$log_excerpt" | base64 -w 0)" python3 - <<PY
 import base64
@@ -394,7 +397,7 @@ for file in "${sorted_compose_files[@]}"; do
   fi
 
   log "Loading compose config: $file"
-  if ! config_json=$(docker compose --project-directory "$dir" "${compose_args[@]}" config --format json 2>/tmp/compose-config-error.log); then
+  if ! config_json=$(hg_docker compose --project-directory "$dir" "${compose_args[@]}" config --format json 2>/tmp/compose-config-error.log); then
     end_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)
     log_excerpt=$(cat /tmp/compose-config-error.log 2>/dev/null || true)
     record_entry "$(LOG_EXCERPT_B64="$(printf '%s' "$log_excerpt" | base64 -w 0)" python3 - <<PY

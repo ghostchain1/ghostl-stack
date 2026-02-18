@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-DEMO_AMOUNT_ETH="${DEMO_AMOUNT_ETH:-1}"
+DEMO_AMOUNT_GST="${DEMO_AMOUNT_GST:-1}"
 
 echo "Demo optimistic ERC20 bridge (L2 escrow -> L1 finalize window -> L2 finalize -> L3 mint)"
 echo "Requires:"
@@ -11,7 +11,7 @@ echo "- rollup proposers funded + running (services/ghost-rollup-proposer/.env.l
 echo "- relayer funded on L2+L3 (services/ghost-relayer/.env)"
 echo
 
-DEMO_AMOUNT_ETH="$DEMO_AMOUNT_ETH" bash "$ROOT_DIR/infra/scripts/demo-deposit-erc20.sh"
+DEMO_AMOUNT_GST="$DEMO_AMOUNT_GST" bash "$ROOT_DIR/infra/scripts/demo-deposit-erc20.sh"
 
 LAST_DEPOSIT_PATH="$ROOT_DIR/.tmp/last_deposit_erc20.json"
 EXPECTED_NONCE="$(jq -r '.nonce' "$LAST_DEPOSIT_PATH")"
@@ -34,4 +34,3 @@ done
 echo "Timed out waiting for optimistic ERC20 relay."
 curl -sS http://localhost:7171/health | jq .
 exit 1
-

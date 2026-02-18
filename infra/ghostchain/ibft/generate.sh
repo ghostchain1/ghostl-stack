@@ -5,9 +5,13 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUT="$ROOT/networkFiles"
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
+REPO_ROOT="$(cd "$ROOT/../../.." && pwd)"
+
+# shellcheck source=scripts/lib/docker.sh
+. "${REPO_ROOT}/scripts/lib/docker.sh"
 
 # Clean any prior output with root permissions (previous runs create root-owned files).
-docker run --rm -v "$ROOT":/workspace alpine sh -c "rm -rf /workspace/networkFiles"
+hg_docker run --rm -v "$ROOT":/workspace alpine sh -c "rm -rf /workspace/networkFiles"
 
 CHAIN_ID="${CHAIN_ID:-14000101}"
 BLOCK_PERIOD="${BLOCK_PERIOD:-2}"
@@ -67,7 +71,7 @@ cat >"$CONFIG_JSON" <<EOF
 EOF
 
 echo "Generating IBFT network files with chainId=${CHAIN_ID}, blockperiod=${BLOCK_PERIOD}s, gasLimit=${GAS_LIMIT_HEX} ..."
-docker run --rm \
+hg_docker run --rm \
   -v "$ROOT":/workspace \
   --entrypoint /bin/sh \
   hyperledger/besu:24.12.0 \
@@ -77,7 +81,7 @@ docker run --rm \
     --private-key-file-name=key \
     --genesis-file-name=genesis.json"
 
-docker run --rm -v "$ROOT":/workspace alpine sh -c "chown -R ${HOST_UID}:${HOST_GID} /workspace/networkFiles"
+hg_docker run --rm -v "$ROOT":/workspace alpine sh -c "chown -R ${HOST_UID}:${HOST_GID} /workspace/networkFiles"
 
 # Normalize key layout to node1..N and emit peers.txt for docker-compose.
 KEYS_DIR="$OUT/keys"

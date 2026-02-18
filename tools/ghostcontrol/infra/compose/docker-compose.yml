@@ -11,14 +11,28 @@ services:
     ports:
       - "7400:3000"
     depends_on:
-      - ghostcontrol-api
+      ghostcontrol-api:
+        condition: service_healthy
+    init: true
+    pids_limit: 128
     read_only: true
     tmpfs:
       - /tmp
     security_opt:
       - no-new-privileges:true
     cap_drop: ["ALL"]
-    user: "10001:10001"
+    user: "${GHOSTCONTROL_UID:-1001}:${GHOSTCONTROL_GID:-1001}"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/nodejs/bin/node",
+          "-e",
+          "fetch('http://localhost:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 10
     networks: [ghostcontrol_net]
 
   ghostcontrol-api:
@@ -31,26 +45,40 @@ services:
       - DATABASE_URL=postgresql://ghostcontrol:ghostcontrol@ghostcontrol-db:5432/ghostcontrol
       - REDIS_URL=redis://ghostcontrol-redis:6379
       - GHOSTCONTROL_TOKEN=${GHOSTCONTROL_TOKEN:-}
-      - L1_RPC=${L1_RPC:-}
-      - L2_RPC=${L2_RPC:-}
-      - L3_RPC=${L3_RPC:-}
+      - L1_RPC=${L1_RPC:-http://host.docker.internal:18545}
+      - L2_RPC=${L2_RPC:-http://host.docker.internal:29547}
+      - L3_RPC=${L3_RPC:-http://host.docker.internal:39545}
+      - GHOSTCONTROL_EVIDENCE_LOG_DIR=/evidence/logs
+      - GHOSTCONTROL_INCIDENT_DB_PATH=/incidents/incidents.db
+      - GHOSTCONTROL_EVENT_CYCLE_OPEN_WARN_THRESHOLD=${GHOSTCONTROL_EVENT_CYCLE_OPEN_WARN_THRESHOLD:-1}
+    volumes:
+      - ../../evidence/logs:/evidence/logs:ro
+      - ../../incidents:/incidents:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "7401:8080"
     depends_on:
-      - ghostcontrol-db
-      - ghostcontrol-redis
+      ghostcontrol-db:
+        condition: service_healthy
+      ghostcontrol-redis:
+        condition: service_healthy
+      ghostcontrol-db-migrate:
+        condition: service_completed_successfully
+    init: true
+    pids_limit: 256
     read_only: true
     tmpfs:
       - /tmp
     security_opt:
       - no-new-privileges:true
     cap_drop: ["ALL"]
-    user: "10001:10001"
+    user: "${GHOSTCONTROL_UID:-1001}:${GHOSTCONTROL_GID:-1001}"
     healthcheck:
       test:
         [
           "CMD",
-          "node",
+          "/nodejs/bin/node",
           "-e",
           "fetch('http://localhost:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
         ]
@@ -68,13 +96,26 @@ services:
       - PORT=8082
       - RISK_ALLOWLIST_PATH=/app/apps/policy/config/risk-allowlist.json
       - ACTION_SCOPES_PATH=/app/apps/policy/config/action-scopes.json
+    init: true
+    pids_limit: 128
     read_only: true
     tmpfs:
       - /tmp
     security_opt:
       - no-new-privileges:true
     cap_drop: ["ALL"]
-    user: "10001:10001"
+    user: "${GHOSTCONTROL_UID:-1001}:${GHOSTCONTROL_GID:-1001}"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/nodejs/bin/node",
+          "-e",
+          "fetch('http://localhost:8082/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 10
     networks: [ghostcontrol_net]
 
   ghostcontrol-planner:
@@ -91,19 +132,32 @@ services:
       - SIGNING_KEY_ID=dev
       - GHOSTCONTROL_TOKEN=${GHOSTCONTROL_TOKEN:-}
     depends_on:
-      - ghostcontrol-db
-      - ghostcontrol-redis
-      - ghostcontrol-api
-      - ghostcontrol-policy
+      ghostcontrol-db:
+        condition: service_healthy
+      ghostcontrol-redis:
+        condition: service_healthy
+      ghostcontrol-api:
+        condition: service_healthy
+      ghostcontrol-policy:
+        condition: service_healthy
+      ghostcontrol-db-migrate:
+        condition: service_completed_successfully
     secrets:
       - ghostcontrol_signing_priv
+    init: true
+    pids_limit: 128
     read_only: true
     tmpfs:
       - /tmp
     security_opt:
       - no-new-privileges:true
     cap_drop: ["ALL"]
-    user: "10001:10001"
+    user: "${GHOSTCONTROL_UID:-1001}:${GHOSTCONTROL_GID:-1001}"
+    healthcheck:
+      test: ["CMD", "/nodejs/bin/node", "-e", "process.kill(1, 0); process.exit(0)"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
     networks: [ghostcontrol_net]
 
   ghostcontrol-ingest:
@@ -119,15 +173,26 @@ services:
       - L2_RPC=${L2_RPC:-}
       - L3_RPC=${L3_RPC:-}
     depends_on:
-      - ghostcontrol-db
-      - ghostcontrol-redis
+      ghostcontrol-db:
+        condition: service_healthy
+      ghostcontrol-redis:
+        condition: service_healthy
+      ghostcontrol-db-migrate:
+        condition: service_completed_successfully
+    init: true
+    pids_limit: 128
     read_only: true
     tmpfs:
       - /tmp
     security_opt:
       - no-new-privileges:true
     cap_drop: ["ALL"]
-    user: "10001:10001"
+    user: "${GHOSTCONTROL_UID:-1001}:${GHOSTCONTROL_GID:-1001}"
+    healthcheck:
+      test: ["CMD", "/nodejs/bin/node", "-e", "process.kill(1, 0); process.exit(0)"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
     networks: [ghostcontrol_net]
 
   ghostcontrol-runner:
@@ -149,22 +214,33 @@ services:
       - L2_RPC=${L2_RPC:-}
       - L3_RPC=${L3_RPC:-}
     depends_on:
-      - ghostcontrol-api
-      - ghostcontrol-policy
-      - ghostcontrol-redis
-      - docker-socket-proxy
+      ghostcontrol-api:
+        condition: service_healthy
+      ghostcontrol-policy:
+        condition: service_healthy
+      ghostcontrol-redis:
+        condition: service_healthy
+      docker-socket-proxy:
+        condition: service_healthy
     secrets:
       - ghostcontrol_signing_pub
     volumes:
       - ../../../..:/workspace:rw
       - ghostcontrol_evidence:/evidence:rw
+    init: true
+    pids_limit: 256
     read_only: false
     tmpfs:
       - /tmp
     security_opt:
       - no-new-privileges:true
     cap_drop: ["ALL"]
-    user: "10001:10001"
+    user: "${GHOSTCONTROL_UID:-1001}:${GHOSTCONTROL_GID:-1001}"
+    healthcheck:
+      test: ["CMD", "/nodejs/bin/node", "-e", "process.kill(1, 0); process.exit(0)"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
     networks: [ghostcontrol_net]
 
   docker-socket-proxy:
@@ -185,12 +261,56 @@ services:
       - SECRETS=0
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    user: "65534:65534"
+    group_add:
+      - "${DOCKER_GID:-112}"
+    privileged: false
+    init: true
+    pids_limit: 128
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run:rw,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: ["ALL"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:2375/_ping"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+    networks: [ghostcontrol_net]
+
+  ghostcontrol-db-migrate:
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+      target: build
+    environment:
+      - DATABASE_URL=postgresql://ghostcontrol:ghostcontrol@ghostcontrol-db:5432/ghostcontrol
+      - HOME=/tmp
+      - PRISMA_HIDE_UPDATE_MESSAGE=1
+    command:
+      [
+        "/app/packages/db/node_modules/.bin/prisma",
+        "migrate",
+        "deploy",
+        "--schema",
+        "/app/packages/db/prisma/schema.prisma"
+      ]
+    depends_on:
+      ghostcontrol-db:
+        condition: service_healthy
+    restart: "no"
+    init: true
+    pids_limit: 64
     read_only: true
     tmpfs:
       - /tmp
     security_opt:
       - no-new-privileges:true
     cap_drop: ["ALL"]
+    user: "${GHOSTCONTROL_UID:-1001}:${GHOSTCONTROL_GID:-1001}"
     networks: [ghostcontrol_net]
 
   ghostcontrol-db:
@@ -201,9 +321,17 @@ services:
       - POSTGRES_PASSWORD=ghostcontrol
     volumes:
       - ghostcontrol_db:/var/lib/postgresql/data
+    user: "${GHOSTCONTROL_DB_USER:-70:70}"
+    privileged: false
+    pids_limit: 256
     security_opt:
       - no-new-privileges:true
     cap_drop: ["ALL"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghostcontrol -d ghostcontrol"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
     networks: [ghostcontrol_net]
 
   ghostcontrol-redis:
@@ -211,9 +339,17 @@ services:
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - ghostcontrol_redis:/data
+    user: "${GHOSTCONTROL_REDIS_USER:-999:999}"
+    privileged: false
+    pids_limit: 128
     security_opt:
       - no-new-privileges:true
     cap_drop: ["ALL"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
     networks: [ghostcontrol_net]
 
 networks:
@@ -230,4 +366,3 @@ secrets:
     file: ../../secrets/signing.pub
   ghostcontrol_signing_priv:
     file: ../../secrets/signing.key
-

@@ -6,7 +6,7 @@
       ],
       "command": "--syncmode snap --http --http.addr=0.0.0.0 --http.port=8545 --http.api=eth,net,web3,txpool --http.vhosts=\"*\" --http.corsdomain=\"*\" --ws --ws.addr=0.0.0.0 --ws.port=8546 --ws.api=eth,net,web3 --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts=\"*\" --datadir=/data --cache=4096 --maxpeers=50 --metrics --metrics.addr=0.0.0.0 --metrics.port=6060\n",
       "cpus": "2.0",
-      "image": "ethereum/client-go:stable",
+      "image": "ghostl/geth:stable",
       "logging": {
         "driver": "json-file",
         "options": {
@@ -1201,7 +1201,7 @@
         ],
         "timeout": "5s"
       },
-      "image": "ghcr.io/ethereum-optimism/op-geth@sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0",
+      "image": "local/op-geth:${OPSTACK_IMAGE_TAG:-local}",
       "logging": {
         "driver": "json-file",
         "options": {
@@ -1279,7 +1279,7 @@
         ],
         "timeout": "10s"
       },
-      "image": "ghcr.io/ethereum-optimism/op-batcher@sha256:21a2426a292a0d1b6c3665c9e07549df97d98e40edda6c880d34e22aefe279d2",
+      "image": "local/op-batcher:${OPSTACK_IMAGE_TAG:-local}",
       "logging": {
         "driver": "json-file",
         "options": {
@@ -1355,7 +1355,7 @@
         ],
         "timeout": "10s"
       },
-      "image": "ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b",
+      "image": "local/op-node:${OPSTACK_IMAGE_TAG:-local}",
       "logging": {
         "driver": "json-file",
         "options": {
@@ -1432,7 +1432,7 @@
         ],
         "timeout": "10s"
       },
-      "image": "ghcr.io/ethereum-optimism/op-proposer@sha256:00590e36e37994eefd8bbc9a6498ad20c62b072b381d0b8cdb7293056e6e5b64",
+      "image": "local/op-proposer:${OPSTACK_IMAGE_TAG:-local}",
       "logging": {
         "driver": "json-file",
         "options": {
@@ -2757,7 +2757,7 @@
         "P2P_PORT=30304",
         "METRICS_PORT=6061"
       ],
-      "image": "${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}",
+      "image": "${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}",
       "logging": {
         "driver": "json-file",
         "options": {
@@ -2926,7 +2926,7 @@
         ":30301"
       ],
       "cpus": "0.5",
-      "image": "${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}",
+      "image": "${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}",
       "logging": {
         "driver": "json-file",
         "options": {
@@ -2968,6 +2968,7 @@
         "ALL"
       ],
       "command": [
+        "/app/bin/blockscout",
         "start"
       ],
       "cpus": "1.5",
@@ -2982,25 +2983,26 @@
         }
       },
       "entrypoint": [
-        "/app/bin/blockscout"
+        "/bin/bash",
+        "/entrypoint.sh"
       ],
       "environment": {
         "API_ONLY": "true",
         "BLOCKSCOUT_HOST": "0.0.0.0",
-        "COIN": "GHOST",
+        "COIN": "GST",
         "DATABASE_URL": "postgres://postgres:postgres@ghostscout-db:5432/blockscout",
         "DISABLE_EVISION": "true",
         "ECTO_USE_SSL": "false",
-        "ETHEREUM_JSONRPC_HTTP_URL": "http://ghostchain-node1:8545",
-        "ETHEREUM_JSONRPC_TRACE_URL": "http://ghostchain-node1:8545",
-        "ETHEREUM_JSONRPC_WS_URL": "ws://ghostchain-node1:8546",
+        "GST_JSONRPC_HTTP_URL": "http://ghostchain-node1:8545",
+        "GST_JSONRPC_TRACE_URL": "http://ghostchain-node1:8545",
+        "GST_JSONRPC_WS_URL": "ws://ghostchain-node1:8546",
         "LOG_LEVEL": "warn",
-        "NETWORK": "Ghostchain",
+        "NETWORK": "GhostChain",
         "PORT": 4000,
         "SECRET_KEY_BASE": "${GHOSTSCOUT_SECRET_KEY_BASE_L1:-}",
-        "SUBNETWORK": "PoA"
+        "SUBNETWORK": "L1"
       },
-      "image": "blockscout/blockscout:latest",
+      "image": "ghostl/ghostscout-l1:local",
       "logging": {
         "driver": "json-file",
         "options": {
@@ -3325,7 +3327,7 @@
         ],
         "timeout": "10s"
       },
-      "image": "ghcr.io/ethereum-optimism/op-geth@sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0",
+      "image": "local/op-geth:${OPSTACK_IMAGE_TAG:-local}",
       "logging": {
         "driver": "json-file",
         "options": {
@@ -3457,7 +3459,7 @@
         ],
         "timeout": "10s"
       },
-      "image": "ghcr.io/ethereum-optimism/op-batcher@sha256:21a2426a292a0d1b6c3665c9e07549df97d98e40edda6c880d34e22aefe279d2",
+      "image": "local/op-batcher:${OPSTACK_IMAGE_TAG:-local}",
       "logging": {
         "driver": "json-file",
         "options": {
@@ -3624,7 +3626,7 @@
         ],
         "timeout": "10s"
       },
-      "image": "ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b",
+      "image": "local/op-node:${OPSTACK_IMAGE_TAG:-local}",
       "logging": {
         "driver": "json-file",
         "options": {
@@ -3723,7 +3725,7 @@
         ],
         "timeout": "10s"
       },
-      "image": "ghcr.io/ethereum-optimism/op-proposer@sha256:00590e36e37994eefd8bbc9a6498ad20c62b072b381d0b8cdb7293056e6e5b64",
+      "image": "local/op-proposer:${OPSTACK_IMAGE_TAG:-local}",
       "logging": {
         "driver": "json-file",
         "options": {
@@ -3813,7 +3815,7 @@
         ],
         "timeout": "10s"
       },
-      "image": "ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b",
+      "image": "local/op-node:${OPSTACK_IMAGE_TAG:-local}",
       "logging": {
         "driver": "json-file",
         "options": {
@@ -4012,9 +4014,7 @@
         "OP_CHALLENGER_DATADIR": "/data",
         "OP_CHALLENGER_GAME_FACTORY_ADDRESS": "${L3_GAME_FACTORY_ADDRESS:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}",
         "OP_CHALLENGER_L1_BEACON": "${L3_L1_BEACON_RPC:-${L3_L1_RPC:-http://l2-geth:8545}}",
-        "OP_CHALLENGER_L1_ETH_RPC": "${L3_L1_RPC:-http://l2-geth:8545}",
         "OP_CHALLENGER_L1_GENESIS": "/config/l1-chain.json",
-        "OP_CHALLENGER_L2_ETH_RPC": "http://l3-geth:8545",
         "OP_CHALLENGER_PRIVATE_KEY": "${L3_CHALLENGER_KEY:-${CHALLENGER_KEY:-}}",
         "OP_CHALLENGER_ROLLUP_RPC": "http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}",
         "OP_CHALLENGER_TRACE_TYPE": "${L3_CHALLENGER_TRACE_TYPE:-cannon}"
@@ -4076,11 +4076,13 @@
           "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "read_only": true,
           "source": "${OP_CHALLENGER_ASSETS_DIR:-./optimism/op-program/bin}",
           "target": "/assets/op-program",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
           "bind": {
@@ -4125,6 +4127,7 @@
           "required": true
         }
       },
+      "command": "op-challenger --l1-eth-rpc=http://l1:8545 --l2-eth-rpc=http://l2:8545 --rollup-rpc=http://op-node:8545\n",
       "environment": {
         "OP_CHALLENGER_CANNON_BIN": "./cannon/bin/cannon",
         "OP_CHALLENGER_CANNON_L2_GENESIS": "./.devnet/genesis-l2.json",
@@ -4135,8 +4138,6 @@
         "OP_CHALLENGER_GAME_FACTORY_ADDRESS": "${DGF_ADDRESS}",
         "OP_CHALLENGER_HD_PATH": "m/44'/60'/0'/0/4",
         "OP_CHALLENGER_L1_BEACON": "http://l1-bn:5052",
-        "OP_CHALLENGER_L1_ETH_RPC": "http://l1:8545",
-        "OP_CHALLENGER_L2_ETH_RPC": "http://l2:8545",
         "OP_CHALLENGER_MNEMONIC": "test test test test test test test test test test test junk",
         "OP_CHALLENGER_NUM_CONFIRMATIONS": 1,
         "OP_CHALLENGER_ROLLUP_RPC": "http://op-node:8545",
@@ -4214,16 +4215,20 @@
           "volume": {}
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../.devnet/genesis-l1.json",
           "target": "/genesis.json",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/test-jwt-secret.txt",
           "target": "/config/jwt-secret.txt",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         }
       ],
       "labels": {
@@ -4281,28 +4286,36 @@
           "volume": {}
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/test-jwt-secret.txt",
           "target": "/config/jwt-secret.txt",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/beacon-data/config.yaml",
           "target": "/genesis/config.yaml",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/beacon-data/deposit_contract_block.txt",
           "target": "/genesis/deposit_contract_block.txt",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../.devnet/genesis-l1.ssz",
           "target": "/genesis/genesis.ssz",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         }
       ],
       "labels": {
@@ -4350,34 +4363,44 @@
           "volume": {}
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/beacon-data/data/keys",
           "target": "/validator_setup/validators",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/beacon-data/data/secrets",
           "target": "/validator_setup/secrets",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/beacon-data/config.yaml",
           "target": "/genesis/config.yaml",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/beacon-data/deposit_contract_block.txt",
           "target": "/genesis/deposit_contract_block.txt",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../.devnet/genesis-l1.ssz",
           "target": "/genesis/genesis.ssz",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         }
       ],
       "labels": {
@@ -4436,16 +4459,20 @@
           "volume": {}
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../.devnet-interop/genesis/l2/900200/genesis.json",
           "target": "/genesis.json",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../ops-bedrock/test-jwt-secret.txt",
           "target": "/config/jwt-secret.txt",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         }
       ],
       "labels": {
@@ -4504,16 +4531,20 @@
           "volume": {}
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../.devnet-interop/genesis/l2/900201/genesis.json",
           "target": "/genesis.json",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../ops-bedrock/test-jwt-secret.txt",
           "target": "/config/jwt-secret.txt",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         }
       ],
       "labels": {
@@ -4551,13 +4582,12 @@
       "env_file": [
         {
           "path": "${PWD}/../.devnet-interop/env/l2/900200/op-batcher.env",
-          "required": true
+          "required": false
         }
       ],
+      "command": "op-batcher --l1-eth-rpc=http://l1:8545 --l2-eth-rpc=http://l2-a:8545 --rollup-rpc=http://op-node-a:8545\n",
       "environment": {
         "OP_BATCHER_BATCH_TYPE": null,
-        "OP_BATCHER_L1_ETH_RPC": "http://l1:8545",
-        "OP_BATCHER_L2_ETH_RPC": "http://l2-a:8545",
         "OP_BATCHER_MAX_CHANNEL_DURATION": 2,
         "OP_BATCHER_METRICS_ENABLED": "true",
         "OP_BATCHER_NUM_CONFIRMATIONS": 1,
@@ -4626,13 +4656,12 @@
       "env_file": [
         {
           "path": "${PWD}/../.devnet-interop/env/l2/900201/op-batcher.env",
-          "required": true
+          "required": false
         }
       ],
+      "command": "op-batcher --l1-eth-rpc=http://l1:8545 --l2-eth-rpc=http://l2-b:8545 --rollup-rpc=http://op-node-b:8545\n",
       "environment": {
         "OP_BATCHER_BATCH_TYPE": null,
-        "OP_BATCHER_L1_ETH_RPC": "http://l1:8545",
-        "OP_BATCHER_L2_ETH_RPC": "http://l2-b:8545",
         "OP_BATCHER_MAX_CHANNEL_DURATION": 2,
         "OP_BATCHER_METRICS_ENABLED": "true",
         "OP_BATCHER_NUM_CONFIRMATIONS": 1,
@@ -4710,7 +4739,7 @@
       "env_file": [
         {
           "path": "${PWD}/../.devnet-interop/env/l2/900200/op-node.env",
-          "required": true
+          "required": false
         }
       ],
       "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:devnet",
@@ -4751,16 +4780,20 @@
           "volume": {}
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../ops-bedrock/test-jwt-secret.txt",
           "target": "/config/jwt-secret.txt",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../.devnet-interop/genesis/l2/900200/rollup.json",
           "target": "/rollup.json",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
           "source": "op_log_a",
@@ -4813,7 +4846,7 @@
       "env_file": [
         {
           "path": "${PWD}/../.devnet-interop/env/l2/900201/op-node.env",
-          "required": true
+          "required": false
         }
       ],
       "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:devnet",
@@ -4854,16 +4887,20 @@
           "volume": {}
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../ops-bedrock/test-jwt-secret.txt",
           "target": "/config/jwt-secret.txt",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../.devnet-interop/genesis/l2/900201/rollup.json",
           "target": "/rollup.json",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
           "source": "op_log_b",
@@ -4903,13 +4940,13 @@
       "env_file": [
         {
           "path": "${PWD}/../.devnet-interop/env/l2/900200/op-proposer.env",
-          "required": true
+          "required": false
         }
       ],
+      "command": "op-proposer --l1-eth-rpc=http://l1:8545 --rollup-rpc=http://op-node-a:8545\n",
       "environment": {
         "OP_PROPOSER_ALLOW_NON_FINALIZED": "true",
         "OP_PROPOSER_GAME_TYPE": "254",
-        "OP_PROPOSER_L1_ETH_RPC": "http://l1:8545",
         "OP_PROPOSER_METRICS_ENABLED": "true",
         "OP_PROPOSER_NUM_CONFIRMATIONS": 1,
         "OP_PROPOSER_POLL_INTERVAL": "1s",
@@ -4973,13 +5010,13 @@
       "env_file": [
         {
           "path": "${PWD}/../.devnet-interop/env/l2/900201/op-proposer.env",
-          "required": true
+          "required": false
         }
       ],
+      "command": "op-proposer --l1-eth-rpc=http://l1:8545 --rollup-rpc=http://op-node-b:8545\n",
       "environment": {
         "OP_PROPOSER_ALLOW_NON_FINALIZED": "true",
         "OP_PROPOSER_GAME_TYPE": "254",
-        "OP_PROPOSER_L1_ETH_RPC": "http://l1:8545",
         "OP_PROPOSER_METRICS_ENABLED": "true",
         "OP_PROPOSER_NUM_CONFIRMATIONS": 1,
         "OP_PROPOSER_POLL_INTERVAL": "1s",
@@ -5141,11 +5178,13 @@
       ],
       "volumes": [
         {
+          "bind": {
+            "create_host_path": true
+          },
           "read_only": true,
           "source": "${PWD}/../.devnet/",
           "target": "/usr/share/nginx/html",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         }
       ],
       "labels": {
@@ -5233,16 +5272,20 @@
           "volume": {}
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../.devnet/genesis-l2.json",
           "target": "/genesis.json",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/test-jwt-secret.txt",
           "target": "/config/jwt-secret.txt",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         }
       ],
       "labels": {
@@ -5265,10 +5308,12 @@
       },
       "volumes": [
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../.devnet/rollup.json",
           "target": "/rollup.json",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         }
       ],
       "labels": {
@@ -5430,7 +5475,7 @@
     "infra/opstack/docker-compose.network-manager.yml",
     "infra/opstack/docker-compose.l3.yml",
     "infra/ghostchain/docker-compose.ibft.yml",
-    "infra/ghostchain/docker-compose.eth.yml",
+    "infra/ghostchain/docker-compose.l1.yml",
     "infra/opstack/docker-compose.yml",
     "infra/opstack/docker-compose.challengers.yml",
     "infra/opstack/optimism-upstream/interop-devnet/docker-compose.yml",

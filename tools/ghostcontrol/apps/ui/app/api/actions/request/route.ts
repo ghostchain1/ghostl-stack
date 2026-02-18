@@ -1,12 +1,5 @@
 import { NextResponse } from "next/server";
-
-function apiBaseUrl(): string {
-  return (
-    process.env.GHOSTCONTROL_API_URL ??
-    process.env.NEXT_PUBLIC_GHOSTCONTROL_API ??
-    "http://localhost:7401"
-  );
-}
+import { apiBaseUrl, extractNetworkErrorCode, fetchWithRetry } from "../../../lib/api-client";
 
 export async function POST(req: Request) {
   const form = await req.formData();
@@ -30,14 +23,28 @@ export async function POST(req: Request) {
   };
 
   const token = process.env.GHOSTCONTROL_TOKEN;
-  const res = await fetch(`${apiBaseUrl().replace(/\\/+$/, "")}/actions/request`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      ...(token ? { "x-ghostcontrol-token": token } : {}),
-    },
-    body: JSON.stringify(payload),
-  });
+  let res: Response;
+  try {
+    res = await fetchWithRetry(
+      `${apiBaseUrl().replace(/\/+$/, "")}/actions/request`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          ...(token ? { "x-ghostcontrol-token": token } : {}),
+        },
+        body: JSON.stringify(payload),
+      },
+      // Keep request submission idempotency-safe: no automatic retries for POST.
+      { attempts: 1 },
+    );
+  } catch (error) {
+    const code = extractNetworkErrorCode(error);
+    return NextResponse.json(
+      { ok: false, status: 503, body: code ? `NETWORK_${code}` : "NETWORK_FETCH_FAILED" },
+      { status: 503 },
+    );
+  }
 
   if (!res.ok) {
     const text = await res.text();
@@ -49,4 +56,3 @@ export async function POST(req: Request) {
 
   return NextResponse.redirect(new URL("/incidents", req.url));
 }
-

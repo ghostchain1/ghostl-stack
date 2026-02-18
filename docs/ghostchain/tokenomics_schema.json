@@ -1,12 +1,12 @@
 {
   "schema_version": "1.0",
   "fields": {
-    "total_supply": {"type": "string", "unit": "GHOST"},
-    "circulating_supply": {"type": "string", "unit": "GHOST"},
-    "burned_total": {"type": "string", "unit": "GHOST"},
-    "burn_rate_per_block": {"type": "string", "unit": "GHOST"},
-    "sequencer_revenue_total": {"type": "string", "unit": "GHOST"},
-    "treasury_balance": {"type": "string", "unit": "GHOST"},
+    "total_supply": {"type": "string", "unit": "GST"},
+    "circulating_supply": {"type": "string", "unit": "GST"},
+    "burned_total": {"type": "string", "unit": "GST"},
+    "burn_rate_per_block": {"type": "string", "unit": "GST"},
+    "sequencer_revenue_total": {"type": "string", "unit": "GST"},
+    "treasury_balance": {"type": "string", "unit": "GST"},
     "inflation_rate": {"type": "string", "unit": "percent"},
     "deflation_rate": {"type": "string", "unit": "percent"},
     "governance_parameters": {"type": "object"}
@@ -15,7 +15,7 @@
   "notes": "UI schema for tokenomics dashboard.",
   "canonical_token": {
     "name": "Ghost Token",
-    "symbol": "GHOST",
+    "symbol": "GST",
     "contract_address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "decimals": 18,
     "genesis_mint": "1000000000",

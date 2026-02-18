@@ -7,7 +7,7 @@ This overlay runs a mainnet geth node as “Ghost Layer 1” instead of the bund
 File: `infra/opstack/docker-compose.mainnet-geth.yml`
 
 Service `l1-mainnet-geth`:
-- Image: `ethereum/client-go:stable`
+- Image: `ghostl/geth:stable`
 - Ports (host → container):
   - `38545:8545` HTTP
   - `38546:8546` WebSocket

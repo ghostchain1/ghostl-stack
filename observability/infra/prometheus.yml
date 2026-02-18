@@ -4,6 +4,7 @@ global:
 
 rule_files:
   - /etc/prometheus/alert_rules.yml
+  - /etc/prometheus/gst_metric_rules.yml
 
 alerting:
   alertmanagers:

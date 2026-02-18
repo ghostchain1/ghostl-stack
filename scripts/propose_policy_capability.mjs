@@ -91,7 +91,7 @@ const loadEthers = async () => {
       return await import(ethersPath);
     } catch (innerErr) {
       throw new Error(
-        "missing_dependency_ethers: install at repo root or ensure contracts/node_modules includes ethers"
+        "missing_dependency_signing_lib: install at repo root or ensure contracts/node_modules includes ethers"
       );
     }
   }

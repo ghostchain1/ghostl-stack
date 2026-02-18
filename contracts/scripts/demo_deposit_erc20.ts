@@ -12,8 +12,8 @@ async function main() {
 
   const [signer] = await ethers.getSigners();
   const to = process.env.DEMO_TO ?? signer.address;
-  const amountEth = process.env.DEMO_AMOUNT_ETH ?? "1";
-  const amountWei = ethers.parseEther(amountEth);
+  const amountGst = process.env.DEMO_AMOUNT_GST ?? "1";
+  const amountWei = ethers.parseEther(amountGst);
   const nonce = BigInt(process.env.DEMO_NONCE ?? Math.floor(Date.now() / 1000).toString());
 
   // Disambiguate between multiple ERC20 artifacts in this repo.
@@ -29,7 +29,7 @@ async function main() {
   console.log("token:", tokenAddress);
   console.log("from:", signer.address);
   console.log("to:", to);
-  console.log("amountEth:", amountEth);
+  console.log("amountGst:", amountGst);
   console.log("nonce:", nonce.toString());
   console.log("tx:", tx.hash);
 

@@ -5,12 +5,6 @@
         "context": "./apps/ghost-ui",
         "dockerfile": "Dockerfile"
       },
-      "depends_on": {
-        "ghost-compliance": {
-          "condition": "service_healthy",
-          "required": true
-        }
-      },
       "environment": {
         "COMPLIANCE_ANALYST_JWT": "${COMPLIANCE_ANALYST_JWT:-}",
         "COMPLIANCE_URL": "http://ghost-compliance:8090",
@@ -47,15 +41,9 @@
         "dockerfile": "apps/web/Dockerfile",
         "target": "dev"
       },
-      "depends_on": {
-        "ghostl-api": {
-          "condition": "service_started",
-          "required": true
-        }
-      },
       "env_file": [
         {
-          "path": "./apps/web/.env.example",
+          "path": "../../../apps/web/.env.example",
           "required": true
         }
       ],
@@ -212,7 +200,7 @@
     "infra/opstack/docker-compose.l3.yml",
     "services/docker-compose.yml",
     "infra/ghostchain/docker-compose.ibft.yml",
-    "infra/ghostchain/docker-compose.eth.yml",
+    "infra/ghostchain/docker-compose.l1.yml",
     "infra/opstack/docker-compose.yml",
     "docker-compose.yml",
     "core-service/docker-compose.yml",

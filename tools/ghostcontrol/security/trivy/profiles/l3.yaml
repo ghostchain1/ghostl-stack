@@ -1,0 +1,16 @@
+name: ghostcontrol-l3
+target: /home/ghost/ghostl-stack/infra/opstack/l3
+scanner:
+  mode: fs
+  scanners:
+    - vuln
+    - misconfig
+    - secret
+  severity:
+    - HIGH
+    - CRITICAL
+  ignore_unfixed: true
+output:
+  format: json
+  file: /home/ghost/ghostl-stack/tools/ghostcontrol/evidence/scans/trivy-l3.json
+

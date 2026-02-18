@@ -6,7 +6,7 @@
 
 ## Immediate mitigation
 1. Restart node container:
-   - `docker compose -f infra/ghostchain/docker-compose.eth.yml restart ghostchain-node1`
+   - `docker compose -f infra/ghostchain/docker-compose.l1.yml restart ghostchain-node1`
 2. Check key permissions and datadir ownership (UID 1000).
 
 ## Permanent fix

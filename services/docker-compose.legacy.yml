@@ -5,7 +5,9 @@ x-host-gateway: &host-gateway
 services:
   rpc-forward-l1-29545:
     <<: *host-gateway
-    image: alpine/socat@sha256:1edb826a9432ab0b0f8c865181fc278e48b792fc80bebfa0e19205cda71bbbd1
+    image: ghostl/rpc-forward-l1-29545:local
+    build:
+      context: ./rpc-forward-l1-29545
     restart: unless-stopped
     command:
       - -d
@@ -505,6 +507,48 @@ services:
       timeout: 5s
       retries: 5
 
+  preconfirm-l2-service:
+    <<: *host-gateway
+    build:
+      context: ./preconfirm-service
+    image: ghostl/preconfirm-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7691
+      - RPC_URL=${RPC_L2}
+      - LAYER=l2
+    ports:
+      - "7691:7691"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7691}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  preconfirm-l3-service:
+    <<: *host-gateway
+    build:
+      context: ./preconfirm-service
+    image: ghostl/preconfirm-service:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7692
+      - RPC_URL=${RPC_L3}
+      - LAYER=l3
+    ports:
+      - "7692:7692"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7692}/health" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
   network-manager-service:
     <<: *host-gateway
     build:
@@ -819,6 +863,9 @@ services:
     build:
       context: ./ghost-rollup-proposer
     image: ghostl/ghost-rollup-proposer:local
+    depends_on:
+      ghost-registry:
+        condition: service_healthy
     env_file:
       - ./stack.env
     environment:
@@ -827,6 +874,12 @@ services:
       - RPC_CHILD=${RPC_L3}
       - ROLLUP_ADDRESS=${L2_ROLLUP_L3_ADDRESS}
       - PROPOSER_PRIVATE_KEY=${PROPOSER_PRIVATE_KEY}
+      # For sub-second soft confirmations, default to latest-confirmations instead of OP "safe".
+      - ROLLUP_CHILD_HEAD_TAG=${L3_ROLLUP_CHILD_HEAD_TAG:-latest}
+      # Catch-up tuning: L3 can start far behind; increase batch size and parallelism to reduce lag faster.
+      - CATCHUP_LAG_THRESHOLD=${L3_ROLLUP_CATCHUP_LAG_THRESHOLD:-512}
+      - CATCHUP_BATCH_SIZE=${L3_ROLLUP_CATCHUP_BATCH_SIZE:-1000}
+      - BLOCK_FETCH_PARALLELISM=${L3_ROLLUP_BLOCK_FETCH_PARALLELISM:-50}
       - STATE_DIR=/state
     volumes:
       - ./.state/ghost-rollup-proposer:/state
@@ -845,6 +898,9 @@ services:
     build:
       context: ./ghost-rollup-challenger
     image: ghostl/ghost-rollup-challenger:local
+    depends_on:
+      ghost-registry:
+        condition: service_healthy
     env_file:
       - ./stack.env
     environment:
@@ -853,6 +909,8 @@ services:
       - RPC_CHILD=${RPC_L3}
       - ROLLUP_ADDRESS=${L2_ROLLUP_L3_ADDRESS}
       - CHALLENGER_PRIVATE_KEY=${CHALLENGER_PRIVATE_KEY}
+      # Keep challenger stability assumptions aligned with proposer (latest-confirmations).
+      - ROLLUP_CHILD_HEAD_TAG=${L3_ROLLUP_CHILD_HEAD_TAG:-latest}
       - STATE_DIR=/state
     volumes:
       - ./.state/ghost-rollup-challenger:/state
@@ -862,6 +920,71 @@ services:
       test:
         - CMD-SHELL
         - curl -sf "http://127.0.0.1:${PORT:-7282}/health" || curl -sf "http://127.0.0.1:${PORT:-7282}/" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # L2 economic finality anchored to L1 (batches of L2 blocks posted to an L1 OptimisticRollup).
+  ghost-rollup-proposer-l2:
+    <<: *host-gateway
+    build:
+      context: ./ghost-rollup-proposer
+    image: ghostl/ghost-rollup-proposer:local
+    depends_on:
+      ghost-registry:
+        condition: service_healthy
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7273
+      - RPC_SETTLEMENT=${RPC_L1}
+      - RPC_CHILD=${RPC_L2}
+      - ROLLUP_ADDRESS=${L1_ROLLUP_L2_ADDRESS}
+      - PROPOSER_PRIVATE_KEY=${PROPOSER_PRIVATE_KEY}
+      # Keep L2 economic finality progress resilient to transient OP safe-head stalls.
+      - ROLLUP_CHILD_HEAD_TAG=${L2_ROLLUP_CHILD_HEAD_TAG:-latest}
+      # Catch-up tuning: keep L2 economic finality close to L1 even after restarts.
+      - CATCHUP_LAG_THRESHOLD=${L2_ROLLUP_CATCHUP_LAG_THRESHOLD:-512}
+      - CATCHUP_BATCH_SIZE=${L2_ROLLUP_CATCHUP_BATCH_SIZE:-1000}
+      - BLOCK_FETCH_PARALLELISM=${L2_ROLLUP_BLOCK_FETCH_PARALLELISM:-50}
+      - STATE_DIR=/state
+    volumes:
+      - ./.state/ghost-rollup-proposer-l2:/state
+    ports:
+      - "7273:7273"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7273}/health" || curl -sf "http://127.0.0.1:${PORT:-7273}/" || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  ghost-rollup-challenger-l2:
+    <<: *host-gateway
+    build:
+      context: ./ghost-rollup-challenger
+    image: ghostl/ghost-rollup-challenger:local
+    depends_on:
+      ghost-registry:
+        condition: service_healthy
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7283
+      - RPC_SETTLEMENT=${RPC_L1}
+      - RPC_CHILD=${RPC_L2}
+      - ROLLUP_ADDRESS=${L1_ROLLUP_L2_ADDRESS}
+      - CHALLENGER_PRIVATE_KEY=${CHALLENGER_PRIVATE_KEY}
+      - STATE_DIR=/state
+    volumes:
+      - ./.state/ghost-rollup-challenger-l2:/state
+    ports:
+      - "7283:7283"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf "http://127.0.0.1:${PORT:-7283}/health" || curl -sf "http://127.0.0.1:${PORT:-7283}/" || exit 1
       interval: 15s
       timeout: 5s
       retries: 5

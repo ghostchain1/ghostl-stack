@@ -131,7 +131,7 @@
     },
     {
       "type": "stat",
-      "title": "Batcher balance (GHOST)",
+      "title": "Batcher balance (GST)",
       "gridPos": {
         "h": 6,
         "w": 6,

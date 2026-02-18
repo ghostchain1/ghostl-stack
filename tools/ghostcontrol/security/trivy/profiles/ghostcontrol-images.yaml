@@ -1,0 +1,18 @@
+name: ghostcontrol-images
+target:
+  images:
+    - compose-ghostcontrol-api
+    - compose-ghostcontrol-ui
+scanner:
+  mode: image
+  scanners:
+    - vuln
+  severity:
+    - HIGH
+    - CRITICAL
+policy:
+  allowlist: /home/ghost/ghostl-stack/tools/ghostcontrol/security/trivy/allowlist/ghostcontrol-images.json
+  expiry_enforced: true
+output:
+  format: json
+  summary: /home/ghost/ghostl-stack/tools/ghostcontrol/evidence/scans/ghostcontrol-image-gate-summary.json

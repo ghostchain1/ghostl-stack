@@ -52,3 +52,14 @@ chains
 chains/**
 apps/worker
 apps/worker/**
+
+# Allow building the Liquidity Gravity Engine router image from repo root context.
+!services/liquidity-router
+!services/liquidity-router/**
+!services/liquidity-prover
+!services/liquidity-prover/**
+
+# Allow NPM workspaces to resolve the worker workspace during api/web image builds
+# without sending the full worker source in the Docker build context.
+!apps/worker/
+!apps/worker/package.json

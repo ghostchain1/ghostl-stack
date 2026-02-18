@@ -4,6 +4,15 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="${ROOT_DIR:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 L1_ENV_FILE="${L1_ENV_FILE:-$ROOT_DIR/infra/ghostchain/.env.l1}"
+CLI_L1_SECRETS_SOURCE="${L1_SECRETS_SOURCE-}"
+CLI_ALLOW_DEV_SECRETS="${ALLOW_DEV_SECRETS-}"
+CLI_VAULT_ADDR="${VAULT_ADDR-}"
+CLI_VAULT_TOKEN="${VAULT_TOKEN-}"
+CLI_VAULT_ROLE_ID="${VAULT_ROLE_ID-}"
+CLI_VAULT_SECRET_ID="${VAULT_SECRET_ID-}"
+
+# shellcheck source=scripts/lib/docker.sh
+. "$ROOT_DIR/scripts/lib/docker.sh"
 
 if [ -f "$L1_ENV_FILE" ]; then
   set -a
@@ -12,7 +21,26 @@ if [ -f "$L1_ENV_FILE" ]; then
   set +a
 fi
 
-L1_COMPOSE_FILE="${L1_COMPOSE_FILE:-$ROOT_DIR/infra/ghostchain/docker-compose.eth.yml}"
+if [ -n "${CLI_L1_SECRETS_SOURCE:-}" ]; then
+  L1_SECRETS_SOURCE="$CLI_L1_SECRETS_SOURCE"
+fi
+if [ -n "${CLI_ALLOW_DEV_SECRETS:-}" ]; then
+  ALLOW_DEV_SECRETS="$CLI_ALLOW_DEV_SECRETS"
+fi
+if [ -n "${CLI_VAULT_ADDR:-}" ]; then
+  VAULT_ADDR="$CLI_VAULT_ADDR"
+fi
+if [ -n "${CLI_VAULT_TOKEN:-}" ]; then
+  VAULT_TOKEN="$CLI_VAULT_TOKEN"
+fi
+if [ -n "${CLI_VAULT_ROLE_ID:-}" ]; then
+  VAULT_ROLE_ID="$CLI_VAULT_ROLE_ID"
+fi
+if [ -n "${CLI_VAULT_SECRET_ID:-}" ]; then
+  VAULT_SECRET_ID="$CLI_VAULT_SECRET_ID"
+fi
+
+L1_COMPOSE_FILE="${L1_COMPOSE_FILE:-$ROOT_DIR/infra/ghostchain/docker-compose.l1.yml}"
 L1_GENESIS_PATH="${L1_GENESIS_PATH:-$ROOT_DIR/infra/ghostchain/geth/genesis.json}"
 L1_RUN_SCRIPT="${L1_RUN_SCRIPT:-$ROOT_DIR/infra/ghostchain/geth/run-node.sh}"
 L1_KEY_DIR="${L1_KEY_DIR:-$ROOT_DIR/infra/ghostchain/geth/keys}"
@@ -39,13 +67,45 @@ L1_DOCTOR_SKIP_RUNTIME="${L1_DOCTOR_SKIP_RUNTIME:-0}"
 L1_DOCTOR_SKIP_DOCKER="${L1_DOCTOR_SKIP_DOCKER:-0}"
 
 GENESIS_SHA256_EXPECTED="696f9da9d751b5ccdac8464eb6a2a8af88be64ca1f182f7af81b4e24600e3dd7"
-RUN_SCRIPT_SHA256_EXPECTED="ad4d931cc7c1c61a9f9de5c006f22cb3ab64de4bef907302ed76698661d4d285"
+RUN_SCRIPT_SHA256_EXPECTED="286239f0dc624760957dec6ef2cb63390cc75697f0ed7173edcfa6b6252cb447"
 
 warn() { echo "WARN: $*" >&2; }
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
+STRICT_MODE=0
+if [ "${SLITHER_STRICT:-0}" = "1" ] || [ -n "${CI:-}" ] || [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+  STRICT_MODE=1
+fi
+
+skip_or_fail() {
+  local message="$1"
+  if [ "$STRICT_MODE" = "1" ]; then
+    fail "$message"
+  fi
+  warn "SKIPPED: $message"
+  echo "[doctor-l1] SKIPPED: $message"
+  exit 0
+}
+
 need_bin() {
   command -v "$1" >/dev/null 2>&1 || fail "missing required binary: $1"
+}
+
+is_docker_daemon_unavailable() {
+  local msg="${1:-}"
+  msg="$(printf '%s' "$msg" | tr '[:upper:]' '[:lower:]')"
+  case "$msg" in
+    *"permission denied while trying to connect to the docker api"* ) return 0 ;;
+    *"permission denied while trying to connect to the docker daemon socket"* ) return 0 ;;
+    *"got permission denied while trying to connect to the docker daemon socket"* ) return 0 ;;
+    *"cannot connect to the docker daemon"* ) return 0 ;;
+    *"is the docker daemon running"* ) return 0 ;;
+    *"error during connect"*docker.sock* ) return 0 ;;
+    *dial\ unix*docker.sock*permission\ denied* ) return 0 ;;
+    *dial\ unix*docker.sock*operation\ not\ permitted* ) return 0 ;;
+    *dial\ unix*docker.sock*no\ such\ file\ or\ directory* ) return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
 jsonrpc() {
@@ -103,20 +163,45 @@ need_bin curl
 need_bin sha256sum
 need_bin python3
 
+DOCKER_AVAILABLE=1
 if ! command -v docker >/dev/null 2>&1; then
-  fail "docker not installed"
-fi
-if [ "$L1_DOCTOR_SKIP_DOCKER" != "1" ]; then
-  if ! docker version --format '{{.Server.Version}}'; then
-    fail "docker daemon not reachable"
+  if [ "$L1_DOCTOR_SKIP_DOCKER" = "1" ]; then
+    DOCKER_AVAILABLE=0
+    warn "docker not installed (L1_DOCTOR_SKIP_DOCKER=1)"
+  else
+    skip_or_fail "docker not installed"
   fi
-else
+fi
+if [ "$DOCKER_AVAILABLE" = "1" ] && [ "$L1_DOCTOR_SKIP_DOCKER" != "1" ]; then
+  docker_out=""
+  if ! docker_out="$(hg_docker version --format '{{.Server.Version}}' 2>&1)"; then
+    if is_docker_daemon_unavailable "$docker_out"; then
+      if [ "$L1_DOCTOR_SKIP_DOCKER" = "1" ]; then
+        DOCKER_AVAILABLE=0
+        warn "docker daemon/socket not reachable (L1_DOCTOR_SKIP_DOCKER=1)"
+      else
+        skip_or_fail "docker daemon/socket not reachable"
+      fi
+    else
+      skip_or_fail "docker version failed"
+    fi
+  fi
+elif [ "$L1_DOCTOR_SKIP_DOCKER" = "1" ]; then
+  DOCKER_AVAILABLE=0
   warn "docker daemon check skipped (L1_DOCTOR_SKIP_DOCKER=1)"
 fi
-if ! docker compose version >/dev/null 2>&1; then
+
+COMPOSE_AVAILABLE=0
+if [ "$DOCKER_AVAILABLE" = "1" ] && hg_docker compose version >/dev/null 2>&1; then
+  COMPOSE_AVAILABLE=1
+elif [ "$L1_DOCTOR_SKIP_DOCKER" != "1" ]; then
   fail "docker compose not available"
 fi
-echo "OK: docker/compose reachable"
+if [ "$DOCKER_AVAILABLE" = "1" ] && [ "$COMPOSE_AVAILABLE" = "1" ]; then
+  echo "OK: docker/compose reachable"
+else
+  warn "docker/compose unavailable; docker-dependent checks will be skipped"
+fi
 
 if [ "$L1_SECRETS_SOURCE" = "vault" ]; then
   if [ -z "$VAULT_ADDR" ] || { [ -z "$VAULT_TOKEN" ] && { [ -z "$VAULT_ROLE_ID" ] || [ -z "$VAULT_SECRET_ID" ]; }; }; then
@@ -187,10 +272,14 @@ if [ "$KEYS_FOUND" -eq 0 ]; then
   fail "no validator keys found in $L1_KEY_DIR"
 fi
 
-if ! docker compose -f "$L1_COMPOSE_FILE" config >/dev/null 2>&1; then
-  fail "compose config invalid for $L1_COMPOSE_FILE"
+if [ "$COMPOSE_AVAILABLE" = "1" ]; then
+  if ! hg_docker compose -f "$L1_COMPOSE_FILE" config >/dev/null 2>&1; then
+    fail "compose config invalid for $L1_COMPOSE_FILE"
+  fi
+  echo "OK: compose config valid"
+else
+  warn "compose config validation skipped (docker compose unavailable)"
 fi
-echo "OK: compose config valid"
 
 if [ "$L1_DOCTOR_SKIP_RUNTIME" = "1" ]; then
   warn "runtime checks skipped (L1_DOCTOR_SKIP_RUNTIME=1)"

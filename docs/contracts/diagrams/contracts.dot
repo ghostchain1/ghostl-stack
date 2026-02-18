@@ -285,7 +285,7 @@ subgraph "clusterStandardBridge" {
   "StandardBridge.setRemoteBridge" [ label = "setRemoteBridge", color = "blue" ];
   "StandardBridge.bridgeERC20" [ label = "bridgeERC20", color = "blue" ];
   "StandardBridge.finalizeBridgeERC20" [ label = "finalizeBridgeERC20", color = "blue" ];
-  "StandardBridge.<Receive Ether>" [ label = "<Receive Ether>", color = "blue" ];
+  "StandardBridge.<Receive Native>" [ label = "<Receive Native>", color = "blue" ];
   "StandardBridge.address" [ label = "address" ];
 }
 
@@ -329,7 +329,7 @@ subgraph "clusterXDomainMessenger" {
   "IXDomainMessenger.xDomainMessageSender" [ label = "xDomainMessageSender", color = "blue" ];
   "IXDomainMessenger.sendMessage" [ label = "sendMessage", color = "blue" ];
   "XDomainMessenger.relayMessage" [ label = "relayMessage", color = "blue" ];
-  "XDomainMessenger.<Receive Ether>" [ label = "<Receive Ether>", color = "blue" ];
+  "XDomainMessenger.<Receive Native>" [ label = "<Receive Native>", color = "blue" ];
   "XDomainMessenger.address" [ label = "address" ];
 }
 
@@ -462,7 +462,7 @@ subgraph "clusterNativeTokenV2" {
 subgraph "clusterWrappedNative" {
   graph [ label = "WrappedNative", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
   "WrappedNative.<Constructor>" [ label = "<Constructor>", color = "green" ];
-  "WrappedNative.<Receive Ether>" [ label = "<Receive Ether>", color = "blue" ];
+  "WrappedNative.<Receive Native>" [ label = "<Receive Native>", color = "blue" ];
   "WrappedNative.deposit" [ label = "deposit", color = "blue" ];
   "WrappedNative.withdraw" [ label = "withdraw", color = "blue" ];
   "WrappedNative.payable" [ label = "payable" ];
@@ -505,7 +505,7 @@ subgraph "clusterIERC20Minimal" {
 subgraph "clusterTreasuryV2" {
   graph [ label = "TreasuryV2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
   "TreasuryV2.<Constructor>" [ label = "<Constructor>", color = "green" ];
-  "TreasuryV2.<Receive Ether>" [ label = "<Receive Ether>", color = "blue" ];
+  "TreasuryV2.<Receive Native>" [ label = "<Receive Native>", color = "blue" ];
   "TreasuryV2.withdraw" [ label = "withdraw", color = "green" ];
   "TreasuryV2.withdrawToken" [ label = "withdrawToken", color = "blue" ];
 }
@@ -845,7 +845,7 @@ subgraph "clusterUpgradeableProxy" {
   "UpgradeableProxy.<Constructor>" [ label = "<Constructor>", color = "green" ];
   "UpgradeableProxy.upgradeTo" [ label = "upgradeTo", color = "blue" ];
   "UpgradeableProxy.<Fallback>" [ label = "<Fallback>", color = "blue" ];
-  "UpgradeableProxy.<Receive Ether>" [ label = "<Receive Ether>", color = "blue" ];
+  "UpgradeableProxy.<Receive Native>" [ label = "<Receive Native>", color = "blue" ];
   "UpgradeableProxy.address" [ label = "address" ];
 }
 
@@ -912,7 +912,7 @@ subgraph "clusterYieldVault" {
 subgraph "clusterInsuranceFund" {
   graph [ label = "InsuranceFund", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
   "InsuranceFund.<Constructor>" [ label = "<Constructor>", color = "green" ];
-  "InsuranceFund.<Receive Ether>" [ label = "<Receive Ether>", color = "blue" ];
+  "InsuranceFund.<Receive Native>" [ label = "<Receive Native>", color = "blue" ];
   "InsuranceFund.payout" [ label = "payout", color = "blue" ];
 }
 
@@ -1138,13 +1138,13 @@ subgraph "clusterIERC20Balance" {
   "IERC20Balance.transfer" [ label = "transfer" ];
 }
 
-subgraph "clusterTreasury" {
-  graph [ label = "Treasury", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
-  "Treasury.<Constructor>" [ label = "<Constructor>", color = "green" ];
-  "Treasury.<Receive Ether>" [ label = "<Receive Ether>", color = "blue" ];
-  "Treasury.withdrawETH" [ label = "withdrawETH", color = "blue" ];
-  "Treasury.withdrawNative" [ label = "withdrawNative", color = "blue" ];
-}
+  subgraph "clusterTreasury" {
+	  graph [ label = "Treasury", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+	  "Treasury.<Constructor>" [ label = "<Constructor>", color = "green" ];
+	  "Treasury.<Receive Native>" [ label = "<Receive Native>", color = "blue" ];
+	  "Treasury.withdrawLegacyValue" [ label = "withdrawLegacyValue", color = "blue" ];
+	  "Treasury.withdrawNative" [ label = "withdrawNative", color = "blue" ];
+	}
 
 subgraph "clusterUpgradeManager" {
   graph [ label = "UpgradeManager", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
@@ -1465,7 +1465,7 @@ subgraph "clusterimpl" {
   "target.call";
   "NativeTokenV2.mint";
   "NativeTokenV2.burn";
-  "WrappedNative.<Receive Ether>";
+  "WrappedNative.<Receive Native>";
   "WrappedNative.deposit";
   "WrappedNative.withdraw";
   "WrappedNative.payable";
@@ -1562,7 +1562,7 @@ subgraph "clusterimpl" {
   "StakingManager.payable";
   "SystemConfig.setBatcher";
   "SystemConfig.setUnsafeBlockSigner";
-  "Treasury.withdrawETH";
+	  "Treasury.withdrawLegacyValue";
   "Treasury.withdrawNative";
   "IERC20Balance.transfer";
   "ValidatorRegistry.addValidator";
@@ -1775,7 +1775,7 @@ subgraph "clusterimpl" {
   "PauseGuardianV2.guardedCall" -> "target.call" [ color = "orange" ];
   "NativeTokenV2.mint" -> "ERC20._mint" [ color = "green" ];
   "NativeTokenV2.burn" -> "ERC20._burn" [ color = "green" ];
-  "WrappedNative.<Receive Ether>" -> "ERC20._mint" [ color = "green" ];
+  "WrappedNative.<Receive Native>" -> "ERC20._mint" [ color = "green" ];
   "WrappedNative.deposit" -> "ERC20._mint" [ color = "green" ];
   "WrappedNative.withdraw" -> "ERC20._burn" [ color = "green" ];
   "WrappedNative.withdraw" -> "WrappedNative.payable" [ color = "green" ];
@@ -1875,8 +1875,8 @@ subgraph "clusterimpl" {
   "StakingManager.unstake" -> "StakingManager.payable" [ color = "green" ];
   "SystemConfig.setBatcher" -> "Ownable.address" [ color = "green" ];
   "SystemConfig.setUnsafeBlockSigner" -> "Ownable.address" [ color = "green" ];
-  "Treasury.withdrawETH" -> "Ownable.address" [ color = "green" ];
-  "Treasury.withdrawETH" -> "to.transfer" [ color = "orange" ];
+	  "Treasury.withdrawLegacyValue" -> "Ownable.address" [ color = "green" ];
+	  "Treasury.withdrawLegacyValue" -> "to.transfer" [ color = "orange" ];
   "Treasury.withdrawNative" -> "IERC20Balance.transfer" [ color = "orange" ];
   "ValidatorRegistry.addValidator" -> "Ownable.address" [ color = "green" ];
   "L1CrossDomainMessenger.<Constructor>" -> "XDomainMessenger.address" [ color = "green" ];
@@ -1967,4 +1967,3 @@ key:i2:e -> key2:i2:w [color="orange"]
 key:i2:e -> key2:i2:w [color="red"]
 }
 }
-

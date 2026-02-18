@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "../common/Governed.sol";
+import "../governance/IVotingPower.sol";
 
 interface IERC20GasToken {
     function balanceOf(address account) external view returns (uint256);
@@ -10,14 +11,22 @@ interface IERC20GasToken {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
 }
 
-/// @notice Minimal staking manager to track GHOST-denominated bonds for validators/operators.
-contract StakingManager is Governed {
+/// @notice Minimal staking manager to track GST-denominated bonds for validators/operators.
+contract StakingManager is Governed, IVotingPower {
     address internal constant CANONICAL_GAS_TOKEN = 0x5FbDB2315678afecb367f032d93F642f64180aa3;
 
     IERC20GasToken public immutable gasToken;
     mapping(address => uint256) public stakes;
     uint256 public totalStaked;
     address public slashManager;
+
+    struct Checkpoint {
+        uint48 timepoint;
+        uint208 votes;
+    }
+
+    mapping(address => Checkpoint[]) private _checkpoints;
+    Checkpoint[] private _totalCheckpoints;
 
     event SlashManagerUpdated(address indexed slashManager);
     event Staked(address indexed staker, uint256 amount);
@@ -33,7 +42,7 @@ contract StakingManager is Governed {
         emit SlashManagerUpdated(manager);
     }
 
-    /// @notice Stakes the caller's full allowance to avoid ETH-based staking paths.
+    /// @notice Stakes the caller's full allowance to avoid non-canonical staking paths.
     function stake() external {
         uint256 allowance = gasToken.allowance(msg.sender, address(this));
         require(allowance > 0, "no allowance");
@@ -49,6 +58,8 @@ contract StakingManager is Governed {
         require(gasToken.transferFrom(staker, address(this), amount), "transferFrom failed");
         stakes[staker] += amount;
         totalStaked += amount;
+        _writeCheckpoint(_checkpoints[staker], uint208(stakes[staker]));
+        _writeCheckpoint(_totalCheckpoints, uint208(totalStaked));
         emit Staked(staker, amount);
     }
 
@@ -57,6 +68,8 @@ contract StakingManager is Governed {
         stakes[msg.sender] -= amount;
         totalStaked -= amount;
         require(gasToken.transfer(msg.sender, amount), "transfer failed");
+        _writeCheckpoint(_checkpoints[msg.sender], uint208(stakes[msg.sender]));
+        _writeCheckpoint(_totalCheckpoints, uint208(totalStaked));
         emit Unstaked(msg.sender, amount);
     }
 
@@ -71,10 +84,65 @@ contract StakingManager is Governed {
         if (amount > bal) amount = bal;
         stakes[staker] = bal - amount;
         totalStaked -= amount;
+        _writeCheckpoint(_checkpoints[staker], uint208(stakes[staker]));
+        _writeCheckpoint(_totalCheckpoints, uint208(totalStaked));
         emit Slashed(staker, amount);
     }
 
     function gasTokenAddress() external pure returns (address) {
         return CANONICAL_GAS_TOKEN;
+    }
+
+    // ---------------------------------------------------------------------
+    // IVotingPower (snapshot-based voting power derived from stake checkpoints)
+    // ---------------------------------------------------------------------
+
+    function clock() external view returns (uint48) {
+        return uint48(block.timestamp);
+    }
+
+    function CLOCK_MODE() external pure returns (string memory) {
+        return "mode=timestamp";
+    }
+
+    function getVotes(address account, uint256 timepoint) external view returns (uint256) {
+        return _getVotesAt(_checkpoints[account], uint48(timepoint));
+    }
+
+    function getTotalVotes(uint256 timepoint) external view returns (uint256) {
+        return _getVotesAt(_totalCheckpoints, uint48(timepoint));
+    }
+
+    function _writeCheckpoint(Checkpoint[] storage cps, uint208 newVotes) internal {
+        uint48 tp = uint48(block.timestamp);
+        uint256 n = cps.length;
+        if (n != 0 && cps[n - 1].timepoint >= tp) {
+            cps[n - 1].votes = newVotes;
+        } else {
+            cps.push(Checkpoint({timepoint: tp, votes: newVotes}));
+        }
+    }
+
+    function _getVotesAt(Checkpoint[] storage cps, uint48 timepoint) internal view returns (uint256) {
+        uint256 n = cps.length;
+        if (n == 0) return 0;
+
+        // If the first checkpoint is after timepoint, zero.
+        if (cps[0].timepoint > timepoint) return 0;
+        // If last checkpoint is <= timepoint, return last.
+        if (cps[n - 1].timepoint <= timepoint) return cps[n - 1].votes;
+
+        // Binary search for highest checkpoint <= timepoint.
+        uint256 lo = 0;
+        uint256 hi = n - 1;
+        while (lo < hi) {
+            uint256 mid = (lo + hi + 1) / 2;
+            if (cps[mid].timepoint <= timepoint) {
+                lo = mid;
+            } else {
+                hi = mid - 1;
+            }
+        }
+        return cps[lo].votes;
     }
 }

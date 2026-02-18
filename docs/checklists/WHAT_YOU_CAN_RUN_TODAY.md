@@ -106,7 +106,7 @@ This checklist is **safe by default** (no transactions) unless a step is explici
   - **Likely fails:** `Dev secrets blocked`; RPC not reachable (`HOST_L1_RPC`); metrics not reachable (`L1_METRICS_PROM_URL`); genesis/run-script checksum mismatch.
   - **Debug:**
     ```bash
-    docker compose -f infra/ghostchain/docker-compose.eth.yml ps
+    docker compose -f infra/ghostchain/docker-compose.l1.yml ps
     ss -lnt | rg ':18545|:18660' || true
     curl -fsS http://localhost:18545 -H 'content-type: application/json' \
       -d '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}'
@@ -337,7 +337,7 @@ This checklist is **safe by default** (no transactions) unless a step is explici
   - **Purpose:** Deposit ERC20 from L1→L2 and verify L2 balance; submits transactions.
   - **Command:**
     ```bash
-    DEMO_AMOUNT_ETH=1 bash infra/scripts/demo-deposit-l1l2-erc20.sh
+    DEMO_AMOUNT_GST=1 bash infra/scripts/demo-deposit-l1l2-erc20.sh
     ```
   - **Pass:** Hardhat prints a tx hash; `.tmp/last_l1l2_deposit_erc20.json` written; L2 balance check prints expected values.
   - **Likely fails:** Missing addresses in `services/stack.env`; Hardhat deps missing; RPC endpoints down.
@@ -351,7 +351,7 @@ This checklist is **safe by default** (no transactions) unless a step is explici
 
 - [ ] **RUN via direct Hardhat (advanced)**
   - **Purpose:** Same as wrapper, but you control env wiring explicitly; submits transactions.
-  - **Requires (names only):** `L1_STANDARD_BRIDGE_ADDRESS`, `L1_TOKEN_ADDRESS`, `L2_TOKEN_ADDRESS`, `RPC_L1`, `DEMO_AMOUNT_ETH`, optional `DEMO_TO`.
+  - **Requires (names only):** `L1_STANDARD_BRIDGE_ADDRESS`, `L1_TOKEN_ADDRESS`, `L2_TOKEN_ADDRESS`, `RPC_L1`, `DEMO_AMOUNT_GST`, optional `DEMO_TO`.
   - **Command:**
     ```bash
     cd contracts
@@ -371,7 +371,7 @@ This checklist is **safe by default** (no transactions) unless a step is explici
   - **Purpose:** Withdraw ERC20 from L2→L1 and verify L1 balance; submits transactions.
   - **Command:**
     ```bash
-    DEMO_AMOUNT_ETH=1 bash infra/scripts/demo-withdraw-l1l2-erc20.sh
+    DEMO_AMOUNT_GST=1 bash infra/scripts/demo-withdraw-l1l2-erc20.sh
     ```
   - **Pass:** Hardhat prints a tx hash; `.tmp/last_l1l2_withdraw_erc20.json` written; L1 balance check prints expected values.
   - **Likely fails:** Missing addresses in `services/stack.env`; RPC endpoints down.
@@ -384,7 +384,7 @@ This checklist is **safe by default** (no transactions) unless a step is explici
 
 - [ ] **RUN via direct Hardhat (advanced)**
   - **Purpose:** Same as wrapper, but you control env wiring explicitly; submits transactions.
-  - **Requires (names only):** `L2_STANDARD_BRIDGE_ADDRESS`, `L2_TOKEN_ADDRESS`, `L1_TOKEN_ADDRESS`, `OP_L2_RPC`, `DEMO_AMOUNT_ETH`, optional `DEMO_TO`.
+  - **Requires (names only):** `L2_STANDARD_BRIDGE_ADDRESS`, `L2_TOKEN_ADDRESS`, `L1_TOKEN_ADDRESS`, `OP_L2_RPC`, `DEMO_AMOUNT_GST`, optional `DEMO_TO`.
   - **Command:**
     ```bash
     cd contracts
@@ -570,4 +570,4 @@ Below is a prioritized roadmap. Each item includes acceptance criteria and sugge
 
 1) Do staging/prod environments want Trivy scans enforced in L2/L3 go/no-go by default (`L2_GO_NO_GO_REQUIRE_SCANS=1`, `L3_GO_NO_GO_REQUIRE_SCANS=1`)?
 2) Where should the single “source of truth” for cross-layer addresses live (deployment JSON under `infra/opstack/config/`, or `services/stack.env` generated from it)?
-3) Should `bridge-e2e.sh` also grow an explicit ETH-mode for L2↔L3 (separate from the ERC20 smoke path)?
+3) Should `bridge-e2e.sh` also grow an explicit native-token mode for L2↔L3 (separate from the ERC20 smoke path)?

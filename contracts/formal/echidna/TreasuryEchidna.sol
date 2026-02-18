@@ -9,14 +9,13 @@ contract TreasuryEchidna {
     Treasury private treasury;
 
     constructor() payable {
-        token = new NativeToken("Ghost", "GHOST");
-        treasury = new Treasury(token);
-        payable(address(treasury)).transfer(1 ether);
-        token.mint(address(treasury), 1000 ether);
+        token = new NativeToken("Ghost Token", "GST");
+        treasury = new Treasury(IERC20Balance(address(token)), address(this), address(0));
+        token.mint(address(treasury), 1000e18);
     }
 
-    function echidna_cannot_overdraw_eth() public returns (bool) {
-        try treasury.withdrawETH(payable(address(this)), 2 ether) {
+    function echidna_cannot_overdraw_gst() public returns (bool) {
+        try treasury.withdrawLegacyValue(payable(address(this)), 2e18) {
             return false;
         } catch {
             return true;

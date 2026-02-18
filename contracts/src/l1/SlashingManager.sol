@@ -5,7 +5,7 @@ import "../common/Governed.sol";
 import "../ai/PolicyGuard.sol";
 import "./StakingManager.sol";
 
-/// @notice Coordinates fee-policy slashing events in canonical GHOST units.
+/// @notice Coordinates fee-policy slashing events in canonical GST units.
 contract SlashingManager is Governed {
     address internal constant CANONICAL_GAS_TOKEN = 0x5FbDB2315678afecb367f032d93F642f64180aa3;
     uint256 internal constant BPS_DENOMINATOR = 10_000;
@@ -272,7 +272,9 @@ contract SlashingManager is Governed {
             v := byte(0, mload(add(signature, 0x60)))
         }
         if (v < 27) v += 27;
-        bytes32 ethSigned = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
-        return ecrecover(ethSigned, v, r, s);
+        bytes32 signedHash = keccak256(
+            abi.encodePacked(hex"19457468657265756d205369676e6564204d6573736167653a0a3332", digest)
+        );
+        return ecrecover(signedHash, v, r, s);
     }
 }

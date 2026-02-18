@@ -13,7 +13,7 @@ export type ExecutorMode = 'batch' | 'single' | 'v2' | 'none';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-// Disallow obvious ETH/native mutation paths at the selector level.
+// Disallow obvious legacy/native mutation paths at the selector level.
 const FORBIDDEN_SIGNATURES = [
   'transferETH(address,uint256)',
   'setNativeCurrency(string,string,uint8)',

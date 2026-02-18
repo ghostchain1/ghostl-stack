@@ -18,7 +18,7 @@ const SLASHING_MANAGER_ADDRESS = process.env.SLASHING_MANAGER_ADDRESS;
 const EXECUTOR_ADDRESS = process.env.PROPOSAL_EXECUTOR_ADDRESS;
 const EXECUTOR_MODE = process.env.PROPOSAL_EXECUTOR_MODE as ExecutorMode | undefined;
 const PROPOSE_VIA_EXECUTOR = (process.env.PROPOSE_VIA_EXECUTOR ?? 'false') === 'true';
-const DESCRIPTION = process.env.PROPOSAL_DESCRIPTION ?? 'Update fee policy (GHOST)';
+const DESCRIPTION = process.env.PROPOSAL_DESCRIPTION ?? 'Update fee policy (GST)';
 
 const toGweiWei = (value: string | number | undefined, fallbackGwei: number) => {
   const gwei = Number(value ?? fallbackGwei);
