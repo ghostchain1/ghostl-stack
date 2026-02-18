@@ -4,6 +4,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="${ROOT_DIR:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 L1_ENV_FILE="${L1_ENV_FILE:-$ROOT_DIR/infra/ghostchain/.env.l1}"
+CLI_L1_SECRETS_SOURCE="${L1_SECRETS_SOURCE-}"
+CLI_ALLOW_DEV_SECRETS="${ALLOW_DEV_SECRETS-}"
+CLI_VAULT_ADDR="${VAULT_ADDR-}"
+CLI_VAULT_TOKEN="${VAULT_TOKEN-}"
+CLI_VAULT_ROLE_ID="${VAULT_ROLE_ID-}"
+CLI_VAULT_SECRET_ID="${VAULT_SECRET_ID-}"
 
 # shellcheck source=scripts/lib/docker.sh
 . "$ROOT_DIR/scripts/lib/docker.sh"
@@ -13,6 +19,25 @@ if [ -f "$L1_ENV_FILE" ]; then
   # shellcheck disable=SC1090
   source "$L1_ENV_FILE"
   set +a
+fi
+
+if [ -n "${CLI_L1_SECRETS_SOURCE:-}" ]; then
+  L1_SECRETS_SOURCE="$CLI_L1_SECRETS_SOURCE"
+fi
+if [ -n "${CLI_ALLOW_DEV_SECRETS:-}" ]; then
+  ALLOW_DEV_SECRETS="$CLI_ALLOW_DEV_SECRETS"
+fi
+if [ -n "${CLI_VAULT_ADDR:-}" ]; then
+  VAULT_ADDR="$CLI_VAULT_ADDR"
+fi
+if [ -n "${CLI_VAULT_TOKEN:-}" ]; then
+  VAULT_TOKEN="$CLI_VAULT_TOKEN"
+fi
+if [ -n "${CLI_VAULT_ROLE_ID:-}" ]; then
+  VAULT_ROLE_ID="$CLI_VAULT_ROLE_ID"
+fi
+if [ -n "${CLI_VAULT_SECRET_ID:-}" ]; then
+  VAULT_SECRET_ID="$CLI_VAULT_SECRET_ID"
 fi
 
 L1_COMPOSE_FILE="${L1_COMPOSE_FILE:-$ROOT_DIR/infra/ghostchain/docker-compose.l1.yml}"
