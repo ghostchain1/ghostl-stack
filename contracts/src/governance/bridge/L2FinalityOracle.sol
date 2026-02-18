@@ -1,0 +1,111 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import "../../common/Governed.sol";
+import "./IFederationFinalityVerifier.sol";
+import "./L1FinalityOracle.sol";
+
+/// @notice L2 finality oracle. A L2 root is accepted only if anchored to an L1-finalized block.
+contract L2FinalityOracle is Governed, IFederationFinalityVerifier {
+    uint256 public constant SOURCE_DOMAIN_ID = 2;
+
+    struct FinalizedL2Root {
+        bytes32 l2StateRoot;
+        uint256 l2BlockNumber;
+        uint256 l1BlockNumber;
+        bytes32 l1BlockHash;
+        bytes32 aiPolicyHash;
+        bytes32 finalityProofHash;
+        uint64 finalizedAt;
+        bool exists;
+    }
+
+    L1FinalityOracle public l1FinalityOracle;
+
+    mapping(bytes32 => FinalizedL2Root) public finalizedL2Roots;
+    mapping(bytes32 => bool) public acceptedProofHash;
+
+    event L1FinalityOracleUpdated(address indexed oracle);
+    event L2RootFinalized(
+        bytes32 indexed l2StateRoot,
+        uint256 indexed l2BlockNumber,
+        uint256 indexed l1BlockNumber,
+        bytes32 l1BlockHash,
+        bytes32 aiPolicyHash,
+        bytes32 finalityProofHash
+    );
+
+    error InvalidRoot();
+    error InvalidPolicyHash();
+    error InvalidProofHash();
+    error L1BlockNotFinalized(uint256 blockNumber, bytes32 blockHash);
+    error PolicyHashMismatch(bytes32 aiPolicyHash);
+
+    constructor(address governor_, address timelock_, L1FinalityOracle l1FinalityOracle_) Governed(governor_, timelock_) {
+        require(address(l1FinalityOracle_) != address(0), "l1Oracle=0");
+        l1FinalityOracle = l1FinalityOracle_;
+        emit L1FinalityOracleUpdated(address(l1FinalityOracle_));
+    }
+
+    function setL1FinalityOracle(L1FinalityOracle l1FinalityOracle_) external onlyGovernance {
+        require(address(l1FinalityOracle_) != address(0), "l1Oracle=0");
+        l1FinalityOracle = l1FinalityOracle_;
+        emit L1FinalityOracleUpdated(address(l1FinalityOracle_));
+    }
+
+    function recordFinalizedL2Root(
+        bytes32 l2StateRoot,
+        uint256 l2BlockNumber,
+        uint256 l1BlockNumber,
+        bytes32 l1BlockHash,
+        bytes32 aiPolicyHash,
+        bytes32 finalityProofHash
+    ) external onlyGovernance {
+        if (l2StateRoot == bytes32(0)) revert InvalidRoot();
+        if (aiPolicyHash == bytes32(0)) revert InvalidPolicyHash();
+        if (finalityProofHash == bytes32(0)) revert InvalidProofHash();
+
+        if (!l1FinalityOracle.isBlockFinalized(l1BlockNumber, l1BlockHash)) {
+            revert L1BlockNotFinalized(l1BlockNumber, l1BlockHash);
+        }
+        if (!l1FinalityOracle.isPolicyHashAccepted(aiPolicyHash)) {
+            revert PolicyHashMismatch(aiPolicyHash);
+        }
+
+        finalizedL2Roots[l2StateRoot] = FinalizedL2Root({
+            l2StateRoot: l2StateRoot,
+            l2BlockNumber: l2BlockNumber,
+            l1BlockNumber: l1BlockNumber,
+            l1BlockHash: l1BlockHash,
+            aiPolicyHash: aiPolicyHash,
+            finalityProofHash: finalityProofHash,
+            finalizedAt: uint64(block.timestamp),
+            exists: true
+        });
+
+        acceptedProofHash[finalityProofHash] = true;
+
+        emit L2RootFinalized(l2StateRoot, l2BlockNumber, l1BlockNumber, l1BlockHash, aiPolicyHash, finalityProofHash);
+    }
+
+    function isFinalizedOnL1(bytes32 l2StateRoot) external view returns (bool) {
+        return finalizedL2Roots[l2StateRoot].exists;
+    }
+
+    function isStateRootFinalized(bytes32 l2StateRoot) external view returns (bool) {
+        return finalizedL2Roots[l2StateRoot].exists;
+    }
+
+    function isFinalityProofAccepted(bytes32 finalityProofHash) external view returns (bool) {
+        return acceptedProofHash[finalityProofHash];
+    }
+
+    function isPolicyHashAccepted(bytes32 aiPolicyHash) external view returns (bool) {
+        return l1FinalityOracle.isPolicyHashAccepted(aiPolicyHash);
+    }
+
+    function verifyFinality(uint256 sourceDomainId, bytes32 finalityProofHash) external view override returns (bool) {
+        if (sourceDomainId != SOURCE_DOMAIN_ID) return false;
+        return acceptedProofHash[finalityProofHash];
+    }
+}

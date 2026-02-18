@@ -2,12 +2,27 @@ import { ethers } from "hardhat";
 import fs from "node:fs/promises";
 import path from "node:path";
 
+function normalizeAddress(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (!ethers.isAddress(trimmed)) {
+    throw new Error(`invalid address: ${trimmed}`);
+  }
+  return ethers.getAddress(trimmed);
+}
+
 async function main() {
   const root = process.env.ROOT_DIR ?? path.resolve(__dirname, "..", "..");
   const outPath = path.join(root, ".tmp", "last_l3_rollup_on_l2.json");
 
   const childChainId = BigInt(process.env.L3_CHAIN_ID ?? "903");
   const challengePeriodSeconds = BigInt(process.env.CHALLENGE_PERIOD_SECONDS ?? "30");
+  const parentFinalityOracle = normalizeAddress(
+    process.env.PARENT_FINALITY_ORACLE_ADDRESS ??
+      process.env.ROLLUP_PARENT_FINALITY_ORACLE ??
+      process.env.L3_FINALITY_ORACLE_ADDRESS
+  );
 
   const [deployer] = await ethers.getSigners();
   if (!deployer?.provider) throw new Error("missing provider (check hardhat network RPC config)");
@@ -24,6 +39,7 @@ async function main() {
   console.log("proposer:", proposer);
   console.log("childChainId:", childChainId.toString());
   console.log("challengePeriodSeconds:", challengePeriodSeconds.toString());
+  console.log("parentFinalityOracle:", parentFinalityOracle ?? "(not set)");
 
   const Rollup = await ethers.getContractFactory("OptimisticRollup", deployer);
   const rollup = await Rollup.deploy(childChainId, challengePeriodSeconds, proposer);
@@ -32,12 +48,19 @@ async function main() {
   const addr = await rollup.getAddress();
   console.log("OptimisticRollup (L3->L2, deployed on L2):", addr);
 
+  if (parentFinalityOracle) {
+    const setParentTx = await rollup.setParentFinalityOracle(parentFinalityOracle);
+    await setParentTx.wait();
+    console.log("OptimisticRollup parentFinalityOracle:", parentFinalityOracle);
+  }
+
   const out = {
     chainId: Number(net.chainId),
     deployer: deployer.address,
     proposer,
     childChainId: childChainId.toString(),
     challengePeriodSeconds: challengePeriodSeconds.toString(),
+    parentFinalityOracle: parentFinalityOracle ?? null,
     rollup: addr
   };
 
@@ -50,4 +73,3 @@ main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
-

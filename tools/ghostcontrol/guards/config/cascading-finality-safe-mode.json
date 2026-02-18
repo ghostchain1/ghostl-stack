@@ -1,0 +1,24 @@
+{
+  "safeMode": {
+    "ifL1Halts": {
+      "l2Finality": "halt",
+      "l3Finality": "halt",
+      "bridge": "disabled",
+      "mode": "read_only"
+    },
+    "ifL2Halts": {
+      "l1Finality": "continue",
+      "l3Finality": "halt",
+      "bridge": "l1_only"
+    }
+  },
+  "hierarchy": ["L3", "L2", "L1"],
+  "enforcement": {
+    "requireL2OnL1": true,
+    "requireL3OnL2": true,
+    "requireL2ParentOnL1": true,
+    "forbidL3DirectL1": true,
+    "forbidL2DirectExternal": true,
+    "forbidL3DirectExternal": true
+  }
+}
