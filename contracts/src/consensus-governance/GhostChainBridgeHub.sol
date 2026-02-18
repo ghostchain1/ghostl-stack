@@ -38,6 +38,7 @@ contract GhostChainBridgeHub is Governed {
     mapping(uint8 => bool) public layerRootPostingEnabled;
     mapping(uint256 => bool) public externalChainAllowed;
     mapping(bytes32 => LayerRootRecord) public layerRootRecords;
+    mapping(bytes32 => bytes32) public l3ParentL2Roots;
     mapping(bytes32 => OutboundMessage) public outboundMessages;
 
     uint256 public outboundNonce;
@@ -47,6 +48,7 @@ contract GhostChainBridgeHub is Governed {
     event LayerRootPostingUpdated(uint8 indexed layer, bool enabled);
     event ExternalChainAllowedUpdated(uint256 indexed chainId, bool allowed);
     event LayerRootRecorded(uint8 indexed layer, bytes32 indexed root, uint64 sourceBlockNumber, bytes32 evidenceHash, address recorder);
+    event L3RootLinkedToL2(bytes32 indexed l3Root, bytes32 indexed parentL2Root);
     event OutboundQueued(
         bytes32 indexed messageId,
         uint256 indexed nonce,
@@ -63,6 +65,8 @@ contract GhostChainBridgeHub is Governed {
     error InvalidLayer(uint8 layer);
     error PostingDisabled(uint8 layer);
     error InvalidRoot();
+    error L3RequiresParentL2Root();
+    error L2ParentRootNotRecorded(bytes32 parentL2Root);
     error OnlyGhostChainEgress(uint8 sourceLayer);
     error ExternalChainNotAllowed(uint256 chainId);
     error OutboundAlreadyExecuted(bytes32 messageId);
@@ -107,6 +111,7 @@ contract GhostChainBridgeHub is Governed {
         onlyOperatorOrGovernance
     {
         if (layer != LAYER_L2 && layer != LAYER_L3) revert InvalidLayer(layer);
+        if (layer == LAYER_L3) revert L3RequiresParentL2Root();
         if (!layerRootPostingEnabled[layer]) revert PostingDisabled(layer);
         if (root == bytes32(0)) revert InvalidRoot();
 
@@ -120,6 +125,34 @@ contract GhostChainBridgeHub is Governed {
         });
 
         emit LayerRootRecorded(layer, root, sourceBlockNumber, evidenceHash, msg.sender);
+    }
+
+    /// @notice Record an L3 root that is explicitly linked to an already recorded L2 root.
+    function recordL3LayerRoot(
+        bytes32 l3Root,
+        bytes32 parentL2Root,
+        uint64 sourceBlockNumber,
+        bytes32 evidenceHash
+    ) external onlyOperatorOrGovernance {
+        if (!layerRootPostingEnabled[LAYER_L3]) revert PostingDisabled(LAYER_L3);
+        if (l3Root == bytes32(0)) revert InvalidRoot();
+        if (parentL2Root == bytes32(0)) revert InvalidRoot();
+
+        bytes32 parentRootId = computeLayerRootId(LAYER_L2, parentL2Root);
+        if (layerRootRecords[parentRootId].recordedAt == 0) revert L2ParentRootNotRecorded(parentL2Root);
+
+        bytes32 l3RootId = computeLayerRootId(LAYER_L3, l3Root);
+        layerRootRecords[l3RootId] = LayerRootRecord({
+            root: l3Root,
+            sourceBlockNumber: sourceBlockNumber,
+            recordedAt: uint64(block.timestamp),
+            evidenceHash: evidenceHash,
+            recorder: msg.sender
+        });
+        l3ParentL2Roots[l3Root] = parentL2Root;
+
+        emit LayerRootRecorded(LAYER_L3, l3Root, sourceBlockNumber, evidenceHash, msg.sender);
+        emit L3RootLinkedToL2(l3Root, parentL2Root);
     }
 
     function queueOutboundMessage(uint8 sourceLayer, uint256 destinationChainId, address asset, uint256 amount, bytes32 payloadHash)
@@ -184,6 +217,10 @@ contract GhostChainBridgeHub is Governed {
     function hasLayerRoot(uint8 layer, bytes32 root) external view returns (bool) {
         bytes32 rootId = computeLayerRootId(layer, root);
         return layerRootRecords[rootId].recordedAt != 0;
+    }
+
+    function isLinkedL3ToL2(bytes32 l3Root, bytes32 parentL2Root) external view returns (bool) {
+        return l3ParentL2Roots[l3Root] == parentL2Root;
     }
 
     function computeLayerRootId(uint8 layer, bytes32 root) public pure returns (bytes32) {
