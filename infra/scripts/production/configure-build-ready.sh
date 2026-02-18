@@ -568,6 +568,7 @@ run_step "doctor-l2" env \
   STACK_ENV_FILE="$STACK_ENV_FILE_ACTIVE" \
   L2_SECRETS_SOURCE="$SECRETS_SOURCE" \
   ALLOW_DEV_SECRETS="$ALLOW_DEV_SECRETS_VALUE" \
+  L2_AUTO_RECOVER_ON_STALL="$([ "$MODE" = "dev" ] && echo 0 || echo 1)" \
   L2_REQUIRE_L2_PROGRESS="$([ "$MODE" = "dev" ] && echo 0 || echo 1)" \
   bash "$ROOT_DIR/infra/scripts/doctor-l2.sh"
 
@@ -600,6 +601,7 @@ if [ "$SKIP_GATES" != "1" ]; then
     STACK_ENV_FILE="$STACK_ENV_FILE_ACTIVE" \
     L2_SECRETS_SOURCE="$SECRETS_SOURCE" \
     ALLOW_DEV_SECRETS="$ALLOW_DEV_SECRETS_VALUE" \
+    L2_AUTO_RECOVER_ON_STALL="$([ "$MODE" = "dev" ] && echo 0 || echo 1)" \
     L2_GO_NO_GO_REQUIRE_SCANS="$([ "$MODE" = "dev" ] && echo 0 || echo 1)" \
     L2_GO_NO_GO_REQUIRE_PROGRESS="$([ "$MODE" = "dev" ] && echo 0 || echo 1)" \
     bash "$ROOT_DIR/infra/scripts/gates/l2-go-no-go.sh"
