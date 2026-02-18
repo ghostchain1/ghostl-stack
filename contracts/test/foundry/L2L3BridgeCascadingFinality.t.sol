@@ -117,6 +117,6 @@ contract L2L3BridgeCascadingFinalityTest is TestBase {
 
     function _recordL3Finality() internal {
         vm.prank(TIMELOCK);
-        l3Oracle.recordFinalizedL3Root(l3Root, 300, l2Root, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l3"));
+        l3Oracle.recordFinalizedL3Root(l3Root, 300, l2Root, 200, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l3"));
     }
 }

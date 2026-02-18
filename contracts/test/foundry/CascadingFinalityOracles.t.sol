@@ -93,6 +93,7 @@ contract CascadingFinalityOraclesTest is TestBase {
             l3Root,
             300,
             missingParent,
+            999,
             100,
             L1_BLOCK_HASH,
             POLICY_HASH,
@@ -100,14 +101,48 @@ contract CascadingFinalityOraclesTest is TestBase {
         );
 
         bytes32 parentL2Root = keccak256("l2-root-2");
+        bytes32 altParentL2Root = keccak256("l2-root-3");
         vm.prank(GOVERNOR);
         l2Oracle.recordFinalizedL2Root(parentL2Root, 201, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l2-2"));
+        vm.prank(GOVERNOR);
+        l2Oracle.recordFinalizedL2Root(altParentL2Root, 202, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l2-3"));
+
+        vm.prank(TIMELOCK);
+        vm.expectRevert(abi.encodeWithSelector(L3FinalityOracle.L2CanonicalRootUnavailable.selector, uint256(777)));
+        l3Oracle.recordFinalizedL3Root(
+            l3Root,
+            301,
+            parentL2Root,
+            777,
+            100,
+            L1_BLOCK_HASH,
+            POLICY_HASH,
+            keccak256("proof-l3-missing-canonical")
+        );
+
+        vm.prank(TIMELOCK);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                L3FinalityOracle.L2ParentBlockCanonicalMismatch.selector, uint256(202), altParentL2Root, parentL2Root
+            )
+        );
+        l3Oracle.recordFinalizedL3Root(
+            l3Root,
+            301,
+            parentL2Root,
+            202,
+            100,
+            L1_BLOCK_HASH,
+            POLICY_HASH,
+            keccak256("proof-l3-canonical-mismatch")
+        );
 
         vm.prank(TIMELOCK);
         l3Oracle.recordFinalizedL3Root(
             l3Root,
             301,
             parentL2Root,
+            201,
             100,
             L1_BLOCK_HASH,
             POLICY_HASH,
@@ -116,5 +151,6 @@ contract CascadingFinalityOraclesTest is TestBase {
 
         assertTrue(l3Oracle.isFinalizedOnL2(l3Root), "l3 finalized on l2");
         assertTrue(l3Oracle.isParentL2FinalizedOnL1(parentL2Root), "parent l2 finalized on l1");
+        assertEq(l3Oracle.parentL2Block(l3Root), 201, "parent l2 block bound");
     }
 }

@@ -14,6 +14,7 @@ contract L3FinalityOracle is Governed, IFederationFinalityVerifier {
         bytes32 l3StateRoot;
         uint256 l3BlockNumber;
         bytes32 parentL2StateRoot;
+        uint256 parentL2BlockNumber;
         uint256 l1BlockNumber;
         bytes32 l1BlockHash;
         bytes32 aiPolicyHash;
@@ -34,6 +35,7 @@ contract L3FinalityOracle is Governed, IFederationFinalityVerifier {
         bytes32 indexed l3StateRoot,
         uint256 indexed l3BlockNumber,
         bytes32 indexed parentL2StateRoot,
+        uint256 parentL2BlockNumber,
         uint256 l1BlockNumber,
         bytes32 l1BlockHash,
         bytes32 aiPolicyHash,
@@ -44,6 +46,8 @@ contract L3FinalityOracle is Governed, IFederationFinalityVerifier {
     error InvalidPolicyHash();
     error InvalidProofHash();
     error L2ParentNotFinalizedOnL1(bytes32 parentL2StateRoot);
+    error L2CanonicalRootUnavailable(uint256 l2BlockNumber);
+    error L2ParentBlockCanonicalMismatch(uint256 l2BlockNumber, bytes32 canonicalRoot, bytes32 providedParentRoot);
     error L1BlockNotFinalized(uint256 blockNumber, bytes32 blockHash);
     error PolicyHashMismatch(bytes32 aiPolicyHash);
 
@@ -77,6 +81,7 @@ contract L3FinalityOracle is Governed, IFederationFinalityVerifier {
         bytes32 l3StateRoot,
         uint256 l3BlockNumber,
         bytes32 parentL2StateRoot,
+        uint256 parentL2BlockNumber,
         uint256 l1BlockNumber,
         bytes32 l1BlockHash,
         bytes32 aiPolicyHash,
@@ -90,6 +95,13 @@ contract L3FinalityOracle is Governed, IFederationFinalityVerifier {
         if (!l2FinalityOracle.isFinalizedOnL1(parentL2StateRoot)) {
             revert L2ParentNotFinalizedOnL1(parentL2StateRoot);
         }
+        bytes32 canonicalParentRoot = l2FinalityOracle.canonicalRootByL2Block(parentL2BlockNumber);
+        if (canonicalParentRoot == bytes32(0)) {
+            revert L2CanonicalRootUnavailable(parentL2BlockNumber);
+        }
+        if (canonicalParentRoot != parentL2StateRoot) {
+            revert L2ParentBlockCanonicalMismatch(parentL2BlockNumber, canonicalParentRoot, parentL2StateRoot);
+        }
         if (!l1FinalityOracle.isBlockFinalized(l1BlockNumber, l1BlockHash)) {
             revert L1BlockNotFinalized(l1BlockNumber, l1BlockHash);
         }
@@ -101,6 +113,7 @@ contract L3FinalityOracle is Governed, IFederationFinalityVerifier {
             l3StateRoot: l3StateRoot,
             l3BlockNumber: l3BlockNumber,
             parentL2StateRoot: parentL2StateRoot,
+            parentL2BlockNumber: parentL2BlockNumber,
             l1BlockNumber: l1BlockNumber,
             l1BlockHash: l1BlockHash,
             aiPolicyHash: aiPolicyHash,
@@ -115,6 +128,7 @@ contract L3FinalityOracle is Governed, IFederationFinalityVerifier {
             l3StateRoot,
             l3BlockNumber,
             parentL2StateRoot,
+            parentL2BlockNumber,
             l1BlockNumber,
             l1BlockHash,
             aiPolicyHash,
@@ -132,6 +146,10 @@ contract L3FinalityOracle is Governed, IFederationFinalityVerifier {
 
     function parentL2Root(bytes32 l3StateRoot) external view returns (bytes32) {
         return finalizedL3Roots[l3StateRoot].parentL2StateRoot;
+    }
+
+    function parentL2Block(bytes32 l3StateRoot) external view returns (uint256) {
+        return finalizedL3Roots[l3StateRoot].parentL2BlockNumber;
     }
 
     function isStateRootFinalized(bytes32 l3StateRoot) external view returns (bool) {
