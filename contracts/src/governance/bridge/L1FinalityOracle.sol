@@ -74,7 +74,7 @@ contract L1FinalityOracle is Governed {
     }
 
     /// @notice Alias for generic settlement contracts expecting a root-style API.
-    function isStateRootFinalized(bytes32 rootOrHash) external view returns (bool) {
+    function isStateRootFinalized(bytes32 rootOrHash) external pure returns (bool) {
         // L1 oracle indexes by block number + hash, not by root hash. Keep strict false for generic callers.
         rootOrHash;
         return false;
