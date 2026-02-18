@@ -4076,11 +4076,13 @@
           "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "read_only": true,
           "source": "${OP_CHALLENGER_ASSETS_DIR:-./optimism/op-program/bin}",
           "target": "/assets/op-program",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
           "bind": {
@@ -4213,16 +4215,20 @@
           "volume": {}
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../.devnet/genesis-l1.json",
           "target": "/genesis.json",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/test-jwt-secret.txt",
           "target": "/config/jwt-secret.txt",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         }
       ],
       "labels": {
@@ -4280,28 +4286,36 @@
           "volume": {}
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/test-jwt-secret.txt",
           "target": "/config/jwt-secret.txt",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/beacon-data/config.yaml",
           "target": "/genesis/config.yaml",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/beacon-data/deposit_contract_block.txt",
           "target": "/genesis/deposit_contract_block.txt",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../.devnet/genesis-l1.ssz",
           "target": "/genesis/genesis.ssz",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         }
       ],
       "labels": {
@@ -4349,34 +4363,44 @@
           "volume": {}
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/beacon-data/data/keys",
           "target": "/validator_setup/validators",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/beacon-data/data/secrets",
           "target": "/validator_setup/secrets",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/beacon-data/config.yaml",
           "target": "/genesis/config.yaml",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/beacon-data/deposit_contract_block.txt",
           "target": "/genesis/deposit_contract_block.txt",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../.devnet/genesis-l1.ssz",
           "target": "/genesis/genesis.ssz",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         }
       ],
       "labels": {
@@ -4435,16 +4459,20 @@
           "volume": {}
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../.devnet-interop/genesis/l2/900200/genesis.json",
           "target": "/genesis.json",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../ops-bedrock/test-jwt-secret.txt",
           "target": "/config/jwt-secret.txt",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         }
       ],
       "labels": {
@@ -4503,16 +4531,20 @@
           "volume": {}
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../.devnet-interop/genesis/l2/900201/genesis.json",
           "target": "/genesis.json",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../ops-bedrock/test-jwt-secret.txt",
           "target": "/config/jwt-secret.txt",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         }
       ],
       "labels": {
@@ -4550,7 +4582,7 @@
       "env_file": [
         {
           "path": "${PWD}/../.devnet-interop/env/l2/900200/op-batcher.env",
-          "required": true
+          "required": false
         }
       ],
       "command": "op-batcher --l1-eth-rpc=http://l1:8545 --l2-eth-rpc=http://l2-a:8545 --rollup-rpc=http://op-node-a:8545\n",
@@ -4624,7 +4656,7 @@
       "env_file": [
         {
           "path": "${PWD}/../.devnet-interop/env/l2/900201/op-batcher.env",
-          "required": true
+          "required": false
         }
       ],
       "command": "op-batcher --l1-eth-rpc=http://l1:8545 --l2-eth-rpc=http://l2-b:8545 --rollup-rpc=http://op-node-b:8545\n",
@@ -4707,7 +4739,7 @@
       "env_file": [
         {
           "path": "${PWD}/../.devnet-interop/env/l2/900200/op-node.env",
-          "required": true
+          "required": false
         }
       ],
       "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:devnet",
@@ -4748,16 +4780,20 @@
           "volume": {}
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../ops-bedrock/test-jwt-secret.txt",
           "target": "/config/jwt-secret.txt",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../.devnet-interop/genesis/l2/900200/rollup.json",
           "target": "/rollup.json",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
           "source": "op_log_a",
@@ -4810,7 +4846,7 @@
       "env_file": [
         {
           "path": "${PWD}/../.devnet-interop/env/l2/900201/op-node.env",
-          "required": true
+          "required": false
         }
       ],
       "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:devnet",
@@ -4851,16 +4887,20 @@
           "volume": {}
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../ops-bedrock/test-jwt-secret.txt",
           "target": "/config/jwt-secret.txt",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../.devnet-interop/genesis/l2/900201/rollup.json",
           "target": "/rollup.json",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
           "source": "op_log_b",
@@ -4900,7 +4940,7 @@
       "env_file": [
         {
           "path": "${PWD}/../.devnet-interop/env/l2/900200/op-proposer.env",
-          "required": true
+          "required": false
         }
       ],
       "command": "op-proposer --l1-eth-rpc=http://l1:8545 --rollup-rpc=http://op-node-a:8545\n",
@@ -4970,7 +5010,7 @@
       "env_file": [
         {
           "path": "${PWD}/../.devnet-interop/env/l2/900201/op-proposer.env",
-          "required": true
+          "required": false
         }
       ],
       "command": "op-proposer --l1-eth-rpc=http://l1:8545 --rollup-rpc=http://op-node-b:8545\n",
@@ -5138,11 +5178,13 @@
       ],
       "volumes": [
         {
+          "bind": {
+            "create_host_path": true
+          },
           "read_only": true,
           "source": "${PWD}/../.devnet/",
           "target": "/usr/share/nginx/html",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         }
       ],
       "labels": {
@@ -5230,16 +5272,20 @@
           "volume": {}
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../.devnet/genesis-l2.json",
           "target": "/genesis.json",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         },
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/test-jwt-secret.txt",
           "target": "/config/jwt-secret.txt",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         }
       ],
       "labels": {
@@ -5262,10 +5308,12 @@
       },
       "volumes": [
         {
+          "bind": {
+            "create_host_path": true
+          },
           "source": "${PWD}/../.devnet/rollup.json",
           "target": "/rollup.json",
-          "type": "volume",
-          "volume": {}
+          "type": "bind"
         }
       ],
       "labels": {
