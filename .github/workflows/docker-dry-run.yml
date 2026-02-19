@@ -23,6 +23,8 @@ concurrency:
 jobs:
   docker-dry-run:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
