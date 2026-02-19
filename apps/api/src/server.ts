@@ -722,7 +722,22 @@ const contractMetadata = {
 const CONTRACT_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 const BYTES32_REGEX = /^0x[a-fA-F0-9]{64}$/;
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-const l1FinalityOracleReadInterface = new Interface(['function acceptedPolicyHash(bytes32) view returns (bool)']);
+const l1FinalityOracleReadInterface = new Interface([
+  'function acceptedPolicyHash(bytes32) view returns (bool)',
+  'event L1BlockFinalized(uint256 indexed blockNumber, bytes32 indexed blockHash, bytes32 indexed quorumCertHash, bytes32 aiPolicyHash, uint64 finalizedAt)'
+]);
+const L1_FINALIZED_EVENT_LOOKBACK_WINDOW = 10_000;
+const L1_FINALIZED_EVENT_MAX_LOOKBACK = 500_000;
+const L1_FINALIZED_POLICY_HASH_CACHE_MS = 15_000;
+const l1FinalizedPolicyHashCache: {
+  oracleAddress: string;
+  expiresAt: number;
+  value: { policyHash: string; l1BlockNumber: number } | null;
+} = {
+  oracleAddress: '',
+  expiresAt: 0,
+  value: null
+};
 const contractRegistrationSchema = z.object({
   name: z.string().min(1),
   address: z
@@ -1343,6 +1358,56 @@ const readAcceptedPolicyHashOnL1 = async (oracleAddress: string, policyHash: str
     const raw = await provider.call({ to: oracleAddress, data });
     const [accepted] = l1FinalityOracleReadInterface.decodeFunctionResult('acceptedPolicyHash', raw);
     return Boolean(accepted);
+  });
+
+const readLatestFinalizedPolicyHashOnL1 = async (oracleAddress: string) =>
+  ghostWalletRpcManager.withProvider('l1', async (provider) => {
+    const now = Date.now();
+    if (
+      l1FinalizedPolicyHashCache.oracleAddress === oracleAddress.toLowerCase() &&
+      l1FinalizedPolicyHashCache.expiresAt > now
+    ) {
+      return l1FinalizedPolicyHashCache.value;
+    }
+
+    const latestBlock = await provider.getBlockNumber();
+    const minBlock = Math.max(0, latestBlock - L1_FINALIZED_EVENT_MAX_LOOKBACK);
+    const topics = l1FinalityOracleReadInterface.encodeFilterTopics('L1BlockFinalized', []);
+    let toBlock = latestBlock;
+
+    while (toBlock >= minBlock) {
+      const fromBlock = Math.max(minBlock, toBlock - L1_FINALIZED_EVENT_LOOKBACK_WINDOW + 1);
+      const logs = await provider.getLogs({
+        address: oracleAddress,
+        fromBlock,
+        toBlock,
+        topics
+      });
+      if (logs.length > 0) {
+        const latest = logs[logs.length - 1];
+        const parsed = l1FinalityOracleReadInterface.parseLog(latest);
+        if (parsed) {
+          const policyHash = String(parsed.args[3] || '');
+          const blockNumberRaw = parsed.args[0];
+          const l1BlockNumber =
+            typeof blockNumberRaw === 'bigint' ? Number(blockNumberRaw) : Number(blockNumberRaw || latest.blockNumber);
+          if (BYTES32_REGEX.test(policyHash) && Number.isFinite(l1BlockNumber)) {
+            const value = { policyHash, l1BlockNumber };
+            l1FinalizedPolicyHashCache.oracleAddress = oracleAddress.toLowerCase();
+            l1FinalizedPolicyHashCache.expiresAt = now + L1_FINALIZED_POLICY_HASH_CACHE_MS;
+            l1FinalizedPolicyHashCache.value = value;
+            return value;
+          }
+        }
+      }
+      if (fromBlock <= minBlock) break;
+      toBlock = fromBlock - 1;
+    }
+
+    l1FinalizedPolicyHashCache.oracleAddress = oracleAddress.toLowerCase();
+    l1FinalizedPolicyHashCache.expiresAt = now + L1_FINALIZED_POLICY_HASH_CACHE_MS;
+    l1FinalizedPolicyHashCache.value = null;
+    return null;
   });
 
 const sendRawTx = async (to: string, data: string) => {
@@ -2552,7 +2617,7 @@ app.get(['/v1/api/contracts/readiness', '/api/contracts/readiness'], requirePerm
     { source: 'AI_POLICY_HASH', value: String(seedEnv.AI_POLICY_HASH || '').trim() },
     { source: 'CHAIN_POLICY_CHECKPOINT_HASH', value: String(seedEnv.CHAIN_POLICY_CHECKPOINT_HASH || '').trim() }
   ];
-  const aiPolicyHashConfig = aiPolicyHashCandidates.find((candidate) => BYTES32_REGEX.test(candidate.value));
+  const aiPolicyHashConfig = aiPolicyHashCandidates.find((candidate) => BYTES32_REGEX.test(candidate.value)) || null;
 
   if (!CONTRACT_ADDRESS_REGEX.test(l1FinalityOracleAddress)) {
     res.json({
@@ -2566,35 +2631,65 @@ app.get(['/v1/api/contracts/readiness', '/api/contracts/readiness'], requirePerm
     return;
   }
 
-  if (!aiPolicyHashConfig) {
+  let resolvedPolicyHash = aiPolicyHashConfig?.value || null;
+  let policyHashSource = aiPolicyHashConfig?.source || null;
+  let resolutionDetail = '';
+  let resolvedFromL1Block: number | null = null;
+
+  if (!resolvedPolicyHash) {
+    try {
+      const latestFinalized = await readLatestFinalizedPolicyHashOnL1(l1FinalityOracleAddress);
+      if (latestFinalized?.policyHash && BYTES32_REGEX.test(latestFinalized.policyHash)) {
+        resolvedPolicyHash = latestFinalized.policyHash;
+        policyHashSource = 'L1BlockFinalized.event';
+        resolvedFromL1Block = latestFinalized.l1BlockNumber;
+        resolutionDetail = `derived from latest L1BlockFinalized event at L1 block ${latestFinalized.l1BlockNumber}`;
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'l1_finalized_event_lookup_failed';
+      res.json({
+        ok: true,
+        l1FinalityOracleAddress,
+        aiPolicyHash: null,
+        aiPolicyHashAccepted: null,
+        policyHashSource: null,
+        detail: `AI policy hash not configured and fallback lookup failed: ${message}`
+      });
+      return;
+    }
+  }
+
+  if (!resolvedPolicyHash) {
     res.json({
       ok: true,
       l1FinalityOracleAddress,
       aiPolicyHash: null,
       aiPolicyHashAccepted: null,
       policyHashSource: null,
-      detail: 'AI_POLICY_HASH/CHAIN_POLICY_CHECKPOINT_HASH not configured'
+      detail: 'AI policy hash not configured and no L1BlockFinalized event policy hash found'
     });
     return;
   }
 
   try {
-    const accepted = await readAcceptedPolicyHashOnL1(l1FinalityOracleAddress, aiPolicyHashConfig.value);
+    const accepted = await readAcceptedPolicyHashOnL1(l1FinalityOracleAddress, resolvedPolicyHash);
+    const baseDetail = accepted ? 'policy hash accepted on L1 finality oracle' : 'policy hash not accepted on L1 finality oracle';
+    const sourceDetail = resolutionDetail || (resolvedFromL1Block !== null ? `derived from L1 block ${resolvedFromL1Block}` : '');
     res.json({
       ok: true,
       l1FinalityOracleAddress,
-      aiPolicyHash: aiPolicyHashConfig.value,
+      aiPolicyHash: resolvedPolicyHash,
       aiPolicyHashAccepted: accepted,
-      policyHashSource: aiPolicyHashConfig.source,
-      detail: accepted ? 'policy hash accepted on L1 finality oracle' : 'policy hash not accepted on L1 finality oracle'
+      policyHashSource,
+      detail: sourceDetail ? `${baseDetail}; ${sourceDetail}` : baseDetail
     });
   } catch (err) {
     res.json({
       ok: true,
       l1FinalityOracleAddress,
-      aiPolicyHash: aiPolicyHashConfig.value,
+      aiPolicyHash: resolvedPolicyHash,
       aiPolicyHashAccepted: null,
-      policyHashSource: aiPolicyHashConfig.source,
+      policyHashSource,
       detail: err instanceof Error ? err.message : 'l1_policy_hash_check_failed'
     });
   }
