@@ -5,6 +5,9 @@ on:
       - CI
     types:
       - completed
+    branches:
+      - main
+      - master
   workflow_dispatch:
     inputs:
       environment:
