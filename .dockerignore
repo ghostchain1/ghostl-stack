@@ -53,6 +53,11 @@ chains/**
 apps/worker
 apps/worker/**
 
+# Keep deterministic AI observability modules available for API TypeScript builds.
+!observability/
+!observability/ai/
+!observability/ai/**
+
 # Allow building the Liquidity Gravity Engine router image from repo root context.
 !services/liquidity-router
 !services/liquidity-router/**
