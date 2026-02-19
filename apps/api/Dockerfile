@@ -35,7 +35,7 @@ FROM node:22.21.0-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/dist/apps/api ./apps/api/dist
 COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
 COPY --from=builder /app/packages ./packages
 WORKDIR /app/apps/api
