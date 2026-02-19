@@ -23,6 +23,18 @@ const layerLabel: Record<LayerKey, string> = {
   l3: 'GhostL3'
 };
 
+const SOVEREIGNTY_CRITICAL_ALERTS = new Set([
+  'GhostSovereigntyViolationSignal',
+  'GhostLayerUnhealthy',
+  'GhostConsensusTelemetryDown'
+]);
+
+const SOVEREIGNTY_WARNING_ALERTS = new Set([
+  'GhostCascadingFinalityLag',
+  'GhostSettlementAgeHigh',
+  'GhostBridgeFinalizeStalled'
+]);
+
 const formatLag = (value?: number) => (typeof value === 'number' ? value.toString() : 'n/a');
 const formatBlock = (value?: number) => (typeof value === 'number' ? value.toLocaleString('en-US') : 'n/a');
 const lagTone = (value?: number): 'default' | 'success' | 'warning' | 'critical' => {
@@ -59,6 +71,24 @@ export default async function DashboardPage() {
   const firingAlerts = alerts.filter((alert) => alert.state === 'firing');
   const firingCritical = firingAlerts.filter((alert) => alert.severity === 'critical').length;
   const firingWarning = firingAlerts.filter((alert) => alert.severity === 'warning').length;
+  const sovereigntyAlerts = firingAlerts.filter((alert) => {
+    if (SOVEREIGNTY_CRITICAL_ALERTS.has(alert.id) || SOVEREIGNTY_WARNING_ALERTS.has(alert.id)) return true;
+    const text = `${alert.id} ${alert.message || ''}`.toLowerCase();
+    return (
+      text.includes('sovereignty') ||
+      text.includes('cascading') ||
+      text.includes('finality') ||
+      text.includes('settlement') ||
+      text.includes('bridge')
+    );
+  });
+  const sovereigntyCritical = sovereigntyAlerts.filter(
+    (alert) => alert.severity === 'critical' || SOVEREIGNTY_CRITICAL_ALERTS.has(alert.id)
+  ).length;
+  const sovereigntyWarning = sovereigntyAlerts.filter(
+    (alert) => alert.severity === 'warning' || SOVEREIGNTY_WARNING_ALERTS.has(alert.id)
+  ).length;
+  const sovereigntySignalIds = Array.from(new Set(sovereigntyAlerts.map((alert) => alert.id))).slice(0, 3);
   const latestAlert = firingAlerts.reduce<Alert | null>((latest, current) => {
     if (!latest) return current;
     return (current.firedAt || '').localeCompare(latest.firedAt || '') > 0 ? current : latest;
@@ -131,6 +161,17 @@ export default async function DashboardPage() {
               </div>
               <div className="kpi-foot">
                 {firingCritical} critical / {firingWarning} warning
+              </div>
+            </div>
+            <div className="kpi-card">
+              <div className="kpi-label">Sovereignty Signals</div>
+              <div className="kpi-value">
+                <Badge tone={sovereigntyCritical > 0 ? 'critical' : sovereigntyWarning > 0 ? 'warning' : 'default'}>
+                  {sovereigntyAlerts.length}
+                </Badge>
+              </div>
+              <div className="kpi-foot">
+                {sovereigntyCritical} critical / {sovereigntyWarning} warning
               </div>
             </div>
           </div>
@@ -211,6 +252,28 @@ export default async function DashboardPage() {
             </div>
             <div className="muted" style={{ marginTop: 8 }}>
               Latest: {latestAlert?.id || latestAlert?.source || 'none'}
+            </div>
+          </div>
+        </Card>
+
+        <Card title="Sovereignty Signals" subtitle="Cascading finality and bridge risk">
+          <div className="stack">
+            <div className="spread">
+              <span className="muted">Firing sovereignty alerts</span>
+              <Badge tone={sovereigntyCritical > 0 ? 'critical' : sovereigntyWarning > 0 ? 'warning' : 'default'}>
+                {sovereigntyAlerts.length}
+              </Badge>
+            </div>
+            <div className="spread">
+              <span className="muted">Critical</span>
+              <Badge tone={sovereigntyCritical > 0 ? 'critical' : 'default'}>{sovereigntyCritical}</Badge>
+            </div>
+            <div className="spread">
+              <span className="muted">Warning</span>
+              <Badge tone={sovereigntyWarning > 0 ? 'warning' : 'default'}>{sovereigntyWarning}</Badge>
+            </div>
+            <div className="muted" style={{ marginTop: 8 }}>
+              Top signals: {sovereigntySignalIds.length ? sovereigntySignalIds.join(', ') : 'none'}
             </div>
           </div>
         </Card>
