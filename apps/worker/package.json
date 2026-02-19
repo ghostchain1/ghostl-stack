@@ -11,12 +11,12 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "bullmq": "5.15.0",
-    "ioredis": "5.4.1"
+    "bullmq": "5.69.3",
+    "ioredis": "5.9.3"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",
-    "typescript": "5.6.3"
+    "typescript": "5.9.3"
   },
   "engines": {
     "node": ">=22.21.0 <23"

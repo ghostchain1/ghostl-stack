@@ -134,7 +134,9 @@ type AlertSummary = { total: number; active: number };
 const apiHealthSchema = z
   .object({
     status: z.string().optional(),
-    dependencies: z.record(z.object({ ok: z.boolean().optional(), url: z.string().optional() })).optional()
+    dependencies: z
+      .record(z.string(), z.object({ ok: z.boolean().optional(), url: z.string().optional() }))
+      .optional()
   })
   .nullable();
 
