@@ -13,7 +13,7 @@
     "@ghostl/contract-schemas": "0.0.1",
     "@ghostl/ui": "0.0.1",
     "ethers": "^6.13.2",
-    "next": "15.5.11",
+    "next": "15.5.12",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^3.25.76"
