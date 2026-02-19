@@ -720,7 +720,9 @@ const contractMetadata = {
   pauseQuery: env.CONTRACT_PAUSE_QUERY || 'op_contract_paused'
 };
 const CONTRACT_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
+const BYTES32_REGEX = /^0x[a-fA-F0-9]{64}$/;
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const l1FinalityOracleReadInterface = new Interface(['function acceptedPolicyHash(bytes32) view returns (bool)']);
 const contractRegistrationSchema = z.object({
   name: z.string().min(1),
   address: z
@@ -1334,6 +1336,14 @@ const tryResolveContractProvider = () => {
     return null;
   }
 };
+
+const readAcceptedPolicyHashOnL1 = async (oracleAddress: string, policyHash: string) =>
+  ghostWalletRpcManager.withProvider('l1', async (provider) => {
+    const data = l1FinalityOracleReadInterface.encodeFunctionData('acceptedPolicyHash', [policyHash]);
+    const raw = await provider.call({ to: oracleAddress, data });
+    const [accepted] = l1FinalityOracleReadInterface.decodeFunctionResult('acceptedPolicyHash', raw);
+    return Boolean(accepted);
+  });
 
 const sendRawTx = async (to: string, data: string) => {
   if (!env.CONTRACT_ADMIN_KEY) {
@@ -2533,6 +2543,61 @@ app.get(['/v1/api/contracts', '/api/contracts'], requirePermission('contracts:re
       riskError
     }
   });
+});
+
+app.get(['/v1/api/contracts/readiness', '/api/contracts/readiness'], requirePermission('contracts:read'), async (_req, res) => {
+  const seedEnv = loadSeedEnv();
+  const l1FinalityOracleAddress = String(seedEnv.L1_FINALITY_ORACLE_ADDRESS || '').trim();
+  const aiPolicyHashCandidates = [
+    { source: 'AI_POLICY_HASH', value: String(seedEnv.AI_POLICY_HASH || '').trim() },
+    { source: 'CHAIN_POLICY_CHECKPOINT_HASH', value: String(seedEnv.CHAIN_POLICY_CHECKPOINT_HASH || '').trim() }
+  ];
+  const aiPolicyHashConfig = aiPolicyHashCandidates.find((candidate) => BYTES32_REGEX.test(candidate.value));
+
+  if (!CONTRACT_ADDRESS_REGEX.test(l1FinalityOracleAddress)) {
+    res.json({
+      ok: true,
+      l1FinalityOracleAddress: l1FinalityOracleAddress || null,
+      aiPolicyHash: aiPolicyHashConfig?.value || null,
+      aiPolicyHashAccepted: null,
+      policyHashSource: aiPolicyHashConfig?.source || null,
+      detail: 'L1_FINALITY_ORACLE_ADDRESS missing or invalid'
+    });
+    return;
+  }
+
+  if (!aiPolicyHashConfig) {
+    res.json({
+      ok: true,
+      l1FinalityOracleAddress,
+      aiPolicyHash: null,
+      aiPolicyHashAccepted: null,
+      policyHashSource: null,
+      detail: 'AI_POLICY_HASH/CHAIN_POLICY_CHECKPOINT_HASH not configured'
+    });
+    return;
+  }
+
+  try {
+    const accepted = await readAcceptedPolicyHashOnL1(l1FinalityOracleAddress, aiPolicyHashConfig.value);
+    res.json({
+      ok: true,
+      l1FinalityOracleAddress,
+      aiPolicyHash: aiPolicyHashConfig.value,
+      aiPolicyHashAccepted: accepted,
+      policyHashSource: aiPolicyHashConfig.source,
+      detail: accepted ? 'policy hash accepted on L1 finality oracle' : 'policy hash not accepted on L1 finality oracle'
+    });
+  } catch (err) {
+    res.json({
+      ok: true,
+      l1FinalityOracleAddress,
+      aiPolicyHash: aiPolicyHashConfig.value,
+      aiPolicyHashAccepted: null,
+      policyHashSource: aiPolicyHashConfig.source,
+      detail: err instanceof Error ? err.message : 'l1_policy_hash_check_failed'
+    });
+  }
 });
 
 app.get(['/v1/api/contracts/state', '/api/contracts/state'], requirePermission('contracts:read'), async (_req, res) => {
