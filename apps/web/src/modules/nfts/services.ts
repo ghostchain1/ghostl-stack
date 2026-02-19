@@ -21,7 +21,7 @@ const tokenSchema = z.object({
   tokenId: z.string(),
   owner: z.string(),
   uri: z.string().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   mintedAt: z.string(),
   updatedAt: z.string(),
   burnedAt: z.string().optional(),

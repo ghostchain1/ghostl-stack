@@ -231,7 +231,7 @@ export const ContractSchema = z.object({
   chainId: z.number().optional(),
   abiHash: z.string().optional(),
   version: z.string().optional(),
-  risk: z.record(z.unknown()).optional()
+  risk: z.record(z.string(), z.unknown()).optional()
 });
 export const ContractsResponseSchema = z.object({
   contracts: z.array(ContractSchema),
@@ -283,16 +283,16 @@ export const TreasurySummarySchema = z.object({
       token: z.string().optional()
     })
     .optional(),
-  proposals: z.array(z.record(z.unknown())),
+  proposals: z.array(z.record(z.string(), z.unknown())),
   payouts: z.array(TreasuryTxSchema)
 });
 export type TreasurySummary = z.infer<typeof TreasurySummarySchema>;
 
 export const GovernanceSummarySchema = z.object({
-  proposals: z.array(z.record(z.unknown())),
-  votes: z.array(z.record(z.unknown())),
-  queue: z.array(z.record(z.unknown())),
-  delegations: z.array(z.record(z.unknown()))
+  proposals: z.array(z.record(z.string(), z.unknown())),
+  votes: z.array(z.record(z.string(), z.unknown())),
+  queue: z.array(z.record(z.string(), z.unknown())),
+  delegations: z.array(z.record(z.string(), z.unknown()))
 });
 export type GovernanceSummary = z.infer<typeof GovernanceSummarySchema>;
 
@@ -317,15 +317,15 @@ export const ComplianceSummarySchema = z.object({
 export type ComplianceSummary = z.infer<typeof ComplianceSummarySchema>;
 
 export const IntegrationsSummarySchema = z.object({
-  definitions: z.array(z.record(z.unknown())),
-  instances: z.array(z.record(z.unknown()))
+  definitions: z.array(z.record(z.string(), z.unknown())),
+  instances: z.array(z.record(z.string(), z.unknown()))
 });
 export type IntegrationsSummary = z.infer<typeof IntegrationsSummarySchema>;
 
 export const DevopsSummarySchema = z.object({
-  releases: z.array(z.record(z.unknown())),
-  forks: z.array(z.record(z.unknown())),
-  upgrades: z.array(z.record(z.unknown()))
+  releases: z.array(z.record(z.string(), z.unknown())),
+  forks: z.array(z.record(z.string(), z.unknown())),
+  upgrades: z.array(z.record(z.string(), z.unknown()))
 });
 export type DevopsSummary = z.infer<typeof DevopsSummarySchema>;
 
@@ -343,7 +343,7 @@ export const AlertSchema = z.object({
   state: z.enum(['firing', 'resolved']),
   firedAt: z.string(),
   resolvedAt: z.string().optional(),
-  labels: z.record(z.string()).optional(),
+  labels: z.record(z.string(), z.string()).optional(),
   message: z.string().optional()
 });
 export const LogEventSchema = z.object({
@@ -351,11 +351,11 @@ export const LogEventSchema = z.object({
   level: z.enum(['debug', 'info', 'warn', 'error']),
   message: z.string(),
   time: z.string(),
-  labels: z.record(z.string()).optional()
+  labels: z.record(z.string(), z.string()).optional()
 });
 export const ObservabilitySummarySchema = z.object({
   alerts: z.array(AlertSchema),
   logs: z.array(LogEventSchema),
-  dashboards: z.array(z.record(z.unknown()))
+  dashboards: z.array(z.record(z.string(), z.unknown()))
 });
 export type ObservabilitySummary = z.infer<typeof ObservabilitySummarySchema>;

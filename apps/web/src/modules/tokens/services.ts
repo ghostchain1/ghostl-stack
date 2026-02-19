@@ -33,7 +33,7 @@ const tokensResponseSchema = z.object({
     .object({
       count: z.number().optional(),
       walletCount: z.number().optional(),
-      filters: z.record(z.unknown()).optional()
+      filters: z.record(z.string(), z.unknown()).optional()
     })
     .optional()
 });
