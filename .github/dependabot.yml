@@ -1,6 +1,7 @@
 version: 2
 # Touching this config intentionally triggers an immediate Dependabot check on main.
 # Follow-up trigger after fixing unreachable submodule commit in ghostchain1/optimism.
+# Follow-up trigger after fixing unreachable nested submodule commit in ghostchain1/automate.
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
