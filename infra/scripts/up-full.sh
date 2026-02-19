@@ -15,6 +15,8 @@ need_cmd() {
 
 need_cmd curl
 
+bash "$ROOT/infra/scripts/env-sync-stack.sh"
+
 if [ ! -f "$OP_ENV" ]; then
   echo "Missing $OP_ENV (copy infra/opstack/.env.sample and set keys/chain IDs)" >&2
   exit 1
@@ -78,10 +80,6 @@ if [ "$SKIP_DEPLOY" != "1" ]; then
 fi
 
 if [ "$START_SERVICES" = "1" ]; then
-  if [ ! -f "$STACK_ENV" ]; then
-    echo "Missing $STACK_ENV (required to start services)." >&2
-    exit 1
-  fi
   SERVICES_COMPOSE="$ROOT/services/docker-compose.yml"
   if [ ! -f "$SERVICES_COMPOSE" ]; then
     SERVICES_COMPOSE="$ROOT/services/docker-compose.legacy.yml"

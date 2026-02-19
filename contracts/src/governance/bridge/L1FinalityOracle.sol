@@ -15,8 +15,10 @@ contract L1FinalityOracle is Governed {
 
     mapping(uint256 => FinalizedBlock) public finalizedBlocks;
     mapping(bytes32 => bool) public acceptedPolicyHash;
+    bool public finalityHalted;
 
     event PolicyHashUpdated(bytes32 indexed policyHash, bool allowed);
+    event FinalityHaltUpdated(bool halted, address indexed executor);
     event L1BlockFinalized(
         uint256 indexed blockNumber,
         bytes32 indexed blockHash,
@@ -29,6 +31,7 @@ contract L1FinalityOracle is Governed {
     error InvalidQuorumCert();
     error InvalidPolicyHash();
     error PolicyHashNotAllowed(bytes32 policyHash);
+    error FinalityHalted();
 
     constructor(address governor_, address timelock_) Governed(governor_, timelock_) {}
 
@@ -38,10 +41,16 @@ contract L1FinalityOracle is Governed {
         emit PolicyHashUpdated(policyHash, allowed);
     }
 
+    function setFinalityHalted(bool halted) external onlyGovernance {
+        finalityHalted = halted;
+        emit FinalityHaltUpdated(halted, msg.sender);
+    }
+
     function recordFinalizedBlock(uint256 blockNumber, bytes32 blockHash, bytes32 quorumCertHash, bytes32 aiPolicyHash)
         external
         onlyGovernance
     {
+        if (finalityHalted) revert FinalityHalted();
         if (blockHash == bytes32(0)) revert InvalidBlockHash();
         if (quorumCertHash == bytes32(0)) revert InvalidQuorumCert();
         if (aiPolicyHash == bytes32(0)) revert InvalidPolicyHash();
@@ -65,7 +74,7 @@ contract L1FinalityOracle is Governed {
     }
 
     /// @notice Alias for generic settlement contracts expecting a root-style API.
-    function isStateRootFinalized(bytes32 rootOrHash) external view returns (bool) {
+    function isStateRootFinalized(bytes32 rootOrHash) external pure returns (bool) {
         // L1 oracle indexes by block number + hash, not by root hash. Keep strict false for generic callers.
         rootOrHash;
         return false;
@@ -73,5 +82,9 @@ contract L1FinalityOracle is Governed {
 
     function isPolicyHashAccepted(bytes32 aiPolicyHash) external view returns (bool) {
         return acceptedPolicyHash[aiPolicyHash];
+    }
+
+    function isFinalityHalted() external view returns (bool) {
+        return finalityHalted;
     }
 }
