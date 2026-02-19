@@ -1,8 +1,10 @@
 name: Docker Publish
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
   workflow_dispatch:
     inputs:
       environment:
@@ -15,6 +17,18 @@ on:
 
 jobs:
   build:
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch' ||
+        (
+          github.event_name == 'workflow_run' &&
+          github.event.workflow_run.conclusion == 'success' &&
+          (
+            github.event.workflow_run.head_branch == 'main' ||
+            github.event.workflow_run.head_branch == 'master'
+          )
+        )
+      }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -22,9 +36,12 @@ jobs:
     env:
       REGISTRY: ghcr.io
       IMAGE_OWNER: ${{ github.repository_owner }}
+      SOURCE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
       DEPLOY_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'staging' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_SHA }}
 
       - name: Enforce GST-native gates
         run: |
@@ -49,7 +66,7 @@ jobs:
           target: runner
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/ghostl-api:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/ghostl-api:${{ env.SOURCE_SHA }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/ghostl-api:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/ghostl-api:${{ env.DEPLOY_TAG }}
 
@@ -61,7 +78,7 @@ jobs:
           target: runner
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/ghostl-web:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/ghostl-web:${{ env.SOURCE_SHA }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/ghostl-web:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/ghostl-web:${{ env.DEPLOY_TAG }}
 
