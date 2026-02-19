@@ -37,6 +37,12 @@ jobs:
         run: |
           bash infra/docker/tests/compose-diff.sh
 
+      - name: Build API and Web images (dry-run)
+        run: |
+          docker build -f apps/api/Dockerfile --target runner -t ghostl-api:dry-run .
+          docker build -f apps/web/Dockerfile --target runner -t ghostl-web:dry-run .
+          docker image rm ghostl-api:dry-run ghostl-web:dry-run || true
+
       - name: Terraform plan (dry-run)
         run: |
           bash infra/terraform/terraform-plan.sh
