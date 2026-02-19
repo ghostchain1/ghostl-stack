@@ -2,10 +2,6 @@ name: docker-dry-run
 
 on:
   pull_request:
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-      - '.github/**/*.md'
   push:
     branches:
       - main
