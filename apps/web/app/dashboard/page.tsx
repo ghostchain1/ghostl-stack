@@ -36,6 +36,14 @@ type TestsSummaryResponse = {
   summary?: { status?: string; updatedAt?: string; mode?: string } | null;
 };
 
+type ContractsReadinessResponse = {
+  l1FinalityOracleAddress?: string | null;
+  aiPolicyHash?: string | null;
+  aiPolicyHashAccepted?: boolean | null;
+  policyHashSource?: string | null;
+  detail?: string;
+};
+
 type ReadinessStatus = 'pass' | 'fail' | 'unknown';
 type ReadinessCheck = { label: string; status: ReadinessStatus; detail: string };
 
@@ -84,20 +92,24 @@ const incidentTone = (severity?: string): 'default' | 'warning' | 'critical' => 
 const isCriticalIncident = (severity?: string) => incidentTone(severity) === 'critical';
 const isWarningIncident = (severity?: string) => incidentTone(severity) === 'warning';
 const isAddressLike = (value?: string) => Boolean(value && /^0x[0-9a-fA-F]{40}$/.test(value));
+const isBytes32Like = (value?: string | null) => Boolean(value && /^0x[0-9a-fA-F]{64}$/.test(value));
+const shortHash = (value?: string | null) => (value ? `${value.slice(0, 10)}...${value.slice(-8)}` : 'n/a');
 
 export default async function DashboardPage() {
-  const [overviewRes, bridgeRes, alertsRes, incidentsRes, contractsRes, testsSummaryRes, governanceRes] = await Promise.all([
-    serverApiRequest<ChainOverview>('/chain', {
-      init: { cache: 'no-store' },
-      schema: ChainOverviewSchema
-    }),
-    serverApiRequest<BridgeSummary>('/api/bridge', { init: { cache: 'no-store' } }),
-    serverApiRequest<Alert[]>('/observability/alerts', { init: { cache: 'no-store' } }),
-    serverApiRequest<IncidentSummary>('/observability/incidents', { init: { cache: 'no-store' } }),
-    serverApiRequest<ContractsApiResponse>('/api/contracts', { init: { cache: 'no-store' } }),
-    serverApiRequest<TestsSummaryResponse>('/api/contracts/tests/summary', { init: { cache: 'no-store' } }),
-    serverApiRequest<Proposal[]>('/governance/proposals', { init: { cache: 'no-store' } })
-  ]);
+  const [overviewRes, bridgeRes, alertsRes, incidentsRes, contractsRes, testsSummaryRes, governanceRes, contractsReadinessRes] =
+    await Promise.all([
+      serverApiRequest<ChainOverview>('/chain', {
+        init: { cache: 'no-store' },
+        schema: ChainOverviewSchema
+      }),
+      serverApiRequest<BridgeSummary>('/api/bridge', { init: { cache: 'no-store' } }),
+      serverApiRequest<Alert[]>('/observability/alerts', { init: { cache: 'no-store' } }),
+      serverApiRequest<IncidentSummary>('/observability/incidents', { init: { cache: 'no-store' } }),
+      serverApiRequest<ContractsApiResponse>('/api/contracts', { init: { cache: 'no-store' } }),
+      serverApiRequest<TestsSummaryResponse>('/api/contracts/tests/summary', { init: { cache: 'no-store' } }),
+      serverApiRequest<Proposal[]>('/governance/proposals', { init: { cache: 'no-store' } }),
+      serverApiRequest<ContractsReadinessResponse>('/api/contracts/readiness', { init: { cache: 'no-store' } })
+    ]);
 
   const errors: Array<{ title: string; error: ApiError }> = [];
   if (!overviewRes.ok) errors.push({ title: 'Chain overview', error: overviewRes.error });
@@ -190,11 +202,37 @@ export default async function DashboardPage() {
         ? { label: 'Governance vote approved', status: 'pass', detail: 'proposal marked passed/executed' }
         : { label: 'Governance vote approved', status: 'fail', detail: 'no passed/executed proposal detected' };
 
-  const policyCommitCheck: ReadinessCheck = {
-    label: 'AI policy hash committed on L1 oracle',
-    status: 'unknown',
-    detail: 'not exposed via current read API (requires acceptedPolicyHash check)'
-  };
+  const policyCommitCheck: ReadinessCheck = !contractsReadinessRes.ok
+    ? { label: 'AI policy hash committed on L1 oracle', status: 'unknown', detail: 'policy readiness endpoint unavailable' }
+    : !isAddressLike(contractsReadinessRes.data.l1FinalityOracleAddress || undefined)
+      ? {
+          label: 'AI policy hash committed on L1 oracle',
+          status: 'unknown',
+          detail: contractsReadinessRes.data.detail || 'L1 finality oracle address missing/invalid'
+        }
+      : !isBytes32Like(contractsReadinessRes.data.aiPolicyHash)
+        ? {
+            label: 'AI policy hash committed on L1 oracle',
+            status: 'unknown',
+            detail: contractsReadinessRes.data.detail || 'AI policy hash not configured'
+          }
+        : contractsReadinessRes.data.aiPolicyHashAccepted === true
+          ? {
+              label: 'AI policy hash committed on L1 oracle',
+              status: 'pass',
+              detail: `${shortHash(contractsReadinessRes.data.aiPolicyHash)} accepted (${contractsReadinessRes.data.policyHashSource || 'config'})`
+            }
+          : contractsReadinessRes.data.aiPolicyHashAccepted === false
+            ? {
+                label: 'AI policy hash committed on L1 oracle',
+                status: 'fail',
+                detail: `${shortHash(contractsReadinessRes.data.aiPolicyHash)} not accepted on oracle`
+              }
+            : {
+                label: 'AI policy hash committed on L1 oracle',
+                status: 'unknown',
+                detail: contractsReadinessRes.data.detail || 'policy hash acceptance check unavailable'
+              };
   const readinessChecks: ReadinessCheck[] = [oracleCheck, policyCommitCheck, governanceCheck, testsCheck];
   const readinessFailed = readinessChecks.filter((check) => check.status === 'fail').length;
   const readinessUnknown = readinessChecks.filter((check) => check.status === 'unknown').length;
