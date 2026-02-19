@@ -1,4 +1,5 @@
 version: 2
+# Touching this config intentionally triggers an immediate Dependabot check on main.
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
