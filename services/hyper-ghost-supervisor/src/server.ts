@@ -279,7 +279,7 @@ export function createApp(cfg: HgConfig, deps: { db?: SqliteDb; collectors?: Col
 
   const ProposalGenerateSchema = z.object({
     incidentId: z.string().min(1),
-    constraints: z.record(z.any()).optional()
+    constraints: z.record(z.string(), z.any()).optional()
   });
 
   app.post('/proposals/generate', (req, res) => {
