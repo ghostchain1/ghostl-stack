@@ -14,6 +14,18 @@ type BridgeSummary = {
   };
 };
 
+type Incident = {
+  source?: string;
+  message?: string;
+  severity?: string;
+  time?: string;
+  createdAt?: string;
+};
+
+type IncidentSummary = {
+  incidents?: Incident[];
+};
+
 type LayerKey = 'l1' | 'l2' | 'l3';
 
 const layerOrder: LayerKey[] = ['l3', 'l2', 'l1'];
@@ -43,21 +55,31 @@ const lagTone = (value?: number): 'default' | 'success' | 'warning' | 'critical'
   if (value > 5) return 'warning';
   return 'success';
 };
+const incidentTone = (severity?: string): 'default' | 'warning' | 'critical' => {
+  const s = (severity || '').toLowerCase();
+  if (s.includes('crit') || s.includes('error')) return 'critical';
+  if (s.includes('warn')) return 'warning';
+  return 'default';
+};
+const isCriticalIncident = (severity?: string) => incidentTone(severity) === 'critical';
+const isWarningIncident = (severity?: string) => incidentTone(severity) === 'warning';
 
 export default async function DashboardPage() {
-  const [overviewRes, bridgeRes, alertsRes] = await Promise.all([
+  const [overviewRes, bridgeRes, alertsRes, incidentsRes] = await Promise.all([
     serverApiRequest<ChainOverview>('/chain', {
       init: { cache: 'no-store' },
       schema: ChainOverviewSchema
     }),
     serverApiRequest<BridgeSummary>('/api/bridge', { init: { cache: 'no-store' } }),
-    serverApiRequest<Alert[]>('/observability/alerts', { init: { cache: 'no-store' } })
+    serverApiRequest<Alert[]>('/observability/alerts', { init: { cache: 'no-store' } }),
+    serverApiRequest<IncidentSummary>('/observability/incidents', { init: { cache: 'no-store' } })
   ]);
 
   const errors: Array<{ title: string; error: ApiError }> = [];
   if (!overviewRes.ok) errors.push({ title: 'Chain overview', error: overviewRes.error });
   if (!bridgeRes.ok) errors.push({ title: 'Bridge summary', error: bridgeRes.error });
   if (!alertsRes.ok) errors.push({ title: 'Alert posture', error: alertsRes.error });
+  if (!incidentsRes.ok) errors.push({ title: 'Incident posture', error: incidentsRes.error });
 
   const chains = overviewRes.ok ? overviewRes.data.chains : [];
   const chainById = chains.reduce<Partial<Record<LayerKey, ChainOverview['chains'][number]>>>((acc, chain) => {
@@ -68,9 +90,16 @@ export default async function DashboardPage() {
 
   const bridgeSummary = bridgeRes.ok ? bridgeRes.data.summary : undefined;
   const alerts = alertsRes.ok ? alertsRes.data : [];
+  const incidents = incidentsRes.ok ? incidentsRes.data.incidents || [] : [];
   const firingAlerts = alerts.filter((alert) => alert.state === 'firing');
   const firingCritical = firingAlerts.filter((alert) => alert.severity === 'critical').length;
   const firingWarning = firingAlerts.filter((alert) => alert.severity === 'warning').length;
+  const incidentCritical = incidents.filter((incident) => isCriticalIncident(incident.severity)).length;
+  const incidentWarning = incidents.filter((incident) => isWarningIncident(incident.severity)).length;
+  const recentIncidents = incidents
+    .slice()
+    .sort((a, b) => (b.time || b.createdAt || '').localeCompare(a.time || a.createdAt || ''))
+    .slice(0, 3);
   const sovereigntyAlerts = firingAlerts.filter((alert) => {
     if (SOVEREIGNTY_CRITICAL_ALERTS.has(alert.id) || SOVEREIGNTY_WARNING_ALERTS.has(alert.id)) return true;
     const text = `${alert.id} ${alert.message || ''}`.toLowerCase();
@@ -97,6 +126,7 @@ export default async function DashboardPage() {
   const l1Lag = chainById.l1?.finalityLag;
   const l2Lag = chainById.l2?.finalityLag;
   const l3Lag = chainById.l3?.finalityLag;
+  const signaturesMissing = bridgeSummary?.signaturesMissing ?? 0;
   const hasCascadeTelemetry = typeof l1Lag === 'number' && typeof l2Lag === 'number' && typeof l3Lag === 'number';
   const cascadeTone: 'default' | 'success' | 'warning' | 'critical' = !hasCascadeTelemetry
     ? 'default'
@@ -105,6 +135,15 @@ export default async function DashboardPage() {
       : (l1Lag ?? 0) > 5 || (l2Lag ?? 0) > 5 || (l3Lag ?? 0) > 5
         ? 'warning'
         : 'success';
+  const gateChecks = [
+    { label: 'L1/L2/L3 telemetry present', ok: hasCascadeTelemetry },
+    { label: 'No critical sovereignty alerts', ok: sovereigntyCritical === 0 },
+    { label: 'Bridge signatures complete', ok: signaturesMissing === 0 },
+    { label: 'No critical incidents', ok: incidentCritical === 0 }
+  ];
+  const failedChecks = gateChecks.filter((check) => !check.ok).length;
+  const sovereigntyGateTone: 'default' | 'warning' | 'critical' =
+    failedChecks >= 2 ? 'critical' : failedChecks === 1 ? 'warning' : 'default';
 
   return (
     <div className="content">
@@ -172,6 +211,17 @@ export default async function DashboardPage() {
               </div>
               <div className="kpi-foot">
                 {sovereigntyCritical} critical / {sovereigntyWarning} warning
+              </div>
+            </div>
+            <div className="kpi-card">
+              <div className="kpi-label">Incidents</div>
+              <div className="kpi-value">
+                <Badge tone={incidentCritical > 0 ? 'critical' : incidentWarning > 0 ? 'warning' : 'default'}>
+                  {incidents.length}
+                </Badge>
+              </div>
+              <div className="kpi-foot">
+                {incidentCritical} critical / {incidentWarning} warning
               </div>
             </div>
           </div>
@@ -275,6 +325,41 @@ export default async function DashboardPage() {
             <div className="muted" style={{ marginTop: 8 }}>
               Top signals: {sovereigntySignalIds.length ? sovereigntySignalIds.join(', ') : 'none'}
             </div>
+          </div>
+        </Card>
+
+        <Card title="Sovereignty Gate" subtitle="Derived operational lock state">
+          <div className="stack">
+            <div className="spread">
+              <span className="muted">Current gate posture</span>
+              <Badge tone={sovereigntyGateTone}>{failedChecks === 0 ? 'PASS' : failedChecks === 1 ? 'WARN' : 'FAIL'}</Badge>
+            </div>
+            {gateChecks.map((check) => (
+              <div key={check.label} className="spread">
+                <span className="muted">{check.label}</span>
+                <Badge tone={check.ok ? 'default' : 'warning'}>{check.ok ? 'ok' : 'attention'}</Badge>
+              </div>
+            ))}
+            <div className="muted" style={{ marginTop: 8 }}>
+              This does not mutate chain state; it reflects telemetry policy health only.
+            </div>
+          </div>
+        </Card>
+
+        <Card title="Incident Feed" subtitle="Latest bridge and validator issues">
+          <div className="stack">
+            {recentIncidents.map((incident, idx) => (
+              <div key={`${incident.source || 'incident'}-${incident.time || incident.createdAt || idx}`} className="spread">
+                <div>
+                  <div>{incident.message || 'incident'}</div>
+                  <div className="muted">
+                    {(incident.source || 'unknown').toUpperCase()} · {incident.time || incident.createdAt || 'n/a'}
+                  </div>
+                </div>
+                <Badge tone={incidentTone(incident.severity)}>{incident.severity || 'info'}</Badge>
+              </div>
+            ))}
+            {recentIncidents.length === 0 && <div className="muted">No recent incidents.</div>}
           </div>
         </Card>
       </div>
