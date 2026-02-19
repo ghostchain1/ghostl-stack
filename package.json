@@ -36,20 +36,21 @@
     "phase2:preflight": "DEPRECATIONS_CMD_TIMEOUT_MS=60000 DEPRECATIONS_SKIP_FILE_SCAN=1 npm run deprecations:check && NODE_OPTIONS=--max_old_space_size=4096 HARDHAT_VIA_IR=true HARDHAT_USE_DOCKER_SOLC=1 npm --prefix contracts run build && bash scripts/pil/smoke-phase2.sh"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.14.0",
-    "@typescript-eslint/parser": "^8.14.0",
-    "eslint": "^9.8.0",
-    "eslint-config-next": "^16.1.1",
-    "eslint-config-prettier": "^9.1.0",
-    "globals": "^15.11.0",
-    "hardhat": "^3.1.5",
-    "next": "15.5.12",
+    "@eslint/js": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.56.0",
+    "@typescript-eslint/parser": "^8.56.0",
+    "eslint": "^10.0.0",
+    "eslint-config-next": "^16.1.6",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.3.0",
+    "hardhat": "^3.1.9",
+    "next": "16.1.6",
     "pm2": "^6.0.14",
-    "prettier": "^3.2.5",
-    "typescript": "5.6.3"
+    "prettier": "^3.8.1",
+    "typescript": "5.9.3"
   },
   "dependencies": {
-    "nodemailer": "7.0.12"
+    "nodemailer": "8.0.1"
   },
   "engines": {
     "node": ">=22.21.0 <23"

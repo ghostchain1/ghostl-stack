@@ -111,7 +111,7 @@ export const autonomyDecisionSchema = z.object({
   predictedGasUsed: z.number().nullable().optional(),
   selectedGasLimit: z.number().nullable().optional(),
   selectedMaxRetries: z.number().nullable().optional(),
-  rationale: z.record(z.any()),
+  rationale: z.record(z.string(), z.any()),
   confidence: z.number(),
   createdAt: z.string()
 });
@@ -124,7 +124,7 @@ export const autonomyEventSchema = z.object({
   id: z.string(),
   chain_key: z.string(),
   event_type: z.string(),
-  payload: z.record(z.any()),
+  payload: z.record(z.string(), z.any()),
   created_at: z.string()
 });
 
@@ -139,7 +139,7 @@ export const autonomyForecastSchema = z.object({
   predictedFailureProbability: z.number(),
   failureTypes: z.array(z.string()),
   confidence: z.number(),
-  features: z.record(z.any()),
+  features: z.record(z.string(), z.any()),
   createdAt: z.string()
 });
 
@@ -165,10 +165,10 @@ export const autonomyPolicyHistorySchema = z.object({
   id: z.string(),
   chainKey: z.string(),
   version: z.string(),
-  policy: z.record(z.any()),
+  policy: z.record(z.string(), z.any()),
   appliedBy: z.string(),
   status: z.string(),
-  metrics: z.record(z.any()),
+  metrics: z.record(z.string(), z.any()),
   createdAt: z.string()
 });
 
@@ -267,7 +267,7 @@ export const aiCorePredictionSchema = z.object({
   timeHorizonSeconds: z.number(),
   affectedSubsystem: z.string(),
   recommendedAction: z.string(),
-  features: z.record(z.any()),
+  features: z.record(z.string(), z.any()),
   createdAt: z.string()
 });
 
@@ -285,7 +285,7 @@ export const aiCoreDecisionSchema = z.object({
   confidence: z.number(),
   forecastId: z.string().nullable().optional(),
   deploymentId: z.string().nullable().optional(),
-  rationale: z.record(z.any()),
+  rationale: z.record(z.string(), z.any()),
   createdAt: z.string()
 });
 
@@ -299,7 +299,7 @@ export const aiCoreActionSchema = z.object({
   chainKey: z.string(),
   actionType: z.string(),
   status: z.string(),
-  payload: z.record(z.any()),
+  payload: z.record(z.string(), z.any()),
   createdAt: z.string()
 });
 
@@ -387,8 +387,8 @@ export const gasRecommendationSchema = z.object({
   recommendedPriorityFee: numericLike,
   volatilityScore: z.number(),
   anomalyScore: z.number(),
-  drivers: z.preprocess((value) => value ?? {}, z.record(z.number())),
-  policyBounds: z.preprocess((value) => value ?? {}, z.record(z.number())),
+  drivers: z.preprocess((value) => value ?? {}, z.record(z.string(), z.number())),
+  policyBounds: z.preprocess((value) => value ?? {}, z.record(z.string(), z.number())),
   createdAt: z.string()
 });
 
@@ -422,7 +422,7 @@ export const slashingEventSchema = z.object({
   reasonCode: z.number().nullable().optional(),
   slashAmount: numericLike.nullable().optional(),
   status: z.string(),
-  evidence: z.preprocess((value) => value ?? {}, z.record(z.any())),
+  evidence: z.preprocess((value) => value ?? {}, z.record(z.string(), z.any())),
   createdAt: z.string()
 });
 
