@@ -10,6 +10,12 @@
   "git.detectSubmodules": false,
   "git.pruneOnFetch": true,
   "git.openRepositoryInParentFolders": "never",
+  "solidity.formatter": "forge",
+  "solidity-language-server.trace.server.verbosity": "off",
+  "[solidity]": {
+    "editor.defaultFormatter": "nomicfoundation.hardhat-solidity",
+    "editor.formatOnSave": true
+  },
   "files.watcherExclude": {
     "**/.git/**": true,
     "**/node_modules/**": true,
