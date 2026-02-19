@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Badge, Card } from '@ghostl/ui';
 import { ChainOverviewSchema, type ChainOverview } from '@ghostl/contract-schemas';
 import type { Alert } from '@ghostl/types/observability';
+import type { Proposal } from '@ghostl/types/governance';
 import type { ApiError } from '../../src/lib/api';
 import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
 import { serverApiRequest } from '../../src/lib/server-api';
@@ -26,6 +27,18 @@ type IncidentSummary = {
   incidents?: Incident[];
 };
 
+type ContractsApiResponse = {
+  networks?: Array<{ id?: string; name?: string; address?: string }>;
+  contracts?: Array<{ id?: string; name?: string; address?: string }>;
+};
+
+type TestsSummaryResponse = {
+  summary?: { status?: string; updatedAt?: string; mode?: string } | null;
+};
+
+type ReadinessStatus = 'pass' | 'fail' | 'unknown';
+type ReadinessCheck = { label: string; status: ReadinessStatus; detail: string };
+
 type LayerKey = 'l1' | 'l2' | 'l3';
 
 const layerOrder: LayerKey[] = ['l3', 'l2', 'l1'];
@@ -47,6 +60,8 @@ const SOVEREIGNTY_WARNING_ALERTS = new Set([
   'GhostBridgeFinalizeStalled'
 ]);
 
+const ORACLE_CONTRACT_NAMES = ['L1FinalityOracle', 'L2FinalityOracle', 'L3FinalityOracle'] as const;
+
 const formatLag = (value?: number) => (typeof value === 'number' ? value.toString() : 'n/a');
 const formatBlock = (value?: number) => (typeof value === 'number' ? value.toLocaleString('en-US') : 'n/a');
 const lagTone = (value?: number): 'default' | 'success' | 'warning' | 'critical' => {
@@ -54,6 +69,11 @@ const lagTone = (value?: number): 'default' | 'success' | 'warning' | 'critical'
   if (value > 12) return 'critical';
   if (value > 5) return 'warning';
   return 'success';
+};
+const readinessTone = (status: ReadinessStatus): 'success' | 'warning' | 'critical' => {
+  if (status === 'pass') return 'success';
+  if (status === 'fail') return 'critical';
+  return 'warning';
 };
 const incidentTone = (severity?: string): 'default' | 'warning' | 'critical' => {
   const s = (severity || '').toLowerCase();
@@ -63,16 +83,20 @@ const incidentTone = (severity?: string): 'default' | 'warning' | 'critical' => 
 };
 const isCriticalIncident = (severity?: string) => incidentTone(severity) === 'critical';
 const isWarningIncident = (severity?: string) => incidentTone(severity) === 'warning';
+const isAddressLike = (value?: string) => Boolean(value && /^0x[0-9a-fA-F]{40}$/.test(value));
 
 export default async function DashboardPage() {
-  const [overviewRes, bridgeRes, alertsRes, incidentsRes] = await Promise.all([
+  const [overviewRes, bridgeRes, alertsRes, incidentsRes, contractsRes, testsSummaryRes, governanceRes] = await Promise.all([
     serverApiRequest<ChainOverview>('/chain', {
       init: { cache: 'no-store' },
       schema: ChainOverviewSchema
     }),
     serverApiRequest<BridgeSummary>('/api/bridge', { init: { cache: 'no-store' } }),
     serverApiRequest<Alert[]>('/observability/alerts', { init: { cache: 'no-store' } }),
-    serverApiRequest<IncidentSummary>('/observability/incidents', { init: { cache: 'no-store' } })
+    serverApiRequest<IncidentSummary>('/observability/incidents', { init: { cache: 'no-store' } }),
+    serverApiRequest<ContractsApiResponse>('/api/contracts', { init: { cache: 'no-store' } }),
+    serverApiRequest<TestsSummaryResponse>('/api/contracts/tests/summary', { init: { cache: 'no-store' } }),
+    serverApiRequest<Proposal[]>('/governance/proposals', { init: { cache: 'no-store' } })
   ]);
 
   const errors: Array<{ title: string; error: ApiError }> = [];
@@ -122,6 +146,60 @@ export default async function DashboardPage() {
     if (!latest) return current;
     return (current.firedAt || '').localeCompare(latest.firedAt || '') > 0 ? current : latest;
   }, null);
+
+  const contractsList = contractsRes.ok
+    ? [...(contractsRes.data.networks || []), ...(contractsRes.data.contracts || [])]
+    : [];
+  const findContract = (name: (typeof ORACLE_CONTRACT_NAMES)[number]) =>
+    contractsList.find((entry) => {
+      const label = `${entry.name || ''} ${entry.id || ''}`.toLowerCase();
+      return label.includes(name.toLowerCase()) && isAddressLike(entry.address);
+    });
+  const missingOracles = ORACLE_CONTRACT_NAMES.filter((name) => !findContract(name));
+  const oracleCheck: ReadinessCheck = !contractsRes.ok
+    ? { label: 'L1/L2/L3 finality oracles deployed', status: 'unknown', detail: 'contracts registry unavailable' }
+    : missingOracles.length > 0
+      ? { label: 'L1/L2/L3 finality oracles deployed', status: 'fail', detail: `missing: ${missingOracles.join(', ')}` }
+      : { label: 'L1/L2/L3 finality oracles deployed', status: 'pass', detail: 'all oracle contracts registered' };
+
+  const testsSummary = testsSummaryRes.ok ? testsSummaryRes.data.summary : null;
+  const testsCheck: ReadinessCheck = !testsSummaryRes.ok
+    ? { label: 'Cascading finality validation tests', status: 'unknown', detail: 'tests summary endpoint unavailable' }
+    : !testsSummary
+      ? { label: 'Cascading finality validation tests', status: 'unknown', detail: 'no summary published' }
+      : String(testsSummary.status || '').toLowerCase() === 'ok'
+        ? {
+            label: 'Cascading finality validation tests',
+            status: 'pass',
+            detail: `${testsSummary.mode || 'foundry'} summary ok`
+          }
+        : {
+            label: 'Cascading finality validation tests',
+            status: 'fail',
+            detail: `summary status=${testsSummary.status || 'unknown'}`
+          };
+
+  const governanceCheck: ReadinessCheck = !governanceRes.ok
+    ? { label: 'Governance vote approved', status: 'unknown', detail: 'governance proposals unavailable' }
+    : governanceRes.data.length === 0
+      ? { label: 'Governance vote approved', status: 'unknown', detail: 'no proposals returned' }
+      : governanceRes.data.some((proposal) => {
+            const status = String(proposal.status || '').toLowerCase();
+            return status === 'passed' || status === 'executed';
+          })
+        ? { label: 'Governance vote approved', status: 'pass', detail: 'proposal marked passed/executed' }
+        : { label: 'Governance vote approved', status: 'fail', detail: 'no passed/executed proposal detected' };
+
+  const policyCommitCheck: ReadinessCheck = {
+    label: 'AI policy hash committed on L1 oracle',
+    status: 'unknown',
+    detail: 'not exposed via current read API (requires acceptedPolicyHash check)'
+  };
+  const readinessChecks: ReadinessCheck[] = [oracleCheck, policyCommitCheck, governanceCheck, testsCheck];
+  const readinessFailed = readinessChecks.filter((check) => check.status === 'fail').length;
+  const readinessUnknown = readinessChecks.filter((check) => check.status === 'unknown').length;
+  const readinessStatus: ReadinessStatus = readinessFailed > 0 ? 'fail' : readinessUnknown > 0 ? 'unknown' : 'pass';
+  const readinessLabel = readinessStatus === 'pass' ? 'READY' : readinessStatus === 'fail' ? 'BLOCKED' : 'PENDING';
 
   const l1Lag = chainById.l1?.finalityLag;
   const l2Lag = chainById.l2?.finalityLag;
@@ -222,6 +300,15 @@ export default async function DashboardPage() {
               </div>
               <div className="kpi-foot">
                 {incidentCritical} critical / {incidentWarning} warning
+              </div>
+            </div>
+            <div className="kpi-card">
+              <div className="kpi-label">Go-Live Readiness</div>
+              <div className="kpi-value">
+                <Badge tone={readinessTone(readinessStatus)}>{readinessLabel}</Badge>
+              </div>
+              <div className="kpi-foot">
+                {readinessFailed} failed / {readinessUnknown} unknown checks
               </div>
             </div>
           </div>
@@ -360,6 +447,41 @@ export default async function DashboardPage() {
               </div>
             ))}
             {recentIncidents.length === 0 && <div className="muted">No recent incidents.</div>}
+          </div>
+        </Card>
+
+        <Card title="Go-Live Readiness" subtitle="Gate-aligned snapshot">
+          <div className="stack">
+            <div className="spread">
+              <span className="muted">Current status</span>
+              <Badge tone={readinessTone(readinessStatus)}>{readinessLabel}</Badge>
+            </div>
+            {readinessChecks.map((check) => (
+              <div key={check.label} className="stack" style={{ gap: 4 }}>
+                <div className="spread">
+                  <span className="muted">{check.label}</span>
+                  <Badge tone={readinessTone(check.status)}>
+                    {check.status === 'pass' ? 'pass' : check.status === 'fail' ? 'fail' : 'unknown'}
+                  </Badge>
+                </div>
+                <div className="muted" style={{ fontSize: '0.82rem' }}>
+                  {check.detail}
+                </div>
+              </div>
+            ))}
+            {testsSummary?.updatedAt && (
+              <div className="muted" style={{ marginTop: 8 }}>
+                Last test summary update: {testsSummary.updatedAt}
+              </div>
+            )}
+            <div className="row" style={{ gap: 8, marginTop: 8 }}>
+              <Link className="button secondary" href="/contracts">
+                Open contracts
+              </Link>
+              <Link className="button secondary" href="/governance">
+                Open governance
+              </Link>
+            </div>
           </div>
         </Card>
       </div>
