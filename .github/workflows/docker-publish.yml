@@ -47,6 +47,7 @@ jobs:
         )
       }}
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
       contents: read
       packages: write
@@ -109,6 +110,7 @@ jobs:
         )
       }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: build
     permissions:
       contents: read
