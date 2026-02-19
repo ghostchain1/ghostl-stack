@@ -60,6 +60,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
 
       - name: Enforce GST-native gates
         run: |
@@ -116,6 +117,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v4
