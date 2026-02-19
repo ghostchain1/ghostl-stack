@@ -13,7 +13,6 @@
   "solidity.formatter": "forge",
   "solidity-language-server.trace.server.verbosity": "off",
   "[solidity]": {
-    "editor.defaultFormatter": "nomicfoundation.hardhat-solidity",
     "editor.formatOnSave": true
   },
   "files.watcherExclude": {
