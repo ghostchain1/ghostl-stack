@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Badge, Card } from '@ghostl/ui';
 import { ChainOverviewSchema, type ChainOverview } from '@ghostl/contract-schemas';
+import type { Alert } from '@ghostl/types/observability';
 import type { ApiError } from '../../src/lib/api';
 import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
 import { serverApiRequest } from '../../src/lib/server-api';
@@ -32,17 +33,19 @@ const lagTone = (value?: number): 'default' | 'success' | 'warning' | 'critical'
 };
 
 export default async function DashboardPage() {
-  const [overviewRes, bridgeRes] = await Promise.all([
+  const [overviewRes, bridgeRes, alertsRes] = await Promise.all([
     serverApiRequest<ChainOverview>('/chain', {
       init: { cache: 'no-store' },
       schema: ChainOverviewSchema
     }),
-    serverApiRequest<BridgeSummary>('/api/bridge', { init: { cache: 'no-store' } })
+    serverApiRequest<BridgeSummary>('/api/bridge', { init: { cache: 'no-store' } }),
+    serverApiRequest<Alert[]>('/observability/alerts', { init: { cache: 'no-store' } })
   ]);
 
   const errors: Array<{ title: string; error: ApiError }> = [];
   if (!overviewRes.ok) errors.push({ title: 'Chain overview', error: overviewRes.error });
   if (!bridgeRes.ok) errors.push({ title: 'Bridge summary', error: bridgeRes.error });
+  if (!alertsRes.ok) errors.push({ title: 'Alert posture', error: alertsRes.error });
 
   const chains = overviewRes.ok ? overviewRes.data.chains : [];
   const chainById = chains.reduce<Partial<Record<LayerKey, ChainOverview['chains'][number]>>>((acc, chain) => {
@@ -52,6 +55,14 @@ export default async function DashboardPage() {
   }, {});
 
   const bridgeSummary = bridgeRes.ok ? bridgeRes.data.summary : undefined;
+  const alerts = alertsRes.ok ? alertsRes.data : [];
+  const firingAlerts = alerts.filter((alert) => alert.state === 'firing');
+  const firingCritical = firingAlerts.filter((alert) => alert.severity === 'critical').length;
+  const firingWarning = firingAlerts.filter((alert) => alert.severity === 'warning').length;
+  const latestAlert = firingAlerts.reduce<Alert | null>((latest, current) => {
+    if (!latest) return current;
+    return (current.firedAt || '').localeCompare(latest.firedAt || '') > 0 ? current : latest;
+  }, null);
 
   const l1Lag = chainById.l1?.finalityLag;
   const l2Lag = chainById.l2?.finalityLag;
@@ -111,6 +122,17 @@ export default async function DashboardPage() {
               <div className="kpi-value">{bridgeSummary?.finalized ?? 'n/a'}</div>
               <div className="kpi-foot">Completed settlements</div>
             </div>
+            <div className="kpi-card">
+              <div className="kpi-label">Firing Alerts</div>
+              <div className="kpi-value">
+                <Badge tone={firingCritical > 0 ? 'critical' : firingWarning > 0 ? 'warning' : 'default'}>
+                  {firingAlerts.length}
+                </Badge>
+              </div>
+              <div className="kpi-foot">
+                {firingCritical} critical / {firingWarning} warning
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -167,6 +189,28 @@ export default async function DashboardPage() {
             </div>
             <div className="muted" style={{ marginTop: 8 }}>
               External chain traffic is routed only through GhostL1 BridgeHub.
+            </div>
+          </div>
+        </Card>
+
+        <Card title="Alert Posture" subtitle="Operational pressure">
+          <div className="stack">
+            <div className="spread">
+              <span className="muted">Firing</span>
+              <Badge tone={firingCritical > 0 ? 'critical' : firingWarning > 0 ? 'warning' : 'default'}>
+                {firingAlerts.length}
+              </Badge>
+            </div>
+            <div className="spread">
+              <span className="muted">Critical</span>
+              <Badge tone={firingCritical > 0 ? 'critical' : 'default'}>{firingCritical}</Badge>
+            </div>
+            <div className="spread">
+              <span className="muted">Warning</span>
+              <Badge tone={firingWarning > 0 ? 'warning' : 'default'}>{firingWarning}</Badge>
+            </div>
+            <div className="muted" style={{ marginTop: 8 }}>
+              Latest: {latestAlert?.id || latestAlert?.source || 'none'}
             </div>
           </div>
         </Card>
