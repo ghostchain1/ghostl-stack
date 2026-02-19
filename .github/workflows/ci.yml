@@ -25,6 +25,7 @@ concurrency:
 jobs:
   rpc-namespace:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -52,6 +53,7 @@ jobs:
   shellcheck:
     needs: [rpc-namespace]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -76,6 +78,7 @@ jobs:
   ghost-bots-python:
     needs: [rpc-namespace]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       actions: read
@@ -99,6 +102,7 @@ jobs:
   node-lint-build:
     needs: [rpc-namespace]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -123,6 +127,7 @@ jobs:
   hyper-ghost-supervisor:
     needs: [rpc-namespace]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -151,6 +156,7 @@ jobs:
   contracts-hardhat-compile:
     needs: [rpc-namespace]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -175,6 +181,7 @@ jobs:
   contracts-gst-invariant:
     needs: [rpc-namespace]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -194,6 +201,7 @@ jobs:
   contracts-lge-tests:
     needs: [rpc-namespace]
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     permissions:
       contents: read
     steps:
@@ -213,6 +221,7 @@ jobs:
   repo-security:
     needs: [rpc-namespace]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -244,6 +253,7 @@ jobs:
   ghost-helper:
     needs: [repo-security]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       actions: read
