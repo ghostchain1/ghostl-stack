@@ -15,6 +15,10 @@ on:
           - prod
         default: staging
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.workflow_run.head_branch || github.ref_name || github.run_id }}-${{ github.event.inputs.environment || 'auto' }}
+  cancel-in-progress: true
+
 jobs:
   build:
     if: >-
