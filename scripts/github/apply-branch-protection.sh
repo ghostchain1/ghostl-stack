@@ -9,6 +9,17 @@ if ! command -v gh >/dev/null 2>&1; then
   exit 1
 fi
 
+ensure_label() {
+  local name="$1"
+  local color="$2"
+  local description="$3"
+  gh label create "$name" \
+    --repo "$REPO" \
+    --color "$color" \
+    --description "$description" \
+    --force >/dev/null
+}
+
 payload="$(cat <<'JSON'
 {
   "required_status_checks": {
@@ -40,6 +51,23 @@ payload="$(cat <<'JSON'
 }
 JSON
 )"
+
+echo "Ensuring required labels on ${REPO}..."
+while IFS='|' read -r name color description; do
+  ensure_label "$name" "$color" "$description"
+done <<'LABELS'
+dependencies|0E8A16|Pull requests that update a dependency file
+ci|1D76DB|Continuous integration and workflow updates
+dependabot|1D76DB|Dependabot managed pull request
+automerge:candidate|0E8A16|Safe candidate for automated merge
+semver:patch|0E8A16|Semver patch dependency update
+semver:minor|FBCA04|Semver minor dependency update
+semver:major|B60205|Semver major dependency update
+semver:unknown|5319E7|Dependency update with unknown semver classification
+ecosystem:github-actions|1D76DB|Dependency update in github-actions ecosystem
+ecosystem:npm|1D76DB|Dependency update in npm ecosystem
+ecosystem:unknown|1D76DB|Dependency update in an unknown or new ecosystem
+LABELS
 
 echo "Applying branch protection to ${REPO}:${BRANCH}..."
 gh api \
