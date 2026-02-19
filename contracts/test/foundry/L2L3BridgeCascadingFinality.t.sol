@@ -9,6 +9,10 @@ import "../../src/governance/bridge/L1FinalityOracle.sol";
 import "../../src/governance/bridge/L2FinalityOracle.sol";
 import "../../src/governance/bridge/L3FinalityOracle.sol";
 
+interface IL1FinalityHaltAdmin {
+    function setFinalityHalted(bool halted) external;
+}
+
 contract L2L3BridgeCascadingFinalityTest is TestBase {
     address private constant GOVERNOR = address(0xB0B);
     address private constant TIMELOCK = address(0xBEEF);
@@ -106,6 +110,18 @@ contract L2L3BridgeCascadingFinalityTest is TestBase {
         );
     }
 
+    function testBridgeFinalityPathBlockedWhenL1FinalityHalted() public {
+        _recordL1AndL2Finality();
+        bridge.depositToL3(address(this), 1 ether, 77);
+
+        vm.prank(GOVERNOR);
+        IL1FinalityHaltAdmin(address(l1Oracle)).setFinalityHalted(true);
+
+        vm.prank(RELAYER);
+        vm.expectRevert(bytes("L1_FINALITY_HALTED"));
+        bridge.finalizeToL3WithFinality(address(this), address(this), 1 ether, 77, l2Root);
+    }
+
     function _recordL1AndL2Finality() internal {
         vm.prank(GOVERNOR);
         l1Oracle.setAcceptedPolicyHash(POLICY_HASH, true);
@@ -117,6 +133,6 @@ contract L2L3BridgeCascadingFinalityTest is TestBase {
 
     function _recordL3Finality() internal {
         vm.prank(TIMELOCK);
-        l3Oracle.recordFinalizedL3Root(l3Root, 300, l2Root, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l3"));
+        l3Oracle.recordFinalizedL3Root(l3Root, 300, l2Root, 200, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l3"));
     }
 }
