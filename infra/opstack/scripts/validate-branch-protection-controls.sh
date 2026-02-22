@@ -44,14 +44,14 @@ run_check "required-contexts-in-script" "cd '$ROOT_DIR' && python3 - <<'PY'
 from pathlib import Path
 text = Path('scripts/github/apply-branch-protection.sh').read_text()
 required = [
-  'CI / rpc-namespace',
-  'CI / shellcheck',
-  'CI / node-lint-build',
-  'CI / contracts-hardhat-compile',
-  'CI / contracts-gst-invariant',
-  'CI / contracts-lge-tests',
-  'CI / contracts-cascading-finality',
-  'Security Production Preflight / secure-preflight',
+  'rpc-namespace',
+  'shellcheck',
+  'node-lint-build',
+  'contracts-hardhat-compile',
+  'contracts-gst-invariant',
+  'contracts-lge-tests',
+  'contracts-cascading-finality',
+  'secure-preflight',
 ]
 missing = [x for x in required if x not in text]
 if missing:
@@ -64,13 +64,13 @@ from pathlib import Path
 ci = Path('.github/workflows/ci.yml').read_text()
 sec = Path('.github/workflows/security-production-preflight.yml').read_text()
 checks = {
-  'rpc-namespace': 'CI / rpc-namespace',
-  'shellcheck': 'CI / shellcheck',
-  'node-lint-build': 'CI / node-lint-build',
-  'contracts-hardhat-compile': 'CI / contracts-hardhat-compile',
-  'contracts-gst-invariant': 'CI / contracts-gst-invariant',
-  'contracts-lge-tests': 'CI / contracts-lge-tests',
-  'contracts-cascading-finality': 'CI / contracts-cascading-finality',
+  'rpc-namespace': 'rpc-namespace',
+  'shellcheck': 'shellcheck',
+  'node-lint-build': 'node-lint-build',
+  'contracts-hardhat-compile': 'contracts-hardhat-compile',
+  'contracts-gst-invariant': 'contracts-gst-invariant',
+  'contracts-lge-tests': 'contracts-lge-tests',
+  'contracts-cascading-finality': 'contracts-cascading-finality',
 }
 missing = [name for name in checks if f'\n  {name}:' not in ci]
 if missing:
@@ -84,14 +84,14 @@ run_check "checklist-contains-required-checks" "cd '$ROOT_DIR' && python3 - <<'P
 from pathlib import Path
 text = Path('docs/checklists/BRANCH_PROTECTION_SECURITY.md').read_text()
 required = [
-  'CI / rpc-namespace',
-  'CI / shellcheck',
-  'CI / node-lint-build',
-  'CI / contracts-hardhat-compile',
-  'CI / contracts-gst-invariant',
-  'CI / contracts-lge-tests',
-  'CI / contracts-cascading-finality',
-  'Security Production Preflight / secure-preflight',
+  'rpc-namespace',
+  'shellcheck',
+  'node-lint-build',
+  'contracts-hardhat-compile',
+  'contracts-gst-invariant',
+  'contracts-lge-tests',
+  'contracts-cascading-finality',
+  'secure-preflight',
 ]
 missing = [x for x in required if x not in text]
 if missing:

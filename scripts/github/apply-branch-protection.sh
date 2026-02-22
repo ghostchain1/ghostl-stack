@@ -40,14 +40,14 @@ enable_required_signatures() {
 
 required_contexts_json="$(cat <<'JSON'
 [
-  "CI / rpc-namespace",
-  "CI / shellcheck",
-  "CI / node-lint-build",
-  "CI / contracts-hardhat-compile",
-  "CI / contracts-gst-invariant",
-  "CI / contracts-lge-tests",
-  "CI / contracts-cascading-finality",
-  "Security Production Preflight / secure-preflight"
+  "rpc-namespace",
+  "shellcheck",
+  "node-lint-build",
+  "contracts-hardhat-compile",
+  "contracts-gst-invariant",
+  "contracts-lge-tests",
+  "contracts-cascading-finality",
+  "secure-preflight"
 ]
 JSON
 )"
