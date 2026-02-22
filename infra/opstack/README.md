@@ -4,9 +4,10 @@ OP Stack L2 (GhostL2) devnet that aligns with the GhostChain blueprint: Optimist
 
 ## What runs
 - L1: GhostChain geth PoA devnet (EVM clone) on `18545`
-- L2: GhostL2 (Shibarium clone) op-geth + op-node + op-batcher + op-proposer on `29547` (direct) / `18547` (guarded via op-gate)
+- L2: GhostL2 (Shibarium clone) op-geth + op-node + op-batcher on `29547` (direct) / `18547` (guarded via op-gate)
 - L3: GhostL3 OP Stack L3 on GhostL2 on `39545` (when `docker-compose.l3.yml` is running)
 - `op-gate` guards L2 RPC and `op-gate-l1` guards L1 submissions for batcher/proposer; both can be driven by Ghost Guard (metrics on `28546/metrics/prom`, `28547/metrics/prom`).
+- `op-proposer` in `infra/opstack/docker-compose.yml` is intentionally disabled by default (`profiles: [disabled]`). The authoritative proposer runtime is `services-ghost-rollup-proposer-1`.
 - Containers use `local/op-*` images built from the vendored Optimism sources.
 
 ## Quickstart
@@ -41,7 +42,8 @@ bash infra/scripts/opstack/up.sh -- --env-file .env --env-file .env.secrets
 
 # 5) Deploy contracts (L1 core + L2/L3 glue) and emit service env files
 bash infra/scripts/opstack/deploy.sh
-# Gate: `op-batcher` / `op-proposer` point at `op-gate` (host `28546`) for Guard-aware pause/delay/deny.
+# Gate: `op-batcher` points at `op-gate` (host `28546`) for Guard-aware pause/delay/deny.
+# If you explicitly enable `op-proposer`, it should also route through `op-gate`.
 
 # Optional: start observability (Prometheus + Grafana) in a separate shell
 docker compose --env-file infra/opstack/.env --env-file infra/opstack/.env.secrets \
@@ -52,7 +54,8 @@ docker compose --env-file infra/opstack/.env --env-file infra/opstack/.env.secre
 ```
 
 ## L2 + L3 stack and challengers
-- Combined run: `docker compose --env-file infra/opstack/.env --env-file infra/opstack/.env.secrets -f infra/opstack/docker-compose.yml -f infra/opstack/docker-compose.l3.yml up -d op-gate l2-geth op-node op-batcher op-proposer l3-geth l3-op-node l3-op-batcher l3-op-proposer`
+- Combined run: `docker compose --env-file infra/opstack/.env --env-file infra/opstack/.env.secrets -f infra/opstack/docker-compose.yml -f infra/opstack/docker-compose.l3.yml up -d op-gate l2-geth op-node op-batcher l3-geth l3-op-node l3-op-batcher l3-op-proposer`
+- `op-proposer` is excluded from default runs to avoid duplicate proposer ownership with `services-ghost-rollup-proposer-1`.
 - Challengers overlay (optional): `docker compose --env-file infra/opstack/.env --env-file infra/opstack/.env.secrets -f infra/opstack/docker-compose.yml -f infra/opstack/docker-compose.l3.yml -f infra/opstack/docker-compose.challengers.yml up -d op-challenger l3-op-challenger`
   - Fill `L2_GAME_FACTORY_ADDRESS`, `L3_GAME_FACTORY_ADDRESS`, `CHALLENGER_KEY`/`L3_CHALLENGER_KEY`. Cannon/Kona bins + prestates are wired to the vendored optimism assets (`optimism/cannon/bin`, `optimism/op-program/bin`) via `/assets`, but you can override with `OP_CHALLENGER_CANNON_*`/`OP_CHALLENGER_CANNON_KONA_*`.
 - Helper script: `bash infra/scripts/opstack/up-challengers.sh` (starts L1/L2, optional L3, then challenger services with the overlay).
@@ -76,6 +79,19 @@ bash infra/scripts/opstack/reset.sh
 - For AI economics + governance dashboards, run `services/ghost-gas-engine` (metrics on `:3210`) and keep `ai-monitor` enabled. Prometheus scrapes both by default.
 - If `AI_MONITOR_OBSERVE_ONLY=0`, set `POLICY_REGISTRY_ADDRESS` to the L1 `AgentGovernancePolicy` registry. The L2 doctor will fail closed without it.
 - Set `BRIDGE_L2L3_ADDRESS`, `L1_ROLLUP_L2_ADDRESS`, `L2_ROLLUP_L3_ADDRESS`, `L1_ROLLUP_PARENT_ORACLE`, `L1_FINALITY_ORACLE_ADDRESS`, `L2_FINALITY_ORACLE_ADDRESS`, and `L3_FINALITY_ORACLE_ADDRESS` in `.env` for cascading-finality telemetry and enforcement wiring.
+- Proposer ownership/enablement checklist: `docs/checklists/OPSTACK_PROPOSER_OWNERSHIP.md`.
+
+### Troubleshooting: proposer rollback
+```bash
+# Return to safe default: keep infra op-proposer disabled and remove duplicate proposer.
+docker compose --env-file infra/opstack/.env --env-file infra/opstack/.env.secrets \
+  -f infra/opstack/docker-compose.yml --profile disabled stop op-proposer || true
+docker rm -f opstack-op-proposer-1 || true
+docker ps --format '{{.Names}}' \
+  | grep -E '^(services-ghost-rollup-proposer-1|opstack-op-proposer-1)$' || true
+```
+
+For full ownership/enablement checks, see `docs/checklists/OPSTACK_PROPOSER_OWNERSHIP.md`.
 
 ## Canonical gas token (L1/L2/L3)
 All layers must use the single canonical GST token on GhostChain L1:

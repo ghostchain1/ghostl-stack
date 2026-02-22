@@ -6,6 +6,7 @@ import express, { type RequestHandler } from 'express';
 import session from 'express-session';
 import cors from 'cors';
 import nodemailer from 'nodemailer';
+import helmet from 'helmet';
 import type {} from './types/session';
 import WebSocket from 'ws';
 import { Interface, JsonRpcProvider, Wallet } from 'ethers';
@@ -191,6 +192,31 @@ const isOriginAllowed = (origin?: string) => {
 
 const app = express();
 const sessionStore = createSessionStore();
+
+// SECURITY: Add security headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'", 'https:'],
+      fontSrc: ["'self'", 'https:'],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"]
+    }
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  },
+  xFrameOptions: { action: 'deny' },
+  xContentTypeOptions: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
+}));
 
 app.set('trust proxy', 1);
 app.use(
@@ -504,6 +530,7 @@ const normalizeRpcEndpoint = (entry: RpcRegistryEntry, source: string) => {
   if (!url) return null;
   const chainId = entry.chainId ?? entry.chain_id ?? entry.chain?.chainId ?? entry.chain?.id;
   const idBase = entry.id || `${source}-${chainId ?? 'unknown'}-${url}`;
+  // SECURITY: Use crypto.randomBytes for better randomness in cache TTL
   const id = crypto.createHash('sha256').update(idBase).digest('hex').slice(0, 12);
   const status =
     entry.health?.status === 'degraded' || entry.health?.status === 'down'
@@ -655,7 +682,10 @@ const getRpcEndpoints = async (): Promise<NormalizedRpcEndpoint[]> => {
   if (rpcEndpointCache && rpcEndpointCache.expiresAt > now) {
     return rpcEndpointCache.endpoints;
   }
-  const ttl = 5 * 60 * 1000 + Math.floor(Math.random() * 10 * 60 * 1000);
+  // SECURITY: Use crypto-secure randomness instead of Math.random()
+  const randomBytes = crypto.randomBytes(4);
+  const randomValue = randomBytes.readUInt32BE(0) / 0xFFFFFFFF;
+  const ttl = 5 * 60 * 1000 + Math.floor(randomValue * 10 * 60 * 1000);
   let endpoints: NormalizedRpcEndpoint[] = [];
   try {
     const registry = (await withTimeout(fetchRegistryEndpoints(), 5000)) as {
@@ -2942,13 +2972,32 @@ app.get(['/v1/api/contracts/diagrams/:name', '/api/contracts/diagrams/:name'], r
     res.status(400).json({ error: 'diagram_name_required' });
     return;
   }
-  const fileName = path.basename(String(nameParam));
-  const filePath = path.join(diagramsDir, fileName);
-  if (!fs.existsSync(filePath)) {
+  // SECURITY: Strict filename validation to prevent path traversal
+  const sanitizedName = String(nameParam).replace(/[^a-zA-Z0-9._-]/g, '');
+  if (!sanitizedName || sanitizedName.includes('..')) {
+    res.status(400).json({ error: 'invalid_filename' });
+    return;
+  }
+  // SECURITY: Whitelist allowed file extensions
+  const allowedExtensions = ['.png', '.svg', '.jpg', '.jpeg', '.json', '.md'];
+  const ext = path.extname(sanitizedName).toLowerCase();
+  if (!allowedExtensions.includes(ext)) {
+    res.status(400).json({ error: 'invalid_file_type' });
+    return;
+  }
+  const filePath = path.join(diagramsDir, sanitizedName);
+  // SECURITY: Ensure resolved path is within allowed directory
+  const resolvedPath = path.resolve(filePath);
+  const resolvedDir = path.resolve(diagramsDir);
+  if (!resolvedPath.startsWith(resolvedDir)) {
+    res.status(403).json({ error: 'access_denied' });
+    return;
+  }
+  if (!fs.existsSync(resolvedPath)) {
     res.status(404).json({ error: 'diagram_not_found' });
     return;
   }
-  res.sendFile(path.resolve(filePath));
+  res.sendFile(resolvedPath);
 });
 
 app.post(['/v1/api/contracts/pause', '/api/contracts/pause'], requirePermission('contracts:write'), async (req, res) => {
@@ -4343,6 +4392,7 @@ app.get(['/v1/health', '/health'], async (_req, res) => {
 });
 
 app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  // SECURITY: Log full error details server-side only
   console.error(
     JSON.stringify({
       ts: new Date().toISOString(),
@@ -4352,7 +4402,12 @@ app.use((err: Error, req: express.Request, res: express.Response, _next: express
       stack: err.stack
     })
   );
-  res.status(500).json({ error: 'internal_error', message: err.message, correlationId: req.correlationId });
+  // SECURITY: Return generic error message to client, no stack trace
+  res.status(500).json({ 
+    error: 'internal_error', 
+    message: 'An internal error occurred',
+    correlationId: req.correlationId 
+  });
 });
 
 const port = Number(process.env.PORT) || 4000;

@@ -25,9 +25,38 @@ Required keys (KV v2):
 3. Sync L1 env + validate:
    - `bash infra/scripts/env-sync-l1.sh`
 
+## Phase 2 — API AppRole bootstrap + rotation
+
+This repo includes a minimal AppRole bootstrap flow for `apps/api` integration refs.
+
+1. Export admin auth env:
+   - `VAULT_ADDR`
+   - `VAULT_TOKEN`
+2. Bootstrap role + policy + first Secret ID:
+   - `bash infra/vault/bootstrap-approle.sh`
+3. Rotate Secret ID (non-disruptive rollout preparation):
+   - `bash infra/vault/rotate-approle-secret-id.sh`
+
+Artifacts are written to `evidence/phase2/`:
+- `vault-approle-bootstrap.json`
+- `vault-approle-rotation.json`
+
+Expected API env (runtime):
+- `VAULT_ADDR`
+- `VAULT_AUTH_PATH` (default `auth/approle/login`)
+- `VAULT_ROLE_ID`
+- `VAULT_SECRET_ID`
+- `VAULT_NAMESPACE` (optional)
+
+Fallback behavior:
+- If `VAULT_TOKEN` is present, API uses it directly.
+- Otherwise, API logs in with AppRole and caches a short-lived client token.
+
 ## Vault Agent template flow
 
 Use `infra/vault/l1-agent.hcl` with `consul-template`/Vault Agent to materialize secrets directly into `infra/ghostchain/secrets/`. This is preferred for production.
+
+For API token templating, use `infra/vault/api-agent.hcl`.
 
 ## Dev mode
 

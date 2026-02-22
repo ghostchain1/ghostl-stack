@@ -170,12 +170,57 @@ const saveStore = async (storePath: string, store: StoreShape) => {
   await fs.writeFile(storePath, JSON.stringify(store, null, 2));
 };
 
-const vaultConfigured = () => Boolean(env.VAULT_ADDR && env.VAULT_TOKEN);
+let cachedVaultToken: { token: string; expiresAt: number } | null = null;
+
+const vaultConfigured = () =>
+  Boolean(
+    env.VAULT_ADDR && (env.VAULT_TOKEN || (env.VAULT_ROLE_ID && env.VAULT_SECRET_ID && env.VAULT_AUTH_PATH))
+  );
+
+const vaultHeaders = async () => {
+  const token = await getVaultToken();
+  const headers: Record<string, string> = { 'x-vault-token': token };
+  if (env.VAULT_NAMESPACE) {
+    headers['x-vault-namespace'] = env.VAULT_NAMESPACE;
+  }
+  return headers;
+};
+
+const getVaultToken = async () => {
+  if (env.VAULT_TOKEN) return env.VAULT_TOKEN;
+  if (!env.VAULT_ADDR || !env.VAULT_ROLE_ID || !env.VAULT_SECRET_ID) {
+    throw new Error('vault_auth_not_configured');
+  }
+
+  const now = Date.now();
+  if (cachedVaultToken && cachedVaultToken.expiresAt > now + 30_000) {
+    return cachedVaultToken.token;
+  }
+
+  const loginPath = env.VAULT_AUTH_PATH || 'auth/approle/login';
+  const url = `${env.VAULT_ADDR}/v1/${loginPath.replace(/^\/+/, '')}`;
+  const loginHeaders: Record<string, string> = { 'content-type': 'application/json' };
+  if (env.VAULT_NAMESPACE) {
+    loginHeaders['x-vault-namespace'] = env.VAULT_NAMESPACE;
+  }
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: loginHeaders,
+    body: JSON.stringify({ role_id: env.VAULT_ROLE_ID, secret_id: env.VAULT_SECRET_ID })
+  });
+  if (!resp.ok) throw new Error('vault_approle_login_failed');
+  const body = (await resp.json()) as { auth?: { client_token?: string; lease_duration?: number } };
+  const token = body.auth?.client_token;
+  if (!token) throw new Error('vault_approle_token_missing');
+  const leaseDuration = Math.max(60, body.auth?.lease_duration || 300);
+  cachedVaultToken = { token, expiresAt: now + leaseDuration * 1000 };
+  return token;
+};
 
 const vaultWrite = async (ref: string, payload: Record<string, unknown>) => {
   const resp = await fetch(`${env.VAULT_ADDR}/v1/${ref}`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-vault-token': env.VAULT_TOKEN || '' },
+    headers: { 'content-type': 'application/json', ...(await vaultHeaders()) },
     body: JSON.stringify({ data: payload })
   });
   if (!resp.ok) throw new Error('vault_write_failed');
@@ -183,7 +228,7 @@ const vaultWrite = async (ref: string, payload: Record<string, unknown>) => {
 
 const vaultRead = async (ref: string) => {
   const resp = await fetch(`${env.VAULT_ADDR}/v1/${ref}`, {
-    headers: { 'x-vault-token': env.VAULT_TOKEN || '' }
+    headers: await vaultHeaders()
   });
   if (!resp.ok) throw new Error('vault_read_failed');
   const body = (await resp.json()) as { data?: { data?: Record<string, unknown> } };

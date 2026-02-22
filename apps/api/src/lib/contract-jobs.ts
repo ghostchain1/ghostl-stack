@@ -17,6 +17,10 @@ export type ContractJobStatus = {
   logPath: string;
 };
 
+// SECURITY: Whitelist of allowed commands to prevent command injection
+const ALLOWED_COMMANDS = new Set(['npm', 'node', 'npx', 'hardhat', 'forge', 'slither', 'scribble', 'echidna', 'certora']);
+const ALLOWED_CWD_PREFIXES = ['contracts', 'packages', 'apps', 'services', 'tools'];
+
 const dataDir = process.env.DATA_DIR || 'data';
 const jobsDir = path.join(dataDir, 'contract-jobs');
 
@@ -27,6 +31,26 @@ const ensureDir = () => {
 const jobPath = (id: string) => path.join(jobsDir, `${id}.json`);
 const logPath = (id: string) => path.join(jobsDir, `${id}.log`);
 
+// SECURITY: Validate command against whitelist
+const validateCommand = (command: string): boolean => {
+  const baseCommand = path.basename(command);
+  return ALLOWED_COMMANDS.has(baseCommand);
+};
+
+// SECURITY: Validate working directory is within allowed paths
+const validateCwd = (cwd: string): boolean => {
+  const resolved = path.resolve(cwd);
+  return ALLOWED_CWD_PREFIXES.some(prefix => resolved.includes(prefix));
+};
+
+// SECURITY: Sanitize arguments to prevent injection
+const sanitizeArgs = (args: string[]): string[] => {
+  return args.map(arg => {
+    // Remove shell metacharacters
+    return arg.replace(/[;&|`$(){}[\]\\]/g, '');
+  });
+};
+
 export const createContractJob = (input: {
   type: ContractJobStatus['type'];
   command: string;
@@ -35,6 +59,19 @@ export const createContractJob = (input: {
   env?: Record<string, string | undefined>;
   meta?: Record<string, unknown>;
 }) => {
+  // SECURITY: Validate command before execution
+  if (!validateCommand(input.command)) {
+    throw new Error(`Command not allowed: ${input.command}. Allowed commands: ${Array.from(ALLOWED_COMMANDS).join(', ')}`);
+  }
+  
+  // SECURITY: Validate working directory
+  if (!validateCwd(input.cwd)) {
+    throw new Error(`Working directory not allowed: ${input.cwd}`);
+  }
+  
+  // SECURITY: Sanitize arguments
+  const sanitizedArgs = sanitizeArgs(input.args);
+
   ensureDir();
   const id = crypto.randomUUID();
   const status: ContractJobStatus = {
@@ -43,7 +80,7 @@ export const createContractJob = (input: {
     status: 'running',
     startedAt: new Date().toISOString(),
     command: input.command,
-    args: input.args,
+    args: sanitizedArgs,
     cwd: input.cwd,
     meta: input.meta,
     logPath: logPath(id)
@@ -51,10 +88,13 @@ export const createContractJob = (input: {
   fs.writeFileSync(jobPath(id), JSON.stringify(status, null, 2));
 
   const out = fs.createWriteStream(logPath(id), { flags: 'a' });
-  const child = spawn(input.command, input.args, {
+  
+  // SECURITY: Use shell: false and validated command
+  const child = spawn(input.command, sanitizedArgs, {
     cwd: input.cwd,
     env: input.env || process.env,
-    stdio: ['ignore', 'pipe', 'pipe']
+    stdio: ['ignore', 'pipe', 'pipe'],
+    shell: false // SECURITY: Disable shell to prevent injection
   });
   child.stdout?.pipe(out);
   child.stderr?.pipe(out);

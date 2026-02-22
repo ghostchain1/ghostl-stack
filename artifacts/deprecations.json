@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-02-06T20:24:21.384Z",
+  "generatedAt": "2026-02-20T23:57:37.901Z",
   "items": [],
   "checks": {
     "npmLs": {
-      "code": 0
+      "code": 1
     },
     "npmOutdated": {
       "code": 1
@@ -11,9 +11,6 @@
     "npmAudit": {
       "code": 1,
       "timedOut": false
-    },
-    "fileScan": {
-      "skipped": true
     }
   }
 }

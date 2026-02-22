@@ -2,6 +2,67 @@ import { ethers } from "hardhat";
 
 const L2_FACTORY_DEFAULT = "0x4200000000000000000000000000000000000012";
 const CREATED_TOPIC0 = ethers.id("OptimismMintableERC20Created(address,address,address)");
+const FACTORY_EVENT_ABI = [
+  "event OptimismMintableERC20Created(address indexed localToken, address indexed remoteToken, address deployer)"
+];
+
+function localTokenFromFactoryLog(log: ethers.Log): string | null {
+  try {
+    const iface = new ethers.Interface(FACTORY_EVENT_ABI);
+    const parsed = iface.parseLog(log);
+    const localToken = parsed?.args?.localToken as string | undefined;
+    return localToken ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function findExistingLocalToken(
+  provider: ethers.Provider,
+  factory: string,
+  remoteToken: string,
+  latestBlock: number,
+  lookback: number
+): Promise<string | null> {
+  const remoteTopic = ethers.zeroPadValue(remoteToken, 32);
+
+  const recentFromBlock = Math.max(0, latestBlock - Math.max(0, lookback));
+  try {
+    const recentLogs = await provider.getLogs({
+      address: factory,
+      fromBlock: recentFromBlock,
+      toBlock: "latest",
+      topics: [CREATED_TOPIC0, null, remoteTopic]
+    });
+    if (recentLogs.length > 0) {
+      const local = localTokenFromFactoryLog(recentLogs[recentLogs.length - 1]!);
+      if (local) return local;
+    }
+  } catch {
+    // continue to full-history scan
+  }
+
+  const chunkSize = Math.max(10_000, Number(process.env.DEMO_LOG_CHUNK_SIZE ?? "200000"));
+  for (let from = 0; from <= latestBlock; from += chunkSize) {
+    const to = Math.min(latestBlock, from + chunkSize - 1);
+    try {
+      const logs = await provider.getLogs({
+        address: factory,
+        fromBlock: from,
+        toBlock: to,
+        topics: [CREATED_TOPIC0, null, remoteTopic]
+      });
+      if (logs.length > 0) {
+        const local = localTokenFromFactoryLog(logs[logs.length - 1]!);
+        if (local) return local;
+      }
+    } catch {
+      // continue scanning remaining ranges
+    }
+  }
+
+  return null;
+}
 
 async function main() {
   const l1Token = process.env.L1_TOKEN_ADDRESS;
@@ -36,33 +97,12 @@ async function main() {
     }
   }
 
-  // Some devnets already have a deterministic OptimismMintableERC20 deployed for this remote token.
-  // Avoid a CREATE2 collision revert by discovering an existing deployment via factory event logs.
-  try {
-    const latest = await l2Provider.getBlockNumber();
-    const lookback = Number(process.env.DEMO_LOG_LOOKBACK ?? "50000");
-    const fromBlock = Math.max(0, latest - lookback);
-    const remoteTopic = ethers.zeroPadValue(l1Token, 32);
-    const logs = await l2Provider.getLogs({
-      address: l2Factory,
-      fromBlock,
-      toBlock: "latest",
-      topics: [CREATED_TOPIC0, null, remoteTopic]
-    });
-    if (logs.length > 0) {
-      const FactoryAbi = [
-        "event OptimismMintableERC20Created(address indexed localToken, address indexed remoteToken, address deployer)"
-      ];
-      const iface = new ethers.Interface(FactoryAbi);
-      const parsed = iface.parseLog(logs[logs.length - 1]);
-      const localToken = parsed?.args?.localToken as string | undefined;
-      if (localToken) {
-        console.log(`L2_TOKEN_ADDRESS=${localToken}`);
-        return;
-      }
-    }
-  } catch {
-    // fall through to create
+  const latest = await l2Provider.getBlockNumber();
+  const lookback = Number(process.env.DEMO_LOG_LOOKBACK ?? "50000");
+  const discoveredLocal = await findExistingLocalToken(l2Provider, l2Factory, l1Token, latest, lookback);
+  if (discoveredLocal) {
+    console.log(`L2_TOKEN_ADDRESS=${discoveredLocal}`);
+    return;
   }
 
   let name = process.env.L1_TOKEN_NAME ?? "Ghost L1 Token";
@@ -83,11 +123,28 @@ async function main() {
   }
 
   const FactoryAbi = [
-    "event OptimismMintableERC20Created(address indexed localToken, address indexed remoteToken, address deployer)",
+    ...FACTORY_EVENT_ABI,
     "function createOptimismMintableERC20(address remoteToken,string name,string symbol) returns (address)"
   ];
   const factory = new ethers.Contract(l2Factory, FactoryAbi, signer);
-  const tx = await factory.createOptimismMintableERC20(l1Token, name, symbol);
+  let tx: ethers.ContractTransactionResponse;
+  try {
+    tx = await factory.createOptimismMintableERC20(l1Token, name, symbol);
+  } catch (createErr) {
+    const afterRevertLatest = await l2Provider.getBlockNumber();
+    const discoveredAfterRevert = await findExistingLocalToken(
+      l2Provider,
+      l2Factory,
+      l1Token,
+      afterRevertLatest,
+      lookback
+    );
+    if (discoveredAfterRevert) {
+      console.log(`L2_TOKEN_ADDRESS=${discoveredAfterRevert}`);
+      return;
+    }
+    throw createErr;
+  }
   const timeoutMs = Number(process.env.DEMO_TX_TIMEOUT_MS ?? "60000");
   const receipt = await Promise.race([
     tx.wait(),

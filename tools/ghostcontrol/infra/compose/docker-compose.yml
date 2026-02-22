@@ -33,6 +33,7 @@ services:
       interval: 20s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
     networks: [ghostcontrol_net]
 
   ghostcontrol-api:
@@ -85,6 +86,7 @@ services:
       interval: 15s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
     networks: [ghostcontrol_net]
 
   ghostcontrol-policy:
@@ -116,6 +118,7 @@ services:
       interval: 20s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
     networks: [ghostcontrol_net]
 
   ghostcontrol-planner:
@@ -158,6 +161,7 @@ services:
       interval: 20s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
     networks: [ghostcontrol_net]
 
   ghostcontrol-ingest:
@@ -193,6 +197,7 @@ services:
       interval: 20s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
     networks: [ghostcontrol_net]
 
   ghostcontrol-runner:
@@ -241,6 +246,7 @@ services:
       interval: 20s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
     networks: [ghostcontrol_net]
 
   docker-socket-proxy:
@@ -279,6 +285,7 @@ services:
       interval: 20s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
     networks: [ghostcontrol_net]
 
   ghostcontrol-db-migrate:
@@ -332,6 +339,7 @@ services:
       interval: 20s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
     networks: [ghostcontrol_net]
 
   ghostcontrol-redis:
@@ -350,6 +358,7 @@ services:
       interval: 20s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
     networks: [ghostcontrol_net]
 
 networks:

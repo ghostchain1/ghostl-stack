@@ -1,5 +1,27 @@
 # Usage (skeleton)
 
+## CLI
+
+Run from `tools/ghostcontrol`:
+
+```bash
+bash bin/ghostcontrol.sh up
+bash bin/ghostcontrol.sh status
+bash bin/ghostcontrol.sh logs ghostcontrol-api
+bash bin/ghostcontrol.sh doctor ../../evidence/phase1
+bash bin/ghostcontrol.sh backup ../../evidence/phase1/backups
+bash bin/ghostcontrol.sh restore ../../evidence/phase1/backups/<archive>.tar.gz
+bash bin/ghostcontrol.sh down
+```
+
+Equivalent npm script shortcuts:
+
+```bash
+pnpm cli -- status
+pnpm doctor
+pnpm backup
+```
+
 ## Queue a SAFE restart
 
 From the UI:

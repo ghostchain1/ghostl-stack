@@ -25,6 +25,33 @@ test("computeOracleIncidents flags stale and lag", () => {
   assert.equal(incidents.oracle_stale, true);
 });
 
+test("computeOracleIncidents flags Phase5 oracle wiring issues", () => {
+  const snapshot = {
+    configured: true,
+    addressInvalid: true,
+    zeroAddress: true,
+    parentChainMismatch: true,
+    contractCodeMissing: true,
+    versionError: "missing function selector",
+    versionEmpty: true,
+    error: "oracle_contract_not_deployed"
+  };
+  const incidents = __test.computeOracleIncidents({
+    snapshot,
+    headNumber: null,
+    headTimestamp: null,
+    maxBlockDrift: 50,
+    maxAgeSec: 100
+  });
+  assert.equal(incidents.oracle_address_invalid, true);
+  assert.equal(incidents.oracle_zero_address, true);
+  assert.equal(incidents.oracle_wrong_parent_chain, true);
+  assert.equal(incidents.oracle_not_deployed, true);
+  assert.equal(incidents.oracle_abi_mismatch, true);
+  assert.equal(incidents.oracle_version_empty, true);
+  assert.equal(incidents.oracle_error, true);
+});
+
 test("buildBridgeKey is deterministic", () => {
   const key1 = __test.buildBridgeKey(
     ["address", "address", "uint256", "uint256"],

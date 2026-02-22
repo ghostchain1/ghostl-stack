@@ -20,6 +20,8 @@
     "configure:build:ready:op-only": "bash infra/scripts/production/configure-build-ready.sh --mode=production --secrets=vault --allow-finality-fallback",
     "configure:build:staging": "bash infra/scripts/production/configure-build-ready.sh --mode=staging --secrets=vault",
     "configure:build:dev": "bash infra/scripts/production/configure-build-ready.sh --mode=dev --secrets=dev",
+    "security:production:preflight": "bash scripts/security/secure-production-build.sh",
+    "security:production:build": "bash scripts/security/secure-production-build.sh --execute",
     "deprecations:check": "node scripts/check-deprecations.mjs",
     "lint": "eslint apps packages --ext .ts,.tsx",
     "node:check": "node scripts/node-check.mjs",
