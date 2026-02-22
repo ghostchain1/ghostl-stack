@@ -82,3 +82,7 @@ This applies:
 - PR review requirements,
 - force-push/delete protection,
 - required signed commits.
+
+## 9) Audit reference
+
+- Governance summary issue: #46
