@@ -1,5 +1,8 @@
-import { z } from 'zod';
 import { resolveApiBase } from './runtime';
+
+type ParseSuccess<T> = { success: true; data: T };
+type ParseFailure = { success: false; error: unknown };
+type SchemaLike<T> = { safeParse: (data: unknown) => ParseSuccess<T> | ParseFailure };
 
 export type ApiError = {
   message: string;
@@ -16,7 +19,7 @@ export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: ApiError 
 export type FetchOptions<T> = {
   fallback?: T;
   next?: { revalidate?: number };
-  schema?: z.ZodType<T>;
+  schema?: SchemaLike<T>;
   baseUrl?: string;
   init?: Parameters<typeof fetch>[1];
 };

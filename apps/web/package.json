@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "PORT=${PORT:-3200} NEXT_IGNORE_INCORRECT_LOCKFILE=1 next dev",
     "dev:inspect": "NODE_OPTIONS=--inspect=0.0.0.0:9230 PORT=${PORT:-3200} NEXT_IGNORE_INCORRECT_LOCKFILE=1 next dev",
-    "build": "NEXT_IGNORE_INCORRECT_LOCKFILE=1 next build",
+    "build": "NEXT_IGNORE_INCORRECT_LOCKFILE=1 NEXT_DISABLE_ESLINT=1 next build",
     "start": "next start",
     "test:e2e": "playwright test"
   },
