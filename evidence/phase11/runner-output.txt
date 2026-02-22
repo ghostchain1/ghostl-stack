@@ -1,0 +1,75 @@
+[phase11] PASS: doctor-l1 (L1 doctor)
+[phase11] PASS: doctor-l2 (L2 doctor)
+[phase11] PASS: doctor-l3 (L3 doctor)
+[phase11] PASS: health-guard (Ghost guard health)
+[phase11] PASS: health-relayer (Ghost relayer health)
+[phase11] PASS: health-ai-monitor (AI monitor health)
+[phase11] PASS: smoke-consensus-autonomy (Consensus autonomy smoke)
+[phase11] PASS: smoke-federation-invariants (Federation invariants smoke)
+[phase11] PASS: smoke-ai-stability (AI stability smoke)
+{
+  "ok": true,
+  "checks": {
+    "doctor-l1": {
+      "description": "L1 doctor",
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase11/doctor-l1.txt"
+    },
+    "doctor-l2": {
+      "description": "L2 doctor",
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase11/doctor-l2.txt"
+    },
+    "doctor-l3": {
+      "description": "L3 doctor",
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase11/doctor-l3.txt"
+    },
+    "health-guard": {
+      "description": "Ghost guard health",
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase11/health-guard.txt"
+    },
+    "health-relayer": {
+      "description": "Ghost relayer health",
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase11/health-relayer.txt"
+    },
+    "health-ai-monitor": {
+      "description": "AI monitor health",
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase11/health-ai-monitor.txt"
+    },
+    "smoke-consensus-autonomy": {
+      "description": "Consensus autonomy smoke",
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase11/smoke-consensus-autonomy.txt"
+    },
+    "smoke-federation-invariants": {
+      "description": "Federation invariants smoke",
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase11/smoke-federation-invariants.txt"
+    },
+    "smoke-ai-stability": {
+      "description": "AI stability smoke",
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase11/smoke-ai-stability.txt"
+    }
+  },
+  "endpoints": {
+    "guard": "http://localhost:7070",
+    "relayer": "http://localhost:7171/health",
+    "aiMonitor": "http://localhost:7575/health"
+  },
+  "failures": 0
+}
+[phase11] PASS: operational readiness gate satisfied

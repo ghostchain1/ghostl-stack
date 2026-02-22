@@ -1,0 +1,125 @@
+[bridge-e2e] L2<->L3 bridge E2E (ERC20)
+[bridge-e2e] Deposit -> Relay -> Withdraw
+L2 token balance too low for deposit (need=1 have=0).
+Deploying a fresh TestERC20 on L2 and minting demo funds to depositor...
+Using fresh demo token: 0x6ad448bF2AdbF3A7Aa9BfE411eD908315566aE24
+Using BRIDGE_L2L3_ADDRESS=0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2
+Using L2_TOKEN_ADDRESS=0x6ad448bF2AdbF3A7Aa9BfE411eD908315566aE24
+Depositor=0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+Sending demo ERC20 deposit (amount=0.000000000000000001 tokens)...
+bridge: 0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2
+token: 0x6ad448bF2AdbF3A7Aa9BfE411eD908315566aE24
+from: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+to: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+amountGst: 0.000000000000000001
+nonce: 1771703407
+tx: 0x7bb416df9e876c7bef39c8d9a495574707b394562731150582e303677827f591
+ERC20DepositInitiated emitted.
+Wrote: /home/ghost/ghostl-stack/.tmp/last_deposit_erc20.json
+[bridge-e2e] Waiting for relayer to mint on L3 (nonce=1771703407)...
+[bridge-e2e] Relayed.
+{
+  "ok": true,
+  "observeOnly": false,
+  "l1ChainId": "0xd59fe5",
+  "l2ChainId": "0x385",
+  "l3ChainId": "0x387",
+  "confirmations": 2,
+  "bridge": "0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2",
+  "rollupGating": {
+    "l2FinalityOnL1": false,
+    "l3FinalityOnL2": false,
+    "l1RollupL2": "0xad32D5C2Da9f4159C4cc98686C005852b3905355",
+    "l2RollupL3": "0x130A46b6E41DB6E1e18fb9c759F223c459190e90"
+  },
+  "inbox": "0x8464135c8F25Da09e49BC8782676a84730C318bC",
+  "l3TokenFactory": "0x71C95911E9a5D330f4D621842EC243EE1343292e",
+  "hasL2Signer": true,
+  "pendingFinalizations": 1,
+  "lastSeen": {
+    "kind": "ERC20Finalized",
+    "token": "0x6ad448bF2AdbF3A7Aa9BfE411eD908315566aE24",
+    "from": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "to": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "amount": "1",
+    "nonce": "1771703407",
+    "key": "0x3bf74dd2495bfae9e2443a396fd7c3a7d7fe463d2d31bc442de6bcfa8bba5bb3",
+    "l2Tx": "0xd1d5169fb115ed5e9f43b1c6694af81f966611cbc5f126381a7d11ac40b42ff8"
+  },
+  "lastRelayed": {
+    "kind": "ERC20Finalized",
+    "token": "0x6ad448bF2AdbF3A7Aa9BfE411eD908315566aE24",
+    "from": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "to": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "amount": "1",
+    "nonce": "1771703407",
+    "key": "0x3bf74dd2495bfae9e2443a396fd7c3a7d7fe463d2d31bc442de6bcfa8bba5bb3",
+    "l2Tx": "0xd1d5169fb115ed5e9f43b1c6694af81f966611cbc5f126381a7d11ac40b42ff8",
+    "l3Tx": "0x11a450da7c979634069bfa07c413fede420cfd3f17f15bcc9b49e8ba3e8bd93d"
+  }
+}
+Demo withdraw ERC20 (burn on L3 -> release on L2) amount=0.000000000000000001
+Using L2_TOKEN_ADDRESS=0x6ad448bF2AdbF3A7Aa9BfE411eD908315566aE24
+Using L3_TOKEN_ADDRESS=0x348Ae0aF668779B0BD2Ca573303aF8E5e22c1C93
+Account=0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+l3Token: 0x348Ae0aF668779B0BD2Ca573303aF8E5e22c1C93
+from: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+to(L2): 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+amountGst: 0.000000000000000001
+nonce: 1771703437
+tx: 0x41be6841c9129673e5b30c2c59d03f81b7c8b3b2e55db6ce7e243977871bb74a
+BurnInitiated emitted.
+Wrote: /home/ghost/ghostl-stack/.tmp/last_withdraw_erc20.json
+Waiting for relayer to release on L2 (nonce=1771703437, wait=60s, l3FinalityOnL2=false)...
+Released.
+{
+  "ok": true,
+  "observeOnly": false,
+  "l1ChainId": "0xd59fe5",
+  "l2ChainId": "0x385",
+  "l3ChainId": "0x387",
+  "confirmations": 2,
+  "bridge": "0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2",
+  "rollupGating": {
+    "l2FinalityOnL1": false,
+    "l3FinalityOnL2": false,
+    "l1RollupL2": "0xad32D5C2Da9f4159C4cc98686C005852b3905355",
+    "l2RollupL3": "0x130A46b6E41DB6E1e18fb9c759F223c459190e90"
+  },
+  "inbox": "0x8464135c8F25Da09e49BC8782676a84730C318bC",
+  "l3TokenFactory": "0x71C95911E9a5D330f4D621842EC243EE1343292e",
+  "hasL2Signer": true,
+  "pendingFinalizations": 1,
+  "lastSeen": {
+    "kind": "BurnInitiated",
+    "l2Token": "0x6ad448bF2AdbF3A7Aa9BfE411eD908315566aE24",
+    "l3Token": "0x348Ae0aF668779B0BD2Ca573303aF8E5e22c1C93",
+    "from": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "to": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "amount": "1",
+    "nonce": "1771703437",
+    "key": "0x2c145f19aa07682dd7ca3a56f5a643d35606475818e93a54a80bee1c9cae9438",
+    "eventKey": "0x2c145f19aa07682dd7ca3a56f5a643d35606475818e93a54a80bee1c9cae9438",
+    "l3Tx": "0x41be6841c9129673e5b30c2c59d03f81b7c8b3b2e55db6ce7e243977871bb74a"
+  },
+  "lastRelayed": {
+    "kind": "ERC20WithdrawReleased",
+    "l2Token": "0x6ad448bF2AdbF3A7Aa9BfE411eD908315566aE24",
+    "from": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "to": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "amount": "1",
+    "nonce": "1771703437",
+    "key": "0x2c145f19aa07682dd7ca3a56f5a643d35606475818e93a54a80bee1c9cae9438",
+    "l3Tx": "0x41be6841c9129673e5b30c2c59d03f81b7c8b3b2e55db6ce7e243977871bb74a",
+    "l2Tx": "0x3506b7f6bef302a38c0be6fdd7479e5e2e26d6f9432dacfb415ea0639fe84307"
+  }
+}
+L2 balance:
+token: 0x6ad448bF2AdbF3A7Aa9BfE411eD908315566aE24
+account: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+balanceWei: 100
+L3 balance:
+token: 0x348Ae0aF668779B0BD2Ca573303aF8E5e22c1C93
+account: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+balanceWei: 0
+[bridge-e2e] Bridge E2E complete

@@ -1,0 +1,43 @@
+[phase14] PASS: script-syntax-phase14-validator
+[phase14] PASS: critical-workflow-action-pinning
+[phase14] PASS: critical-workflow-permissions-baseline
+[phase14] PASS: docker-publish-main-only-scope
+[phase14] PASS: security-and-governance-release-scope
+[phase14] PASS: contracts-cascading-governance-scope
+{
+  "ok": true,
+  "checks": {
+    "script-syntax-phase14-validator": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase14/script-syntax-phase14-validator.txt"
+    },
+    "critical-workflow-action-pinning": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase14/critical-workflow-action-pinning.txt"
+    },
+    "critical-workflow-permissions-baseline": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase14/critical-workflow-permissions-baseline.txt"
+    },
+    "docker-publish-main-only-scope": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase14/docker-publish-main-only-scope.txt"
+    },
+    "security-and-governance-release-scope": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase14/security-and-governance-release-scope.txt"
+    },
+    "contracts-cascading-governance-scope": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase14/contracts-cascading-governance-scope.txt"
+    }
+  },
+  "failures": 0
+}
+[phase14] PASS: workflow supply-chain hardening validated

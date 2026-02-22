@@ -61,17 +61,23 @@ if [ "$HAS_RG" -eq 1 ]; then
   matches="$(rg -n --no-heading --pcre2 "$PATTERN" . "${rg_globs[@]}" || true)"
 else
   matches="$(
-    while IFS= read -r -d '' file; do
-      # Skip submodule/gitlink entries and other non-file paths.
-      [ -f "$file" ] || continue
-      case "$file" in
-        docs/gst-migration/*|scripts/gst-leakage-gate.sh|config/gst-allowlist.txt|backups/*|infra/docker/_backup/*|infra/opstack/optimism-upstream/*|infra/opstack/op-geth/*|contracts/lib/*|*/node_modules/*|*/dist/*|*/.next/*|*/.next-*/*|*/build/*|*/out/*|*/out-*/*|*/cache/*|*/cache-*/*|*/artifacts/*|*/.foundry-out/*|package-lock.json|*/package-lock.json)
-          continue
-          ;;
-      esac
-      printf '%s\0' "$file"
-    done < <(git ls-files -z -- .) \
-      | xargs -0 -r grep -n -I -E "$PATTERN_GREP" || true
+    git grep -n -I -E "$PATTERN_GREP" -- . \
+      ':!docs/gst-migration/**' \
+      ':!scripts/gst-leakage-gate.sh' \
+      ':!config/gst-allowlist.txt' \
+      ':!backups/**' \
+      ':!infra/docker/_backup/**' \
+      ':!infra/opstack/optimism-upstream/**' \
+      ':!infra/opstack/op-geth/**' \
+      ':!contracts/lib/**' \
+      ':!**/node_modules/**' \
+      ':!**/dist/**' \
+      ':!**/.next/**' \
+      ':!**/build/**' \
+      ':!**/out/**' \
+      ':!**/cache/**' \
+      ':!**/artifacts/**' \
+      ':!**/package-lock.json' || true
   )"
 fi
 if [ -n "$matches" ]; then

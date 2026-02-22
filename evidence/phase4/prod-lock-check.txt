@@ -1,0 +1,6 @@
+=== PROD LOCK references ===
+27:const AUTONOMY_PROD_LOCK = process.env.AUTONOMY_PROD_LOCK !== "false";
+29:const PROD_LOCK_ACTIVE =
+30:  AUTONOMY_PROD_LOCK && (NET_ENV === "prod" || process.env.PRODUCTION === "true" || process.env.NODE_ENV === "production");
+700:  if (PROD_LOCK_ACTIVE) {
+701:    res.status(403).json({ ok: false, error: "prod_lock_enabled" });

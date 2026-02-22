@@ -1,0 +1,2 @@
+[2026-02-21T18:41:52Z] Snapshot -> /home/ghost/ghostl-stack/ops/snapshots/consensus-autonomy/20260221-184151
+[2026-02-21T18:41:52Z] Snapshot complete.

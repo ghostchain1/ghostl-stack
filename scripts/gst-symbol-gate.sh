@@ -23,6 +23,7 @@ EXCLUDES=(
   ':!infra/docker/runtime/**'
   ':!infra/docker/audit/**'
   ':!infra/opstack/broadcast/**'
+  ':!evidence/**'
 )
 
 matches="$(

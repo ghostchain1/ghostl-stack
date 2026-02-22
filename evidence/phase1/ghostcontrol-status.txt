@@ -1,0 +1,15 @@
+]633;E;{   echo "# ghostcontrol status"\x3b   bash tools/ghostcontrol/bin/ghostcontrol.sh status || true\x3b } > evidence/phase1/ghostcontrol-status.txt;acee3004-0cb4-4d1a-9815-a1f59028f63f]633;C# ghostcontrol status
+NAME                             IMAGE                                  COMMAND                  SERVICE                CREATED      STATUS                PORTS
+compose-alertmanager-1           prom/alertmanager:v0.27.0              "/bin/sh -lc 'sed -e…"   alertmanager           3 days ago   Up 3 days             0.0.0.0:9093->9093/tcp, [::]:9093->9093/tcp
+compose-docker-socket-proxy-1    tecnativa/docker-socket-proxy:latest   "docker-entrypoint.s…"   docker-socket-proxy    3 days ago   Up 3 days (healthy)   2375/tcp
+compose-ghostcontrol-api-1       compose-ghostcontrol-api               "/nodejs/bin/node ap…"   ghostcontrol-api       3 days ago   Up 3 days (healthy)   0.0.0.0:7401->8080/tcp, [::]:7401->8080/tcp
+compose-ghostcontrol-db-1        postgres:16-alpine                     "docker-entrypoint.s…"   ghostcontrol-db        3 days ago   Up 3 days (healthy)   5432/tcp
+compose-ghostcontrol-ingest-1    compose-ghostcontrol-ingest            "/nodejs/bin/node ap…"   ghostcontrol-ingest    3 days ago   Up 3 days (healthy)   
+compose-ghostcontrol-planner-1   compose-ghostcontrol-planner           "/nodejs/bin/node ap…"   ghostcontrol-planner   3 days ago   Up 3 days (healthy)   
+compose-ghostcontrol-policy-1    compose-ghostcontrol-policy            "/nodejs/bin/node ap…"   ghostcontrol-policy    3 days ago   Up 3 days (healthy)   
+compose-ghostcontrol-redis-1     redis:7-alpine                         "docker-entrypoint.s…"   ghostcontrol-redis     3 days ago   Up 3 days (healthy)   6379/tcp
+compose-ghostcontrol-runner-1    compose-ghostcontrol-runner            "/nodejs/bin/node ap…"   ghostcontrol-runner    3 days ago   Up 3 days (healthy)   
+compose-ghostcontrol-ui-1        compose-ghostcontrol-ui                "/nodejs/bin/node no…"   ghostcontrol-ui        3 days ago   Up 3 days (healthy)   0.0.0.0:7400->3000/tcp, [::]:7400->3000/tcp
+compose-grafana-1                grafana/grafana:10.4.2                 "/run.sh"                grafana                6 days ago   Up 4 days             0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp
+compose-prometheus-1             prom/prometheus:v2.51.2                "/bin/prometheus --c…"   prometheus             6 days ago   Up 4 days             0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp
+compose-vector-1                 timberio/vector:0.38.0-alpine          "/usr/local/bin/vect…"   vector                 6 days ago   Up 4 days             

@@ -1,0 +1,26 @@
+=== docker-compose.autonomy hardening controls ===
+8:    user: "1000:1000"
+9:    cap_drop:
+12:      - no-new-privileges:true
+13:    read_only: true
+14:    tmpfs:
+49:    user: "1000:1000"
+50:    cap_drop:
+53:      - no-new-privileges:true
+54:    read_only: true
+55:    tmpfs:
+88:    user: "1000:1000"
+89:    cap_drop:
+92:      - no-new-privileges:true
+93:    read_only: true
+94:    tmpfs:
+137:    user: "1000:1000"
+140:    cap_drop:
+143:      - no-new-privileges:true
+144:    read_only: true
+145:    tmpfs:
+208:    user: "1000:1000"
+209:    cap_drop:
+212:      - no-new-privileges:true
+213:    read_only: true
+214:    tmpfs:

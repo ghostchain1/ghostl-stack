@@ -1,0 +1,3 @@
+# vault scripts syntax
+PASS bootstrap-approle.sh
+PASS rotate-approle-secret-id.sh

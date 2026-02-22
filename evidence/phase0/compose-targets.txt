@@ -1,0 +1,17 @@
+docker-compose.yml
+docker-compose.dev.yml
+docker-compose.autonomy.yml
+docker-compose.ai-consensus.yml
+docker-compose.cascading-finality.yml
+docker-compose.phase3.yml
+docker-compose.phase3.secrets.yml
+docker-compose.agents.yml
+apps/docker-compose.yml
+apps/docker-compose.dev.yml
+infra/ghostchain/docker-compose.l1.yml
+infra/ghostchain/docker-compose.ibft.yml
+infra/opstack/docker-compose.yml
+infra/opstack/docker-compose.l3.yml
+infra/opstack/docker-compose.challengers.yml
+infra/opstack/docker-compose.network-manager.yml
+infra/opstack/docker-compose.mainnet-geth.yml

@@ -1,0 +1,4 @@
+
+> ghost-relayer@ check /home/ghost/ghostl-stack/services/ghost-relayer
+> tsc --noEmit
+
