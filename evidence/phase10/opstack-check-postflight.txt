@@ -1,0 +1,52 @@
+
+> ghostl-stack-monorepo@0.0.1 opstack:check
+> npm run env:sync:opstack && npm run env:sync:opstack:l3 && npm run preflight:opstack
+
+
+> ghostl-stack-monorepo@0.0.1 env:sync:opstack
+> bash infra/scripts/opstack/sync-env-from-l1-deployments.sh infra/opstack/.env
+
+No changes needed; env already populated.
+
+> ghostl-stack-monorepo@0.0.1 env:sync:opstack:l3
+> bash infra/scripts/opstack/sync-env-from-l2-deployments.sh infra/opstack/.env.l3
+
+No changes needed; env already populated.
+
+> ghostl-stack-monorepo@0.0.1 preflight:opstack
+> bash infra/scripts/opstack/preflight-3layer.sh infra/opstack/.env infra/opstack/.env.l3
+
+Enforcing GST-native leakage gates...
+[gst-leakage-gate] WARN: rg (ripgrep) not found; using grep fallback (slower)
+[gst-leakage-gate] OK: no forbidden ETH branding tokens found.
+[gst-symbol-gate] OK: no forbidden legacy GHOST symbol tokens found.
+⚠ L1 RPC http://host.docker.internal:28545 unreachable from host; falling back to http://localhost:18545
+⚠ L2 RPC http://l2-geth:8545 unreachable from host; falling back to http://localhost:29547
+✔ Canonical gas token locked: 0x5FbDB2315678afecb367f032d93F642f64180aa3
+Preflight: sourcing infra/opstack/.env infra/opstack/.env.l3
+RPCs: L1=http://localhost:18545  L2=http://localhost:29547  L3=http://localhost:39545
+---- Chain ID checks ----
+✔ chain ids are unique across L1/L2/L3
+---- Oracle checks ----
+✔ L2→L1 OutputOracle oracle ok (version: "1.8.1-beta.2")
+✔ L3→L2 OutputOracle oracle ok (version: "1.8.1-beta.2")
+---- Portal / SystemConfig / Bridge checks ----
+✔ L2 portal (OptimismPortal on L1) ok
+✔ L2 SystemConfig (on L1) ok
+✔ L2 game factory (on L1) ok
+✔ L2 StandardBridge (L1 side) ok
+✔ L2 StandardBridge (L2 side) ok
+✔ L3 portal (OptimismPortal on L2) ok
+✔ L3 SystemConfig (on L2) ok
+✔ L3 game factory (on L2) ok
+✔ L3 StandardBridge (L2 side) ok
+---- Canonical gas token / runtime guards ----
+✔ Canonical gas token (on L2) ok
+✔ L3 SystemConfig guard (on L2) ok
+✔ Gas token details: symbol="GHOST" decimals=18
+---- Data dir hygiene ----
+⚠ L2 geth data (infra/opstack/data/l2-geth-901) not empty (if reconfiguring, clear stale data: rm -rf "/home/ghost/ghostl-stack/infra/opstack/data/l2-geth-901")
+⚠ L2 op-sequencer data (infra/opstack/data/op-sequencer) not empty (if reconfiguring, clear stale data: rm -rf "/home/ghost/ghostl-stack/infra/opstack/data/op-sequencer")
+⚠ L3 geth data (infra/opstack/l3/ghostl3/data) not empty (if reconfiguring, clear stale data: rm -rf "/home/ghost/ghostl-stack/infra/opstack/l3/ghostl3/data")
+
+Preflight PASSED

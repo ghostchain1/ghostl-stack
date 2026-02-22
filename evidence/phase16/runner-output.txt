@@ -1,0 +1,43 @@
+[phase16] PASS: script-syntax-phase16-validator
+[phase16] PASS: phase10-15-validator-presence
+[phase16] PASS: phase10-15-validator-hygiene
+[phase16] PASS: phase10-15-validator-syntax
+[phase16] PASS: phase10-15-evidence-contract
+[phase16] PASS: phase10-15-report-and-index-links
+{
+  "ok": true,
+  "checks": {
+    "script-syntax-phase16-validator": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase16/script-syntax-phase16-validator.txt"
+    },
+    "phase10-15-validator-presence": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase16/phase10-15-validator-presence.txt"
+    },
+    "phase10-15-validator-hygiene": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase16/phase10-15-validator-hygiene.txt"
+    },
+    "phase10-15-validator-syntax": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase16/phase10-15-validator-syntax.txt"
+    },
+    "phase10-15-evidence-contract": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase16/phase10-15-evidence-contract.txt"
+    },
+    "phase10-15-report-and-index-links": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase16/phase10-15-report-and-index-links.txt"
+    }
+  },
+  "failures": 0
+}
+[phase16] PASS: gate framework hygiene validated

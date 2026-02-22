@@ -1,0 +1,1 @@
+-rwxrwxr-x 1 ghost ghost 7978 Feb 21 19:25 infra/opstack/scripts/validate-bridge-wiring.sh

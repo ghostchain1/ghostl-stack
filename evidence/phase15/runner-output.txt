@@ -1,0 +1,43 @@
+[phase15] PASS: script-syntax-phase15-validator
+[phase15] PASS: phase10-14-report-and-evidence-presence
+[phase15] PASS: phase10-14-gate-markers-pass
+[phase15] PASS: phase10-14-gate-json-ok
+[phase15] PASS: phase10-14-reports-pass-state
+[phase15] PASS: checklist-index-phase10-14-links
+{
+  "ok": true,
+  "checks": {
+    "script-syntax-phase15-validator": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase15/script-syntax-phase15-validator.txt"
+    },
+    "phase10-14-report-and-evidence-presence": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase15/phase10-14-report-and-evidence-presence.txt"
+    },
+    "phase10-14-gate-markers-pass": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase15/phase10-14-gate-markers-pass.txt"
+    },
+    "phase10-14-gate-json-ok": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase15/phase10-14-gate-json-ok.txt"
+    },
+    "phase10-14-reports-pass-state": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase15/phase10-14-reports-pass-state.txt"
+    },
+    "checklist-index-phase10-14-links": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase15/checklist-index-phase10-14-links.txt"
+    }
+  },
+  "failures": 0
+}
+[phase15] PASS: phase continuity and integrity validated

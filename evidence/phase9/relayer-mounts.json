@@ -1,0 +1,1 @@
+[{"Type":"bind","Source":"/home/ghost/ghostl-stack/services/.state/ghost-relayer","Destination":"/state","Mode":"rw","RW":true,"Propagation":"rprivate"}]

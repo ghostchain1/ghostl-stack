@@ -1,0 +1,13 @@
+{
+  "name": "@ghostl/routing-guard",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  }
+}

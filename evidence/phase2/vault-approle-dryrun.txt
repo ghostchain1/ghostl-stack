@@ -1,0 +1,4 @@
+# vault approle bootstrap dry-run shape
+requires VAULT_ADDR + VAULT_TOKEN; not executed in this run to avoid mutating Vault without explicit operator credentials
+script: infra/vault/bootstrap-approle.sh
+script: infra/vault/rotate-approle-secret-id.sh

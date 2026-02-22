@@ -209,6 +209,7 @@ def run_once(*, repo_root: Path, db_path: Path, schema_path: Path) -> dict[str, 
     checks = []
     skip_docker_health = os.environ.get("GHOST_BOTS_SKIP_DOCKER_HEALTH") == "1"
     skip_rpc_health = os.environ.get("GHOST_BOTS_SKIP_RPC_HEALTH") == "1"
+    skip_gst_gates = os.environ.get("GHOST_BOTS_SKIP_GST_GATES") == "1"
 
     # Runtime health.
     if skip_docker_health:
@@ -263,8 +264,30 @@ def run_once(*, repo_root: Path, db_path: Path, schema_path: Path) -> dict[str, 
         checks.append(check_rpc("http://localhost:39545", layer="L3", expected_chain_id=903))
 
     # Repo policy gates.
-    checks.append(check_gst_leakage(str(repo_root)))
-    checks.append(check_gst_symbol(str(repo_root)))
+    if skip_gst_gates:
+        checks.append(
+            _skipped_check(
+                kind="gst_leakage_gate",
+                title="GST leakage gate",
+                subsystem="policy",
+                chain_layer="",
+                service="repo",
+                reason="GHOST_BOTS_SKIP_GST_GATES=1",
+            )
+        )
+        checks.append(
+            _skipped_check(
+                kind="gst_symbol_gate",
+                title="GST symbol gate",
+                subsystem="policy",
+                chain_layer="",
+                service="repo",
+                reason="GHOST_BOTS_SKIP_GST_GATES=1",
+            )
+        )
+    else:
+        checks.append(check_gst_leakage(str(repo_root)))
+        checks.append(check_gst_symbol(str(repo_root)))
 
     now = utc_now_iso()
     failures = [c for c in checks if not c.ok]

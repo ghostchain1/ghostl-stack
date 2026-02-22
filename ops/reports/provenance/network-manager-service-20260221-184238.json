@@ -1,0 +1,10 @@
+{
+  "createdAt": "2026-02-21T18:42:00Z",
+  "image": "ghostl/network-manager-service:local",
+  "imageId": "sha256:77ce1fe3e7542068d67b09a814b89b0de0736af8bd13e540075da8d7042bbe65",
+  "imageDigest": "",
+  "gitCommit": "8689ff2362cfff1d3c8ee280b6f91b6377a612c3",
+  "builder": "docker",
+  "source": "services/network-manager-service",
+  "notes": "SLSA-like provenance record; attach to release artifacts."
+}

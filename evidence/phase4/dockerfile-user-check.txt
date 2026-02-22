@@ -1,0 +1,5 @@
+=== Dockerfiles USER check ===
+services/network-manager-service/Dockerfile:18:RUN chown -R node:node /app
+services/network-manager-service/Dockerfile:21:USER node
+services/consensus-telemetry-service/Dockerfile:15:RUN chown -R node:node /app
+services/consensus-telemetry-service/Dockerfile:17:USER node

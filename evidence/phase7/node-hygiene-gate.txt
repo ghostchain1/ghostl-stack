@@ -1,0 +1,23 @@
+[phase7] PASS: writable /home/ghost/ghostl-stack/infra/opstack/data/l2-geth-901
+[phase7] PASS: writable /home/ghost/ghostl-stack/infra/opstack/data/op-node
+[phase7] PASS: writable /home/ghost/ghostl-stack/infra/opstack/data/op-sequencer
+[phase7] PASS: writable /home/ghost/ghostl-stack/infra/opstack/l3/ghostl3/data-903
+[phase7] INFO: initialized genesis stamp for L2
+[phase7] PASS: L2 genesis stamp valid
+[phase7] INFO: initialized genesis stamp for L3
+[phase7] PASS: L3 genesis stamp valid
+{
+  "ok": true,
+  "action": "check",
+  "l2ChainId": "901",
+  "l3ChainId": "903",
+  "l3Name": "ghostl3",
+  "directories": [
+    "/home/ghost/ghostl-stack/infra/opstack/data/l2-geth-901",
+    "/home/ghost/ghostl-stack/infra/opstack/data/op-node",
+    "/home/ghost/ghostl-stack/infra/opstack/data/op-sequencer",
+    "/home/ghost/ghostl-stack/infra/opstack/l3/ghostl3/data-903"
+  ],
+  "failures": 0
+}
+[phase7] PASS: node hygiene gate satisfied

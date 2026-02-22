@@ -1,0 +1,23 @@
+[bridge-e2e] L1<->L2 bridge E2E (ERC20)
+[bridge-e2e] Deposit -> Withdraw
+bridge: 0xa513E6E4b8f2a923D98304ec87F64353C4D5C853
+from: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+to: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+amountGst: 0.000000000000000001
+tx: 0x6fb3d7fb0581a530ff2539f2ffe51a01f8fd7ffd6022633a370022999de0e470
+BridgeInitiated emitted.
+Wrote: /home/ghost/ghostl-stack/.tmp/last_l1l2_deposit_erc20.json
+token: 0x777b11eb540E5737C1298caBc3d416115a5B2eB9
+account: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+balanceWei: 1
+bridge: 0x4200000000000000000000000000000000000010
+from: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+to: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+amountGst: 0.000000000000000001
+tx: 0x9ddee3a772850fea9ab1bca4e2955011312e7c7bc894f6d544f8a5ca7bc1aee5
+BridgeInitiated emitted.
+Wrote: /home/ghost/ghostl-stack/.tmp/last_l1l2_withdraw_erc20.json
+token: 0x5FbDB2315678afecb367f032d93F642f64180aa3
+account: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+balanceWei: 999999994999999999999999999
+[bridge-e2e] Bridge E2E complete

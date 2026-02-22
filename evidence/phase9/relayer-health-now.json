@@ -1,0 +1,30 @@
+{
+  "ok": true,
+  "observeOnly": false,
+  "l1ChainId": "0xd59fe5",
+  "l2ChainId": "0x385",
+  "l3ChainId": "0x387",
+  "confirmations": 2,
+  "bridge": "0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2",
+  "rollupGating": {
+    "l2FinalityOnL1": true,
+    "l3FinalityOnL2": true,
+    "l1RollupL2": "0xad32D5C2Da9f4159C4cc98686C005852b3905355",
+    "l2RollupL3": "0x130A46b6E41DB6E1e18fb9c759F223c459190e90"
+  },
+  "inbox": "0x8464135c8F25Da09e49BC8782676a84730C318bC",
+  "l3TokenFactory": "0x71C95911E9a5D330f4D621842EC243EE1343292e",
+  "hasL2Signer": true,
+  "pendingFinalizations": 3,
+  "lastSeen": {
+    "kind": "ERC20DepositInitiated",
+    "token": "0x34E59e53Bd4f1A60ca8b6c21572509027571341d",
+    "from": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "to": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "amount": "1",
+    "nonce": "1771702846",
+    "key": "0x0aab25ce3b47a53166399d0b0ac85a0e1014e22b9007917449de9f692809a2ff",
+    "l2Tx": "0xefb0f93d9d08d028423ea1b67cf3314035e16396dbc1727ffc5a5727c91c6626"
+  },
+  "lastRelayed": null
+}

@@ -1,0 +1,8 @@
+ghostcontrol commands:
+  up                    start ghostcontrol compose stack
+  down                  stop ghostcontrol compose stack
+  status                show compose service status
+  logs [service...]     show recent logs (all or selected services)
+  doctor [out_dir]      run baseline checks and write evidence log
+  backup [out_dir]      create a backup tarball of ghostcontrol configs/docs
+  restore <archive>     restore from a backup tarball

@@ -1,0 +1,32 @@
+{
+  "ok": true,
+  "l3ToL2": {
+    "l3StandardBridge": "0x4200000000000000000000000000000000000010",
+    "expectedParentBridge": "0x061c137864195998838574dA9E822102fA029D70",
+    "actualParentBridge": "0x061c137864195998838574dA9E822102fA029D70",
+    "expectedMessenger": "0x4200000000000000000000000000000000000007",
+    "actualMessenger": "0x4200000000000000000000000000000000000007",
+    "expectedParentMessenger": "0xEA7cFd038c520128C244426766fb7d10804002f5",
+    "actualParentMessenger": "0xEA7cFd038c520128C244426766fb7d10804002f5",
+    "gas": {
+      "minCalldataOverhead": "16",
+      "minDynamicOverheadDenominator": "63",
+      "minDynamicOverheadNumerator": "64"
+    }
+  },
+  "l2ToL1": {
+    "l2StandardBridge": "0x4200000000000000000000000000000000000010",
+    "expectedParentBridge": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+    "actualParentBridge": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+    "l1Messenger": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+    "expectedPortal": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+    "actualPortal": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+  },
+  "rpc": {
+    "l1": "http://localhost:18545",
+    "l2": "http://localhost:29547",
+    "l3": "http://localhost:39545"
+  },
+  "failures": 0
+}
+[phase8] PASS: bridge wiring gate satisfied

@@ -1,0 +1,1 @@
+-rwxrwxr-x 1 ghost ghost 5518 Feb 21 19:04 infra/opstack/scripts/validate-proposer-config.sh

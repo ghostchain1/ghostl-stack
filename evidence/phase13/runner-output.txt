@@ -1,0 +1,43 @@
+[phase13] PASS: script-syntax-phase13-validator
+[phase13] PASS: docker-publish-main-only
+[phase13] PASS: security-preflight-main-only
+[phase13] PASS: ai-governance-tag-scoped
+[phase13] PASS: contracts-cascading-main-and-paths
+[phase13] PASS: checklist-main-tags-governance
+{
+  "ok": true,
+  "checks": {
+    "script-syntax-phase13-validator": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase13/script-syntax-phase13-validator.txt"
+    },
+    "docker-publish-main-only": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase13/docker-publish-main-only.txt"
+    },
+    "security-preflight-main-only": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase13/security-preflight-main-only.txt"
+    },
+    "ai-governance-tag-scoped": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase13/ai-governance-tag-scoped.txt"
+    },
+    "contracts-cascading-main-and-paths": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase13/contracts-cascading-main-and-paths.txt"
+    },
+    "checklist-main-tags-governance": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase13/checklist-main-tags-governance.txt"
+    }
+  },
+  "failures": 0
+}
+[phase13] PASS: release workflow governance validated
