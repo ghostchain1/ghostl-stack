@@ -50,8 +50,12 @@ cp infra/opstack/.env.sample infra/opstack/.env
 cp infra/opstack/.env.secrets.sample infra/opstack/.env.secrets
 bash infra/scripts/opstack/keys/init.sh
 docker compose --env-file infra/opstack/.env --env-file infra/opstack/.env.secrets \
-  -f infra/opstack/docker-compose.yml up -d l1 op-gate l2-geth op-node op-batcher op-proposer
+  -f infra/opstack/docker-compose.yml up -d l1 op-gate l2-geth op-node op-batcher
 ```
+
+Operational default:
+- Keep `infra/opstack` `op-proposer` disabled unless you are intentionally testing that runtime.
+- Use `services-ghost-rollup-proposer-1` as the authoritative proposer runtime in normal operations.
 
 ### Add L3 on top of L2
 ```bash

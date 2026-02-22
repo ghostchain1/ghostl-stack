@@ -1,5 +1,7 @@
 # 👻 GhostL‑Stack
 
+[![Contracts Cascading Finality (Fast)](https://github.com/ghostchain1/ghostl-stack/actions/workflows/contracts-cascading-fast.yml/badge.svg)](https://github.com/ghostchain1/ghostl-stack/actions/workflows/contracts-cascading-fast.yml)
+
 **GhostL‑Stack** is the canonical monorepo for the **GhostChain Sovereign Blockchain System** — a production‑grade, AI‑native, multi‑layer blockchain architecture consisting of:
 
 * **GhostChain (L1)** — main Autonomous Layer 1 blockchain (EVM‑compatible base chain)
@@ -92,7 +94,8 @@ See `docs/DEV_SETUP.md` for prerequisites, bootstrap instructions, and local bri
 
 ### GhostL2 (OP Stack)
 
-* Uses `op-geth`, `op-node`, `op-batcher`, `op-proposer`
+* Uses `op-geth`, `op-node`, `op-batcher` by default (`infra/opstack` keeps `op-proposer` disabled)
+* Authoritative proposer runtime: `services-ghost-rollup-proposer-1`
 * Anchored to GhostChain via OptimismPortal
 * OutputOracle verified during preflight
 * Uses GST as canonical gas
@@ -215,6 +218,27 @@ Production bootstrap + readiness (Vault-backed):
 npm run configure:build:ready
 ```
 
+Recommended full secured production gate (dry-run by default):
+
+```bash
+npm run security:production:preflight
+```
+
+Requires Vault credentials (`VAULT_ADDR` + `VAULT_TOKEN`, or AppRole `VAULT_ROLE_ID` + `VAULT_SECRET_ID`).
+Local non-production rehearsal:
+
+```bash
+bash scripts/security/secure-production-build.sh --mode=dev --secrets=dev --skip-lint --skip-build --skip-foundry
+```
+
+Execute full secured production build path:
+
+```bash
+npm run security:production:build
+```
+
+Dedicated CI preflight workflow: `.github/workflows/security-production-preflight.yml`
+
 ---
 
 ## 🧪 Testing & Safety
@@ -223,6 +247,9 @@ npm run configure:build:ready
 * Gas token enforcement tests
 * Chain‑ID uniqueness checks
 * Oracle bytecode verification
+* Fast cascading finality suite: `cd /home/ghost/ghostl-stack/contracts && npm run test:cascading-finality:ci`
+
+Fast workflow: `.github/workflows/contracts-cascading-fast.yml`
 
 Any failure:
 

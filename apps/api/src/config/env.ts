@@ -114,6 +114,10 @@ const EnvSchema = z.object({
   VAULT_ADDR: z.preprocess(emptyToUndefined, z.string().url().optional()),
   VAULT_HEALTH_URL: z.preprocess(emptyToUndefined, z.string().optional()),
   VAULT_TOKEN: z.string().optional(),
+  VAULT_AUTH_PATH: z.string().default('auth/approle/login'),
+  VAULT_ROLE_ID: z.string().optional(),
+  VAULT_SECRET_ID: z.string().optional(),
+  VAULT_NAMESPACE: z.string().optional(),
   HARDWARE_WALLET_REQUIRED: z
     .string()
     .transform((v) => v === 'true')
