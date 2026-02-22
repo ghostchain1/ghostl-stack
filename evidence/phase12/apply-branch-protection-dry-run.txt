@@ -30,7 +30,7 @@ Applying branch protection to ghostchain1/ghostl-stack:main...
   "block_creations": false,
   "required_conversation_resolution": true,
   "lock_branch": false,
-  "allow_fork_syncing": true
+  "allow_fork_syncing": false
 }
 Enabling required signed commits on ghostchain1/ghostl-stack:main...
 [dry-run] would enable required signed commits for ghostchain1/ghostl-stack:main
