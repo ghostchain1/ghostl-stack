@@ -11,6 +11,7 @@ ALLOW_FINALITY_FALLBACK=0
 SKIP_LINT=0
 SKIP_BUILD=0
 SKIP_FOUNDRY=0
+SKIP_CONFIGURE=0
 
 first_readable_file() {
   for p in "$@"; do
@@ -62,6 +63,7 @@ Options:
   --skip-lint                     Skip monorepo lint
   --skip-build                    Skip monorepo app build
   --skip-foundry                  Skip cascading finality Foundry suite
+  --skip-configure                Skip configure-build-ready execution
   -h, --help                      Show help
 
 Examples:
@@ -80,6 +82,7 @@ for arg in "$@"; do
     --skip-lint) SKIP_LINT=1 ;;
     --skip-build) SKIP_BUILD=1 ;;
     --skip-foundry) SKIP_FOUNDRY=1 ;;
+    --skip-configure) SKIP_CONFIGURE=1 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $arg" >&2; usage; exit 1 ;;
   esac
@@ -128,22 +131,26 @@ if [ "$SKIP_FOUNDRY" -eq 0 ]; then
   npm --prefix contracts run test:cascading-finality:ci
 fi
 
-CONFIG_ARGS=(
-  "--mode=${MODE}"
-  "--secrets=${SECRETS}"
-)
-
-if [ "$ALLOW_FINALITY_FALLBACK" -eq 1 ]; then
-  CONFIG_ARGS+=("--allow-finality-fallback")
-fi
-
-if [ "$EXECUTE" -eq 0 ]; then
-  echo "[secure-build] configure-build-ready (dry-run safety mode)"
-  CONFIG_ARGS+=("--dry-run")
+if [ "$SKIP_CONFIGURE" -eq 1 ]; then
+  echo "[secure-build] skipping configure-build-ready"
 else
-  echo "[secure-build] configure-build-ready (execute mode)"
-fi
+  CONFIG_ARGS=(
+    "--mode=${MODE}"
+    "--secrets=${SECRETS}"
+  )
 
-bash infra/scripts/production/configure-build-ready.sh "${CONFIG_ARGS[@]}"
+  if [ "$ALLOW_FINALITY_FALLBACK" -eq 1 ]; then
+    CONFIG_ARGS+=("--allow-finality-fallback")
+  fi
+
+  if [ "$EXECUTE" -eq 0 ]; then
+    echo "[secure-build] configure-build-ready (dry-run safety mode)"
+    CONFIG_ARGS+=("--dry-run")
+  else
+    echo "[secure-build] configure-build-ready (execute mode)"
+  fi
+
+  bash infra/scripts/production/configure-build-ready.sh "${CONFIG_ARGS[@]}"
+fi
 
 echo "[secure-build] completed successfully"
