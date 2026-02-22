@@ -2,6 +2,7 @@ import express from "express";
 import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { assertExternalEgress, assertRoutingTransition, layerFromNumeric } from "../../../packages/routing-guard/index.js";
 
 type Layer = 1 | 2 | 3;
 
@@ -91,6 +92,7 @@ app.post("/roots/l2", auth, async (req, res) => {
     res.status(400).json({ error: "missing_root" });
     return;
   }
+  assertRoutingTransition("L2", "L1", { intent: "submit_l2_root" });
   state.rootsL2[root] = { layer: 2, root, timestamp: Date.now() };
   await save();
   res.json({ ok: true, root });
@@ -103,6 +105,7 @@ app.post("/roots/l3", auth, async (req, res) => {
     res.status(400).json({ error: "missing_root_or_parent" });
     return;
   }
+  assertRoutingTransition("L3", "L2", { intent: "submit_l3_root" });
   if (!state.rootsL2[parentL2Root]) {
     res.status(400).json({ error: "L2_PARENT_NOT_FINALIZED_ON_L1" });
     return;
@@ -119,6 +122,12 @@ app.post("/egress", auth, async (req, res) => {
   const amount = String(req.body?.amount || "0");
 
   if (sourceLayer !== 1) {
+    res.status(400).json({ error: "ONLY_L1_CAN_EGRESS_EXTERNALLY" });
+    return;
+  }
+  try {
+    assertExternalEgress(sourceLayer);
+  } catch {
     res.status(400).json({ error: "ONLY_L1_CAN_EGRESS_EXTERNALLY" });
     return;
   }
@@ -144,6 +153,17 @@ app.post("/egress", auth, async (req, res) => {
 
   await save();
   res.json({ ok: true, messageId });
+});
+
+app.post("/route/validate", auth, (req, res) => {
+  try {
+    const source = layerFromNumeric(req.body?.sourceLayer);
+    const target = layerFromNumeric(req.body?.targetLayer);
+    const result = assertRoutingTransition(source, target, { intent: "explicit_validate" });
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ ok: false, error: error?.message || "route_invalid" });
+  }
 });
 
 app.post("/validate-withdrawal", (_req, res) => {

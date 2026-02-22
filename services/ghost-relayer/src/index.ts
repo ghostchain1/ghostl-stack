@@ -3,6 +3,10 @@ import express from "express";
 import { ethers } from "ethers";
 import fs from "node:fs/promises";
 import path from "node:path";
+import {
+  assertEndpointAllowlisted,
+  assertRoutingTransition
+} from "../../../packages/routing-guard/index.js";
 
 const PORT = Number(process.env.PORT || "7171");
 const registryUrl = process.env.RPC_REGISTRY_URL || "http://ghost-registry:8088/v1/endpoints";
@@ -201,6 +205,8 @@ const resolveRpcUrls = async () => {
   const l1 = overrides.l1 ? (l1Allowed.has(overrides.l1) ? overrides.l1 : "") : pickRpc(chainL1);
   const l2 = overrides.l2 ? (l2Allowed.has(overrides.l2) ? overrides.l2 : "") : pickRpc(chainL2);
   const l3 = overrides.l3 ? (l3Allowed.has(overrides.l3) ? overrides.l3 : "") : pickRpc(chainL3);
+  assertEndpointAllowlisted(l2, [...l2Allowed]);
+  assertEndpointAllowlisted(l3, [...l3Allowed]);
   if (overrides.l1 && !l1) throw new Error("rpc_override_not_in_registry_l1");
   if (overrides.l2 && !l2) throw new Error("rpc_override_not_in_registry_l2");
   if (overrides.l3 && !l3) throw new Error("rpc_override_not_in_registry_l3");
@@ -209,6 +215,9 @@ const resolveRpcUrls = async () => {
 };
 
 const { l1: RPC_L1, l2: RPC_L2, l3: RPC_L3 } = await resolveRpcUrls();
+
+assertRoutingTransition("L2", "L3", { intent: "deposit_finalize" });
+assertRoutingTransition("L3", "L2", { intent: "burn_release" });
 
 if (!RPC_L2 || !RPC_L3 || !BRIDGE || !L3_INBOX || !L3_TOKEN_FACTORY) {
   console.error("Missing env: RPC_L2, RPC_L3, BRIDGE_L2L3_ADDRESS, L3_INBOX_ADDRESS, L3_TOKEN_FACTORY_ADDRESS");
@@ -1194,6 +1203,17 @@ app.get("/logs", async (_req, res) => {
 
 app.get("/metrics", async (_req, res) => {
   res.json({ ok: true, ...metrics, observeOnly, hasL2Signer: Boolean(l2Signer), confirmations: CONFIRMATIONS });
+});
+
+app.get("/routing-policy", (_req, res) => {
+  res.json({
+    ok: true,
+    policy: {
+      allowed: ["L3->L2", "L2->L1", "L1->L2", "L2->L3"],
+      blocked: ["L3->L1"],
+      enforcedBy: "@ghostl/routing-guard"
+    }
+  });
 });
 
 function promLine(name: string, value: number | string, labels?: Record<string, string>) {

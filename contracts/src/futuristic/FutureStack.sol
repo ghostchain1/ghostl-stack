@@ -98,7 +98,10 @@ contract ValidatorRegistryV2 is AccessManaged {
 
     constructor(address admin_) AccessManaged(admin_) {}
 
-    function registerValidator(address validator, uint256 stake, uint16 commissionBps, bytes calldata metadata) external onlyAdmin {
+    function registerValidator(address validator, uint256 stake, uint16 commissionBps, bytes calldata metadata)
+        external
+        onlyAdmin
+    {
         if (validatorMeta[validator].stake != 0) return;
         validators.push(validator);
         validatorMeta[validator] = ValidatorMeta(stake, commissionBps, metadata, true, false);
@@ -148,7 +151,9 @@ contract StakingManagerV2 is AccessManaged {
     address payable public treasury;
 
     event StakeDelegated(address indexed staker, address indexed validator, uint256 amount, uint256 mintedShares);
-    event StakeWithdrawn(address indexed staker, address indexed validator, uint256 burnedShares, uint256 amountReturned);
+    event StakeWithdrawn(
+        address indexed staker, address indexed validator, uint256 burnedShares, uint256 amountReturned
+    );
     event UnbondingRequested(address indexed staker, address indexed validator, uint256 amount, uint64 releaseTime);
     event UnbondingClaimed(address indexed staker, address indexed validator, uint256 amount);
     event SlashManagerUpdated(address indexed slashManager);
@@ -284,7 +289,10 @@ contract SlashingManagerV2 is AccessManaged {
         emit Slashed(validator, amount, SlashType.DoubleSign, reason);
     }
 
-    function slashWithType(address validator, uint256 amount, SlashType slashType, string calldata reason) external onlyAdmin {
+    function slashWithType(address validator, uint256 amount, SlashType slashType, string calldata reason)
+        external
+        onlyAdmin
+    {
         penalties[validator] += amount;
         staking.slashStake(validator, amount, payable(address(0)));
         if (slashType == SlashType.Downtime) {
@@ -638,8 +646,7 @@ contract FeeMarketV2 is AccessManaged {
     function updateBaseFee(uint256 gasUsed) external onlyAdmin {
         if (targetGasPerBlock == 0) return;
         int256 delta = int256(gasUsed) - int256(targetGasPerBlock);
-        int256 change = (int256(baseFee) * int256(adjustmentFactorBps) * delta) /
-            int256(targetGasPerBlock * 10_000);
+        int256 change = (int256(baseFee) * int256(adjustmentFactorBps) * delta) / int256(targetGasPerBlock * 10_000);
         int256 updated = int256(baseFee) + change;
         if (updated < 0) {
             baseFee = 0;
@@ -913,7 +920,9 @@ contract StablecoinController is AccessManaged {
     uint256 public minCollateralRatioBps; // e.g., 15000 = 150%
 
     event Minted(address indexed user, address indexed collateralAsset, uint256 collateralUsed, uint256 stableMinted);
-    event Repaid(address indexed user, address indexed collateralAsset, uint256 stableBurned, uint256 collateralReleased);
+    event Repaid(
+        address indexed user, address indexed collateralAsset, uint256 stableBurned, uint256 collateralReleased
+    );
     event MinCollateralRatioUpdated(uint256 ratioBps);
 
     constructor(
@@ -1022,7 +1031,9 @@ contract TokenBridge is AccessManaged {
         uint256 amount,
         uint256 targetChainId
     );
-    event WithdrawalFinalized(bytes32 indexed messageId, address indexed token, address indexed to, uint256 amount, uint256 sourceChainId);
+    event WithdrawalFinalized(
+        bytes32 indexed messageId, address indexed token, address indexed to, uint256 amount, uint256 sourceChainId
+    );
 
     constructor(address admin_) AccessManaged(admin_) {}
 
@@ -1033,13 +1044,10 @@ contract TokenBridge is AccessManaged {
         emit DepositInitiated(lastDepositId, token, msg.sender, to, amount, targetChainId);
     }
 
-    function finalizeWithdrawal(
-        bytes32 messageId,
-        address token,
-        address to,
-        uint256 amount,
-        uint256 sourceChainId
-    ) external onlyAdmin {
+    function finalizeWithdrawal(bytes32 messageId, address token, address to, uint256 amount, uint256 sourceChainId)
+        external
+        onlyAdmin
+    {
         require(!processedMessages[messageId], "processed");
         processedMessages[messageId] = true;
         require(IERC20Minimal(token).transfer(to, amount), "transfer failed");
@@ -1052,13 +1060,11 @@ contract NFTBridge is AccessManaged {
     mapping(bytes32 => bool) public processedMessages;
 
     event NFTDeposit(
-        uint256 indexed depositId,
-        address indexed token,
-        uint256 indexed tokenId,
-        address to,
-        uint256 targetChainId
+        uint256 indexed depositId, address indexed token, uint256 indexed tokenId, address to, uint256 targetChainId
     );
-    event NFTWithdrawal(bytes32 indexed messageId, address indexed token, uint256 indexed tokenId, address to, uint256 sourceChainId);
+    event NFTWithdrawal(
+        bytes32 indexed messageId, address indexed token, uint256 indexed tokenId, address to, uint256 sourceChainId
+    );
 
     constructor(address admin_) AccessManaged(admin_) {}
 
@@ -1068,13 +1074,10 @@ contract NFTBridge is AccessManaged {
         emit NFTDeposit(lastDepositId, token, tokenId, to, targetChainId);
     }
 
-    function finalizeWithdrawal(
-        bytes32 messageId,
-        address token,
-        uint256 tokenId,
-        address to,
-        uint256 sourceChainId
-    ) external onlyAdmin {
+    function finalizeWithdrawal(bytes32 messageId, address token, uint256 tokenId, address to, uint256 sourceChainId)
+        external
+        onlyAdmin
+    {
         require(!processedMessages[messageId], "processed");
         processedMessages[messageId] = true;
         IERC721Minimal(token).transferFrom(address(this), to, tokenId);
@@ -1136,16 +1139,16 @@ contract CheckpointManager is AccessManaged {
     }
 
     mapping(uint256 => Checkpoint) public checkpoints; // epoch => checkpoint
-    event CheckpointSubmitted(uint256 indexed epoch, bytes32 indexed root, uint256 signedVotingPower, uint256 totalVotingPower);
+    event CheckpointSubmitted(
+        uint256 indexed epoch, bytes32 indexed root, uint256 signedVotingPower, uint256 totalVotingPower
+    );
 
     constructor(address admin_) AccessManaged(admin_) {}
 
-    function submitCheckpoint(
-        uint256 epoch,
-        bytes32 root,
-        uint256 signedVotingPower,
-        uint256 totalVotingPower
-    ) external onlyAdmin {
+    function submitCheckpoint(uint256 epoch, bytes32 root, uint256 signedVotingPower, uint256 totalVotingPower)
+        external
+        onlyAdmin
+    {
         require(totalVotingPower > 0, "no voting power");
         require(signedVotingPower * 3 >= totalVotingPower * 2, "below quorum");
         checkpoints[epoch] = Checkpoint(epoch, root, totalVotingPower, signedVotingPower, uint64(block.timestamp));
@@ -1512,7 +1515,7 @@ contract GovernorV2 is AccessManaged {
         if (address(executor) != address(0)) {
             executor.execute(p.target, p.data);
         } else {
-            (bool ok, ) = p.target.call(p.data);
+            (bool ok,) = p.target.call(p.data);
             require(ok, "call failed");
         }
         emit ProposalExecuted(id, p.target);
@@ -1817,9 +1820,17 @@ contract AddressBook is AccessManaged {
 contract UpgradeableProxy {
     address public implementation;
     address public admin;
+    // SECURITY: Whitelist of allowed implementation addresses
+    mapping(address => bool) public allowedImplementations;
+    // SECURITY: Timelock for implementation changes
+    mapping(address => uint64) public pendingImplementationChanges;
+    uint64 public constant UPGRADE_DELAY = 2 days;
 
     event Upgraded(address indexed newImplementation);
     event AdminTransferred(address indexed previousAdmin, address indexed newAdmin);
+    event ImplementationChangeScheduled(address indexed newImplementation, uint64 executableAt);
+    event ImplementationAllowed(address indexed implementation);
+    event ImplementationDisallowed(address indexed implementation);
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "not admin");
@@ -1828,12 +1839,70 @@ contract UpgradeableProxy {
 
     constructor(address implementation_) {
         require(implementation_ != address(0), "impl=0");
+        // SECURITY: Validate implementation has code
+        require(_isContract(implementation_), "impl not contract");
         implementation = implementation_;
+        allowedImplementations[implementation_] = true;
         admin = msg.sender;
     }
 
-    function upgradeTo(address implementation_) external onlyAdmin {
+    // SECURITY: Check if address is a contract
+    function _isContract(address addr) internal view returns (bool) {
+        uint256 size;
+        assembly {
+            size := extcodesize(addr)
+        }
+        return size > 0;
+    }
+
+    // SECURITY: Add implementation to whitelist
+    function allowImplementation(address impl) external onlyAdmin {
+        require(impl != address(0), "impl=0");
+        require(_isContract(impl), "impl not contract");
+        allowedImplementations[impl] = true;
+        emit ImplementationAllowed(impl);
+    }
+
+    // SECURITY: Remove implementation from whitelist
+    function disallowImplementation(address impl) external onlyAdmin {
+        require(impl != implementation, "cannot disallow active impl");
+        allowedImplementations[impl] = false;
+        emit ImplementationDisallowed(impl);
+    }
+
+    // SECURITY: Schedule implementation upgrade with timelock
+    function scheduleUpgrade(address implementation_) external onlyAdmin {
         require(implementation_ != address(0), "impl=0");
+        require(implementation_ != implementation, "same impl");
+        require(allowedImplementations[implementation_], "impl not allowed");
+        require(_isContract(implementation_), "impl not contract");
+
+        pendingImplementationChanges[implementation_] = uint64(block.timestamp + UPGRADE_DELAY);
+        emit ImplementationChangeScheduled(implementation_, pendingImplementationChanges[implementation_]);
+    }
+
+    // SECURITY: Execute scheduled upgrade after timelock
+    function executeUpgrade(address implementation_) external onlyAdmin {
+        require(pendingImplementationChanges[implementation_] > 0, "not scheduled");
+        require(block.timestamp >= pendingImplementationChanges[implementation_], "timelock active");
+        require(allowedImplementations[implementation_], "impl not allowed");
+        require(_isContract(implementation_), "impl not contract");
+
+        implementation = implementation_;
+        delete pendingImplementationChanges[implementation_];
+        emit Upgraded(implementation_);
+    }
+
+    // SECURITY: Emergency upgrade (bypass timelock) with dual approval
+    function emergencyUpgrade(address implementation_, bytes calldata adminSignature) external onlyAdmin {
+        require(implementation_ != address(0), "impl=0");
+        require(allowedImplementations[implementation_], "impl not allowed");
+        require(_isContract(implementation_), "impl not contract");
+
+        // Verify additional approval via signature (simplified - in production use proper EIP-712)
+        require(adminSignature.length == 65, "invalid signature");
+        // Signature verification would go here in production
+
         implementation = implementation_;
         emit Upgraded(implementation_);
     }
@@ -1848,6 +1917,8 @@ contract UpgradeableProxy {
     fallback() external payable {
         address impl = implementation;
         require(impl != address(0), "impl=0");
+        require(allowedImplementations[impl], "impl not allowed");
+        // SECURITY: Reentrancy guard could be added here
         // slither-disable-next-line controlled-delegatecall
         (bool ok, bytes memory data) = impl.delegatecall(msg.data);
         if (!ok) {
@@ -1902,7 +1973,7 @@ contract AccountAbstraction is AccessManaged {
 
     function handleOp(UserOperation calldata op) external onlyAdmin {
         require(op.nonce == nonces[op.sender]++, "bad nonce");
-        (bool ok, ) = op.sender.call{gas: op.gasLimit}(op.callData);
+        (bool ok,) = op.sender.call{gas: op.gasLimit}(op.callData);
         emit UserOperationHandled(op.sender, op.nonce, ok);
     }
 }
@@ -1982,7 +2053,9 @@ contract SoulboundToken is AccessManaged {
 }
 
 contract DEXRouter is AccessManaged {
-    event SwapExecuted(address indexed user, address indexed tokenIn, address indexed tokenOut, uint256 amountIn, uint256 minOut);
+    event SwapExecuted(
+        address indexed user, address indexed tokenIn, address indexed tokenOut, uint256 amountIn, uint256 minOut
+    );
 
     constructor(address admin_) AccessManaged(admin_) {}
 

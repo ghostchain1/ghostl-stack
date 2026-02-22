@@ -537,6 +537,93 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
     })
   );
 
+  router.get(
+    '/identity/mappings',
+    requirePermission('iam:read'),
+    asyncHandler(async (_req, res) => {
+      const users = await deps.userService.list();
+      const mappings = users.flatMap((user) =>
+        (user.wallets || []).map((walletAddress) => ({
+          userId: user.id,
+          username: user.username || null,
+          email: user.email,
+          walletAddress
+        }))
+      );
+      res.json({ mappings });
+    })
+  );
+
+  router.post(
+    '/identity/mappings/upsert',
+    requirePermission('iam:write'),
+    asyncHandler(async (req, res) => {
+      const body = (req.body || {}) as { userId?: string; username?: string; walletAddress?: string };
+      const walletAddress = (body.walletAddress || '').trim().toLowerCase();
+      const requestedUserId = (body.userId || '').trim();
+      const requestedUsername = (body.username || '').trim();
+
+      if (!walletAddress || !walletAddress.startsWith('0x')) {
+        res.status(400).json({ error: 'walletAddress required (0x...)' });
+        return;
+      }
+      if (!requestedUserId && !requestedUsername) {
+        res.status(400).json({ error: 'userId or username required' });
+        return;
+      }
+
+      const users = await deps.userService.list();
+      const user = requestedUserId
+        ? users.find((entry) => entry.id === requestedUserId)
+        : users.find((entry) => (entry.username || '').toLowerCase() === requestedUsername.toLowerCase());
+
+      if (!user) {
+        res.status(404).json({ error: 'user_not_found' });
+        return;
+      }
+
+      const nextWallets = Array.from(new Set([...(user.wallets || []), walletAddress]));
+      const updated = await deps.userService.update(user.id, { wallets: nextWallets });
+      await deps.auditLogService.append({
+        actorId: req.session.userId || 'unknown',
+        action: 'identity_mapping:upsert',
+        resource: updated.id,
+        meta: { correlationId: req.correlationId, walletAddress }
+      });
+      res.json({ user: updated, linked: walletAddress });
+    })
+  );
+
+  router.delete(
+    '/identity/mappings',
+    requirePermission('iam:write'),
+    asyncHandler(async (req, res) => {
+      const userId = typeof req.query.userId === 'string' ? req.query.userId.trim() : '';
+      const walletAddress = typeof req.query.walletAddress === 'string' ? req.query.walletAddress.trim().toLowerCase() : '';
+
+      if (!userId || !walletAddress) {
+        res.status(400).json({ error: 'userId and walletAddress required' });
+        return;
+      }
+
+      const user = await deps.userService.get(userId);
+      if (!user) {
+        res.status(404).json({ error: 'user_not_found' });
+        return;
+      }
+
+      const nextWallets = (user.wallets || []).filter((wallet) => wallet.toLowerCase() !== walletAddress);
+      const updated = await deps.userService.update(user.id, { wallets: nextWallets });
+      await deps.auditLogService.append({
+        actorId: req.session.userId || 'unknown',
+        action: 'identity_mapping:remove',
+        resource: updated.id,
+        meta: { correlationId: req.correlationId, walletAddress }
+      });
+      res.json({ user: updated, removed: walletAddress });
+    })
+  );
+
   router.post(
     '/users',
     requirePermission('iam:write'),

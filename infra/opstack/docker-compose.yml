@@ -757,6 +757,8 @@ services:
     image: local/op-proposer:${OPSTACK_IMAGE_TAG:-local}
     user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     restart: unless-stopped
+    profiles:
+    - disabled
     stop_grace_period: 30s
     logging: *id003
     extra_hosts:
@@ -779,7 +781,8 @@ services:
     # Fault-proofs mode (DisputeGameFactory). Safer than legacy L2OutputOracle polling.
     - --game-factory-address=${L2_GAME_FACTORY_ADDRESS:-0x8A791620dd6260079BF849Dc5567aDC3F2FdC318}
     - --proposal-interval=${PROPOSAL_INTERVAL:-30s}
-    - --game-type=0
+    - --poll-interval=${OP_PROPOSER_POLL_INTERVAL:-10m}
+    - --game-type=${OP_PROPOSER_GAME_TYPE:-0}
     - --private-key=${PROPOSER_KEY:-}
     - --allow-non-finalized
     - --txmgr.send-timeout=30s
@@ -790,9 +793,6 @@ services:
     - --metrics.port=7302
     volumes:
     - ./config:/config:ro
-    ports:
-    - 8560:8560
-    - 7302:7302
     healthcheck:
       test:
       - CMD-SHELL

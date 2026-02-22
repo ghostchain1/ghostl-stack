@@ -39,19 +39,17 @@ contract GhostChainBridgeHubTest is TestBase {
         hub.recordLayerRoot(LAYER_L2, l2Root, 124, keccak256("evidence-duplicate"));
 
         vm.prank(OPERATOR);
-        bytes32 messageId = hub.queueOutboundMessage(
-            LAYER_L1,
-            42161,
-            address(0xAAAA),
-            100,
-            keccak256("payload")
-        );
+        bytes32 messageId = hub.queueOutboundMessage(LAYER_L1, 42161, address(0xAAAA), 100, keccak256("payload"));
 
         assertTrue(messageId != bytes32(0), "message queued");
 
         vm.prank(OPERATOR);
         vm.expectRevert(abi.encodeWithSelector(GhostChainBridgeHub.OnlyGhostChainEgress.selector, uint8(2)));
         hub.queueOutboundMessage(uint8(2), 42161, address(0xAAAA), 100, keccak256("payload-2"));
+
+        vm.prank(OPERATOR);
+        vm.expectRevert(abi.encodeWithSelector(GhostChainBridgeHub.OnlyGhostChainEgress.selector, uint8(3)));
+        hub.queueOutboundMessage(uint8(3), 42161, address(0xAAAA), 100, keccak256("payload-3"));
     }
 
     function testL3RootRequiresParentL2Root() public {
@@ -124,13 +122,8 @@ contract GhostChainBridgeHubTest is TestBase {
         assertTrue(!hub.isReadOnlyMode(), "manual readonly cleared");
 
         vm.prank(OPERATOR);
-        bytes32 messageId = hub.queueOutboundMessage(
-            LAYER_L1,
-            42161,
-            address(0xAAAA),
-            7,
-            keccak256("payload-before-halt")
-        );
+        bytes32 messageId =
+            hub.queueOutboundMessage(LAYER_L1, 42161, address(0xAAAA), 7, keccak256("payload-before-halt"));
 
         vm.prank(GOVERNOR);
         l1Oracle.setAcceptedPolicyHash(POLICY_HASH, true);

@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import fs from "fs";
 import path from "path";
+import { assertRoutingTransition, layerFromNumeric } from "../../../packages/routing-guard/index.js";
 
 const PORT = Number(process.env.PORT || 7604);
 const PROM_URL = process.env.PROM_URL || "http://localhost:9090";
@@ -151,6 +152,17 @@ app.post("/bridges/fees", requireAdmin, (req, res) => {
   }
   bridgeState.feeBps = bps;
   res.json({ ok: true, feeBps: bridgeState.feeBps });
+});
+
+app.post("/bridges/route/validate", requireAdmin, (req, res) => {
+  try {
+    const sourceLayer = layerFromNumeric(req.body?.sourceLayer);
+    const targetLayer = layerFromNumeric(req.body?.targetLayer);
+    const result = assertRoutingTransition(sourceLayer, targetLayer, { intent: "bridge_api_validate" });
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e?.message || String(e) });
+  }
 });
 
 app.get("/bridges/incidents", requireAdmin, (_req, res) => {

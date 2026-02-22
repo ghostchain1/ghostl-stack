@@ -35,7 +35,8 @@
     "test:foundry": "ts-node scripts/run_foundry_tests.ts --mode default",
     "test:fuzz": "ts-node scripts/run_foundry_tests.ts --mode fuzz",
     "test:invariant": "ts-node scripts/run_foundry_tests.ts --mode invariant",
-    "test:gst-invariant": "forge test --match-path test/GSTInvariant.t.sol"
+    "test:gst-invariant": "forge test --match-path test/GSTInvariant.t.sol",
+    "test:cascading-finality:ci": "bash scripts/run_cascading_finality_ci.sh"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^6.1.0",

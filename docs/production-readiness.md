@@ -88,6 +88,10 @@ Each run writes a summary artifact to:
 - CI gates: lint/test, typecheck, unit/integration where possible; fail on secrets in git history/commits.
 - Release flow: build -> push -> deploy to staging -> smoke tests -> manual promote to prod with rollback hooks.
 
+Branch protection and required status checks:
+
+- See `docs/checklists/BRANCH_PROTECTION_SECURITY.md` and enforce required checks before merge to `main`.
+
 ## Resilience & SLOs
 - Set resource limits/requests; configure restarts/backoff; add pod disruption budgets if on K8s.
 - Define SLOs for RPC latency, relayer finality lag, proposer throughput; alert on error budgets.

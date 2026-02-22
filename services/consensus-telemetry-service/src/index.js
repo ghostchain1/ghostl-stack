@@ -310,6 +310,7 @@ const L2_OUTPUT_ORACLE_ABI = [
   "function getL2Output(uint256) view returns (tuple(bytes32 outputRoot,uint128 timestamp,uint128 l2BlockNumber))",
   "function finalizationPeriodSeconds() view returns (uint256)"
 ];
+const ORACLE_VERSION_ABI = ["function version() view returns (string)"];
 
 const GOVERNOR_ABI = ["function propose(address target,uint256 value,bytes data) returns (uint256)"];
 const PAUSE_GUARDIAN_V1_ABI = ["function setPaused(bool p)"];
@@ -331,12 +332,64 @@ const getProvider = (rpc) => {
   return providerCache.get(rpc);
 };
 
-const fetchOutputOracleSnapshot = async (label, rpc, address) => {
-  if (!address) return { label, address: "", configured: false };
-  if (!rpc) return { label, address, configured: true, error: "rpc_missing" };
+const fetchOutputOracleSnapshot = async (label, rpc, address, expectedParentChainId = null) => {
+  if (!address) return { label, address: "", configured: true, error: "oracle_address_missing" };
+  if (!rpc) return { label, address, configured: true, error: "oracle_parent_rpc_missing" };
+  let normalizedAddress = "";
+  try {
+    normalizedAddress = ethers.getAddress(address);
+  } catch {
+    return { label, address, configured: true, addressInvalid: true, error: "oracle_address_invalid" };
+  }
+  if (normalizedAddress.toLowerCase() === ethers.ZeroAddress.toLowerCase()) {
+    return {
+      label,
+      address: normalizedAddress,
+      configured: true,
+      zeroAddress: true,
+      error: "oracle_zero_address"
+    };
+  }
+
   const provider = getProvider(rpc);
-  const contract = new ethers.Contract(address, L2_OUTPUT_ORACLE_ABI, provider);
-  const snapshot = { label, address, rpc, configured: true };
+  const contract = new ethers.Contract(normalizedAddress, L2_OUTPUT_ORACLE_ABI, provider);
+  const versionContract = new ethers.Contract(normalizedAddress, ORACLE_VERSION_ABI, provider);
+  const snapshot = { label, address: normalizedAddress, rpc, configured: true, expectedParentChainId };
+
+  try {
+    snapshot.parentChainId = parseNumber(await provider.send("gst_chainId", []));
+  } catch (err) {
+    snapshot.parentChainIdError = err?.message || String(err);
+  }
+  if (
+    expectedParentChainId !== null &&
+    expectedParentChainId !== undefined &&
+    snapshot.parentChainId !== null &&
+    snapshot.parentChainId !== undefined &&
+    snapshot.parentChainId !== expectedParentChainId
+  ) {
+    snapshot.parentChainMismatch = true;
+  }
+  try {
+    const code = await provider.getCode(normalizedAddress);
+    snapshot.hasCode = Boolean(code && code !== "0x");
+    if (!snapshot.hasCode) {
+      snapshot.contractCodeMissing = true;
+      snapshot.error = "oracle_contract_not_deployed";
+      return snapshot;
+    }
+  } catch (err) {
+    snapshot.contractCodeError = err?.message || String(err);
+  }
+  try {
+    snapshot.version = String(await versionContract.version());
+    if (!snapshot.version) {
+      snapshot.versionEmpty = true;
+    }
+  } catch (err) {
+    snapshot.versionError = err?.message || String(err);
+  }
+
   try {
     snapshot.latestOutputIndex = parseNumber(await contract.latestOutputIndex());
   } catch (err) {
@@ -380,6 +433,24 @@ const computeOracleIncidents = ({
 }) => {
   const incidents = {};
   if (!snapshot || !snapshot.configured) return incidents;
+  if (snapshot.addressInvalid) {
+    incidents.oracle_address_invalid = true;
+  }
+  if (snapshot.zeroAddress) {
+    incidents.oracle_zero_address = true;
+  }
+  if (snapshot.parentChainMismatch) {
+    incidents.oracle_wrong_parent_chain = true;
+  }
+  if (snapshot.contractCodeMissing) {
+    incidents.oracle_not_deployed = true;
+  }
+  if (snapshot.versionError) {
+    incidents.oracle_abi_mismatch = true;
+  }
+  if (snapshot.versionEmpty) {
+    incidents.oracle_version_empty = true;
+  }
   if (snapshot.error || snapshot.latestBlockNumberError || snapshot.latestOutputIndexError) {
     incidents.oracle_error = true;
   }
@@ -795,7 +866,7 @@ const fetchLayerStatus = async (layer, rpc) => {
   return {
     layer,
     rpc,
-    chainId: parseNumber(await provider.send("eth_chainId", [])),
+    chainId: parseNumber(await provider.send("gst_chainId", [])),
     headNumber: latest?.number ?? null,
     headHash: latest?.hash ?? null,
     headTimestamp: latest?.timestamp ?? null,
@@ -1071,8 +1142,18 @@ const pollOnce = async () => {
       const l1Rpc = L2_OUTPUT_ORACLE_RPC || state.layers.L1?.rpc || "";
       const l2Rpc = L3_OUTPUT_ORACLE_RPC || state.layers.L2?.rpc || "";
       finalitySnapshots = {
-        L2: await fetchOutputOracleSnapshot("L2", l1Rpc, L2_OUTPUT_ORACLE_ADDRESS),
-        L3: await fetchOutputOracleSnapshot("L3", l2Rpc, L3_OUTPUT_ORACLE_ADDRESS)
+        L2: await fetchOutputOracleSnapshot(
+          "L2",
+          l1Rpc,
+          L2_OUTPUT_ORACLE_ADDRESS,
+          state.layers.L1?.chainId ?? null
+        ),
+        L3: await fetchOutputOracleSnapshot(
+          "L3",
+          l2Rpc,
+          L3_OUTPUT_ORACLE_ADDRESS,
+          state.layers.L2?.chainId ?? null
+        )
       };
       state.finality = finalitySnapshots;
     } else {

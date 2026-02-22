@@ -22,7 +22,18 @@ Quick start:
 7) Optional live-fire resilience drill:
    - `pnpm ghostloop:watch:drill`
 
+CLI skeleton (Phase 1):
+
+- `bash bin/ghostcontrol.sh up`
+- `bash bin/ghostcontrol.sh down`
+- `bash bin/ghostcontrol.sh status`
+- `bash bin/ghostcontrol.sh logs [service]`
+- `bash bin/ghostcontrol.sh doctor [evidence_dir]`
+- `bash bin/ghostcontrol.sh backup [out_dir]`
+- `bash bin/ghostcontrol.sh restore <archive.tar.gz>`
+
 Docs:
 - `docs/architecture.mmd`
 - `docs/security.md`
 - `docs/runbooks.md`
+- `docs/usage.md`

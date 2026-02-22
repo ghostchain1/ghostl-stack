@@ -63,7 +63,9 @@ contract CascadingFinalityOraclesTest is TestBase {
         bytes32 evidenceHash = keccak256("l2-divergence-evidence");
 
         vm.prank(GOVERNOR);
-        l2Oracle.recordFinalizedL2Root(canonicalRoot, 250, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l2-canonical"));
+        l2Oracle.recordFinalizedL2Root(
+            canonicalRoot, 250, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l2-canonical")
+        );
 
         vm.prank(GOVERNOR);
         evidenceStore.setReporter(address(l2Oracle), true);
@@ -73,13 +75,12 @@ contract CascadingFinalityOraclesTest is TestBase {
         vm.prank(TIMELOCK);
         vm.expectRevert(
             abi.encodeWithSelector(
-                L2FinalityOracle.L2CanonicalRootMismatch.selector,
-                uint256(250),
-                canonicalRoot,
-                conflictingRoot
+                L2FinalityOracle.L2CanonicalRootMismatch.selector, uint256(250), canonicalRoot, conflictingRoot
             )
         );
-        l2Oracle.recordFinalizedL2Root(conflictingRoot, 250, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l2-conflict"));
+        l2Oracle.recordFinalizedL2Root(
+            conflictingRoot, 250, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l2-conflict")
+        );
 
         vm.prank(GOVERNOR);
         bool reported = l2Oracle.reportCanonicalRootDivergence(250, conflictingRoot, evidenceHash);
@@ -106,14 +107,7 @@ contract CascadingFinalityOraclesTest is TestBase {
         vm.prank(TIMELOCK);
         vm.expectRevert(abi.encodeWithSelector(L3FinalityOracle.L2ParentNotFinalizedOnL1.selector, missingParent));
         l3Oracle.recordFinalizedL3Root(
-            l3Root,
-            300,
-            missingParent,
-            999,
-            100,
-            L1_BLOCK_HASH,
-            POLICY_HASH,
-            keccak256("proof-l3")
+            l3Root, 300, missingParent, 999, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l3")
         );
 
         bytes32 parentL2Root = keccak256("l2-root-2");
@@ -130,14 +124,7 @@ contract CascadingFinalityOraclesTest is TestBase {
         vm.prank(TIMELOCK);
         vm.expectRevert(abi.encodeWithSelector(L3FinalityOracle.L2CanonicalRootUnavailable.selector, uint256(777)));
         l3Oracle.recordFinalizedL3Root(
-            l3Root,
-            301,
-            parentL2Root,
-            777,
-            100,
-            L1_BLOCK_HASH,
-            POLICY_HASH,
-            keccak256("proof-l3-missing-canonical")
+            l3Root, 301, parentL2Root, 777, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l3-missing-canonical")
         );
 
         vm.prank(TIMELOCK);
@@ -147,14 +134,7 @@ contract CascadingFinalityOraclesTest is TestBase {
             )
         );
         l3Oracle.recordFinalizedL3Root(
-            l3Root,
-            301,
-            parentL2Root,
-            202,
-            100,
-            L1_BLOCK_HASH,
-            POLICY_HASH,
-            keccak256("proof-l3-canonical-mismatch")
+            l3Root, 301, parentL2Root, 202, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l3-canonical-mismatch")
         );
 
         bytes32 l3DivergenceEvidence = keccak256("l3-parent-divergence-evidence");
@@ -172,19 +152,42 @@ contract CascadingFinalityOraclesTest is TestBase {
 
         vm.prank(TIMELOCK);
         l3Oracle.recordFinalizedL3Root(
-            l3Root,
-            301,
-            parentL2Root,
-            201,
-            100,
-            L1_BLOCK_HASH,
-            POLICY_HASH,
-            keccak256("proof-l3-2")
+            l3Root, 301, parentL2Root, 201, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l3-2")
         );
 
         assertTrue(l3Oracle.isFinalizedOnL2(l3Root), "l3 finalized on l2");
         assertTrue(l3Oracle.isParentL2FinalizedOnL1(parentL2Root), "parent l2 finalized on l1");
         assertEq(l3Oracle.parentL2Block(l3Root), 201, "parent l2 block bound");
+    }
+
+    function testL3FailsWhenReferencedL1ConfirmationIsWrong() public {
+        vm.prank(GOVERNOR);
+        l1Oracle.setAcceptedPolicyHash(POLICY_HASH, true);
+        vm.prank(GOVERNOR);
+        l1Oracle.recordFinalizedBlock(100, L1_BLOCK_HASH, L1_QC_HASH, POLICY_HASH);
+
+        bytes32 l2Root = keccak256("l2-root-l1-mismatch");
+        bytes32 l3Root = keccak256("l3-root-l1-mismatch");
+
+        vm.prank(GOVERNOR);
+        l2Oracle.recordFinalizedL2Root(l2Root, 210, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l2-l1-mismatch"));
+
+        vm.prank(TIMELOCK);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                L3FinalityOracle.L1BlockNotFinalized.selector, uint256(999), keccak256("wrong-l1-block-hash")
+            )
+        );
+        l3Oracle.recordFinalizedL3Root(
+            l3Root,
+            310,
+            l2Root,
+            210,
+            999,
+            keccak256("wrong-l1-block-hash"),
+            POLICY_HASH,
+            keccak256("proof-l3-l1-mismatch")
+        );
     }
 
     function testL1HaltPropagatesToL2AndL3Finality() public {
@@ -208,14 +211,7 @@ contract CascadingFinalityOraclesTest is TestBase {
         vm.prank(TIMELOCK);
         vm.expectRevert(L3FinalityOracle.L1FinalityHalted.selector);
         l3Oracle.recordFinalizedL3Root(
-            l3Root,
-            500,
-            l2Root,
-            400,
-            100,
-            L1_BLOCK_HASH,
-            POLICY_HASH,
-            keccak256("proof-l3-halt")
+            l3Root, 500, l2Root, 400, 100, L1_BLOCK_HASH, POLICY_HASH, keccak256("proof-l3-halt")
         );
 
         vm.prank(TIMELOCK);

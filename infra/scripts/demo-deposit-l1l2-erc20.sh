@@ -47,11 +47,19 @@ fi
 
 L2_MINTABLE_ERC20_FACTORY="${L2_MINTABLE_ERC20_FACTORY:-0x4200000000000000000000000000000000000012}"
 cd "$ROOT_DIR/contracts"
+set +e
 ENSURE_OUT="$(DEPLOYER_PRIVATE_KEY="$DEMO_SIGNER_PRIVATE_KEY" \
   L1_TOKEN_ADDRESS="$L1_TOKEN_ADDRESS" L2_TOKEN_ADDRESS="$L2_TOKEN_ADDRESS" \
   L2_MINTABLE_ERC20_FACTORY="$L2_MINTABLE_ERC20_FACTORY" RPC_L1="http://localhost:18545" \
   OP_L2_RPC="http://localhost:29547" \
   npx hardhat run --network ghostl2Op --no-compile scripts/ensure_l2_mintable_erc20.ts 2>&1)"
+ENSURE_RC=$?
+set -e
+if [ "$ENSURE_RC" -ne 0 ]; then
+  echo "Failed to run ensure_l2_mintable_erc20.ts" >&2
+  echo "$ENSURE_OUT" >&2
+  exit "$ENSURE_RC"
+fi
 L2_TOKEN_ADDRESS="$(printf '%s\n' "$ENSURE_OUT" | grep -Eo 'L2_TOKEN_ADDRESS=0x[a-fA-F0-9]{40}' | tail -n1 | cut -d= -f2)"
 if [ -z "$L2_TOKEN_ADDRESS" ]; then
   echo "Failed to resolve L2_TOKEN_ADDRESS from ensure_l2_mintable_erc20.ts" >&2
