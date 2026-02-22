@@ -15,14 +15,16 @@ Use this checklist to harden `main` branch merge policy for production safety.
 
 Mark these GitHub Actions checks as **required**:
 
-- `CI / rpc-namespace`
-- `CI / shellcheck`
-- `CI / node-lint-build`
-- `CI / contracts-hardhat-compile`
-- `CI / contracts-gst-invariant`
-- `CI / contracts-lge-tests`
-- `CI / contracts-cascading-finality`
-- `Security Production Preflight / secure-preflight`
+- `rpc-namespace`
+- `shellcheck`
+- `node-lint-build`
+- `contracts-hardhat-compile`
+- `contracts-gst-invariant`
+- `contracts-lge-tests`
+- `contracts-cascading-finality`
+- `secure-preflight`
+
+Pin these checks to the **GitHub Actions** app when configuring via API/CLI.
 
 Recommended additional required checks:
 
@@ -51,7 +53,7 @@ After applying protection:
 
 - Open a test PR that touches `contracts/src/governance/bridge/**` and confirm:
   - `Contracts Cascading Finality (Fast)` runs.
-  - `CI` and `Security Production Preflight` required checks gate merge.
+  - required checks above are reported on the PR head commit and gate merge.
 - Open a test PR with non-contract docs-only changes and confirm expected workflow scope behavior.
 
 ## 7) Maintenance cadence

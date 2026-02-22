@@ -1,15 +1,4 @@
 Ensuring required labels on ghostchain1/ghostl-stack...
-[dry-run] would ensure label 'dependencies' (0E8A16) on ghostchain1/ghostl-stack
-[dry-run] would ensure label 'ci' (1D76DB) on ghostchain1/ghostl-stack
-[dry-run] would ensure label 'dependabot' (1D76DB) on ghostchain1/ghostl-stack
-[dry-run] would ensure label 'automerge:candidate' (0E8A16) on ghostchain1/ghostl-stack
-[dry-run] would ensure label 'semver:patch' (0E8A16) on ghostchain1/ghostl-stack
-[dry-run] would ensure label 'semver:minor' (FBCA04) on ghostchain1/ghostl-stack
-[dry-run] would ensure label 'semver:major' (B60205) on ghostchain1/ghostl-stack
-[dry-run] would ensure label 'semver:unknown' (5319E7) on ghostchain1/ghostl-stack
-[dry-run] would ensure label 'ecosystem:github-actions' (1D76DB) on ghostchain1/ghostl-stack
-[dry-run] would ensure label 'ecosystem:npm' (1D76DB) on ghostchain1/ghostl-stack
-[dry-run] would ensure label 'ecosystem:unknown' (1D76DB) on ghostchain1/ghostl-stack
 Applying branch protection to ghostchain1/ghostl-stack:main...
 [dry-run] would call: PUT repos/ghostchain1/ghostl-stack/branches/main/protection
 [dry-run] payload:
@@ -17,14 +6,14 @@ Applying branch protection to ghostchain1/ghostl-stack:main...
   "required_status_checks": {
     "strict": true,
     "contexts": [
-      "CI / rpc-namespace",
-      "CI / shellcheck",
-      "CI / node-lint-build",
-      "CI / contracts-hardhat-compile",
-      "CI / contracts-gst-invariant",
-      "CI / contracts-lge-tests",
-      "CI / contracts-cascading-finality",
-      "Security Production Preflight / secure-preflight"
+      "rpc-namespace",
+      "shellcheck",
+      "node-lint-build",
+      "contracts-hardhat-compile",
+      "contracts-gst-invariant",
+      "contracts-lge-tests",
+      "contracts-cascading-finality",
+      "secure-preflight"
     ]
   },
   "enforce_admins": true,
@@ -46,11 +35,11 @@ Applying branch protection to ghostchain1/ghostl-stack:main...
 Enabling required signed commits on ghostchain1/ghostl-stack:main...
 [dry-run] would enable required signed commits for ghostchain1/ghostl-stack:main
 Preview complete. Required status checks that would be configured:
-CI / rpc-namespace
-CI / shellcheck
-CI / node-lint-build
-CI / contracts-hardhat-compile
-CI / contracts-gst-invariant
-CI / contracts-lge-tests
-CI / contracts-cascading-finality
-Security Production Preflight / secure-preflight
+rpc-namespace
+shellcheck
+node-lint-build
+contracts-hardhat-compile
+contracts-gst-invariant
+contracts-lge-tests
+contracts-cascading-finality
+secure-preflight
