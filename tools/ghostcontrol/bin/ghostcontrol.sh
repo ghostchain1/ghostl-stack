@@ -33,17 +33,24 @@ rpc_probe() {
   local name="$1"
   local url="$2"
   local http_code
-  http_code=$(curl -sS -m 3 -o /tmp/ghostcontrol-rpc.json -w '%{http_code}' \
+  local tmp_out
+  local tmp_err
+  tmp_out="$(mktemp)"
+  tmp_err="$(mktemp)"
+
+  http_code=$(curl -sS -m 3 -o "${tmp_out}" -w '%{http_code}' \
     -H 'content-type: application/json' \
     --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
-    "${url}" 2>/tmp/ghostcontrol-rpc.err || true)
+    "${url}" 2>"${tmp_err}" || true)
   if [[ "${http_code}" == "200" ]]; then
     echo "PASS rpc:${name} ${url}"
+    rm -f "${tmp_out}" "${tmp_err}"
     return 0
   fi
   local err
-  err="$(tr -d '\n' < /tmp/ghostcontrol-rpc.err 2>/dev/null | head -c 140)"
+  err="$(tr -d '\n' < "${tmp_err}" 2>/dev/null | head -c 140)"
   echo "FAIL rpc:${name} ${url} ${err}"
+  rm -f "${tmp_out}" "${tmp_err}"
   return 1
 }
 
@@ -51,14 +58,19 @@ http_probe() {
   local name="$1"
   local url="$2"
   local code
-  code=$(curl -sS -m 3 -o /dev/null -w '%{http_code}' "${url}" 2>/tmp/ghostcontrol-http.err || true)
-  if [[ "${code}" =~ ^2|3 ]]; then
+  local tmp_err
+  tmp_err="$(mktemp)"
+
+  code=$(curl -sS -m 3 -o /dev/null -w '%{http_code}' "${url}" 2>"${tmp_err}" || true)
+  if [[ "${code}" =~ ^[23][0-9][0-9]$ ]]; then
     echo "PASS http:${name} ${url} ${code}"
+    rm -f "${tmp_err}"
     return 0
   fi
   local err
-  err="$(tr -d '\n' < /tmp/ghostcontrol-http.err 2>/dev/null | head -c 140)"
+  err="$(tr -d '\n' < "${tmp_err}" 2>/dev/null | head -c 140)"
   echo "FAIL http:${name} ${url} ${code} ${err}"
+  rm -f "${tmp_err}"
   return 1
 }
 
@@ -67,6 +79,13 @@ cmd_doctor() {
   mkdir -p "${out_dir}"
   local log_file="${out_dir}/ghostcontrol-doctor.log"
   local failures=0
+  local compose_cfg_err
+  local compose_ps_out
+  local compose_ps_err
+
+  compose_cfg_err="$(mktemp)"
+  compose_ps_out="$(mktemp)"
+  compose_ps_err="$(mktemp)"
 
   {
     echo "# ghostcontrol doctor"
@@ -80,20 +99,20 @@ cmd_doctor() {
       failures=$((failures + 1))
     fi
 
-    if docker compose -f "${COMPOSE_FILE}" config -q >/tmp/ghostcontrol-doctor-compose.err 2>&1; then
+    if docker compose -f "${COMPOSE_FILE}" config -q >"${compose_cfg_err}" 2>&1; then
       echo "PASS compose:config ${COMPOSE_FILE}"
     else
       echo "FAIL compose:config ${COMPOSE_FILE}"
-      sed 's/^/  /' /tmp/ghostcontrol-doctor-compose.err || true
+      sed 's/^/  /' "${compose_cfg_err}" || true
       failures=$((failures + 1))
     fi
 
-    if run_compose ps >/tmp/ghostcontrol-doctor-ps.out 2>/tmp/ghostcontrol-doctor-ps.err; then
+    if run_compose ps >"${compose_ps_out}" 2>"${compose_ps_err}"; then
       echo "PASS compose:ps"
-      cat /tmp/ghostcontrol-doctor-ps.out
+      cat "${compose_ps_out}"
     else
       echo "FAIL compose:ps"
-      sed 's/^/  /' /tmp/ghostcontrol-doctor-ps.err || true
+      sed 's/^/  /' "${compose_ps_err}" || true
       failures=$((failures + 1))
     fi
 
@@ -111,8 +130,9 @@ cmd_doctor() {
     else
       echo "DOCTOR_STATUS=FAIL failures=${failures}"
     fi
-  } | tee "${log_file}"
+  } > >(tee "${log_file}") 2>&1
 
+  rm -f "${compose_cfg_err}" "${compose_ps_out}" "${compose_ps_err}"
   [[ ${failures} -eq 0 ]]
 }
 
