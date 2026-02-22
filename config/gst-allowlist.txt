@@ -7,3 +7,8 @@ contracts/reports/formal/scribble/scribble.json
 
 # Generated snapshot (contains upstream image/import identifiers).
 ops/STACK_CANONICAL.yml
+
+# Historical evidence snapshots may contain legacy upstream filenames/tokens.
+evidence/phase0/compose-files.txt
+evidence/phase10/opstack-check-postflight.txt
+evidence/phase12/gate-l1-go-no-go.txt

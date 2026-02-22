@@ -1,0 +1,10 @@
+=== Oracle validation logic references ===
+313:const ORACLE_VERSION_ABI = ["function version() view returns (string)"];
+350:      error: "oracle_zero_address"
+385:    snapshot.version = String(await versionContract.version());
+440:    incidents.oracle_zero_address = true;
+443:    incidents.oracle_wrong_parent_chain = true;
+446:    incidents.oracle_not_deployed = true;
+449:    incidents.oracle_abi_mismatch = true;
+1145:        L2: await fetchOutputOracleSnapshot(
+1151:        L3: await fetchOutputOracleSnapshot(

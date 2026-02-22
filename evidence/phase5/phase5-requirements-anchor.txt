@@ -1,0 +1,8 @@
+=== Phase5 oracle requirement anchors ===
+22:- Verifies OutputOracles (L2→L1 and L3→L2) have bytecode and respond to `version()` on the correct parent chain.
+118:* [ ] `L2OutputOracle` **OR**
+169:# ✅ PHASE 5 — OUTPUT ORACLES (MOST COMMON FAILURE POINT)
+173:* [ ] **L2 → L1 OutputOracle**
+174:* [ ] **L3 → L2 OutputOracle**
+185:cast call <ORACLE_ADDR> "version()(string)" --rpc-url <PARENT_RPC>
+304:> **Each layer only trusts its parent, and every proposer must be able to call `version()` on its output oracle.**

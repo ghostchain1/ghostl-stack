@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "checks": {
+    "script-syntax-phase13-validator": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase13/script-syntax-phase13-validator.txt"
+    },
+    "docker-publish-main-only": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase13/docker-publish-main-only.txt"
+    },
+    "security-preflight-main-only": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase13/security-preflight-main-only.txt"
+    },
+    "ai-governance-tag-scoped": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase13/ai-governance-tag-scoped.txt"
+    },
+    "contracts-cascading-main-and-paths": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase13/contracts-cascading-main-and-paths.txt"
+    },
+    "checklist-main-tags-governance": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase13/checklist-main-tags-governance.txt"
+    }
+  },
+  "failures": 0
+}

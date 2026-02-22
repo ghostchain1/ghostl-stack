@@ -1,0 +1,14 @@
+[doctor-l3] starting
+OK: docker/compose reachable
+OK: L3 config files present
+OK: dev secrets allowed
+OK: chain IDs aligned
+OK: L3 execution head (eth_blockNumber)=702038 (progress check skipped: L3_REQUIRE_L3_PROGRESS=0)
+OK: rollup RPC reachable
+OK: rollup parent block hash matches
+OK: rollup L3 block hash matches
+OK: parent derivation lag within threshold
+WARN: L3 safe lag too high (unsafe=702039 safe=699027 lag=3012 > 256)
+OK: parent L2 contract bytecode checks passed
+WARN: metrics endpoint not reachable: http://localhost:8302/metrics
+OK: L3 doctor checks completed

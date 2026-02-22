@@ -1,0 +1,1 @@
+-rwxrwxr-x 1 ghost ghost 3996 Feb 21 19:22 infra/opstack/scripts/validate-node-hygiene.sh

@@ -1,0 +1,2 @@
+build:api exit=0
+build:web exit=1

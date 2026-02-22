@@ -1,0 +1,21 @@
+[doctor-l1] starting
+OK: docker/compose reachable
+OK: dev secrets allowed
+OK: checksum /home/ghost/ghostl-stack/infra/ghostchain/geth/genesis.json
+OK: checksum /home/ghost/ghostl-stack/infra/ghostchain/geth/run-node.sh
+OK: genesis chainId=14000101
+OK: port 18545 listening
+OK: port 18546 listening
+OK: port 18551 listening
+OK: port 18552 listening
+OK: port 18660 listening
+OK: key /home/ghost/ghostl-stack/infra/ghostchain/geth/keys/node1.key permissions 600
+OK: key /home/ghost/ghostl-stack/infra/ghostchain/geth/keys/node2.key permissions 600
+OK: compose config valid
+OK: RPC chainId=14000101
+OK: RPC peerCount reachable
+OK: RPC syncing reachable
+OK: L1 metrics reachable
+OK: Prometheus ready
+OK: Prometheus targets include L1 metrics
+[doctor-l1] OK

@@ -1,0 +1,29 @@
+Debugger listening on ws://127.0.0.1:53136/c2b5dc3b-886e-4f6a-ae95-5a798be28604
+For help, see: https://nodejs.org/en/docs/inspector
+Debugger attached.
+Waiting for the debugger to disconnect...
+Debugger listening on ws://127.0.0.1:53999/943761eb-cdb8-4cd7-819a-2ec95b94dfda
+For help, see: https://nodejs.org/en/docs/inspector
+Debugger attached.
+Waiting for the debugger to disconnect...
+{
+  "ok": true,
+  "l2": {
+    "mode": "fault-proof",
+    "rollupNodeRpc": "op-proposer --rollup-rpc (compose validated)",
+    "parentRpc": "http://localhost:18545",
+    "targetAddress": "0x05Aa229Aec102f78CE0E852A812a388F076Aa555",
+    "hasCode": true,
+    "versionRaw": ""
+  },
+  "l3": {
+    "mode": "fault-proof",
+    "rollupNodeRpc": "l3-op-proposer --rollup-rpc (compose validated)",
+    "parentRpc": "http://localhost:29547",
+    "targetAddress": "0x05Aa229Aec102f78CE0E852A812a388F076Aa555",
+    "hasCode": true,
+    "versionRaw": ""
+  },
+  "failures": 0
+}
+[phase6] PASS: proposer configuration gate satisfied

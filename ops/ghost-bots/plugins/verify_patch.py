@@ -375,6 +375,7 @@ def main() -> int:
     ap.add_argument("--skip-forge", action="store_true")
     ap.add_argument("--skip-rpc-smoke", action="store_true")
     ap.add_argument("--skip-compose", action="store_true")
+    ap.add_argument("--skip-gst-gates", action="store_true")
     ap.add_argument("--gate-timeout-seconds", type=int, default=int(os.environ.get("GHOST_BOTS_GATE_TIMEOUT_SEC", "180")))
     ap.add_argument(
         "--service-test-timeout-seconds",
@@ -401,24 +402,28 @@ def main() -> int:
 
     touches_dashboards = any(("grafana" in f or "dashboard" in f) for f in patch_files)
     results: list[dict[str, Any]] = []
-    results.append(
-        _run_gate_cmd(
-            "gst_leakage_gate",
-            ["bash", "scripts/gst-leakage-gate.sh"],
-            repo_root,
-            out_dir,
-            timeout_seconds=args.gate_timeout_seconds,
+    if args.skip_gst_gates:
+        results.append(_skip_gate(out_dir, "gst_leakage_gate", "disabled by flag"))
+        results.append(_skip_gate(out_dir, "gst_symbol_gate", "disabled by flag"))
+    else:
+        results.append(
+            _run_gate_cmd(
+                "gst_leakage_gate",
+                ["bash", "scripts/gst-leakage-gate.sh"],
+                repo_root,
+                out_dir,
+                timeout_seconds=args.gate_timeout_seconds,
+            )
         )
-    )
-    results.append(
-        _run_gate_cmd(
-            "gst_symbol_gate",
-            ["bash", "scripts/gst-symbol-gate.sh"],
-            repo_root,
-            out_dir,
-            timeout_seconds=args.gate_timeout_seconds,
+        results.append(
+            _run_gate_cmd(
+                "gst_symbol_gate",
+                ["bash", "scripts/gst-symbol-gate.sh"],
+                repo_root,
+                out_dir,
+                timeout_seconds=args.gate_timeout_seconds,
+            )
         )
-    )
     if args.skip_compose:
         results.append(_skip_gate(out_dir, "compose_config", "disabled by flag"))
     else:

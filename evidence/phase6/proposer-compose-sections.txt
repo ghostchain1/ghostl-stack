@@ -1,0 +1,93 @@
+=== L2 op-proposer args ===
+    cap_drop: *id001
+    security_opt: *id002
+    image: local/op-proposer:${OPSTACK_IMAGE_TAG:-local}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    logging: *id003
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    depends_on:
+      op-sequencer:
+        condition: service_healthy
+      op-gate:
+        condition: service_healthy
+      op-gate-l1:
+        condition: service_healthy
+      l1-rpc-proxy:
+        condition: service_healthy
+    environment:
+      PROPOSER_KEY: ${PROPOSER_KEY:-}
+    command:
+    - op-proposer
+    - --l1-eth-rpc=http://op-gate-l1:8545
+    - --rollup-rpc=http://op-sequencer:9646
+    # Fault-proofs mode (DisputeGameFactory). Safer than legacy L2OutputOracle polling.
+    - --game-factory-address=${L2_GAME_FACTORY_ADDRESS:-0x8A791620dd6260079BF849Dc5567aDC3F2FdC318}
+    - --proposal-interval=${PROPOSAL_INTERVAL:-30s}
+    - --game-type=0
+    - --private-key=${PROPOSER_KEY:-}
+    - --allow-non-finalized
+    - --txmgr.send-timeout=30s
+    - --rpc.addr=0.0.0.0
+    - --rpc.port=8560
+    - --metrics.enabled
+    - --metrics.addr=0.0.0.0
+    - --metrics.port=7302
+    volumes:
+    - ./config:/config:ro
+    ports:
+    - 8560:8560
+    - 7302:7302
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:7302/metrics >/dev/null
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 25s
+    mem_limit: 1g
+    cpus: '1.0'
+
+=== L3 op-proposer args ===
+    image: local/op-proposer:${OPSTACK_IMAGE_TAG:-local}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
+    restart: unless-stopped
+    stop_grace_period: 60s
+    logging: *default-logging
+    depends_on:
+      l3-op-node:
+        condition: service_healthy
+      op-gate:
+        condition: service_healthy
+    command:
+      - op-proposer
+      - --l1-eth-rpc=${L3_L1_RPC:-http://op-gate:8545}
+      - --rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}
+      - --game-factory-address=${L3_GAME_FACTORY_ADDRESS:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}
+      - --proposal-interval=${L3_PROPOSAL_INTERVAL:-10s}
+      - --game-type=0
+      - --private-key=${L3_PROPOSER_KEY:-${PROPOSER_KEY}}
+      - --allow-non-finalized
+      - --rpc.addr=0.0.0.0
+      - --rpc.port=${L3_PROPOSER_RPC_PORT:-18560}
+      - --metrics.enabled
+      - --metrics.addr=0.0.0.0
+      - --metrics.port=${L3_METRICS_PROPOSER_PORT:-8302}
+    volumes:
+      - ./l3/${L3_NAME:-ghostl3}/config:/config:ro
+    ports:
+      - "${L3_PROPOSER_HOST_PORT:-39560}:${L3_PROPOSER_RPC_PORT:-18560}"
+      - "${L3_METRICS_PROPOSER_HOST_PORT:-8302}:${L3_METRICS_PROPOSER_PORT:-8302}"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:${L3_PROPOSER_RPC_PORT:-18560} >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 25s
+    <<: *default-security
+    mem_limit: 1g
+    cpus: "1.0"
+

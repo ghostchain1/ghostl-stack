@@ -1,0 +1,17 @@
+Phase 8 bridge wiring drift detected (2026-02-21)
+
+L3 -> L2 mismatch:
+- Expected parent bridge   : 0xC6bA8C3233eCF65B761049ef63466945c362EdD2 (from infra/opstack/.env.l3)
+- On-chain parent bridge   : 0x061c137864195998838574dA9E822102fA029D70
+
+- Expected parent messenger: 0x59F2f1fCfE2474fD5F0b9BA1E73ca90b143Eb8d0 (from infra/opstack/.env.l3)
+- On-chain parent messenger: 0xEA7cFd038c520128C244426766fb7d10804002f5
+
+L2 -> L1 checks passed:
+- L2StandardBridge other bridge matched L1_STANDARD_BRIDGE_ADDRESS.
+- L1 messenger portal matched OPTIMISM_PORTAL_ADDRESS.
+
+Gas constants (L3 messenger):
+- MIN_GAS_CALLDATA_OVERHEAD=16
+- MIN_GAS_DYNAMIC_OVERHEAD_DENOMINATOR=63
+- MIN_GAS_DYNAMIC_OVERHEAD_NUMERATOR=64

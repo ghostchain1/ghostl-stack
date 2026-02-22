@@ -1,0 +1,4 @@
+[2026-02-21T20:12:13Z] Federation invariants: required docs and scripts
+[2026-02-21T20:12:13Z] Federation invariants: env wiring for L2
+[2026-02-21T20:12:13Z] Federation invariants: env wiring for L3
+[2026-02-21T20:12:13Z] Federation invariants: OK
