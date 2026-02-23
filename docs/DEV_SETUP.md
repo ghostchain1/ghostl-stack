@@ -46,6 +46,40 @@ Notes:
   - `sudo usermod -aG docker $USER`
 - Next.js may emit a warning about SWC optional dependencies; it is safe to ignore if `npm run build` succeeds.
 
+## Production app runtimes (root commands)
+
+Required for API startup:
+
+```bash
+export GHOSTWALLET_MASTER_KEY=<32-byte-hex-or-base64>
+```
+
+Start individually:
+
+```bash
+npm run start:api:prod
+npm run start:worker:prod
+PORT=3200 npm run start -w apps/web
+```
+
+Start combined:
+
+```bash
+# API + Worker
+npm run start:apps:prod
+
+# API + Worker + Web
+# Optional overrides: API_PORT, WEB_PORT, WORKER_HEALTH_PORT
+npm run start:stack:prod
+```
+
+Quick verification:
+
+```bash
+npm run smoke:stack:prod
+npm run verify:prod
+```
+
 ## Liquidity Gravity Engine (LGE)
 
 Start the LGE stack:

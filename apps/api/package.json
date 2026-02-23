@@ -6,6 +6,7 @@
   "types": "dist/server.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "start:prod": "node scripts/start-prod.cjs",
     "dev": "ts-node src/server.ts",
     "dev:inspect": "NODE_OPTIONS=--inspect=0.0.0.0:9229 ts-node src/server.ts",
     "lint": "eslint src --ext .ts"
