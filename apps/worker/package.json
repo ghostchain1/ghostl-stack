@@ -12,7 +12,7 @@
     "start:prod": "node dist/index.js"
   },
   "dependencies": {
-    "bullmq": "5.69.3",
+    "bullmq": "5.70.1",
     "ioredis": "5.9.3"
   },
   "devDependencies": {
