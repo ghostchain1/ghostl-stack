@@ -11,6 +11,9 @@ on:
       - '**/*.md'
       - 'docs/**'
       - '.github/**/*.md'
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * 1'
 
 permissions: {}
 
