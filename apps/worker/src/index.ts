@@ -2,7 +2,6 @@ import { createServer } from 'node:http';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { Worker as BullWorker, type Job as BullJob } from 'bullmq';
-import { Redis } from 'ioredis';
 
 // Placeholder job runner for alerts/indexers. Replace with BullMQ or a scheduler when wiring live jobs.
 const heartbeatIntervalMs = Number(process.env.WORKER_HEARTBEAT_INTERVAL_MS || 30000);
@@ -52,7 +51,6 @@ const queueAllowedJobs = new Set(
 );
 
 let queueWorker: BullWorker | undefined;
-let queueConnection: Redis | undefined;
 
 type Job = {
   name: string;
@@ -243,9 +241,19 @@ const startQueueWorker = () => {
   if (!queueRedisUrl) {
     throw new Error('WORKER_REDIS_URL or REDIS_URL must be set when WORKER_QUEUE_ENABLED=true');
   }
-  queueConnection = new Redis(queueRedisUrl, { maxRetriesPerRequest: null });
+  const redisUrl = new URL(queueRedisUrl);
+  const parsedDb = redisUrl.pathname && redisUrl.pathname !== '/' ? Number(redisUrl.pathname.slice(1)) : undefined;
+  const connection = {
+    host: redisUrl.hostname,
+    port: Number(redisUrl.port || 6379),
+    username: redisUrl.username || undefined,
+    password: redisUrl.password || undefined,
+    db: Number.isFinite(parsedDb) ? parsedDb : undefined,
+    maxRetriesPerRequest: null as null,
+    ...(redisUrl.protocol === 'rediss:' ? { tls: {} } : {})
+  };
   queueWorker = new BullWorker(queueName, handleQueueJob, {
-    connection: queueConnection,
+    connection,
     concurrency: queueConcurrency
   });
   queueWorker.on('ready', () => {
@@ -270,10 +278,6 @@ const stopQueueWorker = async () => {
   if (queueWorker) {
     await queueWorker.close();
     queueWorker = undefined;
-  }
-  if (queueConnection) {
-    await queueConnection.quit();
-    queueConnection = undefined;
   }
 };
 

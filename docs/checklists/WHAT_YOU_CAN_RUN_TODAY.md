@@ -6,6 +6,23 @@ This checklist is **safe by default** (no transactions) unless a step is explici
 
 **Never paste or print secrets.** Do not `cat` `.env` / `.env.secrets` files and never echo private keys. If a step requires secrets, it lists **variable names only**.
 
+## 0) Final App Runtime Gate (recommended)
+
+- [ ] **Run canonical production app gate**
+  - **Purpose:** Validate app production readiness in one command (build + runtime smoke).
+  - **Required env:** `GHOSTWALLET_MASTER_KEY`
+  - **Command:**
+    ```bash
+    export GHOSTWALLET_MASTER_KEY=<32-byte-hex-or-base64>
+    npm run verify:prod
+    ```
+  - **Pass:** Command exits `0`; API/Worker/Web smoke endpoints all return `200`.
+  - **Likely fails:** Missing `GHOSTWALLET_MASTER_KEY`; local port conflicts on `4000`, `4100`, or `3200`.
+  - **Debug:**
+    ```bash
+    npm run smoke:stack:prod
+    ```
+
 ## 1) Preconditions
 
 - [ ] **Confirm you’re in the repo root and (optionally) clean**

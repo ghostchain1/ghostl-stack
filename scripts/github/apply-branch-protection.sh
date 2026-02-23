@@ -20,6 +20,10 @@ ensure_label() {
   local name="$1"
   local color="$2"
   local description="$3"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "[dry-run] would ensure label: ${name}"
+    return 0
+  fi
   gh label create "$name" \
     --repo "$REPO" \
     --color "$color" \
@@ -47,6 +51,7 @@ required_contexts_json="$(cat <<'JSON'
   "contracts-gst-invariant",
   "contracts-lge-tests",
   "contracts-cascading-finality",
+  "app-runtime-release-gate",
   "secure-preflight"
 ]
 JSON

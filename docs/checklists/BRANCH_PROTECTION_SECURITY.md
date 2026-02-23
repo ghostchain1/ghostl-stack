@@ -22,6 +22,7 @@ Mark these GitHub Actions checks as **required**:
 - `contracts-gst-invariant`
 - `contracts-lge-tests`
 - `contracts-cascading-finality`
+- `app-runtime-release-gate`
 - `secure-preflight`
 
 Pin these checks to the **GitHub Actions** app when configuring via API/CLI.
