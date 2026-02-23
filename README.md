@@ -239,6 +239,42 @@ npm run security:production:build
 
 Dedicated CI preflight workflow: `.github/workflows/security-production-preflight.yml`
 
+### Production app runtimes (root commands)
+
+Required for API startup:
+
+```bash
+export GHOSTWALLET_MASTER_KEY=<32-byte-hex-or-base64>
+```
+
+Start individually:
+
+```bash
+npm run start:api:prod
+npm run start:worker:prod
+PORT=3200 npm run start -w apps/web
+```
+
+Start combined:
+
+```bash
+# API + Worker
+npm run start:apps:prod
+
+# API + Worker + Web
+# Optional overrides: API_PORT, WEB_PORT, WORKER_HEALTH_PORT
+npm run start:stack:prod
+```
+
+Quick verification:
+
+```bash
+npm run smoke:stack:prod
+npm run verify:prod
+```
+
+Release gate checklist: `docs/checklists/RELEASE_GATE.md`
+
 ---
 
 ## 🧪 Testing & Safety

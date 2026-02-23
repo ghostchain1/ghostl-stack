@@ -10,6 +10,12 @@
   ],
   "scripts": {
     "build": "npm run build -w apps/api && npm run build -w apps/web",
+    "start:api:prod": "npm run start:prod -w apps/api",
+    "start:worker:prod": "npm run start:prod -w apps/worker",
+    "start:apps:prod": "bash scripts/start-apps-prod.sh",
+    "start:stack:prod": "bash scripts/start-stack-prod.sh",
+    "smoke:stack:prod": "bash scripts/smoke-stack-prod.sh",
+    "verify:prod": "bash scripts/verify-prod.sh",
     "compile:docker": "npm --prefix contracts run compile:docker",
     "compile:docker:verbose": "npm --prefix contracts run compile:docker:verbose",
     "compile:docker:clean": "npm --prefix contracts run compile:docker:clean",
