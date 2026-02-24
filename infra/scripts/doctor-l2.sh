@@ -810,7 +810,9 @@ if [ "$ROLLUP_GATING_L2_FINALITY_ON_L1" = "true" ]; then
     metric_urls+=( "$L2_ROLLUP_PROPOSER_HEALTH_URL" )
   fi
 else
-  metric_urls+=( "$OP_PROPOSER_METRICS_URL" )
+  if [ "$L2_REQUIRE_L2_PROGRESS" = "1" ] && [ -n "$OP_PROPOSER_METRICS_URL" ]; then
+    metric_urls+=( "$OP_PROPOSER_METRICS_URL" )
+  fi
 fi
 
 for url in "${metric_urls[@]}"; do

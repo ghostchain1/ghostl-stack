@@ -547,6 +547,14 @@ fi
 run_step "sync-opstack-env-from-l1-deployments" bash "$ROOT_DIR/infra/scripts/opstack/sync-env-from-l1-deployments.sh" "$ROOT_DIR/infra/opstack/.env"
 run_step "sync-opstack-env-from-l2-deployments" bash "$ROOT_DIR/infra/scripts/opstack/sync-env-from-l2-deployments.sh" "$ROOT_DIR/infra/opstack/.env.l3"
 
+if [ "$MODE" = "dev" ]; then
+  if [ "$SECRETS_SOURCE" = "vault" ]; then
+    log "Skipping deploy-l3-parent-contracts in dev mode for vault secrets source"
+  else
+    run_step "deploy-l3-parent-contracts" bash "$ROOT_DIR/infra/scripts/opstack/deploy-l3.sh"
+  fi
+fi
+
 run_step "opstack-preflight-3layer" bash "$ROOT_DIR/infra/scripts/opstack/preflight-3layer.sh" "$ROOT_DIR/infra/opstack/.env" "$ROOT_DIR/infra/opstack/.env.l3"
 
 if [ "$START_STACK" = "1" ]; then
