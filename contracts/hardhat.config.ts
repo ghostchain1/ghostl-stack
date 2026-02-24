@@ -1,25 +1,11 @@
-import { HardhatUserConfig, subtask } from "hardhat/config";
-import { TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD } from "hardhat/builtin-tasks/task-names";
+import { HardhatUserConfig } from "hardhat/config";
 import os from "os";
 import path from "path";
+import { fileURLToPath } from "url";
 import "dotenv/config";
 
-const disableTypechain =
-  process.env.HARDHAT_DISABLE_TYPECHAIN === "1" ||
-  process.env.HARDHAT_DISABLE_TYPECHAIN === "true";
-
-if (disableTypechain) {
-  // Load only the plugins we need, excluding TypeChain to avoid compile stalls.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  require("@nomicfoundation/hardhat-ethers");
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  require("@nomicfoundation/hardhat-chai-matchers");
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  require("@nomicfoundation/hardhat-verify");
-} else {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  require("@nomicfoundation/hardhat-toolbox");
-}
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
 const LOCAL_ACCOUNTS = DEPLOYER_PRIVATE_KEY ? [DEPLOYER_PRIVATE_KEY] : [];
@@ -39,14 +25,6 @@ const OP_L3_RPC = process.env.OP_L3_RPC ?? "http://localhost:39545";
 const OP_L2_CHAIN_ID = Number(process.env.OP_L2_CHAIN_ID ?? 901);
 const OP_L3_CHAIN_ID = Number(process.env.OP_L3_CHAIN_ID ?? 903);
 const ENABLE_VIA_IR = process.env.HARDHAT_VIA_IR !== "false";
-const USE_DOCKER_SOLC =
-  process.env.HARDHAT_USE_DOCKER_SOLC === "1" ||
-  process.env.HARDHAT_USE_DOCKER_SOLC === "true";
-const FORCE_WASM_SOLC =
-  process.env.HARDHAT_FORCE_WASM_SOLC === "1" ||
-  process.env.HARDHAT_FORCE_WASM_SOLC === "true" ||
-  process.arch !== "x64";
-
 const REQUEST_TIMEOUT_MS = 120_000;
 
 const enableModelChecker = process.env.FORMAL_VERIFY === "true";
@@ -62,53 +40,6 @@ const soliditySettings = enableModelChecker
     }
   : { optimizer: { enabled: true, runs: 200 }, viaIR: ENABLE_VIA_IR };
 
-const resolveHardhatWasmSolcPath = (version: string): string | undefined => {
-  const cacheDir = path.join(os.homedir(), ".cache", "hardhat-nodejs", "compilers-v2", "wasm");
-  const listPath = path.join(cacheDir, "list.json");
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const list = require(listPath) as { releases?: Record<string, string> };
-    const compilerFile = list?.releases?.[version];
-    if (!compilerFile) return undefined;
-    return path.join(cacheDir, compilerFile);
-  } catch {
-    return undefined;
-  }
-};
-
-const dockerSolcDir = path.join(__dirname, "scripts", "solc-docker");
-const dockerSolcByVersion: Record<string, string> = {
-  "0.8.24": path.join(dockerSolcDir, "solc-0.8.24.sh")
-};
-
-subtask(TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD).setAction(async (args, hre, runSuper) => {
-  const build = await runSuper(args);
-
-  if (FORCE_WASM_SOLC) {
-    const wasmPath = resolveHardhatWasmSolcPath(args.solcVersion as string);
-    if (wasmPath) {
-      return {
-        ...build,
-        compilerPath: wasmPath,
-        isSolcJs: true
-      };
-    }
-  }
-
-  if (USE_DOCKER_SOLC) {
-    const dockerPath = dockerSolcByVersion[args.solcVersion as string];
-    if (dockerPath) {
-      return {
-        ...build,
-        compilerPath: dockerPath,
-        isSolcJs: false
-      };
-    }
-  }
-
-  return build;
-});
-
 const config: HardhatUserConfig = {
   solidity: {
     version: "0.8.24",
@@ -120,6 +51,7 @@ const config: HardhatUserConfig = {
   },
   networks: {
     anvil: {
+      type: "http",
       url: RPC_L1,
       chainId: L1_CHAIN_ID,
       accounts: LOCAL_ACCOUNTS,
@@ -127,6 +59,7 @@ const config: HardhatUserConfig = {
       gasPrice: 1_000_000_000
     },
     ghostl2: {
+      type: "http",
       url: RPC_L2,
       chainId: L2_CHAIN_ID,
       accounts: LOCAL_ACCOUNTS,
@@ -134,6 +67,7 @@ const config: HardhatUserConfig = {
       gasPrice: 1_000_000_000
     },
     ghostl3: {
+      type: "http",
       url: RPC_L3,
       chainId: L3_CHAIN_ID,
       accounts: LOCAL_ACCOUNTS,
@@ -141,6 +75,7 @@ const config: HardhatUserConfig = {
       gasPrice: 1_000_000_000
     },
     ghostl2Op: {
+      type: "http",
       url: OP_L2_RPC,
       chainId: OP_L2_CHAIN_ID,
       accounts: LOCAL_ACCOUNTS,
@@ -148,6 +83,7 @@ const config: HardhatUserConfig = {
       gasPrice: 1_000_000_000
     },
     ghostl3Op: {
+      type: "http",
       url: OP_L3_RPC,
       chainId: OP_L3_CHAIN_ID,
       accounts: LOCAL_ACCOUNTS,
@@ -155,6 +91,7 @@ const config: HardhatUserConfig = {
       gasPrice: 1_000_000_000
     },
     polygon: {
+      type: "http",
       url: POLYGON_RPC_URL,
       chainId: 137,
       accounts: EXTERNAL_DEPLOYER_KEY,
@@ -162,6 +99,7 @@ const config: HardhatUserConfig = {
       gasPrice: 1_000_000_000
     },
     polygonAmoy: {
+      type: "http",
       url: POLYGON_AMOY_RPC_URL,
       chainId: 80002,
       accounts: EXTERNAL_DEPLOYER_KEY,
