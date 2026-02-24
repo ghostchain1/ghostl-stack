@@ -211,6 +211,17 @@ jobs:
         working-directory: contracts
         run: npm ci --legacy-peer-deps
 
+      - name: Diagnose Hardhat resolution
+        working-directory: contracts
+        run: |
+          set -euo pipefail
+          echo "node: $(node -v)"
+          echo "npm: $(npm -v)"
+          echo "npx hardhat version:"
+          npx hardhat --version
+          echo "hardhat package:"
+          npm ls hardhat --depth=0
+
       - name: Compile (Hardhat)
         working-directory: contracts
         env:
