@@ -1,0 +1,73 @@
+{
+  "title": "GhostLoad AI Overview",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Gas Target vs Actual (L1/L2/L3)",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+      "targets": [
+        { "expr": "gas_target_vs_actual{layer=\"L1\"}", "refId": "A" },
+        { "expr": "gas_target_vs_actual{layer=\"L2\"}", "refId": "B" },
+        { "expr": "gas_target_vs_actual{layer=\"L3\"}", "refId": "C" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Fee Volatility by Layer",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "fee_volatility{layer=\"L1\"}", "refId": "A" },
+        { "expr": "fee_volatility{layer=\"L2\"}", "refId": "B" },
+        { "expr": "fee_volatility{layer=\"L3\"}", "refId": "C" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Backlog Depth by Layer",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "backlog_depth{layer=\"L1\"}", "refId": "A" },
+        { "expr": "backlog_depth{layer=\"L2\"}", "refId": "B" },
+        { "expr": "backlog_depth{layer=\"L3\"}", "refId": "C" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Profit Estimate (bps)",
+      "gridPos": { "x": 0, "y": 16, "w": 6, "h": 4 },
+      "targets": [{ "expr": "profit_estimate", "refId": "A" }]
+    },
+    {
+      "type": "stat",
+      "title": "Batch Cost L1",
+      "gridPos": { "x": 6, "y": 16, "w": 6, "h": 4 },
+      "targets": [{ "expr": "batch_cost_l1", "refId": "A" }]
+    },
+    {
+      "type": "stat",
+      "title": "Compression Ratio",
+      "gridPos": { "x": 12, "y": 16, "w": 6, "h": 4 },
+      "targets": [{ "expr": "compression_ratio", "refId": "A" }]
+    },
+    {
+      "type": "stat",
+      "title": "Energy Retry Rate",
+      "gridPos": { "x": 18, "y": 16, "w": 6, "h": 4 },
+      "targets": [{ "expr": "energy_proxy_retry_rate", "refId": "A" }]
+    },
+    {
+      "type": "timeseries",
+      "title": "Safety and Fallback Signals",
+      "gridPos": { "x": 0, "y": 20, "w": 24, "h": 8 },
+      "targets": [
+        { "expr": "policy_rejections_total", "refId": "A" },
+        { "expr": "ai_decisions_total", "refId": "B" },
+        { "expr": "ai_fallback_total", "refId": "C" }
+      ]
+    }
+  ]
+}

@@ -17,6 +17,7 @@
     "deploy:futuristic:l3": "DEPLOY_LAYER=L3 hardhat run --network ghostl3 scripts/deploy_futuristic_stack.ts",
     "deploy:governance:l2": "DEPLOY_LAYER=L2 GOVERNANCE_ONLY=1 hardhat run --network ghostl2 scripts/deploy_futuristic_stack.ts",
     "deploy:governance:l3": "DEPLOY_LAYER=L3 GOVERNANCE_ONLY=1 hardhat run --network ghostl3 scripts/deploy_futuristic_stack.ts",
+    "deploy:ghostload:governance": "hardhat run --network anvil scripts/deploy_ghostload_governance.ts",
     "deploy:cascading-finality": "hardhat run --network ghostl2 scripts/deploy_cascading_finality.ts",
     "deploy:cascading-finality:op": "hardhat run --network ghostl2Op scripts/deploy_cascading_finality.ts",
     "deploy:ai": "hardhat run --network ghostl2 scripts/deploy_ai_layers.ts",

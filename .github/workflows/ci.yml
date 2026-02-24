@@ -131,6 +131,44 @@ jobs:
       - name: Build
         run: npm run build
 
+  ghostload-quality:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: "22.22.0"
+
+      - name: Syntax checks (GhostLoad)
+        run: |
+          node --check packages/ghostload-policy/index.js
+          node --check services/ghostload-ai/src/control.js
+          node --check services/ghostload-ai/src/index.js
+          node --check services/ghostload-controller/src/index.js
+          node --check tools/ghostload-sim/src/sim.js
+          node --check tools/ghostload-sim/src/cli.js
+
+      - name: Unit tests (GhostLoad)
+        run: |
+          npm --prefix packages/ghostload-policy test
+          npm --prefix services/ghostload-ai test
+          npm --prefix services/ghostload-controller test
+          npm --prefix tools/ghostload-sim test
+
+      - name: Stress simulation smoke
+        run: |
+          node tools/ghostload-sim/src/cli.js --scenario=l1-fee-spike --out=/tmp/ghostload-l1-fee-spike.json
+          node tools/ghostload-sim/src/cli.js --scenario=spam-attack --out=/tmp/ghostload-spam-attack.json
+
   app-runtime-release-gate:
     needs: [rpc-namespace]
     runs-on: ubuntu-latest

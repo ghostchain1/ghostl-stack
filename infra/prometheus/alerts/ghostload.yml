@@ -1,0 +1,56 @@
+groups:
+  - name: ghostload-alerts
+    rules:
+      - alert: GhostLoadFeeOutsideBand
+        expr: gas_target_vs_actual > 1.25 or gas_target_vs_actual < 0.75
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "GhostLoad fee drift outside target band"
+          description: "Actual fee has drifted outside configured target ratio for over 5m."
+
+      - alert: GhostLoadVolatilityHigh
+        expr: fee_volatility > 0.15
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "GhostLoad fee volatility high"
+          description: "Fee volatility exceeded threshold for 10m."
+
+      - alert: GhostLoadProfitBelowFloor
+        expr: profit_estimate < 1200
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "GhostLoad profit below floor"
+          description: "Profit estimate dropped below configured floor."
+
+      - alert: GhostLoadFallbackSpike
+        expr: increase(ai_fallback_total[10m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "GhostLoad fallback spike"
+          description: "AI fallback count increased rapidly."
+
+      - alert: GhostLoadBacklogRunaway
+        expr: backlog_depth > 100
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "GhostLoad backlog runaway"
+          description: "Backlog depth exceeded safe threshold for 5m."
+
+      - alert: GhostLoadRoutingViolationAttempt
+        expr: increase(policy_rejections_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "GhostLoad routing law violation attempt"
+          description: "Policy rejected at least one decision, potentially including forbidden route edges."
