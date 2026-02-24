@@ -5,6 +5,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_FILE="$ROOT/infra/opstack/docker-compose.yml"
+OPSTACK_ENV_FILE="$ROOT/infra/opstack/.env"
+OPSTACK_SECRETS_FILE="$ROOT/infra/opstack/.env.secrets"
 PROJECT_NAME="ghostl-stack"
 PM2_BIN="$ROOT/node_modules/.bin/pm2"
 
@@ -42,7 +44,14 @@ copy_env "$ROOT/apps/api/.env.local.example" "$ROOT/apps/api/.env.local"
 copy_env "$ROOT/apps/web/.env.local.example" "$ROOT/apps/web/.env.local"
 
 echo "Starting op-stack services via docker-compose..."
-hg_docker compose -f "$COMPOSE_FILE" --project-name "$PROJECT_NAME" up -d
+COMPOSE_ENV_ARGS=()
+if [[ -f "$OPSTACK_ENV_FILE" ]]; then
+  COMPOSE_ENV_ARGS+=(--env-file "$OPSTACK_ENV_FILE")
+fi
+if [[ -f "$OPSTACK_SECRETS_FILE" ]]; then
+  COMPOSE_ENV_ARGS+=(--env-file "$OPSTACK_SECRETS_FILE")
+fi
+hg_docker compose "${COMPOSE_ENV_ARGS[@]}" -f "$COMPOSE_FILE" --project-name "$PROJECT_NAME" up -d
 
 echo "Starting API + web via PM2..."
 "$PM2_BIN" start "$ROOT/ecosystem.config.cjs" --only ghostl-api,ghostl-web --env dev

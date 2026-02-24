@@ -1,0 +1,13 @@
+{
+  "name": "bridge-burst",
+  "mode": "cost-cap",
+  "initial": { "backlog": 11, "retryRatePct": 1.6, "wastedComputeRatioPct": 3.7, "utilizationPct": 63 },
+  "thresholds": { "backlogWarn": 40, "retryWarn": 5, "recoveryBacklogTarget": 12, "maxL2Volatility": 0.012, "maxFinalBacklog": 22, "minProfitFloorBps": 900, "maxWastedComputePct": 8 },
+  "timeline": [
+    { "epoch": 1, "gasL1": 1.2, "gasL2": 0.0013, "gasL3": 0.0011, "demandShock": 4, "drainCapacity": 4, "utilizationShock": 4, "settlementUnits": 120, "userFeeUnits": 360, "infraCostUnits": 34 },
+    { "epoch": 2, "gasL1": 2.6, "gasL2": 0.0016, "gasL3": 0.0013, "demandShock": 6, "drainCapacity": 3, "utilizationShock": 7, "settlementUnits": 170, "userFeeUnits": 370, "infraCostUnits": 34 },
+    { "epoch": 3, "gasL1": 3.0, "gasL2": 0.0017, "gasL3": 0.0014, "demandShock": 6, "drainCapacity": 3, "utilizationShock": 8, "settlementUnits": 190, "userFeeUnits": 375, "infraCostUnits": 34 },
+    { "epoch": 4, "gasL1": 1.8, "gasL2": 0.0015, "gasL3": 0.0012, "demandShock": 1, "drainCapacity": 6, "utilizationShock": -2, "settlementUnits": 130, "userFeeUnits": 365, "infraCostUnits": 34 },
+    { "epoch": 5, "gasL1": 1.3, "gasL2": 0.0013, "gasL3": 0.0011, "demandShock": -1, "drainCapacity": 7, "utilizationShock": -4, "settlementUnits": 110, "userFeeUnits": 355, "infraCostUnits": 34 }
+  ]
+}

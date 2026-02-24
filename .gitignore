@@ -195,6 +195,7 @@ ops/zkml/learning-log.json
 ops/governance/enforcement-log.json
 ops/governance/ai-policy-proposal.json
 ops/governance/chain-policy-*.json
+ops/security/vault-auth.env
 
 # ghost-helper-bots artifacts (generated)
 ghost-helper-bots/reports/

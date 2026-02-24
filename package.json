@@ -28,6 +28,8 @@
     "configure:build:dev": "bash infra/scripts/production/configure-build-ready.sh --mode=dev --secrets=dev",
     "security:production:preflight": "bash scripts/security/secure-production-build.sh",
     "security:production:build": "bash scripts/security/secure-production-build.sh --execute",
+    "security:vault:prepare": "bash scripts/security/prepare-vault-auth.sh --write-example",
+    "security:vault:check": "bash scripts/security/check-vault-auth.sh",
     "deprecations:check": "node scripts/check-deprecations.mjs",
     "lint": "eslint apps packages --ext .ts,.tsx",
     "node:check": "node scripts/node-check.mjs",
@@ -41,7 +43,10 @@
     "env:sync:l1": "bash infra/scripts/env-sync-l1.sh",
     "opstack:check": "npm run env:sync:opstack && npm run env:sync:opstack:l3 && npm run preflight:opstack",
     "phase2:formal": "npm --prefix contracts run formal:slither && npm --prefix contracts run formal:scribble && npm --prefix contracts run formal:echidna && npm --prefix contracts run test:invariant",
-    "phase2:preflight": "DEPRECATIONS_CMD_TIMEOUT_MS=60000 DEPRECATIONS_SKIP_FILE_SCAN=1 npm run deprecations:check && NODE_OPTIONS=--max_old_space_size=4096 HARDHAT_VIA_IR=true HARDHAT_USE_DOCKER_SOLC=1 npm --prefix contracts run build && bash scripts/pil/smoke-phase2.sh"
+    "phase2:preflight": "DEPRECATIONS_CMD_TIMEOUT_MS=60000 DEPRECATIONS_SKIP_FILE_SCAN=1 npm run deprecations:check && NODE_OPTIONS=--max_old_space_size=4096 HARDHAT_VIA_IR=true HARDHAT_USE_DOCKER_SOLC=1 npm --prefix contracts run build && bash scripts/pil/smoke-phase2.sh",
+    "ghostload:test": "npm --prefix packages/ghostload-policy test && npm --prefix services/ghostload-ai test && npm --prefix services/ghostload-controller test && npm --prefix tools/ghostload-sim test",
+    "ghostload:sim": "node tools/ghostload-sim/src/cli.js --scenario=l1-fee-spike",
+    "ghostload:sim:spam": "node tools/ghostload-sim/src/cli.js --scenario=spam-attack"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
