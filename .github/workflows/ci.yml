@@ -213,6 +213,8 @@ jobs:
 
       - name: Compile (Hardhat)
         working-directory: contracts
+        env:
+          HARDHAT_FORCE_WASM_SOLC: "1"
         run: npm run build
 
   contracts-gst-invariant:
