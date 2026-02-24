@@ -43,6 +43,19 @@ Key variables:
 - `COMPLIANCE_ANALYST_JWT` (server-side token for audit endpoints)
 - `COMPLIANCE_ADMIN_JWT` (admin token for policy/law ingestion)
 
+## Security scanning note (CI vs local)
+
+- CI secret scans run on repository checkout and should not include developer-local `.env` files.
+- Local scans may flag valid dev tokens/JWTs in `.env` or `.env.local`; treat these as local-environment findings unless those files are tracked.
+- To run a CI-like local secret scan:
+
+```bash
+trivy fs --timeout 10m --scanners secret --secret-config trivy-secret.yaml --exit-code 1 \
+	--skip-dirs node_modules,contracts/node_modules,dist,contracts/dist,contracts/artifacts,contracts/cache,contracts/.hardhat-cache,contracts/typechain-types,contracts/proposals \
+	--skip-files .env,.env.local,ops/security/trivy-fs.json,contracts/reports/formal/scribble/scribble.json,contracts/artifacts/build-info/*.json,infra/opstack/op-geth/signer/fourbyte/4byte.json \
+	.
+```
+
 ## Migrations + seed
 
 The docker compose stack runs the one-shot `ghost-compliance-migrate` service on boot.

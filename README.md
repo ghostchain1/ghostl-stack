@@ -175,6 +175,34 @@ Governance rules:
 * AI governance evidence pack: `infra/scripts/evidence-pack-ai-governance.sh`
 * AI governance release gate workflow: `.github/workflows/ai-governance-gate.yml`
 
+## 🚦 GhostLoad Index
+
+GhostLoad is the bounded autonomous load-balancing control plane for GhostChain/GhostL2/GhostL3 with strict routing law and governance safety rails.
+
+Core docs:
+
+* Architecture: [docs/ghostload/ARCHITECTURE.md](docs/ghostload/ARCHITECTURE.md)
+* Baseline metrics: [docs/ghostload/BASELINE.md](docs/ghostload/BASELINE.md)
+* Rollout and rollback: [docs/ghostload/ROLLOUT.md](docs/ghostload/ROLLOUT.md)
+* Governance proposal template: [docs/ghostload/GOVERNANCE_PROPOSAL.md](docs/ghostload/GOVERNANCE_PROPOSAL.md)
+
+Core components:
+
+* Policy engine: [packages/ghostload-policy](packages/ghostload-policy)
+* AI decision service: [services/ghostload-ai](services/ghostload-ai)
+* Controller actuator: [services/ghostload-controller](services/ghostload-controller)
+* Simulator + stress scenarios: [tools/ghostload-sim](tools/ghostload-sim)
+
+Validation and evidence:
+
+* Composite test command: `npm run ghostload:test`
+* Scenario outputs: [artifacts/ghostload](artifacts/ghostload)
+* Readiness summary: [artifacts/ghostload/READINESS_SUMMARY.md](artifacts/ghostload/READINESS_SUMMARY.md)
+
+CI wiring:
+
+* GhostLoad quality gate: [.github/workflows/ci.yml](.github/workflows/ci.yml) (`ghostload-quality` job)
+
 ---
 
 ## 📊 Observability & Ops

@@ -1278,6 +1278,77 @@ services:
       timeout: 5s
       retries: 5
 
+  ghostload-ai:
+    <<: *host-gateway
+    build:
+      context: ..
+      dockerfile: services/ghostload-ai/Dockerfile
+    image: ghostl/ghostload-ai:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7688
+      - GHOSTLOAD_POLICY_PATH=/app/packages/ghostload-policy/default-policy.json
+      - GHOSTLOAD_KILL_SWITCH=${GHOSTLOAD_KILL_SWITCH:-0}
+      - GHOSTLOAD_MANUAL_ONLY=${GHOSTLOAD_MANUAL_ONLY:-1}
+      - GHOSTLOAD_AUTONOMOUS_ENABLED=${GHOSTLOAD_AUTONOMOUS_ENABLED:-0}
+      - GHOSTLOAD_L1_RPC=${RPC_L1}
+      - GHOSTLOAD_L2_RPC=${RPC_L2}
+      - GHOSTLOAD_L3_RPC=${RPC_L3}
+    ports:
+      - "7688:7688"
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - /app/services/ghostload-ai/healthcheck.sh
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  ghostload-controller:
+    <<: *host-gateway
+    build:
+      context: ..
+      dockerfile: services/ghostload-controller/Dockerfile
+    image: ghostl/ghostload-controller:local
+    env_file:
+      - ./stack.env
+    environment:
+      - PORT=7689
+      - GHOSTLOAD_POLICY_PATH=/app/packages/ghostload-policy/default-policy.json
+      - GHOSTLOAD_STATE_DIR=/data
+      - GHOSTLOAD_KILL_SWITCH=${GHOSTLOAD_KILL_SWITCH:-0}
+      - GHOSTLOAD_MANUAL_ONLY=${GHOSTLOAD_MANUAL_ONLY:-1}
+      - GHOSTLOAD_AUDIT_SIGNING_KEY=${GHOSTLOAD_AUDIT_SIGNING_KEY:-ghostload-dev-audit-key}
+    ports:
+      - "7689:7689"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./.state/ghostload-controller:/data
+    read_only: false
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - /app/services/ghostload-controller/healthcheck.sh
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      ghostload-ai:
+        condition: service_healthy
+    restart: unless-stopped
+
   ghost-rpc-proxy:
     <<: *host-gateway
     build:

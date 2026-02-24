@@ -69,17 +69,29 @@ print_http http://localhost:7171/health
 wait_http http://localhost:7272/health rollup-proposer-l2 >/dev/null || true
 print_http http://localhost:7272/health
 
-wait_http http://localhost:7373/health rollup-proposer-l3 >/dev/null || true
-print_http http://localhost:7373/health
+if wait_http http://localhost:7273/health rollup-proposer-l3 >/dev/null; then
+  print_http http://localhost:7273/health
+else
+  wait_http http://localhost:7373/health rollup-proposer-l3-legacy >/dev/null || true
+  print_http http://localhost:7373/health
+fi
 
 wait_http http://localhost:7282/health rollup-challenger-l2 >/dev/null || true
 print_http http://localhost:7282/health
 
-wait_http http://localhost:7383/health rollup-challenger-l3 >/dev/null || true
-print_http http://localhost:7383/health
+if wait_http http://localhost:7283/health rollup-challenger-l3 >/dev/null; then
+  print_http http://localhost:7283/health
+else
+  wait_http http://localhost:7383/health rollup-challenger-l3-legacy >/dev/null || true
+  print_http http://localhost:7383/health
+fi
 
-wait_http http://localhost:9090/-/ready prometheus >/dev/null || true
-print_http http://localhost:9090/-/ready
+if wait_http http://localhost:9091/-/ready prometheus >/dev/null; then
+  print_http http://localhost:9091/-/ready
+else
+  wait_http http://localhost:9090/-/ready prometheus-legacy >/dev/null || true
+  print_http http://localhost:9090/-/ready
+fi
 
 wait_http http://localhost:3000/api/health grafana >/dev/null || true
 print_http http://localhost:3000/api/health

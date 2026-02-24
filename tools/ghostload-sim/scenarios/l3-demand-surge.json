@@ -1,0 +1,13 @@
+{
+  "name": "l3-demand-surge",
+  "mode": "stability-first",
+  "initial": { "backlog": 10, "retryRatePct": 1.4, "wastedComputeRatioPct": 3.2, "utilizationPct": 65 },
+  "thresholds": { "backlogWarn": 40, "retryWarn": 5, "recoveryBacklogTarget": 12, "maxL2Volatility": 0.011, "maxFinalBacklog": 20, "minProfitFloorBps": 1000, "maxWastedComputePct": 7.5 },
+  "timeline": [
+    { "epoch": 1, "gasL1": 1.0, "gasL2": 0.0011, "gasL3": 0.0011, "demandShock": 5, "drainCapacity": 4, "utilizationShock": 5, "settlementUnits": 90, "userFeeUnits": 360, "infraCostUnits": 30 },
+    { "epoch": 2, "gasL1": 1.0, "gasL2": 0.0012, "gasL3": 0.0014, "demandShock": 8, "drainCapacity": 3, "utilizationShock": 10, "settlementUnits": 100, "userFeeUnits": 390, "infraCostUnits": 30 },
+    { "epoch": 3, "gasL1": 1.1, "gasL2": 0.0013, "gasL3": 0.0017, "demandShock": 9, "drainCapacity": 3, "utilizationShock": 11, "settlementUnits": 105, "userFeeUnits": 405, "infraCostUnits": 30 },
+    { "epoch": 4, "gasL1": 1.0, "gasL2": 0.0012, "gasL3": 0.0015, "demandShock": 2, "drainCapacity": 6, "utilizationShock": -3, "settlementUnits": 92, "userFeeUnits": 380, "infraCostUnits": 30 },
+    { "epoch": 5, "gasL1": 0.9, "gasL2": 0.0011, "gasL3": 0.0012, "demandShock": -2, "drainCapacity": 7, "utilizationShock": -5, "settlementUnits": 85, "userFeeUnits": 355, "infraCostUnits": 30 }
+  ]
+}
