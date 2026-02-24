@@ -348,6 +348,8 @@ services:
       UPSTREAM_URL: http://l1-rpc-proxy:18546
       RPC_ENABLE_GST_NAMESPACE: '1'
       RPC_DEPRECATE_LEGACY_NAMESPACE: '1'
+      RPC_RATE_LIMIT_ALLOWLIST: ${L1_RPC_RATE_LIMIT_ALLOWLIST:-127.0.0.1,::1,172.28.0.1}
+      RPC_CORS_ORIGINS: ${L1_RPC_CORS_ORIGINS:-http://localhost,http://127.0.0.1}
     healthcheck:
       test:
       - CMD-SHELL
@@ -375,6 +377,8 @@ services:
       UPSTREAM_URL: http://l2-geth:8545
       RPC_ENABLE_GST_NAMESPACE: '1'
       RPC_DEPRECATE_LEGACY_NAMESPACE: '1'
+      RPC_RATE_LIMIT_ALLOWLIST: ${L2_RPC_RATE_LIMIT_ALLOWLIST:-127.0.0.1,::1,172.28.0.1}
+      RPC_CORS_ORIGINS: ${L2_RPC_CORS_ORIGINS:-http://localhost,http://127.0.0.1}
     healthcheck:
       test:
       - CMD-SHELL
@@ -402,6 +406,8 @@ services:
       UPSTREAM_URL: ${L3_ARCHIVE_RPC:-http://l3-geth:8545}
       RPC_ENABLE_GST_NAMESPACE: '1'
       RPC_DEPRECATE_LEGACY_NAMESPACE: '1'
+      RPC_RATE_LIMIT_ALLOWLIST: ${L3_RPC_RATE_LIMIT_ALLOWLIST:-127.0.0.1,::1,172.28.0.1}
+      RPC_CORS_ORIGINS: ${L3_RPC_CORS_ORIGINS:-http://localhost,http://127.0.0.1}
     mem_limit: 128m
     cpus: '0.25'
   hyper-ghost-supervisor:
