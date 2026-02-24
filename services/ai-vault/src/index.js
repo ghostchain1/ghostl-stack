@@ -10,7 +10,7 @@ const VAULT_TOKEN = process.env.VAULT_TOKEN || "";
 const VAULT_ROLE_ID = process.env.VAULT_ROLE_ID || "";
 const VAULT_SECRET_ID = process.env.VAULT_SECRET_ID || "";
 const FORWARD_CLIENT_TOKEN = process.env.AI_VAULT_FORWARD_CLIENT_TOKEN === "1";
-const SERVICES_ROOT = process.env.SERVICES_ROOT || "/home/ghost/ghostl-stack/services";
+const SERVICES_ROOT = process.env.SERVICES_ROOT || "/services";
 const SERVICES_MOUNT = "/services";
 
 const POLICY_PATH = process.env.AI_VAULT_POLICY_PATH || path.resolve(process.cwd(), "policy.example.json");
