@@ -1,9 +1,10 @@
 {
   "name": "ghostl-contracts",
   "private": true,
+  "type": "module",
   "scripts": {
     "prebuild": "npm run pragmas:check",
-    "build": "hardhat compile",
+    "build": "hardhat build --no-tests",
     "compile:docker": "NODE_OPTIONS=--max_old_space_size=4096 HARDHAT_USE_DOCKER_SOLC=1 HARDHAT_VIA_IR=true hardhat compile",
     "compile:docker:verbose": "NODE_OPTIONS=--max_old_space_size=4096 HARDHAT_USE_DOCKER_SOLC=1 HARDHAT_VIA_IR=true HARDHAT_VERBOSE=true hardhat compile",
     "compile:docker:clean": "hardhat clean && node scripts/clean-typechain.mjs && npm run compile:docker",
@@ -41,7 +42,7 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^6.1.0",
     "scribble": "git+https://github.com/ConsenSys/scribble.git#v0.7.10",
-    "hardhat": "^2.28.2",
+    "hardhat": "^3.1.9",
     "surya": "^0.4.3",
     "typescript": "5.9.3",
     "ts-node": "^10.9.2",
