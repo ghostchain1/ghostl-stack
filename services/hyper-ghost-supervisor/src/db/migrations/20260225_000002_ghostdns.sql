@@ -1,0 +1,28 @@
+CREATE TABLE IF NOT EXISTS ghostdns_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts INTEGER NOT NULL,
+  level TEXT NOT NULL,
+  type TEXT NOT NULL,
+  message TEXT NOT NULL,
+  payload_json TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ghostdns_changes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts INTEGER NOT NULL,
+  actor TEXT NOT NULL,
+  mode TEXT NOT NULL,
+  diff_hash TEXT NOT NULL,
+  approved INTEGER NOT NULL DEFAULT 0,
+  applied INTEGER NOT NULL DEFAULT 0,
+  rollback_ref TEXT
+);
+
+CREATE TABLE IF NOT EXISTS ghostdns_incidents (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts INTEGER NOT NULL,
+  severity TEXT NOT NULL,
+  detector TEXT NOT NULL,
+  status TEXT NOT NULL,
+  details_json TEXT NOT NULL
+);

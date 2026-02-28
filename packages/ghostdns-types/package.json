@@ -1,0 +1,14 @@
+{
+  "name": "@ghostl/ghostdns-types",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./schema": "./schema.json"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

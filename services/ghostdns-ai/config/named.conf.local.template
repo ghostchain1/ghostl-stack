@@ -1,0 +1,6 @@
+zone "ghostchain.cloud" {
+  type master;
+  file "{{ZONE_DIR}}/db.ghostchain.cloud";
+  allow-transfer { none; };
+  allow-update { none; };
+};

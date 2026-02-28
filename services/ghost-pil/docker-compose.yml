@@ -2,7 +2,6 @@
 # role: ghost-pil
 # ports: 3220:3220
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   ghost-pil:
     container_name: ghost_ghost-pil

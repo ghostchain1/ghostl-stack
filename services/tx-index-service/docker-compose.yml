@@ -2,7 +2,6 @@
 # role: tx-index-service
 # ports: 7625:7625
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   tx-index-service:
     container_name: ghost_tx-index-service

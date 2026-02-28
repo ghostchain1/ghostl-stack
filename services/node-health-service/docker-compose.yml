@@ -2,7 +2,6 @@
 # role: node-health-service
 # ports: 7613:7613
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   node-health-service:
     container_name: ghost_node-health-service

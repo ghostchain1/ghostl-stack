@@ -1,0 +1,23 @@
+{
+  "proposalId": "EXAMPLE-0001",
+  "network": "mainnet",
+  "allowDeploy": true,
+  "approvedBy": "GhostChain DAO Multisig",
+  "approvalSignature": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "approvedAt": "2026-02-25T00:00:00Z",
+  "approvers": [
+    {
+      "signer": "GhostChain Multisig Signer A",
+      "signature": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  ],
+  "approvalDigest": "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "quorumReached": true,
+  "timelockExpiresAt": "2026-02-24T00:00:00Z",
+  "constitutionHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "releaseManifestHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "releaseAttestationHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "metadata": {
+    "note": "Template for governance-locked mainnet deployment approval"
+  }
+}

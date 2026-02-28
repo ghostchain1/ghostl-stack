@@ -1,0 +1,42 @@
+[
+  {
+    "file": "infra/ghostchain/docker-compose.l1.yml",
+    "service": "ghostchain-bootnode"
+  },
+  {
+    "file": "infra/ghostchain/docker-compose.l1.yml",
+    "service": "ghostchain-node2"
+  },
+  {
+    "file": "infra/ghostchain/docker-compose.l1.yml",
+    "service": "ghostscout"
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "ghost-rpc-proxy-l3"
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "rpc-forward-l2-18547"
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "grafana"
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "vector"
+  },
+  {
+    "file": "infra/opstack/docker-compose.challengers.yml",
+    "service": "op-challenger"
+  },
+  {
+    "file": "infra/opstack/docker-compose.challengers.yml",
+    "service": "l3-op-challenger"
+  },
+  {
+    "file": "docker-compose.autonomy.yml",
+    "service": "ghostdns-volume-init"
+  }
+]

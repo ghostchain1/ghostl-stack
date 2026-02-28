@@ -2,7 +2,6 @@
 # role: feature-flags-service
 # ports: 7611:7611
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   feature-flags-service:
     container_name: ghost_feature-flags-service

@@ -2,7 +2,6 @@
 # role: ghost-gas-engine-worker
 # ports: none
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   ghost-gas-engine-worker:
     container_name: ghost_ghost-gas-engine-worker

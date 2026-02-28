@@ -2,7 +2,6 @@
 # role: ghost-rollup-challenger
 # ports: 7282:7282
 # volumes: ./data:/state, ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   ghost-rollup-challenger:
     container_name: ghost_ghost-rollup-challenger

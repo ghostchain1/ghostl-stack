@@ -47,6 +47,7 @@ jobs:
           docker compose -f infra/docker/compose/docker-compose.ui.yml config
           docker compose -f infra/docker/compose/docker-compose.obs.yml config
           docker compose -f infra/docker/compose/docker-compose.ai.yml config
+          docker compose -f docker-compose.sovereign.yml config
 
       - name: Compose diff safety checks
         run: |

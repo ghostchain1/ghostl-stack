@@ -77,6 +77,7 @@ MAINNET deploy is forbidden unless:
    - `release_id_bytes32`
    - `manifest_hash`
 3) MAINNET deploy script verifies `MainnetLaunchGate.isLaunchAuthorized(releaseId, manifestHash) == true`.
+4) MAINNET deploy script verifies `ReleaseGate.isMainnetLaunchAllowed() == true`.
 
 On DEVNET, sealing writes:
 
@@ -90,10 +91,12 @@ On MAINNET:
 cd /opt/ghoststack/releases/<release-id>
 RPC_L1=http://127.0.0.1:18545 \
 MAINNET_LAUNCH_GATE_ADDRESS=0x... \
+MAINNET_RELEASE_GATE_ADDRESS=0x... \
   ./governance/verify-onchain-authorization.sh
 
 sudo RPC_L1=http://127.0.0.1:18545 \
 MAINNET_LAUNCH_GATE_ADDRESS=0x... \
+MAINNET_RELEASE_GATE_ADDRESS=0x... \
   ./scripts/deploy-mainnet.sh
 ```
 

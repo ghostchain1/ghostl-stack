@@ -240,6 +240,46 @@ Start devnet:
 docker compose up -d
 ```
 
+Enforced promotion workflow (recommended):
+
+```bash
+# Stage 1: devnet
+bash tools/ghostctl up devnet
+
+# Stage 2: testnet (blocked unless devnet stage is complete)
+bash tools/ghostctl up testnet
+
+# Stage 3: mainnet (blocked unless governance approval is valid)
+bash tools/ghostctl up mainnet --proposal-id <id>
+```
+
+Gate checks:
+
+```bash
+bash tools/ghostctl verify-routing
+bash tools/ghostctl verify-governance --proposal-id <id>
+bash scripts/security/compose-hardening-audit.sh
+```
+
+Publish GhostDNS/HGOP images to GHCR (`ghcr.io/ghostchain1/*`):
+
+```bash
+export GHCR_TOKEN=<token-with-packages-write>
+export GHCR_USER=ghostchain1
+
+# default tag = git short sha, also pushes :latest
+npm run release:push:ghostdns:ghcr
+
+# optional env tag (e.g. staging/prod)
+PUSH_ENV_TAG=staging npm run release:push:ghostdns:ghcr
+```
+
+Runbooks:
+
+- `docs/RUNBOOKS/README.md`
+- `docs/RUNBOOKS/ENV_PROMOTION.md`
+- `docs/RUNBOOKS/INCIDENT_DEPLOY_GATES.md`
+
 Production bootstrap + readiness (Vault-backed):
 
 ```bash
@@ -299,6 +339,7 @@ Quick verification:
 ```bash
 npm run smoke:stack:prod
 npm run verify:prod
+npm run smoke:kong:auth -- .env
 ```
 
 Release gate checklist: `docs/checklists/RELEASE_GATE.md`

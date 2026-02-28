@@ -1,0 +1,66 @@
+{
+  "realm": "ghost-employees",
+  "enabled": true,
+  "displayName": "Ghost Employees",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "bruteForceProtected": true,
+  "failureFactor": 5,
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyDigits": 6,
+  "otpPolicyLookAheadWindow": 1,
+  "otpPolicyPeriod": 30,
+  "otpPolicyCodeReusable": false,
+  "requiredActions": [
+    {
+      "alias": "CONFIGURE_TOTP",
+      "name": "Configure OTP",
+      "providerId": "CONFIGURE_TOTP",
+      "enabled": true,
+      "defaultAction": true,
+      "priority": 10
+    }
+  ],
+  "roles": {
+    "realm": [
+      { "name": "employee", "description": "Employee portal access" },
+      { "name": "support", "description": "Support tools" },
+      { "name": "kyc_reviewer", "description": "KYC review permissions" },
+      { "name": "ops_viewer", "description": "Ops read-only dashboards" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "ghost-web",
+      "name": "Ghost Web",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["https://app.ghostchain.cloud/api/auth/callback/keycloak"],
+      "webOrigins": ["https://app.ghostchain.cloud"]
+    },
+    {
+      "clientId": "ghost-e2e-cli",
+      "name": "Ghost E2E CLI",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "secret": "ghost-e2e-secret",
+      "attributes": {
+        "access.token.lifespan": "5"
+      }
+    }
+  ],
+  "attributes": {
+    "realm": "employees"
+  }
+}

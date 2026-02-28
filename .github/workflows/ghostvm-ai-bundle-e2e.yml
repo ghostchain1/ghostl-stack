@@ -1,0 +1,134 @@
+name: ghostvm-ai bundle e2e
+
+on:
+  workflow_dispatch:
+    inputs:
+      include_all:
+        description: "Include multiple recent runs in bundle"
+        required: false
+        default: true
+        type: boolean
+      depth:
+        description: "Depth for include-all mode"
+        required: false
+        default: "20"
+        type: string
+      pr_number:
+        description: "Optional pull request number to comment verification summary"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  build-bundle:
+    runs-on: ubuntu-latest
+    outputs:
+      bundle_id: ${{ steps.bundle.outputs.bundle_id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ghostvm-ai dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r services/ghostvm-ai/requirements.txt
+
+      - name: Build signed bundle
+        id: bundle
+        working-directory: services/ghostvm-ai
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/ghostvm-ai-bundles
+          if [[ "${{ inputs.include_all }}" == "true" ]]; then
+            BUNDLE_JSON=$(PYTHONPATH=. python3 ghostnetsync.py bundle-evidence --include-all --depth "${{ inputs.depth }}" --output /tmp/ghostvm-ai-bundles --sign)
+          else
+            BUNDLE_JSON=$(PYTHONPATH=. python3 ghostnetsync.py bundle-evidence --output /tmp/ghostvm-ai-bundles --sign)
+          fi
+          echo "$BUNDLE_JSON" > /tmp/ghostvm-ai-bundle.json
+          BUNDLE_ID=$(python3 - <<'PY'
+import json
+from pathlib import Path
+payload = json.loads(Path('/tmp/ghostvm-ai-bundle.json').read_text())
+print(payload['bundle_id'])
+PY
+)
+          echo "bundle_id=$BUNDLE_ID" >> "$GITHUB_OUTPUT"
+          cp -r "/tmp/ghostvm-ai-bundles/$BUNDLE_ID" "/tmp/$BUNDLE_ID"
+
+      - name: Upload bundle directory
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghostvm-ai-bundle-${{ steps.bundle.outputs.bundle_id }}
+          path: /tmp/${{ steps.bundle.outputs.bundle_id }}
+          if-no-files-found: error
+
+  verify-bundle:
+    needs: build-bundle
+    runs-on: ubuntu-latest
+    outputs:
+      verify_ok: ${{ steps.make-summary.outputs.verify_ok }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ghostvm-ai dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r services/ghostvm-ai/requirements.txt
+
+      - name: Download bundle artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ghostvm-ai-bundle-${{ needs.build-bundle.outputs.bundle_id }}
+          path: /tmp/ghostvm-ai-downloaded
+
+      - name: Verify downloaded bundle (composite)
+        id: make-summary
+        uses: ./.github/actions/ghostvm-ai-verify-bundle
+        with:
+          bundle_dir: /tmp/ghostvm-ai-downloaded/${{ needs.build-bundle.outputs.bundle_id }}
+          jsonl_path: /tmp/ghostvm-ai-verify.jsonl
+          summary_path: /tmp/ghostvm-ai-verify-summary.md
+          append_job_summary: "true"
+
+      - name: Upload verify artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghostvm-ai-verify-${{ needs.build-bundle.outputs.bundle_id }}
+          path: |
+            /tmp/ghostvm-ai-verify.jsonl
+            /tmp/ghostvm-ai-verify-summary.md
+
+      - name: Comment on PR
+        if: ${{ inputs.pr_number != '' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('/tmp/ghostvm-ai-verify-summary.md', 'utf8');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: Number('${{ inputs.pr_number }}'),
+              body,
+            });
+
+      - name: Enforce verification policy gate
+        if: ${{ steps.make-summary.outputs.verify_ok != 'true' }}
+        run: |
+          echo "ghostvm-ai bundle verification policy gate failed"
+          exit 1

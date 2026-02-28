@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 
-export type EventScope = 'ai' | 'integrations' | 'auth' | 'webhook' | 'analytics';
+export type EventScope = 'ai' | 'integrations' | 'auth' | 'webhook' | 'analytics' | 'identity';
 export type EventStatus = 'ok' | 'error';
 
 export type EventRecord = {

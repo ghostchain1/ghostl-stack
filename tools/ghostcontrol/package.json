@@ -13,6 +13,7 @@
     "status": "bash bin/ghostcontrol.sh status",
     "logs": "bash bin/ghostcontrol.sh logs",
     "doctor": "bash bin/ghostcontrol.sh doctor",
+    "doctor:supervisor": "node --experimental-strip-types supervisor.ts",
     "backup": "bash bin/ghostcontrol.sh backup",
     "restore": "bash bin/ghostcontrol.sh restore",
     "ghostloop:typecheck": "npx tsc -p tsconfig.ghostloop.json",

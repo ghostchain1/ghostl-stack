@@ -1,0 +1,27 @@
+- name: GhostNetSync bootstrap
+  hosts: all
+  become: true
+  tasks:
+    - name: Ensure nftables installed
+      package:
+        name: nftables
+        state: present
+
+    - name: Deploy nftables rules
+      copy:
+        src: files/nftables.conf
+        dest: /etc/nftables.conf
+        owner: root
+        group: root
+        mode: "0644"
+      notify: restart nftables
+
+    - name: Ensure docker present
+      command: docker --version
+      changed_when: false
+
+  handlers:
+    - name: restart nftables
+      service:
+        name: nftables
+        state: restarted

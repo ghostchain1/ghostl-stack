@@ -104,6 +104,16 @@ infra/ghostchain/data/**/keystore/
 # runtime state snapshots
 services/data/state.json
 services/**/data/
+!services/l3-fee-collector/data/
+!services/l3-fee-collector/data/.gitkeep
+!services/l2-revenue-aggregator/data/
+!services/l2-revenue-aggregator/data/.gitkeep
+!services/treasury-engine/data/
+!services/treasury-engine/data/.gitkeep
+!services/reward-distributor/data/
+!services/reward-distributor/data/.gitkeep
+!services/hyper-ghost-governor/data/
+!services/hyper-ghost-governor/data/.gitkeep
 services/.state/
 
 # build artifacts
@@ -202,6 +212,9 @@ ghost-helper-bots/reports/
 ghost-helper-bots/evidence/
 ghost-helper-bots/sbom/
 ghost-helper-bots/attestations/
+
+# audit snapshot preflight env overrides (generated)
+.audit/snapshots/**/ops/preflight/**/stack.env.override
 *.swp
 *.swo
 *.tmp

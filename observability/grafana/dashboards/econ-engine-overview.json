@@ -1,0 +1,39 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "graphTooltip": 0,
+  "id": null,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Treasury Agent Intents",
+      "targets": [
+        {"expr": "sum by (decision) (rate(hg_treasury_agent_intents_total[5m]))", "refId": "A"}
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+    },
+    {
+      "type": "timeseries",
+      "title": "Indexer Ingest Throughput",
+      "targets": [
+        {"expr": "sum(rate(hg_reporting_indexer_ingest_total[5m]))", "refId": "A"}
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+    },
+    {
+      "type": "timeseries",
+      "title": "Snapshots Produced",
+      "targets": [
+        {"expr": "increase(hg_proof_snapshotter_snapshots_total[1h])", "refId": "A"}
+      ],
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8}
+    }
+  ],
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["econ", "treasury", "ghoststack"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "title": "GhostStack Econ Engine Overview",
+  "version": 1
+}

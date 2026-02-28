@@ -2,7 +2,6 @@
 # role: compliance-export-service
 # ports: 7621:7621
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   compliance-export-service:
     container_name: ghost_compliance-export-service

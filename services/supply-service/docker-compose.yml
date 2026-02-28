@@ -2,7 +2,6 @@
 # role: supply-service
 # ports: 7614:7614
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   supply-service:
     container_name: ghost_supply-service

@@ -13,6 +13,8 @@ import type { WalletService } from '../../services/wallet-store';
 import type { GhostWalletService } from '../../services/ghostwallet';
 import { env } from '../../config/env';
 import { emitEvent } from '../../lib/events';
+import { isAddress, verifyMessage } from 'ethers';
+import { openSqlite } from '../../services/db';
 
 const asyncHandler =
   <TReq extends Request = Request, TRes extends Response = Response>(
@@ -89,6 +91,185 @@ const logAuthEvent = (level: 'info' | 'warn' | 'error', event: string, meta: Rec
 
 export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
   const router = Router();
+  const walletLinkDb = openSqlite(process.env.AUTH_DB_PATH || process.env.SQLITE_DB_PATH || 'data/auth.db');
+  if (walletLinkDb) {
+    walletLinkDb.exec(`
+      create table if not exists wallet_link_challenges (
+        id text primary key,
+        user_id text not null,
+        wallet_address text not null,
+        nonce_hash text not null,
+        statement text not null,
+        chain_id text not null,
+        issued_at text not null,
+        expires_at text not null,
+        used_at text,
+        created_at text not null
+      );
+      create table if not exists wallet_link_proofs (
+        id text primary key,
+        user_id text not null,
+        wallet_address text not null,
+        challenge_id text not null,
+        method text not null,
+        signature_hash text not null,
+        verified_at text not null,
+        subject text,
+        session_id text
+      );
+    `);
+  }
+
+  const challengeStoreFallback = new Map<
+    string,
+    {
+      id: string;
+      userId: string;
+      walletAddress: string;
+      nonceHash: string;
+      statement: string;
+      chainId: string;
+      issuedAt: string;
+      expiresAt: string;
+      usedAt?: string | null;
+    }
+  >();
+
+  const rateLimitState = new Map<string, { count: number; resetAt: number }>();
+  const allowWithinRate = (key: string, limit: number, windowMs: number) => {
+    const now = Date.now();
+    const current = rateLimitState.get(key);
+    if (!current || current.resetAt <= now) {
+      rateLimitState.set(key, { count: 1, resetAt: now + windowMs });
+      return true;
+    }
+    if (current.count >= limit) return false;
+    current.count += 1;
+    rateLimitState.set(key, current);
+    return true;
+  };
+
+  const normalizeWalletAddress = (value: string) => value.trim().toLowerCase();
+  const hashValue = (value: string) => crypto.createHash('sha256').update(value).digest('hex');
+
+  const resolveWalletLinkUserId = (req: Request): string | undefined => {
+    if (req.session.userId) return req.session.userId;
+    const realm = String(req.header('x-ghost-realm') || '').trim();
+    const subject = String(req.header('x-ghost-subject') || '').trim();
+    if (realm === 'users' && subject) return subject;
+    return undefined;
+  };
+
+  const createChallenge = (challenge: {
+    id: string;
+    userId: string;
+    walletAddress: string;
+    nonceHash: string;
+    statement: string;
+    chainId: string;
+    issuedAt: string;
+    expiresAt: string;
+  }) => {
+    if (walletLinkDb) {
+      walletLinkDb
+        .prepare(
+          `
+          insert into wallet_link_challenges
+            (id, user_id, wallet_address, nonce_hash, statement, chain_id, issued_at, expires_at, created_at)
+          values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `
+        )
+        .run(
+          challenge.id,
+          challenge.userId,
+          challenge.walletAddress,
+          challenge.nonceHash,
+          challenge.statement,
+          challenge.chainId,
+          challenge.issuedAt,
+          challenge.expiresAt,
+          challenge.issuedAt
+        );
+      return;
+    }
+    challengeStoreFallback.set(challenge.id, challenge);
+  };
+
+  const getChallenge = (challengeId: string) => {
+    if (walletLinkDb) {
+      const row = walletLinkDb
+        .prepare('select * from wallet_link_challenges where id = ?')
+        .get(challengeId) as
+        | {
+            id: string;
+            user_id: string;
+            wallet_address: string;
+            nonce_hash: string;
+            statement: string;
+            chain_id: string;
+            issued_at: string;
+            expires_at: string;
+            used_at?: string | null;
+          }
+        | undefined;
+      if (!row) return null;
+      return {
+        id: row.id,
+        userId: row.user_id,
+        walletAddress: row.wallet_address,
+        nonceHash: row.nonce_hash,
+        statement: row.statement,
+        chainId: row.chain_id,
+        issuedAt: row.issued_at,
+        expiresAt: row.expires_at,
+        usedAt: row.used_at
+      };
+    }
+    return challengeStoreFallback.get(challengeId) || null;
+  };
+
+  const markChallengeUsed = (challengeId: string, usedAt: string) => {
+    if (walletLinkDb) {
+      walletLinkDb.prepare('update wallet_link_challenges set used_at = ? where id = ?').run(usedAt, challengeId);
+      return;
+    }
+    const challenge = challengeStoreFallback.get(challengeId);
+    if (challenge) {
+      challenge.usedAt = usedAt;
+      challengeStoreFallback.set(challengeId, challenge);
+    }
+  };
+
+  const writeWalletProof = (input: {
+    id: string;
+    userId: string;
+    walletAddress: string;
+    challengeId: string;
+    signature: string;
+    verifiedAt: string;
+    subject?: string;
+    sessionId?: string;
+  }) => {
+    if (!walletLinkDb) return;
+    walletLinkDb
+      .prepare(
+        `
+        insert into wallet_link_proofs
+          (id, user_id, wallet_address, challenge_id, method, signature_hash, verified_at, subject, session_id)
+        values (?, ?, ?, ?, 'evm_sign_message', ?, ?, ?, ?)
+      `
+      )
+      .run(
+        input.id,
+        input.userId,
+        input.walletAddress,
+        input.challengeId,
+        hashValue(input.signature),
+        input.verifiedAt,
+        input.subject || null,
+        input.sessionId || null
+      );
+  };
 
   const rotateSession = async (req: Request) => {
     const previous = req.sessionID;
@@ -551,6 +732,181 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
         }))
       );
       res.json({ mappings });
+    })
+  );
+
+  router.post(
+    '/v1/wallet/link/challenge',
+    asyncHandler(async (req, res) => {
+      const userId = resolveWalletLinkUserId(req);
+      if (!userId) {
+        res.status(401).json({ error: 'unauthenticated' });
+        return;
+      }
+      if (!allowWithinRate(`wallet-link-challenge:${req.ip}:${userId}`, 10, 60_000)) {
+        res.status(429).json({ error: 'rate_limited' });
+        return;
+      }
+
+      const body = (req.body || {}) as { walletAddress?: string; chainId?: string };
+      const walletAddress = normalizeWalletAddress(String(body.walletAddress || ''));
+      if (!walletAddress || !isAddress(walletAddress)) {
+        res.status(400).json({ error: 'invalid_wallet_address' });
+        return;
+      }
+
+      const user = await deps.userService.get(userId);
+      if (!user) {
+        res.status(404).json({ error: 'user_not_found' });
+        return;
+      }
+
+      const challengeId = crypto.randomUUID();
+      const nonce = crypto.randomBytes(16).toString('hex');
+      const issuedAt = new Date().toISOString();
+      const expiresAt = new Date(Date.now() + 5 * 60_000).toISOString();
+      const chainId = String(body.chainId || process.env.CHAIN_ID || '901');
+      const domain = req.header('x-forwarded-host') || req.header('host') || 'ghostchain.cloud';
+      const statement = [
+        `GhostStack wallet ownership proof`,
+        `Domain: ${domain}`,
+        `Address: ${walletAddress}`,
+        `ChainId: ${chainId}`,
+        `IssuedAt: ${issuedAt}`,
+        `Nonce: ${nonce}`
+      ].join('\\n');
+
+      createChallenge({
+        id: challengeId,
+        userId,
+        walletAddress,
+        nonceHash: hashValue(nonce),
+        statement,
+        chainId,
+        issuedAt,
+        expiresAt
+      });
+
+      await deps.auditLogService.append({
+        actorId: userId,
+        action: 'wallet_link:challenge_issued',
+        resource: challengeId,
+        meta: { correlationId: req.correlationId, walletAddress, expiresAt, chainId }
+      });
+
+      res.json({ challengeId, nonce, statement, expiresAt });
+    })
+  );
+
+  router.post(
+    '/v1/wallet/link/verify',
+    asyncHandler(async (req, res) => {
+      const userId = resolveWalletLinkUserId(req);
+      if (!userId) {
+        res.status(401).json({ error: 'unauthenticated' });
+        return;
+      }
+      if (!allowWithinRate(`wallet-link-verify:${req.ip}:${userId}`, 20, 60_000)) {
+        res.status(429).json({ error: 'rate_limited' });
+        return;
+      }
+
+      const body = (req.body || {}) as { challengeId?: string; walletAddress?: string; signature?: string };
+      const challengeId = String(body.challengeId || '').trim();
+      const walletAddress = normalizeWalletAddress(String(body.walletAddress || ''));
+      const signature = String(body.signature || '').trim();
+      if (!challengeId || !walletAddress || !signature) {
+        res.status(400).json({ error: 'challengeId, walletAddress, signature required' });
+        return;
+      }
+      if (!isAddress(walletAddress)) {
+        res.status(400).json({ error: 'invalid_wallet_address' });
+        return;
+      }
+
+      const challenge = getChallenge(challengeId);
+      if (!challenge) {
+        res.status(404).json({ error: 'challenge_not_found' });
+        return;
+      }
+      if (challenge.userId !== userId) {
+        res.status(403).json({ error: 'challenge_user_mismatch' });
+        return;
+      }
+      if (challenge.usedAt) {
+        res.status(409).json({ error: 'challenge_already_used' });
+        return;
+      }
+      if (new Date(challenge.expiresAt).getTime() < Date.now()) {
+        res.status(410).json({ error: 'challenge_expired' });
+        return;
+      }
+      if (challenge.walletAddress !== walletAddress) {
+        res.status(400).json({ error: 'wallet_address_mismatch' });
+        return;
+      }
+      if (!challenge.statement.includes(`Nonce: `)) {
+        res.status(400).json({ error: 'challenge_statement_invalid' });
+        return;
+      }
+      const nonceLine = challenge.statement
+        .split('\n')
+        .map((line) => line.trim())
+        .find((line) => line.startsWith('Nonce: '));
+      const nonceValue = nonceLine ? nonceLine.slice('Nonce: '.length).trim() : '';
+      if (!nonceValue || hashValue(nonceValue) !== challenge.nonceHash) {
+        res.status(400).json({ error: 'challenge_nonce_invalid' });
+        return;
+      }
+
+      let recoveredAddress: string;
+      try {
+        recoveredAddress = normalizeWalletAddress(verifyMessage(challenge.statement, signature));
+      } catch {
+        res.status(400).json({ error: 'invalid_signature' });
+        return;
+      }
+      if (recoveredAddress !== walletAddress) {
+        res.status(400).json({ error: 'signature_address_mismatch' });
+        return;
+      }
+
+      const user = await deps.userService.get(userId);
+      if (!user) {
+        res.status(404).json({ error: 'user_not_found' });
+        return;
+      }
+      const nextWallets = Array.from(new Set([...(user.wallets || []), walletAddress]));
+      const updated = await deps.userService.update(user.id, { wallets: nextWallets });
+
+      const verifiedAt = new Date().toISOString();
+      markChallengeUsed(challengeId, verifiedAt);
+      writeWalletProof({
+        id: crypto.randomUUID(),
+        userId,
+        walletAddress,
+        challengeId,
+        signature,
+        verifiedAt,
+        subject: String(req.header('x-ghost-subject') || ''),
+        sessionId: req.sessionID
+      });
+
+      await deps.auditLogService.append({
+        actorId: userId,
+        action: 'wallet_link:verified',
+        resource: challengeId,
+        meta: { correlationId: req.correlationId, walletAddress }
+      });
+      await emitEvent({
+        scope: 'identity',
+        type: 'wallet:linked',
+        actorId: userId,
+        status: 'ok',
+        payload: { walletAddress, challengeId, verifiedAt }
+      });
+
+      res.json({ user: updated, linked: walletAddress, challengeId, verifiedAt });
     })
   );
 

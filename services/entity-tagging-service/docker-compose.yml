@@ -2,7 +2,6 @@
 # role: entity-tagging-service
 # ports: 7627:7627
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   entity-tagging-service:
     container_name: ghost_entity-tagging-service

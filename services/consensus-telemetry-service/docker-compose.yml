@@ -2,7 +2,8 @@
 # role: consensus-telemetry-service
 # ports: 7635:7635
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
+x-ghost-user: &ghost-user "10001:10001"
+
 services:
   consensus-telemetry-service:
     container_name: ghost_consensus-telemetry-service
@@ -12,7 +13,7 @@ services:
       args:
         VCS_REF: ${VCS_REF:-unknown}
         BUILD_DATE: ${BUILD_DATE:-unknown}
-    user: "1000:1000"
+    user: *ghost-user
     cap_drop:
     - ALL
     security_opt:

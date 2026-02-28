@@ -1,0 +1,53 @@
+services:
+  l3-fee-collector:
+    container_name: ghost_l3-fee-collector
+    image: ghostl/l3-fee-collector:local
+    build:
+      context: ./services/l3-fee-collector
+    environment:
+      PORT: 7681
+      HOST: 0.0.0.0
+      L3_CHAIN_ID: ${L3_CHAIN_ID:-903}
+      L2_CHAIN_ID: ${L2_CHAIN_ID:-901}
+      L2_REVENUE_AGGREGATOR_URL: http://l2-revenue-aggregator:7682
+      L2_REVENUE_BRIDGE_ADDRESS: ${L2_REVENUE_BRIDGE_ADDRESS:-0x0000000000000000000000000000000000000901}
+      LEDGER_PATH: /data/l3-fee-ledger.sqlite
+      L3_FEE_FORWARD_HMAC_SECRET: ${L3_FEE_FORWARD_HMAC_SECRET:-}
+      L3_FEE_ADMIN_TOKEN: ${L3_FEE_ADMIN_TOKEN:-}
+    user: "10001:10001"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - ./data:/data
+    ports:
+      - "127.0.0.1:7681:7681"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7681/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M
+    networks:
+      - internal-services
+      - observability
+
+networks:
+  internal-services:
+    external: true
+  observability:
+    external: true

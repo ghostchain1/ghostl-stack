@@ -2,7 +2,6 @@
 # role: ai-monitor, ai-monitor-l1, ai-monitor-l3
 # ports: 7575:7575, 7576:7576, 7577:7577
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   ai-monitor:
     container_name: ghost_ai-monitor

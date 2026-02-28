@@ -2,7 +2,6 @@
 # role: theme-service
 # ports: 7634:7634
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   theme-service:
     container_name: ghost_theme-service

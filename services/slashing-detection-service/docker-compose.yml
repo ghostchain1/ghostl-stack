@@ -2,7 +2,6 @@
 # role: slashing-detection-service
 # ports: 7620:7620
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   slashing-detection-service:
     container_name: ghost_slashing-detection-service

@@ -1,0 +1,38 @@
+name: ghostvm-ai verify bundle
+
+on:
+  workflow_dispatch:
+    inputs:
+      bundle_dir:
+        description: "Absolute path on runner to the bundle directory containing manifest.json"
+        required: true
+        type: string
+
+jobs:
+  verify-bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ghostvm-ai dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r services/ghostvm-ai/requirements.txt
+
+      - name: Verify evidence bundle (composite)
+        id: verify
+        uses: ./.github/actions/ghostvm-ai-verify-bundle
+        with:
+          bundle_dir: ${{ inputs.bundle_dir }}
+
+      - name: Enforce verification policy gate
+        if: ${{ steps.verify.outputs.verify_ok != 'true' }}
+        run: |
+          echo "ghostvm-ai verify-bundle policy gate failed"
+          exit 1

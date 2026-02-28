@@ -7,6 +7,7 @@
 - `l2-hardening-checklist.md`: Hardening checklist for L2 ops.
 - `l2-invariants.md`: Formal L2 invariants and enforcement map.
 - `ai-governance-invariants.yaml`: Machine-readable invariants registry for AI governance primitives.
+- `branch-protection.md`: Required branch checks and merge gate policy.
 - `ssh-onchain-notary.md`: SSH notarization workflow.
 - `decision-log.md`: Security-relevant implementation decisions and rationale.
 

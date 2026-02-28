@@ -53,6 +53,12 @@ export default function HyperghostOverviewPage() {
           <Link className="button secondary" href="/ai/hyperghost/metrics">
             Metrics
           </Link>
+          <Link className="button secondary" href="/ai/hyperghost/ghostdns">
+            GhostDNS
+          </Link>
+          <Link className="button secondary" href="/ai/governor">
+            AI Governor
+          </Link>
         </div>
       </div>
 
@@ -137,4 +143,3 @@ export default function HyperghostOverviewPage() {
     </div>
   );
 }
-

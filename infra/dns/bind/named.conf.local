@@ -1,0 +1,8 @@
+zone "ghostchain.cloud" {
+  type master;
+  file "/etc/bind/zones/db.ghostchain.cloud";
+  allow-update { none; };
+  allow-transfer { none; };
+  inline-signing yes;
+  auto-dnssec maintain;
+};

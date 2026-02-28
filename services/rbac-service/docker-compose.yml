@@ -2,7 +2,6 @@
 # role: rbac-service
 # ports: 7640:7640
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   rbac-service:
     container_name: ghost_rbac-service

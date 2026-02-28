@@ -4,6 +4,7 @@ import { ethers } from 'ethers';
 import type { GhostWalletService } from '../../services/ghostwallet';
 import { requirePermission } from '../../lib/rbac';
 import { ghostWalletRpcManager } from '../../services/rpc-manager';
+import { assertRoutingLaw } from '@ghostl/routing-law';
 
 export const buildWalletRouter = (ghostWallet: GhostWalletService) => {
   const router = Router();
@@ -204,6 +205,29 @@ export const buildWalletRouter = (ghostWallet: GhostWalletService) => {
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const targetChain = parsed.data.toChain || (parsed.data.fromChain === 'l3' ? 'l2' : parsed.data.fromChain === 'l2' ? 'l1' : 'l1');
+    try {
+      assertRoutingLaw({
+        sourceLayer: parsed.data.fromChain.toUpperCase(),
+        targetLayer: targetChain.toUpperCase(),
+        intent: 'wallet_bridge'
+      });
+    } catch (error) {
+      console.warn(
+        JSON.stringify({
+          ts: new Date().toISOString(),
+          level: 'warn',
+          event: 'routing_law_blocked',
+          intent: 'wallet_bridge',
+          source: parsed.data.fromChain,
+          target: targetChain,
+          correlationId: req.correlationId,
+          error: error instanceof Error ? error.message : 'routing_law_violation'
+        })
+      );
+      res.status(400).json({ error: 'routing_law_violation', details: error instanceof Error ? error.message : undefined });
       return;
     }
     try {

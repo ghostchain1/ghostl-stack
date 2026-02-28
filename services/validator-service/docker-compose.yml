@@ -2,7 +2,6 @@
 # role: validator-service
 # ports: 7600:7600
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   validator-service:
     container_name: ghost_validator-service

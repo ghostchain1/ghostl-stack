@@ -1,0 +1,14 @@
+{
+  "name": "ghost-jwks-guard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.mjs"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "jose": "^5.10.0",
+    "js-yaml": "^4.1.0"
+  }
+}

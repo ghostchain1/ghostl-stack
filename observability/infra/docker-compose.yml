@@ -1,6 +1,16 @@
+x-ghost-user: &ghost-user "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
+
+x-runtime-hardening: &runtime-hardening
+  user: *ghost-user
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
 services:
   loki:
-    image: grafana/loki:2.9.5
+    <<: *runtime-hardening
+    image: grafana/loki:2.9.5@sha256:03d4bb6874898cc503a6a121b832556dd7747b20b5efe8cbc9ae175caf43811b
     restart: unless-stopped
     command:
       - -config.file=/etc/loki/config.yml
@@ -10,7 +20,8 @@ services:
     ports:
       - 3100:3100
   prometheus:
-    image: prom/prometheus:v2.51.2
+    <<: *runtime-hardening
+    image: prom/prometheus:v2.51.2@sha256:dc056a19e2398743fdd8133ca02cd9967c659608c625286ce0c18b5bfb413180
     restart: unless-stopped
     extra_hosts:
       - host.docker.internal:host-gateway
@@ -25,11 +36,18 @@ services:
       - prometheus_data:/prometheus
     ports:
       - 9090:9090
+    healthcheck:
+      test: ["CMD", "promtool", "--version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     networks:
       - default
       - opstack_default
   alertmanager:
-    image: prom/alertmanager:v0.27.0
+    <<: *runtime-hardening
+    image: prom/alertmanager:v0.27.0@sha256:45c3a586d4332d710bef92b06e90380c0b1f588968c00100d4b5e4e44c40ca5f
     restart: unless-stopped
     command:
       - --config.file=/etc/alertmanager/alertmanager.yml
@@ -41,7 +59,8 @@ services:
     ports:
       - 9093:9093
   grafana:
-    image: grafana/grafana:10.4.2
+    <<: *runtime-hardening
+    image: grafana/grafana:10.4.2@sha256:3aa2a03d88ad9628485f78e89adcd5b18bcde1aced3e6146bbbd7a718b82b797
     restart: unless-stopped
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
