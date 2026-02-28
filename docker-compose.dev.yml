@@ -11,12 +11,10 @@ x-runtime-hardening: &runtime-hardening
   security_opt:
     - no-new-privileges:true
 
-x-dev-service-defaults: &dev-service-defaults
-  <<: [*host-gateway, *runtime-hardening]
-
 services:
   ghostl-api:
-    <<: *dev-service-defaults
+    <<: *host-gateway
+    <<: *runtime-hardening
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -53,7 +51,8 @@ services:
       retries: 10
 
   ghostl-web:
-    <<: *dev-service-defaults
+    <<: *host-gateway
+    <<: *runtime-hardening
     build:
       context: .
       dockerfile: apps/web/Dockerfile

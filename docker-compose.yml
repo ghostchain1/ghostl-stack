@@ -11,7 +11,7 @@ x-runtime-hardening: &runtime-hardening
 
 services:
   postgres:
-    image: postgres:16-alpine@sha256:b7587f3cb74f4f4b2a4f9d67f052edbf95eb93f4fec7c5ada3792546caaf7383
+    image: postgres:16-alpine@sha256:129fbfd388241accda7b15e38ada14b11c70698e01e5c8072265b0eaa03af010
     environment:
       POSTGRES_DB: ghost_compliance
       POSTGRES_USER: ghost
@@ -27,7 +27,7 @@ services:
       retries: 20
 
   redis:
-    image: redis:7-alpine@sha256:8b81dd37ff027bec4e516d41acfbe9fe2460070dc6d4a4570a2ac5b9d59df065
+    image: redis:7-alpine@sha256:4bfd9eca23339865dc14fe75f6d9ae643f714924623978dd2798f1a673b08f43
     ports:
       - "6379:6379"
     command: ["redis-server", "--appendonly", "yes"]
@@ -41,7 +41,7 @@ services:
 
   migrate:
     <<: *runtime-hardening
-    image: node:22-alpine@sha256:e4bf2a82ad0a4037d28035ae71529873c069b13eb0455466ae0bc13363826e34
+    image: node:22-alpine@sha256:48f53c3f0105ccddcc5e4f520347398dfc0ba9b3008fbfd98a2add27e5797957
     working_dir: /work
     volumes:
       - ./services/ghost-compliance:/work
