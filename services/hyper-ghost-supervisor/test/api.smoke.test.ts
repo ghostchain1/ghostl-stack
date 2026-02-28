@@ -31,7 +31,8 @@ test('API smoke: health/status/incidents/proposals/metrics', async (t) => {
     seedDemo: false,
     execEnabled: false,
     rpc: {},
-    probes: { urls: [], timeoutMs: 50, intervalMs: 60_000 }
+    probes: { urls: [], timeoutMs: 50, intervalMs: 60_000 },
+    ghostdns: { url: 'http://127.0.0.1:18089' }
   };
 
   const db = openDb(':memory:');
@@ -98,7 +99,8 @@ test('Gate: mainnet execute is proposal-only (403)', async (t) => {
     execEnabled: true,
     approvalToken: 'token',
     rpc: {},
-    probes: { urls: [], timeoutMs: 50, intervalMs: 60_000 }
+    probes: { urls: [], timeoutMs: 50, intervalMs: 60_000 },
+    ghostdns: { url: 'http://127.0.0.1:18089' }
   };
   const db = openDb(':memory:');
   const collectors: CollectorState = { startedAt: Date.now(), lastProbes: [], lastSnapshotHash: null };
@@ -111,4 +113,3 @@ test('Gate: mainnet execute is proposal-only (403)', async (t) => {
   const body = (await res.json()) as any;
   assert.equal(body.error, 'MAINNET_PROPOSAL_ONLY');
 });
-

@@ -2,7 +2,6 @@
 # role: forecasting-service
 # ports: 7617:7617
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   forecasting-service:
     container_name: ghost_forecasting-service

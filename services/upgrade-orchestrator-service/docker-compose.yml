@@ -2,7 +2,6 @@
 # role: upgrade-orchestrator-service
 # ports: 7623:7623
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   upgrade-orchestrator-service:
     container_name: ghost_upgrade-orchestrator-service

@@ -54,9 +54,19 @@ jobs:
             --skip-files ops/security/trivy-fs.json,contracts/reports/formal/scribble/scribble.json,contracts/artifacts/build-info/*.json,infra/opstack/op-geth/signer/fourbyte/4byte.json \
             .
 
+      - name: Digest refresh report (non-blocking)
+        run: bash scripts/security/digest-refresh-report.sh
+
+      - name: Digest rollforward candidates (stale-only)
+        run: bash scripts/security/digest-rollforward-candidates.sh
+
       - name: Upload report
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: nightly-security
-          path: trivy-fs.json
+          path: |
+            trivy-fs.json
+            artifacts/security/digest-refresh-report.md
+            artifacts/security/digest-refresh-report.json
+            artifacts/security/digest-rollforward-candidates.md

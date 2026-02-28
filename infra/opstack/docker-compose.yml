@@ -17,7 +17,7 @@ services:
       context: ./gate
       dockerfile: Dockerfile
       args:
-        NODE_IMAGE: ${OP_STACK_BASE_IMAGE:-node@sha256:40dc4b415c17b85bea9be05314b4a753f45a4e1716bb31c01182e6c53d51a654}
+        NODE_IMAGE: ${OP_STACK_BASE_IMAGE:-node@sha256:e4bf2a82ad0a4037d28035ae71529873c069b13eb0455466ae0bc13363826e34}
     user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     working_dir: /app
     restart: unless-stopped
@@ -38,7 +38,7 @@ services:
     volumes:
     - ./data/op-gate-state:/state
     ports:
-    - 28546:8545
+    - ${L2_GATE_BIND:-127.0.0.1}:${L2_GATE_HOST_PORT:-28546}:8545
     healthcheck:
       test:
       - CMD-SHELL
@@ -57,7 +57,7 @@ services:
       context: ./gate
       dockerfile: Dockerfile
       args:
-        NODE_IMAGE: ${OP_STACK_BASE_IMAGE:-node@sha256:40dc4b415c17b85bea9be05314b4a753f45a4e1716bb31c01182e6c53d51a654}
+        NODE_IMAGE: ${OP_STACK_BASE_IMAGE:-node@sha256:e4bf2a82ad0a4037d28035ae71529873c069b13eb0455466ae0bc13363826e34}
     user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     working_dir: /app
     restart: unless-stopped
@@ -78,7 +78,7 @@ services:
     volumes:
     - ./data/op-gate-l1-state:/state
     ports:
-    - 28547:8545
+    - ${L1_GATE_BIND:-127.0.0.1}:${L1_GATE_HOST_PORT:-28547}:8545
     healthcheck:
       test:
       - CMD-SHELL
@@ -441,6 +441,8 @@ services:
       L2_RPC_URL: http://ghost-rpc-proxy-l2:8546
       L3_RPC_URL: http://ghost-rpc-proxy-l3:8546
       HG_PROBE_URLS: ${HG_PROBE_URLS:-}
+      HG_GHOSTDNS_URL: ${HG_GHOSTDNS_URL:-http://host.docker.internal:18089}
+      HG_GHOSTDNS_SHARED_SECRET: ${HG_GHOSTDNS_SHARED_SECRET:-}
     ports:
     - 7077:7077
     volumes:
@@ -521,9 +523,9 @@ services:
       op-gate:
         condition: service_healthy
     ports:
-    - 29547:8545
+    - ${L2_RPC_BIND:-127.0.0.1}:${L2_HOST_RPC_PORT:-29547}:8545
     - ${L2_HOST_WS:-29548}:8546
-    - 29606:6060
+    - ${L2_METRICS_HOST_PORT:-29606}:6060
     volumes:
     - ./data/l2-geth-${L2_CHAIN_ID:-901}:/data
     - ./config:/config:ro
@@ -567,13 +569,13 @@ services:
     - TCP-LISTEN:18547,fork,reuseaddr
     - TCP:op-gate:8545
     ports:
-    - 18547:18547
+    - ${RPC_FORWARD_L2_BIND:-127.0.0.1}:${RPC_FORWARD_L2_HOST_PORT:-18547}:18547
     mem_limit: 64m
     cpus: '0.1'
   l1-rpc-proxy:
     cap_drop: *id001
     security_opt: *id002
-    image: node:22-alpine
+    image: node:22-alpine@sha256:e4bf2a82ad0a4037d28035ae71529873c069b13eb0455466ae0bc13363826e34
     restart: unless-stopped
     logging: *id003
     extra_hosts:
@@ -635,8 +637,8 @@ services:
     - --metrics.addr=0.0.0.0
     - --metrics.port=7300
     ports:
-    - 9546:9546
-    - 7300:7300
+    - ${OP_NODE_HOST_PORT:-9546}:9546
+    - ${OP_NODE_METRICS_HOST_PORT:-7300}:7300
     healthcheck:
       test:
       - CMD-SHELL
@@ -689,8 +691,8 @@ services:
     - --metrics.addr=0.0.0.0
     - --metrics.port=7303
     ports:
-    - 9646:9646
-    - 7303:7303
+    - ${OP_SEQUENCER_HOST_PORT:-9646}:9646
+    - ${OP_SEQUENCER_METRICS_HOST_PORT:-7303}:7303
     healthcheck:
       test:
       - CMD-SHELL
@@ -745,8 +747,8 @@ services:
     volumes:
     - ./config:/config:ro
     ports:
-    - 8551:8551
-    - 7301:7301
+    - ${OP_BATCHER_HOST_PORT:-8551}:8551
+    - ${OP_BATCHER_METRICS_HOST_PORT:-7301}:7301
     healthcheck:
       test:
       - CMD-SHELL
@@ -916,7 +918,7 @@ services:
   vector:
     cap_drop: *id001
     security_opt: *id002
-    image: ${VECTOR_IMAGE:-timberio/vector:0.38.0-alpine}
+    image: ${VECTOR_IMAGE:-timberio/vector:0.38.0-alpine@sha256:0f40a5bc6df18de0f4855ee6a801449f1b78fa60b3c5001c530896abc64b18b2}
     restart: unless-stopped
     logging: *id003
     depends_on:

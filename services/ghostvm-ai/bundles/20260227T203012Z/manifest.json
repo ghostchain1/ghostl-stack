@@ -1,0 +1,55 @@
+{
+  "bundle_id": "20260227T203012Z",
+  "bundle_dir": "/home/ghost/ghostl-stack/services/ghostvm-ai/bundles/20260227T203012Z",
+  "mode": "include_all",
+  "depth": 20,
+  "source": {
+    "plans": [
+      "/home/ghost/ghostl-stack/services/ghostvm-ai/plans/20260227T200033Z",
+      "/home/ghost/ghostl-stack/services/ghostvm-ai/plans/20260227T200724Z",
+      "/home/ghost/ghostl-stack/services/ghostvm-ai/plans/20260227T200903Z",
+      "/home/ghost/ghostl-stack/services/ghostvm-ai/plans/20260227T200954Z"
+    ],
+    "verification": [
+      "/home/ghost/ghostl-stack/services/ghostvm-ai/evidence/20260227T200037Z",
+      "/home/ghost/ghostl-stack/services/ghostvm-ai/evidence/20260227T200105Z",
+      "/home/ghost/ghostl-stack/services/ghostvm-ai/evidence/20260227T200220Z",
+      "/home/ghost/ghostl-stack/services/ghostvm-ai/evidence/20260227T200324Z",
+      "/home/ghost/ghostl-stack/services/ghostvm-ai/evidence/20260227T200518Z",
+      "/home/ghost/ghostl-stack/services/ghostvm-ai/evidence/20260227T200644Z",
+      "/home/ghost/ghostl-stack/services/ghostvm-ai/evidence/20260227T200725Z",
+      "/home/ghost/ghostl-stack/services/ghostvm-ai/evidence/20260227T200914Z",
+      "/home/ghost/ghostl-stack/services/ghostvm-ai/evidence/20260227T201001Z",
+      "/home/ghost/ghostl-stack/services/ghostvm-ai/evidence/20260227T201052Z"
+    ]
+  },
+  "files": [
+    "plans/20260227T200033Z/plan.json",
+    "plans/20260227T200033Z/diff.md",
+    "plans/20260227T200033Z/rollback.md",
+    "plans/20260227T200724Z/plan.json",
+    "plans/20260227T200724Z/diff.md",
+    "plans/20260227T200724Z/rollback.md",
+    "plans/20260227T200903Z/nft-remediation.json",
+    "plans/20260227T200903Z/nft-remediation.md",
+    "plans/20260227T200903Z/nftables-remediation.conf",
+    "plans/20260227T200954Z/nft-remediation.json",
+    "plans/20260227T200954Z/nft-remediation.md",
+    "plans/20260227T200954Z/nftables-remediation.conf",
+    "verification/20260227T200037Z/network-verification.json",
+    "verification/20260227T200037Z/network-verification.md",
+    "verification/20260227T200105Z/network-verification.json",
+    "verification/20260227T200105Z/network-verification.md",
+    "verification/20260227T200220Z/network-verification.json",
+    "verification/20260227T200324Z/network-verification.json",
+    "verification/20260227T200518Z/network-verification.json",
+    "verification/20260227T200644Z/network-verification.json",
+    "verification/20260227T200725Z/network-verification.json",
+    "verification/20260227T200914Z/network-verification.json",
+    "verification/20260227T201001Z/network-verification.json",
+    "verification/20260227T201001Z/network-verification.md",
+    "verification/20260227T201052Z/network-verification.json",
+    "verification/20260227T201052Z/network-verification.md"
+  ],
+  "archive": "/home/ghost/ghostl-stack/services/ghostvm-ai/bundles/ghostnetsync-evidence-all-20260227T203012Z.tar.gz"
+}

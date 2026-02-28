@@ -88,7 +88,7 @@ services:
       retries: 10
 
   ghostl-worker:
-    image: node:22.21.0-bookworm-slim
+    image: node:22.21.0-bookworm-slim@sha256:f9f7f95dcf1f007b007c4dcd44ea8f7773f931b71dc79d57c216e731c87a090b
     working_dir: /app
     command: ["npm", "run", "dev", "-w", "apps/worker"]
     ports:
@@ -117,7 +117,7 @@ services:
     restart: unless-stopped
 
   ghostl-worker-redis:
-    image: redis:7-alpine
+    image: redis:7-alpine@sha256:8b81dd37ff027bec4e516d41acfbe9fe2460070dc6d4a4570a2ac5b9d59df065
     command: ["redis-server", "--appendonly", "yes"]
     restart: unless-stopped
     healthcheck:

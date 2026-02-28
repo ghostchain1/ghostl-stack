@@ -477,6 +477,7 @@ REL_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." >/dev/null 2>&1 && pwd)"
 
 : "${RPC_L1:?set RPC_L1 (e.g. http://127.0.0.1:18545)}"
 : "${MAINNET_LAUNCH_GATE_ADDRESS:?set MAINNET_LAUNCH_GATE_ADDRESS (0x...)}"
+: "${MAINNET_RELEASE_GATE_ADDRESS:?set MAINNET_RELEASE_GATE_ADDRESS (0x...)}"
 
 release_id_b32="$(jq -r .release_id_bytes32 "${REL_DIR}/governance/launch-hashes.json")"
 manifest_hash="$(jq -r .manifest_hash "${REL_DIR}/governance/launch-hashes.json")"
@@ -486,6 +487,10 @@ python3 "${REL_DIR}/scripts/lib/evmrpc.py" is-launch-authorized \
   --gate "${MAINNET_LAUNCH_GATE_ADDRESS}" \
   --release-id-bytes32 "${release_id_b32}" \
   --manifest-hash-bytes32 "${manifest_hash}"
+
+python3 "${REL_DIR}/scripts/lib/evmrpc.py" is-mainnet-launch-allowed \
+  --rpc "${RPC_L1}" \
+  --release-gate "${MAINNET_RELEASE_GATE_ADDRESS}"
 SH
 chmod 750 "${REL_DIR}/governance/verify-onchain-authorization.sh"
 
@@ -785,6 +790,13 @@ authorized="$(python3 "${REL_DIR}/scripts/lib/evmrpc.py" is-launch-authorized --
 if [ "${authorized}" != "true" ]; then
   echo "MAINNET DEPLOY BLOCKED: No on-chain authorization found for release-id + manifestHash." >&2
   echo "Required: execute governance proposal that calls authorizeMainnetLaunch(...)." >&2
+  exit 1
+fi
+
+release_allowed="$(python3 "${REL_DIR}/scripts/lib/evmrpc.py" is-mainnet-launch-allowed --rpc "${RPC_L1}" --release-gate "${MAINNET_RELEASE_GATE_ADDRESS}")"
+if [ "${release_allowed}" != "true" ]; then
+  echo "MAINNET DEPLOY BLOCKED: Constitutional ReleaseGate denied launch authorization." >&2
+  echo "Required: governance must approve constitution + manifest + attestation + timelock and set ReleaseGate." >&2
   exit 1
 fi
 

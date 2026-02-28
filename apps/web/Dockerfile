@@ -4,6 +4,7 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
+COPY scripts scripts
 # Copy workspace manifests explicitly so `npm ci --workspaces` has a consistent
 # directory layout (wildcard COPY destinations do not preserve structure).
 COPY apps/api/package.json apps/api/package.json
@@ -33,12 +34,10 @@ RUN npm run build -w apps/web
 FROM node:22.21.0-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/web/.next-ghost ./apps/web/.next-ghost
+ENV PORT=3000
+COPY --from=builder /app/apps/web/.next-ghost/standalone ./
+COPY --from=builder /app/apps/web/.next-ghost/static ./apps/web/.next-ghost/static
 COPY --from=builder /app/apps/web/public ./apps/web/public
-COPY --from=builder /app/apps/web/package.json ./apps/web/package.json
-COPY --from=builder /app/apps/web/next.config.js ./apps/web/next.config.js
-WORKDIR /app/apps/web
-EXPOSE 3200
+EXPOSE 3000
 USER node
-CMD ["npm", "run", "start"]
+CMD ["node", "apps/web/server.js"]

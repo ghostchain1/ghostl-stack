@@ -2,7 +2,6 @@
 # role: auth-service
 # ports: 7639:7639
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   auth-service:
     container_name: ghost_auth-service

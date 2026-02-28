@@ -1,0 +1,116 @@
+{
+  "uid": "sovereign-economy",
+  "title": "Sovereign Revenue & Treasury Engine",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "L3 Revenue Intake",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(l3_revenue_total[5m])",
+          "legendFormat": "L3 revenue/sec"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "L2 Revenue + Bridge + LP",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(l2_revenue_total[5m])",
+          "legendFormat": "L2 revenue/sec"
+        },
+        {
+          "expr": "rate(l2_liquidity_fees[5m])",
+          "legendFormat": "LP fees/sec"
+        },
+        {
+          "expr": "rate(l2_bridge_volume[5m])",
+          "legendFormat": "Bridge volume/sec"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Treasury Total Value",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "treasury_total_value",
+          "legendFormat": "TV"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Treasury Deployed Capital",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "targets": [
+        {
+          "expr": "treasury_deployed_capital",
+          "legendFormat": "Deployed"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Treasury Risk Exposure",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "targets": [
+        {
+          "expr": "treasury_risk_exposure",
+          "legendFormat": "Risk"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Yield + Rewards Distribution",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "rate(treasury_yield_returned[5m])",
+          "legendFormat": "Yield returned/sec"
+        },
+        {
+          "expr": "rate(rewards_distributed_total[5m])",
+          "legendFormat": "Rewards distributed/sec"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Distribution Breakdown",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "expr": "rate(validator_rewards[5m])",
+          "legendFormat": "Validator"
+        },
+        {
+          "expr": "rate(ecosystem_incentives[5m])",
+          "legendFormat": "Ecosystem"
+        },
+        {
+          "expr": "rate(l3_event_rewards[5m])",
+          "legendFormat": "L2/L3 incentives"
+        }
+      ]
+    }
+  ]
+}

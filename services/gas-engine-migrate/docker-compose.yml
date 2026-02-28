@@ -2,7 +2,6 @@
 # role: gas-engine-migrate
 # ports: none
 # volumes: ../ghost-gas-engine:/work, ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   gas-engine-migrate:
     container_name: ghost_gas-engine-migrate

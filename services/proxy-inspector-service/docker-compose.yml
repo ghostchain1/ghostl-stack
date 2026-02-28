@@ -2,7 +2,6 @@
 # role: proxy-inspector-service
 # ports: 7631:7631
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   proxy-inspector-service:
     container_name: ghost_proxy-inspector-service

@@ -1,0 +1,29 @@
+groups:
+  - name: econ-engine-alerts
+    rules:
+      - alert: EconServiceDown
+        expr: up{job=~"hg-.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Economic engine service down"
+          description: "A core hg-* service is unavailable for more than 2 minutes."
+
+      - alert: TreasuryAgentRejectSpike
+        expr: increase(hg_treasury_agent_intents_total{decision="rejected"}[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Treasury agent rejecting intents"
+          description: "Rejected execution intents exceeded threshold."
+
+      - alert: ProofSnapshotterIdle
+        expr: increase(hg_proof_snapshotter_snapshots_total[1h]) == 0
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "No proof snapshots produced"
+          description: "No snapshots were produced in the last hour."

@@ -1,0 +1,884 @@
+[
+  {
+    "file": "infra/ghostchain/docker-compose.l1.yml",
+    "service": "ghostchain-bootnode",
+    "has_user": true,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/ghostchain/docker-compose.l1.yml",
+    "service": "ghostchain-node1",
+    "has_user": true,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/ghostchain/docker-compose.l1.yml",
+    "service": "ghostchain-node2",
+    "has_user": true,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/ghostchain/docker-compose.l1.yml",
+    "service": "ghostchain-rpc-proxy",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/ghostchain/docker-compose.l1.yml",
+    "service": "ghostscout",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "op-gate",
+    "has_user": true,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "op-gate-l1",
+    "has_user": true,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "gas-engine-postgres",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "gas-engine-redis",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "ghost-gas-engine",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "ghost-gas-engine-worker",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "ghost-guard",
+    "has_user": true,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "ghost-rpc-proxy-l1",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "ghost-rpc-proxy-l2",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "ghost-rpc-proxy-l3",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "hyper-ghost-supervisor",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "ai-monitor",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "l2-geth",
+    "has_user": true,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "rpc-forward-l2-18547",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "l1-rpc-proxy",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "op-node",
+    "has_user": true,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "op-sequencer",
+    "has_user": true,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "op-batcher",
+    "has_user": true,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "op-proposer",
+    "has_user": true,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "prometheus",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "alertmanager",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "loki",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "grafana",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.yml",
+    "service": "vector",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "l3-geth",
+    "has_user": true,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "l3-op-node",
+    "has_user": true,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "l3-op-batcher",
+    "has_user": true,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "l3-op-proposer",
+    "has_user": true,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "validator-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "auth-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "rbac-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "session-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "notifications-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "alerts-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "node-health-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "consensus-telemetry-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "slashing-detection-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "treasury-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "bridge-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "liquidity-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "anomaly-detection-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "feature-flags-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "governance-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "contract-registry-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "contract-risk-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "proxy-inspector-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "mempool-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "tx-index-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "peer-graph-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "audit-log-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "block-index-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "chain-status-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "compliance-export-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "dispute-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "entity-tagging-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "explainability-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "fee-model-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "forecasting-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "global-search-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "key-rotation-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "network-context-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "node-inventory-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "participation-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "payout-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "rewards-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "secrets-health-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "snapshot-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "staking-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "supply-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "theme-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "transfer-lifecycle-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "upgrade-orchestrator-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "service": "verification-service",
+    "has_user": false,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.challengers.yml",
+    "service": "op-challenger",
+    "has_user": true,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "infra/opstack/docker-compose.challengers.yml",
+    "service": "l3-op-challenger",
+    "has_user": true,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "docker-compose.sovereign.yml",
+    "service": "l3-fee-collector",
+    "has_user": true,
+    "read_only": true,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "docker-compose.sovereign.yml",
+    "service": "l2-revenue-aggregator",
+    "has_user": true,
+    "read_only": true,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "docker-compose.sovereign.yml",
+    "service": "treasury-engine",
+    "has_user": true,
+    "read_only": true,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "docker-compose.sovereign.yml",
+    "service": "reward-distributor",
+    "has_user": true,
+    "read_only": true,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "docker-compose.sovereign.yml",
+    "service": "hyper-ghost-governor",
+    "has_user": true,
+    "read_only": true,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "docker-compose.autonomy.yml",
+    "service": "ghost-registry",
+    "has_user": true,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "docker-compose.autonomy.yml",
+    "service": "network-context-service",
+    "has_user": true,
+    "read_only": true,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "docker-compose.autonomy.yml",
+    "service": "consensus-telemetry-service",
+    "has_user": true,
+    "read_only": true,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "docker-compose.autonomy.yml",
+    "service": "network-manager-service",
+    "has_user": true,
+    "read_only": true,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "docker-compose.autonomy.yml",
+    "service": "ghostdns-ai",
+    "has_user": true,
+    "read_only": false,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "docker-compose.autonomy.yml",
+    "service": "ghostdns-indexer",
+    "has_user": true,
+    "read_only": true,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "docker-compose.autonomy.yml",
+    "service": "ghostdns-ai-policy",
+    "has_user": true,
+    "read_only": true,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "docker-compose.autonomy.yml",
+    "service": "ghostdns-resolver",
+    "has_user": true,
+    "read_only": true,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "docker-compose.autonomy.yml",
+    "service": "ghostdns-attestor",
+    "has_user": true,
+    "read_only": true,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "docker-compose.autonomy.yml",
+    "service": "ghostdns-volume-init",
+    "has_user": false,
+    "read_only": true,
+    "has_cap_drop_all": false,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "docker-compose.autonomy.yml",
+    "service": "host-orchestrator-ai",
+    "has_user": true,
+    "read_only": true,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "docker-compose.autonomy.yml",
+    "service": "vm-protocol-ai",
+    "has_user": true,
+    "read_only": true,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  },
+  {
+    "file": "docker-compose.autonomy.yml",
+    "service": "ghost-mapper",
+    "has_user": true,
+    "read_only": true,
+    "has_cap_drop_all": true,
+    "privileged": false,
+    "has_restart": true
+  }
+]

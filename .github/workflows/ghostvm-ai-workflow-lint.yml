@@ -1,0 +1,38 @@
+name: ghostvm-ai workflow lint
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+      - ".github/actions/**"
+
+permissions:
+  contents: read
+
+jobs:
+  lint-workflows:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate YAML syntax
+        run: |
+          python - <<'PY'
+from pathlib import Path
+import yaml
+
+targets = list(Path('.github/workflows').glob('*.yml')) + list(Path('.github/actions').rglob('action.yml'))
+for target in targets:
+    yaml.safe_load(target.read_text(encoding='utf-8'))
+print(f"validated_yaml_files={len(targets)}")
+PY
+
+      - name: Run actionlint
+        uses: rhysd/actionlint@v1

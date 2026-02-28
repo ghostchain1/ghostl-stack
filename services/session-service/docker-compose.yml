@@ -2,7 +2,6 @@
 # role: session-service
 # ports: 7643:7643
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   session-service:
     container_name: ghost_session-service

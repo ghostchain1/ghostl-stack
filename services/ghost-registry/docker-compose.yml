@@ -2,7 +2,6 @@
 # role: ghost-registry
 # ports: 18088:8088
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   ghost-registry:
     container_name: ghost_ghost-registry

@@ -2,7 +2,6 @@
 # role: ghostscout-frontend-l1
 # ports: ${GHOSTSCOUT_L1_UI_PORT:-18651}:3000
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   ghostscout-frontend-l1:
     container_name: ghost_ghostscout-frontend-l1

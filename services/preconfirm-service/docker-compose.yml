@@ -1,7 +1,6 @@
 # stack-group: rpc
 # role: preconfirm-service
 # ports: 7691:7691
-version: '3.9'
 services:
   preconfirm-service:
     container_name: ghost_preconfirm-service

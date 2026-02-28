@@ -2,7 +2,6 @@
 # role: rewards-service
 # ports: 7602:7602
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   rewards-service:
     container_name: ghost_rewards-service

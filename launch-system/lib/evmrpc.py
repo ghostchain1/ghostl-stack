@@ -7,6 +7,7 @@ No external deps.
 Supports:
 - eth_call
 - MainnetLaunchGate.isLaunchAuthorized(bytes32,bytes32) view(bool)
+- ReleaseGate.isMainnetLaunchAllowed() view(bool)
 """
 
 from __future__ import annotations
@@ -109,6 +110,15 @@ def is_launch_authorized(cfg: RpcConfig, gate_addr: str, release_id: bytes, mani
     return _abi_encode_bool_from_32bytes(out[:32])
 
 
+def is_mainnet_launch_allowed(cfg: RpcConfig, release_gate_addr: str) -> bool:
+    sel = _selector("isMainnetLaunchAllowed()")
+    out_hex = eth_call(cfg, release_gate_addr, _hex0x(sel))
+    out = _parse_hex_bytes(out_hex)
+    if len(out) < 32:
+        out = out.rjust(32, b"\x00")
+    return _abi_encode_bool_from_32bytes(out[:32])
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -125,6 +135,10 @@ def main(argv: list[str]) -> int:
     auth.add_argument("--release-id-bytes32", required=True)
     auth.add_argument("--manifest-hash-bytes32", required=True)
 
+    release_gate = sub.add_parser("is-mainnet-launch-allowed")
+    release_gate.add_argument("--rpc", required=True)
+    release_gate.add_argument("--release-gate", required=True)
+
     args = parser.parse_args(argv)
     if args.cmd == "eth-call":
         cfg = RpcConfig(url=args.rpc)
@@ -139,6 +153,12 @@ def main(argv: list[str]) -> int:
             _bytes32(args.release_id_bytes32),
             _bytes32(args.manifest_hash_bytes32),
         )
+        sys.stdout.write(("true" if ok else "false") + "\n")
+        return 0
+
+    if args.cmd == "is-mainnet-launch-allowed":
+        cfg = RpcConfig(url=args.rpc)
+        ok = is_mainnet_launch_allowed(cfg, args.release_gate)
         sys.stdout.write(("true" if ok else "false") + "\n")
         return 0
 

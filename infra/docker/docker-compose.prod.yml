@@ -1,0 +1,154 @@
+services:
+  traefik:
+    image: traefik:v3.1
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      # TLS termination should be configured (ACME or external). Keep minimal here.
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks: [edge, internal]
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: ["start", "--http-enabled=true", "--proxy-headers=xforwarded", "--import-realm"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://kc-postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+      KEYCLOAK_ADMIN: ${KC_ADMIN_USER}
+      KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
+      KC_HOSTNAME: auth.ghostchain.cloud
+    depends_on: [kc-postgres]
+    volumes:
+      - ../keycloak/realm-exports:/opt/keycloak/data/import:ro
+    networks: [edge, internal]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=docker_internal
+      - traefik.http.routers.keycloak.rule=Host(`auth.ghostchain.cloud`)
+      - traefik.http.routers.keycloak.entrypoints=websecure
+      - traefik.http.routers.keycloak.tls=true
+      - traefik.http.services.keycloak.loadbalancer.server.port=8080
+
+  kc-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KC_DB_PASSWORD}
+    volumes:
+      - kc_pg:/var/lib/postgresql/data
+    networks: [internal]
+
+  kong:
+    image: kong:3.7
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      KONG_PROXY_LISTEN: "0.0.0.0:8000"
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+      KONG_PLUGINS: bundled
+    volumes:
+      - ./kong/kong.yml:/kong/declarative/kong.yml:ro
+    networks: [edge, internal]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=docker_internal
+      - traefik.http.routers.api.rule=Host(`api.ghostchain.cloud`)
+      - traefik.http.routers.api.entrypoints=websecure
+      - traefik.http.routers.api.tls=true
+      - traefik.http.routers.api.middlewares=ghost-jwks-guard@docker
+      - traefik.http.services.api.loadbalancer.server.port=8000
+
+  ghost-jwks-guard:
+    build:
+      context: ../../services/ghost-jwks-guard
+      dockerfile: Dockerfile
+    environment:
+      PORT: 8090
+      AUTHZ_POLICIES_FILE: /etc/ghost/authz/policies.yml
+      KEYCLOAK_BASE_URL: https://auth.ghostchain.cloud
+      KEYCLOAK_REALM_USERS: ghost-users
+      KEYCLOAK_REALM_EMPLOYEES: ghost-employees
+      KEYCLOAK_REALM_ADMINS: ghost-admins
+      OIDC_ISSUER_USERS: ${KONG_OIDC_USERS_ISSUER}
+      OIDC_ISSUER_EMPLOYEES: ${KONG_OIDC_EMPLOYEES_ISSUER}
+      OIDC_ISSUER_ADMINS: ${KONG_OIDC_ADMINS_ISSUER}
+      JWKS_GUARD_AUDIENCE: ghost-web
+      JWKS_GUARD_CLOCK_TOLERANCE_SECONDS: 5
+    volumes:
+      - ../authz/policies.yml:/etc/ghost/authz/policies.yml:ro
+    networks: [internal]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=docker_internal
+      - traefik.http.middlewares.ghost-jwks-guard.forwardauth.address=http://ghost-jwks-guard:8090/verify
+      - traefik.http.middlewares.ghost-jwks-guard.forwardauth.trustForwardHeader=true
+      - traefik.http.middlewares.ghost-jwks-guard.forwardauth.authResponseHeaders=X-Ghost-Realm,X-Ghost-Subject,X-Ghost-Roles,X-Ghost-Session-Id,X-Correlation-Id
+
+  web:
+    build:
+      context: ../../
+      dockerfile: apps/web/Dockerfile
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      NEXTAUTH_URL: https://app.ghostchain.cloud
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+
+      KEYCLOAK_BASE_URL: https://auth.ghostchain.cloud
+      KEYCLOAK_REALM_USERS: ghost-users
+      KEYCLOAK_REALM_EMPLOYEES: ghost-employees
+      KEYCLOAK_REALM_ADMINS: ghost-admins
+      KEYCLOAK_CLIENT_ID: ghost-web
+      KEYCLOAK_CLIENT_SECRET: ${KC_CLIENT_SECRET}
+
+      API_BASE_URL: https://api.ghostchain.cloud
+    networks: [edge, internal]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=docker_internal
+      - traefik.http.routers.web.rule=Host(`app.ghostchain.cloud`)
+      - traefik.http.routers.web.entrypoints=websecure
+      - traefik.http.routers.web.tls=true
+      - traefik.http.services.web.loadbalancer.server.port=3000
+
+  identity-service:
+    build:
+      context: ../../
+      dockerfile: apps/api/Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      DATABASE_URL: ${IDENTITY_DB_URL}
+      KEYCLOAK_BASE_URL: https://auth.ghostchain.cloud
+      KEYCLOAK_REALM_USERS: ghost-users
+      KEYCLOAK_REALM_EMPLOYEES: ghost-employees
+      KEYCLOAK_REALM_ADMINS: ghost-admins
+      ROUTING_LAW_MODE: strict
+    networks: [internal]
+
+  governance-service:
+    build:
+      context: ../../services/governance-service
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      DATABASE_URL: ${GOV_DB_URL}
+      ROUTING_LAW_MODE: strict
+    networks: [internal]
+
+networks:
+  edge: {}
+  internal: {}
+
+volumes:
+  kc_pg: {}

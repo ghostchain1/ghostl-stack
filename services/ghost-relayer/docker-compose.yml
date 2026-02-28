@@ -2,7 +2,6 @@
 # role: ghost-relayer
 # ports: 7171:7171
 # volumes: ./data:/state, ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   ghost-relayer:
     container_name: ghost_ghost-relayer

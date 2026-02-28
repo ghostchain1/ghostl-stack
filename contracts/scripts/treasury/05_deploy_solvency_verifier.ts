@@ -1,0 +1,23 @@
+/* eslint-disable no-console */
+import { ethers } from "hardhat";
+
+async function main() {
+  const governor = process.env.GOVERNOR_ADDRESS || process.env.TIMELOCK_ADDRESS || "";
+  if (!governor || !ethers.isAddress(governor)) {
+    throw new Error("set GOVERNOR_ADDRESS or TIMELOCK_ADDRESS");
+  }
+  const timelock = process.env.TIMELOCK_ADDRESS || ethers.ZeroAddress;
+
+  const Verifier = await ethers.getContractFactory("SolvencyVerifier");
+  const verifier = await Verifier.deploy(governor, timelock);
+  await verifier.waitForDeployment();
+
+  console.log(`SolvencyVerifier deployed: ${await verifier.getAddress()}`);
+  console.log(`governor: ${governor}`);
+  console.log(`timelock: ${timelock}`);
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

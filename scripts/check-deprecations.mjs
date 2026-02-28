@@ -10,17 +10,27 @@ const rootDir = process.cwd();
 const DEFAULT_CMD_TIMEOUT_MS = Number(process.env.DEPRECATIONS_CMD_TIMEOUT_MS ?? 120000);
 const SKIP_NPM_AUDIT = process.env.DEPRECATIONS_SKIP_AUDIT === '1';
 const SKIP_FILE_SCAN = process.env.DEPRECATIONS_SKIP_FILE_SCAN === '1';
+const exceptionsPath = path.join(rootDir, 'security', 'audit-exceptions.json');
+const nowIso = new Date().toISOString();
 
 const artifactsDir = path.join(rootDir, 'artifacts');
 await mkdir(artifactsDir, { recursive: true });
 
 const report = {
-  generatedAt: new Date().toISOString(),
+  generatedAt: nowIso,
   items: [],
+  summary: {
+    failures: [],
+    exceptions: {
+      total: 0,
+      expired: []
+    }
+  },
   checks: {
     npmLs: null,
     npmOutdated: null,
-    npmAudit: null
+    npmAudit: null,
+    exceptions: null
   }
 };
 
@@ -54,6 +64,86 @@ const safeJsonParse = (value) => {
   } catch (error) {
     return { ok: false, error };
   }
+};
+
+const parseJsonPayload = (value) => {
+  const raw = typeof value === 'string' ? value.trim() : '';
+  if (!raw) return { ok: false, error: new Error('empty-json') };
+  const direct = safeJsonParse(raw);
+  if (direct.ok) return direct;
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start === -1 || end === -1 || end <= start) return direct;
+  return safeJsonParse(raw.slice(start, end + 1));
+};
+
+const extractGhsaId = (value) => {
+  if (typeof value !== 'string') return null;
+  const match = value.match(/(GHSA-[A-Za-z0-9-]+)/i);
+  return match ? match[1].toUpperCase() : null;
+};
+
+const normalizeException = (raw, index) => {
+  if (!raw || typeof raw !== 'object') return null;
+  const id = String(raw.id || `exception-${index + 1}`);
+  const type = raw.type === 'outdated' ? 'outdated' : 'audit';
+  const pkg = typeof raw.package === 'string' ? raw.package.trim() : '';
+  const advisoryId = typeof raw.advisory_id === 'string' ? raw.advisory_id.trim().toUpperCase() : undefined;
+  const owner = typeof raw.owner === 'string' ? raw.owner.trim() : '';
+  const rationale = typeof raw.rationale === 'string' ? raw.rationale.trim() : '';
+  const createdAt = typeof raw.created_at === 'string' ? raw.created_at.trim() : '';
+  const expiresAt = typeof raw.expires_at === 'string' ? raw.expires_at.trim() : '';
+  if (!pkg || !owner || !rationale || !createdAt || !expiresAt) return null;
+  return {
+    id,
+    type,
+    package: pkg,
+    advisoryId,
+    owner,
+    rationale,
+    compensatingControls: Array.isArray(raw.compensating_controls)
+      ? raw.compensating_controls.filter((item) => typeof item === 'string' && item.trim())
+      : [],
+    createdAt,
+    expiresAt
+  };
+};
+
+const loadExceptions = async () => {
+  try {
+    const raw = await readFile(exceptionsPath, 'utf8');
+    const parsed = safeJsonParse(raw);
+    if (!parsed.ok || !Array.isArray(parsed.data?.exceptions)) {
+      return { exceptions: [], invalid: true };
+    }
+    const exceptions = parsed.data.exceptions
+      .map((entry, index) => normalizeException(entry, index))
+      .filter(Boolean);
+    return { exceptions, invalid: false };
+  } catch {
+    return { exceptions: [], invalid: false };
+  }
+};
+
+const isExpired = (dateValue) => {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return true;
+  const endOfDay = new Date(date);
+  endOfDay.setUTCHours(23, 59, 59, 999);
+  return endOfDay.getTime() < Date.now();
+};
+
+const matchAuditException = (finding, exceptions) => {
+  return exceptions.find((entry) => {
+    if (entry.type !== 'audit') return false;
+    if (entry.package !== finding.package) return false;
+    if (!entry.advisoryId) return true;
+    return finding.advisoryIds.includes(entry.advisoryId);
+  });
+};
+
+const matchOutdatedException = (finding, exceptions) => {
+  return exceptions.find((entry) => entry.type === 'outdated' && entry.package === finding.package);
 };
 
 const resolveWorkspacePaths = async () => {
@@ -347,25 +437,62 @@ const scanNpmLs = async () => {
 
 const scanNpmOutdated = async () => {
   const result = await runCommand('npm', ['outdated', '-ws', '--json']);
-  report.checks.npmOutdated = { code: result.code };
-  if (!result.stdout.trim()) return;
-  const parsed = safeJsonParse(result.stdout);
-  if (!parsed.ok) {
+  report.checks.npmOutdated = { code: result.code, findings: [] };
+  const candidate = result.stdout.trim();
+  if (!candidate) return;
+  const parsed = parseJsonPayload(candidate);
+  if (!parsed.ok || !parsed.data || typeof parsed.data !== 'object') {
     report.checks.npmOutdated.error = 'invalid-json';
+    return;
   }
+  const findings = Object.entries(parsed.data).map(([pkg, details]) => ({
+    package: pkg,
+    current: details?.current,
+    wanted: details?.wanted,
+    latest: details?.latest,
+    location: details?.location
+  }));
+  report.checks.npmOutdated.findings = findings;
+  report.checks.npmOutdated.raw = parsed.data;
 };
 
 const scanNpmAudit = async () => {
   if (SKIP_NPM_AUDIT) {
-    report.checks.npmAudit = { code: 0, skipped: true };
+    report.checks.npmAudit = { code: 0, skipped: true, findings: [] };
     return;
   }
   const result = await runCommand('npm', ['audit', '--json']);
-  report.checks.npmAudit = { code: result.code, timedOut: !!result.timedOut };
-  const parsed = safeJsonParse(result.stdout);
-  if (!parsed.ok) {
+  report.checks.npmAudit = { code: result.code, timedOut: !!result.timedOut, findings: [] };
+  const parsed = parseJsonPayload(result.stdout);
+  if (!parsed.ok || !parsed.data || typeof parsed.data !== 'object') {
     report.checks.npmAudit.error = 'invalid-json';
+    return;
   }
+  const vulnerabilities = parsed.data?.vulnerabilities || {};
+  const findings = [];
+  for (const [pkg, entry] of Object.entries(vulnerabilities)) {
+    const advisories = Array.isArray(entry?.via)
+      ? entry.via
+          .filter((viaEntry) => viaEntry && typeof viaEntry === 'object')
+          .map((viaEntry) => {
+            const advisoryId = extractGhsaId(viaEntry.url) || extractGhsaId(viaEntry.title) || undefined;
+            return {
+              advisoryId,
+              url: viaEntry.url,
+              title: viaEntry.title
+            };
+          })
+      : [];
+    const advisoryIds = advisories.map((advisory) => advisory.advisoryId).filter(Boolean);
+    findings.push({
+      package: pkg,
+      severity: entry?.severity || 'unknown',
+      advisoryIds,
+      advisories
+    });
+  }
+  report.checks.npmAudit.findings = findings;
+  report.checks.npmAudit.raw = parsed.data;
 };
 
 await scanNpmLs();
@@ -373,10 +500,107 @@ await scanNpmOutdated();
 await scanNpmAudit();
 await scanFiles();
 
-const reportPath = path.join(artifactsDir, 'deprecations.json');
-await writeFile(reportPath, JSON.stringify(report, null, 2));
+const { exceptions, invalid } = await loadExceptions();
+const expiredExceptions = exceptions.filter((entry) => isExpired(entry.expiresAt));
+const activeExceptions = exceptions.filter((entry) => !isExpired(entry.expiresAt));
 
-const hasDeprecated = report.items.length > 0;
-if (hasDeprecated) {
+report.checks.exceptions = {
+  file: path.relative(rootDir, exceptionsPath),
+  exists: exceptions.length > 0 || invalid,
+  invalid,
+  active: activeExceptions.length,
+  expired: expiredExceptions.length
+};
+
+const auditFindings = Array.isArray(report.checks.npmAudit?.findings) ? report.checks.npmAudit.findings : [];
+const outdatedFindings = Array.isArray(report.checks.npmOutdated?.findings) ? report.checks.npmOutdated.findings : [];
+
+const auditUnallowlisted = auditFindings.filter((finding) => !matchAuditException(finding, activeExceptions));
+const outdatedUnallowlisted = outdatedFindings.filter((finding) => !matchOutdatedException(finding, activeExceptions));
+
+const summaryRows = [];
+summaryRows.push(
+  ['check', 'status', 'details'],
+  ['deprecated-patterns', report.items.length > 0 ? 'FAIL' : 'PASS', `${report.items.length} item(s)`],
+  [
+    'npm-audit',
+    report.checks.npmAudit?.code === 0 || auditUnallowlisted.length === 0 ? 'PASS' : 'FAIL',
+    `${auditFindings.length} finding(s), ${auditUnallowlisted.length} unallowlisted`
+  ],
+  [
+    'npm-outdated',
+    report.checks.npmOutdated?.code === 0 || outdatedUnallowlisted.length === 0 ? 'PASS' : 'FAIL',
+    `${outdatedFindings.length} package(s), ${outdatedUnallowlisted.length} unallowlisted`
+  ],
+  ['exceptions', expiredExceptions.length === 0 && !invalid ? 'PASS' : 'FAIL', `${activeExceptions.length} active, ${expiredExceptions.length} expired`]
+);
+
+const pad = (value, len) => `${value}`.padEnd(len, ' ');
+const colWidths = [0, 1, 2].map((idx) => Math.max(...summaryRows.map((row) => `${row[idx]}`.length)));
+console.log('\nDependency Gate Summary');
+for (const row of summaryRows) {
+  console.log(`${pad(row[0], colWidths[0])} | ${pad(row[1], colWidths[1])} | ${row[2]}`);
+}
+
+if (report.items.length > 0) report.summary.failures.push('deprecated-patterns');
+if (invalid) report.summary.failures.push('exceptions-invalid');
+if (expiredExceptions.length > 0) report.summary.failures.push('exceptions-expired');
+if ((report.checks.npmAudit?.code ?? 0) !== 0 && auditUnallowlisted.length > 0) report.summary.failures.push('npm-audit');
+if ((report.checks.npmOutdated?.code ?? 0) !== 0 && outdatedUnallowlisted.length > 0) report.summary.failures.push('npm-outdated');
+
+report.summary.exceptions = {
+  total: exceptions.length,
+  expired: expiredExceptions.map((entry) => ({ id: entry.id, package: entry.package, expiresAt: entry.expiresAt }))
+};
+report.summary.unallowlisted = {
+  audit: auditUnallowlisted,
+  outdated: outdatedUnallowlisted
+};
+
+const reportPath = path.join(artifactsDir, 'deprecations.json');
+const auditReportPath = path.join(artifactsDir, 'dependency-audit.json');
+const outdatedReportPath = path.join(artifactsDir, 'dependency-outdated.json');
+const exceptionsEvalPath = path.join(artifactsDir, 'dependency-exceptions-eval.json');
+
+await writeFile(reportPath, JSON.stringify(report, null, 2));
+await writeFile(
+  auditReportPath,
+  JSON.stringify(
+    {
+      generatedAt: nowIso,
+      code: report.checks.npmAudit?.code ?? null,
+      findings: auditFindings
+    },
+    null,
+    2
+  )
+);
+await writeFile(
+  outdatedReportPath,
+  JSON.stringify(
+    {
+      generatedAt: nowIso,
+      code: report.checks.npmOutdated?.code ?? null,
+      findings: outdatedFindings
+    },
+    null,
+    2
+  )
+);
+await writeFile(
+  exceptionsEvalPath,
+  JSON.stringify(
+    {
+      generatedAt: nowIso,
+      invalid,
+      exceptions,
+      expired: expiredExceptions
+    },
+    null,
+    2
+  )
+);
+
+if (report.summary.failures.length > 0) {
   process.exit(1);
 }

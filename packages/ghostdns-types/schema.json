@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ghostchain.local/schemas/ghostdns-types.schema.json",
+  "title": "GhostDNS Types",
+  "type": "object",
+  "definitions": {
+    "layer": {
+      "type": "string",
+      "enum": ["L1", "L2", "L3"]
+    },
+    "record": {
+      "type": "object",
+      "required": ["domain", "target", "layer", "ttl", "version"],
+      "properties": {
+        "domain": { "type": "string", "minLength": 1 },
+        "target": { "type": "string", "minLength": 1 },
+        "layer": { "$ref": "#/definitions/layer" },
+        "ttl": { "type": "integer", "minimum": 10, "maximum": 86400 },
+        "version": { "type": "integer", "minimum": 1 },
+        "owner": { "type": ["string", "null"] },
+        "metadata": { "type": "object" }
+      },
+      "additionalProperties": true
+    },
+    "decision": {
+      "type": "object",
+      "required": ["allow", "reason", "action", "requestLayer", "recordLayer", "evaluatedAt"],
+      "properties": {
+        "allow": { "type": "boolean" },
+        "reason": { "type": "string" },
+        "action": { "type": "string" },
+        "requestLayer": { "$ref": "#/definitions/layer" },
+        "recordLayer": { "$ref": "#/definitions/layer" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "evaluatedAt": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": true
+    },
+    "evidenceEnvelope": {
+      "type": "object",
+      "required": ["id", "createdAt", "decision", "decisionHash"],
+      "properties": {
+        "id": { "type": "string", "minLength": 8 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "record": { "$ref": "#/definitions/record" },
+        "decision": { "$ref": "#/definitions/decision" },
+        "decisionHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      },
+      "additionalProperties": true
+    }
+  }
+}

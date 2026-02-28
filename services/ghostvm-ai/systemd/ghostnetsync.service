@@ -1,0 +1,16 @@
+[Unit]
+Description=GhostNetSync AI Control Plane
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ghost/ghostl-stack/services/ghostvm-ai
+Environment=PYTHONUNBUFFERED=1
+Environment=GNS_APPLY_ENABLED=false
+ExecStart=/usr/bin/env uvicorn api.main:app --host 0.0.0.0 --port 8099
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

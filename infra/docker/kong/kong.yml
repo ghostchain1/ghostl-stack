@@ -1,0 +1,80 @@
+_format_version: "3.0"
+_transform: true
+
+# Kong keeps central routing, correlation-id, CORS, and rate limiting.
+# JWT/JWKS validation is performed before Kong by Traefik ForwardAuth
+# using services/ghost-jwks-guard (Keycloak OIDC discovery + JWKS).
+
+services:
+  - name: identity-service
+    url: http://identity-service:8080
+    routes:
+      - name: identity-public
+        paths: ["/identity/public"]
+        strip_path: false
+
+      - name: identity-user
+        paths: ["/identity/user"]
+        strip_path: false
+
+      - name: identity-employee
+        paths: ["/identity/employee"]
+        strip_path: false
+
+      - name: identity-admin
+        paths: ["/identity/admin"]
+        strip_path: false
+
+  - name: governance-service
+    url: http://governance-service:8080
+    routes:
+      - name: governance-admin
+        paths: ["/governance"]
+        strip_path: false
+
+plugins:
+  - name: correlation-id
+    config:
+      header_name: x-request-id
+      generator: uuid
+      echo_downstream: true
+
+  - name: cors
+    config:
+      origins:
+        - https://app.ghostchain.cloud
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+      headers: ["Authorization", "Content-Type", "X-Request-Id"]
+      exposed_headers: ["X-Request-Id"]
+      credentials: false
+      max_age: 3600
+
+  - name: rate-limiting
+    route: identity-public
+    config:
+      minute: 600
+      policy: local
+
+  - name: rate-limiting
+    route: identity-user
+    config:
+      minute: 300
+      policy: local
+
+  - name: rate-limiting
+    route: identity-employee
+    config:
+      minute: 240
+      policy: local
+
+  - name: rate-limiting
+    route: identity-admin
+    config:
+      minute: 180
+      policy: local
+
+  - name: rate-limiting
+    route: governance-admin
+    config:
+      minute: 120
+      policy: local

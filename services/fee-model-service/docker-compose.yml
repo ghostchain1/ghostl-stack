@@ -2,7 +2,6 @@
 # role: fee-model-service
 # ports: 7615:7615
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   fee-model-service:
     container_name: ghost_fee-model-service

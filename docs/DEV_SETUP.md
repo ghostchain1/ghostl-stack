@@ -32,7 +32,7 @@ npm ci
 
 ## Bring up the dev stack
 
-This starts OP-stack infra via Docker Compose and runs the API + web via PM2:
+This starts OP-stack infra via Docker Compose and runs the API + web as local background processes:
 
 ```bash
 bash dev-stack.sh
@@ -41,7 +41,8 @@ bash dev-stack.sh
 Notes:
 
 - `dev-stack.sh` will create `apps/api/.env.local` and `apps/web/.env.local` from the `*.example` files if missing.
-- If `node_modules` (including PM2) is missing, `dev-stack.sh` will run `npm ci`.
+- `dev-stack.sh` always runs `npm ci --prefer-offline` before starting local processes.
+- Runtime logs/pids are written under `.tmp/dev-stack/` (`api.log`, `web.log`, `api.pid`, `web.pid`).
 - If Docker commands fail with `permission denied`, add your user to the `docker` group and re-login:
   - `sudo usermod -aG docker $USER`
 - Next.js may emit a warning about SWC optional dependencies; it is safe to ignore if `npm run build` succeeds.

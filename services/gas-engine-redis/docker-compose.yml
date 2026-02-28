@@ -2,7 +2,6 @@
 # role: gas-engine-redis
 # ports: 6381:6379
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   gas-engine-redis:
     container_name: ghost_gas-engine-redis

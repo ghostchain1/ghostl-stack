@@ -2,7 +2,6 @@
 # role: key-rotation-service
 # ports: 7619:7619
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   key-rotation-service:
     container_name: ghost_key-rotation-service

@@ -1,0 +1,180 @@
+services:
+  hg-reporting-indexer:
+    build:
+      context: ./services/hg-reporting-indexer
+      dockerfile: Dockerfile
+    env_file:
+      - ./services/hg-reporting-indexer/.env.example
+    environment:
+      - NODE_ENV=production
+      - PORT=7603
+    ports:
+      - "7603:7603"
+    user: "10001:10001"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - econ_internal
+    pids_limit: 256
+    mem_limit: 512m
+    cpus: 1.00
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:7603/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  hg-risk-oracle:
+    build:
+      context: ./services/hg-risk-oracle
+      dockerfile: Dockerfile
+    env_file:
+      - ./services/hg-risk-oracle/.env.example
+    environment:
+      - NODE_ENV=production
+      - PORT=7602
+      - RECOMMENDATION_DIR=/evidence
+    ports:
+      - "7602:7602"
+    user: "10001:10001"
+    volumes:
+      - ./evidence/econ/risk:/evidence
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - econ_internal
+    pids_limit: 256
+    mem_limit: 512m
+    cpus: 1.00
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:7602/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  hg-treasury-agent:
+    build:
+      context: ./services/hg-treasury-agent
+      dockerfile: Dockerfile
+    env_file:
+      - ./services/hg-treasury-agent/.env.example
+    environment:
+      - NODE_ENV=production
+      - PORT=7601
+      - MAINNET_EXECUTION_MODE=false
+      - EVIDENCE_DIR=/evidence
+    ports:
+      - "7601:7601"
+    user: "10001:10001"
+    volumes:
+      - ./evidence/econ/receipts:/evidence
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - econ_internal
+    pids_limit: 256
+    mem_limit: 512m
+    cpus: 1.00
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:7601/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  hg-proof-snapshotter:
+    build:
+      context: ./services/hg-proof-snapshotter
+      dockerfile: Dockerfile
+    env_file:
+      - ./services/hg-proof-snapshotter/.env.example
+    environment:
+      - NODE_ENV=production
+      - PORT=7604
+      - INDEXER_BASE=http://hg-reporting-indexer:7603
+      - SNAPSHOT_EVIDENCE_DIR=/evidence
+      - POST_ONCHAIN=false
+    ports:
+      - "7604:7604"
+    user: "10001:10001"
+    depends_on:
+      - hg-reporting-indexer
+    volumes:
+      - ./evidence/econ/snapshots:/evidence
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - econ_internal
+    pids_limit: 256
+    mem_limit: 512m
+    cpus: 1.00
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:7604/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  econ-prometheus:
+    image: prom/prometheus:v2.55.1@sha256:2659f4c2ebb718e7695cb9b25ffa7d6be64db013daba13e05c875451cf51b0d3
+    command: ["--config.file=/etc/prometheus/prometheus.yml"]
+    ports:
+      - "9097:9090"
+    volumes:
+      - ./observability/prometheus/prometheus-econ.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/prometheus/rules:/etc/prometheus/rules:ro
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks:
+      - econ_internal
+    pids_limit: 256
+    mem_limit: 512m
+    cpus: 1.00
+    restart: unless-stopped
+
+  econ-grafana:
+    image: grafana/grafana:11.3.1@sha256:fa801ab6e1ae035135309580891e09f7eb94d1abdbd2106bdc288030b028158c
+    ports:
+      - "3011:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - econ_internal
+    pids_limit: 256
+    mem_limit: 512m
+    cpus: 1.00
+    restart: unless-stopped
+
+networks:
+  econ_internal:
+    name: ghost_econ_internal
+    driver: bridge
+    internal: true

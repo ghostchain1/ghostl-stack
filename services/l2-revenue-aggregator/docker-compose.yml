@@ -1,0 +1,62 @@
+services:
+  l2-revenue-aggregator:
+    container_name: ghost_l2-revenue-aggregator
+    image: ghostl/l2-revenue-aggregator:local
+    build:
+      context: ./services/l2-revenue-aggregator
+    environment:
+      PORT: 7682
+      HOST: 0.0.0.0
+      L1_CHAIN_ID: ${L1_CHAIN_ID:-14000101}
+      L2_CHAIN_ID: ${L2_CHAIN_ID:-901}
+      L3_CHAIN_ID: ${L3_CHAIN_ID:-903}
+      L1_TREASURY_ENGINE_URL: http://treasury-engine:7683
+      LEDGER_PATH: /data/l2-revenue-aggregator.sqlite
+      L3_SHARED_SECRET: ${L3_FEE_FORWARD_HMAC_SECRET:-}
+      AGGREGATOR_ADMIN_TOKEN: ${L2_REVENUE_AGGREGATOR_ADMIN_TOKEN:-}
+      FORWARD_TIMEOUT_MS: 4500
+      BATCH_SIZE: 50
+      BATCH_INTERVAL_MS: 15000
+      OPERATIONS_FEE_BPS: 250
+      RATE_LIMIT_WINDOW_MS: 60000
+      RATE_LIMIT_MAX: 240
+    user: "10001:10001"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - ./data:/data
+    ports:
+      - "127.0.0.1:7682:7682"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7682/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M
+    networks:
+      - internal-services
+      - chains
+      - observability
+
+networks:
+  internal-services:
+    external: true
+  chains:
+    external: true
+  observability:
+    external: true

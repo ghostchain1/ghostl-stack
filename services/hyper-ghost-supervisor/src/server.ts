@@ -18,6 +18,7 @@ import { writeCmfBundle } from './proposals/manifest.js';
 import { writeGovernanceTemplates } from './proposals/governance.js';
 import { executeFix } from './exec/executor.js';
 import type { Fix, Incident, Proposal } from './types/hgop.js';
+import { createGhostDnsRouter } from './routes/ghostdns.js';
 
 const now = () => Math.floor(Date.now() / 1000);
 
@@ -138,6 +139,17 @@ export function createApp(cfg: HgConfig, deps: { db?: SqliteDb; collectors?: Col
     res.setHeader('content-type', metrics.registry.contentType);
     res.send(await metrics.registry.metrics());
   });
+
+  app.use(
+    '/ghostdns',
+    createGhostDnsRouter({
+      db,
+      mode: cfg.env,
+      approvalToken: cfg.approvalToken,
+      ghostDnsUrl: cfg.ghostdns.url,
+      ghostDnsSharedSecret: cfg.ghostdns.sharedSecret
+    })
+  );
 
   app.get('/incidents', (req, res) => {
     const qs = z

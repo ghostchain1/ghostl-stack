@@ -2,7 +2,6 @@
 # role: ghostscout-l3
 # ports: ${GHOSTSCOUT_L3_PORT:-18643}:4000
 # volumes: ./data:/data, ../../infra/opstack/l3/ghostl3/config/genesis.json:/config/chain-spec.json:ro, ./data/precompiles-evm.json:/config/precompiles.json:ro, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   ghostscout-l3:
     container_name: ghost_ghostscout-l3

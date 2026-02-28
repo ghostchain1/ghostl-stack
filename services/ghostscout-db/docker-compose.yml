@@ -2,7 +2,6 @@
 # role: ghostscout-db
 # ports: none
 # volumes: ./data:/var/lib/postgresql/data, ./init/create_dbs.sql:/docker-entrypoint-initdb.d/create_dbs.sql:ro, ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   ghostscout-db:
     container_name: ghost_ghostscout-db

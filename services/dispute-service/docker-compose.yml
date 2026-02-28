@@ -2,7 +2,6 @@
 # role: dispute-service
 # ports: 7607:7607
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   dispute-service:
     container_name: ghost_dispute-service

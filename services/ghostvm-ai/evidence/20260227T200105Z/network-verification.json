@@ -1,0 +1,36 @@
+{
+  "checks": [
+    {
+      "details": "ok",
+      "name": "routing_law_rules",
+      "ok": true
+    },
+    {
+      "details": "ok",
+      "name": "no_subnet_overlap",
+      "ok": true
+    },
+    {
+      "details": "skipped_non_l3_context",
+      "name": "l3_to_l2_reachability_probe",
+      "ok": true
+    },
+    {
+      "details": "skipped_non_l3_context",
+      "name": "l3_to_l1_direct_probe_expected_block",
+      "ok": true
+    },
+    {
+      "details": "skipped_non_l3_context",
+      "name": "l3_to_external_probe_expected_block",
+      "ok": true
+    },
+    {
+      "details": "network_count=17",
+      "name": "docker_state_observed",
+      "ok": true
+    }
+  ],
+  "ok": true,
+  "timestamp": "20260227T200105Z"
+}

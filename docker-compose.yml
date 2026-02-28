@@ -1,8 +1,17 @@
 name: ghostchain-compliance
 
+x-ghost-user: &ghost-user "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
+
+x-runtime-hardening: &runtime-hardening
+  user: *ghost-user
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:b7587f3cb74f4f4b2a4f9d67f052edbf95eb93f4fec7c5ada3792546caaf7383
     environment:
       POSTGRES_DB: ghost_compliance
       POSTGRES_USER: ghost
@@ -18,7 +27,7 @@ services:
       retries: 20
 
   redis:
-    image: redis:7-alpine
+    image: redis:7-alpine@sha256:8b81dd37ff027bec4e516d41acfbe9fe2460070dc6d4a4570a2ac5b9d59df065
     ports:
       - "6379:6379"
     command: ["redis-server", "--appendonly", "yes"]
@@ -31,7 +40,8 @@ services:
       retries: 20
 
   migrate:
-    image: node:22-alpine
+    <<: *runtime-hardening
+    image: node:22-alpine@sha256:e4bf2a82ad0a4037d28035ae71529873c069b13eb0455466ae0bc13363826e34
     working_dir: /work
     volumes:
       - ./services/ghost-compliance:/work
@@ -50,6 +60,7 @@ services:
     restart: "no"
 
   ghost-compliance:
+    <<: *runtime-hardening
     build:
       context: ./services/ghost-compliance
     environment:
@@ -81,6 +92,7 @@ services:
       retries: 20
 
   ghost-compliance-worker:
+    <<: *runtime-hardening
     build:
       context: ./services/ghost-compliance-worker
     environment:

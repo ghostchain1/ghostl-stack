@@ -18,7 +18,8 @@ Remote safety gates:
 - checksums must validate on remote
 
 Note:
-Mainnet deploy is governance-gated; deploy-mainnet.sh MUST refuse to run unless the on-chain gate authorizes the release.
+Mainnet deploy is governance-gated; deploy-mainnet.sh MUST refuse to run unless
+MainnetLaunchGate and ReleaseGate both authorize the release.
 USAGE
 }
 
@@ -64,4 +65,4 @@ ssh -o BatchMode=yes "${SSH_TARGET}" "set -e\nsudo mkdir -p /opt/ghoststack/bin 
 log "push: done"
 log "push: next on mainnet VM:"
 log "  1) ${remote_dir}/governance/verify-onchain-authorization.sh"
-log "  2) sudo RPC_L1=... MAINNET_LAUNCH_GATE_ADDRESS=... ${remote_dir}/scripts/deploy-mainnet.sh"
+log "  2) sudo RPC_L1=... MAINNET_LAUNCH_GATE_ADDRESS=... MAINNET_RELEASE_GATE_ADDRESS=... ${remote_dir}/scripts/deploy-mainnet.sh"

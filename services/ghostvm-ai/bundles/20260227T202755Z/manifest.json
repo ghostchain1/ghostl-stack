@@ -1,0 +1,16 @@
+{
+  "bundle_id": "20260227T202755Z",
+  "bundle_dir": "/home/ghost/ghostl-stack/services/ghostvm-ai/bundles/20260227T202755Z",
+  "source": {
+    "plan": "/home/ghost/ghostl-stack/services/ghostvm-ai/plans/20260227T200954Z",
+    "verification": "/home/ghost/ghostl-stack/services/ghostvm-ai/evidence/20260227T201052Z"
+  },
+  "files": [
+    "plan/nft-remediation.json",
+    "plan/nft-remediation.md",
+    "plan/nftables-remediation.conf",
+    "verification/network-verification.json",
+    "verification/network-verification.md"
+  ],
+  "archive": "/home/ghost/ghostl-stack/services/ghostvm-ai/bundles/ghostnetsync-evidence-20260227T202755Z.tar.gz"
+}
