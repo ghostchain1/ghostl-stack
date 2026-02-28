@@ -2,7 +2,6 @@
 # role: pil-migrate
 # ports: none
 # volumes: ../ghost-pil:/work, ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   pil-migrate:
     container_name: ghost_pil-migrate

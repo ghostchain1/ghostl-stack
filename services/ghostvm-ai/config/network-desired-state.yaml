@@ -1,0 +1,146 @@
+version: 1
+metadata:
+  owner: ghostvm-ai
+  environment: testnet
+
+network_segments:
+  mgmt:
+    cidr: 10.10.0.0/24
+    gateway: 10.10.0.1
+  l1:
+    cidr: 10.20.0.0/24
+    gateway: 10.20.0.1
+  l2:
+    cidr: 10.30.0.0/24
+    gateway: 10.30.0.1
+  l3:
+    cidr: 10.40.0.0/24
+    gateway: 10.40.0.1
+  docker:
+    cidr: 172.30.0.0/16
+    gateway: 172.30.0.1
+  external:
+    cidr: 208.110.71.128/26
+    gateway: 208.110.71.129
+
+ipam:
+  external_primary_ip: 208.110.71.164
+  external_reserved_ips:
+    - 208.110.71.171
+    - 208.110.71.172
+    - 208.110.71.173
+    - 208.110.71.174
+    - 208.110.71.175
+    - 208.110.71.176
+    - 208.110.71.177
+  public_role_bindings:
+    l1_edge: 208.110.71.171
+    l2_edge: 208.110.71.172
+    l3_edge: 208.110.71.173
+    observability_edge: 208.110.71.174
+    failover_edge_1: 208.110.71.175
+    failover_edge_2: 208.110.71.176
+    failover_edge_3: 208.110.71.177
+
+hypervisor:
+  bridges:
+    - name: br-mgmt
+      segment: mgmt
+    - name: br-l1
+      segment: l1
+    - name: br-l2
+      segment: l2
+    - name: br-l3
+      segment: l3
+  nftables:
+    default_policy: drop
+    allow_established: true
+
+vms:
+  - name: ghost-l1-node
+    role: l1
+    interfaces:
+      - name: ens3
+        segment: l1
+        address: 10.20.0.10/24
+      - name: ens4
+        segment: external
+        address: 208.110.71.171/26
+        gateway: 208.110.71.129
+  - name: ghost-l2-node
+    role: l2
+    interfaces:
+      - name: ens3
+        segment: l2
+        address: 10.30.0.10/24
+      - name: ens4
+        segment: external
+        address: 208.110.71.172/26
+        gateway: 208.110.71.129
+  - name: ghost-l3-node
+    role: l3
+    interfaces:
+      - name: ens3
+        segment: l3
+        address: 10.40.0.10/24
+      - name: ens4
+        segment: external
+        address: 208.110.71.173/26
+        gateway: 208.110.71.129
+  - name: ghost-observability-node
+    role: observability
+    interfaces:
+      - name: ens3
+        segment: mgmt
+        address: 10.10.0.20/24
+      - name: ens4
+        segment: external
+        address: 208.110.71.174/26
+        gateway: 208.110.71.129
+  - name: ghost-edge-failover-1
+    role: edge-failover
+    interfaces:
+      - name: ens3
+        segment: mgmt
+        address: 10.10.0.31/24
+      - name: ens4
+        segment: external
+        address: 208.110.71.175/26
+        gateway: 208.110.71.129
+  - name: ghost-edge-failover-2
+    role: edge-failover
+    interfaces:
+      - name: ens3
+        segment: mgmt
+        address: 10.10.0.32/24
+      - name: ens4
+        segment: external
+        address: 208.110.71.176/26
+        gateway: 208.110.71.129
+  - name: ghost-edge-failover-3
+    role: edge-failover
+    interfaces:
+      - name: ens3
+        segment: mgmt
+        address: 10.10.0.33/24
+      - name: ens4
+        segment: external
+        address: 208.110.71.177/26
+        gateway: 208.110.71.129
+
+docker:
+  managed_networks:
+    - name: ghost-devnet
+      driver: bridge
+      subnet: 172.31.0.0/24
+      gateway: 172.31.0.1
+  enforce_labels:
+    l1: ghost.layer=l1
+    l2: ghost.layer=l2
+    l3: ghost.layer=l3
+
+dns:
+  resolver: 10.10.0.2
+  forwarders:
+    - 1.1.1.1
+    - 8.8.8.8

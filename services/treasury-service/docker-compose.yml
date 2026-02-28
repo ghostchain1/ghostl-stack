@@ -2,7 +2,6 @@
 # role: treasury-service
 # ports: 7628:7628
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   treasury-service:
     container_name: ghost_treasury-service

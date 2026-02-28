@@ -1,0 +1,44 @@
+{
+  "apply_commands": [
+    "sudo nft list ruleset > /tmp/ghostnetsync-ruleset-pre-remediation.nft",
+    "sudo nft -f /home/ghost/ghostl-stack/services/ghostvm-ai/plans/20260227T200954Z/nftables-remediation.conf"
+  ],
+  "bridges": {
+    "l1": "br-fdf77c072ffa",
+    "l2": "br-315cdb4e43c9",
+    "l3": "br-3a47f74c6888",
+    "uplink": "enp2s0"
+  },
+  "dry_run": false,
+  "executed": [
+    {
+      "cmd": [
+        "bash",
+        "-lc",
+        "sudo nft list ruleset > /tmp/ghostnetsync-ruleset-pre-remediation.nft"
+      ],
+      "ok": true,
+      "returncode": 0,
+      "stderr": "# Warning: table ip nat is managed by iptables-nft, do not touch!\n# Warning: table ip filter is managed by iptables-nft, do not touch!\n# Warning: table ip6 nat is managed by iptables-nft, do not touch!",
+      "stdout": ""
+    },
+    {
+      "cmd": [
+        "bash",
+        "-lc",
+        "sudo nft -f /home/ghost/ghostl-stack/services/ghostvm-ai/plans/20260227T200954Z/nftables-remediation.conf"
+      ],
+      "ok": true,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": ""
+    }
+  ],
+  "id": "20260227T200954Z",
+  "ok": true,
+  "path": "/home/ghost/ghostl-stack/services/ghostvm-ai/plans/20260227T200954Z",
+  "rollback_commands": [
+    "sudo nft -f /tmp/ghostnetsync-ruleset-pre-remediation.nft"
+  ],
+  "rules_file": "/home/ghost/ghostl-stack/services/ghostvm-ai/plans/20260227T200954Z/nftables-remediation.conf"
+}

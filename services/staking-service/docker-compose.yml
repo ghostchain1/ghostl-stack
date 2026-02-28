@@ -2,7 +2,6 @@
 # role: staking-service
 # ports: 7601:7601
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   staking-service:
     container_name: ghost_staking-service

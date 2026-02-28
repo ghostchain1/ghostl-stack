@@ -1,0 +1,36 @@
+acl "trusted-nets" {
+  127.0.0.0/8;
+  10.0.0.0/8;
+  172.16.0.0/12;
+  192.168.0.0/16;
+};
+
+options {
+  directory "/var/cache/bind";
+
+  listen-on { 127.0.0.1; 192.168.122.205; 172.17.0.1; };
+  listen-on-v6 { none; };
+
+  recursion yes;
+  allow-recursion { trusted-nets; };
+  allow-query-cache { trusted-nets; };
+  allow-query { any; };
+
+  forwarders {
+    1.1.1.1;
+    8.8.8.8;
+  };
+  forward only;
+
+  dnssec-validation auto;
+  auth-nxdomain no;
+  minimal-responses yes;
+
+  allow-transfer { none; };
+
+  rate-limit {
+    responses-per-second 20;
+    window 5;
+    slip 2;
+  };
+};

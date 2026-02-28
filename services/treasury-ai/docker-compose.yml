@@ -2,7 +2,6 @@
 # role: treasury-ai
 # ports: 7630:7630
 # volumes: ./data:/data
-version: '3.9'
 services:
   treasury-ai:
     container_name: ghost_treasury-ai

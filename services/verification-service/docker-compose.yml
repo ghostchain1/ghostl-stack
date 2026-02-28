@@ -2,7 +2,6 @@
 # role: verification-service
 # ports: 7630:7630
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   verification-service:
     container_name: ghost_verification-service

@@ -1,0 +1,23 @@
+{
+  "policyVersion": "federation-v1",
+  "members": {
+    "region-core": {
+      "status": "active",
+      "riskCapBps": 7200,
+      "maxExposureBps": 3500,
+      "revenueShareBps": 1800,
+      "allowedDestinationChainIds": [
+        14000101
+      ]
+    },
+    "region-growth": {
+      "status": "suspended",
+      "riskCapBps": 6500,
+      "maxExposureBps": 2400,
+      "revenueShareBps": 1200,
+      "allowedDestinationChainIds": [
+        14000101
+      ]
+    }
+  }
+}

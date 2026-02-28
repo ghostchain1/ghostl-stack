@@ -1,0 +1,4 @@
+# Place a signed governance approval token in governance.approval.token for production changes.
+# This can be a detached signature reference or signed ticket id.
+TICKET=GOV-CHANGE-REQUIRED
+SIGNATURE=<replace-with-signature>

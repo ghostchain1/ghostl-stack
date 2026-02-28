@@ -1,0 +1,3966 @@
+{
+  "infra/ghostchain/docker-compose.l1.yml": {
+    "top_level_networks": [
+      "ghostchain"
+    ],
+    "services": {
+      "ghostchain-bootnode": {
+        "image": "${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}",
+        "build": null,
+        "networks": {
+          "ghostchain": {
+            "ipv4_address": "172.28.0.21"
+          }
+        },
+        "ports": [
+          "${L1_BOOTNODE_PORT:-30301}:30301/udp"
+        ],
+        "depends_on": null,
+        "healthcheck": false,
+        "restart": "unless-stopped",
+        "user": "${L1_UID:-1000}:${L1_GID:-1000}",
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./data/bootnode:/config"
+        ],
+        "environment": null
+      },
+      "ghostchain-node1": {
+        "image": "${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}",
+        "build": null,
+        "networks": {
+          "ghostchain": {
+            "ipv4_address": "172.28.0.22"
+          }
+        },
+        "ports": [
+          "${L1_RPC_WS_PORT:-18546}:8546",
+          "${L1_RPC_AUTH_PORT:-18552}:8551",
+          "${L1_P2P_PORT:-18551}:30303",
+          "${L1_METRICS_PORT:-18660}:6060"
+        ],
+        "depends_on": [
+          "ghostchain-bootnode"
+        ],
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "${L1_UID:-1000}:${L1_GID:-1000}",
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./data/node1:/data",
+          "./geth:/config:ro",
+          "./data/bootnode:/run/bootnode:ro",
+          "./secrets:/secrets:ro"
+        ],
+        "environment": [
+          "CHAIN_ID=${L1_CHAIN_ID:-14000101}",
+          "SIGNER_ADDRESS=0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+          "MINING_ENABLED=${L1_NODE1_MINING_ENABLED:-1}",
+          "HTTP_PORT=8545",
+          "WS_PORT=8546",
+          "AUTH_PORT=8551",
+          "P2P_PORT=30303",
+          "METRICS_PORT=6060",
+          "AUTH_JWT_FILE=${AUTH_JWT_FILE:-/secrets/jwtsecret}",
+          "HTTP_APIS=${L1_HTTP_APIS:-eth,net,web3,debug,txpool}",
+          "WS_APIS=${L1_WS_APIS:-eth,net,web3}",
+          "HTTP_VHOSTS=${L1_HTTP_VHOSTS:-localhost,127.0.0.1}",
+          "HTTP_CORS=${L1_HTTP_CORS:-http://localhost,http://127.0.0.1}",
+          "WS_ORIGINS=${L1_WS_ORIGINS:-http://localhost,http://127.0.0.1}",
+          "AUTHRPC_VHOSTS=${L1_AUTHRPC_VHOSTS:-localhost,127.0.0.1}"
+        ]
+      },
+      "ghostchain-node2": {
+        "image": "${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}",
+        "build": null,
+        "networks": {
+          "ghostchain": {
+            "ipv4_address": "172.28.0.23"
+          }
+        },
+        "ports": null,
+        "depends_on": [
+          "ghostchain-bootnode"
+        ],
+        "healthcheck": false,
+        "restart": "unless-stopped",
+        "user": "${L1_UID:-1000}:${L1_GID:-1000}",
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./data/node2:/data",
+          "./geth:/config:ro",
+          "./data/bootnode:/run/bootnode:ro",
+          "./secrets:/secrets:ro"
+        ],
+        "environment": [
+          "CHAIN_ID=${L1_CHAIN_ID:-14000101}",
+          "SIGNER_ADDRESS=0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+          "MINING_ENABLED=${L1_NODE2_MINING_ENABLED:-1}",
+          "HTTP_PORT=8545",
+          "WS_PORT=8546",
+          "AUTH_PORT=8551",
+          "P2P_PORT=30304",
+          "METRICS_PORT=6061",
+          "AUTH_JWT_FILE=${AUTH_JWT_FILE:-/secrets/jwtsecret}",
+          "HTTP_APIS=${L1_HTTP_APIS:-eth,net,web3,debug,txpool}",
+          "WS_APIS=${L1_WS_APIS:-eth,net,web3}",
+          "HTTP_VHOSTS=${L1_HTTP_VHOSTS:-localhost,127.0.0.1}",
+          "HTTP_CORS=${L1_HTTP_CORS:-http://localhost,http://127.0.0.1}",
+          "WS_ORIGINS=${L1_WS_ORIGINS:-http://localhost,http://127.0.0.1}",
+          "AUTHRPC_VHOSTS=${L1_AUTHRPC_VHOSTS:-localhost,127.0.0.1}"
+        ]
+      },
+      "ghostchain-rpc-proxy": {
+        "image": "ghostl/ghost-rpc-proxy:local",
+        "build": {
+          "context": "../../services/ghost-rpc-proxy"
+        },
+        "networks": {
+          "ghostchain": {
+            "ipv4_address": "172.28.0.30"
+          }
+        },
+        "ports": [
+          "${L1_RPC_HTTP_PORT:-18545}:8545"
+        ],
+        "depends_on": [
+          "ghostchain-node1"
+        ],
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": [
+          "PORT=8545",
+          "UPSTREAM_URL=http://ghostchain-node1:8545",
+          "LOG_REQUESTS=${L1_RPC_PROXY_LOG_REQUESTS:-0}",
+          "RPC_AUTH_TOKEN=${L1_RPC_AUTH_TOKEN:-}",
+          "RPC_REQUIRE_AUTH=${L1_RPC_REQUIRE_AUTH:-0}",
+          "RPC_SENSITIVE_METHODS=${L1_RPC_SENSITIVE_METHODS:-personal_,debug_,txpool_,admin_}",
+          "RPC_RATE_LIMIT_PER_MINUTE=${L1_RPC_RATE_LIMIT_PER_MINUTE:-120}",
+          "RPC_RATE_LIMIT_BURST=${L1_RPC_RATE_LIMIT_BURST:-40}",
+          "RPC_RATE_WINDOW_MS=${L1_RPC_RATE_WINDOW_MS:-60000}",
+          "RPC_RATE_LIMIT_ALLOWLIST=${L1_RPC_RATE_LIMIT_ALLOWLIST:-127.0.0.1,::1,172.28.0.1}",
+          "RPC_CORS_ORIGINS=${L1_RPC_CORS_ORIGINS:-http://localhost,http://127.0.0.1}"
+        ]
+      },
+      "ghostscout": {
+        "image": "blockscout/blockscout:latest",
+        "build": null,
+        "networks": {
+          "ghostchain": {
+            "ipv4_address": "172.28.0.31"
+          }
+        },
+        "ports": [
+          "18644:4000"
+        ],
+        "depends_on": [
+          "ghostchain-node1"
+        ],
+        "healthcheck": false,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./scripts/ghostscout-entrypoint.sh:/config/ghostscout-entrypoint.sh:ro"
+        ],
+        "environment": {
+          "DATABASE_URL": "postgres://ghostscout:${GHOSTSCOUT_DB_PASSWORD:-ghostpass}@ghostscout-postgres:5432/ghostscout_l1",
+          "ECTO_USE_SSL": "false",
+          "GST_JSONRPC_HTTP_URL": "http://ghostchain-node1:8545",
+          "GST_JSONRPC_TRACE_URL": "http://ghostchain-node1:8545",
+          "GST_JSONRPC_WS_URL": "ws://ghostchain-node1:8546",
+          "BLOCKSCOUT_HOST": "0.0.0.0",
+          "PORT": 4000,
+          "NETWORK": "Ghostchain",
+          "SUBNETWORK": "PoA",
+          "COIN": "GST",
+          "SECRET_KEY_BASE": "${GHOSTSCOUT_SECRET_KEY_BASE_L1:-}",
+          "DISABLE_EVISION": "true",
+          "API_ONLY": "true",
+          "LOG_LEVEL": "warn"
+        }
+      }
+    }
+  },
+  "infra/opstack/docker-compose.yml": {
+    "top_level_networks": [],
+    "services": {
+      "op-gate": {
+        "image": "${OP_GATE_IMAGE:-local/op-gate:0.1.0}",
+        "build": {
+          "context": "./gate",
+          "dockerfile": "Dockerfile",
+          "args": {
+            "NODE_IMAGE": "${OP_STACK_BASE_IMAGE:-node@sha256:40dc4b415c17b85bea9be05314b4a753f45a4e1716bb31c01182e6c53d51a654}"
+          }
+        },
+        "networks": null,
+        "ports": [
+          "28546:8545"
+        ],
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}",
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./data/op-gate-state:/state"
+        ],
+        "environment": {
+          "NODE_ENV": "production",
+          "PORT": "${GATE_PORT:-8545}",
+          "UPSTREAM_RPC": "${GATE_UPSTREAM_RPC:-http://l2-geth:8545}",
+          "STATE_DIR": "/state",
+          "ADMIN_TOKEN": "${GATE_ADMIN_TOKEN:-}",
+          "ALLOW_INSECURE_ADMIN": "${GATE_ALLOW_INSECURE_ADMIN:-0}",
+          "DEFAULT_DELAY_SECONDS": "${GATE_DEFAULT_DELAY_SECONDS:-0}",
+          "GUARD_URL": "${GATE_GUARD_URL:-http://ghost-guard:7070}",
+          "BATCH_SENDER_ADDRESS": "${BATCH_SENDER_ADDRESS:-}",
+          "PROPOSER_ADDRESS": "${PROPOSER_ADDRESS:-}"
+        }
+      },
+      "op-gate-l1": {
+        "image": "${OP_GATE_IMAGE:-local/op-gate:0.1.0}",
+        "build": {
+          "context": "./gate",
+          "dockerfile": "Dockerfile",
+          "args": {
+            "NODE_IMAGE": "${OP_STACK_BASE_IMAGE:-node@sha256:40dc4b415c17b85bea9be05314b4a753f45a4e1716bb31c01182e6c53d51a654}"
+          }
+        },
+        "networks": null,
+        "ports": [
+          "28547:8545"
+        ],
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}",
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./data/op-gate-l1-state:/state"
+        ],
+        "environment": {
+          "NODE_ENV": "production",
+          "PORT": "${GATE_L1_PORT:-8545}",
+          "UPSTREAM_RPC": "${GATE_L1_UPSTREAM_RPC:-http://l1-rpc-proxy:18546}",
+          "STATE_DIR": "/state",
+          "ADMIN_TOKEN": "${GATE_L1_ADMIN_TOKEN:-${GATE_ADMIN_TOKEN:-}}",
+          "ALLOW_INSECURE_ADMIN": "${GATE_L1_ALLOW_INSECURE_ADMIN:-${GATE_ALLOW_INSECURE_ADMIN:-0}}",
+          "DEFAULT_DELAY_SECONDS": "${GATE_L1_DEFAULT_DELAY_SECONDS:-0}",
+          "GUARD_URL": "${GATE_L1_GUARD_URL:-${GATE_GUARD_URL:-http://ghost-guard:7070}}",
+          "BATCH_SENDER_ADDRESS": "${BATCH_SENDER_ADDRESS:-}",
+          "PROPOSER_ADDRESS": "${PROPOSER_ADDRESS:-}"
+        }
+      },
+      "gas-engine-postgres": {
+        "image": "ghostl/gas-engine-postgres:local",
+        "build": {
+          "context": "../../services/gas-engine-postgres",
+          "dockerfile": "Dockerfile"
+        },
+        "networks": null,
+        "ports": [
+          "5433:5432"
+        ],
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./data/gas-engine-postgres:/var/lib/postgresql/data",
+          "../../services/gas-engine-postgres/healthcheck.sh:/healthcheck.sh:ro"
+        ],
+        "environment": {
+          "POSTGRES_DB": "ghost_gas",
+          "POSTGRES_USER": "ghost",
+          "POSTGRES_PASSWORD": "${GAS_ENGINE_DB_PASSWORD:-ghostpass}"
+        }
+      },
+      "gas-engine-redis": {
+        "image": "ghostl/gas-engine-redis:local",
+        "build": {
+          "context": "../../services/gas-engine-redis",
+          "dockerfile": "Dockerfile"
+        },
+        "networks": null,
+        "ports": [
+          "6381:6379"
+        ],
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./data/gas-engine-redis:/data",
+          "../../services/gas-engine-redis/entrypoint.sh:/entrypoint.sh:ro",
+          "../../services/gas-engine-redis/healthcheck.sh:/healthcheck.sh:ro"
+        ],
+        "environment": null
+      },
+      "ghost-gas-engine": {
+        "image": "ghostl/ghost-gas-engine:local",
+        "build": {
+          "context": "../../services/ghost-gas-engine",
+          "dockerfile": "Dockerfile"
+        },
+        "networks": null,
+        "ports": [
+          "3210:3210"
+        ],
+        "depends_on": {
+          "gas-engine-postgres": {
+            "condition": "service_healthy"
+          },
+          "gas-engine-redis": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./data/ghost-gas-engine:/data",
+          "../../services/ghost-gas-engine/entrypoint.sh:/entrypoint.sh:ro",
+          "../../services/ghost-gas-engine/healthcheck.sh:/healthcheck.sh:ro"
+        ],
+        "environment": {
+          "PORT": 3210,
+          "DATABASE_URL": "postgresql://ghost:${GAS_ENGINE_DB_PASSWORD:-ghostpass}@gas-engine-postgres:5432/ghost_gas",
+          "REDIS_URL": "redis://gas-engine-redis:6379",
+          "CHAINS_CONFIG_PATH": "/app/config/chains.json",
+          "POLICIES_PATH": "/app/config/gas-policies.json",
+          "SEED_SAMPLE_DATA": "${GAS_ENGINE_SEED_SAMPLE_DATA:-true}",
+          "RPC_L1": "${HOST_L1_RPC:-http://host.docker.internal:18545}",
+          "RPC_L2": "${HOST_L2_RPC:-http://host.docker.internal:29547}",
+          "RPC_L3": "${HOST_L3_RPC:-http://host.docker.internal:39545}",
+          "GAS_TOKEN_L1": "${GAS_TOKEN_L1:-GST}",
+          "GAS_TOKEN_L2": "${GAS_TOKEN_L2:-GST}",
+          "GAS_TOKEN_L3": "${GAS_TOKEN_L3:-GST}",
+          "SIGNER_PRIVATE_KEY": "${GAS_ENGINE_SIGNER_PRIVATE_KEY:-}",
+          "SIGNER_PRIVATE_KEY_L1": "${GAS_ENGINE_SIGNER_PRIVATE_KEY_L1:-}",
+          "SIGNER_PRIVATE_KEY_L2": "${GAS_ENGINE_SIGNER_PRIVATE_KEY_L2:-}",
+          "SIGNER_PRIVATE_KEY_L3": "${GAS_ENGINE_SIGNER_PRIVATE_KEY_L3:-}",
+          "ADMIN_TOKEN": "${GAS_ENGINE_ADMIN_TOKEN:-}",
+          "RUN_MIGRATIONS": "1",
+          "MIGRATION_TIMEOUT_MS": 120000,
+          "READINESS_FILE": "/tmp/ghost_gas_engine_migrated",
+          "HEALTHCHECK_URL": "http://127.0.0.1:3210/ready"
+        }
+      },
+      "ghost-gas-engine-worker": {
+        "image": "ghostl/ghost-gas-engine:local",
+        "build": {
+          "context": "../../services/ghost-gas-engine",
+          "dockerfile": "Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "gas-engine-postgres": {
+            "condition": "service_healthy"
+          },
+          "gas-engine-redis": {
+            "condition": "service_healthy"
+          },
+          "ghost-gas-engine": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./data/ghost-gas-engine:/data",
+          "../../services/ghost-gas-engine/entrypoint.sh:/entrypoint.sh:ro",
+          "../../services/ghost-gas-engine/healthcheck.sh:/healthcheck.sh:ro"
+        ],
+        "environment": {
+          "DATABASE_URL": "postgresql://ghost:${GAS_ENGINE_DB_PASSWORD:-ghostpass}@gas-engine-postgres:5432/ghost_gas",
+          "REDIS_URL": "redis://gas-engine-redis:6379",
+          "CHAINS_CONFIG_PATH": "/app/config/chains.json",
+          "POLICIES_PATH": "/app/config/gas-policies.json",
+          "RPC_L1": "${HOST_L1_RPC:-http://host.docker.internal:18545}",
+          "RPC_L2": "${HOST_L2_RPC:-http://host.docker.internal:29547}",
+          "RPC_L3": "${HOST_L3_RPC:-http://host.docker.internal:39545}",
+          "GAS_TOKEN_L1": "${GAS_TOKEN_L1:-GST}",
+          "GAS_TOKEN_L2": "${GAS_TOKEN_L2:-GST}",
+          "GAS_TOKEN_L3": "${GAS_TOKEN_L3:-GST}",
+          "SIGNER_PRIVATE_KEY": "${GAS_ENGINE_SIGNER_PRIVATE_KEY:-}",
+          "SIGNER_PRIVATE_KEY_L1": "${GAS_ENGINE_SIGNER_PRIVATE_KEY_L1:-}",
+          "SIGNER_PRIVATE_KEY_L2": "${GAS_ENGINE_SIGNER_PRIVATE_KEY_L2:-}",
+          "SIGNER_PRIVATE_KEY_L3": "${GAS_ENGINE_SIGNER_PRIVATE_KEY_L3:-}"
+        }
+      },
+      "ghost-guard": {
+        "image": "local/ghost-guard:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/ghost-guard",
+          "dockerfile": "Dockerfile"
+        },
+        "networks": null,
+        "ports": [
+          "7070:7070"
+        ],
+        "depends_on": {
+          "l2-geth": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}",
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./data/guard:/state"
+        ],
+        "environment": {
+          "PORT": 7070,
+          "RPC_L1": "http://l1-rpc-proxy:18546",
+          "RPC_L2": "http://l2-geth:8545",
+          "RPC_L3": "${L3_ARCHIVE_RPC:-${HOST_L3_RPC:-http://host.docker.internal:39545}}",
+          "BRIDGE_L2L3_ADDRESS": "${BRIDGE_L2L3_ADDRESS:-0x0000000000000000000000000000000000000000}",
+          "GUARD_POLICY_ADDRESS": "${GUARD_POLICY_ADDRESS:-}",
+          "PRIVATE_KEY": "${GUARD_PRIVATE_KEY:-}",
+          "ADMIN_TOKEN": "${GUARD_ADMIN_TOKEN:-}",
+          "STATE_DIR": "/state",
+          "AI_GUARDIAN_L1_ADDRESS": "${AI_GUARDIAN_L1_ADDRESS:-}",
+          "AI_GUARDIAN_L2_ADDRESS": "${AI_GUARDIAN_L2_ADDRESS:-}",
+          "AI_GUARDIAN_L3_ADDRESS": "${AI_GUARDIAN_L3_ADDRESS:-}",
+          "AI_SIGNER_PRIVATE_KEY": "${AI_SIGNER_PRIVATE_KEY:-}",
+          "AI_CONSENSUS_MODE": "${AI_CONSENSUS_MODE:-enforce}",
+          "AI_CONSENSUS_FAIL_OPEN": "${AI_CONSENSUS_FAIL_OPEN:-0}",
+          "AI_MODEL_ID": "${AI_MODEL_ID:-GHOST_AI_CONSENSUS_V1}",
+          "AI_CONFIDENCE_BPS": "${AI_CONFIDENCE_BPS:-9000}",
+          "AI_ATTEST_TTL_SECONDS": "${AI_ATTEST_TTL_SECONDS:-300}",
+          "AI_RISK_REVIEW_BPS": "${AI_RISK_REVIEW_BPS:-5000}",
+          "AI_RISK_BLOCK_BPS": "${AI_RISK_BLOCK_BPS:-8000}",
+          "AI_REVIEW_DELAY_SECONDS": "${AI_REVIEW_DELAY_SECONDS:-60}",
+          "AI_WAIT_CONFIRMATIONS": "${AI_WAIT_CONFIRMATIONS:-0}",
+          "AI_DEFAULT_LAYER": "${AI_DEFAULT_LAYER:-l2}",
+          "AI_ROLE_LAYER_MAP": "${AI_ROLE_LAYER_MAP:-}",
+          "AUTO_PAUSE": "${GUARD_AUTO_PAUSE:-0}",
+          "AUTO_ACTION": "${GUARD_AUTO_ACTION:-}",
+          "QUARANTINE_DELAY_SECONDS": "${GUARD_QUARANTINE_DELAY_SECONDS:-30}",
+          "AUTO_QUARANTINE_THRESHOLD": "${GUARD_AUTO_QUARANTINE_THRESHOLD:-70}",
+          "AUTO_PAUSE_THRESHOLD": "${GUARD_AUTO_PAUSE_THRESHOLD:-90}",
+          "RISK_WINDOW_SECONDS": "${GUARD_RISK_WINDOW_SECONDS:-300}",
+          "GRAPH_WINDOW_SECONDS": "${GUARD_GRAPH_WINDOW_SECONDS:-3600}",
+          "ALERT_MIN_RISK": "${GUARD_ALERT_MIN_RISK:-70}",
+          "RATE_LIMIT_WINDOW_MS": "${GUARD_RATE_LIMIT_WINDOW_MS:-1000}",
+          "RATE_LIMIT_MAX": "${GUARD_RATE_LIMIT_MAX:-20}"
+        }
+      },
+      "ghost-rpc-proxy-l1": {
+        "image": "local/ghost-rpc-proxy:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/ghost-rpc-proxy",
+          "dockerfile": "Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "l1-rpc-proxy": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PORT": 8546,
+          "UPSTREAM_URL": "http://l1-rpc-proxy:18546",
+          "RPC_ENABLE_GST_NAMESPACE": "1",
+          "RPC_DEPRECATE_LEGACY_NAMESPACE": "1",
+          "RPC_RATE_LIMIT_ALLOWLIST": "${L1_RPC_RATE_LIMIT_ALLOWLIST:-127.0.0.1,::1,172.28.0.1}",
+          "RPC_CORS_ORIGINS": "${L1_RPC_CORS_ORIGINS:-http://localhost,http://127.0.0.1}"
+        }
+      },
+      "ghost-rpc-proxy-l2": {
+        "image": "local/ghost-rpc-proxy:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/ghost-rpc-proxy",
+          "dockerfile": "Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "l2-geth": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PORT": 8546,
+          "UPSTREAM_URL": "http://l2-geth:8545",
+          "RPC_ENABLE_GST_NAMESPACE": "1",
+          "RPC_DEPRECATE_LEGACY_NAMESPACE": "1",
+          "RPC_RATE_LIMIT_ALLOWLIST": "${L2_RPC_RATE_LIMIT_ALLOWLIST:-127.0.0.1,::1,172.28.0.1}",
+          "RPC_CORS_ORIGINS": "${L2_RPC_CORS_ORIGINS:-http://localhost,http://127.0.0.1}"
+        }
+      },
+      "ghost-rpc-proxy-l3": {
+        "image": "local/ghost-rpc-proxy:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/ghost-rpc-proxy",
+          "dockerfile": "Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": false,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PORT": 8546,
+          "UPSTREAM_URL": "${L3_ARCHIVE_RPC:-http://l3-geth:8545}",
+          "RPC_ENABLE_GST_NAMESPACE": "1",
+          "RPC_DEPRECATE_LEGACY_NAMESPACE": "1",
+          "RPC_RATE_LIMIT_ALLOWLIST": "${L3_RPC_RATE_LIMIT_ALLOWLIST:-127.0.0.1,::1,172.28.0.1}",
+          "RPC_CORS_ORIGINS": "${L3_RPC_CORS_ORIGINS:-http://localhost,http://127.0.0.1}"
+        }
+      },
+      "hyper-ghost-supervisor": {
+        "image": "local/hyper-ghost-supervisor:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/hyper-ghost-supervisor",
+          "dockerfile": "Dockerfile"
+        },
+        "networks": null,
+        "ports": [
+          "7077:7077"
+        ],
+        "depends_on": {
+          "ghost-rpc-proxy-l1": {
+            "condition": "service_healthy"
+          },
+          "ghost-rpc-proxy-l2": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "hyperghost_data:/var/lib/ghost"
+        ],
+        "environment": {
+          "HG_ENV": "${HG_ENV:-${OPSTACK_IMAGE_TAG:-devnet}}",
+          "HG_BIND": "0.0.0.0",
+          "HG_PORT": 7077,
+          "HG_DB_PATH": "/var/lib/ghost/incident.db",
+          "HG_ARTIFACT_DIR": "/var/lib/ghost/hgop",
+          "HG_DB_MIGRATE": "1",
+          "HG_DB_SEED_DEMO": "${HG_DB_SEED_DEMO:-1}",
+          "HGOP_EXEC_ENABLED": "${HGOP_EXEC_ENABLED:-0}",
+          "HGOP_APPROVAL_TOKEN": "${HGOP_APPROVAL_TOKEN:-}",
+          "HG_ATTESTOR_PRIVATE_KEY": "${HG_ATTESTOR_PRIVATE_KEY:-}",
+          "L1_RPC_URL": "http://ghost-rpc-proxy-l1:8546",
+          "L2_RPC_URL": "http://ghost-rpc-proxy-l2:8546",
+          "L3_RPC_URL": "http://ghost-rpc-proxy-l3:8546",
+          "HG_PROBE_URLS": "${HG_PROBE_URLS:-}",
+          "HG_GHOSTDNS_URL": "${HG_GHOSTDNS_URL:-http://host.docker.internal:18089}",
+          "HG_GHOSTDNS_SHARED_SECRET": "${HG_GHOSTDNS_SHARED_SECRET:-}"
+        }
+      },
+      "ai-monitor": {
+        "image": "local/ai-monitor:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/ai-monitor",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": [
+          "7575:7575"
+        ],
+        "depends_on": {
+          "l2-geth": {
+            "condition": "service_healthy"
+          },
+          "op-node": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PORT": 7575,
+          "RPC_L2": "http://l2-geth:8545",
+          "RPC_URL": "http://l2-geth:8545",
+          "RPC_L1": "http://l1-rpc-proxy:18546",
+          "OP_NODE_RPC_URL": "http://op-node:9546",
+          "OP_BATCHER_METRICS_URL": "http://op-batcher:7301/metrics",
+          "OP_PROPOSER_METRICS_URL": "http://op-proposer:7302/metrics",
+          "POLICY_REGISTRY_ADDRESS": "${POLICY_REGISTRY_ADDRESS:-}",
+          "POLICY_REGISTRY_RPC": "${POLICY_REGISTRY_RPC:-${L1_RPC:-http://l1-rpc-proxy:18546}}",
+          "POLICY_ROLE": "${POLICY_ROLE:-L2_AI_MONITOR}",
+          "POLICY_ACTION_THROTTLE": "${POLICY_ACTION_THROTTLE:-L2_AI_THROTTLE}",
+          "POLICY_ACTION_PAUSE": "${POLICY_ACTION_PAUSE:-L2_AI_PAUSE}",
+          "POLICY_APPROVALS_PROVIDED": "${POLICY_APPROVALS_PROVIDED:-0}",
+          "POLICY_HAS_EVIDENCE": "${POLICY_HAS_EVIDENCE:-0}",
+          "POLICY_REQUIRED": "${POLICY_REQUIRED:-1}",
+          "POLICY_CACHE_MS": "${POLICY_CACHE_MS:-10000}",
+          "GUARD_URL": "${GUARD_URL:-${GATE_GUARD_URL:-http://ghost-guard:7070}}",
+          "ADMIN_TOKEN": "${AI_MONITOR_ADMIN_TOKEN:-}",
+          "OBSERVE_ONLY": "${AI_MONITOR_OBSERVE_ONLY:-1}",
+          "SIMULATION_ENABLED": "${AI_MONITOR_SIMULATION_ENABLED:-0}",
+          "TARGET_LAYER": "${AI_MONITOR_LAYER_L2:-L2}",
+          "L1_HEAD_LAG_THRESHOLD_SEC": "${AI_MONITOR_L1_HEAD_LAG_THRESHOLD_SEC:-120}",
+          "BATCHER_IDLE_THRESHOLD_SEC": "${AI_MONITOR_BATCHER_IDLE_THRESHOLD_SEC:-900}",
+          "PROPOSER_IDLE_THRESHOLD_SEC": "${AI_MONITOR_PROPOSER_IDLE_THRESHOLD_SEC:-900}"
+        }
+      },
+      "l2-geth": {
+        "image": "local/op-geth:${OPSTACK_IMAGE_TAG:-local}",
+        "build": null,
+        "networks": null,
+        "ports": [
+          "29547:8545",
+          "${L2_HOST_WS:-29548}:8546",
+          "29606:6060"
+        ],
+        "depends_on": {
+          "op-gate": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}",
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./data/l2-geth-${L2_CHAIN_ID:-901}:/data",
+          "./config:/config:ro"
+        ],
+        "environment": null
+      },
+      "rpc-forward-l2-18547": {
+        "image": "${OPSTACK_RPC_FORWARD_IMAGE:-local/rpc-forward:0.1.0}",
+        "build": {
+          "context": "./rpc-forward"
+        },
+        "networks": null,
+        "ports": [
+          "18547:18547"
+        ],
+        "depends_on": {
+          "l2-geth": {
+            "condition": "service_healthy"
+          },
+          "op-gate": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": false,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": null
+      },
+      "l1-rpc-proxy": {
+        "image": "node:22-alpine",
+        "build": null,
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./scripts/l1-rpc-proxy.mjs:/app/l1-rpc-proxy.mjs:ro"
+        ],
+        "environment": {
+          "UPSTREAM_URL": "${L1_RPC_UPSTREAM:-http://host.docker.internal:18545}",
+          "PORT": 18546
+        }
+      },
+      "op-node": {
+        "image": "local/op-node:${OPSTACK_IMAGE_TAG:-local}",
+        "build": null,
+        "networks": null,
+        "ports": [
+          "9546:9546",
+          "7300:7300"
+        ],
+        "depends_on": {
+          "l2-geth": {
+            "condition": "service_healthy"
+          },
+          "l1-rpc-proxy": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}",
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./data/op-node:/data",
+          "./config:/config:ro"
+        ],
+        "environment": null
+      },
+      "op-sequencer": {
+        "image": "local/op-node:${OPSTACK_IMAGE_TAG:-local}",
+        "build": null,
+        "networks": null,
+        "ports": [
+          "9646:9646",
+          "7303:7303"
+        ],
+        "depends_on": {
+          "l2-geth": {
+            "condition": "service_healthy"
+          },
+          "l1-rpc-proxy": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}",
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./data/op-sequencer:/data",
+          "./config:/config:ro"
+        ],
+        "environment": {
+          "OP_NODE_L1_BEACON_IGNORE": "1"
+        }
+      },
+      "op-batcher": {
+        "image": "local/op-batcher:${OPSTACK_IMAGE_TAG:-local}",
+        "build": null,
+        "networks": null,
+        "ports": [
+          "8551:8551",
+          "7301:7301"
+        ],
+        "depends_on": {
+          "op-sequencer": {
+            "condition": "service_healthy"
+          },
+          "op-gate": {
+            "condition": "service_healthy"
+          },
+          "op-gate-l1": {
+            "condition": "service_healthy"
+          },
+          "l1-rpc-proxy": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}",
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./config:/config:ro"
+        ],
+        "environment": {
+          "L2OO_ADDRESS": "${L2OO_ADDRESS:-0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9}",
+          "OP_BATCHER_DATA_AVAILABILITY_TYPE": "${OP_BATCHER_DATA_AVAILABILITY_TYPE:-calldata}",
+          "OP_BATCHER_MAX_CHANNEL_DURATION": "${OP_BATCHER_MAX_CHANNEL_DURATION:-2}",
+          "OP_BATCHER_NUM_CONFIRMATIONS": "${OP_BATCHER_NUM_CONFIRMATIONS:-1}",
+          "OP_BATCHER_POLL_INTERVAL": "${OP_BATCHER_POLL_INTERVAL:-1s}",
+          "OP_BATCHER_RPC_ENABLE_ADMIN": "${OP_BATCHER_RPC_ENABLE_ADMIN:-true}",
+          "OP_BATCHER_SUB_SAFETY_MARGIN": "${OP_BATCHER_SUB_SAFETY_MARGIN:-4}"
+        }
+      },
+      "op-proposer": {
+        "image": "local/op-proposer:${OPSTACK_IMAGE_TAG:-local}",
+        "build": null,
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "op-sequencer": {
+            "condition": "service_healthy"
+          },
+          "op-gate": {
+            "condition": "service_healthy"
+          },
+          "op-gate-l1": {
+            "condition": "service_healthy"
+          },
+          "l1-rpc-proxy": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}",
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./config:/config:ro"
+        ],
+        "environment": {
+          "PROPOSER_KEY": "${PROPOSER_KEY:-}"
+        }
+      },
+      "prometheus": {
+        "image": "${PROMETHEUS_IMAGE:-prom/prometheus@sha256:075b1ba2c4ebb04bc3a6ab86c06ec8d8099f8fda1c96ef6d104d9bb1def1d8bc}",
+        "build": null,
+        "networks": null,
+        "ports": [
+          "9091:9090"
+        ],
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro",
+          "./observability/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro",
+          "prometheus_data:/prometheus"
+        ],
+        "environment": null
+      },
+      "alertmanager": {
+        "image": "${ALERTMANAGER_IMAGE:-prom/alertmanager@sha256:e13b6ed5cb929eeaee733479dce55e10eb3bc2e9c4586c705a4e8da41e5eacf5}",
+        "build": null,
+        "networks": null,
+        "ports": [
+          "9093:9093"
+        ],
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro",
+          "alertmanager_data:/alertmanager"
+        ],
+        "environment": {
+          "ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL": "${ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL:-http://host.docker.internal:19093/alert-hooks/sovereignty-critical}",
+          "ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL": "${ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL:-http://host.docker.internal:19093/alert-hooks/sovereignty-warning}"
+        }
+      },
+      "loki": {
+        "image": "${LOKI_IMAGE:-grafana/loki@sha256:8b5bd7748d0e4da66cd741ac276e485517514af0bea32167e27c0e1a95bcf8aa}",
+        "build": null,
+        "networks": null,
+        "ports": [
+          "3100:3100"
+        ],
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./observability/loki/config.yml:/etc/loki/config.yml:ro",
+          "loki_data:/loki"
+        ],
+        "environment": null
+      },
+      "grafana": {
+        "image": "${GRAFANA_IMAGE:-grafana/grafana@sha256:408afb9726de5122b00a2576763a8a57a3c86d5b0eff5305bc994ceb3eb96c3f}",
+        "build": null,
+        "networks": null,
+        "ports": [
+          "3000:3000"
+        ],
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_started"
+          },
+          "loki": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": false,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "grafana_data:/var/lib/grafana",
+          "./observability/grafana/provisioning:/etc/grafana/provisioning:ro",
+          "./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro"
+        ],
+        "environment": {
+          "GF_SECURITY_ADMIN_PASSWORD": "${GRAFANA_ADMIN_PASSWORD:-admin}",
+          "PROMETHEUS_URL": "${PROMETHEUS_URL:-http://prometheus:9090}"
+        }
+      },
+      "vector": {
+        "image": "${VECTOR_IMAGE:-timberio/vector:0.38.0-alpine}",
+        "build": null,
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "loki": {
+            "condition": "service_started"
+          }
+        },
+        "healthcheck": false,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "/var/run/docker.sock:/var/run/docker.sock",
+          "/var/lib/docker/containers:/var/lib/docker/containers:ro",
+          "./observability/vector/vector.yaml:/etc/vector/vector.yaml:ro"
+        ],
+        "environment": {
+          "VECTOR_LOG": "info"
+        }
+      }
+    }
+  },
+  "infra/opstack/docker-compose.l3.yml": {
+    "top_level_networks": [],
+    "services": {
+      "l3-geth": {
+        "image": "local/op-geth:${OPSTACK_IMAGE_TAG:-local}",
+        "build": null,
+        "networks": null,
+        "ports": [
+          "${L3_HOST_RPC:-39545}:8545",
+          "${L3_HOST_WS:-39548}:8546",
+          "${L3_GETH_METRICS_HOST_PORT:-39606}:${L3_GETH_METRICS_PORT:-6060}"
+        ],
+        "depends_on": {
+          "l2-geth": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}",
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./l3/${L3_NAME:-ghostl3}/data-${L3_CHAIN_ID:-903}${L3_DATA_PROFILE:+-${L3_DATA_PROFILE}}:/data",
+          "./l3/${L3_NAME:-ghostl3}/config:/config:ro"
+        ],
+        "environment": null
+      },
+      "l3-op-node": {
+        "image": "local/op-node:${OPSTACK_IMAGE_TAG:-local}",
+        "build": null,
+        "networks": null,
+        "ports": [
+          "${L3_ROLLUP_RPC_HOST_PORT:-39546}:${L3_ROLLUP_RPC_PORT:-19546}",
+          "${L3_METRICS_NODE_HOST_PORT:-8300}:${L3_METRICS_NODE_PORT:-8300}"
+        ],
+        "depends_on": {
+          "l3-geth": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}",
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./l3/${L3_NAME:-ghostl3}/data-${L3_CHAIN_ID:-903}${L3_DATA_PROFILE:+-${L3_DATA_PROFILE}}/op-node:/data",
+          "./l3/${L3_NAME:-ghostl3}/config:/config:ro"
+        ],
+        "environment": {
+          "OP_NODE_L1_BEACON_IGNORE": "1",
+          "OP_NODE_SEQUENCER_ENABLED": "1"
+        }
+      },
+      "l3-op-batcher": {
+        "image": "local/op-batcher:${OPSTACK_IMAGE_TAG:-local}",
+        "build": null,
+        "networks": null,
+        "ports": [
+          "${L3_BATCHER_HOST_PORT:-39551}:${L3_BATCHER_RPC_PORT:-18551}",
+          "${L3_METRICS_BATCHER_HOST_PORT:-8301}:${L3_METRICS_BATCHER_PORT:-8301}"
+        ],
+        "depends_on": {
+          "l3-op-node": {
+            "condition": "service_healthy"
+          },
+          "op-gate": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}",
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./l3/${L3_NAME:-ghostl3}/config:/config:ro"
+        ],
+        "environment": {
+          "L2OO_ADDRESS": "${L3_L2OO_ADDRESS:-0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512}",
+          "OP_BATCHER_MAX_CHANNEL_DURATION": "${L3_OP_BATCHER_MAX_CHANNEL_DURATION:-2}",
+          "OP_BATCHER_NUM_CONFIRMATIONS": "${L3_OP_BATCHER_NUM_CONFIRMATIONS:-1}",
+          "OP_BATCHER_POLL_INTERVAL": "${L3_OP_BATCHER_POLL_INTERVAL:-1s}",
+          "OP_BATCHER_RPC_ENABLE_ADMIN": "${L3_OP_BATCHER_RPC_ENABLE_ADMIN:-true}",
+          "OP_BATCHER_SUB_SAFETY_MARGIN": "${L3_OP_BATCHER_SUB_SAFETY_MARGIN:-4}"
+        }
+      },
+      "l3-op-proposer": {
+        "image": "local/op-proposer:${OPSTACK_IMAGE_TAG:-local}",
+        "build": null,
+        "networks": null,
+        "ports": [
+          "${L3_PROPOSER_HOST_PORT:-39560}:${L3_PROPOSER_RPC_PORT:-18560}",
+          "${L3_METRICS_PROPOSER_HOST_PORT:-8302}:${L3_METRICS_PROPOSER_PORT:-8302}"
+        ],
+        "depends_on": {
+          "l3-op-node": {
+            "condition": "service_healthy"
+          },
+          "op-gate": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}",
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./l3/${L3_NAME:-ghostl3}/config:/config:ro"
+        ],
+        "environment": null
+      },
+      "validator-service": {
+        "image": "local/validator-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/validator-service",
+          "dockerfile": "Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "l2-geth": {
+            "condition": "service_healthy"
+          },
+          "l3-geth": {
+            "condition": "service_healthy"
+          },
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PORT": 7600,
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}",
+          "RPC_L2": "http://l2-geth:8545",
+          "RPC_L3": "http://l3-geth:8545"
+        }
+      },
+      "auth-service": {
+        "image": "local/auth-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/auth-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": null
+      },
+      "rbac-service": {
+        "image": "local/rbac-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/rbac-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": null
+      },
+      "session-service": {
+        "image": "local/session-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/session-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": null
+      },
+      "notifications-service": {
+        "image": "local/notifications-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/notifications-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": null
+      },
+      "alerts-service": {
+        "image": "local/alerts-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/alerts-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "node-health-service": {
+        "image": "local/node-health-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/node-health-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "l2-geth": {
+            "condition": "service_healthy"
+          },
+          "l3-geth": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "RPC_L1": "${HOST_L1_RPC:-http://host.docker.internal:18545}",
+          "RPC_L2": "http://l2-geth:8545",
+          "RPC_L3": "http://l3-geth:8545",
+          "GOVERNOR_ADDRESS_L1": "${GOVERNOR_ADDRESS_L1:-}",
+          "PAUSE_GUARDIAN_ADDRESS": "${PAUSE_GUARDIAN_ADDRESS:-}",
+          "BRIDGE_L2L3_ADDRESS": "${BRIDGE_L2L3_ADDRESS:-}",
+          "L2_OUTPUT_ORACLE_ADDRESS": "${L2_OUTPUT_ORACLE_ADDRESS:-}",
+          "L3_OUTPUT_ORACLE_ADDRESS": "${L3_OUTPUT_ORACLE_ADDRESS:-}",
+          "L2_OUTPUT_ORACLE_RPC": "${L2_OUTPUT_ORACLE_RPC:-${HOST_L1_RPC:-http://host.docker.internal:18545}}",
+          "L3_OUTPUT_ORACLE_RPC": "${L3_OUTPUT_ORACLE_RPC:-${HOST_L2_RPC:-http://host.docker.internal:29547}}"
+        }
+      },
+      "consensus-telemetry-service": {
+        "image": "local/consensus-telemetry-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/consensus-telemetry-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "l2-geth": {
+            "condition": "service_healthy"
+          },
+          "l3-geth": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "RPC_L2": "http://l2-geth:8545",
+          "RPC_L3": "http://l3-geth:8545"
+        }
+      },
+      "slashing-detection-service": {
+        "image": "local/slashing-detection-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/slashing-detection-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "treasury-service": {
+        "image": "local/treasury-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/treasury-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "bridge-service": {
+        "image": "local/bridge-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/bridge-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "liquidity-service": {
+        "image": "local/liquidity-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/liquidity-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          },
+          "l2-geth": {
+            "condition": "service_healthy"
+          },
+          "l3-geth": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}",
+          "RPC_L2": "http://l2-geth:8545",
+          "RPC_L3": "http://l3-geth:8545",
+          "BRIDGE_ADDRESS": "${BRIDGE_ADDRESS:-0x0000000000000000000000000000000000000000}",
+          "L2_TOKEN_ADDRESS": "${L2_TOKEN_ADDRESS:-0x5FbDB2315678afecb367f032d93F642f64180aa3}",
+          "L3_TOKEN_ADDRESS": "${L3_TOKEN_ADDRESS:-0x5FbDB2315678afecb367f032d93F642f64180aa3}"
+        }
+      },
+      "anomaly-detection-service": {
+        "image": "local/anomaly-detection-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/anomaly-detection-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": [
+          "7616:7616"
+        ],
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "feature-flags-service": {
+        "image": "local/feature-flags-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/feature-flags-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "FEATURE_FLAGS": "${FEATURE_FLAGS:-}"
+        }
+      },
+      "governance-service": {
+        "image": "local/governance-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/governance-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": null
+      },
+      "contract-registry-service": {
+        "image": "local/contract-registry-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/contract-registry-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "l2-geth": {
+            "condition": "service_healthy"
+          },
+          "l3-geth": {
+            "condition": "service_healthy"
+          },
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}",
+          "RPC_L2": "http://l2-geth:8545",
+          "RPC_L3": "http://l3-geth:8545"
+        }
+      },
+      "contract-risk-service": {
+        "image": "local/contract-risk-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/contract-risk-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": [
+          "7609:7609"
+        ],
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "proxy-inspector-service": {
+        "image": "local/proxy-inspector-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/proxy-inspector-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "mempool-service": {
+        "image": "local/mempool-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/mempool-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "tx-index-service": {
+        "image": "local/tx-index-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/tx-index-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "peer-graph-service": {
+        "image": "local/peer-graph-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/peer-graph-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "l2-geth": {
+            "condition": "service_healthy"
+          },
+          "l3-geth": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "RPC_L2": "http://l2-geth:8545",
+          "RPC_L3": "http://l3-geth:8545"
+        }
+      },
+      "audit-log-service": {
+        "image": "local/audit-log-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/audit-log-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./data/audit:/data"
+        ],
+        "environment": {
+          "LOG_PATH": "/data/audit.log"
+        }
+      },
+      "block-index-service": {
+        "image": "local/block-index-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/block-index-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "chain-status-service": {
+        "image": "local/chain-status-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/chain-status-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": null
+      },
+      "compliance-export-service": {
+        "image": "local/compliance-export-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/compliance-export-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": null
+      },
+      "dispute-service": {
+        "image": "local/dispute-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/dispute-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "entity-tagging-service": {
+        "image": "local/entity-tagging-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/entity-tagging-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": null
+      },
+      "explainability-service": {
+        "image": "local/explainability-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/explainability-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": [
+          "7632:7632"
+        ],
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "fee-model-service": {
+        "image": "local/fee-model-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/fee-model-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "forecasting-service": {
+        "image": "local/forecasting-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/forecasting-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": [
+          "7617:7617"
+        ],
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "global-search-service": {
+        "image": "local/global-search-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/global-search-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": null
+      },
+      "key-rotation-service": {
+        "image": "local/key-rotation-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/key-rotation-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "network-context-service": {
+        "image": "local/network-context-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/network-context-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": null
+      },
+      "node-inventory-service": {
+        "image": "local/node-inventory-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/node-inventory-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": null
+      },
+      "participation-service": {
+        "image": "local/participation-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/participation-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "payout-service": {
+        "image": "local/payout-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/payout-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "rewards-service": {
+        "image": "local/rewards-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/rewards-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "secrets-health-service": {
+        "image": "local/secrets-health-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/secrets-health-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "snapshot-service": {
+        "image": "local/snapshot-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/snapshot-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": null
+      },
+      "staking-service": {
+        "image": "local/staking-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/staking-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "supply-service": {
+        "image": "local/supply-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/supply-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "theme-service": {
+        "image": "local/theme-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/theme-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": null
+      },
+      "transfer-lifecycle-service": {
+        "image": "local/transfer-lifecycle-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/transfer-lifecycle-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": {
+          "prometheus": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": {
+          "PROM_URL": "${PROM_URL:-http://prometheus:9090}"
+        }
+      },
+      "upgrade-orchestrator-service": {
+        "image": "local/upgrade-orchestrator-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/upgrade-orchestrator-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": null
+      },
+      "verification-service": {
+        "image": "local/verification-service:${OPSTACK_IMAGE_TAG:-devnet}",
+        "build": {
+          "context": "../../services/verification-service",
+          "dockerfile": "../../services/common.Dockerfile"
+        },
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": null,
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": null,
+        "environment": null
+      }
+    }
+  },
+  "infra/opstack/docker-compose.challengers.yml": {
+    "top_level_networks": [],
+    "services": {
+      "op-challenger": {
+        "image": "${OP_CHALLENGER_IMAGE:-local/op-challenger:${OPSTACK_IMAGE_TAG:-devnet}}",
+        "build": null,
+        "networks": null,
+        "ports": [
+          "${L2_CHALLENGER_METRICS_HOST_PORT:-7303}:${L2_CHALLENGER_METRICS_PORT:-7303}"
+        ],
+        "depends_on": {
+          "op-node": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": false,
+        "restart": "unless-stopped",
+        "user": "10001:10001",
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./data/op-challenger:/data",
+          "./config/rollup.json:/config/rollup.json:ro",
+          "./config/genesis-l2.json:/config/genesis-l2.json:ro",
+          "./config/l1-chain.json:/config/l1-chain.json:ro",
+          "${OP_CHALLENGER_ASSETS_DIR:-./optimism/op-program/bin}:/assets/op-program:ro",
+          "./optimism/cannon/bin:/assets/cannon:ro"
+        ],
+        "environment": {
+          "OP_CHALLENGER_ROLLUP_RPC": "http://op-node:9546",
+          "OP_CHALLENGER_GAME_FACTORY_ADDRESS": "${L2_GAME_FACTORY_ADDRESS:-0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9}",
+          "OP_CHALLENGER_PRIVATE_KEY": "${CHALLENGER_KEY:-}",
+          "OP_CHALLENGER_DATADIR": "/data",
+          "OP_CHALLENGER_L1_BEACON": "${L1_BEACON_RPC:-${L1_RPC:-http://l1:8545}}",
+          "OP_CHALLENGER_TRACE_TYPE": "${L2_CHALLENGER_TRACE_TYPE:-cannon}",
+          "OP_CHALLENGER_CANNON_ROLLUP_CONFIG": "/config/rollup.json",
+          "OP_CHALLENGER_CANNON_L2_GENESIS": "/config/genesis-l2.json",
+          "OP_CHALLENGER_L1_GENESIS": "/config/l1-chain.json",
+          "OP_CHALLENGER_CANNON_BIN": "${OP_CHALLENGER_CANNON_BIN:-/assets/cannon/cannon}",
+          "OP_CHALLENGER_CANNON_SERVER": "${OP_CHALLENGER_CANNON_SERVER:-/assets/op-program/op-program}",
+          "OP_CHALLENGER_CANNON_PRESTATE": "${OP_CHALLENGER_CANNON_PRESTATE:-/assets/op-program/prestate-mt64.bin.gz}",
+          "OP_CHALLENGER_CANNON_KONA_SERVER": "${OP_CHALLENGER_CANNON_KONA_SERVER:-/usr/local/bin/kona-host}",
+          "OP_CHALLENGER_CANNON_KONA_PRESTATE": "${OP_CHALLENGER_CANNON_KONA_PRESTATE:-/assets/op-program/prestate-mt64.bin.gz}"
+        }
+      },
+      "l3-op-challenger": {
+        "image": "${OP_CHALLENGER_IMAGE:-local/op-challenger:${OPSTACK_IMAGE_TAG:-devnet}}",
+        "build": null,
+        "networks": null,
+        "ports": [
+          "${L3_CHALLENGER_METRICS_HOST_PORT:-8303}:${L3_CHALLENGER_METRICS_PORT:-8303}"
+        ],
+        "depends_on": {
+          "l3-op-node": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": false,
+        "restart": "unless-stopped",
+        "user": "10001:10001",
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": {
+          "driver": "json-file",
+          "options": {
+            "max-size": "10m",
+            "max-file": "3"
+          }
+        },
+        "volumes": [
+          "./l3/${L3_NAME:-ghostl3}/data/challenger:/data",
+          "./l3/${L3_NAME:-ghostl3}/config/rollup.json:/config/rollup.json:ro",
+          "./l3/${L3_NAME:-ghostl3}/config/genesis.json:/config/genesis.json:ro",
+          "./l3/${L3_NAME:-ghostl3}/config/l1-chain.json:/config/l1-chain.json:ro",
+          "${OP_CHALLENGER_ASSETS_DIR:-./optimism/op-program/bin}:/assets/op-program:ro",
+          "./optimism/cannon/bin:/assets/cannon:ro"
+        ],
+        "environment": {
+          "OP_CHALLENGER_ROLLUP_RPC": "http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}",
+          "OP_CHALLENGER_GAME_FACTORY_ADDRESS": "${L3_GAME_FACTORY_ADDRESS:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}",
+          "OP_CHALLENGER_PRIVATE_KEY": "${L3_CHALLENGER_KEY:-${CHALLENGER_KEY:-}}",
+          "OP_CHALLENGER_DATADIR": "/data",
+          "OP_CHALLENGER_L1_BEACON": "${L3_L1_BEACON_RPC:-${L3_L1_RPC:-http://l2-geth:8545}}",
+          "OP_CHALLENGER_TRACE_TYPE": "${L3_CHALLENGER_TRACE_TYPE:-cannon}",
+          "OP_CHALLENGER_CANNON_ROLLUP_CONFIG": "/config/rollup.json",
+          "OP_CHALLENGER_CANNON_L2_GENESIS": "/config/genesis.json",
+          "OP_CHALLENGER_L1_GENESIS": "/config/l1-chain.json",
+          "OP_CHALLENGER_CANNON_BIN": "${OP_CHALLENGER_CANNON_BIN:-/assets/cannon/cannon}",
+          "OP_CHALLENGER_CANNON_SERVER": "${OP_CHALLENGER_CANNON_SERVER:-/assets/op-program/op-program}",
+          "OP_CHALLENGER_CANNON_PRESTATE": "${OP_CHALLENGER_CANNON_PRESTATE:-/assets/op-program/prestate-mt64.bin.gz}",
+          "OP_CHALLENGER_CANNON_KONA_SERVER": "${OP_CHALLENGER_CANNON_KONA_SERVER:-/usr/local/bin/kona-host}",
+          "OP_CHALLENGER_CANNON_KONA_PRESTATE": "${OP_CHALLENGER_CANNON_KONA_PRESTATE:-/assets/op-program/prestate-mt64.bin.gz}"
+        }
+      }
+    }
+  },
+  "docker-compose.sovereign.yml": {
+    "top_level_networks": [
+      "public-edge",
+      "internal-services",
+      "chains",
+      "observability"
+    ],
+    "services": {
+      "l3-fee-collector": {
+        "image": "ghostl/l3-fee-collector:local",
+        "build": {
+          "context": "./services/l3-fee-collector"
+        },
+        "networks": [
+          "internal-services",
+          "observability"
+        ],
+        "ports": [
+          "127.0.0.1:7681:7681"
+        ],
+        "depends_on": {
+          "l2-revenue-aggregator": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "10001:10001",
+        "read_only": true,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": null,
+        "volumes": [
+          "./services/l3-fee-collector/data:/data"
+        ],
+        "environment": {
+          "PORT": 7681,
+          "HOST": "0.0.0.0",
+          "L3_CHAIN_ID": "${L3_CHAIN_ID:-903}",
+          "L2_CHAIN_ID": "${L2_CHAIN_ID:-901}",
+          "L2_REVENUE_AGGREGATOR_URL": "http://l2-revenue-aggregator:7682",
+          "L2_REVENUE_BRIDGE_ADDRESS": "${L2_REVENUE_BRIDGE_ADDRESS:-0x0000000000000000000000000000000000000901}",
+          "LEDGER_PATH": "/data/l3-fee-ledger.sqlite",
+          "L3_FEE_FORWARD_HMAC_SECRET": "${L3_FEE_FORWARD_HMAC_SECRET:-}",
+          "L3_FEE_ADMIN_TOKEN": "${L3_FEE_ADMIN_TOKEN:-}"
+        }
+      },
+      "l2-revenue-aggregator": {
+        "image": "ghostl/l2-revenue-aggregator:local",
+        "build": {
+          "context": "./services/l2-revenue-aggregator"
+        },
+        "networks": [
+          "internal-services",
+          "chains",
+          "observability"
+        ],
+        "ports": [
+          "127.0.0.1:7682:7682"
+        ],
+        "depends_on": {
+          "treasury-engine": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "10001:10001",
+        "read_only": true,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": null,
+        "volumes": [
+          "./services/l2-revenue-aggregator/data:/data"
+        ],
+        "environment": {
+          "PORT": 7682,
+          "HOST": "0.0.0.0",
+          "L1_CHAIN_ID": "${L1_CHAIN_ID:-14000101}",
+          "L2_CHAIN_ID": "${L2_CHAIN_ID:-901}",
+          "L3_CHAIN_ID": "${L3_CHAIN_ID:-903}",
+          "L1_TREASURY_ENGINE_URL": "http://treasury-engine:7683",
+          "LEDGER_PATH": "/data/l2-revenue-aggregator.sqlite",
+          "L3_SHARED_SECRET": "${L3_FEE_FORWARD_HMAC_SECRET:-}",
+          "AGGREGATOR_ADMIN_TOKEN": "${L2_REVENUE_AGGREGATOR_ADMIN_TOKEN:-}",
+          "FORWARD_TIMEOUT_MS": 4500,
+          "BATCH_SIZE": 50,
+          "BATCH_INTERVAL_MS": 15000,
+          "OPERATIONS_FEE_BPS": 250,
+          "RATE_LIMIT_WINDOW_MS": 60000,
+          "RATE_LIMIT_MAX": 240
+        }
+      },
+      "treasury-engine": {
+        "image": "ghostl/treasury-engine:local",
+        "build": {
+          "context": "./services/treasury-engine"
+        },
+        "networks": [
+          "internal-services",
+          "chains",
+          "observability"
+        ],
+        "ports": [
+          "127.0.0.1:7683:7683"
+        ],
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "10001:10001",
+        "read_only": true,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": null,
+        "volumes": [
+          "./services/treasury-engine/data:/data",
+          "./artifacts:/artifacts",
+          "./governance:/governance:ro"
+        ],
+        "environment": {
+          "PORT": 7683,
+          "HOST": "0.0.0.0",
+          "SERVICE_LAYER": "L1",
+          "L1_CHAIN_ID": "${L1_CHAIN_ID:-14000101}",
+          "L2_CHAIN_ID": "${L2_CHAIN_ID:-901}",
+          "DB_PATH": "/data/treasury-engine.sqlite",
+          "PROOF_DIR": "/data/proofs",
+          "SOLVENCY_ARTIFACT_DIR": "/artifacts/solvency",
+          "SOLVENCY_ARTIFACT_SIGNING_KEY": "${SOLVENCY_ARTIFACT_SIGNING_KEY:-}",
+          "GOVERNANCE_ROOT": "/governance/proposals",
+          "STABLE_ASSET_RATIO": "${TREASURY_STABLE_ASSET_RATIO:-65}",
+          "YIELD_RATIO": "${TREASURY_YIELD_RATIO:-35}",
+          "RISK_CAP_BPS": "${TREASURY_RISK_CAP_BPS:-7200}",
+          "ROUTE_TIMEOUT_MS": 5000,
+          "TREASURY_ADMIN_TOKEN": "${TREASURY_ENGINE_ADMIN_TOKEN:-}",
+          "YIELD_ADAPTERS_JSON": "${YIELD_ADAPTERS_JSON:-[]}",
+          "FEDERATION_POLICY_PATH": "/governance/federation/policy.json"
+        }
+      },
+      "reward-distributor": {
+        "image": "ghostl/reward-distributor:local",
+        "build": {
+          "context": "./services/reward-distributor"
+        },
+        "networks": [
+          "internal-services",
+          "observability"
+        ],
+        "ports": [
+          "127.0.0.1:7684:7684"
+        ],
+        "depends_on": {
+          "treasury-engine": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "10001:10001",
+        "read_only": true,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": null,
+        "volumes": [
+          "./services/reward-distributor/data:/data",
+          "./governance:/governance:ro"
+        ],
+        "environment": {
+          "PORT": 7684,
+          "HOST": "0.0.0.0",
+          "DB_PATH": "/data/reward-distributor.sqlite",
+          "GOVERNANCE_ROOT": "/governance/proposals",
+          "DISTRIBUTOR_ADMIN_TOKEN": "${REWARD_DISTRIBUTOR_ADMIN_TOKEN:-}"
+        }
+      },
+      "hyper-ghost-governor": {
+        "image": "ghostl/hyper-ghost-governor:local",
+        "build": {
+          "context": "./services/hyper-ghost-governor"
+        },
+        "networks": [
+          "internal-services",
+          "observability"
+        ],
+        "ports": [
+          "127.0.0.1:7685:7685"
+        ],
+        "depends_on": {
+          "treasury-engine": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "10001:10001",
+        "read_only": true,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": null,
+        "volumes": [
+          "./services/hyper-ghost-governor/data:/data",
+          "./artifacts:/artifacts"
+        ],
+        "environment": {
+          "PORT": 7685,
+          "HOST": "0.0.0.0",
+          "DB_PATH": "/data/hyper-ghost-governor.sqlite",
+          "ARTIFACTS_ROOT": "/artifacts/governor",
+          "TREASURY_STATUS_URL": "http://treasury-engine:7683/v1/treasury/status",
+          "GOVERNOR_ADMIN_TOKEN": "${HYPER_GHOST_GOVERNOR_ADMIN_TOKEN:-}"
+        }
+      }
+    }
+  },
+  "docker-compose.autonomy.yml": {
+    "top_level_networks": [
+      "ghost_net",
+      "opstack_default",
+      "ghostchain"
+    ],
+    "services": {
+      "ghost-registry": {
+        "image": "ghostl/ghost-registry:local",
+        "build": {
+          "context": "./services/ghost-registry"
+        },
+        "networks": null,
+        "ports": [
+          "${AUTONOMY_GHOST_REGISTRY_HOST_PORT:-28088}:8088"
+        ],
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "10001:10001",
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": null,
+        "volumes": null,
+        "environment": {
+          "PORT": 8088,
+          "NET_ENV": "${NET_ENV:-dev}",
+          "RPC_L1": "${RPC_L1:-http://ghost-mapper:18545}",
+          "RPC_L2": "${RPC_L2:-http://ghost-mapper:29547}",
+          "RPC_L3": "${RPC_L3:-http://ghost-mapper:39545}",
+          "RPC_L1_WS": "${RPC_L1_WS:-}",
+          "RPC_L2_WS": "${RPC_L2_WS:-}",
+          "RPC_L3_WS": "${RPC_L3_WS:-}"
+        }
+      },
+      "network-context-service": {
+        "image": "ghostl/network-context-service:local",
+        "build": {
+          "context": "./services/network-context-service",
+          "args": {
+            "VCS_REF": "${VCS_REF:-unknown}",
+            "BUILD_DATE": "${BUILD_DATE:-unknown}"
+          }
+        },
+        "networks": null,
+        "ports": [
+          "${AUTONOMY_NETWORK_CONTEXT_HOST_PORT:-17633}:7633"
+        ],
+        "depends_on": {
+          "ghost-registry": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "10001:10001",
+        "read_only": true,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": null,
+        "volumes": null,
+        "environment": {
+          "PORT": 7633,
+          "NET_ENV": "${NET_ENV:-dev}",
+          "RPC_REGISTRY_URL": "http://ghost-registry:8088/v1/endpoints"
+        }
+      },
+      "consensus-telemetry-service": {
+        "image": "ghostl/consensus-telemetry-service:local",
+        "build": {
+          "context": "./services/consensus-telemetry-service",
+          "args": {
+            "VCS_REF": "${VCS_REF:-unknown}",
+            "BUILD_DATE": "${BUILD_DATE:-unknown}"
+          }
+        },
+        "networks": null,
+        "ports": [
+          "${AUTONOMY_CONSENSUS_TELEMETRY_HOST_PORT:-17635}:7635"
+        ],
+        "depends_on": {
+          "ghost-registry": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "10001:10001",
+        "read_only": true,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": null,
+        "volumes": [
+          "./services/consensus-telemetry-service/data:/data"
+        ],
+        "environment": {
+          "PORT": 7635,
+          "NET_ENV": "${NET_ENV:-dev}",
+          "RPC_REGISTRY_URL": "http://ghost-registry:8088/v1/endpoints",
+          "RPC_L1": "${RPC_L1:-http://ghost-mapper:18545}",
+          "RPC_L2": "${RPC_L2:-http://ghost-mapper:29547}",
+          "RPC_L3": "${RPC_L3:-http://ghost-mapper:39545}",
+          "OP_NODE_L2_RPC": "${OP_NODE_L2_RPC:-http://ghost-mapper:9546}",
+          "OP_NODE_L3_RPC": "${OP_NODE_L3_RPC:-http://ghost-mapper:39546}",
+          "EVIDENCE_DIR": "/data/evidence",
+          "PROPOSAL_DIR": "/data/proposals",
+          "FINALITY_STATE_PATH": "/data/finality-state.json"
+        }
+      },
+      "network-manager-service": {
+        "image": "ghostl/network-manager-service:local",
+        "build": {
+          "context": "./services/network-manager-service",
+          "args": {
+            "VCS_REF": "${VCS_REF:-unknown}",
+            "BUILD_DATE": "${BUILD_DATE:-unknown}"
+          }
+        },
+        "networks": null,
+        "ports": [
+          "${AUTONOMY_NETWORK_MANAGER_HOST_PORT:-17766}:7766"
+        ],
+        "depends_on": {
+          "ghost-registry": {
+            "condition": "service_healthy"
+          },
+          "consensus-telemetry-service": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "10001:10001",
+        "read_only": true,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": null,
+        "volumes": [
+          "./services/network-manager-service/data:/data",
+          "/var/run/docker.sock:/var/run/docker.sock"
+        ],
+        "environment": {
+          "NETWORK_MANAGER_PORT": 7766,
+          "NET_ENV": "${NET_ENV:-dev}",
+          "RPC_REGISTRY_URL": "http://ghost-registry:8088/v1/endpoints",
+          "CONSENSUS_TELEMETRY_URL": "http://consensus-telemetry-service:7635/consensus",
+          "MONITOR_HOST": "${MONITOR_HOST:-host.docker.internal}",
+          "MONITOR_PORTS": "${MONITOR_PORTS:-7070,7171,18545,29547,39545}",
+          "MONITOR_HEALTH_ENDPOINTS": "${MONITOR_HEALTH_ENDPOINTS:-http://host.docker.internal:7070/health,http://host.docker.internal:7171/health}",
+          "MONITOR_INTERVAL_MS": "${MONITOR_INTERVAL_MS:-10000}",
+          "OP_GATE_URL": "${OP_GATE_URL:-http://ghost-mapper:28546}",
+          "OP_GATE_URL_L3": "${OP_GATE_URL_L3:-}",
+          "OP_GATE_ADMIN_TOKEN": "${OP_GATE_ADMIN_TOKEN:-}",
+          "AUTONOMY_EXECUTION_ENABLED": "${AUTONOMY_EXECUTION_ENABLED:-false}",
+          "AUTONOMY_KILL_SWITCH": "${AUTONOMY_KILL_SWITCH:-false}",
+          "AUTONOMY_PROD_LOCK": "${AUTONOMY_PROD_LOCK:-true}",
+          "REQUIRE_TELEMETRY": "${REQUIRE_TELEMETRY:-true}",
+          "REQUIRE_GOVERNANCE": "${REQUIRE_GOVERNANCE:-true}",
+          "REQUIRE_PAUSE_GUARDIAN": "${REQUIRE_PAUSE_GUARDIAN:-true}",
+          "EXECUTION_APPROVAL_TOKEN": "${EXECUTION_APPROVAL_TOKEN:-}",
+          "ACTION_APPROVER_ADDRESSES": "${ACTION_APPROVER_ADDRESSES:-}",
+          "ACTION_APPROVAL_THRESHOLD": "${ACTION_APPROVAL_THRESHOLD:-2}",
+          "GOVERNANCE_RPC_L1": "${GOVERNANCE_RPC_L1:-http://ghost-mapper:18545}",
+          "GOVERNOR_ADDRESS_L1": "${GOVERNOR_ADDRESS_L1:-}",
+          "EVIDENCE_ANCHOR_ADDRESS": "${EVIDENCE_ANCHOR_ADDRESS:-}",
+          "PAUSE_GUARDIAN_ADDRESS": "${PAUSE_GUARDIAN_ADDRESS:-}",
+          "ACTION_POLICY_PATH": "/data/action-policy.json",
+          "EVIDENCE_DIR": "/data/evidence",
+          "DOCKER_ACTIONS_ENABLED": "${DOCKER_ACTIONS_ENABLED:-false}",
+          "DOCKER_SOCKET_PATH": "/var/run/docker.sock"
+        }
+      },
+      "ghostdns-ai": {
+        "image": "ghostl/ghostdns-ai:local",
+        "build": {
+          "context": "./services/ghostdns-ai"
+        },
+        "networks": null,
+        "ports": [
+          "${GHOSTDNS_BIND_IP:-192.168.122.205}:53:53/udp",
+          "${GHOSTDNS_BIND_IP:-192.168.122.205}:53:53/tcp",
+          "127.0.0.1:${GHOSTDNS_AI_HOST_PORT:-18089}:8089"
+        ],
+        "depends_on": {
+          "ghost-registry": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "10001:10001",
+        "read_only": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": null,
+        "volumes": [
+          "./services/ghostdns-ai/config:/app/config:ro",
+          "/var/run/docker.sock:/var/run/docker.sock:ro"
+        ],
+        "environment": {
+          "GHOSTDNS_DOMAIN": "${GHOSTDNS_DOMAIN:-ghostchain.cloud}",
+          "GHOSTDNS_MODE": "${GHOSTDNS_MODE:-dev}",
+          "UPSTREAM_DNS": "${UPSTREAM_DNS:-1.1.1.1,8.8.8.8}",
+          "ALLOW_RECURSION_CIDRS": "${ALLOW_RECURSION_CIDRS:-127.0.0.0/8,172.16.0.0/12,192.168.0.0/16}",
+          "HGOP_URL": "${HGOP_URL:-http://host.docker.internal:7077}",
+          "HGOP_SHARED_SECRET": "${HGOP_SHARED_SECRET:-}",
+          "GHOSTDNS_HYPERVISOR_IP": "${GHOSTDNS_HYPERVISOR_IP:-192.168.122.205}",
+          "GHOSTDNS_DOCKER_GATEWAY_IP": "${GHOSTDNS_DOCKER_GATEWAY_IP:-172.17.0.1}",
+          "GHOSTDNS_STATE_DIR": "${GHOSTDNS_STATE_DIR:-/tmp/ghostdns-state}",
+          "GHOSTDNS_VM_LEASES_FILE": "${GHOSTDNS_VM_LEASES_FILE:-/tmp/ghostdns-state/vm_leases.json}",
+          "GHOSTDNS_EVENT_FALLBACK_LOG": "${GHOSTDNS_EVENT_FALLBACK_LOG:-/tmp/ghostdns-state/events-fallback.log}",
+          "GHOSTDNS_BIND_ETC": "/tmp/bind",
+          "GHOSTDNS_NAMED_CHECKCONF": "${GHOSTDNS_NAMED_CHECKCONF:-named-checkconf /tmp/bind/named.conf}"
+        }
+      },
+      "ghostdns-indexer": {
+        "image": "ghostl/ghostdns-indexer:local",
+        "build": {
+          "context": "./services/ghostdns-indexer"
+        },
+        "networks": null,
+        "ports": [
+          "${GHOSTDNS_INDEXER_HOST_PORT:-17811}:7811"
+        ],
+        "depends_on": {
+          "ghostdns-volume-init": {
+            "condition": "service_completed_successfully"
+          },
+          "ghost-registry": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "10001:10001",
+        "read_only": true,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": null,
+        "volumes": [
+          "ghostdns_indexer_data:/data"
+        ],
+        "environment": {
+          "PORT": 7811,
+          "STATE_DIR": "/data",
+          "RPC_REGISTRY_URL": "http://ghost-registry:8088/v1/endpoints",
+          "SYNC_INTERVAL_MS": "${GHOSTDNS_SYNC_INTERVAL_MS:-15000}",
+          "ADMIN_TOKEN": "${GHOSTDNS_ADMIN_TOKEN:-}"
+        }
+      },
+      "ghostdns-ai-policy": {
+        "image": "ghostl/ghostdns-ai-policy:local",
+        "build": {
+          "context": "./services/ghostdns-ai-policy"
+        },
+        "networks": null,
+        "ports": [
+          "${GHOSTDNS_POLICY_HOST_PORT:-17813}:7813"
+        ],
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "10001:10001",
+        "read_only": true,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": null,
+        "volumes": null,
+        "environment": {
+          "PORT": 7813,
+          "GHOSTDNS_POLICY_VERSION": "${GHOSTDNS_POLICY_VERSION:-v1}",
+          "GHOSTDNS_EMERGENCY_LOCK": "${GHOSTDNS_EMERGENCY_LOCK:-0}",
+          "GHOSTDNS_CONFIDENCE_FLOOR": "${GHOSTDNS_CONFIDENCE_FLOOR:-0.55}"
+        }
+      },
+      "ghostdns-resolver": {
+        "image": "ghostl/ghostdns-resolver:local",
+        "build": {
+          "context": "./services/ghostdns-resolver"
+        },
+        "networks": null,
+        "ports": [
+          "${GHOSTDNS_RESOLVER_HOST_PORT:-17812}:7812"
+        ],
+        "depends_on": {
+          "ghostdns-indexer": {
+            "condition": "service_healthy"
+          },
+          "ghostdns-ai-policy": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "10001:10001",
+        "read_only": true,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": null,
+        "volumes": null,
+        "environment": {
+          "PORT": 7812,
+          "GHOSTDNS_INDEXER_URL": "http://ghostdns-indexer:7811",
+          "GHOSTDNS_POLICY_URL": "http://ghostdns-ai-policy:7813",
+          "GHOSTDNS_POLICY_REQUIRED": "${GHOSTDNS_POLICY_REQUIRED:-1}"
+        }
+      },
+      "ghostdns-attestor": {
+        "image": "ghostl/ghostdns-attestor:local",
+        "build": {
+          "context": "./services/ghostdns-attestor"
+        },
+        "networks": null,
+        "ports": [
+          "${GHOSTDNS_ATTESTOR_HOST_PORT:-17814}:7814"
+        ],
+        "depends_on": {
+          "ghostdns-volume-init": {
+            "condition": "service_completed_successfully"
+          },
+          "ghostdns-ai-policy": {
+            "condition": "service_healthy"
+          }
+        },
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "10001:10001",
+        "read_only": true,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": null,
+        "volumes": [
+          "ghostdns_attestor_data:/data"
+        ],
+        "environment": {
+          "PORT": 7814,
+          "GHOSTDNS_POLICY_URL": "http://ghostdns-ai-policy:7813",
+          "EVIDENCE_DIR": "/data/evidence",
+          "ADMIN_TOKEN": "${GHOSTDNS_ADMIN_TOKEN:-}",
+          "ATTESTOR_SECRET": "${GHOSTDNS_ATTESTOR_SECRET:-ghostdns-dev-attestor}"
+        }
+      },
+      "ghostdns-volume-init": {
+        "image": "alpine:3.20@sha256:b0cb30c51c47cdfde647364301758b14c335dea2fddc9490d4f007d67ecb2538",
+        "build": null,
+        "networks": null,
+        "ports": null,
+        "depends_on": null,
+        "healthcheck": false,
+        "restart": "no",
+        "user": null,
+        "read_only": true,
+        "cap_drop": null,
+        "security_opt": null,
+        "privileged": false,
+        "logging": null,
+        "volumes": [
+          "ghostdns_indexer_data:/vol/indexer",
+          "ghostdns_attestor_data:/vol/attestor"
+        ],
+        "environment": null
+      },
+      "host-orchestrator-ai": {
+        "image": "ghostl/host-orchestrator-ai:local",
+        "build": {
+          "context": "./services/host-orchestrator-ai"
+        },
+        "networks": null,
+        "ports": [
+          "${HOST_ORCH_HOST_PORT:-17831}:7831"
+        ],
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "10001:10001",
+        "read_only": true,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": null,
+        "volumes": null,
+        "environment": {
+          "HOST_ORCH_PORT": 7831,
+          "CONTROL_PLANE_REQUIRE_SIGNATURE": "${CONTROL_PLANE_REQUIRE_SIGNATURE:-1}",
+          "CONTROL_PLANE_HMAC_SECRET": "${CONTROL_PLANE_HMAC_SECRET:-dev-control-plane-secret}",
+          "CONTROL_NONCE_TTL_MS": "${CONTROL_NONCE_TTL_MS:-300000}",
+          "HOST_ORCH_ALLOWED_VM_ROLES": "${HOST_ORCH_ALLOWED_VM_ROLES:-vm_protocol_ai}",
+          "HOST_ORCH_ALLOWED_HOST_ROLES": "${HOST_ORCH_ALLOWED_HOST_ROLES:-host_infra_ai}"
+        }
+      },
+      "vm-protocol-ai": {
+        "image": "ghostl/vm-protocol-ai:local",
+        "build": {
+          "context": "./services/vm-protocol-ai"
+        },
+        "networks": null,
+        "ports": [
+          "${VM_PROTOCOL_HOST_PORT:-17832}:7832"
+        ],
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "10001:10001",
+        "read_only": true,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": null,
+        "volumes": null,
+        "environment": {
+          "VM_PROTOCOL_PORT": 7832,
+          "CONTROL_PLANE_REQUIRE_SIGNATURE": "${CONTROL_PLANE_REQUIRE_SIGNATURE:-1}",
+          "CONTROL_PLANE_HMAC_SECRET": "${CONTROL_PLANE_HMAC_SECRET:-dev-control-plane-secret}",
+          "CONTROL_NONCE_TTL_MS": "${CONTROL_NONCE_TTL_MS:-300000}",
+          "VM_PROTOCOL_ALLOWED_HOST_ROLES": "${VM_PROTOCOL_ALLOWED_HOST_ROLES:-host_infra_ai}",
+          "VM_PROTOCOL_MANUAL_ONLY": "${VM_PROTOCOL_MANUAL_ONLY:-1}",
+          "VM_PROTOCOL_EMERGENCY_LOCK": "${VM_PROTOCOL_EMERGENCY_LOCK:-0}"
+        }
+      },
+      "ghost-mapper": {
+        "image": "ghostl/ghost-mapper:local",
+        "build": {
+          "context": "./services/ghost-mapper",
+          "args": {
+            "VCS_REF": "${VCS_REF:-unknown}",
+            "BUILD_DATE": "${BUILD_DATE:-unknown}"
+          }
+        },
+        "networks": [
+          "default",
+          "ghost_net",
+          "opstack_default",
+          "ghostchain"
+        ],
+        "ports": [
+          "${GHOST_MAPPER_HOST_PORT:-17780}:7780"
+        ],
+        "depends_on": null,
+        "healthcheck": true,
+        "restart": "unless-stopped",
+        "user": "10001:10001",
+        "read_only": true,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "privileged": false,
+        "logging": null,
+        "volumes": [
+          "./services/ghost-mapper/data:/data"
+        ],
+        "environment": {
+          "PORT": 7780,
+          "SERVICE_NAME": "ghost-mapper",
+          "MAPPER_CONFIG_PATH": "/data/mappings.json",
+          "MAPPER_PERSIST_ENABLED": "${GHOST_MAPPER_PERSIST_ENABLED:-true}",
+          "MAPPER_EXECUTION_ENABLED": "${GHOST_MAPPER_EXECUTION_ENABLED:-false}",
+          "MAPPER_ADMIN_TOKEN": "${GHOST_MAPPER_ADMIN_TOKEN:-}",
+          "MAPPER_BIND_ADDRESS": "${GHOST_MAPPER_BIND_ADDRESS:-0.0.0.0}",
+          "MAPPER_CONNECT_TIMEOUT_MS": "${GHOST_MAPPER_CONNECT_TIMEOUT_MS:-5000}",
+          "MAPPER_IDLE_TIMEOUT_MS": "${GHOST_MAPPER_IDLE_TIMEOUT_MS:-300000}",
+          "MAPPER_MAX_ACTIVE_MAPPINGS": "${GHOST_MAPPER_MAX_ACTIVE_MAPPINGS:-100}",
+          "MAPPER_ALLOW_LOW_PORTS": "${GHOST_MAPPER_ALLOW_LOW_PORTS:-false}",
+          "LOG_REQUESTS": "${GHOST_MAPPER_LOG_REQUESTS:-0}",
+          "LOG_CONNECTIONS": "${GHOST_MAPPER_LOG_CONNECTIONS:-0}"
+        }
+      }
+    }
+  }
+}

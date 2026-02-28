@@ -1,0 +1,210 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+STATE_DIR="${ROOT_DIR}/.ghostctl/state"
+SOVEREIGN_COMPOSE_FILE="${ROOT_DIR}/docker-compose.sovereign.yml"
+
+usage() {
+  cat <<'USAGE'
+Usage: tools/ghostctl <command> [args]
+
+Commands:
+  up <devnet|testnet|mainnet> [--proposal-id <id>]
+  down
+  status
+  logs [args...]
+  doctor
+  verify-routing
+  verify-governance --proposal-id <id>
+
+Promotion law:
+  devnet -> testnet -> mainnet
+USAGE
+}
+
+require_cmd() {
+  local cmd="$1"
+  command -v "$cmd" >/dev/null 2>&1 || {
+    echo "missing required command: $cmd" >&2
+    exit 2
+  }
+}
+
+docker_compose_available() {
+  command -v docker >/dev/null 2>&1
+}
+
+sovereign_up() {
+  if [[ ! -f "$SOVEREIGN_COMPOSE_FILE" ]]; then
+    return 0
+  fi
+  if ! docker_compose_available; then
+    echo "docker not found; skipping sovereign compose up" >&2
+    return 0
+  fi
+  docker compose -f "$SOVEREIGN_COMPOSE_FILE" up -d --build
+}
+
+sovereign_down() {
+  if [[ ! -f "$SOVEREIGN_COMPOSE_FILE" ]]; then
+    return 0
+  fi
+  if ! docker_compose_available; then
+    return 0
+  fi
+  docker compose -f "$SOVEREIGN_COMPOSE_FILE" down --remove-orphans || true
+}
+
+mark_stage() {
+  local stage="$1"
+  mkdir -p "$STATE_DIR"
+  date -u +"%Y-%m-%dT%H:%M:%SZ" > "${STATE_DIR}/${stage}.ok"
+}
+
+has_stage() {
+  local stage="$1"
+  [[ -f "${STATE_DIR}/${stage}.ok" ]]
+}
+
+ensure_promotion_path() {
+  local target="$1"
+  case "$target" in
+    devnet) ;;
+    testnet)
+      has_stage devnet || {
+        echo "promotion blocked: run 'tools/ghostctl up devnet' first" >&2
+        exit 3
+      }
+      ;;
+    mainnet)
+      has_stage devnet || {
+        echo "promotion blocked: run 'tools/ghostctl up devnet' first" >&2
+        exit 3
+      }
+      has_stage testnet || {
+        echo "promotion blocked: run 'tools/ghostctl up testnet' first" >&2
+        exit 3
+      }
+      ;;
+    *)
+      echo "invalid target: $target" >&2
+      usage
+      exit 2
+      ;;
+  esac
+}
+
+cmd_up() {
+  local target="${1:-}"
+  shift || true
+  if [[ -z "$target" ]]; then
+    echo "missing target environment" >&2
+    usage
+    exit 2
+  fi
+
+  local proposal_id=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --proposal-id)
+        proposal_id="${2:-}"
+        shift 2
+        ;;
+      *)
+        echo "unknown argument: $1" >&2
+        exit 2
+        ;;
+    esac
+  done
+
+  ensure_promotion_path "$target"
+
+  case "$target" in
+    devnet)
+      bash "$ROOT_DIR/ops/scripts/ghostctl" preflight
+      bash "$ROOT_DIR/ops/scripts/ghostctl" up
+      sovereign_up
+      bash "$ROOT_DIR/scripts/verify-routing.sh"
+      mark_stage devnet
+      ;;
+    testnet)
+      bash "$ROOT_DIR/ops/scripts/ghostctl" preflight --l1-doctor
+      sovereign_up
+      bash "$ROOT_DIR/scripts/verify-routing.sh"
+      mark_stage testnet
+      ;;
+    mainnet)
+      [[ -n "$proposal_id" ]] || {
+        echo "mainnet requires --proposal-id <id>" >&2
+        exit 2
+      }
+      bash "$ROOT_DIR/scripts/verify-routing.sh"
+      bash "$ROOT_DIR/scripts/verify-governance.sh" --proposal-id "$proposal_id"
+      bash "$ROOT_DIR/scripts/verify-release-gate.sh" --proposal-id "$proposal_id"
+      bash "$ROOT_DIR/scripts/security/secure-production-build.sh" --mode=production --secrets=vault
+      sovereign_up
+      mark_stage mainnet
+      ;;
+  esac
+}
+
+cmd_verify_governance() {
+  bash "$ROOT_DIR/scripts/verify-governance.sh" "$@"
+}
+
+cmd_verify_routing() {
+  bash "$ROOT_DIR/scripts/verify-routing.sh"
+}
+
+cmd_status() {
+  bash "$ROOT_DIR/ops/scripts/ghostctl" doctor || true
+  mkdir -p "$STATE_DIR"
+  echo "promotion_state_dir=$STATE_DIR"
+  ls -1 "$STATE_DIR" 2>/dev/null || true
+  if docker_compose_available && [[ -f "$SOVEREIGN_COMPOSE_FILE" ]]; then
+    docker compose -f "$SOVEREIGN_COMPOSE_FILE" ps || true
+  fi
+}
+
+cmd_logs() {
+  if docker_compose_available && [[ -f "$SOVEREIGN_COMPOSE_FILE" ]]; then
+    docker compose -f "$SOVEREIGN_COMPOSE_FILE" logs --tail=200 "$@" || true
+  else
+    bash "$ROOT_DIR/ops/scripts/ghostctl" doctor || true
+  fi
+}
+
+cmd_doctor() {
+  bash "$ROOT_DIR/ops/scripts/ghostctl" doctor
+  bash "$ROOT_DIR/scripts/verify-routing.sh"
+  node --experimental-strip-types "$ROOT_DIR/tools/ghostcontrol/supervisor.ts"
+}
+
+cmd_down() {
+  sovereign_down
+  bash "$ROOT_DIR/infra/scripts/down.sh"
+}
+
+main() {
+  require_cmd bash
+  local cmd="${1:-}"
+  shift || true
+  case "$cmd" in
+    up) cmd_up "$@" ;;
+    down) cmd_down "$@" ;;
+    status) cmd_status "$@" ;;
+    logs) cmd_logs "$@" ;;
+    doctor) cmd_doctor "$@" ;;
+    verify-routing) cmd_verify_routing "$@" ;;
+    verify-governance) cmd_verify_governance "$@" ;;
+    -h|--help|help|"") usage ;;
+    *)
+      echo "unknown command: $cmd" >&2
+      usage
+      exit 2
+      ;;
+  esac
+}
+
+main "$@"

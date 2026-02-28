@@ -10,10 +10,12 @@ x-security: &default-security
   security_opt:
     - no-new-privileges:true
 
+x-ghost-user: &ghost-user "10001:10001"
+
 services:
   op-challenger:
     image: ${OP_CHALLENGER_IMAGE:-local/op-challenger:${OPSTACK_IMAGE_TAG:-devnet}}
-    user: "1000:1000"
+    user: *ghost-user
     restart: unless-stopped
     logging: *default-logging
     depends_on:
@@ -63,7 +65,7 @@ services:
 
   l3-op-challenger:
     image: ${OP_CHALLENGER_IMAGE:-local/op-challenger:${OPSTACK_IMAGE_TAG:-devnet}}
-    user: "1000:1000"
+    user: *ghost-user
     restart: unless-stopped
     logging: *default-logging
     depends_on:

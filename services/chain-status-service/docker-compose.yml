@@ -2,7 +2,6 @@
 # role: chain-status-service
 # ports: 7612:7612
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   chain-status-service:
     container_name: ghost_chain-status-service

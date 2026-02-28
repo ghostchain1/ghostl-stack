@@ -318,6 +318,44 @@ app.use((req, res, next) => {
   next();
 });
 
+const headerAuthPolicy: Array<{ prefix: string; realm: 'users' | 'employees' | 'admins'; rolesAny?: string[] }> = [
+  { prefix: '/identity/user', realm: 'users' },
+  { prefix: '/identity/employee', realm: 'employees' },
+  { prefix: '/identity/admin', realm: 'admins' },
+  { prefix: '/governance/execute', realm: 'admins', rolesAny: ['governance_admin'] },
+  { prefix: '/governance', realm: 'admins' }
+];
+
+const policyForPath = (pathname: string) =>
+  headerAuthPolicy.find((entry) => pathname === entry.prefix || pathname.startsWith(`${entry.prefix}/`));
+
+app.use((req, res, next) => {
+  const policy = policyForPath(req.path);
+  if (!policy) {
+    next();
+    return;
+  }
+  const tokenRealm = String(req.header('x-ghost-realm') || '').trim();
+  const tokenSubject = String(req.header('x-ghost-subject') || '').trim();
+  const tokenRoles = String(req.header('x-ghost-roles') || '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  if (!tokenRealm || !tokenSubject) {
+    res.status(401).json({ error: 'missing_identity_headers', correlationId: req.correlationId });
+    return;
+  }
+  if (tokenRealm !== policy.realm) {
+    res.status(403).json({ error: 'realm_mismatch', expectedRealm: policy.realm, correlationId: req.correlationId });
+    return;
+  }
+  if (policy.rolesAny && policy.rolesAny.length > 0 && !policy.rolesAny.some((role) => tokenRoles.includes(role))) {
+    res.status(403).json({ error: 'missing_required_role', correlationId: req.correlationId });
+    return;
+  }
+  next();
+});
+
 app.use((req, res, next) => {
   if (req.session && req.session.expiresAt && req.session.expiresAt < Date.now()) {
     req.session.destroy(() => undefined);
@@ -729,6 +767,11 @@ const servicesBase = {
   feeModel: env.FEE_MODEL_SERVICE_URL,
   treasury: env.TREASURY_SERVICE_URL,
   payouts: env.PAYOUT_SERVICE_URL,
+  l3Revenue: env.L3_FEE_COLLECTOR_URL,
+  l2Revenue: env.L2_REVENUE_AGGREGATOR_URL,
+  treasuryEngine: env.TREASURY_ENGINE_URL,
+  rewardDistributor: env.REWARD_DISTRIBUTOR_URL,
+  hyperGovernor: env.HYPER_GHOST_GOVERNOR_URL,
   governance: env.GOVERNANCE_SERVICE_URL,
   validators: env.VALIDATOR_SERVICE_URL,
   devops: env.DEVOPS_SERVICE_URL,
@@ -752,6 +795,108 @@ const contractMetadata = {
 const CONTRACT_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 const BYTES32_REGEX = /^0x[a-fA-F0-9]{64}$/;
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const resolveRepoPath = (target: string) => (path.isAbsolute(target) ? target : path.join(repoRoot, target));
+const sha256Hex = (value: Buffer | string) => crypto.createHash('sha256').update(value).digest('hex');
+const safeReadJsonFile = <T>(filePath: string): T | null => {
+  try {
+    const raw = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+};
+
+const readMainnetReadiness = async () => {
+  const constitutionPath = resolveRepoPath(env.CONSTITUTION_DOC_PATH);
+  const manifestPath = resolveRepoPath(env.RELEASE_MANIFEST_PATH);
+  const signaturePath = resolveRepoPath(env.RELEASE_ATTESTATION_PATH);
+  const publicKeyPath = resolveRepoPath(env.RELEASE_ATTESTATION_PUBLIC_KEY_PATH);
+  const approvalPath = path.join(repoRoot, 'governance', 'proposals', env.GOVERNANCE_PROPOSAL_ID, 'approval.json');
+
+  const constitutionExists = fs.existsSync(constitutionPath);
+  const manifestExists = fs.existsSync(manifestPath);
+  const signatureExists = fs.existsSync(signaturePath);
+  const publicKeyExists = fs.existsSync(publicKeyPath);
+  const approval = safeReadJsonFile<Record<string, unknown>>(approvalPath);
+  const now = Date.now();
+
+  const constitutionHash = constitutionExists ? `sha256:${sha256Hex(fs.readFileSync(constitutionPath))}` : null;
+  const manifestHash = manifestExists ? `sha256:${sha256Hex(fs.readFileSync(manifestPath))}` : null;
+
+  let attestationVerified = false;
+  if (manifestExists && signatureExists && publicKeyExists) {
+    try {
+      const manifestBody = fs.readFileSync(manifestPath);
+      const signatureBody = fs.readFileSync(signaturePath);
+      const publicKeyBody = fs.readFileSync(publicKeyPath, 'utf8');
+      const verifier = crypto.createVerify('sha256');
+      verifier.update(manifestBody);
+      verifier.end();
+      attestationVerified = verifier.verify(publicKeyBody, signatureBody);
+    } catch {
+      attestationVerified = false;
+    }
+  }
+
+  let releaseGateAllowed = false;
+  let releaseGateError: string | null = null;
+  const releaseGateAddress = env.MAINNET_RELEASE_GATE_ADDRESS || '';
+  if (releaseGateAddress && CONTRACT_ADDRESS_REGEX.test(releaseGateAddress)) {
+    try {
+      const provider = new JsonRpcProvider(process.env.RPC_L1 || 'http://localhost:18545');
+      const iface = new Interface(['function isMainnetLaunchAllowed() view returns (bool)']);
+      const callData = iface.encodeFunctionData('isMainnetLaunchAllowed', []);
+      const raw = await provider.call({ to: releaseGateAddress, data: callData });
+      const decoded = iface.decodeFunctionResult('isMainnetLaunchAllowed', raw);
+      releaseGateAllowed = Boolean(decoded?.[0]);
+    } catch (error) {
+      releaseGateError = error instanceof Error ? error.message : 'release_gate_call_failed';
+    }
+  } else if (releaseGateAddress) {
+    releaseGateError = 'invalid_release_gate_address';
+  }
+
+  const timelockExpiresAt = typeof approval?.timelockExpiresAt === 'string' ? approval.timelockExpiresAt : null;
+  const timelockExpired = timelockExpiresAt ? Date.parse(timelockExpiresAt) <= now : false;
+
+  return {
+    ok: true,
+    constitution: {
+      path: constitutionPath,
+      exists: constitutionExists,
+      hash: constitutionHash
+    },
+    governance: {
+      proposalId: env.GOVERNANCE_PROPOSAL_ID,
+      approvalPath,
+      approvalExists: Boolean(approval),
+      quorumReached: approval?.quorumReached === true,
+      allowDeploy: approval?.allowDeploy === true,
+      approvedAt: typeof approval?.approvedAt === 'string' ? approval.approvedAt : null,
+      timelockExpiresAt,
+      timelockExpired
+    },
+    releaseManifest: {
+      path: manifestPath,
+      exists: manifestExists,
+      hash: manifestHash
+    },
+    attestation: {
+      signaturePath,
+      signatureExists,
+      publicKeyPath,
+      publicKeyExists,
+      verified: attestationVerified
+    },
+    onchain: {
+      rpcL1: process.env.RPC_L1 || 'http://localhost:18545',
+      mainnetLaunchGateAddress: env.MAINNET_LAUNCH_GATE_ADDRESS || null,
+      releaseGateAddress: env.MAINNET_RELEASE_GATE_ADDRESS || null,
+      releaseGateAllowed,
+      releaseGateError
+    }
+  };
+};
 const l1FinalityOracleReadInterface = new Interface([
   'function acceptedPolicyHash(bytes32) view returns (bool)',
   'event L1BlockFinalized(uint256 indexed blockNumber, bytes32 indexed blockHash, bytes32 indexed quorumCertHash, bytes32 aiPolicyHash, uint64 finalizedAt)'
@@ -3578,6 +3723,145 @@ app.get(['/v1/api/treasury/payouts', '/api/treasury/payouts'], requirePermission
     res.status(502).json({ error: err instanceof Error ? err.message : 'payout_fetch_failed' });
   }
 });
+
+app.get(['/v1/api/treasury/status', '/api/treasury/status'], requirePermission('treasury:read'), async (_req, res) => {
+  const data = await proxyJson<Record<string, unknown>>(`${servicesBase.treasuryEngine}/v1/treasury/status`, {
+    ok: false,
+    error: 'treasury_engine_unavailable'
+  }).catch(() => ({ ok: false, error: 'treasury_engine_unavailable' }));
+  res.json(data);
+});
+
+app.get(['/v1/api/revenue/l3', '/api/revenue/l3'], requirePermission('treasury:read'), async (_req, res) => {
+  const data = await proxyJson<Record<string, unknown>>(`${servicesBase.l3Revenue}/v1/revenue/l3`, {
+    ok: false,
+    error: 'l3_revenue_unavailable',
+    eventCount: 0,
+    totalWei: '0',
+    bySource: [],
+    recent: []
+  }).catch(() => ({ ok: false, error: 'l3_revenue_unavailable', eventCount: 0, totalWei: '0', bySource: [], recent: [] }));
+  res.json(data);
+});
+
+app.get(['/v1/api/revenue/l2', '/api/revenue/l2'], requirePermission('treasury:read'), async (_req, res) => {
+  const data = await proxyJson<Record<string, unknown>>(`${servicesBase.l2Revenue}/v1/revenue/l2`, {
+    ok: false,
+    error: 'l2_revenue_unavailable',
+    eventCount: 0,
+    totalWei: '0',
+    pendingCount: 0,
+    recentBatches: []
+  }).catch(() => ({ ok: false, error: 'l2_revenue_unavailable', eventCount: 0, totalWei: '0', pendingCount: 0, recentBatches: [] }));
+  res.json(data);
+});
+
+app.get(['/v1/api/allocation/history', '/api/allocation/history'], requirePermission('treasury:read'), async (_req, res) => {
+  const data = await proxyJson<{ ok?: boolean; allocations?: unknown[] }>(`${servicesBase.treasuryEngine}/v1/allocation/history`, {
+    ok: true,
+    allocations: []
+  }).catch(() => ({ ok: false, allocations: [] }));
+  res.json({ ok: data.ok !== false, allocations: data.allocations || [] });
+});
+
+app.get(['/v1/api/reward/cycles', '/api/reward/cycles'], requirePermission('treasury:read'), async (_req, res) => {
+  const data = await proxyJson<{ ok?: boolean; cycles?: unknown[] }>(`${servicesBase.rewardDistributor}/v1/reward/cycles`, {
+    ok: true,
+    cycles: []
+  }).catch(() => ({ ok: false, cycles: [] }));
+  res.json({ ok: data.ok !== false, cycles: data.cycles || [] });
+});
+
+app.get(['/v1/api/federation/status', '/api/federation/status'], requirePermission('treasury:read'), async (_req, res) => {
+  const data = await proxyJson<Record<string, unknown>>(`${servicesBase.treasuryEngine}/v1/treasury/federation`, {
+    ok: true,
+    membersActive: 0,
+    exposureByMember: [],
+    violationsTotal: 0
+  }).catch(() => ({ ok: false, membersActive: 0, exposureByMember: [], violationsTotal: 0 }));
+  res.json(data);
+});
+
+app.get(['/v1/api/solvency/latest', '/api/solvency/latest'], requirePermission('treasury:read'), async (_req, res) => {
+  const data = await proxyJson<Record<string, unknown>>(`${servicesBase.treasuryEngine}/v1/treasury/solvency/latest`, {
+    ok: true,
+    latest: null
+  }).catch(() => ({ ok: false, latest: null }));
+  res.json(data);
+});
+
+app.post(['/v1/api/solvency/snapshot', '/api/solvency/snapshot'], requirePermission('treasury:write'), async (req, res) => {
+  try {
+    const upstream = await fetch(`${servicesBase.treasuryEngine}/v1/treasury/solvency/snapshot`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        ...(req.header('x-admin-token') ? { 'x-admin-token': String(req.header('x-admin-token')) } : {})
+      },
+      body: JSON.stringify(req.body || {})
+    });
+    const body = await upstream.json().catch(() => ({}));
+    res.status(upstream.status).json(body);
+  } catch (error) {
+    res.status(502).json({ ok: false, error: error instanceof Error ? error.message : 'solvency_snapshot_unavailable' });
+  }
+});
+
+app.get(['/v1/api/mainnet/readiness', '/api/mainnet/readiness'], requirePermission('governance:read'), async (_req, res) => {
+  try {
+    const data = await readMainnetReadiness();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: error instanceof Error ? error.message : 'mainnet_readiness_failed'
+    });
+  }
+});
+
+app.get(['/v1/api/governor/proposals', '/api/governor/proposals'], requirePermission('governance:read'), async (_req, res) => {
+  const data = await proxyJson<{ ok?: boolean; proposals?: unknown[] }>(`${servicesBase.hyperGovernor}/proposals`, {
+    ok: true,
+    proposals: []
+  }).catch(() => ({ ok: false, proposals: [] }));
+  res.json({ ok: data.ok !== false, proposals: data.proposals || [] });
+});
+
+app.post(['/v1/api/governor/proposals/draft', '/api/governor/proposals/draft'], requirePermission('governance:write'), async (req, res) => {
+  try {
+    const upstream = await fetch(`${servicesBase.hyperGovernor}/proposals/draft`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        ...(req.header('x-admin-token') ? { 'x-admin-token': String(req.header('x-admin-token')) } : {})
+      },
+      body: JSON.stringify(req.body || {})
+    });
+    const body = await upstream.json().catch(() => ({}));
+    res.status(upstream.status).json(body);
+  } catch (error) {
+    res.status(502).json({ ok: false, error: error instanceof Error ? error.message : 'hyper_governor_unavailable' });
+  }
+});
+
+app.get(
+  ['/v1/api/governor/proposals/:id/evidence', '/api/governor/proposals/:id/evidence'],
+  requirePermission('governance:read'),
+  async (req, res) => {
+    const proposalId = String(req.params.id || '').trim();
+    if (!proposalId) {
+      res.status(400).json({ ok: false, error: 'proposal_id_required' });
+      return;
+    }
+    try {
+      const upstream = await fetch(`${servicesBase.hyperGovernor}/proposals/${proposalId}/evidence`);
+      const body = await upstream.json().catch(() => ({}));
+      res.status(upstream.status).json(body);
+    } catch (error) {
+      res.status(502).json({ ok: false, error: error instanceof Error ? error.message : 'hyper_governor_unavailable' });
+    }
+  }
+);
 
 app.get(['/v1/devops/releases', '/devops/releases'], requirePermission('devops:read'), async (_req, res) => {
   const data = await proxyJson<{ releases?: unknown[] }>(`${servicesBase.devops}/releases`, { releases: [] });

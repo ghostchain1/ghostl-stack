@@ -25,8 +25,20 @@ HG_ENV=devnet HG_PORT=7077 HG_DB_PATH=./.data/incident.db npm run dev
 - `POST /proposals/:id/attest`
 - `POST /proposals/:id/submit-governance`
 - `POST /execute/:proposalId/:fixId` (gated)
+- `GET /ghostdns/status`
+- `GET /ghostdns/metrics`
+- `POST /ghostdns/events`
+- `POST /ghostdns/reconcile`
+- `POST /ghostdns/safe-reload`
+- `POST /ghostdns/rollback-last-good`
+- `POST /ghostdns/detectors/run`
 
 ## Compose
 
 This repo wires the service into `infra/opstack/docker-compose.yml` on port `7077`.
+
+GhostDNS integration env vars:
+
+- `HG_GHOSTDNS_URL` (default `http://ghostdns-ai:8089`)
+- `HG_GHOSTDNS_SHARED_SECRET` (shared signing secret for prod mutations)
 

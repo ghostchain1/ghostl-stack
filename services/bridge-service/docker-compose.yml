@@ -2,7 +2,6 @@
 # role: bridge-service
 # ports: 7604:7604
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   bridge-service:
     container_name: ghost_bridge-service

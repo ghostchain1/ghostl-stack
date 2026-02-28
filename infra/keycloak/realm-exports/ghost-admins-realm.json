@@ -1,0 +1,67 @@
+{
+  "realm": "ghost-admins",
+  "enabled": true,
+  "displayName": "Ghost Admins",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "rememberMe": false,
+  "bruteForceProtected": true,
+  "failureFactor": 5,
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyDigits": 6,
+  "otpPolicyLookAheadWindow": 1,
+  "otpPolicyPeriod": 30,
+  "otpPolicyCodeReusable": false,
+  "requiredActions": [
+    {
+      "alias": "CONFIGURE_TOTP",
+      "name": "Configure OTP",
+      "providerId": "CONFIGURE_TOTP",
+      "enabled": true,
+      "defaultAction": true,
+      "priority": 10
+    }
+  ],
+  "roles": {
+    "realm": [
+      { "name": "admin", "description": "Admin portal access" },
+      { "name": "governance_admin", "description": "Create/execute governance proposals" },
+      { "name": "treasury_admin", "description": "Treasury controls" },
+      { "name": "compliance_admin", "description": "Compliance controls" },
+      { "name": "infra_admin", "description": "Infrastructure controls" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "ghost-web",
+      "name": "Ghost Web",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["https://app.ghostchain.cloud/api/auth/callback/keycloak"],
+      "webOrigins": ["https://app.ghostchain.cloud"]
+    },
+    {
+      "clientId": "ghost-e2e-cli",
+      "name": "Ghost E2E CLI",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "secret": "ghost-e2e-secret",
+      "attributes": {
+        "access.token.lifespan": "5"
+      }
+    }
+  ],
+  "attributes": {
+    "realm": "admins"
+  }
+}

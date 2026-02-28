@@ -2,7 +2,6 @@
 # role: mempool-service
 # ports: 7610:7610
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   mempool-service:
     container_name: ghost_mempool-service

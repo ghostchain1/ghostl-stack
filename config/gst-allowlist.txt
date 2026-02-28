@@ -12,3 +12,6 @@ ops/STACK_CANONICAL.yml
 evidence/phase0/compose-files.txt
 evidence/phase10/opstack-check-postflight.txt
 evidence/phase12/gate-l1-go-no-go.txt
+
+# Archived audit snapshots are immutable historical evidence and may include upstream token strings.
+.audit/snapshots/**

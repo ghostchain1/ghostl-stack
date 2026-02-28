@@ -13,6 +13,7 @@ Generated on: 2026-02-12
   - `launch-system/push-release-to-mainnet.sh`
 - Governance gate contract code present:
   - `contracts/src/governance/MainnetLaunchGate.sol`
+  - `contracts/src/governance/ReleaseGate.sol`
 - Release sealing produces:
   - `manifest.json`, `checksums.txt`
   - `governance/launch-hashes.json`, `governance/calldata.txt`
@@ -33,7 +34,9 @@ Generated on: 2026-02-12
 
 2) **On-chain gate deployment**
    - `MainnetLaunchGate` must be deployed on GhostChain L1 and its address must be set on MAINNET via `MAINNET_LAUNCH_GATE_ADDRESS`.
+   - `ReleaseGate` must be deployed on GhostChain L1 and its address must be set on MAINNET via `MAINNET_RELEASE_GATE_ADDRESS`.
    - A governance/timelock path must exist to call `authorizeMainnetLaunch(...)`.
+   - Governance must approve constitution hash + release manifest hash + proposal hash + attestation hash in `ReleaseGate`.
 
 3) **Image digest locking**
    - `images.lock` currently contains a placeholder and should be populated with immutable digests (or an image distribution mechanism) before production.
@@ -41,7 +44,7 @@ Generated on: 2026-02-12
 ## Next Steps (Recommended Order)
 
 1) Establish a management interface for TESTNET/MAINNET VMs (guest agent or dedicated NIC).
-2) Deploy `MainnetLaunchGate` + bind it behind your timelock/governance executor.
+2) Deploy `MainnetLaunchGate` + `ReleaseGate` and bind them behind your timelock/governance executor.
 3) Implement image distribution:
    - registry with digest pinning, or
    - `docker save` artifacts shipped with the release

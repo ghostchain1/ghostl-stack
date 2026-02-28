@@ -1,0 +1,37 @@
+[
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "description": "l3 op-node parent default is L2 geth",
+    "ok": false
+  },
+  {
+    "file": "infra/opstack/docker-compose.l3.yml",
+    "description": "l3 batcher/proposer parent default via op-gate",
+    "ok": false
+  },
+  {
+    "file": "infra/opstack/docker-compose.challengers.yml",
+    "description": "l3 challenger parent default is L2 geth",
+    "ok": false
+  },
+  {
+    "file": "infra/opstack/config/rollup.json",
+    "description": "l2 rollup parent chain is L1 14000101",
+    "ok": true
+  },
+  {
+    "file": "infra/opstack/config/rollup.json",
+    "description": "l2 chain id 901",
+    "ok": true
+  },
+  {
+    "file": "infra/opstack/l3/ghostl3/config/rollup.json",
+    "description": "l3 parent chain is L2 901",
+    "ok": true
+  },
+  {
+    "file": "infra/opstack/l3/ghostl3/config/rollup.json",
+    "description": "l3 chain id 903",
+    "ok": true
+  }
+]

@@ -2,7 +2,6 @@
 # role: snapshot-service
 # ports: 7624:7624
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   snapshot-service:
     container_name: ghost_snapshot-service

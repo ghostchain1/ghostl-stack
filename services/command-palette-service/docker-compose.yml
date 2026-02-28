@@ -2,7 +2,6 @@
 # role: command-palette-service
 # ports: 7642:7642
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   command-palette-service:
     container_name: ghost_command-palette-service

@@ -1,0 +1,34 @@
+version: 1
+rules:
+  - id: allow-l3-to-l2
+    from: l3
+    to: l2
+    action: allow
+  - id: deny-l3-to-l1
+    from: l3
+    to: l1
+    action: deny
+  - id: deny-l3-to-external
+    from: l3
+    to: external
+    action: deny
+  - id: allow-l2-to-l1
+    from: l2
+    to: l1
+    action: allow
+  - id: deny-l2-to-external
+    from: l2
+    to: external
+    action: deny
+  - id: allow-l1-to-external
+    from: l1
+    to: external
+    action: allow
+
+destructive_actions:
+  require_governance_approval: true
+  actions:
+    - delete_network
+    - change_subnet
+    - expose_wan
+    - mainnet_provision

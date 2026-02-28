@@ -12,6 +12,15 @@ on:
       - 'docs/**'
       - '.github/**/*.md'
   workflow_dispatch:
+    inputs:
+      run_ghostdns_live:
+        description: 'Run optional GhostDNS live smoke (docker compose up + upsert/resolve/attest)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
   schedule:
     - cron: '0 4 * * 1'
 
@@ -78,6 +87,30 @@ jobs:
               || true ) \
             | xargs -r shellcheck -S error
 
+  routing-governance-gates:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Verify routing law
+        run: bash scripts/verify-routing.sh
+
+      - name: Verify governance template integrity
+        run: bash scripts/verify-governance.sh --proposal-id EXAMPLE-0001
+
+      - name: Compose hardening audit
+        run: bash scripts/security/compose-hardening-audit.sh
+
+      - name: Compose bundles validation
+        run: bash scripts/validate/compose-bundles.sh
+
   ghost-bots-python:
     needs: [rpc-namespace]
     runs-on: ubuntu-latest
@@ -125,11 +158,29 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      - name: Dependency security gates
+        run: npm run security:deps
+
       - name: Lint
         run: npm run lint
 
       - name: Build
         run: npm run build
+
+      - name: Web realm-login smoke
+        run: npm run smoke:web:realm-login
+
+      - name: Upload dependency gate artifacts
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: dependency-gate-artifacts
+          path: |
+            artifacts/deprecations.json
+            artifacts/dependency-audit.json
+            artifacts/dependency-outdated.json
+            artifacts/dependency-exceptions-eval.json
+          if-no-files-found: warn
 
   ghostload-quality:
     needs: [rpc-namespace]
@@ -168,6 +219,254 @@ jobs:
         run: |
           node tools/ghostload-sim/src/cli.js --scenario=l1-fee-spike --out=/tmp/ghostload-l1-fee-spike.json
           node tools/ghostload-sim/src/cli.js --scenario=spam-attack --out=/tmp/ghostload-spam-attack.json
+
+  ghostdns-smoke:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: "22.22.0"
+
+      - name: GhostDNS smoke gate
+        run: |
+          bash scripts/smoke/ghostdns.sh
+
+  kong-realm-auth-smoke:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Skip Kong realm auth smoke on pull requests
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "Kong realm auth smoke runs outside pull_request events; marking successful no-op."
+
+      - name: Checkout
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        if: github.event_name != 'pull_request'
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: "22.22.0"
+
+      - name: Prepare Kong smoke env
+        if: github.event_name != 'pull_request'
+        run: |
+          cat > /tmp/kong-smoke.env <<'EOF'
+          NEXTAUTH_SECRET=ci_nextauth_secret
+          KEYCLOAK_BASE_URL=https://auth.ghostchain.cloud
+          KEYCLOAK_PUBLIC_BASE_URL=https://127.0.0.1
+          KEYCLOAK_PUBLIC_HOST=auth.ghostchain.cloud
+          KC_CLIENT_SECRET=ci_keycloak_client_secret
+          KC_DB_PASSWORD=ci_keycloak_db_password
+          KC_ADMIN_USER=admin
+          KC_ADMIN_PASSWORD=ci_keycloak_admin_password
+          KONG_E2E_CLIENT_ID=ghost-e2e-cli
+          KONG_E2E_CLIENT_SECRET=ghost-e2e-secret
+          KONG_OIDC_USERS_ISSUER=https://auth.ghostchain.cloud/realms/ghost-users
+          KONG_OIDC_EMPLOYEES_ISSUER=https://auth.ghostchain.cloud/realms/ghost-employees
+          KONG_OIDC_ADMINS_ISSUER=https://auth.ghostchain.cloud/realms/ghost-admins
+          IDENTITY_DB_URL=postgres://user:pass@db:5432/identity
+          GOV_DB_URL=postgres://user:pass@db:5432/governance
+          GHOSTWALLET_MASTER_KEY=0000000000000000000000000000000000000000000000000000000000000001
+          EOF
+
+      - name: Start Kong edge stack
+        if: github.event_name != 'pull_request'
+        run: |
+          docker compose -f infra/docker/docker-compose.prod.yml --env-file /tmp/kong-smoke.env up -d --force-recreate kc-postgres keycloak ghost-jwks-guard traefik kong
+
+      - name: Wait for Kong health
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          CID="$(docker compose -f infra/docker/docker-compose.prod.yml --env-file /tmp/kong-smoke.env ps -q kong)"
+          if [ -z "$CID" ]; then
+            echo "Kong container ID not found"
+            exit 1
+          fi
+
+          for _ in $(seq 1 90); do
+            STATUS="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$CID")"
+            if [ "$STATUS" = "healthy" ] || [ "$STATUS" = "running" ]; then
+              echo "Kong status: $STATUS"
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "Kong failed to become healthy"
+          docker logs "$CID" || true
+          exit 1
+
+      - name: Wait for Keycloak realms
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          for realm in ghost-users ghost-employees ghost-admins; do
+            for _ in $(seq 1 90); do
+              code="$(curl -k -s -o /dev/null -w '%{http_code}' -H 'Host: auth.ghostchain.cloud' 'https://127.0.0.1/realms/'\"$realm\"'/.well-known/openid-configuration' || true)"
+              if [ "$code" = "200" ]; then
+                break
+              fi
+              sleep 1
+            done
+          done
+
+      - name: Run Kong realm auth smoke
+        if: github.event_name != 'pull_request'
+        run: |
+          bash scripts/smoke/kong-realm-auth.sh /tmp/kong-smoke.env
+
+      - name: Dump Kong stack logs on failure
+        if: github.event_name != 'pull_request' && failure()
+        run: |
+          docker compose -f infra/docker/docker-compose.prod.yml --env-file /tmp/kong-smoke.env ps || true
+          docker compose -f infra/docker/docker-compose.prod.yml --env-file /tmp/kong-smoke.env logs --no-color kong traefik keycloak ghost-jwks-guard || true
+
+      - name: Stop Kong edge stack
+        if: github.event_name != 'pull_request' && always()
+        run: |
+          docker compose -f infra/docker/docker-compose.prod.yml --env-file /tmp/kong-smoke.env down -v
+
+  e2e-smoke:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: "22.22.0"
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Prepare e2e env
+        run: |
+          cat > /tmp/e2e-smoke.env <<'EOF'
+          NEXTAUTH_SECRET=ci_nextauth_secret
+          KEYCLOAK_BASE_URL=https://auth.ghostchain.cloud
+          KC_CLIENT_SECRET=ci_keycloak_client_secret
+          KC_DB_PASSWORD=ci_keycloak_db_password
+          KC_ADMIN_USER=admin
+          KC_ADMIN_PASSWORD=ci_keycloak_admin_password
+          KONG_E2E_CLIENT_ID=ghost-e2e-cli
+          KONG_E2E_CLIENT_SECRET=ghost-e2e-secret
+          KONG_OIDC_USERS_ISSUER=https://auth.ghostchain.cloud/realms/ghost-users
+          KONG_OIDC_EMPLOYEES_ISSUER=https://auth.ghostchain.cloud/realms/ghost-employees
+          KONG_OIDC_ADMINS_ISSUER=https://auth.ghostchain.cloud/realms/ghost-admins
+          IDENTITY_DB_URL=postgres://user:pass@db:5432/identity
+          GOV_DB_URL=postgres://user:pass@db:5432/governance
+          GHOSTWALLET_MASTER_KEY=0000000000000000000000000000000000000000000000000000000000000001
+          EOF
+
+      - name: Validate e2e compose config
+        run: |
+          docker compose -f infra/docker/docker-compose.e2e.yml --env-file /tmp/e2e-smoke.env config
+
+      - name: Run e2e smoke
+        run: |
+          npm run e2e:smoke -- /tmp/e2e-smoke.env
+
+      - name: Upload e2e artifacts
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: e2e-smoke-artifacts
+          path: |
+            artifacts/e2e
+            artifacts/gateway
+          if-no-files-found: warn
+
+  ghostdns-live-smoke:
+    needs: [ghostdns-smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Skip when live smoke is not requested
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.run_ghostdns_live == 'true') }}
+        run: |
+          echo "GhostDNS live smoke only runs on workflow_dispatch with run_ghostdns_live=true."
+
+      - name: Checkout
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_ghostdns_live == 'true' }}
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_ghostdns_live == 'true' }}
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: "22.22.0"
+
+      - name: Start GhostDNS profile
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_ghostdns_live == 'true' }}
+        run: |
+          docker compose --env-file services/stack.env -f docker-compose.autonomy.yml --profile ghostdns up -d
+
+      - name: Run GhostDNS live smoke
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_ghostdns_live == 'true' }}
+        env:
+          GHOSTDNS_SMOKE_LIVE: "1"
+        run: |
+          bash scripts/smoke/ghostdns.sh
+
+      - name: Collect GhostDNS live artifacts
+        if: ${{ always() && github.event_name == 'workflow_dispatch' && github.event.inputs.run_ghostdns_live == 'true' }}
+        run: |
+          set -euo pipefail
+          OUT_DIR="/tmp/ghostdns-live-artifacts"
+          mkdir -p "$OUT_DIR"
+
+          docker compose --env-file services/stack.env -f docker-compose.autonomy.yml --profile ghostdns ps > "$OUT_DIR/compose-ps.txt" || true
+          docker compose --env-file services/stack.env -f docker-compose.autonomy.yml --profile ghostdns logs --no-color > "$OUT_DIR/compose-logs.txt" || true
+
+          ATT_CID="$(docker compose --env-file services/stack.env -f docker-compose.autonomy.yml --profile ghostdns ps -q ghostdns-attestor || true)"
+          if [ -n "$ATT_CID" ]; then
+            mkdir -p "$OUT_DIR/attestor-evidence"
+            docker cp "$ATT_CID:/data/evidence/." "$OUT_DIR/attestor-evidence" || true
+          fi
+
+      - name: Upload GhostDNS live artifacts
+        if: ${{ always() && github.event_name == 'workflow_dispatch' && github.event.inputs.run_ghostdns_live == 'true' }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: ghostdns-live-artifacts
+          path: /tmp/ghostdns-live-artifacts
+          if-no-files-found: warn
+
+      - name: Stop GhostDNS profile
+        if: ${{ always() && github.event_name == 'workflow_dispatch' && github.event.inputs.run_ghostdns_live == 'true' }}
+        run: |
+          docker compose --env-file services/stack.env -f docker-compose.autonomy.yml --profile ghostdns down -v
 
   app-runtime-release-gate:
     needs: [rpc-namespace]
@@ -342,6 +641,76 @@ jobs:
         working-directory: contracts
         run: npm run test:cascading-finality:ci
 
+  sovereign-engine:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: "22.22.0"
+          cache: npm
+
+      - name: Install root deps
+        run: npm ci
+
+      - name: Install sovereign service deps
+        run: |
+          npm --prefix services/l3-fee-collector ci
+          npm --prefix services/l2-revenue-aggregator ci
+          npm --prefix services/treasury-engine ci
+          npm --prefix services/reward-distributor ci
+          npm --prefix services/hyper-ghost-governor ci
+
+      - name: Install contracts deps
+        working-directory: contracts
+        run: npm ci --legacy-peer-deps
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@8789b3e21e6c11b2697f5eb56eddae542f746c10 # v1
+        with:
+          version: stable
+
+      - name: Sovereign tests
+        run: npm run sovereign:test
+
+      - name: Sovereign gas report
+        run: npm --prefix contracts run gas:sovereign
+
+      - name: Validate sovereign compose
+        run: docker compose -f docker-compose.sovereign.yml config
+
+      - name: Validate routing + governance gates
+        run: |
+          bash scripts/verify-routing.sh
+          bash scripts/verify-governance.sh --proposal-id EXAMPLE-0001
+
+      - name: Build and verify constitutional release artifacts
+        run: |
+          bash scripts/release/build-release-manifest.sh
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /tmp/release-attestation.key >/dev/null 2>&1
+          RELEASE_ATTESTATION_PRIVATE_KEY_FILE=/tmp/release-attestation.key bash scripts/release/sign-release-manifest.sh
+          bash scripts/release/verify-release-attestation.sh
+          node --experimental-strip-types tools/governance/create-constitution-proposal.ts \
+            --proposal-id EXAMPLE-0001 \
+            --release-id ci-release \
+            --release-gate 0x0000000000000000000000000000000000000001 \
+            --manifest artifacts/release/release_manifest.json \
+            --constitution docs/constitution/GhostChain-Constitution.md \
+            --signature artifacts/release/release_manifest.sig \
+            --out artifacts/release/constitution-proposal-ci.json
+
+      - name: Generate sovereign simulation report
+        run: node scripts/simulations/sovereign-economy.mjs docs/sovereign-economy-simulation.md
+
   repo-security:
     needs: [rpc-namespace]
     runs-on: ubuntu-latest
@@ -375,6 +744,28 @@ jobs:
             --skip-dirs node_modules,contracts/node_modules,dist,contracts/dist,contracts/artifacts,contracts/cache,contracts/.hardhat-cache,contracts/typechain-types,contracts/proposals \
             --skip-files ops/security/trivy-fs.json,contracts/reports/formal/scribble/scribble.json,contracts/artifacts/build-info/*.json,infra/opstack/op-geth/signer/fourbyte/4byte.json \
             .
+
+      - name: Econ secret gate
+        env:
+          SKIP_GITLEAKS: "1"
+        run: bash scripts/econ/no-secrets-scan.sh
+
+      - name: Digest refresh report (non-blocking)
+        run: bash scripts/security/digest-refresh-report.sh
+
+      - name: Digest rollforward candidates (stale-only)
+        run: bash scripts/security/digest-rollforward-candidates.sh
+
+      - name: Upload digest refresh report
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: digest-refresh-report
+          path: |
+            artifacts/security/digest-refresh-report.md
+            artifacts/security/digest-refresh-report.json
+            artifacts/security/digest-rollforward-candidates.md
+          if-no-files-found: warn
 
   ghost-helper:
     needs: [repo-security]

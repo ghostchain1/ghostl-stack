@@ -2,7 +2,6 @@
 # role: ghost-rollup-proposer
 # ports: 7272:7272
 # volumes: ./data:/state, ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   ghost-rollup-proposer:
     container_name: ghost_ghost-rollup-proposer

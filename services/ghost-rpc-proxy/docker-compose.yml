@@ -2,7 +2,6 @@
 # role: ghost-rpc-proxy
 # ports: 8546:8546
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   ghost-rpc-proxy:
     container_name: ghost_ghost-rpc-proxy

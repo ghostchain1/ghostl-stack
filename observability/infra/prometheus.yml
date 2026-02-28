@@ -100,3 +100,28 @@ scrape_configs:
     metrics_path: /metrics
     static_configs:
       - targets: ["host.docker.internal:7690"]
+
+  - job_name: l3-fee-collector
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["l3-fee-collector:7681"]
+
+  - job_name: l2-revenue-aggregator
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["l2-revenue-aggregator:7682"]
+
+  - job_name: treasury-engine
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["treasury-engine:7683"]
+
+  - job_name: reward-distributor
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["reward-distributor:7684"]
+
+  - job_name: hyper-ghost-governor
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["hyper-ghost-governor:7685"]

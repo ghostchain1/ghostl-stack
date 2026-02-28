@@ -1,0 +1,66 @@
+services:
+  treasury-engine:
+    container_name: ghost_treasury-engine
+    image: ghostl/treasury-engine:local
+    build:
+      context: ./services/treasury-engine
+    environment:
+      PORT: 7683
+      HOST: 0.0.0.0
+      SERVICE_LAYER: L1
+      L1_CHAIN_ID: ${L1_CHAIN_ID:-14000101}
+      L2_CHAIN_ID: ${L2_CHAIN_ID:-901}
+      DB_PATH: /data/treasury-engine.sqlite
+      PROOF_DIR: /data/proofs
+      SOLVENCY_ARTIFACT_DIR: /artifacts/solvency
+      SOLVENCY_ARTIFACT_SIGNING_KEY: ${SOLVENCY_ARTIFACT_SIGNING_KEY:-}
+      GOVERNANCE_ROOT: /governance/proposals
+      STABLE_ASSET_RATIO: ${TREASURY_STABLE_ASSET_RATIO:-65}
+      YIELD_RATIO: ${TREASURY_YIELD_RATIO:-35}
+      RISK_CAP_BPS: ${TREASURY_RISK_CAP_BPS:-7200}
+      ROUTE_TIMEOUT_MS: 5000
+      TREASURY_ADMIN_TOKEN: ${TREASURY_ENGINE_ADMIN_TOKEN:-}
+      YIELD_ADAPTERS_JSON: ${YIELD_ADAPTERS_JSON:-[]}
+      FEDERATION_POLICY_PATH: /governance/federation/policy.json
+    user: "10001:10001"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - ./data:/data
+      - ../../artifacts:/artifacts
+      - ../../governance:/governance:ro
+    ports:
+      - "127.0.0.1:7683:7683"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7683/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.50"
+          memory: 1G
+    networks:
+      - internal-services
+      - chains
+      - observability
+
+networks:
+  internal-services:
+    external: true
+  chains:
+    external: true
+  observability:
+    external: true

@@ -2,9 +2,21 @@ x-host-gateway: &host-gateway
   extra_hosts:
     - "host.docker.internal:host-gateway"
 
+x-ghost-user: &ghost-user "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
+
+x-runtime-hardening: &runtime-hardening
+  user: *ghost-user
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
+x-dev-service-defaults: &dev-service-defaults
+  <<: [*host-gateway, *runtime-hardening]
+
 services:
   ghostl-api:
-    <<: *host-gateway
+    <<: *dev-service-defaults
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -41,7 +53,7 @@ services:
       retries: 10
 
   ghostl-web:
-    <<: *host-gateway
+    <<: *dev-service-defaults
     build:
       context: .
       dockerfile: apps/web/Dockerfile

@@ -2,7 +2,6 @@
 # role: anomaly-detection-service
 # ports: 7616:7616
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   anomaly-detection-service:
     container_name: ghost_anomaly-detection-service

@@ -1,0 +1,2 @@
+# Required in production mode to authorize DNS zone mutation.
+# Keep this file present only during approved governance windows.

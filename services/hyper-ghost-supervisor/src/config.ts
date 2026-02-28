@@ -33,7 +33,10 @@ const EnvSchema = z.object({
 
   HG_PROBE_URLS: z.string().optional(),
   HG_PROBE_TIMEOUT_MS: z.coerce.number().int().positive().default(3500),
-  HG_PROBE_INTERVAL_MS: z.coerce.number().int().positive().default(15000)
+  HG_PROBE_INTERVAL_MS: z.coerce.number().int().positive().default(15000),
+
+  HG_GHOSTDNS_URL: z.string().default('http://ghostdns-ai:8089'),
+  HG_GHOSTDNS_SHARED_SECRET: z.string().optional()
 });
 
 export type HgConfig = {
@@ -49,6 +52,7 @@ export type HgConfig = {
   attestorPrivateKey?: string;
   rpc: { l1?: string; l2?: string; l3?: string };
   probes: { urls: string[]; timeoutMs: number; intervalMs: number };
+  ghostdns: { url: string; sharedSecret?: string };
 };
 
 const normalizeEnv = (raw?: string): HgEnv => {
@@ -79,6 +83,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): HgConfig {
     approvalToken: parsed.HGOP_APPROVAL_TOKEN,
     attestorPrivateKey: parsed.HG_ATTESTOR_PRIVATE_KEY,
     rpc: { l1: parsed.L1_RPC_URL, l2: parsed.L2_RPC_URL, l3: parsed.L3_RPC_URL },
-    probes: { urls, timeoutMs: parsed.HG_PROBE_TIMEOUT_MS, intervalMs: parsed.HG_PROBE_INTERVAL_MS }
+    probes: { urls, timeoutMs: parsed.HG_PROBE_TIMEOUT_MS, intervalMs: parsed.HG_PROBE_INTERVAL_MS },
+    ghostdns: {
+      url: parsed.HG_GHOSTDNS_URL,
+      sharedSecret: parsed.HG_GHOSTDNS_SHARED_SECRET
+    }
   };
 }

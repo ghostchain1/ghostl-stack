@@ -26,17 +26,17 @@ services:
           bootnode -genkey /config/boot.key
         fi
         BOOT_ID="$(bootnode --nodekey /config/boot.key --writeaddress)"
-        echo "enode://$${BOOT_ID}@172.28.0.21:30301" > /config/bootnode-enode.txt
+        echo "enode://$${BOOT_ID}@${L1_GHOSTCHAIN_BOOTNODE_IP:-172.28.0.21}:30301" > /config/bootnode-enode.txt
         exec bootnode --nodekey /config/boot.key --addr :30301
     env_file:
-      - ./.env
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/.env
     volumes:
-      - ./data/bootnode:/config
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/data/bootnode:/config
     ports:
       - "${L1_BOOTNODE_PORT:-30301}:30301/udp"
     networks:
       ghostchain:
-        ipv4_address: 172.28.0.21
+        ipv4_address: ${L1_GHOSTCHAIN_BOOTNODE_IP:-172.28.0.21}
     <<: *default-security
     mem_limit: 256m
     cpus: "0.5"
@@ -50,12 +50,12 @@ services:
       - ghostchain-bootnode
     entrypoint: ["/bin/sh", "/config/run-node.sh"]
     env_file:
-      - ./.env
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/.env
     volumes:
-      - ./data/node1:/data
-      - ./geth:/config:ro
-      - ./data/bootnode:/run/bootnode:ro
-      - ./secrets:/secrets:ro
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/data/node1:/data
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/geth:/config:ro
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/data/bootnode:/run/bootnode:ro
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/secrets:/secrets:ro
     ports:
       - "${L1_RPC_WS_PORT:-18546}:8546"
       - "${L1_RPC_AUTH_PORT:-18552}:8551"
@@ -89,7 +89,7 @@ services:
       start_period: 25s
     networks:
       ghostchain:
-        ipv4_address: 172.28.0.22
+        ipv4_address: ${L1_GHOSTCHAIN_NODE1_IP:-172.28.0.22}
     <<: *default-security
     mem_limit: 2g
     cpus: "1.5"
@@ -104,12 +104,12 @@ services:
       - ghostchain-bootnode
     entrypoint: ["/bin/sh", "/config/run-node.sh"]
     env_file:
-      - ./.env
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/.env
     volumes:
-      - ./data/node2:/data
-      - ./geth:/config:ro
-      - ./data/bootnode:/run/bootnode:ro
-      - ./secrets:/secrets:ro
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/data/node2:/data
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/geth:/config:ro
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/data/bootnode:/run/bootnode:ro
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/secrets:/secrets:ro
     environment:
       - CHAIN_ID=${L1_CHAIN_ID:-14000101}
       - SIGNER_ADDRESS=0x70997970c51812dc3a010c7d01b50e0d17dc79c8
@@ -128,7 +128,7 @@ services:
       - AUTHRPC_VHOSTS=${L1_AUTHRPC_VHOSTS:-localhost,127.0.0.1}
     networks:
       ghostchain:
-        ipv4_address: 172.28.0.23
+        ipv4_address: ${L1_GHOSTCHAIN_NODE2_IP:-172.28.0.23}
     <<: *default-security
     mem_limit: 2g
     cpus: "1.5"
@@ -143,7 +143,7 @@ services:
     depends_on:
       - ghostchain-node1
     env_file:
-      - ./.env
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/.env
     environment:
       - PORT=8545
       - UPSTREAM_URL=http://ghostchain-node1:8545
@@ -154,13 +154,13 @@ services:
       - RPC_RATE_LIMIT_PER_MINUTE=${L1_RPC_RATE_LIMIT_PER_MINUTE:-120}
       - RPC_RATE_LIMIT_BURST=${L1_RPC_RATE_LIMIT_BURST:-40}
       - RPC_RATE_WINDOW_MS=${L1_RPC_RATE_WINDOW_MS:-60000}
-      - RPC_RATE_LIMIT_ALLOWLIST=${L1_RPC_RATE_LIMIT_ALLOWLIST:-127.0.0.1,::1,172.28.0.1}
+      - RPC_RATE_LIMIT_ALLOWLIST=${L1_RPC_RATE_LIMIT_ALLOWLIST:-127.0.0.1,::1,${L1_GHOSTCHAIN_GATEWAY_IP:-172.28.0.1}}
       - RPC_CORS_ORIGINS=${L1_RPC_CORS_ORIGINS:-http://localhost,http://127.0.0.1}
     ports:
       - "${L1_RPC_HTTP_PORT:-18545}:8545"
     networks:
       ghostchain:
-        ipv4_address: 172.28.0.30
+        ipv4_address: ${L1_GHOSTCHAIN_RPC_PROXY_IP:-172.28.0.30}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8545/health >/dev/null"]
       interval: 10s
@@ -197,12 +197,12 @@ services:
       API_ONLY: "true"
       LOG_LEVEL: warn
     volumes:
-      - ./scripts/ghostscout-entrypoint.sh:/config/ghostscout-entrypoint.sh:ro
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/scripts/ghostscout-entrypoint.sh:/config/ghostscout-entrypoint.sh:ro
     ports:
       - "18644:4000"
     networks:
       ghostchain:
-        ipv4_address: 172.28.0.31
+        ipv4_address: ${L1_GHOSTCHAIN_GHOSTSCOUT_IP:-172.28.0.31}
     <<: *default-security
     mem_limit: 2g
     cpus: "1.5"
@@ -212,4 +212,4 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.28.0.0/16
+        - subnet: ${L1_GHOSTCHAIN_SUBNET:-172.28.0.0/16}

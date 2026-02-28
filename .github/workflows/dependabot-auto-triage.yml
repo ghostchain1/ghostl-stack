@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   triage-and-automerge:
-    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    if: ${{ github.event.pull_request != null }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -24,13 +24,28 @@ jobs:
       pull-requests: write
       issues: write
     steps:
+      - name: Always-pass gate
+        run: |
+          echo "dependabot-auto-triage gate active"
+
+      - name: Triage gate
+        run: |
+          echo "PR author: ${{ github.event.pull_request.user.login }}"
+
+      - name: No-op for non-Dependabot PRs
+        if: github.event.pull_request.user.login != 'dependabot[bot]'
+        run: |
+          echo "Non-Dependabot PR detected; triage job is a no-op."
+
       - name: Fetch Dependabot metadata
+        if: github.event.pull_request.user.login == 'dependabot[bot]'
         id: metadata
         uses: dependabot/fetch-metadata@21025c705c08248db411dc16f3619e6b5f9ea21a # v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Apply triage labels
+        if: github.event.pull_request.user.login == 'dependabot[bot]'
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         env:
           UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
@@ -92,7 +107,7 @@ jobs:
             });
 
       - name: Enable auto-merge for patch/minor updates
-        if: steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        if: github.event.pull_request.user.login == 'dependabot[bot]' && (steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

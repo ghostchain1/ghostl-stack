@@ -2,7 +2,6 @@
 # role: pil-postgres
 # ports: 5434:5432
 # volumes: ./data:/var/lib/postgresql/data, ./data:/data, ./healthcheck.sh:/healthcheck.sh:ro
-version: '3.9'
 services:
   pil-postgres:
     container_name: ghost_pil-postgres

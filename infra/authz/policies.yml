@@ -1,0 +1,47 @@
+version: 1
+defaults:
+  require_bearer: true
+routes:
+  - id: identity-public
+    path_prefix: /identity/public
+    allow_anonymous: true
+
+  - id: identity-user
+    path_prefix: /identity/user
+    realm: users
+    roles_any:
+      - user
+      - default-roles-ghost-users
+
+  - id: identity-employee
+    path_prefix: /identity/employee
+    realm: employees
+    roles_any:
+      - employee
+      - support
+      - ops_viewer
+      - kyc_reviewer
+      - default-roles-ghost-employees
+
+  - id: identity-admin
+    path_prefix: /identity/admin
+    realm: admins
+    roles_any:
+      - admin
+      - infra_admin
+      - governance_admin
+      - default-roles-ghost-admins
+
+  - id: governance-execute
+    path_prefix: /governance/execute
+    realm: admins
+    roles_any:
+      - governance_admin
+
+  - id: governance-admin
+    path_prefix: /governance
+    realm: admins
+    roles_any:
+      - admin
+      - governance_admin
+      - default-roles-ghost-admins
