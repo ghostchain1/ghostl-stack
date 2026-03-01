@@ -598,7 +598,7 @@ jobs:
             sleep $((attempt * 2))
           done
           echo "$FOUNDRY_ROOT/bin" >> "$GITHUB_PATH"
-          forge --version
+          "$FOUNDRY_ROOT/bin/forge" --version
 
       - name: Run GST invariant (Foundry)
         working-directory: contracts
@@ -638,7 +638,7 @@ jobs:
             sleep $((attempt * 2))
           done
           echo "$FOUNDRY_ROOT/bin" >> "$GITHUB_PATH"
-          forge --version
+          "$FOUNDRY_ROOT/bin/forge" --version
 
       - name: Run Liquidity Gravity Engine tests (Foundry)
         working-directory: contracts
@@ -689,7 +689,7 @@ jobs:
             sleep $((attempt * 2))
           done
           echo "$FOUNDRY_ROOT/bin" >> "$GITHUB_PATH"
-          forge --version
+          "$FOUNDRY_ROOT/bin/forge" --version
 
       - name: Run cascading finality tests (Foundry, low-memory profile)
         working-directory: contracts
@@ -749,7 +749,7 @@ jobs:
             sleep $((attempt * 2))
           done
           echo "$FOUNDRY_ROOT/bin" >> "$GITHUB_PATH"
-          forge --version
+          "$FOUNDRY_ROOT/bin/forge" --version
 
       - name: Sovereign tests
         run: npm run sovereign:test
