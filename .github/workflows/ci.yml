@@ -578,9 +578,21 @@ jobs:
           persist-credentials: false
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@8789b3e21e6c11b2697f5eb56eddae542f746c10 # v1
-        with:
-          version: stable
+        run: |
+          set -euo pipefail
+          curl -sSfL https://raw.githubusercontent.com/foundry-rs/foundry/HEAD/foundryup/install | bash
+          for attempt in 1 2 3; do
+            if "$HOME/.foundry/bin/foundryup" --force --install stable; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "foundryup install failed after 3 attempts" >&2
+              exit 1
+            fi
+            sleep $((attempt * 2))
+          done
+          echo "$HOME/.foundry/bin" >> "$GITHUB_PATH"
+          forge --version
 
       - name: Run GST invariant (Foundry)
         working-directory: contracts
@@ -600,9 +612,21 @@ jobs:
           persist-credentials: false
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@8789b3e21e6c11b2697f5eb56eddae542f746c10 # v1
-        with:
-          version: stable
+        run: |
+          set -euo pipefail
+          curl -sSfL https://raw.githubusercontent.com/foundry-rs/foundry/HEAD/foundryup/install | bash
+          for attempt in 1 2 3; do
+            if "$HOME/.foundry/bin/foundryup" --force --install stable; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "foundryup install failed after 3 attempts" >&2
+              exit 1
+            fi
+            sleep $((attempt * 2))
+          done
+          echo "$HOME/.foundry/bin" >> "$GITHUB_PATH"
+          forge --version
 
       - name: Run Liquidity Gravity Engine tests (Foundry)
         working-directory: contracts
@@ -633,9 +657,21 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@8789b3e21e6c11b2697f5eb56eddae542f746c10 # v1
-        with:
-          version: stable
+        run: |
+          set -euo pipefail
+          curl -sSfL https://raw.githubusercontent.com/foundry-rs/foundry/HEAD/foundryup/install | bash
+          for attempt in 1 2 3; do
+            if "$HOME/.foundry/bin/foundryup" --force --install stable; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "foundryup install failed after 3 attempts" >&2
+              exit 1
+            fi
+            sleep $((attempt * 2))
+          done
+          echo "$HOME/.foundry/bin" >> "$GITHUB_PATH"
+          forge --version
 
       - name: Run cascading finality tests (Foundry, low-memory profile)
         working-directory: contracts
@@ -675,9 +711,21 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@8789b3e21e6c11b2697f5eb56eddae542f746c10 # v1
-        with:
-          version: stable
+        run: |
+          set -euo pipefail
+          curl -sSfL https://raw.githubusercontent.com/foundry-rs/foundry/HEAD/foundryup/install | bash
+          for attempt in 1 2 3; do
+            if "$HOME/.foundry/bin/foundryup" --force --install stable; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "foundryup install failed after 3 attempts" >&2
+              exit 1
+            fi
+            sleep $((attempt * 2))
+          done
+          echo "$HOME/.foundry/bin" >> "$GITHUB_PATH"
+          forge --version
 
       - name: Sovereign tests
         run: npm run sovereign:test
