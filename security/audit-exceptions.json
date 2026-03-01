@@ -121,6 +121,20 @@
       "owner": "ghost-platform-security",
       "created_at": "2026-02-27",
       "expires_at": "2026-05-31"
+    },
+    {
+      "id": "outdated-types-node-runtime-lockstep",
+      "type": "outdated",
+      "package": "@types/node",
+      "rationale": "The workspace intentionally tracks the Node 22 type line to match the runtime/toolchain baseline; the newest @types/node line targets a newer runtime and can introduce incompatible ambient type changes.",
+      "compensating_controls": [
+        "CI enforces Node 22 across lint, build, and test jobs",
+        "Typecheck and build gates run on every pull request",
+        "Exception is time-bounded and reviewed before expiry"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-03-01",
+      "expires_at": "2026-05-31"
     }
   ]
 }

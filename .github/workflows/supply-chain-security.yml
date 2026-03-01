@@ -63,10 +63,15 @@ jobs:
       - name: Install Trivy
         run: |
           set -euo pipefail
-          TRIVY_VERSION="0.69.0"
-          curl -sSfL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
-            | tar -xz trivy
-          sudo mv trivy /usr/local/bin/trivy
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key \
+            | gpg --dearmor \
+            | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" \
+            | sudo tee /etc/apt/sources.list.d/trivy.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y trivy
           trivy --version
 
       - name: Vulnerability gate (HIGH/CRITICAL)
@@ -122,4 +127,3 @@ jobs:
             sbom.spdx.sig
             sbom.spdx.pem
           if-no-files-found: warn
-
