@@ -1,0 +1,141 @@
+{
+  "generatedAt": "2026-03-01T06:51:51.991Z",
+  "invalid": false,
+  "exceptions": [
+    {
+      "id": "outdated-next-auth-beta-track",
+      "type": "outdated",
+      "package": "next-auth",
+      "owner": "ghost-platform-security",
+      "rationale": "The platform intentionally tracks NextAuth v5 beta for App Router realm-aware Auth.js support until v5 stable lands in the configured registry.",
+      "compensatingControls": [
+        "SSO realm smoke tests run in CI",
+        "Dependency gate re-evaluates this exception every run"
+      ],
+      "createdAt": "2026-02-27",
+      "expiresAt": "2026-05-31"
+    },
+    {
+      "id": "outdated-auth-core-registry-mismatch",
+      "type": "outdated",
+      "package": "@auth/core",
+      "owner": "ghost-platform-security",
+      "rationale": "Registry metadata currently reports a stale latest tag while GhostStack pins a newer secure @auth/core release required for audit-clean status.",
+      "compensatingControls": [
+        "Pinned to 0.41.1 in root overrides and apps/web dependency",
+        "Audit gate enforces vulnerability clean state on every CI run"
+      ],
+      "createdAt": "2026-02-27",
+      "expiresAt": "2026-05-31"
+    },
+    {
+      "id": "outdated-tailwind-v4-migration",
+      "type": "outdated",
+      "package": "tailwindcss",
+      "owner": "ghost-platform-security",
+      "rationale": "Tailwind v4 migration is tracked separately because the current UI package still relies on v3 plugin compatibility.",
+      "compensatingControls": [
+        "Pinned minor/patch updates on v3 line",
+        "Dedicated migration issue required before expiry"
+      ],
+      "createdAt": "2026-02-27",
+      "expiresAt": "2026-05-31"
+    },
+    {
+      "id": "outdated-eslint-next-peer-window",
+      "type": "outdated",
+      "package": "eslint",
+      "owner": "ghost-platform-security",
+      "rationale": "The repository runs ESLint 10 while Next's plugin ecosystem currently advertises peer ranges through v9; upgrading immediately is blocked by peer-resolution conflicts in the monorepo.",
+      "compensatingControls": [
+        "Lint gate remains mandatory in CI",
+        "Dependency gate revalidates this exception on every run",
+        "Exception expires and must be reviewed before renewal"
+      ],
+      "createdAt": "2026-02-27",
+      "expiresAt": "2026-05-31"
+    },
+    {
+      "id": "outdated-typescript-eslint-plugin-peer-window",
+      "type": "outdated",
+      "package": "@typescript-eslint/eslint-plugin",
+      "owner": "ghost-platform-security",
+      "rationale": "Patch upgrade is currently blocked by peer version lock-step between Next's bundled lint stack and root eslint plugin versions.",
+      "compensatingControls": [
+        "Lint runs in CI for all changed files",
+        "Exception is time-bounded and re-evaluated each release cycle"
+      ],
+      "createdAt": "2026-02-27",
+      "expiresAt": "2026-05-31"
+    },
+    {
+      "id": "outdated-typescript-eslint-parser-peer-window",
+      "type": "outdated",
+      "package": "@typescript-eslint/parser",
+      "owner": "ghost-platform-security",
+      "rationale": "Patch upgrade is currently blocked by peer version lock-step between Next's bundled lint stack and root parser versions.",
+      "compensatingControls": [
+        "Lint runs in CI for all changed files",
+        "Exception is time-bounded and re-evaluated each release cycle"
+      ],
+      "createdAt": "2026-02-27",
+      "expiresAt": "2026-05-31"
+    },
+    {
+      "id": "outdated-hardhat-toolchain-window",
+      "type": "outdated",
+      "package": "hardhat",
+      "owner": "ghost-platform-security",
+      "rationale": "Hardhat patch upgrades are batched with contract and plugin compatibility testing for Ghostchain release trains to avoid accidental deployment behavior drift.",
+      "compensatingControls": [
+        "Contract CI includes compile/test/static checks",
+        "Release checklist requires explicit hardhat upgrade validation before exception expiry"
+      ],
+      "createdAt": "2026-02-27",
+      "expiresAt": "2026-05-31"
+    },
+    {
+      "id": "outdated-qs-express-chain",
+      "type": "outdated",
+      "package": "qs",
+      "owner": "ghost-platform-security",
+      "rationale": "Express 5/body-parser dependency chain currently resolves to qs 6.14.x in this workspace lock; upgrade to 6.15.0 is tracked but blocked by the existing lock/peer graph.",
+      "compensatingControls": [
+        "npm audit is clean with zero vulnerabilities",
+        "Gateway and API input validation remains enforced for query parsing paths",
+        "Exception expires and must be re-validated"
+      ],
+      "createdAt": "2026-02-27",
+      "expiresAt": "2026-05-31"
+    },
+    {
+      "id": "outdated-ioredis-minor-window",
+      "type": "outdated",
+      "package": "ioredis",
+      "owner": "ghost-platform-security",
+      "rationale": "ioredis 5.10.0 minor bump is deferred until redis-dependent service integration smoke tests are completed for this release branch.",
+      "compensatingControls": [
+        "Redis-backed services run health checks and integration smoke flows in CI",
+        "npm audit remains enforced and reports zero vulnerabilities",
+        "Exception is short-lived and must be revalidated before expiry"
+      ],
+      "createdAt": "2026-02-27",
+      "expiresAt": "2026-05-31"
+    },
+    {
+      "id": "outdated-types-node-runtime-lockstep",
+      "type": "outdated",
+      "package": "@types/node",
+      "owner": "ghost-platform-security",
+      "rationale": "The workspace intentionally tracks the Node 22 type line to match the runtime/toolchain baseline; the newest @types/node line targets a newer runtime and can introduce incompatible ambient type changes.",
+      "compensatingControls": [
+        "CI enforces Node 22 across lint, build, and test jobs",
+        "Typecheck and build gates run on every pull request",
+        "Exception is time-bounded and reviewed before expiry"
+      ],
+      "createdAt": "2026-03-01",
+      "expiresAt": "2026-05-31"
+    }
+  ],
+  "expired": []
+}

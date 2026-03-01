@@ -1,0 +1,59 @@
+{
+  "generatedAt": "2026-03-01T06:51:51.991Z",
+  "items": [],
+  "summary": {
+    "failures": [],
+    "exceptions": {
+      "total": 10,
+      "expired": []
+    },
+    "unallowlisted": {
+      "audit": [],
+      "outdated": []
+    }
+  },
+  "checks": {
+    "npmLs": {
+      "code": 0
+    },
+    "npmOutdated": {
+      "code": 0,
+      "findings": [],
+      "raw": {}
+    },
+    "npmAudit": {
+      "code": 0,
+      "timedOut": false,
+      "findings": [],
+      "raw": {
+        "auditReportVersion": 2,
+        "vulnerabilities": {},
+        "metadata": {
+          "vulnerabilities": {
+            "info": 0,
+            "low": 0,
+            "moderate": 0,
+            "high": 0,
+            "critical": 0,
+            "total": 0
+          },
+          "dependencies": {
+            "prod": 242,
+            "dev": 489,
+            "optional": 102,
+            "peer": 2,
+            "peerOptional": 0,
+            "total": 775
+          }
+        }
+      }
+    },
+    "exceptions": {
+      "file": "security/audit-exceptions.json",
+      "exists": true,
+      "invalid": false,
+      "active": 10,
+      "expired": 0
+    }
+  }
+}
