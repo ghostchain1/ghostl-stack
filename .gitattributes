@@ -1,7 +1,4 @@
-contracts/reports/formal/scribble/scribble.json filter=lfs diff=lfs merge=lfs -text
 infra/opstack/bin/op-deployer-0.5.2-linux-amd64/op-deployer filter=lfs diff=lfs merge=lfs -text
 infra/opstack/bin/op-deployer-0.6.0-rc.2-linux-amd64/op-deployer filter=lfs diff=lfs merge=lfs -text
 infra/opstack/bin/op-deployer-x86 filter=lfs diff=lfs merge=lfs -text
 infra/opstack/bin/op-deployer-local filter=lfs diff=lfs merge=lfs -text
-.gomodcache/cache/download/golang.org/toolchain/@v/v0.0.1-go1.24.10.linux-arm64.zip filter=lfs diff=lfs merge=lfs -text
-.gomodcache/github.com/ferranbt/fastssz@v0.1.4/spectests/fixtures/beacon_state_bellatrix.ssz filter=lfs diff=lfs merge=lfs -text
