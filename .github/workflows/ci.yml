@@ -581,8 +581,14 @@ jobs:
         run: |
           set -euo pipefail
           curl -sSfL https://raw.githubusercontent.com/foundry-rs/foundry/HEAD/foundryup/install | bash
+          FOUNDRY_ROOT="${FOUNDRY_DIR:-${XDG_CONFIG_HOME:-$HOME}/.foundry}"
+          FOUNDRYUP_BIN="$FOUNDRY_ROOT/bin/foundryup"
+          if [ ! -x "$FOUNDRYUP_BIN" ]; then
+            echo "foundryup binary not found at $FOUNDRYUP_BIN" >&2
+            exit 1
+          fi
           for attempt in 1 2 3; do
-            if "$HOME/.foundry/bin/foundryup" --force --install stable; then
+            if "$FOUNDRYUP_BIN" --force --install stable; then
               break
             fi
             if [ "$attempt" -eq 3 ]; then
@@ -591,7 +597,7 @@ jobs:
             fi
             sleep $((attempt * 2))
           done
-          echo "$HOME/.foundry/bin" >> "$GITHUB_PATH"
+          echo "$FOUNDRY_ROOT/bin" >> "$GITHUB_PATH"
           forge --version
 
       - name: Run GST invariant (Foundry)
@@ -615,8 +621,14 @@ jobs:
         run: |
           set -euo pipefail
           curl -sSfL https://raw.githubusercontent.com/foundry-rs/foundry/HEAD/foundryup/install | bash
+          FOUNDRY_ROOT="${FOUNDRY_DIR:-${XDG_CONFIG_HOME:-$HOME}/.foundry}"
+          FOUNDRYUP_BIN="$FOUNDRY_ROOT/bin/foundryup"
+          if [ ! -x "$FOUNDRYUP_BIN" ]; then
+            echo "foundryup binary not found at $FOUNDRYUP_BIN" >&2
+            exit 1
+          fi
           for attempt in 1 2 3; do
-            if "$HOME/.foundry/bin/foundryup" --force --install stable; then
+            if "$FOUNDRYUP_BIN" --force --install stable; then
               break
             fi
             if [ "$attempt" -eq 3 ]; then
@@ -625,7 +637,7 @@ jobs:
             fi
             sleep $((attempt * 2))
           done
-          echo "$HOME/.foundry/bin" >> "$GITHUB_PATH"
+          echo "$FOUNDRY_ROOT/bin" >> "$GITHUB_PATH"
           forge --version
 
       - name: Run Liquidity Gravity Engine tests (Foundry)
@@ -660,8 +672,14 @@ jobs:
         run: |
           set -euo pipefail
           curl -sSfL https://raw.githubusercontent.com/foundry-rs/foundry/HEAD/foundryup/install | bash
+          FOUNDRY_ROOT="${FOUNDRY_DIR:-${XDG_CONFIG_HOME:-$HOME}/.foundry}"
+          FOUNDRYUP_BIN="$FOUNDRY_ROOT/bin/foundryup"
+          if [ ! -x "$FOUNDRYUP_BIN" ]; then
+            echo "foundryup binary not found at $FOUNDRYUP_BIN" >&2
+            exit 1
+          fi
           for attempt in 1 2 3; do
-            if "$HOME/.foundry/bin/foundryup" --force --install stable; then
+            if "$FOUNDRYUP_BIN" --force --install stable; then
               break
             fi
             if [ "$attempt" -eq 3 ]; then
@@ -670,7 +688,7 @@ jobs:
             fi
             sleep $((attempt * 2))
           done
-          echo "$HOME/.foundry/bin" >> "$GITHUB_PATH"
+          echo "$FOUNDRY_ROOT/bin" >> "$GITHUB_PATH"
           forge --version
 
       - name: Run cascading finality tests (Foundry, low-memory profile)
@@ -714,8 +732,14 @@ jobs:
         run: |
           set -euo pipefail
           curl -sSfL https://raw.githubusercontent.com/foundry-rs/foundry/HEAD/foundryup/install | bash
+          FOUNDRY_ROOT="${FOUNDRY_DIR:-${XDG_CONFIG_HOME:-$HOME}/.foundry}"
+          FOUNDRYUP_BIN="$FOUNDRY_ROOT/bin/foundryup"
+          if [ ! -x "$FOUNDRYUP_BIN" ]; then
+            echo "foundryup binary not found at $FOUNDRYUP_BIN" >&2
+            exit 1
+          fi
           for attempt in 1 2 3; do
-            if "$HOME/.foundry/bin/foundryup" --force --install stable; then
+            if "$FOUNDRYUP_BIN" --force --install stable; then
               break
             fi
             if [ "$attempt" -eq 3 ]; then
@@ -724,7 +748,7 @@ jobs:
             fi
             sleep $((attempt * 2))
           done
-          echo "$HOME/.foundry/bin" >> "$GITHUB_PATH"
+          echo "$FOUNDRY_ROOT/bin" >> "$GITHUB_PATH"
           forge --version
 
       - name: Sovereign tests
