@@ -1,7 +1,7 @@
 name: ghost-sovereign-engine
 
 x-hardening: &hardening
-  user: "10001:10001"
+  user: "1001:1001"
   cap_drop:
     - ALL
   security_opt:

@@ -22,7 +22,7 @@ services:
       TREASURY_ADMIN_TOKEN: ${TREASURY_ENGINE_ADMIN_TOKEN:-}
       YIELD_ADAPTERS_JSON: ${YIELD_ADAPTERS_JSON:-[]}
       FEDERATION_POLICY_PATH: /governance/federation/policy.json
-    user: "10001:10001"
+    user: "1001:1001"
     cap_drop:
       - ALL
     security_opt:

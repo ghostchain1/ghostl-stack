@@ -10,7 +10,7 @@ services:
       - PORT=7603
     ports:
       - "7603:7603"
-    user: "10001:10001"
+    user: "1001:1001"
     read_only: true
     tmpfs:
       - /tmp
@@ -41,7 +41,7 @@ services:
       - RECOMMENDATION_DIR=/evidence
     ports:
       - "7602:7602"
-    user: "10001:10001"
+    user: "1001:1001"
     volumes:
       - ./evidence/econ/risk:/evidence
     read_only: true
@@ -75,7 +75,7 @@ services:
       - EVIDENCE_DIR=/evidence
     ports:
       - "7601:7601"
-    user: "10001:10001"
+    user: "1001:1001"
     volumes:
       - ./evidence/econ/receipts:/evidence
     read_only: true
@@ -110,7 +110,7 @@ services:
       - POST_ONCHAIN=false
     ports:
       - "7604:7604"
-    user: "10001:10001"
+    user: "1001:1001"
     depends_on:
       - hg-reporting-indexer
     volumes:
@@ -135,6 +135,7 @@ services:
 
   econ-prometheus:
     image: prom/prometheus:v2.55.1@sha256:2659f4c2ebb718e7695cb9b25ffa7d6be64db013daba13e05c875451cf51b0d3
+    user: "1001:1001"
     command: ["--config.file=/etc/prometheus/prometheus.yml"]
     ports:
       - "9097:9090"
@@ -156,6 +157,7 @@ services:
 
   econ-grafana:
     image: grafana/grafana:11.3.1@sha256:fa801ab6e1ae035135309580891e09f7eb94d1abdbd2106bdc288030b028158c
+    user: "1001:1001"
     ports:
       - "3011:3000"
     environment:

@@ -1,3 +1,8 @@
 packages:
   - "apps/*"
   - "packages/*"
+  - "services/ghost-treasury-ai"
+  - "services/ghostbrain-core"  - "services/ghostcontract-ai"
+  - "services/ghostload-ai"
+  - "services/ghostload-controller"
+  - "tools/ghostload-sim"

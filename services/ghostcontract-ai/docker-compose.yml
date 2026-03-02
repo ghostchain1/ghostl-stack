@@ -1,0 +1,54 @@
+services:
+  ghostcontract-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghostchain1/ghostcontract-ai:latest
+    container_name: ghostcontract-ai
+    restart: unless-stopped
+    ports:
+      - "7610:7610"
+    environment:
+      NODE_ENV:                   ${NODE_ENV:-production}
+      PORT:                       7610
+      GHOSTAI_L1_CHAIN_ID:        ${GHOSTAI_L1_CHAIN_ID:-1}
+      GHOSTAI_L2_CHAIN_ID:        ${GHOSTAI_L2_CHAIN_ID:-10}
+      GHOSTAI_L3_CHAIN_ID:        ${GHOSTAI_L3_CHAIN_ID:-100}
+      GHOSTAI_L1_RPC_URL:         ${GHOSTAI_L1_RPC_URL:-http://ghostchain-rpc:8545}
+      GHOSTAI_L2_RPC_URL:         ${GHOSTAI_L2_RPC_URL:-http://ghostl2-rpc:9545}
+      GHOSTAI_L3_RPC_URL:         ${GHOSTAI_L3_RPC_URL:-http://ghostl3-rpc:9546}
+      GHOSTAI_REGISTRY_ADDR:      ${GHOSTAI_REGISTRY_ADDR:-}
+      GHOSTAI_GOVERNOR_ADDR:      ${GHOSTAI_GOVERNOR_ADDR:-}
+      GHOSTAI_POLICYGATE_ADDR:    ${GHOSTAI_POLICYGATE_ADDR:-}
+      GHOSTAI_RISKORACLE_ADDR:    ${GHOSTAI_RISKORACLE_ADDR:-}
+      # DRY_RUN — default true (safe mode). Set false + approval file for live deploys.
+      GHOSTAI_DRY_RUN:            ${GHOSTAI_DRY_RUN:-true}
+      # Vault — inject at runtime, never in image
+      GHOSTAI_VAULT_ADDR:         ${GHOSTAI_VAULT_ADDR:-}
+      GHOSTAI_VAULT_TOKEN:        ${GHOSTAI_VAULT_TOKEN:-}
+      GHOSTAI_VAULT_SECRET_PATH:  ${GHOSTAI_VAULT_SECRET_PATH:-secret/ghostcontract-ai/signer}
+      RPC_REGISTRY_URL:           ${RPC_REGISTRY_URL:-http://ghost-registry:8088/v1/endpoints}
+      FOUNDRY_PROFILE:            ${FOUNDRY_PROFILE:-default}
+      GHOSTAI_QUARANTINE_THRESHOLD: ${GHOSTAI_QUARANTINE_THRESHOLD:-70}
+    volumes:
+      - ../../contracts:/app/contracts:ro
+    networks:
+      - ghost-internal
+    labels:
+      - "ghostchain.service=ghostcontract-ai"
+      - "ghostchain.layer=management"
+      - "ghostchain.version=0.1.0"
+    # SECURITY: No privileged mode, no host network, no cap-add
+    security_opt:
+      - no-new-privileges:true
+    read_only: false   # dist/ needs to be writable for node; set true with tmpfs overlay in prod
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+networks:
+  ghost-internal:
+    external: true
+    name: ghost-internal

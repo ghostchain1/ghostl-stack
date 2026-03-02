@@ -191,10 +191,47 @@ const syncComplianceCache = async (payload: SyncComplianceCachePayload) => {
   return { status: summary.status, path: complianceCachePath };
 };
 
+// ---------------------------------------------------------------------------
+// AI network scan queue job
+// ---------------------------------------------------------------------------
+
+type AiNetworkScanPayload = {
+  apiBase?: string;
+  chains?: string[];
+};
+
+const aiNetworkScanCachePath =
+  process.env.WORKER_AI_SCAN_CACHE_PATH ||
+  path.join(process.cwd(), 'apps', 'worker', 'data', 'ai-network-scan.json');
+
+const aiNetworkScan = async (payload: AiNetworkScanPayload) => {
+  const apiBase = payload.apiBase || process.env.API_BASE_URL || 'http://localhost:3100';
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  try {
+    const res = await fetch(`${apiBase}/api/ai/summary`, { signal: controller.signal });
+    const body: unknown = await res.json().catch(() => ({}));
+    const summary = {
+      generatedAt: nowIso(),
+      status: res.ok ? 'ok' : 'degraded',
+      httpStatus: res.status,
+      payload: body
+    };
+    await fs.mkdir(path.dirname(aiNetworkScanCachePath), { recursive: true });
+    await fs.writeFile(aiNetworkScanCachePath, `${JSON.stringify(summary, null, 2)}\n`, 'utf-8');
+    console.log(`[worker] ai-network-scan ok status=${summary.status}`);
+    return { status: summary.status, path: aiNetworkScanCachePath };
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
 const runQueueJob = async (job: BullJob) => {
   switch (job.name) {
     case 'sync-compliance-cache':
       return syncComplianceCache(job.data as SyncComplianceCachePayload);
+    case 'ai-network-scan':
+      return aiNetworkScan(job.data as AiNetworkScanPayload);
     default:
       throw new Error(`unsupported_queue_job ${job.name}`);
   }
@@ -323,8 +360,23 @@ const shutdown = (signal: string) => {
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 
+// ---------------------------------------------------------------------------
+// AI anomaly sweep — scheduled job that writes rolling scan manifests
+// ---------------------------------------------------------------------------
+
+const aiSweepIntervalMs = Number(process.env.WORKER_AI_SWEEP_INTERVAL_MS || 300_000); // default 5 min
+const aiSweepEnabled = process.env.WORKER_AI_SWEEP_ENABLED !== 'false';
+
+const aiAnomalySweepJob: Job | null = aiSweepEnabled
+  ? {
+      name: 'ai-anomaly-sweep',
+      intervalMs: aiSweepIntervalMs >= 60_000 ? aiSweepIntervalMs : 300_000,
+      run: async () => { await aiNetworkScan({}); }
+    }
+  : null;
+
 const main = async () => {
-  const jobs = [heartbeatJob, healthcheckJob].filter(Boolean) as Job[];
+  const jobs = [heartbeatJob, healthcheckJob, aiAnomalySweepJob].filter(Boolean) as Job[];
   for (const job of jobs) {
     scheduleJob(job);
   }

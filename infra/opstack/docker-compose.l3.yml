@@ -359,6 +359,7 @@ services:
       context: ../../services/consensus-telemetry-service
       dockerfile: ../../services/common.Dockerfile
     image: local/consensus-telemetry-service:${OPSTACK_IMAGE_TAG:-devnet}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     restart: unless-stopped
     logging: *default-logging
     depends_on:
@@ -366,6 +367,8 @@ services:
         condition: service_healthy
       l3-geth:
         condition: service_healthy
+    volumes:
+      - ./data/consensus-telemetry:/data
     environment:
       RPC_L2: http://l2-geth:8545
       RPC_L3: http://l3-geth:8545
@@ -425,8 +428,8 @@ services:
 
   bridge-service:
     build:
-      context: ../../services/bridge-service
-      dockerfile: ../../services/common.Dockerfile
+      context: ../..
+      dockerfile: services/bridge-service/Dockerfile
     image: local/bridge-service:${OPSTACK_IMAGE_TAG:-devnet}
     restart: unless-stopped
     logging: *default-logging
@@ -488,8 +491,6 @@ services:
         condition: service_healthy
     environment:
       PROM_URL: ${PROM_URL:-http://prometheus:9090}
-    ports:
-      - "7616:7616"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:7616/health >/dev/null"]
       interval: 20s
@@ -576,8 +577,6 @@ services:
         condition: service_healthy
     environment:
       PROM_URL: ${PROM_URL:-http://prometheus:9090}
-    ports:
-      - "7609:7609"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:7609/health >/dev/null"]
       interval: 20s
@@ -783,8 +782,6 @@ services:
         condition: service_healthy
     environment:
       PROM_URL: ${PROM_URL:-http://prometheus:9090}
-    ports:
-      - "7632:7632"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:7632/health >/dev/null"]
     <<: *default-security
@@ -821,8 +818,6 @@ services:
         condition: service_healthy
     environment:
       PROM_URL: ${PROM_URL:-http://prometheus:9090}
-    ports:
-      - "7617:7617"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:7617/health >/dev/null"]
     <<: *default-security

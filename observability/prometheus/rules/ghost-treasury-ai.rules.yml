@@ -1,0 +1,101 @@
+groups:
+  - name: ghost-treasury-ai-alerts
+    rules:
+      # ── Service availability ──────────────────────────────────────────────
+      - alert: TreasuryAIDown
+        expr: up{job="ghost-treasury-ai"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "GhostTreasuryAI is DOWN"
+          description: "The ghost-treasury-ai service has been unreachable for more than 2 minutes. All autonomous treasury activity is suspended."
+
+      # ── Circuit breaker ───────────────────────────────────────────────────
+      - alert: TreasuryCircuitBreakerOpen
+        expr: treasury_ai_circuit_breaker_open == 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Treasury circuit breaker OPEN"
+          description: "The on-chain RiskEngine circuit breaker is open. No autonomous actions will be taken until governance resets it."
+
+      # ── Stable reserve below floor ────────────────────────────────────────
+      - alert: TreasuryStableReserveLow
+        expr: treasury_ai_stable_reserve_eth < 1000
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Treasury stable reserve below 6-month floor"
+          description: "Stable reserve is {{ $value | printf \"%.2f\" }} ETH, below the 1000 ETH (6-month) constitutional minimum."
+
+      # ── Daily VaR approaching limit ───────────────────────────────────────
+      - alert: TreasuryDailyVaRWarning
+        expr: treasury_ai_daily_var_eth > 350
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Daily VaR approaching limit"
+          description: "Daily VaR accumulation is {{ $value | printf \"%.2f\" }} ETH (limit: 500 ETH). Review strategy activity."
+
+      - alert: TreasuryDailyVaRCritical
+        expr: treasury_ai_daily_var_eth > 450
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Daily VaR near circuit-breaker threshold"
+          description: "Daily VaR is {{ $value | printf \"%.2f\" }} ETH — within 50 ETH of the 500 ETH circuit-breaker limit."
+
+      # ── Runway coverage ───────────────────────────────────────────────────
+      - alert: TreasuryRunwayBelowMinimum
+        expr: treasury_ai_runway_coverage_months < 6
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Operational runway below 6-month constitutional minimum"
+          description: "Runway coverage is {{ $value | printf \"%.1f\" }} months. Immediate reserve top-up required."
+
+      # ── No solvency snapshots ─────────────────────────────────────────────
+      - alert: TreasurySolvencySnapshotStale
+        expr: time() - treasury_ai_last_solvency_snapshot_timestamp > 7200
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Solvency snapshot is stale (> 2 hours old)"
+          description: "No ProofOfSolvency snapshot has been published in over 2 hours. Check ghost-treasury-ai logs."
+
+      # ── Agent veto spike ──────────────────────────────────────────────────
+      - alert: TreasuryRiskGovernorVetoSpike
+        expr: increase(treasury_ai_agent_votes_total{agent="risk-governor", verdict="reject"}[15m]) > 5
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Risk Governor vetoing proposals at high rate"
+          description: "The risk-governor agent has rejected more than 5 proposals in 15 minutes. Review risk parameters and market conditions."
+
+      # ── Market sentinel alerts ────────────────────────────────────────────
+      - alert: TreasuryMarketSentinelVetoSpike
+        expr: increase(treasury_ai_agent_votes_total{agent="market-sentinel", verdict="reject"}[10m]) > 3
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Market Sentinel detecting manipulation signals"
+          description: "The market-sentinel agent has rejected more than 3 proposals in 10 minutes due to market integrity concerns."
+
+      # ── NAV drop ──────────────────────────────────────────────────────────
+      - alert: TreasuryNAVDropSignificant
+        expr: (treasury_ai_nav_eth offset 1h) > 0 and (treasury_ai_nav_eth / (treasury_ai_nav_eth offset 1h)) < 0.95
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Treasury NAV dropped more than 5% in 1 hour"
+          description: "NAV decreased by more than 5% within the past hour. Current: {{ $value | printf \"%.2f\" }} ETH."

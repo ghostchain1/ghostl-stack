@@ -4,6 +4,7 @@ global:
 
 rule_files:
   - /etc/prometheus/rules/econ-engine.rules.yml
+  - /etc/prometheus/rules/ghost-treasury-ai.rules.yml
 
 scrape_configs:
   - job_name: hg-treasury-agent
@@ -25,3 +26,9 @@ scrape_configs:
     static_configs:
       - targets: ["hg-proof-snapshotter:7604"]
     metrics_path: /metrics
+
+  - job_name: ghost-treasury-ai
+    static_configs:
+      - targets: ["ghost-treasury-ai:7680"]
+    metrics_path: /metrics
+    scrape_interval: 15s

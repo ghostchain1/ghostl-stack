@@ -1,0 +1,75 @@
+# GhostBrain Runbook: Compose Reconcile
+# Triggered by: config drift, desired vs actual compose mismatch
+# Routing law: L3→L2 only; L2→L1 only
+
+name: compose-reconcile
+version: 1.0.0
+description: |
+  Reconcile actual docker-compose state to desired state.
+  Always runs a canary replica first (10% traffic).
+  Full rollout only after canary window passes SLOs.
+
+trigger:
+  patterns:
+    - "compose"
+    - "config.drift"
+    - "reconcile"
+    - "desired.state"
+
+preconditions:
+  - check: "backup_recent"
+    required: true
+  - check: "routing_law_compliant"
+    required: true  # L3→L2 only; L2→L1 only
+
+steps:
+  - id: snapshot-before
+    capability: metrics.query
+    description: "Snapshot baseline metrics"
+    evidence_kind: before_after
+    timeout_seconds: 30
+
+  - id: canary-apply
+    capability: compose.canary
+    description: "Apply to canary replica (10%)"
+    params:
+      fraction: 0.1
+      stack: "{{ stack }}"
+    success_metrics:
+      - metric: "up"
+        operator: eq
+        threshold: 1
+        window_seconds: 120
+    timeout_seconds: 180
+    rollback:
+      capability: compose.canary
+      params:
+        rollback: true
+
+  - id: full-apply
+    capability: compose.apply
+    description: "Full reconcile after canary passes"
+    params:
+      stack: "{{ stack }}"
+      pull: true
+    timeout_seconds: 300
+    rollback:
+      capability: compose.apply
+      params:
+        rollback: true
+
+  - id: verify-after
+    capability: metrics.query
+    description: "Verify all services healthy after reconcile"
+    evidence_kind: before_after
+    timeout_seconds: 60
+
+success_metrics:
+  - metric: "ghostbrain_health_graph_nodes{health='healthy'}"
+    operator: gte
+    threshold: 1
+    window_seconds: 120
+
+blast_radius: 5
+canary_required: true
+break_glass_required: false

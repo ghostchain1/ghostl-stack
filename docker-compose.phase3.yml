@@ -1,6 +1,6 @@
 name: ghostl-phase3
 
-x-ghost-user: &ghost-user "10001:10001"
+x-ghost-user: &ghost-user "1001:1001"
 
 x-node-hardening: &node-hardening
   user: *ghost-user

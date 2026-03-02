@@ -4,10 +4,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { signOut } from 'next-auth/react';
 import { CommandPalette } from './CommandPalette';
 import { GlobalSearch } from './GlobalSearch';
 import { NetworkSwitcher } from './NetworkSwitcher';
 import { NotificationsCenter } from './NotificationsCenter';
+import { GhostWordmark } from '@/components/brand/GhostMark';
 import { useSession } from '../../identity-access/session';
 import { normalizeRole, resolveMinimumRole, roleOrder } from '../../identity-access/access-policy';
 import { useFeatureFlags } from '../services/FeatureFlagsService';
@@ -85,6 +87,18 @@ const legacyNavSections: { title: string; items: NavItem[] }[] = [
   {
     title: 'Admin',
     items: [{ href: '/admin/users', label: 'Users' }]
+  },
+  {
+    title: 'Sovereign Economy',
+    items: [
+      { href: '/econ',             label: 'Overview'       },
+      { href: '/econ/treasury',    label: 'Treasury'       },
+      { href: '/econ/governance',  label: 'Governance'     },
+      { href: '/econ/risk',        label: 'Risk Oracle'    },
+      { href: '/econ/flows',       label: 'Revenue Flows'  },
+      { href: '/econ/proofs',      label: 'Solvency Proofs'},
+      { href: '/econ/alerts-logs', label: 'Alerts & Logs'  },
+    ]
   }
 ];
 
@@ -119,17 +133,27 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const userRole = normalizeRole(user?.role);
   const isConsole = pathname?.startsWith('/console');
   const navSections = isConsole ? consoleNavSections : legacyNavSections;
+
+  // ── Public marketing site & portal hub — bypass shell entirely ──────────
+  const PUBLIC_PREFIXES = ['/site'];
+  const isPublicSite =
+    pathname === '/' ||
+    PUBLIC_PREFIXES.some((p) => pathname?.startsWith(p));
+  if (isPublicSite) return <>{children}</>;
+  // ─────────────────────────────────────────────────────────────────────────
   const ribbon = [
-    { label: 'Stack', value: 'Operational' },
-    { label: 'Bridges', value: 'Monitoring' },
-    { label: 'Sequencer', value: 'Finality <2s' },
-    { label: 'Guards', value: 'Active' }
+    { label: 'L1 GhostChain', value: 'Operational', color: '#C9A227' },
+    { label: 'L2 GhostL2',    value: 'Finality <2s', color: '#7A5CFF' },
+    { label: 'L3 GhostL3',    value: 'Monitoring',   color: '#00C2FF' },
+    { label: 'AI',            value: 'Active',        color: '#00F0B5' },
   ];
   const userLabel = user?.username || user?.email;
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="logo">GhostL Stack</div>
+        <div className="logo" style={{ padding: '16px 12px 12px' }}>
+          <GhostWordmark size={24} showTagline={false} />
+        </div>
         <nav className="nav">
           {navSections.map((section) => (
             <div key={section.title} className="nav-section">
@@ -168,9 +192,22 @@ export function AppLayout({ children }: { children: ReactNode }) {
       </aside>
       <div className="main">
         <header className="topbar">
-          <div className="title">
-            Control Center
-            {current && <span className="muted"> - {current.label}</span>}
+          <div className="title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{
+              fontFamily: 'Orbitron, system-ui, sans-serif',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              color: 'var(--text)',
+              textTransform: 'uppercase',
+            }}>
+              GhostStack
+            </span>
+            {current && (
+              <span className="muted" style={{ fontSize: '0.78rem' }}>
+                — {current.label}
+              </span>
+            )}
           </div>
           <div className="topbar-actions">
             <GlobalSearch />
@@ -190,15 +227,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   type="button"
                   onClick={async () => {
                     try {
-                      const res = await apiRequest('/api/auth/logout', {
+                      // Clear NextAuth JWT session
+                      await signOut({ redirect: false });
+                      // Also revoke express-session on API (best-effort)
+                      await apiRequest('/api/auth/logout', {
                         baseUrl: resolveApiBase(),
                         init: { method: 'POST' }
-                      });
-                      if (!res.ok) {
-                        setLogoutError(res.error);
-                        return;
-                      }
-                      setLogoutError(null);
+                      }).catch(() => null);
                       window.location.href = '/login';
                     } catch (err) {
                       setLogoutError({
@@ -219,10 +254,25 @@ export function AppLayout({ children }: { children: ReactNode }) {
           {ribbon.map((item) => (
             <div key={item.label} className="status-chip">
               <span className="inline-form">
-                <span className="pulse" />
-                {item.label}
+                <span
+                  className="pulse"
+                  style={{
+                    background: item.color,
+                    boxShadow: `0 0 5px ${item.color}`,
+                  }}
+                />
+                <span style={{
+                  fontFamily: 'Inter, system-ui, sans-serif',
+                  fontSize: '0.68rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.08em',
+                  color: item.color,
+                  textTransform: 'uppercase',
+                }}>
+                  {item.label}
+                </span>
               </span>
-              <strong>{item.value}</strong>
+              <strong style={{ color: 'var(--text)', fontSize: '0.72rem' }}>{item.value}</strong>
             </div>
           ))}
         </div>

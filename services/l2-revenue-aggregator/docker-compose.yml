@@ -20,7 +20,7 @@ services:
       OPERATIONS_FEE_BPS: 250
       RATE_LIMIT_WINDOW_MS: 60000
       RATE_LIMIT_MAX: 240
-    user: "10001:10001"
+    user: "1001:1001"
     cap_drop:
       - ALL
     security_opt:

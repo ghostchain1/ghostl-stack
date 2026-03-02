@@ -1,6 +1,14 @@
-# Services Index
+# GhostStack — Services Index
 
-Lightweight overview of the service stubs that back the dashboard modules. Most services are Node/Express shells waiting on real integrations—keep names and domains aligned with `apps/web/src/modules/*` and the API routers under `apps/api/src/modules/*`.
+> **Autonomy Secured.** · AI-Governed Sovereign Multichain Infrastructure
+>
+> Routing law: `L3 → L2 → L1` — no bypass, no exceptions.
+
+Lightweight overview of the microservices that back the GhostStack dashboard modules.
+Most services are Node/Express or Fastify shells — keep names and domains aligned
+with `apps/web/src/modules/*` and the API routers under `apps/api/src/modules/*`.
+
+---
 
 ## Core rollup + bridge
 - `ghost-guard`, `ghost-relayer`, `ghost-rollup-proposer`, `ghost-rollup-challenger`, `ghost-rpc-proxy`: enforcement, relaying, and rollup batch posting to parent chains.

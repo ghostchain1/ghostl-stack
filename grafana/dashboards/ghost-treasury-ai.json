@@ -1,0 +1,251 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {"type": "grafana",    "id": "grafana",    "name": "Grafana",    "version": "10.0.0"},
+    {"type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0"},
+    {"type": "panel", "id": "timeseries", "name": "Time series", "version": ""},
+    {"type": "panel", "id": "stat",       "name": "Stat",        "version": ""},
+    {"type": "panel", "id": "gauge",      "name": "Gauge",       "version": ""},
+    {"type": "panel", "id": "table",      "name": "Table",       "version": ""}
+  ],
+  "annotations": {"list": []},
+  "description": "GhostTreasuryAI — L1 Autonomous Treasury Intelligence Dashboard",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["treasury", "ai", "ghostchain"],
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "utc",
+  "title": "GhostTreasuryAI",
+  "uid": "ghost-treasury-ai",
+  "version": 1,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Treasury NAV (ETH)",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "treasury_ai_nav_eth", "legendFormat": "NAV"}],
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"]},
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red",    "value": null},
+              {"color": "yellow", "value": 1000},
+              {"color": "green",  "value": 5000}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Stable Reserve (ETH)",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "treasury_ai_stable_reserve_eth", "legendFormat": "Stable Reserve"}],
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"]},
+        "colorMode": "background"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red",    "value": null},
+              {"color": "yellow", "value": 500},
+              {"color": "green",  "value": 1000}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Ops Runway (months)",
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "treasury_ai_runway_coverage_months", "legendFormat": "Runway"}],
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"]},
+        "colorMode": "background"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red",    "value": null},
+              {"color": "yellow", "value": 4},
+              {"color": "green",  "value": 6}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Circuit Breaker",
+      "gridPos": {"h": 4, "w": 3, "x": 12, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "treasury_ai_circuit_breaker_open", "legendFormat": "CB State"}],
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"]},
+        "colorMode": "background",
+        "mappings": [
+          {"type": "value", "options": {"0": {"text": "CLOSED", "color": "green"}, "1": {"text": "OPEN!", "color": "red"}}}
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Autonomy Tier",
+      "gridPos": {"h": 4, "w": 3, "x": 15, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "treasury_ai_autonomy_tier", "legendFormat": "Tier"}],
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"]},
+        "colorMode": "value"
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Shadow Proposals (24h)",
+      "gridPos": {"h": 4, "w": 3, "x": 18, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "increase(treasury_ai_shadow_proposals_total[24h])", "legendFormat": "Shadow"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"}
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Treasury NAV Over Time",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "treasury_ai_nav_eth",            "legendFormat": "NAV (ETH)"},
+        {"expr": "treasury_ai_stable_reserve_eth", "legendFormat": "Stable Reserve (ETH)"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "none", "decimals": 2}}
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Risk Metrics — Daily VaR & Weekly Loss",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "treasury_ai_daily_var_eth",   "legendFormat": "Daily VaR (ETH)"},
+        {"expr": "treasury_ai_weekly_loss_eth", "legendFormat": "Weekly Loss (ETH)"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green",  "value": null},
+              {"color": "yellow", "value": 250},
+              {"color": "red",    "value": 450}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Proposals — Total vs Executed vs Cancelled",
+      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 12},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "increase(treasury_ai_proposals_total[1h])",           "legendFormat": "Submitted (1h)"},
+        {"expr": "increase(treasury_ai_proposals_executed_total[1h])",  "legendFormat": "Executed (1h)"},
+        {"expr": "increase(treasury_ai_proposals_cancelled_total[1h])", "legendFormat": "Cancelled (1h)"}
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Agent Votes — Approvals vs Rejections",
+      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 12},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "increase(treasury_ai_agent_votes_total{verdict=\"approve\"}[1h])", "legendFormat": "Approvals (1h)"},
+        {"expr": "increase(treasury_ai_agent_votes_total{verdict=\"reject\"}[1h])",  "legendFormat": "Rejections (1h)"},
+        {"expr": "increase(treasury_ai_agent_votes_total{verdict=\"abstain\"}[1h])", "legendFormat": "Abstains (1h)"}
+      ]
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Agent Reasoning Latency (p95)",
+      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 18},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "histogram_quantile(0.95, rate(treasury_ai_agent_latency_ms_bucket[5m]))", "legendFormat": "p95 latency (ms)"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "ms"}}
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Revenue Routed By Bucket",
+      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 18},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "treasury_ai_revenue_routed_eth_total{bucket=\"OPS\"}",          "legendFormat": "Ops"},
+        {"expr": "treasury_ai_revenue_routed_eth_total{bucket=\"VALIDATORS\"}",   "legendFormat": "Validators"},
+        {"expr": "treasury_ai_revenue_routed_eth_total{bucket=\"BUYBACK_BURN\"}", "legendFormat": "Buyback/Burn"},
+        {"expr": "treasury_ai_revenue_routed_eth_total{bucket=\"PAYROLL\"}",      "legendFormat": "Payroll"},
+        {"expr": "treasury_ai_revenue_routed_eth_total{bucket=\"GRANTS\"}",       "legendFormat": "Grants"},
+        {"expr": "treasury_ai_revenue_routed_eth_total{bucket=\"RESERVES\"}",     "legendFormat": "Reserves"}
+      ]
+    },
+    {
+      "id": 13,
+      "type": "stat",
+      "title": "Solvency Snapshots (all time)",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 24},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "treasury_ai_solvency_snapshots_total", "legendFormat": "Snapshots"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"}
+    },
+    {
+      "id": 14,
+      "type": "stat",
+      "title": "Last Solvency Snapshot",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 24},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "treasury_ai_last_solvency_snapshot_timestamp", "legendFormat": "Timestamp"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
+      "fieldConfig": {"defaults": {"unit": "dateTimeAsIso"}}
+    }
+  ]
+}

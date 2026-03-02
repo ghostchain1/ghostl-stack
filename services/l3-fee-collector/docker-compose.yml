@@ -14,7 +14,7 @@ services:
       LEDGER_PATH: /data/l3-fee-ledger.sqlite
       L3_FEE_FORWARD_HMAC_SECRET: ${L3_FEE_FORWARD_HMAC_SECRET:-}
       L3_FEE_ADMIN_TOKEN: ${L3_FEE_ADMIN_TOKEN:-}
-    user: "10001:10001"
+    user: "1001:1001"
     cap_drop:
       - ALL
     security_opt:

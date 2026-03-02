@@ -5,6 +5,7 @@ from fastapi.responses import PlainTextResponse
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
 
 from core.apply_engine import apply_plan, rollback_plan
+from core.brain_connector import publish_signal, start as brain_start
 from core.common import read_yaml
 from core.discovery import run_discovery
 from core.planner import build_plan, load_latest_plan
@@ -42,6 +43,7 @@ reconciler = Reconciler(reconcile_interval_seconds(), _reconcile_tick)
 @app.on_event("startup")
 def _startup() -> None:
     reconciler.start()
+    brain_start()   # Register with GhostBrain Core + start heartbeat
 
 
 @app.get("/health")
@@ -57,7 +59,10 @@ def metrics() -> PlainTextResponse:
 @app.post("/discover")
 def discover() -> dict:
     DISCOVERY_TOTAL.inc()
-    return run_discovery(paths.state_dir)
+    result = run_discovery(paths.state_dir)
+    publish_signal(service="ghostvm-ai", metric="discovery.run", value=1.0, anomaly=False,
+                   log_line="ghostvm-ai discovery completed")
+    return result
 
 
 @app.post("/plan")
@@ -65,14 +70,22 @@ def plan() -> dict:
     PLAN_TOTAL.inc()
     ndsm, policy = _load_cfg()
     discovery = run_discovery(paths.state_dir)
-    return build_plan(ndsm, policy, discovery["snapshot"], paths.plans_dir)
+    result = build_plan(ndsm, policy, discovery["snapshot"], paths.plans_dir)
+    ok = bool(result.get("ok"))
+    publish_signal(service="ghostvm-ai", metric="plan.run", value=1.0 if ok else 0.0,
+                   anomaly=not ok, log_line=f"ghostvm-ai plan: ok={ok}")
+    return result
 
 
 @app.post("/apply")
 def apply(dry_run: bool = True) -> dict:
     APPLY_TOTAL.inc()
     plan_data = load_latest_plan(paths.plans_dir)
-    return apply_plan(plan_data, paths.plans_dir, paths.governance_dir, apply_enabled=apply_enabled(), dry_run=dry_run)
+    result = apply_plan(plan_data, paths.plans_dir, paths.governance_dir, apply_enabled=apply_enabled(), dry_run=dry_run)
+    ok = bool(result.get("ok"))
+    publish_signal(service="ghostvm-ai", metric="apply.run", value=1.0 if ok else 0.0,
+                   anomaly=not ok, log_line=f"ghostvm-ai apply dry_run={dry_run}: ok={ok}")
+    return result
 
 
 @app.post("/verify")

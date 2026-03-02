@@ -10,7 +10,7 @@ x-security: &default-security
   security_opt:
     - no-new-privileges:true
 
-x-ghost-user: &ghost-user "10001:10001"
+x-ghost-user: &ghost-user "1001:1001"
 
 services:
   op-challenger:

@@ -1,0 +1,113 @@
+#cloud-config
+# =============================================================
+# GhostStack — ghostl3-mainnet
+# OP Stack L3 mainnet on GhostL2
+# Network: gs-l3  /  static IP 10.50.30.10
+# Settles to: ghostl2-mainnet  (10.50.20.10:8545)   [L3→L2 only]
+# Routing law: L3 → L2 ONLY.  L3 → L1 direct is FORBIDDEN.
+# =============================================================
+
+hostname: ghostl3-mainnet
+fqdn: ghostl3-mainnet.ghostchain.local
+manage_etc_hosts: true
+timezone: UTC
+
+users:
+  - name: ghost
+    gecos: GhostStack Operator
+    groups: sudo, docker
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+osgEYoqPCDiJESBGJhdbM2EI+CcQr4UIC4igDX1Xu ghosttoken.dev@gmail.com"
+
+package_update: true
+package_upgrade: false
+packages:
+  - curl
+  - git
+  - jq
+  - ca-certificates
+  - gnupg
+  - fail2ban
+  - unattended-upgrades
+
+write_files:
+  - path: /etc/ghostl-stack/l3-mainnet.env
+    permissions: "0600"
+    owner: root:root
+    content: |
+      # ── GhostL3 Mainnet ─────────────────────────────────────
+      # ROUTING LAW: L3 settles to L2 ONLY. Never L1 directly.
+      ROUTING_LAW_MODE=strict
+
+      # L2 parent RPC (ghostl2-mainnet) — NOT the L1
+      L2_RPC=http://10.50.20.10:8545
+      L1_RPC=http://10.50.10.10:8545
+      L2_CHAIN_ID=901
+      L3_CHAIN_ID=903
+
+      # L3 rollup config (from chains/l3/rollup.json)
+      L3_INBOX_ADDRESS=0x1e2F4432bFeF9E9Ad39DA6d272F4aFf33629c770
+      L3_TOKEN_FACTORY_ADDRESS=0x446e7636a5Fa9af46c3718719e465B547248bF62
+
+      # L2 OP Stack contracts for L3 settlement
+      L2_OUTPUT_ORACLE_ADDRESS=REPLACE_ME
+      DISPUTE_GAME_FACTORY_ADDRESS=REPLACE_ME
+      BATCH_INBOX_ADDRESS=REPLACE_ME
+
+      # Operator keys (Vault — never commit values)
+      SEQUENCER_KEY=REPLACE_ME
+      BATCHER_KEY=REPLACE_ME
+      PROPOSER_KEY=REPLACE_ME
+      CHALLENGER_KEY=REPLACE_ME
+      SEQUENCER_ADDRESS=REPLACE_ME
+      BATCH_SENDER_ADDRESS=REPLACE_ME
+      PROPOSER_ADDRESS=REPLACE_ME
+
+      L3_SEQUENCER_L1_CONFS=2
+      L3_NAME=ghostl3
+      L3_DATA_PROFILE=mainnet
+
+      OPSTACK_IMAGE_TAG=mainnet
+      OPSTACK_UID=1000
+      OPSTACK_GID=1000
+
+      CANONICAL_GAS_TOKEN_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
+      GAS_TOKEN_L3=GST
+
+      AI_CONSENSUS_MODE=enforce
+      AI_CONSENSUS_FAIL_OPEN=0
+
+  - path: /etc/systemd/system/ghostl3-mainnet.service
+    permissions: "0644"
+    owner: root:root
+    content: |
+      [Unit]
+      Description=GhostL3 Mainnet OP Stack (L3 on GhostL2)
+      Requires=docker.service
+      After=docker.service network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=simple
+      EnvironmentFile=/etc/ghostl-stack/l3-mainnet.env
+      WorkingDirectory=/opt/ghostl-stack/infra/opstack
+      ExecStart=/usr/bin/docker compose \
+        -f docker-compose.l3.yml \
+        --env-file /etc/ghostl-stack/l3-mainnet.env \
+        up --remove-orphans
+      ExecStop=/usr/bin/docker compose \
+        -f docker-compose.l3.yml \
+        down
+      Restart=always
+      RestartSec=20
+      StandardOutput=journal
+      StandardError=journal
+      SyslogIdentifier=ghostl3-mainnet
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - bash /opt/ghostl-stack/infra/hypervisor/provision/ghostl3-provision.sh mainnet

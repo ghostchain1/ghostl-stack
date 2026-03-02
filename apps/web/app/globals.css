@@ -1,53 +1,98 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap');
+/* ── GhostStack Brand Fonts ─────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Sora:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ── GhostStack Brand Variables ─────────────────────────────────────────── */
 :root {
-  color-scheme: light dark;
-  --font-body: 'Space Grotesk', 'Sora', system-ui, -apple-system, sans-serif;
-  --font-display: 'Sora', 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+
+  /* Typography */
+  --font-display: 'Orbitron', system-ui, sans-serif;
+  --font-heading: 'Sora', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Brand Colors */
+  --phantom-black:   #0B0F14;
+  --spectral-purple: #7A5CFF;
+  --ghost-blue:      #00C2FF;
+  --neural-teal:     #00F0B5;
+  --sovereign-gold:  #C9A227;
+  --signal-red:      #FF3B3B;
+  --ghost-white:     #E8EDF5;
+  --phantom-mist:    #8A9BB5;
+
+  /* Layer Accents */
+  --l1-color:  #C9A227;  /* Sovereign Gold  — GhostChain */
+  --l2-color:  #7A5CFF;  /* Spectral Purple — GhostL2    */
+  --l3-color:  #00C2FF;  /* Ghost Blue      — GhostL3    */
+  --ai-color:  #00F0B5;  /* Neural Teal     — AI Systems */
+  --sec-color: #FF3B3B;  /* Signal Red      — Security   */
+
+  /* Layer Glow (25% opacity) */
+  --l1-glow:  rgba(201, 162, 39,  0.25);
+  --l2-glow:  rgba(122, 92,  255, 0.25);
+  --l3-glow:  rgba(0,   194, 255, 0.25);
+  --ai-glow:  rgba(0,   240, 181, 0.25);
+  --sec-glow: rgba(255, 59,  59,  0.25);
+
+  /* Border Radius */
   --radius-xs: 8px;
   --radius-sm: 10px;
   --radius-md: 14px;
   --radius-lg: 18px;
   --radius-xl: 22px;
-  --shadow-soft: 0 18px 50px rgba(0, 0, 0, 0.25);
-  --shadow-glow: 0 20px 60px rgba(35, 214, 166, 0.2);
+
+  /* Shadows */
+  --shadow-panel: 0 20px 60px rgba(0, 0, 0, 0.4);
+  --shadow-card:  0 8px 32px rgba(0, 0, 0, 0.3);
+  --shadow-glow:  0 0 24px rgba(122, 92, 255, 0.35);
 }
 
+/* ── Dark Theme (Primary / Default) ────────────────────────────────────── */
+:root,
 :root[data-theme='dark'] {
-  --bg: #05070f;
-  --bg-2: #0a0f1b;
-  --panel: rgba(10, 16, 28, 0.82);
-  --panel-strong: rgba(8, 12, 22, 0.92);
-  --text: #ebf0f7;
-  --muted: #9fb1c8;
-  --accent: #23d6a6;
-  --accent-2: #f2c14e;
-  --accent-3: #7aa2ff;
-  --border: rgba(255, 255, 255, 0.08);
-  --glow: rgba(35, 214, 166, 0.28);
-  --danger: #ff6b6b;
-  --success: #72f2a7;
-  --warning: #f2c14e;
+  --bg:           #0B0F14;
+  --bg-2:         #0f1520;
+  --bg-3:         #141c2e;
+  --panel:        rgba(11, 15, 20, 0.85);
+  --panel-strong: rgba(8, 11, 18, 0.95);
+  --text:         #E8EDF5;
+  --muted:        #8A9BB5;
+  --accent:       #7A5CFF;   /* Spectral Purple — primary brand */
+  --accent-2:     #C9A227;   /* Sovereign Gold  — governance    */
+  --accent-3:     #00C2FF;   /* Ghost Blue      — system        */
+  --accent-ai:    #00F0B5;   /* Neural Teal     — AI            */
+  --border:       rgba(122, 92, 255, 0.15);
+  --border-subtle:rgba(255, 255, 255, 0.06);
+  --glow:         rgba(122, 92, 255, 0.28);
+  --danger:       #FF3B3B;
+  --success:      #00F0B5;
+  --warning:      #C9A227;
 }
 
+/* ── Light Theme ────────────────────────────────────────────────────────── */
 :root[data-theme='light'] {
-  --bg: #f4f3ed;
-  --bg-2: #ffffff;
-  --panel: rgba(255, 255, 255, 0.92);
-  --panel-strong: rgba(248, 249, 252, 0.95);
-  --text: #10131a;
-  --muted: #4f5f73;
-  --accent: #1bb388;
-  --accent-2: #e6a325;
-  --accent-3: #3d6df6;
-  --border: rgba(16, 19, 26, 0.12);
-  --glow: rgba(27, 179, 136, 0.2);
-  --danger: #d14b4b;
-  --success: #1e8f6c;
-  --warning: #c6891d;
+  --bg:           #f0f2f8;
+  --bg-2:         #ffffff;
+  --bg-3:         #e8ecf5;
+  --panel:        rgba(255, 255, 255, 0.92);
+  --panel-strong: rgba(248, 249, 252, 0.98);
+  --text:         #0B0F14;
+  --muted:        #4f5f73;
+  --accent:       #5a3cdf;
+  --accent-2:     #b8891a;
+  --accent-3:     #0099cc;
+  --accent-ai:    #00b88a;
+  --border:       rgba(122, 92, 255, 0.2);
+  --border-subtle:rgba(0, 0, 0, 0.08);
+  --glow:         rgba(122, 92, 255, 0.15);
+  --danger:       #cc2222;
+  --success:      #00a87a;
+  --warning:      #a07a10;
 }
 
 *,
@@ -60,26 +105,135 @@ body {
   margin: 0;
   font-family: var(--font-body);
   background:
-    radial-gradient(circle at 20% 20%, rgba(35, 214, 166, 0.12), transparent 32%),
-    radial-gradient(circle at 80% 0%, rgba(242, 193, 78, 0.18), transparent 28%),
-    radial-gradient(circle at 50% 80%, rgba(122, 162, 255, 0.12), transparent 30%),
+    radial-gradient(circle at 15% 15%, rgba(122, 92, 255, 0.10), transparent 35%),
+    radial-gradient(circle at 85% 5%,  rgba(201, 162, 39, 0.08), transparent 30%),
+    radial-gradient(circle at 50% 85%, rgba(0, 194, 255, 0.07),  transparent 30%),
     linear-gradient(145deg, var(--bg) 0%, var(--bg-2) 55%, var(--bg) 100%);
   color: var(--text);
   min-height: 100vh;
   letter-spacing: 0.01em;
 }
 
+/* ── Brand Grid Overlay ─────────────────────────────────────────────────── */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 120px 120px;
-  opacity: 0.06;
+  background-image:
+    linear-gradient(rgba(122, 92, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(122, 92, 255, 0.04) 1px, transparent 1px);
+  background-size: 80px 80px;
+  opacity: 0.5;
   pointer-events: none;
   z-index: -1;
 }
+
+/* ── Brand Utility Classes ──────────────────────────────────────────────── */
+
+/* Display font (Orbitron) */
+.font-display { font-family: var(--font-display); }
+.font-heading  { font-family: var(--font-heading); }
+.font-body     { font-family: var(--font-body); }
+.font-mono     { font-family: var(--font-mono); }
+
+/* Layer badge base */
+.layer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid;
+}
+
+.layer-badge-l1 {
+  background: rgba(201, 162, 39, 0.12);
+  color: #C9A227;
+  border-color: rgba(201, 162, 39, 0.35);
+}
+
+.layer-badge-l2 {
+  background: rgba(122, 92, 255, 0.12);
+  color: #7A5CFF;
+  border-color: rgba(122, 92, 255, 0.35);
+}
+
+.layer-badge-l3 {
+  background: rgba(0, 194, 255, 0.12);
+  color: #00C2FF;
+  border-color: rgba(0, 194, 255, 0.35);
+}
+
+.layer-badge-ai {
+  background: rgba(0, 240, 181, 0.12);
+  color: #00F0B5;
+  border-color: rgba(0, 240, 181, 0.35);
+}
+
+.layer-badge-sec {
+  background: rgba(255, 59, 59, 0.12);
+  color: #FF3B3B;
+  border-color: rgba(255, 59, 59, 0.35);
+}
+
+/* Sovereign card */
+.sovereign-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.sovereign-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card), var(--shadow-glow);
+}
+
+/* Glow text */
+.text-glow-purple { text-shadow: 0 0 20px rgba(122, 92, 255, 0.6); }
+.text-glow-gold   { text-shadow: 0 0 20px rgba(201, 162, 39, 0.6); }
+.text-glow-teal   { text-shadow: 0 0 20px rgba(0, 240, 181, 0.6); }
+.text-glow-blue   { text-shadow: 0 0 20px rgba(0, 194, 255, 0.6); }
+
+/* Sovereign section label */
+.section-label {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Metric value */
+.metric-value {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.04em;
+}
+
+/* Status dot */
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.status-dot-active  { background: #00F0B5; box-shadow: 0 0 6px rgba(0,240,181,0.6); }
+.status-dot-warning { background: #C9A227; box-shadow: 0 0 6px rgba(201,162,39,0.6); }
+.status-dot-error   { background: #FF3B3B; box-shadow: 0 0 6px rgba(255,59,59,0.6); }
+.status-dot-muted   { background: #8A9BB5; }
 
 a {
   color: inherit;
@@ -115,14 +269,7 @@ a {
   font-family: var(--font-display);
 }
 
-.logo::before {
-  content: '';
-  width: 14px;
-  height: 14px;
-  border-radius: 5px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  box-shadow: 0 0 20px var(--glow);
-}
+/* logo::before removed — GhostWordmark component renders the mark directly */
 
 .nav {
   display: flex;
@@ -158,9 +305,9 @@ a {
 }
 
 .nav a.active {
-  background: linear-gradient(120deg, rgba(35, 214, 166, 0.16), rgba(242, 193, 78, 0.12));
+  background: linear-gradient(120deg, rgba(122, 92, 255, 0.16), rgba(201, 162, 39, 0.10));
   color: var(--text);
-  border-color: var(--border);
+  border-color: rgba(122, 92, 255, 0.35);
   transform: translateX(4px);
 }
 
@@ -188,7 +335,7 @@ a {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: linear-gradient(160deg, rgba(35, 214, 166, 0.05), rgba(242, 193, 78, 0.04), rgba(5, 8, 20, 0.8));
+  background: linear-gradient(160deg, rgba(0, 240, 181, 0.05), rgba(201, 162, 39, 0.04), rgba(5, 8, 20, 0.8));
 }
 
 .topbar {
@@ -278,8 +425,8 @@ a {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 15% 20%, rgba(35, 214, 166, 0.25), transparent 35%),
-    radial-gradient(circle at 85% 10%, rgba(242, 193, 78, 0.28), transparent 40%);
+  background: radial-gradient(circle at 15% 20%, rgba(0, 240, 181, 0.25), transparent 35%),
+    radial-gradient(circle at 85% 10%, rgba(201, 162, 39, 0.28), transparent 40%);
   opacity: 0.6;
   pointer-events: none;
 }
@@ -296,9 +443,11 @@ a {
   gap: 8px;
   padding: 6px 12px;
   border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(35, 214, 166, 0.12);
+  border: 1px solid rgba(0, 240, 181, 0.35);
+  background: rgba(0, 240, 181, 0.10);
+  color: #00F0B5;
   font-size: 0.8rem;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
@@ -400,11 +549,38 @@ textarea {
 
 .button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 18px 40px rgba(35, 214, 166, 0.28);
+  box-shadow: 0 18px 40px rgba(122, 92, 255, 0.35);
 }
 
 .button.secondary {
   background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  box-shadow: none;
+}
+
+/* Signal Red — destructive / alert actions */
+.button.danger {
+  background: rgba(255, 59, 59, 0.15);
+  border-color: rgba(255, 59, 59, 0.40);
+  color: #FF3B3B;
+  box-shadow: 0 0 12px rgba(255, 59, 59, 0.20);
+}
+
+.button.danger:hover {
+  background: rgba(255, 59, 59, 0.25);
+  box-shadow: 0 8px 24px rgba(255, 59, 59, 0.30);
+}
+
+/* Transparent ghost — border only */
+.button.ghost-btn {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--muted);
+  box-shadow: none;
+}
+
+.button.ghost-btn:hover {
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text);
   box-shadow: none;
 }
@@ -544,7 +720,7 @@ textarea {
   border: 1px solid var(--border);
   background: rgba(5, 10, 16, 0.6);
   color: var(--text);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: var(--font-mono);
   font-size: 0.78rem;
   line-height: 1.45;
   white-space: pre-wrap;
@@ -574,7 +750,7 @@ textarea {
 }
 
 .mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: var(--font-mono);
   font-size: 0.85rem;
 }
 
@@ -584,7 +760,7 @@ textarea {
 }
 
 .badge.warn {
-  background: rgba(242, 193, 78, 0.2);
+  background: rgba(201, 162, 39, 0.2);
   color: var(--warning);
 }
 
@@ -600,7 +776,7 @@ textarea {
 
 .pill.bad {
   color: var(--danger);
-  border-color: rgba(255, 107, 107, 0.4);
+  border-color: rgba(255, 59, 59, 0.4);
 }
 
 .sparkline {
@@ -735,14 +911,14 @@ textarea {
 
 .trace-dot.severity-warn,
 .trace-dot.severity-consensus_risk {
-  background: #fbbf24;
+  background: #C9A227;
 }
 
 .trace-dot.severity-error,
 .trace-dot.severity-critical,
 .trace-dot.severity-slashing_risk,
 .trace-dot.severity-security_event {
-  background: #f87171;
+  background: #FF3B3B;
 }
 
 @media (max-width: 1080px) {
@@ -768,13 +944,13 @@ textarea {
 
 @keyframes pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(114, 242, 167, 0.5);
+    box-shadow: 0 0 0 0 rgba(0, 240, 181, 0.5);
   }
   70% {
-    box-shadow: 0 0 0 10px rgba(114, 242, 167, 0);
+    box-shadow: 0 0 0 10px rgba(0, 240, 181, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(114, 242, 167, 0);
+    box-shadow: 0 0 0 0 rgba(0, 240, 181, 0);
   }
 }
 

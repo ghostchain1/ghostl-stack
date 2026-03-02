@@ -1,0 +1,26 @@
+[Unit]
+Description=GhostStack Hypervisor Supervisor — VM Health + GhostBrain Signal Publisher
+After=network-online.target libvirtd.service
+Wants=network-online.target
+Requires=libvirtd.service
+
+[Service]
+Type=simple
+User=ghost
+Group=libvirt
+WorkingDirectory=/home/ghost/ghostl-stack/infra/hypervisor/supervisor
+Environment=PYTHONUNBUFFERED=1
+Environment=SUPERVISOR_PORT=9108
+Environment=SCRAPE_INTERVAL=10
+Environment=RPC_PORT=8545
+# GhostBrain Core integration — VM health signals published via HTTP
+Environment=GHOSTBRAIN_URL=http://127.0.0.1:7900
+Environment=GHOSTBRAIN_ENABLED=true
+# Override per host via EnvironmentFile
+EnvironmentFile=-/etc/ghoststack/hypervisor-supervisor.env
+ExecStart=/usr/bin/python3 /home/ghost/ghostl-stack/infra/hypervisor/supervisor/supervisor.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

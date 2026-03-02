@@ -8,6 +8,7 @@ import { resolveAiAttestorBase, resolveApiBase } from '../../lib/runtime';
 import { useSession } from '../identity-access/session';
 import { apiRequest, type ApiError, formatApiError } from '../../lib/api';
 import { DataFetchErrorCard } from '../../components/DataFetchErrorCard';
+import { AIInsightsFeed } from './components/AIInsightsFeed';
 
 type ChainRef = 'l1' | 'l2' | 'l3';
 
@@ -114,6 +115,46 @@ type Forecasting = {
   forecasts: { avgGasPriceWei: string; congestion: string; avgTxPerBlock: number };
   explainability: Explainability;
 };
+
+type AiSummaryNetwork = {
+  chain: { layer: string; chainId: number; name: string };
+  risk: RiskScore;
+  health: { headBlock: number; avgBlockTimeSec: number; txPerBlockAvg: number; stalled: boolean } | null;
+};
+
+type AiSummaryAnomaly = {
+  id: string;
+  entity: string;
+  score: number;
+  reasons: string[];
+  recordedAt: string;
+};
+
+type AiSummary = {
+  generatedAt: string;
+  networks: AiSummaryNetwork[];
+  recentAnomalies: AiSummaryAnomaly[];
+  modules: string[];
+};
+
+type BatchResultOk = {
+  type: string;
+  entity: string;
+  chain: string;
+  ok: true;
+  risk: RiskScore;
+  explainability: Explainability;
+};
+
+type BatchResultErr = {
+  type: string;
+  entity: string;
+  chain: string;
+  ok: false;
+  error: string;
+};
+
+type BatchResult = BatchResultOk | BatchResultErr;
 
 type AiContractKey = 'AIOracleRegistry' | 'AIAttestationHub' | 'PolicyGuard' | 'EvidenceAnchor';
 
@@ -278,6 +319,13 @@ export function AiCommandCenter() {
   const [attestorStatus, setAttestorStatus] = useState('');
   const [attestorError, setAttestorError] = useState('');
 
+  // --- AI Summary & Batch Analyze state ---
+  const [aiSummary, setAiSummary] = useState<AiSummary | null>(null);
+  const [batchInput, setBatchInput] = useState('');
+  const [batchResults, setBatchResults] = useState<BatchResult[]>([]);
+  const [batchLoading, setBatchLoading] = useState(false);
+  const [batchError, setBatchError] = useState('');
+
   const pushError = (title: string, error: ApiError) => {
     setErrors((prev) => [...prev.filter((entry) => entry.title !== title), { title, error }]);
   };
@@ -399,6 +447,54 @@ export function AiCommandCenter() {
     }
     aiDefaultsAppliedRef.current[chain] = true;
   }, [aiAddressHints, chain]);
+
+  const runAiSummary = async () => {
+    try {
+      const res = await apiRequest<AiSummary>('/ai/summary', { baseUrl: API_URL });
+      if (!res.ok) return;
+      setAiSummary(res.data);
+    } catch {
+      // non-critical
+    }
+  };
+
+  const runBatchAnalyze = async () => {
+    setBatchError('');
+    const lines = batchInput
+      .split(/[\n,]+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (!lines.length) {
+      setBatchError('Enter at least one address or tx hash.');
+      return;
+    }
+    const items = lines.slice(0, 20).map((entity) => {
+      const isTx = /^0x[a-fA-F0-9]{64}$/.test(entity);
+      const type = isTx ? 'tx' : 'wallet';
+      return { type, entity, chain } as { type: 'tx' | 'wallet' | 'contract'; entity: string; chain: typeof chain };
+    });
+    setBatchLoading(true);
+    setBatchResults([]);
+    try {
+      const res = await apiRequest<{ results: BatchResult[] }>('/ai/batch-analyze', {
+        baseUrl: API_URL,
+        init: {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ items })
+        }
+      });
+      if (!res.ok) {
+        setBatchError(formatApiError(res.error).hint);
+        return;
+      }
+      setBatchResults(res.data.results);
+    } catch (err) {
+      setBatchError(err instanceof Error ? err.message : 'batch_error');
+    } finally {
+      setBatchLoading(false);
+    }
+  };
 
   const summarizeEvent = (event: AnalyticsEvent) => {
     const payload = event.payload || {};
@@ -746,6 +842,10 @@ export function AiCommandCenter() {
     loadAttestorStatus().catch(() => undefined);
     // We refresh attestor status when the selected layer changes.
   }, [chain]);
+
+  useEffect(() => {
+    runAiSummary().catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     if (!activeRpc) return;
@@ -1119,6 +1219,80 @@ export function AiCommandCenter() {
             </div>
           )}
         </Card>
+      </div>
+      {/* --- AI Summary, Batch Analyze & Live Feed --- */}
+      <div className="card-grid">
+        <Card title="AI System Summary" subtitle="Cross-chain health snapshot">
+          <Button onClick={runAiSummary}>Refresh</Button>
+          {aiSummary && (
+            <div className="stack" style={{ gap: 6 }}>
+              <div className="muted" style={{ fontSize: 11 }}>Updated {new Date(aiSummary.generatedAt).toLocaleTimeString()}</div>
+              {aiSummary.networks.map((net) => (
+                <div key={net.chain.layer} className="row" style={{ justifyContent: 'space-between' }}>
+                  <div>
+                    <div>{net.chain.name}</div>
+                    {net.health && (
+                      <div className="muted">
+                        block {net.health.headBlock} · {net.health.avgBlockTimeSec.toFixed(1)}s avg
+                        {net.health.stalled ? ' · STALLED' : ''}
+                      </div>
+                    )}
+                  </div>
+                  <Badge>{net.risk.label}</Badge>
+                </div>
+              ))}
+              {aiSummary.recentAnomalies.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <div className="muted" style={{ fontSize: 11, marginBottom: 4 }}>Recent Anomalies</div>
+                  {aiSummary.recentAnomalies.slice(0, 5).map((a) => (
+                    <div key={a.id} className="row" style={{ justifyContent: 'space-between', fontSize: 12 }}>
+                      <span className="mono" style={{ overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200 }}>{a.entity}</span>
+                      <Badge>{a.score >= 80 ? 'CRITICAL' : a.score >= 60 ? 'HIGH' : 'MEDIUM'}</Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {!aiSummary && <div className="muted">Click Refresh to load summary.</div>}
+        </Card>
+        <Card title="Batch Analyze" subtitle="Analyze up to 20 wallets or tx hashes">
+          <textarea
+            className="input"
+            rows={5}
+            placeholder={"Paste addresses or tx hashes, one per line or comma-separated\n0x123...\n0xabc..."}
+            value={batchInput}
+            onChange={(e) => setBatchInput(e.target.value)}
+            style={{ width: '100%', resize: 'vertical', fontFamily: 'monospace', fontSize: 12 }}
+          />
+          <div className="row" style={{ gap: 8, marginTop: 6 }}>
+            <Button onClick={runBatchAnalyze} disabled={batchLoading}>
+              {batchLoading ? 'Analyzing…' : 'Run Batch'}
+            </Button>
+            {batchResults.length > 0 && (
+              <span className="muted" style={{ fontSize: 12 }}>{batchResults.length} result{batchResults.length !== 1 ? 's' : ''}</span>
+            )}
+          </div>
+          {batchError && <div className="muted" style={{ color: '#dc3545', fontSize: 12 }}>{batchError}</div>}
+          <div className="stack" style={{ gap: 6, marginTop: 8 }}>
+            {batchResults.map((result, idx) => (
+              <div key={`${result.entity}-${idx}`} className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 240 }}>
+                    {result.entity}
+                  </div>
+                  <div className="muted" style={{ fontSize: 11 }}>{result.type} · {result.chain}</div>
+                </div>
+                {result.ok ? (
+                  <Badge>{result.risk.label}</Badge>
+                ) : (
+                  <span className="muted" style={{ fontSize: 11, color: '#dc3545' }}>{result.error}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
+        <AIInsightsFeed />
       </div>
       {isAdmin && (
         <div className="card-grid">

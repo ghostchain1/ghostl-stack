@@ -1,0 +1,100 @@
+#cloud-config
+# =============================================================
+# GhostStack — ghostchain-vhdx-import
+# One-shot VM: converts VHDX (Hyper-V) images → QCOW2 for KVM
+# Network: gs-mgmt  /  static IP 10.50.99.20
+# This VM has no chain-node role and no RPC endpoint.
+# =============================================================
+
+hostname: ghostchain-vhdx-import
+fqdn: ghostchain-vhdx-import.ghostchain.local
+manage_etc_hosts: true
+timezone: UTC
+
+users:
+  - name: ghost
+    gecos: GhostStack Operator
+    groups: sudo
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+osgEYoqPCDiJESBGJhdbM2EI+CcQr4UIC4igDX1Xu ghosttoken.dev@gmail.com"
+
+package_update: true
+package_upgrade: false
+packages:
+  - curl
+  - git
+  - jq
+  - ca-certificates
+  - qemu-utils
+  - libguestfs-tools
+  - ntfs-3g
+  - rsync
+  - pv
+
+write_files:
+  - path: /usr/local/bin/vhdx-to-qcow2
+    permissions: "0755"
+    owner: root:root
+    content: |
+      #!/usr/bin/env bash
+      # =======================================================
+      # vhdx-to-qcow2 — convert a VHDX disk image to QCOW2
+      #
+      # Usage:
+      #   vhdx-to-qcow2 <source.vhdx> [dest.qcow2]
+      #
+      # Outputs a QCOW2 suitable for use with virsh/virt-install.
+      # =======================================================
+      set -euo pipefail
+
+      SRC="${1:?Usage: vhdx-to-qcow2 <source.vhdx> [dest.qcow2]}"
+      DST="${2:-${SRC%.vhdx}.qcow2}"
+
+      echo "[vhdx-to-qcow2] Source : $SRC"
+      echo "[vhdx-to-qcow2] Dest   : $DST"
+      echo "[vhdx-to-qcow2] Converting..."
+
+      qemu-img convert -p -f vhdx -O qcow2 "$SRC" "$DST"
+
+      echo "[vhdx-to-qcow2] Done."
+      qemu-img info "$DST"
+
+  - path: /usr/local/bin/vhdx-mount-inspect
+    permissions: "0755"
+    owner: root:root
+    content: |
+      #!/usr/bin/env bash
+      # =======================================================
+      # vhdx-mount-inspect — mount VHDX/QCOW2 and list contents
+      #
+      # Usage:
+      #   vhdx-mount-inspect <image.vhdx|image.qcow2> [mount-point]
+      # =======================================================
+      set -euo pipefail
+
+      IMG="${1:?Usage: vhdx-mount-inspect <image> [mountpoint]}"
+      MNT="${2:-/mnt/vhdx-inspect}"
+
+      mkdir -p "$MNT"
+      guestmount -a "$IMG" -i --ro "$MNT"
+      echo "[inspect] Mounted at $MNT"
+      ls -la "$MNT"
+      echo ""
+      echo "[inspect] To unmount: guestunmount $MNT"
+
+  - path: /etc/motd
+    content: |
+      =====================================================
+       ghostchain-vhdx-import  — Disk Image Conversion VM
+      =====================================================
+       Tools: vhdx-to-qcow2, vhdx-mount-inspect
+       Work dir: /var/lib/vhdx-import/
+       Output dir: /var/lib/libvirt/images/ (if NFS-mounted)
+      =====================================================
+
+runcmd:
+  - mkdir -p /var/lib/vhdx-import
+  - chown ghost:ghost /var/lib/vhdx-import
+  - bash /opt/ghostl-stack/infra/hypervisor/provision/ghostchain-vhdx-import-provision.sh

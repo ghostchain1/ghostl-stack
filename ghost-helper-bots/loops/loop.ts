@@ -12,6 +12,7 @@ import { remediator } from "../bots/remediator.js";
 import { attestor } from "../bots/attestor.js";
 import { automator } from "../bots/automator.js";
 import type { LoopState } from "../core/state.js";
+import { connectBrain, disconnectBrain, publishStageSignal } from "../core/brain-client.js";
 
 async function main() {
   const argv = await yargs(hideBin(process.argv))
@@ -22,6 +23,15 @@ async function main() {
 
   const cfg = loadConfig();
   if (argv.maxIters) cfg.maxIterations = argv.maxIters;
+
+  // ── Connect to GhostBrain Core ─────────────────────────────────────────
+  await connectBrain(cfg.natsUrl);
+
+  // ── Graceful disconnect on exit ────────────────────────────────────────
+  const _cleanup = () => { void disconnectBrain(); };
+  process.on("exit", _cleanup);
+  process.on("SIGTERM", _cleanup);
+  process.on("SIGINT", _cleanup);
 
   ensureDir(cfg.reportsDir);
   ensureDir(cfg.evidenceDir);
@@ -42,6 +52,7 @@ async function main() {
     const sent = await sentinel(cfg);
     state.artifacts!["sentinel"] = sent.reportMd;
     saveState();
+    publishStageSignal("sentinel", sent.ok);
     if (!sent.ok) {
       state.stage = "blocked";
       state.lastError = "Sentinel vetoed run.";
@@ -55,6 +66,7 @@ async function main() {
       state.artifacts!["analysis"] = a.reportMd;
       state.artifacts!["fixPlan"] = a.evidenceJson;
       saveState();
+      publishStageSignal("analyze", true);
       return a;
     };
 
@@ -63,6 +75,7 @@ async function main() {
       const f = await fixer(cfg, fixPlanPath);
       state.artifacts!["fix"] = f.reportMd;
       saveState();
+      publishStageSignal("fix", f.ok);
       return f.ok;
     };
 
@@ -71,6 +84,7 @@ async function main() {
       const b = await builder(cfg);
       state.artifacts!["build"] = b.reportMd;
       saveState();
+      publishStageSignal("build", b.ok);
       return b.ok;
     };
 
@@ -79,6 +93,7 @@ async function main() {
       const v = await verifier(cfg);
       state.artifacts!["verify"] = v.reportMd;
       saveState();
+      publishStageSignal("verify", v.ok);
       return v.ok;
     };
 
@@ -87,6 +102,7 @@ async function main() {
       const r = await remediator(cfg);
       state.artifacts!["remediate"] = r.reportMd;
       saveState();
+      publishStageSignal("remediate", r.ok);
       return r.ok;
     };
 
@@ -95,6 +111,7 @@ async function main() {
       const at = await attestor(cfg);
       state.artifacts!["attest"] = at.reportMd;
       saveState();
+      publishStageSignal("attest", at.ok);
       return at.ok;
     };
 
@@ -103,6 +120,7 @@ async function main() {
       const au = await automator(cfg);
       state.artifacts!["automate"] = au.reportMd;
       saveState();
+      publishStageSignal("automate", au.ok);
       return au.ok;
     };
 

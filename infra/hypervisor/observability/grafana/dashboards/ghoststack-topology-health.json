@@ -1,0 +1,203 @@
+{
+  "uid": "ghoststack-topology",
+  "title": "GhostStack — Federation Topology & Health",
+  "tags": ["ghoststack", "topology", "health", "routing-law"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 2,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "VMs Running",
+      "description": "Count of VMs in 'running' state",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red",   "value": null },
+              { "color": "yellow","value": 5 },
+              { "color": "green", "value": 9 }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(ghoststack_vm_up)",
+          "legendFormat": "running"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "VMs With IP",
+      "description": "Count of VMs with a visible DHCP lease",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red",   "value": null },
+              { "color": "yellow","value": 5 },
+              { "color": "green", "value": 9 }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "targets": [
+        { "expr": "sum(ghoststack_vm_has_ip)", "legendFormat": "with-ip" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "RPC Healthy",
+      "description": "Count of VMs with a responding JSON-RPC endpoint",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red",   "value": null },
+              { "color": "yellow","value": 3 },
+              { "color": "green", "value": 9 }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "targets": [
+        { "expr": "sum(ghoststack_rpc_ok)", "legendFormat": "rpc-ok" }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Routing Law Edges",
+      "description": "L3→L2 and L2→L1 topology edges active (should always be 4)",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red",   "value": null },
+              { "color": "green", "value": 4 }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "targets": [
+        { "expr": "sum(ghoststack_topology_edge)", "legendFormat": "edges" }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "table",
+      "title": "VM Health Detail",
+      "description": "Per-VM state: running, has IP, RPC healthy",
+      "gridPos": { "x": 0, "y": 4, "w": 24, "h": 9 },
+      "options": {
+        "showHeader": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red",   "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "color": { "mode": "thresholds" },
+          "custom": { "displayMode": "color-background" }
+        }
+      },
+      "targets": [
+        { "expr": "ghoststack_vm_up",     "legendFormat": "{{vm}} — state",   "instant": true },
+        { "expr": "ghoststack_vm_has_ip", "legendFormat": "{{vm}} — has_ip",  "instant": true },
+        { "expr": "ghoststack_rpc_ok",    "legendFormat": "{{vm}} — rpc_ok",  "instant": true }
+      ],
+      "transformations": [
+        { "id": "labelsToFields",  "options": { "mode": "rows" } },
+        { "id": "organize",        "options": {} }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "VM Running State (over time)",
+      "description": "1 = running, 0 = off",
+      "gridPos": { "x": 0, "y": 13, "w": 24, "h": 8 },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip":  { "mode": "multi" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0, "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }]
+          },
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "targets": [
+        { "expr": "ghoststack_vm_up", "legendFormat": "{{vm}}" }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "RPC Health (over time)",
+      "description": "1 = JSON-RPC responding, 0 = unreachable",
+      "gridPos": { "x": 0, "y": 21, "w": 24, "h": 8 },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip":  { "mode": "multi" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0, "max": 1,
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "targets": [
+        { "expr": "ghoststack_rpc_ok", "legendFormat": "{{vm}} {{ip}}:{{port}}" }
+      ]
+    }
+  ]
+}

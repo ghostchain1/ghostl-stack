@@ -1,5 +1,6 @@
 import express from 'express';
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, timingSafeEqual, randomUUID } from 'node:crypto';
+import { connect, type NatsConnection, StringCodec } from 'nats';
 
 type Layer = 'L0' | 'L1' | 'L2' | 'L3';
 
@@ -26,6 +27,97 @@ type Envelope = {
     value?: string;
   };
 };
+
+const AGENT_ID           = 'host-orchestrator-ai';
+const NATS_URL            = process.env.NATS_URL ?? 'nats://nats:4222';
+const GHOSTBRAIN_ENABLED  = String(process.env.GHOSTBRAIN_ENABLED ?? '1') !== '0';
+
+// ──────────────────────────────────────────────────────────────────────────
+// GhostBrain Core NATS integration
+// ──────────────────────────────────────────────────────────────────────────
+const sc = StringCodec();
+let _nc: NatsConnection | null = null;
+
+function _brainEnvelope<T>(subject: string, payload: T): string {
+  return JSON.stringify({
+    messageId: randomUUID(),
+    subject,
+    correlationId: randomUUID(),
+    senderAgentId: AGENT_ID,
+    payload,
+    sentAt: new Date().toISOString(),
+  });
+}
+
+function _brainPublish<T>(subject: string, payload: T): void {
+  if (!_nc) return;
+  _nc.publish(subject, sc.encode(_brainEnvelope(subject, payload)));
+}
+
+async function connectGhostBrain(): Promise<void> {
+  if (!GHOSTBRAIN_ENABLED) return;
+  try {
+    _nc = await connect({ servers: NATS_URL, reconnect: true, maxReconnectAttempts: -1 });
+    console.log(`[host-orchestrator-ai] GhostBrain NATS connected → ${NATS_URL}`);
+
+    // Register agent
+    const now = new Date().toISOString();
+    _brainPublish('ghostbrain.agent.register', {
+      agentId: AGENT_ID,
+      role: 'executor',
+      capabilities: [
+        'libvirt.status', 'libvirt.start', 'libvirt.stop', 'libvirt.snapshot',
+        'docker.ps', 'docker.restart',
+        'network.firewall.read',
+      ],
+      resourceScopes: [
+        { type: 'vm', name: '*', layer: 'L1' },
+        { type: 'vm', name: '*', layer: 'L2' },
+        { type: 'vm', name: '*', layer: 'L3' },
+        { type: 'stack', name: 'hypervisor-host', layer: 'L1' },
+      ],
+      natsSubject: `ghostbrain.agent.${AGENT_ID}.task`,
+      registeredAt: now,
+      lastSeen: now,
+      healthy: true,
+    });
+
+    // Subscribe to inbound task assignments
+    const taskSub = _nc.subscribe(`ghostbrain.agent.${AGENT_ID}.task`);
+    void (async () => {
+      for await (const m of taskSub) {
+        try {
+          const msg = JSON.parse(sc.decode(m.data)) as { correlationId: string; payload: unknown };
+          console.log(`[host-orchestrator-ai] GhostBrain task: ${JSON.stringify(msg.payload)}`);
+          // Acknowledge — real execution would dispatch to virsh/docker
+          _brainPublish(`ghostbrain.agent.${AGENT_ID}.report`, {
+            correlationId: msg.correlationId,
+            result: { status: 'acknowledged' },
+            reportedAt: new Date().toISOString(),
+          });
+        } catch (err) {
+          console.error('[host-orchestrator-ai] Task parse error:', err);
+        }
+      }
+    })();
+
+    // Heartbeat every 60 s
+    setInterval(() => {
+      _brainPublish('ghostbrain.signal.health', {
+        signalId: randomUUID(),
+        source: 'manual',
+        service: AGENT_ID,
+        layer: 'L1',
+        metric: 'agent.alive',
+        value: 1,
+        observedAt: new Date().toISOString(),
+        anomaly: false,
+      });
+    }, 60_000);
+  } catch (err) {
+    console.warn(`[host-orchestrator-ai] GhostBrain NATS unavailable: ${String(err)}`);
+  }
+}
 
 const port = Number(process.env.HOST_ORCH_PORT || process.env.PORT || 7831);
 const signatureRequired = String(process.env.CONTROL_PLANE_REQUIRE_SIGNATURE || '1') !== '0';
@@ -204,6 +296,16 @@ app.post('/v1/host/telemetry/report', (req, res) => {
     const envelope = parseEnvelope(req.body);
     validateEnvelope(envelope, allowedVmRoles);
     metrics.telemetryReports += 1;
+    // Forward telemetry as a health signal to GhostBrain
+    _brainPublish('ghostbrain.signal.health', {
+      signalId: randomUUID(),
+      source: 'nats',
+      service: String(envelope.sender.id || AGENT_ID),
+      layer: envelope.sender.layer_scope === 'L0' ? 'L1' : envelope.sender.layer_scope as Layer,
+      logLine: `Telemetry from ${envelope.sender.id}: ${JSON.stringify(envelope.payload).slice(0, 120)}`,
+      observedAt: envelope.timestamp,
+      anomaly: false,
+    });
     res.json({ ok: true, accepted_at: new Date().toISOString(), request_id: envelope.request_id });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
@@ -227,4 +329,8 @@ app.post('/v1/host/evidence/submit', (req, res) => {
 
 app.listen(port, '0.0.0.0', () => {
   console.log(`[host-orchestrator-ai] listening on :${port}`);
+  void connectGhostBrain();
 });
+
+process.on('SIGTERM', async () => { if (_nc) await _nc.drain(); process.exit(0); });
+process.on('SIGINT',  async () => { if (_nc) await _nc.drain(); process.exit(0); });

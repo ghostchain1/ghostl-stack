@@ -1,0 +1,184 @@
+/* ── GhostStack Public Site — Design System ──────────────────────────── */
+
+/* ── Keyframes ─────────────────────────────────────────────────────────── */
+
+@keyframes gsGridScroll {
+  0%   { background-position: 0 0; }
+  100% { background-position: 60px 60px; }
+}
+
+@keyframes gsPulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
+
+@keyframes gsDotPulse {
+  0%   { box-shadow: 0 0 0 0   rgba(0, 240, 181, 0.6); }
+  70%  { box-shadow: 0 0 0 8px rgba(0, 240, 181, 0);   }
+  100% { box-shadow: 0 0 0 0   rgba(0, 240, 181, 0);   }
+}
+
+@keyframes gsDotPulseGold {
+  0%   { box-shadow: 0 0 0 0   rgba(201, 162, 39, 0.7); }
+  70%  { box-shadow: 0 0 0 8px rgba(201, 162, 39, 0);   }
+  100% { box-shadow: 0 0 0 0   rgba(201, 162, 39, 0);   }
+}
+
+@keyframes gsDotPulseBlue {
+  0%   { box-shadow: 0 0 0 0   rgba(0, 194, 255, 0.6); }
+  70%  { box-shadow: 0 0 0 8px rgba(0, 194, 255, 0);   }
+  100% { box-shadow: 0 0 0 0   rgba(0, 194, 255, 0);   }
+}
+
+@keyframes gsDotPulsePurple {
+  0%   { box-shadow: 0 0 0 0   rgba(122, 92, 255, 0.6); }
+  70%  { box-shadow: 0 0 0 8px rgba(122, 92, 255, 0);   }
+  100% { box-shadow: 0 0 0 0   rgba(122, 92, 255, 0);   }
+}
+
+@keyframes gsShimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+@keyframes gsScan {
+  0%   { transform: translateY(-4px); opacity: 0; }
+  5%   { opacity: 0.4; }
+  95%  { opacity: 0.4; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+@keyframes gsFloat {
+  0%, 100% { transform: translateY(0px);   }
+  50%       { transform: translateY(-8px); }
+}
+
+@keyframes gsBorderGlow {
+  0%, 100% { border-color: rgba(122, 92, 255, 0.15); }
+  50%       { border-color: rgba(122, 92, 255, 0.45); }
+}
+
+@keyframes gsTickerScroll {
+  0%   { transform: translateX(0%);    }
+  100% { transform: translateX(-50%);  }
+}
+
+@keyframes gsFadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes gsRotate {
+  from { transform: rotate(0deg);   }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Utilities ─────────────────────────────────────────────────────────── */
+
+.gs-grid-bg {
+  background-image:
+    linear-gradient(rgba(122,92,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(122,92,255,0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: gsGridScroll 20s linear infinite;
+}
+
+.gs-dot-teal  { animation: gsDotPulse       2s ease-in-out infinite; }
+.gs-dot-gold  { animation: gsDotPulseGold   2s ease-in-out infinite; }
+.gs-dot-blue  { animation: gsDotPulseBlue   2s ease-in-out infinite; }
+.gs-dot-purple{ animation: gsDotPulsePurple 2s ease-in-out infinite; }
+
+.gs-float     { animation: gsFloat 6s ease-in-out infinite; }
+.gs-pulse     { animation: gsPulse 3s ease-in-out infinite; }
+.gs-rotate    { animation: gsRotate 20s linear infinite;    }
+
+.gs-shimmer-text {
+  background: linear-gradient(90deg, #8A9BB5 25%, #E8EDF5 50%, #8A9BB5 75%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gsShimmer 4s linear infinite;
+}
+
+.gs-ticker-wrap {
+  overflow: hidden;
+  white-space: nowrap;
+}
+.gs-ticker-inner {
+  display: inline-flex;
+  animation: gsTickerScroll 30s linear infinite;
+}
+
+.gs-border-glow { animation: gsBorderGlow 4s ease-in-out infinite; }
+
+.gs-scan-line {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.gs-scan-line::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(122,92,255,0.35), transparent);
+  animation: gsScan 8s ease-in-out infinite;
+  top: 0;
+}
+
+/* ── HUD Panel corner accents ──────────────────────────────────────────── */
+.gs-hud {
+  position: relative;
+}
+.gs-hud::before,
+.gs-hud::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: rgba(122, 92, 255, 0.5);
+  border-style: solid;
+}
+.gs-hud::before {
+  top: -1px; left: -1px;
+  border-width: 2px 0 0 2px;
+}
+.gs-hud::after {
+  bottom: -1px; right: -1px;
+  border-width: 0 2px 2px 0;
+}
+
+/* ── Nav ───────────────────────────────────────────────────────────────── */
+.gs-nav-link {
+  transition: color 0.15s, background 0.15s;
+}
+.gs-nav-link:hover {
+  color: #E8EDF5 !important;
+  background: rgba(122, 92, 255, 0.08) !important;
+}
+
+/* ── Cards ─────────────────────────────────────────────────────────────── */
+.gs-card-hover {
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.gs-card-hover:hover {
+  border-color: rgba(122, 92, 255, 0.35) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 40px rgba(122, 92, 255, 0.12);
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+.gs-btn-primary {
+  transition: filter 0.15s, transform 0.15s;
+}
+.gs-btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+/* ── Fade-in ───────────────────────────────────────────────────────────── */
+.gs-fade-up {
+  animation: gsFadeUp 0.6s ease both;
+}

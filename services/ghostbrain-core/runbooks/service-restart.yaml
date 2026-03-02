@@ -1,0 +1,73 @@
+# GhostBrain Runbook: Service Restart
+# Triggered by: crash-loop, OOM kill, container exited
+# Routing law: operates on L2/L3 services only
+
+name: service-restart
+version: 1.0.0
+description: |
+  Safely restart a crash-looping container.
+  Requires: health check passes within 60s.
+  Rollback: restore previous container state from snapshot.
+
+trigger:
+  patterns:
+    - "crash.loop"
+    - "restarting"
+    - "oom.kill"
+    - "exited"
+
+preconditions:
+  - check: "container_exists"
+    required: true
+  - check: "backup_recent"
+    required: false
+
+steps:
+  - id: collect-before-evidence
+    capability: metrics.query
+    description: "Snapshot current metrics before restart"
+    params:
+      queries:
+        - "up{job='{{ service }}'}"
+        - "container_restart_count{name='{{ service }}'}"
+    evidence_kind: before_after
+    timeout_seconds: 30
+
+  - id: restart-container
+    capability: docker.restart
+    description: "Restart the unhealthy container"
+    params:
+      service: "{{ service }}"
+      timeout: 30
+    timeout_seconds: 60
+    rollback:
+      capability: docker.restart
+      params:
+        service: "{{ service }}"
+        timeout: 30
+
+  - id: verify-health
+    capability: metrics.query
+    description: "Verify container is healthy for 60 seconds"
+    params:
+      queries:
+        - "up{job='{{ service }}'}"
+      min_value: 1
+      window_seconds: 60
+    timeout_seconds: 90
+
+success_metrics:
+  - metric: "up{job='{{ service }}'}"
+    operator: eq
+    threshold: 1
+    window_seconds: 60
+
+rollback_trigger:
+  - metric: "container_restart_count{name='{{ service }}'}"
+    operator: gt
+    threshold: 3
+    window_seconds: 120
+
+blast_radius: 1
+canary_required: false
+break_glass_required: false

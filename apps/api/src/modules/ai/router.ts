@@ -5,6 +5,7 @@ import { ghostWalletRpcManager } from '../../services/rpc-manager';
 import { env } from '../../config/env';
 import { requirePermission } from '../../lib/rbac';
 import { emitEvent } from '../../lib/events';
+import { aiRegistry } from './services';
 
 type ChainRef = 'l1' | 'l2' | 'l3';
 type ChainLayer = 'L1' | 'L2' | 'L3';
@@ -1295,6 +1296,169 @@ export const buildAiRouter = () => {
       });
       res.status(404).json({ error: err instanceof Error ? err.message : 'contract_not_found' });
     }
+  });
+
+  // -------------------------------------------------------------------------
+  // GET /ai/summary  — aggregated cross-chain health snapshot
+  // -------------------------------------------------------------------------
+  router.get('/ai/summary', guard, async (req, res) => {
+    try {
+      const chains: ChainRef[] = ['l1', 'l2', 'l3'];
+      const networkResults = await Promise.allSettled(
+        chains.map((c) =>
+          getProvider(c, async (_provider) => {
+            const sampleSize = 40;
+            const blocks = await fetchLatestBlocks(c, sampleSize);
+            const times = blocks.map((b) => Number(b.timestamp)).filter(Boolean);
+            const latest = blocks[blocks.length - 1];
+            const deltas = times.slice(1).map((t, idx) => t - times[idx]);
+            const avg = deltas.length ? deltas.reduce((a, b) => a + b, 0) / deltas.length : 0;
+            const lastAge = latest ? Math.max(0, Math.floor(Date.now() / 1000) - Number(latest.timestamp)) : 0;
+            const stalled = avg > 0 && lastAge > avg * 3;
+            const txPerBlockAvg =
+              blocks.reduce((sum, b) => sum + (b.transactions ? b.transactions.length : 0), 0) / Math.max(blocks.length, 1);
+            const features = stalled
+              ? [{ name: 'chain_stall', weight: 40, detail: 'last block age exceeds 3x avg' }]
+              : [];
+            const risk = computeRisk(features);
+            return {
+              chain: chainDescriptor(c),
+              risk,
+              health: {
+                headBlock: latest?.number ?? 0,
+                avgBlockTimeSec: avg,
+                txPerBlockAvg,
+                stalled
+              }
+            };
+          })
+        )
+      );
+
+      const recentAnomalies = await aiRegistry.anomalyDetection.getRecent(20);
+
+      const summary = {
+        generatedAt: new Date().toISOString(),
+        networks: networkResults.map((r, idx) =>
+          r.status === 'fulfilled'
+            ? r.value
+            : { chain: chainDescriptor(chains[idx]), risk: { score: 0, label: 'SAFE', reasons: ['unavailable'] }, health: null }
+        ),
+        recentAnomalies,
+        modules: [
+          'tx-intel', 'wallet-intel', 'contract-intel', 'network-intel',
+          'bridge-intel', 'governance-intel', 'forecasting', 'explainability'
+        ]
+      };
+
+      await emitEvent({
+        scope: 'ai',
+        type: 'ai:summary',
+        actorId: req.session?.userId,
+        status: 'ok',
+        payload: { chains }
+      });
+      res.json(summary);
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'summary_error' });
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // POST /ai/batch-analyze  — parallel multi-entity analysis
+  // Body: { items: Array<{ type: 'tx'|'wallet'|'contract', entity: string, chain: 'l1'|'l2'|'l3' }> }
+  // -------------------------------------------------------------------------
+  const batchItemSchema = z.object({
+    type: z.enum(['tx', 'wallet', 'contract']),
+    entity: z.string().min(1),
+    chain: chainParam
+  });
+  const batchBodySchema = z.object({
+    items: z.array(batchItemSchema).min(1).max(20)
+  });
+
+  router.post('/ai/batch-analyze', guard, async (req, res) => {
+    const parsed = batchBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'invalid_input', details: parsed.error.flatten() });
+      return;
+    }
+    const { items } = parsed.data;
+    const results = await Promise.allSettled(
+      items.map(async (item) => {
+        if (item.type === 'tx') {
+          if (!/^0x[a-fA-F0-9]{64}$/.test(item.entity)) throw new Error('invalid_tx_hash');
+          const intel = await txIntel(item.chain, item.entity);
+          return { ...item, ok: true, risk: intel.risk, explainability: intel.explainability };
+        }
+        if (item.type === 'wallet') {
+          if (!isAddress(item.entity)) throw new Error('invalid_address');
+          const intel = await walletIntel(item.chain, item.entity);
+          return { ...item, ok: true, risk: intel.risk, explainability: intel.explainability };
+        }
+        if (!isAddress(item.entity)) throw new Error('invalid_address');
+        const intel = await contractIntel(item.chain, item.entity);
+        return { ...item, ok: true, risk: intel.risk, explainability: intel.explainability };
+      })
+    );
+
+    const output = results.map((r, idx) =>
+      r.status === 'fulfilled'
+        ? r.value
+        : { ...items[idx], ok: false, error: (r.reason as Error)?.message ?? 'analysis_error' }
+    );
+
+    // record high-risk findings into anomaly store
+    for (const item of output) {
+      if (item.ok && 'risk' in item && item.risk.score >= 60) {
+        aiRegistry.anomalyDetection.record({
+          entity: item.entity,
+          score: item.risk.score,
+          reasons: item.risk.reasons
+        });
+      }
+    }
+
+    await emitEvent({
+      scope: 'ai',
+      type: 'ai:batch-analyze',
+      actorId: req.session?.userId,
+      status: 'ok',
+      payload: { count: items.length }
+    });
+    res.json({ results: output });
+  });
+
+  // -------------------------------------------------------------------------
+  // GET /ai/stream-alerts  — Server-Sent Events feed of AI anomaly alerts
+  // -------------------------------------------------------------------------
+  router.get('/ai/stream-alerts', guard, (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders?.();
+
+    // immediately send recent anomalies as seed events
+    aiRegistry.anomalyDetection.getRecent(10).then((recent) => {
+      for (const anomaly of recent.reverse()) {
+        res.write(`data: ${JSON.stringify(anomaly)}\n\n`);
+      }
+    }).catch(() => undefined);
+
+    // subscribe to future anomalies
+    const unsubscribe = aiRegistry.anomalyDetection.watch((anomaly) => {
+      res.write(`data: ${JSON.stringify(anomaly)}\n\n`);
+    });
+
+    // heartbeat to keep connection open
+    const heartbeat = setInterval(() => {
+      res.write(': heartbeat\n\n');
+    }, 25_000);
+
+    req.on('close', () => {
+      unsubscribe();
+      clearInterval(heartbeat);
+    });
   });
 
   return router;

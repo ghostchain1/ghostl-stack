@@ -10,7 +10,7 @@ services:
       DB_PATH: /data/reward-distributor.sqlite
       GOVERNANCE_ROOT: /governance/proposals
       DISTRIBUTOR_ADMIN_TOKEN: ${REWARD_DISTRIBUTOR_ADMIN_TOKEN:-}
-    user: "10001:10001"
+    user: "1001:1001"
     cap_drop:
       - ALL
     security_opt:

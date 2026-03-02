@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7A5CFF" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#7A5CFF" stop-opacity="0.65"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <!-- Phantom black background -->
+  <rect width="48" height="48" rx="10" fill="#0B0F14"/>
+  <!-- Hexagonal frame -->
+  <polygon points="24,3 42,13.5 42,34.5 24,45 6,34.5 6,13.5"
+           stroke="#7A5CFF" stroke-width="1" stroke-opacity="0.4" fill="none"/>
+  <!-- Ghost body -->
+  <path d="M24 11 C18 11 14 16 14 22 L14 34 L17 31 L20 34 L23 31 L24 33 L27 31 L30 34 L33 31 L34 34 L34 22 C34 16 30 11 24 11 Z"
+        fill="url(#g1)" filter="url(#glow)"/>
+  <!-- Ghost eyes -->
+  <circle cx="20.5" cy="22" r="1.8" fill="#0B0F14"/>
+  <circle cx="27.5" cy="22" r="1.8" fill="#0B0F14"/>
+</svg>

@@ -40,7 +40,11 @@ services:
       retries: 20
 
   migrate:
-    <<: *runtime-hardening
+    # Migration runs as root. cap_drop/security hardening are intentionally
+    # omitted here: this is a one-shot container (restart: no) that runs the
+    # database schema migration and exits. node_modules are pre-installed on
+    # the host so the bind-mount already contains all dependencies.
+    user: root
     image: node:22-alpine@sha256:48f53c3f0105ccddcc5e4f520347398dfc0ba9b3008fbfd98a2add27e5797957
     working_dir: /work
     volumes:
@@ -56,7 +60,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: ["sh", "-lc", "npm install && npm run migrate"]
+    command: ["sh", "-lc", "npm run migrate"]
     restart: "no"
 
   ghost-compliance:

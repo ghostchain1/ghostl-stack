@@ -1,0 +1,11 @@
+$TTL 300
+@   IN  SOA ns1.ghostchain.cloud. admin.ghostchain.cloud. (
+        2026022501 ; serial
+        3600       ; refresh
+        600        ; retry
+        604800     ; expire
+        300        ; minimum
+)
+
+@                                IN NS ns1.ghostchain.cloud.
+ns1                              300 IN A 192.168.122.205

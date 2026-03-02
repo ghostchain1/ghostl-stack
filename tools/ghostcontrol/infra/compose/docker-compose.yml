@@ -267,7 +267,7 @@ services:
       - SECRETS=0
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    user: "65534:65534"
+    user: "1001:1001"
     group_add:
       - "${DOCKER_GID:-112}"
     privileged: false

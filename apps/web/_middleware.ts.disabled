@@ -1,0 +1,76 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+// ── Subdomain → path mapping ─────────────────────────────────────────────
+// e.g. investors.localhost:3200 → /site/investors
+const SUBDOMAIN_MAP: Record<string, string> = {
+  investors:  '/site/investors',
+  users:      '/site/users',
+  user:       '/site/users',
+  token:      '/site/token',
+  gst:        '/site/token',
+  developers: '/site/developers',
+  dev:        '/site/developers',
+  docs:       '/site/developers',
+  www:        '/site',
+  whitepaper: '/site/whitepaper',
+  // ── Management / operator console ──────────────────────────────────────
+  management: '/econ',
+  app:        '/econ',
+};
+
+// These subdomains pass through to the internal dashboard unchanged
+const PASSTHROUGH_SUBDOMAINS = new Set(['grafana', 'api', 'econ', 'admin']);
+
+export function middleware(req: NextRequest) {
+  const host = req.headers.get('host') ?? '';
+
+  // Extract subdomain — works for:
+  //   investors.localhost:3200
+  //   investors.ghoststack.io
+  //   localhost:3200 (no subdomain → skip)
+  const hostWithoutPort = host.split(':')[0];
+  const parts = hostWithoutPort.split('.');
+
+  // Need at least 2 parts and first part must not be the bare host
+  // "localhost" → parts = ["localhost"] → no subdomain
+  // "investors.localhost" → parts = ["investors", "localhost"]
+  // "investors.ghoststack.io" → parts = ["investors", "ghoststack", "io"]
+  if (parts.length < 2 || parts[0] === 'localhost' || parts[0] === 'www' && parts.length === 1) {
+    return NextResponse.next();
+  }
+
+  const subdomain = parts[0].toLowerCase();
+
+  // Passthrough — don't rewrite these
+  if (PASSTHROUGH_SUBDOMAINS.has(subdomain)) {
+    return NextResponse.next();
+  }
+
+  const targetPath = SUBDOMAIN_MAP[subdomain];
+  if (!targetPath) {
+    // Unknown subdomain — fall through to Next.js routing
+    return NextResponse.next();
+  }
+
+  const url = req.nextUrl.clone();
+  const incomingPath = url.pathname;
+
+  // If request is already at the target path (or a sub-path of it), pass through
+  // This avoids redirect loops
+  if (incomingPath.startsWith(targetPath)) {
+    return NextResponse.next();
+  }
+
+  // Rewrite: keep query string, map / → /site/xxx
+  const suffix = incomingPath === '/' ? '' : incomingPath;
+  url.pathname = targetPath + suffix;
+
+  return NextResponse.rewrite(url);
+}
+
+export const config = {
+  // Run on all paths except Next.js internals and static files
+  matcher: [
+    '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:png|jpg|jpeg|svg|gif|ico|webp|woff|woff2|ttf|otf)).*)',
+  ],
+};

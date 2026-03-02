@@ -1,0 +1,72 @@
+services:
+  # ──────────────────────────────────────────────────────────
+  # Hypervisor Supervisor
+  # Mounts the libvirt socket so it can call virsh inside.
+  # ──────────────────────────────────────────────────────────
+  ghoststack-supervisor:
+    build:
+      context: ../supervisor
+      dockerfile: Dockerfile
+    container_name: ghoststack-supervisor
+    restart: unless-stopped
+    environment:
+      VM_L1_MAINNET:           ${VM_L1_MAINNET:-ghostchain-mainnet-l1}
+      VM_L1_TESTNET:           ${VM_L1_TESTNET:-ghostchain-testnet-l1}
+      VM_L1_VALIDATOR_MAINNET: ${VM_L1_VALIDATOR_MAINNET:-ghost-mainnet-validator}
+      VM_L1_VALIDATOR_TESTNET: ${VM_L1_VALIDATOR_TESTNET:-ghost-testnet-validator}
+      VM_L1_ARCHIVE:           ${VM_L1_ARCHIVE:-ghost-mainnet-archive-node}
+      VM_L2_MAINNET:           ${VM_L2_MAINNET:-ghostl2-mainnet}
+      VM_L2_TESTNET:           ${VM_L2_TESTNET:-ghostl2-testnet}
+      VM_L3_MAINNET:           ${VM_L3_MAINNET:-ghostl3-mainnet}
+      VM_L3_TESTNET:           ${VM_L3_TESTNET:-ghostl3-testnet}
+      RPC_PORT:                ${RPC_PORT_L1:-8545}
+      SUPERVISOR_PORT:         ${SUPERVISOR_METRICS_PORT:-9108}
+      SCRAPE_INTERVAL:         "10"
+    volumes:
+      - /var/run/libvirt/libvirt-sock:/var/run/libvirt/libvirt-sock
+    ports:
+      - "${SUPERVISOR_METRICS_PORT:-9108}:9108"
+
+  # ──────────────────────────────────────────────────────────
+  # Prometheus
+  # ──────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    container_name: ghoststack-prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    depends_on:
+      - ghoststack-supervisor
+
+  # ──────────────────────────────────────────────────────────
+  # Grafana
+  # ──────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: ghoststack-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER:     admin
+      GF_SECURITY_ADMIN_PASSWORD: admin   # change in production
+      GF_FEATURE_TOGGLES_ENABLE:  ""
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      - prometheus
+
+volumes:
+  prometheus-data: {}
+  grafana-data: {}

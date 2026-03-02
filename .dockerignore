@@ -53,6 +53,15 @@ chains/**
 apps/worker
 apps/worker/**
 
+# Allow bridge-service workspace build (needs routing-guard from packages/)
+!services/bridge-service/
+!services/bridge-service/package.json
+!services/bridge-service/package-lock.json
+!services/bridge-service/src/
+!services/bridge-service/src/**
+!packages/routing-guard/
+!packages/routing-guard/**
+
 # Keep deterministic AI observability modules available for API TypeScript builds.
 !observability/
 !observability/ai/

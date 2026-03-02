@@ -1,0 +1,127 @@
+# GhostBrain Core — Docker Compose Snippet
+# Merge into main compose or include with: --file compose.snippet.yml
+#
+# Routing law: GhostBrain orchestrates L2/L3 services.
+# It never directly connects to external chains — only via GhostChain L1 policy.
+
+name: ghostbrain-core
+
+services:
+  ghostbrain-core:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghostbrain-core:latest
+    container_name: ghostbrain-core
+    restart: unless-stopped
+    ports:
+      - "7900:7900"
+    environment:
+      NODE_ENV: production
+      PORT: "7900"
+      # Chain IDs (routing law)
+      GHOSTAI_L1_CHAIN_ID: "${GHOSTAI_L1_CHAIN_ID}"
+      GHOSTAI_L2_CHAIN_ID: "${GHOSTAI_L2_CHAIN_ID}"
+      GHOSTAI_L3_CHAIN_ID: "${GHOSTAI_L3_CHAIN_ID}"
+      # NATS
+      NATS_URL: "${NATS_URL:-nats://nats:4222}"
+      # Postgres (incidents, plans, audit)
+      GHOSTBRAIN_POSTGRES_URL: "${GHOSTBRAIN_POSTGRES_URL}"
+      # Redis (locks, rate limits)
+      GHOSTBRAIN_REDIS_URL: "${GHOSTBRAIN_REDIS_URL:-redis://redis:6379}"
+      # Vault
+      VAULT_ADDR: "${VAULT_ADDR:-http://vault:8200}"
+      VAULT_ROLE_ID: "${VAULT_ROLE_ID}"
+      # Observability
+      PROMETHEUS_URL: "${PROMETHEUS_URL:-http://prometheus:9090}"
+      LOKI_URL: "${LOKI_URL:-http://loki:3100}"
+      # GhostContractAI authorities
+      GHOSTAI_REGISTRY_ADDRESS: "${GHOSTAI_REGISTRY_ADDRESS}"
+      GHOSTAI_GOVERNOR_ADDRESS: "${GHOSTAI_GOVERNOR_ADDRESS}"
+      GHOSTAI_POLICY_GATE_ADDRESS: "${GHOSTAI_POLICY_GATE_ADDRESS}"
+      GHOSTAI_RISK_ORACLE_ADDRESS: "${GHOSTAI_RISK_ORACLE_ADDRESS}"
+      # Brain tuning
+      BRAIN_TICK_SECONDS: "${BRAIN_TICK_SECONDS:-30}"
+      CANARY_WINDOW_SECONDS: "${CANARY_WINDOW_SECONDS:-120}"
+      MAX_BLAST_RADIUS: "${MAX_BLAST_RADIUS:-3}"
+      TASK_TOKEN_TTL_SECONDS: "${TASK_TOKEN_TTL_SECONDS:-300}"
+    volumes:
+      # Read-only Docker socket for container health observation only.
+      # GhostBrain never directly mutates containers — executors do.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - ghostbrain-net
+      - ghoststack-internal
+    depends_on:
+      ghostbrain-postgres:
+        condition: service_healthy
+      ghostbrain-redis:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:7900/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    labels:
+      ghostbrain.role: "brain-core"
+      ghostbrain.layer: "L2"
+      ghostbrain.routing-law: "L3→L2→L1"
+
+  ghostbrain-postgres:
+    image: postgres:16-alpine
+    container_name: ghostbrain-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ghostbrain
+      POSTGRES_USER: ghostbrain
+      POSTGRES_PASSWORD: "${GHOSTBRAIN_POSTGRES_PASSWORD}"
+    volumes:
+      - ghostbrain-postgres-data:/var/lib/postgresql/data
+    networks:
+      - ghostbrain-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghostbrain"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ghostbrain-redis:
+    image: redis:7-alpine
+    container_name: ghostbrain-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - ghostbrain-redis-data:/data
+    networks:
+      - ghostbrain-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  nats:
+    image: nats:2.10-alpine
+    container_name: ghostbrain-nats
+    restart: unless-stopped
+    ports:
+      - "4222:4222"
+      - "8222:8222"   # monitoring
+    command: ["-js", "-m", "8222"]
+    networks:
+      - ghostbrain-net
+      - ghoststack-internal
+
+volumes:
+  ghostbrain-postgres-data:
+  ghostbrain-redis-data:
+
+networks:
+  ghostbrain-net:
+    driver: bridge
+  ghoststack-internal:
+    external: true
+    name: ghoststack-internal

@@ -11,7 +11,7 @@ services:
       ARTIFACTS_ROOT: /artifacts/governor
       TREASURY_STATUS_URL: http://treasury-engine:7683/v1/treasury/status
       GOVERNOR_ADMIN_TOKEN: ${HYPER_GHOST_GOVERNOR_ADMIN_TOKEN:-}
-    user: "10001:10001"
+    user: "1001:1001"
     cap_drop:
       - ALL
     security_opt:

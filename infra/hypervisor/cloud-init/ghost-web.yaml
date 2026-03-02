@@ -1,0 +1,140 @@
+#cloud-config
+# =============================================================
+# GhostStack — ghost-web VM cloud-init user-data
+#
+# Provisions the dedicated web frontend VM on first boot:
+#   - Docker Engine + Compose plugin
+#   - Ghost user with sudo
+#   - Clones ghostl-stack repo to /opt/ghostl-stack
+#   - Writes /etc/ghostl-stack/web.env (populate with real secrets)
+#   - Starts the web stack via docker compose
+#
+# Usage (when creating the VM with virt-install):
+#   --cloud-init user-data=infra/hypervisor/cloud-init/ghost-web.yaml
+#
+# Or with cloud-localds:
+#   cloud-localds cloud-init.iso infra/hypervisor/cloud-init/ghost-web.yaml
+#   virt-install ... --disk cloud-init.iso,device=cdrom
+# =============================================================
+
+hostname: ghost-web
+fqdn: ghost-web.ghostchain.cloud
+manage_etc_hosts: true
+timezone: UTC
+
+# ── Users ────────────────────────────────────────────────────
+users:
+  - name: ghost
+    gecos: GhostStack Operator
+    groups: sudo, docker
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    # Replace with your actual SSH public key:
+    ssh_authorized_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+osgEYoqPCDiJESBGJhdbM2EI+CcQr4UIC4igDX1Xu ghosttoken.dev@gmail.com"
+
+# ── Packages ─────────────────────────────────────────────────
+package_update: true
+package_upgrade: false
+packages:
+  - curl
+  - git
+  - jq
+  - ca-certificates
+  - gnupg
+  - fail2ban
+  - unattended-upgrades
+
+# ── Files ────────────────────────────────────────────────────
+write_files:
+  # Env file for the web compose stack — fill in real secrets before deploy
+  - path: /etc/ghostl-stack/web.env
+    permissions: "0600"
+    owner: root:root
+    content: |
+      # ── Domain ─────────────────────────────────────────────
+      WEB_DOMAIN=ghostchain.cloud
+      NEXT_PUBLIC_BASE_DOMAIN=ghostchain.cloud
+      ACME_EMAIL=ops@ghostchain.cloud
+
+      # ── NextAuth ────────────────────────────────────────────
+      NEXTAUTH_URL=https://app.ghostchain.cloud
+      NEXTAUTH_SECRET=REPLACE_WITH_STRONG_RANDOM_SECRET
+
+      # ── Keycloak OAuth ─────────────────────────────────────
+      NEXT_KEYCLOAK_ID=REPLACE_WITH_CLIENT_ID
+      NEXT_KEYCLOAK_SECRET=REPLACE_WITH_CLIENT_SECRET
+      NEXT_KEYCLOAK_URL=https://auth.ghostchain.cloud/realms/ghostchain
+
+      # ── API Gateway ────────────────────────────────────────
+      NEXT_PUBLIC_API_URL=https://api.ghostchain.cloud
+
+  # Systemd service that keeps the stack running across reboots
+  - path: /etc/systemd/system/ghostweb.service
+    permissions: "0644"
+    owner: root:root
+    content: |
+      [Unit]
+      Description=GhostStack Web Frontend
+      Requires=docker.service
+      After=docker.service network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=simple
+      WorkingDirectory=/opt/ghostl-stack
+      ExecStart=/usr/bin/docker compose \
+        -f infra/docker/docker-compose.web.yml \
+        up --remove-orphans
+      ExecStop=/usr/bin/docker compose \
+        -f infra/docker/docker-compose.web.yml \
+        down
+      Restart=always
+      RestartSec=10
+      StandardOutput=journal
+      StandardError=journal
+      SyslogIdentifier=ghostweb
+
+      [Install]
+      WantedBy=multi-user.target
+
+  # fail2ban sshd jail
+  - path: /etc/fail2ban/jail.d/sshd.conf
+    permissions: "0644"
+    owner: root:root
+    content: |
+      [sshd]
+      enabled = true
+      port    = ssh
+      filter  = sshd
+      maxretry = 5
+      bantime  = 3600
+
+# ── Commands (run as root at first boot) ─────────────────────
+runcmd:
+  # Install Docker Engine via official script
+  - curl -fsSL https://get.docker.com | sh
+  - systemctl enable --now docker
+
+  # Add ghost user to docker group (if not already via cloud-init users)
+  - usermod -aG docker ghost
+
+  # Clone the GhostStack repository
+  - git clone --depth=1 https://github.com/ghostchain/ghostl-stack.git /opt/ghostl-stack
+
+  # Run the idempotent provision script to finish setup
+  - bash /opt/ghostl-stack/infra/hypervisor/provision/ghost-web-provision.sh
+
+  # Enable and start the systemd service
+  - systemctl daemon-reload
+  - systemctl enable ghostweb.service
+  - systemctl start ghostweb.service
+
+  # Enable fail2ban
+  - systemctl enable --now fail2ban
+
+# ── Final message (visible in cloud-init logs) ───────────────
+final_message: |
+  ghost-web VM provisioned in $UPTIME seconds.
+  Check status: journalctl -u ghostweb -f
+  Logs:         docker compose -f /opt/ghostl-stack/infra/docker/docker-compose.web.yml logs -f

@@ -1,6 +1,6 @@
 name: ghostl-autonomy
 
-x-ghost-user: &ghost-user "10001:10001"
+x-ghost-user: &ghost-user "1001:1001"
 
 services:
   ghost-registry:
@@ -212,8 +212,8 @@ services:
     security_opt:
       - no-new-privileges:true
     tmpfs:
-      - /tmp:size=64m,uid=10001,gid=10001,mode=0770
-      - /app/state:size=32m,uid=10001,gid=10001,mode=0770
+      - /tmp:size=64m,uid=1001,gid=1001,mode=0770
+      - /app/state:size=32m,uid=1001,gid=1001,mode=0770
     depends_on:
       ghost-registry:
         condition: service_healthy
@@ -408,7 +408,7 @@ services:
     command:
       - sh
       - -lc
-      - mkdir -p /vol/indexer /vol/attestor/evidence && chown -R 10001:10001 /vol/indexer /vol/attestor
+      - mkdir -p /vol/indexer /vol/attestor/evidence && chown -R 1001:1001 /vol/indexer /vol/attestor
     restart: "no"
     read_only: true
     tmpfs:

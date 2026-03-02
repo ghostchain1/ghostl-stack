@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghostchain.cloud/schemas/ghostbrain/task.schema.json",
+  "title": "GhostBrain Task",
+  "description": "Schema for task tokens dispatched from GhostBrain to executor agents",
+  "type": "object",
+  "required": ["taskId", "agentId", "capability", "resourceScope", "params", "timeoutSeconds", "token"],
+  "additionalProperties": false,
+  "properties": {
+    "taskId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique task identifier"
+    },
+    "agentId": {
+      "type": "string",
+      "description": "Target executor agent ID"
+    },
+    "capability": {
+      "type": "string",
+      "enum": [
+        "docker.restart", "docker.ps",
+        "compose.apply", "compose.reconcile", "compose.canary",
+        "libvirt.snapshot", "libvirt.status", "libvirt.start", "libvirt.stop",
+        "network.firewall.read", "network.dns.update", "network.tls.renew",
+        "db.backup.verify", "db.replication.status", "db.migration.apply",
+        "vault.health", "metrics.query", "logs.query", "policy.evaluate"
+      ],
+      "description": "The single capability this task exercises"
+    },
+    "resourceScope": {
+      "type": "object",
+      "required": ["type", "name", "layer"],
+      "properties": {
+        "type": { "type": "string", "enum": ["vm", "stack", "domain", "db", "network"] },
+        "name": { "type": "string" },
+        "layer": { "type": "string", "enum": ["L1", "L2", "L3"] }
+      }
+    },
+    "params": {
+      "type": "object",
+      "description": "Capability-specific parameters. No plaintext secrets allowed.",
+      "additionalProperties": true
+    },
+    "timeoutSeconds": {
+      "type": "integer",
+      "minimum": 10,
+      "maximum": 3600
+    },
+    "token": {
+      "type": "string",
+      "description": "GhostBrain-issued task token ID (not the secret value)"
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "description": "Replay-protection key"
+    }
+  }
+}

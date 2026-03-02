@@ -6,6 +6,7 @@
 **/node_modules/
 
 # local-only env variants
+.env
 .env.local
 .env.*.local
 /.env
@@ -329,3 +330,41 @@ sbom.spdx.json
 
 # opstack local geth logs
 infra/opstack/data/l2-geth-901/geth/nodes/LOG
+
+# ghostcontract-ai service — local runtime state (not secrets, but generated)
+services/ghostcontract-ai/.env
+services/ghostcontract-ai/.env.*
+!services/ghostcontract-ai/.env.example
+services/ghost-treasury-ai/.env
+services/ghost-treasury-ai/.env.*
+!services/ghost-treasury-ai/.env.example
+services/ghostbrain-core/.env
+services/ghostbrain-core/.env.*
+!services/ghostbrain-core/.env.example
+services/ghost-sync-sentinel/.env
+services/ghost-sync-sentinel/.env.*
+!services/ghost-sync-sentinel/.env.example
+services/ghostvm-ai/.env
+services/ghostvm-ai/.env.*
+!services/ghostvm-ai/.env.example
+services/ghostdns-ai/.env
+services/ghostdns-ai/.env.*
+!services/ghostdns-ai/.env.example
+
+# ghostcontract-ai signing keys and dry-run state
+services/ghostcontract-ai/data/
+services/ghost-treasury-ai/data/
+
+# hypervisor provisioned secrets
+infra/hypervisor/provision/secrets/
+infra/hypervisor/config/secrets/
+
+# ghost-helper-bots local runtime config (tokens)
+ghost-helper-bots/.env
+ghost-helper-bots/.env.*
+!ghost-helper-bots/.env.example
+
+# generated audit reports (can be 100s of MB)
+artifacts/todo-audit-report-*-source-scope.md
+artifacts/todo-audit-report-*.md
+!artifacts/todo-audit-report-*-tracked.md

@@ -6,6 +6,34 @@ import { REALM_ROUTE_PREFIXES, type Realm } from './lib/realms';
 
 const ENABLE_NEXTAUTH_REALM_PARTITIONS = process.env.ENABLE_NEXTAUTH_REALM_PARTITIONS !== 'false';
 
+// ── Subdomain → path rewrites (merged from middleware.ts) ─────────────────
+const SUBDOMAIN_MAP: Record<string, string> = {
+  // Public marketing + portals
+  investors:    '/site/investors',
+  investor:     '/site/investors',
+  users:        '/site/users',
+  user:         '/site/users',
+  token:        '/site/token',
+  gst:          '/site/token',
+  developers:   '/site/developers',
+  dev:          '/site/developers',
+  docs:         '/site/whitepaper',
+  www:          '/site',
+  whitepaper:   '/site/whitepaper',
+  // App portals (auth-gated internally)
+  app:          '/dashboard',
+  employee:     '/support',
+  // Chain tooling (public)
+  validators:   '/validators',
+  validator:    '/validators',
+  explorer:     '/explorer/txs',
+  status:       '/status',
+  governance:   '/governance',
+  // Ops (management dashboard)
+  management:   '/econ',
+};
+const PASSTHROUGH_SUBDOMAINS = new Set(['grafana', 'api', 'econ', 'admin']);
+
 const requiredRealmForPath = (pathname: string): Realm | null => {
   if (pathname === '/login' || pathname.startsWith('/api/auth')) return null;
   for (const realm of Object.keys(REALM_ROUTE_PREFIXES) as Realm[]) {
@@ -18,9 +46,15 @@ const requiredRealmForPath = (pathname: string): Realm | null => {
 };
 
 const isPublicPath = (pathname: string) =>
+  pathname === '/' ||
+  pathname.startsWith('/site') ||
   pathname === '/login' ||
   pathname.startsWith('/api/auth') ||
   pathname === '/health' ||
+  pathname === '/status' ||
+  pathname.startsWith('/status/') ||
+  pathname.startsWith('/explorer') ||
+  pathname.startsWith('/validators') ||
   pathname === '/compliance/transparency' ||
   pathname.startsWith('/compliance/transparency/') ||
   pathname.startsWith('/_next') ||
@@ -80,8 +114,27 @@ export const config = {
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  // ── Subdomain routing ────────────────────────────────────────────────────
+  const host = req.headers.get('host') ?? '';
+  const hostWithoutPort = host.split(':')[0];
+  const parts = hostWithoutPort.split('.');
+  if (parts.length >= 2 && parts[0] !== 'localhost') {
+    const subdomain = parts[0].toLowerCase();
+    if (!PASSTHROUGH_SUBDOMAINS.has(subdomain)) {
+      const targetPath = SUBDOMAIN_MAP[subdomain];
+      if (targetPath && !pathname.startsWith(targetPath)) {
+        const url = req.nextUrl.clone();
+        const suffix = pathname === '/' ? '' : pathname;
+        url.pathname = targetPath + suffix;
+        return NextResponse.rewrite(url);
+      }
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   if (isPublicPath(pathname)) return NextResponse.next();
-  const nextAuthToken = (await getToken({ req, secret: process.env.NEXTAUTH_SECRET }).catch(() => null)) as
+  const nextAuthToken = (await getToken({ req, secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? '' }).catch(() => null)) as
     | NextAuthTokenLike
     | null;
 

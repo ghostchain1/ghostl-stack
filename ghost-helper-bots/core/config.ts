@@ -1,6 +1,8 @@
 import path from "node:path";
 
 export type GhostHelperConfig = {
+  natsUrl: string;
+  ghostbrainUrl: string;
   repoRoot: string;
   reportsDir: string;
   evidenceDir: string;
@@ -19,6 +21,8 @@ export function loadConfig(): GhostHelperConfig {
     evidenceDir: path.join(base, "evidence"),
     sbomDir: path.join(base, "sbom"),
     attestDir: path.join(base, "attestations"),
+    natsUrl: process.env.NATS_URL || "nats://localhost:4222",
+    ghostbrainUrl: process.env.GHOSTBRAIN_URL || "http://localhost:7900",
     maxIterations: Number(process.env.GHOST_HELPER_MAX_ITERS || 5),
     requireNoHighCritical: (process.env.GHOST_HELPER_FAIL_ON_HIGH_CRITICAL || "true") === "true"
   };

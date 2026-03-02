@@ -1,6 +1,6 @@
 zone "ghostchain.cloud" {
   type master;
   file "{{ZONE_DIR}}/db.ghostchain.cloud";
-  allow-transfer { none; };
+  allow-transfer { 192.168.122.0/24; };
   allow-update { none; };
 };

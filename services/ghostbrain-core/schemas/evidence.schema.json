@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghostchain.cloud/schemas/ghostbrain/evidence.schema.json",
+  "title": "GhostBrain Evidence Pack",
+  "description": "Schema for evidence records produced by GhostBrain operations. Every action must produce evidence.",
+  "type": "object",
+  "required": ["evidenceId", "kind", "description", "storedAt", "payload"],
+  "additionalProperties": false,
+  "properties": {
+    "evidenceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "incidentId": { "type": "string" },
+    "planId": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "metric_snapshot",
+        "log_excerpt",
+        "config_diff",
+        "command_transcript",
+        "health_check",
+        "slo_chart",
+        "before_after"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Human-readable explanation of what this evidence proves"
+    },
+    "storedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "payload": {
+      "type": "object",
+      "description": "Evidence content (metric values, log lines, diffs). Must not contain secrets."
+    }
+  }
+}

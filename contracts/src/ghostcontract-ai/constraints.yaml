@@ -1,0 +1,183 @@
+# GhostContractAI — Constitutional Constraints
+# =============================================================================
+# This file defines the policy rules for the GhostContractAI pipeline gate.
+# Its keccak256 hash is committed on-chain in GhostPolicyGate.sol.
+#
+# ROUTING LAW (immutable — never override):
+#   L3 → L2 ONLY
+#   L2 → L1 ONLY
+#   No direct L3 → L1 bypass
+# =============================================================================
+
+version: "1.0.0"
+policyNamespace: "ghostcontract-ai.constitutional"
+effectiveFrom: "2026-03-02T00:00:00Z"
+
+# ─── Risk Score Tiers ────────────────────────────────────────────────────────
+risk:
+  tiers:
+    - name: LOW
+      range: [0, 30]
+      quorumRequired: 1
+      timelockHours: 0
+      description: "Low risk — single approver, no mandatory timelock (devnet only)"
+    - name: MEDIUM
+      range: [31, 50]
+      quorumRequired: 2
+      timelockHours: 48
+      description: "Medium risk — 2-of-N approvers, 48h timelock"
+    - name: HIGH
+      range: [51, 70]
+      quorumRequired: 3
+      timelockHours: 72
+      description: "High risk — 3-of-N approvers, 72h timelock, mandatory external audit"
+    - name: QUARANTINE
+      range: [71, 100]
+      quorumRequired: 5
+      timelockHours: 168    # 7 days
+      requiresFullCouncilVote: true
+      description: "Quarantine — auto-blocked; requires lifted quarantine + full council vote"
+
+  quarantineThreshold: 70     # auto-quarantine in GhostUpgradeGovernor
+  highThreshold: 50
+
+# ─── Phase Gates ─────────────────────────────────────────────────────────────
+phases:
+  devnet:
+    allowedActions:
+      - compile-test
+      - security-audit
+      - verify
+      - deploy         # dry-run default; live requires GHOSTAI_DRY_RUN=false + L1 admin approval
+      - upgrade
+      - rollback
+    requiresSlither: true
+    requiresFoundryTests: true
+    requiresInvariantTests: false   # optional in devnet
+    requiresExternalAudit: false
+    routingLawEnforced: true
+    mainnetRestrictionsActive: false
+
+  testnet:
+    allowedActions:
+      - compile-test
+      - security-audit
+      - verify
+      - deploy         # requires at least 2-of-N + policy hash match
+      - upgrade        # proposal only; execution requires governance
+      - rollback       # requires governance approvalRef
+    requiresSlither: true
+    requiresFoundryTests: true
+    requiresInvariantTests: true
+    requiresExternalAudit: false
+    routingLawEnforced: true
+    mainnetRestrictionsActive: false
+    slitherMaxHigh: 0
+    slitherMaxMedium: 2
+
+  mainnet:
+    allowedActions:
+      - compile-test
+      - security-audit
+      - verify
+      # deploy/upgrade/rollback require signed governance approval — no auto-approve
+    disallowedWithoutGovernance:
+      - deploy
+      - upgrade
+      - rollback
+    requiresSlither: true
+    requiresFoundryTests: true
+    requiresInvariantTests: true
+    requiresExternalAudit: true
+    routingLawEnforced: true
+    mainnetRestrictionsActive: true
+    slitherMaxHigh: 0
+    slitherMaxMedium: 0
+    mandatoryEvidence:
+      - buildManifest
+      - testReport
+      - slitherReport
+      - policyGateProof
+      - approvalChain
+      - deploymentReceipt
+      - slsaProvenance
+
+# ─── Routing Law (hard invariant — machine-checked) ──────────────────────────
+routingLaw:
+  enforced: true
+  topology:
+    - from: L3
+      to: L2
+      allowed: true
+    - from: L2
+      to: L1
+      allowed: true
+    - from: L3
+      to: L1
+      allowed: false
+      reason: "L3 → L1 direct bypass is ILLEGAL"
+    - from: L2
+      to: L3
+      allowed: false
+      reason: "Downward L2 → L3 links are ILLEGAL"
+    - from: L1
+      to: "*"
+      allowed: false
+      reason: "L1 is root authority — no outbound cross-chain registry links"
+  violationAction: HARD_FAIL   # never WARN
+
+# ─── Contract Action Allow-list ──────────────────────────────────────────────
+contractActions:
+  deploy:
+    requiresPolicyHash: true
+    requiresFoundryTests: true
+    requiresSlither: true
+    requiresApproval: true
+    allowedContracts: ["*"]         # restrict to specific names in mainnet
+    prohibitedContracts: []
+
+  upgrade:
+    requiresPolicyHash: true
+    requiresFoundryTests: true
+    requiresSlither: true
+    requiresGovernance: true        # on-chain governor proposal always required
+    requiresTimelock: true
+    proposalOnly: true              # GhostContractAI never auto-executes upgrades
+
+  rollback:
+    requiresGovernance: true
+    requiresApprovalRef: true
+    proposalOnly: false             # can execute once governor has approved
+
+  deprecate:
+    requiresGovernance: true
+    requiresApprovalRef: true
+
+# ─── Operator Allow-list ─────────────────────────────────────────────────────
+operators:
+  roles:
+    governor:
+      allowedActions: ["deploy", "upgrade", "rollback", "deprecate", "compile-test", "security-audit", "verify"]
+    auditor:
+      allowedActions: ["security-audit", "compile-test", "verify"]
+    operator:
+      allowedActions: ["compile-test", "verify"]
+    viewer:
+      allowedActions: []
+
+# ─── SLSA Provenance ─────────────────────────────────────────────────────────
+provenance:
+  level: "SLSA_L2"       # minimum: git commit + build manifest + signer key ID
+  requireSignedBuildManifest: true
+  signerKeyRotationDays: 90
+
+# ─── Emergency Controls ──────────────────────────────────────────────────────
+emergency:
+  breakGlass:
+    allowedRoles: ["governor"]
+    requiresPostmortem: true
+    postmortemDeadlineHours: 48
+  quarantineMode:
+    autoTriggerRiskScore: 70
+    requiresLiftByRole: "governor"
+    minimumLifterQuorum: 3

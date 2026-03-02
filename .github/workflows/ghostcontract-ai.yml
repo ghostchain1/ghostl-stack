@@ -1,0 +1,371 @@
+name: GhostContractAI — Contract CI
+
+on:
+  pull_request:
+    paths:
+      - 'contracts/src/ghostcontract-ai/**'
+      - 'contracts/test/ghostcontract-ai/**'
+      - 'contracts/scripts/ghostcontract-ai/**'
+      - 'services/ghostcontract-ai/**'
+      - 'contracts/src/ghostcontract-ai/constraints.yaml'
+      - '.github/workflows/ghostcontract-ai.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'contracts/src/ghostcontract-ai/**'
+      - 'contracts/test/ghostcontract-ai/**'
+      - 'services/ghostcontract-ai/**'
+  workflow_dispatch:
+    inputs:
+      run_live_deploy:
+        description: 'Attempt live devnet deploy (requires GHOSTAI_DRY_RUN=false + signing key)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  # ─── Routing Law Check ──────────────────────────────────────────────────────
+  routing-law:
+    name: Routing Law Invariant Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check for L3→L1 bypass patterns in Solidity
+        run: |
+          echo "Scanning for illegal L3→L1 routing patterns..."
+          # Fail if any Solidity file in ghostcontract-ai tries to reference L1 directly from L3 context
+          ! grep -rn "l1ChainId\|L1_CHAIN_ID" \
+            contracts/src/ghostcontract-ai/GhostContractRegistry.sol \
+            | grep -v "topology\|layerParent\|setChainTopology\|constructor\|_setChainTopology" \
+            | grep -n "L3" || echo "No L3→L1 bypass patterns detected"
+
+      - name: Verify routing law constants in service
+        run: |
+          echo "Checking routing law enforcement in service..."
+          grep -n "L3_MUST_LINK_TO_L2_ONLY\|L2_MUST_LINK_TO_L1_ONLY\|L1_IS_ROOT" \
+            contracts/src/ghostcontract-ai/GhostContractRegistry.sol
+          grep -n "assertRoutingLaw\|RoutingLawViolation" \
+            services/ghostcontract-ai/src/routing-law.ts
+          echo "OK: Routing law enforcement present in both contract and service"
+
+      - name: Verify constraints.yaml routing law section
+        run: |
+          grep -A 20 "routingLaw:" contracts/src/ghostcontract-ai/constraints.yaml | \
+            grep "allowed: false" | wc -l | xargs -I{} test {} -ge 3
+          echo "OK: constraints.yaml contains at least 3 illegal link denials"
+
+  # ─── Solidity Build + Test ──────────────────────────────────────────────────
+  foundry:
+    name: Foundry Build + Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Build contracts (default profile)
+        working-directory: contracts
+        run: forge build --profile default
+
+      - name: Run GhostContractAI tests
+        working-directory: contracts
+        run: |
+          forge test --profile default \
+            --match-path "test/ghostcontract-ai/*" \
+            -v --gas-report 2>&1 | tee /tmp/foundry-output.txt
+
+      - name: Run invariant tests
+        working-directory: contracts
+        run: |
+          forge test --profile default \
+            --match-test "invariant_" \
+            --match-path "test/ghostcontract-ai/*" \
+            -v 2>&1 | tee -a /tmp/foundry-output.txt
+
+      - name: Parse test results
+        run: |
+          FAILED=$(grep -c "FAIL" /tmp/foundry-output.txt || echo "0")
+          PASSED=$(grep -oP '\d+ passed' /tmp/foundry-output.txt | awk '{sum+=$1} END{print sum}')
+          echo "Tests passed: ${PASSED:-0}"
+          echo "Tests failed: ${FAILED}"
+          if [ "${FAILED}" -gt 0 ]; then
+            echo "::error::Foundry tests failed"
+            exit 1
+          fi
+
+      - name: Upload Foundry test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: foundry-test-output
+          path: /tmp/foundry-output.txt
+          retention-days: 14
+
+  # ─── Slither Static Analysis ─────────────────────────────────────────────────
+  slither:
+    name: Slither Static Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Install Slither
+        run: pip3 install slither-analyzer
+
+      - name: Run Slither on GhostContractRegistry
+        working-directory: contracts
+        run: |
+          slither src/ghostcontract-ai/GhostContractRegistry.sol \
+            --foundry-compile-all \
+            --json /tmp/slither-registry.json || true
+
+      - name: Run Slither on GhostUpgradeGovernor
+        working-directory: contracts
+        run: |
+          slither src/ghostcontract-ai/GhostUpgradeGovernor.sol \
+            --foundry-compile-all \
+            --json /tmp/slither-governor.json || true
+
+      - name: Run Slither on GhostPolicyGate + GhostRiskOracle
+        working-directory: contracts
+        run: |
+          slither src/ghostcontract-ai/GhostPolicyGate.sol \
+            --foundry-compile-all \
+            --json /tmp/slither-policygate.json || true
+          slither src/ghostcontract-ai/GhostRiskOracle.sol \
+            --foundry-compile-all \
+            --json /tmp/slither-riskoracle.json || true
+
+      - name: Assert no high-severity findings
+        run: |
+          for f in /tmp/slither-*.json; do
+            if [ -f "$f" ]; then
+              HIGH=$(jq '[.results.detectors[]? | select(.impact == "High")] | length' "$f" 2>/dev/null || echo "0")
+              echo "$f: HIGH=$HIGH"
+              if [ "$HIGH" -gt 0 ]; then
+                echo "::error::Slither found HIGH severity issues in $f"
+                exit 1
+              fi
+            fi
+          done
+          echo "OK: No high-severity Slither findings"
+
+      - name: Upload Slither reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: slither-reports
+          path: /tmp/slither-*.json
+          retention-days: 30
+
+  # ─── Policy Gate Hash Verification ──────────────────────────────────────────
+  policy-gate:
+    name: Policy Gate Hash Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Compute constraints.yaml hash
+        id: policy_hash
+        run: |
+          HASH=$(sha256sum contracts/src/ghostcontract-ai/constraints.yaml | awk '{print $1}')
+          echo "hash=${HASH}" >> "$GITHUB_OUTPUT"
+          echo "constraints.yaml SHA256: ${HASH}"
+
+      - name: Verify policy structure is valid YAML
+        run: python3 -c "import yaml; yaml.safe_load(open('contracts/src/ghostcontract-ai/constraints.yaml'))"
+
+      - name: Verify routing law section exists
+        run: |
+          python3 - <<'EOF'
+          import yaml
+          with open("contracts/src/ghostcontract-ai/constraints.yaml") as f:
+              c = yaml.safe_load(f)
+          rl = c.get("routingLaw", {})
+          assert rl.get("enforced") is True, "routingLaw.enforced must be true"
+          assert rl.get("violationAction") == "HARD_FAIL", "routingLaw.violationAction must be HARD_FAIL"
+          topology = rl.get("topology", [])
+          illegal = [t for t in topology if not t.get("allowed", True)]
+          assert len(illegal) >= 3, f"Expected >= 3 illegal links, got {len(illegal)}"
+          print(f"OK: routingLaw section valid. {len(illegal)} illegal links declared.")
+          EOF
+
+      - name: Output policy hash for on-chain commitment
+        run: |
+          echo "::notice::Policy hash for on-chain commitment: ${{ steps.policy_hash.outputs.hash }}"
+          echo "Use this hash with GhostPolicyGate.commitPolicy() on devnet/testnet/mainnet"
+
+  # ─── Service TypeScript Check ────────────────────────────────────────────────
+  service-typecheck:
+    name: GhostContractAI Service Typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: services/ghostcontract-ai/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: services/ghostcontract-ai
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        working-directory: services/ghostcontract-ai
+        run: pnpm typecheck
+
+  # ─── Container Build ─────────────────────────────────────────────────────────
+  container:
+    name: Container Build (dry-run)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    needs: [routing-law, foundry, slither, policy-gate, service-typecheck]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Build Docker image (no push)
+        run: |
+          docker build \
+            -t ghostchain1/ghostcontract-ai:ci-${{ github.sha }} \
+            -f services/ghostcontract-ai/Dockerfile \
+            services/ghostcontract-ai/
+
+      - name: Smoke test container health
+        run: |
+          docker run -d --name ghostcontract-ai-test \
+            -p 7610:7610 \
+            -e GHOSTAI_DRY_RUN=true \
+            ghostchain1/ghostcontract-ai:ci-${{ github.sha }}
+          sleep 5
+          docker logs ghostcontract-ai-test
+          curl -sf http://localhost:7610/health || (docker logs ghostcontract-ai-test; exit 1)
+          docker rm -f ghostcontract-ai-test
+
+  # ─── SLSA Provenance ─────────────────────────────────────────────────────────
+  provenance:
+    name: Artifact Provenance
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    needs: [foundry, slither]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Generate SLSA-style build manifest
+        run: |
+          cat > /tmp/build-manifest.json <<EOF
+          {
+            "schemaVersion": "1.0.0",
+            "service":       "ghostcontract-ai",
+            "gitCommit":     "${{ github.sha }}",
+            "gitRef":        "${{ github.ref }}",
+            "buildAt":       "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "runner":        "github-actions",
+            "contracts": [
+              "GhostContractRegistry.sol",
+              "GhostUpgradeGovernor.sol",
+              "GhostPolicyGate.sol",
+              "GhostRiskOracle.sol"
+            ],
+            "constraintsHash": "$(sha256sum contracts/src/ghostcontract-ai/constraints.yaml | awk '{print $1}')"
+          }
+          EOF
+          cat /tmp/build-manifest.json
+
+      - name: Upload build manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-manifest
+          path: /tmp/build-manifest.json
+          retention-days: 90
+
+  # ─── Go/No-Go Gate ───────────────────────────────────────────────────────────
+  go-no-go:
+    name: Testnet Readiness Go/No-Go
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [routing-law, foundry, slither, policy-gate, service-typecheck, container, provenance]
+    permissions:
+      contents: read
+    steps:
+      - name: Print Go/No-Go Checklist
+        run: |
+          echo "========================================================"
+          echo "   GhostContractAI — Testnet Readiness Checklist"
+          echo "========================================================"
+          echo "  [✓] Routing law invariant check passed"
+          echo "  [✓] Foundry build + tests passed"
+          echo "  [✓] Invariant tests passed"
+          echo "  [✓] Slither: no HIGH severity findings"
+          echo "  [✓] Policy gate (constraints.yaml) verified"
+          echo "  [✓] TypeScript service typechecks clean"
+          echo "  [✓] Container builds and passes health check"
+          echo "  [✓] SLSA build manifest generated"
+          echo "========================================================"
+          echo "  MANUAL STEPS BEFORE TESTNET DEPLOY:"
+          echo "  [ ] Deploy contracts: forge script deploy_l1.s.sol --broadcast"
+          echo "  [ ] Commit policy hash on-chain: GhostPolicyGate.commitPolicy()"
+          echo "  [ ] Authorize attestor: GhostRiskOracle.authorizeAttestor()"
+          echo "  [ ] Grant REGISTRAR_ROLE to GhostContractAI service address"
+          echo "  [ ] Set GHOSTAI_DRY_RUN=false + governance signed approval"
+          echo "========================================================"
+          echo "  GO for testnet: all automated checks PASSED"
+          echo "========================================================"

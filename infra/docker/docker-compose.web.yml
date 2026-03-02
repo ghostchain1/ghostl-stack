@@ -1,0 +1,110 @@
+# ============================================================
+# ghost-web VM — Traefik + Next.js web app
+# Deploy target: the dedicated ghost-web KVM VM (10.50.99.10)
+#
+# Prerequisites (set in /etc/ghostl-stack/web.env on the VM):
+#   NEXT_PUBLIC_BASE_DOMAIN, NEXTAUTH_SECRET, NEXTAUTH_URL,
+#   NEXT_KEYCLOAK_ID, NEXT_KEYCLOAK_SECRET, NEXT_KEYCLOAK_URL,
+#   ACME_EMAIL, WEB_DOMAIN
+#
+# Usage:
+#   docker compose -f infra/docker/docker-compose.web.yml up -d
+# ============================================================
+
+name: ghostweb
+
+services:
+  # ── Traefik TLS edge proxy ────────────────────────────────
+  traefik:
+    image: traefik:v3.1
+    restart: unless-stopped
+    command:
+      - "--log.level=INFO"
+      - "--accesslog=true"
+      # API dashboard (internal only — bind only on localhost)
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+      # Docker provider
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      # HTTP entrypoint (redirect → HTTPS)
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      # HTTPS entrypoint
+      - "--entrypoints.websecure.address=:443"
+      # Let's Encrypt / ACME
+      - "--certificatesresolvers.letsencrypt.acme.httpChallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpChallenge.entryPoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-ops@ghostchain.cloud}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/acme/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_acme:/acme
+    networks:
+      - ghost_web
+    labels:
+      # Dashboard — accessible only from MGMT subnet via SSH tunnel
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik-dash.rule=Host(`traefik.internal`)"
+      - "traefik.http.routers.traefik-dash.entrypoints=websecure"
+      - "traefik.http.routers.traefik-dash.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik-dash.service=api@internal"
+
+  # ── Next.js web app ────────────────────────────────────────
+  web:
+    image: ghcr.io/ghostchain/web:latest
+    # Or build from source:
+    # build:
+    #   context: ../..
+    #   dockerfile: apps/web/Dockerfile
+    #   target: runner
+    restart: unless-stopped
+    env_file:
+      - /etc/ghostl-stack/web.env
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      # Internal self-fetch bypasses public DNS
+      NEXT_SERVER_URL: "http://web:3000"
+    expose:
+      - "3000"
+    networks:
+      - ghost_web
+    labels:
+      - "traefik.enable=true"
+      # ── Apex + www ───────────────────────────────────────
+      - "traefik.http.routers.web-apex.rule=Host(`${WEB_DOMAIN:-ghostchain.cloud}`) || Host(`www.${WEB_DOMAIN:-ghostchain.cloud}`)"
+      - "traefik.http.routers.web-apex.entrypoints=websecure"
+      - "traefik.http.routers.web-apex.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web-apex.service=web"
+      # ── All public subdomains ──────────────────────────
+      - >-
+        traefik.http.routers.web-public.rule=
+        Host(`status.${WEB_DOMAIN:-ghostchain.cloud}`) ||
+        Host(`explorer.${WEB_DOMAIN:-ghostchain.cloud}`) ||
+        Host(`validators.${WEB_DOMAIN:-ghostchain.cloud}`) ||
+        Host(`governance.${WEB_DOMAIN:-ghostchain.cloud}`) ||
+        Host(`investors.${WEB_DOMAIN:-ghostchain.cloud}`) ||
+        Host(`token.${WEB_DOMAIN:-ghostchain.cloud}`) ||
+        Host(`developers.${WEB_DOMAIN:-ghostchain.cloud}`) ||
+        Host(`docs.${WEB_DOMAIN:-ghostchain.cloud}`) ||
+        Host(`employee.${WEB_DOMAIN:-ghostchain.cloud}`) ||
+        Host(`management.${WEB_DOMAIN:-ghostchain.cloud}`) ||
+        Host(`app.${WEB_DOMAIN:-ghostchain.cloud}`)
+      - "traefik.http.routers.web-public.entrypoints=websecure"
+      - "traefik.http.routers.web-public.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web-public.service=web"
+      # ── Backend service definition ──────────────────────
+      - "traefik.http.services.web.loadbalancer.server.port=3000"
+
+volumes:
+  traefik_acme:
+    driver: local
+
+networks:
+  ghost_web:
+    driver: bridge

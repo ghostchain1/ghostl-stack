@@ -8,4 +8,6 @@ $TTL 300
 )
 
 @                                IN NS ns1.ghostchain.cloud.
+@                                IN NS ns2.ghostchain.cloud.
 ns1                              300 IN A 192.168.122.205
+ns2                              300 IN A 192.168.122.210

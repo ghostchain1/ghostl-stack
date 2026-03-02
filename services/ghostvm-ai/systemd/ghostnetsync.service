@@ -8,6 +8,11 @@ Type=simple
 WorkingDirectory=/home/ghost/ghostl-stack/services/ghostvm-ai
 Environment=PYTHONUNBUFFERED=1
 Environment=GNS_APPLY_ENABLED=false
+# GhostBrain Core integration — set GHOSTBRAIN_URL to the host running GhostBrain
+Environment=GHOSTBRAIN_URL=http://192.168.122.1:7900
+Environment=GHOSTBRAIN_ENABLED=true
+# Optional: override via EnvironmentFile for per-VM configuration
+EnvironmentFile=-/etc/ghostvm-ai/ghostbrain.env
 ExecStart=/usr/bin/env uvicorn api.main:app --host 0.0.0.0 --port 8099
 Restart=always
 RestartSec=3

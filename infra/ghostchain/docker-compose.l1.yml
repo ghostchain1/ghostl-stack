@@ -138,6 +138,7 @@ services:
     image: ghostl/ghost-rpc-proxy:local
     build:
       context: ../../services/ghost-rpc-proxy
+    user: "1001:1001"
     restart: unless-stopped
     logging: *default-logging
     depends_on:

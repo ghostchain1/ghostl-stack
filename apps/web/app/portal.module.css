@@ -1,0 +1,145 @@
+/* ── GhostChain Portal Hub — CSS Module ─────────────────────────────────── */
+
+/* ── Keyframes ─────────────────────────────────────────────────────────────── */
+
+@keyframes gridScroll {
+  0%   { background-position: 0 0; }
+  100% { background-position: 60px 60px; }
+}
+
+@keyframes scanLine {
+  0%   { background-position: 0 -100vh; }
+  100% { background-position: 0 200vh; }
+}
+
+@keyframes dotPulse {
+  0%   { box-shadow: 0 0 0 0   rgba(0, 240, 181, 0.6); }
+  70%  { box-shadow: 0 0 0 8px rgba(0, 240, 181, 0);   }
+  100% { box-shadow: 0 0 0 0   rgba(0, 240, 181, 0);   }
+}
+
+@keyframes ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes fadeUp {
+  0%   { opacity: 0; transform: translateY(18px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Grid background ──────────────────────────────────────────────────────── */
+
+.gridBg {
+  background-image:
+    linear-gradient(rgba(122,92,255,0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(122,92,255,0.045) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: gridScroll 18s linear infinite;
+}
+
+/* ── Scan line ─────────────────────────────────────────────────────────────── */
+
+.scanLine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(122,92,255,0.025) 50%,
+    transparent 100%
+  );
+  background-size: 100% 200px;
+  animation: scanLine 8s linear infinite;
+  pointer-events: none;
+}
+
+/* ── Pulsing dot ───────────────────────────────────────────────────────────── */
+
+.dotTeal {
+  animation: dotPulse 2.2s ease-out infinite;
+}
+
+/* ── Ticker ────────────────────────────────────────────────────────────────── */
+
+.tickerWrap {
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.tickerInner {
+  display: flex;
+  width: max-content;
+  animation: ticker 42s linear infinite;
+}
+
+/* ── Portal card ───────────────────────────────────────────────────────────── */
+
+.portalCard {
+  display: flex;
+  flex-direction: column;
+  padding: 22px 22px 18px;
+  border-radius: 14px;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  animation: fadeUp 0.5s ease both;
+}
+
+.portalCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at 50% 0%, var(--card-glow, transparent) 0%, transparent 65%);
+  opacity: 0;
+  transition: opacity 0.22s ease;
+  pointer-events: none;
+}
+
+.portalCard:hover {
+  transform: translateY(-3px);
+}
+
+.portalCard:hover::before {
+  opacity: 1;
+}
+
+/* ── Domain pill ───────────────────────────────────────────────────────────── */
+
+.domainPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  text-decoration: none;
+  color: #8A9BB5;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.domainPill:hover {
+  border-color: rgba(122,92,255,0.4);
+  color: #C3BFFF;
+  background: rgba(122,92,255,0.07);
+}
+
+/* ── Fade-up stagger for cards ──────────────────────────────────────────────── */
+
+.portalCard:nth-child(1)  { animation-delay: 0.05s; }
+.portalCard:nth-child(2)  { animation-delay: 0.10s; }
+.portalCard:nth-child(3)  { animation-delay: 0.15s; }
+.portalCard:nth-child(4)  { animation-delay: 0.20s; }
+.portalCard:nth-child(5)  { animation-delay: 0.25s; }
+.portalCard:nth-child(6)  { animation-delay: 0.30s; }
+.portalCard:nth-child(7)  { animation-delay: 0.35s; }
+.portalCard:nth-child(8)  { animation-delay: 0.40s; }
+.portalCard:nth-child(9)  { animation-delay: 0.45s; }
+.portalCard:nth-child(10) { animation-delay: 0.50s; }

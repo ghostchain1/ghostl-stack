@@ -1,12 +1,15 @@
 FROM node:22-alpine AS base
 RUN apk add --no-cache bash curl
 WORKDIR /app
-COPY package*.json ./
+# Copy package files from service dir (build context = workspace root)
+COPY services/bridge-service/package*.json ./
 RUN npm config set fetch-retries 5 \
  && npm config set fetch-timeout 600000 \
  && npm install --production || (echo "npm install failed, retrying in 5s" && sleep 5 && npm install --production)
-COPY src ./src
-RUN chown -R node:node /app
+COPY services/bridge-service/src ./src
+# Copy shared workspace packages (imported as ../../../packages/ from src/)
+COPY packages/ /packages/
+RUN chown -R node:node /app /packages
 USER node
 EXPOSE 7604
 CMD ["node", "src/index.js"]

@@ -1,0 +1,61 @@
+services:
+  ghost-treasury-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghostchain1/ghost-treasury-ai:latest
+    container_name: ghost-treasury-ai
+    restart: unless-stopped
+    ports:
+      - "7680:7680"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV:            ${NODE_ENV:-production}
+      PORT:                7680
+      LOG_LEVEL:           ${LOG_LEVEL:-info}
+      # ── Chain ──────────────────────────────────────────────────────────
+      L1_RPC_URL:          ${L1_RPC_URL:-http://ghostchain-rpc:8545}
+      CHAIN_ID_L1:         ${CHAIN_ID_L1:-1300}
+      # ── Contracts ──────────────────────────────────────────────────────
+      TREASURY_VAULT_ADDRESS:       ${TREASURY_VAULT_ADDRESS}
+      STRATEGY_REGISTRY_ADDRESS:    ${STRATEGY_REGISTRY_ADDRESS}
+      RISK_ENGINE_ADDRESS:          ${RISK_ENGINE_ADDRESS}
+      TREASURY_GOVERNOR_ADDRESS:    ${TREASURY_GOVERNOR_ADDRESS}
+      REVENUE_ROUTER_ADDRESS:       ${REVENUE_ROUTER_ADDRESS}
+      PROOF_OF_SOLVENCY_ADDRESS:    ${PROOF_OF_SOLVENCY_ADDRESS}
+      STABLE_TOKEN_ADDRESS:         ${STABLE_TOKEN_ADDRESS:-0x0000000000000000000000000000000000000000}
+      # ── Signing (injected from Vault at runtime) ────────────────────────
+      PROPOSER_PRIVATE_KEY:         ${PROPOSER_PRIVATE_KEY}
+      # ── Autonomy ───────────────────────────────────────────────────────
+      AUTONOMY_TIER:       ${AUTONOMY_TIER:-1}
+      SHADOW_MODE:         ${SHADOW_MODE:-true}
+      CYCLE_INTERVAL_MS:   ${CYCLE_INTERVAL_MS:-300000}
+      # ── Risk ───────────────────────────────────────────────────────────
+      MIN_STABLE_RESERVE_ETH:  ${MIN_STABLE_RESERVE_ETH:-1000}
+      MAX_DAILY_VAR_ETH:       ${MAX_DAILY_VAR_ETH:-500}
+      AUTO_EXEC_THRESHOLD_ETH: ${AUTO_EXEC_THRESHOLD_ETH:-100}
+    networks:
+      - ghost-internal
+    labels:
+      - "ghostchain.service=ghost-treasury-ai"
+      - "ghostchain.layer=l1-treasury"
+      - "ghostchain.version=0.1.0"
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:7680/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+networks:
+  ghost-internal:
+    external: true
+    name: ghost-internal

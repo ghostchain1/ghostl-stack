@@ -1,0 +1,35 @@
+{
+  "name": "ghostbrain-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "GhostBrain Core — central autonomous coordination brain for GhostStack",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint 'src/**/*.ts' --max-warnings 0",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "nats": "^2.29.1",
+    "pg": "^8.13.3",
+    "ioredis": "^5.4.2",
+    "prom-client": "^15.1.3",
+    "uuid": "^11.1.0",
+    "zod": "^3.24.2",
+    "yaml": "^2.7.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.13.10",
+    "@types/pg": "^8.11.11",
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

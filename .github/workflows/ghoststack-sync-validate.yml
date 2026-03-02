@@ -1,0 +1,225 @@
+name: GhostStack Sync Validate (Zero-Downtime)
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  # ── 1. Build & lint the sentinel image ──────────────────────────────────────
+  build-sentinel:
+    name: Build Sentinel Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ghost-sync-sentinel
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/ghost-sync-sentinel
+          push: false
+          tags: ghost-sync-sentinel:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── 2. Routing law static analysis ──────────────────────────────────────────
+  routing-law-check:
+    name: Routing Law Static Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check L3 does not reference L1 directly
+        run: |
+          set -e
+          echo "=== Routing Law Check: L3 must NOT reference L1 RPC directly ==="
+
+          VIOLATIONS=0
+
+          # Check compose files for L3_RPC_URL pointing at L1 endpoints
+          if grep -rn --include="*.yml" --include="*.yaml" \
+              -E "L3_RPC_URL[[:space:]]*:[[:space:]]*.*l1-rpc-proxy|L3_RPC_URL[[:space:]]*:[[:space:]]*.*:18545|L3_RPC_URL[[:space:]]*:[[:space:]]*.*:18546" \
+              infra/ services/ docker-compose*.yml 2>/dev/null; then
+            echo "FAIL: L3_RPC_URL references L1 endpoint"
+            VIOLATIONS=$((VIOLATIONS+1))
+          fi
+
+          # Check l3-op-node --l1 flag does not point to ghostchain/L1 RPC
+          if grep -rn --include="*.yml" --include="*.yaml" \
+              -E "\-\-l1=http://l1-rpc-proxy|\-\-l1=http://ghostchain|\-\-l1=.*:18545|\-\-l1=.*:18546" \
+              infra/opstack/docker-compose.l3.yml 2>/dev/null; then
+            echo "FAIL: l3-op-node --l1 flag references L1 (must reference L2/l2-geth)"
+            VIOLATIONS=$((VIOLATIONS+1))
+          fi
+
+          # Check l3-op-batcher --l1-eth-rpc does not point to L1
+          if grep -rn --include="*.yml" --include="*.yaml" \
+              -E "\-\-l1-eth-rpc=http://l1-rpc-proxy|\-\-l1-eth-rpc=http://ghostchain|\-\-l1-eth-rpc=.*:18545|\-\-l1-eth-rpc=.*:18546" \
+              infra/opstack/docker-compose.l3.yml 2>/dev/null; then
+            echo "FAIL: l3-op-batcher --l1-eth-rpc references L1 (must reference L2/op-gate)"
+            VIOLATIONS=$((VIOLATIONS+1))
+          fi
+
+          if [ "$VIOLATIONS" -gt 0 ]; then
+            echo ""
+            echo "Routing law violations found: $VIOLATIONS"
+            echo "GhostL3 must ONLY communicate with GhostL2."
+            echo "GhostL2 must ONLY communicate with GhostChain (L1)."
+            exit 1
+          fi
+
+          echo "OK: No routing law violations detected in static config."
+
+      - name: Verify sentinel L3_RPC_URL default is L2-internal
+        run: |
+          set -e
+          echo "=== Verify sentinel default L3_RPC_URL points to l3-op-node (L2 network) ==="
+          # The sentinel's L3_RPC_URL must be the L3 op-node, not the L1 proxy
+          if grep -n "L3_RPC_URL" infra/opstack/docker-compose.yml | grep -E "l1-rpc-proxy|:18545|:18546"; then
+            echo "FAIL: sentinel L3_RPC_URL references L1"
+            exit 1
+          fi
+          echo "OK: sentinel L3_RPC_URL is correctly set to L3 op-node."
+
+  # ── 3. Sync validation (canary stack) ───────────────────────────────────────
+  sync-validate:
+    name: Sync Validation (Canary)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [build-sentinel, routing-law-check]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build sentinel image (for compose)
+        run: |
+          docker build -t ghost-sync-sentinel:ci ./services/ghost-sync-sentinel
+
+      - name: Start canary stack
+        run: |
+          # Use the ci compose profile if defined; otherwise bring up core services only.
+          # In a real environment this would start the full L1+L2+L3 stack.
+          # For CI we start the sentinel in isolation with mock/stub RPC endpoints
+          # and verify it starts, exposes /health, /status, /metrics correctly.
+          docker compose \
+            -f infra/opstack/docker-compose.yml \
+            --profile ci \
+            up -d --no-build 2>/dev/null || \
+          echo "No ci profile services; sentinel will start in degraded mode for structural validation."
+
+          # Always start the sentinel for structural validation
+          docker run -d \
+            --name ghost-sync-sentinel-ci \
+            -p 8787:8787 \
+            -e PORT=8787 \
+            -e LOG_LEVEL=warn \
+            -e L1_RPC_URL=http://127.0.0.1:19999 \
+            -e L2_RPC_URL=http://127.0.0.1:29999 \
+            -e L3_RPC_URL=http://127.0.0.1:39999 \
+            -e ENFORCE_ROUTING_LAW=true \
+            -e L1_RPC_HOSTNAME_HINT=l1-rpc-proxy \
+            -e POLL_INTERVAL_MS=5000 \
+            ghost-sync-sentinel:ci || true
+
+      - name: Wait for sentinel HTTP server to start
+        run: |
+          set -e
+          echo "Waiting for sentinel HTTP server..."
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8787/health 2>/dev/null; then
+              echo ""
+              echo "Sentinel HTTP server is up"
+              exit 0
+            fi
+            echo "  attempt $i/30..."
+            sleep 2
+          done
+          echo "Sentinel did not start in time"
+          docker logs ghost-sync-sentinel-ci 2>/dev/null || true
+          exit 1
+
+      - name: Validate /health endpoint structure
+        run: |
+          set -e
+          RESP=$(curl -fsS http://localhost:8787/health)
+          echo "Health response: $RESP"
+          # Must contain a status field
+          echo "$RESP" | grep -q '"status"'
+          echo "OK: /health returns valid JSON with status field"
+
+      - name: Validate /status endpoint structure
+        run: |
+          set -e
+          RESP=$(curl -fsS http://localhost:8787/status)
+          echo "Status response: $RESP"
+          # Must contain ok, routingLawOk, reasons fields
+          echo "$RESP" | grep -q '"routingLawOk"'
+          echo "OK: /status returns valid JSON with routingLawOk field"
+
+      - name: Validate /metrics endpoint (Prometheus format)
+        run: |
+          set -e
+          RESP=$(curl -fsS http://localhost:8787/metrics)
+          # Must contain our custom metrics
+          echo "$RESP" | grep -q "ghost_sync_ok"
+          echo "$RESP" | grep -q "ghost_routing_law_ok"
+          echo "$RESP" | grep -q "ghost_l1_syncing"
+          echo "$RESP" | grep -q "ghost_l1_peer_count"
+          echo "OK: /metrics exposes all required ghost_* gauges"
+
+      - name: Validate routing law is enforced in sentinel config
+        run: |
+          set -e
+          RESP=$(curl -fsS http://localhost:8787/status)
+          # routingLawOk must be true (L3_RPC_URL does not contain l1-rpc-proxy)
+          echo "$RESP" | grep -q '"routingLawOk":true'
+          echo "OK: routing law is satisfied in sentinel config"
+
+      - name: Tear down
+        if: always()
+        run: |
+          docker stop ghost-sync-sentinel-ci 2>/dev/null || true
+          docker rm ghost-sync-sentinel-ci 2>/dev/null || true
+          docker compose \
+            -f infra/opstack/docker-compose.yml \
+            --profile ci \
+            down -v 2>/dev/null || true
+
+  # ── 4. Prometheus rules lint ─────────────────────────────────────────────────
+  prometheus-rules-lint:
+    name: Prometheus Rules Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install promtool
+        run: |
+          PROM_VERSION="2.51.2"
+          wget -qO /tmp/prometheus.tar.gz \
+            "https://github.com/prometheus/prometheus/releases/download/v${PROM_VERSION}/prometheus-${PROM_VERSION}.linux-amd64.tar.gz"
+          tar -xzf /tmp/prometheus.tar.gz -C /tmp
+          sudo mv /tmp/prometheus-${PROM_VERSION}.linux-amd64/promtool /usr/local/bin/promtool
+
+      - name: Lint ghoststack-sync rules
+        run: |
+          promtool check rules \
+            infra/opstack/observability/rules/ghoststack-sync.rules.yml
+          echo "OK: ghoststack-sync.rules.yml is valid"
+
+      - name: Lint existing alert rules
+        run: |
+          promtool check rules \
+            infra/opstack/observability/alert_rules.yml
+          echo "OK: alert_rules.yml is valid"

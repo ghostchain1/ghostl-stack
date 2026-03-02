@@ -1,0 +1,183 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# GhostTreasuryAI — Treasury Constitution
+#
+# This file is the normative policy document for the autonomous treasury.
+# Its parameters are compiled into on-chain constructor arguments for:
+#   • StrategyRegistry.sol  — strategy allowlist
+#   • RiskEngine.sol        — risk budgets
+#   • TreasuryGovernor.sol  — governance thresholds
+#   • GhostRevenueRouter.sol — revenue allocation
+#
+# Changes to this file require a governance proposal through TreasuryGovernor
+# and must pass the long timelock (≥ 72 hours) before taking effect on-chain.
+#
+# Routing Law (non-negotiable, enforced at contract level):
+#   L3 → L2 only
+#   L2 → L1 only
+#   L3 → L1 direct: FORBIDDEN
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "1.0.0"
+effective_date: "2025-07-01"
+amendment_timelock_hours: 72
+
+# ── Risk Engine Defaults ──────────────────────────────────────────────────────
+risk:
+  # Minimum stable reserve that must be maintained at all times (ETH-equivalent)
+  # Maps to: RiskEngine.config.minStableReserve
+  min_stable_reserve_eth: 1000
+
+  # Maximum daily Value-at-Risk accumulation before circuit breaker trips
+  # Maps to: RiskEngine.config.maxDailyVaR
+  max_daily_var_eth: 500
+
+  # Maximum weekly loss before circuit breaker trips
+  # Maps to: RiskEngine.config.maxWeeklyLoss
+  max_weekly_loss_eth: 1000
+
+  # Maximum single-asset concentration across the entire treasury (in bps)
+  # Maps to: RiskEngine.config.maxAssetConcentrationBps
+  max_asset_concentration_bps: 3000   # 30%
+
+  # Maximum allocation to a single strategy (in bps)
+  # Maps to: RiskEngine.config.maxStrategyConcentrationBps
+  max_strategy_concentration_bps: 2000  # 20%
+
+  # Circuit breaker auto-reset: must be manually reset by GUARDIAN_ROLE
+  circuit_breaker_manual_reset_only: true
+
+  # Stress multiplier applied to VaR figures in adverse conditions (in bps)
+  # 15000 bps = 1.5x
+  stress_multiplier_bps: 15000
+
+# ── Treasury Governor Thresholds ──────────────────────────────────────────────
+governance:
+  # Proposals below this amount (in ETH) skip the long timelock
+  # Maps to: TreasuryGovernor.autoExecuteThreshold
+  auto_execute_threshold_eth: 50
+
+  # Short timelock for proposals ≤ autoExecuteThreshold (seconds)
+  # Maps to: TreasuryGovernor.shortTimelockSeconds
+  short_timelock_seconds: 3600         # 1 hour
+
+  # Long timelock for proposals > autoExecuteThreshold (seconds)
+  # Maps to: TreasuryGovernor.longTimelockSeconds
+  long_timelock_seconds: 259200        # 72 hours
+
+  # Maximum number of open proposals at one time
+  max_open_proposals: 20
+
+  # Proposal expiry window (seconds after creation)
+  proposal_expiry_seconds: 604800      # 7 days
+
+  # Autonomy tier boundaries (ETH per execution, excluding tier 0/1)
+  autonomy_tiers:
+    tier_2_max_eth: 50
+    tier_3_max_eth: 200
+    tier_4_max_eth: 500
+    tier_5_is_crisis_playbook: true
+
+# ── Revenue Router Allocation ─────────────────────────────────────────────────
+# Weights must sum to exactly 10,000 bps (100%)
+# Maps to: GhostRevenueRouter.BucketConfig[6]
+revenue_allocation:
+  - bucket: OPS
+    bps: 2000          # 20%
+    description: "Operational costs: infra, licensing, monitoring"
+
+  - bucket: VALIDATORS
+    bps: 2500          # 25%
+    description: "Validator rewards and staking incentives"
+
+  - bucket: BUYBACK_BURN
+    bps: 1000          # 10%
+    description: "On-market GST buyback and burn program"
+
+  - bucket: PAYROLL
+    bps: 2000          # 20%
+    description: "Core team payroll via streaming multisig"
+
+  - bucket: GRANTS
+    bps: 1000          # 10%
+    description: "Ecosystem grants and developer incentives"
+
+  - bucket: RESERVES
+    bps: 1500          # 15%
+    description: "Strategic reserves for emergency drawdown"
+
+# ── Strategy Registry — Approved Strategies ───────────────────────────────────
+# All strategies must be internal-only (no external protocol integrations).
+# External integrations require a separate governance amendment.
+strategies:
+  - label: "staking-validator-delegation"
+    max_allocation_bps: 4000          # 40% of treasury NAV
+    max_drawdown_bps: 500             # 5% max loss tolerance
+    cooldown_seconds: 86400           # 24h cooldown between executions
+    min_oracle_count: 2
+    risk_tier: 1                      # 1=conservative
+    description: "Delegate native to trusted validator set for protocol revenue"
+
+  - label: "stable-liquidity-ops"
+    max_allocation_bps: 2000          # 20%
+    max_drawdown_bps: 200             # 2% max loss
+    cooldown_seconds: 43200           # 12h cooldown
+    min_oracle_count: 1
+    risk_tier: 1
+    description: "Maintain internal stable liquidity pools for bridging operations"
+
+  - label: "reserve-rebalance"
+    max_allocation_bps: 500           # 5%
+    max_drawdown_bps: 100             # 1% max loss
+    cooldown_seconds: 21600           # 6h cooldown
+    min_oracle_count: 1
+    risk_tier: 0                      # 0=minimal risk
+    description: "Periodic rebalancing to maintain constitutional stable reserve floor"
+
+  - label: "validator-bond-top-up"
+    max_allocation_bps: 1000          # 10%
+    max_drawdown_bps: 0               # no loss tolerance — pure bonding
+    cooldown_seconds: 604800          # 7 days
+    min_oracle_count: 2
+    risk_tier: 0
+    description: "Top-up validator bonds to prevent slashing risk"
+
+# ── ProofOfSolvency Policy ────────────────────────────────────────────────────
+solvency:
+  # How often the AI service must publish a new solvency snapshot
+  snapshot_interval_cycles: 12        # every 12 orchestrator cycles
+  # Max acceptable staleness before an alert fires (seconds)
+  max_snapshot_staleness_seconds: 7200 # 2 hours
+  # Minimum surplus ratio (surplus / nav) before AI may execute any strategy
+  # 0.05 = 5%: assets must exceed liabilities by at least 5%
+  min_surplus_ratio: 0.05
+
+# ── AI Swarm Quorum Rules ─────────────────────────────────────────────────────
+quorum:
+  # Agents with veto power — a single reject from these blocks the proposal
+  veto_agents:
+    - risk-governor          # circuit breaker, VaR, weekly-loss checks
+    - market-sentinel        # manipulation, gas spike, NAV integrity
+
+  # Non-veto agents must achieve this many approvals for a proposal to proceed
+  min_approvals: 2
+
+  # Minimum average confidence across all non-veto approvals
+  min_avg_confidence: 0.6
+
+  # Veto agents must exceed this confidence to trigger a veto
+  veto_confidence_threshold: 0.7
+
+# ── Emergency Procedures ──────────────────────────────────────────────────────
+emergency:
+  # Role that may call emergencyPause on TreasuryGovernor
+  pause_role: "GUARDIAN_ROLE"
+
+  # Role that may reset the RiskEngine circuit breaker
+  circuit_breaker_reset_role: "GUARDIAN_ROLE"
+
+  # Maximum pause duration before auto-unpause (0 = no auto-unpause)
+  max_pause_duration_hours: 0
+
+  # Post-mortem required for any circuit breaker trip
+  post_mortem_required: true
+  post_mortem_path: "docs/postmortems/"

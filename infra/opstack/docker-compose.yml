@@ -334,6 +334,7 @@ services:
   ghost-rpc-proxy-l1:
     cap_drop: *id001
     security_opt: *id002
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     build:
       context: ../../services/ghost-rpc-proxy
       dockerfile: Dockerfile
@@ -363,6 +364,7 @@ services:
   ghost-rpc-proxy-l2:
     cap_drop: *id001
     security_opt: *id002
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     build:
       context: ../../services/ghost-rpc-proxy
       dockerfile: Dockerfile
@@ -392,6 +394,7 @@ services:
   ghost-rpc-proxy-l3:
     cap_drop: *id001
     security_opt: *id002
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     build:
       context: ../../services/ghost-rpc-proxy
       dockerfile: Dockerfile
@@ -413,6 +416,7 @@ services:
   hyper-ghost-supervisor:
     cap_drop: *id001
     security_opt: *id002
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     build:
       context: ../../services/hyper-ghost-supervisor
       dockerfile: Dockerfile
@@ -460,6 +464,7 @@ services:
   ai-monitor:
     cap_drop: *id001
     security_opt: *id002
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
     build:
       context: ../../services/ai-monitor
       dockerfile: ../../services/common.Dockerfile
@@ -553,6 +558,7 @@ services:
   rpc-forward-l2-18547:
     cap_drop: *id001
     security_opt: *id002
+    user: "1001:1001"
     image: ${OPSTACK_RPC_FORWARD_IMAGE:-local/rpc-forward:0.1.0}
     build:
       context: ./rpc-forward
@@ -575,6 +581,7 @@ services:
   l1-rpc-proxy:
     cap_drop: *id001
     security_opt: *id002
+    user: "1001:1001"
     image: node:22-alpine@sha256:e4bf2a82ad0a4037d28035ae71529873c069b13eb0455466ae0bc13363826e34
     restart: unless-stopped
     logging: *id003
@@ -814,6 +821,7 @@ services:
   prometheus:
     cap_drop: *id001
     security_opt: *id002
+    user: "1001:1001"
     image: ${PROMETHEUS_IMAGE:-prom/prometheus@sha256:075b1ba2c4ebb04bc3a6ab86c06ec8d8099f8fda1c96ef6d104d9bb1def1d8bc}
     restart: unless-stopped
     logging: *id003
@@ -822,6 +830,7 @@ services:
     volumes:
     - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     - ./observability/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+    - ./observability/rules:/etc/prometheus/rules:ro
     - prometheus_data:/prometheus
     command:
     - --config.file=/etc/prometheus/prometheus.yml
@@ -841,6 +850,7 @@ services:
   alertmanager:
     cap_drop: *id001
     security_opt: *id002
+    user: "1001:1001"
     image: ${ALERTMANAGER_IMAGE:-prom/alertmanager@sha256:e13b6ed5cb929eeaee733479dce55e10eb3bc2e9c4586c705a4e8da41e5eacf5}
     restart: unless-stopped
     logging: *id003
@@ -873,6 +883,7 @@ services:
   loki:
     cap_drop: *id001
     security_opt: *id002
+    user: "1001:1001"
     image: ${LOKI_IMAGE:-grafana/loki@sha256:8b5bd7748d0e4da66cd741ac276e485517514af0bea32167e27c0e1a95bcf8aa}
     restart: unless-stopped
     logging: *id003
@@ -896,6 +907,7 @@ services:
   grafana:
     cap_drop: *id001
     security_opt: *id002
+    user: "1001:1001"
     image: ${GRAFANA_IMAGE:-grafana/grafana@sha256:408afb9726de5122b00a2576763a8a57a3c86d5b0eff5305bc994ceb3eb96c3f}
     restart: unless-stopped
     logging: *id003
@@ -918,6 +930,7 @@ services:
   vector:
     cap_drop: *id001
     security_opt: *id002
+    user: "root"
     image: ${VECTOR_IMAGE:-timberio/vector:0.38.0-alpine@sha256:0f40a5bc6df18de0f4855ee6a801449f1b78fa60b3c5001c530896abc64b18b2}
     restart: unless-stopped
     logging: *id003
@@ -933,6 +946,53 @@ services:
     command:
     - --config
     - /etc/vector/vector.yaml
+    mem_limit: 256m
+    cpus: '0.25'
+
+  # ── Ghost Sync Sentinel ────────────────────────────────────────────────────
+  # Continuously verifies end-to-end sync across L1 → L2 → L3.
+  # Routing law: L3 talks ONLY to L2; L2 talks ONLY to L1.
+  ghost-sync-sentinel:
+    cap_drop: *id001
+    security_opt: *id002
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
+    build:
+      context: ../../services/ghost-sync-sentinel
+      dockerfile: Dockerfile
+    image: local/ghost-sync-sentinel:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *id003
+    depends_on:
+      l1-rpc-proxy:
+        condition: service_healthy
+      op-node:
+        condition: service_healthy
+    environment:
+      PORT: "8787"
+      LOG_LEVEL: ${SENTINEL_LOG_LEVEL:-info}
+      # L1: standard eth JSON-RPC via internal l1-rpc-proxy
+      L1_RPC_URL: http://l1-rpc-proxy:18546
+      # L2: OP Stack op-node rollup RPC (optimism_syncStatus)
+      L2_RPC_URL: http://op-node:9546
+      # L3: OP Stack l3-op-node rollup RPC (optimism_syncStatus)
+      # Falls back to host if L3 is not running in this compose profile
+      L3_RPC_URL: ${L3_SENTINEL_RPC_URL:-http://l3-op-node:19546}
+      MAX_HEAD_LAG_SEC: ${SENTINEL_MAX_HEAD_LAG_SEC:-180}
+      MAX_SAFE_LAG_SEC: ${SENTINEL_MAX_SAFE_LAG_SEC:-600}
+      POLL_INTERVAL_MS: ${SENTINEL_POLL_INTERVAL_MS:-10000}
+      ENFORCE_ROUTING_LAW: "true"
+      # Hostname hint used to detect routing law violations (L3 must not reference L1)
+      L1_RPC_HOSTNAME_HINT: "l1-rpc-proxy"
+    ports:
+    - ${SENTINEL_HOST_PORT:-8787}:8787
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -qO- http://127.0.0.1:8787/health || exit 1
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
     mem_limit: 256m
     cpus: '0.25'
 volumes:

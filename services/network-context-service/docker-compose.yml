@@ -2,7 +2,7 @@
 # role: network-context-service
 # ports: 7633:7633
 # volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-x-ghost-user: &ghost-user "10001:10001"
+x-ghost-user: &ghost-user "1001:1001"
 
 services:
   network-context-service:

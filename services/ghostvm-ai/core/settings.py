@@ -29,3 +29,11 @@ def apply_enabled() -> bool:
 
 def reconcile_interval_seconds() -> int:
     return max(30, int(os.getenv("GNS_RECONCILE_INTERVAL_SECONDS", "60")))
+
+
+def ghostbrain_url() -> str:
+    return os.getenv("GHOSTBRAIN_URL", "http://ghostbrain-core:7900")
+
+
+def ghostbrain_enabled() -> bool:
+    return os.getenv("GHOSTBRAIN_ENABLED", "true").lower() == "true"

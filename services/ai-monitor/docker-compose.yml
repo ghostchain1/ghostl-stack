@@ -6,6 +6,7 @@ services:
   ai-monitor:
     container_name: ghost_ai-monitor
     image: ghostl/ai-monitor:local
+    user: "1001:1001"
     profiles:
       - legacy-ai-monitor
     build:
@@ -80,6 +81,7 @@ services:
   ai-monitor-l1:
     container_name: ghost_ai-monitor-l1
     image: ghostl/ai-monitor:local
+    user: "1001:1001"
     build:
       context: .
     env_file:
@@ -138,6 +140,7 @@ services:
   ai-monitor-l3:
     container_name: ghost_ai-monitor-l3
     image: ghostl/ai-monitor:local
+    user: "1001:1001"
     build:
       context: .
     env_file:

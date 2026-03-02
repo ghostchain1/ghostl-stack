@@ -1,0 +1,114 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {"type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0"},
+    {"type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0"},
+    {"type": "panel", "id": "timeseries", "name": "Time series", "version": ""},
+    {"type": "panel", "id": "stat", "name": "Stat", "version": ""},
+    {"type": "panel", "id": "table", "name": "Table", "version": ""}
+  ],
+  "annotations": {"list": []},
+  "description": "GhostContractAI — Contract Management System Overview",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Active Pipelines",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(ghostcontract_ai_pipeline_active)", "legendFormat": "Active"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"}
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Pipelines (24h)",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(increase(ghostcontract_ai_pipeline_total[24h]))", "legendFormat": "Total"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"}
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Pipeline Failures (24h)",
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(increase(ghostcontract_ai_pipeline_total{result=\"failure\"}[24h]))", "legendFormat": "Failures"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Routing Law Violations (24h)",
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(increase(ghostcontract_ai_routing_law_violations_total[24h]))", "legendFormat": "Violations"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Evidence Packs (24h)",
+      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(increase(ghostcontract_ai_evidence_packs_total[24h]))", "legendFormat": "Packs"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"}
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Pipeline Duration (p50/p95) by Type",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum by (le, type) (rate(ghostcontract_ai_pipeline_duration_seconds_bucket[5m])))", "legendFormat": "p50 {{type}}"},
+        {"expr": "histogram_quantile(0.95, sum by (le, type) (rate(ghostcontract_ai_pipeline_duration_seconds_bucket[5m])))", "legendFormat": "p95 {{type}}"}
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Pipeline Throughput by Result",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum by (result, type) (rate(ghostcontract_ai_pipeline_total[5m]))", "legendFormat": "{{type}} / {{result}}"}
+      ]
+    },
+    {
+      "id": 8,
+      "type": "table",
+      "title": "Contract Risk Scores",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "ghostcontract_ai_risk_score", "instant": true, "legendFormat": "{{name}} @ {{chain}}"}],
+      "options": {"sortBy": [{"displayName": "Value", "desc": true}]}
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Policy Gate Checks",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum by (result, namespace) (rate(ghostcontract_ai_policy_gate_checks_total[5m]))", "legendFormat": "{{namespace}} / {{result}}"}
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["ghostchain", "contracts", "ai", "security"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "utc",
+  "title": "GhostContractAI — Contract Management",
+  "uid": "ghostcontract-ai-dashboard",
+  "version": 1
+}

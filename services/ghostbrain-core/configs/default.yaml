@@ -1,0 +1,43 @@
+# GhostBrain Core — Default Configuration
+# Override all values via environment variables.
+
+service:
+  name: ghostbrain-core
+  port: 7900
+  environment: development
+
+routing_law:
+  # Hard-coded adjacency — never change without CI + routing-law test pass
+  L3_can_route_to: L2
+  L2_can_route_to: L1
+  L1_outbound: none
+
+brain:
+  tick_interval_seconds: 30
+  canary_window_seconds: 120
+  max_blast_radius: 3
+
+policy:
+  break_glass_capabilities:
+    - db.migration.apply
+    - libvirt.stop
+  canary_required_capabilities:
+    - compose.apply
+    - compose.canary
+    - docker.restart
+
+nats:
+  subjects:
+    agent_register: ghostbrain.agent.register
+    health_signal: ghostbrain.signal.health
+    anomaly_signal: ghostbrain.signal.anomaly
+    task_prefix: ghostbrain.agent
+
+observability:
+  metrics_path: /metrics
+  health_path: /healthz
+  ready_path: /readyz
+
+evidence:
+  required_before_migration: true
+  required_before_blast_radius_gt: 2

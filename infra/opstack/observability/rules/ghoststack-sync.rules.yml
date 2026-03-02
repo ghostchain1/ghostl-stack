@@ -1,0 +1,119 @@
+groups:
+  - name: ghoststack-sync-sentinel
+    rules:
+      # ── Critical: full stack sync unhealthy ──────────────────────────────
+      - alert: GhostStackSyncUnhealthy
+        expr: ghost_sync_ok == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "GhostStack sync is unhealthy"
+          description: >
+            Sync Sentinel reports unhealthy for >2m.
+            Check /status on ghost-sync-sentinel:8787 and review
+            batcher/sequencer/op-node logs for L2 and L3.
+
+      # ── Critical: routing law violated ──────────────────────────────────
+      - alert: GhostRoutingLawViolation
+        expr: ghost_routing_law_ok == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Routing law violation detected"
+          description: >
+            Routing law must remain GhostL3→GhostL2→GhostChain (L1).
+            A direct L3→L1 reference has been detected in configuration.
+            Investigate compose env vars and Docker network ACLs immediately.
+
+      # ── Warning: L1 is syncing ───────────────────────────────────────────
+      - alert: GhostL1Syncing
+        expr: ghost_l1_syncing == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "L1 (GhostChain) is syncing"
+          description: >
+            L1 reports eth_syncing != false for >5m.
+            This can destabilize L2/L3 settlement and derivation.
+            Check ghostchain-node1 / ghostchain-rpc-proxy logs.
+
+      # ── Critical: L2 head stale ──────────────────────────────────────────
+      - alert: GhostL2HeadStale
+        expr: ghost_layer_head_lag_seconds{layer="L2"} > 180
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "L2 head is stale"
+          description: >
+            L2 head lag exceeded 180s for >2m (current: {{ $value }}s).
+            op-node / op-sequencer may be stalled or disconnected from L1.
+            Check op-node:9546 and op-sequencer:9646 logs.
+
+      # ── Critical: L3 head stale ──────────────────────────────────────────
+      - alert: GhostL3HeadStale
+        expr: ghost_layer_head_lag_seconds{layer="L3"} > 180
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "L3 head is stale"
+          description: >
+            L3 head lag exceeded 180s for >2m (current: {{ $value }}s).
+            l3-op-node sequencer/derivation may be stalled.
+            Check l3-op-node:19546 and l3-geth logs.
+
+      # ── Warning: L2 safe stale ───────────────────────────────────────────
+      - alert: GhostL2SafeStale
+        expr: ghost_layer_safe_lag_seconds{layer="L2"} > 600
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "L2 safe head is stale"
+          description: >
+            L2 safe lag exceeded 600s for >5m (current: {{ $value }}s).
+            L1 batch posting (op-batcher) or proving may be delayed.
+            Check op-batcher:7301/metrics and op-gate-l1 logs.
+
+      # ── Warning: L3 safe stale ───────────────────────────────────────────
+      - alert: GhostL3SafeStale
+        expr: ghost_layer_safe_lag_seconds{layer="L3"} > 600
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "L3 safe head is stale"
+          description: >
+            L3 safe lag exceeded 600s for >5m (current: {{ $value }}s).
+            L2 batch posting (l3-op-batcher) may be delayed.
+            Check l3-op-batcher:8301/metrics and op-gate logs.
+
+      # ── Warning: L1 low peers ────────────────────────────────────────────
+      - alert: GhostL1LowPeers
+        expr: ghost_l1_peer_count < 3
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "L1 peer count is low"
+          description: >
+            L1 peer count < 3 for >10m (current: {{ $value }}).
+            GhostChain network health may be degraded.
+            Check ghostchain-bootnode and ghostchain-node1/node2 P2P connectivity.
+
+      # ── Info: sentinel itself is down ────────────────────────────────────
+      - alert: GhostSyncSentinelDown
+        expr: up{job="ghost-sync-sentinel"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Ghost Sync Sentinel is unreachable"
+          description: >
+            Prometheus cannot scrape ghost-sync-sentinel:8787 for >2m.
+            The sentinel itself may be crashed or the container is unhealthy.
+            Run: docker compose logs ghost-sync-sentinel

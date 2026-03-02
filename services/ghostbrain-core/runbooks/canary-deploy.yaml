@@ -1,0 +1,74 @@
+# GhostBrain Runbook: Canary Deploy
+# For any service update requiring progressive rollout
+
+name: canary-deploy
+version: 1.0.0
+description: |
+  Progressive canary deployment:
+    10% canary → SLO verification → 100% rollout
+  Auto-rollback if error rate or latency regresses.
+
+trigger:
+  patterns:
+    - "deploy"
+    - "update"
+    - "upgrade"
+    - "rollout"
+
+preconditions:
+  - check: "backup_recent"
+    required: true
+  - check: "routing_law_compliant"
+    required: true
+
+steps:
+  - id: canary-10pct
+    capability: compose.canary
+    description: "Deploy to 10% canary"
+    params:
+      fraction: 0.1
+    success_metrics:
+      - metric: "http_request_duration_p99_seconds"
+        operator: lt
+        threshold: 1.0
+        window_seconds: 120
+      - metric: "http_error_rate"
+        operator: lt
+        threshold: 0.01
+        window_seconds: 120
+    timeout_seconds: 180
+    rollback:
+      capability: compose.canary
+      params:
+        rollback: true
+
+  - id: ramp-50pct
+    capability: compose.canary
+    description: "Ramp to 50%"
+    params:
+      fraction: 0.5
+    success_metrics:
+      - metric: "http_request_duration_p99_seconds"
+        operator: lt
+        threshold: 1.0
+        window_seconds: 120
+    timeout_seconds: 180
+    rollback:
+      capability: compose.canary
+      params:
+        rollback: true
+
+  - id: full-rollout
+    capability: compose.apply
+    description: "Full rollout (100%)"
+    params:
+      pull: false
+    timeout_seconds: 300
+    rollback:
+      capability: compose.apply
+      params:
+        rollback: true
+
+blast_radius: 3
+canary_required: true
+break_glass_required: false

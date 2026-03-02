@@ -1,0 +1,108 @@
+#cloud-config
+# =============================================================
+# GhostStack — ghostl2-testnet
+# OP Stack L2 testnet sequencer + batcher + proposer
+# Network: gs-l2  /  static IP 10.50.20.11
+# Settles to: ghostchain-testnet-l1  (10.50.10.11:8545)
+# =============================================================
+
+hostname: ghostl2-testnet
+fqdn: ghostl2-testnet.ghostchain.local
+manage_etc_hosts: true
+timezone: UTC
+
+users:
+  - name: ghost
+    gecos: GhostStack Operator
+    groups: sudo, docker
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+osgEYoqPCDiJESBGJhdbM2EI+CcQr4UIC4igDX1Xu ghosttoken.dev@gmail.com"
+
+package_update: true
+package_upgrade: false
+packages:
+  - curl
+  - git
+  - jq
+  - ca-certificates
+  - gnupg
+  - fail2ban
+  - unattended-upgrades
+
+write_files:
+  - path: /etc/ghostl-stack/l2-testnet.env
+    permissions: "0600"
+    owner: root:root
+    content: |
+      # ── GhostL2 Testnet ─────────────────────────────────────
+      ROUTING_LAW_MODE=strict
+
+      L1_RPC=http://10.50.10.11:8545
+      L1_CHAIN_ID=14000102
+
+      L2_CHAIN_ID=902
+      L2_RPC=http://l2-geth:8545
+
+      OP_PORTAL_ADDRESS=REPLACE_ME
+      L2OO_ADDRESS=REPLACE_ME
+      SYSTEM_CONFIG_ADDRESS=REPLACE_ME
+      DISPUTE_GAME_FACTORY_ADDRESS=REPLACE_ME
+      BATCH_INBOX_ADDRESS=REPLACE_ME
+
+      SEQUENCER_KEY=REPLACE_ME
+      BATCHER_KEY=REPLACE_ME
+      PROPOSER_KEY=REPLACE_ME
+      CHALLENGER_KEY=REPLACE_ME
+      SEQUENCER_ADDRESS=REPLACE_ME
+      BATCH_SENDER_ADDRESS=REPLACE_ME
+      PROPOSER_ADDRESS=REPLACE_ME
+
+      SEQUENCER_L1_CONFS=2
+
+      OPSTACK_IMAGE_TAG=testnet
+      OPSTACK_UID=1000
+      OPSTACK_GID=1000
+
+      CANONICAL_GAS_TOKEN_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
+      GAS_TOKEN_L1=GST
+      GAS_TOKEN_L2=GST
+
+      GATE_ADMIN_TOKEN=REPLACE_ME
+      GATE_ALLOW_INSECURE_ADMIN=0
+      AI_CONSENSUS_MODE=log
+      AI_CONSENSUS_FAIL_OPEN=1
+
+  - path: /etc/systemd/system/ghostl2-testnet.service
+    permissions: "0644"
+    owner: root:root
+    content: |
+      [Unit]
+      Description=GhostL2 Testnet OP Stack
+      Requires=docker.service
+      After=docker.service network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=simple
+      EnvironmentFile=/etc/ghostl-stack/l2-testnet.env
+      WorkingDirectory=/opt/ghostl-stack/infra/opstack
+      ExecStart=/usr/bin/docker compose \
+        -f docker-compose.yml \
+        --env-file /etc/ghostl-stack/l2-testnet.env \
+        up --remove-orphans
+      ExecStop=/usr/bin/docker compose \
+        -f docker-compose.yml \
+        down
+      Restart=always
+      RestartSec=20
+      StandardOutput=journal
+      StandardError=journal
+      SyslogIdentifier=ghostl2-testnet
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - bash /opt/ghostl-stack/infra/hypervisor/provision/ghostl2-provision.sh testnet

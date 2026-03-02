@@ -1,0 +1,105 @@
+#cloud-config
+# =============================================================
+# GhostStack — ghost-mainnet-validator
+# GhostChain L1 mainnet validator / signer node (chain ID 14000101)
+# Network: gs-l1  /  static IP 10.50.10.12
+# Mining: ENABLED — holds the IBFT signer key
+# =============================================================
+
+hostname: ghost-mainnet-validator
+fqdn: ghost-mainnet-validator.ghostchain.local
+manage_etc_hosts: true
+timezone: UTC
+
+users:
+  - name: ghost
+    gecos: GhostStack Operator
+    groups: sudo, docker
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+osgEYoqPCDiJESBGJhdbM2EI+CcQr4UIC4igDX1Xu ghosttoken.dev@gmail.com"
+
+package_update: true
+package_upgrade: false
+packages:
+  - curl
+  - git
+  - jq
+  - ca-certificates
+  - gnupg
+  - fail2ban
+  - unattended-upgrades
+
+write_files:
+  - path: /etc/ghostl-stack/validator-mainnet.env
+    permissions: "0600"
+    owner: root:root
+    content: |
+      # ── GhostChain L1 Mainnet Validator ─────────────────────
+      L1_ENV=production
+      ALLOW_DEV_SECRETS=0
+      L1_SECRETS_SOURCE=vault
+      L1_CHAIN_ID=14000101
+      GETH_IMAGE=ghostl/geth:alltools-v1.13.14
+
+      L1_GHOSTCHAIN_BOOTNODE_IP=10.50.10.2
+      L1_BOOTNODE_PORT=30301
+      L1_RPC_HTTP_PORT=8545
+      L1_RPC_WS_PORT=8546
+      L1_RPC_AUTH_PORT=8551
+      L1_P2P_PORT=30303
+      L1_METRICS_PORT=6060
+
+      # Validator: no public HTTP RPC — auth-only local access
+      L1_HTTP_APIS=eth,net
+      L1_WS_APIS=eth,net
+      L1_HTTP_VHOSTS=localhost,127.0.0.1
+      L1_HTTP_CORS=http://localhost
+      L1_WS_ORIGINS=http://localhost
+      L1_AUTHRPC_VHOSTS=localhost,127.0.0.1
+      L1_RPC_REQUIRE_AUTH=1
+      L1_RPC_RATE_LIMIT_PER_MINUTE=30
+      L1_RPC_RATE_LIMIT_BURST=10
+
+      # Mining MUST be enabled on the validator
+      L1_NODE1_MINING_ENABLED=1
+
+      # Signer key lives in Vault — do NOT set here
+      VAULT_ADDR=REPLACE_ME
+      VAULT_ROLE_ID=REPLACE_ME
+      VAULT_SECRET_ID=REPLACE_ME
+      VAULT_L1_PATH=ghostchain/l1/mainnet/validator
+
+  - path: /etc/systemd/system/ghost-mainnet-validator.service
+    permissions: "0644"
+    owner: root:root
+    content: |
+      [Unit]
+      Description=GhostChain L1 Mainnet Validator
+      Requires=docker.service
+      After=docker.service network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=simple
+      EnvironmentFile=/etc/ghostl-stack/validator-mainnet.env
+      WorkingDirectory=/opt/ghostl-stack/infra/ghostchain
+      ExecStart=/usr/bin/docker compose \
+        -f docker-compose.l1.yml \
+        --env-file /etc/ghostl-stack/validator-mainnet.env \
+        up --remove-orphans
+      ExecStop=/usr/bin/docker compose \
+        -f docker-compose.l1.yml \
+        down
+      Restart=always
+      RestartSec=10
+      StandardOutput=journal
+      StandardError=journal
+      SyslogIdentifier=ghost-mainnet-validator
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - bash /opt/ghostl-stack/infra/hypervisor/provision/ghost-validator-provision.sh mainnet

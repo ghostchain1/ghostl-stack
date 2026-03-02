@@ -2,7 +2,7 @@
 # role: network-manager-service
 # ports: 7766:7766
 # volumes: /var/run/docker.sock:/var/run/docker.sock, ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
-x-ghost-user: &ghost-user "10001:10001"
+x-ghost-user: &ghost-user "1001:1001"
 
 services:
   network-manager-service:
