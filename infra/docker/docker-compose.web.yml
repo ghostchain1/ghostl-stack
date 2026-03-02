@@ -56,12 +56,13 @@ services:
 
   # ── Next.js web app ────────────────────────────────────────
   web:
-    image: ghcr.io/ghostchain/web:latest
-    # Or build from source:
-    # build:
-    #   context: ../..
-    #   dockerfile: apps/web/Dockerfile
-    #   target: runner
+    # Use pre-built image when available:
+    # image: ghcr.io/ghostchain1/web:latest
+    # Build from source (default — works without registry credentials):
+    build:
+      context: /opt/ghostl-stack
+      dockerfile: apps/web/Dockerfile
+      target: runner
     restart: unless-stopped
     env_file:
       - /etc/ghostl-stack/web.env

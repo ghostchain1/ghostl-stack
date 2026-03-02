@@ -113,6 +113,12 @@ VM_NET["$VM_VHDX_IMPORT"]="$GS_NET_MGMT"
 VM_PROVISION["$VM_VHDX_IMPORT"]="infra/hypervisor/provision/ghostchain-vhdx-import-provision.sh"
 VM_ARG["$VM_VHDX_IMPORT"]=""
 
+# Web frontend VM (MGMT segment — serves ghostchain.cloud public subdomains)
+VM_IP["$VM_WEB"]="${IP_WEB:-10.50.99.10}";           VM_GW["$VM_WEB"]="$GS_MGMT_GW"
+VM_NET["$VM_WEB"]="$GS_NET_MGMT"
+VM_PROVISION["$VM_WEB"]="infra/hypervisor/provision/ghost-web-provision.sh"
+VM_ARG["$VM_WEB"]=""
+
 # ── Start order: L1 first, then L2, then L3, then MGMT ───────────────────────
 LAYER_ORDER=(
   "$VM_L1_MAINNET"
@@ -125,6 +131,7 @@ LAYER_ORDER=(
   "$VM_L3_MAINNET"
   "$VM_L3_TESTNET"
   "$VM_VHDX_IMPORT"
+  "$VM_WEB"
 )
 
 # ── Step 0: Ensure libvirt networks exist ────────────────────────────────────
