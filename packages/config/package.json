@@ -5,7 +5,7 @@
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
-    "lint": "echo \"TODO: lint\""
+    "lint": "tsc --noEmit index.ts"
   },
   "engines": {
     "node": ">=22.21.0 <23"

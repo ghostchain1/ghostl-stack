@@ -1,0 +1,57 @@
+# ghost-storage-ai — Storage Desired State
+# ──────────────────────────────────────────────────────────────
+# This file defines:
+#   - vm targets (SSH-accessible VMs to probe)
+#   - thresholds (overrides env vars; env vars take precedence)
+#   - hypervisor settings
+
+thresholds:
+  disk_warn_pct: 75      # filesystem % full → WARN
+  disk_crit_pct: 88      # filesystem % full → CRIT
+  journal_warn_mb: 200   # systemd journal size MB → WARN
+  apt_cache_warn_mb: 150 # APT cache size MB → WARN
+  tmp_warn_mb: 500       # /tmp size MB → WARN
+  qcow_sparse_warn_pct: 80  # qcow2 actual/virtual % → WARN
+
+# VM targets — hostname or IP reachable from the ghost-storage-ai container
+# For containers running on the hypervisor host, use the virbr IP.
+# ControlMaster is not used here — clean SSH per probe.
+vms:
+  - name: ghostchain-mainnet-l1
+    host: 10.50.10.10
+
+  - name: ghostchain-testnet-l1
+    host: 10.50.10.11
+
+  - name: ghost-mainnet-validator
+    host: 10.50.10.12
+
+  - name: ghost-testnet-validator
+    host: 10.50.10.13
+
+  - name: ghost-mainnet-archive-node
+    host: 10.50.10.14
+
+  - name: ghostl2-mainnet
+    host: 10.50.20.10
+
+  - name: ghostl2-testnet
+    host: 10.50.20.11
+
+  - name: ghostl3-mainnet
+    host: 10.50.30.10
+
+  - name: ghostl3-testnet
+    host: 10.50.30.11
+
+  - name: ghost-dns-slave
+    host: 192.168.122.210
+
+hypervisor:
+  # libvirt pools to monitor
+  pools:
+    - mainnet
+    - testnet
+  # Reconcile settings
+  apply_enabled: false          # set GSA_APPLY_ENABLED=true env var to allow live apply
+  reconcile_interval_seconds: 300

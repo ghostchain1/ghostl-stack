@@ -347,4 +347,4 @@
 If you want, I can also format this into:
 
 * a **GitHub issue template** (checkboxes + acceptance criteria), or
-* a **VS Code Tasks + TODO tree setup** (so these show up as tracked TODOs in the sidebar).
+* a **VS Code Tasks + task tree setup** (so these show up as tracked tasks in the sidebar).

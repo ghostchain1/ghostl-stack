@@ -23,7 +23,7 @@ Last updated: 2026-02-18
 - L2 Executor: (unset)
 - L3 Governor: (unset)
 - L3 Executor: (unset)
-  - TODO: populate once L2/L3 governance deployments are complete.
+  - Pending: populate once L2/L3 governance deployments are complete.
 
 ## Bridge / Oracle / System Contracts (from env)
 - L2 Output Oracle: `0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6`

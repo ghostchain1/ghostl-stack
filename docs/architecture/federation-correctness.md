@@ -45,7 +45,7 @@ bash infra/scripts/bridge-e2e.sh --mode l2l3 --run --amount 1
 bash infra/scripts/bridge-e2e.sh --mode l1l2 --run --amount 1
 ```
 
-TODOs:
+Open follow-ups:
 - Revert-path tests
 - Add L1<->L2 relayer health checks (if required in your deployment)
 

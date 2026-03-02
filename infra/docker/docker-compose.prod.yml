@@ -102,6 +102,10 @@ services:
       HOSTNAME: 0.0.0.0
       NEXTAUTH_URL: https://app.ghostchain.cloud
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      # Internal URL used for server-side self-fetches (avoids public round-trip)
+      NEXT_SERVER_URL: http://web:3000
+      # Enables subdomain portal links in the frontend
+      NEXT_PUBLIC_BASE_DOMAIN: ghostchain.cloud
 
       KEYCLOAK_BASE_URL: https://auth.ghostchain.cloud
       KEYCLOAK_REALM_USERS: ghost-users
@@ -115,10 +119,17 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=docker_internal
+      - traefik.http.services.web.loadbalancer.server.port=3000
+      # Auth-gated app portal
       - traefik.http.routers.web.rule=Host(`app.ghostchain.cloud`)
       - traefik.http.routers.web.entrypoints=websecure
       - traefik.http.routers.web.tls=true
-      - traefik.http.services.web.loadbalancer.server.port=3000
+      - traefik.http.routers.web.service=web
+      # Public-facing subdomains — subdomain rewriting handled by Next.js proxy.ts
+      - "traefik.http.routers.web-public.rule=Host(`ghostchain.cloud`) || Host(`www.ghostchain.cloud`) || Host(`status.ghostchain.cloud`) || Host(`explorer.ghostchain.cloud`) || Host(`validators.ghostchain.cloud`) || Host(`governance.ghostchain.cloud`) || Host(`investors.ghostchain.cloud`) || Host(`token.ghostchain.cloud`) || Host(`developers.ghostchain.cloud`) || Host(`docs.ghostchain.cloud`) || Host(`employee.ghostchain.cloud`) || Host(`management.ghostchain.cloud`)"
+      - traefik.http.routers.web-public.entrypoints=websecure
+      - traefik.http.routers.web-public.tls=true
+      - traefik.http.routers.web-public.service=web
 
   identity-service:
     build:
@@ -146,9 +157,47 @@ services:
       ROUTING_LAW_MODE: strict
     networks: [internal]
 
+  ghost-storage-ai:
+    build:
+      context: ../../services/ghost-storage-ai
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "7630:7630"
+    environment:
+      GSA_APPLY_ENABLED: "false"
+      GSA_RECONCILE_INTERVAL_SECONDS: "300"
+      GSA_PORT: "7630"
+      GSA_SSH_USER: ghost
+      GSA_SSH_KEY: /run/secrets/ghost_storage_ssh_key
+    volumes:
+      - ghost_storage_state:/app/state
+      - ghost_storage_plans:/app/plans
+      - ghost_storage_evidence:/app/evidence
+      - ../../services/ghost-storage-ai/config:/app/config:ro
+      # Hypervisor libvirt socket — mount from host so virsh commands work
+      - /run/libvirt:/run/libvirt:ro
+    secrets:
+      - ghost_storage_ssh_key
+    networks: [internal]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=docker_internal
+      - traefik.http.routers.ghost-storage-ai.rule=Host(`storage-ai.ghostchain.cloud`)
+      - traefik.http.routers.ghost-storage-ai.entrypoints=websecure
+      - traefik.http.routers.ghost-storage-ai.tls=true
+      - traefik.http.services.ghost-storage-ai.loadbalancer.server.port=7630
+
 networks:
   edge: {}
   internal: {}
 
 volumes:
   kc_pg: {}
+  ghost_storage_state: {}
+  ghost_storage_plans: {}
+  ghost_storage_evidence: {}
+
+secrets:
+  ghost_storage_ssh_key:
+    file: ${GHOST_STORAGE_SSH_KEY_PATH:-/etc/ghost/keys/storage_ssh_key}

@@ -32,7 +32,7 @@
 - HMAC signatures are operator-keyed and not yet on-chain verified.
 - Indexer currently supports manual record ingest for bootstrap; production should prefer contract-event only ingest.
 
-## Hardening TODOs
+## Hardening backlog
 
 - Replace HMAC evidence signatures with ECDSA/attestor key registered on `GhostDNSPolicyAnchor`.
 - Add replay nonce and short-lived authorization windows for admin endpoints.
