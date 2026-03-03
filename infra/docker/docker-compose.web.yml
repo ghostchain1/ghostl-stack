@@ -77,14 +77,23 @@ services:
       - ghost_web
     labels:
       - "traefik.enable=true"
-      # ── Apex + www ───────────────────────────────────────
+
+      # ── Canonical redirect middleware ─────────────────────────────────────────
+      # All alternative TLDs permanently redirect to ghostchain.cloud (SEO canonical)
+      - "traefik.http.middlewares.to-canonical.redirectregex.regex=^https?://(?:www\\.)?(ghostchain\\.(?:info|life|live|online|space|store|world)|ghostchainlink\\.com|ghostchainsolutions\\.com|ghostschain\\.com)(.*)"
+      - "traefik.http.middlewares.to-canonical.redirectregex.replacement=https://ghostchain.cloud$${2}"
+      - "traefik.http.middlewares.to-canonical.redirectregex.permanent=true"
+
+      # ── Primary domain: ghostchain.cloud ─────────────────────────────────────
       - "traefik.http.routers.web-apex.rule=Host(`${WEB_DOMAIN:-ghostchain.cloud}`) || Host(`www.${WEB_DOMAIN:-ghostchain.cloud}`)"
       - "traefik.http.routers.web-apex.entrypoints=websecure"
+      - "traefik.http.routers.web-apex.tls=true"
       - "traefik.http.routers.web-apex.tls.certresolver=letsencrypt"
       - "traefik.http.routers.web-apex.service=web"
-      # ── All public subdomains ──────────────────────────
+
+      # ── Public subdomains of ghostchain.cloud ────────────────────────────────
       - >-
-        traefik.http.routers.web-public.rule=
+        traefik.http.routers.web-subdomains.rule=
         Host(`status.${WEB_DOMAIN:-ghostchain.cloud}`) ||
         Host(`explorer.${WEB_DOMAIN:-ghostchain.cloud}`) ||
         Host(`validators.${WEB_DOMAIN:-ghostchain.cloud}`) ||
@@ -95,11 +104,56 @@ services:
         Host(`docs.${WEB_DOMAIN:-ghostchain.cloud}`) ||
         Host(`employee.${WEB_DOMAIN:-ghostchain.cloud}`) ||
         Host(`management.${WEB_DOMAIN:-ghostchain.cloud}`) ||
-        Host(`app.${WEB_DOMAIN:-ghostchain.cloud}`)
-      - "traefik.http.routers.web-public.entrypoints=websecure"
-      - "traefik.http.routers.web-public.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.web-public.service=web"
-      # ── Backend service definition ──────────────────────
+        Host(`app.${WEB_DOMAIN:-ghostchain.cloud}`) ||
+        Host(`api.${WEB_DOMAIN:-ghostchain.cloud}`) ||
+        Host(`rpc.${WEB_DOMAIN:-ghostchain.cloud}`) ||
+        Host(`rpc-l3.${WEB_DOMAIN:-ghostchain.cloud}`)
+      - "traefik.http.routers.web-subdomains.entrypoints=websecure"
+      - "traefik.http.routers.web-subdomains.tls=true"
+      - "traefik.http.routers.web-subdomains.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web-subdomains.service=web"
+
+      # ── Alternative TLDs (redirect → ghostchain.cloud) ───────────────────────
+      # Covers: ghostchain.{info,life,live,online,space,store,world}
+      #         ghostchainlink.com  ghostchainsolutions.com  ghostschain.com
+      - >-
+        traefik.http.routers.web-altdomains.rule=
+        Host(`ghostchain.info`) || Host(`www.ghostchain.info`) ||
+        Host(`ghostchain.life`) || Host(`www.ghostchain.life`) ||
+        Host(`ghostchain.live`) || Host(`www.ghostchain.live`) ||
+        Host(`ghostchain.online`) || Host(`www.ghostchain.online`) ||
+        Host(`ghostchain.space`) || Host(`www.ghostchain.space`) ||
+        Host(`ghostchain.store`) || Host(`www.ghostchain.store`) ||
+        Host(`ghostchain.world`) || Host(`www.ghostchain.world`) ||
+        Host(`ghostchainlink.com`) || Host(`www.ghostchainlink.com`) ||
+        Host(`ghostchainsolutions.com`) || Host(`www.ghostchainsolutions.com`) ||
+        Host(`ghostschain.com`) || Host(`www.ghostschain.com`)
+      - "traefik.http.routers.web-altdomains.entrypoints=websecure"
+      - "traefik.http.routers.web-altdomains.tls=true"
+      - "traefik.http.routers.web-altdomains.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web-altdomains.middlewares=to-canonical"
+      - "traefik.http.routers.web-altdomains.service=web"
+
+      # ── HTTP entrypoint routers (needed to obtain ACME certs via HTTP challenge)
+      - "traefik.http.routers.web-apex-http.rule=Host(`${WEB_DOMAIN:-ghostchain.cloud}`) || Host(`www.${WEB_DOMAIN:-ghostchain.cloud}`)"
+      - "traefik.http.routers.web-apex-http.entrypoints=web"
+      - "traefik.http.routers.web-apex-http.service=web"
+      - >-
+        traefik.http.routers.web-altdomains-http.rule=
+        Host(`ghostchain.info`) || Host(`www.ghostchain.info`) ||
+        Host(`ghostchain.life`) || Host(`www.ghostchain.life`) ||
+        Host(`ghostchain.live`) || Host(`www.ghostchain.live`) ||
+        Host(`ghostchain.online`) || Host(`www.ghostchain.online`) ||
+        Host(`ghostchain.space`) || Host(`www.ghostchain.space`) ||
+        Host(`ghostchain.store`) || Host(`www.ghostchain.store`) ||
+        Host(`ghostchain.world`) || Host(`www.ghostchain.world`) ||
+        Host(`ghostchainlink.com`) || Host(`www.ghostchainlink.com`) ||
+        Host(`ghostchainsolutions.com`) || Host(`www.ghostchainsolutions.com`) ||
+        Host(`ghostschain.com`) || Host(`www.ghostschain.com`)
+      - "traefik.http.routers.web-altdomains-http.entrypoints=web"
+      - "traefik.http.routers.web-altdomains-http.service=web"
+
+      # ── Backend service ───────────────────────────────────────────────────────
       - "traefik.http.services.web.loadbalancer.server.port=3000"
 
 volumes:
