@@ -18,7 +18,7 @@ WORKDIR /app
 # Foundry is installed from the official installer; Slither via pip.
 # Both are optional — pipelines fall back to stub mode if unavailable.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      curl git python3 python3-pip ca-certificates \
+      curl git python3 python3-pip ca-certificates ripgrep \
     && pip3 install --no-cache-dir slither-analyzer --break-system-packages 2>/dev/null || true \
     && curl -L https://foundry.paradigm.xyz | bash || true \
     && export PATH="$HOME/.foundry/bin:$PATH" \
@@ -36,9 +36,18 @@ VOLUME ["/app/contracts"]
 
 # SECURITY: No secrets in image layers.
 # Keys are injected at runtime via Vault or sealed env.
+# SQLite data directory for job history + learner store
+RUN mkdir -p /var/lib/ghost-contract-ai && chown node:node /var/lib/ghost-contract-ai
+VOLUME ["/var/lib/ghost-contract-ai"]
+
 ENV NODE_ENV=production \
     PORT=7610 \
-    GHOSTAI_DRY_RUN=true
+    GHOSTAI_DRY_RUN=true \
+    GHOSTAI_DB_PATH=/var/lib/ghost-contract-ai/jobs.db \
+    GHOSTAI_MEMORY_SOFT_MB=512 \
+    GHOSTAI_MEMORY_HARD_MB=1024 \
+    GHOSTAI_MAX_JOBS=1 \
+    GHOSTAI_FORGE_CONCURRENCY=1
 
 EXPOSE 7610
 

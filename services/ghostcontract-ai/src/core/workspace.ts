@@ -7,15 +7,13 @@
  */
 
 import { mkdtemp, rm } from "node:fs/promises";
-import path from "node:path";
-import os from "node:os";
-import { randomUUID } from "node:crypto";
+import * as path from "node:path";
+import * as os from "node:os";
 import type { Job, WorkspaceState } from "../types/jobs.js";
 import { getAllowedRoots } from "./policy.js";
 import { CONTRACTS_DIR } from "../config.js";
 import { logger } from "../logger.js";
 
-const DEFAULT_MAX_FILE_BYTES = 1_048_576;   // 1 MB
 const DEFAULT_MAX_TOTAL_BYTES = 16_777_216; // 16 MB
 const DEFAULT_MAX_FILES = 50;
 const DEFAULT_JOB_TIMEOUT_MS = 900_000;     // 15 min

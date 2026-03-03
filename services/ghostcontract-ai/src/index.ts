@@ -47,6 +47,15 @@ import type {
   CompileTestRequest,
 } from "./types.js";
 import { ghostbrainRegister, ghostbrainStartHeartbeat } from "./ghostbrain-client.js";
+import { jobsRouter } from "./api/jobs.js";
+import { initStore } from "./store/sqlite.js";
+import { startMemoryMonitor } from "./core/memory.js";
+
+// ─── Bootstrap ────────────────────────────────────────────────────────────────
+
+const DB_PATH = process.env.GHOSTAI_DB_PATH ?? "/var/lib/ghost-contract-ai/jobs.db";
+initStore(DB_PATH);
+startMemoryMonitor();
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 
@@ -64,6 +73,10 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 app.use(authMiddleware);
+
+// ─── Autonomous Job API (v1) ──────────────────────────────────────────────────
+
+app.use("/v1/jobs", jobsRouter);
 
 // ─── Health ───────────────────────────────────────────────────────────────────
 
@@ -232,7 +245,8 @@ app.post(
 // ─── Reports ──────────────────────────────────────────────────────────────────
 
 app.get("/reports/:pipelineId", requireRole("viewer"), (req: Request, res: Response) => {
-  const record = getPipeline(req.params["pipelineId"] ?? "");
+  const pid = Array.isArray(req.params["pipelineId"]) ? req.params["pipelineId"][0] : req.params["pipelineId"];
+  const record = getPipeline(pid ?? "");
   if (!record) {
     res.status(404).json({ ok: false, error: "pipeline not found" });
     return;

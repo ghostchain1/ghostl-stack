@@ -9,9 +9,8 @@
  */
 
 import Database from "better-sqlite3";
-import { createReadStream } from "node:fs";
 import { readFileSync } from "node:fs";
-import path from "node:path";
+import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import type {
   Job,
@@ -121,11 +120,11 @@ function _rowToJob(row: Record<string, unknown>): Job {
     context: JSON.parse(row.context as string),
     initiator: row.initiator as string,
     createdAt: row.created_at as string,
-    startedAt: (row.started_at as string | null) ?? undefined,
-    finishedAt: (row.finished_at as string | null) ?? undefined,
-    planSteps: row.plan_steps ? JSON.parse(row.plan_steps as string) : undefined,
-    result: row.result ? JSON.parse(row.result as string) : undefined,
-    error: (row.error as string | null) ?? undefined,
+    ...(row.started_at != null && { startedAt: row.started_at as string }),
+    ...(row.finished_at != null && { finishedAt: row.finished_at as string }),
+    ...(row.plan_steps != null && { planSteps: JSON.parse(row.plan_steps as string) }),
+    ...(row.result != null && { result: JSON.parse(row.result as string) }),
+    ...(row.error != null && { error: row.error as string }),
   };
 }
 
@@ -163,12 +162,12 @@ export function getEvidence(jobId: string): JobEvidence | undefined {
     generatedAt: row.generated_at as string,
     toolVersions: JSON.parse(row.tool_versions as string),
     touchedFiles: JSON.parse(row.touched_files as string),
-    patchDiff: (row.patch_diff as string | null) ?? undefined,
-    compileLogs: (row.compile_logs as string | null) ?? undefined,
-    testLogs: (row.test_logs as string | null) ?? undefined,
-    auditLogs: (row.audit_logs as string | null) ?? undefined,
+    ...(row.patch_diff != null && { patchDiff: row.patch_diff as string }),
+    ...(row.compile_logs != null && { compileLogs: row.compile_logs as string }),
+    ...(row.test_logs != null && { testLogs: row.test_logs as string }),
+    ...(row.audit_logs != null && { auditLogs: row.audit_logs as string }),
     sha256Manifest: row.sha256_manifest as string,
-    signature: (row.signature as string | null) ?? undefined,
+    ...(row.signature != null && { signature: row.signature as string }),
   };
 }
 
@@ -289,8 +288,8 @@ export function queryRepoIndex(pattern: string, limit = 20): RepoIndexEntry[] {
     path: r.path as string,
     sha256: r.sha256 as string,
     sizeBytes: r.size_bytes as number,
-    symbols: r.symbols ? JSON.parse(r.symbols as string) : undefined,
-    pragma: (r.pragma as string | null) ?? undefined,
+    ...(r.symbols != null && { symbols: JSON.parse(r.symbols as string) }),
+    ...(r.pragma != null && { pragma: r.pragma as string }),
   }));
 }
 

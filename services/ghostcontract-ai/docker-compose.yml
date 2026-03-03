@@ -34,8 +34,22 @@ services:
       RPC_REGISTRY_URL:           ${RPC_REGISTRY_URL:-http://ghost-registry:8088/v1/endpoints}
       FOUNDRY_PROFILE:            ${FOUNDRY_PROFILE:-default}
       GHOSTAI_QUARANTINE_THRESHOLD: ${GHOSTAI_QUARANTINE_THRESHOLD:-70}
+      # Autonomous job API
+      GHOSTBRAIN_SHARED_SECRET:   ${GHOSTBRAIN_SHARED_SECRET:-}
+      GHOSTAI_DB_PATH:            /var/lib/ghost-contract-ai/jobs.db
+      GHOSTAI_MEMORY_SOFT_MB:     ${GHOSTAI_MEMORY_SOFT_MB:-512}
+      GHOSTAI_MEMORY_HARD_MB:     ${GHOSTAI_MEMORY_HARD_MB:-1024}
+      GHOSTAI_MAX_JOBS:           ${GHOSTAI_MAX_JOBS:-1}
+      GHOSTAI_FORGE_CONCURRENCY:  ${GHOSTAI_FORGE_CONCURRENCY:-1}
+      GHOSTAI_ALLOWED_ROOTS:      ${GHOSTAI_ALLOWED_ROOTS:-/app/contracts}
+      GHOSTAI_EVIDENCE_HMAC_SECRET: ${GHOSTAI_EVIDENCE_HMAC_SECRET:-}
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
     volumes:
-      - ../../contracts:/app/contracts:ro
+      - ../../contracts:/app/contracts:rw
+      - ghost_contract_ai_cache:/var/lib/ghost-contract-ai
     networks:
       - ghost-internal
     labels:
@@ -56,3 +70,6 @@ networks:
   ghost-internal:
     external: true
     name: ghost-internal
+
+volumes:
+  ghost_contract_ai_cache:

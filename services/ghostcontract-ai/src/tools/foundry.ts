@@ -6,7 +6,7 @@
  */
 
 import { spawn } from "node:child_process";
-import { FOUNDRY_PROFILE, CONTRACTS_DIR } from "../config.js";
+import { FOUNDRY_PROFILE } from "../config.js";
 
 export interface CmdResult {
   code: number;

@@ -93,9 +93,9 @@ export async function runPlanner(job: Job, ws: WorkspaceState): Promise<Plan> {
     jobId: job.id,
     steps,
     estimatedMs: _estimateMs(job.type, relevantFiles.length),
-    warnings: relevantFiles.length === 0
-      ? ["No Solidity files found matching the job scope"]
-      : undefined,
+    ...(relevantFiles.length === 0 && {
+      warnings: ["No Solidity files found matching the job scope"],
+    }),
   };
 
   logger.info("Planner: plan ready", {

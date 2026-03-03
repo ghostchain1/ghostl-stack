@@ -6,7 +6,6 @@
  */
 
 import { spawn } from "node:child_process";
-import path from "node:path";
 
 export interface RipgrepMatch {
   filePath: string;
@@ -64,10 +63,8 @@ export async function ripgrepSearch(
     });
 
     let buffer = "";
-    let timedOut = false;
 
     const timer = setTimeout(() => {
-      timedOut = true;
       proc.kill("SIGKILL");
     }, timeoutMs);
 

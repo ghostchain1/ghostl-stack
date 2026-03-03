@@ -11,8 +11,7 @@
 
 import { exec as execCb } from "node:child_process";
 import { promisify } from "node:util";
-import path from "node:path";
-import { createHash } from "node:crypto";
+import * as path from "node:path";
 import type {
   PipelineRecord,
   PipelineResult,
@@ -92,7 +91,7 @@ export async function runSecurityAudit(
   // 1. Foundry tests first
   const testCmd = `cd "${CONTRACTS_DIR}" && forge test -v 2>&1`;
   const foundryOut = await _fallbackExec(testCmd, "forge test");
-  const testReport = parseFoundryOutput(foundryOut);
+  parseFoundryOutput(foundryOut); // parse for side-effects / future use
 
   // 2. Slither static analysis
   const slitherCmd = `${SLITHER_BIN} "${targetPath}" --json - 2>&1 || true`;

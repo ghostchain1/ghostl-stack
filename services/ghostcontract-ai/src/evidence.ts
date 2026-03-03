@@ -40,7 +40,7 @@ export function generateEvidencePack(input: EvidencePackInput): EvidencePack {
     slitherReport:    input.slitherReport,
     policyGateProof:  input.policyGateProof,
     approvalChain:    input.approvalChain,
-    deploymentReceipt: input.deploymentReceipt,
+    ...(input.deploymentReceipt !== undefined && { deploymentReceipt: input.deploymentReceipt }),
   };
 
   evidencePacksGenerated.inc({ chain: input.pipeline.chain });

@@ -4,8 +4,6 @@
  * Runs forge build, collects artifact hashes, emits evidence.
  */
 
-import path from "node:path";
-import { createHash } from "node:crypto";
 import type { Job, Plan, JobResult, TouchedFile } from "../types/jobs.js";
 import type { WorkspaceState } from "../types/jobs.js";
 import { forgeBuild, withForgeSemaphore } from "../tools/foundry.js";
@@ -18,7 +16,7 @@ import { logger } from "../logger.js";
 export async function runCompiler(
   job: Job,
   ws: WorkspaceState,
-  plan: Plan,
+  _plan: Plan,
 ): Promise<JobResult> {
   logger.info("Compiler agent: starting", { jobId: job.id });
 

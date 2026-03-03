@@ -8,7 +8,7 @@
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { createHash } from "node:crypto";
-import path from "node:path";
+import * as path from "node:path";
 import type { WorkspaceState } from "../types/jobs.js";
 import { checkAllowedPath } from "../core/policy.js";
 
@@ -90,14 +90,13 @@ export async function hashFile(filePath: string): Promise<string> {
  * Write content to a file (only within allowed roots).
  * Returns sha256 of written content.
  */
-import { writeFile, mkdir } from "node:fs/promises";
-
 export async function writeAllowedFile(
   filePath: string,
   content: string,
   allowedRoots: string[],
 ): Promise<string> {
   checkAllowedPath(filePath, allowedRoots);
+  const { writeFile, mkdir } = await import("node:fs/promises");
   await mkdir(path.dirname(filePath), { recursive: true });
   const buf = Buffer.from(content, "utf8");
   await writeFile(filePath, buf);

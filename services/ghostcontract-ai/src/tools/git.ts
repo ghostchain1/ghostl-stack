@@ -6,7 +6,6 @@
  */
 
 import { runCmd } from "./foundry.js";
-import path from "node:path";
 
 export interface GitDiff {
   diff: string;

@@ -18,7 +18,7 @@ import { logger } from "../logger.js";
 export async function runAuditor(
   job: Job,
   ws: WorkspaceState,
-  plan: Plan,
+  _plan: Plan,
 ): Promise<JobResult> {
   logger.info("Auditor agent: starting", { jobId: job.id });
 

@@ -5,9 +5,9 @@
  * This file must NEVER be modified by automated agents.
  */
 
-import path from "node:path";
+import * as path from "node:path";
 import { minimatch } from "minimatch";
-import type { Job, JobType } from "../types/jobs.js";
+import type { Job } from "../types/jobs.js";
 
 // ─── Allowed roots (mirrors policy.yml — hard-coded as final backstop) ─────────
 

@@ -6,7 +6,7 @@
  */
 
 import { createHash, createHmac } from "node:crypto";
-import type { Job, JobResult, JobEvidence, WorkspaceState, TouchedFile } from "../types/jobs.js";
+import type { Job, JobResult, JobEvidence, TouchedFile } from "../types/jobs.js";
 import { forgeVersion } from "../tools/foundry.js";
 import { slitherVersion } from "../tools/slither.js";
 import { solcVersion } from "../tools/solc.js";
@@ -16,7 +16,7 @@ import { logger } from "../logger.js";
 
 export async function buildEvidencePack(
   job: Job,
-  ws: WorkspaceState,
+  _ws: unknown,
   result: JobResult,
   touchedFiles: TouchedFile[] = [],
 ): Promise<JobEvidence> {
@@ -39,11 +39,11 @@ export async function buildEvidencePack(
     generatedAt: new Date().toISOString(),
     toolVersions,
     touchedFiles,
-    patchDiff: result.patchDiff,
-    compileLogs: result.artifacts?.["compileLogs"],
-    testLogs: result.artifacts?.["testLogs"],
-    auditLogs: result.artifacts?.["auditLogs"],
-    sha256Manifest: "", // computed below
+    ...(result.patchDiff !== undefined && { patchDiff: result.patchDiff }),
+    ...(result.artifacts?.["compileLogs"] !== undefined && { compileLogs: result.artifacts["compileLogs"] }),
+    ...(result.artifacts?.["testLogs"] !== undefined && { testLogs: result.artifacts["testLogs"] }),
+    ...(result.artifacts?.["auditLogs"] !== undefined && { auditLogs: result.artifacts["auditLogs"] }),
+    sha256Manifest: "",
   };
 
   // Compute a deterministic hash of the evidence (before signature)
