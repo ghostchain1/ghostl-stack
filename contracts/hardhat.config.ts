@@ -1,11 +1,6 @@
 import { HardhatUserConfig } from "hardhat/config";
-import os from "os";
-import path from "path";
-import { fileURLToPath } from "url";
+import "@nomicfoundation/hardhat-toolbox";
 import "dotenv/config";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
 const LOCAL_ACCOUNTS = DEPLOYER_PRIVATE_KEY ? [DEPLOYER_PRIVATE_KEY] : [];
@@ -33,9 +28,9 @@ const soliditySettings = enableModelChecker
       optimizer: { enabled: true, runs: 200 },
       viaIR: ENABLE_VIA_IR,
       modelChecker: {
-        engine: "chc",
+        engine: "chc" as const,
         timeout: 60_000,
-        targets: ["assert", "overflow", "divByZero", "outOfBounds"]
+        targets: ["assert", "overflow", "divByZero", "outOfBounds"] as string[]
       }
     }
   : { optimizer: { enabled: true, runs: 200 }, viaIR: ENABLE_VIA_IR };
@@ -51,7 +46,6 @@ const config: HardhatUserConfig = {
   },
   networks: {
     anvil: {
-      type: "http",
       url: RPC_L1,
       chainId: L1_CHAIN_ID,
       accounts: LOCAL_ACCOUNTS,
@@ -59,7 +53,6 @@ const config: HardhatUserConfig = {
       gasPrice: 1_000_000_000
     },
     ghostl2: {
-      type: "http",
       url: RPC_L2,
       chainId: L2_CHAIN_ID,
       accounts: LOCAL_ACCOUNTS,
@@ -67,7 +60,6 @@ const config: HardhatUserConfig = {
       gasPrice: 1_000_000_000
     },
     ghostl3: {
-      type: "http",
       url: RPC_L3,
       chainId: L3_CHAIN_ID,
       accounts: LOCAL_ACCOUNTS,
@@ -75,7 +67,6 @@ const config: HardhatUserConfig = {
       gasPrice: 1_000_000_000
     },
     ghostl2Op: {
-      type: "http",
       url: OP_L2_RPC,
       chainId: OP_L2_CHAIN_ID,
       accounts: LOCAL_ACCOUNTS,
@@ -83,7 +74,6 @@ const config: HardhatUserConfig = {
       gasPrice: 1_000_000_000
     },
     ghostl3Op: {
-      type: "http",
       url: OP_L3_RPC,
       chainId: OP_L3_CHAIN_ID,
       accounts: LOCAL_ACCOUNTS,
@@ -91,7 +81,6 @@ const config: HardhatUserConfig = {
       gasPrice: 1_000_000_000
     },
     polygon: {
-      type: "http",
       url: POLYGON_RPC_URL,
       chainId: 137,
       accounts: EXTERNAL_DEPLOYER_KEY,
@@ -99,7 +88,6 @@ const config: HardhatUserConfig = {
       gasPrice: 1_000_000_000
     },
     polygonAmoy: {
-      type: "http",
       url: POLYGON_AMOY_RPC_URL,
       chainId: 80002,
       accounts: EXTERNAL_DEPLOYER_KEY,
