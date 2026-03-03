@@ -1,9 +1,14 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
 import "../common/Governed.sol";
 import "./TreasuryVault.sol";
 import "./TreasuryInvariants.sol";
+
+interface IERC20Min {
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
+    function transfer(address to, uint256 amount) external returns (bool);
+}
 
 /// @title GhostRevenueRouter
 /// @notice Routes inbound protocol revenue (L2→L1 messages, bridge fees,
@@ -165,11 +170,6 @@ contract GhostRevenueRouter is Governed {
     }
 
     // ─── Internal ─────────────────────────────────────────────────────────────
-
-    interface IERC20Min {
-        function transferFrom(address from, address to, uint256 amount) external returns (bool);
-        function transfer(address to, uint256 amount) external returns (bool);
-    }
 
     function _distribute(address token, uint256 totalAmount, bool isNative) internal {
         uint256 remaining = totalAmount;

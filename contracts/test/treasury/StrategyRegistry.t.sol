@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
 import "../foundry/TestBase.sol";
@@ -109,7 +109,7 @@ contract StrategyRegistryTest is TestBase {
         reg.recordExecution(1, 50 ether, GOV);
 
         StrategyRegistry.StrategyParams memory p = reg.getStrategy(1);
-        assertEq(p.cumulativePnL, 150 ether, "pnl accumulation wrong");
+        assertTrue(p.cumulativePnL == int256(150 ether), "pnl accumulation wrong");
     }
 
     // ─── Invariants ───────────────────────────────────────────────────────────

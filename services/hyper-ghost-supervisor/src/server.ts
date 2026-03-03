@@ -19,6 +19,7 @@ import { writeGovernanceTemplates } from './proposals/governance.js';
 import { executeFix } from './exec/executor.js';
 import type { Fix, Incident, Proposal } from './types/hgop.js';
 import { createGhostDnsRouter } from './routes/ghostdns.js';
+import { ghostbrainRegister, ghostbrainStartHeartbeat } from './ghostbrain-client.js';
 
 const now = () => Math.floor(Date.now() / 1000);
 
@@ -429,6 +430,8 @@ export async function main() {
   const { app } = createApp(cfg);
   app.listen(cfg.port, cfg.bind, () => {
     console.log(`[hyper-ghost-supervisor] listening on http://${cfg.bind}:${cfg.port} env=${cfg.env}`);
+    // ── GhostBrain Core registration ───────────────────────────────────────
+    void ghostbrainRegister().then(() => ghostbrainStartHeartbeat());
   });
 }
 

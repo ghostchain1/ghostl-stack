@@ -3,6 +3,8 @@ pragma solidity ^0.8.24;
 
 interface Vm {
     function prank(address) external;
+    function startPrank(address) external;
+    function stopPrank() external;
     function expectRevert() external;
     function expectRevert(bytes4) external;
     function expectRevert(bytes calldata) external;
@@ -31,16 +33,40 @@ abstract contract TestBase {
         require(value, message);
     }
 
+    function assertTrue(bool value) internal pure {
+        require(value, "assertion failed");
+    }
+
+    function assertFalse(bool value, string memory message) internal {
+        require(!value, message);
+    }
+
+    function assertFalse(bool value) internal pure {
+        require(!value, "assertion expected false");
+    }
+
     function assertEq(uint256 a, uint256 b, string memory message) internal {
         require(a == b, message);
+    }
+
+    function assertEq(uint256 a, uint256 b) internal pure {
+        require(a == b, "uint256 eq assertion failed");
     }
 
     function assertEq(address a, address b, string memory message) internal {
         require(a == b, message);
     }
 
+    function assertEq(address a, address b) internal pure {
+        require(a == b, "address eq assertion failed");
+    }
+
     function assertEq(bytes32 a, bytes32 b, string memory message) internal {
         require(a == b, message);
+    }
+
+    function assertEq(bytes32 a, bytes32 b) internal pure {
+        require(a == b, "bytes32 eq assertion failed");
     }
 
     // Forge invariant hooks (return empty to silence warnings).

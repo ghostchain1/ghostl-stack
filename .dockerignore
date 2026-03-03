@@ -62,6 +62,14 @@ apps/worker/**
 !packages/routing-guard/
 !packages/routing-guard/**
 
+# Allow ghostchain-bridge-hub build from repo root (needs routing-guard)
+!services/ghostchain-bridge-hub/
+!services/ghostchain-bridge-hub/package.json
+!services/ghostchain-bridge-hub/package-lock.json
+!services/ghostchain-bridge-hub/tsconfig.json
+!services/ghostchain-bridge-hub/src/
+!services/ghostchain-bridge-hub/src/**
+
 # Keep deterministic AI observability modules available for API TypeScript builds.
 !observability/
 !observability/ai/

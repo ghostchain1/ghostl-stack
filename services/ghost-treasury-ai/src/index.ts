@@ -15,6 +15,7 @@ import { registry }   from './metrics.js';
 import { getChainClient } from './chain/client.js';
 import { getTreasuryContracts } from './chain/contracts.js';
 import { TreasuryOrchestrator } from './orchestrator.js';
+import { ghostbrainRegister, ghostbrainStartHeartbeat } from './ghostbrain-client.js';
 
 const cfg = loadConfig();
 const app = express();
@@ -82,6 +83,8 @@ async function main(): Promise<void> {
   // Start HTTP server
   const server = app.listen(cfg.PORT, () => {
     logger.info(`HTTP server listening on :${cfg.PORT}`);
+    // ── GhostBrain Core registration ───────────────────────────────────────
+    void ghostbrainRegister().then(() => ghostbrainStartHeartbeat());
   });
 
   // Run orchestration loop

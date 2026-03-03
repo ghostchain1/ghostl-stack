@@ -2,6 +2,7 @@ import express from "express";
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
+import { ghostbrainRegister, ghostbrainStartHeartbeat, ghostbrainAnomalySignal } from "./ghostbrain-client.js";
 
 const PORT = Number(process.env.PORT || 7710);
 const VAULT_ADDR = process.env.VAULT_ADDR || "http://localhost:8200";
@@ -315,4 +316,6 @@ app.listen(PORT, () => {
   console.log(
     `[ai-vault] listening on :${PORT}, vault=${VAULT_ADDR}, execute=${EXECUTE_ACTIONS}, servicesRoot=${SERVICES_ROOT}, servicesRootExists=${servicesRootExists}, servicesMount=${SERVICES_MOUNT}, servicesMountExists=${servicesMountExists}, servicesRootResolved=${servicesRootResolved}`
   );
+  // ── GhostBrain Core registration ───────────────────────────────────────
+  ghostbrainRegister().then(() => ghostbrainStartHeartbeat());
 });

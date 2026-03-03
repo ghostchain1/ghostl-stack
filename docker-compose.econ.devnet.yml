@@ -39,6 +39,9 @@ services:
       - NODE_ENV=production
       - PORT=7602
       - RECOMMENDATION_DIR=/evidence
+      - GHOSTBRAIN_URL=${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}
+      - GHOSTBRAIN_ENABLED=${GHOSTBRAIN_ENABLED:-true}
+      - NATS_URL=${NATS_URL:-nats://nats:4222}
     ports:
       - "7602:7602"
     user: "1001:1001"
@@ -73,6 +76,9 @@ services:
       - PORT=7601
       - MAINNET_EXECUTION_MODE=false
       - EVIDENCE_DIR=/evidence
+      - GHOSTBRAIN_URL=${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}
+      - GHOSTBRAIN_ENABLED=${GHOSTBRAIN_ENABLED:-true}
+      - NATS_URL=${NATS_URL:-nats://nats:4222}
     ports:
       - "7601:7601"
     user: "1001:1001"

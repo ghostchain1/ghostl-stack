@@ -40,11 +40,13 @@ contract L3BridgedToken is ERC20 {
     }
 
     function setOwner(address newOwner) external onlyOwner {
+        require(newOwner != address(0), "owner=0");
         owner = newOwner;
         emit OwnerChanged(newOwner);
     }
 
     function setRelayer(address newRelayer) external onlyOwner {
+        require(newRelayer != address(0), "relayer=0");
         relayer = newRelayer;
         emit RelayerChanged(newRelayer);
     }
@@ -59,6 +61,8 @@ contract L3BridgedToken is ERC20 {
 
     /// @notice Burn bridged tokens on L3 to release the escrowed L2 tokens to `to` (via relayer).
     function burnToL2(address to, uint256 amount, uint256 nonce) external {
+        require(to != address(0), "to=0");
+        require(amount > 0, "amount=0");
         bytes32 key = keccak256(abi.encode(l2Token, msg.sender, to, amount, nonce));
         require(!burned[key], "already");
         burned[key] = true;

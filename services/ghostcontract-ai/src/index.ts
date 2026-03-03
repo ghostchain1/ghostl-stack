@@ -46,6 +46,7 @@ import type {
   AuditRequest,
   CompileTestRequest,
 } from "./types.js";
+import { ghostbrainRegister, ghostbrainStartHeartbeat } from "./ghostbrain-client.js";
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 
@@ -295,6 +296,8 @@ app.listen(PORT, () => {
     L2: process.env.GHOSTAI_L2_CHAIN_ID ?? "10",
     L3: process.env.GHOSTAI_L3_CHAIN_ID ?? "100",
   });
+  // ── GhostBrain Core registration ───────────────────────────────────────
+  void ghostbrainRegister().then(() => ghostbrainStartHeartbeat());
 });
 
 export default app;

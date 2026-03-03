@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import express from "express";
 import { Counter, Gauge, Registry, collectDefaultMetrics } from "prom-client";
+import { ghostbrainRegister, ghostbrainStartHeartbeat } from "./ghostbrain-client";
 
 type ExecutionIntent = {
   proposalId: string;
@@ -228,4 +229,6 @@ app.listen(PORT, HOST, () => {
       mainnetMode: MAINNET_MODE
     })
   );
+  // ── GhostBrain Core registration ───────────────────────────────────────
+  void ghostbrainRegister().then(() => ghostbrainStartHeartbeat());
 });

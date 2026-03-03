@@ -1,0 +1,18 @@
+{
+  "name": "Ghost Virtual Machine",
+  "shortName": "gvm",
+  "chainId": 9001,
+  "parentChainId": 901,
+  "parentLayer": "l2",
+  "executionLayer": "gvm",
+  "rpc": "http://gvm:7646",
+  "description": "GhostChain EVM execution layer — GVM. Settles to L2 (chainId 901). L3→L2 routing law enforced.",
+  "nativeCurrency": {
+    "name": "Ghost",
+    "symbol": "GHOST",
+    "decimals": 18
+  },
+  "blockTime": 2,
+  "gasLimit": "0x1c9c380",
+  "createdAt": "2026-03-03T00:00:00Z"
+}

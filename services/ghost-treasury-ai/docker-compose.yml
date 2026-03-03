@@ -13,8 +13,10 @@ services:
     environment:
       NODE_ENV:            ${NODE_ENV:-production}
       PORT:                7680
-      LOG_LEVEL:           ${LOG_LEVEL:-info}
-      # ── Chain ──────────────────────────────────────────────────────────
+      LOG_LEVEL:           ${LOG_LEVEL:-info}      # ── GhostBrain Core ────────────────────────────────────────────────
+      GHOSTBRAIN_URL:      ${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}
+      GHOSTBRAIN_ENABLED:  ${GHOSTBRAIN_ENABLED:-true}
+      NATS_URL:            ${NATS_URL:-nats://nats:4222}      # ── Chain ──────────────────────────────────────────────────────────
       L1_RPC_URL:          ${L1_RPC_URL:-http://ghostchain-rpc:8545}
       CHAIN_ID_L1:         ${CHAIN_ID_L1:-1300}
       # ── Contracts ──────────────────────────────────────────────────────

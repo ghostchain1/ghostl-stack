@@ -1,0 +1,29 @@
+# Prometheus scrape configuration for autonomous-vault-hypervisor
+# Include this in your prometheus.yml scrape_configs section.
+#
+# For standalone integration, append to or include in:
+#   observability/prometheus/prometheus-econ.yml
+#   or your primary prometheus.yml
+
+scrape_configs:
+  - job_name: autonomous-vault-hypervisor
+    static_configs:
+      - targets: ["autonomous-vault-hypervisor:7720"]
+    metrics_path: /metrics
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    labels:
+      service: autonomous-vault-hypervisor
+      layer: L1
+      component: hypervisor
+
+  # Also scrape ai-vault if co-located
+  - job_name: ai-vault
+    static_configs:
+      - targets: ["ai-vault:7710"]
+    metrics_path: /metrics
+    scrape_interval: 15s
+    labels:
+      service: ai-vault
+      layer: L1
+      component: vault-gateway

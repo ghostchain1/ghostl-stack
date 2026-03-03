@@ -238,6 +238,13 @@ def _autonomous_loop() -> None:
 def on_startup() -> None:
     thread = threading.Thread(target=_autonomous_loop, name="ghostdns-reconcile-loop", daemon=True)
     thread.start()
+    # ── GhostBrain Core registration ───────────────────────────────────────
+    from src.ghostbrain_client import ghostbrain_register, ghostbrain_start_heartbeat
+    threading.Thread(
+        target=lambda: (ghostbrain_register(), ghostbrain_start_heartbeat()),
+        daemon=True,
+        name="ghostbrain-register",
+    ).start()
 
 
 @app.middleware("http")

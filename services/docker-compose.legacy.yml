@@ -570,6 +570,13 @@ services:
       - MONITOR_PORTS=${MONITOR_PORTS:-7070,7171,18545,29547,39545}
       - MONITOR_HEALTH_ENDPOINTS=${MONITOR_HEALTH_ENDPOINTS:-http://host.docker.internal:7070/health,http://host.docker.internal:7171/health}
       - MONITOR_INTERVAL_MS=${MONITOR_INTERVAL_MS:-10000}
+      # ── GhostBrain Core — autonomous AI network agent ─────────────────────────
+      - GHOSTBRAIN_AGENT_ID=network-manager-service
+      - GHOSTBRAIN_AGENT_LAYER=${GHOSTBRAIN_AGENT_LAYER:-L2}
+      - GHOSTBRAIN_CORE_URL=${GHOSTBRAIN_CORE_URL:-http://ghostbrain-core:7900}
+      - GHOSTBRAIN_HEARTBEAT_INTERVAL_MS=${GHOSTBRAIN_HEARTBEAT_INTERVAL_MS:-30000}
+      - NATS_URL=${NATS_URL:-nats://ghostbrain-nats:4222}
+      - NATS_CONNECT_TIMEOUT_MS=${NATS_CONNECT_TIMEOUT_MS:-5000}
     ports:
       - "7766:7766"
     healthcheck:
@@ -1300,6 +1307,9 @@ services:
       - GHOSTLOAD_L1_RPC=${RPC_L1}
       - GHOSTLOAD_L2_RPC=${RPC_L2}
       - GHOSTLOAD_L3_RPC=${RPC_L3}
+      - GHOSTBRAIN_URL=${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}
+      - GHOSTBRAIN_ENABLED=${GHOSTBRAIN_ENABLED:-true}
+      - NATS_URL=${NATS_URL:-nats://nats:4222}
     ports:
       - "7688:7688"
     read_only: true

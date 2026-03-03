@@ -1,0 +1,36 @@
+{
+  "name": "ghost-ai-contract-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "GhostBrain Autonomous Smart Contract Engine — scans, fixes, brands and compiles all GhostChain contracts with low-memory batch compilation",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint 'src/**/*.ts' --max-warnings 0",
+    "scan": "tsx src/cli/scan.ts",
+    "fix": "tsx src/cli/fix.ts",
+    "brand": "tsx src/cli/brand.ts",
+    "compile": "tsx src/cli/compile.ts"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "nats": "^2.29.1",
+    "prom-client": "^15.1.3",
+    "uuid": "^11.1.0",
+    "zod": "^3.24.2",
+    "glob": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.13.10",
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

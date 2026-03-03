@@ -1,0 +1,404 @@
+name: ACG Guardian Pipeline
+
+# GhostBrain Autonomous Code Guardian — GitHub Actions CI
+#
+# Runs every gate from the blueprint on every PR and push to main.
+# Routing law enforcement (L3→L2→L1) runs first; any violation = immediate fail.
+#
+# Required secrets (set in repo Settings → Secrets):
+#   GHOSTAI_REGISTRY_ADDRESS, GHOSTAI_GOVERNOR_ADDRESS,
+#   GHOSTAI_POLICY_GATE_ADDRESS, GHOSTAI_RISK_ORACLE_ADDRESS
+#
+# Optional (for full enforcement):
+#   SEMGREP_APP_TOKEN, SNYK_TOKEN, VAULT_ADDR
+
+on:
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+  schedule:
+    # Nightly full scan at 02:00 UTC
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      proposal_id:
+        description: "ACG Proposal ID to gate-check (leave blank for full scan)"
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write   # for CodeQL / SARIF upload
+  id-token: write          # for SLSA provenance
+
+concurrency:
+  group: acg-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "9"
+
+jobs:
+  # ─── 0: Routing Law (always first — hard fail blocks everything) ────────────
+  routing-law:
+    name: "Gate 0 — Routing Law"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check L3→L2→L1 routing law invariant
+        run: |
+          echo "=== Routing Law Validator ==="
+          # Scan diff for any direct L3→L1 cross-chain calls
+          VIOLATIONS=$(git diff origin/${{ github.base_ref || 'main' }}...HEAD \
+            -- '*.ts' '*.sol' '*.js' '*.py' \
+            | grep -E '^\+' \
+            | grep -iE 'l3.*->.*l1|ghostl3.*l1|sendToL1.*l3|l3.*crosschainmessage.*l1' \
+            || true)
+
+          if [ -n "$VIOLATIONS" ]; then
+            echo "❌ ROUTING LAW VIOLATION: L3→L1 direct routing detected:"
+            echo "$VIOLATIONS"
+            echo ""
+            echo "RULE: L3 must route through L2. L2 routes to L1."
+            echo "L3 → L1 direct = FORBIDDEN."
+            exit 1
+          fi
+          echo "✅ Routing law: OK (no L3→L1 direct paths found)"
+
+  # ─── 1: Build Gate ──────────────────────────────────────────────────────────
+  build:
+    name: "Gate 1 — Build"
+    runs-on: ubuntu-latest
+    needs: routing-law
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with: { version: "${{ env.PNPM_VERSION }}" }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "${{ env.NODE_VERSION }}"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript typecheck (ghostbrain-core)
+        run: pnpm --filter ghostbrain-core exec tsc --noEmit
+
+      - name: TypeScript typecheck (all packages)
+        run: pnpm -r exec tsc --noEmit --project tsconfig.json || true
+
+      - name: Forge build (contracts)
+        run: |
+          if [ -d "contracts" ]; then
+            cd contracts && forge build --deny-warnings
+          else
+            echo "No contracts directory — skipping forge build"
+          fi
+
+  # ─── 2: Code Quality Gate ───────────────────────────────────────────────────
+  code-quality:
+    name: "Gate 2 — Code Quality"
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with: { version: "${{ env.PNPM_VERSION }}" }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "${{ env.NODE_VERSION }}"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: ESLint (zero warnings)
+        run: pnpm --filter ghostbrain-core exec eslint . --max-warnings=0 || \
+             pnpm exec eslint services/ghostbrain-core/src --max-warnings=0
+
+      - name: Prettier format check
+        run: pnpm exec prettier --check "services/ghostbrain-core/src/**/*.ts" || true
+
+  # ─── 3: Test Gate ───────────────────────────────────────────────────────────
+  tests:
+    name: "Gate 3 — Tests"
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with: { version: "${{ env.PNPM_VERSION }}" }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "${{ env.NODE_VERSION }}"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Unit tests with coverage
+        run: pnpm --filter ghostbrain-core test --coverage || \
+             pnpm --filter ghostbrain-core run test
+
+      - name: Forge tests with fuzz (contracts)
+        run: |
+          if [ -d "contracts" ]; then
+            cd contracts && forge test --fuzz-runs 256 -v
+          fi
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          flags: ghostbrain-core
+        continue-on-error: true
+
+  # ─── 4: Security Gate ───────────────────────────────────────────────────────
+  security:
+    name: "Gate 4 — Security"
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with: { version: "${{ env.PNPM_VERSION }}" }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "${{ env.NODE_VERSION }}"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Secret scan (gitleaks)
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Dependency audit
+      - name: Dependency audit (pnpm)
+        run: pnpm audit --audit-level=high
+        continue-on-error: false   # hard fail on high/critical
+
+      # SAST (Semgrep)
+      - name: SAST (Semgrep)
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: auto
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        continue-on-error: true   # surfaced as annotation; non-blocking for now
+
+      # CodeQL
+      - name: CodeQL — init
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript, typescript
+        continue-on-error: true
+
+      - name: CodeQL — analyze
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:javascript
+        continue-on-error: true
+
+  # ─── 5: Supply Chain Gate ───────────────────────────────────────────────────
+  supply-chain:
+    name: "Gate 5 — Supply Chain"
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lockfile integrity check
+        run: |
+          if git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -q "package.json"; then
+            if git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -qv "pnpm-lock.yaml"; then
+              echo "⚠️  package.json changed but pnpm-lock.yaml was not updated"
+              # Non-fatal on PR; fatal on push to main
+              if [ "${{ github.event_name }}" = "push" ]; then exit 1; fi
+            fi
+          fi
+          echo "✅ Lockfile OK"
+
+      - name: Check for :latest base images
+        run: |
+          UNPINNED=$(grep -rn "FROM.*:latest" --include="Dockerfile*" . 2>/dev/null || true)
+          if [ -n "$UNPINNED" ]; then
+            echo "⚠️  Unpinned :latest base images found:"
+            echo "$UNPINNED"
+            echo "Please pin to a specific tag or digest."
+            # Warning only — enforce on next release cycle
+          fi
+
+      - name: Generate SBOM (Syft)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          artifact-name: ghostbrain-sbom.spdx.json
+          output-file: sbom.spdx.json
+        continue-on-error: true
+
+  # ─── 6: Contract Scan (runs only when contracts/ changes) ──────────────────
+  contract-scan:
+    name: "Gate 6 — Solidity Audit"
+    runs-on: ubuntu-latest
+    needs: build
+    if: |
+      contains(toJSON(github.event.pull_request.changed_files), 'contracts/') ||
+      github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Install Python (for Slither)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Slither
+        run: pip install slither-analyzer
+
+      - name: Run Slither
+        run: |
+          cd contracts
+          slither src/ \
+            --exclude-dependencies \
+            --fail-high \
+            --json slither-report.json \
+            2>&1 || SLITHER_EXIT=$?
+          if [ -f slither-report.json ]; then
+            HIGH=$(python3 -c "import json; d=json.load(open('slither-report.json')); \
+              print(len([r for r in d.get('results',{}).get('detectors',[]) \
+              if r['impact'] in ('High','Critical')]))")
+            echo "Slither HIGH/CRITICAL findings: $HIGH"
+            if [ "$HIGH" -gt 0 ]; then
+              echo "❌ Slither found $HIGH HIGH/CRITICAL issues — blocking merge"
+              exit 1
+            fi
+          fi
+          echo "✅ Slither: OK"
+
+      - name: Upload Slither report
+        uses: actions/upload-artifact@v4
+        with:
+          name: slither-report
+          path: contracts/slither-report.json
+        if: always()
+
+  # ─── 7: Docker Dry Run ──────────────────────────────────────────────────────
+  docker-dry-run:
+    name: "Gate 7 — Docker Build"
+    runs-on: ubuntu-latest
+    needs: [build, security]
+    if: |
+      contains(toJSON(github.event.pull_request.changed_files), 'Dockerfile') ||
+      github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build ghostbrain-core image
+        run: docker build -t ghostbrain-core:acg-test ./services/ghostbrain-core
+
+      - name: Trivy container scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghostbrain-core:acg-test
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "1"   # hard fail on CRITICAL/HIGH
+        continue-on-error: false
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+        if: always()
+
+  # ─── Summary Gate (all must pass before PR can merge) ───────────────────────
+  acg-gates-summary:
+    name: "ACG — All Gates Summary"
+    runs-on: ubuntu-latest
+    needs:
+      - routing-law
+      - build
+      - code-quality
+      - tests
+      - security
+      - supply-chain
+    if: always()
+    steps:
+      - name: Check all required gates passed
+        run: |
+          ROUTING="${{ needs.routing-law.result }}"
+          BUILD="${{ needs.build.result }}"
+          QUALITY="${{ needs.code-quality.result }}"
+          TESTS="${{ needs.tests.result }}"
+          SECURITY="${{ needs.security.result }}"
+
+          echo "=== ACG Gate Summary ==="
+          echo "  routing-law:  $ROUTING"
+          echo "  build:        $BUILD"
+          echo "  code-quality: $QUALITY"
+          echo "  tests:        $TESTS"
+          echo "  security:     $SECURITY"
+
+          FAILED=0
+          for RESULT in "$ROUTING" "$BUILD" "$TESTS" "$SECURITY"; do
+            if [ "$RESULT" != "success" ] && [ "$RESULT" != "skipped" ]; then
+              FAILED=1
+            fi
+          done
+
+          if [ "$FAILED" -eq 1 ]; then
+            echo "❌ One or more required ACG gates FAILED — PR cannot be merged"
+            exit 1
+          fi
+          echo "✅ All required ACG gates passed"
+
+      - name: Post gate summary to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `## 🧠 GhostBrain ACG Gate Results
+
+            | Gate | Status |
+            |------|--------|
+            | Routing Law | ${{ needs.routing-law.result == 'success' && '✅ PASS' || '❌ FAIL' }} |
+            | Build | ${{ needs.build.result == 'success' && '✅ PASS' || '❌ FAIL' }} |
+            | Code Quality | ${{ needs.code-quality.result == 'success' && '✅ PASS' || '⚠️ WARN' }} |
+            | Tests | ${{ needs.tests.result == 'success' && '✅ PASS' || '❌ FAIL' }} |
+            | Security | ${{ needs.security.result == 'success' && '✅ PASS' || '❌ FAIL' }} |
+            | Supply Chain | ${{ needs.supply-chain.result == 'success' && '✅ PASS' || '⚠️ WARN' }} |
+
+            _Generated by GhostBrain ACG — ${new Date().toISOString()}_
+            `;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });

@@ -7,6 +7,9 @@ services:
     image: ghostl/ghost-ai-consensus:local
     environment:
       PORT: 7715
+      GHOSTBRAIN_URL: "${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}"
+      GHOSTBRAIN_ENABLED: "${GHOSTBRAIN_ENABLED:-true}"
+      NATS_URL: "${NATS_URL:-nats://nats:4222}"
       AI_MODEL_HASH: ${AI_MODEL_HASH:-ghost-ai-consensus-model-v1}
       AI_ALLOWLIST: ${AI_ALLOWLIST:-}
       AI_DENYLIST: ${AI_DENYLIST:-}
@@ -39,7 +42,8 @@ services:
 
   ghostchain-bridge-hub:
     build:
-      context: ./services/ghostchain-bridge-hub
+      context: .
+      dockerfile: services/ghostchain-bridge-hub/Dockerfile
     image: ghostl/ghostchain-bridge-hub:local
     environment:
       PORT: 7720

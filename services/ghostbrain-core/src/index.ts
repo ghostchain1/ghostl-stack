@@ -19,6 +19,7 @@ import { connectNATS, disconnectNATS } from "./connectors/nats.js";
 import { buildRouter } from "./api/router.js";
 import { startBrain } from "./orchestrator/brain.js";
 import { DependencyGraph } from "./planner/dependency-graph.js";
+import { memorySwapAdvisor } from "./memory/memory-swap-advisor.js";
 
 async function main(): Promise<void> {
   logger.info("GhostBrain Core starting", { service: SERVICE_NAME, version: VERSION, env: NODE_ENV });
@@ -46,24 +47,31 @@ async function main(): Promise<void> {
 
   // ── Brain loop ─────────────────────────────────────────────────────────────
   startBrain();
-
+  // ── Memory Swap Advisor ────────────────────────────────────────
+  memorySwapAdvisor.start();
   logger.info("GhostBrain Core ready");
 }
 
 // ── Graceful shutdown ──────────────────────────────────────────────────────────
 process.on("SIGTERM", async () => {
   logger.info("SIGTERM received — shutting down");
+  memorySwapAdvisor.stop();
   await disconnectNATS();
   const { closePool } = await import("./connectors/db.js");
   await closePool();
+  const { disconnectRedis } = await import("./connectors/redis.js");
+  await disconnectRedis();
   process.exit(0);
 });
 
 process.on("SIGINT", async () => {
   logger.info("SIGINT received — shutting down");
+  memorySwapAdvisor.stop();
   await disconnectNATS();
   const { closePool } = await import("./connectors/db.js");
   await closePool();
+  const { disconnectRedis } = await import("./connectors/redis.js");
+  await disconnectRedis();
   process.exit(0);
 });
 

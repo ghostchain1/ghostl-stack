@@ -1,0 +1,47 @@
+{
+  "allowActions": [
+    { "type": "vm", "action": "vm.start",      "target": "*", "layer": "L1", "allow": true, "reason": "auto_remediate_l1" },
+    { "type": "vm", "action": "vm.start",      "target": "*", "layer": "L2", "allow": true, "reason": "auto_remediate_l2" },
+    { "type": "vm", "action": "vm.start",      "target": "*", "layer": "L3", "allow": true, "reason": "auto_remediate_l3" },
+    { "type": "vm", "action": "vm.restart",    "target": "*", "allow": true, "reason": "auto_remediate" },
+    { "type": "vm", "action": "vm.snapshot",   "target": "*", "allow": true, "reason": "auto_snapshot" },
+    { "type": "container", "action": "container.start",   "target": "*", "allow": true, "reason": "auto_remediate" },
+    { "type": "container", "action": "container.restart", "target": "*", "allow": true, "reason": "auto_remediate" },
+    { "type": "secret", "action": "secret.rotate", "target": "*", "allow": true, "reason": "scheduled_rotation" }
+  ],
+  "denyActions": [
+    { "type": "vm",        "action": "vm.destroy",       "target": "ghost-l1*", "allow": false, "reason": "protect_l1_validators" },
+    { "type": "container", "action": "container.stop",   "target": "ghost_ai-vault*", "allow": false, "reason": "protect_vault" }
+  ],
+  "emergencyLock": false,
+  "maxAutoRestarts": {
+    "vms": 3,
+    "containers": 5
+  },
+  "rotations": [
+    {
+      "mount": "ghostchain",
+      "path": "l1/jwtsecret",
+      "kvVersion": 2,
+      "keys": ["jwtsecret"],
+      "encoding": "base64",
+      "intervalMinutes": 1440
+    },
+    {
+      "mount": "ghostchain",
+      "path": "l2/jwtsecret",
+      "kvVersion": 2,
+      "keys": ["jwtsecret"],
+      "encoding": "base64",
+      "intervalMinutes": 1440
+    },
+    {
+      "mount": "ghostchain",
+      "path": "l3/jwtsecret",
+      "kvVersion": 2,
+      "keys": ["jwtsecret"],
+      "encoding": "base64",
+      "intervalMinutes": 1440
+    }
+  ]
+}

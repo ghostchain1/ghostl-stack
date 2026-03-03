@@ -1,0 +1,29 @@
+{
+  "name": "@ghost/logger",
+  "version": "1.0.0",
+  "description": "GhostStack AI Secure Logger — structured, redacting, HMAC-signed, NATS-publishing logger for all AI systems and bots",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types":  "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build":     "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "dev":       "tsc --watch"
+  },
+  "dependencies": {
+    "nats": "^2.28.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "typescript":  "^5.6.3"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

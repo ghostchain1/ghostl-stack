@@ -21,7 +21,7 @@ const LOG_ENTRIES: LogEntry[] = [
   { id: 'e007', ts: '2026-03-01T14:16:39.888Z', level: 'DEBUG', service: 'l3-sequencer',     msg: 'Mempool flush · 240 txs · fee_base=0.00001 GST · duration=412ms' },
   { id: 'e008', ts: '2026-03-01T14:15:31.540Z', level: 'AUDIT', service: 'kyc-service',      msg: 'KYC submission received · sub_id=KYC-0482 · doc_type=Passport · risk=low' },
   { id: 'e009', ts: '2026-03-01T14:14:22.003Z', level: 'ERROR', service: 'l3-prover',        msg: 'Prover-03 OOM (heap 95%) — memory rebalance triggered',                       trace: 'prover-03 node' },
-  { id: 'e010', ts: '2026-03-01T14:13:05.771Z', level: 'INFO',  service: 'l2-liquidity',     msg: 'LP utilisation reached 84% warning threshold · pool=GHOST/USDC' },
+  { id: 'e010', ts: '2026-03-01T14:13:05.771Z', level: 'INFO',  service: 'l2-liquidity',     msg: 'LP utilisation reached 84% warning threshold · pool=GST/USDC' },
   { id: 'e011', ts: '2026-03-01T14:12:01.420Z', level: 'INFO',  service: 'ghostsentinel',    msg: 'Threat scan complete — 0 HIGH findings · scanned 182 contracts' },
   { id: 'e012', ts: '2026-03-01T14:11:44.190Z', level: 'AUDIT', service: 'governance',       msg: 'GIP-0017 vote cast · voter=0x1F3a…F3a · weight=12,400' },
   { id: 'e013', ts: '2026-03-01T14:10:33.001Z', level: 'DEBUG', service: 'l3-batcher',       msg: 'Batch compression ratio 4.3× · raw=1.8MB compressed=418KB' },

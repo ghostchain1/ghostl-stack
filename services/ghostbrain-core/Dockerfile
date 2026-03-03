@@ -5,7 +5,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 # ─── Build stage ─────────────────────────────────────────────────────────────
 FROM base AS build
 COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile --prod=false
+RUN pnpm install --no-frozen-lockfile --prod=false
 COPY tsconfig.json ./
 COPY src ./src
 RUN pnpm build

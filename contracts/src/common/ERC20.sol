@@ -21,6 +21,7 @@ contract ERC20 {
     }
 
     function _transfer(address from, address to, uint256 amount) internal {
+        require(from != address(0), "transfer from zero");
         require(to != address(0), "transfer to zero");
         uint256 bal = balanceOf[from];
         require(bal >= amount, "insufficient");

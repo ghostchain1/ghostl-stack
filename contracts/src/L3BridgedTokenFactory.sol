@@ -39,11 +39,13 @@ contract L3BridgedTokenFactory {
     }
 
     function setOwner(address newOwner) external onlyOwner {
+        require(newOwner != address(0), "owner=0");
         owner = newOwner;
         emit OwnerChanged(newOwner);
     }
 
     function setRelayer(address newRelayer) external onlyOwner {
+        require(newRelayer != address(0), "relayer=0");
         relayer = newRelayer;
         emit RelayerChanged(newRelayer);
     }

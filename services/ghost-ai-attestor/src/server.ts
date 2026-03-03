@@ -1,6 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import { getAddress, isAddress } from "ethers";
 import { loadConfig, type GhostLayer } from "./config.js";
+import { ghostbrainRegister, ghostbrainStartHeartbeat } from "./ghostbrain-client.js";
 import { NonceStore } from "./nonceStore.js";
 import { HubClient, type LatestRiskSnapshot, type PolicySnapshot } from "./hubClient.js";
 import { computeRisk } from "./riskEngine.js";
@@ -332,6 +333,8 @@ const main = async () => {
     console.log(
       `[ghost-ai-attestor] listening on :${port} defaultLayer=L${config.defaultLayer} modelVersion=${config.modelVersion} ttl=${config.ttlSeconds}s`
     );
+    // ── GhostBrain Core registration ──────────────────────────────────────
+    void ghostbrainRegister().then(() => ghostbrainStartHeartbeat());
   });
 };
 

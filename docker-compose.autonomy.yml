@@ -541,6 +541,115 @@ services:
       retries: 10
       start_period: 10s
 
+  autonomous-vault-hypervisor:
+    build:
+      context: ./services/autonomous-vault-hypervisor
+    image: ghostl/autonomous-vault-hypervisor:local
+    container_name: ghost_autonomous-vault-hypervisor
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    environment:
+      PORT: 7720
+      NATS_URL: ${NATS_URL:-nats://nats:4222}
+      GHOSTBRAIN_URL: ${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}
+      GHOSTBRAIN_ENABLED: ${GHOSTBRAIN_ENABLED:-1}
+      AI_VAULT_ADDR: ${AI_VAULT_ADDR:-http://host.docker.internal:7710}
+      VAULT_ADDR: ${VAULT_ADDR:-http://host.docker.internal:8200}
+      VAULT_TOKEN: ${VAULT_TOKEN:-}
+      VAULT_ROLE_ID: ${VAULT_ROLE_ID:-}
+      VAULT_SECRET_ID: ${VAULT_SECRET_ID:-}
+      VAULT_NAMESPACE: ${VAULT_NAMESPACE:-}
+      ROTATE_ENABLED: ${AVH_ROTATE_ENABLED:-1}
+      ROTATE_INTERVAL_MS: ${AVH_ROTATE_INTERVAL_MS:-900000}
+      HYPERVISOR_HOST: ${AVH_HYPERVISOR_HOST:-}
+      HYPERVISOR_USER: ${AVH_HYPERVISOR_USER:-ghost}
+      HYPERVISOR_SSH_PORT: ${AVH_HYPERVISOR_SSH_PORT:-22}
+      HYPERVISOR_SSH_KEY_PATH: ${AVH_HYPERVISOR_SSH_KEY_PATH:-}
+      SSH_ENABLED: ${AVH_SSH_ENABLED:-0}
+      DOCKER_ENABLED: ${AVH_DOCKER_ENABLED:-1}
+      DOCKER_SOCKET: /var/run/docker.sock
+      RECONCILE_INTERVAL_MS: ${AVH_RECONCILE_INTERVAL_MS:-60000}
+      REMEDIATE_ENABLED: ${AVH_REMEDIATE_ENABLED:-1}
+      MAX_REMEDIATIONS_PER_RUN: ${AVH_MAX_REMEDIATIONS_PER_RUN:-3}
+      MAX_CONTAINER_RESTARTS: ${AVH_MAX_CONTAINER_RESTARTS:-5}
+      RESTART_COOLDOWN_MS: ${AVH_RESTART_COOLDOWN_MS:-120000}
+      POLICY_PATH: /app/policy.json
+      EXECUTE_ACTIONS: ${AVH_EXECUTE_ACTIONS:-1}
+      EMERGENCY_LOCK: ${AVH_EMERGENCY_LOCK:-0}
+      HMAC_SECRET: ${AVH_HMAC_SECRET:-change-me-in-production}
+      REQUIRE_SIGNATURE: ${AVH_REQUIRE_SIGNATURE:-0}
+      VM_LAYER_MAP: ${AVH_VM_LAYER_MAP:-{}}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - avh_policy:/app
+    ports:
+      - "${AVH_HOST_PORT:-7720}:7720"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp
+    networks:
+      - default
+      - ghost_net
+    healthcheck:
+      test:
+        - "CMD"
+        - "node"
+        - "-e"
+        - "fetch('http://127.0.0.1:7720/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 8s
+      retries: 5
+      start_period: 30s
+
+  ghost-secure-logger:
+    build:
+      context: ./services/ghost-secure-logger
+      dockerfile: Dockerfile
+    image: ghostl/ghost-secure-logger:local
+    container_name: ghost-secure-logger
+    restart: unless-stopped
+    ports:
+      - "${AUTONOMY_GSL_HOST_PORT:-7730}:7730"
+    environment:
+      PORT:                     "7730"
+      VERSION:                  "1.0.0"
+      NATS_URL:                 "${NATS_URL:-nats://nats:4222}"
+      GHOSTBRAIN_URL:           "${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}"
+      LOG_HMAC_SECRET:          "${LOG_HMAC_SECRET:-}"
+      LOG_DIR:                  "/data/ghost-secure-logger"
+      MAX_ENTRIES_IN_MEM:       "${MAX_ENTRIES_IN_MEM:-50000}"
+      BUNDLE_INTERVAL_MS:       "${BUNDLE_INTERVAL_MS:-300000}"
+      LOKI_URL:                 "${LOKI_URL:-}"
+      ERROR_SPIKE_THRESHOLD:    "${ERROR_SPIKE_THRESHOLD:-20}"
+      ERROR_SPIKE_WINDOW_MS:    "${ERROR_SPIKE_WINDOW_MS:-60000}"
+      SECURITY_BURST_THRESHOLD: "${SECURITY_BURST_THRESHOLD:-5}"
+      SECURITY_BURST_WINDOW_MS: "${SECURITY_BURST_WINDOW_MS:-10000}"
+    volumes:
+      - gsl_data:/data/ghost-secure-logger
+    networks:
+      - default
+      - ghost_net
+    healthcheck:
+      test:
+        - "CMD"
+        - "node"
+        - "-e"
+        - "fetch('http://127.0.0.1:7730/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 8s
+      retries: 5
+      start_period: 20s
+    labels:
+      ghost.service: "ghost-secure-logger"
+      ghost.layer:   "observability"
+      ghost.port:    "7730"
+
 networks:
   ghost_net:
     external: true
@@ -557,3 +666,5 @@ volumes:
   ghostdns_logs:
   ghostdns_indexer_data:
   ghostdns_attestor_data:
+  avh_policy:
+  gsl_data:

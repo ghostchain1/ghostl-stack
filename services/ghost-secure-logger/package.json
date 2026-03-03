@@ -1,0 +1,26 @@
+{
+  "name": "ghost-secure-logger",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GhostStack AI Secure Logger Service — centralized log aggregation, signing, anomaly detection, and audit chain for all AI systems",
+  "type": "module",
+  "scripts": {
+    "dev":       "tsx watch src/index.ts",
+    "build":     "tsc -p tsconfig.json",
+    "start":     "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "nats":    "^2.28.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/node":    "^22.13.10",
+    "tsx":            "^4.19.3",
+    "typescript":     "^5.6.3"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

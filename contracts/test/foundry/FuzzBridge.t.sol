@@ -20,7 +20,7 @@ contract FuzzBridge is TestBase {
         bridge.setRelayer(relayer);
         bridge.setRequireComplianceRoot(false);
         vm.prank(CANONICAL_GAS_TOKEN);
-        token = new GhostTokenL2();
+        token = new GhostTokenL2(0);
         token.approve(address(bridge), type(uint256).max);
     }
 

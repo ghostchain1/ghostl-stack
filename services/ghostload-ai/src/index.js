@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import http from "node:http";
 import { buildDecision, fallbackDecision, loadValidatedPolicy } from "./control.js";
+import { ghostbrainRegister, ghostbrainStartHeartbeat } from "./ghostbrain-client.js";
 
 const PORT = Number(process.env.PORT || 7688);
 const POLICY_PATH = process.env.GHOSTLOAD_POLICY_PATH || "";
@@ -120,4 +121,6 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, "0.0.0.0", () => {
   fs.mkdirSync("/tmp", { recursive: true });
   console.log(`[ghostload-ai] listening on ${PORT}`);
+  // ── GhostBrain Core registration ───────────────────────────────────────
+  ghostbrainRegister().then(() => ghostbrainStartHeartbeat());
 });

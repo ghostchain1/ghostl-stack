@@ -4,6 +4,7 @@ import { hashObject } from "./lib/determinism.js";
 import { buildProposal } from "./lib/proposer.js";
 import { buildEvidencePack } from "./lib/evidence.js";
 import type { CascadingContext, TxCandidate } from "./lib/types.js";
+import { ghostbrainRegister, ghostbrainStartHeartbeat } from "./ghostbrain-client.js";
 
 const app = express();
 app.use(express.json({ limit: "2mb" }));
@@ -73,4 +74,6 @@ app.post("/evidence-pack", (req, res) => {
 app.listen(port, () => {
   // eslint-disable-next-line no-console
   console.log(`[ghost-ai-consensus] listening on ${port}`);
+  // ── GhostBrain Core registration ───────────────────────────────────────
+  void ghostbrainRegister().then(() => ghostbrainStartHeartbeat());
 });

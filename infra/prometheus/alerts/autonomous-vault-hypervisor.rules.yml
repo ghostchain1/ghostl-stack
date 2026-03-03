@@ -1,0 +1,65 @@
+groups:
+  - name: autonomous-vault-hypervisor
+    interval: 30s
+    rules:
+      - alert: AVHServiceDown
+        expr: up{job="autonomous-vault-hypervisor"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: autonomous-vault-hypervisor
+          layer: L1
+        annotations:
+          summary: "Autonomous Vault Hypervisor is DOWN"
+          description: "The autonomous-vault-hypervisor service has been unreachable for more than 2 minutes. All VM/container automation is offline."
+          runbook: "https://github.com/ghostchain1/ghostl-stack/blob/main/docs/RUNBOOK.md#avh-service-down"
+
+      - alert: AVHHighRemediationRate
+        expr: rate(avh_vm_remediations_total[10m]) > 0.1 or rate(avh_container_remediations_total[10m]) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          service: autonomous-vault-hypervisor
+        annotations:
+          summary: "High autonomous remediation rate detected"
+          description: "AVH is remediating VMs or containers at an unusually high rate, suggesting systemic instability."
+
+      - alert: AVHSecretRotationFailing
+        expr: rate(avh_secret_rotation_failures_total[15m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: autonomous-vault-hypervisor
+        annotations:
+          summary: "Secret rotation failures in autonomous-vault-hypervisor"
+          description: "Secret rotations are failing. Check Vault connectivity and AppRole credentials."
+
+      - alert: AVHPolicyDenialsSpike
+        expr: rate(avh_policy_denials_total[5m]) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+          service: autonomous-vault-hypervisor
+        annotations:
+          summary: "High policy denial rate in AVH"
+          description: "Many actions are being policy-denied. Review emergency_lock status and policy rules."
+
+      - alert: AVHReconcileStalled
+        expr: time() - (avh_reconcile_runs_total > bool 0) * time() > 300
+        for: 5m
+        labels:
+          severity: critical
+          service: autonomous-vault-hypervisor
+        annotations:
+          summary: "AVH reconcile loop appears to have stalled"
+          description: "No reconcile runs have been recorded in the last 5 minutes."
+
+      - alert: AVHNATSErrors
+        expr: rate(avh_nats_errors_total[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+          service: autonomous-vault-hypervisor
+        annotations:
+          summary: "NATS publish errors in AVH"
+          description: "GhostBrain NATS messages are failing to publish. Check NATS connectivity."

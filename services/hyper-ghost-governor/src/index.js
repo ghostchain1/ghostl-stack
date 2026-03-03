@@ -3,6 +3,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import express from "express";
+import { ghostbrainRegister, ghostbrainStartHeartbeat } from "./ghostbrain-client.js";
 
 import {
   getEvidencePack,
@@ -273,4 +274,6 @@ app.listen(PORT, HOST, () => {
     artifactsRoot: ARTIFACTS_ROOT,
     treasuryStatusUrl: TREASURY_STATUS_URL
   });
+  // ── GhostBrain Core registration ───────────────────────────────────────
+  ghostbrainRegister().then(() => ghostbrainStartHeartbeat());
 });

@@ -10,7 +10,8 @@
   "dependencies": {
     "dockerode": "^4.0.3",
     "ethers": "^6.13.2",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "nats": "^2.29.3"
   },
   "engines": {
     "node": ">=22.21.0 <23"

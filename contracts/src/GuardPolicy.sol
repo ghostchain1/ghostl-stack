@@ -29,6 +29,7 @@ contract GuardPolicy {
     }
 
     function setOwner(address newOwner) external onlyOwner {
+        require(newOwner != address(0), "owner=0");
         owner = newOwner;
         emit OwnerChanged(newOwner);
     }

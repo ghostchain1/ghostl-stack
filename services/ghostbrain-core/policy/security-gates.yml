@@ -1,0 +1,138 @@
+# GhostBrain ACG — Security Gate Policy
+#
+# Defines MANDATORY security checks and their pass/fail criteria.
+# These gates CANNOT be disabled by configuration — only tool skipping
+# due to tool unavailability is permitted (non-blocking warning).
+#
+# Severity ladder: critical > high > medium > low > info
+# Block thresholds: critical or high = HARD BLOCK (no exceptions)
+
+security_gates:
+  version: "1.1.0"
+  description: "Mandatory security checks for every ACG Change Proposal"
+
+  global:
+    max_finding_age_days: 30
+    fail_fast: false
+    exception_file: "security/exceptions.json"
+    exception_review_cycle_days: 90
+
+  gates:
+    # ── Dependency Audit ──────────────────────────────────────────────────────
+    - id: dep-audit
+      name: "Dependency vulnerability audit"
+      tools:
+        - pnpm-audit
+        - osv-scanner
+      block_on:
+        - severity: critical
+        - severity: high
+      remediation: |
+        Run `pnpm audit fix` to auto-remediate. For unfixable vulns, add an
+        exception entry in security/exceptions.json with CVE, expiry, and
+        justification (requires security team sign-off).
+      schedule:
+        on_pr: true
+        nightly: true
+
+    # ── Secret / Credential Scan ───────────────────────────────────────────
+    - id: secret-scan
+      name: "Secret and credential detection"
+      tools:
+        - gitleaks
+      block_on:
+        - severity: critical
+      remediation: |
+        Remove the secret from code immediately. Rotate the exposed credential.
+        Use Vault/KMS for injection. See runbooks/acg-operations.md §Secret Hygiene.
+      config:
+        scan_history: true
+        custom_rules: "security/gitleaks-rules.toml"
+      schedule:
+        on_pr: true
+        nightly: true
+        pre_commit: true
+
+    # ── SAST ──────────────────────────────────────────────────────────────────
+    - id: sast
+      name: "Static application security testing"
+      tools:
+        - semgrep
+        - codeql
+      block_on:
+        - severity: critical
+        - severity: high
+      config:
+        semgrep_config: auto
+        codeql_languages:
+          - javascript
+          - typescript
+      remediation: |
+        Address each finding. If false positive, add `# nosemgrep: rule-id`
+        with a comment explaining why it's a false positive. Requires code review.
+      schedule:
+        on_pr: true
+        nightly: true
+
+    # ── Container / IaC Scan ──────────────────────────────────────────────────
+    - id: container-scan
+      name: "Container image and IaC vulnerability scan"
+      tools:
+        - trivy
+        - grype
+      block_on:
+        - severity: critical
+        - severity: high
+      trigger_paths:
+        - "**/Dockerfile*"
+        - "docker-compose*.yml"
+        - "infra/**"
+      remediation: |
+        Update base images to patched versions. Pin to specific digests.
+        Run `trivy image --ignore-unfixed <image>` to see patched alternatives.
+      schedule:
+        on_pr: true
+        nightly: true
+        weekly_full_scan: true
+
+    # ── Solidity / Smart Contract Audit ───────────────────────────────────────
+    - id: contract-scan
+      name: "Smart contract static analysis + fuzz"
+      tools:
+        - slither
+        - echidna
+      trigger_paths:
+        - "contracts/src/**/*.sol"
+        - "contracts/test/**/*.sol"
+      block_on:
+        - severity: critical
+        - severity: high
+      config:
+        slither_filters:
+          - "contracts/lib/**"
+        echidna_corpus: "contracts/echidna-corpus/"
+        echidna_runs: 50000
+      remediation: |
+        Fix Slither HIGH/CRITICAL findings before merge. Add mitigation comments
+        for accepted medium findings. Echidna corpus must grow, never shrink.
+      schedule:
+        on_pr: true
+        post_deploy_audit: true
+
+    # ── Supply Chain ──────────────────────────────────────────────────────────
+    - id: supply-chain
+      name: "Software supply chain integrity"
+      checks:
+        lockfile_committed: true
+        no_latest_base_images: true
+        sbom_generated: true
+        provenance_signed: true
+        base_images_pinned: true
+      block_on:
+        - check: lockfile_committed
+          severity: high
+        - check: no_latest_base_images
+          severity: medium
+      remediation: |
+        Pin lockfiles. Use `docker pull image@sha256:...` digests for base images.
+        Generate SBOMs with syft. Sign provenance with cosign.

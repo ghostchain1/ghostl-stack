@@ -53,9 +53,16 @@ contract L2L3Bridge {
     }
 
     constructor(address policyAddr) {
+        require(policyAddr != address(0), "policy=0");
         owner = msg.sender;
         policy = GuardPolicy(policyAddr);
         relayer = msg.sender;
+    }
+
+    /// @notice Transfer ownership. Zero address rejected.
+    function transferOwnership(address newOwner) external onlyOwner {
+        require(newOwner != address(0), "owner=0");
+        owner = newOwner;
     }
 
     function setPolicy(address policyAddr) external onlyOwner {
@@ -100,6 +107,8 @@ contract L2L3Bridge {
 
     /// User deposits on L2 to mint/release on L3 (offchain relayer can mirror on the other chain).
     function depositToL3(address to, uint256 amount, uint256 nonce) external {
+        require(to != address(0), "to=0");
+        require(amount > 0, "amount=0");
         // In MVP we just emit an event; funds handling can be added later (ERC20 escrow etc).
         bytes32 key = keccak256(abi.encode(msg.sender, to, amount, nonce));
         // slither-disable-next-line incorrect-equality
@@ -110,6 +119,9 @@ contract L2L3Bridge {
 
     /// Deposit an ERC20 on L2 to mint the bridged representation on L3.
     function depositERC20ToL3(address token, address to, uint256 amount, uint256 nonce) external {
+        require(token != address(0), "token=0");
+        require(to != address(0), "to=0");
+        require(amount > 0, "amount=0");
         bytes32 key = keccak256(abi.encode(token, msg.sender, to, amount, nonce));
         // slither-disable-next-line incorrect-equality
         require(erc20DepositTime[key] == 0, "already");

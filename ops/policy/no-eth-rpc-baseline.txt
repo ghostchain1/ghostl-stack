@@ -1,55 +1,55 @@
-apps/api/src/modules/ai/router.ts	eth_getBlockByNumber	1186:          { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: `sample:${blocks.length}` }
-apps/api/src/modules/ai/router.ts	eth_getBlockByNumber	439:        { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: String(tx.blockNumber ?? '') },
-apps/api/src/modules/ai/router.ts	eth_getBlockByNumber	539:        { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: `lookback:${lookbackBlocks}` },
-apps/api/src/modules/ai/router.ts	eth_getBlockByNumber	906:              { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: `head:${latest?.number ?? ''}` }
-apps/api/src/modules/ghostchain/router.ts	eth_chainId	21:    rpcCall<string>(provider, 'eth_chainId'),
-apps/api/src/server.ts	eth_blockNumber	1796:            provider.send('eth_blockNumber', []),
-apps/api/src/server.ts	eth_blockNumber	2166:      const latestHex = (await rpcCall<HexString>('eth_blockNumber', [], chain)) as HexString;
-apps/api/src/server.ts	eth_blockNumber	3785:    const latestHex = (await rpcCall<HexString>('eth_blockNumber', [], chain)) as HexString;
-apps/api/src/server.ts	eth_blockNumber	3835:    const latestHex = (await rpcCall<HexString>('eth_blockNumber', [], chain)) as HexString;
-apps/api/src/server.ts	eth_chainId	1795:            provider.send('eth_chainId', []),
-apps/api/src/server.ts	eth_chainId	430:    const rawChainId = await withTimeout(rpcProbe<string>(endpoint.url, 'eth_chainId'), 1500);
-apps/api/src/server.ts	eth_gasPrice	1797:            provider.send('eth_gasPrice', []),
-apps/api/src/server.ts	eth_getBalance	3883:    const balanceHex = (await rpcCall('eth_getBalance', [address, 'latest'])) as HexString;
-apps/api/src/server.ts	eth_getBlockByNumber	2173:              'eth_getBlockByNumber',
-apps/api/src/server.ts	eth_getBlockByNumber	2191:          'eth_getBlockByNumber',
-apps/api/src/server.ts	eth_getBlockByNumber	3792:            'eth_getBlockByNumber',
-apps/api/src/server.ts	eth_getBlockByNumber	3841:        'eth_getBlockByNumber',
-apps/api/src/services/integrations-store.ts	eth_chainId	367:        const result = await rpcJson(baseUrl, 'eth_chainId', timeoutMs);
-apps/api/src/services/rpc-manager.ts	eth_blockNumber	129:      return await call('eth_blockNumber');
-apps/api/src/services/rpc-manager.ts	eth_blockNumber	209:              send('eth_blockNumber', 2);
-apps/api/src/services/rpc-manager.ts	eth_chainId	144:      socket.send(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_chainId', params: [] }));
-apps/api/src/services/rpc-manager.ts	eth_chainId	80:      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_chainId', params: [] }),
-apps/web/app/api/status/route.ts	eth_blockNumber	90:  return await rpcCall(url, 'eth_blockNumber');
-apps/web/app/api/status/route.ts	eth_chainId	97:  const [chainId, blockNumber] = await Promise.all([rpcCall(rpc, 'eth_chainId'), rpcBlockNumber(rpc)]);
-packages/ghostchain-sdk/src/index.ts	eth_blockNumber	28:  getBlockNumber: async () => parseHex(await rpcCall<string>(url, 'eth_blockNumber')),
-packages/ghostchain-sdk/src/index.ts	eth_chainId	29:  getChainId: async () => parseHex(await rpcCall<string>(url, 'eth_chainId')),
-packages/ghostchain-sdk/src/index.ts	eth_gasPrice	30:  getGasPrice: async () => parseHex(await rpcCall<string>(url, 'eth_gasPrice')),
-packages/ghostchain-sdk/src/index.ts	eth_getBalance	31:  getBalance: async (address: string) => parseHex(await rpcCall<string>(url, 'eth_getBalance', [address, 'latest'])),
-services/ai-clock-sync/index.js	eth_blockNumber	147:      rpcCall(rpc, "eth_blockNumber")
-services/ai-clock-sync/index.js	eth_chainId	146:      rpcCall(rpc, "eth_chainId"),
-services/ai-clock-sync/index.js	eth_getBlockByNumber	149:    const block = await rpcCall(rpc, "eth_getBlockByNumber", [blockNumberHex, false]);
-services/ai-monitor/src/index.js	eth_call	219:  const result = await rpcRequest(POLICY_REGISTRY_RPC, "eth_call", [
-services/ai-monitor/src/index.js	eth_chainId	560:        await rpcRequest(RPC_L1, "eth_chainId");
-services/ai-monitor/src/index.js	eth_getBlockByNumber	537:      latestBlock = await rpc("eth_getBlockByNumber", ["latest", true]);
-services/ai-monitor/src/index.js	eth_getCode	237:    const code = await rpcRequest(CHAIN_POLICY_REGISTRY_RPC, "eth_getCode", [
-services/chain-status-service/src/index.js	eth_chainId	67:    chainId: await provider.send("eth_chainId", []),
-services/consensus-telemetry-service/src/index.js	eth_chainId	798:    chainId: parseNumber(await provider.send("eth_chainId", [])),
-services/ghost-registry/src/health/checker.ts	eth_blockNumber	437:            ? await wsCall(endpoint.url, 'eth_blockNumber', this.timeoutMs)
-services/ghost-registry/src/health/checker.ts	eth_blockNumber	438:            : await rpcCall(endpoint.url, 'eth_blockNumber', this.timeoutMs);
-services/ghost-registry/src/health/checker.ts	eth_chainId	433:            ? await wsCall(endpoint.url, 'eth_chainId', this.timeoutMs)
-services/ghost-registry/src/health/checker.ts	eth_chainId	434:            : await rpcCall(endpoint.url, 'eth_chainId', this.timeoutMs);
-services/ghost-relayer/src/index.ts	eth_chainId	1052:    const l1ChainId = l1Provider ? await l1Provider.send("eth_chainId", []) : null;
-services/ghost-relayer/src/index.ts	eth_chainId	1053:    const l2ChainId = await l2Provider.send("eth_chainId", []);
-services/ghost-relayer/src/index.ts	eth_chainId	1054:    const l3ChainId = await l3Provider.send("eth_chainId", []);
-services/ghost-rollup-challenger/src/index.ts	eth_chainId	268:    const settlementChainId = await settlement.send("eth_chainId", []);
-services/ghost-rollup-challenger/src/index.ts	eth_chainId	269:    const childChainId = await child.send("eth_chainId", []);
-services/ghost-rollup-proposer/src/index.ts	eth_chainId	263:  const raw = await provider.send("eth_chainId", []);
-services/ghost-rollup-proposer/src/index.ts	eth_chainId	326:    const settlementChainId = await settlement.send("eth_chainId", []);
-services/ghost-rollup-proposer/src/index.ts	eth_chainId	327:    const childChainId = await child.send("eth_chainId", []);
-services/governance-service/src/index.js	eth_call	109:  rpc(rpcUrl, "eth_call", [
-services/governance-service/src/index.js	eth_chainId	142:      rpc(config.rpc, "eth_chainId"),
-services/network-context-service/src/index.js	eth_chainId	64:    const chainId = await provider.send("eth_chainId", []);
-services/network-manager-service/src/index.js	eth_chainId	333:      const data = await fetchJson(t.url, { jsonrpc: "2.0", id: 1, method: "eth_chainId", params: [] });
-services/validator-service/src/index.js	eth_blockNumber	110:    const latestHex = await jsonRpc(rpc, "eth_blockNumber");
-services/validator-service/src/index.js	eth_getBlockByNumber	114:      const blk = await jsonRpc(rpc, "eth_getBlockByNumber", [`0x${n.toString(16)}`, false]);
+apps/api/src/modules/ai/router.ts	eth_getBlockByNumber	              { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: `head:${latest?.number ?? ''}` }
+apps/api/src/modules/ai/router.ts	eth_getBlockByNumber	          { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: `sample:${blocks.length}` }
+apps/api/src/modules/ai/router.ts	eth_getBlockByNumber	        { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: String(tx.blockNumber ?? '') },
+apps/api/src/modules/ai/router.ts	eth_getBlockByNumber	        { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: `lookback:${lookbackBlocks}` },
+apps/api/src/modules/ghostchain/router.ts	eth_chainId	    rpcCall<string>(provider, 'eth_chainId'),
+apps/api/src/server.ts	eth_blockNumber	            provider.send('eth_blockNumber', []),
+apps/api/src/server.ts	eth_blockNumber	      const latestHex = (await rpcCall<HexString>('eth_blockNumber', [], chain)) as HexString;
+apps/api/src/server.ts	eth_blockNumber	    const latestHex = (await rpcCall<HexString>('eth_blockNumber', [], chain)) as HexString;
+apps/api/src/server.ts	eth_chainId	            provider.send('eth_chainId', []),
+apps/api/src/server.ts	eth_chainId	    const rawChainId = await withTimeout(rpcProbe<string>(endpoint.url, 'eth_chainId'), 1500);
+apps/api/src/server.ts	eth_gasPrice	            provider.send('eth_gasPrice', []),
+apps/api/src/server.ts	eth_getBalance	    const balanceHex = (await rpcCall('eth_getBalance', [address, 'latest'])) as HexString;
+apps/api/src/server.ts	eth_getBlockByNumber	              'eth_getBlockByNumber',
+apps/api/src/server.ts	eth_getBlockByNumber	            'eth_getBlockByNumber',
+apps/api/src/server.ts	eth_getBlockByNumber	          'eth_getBlockByNumber',
+apps/api/src/server.ts	eth_getBlockByNumber	        'eth_getBlockByNumber',
+apps/api/src/services/integrations-store.ts	eth_chainId	        const result = await rpcJson(baseUrl, 'eth_chainId', timeoutMs);
+apps/api/src/services/rpc-manager.ts	eth_blockNumber	              send('eth_blockNumber', 2);
+apps/api/src/services/rpc-manager.ts	eth_blockNumber	      return await call('eth_blockNumber');
+apps/api/src/services/rpc-manager.ts	eth_chainId	      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_chainId', params: [] }),
+apps/api/src/services/rpc-manager.ts	eth_chainId	      socket.send(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_chainId', params: [] }));
+apps/web/app/api/status/route.ts	eth_blockNumber	  return await rpcCall(url, 'eth_blockNumber');
+apps/web/app/api/status/route.ts	eth_chainId	  const [chainId, blockNumber] = await Promise.all([rpcCall(rpc, 'eth_chainId'), rpcBlockNumber(rpc)]);
+packages/ghostchain-sdk/src/index.ts	eth_blockNumber	  getBlockNumber: async () => parseHex(await rpcCall<string>(url, 'eth_blockNumber')),
+packages/ghostchain-sdk/src/index.ts	eth_chainId	  getChainId: async () => parseHex(await rpcCall<string>(url, 'eth_chainId')),
+packages/ghostchain-sdk/src/index.ts	eth_gasPrice	  getGasPrice: async () => parseHex(await rpcCall<string>(url, 'eth_gasPrice')),
+packages/ghostchain-sdk/src/index.ts	eth_getBalance	  getBalance: async (address: string) => parseHex(await rpcCall<string>(url, 'eth_getBalance', [address, 'latest'])),
+services/ai-clock-sync/index.js	eth_blockNumber	      rpcCall(rpc, "eth_blockNumber")
+services/ai-clock-sync/index.js	eth_chainId	      rpcCall(rpc, "eth_chainId"),
+services/ai-clock-sync/index.js	eth_getBlockByNumber	    const block = await rpcCall(rpc, "eth_getBlockByNumber", [blockNumberHex, false]);
+services/ai-monitor/src/index.js	eth_call	  const result = await rpcRequest(POLICY_REGISTRY_RPC, "eth_call", [
+services/ai-monitor/src/index.js	eth_chainId	        await rpcRequest(RPC_L1, "eth_chainId");
+services/ai-monitor/src/index.js	eth_getBlockByNumber	      latestBlock = await rpc("eth_getBlockByNumber", ["latest", true]);
+services/ai-monitor/src/index.js	eth_getCode	    const code = await rpcRequest(CHAIN_POLICY_REGISTRY_RPC, "eth_getCode", [
+services/chain-status-service/src/index.js	eth_chainId	    chainId: await provider.send("eth_chainId", []),
+services/ghost-registry/src/health/checker.ts	eth_blockNumber	            : await rpcCall(endpoint.url, 'eth_blockNumber', this.timeoutMs);
+services/ghost-registry/src/health/checker.ts	eth_blockNumber	            ? await wsCall(endpoint.url, 'eth_blockNumber', this.timeoutMs)
+services/ghost-registry/src/health/checker.ts	eth_chainId	            : await rpcCall(endpoint.url, 'eth_chainId', this.timeoutMs);
+services/ghost-registry/src/health/checker.ts	eth_chainId	            ? await wsCall(endpoint.url, 'eth_chainId', this.timeoutMs)
+services/ghost-relayer/src/index.ts	eth_chainId	    const l1ChainId = l1Provider ? await l1Provider.send("eth_chainId", []) : null;
+services/ghost-relayer/src/index.ts	eth_chainId	    const l2ChainId = await l2Provider.send("eth_chainId", []);
+services/ghost-relayer/src/index.ts	eth_chainId	    const l3ChainId = await l3Provider.send("eth_chainId", []);
+services/ghost-rollup-challenger/src/index.ts	eth_chainId	    const childChainId = await child.send("eth_chainId", []);
+services/ghost-rollup-challenger/src/index.ts	eth_chainId	    const settlementChainId = await settlement.send("eth_chainId", []);
+services/ghost-rollup-proposer/src/index.ts	eth_chainId	    const childChainId = await child.send("eth_chainId", []);
+services/ghost-rollup-proposer/src/index.ts	eth_chainId	    const settlementChainId = await settlement.send("eth_chainId", []);
+services/ghost-rollup-proposer/src/index.ts	eth_chainId	  const raw = await provider.send("eth_chainId", []);
+services/ghost-sync-sentinel/src/checks.ts	eth_blockNumber	    const b = await jsonRpc<string>(url, "eth_blockNumber");
+services/ghost-sync-sentinel/src/checks.ts	eth_blockNumber	    errors.push(`eth_blockNumber: ${(e as Error).message}`);
+services/governance-service/src/index.js	eth_call	  rpc(rpcUrl, "eth_call", [
+services/governance-service/src/index.js	eth_chainId	      rpc(config.rpc, "eth_chainId"),
+services/network-context-service/src/index.js	eth_chainId	    const chainId = await provider.send("eth_chainId", []);
+services/network-manager-service/src/index.js	eth_chainId	      const data = await fetchJson(t.url, { jsonrpc: "2.0", id: 1, method: "eth_chainId", params: [] });
+services/validator-service/src/index.js	eth_blockNumber	    const latestHex = await jsonRpc(rpc, "eth_blockNumber");
+services/validator-service/src/index.js	eth_getBlockByNumber	      const blk = await jsonRpc(rpc, "eth_getBlockByNumber", [`0x${n.toString(16)}`, false]);

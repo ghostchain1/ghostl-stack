@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
 import "../foundry/TestBase.sol";
@@ -84,7 +84,8 @@ contract RiskEngineTest is TestBase {
     function test_weeklyLoss_tripsCircuitBreaker() public {
         vm.prank(GOV);
         risk.recordLoss(1, 1_500 ether);
-        assertTrue(risk.config().circuitBreakerOpen, "breaker should be open");
+        (, , , , , , bool cbOpen) = risk.config();
+        assertTrue(cbOpen, "breaker should be open");
 
         vm.expectRevert(RiskEngine.CircuitBreakerActive.selector);
         risk.checkExecution(1, 1 ether, 2_000 ether, 0);
@@ -97,7 +98,8 @@ contract RiskEngineTest is TestBase {
         risk.openCircuitBreaker("test");
         vm.prank(GOV);
         risk.resetCircuitBreaker();
-        assertTrue(!risk.config().circuitBreakerOpen, "breaker still open");
+        (, , , , , , bool cbOpen) = risk.config();
+        assertTrue(!cbOpen, "breaker still open");
         assertEq(risk.currentDailyLoss(), 0, "daily loss not cleared");
         assertEq(risk.currentWeeklyLoss(), 0, "weekly loss not cleared");
     }

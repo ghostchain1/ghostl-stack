@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
 import "../foundry/TestBase.sol";
@@ -172,15 +172,7 @@ contract GhostTreasuryAIInvariantTest is TestBase {
         uint16  stressMul,
         bool    cbOpen
     ) {
-        RiskEngine.RiskConfig memory c = risk.config();
-        return (
-            c.minStableReserve,
-            c.maxDailyVaR,
-            c.maxWeeklyLoss,
-            c.maxAssetConcentrationBps,
-            c.maxStrategyConcentrationBps,
-            c.stressMultiplierBps,
-            c.circuitBreakerOpen
-        );
+        (minStable, maxDailyVaR, maxWeeklyLoss, maxAssetBps, maxStratBps, stressMul, cbOpen) = risk.config();
+        return (minStable, maxDailyVaR, maxWeeklyLoss, maxAssetBps, maxStratBps, stressMul, cbOpen);
     }
 }

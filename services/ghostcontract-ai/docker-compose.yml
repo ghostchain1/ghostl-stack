@@ -23,6 +23,10 @@ services:
       GHOSTAI_RISKORACLE_ADDR:    ${GHOSTAI_RISKORACLE_ADDR:-}
       # DRY_RUN — default true (safe mode). Set false + approval file for live deploys.
       GHOSTAI_DRY_RUN:            ${GHOSTAI_DRY_RUN:-true}
+      # GhostBrain Core registration
+      GHOSTBRAIN_URL:             ${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}
+      GHOSTBRAIN_ENABLED:         ${GHOSTBRAIN_ENABLED:-true}
+      NATS_URL:                   ${NATS_URL:-nats://nats:4222}
       # Vault — inject at runtime, never in image
       GHOSTAI_VAULT_ADDR:         ${GHOSTAI_VAULT_ADDR:-}
       GHOSTAI_VAULT_TOKEN:        ${GHOSTAI_VAULT_TOKEN:-}

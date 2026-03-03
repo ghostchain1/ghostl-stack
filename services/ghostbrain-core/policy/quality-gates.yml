@@ -1,0 +1,110 @@
+# GhostBrain ACG — Quality Gates Policy
+#
+# Code quality, test, and build gates that every Change Proposal must pass.
+# These enforce consistent engineering standards across the monorepo.
+
+quality_gates:
+  version: "1.0.0"
+  description: "Code quality, test coverage, and build integrity gates"
+
+  # ── Build Gate ─────────────────────────────────────────────────────────────
+  build:
+    checks:
+      - id: tsc-noEmit
+        command: "pnpm --filter <package> exec tsc --noEmit"
+        block: true
+        description: "TypeScript must typecheck with zero errors"
+
+      - id: forge-build
+        command: "forge build --root contracts"
+        block: true
+        trigger_paths: ["contracts/**"]
+        description: "Solidity contracts must compile cleanly"
+
+      - id: docker-dry-run
+        command: "docker build --no-cache -t acg-dry-run:latest ."
+        block: true
+        trigger_paths: ["**/Dockerfile*"]
+        description: "Docker images must build successfully"
+
+  # ── Code Quality Gate ──────────────────────────────────────────────────────
+  code_quality:
+    checks:
+      - id: eslint
+        command: "pnpm --filter <package> exec eslint . --max-warnings=0"
+        block: true
+        description: "Lint must pass with zero warnings"
+
+      - id: prettier
+        command: "pnpm --filter <package> exec prettier --check ."
+        block: true
+        description: "All files must be formatted (prettier)"
+
+      - id: no-unused-exports
+        tool: "ts-prune"
+        block: false         # warn only
+        description: "No new unused exports (warn)"
+
+    # New code cannot introduce new warnings (warnings as errors mode)
+    warnings_as_errors: true
+
+    # Files excluded from quality checks
+    exclude_patterns:
+      - "dist/**"
+      - "node_modules/**"
+      - "coverage/**"
+      - "out/**"
+      - "out-codex/**"
+
+  # ── Test Gate ─────────────────────────────────────────────────────────────
+  tests:
+    suites:
+      - id: unit
+        command: "pnpm --filter <package> test --coverage"
+        required: true
+        block_on_failure: true
+
+      - id: integration
+        command: "pnpm --filter <package> test:integration"
+        required: false       # non-fatal if script not defined
+        block_on_failure: true
+
+      - id: forge-fuzz
+        command: "forge test --fuzz-runs 500 --root contracts"
+        required: true
+        trigger_paths: ["contracts/**"]
+        block_on_failure: true
+
+    coverage:
+      # Per-package coverage floors (override with package-level .acg.yml)
+      default_floor_pct: 80
+      per_package:
+        ghostbrain-core: 85
+        ghostcontract-ai: 90      # higher bar for on-chain critical path
+      # Policy: coverage cannot DECREASE with a change (delta check)
+      no_coverage_decrease: true
+      # New bug fix must include a regression test
+      regression_test_required: true
+
+  # ── Regression Rule ────────────────────────────────────────────────────────
+  regression_rule:
+    enabled: true
+    description: |
+      Every bug fix must include a failing test that was added BEFORE the fix.
+      The DebuggerAgent enforces red-green-refactor order automatically.
+      Any PR tagged `fix:` or `bug:` that lacks a new test is blocked.
+
+  # ── Change Scope Cap ───────────────────────────────────────────────────────
+  change_scope:
+    max_files_per_proposal: 20
+    max_lines_changed_per_proposal: 500
+    description: |
+      Large diffs are split automatically by the PlannerAgent into multiple
+      smaller proposals. Proposals exceeding the cap are rejected at planning.
+
+  # ── Documentation ──────────────────────────────────────────────────────────
+  documentation:
+    changelog_required: true
+    description: |
+      CHANGELOG.md must be updated by the ExecutorAgent for every proposal.
+      New public APIs must have natspec (Solidity) or JSDoc (TypeScript).

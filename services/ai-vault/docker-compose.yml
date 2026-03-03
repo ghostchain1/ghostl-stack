@@ -9,6 +9,9 @@ services:
     environment:
       - PORT=${PORT:-7710}
       - VAULT_ADDR=${VAULT_ADDR:-http://host.docker.internal:8200}
+      - GHOSTBRAIN_URL=${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}
+      - GHOSTBRAIN_ENABLED=${GHOSTBRAIN_ENABLED:-true}
+      - NATS_URL=${NATS_URL:-nats://nats:4222}
       - VAULT_NAMESPACE=${VAULT_NAMESPACE:-}
       - VAULT_TOKEN=${VAULT_TOKEN:-}
       - VAULT_ROLE_ID=${VAULT_ROLE_ID:-}

@@ -19,6 +19,9 @@ services:
     environment:
     - PORT=7575
     - HEALTHCHECK_URL=http://127.0.0.1:7575/health
+    - GHOSTBRAIN_URL=${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}
+    - GHOSTBRAIN_ENABLED=${GHOSTBRAIN_ENABLED:-true}
+    - NATS_URL=${NATS_URL:-nats://nats:4222}
     - RPC_L2=${RPC_L2}
     - RPC_URL=${RPC_L2}
     - RPC_L1=${RPC_L1}

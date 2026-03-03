@@ -1,0 +1,48 @@
+policy:
+  # Directories the AI may read from or write to
+  allowed_roots:
+    - /home/ghost/ghostl-stack/contracts
+    - /home/ghost/ghostl-stack/contracts/lib
+    - /home/ghost/ghostl-stack/contracts/src
+    - /home/ghost/ghostl-stack/contracts/test
+
+  # Files that must never be accessed, regardless of allowed_roots
+  denied_globs:
+    - "**/.env"
+    - "**/.env.*"
+    - "**/secrets/**"
+    - "**/node_modules/**"
+    - "**/.git/**"
+    - "**/keystore/**"
+    - "**/*.pem"
+    - "**/*.key"
+    - "**/private_key*"
+
+  actions:
+    allow_create: true
+    allow_edit: true
+    allow_delete: false       # deleting contracts is FORBIDDEN
+    allow_network: false      # no external HTTP calls from agents
+    allow_deploy: false       # deployment gated on GhostBrain Governor
+
+  # These gates MUST pass before a job result is marked successful
+  required_gates:
+    - forge_build
+    - forge_test
+    - slither_high_zero
+
+  # Gates that can be waived by a GhostBrain Governor approval reference
+  waivable_gates:
+    - slither_high_zero       # requires governorApprovalRef in job context
+    - forge_test              # requires governorApprovalRef + justification
+
+evidence:
+  require_tool_versions: true
+  require_hash_manifest: true
+  sign_evidence: true         # HMAC signed; full Vault signing if VAULT_ADDR set
+
+# Routing law (mirrors AGENTS.md — constitution-locked, never auto-modified)
+routing_law:
+  l3_to_l2_only: true
+  l2_to_l1_only: true
+  l3_direct_to_l1: false

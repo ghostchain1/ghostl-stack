@@ -7,9 +7,9 @@ RUN npm config set fetch-retries 5 \
  && npm config set fetch-timeout 600000 \
  && npm install --production || (echo "npm install failed, retrying in 5s" && sleep 5 && npm install --production)
 COPY services/bridge-service/src ./src
-# Copy shared workspace packages (imported as ../../../packages/ from src/)
-COPY packages/ /packages/
-RUN chown -R node:node /app /packages
+# Copy only the routing-guard package (the only one used by bridge-service)
+COPY packages/routing-guard /packages/routing-guard
+RUN chown -R node:node /app /packages/routing-guard
 USER node
 EXPOSE 7604
 CMD ["node", "src/index.js"]

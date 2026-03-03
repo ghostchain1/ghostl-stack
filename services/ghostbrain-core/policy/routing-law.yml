@@ -1,0 +1,59 @@
+# GhostBrain ACG — Routing Law Policy
+#
+# HARD constraints that can NEVER be relaxed by any ACG evolution.
+# Any change proposal that violates these rules is DENIED immediately.
+#
+# Mirrors the on-chain GhostContractRegistry routing enforcement.
+# Source of truth: contracts/src/GhostContractRegistry.sol
+
+routing_law:
+  version: "1.0.0"
+  description: "Layer routing constraints (L3→L2→L1, no bypasses)"
+
+  # Legal hops (from → to)
+  allowed_hops:
+    - from: L3
+      to: L2
+      bidirectional: true
+      description: "L3 ↔ L2 only"
+
+    - from: L2
+      to: L1
+      bidirectional: true
+      description: "L2 ↔ GhostChain L1 only"
+
+  # Forbidden direct hops
+  forbidden_hops:
+    - from: L3
+      to: L1
+      reason: "L3→L1 direct bypasses L2 security layer — FORBIDDEN"
+      severity: CRITICAL
+
+  # Files whose changes trigger routing-law re-validation
+  trigger_paths:
+    - "contracts/src/**"
+    - "services/bridge-service/**"
+    - "services/ghost-relayer/**"
+    - "services/ghostchain-bridge-hub/**"
+    - "chains/**"
+    - ".github/workflows/ghostcontract-ai.yml"
+
+  # Enforcement: any code path that includes a direct L3→L1 message or call
+  # must fail the routing-law gate.
+  detection_patterns:
+    - pattern: "l3.*->.*l1|L3.*L1|ghostl3.*ghostchain"
+      context: "goal,scope,diff"
+      severity: CRITICAL
+      message: "L3→L1 direct routing detected. Route through L2."
+
+    - pattern: "sendToL1.*l3|l3.*sendCrossChain.*l1"
+      context: "diff"
+      severity: CRITICAL
+      message: "Cross-chain message skips L2 security layer."
+
+  # On-chain enforcement contracts (GhostContractAI)
+  on_chain:
+    registry: "${GHOSTAI_REGISTRY_ADDRESS}"
+    governor: "${GHOSTAI_GOVERNOR_ADDRESS}"
+    policy_gate: "${GHOSTAI_POLICY_GATE_ADDRESS}"
+    risk_oracle: "${GHOSTAI_RISK_ORACLE_ADDRESS}"

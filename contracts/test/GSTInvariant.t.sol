@@ -13,7 +13,7 @@ contract GSTInvariantTest is Test {
 
         GhostGasTokenL2 l2 = new GhostGasTokenL2(0);
         GhostGasTokenL3 l3 = new GhostGasTokenL3(0);
-        GhostTokenL2 legacyL2 = new GhostTokenL2();
+        GhostTokenL2 legacyL2 = new GhostTokenL2(0);
 
         vm.stopPrank();
 

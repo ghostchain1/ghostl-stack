@@ -3,6 +3,7 @@ import path from "node:path";
 import express from "express";
 import client from "prom-client";
 import { Interface, ethers } from "ethers";
+import { ghostbrainRegister, ghostbrainStartHeartbeat, ghostbrainAnomalySignal } from "./ghostbrain-client.js";
 
 const env = process.env;
 const readSecret = (key) => {
@@ -822,6 +823,8 @@ async function init() {
         guard: GUARD_URL,
         observeOnly: OBSERVE_ONLY
       });
+      // ── GhostBrain Core registration ───────────────────────────────────────
+      ghostbrainRegister().then(() => ghostbrainStartHeartbeat());
       loop();
     });
   } catch (err) {

@@ -215,16 +215,23 @@ services:
     image: ghost-helper-bots:latest
     container_name: ghost-helper-bots
     restart: "no"   # run-once loop; set to unless-stopped for continuous
+    command: ["node", "--loader", "ts-node/esm", "loops/loop.ts", "--mode", "analyze", "--maxIters", "1"]
     environment:
       <<: *brain-env
       GHOST_REPO_ROOT: "/workspace"
       NODE_ENV: "${NODE_ENV:-production}"
       GHOST_HELPER_MAX_ITERS: "${GHOST_HELPER_MAX_ITERS:-3}"
       GHOST_HELPER_FAIL_ON_HIGH_CRITICAL: "${GHOST_HELPER_FAIL_ON_HIGH_CRITICAL:-true}"
+      GHOST_REPORTS_DIR: "/data/reports"
+      GHOST_EVIDENCE_DIR: "/data/evidence"
+      GHOST_SBOM_DIR: "/data/sbom"
+      GHOST_ATTEST_DIR: "/data/attestations"
     volumes:
       - .:/workspace:ro
-      - ghost-helper-bots-reports:/workspace/ghost-helper-bots/reports
-      - ghost-helper-bots-evidence:/workspace/ghost-helper-bots/evidence
+      - ghost-helper-bots-reports:/data/reports
+      - ghost-helper-bots-evidence:/data/evidence
+      - ghost-helper-bots-sbom:/data/sbom
+      - ghost-helper-bots-attestations:/data/attestations
     networks:
       - ghostbrain-net
     depends_on:
@@ -236,11 +243,134 @@ services:
       ghostbrain.role: "sentinel"
       ghostbrain.layer: "L2"
 
+  # ─── ACG: Planner Agent (code change planning) ────────────────────────────
+  acg-planner:
+    build:
+      context: ./services/ghostbrain-core
+      dockerfile: Dockerfile
+    image: ghostbrain-core:latest
+    container_name: acg-planner
+    restart: unless-stopped
+    command: ["node", "dist/agents/planner-agent.js"]
+    environment:
+      <<: *brain-env
+      NODE_ENV: "${NODE_ENV:-production}"
+      ACG_GITHUB_TOKEN: "${ACG_GITHUB_TOKEN:-}"
+      ACG_GITHUB_OWNER: "${ACG_GITHUB_OWNER:-ghostchain1}"
+      ACG_GITHUB_REPO: "${ACG_GITHUB_REPO:-ghostl-stack}"
+      ACG_REPO_URL: "${ACG_REPO_URL:-https://github.com/ghostchain1/ghostl-stack}"
+      ACG_REPO_DEFAULT_BRANCH: "${ACG_REPO_DEFAULT_BRANCH:-main}"
+      ACG_MAX_DEBUG_ITERS: "${ACG_MAX_DEBUG_ITERS:-3}"
+      VAULT_ADDR: "${VAULT_ADDR:-http://vault:8200}"
+      VAULT_ROLE_ID: "${VAULT_ROLE_ID:-}"
+      GHOSTAI_L1_CHAIN_ID: "${GHOSTAI_L1_CHAIN_ID}"
+      GHOSTAI_L2_CHAIN_ID: "${GHOSTAI_L2_CHAIN_ID}"
+      GHOSTAI_L3_CHAIN_ID: "${GHOSTAI_L3_CHAIN_ID}"
+    networks:
+      - ghostbrain-net
+    depends_on:
+      ghostbrain-core:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      # Agents are NATS daemons — no HTTP server. Check PID 1 is alive.
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      ghostbrain.role: "planner"
+      ghostbrain.layer: "L2"
+      acg.agent: "planner"
+
+  # ─── ACG: Auditor Agent (security gate enforcement) ───────────────────────
+  acg-auditor:
+    build:
+      context: ./services/ghostbrain-core
+      dockerfile: Dockerfile
+    image: ghostbrain-core:latest
+    container_name: acg-auditor
+    restart: unless-stopped
+    command: ["node", "dist/agents/auditor-agent.js"]
+    environment:
+      <<: *brain-env
+      NODE_ENV: "${NODE_ENV:-production}"
+      ACG_FAIL_ON_HIGH: "${ACG_FAIL_ON_HIGH:-true}"
+      VAULT_ADDR: "${VAULT_ADDR:-http://vault:8200}"
+      VAULT_ROLE_ID: "${VAULT_ROLE_ID:-}"
+      GHOSTAI_L1_CHAIN_ID: "${GHOSTAI_L1_CHAIN_ID}"
+      GHOSTAI_L2_CHAIN_ID: "${GHOSTAI_L2_CHAIN_ID}"
+      GHOSTAI_L3_CHAIN_ID: "${GHOSTAI_L3_CHAIN_ID}"
+    # Mount workspace volume for scratch repo access
+    volumes:
+      - acg-scratch:/acg-scratch
+    networks:
+      - ghostbrain-net
+    depends_on:
+      ghostbrain-core:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      # Agents are NATS daemons — no HTTP server. Check PID 1 is alive.
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      ghostbrain.role: "auditor"
+      ghostbrain.layer: "L2"
+      acg.agent: "auditor"
+
+  # ─── ACG: Sentinel Agent (post-deploy SLO watcher) ────────────────────────
+  acg-sentinel:
+    build:
+      context: ./services/ghostbrain-core
+      dockerfile: Dockerfile
+    image: ghostbrain-core:latest
+    container_name: acg-sentinel
+    restart: unless-stopped
+    command: ["node", "dist/agents/sentinel-agent.js"]
+    environment:
+      <<: *brain-env
+      NODE_ENV: "${NODE_ENV:-production}"
+      ACG_SENTINEL_WINDOW_SECONDS: "${ACG_SENTINEL_WINDOW_SECONDS:-300}"
+      ACG_SENTINEL_ERROR_RATE_ROLLBACK_MULTIPLIER: "${ACG_SENTINEL_ERROR_RATE_ROLLBACK_MULTIPLIER:-5}"
+      ACG_SENTINEL_LATENCY_HOTFIX_MULTIPLIER: "${ACG_SENTINEL_LATENCY_HOTFIX_MULTIPLIER:-2}"
+      PROMETHEUS_URL: "${PROMETHEUS_URL:-http://prometheus:9090}"
+      GHOSTAI_L1_CHAIN_ID: "${GHOSTAI_L1_CHAIN_ID}"
+      GHOSTAI_L2_CHAIN_ID: "${GHOSTAI_L2_CHAIN_ID}"
+      GHOSTAI_L3_CHAIN_ID: "${GHOSTAI_L3_CHAIN_ID}"
+    networks:
+      - ghostbrain-net
+    depends_on:
+      ghostbrain-core:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      # Agents are NATS daemons — no HTTP server. Check PID 1 is alive.
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      ghostbrain.role: "sentinel"
+      ghostbrain.layer: "L2"
+      acg.agent: "sentinel"
+
 volumes:
   ghostbrain-postgres-data:
   ghostbrain-redis-data:
   ghost-helper-bots-reports:
   ghost-helper-bots-evidence:
+  ghost-helper-bots-sbom:
+  ghost-helper-bots-attestations:
+  acg-scratch:           # isolated scratch volume for ACG workspace clones
 
 networks:
   ghostbrain-net:

@@ -1,0 +1,40 @@
+service:
+  port: 7610
+  host: 0.0.0.0
+
+repo:
+  root: /home/ghost/ghostl-stack
+  contracts_dir: /home/ghost/ghostl-stack/contracts
+
+limits:
+  max_concurrency: 1
+  max_file_bytes: 1048576          # 1 MB per file read
+  max_total_read_bytes: 16777216   # 16 MB per job
+  max_patch_bytes: 2097152         # 2 MB diff output cap
+  job_timeout_ms: 900000           # 15 minutes
+  child_timeout_ms: 600000         # 10 minutes
+  memory_soft_mb: 512              # service target
+  memory_hard_mb: 1024             # kill/deny jobs over this
+  max_files_read: 50               # max files indexed per job
+  queue_depth: 16                  # max pending jobs in queue
+
+tools:
+  foundry:
+    forge_bin: forge
+  slither:
+    enabled: true
+    fail_on_high: true
+    bin: slither
+  ripgrep:
+    enabled: true
+    bin: rg
+  git:
+    enabled: true
+  solc:
+    bin: solc
+
+ghostbrain:
+  mode: client
+  base_url: http://ghostbrain-core:8686
+  shared_secret_env: GHOSTBRAIN_SHARED_SECRET
+  heartbeat_interval_ms: 30000

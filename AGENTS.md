@@ -76,7 +76,7 @@ The following contracts are the root authority for smart-contract lifecycle oper
 
 ## 7. File Creation Rules
 
-- All Solidity files: `SPDX-License-Identifier: UNLICENSED`, pragma `0.8.24`.
+- All Solidity files: `SPDX-License-Identifier: MIT`, pragma `0.8.24`.
 - All TypeScript service files: ESM (`"type": "module"`), NodeNext resolution, `node >=22.21.0 <23`.
 - New services: add to `pnpm-workspace.yaml`, assign next sequential port after 7610.
 - New contracts: add `forge build` coverage in CI.

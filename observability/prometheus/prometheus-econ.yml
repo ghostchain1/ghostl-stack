@@ -32,3 +32,14 @@ scrape_configs:
       - targets: ["ghost-treasury-ai:7680"]
     metrics_path: /metrics
     scrape_interval: 15s
+
+  - job_name: autonomous-vault-hypervisor
+    static_configs:
+      - targets: ["autonomous-vault-hypervisor:7720"]
+    metrics_path: /metrics
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    labels:
+      service: autonomous-vault-hypervisor
+      layer: L1
+      component: hypervisor

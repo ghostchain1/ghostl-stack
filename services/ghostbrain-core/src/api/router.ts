@@ -21,6 +21,7 @@ import { logger } from "../logger.js";
 import { publish } from "../connectors/nats.js";
 import type { HealthSignal, AgentRegistration } from "../types.js";
 import { v4 as uuidv4 } from "uuid";
+import { acgRouter } from "./acg-router.js";
 
 export function buildRouter(graph: DependencyGraph): express.Router {
   const router = express.Router();
@@ -198,6 +199,9 @@ export function buildRouter(graph: DependencyGraph): express.Router {
       res.json({ ok: true, agentId: reg.agentId });
     } catch (err) { next(err); }
   });
+
+  // ─── Autonomous Code Guardian (ACG) ───────────────────────────────────────
+  router.use("/acg", acgRouter);
 
   // ─── Error handler ─────────────────────────────────────────────────────────
   router.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {

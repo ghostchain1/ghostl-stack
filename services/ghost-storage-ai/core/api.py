@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse
@@ -17,6 +18,17 @@ log = logging.getLogger("ghost-storage-ai.api")
 
 app = FastAPI(title="ghost-storage-ai", version="1.0.0", description="AI-driven hypervisor storage manager")
 _reconciler: StorageReconciler | None = None
+
+
+@app.on_event("startup")
+def on_startup() -> None:
+    """Wire GhostBrain Core registration + heartbeat on FastAPI startup."""
+    from core.ghostbrain_client import ghostbrain_register, ghostbrain_start_heartbeat
+    threading.Thread(
+        target=lambda: (ghostbrain_register(), ghostbrain_start_heartbeat()),
+        daemon=True,
+        name="ghostbrain-register",
+    ).start()
 
 
 def set_reconciler(r: StorageReconciler) -> None:

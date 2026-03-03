@@ -17,10 +17,10 @@ export function loadConfig(): GhostHelperConfig {
   const base = path.join(repoRoot, "ghost-helper-bots");
   return {
     repoRoot,
-    reportsDir: path.join(base, "reports"),
-    evidenceDir: path.join(base, "evidence"),
-    sbomDir: path.join(base, "sbom"),
-    attestDir: path.join(base, "attestations"),
+    reportsDir: process.env.GHOST_REPORTS_DIR || path.join(base, "reports"),
+    evidenceDir: process.env.GHOST_EVIDENCE_DIR || path.join(base, "evidence"),
+    sbomDir: process.env.GHOST_SBOM_DIR || path.join(base, "sbom"),
+    attestDir: process.env.GHOST_ATTEST_DIR || path.join(base, "attestations"),
     natsUrl: process.env.NATS_URL || "nats://localhost:4222",
     ghostbrainUrl: process.env.GHOSTBRAIN_URL || "http://localhost:7900",
     maxIterations: Number(process.env.GHOST_HELPER_MAX_ITERS || 5),

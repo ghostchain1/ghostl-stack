@@ -26,6 +26,9 @@ services:
     environment:
       GHOSTDNS_DOMAIN: ${GHOSTDNS_DOMAIN:-ghostchain.cloud}
       GHOSTDNS_MODE: ${GHOSTDNS_MODE:-dev}
+      GHOSTBRAIN_URL: ${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}
+      GHOSTBRAIN_ENABLED: ${GHOSTBRAIN_ENABLED:-true}
+      NATS_URL: ${NATS_URL:-nats://nats:4222}
       UPSTREAM_DNS: ${UPSTREAM_DNS:-1.1.1.1,8.8.8.8}
       ALLOW_RECURSION_CIDRS: ${ALLOW_RECURSION_CIDRS:-127.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
       HGOP_URL: ${HGOP_URL:-http://hyper-ghost-supervisor:7077}

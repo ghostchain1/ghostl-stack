@@ -5,6 +5,12 @@ import { promises as fs } from "node:fs";
 import crypto from "node:crypto";
 import { ethers } from "ethers";
 import Docker from "dockerode";
+import {
+  connectGhostBrain,
+  disconnectGhostBrain,
+  publishHealthSignal,
+  publishAnomalySignal,
+} from "./ghostbrain-client.js";
 
 const PORT = Number(process.env.NETWORK_MANAGER_PORT || "7766");
 const MONITOR_HOST = process.env.MONITOR_HOST || "localhost";
@@ -281,20 +287,29 @@ function pickRpc(chain) {
 }
 
 async function resolveRpc(layer, override) {
-  const registry = await fetchRegistry();
-  const chain = registry.chains.find((entry) => entry.layer === layer);
-  const allowed = new Set([
-    ...(typeof chain?.rpc === "string" && chain.rpc ? [chain.rpc] : []),
-    ...(Array.isArray(chain?.rpcUrls) ? chain.rpcUrls : []),
-    ...(Array.isArray(chain?.endpoints) ? chain.endpoints.map((endpoint) => endpoint.url) : [])
-  ]);
-  if (override) {
-    if (!allowed.has(override)) throw new Error("rpc_override_not_in_registry");
-    return override;
+  try {
+    const registry = await fetchRegistry();
+    const chain = registry.chains.find((entry) => entry.layer === layer);
+    const allowed = new Set([
+      ...(typeof chain?.rpc === "string" && chain.rpc ? [chain.rpc] : []),
+      ...(Array.isArray(chain?.rpcUrls) ? chain.rpcUrls : []),
+      ...(Array.isArray(chain?.endpoints) ? chain.endpoints.map((endpoint) => endpoint.url) : [])
+    ]);
+    if (override) {
+      if (!allowed.has(override)) throw new Error("rpc_override_not_in_registry");
+      return override;
+    }
+    const rpc = pickRpc(chain);
+    if (!rpc) throw new Error(`rpc_missing_${layer.toLowerCase()}`);
+    return rpc;
+  } catch (err) {
+    // Registry unavailable — fall back to env-var override (degraded mode)
+    if (override) {
+      logEvent("warn", "registry_fallback", { layer, override, reason: err?.message || String(err) });
+      return override;
+    }
+    throw err;
   }
-  const rpc = pickRpc(chain);
-  if (!rpc) throw new Error(`rpc_missing_${layer.toLowerCase()}`);
-  return rpc;
 }
 
 async function fetchJson(url, body) {
@@ -360,6 +375,25 @@ async function probe() {
   state.lastRun = Date.now();
   state.results = results;
   state.errors = errors;
+
+  // ── GhostBrain Core: publish network health/anomaly signals ─────────────────
+  const overallOk = errors.length === 0;
+  if (overallOk) {
+    publishHealthSignal({
+      ok:      true,
+      source:  "network-manager-service",
+      metrics: { checked: results.length, failed: 0 },
+      errors:  [],
+    });
+  } else {
+    publishAnomalySignal({
+      source:      "network-manager-service",
+      severity:    errors.some((e) => e.type === "rpc") ? "critical" : "warning",
+      description: `${errors.length} network check(s) failed`,
+      metrics:     { checked: results.length, failed: errors.length },
+      errors:      errors.map((e) => e.error ?? e.target ?? "unknown"),
+    });
+  }
 }
 
 function summarize() {
@@ -771,6 +805,8 @@ app.post("/remediate/execute", async (req, res) => {
 async function init() {
   try {
     await loadPolicy();
+
+    // Resolve RPC targets — falls back to env-var overrides if registry is down
     const [l1, l2, l3] = await Promise.all([
       resolveRpc("L1", process.env.MONITOR_RPC_L1),
       resolveRpc("L2", process.env.MONITOR_RPC_L2),
@@ -781,15 +817,47 @@ async function init() {
       { name: "l2", url: l2 },
       { name: "l3", url: l3 }
     ];
+
+    // ── GhostBrain Core: connect as autonomous AI network agent ──────────────
+    await connectGhostBrain(async (task) => {
+      // Autonomous task dispatch from GhostBrain orchestrator
+      // Supported: { type: "probe" }, { type: "op_gate_mode", ... },
+      //            { type: "restart_service", ... }
+      logEvent("info", "ghostbrain_autonomous_task", { taskType: task?.type });
+      if (task?.type === "probe") {
+        await probe();
+        return { ok: true, results: state.results, errors: state.errors };
+      }
+      if (task?.type === "op_gate_mode" || task?.type === "restart_service") {
+        // Wrap as a plan action and delegate to execute logic
+        if (!AUTONOMY_EXECUTION_ENABLED) return { ok: false, error: "autonomy_execution_disabled" };
+        if (AUTONOMY_KILL_SWITCH)         return { ok: false, error: "autonomy_kill_switch_enabled" };
+        const handler = supportedActions[task.type];
+        if (!handler) return { ok: false, error: `unsupported_action:${task.type}` };
+        const result = await handler(task);
+        return { ok: true, result };
+      }
+      return { ok: false, error: `unknown_task_type:${task?.type}` };
+    });
+
     const intervalMs = Number(process.env.MONITOR_INTERVAL_MS || "10000");
     setInterval(probe, intervalMs);
     probe().catch(() => {});
+
     const server = app.listen(PORT, () => {
       console.log(`[netmgr] listening on :${PORT}`);
     });
-    process.on("SIGTERM", () => server.close(() => process.exit(0)));
+
+    const shutdown = async (signal) => {
+      logEvent("info", "shutdown", { signal });
+      await disconnectGhostBrain();
+      server.close(() => process.exit(0));
+    };
+    process.on("SIGTERM", () => void shutdown("SIGTERM"));
+    process.on("SIGINT",  () => void shutdown("SIGINT"));
+
   } catch (err) {
-    console.error(`[netmgr] registry error: ${err?.message || err}`);
+    console.error(`[netmgr] fatal init error: ${err?.message || err}`);
     process.exit(1);
   }
 }

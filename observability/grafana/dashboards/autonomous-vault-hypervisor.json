@@ -1,0 +1,103 @@
+{
+  "id": null,
+  "uid": "avh-hypervisor",
+  "title": "Autonomous Vault Hypervisor",
+  "description": "VM lifecycle, container management, secret rotation and policy enforcement",
+  "tags": ["ghoststack", "hypervisor", "vault", "autonomous"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Reconcile Runs",
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+      "targets": [{ "expr": "avh_reconcile_runs_total", "legendFormat": "Total Runs" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "VM Remediations",
+      "gridPos": { "x": 4, "y": 0, "w": 4, "h": 4 },
+      "targets": [{ "expr": "avh_vm_remediations_total", "legendFormat": "VM Remediations" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area", "thresholds": { "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 5}, {"color": "red", "value": 20}] } }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Container Remediations",
+      "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 },
+      "targets": [{ "expr": "avh_container_remediations_total", "legendFormat": "Container Remediations" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area", "thresholds": { "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 5}, {"color": "red", "value": 20}] } }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Secret Rotations",
+      "gridPos": { "x": 12, "y": 0, "w": 4, "h": 4 },
+      "targets": [{ "expr": "avh_secret_rotations_total", "legendFormat": "Successful Rotations" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Rotation Failures",
+      "gridPos": { "x": 16, "y": 0, "w": 4, "h": 4 },
+      "targets": [{ "expr": "avh_secret_rotation_failures_total", "legendFormat": "Rotation Failures" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area", "thresholds": { "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}] } }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Policy Denials",
+      "gridPos": { "x": 20, "y": 0, "w": 4, "h": 4 },
+      "targets": [{ "expr": "avh_policy_denials_total", "legendFormat": "Policy Denials" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area", "thresholds": { "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 3}, {"color": "red", "value": 10}] } }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Reconcile Rate & Remediations (5m rate)",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "rate(avh_reconcile_runs_total[5m])", "legendFormat": "Reconcile/s" },
+        { "expr": "rate(avh_vm_remediations_total[5m])", "legendFormat": "VM Remediation/s" },
+        { "expr": "rate(avh_container_remediations_total[5m])", "legendFormat": "Container Remediation/s" }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Secret Rotation Activity",
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "rate(avh_secret_rotations_total[5m])", "legendFormat": "Rotations/s" },
+        { "expr": "rate(avh_secret_rotation_failures_total[5m])", "legendFormat": "Failures/s" }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "NATS / GhostBrain Activity",
+      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "rate(avh_nats_published_total[5m])", "legendFormat": "NATS Published/s" },
+        { "expr": "rate(avh_nats_errors_total[5m])", "legendFormat": "NATS Errors/s" }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "API Requests & Anomalies",
+      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "rate(avh_api_requests_total[5m])", "legendFormat": "API Requests/s" },
+        { "expr": "rate(avh_anomalies_total[5m])", "legendFormat": "Anomalies/s" }
+      ]
+    }
+  ]
+}

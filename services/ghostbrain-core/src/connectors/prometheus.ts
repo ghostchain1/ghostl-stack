@@ -88,3 +88,45 @@ export async function snapshotMetrics(
   }
   return snapshot;
 }
+
+// ─── Range query (for Sentinel SLO evaluation) ────────────────────────────────
+
+interface PrometheusRangeResult {
+  metric: Record<string, string>;
+  values: Array<[number, string]>;
+}
+
+interface PrometheusRangeResponse {
+  status: "success" | "error";
+  data: {
+    resultType: "matrix";
+    result: PrometheusRangeResult[];
+  };
+}
+
+/**
+ * Query Prometheus over a time range (used by the SentinelAgent for SLO evaluation).
+ * Returns the raw Prometheus matrix response.
+ */
+export async function queryRange(
+  query: string,
+  start: number,
+  end: number,
+  step: string,
+): Promise<PrometheusRangeResponse | null> {
+  const params = new URLSearchParams({
+    query,
+    start: String(start),
+    end: String(end),
+    step,
+  });
+  const url = `${PROMETHEUS_URL}/api/v1/query_range?${params.toString()}`;
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+    if (!res.ok) return null;
+    return await res.json() as PrometheusRangeResponse;
+  } catch (err) {
+    logger.warn("Prometheus range query failed", { query: query.substring(0, 80), err: String(err) });
+    return null;
+  }
+}

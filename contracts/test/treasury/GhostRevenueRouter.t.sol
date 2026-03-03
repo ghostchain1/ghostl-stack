@@ -1,13 +1,15 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {GhostRevenueRouter} from "../../src/treasury/GhostRevenueRouter.sol";
-import {ERC20Mock} from "../mocks/ERC20Mock.sol";
+import {TreasuryVault} from "../../src/treasury/TreasuryVault.sol";
+import {TestERC20} from "../../src/tokens/TestERC20.sol";
 
 contract GhostRevenueRouterTest is Test {
     GhostRevenueRouter internal router;
-    ERC20Mock internal token;
+    TreasuryVault internal vault;
+    TestERC20 internal token;
 
     address internal governance = address(0xA11CE);
     address internal timelock   = address(0xB0B);
@@ -25,8 +27,9 @@ contract GhostRevenueRouterTest is Test {
     GhostRevenueRouter.BucketConfig[6] internal defaultConfig;
 
     function setUp() public {
-        router = new GhostRevenueRouter(governance, timelock);
-        token  = new ERC20Mock("Ghost Stable", "GST", 18);
+        vault  = new TreasuryVault(address(this));
+        router = new GhostRevenueRouter(governance, timelock, vault);
+        token  = new TestERC20("Ghost Stable", "GST", 18);
 
         // Build config: all weights sum to 10_000 bps
         defaultConfig[0] = GhostRevenueRouter.BucketConfig({bps: 2000, recipient: ops,        label: "ops"});
@@ -39,7 +42,7 @@ contract GhostRevenueRouterTest is Test {
         // Configure buckets and approve source
         vm.startPrank(governance);
         router.configureBuckets(defaultConfig);
-        router.approveSource(source, true);
+        router.setApprovedSource(source, true);
         vm.stopPrank();
     }
 
@@ -48,7 +51,8 @@ contract GhostRevenueRouterTest is Test {
     function test_configureBuckets_validWeights() public view {
         // All 6 buckets should be readable after setUp
         for (uint8 i = 0; i < 6; i++) {
-            (uint16 bps,,) = router.getBucket(i);
+            GhostRevenueRouter.BucketConfig memory bc = router.getBucket(GhostRevenueRouter.Bucket(i));
+            uint16 bps = bc.bps;
             assertTrue(bps > 0, "bucket weight should be > 0");
         }
     }
@@ -58,7 +62,7 @@ contract GhostRevenueRouterTest is Test {
         bad[0].bps = 9999; // total ≠ 10_000
 
         vm.prank(governance);
-        vm.expectRevert(GhostRevenueRouter.InvalidWeights.selector);
+        vm.expectRevert(GhostRevenueRouter.InvalidBucketWeights.selector);
         router.configureBuckets(bad);
     }
 
@@ -104,7 +108,7 @@ contract GhostRevenueRouterTest is Test {
 
     function test_routeERC20_zeroAmount_reverts() public {
         vm.prank(source);
-        vm.expectRevert(GhostRevenueRouter.ZeroAmount.selector);
+        vm.expectRevert(bytes("amount=0"));
         router.routeERC20(address(token), 0);
     }
 
@@ -132,14 +136,14 @@ contract GhostRevenueRouterTest is Test {
 
     function test_routeNative_zeroValue_reverts() public {
         vm.prank(source);
-        vm.expectRevert(GhostRevenueRouter.ZeroAmount.selector);
+        vm.expectRevert(bytes("value=0"));
         router.routeNative{value: 0}();
     }
 
     // ── updateBucket ──────────────────────────────────────────────────────────
 
     function test_updateBucket_changesRecipient() public {
-        address newRecipient = address(0xNEW);
+        address newRecipient = address(0x1234);
         // Reduce ops by 500bps and give to new recipient replacing grants (keep total = 10_000)
         // Simpler: just update the recipient without changing bps
         vm.prank(governance);
@@ -168,7 +172,7 @@ contract GhostRevenueRouterTest is Test {
 
     function test_revokedSource_reverts() public {
         vm.prank(governance);
-        router.approveSource(source, false);
+        router.setApprovedSource(source, false);
 
         token.mint(source, 1e18);
         vm.startPrank(source);
@@ -192,7 +196,7 @@ contract GhostRevenueRouterTest is Test {
         router.routeERC20(address(token), amt2);
         vm.stopPrank();
 
-        assertEq(router.totalRouted(address(token)), amt1 + amt2, "cumulative total");
+        assertEq(router.totalReceived(address(token)), amt1 + amt2, "cumulative total");
     }
 
     // ── Fuzz: weights must sum to exactly 10_000 ───────────────────────────────
@@ -205,7 +209,7 @@ contract GhostRevenueRouterTest is Test {
         // total ≠ 10_000 unless w0 == 2000
 
         vm.prank(governance);
-        vm.expectRevert(GhostRevenueRouter.InvalidWeights.selector);
+        vm.expectRevert(GhostRevenueRouter.InvalidBucketWeights.selector);
         router.configureBuckets(bad);
     }
 

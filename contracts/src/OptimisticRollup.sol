@@ -67,16 +67,19 @@ contract OptimisticRollup {
     }
 
     function setOwner(address newOwner) external onlyOwner {
+        require(newOwner != address(0), "owner=0");
         owner = newOwner;
         emit OwnerChanged(newOwner);
     }
 
     function setProposer(address newProposer) external onlyOwner {
+        require(newProposer != address(0), "proposer=0");
         proposer = newProposer;
         emit ProposerChanged(newProposer);
     }
 
     function setParentFinalityOracle(address oracle) external onlyOwner {
+        // oracle == address(0) disables the oracle; allowed intentionally.
         parentFinalityOracle = IStateRootFinalityOracle(oracle);
         emit ParentFinalityOracleChanged(oracle);
     }

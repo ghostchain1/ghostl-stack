@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import express from "express";
 import { Counter, Registry, collectDefaultMetrics } from "prom-client";
+import { ghostbrainRegister, ghostbrainStartHeartbeat } from "./ghostbrain-client";
 
 type RiskInput = {
   strategyId: string;
@@ -163,4 +164,6 @@ app.post("/v1/risk/score", (req, res) => {
 
 app.listen(PORT, HOST, () => {
   console.log(JSON.stringify({ ts: new Date().toISOString(), service: "hg-risk-oracle", level: "info", msg: "started", port: PORT }));
+  // ── GhostBrain Core registration ───────────────────────────────────────
+  void ghostbrainRegister().then(() => ghostbrainStartHeartbeat());
 });

@@ -1,0 +1,27 @@
+{
+  "name": "autonomous-vault-hypervisor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "node --loader ts-node/esm src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "memory:swap:status": "node -e \"import('./dist/memory-swap-manager.js').then(m => m.sampleMemoryPressure()).then(s => console.log(JSON.stringify(s, null, 2)))\""
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "nats": "^2.28.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.10.2",
+    "ts-node": "^10.9.2",
+    "typescript": "5.6.3"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

@@ -25,9 +25,12 @@ import {
   anomalySignals,
   healthGraphNodes,
 } from "../metrics.js";
-import { subscribeAnomalySignals, subscribeAgentRegistrations } from "../connectors/nats.js";
+import { subscribeAnomalySignals, subscribeAgentRegistrations, subscribe } from "../connectors/nats.js";
 import { logger } from "../logger.js";
 import { TICK_INTERVAL_SECONDS } from "../config.js";
+import { acgPipeline } from "../acg/pipeline.js";
+import { ACG_SUBJECTS } from "../acg/types.js";
+import type { ChangeProposalInput } from "../acg/types.js";
 
 // ─── Agent registry ───────────────────────────────────────────────────────────
 const _agents = new Map<string, AgentRegistration>();
@@ -59,6 +62,17 @@ export function startBrain(): void {
   subscribeAnomalySignals(signal => {
     _signalQueue.push(signal);
     anomalySignals.inc({ source: signal.source, layer: signal.layer ?? "unknown" });
+  });
+
+  // ── ACG: subscribe to sentinel hotfix proposals ──────────────────────────
+  subscribe(ACG_SUBJECTS.HOTFIX_PROPOSAL, async (msg: unknown) => {
+    const { hotfixInput } = msg as { hotfixInput: ChangeProposalInput };
+    logger.warn("Brain: ACG hotfix proposal received — launching pipeline", {
+      goal: hotfixInput.goal.substring(0, 80),
+    });
+    void acgPipeline.run(hotfixInput).catch(err => {
+      logger.error("Brain: ACG hotfix pipeline error", { err: String(err) });
+    });
   });
 
   // Start tick loop

@@ -15,3 +15,31 @@ evidence/phase12/gate-l1-go-no-go.txt
 
 # Archived audit snapshots are immutable historical evidence and may include upstream token strings.
 .audit/snapshots/**
+
+# Ghost-treasury-ai uses ETH as internal unit-of-account naming (config, metrics, docs).
+# These are technical identifiers, not user-facing ETH branding.
+services/ghost-treasury-ai/**
+
+# Grafana dashboard and Prometheus alert rules for treasury-ai reference ETH metric names.
+grafana/dashboards/ghost-treasury-ai.json
+observability/prometheus/rules/ghost-treasury-ai.rules.yml
+
+# Docs — pitch decks and design docs may reference external chains (Ethereum, Solana, etc.).
+docs/BRAND_IDENTITY.md
+docs/GHOSTSTACK_INVESTOR_DECK.md
+docs/GHOSTSTACK_PITCH_DECK_COPY.md
+docs/ghost-treasury-ai/README.md
+
+# Ghost-logger redact list contains ETH field names for filtering purposes.
+packages/ghost-logger/src/redact.ts
+
+# Shibarium bridge contracts reference ETH natively (upstream protocol compatibility).
+contracts/scripts/deploy-shibarium-bridge.ts
+contracts/src/bridge/GSTCrossChainAdapter.sol
+contracts/src/bridge/ShibariumBridge.sol
+contracts/src/bridge/ShibariumBridgeChild.sol
+
+# Treasury contract and tests — ETH used as unit-of-account in comments/variable names.
+contracts/src/treasury/GhostRevenueRouter.sol
+contracts/test/foundry/L1FeePool.t.sol
+contracts/test/treasury/RiskEngine.t.sol

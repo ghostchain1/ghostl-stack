@@ -11,6 +11,9 @@ services:
       ARTIFACTS_ROOT: /artifacts/governor
       TREASURY_STATUS_URL: http://treasury-engine:7683/v1/treasury/status
       GOVERNOR_ADMIN_TOKEN: ${HYPER_GHOST_GOVERNOR_ADMIN_TOKEN:-}
+      GHOSTBRAIN_URL: ${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}
+      GHOSTBRAIN_ENABLED: ${GHOSTBRAIN_ENABLED:-true}
+      NATS_URL: ${NATS_URL:-nats://nats:4222}
     user: "1001:1001"
     cap_drop:
       - ALL

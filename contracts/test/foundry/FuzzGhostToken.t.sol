@@ -10,7 +10,7 @@ contract FuzzGhostToken is TestBase {
 
     function setUp() public {
         vm.prank(CANONICAL_GAS_TOKEN);
-        token = new GhostTokenL2();
+        token = new GhostTokenL2(0);
     }
 
     function testFuzz_transferPreservesSupply(address to, uint256 amount) public {

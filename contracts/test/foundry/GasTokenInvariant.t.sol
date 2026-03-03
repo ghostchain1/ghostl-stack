@@ -151,7 +151,7 @@ contract GasTokenInvariant is TestBase {
         vm.expectRevert();
         new GhostGasTokenL3(1);
         vm.expectRevert();
-        new GhostTokenL2();
+        new GhostTokenL2(0);
         vm.expectRevert();
         new GasToken("Ghost Token", "GST", 18, 1e18, address(this));
     }

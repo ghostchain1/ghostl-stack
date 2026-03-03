@@ -59,3 +59,21 @@ export const GHOSTAI_RISK_ORACLE_ADDRESS = optional("GHOSTAI_RISK_ORACLE_ADDRESS
 
 // ─── Token expiry ─────────────────────────────────────────────────────────────
 export const TASK_TOKEN_TTL_SECONDS = parseInt(optional("TASK_TOKEN_TTL_SECONDS", "300"), 10);
+
+// ─── Autonomous Code Guardian (ACG) ───────────────────────────────────────────
+// GitHub integration (token comes from Vault at runtime; never hardcoded)
+export const ACG_GITHUB_TOKEN         = optional("ACG_GITHUB_TOKEN", "");
+export const ACG_GITHUB_OWNER         = optional("ACG_GITHUB_OWNER", "ghostchain1");
+export const ACG_GITHUB_REPO          = optional("ACG_GITHUB_REPO", "ghostl-stack");
+export const ACG_REPO_URL             = optional("ACG_REPO_URL", "https://github.com/ghostchain1/ghostl-stack");
+export const ACG_REPO_DEFAULT_BRANCH  = optional("ACG_REPO_DEFAULT_BRANCH", "main");
+
+// Pipeline behaviour
+export const ACG_MAX_DEBUG_ITERS      = parseInt(optional("ACG_MAX_DEBUG_ITERS", "3"), 10);
+export const ACG_COVERAGE_FLOOR_PCT   = parseFloat(optional("ACG_COVERAGE_FLOOR_PCT", "80"));
+export const ACG_FAIL_ON_HIGH         = optional("ACG_FAIL_ON_HIGH", "true") === "true";
+
+// Sentinel thresholds
+export const ACG_SENTINEL_WINDOW_SECONDS                  = parseInt(optional("ACG_SENTINEL_WINDOW_SECONDS", "300"), 10);
+export const ACG_SENTINEL_ERROR_RATE_ROLLBACK_MULTIPLIER  = parseFloat(optional("ACG_SENTINEL_ERROR_RATE_ROLLBACK_MULTIPLIER", "5"));
+export const ACG_SENTINEL_LATENCY_HOTFIX_MULTIPLIER       = parseFloat(optional("ACG_SENTINEL_LATENCY_HOTFIX_MULTIPLIER", "2"));
