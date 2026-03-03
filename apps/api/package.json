@@ -26,7 +26,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^8.0.1",
-    "qs": "6.14.2",
+    "qs": "6.15.0",
     "session-file-store": "^1.5.0",
     "ws": "^8.19.0",
     "zod": "^4.3.6"
@@ -36,7 +36,7 @@
     "@types/express": "^5.0.6",
     "@types/express-session": "^1.17.7",
     "@types/jsonwebtoken": "^9.0.6",
-    "@types/node": "^25.3.2",
+    "@types/node": "^25.3.3",
     "@types/nodemailer": "^7.0.11",
     "@types/session-file-store": "^1.2.5",
     "@types/ws": "^8.5.12",
