@@ -3,6 +3,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import nextPlugin from '@next/eslint-plugin-next';
 import prettier from 'eslint-config-prettier';
+import reactHooks from 'eslint-plugin-react-hooks';
 
 export default tseslint.config(
   {
@@ -31,7 +32,8 @@ export default tseslint.config(
     },
     plugins: {
       '@next/next': nextPlugin,
-      '@typescript-eslint': tseslint.plugin
+      '@typescript-eslint': tseslint.plugin,
+      'react-hooks': reactHooks
     },
     settings: {
       next: {
@@ -43,6 +45,7 @@ export default tseslint.config(
       ...tseslint.configs.recommended.rules,
       ...nextPlugin.configs.recommended.rules,
       ...(prettier.rules || {}),
+      ...reactHooks.configs.recommended.rules,
       'next/no-html-link-for-pages': 'off',
       'no-undef': 'off',
       'no-useless-assignment': 'off',

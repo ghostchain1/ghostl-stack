@@ -1,0 +1,116 @@
+/**
+ * Ghost Wallet integration helper
+ *
+ * Ghost Wallet is GhostChain's native browser extension wallet.
+ * It follows the EIP-1193 provider standard and self-identifies via:
+ *   • window.ghostWallet          (primary injection)
+ *   • EIP-6963 RDNS: "io.ghostchain.wallet"
+ *   • Falls back to window.ethereum if the above are absent
+ */
+
+export const GHOST_WALLET_RDNS = "io.ghostchain.wallet";
+export const GHOST_CHAIN_L2_ID = 471; // GhostChain L2 chain id
+
+export interface GhostWalletProvider {
+  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+  on: (event: string, handler: (...args: unknown[]) => void) => void;
+  removeListener: (event: string, handler: (...args: unknown[]) => void) => void;
+  isGhostWallet?: boolean;
+}
+
+declare global {
+  interface Window {
+    ghostWallet?: GhostWalletProvider;
+    ethereum?: GhostWalletProvider & { isMetaMask?: boolean };
+  }
+}
+
+// ─── Provider resolution ───────────────────────────────────────────────────
+
+/** Resolve the best available EIP-1193 provider, favouring Ghost Wallet. */
+export function resolveProvider(): GhostWalletProvider | null {
+  if (typeof window === "undefined") return null;
+
+  // 1. Native Ghost Wallet injection
+  if (window.ghostWallet) return window.ghostWallet;
+
+  // 2. EIP-6963 multi-provider list (injected as window.ethereum.providers in some setups)
+  if (Array.isArray((window as unknown as { ethereum?: { providers?: GhostWalletProvider[] } }).ethereum?.providers)) {
+    const providers = (window as unknown as { ethereum: { providers: GhostWalletProvider[] } }).ethereum.providers;
+    const ghost = providers.find((p) => p.isGhostWallet);
+    if (ghost) return ghost;
+  }
+
+  // 3. Fallback to generic window.ethereum
+  if (window.ethereum) return window.ethereum;
+
+  return null;
+}
+
+// ─── Connection helpers ────────────────────────────────────────────────────
+
+export async function requestAccounts(provider: GhostWalletProvider): Promise<string[]> {
+  return provider.request({ method: "eth_requestAccounts" }) as Promise<string[]>;
+}
+
+export async function getAccounts(provider: GhostWalletProvider): Promise<string[]> {
+  return provider.request({ method: "eth_accounts" }) as Promise<string[]>;
+}
+
+export async function getChainId(provider: GhostWalletProvider): Promise<number> {
+  const raw = (await provider.request({ method: "eth_chainId" })) as string;
+  return parseInt(raw, 16);
+}
+
+export async function getBalance(
+  provider: GhostWalletProvider,
+  address: string,
+): Promise<bigint> {
+  const hex = (await provider.request({
+    method: "eth_getBalance",
+    params: [address, "latest"],
+  })) as string;
+  return BigInt(hex);
+}
+
+/** Ask the wallet to switch to GhostChain L2. */
+export async function switchToGhostChain(provider: GhostWalletProvider): Promise<void> {
+  try {
+    await provider.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: "0x" + GHOST_CHAIN_L2_ID.toString(16) }],
+    });
+  } catch (err: unknown) {
+    // Error code 4902 = chain not added yet
+    if ((err as { code?: number }).code === 4902) {
+      await provider.request({
+        method: "wallet_addEthereumChain",
+        params: [
+          {
+            chainId: "0x" + GHOST_CHAIN_L2_ID.toString(16),
+            chainName: "GhostChain L2",
+            nativeCurrency: { name: "Ghost", symbol: "GST", decimals: 18 },
+            rpcUrls: [
+              process.env.NEXT_PUBLIC_L2_RPC_URL ?? "https://rpc.l2.ghostchain.io",
+            ],
+            blockExplorerUrls: ["https://explorer.l2.ghostchain.io"],
+          },
+        ],
+      });
+    } else {
+      throw err;
+    }
+  }
+}
+
+// ─── Formatting helpers ────────────────────────────────────────────────────
+
+export function shortAddress(addr: string): string {
+  if (!addr) return "";
+  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+}
+
+export function formatGST(wei: bigint, decimals = 4): string {
+  const eth = Number(wei) / 1e18;
+  return eth.toFixed(decimals);
+}

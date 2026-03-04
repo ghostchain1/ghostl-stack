@@ -1,0 +1,67 @@
+# docker-compose.ghostx.yml
+# Ghost X – Layer 2 Order Book Exchange
+#
+# Usage:
+#   docker compose -f docker-compose.ghostx.yml up -d
+#
+# Requires the L2 nodes to be running (docker-compose.yml or compose.testnet.yml).
+# Copy .env.ghostx.example → .env.ghostx and fill in contract addresses after deployment.
+
+name: ghostx
+
+services:
+  # ── Off-chain matching engine / REST + WS API ───────────────────────────────
+  ghostx-api:
+    build:
+      context: ./services/ghostx-api
+      dockerfile: Dockerfile
+    image: ghostchain/ghostx-api:local
+    container_name: ghostx-api
+    restart: unless-stopped
+    env_file:
+      - ./services/ghostx-api/.env
+    environment:
+      PORT: "4100"
+    ports:
+      - "4100:4100"
+    networks:
+      - ghostx-net
+      - ghost-l2          # shared with L2 node stack
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4100/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Frontend trading UI ─────────────────────────────────────────────────────
+  ghostx-web:
+    build:
+      context: ./apps/ghostx
+      dockerfile: Dockerfile
+    image: ghostchain/ghostx-web:local
+    container_name: ghostx-web
+    restart: unless-stopped
+    env_file:
+      - ./apps/ghostx/.env
+    environment:
+      PORT: "4200"
+      GHOSTX_API_URL: "http://ghostx-api:4100"
+    ports:
+      - "4200:4200"
+    depends_on:
+      ghostx-api:
+        condition: service_healthy
+    networks:
+      - ghostx-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4200"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+networks:
+  ghostx-net:
+    name: ghostx-net
+  ghost-l2:
+    external: true
+    name: ghost-l2          # must match the network name in docker-compose.yml
