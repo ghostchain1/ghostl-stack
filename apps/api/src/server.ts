@@ -4675,35 +4675,6 @@ app.get(['/v1/health', '/health'], async (_req, res) => {
   });
 });
 
-app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  // SECURITY: Log full error details server-side only
-  console.error(
-    JSON.stringify({
-      ts: new Date().toISOString(),
-      level: 'error',
-      correlationId: req.correlationId,
-      message: err.message,
-      stack: err.stack
-    })
-  );
-  // SECURITY: Return generic error message to client, no stack trace
-  res.status(500).json({ 
-    error: 'internal_error', 
-    message: 'An internal error occurred',
-    correlationId: req.correlationId 
-  });
-});
-
-const port = Number(process.env.PORT) || 4000;
-const host = process.env.HOST || '0.0.0.0';
-const shouldListen = require.main === module || process.env.FORCE_LISTEN === 'true';
-if (shouldListen) {
-  app.listen(port, host, () => {
-    console.log(`API listening on ${host}:${port}`);
-  });
-}
-
-export default app;
 app.post(['/v1/webhooks/alerts', '/webhooks/alerts'], requireAdmin, async (req, res) => {
   if (!env.ALERT_WEBHOOK_SECRET) {
     await emitEvent({
@@ -4753,3 +4724,33 @@ app.post(['/v1/webhooks/alerts', '/webhooks/alerts'], requireAdmin, async (req, 
   });
   res.json({ ok: true });
 });
+
+app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  // SECURITY: Log full error details server-side only
+  console.error(
+    JSON.stringify({
+      ts: new Date().toISOString(),
+      level: 'error',
+      correlationId: req.correlationId,
+      message: err.message,
+      stack: err.stack
+    })
+  );
+  // SECURITY: Return generic error message to client, no stack trace
+  res.status(500).json({ 
+    error: 'internal_error', 
+    message: 'An internal error occurred',
+    correlationId: req.correlationId 
+  });
+});
+
+const port = Number(process.env.PORT) || 4000;
+const host = process.env.HOST || '0.0.0.0';
+const shouldListen = require.main === module || process.env.FORCE_LISTEN === 'true';
+if (shouldListen) {
+  app.listen(port, host, () => {
+    console.log(`API listening on ${host}:${port}`);
+  });
+}
+
+export default app;

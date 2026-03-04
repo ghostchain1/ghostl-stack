@@ -15,12 +15,23 @@ on:
   push:
     branches: ["main", "release/**"]
 
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint-typecheck:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: 22.21.0
       - run: npm ci
@@ -30,31 +41,51 @@ jobs:
 
   foundry-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@8789b3e21e6c11b2697f5eb56eddae542f746c10 # v1
       - run: cd contracts && forge test --match-path test/foundry/GhostEconomicRouting.t.sol
       - run: cd contracts && forge test --match-path test/foundry/GhostEconomicGovernanceRisk.t.sol
       - run: cd contracts && forge test --match-path test/foundry/GhostEconomicFlywheel.t.sol
 
   routing-law-gate:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@8789b3e21e6c11b2697f5eb56eddae542f746c10 # v1
       - run: bash scripts/econ/verify-routing-law.sh
 
   governance-gate:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@8789b3e21e6c11b2697f5eb56eddae542f746c10 # v1
       - run: bash scripts/econ/verify-governance-gate.sh
 
   secret-scan:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - name: Secret scan (Trivy)
         uses: aquasecurity/trivy-action@0.30.0
         with:
@@ -66,8 +97,13 @@ jobs:
 
   trivy:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - name: Trivy FS scan
         uses: aquasecurity/trivy-action@0.30.0
         with:
@@ -79,8 +115,13 @@ jobs:
 
   docker-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - name: Build hg images
         run: |
           docker build -t hg-treasury-agent:ci services/hg-treasury-agent
@@ -90,14 +131,19 @@ jobs:
 
   promotion-gate:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
     steps:
       - name: Promotion gate not required on non-main refs
         if: github.ref != 'refs/heads/main'
         run: |
           echo "Promotion gate only enforced on main; marking job successful for this ref."
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: github.ref == 'refs/heads/main'
+        with:
+          persist-credentials: false
       - name: Ensure mainnet activation policy script exists
         if: github.ref == 'refs/heads/main'
         run: test -f scripts/econ/verify-governance-gate.sh
