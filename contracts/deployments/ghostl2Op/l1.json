@@ -4,7 +4,7 @@
   "contracts": [
     {
       "name": "OptimisticRollup",
-      "address": "0x7F6D5d1bDFB4b281374285510A845cb140d4367b",
+      "address": "0xE8addD62feD354203d079926a8e563BC1A7FE81e",
       "chainId": 14000101,
       "layer": "l1",
       "abi": [
@@ -91,6 +91,25 @@
             },
             {
               "indexed": true,
+              "internalType": "bytes32",
+              "name": "policyHash",
+              "type": "bytes32"
+            }
+          ],
+          "name": "BatchPolicyHashUpdated",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "uint256",
+              "name": "batchId",
+              "type": "uint256"
+            },
+            {
+              "indexed": true,
               "internalType": "uint256",
               "name": "startBlock",
               "type": "uint256"
@@ -130,12 +149,44 @@
             {
               "indexed": true,
               "internalType": "address",
+              "name": "oracle",
+              "type": "address"
+            }
+          ],
+          "name": "ParentFinalityOracleChanged",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
               "name": "proposer",
               "type": "address"
             }
           ],
           "name": "ProposerChanged",
           "type": "event"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "name": "batchPolicyHash",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
         },
         {
           "inputs": [
@@ -270,6 +321,19 @@
           "type": "function"
         },
         {
+          "inputs": [],
+          "name": "parentFinalityOracle",
+          "outputs": [
+            {
+              "internalType": "contract IStateRootFinalityOracle",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
           "inputs": [
             {
               "internalType": "uint256",
@@ -288,6 +352,40 @@
             }
           ],
           "name": "proposeBatch",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "batchId",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "startBlock",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "endBlock",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "root",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "policyHash",
+              "type": "bytes32"
+            }
+          ],
+          "name": "proposeBatchWithPolicy",
           "outputs": [
             {
               "internalType": "uint256",
@@ -332,12 +430,43 @@
         {
           "inputs": [
             {
+              "internalType": "uint256",
+              "name": "batchId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "policyHash",
+              "type": "bytes32"
+            }
+          ],
+          "name": "setBatchPolicyHash",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
               "internalType": "address",
               "name": "newOwner",
               "type": "address"
             }
           ],
           "name": "setOwner",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "oracle",
+              "type": "address"
+            }
+          ],
+          "name": "setParentFinalityOracle",
           "outputs": [],
           "stateMutability": "nonpayable",
           "type": "function"
@@ -390,13 +519,13 @@
           "type": "function"
         }
       ],
-      "abiHash": "08ad6f80cb56626053e2732a0989d23817d180ff4019c7183b587100ed7c7a16",
-      "version": "0.0.1",
-      "deployedAt": "2026-02-02T08:09:41.675Z"
+      "abiHash": "9684eb9764ff27f0b97dd94682726b7d93fd213772168d5bcb4af56ca3e521be",
+      "version": "1.0.0",
+      "deployedAt": "2026-03-04T02:30:39.105Z"
     },
     {
       "name": "GhostConstitution",
-      "address": "0x455A2aC2F917956c0f2664992C1DDd9Cd6562976",
+      "address": "0xe039608E695D21aB11675EBBA00261A0e750526c",
       "chainId": 14000101,
       "layer": "l1",
       "abi": [
@@ -890,12 +1019,12 @@
         }
       ],
       "abiHash": "ea2f12a7c5fea46d69a26ecec9c3484b3bc470cafe48bffec3273e9152c32087",
-      "version": "0.0.1",
-      "deployedAt": "2026-02-02T08:09:41.749Z"
+      "version": "1.0.0",
+      "deployedAt": "2026-03-04T02:30:43.777Z"
     },
     {
       "name": "GhostNFT",
-      "address": "0x4dcA4bFA0bAa0C8ce741b92B255D967599d994f0",
+      "address": "0x071586BA1b380B00B793Cc336fe01106B0BFbE6D",
       "chainId": 14000101,
       "layer": "l1",
       "abi": [
@@ -1426,8 +1555,8 @@
         }
       ],
       "abiHash": "a5ef261441c0af31fe5584f26cceaced5f74983ebf3cf915d3790b9ddd98716c",
-      "version": "0.0.1",
-      "deployedAt": "2026-02-02T08:09:41.826Z"
+      "version": "1.0.0",
+      "deployedAt": "2026-03-04T02:30:46.438Z"
     }
   ]
 }
