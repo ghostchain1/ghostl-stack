@@ -35,4 +35,4 @@ jobs:
           PY
 
       - name: Run actionlint
-        uses: rhysd/actionlint@v1
+        uses: rhysd/actionlint@v1.7.11
