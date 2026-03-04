@@ -1,0 +1,7 @@
+# GhostStack Hypervisor Supervisor — Python dependencies
+#
+# Install on the hypervisor host:
+#   pip install -r requirements.txt
+# OR via apt (Ubuntu 22.04+):
+#   apt-get install -y python3-prometheus-client
+prometheus-client>=0.14.0

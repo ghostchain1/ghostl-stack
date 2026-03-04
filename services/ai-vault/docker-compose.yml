@@ -26,6 +26,7 @@ services:
       - AI_VAULT_ROTATE_INTERVAL_MS=${AI_VAULT_ROTATE_INTERVAL_MS:-900000}
     volumes:
       - ${HOST_SERVICES_ROOT:-..}:/services:ro
+      - ./policy.generated.json:/app/policy.generated.json:rw
     ports:
       - "7710:7710"
     restart: unless-stopped

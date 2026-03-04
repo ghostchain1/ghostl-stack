@@ -26,8 +26,12 @@
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
+# Shared inventory — provides VM IPs, preflight_virsh(), preflight_ssh().
+# shellcheck disable=SC1091
+source "$(dirname "${BASH_SOURCE[0]}")/inventory.sh"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_DIR="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
 # ── Defaults ──────────────────────────────────────────────────────────────────
 TARGET=""          # testnet | mainnet
@@ -72,11 +76,66 @@ if [ -z "$TARGET" ]; then
   exit 1
 fi
 
+log() { echo "[push-to-vm] $(date -u +%H:%M:%SZ) $*"; }
+die() { log "ERROR: $*"; exit 1; }
+
 PROVISION_DIR="$REPO_DIR/infra/hypervisor/provision"
 DEPLOY_DIR="$REPO_DIR/contracts/deployments/ghostl2"
 
-log() { echo "[push-to-vm] $(date -u +%H:%M:%SZ) $*"; }
-die() { log "ERROR: $*"; exit 1; }
+# Resolve SSH key: prefer ghostchain_deploy; fall back to id_ed25519 so the
+# script works immediately from ghostchain-devnet before the deploy key is
+# distributed to other VMs.
+if [ ! -f "$SSH_KEY" ]; then
+  FALLBACK_KEY="$HOME/.ssh/id_ed25519"
+  if [ -f "$FALLBACK_KEY" ]; then
+    log "WARNING: $SSH_KEY not found — falling back to $FALLBACK_KEY"
+    log "       Run 'ssh-keygen -t ed25519 -f ~/.ssh/ghostchain_deploy' on devnet"
+    log "       then distribute ~/.ssh/ghostchain_deploy.pub to all target VMs."
+    SSH_KEY="$FALLBACK_KEY"
+  else
+    die "No SSH key found. Expected $SSH_KEY or $FALLBACK_KEY"
+  fi
+fi
+
+# ── Preflight: verify target VMs exist in libvirt + are SSH-reachable ─────────
+run_preflight() {
+  local target="$1" layer="$2"
+  [ "$DRY_RUN" = "1" ] && { log "[DRY-RUN] skipping preflight"; return 0; }
+
+  log "Running preflight checks for --target ${target} --layer ${layer}..."
+
+  local l1_vms=() l2_vms=() l3_vms=() target_vms
+  if [ "$target" = "testnet" ]; then
+    l1_vms=(ghostchain-testnet-l1 ghost-testnet-validator)
+    l2_vms=(ghostl2-testnet)
+    l3_vms=(ghostl3-testnet)
+  else
+    l1_vms=(ghostchain-mainnet-l1 ghost-mainnet-validator)
+    l2_vms=(ghostl2-mainnet)
+    l3_vms=(ghostl3-mainnet)
+  fi
+
+  case "$layer" in
+    l1)  target_vms=("${l1_vms[@]}") ;;
+    l2)  target_vms=("${l2_vms[@]}") ;;
+    l3)  target_vms=("${l3_vms[@]}") ;;
+    all) target_vms=("${l1_vms[@]}" "${l2_vms[@]}" "${l3_vms[@]}") ;;
+    *)   die "Unknown layer: $layer" ;;
+  esac
+
+  # 1) libvirt domain existence
+  preflight_virsh "${target_vms[@]}" || die "Preflight failed (virsh). Run create-vms.sh first."
+
+  # 2) SSH reachability
+  local ssh_targets=()
+  for vm in "${target_vms[@]}"; do
+    local ip; ip=$(vm_ip "$vm")
+    [ -n "$ip" ] && ssh_targets+=("${SSH_USER}@${ip}")
+  done
+  preflight_ssh "${ssh_targets[@]}" || die "Preflight failed (SSH). Check keys and that VMs are running."
+
+  log "Preflight OK — all ${#target_vms[@]} target VM(s) reachable."
+}
 
 ssh_run() {
   local ip="$1"; shift
@@ -197,9 +256,9 @@ push_rollup_json() {
   local src="$REPO_DIR/chains/${layer}/rollup.json"
   if [ -f "$src" ]; then
     log "  Pushing ${layer}/rollup.json to ${ip}..."
-    ssh_run "$ip" "mkdir -p /etc/ghostl-stack"
-    scp_push "$src" "$ip" "/etc/ghostl-stack/${layer}-rollup.json"
-    ssh_run "$ip" "chmod 644 /etc/ghostl-stack/${layer}-rollup.json"
+    # SCP to tmp first (ghost user can write there), then sudo-move to /etc
+    scp_push "$src" "$ip" "/tmp/${layer}-rollup.json"
+    ssh_run "$ip" "sudo mkdir -p /etc/ghostl-stack && sudo mv /tmp/${layer}-rollup.json /etc/ghostl-stack/${layer}-rollup.json && sudo chmod 644 /etc/ghostl-stack/${layer}-rollup.json"
   else
     log "  WARNING: ${src} not found; skipping rollup.json push"
   fi
@@ -236,6 +295,12 @@ wait_rpc() {
 }
 
 # ── Main promotion logic ──────────────────────────────────────────────────────
+
+# Preflight: verify all target VMs exist in libvirt and are SSH-reachable
+# before touching anything. This prevents "ghost automation" where the script
+# runs silently against missing VMs and reports false success.
+run_preflight "$TARGET" "$LAYER"
+
 ADDR_BLOCK=""
 if [ "$PROVISION_ONLY" = "0" ]; then
   log "Building promoted address map from devnet deployments..."

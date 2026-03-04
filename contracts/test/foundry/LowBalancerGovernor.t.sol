@@ -37,7 +37,7 @@ contract LowBalancerGovernorTest is TestBase {
         LowBalancerGovernor governor = new LowBalancerGovernor(token, executor, 1 days, 0);
 
         address alice = address(0xA11CE);
-        token.mint(alice, 100 ether);
+        token.mint(alice, 100 * GST_UNIT);
 
         uint256 id = governor.propose(address(0xCAFE), 0, hex"");
 
@@ -46,9 +46,9 @@ contract LowBalancerGovernorTest is TestBase {
         governor.vote(id, true);
 
         vm.prank(alice);
-        token.approve(address(governor), 100 ether);
+        token.approve(address(governor), 100 * GST_UNIT);
         vm.prank(alice);
-        governor.stake(100 ether);
+        governor.stake(100 * GST_UNIT);
 
         vm.prank(alice);
         governor.vote(id, true);
@@ -56,12 +56,12 @@ contract LowBalancerGovernorTest is TestBase {
         (, , , , , , uint64 end, , , , ) = governor.proposals(id);
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(LowBalancerGovernor.Locked.selector, end));
-        governor.withdraw(1 ether);
+        governor.withdraw(1 * GST_UNIT);
 
         vm.warp(uint256(end) + 1);
         vm.prank(alice);
-        governor.withdraw(1 ether);
-        assertEq(token.balanceOf(alice), 1 ether, "withdrawn");
+        governor.withdraw(1 * GST_UNIT);
+        assertEq(token.balanceOf(alice), 1 * GST_UNIT, "withdrawn");
     }
 
     function testQueueRequiresQuorum() public {
@@ -70,13 +70,13 @@ contract LowBalancerGovernorTest is TestBase {
         LowBalancerGovernor governor = new LowBalancerGovernor(token, executor, 1 days, 8000);
 
         address alice = address(0xA11CE);
-        token.mint(alice, 60 ether);
-        token.mint(address(0xB0B), 40 ether); // totalSupply = 100
+        token.mint(alice, 60 * GST_UNIT);
+        token.mint(address(0xB0B), 40 * GST_UNIT); // totalSupply = 100
 
         vm.prank(alice);
-        token.approve(address(governor), 60 ether);
+        token.approve(address(governor), 60 * GST_UNIT);
         vm.prank(alice);
-        governor.stake(60 ether);
+        governor.stake(60 * GST_UNIT);
 
         uint256 id = governor.propose(address(0xCAFE), 0, hex"");
         vm.prank(alice);
@@ -104,13 +104,13 @@ contract LowBalancerGovernorTest is TestBase {
         LowBalancerGovernor governor = new LowBalancerGovernor(token, executor, 1 days, 5000);
 
         address alice = address(0xA11CE);
-        token.mint(alice, 60 ether);
-        token.mint(address(0xB0B), 40 ether); // totalSupply = 100
+        token.mint(alice, 60 * GST_UNIT);
+        token.mint(address(0xB0B), 40 * GST_UNIT); // totalSupply = 100
 
         vm.prank(alice);
-        token.approve(address(governor), 60 ether);
+        token.approve(address(governor), 60 * GST_UNIT);
         vm.prank(alice);
-        governor.stake(60 ether);
+        governor.stake(60 * GST_UNIT);
 
         Box box = new Box();
         bytes memory data = abi.encodeWithSelector(Box.setValue.selector, 123);

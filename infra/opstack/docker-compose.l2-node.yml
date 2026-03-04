@@ -1,0 +1,120 @@
+# Minimal L2 OP-Stack node compose — op-geth + op-node only.
+# Used by ghostl2-provision.sh on remote L2 VMs (testnet: 10.50.99.77, mainnet: 10.50.99.76).
+# Batcher + proposer are added once L2 contracts are deployed.
+#
+# Required env vars (provided via /etc/ghostl-stack/l2-{env}.env):
+#   L2_CHAIN_ID          — e.g. 901 (testnet) / 902 (mainnet)
+#   L1_RPC_HTTP          — L1 fullnode HTTP RPC, e.g. http://10.50.99.71:18545
+#   OPSTACK_IMAGE_TAG    — Docker image tag, default: local
+#   L2_HOST_RPC_PORT     — exposed RPC port, default 29547
+#   L2_HOST_WS           — exposed WS port, default 29548
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-security: &default-security
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  l2-geth:
+    image: local/op-geth:${OPSTACK_IMAGE_TAG:-local}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
+    restart: unless-stopped
+    stop_grace_period: 45s
+    logging: *default-logging
+    ports:
+      - "${L2_RPC_BIND:-0.0.0.0}:${L2_HOST_RPC_PORT:-29547}:8545"
+      - "${L2_HOST_WS:-29548}:8546"
+      - "${L2_METRICS_HOST_PORT:-29606}:6060"
+    volumes:
+      - /opt/ghostl-stack-data/l2-geth:/data
+      - /etc/ghostl-stack/l2-config:/config:ro
+    entrypoint: ["/bin/sh"]
+    command:
+      - -c
+      - |
+        set -e
+        if [ ! -d /data/geth ]; then
+          echo "[l2-geth] initializing genesis..."
+          geth init --state.scheme=hash --datadir /data /config/genesis-l2.json
+        fi
+        exec geth \
+          --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug,txpool \
+          --http.vhosts="*" \
+          --ws --ws.addr=0.0.0.0 --ws.origins="*" \
+          --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts="*" \
+          --authrpc.jwtsecret=/config/jwt.txt \
+          --datadir=/data \
+          --networkid=${L2_CHAIN_ID:-901} \
+          --state.scheme=hash \
+          --gcmode=archive \
+          --metrics --metrics.addr=0.0.0.0 --metrics.port=6060 \
+          --rollup.computependingblock=true \
+          --rollup.enabletxpooladmission=true \
+          --rollup.disabletxpoolgossip=false
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:8545 >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 30s
+    <<: *default-security
+    mem_limit: 4g
+    cpus: "2.0"
+
+  op-node:
+    image: local/op-node:${OPSTACK_IMAGE_TAG:-local}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    logging: *default-logging
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    depends_on:
+      l2-geth:
+        condition: service_healthy
+    volumes:
+      - /opt/ghostl-stack-data/op-node:/data
+      - /etc/ghostl-stack/l2-config:/config:ro
+    command:
+      - op-node
+      - --l1=${L1_RPC_HTTP:-http://host.docker.internal:18545}
+      - --l2=http://l2-geth:8551
+      - --l2.jwt-secret=/config/jwt.txt
+      - --rollup.config=/config/rollup.json
+      - --rpc.addr=0.0.0.0
+      - --rpc.port=9546
+      - --rpc.enable-admin
+      - --rpc.admin-state=/data/admin-state.json
+      - --l1.rpckind=basic
+      - --l1.trustrpc
+      - --p2p.disable
+      - --l1.beacon.ignore
+      - --sequencer.enabled
+      - --sequencer.l1-confs=${SEQUENCER_L1_CONFS:-2}
+      - --l1.runtime-config-reload-interval=30s
+      - --metrics.enabled
+      - --metrics.addr=0.0.0.0
+      - --metrics.port=7300
+    ports:
+      - "${OP_NODE_HOST_PORT:-29546}:9546"
+      - "${OP_NODE_METRICS_HOST_PORT:-7300}:7300"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"optimism_syncStatus\",\"params\":[]}' http://localhost:9546 >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 25s
+    <<: *default-security
+    mem_limit: 2g
+    cpus: "1.5"
+
+networks:
+  default:
+    driver: bridge

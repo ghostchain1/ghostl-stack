@@ -1,6 +1,7 @@
 [profile.default]
 src = "src"
 test = "test"
+script = "script"
 out = "out-codex"
 libs = ["lib"]
 solc_version = "0.8.24"
@@ -31,3 +32,9 @@ fuzz = { runs = 128, failure_persist_dir = "cache-legacy/fuzz" }
 invariant = { runs = 64, failure_persist_dir = "cache-legacy/invariant" }
 via_ir = false
 evm_version = "paris"
+
+# Ghost Name Service test profile — run with: FOUNDRY_PROFILE=gns forge test
+[profile.gns]
+test = "test/gns"
+out = "out-codex"
+cache_path = "cache-codex"

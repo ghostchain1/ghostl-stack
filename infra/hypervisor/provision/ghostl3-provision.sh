@@ -81,18 +81,18 @@ L3_GETH_METRICS_PORT=39660
 
 # ── L3 ports (l3-op-node) ─────────────────────────────────────────────────────
 L3_OP_NODE_RPC_PORT=39546
-L3_ROLLUP_RPC_PORT=19546          # internal container port; host exposes 39546
+L3_ROLLUP_RPC_PORT=19546
 L3_ROLLUP_RPC_HOST_PORT=39546
 L3_OP_NODE_METRICS_PORT=39661
 
 # ── L3 ports (l3-batcher) ─────────────────────────────────────────────────────
-L3_BATCHER_RPC_PORT=18551         # internal; host exposes 39551
+L3_BATCHER_RPC_PORT=18551
 L3_BATCHER_HOST_PORT=39551
 L3_BATCHER_METRICS_PORT=8301
 L3_METRICS_BATCHER_HOST_PORT=39301
 
 # ── L3 ports (l3-proposer) ────────────────────────────────────────────────────
-L3_PROPOSER_RPC_PORT=18560        # internal; host exposes 39560
+L3_PROPOSER_RPC_PORT=18560
 L3_PROPOSER_HOST_PORT=39560
 L3_PROPOSER_METRICS_PORT=8302
 L3_METRICS_PROPOSER_HOST_PORT=39302
@@ -167,12 +167,10 @@ if [ ! -f "$ROLLUP_DST" ]; then
 fi
 
 # ── 6. Compose file ───────────────────────────────────────────────────────────
-COMPOSE_FILE="$REPO_DIR/infra/docker/compose/docker-compose.core.yml"
+# Minimal L3 compose: l3-geth + l3-op-node only (batcher/proposer added once L3 contracts deployed)
+COMPOSE_FILE="$REPO_DIR/infra/opstack/docker-compose.l3-node.yml"
 if [ ! -f "$COMPOSE_FILE" ]; then
-  COMPOSE_FILE="$REPO_DIR/docker-compose.phase3.yml"
-fi
-if [ ! -f "$COMPOSE_FILE" ]; then
-  COMPOSE_FILE="$REPO_DIR/docker-compose.yml"
+  die "L3 compose file not found: $COMPOSE_FILE"
 fi
 
 log "Configuring systemd service: ${SVC_NAME}..."

@@ -1,0 +1,240 @@
+# ────────────────────────────────────────────────────────────────────────────
+# Ghost Name Service (GNS) — Docker Compose (dev / CI)
+#
+# Production deployment uses VM-based provisioning via:
+#   infra/hypervisor/provision/gns-provision.sh
+#
+# This compose file mirrors the VM topology for local development:
+#
+#   gns-postgres       — PostgreSQL 16 (GNS state mirror)
+#   gns-bind9          — BIND9 authoritative DNS for ghostchain.internal
+#   gns-kea-dhcp4      — Kea DHCPv4 (static leases in dev)
+#   gns-kea-ddns       — Kea DHCP-DDNS (dynamic DNS update to Bind9)
+#   gns-kea-ctrl-agent — Kea REST control plane
+#   gns-indexer        — L1 event indexer (writes to postgres)
+#   gns-api            — Public + internal REST API
+#
+# Usage:
+#   cp .env.example .env     # fill in L1_RPC_URL, GNS_REGISTRY_ADDRESS, ...
+#   docker compose up -d
+# ────────────────────────────────────────────────────────────────────────────
+name: gns
+
+x-runtime-hardening: &runtime-hardening
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+
+x-restart: &restart
+  restart: unless-stopped
+
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "20m"
+      max-file: "5"
+      labels: com.ghost.service
+
+networks:
+  gns-internal:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.20.0/24
+
+volumes:
+  gns-pg-data:
+  gns-bind-cache:
+  gns-kea-leases:
+
+services:
+
+  # ── PostgreSQL ────────────────────────────────────────────────────────────
+  gns-postgres:
+    <<: [*runtime-hardening, *restart, *logging]
+    image: postgres:16-alpine
+    container_name: gns-postgres
+    environment:
+      POSTGRES_USER:     gns
+      POSTGRES_PASSWORD: "${GNS_POSTGRES_PASSWORD:-gnsdev}"
+      POSTGRES_DB:       gns
+      PGDATA:            /var/lib/postgresql/data
+    volumes:
+      - gns-pg-data:/var/lib/postgresql/data
+      - ./services/gns-postgres/init.sql:/docker-entrypoint-initdb.d/01-gns-schema.sql:ro
+    ports:
+      - "15432:5432"
+    networks:
+      gns-internal:
+        ipv4_address: 172.30.20.10
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gns -d gns"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    labels:
+      com.ghost.service: gns-postgres
+      com.ghost.layer:   infra
+
+  # ── BIND9 authoritative DNS ───────────────────────────────────────────────
+  gns-bind9:
+    <<: [*restart, *logging]
+    image: internetsystemsconsortium/bind9:9.20
+    container_name: gns-bind9
+    cap_drop: [ALL]
+    cap_add:  [NET_BIND_SERVICE]
+    security_opt: [no-new-privileges:true]
+    volumes:
+      - ./infra/gns/bind/named.conf:/etc/bind/named.conf:ro
+      - ./infra/gns/bind/named.conf.options:/etc/bind/named.conf.options:ro
+      - ./infra/gns/bind/zones:/etc/bind/zones:ro
+      - gns-bind-cache:/var/cache/bind
+    ports:
+      - "15353:53/udp"
+      - "15353:53/tcp"
+    networks:
+      gns-internal:
+        ipv4_address: 172.30.20.30
+    healthcheck:
+      test: ["CMD-SHELL", "dig @127.0.0.1 ghostchain.internal SOA +short 2>&1 | grep -q ns1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    labels:
+      com.ghost.service: gns-bind9
+      com.ghost.layer:   infra
+
+  # ── Kea DHCPv4 ───────────────────────────────────────────────────────────
+  gns-kea-dhcp4:
+    <<: [*restart, *logging]
+    image: ghcr.io/isc-projects/kea:2.6
+    container_name: gns-kea-dhcp4
+    cap_drop: [ALL]
+    cap_add:  [NET_BIND_SERVICE, NET_RAW]
+    security_opt: [no-new-privileges:true]
+    network_mode: host          # DHCP requires direct L2 access in production;
+                                # for dev override with bridge + host-relay
+    volumes:
+      - ./infra/gns/kea/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf:ro
+      - gns-kea-leases:/var/lib/kea
+    command: kea-dhcp4 -c /etc/kea/kea-dhcp4.conf
+    profiles: [kea]             # only start with: docker compose --profile kea up
+    labels:
+      com.ghost.service: gns-kea-dhcp4
+      com.ghost.layer:   infra
+
+  # ── Kea DHCP-DDNS ────────────────────────────────────────────────────────
+  gns-kea-ddns:
+    <<: [*restart, *logging]
+    image: ghcr.io/isc-projects/kea:2.6
+    container_name: gns-kea-ddns
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    network_mode: host
+    volumes:
+      - ./infra/gns/kea/kea-dhcp-ddns.conf:/etc/kea/kea-dhcp-ddns.conf:ro
+      - gns-kea-leases:/var/lib/kea
+    command: kea-dhcp-ddns -c /etc/kea/kea-dhcp-ddns.conf
+    depends_on:
+      gns-bind9:
+        condition: service_healthy
+    profiles: [kea]
+    labels:
+      com.ghost.service: gns-kea-ddns
+      com.ghost.layer:   infra
+
+  # ── Kea Control Agent ────────────────────────────────────────────────────
+  gns-kea-ctrl-agent:
+    <<: [*restart, *logging]
+    image: ghcr.io/isc-projects/kea:2.6
+    container_name: gns-kea-ctrl-agent
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    network_mode: host
+    volumes:
+      - ./infra/gns/kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf:ro
+      - gns-kea-leases:/var/lib/kea
+    command: kea-ctrl-agent -c /etc/kea/kea-ctrl-agent.conf
+    ports:
+      - "18000:8000"
+    profiles: [kea]
+    labels:
+      com.ghost.service: gns-kea-ctrl-agent
+      com.ghost.layer:   infra
+
+  # ── GNS Indexer ───────────────────────────────────────────────────────────
+  gns-indexer:
+    <<: [*runtime-hardening, *restart, *logging]
+    build:
+      context: ./services/gns-indexer
+      dockerfile: Dockerfile
+    image: ghostl/gns-indexer:latest
+    container_name: gns-indexer
+    environment:
+      PORT:                   "8080"
+      LOG_LEVEL:              "${LOG_LEVEL:-info}"
+      NODE_ENV:               production
+      DATABASE_URL:           "postgresql://gns:${GNS_POSTGRES_PASSWORD:-gnsdev}@gns-postgres:5432/gns"
+      L1_RPC_URL:             "${L1_RPC_URL:-http://host.docker.internal:18545}"
+      GNS_REGISTRY_ADDRESS:   "${GNS_REGISTRY_ADDRESS:-}"
+      CONFIRM_BLOCKS:         "2"
+      POLL_INTERVAL_MS:       "12000"
+      GNS_API_URL:            "http://gns-api:3000"
+    ports:
+      - "18080:8080"
+    networks:
+      gns-internal:
+        ipv4_address: 172.30.20.33
+    depends_on:
+      gns-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    labels:
+      com.ghost.service: gns-indexer
+      com.ghost.layer:   infra
+
+  # ── GNS API ───────────────────────────────────────────────────────────────
+  gns-api:
+    <<: [*runtime-hardening, *restart, *logging]
+    build:
+      context: ./services/gns-api
+      dockerfile: Dockerfile
+    image: ghostl/gns-api:latest
+    container_name: gns-api
+    environment:
+      PORT:                   "3000"
+      LOG_LEVEL:              "${LOG_LEVEL:-info}"
+      NODE_ENV:               production
+      DATABASE_URL:           "postgresql://gns:${GNS_POSTGRES_PASSWORD:-gnsdev}@gns-postgres:5432/gns"
+      INDEXER_URL:            "http://gns-indexer:8080"
+      L1_RPC_URL:             "${L1_RPC_URL:-}"
+      GNS_REGISTRY_ADDRESS:   "${GNS_REGISTRY_ADDRESS:-}"
+      GNS_RESOLVER_ADDRESS:   "${GNS_RESOLVER_ADDRESS:-}"
+      KEA_CTRL_URL:           "http://gns-kea-ctrl-agent:8000"
+      INTERNAL_TOKEN:         "${GNS_INTERNAL_TOKEN:-}"
+      RATE_LIMIT_RPM:         "60"
+    ports:
+      - "13000:3000"
+    networks:
+      gns-internal:
+        ipv4_address: 172.30.20.34
+    depends_on:
+      gns-postgres:
+        condition: service_healthy
+      gns-indexer:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    labels:
+      com.ghost.service: gns-api
+      com.ghost.layer:   infra

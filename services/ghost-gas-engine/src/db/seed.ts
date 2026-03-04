@@ -88,7 +88,7 @@ const seedOnce = async () => {
         chain.rpcUrl,
         chain.gasTokenSymbol,
         chain.gasTokenAddress,
-        chain.gasTokenName ?? 'Ghost Token',
+        chain.gasTokenName ?? 'Ghost',
         chain.gasTokenDecimals ?? 18
       ]
     );

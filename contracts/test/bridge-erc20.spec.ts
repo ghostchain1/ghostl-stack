@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 
 const deployTestToken = async (owner: { address: string }) => {
   const Token = await ethers.getContractFactory("TestERC20");
-  const token = await Token.connect(owner).deploy("Ghost Token (L2)", "GHOSTL2", 18);
+  const token = await Token.connect(owner).deploy("Ghost (L2)", "GHOSTL2", 18);
   await token.waitForDeployment();
   return token;
 };
@@ -48,7 +48,7 @@ describe("ERC20 bridge (MVP)", function () {
 
     const deployTx = await factory
       .connect(relayer)
-      .getOrDeployBridgedToken(await l2Token.getAddress(), "Ghost Token (L2) (L3)", "GHOSTL3", 18);
+      .getOrDeployBridgedToken(await l2Token.getAddress(), "Ghost (L2) (L3)", "GHOSTL3", 18);
     const receipt = await deployTx.wait();
     const event = receipt?.logs
       .map((l) => {

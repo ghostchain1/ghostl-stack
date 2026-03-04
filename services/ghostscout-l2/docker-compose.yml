@@ -28,6 +28,9 @@ services:
       SECRET_KEY_BASE: ${GHOSTSCOUT_SECRET_KEY_BASE_L2:-1c9f9b0d27d9c76a8c5f4b2e1d0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a}
       DISABLE_EVISION: 'true'
       LOG_LEVEL: warn
+      # Native gas token — GST (Ghost) on all layers
+      COIN: GST
+      COIN_NAME: Ghost
     ports:
     - ${GHOSTSCOUT_L2_PORT:-18642}:4000
     restart: unless-stopped

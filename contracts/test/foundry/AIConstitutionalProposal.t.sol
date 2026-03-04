@@ -34,8 +34,8 @@ contract AIConstitutionalProposalTest is TestBase {
 
         address alice = address(0xA11CE);
         address bob = address(0xB0B);
-        token.mint(alice, 1000 ether);
-        token.mint(bob, 500 ether);
+        token.mint(alice, 1000 * GST_UNIT);
+        token.mint(bob, 500 * GST_UNIT);
 
         uint256 id = governor.proposalsLength();
         bytes memory data = abi.encodeWithSelector(proposal.ratify.selector, id, bytes32(uint256(123)));

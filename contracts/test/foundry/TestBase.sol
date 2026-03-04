@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "../../src/GhostBrand.sol";
+
 interface Vm {
     function prank(address) external;
     function expectRevert() external;
@@ -17,7 +19,7 @@ interface Vm {
     function ffi(string[] calldata) external returns (bytes memory);
 }
 
-abstract contract TestBase {
+abstract contract TestBase is GhostBrand {
     Vm internal constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
     receive() external payable {}

@@ -9,7 +9,7 @@ contract FuzzNativeToken is TestBase {
     NativeToken private token;
 
     function setUp() public {
-        token = new NativeToken("Ghost Token", "GST");
+        token = new NativeToken("Ghost", "GST");
     }
 
     function testFuzz_transferPreservesSupply(address to, uint256 amount) public {

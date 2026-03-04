@@ -121,7 +121,31 @@ else
   log "devnet.env already exists — skipping (use --update to overwrite)"
 fi
 
-# ── 4. Tooling (Foundry + Node) ───────────────────────────────────────────────
+# ── 4. SSH deploy key for push-to-vm.sh ─────────────────────────────────────
+DEPLOY_KEY="/home/ghost/.ssh/ghostchain_deploy"
+if [ ! -f "${DEPLOY_KEY}" ]; then
+  log "Generating ghostchain_deploy SSH keypair..."
+  sudo -u ghost ssh-keygen -t ed25519 -N "" -C "ghostchain-devnet-deploy" -f "${DEPLOY_KEY}"
+else
+  log "Deploy key already exists at ${DEPLOY_KEY}"
+fi
+log ""
+log "  ══════════════════════════════════════════════════════════════════"
+log "  IMPORTANT — add this public key to all target VMs' authorized_keys"
+log "  (ghostchain-testnet-l1, ghost-testnet-validator, ghostl2-testnet,"
+log "   ghostl3-testnet, ghostchain-mainnet-l1, ghost-mainnet-validator,"
+log "   ghostl2-mainnet, ghostl3-mainnet)"
+log ""
+log "  Public key:"
+cat "${DEPLOY_KEY}.pub"
+log ""
+log "  From the hypervisor run:"
+log "    bash push-to-vm.sh --target testnet --dry-run   # (uses id_ed25519 until key distributed)"
+log "  Or distribute via inject-devnet-key.sh on the hypervisor."
+log "  ══════════════════════════════════════════════════════════════════"
+log ""
+
+# ── 5. Tooling (Foundry + Node) ───────────────────────────────────────────────
 if ! command -v forge &>/dev/null; then
   log "Installing Foundry..."
   curl -fsSL https://foundry.paradigm.xyz | bash
@@ -143,7 +167,7 @@ if ! command -v pnpm &>/dev/null; then
   npm install -g pnpm
 fi
 
-# ── 5. Systemd — ghostdevnet (docker compose full stack) ─────────────────────
+# ── 6. Systemd — ghostdevnet (docker compose full stack) ─────────────────────
 COMPOSE_FILE="$REPO_DIR/infra/docker/compose/docker-compose.core.yml"
 
 # Fallback if the core compose lives elsewhere
@@ -175,7 +199,7 @@ SyslogIdentifier=ghostdevnet
 WantedBy=multi-user.target
 SERVICE
 
-# ── 6. Health check ───────────────────────────────────────────────────────────
+# ── 7. Health check ───────────────────────────────────────────────────────────
 cat > /usr/local/bin/ghostdevnet-health <<'HEALTH'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -222,7 +246,7 @@ echo "--- ok=${ok} fail=${fail} ---"
 HEALTH
 chmod +x /usr/local/bin/ghostdevnet-health
 
-# ── 7. Health timer ───────────────────────────────────────────────────────────
+# ── 8. Health timer ───────────────────────────────────────────────────────────
 cat > /etc/systemd/system/ghostdevnet-health.service <<HSVC
 [Unit]
 Description=GhostDevnet health check
@@ -247,7 +271,7 @@ Unit=ghostdevnet-health.service
 WantedBy=timers.target
 HTIMER
 
-# ── 8. Reload + enable ────────────────────────────────────────────────────────
+# ── 9. Reload + enable ────────────────────────────────────────────────────────
 systemctl daemon-reload
 systemctl enable ghostdevnet.service
 systemctl enable ghostdevnet-health.timer

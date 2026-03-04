@@ -128,14 +128,6 @@
       "networks": {
         "default": null
       },
-      "ports": [
-        {
-          "mode": "ingress",
-          "protocol": "tcp",
-          "published": "3100",
-          "target": 3100
-        }
-      ],
       "restart": "unless-stopped",
       "volumes": [
         {

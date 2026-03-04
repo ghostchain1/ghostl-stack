@@ -12,7 +12,7 @@ contract FuzzTreasury is TestBase {
     address private executorV2 = address(0xC0DE);
 
     function setUp() public payable {
-        token = new NativeToken("Ghost Token", "GST");
+        token = new NativeToken("Ghost", "GST");
         treasury = new Treasury(IERC20Balance(address(token)), executor, executorV2);
         token.mint(address(treasury), 1000e18);
     }

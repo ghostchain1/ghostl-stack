@@ -626,7 +626,7 @@ export function WalletClient() {
                 </select>
                 <input
                   className="input"
-                  placeholder="Amount GTK"
+                  placeholder="Amount GST"
                   value={fundAmount}
                   onChange={(e) => setFundAmount(e.target.value)}
                 />

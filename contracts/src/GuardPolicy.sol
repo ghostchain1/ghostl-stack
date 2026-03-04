@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-contract GuardPolicy {
+import "./GhostBrand.sol";
+
+contract GuardPolicy is GhostBrand {
     enum Mode { ALLOW, DELAY, PAUSE }
 
     address public owner;
@@ -61,7 +63,7 @@ contract GuardPolicy {
 
         uint256 r = riskScore[actor];
         // simple severity bump for big amounts (tune later)
-        if (amount >= 100 ether && r < 100) r += 15;
+        if (amount >= 100 * GST_UNIT && r < 100) r += 15; // 100 GST threshold
         if (r > 100) r = 100;
 
         if (r >= riskThreshold) {

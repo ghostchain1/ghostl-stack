@@ -101,7 +101,7 @@ contract SlashingManagerPolicyGuardTest is TestBase {
             spikeThresholdBps: 500,
             windowSeconds: 300,
             violationPenaltyBps: 1_000,
-            minBondGHOST: 10 ether
+            minBondGHOST: 10 * GST_UNIT
         });
     }
 

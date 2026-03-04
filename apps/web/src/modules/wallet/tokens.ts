@@ -47,19 +47,19 @@ const envTokens: TokenConfig[] = [
 export const defaultTokens: TokenConfig[] = [
   {
     chain: 'l1',
-    symbol: process.env.NEXT_PUBLIC_L1_NATIVE_SYMBOL || 'GTK',
+    symbol: process.env.NEXT_PUBLIC_L1_NATIVE_SYMBOL || 'GST',
     decimals: Number(process.env.NEXT_PUBLIC_L1_NATIVE_DECIMALS || 18),
     type: 'native'
   },
   {
     chain: 'l2',
-    symbol: process.env.NEXT_PUBLIC_L2_NATIVE_SYMBOL || 'GTL2',
+    symbol: process.env.NEXT_PUBLIC_L2_NATIVE_SYMBOL || 'GST',
     decimals: Number(process.env.NEXT_PUBLIC_L2_NATIVE_DECIMALS || 18),
     type: 'native'
   },
   {
     chain: 'l3',
-    symbol: process.env.NEXT_PUBLIC_L3_NATIVE_SYMBOL || 'GTL3',
+    symbol: process.env.NEXT_PUBLIC_L3_NATIVE_SYMBOL || 'GST',
     decimals: Number(process.env.NEXT_PUBLIC_L3_NATIVE_DECIMALS || 18),
     type: 'native'
   },

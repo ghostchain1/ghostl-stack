@@ -25,9 +25,9 @@ contract GSTInvariantTest is Test {
         assertEq(l3.symbol(), "GST");
         assertEq(legacyL2.symbol(), "GST");
 
-        assertEq(l2.name(), "Ghost Token");
-        assertEq(l3.name(), "Ghost Token");
-        assertEq(legacyL2.name(), "Ghost Token");
+        assertEq(l2.name(), "Ghost");
+        assertEq(l3.name(), "Ghost");
+        assertEq(legacyL2.name(), "Ghost");
     }
 
     function test_no_forbidden_branding_in_frontdoor_configs() external view {

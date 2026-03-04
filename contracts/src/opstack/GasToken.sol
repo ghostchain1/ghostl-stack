@@ -31,7 +31,7 @@ contract GasToken {
         _decimals;
         _initialSupply;
         _recipient;
-        name = "Ghost Token";
+        name = "Ghost";
         symbol = "GST";
         decimals = 18;
         if (msg.sender != CANONICAL_GAS_TOKEN) {

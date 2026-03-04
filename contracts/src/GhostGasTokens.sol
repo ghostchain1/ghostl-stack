@@ -2,10 +2,16 @@
 pragma solidity ^0.8.24;
 
 import "./ERC20.sol";
+import "./GhostBrand.sol";
 
-contract GhostGasTokenBase is ERC20 {
-    /// @dev Canonical GhostChain gas token (L1) used across all layers.
-    address internal constant CANONICAL_GAS_TOKEN = 0x5FbDB2315678afecb367f032d93F642f64180aa3;
+contract GhostGasTokenBase is ERC20, GhostBrand {
+    /// @dev Canonical GhostChain gas token address — must be deployed before this contract.
+    address internal constant CANONICAL_GAS_TOKEN = CANONICAL_GST;
+
+    /// @dev Authorized deployer EOA for initial chain setup.
+    ///      After deployment, ownership should be transferred to CANONICAL_GAS_TOKEN.
+    address internal constant AUTHORIZED_DEPLOYER  = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+
     error CanonicalGasTokenOnly(address canonical);
 
     address public owner;
@@ -30,14 +36,11 @@ contract GhostGasTokenBase is ERC20 {
         uint8 decimals_,
         uint256 initialSupply
     ) ERC20(name_, symbol_, decimals_) {
-        // Per-layer gas token deployment is forbidden. Use the canonical L1 token address.
-        name_;
-        symbol_;
-        decimals_;
-        initialSupply;
-        if (msg.sender != CANONICAL_GAS_TOKEN) {
+        if (msg.sender != CANONICAL_GAS_TOKEN && msg.sender != AUTHORIZED_DEPLOYER) {
             revert CanonicalGasTokenOnly(CANONICAL_GAS_TOKEN);
         }
+        owner = msg.sender;
+        if (initialSupply > 0) _mint(msg.sender, initialSupply);
     }
 
     function setOwner(address newOwner) external onlyOwner {
@@ -65,12 +68,12 @@ contract GhostGasTokenBase is ERC20 {
 
 contract GhostGasTokenL2 is GhostGasTokenBase {
     constructor(uint256 initialSupply)
-        GhostGasTokenBase("Ghost Token", "GST", 18, initialSupply)
+        GhostGasTokenBase("Ghost", "GST", 18, initialSupply)
     {}
 }
 
 contract GhostGasTokenL3 is GhostGasTokenBase {
     constructor(uint256 initialSupply)
-        GhostGasTokenBase("Ghost Token", "GST", 18, initialSupply)
+        GhostGasTokenBase("Ghost", "GST", 18, initialSupply)
     {}
 }

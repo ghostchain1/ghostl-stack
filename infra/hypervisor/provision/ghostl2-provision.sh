@@ -155,13 +155,10 @@ if [ ! -f "$ROLLUP_DST" ]; then
 fi
 
 # ── 6. Compose file ───────────────────────────────────────────────────────────
-COMPOSE_FILE="$REPO_DIR/infra/docker/compose/docker-compose.core.yml"
+# Minimal L2 compose: op-geth + op-node only (batcher/proposer added once contracts are deployed)
+COMPOSE_FILE="$REPO_DIR/infra/opstack/docker-compose.l2-node.yml"
 if [ ! -f "$COMPOSE_FILE" ]; then
-  # Fallback to phase3 compose or main
-  COMPOSE_FILE="$REPO_DIR/docker-compose.phase3.yml"
-fi
-if [ ! -f "$COMPOSE_FILE" ]; then
-  COMPOSE_FILE="$REPO_DIR/docker-compose.yml"
+  die "L2 compose file not found: $COMPOSE_FILE"
 fi
 
 log "Configuring systemd service: ${SVC_NAME}..."

@@ -7,9 +7,9 @@ import "../../src/governance/ProposalExecutor.sol";
 import "../../src/common/ERC20.sol";
 import "../../src/common/Ownable.sol";
 
-contract GovToken is ERC20 {
+contract GovToken is ERC20, GhostBrand {
     constructor() ERC20("Gov", "GOV", 18) {
-        _mint(msg.sender, 1_000_000 ether);
+        _mint(msg.sender, 1_000_000 * GST_UNIT);
     }
 }
 

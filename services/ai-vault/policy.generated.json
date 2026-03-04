@@ -13,6 +13,37 @@
         "GET",
         "LIST"
       ]
+    },
+    {
+      "pathPrefix": "/v1/ghostchain/data/l1",
+      "methods": [
+        "GET",
+        "POST",
+        "PUT"
+      ]
+    },
+    {
+      "pathPrefix": "/v1/ghostchain/data/l2",
+      "methods": [
+        "GET",
+        "POST",
+        "PUT"
+      ]
+    },
+    {
+      "pathPrefix": "/v1/ghostchain/data/l3",
+      "methods": [
+        "GET",
+        "POST",
+        "PUT"
+      ]
+    },
+    {
+      "pathPrefix": "/v1/ghostchain/metadata",
+      "methods": [
+        "GET",
+        "LIST"
+      ]
     }
   ],
   "deny": [

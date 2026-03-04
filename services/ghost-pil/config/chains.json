@@ -2,7 +2,7 @@
   "chains": [
     {
       "key": "l1",
-      "chainId": 901,
+      "chainId": 14000101,
       "name": "GhostChain",
       "type": "L1",
       "rpcUrl": "http://host.docker.internal:18545",
@@ -11,7 +11,7 @@
     },
     {
       "key": "l2",
-      "chainId": 902,
+      "chainId": 901,
       "name": "GhostL2",
       "type": "L2",
       "rpcUrl": "http://host.docker.internal:28545",

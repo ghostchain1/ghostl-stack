@@ -71,7 +71,7 @@ const POLICY_NATIVE_TOKEN_NAME_HASH = ethers.id('ghost.policy.native.token.name.
 
 const EVIDENCE_HASH = ethers.id('ghost.evidence.gst_constitution.v1');
 const SYMBOL = 'GST';
-const NAME = 'Ghost Token';
+const NAME = 'Ghost';
 type ProposalCall = ReturnType<typeof buildCall>;
 
 function pushBooleanPolicy(calls: ProposalCall[], policyRegistry: string, policyKey: string) {

@@ -48,29 +48,29 @@ contract L2L3BridgeCascadingFinalityTest is TestBase {
         bridge.setEnforceHierarchicalFinality(true);
 
         token = new TestERC20("Ghost Test", "GTST", 18);
-        token.mint(address(this), 1000 ether);
+        token.mint(address(this), 1000 * GST_UNIT);
         token.approve(address(bridge), type(uint256).max);
     }
 
     function testL2FinalizeFailsBeforeL1Confirmation() public {
-        bridge.depositToL3(address(this), 1 ether, 1);
+        bridge.depositToL3(address(this), 1 * GST_UNIT, 1);
 
         vm.prank(RELAYER);
         vm.expectRevert(bytes("L2_NOT_FINALIZED_ON_L1"));
-        bridge.finalizeToL3WithFinality(address(this), address(this), 1 ether, 1, l2Root);
+        bridge.finalizeToL3WithFinality(address(this), address(this), 1 * GST_UNIT, 1, l2Root);
     }
 
     function testL3ReleaseFailsWithoutRecursiveFinality() public {
-        bridge.depositERC20ToL3(address(token), address(this), 2 ether, 2);
+        bridge.depositERC20ToL3(address(token), address(this), 2 * GST_UNIT, 2);
 
         vm.prank(RELAYER);
         vm.expectRevert(bytes("L2_NOT_FINALIZED_ON_L1"));
-        bridge.finalizeERC20ToL3WithFinality(address(token), address(this), address(this), 2 ether, 2, l2Root);
+        bridge.finalizeERC20ToL3WithFinality(address(token), address(this), address(this), 2 * GST_UNIT, 2, l2Root);
 
         _recordL1AndL2Finality();
 
         vm.prank(RELAYER);
-        bridge.finalizeERC20ToL3WithFinality(address(token), address(this), address(this), 2 ether, 2, l2Root);
+        bridge.finalizeERC20ToL3WithFinality(address(token), address(this), address(this), 2 * GST_UNIT, 2, l2Root);
 
         vm.prank(RELAYER);
         vm.expectRevert(bytes("L3_NOT_FINALIZED_ON_L2"));
@@ -78,7 +78,7 @@ contract L2L3BridgeCascadingFinalityTest is TestBase {
             address(token),
             address(this),
             address(this),
-            2 ether,
+            2 * GST_UNIT,
             2,
             l3Root,
             l2Root
@@ -92,7 +92,7 @@ contract L2L3BridgeCascadingFinalityTest is TestBase {
             address(token),
             address(this),
             address(this),
-            2 ether,
+            2 * GST_UNIT,
             2,
             l3Root,
             keccak256("wrong-parent")
@@ -103,7 +103,7 @@ contract L2L3BridgeCascadingFinalityTest is TestBase {
             address(token),
             address(this),
             address(this),
-            2 ether,
+            2 * GST_UNIT,
             2,
             l3Root,
             l2Root
@@ -112,14 +112,14 @@ contract L2L3BridgeCascadingFinalityTest is TestBase {
 
     function testBridgeFinalityPathBlockedWhenL1FinalityHalted() public {
         _recordL1AndL2Finality();
-        bridge.depositToL3(address(this), 1 ether, 77);
+        bridge.depositToL3(address(this), 1 * GST_UNIT, 77);
 
         vm.prank(GOVERNOR);
         IL1FinalityHaltAdmin(address(l1Oracle)).setFinalityHalted(true);
 
         vm.prank(RELAYER);
         vm.expectRevert(bytes("L1_FINALITY_HALTED"));
-        bridge.finalizeToL3WithFinality(address(this), address(this), 1 ether, 77, l2Root);
+        bridge.finalizeToL3WithFinality(address(this), address(this), 1 * GST_UNIT, 77, l2Root);
     }
 
     function _recordL1AndL2Finality() internal {
