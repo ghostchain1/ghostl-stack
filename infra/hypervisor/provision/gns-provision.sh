@@ -302,11 +302,11 @@ KEACTL
 
   # Install Kea via native apt packages (Ubuntu 24.04 noble universe).
   # ghcr.io/isc-projects/kea requires registry auth; apt is more reliable.
-  log "Enabling universe repo and installing isc-kea packages via apt..."
+  log "Enabling universe repo and installing kea packages via apt..."
   add-apt-repository -y universe 2>&1 | tail -1 || true
   DEBIAN_FRONTEND=noninteractive apt-get update -qq
   DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    isc-kea-dhcp4-server isc-kea-dhcp-ddns-server isc-kea-ctrl-agent
+    kea-dhcp4-server kea-dhcp-ddns-server kea-ctrl-agent
 
   # Install the configs we generated above into /etc/kea/ (the native location)
   install -d -m 750 /etc/kea
@@ -484,8 +484,8 @@ case "$GNS_ROLE" in
     log "gns-bind9 enabled and started."
     ;;
   kea)
-    systemctl enable --now isc-kea-dhcp4-server isc-kea-dhcp-ddns-server isc-kea-ctrl-agent
-    log "isc-kea-dhcp4-server, isc-kea-dhcp-ddns-server, isc-kea-ctrl-agent enabled and started."
+    systemctl enable --now kea-dhcp4-server kea-dhcp-ddns-server kea-ctrl-agent
+    log "kea-dhcp4-server, kea-dhcp-ddns-server, kea-ctrl-agent enabled and started."
     ;;
   postgres)
     systemctl enable --now gns-postgres.service
