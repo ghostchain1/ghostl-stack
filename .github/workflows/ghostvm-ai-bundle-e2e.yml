@@ -55,12 +55,12 @@ jobs:
           fi
           echo "$BUNDLE_JSON" > /tmp/ghostvm-ai-bundle.json
           BUNDLE_ID=$(python3 - <<'PY'
-import json
-from pathlib import Path
-payload = json.loads(Path('/tmp/ghostvm-ai-bundle.json').read_text())
-print(payload['bundle_id'])
-PY
-)
+          import json
+          from pathlib import Path
+          payload = json.loads(Path('/tmp/ghostvm-ai-bundle.json').read_text())
+          print(payload['bundle_id'])
+          PY
+          )
           echo "bundle_id=$BUNDLE_ID" >> "$GITHUB_OUTPUT"
           cp -r "/tmp/ghostvm-ai-bundles/$BUNDLE_ID" "/tmp/$BUNDLE_ID"
 
