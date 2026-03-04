@@ -19,7 +19,7 @@ set -euo pipefail
 ROLE="${ROLE:-node}"
 GHOSTL_STACK_REPO="https://github.com/ghostchain1/ghostl-stack.git"
 GHOSTL_STACK_DIR="/opt/ghostl-stack"
-GETH_IMAGE="ghostl/geth:alltools-v1.13.14"
+GETH_IMAGE="${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}"
 DATA_ROOT="/var/lib/ghostchain"
 SECRETS_DIR="/etc/ghostchain/secrets"
 L1_CHAIN_ID="${L1_CHAIN_ID:-14000101}"

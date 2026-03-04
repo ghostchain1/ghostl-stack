@@ -300,97 +300,25 @@ KEADDNS
 }
 KEACTL
 
-  docker pull "$KEA_IMAGE"
+  # Install Kea via native apt packages (Ubuntu 24.04 noble universe).
+  # ghcr.io/isc-projects/kea requires registry auth; apt is more reliable.
+  log "Installing isc-kea packages via apt..."
+  DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    isc-kea-dhcp4-server isc-kea-dhcp-ddns-server isc-kea-ctrl-agent
 
-  # kea-dhcp4
-  cat > "$UNIT_DIR/gns-kea-dhcp4.service" <<UNIT
-[Unit]
-Description=GNS Kea DHCPv4 Server
-After=docker.service network-online.target
-Requires=docker.service
-
-[Service]
-Type=simple
-Restart=always
-RestartSec=10
-ExecStartPre=-/usr/bin/docker rm -f gns-kea-dhcp4
-ExecStart=/usr/bin/docker run --rm --name gns-kea-dhcp4 \
-  --network host \
-  --cap-drop ALL \
-  --cap-add NET_BIND_SERVICE \
-  --cap-add NET_RAW \
-  --security-opt no-new-privileges:true \
-  -v /etc/gns/kea/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf:ro \
-  -v /var/lib/gns/kea:/var/lib/kea \
-  --memory=512m --cpus=0.5 \
-  --label com.ghost.role=gns-kea-dhcp4 \
-  ${KEA_IMAGE} kea-dhcp4 -c /etc/kea/kea-dhcp4.conf
-ExecStop=/usr/bin/docker stop gns-kea-dhcp4
-
-[Install]
-WantedBy=multi-user.target
-UNIT
-
-  # kea-ddns
-  cat > "$UNIT_DIR/gns-kea-ddns.service" <<UNIT
-[Unit]
-Description=GNS Kea DHCP-DDNS
-After=gns-kea-dhcp4.service
-Requires=docker.service
-
-[Service]
-Type=simple
-Restart=always
-RestartSec=10
-ExecStartPre=-/usr/bin/docker rm -f gns-kea-ddns
-ExecStart=/usr/bin/docker run --rm --name gns-kea-ddns \
-  --network host \
-  --cap-drop ALL \
-  --security-opt no-new-privileges:true \
-  -v /etc/gns/kea/kea-dhcp-ddns.conf:/etc/kea/kea-dhcp-ddns.conf:ro \
-  -v /var/lib/gns/kea:/var/lib/kea \
-  --memory=256m --cpus=0.25 \
-  --label com.ghost.role=gns-kea-ddns \
-  ${KEA_IMAGE} kea-dhcp-ddns -c /etc/kea/kea-dhcp-ddns.conf
-ExecStop=/usr/bin/docker stop gns-kea-ddns
-
-[Install]
-WantedBy=multi-user.target
-UNIT
-
-  # kea-ctrl-agent
-  cat > "$UNIT_DIR/gns-kea-ctrl-agent.service" <<UNIT
-[Unit]
-Description=GNS Kea Control Agent
-After=gns-kea-dhcp4.service
-Requires=docker.service
-
-[Service]
-Type=simple
-Restart=always
-RestartSec=10
-ExecStartPre=-/usr/bin/docker rm -f gns-kea-ctrl-agent
-ExecStart=/usr/bin/docker run --rm --name gns-kea-ctrl-agent \
-  --network host \
-  --cap-drop ALL \
-  --security-opt no-new-privileges:true \
-  -v /etc/gns/kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf:ro \
-  -v /var/lib/gns/kea:/var/lib/kea \
-  -p 8000:8000 \
-  --memory=128m --cpus=0.25 \
-  --label com.ghost.role=gns-kea-ctrl-agent \
-  ${KEA_IMAGE} kea-ctrl-agent -c /etc/kea/kea-ctrl-agent.conf
-ExecStop=/usr/bin/docker stop gns-kea-ctrl-agent
-
-[Install]
-WantedBy=multi-user.target
-UNIT
+  # Install the configs we generated above into /etc/kea/ (the native location)
+  install -d -m 750 /etc/kea
+  cp /etc/gns/kea/kea-dhcp4.conf      /etc/kea/kea-dhcp4.conf
+  cp /etc/gns/kea/kea-dhcp-ddns.conf  /etc/kea/kea-dhcp-ddns.conf
+  cp /etc/gns/kea/kea-ctrl-agent.conf /etc/kea/kea-ctrl-agent.conf
+  chmod 640 /etc/kea/kea-dhcp4.conf /etc/kea/kea-dhcp-ddns.conf /etc/kea/kea-ctrl-agent.conf
   ;;
 
 # ── PostgreSQL (GNS backing DB) ───────────────────────────────────────────────
 postgres)
   log "Provisioning gns-postgres (PostgreSQL 16)..."
   install -d -m 700 /var/lib/gns/postgres
+  install -d -m 750 /etc/gns
 
   GNS_POSTGRES_PASSWORD="${GNS_POSTGRES_PASSWORD:-$(openssl rand -hex 16)}"
   echo "GNS_POSTGRES_PASSWORD=${GNS_POSTGRES_PASSWORD}" > /etc/gns/postgres.env
@@ -554,8 +482,8 @@ case "$GNS_ROLE" in
     log "gns-bind9 enabled and started."
     ;;
   kea)
-    systemctl enable --now gns-kea-dhcp4.service gns-kea-ddns.service gns-kea-ctrl-agent.service
-    log "gns-kea-dhcp4, gns-kea-ddns, gns-kea-ctrl-agent enabled and started."
+    systemctl enable --now isc-kea-dhcp4-server isc-kea-dhcp-ddns-server isc-kea-ctrl-agent
+    log "isc-kea-dhcp4-server, isc-kea-dhcp-ddns-server, isc-kea-ctrl-agent enabled and started."
     ;;
   postgres)
     systemctl enable --now gns-postgres.service
