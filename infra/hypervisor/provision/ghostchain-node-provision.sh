@@ -61,7 +61,7 @@ fi
 
 # ── Data directories ──────────────────────────────────────────────────────────
 install -d -m 755 "$DATA_ROOT"/{bootnode,node1,node2} "$SECRETS_DIR"
-# ghost user owns data dirs (matches the ghost user running inside containers)
+# ghost user (uid 1001, gid 1001) owns data dirs — matches --user 1001:1001 in containers
 chown -R ghost:ghost "$DATA_ROOT"/{bootnode,node1,node2}
 
 # JWT secret (generated locally; operators must paste the canonical one)
@@ -70,7 +70,7 @@ if [ ! -f "$SECRETS_DIR/jwtsecret" ]; then
   openssl rand -hex 32 > "$SECRETS_DIR/jwtsecret"
   log "WARNING: Replace $SECRETS_DIR/jwtsecret with the canonical JWT before starting nodes."
 fi
-# Ensure secrets are readable by container uid 1000
+# Ensure secrets are readable by container user (ghost, uid 1001)
 chmod 644 "$SECRETS_DIR/jwtsecret" 2>/dev/null || true
 chmod 755 "$SECRETS_DIR"
 
@@ -78,7 +78,7 @@ chmod 755 "$SECRETS_DIR"
 log "Pulling geth image: $GETH_IMAGE..."
 docker pull "$GETH_IMAGE"
 
-# ── Ensure geth config dir is readable by uid 1000 ───────────────────────────
+# ── Ensure geth config dir is readable by ghost user (uid 1001) ──────────────────
 GETH_CONFIG_BASE="$GHOSTL_STACK_DIR/infra/ghostchain/geth"
 chmod -R o+r "$GETH_CONFIG_BASE" 2>/dev/null || true
 find "$GETH_CONFIG_BASE" -type d -exec chmod o+x {} + 2>/dev/null || true
@@ -103,7 +103,7 @@ TimeoutStartSec=60
 TimeoutStopSec=30
 ExecStartPre=-/usr/bin/docker rm -f ghostchain-bootnode
 ExecStart=/usr/bin/docker run --rm --name ghostchain-bootnode \
-  --user 1000:1000 \
+  --user 1000:1001 \
   --cap-drop ALL \
   --security-opt no-new-privileges:true \
   -v ${DATA_ROOT}/bootnode:/config \
@@ -111,15 +111,7 @@ ExecStart=/usr/bin/docker run --rm --name ghostchain-bootnode \
   --memory=256m --cpus=0.5 \
   --label com.ghost.role=ghostchain-bootnode \
   ${GETH_IMAGE} \
-  /bin/sh -c ' \
-    set -e; \
-    if [ ! -f /config/boot.key ]; then \
-      echo "[bootnode] Generating boot.key..."; \
-      bootnode -genkey /config/boot.key; \
-    fi; \
-    BOOT_ID="\$(bootnode --nodekey /config/boot.key --writeaddress)"; \
-    echo "enode://\${BOOT_ID}@10.50.99.20:30301" > /config/bootnode-enode.txt; \
-    exec bootnode --nodekey /config/boot.key --addr :30301'
+  bootnode --nodekey /config/boot.key --addr :30301
 ExecStop=/usr/bin/docker stop ghostchain-bootnode
 
 [Install]
@@ -156,7 +148,7 @@ TimeoutStartSec=90
 TimeoutStopSec=30
 ExecStartPre=-/usr/bin/docker rm -f ghostchain-node${NODE_NUM}
 ExecStart=/usr/bin/docker run --rm --name ghostchain-node${NODE_NUM} \
-  --user 1000:1000 \
+  --user 1000:1001 \
   --cap-drop ALL \
   --security-opt no-new-privileges:true \
   -v ${NODE_DATA}:/data \
