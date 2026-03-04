@@ -31,6 +31,21 @@ services/.env
 # root-level stack.env may contain real secrets — never track
 /stack.env
 
+# environment-specific env files (non-dotfile naming, e.g. ghostchain.env)
+environments/**/*.env
+!environments/**/*.env.example
+!environments/**/*.env.sample
+
+# docker compose runtime env files (non-dotfile naming)
+infra/docker/compose/*.env
+infra/docker/compose/**/*.env
+!infra/docker/compose/*.env.example
+!infra/docker/compose/**/*.env.example
+
+# observability / infra env files
+observability/**/.env
+observability/**/stack.env
+
 # vault rendered secrets (local only)
 infra/opstack/secrets/
 infra/opstack/l3/secrets/
