@@ -192,6 +192,7 @@ services:
       NETWORK: Ghostchain
       SUBNETWORK: PoA
       COIN: GST
+      COIN_NAME: Ghost
       SECRET_KEY_BASE: ${GHOSTSCOUT_SECRET_KEY_BASE_L1:-}
       DISABLE_EVISION: "true"
       API_ONLY: "true"

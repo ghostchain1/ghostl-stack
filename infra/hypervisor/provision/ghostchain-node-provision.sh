@@ -60,19 +60,28 @@ else
 fi
 
 # ── Data directories ──────────────────────────────────────────────────────────
-install -d -m 750 "$DATA_ROOT"/{bootnode,node1,node2} "$SECRETS_DIR"
+install -d -m 755 "$DATA_ROOT"/{bootnode,node1,node2} "$SECRETS_DIR"
+# ghost user owns data dirs (matches the ghost user running inside containers)
+chown -R ghost:ghost "$DATA_ROOT"/{bootnode,node1,node2}
 
 # JWT secret (generated locally; operators must paste the canonical one)
 if [ ! -f "$SECRETS_DIR/jwtsecret" ]; then
   log "Generating JWT secret..."
   openssl rand -hex 32 > "$SECRETS_DIR/jwtsecret"
-  chmod 600 "$SECRETS_DIR/jwtsecret"
   log "WARNING: Replace $SECRETS_DIR/jwtsecret with the canonical JWT before starting nodes."
 fi
+# Ensure secrets are readable by container uid 1000
+chmod 644 "$SECRETS_DIR/jwtsecret" 2>/dev/null || true
+chmod 755 "$SECRETS_DIR"
 
 # ── Pull geth image ───────────────────────────────────────────────────────────
 log "Pulling geth image: $GETH_IMAGE..."
 docker pull "$GETH_IMAGE"
+
+# ── Ensure geth config dir is readable by uid 1000 ───────────────────────────
+GETH_CONFIG_BASE="$GHOSTL_STACK_DIR/infra/ghostchain/geth"
+chmod -R o+r "$GETH_CONFIG_BASE" 2>/dev/null || true
+find "$GETH_CONFIG_BASE" -type d -exec chmod o+x {} + 2>/dev/null || true
 
 # ── Systemd unit per role ─────────────────────────────────────────────────────
 UNIT_DIR="/etc/systemd/system"
@@ -166,7 +175,7 @@ ExecStart=/usr/bin/docker run --rm --name ghostchain-node${NODE_NUM} \
   -e AUTH_PORT=8551 \
   -e P2P_PORT=30303 \
   -e AUTH_JWT_FILE=/secrets/jwtsecret \
-  -e HTTP_APIS=eth,net,web3,debug,txpool \
+  -e HTTP_APIS=eth,net,web3,debug,txpool,admin \
   -e WS_APIS=eth,net,web3 \
   -e HTTP_VHOSTS="*" \
   -e HTTP_CORS="*" \
