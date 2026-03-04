@@ -25,14 +25,14 @@ jobs:
       - name: Validate YAML syntax
         run: |
           python - <<'PY'
-from pathlib import Path
-import yaml
-
-targets = list(Path('.github/workflows').glob('*.yml')) + list(Path('.github/actions').rglob('action.yml'))
-for target in targets:
-    yaml.safe_load(target.read_text(encoding='utf-8'))
-print(f"validated_yaml_files={len(targets)}")
-PY
+          from pathlib import Path
+          import yaml
+          targets = list(Path('.github/workflows').glob('*.yml')) + \
+            list(Path('.github/actions').rglob('action.yml') if Path('.github/actions').exists() else [])
+          for target in targets:
+            yaml.safe_load(target.read_text(encoding='utf-8'))
+          print(f"validated_yaml_files={len(targets)}")
+          PY
 
       - name: Run actionlint
         uses: rhysd/actionlint@v1
