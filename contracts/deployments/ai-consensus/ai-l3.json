@@ -1,0 +1,2229 @@
+{
+  "network": "ghostl3Op",
+  "layer": "l3",
+  "contracts": [
+    {
+      "name": "AIGuardianL3",
+      "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+      "chainId": 903,
+      "layer": "l3",
+      "abi": [
+        {
+          "inputs": [],
+          "stateMutability": "nonpayable",
+          "type": "constructor"
+        },
+        {
+          "inputs": [],
+          "name": "NotOwner",
+          "type": "error"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "bytes32",
+              "name": "operationId",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "actor",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "target",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "bytes4",
+              "name": "selector",
+              "type": "bytes4"
+            }
+          ],
+          "name": "ActionExecuted",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "target",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "bytes4",
+              "name": "selector",
+              "type": "bytes4"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bool",
+                  "name": "enabled",
+                  "type": "bool"
+                },
+                {
+                  "internalType": "bool",
+                  "name": "hasValueBounds",
+                  "type": "bool"
+                },
+                {
+                  "internalType": "uint64",
+                  "name": "cooldownSeconds",
+                  "type": "uint64"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "minValue",
+                  "type": "uint128"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "maxValue",
+                  "type": "uint128"
+                }
+              ],
+              "indexed": false,
+              "internalType": "struct AILayerGuardian.ActionPolicy",
+              "name": "policy",
+              "type": "tuple"
+            }
+          ],
+          "name": "ActionPolicyUpdated",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "internalType": "bool",
+              "name": "requireFraud",
+              "type": "bool"
+            },
+            {
+              "indexed": false,
+              "internalType": "bool",
+              "name": "requireCompliance",
+              "type": "bool"
+            }
+          ],
+          "name": "AssessmentRequirementsUpdated",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "bytes32",
+              "name": "operationId",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint8",
+              "name": "decision",
+              "type": "uint8"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint64",
+              "name": "delaySeconds",
+              "type": "uint64"
+            },
+            {
+              "indexed": false,
+              "internalType": "bytes32",
+              "name": "attestationHash",
+              "type": "bytes32"
+            }
+          ],
+          "name": "ComplianceDecisionSubmitted",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "bytes32",
+              "name": "subjectHash",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "internalType": "bytes32",
+              "name": "attestationHash",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "internalType": "bytes32",
+              "name": "modelId",
+              "type": "bytes32"
+            }
+          ],
+          "name": "ExplainabilitySubmitted",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "bytes32",
+              "name": "operationId",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint8",
+              "name": "verdict",
+              "type": "uint8"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint32",
+              "name": "riskScoreBps",
+              "type": "uint32"
+            },
+            {
+              "indexed": false,
+              "internalType": "bytes32",
+              "name": "attestationHash",
+              "type": "bytes32"
+            }
+          ],
+          "name": "FraudAssessmentSubmitted",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "uint8",
+              "name": "layer",
+              "type": "uint8"
+            },
+            {
+              "indexed": false,
+              "internalType": "bytes32",
+              "name": "digest",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint64",
+              "name": "blockNumber",
+              "type": "uint64"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint64",
+              "name": "updatedAt",
+              "type": "uint64"
+            },
+            {
+              "indexed": false,
+              "internalType": "address",
+              "name": "oracle",
+              "type": "address"
+            }
+          ],
+          "name": "LayerDigestUpdated",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "uint8",
+              "name": "layer",
+              "type": "uint8"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint64",
+              "name": "maxAge",
+              "type": "uint64"
+            }
+          ],
+          "name": "LayerMaxAgeUpdated",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "uint8",
+              "name": "layer",
+              "type": "uint8"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "oracle",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "bool",
+              "name": "allowed",
+              "type": "bool"
+            }
+          ],
+          "name": "LayerOracleUpdated",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "uint8",
+              "name": "layer",
+              "type": "uint8"
+            },
+            {
+              "indexed": false,
+              "internalType": "bool",
+              "name": "required",
+              "type": "bool"
+            }
+          ],
+          "name": "LayerRequirementUpdated",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "bytes32",
+              "name": "modelId",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "internalType": "bool",
+              "name": "allowed",
+              "type": "bool"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint32",
+              "name": "minConfidenceBps",
+              "type": "uint32"
+            },
+            {
+              "indexed": false,
+              "internalType": "bytes32",
+              "name": "inputSchemaHash",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "internalType": "bytes32",
+              "name": "outputSchemaHash",
+              "type": "bytes32"
+            }
+          ],
+          "name": "ModelPolicyUpdated",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "bytes32",
+              "name": "modelId",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "internalType": "bool",
+              "name": "allowed",
+              "type": "bool"
+            }
+          ],
+          "name": "ModelUpdated",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "internalType": "bytes32",
+              "name": "digest",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint64",
+              "name": "updatedAt",
+              "type": "uint64"
+            },
+            {
+              "indexed": false,
+              "internalType": "address",
+              "name": "oracle",
+              "type": "address"
+            }
+          ],
+          "name": "OffchainDigestUpdated",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "internalType": "uint64",
+              "name": "maxAge",
+              "type": "uint64"
+            }
+          ],
+          "name": "OffchainMaxAgeUpdated",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "oracle",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "bool",
+              "name": "allowed",
+              "type": "bool"
+            }
+          ],
+          "name": "OffchainOracleUpdated",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "previousOwner",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "newOwner",
+              "type": "address"
+            }
+          ],
+          "name": "OwnershipTransferred",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "internalType": "bool",
+              "name": "paused",
+              "type": "bool"
+            }
+          ],
+          "name": "PausedSet",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "internalType": "uint32",
+              "name": "minConfidenceBps",
+              "type": "uint32"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint64",
+              "name": "maxAttestationAge",
+              "type": "uint64"
+            },
+            {
+              "indexed": false,
+              "internalType": "bool",
+              "name": "requireOffchainDigest",
+              "type": "bool"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "minSigners",
+              "type": "uint256"
+            }
+          ],
+          "name": "PolicyUpdated",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "internalType": "uint32",
+              "name": "reviewThresholdBps",
+              "type": "uint32"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint32",
+              "name": "blockThresholdBps",
+              "type": "uint32"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint64",
+              "name": "reviewDelaySeconds",
+              "type": "uint64"
+            }
+          ],
+          "name": "RiskThresholdsUpdated",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "signer",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "bool",
+              "name": "allowed",
+              "type": "bool"
+            }
+          ],
+          "name": "SignerUpdated",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "bytes32",
+              "name": "operationId",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint8",
+              "name": "category",
+              "type": "uint8"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint8",
+              "name": "riskTier",
+              "type": "uint8"
+            },
+            {
+              "indexed": false,
+              "internalType": "bytes32",
+              "name": "attestationHash",
+              "type": "bytes32"
+            }
+          ],
+          "name": "TxAnalysisSubmitted",
+          "type": "event"
+        },
+        {
+          "inputs": [],
+          "name": "L1",
+          "outputs": [
+            {
+              "internalType": "uint8",
+              "name": "",
+              "type": "uint8"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "L2",
+          "outputs": [
+            {
+              "internalType": "uint8",
+              "name": "",
+              "type": "uint8"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "L3",
+          "outputs": [
+            {
+              "internalType": "uint8",
+              "name": "",
+              "type": "uint8"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "REASON_COMPLIANCE_BLOCK",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "REASON_COMPLIANCE_DELAY",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "REASON_COMPLIANCE_MISSING",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "REASON_FRAUD_BLOCK",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "REASON_FRAUD_MISSING",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "REASON_FRAUD_REVIEW",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "REASON_PAUSED",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            },
+            {
+              "internalType": "bytes4",
+              "name": "",
+              "type": "bytes4"
+            }
+          ],
+          "name": "actionPolicies",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "enabled",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "hasValueBounds",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint64",
+              "name": "cooldownSeconds",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint128",
+              "name": "minValue",
+              "type": "uint128"
+            },
+            {
+              "internalType": "uint128",
+              "name": "maxValue",
+              "type": "uint128"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "name": "aiSigners",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "name": "allowedModels",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "operationId",
+              "type": "bytes32"
+            }
+          ],
+          "name": "checkTransaction",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "allowed",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint64",
+              "name": "waitSeconds",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "reason",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "name": "complianceAssessments",
+          "outputs": [
+            {
+              "internalType": "uint8",
+              "name": "decision",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint64",
+              "name": "delaySeconds",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "ruleId",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "jurisdiction",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "detailsHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "decidedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "validUntil",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "attestationHash",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "actor",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "target",
+              "type": "address"
+            },
+            {
+              "internalType": "bytes4",
+              "name": "selector",
+              "type": "bytes4"
+            },
+            {
+              "internalType": "bytes",
+              "name": "data",
+              "type": "bytes"
+            },
+            {
+              "internalType": "uint256",
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "computeOperationId",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "defaultReviewDelaySeconds",
+          "outputs": [
+            {
+              "internalType": "uint64",
+              "name": "",
+              "type": "uint64"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "domainSeparator",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "target",
+              "type": "address"
+            },
+            {
+              "internalType": "bytes4",
+              "name": "selector",
+              "type": "bytes4"
+            },
+            {
+              "internalType": "bytes",
+              "name": "data",
+              "type": "bytes"
+            }
+          ],
+          "name": "executeIfAllowed",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "payable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "name": "explainabilityByAttestation",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "uriHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "summaryHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "uri",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "summary",
+              "type": "string"
+            },
+            {
+              "internalType": "uint64",
+              "name": "updatedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "attestationHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "modelId",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "name": "fraudAssessments",
+          "outputs": [
+            {
+              "internalType": "uint8",
+              "name": "verdict",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint32",
+              "name": "riskScoreBps",
+              "type": "uint32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "detailsHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "assessedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "validUntil",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "attestationHash",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "fraudBlockThresholdBps",
+          "outputs": [
+            {
+              "internalType": "uint32",
+              "name": "",
+              "type": "uint32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "fraudReviewThresholdBps",
+          "outputs": [
+            {
+              "internalType": "uint32",
+              "name": "",
+              "type": "uint32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "name": "lastActionAt",
+          "outputs": [
+            {
+              "internalType": "uint64",
+              "name": "",
+              "type": "uint64"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint8",
+              "name": "",
+              "type": "uint8"
+            }
+          ],
+          "name": "layerFeeds",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "digest",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "blockNumber",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "updatedAt",
+              "type": "uint64"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "layerId",
+          "outputs": [
+            {
+              "internalType": "uint8",
+              "name": "",
+              "type": "uint8"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint8",
+              "name": "",
+              "type": "uint8"
+            },
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "name": "layerOracles",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "maxAttestationAge",
+          "outputs": [
+            {
+              "internalType": "uint64",
+              "name": "",
+              "type": "uint64"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint8",
+              "name": "",
+              "type": "uint8"
+            }
+          ],
+          "name": "maxLayerAge",
+          "outputs": [
+            {
+              "internalType": "uint64",
+              "name": "",
+              "type": "uint64"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "maxOffchainAge",
+          "outputs": [
+            {
+              "internalType": "uint64",
+              "name": "",
+              "type": "uint64"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "minConfidenceBps",
+          "outputs": [
+            {
+              "internalType": "uint32",
+              "name": "",
+              "type": "uint32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "minSigners",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "name": "modelInputSchemaHash",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "name": "modelMinConfidenceBps",
+          "outputs": [
+            {
+              "internalType": "uint32",
+              "name": "",
+              "type": "uint32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "name": "modelOutputSchemaHash",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "offchainFeed",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "digest",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "updatedAt",
+              "type": "uint64"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "name": "offchainOracles",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "owner",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "paused",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "requireComplianceAssessment",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "requireFraudAssessment",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint8",
+              "name": "",
+              "type": "uint8"
+            }
+          ],
+          "name": "requireLayerDigest",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "requireOffchainDigest",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "target",
+              "type": "address"
+            },
+            {
+              "internalType": "bytes4",
+              "name": "selector",
+              "type": "bytes4"
+            },
+            {
+              "internalType": "bool",
+              "name": "enabled",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint64",
+              "name": "cooldownSeconds",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bool",
+              "name": "hasValueBounds",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint128",
+              "name": "minValue",
+              "type": "uint128"
+            },
+            {
+              "internalType": "uint128",
+              "name": "maxValue",
+              "type": "uint128"
+            }
+          ],
+          "name": "setActionPolicy",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bool",
+              "name": "requireFraud",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "requireCompliance",
+              "type": "bool"
+            }
+          ],
+          "name": "setAssessmentRequirements",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint8",
+              "name": "layer",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint64",
+              "name": "maxAge",
+              "type": "uint64"
+            }
+          ],
+          "name": "setLayerMaxAge",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint8",
+              "name": "layer",
+              "type": "uint8"
+            },
+            {
+              "internalType": "address",
+              "name": "oracle",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "allowed",
+              "type": "bool"
+            }
+          ],
+          "name": "setLayerOracle",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint8",
+              "name": "layer",
+              "type": "uint8"
+            },
+            {
+              "internalType": "bool",
+              "name": "required",
+              "type": "bool"
+            }
+          ],
+          "name": "setLayerRequired",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "modelId",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bool",
+              "name": "allowed",
+              "type": "bool"
+            }
+          ],
+          "name": "setModel",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "modelId",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bool",
+              "name": "allowed",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint32",
+              "name": "minConfidenceBps_",
+              "type": "uint32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "inputSchemaHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "outputSchemaHash",
+              "type": "bytes32"
+            }
+          ],
+          "name": "setModelPolicy",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint64",
+              "name": "maxAge",
+              "type": "uint64"
+            }
+          ],
+          "name": "setOffchainMaxAge",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "oracle",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "allowed",
+              "type": "bool"
+            }
+          ],
+          "name": "setOffchainOracle",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bool",
+              "name": "paused_",
+              "type": "bool"
+            }
+          ],
+          "name": "setPaused",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint32",
+              "name": "minConfidenceBps_",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "maxAttestationAge_",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bool",
+              "name": "requireOffchainDigest_",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint256",
+              "name": "minSigners_",
+              "type": "uint256"
+            }
+          ],
+          "name": "setPolicy",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint32",
+              "name": "reviewThresholdBps",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "blockThresholdBps",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "reviewDelaySeconds",
+              "type": "uint64"
+            }
+          ],
+          "name": "setRiskThresholds",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "signer",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "allowed",
+              "type": "bool"
+            }
+          ],
+          "name": "setSigner",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "nonce",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "layerId",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "operationId",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "decision",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint64",
+                  "name": "delaySeconds",
+                  "type": "uint64"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "ruleId",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "jurisdiction",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "detailsHash",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint64",
+                  "name": "issuedAt",
+                  "type": "uint64"
+                },
+                {
+                  "internalType": "uint64",
+                  "name": "validUntil",
+                  "type": "uint64"
+                },
+                {
+                  "internalType": "uint32",
+                  "name": "confidenceBps",
+                  "type": "uint32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "modelId",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "l1Digest",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "l2Digest",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "l3Digest",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "offchainDigest",
+                  "type": "bytes32"
+                }
+              ],
+              "internalType": "struct AILayerGuardian.ComplianceAttestation",
+              "name": "att",
+              "type": "tuple"
+            },
+            {
+              "internalType": "bytes[]",
+              "name": "signatures",
+              "type": "bytes[]"
+            }
+          ],
+          "name": "submitComplianceDecision",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "nonce",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "layerId",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "operationId",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "subjectHash",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "uriHash",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "summaryHash",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint64",
+                  "name": "issuedAt",
+                  "type": "uint64"
+                },
+                {
+                  "internalType": "uint64",
+                  "name": "validUntil",
+                  "type": "uint64"
+                },
+                {
+                  "internalType": "uint32",
+                  "name": "confidenceBps",
+                  "type": "uint32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "modelId",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "l1Digest",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "l2Digest",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "l3Digest",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "offchainDigest",
+                  "type": "bytes32"
+                }
+              ],
+              "internalType": "struct AILayerGuardian.ExplainabilityAttestation",
+              "name": "att",
+              "type": "tuple"
+            },
+            {
+              "internalType": "string",
+              "name": "uri",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "summary",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes[]",
+              "name": "signatures",
+              "type": "bytes[]"
+            }
+          ],
+          "name": "submitExplainability",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "nonce",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "layerId",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "operationId",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "verdict",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint32",
+                  "name": "riskScoreBps",
+                  "type": "uint32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "detailsHash",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint64",
+                  "name": "issuedAt",
+                  "type": "uint64"
+                },
+                {
+                  "internalType": "uint64",
+                  "name": "validUntil",
+                  "type": "uint64"
+                },
+                {
+                  "internalType": "uint32",
+                  "name": "confidenceBps",
+                  "type": "uint32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "modelId",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "l1Digest",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "l2Digest",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "l3Digest",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "offchainDigest",
+                  "type": "bytes32"
+                }
+              ],
+              "internalType": "struct AILayerGuardian.FraudAttestation",
+              "name": "att",
+              "type": "tuple"
+            },
+            {
+              "internalType": "bytes[]",
+              "name": "signatures",
+              "type": "bytes[]"
+            }
+          ],
+          "name": "submitFraudAssessment",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint8",
+              "name": "layer",
+              "type": "uint8"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "digest",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "blockNumber",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "updatedAt",
+              "type": "uint64"
+            }
+          ],
+          "name": "submitLayerDigest",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "digest",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "updatedAt",
+              "type": "uint64"
+            }
+          ],
+          "name": "submitOffchainDigest",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "nonce",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "layerId",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "operationId",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "category",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "riskTier",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "tagsHash",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "detailsHash",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint64",
+                  "name": "issuedAt",
+                  "type": "uint64"
+                },
+                {
+                  "internalType": "uint64",
+                  "name": "validUntil",
+                  "type": "uint64"
+                },
+                {
+                  "internalType": "uint32",
+                  "name": "confidenceBps",
+                  "type": "uint32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "modelId",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "l1Digest",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "l2Digest",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "l3Digest",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "offchainDigest",
+                  "type": "bytes32"
+                }
+              ],
+              "internalType": "struct AILayerGuardian.TxAnalysisAttestation",
+              "name": "att",
+              "type": "tuple"
+            },
+            {
+              "internalType": "bytes[]",
+              "name": "signatures",
+              "type": "bytes[]"
+            }
+          ],
+          "name": "submitTxAnalysis",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "newOwner",
+              "type": "address"
+            }
+          ],
+          "name": "transferOwnership",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "name": "txAnalyses",
+          "outputs": [
+            {
+              "internalType": "uint8",
+              "name": "category",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "riskTier",
+              "type": "uint8"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "tagsHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "detailsHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "analyzedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "validUntil",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "attestationHash",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "name": "usedAttestations",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        }
+      ],
+      "abiHash": "084ffc09357e7a7b396eeaacc1eab1c98c027bb429039045afa4485eb83d4654",
+      "version": "0.0.1",
+      "deployedAt": "2026-03-04T02:08:14.391Z"
+    }
+  ]
+}

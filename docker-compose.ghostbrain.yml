@@ -1,0 +1,388 @@
+# GhostBrain Core — Unified AI/Orchestration Stack
+#
+# Brings together:
+#   • NATS message bus
+#   • GhostBrain Core (brain loop, incident management, plan execution)
+#   • Hypervisor Supervisor (VM health → GhostBrain signals)
+#   • Host Orchestrator AI (libvirt/docker executor agent)
+#   • Ghost Helper Bots (sentinel/analyzer/fixer loop)
+#
+# All AI agents self-register with GhostBrain Core via NATS on startup.
+#
+# Routing law enforced: L3 → L2 → L1  (L3 → L1 direct: FORBIDDEN)
+#
+# Usage:
+#   docker compose -f docker-compose.ghostbrain.yml --env-file stack.env up -d
+
+name: ghostbrain
+
+# ─── Shared environment anchors ──────────────────────────────────────────────
+x-brain-env: &brain-env
+  NATS_URL: "${NATS_URL:-nats://nats:4222}"
+  GHOSTBRAIN_URL: "${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}"
+  GHOSTBRAIN_ENABLED: "${GHOSTBRAIN_ENABLED:-true}"
+
+services:
+
+  # ─── NATS message bus ──────────────────────────────────────────────────────
+  nats:
+    image: nats:2.10-alpine
+    container_name: ghostbrain-nats
+    restart: unless-stopped
+    ports:
+      - "${NATS_PORT:-4222}:4222"
+      - "${NATS_MON_PORT:-8222}:8222"
+    command: ["-js", "-m", "8222"]
+    networks:
+      - ghostbrain-net
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -qO- http://localhost:8222/healthz | grep -q ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # ─── GhostBrain Postgres ───────────────────────────────────────────────────
+  ghostbrain-postgres:
+    image: postgres:16-alpine
+    container_name: ghostbrain-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ghostbrain
+      POSTGRES_USER: ghostbrain
+      POSTGRES_PASSWORD: "${GHOSTBRAIN_POSTGRES_PASSWORD:-ghostbrain_dev_pw}"
+    volumes:
+      - ghostbrain-postgres-data:/var/lib/postgresql/data
+    networks:
+      - ghostbrain-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghostbrain"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── GhostBrain Redis ─────────────────────────────────────────────────────
+  ghostbrain-redis:
+    image: redis:7-alpine
+    container_name: ghostbrain-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - ghostbrain-redis-data:/data
+    networks:
+      - ghostbrain-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ─── GhostBrain Core (central brain + HTTP API on :7900) ──────────────────
+  ghostbrain-core:
+    build:
+      context: ./services/ghostbrain-core
+      dockerfile: Dockerfile
+    image: ghostbrain-core:latest
+    container_name: ghostbrain-core
+    restart: unless-stopped
+    group_add:
+      - "112"  # docker socket GID
+    extra_hosts:
+      - "vault:host-gateway"
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${GHOSTBRAIN_PORT:-7900}:7900"
+    environment:
+      <<: *brain-env
+      NODE_ENV: "${NODE_ENV:-production}"
+      PORT: "7900"
+      # Chain IDs (routing-law enforcement)
+      GHOSTAI_L1_CHAIN_ID: "${GHOSTAI_L1_CHAIN_ID:-14000101}"
+      GHOSTAI_L2_CHAIN_ID: "${GHOSTAI_L2_CHAIN_ID:-901}"
+      GHOSTAI_L3_CHAIN_ID: "${GHOSTAI_L3_CHAIN_ID:-903}"
+      # Postgres + Redis
+      GHOSTBRAIN_POSTGRES_URL: "postgresql://ghostbrain:${GHOSTBRAIN_POSTGRES_PASSWORD:-ghostbrain_dev_pw}@ghostbrain-postgres:5432/ghostbrain"
+      GHOSTBRAIN_REDIS_URL: "redis://ghostbrain-redis:6379"
+      # Vault
+      VAULT_ADDR: "${VAULT_ADDR:-http://vault:8200}"
+      VAULT_ROLE_ID: "${VAULT_ROLE_ID:-}"
+      # Observability
+      PROMETHEUS_URL: "${PROMETHEUS_URL:-http://prometheus:9090}"
+      LOKI_URL: "${LOKI_URL:-http://loki:3100}"
+      # GhostContractAI on-chain authorities
+      GHOSTAI_REGISTRY_ADDRESS: "${GHOSTAI_REGISTRY_ADDRESS:-}"
+      GHOSTAI_GOVERNOR_ADDRESS: "${GHOSTAI_GOVERNOR_ADDRESS:-}"
+      GHOSTAI_POLICY_GATE_ADDRESS: "${GHOSTAI_POLICY_GATE_ADDRESS:-}"
+      GHOSTAI_RISK_ORACLE_ADDRESS: "${GHOSTAI_RISK_ORACLE_ADDRESS:-}"
+      # Brain tuning
+      BRAIN_TICK_SECONDS: "${BRAIN_TICK_SECONDS:-30}"
+      CANARY_WINDOW_SECONDS: "${CANARY_WINDOW_SECONDS:-120}"
+      MAX_BLAST_RADIUS: "${MAX_BLAST_RADIUS:-3}"
+      TASK_TOKEN_TTL_SECONDS: "${TASK_TOKEN_TTL_SECONDS:-300}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /home/ghost/ghostl-stack/services/ghostbrain-core/dist/connectors/docker.js:/app/dist/connectors/docker.js:ro
+    networks:
+      - ghostbrain-net
+      - ghostl-stack_default
+    depends_on:
+      ghostbrain-postgres:
+        condition: service_healthy
+      ghostbrain-redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:7900/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    labels:
+      ghostbrain.role: "brain-core"
+      ghostbrain.layer: "L2"
+      ghostbrain.routing-law: "L3→L2→L1"
+
+  # ─── Hypervisor Supervisor (VM health → GhostBrain signals) ───────────────
+  hypervisor-supervisor:
+    build:
+      context: ./infra/hypervisor/supervisor
+      dockerfile: Dockerfile
+    image: ghostbrain-hypervisor-supervisor:latest
+    container_name: hypervisor-supervisor
+    restart: unless-stopped
+    ports:
+      - "${SUPERVISOR_PORT:-9108}:9108"
+    environment:
+      <<: *brain-env
+      SUPERVISOR_PORT: "9108"
+      SCRAPE_INTERVAL: "${SUPERVISOR_SCRAPE_INTERVAL:-10}"
+      RPC_PORT: "${RPC_PORT:-8545}"
+      # VM name overrides (defaults match ghoststack-bootstrap naming)
+      VM_L1_MAINNET: "${VM_L1_MAINNET:-ghostchain-mainnet-l1}"
+      VM_L1_TESTNET: "${VM_L1_TESTNET:-ghostchain-testnet-l1}"
+      VM_L1_VALIDATOR_MAINNET: "${VM_L1_VALIDATOR_MAINNET:-ghost-mainnet-validator}"
+      VM_L1_VALIDATOR_TESTNET: "${VM_L1_VALIDATOR_TESTNET:-ghost-testnet-validator}"
+      VM_L1_ARCHIVE: "${VM_L1_ARCHIVE:-ghost-mainnet-archive-node}"
+      VM_L2_MAINNET: "${VM_L2_MAINNET:-ghostl2-mainnet}"
+      VM_L2_TESTNET: "${VM_L2_TESTNET:-ghostl2-testnet}"
+      VM_L3_MAINNET: "${VM_L3_MAINNET:-ghostl3-mainnet}"
+      VM_L3_TESTNET: "${VM_L3_TESTNET:-ghostl3-testnet}"
+    volumes:
+      # libvirt socket for virsh access (requires running on KVM host)
+      - /var/run/libvirt/libvirt-sock:/var/run/libvirt/libvirt-sock:ro
+    network_mode: host   # needs host-level libvirt access
+    depends_on:
+      ghostbrain-core:
+        condition: service_healthy
+    labels:
+      ghostbrain.role: "sentinel"
+      ghostbrain.layer: "L1"
+
+  # ─── Host Orchestrator AI (executor — libvirt/docker on port 7831) ─────────
+  host-orchestrator-ai:
+    build:
+      context: ./services/host-orchestrator-ai
+      dockerfile: Dockerfile
+    image: host-orchestrator-ai:latest
+    container_name: host-orchestrator-ai
+    restart: unless-stopped
+    ports:
+      - "${HOST_ORCH_PORT:-7831}:7831"
+    environment:
+      <<: *brain-env
+      PORT: "7831"
+      NODE_ENV: "${NODE_ENV:-production}"
+      CONTROL_PLANE_HMAC_SECRET: "${CONTROL_PLANE_HMAC_SECRET:-dev-control-plane-secret}"
+      CONTROL_PLANE_REQUIRE_SIGNATURE: "${CONTROL_PLANE_REQUIRE_SIGNATURE:-1}"
+      HOST_ORCH_ALLOWED_VM_ROLES: "${HOST_ORCH_ALLOWED_VM_ROLES:-vm_protocol_ai}"
+      HOST_ORCH_ALLOWED_HOST_ROLES: "${HOST_ORCH_ALLOWED_HOST_ROLES:-host_infra_ai,ghostbrain-core}"
+    networks:
+      - ghostbrain-net
+    depends_on:
+      ghostbrain-core:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:7831/v1/host/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    labels:
+      ghostbrain.role: "executor"
+      ghostbrain.layer: "L1"
+
+  # ─── Ghost Helper Bots (sentinel/analyzer/fixer loop) ─────────────────────
+  ghost-helper-bots:
+    build:
+      context: ./ghost-helper-bots
+      dockerfile: Dockerfile
+    image: ghost-helper-bots:latest
+    container_name: ghost-helper-bots
+    restart: "no"   # run-once loop; set to unless-stopped for continuous
+    command: ["node", "--loader", "ts-node/esm", "loops/loop.ts", "--mode", "analyze", "--maxIters", "1"]
+    environment:
+      <<: *brain-env
+      GHOST_REPO_ROOT: "/workspace"
+      NODE_ENV: "${NODE_ENV:-production}"
+      GHOST_HELPER_MAX_ITERS: "${GHOST_HELPER_MAX_ITERS:-3}"
+      GHOST_HELPER_FAIL_ON_HIGH_CRITICAL: "${GHOST_HELPER_FAIL_ON_HIGH_CRITICAL:-true}"
+      GHOST_REPORTS_DIR: "/data/reports"
+      GHOST_EVIDENCE_DIR: "/data/evidence"
+      GHOST_SBOM_DIR: "/data/sbom"
+      GHOST_ATTEST_DIR: "/data/attestations"
+    volumes:
+      - .:/workspace:ro
+      - ghost-helper-bots-reports:/data/reports
+      - ghost-helper-bots-evidence:/data/evidence
+      - ghost-helper-bots-sbom:/data/sbom
+      - ghost-helper-bots-attestations:/data/attestations
+    networks:
+      - ghostbrain-net
+    depends_on:
+      ghostbrain-core:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    labels:
+      ghostbrain.role: "sentinel"
+      ghostbrain.layer: "L2"
+
+  # ─── ACG: Planner Agent (code change planning) ────────────────────────────
+  acg-planner:
+    build:
+      context: ./services/ghostbrain-core
+      dockerfile: Dockerfile
+    image: ghostbrain-core:latest
+    container_name: acg-planner
+    restart: unless-stopped
+    command: ["node", "dist/agents/planner-agent.js"]
+    environment:
+      <<: *brain-env
+      NODE_ENV: "${NODE_ENV:-production}"
+      ACG_GITHUB_TOKEN: "${ACG_GITHUB_TOKEN:-}"
+      ACG_GITHUB_OWNER: "${ACG_GITHUB_OWNER:-ghostchain1}"
+      ACG_GITHUB_REPO: "${ACG_GITHUB_REPO:-ghostl-stack}"
+      ACG_REPO_URL: "${ACG_REPO_URL:-https://github.com/ghostchain1/ghostl-stack}"
+      ACG_REPO_DEFAULT_BRANCH: "${ACG_REPO_DEFAULT_BRANCH:-main}"
+      ACG_MAX_DEBUG_ITERS: "${ACG_MAX_DEBUG_ITERS:-3}"
+      VAULT_ADDR: "${VAULT_ADDR:-http://vault:8200}"
+      VAULT_ROLE_ID: "${VAULT_ROLE_ID:-}"
+      GHOSTAI_L1_CHAIN_ID: "${GHOSTAI_L1_CHAIN_ID:-14000101}"
+      GHOSTAI_L2_CHAIN_ID: "${GHOSTAI_L2_CHAIN_ID:-901}"
+      GHOSTAI_L3_CHAIN_ID: "${GHOSTAI_L3_CHAIN_ID:-903}"
+    networks:
+      - ghostbrain-net
+    depends_on:
+      ghostbrain-core:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      # Agents are NATS daemons — no HTTP server. Check PID 1 is alive.
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      ghostbrain.role: "planner"
+      ghostbrain.layer: "L2"
+      acg.agent: "planner"
+
+  # ─── ACG: Auditor Agent (security gate enforcement) ───────────────────────
+  acg-auditor:
+    build:
+      context: ./services/ghostbrain-core
+      dockerfile: Dockerfile
+    image: ghostbrain-core:latest
+    container_name: acg-auditor
+    restart: unless-stopped
+    command: ["node", "dist/agents/auditor-agent.js"]
+    environment:
+      <<: *brain-env
+      NODE_ENV: "${NODE_ENV:-production}"
+      ACG_FAIL_ON_HIGH: "${ACG_FAIL_ON_HIGH:-true}"
+      VAULT_ADDR: "${VAULT_ADDR:-http://vault:8200}"
+      VAULT_ROLE_ID: "${VAULT_ROLE_ID:-}"
+      GHOSTAI_L1_CHAIN_ID: "${GHOSTAI_L1_CHAIN_ID:-14000101}"
+      GHOSTAI_L2_CHAIN_ID: "${GHOSTAI_L2_CHAIN_ID:-901}"
+      GHOSTAI_L3_CHAIN_ID: "${GHOSTAI_L3_CHAIN_ID:-903}"
+    # Mount workspace volume for scratch repo access
+    volumes:
+      - acg-scratch:/acg-scratch
+    networks:
+      - ghostbrain-net
+    depends_on:
+      ghostbrain-core:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      # Agents are NATS daemons — no HTTP server. Check PID 1 is alive.
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      ghostbrain.role: "auditor"
+      ghostbrain.layer: "L2"
+      acg.agent: "auditor"
+
+  # ─── ACG: Sentinel Agent (post-deploy SLO watcher) ────────────────────────
+  acg-sentinel:
+    build:
+      context: ./services/ghostbrain-core
+      dockerfile: Dockerfile
+    image: ghostbrain-core:latest
+    container_name: acg-sentinel
+    restart: unless-stopped
+    command: ["node", "dist/agents/sentinel-agent.js"]
+    environment:
+      <<: *brain-env
+      NODE_ENV: "${NODE_ENV:-production}"
+      ACG_SENTINEL_WINDOW_SECONDS: "${ACG_SENTINEL_WINDOW_SECONDS:-300}"
+      ACG_SENTINEL_ERROR_RATE_ROLLBACK_MULTIPLIER: "${ACG_SENTINEL_ERROR_RATE_ROLLBACK_MULTIPLIER:-5}"
+      ACG_SENTINEL_LATENCY_HOTFIX_MULTIPLIER: "${ACG_SENTINEL_LATENCY_HOTFIX_MULTIPLIER:-2}"
+      PROMETHEUS_URL: "${PROMETHEUS_URL:-http://prometheus:9090}"
+      GHOSTAI_L1_CHAIN_ID: "${GHOSTAI_L1_CHAIN_ID:-14000101}"
+      GHOSTAI_L2_CHAIN_ID: "${GHOSTAI_L2_CHAIN_ID:-901}"
+      GHOSTAI_L3_CHAIN_ID: "${GHOSTAI_L3_CHAIN_ID:-903}"
+    networks:
+      - ghostbrain-net
+    depends_on:
+      ghostbrain-core:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      # Agents are NATS daemons — no HTTP server. Check PID 1 is alive.
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      ghostbrain.role: "sentinel"
+      ghostbrain.layer: "L2"
+      acg.agent: "sentinel"
+
+volumes:
+  ghostbrain-postgres-data:
+  ghostbrain-redis-data:
+  ghost-helper-bots-reports:
+  ghost-helper-bots-evidence:
+  ghost-helper-bots-sbom:
+  ghost-helper-bots-attestations:
+  acg-scratch:           # isolated scratch volume for ACG workspace clones
+
+networks:
+  ghostbrain-net:
+    driver: bridge
+    name: ghostbrain-net
+  ghostl-stack_default:
+    external: true
+    name: ghostl-stack_default

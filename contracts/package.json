@@ -23,6 +23,7 @@
     "deploy:cascading-finality": "hardhat run --network ghostl2 scripts/deploy_cascading_finality.ts",
     "deploy:cascading-finality:op": "hardhat run --network ghostl2Op scripts/deploy_cascading_finality.ts",
     "deploy:ai": "hardhat run --network ghostl2 scripts/deploy_ai_layers.ts",
+    "deploy:ai:consensus": "ts-node scripts/deploy_ai_consensus.ts",
     "deploy:one-click": "ts-node scripts/deploy_one_click.ts",
     "deploy:rollups-manual": "ts-node scripts/deploy_rollups_manual.ts",
     "deploy:testnet": "ts-node scripts/one_click_testnet.ts",
