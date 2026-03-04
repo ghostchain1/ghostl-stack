@@ -302,7 +302,9 @@ KEACTL
 
   # Install Kea via native apt packages (Ubuntu 24.04 noble universe).
   # ghcr.io/isc-projects/kea requires registry auth; apt is more reliable.
-  log "Installing isc-kea packages via apt..."
+  log "Enabling universe repo and installing isc-kea packages via apt..."
+  add-apt-repository -y universe 2>&1 | tail -1 || true
+  DEBIAN_FRONTEND=noninteractive apt-get update -qq
   DEBIAN_FRONTEND=noninteractive apt-get install -y \
     isc-kea-dhcp4-server isc-kea-dhcp-ddns-server isc-kea-ctrl-agent
 
