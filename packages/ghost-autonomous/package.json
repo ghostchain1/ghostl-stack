@@ -1,0 +1,53 @@
+{
+  "name": "@ghostchain/autonomous",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Ghost Autonomous DevOps System — AI-driven self-healing, scaling, and governance for GhostChain",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./ai": {
+      "types": "./dist/ai/GhostAICodeRepair.d.ts",
+      "default": "./dist/ai/GhostAICodeRepair.js"
+    },
+    "./cicd": {
+      "types": "./dist/cicd/GhostAICICD.d.ts",
+      "default": "./dist/cicd/GhostAICICD.js"
+    },
+    "./scaling": {
+      "types": "./dist/scaling/GhostNodeScaler.d.ts",
+      "default": "./dist/scaling/GhostNodeScaler.js"
+    },
+    "./validators": {
+      "types": "./dist/validators/GhostValidatorSupervisor.d.ts",
+      "default": "./dist/validators/GhostValidatorSupervisor.js"
+    },
+    "./governance": {
+      "types": "./dist/governance/GhostGovernanceProposalAI.d.ts",
+      "default": "./dist/governance/GhostGovernanceProposalAI.js"
+    },
+    "./orchestration": {
+      "types": "./dist/orchestration/GhostOrchestrator.d.ts",
+      "default": "./dist/orchestration/GhostOrchestrator.js"
+    },
+    "./monitoring": {
+      "types": "./dist/monitoring/GhostTelemetry.d.ts",
+      "default": "./dist/monitoring/GhostTelemetry.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@ghostchain/devkit": "*"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}
