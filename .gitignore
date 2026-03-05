@@ -42,6 +42,11 @@ infra/docker/compose/**/*.env
 !infra/docker/compose/*.env.example
 !infra/docker/compose/**/*.env.example
 
+# hypervisor env files (non-dotfile naming, e.g. ghoststack.env)
+infra/hypervisor/**/*.env
+!infra/hypervisor/**/*.env.example
+!infra/hypervisor/**/*.env.sample
+
 # observability / infra env files
 observability/**/.env
 observability/**/stack.env
