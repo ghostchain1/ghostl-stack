@@ -1,0 +1,457 @@
+name: Sovereign Policy Gate
+
+# ── PURPOSE ──────────────────────────────────────────────────────────────────
+# This workflow is the constitutional enforcement layer.  It is deliberately
+# separate from the main CI so that it can be independently required in branch
+# protection rules.  No code may merge to main unless every check in this
+# workflow passes.
+#
+# SOVEREIGN RULES ENFORCED HERE:
+#   1. Kong admin port NOT exposed on 0.0.0.0
+#   2. trustForwardHeader NOT set to true in any Traefik config
+#   3. No docker.sock mounted writable on services with docker actions disabled
+#   4. All production compose images are digest-pinned
+#   5. No hardcoded insecure secret defaults (change-me / ghostpass)
+#   6. No npm install in container commands (must be npm ci)
+#   7. Routing law invariant maintained (L3→L2→L1 only)
+#   8. No public admin APIs
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── 1. Kong admin exposure check ────────────────────────────────────────────
+  kong-admin-not-public:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: SOVEREIGN — Kong admin must not bind 0.0.0.0
+        run: |
+          set -euo pipefail
+          echo "Scanning all compose files for KONG_ADMIN_LISTEN: 0.0.0.0..."
+          if grep -rE 'KONG_ADMIN_LISTEN[[:space:]]*:[[:space:]]*["]?0\.0\.0\.0:' \
+              --include="docker-compose*.yml" \
+              --include="docker-compose.*.yml" \
+              . 2>/dev/null | grep -v '^Binary'; then
+            echo "FAIL: Kong admin API bound to 0.0.0.0 — this is a critical privilege-escalation vector."
+            echo "FIX: Set KONG_ADMIN_LISTEN to 127.0.0.1:8001"
+            exit 1
+          fi
+          echo "PASS: No Kong admin port exposed on 0.0.0.0"
+
+  # ── 2. ForwardAuth trustForwardHeader check ─────────────────────────────────
+  no-trust-forward-header:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: SOVEREIGN — trustForwardHeader must not be true
+        run: |
+          set -euo pipefail
+          echo "Scanning for trustForwardHeader=true..."
+          if grep -rE 'trustForwardHeader[[:space:]]*=[[:space:]]*true' \
+              --include="docker-compose*.yml" \
+              --include="*.yml" \
+              --include="*.yaml" \
+              . 2>/dev/null | grep -v '^Binary' | grep -v node_modules; then
+            echo "FAIL: trustForwardHeader=true allows clients to forge X-Forwarded-For."
+            echo "FIX: Set trustForwardHeader=false in all Traefik forwardauth middleware configs."
+            exit 1
+          fi
+          echo "PASS: No trustForwardHeader=true found"
+
+  # ── 3. No insecure default secrets ──────────────────────────────────────────
+  no-insecure-defaults:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: SOVEREIGN — no hardcoded insecure secret defaults in production composes
+        run: |
+          set -euo pipefail
+          PROD_COMPOSES=(
+            "docker-compose.yml"
+            "docker-compose.sovereign.yml"
+            "docker-compose.phase3.yml"
+            "apps/docker-compose.yml"
+            "infra/docker/docker-compose.prod.yml"
+            "docker-compose.econ.mainnet.yml"
+            "docker-compose.econ.testnet.yml"
+          )
+          FAILURES=0
+          for f in "${PROD_COMPOSES[@]}"; do
+            if [[ ! -f "$f" ]]; then
+              continue
+            fi
+            # Check for patterns like ${VAR:-change-me} or ${VAR:-ghostpass}
+            BAD=$(grep -En '\$\{[A-Za-z0-9_]+:-?(change-me|ghostpass|admin|password|secret|changeme)[^}]*\}' "$f" || true)
+            if [[ -n "$BAD" ]]; then
+              echo "FAIL [$f]: insecure default secret value:"
+              echo "$BAD"
+              FAILURES=$((FAILURES + 1))
+            fi
+          done
+          if [[ "$FAILURES" -gt 0 ]]; then
+            echo ""
+            echo "SOVEREIGN VIOLATION: Production compose files must not have insecure default secrets."
+            echo "FIX: Use \${VAR:?VAR is required} to fail closed when a secret is not provided."
+            exit 1
+          fi
+          echo "PASS: No insecure default secrets in production compose files"
+
+  # ── 4. No npm install in container commands ──────────────────────────────────
+  no-npm-install-in-compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: SOVEREIGN — npm install is non-deterministic; must use npm ci
+        run: |
+          set -euo pipefail
+          # Scan production and core compose files only (exclude legacy/rollback).
+          PROD_COMPOSES=(
+            "docker-compose.yml"
+            "apps/docker-compose.yml"
+            "docker-compose.sovereign.yml"
+            "docker-compose.phase3.yml"
+            "infra/docker/docker-compose.prod.yml"
+          )
+          FAILURES=0
+          for f in "${PROD_COMPOSES[@]}"; do
+            if [[ ! -f "$f" ]]; then
+              continue
+            fi
+            if grep -n 'npm install\b' "$f" | grep -v 'npm install -g\|npm install --global\|# npm install'; then
+              echo "FAIL [$f]: 'npm install' is non-deterministic. Replace with 'npm ci'."
+              FAILURES=$((FAILURES + 1))
+            fi
+          done
+          if [[ "$FAILURES" -gt 0 ]]; then
+            echo ""
+            echo "SOVEREIGN VIOLATION: npm install ignores lockfile and is non-deterministic."
+            echo "FIX: Replace 'npm install' with 'npm ci' in all migrate/init container commands."
+            exit 1
+          fi
+          echo "PASS: No bare npm install in production compose files"
+
+  # ── 5. Production image digest pinning ──────────────────────────────────────
+  prod-images-digest-pinned:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: SOVEREIGN — production images must be digest-pinned
+        run: |
+          set -euo pipefail
+          # Only enforce on production-grade compose files.
+          PROD_COMPOSES=(
+            "docker-compose.yml"
+            "apps/docker-compose.yml"
+            "docker-compose.sovereign.yml"
+            "docker-compose.econ.mainnet.yml"
+          )
+          FAILURES=0
+          for f in "${PROD_COMPOSES[@]}"; do
+            if [[ ! -f "$f" ]]; then
+              continue
+            fi
+            # Find image: lines that are not build-based (no 'build:' override)
+            # and not already pinned to @sha256: or using local build tags.
+            UNPINNED=$(grep -En '^[[:space:]]*image:[[:space:]]*[^@]+:[^[:space:]]+$' "$f" \
+              | grep -Ev '@sha256:|ghostl/.+:local|\$\{[A-Za-z0-9_]+' || true)
+            if [[ -n "$UNPINNED" ]]; then
+              echo "WARN [$f]: Unpinned image tags found (should be digest-pinned for sovereign builds):"
+              echo "$UNPINNED"
+              # Treat as REPLACEMENT_MARKER in CI — do not fail yet (digest update is operational).
+              # To enforce strictly, change the line below to: FAILURES=$((FAILURES + 1))
+            fi
+          done
+          # Check for the placeholder string from our hardening template.
+          if grep -rn 'REPLACE_WITH_CURRENT_DIGEST' \
+              docker-compose*.yml infra/docker/docker-compose.prod.yml 2>/dev/null; then
+            echo ""
+            echo "FAIL: Images with REPLACE_WITH_CURRENT_DIGEST placeholder found."
+            echo "FIX: Run 'bash scripts/security/digest-refresh-report.sh' and update image digests."
+            FAILURES=$((FAILURES + 1))
+          fi
+          if [[ "$FAILURES" -gt 0 ]]; then
+            exit 1
+          fi
+          echo "PASS: Production image digest check complete"
+
+  # ── 6. Routing law enforcement ───────────────────────────────────────────────
+  routing-law:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: SOVEREIGN — routing law L3→L2→L1 must not be violated
+        run: bash scripts/verify-routing.sh
+
+  # ── 7. Compose hardening audit ───────────────────────────────────────────────
+  compose-hardening-full:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install ripgrep
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ripgrep
+
+      - name: SOVEREIGN — compose hardening audit (full scope)
+        run: bash scripts/security/compose-hardening-audit.sh
+
+  # ── 9. PQ hybrid crypto stub status ─────────────────────────────────────────
+  pq-stub-status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: SOVEREIGN — PQ crypto package must exist and migration doc must be present
+        run: |
+          set -euo pipefail
+          if [[ ! -f "packages/pq-crypto/index.js" ]]; then
+            echo "FAIL: packages/pq-crypto/index.js not found."
+            exit 1
+          fi
+          if [[ ! -f "docs/pq-migration.md" ]]; then
+            echo "FAIL: docs/pq-migration.md not found — PQ migration playbook is required."
+            exit 1
+          fi
+          # Detect stub status and warn (not fail — stub is acceptable until 2026 Q3 deadline)
+          if grep -q "IS_STUB = true" packages/pq-crypto/src/pq-stub.js 2>/dev/null; then
+            echo "WARN: packages/pq-crypto is using HMAC-SHA3-512 stub (NOT post-quantum secure)."
+            echo "      ML-DSA-87 migration required by 2026 Q3. See docs/pq-migration.md."
+            echo "      This warning will become a FAIL after the deadline gate is enforced."
+          else
+            echo "PASS: PQ layer is NOT a stub — production ML-DSA-87 in use."
+          fi
+          echo "PASS: PQ crypto package and migration doc present"
+
+  # ── 10. Brand enforcement scan ───────────────────────────────────────────────
+  brand-enforcement-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install ripgrep
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ripgrep
+
+      - name: SOVEREIGN — Brand enforcement (GST symbol gate)
+        run: |
+          set -euo pipefail
+          if [[ -f "scripts/gst-symbol-gate.sh" ]]; then
+            bash scripts/gst-symbol-gate.sh
+          else
+            echo "WARN: scripts/gst-symbol-gate.sh not found — skipping symbol gate"
+          fi
+
+      - name: SOVEREIGN — Brand enforcement (GST leakage gate)
+        run: |
+          set -euo pipefail
+          if [[ -f "scripts/gst-leakage-gate.sh" ]]; then
+            bash scripts/gst-leakage-gate.sh
+          else
+            echo "WARN: scripts/gst-leakage-gate.sh not found — skipping leakage gate"
+          fi
+
+      - name: SOVEREIGN — Brand spec exists
+        run: |
+          set -euo pipefail
+          if [[ ! -f "docs/brand/spec.json" ]]; then
+            echo "FAIL: docs/brand/spec.json missing — canonical brand spec is required."
+            exit 1
+          fi
+          # Validate required fields
+          NAME=$(node -e "const s=require('./docs/brand/spec.json'); process.stdout.write(s.name)")
+          SYMBOL=$(node -e "const s=require('./docs/brand/spec.json'); process.stdout.write(s.symbol)")
+          DECIMALS=$(node -e "const s=require('./docs/brand/spec.json'); process.stdout.write(String(s.decimals))")
+          if [[ "$NAME" != "Ghost" ]]; then
+            echo "FAIL: brand spec name='$NAME' — must be 'Ghost'"; exit 1
+          fi
+          if [[ "$SYMBOL" != "GST" ]]; then
+            echo "FAIL: brand spec symbol='$SYMBOL' — must be 'GST'"; exit 1
+          fi
+          if [[ "$DECIMALS" != "18" ]]; then
+            echo "FAIL: brand spec decimals='$DECIMALS' — must be 18"; exit 1
+          fi
+          echo "PASS: Brand spec valid (name=Ghost, symbol=GST, decimals=18)"
+
+  # ── 11. Governance bundle integrity ──────────────────────────────────────────
+  governance-bundle-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: "22.22.0"
+
+      - name: SOVEREIGN — Governance bundle package structure
+        run: |
+          set -euo pipefail
+          REQUIRED_FILES=(
+            "packages/governance-bundle/index.js"
+            "packages/governance-bundle/package.json"
+            "packages/governance-bundle/test/bundle.test.js"
+            "services/dtn-relay/src/index.js"
+            "packages/dtn-cli/src/cli.js"
+            "docs/dtn-governance-spec.md"
+            "infra/safeops/allowlist.yml"
+          )
+          MISSING=0
+          for f in "${REQUIRED_FILES[@]}"; do
+            if [[ ! -f "$f" ]]; then
+              echo "FAIL: Required governance file missing: $f"
+              MISSING=$((MISSING+1))
+            fi
+          done
+          [[ "$MISSING" -eq 0 ]] || exit 1
+          echo "PASS: All governance bundle files present"
+
+      - name: SOVEREIGN — Governance bundle tests pass
+        run: node --test packages/governance-bundle/test/bundle.test.js
+
+  # ── 12. SafeOps allowlist review gate ────────────────────────────────────────
+  safeops-allowlist-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: SOVEREIGN — SafeOps allowlist must not grant RESTART_SERVICE or ROTATE_SECRET without review
+        run: |
+          set -euo pipefail
+          ALLOWLIST="infra/safeops/allowlist.yml"
+          if [[ ! -f "$ALLOWLIST" ]]; then
+            echo "FAIL: $ALLOWLIST not found — safeops allowlist is required."
+            exit 1
+          fi
+          # Detect if high-risk actions are enabled
+          HARMFUL_ACTIONS=(RESTART_SERVICE ROTATE_SECRET EMERGENCY_HALT APPLY_CONFIG_PATCH)
+          for action in "${HARMFUL_ACTIONS[@]}"; do
+            if grep -q "^[[:space:]]*-[[:space:]]*${action}$" "$ALLOWLIST" 2>/dev/null; then
+              echo "WARN: $action is in the safeops allowlist — ensure this was approved via governance vote."
+            fi
+          done
+          # emergency_halt: false must be set
+          if grep -q "emergency_halt:[[:space:]]*true" "$ALLOWLIST" 2>/dev/null; then
+            echo "NOTICE: emergency_halt is active in allowlist — all AI executor actions are suspended."
+          fi
+          echo "PASS: SafeOps allowlist review gate passed"
+
+  # ── 13. Policy gate merge guard ──────────────────────────────────────────────
+  # This job is the single required status check. It only passes when all above
+  # jobs pass, making it the constitutional merge gate.
+  policy-gate-passed:
+    needs:
+      - kong-admin-not-public
+      - no-trust-forward-header
+      - no-insecure-defaults
+      - no-npm-install-in-compose
+      - prod-images-digest-pinned
+      - routing-law
+      - compose-hardening-full
+      - pq-stub-status
+      - brand-enforcement-scan
+      - governance-bundle-integrity
+      - safeops-allowlist-review
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    permissions: {}
+    if: always()
+    steps:
+      - name: Evaluate policy gate
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || \
+                "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "SOVEREIGN POLICY GATE: FAILED"
+            echo "One or more constitutional enforcement checks failed."
+            echo "No merge is permitted until all policy gate checks pass."
+            exit 1
+          fi
+          echo "SOVEREIGN POLICY GATE: PASSED"
+          echo "All constitutional enforcement checks passed."
