@@ -9,7 +9,7 @@ contract RoutingLawHarness is RoutingLaw {
     function assertRoutingLaw(uint256 src, uint256 dst) external {
         _assertRoutingLaw(src, dst);
     }
-    function assertExternalEgressFromL1(uint256 src) external {
+    function assertExternalEgressFromL1(uint256 src) external pure {
         _assertExternalEgressFromL1(src);
     }
 }
@@ -95,7 +95,7 @@ contract RoutingLawTest is Test {
         rl.assertExternalEgressFromL1(L3);
     }
 
-    function test_external_egress_from_L1_valid() public {
+    function test_external_egress_from_L1_valid() public view {
         rl.assertExternalEgressFromL1(L1); // should not revert
     }
 

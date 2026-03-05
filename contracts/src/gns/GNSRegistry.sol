@@ -160,7 +160,7 @@ contract GNSRegistry {
         bytes32 node,
         string calldata label,
         address owner_,
-        uint64 expiry
+        uint64 expiry_
     ) external onlyBridgeOrGovernance {
         if (reserved[GNSLib.labelHash(label)]) revert RootLocked();
 
@@ -171,11 +171,11 @@ contract GNSRegistry {
             owner:    owner_,
             resolver: address(0),
             approved: address(0),
-            expiry:   expiry,
+            expiry:   expiry_,
             locked:   false
         });
 
-        emit NameRegistered(node, label, owner_, expiry);
+        emit NameRegistered(node, label, owner_, expiry_);
     }
 
     // ── Renewal ───────────────────────────────────────────────────────────────
@@ -189,10 +189,10 @@ contract GNSRegistry {
     }
 
     // ── Resolver ──────────────────────────────────────────────────────────────
-    function setResolver(bytes32 node, address resolver) external ownerOrApproved(node) {
+    function setResolver(bytes32 node, address resolver_) external ownerOrApproved(node) {
         _assertNotExpired(node);
-        records[node].resolver = resolver;
-        emit ResolverSet(node, resolver);
+        records[node].resolver = resolver_;
+        emit ResolverSet(node, resolver_);
     }
 
     // ── Transfer ──────────────────────────────────────────────────────────────

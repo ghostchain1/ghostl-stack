@@ -41,7 +41,7 @@ contract GhostBrainIntegrationTest is TestBase {
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
-    function testConstructorSetsOperator() public {
+    function testConstructorSetsOperator() public view {
         assertEq(gbi.operator(), OPERATOR, "operator mismatch");
     }
 
@@ -79,12 +79,12 @@ contract GhostBrainIntegrationTest is TestBase {
 
     // ── Routing law: valid paths ───────────────────────────────────────────────
 
-    function testRoutingLawL3ToL2() public {
+    function testRoutingLawL3ToL2() public view {
         // Must not revert
         gbi.checkRoutingLaw(903, 901);
     }
 
-    function testRoutingLawL2ToL1() public {
+    function testRoutingLawL2ToL1() public view {
         gbi.checkRoutingLaw(901, 14000101);
     }
 
@@ -117,7 +117,7 @@ contract GhostBrainIntegrationTest is TestBase {
 
     // ── External egress law ───────────────────────────────────────────────────
 
-    function testExternalEgressFromL1Allowed() public {
+    function testExternalEgressFromL1Allowed() public view {
         gbi.checkExternalEgress(14000101);
     }
 
@@ -133,15 +133,15 @@ contract GhostBrainIntegrationTest is TestBase {
 
     // ── Brand law: valid ──────────────────────────────────────────────────────
 
-    function testBrandNameGhost() public {
+    function testBrandNameGhost() public view {
         gbi.checkBrandName("Ghost");
     }
 
-    function testBrandSymbolGST() public {
+    function testBrandSymbolGST() public view {
         gbi.checkBrandSymbol("GST");
     }
 
-    function testBrandDecimals18() public {
+    function testBrandDecimals18() public view {
         gbi.checkBrandDecimals(18);
     }
 
@@ -164,7 +164,7 @@ contract GhostBrainIntegrationTest is TestBase {
 
     // ── Canonical view constants ──────────────────────────────────────────────
 
-    function testCanonicalConstants() public {
+    function testCanonicalConstants() public view {
         assertEq(keccak256(bytes(gbi.brandName())),   keccak256(bytes("Ghost")),  "name");
         assertEq(keccak256(bytes(gbi.brandSymbol())), keccak256(bytes("GST")),    "symbol");
         assertEq(uint256(gbi.brandDecimals()),        18,                         "decimals");

@@ -74,13 +74,13 @@ contract AIConstitutionInvariantTest is TestBase {
         );
     }
 
-    function invariant_constitution_hashes_match() public {
+    function invariant_constitution_hashes_match() public view {
         assertEq(registry.constitutionHash(), CONSTITUTION_HASH, "registry hash");
         assertEq(vault.constitutionHash(), CONSTITUTION_HASH, "vault hash");
         assertEq(executor.constitutionHash(), CONSTITUTION_HASH, "executor hash");
     }
 
-    function invariant_forbidden_actions() public {
+    function invariant_forbidden_actions() public view {
         assertTrue(proposal.forbiddenAction(proposal.FORBIDDEN_FORK_CHOICE()), "fork choice forbidden");
         assertTrue(proposal.forbiddenAction(proposal.FORBIDDEN_BLOCK_ORDERING()), "block ordering forbidden");
         assertTrue(proposal.forbiddenAction(proposal.FORBIDDEN_FINALITY()), "finality forbidden");

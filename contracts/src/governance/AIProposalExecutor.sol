@@ -102,7 +102,7 @@ contract AIProposalExecutor is Governed {
         emit MaxUpdateAgeUpdated(maxAge);
     }
 
-    function hashUpdate(PolicyUpdate calldata update) external view returns (bytes32) {
+    function hashUpdate(PolicyUpdate calldata update) external pure returns (bytes32) {
         return _hashUpdate(update);
     }
 
@@ -217,7 +217,7 @@ contract AIProposalExecutor is Governed {
         return signer;
     }
 
-    function _hashUpdate(PolicyUpdate calldata update) internal view returns (bytes32) {
+    function _hashUpdate(PolicyUpdate calldata update) internal pure returns (bytes32) {
         return
             keccak256(
                 abi.encode(

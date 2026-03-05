@@ -29,19 +29,19 @@ abstract contract TestBase is GhostBrand {
         bytes4[] selectors;
     }
 
-    function assertTrue(bool value, string memory message) internal {
+    function assertTrue(bool value, string memory message) internal pure {
         require(value, message);
     }
 
-    function assertEq(uint256 a, uint256 b, string memory message) internal {
+    function assertEq(uint256 a, uint256 b, string memory message) internal pure {
         require(a == b, message);
     }
 
-    function assertEq(address a, address b, string memory message) internal {
+    function assertEq(address a, address b, string memory message) internal pure {
         require(a == b, message);
     }
 
-    function assertEq(bytes32 a, bytes32 b, string memory message) internal {
+    function assertEq(bytes32 a, bytes32 b, string memory message) internal pure {
         require(a == b, message);
     }
 

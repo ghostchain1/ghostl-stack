@@ -11,19 +11,19 @@ contract GhostIdentityConstitutionTest is TestBase {
         c = new GhostIdentityConstitution(address(this));
     }
 
-    function testIdentityMatchesGhost() public {
+    function testIdentityMatchesGhost() public view {
         assertTrue(c.verifyIdentity("Ghost", "GST", 18), "canonical identity should match");
     }
 
-    function testIdentityRejectsWrongName() public {
+    function testIdentityRejectsWrongName() public view {
         assertEq(c.verifyIdentity("Ghost Token", "GST", 18), false, "wrong name must fail");
     }
 
-    function testIdentityRejectsETHSymbol() public {
+    function testIdentityRejectsETHSymbol() public view {
         assertEq(c.verifyIdentity("Ghost", "ETH", 18), false, "ETH symbol must fail");
     }
 
-    function testIdentityRejectsWrongDecimals() public {
+    function testIdentityRejectsWrongDecimals() public view {
         assertEq(c.verifyIdentity("Ghost", "GST", 17), false, "wrong decimals must fail");
     }
 
@@ -61,7 +61,7 @@ contract GhostIdentityConstitutionTest is TestBase {
     function testConstantsAreCanonical() public view {
         assertEq(c.NATIVE_NAME(),    "Ghost",      "name mismatch");
         assertEq(c.NATIVE_SYMBOL(),  "GST",        "symbol mismatch");
-        assertEq(c.NATIVE_DECIMALS(), uint8(18),   "decimals mismatch");
+        assertEq(uint256(c.NATIVE_DECIMALS()), uint256(18),   "decimals mismatch");
         assertEq(c.L1_NAME(),        "GhostChain", "L1 name mismatch");
         assertEq(c.L2_NAME(),        "GhostL2",    "L2 name mismatch");
         assertEq(c.L3_NAME(),        "GhostL3",    "L3 name mismatch");
@@ -88,15 +88,15 @@ contract GhostIdentityConstitutionTest is TestBase {
 
     // ── Helpers re-implemented (TestBase doesn't have all asserts) ─────────────
 
-    function assertEq(bool a, bool b, string memory msg) internal {
-        require(a == b, msg);
+    function assertEq(bool a, bool b, string memory message) internal pure {
+        require(a == b, message);
     }
 
-    function assertEq(string memory a, string memory b, string memory msg) internal {
-        require(keccak256(bytes(a)) == keccak256(bytes(b)), msg);
+    function assertEq(string memory a, string memory b, string memory message) internal pure {
+        require(keccak256(bytes(a)) == keccak256(bytes(b)), message);
     }
 
-    function assertEq(uint8 a, uint8 b, string memory msg) internal {
-        require(a == b, msg);
+    function assertEq(uint8 a, uint8 b, string memory message) internal pure {
+        require(a == b, message);
     }
 }

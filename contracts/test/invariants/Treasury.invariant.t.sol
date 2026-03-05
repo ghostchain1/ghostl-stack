@@ -73,16 +73,16 @@ contract TreasuryInvariantTest is TestBase {
         senders[1] = address(0xCAFE);
     }
 
-    function invariant_reserve_floor() public {
+    function invariant_reserve_floor() public view {
         uint256 balance = vault.balanceOf(address(token));
         assertTrue(balance >= policy.minReserve(), "reserve breached");
     }
 
-    function invariant_epoch_budget() public {
+    function invariant_epoch_budget() public view {
         assertTrue(policy.epochSpent() <= policy.epochBudget(), "budget breached");
     }
 
-    function invariant_no_eoa_control() public {
+    function invariant_no_eoa_control() public view {
         assertTrue(address(controller).code.length > 0, "controller code missing");
         assertTrue(address(policy).code.length > 0, "policy code missing");
         assertTrue(address(guard).code.length > 0, "guard code missing");

@@ -65,7 +65,7 @@ contract AIAttestationSpecTest is TestBase {
         bytes32 explanationRef;
     }
 
-    function testTypehashesMatchSpec() public {
+    function testTypehashesMatchSpec() public pure {
         bytes32 domainTypehash = keccak256(bytes(DOMAIN_TYPESTRING));
         bytes32 attestationTypehash = keccak256(bytes(ATTESTATION_TYPESTRING));
 
@@ -73,7 +73,7 @@ contract AIAttestationSpecTest is TestBase {
         assertEq(uint256(attestationTypehash), uint256(EXPECTED_ATTESTATION_TYPEHASH), "attestation typehash");
     }
 
-    function testGoldenVectorHashesMatchSpec() public {
+    function testGoldenVectorHashesMatchSpec() public pure {
         bytes32 domainSeparator = _domainSeparator();
         assertEq(uint256(domainSeparator), uint256(EXPECTED_DOMAIN_SEPARATOR), "domain separator");
 

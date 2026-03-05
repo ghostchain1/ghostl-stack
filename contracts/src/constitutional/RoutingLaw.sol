@@ -65,7 +65,7 @@ abstract contract RoutingLaw is GhostBrand {
 
     /// @notice Validates that external egress (to non-GhostChain) originates from L1 only.
     /// @param sourceChainId The chain initiating the external egress
-    function _assertExternalEgressFromL1(uint256 sourceChainId) internal {
+    function _assertExternalEgressFromL1(uint256 sourceChainId) internal pure {
         if (sourceChainId != L1_CHAIN_ID) {
             revert RoutingLawViolation_ExternalEgressNotFromL1(sourceChainId);
         }

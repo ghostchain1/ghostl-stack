@@ -128,7 +128,7 @@ contract GasTokenInvariant is TestBase {
         assertTrue(wasSlashed, "violation slashed");
     }
 
-    function testConfigFilesReferenceCanonicalGasToken() public {
+    function testConfigFilesReferenceCanonicalGasToken() public view {
         _assertCanonicalConfig("../infra/opstack/config/deploy-config.json");
         _assertCanonicalConfig("../infra/opstack/config/deploy-config.l3.json");
         _assertCanonicalConfig("../infra/opstack/op-intent/intent.toml");
@@ -211,7 +211,7 @@ contract GasTokenInvariant is TestBase {
         _rgNoMatches(nonCanonicalAddressCmd, "non-canonical gas token addresses");
     }
 
-    function _assertCanonicalConfig(string memory path) internal {
+    function _assertCanonicalConfig(string memory path) internal view {
         string memory content = vm.readFile(path);
         string memory legacySymbol = _legacyGasSymbol();
         string memory legacyGasTokenSymbolJson = string.concat("gasTokenSymbol\": \"", legacySymbol, "\"");

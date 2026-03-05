@@ -12,13 +12,13 @@ contract BrandingInvariantHarness is BrandingInvariant {
     function assertSymbol(string memory symbol) external {
         _assertBrandSymbol(symbol);
     }
-    function assertDecimals(uint8 d) external {
+    function assertDecimals(uint8 d) external pure {
         _assertBrandDecimals(d);
     }
     function assertTriple(string memory name, string memory symbol, uint8 d) external {
         _assertBrandTriple(name, symbol, d);
     }
-    function assertNoLegacy(string memory value, string memory field) external {
+    function assertNoLegacy(string memory value, string memory field) external pure {
         _assertNoLegacyBranding(value, field);
     }
 }
@@ -40,7 +40,7 @@ contract BrandingInvariantTest is Test {
         bi.assertSymbol("GST");
     }
 
-    function test_canonicalDecimals_passes() public {
+    function test_canonicalDecimals_passes() public view {
         bi.assertDecimals(18);
     }
 
@@ -129,11 +129,11 @@ contract BrandingInvariantTest is Test {
         bi.assertNoLegacy("ETHEREUM", "name");
     }
 
-    function test_GST_no_legacy_passes() public {
+    function test_GST_no_legacy_passes() public view {
         bi.assertNoLegacy("GST", "symbol");
     }
 
-    function test_Ghost_no_legacy_passes() public {
+    function test_Ghost_no_legacy_passes() public view {
         bi.assertNoLegacy("Ghost", "name");
     }
 

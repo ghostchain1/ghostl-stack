@@ -142,7 +142,7 @@ contract GhostXStakingBadgeTest is Test {
         assertEq(badge.discountBps(ALICE), 5_000, "diamond discount should be 50%");
     }
 
-    function test_discount_no_badge() public {
+    function test_discount_no_badge() public view {
         assertEq(badge.discountBps(address(0xDEAD)), 0, "should be 0 with no badge");
     }
 

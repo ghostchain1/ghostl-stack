@@ -14,7 +14,7 @@ contract InvariantBridge is TestBase {
         bridge = new L2L3Bridge(address(policy));
     }
 
-    function invariant_relayer_set() public {
+    function invariant_relayer_set() public view {
         assertTrue(bridge.relayer() != address(0), "relayer zero");
     }
 }

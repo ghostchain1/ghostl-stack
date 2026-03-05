@@ -70,7 +70,7 @@ abstract contract BrandingInvariant is GhostBrand {
 
     /// @notice Asserts that proposed decimals matches the canonical 18.
     /// @param proposed The proposed decimals value
-    function _assertBrandDecimals(uint8 proposed) internal {
+    function _assertBrandDecimals(uint8 proposed) internal pure {
         if (proposed != GHOST_DECIMALS) {
             revert BrandingInvariant_InvalidDecimals(proposed, GHOST_DECIMALS);
         }
@@ -91,7 +91,7 @@ abstract contract BrandingInvariant is GhostBrand {
     ///         NOTE: For substring matching, use off-chain brand-audit.sh.
     /// @param value    The string field value to check
     /// @param field    Human-readable field name (for error context)
-    function _assertNoLegacyBranding(string memory value, string memory field) internal {
+    function _assertNoLegacyBranding(string memory value, string memory field) internal pure {
         bytes32 lowered = keccak256(bytes(_toLower(value)));
         if (
             lowered == _ETH_HASH ||
