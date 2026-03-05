@@ -70,17 +70,17 @@ export class GhostWalletAdapter {
     this._setState("connecting");
 
     try {
-      const opts: Record<string, unknown> = { layer: this._layer };
-      if (this._rpc) opts["rpcUrl"] = this._rpc;
-
-      this._provider = new GhostNativeProvider(opts as Parameters<typeof GhostNativeProvider.prototype.constructor>[0]);
+      const { GhostNetworks } = await import("../networks.js");
+      const rpcUrl = this._rpc ?? GhostNetworks[this._layer].rpc;
+      this._provider = new GhostNativeProvider({ rpcUrl });
 
       if (this._key) {
         const { GhostNativeWallet } = await import("../native/GhostNativeWallet.js");
-        const wallet = new GhostNativeWallet(this._key, this._provider);
-        this._address = await wallet.getAddress();
+        const key = this._key.startsWith("0x") ? this._key as `0x${string}` : `0x${this._key}` as `0x${string}`;
+        const wallet     = new GhostNativeWallet(key, {});
+        this._address    = wallet.address;
       } else {
-        // Read-only: derive a zero address placeholder
+        // Read-only: use zero address
         this._address = "0x0000000000000000000000000000000000000000";
       }
 
@@ -105,11 +105,12 @@ export class GhostWalletAdapter {
     if (!this._key) throw new Error("GhostWalletAdapter: read-only adapter cannot sign");
 
     const { GhostNativeWallet } = await import("../native/GhostNativeWallet.js");
-    const wallet = new GhostNativeWallet(this._key, this._provider!);
-    return wallet.signMessage(message);
+    const key    = this._key.startsWith("0x") ? this._key as `0x${string}` : `0x${this._key}` as `0x${string}`;
+    const wallet = new GhostNativeWallet(key, {});
+    return wallet.signMessage(new TextEncoder().encode(message));
   }
 
-  /** Send a transaction. Requires a private key. */
+  /** Send a transaction. Requires a private key and a connected provider. */
   async sendTransaction(tx: {
     to:      string;
     value?:  bigint;
@@ -117,17 +118,18 @@ export class GhostWalletAdapter {
     gas?:    bigint;
   }): Promise<string> {
     this._requireConnected();
-    if (!this._key) throw new Error("GhostWalletAdapter: read-only adapter cannot send transactions");
+    if (!this._key)      throw new Error("GhostWalletAdapter: read-only adapter cannot send transactions");
+    if (!this._provider) throw new Error("GhostWalletAdapter: provider not initialised");
 
     const { GhostNativeWallet } = await import("../native/GhostNativeWallet.js");
-    const wallet = new GhostNativeWallet(this._key, this._provider!);
-    const receipt = await wallet.sendTransaction({
-      to:     tx.to as `0x${string}`,
-      value:  tx.value,
-      data:   tx.data as `0x${string}` | undefined,
-      gas:    tx.gas,
+    const key    = this._key.startsWith("0x") ? this._key as `0x${string}` : `0x${this._key}` as `0x${string}`;
+    const wallet = new GhostNativeWallet(key, {});
+    return wallet.sendTransaction(this._provider, {
+      to:       tx.to as `0x${string}`,
+      value:    tx.value,
+      data:     tx.data as `0x${string}` | undefined,
+      gasLimit: tx.gas,
     });
-    return receipt.hash;
   }
 
   // ── Listeners ──────────────────────────────────────────────────────────────

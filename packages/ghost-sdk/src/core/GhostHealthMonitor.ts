@@ -22,7 +22,7 @@
  */
 
 import { GhostRPCMonitor, RpcHealthResult } from "../validator/GhostRPCMonitor.js";
-import { GhostValidatorMonitor, ValidatorHealth } from "../validator/GhostValidatorMonitor.js";
+import { GhostValidatorMonitor, ValidatorHealth, ValidatorMonitorConfig } from "../validator/GhostValidatorMonitor.js";
 import { GhostNetworks } from "../networks.js";
 import type { GhostLayer } from "../networks.js";
 
@@ -35,6 +35,9 @@ export interface LayerHealth {
   healthy:      boolean;
   issues:       string[];
 }
+
+// Suppress unused-import lint for imported type
+type _ValidatorMonitorConfig = ValidatorMonitorConfig;
 
 export interface StackHealthReport {
   timestamp: number;
@@ -88,8 +91,8 @@ export class GhostHealthMonitor {
         if (!rpcResult.available)   issues.push(`${layer}: RPC unreachable`);
         if (rpcResult.latencyMs > 2_000) issues.push(`${layer}: RPC high latency (${rpcResult.latencyMs}ms)`);
         if (valResult.syncing)      issues.push(`${layer}: validator is syncing`);
-        if (valResult.peerCount < 1) issues.push(`${layer}: validator has no peers`);
-        if (valResult.status === "error") issues.push(`${layer}: validator error — ${valResult.message ?? "unknown"}`);
+        if ((valResult.peers ?? 1) < 1)  issues.push(`${layer}: validator has no peers`);
+        if (!valResult.healthy)     issues.push(`${layer}: validator error — ${valResult.error ?? "unknown"}`);
 
         const healthy = issues.length === 0;
         return { layer, rpc: rpcResult, validator: valResult, healthy, issues } satisfies LayerHealth;
@@ -147,18 +150,18 @@ export class GhostHealthMonitor {
 // ── Fallback constructors ─────────────────────────────────────────────────────
 
 function _deadRpc(rpcUrl: string): RpcHealthResult {
-  return { rpcUrl, available: false, latencyMs: 0, blockNumber: null, blockLag: null };
+  return { url: rpcUrl, available: false, latencyMs: 0, blockNumber: null, blockLag: null, checkedAt: Date.now() };
 }
 
 function _deadValidator(layer: GhostLayer): ValidatorHealth {
   return {
     layer,
-    rpcUrl:      GhostNetworks[layer].rpc,
-    status:      "error",
-    blockNumber: null,
-    peerCount:   0,
-    syncing:     false,
-    latencyMs:   0,
-    message:     "check failed",
+    rpcUrl:    GhostNetworks[layer].rpc,
+    block:     null,
+    peers:     null,
+    syncing:   null,
+    healthy:   false,
+    error:     "check failed",
+    checkedAt: Date.now(),
   };
 }

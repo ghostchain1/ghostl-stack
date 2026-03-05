@@ -368,7 +368,7 @@ export {
 export {
   GhostBridgeWatcher,
   type BridgeWatchResult,
-  type BridgeWatchConfig,
+  type BridgeWatcherConfig,
 } from "./bridge/GhostBridgeWatcher.js";
 
 export { GNSCache, type GNSCacheEntry, type GNSCacheConfig } from "./gns/GNSCache.js";
@@ -440,7 +440,6 @@ export {
   type GhostHardwareWallet,
   type Eip712Domain,
   type Eip712Type,
-  type SignatureComponents as HardwareWalletSignatureComponents,
 } from "./wallet/GhostHardwareWallet.js";
 
 export {

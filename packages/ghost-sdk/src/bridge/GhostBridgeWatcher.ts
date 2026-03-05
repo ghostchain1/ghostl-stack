@@ -83,8 +83,9 @@ export class GhostBridgeWatcher {
         );
       }
 
-      const currentBlock = await this.provider.getBlockNumber();
-      const status       = this.finality.status(txBlockNumber, currentBlock, this.layer);
+      const currentBlockBig = await this.provider.getBlockNumber();
+      const currentBlock    = Number(currentBlockBig);
+      const status          = this.finality.status(txBlockNumber, currentBlock, this.layer);
 
       onProgress?.(status);
 
@@ -107,7 +108,7 @@ export class GhostBridgeWatcher {
    * Quick finality check without polling — just checks current block number.
    */
   async checkOnce(txBlockNumber: number): Promise<FinalityStatus> {
-    const currentBlock = await this.provider.getBlockNumber();
+    const currentBlock = Number(await this.provider.getBlockNumber());
     return this.finality.status(txBlockNumber, currentBlock, this.layer);
   }
 

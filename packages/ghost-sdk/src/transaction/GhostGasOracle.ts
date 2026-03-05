@@ -28,7 +28,7 @@ export interface GhostGasOracleConfig {
   /** Weight given to RPC data vs AI model (0‥1). Default: 0.5 */
   rpcWeight?:    number;
   /** Override urgency: "low" | "normal" | "high". Default: "normal" */
-  urgency?:       "low" | "normal" | "high";
+  urgency?:       "slow" | "standard" | "fast";
   /** Timeout for RPC calls in ms. Default: 5000 */
   timeoutMs?:    number;
 }
@@ -39,7 +39,7 @@ export class GhostGasOracle {
   private readonly layer:     GhostLayer;
   private readonly rpcUrl:    string;
   private readonly timeoutMs: number;
-  private readonly urgency:   "low" | "normal" | "high";
+  private readonly urgency:   "slow" | "standard" | "fast";
   private readonly rpcWeight: number;
   private readonly ai:        GhostAIGasOptimizer;
 
@@ -47,9 +47,9 @@ export class GhostGasOracle {
     this.layer     = config.layer;
     this.rpcUrl    = config.rpc      ?? GhostNetworks[config.layer].rpc;
     this.timeoutMs = config.timeoutMs ?? 5_000;
-    this.urgency   = config.urgency   ?? "normal";
+    this.urgency   = config.urgency   ?? "standard";
     this.rpcWeight = config.rpcWeight ?? 0.5;
-    this.ai        = new GhostAIGasOptimizer({ speed: this.urgency });
+    this.ai        = new GhostAIGasOptimizer({ targetSpeed: this.urgency });
   }
 
   /**
@@ -59,16 +59,15 @@ export class GhostGasOracle {
     try {
       const stats = await this._fetchStats();
       this.ai.recordBlock({
-        baseFee:     stats.baseFee,
-        gasUsed:     stats.gasUsed,
-        gasLimit:    stats.gasLimit,
+        baseGas:     stats.baseGas,
         mempoolSize: stats.mempoolSize,
       });
-      const aiSuggestion = this.ai.suggest(stats);
+      const networkStats: NetworkStats = { baseGas: stats.baseGas, mempoolSize: stats.mempoolSize };
+      const aiSuggestion = this.ai.suggest(networkStats);
 
       // Blend AI suggestion with raw RPC data
       const blended = _blend(
-        { maxFeePerGas: stats.baseFee * 2n, maxPriorityFeePerGas: stats.baseFee / 10n },
+        { maxFeePerGas: stats.baseGas * 2n, maxPriorityFeePerGas: stats.baseGas / 10n },
         aiSuggestion,
         this.rpcWeight,
       );
@@ -83,7 +82,7 @@ export class GhostGasOracle {
   async baseFee(): Promise<bigint> {
     try {
       const stats = await this._fetchStats();
-      return stats.baseFee;
+      return stats.baseGas;
     } catch {
       return 1_000_000_000n; // 1 gwei fallback
     }
@@ -91,7 +90,7 @@ export class GhostGasOracle {
 
   // ── Internal ──────────────────────────────────────────────────────────────
 
-  private async _fetchStats(): Promise<NetworkStats & { mempoolSize: number }> {
+  private async _fetchStats(): Promise<{ baseGas: bigint; mempoolSize: number }> {
     const [blockRes, gasPriceRes] = await Promise.allSettled([
       this._rpc("eth_getBlockByNumber", ["latest", false]),
       this._rpc("eth_gasPrice", []),
@@ -105,11 +104,9 @@ export class GhostGasOracle {
       ? BigInt(gasPriceRes.value as string)
       : 1_000_000_000n;
 
-    const baseFee  = block?.["baseFeePerGas"] ? BigInt(block["baseFeePerGas"]) : gasPrice;
-    const gasUsed  = block?.["gasUsed"]  ? BigInt(block["gasUsed"])  : 0n;
-    const gasLimit = block?.["gasLimit"] ? BigInt(block["gasLimit"]) : 30_000_000n;
+    const baseGas = block?.["baseFeePerGas"] ? BigInt(block["baseFeePerGas"]) : gasPrice;
 
-    return { baseFee, gasUsed, gasLimit, mempoolSize: 0 };
+    return { baseGas, mempoolSize: 0 };
   }
 
   private _fallback(): GhostFeeSuggestion {

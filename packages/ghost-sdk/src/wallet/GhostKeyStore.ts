@@ -74,9 +74,11 @@ export class GhostKeyStore {
     const iv     = randomBytes(IV_LEN);
     const dk     = this._deriveKey(salt);
     const cipher = createCipheriv(ALG, dk, iv);
+    cipher.setAutoPadding(false);
     const plain  = Buffer.from(privateKey.replace(/^0x/, ""), "hex");
     const ct     = Buffer.concat([cipher.update(plain), cipher.final()]);
     const tag    = cipher.getAuthTag();
+    if (tag.length !== TAG_LEN) throw new Error(`GhostKeyStore: unexpected GCM tag length ${tag.length} (expected ${TAG_LEN})`);
 
     this._entries.set(alias, {
       alias,
@@ -100,6 +102,7 @@ export class GhostKeyStore {
     const iv      = Buffer.from(entry.iv, "hex");
     const ct      = Buffer.from(entry.ciphertext, "hex");
     const tag     = Buffer.from(entry.tag, "hex");
+    if (tag.length !== TAG_LEN) throw new Error(`GhostKeyStore: stored GCM tag has unexpected length ${tag.length} (expected ${TAG_LEN})`);
     const dk      = this._deriveKey(salt);
     const decipher = createDecipheriv(ALG, dk, iv);
     decipher.setAuthTag(tag);

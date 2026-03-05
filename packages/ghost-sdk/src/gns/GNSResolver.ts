@@ -78,11 +78,12 @@ export function gnsNamehash(name: string): string {
 
   const labels = name.split(".").reverse();
   for (const label of labels) {
-    const labelHash = keccak256Bytes(enc.encode(label));
-    const combined  = new Uint8Array(64);
+    const labelHashRaw = keccak256Bytes(enc.encode(label));
+    const labelHash    = new Uint8Array(labelHashRaw);
+    const combined     = new Uint8Array(64);
     combined.set(node,      0);
     combined.set(labelHash, 32);
-    node = keccak256Bytes(combined);
+    node = new Uint8Array(keccak256Bytes(combined));
   }
 
   return "0x" + Array.from(node).map(b => b.toString(16).padStart(2, "0")).join("");

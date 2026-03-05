@@ -90,34 +90,34 @@ export class GhostSoftwareHardwareWallet implements GhostHardwareWallet {
   }
 
   async getAddress(): Promise<string> {
+    const key    = this._privateKey.startsWith("0x") ? this._privateKey as `0x${string}` : `0x${this._privateKey}` as `0x${string}`;
     const { computeAddress } = await _secp();
-    return computeAddress(this._privateKey);
+    return computeAddress(key);
   }
 
   async signMessage(message: string | Uint8Array): Promise<string> {
-    const { signMessage } = await _secp();
-    return signMessage(this._privateKey, message);
+    const { GhostNativeWallet } = await import("../native/GhostNativeWallet.js");
+    const key    = this._privateKey.startsWith("0x") ? this._privateKey as `0x${string}` : `0x${this._privateKey}` as `0x${string}`;
+    const wallet = new GhostNativeWallet(key, {});
+    const bytes  = typeof message === "string" ? new TextEncoder().encode(message) : message;
+    return wallet.signMessage(bytes);
   }
 
   async signTransaction(tx: GhostTxRequest): Promise<string> {
     const { GhostNativeWallet } = await import("../native/GhostNativeWallet.js");
-    const { GhostNativeProvider } = await import("../native/GhostNativeProvider.js");
-    const provider = new GhostNativeProvider({ layer: "L2" });
-    const wallet   = new GhostNativeWallet(this._privateKey, provider);
-    return wallet.signTransaction(tx);
+    const key    = this._privateKey.startsWith("0x") ? this._privateKey as `0x${string}` : `0x${this._privateKey}` as `0x${string}`;
+    const wallet = new GhostNativeWallet(key, {});
+    return wallet.signEip1559Tx(tx);
   }
 
   async signTypedData(
-    domain: Eip712Domain,
-    types: Record<string, Eip712Type[]>,
-    value: Record<string, unknown>,
+    _domain: Eip712Domain,
+    _types: Record<string, Eip712Type[]>,
+    _value: Record<string, unknown>,
   ): Promise<string> {
-    // Minimal EIP-712 via ghost (ethers alias)
-    const { TypedDataEncoder } = await import("ghost");
-    const encoder = TypedDataEncoder.from(types);
-    const hash    = TypedDataEncoder.hash(domain as Parameters<typeof TypedDataEncoder.hash>[0], types, value);
-    const { signMessage } = await _secp();
-    return signMessage(this._privateKey, Buffer.from(hash.slice(2), "hex"));
+    // Software stub: EIP-712 signing requires ethers TypedDataEncoder
+    // In production use GhostHardwareWalletBase extension with real transport
+    throw new Error("GhostSoftwareHardwareWallet: signTypedData not implemented in software stub");
   }
 
   async isConnected(): Promise<boolean> {
@@ -158,30 +158,16 @@ export abstract class GhostHardwareWalletBase implements GhostHardwareWallet {
 
 async function _secp(): Promise<{
   computeAddress: (key: string) => string;
-  signMessage: (key: string, msg: string | Uint8Array) => string;
 }> {
-  const { secp256k1 }       = await import("@noble/curves/secp256k1");
-  const { keccak_256 }      = await import("@noble/hashes/sha3");
+  const { secp256k1 }  = await import("@noble/curves/secp256k1");
+  const { keccak_256 } = await import("@noble/hashes/sha3");
 
   function computeAddress(key: string): string {
-    const priv    = Buffer.from(key.replace(/^0x/, ""), "hex");
-    const pub     = secp256k1.getPublicKey(priv, false).slice(1); // uncompressed, drop 0x04
-    const hashed  = keccak_256(pub);
+    const priv   = Buffer.from(key.replace(/^0x/, ""), "hex");
+    const pub    = secp256k1.getPublicKey(priv, false).slice(1);
+    const hashed = keccak_256(pub);
     return "0x" + Buffer.from(hashed).slice(12).toString("hex");
   }
 
-  function signMessage(key: string, msg: string | Uint8Array): string {
-    const priv    = Buffer.from(key.replace(/^0x/, ""), "hex");
-    const payload = typeof msg === "string"
-      ? Buffer.from(msg)
-      : Buffer.from(msg);
-    const hash    = keccak_256(payload);
-    const sig     = secp256k1.sign(hash, priv);
-    const r       = sig.r.toString(16).padStart(64, "0");
-    const s       = sig.s.toString(16).padStart(64, "0");
-    const v       = (sig.recovery! + 27).toString(16).padStart(2, "0");
-    return `0x${r}${s}${v}`;
-  }
-
-  return { computeAddress, signMessage };
+  return { computeAddress };
 }
