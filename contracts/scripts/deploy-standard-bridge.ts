@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 function getEnv(name: string) {
   const v = process.env[name];
@@ -12,12 +12,12 @@ async function main() {
   const messenger = getEnv("MESSENGER");
   const remoteBridge = getEnv("REMOTE_BRIDGE");
 
-  const [deployer] = await ethers.getSigners();
+  const [deployer] = await ghost.getSigners();
   console.log(`Deployer: ${deployer.address}`);
   console.log(`Messenger: ${messenger}`);
   console.log(`Remote bridge: ${remoteBridge}`);
 
-  const Bridge = await ethers.getContractFactory("StandardBridge");
+  const Bridge = await ghost.getContractFactory("StandardBridge");
   const bridge = await Bridge.deploy(messenger, remoteBridge);
   await bridge.waitForDeployment();
 

@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -10,15 +10,15 @@ async function main() {
     throw new Error("Missing env BRIDGE_L2L3_ADDRESS/L2_TOKEN_ADDRESS (source services/ghost-guard/.env first)");
   }
 
-  const [signer] = await ethers.getSigners();
+  const [signer] = await ghost.getSigners();
   const to = process.env.DEMO_TO ?? signer.address;
   const amountGst = process.env.DEMO_AMOUNT_GST ?? "1";
-  const amountWei = ethers.parseEther(amountGst);
+  const amountWei = ghost.parseEther(amountGst);
   const nonce = BigInt(process.env.DEMO_NONCE ?? Math.floor(Date.now() / 1000).toString());
 
   // Disambiguate between multiple ERC20 artifacts in this repo.
-  const token = await ethers.getContractAt("src/common/ERC20.sol:ERC20", tokenAddress, signer);
-  const bridge = await ethers.getContractAt("L2L3Bridge", bridgeAddress, signer);
+  const token = await ghost.getContractAt("src/common/ERC20.sol:ERC20", tokenAddress, signer);
+  const bridge = await ghost.getContractAt("L2L3Bridge", bridgeAddress, signer);
 
   const approveTx = await token.approve(bridgeAddress, amountWei);
   await approveTx.wait();

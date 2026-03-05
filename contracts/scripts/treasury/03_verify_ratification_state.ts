@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 
 const RPC_L1 = process.env.RPC_L1 ?? "http://localhost:18545";
 
@@ -12,13 +12,13 @@ const TREASURY_RECEIPTS_ADDRESS = process.env.TREASURY_RECEIPTS_ADDRESS;
 const PROPOSAL_EXECUTOR_ADDRESS = process.env.PROPOSAL_EXECUTOR_ADDRESS;
 
 function requireAddress(name: string, value: string | undefined) {
-  if (!value || !ethers.isAddress(value)) {
+  if (!value || !ghost.isAddress(value)) {
     throw new Error(`missing_or_invalid_${name}`);
   }
-  return ethers.getAddress(value);
+  return ghost.getAddress(value);
 }
 
-async function requireContract(provider: ethers.JsonRpcProvider, label: string, addr: string) {
+async function requireContract(provider: ghost.JsonRpcProvider, label: string, addr: string) {
   const code = await provider.getCode(addr);
   if (!code || code === "0x") {
     throw new Error(`not_contract:${label}:${addr}`);
@@ -26,7 +26,7 @@ async function requireContract(provider: ethers.JsonRpcProvider, label: string, 
 }
 
 async function main() {
-  const provider = new ethers.JsonRpcProvider(RPC_L1);
+  const provider = new ghost.JsonRpcProvider(RPC_L1);
   const legacyTreasury = requireAddress("LEGACY_TREASURY_ADDRESS", LEGACY_TREASURY_ADDRESS);
   const vault = requireAddress("TREASURY_VAULT_ADDRESS", TREASURY_VAULT_ADDRESS);
   const controller = requireAddress("TREASURY_CONTROLLER_ADDRESS", TREASURY_CONTROLLER_ADDRESS);
@@ -73,13 +73,13 @@ async function main() {
   const receiptsAbi = ["function controller() external view returns (address)"];
   const executorAbi = ["function delay() external view returns (uint256)"];
 
-  const legacy = new ethers.Contract(legacyTreasury, legacyAbi, provider);
-  const vaultContract = new ethers.Contract(vault, vaultAbi, provider);
-  const controllerContract = new ethers.Contract(controller, controllerAbi, provider);
-  const policyContract = new ethers.Contract(policy, policyAbi, provider);
-  const guardContract = new ethers.Contract(guard, guardAbi, provider);
-  const receiptsContract = new ethers.Contract(receipts, receiptsAbi, provider);
-  const executorContract = new ethers.Contract(executor, executorAbi, provider);
+  const legacy = new ghost.Contract(legacyTreasury, legacyAbi, provider);
+  const vaultContract = new ghost.Contract(vault, vaultAbi, provider);
+  const controllerContract = new ghost.Contract(controller, controllerAbi, provider);
+  const policyContract = new ghost.Contract(policy, policyAbi, provider);
+  const guardContract = new ghost.Contract(guard, guardAbi, provider);
+  const receiptsContract = new ghost.Contract(receipts, receiptsAbi, provider);
+  const executorContract = new ghost.Contract(executor, executorAbi, provider);
 
   const [legacyGovernor, legacyTimelock, frozen] = await Promise.all([
     legacy.governor(),
@@ -89,7 +89,7 @@ async function main() {
   if (legacyGovernor.toLowerCase() !== controller.toLowerCase()) {
     throw new Error("legacy_governor_not_controller");
   }
-  if (legacyTimelock !== ethers.ZeroAddress) {
+  if (legacyTimelock !== ghost.ZeroAddress) {
     throw new Error("legacy_timelock_should_be_zero");
   }
   if (!frozen) {

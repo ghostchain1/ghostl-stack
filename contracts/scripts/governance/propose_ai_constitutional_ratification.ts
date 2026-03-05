@@ -2,7 +2,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 const repoRoot = path.resolve(__dirname, "..", "..", "..");
 const DEFAULT_DOC_PATH = path.join(repoRoot, "docs", "ghostchain", "charter.md");
@@ -56,15 +56,15 @@ const docPath = process.env.CONSTITUTION_DOC_PATH || DEFAULT_DOC_PATH;
 const constitutionHashEnv = process.env.CONSTITUTION_HASH;
 
 const normalizeAddress = (label: string, value: string) => {
-  if (!value || !ethers.isAddress(value)) {
+  if (!value || !ghost.isAddress(value)) {
     throw new Error(`missing_or_invalid_${label}`);
   }
-  return ethers.getAddress(value);
+  return ghost.getAddress(value);
 };
 
 const readConstitutionHash = () => {
   if (constitutionHashEnv) {
-    if (!ethers.isHexString(constitutionHashEnv, 32)) {
+    if (!ghost.isHexString(constitutionHashEnv, 32)) {
       throw new Error(`invalid_CONSTITUTION_HASH:${constitutionHashEnv}`);
     }
     return constitutionHashEnv;
@@ -78,8 +78,8 @@ const resolveProposalAddress = () => {
   if (proposalAddressEnv) return normalizeAddress("AI_CONSTITUTION_PROPOSAL_ADDRESS", proposalAddressEnv);
   if (fs.existsSync(deploymentPath)) {
     const payload = JSON.parse(fs.readFileSync(deploymentPath, "utf8"));
-    if (payload?.address && ethers.isAddress(payload.address)) {
-      return ethers.getAddress(payload.address);
+    if (payload?.address && ghost.isAddress(payload.address)) {
+      return ghost.getAddress(payload.address);
     }
   }
   throw new Error("missing_AI_CONSTITUTION_PROPOSAL_ADDRESS");
@@ -90,8 +90,8 @@ async function main() {
   const proposalAddress = resolveProposalAddress();
   const constitutionHash = readConstitutionHash();
 
-  const [deployer] = await ethers.getSigners();
-  const governorContract = new ethers.Contract(
+  const [deployer] = await ghost.getSigners();
+  const governorContract = new ghost.Contract(
     governor,
     [
       "function proposalsLength() view returns (uint256)",
@@ -101,7 +101,7 @@ async function main() {
   );
 
   const abi = ["function ratify(uint256 proposalId, bytes32 constitutionHash) external"];
-  const iface = new ethers.Interface(abi);
+  const iface = new ghost.Interface(abi);
   const nextId = await governorContract.proposalsLength();
   const data = iface.encodeFunctionData("ratify", [nextId, constitutionHash]);
 

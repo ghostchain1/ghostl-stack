@@ -22,6 +22,7 @@ import {
 } from '../index.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const REPO_ROOT = resolve(__dirname, '../../..');
 
 // ---------------------------------------------------------------------------
@@ -131,7 +132,7 @@ describe('validateNoEthLeaks — bridge allowlist', () => {
 
   it('exempts node_modules', () => {
     const content = `symbol: "ETH"`;
-    const v = validateNoEthLeaks(content, 'node_modules/ethers/src/token.js');
+    const v = validateNoEthLeaks(content, 'node_modules/ghost/src/token.js');
     assert.equal(v.length, 0);
   });
 });

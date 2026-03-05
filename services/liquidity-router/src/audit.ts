@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 
 export type AuditEvent = Record<string, unknown>;
 
@@ -16,7 +16,7 @@ export const stableStringify = (value: unknown): string => {
   return JSON.stringify(value);
 };
 
-export const hashJson = (value: unknown): string => ethers.keccak256(ethers.toUtf8Bytes(stableStringify(value)));
+export const hashJson = (value: unknown): string => ghost.keccak256(ghost.toUtf8Bytes(stableStringify(value)));
 
 export async function appendAuditLog(dir: string, record: AuditEvent) {
   await fs.mkdir(dir, { recursive: true });
@@ -26,10 +26,10 @@ export async function appendAuditLog(dir: string, record: AuditEvent) {
   return filePath;
 }
 
-export async function signAuditRecord(wallet: ethers.Wallet, record: AuditEvent) {
+export async function signAuditRecord(wallet: ghost.Wallet, record: AuditEvent) {
   const payload = stableStringify(record);
-  const digest = ethers.keccak256(ethers.toUtf8Bytes(payload));
-  const sig = await wallet.signMessage(ethers.getBytes(digest));
+  const digest = ghost.keccak256(ghost.toUtf8Bytes(payload));
+  const sig = await wallet.signMessage(ghost.getBytes(digest));
   return { digest, signature: sig };
 }
 

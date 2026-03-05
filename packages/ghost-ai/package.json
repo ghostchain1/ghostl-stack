@@ -1,0 +1,27 @@
+{
+  "name": "@ghost/ai",
+  "version": "0.1.0",
+  "description": "Ghost AI SDK — AI-native GhostChain developer toolkit with GhostBrain integration",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types":  "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev":   "tsc -p tsconfig.json --watch"
+  },
+  "dependencies": {
+    "ghost": "^6.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript":  "^5.6.0"
+  }
+}

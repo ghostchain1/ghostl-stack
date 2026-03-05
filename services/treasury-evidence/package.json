@@ -11,7 +11,7 @@
     "verify_evidence_pack": "bin/verify_evidence_pack.js"
   },
   "dependencies": {
-    "ethers": "^6.15.0",
+    "ghost": "^6.15.0",
     "pdfkit": "^0.15.0"
   },
   "engines": {

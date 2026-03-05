@@ -1,4 +1,4 @@
-import { getAddress } from "ethers";
+import { getAddress } from "ghost";
 import fs from "node:fs/promises";
 import path from "node:path";
 

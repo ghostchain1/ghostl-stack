@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { formatUnits, parseUnits } from 'ethers';
+import { formatUnits, parseUnits } from 'ghost';
 import { Badge, Button, Card } from '@ghostl/ui';
 import { useSession } from '../../src/modules/identity-access/session';
 import { useWallet } from '../../src/modules/wallet/useWallet';

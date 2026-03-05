@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { JsonRpcProvider, Contract } from 'ethers';
+import { JsonRpcProvider, Contract } from 'ghost';
 import { requirePermission } from '../../lib/rbac';
 import type { TokenService } from '../../services/token-store';
 import type { WalletService } from '../../services/wallet-store';

@@ -79,10 +79,10 @@ export default function StakingPanel() {
 
   async function loadState() {
     if (!address || !provider || !STAKING_ADDR || !STAKE_TOKEN) return;
-    const { ethers } = await import("ethers");
-    const web3 = new ethers.BrowserProvider(provider as unknown as ethers.Eip1193Provider);
-    const staking  = new ethers.Contract(STAKING_ADDR, STAKING_ABI, web3);
-    const token    = new ethers.Contract(STAKE_TOKEN,  ERC20_ABI,   web3);
+    const { ghost } = await import("ghost");
+    const web3 = new ghost.BrowserProvider(provider as unknown as ghost.Eip1193Provider);
+    const staking  = new ghost.Contract(STAKING_ADDR, STAKING_ABI, web3);
+    const token    = new ghost.Contract(STAKE_TOKEN,  ERC20_ABI,   web3);
 
     const [raw, pend, bal] = await Promise.all([
       staking.stakes(address) as Promise<[bigint,bigint,bigint,bigint,number,bigint]>,
@@ -102,13 +102,13 @@ export default function StakingPanel() {
 
   // ── Tx wrappers ─────────────────────────────────────────────────────────
 
-  async function withTx(label: string, fn: (signer: import("ethers").Signer) => Promise<import("ethers").ContractTransactionResponse>) {
+  async function withTx(label: string, fn: (signer: import("ghost").Signer) => Promise<import("ghost").ContractTransactionResponse>) {
     setError(null);
     setTxStatus(null);
     setLoading(true);
     try {
-      const { ethers } = await import("ethers");
-      const web3   = new ethers.BrowserProvider(provider as unknown as ethers.Eip1193Provider);
+      const { ghost } = await import("ghost");
+      const web3   = new ghost.BrowserProvider(provider as unknown as ghost.Eip1193Provider);
       const signer = await web3.getSigner();
       setTxStatus(`${label}: waiting for signature…`);
       const tx = await fn(signer);
@@ -129,35 +129,35 @@ export default function StakingPanel() {
     if (!amountStr || !STAKING_ADDR || !STAKE_TOKEN) return;
 
     await withTx("Stake", async (signer) => {
-      const { ethers } = await import("ethers");
-      const amount = ethers.parseUnits(amountStr, 18);
-      const token   = new ethers.Contract(STAKE_TOKEN,  ERC20_ABI,   signer);
-      const staking = new ethers.Contract(STAKING_ADDR, STAKING_ABI, signer);
+      const { ghost } = await import("ghost");
+      const amount = ghost.parseUnits(amountStr, 18);
+      const token   = new ghost.Contract(STAKE_TOKEN,  ERC20_ABI,   signer);
+      const staking = new ghost.Contract(STAKING_ADDR, STAKING_ABI, signer);
 
       // Approve if needed
       const allowance = await token.allowance(await signer.getAddress(), STAKING_ADDR) as bigint;
       if (allowance < amount) {
-        const approveTx = await token.approve(STAKING_ADDR, ethers.MaxUint256) as import("ethers").ContractTransactionResponse;
+        const approveTx = await token.approve(STAKING_ADDR, ghost.MaxUint256) as import("ghost").ContractTransactionResponse;
         await approveTx.wait();
       }
 
-      return staking.stake(amount, LOCK_PERIOD_IDX[lockPeriod]) as Promise<import("ethers").ContractTransactionResponse>;
+      return staking.stake(amount, LOCK_PERIOD_IDX[lockPeriod]) as Promise<import("ghost").ContractTransactionResponse>;
     });
     setAmountStr("");
   }
 
   async function handleUnstake() {
     await withTx("Unstake", (signer) => {
-      return import("ethers").then(({ ethers }) =>
-        new ethers.Contract(STAKING_ADDR, STAKING_ABI, signer).unstake() as Promise<import("ethers").ContractTransactionResponse>
+      return import("ghost").then(({ ghost }) =>
+        new ghost.Contract(STAKING_ADDR, STAKING_ABI, signer).unstake() as Promise<import("ghost").ContractTransactionResponse>
       );
     });
   }
 
   async function handleHarvest() {
     await withTx("Harvest", (signer) => {
-      return import("ethers").then(({ ethers }) =>
-        new ethers.Contract(STAKING_ADDR, STAKING_ABI, signer).harvest() as Promise<import("ethers").ContractTransactionResponse>
+      return import("ghost").then(({ ghost }) =>
+        new ghost.Contract(STAKING_ADDR, STAKING_ABI, signer).harvest() as Promise<import("ghost").ContractTransactionResponse>
       );
     });
   }

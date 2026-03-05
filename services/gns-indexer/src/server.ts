@@ -10,7 +10,7 @@
  */
 
 import express, { type Request, type Response } from 'express';
-import { ethers }    from 'ethers';
+import { ghost }    from 'ghost';
 import { Pool }      from 'pg';
 import pino          from 'pino';
 import pinoHttp      from 'pino-http';
@@ -136,14 +136,14 @@ async function notifyDnsSync(node: string): Promise<void> {
 
 // ── Event processing ──────────────────────────────────────────────────────────
 async function processLogs(
-  contract: ethers.Contract,
+  contract: ghost.Contract,
   fromBlock: number,
   toBlock:   number,
 ): Promise<void> {
   // NameRegistered
   const registered = await contract.queryFilter(
     contract.filters.NameRegistered(), fromBlock, toBlock
-  ) as ethers.EventLog[];
+  ) as ghost.EventLog[];
 
   for (const ev of registered) {
     const { node, label, owner, expiry } = ev.args as unknown as {
@@ -157,7 +157,7 @@ async function processLogs(
   // NameRenewed
   const renewed = await contract.queryFilter(
     contract.filters.NameRenewed(), fromBlock, toBlock
-  ) as ethers.EventLog[];
+  ) as ghost.EventLog[];
 
   for (const ev of renewed) {
     const { node, newExpiry } = ev.args as unknown as { node: string; newExpiry: bigint };
@@ -168,7 +168,7 @@ async function processLogs(
   // ResolverSet
   const resolverSet = await contract.queryFilter(
     contract.filters.ResolverSet(), fromBlock, toBlock
-  ) as ethers.EventLog[];
+  ) as ghost.EventLog[];
 
   for (const ev of resolverSet) {
     const { node, resolver } = ev.args as unknown as { node: string; resolver: string };
@@ -180,7 +180,7 @@ async function processLogs(
   // OwnershipTransferred
   const transferred = await contract.queryFilter(
     contract.filters.OwnershipTransferred(), fromBlock, toBlock
-  ) as ethers.EventLog[];
+  ) as ghost.EventLog[];
 
   for (const ev of transferred) {
     const { node, newOwner } = ev.args as unknown as { node: string; newOwner: string };
@@ -191,7 +191,7 @@ async function processLogs(
   // NameLocked
   const locked = await contract.queryFilter(
     contract.filters.NameLocked(), fromBlock, toBlock
-  ) as ethers.EventLog[];
+  ) as ghost.EventLog[];
 
   for (const ev of locked) {
     const { node } = ev.args as unknown as { node: string };
@@ -201,7 +201,7 @@ async function processLogs(
 }
 
 // ── Poll loop ─────────────────────────────────────────────────────────────────
-async function poll(contract: ethers.Contract, provider: ethers.JsonRpcProvider): Promise<void> {
+async function poll(contract: ghost.Contract, provider: ghost.JsonRpcProvider): Promise<void> {
   state.syncRuns += 1;
   try {
     const tip      = await provider.getBlockNumber();
@@ -246,13 +246,13 @@ async function main(): Promise<void> {
     log.info({ lastBlock: state.lastBlock }, 'resuming from saved block');
   }
 
-  // Set up ethers client
-  let contract: ethers.Contract | null = null;
-  let provider: ethers.JsonRpcProvider | null = null;
+  // Set up ghost client
+  let contract: ghost.Contract | null = null;
+  let provider: ghost.JsonRpcProvider | null = null;
 
   if (GNS_REGISTRY_ADDR && L1_RPC_URL) {
-    provider = new ethers.JsonRpcProvider(L1_RPC_URL);
-    contract = new ethers.Contract(GNS_REGISTRY_ADDR, GNS_REGISTRY_ABI, provider);
+    provider = new ghost.JsonRpcProvider(L1_RPC_URL);
+    contract = new ghost.Contract(GNS_REGISTRY_ADDR, GNS_REGISTRY_ABI, provider);
 
     // Start poll loop
     const tick = () => {

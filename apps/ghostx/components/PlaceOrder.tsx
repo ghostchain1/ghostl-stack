@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 import { placeOrder, ApiOrder } from "../lib/api";
 
 interface Props {
@@ -25,7 +25,7 @@ export default function PlaceOrder({ baseToken, quoteToken }: Props) {
       setError("No EVM wallet detected");
       return;
     }
-    const provider = new ethers.BrowserProvider((window as any).ethereum);
+    const provider = new ghost.BrowserProvider((window as any).ethereum);
     const signer   = await provider.getSigner();
     setTraderAddr(await signer.getAddress());
   }
@@ -39,8 +39,8 @@ export default function PlaceOrder({ baseToken, quoteToken }: Props) {
 
     try {
       // Parse to 18-decimal bigint strings.
-      const price18  = ethers.parseUnits(priceStr,  18).toString();
-      const amount18 = ethers.parseUnits(amountStr, 18).toString();
+      const price18  = ghost.parseUnits(priceStr,  18).toString();
+      const amount18 = ghost.parseUnits(amountStr, 18).toString();
 
       setLoading(true);
       const order = await placeOrder({

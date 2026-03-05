@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { ethers, artifacts, network } from "hardhat";
+import { ghost, artifacts, network } from "hardhat";
 import fs from "fs";
 import path from "path";
 import crypto from "node:crypto";
@@ -16,17 +16,17 @@ function optionalEnv(name: string, fallback = "") {
 
 async function resolveOrDeployPolicyRegistry(governor: string, timelock: string) {
   const existing = optionalEnv("POLICY_REGISTRY_ADDRESS", "");
-  if (existing && ethers.isAddress(existing)) {
-    const code = await ethers.provider.getCode(existing);
+  if (existing && ghost.isAddress(existing)) {
+    const code = await ghost.provider.getCode(existing);
     if (code && code !== "0x") {
-      return ethers.getAddress(existing);
+      return ghost.getAddress(existing);
     }
   }
   const constitutionHash =
     optionalEnv("STACK_CONSTITUTION_HASH", "") ||
     optionalEnv("CONSTITUTION_HASH", "") ||
-    ethers.keccak256(ethers.toUtf8Bytes("lge.constitution.dev"));
-  const PolicyRegistry = await ethers.getContractFactory("PolicyRegistry");
+    ghost.keccak256(ghost.toUtf8Bytes("lge.constitution.dev"));
+  const PolicyRegistry = await ghost.getContractFactory("PolicyRegistry");
   const registry = await PolicyRegistry.deploy(governor, timelock, constitutionHash);
   await registry.waitForDeployment();
   return registry.target as string;
@@ -37,42 +37,42 @@ async function main() {
   const outputFile = getEnv("OUTPUT_FILE", path.join(outputDir, "liquidity_gravity.json"));
   const version = process.env.CONTRACTS_VERSION ?? "0.0.1";
 
-  const [deployer] = await ethers.getSigners();
+  const [deployer] = await ghost.getSigners();
   console.log(`Deployer: ${deployer.address}`);
 
-  const feeReceiver = ethers.getAddress(optionalEnv("LGE_FEE_RECEIVER", optionalEnv("TREASURY_ADDRESS", deployer.address)));
-  const polReceiver = ethers.getAddress(optionalEnv("LGE_POL_RECEIVER", optionalEnv("TREASURY_ADDRESS", deployer.address)));
-  const burnReceiver = ethers.getAddress(optionalEnv("LGE_BURN_RECEIVER", ethers.ZeroAddress));
-  const validatorReceiver = ethers.getAddress(optionalEnv("LGE_VALIDATOR_RECEIVER", optionalEnv("TREASURY_ADDRESS", deployer.address)));
+  const feeReceiver = ghost.getAddress(optionalEnv("LGE_FEE_RECEIVER", optionalEnv("TREASURY_ADDRESS", deployer.address)));
+  const polReceiver = ghost.getAddress(optionalEnv("LGE_POL_RECEIVER", optionalEnv("TREASURY_ADDRESS", deployer.address)));
+  const burnReceiver = ghost.getAddress(optionalEnv("LGE_BURN_RECEIVER", ghost.ZeroAddress));
+  const validatorReceiver = ghost.getAddress(optionalEnv("LGE_VALIDATOR_RECEIVER", optionalEnv("TREASURY_ADDRESS", deployer.address)));
   const gasToken = optionalEnv("GAS_TOKEN_ADDRESS_L1", optionalEnv("CANONICAL_GAS_TOKEN_ADDRESS", ""));
 
-  const governor = ethers.getAddress(optionalEnv("LGE_GOVERNOR", deployer.address));
-  const timelock = ethers.getAddress(optionalEnv("LGE_TIMELOCK", ethers.ZeroAddress));
+  const governor = ghost.getAddress(optionalEnv("LGE_GOVERNOR", deployer.address));
+  const timelock = ghost.getAddress(optionalEnv("LGE_TIMELOCK", ghost.ZeroAddress));
 
   const policyRegistryAddress = await resolveOrDeployPolicyRegistry(governor, timelock);
   console.log(`PolicyRegistry: ${policyRegistryAddress}`);
 
-  const AdapterRegistry = await ethers.getContractFactory("AdapterRegistry");
+  const AdapterRegistry = await ghost.getContractFactory("AdapterRegistry");
   const adapterRegistry = await AdapterRegistry.deploy(governor, timelock);
   await adapterRegistry.waitForDeployment();
   console.log(`AdapterRegistry: ${adapterRegistry.target as string}`);
 
-  const CircuitBreaker = await ethers.getContractFactory("CircuitBreaker");
+  const CircuitBreaker = await ghost.getContractFactory("CircuitBreaker");
   const breaker = await CircuitBreaker.deploy(governor, timelock);
   await breaker.waitForDeployment();
   console.log(`CircuitBreaker: ${breaker.target as string}`);
 
-  const OperatorBondVault = await ethers.getContractFactory("OperatorBondVault");
+  const OperatorBondVault = await ghost.getContractFactory("OperatorBondVault");
   const bondVault = await OperatorBondVault.deploy(governor, timelock);
   await bondVault.waitForDeployment();
   console.log(`OperatorBondVault: ${bondVault.target as string}`);
 
-  const RewardRouter = await ethers.getContractFactory("RewardRouter");
+  const RewardRouter = await ghost.getContractFactory("RewardRouter");
   const rewardRouter = await RewardRouter.deploy(governor, timelock);
   await rewardRouter.waitForDeployment();
   console.log(`RewardRouter: ${rewardRouter.target as string}`);
 
-  const SettlementOracle = await ethers.getContractFactory("SettlementOracle");
+  const SettlementOracle = await ghost.getContractFactory("SettlementOracle");
   const oracle = await SettlementOracle.deploy(
     governor,
     timelock,
@@ -84,7 +84,7 @@ async function main() {
   await oracle.waitForDeployment();
   console.log(`SettlementOracle: ${oracle.target as string}`);
 
-  const LoadBalancerVault = await ethers.getContractFactory("LoadBalancerVault");
+  const LoadBalancerVault = await ghost.getContractFactory("LoadBalancerVault");
   const vault = await LoadBalancerVault.deploy(
     governor,
     timelock,
@@ -96,19 +96,19 @@ async function main() {
   await vault.waitForDeployment();
   console.log(`LoadBalancerVault: ${vault.target as string}`);
 
-  const BridgeEscrow = await ethers.getContractFactory("BridgeEscrow");
+  const BridgeEscrow = await ghost.getContractFactory("BridgeEscrow");
   const bridgeEscrow = await BridgeEscrow.deploy(governor, timelock);
   await bridgeEscrow.waitForDeployment();
   console.log(`BridgeEscrow: ${bridgeEscrow.target as string}`);
 
   // Optional: wrapped native token for native bridge escrow custody.
   let wrappedNative = optionalEnv("LGE_WRAPPED_NATIVE_ADDRESS", "");
-  if (wrappedNative && ethers.isAddress(wrappedNative)) {
-    const code = await ethers.provider.getCode(wrappedNative);
+  if (wrappedNative && ghost.isAddress(wrappedNative)) {
+    const code = await ghost.provider.getCode(wrappedNative);
     if (!code || code === "0x") wrappedNative = "";
   }
   if (!wrappedNative) {
-    const WrappedNativeToken = await ethers.getContractFactory("WrappedNativeToken");
+    const WrappedNativeToken = await ghost.getContractFactory("WrappedNativeToken");
     const wn = await WrappedNativeToken.deploy("Wrapped Native", "WNATIVE");
     await wn.waitForDeployment();
     wrappedNative = wn.target as string;
@@ -118,7 +118,7 @@ async function main() {
   // Wire components (dev path only; production should use governance proposals if governor != deployer).
   if (governor === deployer.address || timelock === deployer.address) {
     await (await rewardRouter.setSettlementOracle(oracle.target as string)).wait();
-    if (gasToken && ethers.isAddress(gasToken)) {
+    if (gasToken && ghost.isAddress(gasToken)) {
       await (await rewardRouter.setGasToken(gasToken)).wait();
     }
 
@@ -126,7 +126,7 @@ async function main() {
     await (await rewardRouter.setSplitDelaySeconds(10)).wait();
     await (await rewardRouter.queueConfig(polReceiver, burnReceiver, validatorReceiver, 5000, 3000, 2000)).wait();
     // dev activate immediately after delay.
-    await ethers.provider.send("evm_increaseTime", [11]);
+    await ghost.provider.send("evm_increaseTime", [11]);
     await (await rewardRouter.activateConfig()).wait();
 
     await (await breaker.setVault(vault.target as string)).wait();
@@ -140,10 +140,10 @@ async function main() {
 
     // Minimal dev config: allow native deposits/deploys and register an adapter.
     const operatorFromPk = optionalEnv("LGE_OPERATOR_PRIVATE_KEY", "");
-    const operator = operatorFromPk ? new ethers.Wallet(operatorFromPk).address : deployer.address;
+    const operator = operatorFromPk ? new ghost.Wallet(operatorFromPk).address : deployer.address;
     const adapterId = Number(optionalEnv("LGE_DEFAULT_ADAPTER_ID", "1"));
     const extChainId = BigInt(optionalEnv("LGE_DEFAULT_EXTERNAL_CHAIN_ID", "137"));
-    const maxCap = BigInt(optionalEnv("LGE_DEFAULT_MAX_DEPLOY_CAP_WEI", ethers.parseEther("100").toString()));
+    const maxCap = BigInt(optionalEnv("LGE_DEFAULT_MAX_DEPLOY_CAP_WEI", ghost.parseEther("100").toString()));
     const interval = Number(optionalEnv("LGE_DEFAULT_SETTLEMENT_INTERVAL_SEC", "86400"));
 
     await (
@@ -161,14 +161,14 @@ async function main() {
     ).wait();
 
     await (
-      await vault.configureAsset(ethers.ZeroAddress, {
+      await vault.configureAsset(ghost.ZeroAddress, {
         supported: true,
-        maxTotalDeployed: BigInt(optionalEnv("LGE_DEFAULT_MAX_TOTAL_DEPLOYED_WEI", ethers.parseEther("200").toString())),
+        maxTotalDeployed: BigInt(optionalEnv("LGE_DEFAULT_MAX_TOTAL_DEPLOYED_WEI", ghost.parseEther("200").toString())),
         depositsEnabled: true,
         withdrawalsEnabled: true
       })
     ).wait();
-    await (await vault.setGlobalStrategyAllowed(ethers.id("lge.strategy.mock"), true)).wait();
+    await (await vault.setGlobalStrategyAllowed(ghost.id("lge.strategy.mock"), true)).wait();
 
     await (await oracle.setRelayer(operator, true)).wait();
     await (await oracle.setMinRelayers(1)).wait();
@@ -187,7 +187,7 @@ async function main() {
     { name: "BridgeEscrow", address: bridgeEscrow.target as string }
   ];
 
-  const chainId = Number((await ethers.provider.getNetwork()).chainId);
+  const chainId = Number((await ghost.provider.getNetwork()).chainId);
   const enriched = await Promise.all(
     contracts.map(async (entry) => {
       const artifact = await artifacts.readArtifact(entry.name);

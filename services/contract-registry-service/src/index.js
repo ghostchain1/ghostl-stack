@@ -1,5 +1,5 @@
 import express from "express";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 
 const PORT = Number(process.env.PORT || 7608);
 const PROM_URL = process.env.PROM_URL || "http://localhost:9090";
@@ -86,7 +86,7 @@ const fetchContractsProm = async () => {
 
 const codeAt = async (rpc, addr) => {
   try {
-    const provider = new ethers.JsonRpcProvider(rpc);
+    const provider = new ghost.JsonRpcProvider(rpc);
     const code = await provider.getCode(addr);
     return code && code !== "0x" ? code : null;
   } catch {

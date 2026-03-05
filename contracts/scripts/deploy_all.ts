@@ -1,4 +1,4 @@
-import { ethers, network, artifacts } from "hardhat";
+import { ghost, network, artifacts } from "hardhat";
 import path from "node:path";
 import crypto from "node:crypto";
 import { promises as fs } from "node:fs";
@@ -15,29 +15,29 @@ function normalizeAddress(value: string | undefined): string | undefined {
   if (!value) return undefined;
   const trimmed = value.trim();
   if (!trimmed) return undefined;
-  if (!ethers.isAddress(trimmed)) {
+  if (!ghost.isAddress(trimmed)) {
     throw new Error(`invalid address: ${trimmed}`);
   }
-  return ethers.getAddress(trimmed);
+  return ghost.getAddress(trimmed);
 }
 
 function ensureBytes32(value: string | undefined, label: string): string | undefined {
   if (!value) return undefined;
   const trimmed = value.trim();
   if (!trimmed) return undefined;
-  if (!ethers.isHexString(trimmed, 32)) {
+  if (!ghost.isHexString(trimmed, 32)) {
     throw new Error(`${label} must be a 32-byte hex value`);
   }
   return trimmed;
 }
 
 async function waitForReceipt(
-  provider: ethers.JsonRpcProvider,
+  provider: ghost.Provider,
   hash: string,
   label: string,
   retries = 0,
   timeoutMs = 120_000
-): Promise<ethers.TransactionReceipt | null> {
+): Promise<ghost.TransactionReceipt | null> {
   const start = Date.now();
   while (true) {
     try {
@@ -61,8 +61,8 @@ async function waitForReceipt(
 }
 
 async function waitForDeployment(
-  contract: ethers.Contract,
-  provider: ethers.JsonRpcProvider,
+  contract:ghost.Contract,
+  provider: ghost.JsonRpcProvider,
   label: string
 ): Promise<void> {
   const tx = contract.deploymentTransaction();
@@ -98,7 +98,7 @@ async function main() {
   const autoAcceptPolicyHash = parseBool(process.env.AUTO_ACCEPT_POLICY_HASH, true);
   const aiPolicyHash = ensureBytes32(process.env.AI_POLICY_HASH, "AI_POLICY_HASH");
   const governanceExecutorOverride = normalizeAddress(process.env.GOVERNANCE_EXECUTOR);
-  const governanceTimelock = normalizeAddress(process.env.GOVERNANCE_TIMELOCK) ?? ethers.ZeroAddress;
+  const governanceTimelock = normalizeAddress(process.env.GOVERNANCE_TIMELOCK) ?? ghost.ZeroAddress;
   const l1RollupParentOracleEnv = normalizeAddress(
     process.env.L1_ROLLUP_PARENT_ORACLE ??
       process.env.ROLLUP_L2_PARENT_ORACLE_ADDRESS ??
@@ -152,7 +152,7 @@ async function main() {
   // Deploy policy + bridge on L2 (GhostL2)
   const CANONICAL_GAS_TOKEN = process.env.CANONICAL_GAS_TOKEN ?? "0x5FbDB2315678afecb367f032d93F642f64180aa3";
   const l2TokenAddr = process.env.L2_TOKEN_ADDRESS ?? process.env.L2_TOKEN ?? CANONICAL_GAS_TOKEN;
-  const l2 = await ethers.getSigners();
+  const l2 = await ghost.getSigners();
   if (!l2.length) {
     throw new Error(
       `No signers available for network=${network.name}. Set DEPLOYER_PRIVATE_KEY (or configure hardhat network accounts).`
@@ -161,20 +161,20 @@ async function main() {
   if (!l2[0].provider) {
     throw new Error(`Signer has no provider for network=${network.name}. Check your Hardhat RPC URL config.`);
   }
-  const l2Provider = l2[0].provider as ethers.JsonRpcProvider;
+  const l2Provider = l2[0].provider as ghost.JsonRpcProvider;
   const l2TokenCode = await l2Provider.getCode(l2TokenAddr);
   const l2TokenHasCode = !!l2TokenCode && l2TokenCode !== "0x";
 
   console.log(`Deploying to GhostL2 network (${network.name})...`);
   console.log("== Deploy GuardPolicy on L2 ==");
-  const Policy = await ethers.getContractFactory("GuardPolicy");
+  const Policy = await ghost.getContractFactory("GuardPolicy");
   const policy = await Policy.connect(l2[0]).deploy(txOpts);
-  await waitForDeployment(policy, l2[0].provider as ethers.JsonRpcProvider, "GuardPolicy");
+  await waitForDeployment(policy, l2[0].provider as ghost.JsonRpcProvider, "GuardPolicy");
 
   console.log("== Deploy L2L3Bridge on L2 ==");
-  const Bridge = await ethers.getContractFactory("L2L3Bridge");
+  const Bridge = await ghost.getContractFactory("L2L3Bridge");
   const bridge = await Bridge.connect(l2[0]).deploy(await policy.getAddress(), txOpts);
-  await waitForDeployment(bridge, l2[0].provider as ethers.JsonRpcProvider, "L2L3Bridge");
+  await waitForDeployment(bridge, l2[0].provider as ghost.JsonRpcProvider, "L2L3Bridge");
 
   const policyAddr = await policy.getAddress();
   const bridgeAddr = await bridge.getAddress();
@@ -193,11 +193,11 @@ async function main() {
   }
 
   console.log("== Deploy GhostNFT on L2 ==");
-  const GhostNFT = await ethers.getContractFactory("GhostNFT");
+  const GhostNFT = await ghost.getContractFactory("GhostNFT");
   const l2NftName = process.env.L2_NFT_NAME ?? "GhostL2 NFT";
   const l2NftSymbol = process.env.L2_NFT_SYMBOL ?? "GL2NFT";
   const l2Nft = await GhostNFT.connect(l2[0]).deploy(l2NftName, l2NftSymbol, txOpts);
-  await waitForDeployment(l2Nft, l2[0].provider as ethers.JsonRpcProvider, "GhostNFT L2");
+  await waitForDeployment(l2Nft, l2[0].provider as ghost.JsonRpcProvider, "GhostNFT L2");
   const l2NftAddr = await l2Nft.getAddress();
   await recordDeployment("l2", "GhostNFT", l2NftAddr, l2ChainId);
   console.log("GhostNFT (L2):", l2NftAddr);
@@ -209,15 +209,15 @@ async function main() {
     throw new Error("Missing RELAYER_PRIVATE_KEY (or DEPLOYER_PRIVATE_KEY) for L1/L3 deployments");
   }
 
-  const l3Provider = new ethers.JsonRpcProvider(l3Rpc);
-  const l3Signer = new ethers.Wallet(relayerKey, l3Provider);
+  const l3Provider = new ghost.JsonRpcProvider(l3Rpc);
+  const l3Signer = new ghost.Wallet(relayerKey, l3Provider);
   const relayerAddr = await l3Signer.getAddress();
   let l3Nonce = await l3Provider.getTransactionCount(relayerAddr, "pending");
   const nextL3Nonce = () => l3Nonce++;
 
   console.log("== Set bridge relayer on L2 ==");
   const setRelayerTx = await bridge.setRelayer(relayerAddr, txOpts);
-  await waitForReceipt(l2[0].provider as ethers.JsonRpcProvider, setRelayerTx.hash, "Bridge.setRelayer");
+  await waitForReceipt(l2[0].provider as ghost.JsonRpcProvider, setRelayerTx.hash, "Bridge.setRelayer");
   console.log("Bridge relayer (L2):", relayerAddr);
 
   // The bridge defaults to strict compliance gating. For local devnets, disable this by default so E2E flows work
@@ -226,19 +226,19 @@ async function main() {
   if (!requireComplianceRoot) {
     console.log("== Disable L2L3Bridge compliance root requirement (dev default) ==");
     const tx = await bridge.setRequireComplianceRoot(false, txOpts);
-    await waitForReceipt(l2[0].provider as ethers.JsonRpcProvider, tx.hash, "Bridge.setRequireComplianceRoot(false)");
+    await waitForReceipt(l2[0].provider as ghost.JsonRpcProvider, tx.hash, "Bridge.setRequireComplianceRoot(false)");
   }
 
   // Deploy optimistic settlement contracts:
   // - L2 batches posted to L1 (Anvil)
   // - L3 batches posted to L2 (GhostL2)
-  const l1Provider = new ethers.JsonRpcProvider(rpcL1);
-  const l1Signer = new ethers.Wallet(relayerKey, l1Provider);
+  const l1Provider = new ghost.JsonRpcProvider(rpcL1);
+  const l1Signer = new ghost.Wallet(relayerKey, l1Provider);
   const l1Address = await l1Signer.getAddress();
   let l1Nonce = await l1Provider.getTransactionCount(l1Address, "pending");
   const nextL1Nonce = () => l1Nonce++;
 
-  const Rollup = await ethers.getContractFactory("OptimisticRollup");
+  const Rollup = await ghost.getContractFactory("OptimisticRollup");
 
   console.log("== Deploy OptimisticRollup L2->L1 on L1 ==");
   const l1Rollup = await Rollup.connect(l1Signer).deploy(
@@ -257,8 +257,8 @@ async function main() {
   const constitutionGovernance = process.env.CONSTITUTION_GOVERNANCE ?? (await l1Signer.getAddress());
   const constitutionVerifierAgent =
     process.env.CONSTITUTION_VERIFIER_AGENT ?? constitutionGovernance;
-  const constitutionZkVerifier = process.env.CONSTITUTION_ZK_VERIFIER ?? ethers.ZeroAddress;
-  const Constitution = await ethers.getContractFactory("GhostConstitution");
+  const constitutionZkVerifier = process.env.CONSTITUTION_ZK_VERIFIER ?? ghost.ZeroAddress;
+  const Constitution = await ghost.getContractFactory("GhostConstitution");
   const constitution = await Constitution.connect(l1Signer).deploy(
     constitutionGovernance,
     constitutionVerifierAgent,
@@ -289,7 +289,7 @@ async function main() {
     await l2[0].getAddress(),
     txOpts
   );
-  await waitForDeployment(l2Rollup, l2[0].provider as ethers.JsonRpcProvider, "OptimisticRollup L3->L2");
+  await waitForDeployment(l2Rollup, l2[0].provider as ghost.JsonRpcProvider, "OptimisticRollup L3->L2");
   const l2RollupAddr = await l2Rollup.getAddress();
   await recordDeployment("l2", "OptimisticRollup", l2RollupAddr, l2ChainId);
   console.log("OptimisticRollup L3->L2 (L2):", l2RollupAddr);
@@ -299,9 +299,9 @@ async function main() {
     console.log("== Deploy/Wire Cascading Finality Oracles on L2 ==");
     console.log("Cascading governance:", { executor: governanceExecutor, timelock: governanceTimelock });
 
-    const L1FinalityOracle = await ethers.getContractFactory("L1FinalityOracle");
-    const L2FinalityOracle = await ethers.getContractFactory("L2FinalityOracle");
-    const L3FinalityOracle = await ethers.getContractFactory("L3FinalityOracle");
+    const L1FinalityOracle = await ghost.getContractFactory("L1FinalityOracle");
+    const L2FinalityOracle = await ghost.getContractFactory("L2FinalityOracle");
+    const L3FinalityOracle = await ghost.getContractFactory("L3FinalityOracle");
 
     if (l1FinalityOracleAddr) {
       const code = await l2Provider.getCode(l1FinalityOracleAddr);
@@ -355,7 +355,7 @@ async function main() {
     await recordDeployment("l2", "L3FinalityOracle", l3FinalityOracleAddr, l2ChainId);
 
     if (aiPolicyHash && autoAcceptPolicyHash) {
-      const l1FinalityOracle = await ethers.getContractAt("L1FinalityOracle", l1FinalityOracleAddr, l2[0]);
+      const l1FinalityOracle = await ghost.getContractAt("L1FinalityOracle", l1FinalityOracleAddr, l2[0]);
       const accepted = await (l1FinalityOracle as any).acceptedPolicyHash(aiPolicyHash);
       if (!accepted) {
         const tx = await (l1FinalityOracle as any).setAcceptedPolicyHash(aiPolicyHash, true, txOpts);
@@ -364,13 +364,13 @@ async function main() {
       }
     }
 
-    const currentBridgeL2Oracle = ethers.getAddress(await bridge.l2FinalityOracle());
+    const currentBridgeL2Oracle = ghost.getAddress(await bridge.l2FinalityOracle());
     if (currentBridgeL2Oracle !== l2FinalityOracleAddr) {
       const tx = await bridge.setL2FinalityOracle(l2FinalityOracleAddr, txOpts);
       await waitForReceipt(l2Provider, tx.hash, "L2L3Bridge.setL2FinalityOracle");
     }
 
-    const currentBridgeL3Oracle = ethers.getAddress(await bridge.l3FinalityOracle());
+    const currentBridgeL3Oracle = ghost.getAddress(await bridge.l3FinalityOracle());
     if (currentBridgeL3Oracle !== l3FinalityOracleAddr) {
       const tx = await bridge.setL3FinalityOracle(l3FinalityOracleAddr, txOpts);
       await waitForReceipt(l2Provider, tx.hash, "L2L3Bridge.setL3FinalityOracle");
@@ -387,7 +387,7 @@ async function main() {
     if (!l2ParentCode || l2ParentCode === "0x") {
       throw new Error(`No bytecode at L2 rollup parent finality oracle on L2 network: ${l2RollupParentOracleAddr}`);
     }
-    const currentL2ParentOracle = ethers.getAddress(await l2Rollup.parentFinalityOracle());
+    const currentL2ParentOracle = ghost.getAddress(await l2Rollup.parentFinalityOracle());
     if (currentL2ParentOracle !== l2RollupParentOracleAddr) {
       const tx = await l2Rollup.setParentFinalityOracle(l2RollupParentOracleAddr, txOpts);
       await waitForReceipt(l2Provider, tx.hash, "OptimisticRollup(L3->L2).setParentFinalityOracle");
@@ -406,7 +406,7 @@ async function main() {
       );
       l1RollupParentOracleAddr = "";
     } else {
-      const currentL1ParentOracle = ethers.getAddress(await l1Rollup.parentFinalityOracle());
+      const currentL1ParentOracle = ghost.getAddress(await l1Rollup.parentFinalityOracle());
       if (currentL1ParentOracle !== l1RollupParentOracleAddr) {
         // If L1/L2 share RPC+key in dev, refresh nonce to avoid drift from L2 transactions.
         l1Nonce = await l1Provider.getTransactionCount(l1Address, "pending");
@@ -430,7 +430,7 @@ async function main() {
   console.log("== Deploy L3Inbox on L3 ==");
   // If L2/L3 share RPC+key in dev, refresh nonce to avoid drift from L2 transactions.
   l3Nonce = await l3Provider.getTransactionCount(relayerAddr, "pending");
-  const Inbox = await ethers.getContractFactory("L3Inbox");
+  const Inbox = await ghost.getContractFactory("L3Inbox");
   const inbox = await Inbox.connect(l3Signer).deploy(relayerAddr, { ...l3TxOpts, nonce: nextL3Nonce() });
   await waitForDeployment(inbox, l3Provider, "L3Inbox");
   const inboxAddr = await inbox.getAddress();
@@ -438,7 +438,7 @@ async function main() {
   console.log("L3Inbox (L3):", inboxAddr);
 
   console.log("== Deploy L3BridgedTokenFactory on L3 ==");
-  const Factory = await ethers.getContractFactory("L3BridgedTokenFactory");
+  const Factory = await ghost.getContractFactory("L3BridgedTokenFactory");
   const factory = await Factory.connect(l3Signer).deploy(relayerAddr, { ...l3TxOpts, nonce: nextL3Nonce() });
   await waitForDeployment(factory, l3Provider, "L3BridgedTokenFactory");
   const factoryAddr = await factory.getAddress();
@@ -461,7 +461,7 @@ async function main() {
   let l3TokenAddr = "";
   if (l2TokenHasCode) {
     try {
-      const l2Token = await ethers.getContractAt("src/common/ERC20.sol:ERC20", l2TokenAddr, l2[0]);
+      const l2Token = await ghost.getContractAt("src/common/ERC20.sol:ERC20", l2TokenAddr, l2[0]);
       const l2Name = await l2Token.name();
       const l2Symbol = await l2Token.symbol();
       const l2Decimals = await l2Token.decimals();

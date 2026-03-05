@@ -3,7 +3,7 @@ import net from "net";
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import crypto from "node:crypto";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 import Docker from "dockerode";
 
 const PORT = Number(process.env.NETWORK_MANAGER_PORT || "7766");
@@ -190,7 +190,7 @@ const planPayload = (plan) => {
 };
 
 const computePlanHash = (plan) =>
-  ethers.keccak256(ethers.toUtf8Bytes(stableStringify(planPayload(plan))));
+  ghost.keccak256(ghost.toUtf8Bytes(stableStringify(planPayload(plan))));
 
 const approvalMessage = (planHash) => `GhostChain ActionPlan ${planHash}`;
 
@@ -228,7 +228,7 @@ const verifyApprovals = (plan) => {
     if (!signature) continue;
     let recovered = null;
     try {
-      recovered = ethers.verifyMessage(message, signature).toLowerCase();
+      recovered = ghost.verifyMessage(message, signature).toLowerCase();
     } catch {
       continue;
     }
@@ -512,10 +512,10 @@ const buildPlan = async (req) => {
 
   if (GOVERNANCE_RPC && GOVERNOR_ADDRESS) {
     try {
-      const provider = new ethers.JsonRpcProvider(GOVERNANCE_RPC);
-      const governor = new ethers.Contract(GOVERNOR_ADDRESS, GOVERNOR_ABI, provider);
+      const provider = new ghost.JsonRpcProvider(GOVERNANCE_RPC);
+      const governor = new ghost.Contract(GOVERNOR_ADDRESS, GOVERNOR_ABI, provider);
       const executorAddr = await governor.executor();
-      const executor = new ethers.Contract(executorAddr, EXECUTOR_ABI, provider);
+      const executor = new ghost.Contract(executorAddr, EXECUTOR_ABI, provider);
       const delay = await executor.delay();
       governance.executor = executorAddr;
       governance.minDelaySeconds = Number(delay);
@@ -551,8 +551,8 @@ const checkKillSwitches = async () => {
     if (REQUIRE_PAUSE_GUARDIAN) throw new Error("pause_guardian_not_configured");
     return { paused: null };
   }
-  const provider = new ethers.JsonRpcProvider(GOVERNANCE_RPC || process.env.RPC_L1);
-  const guardian = new ethers.Contract(PAUSE_GUARDIAN_ADDRESS, PAUSE_GUARDIAN_ABI, provider);
+  const provider = new ghost.JsonRpcProvider(GOVERNANCE_RPC || process.env.RPC_L1);
+  const guardian = new ghost.Contract(PAUSE_GUARDIAN_ADDRESS, PAUSE_GUARDIAN_ABI, provider);
   const paused = await guardian.paused();
   if (paused) throw new Error("pause_guardian_paused");
   return { paused };
@@ -579,15 +579,15 @@ const verifyGovernanceAnchor = async (plan) => {
     throw new Error("anchor_index_missing");
   }
 
-  const provider = new ethers.JsonRpcProvider(GOVERNANCE_RPC);
-  const governor = new ethers.Contract(GOVERNOR_ADDRESS, GOVERNOR_ABI, provider);
+  const provider = new ghost.JsonRpcProvider(GOVERNANCE_RPC);
+  const governor = new ghost.Contract(GOVERNOR_ADDRESS, GOVERNOR_ABI, provider);
   const executorAddr = await governor.executor();
   const executorAddrLower = String(executorAddr).toLowerCase();
-  const executor = new ethers.Contract(executorAddr, EXECUTOR_ABI, provider);
+  const executor = new ghost.Contract(executorAddr, EXECUTOR_ABI, provider);
   const delaySeconds = Number(await executor.delay());
 
   const anchorAddr = plan.governance?.evidenceAnchor || EVIDENCE_ANCHOR_ADDRESS;
-  const anchor = new ethers.Contract(anchorAddr, EVIDENCE_ANCHOR_ABI, provider);
+  const anchor = new ghost.Contract(anchorAddr, EVIDENCE_ANCHOR_ABI, provider);
   const record = await anchor.anchorAt(anchorIndex);
   const recordHash = record.hash || record[1];
   const anchoredBy = String(record.anchoredBy || record[4] || "").toLowerCase();
@@ -757,7 +757,7 @@ app.post("/remediate/execute", async (req, res) => {
       postSnapshot,
       results
     };
-    evidence.executionHash = ethers.keccak256(ethers.toUtf8Bytes(stableStringify(evidence)));
+    evidence.executionHash = ghost.keccak256(ghost.toUtf8Bytes(stableStringify(evidence)));
     const evidencePath = await writeEvidence(evidence);
 
     const requirePost = policy?.postconditions?.requireTelemetryAfter ?? DEFAULT_POLICY.postconditions.requireTelemetryAfter;

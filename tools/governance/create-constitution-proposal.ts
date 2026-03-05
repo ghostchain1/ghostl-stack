@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { Interface, keccak256, toUtf8Bytes } from "ethers";
+import { Interface, keccak256, toUtf8Bytes } from "ghost";
 
 type CliArgs = {
   proposalId: string;

@@ -64,7 +64,7 @@
 - Redis (sessions, queues, rate limits)
 - Queue worker (BullMQ)
 - Websocket gateway for live updates
-- Chain Ops SDK (ethers v6 + op-stack tooling + polygon-edge tooling)
+- Chain Ops SDK (ghost v6 + op-stack tooling + polygon-edge tooling)
 
 ### Security
 - RBAC + ABAC policy layer

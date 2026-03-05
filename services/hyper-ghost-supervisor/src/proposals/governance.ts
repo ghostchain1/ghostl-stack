@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { Interface } from 'ethers';
+import { Interface } from 'ghost';
 import { writeJson } from './manifest.js';
 
 type TemplateField<T> = { value: T | null; resolvedFrom?: string; howToResolve?: string };

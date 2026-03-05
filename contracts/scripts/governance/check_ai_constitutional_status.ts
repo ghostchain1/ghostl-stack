@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import fs from "node:fs";
 import path from "node:path";
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 const repoRoot = path.resolve(__dirname, "..", "..", "..");
 const DEFAULT_REPORT_PATH = path.join(
@@ -54,21 +54,21 @@ const governorAddress =
 const proposalAddress = readEnv("AI_CONSTITUTION_PROPOSAL_ADDRESS") || "";
 
 const normalizeAddress = (label: string, value: string) => {
-  if (!value || !ethers.isAddress(value)) {
+  if (!value || !ghost.isAddress(value)) {
     throw new Error(`missing_or_invalid_${label}`);
   }
-  return ethers.getAddress(value);
+  return ghost.getAddress(value);
 };
 
 async function main() {
-  const [signer] = await ethers.getSigners();
+  const [signer] = await ghost.getSigners();
   const governor = normalizeAddress("GOVERNOR_ADDRESS", governorAddress);
   const proposalContract = normalizeAddress(
     "AI_CONSTITUTION_PROPOSAL_ADDRESS",
     proposalAddress
   );
 
-  const gov = new ethers.Contract(
+  const gov = new ghost.Contract(
     governor,
     [
       "function proposals(uint256) view returns (address target,uint256 value,bytes data,uint256 forVotes,uint256 againstVotes,uint256 start,uint256 end,bool queued,bool executed)",
@@ -82,7 +82,7 @@ async function main() {
   const votingToken = await gov.votingToken();
   const executor = await gov.executor();
 
-  const token = new ethers.Contract(
+  const token = new ghost.Contract(
     votingToken,
     ["function totalSupply() view returns (uint256)", "function balanceOf(address) view returns (uint256)"],
     signer
@@ -90,7 +90,7 @@ async function main() {
   const totalSupply = await token.totalSupply();
   const signerBalance = await token.balanceOf(signer.address);
 
-  const constitution = new ethers.Contract(
+  const constitution = new ghost.Contract(
     proposalContract,
     [
       "function ratified() view returns (bool)",

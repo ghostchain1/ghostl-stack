@@ -16,7 +16,7 @@
  * Safe to re-run: skips contracts already deployed at the recorded address.
  */
 
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 import path from "node:path";
 import crypto from "node:crypto";
 import { readFileSync, promises as fs } from "node:fs";
@@ -43,7 +43,7 @@ const OUTPUT_DIR =
 
 // Model ID = keccak256(utf8("GHOST_AI_CONSENSUS_V1")) – must match ghost-guard buildModelId()
 const AI_MODEL_TEXT = process.env.AI_MODEL_ID ?? "GHOST_AI_CONSENSUS_V1";
-const AI_MODEL_ID = ethers.keccak256(ethers.toUtf8Bytes(AI_MODEL_TEXT));
+const AI_MODEL_ID = ghost.keccak256(ghost.toUtf8Bytes(AI_MODEL_TEXT));
 
 const ARTIFACTS = path.resolve(__dirname, "../artifacts");
 
@@ -53,7 +53,7 @@ function loadArtifact(contractName: string, solFileSubdir: string) {
   // Hardhat artifact path: artifacts/src/<subdir>/<Contract>.sol/<Contract>.json
   const p = path.join(ARTIFACTS, "src", solFileSubdir, `${contractName}.sol`, `${contractName}.json`);
   try {
-    return JSON.parse(readFileSync(p, "utf8")) as { abi: ethers.InterfaceAbi; bytecode: string };
+    return JSON.parse(readFileSync(p, "utf8")) as { abi: ghost.InterfaceAbi; bytecode: string };
   } catch {
     throw new Error(`Cannot load artifact for ${contractName} at:\n  ${p}\n  Run: npx hardhat compile`);
   }
@@ -97,9 +97,9 @@ async function deploy(
   contractName: string,
   solFileSubdir: string,
   layer: string,
-  signer: ethers.Wallet
-): Promise<{ address: string; contract: ethers.Contract }> {
-  const provider = signer.provider as ethers.JsonRpcProvider;
+  signer: ghost.Wallet
+): Promise<{ address: string; contract: ghost.Contract }> {
+  const provider = signer.provider as ghost.JsonRpcProvider;
   const network = await provider.getNetwork();
   const chainId = Number(network.chainId);
 
@@ -115,7 +115,7 @@ async function deploy(
       if (code && code !== "0x") {
         console.log(`  [skip] ${contractName} already deployed at ${entry.address}`);
         const { abi } = loadArtifact(contractName, solFileSubdir);
-        return { address: entry.address, contract: new ethers.Contract(entry.address, abi, signer) };
+        return { address: entry.address, contract: new ghost.Contract(entry.address, abi, signer) };
       }
     }
   } catch {
@@ -127,7 +127,7 @@ async function deploy(
 
   const feeData = await provider.getFeeData();
   const gasPrice = feeData.gasPrice ?? 1_000_000_000n;
-  const factory = new ethers.ContractFactory(abi, bytecode, signer);
+  const factory = new ghost.ContractFactory(abi, bytecode, signer);
 
   console.log(`  [deploy] ${contractName} → chain ${chainId}`);
   const instance = await factory.deploy({ gasLimit: 6_000_000n, gasPrice });
@@ -162,12 +162,12 @@ async function deploy(
     )
   );
 
-  return { address, contract: new ethers.Contract(address, abi, signer) };
+  return { address, contract: new ghost.Contract(address, abi, signer) };
 }
 
 // ── configure ────────────────────────────────────────────────────────────────
 
-async function configure(contract: ethers.Contract, deployerAddress: string, layer: string) {
+async function configure(contract: ghost.Contract, deployerAddress: string, layer: string) {
   console.log(`  [configure] ${layer.toUpperCase()} guardian...`);
   const provider = contract.runner!.provider!;
   const feeData = await provider.getFeeData();
@@ -232,12 +232,12 @@ async function configure(contract: ethers.Contract, deployerAddress: string, lay
 // ── main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
-  const provL1 = new ethers.JsonRpcProvider(RPC_L1);
-  const provL2 = new ethers.JsonRpcProvider(RPC_L2);
-  const provL3 = new ethers.JsonRpcProvider(RPC_L3);
-  const sigL1 = new ethers.Wallet(DEPLOYER_KEY, provL1);
-  const sigL2 = new ethers.Wallet(DEPLOYER_KEY, provL2);
-  const sigL3 = new ethers.Wallet(DEPLOYER_KEY, provL3);
+  const provL1 = new ghost.JsonRpcProvider(RPC_L1);
+  const provL2 = new ghost.JsonRpcProvider(RPC_L2);
+  const provL3 = new ghost.JsonRpcProvider(RPC_L3);
+  const sigL1 = new ghost.Wallet(DEPLOYER_KEY, provL1);
+  const sigL2 = new ghost.Wallet(DEPLOYER_KEY, provL2);
+  const sigL3 = new ghost.Wallet(DEPLOYER_KEY, provL3);
 
   const deployer = sigL1.address;
   console.log(`Deployer : ${deployer}`);
@@ -245,7 +245,7 @@ async function main() {
 
   // connectivity check
   for (const [name, p] of [["L1", provL1], ["L2", provL2], ["L3", provL3]] as const) {
-    const net = await (p as ethers.JsonRpcProvider).getNetwork().catch((e) => {
+    const net = await (p as ghost.JsonRpcProvider).getNetwork().catch((e) => {
       throw new Error(`Cannot connect to ${name} (${e.message})`);
     });
     console.log(`${name} chainId : ${net.chainId}`);

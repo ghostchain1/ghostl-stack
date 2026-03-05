@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { ethers } from 'ethers';
+import { ghost } from 'ghost';
 import { z } from 'zod';
 import { config, loadChains } from '../config.js';
 import { buildEvidenceBundle, fetchPolicyVersion, recordEvidence, writeEvidenceBundle } from '../ai-core/evidence.js';
@@ -366,7 +366,7 @@ export async function registerAiCoreRoutes(app: FastifyInstance) {
             policyKey,
             policyVersion: policyVersion ?? 0,
             proposalId: parsed.data.proposalId ?? 0,
-            signerSetHash: config.AI_EVIDENCE_SIGNER_SET_HASH || ethers.ZeroHash,
+            signerSetHash: config.AI_EVIDENCE_SIGNER_SET_HASH || ghost.ZeroHash,
             threshold: config.AI_EVIDENCE_THRESHOLD,
             metadataHash
           });

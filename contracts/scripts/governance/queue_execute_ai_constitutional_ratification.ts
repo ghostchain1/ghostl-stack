@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import fs from "node:fs";
 import path from "node:path";
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 const repoRoot = path.resolve(__dirname, "..", "..", "..");
 const DEFAULT_REPORT_PATH = path.join(
@@ -67,10 +67,10 @@ const governorAddress =
   "";
 
 const normalizeAddress = (label: string, value: string) => {
-  if (!value || !ethers.isAddress(value)) {
+  if (!value || !ghost.isAddress(value)) {
     throw new Error(`missing_or_invalid_${label}`);
   }
-  return ethers.getAddress(value);
+  return ghost.getAddress(value);
 };
 
 const AUTO_EXECUTE =
@@ -78,13 +78,13 @@ const AUTO_EXECUTE =
 
 async function main() {
   const governor = normalizeAddress("GOVERNOR_ADDRESS", governorAddress);
-  const [signer] = await ethers.getSigners();
+  const [signer] = await ghost.getSigners();
   const provider = signer.provider;
   if (!provider) {
     throw new Error("missing_provider");
   }
 
-  const governorContract = new ethers.Contract(
+  const governorContract = new ghost.Contract(
     governor,
     [
       "function queue(uint256 id) external",
@@ -115,7 +115,7 @@ async function main() {
   }
 
   const executorAddress = await governorContract.executor();
-  const executor = new ethers.Contract(
+  const executor = new ghost.Contract(
     executorAddress,
     [
       "function queue(uint256) view returns (address target,uint256 value,bytes data,uint256 eta,bool executed)",

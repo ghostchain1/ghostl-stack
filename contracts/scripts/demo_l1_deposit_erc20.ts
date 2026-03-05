@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -12,13 +12,13 @@ async function main() {
     throw new Error("Missing env L1_STANDARD_BRIDGE_ADDRESS/L1_TOKEN_ADDRESS/L2_TOKEN_ADDRESS");
   }
 
-  const [signer] = await ethers.getSigners();
+  const [signer] = await ghost.getSigners();
   const to = process.env.DEMO_TO ?? signer.address;
   const amountGst = process.env.DEMO_AMOUNT_GST ?? "1";
-  const amountWei = ethers.parseEther(amountGst);
+  const amountWei = ghost.parseEther(amountGst);
   const minGasLimit = BigInt(process.env.DEMO_MIN_GAS ?? "200000");
 
-  const erc20 = await ethers.getContractAt("src/common/ERC20.sol:ERC20", localToken, signer);
+  const erc20 = await ghost.getContractAt("src/common/ERC20.sol:ERC20", localToken, signer);
   const allowance = await erc20.allowance(signer.address, bridgeAddress);
   if (allowance < amountWei) {
     const approveTx = await erc20.approve(bridgeAddress, amountWei);
@@ -28,7 +28,7 @@ async function main() {
   const StandardBridgeAbi = [
     "function depositERC20To(address l1Token,address l2Token,address to,uint256 amount,uint32 minGasLimit,bytes extraData)"
   ];
-  const bridge = new ethers.Contract(bridgeAddress, StandardBridgeAbi, signer);
+  const bridge = new ghost.Contract(bridgeAddress, StandardBridgeAbi, signer);
   const minGasLimit32 = Number(minGasLimit);
   if (!Number.isSafeInteger(minGasLimit32) || minGasLimit32 < 0 || minGasLimit32 > 0xffffffff) {
     throw new Error(`DEMO_MIN_GAS must fit uint32, got ${minGasLimit.toString()}`);

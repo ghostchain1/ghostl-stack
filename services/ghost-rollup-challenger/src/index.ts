@@ -1,6 +1,6 @@
 import "dotenv/config";
 import express from "express";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -81,12 +81,12 @@ if (!RPC_SETTLEMENT_RESOLVED || !RPC_CHILD_RESOLVED || !ROLLUP) {
 
 const observeOnly = !CHALLENGER_PRIVATE_KEY;
 
-const settlement = new ethers.JsonRpcProvider(RPC_SETTLEMENT_RESOLVED, undefined, { polling: true });
+const settlement = new ghost.JsonRpcProvider(RPC_SETTLEMENT_RESOLVED, undefined, { polling: true });
 settlement.pollingInterval = 1000;
-const child = new ethers.JsonRpcProvider(RPC_CHILD_RESOLVED, undefined, { polling: true });
+const child = new ghost.JsonRpcProvider(RPC_CHILD_RESOLVED, undefined, { polling: true });
 child.pollingInterval = 1000;
 
-const signer = observeOnly ? null : new ethers.NonceManager(new ethers.Wallet(CHALLENGER_PRIVATE_KEY, settlement));
+const signer = observeOnly ? null : new ghost.NonceManager(new ghost.Wallet(CHALLENGER_PRIVATE_KEY, settlement));
 
 const rollupAbi = [
   "function batchesLength() view returns (uint256)",
@@ -94,7 +94,7 @@ const rollupAbi = [
   "function challengeBatch(uint256 batchId, string reason) external",
   "event BatchChallenged(uint256 indexed batchId, address indexed challenger, string reason)"
 ];
-const rollup = new ethers.Contract(ROLLUP, rollupAbi, signer ?? settlement);
+const rollup = new ghost.Contract(ROLLUP, rollupAbi, signer ?? settlement);
 
 type State = { nextBatchToCheck: number | null };
 const statePath = path.join(STATE_DIR, "state.json");
@@ -119,17 +119,17 @@ async function saveState(s: State) {
 }
 
 function hashLeaf(blockNumber: number, blockHash: string): string {
-  return ethers.keccak256(
-    ethers.solidityPacked(["uint256", "bytes32"], [BigInt(blockNumber), blockHash as `0x${string}`])
+  return ghost.keccak256(
+    ghost.solidityPacked(["uint256", "bytes32"], [BigInt(blockNumber), blockHash as `0x${string}`])
   );
 }
 
 function hashPair(a: string, b: string): string {
-  return ethers.keccak256(ethers.concat([a as `0x${string}`, b as `0x${string}`]));
+  return ghost.keccak256(ghost.concat([a as `0x${string}`, b as `0x${string}`]));
 }
 
 function merkleRoot(leaves: Array<string>): string {
-  if (leaves.length === 0) return ethers.ZeroHash;
+  if (leaves.length === 0) return ghost.ZeroHash;
   let level = leaves.slice();
   while (level.length > 1) {
     const next: Array<string> = [];

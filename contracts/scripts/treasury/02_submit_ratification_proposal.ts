@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import fs from "node:fs";
 import path from "node:path";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 
 const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
 
@@ -13,10 +13,10 @@ const INPUT_PATH =
   path.join(process.cwd(), "contracts", "scripts", "treasury", "ratification_proposal.json");
 
 function requireAddress(name: string, value: string | undefined) {
-  if (!value || !ethers.isAddress(value)) {
+  if (!value || !ghost.isAddress(value)) {
     throw new Error(`missing_or_invalid_${name}`);
   }
-  return ethers.getAddress(value);
+  return ghost.getAddress(value);
 }
 
 async function main() {
@@ -30,9 +30,9 @@ async function main() {
   const payload = JSON.parse(raw) as any;
 
   const governor = requireAddress("GOVERNOR_ADDRESS", GOVERNOR_ADDRESS);
-  const provider = new ethers.JsonRpcProvider(RPC_L1);
-  const signer = new ethers.Wallet(DEPLOYER_PRIVATE_KEY, provider);
-  const governorContract = new ethers.Contract(
+  const provider = new ghost.JsonRpcProvider(RPC_L1);
+  const signer = new ghost.Wallet(DEPLOYER_PRIVATE_KEY, provider);
+  const governorContract = new ghost.Contract(
     governor,
     ["function propose(address target,uint256 value,bytes data) external returns (uint256)"],
     signer

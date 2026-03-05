@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { getAddress, isAddress } from "ethers";
+import { getAddress, isAddress } from "ghost";
 
 export type GhostLayer = 1 | 2 | 3;
 

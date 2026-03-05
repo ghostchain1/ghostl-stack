@@ -17,7 +17,7 @@ gen_key() {
 }
 
 addr_for_key() {
-  node -e "const { Wallet } = require('ethers'); console.log(new Wallet(process.argv[1]).address)" "$1"
+  node -e "const { Wallet } = require('ghost'); console.log(new Wallet(process.argv[1]).address)" "$1"
 }
 
 echo "Generating fresh L2 keys..."

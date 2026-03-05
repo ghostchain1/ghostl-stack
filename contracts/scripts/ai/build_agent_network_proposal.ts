@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import fs from "node:fs";
 import path from "node:path";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 import {
   EXECUTOR_ABI_FRAGMENTS,
   buildCall,
@@ -24,15 +24,15 @@ const DESCRIPTION = process.env.AGENT_PROPOSAL_DESCRIPTION || "Agent network pol
 const CONFIG_PATH = process.env.AGENT_CONFIG_PATH || "";
 
 const toBytes32 = (value: string) => {
-  if (ethers.isHexString(value, 32)) return value;
-  return ethers.keccak256(ethers.toUtf8Bytes(value));
+  if (ghost.isHexString(value, 32)) return value;
+  return ghost.keccak256(ghost.toUtf8Bytes(value));
 };
 
 const requireAddress = (name: string, value: string) => {
-  if (!value || !ethers.isAddress(value)) {
+  if (!value || !ghost.isAddress(value)) {
     throw new Error(`missing_or_invalid_${name}`);
   }
-  return ethers.getAddress(value);
+  return ghost.getAddress(value);
 };
 
 const loadConfig = () => {

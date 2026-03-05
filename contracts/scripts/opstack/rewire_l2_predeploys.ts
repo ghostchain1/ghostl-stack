@@ -1,7 +1,7 @@
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 import fs from "node:fs";
 import path from "node:path";
-import { getCreateAddress } from "ethers";
+import { getCreateAddress } from "ghost";
 
 type L1Deployments = Record<string, string>;
 
@@ -44,10 +44,10 @@ async function main() {
   const l2StdBridgeProxy = "0x4200000000000000000000000000000000000010";
 
   // Storage slots on L2 predeploy proxies (validated by reading current values first).
-  const SLOT_OTHER_MESSENGER = ethers.zeroPadValue(ethers.toBeHex(0xcf), 32);
-  const SLOT_OTHER_BRIDGE = ethers.zeroPadValue(ethers.toBeHex(0x04), 32);
+  const SLOT_OTHER_MESSENGER = ghost.zeroPadValue(ghost.toBeHex(0xcf), 32);
+  const SLOT_OTHER_BRIDGE = ghost.zeroPadValue(ghost.toBeHex(0x04), 32);
 
-  const [signer] = await ethers.getSigners();
+  const [signer] = await ghost.getSigners();
   const signerAddr = await signer.getAddress();
 
   const ProxyAdminAbi = [
@@ -55,7 +55,7 @@ async function main() {
     "function upgrade(address proxy,address implementation)",
     "function upgradeAndCall(address proxy,address implementation,bytes data) payable"
   ];
-  const proxyAdmin = new ethers.Contract(l2ProxyAdmin, ProxyAdminAbi, signer);
+  const proxyAdmin = new ghost.Contract(l2ProxyAdmin, ProxyAdminAbi, signer);
 
   const owner = (await proxyAdmin.owner()) as string;
   if (owner.toLowerCase() !== signerAddr.toLowerCase()) {
@@ -65,9 +65,9 @@ async function main() {
   }
 
   const L2XdmViewAbi = ["function l1CrossDomainMessenger() view returns (address)"];
-  const l2Xdm = new ethers.Contract(l2XdmProxy, L2XdmViewAbi, signer.provider);
+  const l2Xdm = new ghost.Contract(l2XdmProxy, L2XdmViewAbi, signer.provider);
   const L2BridgeViewAbi = ["function l1TokenBridge() view returns (address)"];
-  const l2Bridge = new ethers.Contract(l2StdBridgeProxy, L2BridgeViewAbi, signer.provider);
+  const l2Bridge = new ghost.Contract(l2StdBridgeProxy, L2BridgeViewAbi, signer.provider);
 
   const currentOtherMessenger = (await l2Xdm.l1CrossDomainMessenger()) as string;
   const slotOtherMessenger = await signer.provider!.getStorage(l2XdmProxy, SLOT_OTHER_MESSENGER);
@@ -113,7 +113,7 @@ async function main() {
     await bump.wait();
   }
 
-  const Setter = await ethers.getContractFactory("ProxyStorageSetter", signer);
+  const Setter = await ghost.getContractFactory("ProxyStorageSetter", signer);
   const setter = await Setter.deploy(l2ProxyAdmin);
   await setter.waitForDeployment();
   const setterAddr = await setter.getAddress();
@@ -127,8 +127,8 @@ async function main() {
   const IMPL_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
   const origXdmImpl = await signer.provider!.getStorage(l2XdmProxy, IMPL_SLOT);
   const origBridgeImpl = await signer.provider!.getStorage(l2StdBridgeProxy, IMPL_SLOT);
-  const origXdmImplAddr = ethers.getAddress(ethers.dataSlice(origXdmImpl, 12));
-  const origBridgeImplAddr = ethers.getAddress(ethers.dataSlice(origBridgeImpl, 12));
+  const origXdmImplAddr = ghost.getAddress(ghost.dataSlice(origXdmImpl, 12));
+  const origBridgeImplAddr = ghost.getAddress(ghost.dataSlice(origBridgeImpl, 12));
   console.log("Original implementations:");
   console.log("  L2XDM:", origXdmImplAddr);
   console.log("  L2StandardBridge:", origBridgeImplAddr);

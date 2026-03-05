@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 function getEnv(name: string, fallback?: string) {
   const v = process.env[name] ?? fallback;
@@ -14,16 +14,16 @@ async function main() {
   const amountWei = amountWeiRaw
     ? BigInt(amountWeiRaw)
     : amountGstRaw
-      ? ethers.parseEther(amountGstRaw)
-      : ethers.parseEther("10");
+      ? ghost.parseEther(amountGstRaw)
+      : ghost.parseEther("10");
 
-  const [signer] = await ethers.getSigners();
+  const [signer] = await ghost.getSigners();
   console.log(`Depositor: ${signer.address}`);
   console.log(`Vault: ${vaultAddress}`);
   console.log(`Deposit: ${amountWei.toString()} wei`);
 
-  const vault = await ethers.getContractAt("LoadBalancerVault", vaultAddress);
-  const tx = await vault.deposit(ethers.ZeroAddress, amountWei, { value: amountWei });
+  const vault = await ghost.getContractAt("LoadBalancerVault", vaultAddress);
+  const tx = await vault.deposit(ghost.ZeroAddress, amountWei, { value: amountWei });
   const receipt = await tx.wait();
   console.log(`tx=${receipt?.hash || tx.hash}`);
 }

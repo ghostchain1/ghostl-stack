@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 function getEnv(name: string) {
   const v = process.env[name];
@@ -8,11 +8,11 @@ function getEnv(name: string) {
 
 async function main() {
   const messenger = getEnv("MESSENGER");
-  const [deployer] = await ethers.getSigners();
+  const [deployer] = await ghost.getSigners();
   console.log(`Deployer: ${deployer.address}`);
   console.log(`Messenger: ${messenger}`);
 
-  const PingPong = await ethers.getContractFactory("PingPong");
+  const PingPong = await ghost.getContractFactory("PingPong");
   const pp = await PingPong.deploy(messenger);
   await pp.waitForDeployment();
 

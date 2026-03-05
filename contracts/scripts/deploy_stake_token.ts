@@ -1,11 +1,11 @@
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 async function main() {
-  const [signer] = await ethers.getSigners();
+  const [signer] = await ghost.getSigners();
   const owner = await signer.getAddress();
-  const initialSupply = ethers.parseEther(process.env.STAKE_TOKEN_SUPPLY ?? "1000000");
+  const initialSupply = ghost.parseEther(process.env.STAKE_TOKEN_SUPPLY ?? "1000000");
 
-  const factory = await ethers.getContractFactory("StakeToken");
+  const factory = await ghost.getContractFactory("StakeToken");
   const token = await factory.deploy(owner, initialSupply);
   await token.waitForDeployment();
 

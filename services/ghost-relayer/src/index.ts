@@ -1,6 +1,6 @@
 import "dotenv/config";
 import express from "express";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
@@ -75,7 +75,7 @@ const canonicalGasTokenAbi = [
 
 const gasTokenCacheKey = (chainLabel: "l2" | "l3", account: string) => `${chainLabel}:${account.toLowerCase()}`;
 
-async function ensureGasTokenBalance(chainLabel: "l2" | "l3", provider: ethers.Provider, signer: ethers.Signer | null) {
+async function ensureGasTokenBalance(chainLabel: "l2" | "l3", provider: ghost.Provider, signer: ghost.Signer | null) {
   if (!signer) return;
   if (MIN_CANONICAL_GAS_TOKEN_BALANCE === 0n) return;
   const account = await signer.getAddress();
@@ -101,7 +101,7 @@ async function ensureGasTokenBalance(chainLabel: "l2" | "l3", provider: ethers.P
         `canonical gas token contract missing on ${chainLabel}: address=${CANONICAL_GAS_TOKEN_ADDRESS}`
       );
     }
-    const token = new ethers.Contract(CANONICAL_GAS_TOKEN_ADDRESS, canonicalGasTokenAbi, provider);
+    const token = new ghost.Contract(CANONICAL_GAS_TOKEN_ADDRESS, canonicalGasTokenAbi, provider);
     let symbol = CANONICAL_GAS_TOKEN_SYMBOL;
     try {
       symbol = String(await token.symbol());
@@ -236,11 +236,11 @@ const inboxAbi = [
   "function processed(bytes32 key) view returns (bool)"
 ];
 
-const depositTopic = ethers.id("DepositInitiated(address,address,uint256,uint256)");
-const finalizedTopic = ethers.id("Finalized(address,address,uint256,uint256)");
-const erc20DepositTopic = ethers.id("ERC20DepositInitiated(address,address,address,uint256,uint256)");
-const erc20FinalizedTopic = ethers.id("ERC20Finalized(address,address,address,uint256,uint256)");
-const bridgeIface = new ethers.Interface(bridgeAbi);
+const depositTopic = ghost.id("DepositInitiated(address,address,uint256,uint256)");
+const finalizedTopic = ghost.id("Finalized(address,address,uint256,uint256)");
+const erc20DepositTopic = ghost.id("ERC20DepositInitiated(address,address,address,uint256,uint256)");
+const erc20FinalizedTopic = ghost.id("ERC20Finalized(address,address,address,uint256,uint256)");
+const bridgeIface = new ghost.Interface(bridgeAbi);
 
 const l2Erc20MetaAbi = [
   "function name() view returns (string)",
@@ -262,28 +262,28 @@ const l3TokenAbi = [
   "event BurnInitiated(address indexed l2Token, address indexed from, address indexed to, uint256 amount, uint256 nonce, bytes32 key)"
 ];
 
-const l2Provider = new ethers.JsonRpcProvider(RPC_L2, undefined, { polling: true });
+const l2Provider = new ghost.JsonRpcProvider(RPC_L2, undefined, { polling: true });
 l2Provider.pollingInterval = 1000;
 
-const l3Provider = new ethers.JsonRpcProvider(RPC_L3, undefined, { polling: true });
+const l3Provider = new ghost.JsonRpcProvider(RPC_L3, undefined, { polling: true });
 l3Provider.pollingInterval = 1000;
 
-const l1Provider = RPC_L1 ? new ethers.JsonRpcProvider(RPC_L1, undefined, { polling: true }) : null;
+const l1Provider = RPC_L1 ? new ghost.JsonRpcProvider(RPC_L1, undefined, { polling: true }) : null;
 if (l1Provider) l1Provider.pollingInterval = 1000;
 
 const observeOnly = !RELAYER_PRIVATE_KEY;
-const l3Signer = observeOnly ? null : new ethers.NonceManager(new ethers.Wallet(RELAYER_PRIVATE_KEY, l3Provider));
+const l3Signer = observeOnly ? null : new ghost.NonceManager(new ghost.Wallet(RELAYER_PRIVATE_KEY, l3Provider));
 const l2Key = L2_RELAYER_PRIVATE_KEY || RELAYER_PRIVATE_KEY;
-const l2Signer = l2Key ? new ethers.NonceManager(new ethers.Wallet(l2Key, l2Provider)) : null;
-const inbox = new ethers.Contract(L3_INBOX, inboxAbi, l3Signer ?? l3Provider);
-const l3Factory = new ethers.Contract(L3_TOKEN_FACTORY, l3FactoryAbi, l3Signer ?? l3Provider);
+const l2Signer = l2Key ? new ghost.NonceManager(new ghost.Wallet(l2Key, l2Provider)) : null;
+const inbox = new ghost.Contract(L3_INBOX, inboxAbi, l3Signer ?? l3Provider);
+const l3Factory = new ghost.Contract(L3_TOKEN_FACTORY, l3FactoryAbi, l3Signer ?? l3Provider);
 
 const rollupAbi = [
   "function batchesLength() view returns (uint256)",
   "function batches(uint256) view returns (uint256 startBlock,uint256 endBlock,bytes32 root,uint256 proposedAt,bool challenged,bool finalized,bool invalidated)"
 ];
-const l1Rollup = l1Provider && L1_ROLLUP_L2 ? new ethers.Contract(L1_ROLLUP_L2, rollupAbi, l1Provider) : null;
-const l2Rollup = L2_ROLLUP_L3 ? new ethers.Contract(L2_ROLLUP_L3, rollupAbi, l2Provider) : null;
+const l1Rollup = l1Provider && L1_ROLLUP_L2 ? new ghost.Contract(L1_ROLLUP_L2, rollupAbi, l1Provider) : null;
+const l2Rollup = L2_ROLLUP_L3 ? new ghost.Contract(L2_ROLLUP_L3, rollupAbi, l2Provider) : null;
 
 type LogEntry = { ts: number; level: "info" | "warn" | "error"; msg: string; data?: any };
 const logBuffer: Array<LogEntry> = [];
@@ -350,14 +350,14 @@ async function saveCursor(name: "l2" | "l3", state: CursorState) {
 }
 
 function msgKeyEth(from: string, to: string, amount: bigint, nonce: bigint): string {
-  return ethers.keccak256(
-    ethers.AbiCoder.defaultAbiCoder().encode(["address", "address", "uint256", "uint256"], [from, to, amount, nonce])
+  return ghost.keccak256(
+    ghost.AbiCoder.defaultAbiCoder().encode(["address", "address", "uint256", "uint256"], [from, to, amount, nonce])
   );
 }
 
 function msgKeyErc20(token: string, from: string, to: string, amount: bigint, nonce: bigint): string {
-  return ethers.keccak256(
-    ethers.AbiCoder.defaultAbiCoder().encode(
+  return ghost.keccak256(
+    ghost.AbiCoder.defaultAbiCoder().encode(
       ["address", "address", "address", "uint256", "uint256"],
       [token, from, to, amount, nonce]
     )
@@ -365,17 +365,17 @@ function msgKeyErc20(token: string, from: string, to: string, amount: bigint, no
 }
 
 function hashLeaf(blockNumber: number, blockHash: string): string {
-  return ethers.keccak256(
-    ethers.solidityPacked(["uint256", "bytes32"], [BigInt(blockNumber), blockHash as `0x${string}`])
+  return ghost.keccak256(
+    ghost.solidityPacked(["uint256", "bytes32"], [BigInt(blockNumber), blockHash as `0x${string}`])
   );
 }
 
 function hashPair(a: string, b: string): string {
-  return ethers.keccak256(ethers.concat([a as `0x${string}`, b as `0x${string}`]));
+  return ghost.keccak256(ghost.concat([a as `0x${string}`, b as `0x${string}`]));
 }
 
 function merkleRoot(leaves: Array<string>): string {
-  if (leaves.length === 0) return ethers.ZeroHash;
+  if (leaves.length === 0) return ghost.ZeroHash;
   let level = leaves.slice();
   while (level.length > 1) {
     const next: Array<string> = [];
@@ -391,9 +391,9 @@ function merkleRoot(leaves: Array<string>): string {
 
 const verifiedBatchCache = new Set<string>();
 async function verifyFinalizedBatchContainsBlock(opts: {
-  rollup: ethers.Contract | null;
+  rollup: ghost.Contract | null;
   settlementName: "l1" | "l2";
-  childProvider: ethers.JsonRpcProvider;
+  childProvider: ghost.JsonRpcProvider;
   childBlockNumber: number;
   childBlockHash: string;
 }): Promise<boolean> {
@@ -531,7 +531,7 @@ async function savePendingLocked() {
   return p;
 }
 
-function scrubEthersError(e: any): string {
+function scrubghostError(e: any): string {
   return String(e?.shortMessage ?? e?.reason ?? e?.message ?? e);
 }
 
@@ -542,7 +542,7 @@ function classifyFinalizeError(msg: string): "policy" | "rollup" | "other" {
   return "other";
 }
 
-async function handleFinalizedLog(log: ethers.Log) {
+async function handleFinalizedLog(log: ghost.Log) {
   const parsed = bridgeIface.parseLog(log);
   if (!parsed) return;
   if (parsed.name === "Finalized") {
@@ -599,13 +599,13 @@ async function handleFinalizedLog(log: ethers.Log) {
 
     await ensureGasTokenBalance("l3", l3Provider, l3Signer);
     let l3TokenAddr = (await l3Factory.l3TokenForL2Token(token)) as string;
-    if (!l3TokenAddr || l3TokenAddr === ethers.ZeroAddress) {
+    if (!l3TokenAddr || l3TokenAddr === ghost.ZeroAddress) {
       if (observeOnly) {
         console.log(`[Relayer] Observe-only: missing bridged token for ${token} (set RELAYER_PRIVATE_KEY to auto-deploy)`);
         return;
       }
 
-      const l2Token = new ethers.Contract(token, l2Erc20MetaAbi, l2Provider);
+      const l2Token = new ghost.Contract(token, l2Erc20MetaAbi, l2Provider);
       let name = `Bridged ${token.slice(0, 6)}`;
       let symbol = `BRG${token.slice(2, 6)}`;
       let decimals = 18;
@@ -621,23 +621,23 @@ async function handleFinalizedLog(log: ethers.Log) {
       const txDeploy = await l3Factory.getOrDeployBridgedToken(token, name, symbol, decimals);
       const rcpt = await txDeploy.wait();
       l3TokenAddr = (await l3Factory.l3TokenForL2Token(token)) as string;
-      if (!l3TokenAddr || l3TokenAddr === ethers.ZeroAddress) {
+      if (!l3TokenAddr || l3TokenAddr === ghost.ZeroAddress) {
         const ev = rcpt?.logs
-          .map((l: ethers.Log) => {
+          .map((l: ghost.Log) => {
             try {
               return l3Factory.interface.parseLog(l);
             } catch {
               return null;
             }
           })
-          .find((e: ethers.LogDescription | null): e is ethers.LogDescription =>
+          .find((e: ghost.LogDescription | null): e is ghost.LogDescription =>
             Boolean(e && e.name === "BridgedTokenDeployed")
           );
         l3TokenAddr = String(ev?.args?.l3Token ?? "");
       }
     }
 
-    const l3Token = new ethers.Contract(l3TokenAddr, l3TokenAbi, l3Signer ?? l3Provider);
+    const l3Token = new ghost.Contract(l3TokenAddr, l3TokenAbi, l3Signer ?? l3Provider);
     const already = await l3Token.processed(key);
     if (already) return;
 
@@ -660,10 +660,10 @@ const l2BridgeAbi = [
   "function depositTime(bytes32 key) view returns (uint256)",
   "function erc20DepositTime(bytes32 key) view returns (uint256)"
 ];
-const l2Bridge = new ethers.Contract(BRIDGE, l2BridgeAbi, l2Signer ?? l2Provider);
+const l2Bridge = new ghost.Contract(BRIDGE, l2BridgeAbi, l2Signer ?? l2Provider);
 
-const burnTopic = ethers.id("BurnInitiated(address,address,address,uint256,uint256,bytes32)");
-const l3TokenIface = new ethers.Interface(l3TokenAbi);
+const burnTopic = ghost.id("BurnInitiated(address,address,address,uint256,uint256,bytes32)");
+const l3TokenIface = new ghost.Interface(l3TokenAbi);
 
 async function tryFinalizeOne(p: PendingFinalize) {
   if (!l2Signer) return;
@@ -691,7 +691,7 @@ async function tryFinalizeOne(p: PendingFinalize) {
       // The L2 bridge has no onchain proof requirement for burns; the relayer must not "release" unless
       // the burn is still present on L3 and economically final.
       const l3TokenAddr = p.l3Token || ((await l3Factory.l3TokenForL2Token(p.l2Token)) as string);
-      if (!l3TokenAddr || l3TokenAddr === ethers.ZeroAddress) {
+      if (!l3TokenAddr || l3TokenAddr === ghost.ZeroAddress) {
         const msg = `[Relayer] Missing L3 token for burn key=${p.key} l2Token=${p.l2Token}`;
         pushLog("warn", msg);
         throw new Error("Missing L3 token for burn");
@@ -705,7 +705,7 @@ async function tryFinalizeOne(p: PendingFinalize) {
         return;
       }
 
-      const l3Token = new ethers.Contract(l3TokenAddr, l3TokenAbi, l3Provider);
+      const l3Token = new ghost.Contract(l3TokenAddr, l3TokenAbi, l3Provider);
       const stillBurned = (await l3Token.burned(p.key)) as boolean;
       if (!stillBurned) {
         pendingByKey.delete(id);
@@ -795,7 +795,7 @@ async function tryFinalizeOne(p: PendingFinalize) {
   } catch (e) {
     p.lastAttempt = Date.now();
     p.attempts += 1;
-    const err = scrubEthersError(e);
+    const err = scrubghostError(e);
     const kind = classifyFinalizeError(err);
     if (p.kind === "BurnInitiated") {
       if (kind === "rollup") metrics.releaseBlockedRollup += 1;
@@ -819,7 +819,7 @@ async function tryFinalizeOne(p: PendingFinalize) {
   }
 }
 
-async function handleDepositLog(log: ethers.Log) {
+async function handleDepositLog(log: ghost.Log) {
   const parsed = bridgeIface.parseLog(log);
   if (!parsed) return;
   if (parsed.name === "DepositInitiated") {
@@ -896,7 +896,7 @@ async function handleDepositLog(log: ethers.Log) {
   }
 }
 
-async function handleBurnLog(log: ethers.Log): Promise<boolean> {
+async function handleBurnLog(log: ghost.Log): Promise<boolean> {
   const parsed = l3TokenIface.parseLog(log);
   if (!parsed) return false;
   metrics.burnsSeen += 1;
@@ -928,8 +928,8 @@ async function handleBurnLog(log: ethers.Log): Promise<boolean> {
   }
 
   const expectedL3Token = (await l3Factory.l3TokenForL2Token(l2Token)) as string;
-  if (!expectedL3Token || expectedL3Token === ethers.ZeroAddress) return false;
-  if (ethers.getAddress(expectedL3Token) !== ethers.getAddress(log.address)) return false;
+  if (!expectedL3Token || expectedL3Token === ghost.ZeroAddress) return false;
+  if (ghost.getAddress(expectedL3Token) !== ghost.getAddress(log.address)) return false;
 
   const l3BlockNumber = Number(log.blockNumber);
   let l3BlockHash = String(log.blockHash ?? "");
@@ -994,10 +994,10 @@ function isSplitableGetLogsError(e: any): boolean {
 }
 
 async function getLogsSplit(
-  provider: ethers.JsonRpcProvider,
+  provider: ghost.JsonRpcProvider,
   filter: NumericLogFilter,
   splitsRemaining: number = RELAYER_GET_LOGS_MAX_SPLITS
-): Promise<Array<ethers.Log>> {
+): Promise<Array<ghost.Log>> {
   try {
     return await provider.getLogs(filter as any);
   } catch (e) {

@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 
 export type ExternalRpcMap = Record<string, string[]>;
 
@@ -27,7 +27,7 @@ export type LatestBlockInfo = {
 
 export class RpcPool {
   private readonly urls: string[];
-  private readonly providers: Map<string, ethers.JsonRpcProvider>;
+  private readonly providers: Map<string, ghost.JsonRpcProvider>;
   private cursor: number;
 
   constructor(urls: string[]) {
@@ -38,10 +38,10 @@ export class RpcPool {
     this.cursor = 0;
   }
 
-  private provider(url: string): ethers.JsonRpcProvider {
+  private provider(url: string): ghost.JsonRpcProvider {
     const existing = this.providers.get(url);
     if (existing) return existing;
-    const p = new ethers.JsonRpcProvider(url);
+    const p = new ghost.JsonRpcProvider(url);
     this.providers.set(url, p);
     return p;
   }

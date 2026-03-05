@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import fs from "node:fs";
 import path from "node:path";
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 const DEFAULT_SUPERMAJORITY_BPS = 6667;
 const DEFAULT_QUORUM_BPS = 5000;
@@ -65,16 +65,16 @@ const outputPath =
   path.join(repoRoot, "contracts", "reports", "ai_constitutional_deployment.json");
 
 const normalizeAddress = (label: string, value: string) => {
-  if (!value || !ethers.isAddress(value)) {
+  if (!value || !ghost.isAddress(value)) {
     throw new Error(`missing_or_invalid_${label}`);
   }
-  return ethers.getAddress(value);
+  return ghost.getAddress(value);
 };
 
 const normalizeBytes32 = (label: string, value: string) => {
-  if (ethers.isHexString(value, 32)) return value;
+  if (ghost.isHexString(value, 32)) return value;
   try {
-    return ethers.id(value);
+    return ghost.id(value);
   } catch {
     throw new Error(`invalid_${label}:${value}`);
   }
@@ -85,7 +85,7 @@ async function main() {
   const executor = normalizeAddress("EXECUTOR_ADDRESS", executorAddress);
   const emergencyScope = normalizeBytes32("EMERGENCY_SCOPE", emergencyScopeRaw);
 
-  const [deployer] = await ethers.getSigners();
+  const [deployer] = await ghost.getSigners();
   const provider = deployer.provider;
   if (!provider) {
     throw new Error("missing_provider");
@@ -94,7 +94,7 @@ async function main() {
   const network = await provider.getNetwork();
   const chainId = Number(network.chainId);
 
-  const Factory = await ethers.getContractFactory("AIConstitutionalProposal");
+  const Factory = await ghost.getContractFactory("AIConstitutionalProposal");
   const contract = await Factory.deploy(
     governor,
     executor,

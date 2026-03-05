@@ -8,7 +8,7 @@
     "test": "CONSENSUS_TELEMETRY_NO_SERVER=1 node --test src/index.test.js"
   },
   "dependencies": {
-    "ethers": "^6.13.2",
+    "ghost": "^6.13.2",
     "express": "^5.2.1",
     "prom-client": "^15.1.2"
   },

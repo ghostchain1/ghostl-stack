@@ -12,16 +12,21 @@
  *   GHOSTAI_L3_CHAIN_ID  e.g. 903
  */
 
-import { buildApp } from "./app.js";
+import { buildApp }       from "./app.js";
+import { attachWsServer } from "./routes/ws.js";
 
 const PORT = Number(process.env.GHOSTBRAIN_PORT ?? "7900");
 const BIND = process.env.GHOSTBRAIN_BIND ?? "127.0.0.1";
 
 const app = buildApp();
+let wss: ReturnType<typeof attachWsServer> | undefined;
 
 try {
   await app.listen({ port: PORT, host: BIND });
-  app.log.info({ bind: BIND, port: PORT }, "ghostbrain-core started");
+
+  // Attach WebSocket server to the same port (path: /ws)
+  wss = attachWsServer(app.server);
+  app.log.info({ bind: BIND, port: PORT, wsPath: "/ws" }, "ghostbrain-core started");
 } catch (err) {
   app.log.error(err, "ghostbrain-core failed to start");
   process.exit(1);
@@ -29,6 +34,8 @@ try {
 
 process.on("SIGTERM", async () => {
   app.log.info("SIGTERM received — shutting down");
+  wss?.close();
   await app.close();
   process.exit(0);
 });
+

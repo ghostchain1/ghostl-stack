@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
-import { JsonRpcProvider, Contract } from 'ethers';
+import { JsonRpcProvider, Contract } from 'ghost';
 import type { TokenRecord } from '@ghostl/types';
 import { openSqlite, type SqliteHandle } from './db';
 

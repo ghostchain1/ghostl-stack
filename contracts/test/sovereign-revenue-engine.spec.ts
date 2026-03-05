@@ -1,15 +1,15 @@
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 describe("Sovereign revenue + treasury + redistribution", () => {
   it("enforces L2-only revenue intake and governance-locked allocation", async () => {
-    const [governor, l2Aggregator, yieldRouter, outsider] = await ethers.getSigners();
-    const network = await ethers.provider.getNetwork();
+    const [governor, l2Aggregator, yieldRouter, outsider] = await ghost.getSigners();
+    const network = await ghost.provider.getNetwork();
 
-    const Treasury = await ethers.getContractFactory("SovereignTreasuryEngine");
+    const Treasury = await ghost.getContractFactory("SovereignTreasuryEngine");
     const treasury = await Treasury.connect(governor).deploy(
       governor.address,
-      ethers.ZeroAddress,
+      ghost.ZeroAddress,
       Number(network.chainId),
       901,
       l2Aggregator.address
@@ -23,7 +23,7 @@ describe("Sovereign revenue + treasury + redistribution", () => {
       .withArgs(l2Aggregator.address, 1_000_000n, 1_000_000n);
 
     const allocRequest = {
-      allocationId: ethers.id("alloc-1"),
+      allocationId: ghost.id("alloc-1"),
       deployedAmountWei: 100_000n,
       expectedApyBps: 650,
       riskScoreBps: 2400,
@@ -48,12 +48,12 @@ describe("Sovereign revenue + treasury + redistribution", () => {
       treasury.connect(governor).executeAllocation(queuedRequest)
     ).to.be.revertedWith("allocation_timelock_active");
 
-    await ethers.provider.send("evm_increaseTime", [24 * 60 * 60 + 1]);
-    await ethers.provider.send("evm_mine", []);
+    await ghost.provider.send("evm_increaseTime", [24 * 60 * 60 + 1]);
+    await ghost.provider.send("evm_mine", []);
 
     await expect(
       treasury.connect(governor).executeAllocation({
-        allocationId: ethers.id("alloc-1"),
+        allocationId: ghost.id("alloc-1"),
         deployedAmountWei: 100_000n,
         expectedApyBps: 650,
         riskScoreBps: 2500,
@@ -68,26 +68,26 @@ describe("Sovereign revenue + treasury + redistribution", () => {
 
     expect(await treasury.deployedCapitalWei()).to.equal(100_000n);
 
-    await expect(treasury.connect(outsider).recordYieldReturn(ethers.id("alloc-1"), 10_000n, 500)).to.be.revertedWith(
+    await expect(treasury.connect(outsider).recordYieldReturn(ghost.id("alloc-1"), 10_000n, 500)).to.be.revertedWith(
       "not_yield_router_or_governance"
     );
 
     await (await treasury.connect(governor).setYieldRouter(yieldRouter.address)).wait();
-    await expect(treasury.connect(yieldRouter).recordYieldReturn(ethers.id("alloc-1"), 10_000n, 500)).to.emit(
+    await expect(treasury.connect(yieldRouter).recordYieldReturn(ghost.id("alloc-1"), 10_000n, 500)).to.emit(
       treasury,
       "YieldRecorded"
     );
   });
 
   it("enforces timelock and net-yield bounds in reward distributor", async () => {
-    const [governor] = await ethers.getSigners();
+    const [governor] = await ghost.getSigners();
 
-    const Distributor = await ethers.getContractFactory("SovereignRewardDistributor");
-    const distributor = await Distributor.connect(governor).deploy(governor.address, ethers.ZeroAddress);
+    const Distributor = await ghost.getContractFactory("SovereignRewardDistributor");
+    const distributor = await Distributor.connect(governor).deploy(governor.address, ghost.ZeroAddress);
     await distributor.waitForDeployment();
 
-    const cycleId = ethers.id("cycle-1");
-    const now = (await ethers.provider.getBlock("latest"))?.timestamp || 0;
+    const cycleId = ghost.id("cycle-1");
+    const now = (await ghost.provider.getBlock("latest"))?.timestamp || 0;
 
     await expect(
       distributor.connect(governor).queueRewardCycle(
@@ -117,35 +117,35 @@ describe("Sovereign revenue + treasury + redistribution", () => {
 
     await expect(distributor.connect(governor).executeRewardCycle(cycleId)).to.be.revertedWith("timelock_active");
 
-    await ethers.provider.send("evm_increaseTime", [61]);
-    await ethers.provider.send("evm_mine", []);
+    await ghost.provider.send("evm_increaseTime", [61]);
+    await ghost.provider.send("evm_mine", []);
 
     await expect(distributor.connect(governor).executeRewardCycle(cycleId)).to.emit(distributor, "RewardCycleExecuted");
     expect(await distributor.totalDistributedWei()).to.equal(1_000_000n);
   });
 
   it("enforces distribution policy guards and queues cycles by policy", async () => {
-    const [governor] = await ethers.getSigners();
+    const [governor] = await ghost.getSigners();
 
-    const Distributor = await ethers.getContractFactory("SovereignRewardDistributor");
-    const distributor = await Distributor.connect(governor).deploy(governor.address, ethers.ZeroAddress);
+    const Distributor = await ghost.getContractFactory("SovereignRewardDistributor");
+    const distributor = await Distributor.connect(governor).deploy(governor.address, ghost.ZeroAddress);
     await distributor.waitForDeployment();
 
     await (await distributor.connect(governor).configureDistributionPolicy(2000, 3000, 3000, 1000, 100_000n, 800_000n, true)).wait();
 
-    const now = (await ethers.provider.getBlock("latest"))?.timestamp || 0;
+    const now = (await ghost.provider.getBlock("latest"))?.timestamp || 0;
 
     await expect(
-      distributor.connect(governor).queueRewardCycleByPolicy(ethers.id("cycle-low"), 90_000n, now + 5, "GOV-RWD-POLICY-1")
+      distributor.connect(governor).queueRewardCycleByPolicy(ghost.id("cycle-low"), 90_000n, now + 5, "GOV-RWD-POLICY-1")
     ).to.be.revertedWith("yield_below_policy_min");
 
     await expect(
       distributor
         .connect(governor)
-        .queueRewardCycleByPolicy(ethers.id("cycle-cap"), 1_000_000n, now + 5, "GOV-RWD-POLICY-2")
+        .queueRewardCycleByPolicy(ghost.id("cycle-cap"), 1_000_000n, now + 5, "GOV-RWD-POLICY-2")
     ).to.be.revertedWith("distribution_over_cycle_cap");
 
-    const cycleId = ethers.id("cycle-policy-ok");
+    const cycleId = ghost.id("cycle-policy-ok");
     await expect(
       distributor.connect(governor).queueRewardCycleByPolicy(cycleId, 800_000n, now + 5, "GOV-RWD-POLICY-3")
     ).to.emit(distributor, "RewardCycleQueued");
@@ -157,8 +157,8 @@ describe("Sovereign revenue + treasury + redistribution", () => {
     expect(cycle.ecosystemIncentivesWei).to.equal(240_000n);
     expect(cycle.l2l3IncentiveWei).to.equal(80_000n);
 
-    await ethers.provider.send("evm_increaseTime", [6]);
-    await ethers.provider.send("evm_mine", []);
+    await ghost.provider.send("evm_increaseTime", [6]);
+    await ghost.provider.send("evm_mine", []);
 
     await expect(distributor.connect(governor).executeRewardCycle(cycleId)).to.emit(distributor, "RewardCycleExecuted");
     expect(await distributor.totalDistributedWei()).to.equal(720_000n);
@@ -166,13 +166,13 @@ describe("Sovereign revenue + treasury + redistribution", () => {
   });
 
   it("halts allocation and distribution when emergency flag is enabled", async () => {
-    const [governor, l2Aggregator, target] = await ethers.getSigners();
-    const network = await ethers.provider.getNetwork();
+    const [governor, l2Aggregator, target] = await ghost.getSigners();
+    const network = await ghost.provider.getNetwork();
 
-    const Treasury = await ethers.getContractFactory("SovereignTreasuryEngine");
+    const Treasury = await ghost.getContractFactory("SovereignTreasuryEngine");
     const treasury = await Treasury.connect(governor).deploy(
       governor.address,
-      ethers.ZeroAddress,
+      ghost.ZeroAddress,
       Number(network.chainId),
       901,
       l2Aggregator.address
@@ -184,7 +184,7 @@ describe("Sovereign revenue + treasury + redistribution", () => {
 
     await expect(
       treasury.connect(governor).queueAllocation({
-        allocationId: ethers.id("alloc-halt"),
+        allocationId: ghost.id("alloc-halt"),
         deployedAmountWei: 100_000n,
         expectedApyBps: 700,
         riskScoreBps: 3000,
@@ -195,16 +195,16 @@ describe("Sovereign revenue + treasury + redistribution", () => {
       })
     ).to.be.revertedWith("emergency_halt");
 
-    const Distributor = await ethers.getContractFactory("SovereignRewardDistributor");
-    const distributor = await Distributor.connect(governor).deploy(governor.address, ethers.ZeroAddress);
+    const Distributor = await ghost.getContractFactory("SovereignRewardDistributor");
+    const distributor = await Distributor.connect(governor).deploy(governor.address, ghost.ZeroAddress);
     await distributor.waitForDeployment();
 
     await (await distributor.connect(governor).setFlags(true, false)).wait();
 
-    const now = (await ethers.provider.getBlock("latest"))?.timestamp || 0;
+    const now = (await ghost.provider.getBlock("latest"))?.timestamp || 0;
     await expect(
       distributor.connect(governor).queueRewardCycle(
-        ethers.id("cycle-halt"),
+        ghost.id("cycle-halt"),
         100_000n,
         2000,
         3000,
@@ -217,13 +217,13 @@ describe("Sovereign revenue + treasury + redistribution", () => {
   });
 
   it("allows governance to cancel queued allocations", async () => {
-    const [governor, l2Aggregator, target] = await ethers.getSigners();
-    const network = await ethers.provider.getNetwork();
+    const [governor, l2Aggregator, target] = await ghost.getSigners();
+    const network = await ghost.provider.getNetwork();
 
-    const Treasury = await ethers.getContractFactory("SovereignTreasuryEngine");
+    const Treasury = await ghost.getContractFactory("SovereignTreasuryEngine");
     const treasury = await Treasury.connect(governor).deploy(
       governor.address,
-      ethers.ZeroAddress,
+      ghost.ZeroAddress,
       Number(network.chainId),
       901,
       l2Aggregator.address
@@ -233,7 +233,7 @@ describe("Sovereign revenue + treasury + redistribution", () => {
     await (await treasury.connect(l2Aggregator).depositRevenueFromL2(1_000_000n)).wait();
 
     const req = {
-      allocationId: ethers.id("alloc-cancel"),
+      allocationId: ghost.id("alloc-cancel"),
       deployedAmountWei: 100_000n,
       expectedApyBps: 900,
       riskScoreBps: 2000,
@@ -252,17 +252,17 @@ describe("Sovereign revenue + treasury + redistribution", () => {
   });
 
   it("records governance snapshots anchored to the latest solvency proof", async () => {
-    const [governor, l2Aggregator, outsider] = await ethers.getSigners();
-    const network = await ethers.provider.getNetwork();
+    const [governor, l2Aggregator, outsider] = await ghost.getSigners();
+    const network = await ghost.provider.getNetwork();
 
-    const Verifier = await ethers.getContractFactory("SolvencyVerifier");
-    const verifier = await Verifier.connect(governor).deploy(governor.address, ethers.ZeroAddress);
+    const Verifier = await ghost.getContractFactory("SolvencyVerifier");
+    const verifier = await Verifier.connect(governor).deploy(governor.address, ghost.ZeroAddress);
     await verifier.waitForDeployment();
 
-    const Treasury = await ethers.getContractFactory("SovereignTreasuryEngine");
+    const Treasury = await ghost.getContractFactory("SovereignTreasuryEngine");
     const treasury = await Treasury.connect(governor).deploy(
       governor.address,
-      ethers.ZeroAddress,
+      ghost.ZeroAddress,
       Number(network.chainId),
       901,
       l2Aggregator.address
@@ -275,44 +275,44 @@ describe("Sovereign revenue + treasury + redistribution", () => {
     await expect(
       treasury
         .connect(governor)
-        .submitSolvencyProof(1n, ethers.id("assets"), ethers.id("liabilities"), ethers.id("net"), "0x", "GOV-SNAP-1")
+        .submitSolvencyProof(1n, ghost.id("assets"), ghost.id("liabilities"), ghost.id("net"), "0x", "GOV-SNAP-1")
     ).to.be.revertedWith("invalid_solvency_proof");
 
     await expect(
-      treasury.connect(outsider).recordTreasurySnapshot(1n, ethers.id("meta"), "GOV-SNAP-1")
+      treasury.connect(outsider).recordTreasurySnapshot(1n, ghost.id("meta"), "GOV-SNAP-1")
     ).to.be.revertedWith("NOT_EXECUTOR");
 
-    await (await treasury.connect(governor).setSolvencyVerifier(ethers.ZeroAddress)).wait();
+    await (await treasury.connect(governor).setSolvencyVerifier(ghost.ZeroAddress)).wait();
     await (
       await treasury
         .connect(governor)
-        .submitSolvencyProof(1n, ethers.id("assets"), ethers.id("liabilities"), ethers.id("net"), "0x01", "GOV-SNAP-1")
+        .submitSolvencyProof(1n, ghost.id("assets"), ghost.id("liabilities"), ghost.id("net"), "0x01", "GOV-SNAP-1")
     ).wait();
 
     await expect(
-      treasury.connect(governor).recordTreasurySnapshot(2n, ethers.id("meta"), "GOV-SNAP-1")
+      treasury.connect(governor).recordTreasurySnapshot(2n, ghost.id("meta"), "GOV-SNAP-1")
     ).to.be.revertedWith("snapshot_epoch_mismatch");
 
-    await expect(treasury.connect(governor).recordTreasurySnapshot(1n, ethers.id("meta"), "GOV-SNAP-1")).to.emit(
+    await expect(treasury.connect(governor).recordTreasurySnapshot(1n, ghost.id("meta"), "GOV-SNAP-1")).to.emit(
       treasury,
       "TreasurySnapshotRecorded"
     );
 
     expect(await treasury.latestSnapshotEpoch()).to.equal(1n);
-    await expect(treasury.connect(governor).recordTreasurySnapshot(1n, ethers.id("meta"), "GOV-SNAP-1")).to.be.revertedWith(
+    await expect(treasury.connect(governor).recordTreasurySnapshot(1n, ghost.id("meta"), "GOV-SNAP-1")).to.be.revertedWith(
       "snapshot_exists"
     );
-    expect(await treasury.snapshotHash(1n)).to.not.equal(ethers.ZeroHash);
+    expect(await treasury.snapshotHash(1n)).to.not.equal(ghost.ZeroHash);
   });
 
   it("enforces governance-configured risk policy caps", async () => {
-    const [governor, l2Aggregator, target] = await ethers.getSigners();
-    const network = await ethers.provider.getNetwork();
+    const [governor, l2Aggregator, target] = await ghost.getSigners();
+    const network = await ghost.provider.getNetwork();
 
-    const Treasury = await ethers.getContractFactory("SovereignTreasuryEngine");
+    const Treasury = await ghost.getContractFactory("SovereignTreasuryEngine");
     const treasury = await Treasury.connect(governor).deploy(
       governor.address,
-      ethers.ZeroAddress,
+      ghost.ZeroAddress,
       Number(network.chainId),
       901,
       l2Aggregator.address
@@ -324,7 +324,7 @@ describe("Sovereign revenue + treasury + redistribution", () => {
     await (await treasury.connect(governor).configureRiskPolicy(100_000n, 2000, 3000, 2500)).wait();
 
     const tooLarge = {
-      allocationId: ethers.id("alloc-too-large"),
+      allocationId: ghost.id("alloc-too-large"),
       deployedAmountWei: 300_000n,
       expectedApyBps: 650,
       riskScoreBps: 2000,
@@ -338,7 +338,7 @@ describe("Sovereign revenue + treasury + redistribution", () => {
 
     const riskTooHigh = {
       ...tooLarge,
-      allocationId: ethers.id("alloc-risk-too-high"),
+      allocationId: ghost.id("alloc-risk-too-high"),
       deployedAmountWei: 200_000n,
       riskScoreBps: 3000,
       governanceProposalId: "GOV-RISK-2"
@@ -348,7 +348,7 @@ describe("Sovereign revenue + treasury + redistribution", () => {
 
     const good = {
       ...riskTooHigh,
-      allocationId: ethers.id("alloc-good"),
+      allocationId: ghost.id("alloc-good"),
       riskScoreBps: 2000,
       governanceProposalId: "GOV-RISK-3"
     };
@@ -358,7 +358,7 @@ describe("Sovereign revenue + treasury + redistribution", () => {
 
     const totalCap = {
       ...good,
-      allocationId: ethers.id("alloc-total-cap"),
+      allocationId: ghost.id("alloc-total-cap"),
       deployedAmountWei: 150_000n,
       governanceProposalId: "GOV-RISK-4"
     };
@@ -367,13 +367,13 @@ describe("Sovereign revenue + treasury + redistribution", () => {
   });
 
   it("enforces versioned solvency proofs with replay protection and snapshot sync gating", async () => {
-    const [governor, l2Aggregator, target] = await ethers.getSigners();
-    const network = await ethers.provider.getNetwork();
+    const [governor, l2Aggregator, target] = await ghost.getSigners();
+    const network = await ghost.provider.getNetwork();
 
-    const Treasury = await ethers.getContractFactory("SovereignTreasuryEngine");
+    const Treasury = await ghost.getContractFactory("SovereignTreasuryEngine");
     const treasury = await Treasury.connect(governor).deploy(
       governor.address,
-      ethers.ZeroAddress,
+      ghost.ZeroAddress,
       Number(network.chainId),
       901,
       l2Aggregator.address
@@ -383,8 +383,8 @@ describe("Sovereign revenue + treasury + redistribution", () => {
     await (await treasury.connect(l2Aggregator).depositRevenueFromL2(1_000_000n)).wait();
     await (await treasury.connect(governor).setMinAllocationDelaySeconds(0)).wait();
 
-    const Verifier = await ethers.getContractFactory("SolvencyVerifier");
-    const verifier = await Verifier.connect(governor).deploy(governor.address, ethers.ZeroAddress);
+    const Verifier = await ghost.getContractFactory("SolvencyVerifier");
+    const verifier = await Verifier.connect(governor).deploy(governor.address, ghost.ZeroAddress);
     await verifier.waitForDeployment();
 
     await (await treasury.connect(governor).setSolvencyVerifierForCircuit(1, await verifier.getAddress(), true)).wait();
@@ -393,13 +393,13 @@ describe("Sovereign revenue + treasury + redistribution", () => {
     await expect(
       treasury
         .connect(governor)
-        .submitSolvencyProof(1n, ethers.id("assets"), ethers.id("liabilities"), ethers.id("net"), "0x", "GOV-ZK-1")
+        .submitSolvencyProof(1n, ghost.id("assets"), ghost.id("liabilities"), ghost.id("net"), "0x", "GOV-ZK-1")
     ).to.be.revertedWith("invalid_solvency_proof");
 
     await (
       await treasury
         .connect(governor)
-        .submitSolvencyProof(1n, ethers.id("assets"), ethers.id("liabilities"), ethers.id("net"), "0x0102", "GOV-ZK-1")
+        .submitSolvencyProof(1n, ghost.id("assets"), ghost.id("liabilities"), ghost.id("net"), "0x0102", "GOV-ZK-1")
     ).wait();
     expect(await treasury.latestSolvencyCircuitVersion()).to.equal(1n);
 
@@ -408,9 +408,9 @@ describe("Sovereign revenue + treasury + redistribution", () => {
         .connect(governor)
         .submitSolvencyProofWithCircuit(
           2n,
-          ethers.id("assets-2"),
-          ethers.id("liabilities-2"),
-          ethers.id("net-2"),
+          ghost.id("assets-2"),
+          ghost.id("liabilities-2"),
+          ghost.id("net-2"),
           "0x0102",
           "GOV-ZK-2",
           1
@@ -420,7 +420,7 @@ describe("Sovereign revenue + treasury + redistribution", () => {
     await (await treasury.connect(governor).setRequireSnapshotSyncForAllocation(true)).wait();
 
     const req = {
-      allocationId: ethers.id("alloc-sync"),
+      allocationId: ghost.id("alloc-sync"),
       deployedAmountWei: 100_000n,
       expectedApyBps: 650,
       riskScoreBps: 2000,
@@ -432,7 +432,7 @@ describe("Sovereign revenue + treasury + redistribution", () => {
     await (await treasury.connect(governor).queueAllocation(req)).wait();
     await expect(treasury.connect(governor).executeAllocation(req)).to.be.revertedWith("snapshot_required");
 
-    await (await treasury.connect(governor).recordTreasurySnapshot(1n, ethers.id("sync-meta"), "GOV-SYNC-1")).wait();
+    await (await treasury.connect(governor).recordTreasurySnapshot(1n, ghost.id("sync-meta"), "GOV-SYNC-1")).wait();
     await (await treasury.connect(governor).executeAllocation(req)).wait();
   });
 });

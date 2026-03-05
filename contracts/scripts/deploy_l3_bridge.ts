@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -6,7 +6,7 @@ async function main() {
   const root = process.env.ROOT_DIR ?? path.resolve(__dirname, "..", "..");
   const outPath = path.join(root, ".tmp", "last_l3_bridge_deploy.json");
 
-  const [deployer] = await ethers.getSigners();
+  const [deployer] = await ghost.getSigners();
   if (!deployer?.provider) {
     throw new Error("missing provider (check hardhat network RPC config)");
   }
@@ -18,14 +18,14 @@ async function main() {
   console.log("deployer:", deployer.address);
   console.log("relayer:", relayer);
 
-  const Inbox = await ethers.getContractFactory("L3Inbox", deployer);
+  const Inbox = await ghost.getContractFactory("L3Inbox", deployer);
   const inbox = await Inbox.deploy(relayer);
   console.log("L3Inbox deploy tx:", inbox.deploymentTransaction()?.hash ?? "");
   await inbox.waitForDeployment();
   const inboxAddr = await inbox.getAddress();
   console.log("L3Inbox:", inboxAddr);
 
-  const Factory = await ethers.getContractFactory("L3BridgedTokenFactory", deployer);
+  const Factory = await ghost.getContractFactory("L3BridgedTokenFactory", deployer);
   const factory = await Factory.deploy(relayer);
   console.log("L3BridgedTokenFactory deploy tx:", factory.deploymentTransaction()?.hash ?? "");
   await factory.waitForDeployment();

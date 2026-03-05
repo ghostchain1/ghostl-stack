@@ -8,7 +8,7 @@ import {
   type BytesLike,
   type Signer,
   type TypedDataField
-} from "ethers";
+} from "ghost";
 
 export type GhostLayer = 1 | 2 | 3;
 

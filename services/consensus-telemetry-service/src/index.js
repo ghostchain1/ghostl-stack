@@ -1,5 +1,5 @@
 import express from "express";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 import promClient from "prom-client";
 import { promises as fs } from "node:fs";
 import path from "node:path";
@@ -323,11 +323,11 @@ const BRIDGE_ABI = [
   "event ERC20Finalized(address indexed token,address indexed from,address indexed to,uint256 amount,uint256 nonce)",
   "event ERC20WithdrawReleased(address indexed token,address indexed from,address indexed to,uint256 amount,uint256 nonce)"
 ];
-const bridgeIface = new ethers.Interface(BRIDGE_ABI);
+const bridgeIface = new ghost.Interface(BRIDGE_ABI);
 
 const getProvider = (rpc) => {
   if (!providerCache.has(rpc)) {
-    providerCache.set(rpc, new ethers.JsonRpcProvider(rpc));
+    providerCache.set(rpc, new ghost.JsonRpcProvider(rpc));
   }
   return providerCache.get(rpc);
 };
@@ -337,11 +337,11 @@ const fetchOutputOracleSnapshot = async (label, rpc, address, expectedParentChai
   if (!rpc) return { label, address, configured: true, error: "oracle_parent_rpc_missing" };
   let normalizedAddress = "";
   try {
-    normalizedAddress = ethers.getAddress(address);
+    normalizedAddress = ghost.getAddress(address);
   } catch {
     return { label, address, configured: true, addressInvalid: true, error: "oracle_address_invalid" };
   }
-  if (normalizedAddress.toLowerCase() === ethers.ZeroAddress.toLowerCase()) {
+  if (normalizedAddress.toLowerCase() === ghost.ZeroAddress.toLowerCase()) {
     return {
       label,
       address: normalizedAddress,
@@ -352,8 +352,8 @@ const fetchOutputOracleSnapshot = async (label, rpc, address, expectedParentChai
   }
 
   const provider = getProvider(rpc);
-  const contract = new ethers.Contract(normalizedAddress, L2_OUTPUT_ORACLE_ABI, provider);
-  const versionContract = new ethers.Contract(normalizedAddress, ORACLE_VERSION_ABI, provider);
+  const contract = new ghost.Contract(normalizedAddress, L2_OUTPUT_ORACLE_ABI, provider);
+  const versionContract = new ghost.Contract(normalizedAddress, ORACLE_VERSION_ABI, provider);
   const snapshot = { label, address: normalizedAddress, rpc, configured: true, expectedParentChainId };
 
   try {
@@ -510,10 +510,10 @@ const computeOracleIncidents = ({
   return incidents;
 };
 
-const bridgeCoder = ethers.AbiCoder.defaultAbiCoder();
+const bridgeCoder = ghost.AbiCoder.defaultAbiCoder();
 
 const buildBridgeKey = (fields, values) =>
-  ethers.keccak256(bridgeCoder.encode(fields, values.map((v) => (typeof v === "string" ? v : v))));
+  ghost.keccak256(bridgeCoder.encode(fields, values.map((v) => (typeof v === "string" ? v : v))));
 
 const getBlockTimestamp = async (provider, blockNumber) => {
   if (blockTimestampCache.has(blockNumber)) return blockTimestampCache.get(blockNumber);
@@ -677,13 +677,13 @@ const buildPauseGuardianActions = () => {
   if (!PAUSE_GUARDIAN_ADDRESS) return [];
   let guardian;
   try {
-    guardian = ethers.getAddress(PAUSE_GUARDIAN_ADDRESS);
+    guardian = ghost.getAddress(PAUSE_GUARDIAN_ADDRESS);
   } catch {
     return [];
   }
   const actions = [];
-  const v1 = new ethers.Interface(PAUSE_GUARDIAN_V1_ABI);
-  const v2 = new ethers.Interface(PAUSE_GUARDIAN_V2_ABI);
+  const v1 = new ghost.Interface(PAUSE_GUARDIAN_V1_ABI);
+  const v2 = new ghost.Interface(PAUSE_GUARDIAN_V2_ABI);
   actions.push({
     name: "pause_guardian_setPaused",
     target: guardian,
@@ -706,12 +706,12 @@ const buildProposalDraft = ({ layer, type, evidenceHash }) => {
   let governor = null;
   if (GOVERNOR_ADDRESS_L1) {
     try {
-      governor = ethers.getAddress(GOVERNOR_ADDRESS_L1);
+      governor = ghost.getAddress(GOVERNOR_ADDRESS_L1);
     } catch {
       governor = null;
     }
   }
-  const governorIface = new ethers.Interface(GOVERNOR_ABI);
+  const governorIface = new ghost.Interface(GOVERNOR_ABI);
   const description = `Draft proposal: ${layer} ${type} detected (evidence ${evidenceHash}). Review and execute as appropriate.`;
   const payload = {
     id: `${layer}-${type}-${Date.now()}`,
@@ -749,7 +749,7 @@ const recordProofOfIssue = async ({ layer, type, data, context }) => {
     op: context?.op ?? null
   };
   const evidenceJson = JSON.stringify(evidence);
-  const evidenceHash = ethers.keccak256(ethers.toUtf8Bytes(evidenceJson));
+  const evidenceHash = ghost.keccak256(ghost.toUtf8Bytes(evidenceJson));
   const evidencePath = path.join(EVIDENCE_DIR, `proof-${layer}-${type}-${Date.now()}.json`);
   await writeJsonFile(evidencePath, { ...evidence, evidenceHash });
   logEvent("info", "proof_recorded", { layer, type, evidenceHash, file: evidencePath });

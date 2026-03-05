@@ -1,4 +1,4 @@
-import { keccak256, solidityPacked, toUtf8Bytes, getAddress } from 'ethers';
+import { keccak256, solidityPacked, toUtf8Bytes, getAddress } from 'ghost';
 import type { DecisionInput } from '../engine/types';
 import { signParamsHash } from './ecdsa';
 import { config } from '../config';

@@ -2,7 +2,7 @@
 import express from "express";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 
 const PORT = Number(process.env.PORT || "8545");
 const UPSTREAM_RPC = process.env.UPSTREAM_RPC || "http://l1:8545";
@@ -78,7 +78,7 @@ async function savePolicy(nextPolicy) {
 
 function safeAddr(a) {
   try {
-    return a ? ethers.getAddress(a) : null;
+    return a ? ghost.getAddress(a) : null;
   } catch {
     return null;
   }
@@ -186,7 +186,7 @@ async function handleSendRawTx(body) {
   }
   let tx;
   try {
-    tx = ethers.Transaction.from(raw);
+    tx = ghost.Transaction.from(raw);
   } catch (e) {
     return { jsonrpc: "2.0", id: body.id ?? null, error: { code: -32602, message: `invalid raw tx: ${e?.message ?? e}` } };
   }
@@ -194,14 +194,14 @@ async function handleSendRawTx(body) {
   const dataHex = tx.data ?? "0x";
   const txSummary = {
     hash: tx.hash,
-    from: tx.from ? ethers.getAddress(tx.from) : null,
-    to: tx.to ? ethers.getAddress(tx.to) : null,
+    from: tx.from ? ghost.getAddress(tx.from) : null,
+    to: tx.to ? ghost.getAddress(tx.to) : null,
     nonce: tx.nonce,
     type: tx.type,
     value: tx.value?.toString() ?? "0",
     gasLimit: tx.gasLimit?.toString() ?? null,
     dataLength: dataHex.length > 2 ? dataHex.length / 2 - 1 : 0,
-    dataHash: ethers.keccak256(dataHex),
+    dataHash: ghost.keccak256(dataHex),
     selector: dataHex.length >= 10 ? dataHex.slice(0, 10) : "0x00000000"
   };
 
@@ -345,7 +345,7 @@ function evaluatePolicy(context) {
   }
 
   if (context.tx) {
-    const valueEth = Number(ethers.formatEther(context.tx.value || "0"));
+    const valueEth = Number(ghost.formatEther(context.tx.value || "0"));
     if (valueEth >= 1) {
       risk += Math.min(12, Math.floor(valueEth));
       reason = "high_value";
@@ -370,7 +370,7 @@ function evaluatePolicy(context) {
       reason = rule.reason || rule.id || "rule_match";
     }
     if (cond.txValueEthGte && context.tx) {
-      const valueEth = Number(ethers.formatEther(context.tx.value || "0"));
+      const valueEth = Number(ghost.formatEther(context.tx.value || "0"));
       if (valueEth >= cond.txValueEthGte) {
         risk += rule.risk || 0;
         reason = rule.reason || rule.id || "rule_match";

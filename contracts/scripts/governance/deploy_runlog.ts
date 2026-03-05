@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 import fs from "node:fs";
 import path from "node:path";
 import dotenv from "dotenv";
@@ -61,11 +61,11 @@ async function main() {
     envFromFiles
   );
 
-  if (!initialExecutor || !ethers.isAddress(initialExecutor)) {
+  if (!initialExecutor || !ghost.isAddress(initialExecutor)) {
     throw new Error("Missing executor for RunLog (set RUNLOG_EXECUTOR or EXECUTOR_ADDRESS_L1 in env)");
   }
 
-  const RunLog = await ethers.getContractFactory("RunLog");
+  const RunLog = await ghost.getContractFactory("RunLog");
   const runLog = await RunLog.deploy(initialExecutor);
   await runLog.waitForDeployment();
 

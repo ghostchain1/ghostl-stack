@@ -1,14 +1,14 @@
 /* eslint-disable no-console */
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 async function main() {
   const governor = process.env.GOVERNOR_ADDRESS || process.env.TIMELOCK_ADDRESS || "";
-  if (!governor || !ethers.isAddress(governor)) {
+  if (!governor || !ghost.isAddress(governor)) {
     throw new Error("set GOVERNOR_ADDRESS or TIMELOCK_ADDRESS");
   }
-  const timelock = process.env.TIMELOCK_ADDRESS || ethers.ZeroAddress;
+  const timelock = process.env.TIMELOCK_ADDRESS || ghost.ZeroAddress;
 
-  const Verifier = await ethers.getContractFactory("SolvencyVerifier");
+  const Verifier = await ghost.getContractFactory("SolvencyVerifier");
   const verifier = await Verifier.deploy(governor, timelock);
   await verifier.waitForDeployment();
 

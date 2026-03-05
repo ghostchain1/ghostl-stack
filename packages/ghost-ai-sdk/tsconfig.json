@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "declarationMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "ghost": ["../../node_modules/ethers/lib.esm/index.d.ts"]
+    }
+  },
+  "include": ["src"]
+}

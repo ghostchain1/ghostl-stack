@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -6,10 +6,10 @@ function normalizeAddress(value: string | undefined): string | undefined {
   if (!value) return undefined;
   const trimmed = value.trim();
   if (!trimmed) return undefined;
-  if (!ethers.isAddress(trimmed)) {
+  if (!ghost.isAddress(trimmed)) {
     throw new Error(`invalid address: ${trimmed}`);
   }
-  return ethers.getAddress(trimmed);
+  return ghost.getAddress(trimmed);
 }
 
 async function main() {
@@ -24,13 +24,13 @@ async function main() {
       process.env.L3_FINALITY_ORACLE_ADDRESS
   );
 
-  const [deployer] = await ethers.getSigners();
+  const [deployer] = await ghost.getSigners();
   if (!deployer?.provider) throw new Error("missing provider (check hardhat network RPC config)");
 
   const proposer =
     process.env.ROLLUP_PROPOSER_ADDRESS ??
     process.env.PROPOSER_ADDRESS ??
-    (process.env.PROPOSER_PRIVATE_KEY ? new ethers.Wallet(process.env.PROPOSER_PRIVATE_KEY).address : null) ??
+    (process.env.PROPOSER_PRIVATE_KEY ? new ghost.Wallet(process.env.PROPOSER_PRIVATE_KEY).address : null) ??
     deployer.address;
 
   const net = await deployer.provider.getNetwork();
@@ -41,7 +41,7 @@ async function main() {
   console.log("challengePeriodSeconds:", challengePeriodSeconds.toString());
   console.log("parentFinalityOracle:", parentFinalityOracle ?? "(not set)");
 
-  const Rollup = await ethers.getContractFactory("OptimisticRollup", deployer);
+  const Rollup = await ghost.getContractFactory("OptimisticRollup", deployer);
   const rollup = await Rollup.deploy(childChainId, challengePeriodSeconds, proposer);
   console.log("OptimisticRollup deploy tx:", rollup.deploymentTransaction()?.hash ?? "");
   await rollup.waitForDeployment();

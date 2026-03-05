@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { JsonRpcProvider } from 'ethers';
+import { JsonRpcProvider } from 'ghost';
 import { requirePermission } from '../../lib/rbac';
 import { ghostWalletRpcManager } from '../../services/rpc-manager';
 

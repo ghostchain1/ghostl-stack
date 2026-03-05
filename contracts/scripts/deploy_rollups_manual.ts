@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import "dotenv/config";
@@ -7,7 +7,7 @@ const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 const nonceState = new Map<string, number>();
 
 type ArtifactJson = {
-  abi: ethers.InterfaceAbi;
+  abi: ghost.InterfaceAbi;
   bytecode: string;
 };
 
@@ -37,17 +37,17 @@ function normalizeAddress(value: string | undefined): string | undefined {
   if (!value) return undefined;
   const trimmed = value.trim();
   if (!trimmed) return undefined;
-  if (!ethers.isAddress(trimmed)) {
+  if (!ghost.isAddress(trimmed)) {
     throw new Error(`invalid address: ${trimmed}`);
   }
-  return ethers.getAddress(trimmed);
+  return ghost.getAddress(trimmed);
 }
 
 function ensureBytes32(value: string | undefined, label: string): string | undefined {
   if (!value) return undefined;
   const trimmed = value.trim();
   if (!trimmed) return undefined;
-  if (!ethers.isHexString(trimmed, 32)) {
+  if (!ghost.isHexString(trimmed, 32)) {
     throw new Error(`${label} must be a 32-byte hex value`);
   }
   return trimmed;
@@ -76,14 +76,14 @@ async function loadArtifact(name: string): Promise<ArtifactJson> {
   throw new Error(`Missing artifact for ${name}; run npm run build in ./contracts`);
 }
 
-async function assertCode(provider: ethers.JsonRpcProvider, address: string, label: string) {
+async function assertCode(provider: ghost.JsonRpcProvider, address: string, label: string) {
   const code = await provider.getCode(address);
   if (!code || code === "0x") {
     throw new Error(`No code at ${label} address ${address}`);
   }
 }
 
-async function nextNonce(provider: ethers.JsonRpcProvider, rpcUrl: string, signerAddress: string): Promise<number> {
+async function nextNonce(provider: ghost.JsonRpcProvider, rpcUrl: string, signerAddress: string): Promise<number> {
   const key = `${rpcUrl.toLowerCase()}::${signerAddress.toLowerCase()}`;
   const cached = nonceState.get(key);
   if (cached !== undefined) {
@@ -96,11 +96,11 @@ async function nextNonce(provider: ethers.JsonRpcProvider, rpcUrl: string, signe
 }
 
 async function withNonce(
-  provider: ethers.JsonRpcProvider,
+  provider: ghost.JsonRpcProvider,
   rpcUrl: string,
   signerAddress: string,
-  txOpts: ethers.TransactionRequest
-): Promise<ethers.TransactionRequest> {
+  txOpts: ghost.TransactionRequest
+): Promise<ghost.TransactionRequest> {
   return {
     ...txOpts,
     nonce: await nextNonce(provider, rpcUrl, signerAddress)
@@ -127,7 +127,7 @@ async function main() {
   const autoAcceptPolicyHash = parseBool(process.env.AUTO_ACCEPT_POLICY_HASH, true);
   const aiPolicyHash = ensureBytes32(process.env.AI_POLICY_HASH, "AI_POLICY_HASH");
   const governanceExecutorOverride = normalizeAddress(process.env.GOVERNANCE_EXECUTOR);
-  const governanceTimelock = normalizeAddress(process.env.GOVERNANCE_TIMELOCK) ?? ethers.ZeroAddress;
+  const governanceTimelock = normalizeAddress(process.env.GOVERNANCE_TIMELOCK) ?? ghost.ZeroAddress;
   const relayerKey = process.env.RELAYER_PRIVATE_KEY ?? process.env.DEPLOYER_PRIVATE_KEY;
   if (!relayerKey) {
     throw new Error("Missing RELAYER_PRIVATE_KEY (or DEPLOYER_PRIVATE_KEY) for rollup deployments");
@@ -175,18 +175,18 @@ async function main() {
     aiPolicyHash: aiPolicyHash ?? null
   });
 
-  const txOpts: ethers.TransactionRequest =
+  const txOpts: ghost.TransactionRequest =
     maxFeePerGas !== undefined && maxPriorityFeePerGas !== undefined
       ? { gasLimit, maxFeePerGas, maxPriorityFeePerGas }
       : { gasLimit };
 
-  const l1Provider = new ethers.JsonRpcProvider(l1Rpc);
-  const l2Provider = new ethers.JsonRpcProvider(l2Rpc);
-  const l3Provider = new ethers.JsonRpcProvider(l3Rpc);
+  const l1Provider = new ghost.JsonRpcProvider(l1Rpc);
+  const l2Provider = new ghost.JsonRpcProvider(l2Rpc);
+  const l3Provider = new ghost.JsonRpcProvider(l3Rpc);
 
-  const l1Signer = new ethers.Wallet(relayerKey, l1Provider);
-  const l2Signer = new ethers.Wallet(relayerKey, l2Provider);
-  const l3Signer = new ethers.Wallet(relayerKey, l3Provider);
+  const l1Signer = new ghost.Wallet(relayerKey, l1Provider);
+  const l2Signer = new ghost.Wallet(relayerKey, l2Provider);
+  const l3Signer = new ghost.Wallet(relayerKey, l3Provider);
   const l1SignerAddress = await l1Signer.getAddress();
   const l2SignerAddress = await l2Signer.getAddress();
   const l3SignerAddress = await l3Signer.getAddress();
@@ -200,12 +200,12 @@ async function main() {
   const bridgeArtifact =
     enableCascadingFinality && bridgeAddress ? await loadArtifact("L2L3Bridge") : null;
 
-  const rollupFactoryL1 = new ethers.ContractFactory(
+  const rollupFactoryL1 = new ghost.ContractFactory(
     rollupArtifact.abi,
     rollupArtifact.bytecode,
     l1Signer
   );
-  const rollupFactoryL2 = new ethers.ContractFactory(
+  const rollupFactoryL2 = new ghost.ContractFactory(
     rollupArtifact.abi,
     rollupArtifact.bytecode,
     l2Signer
@@ -251,17 +251,17 @@ async function main() {
     console.log("== Deploy/Wire Cascading Finality Oracles on L2 ==");
     console.log("Cascading governance:", { executor: governanceExecutor, timelock: governanceTimelock });
 
-    const l1FinalityOracleFactory = new ethers.ContractFactory(
+    const l1FinalityOracleFactory = new ghost.ContractFactory(
       l1FinalityOracleArtifact.abi,
       l1FinalityOracleArtifact.bytecode,
       l2Signer
     );
-    const l2FinalityOracleFactory = new ethers.ContractFactory(
+    const l2FinalityOracleFactory = new ghost.ContractFactory(
       l2FinalityOracleArtifact.abi,
       l2FinalityOracleArtifact.bytecode,
       l2Signer
     );
-    const l3FinalityOracleFactory = new ethers.ContractFactory(
+    const l3FinalityOracleFactory = new ghost.ContractFactory(
       l3FinalityOracleArtifact.abi,
       l3FinalityOracleArtifact.bytecode,
       l2Signer
@@ -314,13 +314,13 @@ async function main() {
     }
 
     if (aiPolicyHash && autoAcceptPolicyHash) {
-      const l1FinalityOracle = new ethers.Contract(l1FinalityOracleAddr, l1FinalityOracleArtifact.abi, l2Signer) as ethers.Contract & {
+      const l1FinalityOracle = new ghost.Contract(l1FinalityOracleAddr, l1FinalityOracleArtifact.abi, l2Signer) as ghost.Contract & {
         acceptedPolicyHash: (policyHash: string) => Promise<boolean>;
         setAcceptedPolicyHash: (
           policyHash: string,
           allowed: boolean,
-          opts?: ethers.TransactionRequest
-        ) => Promise<ethers.ContractTransactionResponse>;
+          opts?: ghost.TransactionRequest
+        ) => Promise<ghost.ContractTransactionResponse>;
       };
       const accepted = await l1FinalityOracle.acceptedPolicyHash(aiPolicyHash);
       if (!accepted) {
@@ -339,25 +339,25 @@ async function main() {
         throw new Error("Missing L2L3Bridge artifact");
       }
       await assertCode(l2Provider, bridgeAddress, "L2L3Bridge");
-      const bridge = new ethers.Contract(bridgeAddress, bridgeArtifact.abi, l2Signer) as ethers.Contract & {
+      const bridge = new ghost.Contract(bridgeAddress, bridgeArtifact.abi, l2Signer) as ghost.Contract & {
         l2FinalityOracle: () => Promise<string>;
         l3FinalityOracle: () => Promise<string>;
         enforceHierarchicalFinality: () => Promise<boolean>;
         setL2FinalityOracle: (
           oracle: string,
-          opts?: ethers.TransactionRequest
-        ) => Promise<ethers.ContractTransactionResponse>;
+          opts?: ghost.TransactionRequest
+        ) => Promise<ghost.ContractTransactionResponse>;
         setL3FinalityOracle: (
           oracle: string,
-          opts?: ethers.TransactionRequest
-        ) => Promise<ethers.ContractTransactionResponse>;
+          opts?: ghost.TransactionRequest
+        ) => Promise<ghost.ContractTransactionResponse>;
         setEnforceHierarchicalFinality: (
           enabled: boolean,
-          opts?: ethers.TransactionRequest
-        ) => Promise<ethers.ContractTransactionResponse>;
+          opts?: ghost.TransactionRequest
+        ) => Promise<ghost.ContractTransactionResponse>;
       };
 
-      const currentL2Oracle = ethers.getAddress(await bridge.l2FinalityOracle());
+      const currentL2Oracle = ghost.getAddress(await bridge.l2FinalityOracle());
       if (currentL2Oracle !== l2FinalityOracleAddr) {
         const tx = await bridge.setL2FinalityOracle(
           l2FinalityOracleAddr,
@@ -366,7 +366,7 @@ async function main() {
         await tx.wait();
       }
 
-      const currentL3Oracle = ethers.getAddress(await bridge.l3FinalityOracle());
+      const currentL3Oracle = ghost.getAddress(await bridge.l3FinalityOracle());
       if (currentL3Oracle !== l3FinalityOracleAddr) {
         const tx = await bridge.setL3FinalityOracle(
           l3FinalityOracleAddr,
@@ -385,17 +385,17 @@ async function main() {
       }
     }
 
-    const l2Rollup = new ethers.Contract(l2RollupAddr, rollupArtifact.abi, l2Signer) as ethers.Contract & {
+    const l2Rollup = new ghost.Contract(l2RollupAddr, rollupArtifact.abi, l2Signer) as ghost.Contract & {
       parentFinalityOracle: () => Promise<string>;
       setParentFinalityOracle: (
         oracle: string,
-        opts?: ethers.TransactionRequest
-      ) => Promise<ethers.ContractTransactionResponse>;
+        opts?: ghost.TransactionRequest
+      ) => Promise<ghost.ContractTransactionResponse>;
     };
 
     l2RollupParentOracleAddr = l2RollupParentOracleAddr || l3FinalityOracleAddr;
     await assertCode(l2Provider, l2RollupParentOracleAddr, "L2 rollup parent finality oracle");
-    const currentL2RollupParent = ethers.getAddress(await l2Rollup.parentFinalityOracle());
+    const currentL2RollupParent = ghost.getAddress(await l2Rollup.parentFinalityOracle());
     if (currentL2RollupParent !== l2RollupParentOracleAddr) {
       const tx = await l2Rollup.setParentFinalityOracle(
         l2RollupParentOracleAddr,
@@ -405,12 +405,12 @@ async function main() {
     }
 
     l1RollupParentOracleAddr = l1RollupParentOracleAddr || l2FinalityOracleAddr;
-    const l1Rollup = new ethers.Contract(l1RollupAddr, rollupArtifact.abi, l1Signer) as ethers.Contract & {
+    const l1Rollup = new ghost.Contract(l1RollupAddr, rollupArtifact.abi, l1Signer) as ghost.Contract & {
       parentFinalityOracle: () => Promise<string>;
       setParentFinalityOracle: (
         oracle: string,
-        opts?: ethers.TransactionRequest
-      ) => Promise<ethers.ContractTransactionResponse>;
+        opts?: ghost.TransactionRequest
+      ) => Promise<ghost.ContractTransactionResponse>;
     };
     const l1ParentCode = await l1Provider.getCode(l1RollupParentOracleAddr);
     if (!l1ParentCode || l1ParentCode === "0x") {
@@ -430,7 +430,7 @@ async function main() {
       );
       l1RollupParentOracleAddr = "";
     } else {
-      const currentL1RollupParent = ethers.getAddress(await l1Rollup.parentFinalityOracle());
+      const currentL1RollupParent = ghost.getAddress(await l1Rollup.parentFinalityOracle());
       if (currentL1RollupParent !== l1RollupParentOracleAddr) {
         const tx = await l1Rollup.setParentFinalityOracle(
           l1RollupParentOracleAddr,
@@ -446,7 +446,7 @@ async function main() {
     await assertCode(l3Provider, inboxAddr, "L3 inbox");
   } else {
     console.log("== Deploy L3Inbox on L3 ==");
-    const inboxFactory = new ethers.ContractFactory(inboxArtifact.abi, inboxArtifact.bytecode, l3Signer);
+    const inboxFactory = new ghost.ContractFactory(inboxArtifact.abi, inboxArtifact.bytecode, l3Signer);
     const inbox = await inboxFactory.deploy(
       l3SignerAddress,
       await withNonce(l3Provider, l3Rpc, l3SignerAddress, txOpts)
@@ -461,7 +461,7 @@ async function main() {
     await assertCode(l3Provider, factoryAddr, "L3 token factory");
   } else {
     console.log("== Deploy L3BridgedTokenFactory on L3 ==");
-    const factoryFactory = new ethers.ContractFactory(factoryArtifact.abi, factoryArtifact.bytecode, l3Signer);
+    const factoryFactory = new ghost.ContractFactory(factoryArtifact.abi, factoryArtifact.bytecode, l3Signer);
     const factory = await factoryFactory.deploy(
       l3SignerAddress,
       await withNonce(l3Provider, l3Rpc, l3SignerAddress, txOpts)
@@ -484,20 +484,20 @@ async function main() {
           "function symbol() view returns (string)",
           "function decimals() view returns (uint8)"
         ];
-        const l2Token = new ethers.Contract(l2TokenAddr, erc20Abi, l2Provider);
+        const l2Token = new ghost.Contract(l2TokenAddr, erc20Abi, l2Provider);
         const l2Name = await l2Token.name();
         const l2Symbol = await l2Token.symbol();
         const l2Decimals = await l2Token.decimals();
         const l3Name = `${l2Name} (L3)`;
         const l3Symbol = `${l2Symbol}L3`;
-        const factory = new ethers.Contract(factoryAddr!, factoryArtifact.abi, l3Signer) as ethers.Contract & {
+        const factory = new ghost.Contract(factoryAddr!, factoryArtifact.abi, l3Signer) as ghost.Contract & {
           getOrDeployBridgedToken: (
             l2Token: string,
             name: string,
             symbol: string,
             decimals: number,
-            opts?: ethers.TransactionRequest
-          ) => Promise<ethers.ContractTransactionResponse>;
+            opts?: ghost.TransactionRequest
+          ) => Promise<ghost.ContractTransactionResponse>;
         };
         const deployTokenTx = await factory.getOrDeployBridgedToken(
           l2TokenAddr,
@@ -510,7 +510,7 @@ async function main() {
         const deployed = deployTokenRcpt?.logs
           .map((log) => {
             try {
-              return factory.interface.parseLog(log as ethers.Log);
+              return factory.interface.parseLog(log as ghost.Log);
             } catch {
               return null;
             }

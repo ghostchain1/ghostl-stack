@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 async function main() {
   const tokenAddress = process.env.L3_TOKEN_ADDRESS;
@@ -7,7 +7,7 @@ async function main() {
     throw new Error("Missing env L3_TOKEN_ADDRESS/DEMO_ACCOUNT (source services/ghost-relayer/.env first)");
   }
 
-  const token = await ethers.getContractAt("src/common/ERC20.sol:ERC20", tokenAddress);
+  const token = await ghost.getContractAt("src/common/ERC20.sol:ERC20", tokenAddress);
   const bal = await token.balanceOf(account);
   console.log("token:", tokenAddress);
   console.log("account:", account);

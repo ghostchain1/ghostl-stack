@@ -1,14 +1,14 @@
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 const L2_FACTORY_DEFAULT = "0x4200000000000000000000000000000000000012";
-const CREATED_TOPIC0 = ethers.id("OptimismMintableERC20Created(address,address,address)");
+const CREATED_TOPIC0 = ghost.id("OptimismMintableERC20Created(address,address,address)");
 const FACTORY_EVENT_ABI = [
   "event OptimismMintableERC20Created(address indexed localToken, address indexed remoteToken, address deployer)"
 ];
 
-function localTokenFromFactoryLog(log: ethers.Log): string | null {
+function localTokenFromFactoryLog(log: ghost.Log): string | null {
   try {
-    const iface = new ethers.Interface(FACTORY_EVENT_ABI);
+    const iface = new ghost.Interface(FACTORY_EVENT_ABI);
     const parsed = iface.parseLog(log);
     const localToken = parsed?.args?.localToken as string | undefined;
     return localToken ?? null;
@@ -18,13 +18,13 @@ function localTokenFromFactoryLog(log: ethers.Log): string | null {
 }
 
 async function findExistingLocalToken(
-  provider: ethers.Provider,
+  provider: ghost.Provider,
   factory: string,
   remoteToken: string,
   latestBlock: number,
   lookback: number
 ): Promise<string | null> {
-  const remoteTopic = ethers.zeroPadValue(remoteToken, 32);
+  const remoteTopic = ghost.zeroPadValue(remoteToken, 32);
 
   const recentFromBlock = Math.max(0, latestBlock - Math.max(0, lookback));
   try {
@@ -74,7 +74,7 @@ async function main() {
     throw new Error("Missing env L1_TOKEN_ADDRESS");
   }
 
-  const [signer] = await ethers.getSigners();
+  const [signer] = await ghost.getSigners();
   const l2Provider = signer.provider;
   if (!l2Provider) {
     throw new Error("Missing L2 provider for signer");
@@ -86,7 +86,7 @@ async function main() {
 
   if (l2Token) {
     try {
-      const existing = new ethers.Contract(l2Token, MintableAbi, l2Provider);
+      const existing = new ghost.Contract(l2Token, MintableAbi, l2Provider);
       const remote = await existing.l1Token();
       if (remote.toLowerCase() === l1Token.toLowerCase()) {
         console.log(`L2_TOKEN_ADDRESS=${l2Token}`);
@@ -109,12 +109,12 @@ async function main() {
   let symbol = process.env.L1_TOKEN_SYMBOL ?? "GL1";
   if (l1Rpc) {
     try {
-      const l1Provider = new ethers.JsonRpcProvider(l1Rpc);
+      const l1Provider = new ghost.JsonRpcProvider(l1Rpc);
       const erc20Abi = [
         "function name() view returns (string)",
         "function symbol() view returns (string)"
       ];
-      const l1Erc20 = new ethers.Contract(l1Token, erc20Abi, l1Provider);
+      const l1Erc20 = new ghost.Contract(l1Token, erc20Abi, l1Provider);
       name = await l1Erc20.name();
       symbol = await l1Erc20.symbol();
     } catch {
@@ -126,8 +126,8 @@ async function main() {
     ...FACTORY_EVENT_ABI,
     "function createOptimismMintableERC20(address remoteToken,string name,string symbol) returns (address)"
   ];
-  const factory = new ethers.Contract(l2Factory, FactoryAbi, signer);
-  let tx: ethers.ContractTransactionResponse;
+  const factory = new ghost.Contract(l2Factory, FactoryAbi, signer);
+  let tx: ghost.ContractTransactionResponse;
   try {
     tx = await factory.createOptimismMintableERC20(l1Token, name, symbol);
   } catch (createErr) {

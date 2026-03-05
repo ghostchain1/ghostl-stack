@@ -1,5 +1,5 @@
 import express from "express";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 
 const PORT = Number(process.env.PORT || 7606);
 const PROM_URL = process.env.PROM_URL || "http://localhost:9090";
@@ -80,8 +80,8 @@ const erc20Abi = ["function balanceOf(address) view returns (uint256)", "functio
 const erc20Balance = async (rpcUrl, token, account) => {
   if (!token || !account) return null;
   try {
-    const provider = new ethers.JsonRpcProvider(rpcUrl);
-    const c = new ethers.Contract(token, erc20Abi, provider);
+    const provider = new ghost.JsonRpcProvider(rpcUrl);
+    const c = new ghost.Contract(token, erc20Abi, provider);
     const bal = await c.balanceOf(account);
     return bal.toString();
   } catch {

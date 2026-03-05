@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 function parseAddresses(): Array<string> {
   const raw = process.env.FUND_ADDRESSES_JSON || "[]";
@@ -11,22 +11,22 @@ function parseAddresses(): Array<string> {
   if (!Array.isArray(parsed)) throw new Error("FUND_ADDRESSES_JSON must be a JSON array");
   const out: Array<string> = [];
   for (const a of parsed) {
-    if (typeof a !== "string" || !ethers.isAddress(a)) throw new Error(`Invalid address: ${String(a)}`);
-    out.push(ethers.getAddress(a));
+    if (typeof a !== "string" || !ghost.isAddress(a)) throw new Error(`Invalid address: ${String(a)}`);
+    out.push(ghost.getAddress(a));
   }
   return Array.from(new Set(out));
 }
 
 async function main() {
   const amountGst = process.env.FUND_AMOUNT_GST || "10";
-  const amountWei = ethers.parseEther(amountGst);
+  const amountWei = ghost.parseEther(amountGst);
   const addrs = parseAddresses();
   if (addrs.length === 0) {
     console.log("No addresses to fund.");
     return;
   }
 
-  const [signer] = await ethers.getSigners();
+  const [signer] = await ghost.getSigners();
   const from = await signer.getAddress();
   const net = await signer.provider!.getNetwork();
 

@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 async function main() {
   const bridgeAddress = process.env.BRIDGE_L2L3_ADDRESS;
@@ -17,8 +17,8 @@ async function main() {
   const amountWei = BigInt(amountWeiStr);
   const nonce = BigInt(nonceStr);
 
-  const [signer] = await ethers.getSigners();
-  const bridge = await ethers.getContractAt("L2L3Bridge", bridgeAddress, signer);
+  const [signer] = await ghost.getSigners();
+  const bridge = await ghost.getContractAt("L2L3Bridge", bridgeAddress, signer);
 
   const tx = await bridge.finalizeToL3(from, to, amountWei, nonce);
   console.log("tx:", tx.hash);

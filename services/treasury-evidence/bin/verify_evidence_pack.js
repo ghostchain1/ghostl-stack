@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 
 const INPUT_PATH = process.env.EVIDENCE_PACK_PATH || process.argv[2] || path.join(process.cwd(), "data", "evidence_pack.json");
 const SIGNER_ADDRESS = process.env.EVIDENCE_SIGNER_ADDRESS || "";
@@ -16,10 +16,10 @@ const stableStringify = (value) => {
   return JSON.stringify(value);
 };
 
-const hashOf = (value) => ethers.keccak256(ethers.toUtf8Bytes(stableStringify(value)));
+const hashOf = (value) => ghost.keccak256(ghost.toUtf8Bytes(stableStringify(value)));
 
 const buildMerkleRoot = (leaves) => {
-  if (leaves.length === 0) return ethers.ZeroHash;
+  if (leaves.length === 0) return ghost.ZeroHash;
   let level = leaves.slice().sort();
   while (level.length > 1) {
     const next = [];
@@ -79,7 +79,7 @@ const verify = () => {
   }
 
   if (pack.signature?.signature && SIGNER_ADDRESS) {
-    const recovered = ethers.verifyMessage(ethers.getBytes(packHash), pack.signature.signature);
+    const recovered = ghost.verifyMessage(ghost.getBytes(packHash), pack.signature.signature);
     if (recovered.toLowerCase() !== SIGNER_ADDRESS.toLowerCase()) {
       throw new Error("signature_mismatch");
     }

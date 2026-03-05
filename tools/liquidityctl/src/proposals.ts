@@ -1,18 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Interface, ethers } from "ethers";
+import { Interface, ghost } from "ghost";
 
 export type ProposalCall = { target: string; value: bigint; data: string };
 
 export const EXECUTOR_ABI = ["function executeBatch(address[] targets,uint256[] values,bytes[] datas) external"] as const;
 
 export function buildCall(target: string, abi: readonly string[], functionName: string, args: readonly unknown[]): ProposalCall {
-  if (!ethers.isAddress(target) || ethers.getAddress(target) === ethers.ZeroAddress) {
+  if (!ghost.isAddress(target) || ghost.getAddress(target) === ghost.ZeroAddress) {
     throw new Error(`invalid_target:${target}`);
   }
   const iface = new Interface(abi);
   const data = iface.encodeFunctionData(functionName, [...args]);
-  return { target: ethers.getAddress(target), value: 0n, data };
+  return { target: ghost.getAddress(target), value: 0n, data };
 }
 
 export function buildExecutorBatchCalldata(calls: readonly ProposalCall[]) {

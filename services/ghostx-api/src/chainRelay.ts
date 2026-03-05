@@ -8,7 +8,7 @@
  * the engine has accepted the order.  The returned on-chain order ID is
  * stored back on the local order object.
  */
-import { ethers, JsonRpcProvider, Wallet, Contract } from "ethers";
+import { ghost, JsonRpcProvider, Wallet, Contract } from "ghost";
 import { Fill, LimitOrder } from "./types";
 
 // Minimal ABI – only what the relay needs.
@@ -44,7 +44,7 @@ export class ChainRelay {
     const receipt = await tx.wait();
 
     // Parse OrderPlaced event for on-chain orderId.
-    const iface = new ethers.Interface(ORDER_BOOK_ABI);
+    const iface = new ghost.Interface(ORDER_BOOK_ABI);
     for (const log of receipt.logs ?? []) {
       try {
         const parsed = iface.parseLog(log);
@@ -61,7 +61,7 @@ export class ChainRelay {
     const tx = await this.book.matchOrders(buyOnChainId, sellOnChainId);
     const receipt = await tx.wait();
 
-    const iface = new ethers.Interface(ORDER_BOOK_ABI);
+    const iface = new ghost.Interface(ORDER_BOOK_ABI);
     for (const log of receipt.logs ?? []) {
       try {
         const parsed = iface.parseLog(log);

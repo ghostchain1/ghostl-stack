@@ -1,4 +1,4 @@
-import { ethers, network } from "hardhat";
+import { ghost, network } from "hardhat";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -13,30 +13,30 @@ function normalizeAddress(value: string | undefined): string | undefined {
   if (!value) return undefined;
   const trimmed = value.trim();
   if (!trimmed) return undefined;
-  if (!ethers.isAddress(trimmed)) {
+  if (!ghost.isAddress(trimmed)) {
     throw new Error(`invalid address: ${trimmed}`);
   }
-  return ethers.getAddress(trimmed);
+  return ghost.getAddress(trimmed);
 }
 
 function ensureBytes32(value: string | undefined, label: string): string | undefined {
   if (!value) return undefined;
   const trimmed = value.trim();
   if (!trimmed) return undefined;
-  if (!ethers.isHexString(trimmed, 32)) {
+  if (!ghost.isHexString(trimmed, 32)) {
     throw new Error(`${label} must be a 32-byte hex value`);
   }
   return trimmed;
 }
 
-async function assertCode(provider: ethers.Provider, address: string, label: string): Promise<void> {
+async function assertCode(provider: ghost.Provider, address: string, label: string): Promise<void> {
   const code = await provider.getCode(address);
   if (!code || code === "0x") {
     throw new Error(`No code at ${label} address ${address}`);
   }
 }
 
-async function hasCode(provider: ethers.Provider, address: string): Promise<boolean> {
+async function hasCode(provider: ghost.Provider, address: string): Promise<boolean> {
   const code = await provider.getCode(address);
   return !!code && code !== "0x";
 }
@@ -47,15 +47,15 @@ async function main() {
   const tmpPath = path.join(root, ".tmp", `last_cascading_finality_${network.name}.json`);
   const deploymentPath = path.join(outputDir, "cascading-finality.json");
 
-  const [deployer] = await ethers.getSigners();
+  const [deployer] = await ghost.getSigners();
   if (!deployer?.provider) {
     throw new Error("missing provider (check hardhat network RPC config)");
   }
 
-  const provider = deployer.provider as ethers.Provider;
+  const provider = deployer.provider as ghost.Provider;
   const net = await provider.getNetwork();
   const governanceExecutor = normalizeAddress(process.env.GOVERNANCE_EXECUTOR) ?? deployer.address;
-  const governanceTimelock = normalizeAddress(process.env.GOVERNANCE_TIMELOCK) ?? ethers.ZeroAddress;
+  const governanceTimelock = normalizeAddress(process.env.GOVERNANCE_TIMELOCK) ?? ghost.ZeroAddress;
   const aiPolicyHash = ensureBytes32(process.env.AI_POLICY_HASH, "AI_POLICY_HASH");
   const autoAcceptPolicyHash = parseBool(process.env.AUTO_ACCEPT_POLICY_HASH, true);
   const enforceHierarchicalFinality = parseBool(process.env.ENFORCE_HIERARCHICAL_FINALITY, true);
@@ -72,9 +72,9 @@ async function main() {
   console.log("deployer:", deployer.address);
   console.log("governance:", { executor: governanceExecutor, timelock: governanceTimelock });
 
-  const L1OracleFactory = await ethers.getContractFactory("L1FinalityOracle", deployer);
-  const L2OracleFactory = await ethers.getContractFactory("L2FinalityOracle", deployer);
-  const L3OracleFactory = await ethers.getContractFactory("L3FinalityOracle", deployer);
+  const L1OracleFactory = await ghost.getContractFactory("L1FinalityOracle", deployer);
+  const L2OracleFactory = await ghost.getContractFactory("L2FinalityOracle", deployer);
+  const L3OracleFactory = await ghost.getContractFactory("L3FinalityOracle", deployer);
 
   if (l1OracleAddress) {
     await assertCode(provider, l1OracleAddress, "L1FinalityOracle");
@@ -108,7 +108,7 @@ async function main() {
   }
 
   if (aiPolicyHash && autoAcceptPolicyHash) {
-    const l1Oracle = (await ethers.getContractAt("L1FinalityOracle", l1OracleAddress, deployer)) as any;
+    const l1Oracle = (await ghost.getContractAt("L1FinalityOracle", l1OracleAddress, deployer)) as any;
     const alreadyAccepted = await l1Oracle.acceptedPolicyHash(aiPolicyHash);
     if (!alreadyAccepted) {
       const tx = await l1Oracle.setAcceptedPolicyHash(aiPolicyHash, true);
@@ -127,7 +127,7 @@ async function main() {
       console.warn(`Skipping bridge wiring (${bridgeAddress}): ${reason}`);
       skippedWiring.push({ target: "bridge", reason });
     } else {
-      const bridge = (await ethers.getContractAt("L2L3Bridge", bridgeAddress, deployer)) as any;
+      const bridge = (await ghost.getContractAt("L2L3Bridge", bridgeAddress, deployer)) as any;
       let bridgeCompatible = true;
       try {
         await bridge.l2FinalityOracle();
@@ -142,14 +142,14 @@ async function main() {
         console.warn(`Skipping bridge wiring (${bridgeAddress}): ${reason}`);
         skippedWiring.push({ target: "bridge", reason });
       } else {
-        const currentL2Oracle = ethers.getAddress(await bridge.l2FinalityOracle());
+        const currentL2Oracle = ghost.getAddress(await bridge.l2FinalityOracle());
         if (currentL2Oracle !== l2OracleAddress) {
           const tx = await bridge.setL2FinalityOracle(l2OracleAddress);
           await tx.wait();
           console.log(`Bridge wired L2FinalityOracle -> ${l2OracleAddress}`);
         }
 
-        const currentL3Oracle = ethers.getAddress(await bridge.l3FinalityOracle());
+        const currentL3Oracle = ghost.getAddress(await bridge.l3FinalityOracle());
         if (currentL3Oracle !== l3OracleAddress) {
           const tx = await bridge.setL3FinalityOracle(l3OracleAddress);
           await tx.wait();
@@ -172,11 +172,11 @@ async function main() {
       console.warn(`Skipping rollup L2->L1 wiring (${l2OnL1RollupAddress}): ${reason}`);
       skippedWiring.push({ target: "rollupL2L1", reason });
     } else {
-      const l2Rollup = (await ethers.getContractAt("OptimisticRollup", l2OnL1RollupAddress, deployer)) as any;
+      const l2Rollup = (await ghost.getContractAt("OptimisticRollup", l2OnL1RollupAddress, deployer)) as any;
       let rollupCompatible = true;
-      let currentParent = ethers.ZeroAddress;
+      let currentParent = ghost.ZeroAddress;
       try {
-        currentParent = ethers.getAddress(await l2Rollup.parentFinalityOracle());
+        currentParent = ghost.getAddress(await l2Rollup.parentFinalityOracle());
       } catch {
         rollupCompatible = false;
       }
@@ -199,11 +199,11 @@ async function main() {
       console.warn(`Skipping rollup L3->L2 wiring (${l3OnL2RollupAddress}): ${reason}`);
       skippedWiring.push({ target: "rollupL3L2", reason });
     } else {
-      const l3Rollup = (await ethers.getContractAt("OptimisticRollup", l3OnL2RollupAddress, deployer)) as any;
+      const l3Rollup = (await ghost.getContractAt("OptimisticRollup", l3OnL2RollupAddress, deployer)) as any;
       let rollupCompatible = true;
-      let currentParent = ethers.ZeroAddress;
+      let currentParent = ghost.ZeroAddress;
       try {
-        currentParent = ethers.getAddress(await l3Rollup.parentFinalityOracle());
+        currentParent = ghost.getAddress(await l3Rollup.parentFinalityOracle());
       } catch {
         rollupCompatible = false;
       }

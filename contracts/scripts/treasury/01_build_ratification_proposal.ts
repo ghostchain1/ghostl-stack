@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import fs from "node:fs";
 import path from "node:path";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 import {
   EXECUTOR_ABI_FRAGMENTS,
   buildCall,
@@ -35,13 +35,13 @@ const EPOCH_BUDGET = process.env.TREASURY_EPOCH_BUDGET ?? "25000"; // in GST
 const EPOCH_LENGTH_SECONDS = process.env.TREASURY_EPOCH_LENGTH_SECONDS ?? "86400";
 const MAX_RISK_SCORE_BPS = process.env.TREASURY_MAX_RISK_SCORE_BPS ?? "7500";
 
-const toGhost = (value: string) => ethers.parseUnits(value, 18);
+const toGhost = (value: string) => ghost.parseUnits(value, 18);
 
 function requireAddress(name: string, value: string | undefined) {
-  if (!value || !ethers.isAddress(value)) {
+  if (!value || !ghost.isAddress(value)) {
     throw new Error(`missing_or_invalid_${name}`);
   }
-  return ethers.getAddress(value);
+  return ghost.getAddress(value);
 }
 
 const LEGACY_TREASURY_ABI = [
@@ -102,10 +102,10 @@ function main() {
   calls.push(buildCall(guard, TREASURY_GUARD_ABI, "setController", [controller]));
 
   // 4) wire controller components
-  const router = TREASURY_ROUTER_ADDRESS ? requireAddress("TREASURY_ROUTER_ADDRESS", TREASURY_ROUTER_ADDRESS) : ethers.ZeroAddress;
+  const router = TREASURY_ROUTER_ADDRESS ? requireAddress("TREASURY_ROUTER_ADDRESS", TREASURY_ROUTER_ADDRESS) : ghost.ZeroAddress;
   const federation = FEDERATION_ROUTER_ADDRESS
     ? requireAddress("FEDERATION_ROUTER_ADDRESS", FEDERATION_ROUTER_ADDRESS)
-    : ethers.ZeroAddress;
+    : ghost.ZeroAddress;
   calls.push(buildCall(controller, TREASURY_CONTROLLER_ABI, "setComponents", [policy, guard, receipts, router, federation]));
 
   // 5) optional router controller wiring
@@ -117,7 +117,7 @@ function main() {
   }
 
   // 6) lock legacy treasury governance to controller (post-freeze)
-  calls.push(buildCall(legacyTreasury, LEGACY_TREASURY_ABI, "setGovernance", [controller, ethers.ZeroAddress]));
+  calls.push(buildCall(legacyTreasury, LEGACY_TREASURY_ABI, "setGovernance", [controller, ghost.ZeroAddress]));
 
   const serializedCalls = calls.map((call) => ({
     ...call,

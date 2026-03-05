@@ -9,7 +9,7 @@ import nodemailer from 'nodemailer';
 import helmet from 'helmet';
 import type {} from './types/session';
 import WebSocket from 'ws';
-import { Interface, JsonRpcProvider, Wallet } from 'ethers';
+import { Interface, JsonRpcProvider, Wallet } from 'ghost';
 import { z } from 'zod';
 import type { Transfer } from '@ghostl/types/bridge';
 import type { WalletRecord } from '@ghostl/types';

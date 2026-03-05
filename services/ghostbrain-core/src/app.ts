@@ -16,6 +16,8 @@ import { statusRoutes  } from "./routes/status.js";
 import { actionRoutes  } from "./routes/actions.js";
 import { signalsRoutes } from "./routes/signals.js";
 import { gsaRoutes     } from "./routes/gsa.js";
+import { rpcRoutes     } from "./routes/rpc.js";
+import { thinkRoutes   } from "./routes/think.js";
 import { hmacAuthPlugin } from "./middleware/hmac.js";
 
 export function buildApp() {
@@ -48,6 +50,8 @@ export function buildApp() {
   app.register(actionRoutes);
   app.register(signalsRoutes);
   app.register(gsaRoutes);
+  app.register(rpcRoutes);
+  app.register(thinkRoutes);
 
   return app;
 }

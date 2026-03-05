@@ -1,5 +1,5 @@
 import express from "express";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 
 const PORT = Number(process.env.PORT || 7630);
 const SIGNER_KEY = process.env.TREASURY_AI_SIGNER_KEY || "";
@@ -19,7 +19,7 @@ const stableStringify = (value) => {
   return JSON.stringify(value);
 };
 
-const hashOf = (value) => ethers.keccak256(ethers.toUtf8Bytes(stableStringify(value)));
+const hashOf = (value) => ghost.keccak256(ghost.toUtf8Bytes(stableStringify(value)));
 
 const computeRiskScore = (seed) => {
   const value = BigInt(seed);
@@ -39,15 +39,15 @@ const buildShapReport = (inputHash, fields) => {
 
 const signPayload = async (payload) => {
   if (!SIGNER_KEY) return null;
-  const wallet = new ethers.Wallet(SIGNER_KEY);
+  const wallet = new ghost.Wallet(SIGNER_KEY);
   const digest = hashOf(payload);
-  const signature = await wallet.signMessage(ethers.getBytes(digest));
+  const signature = await wallet.signMessage(ghost.getBytes(digest));
   return { signer: wallet.address, digest, signature };
 };
 
 const buildProposalCalldata = (controller, action) => {
   if (!controller) return null;
-  const iface = new ethers.Interface([
+  const iface = new ghost.Interface([
     "function execute((uint8 actionType,address asset,address target,uint256 amount,uint256 value,uint256 destinationChainId,bytes data,bytes32 metadataHash,bytes32 aiProposalHash,uint256 aiRiskScoreBps,bytes32 treatyId))"
   ]);
   return iface.encodeFunctionData("execute", [action]);

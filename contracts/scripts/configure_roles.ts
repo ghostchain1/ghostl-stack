@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 
 const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
 
@@ -19,21 +19,21 @@ const PROPOSER_L2_ON_L1 = process.env.PROPOSER_L2_ON_L1_ADDRESS!;
 const PROPOSER_L3_ON_L2 = process.env.PROPOSER_L3_ON_L2_ADDRESS!;
 
 function requireAddr(name: string, value: string) {
-  if (!value || !ethers.isAddress(value)) throw new Error(`Missing/invalid ${name}`);
-  return ethers.getAddress(value);
+  if (!value || !ghost.isAddress(value)) throw new Error(`Missing/invalid ${name}`);
+  return ghost.getAddress(value);
 }
 
 async function main() {
   if (!DEPLOYER_PRIVATE_KEY) {
     throw new Error("Missing DEPLOYER_PRIVATE_KEY (refusing to use a built-in dev key)");
   }
-  const l1 = new ethers.JsonRpcProvider(RPC_L1);
-  const l2 = new ethers.JsonRpcProvider(RPC_L2);
-  const l3 = new ethers.JsonRpcProvider(RPC_L3);
+  const l1 = new ghost.JsonRpcProvider(RPC_L1);
+  const l2 = new ghost.JsonRpcProvider(RPC_L2);
+  const l3 = new ghost.JsonRpcProvider(RPC_L3);
 
-  const ownerL1 = new ethers.Wallet(DEPLOYER_PRIVATE_KEY, l1);
-  const ownerL2 = new ethers.Wallet(DEPLOYER_PRIVATE_KEY, l2);
-  const ownerL3 = new ethers.Wallet(DEPLOYER_PRIVATE_KEY, l3);
+  const ownerL1 = new ghost.Wallet(DEPLOYER_PRIVATE_KEY, l1);
+  const ownerL2 = new ghost.Wallet(DEPLOYER_PRIVATE_KEY, l2);
+  const ownerL3 = new ghost.Wallet(DEPLOYER_PRIVATE_KEY, l3);
 
   const l1RollupAddr = requireAddr("L1_ROLLUP_L2_ADDRESS", L1_ROLLUP_L2);
   const l2RollupAddr = requireAddr("L2_ROLLUP_L3_ADDRESS", L2_ROLLUP_L3);
@@ -53,45 +53,45 @@ async function main() {
   const factoryAbi = ["function setRelayer(address r) external", "function relayer() view returns (address)"];
   const l3TokenAbi = ["function setRelayer(address r) external", "function relayer() view returns (address)"];
 
-  const l1Rollup = new ethers.Contract(l1RollupAddr, rollupAbi, ownerL1);
-  const l2Rollup = new ethers.Contract(l2RollupAddr, rollupAbi, ownerL2);
-  const bridge = new ethers.Contract(bridgeAddr, bridgeAbi, ownerL2);
-  const inbox = new ethers.Contract(inboxAddr, inboxAbi, ownerL3);
-  const factory = new ethers.Contract(factoryAddr, factoryAbi, ownerL3);
-  const token = new ethers.Contract(tokenAddr, l3TokenAbi, ownerL3);
+  const l1Rollup = new ghost.Contract(l1RollupAddr, rollupAbi, ownerL1);
+  const l2Rollup = new ghost.Contract(l2RollupAddr, rollupAbi, ownerL2);
+  const bridge = new ghost.Contract(bridgeAddr, bridgeAbi, ownerL2);
+  const inbox = new ghost.Contract(inboxAddr, inboxAbi, ownerL3);
+  const factory = new ghost.Contract(factoryAddr, factoryAbi, ownerL3);
+  const token = new ghost.Contract(tokenAddr, l3TokenAbi, ownerL3);
 
-  if (ethers.getAddress(await l1Rollup.proposer()) !== proposerL2) {
+  if (ghost.getAddress(await l1Rollup.proposer()) !== proposerL2) {
     const tx = await l1Rollup.setProposer(proposerL2);
     await tx.wait();
     console.log("Set L1 rollup proposer:", proposerL2, "tx=", tx.hash);
   }
 
-  if (ethers.getAddress(await l2Rollup.proposer()) !== proposerL3) {
+  if (ghost.getAddress(await l2Rollup.proposer()) !== proposerL3) {
     const tx = await l2Rollup.setProposer(proposerL3);
     await tx.wait();
     console.log("Set L2 rollup proposer:", proposerL3, "tx=", tx.hash);
   }
 
   // L2 bridge lives on the settlement chain (L2). Allow a dedicated L2 relayer key/address.
-  if (ethers.getAddress(await bridge.relayer()) !== l2RelayerAddr) {
+  if (ghost.getAddress(await bridge.relayer()) !== l2RelayerAddr) {
     const tx = await bridge.setRelayer(l2RelayerAddr);
     await tx.wait();
     console.log("Set L2 bridge relayer:", l2RelayerAddr, "tx=", tx.hash);
   }
 
-  if (ethers.getAddress(await inbox.relayer()) !== relayerAddr) {
+  if (ghost.getAddress(await inbox.relayer()) !== relayerAddr) {
     const tx = await inbox.setRelayer(relayerAddr);
     await tx.wait();
     console.log("Set L3 inbox relayer:", relayerAddr, "tx=", tx.hash);
   }
 
-  if (ethers.getAddress(await factory.relayer()) !== relayerAddr) {
+  if (ghost.getAddress(await factory.relayer()) !== relayerAddr) {
     const tx = await factory.setRelayer(relayerAddr);
     await tx.wait();
     console.log("Set L3 factory relayer:", relayerAddr, "tx=", tx.hash);
   }
 
-  if (ethers.getAddress(await token.relayer()) !== relayerAddr) {
+  if (ghost.getAddress(await token.relayer()) !== relayerAddr) {
     const tx = await token.setRelayer(relayerAddr);
     await tx.wait();
     console.log("Set L3 token relayer:", relayerAddr, "tx=", tx.hash);

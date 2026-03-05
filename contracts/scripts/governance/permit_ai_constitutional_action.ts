@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import fs from "node:fs";
 import path from "node:path";
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 const repoRoot = path.resolve(__dirname, "..", "..", "..");
 const DEFAULT_REPORT_PATH = path.join(
@@ -43,17 +43,17 @@ if (!Number.isFinite(proposalId) || proposalId < 0) {
 }
 
 const executorAddress = readEnv("AI_CONSTITUTION_EXECUTOR") || "";
-if (!executorAddress || !ethers.isAddress(executorAddress)) {
+if (!executorAddress || !ghost.isAddress(executorAddress)) {
   throw new Error("missing_or_invalid_AI_CONSTITUTION_EXECUTOR");
 }
 
-const ACTION_GOVERNANCE = ethers.keccak256(
-  ethers.toUtf8Bytes("ghost.governance.execute")
+const ACTION_GOVERNANCE = ghost.keccak256(
+  ghost.toUtf8Bytes("ghost.governance.execute")
 );
 
 async function main() {
-  const [signer] = await ethers.getSigners();
-  const executor = new ethers.Contract(
+  const [signer] = await ghost.getSigners();
+  const executor = new ghost.Contract(
     executorAddress,
     [
       "function queue(uint256) view returns (address target,uint256 value,bytes data,uint256 eta,bool executed)",
@@ -64,21 +64,21 @@ async function main() {
 
   const queued = await executor.queue(proposalId);
   const guardAddress = await executor.constitutionalGuard();
-  if (!guardAddress || guardAddress === ethers.ZeroAddress) {
+  if (!guardAddress || guardAddress === ghost.ZeroAddress) {
     throw new Error("constitution_guard_missing");
   }
 
-  const guard = new ethers.Contract(
+  const guard = new ghost.Contract(
     guardAddress,
     ["function constitution() view returns (address)"],
     signer
   );
   const constitutionAddress = await guard.constitution();
-  if (!constitutionAddress || constitutionAddress === ethers.ZeroAddress) {
+  if (!constitutionAddress || constitutionAddress === ghost.ZeroAddress) {
     throw new Error("constitution_missing");
   }
 
-  const constitution = new ethers.Contract(
+  const constitution = new ghost.Contract(
     constitutionAddress,
     ["function governance() view returns (address)", "function permitAction(bytes32,bool) external"],
     signer
@@ -89,9 +89,9 @@ async function main() {
     throw new Error(`signer_not_constitution_governance:${signer.address}`);
   }
 
-  const dataHash = ethers.keccak256(queued.data);
-  const actionHash = ethers.keccak256(
-    ethers.AbiCoder.defaultAbiCoder().encode(
+  const dataHash = ghost.keccak256(queued.data);
+  const actionHash = ghost.keccak256(
+    ghost.AbiCoder.defaultAbiCoder().encode(
       ["bytes32", "uint256", "address", "uint256", "bytes32", "uint256"],
       [ACTION_GOVERNANCE, proposalId, queued.target, queued.value, dataHash, queued.eta]
     )

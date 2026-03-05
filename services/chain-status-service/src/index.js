@@ -1,5 +1,5 @@
 import express from "express";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 
 const PORT = Number(process.env.PORT || 7612);
 const registryUrl = process.env.RPC_REGISTRY_URL || "http://ghost-registry:8088/v1/endpoints";
@@ -58,7 +58,7 @@ const resolveRpc = async (layer) => {
 };
 
 const fetchChain = async (rpc) => {
-  const provider = new ethers.JsonRpcProvider(rpc);
+  const provider = new ghost.JsonRpcProvider(rpc);
   const latest = await provider.getBlock("latest");
   const prev = await provider.getBlock(latest.number - 1);
   const blockTime =

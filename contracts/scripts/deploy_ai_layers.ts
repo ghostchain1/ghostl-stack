@@ -1,4 +1,4 @@
-import { ethers, network, artifacts } from "hardhat";
+import { ghost, network, artifacts } from "hardhat";
 import path from "node:path";
 import crypto from "node:crypto";
 import { promises as fs } from "node:fs";
@@ -56,11 +56,11 @@ const recordDeployment = async (name: string, address: string, chainId: number, 
 };
 
 const deployGuardian = async (contractName: string, layer: string) => {
-  const factory = await ethers.getContractFactory(contractName);
+  const factory = await ghost.getContractFactory(contractName);
   const contract = await factory.deploy(txOpts);
   await contract.waitForDeployment();
   const address = await contract.getAddress();
-  const chainId = Number(network.config.chainId ?? (await ethers.provider.getNetwork()).chainId);
+  const chainId = Number(network.config.chainId ?? (await ghost.provider.getNetwork()).chainId);
   return recordDeployment(contractName, address, chainId, layer);
 };
 

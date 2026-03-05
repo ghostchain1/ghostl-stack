@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { z } from 'zod';
-import { ethers } from 'ethers';
+import { ghost } from 'ghost';
 
 import { loadConfig, type HgConfig } from './config.js';
 import { openDb, type SqliteDb } from './db/sqlite.js';
@@ -321,7 +321,7 @@ export function createApp(cfg: HgConfig, deps: { db?: SqliteDb; collectors?: Col
       const incident = fetchIncident(db, prop.incident_id);
       const fixes = fetchFixes(db, prop.proposal_id);
       const message = JSON.stringify({ proposal: prop, incident, fixes });
-      const wallet = new ethers.Wallet(cfg.attestorPrivateKey);
+      const wallet = new ghost.Wallet(cfg.attestorPrivateKey);
       const signature = await wallet.signMessage(message);
       const signatures = { signer: await wallet.getAddress(), signature, signedAt: new Date().toISOString() };
       db.prepare('UPDATE proposals SET signatures_json = ?, status = ? WHERE proposal_id = ?').run(

@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "ethers": "^6.13.2"
+    "ghost": "^6.13.2"
   },
   "engines": {
     "node": ">=22.21.0 <23"

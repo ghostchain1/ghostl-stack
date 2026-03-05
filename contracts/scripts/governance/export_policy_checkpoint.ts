@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import fs from "node:fs";
 import path from "node:path";
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 const repoRoot = path.resolve(__dirname, "..", "..", "..");
 
@@ -29,7 +29,7 @@ const readEnv = (key: string) => process.env[key] ?? fileEnv[key];
 
 const normalizeAddress = (value?: string) => {
   if (!value) return "";
-  return ethers.isAddress(value) ? ethers.getAddress(value) : "";
+  return ghost.isAddress(value) ? ghost.getAddress(value) : "";
 };
 
 const parsePolicyKeysFile = (filePath: string) => {
@@ -70,8 +70,8 @@ const outputDir =
   path.join(repoRoot, "infra", "evidence", "out");
 
 const toBytes32 = (value: string) => {
-  if (ethers.isHexString(value, 32)) return value;
-  return ethers.id(value);
+  if (ghost.isHexString(value, 32)) return value;
+  return ghost.id(value);
 };
 
 const stableStringify = (value: unknown): string => {
@@ -94,14 +94,14 @@ async function main() {
     throw new Error("missing_policy_keys");
   }
 
-  const [signer] = await ethers.getSigners();
+  const [signer] = await ghost.getSigners();
   const provider = signer.provider;
   if (!provider) {
     throw new Error("missing_provider");
   }
   const network = await provider.getNetwork();
 
-  const registry = new ethers.Contract(
+  const registry = new ghost.Contract(
     policyRegistryAddress,
     [
       "function constitutionHash() view returns (bytes32)",
@@ -119,31 +119,31 @@ async function main() {
     const [current, pending, emergency] = await registry.getPolicy(keyHash);
     const effective = await registry.effectivePolicy(keyHash);
     policies.push({
-      label: ethers.isHexString(rawKey, 32) ? null : rawKey,
+      label: ghost.isHexString(rawKey, 32) ? null : rawKey,
       key: keyHash,
       current: {
         value: current.value?.toString?.() ?? "0",
         version: Number(current.version ?? 0),
         updatedAt: Number(current.updatedAt ?? 0),
-        evidenceHash: current.evidenceHash ?? ethers.ZeroHash
+        evidenceHash: current.evidenceHash ?? ghost.ZeroHash
       },
       pending: {
         value: pending.value?.toString?.() ?? "0",
         activatesAt: Number(pending.activatesAt ?? 0),
-        evidenceHash: pending.evidenceHash ?? ethers.ZeroHash,
+        evidenceHash: pending.evidenceHash ?? ghost.ZeroHash,
         exists: Boolean(pending.exists)
       },
       emergency: {
         value: emergency.value?.toString?.() ?? "0",
         expiresAt: Number(emergency.expiresAt ?? 0),
-        evidenceHash: emergency.evidenceHash ?? ethers.ZeroHash,
+        evidenceHash: emergency.evidenceHash ?? ghost.ZeroHash,
         active: Boolean(emergency.active)
       },
       effective: {
         value: effective[0]?.toString?.() ?? "0",
         version: Number(effective[1] ?? 0),
         emergency: Boolean(effective[2]),
-        evidenceHash: effective[3] ?? ethers.ZeroHash,
+        evidenceHash: effective[3] ?? ghost.ZeroHash,
         effectiveAt: Number(effective[4] ?? 0)
       }
     });
@@ -159,7 +159,7 @@ async function main() {
     policies
   };
 
-  const checkpointHash = ethers.keccak256(ethers.toUtf8Bytes(stableStringify(report)));
+  const checkpointHash = ghost.keccak256(ghost.toUtf8Bytes(stableStringify(report)));
   const output = { ...report, checkpointHash };
 
   fs.mkdirSync(outputDir, { recursive: true });

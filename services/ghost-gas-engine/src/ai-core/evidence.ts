@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { ethers } from 'ethers';
+import { ghost } from 'ghost';
 
 export type EvidenceBundle = {
   version: string;
@@ -44,7 +44,7 @@ export const stableStringify = (value: unknown): string => {
   return JSON.stringify(value);
 };
 
-export const hashJson = (value: unknown): string => ethers.keccak256(ethers.toUtf8Bytes(stableStringify(value)));
+export const hashJson = (value: unknown): string => ghost.keccak256(ghost.toUtf8Bytes(stableStringify(value)));
 
 export const buildEvidenceBundle = (input: {
   kind: string;
@@ -110,8 +110,8 @@ const POLICY_REGISTRY_ABI = [
 ];
 
 export const fetchPolicyVersion = async (rpcUrl: string, registryAddress: string, policyKey: string) => {
-  const provider = new ethers.JsonRpcProvider(rpcUrl);
-  const registry = new ethers.Contract(registryAddress, POLICY_REGISTRY_ABI, provider);
+  const provider = new ghost.JsonRpcProvider(rpcUrl);
+  const registry = new ghost.Contract(registryAddress, POLICY_REGISTRY_ABI, provider);
   const result = await registry.getPolicy(policyKey);
   const current = result?.[0] || {};
   const version = Number(current.version ?? current[1] ?? 0);
@@ -123,8 +123,8 @@ const EVIDENCE_VAULT_ABI = [
 ];
 
 const toBytes32 = (value: string) => {
-  if (ethers.isHexString(value, 32)) return value;
-  return ethers.keccak256(ethers.toUtf8Bytes(value));
+  if (ghost.isHexString(value, 32)) return value;
+  return ghost.keccak256(ghost.toUtf8Bytes(value));
 };
 
 export const recordEvidence = async (input: {
@@ -140,9 +140,9 @@ export const recordEvidence = async (input: {
   threshold: number;
   metadataHash: string;
 }) => {
-  const provider = new ethers.JsonRpcProvider(input.rpcUrl);
-  const wallet = new ethers.Wallet(input.submitterKey, provider);
-  const vault = new ethers.Contract(input.vaultAddress, EVIDENCE_VAULT_ABI, wallet);
+  const provider = new ghost.JsonRpcProvider(input.rpcUrl);
+  const wallet = new ghost.Wallet(input.submitterKey, provider);
+  const vault = new ghost.Contract(input.vaultAddress, EVIDENCE_VAULT_ABI, wallet);
   const tx = await vault.recordEvidence(
     toBytes32(input.kind),
     input.evidenceHash,

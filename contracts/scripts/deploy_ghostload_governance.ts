@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 async function main(): Promise<void> {
   const governance = process.env.GHOSTLOAD_GOVERNANCE_ADDRESS;
@@ -9,11 +9,11 @@ async function main(): Promise<void> {
     throw new Error("GHOSTLOAD_GOVERNANCE_ADDRESS and GHOSTLOAD_GUARDIAN_ADDRESS are required");
   }
 
-  const Registry = await ethers.getContractFactory("GhostLoadParameterRegistry");
+  const Registry = await ghost.getContractFactory("GhostLoadParameterRegistry");
   const registry = await Registry.deploy(governance, timelockSeconds);
   await registry.waitForDeployment();
 
-  const Pause = await ethers.getContractFactory("GhostLoadEmergencyPause");
+  const Pause = await ghost.getContractFactory("GhostLoadEmergencyPause");
   const pause = await Pause.deploy(guardian);
   await pause.waitForDeployment();
 

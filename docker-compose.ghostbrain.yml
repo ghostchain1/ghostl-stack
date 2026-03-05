@@ -138,6 +138,12 @@ x-hardening: &hardening
       # ── ghostbrain-gsa integration ──
       GSA_BASE_URL: "${GSA_BASE_URL:-http://ghostbrain-gsa:7850}"
       CONTROL_PLANE_HMAC_SECRET: "${CONTROL_PLANE_HMAC_SECRET:?CONTROL_PLANE_HMAC_SECRET is required}"
+      # ── Autonomous RPC pool endpoint lists (comma-separated) ──
+      GHOST_L1_RPC_URLS: "${GHOST_L1_RPC_URLS:-http://host.docker.internal:18545}"
+      GHOST_L2_RPC_URLS: "${GHOST_L2_RPC_URLS:-http://host.docker.internal:29547}"
+      GHOST_L3_RPC_URLS: "${GHOST_L3_RPC_URLS:-http://host.docker.internal:39545}"
+      # ── Allow services using ghost-sdk GhostBrainAiEngine to auto-discover ──
+      GHOSTBRAIN_CORE_URL: "${GHOSTBRAIN_CORE_URL:-http://ghostbrain-core:7900}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /home/ghost/ghostl-stack/services/ghostbrain-core/dist/connectors/docker.js:/app/dist/connectors/docker.js:ro

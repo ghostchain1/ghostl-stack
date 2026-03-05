@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import type { Request, Response } from "express";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -111,10 +111,10 @@ if (!RPC_SETTLEMENT_RESOLVED || !RPC_CHILD_RESOLVED || !ROLLUP) {
 }
 const observeOnly = !PROPOSER_PRIVATE_KEY;
 
-function makeProvider(url: string): ethers.JsonRpcProvider {
-  const req = new ethers.FetchRequest(url);
+function makeProvider(url: string): ghost.JsonRpcProvider {
+  const req = new ghost.FetchRequest(url);
   req.timeout = RPC_TIMEOUT_MS;
-  const p = new ethers.JsonRpcProvider(req, undefined, { polling: true });
+  const p = new ghost.JsonRpcProvider(req, undefined, { polling: true });
   p.pollingInterval = 1000;
   return p;
 }
@@ -122,7 +122,7 @@ function makeProvider(url: string): ethers.JsonRpcProvider {
 const settlement = makeProvider(RPC_SETTLEMENT_RESOLVED);
 const child = makeProvider(RPC_CHILD_RESOLVED);
 
-const wallet = observeOnly ? null : new ethers.Wallet(PROPOSER_PRIVATE_KEY, settlement);
+const wallet = observeOnly ? null : new ghost.Wallet(PROPOSER_PRIVATE_KEY, settlement);
 const walletAddress = wallet?.address || "";
 
 const rollupAbi = [
@@ -134,7 +134,7 @@ const rollupAbi = [
   "event BatchProposed(uint256 indexed batchId, uint256 indexed startBlock, uint256 indexed endBlock, bytes32 root)",
   "event BatchFinalized(uint256 indexed batchId)"
 ];
-const rollup = new ethers.Contract(ROLLUP, rollupAbi, wallet ?? settlement);
+const rollup = new ghost.Contract(ROLLUP, rollupAbi, wallet ?? settlement);
 
 type Cursor = { nextChildBlock: number | null };
 const cursorPath = path.join(STATE_DIR, "cursor.json");
@@ -153,7 +153,7 @@ function parseChainIdEnv(raw: string | undefined, label: string): bigint | null 
 
 function parseCodeHashEnv(raw: string | undefined): string | null {
   if (!raw) return null;
-  if (ethers.isHexString(raw, 32)) return ethers.hexlify(raw);
+  if (ghost.isHexString(raw, 32)) return ghost.hexlify(raw);
   console.warn(`[Startup] Ignoring invalid ROLLUP_CODE_HASH=${raw}`);
   return null;
 }
@@ -178,17 +178,17 @@ async function saveCursor(c: Cursor) {
 }
 
 function hashLeaf(blockNumber: number, blockHash: string): string {
-  return ethers.keccak256(
-    ethers.solidityPacked(["uint256", "bytes32"], [BigInt(blockNumber), blockHash as `0x${string}`])
+  return ghost.keccak256(
+    ghost.solidityPacked(["uint256", "bytes32"], [BigInt(blockNumber), blockHash as `0x${string}`])
   );
 }
 
 function hashPair(a: string, b: string): string {
-  return ethers.keccak256(ethers.concat([a as `0x${string}`, b as `0x${string}`]));
+  return ghost.keccak256(ghost.concat([a as `0x${string}`, b as `0x${string}`]));
 }
 
 function merkleRoot(leaves: Array<string>): string {
-  if (leaves.length === 0) return ethers.ZeroHash;
+  if (leaves.length === 0) return ghost.ZeroHash;
   let level = leaves.slice();
   while (level.length > 1) {
     const next: Array<string> = [];
@@ -360,7 +360,7 @@ function scrubError(e: any) {
   return String(e?.shortMessage ?? e?.reason ?? e?.message ?? e);
 }
 
-async function assertChainId(provider: ethers.JsonRpcProvider, expected: bigint | null, label: string): Promise<bigint> {
+async function assertChainId(provider: ghost.JsonRpcProvider, expected: bigint | null, label: string): Promise<bigint> {
   const raw = await provider.send("eth_chainId", []);
   const chainId = BigInt(raw);
   if (expected != null && chainId !== expected) {
@@ -373,7 +373,7 @@ async function assertChainId(provider: ethers.JsonRpcProvider, expected: bigint 
 async function assertRollupDeployment() {
   const code = await settlement.getCode(ROLLUP);
   if (!code || code === "0x") throw new Error(`No code at rollup address ${ROLLUP}`);
-  const codeHash = ethers.keccak256(code);
+  const codeHash = ghost.keccak256(code);
   if (EXPECTED_ROLLUP_CODE_HASH && codeHash.toLowerCase() !== EXPECTED_ROLLUP_CODE_HASH.toLowerCase()) {
     throw new Error(`Rollup code hash mismatch: got ${codeHash}, expected ${EXPECTED_ROLLUP_CODE_HASH}`);
   }

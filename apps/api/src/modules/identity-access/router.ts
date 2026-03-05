@@ -13,7 +13,7 @@ import type { WalletService } from '../../services/wallet-store';
 import type { GhostWalletService } from '../../services/ghostwallet';
 import { env } from '../../config/env';
 import { emitEvent } from '../../lib/events';
-import { isAddress, verifyMessage } from 'ethers';
+import { isAddress, verifyMessage } from 'ghost';
 import { openSqlite } from '../../services/db';
 
 const asyncHandler =

@@ -1,6 +1,6 @@
 'use client';
 
-import { formatUnits, parseUnits } from 'ethers';
+import { formatUnits, parseUnits } from 'ghost';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { tokensForChain, TokenConfig, SupportedChain } from './tokens';
 import {

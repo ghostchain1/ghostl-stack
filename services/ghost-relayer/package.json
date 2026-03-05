@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "dotenv": "^17.2.3",
-    "ethers": "^6.13.2",
+    "ghost": "^6.13.2",
     "express": "^5.2.1"
   },
   "devDependencies": {

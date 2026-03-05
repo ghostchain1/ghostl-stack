@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { ghost } from 'ghost';
 
 export type PolicyUpdate = {
   policyKey: string;
@@ -11,11 +11,11 @@ export type PolicyUpdate = {
   emergency: boolean;
 };
 
-const DOMAIN_TYPEHASH = ethers.keccak256(
-  ethers.toUtf8Bytes('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)')
+const DOMAIN_TYPEHASH = ghost.keccak256(
+  ghost.toUtf8Bytes('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)')
 );
-const UPDATE_TYPEHASH = ethers.keccak256(
-  ethers.toUtf8Bytes(
+const UPDATE_TYPEHASH = ghost.keccak256(
+  ghost.toUtf8Bytes(
     'PolicyUpdate(bytes32 policyKey,uint256 value,bytes32 evidenceHash,bytes32 metadataHash,uint256 nonce,uint64 issuedAt,uint64 validUntil,bool emergency)'
   )
 );
@@ -31,8 +31,8 @@ const toBigIntValue = (value: string | number | bigint) => {
 };
 
 export const normalizeBytes32 = (value: string) => {
-  if (ethers.isHexString(value, 32)) return value;
-  return ethers.keccak256(ethers.toUtf8Bytes(value));
+  if (ghost.isHexString(value, 32)) return value;
+  return ghost.keccak256(ghost.toUtf8Bytes(value));
 };
 
 export const buildPolicyUpdate = (input: {
@@ -46,7 +46,7 @@ export const buildPolicyUpdate = (input: {
   emergency: boolean;
 }): PolicyUpdate => {
   const nonce =
-    input.nonce !== undefined && input.nonce !== null ? toBigIntValue(input.nonce) : ethers.toBigInt(input.evidenceHash);
+    input.nonce !== undefined && input.nonce !== null ? toBigIntValue(input.nonce) : ghost.toBigInt(input.evidenceHash);
   return {
     policyKey: input.policyKey,
     value: toBigIntValue(input.value),
@@ -60,7 +60,7 @@ export const buildPolicyUpdate = (input: {
 };
 
 export const hashPolicyUpdate = (update: PolicyUpdate): string => {
-  const encoded = ethers.AbiCoder.defaultAbiCoder().encode(
+  const encoded = ghost.AbiCoder.defaultAbiCoder().encode(
     ['bytes32', 'bytes32', 'uint256', 'bytes32', 'bytes32', 'uint256', 'uint64', 'uint64', 'bool'],
     [
       UPDATE_TYPEHASH,
@@ -74,24 +74,24 @@ export const hashPolicyUpdate = (update: PolicyUpdate): string => {
       update.emergency
     ]
   );
-  return ethers.keccak256(encoded);
+  return ghost.keccak256(encoded);
 };
 
 export const domainSeparator = (chainId: number, verifyingContract: string): string => {
-  const encoded = ethers.AbiCoder.defaultAbiCoder().encode(
+  const encoded = ghost.AbiCoder.defaultAbiCoder().encode(
     ['bytes32', 'bytes32', 'bytes32', 'uint256', 'address'],
     [
       DOMAIN_TYPEHASH,
-      ethers.keccak256(ethers.toUtf8Bytes('GhostAIProposalExecutor')),
-      ethers.keccak256(ethers.toUtf8Bytes('1')),
+      ghost.keccak256(ghost.toUtf8Bytes('GhostAIProposalExecutor')),
+      ghost.keccak256(ghost.toUtf8Bytes('1')),
       chainId,
       verifyingContract
     ]
   );
-  return ethers.keccak256(encoded);
+  return ghost.keccak256(encoded);
 };
 
 export const digestPolicyUpdate = (updateHash: string, chainId: number, verifyingContract: string): string => {
   const domain = domainSeparator(chainId, verifyingContract);
-  return ethers.keccak256(ethers.concat(['0x1901', domain, updateHash]));
+  return ghost.keccak256(ghost.concat(['0x1901', domain, updateHash]));
 };

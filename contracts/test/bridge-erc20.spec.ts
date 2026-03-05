@@ -1,8 +1,8 @@
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 const deployTestToken = async (owner: { address: string }) => {
-  const Token = await ethers.getContractFactory("TestERC20");
+  const Token = await ghost.getContractFactory("TestERC20");
   const token = await Token.connect(owner).deploy("Ghost (L2)", "GHOSTL2", 18);
   await token.waitForDeployment();
   return token;
@@ -10,19 +10,19 @@ const deployTestToken = async (owner: { address: string }) => {
 
 describe("ERC20 bridge (MVP)", function () {
   it("escrows on L2, mints on L3, burns and releases back to L2", async function () {
-    const [owner, user, relayer] = await ethers.getSigners();
+    const [owner, user, relayer] = await ghost.getSigners();
 
-    const Policy = await ethers.getContractFactory("GuardPolicy");
+    const Policy = await ghost.getContractFactory("GuardPolicy");
     const policy = await Policy.connect(owner).deploy();
     await policy.waitForDeployment();
 
-    const Bridge = await ethers.getContractFactory("L2L3Bridge");
+    const Bridge = await ghost.getContractFactory("L2L3Bridge");
     const bridge = await Bridge.connect(owner).deploy(await policy.getAddress());
     await bridge.waitForDeployment();
     await (await bridge.connect(owner).setRelayer(relayer.address)).wait();
     await (await bridge.connect(owner).setRequireComplianceRoot(false)).wait();
 
-    const amount = ethers.parseEther("1");
+    const amount = ghost.parseEther("1");
     const nonce = 1n;
 
     const l2Token = await deployTestToken(owner);
@@ -42,7 +42,7 @@ describe("ERC20 bridge (MVP)", function () {
       .to.emit(bridge, "ERC20Finalized")
       .withArgs(await l2Token.getAddress(), user.address, user.address, amount, nonce);
 
-    const Factory = await ethers.getContractFactory("L3BridgedTokenFactory");
+    const Factory = await ghost.getContractFactory("L3BridgedTokenFactory");
     const factory = await Factory.connect(owner).deploy(relayer.address);
     await factory.waitForDeployment();
 
@@ -60,9 +60,9 @@ describe("ERC20 bridge (MVP)", function () {
       })
       .find((e) => e?.name === "BridgedTokenDeployed");
     const l3TokenAddr = event?.args?.l3Token as string;
-    expect(ethers.isAddress(l3TokenAddr)).to.equal(true);
+    expect(ghost.isAddress(l3TokenAddr)).to.equal(true);
 
-    const l3Token = await ethers.getContractAt("L3BridgedToken", l3TokenAddr);
+    const l3Token = await ghost.getContractAt("L3BridgedToken", l3TokenAddr);
 
     await expect(l3Token.connect(relayer).mintFromL2(user.address, user.address, amount, nonce)).to.emit(
       l3Token,
@@ -89,19 +89,19 @@ describe("ERC20 bridge (MVP)", function () {
   });
 
   it("blocks releases when policy is paused", async function () {
-    const [owner, user, relayer] = await ethers.getSigners();
+    const [owner, user, relayer] = await ghost.getSigners();
 
-    const Policy = await ethers.getContractFactory("GuardPolicy");
+    const Policy = await ghost.getContractFactory("GuardPolicy");
     const policy = await Policy.connect(owner).deploy();
     await policy.waitForDeployment();
 
-    const Bridge = await ethers.getContractFactory("L2L3Bridge");
+    const Bridge = await ghost.getContractFactory("L2L3Bridge");
     const bridge = await Bridge.connect(owner).deploy(await policy.getAddress());
     await bridge.waitForDeployment();
     await (await bridge.connect(owner).setRelayer(relayer.address)).wait();
     await (await bridge.connect(owner).setRequireComplianceRoot(false)).wait();
 
-    const amount = ethers.parseEther("1");
+    const amount = ghost.parseEther("1");
     const nonce = 2n;
 
     const l2Token = await deployTestToken(owner);

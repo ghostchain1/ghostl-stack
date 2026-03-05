@@ -1,0 +1,95 @@
+{
+  "name": "@ghostchain/sdk",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GhostChain Sovereign SDK — native L1/L2/L3 routing, zero-ethers native layer, GST gas engine",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./wallet": {
+      "types": "./dist/wallet.d.ts",
+      "default": "./dist/wallet.js"
+    },
+    "./contract": {
+      "types": "./dist/contract.d.ts",
+      "default": "./dist/contract.js"
+    },
+    "./networks": {
+      "types": "./dist/networks.d.ts",
+      "default": "./dist/networks.js"
+    },
+    "./security": {
+      "types": "./dist/security/GhostSecurity.d.ts",
+      "default": "./dist/security/GhostSecurity.js"
+    },
+    "./events": {
+      "types": "./dist/events/GhostEvents.d.ts",
+      "default": "./dist/events/GhostEvents.js"
+    },
+    "./registry": {
+      "types": "./dist/core/GhostNetworkRegistry.d.ts",
+      "default": "./dist/core/GhostNetworkRegistry.js"
+    },
+    "./native": {
+      "types": "./dist/native/index.d.ts",
+      "default": "./dist/native/index.js"
+    },
+    "./ai": {
+      "types": "./dist/ai/GhostAIGasOptimizer.d.ts",
+      "default": "./dist/ai/GhostAIGasOptimizer.js"
+    },
+    "./routing": {
+      "types": "./dist/routing/GhostCrossChainRouter.d.ts",
+      "default": "./dist/routing/GhostCrossChainRouter.js"
+    },
+    "./bridge": {
+      "types": "./dist/bridge/GhostFinalityTracker.d.ts",
+      "default": "./dist/bridge/GhostFinalityTracker.js"
+    },
+    "./gns": {
+      "types": "./dist/gns/GNSResolver.d.ts",
+      "default": "./dist/gns/GNSResolver.js"
+    },
+    "./validator": {
+      "types": "./dist/validator/GhostRPCMonitor.d.ts",
+      "default": "./dist/validator/GhostRPCMonitor.js"
+    },
+    "./ghostbrain": {
+      "types": "./dist/ghostbrain/GhostBrainClient.d.ts",
+      "default": "./dist/ghostbrain/GhostBrainClient.js"
+    },
+    "./transaction": {
+      "types": "./dist/transaction/GhostTxBuilder.d.ts",
+      "default": "./dist/transaction/GhostTxBuilder.js"
+    },
+    "./next": {
+      "types": "./dist/next/useGhostWallet.d.ts",
+      "default": "./dist/next/useGhostWallet.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:watch": "tsc -p tsconfig.json --watch",
+    "lint": "echo 'TODO: add lint'"
+  },
+  "dependencies": {
+    "ghost": "^6.16.0",
+    "@noble/curves": "^1.0.0",
+    "@noble/hashes": "^1.4.0"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

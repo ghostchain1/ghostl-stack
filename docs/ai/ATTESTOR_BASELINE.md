@@ -23,7 +23,7 @@ This baseline summarizes how services are structured and composed in this repo, 
 ## Shared Libraries and Patterns to Reuse
 
 - HTTP server pattern: Express.
-- EVM client: `ethers` v6 (already used across services).
+- EVM client: `ghost` v6 (already used across services).
 - Environment loading: `dotenv/config`.
 - Operational scripts: follow the `entrypoint.sh` and `healthcheck.sh` pattern used by `services/mempool-service/`.
 - Logging: structured `console.log` lines consistent with existing services.

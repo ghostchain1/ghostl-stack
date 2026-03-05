@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 import fs from "node:fs";
 import path from "node:path";
 import dotenv from "dotenv";
@@ -55,17 +55,17 @@ async function main() {
   const timelock = resolveEnvValue("RELEASE_GATE_TIMELOCK", ["TIMELOCK_ADDRESS", "TIMELOCK_ADDRESS_L1"], envFromFiles);
   const mainnetLaunchGateAddress = resolveEnvValue("MAINNET_LAUNCH_GATE_ADDRESS", ["MAINNET_LAUNCH_GATE_ADDRESS"], envFromFiles);
 
-  if (!governor || !ethers.isAddress(governor)) {
+  if (!governor || !ghost.isAddress(governor)) {
     throw new Error("Missing RELEASE_GATE_GOVERNOR / GOVERNOR_ADDRESS");
   }
-  if (!timelock || !ethers.isAddress(timelock)) {
+  if (!timelock || !ghost.isAddress(timelock)) {
     throw new Error("Missing RELEASE_GATE_TIMELOCK / TIMELOCK_ADDRESS");
   }
-  if (!mainnetLaunchGateAddress || !ethers.isAddress(mainnetLaunchGateAddress)) {
+  if (!mainnetLaunchGateAddress || !ghost.isAddress(mainnetLaunchGateAddress)) {
     throw new Error("Missing MAINNET_LAUNCH_GATE_ADDRESS");
   }
 
-  const ReleaseGate = await ethers.getContractFactory("ReleaseGate");
+  const ReleaseGate = await ghost.getContractFactory("ReleaseGate");
   const gate = await ReleaseGate.deploy(governor, timelock, mainnetLaunchGateAddress);
   await gate.waitForDeployment();
 

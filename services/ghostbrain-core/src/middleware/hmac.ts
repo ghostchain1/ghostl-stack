@@ -85,7 +85,7 @@ export async function hmacAuthPlugin(app: FastifyInstance): Promise<void> {
     const path = req.url.split("?")[0];
 
     // Public endpoints — always skip
-    if (path === "/healthz" || path === "/status") return;
+    if (path === "/healthz" || path === "/status" || path === "/api/v1/rpc/metrics") return;
 
     // If no secret configured:
     if (!CONTROL_PLANE_SECRET) {

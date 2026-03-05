@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { ethers } from 'ethers';
+import { ghost } from 'ghost';
 import {
   EXECUTOR_ABI_FRAGMENTS,
   buildCall,
@@ -24,10 +24,10 @@ const PROPOSE_VIA_EXECUTOR = (process.env.PROPOSE_VIA_EXECUTOR ?? 'false') === '
 const DESCRIPTION = process.env.PROPOSAL_DESCRIPTION ?? 'Update slashing controls (GST)';
 
 function requireAddress(name: string, value: string | undefined) {
-  if (!value || !ethers.isAddress(value)) {
+  if (!value || !ghost.isAddress(value)) {
     throw new Error(`missing_or_invalid_${name}`);
   }
-  return ethers.getAddress(value);
+  return ghost.getAddress(value);
 }
 
 type GovernanceCall = {
@@ -93,12 +93,12 @@ async function main() {
   }
 
   const governor = requireAddress('GOVERNOR_ADDRESS', GOVERNOR_ADDRESS);
-  const provider = new ethers.JsonRpcProvider(RPC_L1);
+  const provider = new ghost.JsonRpcProvider(RPC_L1);
   if (!DEPLOYER_PRIVATE_KEY) {
     throw new Error('missing_DEPLOYER_PRIVATE_KEY');
   }
-  const signer = new ethers.Wallet(DEPLOYER_PRIVATE_KEY, provider);
-  const governorContract = new ethers.Contract(
+  const signer = new ghost.Wallet(DEPLOYER_PRIVATE_KEY, provider);
+  const governorContract = new ghost.Contract(
     governor,
     ['function propose(address target,uint256 value,bytes data) external returns (uint256)'],
     signer

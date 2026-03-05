@@ -5,7 +5,7 @@ import {
   keccak256,
   toUtf8Bytes,
   type Provider
-} from "ethers";
+} from "ghost";
 import {
   buildGhostAIDomain,
   normalizeAttestation,

@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import fs from 'node:fs';
 import path from 'node:path';
-import { ethers } from 'ethers';
+import { ghost } from 'ghost';
 import {
   EXECUTOR_ABI_FRAGMENTS,
   buildCall,
@@ -48,10 +48,10 @@ function parseEnvFile(envPath: string): EnvMap {
 }
 
 function requireAddress(name: string, value: string | undefined) {
-  if (!value || !ethers.isAddress(value)) {
+  if (!value || !ghost.isAddress(value)) {
     throw new Error(`missing_or_invalid_${name}`);
   }
-  return ethers.getAddress(value);
+  return ghost.getAddress(value);
 }
 
 const POLICY_REGISTRY_ABI = [
@@ -59,17 +59,17 @@ const POLICY_REGISTRY_ABI = [
   'function applyPolicy(bytes32 key,uint256 value,bytes32 evidenceHash) external returns (bool)'
 ] as const;
 
-const POLICY_GST_NATIVE_ONLY = ethers.id('ghost.policy.native.gst_only');
-const POLICY_GST_ONLY_L1_L2_L3 = ethers.id('ghost.policy.native.gst_l1_l2_l3_only');
-const POLICY_NO_LEGACY_BRANDING_SURFACES = ethers.id('ghost.policy.branding.no_legacy_eth_surface');
-const POLICY_REQUIRE_GST_LEAKAGE_GATE = ethers.id('ghost.policy.release.gst_leakage_gate_required');
-const POLICY_REQUIRE_GST_INVARIANTS = ethers.id('ghost.policy.release.gst_invariant_test_required');
-const POLICY_NATIVE_METADATA_GOVERNANCE_ONLY = ethers.id('ghost.policy.native.metadata_governance_only');
-const POLICY_NATIVE_TOKEN_DECIMALS = ethers.id('ghost.policy.native.token.decimals');
-const POLICY_NATIVE_TOKEN_SYMBOL_HASH = ethers.id('ghost.policy.native.token.symbol.hash');
-const POLICY_NATIVE_TOKEN_NAME_HASH = ethers.id('ghost.policy.native.token.name.hash');
+const POLICY_GST_NATIVE_ONLY = ghost.id('ghost.policy.native.gst_only');
+const POLICY_GST_ONLY_L1_L2_L3 = ghost.id('ghost.policy.native.gst_l1_l2_l3_only');
+const POLICY_NO_LEGACY_BRANDING_SURFACES = ghost.id('ghost.policy.branding.no_legacy_eth_surface');
+const POLICY_REQUIRE_GST_LEAKAGE_GATE = ghost.id('ghost.policy.release.gst_leakage_gate_required');
+const POLICY_REQUIRE_GST_INVARIANTS = ghost.id('ghost.policy.release.gst_invariant_test_required');
+const POLICY_NATIVE_METADATA_GOVERNANCE_ONLY = ghost.id('ghost.policy.native.metadata_governance_only');
+const POLICY_NATIVE_TOKEN_DECIMALS = ghost.id('ghost.policy.native.token.decimals');
+const POLICY_NATIVE_TOKEN_SYMBOL_HASH = ghost.id('ghost.policy.native.token.symbol.hash');
+const POLICY_NATIVE_TOKEN_NAME_HASH = ghost.id('ghost.policy.native.token.name.hash');
 
-const EVIDENCE_HASH = ethers.id('ghost.evidence.gst_constitution.v1');
+const EVIDENCE_HASH = ghost.id('ghost.evidence.gst_constitution.v1');
 const SYMBOL = 'GST';
 const NAME = 'Ghost';
 type ProposalCall = ReturnType<typeof buildCall>;
@@ -132,8 +132,8 @@ function main() {
   );
 
   // Record metadata hashes (no bounds; full uint256 range).
-  const symbolHashValue = BigInt(ethers.id(SYMBOL));
-  const nameHashValue = BigInt(ethers.id(NAME));
+  const symbolHashValue = BigInt(ghost.id(SYMBOL));
+  const nameHashValue = BigInt(ghost.id(NAME));
 
   calls.push(
     buildCall(policyRegistry, POLICY_REGISTRY_ABI, 'setPolicySetting', [
@@ -174,7 +174,7 @@ function main() {
 
   const payload: Record<string, unknown> = {
     description: DESCRIPTION,
-    descriptionHash: ethers.id(DESCRIPTION),
+    descriptionHash: ghost.id(DESCRIPTION),
     policyRegistry,
     evidenceHash: EVIDENCE_HASH,
     policies: {

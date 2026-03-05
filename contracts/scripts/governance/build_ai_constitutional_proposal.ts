@@ -2,7 +2,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 import {
   EXECUTOR_ABI_FRAGMENTS,
   buildCall,
@@ -85,10 +85,10 @@ const DEFAULT_DEPLOYMENT_PATH = path.join(
 
 const resolveProposalAddress = () => {
   const fromEnv = readEnv("AI_CONSTITUTION_PROPOSAL_ADDRESS") || "";
-  if (ethers.isAddress(fromEnv)) return fromEnv;
+  if (ghost.isAddress(fromEnv)) return fromEnv;
   if (fs.existsSync(DEFAULT_DEPLOYMENT_PATH)) {
     const payload = JSON.parse(fs.readFileSync(DEFAULT_DEPLOYMENT_PATH, "utf8"));
-    if (payload?.address && ethers.isAddress(payload.address)) {
+    if (payload?.address && ghost.isAddress(payload.address)) {
       return payload.address;
     }
   }
@@ -96,7 +96,7 @@ const resolveProposalAddress = () => {
 };
 
 const PROPOSAL_ADDRESS = resolveProposalAddress();
-if (!ethers.isAddress(PROPOSAL_ADDRESS)) {
+if (!ghost.isAddress(PROPOSAL_ADDRESS)) {
   throw new Error("missing_or_invalid_AI_CONSTITUTION_PROPOSAL_ADDRESS");
 }
 
@@ -107,7 +107,7 @@ const EXECUTOR_MODE = process.env.PROPOSAL_EXECUTOR_MODE as ExecutorMode | undef
 const readConstitution = () => {
   const text = fs.readFileSync(DOC_PATH, "utf8");
   const sha256 = crypto.createHash("sha256").update(text).digest("hex");
-  const keccak = ethers.keccak256(ethers.toUtf8Bytes(text));
+  const keccak = ghost.keccak256(ghost.toUtf8Bytes(text));
   return {
     text,
     sha256: `0x${sha256}`,
@@ -117,7 +117,7 @@ const readConstitution = () => {
 
 const constitutionDoc = readConstitution();
 const constitutionHash = readEnv("CONSTITUTION_HASH") || constitutionDoc.sha256;
-if (!ethers.isHexString(constitutionHash, 32)) {
+if (!ghost.isHexString(constitutionHash, 32)) {
   throw new Error(`invalid_CONSTITUTION_HASH:${constitutionHash}`);
 }
 
@@ -130,8 +130,8 @@ const call = buildCall(PROPOSAL_ADDRESS, ratifyAbi, "ratify", [
   constitutionHash
 ]);
 
-const policyNamespace = ethers.keccak256(
-  ethers.toUtf8Bytes("ghost.ai.policy.consensus")
+const policyNamespace = ghost.keccak256(
+  ghost.toUtf8Bytes("ghost.ai.policy.consensus")
 );
 
 const payload: Record<string, unknown> = {
@@ -154,7 +154,7 @@ const payload: Record<string, unknown> = {
 };
 
 if (EXECUTOR_ADDRESS) {
-  if (!ethers.isAddress(EXECUTOR_ADDRESS)) {
+  if (!ghost.isAddress(EXECUTOR_ADDRESS)) {
     throw new Error("invalid_PROPOSAL_EXECUTOR_ADDRESS");
   }
   const execBundle = buildExecutorCalldata(EXECUTOR_ABI_FRAGMENTS, [call], EXECUTOR_MODE);

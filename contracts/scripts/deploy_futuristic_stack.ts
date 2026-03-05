@@ -1,9 +1,9 @@
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 type Deployable = { deploymentTransaction: () => any; getAddress: () => Promise<string> };
 
 async function deploy<T extends Deployable>(name: string, args: any[] = []): Promise<T> {
-  const Factory = await ethers.getContractFactory(name);
+  const Factory = await ghost.getContractFactory(name);
   const contract = (await Factory.deploy(...args)) as unknown as T;
   const tx = contract.deploymentTransaction();
   if (tx?.hash) {
@@ -15,7 +15,7 @@ async function deploy<T extends Deployable>(name: string, args: any[] = []): Pro
 }
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
+  const [deployer] = await ghost.getSigners();
   console.log(`Deployer: ${deployer.address}`);
 
   const exportEnv = process.env.EXPORT_ENV === "1";
@@ -35,7 +35,7 @@ async function main() {
       process.env.GOVERNANCE_TOKEN_ADDRESS ?? process.env.GOVERNANCE_TOKEN ?? "0x5FbDB2315678afecb367f032d93F642f64180aa3";
     const delaySeconds = Number(process.env.GOVERNANCE_DELAY_SECONDS ?? 600);
     const constitutionHashRaw = process.env.CONSTITUTION_HASH ?? process.env.AI_CONSTITUTION_HASH ?? "";
-    if (!constitutionHashRaw || !ethers.isHexString(constitutionHashRaw, 32)) {
+    if (!constitutionHashRaw || !ghost.isHexString(constitutionHashRaw, 32)) {
       throw new Error("CONSTITUTION_HASH (32-byte hex) is required for governance-only deployments.");
     }
     const constitutionHash = constitutionHashRaw;
@@ -53,39 +53,39 @@ async function main() {
     const executorAddress = await executor.getAddress();
     emitEnv("PROPOSAL_EXECUTOR", executorAddress);
 
-    const evidenceAnchor = await deploy<Deployable>("EvidenceAnchor", [ethers.ZeroAddress, ethers.ZeroAddress]);
+    const evidenceAnchor = await deploy<Deployable>("EvidenceAnchor", [ghost.ZeroAddress, ghost.ZeroAddress]);
     const evidenceBundle = await deploy<Deployable>("EvidenceBundle", [
       executorAddress,
-      ethers.ZeroAddress,
+      ghost.ZeroAddress,
       await evidenceAnchor.getAddress()
     ]);
     if ((evidenceAnchor as any).setGovernance) {
-      await (await (evidenceAnchor as any).setGovernance(await evidenceBundle.getAddress(), ethers.ZeroAddress)).wait();
+      await (await (evidenceAnchor as any).setGovernance(await evidenceBundle.getAddress(), ghost.ZeroAddress)).wait();
     }
-    const constitution = await deploy<Deployable>("GhostConstitution", [deployer.address, ethers.ZeroAddress, ethers.ZeroAddress]);
+    const constitution = await deploy<Deployable>("GhostConstitution", [deployer.address, ghost.ZeroAddress, ghost.ZeroAddress]);
     const constitutionalGuard = await deploy<Deployable>("ConstitutionalGuard", [
       executorAddress,
-      ethers.ZeroAddress,
+      ghost.ZeroAddress,
       await constitution.getAddress()
     ]);
 
     await (await (executor as any).setEvidenceBundle(await evidenceBundle.getAddress())).wait();
     await (await (executor as any).setConstitutionalGuard(await constitutionalGuard.getAddress())).wait();
 
-    const evidenceVault = await deploy<Deployable>("EvidenceVault", [deployer.address, ethers.ZeroAddress, constitutionHash]);
-    const policyRegistry = await deploy<Deployable>("PolicyRegistry", [deployer.address, ethers.ZeroAddress, constitutionHash]);
+    const evidenceVault = await deploy<Deployable>("EvidenceVault", [deployer.address, ghost.ZeroAddress, constitutionHash]);
+    const policyRegistry = await deploy<Deployable>("PolicyRegistry", [deployer.address, ghost.ZeroAddress, constitutionHash]);
     const aiProposalExecutor = await deploy<Deployable>("AIProposalExecutor", [
       deployer.address,
-      ethers.ZeroAddress,
+      ghost.ZeroAddress,
       constitutionHash
     ]);
     await (await (aiProposalExecutor as any).setPolicyRegistry(await policyRegistry.getAddress())).wait();
     await (await (aiProposalExecutor as any).setEvidenceVault(await evidenceVault.getAddress())).wait();
     await (await (aiProposalExecutor as any).setConstitutionalGuard(await constitutionalGuard.getAddress())).wait();
     await (await (evidenceVault as any).setSubmitter(await aiProposalExecutor.getAddress(), true)).wait();
-    await (await (policyRegistry as any).setGovernance(await aiProposalExecutor.getAddress(), ethers.ZeroAddress)).wait();
-    await (await (aiProposalExecutor as any).setGovernance(executorAddress, ethers.ZeroAddress)).wait();
-    await (await (evidenceVault as any).setGovernance(executorAddress, ethers.ZeroAddress)).wait();
+    await (await (policyRegistry as any).setGovernance(await aiProposalExecutor.getAddress(), ghost.ZeroAddress)).wait();
+    await (await (aiProposalExecutor as any).setGovernance(executorAddress, ghost.ZeroAddress)).wait();
+    await (await (evidenceVault as any).setGovernance(executorAddress, ghost.ZeroAddress)).wait();
 
     emitEnv("EVIDENCE_ANCHOR", await evidenceAnchor.getAddress());
     emitEnv("EVIDENCE_BUNDLE", await evidenceBundle.getAddress());
@@ -105,7 +105,7 @@ async function main() {
       await (await upgradeManager.setConstitutionalGuard(await constitutionalGuard.getAddress())).wait();
     }
     if (upgradeManager?.setGovernance) {
-      await (await upgradeManager.setGovernance(executorAddress, ethers.ZeroAddress)).wait();
+      await (await upgradeManager.setGovernance(executorAddress, ghost.ZeroAddress)).wait();
     }
     if (upgradeManager?.transferOwnership) {
       await (await upgradeManager.transferOwnership(executorAddress)).wait();
@@ -152,7 +152,7 @@ async function main() {
     .map((entry) => entry.trim())
     .filter(Boolean);
   const TRANSFER_ADMIN_TO_GOVERNOR = process.env.TRANSFER_ADMIN_TO_GOVERNOR !== "false";
-  const GENESIS_HASH = process.env.GENESIS_HASH ?? ethers.ZeroHash;
+  const GENESIS_HASH = process.env.GENESIS_HASH ?? ghost.ZeroHash;
   const GENESIS_RAW = process.env.GENESIS_RAW ?? "0x";
   const canonicalGasToken =
     process.env.CANONICAL_GAS_TOKEN_ADDRESS ??
@@ -179,19 +179,19 @@ async function main() {
   const chainConfig = await deploy<any>("ChainConfigV2", [deployer.address]);
   const genesis = await deploy<any>("GenesisConfigV2", [deployer.address, GENESIS_HASH, GENESIS_RAW]);
   const execution = await deploy<any>("ExecutionConfigV2", [deployer.address, chainId, BLOCK_GAS_LIMIT]);
-  const baseFeeWei = ethers.parseUnits(BASE_FEE_GWEI.toString(), "gwei");
+  const baseFeeWei = ghost.parseUnits(BASE_FEE_GWEI.toString(), "gwei");
   await (
     await execution.setGasModel(chainId, BLOCK_GAS_LIMIT, baseFeeWei, ELASTICITY_MULTIPLIER, BASE_FEE_MAX_CHANGE_DENOMINATOR)
   ).wait();
   if (PRECOMPILES.length > 0) {
-    const precompileAddrs = PRECOMPILES.map((entry) => ethers.getAddress(entry));
+    const precompileAddrs = PRECOMPILES.map((entry) => ghost.getAddress(entry));
     await (await execution.setPrecompiles(precompileAddrs)).wait();
   }
   await (
     await execution.setGasModel(
       chainId,
       BLOCK_GAS_LIMIT,
-      ethers.parseUnits(BASE_FEE_GWEI.toString(), "gwei"),
+      ghost.parseUnits(BASE_FEE_GWEI.toString(), "gwei"),
       ELASTICITY_MULTIPLIER,
       BASE_FEE_MAX_CHANGE_DENOMINATOR
     )
@@ -228,8 +228,8 @@ async function main() {
   }
   const feeMarket = await deploy<Deployable>("FeeMarketV2", [
     deployer.address,
-    ethers.parseUnits(FEE_MARKET_BASE_FEE_GWEI.toString(), "gwei"),
-    ethers.parseUnits(FEE_MARKET_PRIORITY_FEE_GWEI.toString(), "gwei"),
+    ghost.parseUnits(FEE_MARKET_BASE_FEE_GWEI.toString(), "gwei"),
+    ghost.parseUnits(FEE_MARKET_PRIORITY_FEE_GWEI.toString(), "gwei"),
     FEE_MARKET_TARGET_GAS,
     FEE_MARKET_ADJUSTMENT_BPS
   ]);
@@ -256,8 +256,8 @@ async function main() {
   // simple oracle price: 1 native = $1
   await (
     await oracle.setPrice(
-      ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(["address"], [nativeTokenAddress])),
-      ethers.parseUnits("1", 18)
+      ghost.keccak256(ghost.AbiCoder.defaultAbiCoder().encode(["address"], [nativeTokenAddress])),
+      ghost.parseUnits("1", 18)
     )
   ).wait();
   const controller = await deploy<Deployable>("StablecoinController", [
@@ -312,7 +312,7 @@ async function main() {
     deployer.address,
     ve.getAddress(),
     executor.getAddress(),
-    ethers.parseUnits("1000"), // quorum
+    ghost.parseUnits("1000"), // quorum
     60, // voting delay
     3600, // voting period
     600 // timelock
@@ -339,43 +339,43 @@ async function main() {
   const contractRegistry = await deploy<Deployable>("ContractRegistry", [deployer.address]);
 
   // Register key addresses for off-chain services
-  await (await addressBook.setAddress(ethers.id("CONSENSUS_PARAMS"), await consensus.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("CHAIN_CONFIG"), await chainConfig.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("GENESIS_CONFIG"), await genesis.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("EXECUTION_CONFIG"), await execution.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("TREASURY"), await treasury.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("STAKING"), await staking.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("SLASHING"), await slashing.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("REWARDS"), await rewards.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("NATIVE_TOKEN"), nativeTokenAddress)).wait();
-  await (await addressBook.setAddress(ethers.id("STABLE"), await stable.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("VAULT"), await vault.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("ORACLE"), await oracle.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("CONTROLLER"), await controller.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("PSM"), await psm.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("TOKEN_BRIDGE"), await tokenBridge.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("NFT_BRIDGE"), await nftBridge.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("ROLLUP_MANAGER"), await rollupMgr.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("BATCH_INBOX"), await batchInbox.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("SEQUENCERS"), await sequencers.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("BATCHER_BOND"), await batcherBond.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("DISPUTES"), await disputes.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("OUTPUT_ORACLE"), await outputOracle.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("FINALIZATION"), await finalization.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("CHECKPOINT_MANAGER"), await checkpointMgr.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("GOVERNOR"), await governor.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("EXECUTOR"), await executor.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("UPGRADE_MANAGER"), await upgradeManager.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("PAUSE"), await pauseGuardian.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("EMERGENCY"), await emergency.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("FORK_RECOVERY"), await forkRecovery.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("AI_SECURITY_ORACLE"), await aiSecurityOracle.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("ANOMALY_DETECTOR"), await anomalyDetector.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("TX_CLASSIFIER"), await txClassifier.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("KEEPER_REGISTRY"), await keeperRegistry.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("AUTONOMOUS_EXECUTOR"), await autonomousExecutor.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("PREDICTIVE_GAS_MANAGER"), await predictiveGas.getAddress())).wait();
-  await (await addressBook.setAddress(ethers.id("CONTRACT_REGISTRY"), await contractRegistry.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("CONSENSUS_PARAMS"), await consensus.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("CHAIN_CONFIG"), await chainConfig.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("GENESIS_CONFIG"), await genesis.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("EXECUTION_CONFIG"), await execution.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("TREASURY"), await treasury.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("STAKING"), await staking.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("SLASHING"), await slashing.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("REWARDS"), await rewards.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("NATIVE_TOKEN"), nativeTokenAddress)).wait();
+  await (await addressBook.setAddress(ghost.id("STABLE"), await stable.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("VAULT"), await vault.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("ORACLE"), await oracle.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("CONTROLLER"), await controller.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("PSM"), await psm.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("TOKEN_BRIDGE"), await tokenBridge.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("NFT_BRIDGE"), await nftBridge.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("ROLLUP_MANAGER"), await rollupMgr.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("BATCH_INBOX"), await batchInbox.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("SEQUENCERS"), await sequencers.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("BATCHER_BOND"), await batcherBond.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("DISPUTES"), await disputes.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("OUTPUT_ORACLE"), await outputOracle.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("FINALIZATION"), await finalization.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("CHECKPOINT_MANAGER"), await checkpointMgr.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("GOVERNOR"), await governor.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("EXECUTOR"), await executor.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("UPGRADE_MANAGER"), await upgradeManager.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("PAUSE"), await pauseGuardian.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("EMERGENCY"), await emergency.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("FORK_RECOVERY"), await forkRecovery.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("AI_SECURITY_ORACLE"), await aiSecurityOracle.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("ANOMALY_DETECTOR"), await anomalyDetector.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("TX_CLASSIFIER"), await txClassifier.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("KEEPER_REGISTRY"), await keeperRegistry.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("AUTONOMOUS_EXECUTOR"), await autonomousExecutor.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("PREDICTIVE_GAS_MANAGER"), await predictiveGas.getAddress())).wait();
+  await (await addressBook.setAddress(ghost.id("CONTRACT_REGISTRY"), await contractRegistry.getAddress())).wait();
 
   console.log("\nDeployment complete.");
   console.log(`UNBONDING_PERIOD=${UNBONDING_PERIOD}s, MIN_STAKE_WEI=${MIN_STAKE_WEI}, DOWNTIME_SLASH_BPS=${DOWNTIME_SLASH_BPS}, L3_CHALLENGE_WINDOW=${CHALLENGE_WINDOW}s, L2_CHECKPOINT_INTERVAL=${CHECKPOINT_INTERVAL}s`);

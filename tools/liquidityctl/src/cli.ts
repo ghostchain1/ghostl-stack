@@ -1,7 +1,7 @@
 import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 import {
   AdapterRegistryAbi,
   CircuitBreakerAbi,
@@ -31,7 +31,7 @@ const envFile = argValue("--env-file", "services/stack.env");
 const fileEnv = fs.existsSync(envFile) ? loadEnvFile(envFile) : {};
 
 const RPC_L1 = getEnv(fileEnv, "RPC_L1", "http://localhost:18545");
-const provider = new ethers.JsonRpcProvider(RPC_L1);
+const provider = new ghost.JsonRpcProvider(RPC_L1);
 
 const LGE_VAULT = getEnv(fileEnv, "LGE_VAULT_ADDRESS", "");
 const LGE_ORACLE = getEnv(fileEnv, "LGE_ORACLE_ADDRESS", "");
@@ -39,11 +39,11 @@ const LGE_ADAPTER_REGISTRY = getEnv(fileEnv, "LGE_ADAPTER_REGISTRY_ADDRESS", "")
 const LGE_BREAKER = getEnv(fileEnv, "LGE_CIRCUIT_BREAKER_ADDRESS", "");
 const EXECUTOR = getEnv(fileEnv, "EXECUTOR_ADDRESS_L1", "");
 
-const adapterRegistry: any = new ethers.Contract(LGE_ADAPTER_REGISTRY, AdapterRegistryAbi, provider);
-const breaker: any = new ethers.Contract(LGE_BREAKER, CircuitBreakerAbi, provider);
-const vault: any = new ethers.Contract(LGE_VAULT, LoadBalancerVaultAbi, provider);
-const oracle: any = new ethers.Contract(LGE_ORACLE, SettlementOracleAbi, provider);
-const executor: any = EXECUTOR ? new ethers.Contract(EXECUTOR, ProposalExecutorAbi, provider) : null;
+const adapterRegistry: any = new ghost.Contract(LGE_ADAPTER_REGISTRY, AdapterRegistryAbi, provider);
+const breaker: any = new ghost.Contract(LGE_BREAKER, CircuitBreakerAbi, provider);
+const vault: any = new ghost.Contract(LGE_VAULT, LoadBalancerVaultAbi, provider);
+const oracle: any = new ghost.Contract(LGE_ORACLE, SettlementOracleAbi, provider);
+const executor: any = EXECUTOR ? new ghost.Contract(EXECUTOR, ProposalExecutorAbi, provider) : null;
 
 const outDir = "artifacts/governance/liquidity-gravity/proposals";
 
@@ -67,7 +67,7 @@ const requestZkProof = async (url: string, payload: Record<string, unknown>, tim
     const proof = body?.proof;
     if (typeof proof !== "string" || !proof.trim()) throw new Error("zk_prover_invalid_response");
     const hex = normalizeHex(proof);
-    if (!ethers.isHexString(hex) || hex === "0x") throw new Error("zk_prover_invalid_proof");
+    if (!ghost.isHexString(hex) || hex === "0x") throw new Error("zk_prover_invalid_proof");
     return hex;
   } finally {
     clearTimeout(timer);
@@ -85,7 +85,7 @@ async function status() {
     "LGE_DEPLOY_ASSET",
     getEnv(fileEnv, "LGE_SETTLEMENT_ASSET", getEnv(fileEnv, "GAS_TOKEN_ADDRESS_L1", "native"))
   ).trim();
-  const assetAddr = !asset || asset === "native" ? ethers.ZeroAddress : ethers.getAddress(asset);
+  const assetAddr = !asset || asset === "native" ? ghost.ZeroAddress : ghost.getAddress(asset);
 
   const globalPaused: boolean = await breaker.paused();
   const results = [];
@@ -124,7 +124,7 @@ async function proposeAdapterAdd() {
   const riskTier = Number(argValue("--risk-tier", "1"));
   const maxDeployCap = BigInt(argValue("--max-cap"));
   const settlementInterval = Number(argValue("--settlement-interval"));
-  const operator = ethers.getAddress(argValue("--operator"));
+  const operator = ghost.getAddress(argValue("--operator"));
   const proofType = Number(argValue("--proof-type", "1"));
 
   const call = buildCall(LGE_ADAPTER_REGISTRY, AdapterRegistryAbi, "configureAdapter", [
@@ -152,8 +152,8 @@ async function proposeAdapterAdd() {
     calls: [call],
     executorCalldata,
     hashes: {
-      executorCalldataHash: ethers.keccak256(executorCalldata),
-      payloadHash: ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify({ description, calls: [call] })))
+      executorCalldataHash: ghost.keccak256(executorCalldata),
+      payloadHash: ghost.keccak256(ghost.toUtf8Bytes(JSON.stringify({ description, calls: [call] })))
     }
   };
 
@@ -235,13 +235,13 @@ async function forceSettle() {
   const yieldWei = BigInt(argValue("--yield", getEnv(fileEnv, "LGE_SETTLEMENT_YIELD_WEI", "0")));
   const feeWei = BigInt(argValue("--fee", getEnv(fileEnv, "LGE_SETTLEMENT_FEE_WEI", "0")));
   const assetRaw = getEnv(fileEnv, "LGE_SETTLEMENT_ASSET", getEnv(fileEnv, "GAS_TOKEN_ADDRESS_L1", ""));
-  const asset = assetRaw === "native" ? ethers.ZeroAddress : ethers.getAddress(assetRaw);
-  const commitment = ethers.keccak256(ethers.toUtf8Bytes(`force-settle:${Date.now()}`));
+  const asset = assetRaw === "native" ? ghost.ZeroAddress : ghost.getAddress(assetRaw);
+  const commitment = ghost.keccak256(ghost.toUtf8Bytes(`force-settle:${Date.now()}`));
 
   const operatorPk = getEnv(fileEnv, "LGE_OPERATOR_PRIVATE_KEY", "");
   if (!operatorPk) throw new Error("missing_env:LGE_OPERATOR_PRIVATE_KEY");
 
-  const signer = new ethers.Wallet(operatorPk, provider);
+  const signer = new ghost.Wallet(operatorPk, provider);
   const oracleWithSigner = oracle.connect(signer);
   const cfg = await adapterRegistry.getAdapter(adapterId);
   const proofType = Number(cfg.proofType);
@@ -297,7 +297,7 @@ async function forceSettle() {
         argValue("--zk-proof", "") || getEnv(fileEnv, "LGE_ZK_PROOF_HEX", "") || getEnv(fileEnv, "LGE_ZK_PROOF", "");
       if (!proofRaw.trim()) throw new Error("missing_proof:--zk-proof or LGE_ZK_PROOF_HEX (or set --zk-prover-url)");
       proof = normalizeHex(proofRaw);
-      if (!ethers.isHexString(proof) || proof === "0x") throw new Error("invalid_proof");
+      if (!ghost.isHexString(proof) || proof === "0x") throw new Error("invalid_proof");
     }
     tx = await oracleWithSigner.submitSettlementZk(
       adapterId,
@@ -309,12 +309,12 @@ async function forceSettle() {
       Number(issuedAt),
       Number(validUntil),
       proof,
-      asset === ethers.ZeroAddress ? { value: yieldWei + feeWei } : {}
+      asset === ghost.ZeroAddress ? { value: yieldWei + feeWei } : {}
     );
   } else {
     const relayerPks = getEnv(fileEnv, "LGE_RELAYER_PRIVATE_KEYS", "");
     if (!relayerPks) throw new Error("missing_env:LGE_RELAYER_PRIVATE_KEYS");
-    const relayers = relayerPks.split(",").map((k) => new ethers.Wallet(k.trim()));
+    const relayers = relayerPks.split(",").map((k) => new ghost.Wallet(k.trim()));
     const sigs = relayers.map((w) => w.signingKey.sign(digest).serialized);
     tx = await oracleWithSigner.submitSettlement(
       adapterId,
@@ -326,7 +326,7 @@ async function forceSettle() {
       Number(issuedAt),
       Number(validUntil),
       sigs,
-      asset === ethers.ZeroAddress ? { value: yieldWei + feeWei } : {}
+      asset === ghost.ZeroAddress ? { value: yieldWei + feeWei } : {}
     );
   }
   const receipt = await tx.wait();

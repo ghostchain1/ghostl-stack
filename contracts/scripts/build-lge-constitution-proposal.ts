@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import fs from "node:fs";
 import path from "node:path";
-import { AbiCoder, ethers } from "ethers";
+import { AbiCoder, ghost } from "ghost";
 import {
   EXECUTOR_ABI_FRAGMENTS,
   buildCall,
@@ -53,16 +53,16 @@ function parseEnvFile(envPath: string): EnvMap {
 }
 
 function requireAddress(name: string, value: string | undefined) {
-  if (!value || !ethers.isAddress(value)) {
+  if (!value || !ghost.isAddress(value)) {
     throw new Error(`missing_or_invalid_${name}`);
   }
-  return ethers.getAddress(value);
+  return ghost.getAddress(value);
 }
 
 function optionalAddress(value: string | undefined) {
   if (!value) return "";
-  if (!ethers.isAddress(value)) return "";
-  return ethers.getAddress(value);
+  if (!ghost.isAddress(value)) return "";
+  return ghost.getAddress(value);
 }
 
 function parseAdapterIds(raw: string | undefined) {
@@ -80,7 +80,7 @@ function parseAdapterIds(raw: string | undefined) {
 function parseAsset(raw: string | undefined, fallback: string) {
   const value = (raw || "").trim();
   if (!value) return requireAddress("ASSET_FALLBACK", fallback);
-  if (value.toLowerCase() === "native") return ethers.ZeroAddress;
+  if (value.toLowerCase() === "native") return ghost.ZeroAddress;
   return requireAddress("ASSET", value);
 }
 
@@ -130,12 +130,12 @@ const REWARD_ROUTER_ABI = [
 
 function keyMaxTotalDeployed(asset: string) {
   const coder = AbiCoder.defaultAbiCoder();
-  return ethers.keccak256(coder.encode(["string", "address"], ["ghost.lge.maxTotalDeployed", asset]));
+  return ghost.keccak256(coder.encode(["string", "address"], ["ghost.lge.maxTotalDeployed", asset]));
 }
 
 function keyAdapterCap(adapterId: number, asset: string) {
   const coder = AbiCoder.defaultAbiCoder();
-  return ethers.keccak256(coder.encode(["string", "uint256", "address"], ["ghost.lge.adapterCap", adapterId, asset]));
+  return ghost.keccak256(coder.encode(["string", "uint256", "address"], ["ghost.lge.adapterCap", adapterId, asset]));
 }
 
 function buildPhase1(env: EnvMap) {
@@ -172,18 +172,18 @@ function buildPhase1(env: EnvMap) {
   const adapterIds = parseAdapterIds(process.env.LGE_ADAPTER_IDS || env.LGE_ADAPTER_IDS);
   const asset = parseAsset(process.env.LGE_DEPLOY_ASSET || env.LGE_DEPLOY_ASSET || env.LGE_SETTLEMENT_ASSET, canonicalGasToken);
 
-  const evidenceHash = ethers.isHexString(process.env.LGE_CONSTITUTION_EVIDENCE_HASH || "", 32)
+  const evidenceHash = ghost.isHexString(process.env.LGE_CONSTITUTION_EVIDENCE_HASH || "", 32)
     ? (process.env.LGE_CONSTITUTION_EVIDENCE_HASH as string)
-    : ethers.id(process.env.LGE_CONSTITUTION_EVIDENCE_HASH || "ghost.evidence.lge_constitution.v1");
+    : ghost.id(process.env.LGE_CONSTITUTION_EVIDENCE_HASH || "ghost.evidence.lge_constitution.v1");
 
   const maxTotalDeployedWei = toBigint(
     process.env.LGE_MAX_TOTAL_DEPLOYED_WEI || env.LGE_MAX_TOTAL_DEPLOYED_WEI,
-    ethers.parseEther("200")
+    ghost.parseEther("200")
   );
 
   const perAdapterCapWei = toBigint(
     process.env.LGE_ADAPTER_CAP_WEI || env.LGE_ADAPTER_CAP_WEI,
-    ethers.parseEther("100")
+    ghost.parseEther("100")
   );
 
   const splitDelaySeconds = Number(process.env.LGE_SPLIT_DELAY_SECONDS || env.LGE_SPLIT_DELAY_SECONDS || "86400");
@@ -198,7 +198,7 @@ function buildPhase1(env: EnvMap) {
 
   const polReceiver = optionalAddress(process.env.LGE_POL_RECEIVER || env.LGE_POL_RECEIVER) || governorAddress;
   const feeReceiver = optionalAddress(process.env.LGE_FEE_RECEIVER || env.LGE_FEE_RECEIVER) || governorAddress;
-  const burnReceiver = optionalAddress(process.env.LGE_BURN_RECEIVER || env.LGE_BURN_RECEIVER) || ethers.ZeroAddress;
+  const burnReceiver = optionalAddress(process.env.LGE_BURN_RECEIVER || env.LGE_BURN_RECEIVER) || ghost.ZeroAddress;
   const validatorReceiver = optionalAddress(process.env.LGE_VALIDATOR_RECEIVER || env.LGE_VALIDATOR_RECEIVER) || governorAddress;
 
   const polBps = Number(process.env.LGE_POL_BPS || env.LGE_POL_BPS || "5000");
@@ -210,8 +210,8 @@ function buildPhase1(env: EnvMap) {
 
   const strategyIdRaw = (process.env.LGE_STRATEGY_ID || env.LGE_STRATEGY_ID || "").trim();
   const strategyId = strategyIdRaw
-    ? (ethers.isHexString(strategyIdRaw, 32) ? strategyIdRaw : ethers.keccak256(ethers.toUtf8Bytes(strategyIdRaw)))
-    : ethers.keccak256(ethers.toUtf8Bytes("lge.strategy.default"));
+    ? (ghost.isHexString(strategyIdRaw, 32) ? strategyIdRaw : ghost.keccak256(ghost.toUtf8Bytes(strategyIdRaw)))
+    : ghost.keccak256(ghost.toUtf8Bytes("lge.strategy.default"));
 
   const calls = [];
 
@@ -250,7 +250,7 @@ function buildPhase1(env: EnvMap) {
       const pk = (process.env.LGE_OPERATOR_PRIVATE_KEY || env.LGE_OPERATOR_PRIVATE_KEY || "").trim();
       if (!pk) return "";
       try {
-        return new ethers.Wallet(pk).address;
+        return new ghost.Wallet(pk).address;
       } catch {
         return "";
       }
@@ -316,7 +316,7 @@ function buildPhase1(env: EnvMap) {
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    const relayerAddrs = pks.map((pk) => new ethers.Wallet(pk).address);
+    const relayerAddrs = pks.map((pk) => new ghost.Wallet(pk).address);
     for (const relayerAddr of relayerAddrs) {
       calls.push(buildCall(oracle, ORACLE_ABI, "setRelayer", [relayerAddr, true]));
     }

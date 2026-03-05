@@ -61,10 +61,10 @@ export default function BadgeDisplay() {
       "function discountBps(address) view returns (uint256)",
     ];
 
-    // Use ethers via the provider
-    import("ethers").then(({ ethers }) => {
-      const web3 = new ethers.BrowserProvider(provider as unknown as ethers.Eip1193Provider);
-      const contract = new ethers.Contract(badgeAddr, abi, web3);
+    // Use ghost via the provider
+    import("ghost").then(({ ghost }) => {
+      const web3 = new ghost.BrowserProvider(provider as unknown as ghost.Eip1193Provider);
+      const contract = new ghost.Contract(badgeAddr, abi, web3);
 
       Promise.all([
         contract.hasBadge(address) as Promise<boolean>,

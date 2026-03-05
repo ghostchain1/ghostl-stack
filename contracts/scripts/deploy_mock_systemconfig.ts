@@ -1,12 +1,12 @@
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 async function main() {
-  const l2Provider = new ethers.JsonRpcProvider(process.env.RPC_L2 ?? "http://localhost:29545");
+  const l2Provider = new ghost.JsonRpcProvider(process.env.RPC_L2 ?? "http://localhost:29545");
   const deployerKey = process.env.DEPLOYER_PRIVATE_KEY;
   if (!deployerKey) {
     throw new Error("missing_DEPLOYER_PRIVATE_KEY");
   }
-  const signer = new ethers.Wallet(deployerKey, l2Provider);
+  const signer = new ghost.Wallet(deployerKey, l2Provider);
 
   const unsafeBlockSigner = process.env.UNSAFE_BLOCK_SIGNER ?? "0xc17ebfc8421667bd832090dce4cc8bca1fdef654";
   const l1CrossDomainMessenger = process.env.L1_XDM ?? "0xea7cfd038c520128c244426766fb7d10804002f5";
@@ -20,7 +20,7 @@ async function main() {
   console.log("Deploying MockSystemConfig to L2 via", await signer.getAddress());
   const net = await l2Provider.getNetwork();
   console.log("L2 network", net);
-  const Factory = await ethers.getContractFactory("MockSystemConfig", signer);
+  const Factory = await ghost.getContractFactory("MockSystemConfig", signer);
   const contract = await Factory.deploy(
     unsafeBlockSigner,
     l1CrossDomainMessenger,

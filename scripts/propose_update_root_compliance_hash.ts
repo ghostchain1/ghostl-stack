@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { ethers } from 'ethers';
+import { ghost } from 'ghost';
 import {
   EXECUTOR_ABI_FRAGMENTS,
   buildCall,
@@ -28,14 +28,14 @@ const ROOT_EPOCH = process.env.ROOT_EPOCH;
 const PROOF_ID = process.env.PROOF_ID ?? '0x' + '00'.repeat(32);
 
 function requireAddress(name: string, value: string | undefined) {
-  if (!value || !ethers.isAddress(value)) {
+  if (!value || !ghost.isAddress(value)) {
     throw new Error(`missing_or_invalid_${name}`);
   }
-  return ethers.getAddress(value);
+  return ghost.getAddress(value);
 }
 
 function requireBytes32(name: string, value: string | undefined) {
-  if (!value || !ethers.isHexString(value, 32)) {
+  if (!value || !ghost.isHexString(value, 32)) {
     throw new Error(`missing_or_invalid_${name}`);
   }
   return value;
@@ -99,12 +99,12 @@ async function main() {
   }
 
   const governor = requireAddress('GOVERNOR_ADDRESS', GOVERNOR_ADDRESS);
-  const provider = new ethers.JsonRpcProvider(RPC_L1);
+  const provider = new ghost.JsonRpcProvider(RPC_L1);
   if (!DEPLOYER_PRIVATE_KEY) {
     throw new Error('missing_DEPLOYER_PRIVATE_KEY');
   }
-  const signer = new ethers.Wallet(DEPLOYER_PRIVATE_KEY, provider);
-  const governorContract = new ethers.Contract(
+  const signer = new ghost.Wallet(DEPLOYER_PRIVATE_KEY, provider);
+  const governorContract = new ghost.Contract(
     governor,
     ['function propose(address target,uint256 value,bytes data) external returns (uint256)'],
     signer

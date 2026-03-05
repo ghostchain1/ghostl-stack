@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import fs from "node:fs";
 import path from "node:path";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 
 const ROOT_DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const CONFIG_PATH =
@@ -19,17 +19,17 @@ const EXECUTOR_ABI = [
 ];
 
 const normalizeAddress = (name, value) => {
-  if (!value || !ethers.isAddress(value)) {
+  if (!value || !ghost.isAddress(value)) {
     throw new Error(`missing_or_invalid_${name}`);
   }
-  return ethers.getAddress(value);
+  return ghost.getAddress(value);
 };
 
 const normalizeBytes32 = (value, label) => {
-  if (!value) return ethers.ZeroHash;
-  if (ethers.isHexString(value, 32)) return value;
+  if (!value) return ghost.ZeroHash;
+  if (ghost.isHexString(value, 32)) return value;
   try {
-    return ethers.id(String(value));
+    return ghost.id(String(value));
   } catch (err) {
     throw new Error(`invalid_${label}:${value}`);
   }
@@ -59,8 +59,8 @@ const config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
 const update = {
   policyKey: normalizeBytes32(config.policyKey, "policyKey"),
   value: normalizeUint(config.value, "value"),
-  evidenceHash: normalizeBytes32(config.evidenceHash || ethers.ZeroHash, "evidenceHash"),
-  metadataHash: normalizeBytes32(config.metadataHash || ethers.ZeroHash, "metadataHash"),
+  evidenceHash: normalizeBytes32(config.evidenceHash || ghost.ZeroHash, "evidenceHash"),
+  metadataHash: normalizeBytes32(config.metadataHash || ghost.ZeroHash, "metadataHash"),
   nonce: normalizeUint(config.nonce ?? 0, "nonce"),
   issuedAt: Number(config.issuedAt || Math.floor(Date.now() / 1000)),
   validUntil: Number(config.validUntil || Math.floor(Date.now() / 1000) + 3600),
@@ -68,7 +68,7 @@ const update = {
 };
 
 const proposalId = Number(config.proposalId || 0);
-const iface = new ethers.Interface(EXECUTOR_ABI);
+const iface = new ghost.Interface(EXECUTOR_ABI);
 const calldata = iface.encodeFunctionData("executePolicyUpdate", [
   update,
   [],
@@ -96,8 +96,8 @@ const domain = {
   verifyingContract: executor
 };
 
-const updateHash = ethers.TypedDataEncoder.hashStruct("PolicyUpdate", types, update);
-const signingDigest = ethers.TypedDataEncoder.hash(domain, types, update);
+const updateHash = ghost.TypedDataEncoder.hashStruct("PolicyUpdate", types, update);
+const signingDigest = ghost.TypedDataEncoder.hash(domain, types, update);
 
 const output = {
   createdAt: new Date().toISOString(),

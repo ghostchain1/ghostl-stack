@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import express from "express";
 import client from "prom-client";
-import { Interface, ethers } from "ethers";
+import { Interface, ghost } from "ghost";
 
 const env = process.env;
 const readSecret = (key) => {
@@ -97,7 +97,7 @@ const stableStringify = (value) => {
   return JSON.stringify(value);
 };
 
-const hashJson = (value) => ethers.keccak256(ethers.toUtf8Bytes(stableStringify(value)));
+const hashJson = (value) => ghost.keccak256(ghost.toUtf8Bytes(stableStringify(value)));
 
 const writeEvidenceFile = (bundle, evidenceHash) => {
   if (!ACTION_EVIDENCE_OUTPUT_DIR) return null;
@@ -188,9 +188,9 @@ const chainPolicyCache = { ok: null, missing: false, expiresAt: 0 };
 
 const normalizePolicyId = (value, label) => {
   if (!value) return null;
-  if (ethers.isHexString(value, 32)) return value;
+  if (ghost.isHexString(value, 32)) return value;
   try {
-    return ethers.id(value);
+    return ghost.id(value);
   } catch (err) {
     logEvent("warn", "policy_hash_error", { label, value, error: err?.message || String(err) });
     return null;
@@ -232,7 +232,7 @@ const policyAllows = async (actionValue, hasEvidenceOverride) => {
     { to: POLICY_REGISTRY_ADDRESS, data },
     "latest"
   ]);
-  const allowed = ethers.getBigInt(result) > 0n;
+  const allowed = ghost.getBigInt(result) > 0n;
   cachePolicyResult(cacheKey, allowed);
   return allowed;
 };

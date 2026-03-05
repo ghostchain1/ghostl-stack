@@ -51,15 +51,15 @@ if [ -z "${DEPLOYER_PRIVATE_KEY:-}" ]; then
   exit 1
 fi
 
-ETHERS_MODULE="$ROOT_DIR/contracts/node_modules/ethers"
-if [ ! -d "$ETHERS_MODULE" ]; then
-  echo "Missing ethers module at $ETHERS_MODULE (run: cd contracts && npm ci)" >&2
+ghost_MODULE="$ROOT_DIR/contracts/node_modules/ghost"
+if [ ! -d "$ghost_MODULE" ]; then
+  echo "Missing ghost module at $ghost_MODULE (run: cd contracts && npm ci)" >&2
   exit 1
 fi
 
 DEPOSITOR="$(
-  ETHERS_MODULE="$ETHERS_MODULE" PK="$DEPLOYER_PRIVATE_KEY" node -e '
-    const { Wallet } = require(process.env.ETHERS_MODULE);
+  ghost_MODULE="$ghost_MODULE" PK="$DEPLOYER_PRIVATE_KEY" node -e '
+    const { Wallet } = require(process.env.ghost_MODULE);
     process.stdout.write(new Wallet(process.env.PK).address);
   '
 )"
@@ -83,8 +83,8 @@ fi
 
 # Resolve the bridged L3 token for this L2 token via the on-chain factory.
 L3_TOKEN_ADDRESS="$(
-  ETHERS_MODULE="$ETHERS_MODULE" RPC_L3="$RPC_L3_EFFECTIVE" FACTORY="$L3_TOKEN_FACTORY_ADDRESS" L2TOKEN="$L2_TOKEN_ADDRESS" node -e '
-    const { JsonRpcProvider, Contract, getAddress } = require(process.env.ETHERS_MODULE);
+  ghost_MODULE="$ghost_MODULE" RPC_L3="$RPC_L3_EFFECTIVE" FACTORY="$L3_TOKEN_FACTORY_ADDRESS" L2TOKEN="$L2_TOKEN_ADDRESS" node -e '
+    const { JsonRpcProvider, Contract, getAddress } = require(process.env.ghost_MODULE);
     const provider = new JsonRpcProvider(process.env.RPC_L3);
     const factory = new Contract(
       process.env.FACTORY,
@@ -146,8 +146,8 @@ if [ "$GATING_L3_FINALITY_ON_L2" = "true" ] && [ -z "${RELAYER_WAIT_SECONDS_EXPL
   if command -v jq >/dev/null 2>&1; then
     if [ -n "${L2_ROLLUP_L3_ADDRESS:-}" ] && [ -n "${RPC_L2_EFFECTIVE:-}" ] && [ -n "${RPC_L3_EFFECTIVE:-}" ]; then
       ESTIMATE="$(
-        ETHERS_MODULE="$ETHERS_MODULE" RPC_L2="$RPC_L2_EFFECTIVE" RPC_L3="$RPC_L3_EFFECTIVE" ROLLUP="$L2_ROLLUP_L3_ADDRESS" node - <<'NODE'
-const { JsonRpcProvider, Contract } = require(process.env.ETHERS_MODULE);
+        ghost_MODULE="$ghost_MODULE" RPC_L2="$RPC_L2_EFFECTIVE" RPC_L3="$RPC_L3_EFFECTIVE" ROLLUP="$L2_ROLLUP_L3_ADDRESS" node - <<'NODE'
+const { JsonRpcProvider, Contract } = require(process.env.ghost_MODULE);
 
 const l2 = new JsonRpcProvider(process.env.RPC_L2);
 const l3 = new JsonRpcProvider(process.env.RPC_L3);

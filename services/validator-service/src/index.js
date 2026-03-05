@@ -1,5 +1,5 @@
 import express from "express";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 
 const PORT = Number(process.env.PORT || 7600);
 const PROM_URL = process.env.PROM_URL || "http://localhost:9090";

@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import fs from "node:fs";
 import path from "node:path";
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 const repoRoot = path.resolve(__dirname, "..", "..", "..");
 const DEFAULT_REPORT_PATH = path.join(
@@ -35,7 +35,7 @@ const readEnv = (key: string) => process.env[key] ?? fileEnv[key];
 
 const normalize = (value?: string) => {
   if (!value) return "";
-  return ethers.isAddress(value) ? ethers.getAddress(value) : "";
+  return ghost.isAddress(value) ? ghost.getAddress(value) : "";
 };
 
 const expectedConstitutionHash = readEnv("CONSTITUTION_HASH") || "";
@@ -53,7 +53,7 @@ const policyRole = readEnv("POLICY_ROLE") || "L2_AI_MONITOR";
 
 const POLICY_ROLE_HASH = (() => {
   try {
-    return ethers.isHexString(policyRole, 32) ? policyRole : ethers.id(policyRole);
+    return ghost.isHexString(policyRole, 32) ? policyRole : ghost.id(policyRole);
   } catch {
     return "";
   }
@@ -62,12 +62,12 @@ const POLICY_ROLE_HASH = (() => {
 const reportPath = process.env.POLICY_PRIMITIVES_REPORT || DEFAULT_REPORT_PATH;
 
 const toAddress = (label: string, value: string) => {
-  if (!value || !ethers.isAddress(value)) return "";
-  return ethers.getAddress(value);
+  if (!value || !ghost.isAddress(value)) return "";
+  return ghost.getAddress(value);
 };
 
 async function main() {
-  const [signer] = await ethers.getSigners();
+  const [signer] = await ghost.getSigners();
   const provider = signer.provider;
   if (!provider) {
     throw new Error("missing_provider");
@@ -81,9 +81,9 @@ async function main() {
   };
 
   const tryExecutorProbe = async (address: string) => {
-    if (!address || !ethers.isAddress(address)) return null;
+    if (!address || !ghost.isAddress(address)) return null;
     try {
-      const executor = new ethers.Contract(
+      const executor = new ghost.Contract(
         address,
         ["function delay() view returns (uint256)", "function queueLength() view returns (uint256)"],
         signer
@@ -153,7 +153,7 @@ async function main() {
 
   if (chainPolicyRegistryAddress) {
     const code = await codeAt(chainPolicyRegistryAddress);
-    const registry = new ethers.Contract(chainPolicyRegistryAddress, registryAbi, signer);
+    const registry = new ghost.Contract(chainPolicyRegistryAddress, registryAbi, signer);
     const constitutionHash = await registry.constitutionHash();
     const governor = await registry.governor();
     const timelock = await registry.timelock();
@@ -171,7 +171,7 @@ async function main() {
 
   if (evidenceVaultAddress) {
     const code = await codeAt(evidenceVaultAddress);
-    const vault = new ethers.Contract(evidenceVaultAddress, evidenceAbi, signer);
+    const vault = new ghost.Contract(evidenceVaultAddress, evidenceAbi, signer);
     const constitutionHash = await vault.constitutionHash();
     const governor = await vault.governor();
     const timelock = await vault.timelock();
@@ -194,7 +194,7 @@ async function main() {
   let guardAddress = "";
   if (aiProposalExecutorAddress) {
     const code = await codeAt(aiProposalExecutorAddress);
-    const executor = new ethers.Contract(aiProposalExecutorAddress, executorAbi, signer);
+    const executor = new ghost.Contract(aiProposalExecutorAddress, executorAbi, signer);
     const constitutionHash = await executor.constitutionHash();
     const governor = await executor.governor();
     const timelock = await executor.timelock();
@@ -222,9 +222,9 @@ async function main() {
     };
   }
 
-  if (guardAddress && ethers.isAddress(guardAddress)) {
+  if (guardAddress && ghost.isAddress(guardAddress)) {
     const code = await codeAt(guardAddress);
-    const guard = new ethers.Contract(guardAddress, guardAbi, signer);
+    const guard = new ghost.Contract(guardAddress, guardAbi, signer);
     const constitution = await guard.constitution();
     const locked = await guard.constitutionLocked();
     const governor = await guard.governor();
@@ -236,8 +236,8 @@ async function main() {
       governor,
       timelock
     };
-    if (constitution && ethers.isAddress(constitution)) {
-      const constitutionContract = new ethers.Contract(constitution, constitutionAbi, signer);
+    if (constitution && ghost.isAddress(constitution)) {
+      const constitutionContract = new ghost.Contract(constitution, constitutionAbi, signer);
       const governance = await constitutionContract.governance();
       const verifierAgent = await constitutionContract.verifierAgent();
       const zkVerifier = await constitutionContract.zkVerifier();
@@ -258,11 +258,11 @@ async function main() {
 
   if (agentPolicyRegistryAddress) {
     const code = await codeAt(agentPolicyRegistryAddress);
-    const policy = new ethers.Contract(agentPolicyRegistryAddress, agentPolicyAbi, signer);
+    const policy = new ghost.Contract(agentPolicyRegistryAddress, agentPolicyAbi, signer);
     const governor = await policy.governor();
     const timelock = await policy.timelock();
     let rolePolicy = null;
-    if (POLICY_ROLE_HASH && ethers.isHexString(POLICY_ROLE_HASH, 32)) {
+    if (POLICY_ROLE_HASH && ghost.isHexString(POLICY_ROLE_HASH, 32)) {
       const rp = await policy.rolePolicies(POLICY_ROLE_HASH);
       rolePolicy = {
         roleHash: POLICY_ROLE_HASH,

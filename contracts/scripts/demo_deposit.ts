@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -9,13 +9,13 @@ async function main() {
     throw new Error("Missing env BRIDGE_L2L3_ADDRESS (source services/ghost-guard/.env first)");
   }
 
-  const [signer] = await ethers.getSigners();
+  const [signer] = await ghost.getSigners();
   const to = process.env.DEMO_TO ?? signer.address;
   const amountGst = process.env.DEMO_AMOUNT_GST ?? "100";
-  const amountWei = ethers.parseEther(amountGst);
+  const amountWei = ghost.parseEther(amountGst);
   const nonce = BigInt(process.env.DEMO_NONCE ?? Math.floor(Date.now() / 1000).toString());
 
-  const bridge = await ethers.getContractAt("L2L3Bridge", bridgeAddress, signer);
+  const bridge = await ghost.getContractAt("L2L3Bridge", bridgeAddress, signer);
   const tx = await bridge.depositToL3(to, amountWei, nonce);
 
   console.log("bridge:", bridgeAddress);

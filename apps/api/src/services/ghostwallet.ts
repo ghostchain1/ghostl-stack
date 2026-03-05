@@ -1,4 +1,4 @@
-import { Contract, Wallet } from 'ethers';
+import { Contract, Wallet } from 'ghost';
 import {
   decryptSecret,
   encryptSecret,

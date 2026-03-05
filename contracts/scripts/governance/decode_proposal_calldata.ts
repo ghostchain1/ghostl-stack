@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { Interface, ethers } from 'ethers';
+import { Interface, ghost } from 'ghost';
 import { EXECUTOR_ABI_FRAGMENTS, computeGovernorHash, computeProposalHash } from './build_proposal_calldata';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -33,10 +33,10 @@ const knownDecoders: KnownDecoder[] = [
 const executorIface = new Interface(EXECUTOR_ABI_FRAGMENTS);
 
 function requireAddress(name: string, value: string | undefined) {
-  if (!value || !ethers.isAddress(value)) {
+  if (!value || !ghost.isAddress(value)) {
     throw new Error(`missing_or_invalid_${name}`);
   }
-  const addr = ethers.getAddress(value);
+  const addr = ghost.getAddress(value);
   if (addr === ZERO_ADDRESS) {
     throw new Error(`zero_${name}`);
   }
@@ -44,7 +44,7 @@ function requireAddress(name: string, value: string | undefined) {
 }
 
 function requireCalldata(name: string, value: string | undefined) {
-  if (!value || !ethers.isHexString(value) || value.length < 10) {
+  if (!value || !ghost.isHexString(value) || value.length < 10) {
     throw new Error(`missing_or_invalid_${name}`);
   }
   return value;
@@ -108,7 +108,7 @@ function decodeExecutorPayload(target: string, data: string) {
     const values = parsed.args?.[1] as bigint[];
     const datas = parsed.args?.[2] as string[];
     const calls = targets.map((t, i) => ({
-      target: ethers.getAddress(t),
+      target: ghost.getAddress(t),
       value: values[i] ?? 0n,
       data: datas[i] ?? '0x'
     }));
@@ -132,7 +132,7 @@ function decodeExecutorPayload(target: string, data: string) {
 
     if (argc === 3) {
       const call = {
-        target: ethers.getAddress(parsed.args?.[0] as string),
+        target: ghost.getAddress(parsed.args?.[0] as string),
         value: parsed.args?.[1] as bigint,
         data: String(parsed.args?.[2] ?? '0x')
       };
@@ -153,7 +153,7 @@ function decodeExecutorPayload(target: string, data: string) {
 
     if (argc === 2) {
       const call = {
-        target: ethers.getAddress(parsed.args?.[0] as string),
+        target: ghost.getAddress(parsed.args?.[0] as string),
         value: 0n,
         data: String(parsed.args?.[1] ?? '0x')
       };
@@ -208,9 +208,9 @@ async function main() {
   }
 
   // If the caller provides an executor address, compute a proposal hash too.
-  if (executorAddress && ethers.isAddress(executorAddress)) {
+  if (executorAddress && ghost.isAddress(executorAddress)) {
     try {
-      const executor = ethers.getAddress(executorAddress);
+      const executor = ghost.getAddress(executorAddress);
       const proposalHash = computeProposalHash(executor, calldata, description);
       console.log('[decode] proposalHash:', proposalHash);
     } catch (err) {

@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 function getEnv(name: string, fallback?: string) {
   const v = process.env[name] ?? fallback;
@@ -15,11 +15,11 @@ async function main() {
   const mintTo = process.env.MINT_TO;
   const mintAmount = process.env.MINT_AMOUNT ? BigInt(process.env.MINT_AMOUNT) : 0n;
 
-  const [deployer] = await ethers.getSigners();
+  const [deployer] = await ghost.getSigners();
   console.log(`Deployer: ${deployer.address}`);
   console.log(`Token: ${name} (${symbol}), decimals: ${decimals}`);
 
-  const Token = await ethers.getContractFactory("TestERC20");
+  const Token = await ghost.getContractFactory("TestERC20");
   const token = await Token.deploy(name, symbol, decimals);
   await token.waitForDeployment();
   console.log(`TestERC20 deployed at: ${token.target as string}`);

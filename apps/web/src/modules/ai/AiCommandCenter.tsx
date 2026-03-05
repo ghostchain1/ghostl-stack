@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Button, Card } from '@ghostl/ui';
 import type { AnalyticsEvent, WebhookStatusSummary } from '@ghostl/types';
-import { ethers, type InterfaceAbi } from 'ethers';
+import { ghost, type InterfaceAbi } from 'ghost';
 import { resolveAiAttestorBase, resolveApiBase } from '../../lib/runtime';
 import { useSession } from '../identity-access/session';
 import { apiRequest, type ApiError, formatApiError } from '../../lib/api';
@@ -521,7 +521,7 @@ export function AiCommandCenter() {
     }
   };
 
-  const policyKey = (key: string) => ethers.keccak256(ethers.toUtf8Bytes(key));
+  const policyKey = (key: string) => ghost.keccak256(ghost.toUtf8Bytes(key));
   const modeLabels: Array<'OFF' | 'ADVISORY' | 'ENFORCE'> = ['OFF', 'ADVISORY', 'ENFORCE'];
   const formatTs = (seconds: number) => (seconds > 0 ? new Date(seconds * 1000).toLocaleString() : 'n/a');
 
@@ -539,7 +539,7 @@ export function AiCommandCenter() {
     setAiError('');
 
     try {
-      const provider = new ethers.JsonRpcProvider(activeRpc);
+      const provider = new ghost.JsonRpcProvider(activeRpc);
 
       const registryAbi = aiAbis.AIOracleRegistry as InterfaceAbi | undefined;
       const guardAbi = aiAbis.PolicyGuard as InterfaceAbi | undefined;
@@ -547,7 +547,7 @@ export function AiCommandCenter() {
       const anchorAbi = aiAbis.EvidenceAnchor as InterfaceAbi | undefined;
 
       if (aiRegistryAddress && registryAbi) {
-        const registry = new ethers.Contract(aiRegistryAddress, registryAbi, provider);
+        const registry = new ghost.Contract(aiRegistryAddress, registryAbi, provider);
         const countRaw = (await registry.signerCount()) as bigint;
         const count = Number(countRaw);
         const limit = Math.min(count, 25);
@@ -590,7 +590,7 @@ export function AiCommandCenter() {
       }
 
       if (aiGuardAddress && guardAbi) {
-        const guard = new ethers.Contract(aiGuardAddress, guardAbi, provider);
+        const guard = new ghost.Contract(aiGuardAddress, guardAbi, provider);
         const modeRaw = (await guard.mode()) as bigint;
         const modeIndex = Number(modeRaw);
         setAiMode(modeLabels[modeIndex] || '');
@@ -598,8 +598,8 @@ export function AiCommandCenter() {
         setAiMode('');
       }
 
-      if (aiHubAddress && hubAbi && aiSubject && ethers.isAddress(aiSubject)) {
-        const hub = new ethers.Contract(aiHubAddress, hubAbi, provider);
+      if (aiHubAddress && hubAbi && aiSubject && ghost.isAddress(aiSubject)) {
+        const hub = new ghost.Contract(aiHubAddress, hubAbi, provider);
         const result = (await hub.getLatestRisk(aiSubject, layerId)) as [bigint, bigint, string, bigint, bigint];
         setAiRisk({
           subject: aiSubject,
@@ -610,7 +610,7 @@ export function AiCommandCenter() {
           issuedAt: Number(result[3] || 0n),
           expiresAt: Number(result[4] || 0n)
         });
-      } else if (aiSubject && !ethers.isAddress(aiSubject)) {
+      } else if (aiSubject && !ghost.isAddress(aiSubject)) {
         setAiRisk(null);
         setAiError('Subject address is not a valid EVM address.');
       } else {
@@ -618,7 +618,7 @@ export function AiCommandCenter() {
       }
 
       if (aiAnchorAddress && anchorAbi) {
-        const anchor = new ethers.Contract(aiAnchorAddress, anchorAbi, provider);
+        const anchor = new ghost.Contract(aiAnchorAddress, anchorAbi, provider);
         const totalRaw = (await anchor.anchorCount()) as bigint;
         const total = Number(totalRaw);
         const take = Math.min(total, 10);
@@ -704,7 +704,7 @@ export function AiCommandCenter() {
 
   const loadAttestorRisk = async () => {
     const subject = attestorSubject.trim();
-    if (!subject || !ethers.isAddress(subject)) {
+    if (!subject || !ghost.isAddress(subject)) {
       setAttestorError('Enter a valid subject address to load risk.');
       return;
     }
@@ -722,7 +722,7 @@ export function AiCommandCenter() {
 
   const runAttestorAttest = async () => {
     const subject = attestorSubject.trim();
-    if (!subject || !ethers.isAddress(subject)) {
+    if (!subject || !ghost.isAddress(subject)) {
       setAttestorError('Enter a valid subject address before attesting.');
       return;
     }

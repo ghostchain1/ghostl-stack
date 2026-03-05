@@ -1,16 +1,16 @@
-import { ethers, artifacts, network } from "hardhat";
+import { ghost, artifacts, network } from "hardhat";
 import fs from "fs";
 import path from "path";
 import crypto from "node:crypto";
 
 async function main() {
   const rpc = process.env.RPC_L2 ?? "http://localhost:29545";
-  const provider = new ethers.JsonRpcProvider(rpc);
+  const provider = new ghost.JsonRpcProvider(rpc);
   const deployerKey = process.env.DEPLOYER_PRIVATE_KEY;
   if (!deployerKey) {
     throw new Error("missing_DEPLOYER_PRIVATE_KEY");
   }
-  const signer = new ethers.Wallet(deployerKey, provider);
+  const signer = new ghost.Wallet(deployerKey, provider);
 
   console.log("Deploying L3 stubs from", await signer.getAddress(), "to", rpc);
   const net = await provider.getNetwork();
@@ -20,14 +20,14 @@ async function main() {
   const outputFile = process.env.OUTPUT_FILE ?? path.join(outputDir, "l3.json");
   const version = process.env.CONTRACTS_VERSION ?? "0.0.1";
 
-  const L2OO = await ethers.getContractFactory("MockL2OutputOracle", signer);
+  const L2OO = await ghost.getContractFactory("MockL2OutputOracle", signer);
   const l2oo = await L2OO.deploy(0);
   console.log("MockL2OutputOracle tx", l2oo.deploymentTransaction()?.hash);
   await l2oo.waitForDeployment();
   const l2ooAddress = await l2oo.getAddress();
   console.log("MockL2OutputOracle deployed at", l2ooAddress);
 
-  const DGF = await ethers.getContractFactory("MockDisputeGameFactory", signer);
+  const DGF = await ghost.getContractFactory("MockDisputeGameFactory", signer);
   const dgf = await DGF.deploy();
   console.log("MockDisputeGameFactory tx", dgf.deploymentTransaction()?.hash);
   await dgf.waitForDeployment();

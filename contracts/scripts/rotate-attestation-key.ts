@@ -19,7 +19,7 @@
  *   AI_ATTESTATION_HUB_L3       — deployed AIAttestationHub on L3 (if set)
  */
 
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 // AIOracleRegistry ABI (subset needed for rotation)
 const ORACLE_REGISTRY_ABI = [
@@ -42,7 +42,7 @@ const COMMAND_CENTER_ABI = [
 ];
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
+  const [deployer] = await ghost.getSigners();
   console.log(`[rotate-attestation-key] deployer: ${deployer.address}`);
 
   const OLD_ADDR = process.env.OLD_ATTESTATION_ADDRESS;
@@ -65,7 +65,7 @@ async function main() {
   const registryAddr = process.env.AI_ORACLE_REGISTRY_ADDRESS;
   if (registryAddr) {
     console.log(`\n[AIOracleRegistry] @ ${registryAddr}`);
-    const registry = new ethers.Contract(registryAddr, ORACLE_REGISTRY_ABI, deployer);
+    const registry = new ghost.Contract(registryAddr, ORACLE_REGISTRY_ABI, deployer);
 
     // rotateSigner atomically disables old + registers new
     const tx = await registry.rotateSigner(
@@ -85,7 +85,7 @@ async function main() {
   const baseAddr = process.env.AI_ATTESTATION_BASE_ADDRESS;
   if (baseAddr) {
     console.log(`\n[AIAttestationBase] @ ${baseAddr}`);
-    const base = new ethers.Contract(baseAddr, ATTESTATION_BASE_ABI, deployer);
+    const base = new ghost.Contract(baseAddr, ATTESTATION_BASE_ABI, deployer);
 
     const wasAllowed = await base.aiSigners(OLD_ADDR);
     if (wasAllowed) {
@@ -108,7 +108,7 @@ async function main() {
   const cmdAddr = process.env.AI_COMMAND_CENTER_ADDRESS;
   if (cmdAddr) {
     console.log(`\n[AICommandCenter] @ ${cmdAddr}`);
-    const cmd = new ethers.Contract(cmdAddr, COMMAND_CENTER_ABI, deployer);
+    const cmd = new ghost.Contract(cmdAddr, COMMAND_CENTER_ABI, deployer);
 
     const wasAllowed = await cmd.aiSigners(OLD_ADDR);
     if (wasAllowed) {

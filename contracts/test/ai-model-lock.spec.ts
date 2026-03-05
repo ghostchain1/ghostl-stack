@@ -1,56 +1,56 @@
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 describe("AI model lock (governance-native)", () => {
   it("enforces model allowlist + freeze via AIModelLock when wired into AICommandCenter", async () => {
-    const [admin, aiSigner] = await ethers.getSigners();
+    const [admin, aiSigner] = await ghost.getSigners();
 
-    const Constitution = await ethers.getContractFactory("GhostConstitution");
+    const Constitution = await ghost.getContractFactory("GhostConstitution");
     const constitution = await Constitution.connect(admin).deploy(
       admin.address,
-      ethers.ZeroAddress,
-      ethers.ZeroAddress
+      ghost.ZeroAddress,
+      ghost.ZeroAddress
     );
     await constitution.waitForDeployment();
 
-    const Guard = await ethers.getContractFactory("ConstitutionalGuard");
+    const Guard = await ghost.getContractFactory("ConstitutionalGuard");
     const guard = await Guard.connect(admin).deploy(
       admin.address,
-      ethers.ZeroAddress,
+      ghost.ZeroAddress,
       await constitution.getAddress()
     );
     await guard.waitForDeployment();
 
-    const Anchor = await ethers.getContractFactory("EvidenceAnchor");
-    const anchor = await Anchor.connect(admin).deploy(admin.address, ethers.ZeroAddress);
+    const Anchor = await ghost.getContractFactory("EvidenceAnchor");
+    const anchor = await Anchor.connect(admin).deploy(admin.address, ghost.ZeroAddress);
     await anchor.waitForDeployment();
 
-    const Bundle = await ethers.getContractFactory("EvidenceBundle");
+    const Bundle = await ghost.getContractFactory("EvidenceBundle");
     const bundle = await Bundle.connect(admin).deploy(
       admin.address,
-      ethers.ZeroAddress,
+      ghost.ZeroAddress,
       await anchor.getAddress()
     );
     await bundle.waitForDeployment();
     // EvidenceBundle anchors via EvidenceAnchor, so the bundle must be governance for the anchor.
-    await (await anchor.connect(admin).setGovernance(await bundle.getAddress(), ethers.ZeroAddress)).wait();
+    await (await anchor.connect(admin).setGovernance(await bundle.getAddress(), ghost.ZeroAddress)).wait();
 
-    const constitutionHash = ethers.id("ghost.constitution.model-lock.v1");
-    const ModelLock = await ethers.getContractFactory("AIModelLock");
+    const constitutionHash = ghost.id("ghost.constitution.model-lock.v1");
+    const ModelLock = await ghost.getContractFactory("AIModelLock");
     const modelLock = await ModelLock.connect(admin).deploy(
       admin.address,
-      ethers.ZeroAddress,
+      ghost.ZeroAddress,
       constitutionHash
     );
     await modelLock.waitForDeployment();
 
-    const CommandCenter = await ethers.getContractFactory("AICommandCenter");
+    const CommandCenter = await ghost.getContractFactory("AICommandCenter");
     const ai = await CommandCenter.connect(admin).deploy();
     await ai.waitForDeployment();
     await (await ai.connect(admin).setConstitutionalGuard(await guard.getAddress())).wait();
     await (await ai.connect(admin).setEvidenceBundle(await bundle.getAddress())).wait();
 
-    const Target = await ethers.getContractFactory("DummyTarget");
+    const Target = await ghost.getContractFactory("DummyTarget");
     const target = await Target.connect(admin).deploy();
     await target.waitForDeployment();
     const pingSelector = target.interface.getFunction("ping").selector;
@@ -65,11 +65,11 @@ describe("AI model lock (governance-native)", () => {
     // Wire governance-native model lock.
     await (await ai.connect(admin).setModelLock(await modelLock.getAddress())).wait();
 
-    const modelId = ethers.id("gpt-5.2-codex-exec");
+    const modelId = ghost.id("gpt-5.2-codex-exec");
 
     const buildDecision = async (nonce: number) => {
-      const issuedAt = (await ethers.provider.getBlock("latest"))!.timestamp;
-      const data = ethers.AbiCoder.defaultAbiCoder().encode(["uint256"], [77]);
+      const issuedAt = (await ghost.provider.getBlock("latest"))!.timestamp;
+      const data = ghost.AbiCoder.defaultAbiCoder().encode(["uint256"], [77]);
       return {
         nonce,
         action: 1,
@@ -79,17 +79,17 @@ describe("AI model lock (governance-native)", () => {
         issuedAt,
         validUntil: issuedAt + 3600,
         confidenceBps: 9000,
-        l1Digest: ethers.ZeroHash,
-        l2Digest: ethers.ZeroHash,
-        l3Digest: ethers.ZeroHash,
-        offchainDigest: ethers.ZeroHash,
+        l1Digest: ghost.ZeroHash,
+        l2Digest: ghost.ZeroHash,
+        l3Digest: ghost.ZeroHash,
+        offchainDigest: ghost.ZeroHash,
         modelId,
         gasLimit: 0
       };
     };
 
     const signDecision = async (decision: any) => {
-      const network = await ethers.provider.getNetwork();
+      const network = await ghost.provider.getNetwork();
       const domain = {
         name: "GhostAICommandCenter",
         version: "1",
@@ -120,7 +120,7 @@ describe("AI model lock (governance-native)", () => {
         action: decision.action,
         target: decision.target,
         selector: decision.selector,
-        dataHash: ethers.keccak256(decision.data),
+        dataHash: ghost.keccak256(decision.data),
         issuedAt: decision.issuedAt,
         validUntil: decision.validUntil,
         confidenceBps: decision.confidenceBps,
@@ -132,7 +132,7 @@ describe("AI model lock (governance-native)", () => {
         gasLimit: decision.gasLimit
       } as const;
 
-      const decisionHash = ethers.TypedDataEncoder.hashStruct("Decision", types, value);
+      const decisionHash = ghost.TypedDataEncoder.hashStruct("Decision", types, value);
       const signature = await aiSigner.signTypedData(domain, types, value);
 
       return { decisionHash, signature };
@@ -142,10 +142,10 @@ describe("AI model lock (governance-native)", () => {
     {
       const decision = await buildDecision(1);
       const { decisionHash, signature } = await signDecision(decision);
-      const actionHash = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode(
+      const actionHash = ghost.keccak256(
+        ghost.AbiCoder.defaultAbiCoder().encode(
           ["bytes32", "bytes32", "address", "bytes4", "bytes32", "uint64"],
-          [ethers.id("ghost.ai.command.execute"), decisionHash, decision.target, decision.selector, ethers.keccak256(decision.data), decision.gasLimit]
+          [ghost.id("ghost.ai.command.execute"), decisionHash, decision.target, decision.selector, ghost.keccak256(decision.data), decision.gasLimit]
         )
       );
       await (await constitution.connect(admin).permitAction(actionHash, true)).wait();
@@ -153,16 +153,16 @@ describe("AI model lock (governance-native)", () => {
     }
 
     // Allow the model with evidence.
-    await (await modelLock.connect(admin).setModel(modelId, true, ethers.id("evidence:allow-model"))).wait();
+    await (await modelLock.connect(admin).setModel(modelId, true, ghost.id("evidence:allow-model"))).wait();
 
     // Executes successfully when model is allowlisted and not frozen.
     {
       const decision = await buildDecision(2);
       const { decisionHash, signature } = await signDecision(decision);
-      const actionHash = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode(
+      const actionHash = ghost.keccak256(
+        ghost.AbiCoder.defaultAbiCoder().encode(
           ["bytes32", "bytes32", "address", "bytes4", "bytes32", "uint64"],
-          [ethers.id("ghost.ai.command.execute"), decisionHash, decision.target, decision.selector, ethers.keccak256(decision.data), decision.gasLimit]
+          [ghost.id("ghost.ai.command.execute"), decisionHash, decision.target, decision.selector, ghost.keccak256(decision.data), decision.gasLimit]
         )
       );
       await (await constitution.connect(admin).permitAction(actionHash, true)).wait();
@@ -171,14 +171,14 @@ describe("AI model lock (governance-native)", () => {
     }
 
     // Freeze blocks execution even for allowlisted model.
-    await (await modelLock.connect(admin).setFrozen(true, ethers.id("evidence:freeze"))).wait();
+    await (await modelLock.connect(admin).setFrozen(true, ghost.id("evidence:freeze"))).wait();
     {
       const decision = await buildDecision(3);
       const { decisionHash, signature } = await signDecision(decision);
-      const actionHash = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode(
+      const actionHash = ghost.keccak256(
+        ghost.AbiCoder.defaultAbiCoder().encode(
           ["bytes32", "bytes32", "address", "bytes4", "bytes32", "uint64"],
-          [ethers.id("ghost.ai.command.execute"), decisionHash, decision.target, decision.selector, ethers.keccak256(decision.data), decision.gasLimit]
+          [ghost.id("ghost.ai.command.execute"), decisionHash, decision.target, decision.selector, ghost.keccak256(decision.data), decision.gasLimit]
         )
       );
       await (await constitution.connect(admin).permitAction(actionHash, true)).wait();

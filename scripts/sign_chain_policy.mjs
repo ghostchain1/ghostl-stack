@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import fs from "node:fs";
 import path from "node:path";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 
 const ROOT_DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const PROPOSAL_PATH =
@@ -54,7 +54,7 @@ const update = {
 
 const signatures = [];
 for (const key of keys) {
-  const wallet = new ethers.Wallet(key);
+  const wallet = new ghost.Wallet(key);
   const signature = await wallet.signTypedData(domain, types, update);
   signatures.push({ signer: wallet.address, signature });
 }

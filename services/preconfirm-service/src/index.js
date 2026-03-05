@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import promClient from "prom-client";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 import fs from "node:fs";
 
 const PORT = Number(process.env.PORT || "7691");
@@ -57,7 +57,7 @@ function selectSigningKey() {
 
 const SIGNER_PRIVATE_KEY = selectSigningKey();
 const observeOnly = !SIGNER_PRIVATE_KEY;
-const signer = observeOnly ? null : new ethers.Wallet(SIGNER_PRIVATE_KEY);
+const signer = observeOnly ? null : new ghost.Wallet(SIGNER_PRIVATE_KEY);
 
 if (!RPC_URL) {
   console.error("Missing required env: RPC_URL");
@@ -149,21 +149,21 @@ async function guardEval(context) {
 }
 
 function txSummaryFromRawTx(raw) {
-  const tx = ethers.Transaction.from(raw);
+  const tx = ghost.Transaction.from(raw);
   const dataHex = tx.data ?? "0x";
   const selector = dataHex.startsWith("0x") && dataHex.length >= 10 ? dataHex.slice(0, 10) : "0x00000000";
   return {
     tx,
     summary: {
       hash: tx.hash,
-      from: tx.from ? ethers.getAddress(tx.from) : null,
-      to: tx.to ? ethers.getAddress(tx.to) : null,
+      from: tx.from ? ghost.getAddress(tx.from) : null,
+      to: tx.to ? ghost.getAddress(tx.to) : null,
       nonce: tx.nonce,
       type: tx.type,
       value: tx.value?.toString?.() ?? String(tx.value ?? "0"),
       gasLimit: tx.gasLimit?.toString?.() ?? null,
       dataLength: dataHex.length > 2 ? dataHex.length / 2 - 1 : 0,
-      dataHash: ethers.keccak256(dataHex),
+      dataHash: ghost.keccak256(dataHex),
       selector,
       chainId: tx.chainId ? Number(tx.chainId) : null
     }
@@ -312,7 +312,7 @@ app.post("/v1/preconfirm", async (req, res) => {
         { name: "layer", type: "uint8" }
       ]
     };
-    digest = ethers.TypedDataEncoder.hash(domain, types, payload);
+    digest = ghost.TypedDataEncoder.hash(domain, types, payload);
     signature = await signer.signTypedData(domain, types, payload);
     signerAddress = await signer.getAddress();
   }

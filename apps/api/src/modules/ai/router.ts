@@ -1,5 +1,5 @@
 import express from 'express';
-import { JsonRpcProvider, keccak256, toUtf8Bytes } from 'ethers';
+import { JsonRpcProvider, keccak256, toUtf8Bytes } from 'ghost';
 import { z } from 'zod';
 import { ghostWalletRpcManager } from '../../services/rpc-manager';
 import { env } from '../../config/env';

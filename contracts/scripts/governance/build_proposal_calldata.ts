@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
-import { AbiCoder, Interface, ethers } from 'ethers';
+import { AbiCoder, Interface, ghost } from 'ghost';
 
-export const CANONICAL_GHOST_TOKEN = ethers.getAddress('0x5FbDB2315678afecb367f032d93F642f64180aa3');
+export const CANONICAL_GHOST_TOKEN = ghost.getAddress('0x5FbDB2315678afecb367f032d93F642f64180aa3');
 
 export type ProposalCall = {
   target: string;
@@ -22,15 +22,15 @@ const FORBIDDEN_SIGNATURES = [
   'setNativeGasToken(address)'
 ] as const;
 
-const selectorOfSig = (signature: string) => ethers.id(signature).slice(0, 10).toLowerCase();
+const selectorOfSig = (signature: string) => ghost.id(signature).slice(0, 10).toLowerCase();
 
 const FORBIDDEN_SELECTORS = new Set(FORBIDDEN_SIGNATURES.map(selectorOfSig));
 
 const normalizeAddress = (name: string, value: string) => {
-  if (!ethers.isAddress(value)) {
+  if (!ghost.isAddress(value)) {
     throw new Error(`invalid_${name}:${value}`);
   }
-  const addr = ethers.getAddress(value);
+  const addr = ghost.getAddress(value);
   if (addr === ZERO_ADDRESS) {
     throw new Error(`zero_${name}`);
   }
@@ -44,7 +44,7 @@ const assertZeroValue = (value: bigint) => {
 };
 
 const assertCalldata = (data: string) => {
-  if (!ethers.isHexString(data) || data.length < 10) {
+  if (!ghost.isHexString(data) || data.length < 10) {
     throw new Error('invalid_calldata');
   }
 };
@@ -61,10 +61,10 @@ const GAS_TOKEN_SETTERS = new Set(['setGasToken', 'setNativeGasToken', 'setFeeTo
 const assertCanonicalGasTokenArgs = (functionName: string, args: readonly unknown[]) => {
   if (!GAS_TOKEN_SETTERS.has(functionName)) return;
   const candidate = args[0];
-  if (typeof candidate !== 'string' || !ethers.isAddress(candidate)) {
+  if (typeof candidate !== 'string' || !ghost.isAddress(candidate)) {
     throw new Error(`gas_token_arg_invalid:${functionName}`);
   }
-  const addr = ethers.getAddress(candidate);
+  const addr = ghost.getAddress(candidate);
   if (addr !== CANONICAL_GHOST_TOKEN) {
     throw new Error(`gas_token_not_canonical:${addr}`);
   }
@@ -155,7 +155,7 @@ export function computeProposalHash(executor: string, calldata: string, descript
   const normalizedExecutor = normalizeAddress('executor', executor);
   assertCalldata(calldata);
   const coder = AbiCoder.defaultAbiCoder();
-  return ethers.keccak256(coder.encode(['address', 'bytes', 'string'], [normalizedExecutor, calldata, description]));
+  return ghost.keccak256(coder.encode(['address', 'bytes', 'string'], [normalizedExecutor, calldata, description]));
 }
 
 export function computeGovernorHash(target: string, value: bigint, calldata: string, description: string) {
@@ -163,7 +163,7 @@ export function computeGovernorHash(target: string, value: bigint, calldata: str
   assertZeroValue(value);
   assertCalldata(calldata);
   const coder = AbiCoder.defaultAbiCoder();
-  return ethers.keccak256(coder.encode(['address', 'uint256', 'bytes', 'string'], [normalizedTarget, value, calldata, description]));
+  return ghost.keccak256(coder.encode(['address', 'uint256', 'bytes', 'string'], [normalizedTarget, value, calldata, description]));
 }
 
 export const EXECUTOR_ABI_FRAGMENTS = [

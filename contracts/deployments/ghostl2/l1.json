@@ -4,7 +4,7 @@
   "contracts": [
     {
       "name": "OptimisticRollup",
-      "address": "0xad32D5C2Da9f4159C4cc98686C005852b3905355",
+      "address": "0xFE5f411481565fbF70D8D33D992C78196E014b90",
       "chainId": 14000101,
       "layer": "l1",
       "abi": [
@@ -520,12 +520,12 @@
         }
       ],
       "abiHash": "9684eb9764ff27f0b97dd94682726b7d93fd213772168d5bcb4af56ca3e521be",
-      "version": "0.0.1",
-      "deployedAt": "2026-02-18T03:48:12.826Z"
+      "version": "1.0.0",
+      "deployedAt": "2026-03-05T15:42:29.055Z"
     },
     {
       "name": "GhostConstitution",
-      "address": "0x815f9103Bd398C0079425B4306b01B85FB6d61AC",
+      "address": "0xD6b040736e948621c5b6E0a494473c47a6113eA8",
       "chainId": 14000101,
       "layer": "l1",
       "abi": [
@@ -1019,12 +1019,12 @@
         }
       ],
       "abiHash": "ea2f12a7c5fea46d69a26ecec9c3484b3bc470cafe48bffec3273e9152c32087",
-      "version": "0.0.1",
-      "deployedAt": "2026-02-18T03:48:15.585Z"
+      "version": "1.0.0",
+      "deployedAt": "2026-03-05T15:42:33.750Z"
     },
     {
       "name": "GhostNFT",
-      "address": "0x46E1a784487Bd701EB28d54B2949de3d55654E10",
+      "address": "0x139e1D41943ee15dDe4DF876f9d0E7F85e26660A",
       "chainId": 14000101,
       "layer": "l1",
       "abi": [
@@ -1555,8 +1555,8 @@
         }
       ],
       "abiHash": "a5ef261441c0af31fe5584f26cceaced5f74983ebf3cf915d3790b9ddd98716c",
-      "version": "0.0.1",
-      "deployedAt": "2026-02-18T03:48:20.323Z"
+      "version": "1.0.0",
+      "deployedAt": "2026-03-05T15:42:38.445Z"
     }
   ]
 }

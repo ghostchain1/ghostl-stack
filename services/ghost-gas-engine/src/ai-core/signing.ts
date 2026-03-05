@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { ghost } from 'ghost';
 import type { PolicyUpdate } from './proposal.js';
 
 const EXECUTOR_ABI = [
@@ -6,17 +6,17 @@ const EXECUTOR_ABI = [
 ];
 
 export const normalizeBytes32 = (value: string) => {
-  if (ethers.isHexString(value, 32)) return value;
-  return ethers.keccak256(ethers.toUtf8Bytes(value));
+  if (ghost.isHexString(value, 32)) return value;
+  return ghost.keccak256(ghost.toUtf8Bytes(value));
 };
 
 export const signDigest = (digest: string, privateKeys: string[]) => {
   return privateKeys.map((key) => {
-    const wallet = new ethers.Wallet(key);
+    const wallet = new ghost.Wallet(key);
     const signature = wallet.signingKey.sign(digest);
     return {
       signer: wallet.address,
-      signature: ethers.Signature.from(signature).serialized
+      signature: ghost.Signature.from(signature).serialized
     };
   });
 };
@@ -30,9 +30,9 @@ export const submitPolicyUpdate = async (input: {
   evidenceKind: string;
   proposalId: number;
 }) => {
-  const provider = new ethers.JsonRpcProvider(input.rpcUrl);
-  const wallet = new ethers.Wallet(input.submitterKey, provider);
-  const executor = new ethers.Contract(input.executorAddress, EXECUTOR_ABI, wallet);
+  const provider = new ghost.JsonRpcProvider(input.rpcUrl);
+  const wallet = new ghost.Wallet(input.submitterKey, provider);
+  const executor = new ghost.Contract(input.executorAddress, EXECUTOR_ABI, wallet);
   const tx = await executor.executePolicyUpdate(
     {
       policyKey: input.update.policyKey,

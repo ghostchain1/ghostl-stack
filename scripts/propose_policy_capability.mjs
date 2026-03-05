@@ -81,23 +81,23 @@ import { createRequire } from "node:module";
 
 const ROOT_DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 
-const loadEthers = async () => {
+const loadghost = async () => {
   try {
-    return await import("ethers");
+    return await import("ghost");
   } catch (err) {
     try {
       const requireFromContracts = createRequire(path.join(ROOT_DIR, "contracts", "package.json"));
-      const ethersPath = requireFromContracts.resolve("ethers");
-      return await import(ethersPath);
+      const ghostPath = requireFromContracts.resolve("ghost");
+      return await import(ghostPath);
     } catch (innerErr) {
       throw new Error(
-        "missing_dependency_signing_lib: install at repo root or ensure contracts/node_modules includes ethers"
+        "missing_dependency_signing_lib: install at repo root or ensure contracts/node_modules includes ghost"
       );
     }
   }
 };
 
-const { ethers } = await loadEthers();
+const { ghost } = await loadghost();
 const CONFIG_PATH = process.env.CAPABILITY_CONFIG;
 const OUTPUT_PATH =
   process.env.CAPABILITY_OUT ||
@@ -121,17 +121,17 @@ const POLICY_REGISTRY_ABI = [
 ];
 
 const normalizeAddress = (name, value) => {
-  if (!value || !ethers.isAddress(value)) {
+  if (!value || !ghost.isAddress(value)) {
     throw new Error(`missing_or_invalid_${name}`);
   }
-  return ethers.getAddress(value);
+  return ghost.getAddress(value);
 };
 
 const normalizeBytes32 = (value, label) => {
-  if (!value) return ethers.ZeroHash;
-  if (ethers.isHexString(value, 32)) return value;
+  if (!value) return ghost.ZeroHash;
+  if (ghost.isHexString(value, 32)) return value;
   try {
-    return ethers.id(String(value));
+    return ghost.id(String(value));
   } catch (err) {
     throw new Error(`invalid_${label}:${value}`);
   }
@@ -147,7 +147,7 @@ const hasFunction = (iface, signature) => {
 };
 
 const buildExecutorCalldata = (executorAbi, calls, mode) => {
-  const iface = new ethers.Interface(executorAbi);
+  const iface = new ghost.Interface(executorAbi);
   const resolvedMode =
     mode ||
     (hasFunction(iface, "executeBatch(address[],uint256[],bytes[])")
@@ -187,13 +187,13 @@ const buildExecutorCalldata = (executorAbi, calls, mode) => {
 };
 
 const computeGovernorHash = (target, value, calldata, description) => {
-  const coder = ethers.AbiCoder.defaultAbiCoder();
-  return ethers.keccak256(coder.encode(["address", "uint256", "bytes", "string"], [target, value, calldata, description]));
+  const coder = ghost.AbiCoder.defaultAbiCoder();
+  return ghost.keccak256(coder.encode(["address", "uint256", "bytes", "string"], [target, value, calldata, description]));
 };
 
 const computeProposalHash = (executor, calldata, description) => {
-  const coder = ethers.AbiCoder.defaultAbiCoder();
-  return ethers.keccak256(coder.encode(["address", "bytes", "string"], [executor, calldata, description]));
+  const coder = ghost.AbiCoder.defaultAbiCoder();
+  return ghost.keccak256(coder.encode(["address", "bytes", "string"], [executor, calldata, description]));
 };
 
 let capabilityConfig = null;
@@ -224,13 +224,13 @@ const hasBoundsFlag = capabilityConfig?.hasBounds ?? process.env.CAPABILITY_HAS_
 const hasBounds = String(hasBoundsFlag).toLowerCase() !== "false";
 
 const evidenceHash = normalizeBytes32(
-  capabilityConfig?.evidenceHash || process.env.EVIDENCE_HASH || ethers.ZeroHash,
+  capabilityConfig?.evidenceHash || process.env.EVIDENCE_HASH || ghost.ZeroHash,
   "evidenceHash"
 );
 
 const capabilityKey = normalizeBytes32(capability, "capability");
 
-const registryIface = new ethers.Interface(POLICY_REGISTRY_ABI);
+const registryIface = new ghost.Interface(POLICY_REGISTRY_ABI);
 const calls = [];
 
 calls.push({

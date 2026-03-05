@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import fs from "node:fs";
 import path from "node:path";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 import {
   EXECUTOR_ABI_FRAGMENTS,
   buildCall,
@@ -34,19 +34,19 @@ const SCOPE_INPUT = process.env.AI_ACTION_SCOPE || "ghostchain.l1";
 const EVIDENCE_HASH = process.env.AI_ACTION_EVIDENCE_HASH || "";
 
 const requireAddress = (name: string, value: string) => {
-  if (!value || !ethers.isAddress(value)) {
+  if (!value || !ghost.isAddress(value)) {
     throw new Error(`missing_or_invalid_${name}`);
   }
-  return ethers.getAddress(value);
+  return ghost.getAddress(value);
 };
 
 const toBytes32 = (value: string) => {
-  if (ethers.isHexString(value, 32)) return value;
-  return ethers.keccak256(ethers.toUtf8Bytes(value));
+  if (ghost.isHexString(value, 32)) return value;
+  return ghost.keccak256(ghost.toUtf8Bytes(value));
 };
 
 const requireBytes32 = (name: string, value: string) => {
-  if (!value || !ethers.isHexString(value, 32)) {
+  if (!value || !ghost.isHexString(value, 32)) {
     throw new Error(`missing_or_invalid_${name}`);
   }
   return value;
@@ -54,13 +54,13 @@ const requireBytes32 = (name: string, value: string) => {
 
 const actionId = () => {
   if (ACTION_ID) return requireBytes32("AI_ACTION_ID", ACTION_ID);
-  if (!ethers.isAddress(ACTION_TARGET)) {
+  if (!ghost.isAddress(ACTION_TARGET)) {
     throw new Error("missing_or_invalid_AI_ACTION_TARGET");
   }
-  if (!ethers.isHexString(ACTION_SELECTOR, 4)) {
+  if (!ghost.isHexString(ACTION_SELECTOR, 4)) {
     throw new Error("missing_or_invalid_AI_ACTION_SELECTOR");
   }
-  return ethers.keccak256(ethers.solidityPacked(["address", "bytes4"], [ACTION_TARGET, ACTION_SELECTOR]));
+  return ghost.keccak256(ghost.solidityPacked(["address", "bytes4"], [ACTION_TARGET, ACTION_SELECTOR]));
 };
 
 function main() {

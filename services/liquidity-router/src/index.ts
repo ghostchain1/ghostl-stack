@@ -1,7 +1,7 @@
 import "dotenv/config";
 import fs from "node:fs/promises";
 import express from "express";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 import {
   AdapterRegistryAbi,
   CircuitBreakerAbi,
@@ -132,7 +132,7 @@ const DEPLOY_TARGET_WEI = env.LGE_DEPLOY_TARGET_WEI || "0";
 const DEPLOY_STEP_WEI = env.LGE_DEPLOY_STEP_WEI || "0";
 const MAX_RISK = Math.max(0, Math.min(1, Number(env.LGE_MAX_RISK || "0.65")));
 
-const STRATEGY_ID = env.LGE_STRATEGY_ID ? (env.LGE_STRATEGY_ID as `0x${string}`) : ethers.id("lge.strategy.mock");
+const STRATEGY_ID = env.LGE_STRATEGY_ID ? (env.LGE_STRATEGY_ID as `0x${string}`) : ghost.id("lge.strategy.mock");
 
 const adapterIds = (env.LGE_ADAPTER_IDS || "1")
   .split(",")
@@ -150,20 +150,20 @@ if (!VAULT_ADDRESS || !ORACLE_ADDRESS || !ADAPTER_REGISTRY_ADDRESS || !BREAKER_A
 const OPERATOR_PRIVATE_KEY = await readSecret("LGE_OPERATOR_PRIVATE_KEY");
 const RELAYER_PRIVATE_KEYS_RAW = await readSecret("LGE_RELAYER_PRIVATE_KEYS");
 
-const operatorWallet = OPERATOR_PRIVATE_KEY ? new ethers.Wallet(OPERATOR_PRIVATE_KEY) : null;
-const relayerWallets: ethers.Wallet[] = RELAYER_PRIVATE_KEYS_RAW
-  ? RELAYER_PRIVATE_KEYS_RAW.split(",").map((k) => new ethers.Wallet(k.trim())).filter(Boolean)
+const operatorWallet = OPERATOR_PRIVATE_KEY ? new ghost.Wallet(OPERATOR_PRIVATE_KEY) : null;
+const relayerWallets: ghost.Wallet[] = RELAYER_PRIVATE_KEYS_RAW
+  ? RELAYER_PRIVATE_KEYS_RAW.split(",").map((k) => new ghost.Wallet(k.trim())).filter(Boolean)
   : [];
 
-const l1Provider = new ethers.JsonRpcProvider(RPC_L1);
+const l1Provider = new ghost.JsonRpcProvider(RPC_L1);
 const l1Signer = operatorWallet ? operatorWallet.connect(l1Provider) : null;
 
-const adapterRegistry = new ethers.Contract(ADAPTER_REGISTRY_ADDRESS, AdapterRegistryAbi, l1Provider);
-const breaker = new ethers.Contract(BREAKER_ADDRESS, CircuitBreakerAbi, l1Provider);
-const vault = new ethers.Contract(VAULT_ADDRESS, LoadBalancerVaultAbi, l1Signer || l1Provider);
-const oracle = new ethers.Contract(ORACLE_ADDRESS, SettlementOracleAbi, l1Signer || l1Provider);
+const adapterRegistry = new ghost.Contract(ADAPTER_REGISTRY_ADDRESS, AdapterRegistryAbi, l1Provider);
+const breaker = new ghost.Contract(BREAKER_ADDRESS, CircuitBreakerAbi, l1Provider);
+const vault = new ghost.Contract(VAULT_ADDRESS, LoadBalancerVaultAbi, l1Signer || l1Provider);
+const oracle = new ghost.Contract(ORACLE_ADDRESS, SettlementOracleAbi, l1Signer || l1Provider);
 const policyRegistry = POLICY_REGISTRY_ADDRESS
-  ? new ethers.Contract(POLICY_REGISTRY_ADDRESS, PolicyRegistryAbi, l1Provider)
+  ? new ghost.Contract(POLICY_REGISTRY_ADDRESS, PolicyRegistryAbi, l1Provider)
   : null;
 
 const app = express();
@@ -202,8 +202,8 @@ const computeCommitment = async (adapterId: number, externalChainId: bigint): Pr
   const pool = getExternalPool(externalChainId);
   if (!pool) {
     return {
-      commitment: ethers.keccak256(
-        ethers.toUtf8Bytes(`lge:static:${adapterId}:${externalChainId.toString()}:${Math.floor(Date.now() / 1000)}`)
+      commitment: ghost.keccak256(
+        ghost.toUtf8Bytes(`lge:static:${adapterId}:${externalChainId.toString()}:${Math.floor(Date.now() / 1000)}`)
       ),
       external: null,
       blockAgeSec: null
@@ -233,8 +233,8 @@ const computeCommitment = async (adapterId: number, externalChainId: bigint): Pr
 const parseSettlementAsset = () => {
   if (!SETTLEMENT_ASSET) return { kind: "missing" as const };
   if (SETTLEMENT_ASSET === "native") return { kind: "native" as const };
-  if (!ethers.isAddress(SETTLEMENT_ASSET)) return { kind: "invalid" as const, value: SETTLEMENT_ASSET };
-  return { kind: "erc20" as const, address: ethers.getAddress(SETTLEMENT_ASSET) };
+  if (!ghost.isAddress(SETTLEMENT_ASSET)) return { kind: "invalid" as const, value: SETTLEMENT_ASSET };
+  return { kind: "erc20" as const, address: ghost.getAddress(SETTLEMENT_ASSET) };
 };
 
 const settlementAsset = parseSettlementAsset();
@@ -247,8 +247,8 @@ if (settlementAsset.kind === "missing" || settlementAsset.kind === "invalid") {
 const deployAsset = (() => {
   if (!DEPLOY_ASSET) return { kind: "missing" as const };
   if (DEPLOY_ASSET === "native") return { kind: "native" as const };
-  if (!ethers.isAddress(DEPLOY_ASSET)) return { kind: "invalid" as const, value: DEPLOY_ASSET };
-  return { kind: "erc20" as const, address: ethers.getAddress(DEPLOY_ASSET) };
+  if (!ghost.isAddress(DEPLOY_ASSET)) return { kind: "invalid" as const, value: DEPLOY_ASSET };
+  return { kind: "erc20" as const, address: ghost.getAddress(DEPLOY_ASSET) };
 })();
 if (deployAsset.kind === "missing" || deployAsset.kind === "invalid") {
   // eslint-disable-next-line no-console
@@ -343,7 +343,7 @@ const sendSettlement = async (adapterId: number, adapter: any) => {
 
   const sigDigest: string = await oracle.digestSettlement(
     adapterId,
-    settlementAsset.kind === "native" ? ethers.ZeroAddress : settlementAsset.address,
+    settlementAsset.kind === "native" ? ghost.ZeroAddress : settlementAsset.address,
     YIELD_AMOUNT,
     FEE_AMOUNT,
     commitment,
@@ -352,7 +352,7 @@ const sendSettlement = async (adapterId: number, adapter: any) => {
     Number(validUntil)
   );
 
-  const calldataAsset = settlementAsset.kind === "native" ? ethers.ZeroAddress : settlementAsset.address;
+  const calldataAsset = settlementAsset.kind === "native" ? ghost.ZeroAddress : settlementAsset.address;
   const proofType = Number(adapter.proofType);
 
   if (DRY_RUN) {
@@ -428,7 +428,7 @@ const sendSettlement = async (adapterId: number, adapter: any) => {
       }
       proof = normalizeHex(proofRaw);
     }
-    if (!ethers.isHexString(proof) || proof === "0x") {
+    if (!ghost.isHexString(proof) || proof === "0x") {
       policyViolationCounter.inc({ type: "zk_proof_invalid" });
       policyViolationsTotal.inc({ type: "zk_proof_invalid" });
       throw new Error("zk_proof_invalid");
@@ -531,7 +531,7 @@ const maybeDeploy = async (adapterId: number, adapter: any, canContinue: boolean
     return { ok: false as const, error: "risk_gate", risk: risk.risk, signals: (risk as any).signals || null };
   }
 
-  const asset = deployAsset.kind === "native" ? ethers.ZeroAddress : deployAsset.address;
+  const asset = deployAsset.kind === "native" ? ghost.ZeroAddress : deployAsset.address;
   const deployed: bigint = await vault.deployedByAdapterAsset(adapterId, asset);
   const remaining = DEPLOY_TARGET > deployed ? DEPLOY_TARGET - deployed : 0n;
   if (remaining === 0n) return null;
@@ -566,7 +566,7 @@ const pollOnce = async () => {
   for (const adapterId of adapterIds) {
     try {
       const adapter = await adapterRegistry.getAdapter(adapterId);
-      const asset = settlementAsset.kind === "native" ? ethers.ZeroAddress : settlementAsset.address;
+      const asset = settlementAsset.kind === "native" ? ghost.ZeroAddress : settlementAsset.address;
 
       const deployed: bigint = await vault.deployedByAdapterAsset(adapterId, asset);
       deployedPrincipalGauge.set({ adapter: String(adapterId), asset: asset.toLowerCase() }, Number(deployed));

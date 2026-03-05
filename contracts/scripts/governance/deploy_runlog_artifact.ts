@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 import dotenv from "dotenv";
 import fs from "node:fs";
 import path from "node:path";
@@ -75,7 +75,7 @@ async function main() {
     envFromFiles
   );
 
-  if (!initialExecutor || !ethers.isAddress(initialExecutor)) {
+  if (!initialExecutor || !ghost.isAddress(initialExecutor)) {
     throw new Error("Missing executor for RunLog (set RUNLOG_EXECUTOR or EXECUTOR_ADDRESS_L1 in env)");
   }
   if (!rpcUrl) {
@@ -112,9 +112,9 @@ async function main() {
   const abi = contractOutput.abi;
   const bytecode = `0x${contractOutput.evm.bytecode.object}`;
 
-  const provider = new ethers.JsonRpcProvider(rpcUrl);
-  const wallet = new ethers.Wallet(privateKey, provider);
-  const factory = new ethers.ContractFactory(abi, bytecode, wallet);
+  const provider = new ghost.JsonRpcProvider(rpcUrl);
+  const wallet = new ghost.Wallet(privateKey, provider);
+  const factory = new ghost.ContractFactory(abi, bytecode, wallet);
 
   const contract = await factory.deploy(initialExecutor);
   await contract.waitForDeployment();

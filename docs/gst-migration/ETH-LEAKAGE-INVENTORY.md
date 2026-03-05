@@ -16,7 +16,7 @@ Exclusions:
 - `contracts/lib/**`, `contracts/reports/formal/**`
 
 Forbidden token pattern set:
-- `_eth`, `ETH_*`, `ETHEREUM_*`, `*_ETH`, `ethAmount`, `ethBalance`, `nativeEth`, `Ether`, `Ethereum`, `Ξ`, `ETH_RPC`, `ETH_CHAIN_ID`, `ETH_PRIVATE_KEY`, `ETHERSCAN_*`
+- `_eth`, `ETH_*`, `ETHEREUM_*`, `*_ETH`, `ethAmount`, `ethBalance`, `nativeEth`, `Ether`, `Ethereum`, `Ξ`, `ETH_RPC`, `ETH_CHAIN_ID`, `ETH_PRIVATE_KEY`, `ghostCAN_*`
 
 Result summary (`33` hits total):
 - `GhostChain L1`: `14` (all technical compatibility)
@@ -47,7 +47,7 @@ Result summary (`33` hits total):
   - `ETH_RPC`
   - `ETH_CHAIN_ID`
   - `ETH_PRIVATE_KEY`
-  - `ETHERSCAN_*`
+  - `ghostCAN_*`
   - `ethAmount`
   - `ethBalance`
   - `nativeEth`
@@ -556,7 +556,7 @@ infra/opstack/op-geth/README.md:109: * Instead of connecting to the main Ethereu
 infra/opstack/op-geth/README.md:144:One of the quickest ways to get Ethereum up and running on your machine is by using
 infra/opstack/op-geth/README.md:165:Ethereum network via your own programs and not manually through the console. To aid
 infra/opstack/op-geth/README.md:198:Ethereum nodes with exposed APIs! Further, all browser tabs can access locally
-infra/opstack/op-geth/docs/postmortems/2021-08-22-split-postmortem.md:3:This is a post-mortem concerning the minority split that occurred on Ethereum mainnet on block [13107518](https://etherscan.io/block/13107518), at which a minority chai
+infra/opstack/op-geth/docs/postmortems/2021-08-22-split-postmortem.md:3:This is a post-mortem concerning the minority split that occurred on Ethereum mainnet on block [13107518](https://ghostcan.io/block/13107518), at which a minority chai
 infra/opstack/op-geth/docs/postmortems/2021-08-22-split-postmortem.md:92:> The primary goal for the Geth team is the health of the Ethereum network as a whole, and the decision whether or not to publish details about a serious vulnerability
 infra/opstack/op-geth/docs/postmortems/2021-08-22-split-postmortem.md:131:- [1] https://twitter.com/go_ethereum/status/1428051458763763721
 infra/opstack/op-geth/docs/postmortems/2021-08-22-split-postmortem.md:150:https://twitter.com/go_ethereum/status/1428051458763763721
@@ -1027,7 +1027,7 @@ docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:501:infra/opstack/op-geth/README.md:
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:502:infra/opstack/op-geth/README.md:144:One of the quickest ways to get Ethereum up and running on your machine is by using
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:503:infra/opstack/op-geth/README.md:165:Ethereum network via your own programs and not manually through the console. To aid
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:504:infra/opstack/op-geth/README.md:198:Ethereum nodes with exposed APIs! Further, all browser tabs can access locally
-docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:505:infra/opstack/op-geth/docs/postmortems/2021-08-22-split-postmortem.md:3:This is a post-mortem concerning the minority split that occurred on Ethereum mainnet on block [13107518](https://ethers
+docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:505:infra/opstack/op-geth/docs/postmortems/2021-08-22-split-postmortem.md:3:This is a post-mortem concerning the minority split that occurred on Ethereum mainnet on block [13107518](https://ghost
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:506:infra/opstack/op-geth/docs/postmortems/2021-08-22-split-postmortem.md:92:> The primary goal for the Geth team is the health of the Ethereum network as a whole, and the decision whether or not 
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:507:infra/opstack/op-geth/docs/postmortems/2021-08-22-split-postmortem.md:131:- [1] https://twitter.com/go_ethereum/status/1428051458763763721
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:508:infra/opstack/op-geth/docs/postmortems/2021-08-22-split-postmortem.md:150:https://twitter.com/go_ethereum/status/1428051458763763721
@@ -1090,7 +1090,7 @@ docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:566:docs/gst-migration/RENAME-MAP.md
 (no matches)
 
 ## scripts
-scripts/gst-leakage-gate.sh:52:PATTERN='(\bETH\b|(?i:\bethereum\b)|\bEther\b|Ξ|(?i:\b[a-z0-9-]+\.eth\b)|\bETH_[A-Z0-9_]+\b|\b[A-Z0-9_]+_ETH\b|\b[A-Za-z0-9]+_eth\b|\bnativeEth\b|\bethAmount\b|\bethBalance\b|\bETH_DECIMALS\b|\bETHERSCAN\b|\b
+scripts/gst-leakage-gate.sh:52:PATTERN='(\bETH\b|(?i:\bethereum\b)|\bEther\b|Ξ|(?i:\b[a-z0-9-]+\.eth\b)|\bETH_[A-Z0-9_]+\b|\b[A-Z0-9_]+_ETH\b|\b[A-Za-z0-9]+_eth\b|\bnativeEth\b|\bethAmount\b|\bethBalance\b|\bETH_DECIMALS\b|\bghostCAN\b|\b
 
 ## tools
 (no matches)

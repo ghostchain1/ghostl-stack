@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import fs from "node:fs";
 import path from "node:path";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 
 const ROOT_DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const CONFIG_PATH = process.env.AI_POLICY_CONFIG || path.join(ROOT_DIR, "ops", "governance", "ai-policy-l2.json");
@@ -25,17 +25,17 @@ const POLICY_REGISTRY_ABI = [
 ];
 
 const normalizeAddress = (name, value) => {
-  if (!value || !ethers.isAddress(value)) {
+  if (!value || !ghost.isAddress(value)) {
     throw new Error(`missing_or_invalid_${name}`);
   }
-  return ethers.getAddress(value);
+  return ghost.getAddress(value);
 };
 
 const normalizeBytes32 = (value, label) => {
-  if (!value) return ethers.ZeroHash;
-  if (ethers.isHexString(value, 32)) return value;
+  if (!value) return ghost.ZeroHash;
+  if (ghost.isHexString(value, 32)) return value;
   try {
-    return ethers.id(String(value));
+    return ghost.id(String(value));
   } catch (err) {
     throw new Error(`invalid_${label}:${value}`);
   }
@@ -50,7 +50,7 @@ const stableStringify = (obj) => {
 
 const computePolicyHash = (policy) => {
   const payload = stableStringify(policy);
-  return ethers.keccak256(ethers.toUtf8Bytes(payload));
+  return ghost.keccak256(ghost.toUtf8Bytes(payload));
 };
 
 const hasFunction = (iface, signature) => {
@@ -63,7 +63,7 @@ const hasFunction = (iface, signature) => {
 };
 
 const buildExecutorCalldata = (executorAbi, calls, mode) => {
-  const iface = new ethers.Interface(executorAbi);
+  const iface = new ghost.Interface(executorAbi);
   const resolvedMode =
     mode ||
     (hasFunction(iface, "executeBatch(address[],uint256[],bytes[])")
@@ -99,13 +99,13 @@ const buildExecutorCalldata = (executorAbi, calls, mode) => {
 };
 
 const computeGovernorHash = (target, value, calldata, description) => {
-  const coder = ethers.AbiCoder.defaultAbiCoder();
-  return ethers.keccak256(coder.encode(["address", "uint256", "bytes", "string"], [target, value, calldata, description]));
+  const coder = ghost.AbiCoder.defaultAbiCoder();
+  return ghost.keccak256(coder.encode(["address", "uint256", "bytes", "string"], [target, value, calldata, description]));
 };
 
 const computeProposalHash = (executor, calldata, description) => {
-  const coder = ethers.AbiCoder.defaultAbiCoder();
-  return ethers.keccak256(coder.encode(["address", "bytes", "string"], [executor, calldata, description]));
+  const coder = ghost.AbiCoder.defaultAbiCoder();
+  return ghost.keccak256(coder.encode(["address", "bytes", "string"], [executor, calldata, description]));
 };
 
 if (!fs.existsSync(CONFIG_PATH)) {
@@ -121,7 +121,7 @@ const enabled = policyConfig.enabled !== false;
 const executors = Array.isArray(policyConfig.executors) ? policyConfig.executors : [];
 const actions = Array.isArray(policyConfig.actions) ? policyConfig.actions : [];
 
-const registryIface = new ethers.Interface(POLICY_REGISTRY_ABI);
+const registryIface = new ghost.Interface(POLICY_REGISTRY_ABI);
 const calls = [];
 
 calls.push({
@@ -142,7 +142,7 @@ executors.forEach((executor) => {
 actions.forEach((action) => {
   const actionHash = normalizeBytes32(action.name, "action");
   const scopeHash = normalizeBytes32(action.scope || "L2", "scope");
-  const evidenceHash = normalizeBytes32(action.evidenceHash || ethers.ZeroHash, "evidenceHash");
+  const evidenceHash = normalizeBytes32(action.evidenceHash || ghost.ZeroHash, "evidenceHash");
   calls.push({
     target: policyRegistry,
     value: 0n,

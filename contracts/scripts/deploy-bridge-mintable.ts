@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 function getEnv(name: string) {
   const v = process.env[name];
@@ -14,12 +14,12 @@ async function main() {
   const decimals = Number(getEnv("TOKEN_DECIMALS"));
   const bridge = getEnv("BRIDGE");
 
-  const [deployer] = await ethers.getSigners();
+  const [deployer] = await ghost.getSigners();
   console.log(`Deployer: ${deployer.address}`);
   console.log(`Bridge: ${bridge}`);
   console.log(`Token: ${name} (${symbol}), decimals: ${decimals}`);
 
-  const Token = await ethers.getContractFactory("BridgeMintableERC20");
+  const Token = await ghost.getContractFactory("BridgeMintableERC20");
   const token = await Token.deploy(name, symbol, decimals, bridge);
   await token.waitForDeployment();
 

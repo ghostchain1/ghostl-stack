@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import fs from "node:fs";
 import path from "node:path";
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 
 const repoRoot = path.resolve(__dirname, "..", "..", "..");
 const DEFAULT_REPORT_PATH = path.join(
@@ -67,10 +67,10 @@ const governorAddress =
   "";
 
 const normalizeAddress = (label: string, value: string) => {
-  if (!value || !ethers.isAddress(value)) {
+  if (!value || !ghost.isAddress(value)) {
     throw new Error(`missing_or_invalid_${label}`);
   }
-  return ethers.getAddress(value);
+  return ghost.getAddress(value);
 };
 
 const SUPPORT =
@@ -78,8 +78,8 @@ const SUPPORT =
 
 async function main() {
   const governor = normalizeAddress("GOVERNOR_ADDRESS", governorAddress);
-  const [voter] = await ethers.getSigners();
-  const governorContract = new ethers.Contract(
+  const [voter] = await ghost.getSigners();
+  const governorContract = new ghost.Contract(
     governor,
     [
       "function vote(uint256 id, bool support) external",

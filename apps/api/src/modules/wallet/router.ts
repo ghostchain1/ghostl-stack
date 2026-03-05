@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { ethers } from 'ethers';
+import { ghost } from 'ghost';
 import type { GhostWalletService } from '../../services/ghostwallet';
 import { requirePermission } from '../../lib/rbac';
 import { ghostWalletRpcManager } from '../../services/rpc-manager';
@@ -61,15 +61,15 @@ export const buildWalletRouter = (ghostWallet: GhostWalletService) => {
     }
     try {
       if (token) {
-        const erc20 = new ethers.Contract(
+        const erc20 = new ghost.Contract(
           token,
           ['function balanceOf(address) view returns (uint256)'],
-          new ethers.JsonRpcProvider(resolved.rpc)
+          new ghost.JsonRpcProvider(resolved.rpc)
         );
         const bal = await erc20.balanceOf(address);
         res.json({ address, token, balance: bal.toString() });
       } else {
-        const provider = new ethers.JsonRpcProvider(resolved.rpc);
+        const provider = new ghost.JsonRpcProvider(resolved.rpc);
         const bal = await provider.getBalance(address);
         res.json({ address, balance: bal.toString() });
       }

@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { ethers } from "hardhat";
+import { ghost } from "hardhat";
 import fs from "node:fs";
 import path from "node:path";
 import dotenv from "dotenv";
@@ -61,13 +61,13 @@ async function main() {
     envFromFiles
   );
 
-  if (!timelock || !ethers.isAddress(timelock)) {
+  if (!timelock || !ghost.isAddress(timelock)) {
     throw new Error(
       "Missing timelock for MainnetLaunchGate (set MAINNET_LAUNCH_TIMELOCK_ADDRESS or TIMELOCK_ADDRESS in env)."
     );
   }
 
-  const Gate = await ethers.getContractFactory("MainnetLaunchGate");
+  const Gate = await ghost.getContractFactory("MainnetLaunchGate");
   const gate = await Gate.deploy(timelock);
   await gate.waitForDeployment();
 

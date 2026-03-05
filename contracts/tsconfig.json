@@ -8,5 +8,10 @@
     "resolveJsonModule": true,
     "types": ["node"]
   },
-  "include": ["hardhat.config.ts", "scripts/**/*.ts", "test/**/*.ts"]
+  "include": [
+    "type-extensions.d.ts",
+    "hardhat.config.ts",
+    "scripts/**/*.ts",
+    "test/**/*.ts"
+  ]
 }

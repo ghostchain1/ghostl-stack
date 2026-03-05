@@ -26,7 +26,7 @@ import express, {
 import { Pool }    from 'pg';
 import pino        from 'pino';
 import pinoHttp    from 'pino-http';
-import { ethers }  from 'ethers';
+import { ghost }  from 'ghost';
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const PORT           = Number(process.env.PORT || 3000);
@@ -67,9 +67,9 @@ const REGISTRY_ABI = [
 
 // ── DB pool ───────────────────────────────────────────────────────────────────
 let db: Pool | null = null;
-let ethProvider: ethers.JsonRpcProvider | null = null;
-let registryContract: ethers.Contract | null   = null;
-let resolverContract:  ethers.Contract | null  = null;
+let ethProvider: ghost.JsonRpcProvider | null = null;
+let registryContract: ghost.Contract | null   = null;
+let resolverContract:  ghost.Contract | null  = null;
 
 function getDb(): Pool {
   if (!db) {
@@ -79,18 +79,18 @@ function getDb(): Pool {
   return db;
 }
 
-function getProvider(): ethers.JsonRpcProvider {
-  if (!ethProvider) ethProvider = new ethers.JsonRpcProvider(L1_RPC_URL);
+function getProvider(): ghost.JsonRpcProvider {
+  if (!ethProvider) ethProvider = new ghost.JsonRpcProvider(L1_RPC_URL);
   return ethProvider;
 }
 
-function getRegistry(): ethers.Contract { 
-  if (!registryContract) registryContract = new ethers.Contract(GNS_REGISTRY, REGISTRY_ABI, getProvider());
+function getRegistry(): ghost.Contract { 
+  if (!registryContract) registryContract = new ghost.Contract(GNS_REGISTRY, REGISTRY_ABI, getProvider());
   return registryContract;
 }
 
-function getResolver(): ethers.Contract {
-  if (!resolverContract) resolverContract = new ethers.Contract(GNS_RESOLVER, RESOLVER_ABI, getProvider());
+function getResolver(): ghost.Contract {
+  if (!resolverContract) resolverContract = new ghost.Contract(GNS_RESOLVER, RESOLVER_ABI, getProvider());
   return resolverContract;
 }
 
@@ -100,8 +100,8 @@ function namehash(name: string): string {
   if (name === '') return node;
   const labels = name.split('.').reverse();
   for (const label of labels) {
-    const lhex  = ethers.keccak256(ethers.toUtf8Bytes(label));
-    node = ethers.keccak256(ethers.concat([node, lhex]));
+    const lhex  = ghost.keccak256(ghost.toUtf8Bytes(label));
+    node = ghost.keccak256(ghost.concat([node, lhex]));
   }
   return node;
 }

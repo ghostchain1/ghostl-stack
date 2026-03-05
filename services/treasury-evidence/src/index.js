@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import PDFDocument from "pdfkit";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 
 const RPC_URL = process.env.RPC_L1 || process.env.RPC_URL || "";
 const RECEIPTS_ADDRESS = process.env.TREASURY_RECEIPTS_ADDRESS || "";
@@ -24,7 +24,7 @@ const stableStringify = (value) => {
   return JSON.stringify(value);
 };
 
-const hashOf = (value) => ethers.keccak256(ethers.toUtf8Bytes(stableStringify(value)));
+const hashOf = (value) => ghost.keccak256(ghost.toUtf8Bytes(stableStringify(value)));
 
 const toSerializable = (value) => {
   if (typeof value === "bigint") return value.toString();
@@ -36,7 +36,7 @@ const toSerializable = (value) => {
 };
 
 const buildMerkleRoot = (leaves) => {
-  if (leaves.length === 0) return ethers.ZeroHash;
+  if (leaves.length === 0) return ghost.ZeroHash;
   let level = leaves.slice().sort();
   while (level.length > 1) {
     const next = [];
@@ -87,7 +87,7 @@ async function main() {
   if (!GOVERNOR_ADDRESS) throw new Error("GOVERNOR_ADDRESS required");
   if (!EXECUTOR_ADDRESS) throw new Error("PROPOSAL_EXECUTOR_ADDRESS required");
 
-  const provider = new ethers.JsonRpcProvider(RPC_URL);
+  const provider = new ghost.JsonRpcProvider(RPC_URL);
   const latest = await provider.getBlockNumber();
   const toBlock = TO_BLOCK ? Number(TO_BLOCK) : latest;
   const fromBlock = FROM_BLOCK ? Number(FROM_BLOCK) : Math.max(0, toBlock - 5000);
@@ -112,9 +112,9 @@ async function main() {
     "function delay() external view returns (uint256)"
   ];
 
-  const receiptsContract = new ethers.Contract(RECEIPTS_ADDRESS, receiptsAbi, provider);
-  const governorContract = new ethers.Contract(GOVERNOR_ADDRESS, governorAbi, provider);
-  const executorContract = new ethers.Contract(EXECUTOR_ADDRESS, executorAbi, provider);
+  const receiptsContract = new ghost.Contract(RECEIPTS_ADDRESS, receiptsAbi, provider);
+  const governorContract = new ghost.Contract(GOVERNOR_ADDRESS, governorAbi, provider);
+  const executorContract = new ghost.Contract(EXECUTOR_ADDRESS, executorAbi, provider);
 
   const receiptLogs = await receiptsContract.queryFilter("ReceiptRecorded", fromBlock, toBlock);
   const receipts = [];
@@ -246,8 +246,8 @@ async function main() {
 
   let signature = null;
   if (SIGNER_KEY) {
-    const wallet = new ethers.Wallet(SIGNER_KEY);
-    const sig = await wallet.signMessage(ethers.getBytes(packHash));
+    const wallet = new ghost.Wallet(SIGNER_KEY);
+    const sig = await wallet.signMessage(ghost.getBytes(packHash));
     signature = { signer: wallet.address, signature: sig };
   }
 

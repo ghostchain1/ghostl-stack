@@ -1,4 +1,4 @@
-import { JsonRpcProvider } from 'ethers';
+import { JsonRpcProvider } from 'ghost';
 import WebSocket from 'ws';
 import { env } from '../config/env';
 

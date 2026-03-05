@@ -3,7 +3,7 @@
  * Deploys MockDisputeGameFactory to the current dev L1/L2 endpoints.
  * Useful for unblocking proposers/challengers when you just need a live factory address.
  */
-const { ethers } = require("ethers");
+const { ghost } = require("ghost");
 const path = require("path");
 const fs = require("fs");
 
@@ -21,11 +21,11 @@ if (!DEFAULT_PK) {
 }
 
 async function fundAndDeploy(rpcUrl, label, chainId) {
-  const provider = new ethers.JsonRpcProvider(rpcUrl, { chainId, name: `${label.toLowerCase()}-chain` });
-  const deployer = new ethers.Wallet(DEFAULT_PK, provider);
-  const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, deployer);
+  const provider = new ghost.JsonRpcProvider(rpcUrl, { chainId, name: `${label.toLowerCase()}-chain` });
+  const deployer = new ghost.Wallet(DEFAULT_PK, provider);
+  const factory = new ghost.ContractFactory(artifact.abi, artifact.bytecode, deployer);
   console.log(`[${label}] Deploying MockDisputeGameFactory from ${await deployer.getAddress()}...`);
-  const feeOpts = { maxPriorityFeePerGas: ethers.parseUnits("1", "gwei"), maxFeePerGas: ethers.parseUnits("10", "gwei") };
+  const feeOpts = { maxPriorityFeePerGas: ghost.parseUnits("1", "gwei"), maxFeePerGas: ghost.parseUnits("10", "gwei") };
   const contract = await factory.deploy({ gasLimit: 6_000_000n, ...feeOpts });
   const txHash = contract.deploymentTransaction().hash;
   let receipt = null;

@@ -70,7 +70,7 @@ This map is scoped to first-party GhostStack paths and split into:
 - No matches in first-party scope for:
   - `ethAmount`, `ethBalance`, `nativeEth`
   - `*_eth` identifiers
-  - `ETH_RPC`, `ETH_CHAIN_ID`, `ETH_PRIVATE_KEY`, `ETHERSCAN_*`
+  - `ETH_RPC`, `ETH_CHAIN_ID`, `ETH_PRIVATE_KEY`, `ghostCAN_*`
 
 ### forward_rule
 - Keep enforced rename policy as guardrail:

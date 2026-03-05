@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 import dotenv from "dotenv";
 import fs from "node:fs";
 import path from "node:path";
@@ -83,7 +83,7 @@ async function main() {
     envFromFiles
   );
 
-  if (!GOVERNOR || !ethers.isAddress(GOVERNOR)) {
+  if (!GOVERNOR || !ghost.isAddress(GOVERNOR)) {
     throw new Error("Missing GOVERNOR address (env GOVERNOR or stack.env GOVERNOR_ADDRESS_L1)");
   }
   if (!RPC_URL) {
@@ -94,9 +94,9 @@ async function main() {
   }
 
   const governorAbi = ["function propose(address target,uint256 value,bytes data) external returns (uint256)"];
-  const provider = new ethers.JsonRpcProvider(RPC_URL);
-  const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
-  const governor = new ethers.Contract(GOVERNOR, governorAbi, wallet);
+  const provider = new ghost.JsonRpcProvider(RPC_URL);
+  const wallet = new ghost.Wallet(PRIVATE_KEY, provider);
+  const governor = new ghost.Contract(GOVERNOR, governorAbi, wallet);
 
   const target = payload.proposal.target;
   const value = BigInt(payload.proposal.value || "0");

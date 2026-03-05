@@ -18,7 +18,7 @@
         aes-js
         typescript
         tslib
-        ethers
+        ghost
         ws
         undici-types
         @adraffy
@@ -5338,7 +5338,7 @@
         lib
         types
         index-fetch.js
-      @ethersproject
+      @ghostproject
         bytes
         properties
         hash
@@ -6886,7 +6886,7 @@
         .github
         LICENSE
         test
-      ethers
+      ghost
         package.json
         README.md
         lib.esm
@@ -7011,11 +7011,11 @@
         edr-linux-arm64-musl
         ignition-core
         edr
-        hardhat-ignition-ethers
+        hardhat-ignition-ghost
         edr-linux-x64-musl
         solidity-analyzer-darwin-arm64
         hardhat-ignition
-        hardhat-ethers
+        hardhat-ghost
         solidity-analyzer-darwin-x64
         hardhat-toolbox
         ignition-ui
@@ -7570,7 +7570,7 @@
         sync.js
         LICENSE
       @typechain
-        ethers-v6
+        ghost-v6
         hardhat
       is-stream
         index.d.ts
@@ -9494,7 +9494,7 @@
         mime-types
         merge-descriptors
         fresh
-        ethers
+        ghost
         call-bind-apply-helpers
         es-define-property
         http-errors
@@ -9746,7 +9746,7 @@
         @rollup
         lodash.defaults
         postgres-date
-        ethers
+        ghost
         @jridgewell
         node-gyp-build-optional-packages
         .vite
@@ -10006,7 +10006,7 @@
         mime-types
         merge-descriptors
         fresh
-        ethers
+        ghost
         call-bind-apply-helpers
         es-define-property
         http-errors
@@ -10224,7 +10224,7 @@
         mime-types
         merge-descriptors
         fresh
-        ethers
+        ghost
         call-bind-apply-helpers
         @jridgewell
         es-define-property
@@ -10346,7 +10346,7 @@
         mime-types
         merge-descriptors
         fresh
-        ethers
+        ghost
         call-bind-apply-helpers
         es-define-property
         http-errors
@@ -10460,7 +10460,7 @@
         mime-types
         merge-descriptors
         fresh
-        ethers
+        ghost
         call-bind-apply-helpers
         es-define-property
         http-errors
@@ -11035,7 +11035,7 @@
         merge-descriptors
         minimist
         fresh
-        ethers
+        ghost
         call-bind-apply-helpers
         @jridgewell
         bl
@@ -11217,7 +11217,7 @@
         mime-types
         merge-descriptors
         fresh
-        ethers
+        ghost
         call-bind-apply-helpers
         es-define-property
         http-errors
@@ -11754,7 +11754,7 @@
         escalade
         lodash.defaults
         postgres-date
-        ethers
+        ghost
         call-bind-apply-helpers
         @jridgewell
         es-define-property
@@ -11878,7 +11878,7 @@
         mime-types
         merge-descriptors
         fresh
-        ethers
+        ghost
         call-bind-apply-helpers
         es-define-property
         http-errors
@@ -24092,7 +24092,7 @@
       index.js
       HISTORY.md
       LICENSE
-    ethers
+    ghost
       package.json
       README.md
       lib.esm
@@ -24106,8 +24106,8 @@
         index.js
         hash
         _version.js
-        ethers.d.ts
-        ethers.js.map
+        ghost.d.ts
+        ghost.js.map
         providers
         index.js.map
         utils
@@ -24116,11 +24116,11 @@
         _version.js.map
         constants
         abi
-        ethers.d.ts.map
+        ghost.d.ts.map
         crypto
         wordlists
         address
-        ethers.js
+        ghost.js
       src.ts
         thirdparty.d.ts
         wallet
@@ -24133,7 +24133,7 @@
         abi
         crypto
         index.ts
-        ethers.ts
+        ghost.ts
         wordlists
         address
         _version.ts
@@ -24142,15 +24142,15 @@
       CHANGELOG.md
       dist
         README.md
-        ethers.js.map
+        ghost.js.map
         wordlists-extra.js.map
-        ethers.umd.min.js
+        ghost.umd.min.js
         wordlists-extra.min.js
         wordlists-extra.js
-        ethers.min.js
-        ethers.umd.js.map
-        ethers.umd.js
-        ethers.js
+        ghost.min.js
+        ghost.umd.js.map
+        ghost.umd.js
+        ghost.js
       SECURITY.md
       lib.commonjs
         index.d.ts
@@ -24163,8 +24163,8 @@
         index.js
         hash
         _version.js
-        ethers.d.ts
-        ethers.js.map
+        ghost.d.ts
+        ghost.js.map
         providers
         index.js.map
         utils
@@ -24173,11 +24173,11 @@
         _version.js.map
         constants
         abi
-        ethers.d.ts.map
+        ghost.d.ts.map
         crypto
         wordlists
         address
-        ethers.js
+        ghost.js
       node_modules
         @types
         tslib

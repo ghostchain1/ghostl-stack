@@ -39,7 +39,7 @@ async function main() {
     params: [executor, "0x3635C9ADC5DEA00000"]
   });
 
-  const signer = await hre.ethers.getSigner(executor);
+  const signer = await hre.ghost.getSigner(executor);
 
   for (let i = 0; i < calls.length; i += 1) {
     const call = calls[i];

@@ -1,5 +1,5 @@
 import express from "express";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 
 const PORT = Number(process.env.PORT || 7636);
 const registryUrl = process.env.RPC_REGISTRY_URL || "http://ghost-registry:8088/v1/endpoints";
@@ -59,7 +59,7 @@ const resolveRpc = async (layer) => {
 
 const fetchPeers = async (rpc) => {
   try {
-    const provider = new ethers.JsonRpcProvider(rpc);
+    const provider = new ghost.JsonRpcProvider(rpc);
     const peersHex = await provider.send("net_peerCount", []);
     return { rpc, peers: parseInt(peersHex, 16) };
   } catch (e) {

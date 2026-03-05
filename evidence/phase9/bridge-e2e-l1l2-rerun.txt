@@ -4,11 +4,11 @@ Failed to run ensure_l2_mintable_erc20.ts
 ProviderError: execution reverted
     at HttpProvider.request (/home/ghost/ghostl-stack/contracts/node_modules/hardhat/src/internal/core/providers/http.ts:116:21)
     at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async HardhatEthersProvider.estimateGas (/home/ghost/ghostl-stack/contracts/node_modules/@nomicfoundation/hardhat-ethers/src/internal/hardhat-ethers-provider.ts:246:27)
-    at async /home/ghost/ghostl-stack/contracts/node_modules/@nomicfoundation/hardhat-ethers/src/signers.ts:339:35
+    at async HardhatghostProvider.estimateGas (/home/ghost/ghostl-stack/contracts/node_modules/@nomicfoundation/hardhat-ghost/src/internal/hardhat-ghost-provider.ts:246:27)
+    at async /home/ghost/ghostl-stack/contracts/node_modules/@nomicfoundation/hardhat-ghost/src/signers.ts:339:35
     at async Promise.all (index 0)
-    at async HardhatEthersSigner._sendUncheckedTransaction (/home/ghost/ghostl-stack/contracts/node_modules/@nomicfoundation/hardhat-ethers/src/signers.ts:360:7)
-    at async HardhatEthersSigner.sendTransaction (/home/ghost/ghostl-stack/contracts/node_modules/@nomicfoundation/hardhat-ethers/src/signers.ts:185:18)
-    at async send (/home/ghost/ghostl-stack/contracts/node_modules/ethers/src.ts/contract/contract.ts:313:20)
-    at async Proxy.createOptimismMintableERC20 (/home/ghost/ghostl-stack/contracts/node_modules/ethers/src.ts/contract/contract.ts:352:16)
+    at async HardhatghostSigner._sendUncheckedTransaction (/home/ghost/ghostl-stack/contracts/node_modules/@nomicfoundation/hardhat-ghost/src/signers.ts:360:7)
+    at async HardhatghostSigner.sendTransaction (/home/ghost/ghostl-stack/contracts/node_modules/@nomicfoundation/hardhat-ghost/src/signers.ts:185:18)
+    at async send (/home/ghost/ghostl-stack/contracts/node_modules/ghost/src.ts/contract/contract.ts:313:20)
+    at async Proxy.createOptimismMintableERC20 (/home/ghost/ghostl-stack/contracts/node_modules/ghost/src.ts/contract/contract.ts:352:16)
     at async main (/home/ghost/ghostl-stack/contracts/scripts/ensure_l2_mintable_erc20.ts:90:14)

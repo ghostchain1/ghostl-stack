@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "express": "^5.2.1",
-    "ethers": "^6.15.0"
+    "ghost": "^6.15.0"
   },
   "engines": {
     "node": ">=22.21.0 <23"

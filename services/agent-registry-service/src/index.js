@@ -1,7 +1,7 @@
 import express from "express";
 import fs from "node:fs";
 import path from "node:path";
-import { ethers } from "ethers";
+import { ghost } from "ghost";
 
 const PORT = Number(process.env.PORT || 7701);
 const STORE_PATH = process.env.AGENT_REGISTRY_STORE || path.join(process.cwd(), "data", "agent-registry.json");
@@ -42,15 +42,15 @@ const writeJson = (filePath, value) => {
 };
 
 const hashOrBytes32 = (value) => {
-  if (!value) return ethers.ZeroHash;
-  if (typeof value === "string" && ethers.isHexString(value, 32)) return value;
-  return ethers.keccak256(ethers.toUtf8Bytes(String(value)));
+  if (!value) return ghost.ZeroHash;
+  if (typeof value === "string" && ghost.isHexString(value, 32)) return value;
+  return ghost.keccak256(ghost.toUtf8Bytes(String(value)));
 };
 
 const buildPolicyClient = () => {
-  if (!POLICY_RPC_URL || !POLICY_CONTRACT || !ethers.isAddress(POLICY_CONTRACT)) return null;
-  const provider = new ethers.JsonRpcProvider(POLICY_RPC_URL);
-  return new ethers.Contract(
+  if (!POLICY_RPC_URL || !POLICY_CONTRACT || !ghost.isAddress(POLICY_CONTRACT)) return null;
+  const provider = new ghost.JsonRpcProvider(POLICY_RPC_URL);
+  return new ghost.Contract(
     POLICY_CONTRACT,
     [
       "function isActionAllowed(bytes32 role,bytes32 action) view returns (bool)",
@@ -63,9 +63,9 @@ const buildPolicyClient = () => {
 const policyClient = buildPolicyClient();
 
 const buildRegistryClient = () => {
-  if (!REGISTRY_RPC_URL || !REGISTRY_CONTRACT || !ethers.isAddress(REGISTRY_CONTRACT)) return null;
-  const provider = new ethers.JsonRpcProvider(REGISTRY_RPC_URL);
-  return new ethers.Contract(
+  if (!REGISTRY_RPC_URL || !REGISTRY_CONTRACT || !ghost.isAddress(REGISTRY_CONTRACT)) return null;
+  const provider = new ghost.JsonRpcProvider(REGISTRY_RPC_URL);
+  return new ghost.Contract(
     REGISTRY_CONTRACT,
     [
       "function agentCount() view returns (uint256)",

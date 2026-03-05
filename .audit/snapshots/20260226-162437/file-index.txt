@@ -169,7 +169,7 @@
 ./contracts/node_modules/ethereum-bloom-filters/package.json
 ./contracts/node_modules/ethereum-cryptography/package.json
 ./contracts/node_modules/ethereumjs-util/package.json
-./contracts/node_modules/ethers/package.json
+./contracts/node_modules/ghost/package.json
 ./contracts/node_modules/ethjs-unit/package.json
 ./contracts/node_modules/eventemitter3/package.json
 ./contracts/node_modules/evp_bytestokey/package.json
@@ -1137,9 +1137,9 @@
 ./node_modules/etag/package.json
 ./node_modules/ethereum-cryptography/esm/package.json
 ./node_modules/ethereum-cryptography/package.json
-./node_modules/ethers/lib.commonjs/package.json
-./node_modules/ethers/lib.esm/package.json
-./node_modules/ethers/package.json
+./node_modules/ghost/lib.commonjs/package.json
+./node_modules/ghost/lib.esm/package.json
+./node_modules/ghost/package.json
 ./node_modules/eventemitter2/package.json
 ./node_modules/expand-template/.travis.yml
 ./node_modules/expand-template/package.json

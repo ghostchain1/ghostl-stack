@@ -56,6 +56,13 @@ scrape_configs:
     static_configs:
       - targets: ["host.docker.internal:28546"]
 
+  - job_name: ghostbrain-rpc
+    metrics_path: /api/v1/rpc/metrics
+    static_configs:
+      - targets: ["ghostbrain-core:7900"]
+    # NOTE: ghostbrain-core auth is HMAC-signed; Prometheus reads this public
+    # metrics endpoint which is open to trusted scrape targets inside ghostbrain-net.
+
   - job_name: consensus-telemetry
     metrics_path: /metrics
     static_configs:

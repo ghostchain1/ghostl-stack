@@ -6,7 +6,7 @@ import {
   keccak256,
   toUtf8Bytes,
   type InterfaceAbi
-} from "ethers";
+} from "ghost";
 import type { AIAttestation, GhostLayer } from "./attestation.js";
 import { POLICY_KEYS, type LayerConfig } from "./config.js";
 

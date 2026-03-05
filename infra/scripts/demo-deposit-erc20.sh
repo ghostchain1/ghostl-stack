@@ -36,9 +36,9 @@ case "$RPC_L2_EFFECTIVE" in
   *host.docker.internal*) RPC_L2_EFFECTIVE="http://127.0.0.1:29547" ;;
 esac
 
-ETHERS_MODULE="$ROOT_DIR/contracts/node_modules/ethers"
-if [ ! -d "$ETHERS_MODULE" ]; then
-  echo "Missing ethers module at $ETHERS_MODULE (run: cd contracts && npm ci)" >&2
+ghost_MODULE="$ROOT_DIR/contracts/node_modules/ghost"
+if [ ! -d "$ghost_MODULE" ]; then
+  echo "Missing ghost module at $ghost_MODULE (run: cd contracts && npm ci)" >&2
   exit 1
 fi
 
@@ -52,21 +52,21 @@ if [ -z "$TOKEN_ADDRESS" ]; then
 fi
 
 DEMO_AMOUNT_WEI="$(
-  ETHERS_MODULE="$ETHERS_MODULE" AMT="$DEMO_AMOUNT_GST" node -e '
-    const { parseEther } = require(process.env.ETHERS_MODULE);
+  ghost_MODULE="$ghost_MODULE" AMT="$DEMO_AMOUNT_GST" node -e '
+    const { parseEther } = require(process.env.ghost_MODULE);
     process.stdout.write(parseEther(process.env.AMT).toString());
   '
 )"
 DEPOSITOR="$(
-  ETHERS_MODULE="$ETHERS_MODULE" PK="$DEPLOYER_PRIVATE_KEY" node -e '
-    const { Wallet } = require(process.env.ETHERS_MODULE);
+  ghost_MODULE="$ghost_MODULE" PK="$DEPLOYER_PRIVATE_KEY" node -e '
+    const { Wallet } = require(process.env.ghost_MODULE);
     process.stdout.write(new Wallet(process.env.PK).address);
   '
 )"
 
 BALANCE_WEI="$(
-  ETHERS_MODULE="$ETHERS_MODULE" RPC_L2="$RPC_L2_EFFECTIVE" TOKEN="$TOKEN_ADDRESS" ACCOUNT="$DEPOSITOR" node -e '
-    const { JsonRpcProvider, Contract } = require(process.env.ETHERS_MODULE);
+  ghost_MODULE="$ghost_MODULE" RPC_L2="$RPC_L2_EFFECTIVE" TOKEN="$TOKEN_ADDRESS" ACCOUNT="$DEPOSITOR" node -e '
+    const { JsonRpcProvider, Contract } = require(process.env.ghost_MODULE);
     const provider = new JsonRpcProvider(process.env.RPC_L2);
     const token = new Contract(process.env.TOKEN, ["function balanceOf(address) view returns (uint256)"], provider);
     token.balanceOf(process.env.ACCOUNT).then((b) => process.stdout.write(b.toString())).catch(() => process.stdout.write("0"));
@@ -78,7 +78,7 @@ if [ "$BALANCE_WEI" -lt "$DEMO_AMOUNT_WEI" ]; then
   echo "Deploying a fresh TestERC20 on L2 and minting demo funds to depositor..."
 
   MINT_AMOUNT_WEI="$(
-    ETHERS_MODULE="$ETHERS_MODULE" AMT="$DEMO_AMOUNT_WEI" node -e '
+    ghost_MODULE="$ghost_MODULE" AMT="$DEMO_AMOUNT_WEI" node -e '
       // Mint 100x the requested amount to keep repeated E2E runs cheap.
       const v = BigInt(process.env.AMT);
       process.stdout.write((v * 100n).toString());

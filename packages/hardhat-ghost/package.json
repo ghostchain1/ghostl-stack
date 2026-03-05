@@ -1,0 +1,23 @@
+{
+  "name": "hardhat-ghost",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Hardhat plugin — injects the Ghost SDK namespace into the Hardhat Runtime Environment",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "hardhat": "^2.0.0",
+    "@ghostchain/sdk": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "hardhat": "^2.22.19",
+    "@ghostchain/sdk": "*"
+  },
+  "keywords": ["hardhat", "ghost", "ghostchain", "gst", "plugin"],
+  "license": "MIT"
+}
