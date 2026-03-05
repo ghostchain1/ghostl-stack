@@ -1,0 +1,17 @@
+{
+  "name": "@ghostchain/dtn-relay",
+  "version": "1.0.0",
+  "description": "Delay/Disruption-Tolerant Network relay for offline governance bundles",
+  "type": "module",
+  "main": "./src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test src/test/*.test.js"
+  },
+  "license": "MIT",
+  "dependencies": {},
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
