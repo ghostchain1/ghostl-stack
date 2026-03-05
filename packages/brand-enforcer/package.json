@@ -1,0 +1,25 @@
+{
+  "name": "@ghostchain/brand-enforcer",
+  "version": "1.0.0",
+  "description": "GhostChain brand invariant enforcer — validates all code surfaces for Ghost/GST canonical naming",
+  "type": "module",
+  "main": "./index.js",
+  "bin": {
+    "ghost-brand": "./src/cli.js"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./rules": "./src/rules.js"
+  },
+  "scripts": {
+    "test": "node --test test/brand.test.js",
+    "scan": "node src/cli.js scan .",
+    "lint": "eslint index.js src/"
+  },
+  "keywords": ["ghostchain", "brand", "gst", "enforcement", "compliance"],
+  "license": "MIT",
+  "dependencies": {},
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

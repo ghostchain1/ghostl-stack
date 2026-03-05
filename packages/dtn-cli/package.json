@@ -1,0 +1,19 @@
+{
+  "name": "@ghostchain/dtn-cli",
+  "version": "1.0.0",
+  "description": "CLI for packing, verifying, and relaying GhostChain governance bundles over DTN",
+  "type": "module",
+  "bin": {
+    "dtn": "./src/cli.js"
+  },
+  "scripts": {
+    "test": "node --test src/test/*.test.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@ghostchain/governance-bundle": "*"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

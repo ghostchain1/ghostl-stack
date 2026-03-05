@@ -1,0 +1,22 @@
+{
+  "name": "@ghostchain/pq-crypto",
+  "version": "1.0.0",
+  "description": "Post-quantum hybrid cryptography for GhostChain — Ed25519 classical + ML-DSA-87 (Dilithium) PQ layer",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./classical": "./src/classical.js",
+    "./pq-stub": "./src/pq-stub.js"
+  },
+  "scripts": {
+    "test": "node --test test/pq.test.js",
+    "lint": "eslint index.js src/"
+  },
+  "keywords": ["ghostchain", "post-quantum", "hybrid", "ed25519", "dilithium", "ml-dsa"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "pqNote": "PQ layer is currently a HMAC-SHA3-512 structural stub. Replace src/pq-stub.js with @noble/post-quantum (ML-DSA-87) for production PQ security. See docs/pq-migration.md."
+}
