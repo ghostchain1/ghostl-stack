@@ -79,7 +79,9 @@
     "econ:up:devnet": "docker compose -f docker-compose.econ.devnet.yml up -d --build",
     "econ:up:testnet": "docker compose -f docker-compose.econ.testnet.yml up -d --build",
     "governance:constitution-proposal": "node --experimental-strip-types tools/governance/create-constitution-proposal.ts --proposal-id EXAMPLE-0001 --release-id local-release --release-gate 0x0000000000000000000000000000000000000001",
-    "ghostctl": "bash tools/ghostctl"
+    "ghostctl": "bash tools/ghostctl",
+    "test:sovereign-policy": "node --test tests/security/sovereign-regression.test.mjs",
+    "security:policy-gate": "npm run test:sovereign-policy && bash scripts/security/compose-hardening-audit.sh && bash scripts/verify-routing.sh"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",

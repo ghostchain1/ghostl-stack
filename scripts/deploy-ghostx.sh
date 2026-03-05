@@ -16,6 +16,7 @@ DEPLOY_OUT="$CONTRACTS_DIR/deployments/ghostx-l2.json"
 L2_RPC_URL="${L2_RPC_URL:-http://localhost:8547}"
 DEPLOYER="${DEPLOYER:-$(cast wallet address "$DEPLOYER_PRIVATE_KEY")}"
 TREASURY="${TREASURY:?TREASURY env var required}"
+STAKE_TOKEN="${STAKE_TOKEN:?STAKE_TOKEN env var required (GST or governance token address)}"
 
 echo "╔═══════════════════════════╗"
 echo "║   Ghost X – Deploy L2     ║"
@@ -23,6 +24,7 @@ echo "╚═══════════════════════�
 echo "  RPC      : $L2_RPC_URL"
 echo "  Deployer : $DEPLOYER"
 echo "  Treasury : $TREASURY"
+echo "  StakeToken: $STAKE_TOKEN"
 echo
 
 cd "$CONTRACTS_DIR"
@@ -43,12 +45,16 @@ fi
 FEE_COLLECTOR=$(jq -r '.feeCollector' "$DEPLOY_OUT")
 VAULT=$(jq -r         '.vault'        "$DEPLOY_OUT")
 ORDER_BOOK=$(jq -r    '.orderBook'    "$DEPLOY_OUT")
+BADGE=$(jq -r         '.badge'        "$DEPLOY_OUT")
+STAKING=$(jq -r       '.staking'      "$DEPLOY_OUT")
 
 echo
 echo "✔ Deployed:"
 echo "  FeeCollector : $FEE_COLLECTOR"
 echo "  Vault        : $VAULT"
 echo "  OrderBook    : $ORDER_BOOK"
+echo "  Badge        : $BADGE"
+echo "  Staking      : $STAKING"
 
 # ── Write/update .env.ghostx ───────────────────────────────────────────────────
 ENV_FILE="$REPO_DIR/.env.ghostx"
@@ -58,6 +64,9 @@ cat > "$ENV_FILE" <<EOF
 GHOSTX_FEE_COLLECTOR=$FEE_COLLECTOR
 GHOSTX_VAULT=$VAULT
 GHOSTX_ORDER_BOOK=$ORDER_BOOK
+GHOSTX_BADGE=$BADGE
+GHOSTX_STAKING=$STAKING
+GHOSTX_STAKE_TOKEN=$STAKE_TOKEN
 L2_RPC_URL=$L2_RPC_URL
 TREASURY=$TREASURY
 EOF

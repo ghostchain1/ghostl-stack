@@ -12,6 +12,12 @@ COMPOSE_FILES=(
   "docker-compose.yml"
   "apps/docker-compose.yml"
   "observability/infra/docker-compose.yml"
+  # SOVEREIGN: additional compose files added to hardening gate.
+  "docker-compose.phase3.yml"
+  "docker-compose.sovereign.yml"
+  "docker-compose.ghostbrain.yml"
+  "docker-compose.cascading-finality.yml"
+  "infra/docker/docker-compose.prod.yml"
 )
 
 FAILURES=0
@@ -125,6 +131,39 @@ check_file() {
     if has_line "GF_SECURITY_ADMIN_PASSWORD[[:space:]]*[:=][[:space:]]*(\\$\\{[^}]*:-admin\\}|admin)([[:space:]]*$|[[:space:]]*#|[[:space:]]*,)" "$check_target"; then
       echo "[compose-hardening] FAIL weak Grafana admin password default found in $file"
       FAILURES=$((FAILURES + 1))
+    fi
+  fi
+
+  # SOVEREIGN: Kong admin port must not be exposed on 0.0.0.0.
+  if has_line "KONG_ADMIN_LISTEN[[:space:]]*:[[:space:]]*[\"']?0\\.0\\.0\\.0:" "$check_target"; then
+    echo "[compose-hardening] FAIL KONG_ADMIN_LISTEN bound to 0.0.0.0 found in $file (expected 127.0.0.1:8001)"
+    FAILURES=$((FAILURES + 1))
+  else
+    if has_line "KONG_ADMIN_LISTEN" "$check_target"; then
+      echo "[compose-hardening] PASS KONG_ADMIN_LISTEN not bound to 0.0.0.0 in $file"
+    fi
+  fi
+
+  # SOVEREIGN: trustForwardHeader=true allows client-forged X-Forwarded-For bypass.
+  if has_line "trustForwardHeader[[:space:]]*=[[:space:]]*true" "$check_target"; then
+    echo "[compose-hardening] FAIL forwardauth.trustForwardHeader=true found in $file"
+    FAILURES=$((FAILURES + 1))
+  else
+    if has_line "trustForwardHeader" "$check_target"; then
+      echo "[compose-hardening] PASS trustForwardHeader is not true in $file"
+    fi
+  fi
+
+  # SOVEREIGN: writable docker.sock mounts require explicit justification.
+  if command -v rg >/dev/null 2>&1; then
+    if rg -n "/var/run/docker\\.sock:/var/run/docker\\.sock[^:]" "$path" \
+        | rg -v "docker\\.sock:ro" >/dev/null 2>&1; then
+      echo "[compose-hardening] WARN writable docker.sock mount found in $file (verify DOCKER_ACTIONS_ENABLED=false where unused)"
+    fi
+  else
+    if grep -En "/var/run/docker\\.sock:/var/run/docker\\.sock[^:]" "$path" \
+        | grep -Ev "docker\\.sock:ro" >/dev/null 2>&1; then
+      echo "[compose-hardening] WARN writable docker.sock mount found in $file (verify DOCKER_ACTIONS_ENABLED=false where unused)"
     fi
   fi
 

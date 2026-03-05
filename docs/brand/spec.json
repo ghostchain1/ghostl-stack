@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "Ghost",
+  "symbol": "GST",
+  "decimals": 18,
+  "chain": "GhostChain",
+  "chainIds": {
+    "L1": 14000101,
+    "L2": 901,
+    "L3": 903
+  },
+  "unit": "1000000000000000000",
+  "unitConstant": "GST_UNIT",
+  "forbiddenInTokenMetadata": ["ETH", "Ether", "Ethereum", "eth"],
+  "bridgeAllowlistPaths": [
+    "contracts/src/bridge/",
+    "contracts/lib/",
+    "docs/architecture/",
+    "docs/ghostchain-l1",
+    "docs/ghostchain-opstack",
+    "docs/dtn-governance-spec",
+    "services/dtn-relay/",
+    "AUDIT_REPORT",
+    "PLAN.md",
+    "README",
+    "CHANGELOG"
+  ],
+  "canonicalContracts": {
+    "GhostBrand": "contracts/src/GhostBrand.sol",
+    "RoutingLaw": "contracts/src/constitutional/RoutingLaw.sol",
+    "BrandingInvariant": "contracts/src/constitutional/BrandingInvariant.sol",
+    "TreasuryInvariant": "contracts/src/constitutional/TreasuryInvariant.sol",
+    "GovernanceExecutor": "contracts/src/constitutional/GovernanceExecutor.sol"
+  },
+  "routingLaw": {
+    "validRoutes": [
+      [903, 901],
+      [901, 14000101]
+    ],
+    "externalEgressSourceChainId": 14000101,
+    "forbiddenRoutes": [
+      [903, 14000101]
+    ]
+  },
+  "version": "1.0.0",
+  "updatedAt": "2026-02-27T00:00:00Z"
+}
