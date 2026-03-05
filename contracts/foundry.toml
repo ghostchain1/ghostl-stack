@@ -38,3 +38,15 @@ evm_version = "paris"
 test = "test/gns"
 out = "out-codex"
 cache_path = "cache-codex"
+
+# AI / GhostBrain agent contracts — run with: FOUNDRY_PROFILE=ai forge test
+[profile.ai]
+test = "test/ai"
+out = "out-codex"
+cache_path = "cache-codex"
+
+# Ghost X exchange test profile — run with: FOUNDRY_PROFILE=exchange forge test
+[profile.exchange]
+test = "test/exchange"
+out = "out-codex"
+cache_path = "cache-codex"
