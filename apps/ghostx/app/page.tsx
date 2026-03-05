@@ -3,16 +3,17 @@
  *
  * Layout:
  *   [Order Book]  |  [Place Order]
- *                      [Recent Fills]
+ *   [Fills]           [Badge]
  */
 "use client";
 
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 
-const OrderBook   = dynamic(() => import("../components/OrderBook"),   { ssr: false });
-const PlaceOrder  = dynamic(() => import("../components/PlaceOrder"),  { ssr: false });
-const RecentFills = dynamic(() => import("../components/RecentFills"), { ssr: false });
+const OrderBook    = dynamic(() => import("../components/OrderBook"),    { ssr: false });
+const PlaceOrder   = dynamic(() => import("../components/PlaceOrder"),   { ssr: false });
+const RecentFills  = dynamic(() => import("../components/RecentFills"),  { ssr: false });
+const BadgeDisplay = dynamic(() => import("../components/BadgeDisplay"), { ssr: false });
 
 // Default pair – can be made dynamic via query params.
 const DEFAULT_BASE  = process.env.NEXT_PUBLIC_DEFAULT_BASE  ?? "0x0000000000000000000000000000000000000001";
@@ -21,7 +22,7 @@ const DEFAULT_QUOTE = process.env.NEXT_PUBLIC_DEFAULT_QUOTE ?? "0x00000000000000
 export default function TradingPage() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-[1fr_380px] gap-4">
-      {/* Left column – order book */}
+      {/* Left column – order book + fills */}
       <section className="space-y-4">
         <Suspense fallback={<Skeleton h="h-96" />}>
           <OrderBook baseToken={DEFAULT_BASE} quoteToken={DEFAULT_QUOTE} />
@@ -31,10 +32,13 @@ export default function TradingPage() {
         </Suspense>
       </section>
 
-      {/* Right column – order placement */}
-      <section>
+      {/* Right column – order placement + badge */}
+      <section className="space-y-4">
         <Suspense fallback={<Skeleton h="h-80" />}>
           <PlaceOrder baseToken={DEFAULT_BASE} quoteToken={DEFAULT_QUOTE} />
+        </Suspense>
+        <Suspense fallback={<Skeleton h="h-40" />}>
+          <BadgeDisplay />
         </Suspense>
       </section>
     </div>
