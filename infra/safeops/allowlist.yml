@@ -1,0 +1,61 @@
+# GhostChain SafeOps Allowlist
+# ─────────────────────────────────────────────────────────────────────────────
+# This file governs which autonomous AI actions are permitted without
+# human operator countersignature.
+#
+# SECURITY: Editing this file requires governance proposal + multi-sig approval.
+# Any PR modifying this file triggers mandatory security review in CI (policy-gate).
+#
+# Structure:
+#   allowed_actions: list of Action enum values the Executor role may perform
+#   allowed_services: list of service names the Executor may act on
+#   allowed_governors: list of key IDs authorized to submit Governor actions
+#   pq_signing_keys: public key IDs allowed to sign governance bundles (hybrid PQ)
+#   dtn_bundle_signers: key IDs allowed in DTN relay bundle signatures
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Actions the AI Executor may perform without human approval
+allowed_actions:
+  - COLLECT_METRICS
+  - READ_LOGS
+  - HEALTH_CHECK
+  - FLUSH_CACHE
+  - SCALE_SERVICE
+  # NOTE: RESTART_SERVICE and ROTATE_SECRET intentionally omitted by default.
+  # Add only after governance vote. Use RESTART_SERVICE cautiously.
+
+# Services the Executor may act on autonomously
+allowed_services:
+  - ghost-api
+  - ghost-web
+  - ghost-worker
+  - ghost-jwks-guard
+
+# Key IDs authorized to submit Governor-level actions (requires GOVERNOR_APPROVAL_TOKEN)
+allowed_governors:
+  - governor-multisig-1
+  - governor-multisig-2
+  - governance-committee-1
+
+# Public key IDs authorized to sign PQ hybrid governance bundles
+# (classical Ed25519 + ML-DSA-87 when available)
+pq_signing_keys:
+  - gov-key-1-ed25519
+  - gov-key-2-ed25519
+  - # Add ML-DSA-87 keys here when PQ migration is complete (see docs/pq-migration.md)
+
+# Key IDs authorized to sign DTN relay governance bundles
+dtn_bundle_signers:
+  - governor-multisig-1
+  - governor-multisig-2
+  - offline-relay-node-1
+
+# Rate limits (overridable via env but listed here for documentation)
+# These are enforced in services/hyper-ghost-ai/src/supervisor.js
+rate_limits:
+  executor_actions_per_minute: 10
+  governor_actions_per_hour: 5
+
+# Emergency halt circuit breaker
+# If true, ALL executor and governor actions are refused regardless of allowlist
+emergency_halt: false

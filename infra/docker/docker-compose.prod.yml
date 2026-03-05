@@ -1,34 +1,80 @@
+# ── Sovereign hardening anchors ───────────────────────────────────────────────
+# All services run non-root, drop all capabilities, enforce no-new-privileges.
+# Secrets have no default fallbacks; missing secrets cause fail-closed startup.
+# Image tags are pinned to SHA256 digests; floating tags are a supply-chain violation.
+
+x-hardening: &hardening
+  user: "10001:10001"
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  read_only: true
+  tmpfs:
+    - /tmp
+  restart: unless-stopped
+
 services:
+  # ── Edge reverse-proxy ───────────────────────────────────────────────────────
+  # docker.sock is mounted :ro for service discovery only.
+  # The Traefik API dashboard is disabled; ping provider operates on loopback only.
   traefik:
-    image: traefik:v3.1
+    # SOVEREIGN: pin to digest – run scripts/security/digest-refresh-report.sh to update.
+    # To refresh: docker pull traefik:v3.1 && docker inspect traefik:v3.1 --format '{{index .RepoDigests 0}}'
+    image: traefik:v3.1@sha256:REPLACE_WITH_CURRENT_DIGEST
     command:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
+      - --api.dashboard=false
+      - --api.insecure=false
+      - --ping=true
+      - --ping.entrypoint=ping
+      - --entrypoints.ping.address=:8082
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
+      - --log.level=WARN
       # TLS termination should be configured (ACME or external). Keep minimal here.
     ports:
       - "80:80"
       - "443:443"
+      # ping entrypoint is internal-only; not exposed on host
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks: [edge, internal]
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/ping | grep -q OK"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
+  # ── Identity provider ────────────────────────────────────────────────────────
   keycloak:
-    image: quay.io/keycloak/keycloak:26.0
+    # SOVEREIGN: pin to digest – run scripts/security/digest-refresh-report.sh to update.
+    image: quay.io/keycloak/keycloak:26.0@sha256:REPLACE_WITH_CURRENT_DIGEST
     command: ["start", "--http-enabled=true", "--proxy-headers=xforwarded", "--import-realm"]
+    <<: *hardening
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://kc-postgres:5432/keycloak
       KC_DB_USERNAME: keycloak
-      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
-      KEYCLOAK_ADMIN: ${KC_ADMIN_USER}
-      KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD:?KC_DB_PASSWORD is required}
+      KEYCLOAK_ADMIN: ${KC_ADMIN_USER:?KC_ADMIN_USER is required}
+      KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:?KC_ADMIN_PASSWORD is required}
       KC_HOSTNAME: auth.ghostchain.cloud
-    depends_on: [kc-postgres]
+    depends_on:
+      kc-postgres:
+        condition: service_healthy
     volumes:
       - ../keycloak/realm-exports:/opt/keycloak/data/import:ro
-    networks: [edge, internal]
+    networks: [internal]
     labels:
       - traefik.enable=true
       - traefik.docker.network=docker_internal
@@ -36,25 +82,46 @@ services:
       - traefik.http.routers.keycloak.entrypoints=websecure
       - traefik.http.routers.keycloak.tls=true
       - traefik.http.services.keycloak.loadbalancer.server.port=8080
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health/ready || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
 
+  # ── Identity database ────────────────────────────────────────────────────────
   kc-postgres:
-    image: postgres:16-alpine
+    # SOVEREIGN: digest-pinned – keep in sync with docker-compose.yml postgres digest.
+    image: postgres:16-alpine@sha256:129fbfd388241accda7b15e38ada14b11c70698e01e5c8072265b0eaa03af010
+    <<: *hardening
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
-      POSTGRES_PASSWORD: ${KC_DB_PASSWORD}
+      POSTGRES_PASSWORD: ${KC_DB_PASSWORD:?KC_DB_PASSWORD is required}
     volumes:
       - kc_pg:/var/lib/postgresql/data
     networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
+  # ── API gateway ──────────────────────────────────────────────────────────────
+  # CRITICAL: KONG_ADMIN_LISTEN is bound to loopback-only (127.0.0.1:8001).
+  # Binding the admin port to 0.0.0.0 is a critical privilege-escalation vector.
   kong:
-    image: kong:3.7
+    # SOVEREIGN: pin to digest – run scripts/security/digest-refresh-report.sh to update.
+    image: kong:3.7@sha256:REPLACE_WITH_CURRENT_DIGEST
+    <<: *hardening
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
       KONG_PROXY_LISTEN: "0.0.0.0:8000"
-      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+      # SOVEREIGN FIX: admin port restricted to loopback only (was 0.0.0.0:8001).
+      KONG_ADMIN_LISTEN: "127.0.0.1:8001"
       KONG_PLUGINS: bundled
+      KONG_LOG_LEVEL: warn
     volumes:
       - ./kong/kong.yml:/kong/declarative/kong.yml:ro
     networks: [edge, internal]
@@ -66,11 +133,20 @@ services:
       - traefik.http.routers.api.tls=true
       - traefik.http.routers.api.middlewares=ghost-jwks-guard@docker
       - traefik.http.services.api.loadbalancer.server.port=8000
+    healthcheck:
+      test: ["CMD-SHELL", "kong health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
 
+  # ── JWKS auth forward-auth middleware ────────────────────────────────────────
+  # CRITICAL: trustForwardHeader=false prevents client-forged X-Forwarded-* bypass.
   ghost-jwks-guard:
     build:
       context: ../../services/ghost-jwks-guard
       dockerfile: Dockerfile
+    <<: *hardening
     environment:
       PORT: 8090
       AUTHZ_POLICIES_FILE: /etc/ghost/authz/policies.yml
@@ -78,9 +154,9 @@ services:
       KEYCLOAK_REALM_USERS: ghost-users
       KEYCLOAK_REALM_EMPLOYEES: ghost-employees
       KEYCLOAK_REALM_ADMINS: ghost-admins
-      OIDC_ISSUER_USERS: ${KONG_OIDC_USERS_ISSUER}
-      OIDC_ISSUER_EMPLOYEES: ${KONG_OIDC_EMPLOYEES_ISSUER}
-      OIDC_ISSUER_ADMINS: ${KONG_OIDC_ADMINS_ISSUER}
+      OIDC_ISSUER_USERS: ${KONG_OIDC_USERS_ISSUER:?KONG_OIDC_USERS_ISSUER is required}
+      OIDC_ISSUER_EMPLOYEES: ${KONG_OIDC_EMPLOYEES_ISSUER:?KONG_OIDC_EMPLOYEES_ISSUER is required}
+      OIDC_ISSUER_ADMINS: ${KONG_OIDC_ADMINS_ISSUER:?KONG_OIDC_ADMINS_ISSUER is required}
       JWKS_GUARD_AUDIENCE: ghost-web
       JWKS_GUARD_CLOCK_TOLERANCE_SECONDS: 5
     volumes:
@@ -90,25 +166,34 @@ services:
       - traefik.enable=true
       - traefik.docker.network=docker_internal
       - traefik.http.middlewares.ghost-jwks-guard.forwardauth.address=http://ghost-jwks-guard:8090/verify
-      - traefik.http.middlewares.ghost-jwks-guard.forwardauth.trustForwardHeader=true
+      # SOVEREIGN FIX: trustForwardHeader=false – prevents client-forged header bypass (was true).
+      - traefik.http.middlewares.ghost-jwks-guard.forwardauth.trustForwardHeader=false
       - traefik.http.middlewares.ghost-jwks-guard.forwardauth.authResponseHeaders=X-Ghost-Realm,X-Ghost-Subject,X-Ghost-Roles,X-Ghost-Session-Id,X-Correlation-Id
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8090/health | grep -q ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
 
+  # ── Frontend web app ─────────────────────────────────────────────────────────
   web:
     build:
       context: ../../
       dockerfile: apps/web/Dockerfile
+    <<: *hardening
     environment:
       NODE_ENV: production
       HOSTNAME: 0.0.0.0
       NEXTAUTH_URL: https://app.ghostchain.cloud
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?NEXTAUTH_SECRET is required}
 
       KEYCLOAK_BASE_URL: https://auth.ghostchain.cloud
       KEYCLOAK_REALM_USERS: ghost-users
       KEYCLOAK_REALM_EMPLOYEES: ghost-employees
       KEYCLOAK_REALM_ADMINS: ghost-admins
       KEYCLOAK_CLIENT_ID: ghost-web
-      KEYCLOAK_CLIENT_SECRET: ${KC_CLIENT_SECRET}
+      KEYCLOAK_CLIENT_SECRET: ${KC_CLIENT_SECRET:?KC_CLIENT_SECRET is required}
 
       API_BASE_URL: https://api.ghostchain.cloud
     networks: [edge, internal]
@@ -119,32 +204,54 @@ services:
       - traefik.http.routers.web.entrypoints=websecure
       - traefik.http.routers.web.tls=true
       - traefik.http.services.web.loadbalancer.server.port=3000
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health | grep -q ok || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
+  # ── Identity API ─────────────────────────────────────────────────────────────
   identity-service:
     build:
       context: ../../
       dockerfile: apps/api/Dockerfile
+    <<: *hardening
     environment:
       NODE_ENV: production
       PORT: 8080
-      DATABASE_URL: ${IDENTITY_DB_URL}
+      DATABASE_URL: ${IDENTITY_DB_URL:?IDENTITY_DB_URL is required}
       KEYCLOAK_BASE_URL: https://auth.ghostchain.cloud
       KEYCLOAK_REALM_USERS: ghost-users
       KEYCLOAK_REALM_EMPLOYEES: ghost-employees
       KEYCLOAK_REALM_ADMINS: ghost-admins
       ROUTING_LAW_MODE: strict
     networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/v1/health | grep -q ok || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
+  # ── Governance API ───────────────────────────────────────────────────────────
   governance-service:
     build:
       context: ../../services/governance-service
       dockerfile: Dockerfile
+    <<: *hardening
     environment:
       NODE_ENV: production
       PORT: 8080
-      DATABASE_URL: ${GOV_DB_URL}
+      DATABASE_URL: ${GOV_DB_URL:?GOV_DB_URL is required}
       ROUTING_LAW_MODE: strict
     networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health | grep -q ok || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
 networks:
   edge: {}

@@ -17,9 +17,10 @@ services:
     command:
     - sh
     - -lc
-    - npm install && npm run migrate
+    # SOVEREIGN FIX: npm ci for deterministic lockfile-enforced installs.
+    - npm ci && npm run migrate
     environment:
-      DATABASE_URL: postgresql://ghost:${PIL_DB_PASSWORD:-ghostpass}@pil-postgres:5432/ghost_pil
+      DATABASE_URL: postgresql://ghost:${PIL_DB_PASSWORD:?PIL_DB_PASSWORD is required}@pil-postgres:5432/ghost_pil
       PIL_SEED_SAMPLE_DATA: ${PIL_SEED_SAMPLE_DATA:-true}
       PIL_REGISTRY_URL: http://ghost-registry:8088
       PIL_CHAIN_CONFIG_PATH: /work/config/chains.json

@@ -22,17 +22,28 @@ x-brain-env: &brain-env
   GHOSTBRAIN_URL: "${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}"
   GHOSTBRAIN_ENABLED: "${GHOSTBRAIN_ENABLED:-true}"
 
-services:
+# SOVEREIGN: Container hardening anchor — applied to all services.
+x-hardening: &hardening
+  user: "10001:10001"
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  read_only: true
+  tmpfs:
+    - /tmp
+  restart: unless-stopped
 
   # ─── NATS message bus ──────────────────────────────────────────────────────
   nats:
+    # SOVEREIGN: pin to digest – run scripts/security/digest-refresh-report.sh to update.
     image: nats:2.10-alpine
     container_name: ghostbrain-nats
-    restart: unless-stopped
+    <<: *hardening
     ports:
-      - "${NATS_PORT:-4222}:4222"
-      - "${NATS_MON_PORT:-8222}:8222"
-    command: ["-js", "-m", "8222"]
+      # SOVEREIGN: NATS bound to localhost; monitoring port (8222) internal only.
+      - "127.0.0.1:${NATS_PORT:-4222}:4222"
+    command: ["-js"]
     networks:
       - ghostbrain-net
     healthcheck:
@@ -46,11 +57,12 @@ services:
   ghostbrain-postgres:
     image: postgres:16-alpine
     container_name: ghostbrain-postgres
-    restart: unless-stopped
+    <<: *hardening
     environment:
       POSTGRES_DB: ghostbrain
       POSTGRES_USER: ghostbrain
-      POSTGRES_PASSWORD: "${GHOSTBRAIN_POSTGRES_PASSWORD:-ghostbrain_dev_pw}"
+      # SOVEREIGN: no insecure default – GHOSTBRAIN_POSTGRES_PASSWORD must be set.
+      POSTGRES_PASSWORD: "${GHOSTBRAIN_POSTGRES_PASSWORD:?GHOSTBRAIN_POSTGRES_PASSWORD is required}"
     volumes:
       - ghostbrain-postgres-data:/var/lib/postgresql/data
     networks:
@@ -101,7 +113,7 @@ services:
       GHOSTAI_L2_CHAIN_ID: "${GHOSTAI_L2_CHAIN_ID:-901}"
       GHOSTAI_L3_CHAIN_ID: "${GHOSTAI_L3_CHAIN_ID:-903}"
       # Postgres + Redis
-      GHOSTBRAIN_POSTGRES_URL: "postgresql://ghostbrain:${GHOSTBRAIN_POSTGRES_PASSWORD:-ghostbrain_dev_pw}@ghostbrain-postgres:5432/ghostbrain"
+      GHOSTBRAIN_POSTGRES_URL: "postgresql://ghostbrain:${GHOSTBRAIN_POSTGRES_PASSWORD:?GHOSTBRAIN_POSTGRES_PASSWORD is required}@ghostbrain-postgres:5432/ghostbrain"
       GHOSTBRAIN_REDIS_URL: "redis://ghostbrain-redis:6379"
       # Vault
       VAULT_ADDR: "${VAULT_ADDR:-http://vault:8200}"
@@ -119,6 +131,13 @@ services:
       CANARY_WINDOW_SECONDS: "${CANARY_WINDOW_SECONDS:-120}"
       MAX_BLAST_RADIUS: "${MAX_BLAST_RADIUS:-3}"
       TASK_TOKEN_TTL_SECONDS: "${TASK_TOKEN_TTL_SECONDS:-300}"
+      # ── Hyper Ghost AI wiring (brain-token auth) ──
+      HYPER_GHOST_BASE_URL: "${HYPER_GHOST_BASE_URL:-http://hyper-ghost-ai:7741}"
+      HYPER_GHOST_BRAIN_TOKEN: "${HYPER_GHOST_BRAIN_TOKEN:?HYPER_GHOST_BRAIN_TOKEN is required}"
+      HYPER_GHOST_GOVERNOR_TOKEN: "${HYPER_GHOST_GOVERNOR_TOKEN:-}"
+      # ── ghostbrain-gsa integration ──
+      GSA_BASE_URL: "${GSA_BASE_URL:-http://ghostbrain-gsa:7850}"
+      CONTROL_PLANE_HMAC_SECRET: "${CONTROL_PLANE_HMAC_SECRET:?CONTROL_PLANE_HMAC_SECRET is required}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /home/ghost/ghostl-stack/services/ghostbrain-core/dist/connectors/docker.js:/app/dist/connectors/docker.js:ro
@@ -131,6 +150,8 @@ services:
       ghostbrain-redis:
         condition: service_healthy
       nats:
+        condition: service_healthy
+      hyper-ghost-ai:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:7900/healthz"]
@@ -369,6 +390,115 @@ services:
       ghostbrain.role: "sentinel"
       ghostbrain.layer: "L2"
       acg.agent: "sentinel"
+
+  # ─── Hyper Ghost AI (brain-token gated, controlled by ghostbrain-core) ─────
+  hyper-ghost-ai:
+    build:
+      context: ./services/hyper-ghost-ai
+      dockerfile: Dockerfile
+    image: hyper-ghost-ai:latest
+    container_name: hyper-ghost-ai
+    restart: unless-stopped
+    user: "10001:10001"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    ports:
+      # SOVEREIGN: Hyper Ghost AI bound to localhost — only ghostbrain-core crosses via internal DNS
+      - "127.0.0.1:${HYPER_GHOST_PORT:-7741}:7741"
+    environment:
+      NODE_ENV: "${NODE_ENV:-production}"
+      HYPER_GHOST_BIND: "0.0.0.0"
+      HYPER_GHOST_PORT: "7741"
+      # Brain-token gate — must match HYPER_GHOST_BRAIN_TOKEN in ghostbrain-core
+      HYPER_GHOST_REQUIRE_BRAIN_TOKEN: "1"
+      HYPER_GHOST_BRAIN_TOKEN: "${HYPER_GHOST_BRAIN_TOKEN:?HYPER_GHOST_BRAIN_TOKEN is required}"
+      # Roles
+      HYPER_GHOST_GOVERNOR_ROLE: "${HYPER_GHOST_GOVERNOR_ROLE:-GOVERNOR}"
+      HYPER_GHOST_AUDITOR_ROLE: "${HYPER_GHOST_AUDITOR_ROLE:-AUDITOR}"
+      HYPER_GHOST_EXECUTOR_ROLE: "${HYPER_GHOST_EXECUTOR_ROLE:-EXECUTOR}"
+      HYPER_GHOST_MAX_BODY_BYTES: "${HYPER_GHOST_MAX_BODY_BYTES:-262144}"
+      HYPER_GHOST_MAX_AUDIT_LIMIT: "${HYPER_GHOST_MAX_AUDIT_LIMIT:-100}"
+      # Chain IDs
+      GHOSTAI_L1_CHAIN_ID: "${GHOSTAI_L1_CHAIN_ID:-14000101}"
+      GHOSTAI_L2_CHAIN_ID: "${GHOSTAI_L2_CHAIN_ID:-901}"
+      GHOSTAI_L3_CHAIN_ID: "${GHOSTAI_L3_CHAIN_ID:-903}"
+    networks:
+      - ghostbrain-net
+    depends_on:
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7741/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      ghostbrain.role: "hyperai"
+      ghostbrain.layer: "L2"
+      ghostbrain.routing-law: "L3→L2→L1"
+      ghostbrain.brain-token-gated: "true"
+
+  # ─── GhostBrain Sovereign Autonomous Agent (GSA) — read-only by default ────
+  ghostbrain-gsa:
+    build:
+      context: ./services/ghostbrain-gsa
+      dockerfile: Dockerfile
+    image: ghostbrain-gsa:latest
+    container_name: ghostbrain-gsa
+    restart: unless-stopped
+    user: "10001:10001"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /tmp/gsa-bundles
+    ports:
+      # SOVEREIGN: GSA API bound to localhost only
+      - "127.0.0.1:${GSA_PORT:-7850}:7850"
+    environment:
+      <<: *brain-env
+      NODE_ENV: "${NODE_ENV:-production}"
+      GSA_PORT: "7850"
+      GSA_BIND: "0.0.0.0"
+      GSA_AGENT_ID: "${GSA_AGENT_ID:-ghostbrain-gsa-1}"
+      # SOVEREIGN: apply is OFF by default — opt in explicitly
+      GSA_APPLY_ENABLED: "${GSA_APPLY_ENABLED:-false}"
+      GSA_PQ_SIGNATURES_REQUIRED: "${GSA_PQ_SIGNATURES_REQUIRED:-false}"
+      # Auth
+      CONTROL_PLANE_HMAC_SECRET: "${CONTROL_PLANE_HMAC_SECRET:?CONTROL_PLANE_HMAC_SECRET is required}"
+      # Brand law (non-negotiable — L3→L2→L1)
+      REPO_ROOT: "/repo"
+      GSA_BUNDLE_DIR: "/tmp/gsa-bundles"
+    volumes:
+      # Mount repo read-only — agent is observing not mutating
+      - .:/repo:ro
+    networks:
+      - ghostbrain-net
+    depends_on:
+      ghostbrain-core:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7850/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    labels:
+      ghostbrain.role: "gsa"
+      ghostbrain.layer: "L2"
+      ghostbrain.routing-law: "L3→L2→L1"
+      ghostbrain.apply-enabled: "${GSA_APPLY_ENABLED:-false}"
 
 volumes:
   ghostbrain-postgres-data:

@@ -1,7 +1,20 @@
 name: ghostl-cascading-finality
 
+# SOVEREIGN: Container hardening anchor.
+x-hardening: &hardening
+  user: "10001:10001"
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  read_only: true
+  tmpfs:
+    - /tmp
+  restart: unless-stopped
+
 services:
   ghost-ai-consensus:
+    <<: *hardening
     build:
       context: ./services/ghost-ai-consensus
     image: ghostl/ghost-ai-consensus:local
@@ -11,18 +24,32 @@ services:
       AI_REVIEW_THRESHOLD: ${AI_REVIEW_THRESHOLD:-65}
       AI_BLOCK_THRESHOLD: ${AI_BLOCK_THRESHOLD:-90}
     ports:
-      - "17715:7715"
+      - "127.0.0.1:17715:7715"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:7715/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
 
   ghostchain-bridge-hub:
+    <<: *hardening
     build:
       context: ./services/ghostchain-bridge-hub
     image: ghostl/ghostchain-bridge-hub:local
     environment:
       PORT: 7720
       EXTERNAL_CHAIN_ALLOWLIST: ${EXTERNAL_CHAIN_ALLOWLIST:-}
-      ADMIN_TOKEN: ${BRIDGE_HUB_ADMIN_TOKEN:-}
+      # SOVEREIGN: ADMIN_TOKEN has no default – fail closed if not set.
+      ADMIN_TOKEN: ${BRIDGE_HUB_ADMIN_TOKEN:?BRIDGE_HUB_ADMIN_TOKEN is required}
       BRIDGE_HUB_DATA_DIR: /data
     ports:
-      - "17720:7720"
+      - "127.0.0.1:17720:7720"
     volumes:
       - ./services/ghostchain-bridge-hub/data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:7720/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s

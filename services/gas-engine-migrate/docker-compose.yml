@@ -17,9 +17,10 @@ services:
     command:
     - sh
     - -lc
-    - npm install && npm run migrate
+    # SOVEREIGN FIX: npm ci for deterministic lockfile-enforced installs.
+    - npm ci && npm run migrate
     environment:
-      DATABASE_URL: postgresql://ghost:${GAS_ENGINE_DB_PASSWORD:-ghostpass}@gas-engine-postgres:5432/ghost_gas
+      DATABASE_URL: postgresql://ghost:${GAS_ENGINE_DB_PASSWORD:?GAS_ENGINE_DB_PASSWORD is required}@gas-engine-postgres:5432/ghost_gas
       REDIS_URL: redis://gas-engine-redis:6379
       SEED_SAMPLE_DATA: ${GAS_ENGINE_SEED_SAMPLE_DATA:-true}
       RPC_L1: ${RPC_L1}

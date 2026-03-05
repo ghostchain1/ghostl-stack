@@ -570,18 +570,25 @@ services:
       HYPERVISOR_SSH_PORT: ${AVH_HYPERVISOR_SSH_PORT:-22}
       HYPERVISOR_SSH_KEY_PATH: ${AVH_HYPERVISOR_SSH_KEY_PATH:-}
       SSH_ENABLED: ${AVH_SSH_ENABLED:-0}
-      DOCKER_ENABLED: ${AVH_DOCKER_ENABLED:-1}
+      # SOVEREIGN: Docker remediation disabled by default; must be explicitly enabled
+      # in production with a signed policy. The docker.sock mount below grants
+      # container-escape-equivalent access; keep DOCKER_ENABLED=0 unless auditedand approved.
+      DOCKER_ENABLED: ${AVH_DOCKER_ENABLED:-0}
       DOCKER_SOCKET: /var/run/docker.sock
       RECONCILE_INTERVAL_MS: ${AVH_RECONCILE_INTERVAL_MS:-60000}
-      REMEDIATE_ENABLED: ${AVH_REMEDIATE_ENABLED:-1}
+      # SOVEREIGN: disable autonomous remediation by default; require explicit override.
+      REMEDIATE_ENABLED: ${AVH_REMEDIATE_ENABLED:-0}
       MAX_REMEDIATIONS_PER_RUN: ${AVH_MAX_REMEDIATIONS_PER_RUN:-3}
       MAX_CONTAINER_RESTARTS: ${AVH_MAX_CONTAINER_RESTARTS:-5}
       RESTART_COOLDOWN_MS: ${AVH_RESTART_COOLDOWN_MS:-120000}
       POLICY_PATH: /app/policy.json
-      EXECUTE_ACTIONS: ${AVH_EXECUTE_ACTIONS:-1}
+      # SOVEREIGN: autonomous execution disabled by default.
+      EXECUTE_ACTIONS: ${AVH_EXECUTE_ACTIONS:-0}
       EMERGENCY_LOCK: ${AVH_EMERGENCY_LOCK:-0}
-      HMAC_SECRET: ${AVH_HMAC_SECRET:-change-me-in-production}
-      REQUIRE_SIGNATURE: ${AVH_REQUIRE_SIGNATURE:-0}
+      # SOVEREIGN FIX: HMAC_SECRET has no fallback – fail closed if not set.
+      HMAC_SECRET: ${AVH_HMAC_SECRET:?AVH_HMAC_SECRET is required}
+      # SOVEREIGN FIX: signature verification required by default (was 0).
+      REQUIRE_SIGNATURE: ${AVH_REQUIRE_SIGNATURE:-1}
       VM_LAYER_MAP: ${AVH_VM_LAYER_MAP:-{}}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

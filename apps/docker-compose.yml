@@ -17,9 +17,9 @@ services:
     environment:
       POSTGRES_DB: ghost_compliance
       POSTGRES_USER: ghost
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ghostpass}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -31,7 +31,7 @@ services:
   redis:
     image: redis:7-alpine@sha256:4bfd9eca23339865dc14fe75f6d9ae643f714924623978dd2798f1a673b08f43
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis_data:/data
@@ -48,9 +48,9 @@ services:
     volumes:
       - ./services/ghost-compliance:/work
     environment:
-      DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:-ghostpass}@postgres:5432/ghost_compliance
+      DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/ghost_compliance
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${COMPLIANCE_JWT_SECRET:-change-me}
+      JWT_SECRET: ${COMPLIANCE_JWT_SECRET:?COMPLIANCE_JWT_SECRET is required}
       ATTESTATION_PRIVATE_KEY: ${COMPLIANCE_ATTESTATION_PRIVATE_KEY:-}
       ATTESTATION_EXPIRY_SECONDS: 900
     depends_on:
@@ -58,7 +58,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: ["sh", "-lc", "npm install && npm run migrate"]
+    # SOVEREIGN FIX: npm ci for deterministic lockfile-enforced installs.
+    command: ["sh", "-lc", "npm ci && npm run migrate"]
     restart: "no"
 
   ghost-compliance:
@@ -68,9 +69,9 @@ services:
     environment:
       NODE_ENV: production
       PORT: 8090
-      DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:-ghostpass}@postgres:5432/ghost_compliance
+      DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/ghost_compliance
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${COMPLIANCE_JWT_SECRET:-change-me}
+      JWT_SECRET: ${COMPLIANCE_JWT_SECRET:?COMPLIANCE_JWT_SECRET is required}
       ATTESTATION_PRIVATE_KEY: ${COMPLIANCE_ATTESTATION_PRIVATE_KEY:-}
       ATTESTATION_EXPIRY_SECONDS: 900
       CORS_ORIGIN: http://localhost:3200
@@ -99,7 +100,7 @@ services:
       context: ./services/ghost-compliance-worker
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:-ghostpass}@postgres:5432/ghost_compliance
+      DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/ghost_compliance
       REDIS_URL: redis://redis:6379
       COMPLIANCE_API_URL: http://ghost-compliance:8090
       PREDICT_INTERVAL_SECONDS: 60
