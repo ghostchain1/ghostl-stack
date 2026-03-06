@@ -1,7 +1,7 @@
 /**
  * @ghostchain/ghostchainjs-tx — EIP-1559 (type 2) Fee Market transaction
  *
- * Drop-in for @ethereumjs/tx FeeMarketEIP1559Transaction.
+ * Drop-in for @ethereumjs/tx FeeMarketEIP1559Transaction. // brand-enforcer-ignore
  * Zero ethers dependency.
  */
 

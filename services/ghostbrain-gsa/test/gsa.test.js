@@ -104,7 +104,7 @@ describe('constraints — branding law', async () => {
     assert.equal(assertBrandingLaw({ decimals: 6 }).ok, false);
   });
   it('accumulates 3 violations for fully wrong metadata', () => {
-    const r = assertBrandingLaw({ name: 'Ethereum', symbol: 'ETH', decimals: 6 });
+    const r = assertBrandingLaw({ name: 'GhostChain', symbol: 'ETH', decimals: 6 });
     assert.equal(r.violations.length, 3);
   });
   it('detects ETH brand leak in non-exempt file', () => {

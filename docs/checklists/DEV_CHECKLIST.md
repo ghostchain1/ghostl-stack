@@ -34,7 +34,7 @@
 
 ### Authentication & Authorization
 
-* [ ] Wallet login (MetaMask + WalletConnect)
+* [ ] Wallet login (GhostWallet + WalletConnect)
 * [ ] OAuth login (Google/GitHub) OR Enterprise SSO placeholder
 * [ ] RBAC model defined (roles: Viewer/Operator/Admin/Security/Treasury)
 * [ ] Session handling (refresh + expiry + device list)

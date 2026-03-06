@@ -135,6 +135,19 @@ function scanFile(filePath: string, violations: Violation[]): void {
 
     // Skip lines with explicit ignore comment
     if (line.includes("brand-enforcer-ignore")) continue;
+    // Skip EIP protocol-standard strings that must stay verbatim for wallet compat
+    if (line.includes("\\x19Ethereum Signed Message") || line.includes("x19Ethereum")) continue;
+    if (line.includes("wallet_switchEthereumChain") || line.includes("wallet_addEthereumChain")) continue;
+    // Skip window.ethereum / (window as any).ethereum — EIP-1193 browser injection point name
+    if (/window[\s\S]*?\.ethereum/.test(line)) continue;
+    // Skip package.json override/resolution keys that must match upstream npm package names
+    if (/^\s*"(ethereum[^"]*|@ethereumjs[^"]*|ethereumjs[^"]*)"\s*:\s*"file:/.test(line)) continue;
+    // Skip npm dependency declarations: "ethers": "^6.x" (cannot rename npm package)
+    if (/^\s*"ethers"\s*:\s*"[\^~]?\d/.test(line)) continue;
+    // Skip TypeScript path alias mappings: "ghost": ["../../node_modules/ethers/..."]
+    if (/node_modules\/ethers\//.test(line)) continue;
+    // Skip Besu/Geth API namespace flags — ETH here is the RPC namespace, not a token name
+    if (/--rpc-http-api=.*\bETH\b/.test(line) || /--rpc-ws-api=.*\bETH\b/.test(line)) continue;
     // Skip lines that are purely URLs (contains http) — legitimately reference Ethereum URLs
     if (/https?:\/\//.test(line) && !line.includes('"') && !line.includes("'")) continue;
 

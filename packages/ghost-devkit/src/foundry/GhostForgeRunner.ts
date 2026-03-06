@@ -60,7 +60,7 @@ export class GhostForgeRunner {
   async verify(address: string, contract: string, chainId: number, apiKey: string): Promise<void> {
     await ProcessRunner.exec(
       "forge",
-      ["verify-contract", address, contract, "--chain-id", String(chainId), "--etherscan-api-key", apiKey],
+      ["verify-contract", address, contract, "--chain-id", String(chainId), "--ghostscan-api-key", apiKey],
       { cwd: this.projectRoot, stream: true },
     );
   }

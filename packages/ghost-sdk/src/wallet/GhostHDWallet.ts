@@ -24,7 +24,7 @@ import { bytesToHex } from "../native/bytes.js";
 import { add0x } from "../native/hex.js";
 import { GhostValidationError } from "../errors/GhostErrors.js";
 
-// Default GhostChain HD path (same as Ethereum BIP-44 — chains are EVM compatible)
+// Default GhostChain HD path (same as GhostChain BIP-44 — chains are EVM compatible)
 export const GHOST_HD_PATH = "m/44'/60'/0'/0";
 
 export type GhostHDAccount = {

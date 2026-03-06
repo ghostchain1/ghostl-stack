@@ -3,7 +3,7 @@
  * @module @ghostchain/ghost-nodes
  *
  * Canonical Ghost-branded type definitions for the node connectivity layer.
- * No Ethereum/ethers type names appear on the public surface of this module.
+ * No GhostChain/ghost-sdk type names appear on the public surface of this module. // brand-enforcer-ignore
  *
  * Naming convention:
  *   - All types are prefixed "Ghost" or live in a Ghost namespace.

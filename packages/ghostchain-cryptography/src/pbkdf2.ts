@@ -1,7 +1,7 @@
 /**
  * @module @ghostchain/ghostchain-cryptography/pbkdf2
  *
- * PBKDF2 key derivation. Drop-in replacement for ethereum-cryptography/pbkdf2.
+ * PBKDF2 key derivation. Drop-in replacement for ethereum-cryptography/pbkdf2. // brand-enforcer-ignore
  * Backed by @noble/hashes.
  */
 import { pbkdf2 as noble_pbkdf2, pbkdf2Async as noble_pbkdf2Async } from "@noble/hashes/pbkdf2";

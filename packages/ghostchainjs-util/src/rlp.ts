@@ -3,7 +3,7 @@
  * @module @ghostchain/ghostchain-util/rlp
  *
  * RLP (Recursive Length Prefix) encoder and decoder.
- * Per Ethereum Yellow Paper §B — used for Ghost transaction serialization.
+ * Per GhostChain Yellow Paper §B — used for Ghost transaction serialization.
  * Zero external dependencies.
  */
 

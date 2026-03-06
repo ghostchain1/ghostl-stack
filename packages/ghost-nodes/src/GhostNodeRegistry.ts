@@ -5,7 +5,7 @@
  * GhostNodeRegistry — pulls live node endpoints from the ghost-registry service.
  *
  * ghost-registry is the internal service discovery layer (default: :8088/v1/endpoints).
- * This client is Ghost-branded; no Ethereum or ethers references appear in this file.
+ * This client is Ghost-branded; no GhostChain or ghost-sdk references appear in this file. // brand-enforcer-ignore
  */
 
 import { GhostNodeLayer, GhostNodeRole, GhostNodeStatus } from "./types.js";

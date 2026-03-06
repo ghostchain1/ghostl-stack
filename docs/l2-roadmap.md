@@ -14,7 +14,7 @@
 ## Why OP Stack
 - Control: own sequencer/batcher/proposer/challenger; ideal for AI-driven pause/delay/throttle.
 - L3-friendly: clean path for app-specific GhostL3s.
-- EVM-perfect: zero tooling friction (Hardhat/Foundry/MetaMask).
+- EVM-perfect: zero tooling friction (Hardhat/Foundry/GhostWallet).
 - Battle-tested: Optimism/Base/Zora/World Chain lineage.
 
 ## Not choosing (now)

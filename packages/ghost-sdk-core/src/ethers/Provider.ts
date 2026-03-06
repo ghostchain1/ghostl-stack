@@ -184,7 +184,7 @@ export class JsonRpcProvider extends Provider {
     throw new Error(`Transaction ${hash} not confirmed within ${timeoutMs}ms`);
   }
 
-  /** ENS not available on GhostChain – returns null for all names. */
+  /** GNS not available on GhostChain – returns null for all names. */
   async resolveName(name: string): Promise<string | null> {
     return null;
   }

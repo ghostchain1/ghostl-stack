@@ -20,7 +20,7 @@ import type { GhostSignature } from "./types.js";
 
 // ─── Personal-sign prefix (EIP-191 §v 0x45) ─────────────────────────────────
 
-const PERSONAL_SIGN_PREFIX = "\x19Ethereum Signed Message:\n";
+const PERSONAL_SIGN_PREFIX = "\x19GhostChain Signed Message:\n";
 
 /**
  * Hash a message with the EIP-191 personal_sign prefix.

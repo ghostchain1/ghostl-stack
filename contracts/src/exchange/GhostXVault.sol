@@ -65,7 +65,7 @@ contract GhostXVault is ReentrancyGuard {
         emit Deposited(msg.sender, token, amount);
     }
 
-    /// @notice Deposit native ETH/GST as the quote token (address(0) sentinel).
+    /// @notice Deposit native GST as the quote token (address(0) sentinel).
     function depositNative() external payable nonReentrant {
         if (msg.value == 0) revert ZeroAmount();
         balance[msg.sender][address(0)] += msg.value;

@@ -1,7 +1,7 @@
 /**
  * @module @ghostchain/ghostchain-cryptography/scrypt
  *
- * scrypt key derivation. Drop-in replacement for ethereum-cryptography/scrypt.
+ * scrypt key derivation. Drop-in replacement for ethereum-cryptography/scrypt. // brand-enforcer-ignore
  * Backed by @noble/hashes.
  */
 import { scrypt as noble_scrypt, scryptAsync as noble_scryptAsync } from "@noble/hashes/scrypt";

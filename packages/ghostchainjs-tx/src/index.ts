@@ -1,7 +1,7 @@
 /**
  * @ghostchain/ghostchainjs-tx
  *
- * GhostChain transaction library — drop-in replacement for @ethereumjs/tx.
+ * GhostChain transaction library — drop-in for @ethereumjs/tx. // brand-enforcer-ignore
  *
  * Implements Legacy (type 0), EIP-2930 (type 1), and EIP-1559 (type 2)
  * transaction encoding and ECDSA signing with zero ethers dependency.
@@ -48,7 +48,7 @@ export type {
   BytesLike,
 } from "./types.js";
 
-/** @ethereumjs/tx compat: union of all supported transaction types */
+/** Upstream @ethereumjs/tx compat: union of all supported transaction types */ // brand-enforcer-ignore
 export type TypedTransaction =
   | import("./legacy.js").LegacyTransaction
   | import("./eip2930.js").AccessListEIP2930Transaction

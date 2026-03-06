@@ -213,7 +213,7 @@ export const ghost = {
   JsonRpcProvider: ghostJsonRpcProvider,
   /** Zero-ethers native provider — direct JSON-RPC transport. */
   Provider: GhostNativeProvider,
-  /** EIP-1193 / MetaMask browser provider. */
+  /** EIP-1193 / GhostWallet browser provider. */
   BrowserProvider: GhostBrowserProvider,
   /** Multi-layer bridge provider (L1 + L2 + L3 in one object). */
   BridgeProvider: GhostBridgeProvider,
@@ -289,7 +289,7 @@ export default ghost;
 
 // ── Native (zero-ethers-dependency) Ghost layer ───────────────────────────────
 // Classes built from scratch using @noble/curves + @noble/hashes.
-// Use these when you need a pure Ghost SDK with no ethers.js at all.
+// Use these when you need a pure Ghost SDK with no ghost-sdk at all.
 //
 // Simple aliases (no "Native" prefix) for the primary ghost classes:
 //   GhostProvider   = GhostNativeProvider  (JSON-RPC transport)

@@ -89,7 +89,7 @@ export class GhostBridgeProvider {
    * Submit a raw signed transaction to the appropriate layer.
    *
    * For L2/L3 this goes directly to the sequencer.
-   * For L1 it goes to the Anvil / Ethereum node.
+   * For L1 it goes to the Anvil / GhostChain node.
    */
   async sendRawTransaction(layer: GhostLayer, signedTx: string): Promise<string> {
     return this.forLayer(layer).send("eth_sendRawTransaction", [signedTx]) as Promise<string>;

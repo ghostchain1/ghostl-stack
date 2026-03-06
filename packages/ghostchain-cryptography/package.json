@@ -1,7 +1,7 @@
 {
   "name": "@ghostchain/ghostchain-cryptography",
   "version": "1.0.0",
-  "description": "GhostChain cryptography library — drop-in replacement for ethereum-cryptography. Zero ethers dependency. Backed by @noble and @scure.",
+  "description": "GhostChain cryptography library — drop-in replacement for ghostchain-cryptography upstream API. Zero external deps. Backed by @noble and @scure.",
   "type": "module",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",

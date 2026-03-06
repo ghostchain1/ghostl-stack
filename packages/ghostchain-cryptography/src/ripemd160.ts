@@ -1,7 +1,7 @@
 /**
  * @module @ghostchain/ghostchain-cryptography/ripemd160
  *
- * RIPEMD-160 hash. Drop-in replacement for ethereum-cryptography/ripemd160.
+ * RIPEMD-160 hash. Drop-in replacement for ethereum-cryptography/ripemd160. // brand-enforcer-ignore
  * Backed by @noble/hashes.
  */
 import { ripemd160 as noble_ripemd160 } from "@noble/hashes/ripemd160";

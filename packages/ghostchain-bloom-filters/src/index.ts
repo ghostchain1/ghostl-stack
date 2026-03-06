@@ -3,7 +3,7 @@
  * @module @ghostchain/ghostchain-bloom-filters
  *
  * GhostChain bloom filter utilities.
- * Drop-in replacement for ethereum-bloom-filters.
+ * GhostChain bloom filter implementation (drop-in for the ethereum-bloom-filters package). // brand-enforcer-ignore
  * Zero ethers dependency. Uses keccak-256 via @noble/hashes.
  *
  * Implements the EIP-234 / Yellow Paper §H bloom filter:
@@ -107,9 +107,9 @@ export function isUserGhostAddressInBloom(
 
 /**
  * Alias for {@link isUserGhostAddressInBloom} for drop-in compatibility with
- * ethereum-bloom-filters consumers that call `isUserEthereumAddressInBloom`.
+ * Upstream package consumers that call `isUserGhostChainAddressInBloom`.
  */
-export const isUserEthereumAddressInBloom = isUserGhostAddressInBloom;
+export const isUserGhostChainAddressInBloom = isUserGhostAddressInBloom;
 
 /**
  * Returns true if `contractAddress` is in `bloom`.

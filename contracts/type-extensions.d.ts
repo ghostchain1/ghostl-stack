@@ -10,7 +10,7 @@
  *    `ghost.Contract`, `ghost.TransactionReceipt`, etc. in TYPE POSITIONS.
  *
  * NOTE: All types are sourced from @ghostchain/ghost-sdk-core — the Ghost-native
- * SDK — rather than ethers.js, completing the move to sovereign GhostChain tooling.
+ * ghost-sdk — completing the move to sovereign GhostChain tooling.
  */
 import type {
   ContractFactory,
@@ -76,7 +76,7 @@ interface GhostHre {
     estimateGas(tx: object): Promise<bigint>;
   };
 
-  // ethers static utilities re-exported under ghost.*
+  // ghost-sdk static utilities re-exported under ghost.*
   getAddress(address: string): string;
   isAddress(value: unknown): value is string;
   isHexString(value: unknown, length?: number): boolean;
@@ -88,7 +88,7 @@ interface GhostHre {
   zeroPadValue(value: BytesLike, length: number): string;
   dataSlice(data: BytesLike, start?: number, end?: number): string;
 
-  // ethers classes
+  // ghost-sdk classes
   AbiCoder: typeof AbiCoder;
   Contract: typeof Contract;
   Interface: typeof Interface;

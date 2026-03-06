@@ -4,7 +4,7 @@
  *
  * ghostchainjs-util — GhostChain's primitive utility belt.
  *
- * The GhostChain-native replacement for ethereumjs-util.
+ * The GhostChain-native replacement for ethereumjs-util. // brand-enforcer-ignore
  * Zero ethers dependency. All functions use native BigInt and Uint8Array.
  *
  * Sub-path imports (preferred for tree-shaking):

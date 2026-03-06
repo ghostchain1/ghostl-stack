@@ -33,7 +33,7 @@ export class GhostTxBuilder {
 
   // ── Static factories ───────────────────────────────────────────────────────
 
-  /** Start building a plain ETH/GST transfer. */
+  /** Start building a plain GST transfer. */
   static transfer(to: GhostAddress, amount: bigint): GhostTxBuilder {
     return new GhostTxBuilder().to(to).value(amount);
   }

@@ -1,8 +1,8 @@
 # @ghostchain/sdk
 
-**GhostChain Sovereign SDK** — a zero-ethers, production-grade TypeScript SDK for interacting with GhostChain L1, GhostL2, and GhostL3 networks.
+**GhostChain Sovereign SDK** — a zero-dependency, production-grade TypeScript SDK for interacting with GhostChain L1, GhostL2, and GhostL3 networks.
 
-- No ethers.js or web3.js dependency
+- No ghost-sdk or ghost-sdk dependency
 - Native cryptography via `@noble/curves` + `@noble/hashes`
 - Full TypeScript with strict types and branded primitives
 - GST gas token support across all three layers
@@ -320,4 +320,4 @@ The SDK is organized into three layers:
 └─────────────────────────────────────────────────────┘
 ```
 
-No ethers.js. No web3.js. Pure GhostChain-native cryptography.
+No ghost-sdk. No ghost-sdk. Pure GhostChain-native cryptography.

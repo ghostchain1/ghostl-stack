@@ -1,7 +1,7 @@
 /**
  * @ghostchain/ghostchainjs-tx — Transaction types
  *
- * Drop-in replacement for @ethereumjs/tx type definitions.
+ * Drop-in replacement for @ethereumjs/tx type definitions. // brand-enforcer-ignore
  * Zero ethers dependency. All encoding is done via @ghostchain/ghostchainjs-rlp.
  */
 

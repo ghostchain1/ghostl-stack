@@ -1,7 +1,7 @@
 /**
  * Ghost Unit System
  *
- * GhostChain replaces Ethereum unit nomenclature:
+ * GhostChain sovereign unit nomenclature (replaces legacy chain units):
  *   1 Ghost  = 1e18 GhostWei
  *   1 GhostGwei = 1e9 GhostWei
  *

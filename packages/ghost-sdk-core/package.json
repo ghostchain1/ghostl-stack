@@ -1,7 +1,7 @@
 {
   "name": "@ghostchain/ghost-sdk-core",
   "version": "1.0.0",
-  "description": "GhostStack native SDK replacing ethers.js",
+  "description": "GhostStack native SDK — sovereign GhostChain primitives",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

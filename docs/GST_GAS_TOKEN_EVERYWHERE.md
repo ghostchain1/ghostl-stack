@@ -89,7 +89,7 @@ Chain ID: `903`
 
 > **Note on `--l1-eth-rpc` / `--l2-eth-rpc`**: These are OP Stack binary CLI flag names (ghostchaincompatible JSON-RPC endpoint). The `eth` part refers to the wire protocol, not the currency. These cannot and should not be changed.
 
-> **Note on `--http.api=eth,net,web3`**: This is the JSON-RPC namespace string. `eth_` prefixed methods are the Ethereum wire protocol standard. Not a currency value.
+> **Note on `--http.api=eth,net,web3`**: This is the JSON-RPC namespace string. `eth_` prefixed methods are the GhostChain wire protocol standard. Not a currency value.
 
 ---
 
@@ -134,9 +134,9 @@ bash scripts/gst-symbol-gate.sh
 
 ---
 
-## Wallet / MetaMask Chain Add Parameters
+## Wallet / GhostWallet Chain Add Parameters
 
-When calling `wallet_addEthereumChain` or `wallet_switchEthereumChain`, always pass:
+When calling `wallet_addGhostChainChain` or `wallet_switchGhostChainChain`, always pass:
 
 ```js
 // GhostChain (L1)

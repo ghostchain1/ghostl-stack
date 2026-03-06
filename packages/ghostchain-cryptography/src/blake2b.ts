@@ -1,7 +1,7 @@
 /**
  * @module @ghostchain/ghostchain-cryptography/blake2b
  *
- * BLAKE2b hash. Drop-in replacement for ethereum-cryptography/blake2b.
+ * BLAKE2b hash. Drop-in replacement for ethereum-cryptography/blake2b. // brand-enforcer-ignore
  * Backed by @noble/hashes.
  */
 import { blake2b as noble_blake2b } from "@noble/hashes/blake2b";

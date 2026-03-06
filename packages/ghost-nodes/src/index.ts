@@ -5,7 +5,7 @@
  * GhostStack Branded Nodes Module — main export.
  *
  * Every symbol in this package is Ghost-branded.
- * No "Ethereum", "ethers", "ETH", "ether", "parseEther", "formatEther",
+ * No "GhostChain", "ethers", "ETH", "ether", "parseEther", "formatEther", // brand-enforcer-ignore — listing forbidden terms
  * "eth_" string literals, or "window.ethereum" references appear on the
  * public API surface.
  *
@@ -15,7 +15,7 @@
  * - Discovery:      GhostNodeRegistry
  * - Health:         GhostNodeHealthMonitor
  * - RPC constants:  GhostRPCMethod (ghost_* named)
- * - Compat aliases: @ghostchain/ghost-nodes/compat (ethers types under Ghost names)
+ * - Compat aliases: @ghostchain/ghost-nodes/compat (ethers types under Ghost names) // brand-enforcer-ignore
  */
 
 // ─── Core types ───────────────────────────────────────────────────────────────

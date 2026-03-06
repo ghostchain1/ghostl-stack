@@ -17,7 +17,7 @@ import { normalizeAddress } from "./address.js";
 import { GhostNativeGasEngine } from "./GhostNativeGasEngine.js";
 
 /**
- * GhostNativeProvider — high-level GhostChain provider with zero ethers.js dependency.
+ * GhostNativeProvider — high-level GhostChain provider with zero ghost-sdk dependency.
  *
  * ```ts
  * const provider = new GhostNativeProvider({ rpcUrl: "http://localhost:18545" });

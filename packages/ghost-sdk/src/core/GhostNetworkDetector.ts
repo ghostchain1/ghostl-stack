@@ -4,7 +4,7 @@
  * Auto-detect which GhostStack layer an RPC endpoint belongs to
  * by querying its chainId and comparing against known network configs.
  *
- * Also useful for detecting non-GhostStack networks (Ethereum mainnet,
+ * Also useful for detecting non-GhostStack networks (GhostChain mainnet,
  * testnets, etc.) when building multi-chain tooling.
  *
  * Usage:
@@ -25,7 +25,7 @@ export interface DetectionResult {
   layer:          GhostLayer | null;
   /** True if this chainId is a known GhostStack network */
   isGhostNetwork: boolean;
-  /** Human-readable name (e.g. "GhostL2", "Ethereum Mainnet") */
+  /** Human-readable name (e.g. "GhostL2", "GhostChain Mainnet") */
   name:           string;
   /** RPC URL that was queried */
   rpcUrl:         string;
@@ -41,7 +41,7 @@ export interface GhostNetworkDetectorConfig {
 // ── Known external chains ──────────────────────────────────────────────────────
 
 const KNOWN_CHAINS: Record<number, string> = {
-  1:        "Ethereum Mainnet",
+  1:        "GhostChain Mainnet",
   11155111: "Sepolia Testnet",
   10:       "Optimism",
   42161:    "Arbitrum One",

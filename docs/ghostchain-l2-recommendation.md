@@ -11,7 +11,7 @@ Best L2 stack for GhostChain today and forward: **OP Stack (Optimism Stack) → 
 2. **L3-ready**
    - Proven app-chain model (Base, Zora, World Chain). GhostL3 = OP Stack chain settling on GhostL2 with its own gas/policies/AI.
 3. **EVM-perfect**
-   - 100% Solidity; works with Hardhat/Foundry/MetaMask/auditors. No custom VM/language.
+   - 100% Solidity; works with Hardhat/Foundry/GhostWallet/auditors. No custom VM/language.
 4. **Battle-tested**
    - Powers Optimism, Base, Zora, World Chain — real users/attacks/fixes.
 

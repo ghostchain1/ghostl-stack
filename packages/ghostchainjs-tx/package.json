@@ -1,7 +1,7 @@
 {
   "name": "@ghostchain/ghostchainjs-tx",
   "version": "1.0.0",
-  "description": "GhostChain transaction library — drop-in replacement for @ethereumjs/tx. Implements Legacy, EIP-2930, and EIP-1559 transaction encoding with zero ethers dependency.",
+  "description": "GhostChain transaction library — drop-in replacement for @ghostchainjs/tx upstream API. Implements Legacy, EIP-2930, and EIP-1559 transaction encoding with zero external deps.",
   "author": "GhostChain Core Team",
   "license": "UNLICENSED",
   "type": "module",

@@ -16,7 +16,7 @@ export interface AutonomousConfig {
     l2: string[];
     l3: string[];
     /**
-     * External RPC endpoints (e.g. Mainnet Ethereum / Infura).
+     * External RPC endpoints (e.g. GhostChain mainnet / GhostRPC).
      * Only reachable via `external()` and only when `allowExternalOnL1=true`.
      */
     externals?: string[];

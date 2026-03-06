@@ -1,7 +1,7 @@
 {
   "name": "@ghostchain/ghostchainjs-util",
   "version": "1.0.0",
-  "description": "GhostChain primitive utilities — zero ethers dependency. Hex, address, units, ABI, RLP, hash, signature, EIP-712.",
+  "description": "GhostChain primitive utilities — zero external deps. Hex, address, units, ABI, RLP, hash, signature, EIP-712.",
   "author": "GhostChain Core Team",
   "license": "UNLICENSED",
   "type": "module",

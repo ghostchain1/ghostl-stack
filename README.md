@@ -153,7 +153,7 @@ See `docs/ai-vault.md` for setup and policy details.
 
 ## 📦 GhostChain SDK (`@ghostchain/sdk`)
 
-The **GhostChain Sovereign SDK** is the official TypeScript SDK for building on GhostChain L1, GhostL2, and GhostL3. It is zero-dependency (no ethers.js, no web3.js) and uses native cryptography via `@noble/curves` and `@noble/hashes`.
+The **GhostChain Sovereign SDK** is the official TypeScript SDK for building on GhostChain L1, GhostL2, and GhostL3. It is zero-dependency (no ghost-sdk, no ghost-sdk) and uses native cryptography via `@noble/curves` and `@noble/hashes`.
 
 **Location:** [`packages/ghost-sdk/`](packages/ghost-sdk/)  
 **Full docs:** [`packages/ghost-sdk/README.md`](packages/ghost-sdk/README.md)
@@ -446,7 +446,7 @@ Location:
 * ✅ L1/L2/L3 built, wired, and tested
 * ✅ Canonical GST gas enforced
 * ✅ OP‑Stack preflight passing (L1/L2)
-* ✅ `@ghostchain/sdk` v1.0.0 — production-complete (38+ sub-path exports, zero ethers)
+* ✅ `@ghostchain/sdk` v1.0.0 — production-complete (38+ sub-path exports, zero external SDK deps)
 * ✅ ERC-20/721/1155, gas tracker, nonce manager, RPC client, signature utils
 * ✅ GhostBrain AI client + AI gas optimizer integrated
 * ⚠️ L3 OutputOracle wiring in progress

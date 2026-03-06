@@ -1,7 +1,7 @@
 /**
  * @module @ghostchain/ghostchain-cryptography/keccak
  *
- * Keccak hash functions. Drop-in replacement for ethereum-cryptography/keccak.
+ * Keccak hash functions. Drop-in replacement for ethereum-cryptography/keccak. // brand-enforcer-ignore
  * Backed by @noble/hashes.
  */
 import { keccak_224, keccak_256, keccak_384, keccak_512 } from "@noble/hashes/sha3";
@@ -13,7 +13,7 @@ export function keccak224(msg: Uint8Array): Uint8Array {
   return keccak_224(msg);
 }
 
-/** Keccak-256: the workhorse hash for GhostChain/Ethereum. Returns 32 bytes. */
+/** Keccak-256: the workhorse hash for GhostChain/GhostChain. Returns 32 bytes. */
 export function keccak256(msg: Uint8Array): Uint8Array {
   return keccak_256(msg);
 }

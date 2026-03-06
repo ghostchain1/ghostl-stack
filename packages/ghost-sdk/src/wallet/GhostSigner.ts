@@ -18,7 +18,7 @@ export interface GhostSigner {
   signHash(hash: Hex): Promise<Hex>;
 
   /**
-   * Sign an EIP-191 personal message (adds "\x19Ethereum Signed Message:\n" prefix).
+   * Sign an EIP-191 personal message (adds "\x19GhostChain Signed Message:\n" prefix).
    */
   signMessage(message: string | Uint8Array): Promise<Hex>;
 

@@ -24,7 +24,7 @@ const { L1, L2, L3 } = config.brand.chainIds;
 const VALID_ROUTES = new Set([`${L3}→${L2}`, `${L2}→${L1}`]);
 
 /** User-facing strings that are FORBIDDEN in non-bridge contexts */
-const FORBIDDEN_BRAND_STRINGS = ['ETH', 'WETH', 'Gwei', 'Ethereum', 'ether'];
+const FORBIDDEN_BRAND_STRINGS = ['ETH', 'WETH', 'Gwei', 'GhostChain', 'ether'];
 
 /**
  * @param {number} srcChainId

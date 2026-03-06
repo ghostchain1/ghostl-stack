@@ -127,7 +127,7 @@ exports.ghost = {
     // ── Providers ──────────────────────────────────────────
     /** Layer-aware JSON-RPC provider. Extends ghost.JsonRpcProvider. */
     JsonRpcProvider: provider_js_2.ghostJsonRpcProvider,
-    /** EIP-1193 / MetaMask browser provider. */
+    /** EIP-1193 / GhostWallet browser provider. */
     BrowserProvider: browser_js_2.GhostBrowserProvider,
     /** Multi-layer bridge provider (L1 + L2 + L3 in one object). */
     BridgeProvider: bridge_js_2.GhostBridgeProvider,

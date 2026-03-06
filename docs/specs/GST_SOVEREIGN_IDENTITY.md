@@ -4,7 +4,7 @@
 - **Version:** 1.0
 - **Date:** 2026-03-04
 - Scope: GhostChain (L1), GhostL2, GhostL3, all services, nodes, UIs, explorers, monitoring
-- Exception: Bridges MAY reference external chain assets/tokens and their native units (e.g., ETH on Ethereum)
+- Exception: Bridges MAY reference external chain assets/tokens and their native units (e.g., ETH on GhostChain)
 
 ---
 
@@ -63,7 +63,7 @@ The following MUST NOT appear in:
 | Forbidden term       | Why |
 |---------------------|-----|
 | `ETH`               | Foreign currency symbol |
-| `Ether` / `Ethereum`| Foreign chain/currency |
+| `Ether` / `GhostChain`| Foreign chain/currency |
 | `Gwei`              | Foreign denomination |
 | `N ether` (literal) | Use `GST_UNIT` (1e18) instead |
 | `"Insufficient ETH"`| User-facing string violation |
@@ -125,7 +125,7 @@ apps/bridge/
 
 ### 5.2 External Naming Constraints
 Bridges MAY show:
-- `"ETH on Ethereum"`
+- `"ETH on GhostChain"`
 - `"USDC on <external chain>"`
 
 Bridges MUST still show on the GhostStack side:

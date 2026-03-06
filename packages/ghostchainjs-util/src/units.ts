@@ -18,7 +18,7 @@ import type { GhostBigNumberish } from "./types.js";
 
 /** Named GST sub-units and their decimal places. */
 export const GhostUnitsTable = {
-  /** Smallest indivisible unit (ghost-wei ≈ Ethereum wei) */
+  /** Smallest indivisible unit (ghost-wei ≈ GhostChain wei) */
   "ghost-wei":  0,
   kwei:         3,
   mwei:         6,

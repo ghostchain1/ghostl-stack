@@ -2,7 +2,7 @@
  * @module @ghostchain/ghostchain-cryptography/random
  *
  * Cryptographically secure random bytes.
- * Drop-in replacement for ethereum-cryptography/random.
+ * Drop-in replacement for ethereum-cryptography/random. // brand-enforcer-ignore
  * Backed by @noble/hashes utils.
  */
 import { randomBytes } from "@noble/hashes/utils";

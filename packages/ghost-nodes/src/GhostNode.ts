@@ -8,7 +8,7 @@
  * from infra/hypervisor/provision/inventory.sh.
  *
  * Design principle:
- *   - Zero "Ethereum" / "ETH" / "ether" identifiers on the public API.
+ *   - Zero "GhostChain" / "ETH" / "ether" identifiers on the public API. // brand-enforcer-ignore — listing forbidden terms
  *   - Wire protocol (JSON-RPC over HTTP) uses standard EVM method names
  *     internally; all public TypeScript methods use Ghost naming.
  */

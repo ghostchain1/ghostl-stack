@@ -47,8 +47,8 @@ const TTL_SELECTOR     = "0x16a25cbd"; // keccak256("ttl(bytes32)")[0:4]
 // ── Hashing ──────────────────────────────────────────────────────────────────
 
 /**
- * GNS namehash — mirrors ENS namehash algorithm (EIP-137) but under the
- * `.ghost` TLD.  This makes GNS structurally compatible with ENS tooling.
+ * GNS namehash — mirrors GNS namehash algorithm (EIP-137) but under the
+ * `.ghost` TLD.  This makes GNS structurally compatible with GNS tooling.
  *
  * namehash("")             = 0x0000...0000
  * namehash("ghost")        = keccak256(namehash("") + keccak256("ghost"))

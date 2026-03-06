@@ -1,7 +1,7 @@
 {
   "name": "@ghostchain/ghost-nodes",
   "version": "1.0.0",
-  "description": "GhostChain branded node connectivity module — zero Ethereum/ethers surface exposure",
+  "description": "GhostChain branded node connectivity module — zero external SDK surface exposure",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

@@ -18,7 +18,7 @@ function leftPad32(b: Uint8Array): Uint8Array {
 }
 
 /**
- * GhostNativeWallet — pure TypeScript wallet, no ethers.js dependency.
+ * GhostNativeWallet — pure TypeScript wallet, no ghost-sdk dependency.
  *
  * Derives address from private key using secp256k1 and keccak256.
  * Signs EIP-1559 transactions natively.

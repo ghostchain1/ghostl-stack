@@ -2,7 +2,7 @@
  * @ghostchain/ghostchainjs-tx — Legacy (type 0) transaction
  *
  * Implements Legacy / EIP-155 transaction encoding and signing.
- * Drop-in for @ethereumjs/tx LegacyTransaction.
+ * GhostChain drop-in for @ethereumjs/tx LegacyTransaction. // brand-enforcer-ignore
  * Zero ethers dependency.
  */
 
@@ -156,5 +156,5 @@ export class LegacyTransaction {
   }
 }
 
-/** Alias matching @ethereumjs/tx export name */
+/** Alias matching @ethereumjs/tx export name */ // brand-enforcer-ignore
 export { LegacyTransaction as Transaction };

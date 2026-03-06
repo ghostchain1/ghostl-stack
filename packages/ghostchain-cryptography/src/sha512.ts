@@ -1,7 +1,7 @@
 /**
  * @module @ghostchain/ghostchain-cryptography/sha512
  *
- * SHA-512 hash. Drop-in replacement for ethereum-cryptography/sha512.
+ * SHA-512 hash. Drop-in replacement for ethereum-cryptography/sha512. // brand-enforcer-ignore
  * Backed by @noble/hashes.
  */
 import { sha512 as noble_sha512 } from "@noble/hashes/sha512";

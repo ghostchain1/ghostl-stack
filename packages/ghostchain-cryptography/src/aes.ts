@@ -1,7 +1,7 @@
 /**
  * @module @ghostchain/ghostchain-cryptography/aes
  *
- * AES encryption/decryption. Drop-in replacement for ethereum-cryptography/aes.
+ * AES encryption/decryption. Drop-in replacement for ethereum-cryptography/aes. // brand-enforcer-ignore
  * Uses Node.js built-in `crypto` module — no external deps.
  *
  * Modes supported: "aes-128-ctr" (default), "aes-256-ctr", "aes-128-cbc",

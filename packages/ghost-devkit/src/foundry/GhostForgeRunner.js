@@ -43,6 +43,6 @@ export class GhostForgeRunner {
         });
     }
     async verify(address, contract, chainId, apiKey) {
-        await ProcessRunner.exec("forge", ["verify-contract", address, contract, "--chain-id", String(chainId), "--etherscan-api-key", apiKey], { cwd: this.projectRoot, stream: true });
+        await ProcessRunner.exec("forge", ["verify-contract", address, contract, "--chain-id", String(chainId), "--ghostscan-api-key", apiKey], { cwd: this.projectRoot, stream: true });
     }
 }

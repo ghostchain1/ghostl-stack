@@ -161,7 +161,7 @@ export class Wallet {
     return this._buildResponse(hash, tx);
   }
 
-  /** ETH transfer shorthand. */
+  /** GST transfer shorthand. */
   async sendEther(to: string, value: BigNumberish): Promise<ContractTransactionResponse> {
     return this.sendTransaction({ to, value });
   }

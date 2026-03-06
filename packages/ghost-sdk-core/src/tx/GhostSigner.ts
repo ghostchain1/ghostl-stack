@@ -105,7 +105,7 @@ export class GhostSigner {
     return this.provider.getBalance(this.wallet.address);
   }
 
-  /** ETH transfer shorthand. */
+  /** GST transfer shorthand. */
   sendEther(to: string, value: bigint): Promise<string> {
     return this.send({ to, value });
   }

@@ -23,21 +23,21 @@ export class GhostBrowserProvider extends BrowserProvider {
 
   /**
    * Request the user's wallet to switch to the given GhostStack layer.
-   * Calls wallet_switchEthereumChain; if the chain is not known to the wallet,
-   * calls wallet_addEthereumChain automatically.
+   * Calls wallet_switchGhostChainChain; if the chain is not known to the wallet,
+   * calls wallet_addGhostChainChain automatically.
    */
   async switchToLayer(layer: GhostLayer): Promise<void> {
     const cfg = GhostNetworks[layer];
     const chainIdHex = "0x" + cfg.chainId.toString(16);
 
     try {
-      await this.send("wallet_switchEthereumChain", [{ chainId: chainIdHex }]);
+      await this.send("wallet_switchGhostChainChain", [{ chainId: chainIdHex }]);
     } catch (err) {
       // 4902: chain not added yet
       const code = (err as { code?: number }).code;
       if (code !== 4902) throw err;
 
-      await this.send("wallet_addEthereumChain", [
+      await this.send("wallet_addGhostChainChain", [
         {
           chainId: chainIdHex,
           chainName: cfg.name,

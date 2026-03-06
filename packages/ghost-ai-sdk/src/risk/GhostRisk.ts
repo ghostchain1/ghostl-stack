@@ -75,7 +75,7 @@ export interface GhostRiskOptions {
   aiGuard?: boolean;
   /**
    * Native-value threshold in wei above which a "large transfer" heuristic
-   * finding is added. Default: 1 ETH (10^18).
+   * finding is added. Default: 1 GST (10^18).
    */
   largeValueThresholdWei?: bigint;
   /**
@@ -133,7 +133,7 @@ export class GhostRisk {
       auditor:                opts.auditor             ?? this.auditor,
       simulate:               opts.simulate             ?? false,
       aiGuard:                opts.aiGuard              ?? true,
-      largeValueThresholdWei: opts.largeValueThresholdWei ?? 1_000_000_000_000_000_000n, // 1 ETH
+      largeValueThresholdWei: opts.largeValueThresholdWei ?? 1_000_000_000_000_000_000n, // 1 GST
       blockThreshold:         opts.blockThreshold       ?? 0.70,
       abi:                    opts.abi                  ?? [],
     };
@@ -176,7 +176,7 @@ export class GhostRisk {
         source:   "heuristic",
         severity: "warn",
         code:     "LARGE_NATIVE_VALUE",
-        message:  `Large native-value transfer: ${eth.toFixed(4)} ETH`,
+        message:  `Large native-value transfer: ${eth.toFixed(4)} GST`,
         meta:     { value: value.toString() },
       });
       heuristicScore = Math.min(1, 0.30 + Number(value / this.opts.largeValueThresholdWei) * 0.05);
@@ -313,7 +313,7 @@ export class GhostRisk {
         source:   "heuristic",
         severity: "warn",
         code:     "LARGE_NATIVE_VALUE",
-        message:  `Large native-value transfer: ${eth.toFixed(4)} ETH`,
+        message:  `Large native-value transfer: ${eth.toFixed(4)} GST`,
         meta:     { value: value.toString() },
       });
       heuristicScore = 0.30;

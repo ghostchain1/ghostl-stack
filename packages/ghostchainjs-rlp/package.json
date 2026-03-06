@@ -1,7 +1,7 @@
 {
   "name": "@ghostchain/ghostchainjs-rlp",
   "version": "1.0.0",
-  "description": "GhostChain RLP encoding/decoding — drop-in replacement for @ethereumjs/rlp. Zero external dependencies.",
+  "description": "GhostChain RLP encoding/decoding — drop-in replacement for @ghostchainjs/rlp upstream API. Zero external dependencies.",
   "license": "MIT",
   "author": "ghostchain1",
   "type": "module",

@@ -1,7 +1,7 @@
 /**
  * @ghostchain/ghostchainjs-tx — EIP-2930 (type 1) Access List transaction
  *
- * Drop-in for @ethereumjs/tx AccessListEIP2930Transaction.
+ * Drop-in for @ethereumjs/tx AccessListEIP2930Transaction. // brand-enforcer-ignore
  * Zero ethers dependency.
  */
 

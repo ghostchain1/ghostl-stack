@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// GhostWallet – Real secp256k1 signing + Ethereum address derivation
+// GhostWallet – Real secp256k1 signing + GhostChain address derivation
 //
 //  Address:
 //    uncompressed pubkey (64 raw bytes) → keccak256 → last 20 bytes → EIP-55
@@ -12,7 +12,7 @@
 //    rawTx = 0x02 || rlp([...fields, v, r, s])
 //
 //  EIP-191 signing:
-//    digest = keccak256("\x19Ethereum Signed Message:\n" + len + message)
+//    digest = keccak256("\x19GhostChain Signed Message:\n" + len + message)
 //    65-byte result: r(32) || s(32) || (v + 27)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -39,7 +39,7 @@ export class GhostWallet {
   // ─── Address derivation ──────────────────────────────────────────────────
 
   /**
-   * Real Ethereum address:
+   * Real GhostChain address:
    *   secp256k1.getPublicKey(privKey, false)  →  65 bytes (0x04 + 64 raw)
    *   drop prefix byte                         →  64 bytes
    *   keccak256(64 bytes)                      →  32 bytes
@@ -87,7 +87,7 @@ export class GhostWallet {
    */
   async signMessage(message: string | Uint8Array): Promise<string> {
     const bytes  = typeof message === "string" ? new TextEncoder().encode(message) : message;
-    const prefix = new TextEncoder().encode(`\x19Ethereum Signed Message:\n${bytes.length}`);
+    const prefix = new TextEncoder().encode(`\x19GhostChain Signed Message:\n${bytes.length}`);
     const hash   = keccak256(new Uint8Array([...prefix, ...bytes]));
     const sig    = await secp.signAsync(hash, this._privateKey, { lowS: true });
     const r      = _bigintTo32Bytes(sig.r);
@@ -101,7 +101,7 @@ export class GhostWallet {
   /** Recover the signer address from a 65-byte EIP-191 signature + original message. */
   static recoverSigner(message: string | Uint8Array, signatureHex: string): string {
     const bytes    = typeof message === "string" ? new TextEncoder().encode(message) : message;
-    const prefix   = new TextEncoder().encode(`\x19Ethereum Signed Message:\n${bytes.length}`);
+    const prefix   = new TextEncoder().encode(`\x19GhostChain Signed Message:\n${bytes.length}`);
     const hash     = keccak256(new Uint8Array([...prefix, ...bytes]));
     const sigBytes = Uint8Array.from(Buffer.from(signatureHex.replace("0x", ""), "hex"));
     if (sigBytes.length !== 65) throw new GhostWalletError("Signature must be 65 bytes");

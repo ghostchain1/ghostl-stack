@@ -11,7 +11,7 @@ export type GhostNativeContractOptions = {
 };
 
 /**
- * GhostNativeContract — ABI-encoded contract interactions without ethers.js.
+ * GhostNativeContract — ABI-encoded contract interactions without ghost-sdk.
  *
  * ```ts
  * const c = new GhostNativeContract("0xTOKEN", { provider, signer: wallet });

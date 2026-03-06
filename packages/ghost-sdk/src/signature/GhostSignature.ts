@@ -39,21 +39,21 @@ export interface GhostSignatureComponents {
 /**
  * Compute the EIP-191 personal_sign hash for a message.
  * Ghost uses `"\x19Ghost Signed Message:\n"` prefix (compatible tools
- * may expect `"\x19Ethereum Signed Message:\n"` — choose the prefix you need).
+ * may expect `"\x19GhostChain Signed Message:\n"` — choose the prefix you need).
  *
  * @param message  Raw bytes or string to hash.
- * @param prefix   `"ghost"` (default) or `"ethereum"` for EIP-191 compatibility.
+ * @param prefix   `"ghost"` (default) or `"eip191"` for EIP-191 compat signing prefix.
  */
 export function personalSignHash(
   message: string | Uint8Array,
-  prefix: "ghost" | "ethereum" = "ghost",
+  prefix: "ghost" | "eip191" = "ghost",
 ): Hex {
   const msgBytes =
     typeof message === "string" ? utf8ToBytes(message) : message;
   const tag =
     prefix === "ghost"
       ? `\x19Ghost Signed Message:\n${msgBytes.length}`
-      : `\x19Ethereum Signed Message:\n${msgBytes.length}`;
+      : `\x19GhostChain Signed Message:\n${msgBytes.length}`;
   const tagBytes = utf8ToBytes(tag);
   const full = new Uint8Array(tagBytes.length + msgBytes.length);
   full.set(tagBytes, 0);
@@ -157,12 +157,12 @@ export function recoverAddress(digest: Hex, sig: Hex): GhostAddress {
  *
  * @param message  Original message (string or bytes).
  * @param sig      65-byte signature returned by the wallet.
- * @param prefix   `"ghost"` (default) or `"ethereum"`.
+ * @param prefix   `"ghost"` (default) or `"eip191"`.
  */
 export function recoverPersonalSignAddress(
   message: string | Uint8Array,
   sig: Hex,
-  prefix: "ghost" | "ethereum" = "ghost",
+  prefix: "ghost" | "eip191" = "ghost",
 ): GhostAddress {
   const digest = personalSignHash(message, prefix) as Hex;
   return recoverAddress(digest, sig);
@@ -193,7 +193,7 @@ export function verifyPersonalSign(
   message: string | Uint8Array,
   sig: Hex,
   expectedSigner: GhostAddress,
-  prefix: "ghost" | "ethereum" = "ghost",
+  prefix: "ghost" | "eip191" = "ghost",
 ): boolean {
   try {
     const recovered = recoverPersonalSignAddress(message, sig, prefix);

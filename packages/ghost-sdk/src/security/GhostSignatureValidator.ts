@@ -39,7 +39,7 @@ export class GhostSignatureValidator {
   /**
    * Verify a `personal_sign` / `eth_sign` signature.
    *
-   * Applies the "\x19Ethereum Signed Message:\n" prefix automatically.
+   * Applies the "\x19GhostChain Signed Message:\n" prefix automatically.
    * Returns true if the signature was produced by expectedAddress.
    *
    * @param message         - plain UTF-8 message (without prefix)
@@ -128,10 +128,10 @@ export class GhostSignatureValidator {
 
 // ── Internal ───────────────────────────────────────────────────────────────────
 
-/** Compute the Ethereum personal_sign message hash. */
+/** Compute the GhostChain personal_sign message hash. */
 function _personalSignHash(message: string): Uint8Array {
   const msgBytes = new TextEncoder().encode(message);
-  const prefix   = new TextEncoder().encode(`\x19Ethereum Signed Message:\n${msgBytes.length}`);
+  const prefix   = new TextEncoder().encode(`\x19GhostChain Signed Message:\n${msgBytes.length}`);
   const combined = new Uint8Array(prefix.length + msgBytes.length);
   combined.set(prefix, 0);
   combined.set(msgBytes, prefix.length);

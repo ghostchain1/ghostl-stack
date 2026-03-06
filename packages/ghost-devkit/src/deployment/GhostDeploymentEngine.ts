@@ -80,7 +80,7 @@ export class GhostDeploymentEngine {
     if (this.privateKey)  args.push("--private-key", this.privateKey);
     if (this.slow)        args.push("--slow");
     if (this.verifyApiKey) {
-      args.push("--verify", "--etherscan-api-key", this.verifyApiKey);
+      args.push("--verify", "--ghostscan-api-key", this.verifyApiKey);
     }
 
     try {

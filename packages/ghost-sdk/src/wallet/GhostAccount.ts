@@ -18,7 +18,7 @@ import { hexToBytes, bytesToHex } from "../native/bytes.js";
 import { add0x } from "../native/hex.js";
 
 /** EIP-191 personal sign prefix */
-const PERSONAL_SIGN_PREFIX = "\x19Ethereum Signed Message:\n";
+const PERSONAL_SIGN_PREFIX = "\x19GhostChain Signed Message:\n";
 
 export class GhostAccount implements GhostSigner {
   public readonly address: GhostAddress;

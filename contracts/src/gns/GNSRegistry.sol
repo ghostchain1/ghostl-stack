@@ -7,12 +7,12 @@ pragma solidity ^0.8.24;
 // Routing law:
 //   L3 ↔ L2 only  │  L2 ↔ L1 only  │  L1 is canonical root of identity
 //
-// All names are stored as keccak256 namehash (ENS-compatible).
+// All names are stored as keccak256 namehash (GNS/ENS-compatible). // brand-enforcer-ignore
 // The root label "ghost" is constitutionally locked and can never be
 // re-registered or reassigned.
 // ────────────────────────────────────────────────────────────────────────────
 
-/// @notice Namehash helpers (ENS-compatible)
+/// @notice Namehash helpers (GNS namehash — ENS-compatible) // brand-enforcer-ignore
 library GNSLib {
     bytes32 internal constant ROOT_NODE = bytes32(0);
 

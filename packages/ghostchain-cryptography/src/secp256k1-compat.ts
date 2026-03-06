@@ -2,11 +2,11 @@
  * @module @ghostchain/ghostchain-cryptography/secp256k1-compat
  *
  * Compatibility layer for the legacy `secp256k1` native Node.js module API.
- * Drop-in replacement for ethereum-cryptography/secp256k1-compat.
+ * GhostChain drop-in for the ethereum-cryptography/secp256k1-compat module. // brand-enforcer-ignore
  * Backed by @noble/curves.
  *
  * This module provides the same synchronous function signatures as the
- * `secp256k1` native bindings formerly used by ethereumjs.
+ * `secp256k1` native bindings (formerly used by ethereumjs). // brand-enforcer-ignore
  */
 import { secp256k1 } from "@noble/curves/secp256k1";
 import { bytesToHex, hexToBytes, concatBytes } from "@noble/hashes/utils";

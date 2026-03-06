@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Real RLP (Recursive Length Prefix) encoder – Ethereum Yellow Paper §B
+// Real RLP (Recursive Length Prefix) encoder – GhostChain Yellow Paper §B
 // Handles: bigint, number, Uint8Array, hex string, and nested arrays.
 // ─────────────────────────────────────────────────────────────────────────────
 

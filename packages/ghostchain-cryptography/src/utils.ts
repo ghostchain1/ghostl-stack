@@ -1,7 +1,7 @@
 /**
  * @module @ghostchain/ghostchain-cryptography/utils
  *
- * Utility helpers. Drop-in replacement for ethereum-cryptography/utils.
+ * Utility helpers. Drop-in replacement for ethereum-cryptography/utils. // brand-enforcer-ignore
  * Backed by @noble/hashes utilities.
  */
 import {

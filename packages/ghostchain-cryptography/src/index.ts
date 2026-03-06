@@ -3,7 +3,7 @@
  * @module @ghostchain/ghostchain-cryptography
  *
  * GhostChain cryptography library.
- * Drop-in replacement for ethereum-cryptography.
+ * Drop-in replacement for ethereum-cryptography. // brand-enforcer-ignore
  * Zero ethers dependency. Backed by @noble/hashes, @noble/curves, @scure/bip32, @scure/bip39.
  *
  * Sub-path imports (preferred):

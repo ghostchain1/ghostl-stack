@@ -54,7 +54,7 @@ import { Interface, AbiCoder, Contract, ContractFactory, getAddress, isAddress, 
 export declare const ghost: {
     /** Layer-aware JSON-RPC provider. Extends ghost.JsonRpcProvider. */
     readonly JsonRpcProvider: typeof ghostJsonRpcProvider;
-    /** EIP-1193 / MetaMask browser provider. */
+    /** EIP-1193 browser provider (GhostWallet-compatible). */
     readonly BrowserProvider: typeof GhostBrowserProvider;
     /** Multi-layer bridge provider (L1 + L2 + L3 in one object). */
     readonly BridgeProvider: typeof GhostBridgeProvider;

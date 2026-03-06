@@ -43,7 +43,7 @@
 ### Authentication & Authorization
 
 - [ ] Wallet login:
-  - [ ] MetaMask
+  - [ ] GhostWallet
   - [ ] WalletConnect
   - [ ] Ledger support (optional)
 - [ ] OAuth / SSO:

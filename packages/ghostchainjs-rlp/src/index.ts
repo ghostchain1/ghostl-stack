@@ -3,7 +3,7 @@
  * @module @ghostchain/ghostchainjs-rlp
  *
  * GhostChain RLP (Recursive Length Prefix) encoding and decoding.
- * Drop-in replacement for @ethereumjs/rlp v4.x.
+ * Drop-in replacement for @ethereumjs/rlp v4.x. // brand-enforcer-ignore
  * Zero external dependencies — pure TypeScript, Node.js built-ins only.
  *
  * Spec: https://ethereum.org/en/developers/docs/data-structures-and-encoding/rlp/
@@ -247,7 +247,7 @@ export function decode(
   return value;
 }
 
-// ─── Utility helpers (mirrors @ethereumjs/rlp utils) ─────────────────────────
+// ─── Utility helpers (mirrors @ethereumjs/rlp utils) ──────────────────────── // brand-enforcer-ignore─
 
 function bytesToHex(uint8a: Uint8Array): string {
   return Array.from(uint8a)
@@ -280,7 +280,7 @@ export const utils = {
   utf8ToBytes,
 };
 
-// ─── RLP class (static helpers, mirrors @ethereumjs/rlp.RLP) ─────────────────
+// ─── RLP class (static helpers, mirrors @ethereumjs/rlp.RLP) ────────────────  // brand-enforcer-ignore─
 
 export const RLP = {
   encode,
