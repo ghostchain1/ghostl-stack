@@ -53,6 +53,9 @@ library GNSAggLib {
 contract GNSAggregator {
     using GNSAggLib for bytes32;
 
+    /// @dev Canonical GST denomination — 1 GST = 1e18 base units
+    uint256 public constant GST_UNIT = 1e18;
+
     // ── Config ────────────────────────────────────────────────────────────────
     ICrossDomainMessenger public immutable messenger;
     address public immutable l1Registry;   // L1 GNSRegistry address
@@ -65,7 +68,7 @@ contract GNSAggregator {
     address public l3Portal;        // authorised L3 relayer
 
     /// Base price per year in GST (18 decimals)
-    uint256 public pricePerYear = 1 ether;  // configurable
+    uint256 public pricePerYear = GST_UNIT;  // configurable
 
     bytes32 public immutable GHOST_ROOT;
     uint32  public constant  MIN_GAS_LIMIT = 500_000;

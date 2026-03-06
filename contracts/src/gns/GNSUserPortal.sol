@@ -35,13 +35,16 @@ interface IL2GNSAggregator {
 }
 
 contract GNSUserPortal {
+    /// @dev Canonical GST denomination — 1 GST = 1e18 base units
+    uint256 public constant GST_UNIT = 1e18;
+
     // ── Config ────────────────────────────────────────────────────────────────
     IL2CrossDomainMessenger public immutable l2Messenger;
     address public immutable l2Aggregator;
     IERC20Portal public       gst;          // GST token on L3
 
     address public owner;
-    uint256 public pricePerYear = 1 ether;  // mirrors L2 price
+    uint256 public pricePerYear = GST_UNIT;  // mirrors L2 price
     uint32  public constant MIN_GAS_LIMIT = 300_000;
 
     // ── State ─────────────────────────────────────────────────────────────────
