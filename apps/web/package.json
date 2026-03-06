@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@auth/core": "^0.41.1",
+    "@ghostl/api-client": "0.0.1",
     "@ghostl/contract-schemas": "0.0.1",
     "@ghostl/ui": "0.0.1",
     "ghost": "^6.13.2",
