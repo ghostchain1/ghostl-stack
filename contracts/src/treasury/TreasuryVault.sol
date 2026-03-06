@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import "./TreasuryInvariants.sol";
 
-interface IERC20Minimal {
+interface IGST20Minimal {
     function transfer(address to, uint256 amount) external returns (bool);
     function balanceOf(address account) external view returns (uint256);
 }
@@ -35,7 +35,7 @@ contract TreasuryVault {
     function transferERC20(address token, address to, uint256 amount) external onlyController {
         require(token != address(0), "token=0");
         require(to != address(0), "to=0");
-        require(IERC20Minimal(token).transfer(to, amount), "transfer failed");
+        require(IGST20Minimal(token).transfer(to, amount), "transfer failed");
         emit AssetTransferred(token, to, amount);
     }
 
@@ -58,6 +58,6 @@ contract TreasuryVault {
         if (token == address(0)) {
             return address(this).balance;
         }
-        return IERC20Minimal(token).balanceOf(address(this));
+        return IGST20Minimal(token).balanceOf(address(this));
     }
 }

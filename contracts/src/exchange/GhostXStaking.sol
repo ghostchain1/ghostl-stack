@@ -25,7 +25,7 @@ import "./GhostXFeeCollector.sol";
 ///      LOCKED_90 – 1.75× multiplier (90-day lock)
 ///      LOCKED_180 - 2.5×  multiplier (180-day lock)
 
-interface IERC20Minimal {
+interface IGST20Minimal {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
     function transfer(address to, uint256 amount) external returns (bool);
 }
@@ -66,8 +66,8 @@ contract GhostXStaking is ReentrancyGuard {
     // ─── State ────────────────────────────────────────────────────────────────
 
     address public owner;
-    IERC20Minimal public immutable stakeToken;   // token to stake (GST or similar)
-    IERC20Minimal public immutable rewardToken;  // token paid as rewards (can equal stakeToken)
+    IGST20Minimal public immutable stakeToken;   // token to stake (GST or similar)
+    IGST20Minimal public immutable rewardToken;  // token paid as rewards (can equal stakeToken)
     GhostXBadge   public immutable badge;
     GhostXFeeCollector public immutable feeCollector;
 
@@ -112,8 +112,8 @@ contract GhostXStaking is ReentrancyGuard {
             "staking: zero addr"
         );
         owner         = msg.sender;
-        stakeToken    = IERC20Minimal(stakeToken_);
-        rewardToken   = IERC20Minimal(rewardToken_);
+        stakeToken    = IGST20Minimal(stakeToken_);
+        rewardToken   = IGST20Minimal(rewardToken_);
         badge         = GhostXBadge(badge_);
         feeCollector  = GhostXFeeCollector(feeCollector_);
     }

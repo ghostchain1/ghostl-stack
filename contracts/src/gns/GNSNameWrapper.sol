@@ -151,9 +151,9 @@ contract GNSNameWrapper {
 
     function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
         return
-            interfaceId == 0x01ffc9a7 || // ERC165
-            interfaceId == 0x80ac58cd || // ERC721
-            interfaceId == 0x5b5e139f;   // ERC721Metadata
+            interfaceId == 0x01ffc9a7 || // GST165
+            interfaceId == 0x80ac58cd || // GST721
+            interfaceId == 0x5b5e139f;   // GST721Metadata
     }
 
     // ── Internal ──────────────────────────────────────────────────────────────

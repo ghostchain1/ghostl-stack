@@ -4,12 +4,12 @@
 pragma solidity ^0.8.24;
 
 import "../common/Ownable.sol";
-import "../common/ERC20.sol";
+import "../common/GST20.sol";
 import "./ProposalExecutor.sol";
 
 /// @notice Simplified token-based governor with timelock execution.
 contract Governor is Ownable {
-    ERC20 public votingToken;
+    GST20 public votingToken;
     ProposalExecutor public executor;
 
     struct Proposal {
@@ -33,7 +33,7 @@ contract Governor is Ownable {
     event Queued(uint256 indexed id, uint256 eta);
     event Executed(uint256 indexed id);
 
-    constructor(ERC20 _votingToken, ProposalExecutor _executor) {
+    constructor(GST20 _votingToken, ProposalExecutor _executor) {
         votingToken = _votingToken;
         executor = _executor;
         executor.setGovernor(address(this));

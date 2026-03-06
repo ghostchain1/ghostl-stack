@@ -3,8 +3,8 @@
 
 pragma solidity ^0.8.24;
 
-/// @notice Minimal ERC20 implementation.
-contract ERC20 {
+/// @notice Minimal GST20 implementation.
+contract GST20 {
     string public name;
     string public symbol;
     uint8 public immutable decimals;

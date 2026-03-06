@@ -5,7 +5,7 @@ pragma solidity ^0.8.24;
 
 import "./L3BridgedToken.sol";
 
-/// @notice Deploys and tracks a dedicated L3 bridged token for each L2 ERC20.
+/// @notice Deploys and tracks a dedicated L3 bridged token for each L2 GST20.
 /// The offchain relayer can deploy tokens on demand and then mint/burn is routed
 /// through the individual token contracts.
 contract L3BridgedTokenFactory {

@@ -42,9 +42,9 @@ contract DeployGhostGasTokens is Script, GhostBrand {
         } else if (chainId == L3_CHAIN_ID) {
             _deployL3(deployer);
         } else if (chainId == L1_CHAIN_ID) {
-            // On L1 the native token is genesis-preallocated; no ERC20 needed.
+            // On L1 the native token is genesis-preallocated; no GST20 needed.
             // GhostTokenL2 is L2-specific so we skip it here.
-            console.log("L1: no ERC20 gas token deployment required (native GST via genesis alloc).");
+            console.log("L1: no GST20 gas token deployment required (native GST via genesis alloc).");
         } else {
             revert(string.concat("Unknown chainId: ", vm.toString(chainId)));
         }

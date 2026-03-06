@@ -3,12 +3,12 @@
 
 pragma solidity ^0.8.24;
 
-import "../common/ERC20.sol";
+import "../common/GST20.sol";
 import "../common/Ownable.sol";
 
 /// @notice Mintable/burnable native token for ghostchain economics.
-contract NativeToken is ERC20, Ownable {
-    constructor(string memory _name, string memory _symbol) ERC20(_name, _symbol, 18) {}
+contract NativeToken is GST20, Ownable {
+    constructor(string memory _name, string memory _symbol) GST20(_name, _symbol, 18) {}
 
     /// #if_succeeds {:msg "only owner mint"} msg.sender == owner;
     /// #if_succeeds {:msg "totalSupply increases"} totalSupply == old(totalSupply) + amount;

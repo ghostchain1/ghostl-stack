@@ -21,7 +21,7 @@ abstract contract GhostBrand {
     ///         `vm.deal(user, 10 * GST_UNIT)` // 10 GST
     uint256 internal constant GST_UNIT = 1e18;
 
-    /// @notice Canonical gas token ERC20 address — consistent across all layers.
+    /// @notice Canonical gas token GST20 address — consistent across all layers.
     ///         Deployed deterministically as the first contract from the genesis deployer.
     address internal constant CANONICAL_GST = 0x5FbDB2315678afecb367f032d93F642f64180aa3;
 

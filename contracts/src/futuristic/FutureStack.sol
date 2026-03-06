@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "../ERC20.sol";
+import "../GST20.sol";
 
 error NotImplemented();
 
@@ -535,8 +535,8 @@ interface IBurnableToken {
     function burn(address from, uint256 amount) external;
 }
 
-contract NativeTokenV2 is AccessManaged, ERC20 {
-    constructor(address admin_) AccessManaged(admin_) ERC20("Futuristic Native Token", "GASX", 18) {}
+contract NativeTokenV2 is AccessManaged, GST20 {
+    constructor(address admin_) AccessManaged(admin_) GST20("Futuristic Native Token", "GASX", 18) {}
 
     function mint(address to, uint256 amount) external onlyAdmin {
         _mint(to, amount);
@@ -547,11 +547,11 @@ contract NativeTokenV2 is AccessManaged, ERC20 {
     }
 }
 
-contract WrappedNative is ERC20 {
+contract WrappedNative is GST20 {
     event Deposited(address indexed from, uint256 amount);
     event Withdrawn(address indexed to, uint256 amount);
 
-    constructor() ERC20("Wrapped Native Token", "WNATIVE", 18) {}
+    constructor() GST20("Wrapped Native Token", "WNATIVE", 18) {}
 
     receive() external payable {
         _mint(msg.sender, msg.value);
@@ -673,7 +673,7 @@ contract BaseFeeOracle is AccessManaged {
     }
 }
 
-interface IERC20Minimal {
+interface IGST20Minimal {
     function transfer(address to, uint256 amount) external returns (bool);
 
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
@@ -697,7 +697,7 @@ contract TreasuryV2 is AccessManaged {
     }
 
     function withdrawToken(address token, address to, uint256 amount) external onlyAdmin {
-        require(IERC20Minimal(token).transfer(to, amount), "transfer failed");
+        require(IGST20Minimal(token).transfer(to, amount), "transfer failed");
         emit TokenWithdraw(token, to, amount);
     }
 }
@@ -720,7 +720,7 @@ contract EmissionController is AccessManaged {
 // 3. Stablecoin System (hybrid + AI-friendly stubs)
 // -----------------------------------------------
 
-contract Stablecoin is AccessManaged, ERC20 {
+contract Stablecoin is AccessManaged, GST20 {
     mapping(address => bool) public minters;
     mapping(address => bool) public burners;
 
@@ -729,7 +729,7 @@ contract Stablecoin is AccessManaged, ERC20 {
     event MinterUpdated(address indexed minter, bool allowed);
     event BurnerUpdated(address indexed burner, bool allowed);
 
-    constructor(address admin_) AccessManaged(admin_) ERC20("Ghost Synthetic Dollar", "GSD", 18) {}
+    constructor(address admin_) AccessManaged(admin_) GST20("Ghost Synthetic Dollar", "GSD", 18) {}
 
     function setMinter(address minter, bool allowed) external onlyAdmin {
         minters[minter] = allowed;
@@ -790,7 +790,7 @@ contract CollateralVault is AccessManaged {
     function deposit(address asset, uint256 amount) external {
         require(isAllowedCollateral[asset], "asset not allowed");
         require(amount > 0, "amount=0");
-        require(IERC20Minimal(asset).transferFrom(msg.sender, address(this), amount), "transfer failed");
+        require(IGST20Minimal(asset).transferFrom(msg.sender, address(this), amount), "transfer failed");
         collateral[asset][msg.sender] += amount;
         totalCollateral[asset] += amount;
         emit Deposited(asset, msg.sender, amount);
@@ -818,7 +818,7 @@ contract CollateralVault is AccessManaged {
         require(bal >= amount, "insufficient");
         collateral[asset][owner] = bal - amount;
         totalCollateral[asset] -= amount;
-        require(IERC20Minimal(asset).transfer(recipient, amount), "transfer failed");
+        require(IGST20Minimal(asset).transfer(recipient, amount), "transfer failed");
         emit Withdrawn(asset, owner, amount);
     }
 }
@@ -856,7 +856,7 @@ contract PegStabilityModule is AccessManaged {
     }
 
     function swapCollateralForStable(uint256 collateralIn, uint256 stableOut) external {
-        require(IERC20Minimal(collateralAsset).transferFrom(msg.sender, address(this), collateralIn), "transfer failed");
+        require(IGST20Minimal(collateralAsset).transferFrom(msg.sender, address(this), collateralIn), "transfer failed");
         uint256 fee = (collateralIn * feeBps) / 10_000;
         uint256 netCollateral = collateralIn - fee;
         require(netCollateral >= stableOut, "slippage");
@@ -866,7 +866,7 @@ contract PegStabilityModule is AccessManaged {
 
     function swapStableForCollateral(uint256 stableIn, uint256 collateralOut) external {
         stable.burn(msg.sender, stableIn);
-        require(IERC20Minimal(collateralAsset).transfer(msg.sender, collateralOut), "transfer failed");
+        require(IGST20Minimal(collateralAsset).transfer(msg.sender, collateralOut), "transfer failed");
         emit SwappedForCollateral(msg.sender, stableIn, collateralOut);
     }
 }
@@ -1039,7 +1039,7 @@ contract TokenBridge is AccessManaged {
 
     function deposit(address token, address to, uint256 amount, uint256 targetChainId) external {
         require(amount > 0, "amount=0");
-        require(IERC20Minimal(token).transferFrom(msg.sender, address(this), amount), "transfer failed");
+        require(IGST20Minimal(token).transferFrom(msg.sender, address(this), amount), "transfer failed");
         lastDepositId += 1;
         emit DepositInitiated(lastDepositId, token, msg.sender, to, amount, targetChainId);
     }
@@ -1050,7 +1050,7 @@ contract TokenBridge is AccessManaged {
     {
         require(!processedMessages[messageId], "processed");
         processedMessages[messageId] = true;
-        require(IERC20Minimal(token).transfer(to, amount), "transfer failed");
+        require(IGST20Minimal(token).transfer(to, amount), "transfer failed");
         emit WithdrawalFinalized(messageId, token, to, amount, sourceChainId);
     }
 }
@@ -1366,11 +1366,11 @@ contract FinalizationManager is AccessManaged {
 // 6. Governance & DAO Layer
 // -----------------------------------
 
-contract GovernanceToken is AccessManaged, ERC20 {
+contract GovernanceToken is AccessManaged, GST20 {
     event Minted(address indexed to, uint256 amount);
     event Burned(address indexed from, uint256 amount);
 
-    constructor(address admin_) AccessManaged(admin_) ERC20("Ghost Governance Token", "GGOV", 18) {}
+    constructor(address admin_) AccessManaged(admin_) GST20("Ghost Governance Token", "GGOV", 18) {}
 
     function mint(address to, uint256 amount) external onlyAdmin {
         _mint(to, amount);

@@ -5,7 +5,7 @@ pragma solidity ^0.8.24;
 
 import {LibErrors} from "../common/LibErrors.sol";
 
-contract TestERC20 {
+contract TestGST20 {
     string public name;
     string public symbol;
     uint8 public immutable decimals;

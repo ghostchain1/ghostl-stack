@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "./GuardPolicy.sol";
-import "./ERC20.sol";
+import "./GST20.sol";
 import "./compliance/ComplianceProofGuard.sol";
 
 interface IL2FinalityOracle {
@@ -100,7 +100,7 @@ contract L2L3Bridge {
 
     /// User deposits on L2 to mint/release on L3 (offchain relayer can mirror on the other chain).
     function depositToL3(address to, uint256 amount, uint256 nonce) external {
-        // In MVP we just emit an event; funds handling can be added later (ERC20 escrow etc).
+        // In MVP we just emit an event; funds handling can be added later (GST20 escrow etc).
         bytes32 key = keccak256(abi.encode(msg.sender, to, amount, nonce));
         // slither-disable-next-line incorrect-equality
         require(depositTime[key] == 0, "already");
@@ -108,13 +108,13 @@ contract L2L3Bridge {
         emit DepositInitiated(msg.sender, to, amount, nonce);
     }
 
-    /// Deposit an ERC20 on L2 to mint the bridged representation on L3.
+    /// Deposit an GST20 on L2 to mint the bridged representation on L3.
     function depositERC20ToL3(address token, address to, uint256 amount, uint256 nonce) external {
         bytes32 key = keccak256(abi.encode(token, msg.sender, to, amount, nonce));
         // slither-disable-next-line incorrect-equality
         require(erc20DepositTime[key] == 0, "already");
         erc20DepositTime[key] = block.timestamp;
-        require(ERC20(token).transferFrom(msg.sender, address(this), amount), "transferFrom");
+        require(GST20(token).transferFrom(msg.sender, address(this), amount), "transferFrom");
         emit ERC20DepositInitiated(token, msg.sender, to, amount, nonce);
     }
 
@@ -140,7 +140,7 @@ contract L2L3Bridge {
         _finalizeERC20ToL3(token, from, to, amount, nonce, bytes32(0));
     }
 
-    /// @notice Cascading-finality aware ERC20 finalize path for hierarchical mode.
+    /// @notice Cascading-finality aware GST20 finalize path for hierarchical mode.
     function finalizeERC20ToL3WithFinality(
         address token,
         address from,
@@ -223,7 +223,7 @@ contract L2L3Bridge {
         require(ok, "blocked by policy");
         require(waitSeconds == 0, "delay");
 
-        require(ERC20(token).transfer(to, amount), "transfer");
+        require(GST20(token).transfer(to, amount), "transfer");
         emit ERC20WithdrawReleased(token, from, to, amount, nonce);
     }
 

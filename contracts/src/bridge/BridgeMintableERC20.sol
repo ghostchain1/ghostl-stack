@@ -5,7 +5,7 @@ import {LibErrors} from "../common/LibErrors.sol";
 
 /// @notice ERC20-like token that can ONLY be minted/burned by a bridge.
 /// Use this for the "representation" token on the child chain.
-contract BridgeMintableERC20 {
+contract BridgeMintableGST20 {
     string public name;
     string public symbol;
     uint8 public immutable decimals;

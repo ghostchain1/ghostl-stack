@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "./ERC20.sol";
+import "./GST20.sol";
 import "./GhostBrand.sol";
 
-contract GhostTokenL2 is ERC20, GhostBrand {
+contract GhostTokenL2 is GST20, GhostBrand {
     /// @dev Canonical GhostChain gas token address.
     address internal constant CANONICAL_GAS_TOKEN = CANONICAL_GST;
 
@@ -13,7 +13,7 @@ contract GhostTokenL2 is ERC20, GhostBrand {
 
     error CanonicalGasTokenOnly(address canonical);
 
-    constructor() ERC20(GHOST_NAME, GHOST_SYMBOL, GHOST_DECIMALS) {
+    constructor() GST20(GHOST_NAME, GHOST_SYMBOL, GHOST_DECIMALS) {
         if (msg.sender != CANONICAL_GAS_TOKEN && msg.sender != AUTHORIZED_DEPLOYER) {
             revert CanonicalGasTokenOnly(CANONICAL_GAS_TOKEN);
         }

@@ -13,7 +13,7 @@ interface IERC20Approve {
     function approve(address spender, uint256 amount) external returns (bool);
 }
 
-interface IBurnableERC20 {
+interface IBurnableGST20 {
     function burn(uint256 amount) external;
 }
 

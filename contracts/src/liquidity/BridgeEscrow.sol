@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import "../common/Governed.sol";
 import "../bridge/StandardBridge.sol";
 
-interface IERC20Escrow {
+interface IGST20Escrow {
     function approve(address spender, uint256 amount) external returns (bool);
     function transfer(address to, uint256 amount) external returns (bool);
 }
@@ -103,15 +103,15 @@ contract BridgeEscrow is Governed {
         address remoteAsset = remoteToken[adapterId][asset];
         if (remoteAsset == address(0)) revert RemoteTokenMissing(adapterId, asset);
 
-        require(IERC20Escrow(asset).approve(cfg.bridge, 0), "approve0");
-        require(IERC20Escrow(asset).approve(cfg.bridge, amount), "approve");
+        require(IGST20Escrow(asset).approve(cfg.bridge, 0), "approve0");
+        require(IGST20Escrow(asset).approve(cfg.bridge, amount), "approve");
 
-        StandardBridge(payable(cfg.bridge)).bridgeERC20(asset, remoteAsset, cfg.remoteTo, amount, cfg.minGasLimit, data, false);
+        StandardBridge(payable(cfg.bridge)).bridgeGST20(asset, remoteAsset, cfg.remoteTo, amount, cfg.minGasLimit, data, false);
 
         emit BridgedOut(adapterId, asset, amount, cfg.bridge, cfg.remoteTo, remoteAsset);
     }
 
-    /// @notice Bridge native gas token out of L1 by wrapping it into `wrappedNative` then bridging as an ERC20.
+    /// @notice Bridge native gas token out of L1 by wrapping it into `wrappedNative` then bridging as a GST20.
     /// @dev Caller MUST pass `msg.value == amount`.
     function bridgeOutNative(uint256 adapterId, uint256 amount, bytes calldata data) external payable onlyVaultOrGovernance {
         require(amount != 0, "amount=0");
@@ -128,10 +128,10 @@ contract BridgeEscrow is Governed {
 
         IWrappedNative(wn).deposit{value: amount}();
 
-        require(IERC20Escrow(wn).approve(cfg.bridge, 0), "approve0");
-        require(IERC20Escrow(wn).approve(cfg.bridge, amount), "approve");
+        require(IGST20Escrow(wn).approve(cfg.bridge, 0), "approve0");
+        require(IGST20Escrow(wn).approve(cfg.bridge, amount), "approve");
 
-        StandardBridge(payable(cfg.bridge)).bridgeERC20(wn, remoteAsset, cfg.remoteTo, amount, cfg.minGasLimit, data, false);
+        StandardBridge(payable(cfg.bridge)).bridgeGST20(wn, remoteAsset, cfg.remoteTo, amount, cfg.minGasLimit, data, false);
 
         emit BridgedOutNative(adapterId, amount, cfg.bridge, cfg.remoteTo, remoteAsset, wn);
     }
@@ -144,14 +144,14 @@ contract BridgeEscrow is Governed {
         require(asset != address(0), "asset=0");
         require(amount != 0, "amount=0");
 
-        require(IERC20Escrow(asset).transfer(vaultRef, amount), "transfer");
+        require(IGST20Escrow(asset).transfer(vaultRef, amount), "transfer");
         ILoadBalancerVaultEscrowReceiver(vaultRef).unwindFromEscrow(adapterId, asset, amount, strategyId);
 
         emit UnwindFinalized(adapterId, asset, amount, msg.sender);
     }
 
     /// @notice Unwrap returned native principal and finalize unwind accounting.
-    /// @dev The bridge must have finalized ERC20 (wrapped-native) back to this escrow before calling.
+    /// @dev The bridge must have finalized GST20 (wrapped-native) back to this escrow before calling.
     function finalizeUnwindNative(uint256 adapterId, uint256 amount, bytes32 strategyId) external {
         address vaultRef = vault;
         require(vaultRef != address(0), "vault=0");
@@ -162,7 +162,7 @@ contract BridgeEscrow is Governed {
 
         // Avoid forwarding native value directly (Slither: arbitrary-send-eth). Instead, forward wrapped native to the vault and let the
         // vault unwrap as part of unwind accounting for asset==address(0).
-        require(IERC20Escrow(wn).transfer(vaultRef, amount), "transfer");
+        require(IGST20Escrow(wn).transfer(vaultRef, amount), "transfer");
         ILoadBalancerVaultEscrowReceiver(vaultRef).unwindFromEscrow(adapterId, address(0), amount, strategyId);
 
         emit UnwindFinalized(adapterId, address(0), amount, msg.sender);

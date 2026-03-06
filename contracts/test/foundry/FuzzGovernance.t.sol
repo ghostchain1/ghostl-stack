@@ -4,11 +4,11 @@ pragma solidity ^0.8.24;
 import "./TestBase.sol";
 import "../../src/governance/Governor.sol";
 import "../../src/governance/ProposalExecutor.sol";
-import "../../src/common/ERC20.sol";
+import "../../src/common/GST20.sol";
 import "../../src/common/Ownable.sol";
 
-contract GovToken is ERC20, GhostBrand {
-    constructor() ERC20("Gov", "GOV", 18) {
+contract GovToken is GST20, GhostBrand {
+    constructor() GST20("Gov", "GOV", 18) {
         _mint(msg.sender, 1_000_000 * GST_UNIT);
     }
 }

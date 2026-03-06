@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import "../common/ReentrancyGuard.sol";
 
-interface IERC20 {
+interface IGST20 {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
     function transfer(address to, uint256 amount) external returns (bool);
     function balanceOf(address account) external view returns (uint256);
@@ -60,7 +60,7 @@ contract GhostXVault is ReentrancyGuard {
     /// @notice Deposit ERC-20 tokens into the vault.
     function deposit(address token, uint256 amount) external nonReentrant {
         if (amount == 0) revert ZeroAmount();
-        if (!IERC20(token).transferFrom(msg.sender, address(this), amount)) revert TransferFailed();
+        if (!IGST20(token).transferFrom(msg.sender, address(this), amount)) revert TransferFailed();
         balance[msg.sender][token] += amount;
         emit Deposited(msg.sender, token, amount);
     }
@@ -128,7 +128,7 @@ contract GhostXVault is ReentrancyGuard {
             (bool ok,) = to.call{value: amount}("");
             require(ok, "native transfer failed");
         } else {
-            if (!IERC20(token).transfer(to, amount)) revert TransferFailed();
+            if (!IGST20(token).transfer(to, amount)) revert TransferFailed();
         }
     }
 

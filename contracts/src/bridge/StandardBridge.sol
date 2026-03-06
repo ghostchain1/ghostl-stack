@@ -9,7 +9,7 @@ interface IERC20Like {
     function transfer(address to, uint256 amount) external returns (bool);
 }
 
-interface IBridgeMintableERC20 {
+interface IBridgeMintableGST20 {
     function mint(address to, uint256 amount) external;
     function burn(address from, uint256 amount) external;
 }
@@ -71,8 +71,8 @@ contract StandardBridge {
 
     /// @notice Bridge ERC20 from this chain to remote chain.
     /// @dev If localToken is canonical here: escrow via transferFrom to this contract.
-    ///      If localToken is representation here: burn via BridgeMintableERC20.
-    function bridgeERC20(
+    ///      If localToken is representation here: burn via BridgeMintableGST20.
+    function bridgeGST20(
         address localToken,
         address remoteToken,
         address to,
@@ -85,7 +85,7 @@ contract StandardBridge {
         if (amount == 0) revert LibErrors.InvalidValue();
 
         if (localIsRepresentation) {
-            IBridgeMintableERC20(localToken).burn(msg.sender, amount);
+            IBridgeMintableGST20(localToken).burn(msg.sender, amount);
         } else {
             require(IERC20Like(localToken).transferFrom(msg.sender, address(this), amount), "escrow fail");
         }
@@ -114,7 +114,7 @@ contract StandardBridge {
         if (amount == 0) revert LibErrors.InvalidValue();
 
         if (localIsRepresentation) {
-            IBridgeMintableERC20(localToken).mint(to, amount);
+            IBridgeMintableGST20(localToken).mint(to, amount);
         } else {
             require(IERC20Like(localToken).transfer(to, amount), "release fail");
         }

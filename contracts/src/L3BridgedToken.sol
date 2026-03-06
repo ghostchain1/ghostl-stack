@@ -3,9 +3,9 @@
 
 pragma solidity ^0.8.24;
 
-import "./ERC20.sol";
+import "./GST20.sol";
 
-contract L3BridgedToken is ERC20 {
+contract L3BridgedToken is GST20 {
     address public owner;
     address public relayer;
     address public immutable l2Token;
@@ -35,7 +35,7 @@ contract L3BridgedToken is ERC20 {
         string memory name_,
         string memory symbol_,
         uint8 decimals_
-    ) ERC20(name_, symbol_, decimals_) {
+    ) GST20(name_, symbol_, decimals_) {
         owner = ownerAddr;
         relayer = relayerAddr;
         l2Token = l2TokenAddr;

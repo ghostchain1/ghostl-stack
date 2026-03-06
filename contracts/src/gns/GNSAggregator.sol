@@ -17,7 +17,7 @@ pragma solidity ^0.8.24;
 //   20% L3 Infrastructure (held, relayed back)
 // ────────────────────────────────────────────────────────────────────────────
 
-interface IERC20 {
+interface IGST20 {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
     function transfer(address to, uint256 amount) external returns (bool);
     function burn(uint256 amount) external;
@@ -59,7 +59,7 @@ contract GNSAggregator {
     // ── Config ────────────────────────────────────────────────────────────────
     ICrossDomainMessenger public immutable messenger;
     address public immutable l1Registry;   // L1 GNSRegistry address
-    IERC20  public           gst;          // GST token on L2
+    IGST20  public           gst;          // GST token on L2
 
     address public owner;
     address public l1Treasury;
@@ -115,7 +115,7 @@ contract GNSAggregator {
         owner          = msg.sender;
         messenger      = ICrossDomainMessenger(_messenger);
         l1Registry     = _l1Registry;
-        gst            = IERC20(_gst);
+        gst            = IGST20(_gst);
         l1Treasury     = _l1Treasury;
         l2Sequencer    = _l2Sequencer;
         l3Infrastructure = _l3Infrastructure;
@@ -212,7 +212,7 @@ contract GNSAggregator {
     // ── Admin ─────────────────────────────────────────────────────────────────
     function setPortal(address portal)         external onlyOwner { l3Portal = portal; }
     function setPricePerYear(uint256 price)    external onlyOwner { pricePerYear = price; emit PriceUpdated(price); }
-    function setGST(address _gst)              external onlyOwner { gst = IERC20(_gst); }
+    function setGST(address _gst)              external onlyOwner { gst = IGST20(_gst); }
     function setL1Treasury(address addr)       external onlyOwner { l1Treasury = addr; }
     function setL2Sequencer(address addr)      external onlyOwner { l2Sequencer = addr; }
     function setL3Infrastructure(address addr) external onlyOwner { l3Infrastructure = addr; }

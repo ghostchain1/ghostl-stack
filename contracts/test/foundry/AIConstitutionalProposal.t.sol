@@ -4,13 +4,13 @@
 pragma solidity ^0.8.24;
 
 import "./TestBase.sol";
-import "../../src/common/ERC20.sol";
+import "../../src/common/GST20.sol";
 import "../../src/governance/ProposalExecutor.sol";
 import "../../src/governance/Governor.sol";
 import "../../src/governance/AIConstitutionalProposal.sol";
 
-contract MockToken is ERC20 {
-    constructor() ERC20("MockGov", "MGOV", 18) {}
+contract MockToken is GST20 {
+    constructor() GST20("MockGov", "MGOV", 18) {}
 
     function mint(address to, uint256 amount) external {
         _mint(to, amount);

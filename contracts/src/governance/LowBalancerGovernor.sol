@@ -3,13 +3,13 @@
 
 pragma solidity ^0.8.24;
 
-import "../common/ERC20.sol";
+import "../common/GST20.sol";
 import "./ProposalExecutor.sol";
 
 /// @notice Token-based governor for Low Balancer with quorum + timelock execution.
 /// @dev Uses staking (token escrow) to prevent vote re-use via transfers during the voting window.
 contract LowBalancerGovernor {
-    ERC20 public immutable votingToken;
+    GST20 public immutable votingToken;
     ProposalExecutor public immutable executor;
 
     uint256 public votingPeriod;
@@ -57,7 +57,7 @@ contract LowBalancerGovernor {
     error NotExecutor();
     error Locked(uint64 until);
 
-    constructor(ERC20 votingToken_, ProposalExecutor executor_, uint256 votingPeriod_, uint16 quorumBps_) {
+    constructor(GST20 votingToken_, ProposalExecutor executor_, uint256 votingPeriod_, uint16 quorumBps_) {
         require(address(votingToken_) != address(0), "token=0");
         require(address(executor_) != address(0), "executor=0");
         require(votingPeriod_ > 0, "period=0");

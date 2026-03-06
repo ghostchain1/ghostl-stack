@@ -3,15 +3,15 @@
 
 pragma solidity ^0.8.24;
 
-import "../common/ERC20.sol";
+import "../common/GST20.sol";
 
 /// @notice Wrapped-native token for the chain's native gas token.
 /// @dev Intended for bridge-escrow custody of native principal. Production should use the canonical wrapped-native token.
-contract WrappedNativeToken is ERC20 {
+contract WrappedNativeToken is GST20 {
     event Deposited(address indexed from, uint256 amount);
     event Withdrawn(address indexed to, uint256 amount);
 
-    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_, 18) {}
+    constructor(string memory name_, string memory symbol_) GST20(name_, symbol_, 18) {}
 
     receive() external payable {
         _mint(msg.sender, msg.value);

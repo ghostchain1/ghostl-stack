@@ -3,11 +3,11 @@ pragma solidity ^0.8.24;
 
 import "../common/Ownable.sol";
 
-interface IERC721Receiver {
-    function onERC721Received(address operator, address from, uint256 tokenId, bytes calldata data) external returns (bytes4);
+interface IGST721Receiver {
+    function onGST721Received(address operator, address from, uint256 tokenId, bytes calldata data) external returns (bytes4);
 }
 
-/// @notice Minimal ERC721-compatible NFT with admin-controlled minting.
+/// @notice Minimal GST721-compatible NFT with admin-controlled minting.
 contract GhostNFT is Ownable {
     string public name;
     string public symbol;
@@ -97,7 +97,7 @@ contract GhostNFT is Ownable {
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data) public {
         require(_isApprovedOrOwner(msg.sender, tokenId), "not approved");
         _transfer(from, to, tokenId);
-        _checkOnERC721Received(from, to, tokenId, data);
+        _checkOnGST721Received(from, to, tokenId, data);
     }
 
     function mint(address to, string memory uri) external onlyMinter returns (uint256) {
@@ -156,9 +156,9 @@ contract GhostNFT is Ownable {
         return (spender == owner || getApproved(tokenId) == spender || isApprovedForAll(owner, spender));
     }
 
-    function _checkOnERC721Received(address from, address to, uint256 tokenId, bytes memory data) internal {
+    function _checkOnGST721Received(address from, address to, uint256 tokenId, bytes memory data) internal {
         if (to.code.length == 0) return;
-        bytes4 retval = IERC721Receiver(to).onERC721Received(msg.sender, from, tokenId, data);
-        require(retval == IERC721Receiver.onERC721Received.selector, "unsafe recipient");
+        bytes4 retval = IGST721Receiver(to).onGST721Received(msg.sender, from, tokenId, data);
+        require(retval == IGST721Receiver.onGST721Received.selector, "unsafe recipient");
     }
 }

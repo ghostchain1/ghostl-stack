@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import "../common/ReentrancyGuard.sol";
 
-interface IERC20Minimal {
+interface IGST20Minimal {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
     function transfer(address to, uint256 amount) external returns (bool);
     function balanceOf(address account) external view returns (uint256);
@@ -12,10 +12,10 @@ interface IERC20Minimal {
 /// @notice Dev-only constant-product AMM for integration testing.
 /// @dev Production deployments should integrate with the canonical GhostChain DEX.
 contract MinimalAMM is ReentrancyGuard {
-    IERC20Minimal public immutable token0;
-    IERC20Minimal public immutable token1;
+    IGST20Minimal public immutable token0;
+    IGST20Minimal public immutable token1;
 
-    // Minimal ERC20-like LP token (dev only).
+    // Minimal GST20-like LP token (dev only).
     string public name;
     string public symbol;
     uint8 public constant decimals = 18;
@@ -35,7 +35,7 @@ contract MinimalAMM is ReentrancyGuard {
     event LiquidityRemoved(address indexed provider, uint256 amount0, uint256 amount1, uint256 lpBurned);
     event Swapped(address indexed user, address indexed tokenIn, uint256 amountIn, address indexed tokenOut, uint256 amountOut);
 
-    constructor(IERC20Minimal token0_, IERC20Minimal token1_) {
+    constructor(IGST20Minimal token0_, IGST20Minimal token1_) {
         require(address(token0_) != address(0) && address(token1_) != address(0), "token=0");
         require(address(token0_) != address(token1_), "same token");
         token0 = token0_;

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "../foundry/TestBase.sol";
-import "../../src/ERC20.sol";
+import "../../src/GST20.sol";
 import "../../src/treasury/TreasuryVault.sol";
 import "../../src/treasury/TreasuryPolicy.sol";
 import "../../src/treasury/TreasuryReceipts.sol";
@@ -18,8 +18,8 @@ interface VmExt {
     function ffi(string[] calldata) external returns (bytes memory);
 }
 
-contract MockToken is ERC20 {
-    constructor() ERC20("Mock", "MOCK", 18) {}
+contract MockToken is GST20 {
+    constructor() GST20("Mock", "MOCK", 18) {}
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
     }

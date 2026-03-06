@@ -3,7 +3,7 @@
 
 pragma solidity ^0.8.24;
 
-contract ERC20 {
+contract GST20 {
     string public name;
     string public symbol;
     uint8 public immutable decimals;
