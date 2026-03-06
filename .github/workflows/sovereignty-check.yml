@@ -1,0 +1,129 @@
+name: GhostStack Sovereignty Check (SED-Engine)
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+      - "sovereignty/**"
+      - "security/**"
+  workflow_dispatch:
+    inputs:
+      strict:
+        description: 'Also fail on MEDIUM severity violations'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─── SED-Engine: dependency & import sovereignty scan ─────────────────────
+  sed-engine-scan:
+    name: SED-Engine Sovereignty Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write   # required for github-guard PR annotations
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history needed for git diff in github-guard
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run SED-Engine scan (non-blocking — for report only)
+        run: |
+          node --experimental-strip-types \
+            tools/sovereignty/sed-engine/cli.ts scan . --json \
+            > sed-engine-report.json || true
+
+      - name: Upload scan report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sed-engine-report-${{ github.run_id }}
+          path: sed-engine-report.json
+          retention-days: 14
+
+      - name: Run SED-Engine enforce (blocking — fails CI on CRITICAL/HIGH)
+        run: |
+          node --experimental-strip-types \
+            tools/sovereignty/sed-engine/cli.ts enforce .
+
+      - name: Post PR annotations via github-guard
+        if: github.event_name == 'pull_request' && failure()
+        env:
+          GITHUB_TOKEN:      ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA:        ${{ github.event.pull_request.head.sha }}
+          GITHUB_PR_NUMBER:  ${{ github.event.pull_request.number }}
+        run: |
+          node --experimental-strip-types \
+            tools/sovereignty/sed-engine/enforcement/github-guard.ts || true
+
+      - name: Sovereignty summary
+        if: always()
+        run: |
+          echo "### ⚡ SED-Engine Summary" >> $GITHUB_STEP_SUMMARY
+          if [ -f sed-engine-report.json ]; then
+            node --eval "
+              const r = JSON.parse(require('fs').readFileSync('sed-engine-report.json', 'utf8'));
+              const f = r.allFindings ?? [];
+              const blocking = f.filter(x => x.severity === 'CRITICAL' || x.severity === 'HIGH');
+              console.log('| Metric | Value |');
+              console.log('|--------|-------|');
+              console.log('| Files scanned | ' + (r.report?.scanned ?? '-') + ' |');
+              console.log('| Total violations | ' + f.length + ' |');
+              console.log('| Blocking (CRITICAL/HIGH) | ' + blocking.length + ' |');
+              console.log('| Status | ' + (blocking.length === 0 ? '✅ Passed' : '❌ Failed') + ' |');
+            " >> $GITHUB_STEP_SUMMARY || echo "| Report | unavailable |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # ─── Rewrite suggester (PRs only — dry-run, comments diff) ───────────────
+  sed-engine-rewrite-preview:
+    name: SED-Engine Rewrite Preview (dry-run)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Dry-run rewrite (shows what would change)
+        run: |
+          node --experimental-strip-types \
+            tools/sovereignty/sed-engine/cli.ts rewrite . --dry-run \
+            | head -200 || true

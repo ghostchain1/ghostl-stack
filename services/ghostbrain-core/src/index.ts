@@ -14,6 +14,7 @@
 
 import { buildApp }       from "./app.js";
 import { attachWsServer } from "./routes/ws.js";
+import { markReady }      from "./routes/status.js";
 
 const PORT = Number(process.env.GHOSTBRAIN_PORT ?? "7900");
 const BIND = process.env.GHOSTBRAIN_BIND ?? "127.0.0.1";
@@ -26,6 +27,7 @@ try {
 
   // Attach WebSocket server to the same port (path: /ws)
   wss = attachWsServer(app.server);
+  markReady();
   app.log.info({ bind: BIND, port: PORT, wsPath: "/ws" }, "ghostbrain-core started");
 } catch (err) {
   app.log.error(err, "ghostbrain-core failed to start");

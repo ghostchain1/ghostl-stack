@@ -6,8 +6,34 @@ import { SessionProvider } from '../src/modules/identity-access/session';
 import { fetchServerSession } from '../src/modules/identity-access/serverSession';
 
 export const metadata = {
-  title: 'GhostL Dashboard',
-  description: 'Blockchain management dashboard'
+  title: {
+    default: 'GhostChain Control Center',
+    template: '%s | GhostChain'
+  },
+  description: 'GhostChain Sovereign L1/L2/L3 blockchain management, governance, treasury, and AI-powered operations dashboard.',
+  applicationName: 'GhostChain Control Center',
+  keywords: ['GhostChain', 'GST', 'blockchain', 'L1', 'L2', 'L3', 'OP Stack', 'sovereign'],
+  authors: [{ name: 'GhostChain', url: 'https://ghostchain.io' }],
+  creator: 'GhostChain',
+  publisher: 'GhostChain',
+  robots: { index: false, follow: false },
+  icons: {
+    icon: '/favicon.svg',
+    apple: '/apple-touch-icon.png',
+    shortcut: '/favicon.svg'
+  },
+  openGraph: {
+    type: 'website',
+    siteName: 'GhostChain Control Center',
+    title: 'GhostChain Control Center',
+    description: 'Sovereign L1/L2/L3 blockchain operations powered by GhostChain.',
+    locale: 'en_US'
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'GhostChain Control Center',
+    description: 'Sovereign L1/L2/L3 blockchain operations.'
+  }
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {

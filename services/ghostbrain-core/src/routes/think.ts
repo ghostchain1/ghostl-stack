@@ -16,6 +16,21 @@
 
 import type { FastifyInstance } from "fastify";
 import { z }                    from "zod";
+import { HyperGhostClient }     from "../agents/hyperGhostClient.js";
+
+// ── Lazy HGA client (fire-and-forget escalation path) ─────────────────────────
+let _hgaClient: HyperGhostClient | null = null;
+
+function getHGAClient(): HyperGhostClient {
+  if (!_hgaClient) {
+    _hgaClient = new HyperGhostClient({
+      baseUrl:       process.env.HYPER_GHOST_BASE_URL       ?? "http://127.0.0.1:7741",
+      brainToken:    process.env.HYPER_GHOST_BRAIN_TOKEN    ?? "",
+      governorToken: process.env.HYPER_GHOST_GOVERNOR_TOKEN ?? "",
+    });
+  }
+  return _hgaClient;
+}
 
 // ── Schemas ────────────────────────────────────────────────────────────────────
 
@@ -159,9 +174,12 @@ const handlers: Record<string, TaskHandler> = {
    *   - Standard proposals   → LOW risk
    *   - L1 proposals         → risk elevated by one tier (root-layer changes)
    *
-   * Phase 2 (TODO): forward to hyper-ghost-ai for LLM-based impact analysis.
+   * Phase 2: high-risk proposals are forwarded to hyper-ghost-ai (GOVERNOR role)
+   *   for LLM-based constitutional impact analysis. The dispatch is fire-and-forget
+   *   (non-blocking) — the deterministic result is still returned immediately so
+   *   callers are never blocked by hyper-ghost-ai availability.
    */
-  analyze_governance_proposal(payload) {
+  analyze_governance_proposal(payload, agent) {
     const proposalId     = String(payload["proposalId"]     ?? "unknown");
     const proposer       = String(payload["proposer"]       ?? "");
     const target         = String(payload["target"]         ?? "");
@@ -178,7 +196,34 @@ const handlers: Record<string, TaskHandler> = {
     if (layer === "L1" && risk === "low")    risk = "medium";
     if (layer === "L1" && risk === "medium") risk = "high";
 
-    const typeLabel = constitutional ? "constitutional" : amendment ? "amendment" : "standard";
+    // Re-assert full union type to prevent TS control-flow narrowing below
+    const riskLevel  = risk as GhostRisk;
+    const typeLabel  = constitutional ? "constitutional" : amendment ? "amendment" : "standard";
+    const needsEscalation = constitutional || riskLevel === "high" || riskLevel === "critical";
+    if (needsEscalation) {
+      // Fire-and-forget — do NOT await; never block the deterministic path
+      getHGAClient()
+        .dispatchAction({
+          requestId: `gov-${proposalId}-${Date.now()}`,
+          role:    "GOVERNOR",
+          action:  "analyze_governance_proposal",
+          params: {
+            proposalId,
+            proposer,
+            target,
+            constitutional,
+            amendment,
+            layer,
+            type:    typeLabel,
+            risk:    riskLevel,
+            callerAgent: agent,
+          },
+        })
+        .catch(() => {
+          // Intentionally swallowed — hyper-ghost-ai is an enhancement, not a hard dep.
+          // Failures are tracked inside HyperGhostClient's circuit breaker.
+        });
+    }
 
     return {
       result: {
@@ -187,18 +232,19 @@ const handlers: Record<string, TaskHandler> = {
         target,
         type:   typeLabel,
         layer,
-        risk,
+        risk:   riskLevel,
         analysedAt: new Date().toISOString(),
+        escalatedToHGA: needsEscalation,
         // Flags for downstream consumers
         requiresSupermajority:    constitutional,
         requiresExtendedPeriod:   constitutional,
-        requiresGovernorApproval: risk === "high",
+        requiresGovernorApproval: riskLevel === "high" || riskLevel === "critical",
       },
-      risk,
+      risk: riskLevel,
       recommendation: constitutional
         ? `Constitutional proposal ${proposalId} on ${layer} — requires supermajority ` +
           `(≥66.7%). GOVERNOR + AUDITOR approval required before execution. ` +
-          `Escalate to hyper-ghost-ai for impact analysis.`
+          `Forwarded to hyper-ghost-ai for LLM-based impact analysis.`
         : amendment
           ? `Amendment proposal ${proposalId} on ${layer} — extended deliberation ` +
             `period recommended. GOVERNOR approval required.`

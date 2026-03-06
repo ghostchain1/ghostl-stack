@@ -88,7 +88,13 @@
     "governance:constitution-proposal": "node --experimental-strip-types tools/governance/create-constitution-proposal.ts --proposal-id EXAMPLE-0001 --release-id local-release --release-gate 0x0000000000000000000000000000000000000001",
     "ghostctl": "bash tools/ghostctl",
     "test:sovereign-policy": "node --test tests/security/sovereign-regression.test.mjs",
-    "security:policy-gate": "npm run test:sovereign-policy && bash scripts/security/compose-hardening-audit.sh && bash scripts/verify-routing.sh"
+    "security:policy-gate": "npm run test:sovereign-policy && bash scripts/security/compose-hardening-audit.sh && bash scripts/verify-routing.sh",
+    "ghost:sovereignty:scan": "node --experimental-strip-types tools/sovereignty/sed-engine/cli.ts scan",
+    "ghost:sovereignty:scan:json": "node --experimental-strip-types tools/sovereignty/sed-engine/cli.ts scan . --json",
+    "ghost:sovereignty:enforce": "node --experimental-strip-types tools/sovereignty/sed-engine/cli.ts enforce",
+    "ghost:sovereignty:rewrite": "node --experimental-strip-types tools/sovereignty/sed-engine/cli.ts rewrite",
+    "ghost:sovereignty:fix": "node --experimental-strip-types tools/sovereignty/sed-engine/cli.ts fix",
+    "ghost:sovereignty:report": "node --experimental-strip-types tools/sovereignty/sed-engine/cli.ts report"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",

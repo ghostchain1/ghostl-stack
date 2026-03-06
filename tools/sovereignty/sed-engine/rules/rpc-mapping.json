@@ -1,0 +1,74 @@
+{
+  "$schema": "https://ghostchain.io/schemas/sed-engine/rpc-mapping/v1",
+  "version": "1.0.0",
+  "description": "Maps Ethereum JSON-RPC method names to Ghost sovereign equivalents. The ghost_* namespace is GhostChain's canonical RPC surface. Nodes MAY also accept eth_* as a compatibility alias for standard methods, but GhostStack source code must always use ghost_*.",
+
+  "mappings": {
+    "eth_blockNumber":                     "ghost_blockNumber",
+    "eth_chainId":                         "ghost_chainId",
+    "eth_call":                            "ghost_call",
+    "eth_sendRawTransaction":              "ghost_sendTransaction",
+    "eth_sendTransaction":                 "ghost_sendTransaction",
+    "eth_getBalance":                      "ghost_getBalance",
+    "eth_getTransactionCount":             "ghost_getTransactionCount",
+    "eth_gasPrice":                        "ghost_gasPrice",
+    "eth_estimateGas":                     "ghost_estimateGas",
+    "eth_getTransactionReceipt":           "ghost_getTransactionReceipt",
+    "eth_getTransactionByHash":            "ghost_getTransactionByHash",
+    "eth_getTransactionByBlockHashAndIndex":   "ghost_getTransactionByBlockHashAndIndex",
+    "eth_getTransactionByBlockNumberAndIndex": "ghost_getTransactionByBlockNumberAndIndex",
+    "eth_getBlockByNumber":                "ghost_getBlockByNumber",
+    "eth_getBlockByHash":                  "ghost_getBlockByHash",
+    "eth_getBlockTransactionCountByHash":  "ghost_getBlockTransactionCountByHash",
+    "eth_getBlockTransactionCountByNumber":"ghost_getBlockTransactionCountByNumber",
+    "eth_getLogs":                         "ghost_getLogs",
+    "eth_subscribe":                       "ghost_subscribe",
+    "eth_unsubscribe":                     "ghost_unsubscribe",
+    "eth_getCode":                         "ghost_getCode",
+    "eth_getStorageAt":                    "ghost_getStorageAt",
+    "eth_accounts":                        "ghost_accounts",
+    "eth_sign":                            "ghost_sign",
+    "eth_signTransaction":                 "ghost_signTransaction",
+    "eth_signTypedData":                   "ghost_signTypedData",
+    "eth_signTypedData_v4":                "ghost_signTypedData_v4",
+    "eth_getFilterChanges":                "ghost_getFilterChanges",
+    "eth_newFilter":                       "ghost_newFilter",
+    "eth_newBlockFilter":                  "ghost_newBlockFilter",
+    "eth_uninstallFilter":                 "ghost_uninstallFilter",
+    "eth_maxPriorityFeePerGas":            "ghost_maxPriorityFeePerGas",
+    "eth_feeHistory":                      "ghost_feeHistory",
+    "eth_syncing":                         "ghost_syncing",
+    "eth_mining":                          "ghost_mining",
+    "eth_hashrate":                        "ghost_hashrate",
+    "eth_coinbase":                        "ghost_coinbase",
+    "eth_protocolVersion":                 "ghost_protocolVersion"
+  },
+
+  "ghostExtensions": {
+    "ghost_getGstBalance":        "Fetch GST (native token) balance — preferred over ghost_getBalance for clarity",
+    "ghost_getLayerInfo":         "Return L1/L2/L3 layer metadata for the connected node",
+    "ghost_getPeerCount":         "Same as net_peerCount but in ghost namespace",
+    "ghost_getRouterState":       "Fetch current cross-layer routing law state",
+    "ghost_getBrainSignal":       "Broadcast a signal to GhostBrain core",
+    "ghost_getPolicyGateState":   "Fetch on-chain governance policy gate status",
+    "ghost_getValidatorSet":      "Return current validator set for the connected layer"
+  },
+
+  "fallbackPolicy": "ghost_* preferred everywhere. eth_* ONLY accepted inside packages/ghost-sdk/src/ (compat layer) and bridge adapters. Detection of eth_* in any other path = VIOLATION.",
+
+  "exemptPaths": [
+    "packages/ghost-sdk/src/",
+    "packages/ghost-sdk-core/src/",
+    "packages/hardhat-ghost/src/",
+    "packages/ghostchainjs-tx/src/",
+    "packages/ghostchainjs-util/src/",
+    "contracts/lib/",
+    "services/",
+    "bridge",
+    "node_modules/",
+    "dist/",
+    ".git/"
+  ],
+
+  "severity": "HIGH"
+}

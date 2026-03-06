@@ -38,7 +38,8 @@ for file in $STAGED; do
   # Skip bridge/adapter/compat paths (legitimate ETH references)
   case "$file" in
     *bridge* | *adapter* | *weth* | *cross-chain* | *l1-interop* | \
-    *node_modules* | *dist/* | *artifacts/* | *cache/* | *brand-enforcer/test*)
+    *node_modules* | *dist/* | *artifacts/* | *cache/* | *brand-enforcer/test* | \
+    *tools/sovereignty/*)
       continue ;;
   esac
 

@@ -1,0 +1,250 @@
+/**
+ * ghost-health-aggregator
+ *
+ * Central health dashboard for all GhostChain application services.
+ *
+ * Polls /health, /healthz, or /status on each registered service and
+ * returns a unified status object — instantly usable by dashboards,
+ * alerting, and CI smoke tests.
+ *
+ * Endpoints:
+ *   GET /health          — liveness (this service itself)
+ *   GET /status          — full aggregated report (all services)
+ *   GET /status/:service — single-service report
+ *   GET /summary         — compact ok/degraded/down counts
+ *
+ * Port: 7640  (override with PORT env var)
+ */
+
+import express from "express";
+
+const PORT       = Number(process.env.PORT     ?? 7640);
+const TIMEOUT_MS = Number(process.env.POLL_TIMEOUT_MS ?? 3000);
+const CACHE_MS   = Number(process.env.POLL_CACHE_MS   ?? 10_000);
+
+// ── Service registry ──────────────────────────────────────────────────────────
+// Each entry: { id: string, url: string, probe: "/health"|"/healthz"|"/status" }
+// URL comes from env vars (docker-compose service names) with sensible defaults.
+
+const SERVICES = Object.freeze([
+  // ── Core brain & AI ──────────────────────────────────────────────────────
+  { id: "ghostbrain-core",          url: process.env.GHOSTBRAIN_CORE_URL         ?? "http://ghostbrain-core:7900",          probe: "/readyz"  },
+  { id: "hyper-ghost-ai",           url: process.env.HYPER_GHOST_BASE_URL        ?? "http://hyper-ghost-ai:7741",           probe: "/health"  },
+  { id: "ghostbrain-gsa",           url: process.env.GSA_BASE_URL                ?? "http://ghostbrain-gsa:7850",           probe: "/health"  },
+  { id: "hyper-ghost-governor",     url: process.env.HG_GOVERNOR_URL             ?? "http://hyper-ghost-governor:7742",     probe: "/health"  },
+  { id: "hyper-ghost-supervisor",   url: process.env.HG_SUPERVISOR_URL           ?? "http://hyper-ghost-supervisor:7743",   probe: "/health"  },
+  { id: "ghost-guard",              url: process.env.GHOST_GUARD_URL             ?? "http://ghost-guard:7701",             probe: "/health"  },
+  { id: "ghostcontract-ai",         url: process.env.GHOSTCONTRACT_AI_URL        ?? "http://ghostcontract-ai:7650",        probe: "/health"  },
+  { id: "ghost-ai-consensus",       url: process.env.GHOST_AI_CONSENSUS_URL      ?? "http://ghost-ai-consensus:7660",      probe: "/health"  },
+  { id: "ghost-ai-attestor",        url: process.env.GHOST_AI_ATTESTOR_URL       ?? "http://ghost-ai-attestor:7661",       probe: "/health"  },
+  { id: "ghost-storage-ai",         url: process.env.GHOST_STORAGE_AI_URL        ?? "http://ghost-storage-ai:7670",        probe: "/health"  },
+
+  // ── Governance ───────────────────────────────────────────────────────────
+  { id: "governance-service",       url: process.env.GOVERNANCE_SERVICE_URL      ?? "http://governance-service:7645",      probe: "/health"  },
+  { id: "governance-event-bridge",  url: process.env.GOV_BRIDGE_URL              ?? "http://governance-event-bridge:7646", probe: "/health"  },
+  { id: "ghost-registry",           url: process.env.GHOST_REGISTRY_URL          ?? "http://ghost-registry:7680",          probe: "/health"  },
+
+  // ── Treasury & economics ──────────────────────────────────────────────────
+  { id: "treasury-ai",              url: process.env.TREASURY_AI_URL             ?? "http://treasury-ai:7630",             probe: "/health"  },
+  { id: "treasury-service",         url: process.env.TREASURY_SERVICE_URL        ?? "http://treasury-service:7631",        probe: "/health"  },
+  { id: "treasury-engine",          url: process.env.TREASURY_ENGINE_URL         ?? "http://treasury-engine:7632",         probe: "/health"  },
+  { id: "hg-treasury-agent",        url: process.env.HG_TREASURY_AGENT_URL       ?? "http://hg-treasury-agent:7633",       probe: "/health"  },
+  { id: "hg-risk-oracle",           url: process.env.HG_RISK_ORACLE_URL          ?? "http://hg-risk-oracle:7635",          probe: "/health"  },
+  { id: "fee-model-service",        url: process.env.FEE_MODEL_URL               ?? "http://fee-model-service:7510",       probe: "/health"  },
+  { id: "ghost-gas-engine",         url: process.env.GAS_ENGINE_URL              ?? "http://ghost-gas-engine:7500",        probe: "/health"  },
+
+  // ── Chain & node ops ─────────────────────────────────────────────────────
+  { id: "chain-status-service",     url: process.env.CHAIN_STATUS_URL            ?? "http://chain-status-service:7600",    probe: "/health"  },
+  { id: "node-health-service",      url: process.env.NODE_HEALTH_URL             ?? "http://node-health-service:7613",     probe: "/health"  },
+  { id: "block-index-service",      url: process.env.BLOCK_INDEX_URL             ?? "http://block-index-service:7602",     probe: "/health"  },
+  { id: "ghost-rpc-proxy",          url: process.env.GHOST_RPC_PROXY_URL         ?? "http://ghost-rpc-proxy:7614",         probe: "/health"  },
+  { id: "ghost-relayer",            url: process.env.GHOST_RELAYER_URL           ?? "http://ghost-relayer:7620",           probe: "/health"  },
+  { id: "ghost-rollup-proposer",    url: process.env.ROLLUP_PROPOSER_URL         ?? "http://ghost-rollup-proposer:7450",   probe: "/health"  },
+  { id: "ghost-rollup-challenger",  url: process.env.ROLLUP_CHALLENGER_URL       ?? "http://ghost-rollup-challenger:7451", probe: "/health"  },
+
+  // ── Theme & UI ────────────────────────────────────────────────────────────
+  { id: "theme-service",            url: process.env.THEME_SERVICE_URL           ?? "http://theme-service:7634",           probe: "/health"  },
+
+  // ── Auth, RBAC, sessions ─────────────────────────────────────────────────
+  { id: "auth-service",             url: process.env.AUTH_SERVICE_URL            ?? "http://auth-service:7700",            probe: "/health"  },
+  { id: "rbac-service",             url: process.env.RBAC_SERVICE_URL            ?? "http://rbac-service:7705",            probe: "/health"  },
+  { id: "session-service",          url: process.env.SESSION_SERVICE_URL         ?? "http://session-service:7706",         probe: "/health"  },
+  { id: "ghost-jwks-guard",         url: process.env.GHOST_JWKS_GUARD_URL        ?? "http://ghost-jwks-guard:7707",        probe: "/health"  },
+  { id: "key-rotation-service",     url: process.env.KEY_ROTATION_URL            ?? "http://key-rotation-service:7708",    probe: "/health"  },
+
+  // ── Compliance & audit ────────────────────────────────────────────────────
+  { id: "ghost-compliance",         url: process.env.COMPLIANCE_URL              ?? "http://ghost-compliance:7710",        probe: "/health"  },
+  { id: "audit-log-service",        url: process.env.AUDIT_LOG_URL               ?? "http://audit-log-service:7711",       probe: "/health"  },
+  { id: "ghost-secure-logger",      url: process.env.SECURE_LOGGER_URL           ?? "http://ghost-secure-logger:7712",     probe: "/health"  },
+
+  // ── Monitoring & alerts ────────────────────────────────────────────────────
+  { id: "alerts-service",           url: process.env.ALERTS_SERVICE_URL          ?? "http://alerts-service:7720",          probe: "/health"  },
+  { id: "anomaly-detection-service",url: process.env.ANOMALY_URL                 ?? "http://anomaly-detection-service:7721",probe: "/health" },
+  { id: "ai-monitor",               url: process.env.AI_MONITOR_URL              ?? "http://ai-monitor:7722",              probe: "/health"  },
+  { id: "notifications-service",    url: process.env.NOTIFICATIONS_URL           ?? "http://notifications-service:7730",   probe: "/health"  },
+]);
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+/**
+ * @typedef {"ok"|"degraded"|"down"|"unknown"} HealthState
+ * @typedef {{ id: string, url: string, state: HealthState, latencyMs: number|null, checkedAt: string, detail?: string }} ServiceStatus
+ */
+
+// ── Poll cache ────────────────────────────────────────────────────────────────
+
+/** @type {Map<string, import("./types").ServiceStatus>} */
+const cache = new Map();
+let cacheExpiresAt = 0;
+
+// ── Probe a single service ─────────────────────────────────────────────────────
+
+/**
+ * Poll one service's health probe.
+ * @param {{ id: string, url: string, probe: string }} svc
+ * @returns {Promise<{ id: string, url: string, state: string, latencyMs: number|null, checkedAt: string, detail?: string }>}
+ */
+async function pollService(svc) {
+  const start = Date.now();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch(`${svc.url}${svc.probe}`, {
+      signal: controller.signal,
+      headers: { accept: "application/json" },
+    });
+    const latencyMs = Date.now() - start;
+    const state = res.ok ? "ok" : res.status >= 500 ? "down" : "degraded";
+    return {
+      id:        svc.id,
+      url:       svc.url,
+      state,
+      latencyMs,
+      checkedAt: new Date().toISOString(),
+      ...(res.ok ? {} : { detail: `HTTP ${res.status}` }),
+    };
+  } catch (err) {
+    return {
+      id:        svc.id,
+      url:       svc.url,
+      state:     err?.name === "AbortError" ? "degraded" : "down",
+      latencyMs: null,
+      checkedAt: new Date().toISOString(),
+      detail:    err?.name === "AbortError" ? `timeout after ${TIMEOUT_MS}ms` : (err?.message ?? "connection refused"),
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ── Aggregate all services ─────────────────────────────────────────────────────
+
+async function pollAll() {
+  const results = await Promise.allSettled(SERVICES.map(pollService));
+  const fresh = new Map();
+  for (const r of results) {
+    if (r.status === "fulfilled") {
+      fresh.set(r.value.id, r.value);
+    }
+  }
+  return fresh;
+}
+
+async function getStatus() {
+  const now = Date.now();
+  if (cache.size > 0 && now < cacheExpiresAt) return cache;
+  const fresh = await pollAll();
+  cache.clear();
+  for (const [k, v] of fresh) cache.set(k, v);
+  cacheExpiresAt = now + CACHE_MS;
+  return cache;
+}
+
+// ── Express app ───────────────────────────────────────────────────────────────
+
+const app = express();
+app.disable("x-powered-by");
+app.use((req, _res, next) => {
+  console.log(JSON.stringify({ ts: new Date().toISOString(), method: req.method, url: req.url }));
+  next();
+});
+
+/** Liveness — always 200 if this process is alive. */
+app.get("/health", (_req, res) => {
+  res.json({ ok: true, service: "ghost-health-aggregator", ts: new Date().toISOString() });
+});
+
+/** Summary — fast compact counts */
+app.get("/summary", async (_req, res) => {
+  try {
+    const statuses = await getStatus();
+    const counts = { ok: 0, degraded: 0, down: 0, unknown: 0 };
+    for (const { state } of statuses.values()) {
+      counts[state] = (counts[state] ?? 0) + 1;
+    }
+    const overall = counts.down > 0 ? "down" : counts.degraded > 0 ? "degraded" : "ok";
+    res.json({
+      overall,
+      total: statuses.size,
+      counts,
+      ts: new Date().toISOString(),
+    });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err?.message ?? String(err) });
+  }
+});
+
+/** Full report — all services with latency and detail. */
+app.get("/status", async (_req, res) => {
+  try {
+    const statuses = await getStatus();
+    const services = [...statuses.values()];
+    const counts = { ok: 0, degraded: 0, down: 0 };
+    for (const { state } of services) {
+      if (state in counts) counts[state]++;
+    }
+    const overall = counts.down > 0 ? "down" : counts.degraded > 0 ? "degraded" : "ok";
+    res.json({
+      overall,
+      total:     services.length,
+      counts,
+      services,
+      ts:        new Date().toISOString(),
+      cacheHit:  cacheExpiresAt > Date.now(),
+      cacheExpiresAt: new Date(cacheExpiresAt).toISOString(),
+    });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err?.message ?? String(err) });
+  }
+});
+
+/** Single-service report — force-refresh for that service. */
+app.get("/status/:service", async (req, res) => {
+  const id = req.params.service;
+  const svc = SERVICES.find(s => s.id === id);
+  if (!svc) {
+    return res.status(404).json({ ok: false, error: `Service '${id}' is not registered` });
+  }
+  try {
+    const result = await pollService(svc);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err?.message ?? String(err) });
+  }
+});
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(JSON.stringify({
+    ts:      new Date().toISOString(),
+    service: "ghost-health-aggregator",
+    port:    PORT,
+    services: SERVICES.length,
+    msg:     "ghost-health-aggregator ready",
+  }));
+});
+
+// Graceful shutdown
+process.on("SIGTERM", () => {
+  console.log(JSON.stringify({ ts: new Date().toISOString(), msg: "SIGTERM — shutting down" }));
+  process.exit(0);
+});

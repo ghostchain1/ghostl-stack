@@ -803,3 +803,312 @@ textarea {
     justify-content: flex-start;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Ghost UI Component Library — Base Styles
+   (mirrors packages/ui/src/components/*)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Input ──────────────────────────────────────────────────────────────────
+ */
+.ghost-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ghost-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.ghost-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.ghost-input-wrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(35, 214, 166, 0.12);
+}
+.ghost-input-wrap.error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.12);
+}
+.ghost-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  width: 100%;
+}
+.ghost-input::placeholder {
+  color: var(--muted);
+  opacity: 0.7;
+}
+.ghost-input-adorn {
+  padding: 0 12px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+}
+.ghost-field-error {
+  font-size: 0.78rem;
+  color: var(--danger);
+  margin: 0;
+}
+.ghost-field-hint {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* ── Alert ──────────────────────────────────────────────────────────────────
+ */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.alert-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.alert-body {
+  flex: 1;
+}
+.alert-title {
+  font-weight: 700;
+  display: block;
+  margin-bottom: 2px;
+}
+.alert-content {
+  color: inherit;
+  opacity: 0.92;
+}
+.alert-dismiss {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: inherit;
+  opacity: 0.7;
+  padding: 0;
+  flex-shrink: 0;
+}
+.alert-dismiss:hover { opacity: 1; }
+
+.alert-info    { background: rgba(122, 162, 255, 0.1); border-color: rgba(122, 162, 255, 0.25); color: var(--accent-3); }
+.alert-success { background: rgba(35, 214, 166, 0.1);  border-color: rgba(35, 214, 166, 0.25);  color: var(--success); }
+.alert-warning { background: rgba(242, 193, 78, 0.1);  border-color: rgba(242, 193, 78, 0.25);  color: var(--warning); }
+.alert-danger  { background: rgba(255, 107, 107, 0.1); border-color: rgba(255, 107, 107, 0.25); color: var(--danger); }
+
+/* ── Table ──────────────────────────────────────────────────────────────────
+ */
+.table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+.ghost-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+.ghost-table-caption {
+  caption-side: top;
+  text-align: left;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  padding: 10px 14px 6px;
+}
+.ghost-table thead tr {
+  background: rgba(255, 255, 255, 0.03);
+}
+.ghost-table th {
+  padding: 10px 14px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.ghost-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.ghost-table tbody tr:last-child td { border-bottom: none; }
+.ghost-table tbody tr {
+  transition: background 0.1s ease;
+}
+.ghost-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+.table-state {
+  text-align: center;
+  padding: 32px 14px;
+  color: var(--muted);
+}
+
+/* ── Modal ──────────────────────────────────────────────────────────────────
+ */
+.ghost-modal {
+  background: var(--panel-strong, rgba(8, 12, 22, 0.96));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.5);
+  padding: 0;
+  width: 100%;
+  color: var(--text);
+  outline: none;
+}
+.ghost-modal::backdrop {
+  background: rgba(5, 7, 15, 0.72);
+  backdrop-filter: blur(4px);
+}
+.ghost-modal-inner {
+  display: flex;
+  flex-direction: column;
+}
+.ghost-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.ghost-modal-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+}
+.ghost-modal-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.4rem;
+  color: var(--muted);
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: color 0.1s ease, background 0.1s ease;
+}
+.ghost-modal-close:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+.ghost-modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  max-height: 70vh;
+}
+.ghost-modal-footer {
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ── Loading / Skeleton / Spinner ───────────────────────────────────────────
+ */
+@keyframes ghost-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.ghost-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.05) 75%
+  );
+  background-size: 800px 100%;
+  animation: ghost-shimmer 1.6s infinite;
+  border-radius: 6px;
+}
+.ghost-skeleton-text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ghost-skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@keyframes ghost-spin {
+  to { transform: rotate(360deg); }
+}
+.ghost-spinner {
+  animation: ghost-spin 0.8s linear infinite;
+}
+
+.ghost-loading-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 200px;
+  width: 100%;
+  color: var(--muted);
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--text);
+  line-height: 1;
+}
+.stat-delta {
+  font-size: 0.78rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.stat-delta.positive { color: var(--success); }
+.stat-delta.negative { color: var(--danger); }
+
+/* ── GhostChain Brand Animations ───────────────────────────────────────────
+ */
+@keyframes glow-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(35, 214, 166, 0); }
+  50%       { box-shadow: 0 0 0 8px rgba(35, 214, 166, 0.15); }
+}
+.ghost-glow-ring {
+  animation: glow-ring 3s ease-in-out infinite;
+}
+

@@ -129,7 +129,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="logo">GhostL Stack</div>
+        <div className="logo">
+          <img src="/ghostchain-logo.svg" alt="GhostChain" height={42} width={160} style={{ maxWidth: '100%', height: 42 }} />
+        </div>
         <nav className="nav">
           {navSections.map((section) => (
             <div key={section.title} className="nav-section">
@@ -169,8 +171,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <div className="main">
         <header className="topbar">
           <div className="title">
-            Control Center
-            {current && <span className="muted"> - {current.label}</span>}
+            GhostChain Control Center
+            {current && <span className="muted"> — {current.label}</span>}
           </div>
           <div className="topbar-actions">
             <GlobalSearch />

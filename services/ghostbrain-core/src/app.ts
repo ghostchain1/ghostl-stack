@@ -19,6 +19,7 @@ import { gsaRoutes     } from "./routes/gsa.js";
 import { rpcRoutes     } from "./routes/rpc.js";
 import { thinkRoutes   } from "./routes/think.js";
 import { hmacAuthPlugin } from "./middleware/hmac.js";
+import { rateLimitPlugin } from "./middleware/rateLimit.js";
 
 export function buildApp() {
   const app = Fastify({
@@ -39,6 +40,9 @@ export function buildApp() {
       catch (err: unknown) { done(err as Error); }
     },
   );
+
+  // ── Rate limiting (applied first — before auth) ──────────────────────────
+  app.register(rateLimitPlugin);
 
   // ── Auth middleware (HMAC — applied to all routes except /healthz /status) ─
   app.register(hmacAuthPlugin);

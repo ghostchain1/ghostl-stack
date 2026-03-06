@@ -160,15 +160,18 @@ x-hardening: &hardening
       hyper-ghost-ai:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:7900/healthz"]
+      test: ["CMD", "curl", "-sf", "http://localhost:7900/readyz"]
       interval: 15s
       timeout: 5s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 45s
     labels:
       ghostbrain.role: "brain-core"
       ghostbrain.layer: "L2"
       ghostbrain.routing-law: "L3→L2→L1"
+      ghostbrain.liveness-probe: "http://localhost:7900/healthz"
+      ghostbrain.readiness-probe: "http://localhost:7900/readyz"
+      ghostbrain.status-endpoint: "http://localhost:7900/status"
 
   # ─── Hypervisor Supervisor (VM health → GhostBrain signals) ───────────────
   hypervisor-supervisor:
@@ -549,6 +552,45 @@ x-hardening: &hardening
       ghostbrain.layer: "L1"
       ghostbrain.routing-law: "L3→L2→L1"
       ghostbrain.pipeline: "contracts→ai"
+
+  # ─── Ghost Health Aggregator ──────────────────────────────────────────────────
+  ghost-health-aggregator:
+    build:
+      context: ./services/ghost-health-aggregator
+      dockerfile: Dockerfile
+    image: ghost-health-aggregator:latest
+    container_name: ghost-health-aggregator
+    restart: unless-stopped
+    ports:
+      - "${HEALTH_AGG_PORT:-7640}:7640"
+    environment:
+      PORT: "7640"
+      NODE_ENV: "${NODE_ENV:-production}"
+      POLL_TIMEOUT_MS: "${HEALTH_AGG_POLL_TIMEOUT_MS:-3000}"
+      POLL_CACHE_MS: "${HEALTH_AGG_POLL_CACHE_MS:-10000}"
+      # Service URLs (override for non-default deployments)
+      GHOSTBRAIN_CORE_URL:   "${GHOSTBRAIN_CORE_URL:-http://ghostbrain-core:7900}"
+      HYPER_GHOST_BASE_URL:  "${HYPER_GHOST_BASE_URL:-http://hyper-ghost-ai:7741}"
+      GSA_BASE_URL:          "${GSA_BASE_URL:-http://ghostbrain-gsa:7850}"
+      GOVERNANCE_SERVICE_URL: "${GOVERNANCE_SERVICE_URL:-http://governance-service:7645}"
+      TREASURY_AI_URL:       "${TREASURY_AI_URL:-http://treasury-ai:7630}"
+      THEME_SERVICE_URL:     "${THEME_SERVICE_URL:-http://theme-service:7634}"
+    networks:
+      - ghostbrain-net
+      - ghostl-stack_default
+    depends_on:
+      ghostbrain-core:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:7640/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      ghostbrain.role: "health-aggregator"
+      ghostbrain.liveness-probe: "http://localhost:7640/health"
+      ghostbrain.status-endpoint: "http://localhost:7640/status"
 
 volumes:
   ghostbrain-postgres-data:
