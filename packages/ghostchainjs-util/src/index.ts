@@ -4,8 +4,8 @@
  *
  * ghostchainjs-util — GhostChain's primitive utility belt.
  *
- * A zero-ethers, zero-Ethereum-branding rewrite of ethereumjs-util for
- * the GhostChain ecosystem. All functions use native BigInt and Uint8Array.
+ * The GhostChain-native replacement for ethereumjs-util.
+ * Zero ethers dependency. All functions use native BigInt and Uint8Array.
  *
  * Sub-path imports (preferred for tree-shaking):
  *   import { parseGST } from "@ghostchain/ghostchainjs-util/units";

@@ -51,6 +51,7 @@
     "test:cascading-finality:ci": "bash scripts/run_cascading_finality_ci.sh"
   },
   "devDependencies": {
+    "@ghostchain/ghostchainjs-util": "file:../packages/ghostchainjs-util",
     "@ghostchain/sdk": "file:../packages/ghost-sdk",
     "@nomicfoundation/hardhat-chai-matchers": "^2.1.2",
     "@nomicfoundation/hardhat-ghost": "^3.1.3",
