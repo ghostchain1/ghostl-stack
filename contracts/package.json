@@ -65,6 +65,7 @@
     "@nomicfoundation/hardhat-foundry": "^3.0.0",
     "@nomicfoundation/hardhat-ignition": "^0.15.16",
     "@nomicfoundation/hardhat-network-helpers": "^1.1.2",
+    "@nomicfoundation/hardhat-toolbox": "^7.0.0",
     "@nomicfoundation/hardhat-verify": "^2.1.3",
     "@nomicfoundation/ignition-core": "^3.0.8",
     "@typechain/hardhat": "^9.1.0",
@@ -72,8 +73,8 @@
     "@types/mocha": "^10.0.10",
     "chai": "^5.1.0",
     "dotenv": "^17.3.1",
-    "ghost": "file:../packages/ghost",
-    "hardhat": "^3.0.0",
+    "ghost": "^6.16.0",
+    "hardhat": "^2.26.0",
     "hardhat-gas-reporter": "^2.3.0",
     "hardhat-ghost": "file:../packages/hardhat-ghost",
     "scribble": "git+https://github.com/ConsenSys/scribble.git#v0.7.10",
@@ -88,6 +89,5 @@
   },
   "dependencies": {
     "ghost": "file:../packages/ghost"
-  },
-  "type": "module"
+  }
 }
