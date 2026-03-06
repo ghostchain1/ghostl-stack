@@ -1,0 +1,37 @@
+vulnerabilities:
+  # ----------------------------------------------------------------------
+  # FALSE POSITIVES — packages/ghost naming collision with Ghost CMS
+  # ----------------------------------------------------------------------
+  # packages/ghost (version 0.0.1) is an internal @ghostchain/sdk re-export
+  # wrapper, NOT the Ghost CMS blog platform. It contains only:
+  #   export * from "@ghostchain/sdk"
+  #   export { ghost as default } from "@ghostchain/sdk"
+  # Trivy matches all Ghost CMS historical CVEs against it because
+  # the npm package name is "ghost". These are not exploitable.
+  # Review date: 2026-03-06
+  - id: CVE-2022-27139
+    statement: >
+      False positive. packages/ghost v0.0.1 is the GhostChain SDK wrapper,
+      not Ghost CMS blog platform. Package named 'ghost' for module resolution
+      compatibility with services importing from "ghost". No Ghost CMS server
+      is ever instantiated.
+  - id: CVE-2022-28397
+    statement: >
+      False positive. packages/ghost v0.0.1 is the GhostChain SDK wrapper,
+      not Ghost CMS blog platform. Package named 'ghost' for module resolution
+      compatibility with services importing from "ghost". No Ghost CMS server
+      is ever instantiated.
+  - id: CVE-2023-31133
+    statement: >
+      False positive. packages/ghost v0.0.1 is the GhostChain SDK wrapper,
+      not Ghost CMS blog platform. Package named 'ghost' for module resolution
+      compatibility with services importing from "ghost". No Ghost CMS server
+      is ever instantiated. Fixed version (5.46.1) is for Ghost CMS; our
+      package will never reach that version number.
+  - id: CVE-2023-32235
+    statement: >
+      False positive. packages/ghost v0.0.1 is the GhostChain SDK wrapper,
+      not Ghost CMS blog platform. Package named 'ghost' for module resolution
+      compatibility with services importing from "ghost". No Ghost CMS server
+      is ever instantiated. Fixed version (5.42.1) is for Ghost CMS; our
+      package will never reach that version number.

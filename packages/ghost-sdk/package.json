@@ -166,9 +166,9 @@
     "lint": "echo 'TODO: add lint'"
   },
   "dependencies": {
-    "ghost": "^6.16.0",
     "@noble/curves": "^1.0.0",
-    "@noble/hashes": "^1.4.0"
+    "@noble/hashes": "^1.4.0",
+    "ethers": "^6.13.0"
   },
   "devDependencies": {
     "typescript": "5.9.3"

@@ -72,6 +72,15 @@ const AgentRegistrationSchema = z.object({
   healthy:        z.boolean().default(true),
 });
 
+// ── Governance signal subjects emitted by governance-event-bridge ─────────────
+
+const GOVERNANCE_SUBJECTS = new Set([
+  "governance.proposal.created",
+  "governance.vote.cast",
+  "governance.proposal.queued",
+  "governance.proposal.executed",
+]);
+
 // ── Routing law subjects that carry cross-layer intent ────────────────────────
 
 const ROUTED_SUBJECTS = new Set([
@@ -176,6 +185,46 @@ export async function signalsRoutes(app: FastifyInstance): Promise<void> {
     if (signalLedger.length > MAX_SIGNALS) signalLedger.shift();
 
     app.log.info({ subject: msg.subject, sender: msg.senderAgentId, cid: msg.correlationId }, "signal received");
+
+    // ── Governance event handling ────────────────────────────────────────────
+    // When a ProposalCreated signal arrives from governance-event-bridge,
+    // kick off a non-blocking AI think task to analyse the proposal.
+    if (msg.subject === "governance.proposal.created") {
+      const payload = msg.payload as Record<string, unknown>;
+      app.log.info(
+        { proposalId: payload["proposalId"], layer: payload["layer"], constitutional: payload["constitutional"] },
+        "governance: new proposal detected — scheduling AI analysis",
+      );
+      // Fire-and-forget: call internal think endpoint so the AI handler runs
+      // without blocking the 202 response to the bridge.
+      void app.inject({
+        method:  "POST",
+        url:     "/api/v1/think",
+        headers: { "content-type": "application/json" },
+        payload: JSON.stringify({
+          task:    "analyze_governance_proposal",
+          agent:   "governance-event-bridge",
+          payload: {
+            proposalId:     payload["proposalId"],
+            proposer:       payload["proposer"],
+            target:         payload["target"],
+            constitutional: payload["constitutional"],
+            amendment:      payload["amendment"],
+            layer:          payload["layer"],
+            chainId:        payload["chainId"],
+            blockNumber:    payload["blockNumber"],
+            txHash:         payload["txHash"],
+          },
+        }),
+      }).catch((err) => {
+        app.log.warn({ err }, "governance-event-bridge: think task injection failed");
+      });
+    } else if (GOVERNANCE_SUBJECTS.has(msg.subject)) {
+      app.log.info(
+        { subject: msg.subject, cid: msg.correlationId },
+        "governance: event recorded in signal ledger",
+      );
+    }
 
     return reply.code(202).send({
       ok:        true,
