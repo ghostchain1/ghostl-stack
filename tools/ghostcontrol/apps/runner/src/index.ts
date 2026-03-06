@@ -99,7 +99,7 @@ async function rpcProbe(url: string): Promise<
       body: JSON.stringify({
         jsonrpc: "2.0",
         id: 1,
-        method: "eth_blockNumber",
+        method: "ghost_blockNumber",
         params: [],
       }),
     });

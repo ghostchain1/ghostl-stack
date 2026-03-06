@@ -107,6 +107,7 @@
     "cache-codex/",
     ".git/",
     "tools/sovereignty/",
+    "sovereignty/sed-engine/",
     "brand-enforcer-ignore"
   ]
 }

@@ -297,7 +297,7 @@ async function probeLayer(layerConfig) {
         body: JSON.stringify({
           jsonrpc: "2.0",
           id: attempt,
-          method: "eth_chainId",
+          method: "ghost_chainId",
           params: [],
         }),
         signal: AbortSignal.timeout(timeoutMs),

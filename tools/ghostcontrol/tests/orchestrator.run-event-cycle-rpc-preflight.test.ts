@@ -23,7 +23,7 @@ test("run_event_cycle probes rpc chain identity before lock acquisition", () => 
 
   assert.match(script, /run_rpc_preflight_probe/);
   assert.match(script, /event-cycle-rpc-preflight-/);
-  assert.match(script, /method: "eth_chainId"/);
+  assert.match(script, /method: "ghost_chainId"/);
   assert.match(script, /event_cycle_rpc_preflight_degraded mode=/);
   assert.match(script, /record_rpc_preflight_incident/);
   assert.match(script, /run_event_cycle rpc preflight degraded/);
