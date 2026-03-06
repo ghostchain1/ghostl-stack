@@ -44,7 +44,7 @@ export class GhostSignatureValidator {
    *
    * @param message         - plain UTF-8 message (without prefix)
    * @param signature       - 65-byte hex signature (0x + 130 hex chars)
-   * @param expectedAddress - Ethereum-style hex address (with or without 0x)
+   * @param expectedAddress - ghostchainstyle hex address (with or without 0x)
    */
   verifyPersonalSign(message: string, signature: string, expectedAddress: string): boolean {
     const hash      = _personalSignHash(message);

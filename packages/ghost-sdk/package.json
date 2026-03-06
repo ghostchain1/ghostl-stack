@@ -106,6 +106,58 @@
     "./wallet/hd": {
       "types": "./dist/wallet/GhostHDWallet.d.ts",
       "default": "./dist/wallet/GhostHDWallet.js"
+    },
+    "./blockNumber": {
+      "types": "./dist/blockNumber/GhostBlockNumber.d.ts",
+      "default": "./dist/blockNumber/GhostBlockNumber.js"
+    },
+    "./hash": {
+      "types": "./dist/hash/GhostHash.d.ts",
+      "default": "./dist/hash/GhostHash.js"
+    },
+    "./address": {
+      "types": "./dist/address/GhostAddress.d.ts",
+      "default": "./dist/address/GhostAddress.js"
+    },
+    "./abi": {
+      "types": "./dist/abi/GhostAbi.d.ts",
+      "default": "./dist/abi/GhostAbi.js"
+    },
+    "./signature": {
+      "types": "./dist/signature/GhostSignature.d.ts",
+      "default": "./dist/signature/GhostSignature.js"
+    },
+    "./gas": {
+      "types": "./dist/gas/GhostGasTracker.d.ts",
+      "default": "./dist/gas/GhostGasTracker.js"
+    },
+    "./nonce": {
+      "types": "./dist/nonce/GhostNonceManager.d.ts",
+      "default": "./dist/nonce/GhostNonceManager.js"
+    },
+    "./rpc": {
+      "types": "./dist/rpc/GhostRpcClient.d.ts",
+      "default": "./dist/rpc/GhostRpcClient.js"
+    },
+    "./token/erc20": {
+      "types": "./dist/token/GhostERC20.d.ts",
+      "default": "./dist/token/GhostERC20.js"
+    },
+    "./token/erc721": {
+      "types": "./dist/token/GhostERC721.d.ts",
+      "default": "./dist/token/GhostERC721.js"
+    },
+    "./token/erc1155": {
+      "types": "./dist/token/GhostERC1155.d.ts",
+      "default": "./dist/token/GhostERC1155.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/GhostUtils.d.ts",
+      "default": "./dist/utils/GhostUtils.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/types/index.js"
     }
   },
   "scripts": {

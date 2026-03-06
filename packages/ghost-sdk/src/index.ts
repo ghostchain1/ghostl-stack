@@ -564,3 +564,137 @@ export { GhostExplorerClient, type ExplorerConfig, type ExplorerTransaction, typ
 
 // AI
 export { TransactionOptimizer, type TxOptimizationResult, type TxOptimizationRequest } from "./ai/TransactionOptimizer.js";
+
+// ── Ghost SDK v3 — Missing Production Modules ─────────────────────────────────
+
+// Block Number
+export {
+  GhostBlockNumber,
+  GhostBlockNumberWatcher,
+  GhostMultiLayerBlockTracker,
+  getGhostBlockNumber,
+  GHOST_GENESIS_BLOCK,
+  GHOST_BLOCK_SENTINEL,
+  type GhostBlockSentinel,
+  type GhostBlockNumberCallback,
+  type GhostLayerBlockNumbers,
+} from "./blockNumber/GhostBlockNumber.js";
+
+// Hash utilities
+export {
+  keccak256Raw,
+  sha256,
+  sha256Hex,
+  sha512,
+  solidityKeccak256,
+  eventTopic,
+  GHOST_EMPTY_HASH,
+  GHOST_ZERO_HASH,
+  GHOST_TOPICS,
+  type GhostHash,
+} from "./hash/GhostHash.js";
+
+// Address utilities
+export {
+  GHOST_ZERO_ADDRESS,
+  GHOST_DEAD_ADDRESS,
+  GHOST_MAX_ADDRESS,
+  isZeroAddress,
+  addressEqual,
+  addressToWord,
+  wordToAddress,
+  getCreateAddress,
+  getCreate2Address,
+  shortenAddress,
+  addressToLower,
+} from "./address/GhostAddress.js";
+
+// ABI utilities
+export {
+  abiSignature,
+  fragmentSelector,
+  decodeReturnData,
+  decodeUint256,
+  decodeAddress,
+  decodeBool,
+  decodeString,
+  encodeBalanceOf,
+  encodeTransfer,
+  encodeApprove,
+  encodeAllowance,
+  encodeTotalSupply,
+  encodeDecimals,
+  encodeSymbol,
+  encodeName,
+  type AbiFragment,
+  type AbiFunctionFragment,
+  type AbiEventFragment,
+  type AbiInput,
+  type AbiOutput,
+} from "./abi/GhostAbi.js";
+
+// Signature utilities
+export {
+  personalSignHash,
+  hashMessage,
+  splitSignature,
+  joinSignature,
+  recoverAddress,
+  recoverPersonalSignAddress,
+  verifySignature,
+  verifyPersonalSign,
+  compactToFull,
+  fullToCompact,
+  type GhostSignatureComponents,
+} from "./signature/GhostSignature.js";
+
+// Gas tracker
+export {
+  GhostGasTracker,
+  formatWei,
+  formatGwei,
+  parseGwei,
+  type GhostGasSnapshot,
+  type GhostGasEstimate as GhostGasTrackerEstimate,
+  type GhostGasHistoryEntry,
+  type GhostSpeedPreset,
+  type GhostGasTrackerConfig,
+} from "./gas/GhostGasTracker.js";
+
+// Nonce management
+export {
+  GhostNonceManager,
+  BoundNonceManager,
+  type GhostNonceManagerOptions,
+} from "./nonce/GhostNonceManager.js";
+
+// RPC client
+export {
+  GhostRpcClient,
+  GhostRpcError,
+  createGhostL1RpcClient,
+  createGhostL2RpcClient,
+  createGhostL3RpcClient,
+  type GhostRpcClientConfig,
+  type GhostBatchCall,
+} from "./rpc/GhostRpcClient.js";
+
+// Token clients
+export {
+  GhostERC20,
+  type GhostERC20Info,
+  type GhostERC20TransferEvent,
+  type GhostERC20Config,
+} from "./token/GhostERC20.js";
+
+export {
+  GhostERC721,
+  type GhostERC721Info,
+  type GhostERC721TransferEvent,
+} from "./token/GhostERC721.js";
+
+export {
+  GhostERC1155,
+  type GhostERC1155TransferSingleEvent,
+  type GhostERC1155TransferBatchEvent,
+} from "./token/GhostERC1155.js";
