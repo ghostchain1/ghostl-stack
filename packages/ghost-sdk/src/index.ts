@@ -512,3 +512,55 @@ export {
   ghostSignatureValidator,
   type SignatureComponents,
 } from "./security/GhostSignatureValidator.js";
+
+// ── Ghost SDK v2 — Native SDK (no ethers) ─────────────────────────────────────
+
+// Providers
+export { HttpProvider, type HttpProviderBlock, type HttpProviderTx } from "./providers/HttpProvider.js";
+export { GhostWebSocketProvider, type WsNewHeadEvent, type WsLogEvent } from "./providers/WebSocketProvider.js";
+
+// Wallet
+export { GhostSigner, type Eip712Domain as GhostEip712Domain, type Eip712Type as GhostEip712Type } from "./wallet/GhostSigner.js";
+export { GhostAccount } from "./wallet/GhostAccount.js";
+export { GhostHDWallet, type GhostHDAccount, generateMnemonic, GHOST_HD_PATH } from "./wallet/GhostHDWallet.js";
+
+// Transactions
+export { GhostTransactionSerializer, type SerializedTx } from "./transactions/GhostTransactionSerializer.js";
+export { GhostFeeEstimator, type GhostFeeEstimate, type GhostFeeEstimatorOptions } from "./transactions/GhostFeeEstimator.js";
+
+// Contracts
+export { GhostContractFactory, type AbiFragment as GhostAbiFragment, type DeployResult } from "./contracts/GhostContractFactory.js";
+export { GhostInterface } from "./contracts/GhostInterface.js";
+export { GhostEventParser, type ParsedEvent } from "./contracts/GhostEventParser.js";
+export { GhostLogDecoder, type DecodedLog } from "./contracts/GhostLogDecoder.js";
+
+// Clients
+export { GhostPublicClient, type GhostPublicClientConfig } from "./clients/GhostPublicClient.js";
+export { GhostWalletClient, type GhostWalletClientConfig } from "./clients/GhostWalletClient.js";
+export { GhostContractClient, type GhostContractClientConfig } from "./clients/GhostContractClient.js";
+
+// Bridge — L1 / L2 / L3 clients
+export { L1Client, GHOST_L1_CHAIN_ID, GHOST_L1_NAME } from "./bridge/L1Client.js";
+export { L2Client, GHOST_L2_CHAIN_ID, GHOST_L2_NAME } from "./bridge/L2Client.js";
+export { L3Client, GHOST_L3_CHAIN_ID, GHOST_L3_NAME } from "./bridge/L3Client.js";
+export { GhostBridgeClient, type BridgeConfig, type BridgeStatus } from "./bridge/GhostBridgeClient.js";
+
+// Multicall
+export { MulticallClient, MULTICALL3_ADDRESS, type MulticallCall, type MulticallResult } from "./multicall/MulticallClient.js";
+
+// Account Abstraction (ERC-4337)
+export { SmartAccount, ENTRY_POINT_V06, ENTRY_POINT_V07, type UserOperation } from "./accounts/SmartAccount.js";
+export { AccountAbstraction, type UserOperationReceipt, type GasEstimate as BundlerGasEstimate } from "./accounts/AccountAbstraction.js";
+
+// Event watchers
+export { BlockWatcher, type BlockCallback } from "./events/BlockWatcher.js";
+export { LogWatcher, type LogFilter, type LogCallback, type RawLog as WatchedLog } from "./events/LogWatcher.js";
+
+// Core
+export { GhostClient, type GhostClientConfig } from "./core/GhostClient.js";
+
+// Explorer
+export { GhostExplorerClient, type ExplorerConfig, type ExplorerTransaction, type ExplorerBlock } from "./explorer/GhostExplorerClient.js";
+
+// AI
+export { TransactionOptimizer, type TxOptimizationResult, type TxOptimizationRequest } from "./ai/TransactionOptimizer.js";

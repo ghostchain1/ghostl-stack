@@ -74,6 +74,38 @@
     "./next": {
       "types": "./dist/next/useGhostWallet.d.ts",
       "default": "./dist/next/useGhostWallet.js"
+    },
+    "./providers": {
+      "types": "./dist/providers/HttpProvider.d.ts",
+      "default": "./dist/providers/HttpProvider.js"
+    },
+    "./clients": {
+      "types": "./dist/clients/GhostPublicClient.d.ts",
+      "default": "./dist/clients/GhostPublicClient.js"
+    },
+    "./bridge/client": {
+      "types": "./dist/bridge/GhostBridgeClient.d.ts",
+      "default": "./dist/bridge/GhostBridgeClient.js"
+    },
+    "./multicall": {
+      "types": "./dist/multicall/MulticallClient.d.ts",
+      "default": "./dist/multicall/MulticallClient.js"
+    },
+    "./accounts": {
+      "types": "./dist/accounts/SmartAccount.d.ts",
+      "default": "./dist/accounts/SmartAccount.js"
+    },
+    "./core": {
+      "types": "./dist/core/GhostClient.d.ts",
+      "default": "./dist/core/GhostClient.js"
+    },
+    "./explorer": {
+      "types": "./dist/explorer/GhostExplorerClient.d.ts",
+      "default": "./dist/explorer/GhostExplorerClient.js"
+    },
+    "./wallet/hd": {
+      "types": "./dist/wallet/GhostHDWallet.d.ts",
+      "default": "./dist/wallet/GhostHDWallet.js"
     }
   },
   "scripts": {
