@@ -53,6 +53,7 @@
   "devDependencies": {
     "@ghostchain/ghostchain-bloom-filters": "file:../packages/ghostchain-bloom-filters",
     "@ghostchain/ghostchain-cryptography": "file:../packages/ghostchain-cryptography",
+    "@ghostchain/ghostchainjs-rlp": "file:../packages/ghostchainjs-rlp",
     "@ghostchain/ghostchainjs-util": "file:../packages/ghostchainjs-util",
     "@ghostchain/sdk": "file:../packages/ghost-sdk",
     "@nomicfoundation/hardhat-chai-matchers": "^2.1.2",

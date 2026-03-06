@@ -1,0 +1,37 @@
+{
+  "name": "@ghostchain/ghostchainjs-rlp",
+  "version": "1.0.0",
+  "description": "GhostChain RLP encoding/decoding — drop-in replacement for @ethereumjs/rlp. Zero external dependencies.",
+  "license": "MIT",
+  "author": "ghostchain1",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ghostchain1/ghostl-stack"
+  },
+  "keywords": [
+    "ghostchain",
+    "rlp",
+    "recursive-length-prefix",
+    "encoding",
+    "blockchain"
+  ]
+}
