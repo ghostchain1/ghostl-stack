@@ -5,17 +5,50 @@
  *   1 Ghost  = 1e18 GhostWei
  *   1 GhostGwei = 1e9 GhostWei
  *
- * All functions are pure wrappers around ethers v6 parse/format helpers
- * so the underlying arithmetic is battle-tested.
+ * All arithmetic is implemented with native BigInt — no ethers dependency.
  */
 
-import {
-  parseEther,
-  formatEther,
-  parseUnits,
-  formatUnits,
-  type BigNumberish,
-} from "ethers";
+// ── Compatibility type alias ─────────────────────────────────────────────────
+
+/** Union of values that can represent a GhostWei amount. */
+export type GhostBigNumberish = bigint | number | string;
+
+// ── Internal helpers ─────────────────────────────────────────────────────────
+
+/**
+ * Low-level: parse a decimal string into a BigInt scaled by `decimals` places.
+ * Handles optional fractional part, truncates to `decimals` significant digits.
+ * @internal
+ */
+function _parseUnitsNative(value: string, decimals: number): bigint {
+  const trimmed = value.trim();
+  const negative = trimmed.startsWith("-");
+  const abs = negative ? trimmed.slice(1) : trimmed;
+
+  if (!/^\d+(?:\.\d+)?$/.test(abs)) {
+    throw new TypeError(`GhostUnits: invalid numeric string "${value}"`);
+  }
+
+  const [intStr, fracStr = ""] = abs.split(".");
+  const frac = fracStr.padEnd(decimals, "0").slice(0, decimals);
+  const raw  = BigInt(intStr || "0") * 10n ** BigInt(decimals) + BigInt(frac || "0");
+  return negative ? -raw : raw;
+}
+
+/**
+ * Low-level: format a BigInt scaled by `decimals` back to a decimal string.
+ * @internal
+ */
+function _formatUnitsNative(value: GhostBigNumberish, decimals: number): string {
+  const wei  = BigInt(value);
+  const neg  = wei < 0n;
+  const abs  = neg ? -wei : wei;
+  const unit = 10n ** BigInt(decimals);
+  const int  = abs / unit;
+  const frac = (abs % unit).toString().padStart(decimals, "0").replace(/0+$/, "");
+  const base = frac ? `${int}.${frac}` : `${int}`;
+  return neg ? `-${base}` : base;
+}
 
 // ── Unit constants ───────────────────────────────────────────────────────────
 
@@ -35,7 +68,7 @@ export const GHOST_UNIT = 1_000_000_000_000_000_000n;
  *   parseGhost("1.5")  // 1500000000000000000n
  */
 export function parseGhost(ghost: string): bigint {
-  return parseEther(ghost);
+  return _parseUnitsNative(ghost, 18);
 }
 
 /**
@@ -44,8 +77,8 @@ export function parseGhost(ghost: string): bigint {
  * @example
  *   formatGhost(1500000000000000000n)  // "1.5"
  */
-export function formatGhost(ghostWei: BigNumberish): string {
-  return formatEther(ghostWei);
+export function formatGhost(ghostWei: GhostBigNumberish): string {
+  return _formatUnitsNative(ghostWei, 18);
 }
 
 /**
@@ -55,7 +88,7 @@ export function formatGhost(ghostWei: BigNumberish): string {
  *   parseGhostGwei("2.5")  // 2500000000n
  */
 export function parseGhostGwei(ghostGwei: string): bigint {
-  return parseUnits(ghostGwei, 9);
+  return _parseUnitsNative(ghostGwei, 9);
 }
 
 /**
@@ -64,8 +97,28 @@ export function parseGhostGwei(ghostGwei: string): bigint {
  * @example
  *   formatGhostGwei(2500000000n)  // "2.5"
  */
-export function formatGhostGwei(ghostWei: BigNumberish): string {
-  return formatUnits(ghostWei, 9);
+export function formatGhostGwei(ghostWei: GhostBigNumberish): string {
+  return _formatUnitsNative(ghostWei, 9);
+}
+
+/**
+ * Generic: parse any decimal string with arbitrary `decimals` precision.
+ *
+ * @example
+ *   parseGhostUnits("1.5", 6)  // 1500000n
+ */
+export function parseGhostUnits(value: string, decimals: number): bigint {
+  return _parseUnitsNative(value, decimals);
+}
+
+/**
+ * Generic: format any BigInt with arbitrary `decimals` precision.
+ *
+ * @example
+ *   formatGhostUnits(1500000n, 6)  // "1.5"
+ */
+export function formatGhostUnits(value: GhostBigNumberish, decimals: number): string {
+  return _formatUnitsNative(value, decimals);
 }
 
 // ── Namespaced unit object ───────────────────────────────────────────────────
@@ -86,4 +139,6 @@ export const GhostUnits = {
   formatGhost,
   parseGhostGwei,
   formatGhostGwei,
+  parseGhostUnits,
+  formatGhostUnits,
 } as const;

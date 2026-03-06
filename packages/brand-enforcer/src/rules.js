@@ -80,6 +80,67 @@ export const VIOLATION_PATTERNS = [
     // Catches e.g.:  == "GST"  without a GHOST_SYMBOL reference on the same line
     regex: /==\s*["']GST["'](?!.*GHOST_SYMBOL)/,
   },
+
+  // ─── BRAND-008 through BRAND-013: deeper eth leak detection ─────────────────
+
+  {
+    id: 'BRAND-008',
+    severity: 'CRITICAL',
+    description: 'Direct import from "ethers" package outside the ghost-sdk-core/src/ethers/ compat subtree.',
+    // Matches any: import ... from "ethers" / import("ethers") / require("ethers")
+    // Exception: files inside ghost-sdk-core/src/ethers/ are the designated compat layer.
+    regex: /(?:import\s+.*?\s+from\s+["']ethers["']|import\s*\(\s*["']ethers["']\s*\)|require\s*\(\s*["']ethers["']\s*\))/,
+    // Bridge-allowlist adds compat paths — see COMPAT_ALLOWLIST_PATTERNS below
+    allowlistedBy: 'COMPAT_ALLOWLIST_PATTERNS',
+  },
+
+  {
+    id: 'BRAND-009',
+    severity: 'HIGH',
+    description: 'parseEther / formatEther / parseUnits / formatUnits used or re-exported outside compat layer.',
+    // These are ethers function names. Ghost code must use parseGhost/formatGhost/parseGhostUnits/formatGhostUnits.
+    regex: /\b(?:parseEther|formatEther)\s*\(/,
+    allowlistedBy: 'COMPAT_ALLOWLIST_PATTERNS',
+  },
+
+  {
+    id: 'BRAND-010',
+    severity: 'HIGH',
+    description: 'eth_ JSON-RPC method string literal used in non-compat user-facing code.',
+    // Ghost consumer code must use GhostRPCMethod constants (ghost_*), not eth_* strings.
+    // Matches: "eth_getBalance", 'eth_blockNumber', `eth_call`, etc.
+    regex: /["'`]eth_(?:getBalance|blockNumber|chainId|call|sendRawTransaction|getTransactionReceipt|getLogs|getBlock(?:ByNumber|ByHash|TransactionCount)?|estimateGas|gasPrice|feeHistory|getCode|getStorageAt|getTransactionCount|getTransactionByHash|newFilter|getFilterLogs|getFilterChanges|uninstallFilter|subscribe|unsubscribe|syncing|accounts|sign(?:Transaction)?|getWork|submitWork|protocolVersion|hashrate|mining|coinbase|createAccessList|maxPriorityFeePerGas)["'`]/,
+    allowlistedBy: 'COMPAT_ALLOWLIST_PATTERNS',
+  },
+
+  {
+    id: 'BRAND-011',
+    severity: 'HIGH',
+    description: 'window.ethereum reference detected outside bridge/compat code.',
+    // MetaMask injection — must not appear in GhostStack code paths.
+    regex: /\bwindow\.ethereum\b/,
+    allowlistedBy: 'BRIDGE_ALLOWLIST_PATTERNS',
+  },
+
+  {
+    id: 'BRAND-012',
+    severity: 'MEDIUM',
+    description: '"MetaMask" string in user-facing code or UI components.',
+    // GhostStack UIs must brand the wallet as GhostWallet, not MetaMask.
+    // Exception: integration docs / bridge adapter descriptions.
+    regex: /\bMetaMask\b/,
+    allowlistedBy: 'BRIDGE_ALLOWLIST_PATTERNS',
+  },
+
+  {
+    id: 'BRAND-013',
+    severity: 'LOW',
+    description: 'Hardcoded chainId 1 (Ethereum mainnet) without a // ghost-chainid-ignore comment.',
+    // GhostChain uses L1=14000101, L2=14000102, L3=14000103.
+    // Bare chainId = 1 indicates a forgotten Ethereum assumption.
+    regex: /\bchainId\s*[=:]\s*1\b(?!.*ghost-chainid-ignore)/,
+    allowlistedBy: 'BRIDGE_ALLOWLIST_PATTERNS',
+  },
 ];
 
 /**
@@ -100,6 +161,27 @@ export const BRIDGE_ALLOWLIST_PATTERNS = [
   /out\//,
   /CHANGELOG/i,
   // Test fixtures with explicit exemption comment
+  /brand-enforcer-ignore/,
+];
+
+/**
+ * File path patterns that are EXEMPT from BRAND-008, BRAND-009, BRAND-010 violations.
+ * These are legitimate ethers/compat integration paths where direct ethers usage is expected.
+ */
+export const COMPAT_ALLOWLIST_PATTERNS = [
+  // ghost-sdk-core ethers shim is the designated compat layer
+  /ghost-sdk-core\/src\/ethers\//,
+  /ghost-sdk-core\/src\/abi\//,
+  /ghost-sdk-core\/src\/rpc\//,
+  // ghost-nodes compat barrel
+  /ghost-nodes\/src\/compat\//,
+  // Bridge adapters legitimately wrap ethers
+  /\bbridge\b/i,
+  /\badapter\b/i,
+  // Ignore compiled output and deps
+  /node_modules/,
+  /dist\//,
+  /\.git/,
   /brand-enforcer-ignore/,
 ];
 
