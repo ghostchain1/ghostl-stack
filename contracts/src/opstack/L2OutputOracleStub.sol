@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: MIT
+// @ghostchain Part of the GhostChain protocol suite — https://ghostchain.io
+
 pragma solidity ^0.8.24;
 
 /// @dev Minimal L2 Output Oracle stub for local/devnet use only.

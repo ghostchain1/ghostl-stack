@@ -151,7 +151,8 @@ const RULES: ContractRule[] = [
       // Only check non-library, non-interface Solidity files
       const isLibOrInterface = /\b(?:library|interface)\s+\w/.test(content);
       if (isLibOrInterface) return { matched: false };
-      const hasGhost = /\bGhost\b/.test(content) || /\bGST\b/.test(content);
+      // Accept compound names (GhostChain, GhostToken, GhostDNS, etc.) — no trailing \b
+      const hasGhost = /Ghost/.test(content) || /\bGST\b/.test(content);
       return { matched: !hasGhost };
     },
   },

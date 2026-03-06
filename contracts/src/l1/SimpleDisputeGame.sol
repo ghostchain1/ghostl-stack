@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: MIT
+// @ghostchain Part of the GhostChain protocol suite — https://ghostchain.io
+
 pragma solidity ^0.8.24;
 
 /// @notice Minimal placeholder dispute game implementation. Not a full OP fault game,
