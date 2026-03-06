@@ -120,10 +120,10 @@ infra/opstack/optimism/README.md:51:The OP Stack is a collaborative project. By 
 infra/opstack/optimism/README.md:119:`op-geth` embeds upstream geth’s version inside its own version as follows: `vMAJOR.GETH_MAJOR GETH_MINOR GETH_PATCH.PATCH`.
 infra/opstack/optimism/docs/postmortems/2022-02-02-inflation-vuln.md:154:[Ethereum tests](https://github.com/ethereum/tests) (though not unexpectedly). Modifying the tests
 infra/opstack/optimism/docs/postmortems/2022-02-02-inflation-vuln.md:197:- We will ensure the common Ethereum tests are run against Bedrock.
-infra/opstack/optimism/op-program/bin/meta-mt64.json:67004:      "name": "github.com/ethereum-optimism/optimism/op-service/eth.Ether",
-infra/opstack/optimism/op-program/bin/meta-mt64Next.json:67004:      "name": "github.com/ethereum-optimism/optimism/op-service/eth.Ether",
-infra/opstack/optimism/op-program/bin/meta-interop.json:67004:      "name": "github.com/ethereum-optimism/optimism/op-service/eth.Ether",
-infra/opstack/optimism/op-program/bin/meta-interopNext.json:67004:      "name": "github.com/ethereum-optimism/optimism/op-service/eth.Ether",
+infra/opstack/optimism/op-program/bin/meta-mt64.json:67004:      "name": "github.com/ghostchainoptimism/optimism/op-service/eth.Ether",
+infra/opstack/optimism/op-program/bin/meta-mt64Next.json:67004:      "name": "github.com/ghostchainoptimism/optimism/op-service/eth.Ether",
+infra/opstack/optimism/op-program/bin/meta-interop.json:67004:      "name": "github.com/ghostchainoptimism/optimism/op-service/eth.Ether",
+infra/opstack/optimism/op-program/bin/meta-interopNext.json:67004:      "name": "github.com/ghostchainoptimism/optimism/op-service/eth.Ether",
 infra/opstack/optimism/devnet-sdk/book/src/shell.md:26:This automatic configuration enables seamless use of Ethereum development tools without explicit endpoint configuration:
 infra/opstack/optimism/devnet-sdk/book/src/shell.md:38:The shell environment enhances the experience with various Ethereum development tools:
 infra/opstack/optimism/devnet-sdk/book/src/shell.md:44:The shell automatically sets up standard Ethereum environment variables based on the descriptor:
@@ -136,8 +136,8 @@ infra/opstack/optimism/kurtosis-devnet/book/src/basic_deployment.md:102:# Enter 
 infra/opstack/optimism/kurtosis-devnet/book/src/basic_deployment.md:133:- `ETH_RPC_URL`: The RPC endpoint for the selected chain
 infra/opstack/optimism/kurtosis-devnet/book/src/basic_deployment.md:134:- `ETH_RPC_JWT_SECRET`: JWT secret for authenticated RPC connections (when cast integration is enabled)
 infra/opstack/optimism/op-batcher/readme.md:52:4. Sends frames from the channel queue to the DA layer as (e.g. to Ethereum L1 as calldata or blob transactions).
-infra/opstack/optimism/op-dispute-mon/README.md:26:  --l1-eth-rpc <L1-Ethereum-RPC-URL> \
-infra/opstack/optimism/op-dispute-mon/README.md:32:  --l1-eth-rpc <L1-Ethereum-RPC-URL> \
+infra/opstack/optimism/op-dispute-mon/README.md:26:  --l1-eth-rpc <L1-ghostchainRPC-URL> \
+infra/opstack/optimism/op-dispute-mon/README.md:32:  --l1-eth-rpc <L1-ghostchainRPC-URL> \
 infra/opstack/optimism/op-supernode/README.md:53:export OP_SUPERNODE_L1_ETH_RPC=$L1_RPC
 infra/opstack/optimism/op-dripper/README.md:7:The main configuration for the EOA, Drippie contract to trigger, and the Ethereum L1 RPC.
 infra/opstack/optimism/op-dripper/README.md:10:- `OP_DRIPPER_L1_ETH_RPC`: RPC URL for the L1 Ethereum chain
@@ -194,7 +194,7 @@ infra/opstack/optimism/packages/contracts-bedrock/src/L2/WETH.sol:22:    ///    
 infra/opstack/optimism/packages/contracts-bedrock/src/L2/WETH.sol:28:    ///         native asset is Ether.
 infra/opstack/optimism/packages/contracts-bedrock/src/L2/ETHLiquidity.sol:39:        if (msg.sender != Predeploys.SUPERCHAIN_ETH_BRIDGE) revert Unauthorized();
 infra/opstack/optimism/packages/contracts-bedrock/src/L2/ETHLiquidity.sol:46:        if (msg.sender != Predeploys.SUPERCHAIN_ETH_BRIDGE) revert Unauthorized();
-infra/opstack/optimism/packages/contracts-bedrock/src/L2/OptimismMintableERC721.sol:17:///         typically an Optimism representation of an Ethereum-based token. Standard reference
+infra/opstack/optimism/packages/contracts-bedrock/src/L2/OptimismMintableERC721.sol:17:///         typically an Optimism representation of an ghostchainbased token. Standard reference
 infra/opstack/optimism/packages/contracts-bedrock/src/L2/L2ERC721Bridge.sol:21:///         make it possible to transfer ERC721 tokens from Ethereum to Optimism. This contract
 infra/opstack/optimism/packages/contracts-bedrock/src/L2/L2ERC721Bridge.sol:25:///         bridge ONLY supports ERC721s originally deployed on Ethereum.
 infra/opstack/optimism/packages/contracts-bedrock/src/L2/SuperchainETHBridge.sol:49:        IETHLiquidity(Predeploys.ETH_LIQUIDITY).burn{ value: msg.value }();
@@ -500,7 +500,7 @@ infra/opstack/optimism/op-devstack/README.md:160:- `OP_RETH_EXEC_PATH=/home/USER
 infra/opstack/optimism/op-devstack/README.md:164:- `SYSGO_GETH_EXEC_PATH=/path/to/geth` to select the geth executable to run
 infra/opstack/optimism/op-service/README.md:23:├── eth             - Common Ethereum data types and OP-Stack extension types
 infra/opstack/optimism/op-service/README.md:50:├── testutils       - Simplified Ethereum types, mock RPC bindings, utils for testing.
-infra/opstack/optimism/op-service/sources/testdata/gen.sh:6:export ETH_RPC_URL=https://ethereum-goerli-rpc.allthatnode.com
+infra/opstack/optimism/op-service/sources/testdata/gen.sh:6:export ETH_RPC_URL=https://ghostchaingoerli-rpc.allthatnode.com
 infra/opstack/optimism/op-challenger/README.md:86:  --l1-eth-rpc <L1_ETH_RPC> \
 infra/opstack/optimism/op-challenger/README.md:96:* `L1_ETH_RPC` - the RPC endpoint of the L1 endpoint to use (e.g. `http://localhost:8545`).
 infra/opstack/optimism/op-challenger/README.md:115:  --l1-eth-rpc <L1_ETH_RPC> \
@@ -720,10 +720,10 @@ docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:64:infra/opstack/optimism/README.md:
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:66:infra/opstack/optimism/README.md:119:`op-geth` embeds upstream geth’s version inside its own version as follows: `vMAJOR.GETH_MAJOR GETH_MINOR GETH_PATCH.PATCH`.
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:67:infra/opstack/optimism/docs/postmortems/2022-02-02-inflation-vuln.md:154:[Ethereum tests](https://github.com/ethereum/tests) (though not unexpectedly). Modifying the tests
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:68:infra/opstack/optimism/docs/postmortems/2022-02-02-inflation-vuln.md:197:- We will ensure the common Ethereum tests are run against Bedrock.
-docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:69:infra/opstack/optimism/op-program/bin/meta-mt64.json:67004:      "name": "github.com/ethereum-optimism/optimism/op-service/eth.Ether",
-docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:70:infra/opstack/optimism/op-program/bin/meta-mt64Next.json:67004:      "name": "github.com/ethereum-optimism/optimism/op-service/eth.Ether",
-docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:71:infra/opstack/optimism/op-program/bin/meta-interop.json:67004:      "name": "github.com/ethereum-optimism/optimism/op-service/eth.Ether",
-docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:72:infra/opstack/optimism/op-program/bin/meta-interopNext.json:67004:      "name": "github.com/ethereum-optimism/optimism/op-service/eth.Ether",
+docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:69:infra/opstack/optimism/op-program/bin/meta-mt64.json:67004:      "name": "github.com/ghostchainoptimism/optimism/op-service/eth.Ether",
+docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:70:infra/opstack/optimism/op-program/bin/meta-mt64Next.json:67004:      "name": "github.com/ghostchainoptimism/optimism/op-service/eth.Ether",
+docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:71:infra/opstack/optimism/op-program/bin/meta-interop.json:67004:      "name": "github.com/ghostchainoptimism/optimism/op-service/eth.Ether",
+docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:72:infra/opstack/optimism/op-program/bin/meta-interopNext.json:67004:      "name": "github.com/ghostchainoptimism/optimism/op-service/eth.Ether",
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:73:infra/opstack/optimism/devnet-sdk/book/src/shell.md:26:This automatic configuration enables seamless use of Ethereum development tools without explicit endpoint configuration:
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:74:infra/opstack/optimism/devnet-sdk/book/src/shell.md:38:The shell environment enhances the experience with various Ethereum development tools:
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:75:infra/opstack/optimism/devnet-sdk/book/src/shell.md:44:The shell automatically sets up standard Ethereum environment variables based on the descriptor:
@@ -736,8 +736,8 @@ docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:81:infra/opstack/optimism/kurtosis-d
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:82:infra/opstack/optimism/kurtosis-devnet/book/src/basic_deployment.md:133:- `ETH_RPC_URL`: The RPC endpoint for the selected chain
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:83:infra/opstack/optimism/kurtosis-devnet/book/src/basic_deployment.md:134:- `ETH_RPC_JWT_SECRET`: JWT secret for authenticated RPC connections (when cast integration is enabled)
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:84:infra/opstack/optimism/op-batcher/readme.md:52:4. Sends frames from the channel queue to the DA layer as (e.g. to Ethereum L1 as calldata or blob transactions).
-docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:85:infra/opstack/optimism/op-dispute-mon/README.md:26:  --l1-eth-rpc <L1-Ethereum-RPC-URL> \
-docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:86:infra/opstack/optimism/op-dispute-mon/README.md:32:  --l1-eth-rpc <L1-Ethereum-RPC-URL> \
+docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:85:infra/opstack/optimism/op-dispute-mon/README.md:26:  --l1-eth-rpc <L1-ghostchainRPC-URL> \
+docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:86:infra/opstack/optimism/op-dispute-mon/README.md:32:  --l1-eth-rpc <L1-ghostchainRPC-URL> \
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:87:infra/opstack/optimism/op-supernode/README.md:53:export OP_SUPERNODE_L1_ETH_RPC=$L1_RPC
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:88:infra/opstack/optimism/op-dripper/README.md:7:The main configuration for the EOA, Drippie contract to trigger, and the Ethereum L1 RPC.
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:89:infra/opstack/optimism/op-dripper/README.md:10:- `OP_DRIPPER_L1_ETH_RPC`: RPC URL for the L1 Ethereum chain
@@ -794,7 +794,7 @@ docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:139:infra/opstack/optimism/packages/
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:140:infra/opstack/optimism/packages/contracts-bedrock/src/L2/WETH.sol:28:    ///         native asset is Ether.
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:141:infra/opstack/optimism/packages/contracts-bedrock/src/L2/ETHLiquidity.sol:39:        if (msg.sender != Predeploys.SUPERCHAIN_ETH_BRIDGE) revert Unauthorized();
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:142:infra/opstack/optimism/packages/contracts-bedrock/src/L2/ETHLiquidity.sol:46:        if (msg.sender != Predeploys.SUPERCHAIN_ETH_BRIDGE) revert Unauthorized();
-docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:143:infra/opstack/optimism/packages/contracts-bedrock/src/L2/OptimismMintableERC721.sol:17:///         typically an Optimism representation of an Ethereum-based token. Standard reference
+docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:143:infra/opstack/optimism/packages/contracts-bedrock/src/L2/OptimismMintableERC721.sol:17:///         typically an Optimism representation of an ghostchainbased token. Standard reference
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:144:infra/opstack/optimism/packages/contracts-bedrock/src/L2/L2ERC721Bridge.sol:21:///         make it possible to transfer ERC721 tokens from Ethereum to Optimism. This contract
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:145:infra/opstack/optimism/packages/contracts-bedrock/src/L2/L2ERC721Bridge.sol:25:///         bridge ONLY supports ERC721s originally deployed on Ethereum.
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:146:infra/opstack/optimism/packages/contracts-bedrock/src/L2/SuperchainETHBridge.sol:49:        IETHLiquidity(Predeploys.ETH_LIQUIDITY).burn{ value: msg.value }();
@@ -976,7 +976,7 @@ docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:445:infra/opstack/optimism/op-devsta
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:446:infra/opstack/optimism/op-devstack/README.md:164:- `SYSGO_GETH_EXEC_PATH=/path/to/geth` to select the geth executable to run
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:447:infra/opstack/optimism/op-service/README.md:23:├── eth             - Common Ethereum data types and OP-Stack extension types
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:448:infra/opstack/optimism/op-service/README.md:50:├── testutils       - Simplified Ethereum types, mock RPC bindings, utils for testing.
-docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:449:infra/opstack/optimism/op-service/sources/testdata/gen.sh:6:export ETH_RPC_URL=https://ethereum-goerli-rpc.allthatnode.com
+docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:449:infra/opstack/optimism/op-service/sources/testdata/gen.sh:6:export ETH_RPC_URL=https://ghostchaingoerli-rpc.allthatnode.com
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:450:infra/opstack/optimism/op-challenger/README.md:86:  --l1-eth-rpc <L1_ETH_RPC> \
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:451:infra/opstack/optimism/op-challenger/README.md:96:* `L1_ETH_RPC` - the RPC endpoint of the L1 endpoint to use (e.g. `http://localhost:8545`).
 docs/gst-migration/ETH-LEAKAGE-INVENTORY.md:452:infra/opstack/optimism/op-challenger/README.md:115:  --l1-eth-rpc <L1_ETH_RPC> \

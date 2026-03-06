@@ -30,7 +30,7 @@ import (
     "strconv"
     "time"
 
-    "github.com/ethereum-optimism/optimism/op-proposer/bindings"
+    "github.com/ghostchainoptimism/optimism/op-proposer/bindings"
     "github.com/ethereum/go-ethereum/accounts/abi/bind"
     "github.com/ethereum/go-ethereum/common"
     "github.com/ethereum/go-ethereum/core/types"

@@ -90,3 +90,48 @@ bash scripts/up-liquidity-gravity.sh
 ```
 
 Then follow the operator runbook in `docs/RUNBOOK.md`.
+
+---
+
+## GhostChain SDK (`@ghostchain/sdk`)
+
+The SDK is a private package inside the monorepo (`packages/ghost-sdk/`). Node.js `>=22.21.0 <23` is required (matches root engine constraint).
+
+### Build the SDK
+
+```bash
+# From repo root (builds only the SDK):
+pnpm build -F @ghostchain/sdk
+
+# Or directly:
+cd packages/ghost-sdk && npx tsc -p tsconfig.json
+```
+
+### Type-check without emit
+
+```bash
+npx tsc -p packages/ghost-sdk/tsconfig.json --noEmit
+```
+
+### Import sub-paths (within monorepo)
+
+Because the package is `"private": true`, add a workspace dependency in your app:
+
+```json
+// apps/api/package.json
+{
+  "dependencies": {
+    "@ghostchain/sdk": "workspace:*"
+  }
+}
+```
+
+Then import using sub-paths:
+
+```ts
+import { createGhostL1RpcClient } from '@ghostchain/sdk/rpc';
+import { GhostGasTracker } from '@ghostchain/sdk/gas';
+import { GhostERC20 } from '@ghostchain/sdk/token/erc20';
+```
+
+Full API reference: [`packages/ghost-sdk/README.md`](../packages/ghost-sdk/README.md)

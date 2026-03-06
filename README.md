@@ -151,6 +151,58 @@ See `docs/ai-vault.md` for setup and policy details.
 
 ---
 
+## 📦 GhostChain SDK (`@ghostchain/sdk`)
+
+The **GhostChain Sovereign SDK** is the official TypeScript SDK for building on GhostChain L1, GhostL2, and GhostL3. It is zero-dependency (no ethers.js, no web3.js) and uses native cryptography via `@noble/curves` and `@noble/hashes`.
+
+**Location:** [`packages/ghost-sdk/`](packages/ghost-sdk/)  
+**Full docs:** [`packages/ghost-sdk/README.md`](packages/ghost-sdk/README.md)
+
+### Highlights
+
+* 38+ sub-path exports — import only what you need
+* Native secp256k1 signing, keccak256, RLP, ABI encoding/decoding
+* GST gas estimation with speed presets (`slow` / `standard` / `fast` / `instant`)
+* ERC-20 / ERC-721 / ERC-1155 token modules with calldata builders
+* Concurrent-safe nonce manager (`GhostNonceManager`)
+* JSON-RPC client with retry + endpoint failover (`GhostRpcClient`)
+* Branded block numbers (`GhostBlockNumber`) with multi-layer watcher
+* Cross-chain bridge client and L1/L2/L3 routing
+* Smart account + Account Abstraction (ERC-4337)
+* GhostBrain AI consensus client, AI gas optimizer
+* Ghost Name Service (GNS) resolver
+
+### Quick install (monorepo)
+
+```bash
+pnpm add @ghostchain/sdk
+```
+
+### Example
+
+```ts
+import { createGhostL1RpcClient } from '@ghostchain/sdk/rpc';
+import { GhostERC20 } from '@ghostchain/sdk/token/erc20';
+import { GhostGasTracker } from '@ghostchain/sdk/gas';
+
+const rpc = createGhostL1RpcClient();           // http://localhost:18545
+const gst = new GhostERC20('0x5FbDB2315678afecb367f032d93F642f64180aa3', rpc);
+const balance = await gst.balanceOf('0xYOUR_ADDRESS');
+
+const gas = new GhostGasTracker(rpc);
+const estimate = await gas.getGasEstimate('fast');
+```
+
+### Chain IDs
+
+| Layer | Chain ID | Default RPC |
+|---|---|---|
+| GhostChain L1 | `14000101` | `localhost:18545` |
+| GhostL2 | `901` | `localhost:29547` |
+| GhostL3 | `903` | `localhost:39545` |
+
+---
+
 ## 🏛️ Governance & Treasury
 
 * On‑chain proposal execution
@@ -394,6 +446,9 @@ Location:
 * ✅ L1/L2/L3 built, wired, and tested
 * ✅ Canonical GST gas enforced
 * ✅ OP‑Stack preflight passing (L1/L2)
+* ✅ `@ghostchain/sdk` v1.0.0 — production-complete (38+ sub-path exports, zero ethers)
+* ✅ ERC-20/721/1155, gas tracker, nonce manager, RPC client, signature utils
+* ✅ GhostBrain AI client + AI gas optimizer integrated
 * ⚠️ L3 OutputOracle wiring in progress
 * 🧠 AI services integrated (expanding)
 

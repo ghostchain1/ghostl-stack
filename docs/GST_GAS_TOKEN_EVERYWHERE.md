@@ -87,7 +87,7 @@ Chain ID: `903`
 | ghost-rpc-proxy | RPC | `RPC_ENABLE_GST_NAMESPACE=1`, `RPC_DEPRECATE_LEGACY_NAMESPACE=1` |
 | apps/web wallet | UI | native token symbol defaults to `GST`; chain metadata in tokens.ts |
 
-> **Note on `--l1-eth-rpc` / `--l2-eth-rpc`**: These are OP Stack binary CLI flag names (Ethereum-compatible JSON-RPC endpoint). The `eth` part refers to the wire protocol, not the currency. These cannot and should not be changed.
+> **Note on `--l1-eth-rpc` / `--l2-eth-rpc`**: These are OP Stack binary CLI flag names (ghostchaincompatible JSON-RPC endpoint). The `eth` part refers to the wire protocol, not the currency. These cannot and should not be changed.
 
 > **Note on `--http.api=eth,net,web3`**: This is the JSON-RPC namespace string. `eth_` prefixed methods are the Ethereum wire protocol standard. Not a currency value.
 
