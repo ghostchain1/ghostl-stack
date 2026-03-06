@@ -156,6 +156,14 @@ import { AutonomousGhostProvider } from "./autonomous/autonomous-provider.js";
 import { GhostBrainAiEngine }      from "./autonomous/ghostbrain-engine.js";
 import { GhostGasEngine }           from "./gas.js";
 import {
+  GhostNativeProvider,
+  GhostNativeWallet,
+  GhostNativeContract,
+  GhostNativeGasEngine,
+  GhostTransaction,
+  GhostJsonRpc,
+} from "./native/index.js";
+import {
   GhostUnits,
   parseGhost,
   formatGhost,
@@ -203,20 +211,32 @@ export const ghost = {
   // ── Providers ──────────────────────────────────────────
   /** Layer-aware JSON-RPC provider. Extends ghost.JsonRpcProvider. */
   JsonRpcProvider: ghostJsonRpcProvider,
+  /** Zero-ethers native provider — direct JSON-RPC transport. */
+  Provider: GhostNativeProvider,
   /** EIP-1193 / MetaMask browser provider. */
   BrowserProvider: GhostBrowserProvider,
   /** Multi-layer bridge provider (L1 + L2 + L3 in one object). */
   BridgeProvider: GhostBridgeProvider,
 
   // ── Signers ────────────────────────────────────────────
-  /** Layer-aware HD/private-key wallet. Extends ghost.Wallet. */
+  /** Layer-aware HD/private-key wallet (ethers-backed). */
   Wallet: GhostWallet,
+  /** Zero-ethers native wallet — secp256k1 + EIP-1559 signing. */
+  NativeWallet: GhostNativeWallet,
 
   // ── Contract ───────────────────────────────────────────
   /** Attach to a deployed contract address with layer metadata. */
   contractAt: ghostContractAt,
   /** Connect a GhostContract to a new runner, preserving layer. */
   connectContract: connectGhostContract,
+  /** Zero-ethers native contract — ABI encoding + eth_call. */
+  NativeContract: GhostNativeContract,
+
+  // ── Transactions ───────────────────────────────────────
+  /** EIP-1559 transaction builder (zero-ethers). */
+  Transaction: GhostTransaction,
+  /** Low-level JSON-RPC transport. */
+  JsonRpc: GhostJsonRpc,
 
   // ── Network config & utils ────────────────────────────
   /** Pre-configured L1 / L2 / L3 network definitions. */
@@ -227,8 +247,10 @@ export const ghost = {
   AutonomousProvider: AutonomousGhostProvider,
   /** Remote AI engine backed by GhostBrain Core (with local fallback). */
   GhostBrainEngine: GhostBrainAiEngine,
-  /** GST gas fee oracle for any layer provider. */
+  /** GST gas fee oracle for any layer provider (ethers-backed). */
   GasEngine: GhostGasEngine,
+  /** GST gas fee oracle — zero-ethers native implementation. */
+  NativeGasEngine: GhostNativeGasEngine,
 
   // ── Ghost unit utilities ──────────────────────────────────────────────
   /** Ghost unit system — parseGhost / formatGhost / GhostWei etc. */
@@ -268,8 +290,16 @@ export default ghost;
 // ── Native (zero-ethers-dependency) Ghost layer ───────────────────────────────
 // Classes built from scratch using @noble/curves + @noble/hashes.
 // Use these when you need a pure Ghost SDK with no ethers.js at all.
+//
+// Simple aliases (no "Native" prefix) for the primary ghost classes:
+//   GhostProvider   = GhostNativeProvider  (JSON-RPC transport)
+//   GhostTx         = GhostTransaction     (EIP-1559 builder)
+//   GhostRpc        = GhostJsonRpc         (low-level RPC)
+//   GhostNativeWallet / GhostNativeContract / GhostNativeGasEngine
+//   are exported as-is to avoid conflict with the ethers-backed variants.
 export {
   GhostNativeProvider,
+  GhostNativeProvider as GhostProvider,
   GhostNativeWallet,
   GhostNativeContract,
   GhostNativeERC20,
