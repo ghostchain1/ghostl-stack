@@ -5,7 +5,7 @@
  * It follows the EIP-1193 provider standard and self-identifies via:
  *   • window.ghostWallet          (primary injection)
  *   • EIP-6963 RDNS: "io.ghostchain.wallet"
- *   • Falls back to window.ethereum if the above are absent
+ *   • Falls back to window.ethereum (EIP-1193 compat — not GhostChain branding)
  */
 
 export const GHOST_WALLET_RDNS = "io.ghostchain.wallet";

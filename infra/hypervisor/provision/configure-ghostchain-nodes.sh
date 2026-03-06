@@ -38,7 +38,7 @@ IP_BOOTNODE="10.50.99.20"
 IP_NODE1="10.50.99.21"
 IP_NODE2="10.50.99.22"
 
-GETH_IMAGE="${GETH_IMAGE:-ethereum/client-go:alltools-v1.13.14}"
+GETH_IMAGE="${GETH_IMAGE:-ghostchain/ghost-geth:alltools-v1.13.14}"
 
 DATA_ROOT="/var/lib/ghostchain"
 SECRETS_DEST="/etc/ghostchain/secrets"

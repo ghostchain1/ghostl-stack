@@ -8170,7 +8170,7 @@
       "file": "infra/ghostchain/docker-compose.l1.yml",
       "services": {
         "ghostchain-bootnode": {
-          "image": "ethereum/client-go:alltools-v1.13.14",
+          "image": "ghostchain/ghost-geth:alltools-v1.13.14",
           "build": null,
           "ports": [
             {
@@ -8207,7 +8207,7 @@
           }
         },
         "ghostchain-node1": {
-          "image": "ethereum/client-go:alltools-v1.13.14",
+          "image": "ghostchain/ghost-geth:alltools-v1.13.14",
           "build": null,
           "ports": [
             {
@@ -8304,7 +8304,7 @@
           }
         },
         "ghostchain-node2": {
-          "image": "ethereum/client-go:alltools-v1.13.14",
+          "image": "ghostchain/ghost-geth:alltools-v1.13.14",
           "build": null,
           "ports": null,
           "environment": {
@@ -8812,7 +8812,7 @@
           }
         },
         "l2-geth": {
-          "image": "ghcr.io/ethereum-optimism/op-geth@sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0",
+          "image": "ghcr.io/ghostchainoptimism/op-geth@sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0",
           "build": null,
           "ports": [
             {
@@ -8919,7 +8919,7 @@
           }
         },
         "op-batcher": {
-          "image": "ghcr.io/ethereum-optimism/op-batcher@sha256:21a2426a292a0d1b6c3665c9e07549df97d98e40edda6c880d34e22aefe279d2",
+          "image": "ghcr.io/ghostchainoptimism/op-batcher@sha256:21a2426a292a0d1b6c3665c9e07549df97d98e40edda6c880d34e22aefe279d2",
           "build": null,
           "ports": [
             {
@@ -9048,7 +9048,7 @@
           }
         },
         "op-node": {
-          "image": "ghcr.io/ethereum-optimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b",
+          "image": "ghcr.io/ghostchainoptimism/op-node@sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b",
           "build": null,
           "ports": [
             {
@@ -9110,7 +9110,7 @@
           }
         },
         "op-proposer": {
-          "image": "ghcr.io/ethereum-optimism/op-proposer@sha256:00590e36e37994eefd8bbc9a6498ad20c62b072b381d0b8cdb7293056e6e5b64",
+          "image": "ghcr.io/ghostchainoptimism/op-proposer@sha256:00590e36e37994eefd8bbc9a6498ad20c62b072b381d0b8cdb7293056e6e5b64",
           "build": null,
           "ports": [
             {
@@ -9322,7 +9322,7 @@
       "file": "infra/opstack/docker-compose.mainnet-geth.yml",
       "services": {
         "l1-mainnet-geth": {
-          "image": "ethereum/client-go:stable",
+          "image": "ghostchain/ghost-geth:stable",
           "build": null,
           "ports": [
             {
@@ -9672,7 +9672,7 @@
         "Command": "\"bootnode --nodekey \u2026\"",
         "CreatedAt": "2026-01-23 13:55:36 -0500 EST",
         "ID": "135ceff35057",
-        "Image": "ethereum/client-go:alltools-v1.13.14",
+        "Image": "ghostchain/ghost-geth:alltools-v1.13.14",
         "Labels": "buildnum=29502,com.docker.compose.config-hash=8d4cc4eeb2e2b4b09c04495ea8534fee8d143472d91f856d2166831afaac5ebd,com.docker.compose.container-number=1,com.docker.compose.depends_on=,com.docker.compose.image=sha256:66a08cde138ae6a2e58e011aff1e7ac3bb2e28cabd1f708546159d78406eead8,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/infra/ghostchain/docker-compose.l1.yml,com.docker.compose.project.working_dir=/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/infra/ghostchain,com.docker.compose.project=ghostchain,com.docker.compose.replace=ghostchain-bootnode-1,com.docker.compose.service=ghostchain-bootnode,com.docker.compose.version=5.0.0,commit=2bd6bd01d2e8561dd7fc21b631f4a34ac16627a1,desktop.docker.io/binds/0/Source=/home/ghost/ghostl-stack/infra/docker/_backup/20260121-1909/infra/ghostchain/data/bootnode,desktop.docker.io/binds/0/SourceKind=wsl2DistroFile,desktop.docker.io/binds/0/Target=/config,desktop.docker.io/ports.scheme=v2,desktop.docker.io/ports/30301/udp=:30301,desktop.docker.io/wsl-distro=Ubuntu,version=1.13.14-stable",
         "LocalVolumes": "0",
         "Mounts": "/run/desktop/m\u2026",
@@ -9793,7 +9793,7 @@
         "Command": "\"/bin/sh /config/run\u2026\"",
         "CreatedAt": "2026-01-23 08:52:45 -0500 EST",
         "ID": "0c0b0f198628",
-        "Image": "ethereum/client-go:alltools-v1.13.14",
+        "Image": "ghostchain/ghost-geth:alltools-v1.13.14",
         "Labels": "buildnum=29502,com.docker.compose.config-hash=9060b1274baa86354f7fb5f5d405e55c3ec299cbd80ea2f99802eecf95797ffc,com.docker.compose.container-number=1,com.docker.compose.depends_on=ghostchain-bootnode:service_started:false,com.docker.compose.image=sha256:66a08cde138ae6a2e58e011aff1e7ac3bb2e28cabd1f708546159d78406eead8,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.l1.yml,com.docker.compose.project.working_dir=/home/ghost/ghostl-stack/infra/ghostchain,com.docker.compose.project=ghostchain,com.docker.compose.service=ghostchain-node2,com.docker.compose.version=5.0.0,commit=2bd6bd01d2e8561dd7fc21b631f4a34ac16627a1,desktop.docker.io/binds/0/Source=/home/ghost/ghostl-stack/infra/ghostchain/data/node2,desktop.docker.io/binds/0/SourceKind=wsl2DistroFile,desktop.docker.io/binds/0/Target=/data,desktop.docker.io/binds/1/Source=/home/ghost/ghostl-stack/infra/ghostchain/geth,desktop.docker.io/binds/1/SourceKind=wsl2DistroFile,desktop.docker.io/binds/1/Target=/config,desktop.docker.io/binds/2/Source=/home/ghost/ghostl-stack/infra/ghostchain/config/bootnode-enode.txt,desktop.docker.io/binds/2/SourceKind=wsl2DistroFile,desktop.docker.io/binds/2/Target=/run/bootnode-enode.txt,desktop.docker.io/ports.scheme=v2,desktop.docker.io/wsl-distro=Ubuntu,version=1.13.14-stable",
         "LocalVolumes": "0",
         "Mounts": "/run/desktop/m\u2026,/run/desktop/m\u2026,/run/desktop/m\u2026",
@@ -9814,7 +9814,7 @@
         "Command": "\"/bin/sh /config/run\u2026\"",
         "CreatedAt": "2026-01-23 08:52:45 -0500 EST",
         "ID": "ef4fc56292eb",
-        "Image": "ethereum/client-go:alltools-v1.13.14",
+        "Image": "ghostchain/ghost-geth:alltools-v1.13.14",
         "Labels": "buildnum=29502,com.docker.compose.config-hash=cd3537841c16417e979ba43e9ef120a869daaeb24f704585244bc91e6bd57c45,com.docker.compose.container-number=1,com.docker.compose.depends_on=ghostchain-bootnode:service_started:false,com.docker.compose.image=sha256:66a08cde138ae6a2e58e011aff1e7ac3bb2e28cabd1f708546159d78406eead8,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.l1.yml,com.docker.compose.project.working_dir=/home/ghost/ghostl-stack/infra/ghostchain,com.docker.compose.project=ghostchain,com.docker.compose.service=ghostchain-node1,com.docker.compose.version=5.0.0,commit=2bd6bd01d2e8561dd7fc21b631f4a34ac16627a1,desktop.docker.io/binds/0/Source=/home/ghost/ghostl-stack/infra/ghostchain/data/node1,desktop.docker.io/binds/0/SourceKind=wsl2DistroFile,desktop.docker.io/binds/0/Target=/data,desktop.docker.io/binds/1/Source=/home/ghost/ghostl-stack/infra/ghostchain/geth,desktop.docker.io/binds/1/SourceKind=wsl2DistroFile,desktop.docker.io/binds/1/Target=/config,desktop.docker.io/binds/2/Source=/home/ghost/ghostl-stack/infra/ghostchain/config/bootnode-enode.txt,desktop.docker.io/binds/2/SourceKind=wsl2DistroFile,desktop.docker.io/binds/2/Target=/run/bootnode-enode.txt,desktop.docker.io/ports.scheme=v2,desktop.docker.io/ports/30303/tcp=:18551,desktop.docker.io/ports/6060/tcp=:18660,desktop.docker.io/ports/8545/tcp=:18545,desktop.docker.io/ports/8546/tcp=:18546,desktop.docker.io/ports/8551/tcp=:18552,desktop.docker.io/wsl-distro=Ubuntu,version=1.13.14-stable",
         "LocalVolumes": "0",
         "Mounts": "/run/desktop/m\u2026,/run/desktop/m\u2026,/run/desktop/m\u2026",

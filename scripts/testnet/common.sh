@@ -10,8 +10,8 @@ mkdir -p "$ARTIFACT_DIR"
 export COMPOSE_PROFILES="${COMPOSE_PROFILES:-disabled}"
 # Resolve GhostChain relative paths when compose base file is infra/opstack/docker-compose.yml.
 export GHOSTCHAIN_PATH_PREFIX="${GHOSTCHAIN_PATH_PREFIX:-../ghostchain}"
-# Use a public geth fallback when private ghostl/geth image is unavailable.
-export GETH_IMAGE="${GETH_IMAGE:-ethereum/client-go:v1.13.14}"
+# Use the GhostChain-branded ghost-geth image (wraps go-ethereum alltools, same binaries).
+export GETH_IMAGE="${GETH_IMAGE:-ghostchain/ghost-geth:v1.13.14}"
 export OPSTACK_UID="${OPSTACK_UID:-$(id -u)}"
 export OPSTACK_GID="${OPSTACK_GID:-$(id -g)}"
 export L1_UID="${L1_UID:-$(id -u)}"

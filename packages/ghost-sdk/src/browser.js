@@ -2,7 +2,7 @@
 /**
  * GhostBrowserProvider
  *
- * Extends ghost v6 BrowserProvider (window.ethereum / EIP-1193) with
+ * Extends ghost v6 BrowserProvider (EIP-1193) with
  * GhostStack layer awareness.  Import this only in browser / Next.js bundles.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -11,8 +11,8 @@ const ethers_1 = require("ethers");
 const networks_js_1 = require("./networks.js");
 class GhostBrowserProvider extends ethers_1.BrowserProvider {
     _layer;
-    constructor(ethereum, layer = "L1") {
-        super(ethereum, "any");
+    constructor(provider, layer = "L1") {
+        super(provider, "any");
         this._layer = layer;
     }
     /** The configured GhostStack layer for this browser session. */
