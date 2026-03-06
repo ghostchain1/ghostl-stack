@@ -18,8 +18,8 @@ const checkChain = async (cfg: ChainConfig) => {
   const provider = ghostWalletRpcManager.getProvider(cfg.id);
   const [blockNumber, netVersion, syncing] = await Promise.all([
     provider.getBlockNumber(),
-    rpcCall<string>(provider, 'eth_chainId'),
-    rpcCall<{ startingBlock?: string; currentBlock?: string; highestBlock?: string } | boolean>(provider, 'eth_syncing').catch(() => false)
+    rpcCall<string>(provider, 'ghost_chainId'),
+    rpcCall<{ startingBlock?: string; currentBlock?: string; highestBlock?: string } | boolean>(provider, 'ghost_syncing').catch(() => false)
   ]);
   return {
     id: cfg.id,

@@ -87,14 +87,14 @@ const rpcBlockNumber = async (url: string) => {
   const gst = await rpcCall(url, 'gst_blockNumber');
   if (gst.ok) return gst;
   if (!isMethodNotFound(gst.error)) return gst;
-  return await rpcCall(url, 'eth_blockNumber');
+  return await rpcCall(url, 'ghost_blockNumber');
 };
 
 const checkChain = async (key: ChainStatus['key'], rpc: string): Promise<ChainStatus> => {
   if (!rpc) {
     return { key, rpc, ok: false, error: 'rpc_url_missing' };
   }
-  const [chainId, blockNumber] = await Promise.all([rpcCall(rpc, 'eth_chainId'), rpcBlockNumber(rpc)]);
+  const [chainId, blockNumber] = await Promise.all([rpcCall(rpc, 'ghost_chainId'), rpcBlockNumber(rpc)]);
   const ok = chainId.ok && blockNumber.ok;
   const latencyMs = Math.max(chainId.latencyMs || 0, blockNumber.latencyMs || 0);
   return {

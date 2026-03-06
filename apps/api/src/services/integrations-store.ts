@@ -409,7 +409,7 @@ export const createIntegrationsStore = async () => {
         checks.push({ name: 'contracts', ok: hasContracts, detail: hasContracts ? 'contracts_ok' : 'contracts_missing' });
         ok = checks.every((c) => c.ok);
       } else if (instance.definitionId === 'rpc-endpoint') {
-        const result = await rpcJson(baseUrl, 'eth_chainId', timeoutMs);
+        const result = await rpcJson(baseUrl, 'ghost_chainId', timeoutMs);
         const hasChainId = typeof result === 'string' && result.length > 0;
         checks.push({ name: 'chainId', ok: hasChainId, detail: hasChainId ? 'chainId_ok' : 'chainId_missing' });
         ok = checks.every((c) => c.ok);

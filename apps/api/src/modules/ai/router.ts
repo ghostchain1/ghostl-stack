@@ -434,9 +434,9 @@ const txIntel = async (chain: ChainRef, txHash: string) =>
       confidence: 0.73,
       reasoning: features.length ? `signals:${features.map((f) => f.name).join(',')}` : 'no abnormal signals',
       evidence: [
-        { kind: 'rpc', ref: 'eth_getTransactionByHash', detail: txHash },
-        { kind: 'receipt', ref: 'eth_getTransactionReceipt', detail: receipt?.transactionHash || txHash },
-        { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: String(tx.blockNumber ?? '') },
+        { kind: 'rpc', ref: 'ghost_getTransactionByHash', detail: txHash },
+        { kind: 'receipt', ref: 'ghost_getTransactionReceipt', detail: receipt?.transactionHash || txHash },
+        { kind: 'rpc', ref: 'ghost_getBlockByNumber', detail: String(tx.blockNumber ?? '') },
         ...(bytecodeHash ? [{ kind: 'bytecode' as const, ref: tx.to || '', detail: bytecodeHash }] : [])
       ],
       model: { name: 'risk-v1', version: '1.0.0' }
@@ -536,8 +536,8 @@ const walletIntel = async (chain: ChainRef, address: string, lookbackBlocks = 20
       confidence: 0.7,
       reasoning: features.length ? `signals:${features.map((f) => f.name).join(',')}` : 'no abnormal signals',
       evidence: [
-        { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: `lookback:${lookbackBlocks}` },
-        { kind: 'rpc', ref: 'eth_getTransactionByHash', detail: `txs:${txs.length}` }
+        { kind: 'rpc', ref: 'ghost_getBlockByNumber', detail: `lookback:${lookbackBlocks}` },
+        { kind: 'rpc', ref: 'ghost_getTransactionByHash', detail: `txs:${txs.length}` }
       ],
       model: { name: 'risk-v1', version: '1.0.0' }
     };
@@ -903,7 +903,7 @@ export const buildAiRouter = () => {
             ];
             const risk = computeRisk(features);
             const explainability = buildExplainability(0.7, `avg_block_time:${avg.toFixed(2)}s; last_age:${lastAge}s`, [
-              { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: `head:${latest?.number ?? ''}` }
+              { kind: 'rpc', ref: 'ghost_getBlockByNumber', detail: `head:${latest?.number ?? ''}` }
             ]);
             return {
               chain: chainDescriptor(parsed.data),
@@ -1032,7 +1032,7 @@ export const buildAiRouter = () => {
         }));
       const risk = computeRisk(stuckSignals.map((signal) => ({ name: signal.name, weight: 15, detail: signal.detail })));
       const explainability = buildExplainability(0.66, `messages:${messages.length}`, [
-        { kind: 'rpc', ref: 'eth_getLogs', detail: `l1:${l1Logs.length} l2:${l2Logs.length}` }
+        { kind: 'rpc', ref: 'ghost_getLogs', detail: `l1:${l1Logs.length} l2:${l2Logs.length}` }
       ]);
       const payload = {
         scope: { l1, l2, l3 },
@@ -1120,7 +1120,7 @@ export const buildAiRouter = () => {
           validatorOps: 'LOW'
         };
         const explainability = buildExplainability(0.68, `governance_logs:${logs.length}`, [
-          { kind: 'rpc', ref: 'eth_getLogs', detail: `from:${fromBlock} to:${latest}` },
+          { kind: 'rpc', ref: 'ghost_getLogs', detail: `from:${fromBlock} to:${latest}` },
           { kind: 'event', ref: governanceAddr, detail: `matches:${matched.length}` }
         ]);
         return {
@@ -1183,7 +1183,7 @@ export const buildAiRouter = () => {
         const congestion = avgGas > 0.75 ? 'HIGH' : avgGas > 0.4 ? 'MEDIUM' : 'LOW';
         const confidence = Math.min(0.9, 0.5 + gasRatios.length * 0.01);
         const explainability = buildExplainability(confidence, 'rolling_block_average', [
-          { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: `sample:${blocks.length}` }
+          { kind: 'rpc', ref: 'ghost_getBlockByNumber', detail: `sample:${blocks.length}` }
         ]);
         return {
           chain: chainDescriptor(chain.data),

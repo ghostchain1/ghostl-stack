@@ -494,9 +494,9 @@ const rpcProbe = async <T>(url: string, method: string, params: unknown[] = []) 
 const probeHttpEndpoint = async (endpoint: { id: string; url: string; chainId?: string }) => {
   const started = Date.now();
   try {
-    const rawChainId = await withTimeout(rpcProbe<string>(endpoint.url, 'eth_chainId'), 1500);
+    const rawChainId = await withTimeout(rpcProbe<string>(endpoint.url, 'ghost_chainId'), 1500);
     const chainId = rawChainId?.startsWith('0x') ? String(parseInt(rawChainId, 16)) : rawChainId;
-    const syncing = await withTimeout(rpcProbe<boolean | { startingBlock?: string }>(endpoint.url, 'eth_syncing'), 1500)
+    const syncing = await withTimeout(rpcProbe<boolean | { startingBlock?: string }>(endpoint.url, 'ghost_syncing'), 1500)
       .then((result) => result !== false)
       .catch(() => undefined);
     const peerCountHex = await withTimeout(rpcProbe<string>(endpoint.url, 'net_peerCount'), 1500).catch(() => undefined);
@@ -2045,9 +2045,9 @@ identityServicesPromise.then(async (identity) => {
         try {
           const provider = new JsonRpcProvider(preferred.url);
           const [chainIdHex, blockHex, gasHex, peerHex] = await Promise.all([
-            provider.send('eth_chainId', []),
-            provider.send('eth_blockNumber', []),
-            provider.send('eth_gasPrice', []),
+            provider.send('ghost_chainId', []),
+            provider.send('ghost_blockNumber', []),
+            provider.send('ghost_gasPrice', []),
             provider.send('net_peerCount', [])
           ]);
           const chainId = parseInt(chainIdHex as string, 16);
@@ -2416,14 +2416,14 @@ identityServicesPromise.then(async (identity) => {
     const blockLimit = Math.min(Number(req.query.blockLimit) || 5, 20);
     const txLimit = Math.min(Number(req.query.txLimit) || 10, 50);
     try {
-      const latestHex = (await rpcCall<HexString>('eth_blockNumber', [], chain)) as HexString;
+      const latestHex = (await rpcCall<HexString>('ghost_blockNumber', [], chain)) as HexString;
       const latest = parseInt(latestHex, 16);
       const blocks = await Promise.all(
         Array.from({ length: blockLimit }, (_, i) => latest - i)
           .filter((n) => n >= 0)
           .map(async (num) => {
             const block = (await rpcCall<RpcBlock>(
-              'eth_getBlockByNumber',
+              'ghost_getBlockByNumber',
               ['0x' + num.toString(16), true],
               chain
             )) as RpcBlock;
@@ -2441,14 +2441,14 @@ identityServicesPromise.then(async (identity) => {
       const maxDepth = Math.max(txLimit * 10, 200);
       for (let num = latest; num >= 0 && collected.length < txLimit && latest - num <= maxDepth; num--) {
         const block = (await rpcCall<RpcBlock>(
-          'eth_getBlockByNumber',
+          'ghost_getBlockByNumber',
           ['0x' + num.toString(16), true],
           chain
         )) as RpcBlock;
         const blockTime = new Date(parseInt(block.timestamp, 16) * 1000).toISOString();
         for (const t of block.transactions || []) {
           if (collected.length >= txLimit) break;
-          const txObj = typeof t === 'string' ? await rpcCall<RpcTx>('eth_getTransactionByHash', [t], chain) : (t as RpcTx);
+          const txObj = typeof t === 'string' ? await rpcCall<RpcTx>('ghost_getTransactionByHash', [t], chain) : (t as RpcTx);
           if (!txObj) continue;
           collected.push({
             hash: txObj.hash,
@@ -4278,14 +4278,14 @@ app.get(['/v1/explorer/blocks', '/explorer/blocks'], explorerGuard, async (req, 
   const limit = Math.min(Number(req.query.limit) || 10, 50);
   const chain = typeof req.query.chain === 'string' ? req.query.chain : undefined;
   try {
-    const latestHex = (await rpcCall<HexString>('eth_blockNumber', [], chain)) as HexString;
+    const latestHex = (await rpcCall<HexString>('ghost_blockNumber', [], chain)) as HexString;
     const latest = parseInt(latestHex, 16);
     const blocks = await Promise.all(
       Array.from({ length: limit }, (_, i) => latest - i)
         .filter((n) => n >= 0)
         .map(async (num) => {
           const block = (await rpcCall<RpcBlock>(
-            'eth_getBlockByNumber',
+            'ghost_getBlockByNumber',
             ['0x' + num.toString(16), true],
             chain
           )) as RpcBlock;
@@ -4328,13 +4328,13 @@ app.get(['/v1/explorer/txs', '/explorer/txs'], explorerGuard, async (req, res) =
   const limit = Math.min(Number(req.query.limit) || 20, 100);
   const chain = typeof req.query.chain === 'string' ? req.query.chain : undefined;
   try {
-    const latestHex = (await rpcCall<HexString>('eth_blockNumber', [], chain)) as HexString;
+    const latestHex = (await rpcCall<HexString>('ghost_blockNumber', [], chain)) as HexString;
     const latest = parseInt(latestHex, 16);
     const collected: ExplorerTx[] = [];
     const maxDepth = Math.max(limit * 10, 500);
     for (let num = latest; num >= 0 && collected.length < limit && latest - num <= maxDepth; num--) {
       const block = (await rpcCall<RpcBlock>(
-        'eth_getBlockByNumber',
+        'ghost_getBlockByNumber',
         ['0x' + num.toString(16), true],
         chain
       )) as RpcBlock;
@@ -4343,7 +4343,7 @@ app.get(['/v1/explorer/txs', '/explorer/txs'], explorerGuard, async (req, res) =
         if (collected.length < limit) {
           let txObj: RpcTx | null = null;
           if (typeof t === 'string') {
-            txObj = (await rpcCall<RpcTx>('eth_getTransactionByHash', [t], chain)) || null;
+            txObj = (await rpcCall<RpcTx>('ghost_getTransactionByHash', [t], chain)) || null;
           } else {
             txObj = t as RpcTx;
           }
@@ -4376,7 +4376,7 @@ app.get(['/v1/wallet/balance', '/wallet/balance'], async (req, res) => {
     return;
   }
   try {
-    const balanceHex = (await rpcCall('eth_getBalance', [address, 'latest'])) as HexString;
+    const balanceHex = (await rpcCall('ghost_getBalance', [address, 'latest'])) as HexString;
     res.json({ address, balance: balanceHex });
   } catch (e) {
     res.status(500).json({ error: (e as Error).message });

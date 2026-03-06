@@ -61,7 +61,7 @@ const resolveRpc = async (layer) => {
 const fetchChain = async (rpc) => {
   try {
     const provider = new ghost.JsonRpcProvider(rpc);
-    const chainId = await provider.send("eth_chainId", []);
+    const chainId = await provider.send("ghost_chainId", []);
     const latest = await provider.getBlock("latest");
     return { rpc, chainId, block: latest?.number, hash: latest?.hash };
   } catch {

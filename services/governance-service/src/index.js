@@ -106,7 +106,7 @@ const rpc = async (rpcUrl, method, params = []) => {
 };
 
 const ethCall = async (rpcUrl, to, data) =>
-  rpc(rpcUrl, "eth_call", [
+  rpc(rpcUrl, "ghost_call", [
     {
       to,
       data
@@ -139,7 +139,7 @@ app.get("/onchain", async (req, res) => {
   }
   try {
     const [chainId, proposalsLength, votingPeriod, executor, votingToken] = await Promise.all([
-      rpc(config.rpc, "eth_chainId"),
+      rpc(config.rpc, "ghost_chainId"),
       ethCall(config.rpc, config.governor, SELECTORS.proposalsLength),
       ethCall(config.rpc, config.governor, SELECTORS.votingPeriod),
       ethCall(config.rpc, config.governor, SELECTORS.executor),

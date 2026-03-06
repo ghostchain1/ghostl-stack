@@ -64,7 +64,7 @@ const fetchChain = async (rpc) => {
   const blockTime =
     latest && prev ? Math.max(0, Number(latest.timestamp) - Number(prev.timestamp || latest.timestamp)) : null;
   return {
-    chainId: await provider.send("eth_chainId", []),
+    chainId: await provider.send("ghost_chainId", []),
     block: latest?.number,
     hash: latest?.hash,
     blockTime,

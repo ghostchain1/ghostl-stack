@@ -330,7 +330,7 @@ async function probe() {
   const errors = [];
   for (const t of rpcTargets) {
     try {
-      const data = await fetchJson(t.url, { jsonrpc: "2.0", id: 1, method: "eth_chainId", params: [] });
+      const data = await fetchJson(t.url, { jsonrpc: "2.0", id: 1, method: "ghost_chainId", params: [] });
       results.push({ target: t.name, type: "rpc", ok: true, detail: data.result });
     } catch (e) {
       errors.push({ target: t.name, type: "rpc", error: e.message, url: t.url });

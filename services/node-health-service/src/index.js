@@ -60,7 +60,7 @@ const resolveRpc = async (layer) => {
 const fetchNode = async (rpc) => {
   const provider = new ghost.JsonRpcProvider(rpc);
   const peersHex = await provider.send("net_peerCount", []);
-  const syncing = await provider.send("eth_syncing", []);
+  const syncing = await provider.send("ghost_syncing", []);
   const block = await provider.getBlock("latest");
   return {
     rpc,

@@ -143,10 +143,10 @@ function hexToNumber(hex) {
 async function checkChain({ name, rpc }) {
   try {
     const [chainIdHex, blockNumberHex] = await Promise.all([
-      rpcCall(rpc, "eth_chainId"),
-      rpcCall(rpc, "eth_blockNumber")
+      rpcCall(rpc, "ghost_chainId"),
+      rpcCall(rpc, "ghost_blockNumber")
     ]);
-    const block = await rpcCall(rpc, "eth_getBlockByNumber", [blockNumberHex, false]);
+    const block = await rpcCall(rpc, "ghost_getBlockByNumber", [blockNumberHex, false]);
     const bn = hexToNumber(blockNumberHex);
     const now = Math.floor(Date.now() / 1000);
     const drift = now - Number(block?.timestamp ? BigInt(block.timestamp) : 0n);

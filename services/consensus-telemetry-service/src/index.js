@@ -839,7 +839,7 @@ const fetchLayerStatus = async (layer, rpc) => {
 
   let syncing = false;
   try {
-    const syncPayload = await provider.send("eth_syncing", []);
+    const syncPayload = await provider.send("ghost_syncing", []);
     syncing = syncPayload && syncPayload !== false ? true : false;
   } catch (err) {
     syncing = false;

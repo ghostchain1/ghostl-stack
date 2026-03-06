@@ -430,12 +430,12 @@ export class HealthChecker {
       try {
         const chainId =
           endpoint.protocol === 'ws'
-            ? await wsCall(endpoint.url, 'eth_chainId', this.timeoutMs)
-            : await rpcCall(endpoint.url, 'eth_chainId', this.timeoutMs);
+            ? await wsCall(endpoint.url, 'ghost_chainId', this.timeoutMs)
+            : await rpcCall(endpoint.url, 'ghost_chainId', this.timeoutMs);
         const blockNumber =
           endpoint.protocol === 'ws'
-            ? await wsCall(endpoint.url, 'eth_blockNumber', this.timeoutMs)
-            : await rpcCall(endpoint.url, 'eth_blockNumber', this.timeoutMs);
+            ? await wsCall(endpoint.url, 'ghost_blockNumber', this.timeoutMs)
+            : await rpcCall(endpoint.url, 'ghost_blockNumber', this.timeoutMs);
         if (chainId !== endpoint.chainId) throw new Error('chainId_mismatch');
         if (!Number.isFinite(blockNumber)) throw new Error('blockNumber_invalid');
         this.recordSuccess(key, Date.now() - started);

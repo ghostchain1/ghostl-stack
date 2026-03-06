@@ -246,7 +246,7 @@ app.post("/v1/preconfirm", async (req, res) => {
 
   let rpcResult;
   try {
-    rpcResult = await rpcRequest("eth_sendRawTransaction", [rawTx]);
+    rpcResult = await rpcRequest("ghost_sendTransaction", [rawTx]);
   } catch (err) {
     requestCounter.labels(String(LAYER_ID), "rpc_error").inc();
     return json(res, 502, { ok: false, error: "rpc_error", message: err?.message || String(err) });

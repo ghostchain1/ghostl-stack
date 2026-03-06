@@ -77,7 +77,7 @@ const rpcChainId = async (url: string, timeoutMs: number) => {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_chainId', params: [] }),
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'ghost_chainId', params: [] }),
       signal: controller.signal
     });
     if (!res.ok) throw new Error(`http_${res.status}`);
@@ -126,7 +126,7 @@ const rpcBlockNumber = async (url: string, timeoutMs: number) => {
       return await call('gst_blockNumber');
     } catch (err) {
       if (!isMethodNotFound(err)) throw err;
-      return await call('eth_blockNumber');
+      return await call('ghost_blockNumber');
     }
   } finally {
     clearTimeout(timer);
@@ -141,7 +141,7 @@ const wsChainId = async (url: string, timeoutMs: number) =>
       reject(new Error('ws_timeout'));
     }, timeoutMs);
     socket.onopen = () => {
-      socket.send(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_chainId', params: [] }));
+      socket.send(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'ghost_chainId', params: [] }));
     };
     socket.onmessage = (event) => {
       clearTimeout(timer);
@@ -206,7 +206,7 @@ const wsBlockNumber = async (url: string, timeoutMs: number) =>
           if (!triedEth && isMethodNotFound(err)) {
             triedEth = true;
             try {
-              send('eth_blockNumber', 2);
+              send('ghost_blockNumber', 2);
             } catch (sendErr) {
               cleanup();
               reject(sendErr instanceof Error ? sendErr : new Error('ws_error'));

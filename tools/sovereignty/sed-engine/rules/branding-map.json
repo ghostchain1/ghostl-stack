@@ -91,6 +91,13 @@
     "packages/sdk/src/",
     "packages/ghost-nodes/src/",
     "contracts/lib/",
+    "services/ghost-rpc-proxy/",
+    "services/ghost-relayer/",
+    "services/ghost-rollup-challenger/",
+    "services/ghost-rollup-proposer/",
+    "services/governance-event-bridge/",
+    "pages/api/rpc/",
+    "bridge",
     "node_modules/",
     "dist/",
     "out/",
@@ -99,6 +106,7 @@
     "cache/",
     "cache-codex/",
     ".git/",
+    "tools/sovereignty/",
     "brand-enforcer-ignore"
   ]
 }

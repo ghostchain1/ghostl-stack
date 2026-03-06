@@ -107,11 +107,11 @@ const collectProposers = async (rpc, window = 32) => {
   if (!rpc) return { counts: {}, total: 0 };
   const counts = {};
   try {
-    const latestHex = await jsonRpc(rpc, "eth_blockNumber");
+    const latestHex = await jsonRpc(rpc, "ghost_blockNumber");
     const latest = latestHex ? parseInt(latestHex, 16) : 0;
     const start = Math.max(0, latest - window + 1);
     for (let n = start; n <= latest; n++) {
-      const blk = await jsonRpc(rpc, "eth_getBlockByNumber", [`0x${n.toString(16)}`, false]);
+      const blk = await jsonRpc(rpc, "ghost_getBlockByNumber", [`0x${n.toString(16)}`, false]);
       const author = blk?.miner || blk?.author;
       if (!author) continue;
       const id = author.toLowerCase();

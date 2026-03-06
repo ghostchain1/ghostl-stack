@@ -228,7 +228,7 @@ const policyAllows = async (actionValue, hasEvidenceOverride) => {
     POLICY_APPROVALS_PROVIDED,
     hasEvidence
   ]);
-  const result = await rpcRequest(POLICY_REGISTRY_RPC, "eth_call", [
+  const result = await rpcRequest(POLICY_REGISTRY_RPC, "ghost_call", [
     { to: POLICY_REGISTRY_ADDRESS, data },
     "latest"
   ]);
@@ -246,7 +246,7 @@ const checkChainPolicyRegistry = async () => {
     return { ok: chainPolicyCache.ok, missing: chainPolicyCache.missing };
   }
   try {
-    const code = await rpcRequest(CHAIN_POLICY_REGISTRY_RPC, "eth_getCode", [
+    const code = await rpcRequest(CHAIN_POLICY_REGISTRY_RPC, "ghost_getCode", [
       CHAIN_POLICY_REGISTRY_ADDRESS,
       "latest"
     ]);
@@ -546,9 +546,9 @@ async function loop() {
       peersRaw = simulation.peersRaw ?? "0x0";
       syncing = simulation.syncing ?? false;
     } else {
-      latestBlock = await rpc("eth_getBlockByNumber", ["latest", true]);
+      latestBlock = await rpc("ghost_getBlockByNumber", ["latest", true]);
       peersRaw = await rpc("net_peerCount");
-      syncing = await rpc("eth_syncing");
+      syncing = await rpc("ghost_syncing");
     }
     const peers = parseHexNumber(peersRaw, 0);
     const headNumber = parseHexNumber(latestBlock.number, null);
@@ -569,7 +569,7 @@ async function loop() {
 
     if (RPC_L1) {
       try {
-        await rpcRequest(RPC_L1, "eth_chainId");
+        await rpcRequest(RPC_L1, "ghost_chainId");
       } catch {
         l1RpcError = true;
       }
