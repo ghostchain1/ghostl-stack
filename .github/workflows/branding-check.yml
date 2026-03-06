@@ -1,0 +1,198 @@
+name: GhostChain Branding Enforcement
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+      - "security/**"
+      - "brand/**"
+  workflow_dispatch:
+    inputs:
+      fail_on_medium:
+        description: 'Also fail on MEDIUM severity violations'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─── Layer 1: @ghostchain/brand-enforcer structural scan ─────────────────
+  brand-enforcer:
+    name: Brand Enforcer (BRAND-001→013)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install brand-enforcer dependencies
+        run: npm install --prefix packages/brand-enforcer
+
+      - name: Run ghost-brand structural scan
+        run: node packages/brand-enforcer/src/cli.js scan . --format text
+        # Exits 1 on any CRITICAL/HIGH violation (BRAND-001 through BRAND-013)
+
+      - name: Upload scan results (JSON)
+        if: always()
+        run: node packages/brand-enforcer/src/cli.js scan . --format json --exit-zero > brand-enforcer-results.json || true
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brand-enforcer-results
+          path: brand-enforcer-results.json
+          retention-days: 30
+
+  # ─── Layer 2: Repo-wide 15-layer text scan ────────────────────────────────
+  brand-audit:
+    name: Branding Audit (15-layer)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run branding audit
+        run: node --experimental-strip-types tools/branding/audit-branding.ts . --json > brand-audit-results.json
+        continue-on-error: true
+
+      - name: Check for CRITICAL/HIGH violations
+        run: |
+          CRITICAL=$(node -e "const r=require('./brand-audit-results.json'); console.log(r.violations.filter(v=>v.rule.severity==='CRITICAL'||v.rule.severity==='HIGH').length)")
+          echo "CRITICAL/HIGH violations: $CRITICAL"
+          if [ "$CRITICAL" -gt 0 ]; then
+            node --experimental-strip-types tools/branding/audit-branding.ts .
+            exit 1
+          fi
+          echo "✔ No blocking branding violations."
+
+      - name: Check for MEDIUM violations (optional)
+        if: ${{ inputs.fail_on_medium == 'true' }}
+        run: |
+          MEDIUM=$(node -e "const r=require('./brand-audit-results.json'); console.log(r.violations.filter(v=>v.rule.severity==='MEDIUM').length)")
+          echo "MEDIUM violations: $MEDIUM"
+          if [ "$MEDIUM" -gt 0 ]; then exit 1; fi
+
+      - name: Upload audit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brand-audit-results
+          path: brand-audit-results.json
+          retention-days: 30
+
+  # ─── Layer 3: Smart Contract brand validation ─────────────────────────────
+  contract-brand:
+    name: Contract Brand Validator
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate contract branding
+        run: node --experimental-strip-types tools/branding/contract-validator.ts
+        # Exits 1 on CRITICAL or HIGH contract violations
+
+      - name: Upload contract validator results (JSON)
+        if: always()
+        run: node --experimental-strip-types tools/branding/contract-validator.ts --json > contract-brand-results.json || true
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract-brand-results
+          path: contract-brand-results.json
+          retention-days: 30
+
+  # ─── Layer 4: Ghost SDK completeness check ────────────────────────────────
+  sdk-completeness:
+    name: SDK Ghost* Export Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check Ghost* SDK exports
+        run: node --experimental-strip-types tools/branding/sdk-generator.ts --check
+        # Exits 1 if any required Ghost* wrapper is missing from the SDK
+
+  # ─── Summary gate ─────────────────────────────────────────────────────────
+  branding-gate:
+    name: Branding Gate (all layers pass)
+    runs-on: ubuntu-latest
+    needs:
+      - brand-enforcer
+      - brand-audit
+      - contract-brand
+      - sdk-completeness
+    if: always()
+    steps:
+      - name: Check all branding jobs passed
+        run: |
+          if [[ "${{ needs.brand-enforcer.result }}" != "success" || \
+                "${{ needs.brand-audit.result }}"    != "success" || \
+                "${{ needs.contract-brand.result }}" != "success" || \
+                "${{ needs.sdk-completeness.result }}" != "success" ]]; then
+            echo "❌ Branding gate FAILED — one or more branding checks did not pass."
+            echo "brand-enforcer:   ${{ needs.brand-enforcer.result }}"
+            echo "brand-audit:      ${{ needs.brand-audit.result }}"
+            echo "contract-brand:   ${{ needs.contract-brand.result }}"
+            echo "sdk-completeness: ${{ needs.sdk-completeness.result }}"
+            exit 1
+          fi
+          echo "✔ All GhostChain branding checks passed — GhostStack is 100% Ghost-branded."

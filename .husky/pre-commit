@@ -1,0 +1,83 @@
+#!/usr/bin/env sh
+# .husky/pre-commit
+# GhostChain Branding Enforcement — pre-commit hook
+#
+# Runs on every commit to prevent brand violations entering the repo.
+# Fast: only runs on staged files (respects git diff --cached).
+#
+# Install:
+#   npm run hooks:install   (copies this file to .git/hooks/pre-commit)
+#   OR: npx husky init && npx husky add .husky/pre-commit
+#
+# Skip for emergency commits (not recommended):
+#   SKIP_BRAND_CHECK=1 git commit -m "..."
+
+set -e
+
+# Allow escape hatch for emergency commits (with audit trail)
+if [ "${SKIP_BRAND_CHECK:-0}" = "1" ]; then
+  echo "[brand-hook] ⚠  SKIP_BRAND_CHECK=1 — brand check bypassed. This will be logged."
+  echo "[brand-hook] commit: $(git rev-parse HEAD 2>/dev/null || echo 'pending')" >> .brand-skip.log
+  exit 0
+fi
+
+# ─── 1. Quick grep on staged files only ────────────────────────────────────
+# Fail fast: if any staged text file contains a clearly forbidden term, block immediately.
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(sol|ts|tsx|js|mjs|cjs|md|yml|yaml)$' || true)
+
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+
+VIOLATIONS=0
+
+for file in $STAGED; do
+  if [ ! -f "$file" ]; then continue; fi
+
+  # Skip bridge/adapter/compat paths (legitimate ETH references)
+  case "$file" in
+    *bridge* | *adapter* | *weth* | *cross-chain* | *l1-interop* | \
+    *node_modules* | *dist/* | *artifacts/* | *cache/* | *brand-enforcer/test*)
+      continue ;;
+  esac
+
+  # Check for unconditionally forbidden terms
+  for term in "Etherscan" "etherscan" "Infura" "Alchemy" "web3.js"; do
+    if grep -q "$term" "$file" 2>/dev/null; then
+      echo "[brand-hook] ❌ Forbidden term '$term' in $file"
+      VIOLATIONS=$((VIOLATIONS + 1))
+    fi
+  done
+
+# Check for Ethereum (but skip if it's a link/URL/reference doc)
+  if grep -q '\bEthereum\b' "$file" 2>/dev/null; then
+    # Allow in comments about cross-chain interop
+    if ! grep -q '\bEthereum\b' "$file" | grep -q 'brand-enforcer-ignore'; then
+      echo "[brand-hook] ❌ 'Ethereum' branding in $file — use 'GhostChain'"
+      VIOLATIONS=$((VIOLATIONS + 1))
+    fi
+  fi
+done
+
+if [ "$VIOLATIONS" -gt 0 ]; then
+  echo ""
+  echo "[brand-hook] ══════════════════════════════════════════════"
+  echo "[brand-hook] ❌ $VIOLATIONS branding violation(s) found."
+  echo "[brand-hook]    Run: pnpm brand:enforce --write  (auto-fix)"
+  echo "[brand-hook]    Then: pnpm brand:audit           (verify)"
+  echo "[brand-hook] ══════════════════════════════════════════════"
+  exit 1
+fi
+
+# ─── 2. Contract validator on staged .sol files ─────────────────────────────
+STAGED_SOL=$(echo "$STAGED" | grep '\.sol$' || true)
+if [ -n "$STAGED_SOL" ]; then
+  node --experimental-strip-types tools/branding/contract-validator.ts 2>/dev/null || {
+    echo "[brand-hook] ❌ Contract brand validation failed."
+    exit 1
+  }
+fi
+
+echo "[brand-hook] ✔ Branding check passed."
+exit 0
