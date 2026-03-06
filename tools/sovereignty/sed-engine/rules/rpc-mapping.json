@@ -65,6 +65,8 @@
     "packages/ghostchainjs-tx/src/",
     "packages/ghostchainjs-util/src/",
     "contracts/lib/",
+    "infra/opstack/gate/",
+    "infra/opstack/scripts/",
     "services/ghost-rpc-proxy/",
     "services/ghost-relayer/",
     "services/ghost-rollup-challenger/",

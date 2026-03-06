@@ -3,10 +3,10 @@ pragma solidity ^0.8.24;
 
 import "../../src/governance/Governor.sol";
 import "../../src/governance/ProposalExecutor.sol";
-import "../../src/common/ERC20.sol";
+import "../../src/common/GST20.sol";
 
-contract GovToken is ERC20 {
-    constructor() ERC20("Gov", "GOV", 18) {
+contract GovToken is GST20 {
+    constructor() GST20("Gov", "GOV", 18) {
         _mint(msg.sender, 1_000_000 ether);
     }
 }

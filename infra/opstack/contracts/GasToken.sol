@@ -2,7 +2,7 @@
 pragma solidity ^0.8.15;
 
 /// @title GasToken
-/// @notice Minimal ERC20 to serve as a custom gas token. Deploy separately on each rollup
+/// @notice Minimal GST20 to serve as a custom gas token. Deploy separately on each rollup
 ///         (e.g., L2 and L3) with the desired name/symbol and initial supply.
 /// @dev    Kept self-contained to avoid external dependencies and make genesis baking easier.
 contract GasToken {
@@ -44,7 +44,7 @@ contract GasToken {
     function transferFrom(address from, address to, uint256 amount) external returns (bool) {
         uint256 allowed = allowance[from][msg.sender];
         if (allowed != type(uint256).max) {
-            require(allowed >= amount, "ERC20: insufficient allowance");
+            require(allowed >= amount, "GST20: insufficient allowance");
             allowance[from][msg.sender] = allowed - amount;
             emit Approval(from, msg.sender, allowance[from][msg.sender]);
         }
@@ -53,9 +53,9 @@ contract GasToken {
     }
 
     function _transfer(address from, address to, uint256 amount) internal {
-        require(to != address(0), "ERC20: transfer to zero");
+        require(to != address(0), "GST20: transfer to zero");
         uint256 fromBalance = balanceOf[from];
-        require(fromBalance >= amount, "ERC20: balance too low");
+        require(fromBalance >= amount, "GST20: balance too low");
         unchecked {
             balanceOf[from] = fromBalance - amount;
             balanceOf[to] += amount;
@@ -64,7 +64,7 @@ contract GasToken {
     }
 
     function _mint(address to, uint256 amount) internal {
-        require(to != address(0), "ERC20: mint to zero");
+        require(to != address(0), "GST20: mint to zero");
         totalSupply += amount;
         balanceOf[to] += amount;
         emit Transfer(address(0), to, amount);
@@ -77,7 +77,7 @@ contract GasToken {
     function burnFrom(address from, uint256 amount) external {
         uint256 allowed = allowance[from][msg.sender];
         if (allowed != type(uint256).max) {
-            require(allowed >= amount, "ERC20: insufficient allowance");
+            require(allowed >= amount, "GST20: insufficient allowance");
             allowance[from][msg.sender] = allowed - amount;
             emit Approval(from, msg.sender, allowance[from][msg.sender]);
         }
@@ -86,7 +86,7 @@ contract GasToken {
 
     function _burn(address from, uint256 amount) internal {
         uint256 fromBalance = balanceOf[from];
-        require(fromBalance >= amount, "ERC20: balance too low");
+        require(fromBalance >= amount, "GST20: balance too low");
         unchecked {
             balanceOf[from] = fromBalance - amount;
             totalSupply -= amount;

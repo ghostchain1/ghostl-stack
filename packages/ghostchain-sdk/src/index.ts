@@ -25,11 +25,11 @@ const parseHex = (hex: string) => BigInt(hex);
 export const createRpcClient = (url: string): RpcClient => ({
   url,
   call: (method, params = []) => rpcCall(url, method, params),
-  getBlockNumber: async () => parseHex(await rpcCall<string>(url, 'eth_blockNumber')),
-  getChainId: async () => parseHex(await rpcCall<string>(url, 'eth_chainId')),
-  getGasPrice: async () => parseHex(await rpcCall<string>(url, 'eth_gasPrice')),
-  getBalance: async (address: string) => parseHex(await rpcCall<string>(url, 'eth_getBalance', [address, 'latest'])),
-  sendRawTransaction: async (tx: string) => rpcCall<string>(url, 'eth_sendRawTransaction', [tx])
+  getBlockNumber: async () => parseHex(await rpcCall<string>(url, 'ghost_blockNumber')),
+  getChainId: async () => parseHex(await rpcCall<string>(url, 'ghost_chainId')),
+  getGasPrice: async () => parseHex(await rpcCall<string>(url, 'ghost_gasPrice')),
+  getBalance: async (address: string) => parseHex(await rpcCall<string>(url, 'ghost_getBalance', [address, 'latest'])),
+  sendRawTransaction: async (tx: string) => rpcCall<string>(url, 'ghost_sendTransaction', [tx])
 });
 
 export type ChainConfig = {
