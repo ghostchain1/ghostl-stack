@@ -1,4 +1,5 @@
 import 'express-session';
+import type { OIDCRealm, RealmClaim } from '../../../../packages/types';
 
 declare module 'express-session' {
   interface SessionData {
@@ -13,5 +14,11 @@ declare module 'express-session' {
     nonceCreatedAt?: number;
     expiresAt?: number;
     lastSeenAt?: number;
+    /** OIDC realm claim populated by realm-auth middleware after JWT validation */
+    realmClaim?: RealmClaim;
+    /** Raw OIDC access token (stored for downstream service delegation) */
+    oidcAccessToken?: string;
+    /** The realm that authenticated this session via OIDC */
+    oidcRealm?: OIDCRealm;
   }
 }

@@ -1124,5 +1124,98 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
     })
   );
 
+  // ─── OIDC token exchange ─────────────────────────────────────────────────────
+  // POST /auth/oidc/token
+  // Accepts an OIDC access_token (already validated externally, e.g. in the SPA
+  // after the authorization_code flow) and attaches the realm claim to the
+  // server-side session, returning a session cookie + CSRF token.
+  // The actual JWT signature verification happens in the global realmAuthMiddleware
+  // (applied in server.ts) which runs before this route and populates
+  // req.session.realmClaim. This handler only needs to confirm the claim is
+  // present and build the session response.
+  router.post(
+    '/auth/oidc/token',
+    asyncHandler(async (req, res) => {
+      const { accessToken, realm } = (req.body || {}) as { accessToken?: string; realm?: string };
+      if (!accessToken || typeof accessToken !== 'string') {
+        res.status(400).json({ error: 'access_token_required' });
+        return;
+      }
+
+      // Inject the token into the authorization header so the upstream
+      // realmAuthMiddleware logic can be re-invoked synchronously via a
+      // minimal inline path — or rely on the claim already populated by
+      // the global middleware for this same request if the client sent the
+      // Bearer header alongside the body.
+      const existingClaim = req.session.realmClaim;
+      if (!existingClaim) {
+        // Token wasn't in the Authorization header; run inline validation.
+        // Import lazily to avoid circular dep: middleware → router → middleware.
+        const { validateBearerTokenForRouter } = await import('../../middleware/realm-auth.js');
+        const claim = await validateBearerTokenForRouter(accessToken);
+        if (!claim) {
+          res.status(401).json({ error: 'invalid_or_expired_oidc_token' });
+          return;
+        }
+        req.session.realmClaim = claim;
+        req.session.oidcRealm = claim.realm;
+        req.session.oidcAccessToken = accessToken;
+      }
+
+      const claim = req.session.realmClaim!;
+
+      // Verify realm matches if caller specified one
+      if (realm && claim.realm !== realm) {
+        res.status(403).json({ error: 'realm_mismatch', expected: realm, actual: claim.realm });
+        return;
+      }
+
+      // Attach a CSRF token if not already present
+      if (!req.session.csrfToken) {
+        req.session.csrfToken = crypto.randomUUID();
+      }
+
+      const now = Date.now();
+      req.session.lastSeenAt = now;
+      // Use the JWT expiry for session TTL (capped to env SESSION_TTL_MS)
+      const jwtTtlMs = claim.exp > 0 ? (claim.exp * 1000 - now) : 0;
+      const maxTtl = env.SESSION_TTL_MS || 30 * 60 * 1000;
+      req.session.expiresAt = now + Math.min(jwtTtlMs > 0 ? jwtTtlMs : maxTtl, maxTtl);
+
+      await deps.auditLogService.append({
+        actorId: claim.sub,
+        action: 'auth:oidc_session',
+        resource: claim.realm,
+        meta: {
+          correlationId: req.correlationId,
+          sub: claim.sub,
+          email: claim.email,
+          realm: claim.realm,
+          roles: claim.realmRoles,
+        },
+      }).catch(() => undefined);
+
+      logAuthEvent('info', 'oidc_session_created', {
+        sub: claim.sub,
+        realm: claim.realm,
+        ip: req.ip,
+        ua: req.headers['user-agent'],
+      });
+
+      res.json({
+        ok: true,
+        user: {
+          sub: claim.sub,
+          email: claim.email,
+          preferredUsername: claim.preferredUsername,
+          realm: claim.realm,
+          roles: claim.realmRoles,
+          clientRoles: claim.clientRoles,
+        },
+        csrfToken: req.session.csrfToken,
+      });
+    })
+  );
+
   return router;
 };

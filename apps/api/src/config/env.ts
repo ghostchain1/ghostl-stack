@@ -157,7 +157,24 @@ const EnvSchema = z.object({
   BOOTSTRAP_ADMIN_PASSWORD: z.string().optional(),
   AUTH_JWT_SECRET: z.string().optional(),
   GHOSTWALLET_FUNDER_PRIVATE_KEY: z.string().optional(),
-  GHOSTWALLET_FUNDER_CHAIN: z.enum(['l1', 'l2', 'l3']).optional()
+  GHOSTWALLET_FUNDER_CHAIN: z.enum(['l1', 'l2', 'l3']).optional(),
+
+  // ─── OIDC / Realm SSO ────────────────────────────────────────────────────
+  /** Keycloak base URL, e.g. https://keycloak.ghost.example */
+  KEYCLOAK_BASE_URL: z.preprocess(emptyToUndefined, z.string().url().optional()),
+  KEYCLOAK_REALM_USERS: z.string().default('ghost-users'),
+  KEYCLOAK_REALM_EMPLOYEES: z.string().default('ghost-employees'),
+  KEYCLOAK_REALM_ADMINS: z.string().default('ghost-admins'),
+  /** Override issuer URLs (auto-derived from KEYCLOAK_BASE_URL if not set) */
+  OIDC_ISSUER_USERS: z.preprocess(emptyToUndefined, z.string().url().optional()),
+  OIDC_ISSUER_EMPLOYEES: z.preprocess(emptyToUndefined, z.string().url().optional()),
+  OIDC_ISSUER_ADMINS: z.preprocess(emptyToUndefined, z.string().url().optional()),
+  /** JWT audience claim(s) expected by this service (comma-separated) */
+  OIDC_AUDIENCE: z.string().optional(),
+  /** Clock tolerance in seconds for JWT expiry validation */
+  OIDC_CLOCK_TOLERANCE_SECONDS: z.coerce.number().int().min(0).max(300).default(5),
+  /** URL of ghost-jwks-guard or JWKS proxy (uses Keycloak JWKS endpoints when not set) */
+  JWKS_GUARD_URL: z.preprocess(emptyToUndefined, z.string().url().optional())
 });
 
 const parsed = EnvSchema.safeParse(process.env);

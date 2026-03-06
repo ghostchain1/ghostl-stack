@@ -39,6 +39,7 @@ import { env } from './config/env';
 import { requirePermission } from './lib/rbac';
 import type { NotificationChannel } from './modules/observability/services';
 import { buildDevopsRouter } from './modules/devops/router';
+import { realmAuthMiddleware } from './middleware/realm-auth';
 import { buildWalletAdminRouter } from './modules/wallet-admin/router';
 import { createWalletService } from './services/wallet-store';
 import { createGhostWalletService } from './services/ghostwallet';
@@ -242,6 +243,8 @@ app.use(
     }
   }) as unknown as RequestHandler
 );
+// OIDC realm-aware JWT validation (non-blocking; populates req.session.realmClaim)
+app.use(realmAuthMiddleware as unknown as RequestHandler);
 
 const isStateChanging = (method: string) => !['GET', 'HEAD', 'OPTIONS'].includes(method);
 const sameOrigin = (req: express.Request) => {
