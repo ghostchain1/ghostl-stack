@@ -1,0 +1,55 @@
+{
+  "name": "@ghostchain/consciousness",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Ghost Consciousness Layer (GCL-Ω) — global AI coordination, multi-swarm intelligence, cross-chain economic diplomacy, and autonomous ecosystem expansion for GhostStack",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./consciousness": {
+      "types": "./dist/consciousness/GhostConsciousnessCore.d.ts",
+      "default": "./dist/consciousness/GhostConsciousnessCore.js"
+    },
+    "./coordination": {
+      "types": "./dist/coordination/GhostGlobalCoordinator.d.ts",
+      "default": "./dist/coordination/GhostGlobalCoordinator.js"
+    },
+    "./swarm-intelligence": {
+      "types": "./dist/swarm-intelligence/GhostSwarmCouncil.d.ts",
+      "default": "./dist/swarm-intelligence/GhostSwarmCouncil.js"
+    },
+    "./diplomacy": {
+      "types": "./dist/diplomacy/GhostCrossChainDiplomat.d.ts",
+      "default": "./dist/diplomacy/GhostCrossChainDiplomat.js"
+    },
+    "./expansion": {
+      "types": "./dist/expansion/GhostEcosystemExpander.d.ts",
+      "default": "./dist/expansion/GhostEcosystemExpander.js"
+    },
+    "./perception": {
+      "types": "./dist/perception/GhostSystemPerception.d.ts",
+      "default": "./dist/perception/GhostSystemPerception.js"
+    },
+    "./memory": {
+      "types": "./dist/memory/GhostCivilizationMemory.d.ts",
+      "default": "./dist/memory/GhostCivilizationMemory.js"
+    },
+    "./telemetry": {
+      "types": "./dist/telemetry/GhostConsciousnessTelemetry.d.ts",
+      "default": "./dist/telemetry/GhostConsciousnessTelemetry.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}
