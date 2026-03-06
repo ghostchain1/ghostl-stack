@@ -8,7 +8,7 @@ import {
   type BytesLike,
   type Signer,
   type TypedDataField
-} from "ethers";
+} from "@ghostchain/ghost-sdk-core/ethers";
 
 export const GHOST_AI_DOMAIN_NAME = "GhostAI";
 export const GHOST_AI_DOMAIN_VERSION = "1";
@@ -139,7 +139,7 @@ export function buildGhostAIDomain(chainId: bigint | number, verifyingContract: 
 
 export function computeDomainSeparator(domain: AIAttestationDomain): string {
   const normalized = normalizeDomain(domain);
-  return TypedDataEncoder.hashDomain(normalized);
+  return TypedDataEncoder.hashDomainHex(normalized);
 }
 
 type NormalizedAttestationCore = Omit<AIAttestation, "attestationId">;
@@ -210,7 +210,7 @@ export function normalizeAttestation(payload: AIAttestationPayload): AIAttestati
 
 export function computeStructHash(attestation: AIAttestationPayload): string {
   const normalized = normalizeAttestation(attestation);
-  return TypedDataEncoder.hashStruct("AIAttestation", AI_ATTESTATION_EIP712_TYPES, normalized);
+  return TypedDataEncoder.hashStructHex("AIAttestation", AI_ATTESTATION_EIP712_TYPES, normalized);
 }
 
 export function computeAttestationDigest(domain: AIAttestationDomain, attestation: AIAttestationPayload): string {

@@ -143,7 +143,7 @@ const finalizedBlockGauge = new promClient.Gauge({
 });
 const syncingGauge = new promClient.Gauge({
   name: `${metricsPrefix}_layer_syncing`,
-  help: "1 if eth_syncing returns a payload",
+  help: "1 if ghost_syncing returns a payload",
   labelNames: ["layer"],
   registers: [registry]
 });

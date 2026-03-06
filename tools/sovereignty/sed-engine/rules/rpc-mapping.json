@@ -60,6 +60,8 @@
     "packages/ghost-sdk/src/",
     "packages/ghost-sdk-core/src/",
     "packages/hardhat-ghost/src/",
+    "packages/ghost-ai-sdk/src/",
+    "packages/ghostwallet/src/",
     "packages/ghostchainjs-tx/src/",
     "packages/ghostchainjs-util/src/",
     "contracts/lib/",

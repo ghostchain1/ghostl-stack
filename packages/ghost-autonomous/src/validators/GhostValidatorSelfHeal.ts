@@ -20,7 +20,7 @@ export class GhostValidatorSelfHeal {
       const res = await fetch(rpcUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: 1, jsonrpc: "2.0", method: "eth_syncing", params: [] }),
+        body: JSON.stringify({ id: 1, jsonrpc: "2.0", method: "ghost_syncing", params: [] }),
         signal: AbortSignal.timeout(4_000),
       });
       const j = await res.json() as { result: boolean | object };

@@ -30,7 +30,7 @@ export class GhostRpc {
 
   constructor(options: RpcOptions) {
     this.url = options.url;
-    this.namespace = options.namespace && options.namespace !== 'auto' ? options.namespace : 'eth';
+    this.namespace = options.namespace && options.namespace !== 'auto' ? options.namespace : 'ghost';
     this.timeoutMs = options.timeoutMs || config.REQUEST_TIMEOUT_MS;
     this.traceMethod = 'debug_traceTransaction';
   }

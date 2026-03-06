@@ -43,6 +43,21 @@ export class TypedDataEncoder {
     return keccak256Hex(combined);
   }
 
+  /** Compute just the domain separator hash — returns 0x-prefixed hex string (ethers v6-compatible). */
+  static hashDomainHex(domain: GhostTypedDataDomain): string {
+    return keccak256Hex(TypedDataEncoder.hashDomain(domain));
+  }
+
+  /** 3-argument static hashStruct (ethers v6 API). Returns 0x-prefixed hex string. */
+  static hashStructHex(
+    primaryType: string,
+    types: GhostTypedDataTypes,
+    value: Record<string, unknown>
+  ): string {
+    const encoder = new TypedDataEncoder(types);
+    return keccak256Hex(encoder.hashStruct(primaryType, value));
+  }
+
   /** Compute just the domain separator hash. */
   static hashDomain(domain: GhostTypedDataDomain): Uint8Array {
     const typeFields: string[] = [];

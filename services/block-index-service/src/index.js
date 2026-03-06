@@ -24,7 +24,7 @@ app.get("/health", (_req, res) => res.json({ ok: true, service: "block-index-ser
 
 app.get("/blocks", async (_req, res) => {
   try {
-    const blockResp = await promQuery("eth_block_number");
+    const blockResp = await promQuery("ghost_blockNumber");
     res.json({ ok: true, blocks: blockResp?.data?.result || [] });
   } catch (e) {
     res.status(500).json({ ok: false, error: e?.message || String(e) });

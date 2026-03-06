@@ -18,9 +18,9 @@ const ENDPOINTS = {
 export class GhostHealthMonitor {
   async check(): Promise<HealthStatus> {
     const [rpcOk, validatorOk, bridgeOk] = await Promise.all([
-      this.probe(ENDPOINTS.rpc,       "eth_blockNumber"),
+      this.probe(ENDPOINTS.rpc,       "ghost_blockNumber"),
       this.probe(ENDPOINTS.validator, "net_peerCount"),
-      this.probe(ENDPOINTS.bridge,    "eth_blockNumber"),
+      this.probe(ENDPOINTS.bridge,    "ghost_blockNumber"),
     ]);
 
     const status: HealthStatus = {
