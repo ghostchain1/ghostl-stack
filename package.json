@@ -108,6 +108,7 @@
     "ethereum-cryptography": "file:./packages/ghostchain-cryptography",
     "ethereum-bloom-filters": "file:./packages/ghostchain-bloom-filters",
     "@ethereumjs/rlp": "file:./packages/ghostchainjs-rlp",
+    "@ethereumjs/tx": "file:./packages/ghostchainjs-tx",
     "ethereumjs-util": "file:./packages/ghostchainjs-util",
     "@ethereumjs/util": "file:./packages/ghostchainjs-util",
     "@auth/core": "^0.41.1",

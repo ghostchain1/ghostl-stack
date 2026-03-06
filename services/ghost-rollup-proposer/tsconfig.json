@@ -10,7 +10,11 @@
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "ghost": ["../../node_modules/ethers/lib.esm/index.d.ts"]
+    }
   },
   "include": ["src/**/*"]
 }

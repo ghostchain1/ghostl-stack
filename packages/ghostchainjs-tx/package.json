@@ -1,0 +1,52 @@
+{
+  "name": "@ghostchain/ghostchainjs-tx",
+  "version": "1.0.0",
+  "description": "GhostChain transaction library — drop-in replacement for @ethereumjs/tx. Implements Legacy, EIP-2930, and EIP-1559 transaction encoding with zero ethers dependency.",
+  "author": "GhostChain Core Team",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./legacy": {
+      "import": "./dist/legacy.js",
+      "types": "./dist/legacy.d.ts"
+    },
+    "./eip2930": {
+      "import": "./dist/eip2930.js",
+      "types": "./dist/eip2930.d.ts"
+    },
+    "./eip1559": {
+      "import": "./dist/eip1559.js",
+      "types": "./dist/eip1559.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "build:watch": "tsc --build --watch",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "test": "node --test test/*.test.js",
+    "brand-check": "node ../../packages/brand-enforcer/src/cli.js scan src/"
+  },
+  "dependencies": {
+    "@ghostchain/ghostchain-cryptography": "*",
+    "@ghostchain/ghostchainjs-rlp": "*",
+    "@ghostchain/ghostchainjs-util": "*",
+    "@noble/curves": "^1.2.0",
+    "@noble/hashes": "^1.3.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

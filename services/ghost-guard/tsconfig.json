@@ -8,7 +8,11 @@
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "ghost": ["../../node_modules/ethers/lib.esm/index.d.ts"]
+    }
   },
   "include": ["src"]
 }
