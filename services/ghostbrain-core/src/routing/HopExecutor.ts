@@ -8,7 +8,7 @@
  * real OP Stack messenger ABI + addresses via `HopExecutorConfig`.
  */
 
-import { Contract, type Wallet } from "ethers";
+import { Contract, type Wallet } from "ghost";
 import type { GhostJsonRpcProvider } from "@ghost/ai-sdk";
 import type { RoutedTxPlan, TxRequest } from "@ghost/ai-sdk";
 

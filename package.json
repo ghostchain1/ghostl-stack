@@ -105,6 +105,11 @@
     "node": ">=22.21.0 <23"
   },
   "overrides": {
+    "ethereum-cryptography": "file:./packages/ghostchain-cryptography",
+    "ethereum-bloom-filters": "file:./packages/ghostchain-bloom-filters",
+    "@ethereumjs/rlp": "file:./packages/ghostchainjs-rlp",
+    "ethereumjs-util": "file:./packages/ghostchainjs-util",
+    "@ethereumjs/util": "file:./packages/ghostchainjs-util",
     "@auth/core": "^0.41.1",
     "ajv": "6.14.0",
     "bn.js": "4.12.3",
