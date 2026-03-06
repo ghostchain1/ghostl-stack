@@ -51,6 +51,8 @@
     "test:cascading-finality:ci": "bash scripts/run_cascading_finality_ci.sh"
   },
   "devDependencies": {
+    "@ghostchain/ghostchain-bloom-filters": "file:../packages/ghostchain-bloom-filters",
+    "@ghostchain/ghostchain-cryptography": "file:../packages/ghostchain-cryptography",
     "@ghostchain/ghostchainjs-util": "file:../packages/ghostchainjs-util",
     "@ghostchain/sdk": "file:../packages/ghost-sdk",
     "@nomicfoundation/hardhat-chai-matchers": "^2.1.2",

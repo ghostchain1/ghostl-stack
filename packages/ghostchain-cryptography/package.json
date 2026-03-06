@@ -1,0 +1,128 @@
+{
+  "name": "@ghostchain/ghostchain-cryptography",
+  "version": "1.0.0",
+  "description": "GhostChain cryptography library — drop-in replacement for ethereum-cryptography. Zero ethers dependency. Backed by @noble and @scure.",
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/src/index.js",
+      "types": "./dist/src/index.d.ts"
+    },
+    "./keccak": {
+      "import": "./dist/src/keccak.js",
+      "types": "./dist/src/keccak.d.ts"
+    },
+    "./sha256": {
+      "import": "./dist/src/sha256.js",
+      "types": "./dist/src/sha256.d.ts"
+    },
+    "./sha512": {
+      "import": "./dist/src/sha512.js",
+      "types": "./dist/src/sha512.d.ts"
+    },
+    "./ripemd160": {
+      "import": "./dist/src/ripemd160.js",
+      "types": "./dist/src/ripemd160.d.ts"
+    },
+    "./secp256k1": {
+      "import": "./dist/src/secp256k1.js",
+      "types": "./dist/src/secp256k1.d.ts"
+    },
+    "./secp256k1-compat": {
+      "import": "./dist/src/secp256k1-compat.js",
+      "types": "./dist/src/secp256k1-compat.d.ts"
+    },
+    "./random": {
+      "import": "./dist/src/random.js",
+      "types": "./dist/src/random.d.ts"
+    },
+    "./utils": {
+      "import": "./dist/src/utils.js",
+      "types": "./dist/src/utils.d.ts"
+    },
+    "./aes": {
+      "import": "./dist/src/aes.js",
+      "types": "./dist/src/aes.d.ts"
+    },
+    "./blake2b": {
+      "import": "./dist/src/blake2b.js",
+      "types": "./dist/src/blake2b.d.ts"
+    },
+    "./pbkdf2": {
+      "import": "./dist/src/pbkdf2.js",
+      "types": "./dist/src/pbkdf2.d.ts"
+    },
+    "./scrypt": {
+      "import": "./dist/src/scrypt.js",
+      "types": "./dist/src/scrypt.d.ts"
+    },
+    "./hdkey": {
+      "import": "./dist/src/hdkey.js",
+      "types": "./dist/src/hdkey.d.ts"
+    },
+    "./bip39": {
+      "import": "./dist/src/bip39/index.js",
+      "types": "./dist/src/bip39/index.d.ts"
+    },
+    "./bip39/index": {
+      "import": "./dist/src/bip39/index.js",
+      "types": "./dist/src/bip39/index.d.ts"
+    },
+    "./bip39/wordlists/english": {
+      "import": "./dist/src/bip39/wordlists/english.js",
+      "types": "./dist/src/bip39/wordlists/english.d.ts"
+    },
+    "./bip39/wordlists/czech": {
+      "import": "./dist/src/bip39/wordlists/czech.js",
+      "types": "./dist/src/bip39/wordlists/czech.d.ts"
+    },
+    "./bip39/wordlists/french": {
+      "import": "./dist/src/bip39/wordlists/french.js",
+      "types": "./dist/src/bip39/wordlists/french.d.ts"
+    },
+    "./bip39/wordlists/italian": {
+      "import": "./dist/src/bip39/wordlists/italian.js",
+      "types": "./dist/src/bip39/wordlists/italian.d.ts"
+    },
+    "./bip39/wordlists/japanese": {
+      "import": "./dist/src/bip39/wordlists/japanese.js",
+      "types": "./dist/src/bip39/wordlists/japanese.d.ts"
+    },
+    "./bip39/wordlists/korean": {
+      "import": "./dist/src/bip39/wordlists/korean.js",
+      "types": "./dist/src/bip39/wordlists/korean.d.ts"
+    },
+    "./bip39/wordlists/portuguese": {
+      "import": "./dist/src/bip39/wordlists/portuguese.js",
+      "types": "./dist/src/bip39/wordlists/portuguese.d.ts"
+    },
+    "./bip39/wordlists/simplified-chinese": {
+      "import": "./dist/src/bip39/wordlists/simplified-chinese.js",
+      "types": "./dist/src/bip39/wordlists/simplified-chinese.d.ts"
+    },
+    "./bip39/wordlists/spanish": {
+      "import": "./dist/src/bip39/wordlists/spanish.js",
+      "types": "./dist/src/bip39/wordlists/spanish.d.ts"
+    },
+    "./bip39/wordlists/traditional-chinese": {
+      "import": "./dist/src/bip39/wordlists/traditional-chinese.js",
+      "types": "./dist/src/bip39/wordlists/traditional-chinese.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@noble/curves": "^1.2.0",
+    "@noble/hashes": "^1.3.2",
+    "@scure/base": "^1.1.0",
+    "@scure/bip32": "^1.3.0",
+    "@scure/bip39": "^1.2.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
