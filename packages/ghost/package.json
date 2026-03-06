@@ -16,8 +16,7 @@
     "build:watch": "tsc -p tsconfig.json --watch"
   },
   "dependencies": {
-    "@ghostchain/sdk": "file:../ghost-sdk",
-    "ghost": "^6.16.0"
+    "@ghostchain/sdk": "file:../ghost-sdk"
   },
   "devDependencies": {
     "typescript": "5.9.3"

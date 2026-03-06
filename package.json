@@ -98,7 +98,6 @@
     "typescript": "5.9.3"
   },
   "dependencies": {
-    "ghost": "*",
     "nodemailer": "8.0.1"
   },
   "engines": {

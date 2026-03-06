@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "dotenv": "^17.2.3",
-    "ghost": "^6.13.2"
+    "ghost": "file:../../packages/ghost"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
@@ -19,4 +19,3 @@
     "node": ">=22.21.0 <23"
   }
 }
-

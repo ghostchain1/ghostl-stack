@@ -506,6 +506,50 @@ x-hardening: &hardening
       ghostbrain.routing-law: "L3→L2→L1"
       ghostbrain.apply-enabled: "${GSA_APPLY_ENABLED:-false}"
 
+  # ─── Governance Event Bridge (contracts → AI signal pipeline) ────────────
+  # Polls GhostChainGovernor events (ProposalCreated, VoteCast, Queued, Executed)
+  # on L1 and L2 via eth_getLogs and forwards them as BrainMessage signals to
+  # ghostbrain-core, completing the contracts → events → AI proposal pipeline.
+  governance-event-bridge:
+    build:
+      context: ./services/governance-event-bridge
+      dockerfile: Dockerfile
+    image: governance-event-bridge:latest
+    container_name: governance-event-bridge
+    <<: *hardening
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      NODE_ENV: "${NODE_ENV:-production}"
+      # RPC endpoints (via host-gateway for local dev chains)
+      RPC_L1: "${GHOST_L1_RPC_URLS:-http://host.docker.internal:18545}"
+      RPC_L2: "${GHOST_L2_RPC_URLS:-http://host.docker.internal:29547}"
+      # Governor contract addresses — set after deployment
+      GOVERNOR_ADDRESS_L1: "${GOVERNOR_ADDRESS_L1:-}"
+      GOVERNOR_ADDRESS_L2: "${GOVERNOR_ADDRESS_L2:-}"
+      # ghostbrain-core endpoint + shared HMAC secret
+      GHOSTBRAIN_URL: "${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}"
+      CONTROL_PLANE_HMAC_SECRET: "${CONTROL_PLANE_HMAC_SECRET:?CONTROL_PLANE_HMAC_SECRET is required}"
+      # Polling config
+      POLL_INTERVAL_MS: "${GOV_BRIDGE_POLL_INTERVAL_MS:-6000}"
+      LOG_BLOCK_RANGE: "${GOV_BRIDGE_LOG_BLOCK_RANGE:-500}"
+      STATE_FILE: "/var/lib/governance-event-bridge/state.json"
+      START_BLOCK_L1: "${GOV_BRIDGE_START_BLOCK_L1:-0}"
+      START_BLOCK_L2: "${GOV_BRIDGE_START_BLOCK_L2:-0}"
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+    volumes:
+      - governance-bridge-state:/var/lib/governance-event-bridge
+    networks:
+      - ghostbrain-net
+    depends_on:
+      ghostbrain-core:
+        condition: service_healthy
+    labels:
+      ghostbrain.role: "event-bridge"
+      ghostbrain.layer: "L1"
+      ghostbrain.routing-law: "L3→L2→L1"
+      ghostbrain.pipeline: "contracts→ai"
+
 volumes:
   ghostbrain-postgres-data:
   ghostbrain-redis-data:
@@ -514,6 +558,7 @@ volumes:
   ghost-helper-bots-sbom:
   ghost-helper-bots-attestations:
   acg-scratch:           # isolated scratch volume for ACG workspace clones
+  governance-bridge-state:  # persists last processed block per layer across restarts
 
 networks:
   ghostbrain-net:

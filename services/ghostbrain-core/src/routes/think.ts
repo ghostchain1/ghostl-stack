@@ -146,6 +146,66 @@ const handlers: Record<string, TaskHandler> = {
       recommendation:  large ? "Large transfer event — verify source intent." : "Normal transfer event.",
     };
   },
+
+  /**
+   * analyze_governance_proposal
+   *
+   * Called automatically by signals.ts whenever governance-event-bridge delivers
+   * a governance.proposal.created signal from GhostChainGovernor.
+   *
+   * Phase 1: deterministic heuristics.
+   *   - Constitutional proposals → HIGH risk (require supermajority, extended deliberation)
+   *   - Amendment proposals  → MEDIUM risk
+   *   - Standard proposals   → LOW risk
+   *   - L1 proposals         → risk elevated by one tier (root-layer changes)
+   *
+   * Phase 2 (TODO): forward to hyper-ghost-ai for LLM-based impact analysis.
+   */
+  analyze_governance_proposal(payload) {
+    const proposalId     = String(payload["proposalId"]     ?? "unknown");
+    const proposer       = String(payload["proposer"]       ?? "");
+    const target         = String(payload["target"]         ?? "");
+    const constitutional = Boolean(payload["constitutional"]);
+    const amendment      = Boolean(payload["amendment"]);
+    const layer          = String(payload["layer"]          ?? "L1");
+
+    // Classify risk based on proposal type + layer
+    let risk: GhostRisk = "low";
+    if (constitutional) risk = "high";
+    else if (amendment) risk = "medium";
+
+    // L1 proposals have higher impact — elevate one level
+    if (layer === "L1" && risk === "low")    risk = "medium";
+    if (layer === "L1" && risk === "medium") risk = "high";
+
+    const typeLabel = constitutional ? "constitutional" : amendment ? "amendment" : "standard";
+
+    return {
+      result: {
+        proposalId,
+        proposer,
+        target,
+        type:   typeLabel,
+        layer,
+        risk,
+        analysedAt: new Date().toISOString(),
+        // Flags for downstream consumers
+        requiresSupermajority:    constitutional,
+        requiresExtendedPeriod:   constitutional,
+        requiresGovernorApproval: risk === "high",
+      },
+      risk,
+      recommendation: constitutional
+        ? `Constitutional proposal ${proposalId} on ${layer} — requires supermajority ` +
+          `(≥66.7%). GOVERNOR + AUDITOR approval required before execution. ` +
+          `Escalate to hyper-ghost-ai for impact analysis.`
+        : amendment
+          ? `Amendment proposal ${proposalId} on ${layer} — extended deliberation ` +
+            `period recommended. GOVERNOR approval required.`
+          : `Standard proposal ${proposalId} on ${layer} from ${proposer}. ` +
+            `No special approval gate required; monitor voting progress.`,
+    };
+  },
 };
 
 // ── Fallback handler for unknown/custom tasks ──────────────────────────────────
