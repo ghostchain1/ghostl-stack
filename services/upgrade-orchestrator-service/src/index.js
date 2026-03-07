@@ -25,6 +25,20 @@ app.use((req, res, next) => {
   if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
 });
+
+const _RL_WINDOW = Number(process.env.RATE_LIMIT_WINDOW_MS ?? 60_000);
+const _RL_MAX    = Number(process.env.RATE_LIMIT_MAX ?? 1000);
+const _rlStore   = new Map();
+setInterval(() => _rlStore.clear(), _RL_WINDOW).unref();
+app.use((req, res, next) => {
+  const key = req.ip ?? "unknown";
+  const count = (_rlStore.get(key) ?? 0) + 1;
+  _rlStore.set(key, count);
+  res.setHeader("X-RateLimit-Limit", _RL_MAX);
+  res.setHeader("X-RateLimit-Remaining", Math.max(0, _RL_MAX - count));
+  if (count > _RL_MAX) return res.status(429).json({ error: "Too many requests" });
+  next();
+});
 app.use(express.json({ limit: "1mb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();
