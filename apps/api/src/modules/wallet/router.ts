@@ -262,7 +262,41 @@ export const buildWalletRouter = (ghostWallet: GhostWalletService) => {
     }
     const { chainId, tokenIn, tokenOut, amountIn, recipient } = parsed.data;
     if (tokenIn !== tokenOut) {
-      res.status(400).json({ error: 'swap routing not implemented; tokenIn must equal tokenOut for passthrough transfer' });
+      const swapUrl = process.env['SWAP_SERVICE_URL'];
+      if (!swapUrl) {
+        res.status(503).json({
+          error: 'swap_service_unavailable',
+          detail: 'Cross-token swap routing requires SWAP_SERVICE_URL to be configured'
+        });
+        return;
+      }
+      try {
+        const quoteRes = await fetch(
+          `${swapUrl}/quote?tokenIn=${encodeURIComponent(tokenIn)}&tokenOut=${encodeURIComponent(tokenOut)}&amount=${encodeURIComponent(amountIn)}&chainId=${encodeURIComponent(chainId)}`,
+          { signal: AbortSignal.timeout(8000) }
+        );
+        if (!quoteRes.ok) {
+          const err = await quoteRes.json().catch(() => ({}));
+          res.status(quoteRes.status).json(err);
+          return;
+        }
+        const quote = await quoteRes.json() as { routes?: { calldata?: string; to?: string; value?: string }[] };
+        const route = quote.routes?.[0];
+        if (!route?.calldata || !route?.to) {
+          res.status(422).json({ error: 'no_swap_route', detail: 'No route found for this token pair' });
+          return;
+        }
+        const result = await ghostWallet.sendTransaction({
+          walletId: parsed.data.walletId,
+          chainId,
+          to: route.to,
+          amount: route.value ?? '0',
+          data: route.calldata
+        });
+        res.json({ ...result, tokenIn, tokenOut, amountIn, note: 'swap via routing service' });
+      } catch (e) {
+        res.status(502).json({ error: (e as Error).message });
+      }
       return;
     }
     try {
