@@ -9,6 +9,8 @@ const DB_FILE  = path.join(DATA_DIR, "rbac.json");
 const app = express();
 app.set("trust proxy", 1);
 app.set("etag", false);
+app.set("json spaces", 0);
+app.set("query parser", "simple");
 app.use((_req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
@@ -21,6 +23,7 @@ app.use((_req, res, next) => {
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
   res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
   res.removeHeader("X-Powered-By");
+  res.removeHeader("Server");
   next();
 });
 const _CORS_ORIGINS = (process.env.ALLOWED_ORIGINS ?? "").split(",").map(s => s.trim()).filter(Boolean);
@@ -47,17 +50,18 @@ app.use((req, res, next) => {
   _rlStore.set(key, count);
   res.setHeader("X-RateLimit-Limit", _RL_MAX);
   res.setHeader("X-RateLimit-Remaining", Math.max(0, _RL_MAX - count));
-  if (count > _RL_MAX) return res.status(429).json({ error: "Too many requests" });
+  if (count > _RL_MAX) res.setHeader("Retry-After", Math.ceil(_RL_WINDOW / 1000)); return res.status(429).json({ error: "Too many requests" });
   next();
 });
 app.use(express.json({ limit: "256kb" }));
 app.use(express.urlencoded({ extended: false, parameterLimit: 100 }));
 let _draining = false;
-app.use((req, res, next) => { if (_draining) { res.set("Connection","close"); return res.status(503).json({ error: "Service shutting down" }); } next(); });
+app.use((req, res, next) => { if (_draining) { res.set("Connection","close"); res.setHeader("Retry-After", "5"); return res.status(503).json({ error: "Service shutting down" }); } next(); });
 app.use((req, res, next) => {
   req.id = req.headers["x-request-id"] ?? crypto.randomUUID();
   res.setHeader("X-Request-ID", req.id);
   const t0 = Date.now();
+  res.on("prefinish", () => res.setHeader("X-Response-Time", `${Date.now() - t0}ms`));
   res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: Date.now() - t0, reqId: req.id, pid: process.pid, mem: process.memoryUsage().rss })));
   next();
 });
