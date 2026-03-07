@@ -34,6 +34,27 @@ app.get("/fees", async (_req, res) => {
   }
 });
 
+// /model is the canonical endpoint consumed by the API layer.
+// Returns { baseFee, targetGas, mode } shape expected by TokenomicsSummarySchema.
+app.get("/model", async (_req, res) => {
+  try {
+    const [baseResp, targetResp, modeResp] = await Promise.all([
+      promQuery("gas_base_fee"),
+      promQuery("gas_target_gas"),
+      promQuery("gas_price_model_mode"),
+    ]);
+    const baseFee = baseResp?.data?.result?.[0]?.value?.[1] || null;
+    const targetGas = targetResp?.data?.result?.[0]?.value?.[1] || null;
+    const modeMetric = modeResp?.data?.result?.[0]?.metric?.mode || null;
+    const mode = modeMetric || process.env.GAS_PRICE_MODEL || "auto";
+    res.json({ ok: true, baseFee, targetGas, mode });
+  } catch (e) {
+    // Fall back to env-configured defaults rather than erroring
+    const mode = process.env.GAS_PRICE_MODEL || "auto";
+    res.json({ ok: true, baseFee: null, targetGas: null, mode });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`[fee-model-service] listening on :${PORT}, PROM=${PROM_URL}`);
 });
