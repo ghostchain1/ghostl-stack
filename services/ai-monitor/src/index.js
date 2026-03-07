@@ -106,6 +106,7 @@ app.use((_req, res, next) => {
   res.setHeader("Accept-Ranges", "none");
   res.setHeader("Origin-Agent-Cluster", "?1");
   res.setHeader("X-Permitted-Cross-Domain-Policies", "none");
+  res.setHeader("Timing-Allow-Origin", process.env.TIMING_ALLOW_ORIGIN ?? "");
   if (process.env.REPORT_TO_URL) {
     res.setHeader("Report-To", JSON.stringify({ group: "default", max_age: 86400, endpoints: [{ url: process.env.REPORT_TO_URL }] }));
     res.setHeader("NEL", JSON.stringify({ report_to: "default", max_age: 86400, include_subdomains: false }));
@@ -998,11 +999,11 @@ process.on("SIGUSR2", () => {
 process.on("SIGPIPE", () => { /* ignore: client disconnected mid-response */ });
 process.on("SIGHUP", () => { console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "sighup_reload", pid: process.pid })); });
 process.on("uncaughtException", (err) => {
-  console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "uncaughtException", error: err?.message ?? String(err), stack: err?.stack }));
+  console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "uncaughtException", error: err?.message ?? String(err), stack: err?.stack, cause: err?.cause != null ? String(err.cause) : undefined }));
   process.exitCode = 1; process.exit(1);
 });
 process.on("unhandledRejection", (reason) => {
-  console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "unhandledRejection", error: String(reason), stack: reason?.stack }));
+  console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "unhandledRejection", error: String(reason), stack: reason?.stack, cause: reason?.cause != null ? String(reason.cause) : undefined }));
   process.exitCode = 1; process.exit(1);
 });
     process.on("SIGTERM", () => {
