@@ -110,6 +110,24 @@ app.get("/nodes/summary", async (_req, res) => {
   }
 });
 
+/** GET /nodes/stats — aggregate health metrics across all layers */
+app.get("/nodes/stats", async (_req, res) => {
+  try {
+    const [rpcL2, rpcL3] = await Promise.all([resolveRpc("L2"), resolveRpc("L3")]);
+    const [l2, l3] = await Promise.all([fetchNode(rpcL2, "L2"), fetchNode(rpcL3, "L3")]);
+    const nodes = [l2, l3];
+    const byStatus = {};
+    for (const n of nodes) byStatus[n.status] = (byStatus[n.status] || 0) + 1;
+    const lags = nodes.filter((n) => n.lagSeconds != null).map((n) => n.lagSeconds);
+    const peerCounts = nodes.filter((n) => n.peers != null).map((n) => n.peers);
+    const avgLag = lags.length ? Math.round(lags.reduce((a, b) => a + b, 0) / lags.length) : null;
+    const avgPeers = peerCounts.length ? Math.round(peerCounts.reduce((a, b) => a + b, 0) / peerCounts.length) : null;
+    res.json({ ok: true, total: nodes.length, byStatus, avgLagSeconds: avgLag, avgPeers, ts: new Date().toISOString() });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
 /** GET /nodes/:layer — single layer node health (l2 or l3) */
 app.get("/nodes/:layer", async (req, res) => {
   const layer = req.params.layer.toUpperCase();

@@ -134,6 +134,11 @@ app.post("/v1/treasury/proposal", async (req, res) => {
   res.json({ ...output, signature });
 });
 
+/** GET /v1/treasury/stats — available AI treasury capabilities */
+app.get("/v1/treasury/stats", (_req, res) => {
+  res.json({ ok: true, stats: { capabilities: ["forecast", "runway", "stress", "allocation", "incident", "proposal"], fetchedAt: new Date().toISOString() } });
+});
+
 app.listen(PORT, () => {
   console.log(`[treasury-ai] listening on :${PORT}`);
 });

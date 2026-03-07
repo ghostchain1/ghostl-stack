@@ -168,6 +168,11 @@ app.get("/delegations", (_req, res) => {
   res.json({ ok: true, delegations });
 });
 
+/** GET /proposals/stats — aggregate proposal and delegation counts */
+app.get("/proposals/stats", (_req, res) => {
+  res.json({ ok: true, stats: { totalProposals: proposals.length, totalDelegations: delegations.length, fetchedAt: new Date().toISOString() } });
+});
+
 app.post("/calldata", (req, res) => {
   const action = String(req.body?.action || "").toLowerCase();
   const layer = resolveLayer(req);

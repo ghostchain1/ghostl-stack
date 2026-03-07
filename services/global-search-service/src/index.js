@@ -227,6 +227,25 @@ app.get("/search", async (req, res) => {
   });
 });
 
+/** GET /search/types — list configured search source types */
+app.get("/search/types", (_req, res) => {
+  const types = [];
+  for (const { name, envVar } of [
+    { name: "l1", envVar: "GHOST_L1_RPC_URLS" },
+    { name: "l2", envVar: "GHOST_L2_RPC_URLS" },
+    { name: "l3", envVar: "GHOST_L3_RPC_URLS" },
+  ]) {
+    if ((process.env[envVar] ?? "").trim()) {
+      types.push({ type: name, kinds: [`${name}:transaction`, `${name}:block`, `${name}:address`, `${name}:contract`], configured: true });
+    }
+  }
+  if ((process.env.HYPER_GHOST_GOVERNOR_URL ?? "").trim())
+    types.push({ type: "governance", kinds: ["governance:proposal"], configured: true });
+  if ((process.env.RPC_REGISTRY_URL ?? "").trim())
+    types.push({ type: "rpc", kinds: ["rpc:endpoint"], configured: true });
+  res.json({ ok: true, types });
+});
+
 app.listen(PORT, () => {
   console.log(`[global-search-service] listening on :${PORT}`);
 });

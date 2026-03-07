@@ -242,6 +242,14 @@ app.post("/dispatch", (req, res) => {
   res.json({ ok: true, event, dispatched: targets.length });
 });
 
+/** GET /stats — aggregate delivery and endpoint stats */
+app.get("/stats", (_req, res) => {
+  const activeEndpoints = endpoints.filter((e) => e.active).length;
+  const byStatus = {};
+  for (const d of deliveries) byStatus[d.status] = (byStatus[d.status] || 0) + 1;
+  res.json({ ok: true, stats: { endpoints: { total: endpoints.length, active: activeEndpoints }, deliveries: { total: deliveries.length, ...byStatus }, fetchedAt: new Date().toISOString() } });
+});
+
 // ─── 404 ─────────────────────────────────────────────────────────────────────
 
 app.use((_req, res) => {

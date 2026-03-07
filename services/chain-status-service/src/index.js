@@ -123,6 +123,23 @@ app.get("/chains/summary", async (_req, res) => {
   }
 });
 
+/** GET /chains/stats — aggregate health metrics across all layers */
+app.get("/chains/stats", async (_req, res) => {
+  try {
+    const [rpcL2, rpcL3] = await Promise.all([resolveRpc("L2"), resolveRpc("L3")]);
+    const [l2, l3] = await Promise.all([fetchChain(rpcL2, "L2"), fetchChain(rpcL3, "L3")]);
+    const chains = [l2, l3];
+    const healthy = chains.filter((c) => !c.error).length;
+    const lags = chains.filter((c) => c.lagSeconds != null).map((c) => c.lagSeconds);
+    const blockTimes = chains.filter((c) => c.blockTime != null).map((c) => c.blockTime);
+    const avgLag = lags.length ? Math.round(lags.reduce((a, b) => a + b, 0) / lags.length) : null;
+    const avgBlockTime = blockTimes.length ? Math.round((blockTimes.reduce((a, b) => a + b, 0) / blockTimes.length) * 10) / 10 : null;
+    res.json({ ok: true, total: chains.length, healthy, degraded: chains.length - healthy, avgLagSeconds: avgLag, avgBlockTimeSec: avgBlockTime, ts: new Date().toISOString() });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
 /** GET /chains/:layer — status for a single layer (l2 or l3) */
 app.get("/chains/:layer", async (req, res) => {
   const layer = req.params.layer.toUpperCase();

@@ -416,6 +416,14 @@ app.post("/mappings", async (req, res) => {
   }
 });
 
+/** GET /stats — mapping runtime summary */
+app.get("/stats", (_req, res) => {
+  const uptimeSec = Math.floor((Date.now() - runtime.startedAt) / 1000);
+  const configured = currentConfig.mappings.length;
+  const active = activeMappings.size;
+  res.json({ ok: true, stats: { configured, active, inactive: configured - active, uptimeSec, startedAt: new Date(runtime.startedAt).toISOString(), fetchedAt: new Date().toISOString() } });
+});
+
 app.delete("/mappings/:id", async (req, res) => {
   if (!requireAdmin(req, res)) return;
   const id = String(req.params.id || "").trim();

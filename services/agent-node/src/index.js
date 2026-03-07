@@ -66,6 +66,21 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true, role: AGENT_ROLE, agentId: AGENT_ID });
 });
 
+/** GET /status — agent identity and runtime configuration */
+app.get("/status", (_req, res) => {
+  res.json({
+    ok: true,
+    agentId: AGENT_ID,
+    role: AGENT_ROLE,
+    registryUrl: AGENT_REGISTRY_URL || null,
+    evidenceUrl: EVIDENCE_URL || null,
+    policyRequired: GOVERNANCE_POLICY_REQUIRED,
+    heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS,
+    watchdog: { enabled: AGENT_ROLE === "watchdog", targets: WATCHDOG_TARGETS, intervalMs: WATCHDOG_INTERVAL_MS },
+    ts: new Date().toISOString(),
+  });
+});
+
 app.post("/task", async (req, res) => {
   const action = req.body?.action || "unknown";
   const payload = req.body?.payload || {};

@@ -245,6 +245,14 @@ app.delete("/auth/session", (req, res) => {
   res.json({ ok: true });
 });
 
+/** GET /auth/stats — session and nonce aggregate counts */
+app.get("/auth/stats", (_req, res) => {
+  const now = Date.now();
+  const activeSessions = [...sessions.values()].filter((s) => s.expiresAt > now).length;
+  const pendingNonces = [...nonceStore.values()].filter((n) => n.expiresAt > now).length;
+  res.json({ ok: true, stats: { activeSessions, pendingNonces, totalSessions: sessions.size, totalNonces: nonceStore.size, sessionTtlMs: SESSION_TTL_MS, nonceTtlMs: NONCE_TTL_MS, fetchedAt: new Date().toISOString() } });
+});
+
 app.listen(PORT, () => {
   console.log(`[auth-service] listening on :${PORT}`);
 });

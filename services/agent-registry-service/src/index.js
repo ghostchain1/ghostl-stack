@@ -172,6 +172,17 @@ app.get("/agents", async (req, res) => {
   res.json({ ok: true, agents: localAgents });
 });
 
+/** GET /agents/stats — local registry counts by role */
+app.get("/agents/stats", (_req, res) => {
+  const registry = readJson(STORE_PATH, { agents: {} });
+  const heartbeats = readJson(HEARTBEAT_PATH, { agents: {} });
+  const agents = Object.values(registry.agents || {});
+  const byRole = {};
+  for (const a of agents) { const r = a.role || "unknown"; byRole[r] = (byRole[r] || 0) + 1; }
+  const activeHeartbeats = Object.keys(heartbeats.agents || {}).length;
+  res.json({ ok: true, stats: { total: agents.length, byRole, activeHeartbeats, fetchedAt: new Date().toISOString() } });
+});
+
 app.post("/agents/register", (req, res) => {
   if (WRITE_TOKEN && req.header("x-registry-token") !== WRITE_TOKEN) {
     res.status(403).json({ ok: false, error: "forbidden" });

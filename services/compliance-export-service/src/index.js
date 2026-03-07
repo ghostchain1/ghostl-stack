@@ -110,6 +110,14 @@ app.delete("/exports/jobs/:id", (req, res) => {
   res.json({ ok: true });
 });
 
+/** GET /exports/stats — export job summary by status */
+app.get("/exports/stats", (_req, res) => {
+  const all = [...exportJobs.values()];
+  const byStatus = {};
+  for (const j of all) byStatus[j.status] = (byStatus[j.status] || 0) + 1;
+  res.json({ ok: true, stats: { total: all.length, byStatus, fetchedAt: new Date().toISOString() } });
+});
+
 app.listen(PORT, () => {
   console.log(`[compliance-export-service] listening on :${PORT}, auditLog=${AUDIT_LOG_URL}`);
 });

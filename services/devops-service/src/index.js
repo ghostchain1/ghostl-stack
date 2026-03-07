@@ -234,6 +234,13 @@ app.post("/nodes/:id/upgrade", async (req, res) => {
   res.json({ ok: true, nodeId: id, action: "upgrade", upgrade });
 });
 
+/** GET /stats — aggregate counts across releases, forks and upgrades */
+app.get("/stats", (_req, res) => {
+  const upgradesByStatus = {};
+  for (const u of upgrades) upgradesByStatus[u.status] = (upgradesByStatus[u.status] || 0) + 1;
+  res.json({ ok: true, stats: { releases: releases.length, forks: forks.length, upgrades: upgrades.length, upgradesByStatus, chainTag: CHAIN_TAG, fetchedAt: new Date().toISOString() } });
+});
+
 // ─── 404 ─────────────────────────────────────────────────────────────────────
 
 app.use((_req, res) => {
