@@ -405,6 +405,8 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: "256kb" }));
 app.use(express.urlencoded({ extended: false, parameterLimit: 100 }));
+let _draining = false;
+app.use((req, res, next) => { if (_draining) { res.set("Connection","close"); return res.status(503).json({ error: "Service shutting down" }); } next(); });
 app.use((req, res, next) => {
   req.id = req.headers["x-request-id"] ?? crypto.randomUUID();
   res.setHeader("X-Request-ID", req.id);
@@ -498,6 +500,7 @@ app.delete("/mappings/:id", async (req, res) => {
 });
 
 const shutdown = async () => {
+  _draining = true;
   setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
   const ids = Array.from(activeMappings.keys());
   for (const id of ids) {

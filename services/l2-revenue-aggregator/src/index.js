@@ -75,6 +75,8 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: false, parameterLimit: 100 }));
+let _draining = false;
+app.use((req, res, next) => { if (_draining) { res.set("Connection","close"); return res.status(503).json({ error: "Service shutting down" }); } next(); });
 app.use((req, res, next) => {
   req.id = req.headers["x-request-id"] ?? crypto.randomUUID();
   res.setHeader("X-Request-ID", req.id);
@@ -466,10 +468,12 @@ process.on("unhandledRejection", (reason) => {
   process.exit(1);
 });
 process.on("SIGTERM", () => {
+  _draining = true;
   setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
   server.close(() => process.exit(0));
 });
 process.on("SIGINT", () => {
+  _draining = true;
   setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
   server.close(() => process.exit(0));
 });
