@@ -185,12 +185,13 @@ app.get("/context/:layer", async (req, res) => {
   }
 });
 
-app.use((_req, res) => res.status(404).json({ ok: false, error: "not_found" }));
+app.use((_req, res) => { res.setHeader("Cache-Control", "no-store"); return res.status(404).json({ ok: false, error: "not_found" }); });
 
 app.use((err, _req, res, _next) => {
   if (err.type === "entity.parse.failed") return res.status(400).json({ ok: false, error: "Invalid JSON" });
   if (err.status === 413 || err.statusCode === 413) return res.status(413).json({ ok: false, error: "Payload too large" });
   if (err.status === 431 || err.statusCode === 431) return res.status(431).json({ ok: false, error: "Request header fields too large" });
+  if (err.status === 408 || err.statusCode === 408) return res.status(408).json({ ok: false, error: "Request timeout" });
   const status = err.status ?? err.statusCode ?? 500;
   res.setHeader("Cache-Control", "no-store");
   res.status(status).json({ ok: false, error: err?.message ?? String(err) });
@@ -205,9 +206,14 @@ server.timeout = 30_000;
 server.maxHeadersCount = 100;
 server.requestTimeout = 30_000;
 server.on("connection", (socket) => socket.setNoDelay(true));
+server.on("error", (err) => {
+  console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "serverError", error: err?.message ?? String(err), code: err?.code }));
+  if (err.code === "EADDRINUSE" || err.code === "EACCES") { process.exitCode = 1; process.exit(1); }
+});
 console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "startup", version: process.env.npm_package_version ?? "unknown" }));
 process.setMaxListeners(20);
 process.on("warning", (w) => console.warn(JSON.stringify({ ts: new Date().toISOString(), level: "warn", msg: "NodeWarning", name: w.name, message: w.message })));
+process.on("exit", (code) => { console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "exit", code })); });
 process.on("uncaughtException", (err) => {
   console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "uncaughtException", error: err?.message ?? String(err) }));
   process.exitCode = 1; process.exit(1);
