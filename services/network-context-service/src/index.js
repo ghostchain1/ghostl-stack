@@ -1,13 +1,13 @@
 import express from "express";
 import { ghost } from "ghost";
 
-const PORT = Number(process.env.PORT || 7633);
-const registryUrl = process.env.RPC_REGISTRY_URL || "http://ghost-registry:8088/v1/endpoints";
+const PORT              = Number(process.env.PORT || 7633);
+const registryUrl       = process.env.RPC_REGISTRY_URL || "http://ghost-registry:8088/v1/endpoints";
 const registryTimeoutMs = Number(process.env.REGISTRY_TIMEOUT_MS || 1500);
-const registryRetries = Math.max(0, Number(process.env.REGISTRY_RETRY_COUNT || 2));
-const registryCacheMs = Math.max(1000, Number(process.env.REGISTRY_CACHE_MS || 30000));
-const registryCache = { data: null, expiresAt: 0 };
-const ENV = process.env.NET_ENV || "dev";
+const registryRetries   = Math.max(0, Number(process.env.REGISTRY_RETRY_COUNT || 2));
+const registryCacheMs   = Math.max(1000, Number(process.env.REGISTRY_CACHE_MS || 30000));
+const registryCache     = { data: null, expiresAt: 0 };
+const ENV               = process.env.NET_ENV || "dev";
 
 const app = express();
 app.use(express.json());
@@ -30,9 +30,7 @@ const fetchRegistry = async () => {
     } catch (err) {
       lastErr = err;
       if (attempt < registryRetries) await new Promise((r) => setTimeout(r, 150 * (attempt + 1)));
-    } finally {
-      clearTimeout(timer);
-    }
+    } finally { clearTimeout(timer); }
   }
   throw lastErr || new Error("registry_unavailable");
 };
@@ -42,7 +40,7 @@ const pickRpc = (chain) => {
   if (typeof chain.rpc === "string" && chain.rpc) return chain.rpc;
   if (Array.isArray(chain.rpcUrls) && chain.rpcUrls.length) return chain.rpcUrls[0];
   if (Array.isArray(chain.endpoints)) {
-    const http = chain.endpoints.find((endpoint) => endpoint.protocol === "http");
+    const http = chain.endpoints.find((e) => e.protocol === "http");
     if (http?.url) return http.url;
   }
   if (typeof chain.ws === "string" && chain.ws) return chain.ws;
@@ -58,24 +56,60 @@ const resolveRpc = async (layer) => {
   return rpc;
 };
 
-const fetchChain = async (rpc) => {
+const fetchChain = async (rpc, layer) => {
   try {
     const provider = new ghost.JsonRpcProvider(rpc);
-    const chainId = await provider.send("ghost_chainId", []);
-    const latest = await provider.getBlock("latest");
-    return { rpc, chainId, block: latest?.number, hash: latest?.hash };
+    const [chainId, latest] = await Promise.all([
+      provider.send("ghost_chainId", []),
+      provider.getBlock("latest"),
+    ]);
+    return { layer, rpc, chainId, block: latest?.number, hash: latest?.hash, timestamp: latest?.timestamp, ts: new Date().toISOString() };
   } catch {
-    return { rpc, error: "unreachable" };
+    return { layer, rpc, error: "unreachable", ts: new Date().toISOString() };
   }
 };
 
-app.get("/health", (_req, res) => res.json({ ok: true, service: "network-context-service" }));
+app.get("/health", (_req, res) => res.json({ ok: true, service: "network-context-service", env: ENV }));
 
+/** GET /context — full network context for all layers */
 app.get("/context", async (_req, res) => {
   try {
     const [rpcL2, rpcL3] = await Promise.all([resolveRpc("L2"), resolveRpc("L3")]);
-    const [l2, l3] = await Promise.all([fetchChain(rpcL2), fetchChain(rpcL3)]);
+    const [l2, l3] = await Promise.all([fetchChain(rpcL2, "L2"), fetchChain(rpcL3, "L3")]);
     res.json({ ok: true, env: ENV, networks: { l2, l3 } });
+  } catch (err) {
+    res.status(503).json({ ok: false, error: err?.message || String(err) });
+  }
+});
+
+/** GET /context/:layer — context for a single layer (l2 or l3) */
+app.get("/context/:layer", async (req, res) => {
+  const layer = req.params.layer.toUpperCase();
+  if (!["L2", "L3"].includes(layer))
+    return res.status(400).json({ ok: false, error: "layer must be l2 or l3" });
+  try {
+    const rpc  = await resolveRpc(layer);
+    const data = await fetchChain(rpc, layer);
+    res.json({ ok: true, env: ENV, network: data });
+  } catch (err) {
+    res.status(503).json({ ok: false, error: err?.message || String(err) });
+  }
+});
+
+/** GET /context/summary — high-level overview: both layers, block heights, chain IDs */
+app.get("/context/summary", async (_req, res) => {
+  try {
+    const [rpcL2, rpcL3] = await Promise.all([resolveRpc("L2"), resolveRpc("L3")]);
+    const [l2, l3] = await Promise.all([fetchChain(rpcL2, "L2"), fetchChain(rpcL3, "L3")]);
+    res.json({
+      ok: true,
+      env: ENV,
+      layers: [
+        { layer: "L2", chainId: l2.chainId, block: l2.block, error: l2.error ?? null },
+        { layer: "L3", chainId: l3.chainId, block: l3.block, error: l3.error ?? null },
+      ],
+      ts: new Date().toISOString(),
+    });
   } catch (err) {
     res.status(503).json({ ok: false, error: err?.message || String(err) });
   }

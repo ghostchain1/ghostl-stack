@@ -1,12 +1,12 @@
 import express from "express";
 import { ghost } from "ghost";
 
-const PORT = Number(process.env.PORT || 7636);
-const registryUrl = process.env.RPC_REGISTRY_URL || "http://ghost-registry:8088/v1/endpoints";
+const PORT              = Number(process.env.PORT || 7636);
+const registryUrl       = process.env.RPC_REGISTRY_URL || "http://ghost-registry:8088/v1/endpoints";
 const registryTimeoutMs = Number(process.env.REGISTRY_TIMEOUT_MS || 1500);
-const registryRetries = Math.max(0, Number(process.env.REGISTRY_RETRY_COUNT || 2));
-const registryCacheMs = Math.max(1000, Number(process.env.REGISTRY_CACHE_MS || 30000));
-const registryCache = { data: null, expiresAt: 0 };
+const registryRetries   = Math.max(0, Number(process.env.REGISTRY_RETRY_COUNT || 2));
+const registryCacheMs   = Math.max(1000, Number(process.env.REGISTRY_CACHE_MS || 30000));
+const registryCache     = { data: null, expiresAt: 0 };
 
 const app = express();
 app.use(express.json());
@@ -29,9 +29,7 @@ const fetchRegistry = async () => {
     } catch (err) {
       lastErr = err;
       if (attempt < registryRetries) await new Promise((r) => setTimeout(r, 150 * (attempt + 1)));
-    } finally {
-      clearTimeout(timer);
-    }
+    } finally { clearTimeout(timer); }
   }
   throw lastErr || new Error("registry_unavailable");
 };
@@ -41,7 +39,7 @@ const pickRpc = (chain) => {
   if (typeof chain.rpc === "string" && chain.rpc) return chain.rpc;
   if (Array.isArray(chain.rpcUrls) && chain.rpcUrls.length) return chain.rpcUrls[0];
   if (Array.isArray(chain.endpoints)) {
-    const http = chain.endpoints.find((endpoint) => endpoint.protocol === "http");
+    const http = chain.endpoints.find((e) => e.protocol === "http");
     if (http?.url) return http.url;
   }
   if (typeof chain.ws === "string" && chain.ws) return chain.ws;
@@ -57,23 +55,52 @@ const resolveRpc = async (layer) => {
   return rpc;
 };
 
-const fetchPeers = async (rpc) => {
+const fetchPeers = async (rpc, layer) => {
   try {
     const provider = new ghost.JsonRpcProvider(rpc);
     const peersHex = await provider.send("net_peerCount", []);
-    return { rpc, peers: parseInt(peersHex, 16) };
+    const count = parseInt(peersHex, 16);
+    return { layer, rpc, peers: count, ts: new Date().toISOString() };
   } catch (e) {
-    return { rpc, error: e?.message || "unreachable" };
+    return { layer, rpc, peers: null, error: e?.message || "unreachable", ts: new Date().toISOString() };
   }
 };
 
 app.get("/health", (_req, res) => res.json({ ok: true, service: "peer-graph-service" }));
 
+/** GET /peers — all layers */
 app.get("/peers", async (_req, res) => {
   try {
     const [rpcL2, rpcL3] = await Promise.all([resolveRpc("L2"), resolveRpc("L3")]);
-    const [l2, l3] = await Promise.all([fetchPeers(rpcL2), fetchPeers(rpcL3)]);
+    const [l2, l3] = await Promise.all([fetchPeers(rpcL2, "L2"), fetchPeers(rpcL3, "L3")]);
     res.json({ ok: true, peers: { l2, l3 } });
+  } catch (err) {
+    res.status(503).json({ ok: false, error: err?.message || String(err) });
+  }
+});
+
+/** GET /peers/stats — peer count summary */
+app.get("/peers/stats", async (_req, res) => {
+  try {
+    const [rpcL2, rpcL3] = await Promise.all([resolveRpc("L2"), resolveRpc("L3")]);
+    const [l2, l3] = await Promise.all([fetchPeers(rpcL2, "L2"), fetchPeers(rpcL3, "L3")]);
+    const totalPeers = (l2.peers ?? 0) + (l3.peers ?? 0);
+    const avgPeers   = totalPeers / 2;
+    res.json({ ok: true, totalPeers, avgPeers, l2Peers: l2.peers, l3Peers: l3.peers, ts: new Date().toISOString() });
+  } catch (err) {
+    res.status(503).json({ ok: false, error: err?.message || String(err) });
+  }
+});
+
+/** GET /peers/:layer — single layer peer count (l2 or l3) */
+app.get("/peers/:layer", async (req, res) => {
+  const layer = req.params.layer.toUpperCase();
+  if (!["L2", "L3"].includes(layer))
+    return res.status(400).json({ ok: false, error: "layer must be l2 or l3" });
+  try {
+    const rpc  = await resolveRpc(layer);
+    const data = await fetchPeers(rpc, layer);
+    res.json({ ok: true, ...data });
   } catch (err) {
     res.status(503).json({ ok: false, error: err?.message || String(err) });
   }

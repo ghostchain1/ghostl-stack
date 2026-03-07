@@ -1,12 +1,12 @@
 import express from "express";
 import { ghost } from "ghost";
 
-const PORT = Number(process.env.PORT || 7612);
-const registryUrl = process.env.RPC_REGISTRY_URL || "http://ghost-registry:8088/v1/endpoints";
+const PORT              = Number(process.env.PORT || 7612);
+const registryUrl       = process.env.RPC_REGISTRY_URL || "http://ghost-registry:8088/v1/endpoints";
 const registryTimeoutMs = Number(process.env.REGISTRY_TIMEOUT_MS || 1500);
-const registryRetries = Math.max(0, Number(process.env.REGISTRY_RETRY_COUNT || 2));
-const registryCacheMs = Math.max(1000, Number(process.env.REGISTRY_CACHE_MS || 30000));
-const registryCache = { data: null, expiresAt: 0 };
+const registryRetries   = Math.max(0, Number(process.env.REGISTRY_RETRY_COUNT || 2));
+const registryCacheMs   = Math.max(1000, Number(process.env.REGISTRY_CACHE_MS || 30000));
+const registryCache     = { data: null, expiresAt: 0 };
 
 const app = express();
 app.use(express.json());
@@ -29,9 +29,7 @@ const fetchRegistry = async () => {
     } catch (err) {
       lastErr = err;
       if (attempt < registryRetries) await new Promise((r) => setTimeout(r, 150 * (attempt + 1)));
-    } finally {
-      clearTimeout(timer);
-    }
+    } finally { clearTimeout(timer); }
   }
   throw lastErr || new Error("registry_unavailable");
 };
@@ -41,7 +39,7 @@ const pickRpc = (chain) => {
   if (typeof chain.rpc === "string" && chain.rpc) return chain.rpc;
   if (Array.isArray(chain.rpcUrls) && chain.rpcUrls.length) return chain.rpcUrls[0];
   if (Array.isArray(chain.endpoints)) {
-    const http = chain.endpoints.find((endpoint) => endpoint.protocol === "http");
+    const http = chain.endpoints.find((e) => e.protocol === "http");
     if (http?.url) return http.url;
   }
   if (typeof chain.ws === "string" && chain.ws) return chain.ws;
@@ -57,28 +55,83 @@ const resolveRpc = async (layer) => {
   return rpc;
 };
 
-const fetchChain = async (rpc) => {
-  const provider = new ghost.JsonRpcProvider(rpc);
-  const latest = await provider.getBlock("latest");
-  const prev = await provider.getBlock(latest.number - 1);
-  const blockTime =
-    latest && prev ? Math.max(0, Number(latest.timestamp) - Number(prev.timestamp || latest.timestamp)) : null;
-  return {
-    chainId: await provider.send("ghost_chainId", []),
-    block: latest?.number,
-    hash: latest?.hash,
-    blockTime,
-    timestamp: latest?.timestamp
-  };
+const fetchChain = async (rpc, layer) => {
+  try {
+    const provider = new ghost.JsonRpcProvider(rpc);
+    const [chainId, latest] = await Promise.all([
+      provider.send("ghost_chainId", []),
+      provider.getBlock("latest"),
+    ]);
+    let blockTime = null;
+    if (latest?.number > 0) {
+      try {
+        const prev = await provider.getBlock(latest.number - 1);
+        blockTime = prev ? Math.max(0, Number(latest.timestamp) - Number(prev.timestamp)) : null;
+      } catch { /* non-fatal */ }
+    }
+    return {
+      layer,
+      rpc,
+      chainId,
+      block: latest?.number,
+      hash: latest?.hash,
+      blockTime,
+      timestamp: latest?.timestamp,
+      lagSeconds: latest?.timestamp
+        ? Math.max(0, Math.floor(Date.now() / 1000 - Number(latest.timestamp)))
+        : null,
+      ts: new Date().toISOString(),
+    };
+  } catch (e) {
+    return { layer, rpc, error: e?.message || "unreachable", ts: new Date().toISOString() };
+  }
 };
 
 app.get("/health", (_req, res) => res.json({ ok: true, service: "chain-status-service" }));
 
+/** GET /chains — status for all layers */
 app.get("/chains", async (_req, res) => {
   try {
     const [rpcL2, rpcL3] = await Promise.all([resolveRpc("L2"), resolveRpc("L3")]);
-    const [l2, l3] = await Promise.all([fetchChain(rpcL2), fetchChain(rpcL3)]);
+    const [l2, l3] = await Promise.all([fetchChain(rpcL2, "L2"), fetchChain(rpcL3, "L3")]);
     res.json({ ok: true, chains: { l2, l3 } });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
+/** GET /chains/summary — concise multi-layer overview */
+app.get("/chains/summary", async (_req, res) => {
+  try {
+    const [rpcL2, rpcL3] = await Promise.all([resolveRpc("L2"), resolveRpc("L3")]);
+    const [l2, l3] = await Promise.all([fetchChain(rpcL2, "L2"), fetchChain(rpcL3, "L3")]);
+    const chains = [l2, l3];
+    res.json({
+      ok: true,
+      chains: chains.map((c) => ({
+        layer: c.layer,
+        chainId: c.chainId,
+        block: c.block,
+        blockTimeSec: c.blockTime,
+        lagSeconds: c.lagSeconds,
+        healthy: !c.error,
+      })),
+      ts: new Date().toISOString(),
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
+/** GET /chains/:layer — status for a single layer (l2 or l3) */
+app.get("/chains/:layer", async (req, res) => {
+  const layer = req.params.layer.toUpperCase();
+  if (!["L2", "L3"].includes(layer))
+    return res.status(400).json({ ok: false, error: "layer must be l2 or l3" });
+  try {
+    const rpc  = await resolveRpc(layer);
+    const data = await fetchChain(rpc, layer);
+    res.json({ ok: true, chain: data });
   } catch (e) {
     res.status(500).json({ ok: false, error: e?.message || String(e) });
   }

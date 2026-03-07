@@ -90,4 +90,30 @@ app.get("/nodes/:id/status", async (req, res) => {
   }
 });
 
+/** GET /nodes/stats — aggregate counts by layer, type, and status */
+app.get("/nodes/stats", async (_req, res) => {
+  const nodes = await getNodes();
+  const byLayer  = {};
+  const byType   = {};
+  const byStatus = {};
+  for (const n of nodes) {
+    const layer  = n.layer  || "unknown";
+    const type   = n.type   || "unknown";
+    const status = n.status || "unknown";
+    byLayer[layer]   = (byLayer[layer]   || 0) + 1;
+    byType[type]     = (byType[type]     || 0) + 1;
+    byStatus[status] = (byStatus[status] || 0) + 1;
+  }
+  res.json({
+    ok: true,
+    total: nodes.length,
+    live: byStatus["live"] || 0,
+    degraded: (byStatus["degraded"] || 0) + (byStatus["unknown"] || 0),
+    byLayer,
+    byType,
+    byStatus,
+    fetchedAt: new Date().toISOString(),
+  });
+});
+
 app.listen(PORT, () => log("info", `listening on :${PORT}`, { promUrl: PROM_URL }));

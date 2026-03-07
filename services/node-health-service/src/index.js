@@ -1,12 +1,12 @@
 import express from "express";
 import { ghost } from "ghost";
 
-const PORT = Number(process.env.PORT || 7613);
-const registryUrl = process.env.RPC_REGISTRY_URL || "http://ghost-registry:8088/v1/endpoints";
+const PORT              = Number(process.env.PORT || 7613);
+const registryUrl       = process.env.RPC_REGISTRY_URL || "http://ghost-registry:8088/v1/endpoints";
 const registryTimeoutMs = Number(process.env.REGISTRY_TIMEOUT_MS || 1500);
-const registryRetries = Math.max(0, Number(process.env.REGISTRY_RETRY_COUNT || 2));
-const registryCacheMs = Math.max(1000, Number(process.env.REGISTRY_CACHE_MS || 30000));
-const registryCache = { data: null, expiresAt: 0 };
+const registryRetries   = Math.max(0, Number(process.env.REGISTRY_RETRY_COUNT || 2));
+const registryCacheMs   = Math.max(1000, Number(process.env.REGISTRY_CACHE_MS || 30000));
+const registryCache     = { data: null, expiresAt: 0 };
 
 const app = express();
 app.use(express.json());
@@ -29,9 +29,7 @@ const fetchRegistry = async () => {
     } catch (err) {
       lastErr = err;
       if (attempt < registryRetries) await new Promise((r) => setTimeout(r, 150 * (attempt + 1)));
-    } finally {
-      clearTimeout(timer);
-    }
+    } finally { clearTimeout(timer); }
   }
   throw lastErr || new Error("registry_unavailable");
 };
@@ -41,7 +39,7 @@ const pickRpc = (chain) => {
   if (typeof chain.rpc === "string" && chain.rpc) return chain.rpc;
   if (Array.isArray(chain.rpcUrls) && chain.rpcUrls.length) return chain.rpcUrls[0];
   if (Array.isArray(chain.endpoints)) {
-    const http = chain.endpoints.find((endpoint) => endpoint.protocol === "http");
+    const http = chain.endpoints.find((e) => e.protocol === "http");
     if (http?.url) return http.url;
   }
   if (typeof chain.ws === "string" && chain.ws) return chain.ws;
@@ -57,27 +55,70 @@ const resolveRpc = async (layer) => {
   return rpc;
 };
 
-const fetchNode = async (rpc) => {
-  const provider = new ghost.JsonRpcProvider(rpc);
-  const peersHex = await provider.send("net_peerCount", []);
-  const syncing = await provider.send("ghost_syncing", []);
-  const block = await provider.getBlock("latest");
-  return {
-    rpc,
-    peers: parseInt(peersHex, 16),
-    syncing: syncing && typeof syncing === "object",
-    block: block?.number,
-    lagSeconds: block?.timestamp ? Math.max(0, Math.floor(Date.now() / 1000 - Number(block.timestamp))) : null
-  };
+const fetchNode = async (rpc, layer) => {
+  try {
+    const provider = new ghost.JsonRpcProvider(rpc);
+    const [peersHex, syncing, block] = await Promise.all([
+      provider.send("net_peerCount", []),
+      provider.send("ghost_syncing", []),
+      provider.getBlock("latest"),
+    ]);
+    const peers = parseInt(peersHex, 16);
+    const isSyncing = syncing && typeof syncing === "object";
+    const lagSeconds = block?.timestamp
+      ? Math.max(0, Math.floor(Date.now() / 1000 - Number(block.timestamp)))
+      : null;
+    const status = isSyncing ? "syncing" : lagSeconds != null && lagSeconds > 30 ? "lagging" : "live";
+    return { layer, rpc, peers, syncing: isSyncing, block: block?.number, lagSeconds, status, ts: new Date().toISOString() };
+  } catch (e) {
+    return { layer, rpc, peers: null, syncing: null, block: null, lagSeconds: null, status: "unreachable", error: e?.message, ts: new Date().toISOString() };
+  }
 };
 
 app.get("/health", (_req, res) => res.json({ ok: true, service: "node-health-service" }));
 
+/** GET /nodes — all layers */
 app.get("/nodes", async (_req, res) => {
   try {
     const [rpcL2, rpcL3] = await Promise.all([resolveRpc("L2"), resolveRpc("L3")]);
-    const [l2, l3] = await Promise.all([fetchNode(rpcL2), fetchNode(rpcL3)]);
+    const [l2, l3] = await Promise.all([fetchNode(rpcL2, "L2"), fetchNode(rpcL3, "L3")]);
     res.json({ ok: true, nodes: { l2, l3 } });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
+/** GET /nodes/summary — aggregated status overview */
+app.get("/nodes/summary", async (_req, res) => {
+  try {
+    const [rpcL2, rpcL3] = await Promise.all([resolveRpc("L2"), resolveRpc("L3")]);
+    const [l2, l3] = await Promise.all([fetchNode(rpcL2, "L2"), fetchNode(rpcL3, "L3")]);
+    const nodes = [l2, l3];
+    const live  = nodes.filter((n) => n.status === "live").length;
+    const degraded = nodes.length - live;
+    res.json({
+      ok: true,
+      totalNodes: nodes.length,
+      liveNodes: live,
+      degradedNodes: degraded,
+      allHealthy: degraded === 0,
+      nodes: nodes.map((n) => ({ layer: n.layer, status: n.status, block: n.block, lagSeconds: n.lagSeconds })),
+      ts: new Date().toISOString(),
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
+/** GET /nodes/:layer — single layer node health (l2 or l3) */
+app.get("/nodes/:layer", async (req, res) => {
+  const layer = req.params.layer.toUpperCase();
+  if (!["L2", "L3"].includes(layer))
+    return res.status(400).json({ ok: false, error: "layer must be l2 or l3" });
+  try {
+    const rpc  = await resolveRpc(layer);
+    const data = await fetchNode(rpc, layer);
+    res.json({ ok: true, node: data });
   } catch (e) {
     res.status(500).json({ ok: false, error: e?.message || String(e) });
   }
