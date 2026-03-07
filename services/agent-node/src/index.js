@@ -12,6 +12,7 @@ const WATCHDOG_TARGETS = (process.env.WATCHDOG_TARGETS || "").split(",").map((t)
 const WATCHDOG_INTERVAL_MS = Number(process.env.WATCHDOG_INTERVAL_MS || 15000);
 
 const app = express();
+process.title = process.env.npm_package_name ?? 'ghoststack';
 app.set("trust proxy", 1);
 app.set("etag", false);
 app.set("json spaces", 0);
@@ -71,7 +72,8 @@ app.use((req, res, next) => {
   if (count > _RL_MAX) { res.setHeader("Retry-After", Math.ceil(_RL_WINDOW / 1000)); res.setHeader("RateLimit-Policy", `limit=${_RL_MAX};w=${Math.ceil(_RL_WINDOW / 1000)}`); return res.status(429).json({ error: "Too many requests" }); }
   next();
 });
-app.use(express.json({ limit: "1mb" }));
+const _safeReviver = (k, v) => { if (k === "__proto__" || k === "constructor" || k === "prototype") return undefined; return v; };
+app.use(express.json({ limit: "1mb", reviver: _safeReviver }));
 app.use(express.urlencoded({ extended: false, parameterLimit: 100 }));
 app.use((req, res, next) => {
   if (["POST","PUT","PATCH"].includes(req.method) && req.headers["content-type"] &&
@@ -131,7 +133,7 @@ app.use((req, res, next) => {
     console.warn(JSON.stringify({ ts: new Date().toISOString(), level: "warn", msg: "sec_fetch_cross_site", method: req.method, url: req.url, sfs: _sfs, reqId: req.id }));
   }
   const t0 = process.hrtime.bigint();
-  res.on("prefinish", () => res.setHeader("X-Response-Time", `${(Number(process.hrtime.bigint()-t0)/1e6).toFixed(2)}ms`));
+  res.on("prefinish", () => { const _ms = (Number(process.hrtime.bigint()-t0)/1e6).toFixed(2); res.setHeader("X-Response-Time", `${_ms}ms`); res.setHeader("Server-Timing", `total;dur=${_ms}`); });
   res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: +(Number(process.hrtime.bigint()-t0)/1e6).toFixed(2), bytes: Number(req.headers["content-length"] ?? 0), reqId: req.id, pid: process.pid, mem: process.memoryUsage().rss })));
   next();
 });
@@ -326,18 +328,21 @@ process.on("unhandledRejection", (reason) => {
 });
 process.on("SIGTERM", () => {
   _draining = true;
+  console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "drain_start", pid: process.pid }));
   setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
   server.closeAllConnections();
   server.close(() => process.exit(0));
 });
 process.on("SIGINT", () => {
   _draining = true;
+  console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "drain_start", pid: process.pid }));
   setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
   server.closeAllConnections();
   server.close(() => process.exit(0));
 });
 process.on("SIGQUIT", () => {
   _draining = true;
+  console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "drain_start", pid: process.pid }));
   setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
   server.closeAllConnections();
   server.close(() => process.exit(0));
