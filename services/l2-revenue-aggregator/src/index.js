@@ -144,6 +144,7 @@ const withRateLimit = (req, res, next) => {
   }
   row.count += 1;
   ipWindow.set(key, row);
+  res.setHeader("X-RateLimit-Reset", Math.ceil((Date.now() + RATE_LIMIT_WINDOW_MS) / 1000));
   if (row.count > RATE_LIMIT_MAX) {
     res.setHeader("Retry-After", Math.ceil(RATE_LIMIT_WINDOW_MS / 1000));
     res.setHeader("RateLimit-Policy", `limit=${RATE_LIMIT_MAX};w=${Math.ceil(RATE_LIMIT_WINDOW_MS / 1000)}`);
@@ -472,11 +473,11 @@ process.setMaxListeners(20);
 process.on("warning", (w) => console.warn(JSON.stringify({ ts: new Date().toISOString(), level: "warn", msg: "NodeWarning", name: w.name, message: w.message })));
 process.on("uncaughtException", (err) => {
   console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "uncaughtException", error: err?.message ?? String(err) }));
-  process.exit(1);
+  process.exitCode = 1; process.exit(1);
 });
 process.on("unhandledRejection", (reason) => {
   console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "unhandledRejection", error: String(reason) }));
-  process.exit(1);
+  process.exitCode = 1; process.exit(1);
 });
 process.on("SIGTERM", () => {
   _draining = true;
@@ -485,6 +486,12 @@ process.on("SIGTERM", () => {
   server.close(() => process.exit(0));
 });
 process.on("SIGINT", () => {
+  _draining = true;
+  setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
+  server.closeAllConnections();
+  server.close(() => process.exit(0));
+});
+process.on("SIGQUIT", () => {
   _draining = true;
   setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
   server.closeAllConnections();

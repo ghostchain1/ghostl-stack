@@ -407,6 +407,7 @@ app.use((req, res, next) => {
   _rlStore.set(key, count);
   res.setHeader("X-RateLimit-Limit", _RL_MAX);
   res.setHeader("X-RateLimit-Remaining", Math.max(0, _RL_MAX - count));
+  res.setHeader("X-RateLimit-Reset", Math.ceil((Date.now() + _RL_WINDOW) / 1000));
   if (count > _RL_MAX) { res.setHeader("Retry-After", Math.ceil(_RL_WINDOW / 1000)); res.setHeader("RateLimit-Policy", `limit=${_RL_MAX};w=${Math.ceil(_RL_WINDOW / 1000)}`); return res.status(429).json({ error: "Too many requests" }); }
   next();
 });
@@ -526,14 +527,15 @@ process.setMaxListeners(20);
 process.on("warning", (w) => console.warn(JSON.stringify({ ts: new Date().toISOString(), level: "warn", msg: "NodeWarning", name: w.name, message: w.message })));
 process.on("uncaughtException", (err) => {
   console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "uncaughtException", error: err?.message ?? String(err) }));
-  process.exit(1);
+  process.exitCode = 1; process.exit(1);
 });
 process.on("unhandledRejection", (reason) => {
   console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "unhandledRejection", error: String(reason) }));
-  process.exit(1);
+  process.exitCode = 1; process.exit(1);
 });
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
+process.on("SIGQUIT", shutdown);
 
 app.use((_req, res) => res.status(404).json({ ok: false, error: "not_found" }));
 
