@@ -50,6 +50,7 @@ app.set("etag", false);
 app.set("json spaces", 0);
 app.set("query parser", "simple");
 app.set("strict routing", true);
+app.set("case sensitive routing", true);
 app.disable("x-powered-by");
 app.use((_req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
@@ -449,6 +450,8 @@ app.use((_req, res) => res.status(404).json({ ok: false, error: "not_found" }));
 
 app.use((err, _req, res, _next) => {
   if (err.type === "entity.parse.failed") return res.status(400).json({ ok: false, error: "Invalid JSON" });
+  if (err.status === 413 || err.statusCode === 413) return res.status(413).json({ ok: false, error: "Payload too large" });
+  if (err.status === 431 || err.statusCode === 431) return res.status(431).json({ ok: false, error: "Request header fields too large" });
   const status = err.status ?? err.statusCode ?? 500;
   res.setHeader("Cache-Control", "no-store");
   res.status(status).json({ ok: false, error: err?.message ?? String(err) });
@@ -468,6 +471,7 @@ server.headersTimeout = 66_000;
 server.timeout = 30_000;
 server.maxHeadersCount = 100;
 server.requestTimeout = 30_000;
+server.on("connection", (socket) => socket.setNoDelay(true));
 console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "startup", version: process.env.npm_package_version ?? "unknown" }));
 process.setMaxListeners(20);
 process.on("warning", (w) => console.warn(JSON.stringify({ ts: new Date().toISOString(), level: "warn", msg: "NodeWarning", name: w.name, message: w.message })));
