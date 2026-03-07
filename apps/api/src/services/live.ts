@@ -20,7 +20,14 @@ import type {
   NotificationRouterService
 } from '../modules/observability/services';
 import type { ReleaseService, ForkSchedulerService } from '../modules/devops/services';
+import type {
+  AnomalyDetectionService,
+  ForecastingService,
+  ExplainabilityService,
+  FraudScoringService
+} from '../modules/ai/services';
 import type { Release, ForkEvent } from '@ghostl/types/devops';
+import type { Anomaly, Forecast } from '@ghostl/types';
 import { ghostWalletRpcManager } from './rpc-manager';
 
 const parsePromValue = (value?: [number, string]) => {
@@ -461,10 +468,82 @@ export const createLiveServices = (deps: {
     }
   };
 
+  const anomalyUrl = process.env.AI_SERVICE_URL ?? 'http://localhost:7616';
+  const forecastUrl = process.env.FORECASTING_SERVICE_URL ?? 'http://localhost:7617';
+  const explainUrl = process.env.EXPLAINABILITY_SERVICE_URL ?? 'http://localhost:7632';
+
+  const anomalyDetectionService: AnomalyDetectionService = {
+    async getRecent(limit = 20) {
+      try {
+        const r = await fetch(`${anomalyUrl}/anomalies?limit=${limit}`);
+        if (!r.ok) return [];
+        const body = (await r.json()) as { anomalies?: Anomaly[] };
+        return body.anomalies ?? [];
+      } catch {
+        return [];
+      }
+    },
+    watch(onAnomaly) {
+      const interval = setInterval(async () => {
+        try {
+          const r = await fetch(`${anomalyUrl}/anomalies?limit=5`);
+          if (!r.ok) return;
+          const body = (await r.json()) as { anomalies?: Anomaly[] };
+          for (const a of body.anomalies ?? []) onAnomaly(a);
+        } catch { /* ignore polling errors */ }
+      }, 15_000);
+      return () => clearInterval(interval);
+    }
+  };
+
+  const forecastingService: ForecastingService = {
+    async getForecast(metric, horizon) {
+      const r = await fetch(`${forecastUrl}/forecast?metric=${encodeURIComponent(metric)}&horizon=${encodeURIComponent(horizon)}`);
+      if (!r.ok) throw new Error(`forecasting_service_${r.status}`);
+      const body = (await r.json()) as { forecast?: Forecast };
+      return body.forecast ?? { metric, horizon, value: 0, confidence: 0 };
+    }
+  };
+
+  const explainabilityService: ExplainabilityService = {
+    async explain(entityId) {
+      const r = await fetch(`${explainUrl}/explain/${encodeURIComponent(entityId)}`);
+      if (!r.ok) throw new Error(`explainability_service_${r.status}`);
+      const body = (await r.json()) as { reasons?: string[]; contributingSignals?: Record<string, number> };
+      return { reasons: body.reasons ?? [], contributingSignals: body.contributingSignals ?? {} };
+    }
+  };
+
+  const fraudScoringService: FraudScoringService = {
+    async scoreWallet(address) {
+      try {
+        const r = await fetch(`${anomalyUrl}/anomalies?entity=${encodeURIComponent(address)}&limit=1`);
+        if (!r.ok) return { score: 0, reasons: [] };
+        const body = (await r.json()) as { anomalies?: Anomaly[] };
+        const top = body.anomalies?.[0];
+        return { score: top?.score ?? 0, reasons: top?.reasons ?? [] };
+      } catch {
+        return { score: 0, reasons: [] };
+      }
+    },
+    async scoreTransaction(hash) {
+      try {
+        const r = await fetch(`${anomalyUrl}/anomalies?entity=${encodeURIComponent(hash)}&limit=1`);
+        if (!r.ok) return { score: 0, reasons: [] };
+        const body = (await r.json()) as { anomalies?: Anomaly[] };
+        const top = body.anomalies?.[0];
+        return { score: top?.score ?? 0, reasons: top?.reasons ?? [] };
+      } catch {
+        return { score: 0, reasons: [] };
+      }
+    }
+  };
+
   return {
     chain: { chainStatusService, consensusTelemetryService, peerGraphService },
     nodes: { nodeInventoryService, nodeHealthService },
     observability: { metricsService, logsService, alertRulesService, notificationRouterService },
-    devops: { releaseService, forkService }
+    devops: { releaseService, forkService },
+    ai: { anomalyDetectionService, forecastingService, explainabilityService, fraudScoringService }
   };
 };

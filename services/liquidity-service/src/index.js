@@ -115,6 +115,39 @@ app.get("/liquidity", async (_req, res) => {
   }
 });
 
+/** GET /liquidity/stats — aggregate relayer flow totals and net balance */
+app.get("/liquidity/stats", async (_req, res) => {
+  try {
+    const relayedResp = await promQuery("ghost_relayer_relayed_to_l3_total");
+    const releasedResp = await promQuery("ghost_relayer_released_to_l2_total");
+    const relayed = relayedResp?.data?.result?.[0]?.value?.[1] || "0";
+    const released = releasedResp?.data?.result?.[0]?.value?.[1] || "0";
+    let netFlow = "0";
+    try { netFlow = (BigInt(relayed) - BigInt(released)).toString(); } catch { /* non-numeric prom value */ }
+    res.json({ ok: true, stats: { relayedToL3: relayed, releasedToL2: released, netFlow, fetchedAt: new Date().toISOString() } });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+/** GET /liquidity/:pool — info for a single named pool (l2-bridge, l3-token) */
+app.get("/liquidity/:pool", async (req, res) => {
+  const { pool } = req.params;
+  try {
+    const [rpcL2, rpcL3] = await Promise.all([resolveRpc("L2"), resolveRpc("L3")]);
+    const l2TokenBal = await erc20Balance(rpcL2, L2_TOKEN, BRIDGE_ADDRESS);
+    const l3TokenSupply = await erc20Balance(rpcL3, L3_TOKEN, null);
+    const pools = {
+      "l2-bridge": { id: "l2-bridge", chain: "l2", token: L2_TOKEN, bridge: BRIDGE_ADDRESS, balance: l2TokenBal },
+      "l3-token": { id: "l3-token", chain: "l3", token: L3_TOKEN, supply: l3TokenSupply },
+    };
+    if (!pools[pool]) {
+      res.status(404).json({ ok: false, error: "pool_not_found", validPools: Object.keys(pools) });
+      return;
+    }
+    res.json({ ok: true, pool: pools[pool] });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+
 app.listen(PORT, () => {
   console.log(`[liquidity-service] listening on :${PORT}, PROM=${PROM_URL}`);
 });

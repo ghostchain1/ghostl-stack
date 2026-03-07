@@ -12,6 +12,9 @@ const registryCache = { data: null, expiresAt: 0 };
 const app = express();
 app.use(express.json());
 
+/** In-memory store for manually registered contracts (not tracked by Prometheus) */
+const manualRegistry = new Map(); // address.toLowerCase() -> record
+
 const promQuery = async (query) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 4000);
@@ -117,6 +120,72 @@ app.get("/contracts", async (_req, res) => {
     res.status(500).json({ ok: false, error: e?.message || String(e) });
   }
 });
+
+/** GET /contracts/stats — aggregate counts from Prometheus + manual registry */
+app.get("/contracts/stats", async (_req, res) => {
+  try {
+    const promContracts = await fetchContractsProm().catch(() => []);
+    const all = [...promContracts];
+    manualRegistry.forEach((r) => {
+      if (!all.find((c) => c.address?.toLowerCase() === r.address.toLowerCase())) all.push(r);
+    });
+    const verified = all.filter((c) => c.verified).length;
+    const proxies = all.filter((c) => c.proxyType).length;
+    res.json({ ok: true, stats: { total: all.length, verified, proxies, manual: manualRegistry.size, fetchedAt: new Date().toISOString() } });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+/** POST /contracts — manually register a contract */
+app.post("/contracts", (req, res) => {
+  const { address, name, proxyType, owner } = req.body || {};
+  if (!address || typeof address !== "string" || !/^0x[0-9a-fA-F]{40}$/.test(address)) {
+    res.status(400).json({ ok: false, error: "valid address required" });
+    return;
+  }
+  const key = address.toLowerCase();
+  const record = { address: key, name: name || "unknown", proxyType: proxyType || null, owner: owner || null, verified: false, manual: true, registeredAt: new Date().toISOString() };
+  manualRegistry.set(key, record);
+  res.status(201).json({ ok: true, contract: record });
+});
+
+/** GET /contracts/:address — single contract lookup (Prometheus + manual registry) */
+app.get("/contracts/:address", async (req, res) => {
+  const { address } = req.params;
+  if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
+    res.status(400).json({ ok: false, error: "invalid_address" });
+    return;
+  }
+  try {
+    const key = address.toLowerCase();
+    const manual = manualRegistry.get(key) || null;
+    const promContracts = await fetchContractsProm().catch(() => []);
+    const fromProm = promContracts.find((c) => c.address?.toLowerCase() === key) || null;
+    if (!fromProm && !manual) {
+      res.status(404).json({ ok: false, error: "not_found" });
+      return;
+    }
+    const [rpcL2, rpcL3] = await Promise.all([resolveRpc("L2").catch(() => null), resolveRpc("L3").catch(() => null)]);
+    const [l2Code, l3Code] = await Promise.all([
+      rpcL2 ? codeAt(rpcL2, address) : Promise.resolve(null),
+      rpcL3 ? codeAt(rpcL3, address) : Promise.resolve(null),
+    ]);
+    const base = fromProm || manual;
+    res.json({ ok: true, contract: { ...base, ...manual, hasCodeL2: Boolean(l2Code), hasCodeL3: Boolean(l3Code) } });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+/** DELETE /contracts/:address — remove a manually registered contract */
+app.delete("/contracts/:address", (req, res) => {
+  const { address } = req.params;
+  const key = address.toLowerCase();
+  if (!manualRegistry.has(key)) {
+    res.status(404).json({ ok: false, error: "not_found_or_not_manual" });
+    return;
+  }
+  manualRegistry.delete(key);
+  res.json({ ok: true, deleted: key });
+});
+
 
 app.listen(PORT, () => {
   console.log(`[contract-registry-service] listening on :${PORT}, PROM=${PROM_URL}`);

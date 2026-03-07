@@ -127,6 +127,29 @@ app.post("/treasury/withdraw", (req, res) => {
   res.json({ ok: true, queued: { proposalId, amount, to, approvals: proposal.approvals.length } });
 });
 
+/** GET /treasury/stats — aggregate balance, risk, runway from Prometheus + observability file */
+app.get("/treasury/stats", async (_req, res) => {
+  try {
+    const [balResp, riskResp] = await Promise.all([
+      promQuery("treasury_balance_total"),
+      promQuery("treasury_risk_score"),
+    ]);
+    const obs = loadObservability();
+    res.json({
+      ok: true,
+      stats: {
+        balanceTotal: balResp?.data?.result?.[0]?.value?.[1] || "0",
+        riskScore: riskResp?.data?.result?.[0]?.value?.[1] ?? String(obs.riskScore ?? 0),
+        runwayDays: obs.runwayDays ?? 0,
+        healthScore: obs.healthScore ?? 0,
+        policyCompliance: obs.policyCompliance ?? false,
+        fetchedAt: new Date().toISOString(),
+      },
+    });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+
 app.listen(PORT, () => {
   console.log(`[treasury-service] listening on :${PORT}, PROM=${PROM_URL}`);
 });

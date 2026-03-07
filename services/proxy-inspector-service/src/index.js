@@ -57,6 +57,29 @@ app.get("/proxies/pending", async (_req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
 });
 
+/** GET /proxies/:address — per-address proxy info (impl, admin, pending upgrade) */
+app.get("/proxies/:address", async (req, res) => {
+  const { address } = req.params;
+  try {
+    const [implResp, adminResp, pendingResp] = await Promise.all([
+      promQuery(`contracts_implementation_address{address="${address}"}`),
+      promQuery(`contracts_proxy_admin{address="${address}"}`),
+      promQuery(`contracts_pending_upgrades{address="${address}"}`),
+    ]);
+    const impl = implResp?.data?.result?.[0];
+    const admin = adminResp?.data?.result?.[0];
+    const pending = pendingResp?.data?.result?.[0];
+    res.json({
+      ok: true,
+      address,
+      implementation: impl?.metric?.implementation || impl?.value?.[1] || null,
+      admin: admin?.metric?.admin || admin?.value?.[1] || null,
+      upgradePending: Boolean(pending?.value?.[1] && Number(pending.value[1]) > 0),
+    });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+
 app.listen(PORT, () => {
   console.log(`[proxy-inspector-service] listening on :${PORT}, PROM=${PROM_URL}`);
 });

@@ -58,7 +58,8 @@ app.get("/payouts", async (_req, res) => {
       : Array.isArray(upstream?.data)
         ? upstream.data
         : [];
-    const payouts = raw.map(cycleToPayoutRecord);
+    const statusFilter = req.query.status;
+    const payouts = raw.map(cycleToPayoutRecord).filter((p) => !statusFilter || p.status === statusFilter);
 
     const prometheusTotal = await promQuery("sum(ghost_payout_amount_wei_total)");
     const meta = {
@@ -73,18 +74,40 @@ app.get("/payouts", async (_req, res) => {
   }
 });
 
-app.get("/payouts/:id", async (req, res) => {
-  const { id } = req.params;
+/** GET /payouts/stats — aggregate payout statistics */
+app.get("/payouts/stats", async (_req, res) => {
   try {
-    const upstream = await fetchJSON(`${REWARD_DISTRIBUTOR_URL}/v1/reward/cycles/${encodeURIComponent(id)}`);
-    const cycle = upstream?.cycle ?? upstream?.data ?? upstream;
-    res.json({ ok: true, payout: cycleToPayoutRecord(cycle) });
+    const upstream = await fetchJSON(`${REWARD_DISTRIBUTOR_URL}/v1/reward/cycles`).catch(() => null);
+    const raw = Array.isArray(upstream?.cycles)
+      ? upstream.cycles
+      : Array.isArray(upstream?.data)
+        ? upstream.data
+        : [];
+    const payouts = raw.map(cycleToPayoutRecord);
+    const executedCount = payouts.filter((p) => p.status === "executed").length;
+    const pendingCount = payouts.filter((p) => p.status === "pending").length;
+    const totalWei = payouts.reduce((sum, p) => sum + BigInt(p.totalAmountWei || "0"), 0n);
+    const avgWei = executedCount > 0 ? (totalWei / BigInt(executedCount)).toString() : "0";
+    const [promTotal, promPending] = await Promise.all([
+      promQuery("sum(ghost_payout_amount_wei_total)"),
+      promQuery("ghost_payout_cycles_pending"),
+    ]);
+    res.json({
+      ok: true,
+      stats: {
+        executedCount,
+        pendingCount,
+        totalAmountWei: totalWei.toString(),
+        avgCycleAmountWei: avgWei,
+        prometheusTotal: promTotal,
+        prometheusPending: promPending ? Number(promPending) : null,
+        fetchedAt: new Date().toISOString(),
+      },
+    });
   } catch (err) {
-    log("warn", `cycle ${id} fetch failed`, { error: err?.message });
-    res.status(502).json({ ok: false, error: "upstream_unavailable" });
+    res.status(500).json({ ok: false, error: err?.message });
   }
 });
-
 app.get("/payouts/summary", async (_req, res) => {
   try {
     const [totalPaid, pendingCount] = await Promise.all([
@@ -103,5 +126,17 @@ app.get("/payouts/summary", async (_req, res) => {
     res.status(500).json({ ok: false, error: err?.message });
   }
 });
+app.get("/payouts/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const upstream = await fetchJSON(`${REWARD_DISTRIBUTOR_URL}/v1/reward/cycles/${encodeURIComponent(id)}`);
+    const cycle = upstream?.cycle ?? upstream?.data ?? upstream;
+    res.json({ ok: true, payout: cycleToPayoutRecord(cycle) });
+  } catch (err) {
+    log("warn", `cycle ${id} fetch failed`, { error: err?.message });
+    res.status(502).json({ ok: false, error: "upstream_unavailable" });
+  }
+});
+
 
 app.listen(PORT, () => log("info", `listening on :${PORT}`, { rewardDistributorUrl: REWARD_DISTRIBUTOR_URL }));
