@@ -108,6 +108,13 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: false, parameterLimit: 100 }));
+app.use((req, res, next) => {
+  if (["POST","PUT","PATCH"].includes(req.method) && req.headers["content-type"] &&
+      !req.is(["application/json","application/x-www-form-urlencoded"])) {
+    return res.status(415).json({ ok: false, error: "Unsupported Media Type" });
+  }
+  next();
+});
 let _draining = false;
 app.use((req, res, next) => { if (_draining) { res.set("Connection","close"); res.setHeader("Retry-After", "5"); return res.status(503).json({ error: "Service shutting down" }); } next(); });
 app.use((req, res, next) => {
@@ -293,8 +300,11 @@ app.use((err, _req, res, _next) => {
   if (err.status === 413 || err.statusCode === 413) return res.status(413).json({ ok: false, error: "Payload too large" });
   if (err.status === 431 || err.statusCode === 431) return res.status(431).json({ ok: false, error: "Request header fields too large" });
   if (err.status === 408 || err.statusCode === 408) return res.status(408).json({ ok: false, error: "Request timeout" });
+  if (err.status === 405 || err.statusCode === 405) return res.status(405).json({ ok: false, error: "Method not allowed" });
   const status = err.status ?? err.statusCode ?? 500;
+  const _isProd = process.env.NODE_ENV === "production";
   res.setHeader("Cache-Control", "no-store");
+  console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "unhandledError", status, error: err?.message ?? String(err), stack: _isProd ? undefined : err?.stack }));
   res.status(status).json({ ok: false, error: err?.message ?? String(err) });
 });
 
@@ -319,12 +329,13 @@ console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "
 process.setMaxListeners(20);
 process.on("warning", (w) => console.warn(JSON.stringify({ ts: new Date().toISOString(), level: "warn", msg: "NodeWarning", name: w.name, message: w.message })));
 process.on("exit", (code) => { console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "exit", code })); });
+process.on("SIGPIPE", () => { /* ignore: client disconnected mid-response */ });
 process.on("uncaughtException", (err) => {
-  console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "uncaughtException", error: err?.message ?? String(err) }));
+  console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "uncaughtException", error: err?.message ?? String(err), stack: err?.stack }));
   process.exitCode = 1; process.exit(1);
 });
 process.on("unhandledRejection", (reason) => {
-  console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "unhandledRejection", error: String(reason) }));
+  console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "unhandledRejection", error: String(reason), stack: reason?.stack }));
   process.exitCode = 1; process.exit(1);
 });
 process.on("SIGTERM", () => {
