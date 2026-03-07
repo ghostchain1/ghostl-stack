@@ -246,6 +246,13 @@ app.get("/search/types", (_req, res) => {
   res.json({ ok: true, types });
 });
 
+/** GET /search/stats — configured search source summary */
+app.get("/search/stats", (_req, res) => {
+  const chains = ["GHOST_L1_RPC_URLS", "GHOST_L2_RPC_URLS", "GHOST_L3_RPC_URLS"].filter(e => (process.env[e] ?? "").trim()).length;
+  const hasGovernance = !!(process.env.HYPER_GHOST_GOVERNOR_URL ?? "").trim();
+  const hasRegistry = !!(process.env.RPC_REGISTRY_URL ?? "").trim();
+  res.json({ ok: true, stats: { configuredChains: chains, governanceSource: hasGovernance, rpcRegistrySource: hasRegistry, totalSources: chains + (hasGovernance ? 1 : 0) + (hasRegistry ? 1 : 0), fetchedAt: new Date().toISOString() } });
+});
+
 app.listen(PORT, () => {
-  console.log(`[global-search-service] listening on :${PORT}`);
 });

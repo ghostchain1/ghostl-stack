@@ -81,6 +81,11 @@ app.get("/status", (_req, res) => {
   });
 });
 
+/** GET /stats — agent identity and watchdog summary */
+app.get("/stats", (_req, res) => {
+  res.json({ ok: true, stats: { agentId: AGENT_ID, role: AGENT_ROLE, policyRequired: GOVERNANCE_POLICY_REQUIRED, heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS, watchdog: { enabled: AGENT_ROLE === "watchdog", targets: WATCHDOG_TARGETS.length, intervalMs: WATCHDOG_INTERVAL_MS }, fetchedAt: new Date().toISOString() } });
+});
+
 app.post("/task", async (req, res) => {
   const action = req.body?.action || "unknown";
   const payload = req.body?.payload || {};
