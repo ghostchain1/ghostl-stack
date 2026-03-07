@@ -258,7 +258,8 @@ app.use((_req, res) => {
 
 // ─── Start ───────────────────────────────────────────────────────────────────
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[webhooks-service] Listening on port ${PORT}`);
   console.log(`[webhooks-service] HMAC signing: ${WEBHOOK_SECRET ? "enabled" : "disabled (set WEBHOOK_SECRET)"}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

@@ -308,7 +308,7 @@ app.all(/^\/v1\/.*/, async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   const servicesRootExists = fs.existsSync(SERVICES_ROOT);
   const servicesMountExists = fs.existsSync(SERVICES_MOUNT);
   const servicesRootResolved = servicesRootExists ? SERVICES_ROOT : (servicesMountExists ? SERVICES_MOUNT : SERVICES_ROOT);
@@ -316,3 +316,4 @@ app.listen(PORT, () => {
     `[ai-vault] listening on :${PORT}, vault=${VAULT_ADDR}, execute=${EXECUTE_ACTIONS}, servicesRoot=${SERVICES_ROOT}, servicesRootExists=${servicesRootExists}, servicesMount=${SERVICES_MOUNT}, servicesMountExists=${servicesMountExists}, servicesRootResolved=${servicesRootResolved}`
   );
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

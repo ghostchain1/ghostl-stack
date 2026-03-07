@@ -815,7 +815,7 @@ app.get("/metrics", async (_req, res) => {
 async function init() {
   try {
     rpcL2 = await resolveRpc();
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       logEvent("info", "ai_monitor_listen", {
         port: PORT,
         rpc: rpcL2,
@@ -824,6 +824,7 @@ async function init() {
       });
       loop();
     });
+    process.on("SIGTERM", () => server.close(() => process.exit(0)));
   } catch (err) {
     logEvent("error", "registry_error", { error: err?.message || String(err) });
     process.exit(1);

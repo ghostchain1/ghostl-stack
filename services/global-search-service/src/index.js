@@ -254,5 +254,6 @@ app.get("/search/stats", (_req, res) => {
   res.json({ ok: true, stats: { configuredChains: chains, governanceSource: hasGovernance, rpcRegistrySource: hasRegistry, totalSources: chains + (hasGovernance ? 1 : 0) + (hasRegistry ? 1 : 0), fetchedAt: new Date().toISOString() } });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

@@ -265,7 +265,7 @@ app.get("/proposals/:id/evidence", (req, res) => {
   });
 });
 
-app.listen(PORT, HOST, () => {
+const server = app.listen(PORT, HOST, () => {
   log("info", "service_started", {
     host: HOST,
     port: PORT,
@@ -274,3 +274,4 @@ app.listen(PORT, HOST, () => {
     treasuryStatusUrl: TREASURY_STATUS_URL
   });
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

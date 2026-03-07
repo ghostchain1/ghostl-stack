@@ -96,6 +96,7 @@ app.get("/supply/stats", async (_req, res) => {
 });
 
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[supply-service] listening on :${PORT}, PROM=${PROM_URL}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

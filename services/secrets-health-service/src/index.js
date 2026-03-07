@@ -118,6 +118,7 @@ app.post("/secrets/rotate-trigger", (req, res) => {
   res.json({ ok: true, queued: true, keyPath, ts: new Date().toISOString() });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[secrets-health-service] listening on :${PORT}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

@@ -135,6 +135,7 @@ app.patch("/anomalies/:id", (req, res) => {
   res.json({ ok: true, anomaly });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[anomaly-detection-service] listening on :${PORT}, threshold=${THRESHOLD}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

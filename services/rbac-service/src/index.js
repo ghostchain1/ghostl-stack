@@ -127,6 +127,7 @@ app.get("/rbac/stats", (_req, res) => {
 });
 
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[rbac-service] listening on :${PORT}, data=${DATA_DIR}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

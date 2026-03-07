@@ -106,6 +106,7 @@ app.get("/peers/:layer", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[peer-graph-service] listening on :${PORT}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

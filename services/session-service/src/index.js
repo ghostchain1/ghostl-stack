@@ -97,6 +97,7 @@ app.delete("/sessions/user/:userId", (req, res) => {
   res.json({ ok: true, invalidated: count });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[session-service] listening on :${PORT}, ttl=${TTL_MS}ms`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

@@ -80,6 +80,7 @@ app.get("/proxies/:address", async (req, res) => {
 });
 
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[proxy-inspector-service] listening on :${PORT}, PROM=${PROM_URL}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

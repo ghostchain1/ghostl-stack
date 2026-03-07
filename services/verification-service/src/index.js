@@ -96,6 +96,7 @@ app.delete("/verifications/:id", (req, res) => {
   res.json({ ok: true });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[verification-service] listening on :${PORT}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

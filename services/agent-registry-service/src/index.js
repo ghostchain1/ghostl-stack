@@ -305,8 +305,9 @@ app.get("/policy/cache", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[agent-registry] listening on :${PORT}`);
   console.log(`[agent-registry] policy source: ${policyClient ? "chain" : "local"}`);
   console.log(`[agent-registry] registry source: ${registryClient ? "chain" : "local"}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

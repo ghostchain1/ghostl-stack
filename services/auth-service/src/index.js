@@ -253,6 +253,7 @@ app.get("/auth/stats", (_req, res) => {
   res.json({ ok: true, stats: { activeSessions, pendingNonces, totalSessions: sessions.size, totalNonces: nonceStore.size, sessionTtlMs: SESSION_TTL_MS, nonceTtlMs: NONCE_TTL_MS, fetchedAt: new Date().toISOString() } });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[auth-service] listening on :${PORT}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

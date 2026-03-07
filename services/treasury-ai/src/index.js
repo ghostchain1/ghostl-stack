@@ -139,6 +139,7 @@ app.get("/v1/treasury/stats", (_req, res) => {
   res.json({ ok: true, stats: { capabilities: ["forecast", "runway", "stress", "allocation", "incident", "proposal"], fetchedAt: new Date().toISOString() } });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[treasury-ai] listening on :${PORT}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

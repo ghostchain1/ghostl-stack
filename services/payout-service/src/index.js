@@ -139,4 +139,5 @@ app.get("/payouts/:id", async (req, res) => {
 });
 
 
-app.listen(PORT, () => log("info", `listening on :${PORT}`, { rewardDistributorUrl: REWARD_DISTRIBUTOR_URL }));
+const server = app.listen(PORT, () => log("info", `listening on :${PORT}`, { rewardDistributorUrl: REWARD_DISTRIBUTOR_URL }));
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

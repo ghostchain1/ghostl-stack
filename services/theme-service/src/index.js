@@ -246,7 +246,7 @@ app.get("/stats", (_req, res) => {
   res.json({ ok: true, stats: { themes: Object.keys(THEMES), default: THEME, brand: BRAND.name, fetchedAt: new Date().toISOString() } });
 });
 
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(JSON.stringify({
     ts: new Date().toISOString(),
     level: "info",
@@ -256,4 +256,5 @@ app.listen(PORT, "0.0.0.0", () => {
     brand: BRAND.name,
   }));
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));
 

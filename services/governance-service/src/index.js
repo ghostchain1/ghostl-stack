@@ -222,10 +222,11 @@ app.post("/calldata", (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   const defaultLayer = normalizeLayer(DEFAULT_LAYER) || "L1";
   const cfg = layerConfigs[defaultLayer] || {};
   console.log(
     `[governance-service] listening on :${PORT} defaultLayer=${defaultLayer} rpc=${cfg.rpc || "unset"}`
   );
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

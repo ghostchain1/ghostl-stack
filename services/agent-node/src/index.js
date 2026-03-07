@@ -152,6 +152,7 @@ setInterval(() => {
 
 startWatchdog();
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[agent-node] role=${AGENT_ROLE} id=${AGENT_ID} listening on :${PORT}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

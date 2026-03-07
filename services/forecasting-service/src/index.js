@@ -97,6 +97,7 @@ app.delete("/forecasts/:id", (req, res) => {
   res.json({ ok: true });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[forecasting-service] listening on :${PORT}, PROM=${PROM_URL}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

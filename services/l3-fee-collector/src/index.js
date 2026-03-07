@@ -226,7 +226,7 @@ app.post("/v1/revenue/fees", withAdmin, async (req, res) => {
   }
 });
 
-app.listen(PORT, HOST, () => {
+const server = app.listen(PORT, HOST, () => {
   log("info", "service_started", {
     port: PORT,
     host: HOST,
@@ -237,3 +237,4 @@ app.listen(PORT, HOST, () => {
     ledgerPath: LEDGER_PATH
   });
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

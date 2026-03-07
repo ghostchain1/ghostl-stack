@@ -195,6 +195,7 @@ app.get("/bridges/stats", (_req, res) => {
   res.json({ ok: true, stats: { status: bridgeState.status, feeBps: bridgeState.feeBps, incidents: incidents.length, bySeverity, fetchedAt: new Date().toISOString() } });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[bridge-service] listening on :${PORT}, PROM=${PROM_URL}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

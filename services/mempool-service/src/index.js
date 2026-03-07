@@ -97,6 +97,7 @@ app.get("/mempool/:layer", async (req, res) => {
 });
 
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[mempool-service] listening on :${PORT}, PROM=${PROM_URL}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

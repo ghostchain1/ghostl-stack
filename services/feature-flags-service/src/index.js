@@ -94,6 +94,7 @@ app.delete("/flags/:name", (req, res) => {
   res.json({ ok: true });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[feature-flags-service] listening on :${PORT}, flags=${flags.size}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

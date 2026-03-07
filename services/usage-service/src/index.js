@@ -172,7 +172,8 @@ app.use((_req, res) => {
 
 // ─── Start ───────────────────────────────────────────────────────────────────
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[usage-service] Listening on port ${PORT}`);
   console.log(`[usage-service] PROM=${PROM_URL} QUOTA_LIMIT=${QUOTA_LIMIT}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

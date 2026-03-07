@@ -472,8 +472,9 @@ app.use((_req, res) => {
 
 loadPairs();
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[swap-service] Listening on port ${PORT}`);
   console.log(`[swap-service] Registered pairs: ${registeredPairs.length}`);
   console.log(`[swap-service] RPC: L1=${RPC_URLS.l1 || "—"} L2=${RPC_URLS.l2 || "—"} L3=${RPC_URLS.l3 || "—"}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

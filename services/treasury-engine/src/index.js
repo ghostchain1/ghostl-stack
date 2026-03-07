@@ -865,7 +865,7 @@ app.get("/v1/treasury/proof", (_req, res) => {
   res.json({ ok: true, file: filePath, root: merkle.root, entryCount: rows.length, generatedAt: snapshot.generatedAt });
 });
 
-app.listen(PORT, HOST, () => {
+const server = app.listen(PORT, HOST, () => {
   log("info", "service_started", {
     host: HOST,
     port: PORT,
@@ -879,3 +879,4 @@ app.listen(PORT, HOST, () => {
     federationPolicyPath: FEDERATION_POLICY_PATH || null
   });
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

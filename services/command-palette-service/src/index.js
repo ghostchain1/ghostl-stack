@@ -90,6 +90,7 @@ app.post("/commands/:id/execute", (req, res) => {
   res.json({ ok: true, command: cmd, executedAt: new Date().toISOString(), context: req.body || {} });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[command-palette-service] listening on :${PORT}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

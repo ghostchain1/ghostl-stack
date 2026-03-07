@@ -249,7 +249,8 @@ app.use((_req, res) => {
 
 // ─── Start ───────────────────────────────────────────────────────────────────
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[devops-service] Listening on port ${PORT} chain=${CHAIN_TAG}`);
   if (NODE_REGISTRY_URL) console.log(`[devops-service] Node registry: ${NODE_REGISTRY_URL}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

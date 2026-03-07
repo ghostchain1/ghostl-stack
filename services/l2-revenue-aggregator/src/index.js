@@ -395,7 +395,7 @@ setInterval(() => {
   });
 }, BATCH_INTERVAL_MS).unref();
 
-app.listen(PORT, HOST, () => {
+const server = app.listen(PORT, HOST, () => {
   log("info", "service_started", {
     port: PORT,
     host: HOST,
@@ -404,3 +404,4 @@ app.listen(PORT, HOST, () => {
     destination: L1_TREASURY_ENGINE_URL
   });
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

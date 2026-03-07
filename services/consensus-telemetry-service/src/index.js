@@ -1273,9 +1273,10 @@ app.get("/consensus", (_req, res) => {
 
 const startService = async () => {
   await initFinalityState();
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     logEvent("info", "service_started", { port: PORT, pollIntervalMs: POLL_INTERVAL_MS });
   });
+  process.on("SIGTERM", () => server.close(() => process.exit(0)));
   pollOnce();
   setInterval(pollOnce, POLL_INTERVAL_MS).unref();
 };

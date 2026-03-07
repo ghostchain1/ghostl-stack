@@ -334,8 +334,9 @@ app.post("/v1/preconfirm", async (req, res) => {
   });
 });
 
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(
     `[preconfirm-service] listening on :${PORT} layer=${LAYER_ID} rpc=${RPC_URL} observeOnly=${observeOnly} guard=${Boolean(GUARD_EVAL_URL)}`
   );
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

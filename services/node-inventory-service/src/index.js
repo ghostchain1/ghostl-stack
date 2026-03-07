@@ -116,4 +116,5 @@ app.get("/nodes/:id/status", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => log("info", `listening on :${PORT}`, { promUrl: PROM_URL }));
+const server = app.listen(PORT, () => log("info", `listening on :${PORT}`, { promUrl: PROM_URL }));
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

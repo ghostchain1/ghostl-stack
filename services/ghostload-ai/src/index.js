@@ -135,3 +135,4 @@ server.listen(PORT, "0.0.0.0", () => {
   fs.mkdirSync("/tmp", { recursive: true });
   console.log(`[ghostload-ai] listening on ${PORT}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

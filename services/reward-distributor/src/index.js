@@ -328,10 +328,11 @@ app.post("/v1/reward/failsafe", withAdmin, (req, res) => {
   }
 });
 
-app.listen(PORT, HOST, () => {
+const server = app.listen(PORT, HOST, () => {
   log("info", "service_started", {
     host: HOST,
     port: PORT,
     governanceRoot: GOVERNANCE_ROOT
   });
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));
