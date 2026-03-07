@@ -68,7 +68,8 @@ app.use((_req, res, next) => {
 app.use(
   cors({
     origin: (origin, callback) => callback(null, isOriginAllowed(origin)),
-    credentials: true
+    credentials: true,
+    maxAge: 86400
   })
 );
 
@@ -93,7 +94,7 @@ app.use((req, res, next) => {
   req.id = req.headers["x-request-id"] ?? crypto.randomUUID();
   res.setHeader("X-Request-ID", req.id);
   const t0 = Date.now();
-  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: Date.now() - t0, reqId: req.id })));
+  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: Date.now() - t0, reqId: req.id, pid: process.pid, mem: process.memoryUsage().rss })));
   next();
 });
 
