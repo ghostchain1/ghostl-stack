@@ -1,64 +1,115 @@
 import express from "express";
+import crypto from "node:crypto";
 
-const PORT       = Number(process.env.PORT || 7621);
-const AUDIT_URL  = process.env.AUDIT_LOG_URL || "http://localhost:7641";
-const MAX_ROWS   = 10_000;
+const PORT          = Number(process.env.PORT || 7621);
+const AUDIT_LOG_URL = process.env.AUDIT_LOG_URL || "http://localhost:7641";
 
 const app = express();
 app.use(express.json());
 
-async function fetchAuditLogs(limit = MAX_ROWS) {
+// Named export jobs: id → { id, name, status, format, filters, createdAt, completedAt, rowCount }
+const exportJobs = new Map();
+
+async function fetchAuditLogs(since, until, limit = 2000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  const params = new URLSearchParams({ limit });
+  if (since) params.set("since", since);
+  if (until) params.set("until", until);
   try {
-    const res = await fetch(`${AUDIT_URL}/logs?limit=${limit}`);
-    if (!res.ok) return [];
-    const body = await res.json();
-    return Array.isArray(body.logs) ? body.logs : [];
-  } catch { return []; }
+    const r = await fetch(`${AUDIT_LOG_URL}/logs?${params}`, { signal: controller.signal });
+    const body = await r.json();
+    // audit-log-service returns { ok, entries: [...] }  (not body.logs)
+    return Array.isArray(body.entries) ? body.entries : [];
+  } catch { return []; } finally { clearTimeout(timer); }
 }
 
-function toCSV(rows) {
-  if (!rows.length) return "timestamp,action,actor,resource,detail\n";
-  const headers = ["timestamp", "action", "actor", "resource", "detail"];
-  const escape  = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const lines   = [headers.join(",")];
-  for (const r of rows) {
-    lines.push(headers.map((h) => escape(r[h] ?? r[h.toLowerCase()] ?? "")).join(","));
-  }
-  return lines.join("\n") + "\n";
+function entryToCsvRow(entry) {
+  // audit-log entries use field "ts" for timestamp
+  const timestamp = entry.ts || entry.timestamp || "";
+  const action    = entry.action   || "";
+  const actor     = entry.actor    || "";
+  const resource  = entry.resource || "";
+  const result    = entry.result   || "";
+  const detail    = JSON.stringify(entry.detail || entry.meta || {}).replace(/"/g, '""');
+  return `"${timestamp}","${action}","${actor}","${resource}","${result}","${detail}"`;
+}
+
+const CSV_HEADER = '"timestamp","action","actor","resource","result","detail"';
+
+function buildCsv(entries) {
+  return [CSV_HEADER, ...entries.map(entryToCsvRow)].join("\n");
+}
+
+function buildNdJson(entries) {
+  return entries.map((e) => JSON.stringify(e)).join("\n");
 }
 
 app.get("/health", (_req, res) =>
-  res.json({ ok: true, service: "compliance-export-service", auditUrl: AUDIT_URL })
+  res.json({ ok: true, service: "compliance-export-service", auditLogUrl: AUDIT_LOG_URL })
 );
 
-/**
- * GET /exports
- * Query params:
- *   format = json (default) | csv
- *   limit  = max rows (default 1000, max 10000)
- *   since  = ISO timestamp filter (inclusive)
- */
+/** GET /exports — ad-hoc export (CSV or NDJSON) */
 app.get("/exports", async (req, res) => {
-  const format = req.query.format === "csv" ? "csv" : "json";
-  const limit  = Math.min(Number(req.query.limit) || 1000, MAX_ROWS);
-  const since  = req.query.since ? new Date(String(req.query.since)).getTime() : 0;
+  const { since, until, format = "csv", limit } = req.query;
+  const entries = await fetchAuditLogs(since, until, limit ? Number(limit) : 2000);
 
-  let logs = await fetchAuditLogs(limit);
-  if (since) logs = logs.filter((l) => new Date(l.timestamp || 0).getTime() >= since);
-  logs = logs.slice(0, limit);
-
-  if (format === "csv") {
-    res.setHeader("Content-Type", "text/csv");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="compliance-export-${Date.now()}.csv"`
-    );
-    return res.send(toCSV(logs));
+  if (format === "ndjson") {
+    res.setHeader("Content-Type", "application/x-ndjson");
+    res.setHeader("Content-Disposition", `attachment; filename="audit-export-${Date.now()}.ndjson"`);
+    return res.send(buildNdJson(entries));
   }
+  // default: CSV
+  res.setHeader("Content-Type", "text/csv");
+  res.setHeader("Content-Disposition", `attachment; filename="audit-export-${Date.now()}.csv"`);
+  res.send(buildCsv(entries));
+});
 
-  res.json({ ok: true, total: logs.length, exportedAt: new Date().toISOString(), logs });
+/** GET /exports/jobs — list named export jobs */
+app.get("/exports/jobs", (_req, res) => {
+  res.json({ ok: true, count: exportJobs.size, jobs: [...exportJobs.values()] });
+});
+
+/** GET /exports/jobs/:id — fetch a specific job */
+app.get("/exports/jobs/:id", (req, res) => {
+  const job = exportJobs.get(req.params.id);
+  if (!job) return res.status(404).json({ ok: false, error: "not_found" });
+  res.json({ ok: true, job });
+});
+
+/** POST /exports/jobs — create and immediately execute a named export job */
+app.post("/exports/jobs", async (req, res) => {
+  const { name, format = "csv", since, until, limit = 2000 } = req.body || {};
+  if (!name) return res.status(400).json({ ok: false, error: "name required" });
+  const id  = crypto.randomUUID();
+  const job = { id, name, format, filters: { since, until, limit }, status: "pending", createdAt: new Date().toISOString(), completedAt: null, rowCount: null };
+  exportJobs.set(id, job);
+
+  // Run async, respond immediately
+  res.status(202).json({ ok: true, job });
+
+  // Execute in background
+  (async () => {
+    try {
+      const entries = await fetchAuditLogs(since, until, limit);
+      job.status      = "completed";
+      job.completedAt = new Date().toISOString();
+      job.rowCount    = entries.length;
+    } catch (err) {
+      job.status = "failed";
+      job.error  = err?.message || "unknown";
+    }
+    exportJobs.set(id, job);
+  })();
+});
+
+/** DELETE /exports/jobs/:id */
+app.delete("/exports/jobs/:id", (req, res) => {
+  if (!exportJobs.has(req.params.id)) return res.status(404).json({ ok: false, error: "not_found" });
+  exportJobs.delete(req.params.id);
+  res.json({ ok: true });
 });
 
 app.listen(PORT, () => {
-  console.log(`[compliance-export-service] listening on :${PORT}, audit=${AUDIT_URL}`);
+  console.log(`[compliance-export-service] listening on :${PORT}, auditLog=${AUDIT_LOG_URL}`);
 });
