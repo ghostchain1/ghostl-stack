@@ -89,6 +89,20 @@ app.delete("/alerts/:id", (req, res) => {
   res.json({ ok: true });
 });
 
+/** GET /alerts/stats — aggregate open/resolved counts and severity breakdown */
+app.get("/alerts/stats", (req, res) => {
+  const all = [...alertLog.values()];
+  const open = all.filter((a) => !a.resolvedAt).length;
+  const resolved = all.filter((a) => a.resolvedAt).length;
+  const bySeverity = {};
+  for (const a of all) {
+    const s = a.severity || "unknown";
+    bySeverity[s] = (bySeverity[s] || 0) + 1;
+  }
+  res.json({ ok: true, stats: { total: all.length, open, resolved, bySeverity, fetchedAt: new Date().toISOString() } });
+});
+
+
 app.listen(PORT, () => {
   console.log(`[alerts-service] listening on :${PORT}, PROM=${PROM_URL}`);
 });

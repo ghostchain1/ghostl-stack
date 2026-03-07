@@ -75,6 +75,35 @@ app.get("/logs/stats", (req, res) => {
   res.json({ ok: true, total: entries.length, byAction });
 });
 
+/** GET /logs/:id — find a single log entry by its id field */
+app.get("/logs/:id", (req, res) => {
+  const { id } = req.params;
+  const entries = parseLines(readLines());
+  const entry = entries.find((e) => e.id === id || e.requestId === id);
+  if (!entry) return res.status(404).json({ ok: false, error: "not_found" });
+  res.json({ ok: true, entry });
+});
+
+/** DELETE /logs — purge all entries (or those matching ?action=) */
+app.delete("/logs", (req, res) => {
+  try {
+    if (req.query.action) {
+      const lines = readLines();
+      const kept = lines.filter((l) => {
+        try { return JSON.parse(l).action !== req.query.action; } catch { return true; }
+      });
+      fs.mkdirSync(path.dirname(LOG_PATH), { recursive: true });
+      fs.writeFileSync(LOG_PATH, kept.join("\n") + (kept.length ? "\n" : ""), "utf-8");
+      res.json({ ok: true, purged: true, action: req.query.action, remaining: kept.length });
+    } else {
+      fs.mkdirSync(path.dirname(LOG_PATH), { recursive: true });
+      fs.writeFileSync(LOG_PATH, "", "utf-8");
+      res.json({ ok: true, purged: true });
+    }
+  } catch (err) { res.status(500).json({ ok: false, error: err?.message }); }
+});
+
+
 app.listen(PORT, () => {
   console.log(`[audit-log-service] listening on :${PORT}, log=${LOG_PATH}`);
 });

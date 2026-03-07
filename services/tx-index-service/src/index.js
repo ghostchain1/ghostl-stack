@@ -77,6 +77,44 @@ app.get("/txs/stats", async (_req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
 });
 
+/** GET /txs/failed — failed transaction details per chain */
+app.get("/txs/failed", async (_req, res) => {
+  try {
+    const [failResp, rateResp] = await Promise.all([
+      promQuery("tx_failed_total"),
+      promQuery("rate(tx_failed_total[5m])"),
+    ]);
+    res.json({
+      ok: true,
+      failed: failResp?.data?.result || [],
+      failRate5m: rateResp?.data?.result?.[0]?.value?.[1] || "0",
+    });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+/** GET /txs/:layer — tx snapshot for a specific chain layer */
+app.get("/txs/:layer", async (req, res) => {
+  const { layer } = req.params;
+  try {
+    const [txResp, failResp] = await Promise.all([
+      promQuery(`tx_count_total{layer="${layer}"}`),
+      promQuery(`tx_failed_total{layer="${layer}"}`),
+    ]);
+    const txs = txResp?.data?.result || [];
+    if (!txs.length) {
+      res.status(404).json({ ok: false, error: "layer_not_found_or_no_data", layer });
+      return;
+    }
+    res.json({
+      ok: true,
+      layer,
+      total: txs[0]?.value?.[1] || "0",
+      failed: (failResp?.data?.result || [])[0]?.value?.[1] || "0",
+    });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+
 app.listen(PORT, () => {
   console.log(`[tx-index-service] listening on :${PORT}, PROM=${PROM_URL}`);
 });

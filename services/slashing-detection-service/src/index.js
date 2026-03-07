@@ -74,6 +74,27 @@ app.post("/slashes", (req, res) => {
   res.status(201).json({ ok: true, event });
 });
 
+/** GET /slashes/:id — look up a specific slash event */
+app.get("/slashes/:id", (req, res) => {
+  const event = slashLog.get(req.params.id);
+  if (!event) return res.status(404).json({ ok: false, error: "not_found" });
+  res.json({ ok: true, event });
+});
+
+/** DELETE /slashes/:id — remove a logged slash event */
+app.delete("/slashes/:id", (req, res) => {
+  if (!slashLog.has(req.params.id)) return res.status(404).json({ ok: false, error: "not_found" });
+  slashLog.delete(req.params.id);
+  res.json({ ok: true });
+});
+
+/** GET /slashes/validator/:validator — all logged events for a validator */
+app.get("/slashes/validator/:validator", (req, res) => {
+  const events = [...slashLog.values()].filter((e) => e.validator === req.params.validator);
+  res.json({ ok: true, validator: req.params.validator, events });
+});
+
+
 app.listen(PORT, () => {
   console.log(`[slashing-detection-service] listening on :${PORT}, PROM=${PROM_URL}`);
 });

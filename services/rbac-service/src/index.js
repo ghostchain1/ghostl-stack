@@ -96,6 +96,37 @@ app.post("/check", (req, res) => {
   res.json({ ok: true, userId, permission, allowed });
 });
 
+/** GET /users — list all users with their assigned roles */
+app.get("/users", (_req, res) => {
+  const users = [];
+  for (const [userId, roleSet] of assignments) {
+    users.push({ userId, roles: [...roleSet] });
+  }
+  res.json({ ok: true, total: users.length, users });
+});
+
+/** DELETE /users/:userId — remove all role assignments for a user */
+app.delete("/users/:userId", (req, res) => {
+  const { userId } = req.params;
+  if (!assignments.has(userId)) return res.status(404).json({ ok: false, error: "user_not_found" });
+  assignments.delete(userId);
+  persist();
+  res.json({ ok: true, userId });
+});
+
+/** GET /rbac/stats — summary of users, roles, and assignment coverage */
+app.get("/rbac/stats", (_req, res) => {
+  const roleCount = Object.keys(ROLE_DEFS).length;
+  const userCount = assignments.size;
+  const assignmentCount = [...assignments.values()].reduce((sum, s) => sum + s.size, 0);
+  const roleUsage = {};
+  for (const roleSet of assignments.values()) {
+    for (const r of roleSet) roleUsage[r] = (roleUsage[r] || 0) + 1;
+  }
+  res.json({ ok: true, stats: { userCount, roleCount, assignmentCount, roleUsage, fetchedAt: new Date().toISOString() } });
+});
+
+
 app.listen(PORT, () => {
   console.log(`[rbac-service] listening on :${PORT}, data=${DATA_DIR}`);
 });

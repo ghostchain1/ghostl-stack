@@ -75,6 +75,27 @@ app.post("/keys/rotate", (req, res) => {
   res.status(201).json({ ok: true, event });
 });
 
+/** GET /keys/:id — look up a specific key rotation event */
+app.get("/keys/:id", (req, res) => {
+  const event = rotationLog.get(req.params.id);
+  if (!event) return res.status(404).json({ ok: false, error: "not_found" });
+  res.json({ ok: true, event });
+});
+
+/** DELETE /keys/:id — remove a logged key rotation event */
+app.delete("/keys/:id", (req, res) => {
+  if (!rotationLog.has(req.params.id)) return res.status(404).json({ ok: false, error: "not_found" });
+  rotationLog.delete(req.params.id);
+  res.json({ ok: true });
+});
+
+/** GET /keys/validator/:validator — all logged rotation events for a validator */
+app.get("/keys/validator/:validator", (req, res) => {
+  const events = [...rotationLog.values()].filter((e) => e.validator === req.params.validator);
+  res.json({ ok: true, validator: req.params.validator, events });
+});
+
+
 app.listen(PORT, () => {
   console.log(`[key-rotation-service] listening on :${PORT}, PROM=${PROM_URL}`);
 });

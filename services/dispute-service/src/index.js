@@ -98,6 +98,18 @@ app.delete("/disputes/:id", (req, res) => {
   res.json({ ok: true });
 });
 
+/** GET /disputes/stats — aggregate dispute counts by status */
+app.get("/disputes/stats", (req, res) => {
+  const all = [...disputes.values()];
+  const byStatus = {};
+  for (const d of all) {
+    const s = d.status || "open";
+    byStatus[s] = (byStatus[s] || 0) + 1;
+  }
+  res.json({ ok: true, stats: { total: all.length, byStatus, fetchedAt: new Date().toISOString() } });
+});
+
+
 app.listen(PORT, () => {
   console.log(`[dispute-service] listening on :${PORT}, PROM=${PROM_URL}`);
 });

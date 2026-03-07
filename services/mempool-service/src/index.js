@@ -74,6 +74,29 @@ app.get("/mempool/stats", async (_req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
 });
 
+/** GET /mempool/:layer — mempool snapshot for a specific chain layer */
+app.get("/mempool/:layer", async (req, res) => {
+  const { layer } = req.params;
+  try {
+    const [pendingResp, queuedResp] = await Promise.all([
+      promQuery(`txpool_pending_total{layer="${layer}"}`),
+      promQuery(`txpool_queued_total{layer="${layer}"}`),
+    ]);
+    const pending = pendingResp?.data?.result || [];
+    if (!pending.length && !(queuedResp?.data?.result || []).length) {
+      res.status(404).json({ ok: false, error: "layer_not_found_or_no_data", layer });
+      return;
+    }
+    res.json({
+      ok: true,
+      layer,
+      pending: pending[0]?.value?.[1] || "0",
+      queued: (queuedResp?.data?.result || [])[0]?.value?.[1] || "0",
+    });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+
 app.listen(PORT, () => {
   console.log(`[mempool-service] listening on :${PORT}, PROM=${PROM_URL}`);
 });

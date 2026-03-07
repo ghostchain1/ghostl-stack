@@ -77,11 +77,29 @@ app.post("/explain", (req, res) => {
   res.status(201).json({ ok: true, explanation });
 });
 
+/** GET /explain/stats — explanation counts by severity */
+app.get("/explain/stats", (req, res) => {
+  const all = [...explanationLog.values()];
+  const bySeverity = {};
+  for (const e of all) {
+    const s = e.severity || "unknown";
+    bySeverity[s] = (bySeverity[s] || 0) + 1;
+  }
+  res.json({ ok: true, stats: { total: all.length, bySeverity, fetchedAt: new Date().toISOString() } });
+});
+
 /** GET /explain/history — recent custom explanation requests */
 app.get("/explain/history", (req, res) => {
   const items = [...explanationLog.values()].sort((a, b) => b.createdAt - a.createdAt);
   const limit = Math.min(Number(req.query.limit) || 50, 200);
   res.json({ ok: true, total: explanationLog.size, history: items.slice(0, limit) });
+});
+
+/** GET /explain/:entityId — look up a specific explanation by ID */
+app.get("/explain/:entityId", (req, res) => {
+  const e = explanationLog.get(req.params.entityId);
+  if (!e) return res.status(404).json({ ok: false, error: "not_found" });
+  res.json({ ok: true, explanation: e });
 });
 
 app.listen(PORT, () => {

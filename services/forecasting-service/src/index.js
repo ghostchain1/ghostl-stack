@@ -73,6 +73,24 @@ app.get("/forecasts", (req, res) => {
   res.json({ ok: true, total: forecastStore.size, forecasts: items.slice(0, limit) });
 });
 
+/** GET /forecasts/stats — aggregate forecast counts by metric */
+app.get("/forecasts/stats", (req, res) => {
+  const all = [...forecastStore.values()];
+  const byMetric = {};
+  for (const f of all) {
+    byMetric[f.metric] = (byMetric[f.metric] || 0) + 1;
+  }
+  res.json({ ok: true, stats: { total: all.length, byMetric, fetchedAt: new Date().toISOString() } });
+});
+
+/** GET /forecasts/:id — look up a specific stored forecast */
+app.get("/forecasts/:id", (req, res) => {
+  const f = forecastStore.get(req.params.id);
+  if (!f) return res.status(404).json({ ok: false, error: "not_found" });
+  res.json({ ok: true, forecast: f });
+});
+
+
 app.delete("/forecasts/:id", (req, res) => {
   if (!forecastStore.has(req.params.id)) return res.status(404).json({ ok: false, error: "not_found" });
   forecastStore.delete(req.params.id);

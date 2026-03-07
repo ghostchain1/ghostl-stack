@@ -73,6 +73,30 @@ app.get("/blocks/stats", async (_req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
 });
 
+/** GET /blocks/:layer — block info for a specific chain layer (L1/L2/L3) */
+app.get("/blocks/:layer", async (req, res) => {
+  const { layer } = req.params;
+  try {
+    const [blockResp, timeResp] = await Promise.all([
+      promQuery(`ghost_blockNumber{layer="${layer}"}`),
+      promQuery(`ghost_blockTime{layer="${layer}"}`),
+    ]);
+    const blocks = blockResp?.data?.result || [];
+    const times = timeResp?.data?.result || [];
+    if (!blocks.length) {
+      res.status(404).json({ ok: false, error: "layer_not_found_or_no_data", layer });
+      return;
+    }
+    res.json({
+      ok: true,
+      layer,
+      blockNumber: blocks[0]?.value?.[1] || null,
+      blockTime: times[0]?.value?.[1] || null,
+    });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+
 app.listen(PORT, () => {
   console.log(`[block-index-service] listening on :${PORT}, PROM=${PROM_URL}`);
 });

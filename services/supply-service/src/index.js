@@ -76,6 +76,26 @@ app.get("/supply/inflation", async (_req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
 });
 
+/** GET /supply/stats — aggregate supply snapshot with key ratios */
+app.get("/supply/stats", async (_req, res) => {
+  try {
+    const [supplyResp, circulatingResp, burnedResp, stakedResp] = await Promise.all([
+      promQuery("token_supply_total"),
+      promQuery("token_circulating_supply"),
+      promQuery("token_burned_total"),
+      promQuery("token_staked_total"),
+    ]);
+    const total = Number(supplyResp?.data?.result?.[0]?.value?.[1] || 0);
+    const circulating = Number(circulatingResp?.data?.result?.[0]?.value?.[1] || 0);
+    const burned = Number(burnedResp?.data?.result?.[0]?.value?.[1] || 0);
+    const staked = Number(stakedResp?.data?.result?.[0]?.value?.[1] || 0);
+    const circulatingPct = total > 0 ? ((circulating / total) * 100).toFixed(2) : "0.00";
+    const stakedPct = circulating > 0 ? ((staked / circulating) * 100).toFixed(2) : "0.00";
+    res.json({ ok: true, stats: { total, circulating, burned, staked, circulatingPct, stakedPct, fetchedAt: new Date().toISOString() } });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+
 app.listen(PORT, () => {
   console.log(`[supply-service] listening on :${PORT}, PROM=${PROM_URL}`);
 });
