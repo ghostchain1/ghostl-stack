@@ -70,6 +70,8 @@ app.use((_req, res, next) => {
   res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
   res.removeHeader("X-Powered-By");
   res.removeHeader("Server");
+  res.setHeader("Vary", "Accept");
+  res.setHeader("Keep-Alive", "timeout=65");
   next();
 });
 app.use(
@@ -100,6 +102,12 @@ app.use((req, res, next) => {
   if (["POST","PUT","PATCH"].includes(req.method) && req.headers["content-type"] &&
       !req.is(["application/json","application/x-www-form-urlencoded"])) {
     return res.status(415).json({ ok: false, error: "Unsupported Media Type" });
+  }
+  next();
+});
+app.use((req, res, next) => {
+  if (req.method !== "OPTIONS" && !req.accepts("application/json")) {
+    return res.status(406).json({ ok: false, error: "Not Acceptable" });
   }
   next();
 });
