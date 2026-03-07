@@ -164,6 +164,7 @@ async function getStatus() {
 
 const app = express();
 app.set("trust proxy", 1);
+app.set("etag", false);
 app.use((_req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
@@ -285,7 +286,7 @@ app.get("/status/:service", async (req, res) => {
   }
 });
 
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(JSON.stringify({
     ts:      new Date().toISOString(),
     service: "ghost-health-aggregator",
@@ -294,6 +295,8 @@ app.listen(PORT, "0.0.0.0", () => {
     msg:     "ghost-health-aggregator ready",
   }));
 });
+server.keepAliveTimeout = 65_000;
+server.headersTimeout = 66_000;
 
 app.use((err, _req, res, _next) => {
   if (err.type === "entity.parse.failed") return res.status(400).json({ ok: false, error: "Invalid JSON" });
@@ -313,6 +316,9 @@ process.on("unhandledRejection", (reason) => {
 });
 process.on("SIGTERM", () => {
   setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
-  console.log(JSON.stringify({ ts: new Date().toISOString(), msg: "SIGTERM — shutting down" }));
-  process.exit(0);
+  server.close(() => process.exit(0));
+});
+process.on("SIGINT", () => {
+  setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
+  server.close(() => process.exit(0));
 });

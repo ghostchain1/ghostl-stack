@@ -8,6 +8,7 @@ const TAGS_FILE = path.join(DATA_DIR, "tags.json");
 
 const app = express();
 app.set("trust proxy", 1);
+app.set("etag", false);
 app.use((_req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
@@ -199,6 +200,8 @@ app.use((err, _req, res, _next) => {
 const server = app.listen(PORT, () => {
   console.log(`[entity-tagging-service] listening on :${PORT}, data=${DATA_DIR}`);
 });
+server.keepAliveTimeout = 65_000;
+server.headersTimeout = 66_000;
 process.on("uncaughtException", (err) => {
   console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "uncaughtException", error: err?.message ?? String(err) }));
   process.exit(1);
@@ -208,6 +211,10 @@ process.on("unhandledRejection", (reason) => {
   process.exit(1);
 });
 process.on("SIGTERM", () => {
+  setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
+  server.close(() => process.exit(0));
+});
+process.on("SIGINT", () => {
   setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
   server.close(() => process.exit(0));
 });

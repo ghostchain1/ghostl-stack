@@ -362,6 +362,7 @@ const toPublicMapping = (spec) => {
 
 const app = express();
 app.set("trust proxy", 1);
+app.set("etag", false);
 app.use((_req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
@@ -526,6 +527,8 @@ app.use((err, _req, res, _next) => {
 });
 
 await loadConfig();
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   logEvent("info", "listening", { port: PORT });
 });
+server.keepAliveTimeout = 65_000;
+server.headersTimeout = 66_000;
