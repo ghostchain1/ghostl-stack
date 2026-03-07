@@ -83,7 +83,7 @@ type SnapshotReceipt = {
 const app = express();
 app.use(express.json({ limit: "1mb" }));
 
-const PORT = Number(process.env.PORT || "7604");
+const PORT = Number(process.env.PORT || "7662");
 const HOST = process.env.HOST || "0.0.0.0";
 const INDEXER_BASE = (process.env.INDEXER_BASE || "http://hg-reporting-indexer:7603").replace(/\/$/, "");
 const POST_ONCHAIN = String(process.env.POST_ONCHAIN || "false") === "true";

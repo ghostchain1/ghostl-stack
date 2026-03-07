@@ -36,7 +36,7 @@ services:
       service: hg-proof-snapshotter
     environment:
       - NODE_ENV=production
-      - PORT=7604
+      - PORT=7662
       - POST_ONCHAIN=true
     networks:
       - econ_internal

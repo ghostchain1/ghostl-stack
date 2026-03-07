@@ -273,8 +273,17 @@ export const createLiveServices = (deps: {
         lag: parsePromValue(lagResult[0]?.value)
       };
     },
-    async getLogs(_id: string, _tail?: number) {
-      return [];
+    async getLogs(id: string, tail = 100) {
+      if (!deps.loki) return [];
+      const endNs = Date.now() * 1_000_000;
+      const startNs = endNs - 30 * 60 * 1_000 * 1_000_000; // last 30 min
+      const query = `{instance="${id}"}`;
+      try {
+        const result = await deps.loki.queryRange(query, startNs, endNs, tail);
+        return flattenLokiEntries(result).map((e) => e.log);
+      } catch {
+        return [];
+      }
     }
   };
 

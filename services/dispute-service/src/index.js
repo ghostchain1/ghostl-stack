@@ -1,6 +1,6 @@
 import express from "express";
 
-const PORT = Number(process.env.PORT || 7607);
+const PORT = Number(process.env.PORT || 7661);
 const PROM_URL = process.env.PROM_URL || "http://localhost:9090";
 
 const app = express();

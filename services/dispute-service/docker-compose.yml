@@ -14,7 +14,7 @@ services:
     - /bin/bash
     - /entrypoint.sh
     environment:
-    - PORT=7607
+    - PORT=7661
     - PROM_URL=${PROM_URL}
     ports:
     - 7607:7607

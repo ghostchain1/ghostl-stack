@@ -8,5 +8,5 @@ RUN npm config set fetch-retries 5 \
 COPY src ./src
 RUN chown -R node:node /app
 USER node
-EXPOSE 7607
+EXPOSE 7661
 CMD ["node", "src/index.js"]

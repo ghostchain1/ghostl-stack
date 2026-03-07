@@ -1,7 +1,7 @@
 import express from "express";
 import { ghost } from "ghost";
 
-const PORT = Number(process.env.PORT || 7600);
+const PORT = Number(process.env.PORT || 7607);
 const PROM_URL = process.env.PROM_URL || "http://localhost:9090";
 const registryUrl = process.env.RPC_REGISTRY_URL || "http://ghost-registry:8088/v1/endpoints";
 const registryTimeoutMs = Number(process.env.REGISTRY_TIMEOUT_MS || 1500);
