@@ -139,6 +139,13 @@ app.post("/usage/record", (req, res) => {
 });
 
 /**
+ * GET /usage/stats — aggregate usage summary (named route before wildcard).
+ */
+app.get("/usage/stats", (_req, res) => {
+  res.json({ ok: true, stats: { totalRequests, totalErrors, actors: actorStats.size, endpoints: endpointCounts.size, quotaLimit: QUOTA_LIMIT, startedAt, fetchedAt: new Date().toISOString() } });
+});
+
+/**
  * GET /quota/:actorId
  * Check quota status for a specific actor.
  */

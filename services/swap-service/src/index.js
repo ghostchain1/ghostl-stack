@@ -456,6 +456,12 @@ app.post("/execute", async (req, res) => {
   });
 });
 
+/** GET /stats — pair count and configured RPC chains */
+app.get("/stats", (_req, res) => {
+  const configured = Object.entries(RPC_URLS).filter(([, v]) => !!v).map(([k]) => k);
+  res.json({ ok: true, stats: { pairs: registeredPairs.length, configuredChains: configured, fetchedAt: new Date().toISOString() } });
+});
+
 // ─── 404 ─────────────────────────────────────────────────────────────────────
 
 app.use((_req, res) => {

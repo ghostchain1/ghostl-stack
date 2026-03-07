@@ -768,6 +768,23 @@ app.post("/remediate/execute", async (req, res) => {
   }
 });
 
+/** GET /stats — autonomy config and last-run state summary */
+app.get("/stats", (_req, res) => {
+  res.json({
+    ok: true,
+    stats: {
+      autonomyEnabled: AUTONOMY_EXECUTION_ENABLED,
+      killSwitch: AUTONOMY_KILL_SWITCH,
+      prodLock: PROD_LOCK_ACTIVE,
+      requireGovernance: REQUIRE_GOVERNANCE,
+      lastRun: state.lastRun,
+      errors: state.errors.length,
+      rpcTargets: rpcTargets.map((r) => r.name),
+      fetchedAt: new Date().toISOString()
+    }
+  });
+});
+
 async function init() {
   try {
     await loadPolicy();

@@ -189,6 +189,12 @@ app.post("/bridges/incidents", requireAdmin, (req, res) => {
   res.status(201).json({ ok: true, incident: entry });
 });
 
+/** GET /bridges/stats — bridge state and incident summary */
+app.get("/bridges/stats", (_req, res) => {
+  const bySeverity = incidents.reduce((acc, inc) => { acc[inc.severity] = (acc[inc.severity] || 0) + 1; return acc; }, {});
+  res.json({ ok: true, stats: { status: bridgeState.status, feeBps: bridgeState.feeBps, incidents: incidents.length, bySeverity, fetchedAt: new Date().toISOString() } });
+});
+
 app.listen(PORT, () => {
   console.log(`[bridge-service] listening on :${PORT}, PROM=${PROM_URL}`);
 });

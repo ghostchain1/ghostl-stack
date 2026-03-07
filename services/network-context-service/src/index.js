@@ -101,6 +101,13 @@ app.get("/context/summary", async (_req, res) => {
   }
 });
 
+/** GET /context/stats — registry cache and environment info */
+app.get("/context/stats", (_req, res) => {
+  const cached = registryCache.data != null && registryCache.expiresAt > Date.now();
+  const layers = cached ? (registryCache.data.chains?.map((c) => c.layer) ?? []) : [];
+  res.json({ ok: true, stats: { env: ENV, cached, configuredLayers: layers.length, layers, registryUrl, fetchedAt: new Date().toISOString() } });
+});
+
 /** GET /context/:layer — context for a single layer (l2 or l3) */
 app.get("/context/:layer", async (req, res) => {
   const layer = req.params.layer.toUpperCase();

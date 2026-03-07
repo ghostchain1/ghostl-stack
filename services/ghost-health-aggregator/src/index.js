@@ -218,6 +218,17 @@ app.get("/status", async (_req, res) => {
   }
 });
 
+/** GET /stats — aggregate service health counts */
+app.get("/stats", async (_req, res) => {
+  try {
+    const statuses = await getStatus();
+    const counts = { ok: 0, degraded: 0, down: 0, unknown: 0 };
+    for (const { state } of statuses.values()) counts[state] = (counts[state] ?? 0) + 1;
+    const overall = counts.down > 0 ? "down" : counts.degraded > 0 ? "degraded" : "ok";
+    res.json({ ok: true, stats: { overall, total: statuses.size, counts, cacheHit: cacheExpiresAt > Date.now(), fetchedAt: new Date().toISOString() } });
+  } catch (err) { res.status(500).json({ ok: false, error: err?.message ?? String(err) }); }
+});
+
 /** Single-service report — force-refresh for that service. */
 app.get("/status/:service", async (req, res) => {
   const id = req.params.service;
