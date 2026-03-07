@@ -67,6 +67,20 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === "GET" && req.url === "/stats") {
+    return json(res, 200, {
+      ok: true,
+      stats: {
+        decisions: state.decisions,
+        fallbacks: state.fallbacks,
+        policyRejections: state.policyRejections,
+        killSwitch: KILL_SWITCH,
+        manualOnly: MANUAL_ONLY,
+        fetchedAt: new Date().toISOString(),
+      },
+    });
+  }
+
   if (req.method === "GET" && req.url === "/explain") {
     return json(res, 200, {
       ok: true,

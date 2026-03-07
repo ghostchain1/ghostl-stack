@@ -194,6 +194,20 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
+  if (req.method === "GET" && req.url === "/stats") {
+    return json(res, 200, {
+      ok: true,
+      stats: {
+        applies: state.applies,
+        rejects: state.rejects,
+        killSwitch: KILL_SWITCH,
+        manualOnly: MANUAL_ONLY,
+        policyVersion: policy.version,
+        fetchedAt: new Date().toISOString(),
+      },
+    });
+  }
+
   if (req.method === "POST" && req.url === "/apply") {
     try {
       const body = await readBody(req);

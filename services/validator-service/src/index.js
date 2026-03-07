@@ -203,6 +203,53 @@ app.get("/validators", async (_req, res) => {
   }
 });
 
+/** GET /validators/stats — aggregate stake, commission, and count */
+app.get("/validators/stats", async (_req, res) => {
+  try {
+    let map = await loadFromProm();
+    map = await mergeRpcFallback(map);
+    const vals = Object.values(map);
+    const totalStake = vals.reduce((s, v) => s + Number(v.stake || 0), 0);
+    const avgCommission = vals.length
+      ? vals.reduce((s, v) => s + Number(v.commission || 0), 0) / vals.length
+      : 0;
+    res.json({
+      ok: true,
+      stats: {
+        total: vals.length,
+        totalStake: String(totalStake),
+        avgCommissionRate: Math.round(avgCommission * 10000) / 10000,
+        fetchedAt: new Date().toISOString(),
+      },
+    });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+/** GET /validators/:id — single validator by address/id */
+app.get("/validators/:id", async (req, res) => {
+  try {
+    let map = await loadFromProm();
+    map = await mergeRpcFallback(map);
+    const v = map[req.params.id] || Object.values(map).find((v) => v.id.toLowerCase() === req.params.id.toLowerCase());
+    if (!v) return res.status(404).json({ ok: false, error: "not_found" });
+    res.json({
+      ok: true,
+      validator: {
+        id: v.id,
+        address: v.id,
+        status: "active",
+        stake: v.stake ?? "0",
+        commission: v.commission ?? "0",
+        power: Number(v.stake || 0),
+        proposerIndex: v.proposerIndex ?? "?",
+        missedBlocks: v.missedBlocks ?? "?",
+        byzantine: v.byzantine ?? "0",
+      },
+    });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+
 app.listen(PORT, () => {
   console.log(`[validator-service] listening on :${PORT}, PROM=${PROM_URL}`);
 });
