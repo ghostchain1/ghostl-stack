@@ -365,6 +365,7 @@ app.set("trust proxy", 1);
 app.set("etag", false);
 app.set("json spaces", 0);
 app.set("query parser", "simple");
+app.set("strict routing", true);
 app.use((_req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
@@ -404,7 +405,7 @@ app.use((req, res, next) => {
   _rlStore.set(key, count);
   res.setHeader("X-RateLimit-Limit", _RL_MAX);
   res.setHeader("X-RateLimit-Remaining", Math.max(0, _RL_MAX - count));
-  if (count > _RL_MAX) res.setHeader("Retry-After", Math.ceil(_RL_WINDOW / 1000)); return res.status(429).json({ error: "Too many requests" });
+  if (count > _RL_MAX) { res.setHeader("Retry-After", Math.ceil(_RL_WINDOW / 1000)); res.setHeader("RateLimit-Policy", `limit=${_RL_MAX};w=${Math.ceil(_RL_WINDOW / 1000)}`); return res.status(429).json({ error: "Too many requests" }); }
   next();
 });
 app.use(express.json({ limit: "256kb" }));
@@ -515,6 +516,7 @@ const shutdown = async () => {
       logEvent("warn", "mapping_stop_failed", { mappingId: id, error: err?.message || String(err) });
     }
   }
+  server.closeAllConnections();
   process.exit(0);
 };
 
@@ -549,3 +551,4 @@ server.headersTimeout = 66_000;
 server.timeout = 30_000;
 server.maxHeadersCount = 100;
 server.requestTimeout = 30_000;
+console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "startup", version: process.env.npm_package_version ?? "unknown" }));

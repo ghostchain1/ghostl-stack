@@ -49,6 +49,7 @@ app.set("trust proxy", 1);
 app.set("etag", false);
 app.set("json spaces", 0);
 app.set("query parser", "simple");
+app.set("strict routing", true);
 app.use((_req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
@@ -143,6 +144,7 @@ const withRateLimit = (req, res, next) => {
   ipWindow.set(key, row);
   if (row.count > RATE_LIMIT_MAX) {
     res.setHeader("Retry-After", Math.ceil(RATE_LIMIT_WINDOW_MS / 1000));
+    res.setHeader("RateLimit-Policy", `limit=${RATE_LIMIT_MAX};w=${Math.ceil(RATE_LIMIT_WINDOW_MS / 1000)}`);
     res.status(429).json({ ok: false, error: "rate_limit_exceeded" });
     return;
   }
@@ -463,6 +465,7 @@ server.headersTimeout = 66_000;
 server.timeout = 30_000;
 server.maxHeadersCount = 100;
 server.requestTimeout = 30_000;
+console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "startup", version: process.env.npm_package_version ?? "unknown" }));
 process.setMaxListeners(20);
 process.on("warning", (w) => console.warn(JSON.stringify({ ts: new Date().toISOString(), level: "warn", msg: "NodeWarning", name: w.name, message: w.message })));
 process.on("uncaughtException", (err) => {
@@ -476,10 +479,12 @@ process.on("unhandledRejection", (reason) => {
 process.on("SIGTERM", () => {
   _draining = true;
   setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
+  server.closeAllConnections();
   server.close(() => process.exit(0));
 });
 process.on("SIGINT", () => {
   _draining = true;
   setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
+  server.closeAllConnections();
   server.close(() => process.exit(0));
 });
