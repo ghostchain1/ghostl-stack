@@ -46,6 +46,8 @@ app.use((_req, res, next) => {
   res.setHeader("Keep-Alive", "timeout=65");
   res.setHeader("X-Robots-Tag", "noindex,nofollow");
   res.setHeader("Accept-Ranges", "none");
+  res.setHeader("Origin-Agent-Cluster", "?1");
+  res.setHeader("X-Permitted-Cross-Domain-Policies", "none");
   if (process.env.REPORT_TO_URL) {
     res.setHeader("Report-To", JSON.stringify({ group: "default", max_age: 86400, endpoints: [{ url: process.env.REPORT_TO_URL }] }));
     res.setHeader("NEL", JSON.stringify({ report_to: "default", max_age: 86400, include_subdomains: false }));
@@ -346,6 +348,7 @@ process.on("SIGUSR2", () => {
   console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "sigusr2_diag", pid: process.pid, rss: m.rss, heapUsed: m.heapUsed, heapTotal: m.heapTotal, external: m.external, cpuUser: cu.user, cpuSystem: cu.system, reqTotal: _reqTotal }));
 });
 process.on("SIGPIPE", () => { /* ignore: client disconnected mid-response */ });
+process.on("SIGHUP", () => { console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "sighup_reload", pid: process.pid })); });
 process.on("uncaughtException", (err) => {
   console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "uncaughtException", error: err?.message ?? String(err), stack: err?.stack }));
   process.exitCode = 1; process.exit(1);
