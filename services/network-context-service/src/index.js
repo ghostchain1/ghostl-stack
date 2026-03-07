@@ -80,6 +80,14 @@ app.use((req, res, next) => {
   }
   next();
 });
+const _ALLOWED_HOSTS = new Set((process.env.ALLOWED_HOSTS ?? "").split(",").map(s => s.trim()).filter(Boolean));
+app.use((req, res, next) => {
+  if (_ALLOWED_HOSTS.size > 0) {
+    const host = (req.headers.host ?? "").split(":")[0].toLowerCase();
+    if (!_ALLOWED_HOSTS.has(host)) { return res.status(421).json({ ok: false, error: "Misdirected Request" }); }
+  }
+  next();
+});
 let _draining = false;
 app.use((req, res, next) => { if (_draining) { res.set("Connection","close"); res.setHeader("Retry-After", "5"); return res.status(503).json({ error: "Service shutting down" }); } next(); });
 app.use((req, res, next) => {
@@ -87,9 +95,15 @@ app.use((req, res, next) => {
   res.setHeader("X-Request-ID", req.id);
   const _tp = req.headers["traceparent"] ?? `00-${crypto.randomUUID().replace(/-/g,"")}-${req.id.replace(/-/g,"").slice(0,16)}-01`;
   res.setHeader("X-Trace-ID", _tp);
+  const _spanId = crypto.randomUUID().replace(/-/g,"").slice(0,16);
+  res.setHeader("X-Span-ID", _spanId);
+  const _sfs = req.headers["sec-fetch-site"];
+  if (_sfs && _sfs !== "same-origin" && _sfs !== "same-site" && _sfs !== "none" && !["GET","HEAD","OPTIONS"].includes(req.method)) {
+    console.warn(JSON.stringify({ ts: new Date().toISOString(), level: "warn", msg: "sec_fetch_cross_site", method: req.method, url: req.url, sfs: _sfs, reqId: req.id }));
+  }
   const t0 = process.hrtime.bigint();
   res.on("prefinish", () => res.setHeader("X-Response-Time", `${(Number(process.hrtime.bigint()-t0)/1e6).toFixed(2)}ms`));
-  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: +(Number(process.hrtime.bigint()-t0)/1e6).toFixed(2), reqId: req.id, pid: process.pid, mem: process.memoryUsage().rss })));
+  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: +(Number(process.hrtime.bigint()-t0)/1e6).toFixed(2), bytes: Number(req.headers["content-length"] ?? 0), reqId: req.id, pid: process.pid, mem: process.memoryUsage().rss })));
   next();
 });
 
@@ -204,7 +218,7 @@ app.get("/context/:layer", async (req, res) => {
   }
 });
 
-app.use((_req, res) => { res.setHeader("Cache-Control", "no-store"); return res.status(404).json({ ok: false, error: "not_found" }); });
+app.use((_req, res) => { res.setHeader("Cache-Control", "no-store"); res.setHeader("Surrogate-Control", "no-store"); return res.status(404).json({ ok: false, error: "not_found" }); });
 
 app.use((err, _req, res, _next) => {
   if (err.type === "entity.parse.failed") return res.status(400).json({ ok: false, error: "Invalid JSON" });
@@ -215,6 +229,7 @@ app.use((err, _req, res, _next) => {
   const status = err.status ?? err.statusCode ?? 500;
   const _isProd = process.env.NODE_ENV === "production";
   res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Surrogate-Control", "no-store");
   console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "unhandledError", status, error: err?.message ?? String(err), stack: _isProd ? undefined : err?.stack }));
   res.status(status).json({ ok: false, error: err?.message ?? String(err) });
 });
@@ -227,6 +242,7 @@ server.headersTimeout = 66_000;
 server.timeout = 30_000;
 server.maxHeadersCount = 100;
 server.requestTimeout = 30_000;
+server.maxConnections = 1024;
 server.on("connection", (socket) => socket.setNoDelay(true));
 server.on("error", (err) => {
   console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "serverError", error: err?.message ?? String(err), code: err?.code }));
@@ -236,6 +252,10 @@ console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "
 process.setMaxListeners(20);
 process.on("warning", (w) => console.warn(JSON.stringify({ ts: new Date().toISOString(), level: "warn", msg: "NodeWarning", name: w.name, message: w.message })));
 process.on("exit", (code) => { console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "exit", code })); });
+process.on("SIGUSR2", () => {
+  const m = process.memoryUsage();
+  console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "sigusr2_diag", pid: process.pid, rss: m.rss, heapUsed: m.heapUsed, heapTotal: m.heapTotal, external: m.external }));
+});
 process.on("SIGPIPE", () => { /* ignore: client disconnected mid-response */ });
 process.on("uncaughtException", (err) => {
   console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "uncaughtException", error: err?.message ?? String(err), stack: err?.stack }));
