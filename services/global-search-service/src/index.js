@@ -418,6 +418,7 @@ server.timeout = 30_000;
 server.maxHeadersCount = 100;
 server.requestTimeout = 30_000;
 server.maxConnections = 1024;
+server.maxRequestsPerSocket = 100;
 server.on("connection", (socket) => socket.setNoDelay(true));
 server.on("error", (err) => {
   console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "serverError", error: err?.message ?? String(err), code: err?.code }));
@@ -444,7 +445,7 @@ process.on("unhandledRejection", (reason) => {
 process.on("SIGTERM", () => {
   _draining = true;
   console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "drain_start", pid: process.pid }));
-  setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
+  setTimeout(() => { console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "shutdown_timeout", pid: process.pid })); process.exit(1); }, 10_000).unref();
   server.closeAllConnections();
   server.close(() => { console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "shutdown_complete", pid: process.pid })); process.exit(0); });
 });

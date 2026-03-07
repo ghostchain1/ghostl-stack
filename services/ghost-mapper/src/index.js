@@ -584,7 +584,7 @@ app.delete("/mappings/:id", async (req, res) => {
 const shutdown = async () => {
   _draining = true;
   console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "drain_start", pid: process.pid }));
-  setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
+  setTimeout(() => { console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "shutdown_timeout", pid: process.pid })); process.exit(1); }, 10_000).unref();
   const ids = Array.from(activeMappings.keys());
   for (const id of ids) {
     try {
@@ -649,6 +649,7 @@ server.timeout = 30_000;
 server.maxHeadersCount = 100;
 server.requestTimeout = 30_000;
 server.maxConnections = 1024;
+server.maxRequestsPerSocket = 100;
 server.on("connection", (socket) => socket.setNoDelay(true));
 server.on("error", (err) => {
   console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "serverError", error: err?.message ?? String(err), code: err?.code }));
