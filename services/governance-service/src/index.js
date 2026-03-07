@@ -56,6 +56,12 @@ const SELECTORS = {
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
+app.use((req, res, next) => {
+  const t0 = Date.now();
+  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: Date.now() - t0 })));
+  next();
+});
+
 
 const proposals = [];
 const delegations = [];

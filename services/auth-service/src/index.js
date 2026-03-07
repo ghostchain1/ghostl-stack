@@ -13,6 +13,12 @@ const SESSION_TTL_MS = Number(process.env.SESSION_TTL_MS || 24 * 60 * 60 * 1000)
 
 const app = express();
 app.use(express.json({ limit: "256kb" }));
+app.use((req, res, next) => {
+  const t0 = Date.now();
+  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: Date.now() - t0 })));
+  next();
+});
+
 
 // ---------------------------------------------------------------------------
 // In-memory stores (per-process; sufficient for a single-replica service)

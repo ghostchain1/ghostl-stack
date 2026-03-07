@@ -16,6 +16,12 @@ const REGISTRY_CONTRACT = process.env.AGENT_REGISTRY_CONTRACT || "";
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
+app.use((req, res, next) => {
+  const t0 = Date.now();
+  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: Date.now() - t0 })));
+  next();
+});
+
 
 const stableStringify = (value) => {
   if (value === null || value === undefined) return "null";

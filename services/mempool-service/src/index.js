@@ -5,6 +5,12 @@ const PROM_URL = process.env.PROM_URL || "http://localhost:9090";
 
 const app = express();
 app.use(express.json({ limit: "256kb" }));
+app.use((req, res, next) => {
+  const t0 = Date.now();
+  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: Date.now() - t0 })));
+  next();
+});
+
 
 const promQuery = async (query) => {
   const ctrl = new AbortController();

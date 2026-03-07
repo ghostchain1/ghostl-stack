@@ -26,6 +26,12 @@ const ROTATE_INTERVAL_MS = Number(process.env.AI_VAULT_ROTATE_INTERVAL_MS || 900
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
+app.use((req, res, next) => {
+  const t0 = Date.now();
+  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: Date.now() - t0 })));
+  next();
+});
+
 
 let policy = {
   allow: [],

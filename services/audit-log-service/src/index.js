@@ -8,6 +8,12 @@ const MAX_LINES = 5000;
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
+app.use((req, res, next) => {
+  const t0 = Date.now();
+  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: Date.now() - t0 })));
+  next();
+});
+
 
 app.get("/health", (_req, res) => res.json({ ok: true, service: "audit-log-service" }));
 

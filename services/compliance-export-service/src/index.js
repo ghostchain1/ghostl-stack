@@ -6,6 +6,12 @@ const AUDIT_LOG_URL = process.env.AUDIT_LOG_URL || "http://localhost:7641";
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
+app.use((req, res, next) => {
+  const t0 = Date.now();
+  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: Date.now() - t0 })));
+  next();
+});
+
 
 // Named export jobs: id → { id, name, status, format, filters, createdAt, completedAt, rowCount }
 const exportJobs = new Map();

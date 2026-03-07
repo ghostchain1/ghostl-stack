@@ -20,6 +20,12 @@ const CHAIN_TAG = process.env.CHAIN_TAG || "ghostchain";
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
+app.use((req, res, next) => {
+  const t0 = Date.now();
+  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: Date.now() - t0 })));
+  next();
+});
+
 
 // ─── In-memory store (bootstrapped from env / future: persisted to disk) ─────
 

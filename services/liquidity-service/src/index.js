@@ -14,6 +14,12 @@ const L3_TOKEN = process.env.L3_TOKEN_ADDRESS || "";
 
 const app = express();
 app.use(express.json({ limit: "256kb" }));
+app.use((req, res, next) => {
+  const t0 = Date.now();
+  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: Date.now() - t0 })));
+  next();
+});
+
 
 const promQuery = async (query) => {
   const controller = new AbortController();

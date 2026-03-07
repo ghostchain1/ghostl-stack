@@ -28,6 +28,12 @@ const db = openLedger({ dbPath: DB_PATH, migrationPath: path.join(__dirname, "..
 
 const app = express();
 app.use(express.json({ limit: "512kb" }));
+app.use((req, res, next) => {
+  const t0 = Date.now();
+  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: Date.now() - t0 })));
+  next();
+});
+
 
 const log = (level, message, extra = {}) => {
   console.log(

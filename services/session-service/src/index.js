@@ -6,6 +6,12 @@ const TTL_MS  = Number(process.env.SESSION_TTL_MS || 8 * 60 * 60 * 1000); // 8 h
 
 const app = express();
 app.use(express.json({ limit: "256kb" }));
+app.use((req, res, next) => {
+  const t0 = Date.now();
+  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: Date.now() - t0 })));
+  next();
+});
+
 
 // sessions: Map<id, session>
 const sessions = new Map();
