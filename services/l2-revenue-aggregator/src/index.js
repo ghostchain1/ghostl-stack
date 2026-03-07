@@ -45,6 +45,7 @@ const RATE_LIMIT_MAX = Math.max(10, Number(process.env.RATE_LIMIT_MAX || "240"))
 const db = openLedger({ dbPath: LEDGER_PATH, migrationPath: path.join(__dirname, "..", "migrations", "0001_init.sql") });
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "1mb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

@@ -10,6 +10,7 @@ const registryCache     = { data: null, expiresAt: 0 };
 const ENV               = process.env.NET_ENV || "dev";
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "256kb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

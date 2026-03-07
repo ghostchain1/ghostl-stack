@@ -27,6 +27,7 @@ const DISTRIBUTOR_ADMIN_TOKEN = String(process.env.DISTRIBUTOR_ADMIN_TOKEN || ""
 const db = openLedger({ dbPath: DB_PATH, migrationPath: path.join(__dirname, "..", "migrations", "0001_init.sql") });
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "512kb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

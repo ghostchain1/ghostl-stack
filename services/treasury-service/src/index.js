@@ -9,6 +9,7 @@ const APPROVAL_FILE = process.env.TREASURY_STATE_FILE || path.join(process.cwd()
 const OBSERVABILITY_FILE = process.env.TREASURY_OBSERVABILITY_FILE || path.join(process.cwd(), "data", "treasury-observability.json");
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "1mb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

@@ -5,6 +5,7 @@ const PORT    = Number(process.env.PORT || 7643);
 const TTL_MS  = Number(process.env.SESSION_TTL_MS || 8 * 60 * 60 * 1000); // 8 hours
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "256kb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

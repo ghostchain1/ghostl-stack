@@ -7,6 +7,7 @@ const PORT = Number(process.env.PORT || 7630);
 const DATA_PATH = process.env.VERIFICATION_STORE || path.join(process.cwd(), "data", "verifications.json");
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "256kb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

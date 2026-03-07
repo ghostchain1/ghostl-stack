@@ -163,6 +163,7 @@ async function getStatus() {
 // ── Express app ───────────────────────────────────────────────────────────────
 
 const app = express();
+app.set("trust proxy", 1);
 app.disable("x-powered-by");
 app.use((req, _res, next) => {
   console.log(JSON.stringify({ ts: new Date().toISOString(), method: req.method, url: req.url }));

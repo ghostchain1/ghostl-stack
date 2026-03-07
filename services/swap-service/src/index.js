@@ -238,6 +238,7 @@ function priceImpactBps(amountIn, amountOut, reserveIn, reserveOut) {
 // ─── Express app ─────────────────────────────────────────────────────────────
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "256kb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

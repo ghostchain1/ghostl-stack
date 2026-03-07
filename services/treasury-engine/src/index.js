@@ -84,6 +84,7 @@ fs.mkdirSync(SOLVENCY_ARTIFACT_DIR, { recursive: true });
 const db = openLedger({ dbPath: DB_PATH, migrationPath: path.join(__dirname, "..", "migrations", "0001_init.sql") });
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "2mb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

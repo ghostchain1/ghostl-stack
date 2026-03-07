@@ -6,6 +6,7 @@ const PROM_URL  = process.env.PROMETHEUS_URL || "http://localhost:9090";
 const THRESHOLD = Number(process.env.ANOMALY_THRESHOLD || 75);
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "256kb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

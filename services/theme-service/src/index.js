@@ -20,6 +20,7 @@ const PORT = Number(process.env.THEME_SERVICE_PORT || process.env.PORT || 7634);
 const THEME = (process.env.UI_THEME || "dark").toLowerCase();
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "256kb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

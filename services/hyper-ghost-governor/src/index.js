@@ -31,6 +31,7 @@ const db = openDb({ dbPath: DB_PATH, migrationPath: path.join(__dirname, "..", "
 fs.mkdirSync(ARTIFACTS_ROOT, { recursive: true });
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "2mb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

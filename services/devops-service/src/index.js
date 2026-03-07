@@ -19,6 +19,7 @@ const NODE_REGISTRY_URL = process.env.NODE_REGISTRY_URL || "";
 const CHAIN_TAG = process.env.CHAIN_TAG || "ghostchain";
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "1mb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

@@ -12,6 +12,7 @@ const WATCHDOG_TARGETS = (process.env.WATCHDOG_TARGETS || "").split(",").map((t)
 const WATCHDOG_INTERVAL_MS = Number(process.env.WATCHDOG_INTERVAL_MS || 15000);
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "1mb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

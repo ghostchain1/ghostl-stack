@@ -64,6 +64,7 @@ const PLAN_TTL_MS = Math.max(5 * 60_000, Number(process.env.PLAN_TTL_MS || 30 * 
 const DRY_RUN_MAX_AGE_MS = Math.max(60_000, Number(process.env.DRY_RUN_MAX_AGE_MS || 10 * 60_000));
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "1mb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

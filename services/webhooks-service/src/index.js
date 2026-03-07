@@ -25,6 +25,7 @@ const MAX_RETRIES = Number(process.env.MAX_RETRIES || 3);
 const RETRY_DELAY_MS = Number(process.env.RETRY_DELAY_MS || 1000);
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "1mb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

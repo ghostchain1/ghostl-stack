@@ -7,6 +7,7 @@ const LOG_PATH = process.env.AUDIT_LOG_PATH || path.join(process.cwd(), "data", 
 const MAX_LINES = 5000;
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "1mb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

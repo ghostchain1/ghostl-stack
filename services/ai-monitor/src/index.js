@@ -77,6 +77,7 @@ const PARENT_RPC_INCIDENT = `${LAYER_TAG}_parent_rpc_unreachable`;
 const PARENT_HEAD_STALE = `${LAYER_TAG}_parent_head_stale`;
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "1mb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

@@ -5,6 +5,7 @@ const PORT          = Number(process.env.PORT || 7621);
 const AUDIT_LOG_URL = process.env.AUDIT_LOG_URL || "http://localhost:7641";
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "1mb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

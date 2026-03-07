@@ -7,6 +7,7 @@ const PORT = Number(process.env.PORT || 7624);
 const SNAPSHOT_DIR = process.env.SNAPSHOT_DIR || process.env.SNAPSHOT_EVIDENCE_DIR || "/tmp/ghost-proofs";
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "256kb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

@@ -13,6 +13,7 @@ const L2_TOKEN = process.env.L2_TOKEN_ADDRESS || "";
 const L3_TOKEN = process.env.L3_TOKEN_ADDRESS || "";
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "256kb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();

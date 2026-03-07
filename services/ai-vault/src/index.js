@@ -25,6 +25,7 @@ const BLOCK_MS = Number(process.env.AI_VAULT_BLOCK_MS || 300_000);
 const ROTATE_INTERVAL_MS = Number(process.env.AI_VAULT_ROTATE_INTERVAL_MS || 900_000);
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "1mb" }));
 app.use((req, res, next) => {
   const t0 = Date.now();
