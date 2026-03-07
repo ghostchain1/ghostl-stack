@@ -3,6 +3,64 @@ import fs from "node:fs";
 import path from "node:path";
 import express from "express";
 import { Counter, Registry, collectDefaultMetrics } from "prom-client";
+import { ethers } from "ethers";
+
+/** Minimal ABI for ZkBatchVerifier.verifyBatch */
+const ZK_BATCH_VERIFIER_ABI = [
+  "function verifyBatch(bytes calldata proof, bytes32 batchRoot, uint256 batchId) external returns (bool)",
+] as const;
+
+type OnchainPostResult = {
+  succeeded: boolean;
+  txHash?: string;
+  reason?: string;
+};
+
+async function postSnapshotOnchain(params: {
+  epoch: number;
+  merkleRoot: string;  // hex string (sha256 digest)
+  proof: string;       // hex HMAC signature
+}): Promise<OnchainPostResult> {
+  const rpcUrl    = process.env.SNAPSHOT_RPC_URL?.trim();
+  const signerKey = process.env.SNAPSHOT_SIGNER_KEY?.trim();
+  const contractAddr = process.env.ZK_BATCH_VERIFIER_ADDRESS?.trim();
+
+  if (!rpcUrl || !signerKey || !contractAddr) {
+    return {
+      succeeded: false,
+      reason: "missing_env: SNAPSHOT_RPC_URL, SNAPSHOT_SIGNER_KEY, and ZK_BATCH_VERIFIER_ADDRESS are required for on-chain posting",
+    };
+  }
+
+  try {
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
+    const wallet   = new ethers.Wallet(signerKey, provider);
+    const contract = new ethers.Contract(contractAddr, ZK_BATCH_VERIFIER_ABI, wallet);
+
+    // ZkBatchVerifier.verifyBatch(bytes proof, bytes32 batchRoot, uint256 batchId)
+    // Map: epoch → batchId, merkleRoot → batchRoot, HMAC → proof bytes
+    const batchRoot = ethers.zeroPadValue(`0x${params.merkleRoot}`, 32);
+    const proofBytes = ethers.toUtf8Bytes(params.proof);
+
+    const tx = await (contract["verifyBatch"] as (
+      proof: Uint8Array,
+      batchRoot: string,
+      batchId: bigint
+    ) => Promise<ethers.ContractTransactionResponse>)(proofBytes, batchRoot, BigInt(params.epoch));
+
+    const receipt = await tx.wait(1);
+    return {
+      succeeded: receipt !== null && receipt.status === 1,
+      txHash: tx.hash,
+      reason: receipt?.status !== 1 ? "tx_reverted" : undefined,
+    };
+  } catch (err: unknown) {
+    return {
+      succeeded: false,
+      reason: err instanceof Error ? err.message : "unknown_onchain_error",
+    };
+  }
+}
 
 type SnapshotReceipt = {
   snapshotId: string;
@@ -16,6 +74,7 @@ type SnapshotReceipt = {
     enabled: boolean;
     attempted: boolean;
     succeeded: boolean;
+    txHash?: string;
     reason?: string;
   };
   signature: string;
@@ -129,6 +188,14 @@ app.post("/v1/proofs/snapshot", async (req, res) => {
     ];
 
     const root = merkleRoot(leaves);
+    const hmacSig = signPayload(`${root}:${epoch}:${proposalRef}`);
+
+    // ── On-chain post ──────────────────────────────────────────────────────
+    let onchainResult: OnchainPostResult = { succeeded: false, reason: "disabled" };
+    if (POST_ONCHAIN) {
+      onchainResult = await postSnapshotOnchain({ epoch, merkleRoot: root, proof: hmacSig });
+    }
+
     const snapshotBase = {
       snapshotId: crypto.randomUUID(),
       epoch,
@@ -140,8 +207,9 @@ app.post("/v1/proofs/snapshot", async (req, res) => {
       onchainPost: {
         enabled: POST_ONCHAIN,
         attempted: POST_ONCHAIN,
-        succeeded: false,
-        reason: POST_ONCHAIN ? "onchain_post_not_implemented_in_bootstrap" : "disabled"
+        succeeded: onchainResult.succeeded,
+        txHash: onchainResult.txHash,
+        reason: onchainResult.reason,
       }
     };
 

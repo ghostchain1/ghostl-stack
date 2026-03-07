@@ -17,6 +17,7 @@
 import type { FastifyInstance } from "fastify";
 import { z }                    from "zod";
 import { HyperGhostClient }     from "../agents/hyperGhostClient.js";
+import { buildHopExecutorFromEnv } from "../routing/HopExecutor.js";
 
 // ── Lazy HGA client (fire-and-forget escalation path) ─────────────────────────
 let _hgaClient: HyperGhostClient | null = null;
@@ -250,6 +251,27 @@ const handlers: Record<string, TaskHandler> = {
             `period recommended. GOVERNOR approval required.`
           : `Standard proposal ${proposalId} on ${layer} from ${proposer}. ` +
             `No special approval gate required; monitor voting progress.`,
+    };
+  },
+
+  /** Return the current HopExecutor messenger wiring status (for diagnostics). */
+  inspect_hop_config(_payload, _agent) {
+    const executor = buildHopExecutorFromEnv();
+    const cfg = (executor as unknown as { cfg: Record<string, unknown> }).cfg;
+    return {
+      result: {
+        L3ToL2Messenger: cfg.L3ToL2Messenger
+          ? { address: (cfg.L3ToL2Messenger as { address: string }).address, wired: true }
+          : { wired: false },
+        L2ToL1Messenger: cfg.L2ToL1Messenger
+          ? { address: (cfg.L2ToL1Messenger as { address: string }).address, wired: true }
+          : { wired: false },
+        defaultMessengerGasLimit: String(cfg.defaultMessengerGasLimit),
+      },
+      risk: "low" as const,
+      recommendation: cfg.L3ToL2Messenger && cfg.L2ToL1Messenger
+        ? "Cross-layer messengers are fully wired."
+        : "Set L3_TO_L2_MESSENGER_ADDRESS and L2_TO_L1_MESSENGER_ADDRESS to enable real OP Stack messenger hops.",
     };
   },
 };
