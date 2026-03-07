@@ -44,6 +44,19 @@ app.get("/snapshots", (req, res) => {
   res.json({ ok: true, total: all.length, snapshots: all.slice(offset, offset + limit) });
 });
 
+/** GET /snapshots/stats — count by source, latest epoch */
+app.get("/snapshots/stats", (req, res) => {
+  const all = [...loadFromDisk(), ...inMemory.values()];
+  const bySource = {};
+  let latestEpoch = null;
+  for (const s of all) {
+    const src = s.source || "unknown";
+    bySource[src] = (bySource[src] || 0) + 1;
+    if (s.epoch != null && (latestEpoch === null || s.epoch > latestEpoch)) latestEpoch = s.epoch;
+  }
+  res.json({ ok: true, total: all.length, bySource, latestEpoch });
+});
+
 /** GET /snapshots/:id — lookup by snapshotId or epoch */
 app.get("/snapshots/:id", (req, res) => {
   const id = req.params.id;
@@ -77,19 +90,6 @@ app.delete("/snapshots/:id", (req, res) => {
   if (!inMemory.has(req.params.id)) return res.status(404).json({ ok: false, error: "not_found_or_immutable" });
   inMemory.delete(req.params.id);
   res.json({ ok: true });
-});
-
-/** GET /snapshots/stats — count by source, latest epoch */
-app.get("/snapshots/stats", (req, res) => {
-  const all = [...loadFromDisk(), ...inMemory.values()];
-  const bySource = {};
-  let latestEpoch = null;
-  for (const s of all) {
-    const src = s.source || "unknown";
-    bySource[src] = (bySource[src] || 0) + 1;
-    if (s.epoch != null && (latestEpoch === null || s.epoch > latestEpoch)) latestEpoch = s.epoch;
-  }
-  res.json({ ok: true, total: all.length, bySource, latestEpoch });
 });
 
 app.listen(PORT, () => {

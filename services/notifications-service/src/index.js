@@ -54,6 +54,20 @@ app.get("/notifications", (req, res) => {
   res.json({ ok: true, total: store.size, notifications: items.slice(offset, offset + limit) });
 });
 
+/** GET /notifications/stats — counts by status and severity */
+app.get("/notifications/stats", (_req, res) => {
+  const all = [...store.values()];
+  const byStatus = {};
+  const bySeverity = {};
+  for (const n of all) {
+    byStatus[n.status] = (byStatus[n.status] || 0) + 1;
+    const sev = n.severity || "info";
+    bySeverity[sev] = (bySeverity[sev] || 0) + 1;
+  }
+  res.json({ ok: true, stats: { total: all.length, channels: channels.size, byStatus, bySeverity } });
+});
+
+
 /** Get a single notification */
 app.get("/notifications/:id", (req, res) => {
   const n = store.get(req.params.id);

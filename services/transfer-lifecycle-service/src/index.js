@@ -50,6 +50,15 @@ app.get("/transfers", async (req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
 });
 
+/** GET /transfers/stats — in-memory counts by status */
+app.get("/transfers/stats", (_req, res) => {
+  const all = [...transfers.values()];
+  const byStatus = {};
+  for (const t of all) byStatus[t.status] = (byStatus[t.status] || 0) + 1;
+  res.json({ ok: true, stats: { total: all.length, byStatus, fetchedAt: new Date().toISOString() } });
+});
+
+
 app.get("/transfers/:id", (req, res) => {
   const t = transfers.get(req.params.id);
   if (!t) return res.status(404).json({ ok: false, error: "not_found" });

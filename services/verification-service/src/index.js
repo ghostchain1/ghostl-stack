@@ -31,6 +31,15 @@ app.get("/verifications", (req, res) => {
   res.json({ ok: true, total: load().length, verifications: items.slice(offset, offset + limit) });
 });
 
+/** GET /verifications/stats — counts by status */
+app.get("/verifications/stats", (_req, res) => {
+  const items = load();
+  const byStatus = {};
+  for (const v of items) byStatus[v.status] = (byStatus[v.status] || 0) + 1;
+  res.json({ ok: true, stats: { total: items.length, byStatus, fetchedAt: new Date().toISOString() } });
+});
+
+
 app.get("/verifications/:id", (req, res) => {
   const items = load();
   const v = items.find((x) => x.id === req.params.id);

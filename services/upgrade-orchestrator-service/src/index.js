@@ -40,6 +40,15 @@ app.get("/upgrades", (req, res) => {
   res.json({ ok: true, total: upgrades.size, upgrades: items.slice(offset, offset + limit) });
 });
 
+/** GET /upgrades/stats — counts by status */
+app.get("/upgrades/stats", (_req, res) => {
+  const all = [...upgrades.values()];
+  const byStatus = {};
+  for (const u of all) byStatus[u.status] = (byStatus[u.status] || 0) + 1;
+  res.json({ ok: true, stats: { total: all.length, byStatus, fetchedAt: new Date().toISOString() } });
+});
+
+
 app.get("/upgrades/:id", (req, res) => {
   const u = upgrades.get(req.params.id);
   if (!u) return res.status(404).json({ ok: false, error: "not_found" });

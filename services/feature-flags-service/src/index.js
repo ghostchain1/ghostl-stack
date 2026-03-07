@@ -50,6 +50,14 @@ app.get("/flags", (req, res) => {
   res.json({ ok: true, total: items.length, flags: items });
 });
 
+/** GET /flags/stats — counts of enabled vs disabled flags */
+app.get("/flags/stats", (_req, res) => {
+  const all = [...flags.values()];
+  const enabled = all.filter((f) => f.enabled).length;
+  res.json({ ok: true, stats: { total: all.length, enabled, disabled: all.length - enabled } });
+});
+
+
 /** GET /flags/:name */
 app.get("/flags/:name", (req, res) => {
   const f = flags.get(req.params.name);

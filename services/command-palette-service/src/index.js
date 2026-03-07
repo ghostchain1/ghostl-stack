@@ -41,6 +41,18 @@ app.get("/commands", (req, res) => {
   res.json({ ok: true, total: cmds.length, commands: cmds });
 });
 
+/** GET /commands/stats — counts by category and builtin vs custom */
+app.get("/commands/stats", (_req, res) => {
+  const all = allCommands();
+  const byCategory = {};
+  for (const c of all) {
+    const cat = c.category || "Uncategorized";
+    byCategory[cat] = (byCategory[cat] || 0) + 1;
+  }
+  res.json({ ok: true, stats: { total: all.length, builtin: BUILTIN.length, custom: custom.size, byCategory } });
+});
+
+
 /** GET /commands/:id */
 app.get("/commands/:id", (req, res) => {
   const cmd = allCommands().find((c) => c.id === req.params.id);

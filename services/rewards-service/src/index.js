@@ -45,6 +45,17 @@ app.get("/rewards", async (req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
 });
 
+/** Aggregate stats: total distributed, count, per-validator summary */
+app.get("/rewards/stats", (req, res) => {
+  const items = [...rewardLog.values()];
+  const total = items.reduce((acc, r) => acc + Number(r.amount), 0);
+  const byValidator = {};
+  for (const r of items) {
+    byValidator[r.validator] = (byValidator[r.validator] || 0) + Number(r.amount);
+  }
+  res.json({ ok: true, count: items.length, totalDistributed: total, byValidator });
+});
+
 app.get("/rewards/:id", (req, res) => {
   const r = rewardLog.get(req.params.id);
   if (!r) return res.status(404).json({ ok: false, error: "not_found" });
@@ -72,17 +83,6 @@ app.delete("/rewards/:id", (req, res) => {
   if (!rewardLog.has(req.params.id)) return res.status(404).json({ ok: false, error: "not_found" });
   rewardLog.delete(req.params.id);
   res.json({ ok: true });
-});
-
-/** Aggregate stats: total distributed, count, per-validator summary */
-app.get("/rewards/stats", (req, res) => {
-  const items = [...rewardLog.values()];
-  const total = items.reduce((acc, r) => acc + Number(r.amount), 0);
-  const byValidator = {};
-  for (const r of items) {
-    byValidator[r.validator] = (byValidator[r.validator] || 0) + Number(r.amount);
-  }
-  res.json({ ok: true, count: items.length, totalDistributed: total, byValidator });
 });
 
 app.listen(PORT, () => {

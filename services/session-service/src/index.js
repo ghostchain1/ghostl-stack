@@ -33,6 +33,16 @@ app.get("/sessions", (_req, res) => {
   res.json({ ok: true, total: active.length, sessions: active });
 });
 
+/** GET /sessions/stats — total, active, expired counts */
+app.get("/sessions/stats", (_req, res) => {
+  const all = [...sessions.values()];
+  const active = all.filter((s) => !isExpired(s));
+  const byUser = {};
+  for (const s of active) byUser[s.userId] = (byUser[s.userId] || 0) + 1;
+  res.json({ ok: true, stats: { total: all.length, active: active.length, expired: all.length - active.length, uniqueUsers: Object.keys(byUser).length } });
+});
+
+
 /** Get a specific session */
 app.get("/sessions/:id", (req, res) => {
   const s = sessions.get(req.params.id);
