@@ -56,7 +56,7 @@ app.use(
     credentials: true
   })
 );
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 const promQuery = async (query) => {
   const controller = new AbortController();

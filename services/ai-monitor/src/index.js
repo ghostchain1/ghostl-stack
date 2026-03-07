@@ -77,7 +77,7 @@ const PARENT_RPC_INCIDENT = `${LAYER_TAG}_parent_rpc_unreachable`;
 const PARENT_HEAD_STALE = `${LAYER_TAG}_parent_head_stale`;
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 
 const logEvent = (level, message, extra = {}) => {
   const payload = { ts: new Date().toISOString(), level, message, layer: TARGET_LAYER, ...extra };

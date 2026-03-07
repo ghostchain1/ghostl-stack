@@ -20,7 +20,7 @@ const PORT = Number(process.env.THEME_SERVICE_PORT || process.env.PORT || 7634);
 const THEME = (process.env.UI_THEME || "dark").toLowerCase();
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 // ── Brand canonical constants ─────────────────────────────────────────────────
 const BRAND = Object.freeze({

@@ -7,7 +7,7 @@ const PORT = Number(process.env.PORT || 7630);
 const DATA_PATH = process.env.VERIFICATION_STORE || path.join(process.cwd(), "data", "verifications.json");
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 app.get("/health", (_req, res) => res.json({ ok: true, service: "verification-service" }));
 

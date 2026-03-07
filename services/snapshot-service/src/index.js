@@ -7,7 +7,7 @@ const PORT = Number(process.env.PORT || 7624);
 const SNAPSHOT_DIR = process.env.SNAPSHOT_DIR || process.env.SNAPSHOT_EVIDENCE_DIR || "/tmp/ghost-proofs";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 /** Read all JSON receipt files written by hg-proof-snapshotter */
 function loadFromDisk() {

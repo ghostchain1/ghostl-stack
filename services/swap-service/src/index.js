@@ -238,7 +238,7 @@ function priceImpactBps(amountIn, amountOut, reserveIn, reserveOut) {
 // ─── Express app ─────────────────────────────────────────────────────────────
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /health

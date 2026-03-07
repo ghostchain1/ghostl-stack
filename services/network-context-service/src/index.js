@@ -10,7 +10,7 @@ const registryCache     = { data: null, expiresAt: 0 };
 const ENV               = process.env.NET_ENV || "dev";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 const fetchRegistry = async () => {
   const now = Date.now();

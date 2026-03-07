@@ -4,7 +4,7 @@ const PORT     = Number(process.env.PORT || 7603);
 const PROM_URL = process.env.PROMETHEUS_URL || "http://localhost:9090";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 async function promQuery(q) {
   const controller = new AbortController();

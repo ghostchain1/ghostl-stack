@@ -7,7 +7,7 @@ const DATA_DIR  = process.env.DATA_DIR || path.join(process.cwd(), "data");
 const TAGS_FILE = path.join(DATA_DIR, "tags.json");
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 // tags: Map<address, Set<label>>
 const tags = new Map();

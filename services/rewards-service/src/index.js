@@ -5,7 +5,7 @@ const PORT = Number(process.env.PORT || 7602);
 const PROM_URL = process.env.PROM_URL || "http://localhost:9090";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 // In-memory reward event log
 const rewardLog = new Map(); // id → reward event

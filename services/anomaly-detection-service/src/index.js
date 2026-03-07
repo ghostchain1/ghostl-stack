@@ -6,7 +6,7 @@ const PROM_URL  = process.env.PROMETHEUS_URL || "http://localhost:9090";
 const THRESHOLD = Number(process.env.ANOMALY_THRESHOLD || 75);
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 // In-memory anomaly log
 const anomalyLog = new Map(); // id → anomaly

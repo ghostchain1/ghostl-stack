@@ -13,7 +13,7 @@ const L2_TOKEN = process.env.L2_TOKEN_ADDRESS || "";
 const L3_TOKEN = process.env.L3_TOKEN_ADDRESS || "";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 const promQuery = async (query) => {
   const controller = new AbortController();

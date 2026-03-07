@@ -19,7 +19,7 @@ const NODE_REGISTRY_URL = process.env.NODE_REGISTRY_URL || "";
 const CHAIN_TAG = process.env.CHAIN_TAG || "ghostchain";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 
 // ─── In-memory store (bootstrapped from env / future: persisted to disk) ─────
 

@@ -64,7 +64,7 @@ const PLAN_TTL_MS = Math.max(5 * 60_000, Number(process.env.PLAN_TTL_MS || 30 * 
 const DRY_RUN_MAX_AGE_MS = Math.max(60_000, Number(process.env.DRY_RUN_MAX_AGE_MS || 10 * 60_000));
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 
 const state = {
   lastRun: null,

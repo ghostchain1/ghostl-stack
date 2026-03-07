@@ -7,7 +7,7 @@ const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), "data");
 const DB_FILE  = path.join(DATA_DIR, "rbac.json");
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 // Built-in roles (immutable schema); user assignments are mutable
 const ROLE_DEFS = {

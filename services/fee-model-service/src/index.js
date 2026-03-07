@@ -4,7 +4,7 @@ const PORT     = Number(process.env.PORT || 7615);
 const PROM_URL = process.env.PROM_URL || "http://localhost:9090";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 // Manual mode override (e.g. "eip1559", "fixed", "auto")
 let modeOverride = null;

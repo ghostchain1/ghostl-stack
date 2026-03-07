@@ -5,7 +5,7 @@ const PORT    = Number(process.env.PORT || 7643);
 const TTL_MS  = Number(process.env.SESSION_TTL_MS || 8 * 60 * 60 * 1000); // 8 hours
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 // sessions: Map<id, session>
 const sessions = new Map();

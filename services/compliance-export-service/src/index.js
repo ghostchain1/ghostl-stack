@@ -5,7 +5,7 @@ const PORT          = Number(process.env.PORT || 7621);
 const AUDIT_LOG_URL = process.env.AUDIT_LOG_URL || "http://localhost:7641";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 
 // Named export jobs: id → { id, name, status, format, filters, createdAt, completedAt, rowCount }
 const exportJobs = new Map();

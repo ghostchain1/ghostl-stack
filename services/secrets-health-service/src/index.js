@@ -5,7 +5,7 @@ const PROM_URL = process.env.PROMETHEUS_URL || "http://localhost:9090";
 const VAULT_URL = process.env.VAULT_ADDR || "http://localhost:8200";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 async function promQuery(q) {
   const controller = new AbortController();

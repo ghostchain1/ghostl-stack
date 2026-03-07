@@ -25,7 +25,7 @@ const MAX_RETRIES = Number(process.env.MAX_RETRIES || 3);
 const RETRY_DELAY_MS = Number(process.env.RETRY_DELAY_MS || 1000);
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 

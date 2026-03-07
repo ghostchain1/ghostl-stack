@@ -5,7 +5,7 @@ const PORT     = Number(process.env.PORT || 7619);
 const PROM_URL = process.env.PROM_URL || "http://localhost:9090";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 // In-memory key rotation event log
 const rotationLog = new Map(); // id → rotation event

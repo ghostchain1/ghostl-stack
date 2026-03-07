@@ -19,7 +19,7 @@ const PROM_URL = process.env.PROM_URL || "http://localhost:9090";
 const QUOTA_LIMIT = Number(process.env.QUOTA_LIMIT || 10000);
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 // ─── In-process counters (resets on restart; production would use Redis/DB) ──
 

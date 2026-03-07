@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 const PORT = Number(process.env.PORT || 7638);
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 // In-memory notification store
 const store = new Map(); // id → notification

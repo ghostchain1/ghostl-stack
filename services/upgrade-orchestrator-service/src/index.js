@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 const PORT = Number(process.env.PORT || 7660);
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 
 // In-memory upgrade plan store
 const upgrades = new Map(); // id → upgrade

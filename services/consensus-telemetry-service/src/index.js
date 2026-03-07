@@ -85,7 +85,7 @@ const GOVERNOR_ADDRESS_L1 =
 const PAUSE_GUARDIAN_ADDRESS = process.env.PAUSE_GUARDIAN_ADDRESS || process.env.FUT_PAUSE_GUARDIAN || "";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 const registry = new promClient.Registry();
 if (METRICS_ENABLED) {

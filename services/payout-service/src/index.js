@@ -5,7 +5,7 @@ const REWARD_DISTRIBUTOR_URL = process.env.REWARD_DISTRIBUTOR_URL || "http://loc
 const PROM_URL = process.env.PROM_URL || "http://localhost:9090";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 const log = (level, msg, extra = {}) =>
   console.log(JSON.stringify({ ts: new Date().toISOString(), level, service: "payout-service", msg, ...extra }));
