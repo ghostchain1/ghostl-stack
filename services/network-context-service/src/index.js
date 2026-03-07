@@ -82,20 +82,6 @@ app.get("/context", async (_req, res) => {
   }
 });
 
-/** GET /context/:layer — context for a single layer (l2 or l3) */
-app.get("/context/:layer", async (req, res) => {
-  const layer = req.params.layer.toUpperCase();
-  if (!["L2", "L3"].includes(layer))
-    return res.status(400).json({ ok: false, error: "layer must be l2 or l3" });
-  try {
-    const rpc  = await resolveRpc(layer);
-    const data = await fetchChain(rpc, layer);
-    res.json({ ok: true, env: ENV, network: data });
-  } catch (err) {
-    res.status(503).json({ ok: false, error: err?.message || String(err) });
-  }
-});
-
 /** GET /context/summary — high-level overview: both layers, block heights, chain IDs */
 app.get("/context/summary", async (_req, res) => {
   try {
@@ -110,6 +96,20 @@ app.get("/context/summary", async (_req, res) => {
       ],
       ts: new Date().toISOString(),
     });
+  } catch (err) {
+    res.status(503).json({ ok: false, error: err?.message || String(err) });
+  }
+});
+
+/** GET /context/:layer — context for a single layer (l2 or l3) */
+app.get("/context/:layer", async (req, res) => {
+  const layer = req.params.layer.toUpperCase();
+  if (!["L2", "L3"].includes(layer))
+    return res.status(400).json({ ok: false, error: "layer must be l2 or l3" });
+  try {
+    const rpc  = await resolveRpc(layer);
+    const data = await fetchChain(rpc, layer);
+    res.json({ ok: true, env: ENV, network: data });
   } catch (err) {
     res.status(503).json({ ok: false, error: err?.message || String(err) });
   }

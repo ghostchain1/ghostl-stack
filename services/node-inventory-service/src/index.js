@@ -72,24 +72,6 @@ app.get("/nodes", async (_req, res) => {
   res.json({ ok: true, nodes, fetchedAt: new Date().toISOString() });
 });
 
-app.get("/nodes/:id", async (req, res) => {
-  const nodes = await getNodes();
-  const node = nodes.find((n) => n.id === req.params.id);
-  if (!node) return res.status(404).json({ ok: false, error: "node_not_found" });
-  res.json({ ok: true, node });
-});
-
-app.get("/nodes/:id/status", async (req, res) => {
-  const { id } = req.params;
-  try {
-    const results = await promQueryRange(`ghost_node_up{node_id="${id}"}`);
-    const up = results[0] ? Number(results[0].value?.[1]) === 1 : null;
-    res.json({ ok: true, nodeId: id, up, checkedAt: new Date().toISOString() });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err?.message });
-  }
-});
-
 /** GET /nodes/stats — aggregate counts by layer, type, and status */
 app.get("/nodes/stats", async (_req, res) => {
   const nodes = await getNodes();
@@ -114,6 +96,24 @@ app.get("/nodes/stats", async (_req, res) => {
     byStatus,
     fetchedAt: new Date().toISOString(),
   });
+});
+
+app.get("/nodes/:id", async (req, res) => {
+  const nodes = await getNodes();
+  const node = nodes.find((n) => n.id === req.params.id);
+  if (!node) return res.status(404).json({ ok: false, error: "node_not_found" });
+  res.json({ ok: true, node });
+});
+
+app.get("/nodes/:id/status", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const results = await promQueryRange(`ghost_node_up{node_id="${id}"}`);
+    const up = results[0] ? Number(results[0].value?.[1]) === 1 : null;
+    res.json({ ok: true, nodeId: id, up, checkedAt: new Date().toISOString() });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err?.message });
+  }
 });
 
 app.listen(PORT, () => log("info", `listening on :${PORT}`, { promUrl: PROM_URL }));

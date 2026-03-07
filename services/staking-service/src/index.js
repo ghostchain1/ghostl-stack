@@ -77,6 +77,18 @@ app.get("/stake/stats", async (_req, res) => {
   });
 });
 
+/** GET /stake/range?validator=X&start=&end=&step= — historical stake data */
+app.get("/stake/range", async (req, res) => {
+  const { validator, start, end, step = "300s" } = req.query;
+  if (!start || !end) return res.status(400).json({ ok: false, error: "start and end required" });
+  const labelFilter = validator ? `{validator="${validator}"}` : "";
+  const [stakeSeries, activeCountSeries] = await Promise.all([
+    promRange(`ghost_validator_total_stake${labelFilter}`, start, end, step),
+    promRange(`sum(ghost_validator_active)`, start, end, step),
+  ]);
+  res.json({ ok: true, stake: stakeSeries, activeCount: activeCountSeries });
+});
+
 /** GET /stake/:validator — per-validator staking details */
 app.get("/stake/:validator", async (req, res) => {
   const v = req.params.validator;
@@ -100,18 +112,6 @@ app.get("/stake/:validator", async (req, res) => {
     slashings,
     ts: new Date().toISOString(),
   });
-});
-
-/** GET /stake/range?validator=X&start=&end=&step= — historical stake data */
-app.get("/stake/range", async (req, res) => {
-  const { validator, start, end, step = "300s" } = req.query;
-  if (!start || !end) return res.status(400).json({ ok: false, error: "start and end required" });
-  const labelFilter = validator ? `{validator="${validator}"}` : "";
-  const [stakeSeries, activeCountSeries] = await Promise.all([
-    promRange(`ghost_validator_total_stake${labelFilter}`, start, end, step),
-    promRange(`sum(ghost_validator_active)`, start, end, step),
-  ]);
-  res.json({ ok: true, stake: stakeSeries, activeCount: activeCountSeries });
 });
 
 app.listen(PORT, () => {

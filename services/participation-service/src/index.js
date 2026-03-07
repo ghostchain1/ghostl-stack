@@ -90,6 +90,18 @@ app.get("/participation/stats", async (_req, res) => {
   });
 });
 
+/** GET /participation/range?validator=X&start=&end=&step= */
+app.get("/participation/range", async (req, res) => {
+  const { validator, start, end, step = "300s" } = req.query;
+  if (!start || !end) return res.status(400).json({ ok: false, error: "start and end required" });
+  const labelFilter = validator ? `{validator="${validator}"}` : "";
+  const [missedSeries, proposedSeries] = await Promise.all([
+    promRange(`ghost_validator_missed_blocks_total${labelFilter}`, start, end, step),
+    promRange(`ghost_validator_proposed_blocks_total${labelFilter}`, start, end, step),
+  ]);
+  res.json({ ok: true, missed: missedSeries, proposed: proposedSeries });
+});
+
 /** GET /participation/:validator — individual validator data */
 app.get("/participation/:validator", async (req, res) => {
   const v = req.params.validator;
@@ -112,18 +124,6 @@ app.get("/participation/:validator", async (req, res) => {
     participationRate: total > 0 ? Math.round((proposed / total) * 10000) / 100 : null,
     ts: new Date().toISOString(),
   });
-});
-
-/** GET /participation/range?validator=X&start=&end=&step= */
-app.get("/participation/range", async (req, res) => {
-  const { validator, start, end, step = "300s" } = req.query;
-  if (!start || !end) return res.status(400).json({ ok: false, error: "start and end required" });
-  const labelFilter = validator ? `{validator="${validator}"}` : "";
-  const [missedSeries, proposedSeries] = await Promise.all([
-    promRange(`ghost_validator_missed_blocks_total${labelFilter}`, start, end, step),
-    promRange(`ghost_validator_proposed_blocks_total${labelFilter}`, start, end, step),
-  ]);
-  res.json({ ok: true, missed: missedSeries, proposed: proposedSeries });
 });
 
 app.listen(PORT, () => {
