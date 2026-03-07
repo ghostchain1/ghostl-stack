@@ -50,6 +50,19 @@ app.get("/alerts", async (req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
 });
 
+/** GET /alerts/stats — aggregate open/resolved counts and severity breakdown */
+app.get("/alerts/stats", (req, res) => {
+  const all = [...alertLog.values()];
+  const open = all.filter((a) => !a.resolvedAt).length;
+  const resolved = all.filter((a) => a.resolvedAt).length;
+  const bySeverity = {};
+  for (const a of all) {
+    const s = a.severity || "unknown";
+    bySeverity[s] = (bySeverity[s] || 0) + 1;
+  }
+  res.json({ ok: true, stats: { total: all.length, open, resolved, bySeverity, fetchedAt: new Date().toISOString() } });
+});
+
 app.get("/alerts/:id", (req, res) => {
   const a = alertLog.get(req.params.id);
   if (!a) return res.status(404).json({ ok: false, error: "not_found" });
@@ -87,19 +100,6 @@ app.delete("/alerts/:id", (req, res) => {
   if (!alertLog.has(req.params.id)) return res.status(404).json({ ok: false, error: "not_found" });
   alertLog.delete(req.params.id);
   res.json({ ok: true });
-});
-
-/** GET /alerts/stats — aggregate open/resolved counts and severity breakdown */
-app.get("/alerts/stats", (req, res) => {
-  const all = [...alertLog.values()];
-  const open = all.filter((a) => !a.resolvedAt).length;
-  const resolved = all.filter((a) => a.resolvedAt).length;
-  const bySeverity = {};
-  for (const a of all) {
-    const s = a.severity || "unknown";
-    bySeverity[s] = (bySeverity[s] || 0) + 1;
-  }
-  res.json({ ok: true, stats: { total: all.length, open, resolved, bySeverity, fetchedAt: new Date().toISOString() } });
 });
 
 

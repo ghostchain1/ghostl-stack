@@ -81,6 +81,28 @@ app.get("/risk/stats", async (_req, res) => {
   res.json({ ok: true, total, highRisk, criticalRisk, avgScore, maxScore, overrideCount: overrides.size, ts: new Date().toISOString() });
 });
 
+/** POST /risk/overrides — set or update a manual risk level for an address */
+app.post("/risk/overrides", (req, res) => {
+  const { address, level, reason } = req.body || {};
+  if (!address || !level) return res.status(400).json({ ok: false, error: "address and level are required" });
+  const valid = ["low", "medium", "high", "critical"];
+  if (!valid.includes(level)) return res.status(400).json({ ok: false, error: `level must be one of: ${valid.join(", ")}` });
+  overrides.set(address, { address, level, reason: reason || "", setAt: new Date().toISOString() });
+  res.status(201).json({ ok: true, override: overrides.get(address) });
+});
+
+/** DELETE /risk/overrides/:address — remove a manual override */
+app.delete("/risk/overrides/:address", (req, res) => {
+  if (!overrides.has(req.params.address)) return res.status(404).json({ ok: false, error: "not_found" });
+  overrides.delete(req.params.address);
+  res.json({ ok: true });
+});
+
+/** GET /risk/overrides — list all manual overrides */
+app.get("/risk/overrides", (_req, res) => {
+  res.json({ ok: true, count: overrides.size, overrides: [...overrides.values()] });
+});
+
 /** GET /risk/:address — risk for a specific contract address */
 app.get("/risk/:address", async (req, res) => {
   const addr = req.params.address;
@@ -102,28 +124,6 @@ app.get("/risk/:address", async (req, res) => {
     paused: toFloat(pausedRes[0]?.value) === 1,
     ts: new Date().toISOString(),
   });
-});
-
-/** POST /risk/overrides — set or update a manual risk level for an address */
-app.post("/risk/overrides", (req, res) => {
-  const { address, level, reason } = req.body || {};
-  if (!address || !level) return res.status(400).json({ ok: false, error: "address and level are required" });
-  const valid = ["low", "medium", "high", "critical"];
-  if (!valid.includes(level)) return res.status(400).json({ ok: false, error: `level must be one of: ${valid.join(", ")}` });
-  overrides.set(address, { address, level, reason: reason || "", setAt: new Date().toISOString() });
-  res.status(201).json({ ok: true, override: overrides.get(address) });
-});
-
-/** DELETE /risk/overrides/:address — remove a manual override */
-app.delete("/risk/overrides/:address", (req, res) => {
-  if (!overrides.has(req.params.address)) return res.status(404).json({ ok: false, error: "not_found" });
-  overrides.delete(req.params.address);
-  res.json({ ok: true });
-});
-
-/** GET /risk/overrides — list all manual overrides */
-app.get("/risk/overrides", (_req, res) => {
-  res.json({ ok: true, count: overrides.size, overrides: [...overrides.values()] });
 });
 
 app.listen(PORT, () => {

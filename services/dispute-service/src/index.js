@@ -48,6 +48,17 @@ app.get("/disputes", async (req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
 });
 
+/** GET /disputes/stats — aggregate dispute counts by status */
+app.get("/disputes/stats", (req, res) => {
+  const all = [...disputes.values()];
+  const byStatus = {};
+  for (const d of all) {
+    const s = d.status || "open";
+    byStatus[s] = (byStatus[s] || 0) + 1;
+  }
+  res.json({ ok: true, stats: { total: all.length, byStatus, fetchedAt: new Date().toISOString() } });
+});
+
 app.get("/disputes/:id", (req, res) => {
   const d = disputes.get(req.params.id);
   if (!d) return res.status(404).json({ ok: false, error: "not_found" });
@@ -96,17 +107,6 @@ app.delete("/disputes/:id", (req, res) => {
   if (!disputes.has(req.params.id)) return res.status(404).json({ ok: false, error: "not_found" });
   disputes.delete(req.params.id);
   res.json({ ok: true });
-});
-
-/** GET /disputes/stats — aggregate dispute counts by status */
-app.get("/disputes/stats", (req, res) => {
-  const all = [...disputes.values()];
-  const byStatus = {};
-  for (const d of all) {
-    const s = d.status || "open";
-    byStatus[s] = (byStatus[s] || 0) + 1;
-  }
-  res.json({ ok: true, stats: { total: all.length, byStatus, fetchedAt: new Date().toISOString() } });
 });
 
 

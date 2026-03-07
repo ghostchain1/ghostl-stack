@@ -79,6 +79,22 @@ app.get("/tags/search", (req, res) => {
   res.json({ ok: true, label, count: matches.length, addresses: matches });
 });
 
+/** POST /tags/batch — bulk add { entries: [{ address, labels: [] }] } */
+app.post("/tags/batch", (req, res) => {
+  const { entries } = req.body || {};
+  if (!Array.isArray(entries) || entries.length === 0)
+    return res.status(400).json({ ok: false, error: "entries array required" });
+  let added = 0;
+  for (const { address, labels: lbls } of entries) {
+    if (!address || !Array.isArray(lbls)) continue;
+    const addr = String(address).toLowerCase();
+    if (!tags.has(addr)) tags.set(addr, new Set());
+    for (const l of lbls) { tags.get(addr).add(String(l)); added++; }
+  }
+  persist();
+  res.status(201).json({ ok: true, added, totalAddresses: tags.size });
+});
+
 /** GET /tags/:address — canonical single-address tag lookup */
 app.get("/tags/:address", (req, res) => {
   const addr   = req.params.address.toLowerCase();
@@ -95,23 +111,6 @@ app.post("/tags", (req, res) => {
   tags.get(addr).add(String(label));
   persist();
   res.status(201).json({ ok: true, address: addr, labels: [...tags.get(addr)] });
-});
-
-/** POST /tags/batch — bulk add { entries: [{ address, labels: [] }] } */
-app.post("/tags/batch", (req, res) => {
-  const { entries } = req.body || {};
-  if (!Array.isArray(entries) || entries.length === 0)
-    return res.status(400).json({ ok: false, error: "entries array required" });
-  let added = 0;
-  for (const { address, labels: lbls } of entries) {
-    if (!address || !Array.isArray(lbls)) continue;
-    const addr = String(address).toLowerCase();
-    if (!tags.has(addr)) tags.set(addr, new Set());
-    for (const l of lbls) { tags.get(addr).add(String(l)); added++; }
-  }
-  persist();
-  res.status(201).json({ ok: true, added, totalAddresses: tags.size });
-});
 
 /** PUT /tags/:address — replace all labels for an address */
 app.put("/tags/:address", (req, res) => {
