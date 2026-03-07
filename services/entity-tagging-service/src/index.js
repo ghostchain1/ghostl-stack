@@ -17,6 +17,9 @@ app.use((_req, res, next) => {
   res.setHeader("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  res.setHeader("X-DNS-Prefetch-Control", "off");
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
   res.removeHeader("X-Powered-By");
   next();
 });
@@ -47,7 +50,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.json({ limit: "256kb" }));
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false, parameterLimit: 100 }));
 app.use((req, res, next) => {
   req.id = req.headers["x-request-id"] ?? crypto.randomUUID();
   res.setHeader("X-Request-ID", req.id);
