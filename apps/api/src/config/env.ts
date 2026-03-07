@@ -96,6 +96,7 @@ const EnvSchema = z.object({
   DEVOPS_SERVICE_URL: z.string().url().default('http://localhost:7623'),
   USAGE_SERVICE_URL: z.string().url().default('http://localhost:7651'),
   WEBHOOKS_SERVICE_URL: z.string().url().default('http://localhost:7652'),
+  NOTIFICATIONS_SERVICE_URL: z.string().url().default('http://localhost:7638'),
   AI_SERVICE_URL: z.string().url().default('http://localhost:7616'),
   FORECASTING_SERVICE_URL: z.string().url().default('http://localhost:7617'),
   EXPLAINABILITY_SERVICE_URL: z.string().url().default('http://localhost:7632'),

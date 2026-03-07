@@ -402,10 +402,36 @@ export const createLiveServices = (deps: {
 
   const notificationRouterService: NotificationRouterService = {
     async listChannels() {
-      return [];
+      const envChannels =
+        readJsonEnv<{ id: string; type: string; target: string }[]>('NOTIFICATION_CHANNELS_JSON') ?? [];
+      try {
+        const notifUrl = process.env.NOTIFICATIONS_SERVICE_URL ?? 'http://localhost:7638';
+        const r = await fetch(`${notifUrl}/notifications/channels`);
+        if (r.ok) {
+          const body = (await r.json()) as { channels?: { id: string; type: string; target: string }[] };
+          return [...envChannels, ...(body.channels ?? [])];
+        }
+      } catch {
+        // fall through to env-seeded list
+      }
+      return envChannels;
     },
-    async send(_alert, _channels) {
-      return;
+    async send(alert, channels) {
+      const notifUrl = process.env.NOTIFICATIONS_SERVICE_URL ?? 'http://localhost:7638';
+      await Promise.allSettled(
+        channels.map((ch) =>
+          fetch(`${notifUrl}/notifications`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              channel: ch,
+              message: (alert as Record<string, unknown>).name ?? 'alert',
+              severity: (alert as Record<string, unknown>).severity ?? 'warning',
+              metadata: alert
+            })
+          })
+        )
+      );
     }
   };
 

@@ -6,12 +6,43 @@ const PORT = Number(process.env.PORT || 7638);
 const app = express();
 app.use(express.json());
 
-// In-memory notification store (survives restart-safe via POST /notifications)
+// In-memory notification store
 const store = new Map(); // id → notification
+
+// In-memory channel registry  (id → {id, type, target, meta})
+const channels = new Map();
 
 function makeId() { return crypto.randomUUID(); }
 
-app.get("/health", (_req, res) => res.json({ ok: true, service: "notifications-service", count: store.size }));
+app.get("/health", (_req, res) => res.json({ ok: true, service: "notifications-service", count: store.size, channelCount: channels.size }));
+
+// ── Channel registry ───────────────────────────────────────────────────────
+
+app.get("/notifications/channels", (_req, res) => {
+  res.json({ ok: true, channels: [...channels.values()] });
+});
+
+app.post("/notifications/channels", (req, res) => {
+  const { type, target, meta } = req.body || {};
+  if (!type || !target) return res.status(400).json({ ok: false, error: "type and target required" });
+  const ch = { id: makeId(), type, target, meta: meta || {}, createdAt: Date.now() };
+  channels.set(ch.id, ch);
+  res.status(201).json({ ok: true, channel: ch });
+});
+
+app.get("/notifications/channels/:id", (req, res) => {
+  const ch = channels.get(req.params.id);
+  if (!ch) return res.status(404).json({ ok: false, error: "not_found" });
+  res.json({ ok: true, channel: ch });
+});
+
+app.delete("/notifications/channels/:id", (req, res) => {
+  if (!channels.has(req.params.id)) return res.status(404).json({ ok: false, error: "not_found" });
+  channels.delete(req.params.id);
+  res.json({ ok: true });
+});
+
+// ── Notifications ──────────────────────────────────────────────────────────
 
 /** List notifications with optional channel / status filter */
 app.get("/notifications", (req, res) => {

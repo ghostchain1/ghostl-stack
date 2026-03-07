@@ -1,34 +1,80 @@
 import express from "express";
 
-const PORT = Number(process.env.PORT || 7625);
+const PORT     = Number(process.env.PORT || 7625);
 const PROM_URL = process.env.PROM_URL || "http://localhost:9090";
 
 const app = express();
 app.use(express.json());
 
 const promQuery = async (query) => {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 4000);
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 4000);
   try {
-    const resp = await fetch(`${PROM_URL}/api/v1/query?query=${encodeURIComponent(query)}`, { signal: controller.signal });
-    clearTimeout(timeout);
-    if (!resp.ok) throw new Error(`prom status ${resp.status}`);
-    return await resp.json();
-  } catch (e) {
-    clearTimeout(timeout);
-    throw e;
-  }
+    const r = await fetch(`${PROM_URL}/api/v1/query?query=${encodeURIComponent(query)}`, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (!r.ok) throw new Error(`prom ${r.status}`);
+    return await r.json();
+  } catch (e) { clearTimeout(t); throw e; }
 };
 
-app.get("/health", (_req, res) => res.json({ ok: true, service: "tx-index-service" }));
+const promRange = async (query, start, end, step = "15s") => {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const url = `${PROM_URL}/api/v1/query_range?query=${encodeURIComponent(query)}&start=${start}&end=${end}&step=${step}`;
+    const r = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (!r.ok) throw new Error(`prom ${r.status}`);
+    return await r.json();
+  } catch (e) { clearTimeout(t); throw e; }
+};
 
+app.get("/health", (_req, res) => res.json({ ok: true, service: "tx-index-service", prom: PROM_URL }));
+
+/** GET /txs — current tx counts per shard */
 app.get("/txs", async (_req, res) => {
   try {
-    const txResp = await promQuery("tx_count_total");
-    res.json({ ok: true, txs: txResp?.data?.result || [] });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) });
-  }
+    const [txResp, failResp, pendingResp] = await Promise.all([
+      promQuery("tx_count_total"),
+      promQuery("tx_failed_total"),
+      promQuery("tx_pending_count"),
+    ]);
+    res.json({
+      ok: true,
+      total:   txResp?.data?.result      || [],
+      failed:  failResp?.data?.result    || [],
+      pending: pendingResp?.data?.result || [],
+    });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+/** GET /txs/range?start=&end=&step= — tx rate over time */
+app.get("/txs/range", async (req, res) => {
+  const now   = Math.floor(Date.now() / 1000);
+  const end   = Number(req.query.end)   || now;
+  const start = Number(req.query.start) || end - 3600;
+  const step  = req.query.step || "30s";
+  try {
+    const r = await promRange("rate(tx_count_total[5m])", start, end, step);
+    res.json({ ok: true, tps: r?.data?.result || [] });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+/** GET /txs/stats — aggregated tx stats */
+app.get("/txs/stats", async (_req, res) => {
+  try {
+    const [totalResp, tpsResp, failResp] = await Promise.all([
+      promQuery("tx_count_total"),
+      promQuery("rate(tx_count_total[5m])"),
+      promQuery("rate(tx_failed_total[5m])"),
+    ]);
+    res.json({
+      ok: true,
+      totalTxs:    Number(totalResp?.data?.result?.[0]?.value?.[1]  || 0),
+      tps:         Number(tpsResp?.data?.result?.[0]?.value?.[1]   || 0).toFixed(4),
+      failedTps:   Number(failResp?.data?.result?.[0]?.value?.[1]  || 0).toFixed(4),
+    });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
 });
 
 app.listen(PORT, () => {

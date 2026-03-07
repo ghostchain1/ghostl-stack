@@ -1,34 +1,78 @@
 import express from "express";
+import crypto from "node:crypto";
 
-const PORT = Number(process.env.PORT || 7619);
+const PORT     = Number(process.env.PORT || 7619);
 const PROM_URL = process.env.PROM_URL || "http://localhost:9090";
 
 const app = express();
 app.use(express.json());
 
+// In-memory key rotation event log
+const rotationLog = new Map(); // id → rotation event
+
 const promQuery = async (query) => {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 4000);
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 4000);
   try {
-    const resp = await fetch(`${PROM_URL}/api/v1/query?query=${encodeURIComponent(query)}`, { signal: controller.signal });
-    clearTimeout(timeout);
-    if (!resp.ok) throw new Error(`prom status ${resp.status}`);
-    return await resp.json();
-  } catch (e) {
-    clearTimeout(timeout);
-    throw e;
-  }
+    const r = await fetch(`${PROM_URL}/api/v1/query?query=${encodeURIComponent(query)}`, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (!r.ok) throw new Error(`prom ${r.status}`);
+    return await r.json();
+  } catch (e) { clearTimeout(t); throw e; }
 };
 
-app.get("/health", (_req, res) => res.json({ ok: true, service: "key-rotation-service" }));
+app.get("/health", (_req, res) =>
+  res.json({ ok: true, service: "key-rotation-service", prom: PROM_URL, logged: rotationLog.size })
+);
 
+/** GET /keys — Prometheus key rotation metrics */
 app.get("/keys", async (_req, res) => {
   try {
-    const rotations = await promQuery("validator_key_rotations_total");
-    res.json({ ok: true, rotations: rotations?.data?.result || [] });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) });
-  }
+    const [rotResp, pendingResp, lastResp] = await Promise.all([
+      promQuery("validator_key_rotations_total"),
+      promQuery("validator_key_rotations_pending"),
+      promQuery("validator_key_last_rotation_timestamp"),
+    ]);
+    res.json({
+      ok: true,
+      rotations:       rotResp?.data?.result     || [],
+      pending:         pendingResp?.data?.result || [],
+      lastRotation:    lastResp?.data?.result    || [],
+      recentEvents:    [...rotationLog.values()].slice(-20),
+    });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+/** GET /keys/stats — aggregated rotation stats */
+app.get("/keys/stats", async (_req, res) => {
+  try {
+    const [totalResp, pendResp] = await Promise.all([
+      promQuery("validator_key_rotations_total"),
+      promQuery("validator_key_rotations_pending"),
+    ]);
+    res.json({
+      ok: true,
+      totalRotations: Number(totalResp?.data?.result?.[0]?.value?.[1] || 0),
+      pending:        Number(pendResp?.data?.result?.[0]?.value?.[1]  || 0),
+      loggedEvents:   rotationLog.size,
+    });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+/** POST /keys/rotate — log a key rotation { validator, keyType, reason } */
+app.post("/keys/rotate", (req, res) => {
+  const { validator, keyType, reason } = req.body || {};
+  if (!validator) return res.status(400).json({ ok: false, error: "validator required" });
+  const event = {
+    id: crypto.randomUUID(),
+    validator,
+    keyType:   keyType || "bls",
+    reason:    reason  || "scheduled",
+    rotatedAt: new Date().toISOString(),
+    status:    "completed",
+  };
+  rotationLog.set(event.id, event);
+  res.status(201).json({ ok: true, event });
 });
 
 app.listen(PORT, () => {
