@@ -107,6 +107,10 @@ app.use((_req, res, next) => {
   res.removeHeader("Server");
   res.setHeader("Vary", "Accept");
   res.setHeader("Keep-Alive", "timeout=65");
+  if (process.env.REPORT_TO_URL) {
+    res.setHeader("Report-To", JSON.stringify({ group: "default", max_age: 86400, endpoints: [{ url: process.env.REPORT_TO_URL }] }));
+    res.setHeader("NEL", JSON.stringify({ report_to: "default", max_age: 86400, include_subdomains: false }));
+  }
   next();
 });
 const _CORS_ORIGINS = (process.env.ALLOWED_ORIGINS ?? "").split(",").map(s => s.trim()).filter(Boolean);
@@ -159,6 +163,29 @@ app.use((req, res, next) => {
   if (_ALLOWED_HOSTS.size > 0) {
     const host = (req.headers.host ?? "").split(":")[0].toLowerCase();
     if (!_ALLOWED_HOSTS.has(host)) { return res.status(421).json({ ok: false, error: "Misdirected Request" }); }
+  }
+  next();
+});
+let _activeReqs = 0;
+const _MAX_CONCURRENT = Number(process.env.MAX_CONCURRENT_REQUESTS ?? 500);
+app.use((req, res, next) => {
+  if (_activeReqs >= _MAX_CONCURRENT) { res.setHeader("Retry-After", "1"); return res.status(503).json({ ok: false, error: "server_busy" }); }
+  _activeReqs++;
+  let _decr = false;
+  const _decrActive = () => { if (!_decr) { _decr = true; _activeReqs = Math.max(0, _activeReqs - 1); } };
+  res.on("finish", _decrActive);
+  res.on("close", _decrActive);
+  next();
+});
+const _idemStore = new Map();
+setInterval(() => _idemStore.clear(), 5 * 60_000).unref();
+app.use((req, res, next) => {
+  const _idemKey = req.headers["idempotency-key"];
+  if (_idemKey && req.method === "POST") {
+    const _cached = _idemStore.get(_idemKey);
+    if (_cached) { res.setHeader("Idempotency-Key", _idemKey); return res.status(_cached.status).json(_cached.body); }
+    const _origJson = res.json.bind(res);
+    res.json = (body) => { if (res.statusCode < 500) { _idemStore.set(_idemKey, { status: res.statusCode, body }); } return _origJson(body); };
   }
   next();
 });
