@@ -44,6 +44,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.json({ limit: "256kb" }));
+app.use(express.urlencoded({ extended: false }));
 app.use((req, res, next) => {
   req.id = req.headers["x-request-id"] ?? crypto.randomUUID();
   res.setHeader("X-Request-ID", req.id);
@@ -170,9 +171,10 @@ app.use((err, _req, res, _next) => {
   res.status(status).json({ ok: false, error: err?.message ?? String(err) });
 });
 
-const server = app.listen(PORT, () => log("info", `listening on :${PORT}`, { promUrl: PROM_URL }));
+const server = app.listen(PORT, "0.0.0.0", () => log("info", `listening on :${PORT}`, { promUrl: PROM_URL }));
 server.keepAliveTimeout = 65_000;
 server.headersTimeout = 66_000;
+server.timeout = 30_000;
 process.on("uncaughtException", (err) => {
   console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "uncaughtException", error: err?.message ?? String(err) }));
   process.exit(1);

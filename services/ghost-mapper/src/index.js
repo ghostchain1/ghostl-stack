@@ -401,6 +401,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.json({ limit: "256kb" }));
+app.use(express.urlencoded({ extended: false }));
 app.use((req, res, next) => {
   req.id = req.headers["x-request-id"] ?? crypto.randomUUID();
   res.setHeader("X-Request-ID", req.id);
@@ -532,3 +533,4 @@ const server = app.listen(PORT, "0.0.0.0", () => {
 });
 server.keepAliveTimeout = 65_000;
 server.headersTimeout = 66_000;
+server.timeout = 30_000;
