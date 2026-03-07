@@ -885,6 +885,10 @@ async function init() {
 server.keepAliveTimeout = 65_000;
 server.headersTimeout = 66_000;
 server.timeout = 30_000;
+server.maxHeadersCount = 100;
+server.requestTimeout = 30_000;
+process.setMaxListeners(20);
+process.on("warning", (w) => console.warn(JSON.stringify({ ts: new Date().toISOString(), level: "warn", msg: "NodeWarning", name: w.name, message: w.message })));
 process.on("uncaughtException", (err) => {
   console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "uncaughtException", error: err?.message ?? String(err) }));
   process.exit(1);

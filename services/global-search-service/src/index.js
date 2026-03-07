@@ -313,10 +313,15 @@ app.use((err, _req, res, _next) => {
 });
 
 const server = app.listen(PORT, "0.0.0.0", () => {
+  console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "global-search-service listening", port: PORT }));
 });
 server.keepAliveTimeout = 65_000;
 server.headersTimeout = 66_000;
 server.timeout = 30_000;
+server.maxHeadersCount = 100;
+server.requestTimeout = 30_000;
+process.setMaxListeners(20);
+process.on("warning", (w) => console.warn(JSON.stringify({ ts: new Date().toISOString(), level: "warn", msg: "NodeWarning", name: w.name, message: w.message })));
 process.on("uncaughtException", (err) => {
   console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "uncaughtException", error: err?.message ?? String(err) }));
   process.exit(1);

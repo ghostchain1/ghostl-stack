@@ -302,6 +302,8 @@ const server = app.listen(PORT, "0.0.0.0", () => {
 server.keepAliveTimeout = 65_000;
 server.headersTimeout = 66_000;
 server.timeout = 30_000;
+server.maxHeadersCount = 100;
+server.requestTimeout = 30_000;
 
 app.use((err, _req, res, _next) => {
   if (err.type === "entity.parse.failed") return res.status(400).json({ ok: false, error: "Invalid JSON" });
@@ -311,6 +313,8 @@ app.use((err, _req, res, _next) => {
 });
 
 // Graceful shutdown
+process.setMaxListeners(20);
+process.on("warning", (w) => console.warn(JSON.stringify({ ts: new Date().toISOString(), level: "warn", msg: "NodeWarning", name: w.name, message: w.message })));
 process.on("uncaughtException", (err) => {
   console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "uncaughtException", error: err?.message ?? String(err) }));
   process.exit(1);
