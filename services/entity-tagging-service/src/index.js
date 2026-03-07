@@ -32,6 +32,8 @@ app.use((_req, res, next) => {
   res.removeHeader("Server");
   res.setHeader("Vary", "Accept");
   res.setHeader("Keep-Alive", "timeout=65");
+  res.setHeader("X-Robots-Tag", "noindex,nofollow");
+  res.setHeader("Accept-Ranges", "none");
   if (process.env.REPORT_TO_URL) {
     res.setHeader("Report-To", JSON.stringify({ group: "default", max_age: 86400, endpoints: [{ url: process.env.REPORT_TO_URL }] }));
     res.setHeader("NEL", JSON.stringify({ report_to: "default", max_age: 86400, include_subdomains: false }));
@@ -115,9 +117,11 @@ app.use((req, res, next) => {
   }
   next();
 });
+let _reqTotal = 0;
 let _draining = false;
 app.use((req, res, next) => { if (_draining) { res.set("Connection","close"); res.setHeader("Retry-After", "5"); return res.status(503).json({ error: "Service shutting down" }); } next(); });
 app.use((req, res, next) => {
+  _reqTotal++;
   req.id = req.headers["x-request-id"] ?? crypto.randomUUID();
   res.setHeader("X-Request-ID", req.id);
   const _tp = req.headers["traceparent"] ?? `00-${crypto.randomUUID().replace(/-/g,"")}-${req.id.replace(/-/g,"").slice(0,16)}-01`;
@@ -269,6 +273,10 @@ app.delete("/tags/:address", (req, res) => {
   res.json({ ok: true });
 });
 
+app.get("/readyz", (_req, res) => {
+  if (_draining) { res.setHeader("Retry-After", "5"); return res.status(503).json({ ok: false, error: "draining" }); }
+  res.json({ ok: true });
+});
 app.use((_req, res) => { res.setHeader("Cache-Control", "no-store"); res.setHeader("Surrogate-Control", "no-store"); return res.status(404).json({ ok: false, error: "not_found" }); });
 
 app.use((err, _req, res, _next) => {
@@ -305,7 +313,7 @@ process.on("warning", (w) => console.warn(JSON.stringify({ ts: new Date().toISOS
 process.on("exit", (code) => { console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "exit", code })); });
 process.on("SIGUSR2", () => {
   const m = process.memoryUsage(); const cu = process.cpuUsage();
-  console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "sigusr2_diag", pid: process.pid, rss: m.rss, heapUsed: m.heapUsed, heapTotal: m.heapTotal, external: m.external, cpuUser: cu.user, cpuSystem: cu.system }));
+  console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "sigusr2_diag", pid: process.pid, rss: m.rss, heapUsed: m.heapUsed, heapTotal: m.heapTotal, external: m.external, cpuUser: cu.user, cpuSystem: cu.system, reqTotal: _reqTotal }));
 });
 process.on("SIGPIPE", () => { /* ignore: client disconnected mid-response */ });
 process.on("uncaughtException", (err) => {
