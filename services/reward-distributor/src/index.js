@@ -34,6 +34,8 @@ app.use((_req, res, next) => {
   res.setHeader("X-XSS-Protection", "0");
   res.setHeader("Referrer-Policy", "no-referrer");
   res.setHeader("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   res.removeHeader("X-Powered-By");
   next();
 });
@@ -373,7 +375,9 @@ app.post("/v1/reward/failsafe", withAdmin, (req, res) => {
 });
 
 app.use((err, _req, res, _next) => {
+  if (err.type === "entity.parse.failed") return res.status(400).json({ ok: false, error: "Invalid JSON" });
   const status = err.status ?? err.statusCode ?? 500;
+  res.setHeader("Cache-Control", "no-store");
   res.status(status).json({ ok: false, error: err?.message ?? String(err) });
 });
 
@@ -383,6 +387,14 @@ const server = app.listen(PORT, HOST, () => {
     port: PORT,
     governanceRoot: GOVERNANCE_ROOT
   });
+});
+process.on("uncaughtException", (err) => {
+  console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "uncaughtException", error: err?.message ?? String(err) }));
+  process.exit(1);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "unhandledRejection", error: String(reason) }));
+  process.exit(1);
 });
 process.on("SIGTERM", () => {
   setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
