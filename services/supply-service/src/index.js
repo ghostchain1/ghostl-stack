@@ -7,31 +7,73 @@ const app = express();
 app.use(express.json());
 
 const promQuery = async (query) => {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 4000);
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 4000);
   try {
-    const resp = await fetch(`${PROM_URL}/api/v1/query?query=${encodeURIComponent(query)}`, { signal: controller.signal });
-    clearTimeout(timeout);
-    if (!resp.ok) throw new Error(`prom status ${resp.status}`);
-    return await resp.json();
-  } catch (e) {
-    clearTimeout(timeout);
-    throw e;
-  }
+    const r = await fetch(`${PROM_URL}/api/v1/query?query=${encodeURIComponent(query)}`, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (!r.ok) throw new Error(`prom ${r.status}`);
+    return await r.json();
+  } catch (e) { clearTimeout(t); throw e; }
 };
 
-app.get("/health", (_req, res) => res.json({ ok: true, service: "supply-service" }));
+const promRange = async (query, start, end, step = "15s") => {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const url = `${PROM_URL}/api/v1/query_range?query=${encodeURIComponent(query)}&start=${start}&end=${end}&step=${step}`;
+    const r = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (!r.ok) throw new Error(`prom ${r.status}`);
+    return await r.json();
+  } catch (e) { clearTimeout(t); throw e; }
+};
 
+app.get("/health", (_req, res) => res.json({ ok: true, service: "supply-service", prom: PROM_URL }));
+
+/** GET /supply — current total supply + emission rate + circulating */
 app.get("/supply", async (_req, res) => {
   try {
-    const supplyResp = await promQuery("token_supply_total");
-    const emissionResp = await promQuery("token_emission_rate");
-    const supply = supplyResp?.data?.result?.[0]?.value?.[1] || null;
-    const emissions = emissionResp?.data?.result?.[0]?.value?.[1] || null;
-    res.json({ ok: true, supply, emissions });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) });
-  }
+    const [supplyResp, emissionResp, circulatingResp, burnedResp] = await Promise.all([
+      promQuery("token_supply_total"),
+      promQuery("token_emission_rate"),
+      promQuery("token_circulating_supply"),
+      promQuery("token_burned_total"),
+    ]);
+    res.json({
+      ok: true,
+      supply: supplyResp?.data?.result?.[0]?.value?.[1] || null,
+      emissionRate: emissionResp?.data?.result?.[0]?.value?.[1] || null,
+      circulating: circulatingResp?.data?.result?.[0]?.value?.[1] || null,
+      burned: burnedResp?.data?.result?.[0]?.value?.[1] || null,
+    });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+/** GET /supply/range?start=&end=&step= — total supply over time */
+app.get("/supply/range", async (req, res) => {
+  const now = Math.floor(Date.now() / 1000);
+  const end = Number(req.query.end) || now;
+  const start = Number(req.query.start) || end - 86400;
+  const step = req.query.step || "5m";
+  try {
+    const r = await promRange("token_supply_total", start, end, step);
+    res.json({ ok: true, range: r?.data?.result || [] });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+/** GET /supply/inflation — current annualised inflation rate */
+app.get("/supply/inflation", async (_req, res) => {
+  try {
+    const [emissionResp, supplyResp] = await Promise.all([
+      promQuery("token_emission_rate"),
+      promQuery("token_supply_total"),
+    ]);
+    const emission = Number(emissionResp?.data?.result?.[0]?.value?.[1] || 0);
+    const supply = Number(supplyResp?.data?.result?.[0]?.value?.[1] || 1);
+    const annualInflation = supply > 0 ? ((emission * 365 * 24 * 3600) / supply) * 100 : 0;
+    res.json({ ok: true, emissionPerSecond: emission, annualInflationPct: annualInflation.toFixed(4) });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
 });
 
 app.listen(PORT, () => {

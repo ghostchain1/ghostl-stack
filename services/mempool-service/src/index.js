@@ -7,31 +7,71 @@ const app = express();
 app.use(express.json());
 
 const promQuery = async (query) => {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 4000);
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 4000);
   try {
-    const resp = await fetch(`${PROM_URL}/api/v1/query?query=${encodeURIComponent(query)}`, { signal: controller.signal });
-    clearTimeout(timeout);
-    if (!resp.ok) throw new Error(`prom status ${resp.status}`);
-    return await resp.json();
-  } catch (e) {
-    clearTimeout(timeout);
-    throw e;
-  }
+    const r = await fetch(`${PROM_URL}/api/v1/query?query=${encodeURIComponent(query)}`, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (!r.ok) throw new Error(`prom ${r.status}`);
+    return await r.json();
+  } catch (e) { clearTimeout(t); throw e; }
 };
 
-app.get("/health", (_req, res) => res.json({ ok: true, service: "mempool-service" }));
+const promRange = async (query, start, end, step = "15s") => {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const url = `${PROM_URL}/api/v1/query_range?query=${encodeURIComponent(query)}&start=${start}&end=${end}&step=${step}`;
+    const r = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (!r.ok) throw new Error(`prom ${r.status}`);
+    return await r.json();
+  } catch (e) { clearTimeout(t); throw e; }
+};
 
+app.get("/health", (_req, res) => res.json({ ok: true, service: "mempool-service", prom: PROM_URL }));
+
+/** GET /mempool — current snapshot: pending + queued + evicted */
 app.get("/mempool", async (_req, res) => {
   try {
-    const statusResp = await promQuery("txpool_pending_total");
-    const queuedResp = await promQuery("txpool_queued_total");
-    const pending = statusResp?.data?.result?.[0]?.value?.[1] || "0";
-    const queued = queuedResp?.data?.result?.[0]?.value?.[1] || "0";
-    res.json({ ok: true, pending, queued });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) });
-  }
+    const [pendingResp, queuedResp, evictedResp] = await Promise.all([
+      promQuery("txpool_pending_total"),
+      promQuery("txpool_queued_total"),
+      promQuery("txpool_evictions_total"),
+    ]);
+    res.json({
+      ok: true,
+      pending: pendingResp?.data?.result?.[0]?.value?.[1] || "0",
+      queued: queuedResp?.data?.result?.[0]?.value?.[1] || "0",
+      evictions: evictedResp?.data?.result?.[0]?.value?.[1] || "0",
+    });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+/** GET /mempool/range?start=&end=&step= — pending count over time */
+app.get("/mempool/range", async (req, res) => {
+  const now = Math.floor(Date.now() / 1000);
+  const end = Number(req.query.end) || now;
+  const start = Number(req.query.start) || end - 3600;
+  const step = req.query.step || "30s";
+  try {
+    const r = await promRange("txpool_pending_total", start, end, step);
+    res.json({ ok: true, range: r?.data?.result || [] });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
+});
+
+/** GET /mempool/stats — aggregated ingestion rate + congestion indicator */
+app.get("/mempool/stats", async (_req, res) => {
+  try {
+    const [pendingResp, ingressResp] = await Promise.all([
+      promQuery("txpool_pending_total"),
+      promQuery("rate(txpool_ingress_total[5m])"),
+    ]);
+    const pending = Number(pendingResp?.data?.result?.[0]?.value?.[1] || 0);
+    const ingress = Number(ingressResp?.data?.result?.[0]?.value?.[1] || 0);
+    const congested = pending > 1000;
+    res.json({ ok: true, pending, ingressRate: ingress.toFixed(4), congested });
+  } catch (e) { res.status(500).json({ ok: false, error: e?.message || String(e) }); }
 });
 
 app.listen(PORT, () => {
