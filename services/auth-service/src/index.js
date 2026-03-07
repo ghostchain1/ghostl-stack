@@ -253,6 +253,13 @@ app.get("/auth/stats", (_req, res) => {
   res.json({ ok: true, stats: { activeSessions, pendingNonces, totalSessions: sessions.size, totalNonces: nonceStore.size, sessionTtlMs: SESSION_TTL_MS, nonceTtlMs: NONCE_TTL_MS, fetchedAt: new Date().toISOString() } });
 });
 
+app.use((_req, res) => res.status(404).json({ ok: false, error: "not_found" }));
+
+app.use((err, _req, res, _next) => {
+  const status = err.status ?? err.statusCode ?? 500;
+  res.status(status).json({ ok: false, error: err?.message ?? String(err) });
+});
+
 const server = app.listen(PORT, () => {
   console.log(`[auth-service] listening on :${PORT}`);
 });

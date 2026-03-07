@@ -135,6 +135,11 @@ app.patch("/anomalies/:id", (req, res) => {
   res.json({ ok: true, anomaly });
 });
 
+app.use((err, _req, res, _next) => {
+  const status = err.status ?? err.statusCode ?? 500;
+  res.status(status).json({ ok: false, error: err?.message ?? String(err) });
+});
+
 const server = app.listen(PORT, () => {
   console.log(`[anomaly-detection-service] listening on :${PORT}, threshold=${THRESHOLD}`);
 });

@@ -118,6 +118,11 @@ app.get("/exports/stats", (_req, res) => {
   res.json({ ok: true, stats: { total: all.length, byStatus, fetchedAt: new Date().toISOString() } });
 });
 
+app.use((err, _req, res, _next) => {
+  const status = err.status ?? err.statusCode ?? 500;
+  res.status(status).json({ ok: false, error: err?.message ?? String(err) });
+});
+
 const server = app.listen(PORT, () => {
   console.log(`[compliance-export-service] listening on :${PORT}, auditLog=${AUDIT_LOG_URL}`);
 });

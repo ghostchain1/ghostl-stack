@@ -139,6 +139,13 @@ app.get("/v1/treasury/stats", (_req, res) => {
   res.json({ ok: true, stats: { capabilities: ["forecast", "runway", "stress", "allocation", "incident", "proposal"], fetchedAt: new Date().toISOString() } });
 });
 
+app.use((_req, res) => res.status(404).json({ ok: false, error: "not_found" }));
+
+app.use((err, _req, res, _next) => {
+  const status = err.status ?? err.statusCode ?? 500;
+  res.status(status).json({ ok: false, error: err?.message ?? String(err) });
+});
+
 const server = app.listen(PORT, () => {
   console.log(`[treasury-ai] listening on :${PORT}`);
 });

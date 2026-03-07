@@ -328,6 +328,11 @@ app.post("/v1/reward/failsafe", withAdmin, (req, res) => {
   }
 });
 
+app.use((err, _req, res, _next) => {
+  const status = err.status ?? err.statusCode ?? 500;
+  res.status(status).json({ ok: false, error: err?.message ?? String(err) });
+});
+
 const server = app.listen(PORT, HOST, () => {
   log("info", "service_started", {
     host: HOST,

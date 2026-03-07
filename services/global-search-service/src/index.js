@@ -254,6 +254,11 @@ app.get("/search/stats", (_req, res) => {
   res.json({ ok: true, stats: { configuredChains: chains, governanceSource: hasGovernance, rpcRegistrySource: hasRegistry, totalSources: chains + (hasGovernance ? 1 : 0) + (hasRegistry ? 1 : 0), fetchedAt: new Date().toISOString() } });
 });
 
+app.use((err, _req, res, _next) => {
+  const status = err.status ?? err.statusCode ?? 500;
+  res.status(status).json({ ok: false, error: err?.message ?? String(err) });
+});
+
 const server = app.listen(PORT, () => {
 });
 process.on("SIGTERM", () => server.close(() => process.exit(0)));

@@ -97,6 +97,11 @@ app.delete("/sessions/user/:userId", (req, res) => {
   res.json({ ok: true, invalidated: count });
 });
 
+app.use((err, _req, res, _next) => {
+  const status = err.status ?? err.statusCode ?? 500;
+  res.status(status).json({ ok: false, error: err?.message ?? String(err) });
+});
+
 const server = app.listen(PORT, () => {
   console.log(`[session-service] listening on :${PORT}, ttl=${TTL_MS}ms`);
 });

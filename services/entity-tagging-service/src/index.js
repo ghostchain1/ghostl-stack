@@ -143,6 +143,11 @@ app.delete("/tags/:address", (req, res) => {
   res.json({ ok: true });
 });
 
+app.use((err, _req, res, _next) => {
+  const status = err.status ?? err.statusCode ?? 500;
+  res.status(status).json({ ok: false, error: err?.message ?? String(err) });
+});
+
 const server = app.listen(PORT, () => {
   console.log(`[entity-tagging-service] listening on :${PORT}, data=${DATA_DIR}`);
 });

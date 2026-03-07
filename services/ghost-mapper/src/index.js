@@ -461,6 +461,13 @@ const shutdown = async () => {
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
 
+app.use((_req, res) => res.status(404).json({ ok: false, error: "not_found" }));
+
+app.use((err, _req, res, _next) => {
+  const status = err.status ?? err.statusCode ?? 500;
+  res.status(status).json({ ok: false, error: err?.message ?? String(err) });
+});
+
 await loadConfig();
 app.listen(PORT, "0.0.0.0", () => {
   logEvent("info", "listening", { port: PORT });

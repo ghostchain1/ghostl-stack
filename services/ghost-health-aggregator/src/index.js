@@ -254,6 +254,11 @@ app.listen(PORT, "0.0.0.0", () => {
   }));
 });
 
+app.use((err, _req, res, _next) => {
+  const status = err.status ?? err.statusCode ?? 500;
+  res.status(status).json({ ok: false, error: err?.message ?? String(err) });
+});
+
 // Graceful shutdown
 process.on("SIGTERM", () => {
   console.log(JSON.stringify({ ts: new Date().toISOString(), msg: "SIGTERM — shutting down" }));

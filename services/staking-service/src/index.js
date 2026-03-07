@@ -114,6 +114,13 @@ app.get("/stake/:validator", async (req, res) => {
   });
 });
 
+app.use((_req, res) => res.status(404).json({ ok: false, error: "not_found" }));
+
+app.use((err, _req, res, _next) => {
+  const status = err.status ?? err.statusCode ?? 500;
+  res.status(status).json({ ok: false, error: err?.message ?? String(err) });
+});
+
 const server = app.listen(PORT, () => {
   console.log(`[staking-service] listening on :${PORT}`);
 });
