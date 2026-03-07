@@ -26,6 +26,7 @@ app.use((_req, res, next) => {
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("X-XSS-Protection", "0");
   res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'");
   res.removeHeader("X-Powered-By");
   next();
 });
@@ -57,8 +58,10 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: "256kb" }));
 app.use((req, res, next) => {
+  req.id = req.headers["x-request-id"] ?? crypto.randomUUID();
+  res.setHeader("X-Request-ID", req.id);
   const t0 = Date.now();
-  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: Date.now() - t0 })));
+  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: Date.now() - t0, reqId: req.id })));
   next();
 });
 
@@ -304,5 +307,8 @@ const server = app.listen(PORT, "0.0.0.0", () => {
     brand: BRAND.name,
   }));
 });
-process.on("SIGTERM", () => server.close(() => process.exit(0)));
+process.on("SIGTERM", () => {
+  setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
+  server.close(() => process.exit(0));
+});
 
