@@ -90,6 +90,7 @@ app.set("etag", false);
 app.set("json spaces", 0);
 app.set("query parser", "simple");
 app.set("strict routing", true);
+app.disable("x-powered-by");
 app.use((_req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
@@ -101,6 +102,7 @@ app.use((_req, res, next) => {
   res.setHeader("X-DNS-Prefetch-Control", "off");
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
   res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
   res.removeHeader("X-Powered-By");
   res.removeHeader("Server");
   next();
