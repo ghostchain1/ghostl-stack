@@ -97,7 +97,8 @@ const rpc = async (rpcUrl, method, params = []) => {
   const res = await fetch(rpcUrl, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params })
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+    signal: AbortSignal.timeout(8000)
   });
   if (!res.ok) throw new Error(`RPC ${method} status ${res.status}`);
   const body = await res.json();

@@ -132,7 +132,8 @@ const vaultFetch = async (method, vaultPath, body, tokenOverride) => {
   const resp = await fetch(url, {
     method,
     headers,
-    body: body ? JSON.stringify(body) : undefined
+    body: body ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(8000)
   });
   const text = await resp.text();
   if (!resp.ok) {

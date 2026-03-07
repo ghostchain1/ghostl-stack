@@ -19,7 +19,8 @@ const postJson = async (url, body) => {
   await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(5000)
   });
 };
 
@@ -38,7 +39,8 @@ const policyCheck = async (action) => {
     const resp = await fetch(`${AGENT_REGISTRY_URL}/policy/check`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ role: AGENT_ROLE, action })
+      body: JSON.stringify({ role: AGENT_ROLE, action }),
+      signal: AbortSignal.timeout(5000)
     });
     if (!resp.ok) return false;
     const data = await resp.json();
@@ -119,7 +121,7 @@ const startWatchdog = () => {
   setInterval(async () => {
     for (const target of WATCHDOG_TARGETS) {
       try {
-        const resp = await fetch(target);
+        const resp = await fetch(target, { signal: AbortSignal.timeout(4000) });
         if (!resp.ok) {
           await logEvidence({
             ts: new Date().toISOString(),
