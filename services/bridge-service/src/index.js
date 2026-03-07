@@ -81,6 +81,12 @@ app.use(
     maxAge: 86400
   })
 );
+app.use((req, res, next) => {
+  if (req.headers["access-control-request-private-network"] === "true") {
+    res.setHeader("Access-Control-Allow-Private-Network", "true");
+  }
+  next();
+});
 
 const _RL_WINDOW = Number(process.env.RATE_LIMIT_WINDOW_MS ?? 60_000);
 const _RL_MAX    = Number(process.env.RATE_LIMIT_MAX ?? 1000);
@@ -116,9 +122,11 @@ app.use((req, res, next) => { if (_draining) { res.set("Connection","close"); re
 app.use((req, res, next) => {
   req.id = req.headers["x-request-id"] ?? crypto.randomUUID();
   res.setHeader("X-Request-ID", req.id);
-  const t0 = Date.now();
-  res.on("prefinish", () => res.setHeader("X-Response-Time", `${Date.now() - t0}ms`));
-  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: Date.now() - t0, reqId: req.id, pid: process.pid, mem: process.memoryUsage().rss })));
+  const _tp = req.headers["traceparent"] ?? `00-${crypto.randomUUID().replace(/-/g,"")}-${req.id.replace(/-/g,"").slice(0,16)}-01`;
+  res.setHeader("X-Trace-ID", _tp);
+  const t0 = process.hrtime.bigint();
+  res.on("prefinish", () => res.setHeader("X-Response-Time", `${(Number(process.hrtime.bigint()-t0)/1e6).toFixed(2)}ms`));
+  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: +(Number(process.hrtime.bigint()-t0)/1e6).toFixed(2), reqId: req.id, pid: process.pid, mem: process.memoryUsage().rss })));
   next();
 });
 

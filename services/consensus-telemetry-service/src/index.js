@@ -119,7 +119,9 @@ app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
     res.setHeader("Access-Control-Max-Age", "86400");
+    res.setHeader("Access-Control-Allow-Private-Network", "true");
   }
+  if (req.headers["access-control-request-private-network"] === "true") { res.setHeader("Access-Control-Allow-Private-Network", "true"); }
   if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
 });
@@ -158,9 +160,11 @@ app.use((req, res, next) => { if (_draining) { res.set("Connection","close"); re
 app.use((req, res, next) => {
   req.id = req.headers["x-request-id"] ?? crypto.randomUUID();
   res.setHeader("X-Request-ID", req.id);
-  const t0 = Date.now();
-  res.on("prefinish", () => res.setHeader("X-Response-Time", `${Date.now() - t0}ms`));
-  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: Date.now() - t0, reqId: req.id, pid: process.pid, mem: process.memoryUsage().rss })));
+  const _tp = req.headers["traceparent"] ?? `00-${crypto.randomUUID().replace(/-/g,"")}-${req.id.replace(/-/g,"").slice(0,16)}-01`;
+  res.setHeader("X-Trace-ID", _tp);
+  const t0 = process.hrtime.bigint();
+  res.on("prefinish", () => res.setHeader("X-Response-Time", `${(Number(process.hrtime.bigint()-t0)/1e6).toFixed(2)}ms`));
+  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: +(Number(process.hrtime.bigint()-t0)/1e6).toFixed(2), reqId: req.id, pid: process.pid, mem: process.memoryUsage().rss })));
   next();
 });
 
