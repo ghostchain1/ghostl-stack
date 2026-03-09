@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "../common/Governed.sol";
 import "../l1/ValidatorRegistry.sol";
+import "../common/GhostHash.sol";
 
 /// @notice L2/L3 route guard that accepts cross-chain proofs only after GhostChain validator attestations.
 contract GhostChainRouteGuard is Governed {
@@ -152,7 +153,7 @@ contract GhostChainRouteGuard is Governed {
     }
 
     function computeRootKey(uint8 sourceLayer, bytes32 root) public pure returns (bytes32) {
-        return keccak256(abi.encode(sourceLayer, root));
+        return GhostHash.layerRootKey(sourceLayer, root);
     }
 
     function _verifySignatures(bytes32 digest, bytes[] calldata signatures) internal view returns (uint16 signerCount) {

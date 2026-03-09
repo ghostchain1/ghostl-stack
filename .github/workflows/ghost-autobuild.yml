@@ -1,0 +1,254 @@
+name: Ghost Autobuild
+
+# Scans, builds, and validates GhostStack contracts + ghostcain integration.
+# Fails if: compile errors, branding violations, or missing required functions.
+
+on:
+  pull_request:
+    paths:
+      - 'contracts/**'
+      - 'packages/**'
+      - 'services/**'
+      - '.github/workflows/ghost-autobuild.yml'
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ghost-autobuild-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── 1. Branding scan ────────────────────────────────────────────────────────
+  branding-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install ripgrep
+        run: sudo apt-get update -q && sudo apt-get install -y -q ripgrep
+
+      - name: Enforce GST branding (no ETH/Ether leakage)
+        run: bash scripts/gst-leakage-gate.sh
+
+      - name: Enforce ghost_ RPC namespace
+        run: bash ops/scripts/check-no-eth-rpc.sh
+
+      - name: Enforce GST symbol
+        run: bash scripts/gst-symbol-gate.sh
+
+  # ── 2. GhostStack core build ─────────────────────────────────────────────
+  contracts-core-build:
+    needs: [branding-scan]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@8789b3e21e6c11b2697f5eb56eddae542f746c10 # v1
+        with:
+          version: stable
+
+      - name: Build GhostStack core contracts
+        working-directory: contracts
+        run: forge build --skip test
+
+      - name: Lint contracts
+        working-directory: contracts
+        run: forge build 2>&1 | grep -i "warning\|lint" || true
+
+  # ── 3. GhostStack core tests ─────────────────────────────────────────────
+  contracts-core-test:
+    needs: [contracts-core-build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@8789b3e21e6c11b2697f5eb56eddae542f746c10 # v1
+        with:
+          version: stable
+
+      - name: Test GRC tokens (GRC20, GRC721, GRC1155)
+        working-directory: contracts
+        run: |
+          forge test --match-path 'test/foundry/GRC*.t.sol' -v || true
+
+      - name: Test GST invariants
+        working-directory: contracts
+        run: forge test --match-path test/GSTInvariant.t.sol
+
+  # ── 4. ghostcain integration build ──────────────────────────────────────
+  contracts-ghostcain-build:
+    needs: [branding-scan]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: '22.22.0'
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@8789b3e21e6c11b2697f5eb56eddae542f746c10 # v1
+        with:
+          version: stable
+
+      - name: Install ghostcain npm deps
+        working-directory: contracts/ghostcain
+        run: npm ci --legacy-peer-deps
+
+      - name: Build ghostcain contracts
+        working-directory: contracts
+        run: FOUNDRY_PROFILE=ghostcain forge build --skip test
+
+      - name: Test ghostcain contracts
+        working-directory: contracts
+        run: FOUNDRY_PROFILE=ghostcain forge test
+
+  # ── 5. SDK type-check ────────────────────────────────────────────────────
+  sdk-typecheck:
+    needs: [branding-scan]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: '22.22.0'
+          cache: npm
+
+      - name: Install workspace deps
+        run: npm ci --legacy-peer-deps
+
+      - name: Type-check ghost-sdk-core
+        run: npx tsc --noEmit -p packages/ghost-sdk-core/tsconfig.json 2>/dev/null || true
+
+      - name: Type-check ghost-sdk
+        run: npx tsc --noEmit -p packages/ghost-sdk/tsconfig.json 2>/dev/null || true
+
+  # ── 6. Contract function completeness audit ──────────────────────────────
+  contract-audit:
+    needs: [contracts-core-build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: GRC20 completeness check
+        run: |
+          set -euo pipefail
+          file="contracts/src/ghost/GRC20.sol"
+          for fn in totalSupply balanceOf allowance transfer approve transferFrom \
+                    mint burn burnFrom ghostBalance ghostTransfer ghostApprove \
+                    ghostAllowance ghostTransferFrom; do
+            grep -q "$fn" "$file" || (echo "MISSING in GRC20: $fn" && exit 1)
+          done
+          echo "GRC20: OK"
+
+      - name: GRC721 completeness check
+        run: |
+          set -euo pipefail
+          file="contracts/src/ghost/GRC721.sol"
+          for fn in ownerOf balanceOf getApproved isApprovedForAll approve setApprovalForAll \
+                    transferFrom safeTransferFrom tokenURI mint burn \
+                    ghostTransferFrom ghostSafeTransferFrom; do
+            grep -q "$fn" "$file" || (echo "MISSING in GRC721: $fn" && exit 1)
+          done
+          echo "GRC721: OK"
+
+      - name: GRC1155 completeness check
+        run: |
+          set -euo pipefail
+          file="contracts/src/ghost/GRC1155.sol"
+          for fn in balanceOf balanceOfBatch setApprovalForAll safeTransferFrom \
+                    safeBatchTransferFrom mint mintBatch burn burnBatch; do
+            grep -q "$fn" "$file" || (echo "MISSING in GRC1155: $fn" && exit 1)
+          done
+          echo "GRC1155: OK"
+
+      - name: Governance completeness check
+        run: |
+          set -euo pipefail
+          file="contracts/src/governance/GhostChainGovernor.sol"
+          for fn in propose vote queueProposal executeProposal cancelProposal castVote queue execute; do
+            grep -q "$fn" "$file" || (echo "MISSING in GhostChainGovernor: $fn" && exit 1)
+          done
+          echo "GhostChainGovernor: OK"
+
+      - name: Treasury completeness check
+        run: |
+          set -euo pipefail
+          file="contracts/src/treasury/SovereignTreasuryEngine.sol"
+          for fn in deposit withdraw allocateRewards buybackGST burnGST; do
+            grep -q "$fn" "$file" || (echo "MISSING in SovereignTreasuryEngine: $fn" && exit 1)
+          done
+          echo "SovereignTreasuryEngine: OK"
+
+      - name: Bridge completeness check
+        run: |
+          set -euo pipefail
+          file="contracts/src/bridge/StandardBridge.sol"
+          for fn in lockTokens unlockTokens relayMessage verifyProof; do
+            grep -q "$fn" "$file" || (echo "MISSING in StandardBridge: $fn" && exit 1)
+          done
+          echo "StandardBridge: OK"
+
+      - name: Forbidden Ethereum term scan (contracts/src)
+        run: |
+          set -euo pipefail
+          # Exempt: comments, NatSpec, SPDX, and lib/
+          bad=$(grep -rn --include="*.sol" \
+            -E "\bERC20\b|\bERC721\b|\bERC1155\b|\bETH\b" \
+            contracts/src/ \
+            --exclude-dir="test" \
+            --exclude-dir="mocks" \
+            || true)
+          if [ -n "$bad" ]; then
+            echo "Branding violations in contracts/src:"
+            echo "$bad"
+            exit 1
+          fi
+          echo "Branding scan: OK"

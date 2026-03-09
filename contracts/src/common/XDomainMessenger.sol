@@ -6,6 +6,7 @@ pragma solidity ^0.8.24;
 import {IXDomainMessenger} from "./IXDomainMessenger.sol";
 import {LibErrors} from "./LibErrors.sol";
 import {LibAddress} from "./LibAddress.sol";
+import {GhostHash} from "./GhostHash.sol";
 
 /// @notice Minimal hierarchical messenger.
 /// - "parentMessenger" is the ONLY entity allowed to relay messages "down" into this chain.
@@ -103,7 +104,7 @@ contract XDomainMessenger is IXDomainMessenger {
         if (target == address(0)) revert LibErrors.ZeroAddress();
         if (value != 0) revert LibErrors.InvalidValue();
 
-        bytes32 msgHash = keccak256(abi.encode(nonce, sender, target, value, message));
+        bytes32 msgHash = GhostHash.xMessageKey(nonce, sender, target, value, keccak256(message));
         if (relayed[msgHash]) revert LibErrors.AlreadyRelayed();
         relayed[msgHash] = true;
 

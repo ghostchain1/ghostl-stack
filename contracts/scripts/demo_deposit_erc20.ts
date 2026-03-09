@@ -16,14 +16,14 @@ async function main() {
   const amountWei = ghost.parseEther(amountGst);
   const nonce = BigInt(process.env.DEMO_NONCE ?? Math.floor(Date.now() / 1000).toString());
 
-  // Disambiguate between multiple ERC20 artifacts in this repo.
+  // Disambiguate between multiple GST20 artifacts in this repo.
   const token = await ghost.getContractAt("src/common/ERC20.sol:ERC20", tokenAddress, signer);
   const bridge = await ghost.getContractAt("L2L3Bridge", bridgeAddress, signer);
 
   const approveTx = await token.approve(bridgeAddress, amountWei);
   await approveTx.wait();
 
-  const tx = await bridge.depositERC20ToL3(tokenAddress, to, amountWei, nonce);
+  const tx = await bridge.depositGST20ToL3(tokenAddress, to, amountWei, nonce);
 
   console.log("bridge:", bridgeAddress);
   console.log("token:", tokenAddress);
@@ -34,7 +34,7 @@ async function main() {
   console.log("tx:", tx.hash);
 
   await tx.wait();
-  console.log("ERC20DepositInitiated emitted.");
+  console.log("GST20DepositInitiated emitted.");
 
   const out = {
     bridge: bridgeAddress,
@@ -47,7 +47,7 @@ async function main() {
   };
 
   const tmpDir = path.join(ROOT, ".tmp");
-  const outPath = path.join(tmpDir, "last_deposit_erc20.json");
+  const outPath = path.join(tmpDir, "last_deposit_gst20.json");
   await fs.mkdir(tmpDir, { recursive: true });
   await fs.writeFile(outPath, JSON.stringify(out, null, 2) + "\n", "utf8");
   console.log("Wrote:", outPath);

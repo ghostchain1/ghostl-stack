@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import "../common/Governed.sol";
 import "./StakingManager.sol";
 
-interface IERC20RewardToken {
+interface IGST20RewardToken {
     function transfer(address to, uint256 amount) external returns (bool);
 }
 
@@ -12,13 +12,13 @@ interface IERC20RewardToken {
 contract RewardDistributor is Governed {
     address internal constant CANONICAL_GAS_TOKEN = 0x5FbDB2315678afecb367f032d93F642f64180aa3;
 
-    IERC20RewardToken public immutable rewardToken;
+    IGST20RewardToken public immutable rewardToken;
     StakingManager public staking;
 
     event Distributed(address indexed to, uint256 amount);
 
     constructor(StakingManager _staking, address governor_, address timelock_) Governed(governor_, timelock_) {
-        rewardToken = IERC20RewardToken(CANONICAL_GAS_TOKEN);
+        rewardToken = IGST20RewardToken(CANONICAL_GAS_TOKEN);
         staking = _staking;
     }
 

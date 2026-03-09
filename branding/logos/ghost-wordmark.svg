@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" fill="none">
+  <!-- Ghost icon mark -->
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7B2FBE"/>
+      <stop offset="100%" stop-color="#00D2FF"/>
+    </linearGradient>
+  </defs>
+  <!-- Ghost body -->
+  <path d="M24 6C15.163 6 8 13.163 8 22v16l5-4 5 4 5-4 5 4 5-4 5 4V22C38 13.163 30.837 6 24 6z"
+        fill="url(#g1)"/>
+  <!-- Eyes -->
+  <circle cx="18" cy="21" r="2.5" fill="#0A0B0F"/>
+  <circle cx="30" cy="21" r="2.5" fill="#0A0B0F"/>
+  <!-- Wordmark -->
+  <text x="52" y="32" font-family="Syne, system-ui, sans-serif" font-weight="800"
+        font-size="22" fill="#E8E9F0" letter-spacing="-0.5">Ghost</text>
+  <text x="120" y="32" font-family="Syne, system-ui, sans-serif" font-weight="400"
+        font-size="22" fill="#7B2FBE" letter-spacing="-0.3">Chain</text>
+</svg>

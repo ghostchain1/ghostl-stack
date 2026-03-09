@@ -175,7 +175,39 @@ const EnvSchema = z.object({
   /** Clock tolerance in seconds for JWT expiry validation */
   OIDC_CLOCK_TOLERANCE_SECONDS: z.coerce.number().int().min(0).max(300).default(5),
   /** URL of ghost-jwks-guard or JWKS proxy (uses Keycloak JWKS endpoints when not set) */
-  JWKS_GUARD_URL: z.preprocess(emptyToUndefined, z.string().url().optional())
+  JWKS_GUARD_URL: z.preprocess(emptyToUndefined, z.string().url().optional()),
+  // ─── OIDC Authorization-Code / PKCE (BFF-side flow) ─────────────────────
+  /** Keycloak client ID for the users realm public client */
+  OIDC_CLIENT_ID_USERS: z.string().default('ghost-app'),
+  /** Keycloak client ID for the employees realm public client */
+  OIDC_CLIENT_ID_EMPLOYEES: z.string().default('ghost-employees-app'),
+  /** Keycloak client ID for the admins realm public client */
+  OIDC_CLIENT_ID_ADMINS: z.string().default('ghost-admins-app'),
+  /**
+   * Absolute redirect URI registered in Keycloak for the auth-code callback.
+   * Must end without a trailing slash.
+   * Example: https://api.ghost.example/auth/oidc/callback
+   */
+  OIDC_REDIRECT_URI: z.preprocess(emptyToUndefined, z.string().url().optional()),
+  /**
+   * Comma-separated list of origin prefixes that are allowed as the
+   * post-login redirect target (open-redirect guard).
+   * Defaults to CORS_ALLOWED_ORIGINS when not set.
+   */
+  OIDC_ALLOWED_REDIRECT_ORIGINS: z.string().optional(),
+
+  // ─── Gateway policy ──────────────────────────────────────────────────────
+  /**
+   * Comma-separated list of origins allowed for CORS (validated at startup).
+   * Empty = allow all in dev, deny all non-same-origin in production.
+   */
+  CORS_ALLOW_ORIGINS: z.string().default(''),
+  /** Rate-limit sliding window duration in ms (default: 1 min). */
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(1_000).max(3_600_000).default(60_000),
+  /** Max requests per IP/session per window (global — all routes). */
+  RATE_LIMIT_MAX_GLOBAL: z.coerce.number().int().min(10).max(10_000).default(600),
+  /** Max requests per IP per window on auth paths (stricter). */
+  RATE_LIMIT_MAX_AUTH: z.coerce.number().int().min(5).max(500).default(30)
 });
 
 const parsed = EnvSchema.safeParse(process.env);

@@ -4,13 +4,13 @@ pragma solidity ^0.8.24;
 /**
  * @title GRC-1155 — Ghost Multi-Token Standard
  * @notice GhostChain native multi-token standard (fungible + non-fungible in one).
- *         API-compatible with ERC-1155.
+ *         ABI-compatible with ERC-1155 for bridge/tooling interoperability.
  */
 contract GRC1155 {
     // ── Storage ──────────────────────────────────────────────────────────────
 
-    /// @dev id => owner => balance
-    mapping(uint256 => mapping(address => uint256)) public balanceOf;
+    /// @dev id => owner => balance — private storage; use balanceOf(account,id) to query.
+    mapping(uint256 => mapping(address => uint256)) internal _balances;
     /// @dev owner => operator => approved
     mapping(address => mapping(address => bool)) public isApprovedForAll;
 
@@ -50,6 +50,14 @@ contract GRC1155 {
         emit ApprovalForAll(msg.sender, operator, approved);
     }
 
+    // ── Balance queries ──────────────────────────────────────────────────────
+
+    /// @notice Returns the balance of `account` for token `id`.
+    /// @dev Signature matches ERC-1155: balanceOf(address account, uint256 id).
+    function balanceOf(address account, uint256 id) public view returns (uint256) {
+        return _balances[id][account];
+    }
+
     // ── Batch balance ────────────────────────────────────────────────────────
 
     function balanceOfBatch(
@@ -59,7 +67,7 @@ contract GRC1155 {
         require(accounts.length == ids.length, "GRC1155: length mismatch");
         uint256[] memory result = new uint256[](accounts.length);
         for (uint256 i = 0; i < accounts.length; ++i) {
-            result[i] = balanceOf[ids[i]][accounts[i]];
+            result[i] = _balances[ids[i]][accounts[i]];
         }
         return result;
     }
@@ -106,15 +114,15 @@ contract GRC1155 {
     function _transfer(address from, address to, uint256 id, uint256 amount) internal {
         require(to != address(0), "GRC1155: transfer to zero");
         if (from != address(0)) {
-            require(balanceOf[id][from] >= amount, "GRC1155: insufficient balance");
-            unchecked { balanceOf[id][from] -= amount; }
+            require(_balances[id][from] >= amount, "GRC1155: insufficient balance");
+            unchecked { _balances[id][from] -= amount; }
         }
-        balanceOf[id][to] += amount;
+        _balances[id][to] += amount;
     }
 
     function _mint(address to, uint256 id, uint256 amount, bytes memory data) internal {
         require(to != address(0), "GRC1155: mint to zero");
-        balanceOf[id][to] += amount;
+        _balances[id][to] += amount;
         emit TransferSingle(msg.sender, address(0), to, id, amount);
         _checkOnGRC1155Received(msg.sender, address(0), to, id, amount, data);
     }
@@ -128,20 +136,66 @@ contract GRC1155 {
         require(to != address(0), "GRC1155: mint to zero");
         require(ids.length == amounts.length, "GRC1155: length mismatch");
         for (uint256 i = 0; i < ids.length; ++i) {
-            balanceOf[ids[i]][to] += amounts[i];
+            _balances[ids[i]][to] += amounts[i];
         }
         emit TransferBatch(msg.sender, address(0), to, ids, amounts);
         _checkOnGRC1155BatchReceived(msg.sender, address(0), to, ids, amounts, data);
     }
 
     function _burn(address from, uint256 id, uint256 amount) internal {
-        require(balanceOf[id][from] >= amount, "GRC1155: burn exceeds balance");
-        unchecked { balanceOf[id][from] -= amount; }
+        require(_balances[id][from] >= amount, "GRC1155: burn exceeds balance");
+        unchecked { _balances[id][from] -= amount; }
         emit TransferSingle(msg.sender, from, address(0), id, amount);
     }
 
     function _setURI(string memory newUri, uint256 id) internal {
         emit URI(newUri, id);
+    }
+
+    // ── Public mint / burn (virtual — override with access control) ───────────
+
+    /// @notice Mints `amount` of token `id` to `to`. Must be overridden with
+    ///         access control in concrete contracts.
+    function mint(address to, uint256 id, uint256 amount, bytes calldata data) public virtual {
+        _mint(to, id, amount, data);
+    }
+
+    /// @notice Batch-mints tokens. Must be overridden with access control in
+    ///         concrete contracts.
+    function mintBatch(
+        address to,
+        uint256[] calldata ids,
+        uint256[] calldata amounts,
+        bytes calldata data
+    ) public virtual {
+        _mintBatch(to, ids, amounts, data);
+    }
+
+    /// @notice Burns `amount` of token `id` from `from`. Caller must be `from`
+    ///         or an approved operator.
+    function burn(address from, uint256 id, uint256 amount) public virtual {
+        require(
+            msg.sender == from || isApprovedForAll[from][msg.sender],
+            "GRC1155: not authorized"
+        );
+        _burn(from, id, amount);
+    }
+
+    /// @notice Batch-burns tokens.
+    function burnBatch(
+        address from,
+        uint256[] calldata ids,
+        uint256[] calldata amounts
+    ) public virtual {
+        require(
+            msg.sender == from || isApprovedForAll[from][msg.sender],
+            "GRC1155: not authorized"
+        );
+        require(ids.length == amounts.length, "GRC1155: length mismatch");
+        for (uint256 i = 0; i < ids.length; ++i) {
+            _burn(from, ids[i], amounts[i]);
+        }
+        emit TransferBatch(msg.sender, from, address(0), ids, amounts);
     }
 
     // ── Receiver checks ──────────────────────────────────────────────────────

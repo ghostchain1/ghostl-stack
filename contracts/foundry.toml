@@ -3,7 +3,13 @@ src = "src"
 test = "test"
 script = "script"
 out = "out-codex"
-libs = ["lib"]
+libs = ["lib", "ghostcain/node_modules", "ghostcain/lib"]
+remappings = [
+  "@openzeppelin/contracts/=lib/ghostchain-contracts/contracts/",
+  # ghostcain-contracts integration
+  "@ghostchain/contracts/=ghostcain/contracts/",
+  "@ghostchain/contracts-upgradeable/=ghostcain/contracts/",
+]
 solc_version = "0.8.24"
 optimizer = true
 optimizer_runs = 200
@@ -50,3 +56,22 @@ cache_path = "cache-codex"
 test = "test/exchange"
 out = "out-codex"
 cache_path = "cache-codex"
+
+# ghostcain-contracts standalone build profile — run with: FOUNDRY_PROFILE=ghostcain forge build/test
+[profile.ghostcain]
+src = "ghostcain/contracts"
+test = "ghostcain/test"
+script = "ghostcain/scripts"
+out = "ghostcain/out-codex"
+cache_path = "ghostcain/cache-codex"
+libs = ["ghostcain/node_modules", "ghostcain/lib", "lib"]
+remappings = [
+  "@ghostchain/contracts/=ghostcain/contracts/",
+  "@ghostchain/contracts-upgradeable/=ghostcain/contracts/",
+  "@openzeppelin/contracts/=lib/ghostchain-contracts/contracts/",
+  "forge-std/=lib/forge-std/src/",
+]
+via_ir = true
+# ghostcain-contracts require ^0.8.26; use latest stable that satisfies it.
+# GhostStack core contracts remain pinned to 0.8.24 in [profile.default].
+solc_version = "0.8.28"

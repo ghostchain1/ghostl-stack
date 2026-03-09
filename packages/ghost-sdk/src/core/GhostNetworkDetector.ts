@@ -43,7 +43,7 @@ export interface GhostNetworkDetectorConfig {
 const KNOWN_CHAINS: Record<number, string> = {
   1:        "GhostChain Mainnet",
   11155111: "Sepolia Testnet",
-  10:       "Optimism",
+  10:       "Optimism L2" /* external network — name is canonical */,
   42161:    "Arbitrum One",
   137:      "Polygon",
   8453:     "Base",

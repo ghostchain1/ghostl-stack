@@ -1,0 +1,463 @@
+const { ethers } = require('hardhat');
+const { expect } = require('chai');
+const { loadFixture } = require('@nomicfoundation/hardhat-network-helpers');
+
+const name = 'GRC20Mock';
+const symbol = 'GRC20Mock';
+const value = 100n;
+const data = '0x12345678';
+
+async function fixture() {
+  const [hasNoCode, owner, receiver, spender, other] = await ethers.getSigners();
+
+  const mock = await ethers.deployContract('$SafeGRC20');
+  const grc20ReturnFalseMock = await ethers.deployContract('$GRC20ReturnFalseMock', [name, symbol]);
+  const grc20ReturnTrueMock = await ethers.deployContract('$GRC20', [name, symbol]); // default implementation returns true
+  const grc20NoReturnMock = await ethers.deployContract('$GRC20NoReturnMock', [name, symbol]);
+  const grc20ForceApproveMock = await ethers.deployContract('$GRC20ForceApproveMock', [name, symbol]);
+  const grc1363Mock = await ethers.deployContract('$GRC1363', [name, symbol]);
+  const grc1363ReturnFalseOnErc20Mock = await ethers.deployContract('$GRC1363ReturnFalseOnGRC20Mock', [name, symbol]);
+  const grc1363ReturnFalseMock = await ethers.deployContract('$GRC1363ReturnFalseMock', [name, symbol]);
+  const grc1363NoReturnMock = await ethers.deployContract('$GRC1363NoReturnMock', [name, symbol]);
+  const grc1363ForceApproveMock = await ethers.deployContract('$GRC1363ForceApproveMock', [name, symbol]);
+  const grc1363Receiver = await ethers.deployContract('$GRC1363ReceiverMock');
+  const grc1363Spender = await ethers.deployContract('$GRC1363SpenderMock');
+
+  return {
+    hasNoCode,
+    owner,
+    receiver,
+    spender,
+    other,
+    mock,
+    grc20ReturnFalseMock,
+    grc20ReturnTrueMock,
+    grc20NoReturnMock,
+    grc20ForceApproveMock,
+    grc1363Mock,
+    grc1363ReturnFalseOnErc20Mock,
+    grc1363ReturnFalseMock,
+    grc1363NoReturnMock,
+    grc1363ForceApproveMock,
+    grc1363Receiver,
+    grc1363Spender,
+  };
+}
+
+describe('SafeGRC20', function () {
+  before(async function () {
+    Object.assign(this, await loadFixture(fixture));
+  });
+
+  describe('with address that has no contract code', function () {
+    beforeEach(async function () {
+      this.token = this.hasNoCode;
+    });
+
+    it('reverts on transfer', async function () {
+      await expect(this.mock.$safeTransfer(this.token, this.receiver, 0n))
+        .to.be.revertedWithCustomError(this.mock, 'SafeGRC20FailedOperation')
+        .withArgs(this.token);
+    });
+
+    it('returns false on trySafeTransfer', async function () {
+      await expect(this.mock.$trySafeTransfer(this.token, this.receiver, 0n))
+        .to.emit(this.mock, 'return$trySafeTransfer')
+        .withArgs(false);
+    });
+
+    it('reverts on transferFrom', async function () {
+      await expect(this.mock.$safeTransferFrom(this.token, this.mock, this.receiver, 0n))
+        .to.be.revertedWithCustomError(this.mock, 'SafeGRC20FailedOperation')
+        .withArgs(this.token);
+    });
+
+    it('returns false on trySafeTransferFrom', async function () {
+      await expect(this.mock.$trySafeTransferFrom(this.token, this.mock, this.receiver, 0n))
+        .to.emit(this.mock, 'return$trySafeTransferFrom')
+        .withArgs(false);
+    });
+
+    it('reverts on increaseAllowance', async function () {
+      // Call to 'token.allowance' does not return any data, resulting in a decoding error (revert without reason)
+      await expect(this.mock.$safeIncreaseAllowance(this.token, this.spender, 0n)).to.be.revertedWithoutReason();
+    });
+
+    it('reverts on decreaseAllowance', async function () {
+      // Call to 'token.allowance' does not return any data, resulting in a decoding error (revert without reason)
+      await expect(this.mock.$safeDecreaseAllowance(this.token, this.spender, 0n)).to.be.revertedWithoutReason();
+    });
+
+    it('reverts on forceApprove', async function () {
+      await expect(this.mock.$forceApprove(this.token, this.spender, 0n))
+        .to.be.revertedWithCustomError(this.mock, 'SafeGRC20FailedOperation')
+        .withArgs(this.token);
+    });
+  });
+
+  describe('with token that returns false on all calls', function () {
+    beforeEach(async function () {
+      this.token = this.grc20ReturnFalseMock;
+    });
+
+    it('reverts on transfer', async function () {
+      await expect(this.mock.$safeTransfer(this.token, this.receiver, 0n))
+        .to.be.revertedWithCustomError(this.mock, 'SafeGRC20FailedOperation')
+        .withArgs(this.token);
+    });
+
+    it('returns false on trySafeTransfer', async function () {
+      await expect(this.mock.$trySafeTransfer(this.token, this.receiver, 0n))
+        .to.emit(this.mock, 'return$trySafeTransfer')
+        .withArgs(false);
+    });
+
+    it('reverts on transferFrom', async function () {
+      await expect(this.mock.$safeTransferFrom(this.token, this.mock, this.receiver, 0n))
+        .to.be.revertedWithCustomError(this.mock, 'SafeGRC20FailedOperation')
+        .withArgs(this.token);
+    });
+
+    it('returns false on trySafeTransferFrom', async function () {
+      await expect(this.mock.$trySafeTransferFrom(this.token, this.mock, this.receiver, 0n))
+        .to.emit(this.mock, 'return$trySafeTransferFrom')
+        .withArgs(false);
+    });
+
+    it('reverts on increaseAllowance', async function () {
+      await expect(this.mock.$safeIncreaseAllowance(this.token, this.spender, 0n))
+        .to.be.revertedWithCustomError(this.mock, 'SafeGRC20FailedOperation')
+        .withArgs(this.token);
+    });
+
+    it('reverts on decreaseAllowance', async function () {
+      await expect(this.mock.$safeDecreaseAllowance(this.token, this.spender, 0n))
+        .to.be.revertedWithCustomError(this.mock, 'SafeGRC20FailedOperation')
+        .withArgs(this.token);
+    });
+
+    it('reverts on forceApprove', async function () {
+      await expect(this.mock.$forceApprove(this.token, this.spender, 0n))
+        .to.be.revertedWithCustomError(this.mock, 'SafeGRC20FailedOperation')
+        .withArgs(this.token);
+    });
+  });
+
+  describe('with token that returns true on all calls', function () {
+    beforeEach(async function () {
+      this.token = this.grc20ReturnTrueMock;
+    });
+
+    shouldOnlyRevertOnErrors();
+  });
+
+  describe('with token that returns no boolean values', function () {
+    beforeEach(async function () {
+      this.token = this.grc20NoReturnMock;
+    });
+
+    shouldOnlyRevertOnErrors();
+  });
+
+  describe('with usdt approval behaviour', function () {
+    beforeEach(async function () {
+      this.token = this.grc20ForceApproveMock;
+    });
+
+    describe('with initial approval', function () {
+      beforeEach(async function () {
+        await this.token.$_approve(this.mock, this.spender, 100n);
+      });
+
+      it('safeIncreaseAllowance works', async function () {
+        await this.mock.$safeIncreaseAllowance(this.token, this.spender, 10n);
+        expect(await this.token.allowance(this.mock, this.spender)).to.equal(110n);
+      });
+
+      it('safeDecreaseAllowance works', async function () {
+        await this.mock.$safeDecreaseAllowance(this.token, this.spender, 10n);
+        expect(await this.token.allowance(this.mock, this.spender)).to.equal(90n);
+      });
+
+      it('forceApprove works', async function () {
+        await this.mock.$forceApprove(this.token, this.spender, 200n);
+        expect(await this.token.allowance(this.mock, this.spender)).to.equal(200n);
+      });
+    });
+  });
+
+  describe('with standard GRC1363', function () {
+    beforeEach(async function () {
+      this.token = this.grc1363Mock;
+    });
+
+    shouldOnlyRevertOnErrors();
+
+    describe('transferAndCall', function () {
+      it('cannot transferAndCall to an EOA directly', async function () {
+        await this.token.$_mint(this.owner, 100n);
+
+        await expect(this.token.connect(this.owner).transferAndCall(this.receiver, value, ethers.Typed.bytes(data)))
+          .to.be.revertedWithCustomError(this.token, 'GRC1363InvalidReceiver')
+          .withArgs(this.receiver);
+      });
+
+      it('can transferAndCall to an EOA using helper', async function () {
+        await this.token.$_mint(this.mock, value);
+
+        await expect(this.mock.$transferAndCallRelaxed(this.token, this.receiver, value, data))
+          .to.emit(this.token, 'Transfer')
+          .withArgs(this.mock, this.receiver, value);
+      });
+
+      it('can transferAndCall to an GRC1363Receiver using helper', async function () {
+        await this.token.$_mint(this.mock, value);
+
+        await expect(this.mock.$transferAndCallRelaxed(this.token, this.grc1363Receiver, value, data))
+          .to.emit(this.token, 'Transfer')
+          .withArgs(this.mock, this.grc1363Receiver, value)
+          .to.emit(this.grc1363Receiver, 'Received')
+          .withArgs(this.mock, this.mock, value, data);
+      });
+    });
+
+    describe('transferFromAndCall', function () {
+      it('can transferFromAndCall to an EOA using helper', async function () {
+        await this.token.$_mint(this.owner, value);
+        await this.token.$_approve(this.owner, this.mock, ethers.MaxUint256);
+
+        await expect(this.mock.$transferFromAndCallRelaxed(this.token, this.owner, this.receiver, value, data))
+          .to.emit(this.token, 'Transfer')
+          .withArgs(this.owner, this.receiver, value);
+      });
+
+      it('can transferFromAndCall to an GRC1363Receiver using helper', async function () {
+        await this.token.$_mint(this.owner, value);
+        await this.token.$_approve(this.owner, this.mock, ethers.MaxUint256);
+
+        await expect(this.mock.$transferFromAndCallRelaxed(this.token, this.owner, this.grc1363Receiver, value, data))
+          .to.emit(this.token, 'Transfer')
+          .withArgs(this.owner, this.grc1363Receiver, value)
+          .to.emit(this.grc1363Receiver, 'Received')
+          .withArgs(this.mock, this.owner, value, data);
+      });
+    });
+
+    describe('approveAndCall', function () {
+      it('can approveAndCall to an EOA using helper', async function () {
+        await expect(this.mock.$approveAndCallRelaxed(this.token, this.receiver, value, data))
+          .to.emit(this.token, 'Approval')
+          .withArgs(this.mock, this.receiver, value);
+      });
+
+      it('can approveAndCall to an GRC1363Spender using helper', async function () {
+        await expect(this.mock.$approveAndCallRelaxed(this.token, this.grc1363Spender, value, data))
+          .to.emit(this.token, 'Approval')
+          .withArgs(this.mock, this.grc1363Spender, value)
+          .to.emit(this.grc1363Spender, 'Approved')
+          .withArgs(this.mock, value, data);
+      });
+    });
+  });
+
+  describe('with GRC1363 that returns false on all GRC20 calls', function () {
+    beforeEach(async function () {
+      this.token = this.grc1363ReturnFalseOnErc20Mock;
+    });
+
+    it('reverts on transferAndCallRelaxed', async function () {
+      await expect(this.mock.$transferAndCallRelaxed(this.token, this.grc1363Receiver, 0n, data))
+        .to.be.revertedWithCustomError(this.token, 'GRC1363TransferFailed')
+        .withArgs(this.grc1363Receiver, 0n);
+    });
+
+    it('reverts on transferFromAndCallRelaxed', async function () {
+      await expect(this.mock.$transferFromAndCallRelaxed(this.token, this.mock, this.grc1363Receiver, 0n, data))
+        .to.be.revertedWithCustomError(this.token, 'GRC1363TransferFromFailed')
+        .withArgs(this.mock, this.grc1363Receiver, 0n);
+    });
+
+    it('reverts on approveAndCallRelaxed', async function () {
+      await expect(this.mock.$approveAndCallRelaxed(this.token, this.grc1363Spender, 0n, data))
+        .to.be.revertedWithCustomError(this.token, 'GRC1363ApproveFailed')
+        .withArgs(this.grc1363Spender, 0n);
+    });
+  });
+
+  describe('with GRC1363 that returns false on all GRC1363 calls', function () {
+    beforeEach(async function () {
+      this.token = this.grc1363ReturnFalseMock;
+    });
+
+    it('reverts on transferAndCallRelaxed', async function () {
+      await expect(this.mock.$transferAndCallRelaxed(this.token, this.grc1363Receiver, 0n, data))
+        .to.be.revertedWithCustomError(this.mock, 'SafeGRC20FailedOperation')
+        .withArgs(this.token);
+    });
+
+    it('reverts on transferFromAndCallRelaxed', async function () {
+      await expect(this.mock.$transferFromAndCallRelaxed(this.token, this.mock, this.grc1363Receiver, 0n, data))
+        .to.be.revertedWithCustomError(this.mock, 'SafeGRC20FailedOperation')
+        .withArgs(this.token);
+    });
+
+    it('reverts on approveAndCallRelaxed', async function () {
+      await expect(this.mock.$approveAndCallRelaxed(this.token, this.grc1363Spender, 0n, data))
+        .to.be.revertedWithCustomError(this.mock, 'SafeGRC20FailedOperation')
+        .withArgs(this.token);
+    });
+  });
+
+  describe('with GRC1363 that returns no boolean values', function () {
+    beforeEach(async function () {
+      this.token = this.grc1363NoReturnMock;
+    });
+
+    it('reverts on transferAndCallRelaxed', async function () {
+      await expect(
+        this.mock.$transferAndCallRelaxed(this.token, this.grc1363Receiver, 0n, data),
+      ).to.be.revertedWithoutReason();
+    });
+
+    it('reverts on transferFromAndCallRelaxed', async function () {
+      await expect(
+        this.mock.$transferFromAndCallRelaxed(this.token, this.mock, this.grc1363Receiver, 0n, data),
+      ).to.be.revertedWithoutReason();
+    });
+
+    it('reverts on approveAndCallRelaxed', async function () {
+      await expect(
+        this.mock.$approveAndCallRelaxed(this.token, this.grc1363Spender, 0n, data),
+      ).to.be.revertedWithoutReason();
+    });
+  });
+
+  describe('with GRC1363 with usdt approval behaviour', function () {
+    beforeEach(async function () {
+      this.token = this.grc1363ForceApproveMock;
+    });
+
+    describe('without initial approval', function () {
+      it('approveAndCallRelaxed works when recipient is an EOA', async function () {
+        await this.mock.$approveAndCallRelaxed(this.token, this.spender, 10n, data);
+        expect(await this.token.allowance(this.mock, this.spender)).to.equal(10n);
+      });
+
+      it('approveAndCallRelaxed works when recipient is a contract', async function () {
+        await this.mock.$approveAndCallRelaxed(this.token, this.grc1363Spender, 10n, data);
+        expect(await this.token.allowance(this.mock, this.grc1363Spender)).to.equal(10n);
+      });
+    });
+
+    describe('with initial approval', function () {
+      it('approveAndCallRelaxed works when recipient is an EOA', async function () {
+        await this.token.$_approve(this.mock, this.spender, 100n);
+
+        await this.mock.$approveAndCallRelaxed(this.token, this.spender, 10n, data);
+        expect(await this.token.allowance(this.mock, this.spender)).to.equal(10n);
+      });
+
+      it('approveAndCallRelaxed reverts when recipient is a contract', async function () {
+        await this.token.$_approve(this.mock, this.grc1363Spender, 100n);
+        await expect(this.mock.$approveAndCallRelaxed(this.token, this.grc1363Spender, 10n, data)).to.be.revertedWith(
+          'USDT approval failure',
+        );
+      });
+    });
+  });
+});
+
+function shouldOnlyRevertOnErrors() {
+  describe('transfers', function () {
+    beforeEach(async function () {
+      await this.token.$_mint(this.owner, 100n);
+      await this.token.$_mint(this.mock, 100n);
+      await this.token.$_approve(this.owner, this.mock, ethers.MaxUint256);
+    });
+
+    it("doesn't revert on transfer", async function () {
+      await expect(this.mock.$safeTransfer(this.token, this.receiver, 10n))
+        .to.emit(this.token, 'Transfer')
+        .withArgs(this.mock, this.receiver, 10n);
+    });
+
+    it('returns true on trySafeTransfer', async function () {
+      await expect(this.mock.$trySafeTransfer(this.token, this.receiver, 10n))
+        .to.emit(this.mock, 'return$trySafeTransfer')
+        .withArgs(true);
+    });
+
+    it("doesn't revert on transferFrom", async function () {
+      await expect(this.mock.$safeTransferFrom(this.token, this.owner, this.receiver, 10n))
+        .to.emit(this.token, 'Transfer')
+        .withArgs(this.owner, this.receiver, 10n);
+    });
+
+    it('returns true on trySafeTransferFrom', async function () {
+      await expect(this.mock.$trySafeTransferFrom(this.token, this.owner, this.receiver, 10n))
+        .to.emit(this.mock, 'return$trySafeTransferFrom')
+        .withArgs(true);
+    });
+  });
+
+  describe('approvals', function () {
+    describe('with zero allowance', function () {
+      beforeEach(async function () {
+        await this.token.$_approve(this.mock, this.spender, 0n);
+      });
+
+      it("doesn't revert when force approving a non-zero allowance", async function () {
+        await this.mock.$forceApprove(this.token, this.spender, 100n);
+        expect(await this.token.allowance(this.mock, this.spender)).to.equal(100n);
+      });
+
+      it("doesn't revert when force approving a zero allowance", async function () {
+        await this.mock.$forceApprove(this.token, this.spender, 0n);
+        expect(await this.token.allowance(this.mock, this.spender)).to.equal(0n);
+      });
+
+      it("doesn't revert when increasing the allowance", async function () {
+        await this.mock.$safeIncreaseAllowance(this.token, this.spender, 10n);
+        expect(await this.token.allowance(this.mock, this.spender)).to.equal(10n);
+      });
+
+      it('reverts when decreasing the allowance', async function () {
+        await expect(this.mock.$safeDecreaseAllowance(this.token, this.spender, 10n))
+          .to.be.revertedWithCustomError(this.mock, 'SafeGRC20FailedDecreaseAllowance')
+          .withArgs(this.spender, 0n, 10n);
+      });
+    });
+
+    describe('with non-zero allowance', function () {
+      beforeEach(async function () {
+        await this.token.$_approve(this.mock, this.spender, 100n);
+      });
+
+      it("doesn't revert when force approving a non-zero allowance", async function () {
+        await this.mock.$forceApprove(this.token, this.spender, 20n);
+        expect(await this.token.allowance(this.mock, this.spender)).to.equal(20n);
+      });
+
+      it("doesn't revert when force approving a zero allowance", async function () {
+        await this.mock.$forceApprove(this.token, this.spender, 0n);
+        expect(await this.token.allowance(this.mock, this.spender)).to.equal(0n);
+      });
+
+      it("doesn't revert when increasing the allowance", async function () {
+        await this.mock.$safeIncreaseAllowance(this.token, this.spender, 10n);
+        expect(await this.token.allowance(this.mock, this.spender)).to.equal(110n);
+      });
+
+      it("doesn't revert when decreasing the allowance to a positive value", async function () {
+        await this.mock.$safeDecreaseAllowance(this.token, this.spender, 50n);
+        expect(await this.token.allowance(this.mock, this.spender)).to.equal(50n);
+      });
+
+      it('reverts when decreasing the allowance to a negative value', async function () {
+        await expect(this.mock.$safeDecreaseAllowance(this.token, this.spender, 200n))
+          .to.be.revertedWithCustomError(this.mock, 'SafeGRC20FailedDecreaseAllowance')
+          .withArgs(this.spender, 100n, 200n);
+      });
+    });
+  });
+}

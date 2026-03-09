@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import "./TestBase.sol";
 import "../../src/GuardPolicy.sol";
 import "../../src/L2L3Bridge.sol";
-import "../../src/tokens/TestERC20.sol";
+import "../../src/tokens/TestGST20.sol";
 import "../../src/governance/bridge/L1FinalityOracle.sol";
 import "../../src/governance/bridge/L2FinalityOracle.sol";
 import "../../src/governance/bridge/L3FinalityOracle.sol";
@@ -24,7 +24,7 @@ contract L2L3BridgeCascadingFinalityTest is TestBase {
 
     GuardPolicy private policy;
     L2L3Bridge private bridge;
-    TestERC20 private token;
+    TestGST20 private token;
 
     L1FinalityOracle private l1Oracle;
     L2FinalityOracle private l2Oracle;
@@ -47,7 +47,7 @@ contract L2L3BridgeCascadingFinalityTest is TestBase {
         bridge.setL3FinalityOracle(address(l3Oracle));
         bridge.setEnforceHierarchicalFinality(true);
 
-        token = new TestERC20("Ghost Test", "GTST", 18);
+        token = new TestGST20("Ghost Test", "GTST", 18);
         token.mint(address(this), 1000 * GST_UNIT);
         token.approve(address(bridge), type(uint256).max);
     }
@@ -61,20 +61,20 @@ contract L2L3BridgeCascadingFinalityTest is TestBase {
     }
 
     function testL3ReleaseFailsWithoutRecursiveFinality() public {
-        bridge.depositERC20ToL3(address(token), address(this), 2 * GST_UNIT, 2);
+        bridge.depositGST20ToL3(address(token), address(this), 2 * GST_UNIT, 2);
 
         vm.prank(RELAYER);
         vm.expectRevert(bytes("L2_NOT_FINALIZED_ON_L1"));
-        bridge.finalizeERC20ToL3WithFinality(address(token), address(this), address(this), 2 * GST_UNIT, 2, l2Root);
+        bridge.finalizeGST20ToL3WithFinality(address(token), address(this), address(this), 2 * GST_UNIT, 2, l2Root);
 
         _recordL1AndL2Finality();
 
         vm.prank(RELAYER);
-        bridge.finalizeERC20ToL3WithFinality(address(token), address(this), address(this), 2 * GST_UNIT, 2, l2Root);
+        bridge.finalizeGST20ToL3WithFinality(address(token), address(this), address(this), 2 * GST_UNIT, 2, l2Root);
 
         vm.prank(RELAYER);
         vm.expectRevert(bytes("L3_NOT_FINALIZED_ON_L2"));
-        bridge.releaseERC20FromL3WithFinality(
+        bridge.releaseGST20FromL3WithFinality(
             address(token),
             address(this),
             address(this),
@@ -88,7 +88,7 @@ contract L2L3BridgeCascadingFinalityTest is TestBase {
 
         vm.prank(RELAYER);
         vm.expectRevert(bytes("L2_PARENT_NOT_FINALIZED_ON_L1"));
-        bridge.releaseERC20FromL3WithFinality(
+        bridge.releaseGST20FromL3WithFinality(
             address(token),
             address(this),
             address(this),
@@ -99,7 +99,7 @@ contract L2L3BridgeCascadingFinalityTest is TestBase {
         );
 
         vm.prank(RELAYER);
-        bridge.releaseERC20FromL3WithFinality(
+        bridge.releaseGST20FromL3WithFinality(
             address(token),
             address(this),
             address(this),

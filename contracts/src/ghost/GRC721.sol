@@ -4,9 +4,9 @@ pragma solidity ^0.8.24;
 /**
  * @title GRC-721 — Ghost Non-Fungible Token Standard
  * @notice GhostChain native NFT standard.
- *         API-compatible with ERC-721 for tooling interoperability.
- * @dev Implements ownerOf, balanceOf, approve, transferFrom, safeTransferFrom.
- *      Does NOT pull in ERC-165 to stay minimal; add it via interface if needed.
+ *         Native GhostChain NFT standard (GRC-721).
+ * @dev Implements ownerOf, balanceOf, approve, transferFrom, safeTransferFrom, tokenURI.
+ *      Does NOT pull in GST-165 (interface detection) to stay minimal; add it via interface if needed.
  */
 contract GRC721 {
     // ── Storage ──────────────────────────────────────────────────────────────
@@ -30,6 +30,15 @@ contract GRC721 {
     constructor(string memory _name, string memory _symbol) {
         name   = _name;
         symbol = _symbol;
+    }
+
+    // ── Metadata ─────────────────────────────────────────────────────────────
+
+    /// @notice Returns the token URI for a given token. Override in subcontracts
+    ///         to return actual metadata URIs.
+    function tokenURI(uint256 tokenId) public view virtual returns (string memory) {
+        require(_exists(tokenId), "GRC721: URI query for nonexistent token");
+        return "";
     }
 
     // ── View helpers ─────────────────────────────────────────────────────────
@@ -128,7 +137,39 @@ contract GRC721 {
         return _owners[tokenId] != address(0);
     }
 
-    /// @dev Calls onGRC721Received on contract recipients (matches ERC-721 receiver interface).
+    // ── Public mint / burn (virtual — override with access control) ───────────
+
+    /// @notice Mints `tokenId` to `to`. Must be overridden with access control
+    ///         in concrete contracts.
+    function mint(address to, uint256 tokenId) public virtual {
+        _mint(to, tokenId);
+    }
+
+    /// @notice Burns `tokenId`. Caller must own the token or be approved.
+    function burn(uint256 tokenId) public virtual {
+        address owner = ownerOf(tokenId);
+        require(
+            msg.sender == owner ||
+            msg.sender == _tokenApprovals[tokenId] ||
+            _operatorApprovals[owner][msg.sender],
+            "GRC721: not authorized"
+        );
+        _burn(tokenId);
+    }
+
+    // ── GhostChain-branded aliases ─────────────────────────────────────────
+
+    /// @notice Ghost-branded transferFrom alias.
+    function ghostTransferFrom(address from, address to, uint256 tokenId) external {
+        transferFrom(from, to, tokenId);
+    }
+
+    /// @notice Ghost-branded safeTransferFrom alias (no data).
+    function ghostSafeTransferFrom(address from, address to, uint256 tokenId) external {
+        safeTransferFrom(from, to, tokenId, "");
+    }
+
+    /// @dev Calls onGRC721Received on contract recipients.
     function _checkOnGRC721Received(address from, address to, uint256 tokenId, bytes memory data) private {
         if (to.code.length > 0) {
             try IGRC721Receiver(to).onGRC721Received(msg.sender, from, tokenId, data) returns (bytes4 retval) {

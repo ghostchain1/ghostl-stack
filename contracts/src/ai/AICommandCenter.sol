@@ -5,6 +5,7 @@ import {AIGovernanceEscalation} from "./AIGovernanceEscalation.sol";
 import {EvidenceBundle} from "./EvidenceBundle.sol";
 import {ConstitutionalGuard} from "../common/ConstitutionalGuard.sol";
 import {Ownable} from "../common/Ownable.sol";
+import {GhostHash} from "../common/GhostHash.sol";
 
 interface IAgentGovernancePolicy {
     function isActionAllowed(bytes32 role, bytes32 action) external view returns (bool);
@@ -454,7 +455,7 @@ contract AICommandCenter is Ownable {
     function _enforcePolicyRegistry(address target, bytes4 selector) internal {
         address registry = policyRegistry;
         if (registry == address(0)) return;
-        bytes32 actionId = keccak256(abi.encodePacked(target, selector));
+        bytes32 actionId = GhostHash.commandActionKey(target, selector);
         if (enforcePolicyRegistry) {
             require(IAgentGovernancePolicy(registry).isActionAllowed(policyRole, actionId), "policy");
         }
@@ -493,7 +494,7 @@ contract AICommandCenter is Ownable {
 
     function _enforceCooldown(address target, bytes4 selector, uint64 cooldownSeconds) internal {
         if (cooldownSeconds == 0) return;
-        bytes32 key = keccak256(abi.encodePacked(target, selector));
+        bytes32 key = GhostHash.commandActionKey(target, selector);
         uint64 lastAt = lastActionAt[key];
         require(block.timestamp >= lastAt + cooldownSeconds, "cooldown");
         lastActionAt[key] = uint64(block.timestamp);
@@ -548,7 +549,7 @@ contract AICommandCenter is Ownable {
         if (v < 27) v += 27;
         require(v == 27 || v == 28, "sig v");
         require(uint256(s) <= SECP256K1N_HALF, "sig s");
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", _domainSeparator(), decisionHash));
+        bytes32 digest = GhostHash.eip712Digest(_domainSeparator(), decisionHash);
         address signer = ecrecover(digest, v, r, s);
         require(signer != address(0), "sig");
         return signer;

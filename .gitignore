@@ -454,3 +454,67 @@ contracts/deployments/ghostx-*.json
 contracts/broadcast/DeployGhostX.s.sol/
 # Docker runtime compose overrides with secrets
 docker-compose.ghostx.override.yml
+
+# ghostcain-contracts integration
+contracts/ghostcain/node_modules/
+contracts/ghostcain/out-codex/
+contracts/ghostcain/out-legacy/
+contracts/ghostcain/cache-codex/
+contracts/ghostcain/cache-legacy/
+contracts/ghostcain/.hardhat-cache/
+contracts/ghostcain/artifacts/
+contracts/ghostcain/typechain-types/
+
+# ── GhostBrain AI OS — runtime artefacts ─────────────────────────────────────
+# Memory journals written at runtime (disk-backed AI memory)
+services/ghostbrain-core/memory/
+services/ghostbrain-core/data/
+services/**/memory/*.ndjson
+services/**/memory/warm/
+services/**/memory/cold/
+services/**/memory/archive/
+# Predictive model checkpoints (ephemeral, regenerated from live metrics)
+services/**/predictive/checkpoints/
+# Prometheus push-gateway local state
+services/**/pushgateway-state.json
+
+# ── GhostBrain microservices — generated / runtime files ─────────────────────
+services/ghostbrain-agent/dist/
+services/ghostbrain-cluster/dist/
+services/ghostbrain-infra/dist/
+services/ghostbrain-memory/dist/
+services/ghostbrain-swarm/dist/
+
+# ── Infra installer scripts — generated keys/certs ───────────────────────────
+infra/genesis/validator-keys/
+infra/genesis/node-keys/
+infra/genesis/gentxs/
+infra/genesis/*.key
+infra/genesis/*.pem
+infra/genesis/*.cert
+
+# ── Node / TypeScript build output (workspace-wide) ──────────────────────────
+**/dist/
+**/build/
+**/.tsbuildinfo
+**/tsconfig.tsbuildinfo
+
+# ── Test / coverage output ────────────────────────────────────────────────────
+**/coverage/
+**/.nyc_output/
+**/junit.xml
+**/*.lcov
+
+# ── OS / editor noise ─────────────────────────────────────────────────────────
+Thumbs.db
+ehthumbs.db
+**/*.swp
+**/*.swo
+**/*~
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+logs/
+**/*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*

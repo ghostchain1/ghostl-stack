@@ -3,12 +3,15 @@
 
 pragma solidity ^0.8.24;
 
+import { GhostSafeCast as SafeCast } from "../common/GhostSafeCast.sol";
 import "../common/GST20.sol";
 import "./ProposalExecutor.sol";
 
 /// @notice Token-based governor for Low Balancer with quorum + timelock execution.
 /// @dev Uses staking (token escrow) to prevent vote re-use via transfers during the voting window.
 contract LowBalancerGovernor {
+    using SafeCast for uint256;
+
     GST20 public immutable votingToken;
     ProposalExecutor public immutable executor;
 
@@ -109,8 +112,8 @@ contract LowBalancerGovernor {
                 data: data,
                 forVotes: 0,
                 againstVotes: 0,
-                start: uint64(block.timestamp),
-                end: uint64(block.timestamp + votingPeriod),
+                start: block.timestamp.toUint64(),
+                end: (block.timestamp + votingPeriod).toUint64(),
                 queued: false,
                 executed: false,
                 queueId: type(uint256).max,

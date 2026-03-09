@@ -1,5 +1,19 @@
 {
+  "name": "GhostL3",
+  "layer": "L3",
+  "parentLayer": "L2",
+  "parentChainId": 901,
+  "chainId": 903,
   "inbox": "0x3155755b79aA083bd953911C92705B7aA82a18F9",
   "factory": "0x5bf5b11053e734690269C6B9D438F8C9d48F528A",
-  "chainId": 903
+  "rpcUrl": "${GHOST_L3_RPC_URL:-http://ghostl3:8545}",
+  "wsUrl": "${GHOST_L3_WS_URL:-ws://ghostl3:8546}",
+  "blockExplorer": "${GHOST_L3_EXPLORER_URL:-http://ghostl3-explorer:4000}",
+  "nativeCurrency": {
+    "name": "Ghost",
+    "symbol": "GST",
+    "decimals": 18
+  },
+  "opStackConfig": "infra/opstack/l3/ghostl3/config/rollup.json"
+}
 }

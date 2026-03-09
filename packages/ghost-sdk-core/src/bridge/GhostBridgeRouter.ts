@@ -47,7 +47,7 @@ export class GhostBridgeRouter {
     const provider = this.providers[srcLayer];
 
     // Simplified: fire eth_sendRawTransaction with bridge calldata encoding.
-    // Real implementation would call StandardBridge / OptimismPortal contracts.
+    // Real implementation would call StandardBridge / GhostPortal contracts.
     const bridgeData = this._encodeBridgeCall(dstLayer, transfer);
     const srcTxHash = await provider.sendRawTransaction(bridgeData);
 

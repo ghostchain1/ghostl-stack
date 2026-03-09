@@ -17,7 +17,7 @@ contract FuzzNativeToken is TestBase {
         uint256 supplyBefore = token.totalSupply();
         uint256 balanceBefore = token.balanceOf(address(this));
         uint256 value = balanceBefore == 0 ? 0 : amount % balanceBefore;
-        token.transfer(to, value);
+        require(token.transfer(to, value), "GST: transfer failed");
         assertEq(token.totalSupply(), supplyBefore, "supply changed");
     }
 

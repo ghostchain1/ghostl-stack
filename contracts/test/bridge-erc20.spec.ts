@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { ghost } from "hardhat";
 
 const deployTestToken = async (owner: { address: string }) => {
-  const Token = await ghost.getContractFactory("TestERC20");
+  const Token = await ghost.getContractFactory("TestGST20");
   const token = await Token.connect(owner).deploy("Ghost (L2)", "GHOSTL2", 18);
   await token.waitForDeployment();
   return token;
@@ -32,14 +32,14 @@ describe("ERC20 bridge (MVP)", function () {
     expect(await l2Token.balanceOf(user.address)).to.equal(amount);
 
     await (await l2Token.connect(user).approve(await bridge.getAddress(), amount)).wait();
-    await expect(bridge.connect(user).depositERC20ToL3(await l2Token.getAddress(), user.address, amount, nonce))
-      .to.emit(bridge, "ERC20DepositInitiated")
+    await expect(bridge.connect(user).depositGST20ToL3(await l2Token.getAddress(), user.address, amount, nonce))
+      .to.emit(bridge, "GST20DepositInitiated")
       .withArgs(await l2Token.getAddress(), user.address, user.address, amount, nonce);
 
     expect(await l2Token.balanceOf(await bridge.getAddress())).to.equal(amount);
 
-    await expect(bridge.connect(relayer).finalizeERC20ToL3(await l2Token.getAddress(), user.address, user.address, amount, nonce))
-      .to.emit(bridge, "ERC20Finalized")
+    await expect(bridge.connect(relayer).finalizeGST20ToL3(await l2Token.getAddress(), user.address, user.address, amount, nonce))
+      .to.emit(bridge, "GST20Finalized")
       .withArgs(await l2Token.getAddress(), user.address, user.address, amount, nonce);
 
     const Factory = await ghost.getContractFactory("L3BridgedTokenFactory");
@@ -75,16 +75,16 @@ describe("ERC20 bridge (MVP)", function () {
     await expect(l3Token.connect(user).burnToL2(user.address, amount, nonce)).to.emit(l3Token, "BurnInitiated");
     expect(await l3Token.balanceOf(user.address)).to.equal(0n);
 
-    await expect(bridge.connect(user).releaseERC20FromL3(await l2Token.getAddress(), user.address, user.address, amount, nonce))
+    await expect(bridge.connect(user).releaseGST20FromL3(await l2Token.getAddress(), user.address, user.address, amount, nonce))
       .to.be.revertedWith("not relayer");
 
-    await expect(bridge.connect(relayer).releaseERC20FromL3(await l2Token.getAddress(), user.address, user.address, amount, nonce))
-      .to.emit(bridge, "ERC20WithdrawReleased")
+    await expect(bridge.connect(relayer).releaseGST20FromL3(await l2Token.getAddress(), user.address, user.address, amount, nonce))
+      .to.emit(bridge, "GST20WithdrawReleased")
       .withArgs(await l2Token.getAddress(), user.address, user.address, amount, nonce);
 
     expect(await l2Token.balanceOf(user.address)).to.equal(amount);
 
-    await expect(bridge.connect(relayer).releaseERC20FromL3(await l2Token.getAddress(), user.address, user.address, amount, nonce))
+    await expect(bridge.connect(relayer).releaseGST20FromL3(await l2Token.getAddress(), user.address, user.address, amount, nonce))
       .to.be.revertedWith("already");
   });
 
@@ -109,14 +109,14 @@ describe("ERC20 bridge (MVP)", function () {
 
     await (await l2Token.connect(owner).transfer(user.address, amount)).wait();
     await (await l2Token.connect(user).approve(await bridge.getAddress(), amount)).wait();
-    await (await bridge.connect(user).depositERC20ToL3(await l2Token.getAddress(), user.address, amount, nonce)).wait();
+    await (await bridge.connect(user).depositGST20ToL3(await l2Token.getAddress(), user.address, amount, nonce)).wait();
 
-    await (await bridge.connect(relayer).finalizeERC20ToL3(await l2Token.getAddress(), user.address, user.address, amount, nonce)).wait();
+    await (await bridge.connect(relayer).finalizeGST20ToL3(await l2Token.getAddress(), user.address, user.address, amount, nonce)).wait();
 
     // Pause policy: Mode.PAUSE == 2
     await (await policy.connect(owner).setMode(2)).wait();
 
-    await expect(bridge.connect(relayer).releaseERC20FromL3(await l2Token.getAddress(), user.address, user.address, amount, nonce))
+    await expect(bridge.connect(relayer).releaseGST20FromL3(await l2Token.getAddress(), user.address, user.address, amount, nonce))
       .to.be.revertedWith("blocked by policy");
   });
 });

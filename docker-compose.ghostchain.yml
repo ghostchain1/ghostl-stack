@@ -1,0 +1,156 @@
+# GhostChain — Cosmos SDK Sovereign Chain
+#
+# Runs ghostchaind (CometBFT + Cosmos SDK v0.50) as the sovereign governance
+# and settlement layer for the entire GhostL-Stack.
+#
+# ┌─────────────────────────────────────────────────────────────────────────┐
+# │  Topology (OP Stack → Cosmos SDK migration)                             │
+# │                                                                         │
+# │  ghostchaind (Cosmos SDK, ChainID: ghostchain-1, denom: ugst)          │
+# │    ↑ IBC (Hermes) ↕                                                     │
+# │  ghostchain-evm-l1 (geth PoA, ChainID: 14000101, port: 18545)          │
+# │    ↑ OP Stack settlement ↕                                              │
+# │  ghostchain-l2 (OP Stack, ChainID: 901, port: 29547)                   │
+# │    ↑ OP Stack ↕                                                         │
+# │  ghostchain-l3 (OP Stack, ChainID: 903, port: 39545)                   │
+# │                                                                         │
+# │  AI Services (ghostbrain + governance-event-bridge) poll LCD :1317      │
+# └─────────────────────────────────────────────────────────────────────────┘
+#
+# Usage (standalone sovereign node):
+#   docker compose -f docker-compose.ghostchain.yml --env-file stack.env up -d
+#
+# Usage (sovereign + AI brain stack):
+#   docker compose \
+#     -f docker-compose.ghostchain.yml \
+#     -f docker-compose.ghostbrain.yml \
+#     --env-file stack.env up -d
+#
+# Usage (sovereign + IBC relayer):
+#   docker compose -f docker-compose.ghostchain.yml --profile ibc \
+#     --env-file stack.env up -d
+
+name: ghostchain-cosmos
+
+x-hardening: &hardening
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  restart: unless-stopped
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  # ─── GhostChain Cosmos SDK Sovereign Node ────────────────────────────────
+  ghostchaind:
+    build:
+      context: ./ghostchain
+      dockerfile: Dockerfile
+    image: ghostchain/ghostchaind:local
+    container_name: ghostchaind
+    <<: *hardening
+    # Override hardening: ghostchaind needs a writable home dir for chain data
+    read_only: false
+    user: "0:0"
+    logging: *default-logging
+    environment:
+      CHAIN_ID:            "${COSMOS_CHAIN_ID:-ghostchain-1}"
+      MONIKER:             "${GHOSTCHAIN_MONIKER:-ghostchain-validator}"
+      GHOST_HOME:          "/root/.ghostchaind"
+      GHOST_AI_ORACLE_ADDR: "${GHOST_AI_ORACLE_ADDR:-}"
+    ports:
+      # CometBFT RPC — consumed by Hermes relayer, CLI, and status monitors
+      - "127.0.0.1:${GHOSTCHAIN_RPC_PORT:-26657}:26657"
+      # P2P — peer discovery and block propagation
+      - "127.0.0.1:${GHOSTCHAIN_P2P_PORT:-26656}:26656"
+      # gRPC — consumed by Hermes IBC relayer and gRPC-based SDK clients
+      - "127.0.0.1:${GHOSTCHAIN_GRPC_PORT:-9090}:9090"
+      # LCD / REST — consumed by governance-event-bridge CosmosGovPoller
+      - "127.0.0.1:${GHOSTCHAIN_LCD_PORT:-1317}:1317"
+    volumes:
+      - ghostchaind-data:/root/.ghostchaind
+    networks:
+      - ghostchain-cosmos-net
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:26657/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+    labels:
+      ghostchain.role:      "cosmos-validator"
+      ghostchain.layer:     "sovereign"
+      ghostchain.chain-id:  "${COSMOS_CHAIN_ID:-ghostchain-1}"
+      ghostchain.consensus: "cometbft"
+      ghostchain.denom:     "ugst"
+      ghostchain.lcd-port:  "1317"
+      ghostchain.rpc-port:  "26657"
+      ghostchain.grpc-port: "9090"
+
+  # ─── IBC / Hermes Relayer (Cosmos SDK ↔ EVM via ICS-20) ─────────────────
+  #
+  # Bridges GST tokens and governance data between the Cosmos SDK sovereign
+  # chain and the EVM L1/L2/L3 chains via IBC.
+  #
+  # Activate with: docker compose ... --profile ibc up
+  #
+  # Key setup steps before first run:
+  #   1. docker exec hermes-relayer hermes keys add \
+  #        --chain ghostchain-1 \
+  #        --mnemonic-file /run/secrets/ghostchain-relayer-mnemonic
+  #   2. docker compose ... --profile ibc run hermes-relayer \
+  #        hermes create connection --a-chain ghostchain-1 --b-chain <evm-chain-id>
+  hermes-relayer:
+    image: informalsystems/hermes:1.10.1
+    container_name: hermes-relayer
+    <<: *hardening
+    read_only: false   # hermes writes keys + config cache at runtime
+    user: "1000:1000"
+    command: ["start"]
+    logging: *default-logging
+    environment:
+      RUST_LOG:         "${HERMES_LOG_LEVEL:-info}"
+      HERMES_HOME:      "/home/hermes/.hermes"
+    volumes:
+      - ./infra/ghostchain/config/hermes.toml:/home/hermes/.hermes/config.toml:ro
+      - hermes-keys:/home/hermes/.hermes/keys
+    networks:
+      - ghostchain-cosmos-net
+    depends_on:
+      ghostchaind:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "hermes health-check 2>&1 | grep -q 'healthy'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    profiles:
+      - ibc
+    labels:
+      ghostchain.role:  "ibc-relayer"
+      ghostchain.layer: "bridge"
+
+networks:
+  # ghostchain-cosmos-net is the shared Cosmos-layer Docker network.
+  # Services in other compose stacks that need to reach ghostchaind join this
+  # as an external network:
+  #
+  #   networks:
+  #     ghostchain-cosmos-net:
+  #       external: true
+  #       name: ghostchain-cosmos-net
+  ghostchain-cosmos-net:
+    name: ghostchain-cosmos-net
+    driver: bridge
+
+volumes:
+  ghostchaind-data:
+    name: ghostchaind-data
+  hermes-keys:
+    name: hermes-keys

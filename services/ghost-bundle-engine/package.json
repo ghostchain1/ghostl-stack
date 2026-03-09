@@ -1,0 +1,23 @@
+{
+  "name": "@ghostchain/ghost-bundle-engine",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "GDTP Bundle Engine — Merkle tree construction, ZK proof stub, bundle compression for interplanetary TX batches",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev":   "tsx src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "ghost-interplanetary-sdk": "file:../../packages/ghost-interplanetary-sdk",
+    "fastify": "^5.3.3",
+    "zod":     "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "tsx":         "^4.19.3",
+    "typescript":  "^5.8.2"
+  }
+}

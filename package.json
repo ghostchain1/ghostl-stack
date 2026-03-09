@@ -37,7 +37,7 @@
     "security:deps": "node scripts/check-deprecations.mjs",
     "deprecations:check": "node scripts/check-deprecations.mjs",
     "lint": "eslint apps packages --ext .ts,.tsx",
-    "tooling:check": "npm run node:check && node scripts/package-manager-check.mjs",
+    "tooling:check": "npm run node:check && node scripts/package-manager-check.mjs && npm run brand:full",
     "node:check": "node scripts/node-check.mjs",
     "gst:leakage": "bash scripts/gst-leakage-gate.sh",
     "gst:symbol": "bash scripts/gst-symbol-gate.sh",  "brand:audit": "node --experimental-strip-types tools/branding/audit-branding.ts",

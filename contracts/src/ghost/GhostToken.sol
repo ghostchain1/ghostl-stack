@@ -72,17 +72,17 @@ contract GhostToken is GRC20 {
     // ── Owner actions ────────────────────────────────────────────────────────
 
     /// @notice Mint new GST to `to`. Only callable by owner.
-    function mint(address to, uint256 amount) external onlyOwner {
+    function mint(address to, uint256 amount) public override onlyOwner {
         _mint(to, amount);
     }
 
     /// @notice Burn GST from `from`. Only callable by owner (e.g. bridge burn).
-    function burnFrom(address from, uint256 amount) external onlyOwner {
+    function burnFrom(address from, uint256 amount) public override onlyOwner {
         _burn(from, amount);
     }
 
     /// @notice Burn caller's own GST.
-    function burn(uint256 amount) external {
+    function burn(uint256 amount) public override {
         _burn(msg.sender, amount);
     }
 

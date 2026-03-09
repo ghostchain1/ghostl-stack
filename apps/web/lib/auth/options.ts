@@ -1,6 +1,8 @@
 import type { NextAuthConfig } from 'next-auth';
 import Keycloak from 'next-auth/providers/keycloak';
-import { isRealm, REALMS, type Realm } from '@/lib/realms';
+import { isRealm, REALMS, realmFromCookieHeader, type Realm } from '@ghostl/auth';
+
+export { realmFromCookieHeader };
 
 const mustGet = (name: string): string => {
   const value = process.env[name];
@@ -30,17 +32,6 @@ export const issuerFor = (realm: Realm): string => {
         ? mustGet('KEYCLOAK_REALM_EMPLOYEES')
         : mustGet('KEYCLOAK_REALM_ADMINS');
   return `${base}/realms/${realmName}`;
-};
-
-export const realmFromCookieHeader = (cookieHeader: string | null | undefined): Realm => {
-  if (!cookieHeader) return 'users';
-  const cookie = cookieHeader
-    .split(';')
-    .map((part) => part.trim())
-    .find((part) => part.startsWith('ghost_realm='));
-  if (!cookie) return 'users';
-  const value = decodeURIComponent(cookie.split('=', 2)[1] || 'users');
-  return isRealm(value) ? value : 'users';
 };
 
 const realmFromIssuer = (issuer: unknown): Realm | null => {

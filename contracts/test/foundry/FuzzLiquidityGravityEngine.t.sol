@@ -4,7 +4,7 @@
 pragma solidity ^0.8.24;
 
 import "./TestBase.sol";
-import "../../src/tokens/TestERC20.sol";
+import "../../src/tokens/TestGST20.sol";
 import "../../src/governance/PolicyRegistry.sol";
 import "../../src/liquidity/AdapterRegistry.sol";
 import "../../src/liquidity/CircuitBreaker.sol";
@@ -28,7 +28,7 @@ contract FuzzLiquidityGravityEngine is TestBase {
         vm.assume(amount > 0);
         vm.assume(amount <= 100e18);
 
-        TestERC20 token = new TestERC20("USD Stable", "USD", 18);
+        TestGST20 token = new TestGST20("USD Stable", "USD", 18);
         PolicyRegistry policyRegistry = new PolicyRegistry(GOVERNOR, TIMELOCK, keccak256("constitution"));
         AdapterRegistry adapterRegistry = new AdapterRegistry(GOVERNOR, TIMELOCK);
         CircuitBreaker breaker = new CircuitBreaker(GOVERNOR, TIMELOCK);

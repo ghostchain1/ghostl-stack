@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "../common/GhostHash.sol";
+
 /// @notice Flexible timelock supporting per-operation delays and batched actions.
 contract GhostChainTimelock {
     bytes32 public constant DEFAULT_ADMIN_ROLE = keccak256("DEFAULT_ADMIN_ROLE");
@@ -46,7 +48,7 @@ contract GhostChainTimelock {
         returns (bytes32 opId)
     {
         require(value == 0, "value");
-        opId = keccak256(abi.encode(target, value, keccak256(data), salt));
+        opId = GhostHash.timelockOpId(target, value, keccak256(data), salt);
         if (timestamps[opId] != 0) revert AlreadyScheduled();
         uint256 executeAfter = block.timestamp + delay;
         timestamps[opId] = executeAfter;
@@ -59,7 +61,7 @@ contract GhostChainTimelock {
         returns (bytes memory result)
     {
         require(value == 0, "value");
-        bytes32 opId = keccak256(abi.encode(target, value, keccak256(data), salt));
+        bytes32 opId = GhostHash.timelockOpId(target, value, keccak256(data), salt);
         uint256 ts = timestamps[opId];
         if (ts == 0) revert NotScheduled();
         if (block.timestamp < ts) revert NotReady();

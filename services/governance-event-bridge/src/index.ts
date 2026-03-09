@@ -20,6 +20,7 @@ import { TOPICS, parseLog, type RawLog }     from "./events.js";
 import { getLatestBlock, getLogs }           from "./rpc.js";
 import { loadState, saveState }              from "./state.js";
 import { BrainPoster }                       from "./brain.js";
+import { CosmosGovPoller }                   from "./cosmos-poller.js";
 
 // ── Logging ───────────────────────────────────────────────────────────────────
 
@@ -133,14 +134,26 @@ async function main(): Promise<void> {
     networks.push({ layer: "L2", rpcUrl: cfg.RPC_L2, address: cfg.GOVERNOR_ADDRESS_L2, chainId: l2ChainId });
   }
 
-  if (networks.length === 0) {
-    log("warn", "no governor addresses configured — service is idle. Set GOVERNOR_ADDRESS_L1 and/or GOVERNOR_ADDRESS_L2.");
+  if (networks.length === 0 && !cfg.COSMOS_LCD_URL) {
+    log("warn", "no governor addresses or COSMOS_LCD_URL configured — service is idle. Set GOVERNOR_ADDRESS_L1, GOVERNOR_ADDRESS_L2, and/or COSMOS_LCD_URL.");
   }
 
   const poster = new BrainPoster({
     ghostbrainUrl: cfg.GHOSTBRAIN_URL,
     hmacSecret:    cfg.CONTROL_PLANE_HMAC_SECRET,
   });
+
+  // Optional Cosmos SDK governance poller (diff-based, no block range needed)
+  let cosmosPoller: CosmosGovPoller | null = null;
+  if (cfg.COSMOS_LCD_URL) {
+    log("info", `Cosmos LCD: ${cfg.COSMOS_LCD_URL}  chain: ${cfg.COSMOS_CHAIN_ID}`);
+    cosmosPoller = new CosmosGovPoller({
+      lcdUrl:  cfg.COSMOS_LCD_URL,
+      chainId: cfg.COSMOS_CHAIN_ID,
+      poster,
+      log,
+    });
+  }
 
   // Load persisted state (last processed block per layer)
   const state = loadState(cfg.STATE_FILE, cfg.START_BLOCK_L1, cfg.START_BLOCK_L2);
@@ -190,6 +203,11 @@ async function main(): Promise<void> {
       } catch (err) {
         log("warn", `failed to save state: ${String(err)}`);
       }
+    }
+
+    // Cosmos governance poll (diff-based, no block tracking needed)
+    if (cosmosPoller) {
+      await cosmosPoller.poll();
     }
 
     // Sleep until next poll, accounting for time spent

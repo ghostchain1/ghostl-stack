@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "../common/Governed.sol";
 import "../ai/PolicyGuard.sol";
 import "./StakingManager.sol";
+import "../common/GhostHash.sol";
 
 /// @notice Coordinates fee-policy slashing events in canonical GST units.
 contract SlashingManager is Governed {
@@ -233,7 +234,7 @@ contract SlashingManager is Governed {
         require(evidence.blockEnd >= evidence.blockStart, "block range");
         require(evidence.attestor != address(0), "attestor=0");
 
-        bytes32 digest = keccak256(abi.encode(operator, _evidenceHash(evidence)));
+        bytes32 digest = GhostHash.hash2(bytes32(uint256(uint160(operator))), _evidenceHash(evidence));
         if (evidence.signature.length == 65) {
             address signer = _recoverSigner(digest, evidence.signature);
             require(signer == evidence.attestor, "bad signature");
@@ -243,21 +244,19 @@ contract SlashingManager is Governed {
     function _evidenceHash(FeeViolationEvidence memory evidence) internal pure returns (bytes32) {
         bytes32 rangeHash = _evidenceRangeHash(evidence);
         bytes32 feeHash = _evidenceFeeHash(evidence);
-        return keccak256(abi.encode(rangeHash, feeHash, evidence.logsHash, evidence.attestor));
+        return GhostHash.hash4(rangeHash, feeHash, evidence.logsHash, bytes32(uint256(uint160(evidence.attestor))));
     }
 
     function _evidenceRangeHash(FeeViolationEvidence memory evidence) internal pure returns (bytes32) {
-        return keccak256(abi.encode(evidence.chainId, evidence.blockStart, evidence.blockEnd));
+        return GhostHash.hash3(bytes32(evidence.chainId), bytes32(evidence.blockStart), bytes32(evidence.blockEnd));
     }
 
     function _evidenceFeeHash(FeeViolationEvidence memory evidence) internal pure returns (bytes32) {
-        return keccak256(
-            abi.encode(
-                evidence.observedBaseFee,
-                evidence.observedPriorityFee,
-                evidence.prevBaseFee,
-                evidence.prevPriorityFee
-            )
+        return GhostHash.hash4(
+            bytes32(evidence.observedBaseFee),
+            bytes32(evidence.observedPriorityFee),
+            bytes32(evidence.prevBaseFee),
+            bytes32(evidence.prevPriorityFee)
         );
     }
 

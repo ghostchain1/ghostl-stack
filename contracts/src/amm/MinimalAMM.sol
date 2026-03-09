@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import { GhostSafeCast as SafeCast } from "../common/GhostSafeCast.sol";
 import "../common/ReentrancyGuard.sol";
 
 interface IGST20Minimal {
@@ -12,6 +13,8 @@ interface IGST20Minimal {
 /// @notice Dev-only constant-product AMM for integration testing.
 /// @dev Production deployments should integrate with the canonical GhostChain DEX.
 contract MinimalAMM is ReentrancyGuard {
+    using SafeCast for uint256;
+
     IGST20Minimal public immutable token0;
     IGST20Minimal public immutable token1;
 
@@ -112,8 +115,10 @@ contract MinimalAMM is ReentrancyGuard {
 
         // Effects before interactions: update reserves now.
         require(amount0 <= r0 && amount1 <= r1, "reserves");
-        reserve0 = uint112(uint256(r0) - amount0);
-        reserve1 = uint112(uint256(r1) - amount1);
+        uint256 out0 = uint256(r0) - amount0;
+        uint256 out1 = uint256(r1) - amount1;
+        reserve0 = out0.toUint112();
+        reserve1 = out1.toUint112();
         emit Sync(reserve0, reserve1);
 
         require(token0.transfer(msg.sender, amount0), "transfer0");
@@ -141,13 +146,14 @@ contract MinimalAMM is ReentrancyGuard {
         uint256 newReserveIn = reserveIn + amountIn;
         require(amountOut <= reserveOut, "reserves");
         uint256 newReserveOut = reserveOut - amountOut;
-        require(newReserveIn <= type(uint112).max && newReserveOut <= type(uint112).max, "overflow");
+        require(newReserveIn <= type(uint112).max, "overflow");
+        require(newReserveOut <= type(uint112).max, "overflow");
         if (in0) {
-            reserve0 = uint112(newReserveIn);
-            reserve1 = uint112(newReserveOut);
+            reserve0 = newReserveIn.toUint112();
+            reserve1 = newReserveOut.toUint112();
         } else {
-            reserve1 = uint112(newReserveIn);
-            reserve0 = uint112(newReserveOut);
+            reserve1 = newReserveIn.toUint112();
+            reserve0 = newReserveOut.toUint112();
         }
         emit Sync(reserve0, reserve1);
 
@@ -165,9 +171,8 @@ contract MinimalAMM is ReentrancyGuard {
     function _sync() internal {
         uint256 b0 = token0.balanceOf(address(this));
         uint256 b1 = token1.balanceOf(address(this));
-        require(b0 <= type(uint112).max && b1 <= type(uint112).max, "overflow");
-        reserve0 = uint112(b0);
-        reserve1 = uint112(b1);
+        reserve0 = b0.toUint112();
+        reserve1 = b1.toUint112();
         emit Sync(reserve0, reserve1);
     }
 

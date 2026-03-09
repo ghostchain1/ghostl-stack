@@ -57,7 +57,7 @@ contract GhostXVault is ReentrancyGuard {
 
     // ─── External – trader facing ─────────────────────────────────────────────
 
-    /// @notice Deposit ERC-20 tokens into the vault.
+    /// @notice Deposit GRC-20/GST20 tokens into the vault.
     function deposit(address token, uint256 amount) external nonReentrant {
         if (amount == 0) revert ZeroAmount();
         if (!IGST20(token).transferFrom(msg.sender, address(this), amount)) revert TransferFailed();

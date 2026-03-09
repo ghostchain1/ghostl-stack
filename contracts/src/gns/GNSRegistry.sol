@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "../common/GhostHash.sol";
+
 // ────────────────────────────────────────────────────────────────────────────
 // GNSRegistry — Ghost Name Service, L1 Canonical Root Registry
 //
@@ -18,7 +20,7 @@ library GNSLib {
 
     /// @dev keccak256(parent ++ keccak256(label))
     function namehash(bytes32 parent, string memory label) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(parent, keccak256(bytes(label))));
+        return GhostHash.gnsNodeFromLabel(parent, label);
     }
 
     function labelHash(string memory label) internal pure returns (bytes32) {
@@ -271,7 +273,7 @@ contract GNSRegistry {
 
     function _reserve(string memory label) internal {
         bytes32 lh   = GNSLib.labelHash(label);
-        bytes32 node = keccak256(abi.encodePacked(GHOST_ROOT, lh));
+        bytes32 node = GhostHash.gnsNode(GHOST_ROOT, lh);
         reserved[lh] = true;
         records[node] = Record({
             owner:    governance,

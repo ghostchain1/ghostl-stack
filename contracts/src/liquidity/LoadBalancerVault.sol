@@ -9,7 +9,7 @@ import "./CircuitBreaker.sol";
 import "./SettlementOracle.sol";
 import "./BridgeEscrow.sol";
 
-interface IERC20Vault {
+interface IGST20Vault {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
     function transfer(address to, uint256 amount) external returns (bool);
 }
@@ -176,7 +176,7 @@ contract LoadBalancerVault is Governed, ReentrancyGuard {
         } else {
             require(msg.value == 0, "no value");
             totals.idle += amount;
-            require(IERC20Vault(asset).transferFrom(msg.sender, address(this), amount), "transferFrom");
+            require(IGST20Vault(asset).transferFrom(msg.sender, address(this), amount), "transferFrom");
         }
 
         emit Deposited(msg.sender, asset, amount, sharesMinted);
@@ -207,7 +207,7 @@ contract LoadBalancerVault is Governed, ReentrancyGuard {
             (bool ok, ) = payable(msg.sender).call{value: amountOut}("");
             require(ok, "eth send");
         } else {
-            require(IERC20Vault(asset).transfer(msg.sender, amountOut), "transfer");
+            require(IGST20Vault(asset).transfer(msg.sender, amountOut), "transfer");
         }
 
         emit Withdrawn(msg.sender, asset, amountOut, sharesIn);
@@ -277,7 +277,7 @@ contract LoadBalancerVault is Governed, ReentrancyGuard {
             if (asset == address(0)) {
                 escrow.bridgeOutNative{value: amount}(adapterId, amount, abi.encode(strategyId));
             } else {
-                require(IERC20Vault(asset).transfer(address(escrow), amount), "to escrow");
+                require(IGST20Vault(asset).transfer(address(escrow), amount), "to escrow");
                 escrow.bridgeOut(adapterId, asset, amount, abi.encode(strategyId));
             }
         } else {
@@ -285,7 +285,7 @@ contract LoadBalancerVault is Governed, ReentrancyGuard {
                 (bool ok, ) = payable(adapter.operator).call{value: amount}("");
                 require(ok, "eth send");
             } else {
-                require(IERC20Vault(asset).transfer(adapter.operator, amount), "transfer");
+                require(IGST20Vault(asset).transfer(adapter.operator, amount), "transfer");
             }
         }
 
@@ -317,7 +317,7 @@ contract LoadBalancerVault is Governed, ReentrancyGuard {
             require(msg.value == amount, "value");
         } else {
             require(msg.value == 0, "no value");
-            require(IERC20Vault(asset).transferFrom(msg.sender, address(this), amount), "transferFrom");
+            require(IGST20Vault(asset).transferFrom(msg.sender, address(this), amount), "transferFrom");
         }
 
         settlementOracle.recordUnwind(adapterId, asset, amount, adapter.operator);
@@ -371,7 +371,7 @@ contract LoadBalancerVault is Governed, ReentrancyGuard {
             (bool ok, ) = payable(to).call{value: amount}("");
             require(ok, "native send");
         } else {
-            require(IERC20Vault(asset).transfer(to, amount), "transfer");
+            require(IGST20Vault(asset).transfer(to, amount), "transfer");
         }
     }
 

@@ -92,6 +92,7 @@ jobs:
           # Run typecheck across all TypeScript workspaces.
           npx tsc --noEmit -p apps/api/tsconfig.json
           npx tsc --noEmit -p apps/web/tsconfig.json
+          npx tsc --noEmit -p apps/worker/tsconfig.json
 
   # ── Gate 3: Security policy checks ──────────────────────────────────────────
   gate-security-policy:
@@ -126,8 +127,11 @@ jobs:
         run: |
           set -euo pipefail
           TRIVY_VERSION="0.69.3"
+          TRIVY_SHA256="1816b632dfe529869c740c0913e36bd1629cb7688bd5634f4a858c1d57c88b75"
           curl -sSfL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
-            | tar -xz trivy
+            -o /tmp/trivy.tar.gz
+          echo "${TRIVY_SHA256}  /tmp/trivy.tar.gz" | sha256sum --check --status
+          tar -xz -f /tmp/trivy.tar.gz trivy
           sudo mv trivy /usr/local/bin/trivy
           trivy fs \
             --timeout 10m \
@@ -171,6 +175,12 @@ jobs:
           npm --prefix services/ghostload-ai test
           npm --prefix services/ghostload-controller test
 
+      - name: GhostBrain Core tests (vitest)
+        run: npm --prefix services/ghostbrain-core test
+
+      - name: API RBAC unit tests
+        run: npm --prefix apps/api test
+
   # ── Gate 4.5: Constitutional contract tests (Foundry) ─────────────────────
   gate-constitutional-contracts:
     needs: [gate-lint-typecheck]
@@ -210,6 +220,56 @@ jobs:
             echo "WARN: GST/routing tests not found or had failures (check contracts/test/)"
           fi
 
+  # ── Gate 4.5b: Branding invariant (mandatory, sovereign property) ────────────
+  # SOVEREIGN PROPERTY: Brand violations block artifact production.
+  # No Docker image may be built or pushed if any CRITICAL/HIGH branding rule fails.
+  gate-branding:
+    needs: [gate-dependency-integrity]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: "22.22.0"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: SOVEREIGN — @ghostchain/brand-enforcer structural scan (BRAND-001→013)
+        run: node packages/brand-enforcer/src/cli.js scan . --format text
+
+      - name: SOVEREIGN — 15-layer branding audit (CRITICAL/HIGH block)
+        run: |
+          set -euo pipefail
+          node --experimental-strip-types tools/branding/audit-branding.ts . --json > /tmp/brand-audit.json
+          BLOCKING=$(node -e "
+            const r = require('/tmp/brand-audit.json');
+            const n = (r.violations || []).filter(v => v.rule && (v.rule.severity === 'CRITICAL' || v.rule.severity === 'HIGH')).length;
+            console.log(n);
+          ")
+          echo "Blocking branding violations: ${BLOCKING}"
+          if [ "${BLOCKING}" -gt 0 ]; then
+            node --experimental-strip-types tools/branding/audit-branding.ts .
+            echo "FAIL: Branding gate — CRITICAL/HIGH violations must be resolved before any artifact is produced."
+            exit 1
+          fi
+          echo "PASS: No blocking branding violations."
+
+      - name: SOVEREIGN — Contract brand validator
+        run: node --experimental-strip-types tools/branding/contract-validator.ts
+
+      - name: SOVEREIGN — Ghost* SDK completeness check
+        run: node --experimental-strip-types tools/branding/sdk-generator.ts --check
+
   # ── Gate 4.6: New package tests (pq-crypto, governance-bundle) ─────────────
   gate-new-package-tests:
     needs: [gate-dependency-integrity]
@@ -244,6 +304,7 @@ jobs:
       - gate-tests
       - gate-constitutional-contracts
       - gate-new-package-tests
+      - gate-branding
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -276,8 +337,11 @@ jobs:
         run: |
           set -euo pipefail
           TRIVY_VERSION="0.69.3"
+          TRIVY_SHA256="1816b632dfe529869c740c0913e36bd1629cb7688bd5634f4a858c1d57c88b75"
           curl -sSfL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
-            | tar -xz trivy
+            -o /tmp/trivy.tar.gz
+          echo "${TRIVY_SHA256}  /tmp/trivy.tar.gz" | sha256sum --check --status
+          tar -xz -f /tmp/trivy.tar.gz trivy
           sudo mv trivy /usr/local/bin/trivy
           trivy image \
             --scanners vuln \

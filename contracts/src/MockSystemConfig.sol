@@ -10,13 +10,15 @@ contract MockSystemConfig {
     bytes32 internal constant UNSAFE_BLOCK_SIGNER_SLOT = keccak256("systemconfig.unsafeblocksigner");
     bytes32 internal constant L1_CROSS_DOMAIN_MESSENGER_SLOT =
         bytes32(uint256(keccak256("systemconfig.l1crossdomainmessenger")) - 1);
-    bytes32 internal constant L1_ERC_721_BRIDGE_SLOT =
+    // NOTE: slot hash strings must match OP-node's expected SystemConfig layout verbatim.
+    bytes32 internal constant L1_GRC721_BRIDGE_SLOT =
         bytes32(uint256(keccak256("systemconfig.l1erc721bridge")) - 1);
     bytes32 internal constant L1_STANDARD_BRIDGE_SLOT =
         bytes32(uint256(keccak256("systemconfig.l1standardbridge")) - 1);
-    bytes32 internal constant OPTIMISM_PORTAL_SLOT =
+    // NOTE: slot hash string must match OP-node's expected SystemConfig layout verbatim.
+    bytes32 internal constant GHOST_PORTAL_SLOT =
         bytes32(uint256(keccak256("systemconfig.optimismportal")) - 1);
-    bytes32 internal constant OPTIMISM_MINTABLE_ERC20_FACTORY_SLOT =
+    bytes32 internal constant GST20_FACTORY_SLOT =
         bytes32(uint256(keccak256("systemconfig.optimismmintableerc20factory")) - 1);
     bytes32 internal constant BATCH_INBOX_SLOT = bytes32(uint256(keccak256("systemconfig.batchinbox")) - 1);
     bytes32 internal constant START_BLOCK_SLOT = bytes32(uint256(keccak256("systemconfig.startBlock")) - 1);
@@ -24,10 +26,10 @@ contract MockSystemConfig {
     constructor(
         address unsafeBlockSigner,
         address l1CrossDomainMessenger,
-        address l1ERC721Bridge,
+        address l1GRC721Bridge,
         address l1StandardBridge,
-        address optimismPortal,
-        address optimismMintableERC20Factory,
+        address ghostPortal,
+        address gst20Factory,
         address batchInbox,
         uint256 gasLimit,
         uint256 baseFeeScalar,
@@ -37,10 +39,10 @@ contract MockSystemConfig {
         _writeConfig(
             unsafeBlockSigner,
             l1CrossDomainMessenger,
-            l1ERC721Bridge,
+            l1GRC721Bridge,
             l1StandardBridge,
-            optimismPortal,
-            optimismMintableERC20Factory,
+            ghostPortal,
+            gst20Factory,
             batchInbox,
             gasLimit,
             baseFeeScalar,
@@ -53,10 +55,10 @@ contract MockSystemConfig {
     function configure(
         address unsafeBlockSigner,
         address l1CrossDomainMessenger,
-        address l1ERC721Bridge,
+        address l1GRC721Bridge,
         address l1StandardBridge,
-        address optimismPortal,
-        address optimismMintableERC20Factory,
+        address ghostPortal,
+        address gst20Factory,
         address batchInbox,
         uint256 gasLimit,
         uint256 baseFeeScalar,
@@ -66,10 +68,10 @@ contract MockSystemConfig {
         _writeConfig(
             unsafeBlockSigner,
             l1CrossDomainMessenger,
-            l1ERC721Bridge,
+            l1GRC721Bridge,
             l1StandardBridge,
-            optimismPortal,
-            optimismMintableERC20Factory,
+            ghostPortal,
+            gst20Factory,
             batchInbox,
             gasLimit,
             baseFeeScalar,
@@ -81,10 +83,10 @@ contract MockSystemConfig {
     function _writeConfig(
         address unsafeBlockSigner,
         address l1CrossDomainMessenger,
-        address l1ERC721Bridge,
+        address l1GRC721Bridge,
         address l1StandardBridge,
-        address optimismPortal,
-        address optimismMintableERC20Factory,
+        address ghostPortal,
+        address gst20Factory,
         address batchInbox,
         uint256 gasLimit,
         uint256 baseFeeScalar,
@@ -99,19 +101,19 @@ contract MockSystemConfig {
         uint256 packedGasConfig = (blobScalar32 << 64) | (baseScalar32 << 32) | gasLimit32;
         bytes32 unsafeSlot = UNSAFE_BLOCK_SIGNER_SLOT;
         bytes32 l1CrossDomainSlot = L1_CROSS_DOMAIN_MESSENGER_SLOT;
-        bytes32 l1ERC721Slot = L1_ERC_721_BRIDGE_SLOT;
+        bytes32 l1GRC721Slot = L1_GRC721_BRIDGE_SLOT;
         bytes32 l1StandardBridgeSlot = L1_STANDARD_BRIDGE_SLOT;
-        bytes32 optimismPortalSlot = OPTIMISM_PORTAL_SLOT;
-        bytes32 optimismMintableSlot = OPTIMISM_MINTABLE_ERC20_FACTORY_SLOT;
+        bytes32 ghostPortalSlot = GHOST_PORTAL_SLOT;
+        bytes32 gst20FactorySlot = GST20_FACTORY_SLOT;
         bytes32 batchInboxSlot = BATCH_INBOX_SLOT;
         bytes32 startBlockSlot = START_BLOCK_SLOT;
         assembly {
             sstore(unsafeSlot, unsafeBlockSigner)
             sstore(l1CrossDomainSlot, l1CrossDomainMessenger)
-            sstore(l1ERC721Slot, l1ERC721Bridge)
+            sstore(l1GRC721Slot, l1GRC721Bridge)
             sstore(l1StandardBridgeSlot, l1StandardBridge)
-            sstore(optimismPortalSlot, optimismPortal)
-            sstore(optimismMintableSlot, optimismMintableERC20Factory)
+            sstore(ghostPortalSlot, ghostPortal)
+            sstore(gst20FactorySlot, gst20Factory)
             sstore(batchInboxSlot, batchInbox)
             // Gas config slots observed in SystemConfig storage layout.
             sstore(0x66, legacyScalarValue)

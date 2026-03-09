@@ -1,0 +1,4 @@
+{
+  "extends": ["github>GhostChain/configs"],
+  "labels": ["ignore-changeset"]
+}

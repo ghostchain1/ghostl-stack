@@ -40,3 +40,20 @@ export type ChainConfig = {
 };
 
 export const defineChain = (config: ChainConfig) => config;
+
+// ─── Cosmos SDK (GhostChain sovereign chain) client ──────────────────────────
+export {
+  CosmosClient,
+  createCosmosClient,
+  GhostChainNetworks,
+} from './cosmos-client.js';
+export type {
+  CosmosClientConfig,
+  GhostProposal,
+  GhostProposalStatus,
+  BankBalance,
+  AccountInfo,
+  IBCChannel,
+  TxBroadcastResult,
+  GhostNetwork,
+} from './cosmos-client.js';

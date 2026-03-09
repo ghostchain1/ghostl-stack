@@ -56,13 +56,13 @@ contract FuzzBridge is TestBase {
         uint256 balance = token.balanceOf(address(this));
         uint256 value = balance == 0 ? 0 : amount % balance;
         token.approve(address(bridge), value);
-        bridge.depositERC20ToL3(address(token), to, value, nonce);
+        bridge.depositGST20ToL3(address(token), to, value, nonce);
         vm.prank(relayer);
-        bridge.finalizeERC20ToL3(address(token), address(this), to, value, nonce);
+        bridge.finalizeGST20ToL3(address(token), address(this), to, value, nonce);
         vm.prank(relayer);
-        bridge.releaseERC20FromL3(address(token), address(this), to, value, nonce);
+        bridge.releaseGST20FromL3(address(token), address(this), to, value, nonce);
         vm.prank(relayer);
         vm.expectRevert(bytes("already"));
-        bridge.releaseERC20FromL3(address(token), address(this), to, value, nonce);
+        bridge.releaseGST20FromL3(address(token), address(this), to, value, nonce);
     }
 }

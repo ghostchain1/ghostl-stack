@@ -11,6 +11,35 @@ const RPC_L3 = process.env.RPC_L3 ?? "http://localhost:39545";
 const L1_CHAIN_ID = Number(process.env.L1_CHAIN_ID ?? 14000101);
 const L2_CHAIN_ID = Number(process.env.L2_CHAIN_ID ?? 901);
 const L3_CHAIN_ID = Number(process.env.L3_CHAIN_ID ?? 903);
+
+// ─── Mainchain enforcement ────────────────────────────────────────────────────
+// Reject env-var overrides that point at non-Ghost chains. Deployments may
+// only target GhostChain (14000101), GhostL2 (901), or GhostL3 (903).
+const CANONICAL_CHAINS: Readonly<Record<number, string>> = {
+  14000101: "GhostChain",
+  901: "GhostL2",
+  903: "GhostL3",
+};
+for (const [envVar, id, expected] of [
+  ["L1_CHAIN_ID", L1_CHAIN_ID, 14000101],
+  ["L2_CHAIN_ID", L2_CHAIN_ID, 901],
+  ["L3_CHAIN_ID", L3_CHAIN_ID, 903],
+] as const) {
+  if (!CANONICAL_CHAINS[id]) {
+    throw new Error(
+      `[hardhat] ${envVar}=${id} is not a recognised GhostChain mainchain. ` +
+      `Permitted values: 14000101 (GhostChain), 901 (GhostL2), 903 (GhostL3).`,
+    );
+  }
+  if (id !== expected) {
+    throw new Error(
+      `[hardhat] ${envVar}=${id} is assigned to the wrong layer. ` +
+      `Expected ${expected} (${CANONICAL_CHAINS[expected]}). ` +
+      `Do not swap chain IDs between layers.`,
+    );
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
 const ENABLE_VIA_IR = process.env.HARDHAT_VIA_IR !== "false";
 const REQUEST_TIMEOUT_MS = 120_000;
 

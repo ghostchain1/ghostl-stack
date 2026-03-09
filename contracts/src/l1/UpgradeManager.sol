@@ -6,6 +6,7 @@ pragma solidity ^0.8.24;
 import "../ai/EvidenceBundle.sol";
 import "../common/ConstitutionalGuard.sol";
 import "../common/Ownable.sol";
+import "../common/GhostHash.sol";
 
 /// @notice Tracks approved upgrades / implementation hashes with optional activation time.
 contract UpgradeManager is Ownable {
@@ -74,15 +75,15 @@ contract UpgradeManager is Ownable {
         p.executed = true;
         ConstitutionalGuard guard = constitutionalGuard;
         require(address(guard) != address(0), "constitution guard=0");
-        bytes32 actionHash = keccak256(abi.encode(ACTION_UPGRADE, id, p.implHash, p.activateAt));
+        bytes32 actionHash = GhostHash.upgradeActionHash(ACTION_UPGRADE, id, p.implHash, p.activateAt);
         guard.checkUpgrade(actionHash, msg.sender, abi.encode(p.implHash, p.activateAt));
         EvidenceBundle bundle = evidenceBundle;
         require(address(bundle) != address(0), "evidence bundle=0");
         EvidenceBundle.Bundle memory evidence = EvidenceBundle.Bundle({
             policyHash: actionHash,
-            decisionHash: keccak256(abi.encode(id, p.implHash, p.activateAt)),
+            decisionHash: GhostHash.hash3(bytes32(id), p.implHash, bytes32(p.activateAt)),
             modelHash: bytes32(0),
-            executionHash: keccak256(abi.encode(p.implHash, p.activateAt)),
+            executionHash: GhostHash.hash2(p.implHash, bytes32(p.activateAt)),
             timestamp: block.timestamp,
             chainId: block.chainid,
             emitter: address(this)

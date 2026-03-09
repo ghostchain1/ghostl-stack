@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
+import { GhostSafeCast as SafeCast } from "../../src/common/GhostSafeCast.sol";
 import "../../src/exchange/GhostXFeeCollector.sol";
 import "../../src/exchange/GhostXVault.sol";
 import "../../src/exchange/GhostXOrderBook.sol";
@@ -43,6 +44,8 @@ contract MockERC20 {
 }
 
 contract GhostXTest is Test {
+    using SafeCast for uint256;
+
     // ─── Actors ────────────────────────────────────────────────────────────────
     address constant TREASURY = address(0xBEEF);
     address constant ALICE    = address(0xA11CE);
@@ -242,7 +245,7 @@ contract GhostXTest is Test {
 
     function _computeCreate(address deployer_, uint64 nonce_) internal pure returns (address) {
         return address(uint160(uint256(keccak256(abi.encodePacked(
-            bytes1(0xd6), bytes1(0x94), deployer_, bytes1(uint8(nonce_))
+            bytes1(0xd6), bytes1(0x94), deployer_, bytes1(uint256(nonce_).toUint8())
         )))));
     }
 }

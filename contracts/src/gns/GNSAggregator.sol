@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "../common/GhostHash.sol";
+
 // ────────────────────────────────────────────────────────────────────────────
 // GNSAggregator — Ghost Name Service, L2 Registration Aggregator
 //
@@ -46,7 +48,7 @@ library GNSAggLib {
     bytes32 internal constant ROOT_NODE = bytes32(0);
 
     function namehash(bytes32 parent, string memory label) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(parent, keccak256(bytes(label))));
+        return GhostHash.gnsNodeFromLabel(parent, label);
     }
 }
 
@@ -120,7 +122,7 @@ contract GNSAggregator {
         l2Sequencer    = _l2Sequencer;
         l3Infrastructure = _l3Infrastructure;
 
-        GHOST_ROOT = keccak256(abi.encodePacked(bytes32(0), keccak256(bytes("ghost"))));
+        GHOST_ROOT = GhostHash.gnsRoot("ghost");
 
         // Constitutional reserves
         _addReserved("validator");
@@ -149,7 +151,7 @@ contract GNSAggregator {
         bytes32 lh = keccak256(bytes(label));
         if (reserved[lh]) revert ReservedLabel();
 
-        node = keccak256(abi.encodePacked(GHOST_ROOT, lh));
+        node = GhostHash.gnsNode(GHOST_ROOT, lh);
         if (pending[node].expiry != 0) revert AlreadyPending();
 
         // Pull GST fee
@@ -198,9 +200,9 @@ contract GNSAggregator {
         uint256 infraAmt = total - burnAmt - trsryAmt - seqAmt; // 20%
 
         gst.burn(burnAmt);
-        gst.transfer(l1Treasury,     trsryAmt);
-        gst.transfer(l2Sequencer,    seqAmt);
-        gst.transfer(l3Infrastructure, infraAmt);
+        require(gst.transfer(l1Treasury,       trsryAmt), "GST: treasury transfer failed");
+        require(gst.transfer(l2Sequencer,      seqAmt),   "GST: sequencer transfer failed");
+        require(gst.transfer(l3Infrastructure, infraAmt), "GST: infra transfer failed");
 
         emit FeeDistributed(burnAmt, trsryAmt, seqAmt, infraAmt);
     }

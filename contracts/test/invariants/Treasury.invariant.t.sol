@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "../foundry/TestBase.sol";
+import { GhostSafeCast as SafeCast } from "../../src/common/GhostSafeCast.sol";
 import "../../src/GST20.sol";
 import "../../src/treasury/TreasuryVault.sol";
 import "../../src/treasury/TreasuryPolicy.sol";
@@ -26,6 +27,8 @@ contract MockToken is GST20 {
 }
 
 contract TreasuryInvariantTest is TestBase {
+    using SafeCast for uint256;
+
     MockToken private token;
     TreasuryVault private vault;
     TreasuryPolicy private policy;
@@ -166,11 +169,11 @@ contract TreasuryInvariantTest is TestBase {
             return address(uint160(uint256(keccak256(abi.encodePacked(hex"d694", deployer, hex"80")))));
         }
         if (nonce <= 0x7f) {
-            return address(uint160(uint256(keccak256(abi.encodePacked(hex"d694", deployer, uint8(nonce))))));
+            return address(uint160(uint256(keccak256(abi.encodePacked(hex"d694", deployer, nonce.toUint8())))));
         }
         if (nonce <= 0xff) {
-            return address(uint160(uint256(keccak256(abi.encodePacked(hex"d794", deployer, hex"81", uint8(nonce))))));
+            return address(uint160(uint256(keccak256(abi.encodePacked(hex"d794", deployer, hex"81", nonce.toUint8())))));
         }
-        return address(uint160(uint256(keccak256(abi.encodePacked(hex"d894", deployer, hex"82", uint16(nonce))))));
+        return address(uint160(uint256(keccak256(abi.encodePacked(hex"d894", deployer, hex"82", nonce.toUint16())))));
     }
 }

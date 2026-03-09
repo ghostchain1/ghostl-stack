@@ -1,4 +1,4 @@
-import { Interface, isAddress, ZeroAddress, keccak256 } from "ethers";
+import { Interface, isAddress, ZeroAddress, keccak256 } from "@ghostchain/sdk";
 
 export type AuditLevel   = "info" | "warn" | "high";
 export type AuditFinding = {

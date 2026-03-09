@@ -230,6 +230,39 @@ routes:
       - default-roles-ghost-employees
       - default-roles-ghost-admins
 
+  # Token listing and per-wallet token endpoints — any authenticated realm
+  # These are mounted under /v1 and / by the token router; guard must not
+  # allow anonymous pass-through for paths not matched by /v1/wallets.
+  - id: tokens-v1-api
+    path_prefix: /v1/api/tokens
+    roles_any:
+      - user
+      - employee
+      - admin
+      - default-roles-ghost-users
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  - id: tokens-api
+    path_prefix: /api/tokens
+    roles_any:
+      - user
+      - employee
+      - admin
+      - default-roles-ghost-users
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  - id: tokens
+    path_prefix: /tokens
+    roles_any:
+      - user
+      - employee
+      - admin
+      - default-roles-ghost-users
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
   # RPC pool — any authenticated realm
   - id: rpc-pool
     path_prefix: /v1/rpc

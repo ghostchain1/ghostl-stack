@@ -641,6 +641,35 @@ jobs:
         working-directory: contracts
         run: npm run test:cascading-finality:ci
 
+  contracts-ghostcain:
+    needs: [rpc-namespace]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@8789b3e21e6c11b2697f5eb56eddae542f746c10 # v1
+        with:
+          version: stable
+
+      - name: Install ghostcain npm deps
+        working-directory: contracts/ghostcain
+        run: npm ci --legacy-peer-deps
+
+      - name: Build ghostcain contracts (FOUNDRY_PROFILE=ghostcain)
+        working-directory: contracts
+        run: npm run build:ghostcain
+
+      - name: Test ghostcain contracts (FOUNDRY_PROFILE=ghostcain)
+        working-directory: contracts
+        run: npm run test:ghostcain
+
   sovereign-engine:
     needs: [rpc-namespace]
     runs-on: ubuntu-latest

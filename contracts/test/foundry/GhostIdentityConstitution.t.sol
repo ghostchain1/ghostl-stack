@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
 import "./TestBase.sol";
 import "../../src/constitution/GhostIdentityConstitution.sol";
@@ -92,7 +92,7 @@ contract GhostIdentityConstitutionTest is TestBase {
         require(a == b, message);
     }
 
-    function assertEq(string memory a, string memory b, string memory message) internal pure {
+    function assertEq(string memory a, string memory b, string memory message) internal pure override {
         require(keccak256(bytes(a)) == keccak256(bytes(b)), message);
     }
 

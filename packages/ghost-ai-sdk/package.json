@@ -20,7 +20,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "ghost": "^6.16.0",
+    "@ghostchain/sdk": "1.0.0",
     "ws":     "^8.0.0"
   },
   "devDependencies": {

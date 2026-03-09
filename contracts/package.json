@@ -48,7 +48,12 @@
     "test:fuzz": "ts-node scripts/run_foundry_tests.ts --mode fuzz",
     "test:invariant": "ts-node scripts/run_foundry_tests.ts --mode invariant",
     "test:gst-invariant": "forge test --match-path test/GSTInvariant.t.sol",
-    "test:cascading-finality:ci": "bash scripts/run_cascading_finality_ci.sh"
+    "test:cascading-finality:ci": "bash scripts/run_cascading_finality_ci.sh",
+    "build:ghostcain": "FOUNDRY_PROFILE=ghostcain forge build",
+    "test:ghostcain": "FOUNDRY_PROFILE=ghostcain forge test",
+    "deploy:ghostcain:l1": "hardhat run --network ghostl1 scripts/deploy_ghostcain.ts",
+    "deploy:ghostcain:l2": "hardhat run --network ghostl2 scripts/deploy_ghostcain.ts",
+    "deploy:ghostcain:l3": "hardhat run --network ghostl3 scripts/deploy_ghostcain.ts"
   },
   "devDependencies": {
     "@ghostchain/ghostchain-bloom-filters": "file:../packages/ghostchain-bloom-filters",

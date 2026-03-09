@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "../common/Ownable.sol";
+import "../common/GhostHash.sol";
 
 contract GhostDNSRegistry is Ownable {
     struct Record {
@@ -29,7 +30,7 @@ contract GhostDNSRegistry is Ownable {
     event RecordRemoved(bytes32 indexed domainHash, string indexed domain, uint64 removedAt, address operator);
 
     function domainHash(string memory domain) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(domain));
+        return GhostHash.gnsLabelHash(domain);
     }
 
     function upsertRecord(string calldata domain, string calldata target, uint32 ttl, uint8 layer) external onlyOwner {

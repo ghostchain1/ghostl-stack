@@ -13,6 +13,8 @@ import { normalizeRole, resolveMinimumRole, roleOrder } from '../../identity-acc
 import { useFeatureFlags } from '../services/FeatureFlagsService';
 import { useNetwork } from '../services/NetworkContextService';
 import { useTheme } from '../services/ThemeService';
+import { useRealm } from '../../identity-access/useRealm';
+import { REALM_NAV } from '@/lib/realms';
 import { resolveApiBase } from '../../../lib/runtime';
 import { DataFetchErrorCard } from '../../../components/DataFetchErrorCard';
 import { apiRequest, type ApiError } from '../../../lib/api';
@@ -118,7 +120,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [logoutError, setLogoutError] = useState<ApiError | null>(null);
   const userRole = normalizeRole(user?.role);
   const isConsole = pathname?.startsWith('/console');
+  const realm = useRealm();
   const navSections = isConsole ? consoleNavSections : legacyNavSections;
+  const realmNavItems = realm ? REALM_NAV[realm] : null;
   const ribbon = [
     { label: 'Stack', value: 'Operational' },
     { label: 'Bridges', value: 'Monitoring' },
@@ -133,6 +137,23 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <img src="/ghostchain-logo.svg" alt="GhostChain" height={42} width={160} style={{ maxWidth: '100%', height: 42 }} />
         </div>
         <nav className="nav">
+          {realmNavItems && (
+            <div className="nav-section">
+              <div className="nav-title">My {realm}</div>
+              {realmNavItems.map((item) => {
+                const isActive = item.href === '/' ? pathname === '/' : pathname?.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={isActive ? 'active' : ''}
+                  >
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
           {navSections.map((section) => (
             <div key={section.title} className="nav-section">
               <div className="nav-title">{section.title}</div>
@@ -186,6 +207,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             {user && (
               <div className="inline-form">
                 {userLabel && <span className="muted">{userLabel}</span>}
+                {realm && <span className="badge">{realm}</span>}
                 {user.role && <span className="badge">{user.role}</span>}
                 <button
                   className="button secondary"

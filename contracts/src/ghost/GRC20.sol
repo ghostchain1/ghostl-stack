@@ -4,10 +4,10 @@ pragma solidity ^0.8.24;
 /**
  * @title GRC-20 — Ghost Fungible Token Standard
  * @notice GhostChain native fungible token standard.
- *         API-compatible with ERC-20 so existing tooling works unchanged,
+ *         Native GhostChain fungible token standard (GRC-20).
  *         while carrying GhostChain branding and event naming.
- * @dev Drop-in replacement for ERC-20. All external interfaces are identical
- *      so bridged tokens and existing frontends need zero changes.
+ * @dev GRC-20 is the Ghost-native fungible token standard, wire-compatible with the
+ *      ERC-20 ABI so bridges and existing tooling require zero code changes.
  */
 contract GRC20 {
     // ── Storage ──────────────────────────────────────────────────────────────
@@ -94,4 +94,74 @@ contract GRC20 {
         allowance[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
+
+    // ── Public mint / burn (virtual — override with access control) ──────────
+
+    /// @notice Mints `amount` tokens to `to`. Must be overridden with access
+    ///         control in concrete contracts (e.g. onlyMinter modifier).
+    function mint(address to, uint256 amount) public virtual {
+        _mint(to, amount);
+    }
+
+    /// @notice Burns `amount` tokens from the caller's balance.
+    function burn(uint256 amount) public virtual {
+        _burn(msg.sender, amount);
+    }
+
+    /// @notice Burns `amount` tokens from `from`'s balance. Caller must have sufficient allowance.
+    function burnFrom(address from, uint256 amount) public virtual {
+        uint256 allowed = allowance[from][msg.sender];
+        require(allowed >= amount, "GRC20: burn allowance exceeded");
+        if (allowed != type(uint256).max) {
+            allowance[from][msg.sender] = allowed - amount;
+        }
+        _burn(from, amount);
+    }
+
+    // ── GhostChain-branded aliases ────────────────────────────────────────────
+    // Thin aliases so off-chain tooling and bridges can use ghost_ prefixed
+    // selectors without any re-implementation risk.
+
+    /// @notice Returns the GST balance of `account`. Alias for `balanceOf`.
+    function ghostBalance(address account) external view returns (uint256) {
+        return balanceOf[account];
+    }
+
+    /// @notice Transfers `amount` GST to `to`. Alias for `transfer`.
+    function ghostTransfer(address to, uint256 amount) external returns (bool) {
+        _transfer(msg.sender, to, amount);
+        emit GhostTransfer(msg.sender, to, amount);
+        return true;
+    }
+
+    /// @notice Approves `spender` for `amount` GST. Alias for `approve`.
+    function ghostApprove(address spender, uint256 amount) external returns (bool) {
+        _approve(msg.sender, spender, amount);
+        emit GhostApproval(msg.sender, spender, amount);
+        return true;
+    }
+
+    /// @notice Returns the allowance of `spender` from `owner`. Alias for `allowance`.
+    function ghostAllowance(address owner, address spender) external view returns (uint256) {
+        return allowance[owner][spender];
+    }
+
+    /// @notice Transfers `amount` GST from `from` to `to`. Alias for `transferFrom`.
+    function ghostTransferFrom(address from, address to, uint256 amount) external returns (bool) {
+        uint256 allowed = allowance[from][msg.sender];
+        require(allowed >= amount, "GRC20: allowance exceeded");
+        if (allowed != type(uint256).max) {
+            allowance[from][msg.sender] = allowed - amount;
+        }
+        _transfer(from, to, amount);
+        emit GhostTransfer(from, to, amount);
+        return true;
+    }
+
+    // ── GhostChain-branded events ──────────────────────────────────────────
+    // Emitted by ghost* alias functions in addition to the canonical ERC-20
+    // compatible Transfer / Approval events so GhostScan can index both.
+
+    event GhostTransfer(address indexed from, address indexed to, uint256 value);
+    event GhostApproval(address indexed owner, address indexed spender, uint256 value);
 }

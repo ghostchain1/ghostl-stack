@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-07T00:22:14.867Z",
+  "generatedAt": "2026-03-08T04:14:57.916Z",
   "items": [],
   "summary": {
     "failures": [],
@@ -37,7 +37,7 @@
         {
           "package": "bullmq",
           "current": "5.70.1",
-          "wanted": "5.70.1",
+          "wanted": "5.70.4",
           "latest": "5.70.4",
           "location": "/home/ghost/ghostl-stack/node_modules/bullmq"
         },
@@ -147,7 +147,7 @@
         ],
         "bullmq": {
           "current": "5.70.1",
-          "wanted": "5.70.1",
+          "wanted": "5.70.4",
           "latest": "5.70.4",
           "dependent": "worker",
           "location": "/home/ghost/ghostl-stack/node_modules/bullmq"
@@ -170,20 +170,6 @@
             "wanted": "6.21.0",
             "latest": "6.21.0",
             "dependent": "ghost-ai",
-            "location": "/home/ghost/ghostl-stack/node_modules/ghost"
-          },
-          {
-            "current": "0.0.1",
-            "wanted": "6.21.0",
-            "latest": "6.21.0",
-            "dependent": "ghost-ai-sdk",
-            "location": "/home/ghost/ghostl-stack/node_modules/ghost"
-          },
-          {
-            "current": "0.0.1",
-            "wanted": "6.21.0",
-            "latest": "6.21.0",
-            "dependent": "ghostwallet",
             "location": "/home/ghost/ghostl-stack/node_modules/ghost"
           },
           {
@@ -314,6 +300,9 @@
       "invalid": false,
       "active": 20,
       "expired": 0
+    },
+    "fileScan": {
+      "skipped": true
     }
   }
 }

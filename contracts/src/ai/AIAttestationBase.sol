@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {Ownable} from "../common/Ownable.sol";
+import {GhostHash} from "../common/GhostHash.sol";
 
 /// @notice Base contract for AI attestations backed by signer quorum and feed digests.
 /// #invariant minSigners > 0;
@@ -309,7 +310,7 @@ abstract contract AIAttestationBase is Ownable {
     }
 
     function _hashTypedData(bytes32 structHash) internal view returns (bytes32) {
-        return keccak256(abi.encodePacked("\x19\x01", _domainSeparator(), structHash));
+        return GhostHash.eip712Digest(_domainSeparator(), structHash);
     }
 
     function _domainSeparator() internal view returns (bytes32) {
@@ -320,7 +321,7 @@ abstract contract AIAttestationBase is Ownable {
     }
 
     function _buildDomainSeparator() internal view returns (bytes32) {
-        return keccak256(abi.encode(DOMAIN_TYPEHASH, NAME_HASH, VERSION_HASH, block.chainid, address(this)));
+        return GhostHash.domainSeparator(DOMAIN_TYPEHASH, NAME_HASH, VERSION_HASH, block.chainid, address(this));
     }
 
     function _requireLayer(uint8 layer) internal pure {

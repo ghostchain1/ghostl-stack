@@ -3,7 +3,14 @@ import fs from "node:fs";
 import path from "node:path";
 import express from "express";
 import { Counter, Registry, collectDefaultMetrics } from "prom-client";
-import { ethers } from "ethers";
+import {
+  JsonRpcProvider,
+  Wallet,
+  Contract,
+  zeroPadValue,
+  toUtf8Bytes,
+  type ContractTransactionResponse,
+} from "ghost";
 
 /** Minimal ABI for ZkBatchVerifier.verifyBatch */
 const ZK_BATCH_VERIFIER_ABI = [
@@ -33,20 +40,20 @@ async function postSnapshotOnchain(params: {
   }
 
   try {
-    const provider = new ethers.JsonRpcProvider(rpcUrl);
-    const wallet   = new ethers.Wallet(signerKey, provider);
-    const contract = new ethers.Contract(contractAddr, ZK_BATCH_VERIFIER_ABI, wallet);
+    const provider = new JsonRpcProvider(rpcUrl);
+    const wallet   = new Wallet(signerKey, provider);
+    const contract = new Contract(contractAddr, ZK_BATCH_VERIFIER_ABI, wallet);
 
     // ZkBatchVerifier.verifyBatch(bytes proof, bytes32 batchRoot, uint256 batchId)
     // Map: epoch → batchId, merkleRoot → batchRoot, HMAC → proof bytes
-    const batchRoot = ethers.zeroPadValue(`0x${params.merkleRoot}`, 32);
-    const proofBytes = ethers.toUtf8Bytes(params.proof);
+    const batchRoot = zeroPadValue(`0x${params.merkleRoot}`, 32);
+    const proofBytes = toUtf8Bytes(params.proof);
 
     const tx = await (contract["verifyBatch"] as (
       proof: Uint8Array,
       batchRoot: string,
       batchId: bigint
-    ) => Promise<ethers.ContractTransactionResponse>)(proofBytes, batchRoot, BigInt(params.epoch));
+    ) => Promise<ContractTransactionResponse>)(proofBytes, batchRoot, BigInt(params.epoch));
 
     const receipt = await tx.wait(1);
     return {

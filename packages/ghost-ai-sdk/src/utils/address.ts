@@ -1,4 +1,4 @@
-import { getAddress, isAddress, ZeroAddress } from "ethers";
+import { getAddress, isAddress, ZeroAddress } from "@ghostchain/sdk";
 
 /**
  * Safely checksum-encode an address string.

@@ -1,0 +1,14 @@
+{
+  "_comment": "Add this block to ghostl-stack/contracts/package.json under devDependencies.",
+  "_usage": "Local development: use 'file:' reference. CI/prod: use npm tag after publish.",
+
+  "devDependencies": {
+    "@ghostchain/contracts": "file:../../ghostchain-contracts"
+  },
+
+  "_ci_alternative": {
+    "devDependencies": {
+      "@ghostchain/contracts": "^5.6.1"
+    }
+  }
+}

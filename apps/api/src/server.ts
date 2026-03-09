@@ -39,7 +39,8 @@ import { env } from './config/env';
 import { requirePermission } from './lib/rbac';
 import type { NotificationChannel } from './modules/observability/services';
 import { buildDevopsRouter } from './modules/devops/router';
-import { realmAuthMiddleware } from './middleware/realm-auth';
+import { realmAuthMiddleware, requireAuth } from './middleware/realm-auth';
+import { assertRoutingLawMiddleware, assertChainIdMiddleware } from './middleware/routing-guard';
 import { buildWalletAdminRouter } from './modules/wallet-admin/router';
 import { createWalletService } from './services/wallet-store';
 import { createGhostWalletService } from './services/ghostwallet';
@@ -157,7 +158,7 @@ type MarketRecommendation = {
 };
 
 const parseCorsAllowlist = () => {
-  const raw = process.env.CORS_ALLOW_ORIGINS || '';
+  const raw = env.CORS_ALLOW_ORIGINS || '';
   return new Set(
     raw
       .split(',')
@@ -199,11 +200,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'", 'https:'],
-      fontSrc: ["'self'", 'https:'],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'"],
+      imgSrc: ["'self'",'data:'],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
       frameSrc: ["'none'"]
@@ -216,8 +217,15 @@ app.use(helmet({
   },
   xFrameOptions: { action: 'deny' },
   xContentTypeOptions: true,
-  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  permittedCrossDomainPolicies: false
 }));
+// Permissions-Policy: restrict sensitive browser features (belt-and-suspenders
+// for any proxied browser traffic hitting the API origin).
+app.use((_req, res, next) => {
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+  next();
+});
 
 app.set('trust proxy', 1);
 app.use(
@@ -265,14 +273,6 @@ const parseEmailList = (value?: string | null) =>
     .map((entry) => entry.trim().toLowerCase())
     .filter(Boolean);
 
-const requireAuth: RequestHandler = (req, res, next) => {
-  if (!req.session?.userId) {
-    res.status(401).json({ error: 'unauthenticated' });
-    return;
-  }
-  next();
-};
-
 const requireAdmin: RequestHandler = (req, res, next) => {
   const roles = (req.session?.roles || []).map((role) => String(role).toLowerCase());
   if (roles.includes('admin') || roles.includes('owner')) {
@@ -294,10 +294,13 @@ app.use((req, res, next) => {
   if (!req.session?.userId) return next();
   const csrfHeader = req.header('x-csrf-token');
   const sessionToken = req.session.csrfToken as string | undefined;
+  // SECURITY: for authenticated sessions, require an explicit CSRF token match.
+  // sameOrigin is only accepted when no session token has been issued yet
+  // (i.e. sub-requests that haven't yet exchanged a /api/auth/csrf token).
   if (csrfHeader && sessionToken && csrfHeader === sessionToken) {
     return next();
   }
-  if (sameOrigin(req)) return next();
+  if (!sessionToken && sameOrigin(req)) return next();
   res.status(403).json({ error: 'csrf_failed' });
 });
 
@@ -320,6 +323,52 @@ app.use((req, res, next) => {
   });
   next();
 });
+
+// ── Global rate limiter — applied after request-id, before route handlers ────
+// Keyed by IP so unauthenticated flood requests are capped before auth work.
+{
+  const _hits = new Map<string, { count: number; resetAt: number }>();
+  app.use((req, res, next) => {
+    const key = req.ip || 'anon';
+    const now = Date.now();
+    const windowMs = env.RATE_LIMIT_WINDOW_MS;
+    const max = env.RATE_LIMIT_MAX_GLOBAL;
+    const current = _hits.get(key);
+    if (!current || current.resetAt <= now) {
+      _hits.set(key, { count: 1, resetAt: now + windowMs });
+      return next();
+    }
+    current.count += 1;
+    if (current.count > max) {
+      res.status(429).json({ error: 'rate_limited' });
+      return;
+    }
+    next();
+  });
+}
+
+// ── Auth-path rate limiter — stricter window on login / token endpoints ──────
+{
+  const _authHits = new Map<string, { count: number; resetAt: number }>();
+  const authLimiter: RequestHandler = (req, res, next) => {
+    const key = req.ip || 'anon';
+    const now = Date.now();
+    const windowMs = env.RATE_LIMIT_WINDOW_MS;
+    const max = env.RATE_LIMIT_MAX_AUTH;
+    const current = _authHits.get(key);
+    if (!current || current.resetAt <= now) {
+      _authHits.set(key, { count: 1, resetAt: now + windowMs });
+      return next();
+    }
+    current.count += 1;
+    if (current.count > max) {
+      res.status(429).json({ error: 'rate_limited', hint: 'Too many auth requests.' });
+      return;
+    }
+    next();
+  };
+  app.use(['/auth', '/v1/auth', '/api/auth'], authLimiter);
+}
 
 const headerAuthPolicy: Array<{ prefix: string; realm: 'users' | 'employees' | 'admins'; rolesAny?: string[] }> = [
   { prefix: '/identity/user', realm: 'users' },
@@ -718,6 +767,21 @@ const layerForChainId = (chainId?: string) => {
   return undefined;
 };
 
+/** Accepted numeric chain IDs for the three GhostChain mainchains. */
+const MAINCHAIN_ALLOWED_IDS = new Set(['14000101', '901', '903']);
+
+/**
+ * Returns true when a registry endpoint belongs to a GhostChain mainchain.
+ * Endpoints whose chainId is absent, non-numeric, or not in the allowlist are
+ * rejected so that a compromised or misconfigured registry cannot inject
+ * foreign-chain RPCs into the pool.
+ */
+const isMainchainEndpoint = (endpoint: NormalizedRpcEndpoint): boolean => {
+  const id = endpoint?.chainId;
+  if (!id) return false;
+  return MAINCHAIN_ALLOWED_IDS.has(String(id));
+};
+
 const getRpcEndpoints = async (): Promise<NormalizedRpcEndpoint[]> => {
   const now = Date.now();
   if (rpcEndpointCache && rpcEndpointCache.expiresAt > now) {
@@ -737,6 +801,9 @@ const getRpcEndpoints = async (): Promise<NormalizedRpcEndpoint[]> => {
   } catch {
     endpoints = [];
   }
+  // MAINCHAIN ENFORCEMENT: discard any registry entry whose chainId is not one
+  // of the three canonical GhostChain mainchains (14000101 / 901 / 903).
+  endpoints = endpoints.filter(isMainchainEndpoint);
   endpoints = endpoints.filter(Boolean).map((endpoint) => ({
     ...endpoint,
     layer: endpoint?.layer || layerForChainId(endpoint?.chainId)
@@ -1879,7 +1946,7 @@ app.use(
   buildGasRouter({ gasEngine })
 );
 ghostWalletServicePromise.then((ghostWalletService) => {
-  app.use(['/v1/wallet', '/wallet'], buildWalletRouter(ghostWalletService));
+  app.use(['/v1/wallet', '/wallet'], assertChainIdMiddleware, buildWalletRouter(ghostWalletService));
 });
 kycServicePromise.then((kycService) => {
   app.use(['/v1/kyc', '/kyc'], buildKycRouter(kycService));
@@ -1980,9 +2047,9 @@ identityServicesPromise.then(async (identity) => {
       alertProxy: alertmanager ? (payload: AlertmanagerAlert) => alertmanager.send(payload) : undefined
     })
   );
-  app.use(['/v1/wallets', '/wallets'], buildWalletAdminRouter(walletService, ghostWalletService));
-  app.use(['/v1', '/'], buildTokenRouter(tokenService, walletService));
-  app.use(['/v1', '/'], buildNftRouter(nftStore, ghostWalletService, walletService));
+  app.use(['/v1/wallets', '/wallets'], assertChainIdMiddleware, buildWalletAdminRouter(walletService, ghostWalletService));
+  app.use(['/v1', '/'], assertChainIdMiddleware, buildTokenRouter(tokenService, walletService));
+  app.use(['/v1', '/'], assertChainIdMiddleware, buildNftRouter(nftStore, ghostWalletService, walletService));
 
   const sanitizeWallet = (wallet: WalletRecord) => {
     const {
@@ -2539,7 +2606,7 @@ app.get(['/v1/api/bridge/incidents', '/api/bridge/incidents'], requirePermission
   res.json(body);
 });
 
-app.post(['/v1/api/bridge/incidents', '/api/bridge/incidents'], requirePermission('bridge:write'), async (req, res) => {
+app.post(['/v1/api/bridge/incidents', '/api/bridge/incidents'], requirePermission('bridge:write'), assertRoutingLawMiddleware, async (req, res) => {
   const upstream = await fetch(`${servicesBase.bridge}/bridges/incidents`, {
     method: 'POST',
     headers: {
@@ -2573,7 +2640,7 @@ app.post(['/v1/api/bridge/incidents', '/api/bridge/incidents'], requirePermissio
   res.status(201).json(body);
 });
 
-app.post(['/v1/api/bridge/pause', '/api/bridge/pause'], requirePermission('bridge:write'), async (req, res) => {
+app.post(['/v1/api/bridge/pause', '/api/bridge/pause'], requirePermission('bridge:write'), assertRoutingLawMiddleware, async (req, res) => {
   const upstream = await fetch(`${servicesBase.bridge}/bridges/pause`, {
     method: 'POST',
     headers: {
@@ -2595,7 +2662,7 @@ app.post(['/v1/api/bridge/pause', '/api/bridge/pause'], requirePermission('bridg
   res.json(body);
 });
 
-app.post(['/v1/api/bridge/resume', '/api/bridge/resume'], requirePermission('bridge:write'), async (req, res) => {
+app.post(['/v1/api/bridge/resume', '/api/bridge/resume'], requirePermission('bridge:write'), assertRoutingLawMiddleware, async (req, res) => {
   const upstream = await fetch(`${servicesBase.bridge}/bridges/resume`, {
     method: 'POST',
     headers: {
@@ -2637,7 +2704,7 @@ app.get(['/v1/api/bridge/fees', '/api/bridge/fees'], requirePermission('bridge:w
   res.json(body);
 });
 
-app.post(['/v1/api/bridge/fees', '/api/bridge/fees'], requirePermission('bridge:write'), async (req, res) => {
+app.post(['/v1/api/bridge/fees', '/api/bridge/fees'], requirePermission('bridge:write'), assertRoutingLawMiddleware, async (req, res) => {
   const upstream = await fetch(`${servicesBase.bridge}/bridges/fees`, {
     method: 'POST',
     headers: {
@@ -4630,7 +4697,7 @@ app.get(['/v1/swap/quote', '/swap/quote'], async (req, res) => {
   res.json(data.routes ? data : { routes: [] });
 });
 
-app.post(['/v1/swap/execute', '/swap/execute'], async (req, res) => {
+app.post(['/v1/swap/execute', '/swap/execute'], assertRoutingLawMiddleware, async (req, res) => {
   const body = req.body || {};
   if (!body || typeof body !== 'object') {
     res.status(400).json({ error: 'invalid_body' });

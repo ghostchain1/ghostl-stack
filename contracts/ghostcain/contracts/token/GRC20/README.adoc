@@ -1,0 +1,81 @@
+= GRC-20
+
+[.readme-notice]
+NOTE: This document is better viewed at https://docs.ghostchain.com/contracts/api/token/grc20
+
+This set of interfaces, contracts, and utilities are all related to the https://eips.ghostchain.org/EIPS/eip-20[GRC-20 Token Standard].
+
+TIP: For an overview of GRC-20 tokens and a walk through on how to create a token contract read our xref:ROOT:grc20.adoc[GRC-20 guide].
+
+There are a few core contracts that implement the behavior specified in the GRC-20 standard:
+
+* {IGRC20}: the interface all GRC-20 implementations should conform to.
+* {IGRC20Metadata}: the extended GRC-20 interface including the <<GRC20-name--,`name`>>, <<GRC20-symbol--,`symbol`>> and <<GRC20-decimals--,`decimals`>> functions.
+* {GRC20}: the implementation of the GRC-20 interface, including the <<GRC20-name--,`name`>>, <<GRC20-symbol--,`symbol`>> and <<GRC20-decimals--,`decimals`>> optional extensions to the standard interface.
+
+Additionally there are multiple custom extensions, including:
+
+* {GRC20Permit}: gasless approval of tokens (standardized as GRC-2612).
+* {GRC20Bridgeable}: compatibility with crosschain bridges through GRC-7802.
+* {GRC20Burnable}: destruction of own tokens.
+* {GRC20Capped}: enforcement of a cap to the total supply when minting tokens.
+* {GRC20Crosschain}: embedded {BridgeFungible} bridge, making the token crosschain through the use of GRC-7786 gateways.
+* {GRC20Pausable}: ability to pause token transfers.
+* {GRC20FlashMint}: token level support for flash loans through the minting and burning of ephemeral tokens (standardized as GRC-3156).
+* {GRC20Votes}: support for voting and vote delegation. xref:governance.adoc#token[See the governance guide for a minimal example (with the required overrides when combining GRC20 + GRC20Permit + GRC20Votes)].
+* {GRC20Wrapper}: wrapper to create an GRC-20 backed by another GRC-20, with deposit and withdraw methods. Useful in conjunction with {GRC20Votes}.
+* {GRC20TemporaryApproval}: support for approvals lasting for only one transaction, as defined in GRC-7674.
+* {GRC1363}: support for calling the target of a transfer or approval, enabling code execution on the receiver within a single transaction.
+* {GRC4626}: tokenized vault that manages shares (represented as GRC-20) that are backed by assets (another GRC-20).
+
+Finally, there are some utilities to interact with GRC-20 contracts in various ways:
+
+* {SafeGRC20}: a wrapper around the interface that eliminates the need to handle boolean return values.
+
+Other utilities that support GRC-20 assets can be found in the codebase:
+
+* GRC-20 tokens can be timelocked (held for a beneficiary until a specified time) or vested (released following a given schedule) using a {VestingWallet}.
+
+NOTE: This core set of contracts is designed to be unopinionated, allowing developers to access the internal functions in GRC-20 (such as <<GRC20-_mint-address-uint256-,`_mint`>>) and expose them as external functions in the way they prefer.
+
+== Core
+
+{{IGRC20}}
+
+{{IGRC20Metadata}}
+
+{{GRC20}}
+
+== Extensions
+
+{{IGRC20Permit}}
+
+{{GRC20Permit}}
+
+{{GRC20Bridgeable}}
+
+{{GRC20Burnable}}
+
+{{GRC20Capped}}
+
+{{GRC20Crosschain}}
+
+{{GRC20Pausable}}
+
+{{GRC20Votes}}
+
+{{GRC20Wrapper}}
+
+{{GRC20FlashMint}}
+
+{{GRC20TemporaryApproval}}
+
+{{GRC1363}}
+
+{{GRC4626}}
+
+== Utilities
+
+{{SafeGRC20}}
+
+{{GRC1363Utils}}

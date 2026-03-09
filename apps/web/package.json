@@ -13,6 +13,7 @@
   "dependencies": {
     "@auth/core": "^0.41.1",
     "@ghostl/api-client": "0.0.1",
+    "@ghostl/auth": "0.0.1",
     "@ghostl/contract-schemas": "0.0.1",
     "@ghostl/ui": "0.0.1",
     "ghost": "^6.13.2",
@@ -24,7 +25,7 @@
   },
   "devDependencies": {
     "@playwright/test": "1.58.2",
-    "@types/node": "^25.3.3",
+    "@types/node": "^25.3.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.20",

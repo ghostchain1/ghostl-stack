@@ -54,8 +54,15 @@ export {
   type InterfaceAbi,
   type TransactionResponse,
   type TransactionReceipt,
+  type TransactionRequest,
+  type ContractTransactionResponse,
+  type FeeData,
+  type BaseContract,
   type Block,
   type Log,
+  HDNodeWallet,
+  zeroPadValue,
+  verifyMessage,
 } from "ethers";
 
 // ── Ghost-native exports ─────────────────────────────────────────────────────

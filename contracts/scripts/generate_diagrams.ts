@@ -70,7 +70,7 @@ const overviewDiagram = `flowchart TB
   subgraph L1["GhostChain L1"]
     NativeToken["NativeToken"]
     Treasury["Treasury"]
-    L1Portal["L1OptimismPortal"]
+    L1Portal["L1GhostPortal"]
     L1Oracle["L1OutputOracle"]
   end
   subgraph L2["Ghost L2"]

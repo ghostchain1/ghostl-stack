@@ -11,7 +11,7 @@ pragma solidity ^0.8.24;
 // aggregator via the L3→L2 cross-domain messenger.
 // ────────────────────────────────────────────────────────────────────────────
 
-interface IERC20Portal {
+interface IGST20Portal {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
     function approve(address spender, uint256 amount) external returns (bool);
     function balanceOf(address who) external view returns (uint256);
@@ -41,7 +41,7 @@ contract GNSUserPortal {
     // ── Config ────────────────────────────────────────────────────────────────
     IL2CrossDomainMessenger public immutable l2Messenger;
     address public immutable l2Aggregator;
-    IERC20Portal public       gst;          // GST token on L3
+    IGST20Portal public       gst;          // GST token on L3
 
     address public owner;
     uint256 public pricePerYear = GST_UNIT;  // mirrors L2 price
@@ -81,7 +81,7 @@ contract GNSUserPortal {
         owner         = msg.sender;
         l2Messenger   = IL2CrossDomainMessenger(_l2Messenger);
         l2Aggregator  = _l2Aggregator;
-        gst           = IERC20Portal(_gst);
+        gst           = IGST20Portal(_gst);
     }
 
     modifier onlyOwner() { if (msg.sender != owner) revert NotOwner(); _; }
@@ -153,7 +153,7 @@ contract GNSUserPortal {
         pricePerYear = price;
         emit PriceUpdated(price);
     }
-    function setGST(address _gst) external onlyOwner { gst = IERC20Portal(_gst); }
+    function setGST(address _gst) external onlyOwner { gst = IGST20Portal(_gst); }
     function transferOwner(address newOwner) external onlyOwner { owner = newOwner; }
 
     // ── Internal ──────────────────────────────────────────────────────────────

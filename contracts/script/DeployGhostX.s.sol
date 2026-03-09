@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
+import { GhostSafeCast as SafeCast } from "../src/common/GhostSafeCast.sol";
 import "../src/exchange/GhostXFeeCollector.sol";
 import "../src/exchange/GhostXVault.sol";
 import "../src/exchange/GhostXOrderBook.sol";
@@ -19,6 +20,8 @@ import "../src/exchange/GhostXStaking.sol";
 ///   STAKE_TOKEN           – ERC-20 token address used for staking (e.g. GST)
 ///   L2_RPC_URL            – GhostChain L2 JSON-RPC endpoint
 contract DeployGhostX is Script {
+    using SafeCast for uint256;
+
     function run() external {
         address deployer   = vm.envAddress("DEPLOYER");
         address treasury   = vm.envAddress("TREASURY");
@@ -78,7 +81,7 @@ contract DeployGhostX is Script {
 
     function _computeCreate(address deployer_, uint64 nonce_) internal pure returns (address) {
         return address(uint160(uint256(keccak256(abi.encodePacked(
-            bytes1(0xd6), bytes1(0x94), deployer_, bytes1(uint8(nonce_))
+            bytes1(0xd6), bytes1(0x94), deployer_, bytes1(uint256(nonce_).toUint8())
         )))));
     }
 }

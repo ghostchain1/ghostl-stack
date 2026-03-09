@@ -91,30 +91,30 @@ contract AIConstitutionInvariantTest is TestBase {
     function test_evidence_requires_auth() public {
         vm.prank(address(0xBEEF));
         vm.expectRevert(EvidenceVault.NotAuthorized.selector);
-        vault.recordEvidence(bytes32("kind"), bytes32("hash"), POLICY_KEY, 1, 0, bytes32("signers"), 1, bytes32("meta"));
+        vault.recordEvidence("kind", "hash", POLICY_KEY, 1, 0, "signers", 1, "meta");
 
         vm.expectRevert(EvidenceVault.InvalidEvidence.selector);
-        vault.recordEvidence(bytes32(0), bytes32("hash"), POLICY_KEY, 1, 0, bytes32("signers"), 1, bytes32("meta"));
+        vault.recordEvidence(bytes32(0), "hash", POLICY_KEY, 1, 0, "signers", 1, "meta");
 
         bytes32 recordId =
-            vault.recordEvidence(bytes32("kind"), bytes32("hash"), POLICY_KEY, 1, 0, bytes32("signers"), 1, bytes32("meta"));
-        assertTrue(vault.recordExists(bytes32("hash")), "evidence recorded");
+            vault.recordEvidence("kind", "hash", POLICY_KEY, 1, 0, "signers", 1, "meta");
+        assertTrue(vault.recordExists("hash"), "evidence recorded");
         EvidenceVault.EvidenceRecord memory rec = vault.getRecord(recordId);
         assertEq(rec.policyKey, POLICY_KEY, "policy key recorded");
     }
 
     function test_policy_bounds_enforced() public {
         vm.expectRevert(PolicyRegistry.PolicyBounds.selector);
-        registry.queuePolicy(POLICY_KEY, 101, bytes32("evidence"));
+        registry.queuePolicy(POLICY_KEY, 101, "evidence");
     }
 
     function test_policy_disabled_rejected() public {
         vm.expectRevert(PolicyRegistry.PolicyDisabled.selector);
-        registry.queuePolicy(POLICY_KEY_DISABLED, 0, bytes32("evidence"));
+        registry.queuePolicy(POLICY_KEY_DISABLED, 0, "evidence");
     }
 
     function test_activation_delay_enforced() public {
-        registry.queuePolicy(POLICY_KEY_DELAY, 10, bytes32("evidence"));
+        registry.queuePolicy(POLICY_KEY_DELAY, 10, "evidence");
         vm.expectRevert(PolicyRegistry.ActivationNotReady.selector);
         registry.activatePolicy(POLICY_KEY_DELAY);
 
@@ -125,7 +125,7 @@ contract AIConstitutionInvariantTest is TestBase {
     }
 
     function test_emergency_expiry_enforced() public {
-        registry.setEmergencyPolicy(POLICY_KEY_EMERGENCY, 20, bytes32("evidence"));
+        registry.setEmergencyPolicy(POLICY_KEY_EMERGENCY, 20, "evidence");
         assertTrue(registry.isEmergencyActive(POLICY_KEY_EMERGENCY), "emergency active");
         vm.warp(block.timestamp + 121);
         assertTrue(!registry.isEmergencyActive(POLICY_KEY_EMERGENCY), "emergency expired");
@@ -133,12 +133,12 @@ contract AIConstitutionInvariantTest is TestBase {
 
     function test_emergency_scope_rejected() public {
         vm.expectRevert(bytes("emergency expiry=0"));
-        registry.setEmergencyPolicy(POLICY_KEY_NO_EMERGENCY, 20, bytes32("evidence"));
+        registry.setEmergencyPolicy(POLICY_KEY_NO_EMERGENCY, 20, "evidence");
     }
 
     function test_rollback_within_window() public {
-        registry.applyPolicy(POLICY_KEY_ROLLBACK, 10, bytes32("ev1"));
-        registry.applyPolicy(POLICY_KEY_ROLLBACK, 20, bytes32("ev2"));
+        registry.applyPolicy(POLICY_KEY_ROLLBACK, 10, "ev1");
+        registry.applyPolicy(POLICY_KEY_ROLLBACK, 20, "ev2");
         vm.warp(block.timestamp + 60);
         registry.rollbackPolicy(POLICY_KEY_ROLLBACK);
         (PolicyRegistry.PolicyValue memory current,,) = registry.getPolicy(POLICY_KEY_ROLLBACK);
@@ -150,7 +150,7 @@ contract AIConstitutionInvariantTest is TestBase {
             policyKey: POLICY_KEY,
             value: 10,
             evidenceHash: bytes32(0),
-            metadataHash: bytes32("meta"),
+            metadataHash: "meta",
             nonce: 1,
             issuedAt: uint64(block.timestamp),
             validUntil: uint64(block.timestamp + 1 hours),
@@ -158,7 +158,7 @@ contract AIConstitutionInvariantTest is TestBase {
         });
 
         vm.expectRevert(AIProposalExecutor.InvalidUpdate.selector);
-        executor.executePolicyUpdate(update, new bytes[](0), bytes32("kind"), 0);
+        executor.executePolicyUpdate(update, new bytes[](0), "kind", 0);
     }
 
     function test_executor_rejects_stale_update() public {
@@ -167,8 +167,8 @@ contract AIConstitutionInvariantTest is TestBase {
         AIProposalExecutor.PolicyUpdate memory update = AIProposalExecutor.PolicyUpdate({
             policyKey: POLICY_KEY,
             value: 10,
-            evidenceHash: bytes32("evidence"),
-            metadataHash: bytes32("meta"),
+            evidenceHash: "evidence",
+            metadataHash: "meta",
             nonce: 2,
             issuedAt: uint64(block.timestamp - 31 minutes),
             validUntil: uint64(block.timestamp + 1 hours),
@@ -176,7 +176,7 @@ contract AIConstitutionInvariantTest is TestBase {
         });
 
         vm.expectRevert(AIProposalExecutor.UpdateStale.selector);
-        executor.executePolicyUpdate(update, new bytes[](0), bytes32("kind"), 0);
+        executor.executePolicyUpdate(update, new bytes[](0), "kind", 0);
     }
 
     function test_executor_requires_quorum() public {
@@ -184,8 +184,8 @@ contract AIConstitutionInvariantTest is TestBase {
         AIProposalExecutor.PolicyUpdate memory update = AIProposalExecutor.PolicyUpdate({
             policyKey: POLICY_KEY,
             value: 10,
-            evidenceHash: bytes32("evidence"),
-            metadataHash: bytes32("meta"),
+            evidenceHash: "evidence",
+            metadataHash: "meta",
             nonce: 3,
             issuedAt: uint64(block.timestamp),
             validUntil: uint64(block.timestamp + 1 hours),
@@ -194,6 +194,6 @@ contract AIConstitutionInvariantTest is TestBase {
 
         vm.prank(address(0xBEEF));
         vm.expectRevert(AIProposalExecutor.QuorumNotMet.selector);
-        executor.executePolicyUpdate(update, new bytes[](0), bytes32("kind"), 0);
+        executor.executePolicyUpdate(update, new bytes[](0), "kind", 0);
     }
 }

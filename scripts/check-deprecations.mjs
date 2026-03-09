@@ -524,12 +524,17 @@ summaryRows.push(
   ['deprecated-patterns', report.items.length > 0 ? 'FAIL' : 'PASS', `${report.items.length} item(s)`],
   [
     'npm-audit',
-    report.checks.npmAudit?.code === 0 || auditUnallowlisted.length === 0 ? 'PASS' : 'FAIL',
+    auditUnallowlisted.length === 0 &&
+      ((report.checks.npmAudit?.code ?? 0) === 0 ||
+        !!report.checks.npmAudit?.skipped ||
+        auditFindings.length > 0)
+      ? 'PASS'
+      : 'FAIL',
     `${auditFindings.length} finding(s), ${auditUnallowlisted.length} unallowlisted`
   ],
   [
     'npm-outdated',
-    report.checks.npmOutdated?.code === 0 || outdatedUnallowlisted.length === 0 ? 'PASS' : 'FAIL',
+    outdatedUnallowlisted.length === 0 ? 'PASS' : 'FAIL',
     `${outdatedFindings.length} package(s), ${outdatedUnallowlisted.length} unallowlisted`
   ],
   ['exceptions', expiredExceptions.length === 0 && !invalid ? 'PASS' : 'FAIL', `${activeExceptions.length} active, ${expiredExceptions.length} expired`]
@@ -545,8 +550,17 @@ for (const row of summaryRows) {
 if (report.items.length > 0) report.summary.failures.push('deprecated-patterns');
 if (invalid) report.summary.failures.push('exceptions-invalid');
 if (expiredExceptions.length > 0) report.summary.failures.push('exceptions-expired');
-if ((report.checks.npmAudit?.code ?? 0) !== 0 && auditUnallowlisted.length > 0) report.summary.failures.push('npm-audit');
-if ((report.checks.npmOutdated?.code ?? 0) !== 0 && outdatedUnallowlisted.length > 0) report.summary.failures.push('npm-outdated');
+// Always fail on unallowlisted audit findings.
+// Also fail conservatively when npm-audit exited non-zero but produced no parseable
+// findings — this signals a parse error or tool crash and we must not silently pass.
+if (auditUnallowlisted.length > 0) report.summary.failures.push('npm-audit');
+else if (
+  (report.checks.npmAudit?.code ?? 0) !== 0 &&
+  !report.checks.npmAudit?.skipped &&
+  auditFindings.length === 0
+)
+  report.summary.failures.push('npm-audit-parse-error');
+if (outdatedUnallowlisted.length > 0) report.summary.failures.push('npm-outdated');
 
 report.summary.exceptions = {
   total: exceptions.length,

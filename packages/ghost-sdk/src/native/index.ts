@@ -47,4 +47,6 @@ export * from "./GhostNativeWallet.js";
 export * from "./GhostNativeInterface.js";
 export * from "./GhostNativeContract.js";
 export * from "./GhostNativeERC20.js";
+export * from "./GhostNativeGRC721.js";
+export * from "./GhostNativeGRC1155.js";
 export * from "./GhostReceipts.js";

@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "../common/Governed.sol";
 import "../governance/InterchainAuthorization.sol";
+import "../common/GhostHash.sol";
 
 interface IFinalityHaltOracle {
     function isFinalityHalted() external view returns (bool);
@@ -259,7 +260,7 @@ contract GhostChainBridgeHub is Governed {
     }
 
     function computeLayerRootId(uint8 layer, bytes32 root) public pure returns (bytes32) {
-        return keccak256(abi.encode(layer, root));
+        return GhostHash.layerRootKey(layer, root);
     }
 
     function _enforceWritableMode() internal view {

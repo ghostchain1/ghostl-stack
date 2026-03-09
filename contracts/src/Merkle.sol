@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "./common/GhostHash.sol";
+
 library Merkle {
     function hashLeaf(uint256 n, bytes32 h) internal pure returns (bytes32) {
         // Domain separate with the block number to avoid ambiguity.
-        return keccak256(abi.encodePacked(n, h));
+        return GhostHash.merkleLeaf(n, h);
     }
 
     function hashPair(bytes32 a, bytes32 b) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(a, b));
+        return GhostHash.merkleNode(a, b);
     }
 
     function verify(bytes32 root, bytes32 leaf, bytes32[] memory proof, uint256 index) internal pure returns (bool) {

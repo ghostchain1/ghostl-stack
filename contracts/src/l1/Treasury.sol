@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import "../common/Governed.sol";
 
-interface IERC20Balance {
+interface IGST20Balance {
     function balanceOf(address account) external view returns (uint256);
     function transfer(address to, uint256 amount) external returns (bool);
 }
@@ -15,14 +15,14 @@ contract Treasury is Governed {
     uint256 internal constant GHOSTL2_CHAIN_ID = 901;
     uint256 internal constant GHOSTL3_CHAIN_ID = 903;
 
-    IERC20Balance public immutable native;
+    IGST20Balance public immutable native;
 
     event WithdrawNative(address indexed to, uint256 amount);
     event LegacyWithdrawalsFrozen(bool frozen);
 
     bool public legacyWithdrawalsFrozen;
 
-    constructor(IERC20Balance _native, address governor_, address timelock_) Governed(governor_, timelock_) {
+    constructor(IGST20Balance _native, address governor_, address timelock_) Governed(governor_, timelock_) {
         _enforceCanonical(address(_native));
         native = _native;
     }

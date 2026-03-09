@@ -68,16 +68,16 @@ contract L1Invariants is TestBase {
 
         vm.prank(ATTACKER);
         vm.expectRevert(abi.encodeWithSelector(L2OutputOracle.NotProposer.selector));
-        l2oo.proposeOutput(bytes32("root"), 100);
+        l2oo.proposeOutput("root", 100);
 
         vm.prank(PROPOSER);
-        l2oo.proposeOutput(bytes32("root"), 100);
+        l2oo.proposeOutput("root", 100);
         assertEq(l2oo.latestBlockNumber(), 100, "latest block updated");
         assertEq(l2oo.outputsLength(), 1, "output recorded");
 
         vm.prank(PROPOSER);
         vm.expectRevert(abi.encodeWithSelector(L2OutputOracle.NonMonotonicBlockNumber.selector));
-        l2oo.proposeOutput(bytes32("root2"), 99);
+        l2oo.proposeOutput("root2", 99);
 
         vm.expectRevert(bytes("bad id"));
         messenger.relayMessage(1);

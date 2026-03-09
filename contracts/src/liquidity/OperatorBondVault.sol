@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import "../common/Governed.sol";
 
-interface IERC20Bond {
+interface IGST20Bond {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
     function transfer(address to, uint256 amount) external returns (bool);
 }
@@ -52,7 +52,7 @@ contract OperatorBondVault is Governed {
     function depositBond(address asset, uint256 amount) external {
         require(bondAssetAllowed[asset], "asset not allowed");
         require(amount != 0, "amount=0");
-        require(IERC20Bond(asset).transferFrom(msg.sender, address(this), amount), "transferFrom");
+        require(IGST20Bond(asset).transferFrom(msg.sender, address(this), amount), "transferFrom");
         bondBalance[asset][msg.sender] += amount;
         emit BondDeposited(msg.sender, asset, amount);
     }
@@ -64,7 +64,7 @@ contract OperatorBondVault is Governed {
         unchecked {
             bondBalance[asset][msg.sender] = bal - amount;
         }
-        require(IERC20Bond(asset).transfer(msg.sender, amount), "transfer");
+        require(IGST20Bond(asset).transfer(msg.sender, amount), "transfer");
         emit BondWithdrawn(msg.sender, asset, amount);
     }
 
@@ -78,7 +78,7 @@ contract OperatorBondVault is Governed {
         unchecked {
             bondBalance[asset][operator] = bal - amount;
         }
-        require(IERC20Bond(asset).transfer(to, amount), "transfer");
+        require(IGST20Bond(asset).transfer(to, amount), "transfer");
         emit Slashed(operator, asset, amount, to, evidenceHash);
     }
 

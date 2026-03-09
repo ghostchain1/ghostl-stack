@@ -18,6 +18,14 @@ import { signalsRoutes } from "./routes/signals.js";
 import { gsaRoutes     } from "./routes/gsa.js";
 import { rpcRoutes     } from "./routes/rpc.js";
 import { thinkRoutes   } from "./routes/think.js";
+import { memoryRoutes    } from "./routes/memory.js";
+import { cognitionRoutes  } from "./routes/cognition.js";
+import { clusterPeerRoutes }   from "./routes/cluster_peer.js";
+import { kernelRoutes }        from "./routes/kernel.js";
+import { orchestratorRoutes }  from "./routes/orchestrator.js";
+import { protectionRoutes }    from "./routes/protection.js";
+import { observabilityRoutes } from "./routes/observability.js";
+import { predictiveRoutes }    from "./routes/predictive.js";
 import { hmacAuthPlugin } from "./middleware/hmac.js";
 import { rateLimitPlugin } from "./middleware/rateLimit.js";
 
@@ -56,6 +64,20 @@ export function buildApp() {
   app.register(gsaRoutes);
   app.register(rpcRoutes);
   app.register(thinkRoutes);
+
+  // ── Cognitive memory + infrastructure intelligence ────────────────────────
+  app.register(memoryRoutes);
+  app.register(cognitionRoutes);
+
+  // ── Cluster mesh peer routes ─────────────────────────────────────────────
+  app.register(clusterPeerRoutes);
+
+  // ── GBA-OS subsystem routes ───────────────────────────────────────────────
+  app.register(kernelRoutes);
+  app.register(orchestratorRoutes);
+  app.register(protectionRoutes);
+  app.register(observabilityRoutes);
+  app.register(predictiveRoutes);
 
   return app;
 }

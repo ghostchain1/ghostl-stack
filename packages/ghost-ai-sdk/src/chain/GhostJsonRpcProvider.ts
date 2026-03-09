@@ -23,7 +23,7 @@ import {
   AbiCoder,
   type TransactionRequest,
   type FeeData,
-} from "ethers";
+} from "@ghostchain/sdk";
 import { randomUUID } from "crypto";
 import type { GhostLayer }      from "./Types.js";
 import type { RpcEndpoint }     from "../config.js";

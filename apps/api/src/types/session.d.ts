@@ -20,5 +20,12 @@ declare module 'express-session' {
     oidcAccessToken?: string;
     /** The realm that authenticated this session via OIDC */
     oidcRealm?: OIDCRealm;
+    // ── PKCE / authorization-code flow (consumed and cleared in /auth/oidc/callback) ──
+    /** PKCE code_verifier — S256 challenge stored during /auth/oidc/login */
+    oidcPkceVerifier?: string;
+    /** Anti-CSRF state nonce stored during /auth/oidc/login */
+    oidcState?: string;
+    /** Post-login redirect destination (relative path or validated absolute URL) */
+    oidcRedirectTo?: string;
   }
 }

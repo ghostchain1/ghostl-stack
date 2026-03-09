@@ -1,0 +1,44 @@
+= Cross chain interoperability
+
+[.readme-notice]
+NOTE: This document is better viewed at https://docs.ghostchain.com/contracts/api/crosschain
+
+This directory contains contracts for sending and receiving cross chain messages that follows the GRC-7786 standard.
+
+* {CrosschainLinked}: helper to facilitate communication between a contract on one chain and counterparts on remote chains through GRC-7786 gateways.
+* {CrosschainRemoteExecutor}: executor contract that relays transaction from a controller on a remote chain.
+* {GRC7786Recipient}: generic GRC-7786 crosschain contract that receives messages from a trusted gateway.
+
+Additionally there are multiple bridge constructions:
+
+* {BridgeFungible}: Core bridging logic for crosschain GRC-20 transfer. Used by {BridgeGRC20}, {BridgeGRC7802} and {GRC20Crosschain},
+* {BridgeNonFungible}: Core bridging logic for crosschain GRC-721 transfer. Used by {BridgeGRC721} and {GRC721Crosschain},
+* {BridgeMultiToken}: Core bridging logic for crosschain GRC-1155 transfer. Used by {BridgeGRC1155} and {GRC1155Crosschain},
+* {BridgeGRC20}: Standalone bridge contract to connect an GRC-20 token contract with counterparts on remote chains,
+* {BridgeGRC721}: Standalone bridge contract to connect an GRC-721 token contract with counterparts on remote chains,
+* {BridgeGRC1155}: Standalone bridge contract to connect an GRC-1155 token contract with counterparts on remote chains,
+* {BridgeGRC7802}: Standalone bridge contract to connect an GRC-7802 token contract with counterparts on remote chains.
+
+== Helpers
+
+{{CrosschainLinked}}
+
+{{CrosschainRemoteExecutor}}
+
+{{GRC7786Recipient}}
+
+== Bridges
+
+{{BridgeFungible}}
+
+{{BridgeNonFungible}}
+
+{{BridgeMultiToken}}
+
+{{BridgeGRC20}}
+
+{{BridgeGRC721}}
+
+{{BridgeGRC1155}}
+
+{{BridgeGRC7802}}

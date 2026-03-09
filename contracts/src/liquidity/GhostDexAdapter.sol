@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import { GhostSafeCast as SafeCast } from "../common/GhostSafeCast.sol";
 import "../common/Governed.sol";
 import "../governance/PolicyRegistry.sol";
 import "./IDexAdapter.sol";
 
-interface IERC20DexAdapterToken {
+interface IGST20DexAdapter {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
     function transfer(address to, uint256 amount) external returns (bool);
     function approve(address spender, uint256 amount) external returns (bool);
@@ -44,6 +45,8 @@ interface IRouterLike {
 /// @dev This adapter is intended for production once wired to the canonical DEX router and a TWAP oracle.
 ///      The repo also ships `MinimalAmmDexAdapter` for dev-only integration tests.
 contract GhostDexAdapter is Governed, IDexAdapter {
+    using SafeCast for uint256;
+
     uint16 public constant BPS_DENOM = 10_000;
 
     PolicyRegistry public policyRegistry;
@@ -133,7 +136,7 @@ contract GhostDexAdapter is Governed, IDexAdapter {
         require(expectedOut != 0, "quote=0");
         uint256 minOut = (expectedOut * (BPS_DENOM - maxSlippageBps)) / BPS_DENOM;
 
-        require(IERC20DexAdapterToken(tokenIn).transferFrom(msg.sender, address(this), amountIn), "pullIn");
+        require(IGST20DexAdapter(tokenIn).transferFrom(msg.sender, address(this), amountIn), "pullIn");
         _approve(tokenIn, dexRouter, amountIn);
 
         address[] memory path = new address[](2);
@@ -165,7 +168,7 @@ contract GhostDexAdapter is Governed, IDexAdapter {
         uint16 cap = _policyMaxSlippageBps();
         require(maxSlippageBps <= cap, "policy slippage");
 
-        require(IERC20DexAdapterToken(tokenIn).transferFrom(msg.sender, address(this), amountIn), "pullIn");
+        require(IGST20DexAdapter(tokenIn).transferFrom(msg.sender, address(this), amountIn), "pullIn");
 
         uint256 amountSwap = amountIn / 2;
         require(amountSwap != 0, "amountIn too small");
@@ -209,18 +212,18 @@ contract GhostDexAdapter is Governed, IDexAdapter {
 
         // Refund any leftovers to the recipient.
         if (amountRemain > usedIn) {
-            require(IERC20DexAdapterToken(tokenIn).transfer(recipient, amountRemain - usedIn), "refundIn");
+            require(IGST20DexAdapter(tokenIn).transfer(recipient, amountRemain - usedIn), "refundIn");
         }
         if (amountOut > usedOut) {
-            require(IERC20DexAdapterToken(tokenOut).transfer(recipient, amountOut - usedOut), "refundOut");
+            require(IGST20DexAdapter(tokenOut).transfer(recipient, amountOut - usedOut), "refundOut");
         }
 
         lpMinted = liquidity;
     }
 
     function _approve(address token, address spender, uint256 amount) internal {
-        require(IERC20DexAdapterToken(token).approve(spender, 0), "approve0");
-        require(IERC20DexAdapterToken(token).approve(spender, amount), "approve");
+        require(IGST20DexAdapter(token).approve(spender, 0), "approve0");
+        require(IGST20DexAdapter(token).approve(spender, amount), "approve");
     }
 
     function _policyMaxSlippageBps() internal view returns (uint16) {
@@ -231,7 +234,7 @@ contract GhostDexAdapter is Governed, IDexAdapter {
         if (!enabled) return BPS_DENOM;
         (uint256 value, , , , ) = registry.effectivePolicy(key);
         if (value > BPS_DENOM) return BPS_DENOM;
-        return uint16(value);
+        return value.toUint16();
     }
 }
 

@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "./GuardPolicy.sol";
 import "./GST20.sol";
 import "./compliance/ComplianceProofGuard.sol";
+import "./common/GhostHash.sol";
 
 interface IL2FinalityOracle {
     function isFinalizedOnL1(bytes32 l2StateRoot) external view returns (bool);
@@ -31,14 +32,14 @@ contract L2L3Bridge {
     // (actor, amount, nonce) => timestamp deposit initiated
     mapping(bytes32 => uint256) public depositTime;
     // (token, actor, amount, nonce) => timestamp deposit initiated
-    mapping(bytes32 => uint256) public erc20DepositTime;
-    mapping(bytes32 => bool) public erc20WithdrawProcessed;
+    mapping(bytes32 => uint256) public gst20DepositTime;
+    mapping(bytes32 => bool) public gst20WithdrawProcessed;
 
     event DepositInitiated(address indexed from, address indexed to, uint256 amount, uint256 nonce);
     event Finalized(address indexed from, address indexed to, uint256 amount, uint256 nonce);
-    event ERC20DepositInitiated(address indexed token, address indexed from, address indexed to, uint256 amount, uint256 nonce);
-    event ERC20Finalized(address indexed token, address indexed from, address indexed to, uint256 amount, uint256 nonce);
-    event ERC20WithdrawReleased(address indexed token, address indexed from, address indexed to, uint256 amount, uint256 nonce);
+    event GST20DepositInitiated(address indexed token, address indexed from, address indexed to, uint256 amount, uint256 nonce);
+    event GST20Finalized(address indexed token, address indexed from, address indexed to, uint256 amount, uint256 nonce);
+    event GST20WithdrawReleased(address indexed token, address indexed from, address indexed to, uint256 amount, uint256 nonce);
     event PolicyChanged(address indexed policy);
     event ComplianceGuardChanged(address indexed guard);
     event ComplianceRootRequirementUpdated(bool required);
@@ -101,7 +102,7 @@ contract L2L3Bridge {
     /// User deposits on L2 to mint/release on L3 (offchain relayer can mirror on the other chain).
     function depositToL3(address to, uint256 amount, uint256 nonce) external {
         // In MVP we just emit an event; funds handling can be added later (GST20 escrow etc).
-        bytes32 key = keccak256(abi.encode(msg.sender, to, amount, nonce));
+        bytes32 key = GhostHash.bridgeNativeKey(msg.sender, to, amount, nonce);
         // slither-disable-next-line incorrect-equality
         require(depositTime[key] == 0, "already");
         depositTime[key] = block.timestamp;
@@ -109,13 +110,13 @@ contract L2L3Bridge {
     }
 
     /// Deposit an GST20 on L2 to mint the bridged representation on L3.
-    function depositERC20ToL3(address token, address to, uint256 amount, uint256 nonce) external {
-        bytes32 key = keccak256(abi.encode(token, msg.sender, to, amount, nonce));
+    function depositGST20ToL3(address token, address to, uint256 amount, uint256 nonce) external {
+        bytes32 key = GhostHash.bridgeTokenKey(token, msg.sender, to, amount, nonce);
         // slither-disable-next-line incorrect-equality
-        require(erc20DepositTime[key] == 0, "already");
-        erc20DepositTime[key] = block.timestamp;
+        require(gst20DepositTime[key] == 0, "already");
+        gst20DepositTime[key] = block.timestamp;
         require(GST20(token).transferFrom(msg.sender, address(this), amount), "transferFrom");
-        emit ERC20DepositInitiated(token, msg.sender, to, amount, nonce);
+        emit GST20DepositInitiated(token, msg.sender, to, amount, nonce);
     }
 
     /// Finalize step: guarded by policy (ALLOW/DELAY/PAUSE + risk threshold)
@@ -133,15 +134,15 @@ contract L2L3Bridge {
         _finalizeToL3(from, to, amount, nonce, l2StateRoot);
     }
 
-    function finalizeERC20ToL3(address token, address from, address to, uint256 amount, uint256 nonce)
+    function finalizeGST20ToL3(address token, address from, address to, uint256 amount, uint256 nonce)
         external
         onlyRelayer
     {
-        _finalizeERC20ToL3(token, from, to, amount, nonce, bytes32(0));
+        _finalizeGST20ToL3(token, from, to, amount, nonce, bytes32(0));
     }
 
     /// @notice Cascading-finality aware GST20 finalize path for hierarchical mode.
-    function finalizeERC20ToL3WithFinality(
+    function finalizeGST20ToL3WithFinality(
         address token,
         address from,
         address to,
@@ -149,21 +150,21 @@ contract L2L3Bridge {
         uint256 nonce,
         bytes32 l2StateRoot
     ) external onlyRelayer {
-        _finalizeERC20ToL3(token, from, to, amount, nonce, l2StateRoot);
+        _finalizeGST20ToL3(token, from, to, amount, nonce, l2StateRoot);
     }
 
     /// @notice Release escrowed L2 tokens after a corresponding burn on L3 (called by relayer).
     /// #if_succeeds {:msg "only relayer release"} msg.sender == relayer;
-    /// #if_succeeds {:msg "withdraw marked"} erc20WithdrawProcessed[keccak256(abi.encode(token, from, to, amount, nonce))];
-    function releaseERC20FromL3(address token, address from, address to, uint256 amount, uint256 nonce)
+    /// #if_succeeds {:msg "withdraw marked"} gst20WithdrawProcessed[keccak256(abi.encode(token, from, to, amount, nonce))];
+    function releaseGST20FromL3(address token, address from, address to, uint256 amount, uint256 nonce)
         external
         onlyRelayer
     {
-        _releaseERC20FromL3(token, from, to, amount, nonce, bytes32(0), bytes32(0));
+        _releaseGST20FromL3(token, from, to, amount, nonce, bytes32(0), bytes32(0));
     }
 
     /// @notice Hierarchical release path requiring recursive finality proofs.
-    function releaseERC20FromL3WithFinality(
+    function releaseGST20FromL3WithFinality(
         address token,
         address from,
         address to,
@@ -172,11 +173,11 @@ contract L2L3Bridge {
         bytes32 l3StateRoot,
         bytes32 parentL2StateRoot
     ) external onlyRelayer {
-        _releaseERC20FromL3(token, from, to, amount, nonce, l3StateRoot, parentL2StateRoot);
+        _releaseGST20FromL3(token, from, to, amount, nonce, l3StateRoot, parentL2StateRoot);
     }
 
     function _finalizeToL3(address from, address to, uint256 amount, uint256 nonce, bytes32 l2StateRoot) internal {
-        bytes32 key = keccak256(abi.encode(from, to, amount, nonce));
+        bytes32 key = GhostHash.bridgeNativeKey(from, to, amount, nonce);
         uint256 t = depositTime[key];
         require(t != 0, "no deposit");
 
@@ -187,21 +188,30 @@ contract L2L3Bridge {
         emit Finalized(from, to, amount, nonce);
     }
 
-    function _finalizeERC20ToL3(address token, address from, address to, uint256 amount, uint256 nonce, bytes32 l2StateRoot)
+    function _finalizeGST20ToL3(address token, address from, address to, uint256 amount, uint256 nonce, bytes32 l2StateRoot)
         internal
     {
-        bytes32 key = keccak256(abi.encode(token, from, to, amount, nonce));
-        uint256 t = erc20DepositTime[key];
+        bytes32 key;
+        assembly {
+            let ptr := mload(0x40)
+            mstore(ptr,          token)
+            mstore(add(ptr, 0x20), from)
+            mstore(add(ptr, 0x40), to)
+            mstore(add(ptr, 0x60), amount)
+            mstore(add(ptr, 0x80), nonce)
+            key := keccak256(ptr, 0xa0)
+        }
+        uint256 t = gst20DepositTime[key];
         require(t != 0, "no deposit");
 
         _enforceL2Finality(l2StateRoot);
         _enforceComplianceAndPolicy(from, amount, t);
 
-        erc20DepositTime[key] = 0;
-        emit ERC20Finalized(token, from, to, amount, nonce);
+        gst20DepositTime[key] = 0;
+        emit GST20Finalized(token, from, to, amount, nonce);
     }
 
-    function _releaseERC20FromL3(
+    function _releaseGST20FromL3(
         address token,
         address from,
         address to,
@@ -210,12 +220,21 @@ contract L2L3Bridge {
         bytes32 l3StateRoot,
         bytes32 parentL2StateRoot
     ) internal {
-        bytes32 key = keccak256(abi.encode(token, from, to, amount, nonce));
-        require(!erc20WithdrawProcessed[key], "already");
+        bytes32 key;
+        assembly {
+            let ptr := mload(0x40)
+            mstore(ptr,          token)
+            mstore(add(ptr, 0x20), from)
+            mstore(add(ptr, 0x40), to)
+            mstore(add(ptr, 0x60), amount)
+            mstore(add(ptr, 0x80), nonce)
+            key := keccak256(ptr, 0xa0)
+        }
+        require(!gst20WithdrawProcessed[key], "already");
 
         _enforceL3Finality(l3StateRoot, parentL2StateRoot);
 
-        erc20WithdrawProcessed[key] = true;
+        gst20WithdrawProcessed[key] = true;
 
         _enforceCompliance();
 
@@ -224,7 +243,7 @@ contract L2L3Bridge {
         require(waitSeconds == 0, "delay");
 
         require(GST20(token).transfer(to, amount), "transfer");
-        emit ERC20WithdrawReleased(token, from, to, amount, nonce);
+        emit GST20WithdrawReleased(token, from, to, amount, nonce);
     }
 
     function _enforceL2Finality(bytes32 l2StateRoot) internal view {

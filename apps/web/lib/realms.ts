@@ -1,9 +1,6 @@
-export const REALMS = ['users', 'employees', 'admins'] as const;
-export type Realm = (typeof REALMS)[number];
-
-const realmSet = new Set<Realm>(REALMS);
-
-export const isRealm = (value: string): value is Realm => realmSet.has(value as Realm);
+// Core realm primitives come from the shared @ghostl/auth package.
+export { REALMS, type Realm, isRealm } from '@ghostl/auth';
+import type { Realm } from '@ghostl/auth';
 
 export type RealmNavItem = {
   href: string;

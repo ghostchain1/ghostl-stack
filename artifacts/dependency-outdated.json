@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-07T00:22:14.867Z",
+  "generatedAt": "2026-03-08T04:14:57.916Z",
   "code": 1,
   "findings": [
     {
@@ -20,7 +20,7 @@
     {
       "package": "bullmq",
       "current": "5.70.1",
-      "wanted": "5.70.1",
+      "wanted": "5.70.4",
       "latest": "5.70.4",
       "location": "/home/ghost/ghostl-stack/node_modules/bullmq"
     },
