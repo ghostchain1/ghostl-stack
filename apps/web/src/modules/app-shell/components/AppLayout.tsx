@@ -130,6 +130,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="logo">
+          {/* Ghostcain brand overlay — 22 × 22 px, top-left of the logo block.
+              Replace /ghostcain-logo.png with the real asset from
+              ghostchain1/ghostcain-contracts (blob/main/logo.png) when available. */}
+          <img src="/ghostcain-logo.png" alt="" aria-hidden="true" className="logo-overlay" />
           <img src="/ghostchain-logo.svg" alt="GhostChain" height={42} width={160} style={{ maxWidth: '100%', height: 42 }} />
         </div>
         <nav className="nav">
