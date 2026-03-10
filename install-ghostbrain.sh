@@ -198,8 +198,9 @@ header "Phase 4 — Database services"
 
 # Docker must already be installed (it's part of GhostStack's docker-compose.yml)
 command -v docker >/dev/null 2>&1 || die "Docker not found — install Docker Engine first (see GhostStack docs)"
-command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1 \
-  || die "docker compose plugin not found — upgrade Docker Engine"
+if ! docker compose version >/dev/null 2>&1; then
+  die "docker compose plugin not found — upgrade Docker Engine"
+fi
 
 DB_COMPOSE="$GB_DIR/docker/ghostbrain-databases.yml"
 
@@ -310,9 +311,12 @@ run_migration() {
   # Port-forward: run psql inside the container to avoid host client version mismatch
   docker exec -i ghostbrain-postgres \
     psql "postgresql://ghostbrain:${GHOSTBRAIN_DB_PASSWORD}@localhost/ghostbrain" \
-    < "$sql_file" \
-    && ok "$name applied" \
-    || die "Migration $name failed — check the output above"
+    < "$sql_file"
+  if [[ $? -eq 0 ]]; then
+    ok "$name applied"
+  else
+    die "Migration $name failed — check the output above"
+  fi
 }
 
 # Apply migrations in order
