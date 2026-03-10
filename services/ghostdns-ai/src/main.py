@@ -23,10 +23,16 @@ from src.intelligence.anomaly_detector import AnomalyDetector
 from src.intelligence.domain_guardian import DomainGuardian
 from src.lb.failover_engine import FailoverEngine, FailoverPolicy
 from src.lb.load_balancer import Backend, LoadBalancer
+from src.ai.geo_router import GeoRouter
+from src.infra.self_healer import SelfHealer
 from src.mesh.service_mesh import ServiceMeshMapper
 from src.metrics import (
     GHOSTDNS_ANOMALY_DETECTED_TOTAL,
     GHOSTDNS_DDOS_BLOCKED_IPS,
+    GHOSTDNS_GEO_ROUTE_TOTAL,  # noqa: F401 — imported for side-effect registration
+    GHOSTDNS_HEALTH_CHECK_LATENCY_MS,  # noqa: F401
+    GHOSTDNS_HEALTH_CHECK_UP,  # noqa: F401
+    GHOSTDNS_HEALER_RESTARTS_TOTAL,  # noqa: F401
     GHOSTDNS_RECONCILE_FAIL_TOTAL,
     GHOSTDNS_RECONCILE_TOTAL,
     GHOSTDNS_RECURSION_DENIED_TOTAL,
@@ -34,6 +40,7 @@ from src.metrics import (
     GHOSTDNS_RECORD_OPS_TOTAL,
     GHOSTDNS_ZONE_SERIAL,
 )
+from src.monitoring.health_monitor import HealthMonitor, HealthTarget
 from src.policy import default_static_records, merge_records
 from src.scanner_docker import scan_docker_records
 from src.scanner_libvirt import scan_libvirt_records
@@ -113,7 +120,25 @@ class DDoSUnblockBody(BaseModel):
     ip: str
 
 
-app = FastAPI(title="ghostdns-ai", version="2.0.0")
+# ── v3 Pydantic models ────────────────────────────────────────────────────────
+
+class HealthTargetBody(BaseModel):
+    name: str
+    url: str
+    timeout_s: float = Field(default=5.0, gt=0, le=30)
+    expected_status: int = Field(default=200, ge=100, le=599)
+
+
+class VmScaleProposalBody(BaseModel):
+    reason: str
+    suggested_name: str
+
+
+class HealerAllowlistBody(BaseModel):
+    container_name: str
+
+
+app = FastAPI(title="ghostdns-ai", version="3.0.0")
 DOMAIN = os.getenv("GHOSTDNS_DOMAIN", "ghostchain.cloud")
 MODE = os.getenv("GHOSTDNS_MODE", "dev")
 UPSTREAM_DNS = os.getenv("UPSTREAM_DNS", "1.1.1.1,8.8.8.8")
@@ -171,6 +196,14 @@ def _on_failover_record_change(fqdn: str, new_ip: str) -> None:
 
 
 _failover_engine = FailoverEngine(on_record_change=_on_failover_record_change)
+
+# ── v3: health monitor / geo router / self-healer singletons ─────────────────
+SIGNING_RELAY_URL = os.getenv("GHOSTDNS_SIGNING_RELAY_URL", "http://127.0.0.1:7910")
+_health_monitor = HealthMonitor()
+_geo_router     = GeoRouter(_load_balancer)
+_self_healer    = SelfHealer(signing_relay_url=SIGNING_RELAY_URL)
+_last_health: list[dict] = []
+_last_heal_events: list[dict] = []
 
 
 def _snapshot_last_good(zone_text: str) -> str:
@@ -631,6 +664,170 @@ def _do_mesh_sync() -> dict:
     return {"ok": True, "endpoints": len(endpoints), "services": len(lb_map)}
 
 
+# ── Health monitor endpoints ──────────────────────────────────────────────────
+
+@app.get("/monitoring/targets")
+def get_monitoring_targets() -> dict:
+    return {"ok": True, "targets": _health_monitor.list_targets()}
+
+
+@app.post("/monitoring/targets/add")
+async def post_monitoring_add(
+    req: Request,
+    body: HealthTargetBody,
+    x_ghost_approval: str = Header(default=""),
+    x_ghost_nonce: str = Header(default=""),
+    x_ghost_timestamp: str = Header(default=""),
+) -> dict:
+    payload = await req.body()
+    governance.verify(x_ghost_approval, x_ghost_nonce, x_ghost_timestamp, payload.decode("utf-8"))
+    try:
+        _health_monitor.register(
+            HealthTarget(name=body.name, url=body.url,
+                         timeout_s=body.timeout_s, expected_status=body.expected_status)
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    logger.emit("info", "health_monitor", "target_added", body.model_dump())
+    return {"ok": True, "name": body.name}
+
+
+@app.post("/monitoring/targets/remove")
+async def post_monitoring_remove(
+    req: Request,
+    body: HealerAllowlistBody,
+    x_ghost_approval: str = Header(default=""),
+    x_ghost_nonce: str = Header(default=""),
+    x_ghost_timestamp: str = Header(default=""),
+) -> dict:
+    payload = await req.body()
+    governance.verify(x_ghost_approval, x_ghost_nonce, x_ghost_timestamp, payload.decode("utf-8"))
+    removed = _health_monitor.deregister(body.container_name)
+    return {"ok": True, "removed": removed}
+
+
+@app.get("/monitoring/health")
+def get_monitoring_health() -> dict:
+    return {"ok": True, "results": _last_health}
+
+
+@app.post("/monitoring/health/check")
+async def post_monitoring_check(
+    req: Request,
+    x_ghost_approval: str = Header(default=""),
+    x_ghost_nonce: str = Header(default=""),
+    x_ghost_timestamp: str = Header(default=""),
+) -> dict:
+    payload = await req.body()
+    governance.verify(x_ghost_approval, x_ghost_nonce, x_ghost_timestamp, payload.decode("utf-8"))
+    global _last_health
+    results = _health_monitor.check_all()
+    _last_health = _health_monitor.last_results()
+    up = sum(1 for r in results if r.up)
+    return {"ok": True, "total": len(results), "up": up, "down": len(results) - up}
+
+
+# ── Geo router endpoints ──────────────────────────────────────────────────────
+
+@app.get("/geo/regions/{service}")
+def get_geo_regions(service: str) -> dict:
+    regions = _geo_router.regions_for_service(service)
+    return {"ok": True, "service": service, "regions": regions}
+
+
+@app.get("/geo/map")
+def get_geo_map() -> dict:
+    return {"ok": True, "map": _geo_router.service_region_map()}
+
+
+@app.get("/geo/route/{service}")
+def get_geo_route(service: str, region: str = "default") -> dict:
+    best = _geo_router.select_for_region(service, region)
+    if best is None:
+        raise HTTPException(status_code=503, detail=f"no_healthy_backend:{service}:{region}")
+    return {
+        "ok": True, "service": service, "region": region,
+        "ip": best.ip, "port": best.port,
+        "latency_ms": best.latency_ms, "backend_region": best.region,
+    }
+
+
+# ── Self-healer endpoints ─────────────────────────────────────────────────────
+
+@app.get("/infra/healer")
+def get_healer_status() -> dict:
+    return {"ok": True, "healer": _self_healer.healer_status(), "last_events": _last_heal_events}
+
+
+@app.post("/infra/healer/allowlist/add")
+async def post_healer_allowlist_add(
+    req: Request,
+    body: HealerAllowlistBody,
+    x_ghost_approval: str = Header(default=""),
+    x_ghost_nonce: str = Header(default=""),
+    x_ghost_timestamp: str = Header(default=""),
+) -> dict:
+    payload = await req.body()
+    governance.verify(x_ghost_approval, x_ghost_nonce, x_ghost_timestamp, payload.decode("utf-8"))
+    _self_healer.add_to_allowlist(body.container_name)
+    logger.emit("info", "self_healer", "allowlist_add", {"container": body.container_name})
+    return {"ok": True, "container": body.container_name}
+
+
+@app.post("/infra/healer/allowlist/remove")
+async def post_healer_allowlist_remove(
+    req: Request,
+    body: HealerAllowlistBody,
+    x_ghost_approval: str = Header(default=""),
+    x_ghost_nonce: str = Header(default=""),
+    x_ghost_timestamp: str = Header(default=""),
+) -> dict:
+    payload = await req.body()
+    governance.verify(x_ghost_approval, x_ghost_nonce, x_ghost_timestamp, payload.decode("utf-8"))
+    removed = _self_healer.remove_from_allowlist(body.container_name)
+    logger.emit("info", "self_healer", "allowlist_remove", {"container": body.container_name})
+    return {"ok": True, "was_present": removed}
+
+
+@app.post("/infra/healer/check")
+async def post_healer_check(
+    req: Request,
+    x_ghost_approval: str = Header(default=""),
+    x_ghost_nonce: str = Header(default=""),
+    x_ghost_timestamp: str = Header(default=""),
+) -> dict:
+    payload = await req.body()
+    governance.verify(x_ghost_approval, x_ghost_nonce, x_ghost_timestamp, payload.decode("utf-8"))
+    global _last_heal_events
+    events = _self_healer.run_checks()
+    _last_heal_events = events
+    if events:
+        logger.emit("info", "self_healer", "heal_cycle", {"events": events})
+    return {"ok": True, "events": events}
+
+
+@app.post("/infra/healer/propose-vm")
+async def post_propose_vm(
+    req: Request,
+    body: VmScaleProposalBody,
+    x_ghost_approval: str = Header(default=""),
+    x_ghost_nonce: str = Header(default=""),
+    x_ghost_timestamp: str = Header(default=""),
+) -> dict:
+    """Send a VM scale-out PROPOSAL to the signing relay.
+
+    This endpoint NEVER provisions a VM.  It drafts a proposal for human
+    ratification via the governance relay at :7910.
+    """
+    payload = await req.body()
+    governance.verify(x_ghost_approval, x_ghost_nonce, x_ghost_timestamp, payload.decode("utf-8"))
+    result = _self_healer.propose_vm_scale_out(
+        reason=body.reason, suggested_name=body.suggested_name
+    )
+    logger.emit("info", "self_healer", "vm_scale_proposal_sent", body.model_dump())
+    return {"ok": True, "proposal": result}
+
+
 # Domain guardian / cert check run every N reconcile cycles (~N min at default)
 _INTELLIGENCE_CHECK_EVERY = max(1, int(os.getenv("GHOSTDNS_INTELLIGENCE_CHECK_EVERY", "6")))
 _tick_count = 0
@@ -663,6 +860,29 @@ def _autonomous_loop() -> None:
             _ddos_guard.prune_expired()
         except Exception as exc:
             logger.emit("error", "autonomous_loop", "ddos_prune_failed", {"error": str(exc)})
+
+        # HTTP health checks every tick (lightweight, fast with configured timeout)
+        try:
+            global _last_health
+            _health_monitor.check_all()
+            _last_health = _health_monitor.last_results()
+            down = [r["name"] for r in _last_health if not r["up"]]
+            if down:
+                logger.emit("warning", "health_monitor", "targets_down",
+                            {"down": down, "count": len(down)})
+        except Exception as exc:
+            logger.emit("error", "autonomous_loop", "health_check_failed", {"error": str(exc)})
+
+        # Self-healer container checks every tick (internal cooldown prevents spam)
+        try:
+            global _last_heal_events
+            heal_events = _self_healer.run_checks()
+            if heal_events:
+                _last_heal_events = heal_events
+                logger.emit("info", "self_healer", "heal_cycle",
+                            {"events": heal_events, "count": len(heal_events)})
+        except Exception as exc:
+            logger.emit("error", "autonomous_loop", "self_healer_failed", {"error": str(exc)})
 
         _tick_count += 1
         if _tick_count % _INTELLIGENCE_CHECK_EVERY == 0:
