@@ -31,3 +31,24 @@ GHOSTDNS_CLOUDFLARE_SYNC_TOTAL = Counter(
 GHOSTDNS_RECORD_OPS_TOTAL = Counter(
     "ghostdns_record_ops_total", "DNS record operations", ["rtype", "op"]
 )
+
+# ── Load balancer metrics ─────────────────────────────────────────────────────
+GHOSTDNS_LB_SELECTION_TOTAL = Counter(
+    "ghostdns_lb_selection_total", "LB backend selection requests", ["service"]
+)
+GHOSTDNS_LB_HEALTHY_BACKENDS = Gauge(
+    "ghostdns_lb_healthy_backends", "Healthy backends per service pool", ["service"]
+)
+
+# ── DDoS guard metrics ────────────────────────────────────────────────────────
+GHOSTDNS_DDOS_BLOCKED_IPS = Gauge(
+    "ghostdns_ddos_blocked_ips", "Currently blocked source IPs"
+)
+GHOSTDNS_DDOS_RATE_EXCEEDED_TOTAL = Counter(
+    "ghostdns_ddos_rate_exceeded_total", "Rate limit violations"
+)
+
+# ── Service mesh metrics ──────────────────────────────────────────────────────
+GHOSTDNS_MESH_ENDPOINTS_TOTAL = Gauge(
+    "ghostdns_mesh_endpoints_total", "Discovered service mesh endpoints", ["source"]
+)
