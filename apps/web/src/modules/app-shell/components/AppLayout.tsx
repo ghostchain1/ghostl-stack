@@ -34,15 +34,20 @@ const legacyNavSections: { title: string; items: NavItem[] }[] = [
       { href: '/chains/l1', label: '↳ GhostChain L1' },
       { href: '/chains/l2', label: '↳ GhostL2' },
       { href: '/chains/l3', label: '↳ GhostL3' },
+      { href: '/supercontrol', label: '⬡ SuperControl' },
+      { href: '/network', label: 'Network 3D' },
+      { href: '/network/heatmap', label: '↳ Node Heatmap' },
       { href: '/nodes', label: 'Nodes' },
       { href: '/validators', label: 'Validators' },
-      { href: '/validators/map', label: '↳ Validator Map' }
+      { href: '/validators/map', label: '↳ Validator Map' },
+      { href: '/validators/control', label: '↳ Validator Control' }
     ]
   },
   {
     title: 'Operations',
     items: [
       { href: '/bridge', label: 'Bridge' },
+      { href: '/bridge/liquidity', label: '↳ Liquidity Monitor' },
       { href: '/wallet', label: 'Wallet' },
       { href: '/explorer', label: 'Explorer' },
       { href: '/explorer/txs', label: '↳ Transactions' }
@@ -78,6 +83,7 @@ const legacyNavSections: { title: string; items: NavItem[] }[] = [
       { href: '/tokenomics', label: 'Tokenomics' },
       { href: '/stocks', label: 'Stocks' },
       { href: '/treasury', label: 'Treasury' },
+      { href: '/treasury/intelligence', label: '↳ Treasury Intel' },
       { href: '/governance', label: 'Governance' },
       { href: '/nfts', label: 'NFTs' }
     ]
