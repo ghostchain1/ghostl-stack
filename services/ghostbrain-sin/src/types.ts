@@ -87,6 +87,65 @@ export interface LearningEvent {
   ts:          number;
 }
 
+// ── Voting advisor ────────────────────────────────────────────────────────────
+
+export interface VoteAdvice {
+  proposalId:     string;
+  title:          string;
+  recommendation: 'support' | 'oppose' | 'abstain';
+  confidence:     number;   // 0–1
+  reason:         string;
+  advisedAt:      number;
+}
+
+// ── Liquidity policy ──────────────────────────────────────────────────────────
+
+export interface LiquidityRoute {
+  id:        string;
+  from:      'L1' | 'L2' | 'L3';
+  to:        'L1' | 'L2' | 'L3';
+  amountGst: string;   // wei as string (bigint-safe)
+  reason:    string;
+}
+
+export interface LiquidityPolicyResult {
+  l1LiquidityPct: number;
+  l2LiquidityPct: number;
+  l3LiquidityPct: number;
+  routes:         LiquidityRoute[];
+  analysedAt:     number;
+}
+
+// ── Upgrade blueprints ────────────────────────────────────────────────────────
+
+export interface UpgradeBlueprint {
+  id:                   string;
+  upgradeType:          UpgradeCategory;
+  targetChain:          'L1' | 'L2' | 'L3' | 'all';
+  migrationSteps:       string[];
+  rollbackPlan:         string;
+  estimatedWindowHours: number;
+  riskMitigation:       string;
+  createdAt:            number;
+}
+
+// ── Security policy ───────────────────────────────────────────────────────────
+
+export type SecurityDomain =
+  | 'validator-collusion'
+  | 'governance-attack'
+  | 'bridge-exploit'
+  | 'token-concentration';
+
+export interface SecurityPolicyResult {
+  id:           string;
+  domain:       SecurityDomain;
+  severity:     'low' | 'medium' | 'high' | 'critical';
+  description:  string;
+  policyUpdate: string;
+  evaluatedAt:  number;
+}
+
 // ── Service snapshot ──────────────────────────────────────────────────────────
 
 export interface SINSnapshot {
@@ -96,13 +155,19 @@ export interface SINSnapshot {
   treasuryAllocation:  TreasuryAllocation | null;
   protocolProposals:   ProtocolUpgradeProposal[];
   learningEvents:      LearningEvent[];
+  // Phase 118-135 additions
+  voteAdvice:          VoteAdvice[];
+  liquidityPolicy:     LiquidityPolicyResult | null;
+  upgradeBlueprints:   UpgradeBlueprint[];
+  securityPolicies:    SecurityPolicyResult[];
   totalProposals:      number;
   dryRun:              boolean;
 }
 
 export interface SINProposal {
   id:          string;
-  type:        'governance-draft' | 'gst-policy' | 'treasury-reallocation' | 'protocol-upgrade';
+  type:        'governance-draft' | 'gst-policy' | 'treasury-reallocation' | 'protocol-upgrade'
+             | 'liquidity-routing' | 'security-policy' | 'upgrade-blueprint';
   description: string;
   payload:     Record<string, unknown>;
   urgency:     'critical' | 'high' | 'medium' | 'low';

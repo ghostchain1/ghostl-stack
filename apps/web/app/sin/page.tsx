@@ -54,6 +54,51 @@ interface LearningEvent {
   ts: number;
 }
 
+interface VoteAdvice {
+  proposalId: string;
+  title: string;
+  recommendation: 'support' | 'oppose' | 'abstain';
+  confidence: number;
+  reason: string;
+  advisedAt: number;
+}
+
+interface LiquidityRoute {
+  id: string;
+  from: string;
+  to: string;
+  amountGst: string;
+  reason: string;
+}
+
+interface LiquidityPolicy {
+  l1LiquidityPct: number;
+  l2LiquidityPct: number;
+  l3LiquidityPct: number;
+  routes: LiquidityRoute[];
+  analysedAt: number;
+}
+
+interface UpgradeBlueprint {
+  id: string;
+  upgradeType: string;
+  targetChain: string;
+  migrationSteps: string[];
+  rollbackPlan: string;
+  estimatedWindowHours: number;
+  riskMitigation: string;
+  createdAt: number;
+}
+
+interface SecurityPolicy {
+  id: string;
+  domain: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  description: string;
+  policyUpdate: string;
+  evaluatedAt: number;
+}
+
 interface SINSnapshot {
   cycleAt: number;
   governanceDrafts: GovernanceDraft[];
@@ -62,6 +107,10 @@ interface SINSnapshot {
   protocolProposals: ProtocolProposal[];
   learningEvents: LearningEvent[];
   recentLearningEvents: LearningEvent[];
+  voteAdvice: VoteAdvice[];
+  liquidityPolicy: LiquidityPolicy | null;
+  upgradeBlueprints: UpgradeBlueprint[];
+  securityPolicies: SecurityPolicy[];
   totalProposals: number;
   dryRun: boolean;
 }
@@ -104,6 +153,19 @@ function learnIcon(t: string): string {
   return '📡';
 }
 
+function voteColor(r: string): string {
+  if (r === 'support') return '#22c55e';
+  if (r === 'oppose')  return '#ef4444';
+  return '#6b7280';
+}
+
+function severityColor(s: string): string {
+  if (s === 'critical') return '#ef4444';
+  if (s === 'high')     return '#f59e0b';
+  if (s === 'medium')   return '#6366f1';
+  return '#22c55e';
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function SINPage() {
@@ -130,7 +192,8 @@ export default function SINPage() {
   if (status === 'error')   return <div style={S.centered}>SIN service offline — retrying every 20 s</div>;
 
   const { governanceDrafts, gstPolicy, treasuryAllocation, protocolProposals,
-          recentLearningEvents, cycleAt, dryRun, totalProposals } = status;
+          recentLearningEvents, voteAdvice, liquidityPolicy, upgradeBlueprints,
+          securityPolicies, cycleAt, dryRun, totalProposals } = status;
 
   return (
     <div style={S.page}>
@@ -151,11 +214,14 @@ export default function SINPage() {
 
       {/* Strip */}
       <div style={S.strip}>
-        <Pill label="Gov Drafts"      value={String(governanceDrafts.length)} color="#a78bfa" />
-        <Pill label="GST Policy"      value={gstPolicy?.recommendation ?? 'none'} color={gstPolicy ? recColor(gstPolicy.recommendation) : '#6b7280'} />
-        <Pill label="Protocol Props"  value={String(protocolProposals.length)} color="#38bdf8" />
-        <Pill label="Learning Events" value={String(recentLearningEvents.length)} color="#22c55e" />
-        <Pill label="Proposals Sent"  value={String(totalProposals)} color={totalProposals > 0 ? '#f59e0b' : '#6b7280'} />
+        <Pill label="Gov Drafts"       value={String(governanceDrafts.length)} color="#a78bfa" />
+        <Pill label="GST Policy"       value={gstPolicy?.recommendation ?? 'none'} color={gstPolicy ? recColor(gstPolicy.recommendation) : '#6b7280'} />
+        <Pill label="Vote Advice"      value={String(voteAdvice?.length ?? 0)} color="#22d3ee" />
+        <Pill label="Liq Routes"       value={String(liquidityPolicy?.routes.length ?? 0)} color="#f59e0b" />
+        <Pill label="Blueprints"       value={String(upgradeBlueprints?.length ?? 0)} color="#38bdf8" />
+        <Pill label="Security Alerts"  value={String((securityPolicies ?? []).filter((s) => s.severity === 'high' || s.severity === 'critical').length)} color="#ef4444" />
+        <Pill label="Protocol Props"   value={String(protocolProposals.length)} color="#6366f1" />
+        <Pill label="Proposals Sent"   value={String(totalProposals)} color={totalProposals > 0 ? '#a78bfa' : '#6b7280'} />
       </div>
 
       {/* Governance drafts */}
@@ -269,6 +335,131 @@ export default function SINPage() {
               ))}
             </tbody>
           </table>
+        )}
+      </Sec>
+
+      {/* Vote advisor */}
+      <Sec title={`AI Voting Advisor (${(voteAdvice ?? []).length} active proposals)`}>
+        {!(voteAdvice ?? []).length ? (
+          <div style={S.dim}>No active governance proposals to advise on</div>
+        ) : (
+          <table style={S.table}>
+            <thead><tr>
+              <th style={S.th}>Proposal</th><th style={S.th}>Recommendation</th>
+              <th style={S.th}>Confidence</th><th style={S.th}>Reason</th>
+            </tr></thead>
+            <tbody>
+              {(voteAdvice ?? []).map((v) => (
+                <tr key={v.proposalId}>
+                  <td style={S.td}>{v.title}</td>
+                  <td style={{ ...S.td, color: voteColor(v.recommendation), fontWeight: 700, textTransform: 'uppercase' }}>{v.recommendation}</td>
+                  <td style={S.td}>{Math.round(v.confidence * 100)}%</td>
+                  <td style={{ ...S.td, color: '#a1a1aa' }}>{v.reason}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Sec>
+
+      {/* Liquidity policy */}
+      <Sec title="Liquidity Distribution & Routing">
+        {!liquidityPolicy ? (
+          <div style={S.dim}>Chain metrics unavailable — liquidity analysis pending</div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: 20, marginBottom: 16 }}>
+              {(['L1', 'L2', 'L3'] as const).map((layer) => {
+                const pct = layer === 'L1' ? liquidityPolicy.l1LiquidityPct
+                          : layer === 'L2' ? liquidityPolicy.l2LiquidityPct
+                          : liquidityPolicy.l3LiquidityPct;
+                return (
+                  <div key={layer} style={S.pill}>
+                    <div style={{ ...S.pillVal, color: '#f59e0b' }}>{pct.toFixed(1)}%</div>
+                    <div style={S.pillLabel}>{layer} Liquidity</div>
+                  </div>
+                );
+              })}
+            </div>
+            {liquidityPolicy.routes.length === 0 ? (
+              <div style={S.dim}>Distribution within policy bounds — no routing needed</div>
+            ) : (
+              <table style={S.table}>
+                <thead><tr>
+                  <th style={S.th}>From</th><th style={S.th}>To</th>
+                  <th style={S.th}>Amount</th><th style={S.th}>Reason</th>
+                </tr></thead>
+                <tbody>
+                  {liquidityPolicy.routes.map((r) => (
+                    <tr key={r.id}>
+                      <td style={{ ...S.td, color: '#f59e0b', fontWeight: 700 }}>{r.from}</td>
+                      <td style={{ ...S.td, color: '#22c55e', fontWeight: 700 }}>{r.to}</td>
+                      <td style={S.td}>{shortGst(r.amountGst)}</td>
+                      <td style={{ ...S.td, color: '#a1a1aa' }}>{r.reason.slice(0, 80)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </>
+        )}
+      </Sec>
+
+      {/* Security policies */}
+      <Sec title="Security Policy Evaluation">
+        {!(securityPolicies ?? []).length ? (
+          <div style={S.dim}>Security evaluation pending</div>
+        ) : (
+          <table style={S.table}>
+            <thead><tr>
+              <th style={S.th}>Domain</th><th style={S.th}>Severity</th>
+              <th style={S.th}>Finding</th><th style={S.th}>Policy Update</th>
+            </tr></thead>
+            <tbody>
+              {(securityPolicies ?? []).map((s) => (
+                <tr key={s.id}>
+                  <td style={S.td}>{s.domain}</td>
+                  <td style={{ ...S.td, color: severityColor(s.severity), fontWeight: 700, textTransform: 'uppercase' }}>{s.severity}</td>
+                  <td style={{ ...S.td, color: '#d4d4d8' }}>{s.description.slice(0, 70)}{s.description.length > 70 ? '…' : ''}</td>
+                  <td style={{ ...S.td, color: '#a1a1aa' }}>{s.policyUpdate.slice(0, 80)}{s.policyUpdate.length > 80 ? '…' : ''}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Sec>
+
+      {/* Upgrade blueprints */}
+      <Sec title={`Upgrade Blueprints (${(upgradeBlueprints ?? []).length})`}>
+        {!(upgradeBlueprints ?? []).length ? (
+          <div style={S.dim}>No upgrade blueprints this cycle</div>
+        ) : (
+          (upgradeBlueprints ?? []).map((bp) => (
+            <div key={bp.id} style={{ ...S.card, marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontWeight: 700, color: '#38bdf8' }}>{bp.upgradeType}</span>
+                <span style={S.cl}>{bp.targetChain} · {bp.estimatedWindowHours}h window</span>
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: 11, color: '#71717a', marginBottom: 4 }}>Migration steps</div>
+                <ol style={{ margin: 0, paddingLeft: 20 }}>
+                  {bp.migrationSteps.map((step, i) => (
+                    <li key={i} style={{ fontSize: 12, color: '#d4d4d8', marginBottom: 2 }}>{step}</li>
+                  ))}
+                </ol>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 8 }}>
+                <div>
+                  <div style={{ fontSize: 11, color: '#71717a', marginBottom: 2 }}>Rollback</div>
+                  <div style={{ fontSize: 12, color: '#a1a1aa' }}>{bp.rollbackPlan.slice(0, 100)}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: '#71717a', marginBottom: 2 }}>Risk mitigation</div>
+                  <div style={{ fontSize: 12, color: '#a1a1aa' }}>{bp.riskMitigation.slice(0, 100)}</div>
+                </div>
+              </div>
+            </div>
+          ))
         )}
       </Sec>
 

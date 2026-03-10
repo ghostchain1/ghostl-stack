@@ -17,6 +17,10 @@ import { analyseGstPolicy }                 from './economics/gstPolicyEngine.js
 import { adviseTreasuryAllocation }         from './treasury/treasuryInvestmentAdvisor.js';
 import { proposeProtocolUpgrades }          from './protocol/protocolUpgradeAdvisor.js';
 import { coordinateLearning, recentLearningEvents } from './learning/globalLearningCoordinator.js';
+import { adviseVotes }               from './governance/votingAdvisor.js';
+import { analyseLiquidity }          from './economics/liquidityPolicy.js';
+import { architectUpgrades }         from './protocol/upgradeArchitect.js';
+import { evaluateSecurityPolicies }  from './protocol/securityPolicy.js';
 
 import type { SINSnapshot, SINProposal } from './types.js';
 
@@ -45,13 +49,18 @@ async function sinCycle(): Promise<void> {
   console.log(`\n[sin] ──── GhostBrain SIN cycle @ ${new Date(cycleAt).toISOString()}`);
 
   // Run all analysis modules concurrently
-  const [govDrafts, gstPolicy, treasuryAlloc, protocolProps, learningEvents] =
+  const [govDrafts, gstPolicy, treasuryAlloc, protocolProps, learningEvents,
+         voteAdvice, liquidityPolicy, upgradeBlueprints, securityPolicies] =
     await Promise.all([
       draftGovernanceProposals(),
       analyseGstPolicy(),
       adviseTreasuryAllocation(),
       proposeProtocolUpgrades(),
       coordinateLearning(),
+      adviseVotes(),
+      analyseLiquidity(),
+      architectUpgrades(),
+      evaluateSecurityPolicies(),
     ]);
 
   // Convert analysis outputs → relay-bound proposals
@@ -110,6 +119,47 @@ async function sinCycle(): Promise<void> {
     });
   }
 
+  // Liquidity routing proposals
+  if (liquidityPolicy && liquidityPolicy.routes.length > 0) {
+    sinProposals.push({
+      id:          randomUUID(),
+      type:        'liquidity-routing',
+      description: `[Liquidity] ${liquidityPolicy.routes.length} cross-layer route(s) recommended — L1:${liquidityPolicy.l1LiquidityPct.toFixed(1)}% L2:${liquidityPolicy.l2LiquidityPct.toFixed(1)}% L3:${liquidityPolicy.l3LiquidityPct.toFixed(1)}%`,
+      payload:     { ...liquidityPolicy },
+      urgency:     liquidityPolicy.l1LiquidityPct < 30 ? 'high' : 'medium',
+      createdAt:   Date.now(),
+      requiresHumanRatification: true,
+    });
+  }
+
+  // Security policy proposals (critical / high only)
+  for (const sp of securityPolicies) {
+    if (sp.severity === 'critical' || sp.severity === 'high') {
+      sinProposals.push({
+        id:          randomUUID(),
+        type:        'security-policy',
+        description: `[Security:${sp.domain}] ${sp.description.slice(0, 120)}`,
+        payload:     { ...sp },
+        urgency:     sp.severity === 'critical' ? 'critical' : 'high',
+        createdAt:   Date.now(),
+        requiresHumanRatification: true,
+      });
+    }
+  }
+
+  // Upgrade blueprints (one per blueprint, medium urgency)
+  for (const bp of upgradeBlueprints) {
+    sinProposals.push({
+      id:          randomUUID(),
+      type:        'upgrade-blueprint',
+      description: `[Blueprint:${bp.upgradeType}] ${bp.targetChain} — ${bp.estimatedWindowHours}h window`,
+      payload:     { ...bp },
+      urgency:     'medium',
+      createdAt:   Date.now(),
+      requiresHumanRatification: true,
+    });
+  }
+
   // Cap proposals per cycle
   const capped = sinProposals
     .sort((a, b) => {
@@ -132,6 +182,10 @@ async function sinCycle(): Promise<void> {
     treasuryAllocation: treasuryAlloc,
     protocolProposals:  protocolProps,
     learningEvents,
+    voteAdvice,
+    liquidityPolicy,
+    upgradeBlueprints,
+    securityPolicies,
     totalProposals:     capped.length,
     dryRun:             DRY_RUN,
   };
@@ -140,7 +194,9 @@ async function sinCycle(): Promise<void> {
     `[sin] cycle done — govDrafts:${govDrafts.length}  ` +
     `gstRec:${gstPolicy?.recommendation ?? 'none'}  ` +
     `treasuryShifts:${treasuryAlloc?.allocations.filter((a) => Math.abs(a.currentPct - a.proposedPct) >= 5).length ?? 0}  ` +
-    `protocolProps:${protocolProps.length}  learningEvents:${learningEvents.length}`,
+    `protocolProps:${protocolProps.length}  learningEvents:${learningEvents.length}  ` +
+    `voteAdvice:${voteAdvice.length}  liquidityRoutes:${liquidityPolicy?.routes.length ?? 0}  ` +
+    `blueprints:${upgradeBlueprints.length}  securityAlerts:${securityPolicies.filter((s) => s.severity === 'high' || s.severity === 'critical').length}`,
   );
 }
 
