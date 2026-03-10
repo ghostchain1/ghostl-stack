@@ -37,6 +37,7 @@ import { hydrateAuditLog }              from "./memory/memory_audit.js";
 import { startMemoryOptimizer, stopMemoryOptimizer } from "./core/memory_optimizer.js";
 import { startCognitiveLoop, stopCognitiveLoop }     from "./cognition/cognitive_engine.js";
 import { startHyperCoreLoop, stopHyperCoreLoop }     from "./hypercore/hypercore_engine.js";
+import { startKernelEngine,  stopKernelEngine }       from "./kernel/kernel_engine.js";
 
 const PORT = Number(process.env.GHOSTBRAIN_PORT ?? "7900");
 const BIND = process.env.GHOSTBRAIN_BIND ?? "127.0.0.1";
@@ -93,6 +94,9 @@ try {
   // Start HyperCore — Layer 5 strategic AI loop (15 s interval)
   startHyperCoreLoop();
 
+  // Start AI Kernel Engine — Layer 6 infrastructure control loop (5 s interval)
+  startKernelEngine();
+
   app.log.info({ bind: BIND, port: PORT, wsPath: "/ws" }, "ghostbrain-core started");
 } catch (err) {
   app.log.error(err, "ghostbrain-core failed to start");
@@ -115,6 +119,7 @@ process.on("SIGTERM", async () => {
   stopMemoryOptimizer();
   stopCognitiveLoop();
   stopHyperCoreLoop();
+  stopKernelEngine();
   wss?.close();
   await app.close();
   // Close DB connections last, after HTTP server is down
