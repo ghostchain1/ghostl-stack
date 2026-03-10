@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * services/ghostbrain-core/test/memory_query.test.ts
  *

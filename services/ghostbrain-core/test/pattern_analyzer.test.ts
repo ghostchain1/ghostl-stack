@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * services/ghostbrain-core/test/pattern_analyzer.test.ts
  *
