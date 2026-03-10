@@ -16,6 +16,7 @@ import { broadcastResult } from "./swarm_memory_sync.js";
 import { log }             from "../observability/event_logger.js";
 import { inc }             from "../observability/metrics_exporter.js";
 import type { SwarmTask, SwarmResult } from "./swarm_types.js";
+import { forwardToSwarm }  from "./ghost_swarm_bridge.js";
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
@@ -43,6 +44,23 @@ export async function dispatchTask(task: SwarmTask): Promise<SwarmResult | null>
     _noAgent++;
     inc("ghostbrain_swarm_no_agent_total", "Swarm tasks with no capable agent");
     log.warn("swarm_controller: no_agent", `type=${task.type} domain=${task.domain}`);
+    // Attempt to forward to the ghost-ai-swarm service (external swarm at port 4080)
+    const bridged = await forwardToSwarm(task.domain, task.type, task.data ?? {}, task.dryRun);
+    if (bridged) {
+      log.info("swarm_controller: bridged_to_ghost_swarm", `agent=${bridged.agent} ok=${bridged.ok} dryRun=${bridged.dryRun}`);
+      const bridgeResult: SwarmResult = {
+        taskId:     task.id,
+        agentName:  `ghost-ai-swarm:${bridged.agent}`,
+        domain:     task.domain,
+        ok:         bridged.ok,
+        detail:     bridged.detail,
+        executedAt: Date.now(),
+        durationMs: 0,
+      };
+      _results.push(bridgeResult);
+      if (_results.length > RING_MAX) _results.shift();
+      return bridgeResult;
+    }
     return null;
   }
 

@@ -19,6 +19,7 @@ import {
 import { dispatchTask }          from "../swarm/swarm_controller.js";
 import { routeRaw }              from "../swarm/task_router.js";
 import type { SwarmTask, SwarmDomain } from "../swarm/swarm_types.js";
+import { swarmBridgeHealth, swarmBridgeStats } from "../swarm/ghost_swarm_bridge.js";
 
 export async function swarmRoutes(app: FastifyInstance): Promise<void> {
 
@@ -76,5 +77,11 @@ export async function swarmRoutes(app: FastifyInstance): Promise<void> {
   app.post("/api/v1/swarm/loop/resume", async (_req, reply) => {
     resumeSwarmEngine();
     return reply.send({ ok: true, action: "resumed" });
+  });
+
+  /** Health of the ghost-ai-swarm bridge (reachability + stats) */
+  app.get("/api/v1/swarm/bridge/health", async (_req, reply) => {
+    const [health, stats] = await Promise.all([swarmBridgeHealth(), Promise.resolve(swarmBridgeStats())]);
+    return reply.send({ bridge: health, stats });
   });
 }
