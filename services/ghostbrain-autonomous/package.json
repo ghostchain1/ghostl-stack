@@ -1,0 +1,19 @@
+{
+  "name": "ghostbrain-autonomous",
+  "version": "0.1.0",
+  "description": "GhostBrain Autonomous Operations Engine — detect-only monitoring with governance-gated proposals",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "node --watch dist/index.js"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "@types/node": "^22.10.7"
+  }
+}
