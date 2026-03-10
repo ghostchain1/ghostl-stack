@@ -33,6 +33,7 @@ import { blockchainRoutes }    from "./routes/blockchain.js";
 import { aiRoutes }            from "./routes/ai.js";
 import { hypercoreRoutes }     from "./routes/hypercore.js";
 import { swarmRoutes }         from "./routes/swarm.js";
+import { dnsRoutes }           from "./routes/dns.js";
 import { hmacAuthPlugin } from "./middleware/hmac.js";
 import { rateLimitPlugin } from "./middleware/rateLimit.js";
 
@@ -99,6 +100,6 @@ export function buildApp() {
   // ── HyperCore — Layer 5 strategic AI: LLM reasoning, DevOps AI, Blockchain AI ─
   app.register(hypercoreRoutes);
   // ── Autonomous Swarm — Layer 7 distributed agent coordination ───────────────
-  app.register(swarmRoutes);
-  return app;
+  app.register(swarmRoutes);  // ── GhostDNS AI — DNS management, intelligence, cert automation ────────────────────
+  app.register(dnsRoutes, { prefix: "/api/v1/brain/dns" });  return app;
 }
