@@ -35,7 +35,8 @@ const legacyNavSections: { title: string; items: NavItem[] }[] = [
       { href: '/chains/l2', label: '↳ GhostL2' },
       { href: '/chains/l3', label: '↳ GhostL3' },
       { href: '/nodes', label: 'Nodes' },
-      { href: '/validators', label: 'Validators' }
+      { href: '/validators', label: 'Validators' },
+      { href: '/validators/map', label: '↳ Validator Map' }
     ]
   },
   {
@@ -43,7 +44,8 @@ const legacyNavSections: { title: string; items: NavItem[] }[] = [
     items: [
       { href: '/bridge', label: 'Bridge' },
       { href: '/wallet', label: 'Wallet' },
-      { href: '/explorer/txs', label: 'Explorer' }
+      { href: '/explorer', label: 'Explorer' },
+      { href: '/explorer/txs', label: '↳ Transactions' }
     ]
   },
   {
@@ -88,6 +90,7 @@ const legacyNavSections: { title: string; items: NavItem[] }[] = [
       { href: '/devops', label: 'DevOps' },
       { href: '/integrations', label: 'Integrations' },
       { href: '/ai', label: 'AI' },
+      { href: '/ai/console', label: 'AI Console' },
       { href: '/ai/recommendations', label: 'AI Recommendations' },
       { href: '/ai/hyperghost', label: 'Hyper Ghost' }
     ]

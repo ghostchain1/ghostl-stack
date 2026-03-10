@@ -1,0 +1,24 @@
+{
+  "name": "ghost-ws-gateway",
+  "version": "1.0.0",
+  "description": "GhostStack WebSocket Gateway — bridges GhostBrain SSE events to WebSocket clients",
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "start": "node dist/server.js",
+    "dev":   "node --watch --import tsx/esm src/server.ts"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/ws":   "^8.5.13",
+    "tsx":         "^4.19.2",
+    "typescript":  "^5.9.3"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}
