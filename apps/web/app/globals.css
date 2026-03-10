@@ -113,11 +113,17 @@ a {
   align-items: center;
   gap: 10px;
   font-family: var(--font-display);
-  /* needed so the Ghostcain overlay can be anchored inside this block */
-  position: relative;
 }
 
-/* Ghostcain custom brand overlay — top-left corner of the sidebar logo block.
+/* Tight wrapper around the logo image — gives the Ghostcain overlay a precise
+   top-left anchor on the image itself, independent of the ::before box. */
+.logo-img-wrap {
+  position: relative;
+  display: inline-flex;
+  line-height: 0; /* collapse inline baseline gap */
+}
+
+/* Ghostcain custom brand overlay — top-left corner of the sidebar logo image.
    Replace apps/web/public/ghostcain-logo.png with the real asset from
    ghostchain1/ghostcain-contracts (blob/main/logo.png) when available. */
 .logo-overlay {
