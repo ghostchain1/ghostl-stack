@@ -32,6 +32,7 @@ import { brainRoutes }         from "./routes/brain.js";
 import { blockchainRoutes }    from "./routes/blockchain.js";
 import { aiRoutes }            from "./routes/ai.js";
 import { hypercoreRoutes }     from "./routes/hypercore.js";
+import { swarmRoutes }         from "./routes/swarm.js";
 import { hmacAuthPlugin } from "./middleware/hmac.js";
 import { rateLimitPlugin } from "./middleware/rateLimit.js";
 
@@ -97,5 +98,7 @@ export function buildApp() {
   app.register(aiRoutes);
   // ── HyperCore — Layer 5 strategic AI: LLM reasoning, DevOps AI, Blockchain AI ─
   app.register(hypercoreRoutes);
+  // ── Autonomous Swarm — Layer 7 distributed agent coordination ───────────────
+  app.register(swarmRoutes);
   return app;
 }

@@ -20,6 +20,7 @@ import { GhostRepairBot,        type GhostRepairBotConfig }        from "./ghost
 import { GhostLoadBalancer,     type GhostLoadBalancerConfig }     from "./ghost_load_balancer.js";
 import { GhostPredictor,        type GhostPredictorConfig }        from "./ghost_predictor.js";
 import { GhostSecurityGuardian, type GhostSecurityGuardianConfig } from "./ghost_security_guardian.js";
+import { GhostDeployAI,         type GhostDeployAIConfig }         from "./ghost_deploy_ai.js";
 import { log }                                                      from "../observability/event_logger.js";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -36,8 +37,9 @@ export interface AgentSpawnConfig {
   loadBalancer?:      GhostLoadBalancerConfig;
   predictor?:         GhostPredictorConfig;
   securityGuardian?:  GhostSecurityGuardianConfig;
+  deployAI?:          GhostDeployAIConfig;
   /** Disable individual agents by name */
-  disabled?:          Array<"optimizer" | "repairBot" | "loadBalancer" | "predictor" | "securityGuardian">;
+  disabled?:          Array<"optimizer" | "repairBot" | "loadBalancer" | "predictor" | "securityGuardian" | "deployAI">;
 }
 
 // ── Registry ──────────────────────────────────────────────────────────────────
@@ -75,6 +77,9 @@ export function spawnAllAgents(cfg: AgentSpawnConfig = {}): void {
   }
   if (!disabled.has("securityGuardian")) {
     register(new GhostSecurityGuardian(cfg.securityGuardian));
+  }
+  if (!disabled.has("deployAI")) {
+    register(new GhostDeployAI(cfg.deployAI));
   }
 
   log.info("agent-spawner: started", `${registry.size} agents active`);
@@ -117,3 +122,4 @@ export { GhostRepairBot }        from "./ghost_repair_bot.js";
 export { GhostLoadBalancer }     from "./ghost_load_balancer.js";
 export { GhostPredictor }        from "./ghost_predictor.js";
 export { GhostSecurityGuardian } from "./ghost_security_guardian.js";
+export { GhostDeployAI }         from "./ghost_deploy_ai.js";
