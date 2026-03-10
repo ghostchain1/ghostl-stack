@@ -1,4 +1,6 @@
 import { HypervisorPanel } from '../../src/modules/devops/components/HypervisorPanel';
+import { SystemHealthPanel } from '../../src/modules/devops/components/SystemHealthPanel';
+import { DockerLogsPanel } from '../../src/modules/devops/components/DockerLogsPanel';
 import { ReleasePlanner } from '../../src/modules/devops/components/ReleasePlanner';
 import { ForkScheduler } from '../../src/modules/devops/components/ForkScheduler';
 import { FeatureFlagsPanel } from '../../src/modules/devops/components/FeatureFlagsPanel';
@@ -95,9 +97,17 @@ export default async function DevOpsPage() {
           Containers · VMs · Releases · Feature Flags · Upgrade Pipeline
         </p>
       </div>
+      {/* System health — service status grid */}
+      <div style={{ marginBottom: 20 }}>
+        <SystemHealthPanel />
+      </div>
       {/* Hypervisor — container/VM live control */}
-      <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 20 }}>
         <HypervisorPanel />
+      </div>
+      {/* Docker logs — container log viewer */}
+      <div style={{ marginBottom: 24 }}>
+        <DockerLogsPanel />
       </div>
       <div className="card-grid">
         {errors.map((entry, idx) => (
