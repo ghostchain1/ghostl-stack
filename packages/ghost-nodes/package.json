@@ -26,7 +26,7 @@
     "brand-check": "node ../../packages/brand-enforcer/src/cli.js --dir ./src"
   },
   "dependencies": {
-    "@ghostchain/ghost-sdk-core": "workspace:*"
+    "@ghostchain/ghost-sdk-core": "1.0.0"
   },
   "devDependencies": {
     "typescript": "^5.4.0"

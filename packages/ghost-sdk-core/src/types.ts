@@ -67,7 +67,7 @@ export interface GhostCallOverride {
 export interface GhostTypedDataDomain {
   name?: string;
   version?: string;
-  chainId?: number;
+  chainId?: number | bigint;
   verifyingContract?: string;
   salt?: string;
 }

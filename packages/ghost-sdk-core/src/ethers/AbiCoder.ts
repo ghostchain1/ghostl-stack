@@ -21,7 +21,7 @@ export class AbiCoder {
    * @param types  e.g. ["uint256", "address", "bool"]
    * @param values matching values
    */
-  encode(types: string[], values: unknown[]): string {
+  encode(types: readonly string[], values: unknown[]): string {
     // Build a synthetic ABI fragment so GhostAbiCoder can process it
     const fragment: GhostABIFragment = {
       type: "function",

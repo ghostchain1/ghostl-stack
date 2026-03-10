@@ -6,7 +6,9 @@
     "declaration": true,
     "baseUrl": ".",
     "paths": {
-      "ghost": ["../../node_modules/ethers/lib.esm/index.d.ts"]
+      "ghost": ["../../packages/ghost/src/index.ts"],
+      "@ghostchain/ghost-sdk-core": ["../../packages/ghost-sdk-core/dist/index.d.ts"],
+      "@ghostchain/ghost-sdk-core/*": ["../../packages/ghost-sdk-core/dist/*"]
     }
   },
   "include": ["src"]

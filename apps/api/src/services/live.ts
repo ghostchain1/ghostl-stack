@@ -287,7 +287,7 @@ export const createLiveServices = (deps: {
       const query = `{instance="${id}"}`;
       try {
         const result = await deps.loki.queryRange(query, startNs, endNs, tail);
-        return flattenLokiEntries(result).map((e) => e.log);
+        return flattenLokiEntries(result).map((e) => e.log.message);
       } catch {
         return [];
       }
@@ -432,8 +432,8 @@ export const createLiveServices = (deps: {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               channel: ch,
-              message: (alert as Record<string, unknown>).name ?? 'alert',
-              severity: (alert as Record<string, unknown>).severity ?? 'warning',
+              message: alert.message ?? alert.id ?? 'alert',
+              severity: alert.severity ?? 'warning',
               metadata: alert
             })
           })

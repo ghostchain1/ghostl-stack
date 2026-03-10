@@ -11,7 +11,8 @@ export * from "./chains/ghostChains";
 export * from "./ethers/index";
 export * from "./utils/hex";
 export * from "./utils/address";
-export * from "./crypto/keccak";
+// export keccak256Hex only — keccak256 is already exported from ./ethers/index
+export { keccak256Hex } from "./crypto/keccak";
 export * from "./crypto/secp256k1";
 export * from "./types";
 export * from "./errors";

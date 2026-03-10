@@ -350,6 +350,30 @@ services:
           add:
             headers: ["X-Ghost-Region:asia"]
 
+  # GhostChain.cloud — canonical brand home site (Next.js web app)
+  - name: ghostchain-home
+    url: http://38.247.149.222:3000
+    connect_timeout: 5000
+    write_timeout:   15000
+    read_timeout:    15000
+    retries: 1
+    routes:
+      - name: home-route
+        protocols: [https]
+        hosts: [ghostchain.cloud]
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 300
+          policy: local
+      - name: cors
+        config:
+          origins: ["*"]
+          methods: [GET, OPTIONS]
+          headers: [Content-Type]
+          max_age: 3600
+
   # GhostBrain Core — internal HMAC-authenticated service
   - name: ghostbrain-core
     url: http://38.247.149.223:7900

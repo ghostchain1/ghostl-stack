@@ -1,7 +1,7 @@
 /**
  * Prometheus metrics for ghost-ai-swarm (prom-client).
  */
-import client from "prom-client";
+import * as client from "prom-client";
 
 export const register = new client.Registry();
 register.setDefaultLabels({ service: "ghost-ai-swarm" });

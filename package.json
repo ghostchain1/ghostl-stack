@@ -6,6 +6,14 @@
   "workspaces": [
     "apps/api",
     "apps/web",
+    "apps/web-main",
+    "apps/web-wallet",
+    "apps/web-explorer",
+    "apps/web-bridge",
+    "apps/web-ai",
+    "apps/web-rpc-portal",
+    "apps/web-docs",
+    "apps/web-live",
     "apps/worker",
     "packages/*"
   ],

@@ -1,5 +1,3 @@
-version: "3.8"
-
 # =============================================================================
 # GhostStack — network IP binding overlay
 #
@@ -45,20 +43,6 @@ x-apps-ports: &apps_ports
     - "${GHOST_BIND_APPS:-38.247.149.222}:3000:3000"   # explorer (Next.js)
     - "${GHOST_BIND_APPS:-38.247.149.222}:3001:3001"   # API BFF (Express)
     - "${GHOST_BIND_APPS:-38.247.149.222}:3002:3002"   # GhostWallet
-
-x-ai-ports: &ai_ports
-  ports:
-    - "${GHOST_BIND_AI:-38.247.149.223}:7900:7900"     # GhostBrain Core
-    - "${GHOST_BIND_AI:-38.247.149.223}:4080:4080"     # Ghost AI Swarm
-    - "${GHOST_BIND_AI:-38.247.149.223}:4060:4060"     # GNMC
-    - "${GHOST_BIND_AI:-38.247.149.223}:4070:4070"     # GACK
-    - "${GHOST_BIND_AI:-38.247.149.223}:7910:7910"     # Signing Relay
-
-x-mon-ports: &mon_ports
-  ports:
-    - "${GHOST_BIND_MON:-38.247.149.224}:3000:3000"    # Grafana
-    - "${GHOST_BIND_MON:-38.247.149.224}:9090:9090"    # Prometheus
-    - "${GHOST_BIND_MON:-38.247.149.224}:9100:9100"    # Node exporter
 
 services:
   # ── GhostChain L1 ────────────────────────────────────────────────────────────
