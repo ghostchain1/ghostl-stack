@@ -1,0 +1,7 @@
+# GhostStack AI Engineering Agent — Python dependencies
+# Install:  pip install -r requirements.txt
+#
+# Standard-library only is the goal; PyYAML is the only third-party dep
+# required to load config.yaml.  All other I/O uses urllib (stdlib).
+
+PyYAML>=6.0.1

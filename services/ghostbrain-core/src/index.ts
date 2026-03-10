@@ -17,6 +17,7 @@ import { attachWsServer }        from "./routes/ws.js";
 import { markReady }             from "./routes/status.js";
 import { hydrateAllMemory }      from "./cognition/memory_controller.js";
 import { startHypervisorLoop, stopHypervisorLoop } from "./infra/hypervisor_controller.js";
+import { startInfraSupervisor, stopInfraSupervisor } from "./infra/infra_supervisor.js";
 import { selfRegisterWithCluster } from "./routes/cluster_peer.js";
 import { startBrain, stopBrain }   from "./kernel/brain.js";
 import { startEventLoop, stopEventLoop } from "./kernel/event_loop.js";
@@ -42,6 +43,9 @@ try {
 
   // Start autonomous infrastructure observe loop
   startHypervisorLoop();
+
+  // Start GhostBrain Infrastructure Supervisor (predictive AI + self-healing)
+  startInfraSupervisor();
 
   // Start GBA-OS kernel
   startEventLoop();

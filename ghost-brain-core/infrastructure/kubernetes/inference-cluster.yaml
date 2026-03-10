@@ -1,0 +1,231 @@
+---
+# GhostBrain — Inference Cluster StatefulSet
+#
+# A StatefulSet-backed inference cluster for high-throughput GhostBrain
+# inference on GhostChain L3 workloads. Each pod represents one
+# GhostBrain inference node (CPU-sim in software; chiplet in hardware).
+#
+# Why StatefulSet over Deployment?
+#   - Stable pod identity (ghost-brain-N) for per-node attestation.
+#   - Ordered startup ensures firmware verification before inference.
+#   - PVC per pod for per-node key cache + SRAM warm-up state.
+#
+# Namespace: ghostbrain
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ghost-brain
+  namespace: ghostbrain
+  labels:
+    app:     ghost-brain
+    tier:    inference
+    version: "1.0.0"
+spec:
+  serviceName: ghost-brain-headless
+  replicas: 4   # scale up to 16 for full chiplet cluster
+  selector:
+    matchLabels:
+      app:  ghost-brain
+      tier: inference
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0   # rolling from pod N-1 downward
+
+  template:
+    metadata:
+      labels:
+        app:  ghost-brain
+        tier: inference
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port:   "7900"
+        prometheus.io/path:   "/metrics"
+    spec:
+      serviceAccountName: ghostbrain-runtime
+
+      # Ordered startup: firmware verify must pass before inference starts.
+      initContainers:
+        - name: firmware-verify
+          image: ghostchain/ghostbrain-runtime:latest
+          command:
+            - "node"
+            - "dist/security/secure_boot/firmware_verifier_runner.js"
+          envFrom:
+            - configMapRef:
+                name: ghostbrain-config
+          env:
+            - name: GHOSTBRAIN_DEVICE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: VAULT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ghostbrain-vault-token
+                  key:  token
+          resources:
+            requests:
+              cpu:    "100m"
+              memory: "128Mi"
+            limits:
+              cpu:    "500m"
+              memory: "256Mi"
+
+      containers:
+        - name:  ghost-brain
+          image: ghostchain/ghostbrain-runtime:latest
+          imagePullPolicy: Always
+
+          ports:
+            - name:          api
+              containerPort: 7900
+              protocol:      TCP
+            - name:          mgmt
+              containerPort: 7901
+              protocol:      TCP
+
+          envFrom:
+            - configMapRef:
+                name: ghostbrain-config
+          env:
+            - name: GHOSTBRAIN_DEVICE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: VAULT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ghostbrain-vault-token
+                  key:  token
+            - name: GHOSTBRAIN_HMAC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ghostbrain-hmac-key
+                  key:  key_hex
+            - name: INFERENCE_CLUSTER_MODE
+              value: "true"
+            - name: INFERENCE_CLUSTER_SIZE
+              value: "4"
+
+          resources:
+            requests:
+              cpu:    "4000m"
+              memory: "8Gi"
+            limits:
+              cpu:    "16000m"
+              memory: "32Gi"
+            # Future: uncommment when chiplet device plugin is deployed
+            # ghostchain.io/compute-chiplet: "1"
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 7900
+            initialDelaySeconds: 15
+            periodSeconds:       15
+            failureThreshold:    3
+
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 7900
+            initialDelaySeconds: 10
+            periodSeconds:       10
+            failureThreshold:    5
+
+          startupProbe:
+            httpGet:
+              path: /ready
+              port: 7900
+            failureThreshold: 30
+            periodSeconds:    5   # up to 150s for startup (firmware verify)
+
+          volumeMounts:
+            - name:      node-state
+              mountPath: /var/lib/ghostbrain
+            - name:      ghostbrain-logs
+              mountPath: /var/log/ghostbrain
+
+      terminationGracePeriodSeconds: 60
+
+  # PVC per pod: node state (attestation nonce, warm KV cache)
+  volumeClaimTemplates:
+    - metadata:
+        name: node-state
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: fast-ssd   # replace with your storage class
+        resources:
+          requests:
+            storage: 10Gi
+    - metadata:
+        name: ghostbrain-logs
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 5Gi
+
+---
+# ── Headless Service (cluster internal DNS: ghost-brain-N.ghost-brain-headless) ──
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ghost-brain-headless
+  namespace: ghostbrain
+  labels:
+    app:  ghost-brain
+    tier: inference
+spec:
+  clusterIP: None
+  selector:
+    app:  ghost-brain
+    tier: inference
+  ports:
+    - name:     api
+      port:     7900
+      protocol: TCP
+    - name:     mgmt
+      port:     7901
+      protocol: TCP
+
+---
+# ── Load-balanced Service (round-robin across cluster) ────────────────────
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ghostbrain-inference
+  namespace: ghostbrain
+  labels:
+    app:  ghost-brain
+    tier: inference
+spec:
+  selector:
+    app:  ghost-brain
+    tier: inference
+  ports:
+    - name:       api
+      port:       7900
+      targetPort: api
+      protocol:   TCP
+  type: ClusterIP
+
+---
+# ── PodDisruptionBudget — ensure ≥2 pods available during node drains ────
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ghost-brain-pdb
+  namespace: ghostbrain
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app:  ghost-brain
+      tier: inference

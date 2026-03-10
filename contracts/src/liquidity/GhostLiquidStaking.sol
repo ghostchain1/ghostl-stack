@@ -26,7 +26,7 @@ contract GhostLiquidStaking is GhostBrand, ReentrancyGuard {
     uint256 public constant OPERATOR_FEE_BPS     = 500;   // 5% of rewards to operators
     uint256 public constant PROTOCOL_FEE_BPS     = 100;   // 1% to treasury
     uint256 public constant MAX_OPERATORS        = 100;
-    uint256 public constant MIN_DEPOSIT          = 0.01 ether; // 0.01 GST minimum
+    uint256 public constant MIN_DEPOSIT          = 10_000_000_000_000_000; // 0.01 GST (1e16 wei)
 
     // ─── Types ───────────────────────────────────────────────────────────────
     struct WithdrawalRequest {

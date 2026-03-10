@@ -40,9 +40,9 @@ contract GhostSwap is TestBase {
 
     function setUp() public {
         // Fund actors with native GST.
-        vm.deal(alice,         100 ether);
-        vm.deal(bob,           100 ether);
-        vm.deal(address(this), 200_000 ether); // enough for GST liquidity bootstrap tests
+        vm.deal(alice,         100 * 1e18);
+        vm.deal(bob,           100 * 1e18);
+        vm.deal(address(this), 200_000 * 1e18); // enough for GST liquidity bootstrap tests
 
         // Deploy core contracts.
         wgst9   = new WGST9();
@@ -55,10 +55,10 @@ contract GhostSwap is TestBase {
         tokenB = new TestGST20("Beta",  "BETA",  18);
 
         // Mint generous supplies to alice and this contract.
-        tokenA.mint(alice,          500_000 ether);
-        tokenB.mint(alice,          500_000 ether);
-        tokenA.mint(address(this),  500_000 ether);
-        tokenB.mint(address(this),  500_000 ether);
+        tokenA.mint(alice,          500_000 * 1e18);
+        tokenB.mint(alice,          500_000 * 1e18);
+        tokenA.mint(address(this),  500_000 * 1e18);
+        tokenB.mint(address(this),  500_000 * 1e18);
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -66,7 +66,7 @@ contract GhostSwap is TestBase {
     // ═════════════════════════════════════════════════════════════════════════
 
     function test_wgst9_deposit() public {
-        uint256 amount  = 5 ether;
+        uint256 amount  = 5 * 1e18;
         uint256 before  = address(this).balance;
 
         wgst9.deposit{value: amount}();
@@ -77,7 +77,7 @@ contract GhostSwap is TestBase {
     }
 
     function test_wgst9_depositViaReceive() public {
-        uint256 amount = 3 ether;
+        uint256 amount = 3 * 1e18;
         // Direct value transfer triggers receive() → deposit().
         (bool ok,) = address(wgst9).call{value: amount}("");
         require(ok, "direct send failed");
@@ -85,7 +85,7 @@ contract GhostSwap is TestBase {
     }
 
     function test_wgst9_withdraw() public {
-        uint256 amount = 7 ether;
+        uint256 amount = 7 * 1e18;
         wgst9.deposit{value: amount}();
 
         uint256 nativeBefore = address(this).balance;
@@ -97,38 +97,38 @@ contract GhostSwap is TestBase {
     }
 
     function test_wgst9_transfer() public {
-        wgst9.deposit{value: 10 ether}();
-        assertTrue(wgst9.transfer(alice, 4 ether), "WGST9: transfer return");
-        assertEq(wgst9.balanceOf(alice),          4 ether, "WGST9: alice balance");
-        assertEq(wgst9.balanceOf(address(this)),  6 ether, "WGST9: sender balance");
+        wgst9.deposit{value: 10 * 1e18}();
+        assertTrue(wgst9.transfer(alice, 4 * 1e18), "WGST9: transfer return");
+        assertEq(wgst9.balanceOf(alice),          4 * 1e18, "WGST9: alice balance");
+        assertEq(wgst9.balanceOf(address(this)),  6 * 1e18, "WGST9: sender balance");
     }
 
     function test_wgst9_approve_transferFrom() public {
-        wgst9.deposit{value: 10 ether}();
-        assertTrue(wgst9.approve(alice, 5 ether), "WGST9: approve");
-        assertEq(wgst9.allowance(address(this), alice), 5 ether, "WGST9: allowance");
+        wgst9.deposit{value: 10 * 1e18}();
+        assertTrue(wgst9.approve(alice, 5 * 1e18), "WGST9: approve");
+        assertEq(wgst9.allowance(address(this), alice), 5 * 1e18, "WGST9: allowance");
 
         vm.prank(alice);
-        assertTrue(wgst9.transferFrom(address(this), bob, 3 ether), "WGST9: transferFrom");
-        assertEq(wgst9.balanceOf(bob),           3 ether, "WGST9: bob received");
-        assertEq(wgst9.allowance(address(this), alice), 2 ether, "WGST9: allowance decremented");
+        assertTrue(wgst9.transferFrom(address(this), bob, 3 * 1e18), "WGST9: transferFrom");
+        assertEq(wgst9.balanceOf(bob),           3 * 1e18, "WGST9: bob received");
+        assertEq(wgst9.allowance(address(this), alice), 2 * 1e18, "WGST9: allowance decremented");
     }
 
     function test_wgst9_infiniteApproval() public {
-        wgst9.deposit{value: 10 ether}();
+        wgst9.deposit{value: 10 * 1e18}();
         wgst9.approve(alice, type(uint256).max);
 
         vm.prank(alice);
-        wgst9.transferFrom(address(this), bob, 5 ether);
+        wgst9.transferFrom(address(this), bob, 5 * 1e18);
 
         // Infinite allowance must NOT be decremented.
         assertEq(wgst9.allowance(address(this), alice), type(uint256).max, "WGST9: max stays max");
     }
 
     function testRevert_wgst9_withdrawInsufficient() public {
-        wgst9.deposit{value: 1 ether}();
+        wgst9.deposit{value: 1 * 1e18}();
         vm.expectRevert(bytes("WGST: insufficient balance"));
-        wgst9.withdraw(2 ether);
+        wgst9.withdraw(2 * 1e18);
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -136,10 +136,10 @@ contract GhostSwap is TestBase {
     // ═════════════════════════════════════════════════════════════════════════
 
     function test_wgst10_depositAndWithdraw() public {
-        wgst10.deposit{value: 5 ether}();
-        assertEq(wgst10.balanceOf(address(this)), 5 ether, "WGST10: deposit");
+        wgst10.deposit{value: 5 * 1e18}();
+        assertEq(wgst10.balanceOf(address(this)), 5 * 1e18, "WGST10: deposit");
 
-        wgst10.withdraw(5 ether);
+        wgst10.withdraw(5 * 1e18);
         assertEq(wgst10.balanceOf(address(this)), 0,       "WGST10: withdraw");
     }
 
@@ -194,8 +194,8 @@ contract GhostSwap is TestBase {
         factory.createPair(address(tokenA), address(tokenB));
         address pair = factory.getPair(address(tokenA), address(tokenB));
 
-        uint256 amtA = 100_000 ether;
-        uint256 amtB = 200_000 ether;
+        uint256 amtA = 100_000 * 1e18;
+        uint256 amtB = 200_000 * 1e18;
 
         // Approve router.
         tokenA.approve(address(router), amtA);
@@ -229,7 +229,7 @@ contract GhostSwap is TestBase {
 
         router.addLiquidity(
             address(tokenA), address(tokenB),
-            100_000 ether, 100_000 ether,
+            100_000 * 1e18, 100_000 * 1e18,
             0, 0, address(this), block.timestamp + 60
         );
 
@@ -239,7 +239,7 @@ contract GhostSwap is TestBase {
         // Second deposit — proportional.
         (,, uint256 lp2) = router.addLiquidity(
             address(tokenA), address(tokenB),
-            50_000 ether, 50_000 ether,
+            50_000 * 1e18, 50_000 * 1e18,
             0, 0, address(this), block.timestamp + 60
         );
 
@@ -260,7 +260,7 @@ contract GhostSwap is TestBase {
         tokenB.approve(address(router), type(uint256).max);
         router.addLiquidity(
             address(tokenA), address(tokenB),
-            100_000 ether, 100_000 ether,
+            100_000 * 1e18, 100_000 * 1e18,
             0, 0, address(this), block.timestamp + 60
         );
         pair = factory.getPair(address(tokenA), address(tokenB));
@@ -269,7 +269,7 @@ contract GhostSwap is TestBase {
     function test_router_swapExactTokensForTokens() public {
         _bootstrapPool();
 
-        uint256 amountIn = 1_000 ether;
+        uint256 amountIn = 1_000 * 1e18;
         tokenA.mint(alice, amountIn);
 
         vm.prank(alice);
@@ -297,20 +297,20 @@ contract GhostSwap is TestBase {
         tokenB.approve(address(router), type(uint256).max);
         router.addLiquidity(
             address(tokenA), address(tokenB),
-            100_000 ether, 100_000 ether,
+            100_000 * 1e18, 100_000 * 1e18,
             0, 0, address(this), block.timestamp + 60
         );
 
         // Then B/WGST pool.
-        wgst9.deposit{value: 50_000 ether}();
+        wgst9.deposit{value: 50_000 * 1e18}();
         wgst9.approve(address(router), type(uint256).max);
         router.addLiquidity(
             address(tokenB), address(wgst9),
-            100_000 ether, 50_000 ether,
+            100_000 * 1e18, 50_000 * 1e18,
             0, 0, address(this), block.timestamp + 60
         );
 
-        uint256 amountIn = 500 ether;
+        uint256 amountIn = 500 * 1e18;
         tokenA.mint(alice, amountIn);
         vm.prank(alice);
         tokenA.approve(address(router), amountIn);
@@ -332,7 +332,7 @@ contract GhostSwap is TestBase {
     function testRevert_router_swapSlippageExceeded() public {
         _bootstrapPool();
 
-        uint256 amountIn = 1_000 ether;
+        uint256 amountIn = 1_000 * 1e18;
         tokenA.mint(alice, amountIn);
         vm.prank(alice);
         tokenA.approve(address(router), amountIn);
@@ -351,9 +351,9 @@ contract GhostSwap is TestBase {
 
     function testRevert_router_deadlineExpired() public {
         _bootstrapPool();
-        tokenA.mint(alice, 1 ether);
+        tokenA.mint(alice, 1 * 1e18);
         vm.prank(alice);
-        tokenA.approve(address(router), 1 ether);
+        tokenA.approve(address(router), 1 * 1e18);
 
         address[] memory path = new address[](2);
         path[0] = address(tokenA);
@@ -361,7 +361,7 @@ contract GhostSwap is TestBase {
 
         vm.prank(alice);
         vm.expectRevert(bytes("GhostRouter: EXPIRED"));
-        router.swapExactTokensForTokens(1 ether, 0, path, alice, block.timestamp - 1);
+        router.swapExactTokensForTokens(1 * 1e18, 0, path, alice, block.timestamp - 1);
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -370,11 +370,11 @@ contract GhostSwap is TestBase {
 
     function test_router_addLiquidityGST() public {
         tokenA.approve(address(router), type(uint256).max);
-        uint256 gstAmount = 10 ether;
+        uint256 gstAmount = 10 * 1e18;
 
         (, uint256 amtGST, uint256 lp) = router.addLiquidityGST{value: gstAmount}(
             address(tokenA),
-            20_000 ether,
+            20_000 * 1e18,
             0,
             0,
             address(this),
@@ -393,9 +393,9 @@ contract GhostSwap is TestBase {
     function test_router_swapExactGSTForTokens() public {
         // Bootstrap tokenA/WGST pool.
         tokenA.approve(address(router), type(uint256).max);
-        router.addLiquidityGST{value: 50_000 ether}(
+        router.addLiquidityGST{value: 50_000 * 1e18}(
             address(tokenA),
-            100_000 ether,
+            100_000 * 1e18,
             0, 0,
             address(this),
             block.timestamp + 60
@@ -407,7 +407,7 @@ contract GhostSwap is TestBase {
 
         uint256 beforeA = tokenA.balanceOf(alice);
         vm.prank(alice);
-        uint256[] memory amounts = router.swapExactGSTForTokens{value: 1 ether}(
+        uint256[] memory amounts = router.swapExactGSTForTokens{value: 1 * 1e18}(
             0, path, alice, block.timestamp + 60
         );
 
@@ -418,15 +418,15 @@ contract GhostSwap is TestBase {
     function test_router_swapExactTokensForGST() public {
         // Bootstrap tokenA/WGST pool.
         tokenA.approve(address(router), type(uint256).max);
-        router.addLiquidityGST{value: 50_000 ether}(
+        router.addLiquidityGST{value: 50_000 * 1e18}(
             address(tokenA),
-            100_000 ether,
+            100_000 * 1e18,
             0, 0,
             address(this),
             block.timestamp + 60
         );
 
-        uint256 amountIn = 2_000 ether;
+        uint256 amountIn = 2_000 * 1e18;
         tokenA.mint(alice, amountIn);
         vm.prank(alice);
         tokenA.approve(address(router), amountIn);
@@ -455,7 +455,7 @@ contract GhostSwap is TestBase {
 
         (,, uint256 lp) = router.addLiquidity(
             address(tokenA), address(tokenB),
-            100_000 ether, 100_000 ether, 0, 0,
+            100_000 * 1e18, 100_000 * 1e18, 0, 0,
             address(this), block.timestamp + 60
         );
 
@@ -482,24 +482,24 @@ contract GhostSwap is TestBase {
     // ═════════════════════════════════════════════════════════════════════════
 
     function test_router_quote() public {
-        uint256 q = router.quote(100 ether, 1_000 ether, 2_000 ether);
-        assertEq(q, 200 ether, "Router: quote proportional");
+        uint256 q = router.quote(100 * 1e18, 1_000 * 1e18, 2_000 * 1e18);
+        assertEq(q, 200 * 1e18, "Router: quote proportional");
     }
 
     function test_router_getAmountOut_fee() public {
         // 0.3% fee: 1000 input, 1000/1000 pool → after fee should be < 500.
-        uint256 out = router.getAmountOut(1_000 ether, 1_000_000 ether, 1_000_000 ether);
+        uint256 out = router.getAmountOut(1_000 * 1e18, 1_000_000 * 1e18, 1_000_000 * 1e18);
         // roughly: out = 997*1e18 / (1000000e18*1000 + 997*1e18) * 1000000e18
         // just verify it's > 0 and < input (fee taken).
         assertTrue(out > 0,           "Router: getAmountOut > 0");
-        assertTrue(out < 1_000 ether, "Router: fee deducted");
+        assertTrue(out < 1_000 * 1e18, "Router: fee deducted");
     }
 
     function testFuzz_router_getAmountOut_monotone(uint96 amtIn) public {
         if (amtIn == 0) return;
         uint256 amountIn = uint256(amtIn);
-        uint256 reserveIn  = 1_000_000 ether;
-        uint256 reserveOut = 1_000_000 ether;
+        uint256 reserveIn  = 1_000_000 * 1e18;
+        uint256 reserveOut = 1_000_000 * 1e18;
         if (amountIn >= reserveIn) return; // skip unrealistic inputs
 
         uint256 out1 = router.getAmountOut(amountIn,     reserveIn, reserveOut);

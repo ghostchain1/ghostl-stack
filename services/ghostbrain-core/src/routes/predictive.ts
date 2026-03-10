@@ -8,6 +8,7 @@ import { anomalyStats, getAnomalies, getAnomalyHistory }  from "../predictive/an
 import { patternRecognitionStats, getPatterns }            from "../predictive/pattern_recognition.js";
 import { predictiveBalancerStats, getRecommendations }     from "../predictive/predictive_balancer.js";
 import { failurePredictorStats, getActiveRisks, getRisksForResource } from "../predictive/failure_predictor.js";
+import { predictiveEngineStats }        from "../predictive/index.js";
 
 export async function predictiveRoutes(app: FastifyInstance): Promise<void> {
   /** Load forecaster stats + on-demand forecast for a resource */
@@ -62,6 +63,41 @@ export async function predictiveRoutes(app: FastifyInstance): Promise<void> {
     return reply.send({
       stats:           predictiveBalancerStats(),
       recommendations: getRecommendations(onlyPending),
+    });
+  });
+
+  /**
+   * Aggregated summary for external consumers (e.g. ghostbrain-swarm).
+   * Returns one compact JSON object so the swarm coordinator can assess the
+   * overall system health in a single HTTP call.
+   */
+  app.get("/api/v1/predictive/summary", async (_req, reply) => {
+    const risks     = getActiveRisks("low");
+    const anomalies = getAnomalies();
+    const recs      = getRecommendations(true);
+
+    return reply.send({
+      engine: predictiveEngineStats(),
+      forecaster: {
+        ...forecasterStats(),
+        trackedCount: trackedResources().length,
+      },
+      failures: {
+        ...failurePredictorStats(),
+        activeCount: risks.length,
+        topRisk:     risks[0] ?? null,
+      },
+      anomalies: {
+        ...anomalyStats(),
+        activeCount:    anomalies.length,
+        criticalCount:  anomalies.filter(a => a.severity === "critical").length,
+      },
+      balancer: {
+        ...predictiveBalancerStats(),
+        pendingRecommendations: recs.length,
+        topRecommendation:      recs[0] ?? null,
+      },
+      ts: Date.now(),
     });
   });
 }

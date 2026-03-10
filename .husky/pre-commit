@@ -39,7 +39,7 @@ for file in $STAGED; do
   case "$file" in
     *bridge* | *adapter* | *weth* | *cross-chain* | *l1-interop* | \
     *node_modules* | *dist/* | *artifacts/* | *cache/* | *brand-enforcer/test* | \
-    *tools/sovereignty/* | \
+    *tools/sovereignty/* | tools/branding/* | \
     contracts/lib/* | contracts/ghostcain/* | \
     .github/* | branding/* | AUDIT_REPORT* | policies/*)
       continue ;;

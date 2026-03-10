@@ -27,7 +27,7 @@ import { ReentrancyGuard } from "../common/ReentrancyGuard.sol";
 contract GhostStateChannel is GhostBrand, ReentrancyGuard {
     // ─── Constants ───────────────────────────────────────────────────────────
     uint256 public constant DISPUTE_PERIOD   = 1 days;
-    uint256 public constant MIN_DEPOSIT      = 0.001 ether;
+    uint256 public constant MIN_DEPOSIT      = 1_000_000_000_000_000; // 0.001 GST (1e15 wei)
 
     // ─── Types ───────────────────────────────────────────────────────────────
     enum ChannelStatus { Open, Disputed, Closed }

@@ -1,5 +1,6 @@
 import { fetch, type Response } from "undici";
 import { AGENT_URLS, PROBE_TIMEOUT_MS, TASK_TIMEOUT_MS, HEARTBEAT_INTERVAL_MS } from "./config.js";
+import { getLoadScore } from "./cluster_client.js";
 import type {
   AgentDescriptor,
   AgentId,
@@ -82,7 +83,14 @@ export function stopHeartbeat(): void {
 
 //─── Task routing ─────────────────────────────────────────────────────────────
 
-/** Pick the best available agent for a given role. */
+/** Pick the best available agent for a given role using load-aware scoring.
+ *
+ * Routing score (lower = preferred):
+ *   60 % node load score from ghostbrain-cluster  (0–100)
+ *   40 % normalised in-process task count         (0–100)
+ *
+ * Falls back to pure task-count ordering when no cluster load data is available.
+ */
 function pickAgent(role?: AgentRole): AgentDescriptor | undefined {
   const candidates = Array.from(registry.values()).filter(a =>
     a.status === "online" && (!role || a.role === role)
@@ -91,8 +99,19 @@ function pickAgent(role?: AgentRole): AgentDescriptor | undefined {
     // Fallback: any online agent
     return Array.from(registry.values()).find(a => a.status === "online");
   }
-  // Pick lowest task count (load balancing)
-  return candidates.sort((a, b) => a.taskCount - b.taskCount)[0];
+  if (candidates.length === 0) return undefined;
+
+  const maxTasks = Math.max(...candidates.map(c => c.taskCount), 1);
+
+  return candidates.sort((a, b) => {
+    const aNodeLoad  = getLoadScore(a.url);                         // 0–100
+    const bNodeLoad  = getLoadScore(b.url);
+    const aTaskLoad  = (a.taskCount / maxTasks) * 100;              // 0–100
+    const bTaskLoad  = (b.taskCount / maxTasks) * 100;
+    const aScore     = aNodeLoad * 0.6 + aTaskLoad * 0.4;
+    const bScore     = bNodeLoad * 0.6 + bTaskLoad * 0.4;
+    return aScore - bScore;
+  })[0];
 }
 
 /** Roles served by ghost-ai-swarm-v2 — use /tasks endpoint with targetRole field */

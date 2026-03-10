@@ -1,0 +1,277 @@
+---
+# GhostBrain Core — Kubernetes Deployment
+#
+# Deploys the GhostBrain runtime, simulator, and compiler as K8s Deployments
+# with a HorizontalPodAutoscaler for the inference runtime.
+#
+# Namespace: ghostbrain
+# Service accounts: ghostbrain-runtime (inference), ghostbrain-ops (simulator/compiler)
+#
+# Secrets (pre-provisioned by Vault agent operator or K8s external-secrets):
+#   ghostbrain-vault-token     — Vault token for KEK fetch
+#   ghostbrain-hmac-key        — HMAC signing key for AI event log
+#   ghostbrain-signing-relay   — JWT secret for signing relay
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ghostbrain
+  labels:
+    app.kubernetes.io/part-of: ghostchain
+    ghostchain.io/component:   ai-engine
+
+---
+# ── Service Account ────────────────────────────────────────────────────────
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ghostbrain-runtime
+  namespace: ghostbrain
+  labels:
+    app: ghostbrain-runtime
+
+---
+# ── ConfigMap ──────────────────────────────────────────────────────────────
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ghostbrain-config
+  namespace: ghostbrain
+data:
+  GHOSTCHAIN_L1_RPC:     "http://ghostchain-l1.ghostchain.svc.cluster.local:18545"
+  GHOSTL2_RPC:           "http://ghostl2.ghostchain.svc.cluster.local:29545"
+  GHOSTL3_RPC:           "http://ghostl3.ghostchain.svc.cluster.local:39545"
+  SIGNING_RELAY_URL:     "http://signing-relay.ghostchain.svc.cluster.local:7910"
+  GHOSTSCAN_INDEXER_URL: "http://ghostscan.ghostchain.svc.cluster.local:8545"
+  VAULT_ADDR:            "http://vault.ghostbrain.svc.cluster.local:8200"
+  GHOSTBRAIN_LOG_DIR:    "/var/log/ghostbrain"
+  NODE_OPTIONS:          "--max_old_space_size=4096"
+
+---
+# ── Runtime Deployment ─────────────────────────────────────────────────────
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ghostbrain-runtime
+  namespace: ghostbrain
+  labels:
+    app:     ghostbrain-runtime
+    version: "1.0.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ghostbrain-runtime
+  template:
+    metadata:
+      labels:
+        app:     ghostbrain-runtime
+        version: "1.0.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port:   "7900"
+        prometheus.io/path:   "/metrics"
+    spec:
+      serviceAccountName: ghostbrain-runtime
+
+      # Anti-affinity: spread pods across nodes for HA.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key:      app
+                      operator: In
+                      values:   ["ghostbrain-runtime"]
+                topologyKey: kubernetes.io/hostname
+
+      containers:
+        - name:  ghostbrain-runtime
+          image: ghostchain/ghostbrain-runtime:latest
+          imagePullPolicy: Always
+
+          ports:
+            - name:          api
+              containerPort: 7900
+              protocol:      TCP
+            - name:          mgmt
+              containerPort: 7901
+              protocol:      TCP
+
+          envFrom:
+            - configMapRef:
+                name: ghostbrain-config
+
+          env:
+            - name: GHOSTBRAIN_DEVICE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: VAULT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ghostbrain-vault-token
+                  key:  token
+            - name: GHOSTBRAIN_HMAC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ghostbrain-hmac-key
+                  key:  key_hex
+
+          resources:
+            requests:
+              cpu:    "2000m"
+              memory: "4Gi"
+            limits:
+              cpu:    "8000m"
+              memory: "16Gi"
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 7900
+            initialDelaySeconds: 10
+            periodSeconds:       15
+            failureThreshold:    3
+
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 7900
+            initialDelaySeconds: 5
+            periodSeconds:       10
+            failureThreshold:    3
+
+          volumeMounts:
+            - name:      ghostbrain-logs
+              mountPath: /var/log/ghostbrain
+
+      volumes:
+        - name: ghostbrain-logs
+          emptyDir: {}   # in production: PVC or GhostStore volume
+
+---
+# ── Runtime Service ────────────────────────────────────────────────────────
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ghostbrain-runtime
+  namespace: ghostbrain
+  labels:
+    app: ghostbrain-runtime
+spec:
+  selector:
+    app: ghostbrain-runtime
+  ports:
+    - name:       api
+      port:       7900
+      targetPort: api
+      protocol:   TCP
+    - name:       mgmt
+      port:       7901
+      targetPort: mgmt
+      protocol:   TCP
+  type: ClusterIP
+
+---
+# ── HorizontalPodAutoscaler ────────────────────────────────────────────────
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ghostbrain-runtime-hpa
+  namespace: ghostbrain
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind:       Deployment
+    name:       ghostbrain-runtime
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type:               Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type:               Utilization
+          averageUtilization: 80
+
+---
+# ── Simulator Deployment ───────────────────────────────────────────────────
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ghostbrain-simulator
+  namespace: ghostbrain
+  labels:
+    app: ghostbrain-simulator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ghostbrain-simulator
+  template:
+    metadata:
+      labels:
+        app: ghostbrain-simulator
+    spec:
+      containers:
+        - name:  ghostbrain-simulator
+          image: ghostchain/ghostbrain-simulator:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 7920
+          resources:
+            requests:
+              cpu:    "500m"
+              memory: "1Gi"
+            limits:
+              cpu:    "2000m"
+              memory: "4Gi"
+
+---
+# ── Compiler Deployment ────────────────────────────────────────────────────
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ghostbrain-compiler
+  namespace: ghostbrain
+  labels:
+    app: ghostbrain-compiler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ghostbrain-compiler
+  template:
+    metadata:
+      labels:
+        app: ghostbrain-compiler
+    spec:
+      containers:
+        - name:  ghostbrain-compiler
+          image: ghostchain/ghostbrain-compiler:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 7930
+          resources:
+            requests:
+              cpu:    "1000m"
+              memory: "2Gi"
+            limits:
+              cpu:    "4000m"
+              memory: "8Gi"

@@ -518,3 +518,78 @@ logs/
 **/npm-debug.log*
 **/yarn-debug.log*
 **/yarn-error.log*
+# ── Python artefacts (ai/, infra/hypervisor/supervisor/, etc.) ──────────────
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/*.pyw
+**/.python-version
+**/venv/
+**/.venv/
+**/.virtualenv/
+**/env/
+**/*.egg-info/
+**/*.egg
+**/.eggs/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.pytest_cache/
+
+# ── GhostBrain Core — runtime artefacts (source code is tracked) ────────────
+ghost-brain-core/**/memory/*.ndjson
+ghost-brain-core/**/memory/warm/
+ghost-brain-core/**/memory/cold/
+ghost-brain-core/**/memory/archive/
+ghost-brain-core/**/data/
+ghost-brain-core/**/checkpoints/
+ghost-brain-core/**/*.bin
+ghost-brain-core/**/*.safetensors
+
+# ── AI swarm — runtime / model artefacts ────────────────────────────────────
+ai/**/data/
+ai/**/checkpoints/
+ai/**/logs/
+ai/**/*.pkl
+ai/**/*.joblib
+
+# ── Autonomous installer — runtime state ────────────────────────────────────
+autonomous-installer/**/state/
+autonomous-installer/**/snapshots/
+autonomous-installer/**/tmp/
+
+# ── Economic AI — runtime artefacts ─────────────────────────────────────────
+economic-ai/**/predictions/cache/
+economic-ai/**/snapshots/
+
+# ── Governance AI — local deploy artefacts ──────────────────────────────────
+governance-ai/artifacts/
+governance-ai/cache/
+
+# ── Interchain bridge — local deploy artefacts ──────────────────────────────
+interchain-bridge/artifacts/
+interchain-bridge/cache/
+
+# ── Infrastructure supervisor — runtime state ────────────────────────────────
+infrastructure/supervisor/logs/
+infrastructure/supervisor/state/
+infra/hypervisor/supervisor/logs/
+infra/hypervisor/supervisor/state/
+infra/hypervisor/supervisor/*.pid
+
+# ── Genesis / installer — generated keys ────────────────────────────────────
+genesis-installer/**/*.key
+genesis-installer/**/*.pem
+genesis-installer/**/*.cert
+genesis-installer/**/state/
+
+# ── GID — local identity state ──────────────────────────────────────────────
+gid/data/
+gid/state/
+
+# ── Validator AI — runtime checkpoints ──────────────────────────────────────
+validator-ai/**/checkpoints/
+validator-ai/**/data/
+
+# ── Docker supervisor override ───────────────────────────────────────────────
+docker-compose.supervisor.override.yml

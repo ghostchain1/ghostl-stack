@@ -17,6 +17,7 @@ import {
   upsertClusterPeer,
 } from "./cluster_node.js";
 import type { GossipMessage } from "./types.js";
+import { clusterHmacHeaders } from "./cluster_hmac.js";
 
 const GOSSIP_INTERVAL_MS = Number(process.env.GOSSIP_INTERVAL_MS ?? "5000");
 const FANOUT             = 3; // peers per gossip round
@@ -88,7 +89,10 @@ async function gossipRound(): Promise<void> {
       try {
         const res = await request(`${peer.url}/api/v1/cluster/gossip`, {
           method:  "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...clusterHmacHeaders(CLUSTER_NODE_ID),
+          },
           body:    JSON.stringify(msg),
           bodyTimeout: 4_000,
         });

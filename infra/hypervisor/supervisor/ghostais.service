@@ -1,0 +1,75 @@
+[Unit]
+Description=GhostStack Autonomous Infrastructure Supervisor (GAIS)
+Documentation=https://github.com/ghostchain1/ghostl-stack/blob/main/infra/hypervisor/supervisor/ghostais.py
+After=network-online.target libvirtd.service
+Wants=network-online.target
+Requires=libvirtd.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/ghost/ghostl-stack/infra/hypervisor/supervisor
+
+# ── Network endpoints ──────────────────────────────────────────────────────────
+Environment=GAIS_LISTEN_ADDR=0.0.0.0
+Environment=GAIS_LISTEN_PORT=9100
+Environment=GAIS_LOG_LEVEL=INFO
+
+# ── Loop intervals ─────────────────────────────────────────────────────────────
+Environment=SCRAPE_INTERVAL_S=10
+Environment=HEAL_INTERVAL_S=15
+Environment=SCALE_INTERVAL_S=180
+Environment=REBALANCE_INTERVAL_S=360
+Environment=DIRECTIVE_POLL_S=30
+
+# ── libvirt ────────────────────────────────────────────────────────────────────
+Environment=VIRSH_URI=qemu:///system
+Environment=LIBVIRT_NETWORK=gs-mgmt
+
+# ── Chain RPC ports ────────────────────────────────────────────────────────────
+Environment=RPC_PORT_L1=18545
+Environment=RPC_PORT_L2=29545
+Environment=RPC_PORT_L3=39545
+
+# ── GhostBrain Core + signing relay ───────────────────────────────────────────
+Environment=GHOSTBRAIN_URL=http://localhost:7900
+Environment=SIGNING_RELAY_URL=http://localhost:7910
+
+# ── Validator rebalancer ───────────────────────────────────────────────────────
+Environment=COSMOS_LCD_URL=http://localhost:1317
+Environment=MAX_REGION_FRACTION_PCT=50
+
+# ── VM Manager safety ──────────────────────────────────────────────────────────
+Environment=VM_MANAGER_DRY_RUN=0
+Environment=VM_MANAGER_COOLDOWN_S=120
+Environment=VM_MANAGER_MAX_RESTARTS_H=4
+Environment=VM_SNAPSHOT_ENABLED=1
+
+# ── Node Healer ────────────────────────────────────────────────────────────────
+Environment=HEALER_SOFT_FAIL_THRESHOLD=2
+Environment=HEALER_HARD_FAIL_THRESHOLD=2
+Environment=HEALER_UNHEALTHY_WINDOW_S=60
+
+# ── API token (MUST be set — no default) ──────────────────────────────────────
+# EnvironmentFile=/etc/ghoststack/gais.env   ← recommended approach for secrets
+# Or set inline (avoid for production secrets):
+# Environment=GAIS_API_TOKEN=<your-secret-here>
+
+ExecStart=/usr/bin/python3 /home/ghost/ghostl-stack/infra/hypervisor/supervisor/ghostais.py
+
+# ── Process hardening ──────────────────────────────────────────────────────────
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/home/ghost/ghostl-stack/.tmp /home/ghost/ghostl-stack/logs /tmp
+
+Restart=on-failure
+RestartSec=5
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gais
+
+[Install]
+WantedBy=multi-user.target

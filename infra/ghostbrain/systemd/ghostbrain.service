@@ -1,0 +1,102 @@
+[Unit]
+Description=GhostBrain Core — Autonomous AI Infrastructure OS (port 7900)
+Documentation=https://github.com/ghostchain1/ghostl-stack/blob/main/services/ghostbrain-core/README.md
+After=network-online.target docker.service libvirtd.service
+Wants=network-online.target
+# Soft dependency on libvirt (graceful degradation when not present)
+Wants=libvirtd.service
+
+[Service]
+Type=simple
+User=ghost
+Group=ghost
+WorkingDirectory=/home/ghost/ghostl-stack/services/ghostbrain-core
+
+# ── Runtime binary ─────────────────────────────────────────────────────────────
+# Requires pre-built dist/ from: npm run build (inside ghostbrain-core)
+ExecStart=/usr/bin/node dist/index.js
+
+# ── Core network ───────────────────────────────────────────────────────────────
+Environment=GHOSTBRAIN_PORT=7900
+Environment=GHOSTBRAIN_BIND=0.0.0.0
+
+# ── GhostChain chain IDs ───────────────────────────────────────────────────────
+Environment=GHOSTAI_L1_CHAIN_ID=14000101
+Environment=GHOSTAI_L2_CHAIN_ID=901
+Environment=GHOSTAI_L3_CHAIN_ID=903
+
+# ── GhostChain RPC endpoints (canonical L3 → L2 → L1 routing) ─────────────────
+Environment=GHOSTCHAIN_L1_RPC=http://localhost:18545
+Environment=GHOSTCHAIN_L2_RPC=http://localhost:29545
+Environment=GHOSTCHAIN_L3_RPC=http://localhost:39545
+
+# ── Disk-backed AI memory ──────────────────────────────────────────────────────
+Environment=GHOSTBRAIN_MEMORY_DIR=/var/lib/ghostbrain/memory
+
+# Memory tier sizes
+Environment=DISK_STORE_HOT_MAX=120
+Environment=DISK_STORE_WARM_MAX_LINES=17280
+Environment=DISK_STORE_COLD_MAX_DAYS=30
+Environment=DISK_STORE_FLUSH_INTERVAL=60000
+
+# ── Predictive engine tuning ───────────────────────────────────────────────────
+Environment=PREDICTIVE_TICK_MS=5000
+Environment=PREDICTIVE_MEM_HIGH_PCT=85
+Environment=FORECAST_EWMA_ALPHA=0.2
+Environment=ANOMALY_ROLLING_N=60
+
+# ── Infrastructure supervisor ──────────────────────────────────────────────────
+Environment=SUPERVISOR_TICK_MS=15000
+Environment=SUPERVISOR_CPU_CRITICAL=90
+Environment=SUPERVISOR_MEM_CRITICAL=85
+Environment=SUPERVISOR_CPU_WARN=75
+Environment=SUPERVISOR_MEM_WARN=70
+Environment=SUPERVISOR_AUTO_RESTART=true
+
+# ── Failure prediction thresholds ─────────────────────────────────────────────
+Environment=FAILURE_DANGER_CPU=90
+Environment=FAILURE_DANGER_MEM=92
+Environment=FAILURE_DANGER_DISK=85
+
+# ── Balancer ──────────────────────────────────────────────────────────────────
+Environment=BALANCER_OVERLOAD_CPU=80
+Environment=BALANCER_OVERLOAD_MEM=85
+
+# ── Docker integration ────────────────────────────────────────────────────────
+Environment=DOCKER_SOCKET=unix:///var/run/docker.sock
+
+# ── Libvirt / VM integration ──────────────────────────────────────────────────
+# Environment=LIBVIRT_REST_URL=http://localhost:8080
+
+# ── Prometheus / observability ─────────────────────────────────────────────────
+# Environment=PROMETHEUS_PUSH_URL=http://localhost:9091
+# Environment=GHOSTBRAIN_COLLECT_INTERVAL_MS=30000
+
+# ── Cluster (leave blank for single-node) ─────────────────────────────────────
+# Environment=CLUSTER_URL=http://ghostbrain-node2:7900
+
+# ── Node.js runtime ───────────────────────────────────────────────────────────
+Environment=NODE_ENV=production
+# Limit heap to ~512 MB; disk-backed memory keeps hot RAM usage low
+Environment=NODE_OPTIONS=--max-old-space-size=512
+
+# ── Process management ────────────────────────────────────────────────────────
+Restart=on-failure
+RestartSec=5
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+# Allow ghostbrain to access Docker socket
+SupplementaryGroups=docker
+
+# Protect system while allowing disk memory writes
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/ghostbrain /tmp
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ghostbrain-core
+
+[Install]
+WantedBy=multi-user.target

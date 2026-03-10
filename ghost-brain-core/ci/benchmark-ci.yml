@@ -1,0 +1,171 @@
+name: GhostBrain Benchmark Regression
+
+on:
+  schedule:
+    # Nightly at 02:00 UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Benchmark target (all | transformer | recommender | graph | mlperf)'
+        default: all
+        required: true
+
+env:
+  PYTHON_VERSION: "3.11"
+
+defaults:
+  run:
+    working-directory: ghost-brain-core
+
+jobs:
+  # ── Hardware Roofline ─────────────────────────────────────────────────────
+  roofline:
+    name: Roofline analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - run: pip install numpy matplotlib scipy
+
+      - name: Run roofline analysis
+        run: python3 simulator/roofline/roofline_model.py | tee /tmp/roofline.txt
+
+      - name: Archive roofline report
+        uses: actions/upload-artifact@v4
+        with:
+          name: roofline-report
+          path: /tmp/roofline.txt
+
+  # ── Thermal simulation ────────────────────────────────────────────────────
+  thermal:
+    name: Thermal model simulation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - run: pip install numpy
+
+      - name: Run thermal model
+        run: python3 simulator/power_model/thermal_model.py | tee /tmp/thermal.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: thermal-report
+          path: /tmp/thermal.txt
+
+  # ── Transformer benchmarks ────────────────────────────────────────────────
+  transformer-benchmarks:
+    name: Transformer benchmarks
+    runs-on: ubuntu-latest
+    if: ${{ inputs.target == 'all' || inputs.target == 'transformer' || github.event_name == 'schedule' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - run: pip install numpy
+
+      - name: LLaMA benchmark
+        run: python3 benchmarks/transformer/llama_benchmark.py | tee /tmp/llama.txt
+
+      - name: Attention kernel comparison
+        run: python3 benchmarks/transformer/attention_kernel.py | tee /tmp/attention.txt
+
+      - name: Token latency P99
+        run: python3 benchmarks/transformer/token_latency_test.py | tee /tmp/latency.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: transformer-benchmarks
+          path: /tmp/llama.txt
+
+  # ── Recommender benchmarks ────────────────────────────────────────────────
+  recommender-benchmarks:
+    name: Recommender benchmarks
+    runs-on: ubuntu-latest
+    if: ${{ inputs.target == 'all' || inputs.target == 'recommender' || github.event_name == 'schedule' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - run: pip install numpy
+
+      - run: python3 benchmarks/recommender/embedding_lookup.py
+      - run: python3 benchmarks/recommender/sparse_ops_test.py
+
+  # ── Graph benchmarks ──────────────────────────────────────────────────────
+  graph-benchmarks:
+    name: Graph benchmarks
+    runs-on: ubuntu-latest
+    if: ${{ inputs.target == 'all' || inputs.target == 'graph' || github.event_name == 'schedule' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - run: pip install numpy
+
+      - run: python3 benchmarks/graph/gnn_kernel.py
+      - run: python3 benchmarks/graph/graph_traversal.py
+
+  # ── MLPerf adapter ────────────────────────────────────────────────────────
+  mlperf:
+    name: MLPerf v4 adapter
+    runs-on: ubuntu-latest
+    if: ${{ inputs.target == 'all' || inputs.target == 'mlperf' || github.event_name == 'schedule' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - run: pip install numpy
+
+      - name: Run MLPerf suite
+        run: python3 benchmarks/mlperf_adapter/mlperf_runner.py | tee /tmp/mlperf.json
+
+      - name: Check all scenarios PASS
+        run: |
+          python3 -c "
+          import json, sys
+          data = json.load(open('/tmp/mlperf.json'))
+          fails = [r for r in data if r.get('result') != 'PASS']
+          if fails:
+              print('FAILED:', fails, file=sys.stderr)
+              sys.exit(1)
+          print('All MLPerf scenarios PASSED')
+          "
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mlperf-results
+          path: /tmp/mlperf.json
+
+  # ── Regression summary ────────────────────────────────────────────────────
+  regression-summary:
+    name: Regression summary
+    runs-on: ubuntu-latest
+    needs: [roofline, thermal, transformer-benchmarks, recommender-benchmarks, graph-benchmarks, mlperf]
+    if: always()
+    steps:
+      - name: Check job results
+        run: |
+          echo "Benchmark regression complete."
+          echo "Check artifacts for detailed reports."

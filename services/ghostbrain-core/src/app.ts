@@ -26,6 +26,8 @@ import { orchestratorRoutes }  from "./routes/orchestrator.js";
 import { protectionRoutes }    from "./routes/protection.js";
 import { observabilityRoutes } from "./routes/observability.js";
 import { predictiveRoutes }    from "./routes/predictive.js";
+import { simulatorRoutes }     from "./routes/simulator.js";
+import { benchmarkRoutes }     from "./routes/benchmark.js";
 import { hmacAuthPlugin } from "./middleware/hmac.js";
 import { rateLimitPlugin } from "./middleware/rateLimit.js";
 
@@ -79,5 +81,9 @@ export function buildApp() {
   app.register(observabilityRoutes);
   app.register(predictiveRoutes);
 
+  // ── Infrastructure Simulator — policy + sim-gate + execution ────────────
+  app.register(simulatorRoutes);
+  // ── Benchmark harness + audit log ─────────────────────────────────────────
+  app.register(benchmarkRoutes);
   return app;
 }

@@ -18,6 +18,7 @@ import {
   upsertClusterPeer,
 } from "./cluster_node.js";
 import type { HeartbeatMessage } from "./types.js";
+import { clusterHmacHeaders } from "./cluster_hmac.js";
 
 const HEARTBEAT_INTERVAL_MS = Number(process.env.HEARTBEAT_INTERVAL_MS ?? "3000");
 const LEADER_TIMEOUT_MS     = Number(process.env.LEADER_TIMEOUT_MS     ?? "9000");
@@ -106,7 +107,10 @@ async function broadcastHeartbeat(): Promise<void> {
     peers.map(peer =>
       request(`${peer.url}/api/v1/cluster/heartbeat`, {
         method:  "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...clusterHmacHeaders(CLUSTER_NODE_ID),
+        },
         body:    JSON.stringify(msg),
         bodyTimeout: 3_000,
       }).catch(() => { /* unreachable peer */ })

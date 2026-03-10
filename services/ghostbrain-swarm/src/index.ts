@@ -16,6 +16,7 @@
 
 import { buildApp }           from "./app.js";
 import { initRegistry, startHeartbeat, stopHeartbeat } from "./swarm.js";
+import { startClusterLoadSync, stopClusterLoadSync }   from "./cluster_client.js";
 import { SWARM_PORT, SWARM_BIND } from "./config.js";
 
 initRegistry();
@@ -25,6 +26,7 @@ const app = buildApp();
 try {
   await app.listen({ port: SWARM_PORT, host: SWARM_BIND });
   startHeartbeat();
+  startClusterLoadSync();
   app.log.info({ bind: SWARM_BIND, port: SWARM_PORT }, "ghostbrain-swarm started");
 } catch (err) {
   app.log.error(err, "ghostbrain-swarm failed to start");
@@ -33,6 +35,7 @@ try {
 
 process.on("SIGTERM", async () => {
   app.log.info("SIGTERM received — shutting down");
+  stopClusterLoadSync();
   stopHeartbeat();
   await app.close();
   process.exit(0);

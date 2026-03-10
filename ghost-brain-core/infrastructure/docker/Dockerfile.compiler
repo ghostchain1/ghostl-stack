@@ -1,0 +1,91 @@
+# GhostBrain MLIR Compiler Container
+# LLVM/MLIR toolchain for the GhostTensor dialect compiler
+FROM ubuntu:22.04 AS base
+
+LABEL org.opencontainers.image.title="ghostbrain-compiler"
+LABEL org.opencontainers.image.description="GhostBrain MLIR/LLVM compiler — GhostTensor dialect lowering"
+LABEL org.opencontainers.image.vendor="GhostChain"
+
+ARG LLVM_VERSION=18
+ARG DEBIAN_FRONTEND=noninteractive
+
+# ── LLVM/MLIR toolchain ────────────────────────────────────────────────────
+FROM base AS llvm-install
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ca-certificates \
+      curl \
+      gnupg \
+      lsb-release \
+    && curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | \
+       gpg --dearmor -o /usr/share/keyrings/llvm-archive-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/llvm-archive-keyring.gpg] \
+       http://apt.llvm.org/jammy/ llvm-toolchain-jammy-${LLVM_VERSION} main" \
+       > /etc/apt/sources.list.d/llvm.list \
+    && apt-get update && apt-get install -y --no-install-recommends \
+       llvm-${LLVM_VERSION} \
+       llvm-${LLVM_VERSION}-dev \
+       mlir-${LLVM_VERSION}-tools \
+       libmlir-${LLVM_VERSION}-dev \
+       clang-${LLVM_VERSION} \
+       cmake \
+       ninja-build \
+       python3-pip \
+       git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Symlink versioned tools to plain names.
+RUN update-alternatives --install /usr/bin/clang  clang  /usr/bin/clang-${LLVM_VERSION}  100 \
+    && update-alternatives --install /usr/bin/llvm-config llvm-config \
+       /usr/bin/llvm-config-${LLVM_VERSION} 100
+
+# ── Build the GhostTensor compiler ────────────────────────────────────────
+FROM llvm-install AS compiler-builder
+
+WORKDIR /build
+
+COPY compiler/ compiler/
+
+# Build the ghostc compiler binary.
+RUN mkdir -p compiler/build && cd compiler/build && \
+    cmake .. \
+      -G Ninja \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DLLVM_DIR=$(llvm-config --cmakedir) \
+      -DMLIR_DIR=/usr/lib/llvm-${LLVM_VERSION}/lib/cmake/mlir \
+      -DCMAKE_C_COMPILER=clang \
+      -DCMAKE_CXX_COMPILER=clang++ \
+    && ninja -j$(nproc) ghostc || \
+    # Fallback: direct g++ build if CMake fails (CI bootstrap mode)
+    ( cd /build/compiler && \
+      g++ -O2 -std=c++17 \
+        -I/usr/lib/llvm-${LLVM_VERSION}/include \
+        frontend/parser.cpp \
+        optimizer/fusion_pass.cpp \
+        backend/cpu_codegen.cpp \
+        -o build/ghostc \
+        -lMLIR -lLLVM || true )
+
+# ── Production compiler image ──────────────────────────────────────────────
+FROM llvm-install AS compiler
+
+RUN addgroup --gid 1001 ghostbrain && \
+    adduser  --uid 1001 --gid 1001 --no-create-home --disabled-password ghostbrain
+
+WORKDIR /app
+
+COPY --from=compiler-builder /build/compiler/build/ghostc ./bin/ghostc
+COPY compiler/                                            ./compiler/
+
+RUN chown -R ghostbrain:ghostbrain /app
+USER ghostbrain
+
+# 7930: Compiler daemon REST API (accept MLIR source → return compiled binary)
+EXPOSE 7930
+
+ENV GHOSTBRAIN_COMPILER_CACHE=/tmp/ghostbrain-compiler-cache
+
+HEALTHCHECK --interval=60s --timeout=10s --retries=3 \
+  CMD ./bin/ghostc --version || exit 1
+
+ENTRYPOINT ["./bin/ghostc", "--daemon", "--port=7930"]

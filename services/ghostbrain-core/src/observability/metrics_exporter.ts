@@ -101,10 +101,33 @@ export function initStandardMetrics(): void {
   set("ghostbrain_infra_load_score",  "Composite infrastructure load score", 0);
   set("ghostbrain_ai_actions_total",  "Total autonomous AI actions taken", 0);
   set("ghostbrain_crash_prevention",  "Crash prevention actions taken this session", 0);
+  set("ghostbrain_crash_prevention_total", "Crash prevention actions total (persistent)", 0);
+  set("ghostbrain_self_heal_total",   "Self-healing actions total", 0);
   set("ghostbrain_collect_cycles",    "Number of observe/learn/decide cycles completed", 0);
   set("ghostbrain_cluster_nodes",     "Active cluster nodes", 0);
   set("ghostbrain_ai_decisions",      "AI decisions made this session", 0);
   set("ghostbrain_threshold_breaches","Active threshold breaches", 0);
   set("ghostbrain_stability_unstable","Resources in unstable state", 0);
   set("ghostbrain_queue_depth",       "Resource scheduler queue depth", 0);
+  // Predictive AI
+  set("ghostbrain_avg_tick_ms",          "Average predictive engine tick latency ms", 0);
+  set("ghostbrain_active_failure_risks", "Active failure risk entries (elevated+)", 0);
+  set("ghostbrain_memory_hot_entries",   "HOT tier (RAM) snapshot count", 0);
+  set("ghostbrain_memory_warm_lines",    "WARM tier (NVMe) NDJSON line count", 0);
+  set("ghostbrain_memory_archive_files", "COLD archive file count", 0);
+  set("ghostbrain_prediction_cpu",       "Predicted CPU % at 30s horizon", 0);
+  set("ghostbrain_prediction_memory",    "Predicted memory % at 30s horizon", 0);
+  set("ghostbrain_failure_risk_score",   "Failure risk score 0-1", 0, { horizon: "30s" });
+  set("ghostbrain_failure_risk_score",   "Failure risk score 0-1", 0, { horizon: "60s" });
+  set("ghostbrain_failure_risk_score",   "Failure risk score 0-1", 0, { horizon: "120s" });
+  set("ghostbrain_active_anomalies",     "Active anomalies by severity", 0, { severity: "critical" });
+  set("ghostbrain_active_anomalies",     "Active anomalies by severity", 0, { severity: "high" });
+  set("ghostbrain_active_anomalies",     "Active anomalies by severity", 0, { severity: "medium" });
+  set("ghostbrain_active_anomalies",     "Active anomalies by severity", 0, { severity: "low" });
+  set("ghostbrain_chain_alive",          "Chain RPC liveness (1=up, 0=down)", 0, { chain: "l1" });
+  set("ghostbrain_chain_alive",          "Chain RPC liveness (1=up, 0=down)", 0, { chain: "l2" });
+  set("ghostbrain_chain_alive",          "Chain RPC liveness (1=up, 0=down)", 0, { chain: "l3" });
+  set("ghostbrain_chain_block_number",   "Latest observed block number", 0, { chain: "l1" });
+  set("ghostbrain_chain_block_number",   "Latest observed block number", 0, { chain: "l2" });
+  set("ghostbrain_chain_block_number",   "Latest observed block number", 0, { chain: "l3" });
 }
