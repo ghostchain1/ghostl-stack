@@ -592,6 +592,55 @@ Dependencies: Prometheus (`PROM_URL`).
 | POST `/l2` | JSON-RPC proxy to L2. | `Authorization: Bearer $CLOCK_SYNC_PROXY_TOKEN` or `X-Clock-Sync-Token` if token set | JSON-RPC | JSON-RPC response |
 | POST `/l3` | JSON-RPC proxy to L3. | `Authorization: Bearer $CLOCK_SYNC_PROXY_TOKEN` or `X-Clock-Sync-Token` if token set | JSON-RPC | JSON-RPC response |
 
+---
+
+### ghostbrain-core (PORT=7900)
+
+GBA-OS kernel + predictive AI hub. All routes are Fastify plugins registered in `src/app.ts`.
+
+#### GBA-OS Kernel
+
+| Endpoint | Description | Auth | Request schema | Response schema |
+| --- | --- | --- | --- | --- |
+| GET `/api/v1/kernel/status` | Brain + event loop + cluster status summary. | none | none | `{ brain, eventLoop, cluster, leader, ts }` |
+| GET `/api/v1/kernel/events` | Recent brain events. | none | `?category=THRESHOLD_BREACH\|CRASH_PREDICTED\|...&severity=low\|medium\|high\|critical` | `{ events: BrainEvent[] }` |
+
+#### GBA-OS Orchestrator
+
+| Endpoint | Description | Auth | Request schema | Response schema |
+| --- | --- | --- | --- | --- |
+| GET `/api/v1/orchestrator/status` | Scheduler queue depth, handler count, priority breakdown. | none | none | `{ queueDepth, handlerCount, byPriority }` |
+| GET `/api/v1/orchestrator/targets` | Active orchestration targets with resource metrics. | none | none | `{ targets: OrchestratorTarget[] }` |
+
+#### GBA-OS Protection
+
+| Endpoint | Description | Auth | Request schema | Response schema |
+| --- | --- | --- | --- | --- |
+| GET `/api/v1/protection/predictions` | Crash and failure predictions from threshold monitor. | none | none | `{ predictions: Prediction[] }` |
+| GET `/api/v1/protection/stability` | Stability guard status + recent recovery actions. | none | none | `{ stable, recoveries: Recovery[] }` |
+| GET `/api/v1/protection/thresholds` | Current threshold configurations. | none | none | `{ thresholds: ThresholdConfig[] }` |
+
+#### GBA-OS Observability
+
+| Endpoint | Description | Auth | Request schema | Response schema |
+| --- | --- | --- | --- | --- |
+| GET `/metrics` | Prometheus text exposition (all GBA-OS + predictive gauges). | none | none | Prometheus text format |
+| GET `/api/v1/observability/alerts` | Active alert events from alert engine. | none | none | `{ alerts: AlertEvent[] }` |
+| GET `/api/v1/observability/push-stats` | Prometheus push gateway statistics. | none | none | `{ pushed, failed, lastPushMs }` |
+| GET `/api/v1/observability/log-stats` | Event logger statistics. | none | none | `{ logged, errors, byCategory }` |
+
+#### Predictive AI
+
+| Endpoint | Description | Auth | Request schema | Response schema |
+| --- | --- | --- | --- | --- |
+| GET `/api/v1/predictive/forecasts` | Load forecasts for a resource (all metrics). | none | `?resourceId=<id>` | `{ forecasts: LoadForecast[] }` |
+| GET `/api/v1/predictive/anomalies` | Current anomalies or history for a resource. | none | `?resourceId=<id>&history=true` | `{ anomalies: AnomalyEvent[] }` |
+| GET `/api/v1/predictive/patterns` | Detected recurring patterns (all resources). | none | none | `{ patterns: RecurringPattern[] }` |
+| GET `/api/v1/predictive/failures` | Failure predictions filtered by min risk level. | none | `?resourceId=<id>&minRisk=low\|elevated\|high\|imminent` | `{ predictions: FailurePrediction[] }` |
+| GET `/api/v1/predictive/recommendations` | Migration and scaling recommendations. | none | `?pending=true` | `{ recommendations: MigrationRecommendation[] }` |
+
+---
+
 ## Missing endpoints for UI requirements
 
 All UI console pages are wired only to existing endpoints listed above; no additional endpoints were required.

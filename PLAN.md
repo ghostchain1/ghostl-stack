@@ -1,8 +1,35 @@
 # GhostStack Apps Integration Plan (Phase 0 Baseline + Phase 1 Start)
 
-Generated: 2026-02-26 (local)
+Generated: 2026-02-26 (local) | Last updated: 2026-03-10
 
-## Scope
+## Completed Phases
+
+| Phase | Description | Gate | Date |
+|---|---|---|---|
+| 0 | Baseline inventory — apps, services, auth wiring, build commands | PASS | 2026-02-26 |
+| 1 | Deployment standardization + observability hardening | PASS | 2026-02-21 |
+| 2 | Vault AppRole wiring + identity wallet mapping | PASS | 2026-02-21 |
+| 3 | Routing lock enforcement | PASS | 2026-02-21 |
+| 4 | Hardening, chaos, rollback, provenance | PASS | 2026-02-21 |
+| 5 | Output oracle integrity gate | PASS | 2026-02-21 |
+| 6 | Proposer configuration gate | PASS | 2026-02-21 |
+| 7 | Docker/node hygiene gate | PASS | 2026-02-21 |
+| 8 | Bridge wiring gate | PASS | 2026-02-21 |
+| 9 | Mandatory smoke gate | PASS | 2026-02-21 |
+| 10 | Fault safety controls gate | PASS | 2026-02-21 |
+| 11 | Operational readiness gate | PASS | 2026-02-21 |
+| 12 | Branch protection controls gate | PASS | 2026-02-21 |
+| 13 | Release workflow governance gate | PASS | 2026-02-21 |
+| 14 | Workflow supply chain hardening gate | PASS | 2026-02-21 |
+| 15 | Phase continuity & integrity gate | PASS | 2026-02-21 |
+| 16 | Gate framework hygiene | PASS | 2026-02-21 |
+| 17 | **GBA-OS + Predictive Infrastructure AI** | PASS | 2026-03-10 |
+
+See `docs/phase17-report.md` for Phase 17 full details.
+
+---
+
+
 - Target analyzed: `/home/ghost/ghostl-stack/apps`
 - Integration target: `/home/ghost/ghostl-stack`
 - Constraints applied: no destructive data changes, minimal churn, routing law guardrails (`L3 -> L2`, `L2 -> L1`, no `L3 -> L1` bypass)

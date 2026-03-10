@@ -117,3 +117,53 @@ Located under `services/liquidity-router/`:
 
 - Upgrade ZK settlement verification from stub verifiers to production-grade circuits and verifiers (already pluggable via `IZkSettlementVerifier`).
 - Production DEX integration via a reviewed `IDexAdapter` implementation (dev reference: `MinimalAmmDexAdapter`, production scaffold: `GhostDexAdapter`).
+
+
+---
+
+## GhostBrain Autonomous Infrastructure OS (GBA-OS)
+
+> Added Phase 17 — 2026-03-10
+
+GBA-OS turns `services/ghostbrain-core` (port 7900) into a self-managing distributed OS for blockchain infrastructure. It runs a 30-second control loop and exposes 16 REST API endpoints.
+
+### Layers
+
+```
+ghostbrain-core (port 7900)
+├── kernel/
+│   ├── brain.ts          — 10-step 30s control loop
+│   └── event_loop.ts     — typed async event bus (7 event types)
+├── cluster/
+│   ├── cluster_node.ts   — peer registry (90s staleness)
+│   ├── cluster_gossip.ts — AI insight fan-out to peers
+│   ├── cluster_sync.ts   — push stats → Memory Service + Cluster
+│   └── leader_election.ts — 5s cached leader query
+├── orchestration/        — load balancer, resource scheduler, memory balancer
+├── protection/           — threshold monitor, crash predictor, stability guard, auto-recovery
+├── observability/        — Prometheus exporter, alert engine, event logger
+└── predictive/
+    ├── load_forecaster.ts      — EWMA + OLS linear regression (30/60/120s horizons)
+    ├── anomaly_detector.ts     — rolling z-score (N=60), auto-resolving (120s)
+    ├── pattern_recognition.ts  — autocorrelation + time-of-day + Pearson correlation
+    ├── predictive_balancer.ts  — scored MigrationRecommendations
+    └── failure_predictor.ts    — composite risk (50% trend + 30% anomaly + 20% pattern)
+```
+
+### API Endpoints
+
+| Group | Endpoints |
+|---|---|
+| Kernel | `GET /api/v1/kernel/status`, `GET /api/v1/kernel/events` |
+| Orchestrator | `GET /api/v1/orchestrator/status`, `GET /api/v1/orchestrator/targets` |
+| Protection | `GET /api/v1/protection/predictions`, `/stability`, `/thresholds` |
+| Observability | `GET /metrics`, `GET /api/v1/observability/alerts`, `/push-stats`, `/log-stats` |
+| Predictive | `GET /api/v1/predictive/forecasts`, `/anomalies`, `/patterns`, `/failures`, `/recommendations` |
+
+### Governance Boundary
+
+GBA-OS operates within the existing GhostChain governance model:
+- The brain tick may **propose** recovery actions and **enqueue** jobs.
+- Recovery jobs execute only within pre-approved `JobType` bounds.
+- Cluster gossip propagates AI insights — it does not alter on-chain state.
+- The failure predictor surfaces risk signals; humans or governance must ratify any resulting on-chain changes (e.g., validator set modifications, adapter pauses).
