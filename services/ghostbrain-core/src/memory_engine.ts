@@ -14,11 +14,11 @@
  *   predict_next_action()   — combine pattern confidence + failure risk → top recommendation
  */
 
-import { recordEvent, detectPatterns } from "./memory/pattern_memory.js";
+import { recordEvent, getTopPatterns } from "./memory/pattern_memory.js";
 import type { RawEvent, PatternEntry }  from "./memory/pattern_memory.js";
-import { storeVector as vectorStore, search as vectorSearch } from "./memory/vector_memory.js";
+import { store as vectorStore, search as vectorSearch } from "./memory/vector_memory.js";
 import { recordInfraSnapshot }          from "./memory/infrastructure_memory.js";
-import { recordFixResult, lookupFix }   from "./memory/fix_memory.js";
+import { recordFix, lookupFix }         from "./memory/fix_memory.js";
 import { recordOptimization }      from "./memory/performance_memory.js";
 import { log }                          from "./observability/event_logger.js";import { incMemoryEvents }               from "./observability/metrics_exporter.js";
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -26,28 +26,29 @@ import { log }                          from "./observability/event_logger.js";i
 export interface MemoryEvent {
   resourceId:  string;
   layer:       string;
-  category:    string;
-  label:       string;
+  category?:   string;   // optional — falls back to type
+  label?:      string;   // optional — falls back to type
   severity?:   "info" | "warn" | "warning" | "error" | "critical";
   payload?:    Record<string, unknown>;
   ts?:         number;
-  /** @deprecated — use category+label instead */
+  /** Deprecated shorthand — maps to category:label */
   type?:       string;
-  /** @deprecated — use resourceId instead */
+  /** Deprecated shorthand — maps to resourceId */
   source?:     string;
 }
 
 export interface MemoryPattern {
-  triggerCategory: string;
-  triggerLabel:    string;
-  action:          string;
-  params?:         Record<string, unknown>;
-  successRate?:    number;
-  /** @deprecated — free-form label for legacy callers */
-  type?:           string;
-  resourceId?:     string;
-  description?:    string;
-  confidence?:     number;
+  triggerCategory?: string;
+  triggerLabel?:    string;
+  action?:          string;
+  params?:          Record<string, unknown>;
+  successRate?:     number;
+  /** Deprecated shorthand */
+  type?:            string;
+  resourceId?:      string;
+  description?:     string;
+  confidence?:      number;
+  payload?:         Record<string, unknown>;
 }
 
 export interface MemoryDecision {
@@ -110,17 +111,19 @@ setInterval(() => {
  * - Long-term: vector embedding for semantic recall
  */
 export function store_event(ev: MemoryEvent): void {
-  const ts = ev.ts ?? Date.now();
+  const ts       = ev.ts ?? Date.now();
+  const category = ev.category ?? ev.type ?? "event";
+  const label    = ev.label    ?? ev.type ?? "unknown";
 
   // 1. Short-term (real-time active state)
-  const stKey = `event:${ev.resourceId}:${ev.label}`;
+  const stKey = `event:${ev.resourceId}:${label}`;
   shortTermSet(stKey, { ...ev, ts }, 5 * 60_000);
 
   // 2. Mid-term (pattern correlation)
   const rawEvent: RawEvent = {
     resourceId: ev.resourceId,
-    label:      ev.label,
-    category:   ev.category,
+    label,
+    category,
     ts,
   };
   recordEvent(rawEvent);
@@ -137,9 +140,12 @@ export function store_event(ev: MemoryEvent): void {
  * Store a learned task pattern (mid-term + vector).
  */
 export function store_pattern(pattern: MemoryPattern): void {
-  const text = `pattern trigger=${pattern.triggerCategory}:${pattern.triggerLabel} action=${pattern.action}`;
+  const tc   = pattern.triggerCategory ?? pattern.type ?? "event";
+  const tl   = pattern.triggerLabel    ?? pattern.description ?? "unknown";
+  const act  = pattern.action          ?? "observe";
+  const text = `pattern trigger=${tc}:${tl} action=${act}`;
   vectorStore(text, text, { ...pattern, type: "pattern" });
-  log.debug("memory_engine: store_pattern", `${pattern.triggerCategory}:${pattern.triggerLabel}`);
+  log.debug("memory_engine: store_pattern", `${tc}:${tl}`);
 }
 
 /**
@@ -159,11 +165,11 @@ export function store_decision(decision: MemoryDecision): void {
 /**
  * Recall similar past events using semantic vector search + pattern matching.
  */
-export function recall_similar_events(query: string, topK = 5): RecallResult[] {
+export async function recall_similar_events(query: string, topK = 5): Promise<RecallResult[]> {
   const results: RecallResult[] = [];
 
   // Vector recall
-  const vecHits = vectorSearch(query, topK, 0.2);
+  const vecHits = await Promise.resolve(vectorSearch(query, topK, 0.1));
   for (const hit of vecHits) {
     results.push({
       source:      "vector",
@@ -174,7 +180,7 @@ export function recall_similar_events(query: string, topK = 5): RecallResult[] {
   }
 
   // Pattern recall
-  const patterns = detectPatterns(topK);
+  const patterns = getTopPatterns(topK);
   for (const p of patterns) {
     const desc = `${p.precursor} → ${p.consequent} (conf=${(p.confidence * 100).toFixed(1)}%, seen=${p.count})`;
     results.push({
@@ -210,7 +216,7 @@ export function predict_next_action(resourceId: string, eventLabel: string): Act
   if (!active) log.debug("memory_engine: predict", `no active short-term for ${resourceId}:${eventLabel}`);
 
   // Best pattern match
-  const patterns = detectPatterns(10);
+  const patterns = getTopPatterns(10);
   const match = patterns.find(p => p.consequent.includes(eventLabel) || p.precursor.includes(eventLabel));
 
   // Best fix
@@ -281,7 +287,7 @@ export function record_repair_outcome(opts: {
   success:     boolean;
   recoveryMs:  number;
 }): void {
-  recordFixResult(opts.problem, opts.solution, opts.actionType, opts.params, opts.success, opts.recoveryMs);
+  recordFix(opts.problem, opts.solution, opts.actionType, opts.params, opts.success, opts.recoveryMs);
   store_pattern({
     triggerCategory: "repair",
     triggerLabel:    opts.problem,
@@ -296,6 +302,6 @@ export function record_repair_outcome(opts: {
 export function getMemoryEngineSummary() {
   return {
     shortTermKeys:  _shortTerm.size,
-    topPatterns:    detectPatterns(5),
+    topPatterns:    getTopPatterns(5),
   };
 }

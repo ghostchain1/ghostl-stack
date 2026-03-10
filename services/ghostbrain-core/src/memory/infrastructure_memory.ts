@@ -97,16 +97,30 @@ export function recordInfraSnapshot(
   return severity;
 }
 
+/** No-arg: returns snapshots grouped by resourceId (for pattern analysis). */
+export function getInfraHistory(): Record<string, InfraSnapshot[]>;
+/** With resourceId/layer args: returns a flat filtered array. */
+export function getInfraHistory(resourceId: string | undefined, layer?: InfraLayer, limitMs?: number): InfraSnapshot[];
 export function getInfraHistory(
   resourceId?: string,
   layer?: InfraLayer,
-  limitMs = 3_600_000,     // default: last 1 hour
-): InfraSnapshot[] {
+  limitMs = 3_600_000,
+): InfraSnapshot[] | Record<string, InfraSnapshot[]> {
   const cutoff = Date.now() - limitMs;
+  if (arguments.length === 0) {
+    // 0-arg call: return grouped by resourceId
+    const grouped: Record<string, InfraSnapshot[]> = {};
+    for (const s of ring) {
+      if (s.ts < cutoff) continue;
+      if (!grouped[s.resourceId]) grouped[s.resourceId] = [];
+      grouped[s.resourceId].push(s);
+    }
+    return grouped;
+  }
   return ring.filter(s => {
     if (s.ts < cutoff) return false;
     if (resourceId && s.resourceId !== resourceId) return false;
-    if (layer && s.layer !== layer)                return false;
+    if (layer && s.layer !== layer) return false;
     return true;
   });
 }

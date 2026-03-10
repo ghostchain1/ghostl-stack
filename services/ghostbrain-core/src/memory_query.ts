@@ -17,7 +17,7 @@
  */
 
 import { lookupFix, getAllFixes }   from "./memory/fix_memory.js";
-import { detectPatterns }           from "./memory/pattern_memory.js";
+import { getTopPatterns }           from "./memory/pattern_memory.js";
 import { search as vectorSearch }   from "./memory/vector_memory.js";
 import { getInfraHistory }          from "./memory/infrastructure_memory.js";
 import { queryKnowledge }           from "./memory/cognitive_memory.js";
@@ -54,10 +54,10 @@ export interface MemoryQueryOptions {
  *                     "disk_exhaustion validator"
  *                     "cpu_high sustained 90%"
  */
-export function queryMemory(
+export async function queryMemory(
   query:   string,
   options: MemoryQueryOptions = {},
-): MemoryQueryResult[] {
+): Promise<MemoryQueryResult[]> {
   const topK      = options.maxResults ?? options.topK ?? 10;
   const threshold = options.minScore   ?? options.threshold ?? 0.2;
   const results: MemoryQueryResult[] = [];
@@ -95,7 +95,7 @@ export function queryMemory(
   }
 
   // 3. Pattern recall
-  const patterns = detectPatterns(20);
+  const patterns = getTopPatterns(20);
   for (const p of patterns) {
     const pText = `${p.precursor} ${p.consequent}`;
     const pVec  = encodeText(pText);
@@ -112,7 +112,7 @@ export function queryMemory(
   }
 
   // 4. Vector semantic search
-  const vecHits = vectorSearch(query, topK, threshold);
+  const vecHits = await Promise.resolve(vectorSearch(query, topK, threshold));
   for (const hit of vecHits) {
     results.push({
       source:     "vector",
@@ -169,11 +169,11 @@ export function queryMemory(
  * Convenience: "Have I seen this problem before?"
  * Returns true + best result if a sufficiently confident match exists.
  */
-export function haveISeenThis(problem: string, minConfidence = 0.5): {
+export async function haveISeenThis(problem: string, minConfidence = 0.5): Promise<{
   seen: boolean;
   bestMatch: MemoryQueryResult | null;
-} {
-  const results = queryMemory(problem, { topK: 3, threshold: minConfidence });
+}> {
+  const results = await queryMemory(problem, { topK: 3, threshold: minConfidence });
   const best    = results[0] ?? null;
   return { seen: !!best && best.score >= minConfidence, bestMatch: best };
 }
@@ -181,11 +181,11 @@ export function haveISeenThis(problem: string, minConfidence = 0.5): {
 /**
  * Convenience: "What solved it previously?"
  */
-export function whatSolvedIt(problem: string): string | null {
+export async function whatSolvedIt(problem: string): Promise<string | null> {
   const fix = lookupFix(problem);
   if (fix) return fix.solution;
 
-  const results = queryMemory(problem, { topK: 5 });
+  const results = await queryMemory(problem, { topK: 5 });
   const fixResult = results.find(r => r.source === "fix_memory" || r.action);
   return fixResult?.action ?? null;
 }
@@ -194,12 +194,12 @@ export function whatSolvedIt(problem: string): string | null {
  * Convenience: "What is the optimal repair?"
  * Returns the action string with highest combined confidence.
  */
-export function optimalRepair(problem: string): {
+export async function optimalRepair(problem: string): Promise<{
   action: string;
   confidence: number;
   rationale:  string;
-} | null {
-  const results = queryMemory(problem, { topK: 5 });
+} | null> {
+  const results = await queryMemory(problem, { topK: 5 });
   const best    = results.find(r => r.action);
   if (!best) return null;
   return {

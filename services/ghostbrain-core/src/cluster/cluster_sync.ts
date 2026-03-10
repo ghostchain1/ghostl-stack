@@ -64,7 +64,7 @@ async function pushPatternStats(): Promise<void> {
 
 async function pushInfraMetrics(): Promise<void> {
   if (!CLUSTER_URL) return;
-  const history = getInfraHistory().slice(-10);
+  const history = Object.values(getInfraHistory()).flat().slice(-10);
   if (history.length === 0) return;
   try {
     const res = await request(`${CLUSTER_URL}/api/v1/cluster/infra-metrics`, {

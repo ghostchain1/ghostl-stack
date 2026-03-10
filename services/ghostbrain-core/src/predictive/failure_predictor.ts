@@ -100,7 +100,7 @@ function patternScore(patterns: RecurringPattern[], resourceId: string, now: num
     return false;
   });
   if (hits.length === 0) return 0;
-  return Math.min(1, hits.reduce((acc, p) => acc + p.confidence, 0));
+  return Math.min(1, hits.reduce((acc, p) => acc + (p.confidence ?? 0), 0));
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────

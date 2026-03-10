@@ -22,24 +22,26 @@ import type { ForecastMetric } from "./load_forecaster.js";
 export type PatternKind = "periodic" | "correlated" | "tod_spike";
 
 export interface RecurringPattern {
-  id:           string;
-  kind:         PatternKind;
-  resourceId:   string;
-  metric:       ForecastMetric;
-  description:  string;
+  id?:            string;
+  kind?:          PatternKind;
+  resourceId:     string;
+  metric:         string;   // e.g. "cpu", "mem", "cpu_pct", "mem_pct"
+  description?:   string;
   // periodic-specific
-  periodMs?:    number;
+  periodMs?:      number;
   // correlated-specific
   peerResourceId?: string;
-  peerMetric?:     ForecastMetric;
-  correlationR?:   number;       // Pearson -1..1
+  peerMetric?:    string;
+  correlationR?:  number;       // Pearson -1..1
   // tod-specific
-  peakHour?:        number;      // 0–23 UTC
+  peakHour?:      number;      // 0–23 UTC
+  peakHourUtc?:   number;      // alias for peakHour
+  peakValue?:     number;      // peak metric value observed
   // general
-  confidence:   number;          // 0–1
-  firstSeenAt:  number;
-  lastSeenAt:   number;
-  occurrences:  number;
+  confidence?:    number;       // 0–1
+  firstSeenAt?:   number;
+  lastSeenAt?:    number;
+  occurrences:    number;
 }
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -105,13 +107,14 @@ function autocorrelation(vals: number[], lag: number): number {
 }
 
 function upsertPattern(p: RecurringPattern): void {
-  const existing = _patterns.get(p.id);
+  const key = p.id ?? `${p.resourceId}:${p.metric}`;
+  const existing = _patterns.get(key);
   if (existing) {
     existing.occurrences++;
-    existing.lastSeenAt = Date.now();
-    existing.confidence = Math.min(1, existing.confidence * 0.9 + p.confidence * 0.1);
+    existing.lastSeenAt  = Date.now();
+    existing.confidence  = Math.min(1, (existing.confidence ?? 0) * 0.9 + (p.confidence ?? 0) * 0.1);
   } else {
-    _patterns.set(p.id, p);
+    _patterns.set(key, p);
   }
 }
 
@@ -251,6 +254,6 @@ export function patternRecognitionStats(): {
   byKind:     Record<PatternKind, number>;
 } {
   const byKind: Record<PatternKind, number> = { periodic: 0, correlated: 0, tod_spike: 0 };
-  for (const p of _patterns.values()) byKind[p.kind]++;
+  for (const p of _patterns.values()) if (p.kind) byKind[p.kind]++;
   return { patterns: _patterns.size, scanCount: _scanCount, resources: _series.size, byKind };
 }

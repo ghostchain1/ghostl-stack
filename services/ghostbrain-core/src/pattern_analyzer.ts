@@ -14,10 +14,10 @@
  * All findings are returned as PatternAnalysis objects for the decision engine.
  */
 
-import { detectPatterns }            from "./memory/pattern_memory.js";
-import { detectRecurringPatterns }       from "./predictive/pattern_recognition.js";
-import { getInfraHistory }            from "./memory/infrastructure_memory.js";
-import { log }                        from "./observability/event_logger.js";
+import { getTopPatterns }              from "./memory/pattern_memory.js";
+import { getRecurringPatterns }        from "./predictive/pattern_recognition.js";
+import { getInfraHistory }             from "./memory/infrastructure_memory.js";
+import { log }                         from "./observability/event_logger.js";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -52,7 +52,7 @@ const MAX_CACHE = 500;
 /** Analyse correlation patterns (A → B pairs from pattern_memory). */
 function analyzeCorrelations(): PatternAnalysis[] {
   const out: PatternAnalysis[] = [];
-  const patterns = detectPatterns(20);
+  const patterns = getTopPatterns(20);
   for (const p of patterns) {
     if (p.confidence < MIN_CONF) continue;
     out.push({
@@ -74,17 +74,18 @@ function analyzeCorrelations(): PatternAnalysis[] {
 function analyzeTemporalPatterns(): PatternAnalysis[] {
   const out: PatternAnalysis[] = [];
   try {
-    const recurring = detectRecurringPatterns();
+    const recurring = getRecurringPatterns();
     for (const rp of recurring) {
+      const peakHour = rp.peakHourUtc ?? rp.peakHour ?? 12;
       out.push({
         id:           `temporal:${rp.resourceId}:${rp.metric}`,
         analysisType: "temporal",
-        severity:     rp.confidence > 0.85 ? "critical" : "warning",
+        severity:     (rp.confidence ?? 0) > 0.85 ? "critical" : "warning",
         resourceId:   rp.resourceId,
-        description:  `Recurring ${rp.metric} spike on ${rp.resourceId} — peaks around ${hourLabel(rp.peakHour ?? 12)} UTC (seen ${rp.occurrences}×)`,
+        description:  `Recurring ${rp.metric} spike on ${rp.resourceId} — peaks around ${hourLabel(peakHour)} UTC (seen ${rp.occurrences}×)`,
         confidence:   Math.min(rp.occurrences / 10, 0.95),
-        recommendation: `Scale up or redistribute load on ${rp.resourceId} before ${hourLabel(rp.peakHour ?? 12)} UTC.`,
-        data:         { metric: rp.metric, peakHour: rp.peakHour, description: rp.description, occurrences: rp.occurrences },
+        recommendation: `Scale up or redistribute load on ${rp.resourceId} before ${hourLabel(peakHour)} UTC.`,
+        data:         { metric: rp.metric, peakHour, description: rp.description ?? "", occurrences: rp.occurrences },
         detectedAt:   Date.now(),
       });
     }
@@ -102,14 +103,7 @@ function analyzeBottlenecks(): PatternAnalysis[] {
   // getInfraHistory returns per-resource snapshots; analyse recent readings
   try {
     const history = getInfraHistory();
-    // Group snapshots by resourceId
-    const byResource = new Map<string, typeof history>();
-    for (const snap of history) {
-      const arr = byResource.get(snap.resourceId) ?? [];
-      arr.push(snap);
-      byResource.set(snap.resourceId, arr);
-    }
-    for (const [resourceId, snaps] of byResource) {
+    for (const [resourceId, snaps] of Object.entries(history)) {
       const recent = snaps.filter(s => s.ts >= cutoff);
       if (recent.length < 3) continue;
 

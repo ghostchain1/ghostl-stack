@@ -100,6 +100,9 @@ export function lookupFix(problem: string): FixRecord | null | undefined {
   return fixes.get(normalizeKey(problem));
 }
 
+/** Alias for recordFixResult — for mock-compatible imports. */
+export const recordFix = recordFixResult;
+
 /** Return all known fixes, sorted by success rate descending. */
 export function getAllFixes(): FixRecord[] {
   return [...fixes.values()].sort((a, b) => b.successRate - a.successRate);

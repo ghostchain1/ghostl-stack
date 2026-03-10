@@ -22,7 +22,7 @@ export interface VectorEntry {
 }
 
 const VOCAB_SIZE   = 256;   // simplified fixed-size vocabulary hash space
-const store: VectorEntry[] = [];
+const _store: VectorEntry[] = [];
 
 let MEMORY_DIR     = process.env.GHOSTBRAIN_MEMORY_DIR ?? "/tmp/ghostbrain-memory";
 let VECTOR_JOURNAL = join(MEMORY_DIR, "vector.ndjson");
@@ -58,7 +58,7 @@ export function hydrateVectorMemory(dir?: string): void {
   try {
     const lines = readFileSync(VECTOR_JOURNAL, "utf8").split("\n").filter(Boolean);
     for (const line of lines) {
-      try { store.push(JSON.parse(line) as VectorEntry); }
+      try { _store.push(JSON.parse(line) as VectorEntry); }
       catch { /* skip */ }
     }
   } catch { /* start fresh */ }
@@ -79,8 +79,8 @@ export function storeVector(
     storedAt: Date.now(),
   };
   // Replace if id already exists
-  const idx = store.findIndex(e => e.id === id);
-  if (idx >= 0) store[idx] = entry; else store.push(entry);
+  const idx = _store.findIndex(e => e.id === id);
+  if (idx >= 0) _store[idx] = entry; else _store.push(entry);
   appendFileSync(VECTOR_JOURNAL, JSON.stringify(entry) + "\n");
   return entry;
 }
@@ -92,13 +92,16 @@ export function search(
   threshold = 0.3,
 ): Array<VectorEntry & { score: number }> {
   const qVec = buildVector(query);
-  return store
+  return _store
     .map(e => ({ ...e, score: cosine(qVec, e.vector) }))
     .filter(e => e.score >= threshold)
     .sort((a, b) => b.score - a.score)
     .slice(0, topK);
 }
 
+/** Alias for storeVector — for mock-compatible imports. */
+export const store = storeVector;
+
 export function vectorStats() {
-  return { entries: store.length };
+  return { entries: _store.length };
 }
