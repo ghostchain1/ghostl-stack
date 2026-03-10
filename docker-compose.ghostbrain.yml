@@ -34,6 +34,7 @@ x-hardening: &hardening
     - /tmp
   restart: unless-stopped
 
+services:
   # ─── NATS message bus ──────────────────────────────────────────────────────
   nats:
     # SOVEREIGN: pin to digest – run scripts/security/digest-refresh-report.sh to update.

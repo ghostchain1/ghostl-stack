@@ -287,7 +287,7 @@ export const createLiveServices = (deps: {
       const query = `{instance="${id}"}`;
       try {
         const result = await deps.loki.queryRange(query, startNs, endNs, tail);
-        return flattenLokiEntries(result).map((e) => e.log);
+        return flattenLokiEntries(result).map((e) => e.log.message);
       } catch {
         return [];
       }

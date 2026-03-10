@@ -28,7 +28,11 @@
       "@ghost/ai": ["packages/ghost-ai/src/index.ts"],
       "@ghost/ai/*": ["packages/ghost-ai/src/*"],
       "@ghost/ai-sdk": ["packages/ghost-ai-sdk/src/index.ts"],
-      "@ghost/ai-sdk/*": ["packages/ghost-ai-sdk/src/*"]
+      "@ghost/ai-sdk/*": ["packages/ghost-ai-sdk/src/*"],
+      "@ghostchain/ui-components": ["packages/ui-components/src/index.ts"],
+      "@ghostchain/ui-components/*": ["packages/ui-components/src/*"],
+      "@ghostchain/ghost-sdk-core": ["packages/ghost-sdk-core/src/index.ts"],
+      "@ghostchain/ghost-sdk-core/*": ["packages/ghost-sdk-core/src/*"]
     }
   }
 }

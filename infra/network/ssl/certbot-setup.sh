@@ -16,6 +16,7 @@ set -euo pipefail
 EMAIL="admin@ghostchain.cloud"
 
 DOMAINS=(
+  # ── GhostStack core subdomains ────────────────────────────────────────────
   "rpc.ghostchain.cloud"
   "l2.ghostchain.cloud"
   "l3.ghostchain.cloud"
@@ -27,7 +28,7 @@ DOMAINS=(
   "status.ghostchain.cloud"
   "explorer.ghostchain.world"
   "wallet.ghostchain.world"
-  # Geo-distributed RPC endpoints
+  # ── Geo-distributed RPC endpoints ────────────────────────────────────────
   "rpc-us.ghostchain.cloud"
   "rpc-eu.ghostchain.cloud"
   "rpc-asia.ghostchain.cloud"
@@ -39,6 +40,23 @@ DOMAINS=(
   "l3-asia.ghostchain.cloud"
 )
 
+# SAN certs — each covers apex + www in one certificate
+SAN_DOMAINS=(
+  # canonical brand site
+  "ghostchain.cloud:www.ghostchain.cloud"
+  # satellite / redirect domains
+  "ghostchain.info:www.ghostchain.info"
+  "ghostchain.live:www.ghostchain.live"
+  "ghostchain.store:www.ghostchain.store"
+  "ghostchain.online:www.ghostchain.online"
+  "ghostchain.space:www.ghostchain.space"
+  "ghostchain.life:www.ghostchain.life"
+  "ghostchain.world:www.ghostchain.world"
+  "ghostchainsolutions.com:www.ghostchainsolutions.com"
+  "ghostchainlink.com:www.ghostchainlink.com"
+  "ghostschain.com:www.ghostschain.com"
+)
+
 for domain in "${DOMAINS[@]}"; do
   echo "==> Issuing cert for ${domain}..."
   certbot certonly \
@@ -47,6 +65,20 @@ for domain in "${DOMAINS[@]}"; do
     --agree-tos \
     --email "${EMAIL}" \
     -d "${domain}"
+done
+
+# Issue SAN certs (apex + www) for portfolio domains
+for pair in "${SAN_DOMAINS[@]}"; do
+  apex="${pair%%:*}"
+  www="${pair##*:}"
+  echo "==> Issuing SAN cert for ${apex} + ${www}..."
+  certbot certonly \
+    --nginx \
+    --non-interactive \
+    --agree-tos \
+    --email "${EMAIL}" \
+    -d "${apex}" \
+    -d "${www}"
 done
 
 echo ""
