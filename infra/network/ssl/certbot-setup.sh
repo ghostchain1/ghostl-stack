@@ -27,6 +27,16 @@ DOMAINS=(
   "status.ghostchain.cloud"
   "explorer.ghostchain.world"
   "wallet.ghostchain.world"
+  # Geo-distributed RPC endpoints
+  "rpc-us.ghostchain.cloud"
+  "rpc-eu.ghostchain.cloud"
+  "rpc-asia.ghostchain.cloud"
+  "l2-us.ghostchain.cloud"
+  "l2-eu.ghostchain.cloud"
+  "l2-asia.ghostchain.cloud"
+  "l3-us.ghostchain.cloud"
+  "l3-eu.ghostchain.cloud"
+  "l3-asia.ghostchain.cloud"
 )
 
 for domain in "${DOMAINS[@]}"; do

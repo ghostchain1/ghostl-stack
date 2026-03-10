@@ -110,6 +110,246 @@ services:
           headers: [Content-Type, Authorization]
           credentials: true
 
+  # ── Geo-distributed RPC routes ──────────────────────────────────────────────
+  # Each region domain routes through Kong with the same rate-limiting + CORS
+  # as the primary RPC services. Kong's upstream health checks detect when a
+  # geo node goes down and removes it from rotation automatically.
+
+  - name: ghostchain-l1-rpc-us
+    url: http://38.247.149.219:18545
+    connect_timeout: 10000
+    write_timeout:   30000
+    read_timeout:    30000
+    retries: 3
+    routes:
+      - name: l1-rpc-us-route
+        protocols: [https]
+        hosts: [rpc-us.ghostchain.cloud]
+        methods: [POST, OPTIONS]
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 150
+          policy: local
+          hide_client_headers: false
+      - name: cors
+        config:
+          origins: ["*"]
+          methods: [POST, OPTIONS]
+          headers: [Content-Type]
+          max_age: 3600
+      - name: request-transformer
+        config:
+          add:
+            headers: ["X-Ghost-Region:us"]
+
+  - name: ghostchain-l1-rpc-eu
+    url: http://38.247.149.219:18545      # update to EU node IP when provisioned
+    connect_timeout: 10000
+    write_timeout:   30000
+    read_timeout:    30000
+    retries: 3
+    routes:
+      - name: l1-rpc-eu-route
+        protocols: [https]
+        hosts: [rpc-eu.ghostchain.cloud]
+        methods: [POST, OPTIONS]
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 150
+          policy: local
+      - name: cors
+        config:
+          origins: ["*"]
+          methods: [POST, OPTIONS]
+          headers: [Content-Type]
+          max_age: 3600
+      - name: request-transformer
+        config:
+          add:
+            headers: ["X-Ghost-Region:eu"]
+
+  - name: ghostchain-l1-rpc-asia
+    url: http://38.247.149.219:18545      # update to Asia node IP when provisioned
+    connect_timeout: 10000
+    write_timeout:   30000
+    read_timeout:    30000
+    retries: 3
+    routes:
+      - name: l1-rpc-asia-route
+        protocols: [https]
+        hosts: [rpc-asia.ghostchain.cloud]
+        methods: [POST, OPTIONS]
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 150
+          policy: local
+      - name: cors
+        config:
+          origins: ["*"]
+          methods: [POST, OPTIONS]
+          headers: [Content-Type]
+          max_age: 3600
+      - name: request-transformer
+        config:
+          add:
+            headers: ["X-Ghost-Region:asia"]
+
+  - name: ghostl2-rpc-us
+    url: http://38.247.149.220:29545
+    connect_timeout: 10000
+    write_timeout:   30000
+    read_timeout:    30000
+    retries: 3
+    routes:
+      - name: l2-rpc-us-route
+        protocols: [https]
+        hosts: [l2-us.ghostchain.cloud]
+        methods: [POST, OPTIONS]
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config: { minute: 150, policy: local }
+      - name: cors
+        config:
+          origins: ["*"]
+          methods: [POST, OPTIONS]
+          headers: [Content-Type]
+      - name: request-transformer
+        config:
+          add:
+            headers: ["X-Ghost-Region:us"]
+
+  - name: ghostl2-rpc-eu
+    url: http://38.247.149.220:29545
+    connect_timeout: 10000
+    write_timeout:   30000
+    read_timeout:    30000
+    retries: 3
+    routes:
+      - name: l2-rpc-eu-route
+        protocols: [https]
+        hosts: [l2-eu.ghostchain.cloud]
+        methods: [POST, OPTIONS]
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config: { minute: 150, policy: local }
+      - name: cors
+        config:
+          origins: ["*"]
+          methods: [POST, OPTIONS]
+          headers: [Content-Type]
+      - name: request-transformer
+        config:
+          add:
+            headers: ["X-Ghost-Region:eu"]
+
+  - name: ghostl2-rpc-asia
+    url: http://38.247.149.220:29545
+    connect_timeout: 10000
+    write_timeout:   30000
+    read_timeout:    30000
+    retries: 3
+    routes:
+      - name: l2-rpc-asia-route
+        protocols: [https]
+        hosts: [l2-asia.ghostchain.cloud]
+        methods: [POST, OPTIONS]
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config: { minute: 150, policy: local }
+      - name: cors
+        config:
+          origins: ["*"]
+          methods: [POST, OPTIONS]
+          headers: [Content-Type]
+      - name: request-transformer
+        config:
+          add:
+            headers: ["X-Ghost-Region:asia"]
+
+  - name: ghostl3-rpc-us
+    url: http://38.247.149.221:39545
+    connect_timeout: 10000
+    write_timeout:   30000
+    read_timeout:    30000
+    retries: 3
+    routes:
+      - name: l3-rpc-us-route
+        protocols: [https]
+        hosts: [l3-us.ghostchain.cloud]
+        methods: [POST, OPTIONS]
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config: { minute: 150, policy: local }
+      - name: cors
+        config:
+          origins: ["*"]
+          methods: [POST, OPTIONS]
+          headers: [Content-Type]
+      - name: request-transformer
+        config:
+          add:
+            headers: ["X-Ghost-Region:us"]
+
+  - name: ghostl3-rpc-eu
+    url: http://38.247.149.221:39545
+    connect_timeout: 10000
+    write_timeout:   30000
+    read_timeout:    30000
+    retries: 3
+    routes:
+      - name: l3-rpc-eu-route
+        protocols: [https]
+        hosts: [l3-eu.ghostchain.cloud]
+        methods: [POST, OPTIONS]
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config: { minute: 150, policy: local }
+      - name: cors
+        config:
+          origins: ["*"]
+          methods: [POST, OPTIONS]
+          headers: [Content-Type]
+      - name: request-transformer
+        config:
+          add:
+            headers: ["X-Ghost-Region:eu"]
+
+  - name: ghostl3-rpc-asia
+    url: http://38.247.149.221:39545
+    connect_timeout: 10000
+    write_timeout:   30000
+    read_timeout:    30000
+    retries: 3
+    routes:
+      - name: l3-rpc-asia-route
+        protocols: [https]
+        hosts: [l3-asia.ghostchain.cloud]
+        methods: [POST, OPTIONS]
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config: { minute: 150, policy: local }
+      - name: cors
+        config:
+          origins: ["*"]
+          methods: [POST, OPTIONS]
+          headers: [Content-Type]
+      - name: request-transformer
+        config:
+          add:
+            headers: ["X-Ghost-Region:asia"]
+
   # GhostBrain Core — internal HMAC-authenticated service
   - name: ghostbrain-core
     url: http://38.247.149.223:7900
