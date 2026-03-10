@@ -27,7 +27,7 @@ import { log }                      from "./observability/event_logger.js";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface MemoryQueryResult {
-  source:       "fix" | "pattern" | "vector" | "infra" | "cognitive";
+  source:       "fix_memory" | "pattern" | "vector" | "infra" | "cognitive";
   score:        number;
   summary:      string;
   action?:      string;
@@ -37,7 +37,9 @@ export interface MemoryQueryResult {
 
 export interface MemoryQueryOptions {
   topK?:        number;   // default 10
+  maxResults?:  number;   // alias for topK
   threshold?:   number;   // min score 0–1, default 0.2
+  minScore?:    number;   // alias for threshold
   resourceId?:  string;   // narrow infra history to one resource
   includeRaw?:  boolean;  // include raw metadata in results
 }
@@ -56,15 +58,15 @@ export function queryMemory(
   query:   string,
   options: MemoryQueryOptions = {},
 ): MemoryQueryResult[] {
-  const topK      = options.topK      ?? 10;
-  const threshold = options.threshold ?? 0.2;
+  const topK      = options.maxResults ?? options.topK ?? 10;
+  const threshold = options.minScore   ?? options.threshold ?? 0.2;
   const results: MemoryQueryResult[] = [];
 
   // 1. Exact fix lookup
   const fix = lookupFix(query);
   if (fix) {
     results.push({
-      source:     "fix",
+      source:     "fix_memory",
       score:      fix.successRate,
       summary:    `Known fix (${(fix.successRate * 100).toFixed(1)}% success): ${fix.solution}`,
       action:     fix.actionType,
@@ -82,7 +84,7 @@ export function queryMemory(
     const sim  = cosineSimilarity(qVec, fVec);
     if (sim >= threshold) {
       results.push({
-        source:     "fix",
+        source:     "fix_memory",
         score:      sim * f.successRate,
         summary:    `Similar fix (${(sim * 100).toFixed(1)}% match, ${(f.successRate * 100).toFixed(1)}% success): ${f.solution}`,
         action:     f.actionType,
@@ -184,7 +186,7 @@ export function whatSolvedIt(problem: string): string | null {
   if (fix) return fix.solution;
 
   const results = queryMemory(problem, { topK: 5 });
-  const fixResult = results.find(r => r.source === "fix" || r.action);
+  const fixResult = results.find(r => r.source === "fix_memory" || r.action);
   return fixResult?.action ?? null;
 }
 

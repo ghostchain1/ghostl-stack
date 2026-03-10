@@ -14,6 +14,7 @@ import { infraSupervisorStats }         from "../infra/infra_supervisor.js";
 import { getAnomalies }                 from "../predictive/anomaly_detector.js";
 import { getActiveRisks }               from "../predictive/failure_predictor.js";
 import { forecastAll }                  from "../predictive/load_forecaster.js";
+import { getAgentStats }                from "../agents/index.js";
 
 const PUSH_URL  = process.env.PROMETHEUS_PUSHGATEWAY_URL ?? "";
 const JOB_NAME  = process.env.PROMETHEUS_JOB_NAME       ?? "ghostbrain-core";
@@ -88,6 +89,13 @@ function refreshPredictiveMetrics(): void {
     for (const sev of ["critical", "high", "medium", "low"] as const) {
       const count = anomalies.filter(a => a.severity === sev && !a.resolved).length;
       set("ghostbrain_active_anomalies", "Active anomalies by severity", count, { severity: sev });
+    }
+
+    // Agent tick cycles — sync cumulative counts from each running agent
+    const agentStats = getAgentStats();
+    for (const [agentName, stats] of Object.entries(agentStats)) {
+      const cycles = typeof stats["cycles"] === "number" ? stats["cycles"] : 0;
+      set("ghostbrain_agent_cycles_total", "Agent tick cycles completed", cycles, { agent: agentName });
     }
   } catch { /* never let metric collection crash the push loop */ }
 }

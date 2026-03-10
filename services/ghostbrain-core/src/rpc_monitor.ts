@@ -10,7 +10,7 @@
  * Emits memory events when nodes degrade so GhostBrain can act.
  */
 
-import { request } from "undici";
+import { GhostJsonRpc }    from "@ghostchain/ghost-sdk-core";
 import { store_event }        from "./memory_engine.js";
 import { recordInfraSnapshot } from "./memory/infrastructure_memory.js";
 import { log }                from "./observability/event_logger.js";
@@ -49,23 +49,25 @@ const _prevBlock = new Map<string, number>();  // for drift detection
 let   _sampleCount = 0;
 let   _timer: ReturnType<typeof setInterval> | null = null;
 
+// ── Per-endpoint GhostJsonRpc clients ─────────────────────────────────────────
+
+const _rpcClients = new Map<string, GhostJsonRpc>();
+
+function clientFor(url: string): GhostJsonRpc {
+  let c = _rpcClients.get(url);
+  if (!c) { c = new GhostJsonRpc(url, { timeoutMs: 8_000 }); _rpcClients.set(url, c); }
+  return c;
+}
+
 // ── RPC call ──────────────────────────────────────────────────────────────────
 
 async function probeNode(id: string, url: string, label: string): Promise<void> {
   const t0 = Date.now();
   try {
-    const { body, statusCode } = await request(url, {
-      method:  "POST",
-      headers: { "content-type": "application/json" },
-      body:    JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ghost_blockNumber", params: [] }),
-    });
-
-    if (statusCode !== 200) throw new Error(`HTTP ${statusCode}`);
-    const json  = await body.json() as { result?: string; error?: { message: string } };
-    if (json.error) throw new Error(json.error.message);
+    const blockHex = await clientFor(url).request<string>("ghost_blockNumber", []);
 
     const latencyMs   = Date.now() - t0;
-    const blockNumber = parseInt(json.result ?? "0x0", 16);
+    const blockNumber = parseInt(blockHex ?? "0x0", 16);
     const prevBlock   = _prevBlock.get(id) ?? blockNumber;
     const drift       = Math.abs(blockNumber - prevBlock);
     _prevBlock.set(id, blockNumber);

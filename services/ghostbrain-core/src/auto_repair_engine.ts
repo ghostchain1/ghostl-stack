@@ -27,8 +27,7 @@ import { request }               from "undici";
 import { observe_task }          from "./task_learning_engine.js";
 import { store_decision }        from "./memory_engine.js";
 import type { TaskProposal }     from "./task_learning_engine.js";
-import { log }                   from "./observability/event_logger.js";
-
+import { log }                   from "./observability/event_logger.js";import { incRepairs }              from "./observability/metrics_exporter.js";
 // ── Config ────────────────────────────────────────────────────────────────────
 
 const SIGNING_RELAY      = process.env.SIGNING_RELAY_URL   ?? "http://localhost:7910";
@@ -244,6 +243,7 @@ export async function executeRepair(req: RepairRequest): Promise<RepairResult> {
     errorDetail:    detail,
   });
 
+  incRepairs(success);
   log.info("auto_repair: done", `${req.resourceId}:${req.strategy} success=${success} recoveryMs=${recoveryMs} dry=${isDry}`);
   return { success, strategy: req.strategy, resourceId: req.resourceId, recoveryMs, detail, dryRun: isDry };
 }

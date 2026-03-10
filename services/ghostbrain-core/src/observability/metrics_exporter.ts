@@ -130,4 +130,38 @@ export function initStandardMetrics(): void {
   set("ghostbrain_chain_block_number",   "Latest observed block number", 0, { chain: "l1" });
   set("ghostbrain_chain_block_number",   "Latest observed block number", 0, { chain: "l2" });
   set("ghostbrain_chain_block_number",   "Latest observed block number", 0, { chain: "l3" });
+  // Named counters — incremented by subsystems
+  inc("ghostbrain_predictions_total",   "Total AI risk predictions generated", 0);
+  inc("ghostbrain_repairs_total",       "Total autonomous repair actions attempted", 0, { success: "true" });
+  inc("ghostbrain_repairs_total",       "Total autonomous repair actions attempted", 0, { success: "false" });
+  inc("ghostbrain_memory_events_total", "Total events stored in memory engine", 0);
+  inc("ghostbrain_agent_cycles_total",  "Agent tick cycles completed", 0, { agent: "optimizer" });
+  inc("ghostbrain_agent_cycles_total",  "Agent tick cycles completed", 0, { agent: "predictor" });
+  inc("ghostbrain_agent_cycles_total",  "Agent tick cycles completed", 0, { agent: "repair_bot" });
+  inc("ghostbrain_agent_cycles_total",  "Agent tick cycles completed", 0, { agent: "load_balancer" });
+  inc("ghostbrain_agent_cycles_total",  "Agent tick cycles completed", 0, { agent: "security_guardian" });
+}
+
+// ── Named counter increment helpers ──────────────────────────────────────────
+
+/** Record one AI prediction emission. */
+export function incPredictions(): void {
+  inc("ghostbrain_predictions_total", "Total AI risk predictions generated");
+}
+
+/** Record one autonomous repair attempt. */
+export function incRepairs(success: boolean): void {
+  inc("ghostbrain_repairs_total", "Total autonomous repair actions attempted", 1, {
+    success: success ? "true" : "false",
+  });
+}
+
+/** Record one memory event stored. */
+export function incMemoryEvents(): void {
+  inc("ghostbrain_memory_events_total", "Total events stored in memory engine");
+}
+
+/** Record one agent tick cycle. */
+export function incAgentCycles(agentName: string): void {
+  inc("ghostbrain_agent_cycles_total", "Agent tick cycles completed", 1, { agent: agentName });
 }

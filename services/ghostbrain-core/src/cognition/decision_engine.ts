@@ -159,9 +159,8 @@ export function decide(resourceId: string, layer = "container"): Decision {
 export function scanAll(): Decision[] {
   // Collect unique resource IDs from fix memory as proxy for all known resources
   const resourceIds = new Set<string>(
-    getAllFixes().map(f => f.id).concat(
-      queryKnowledge().map(k => k.key),
-    ),
+    (getAllFixes().map(f => f.id).filter((id): id is string => id !== undefined) as string[])
+      .concat(queryKnowledge().map(k => k.key)),
   );
   return [...resourceIds]
     .map(id => decide(id))

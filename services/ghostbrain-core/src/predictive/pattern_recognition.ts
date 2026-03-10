@@ -239,6 +239,11 @@ export function getPatterns(kind?: PatternKind): RecurringPattern[] {
   return kind ? all.filter(p => p.kind === kind) : all;
 }
 
+/** Alias for getPatterns — returns all detected recurring patterns. */
+export function getRecurringPatterns(kind?: PatternKind): RecurringPattern[] {
+  return getPatterns(kind);
+}
+
 export function patternRecognitionStats(): {
   patterns:   number;
   scanCount:  number;

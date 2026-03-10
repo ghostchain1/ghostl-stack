@@ -10,7 +10,7 @@
  *             L3 = 903      (port 39545)
  */
 
-import { request } from "undici";
+import { GhostJsonRpc }    from "@ghostchain/ghost-sdk-core";
 import { store_event } from "../memory_engine.js";
 import { log }         from "../observability/event_logger.js";
 
@@ -56,16 +56,16 @@ let   _timer: ReturnType<typeof setInterval> | null = null;
 
 // ── RPC helpers ───────────────────────────────────────────────────────────────
 
+const _rpcClients = new Map<string, GhostJsonRpc>();
+
+function rpcClientFor(url: string): GhostJsonRpc {
+  let c = _rpcClients.get(url);
+  if (!c) { c = new GhostJsonRpc(url, { timeoutMs: 8_000 }); _rpcClients.set(url, c); }
+  return c;
+}
+
 async function rpcCall<T>(url: string, method: string, params: unknown[] = []): Promise<T> {
-  const { body, statusCode } = await request(url, {
-    method:  "POST",
-    headers: { "content-type": "application/json" },
-    body:    JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-  });
-  if (statusCode !== 200) throw new Error(`HTTP ${statusCode}`);
-  const json = await body.json() as { result?: T; error?: { message: string } };
-  if (json.error) throw new Error(json.error.message);
-  return json.result as T;
+  return rpcClientFor(url).request<T>(method, params);
 }
 
 // ── Sampling ──────────────────────────────────────────────────────────────────

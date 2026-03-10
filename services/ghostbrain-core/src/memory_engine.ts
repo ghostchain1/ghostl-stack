@@ -20,8 +20,7 @@ import { storeVector as vectorStore, search as vectorSearch } from "./memory/vec
 import { recordInfraSnapshot }          from "./memory/infrastructure_memory.js";
 import { recordFixResult, lookupFix }   from "./memory/fix_memory.js";
 import { recordOptimization }      from "./memory/performance_memory.js";
-import { log }                          from "./observability/event_logger.js";
-
+import { log }                          from "./observability/event_logger.js";import { incMemoryEvents }               from "./observability/metrics_exporter.js";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface MemoryEvent {
@@ -29,9 +28,13 @@ export interface MemoryEvent {
   layer:       string;
   category:    string;
   label:       string;
-  severity?:   "info" | "warning" | "error" | "critical";
+  severity?:   "info" | "warn" | "warning" | "error" | "critical";
   payload?:    Record<string, unknown>;
   ts?:         number;
+  /** @deprecated — use category+label instead */
+  type?:       string;
+  /** @deprecated — use resourceId instead */
+  source?:     string;
 }
 
 export interface MemoryPattern {
@@ -40,6 +43,11 @@ export interface MemoryPattern {
   action:          string;
   params?:         Record<string, unknown>;
   successRate?:    number;
+  /** @deprecated — free-form label for legacy callers */
+  type?:           string;
+  resourceId?:     string;
+  description?:    string;
+  confidence?:     number;
 }
 
 export interface MemoryDecision {
@@ -121,6 +129,7 @@ export function store_event(ev: MemoryEvent): void {
   const text = `[${ev.layer}] ${ev.category}:${ev.label} on ${ev.resourceId} — ${JSON.stringify(ev.payload ?? {})}`;
   vectorStore(text, text, { ...ev, ts });
 
+  incMemoryEvents();
   log.debug("memory_engine: store_event", `${ev.label} on ${ev.resourceId}`);
 }
 
@@ -239,6 +248,7 @@ export function record_infra_snapshot(snap: {
   diskIoPct?: number; netMbps?: number;
   restarts?: number; healthy?: boolean;
   meta?: Record<string, unknown>;
+  ts?: number;
 }): void {
   recordInfraSnapshot({
     ts:        Date.now(),

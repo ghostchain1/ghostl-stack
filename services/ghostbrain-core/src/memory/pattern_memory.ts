@@ -122,6 +122,11 @@ export function flushPatterns(): void {
 }
 
 /** Hydrate ring from disk on startup. */
+/** Alias for detectPatterns — returns top pattern entries. */
+export function getTopPatterns(limit = 20): PatternEntry[] {
+  return detectPatterns(limit);
+}
+
 export function hydratePatternMemory(dir?: string): void {
   if (dir) { MEMORY_DIR = dir; PATTERN_FILE = join(dir, "patterns.ndjson"); }
   mkdirSync(MEMORY_DIR, { recursive: true });

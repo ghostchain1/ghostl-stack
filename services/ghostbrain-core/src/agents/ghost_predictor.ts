@@ -6,6 +6,7 @@
  */
 
 import { getRisksForResource } from "../predictive/failure_predictor.js";
+import { incPredictions }      from "../observability/metrics_exporter.js";
 import { getContainerFleet }      from "../docker_monitor.js";
 import { getVMFleet }             from "../vm_monitor.js";
 import { store_event }            from "../memory_engine.js";
@@ -78,6 +79,7 @@ export class GhostPredictor {
     }
 
     if (this.warnings.length > 0) {
+      incPredictions();
       log.warn("ghost_predictor: warnings", `${this.warnings.length} failure predictions raised`);
     }
   }

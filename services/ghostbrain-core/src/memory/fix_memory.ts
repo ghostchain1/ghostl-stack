@@ -14,17 +14,17 @@ import { appendFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
 export interface FixRecord {
-  id:          string;   // problem key (normalized)
-  problem:     string;   // human-readable problem description
-  solution:    string;   // action taken
-  actionType:  string;   // e.g. "restart", "scale_memory", "throttle", "reroute"
-  params:      Record<string, unknown>;  // action parameters
-  successCount: number;
-  failureCount: number;
-  successRate:  number;  // recomputed: successCount / (successCount + failureCount)
-  avgRecoveryMs: number; // average time to recovery
-  firstUsed:   number;
-  lastUsed:    number;
+  id?:           string;   // problem key (normalized)
+  problem:       string;   // human-readable problem description
+  solution:      string;   // action taken
+  actionType:    string;   // e.g. "restart", "scale_memory", "throttle", "reroute"
+  params:        Record<string, unknown>;  // action parameters
+  successCount?: number;
+  failureCount?: number;
+  successRate:   number;  // recomputed: successCount / (successCount + failureCount)
+  avgRecoveryMs?: number; // average time to recovery
+  firstUsed?:    number;
+  lastUsed?:     number;
 }
 
 const fixes = new Map<string, FixRecord>();
@@ -49,8 +49,11 @@ export function hydrateFixMemory(dir?: string): void {
     for (const line of lines) {
       try {
         const rec = JSON.parse(line) as FixRecord;
-        const existing = fixes.get(rec.id);
-        if (!existing || rec.lastUsed > existing.lastUsed) fixes.set(rec.id, rec);
+        const recId    = rec.id ?? normalizeKey(rec.problem);
+        const existing = fixes.get(recId);
+        if (!existing || (rec.lastUsed ?? 0) > (existing.lastUsed ?? 0)) {
+          fixes.set(recId, { ...rec, id: recId });
+        }
       } catch { /* skip */ }
     }
   } catch { /* start fresh */ }
@@ -82,7 +85,7 @@ export function recordFixResult(
     failureCount: fc,
     successRate: total > 0 ? sc / total : 0,
     avgRecoveryMs: existing
-      ? Math.round((existing.avgRecoveryMs * (total - 1) + recoveryMs) / total)
+      ? Math.round(((existing.avgRecoveryMs ?? 0) * (total - 1) + recoveryMs) / total)
       : recoveryMs,
     firstUsed: existing?.firstUsed ?? now,
     lastUsed: now,
@@ -93,7 +96,7 @@ export function recordFixResult(
 }
 
 /** Look up the best known fix for a problem. */
-export function lookupFix(problem: string): FixRecord | undefined {
+export function lookupFix(problem: string): FixRecord | null | undefined {
   return fixes.get(normalizeKey(problem));
 }
 
