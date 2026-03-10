@@ -28,6 +28,23 @@ The Treasury AI engine provides deterministic analytics and proposal drafts. AI 
 
 AI may NOT execute or override governance or policy.
 
+### 3.1 Global AI Orchestrator (Phase 6+)
+
+The `ai-orchestrator/` module provides a unified routing layer for all AI agents:
+
+- **Economic Agent** (`agents/economic_agent.ts`): integrates with Treasury Engine (`:7683`) and Reward Distributor (`:7684`) for supply control, demand analysis, and reward scheduling. All actions are advisory — proposals are routed to the signing relay (`:7910`) for human ratification.
+- **`PolicyGuard`**: evaluates every AI task against a policy matrix. DENY and REQUIRE_HUMAN_APPROVAL outcomes prevent dispatch.
+- **`TaskScheduler`**: circuit-breaker pauses orchestration on repeated policy denials.
+- **GhostBrain Core** (`:7900`): downstream consumer of treasury signals — forecasts, anomaly detection, and GST tokenomics models. Never writes on-chain directly.
+
+Services consumed by the treasury AI layer:
+| Service | Port | Role |
+|---|---|---|
+| Treasury Engine | 7683 | canonical treasury state |
+| Reward Distributor | 7684 | epoch reward schedules |
+| GhostBrain Core | 7900 | predictive AI, risk scoring |
+| Signing Relay | 7910 | human-ratification queue |
+
 ## 4. Risk Management Framework
 
 - **Policy-Locked Spending**: minimum reserves and epoch budgets are enforced on-chain.

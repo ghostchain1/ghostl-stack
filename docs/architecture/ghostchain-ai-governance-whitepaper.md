@@ -1,57 +1,117 @@
 # GhostChain AI Governance Whitepaper
 
-Version: 1.1
-Date: 2026-02-03
+Version: 2.0
+Date: 2026-03-10
 
 ## Executive summary
 
-GhostChain implements a dual-plane governance model where deterministic validator consensus finalizes blocks and an AI policy plane proposes, but never executes, operational policy changes. The AI plane is constitutionally bounded, governance-locked, and fully auditable. This document describes the system, authority model, evidence chain, due process, and reproducibility steps so auditors and regulators can verify every action.
+GhostChain implements a multi-layer AI governance model where deterministic validator consensus finalizes blocks and a structured AI plane proposes — but never executes — operational policy changes. The AI plane is constitutionally bounded, governance-locked, and fully auditable. This document describes the system, authority model, evidence chain, Phase 6 AI Orchestrator details, due process, and reproducibility steps so auditors and regulators can verify every action.
 
 ## System overview
 
-GhostChain separates consensus from policy:
+GhostChain separates consensus from policy across three AI tiers:
 
-1. Base consensus plane (deterministic)
-   - Validators finalize blocks via deterministic consensus.
+1. **Base consensus plane (deterministic)**
+   - Validators finalize blocks via deterministic CometBFT consensus.
    - Fork choice, block ordering, and finality are never influenced by AI.
 
-2. AI governance plane (policy only)
+2. **AI governance plane (policy only)**
    - AI services observe, simulate, and propose policy changes.
    - Proposals are executed only after on-chain governance ratification.
    - Validators enforce policy deterministically after ratification.
 
+3. **Global AI Orchestrator plane (Phase 6+)**
+   - Routes tasks across specialized agents (economic, governance, security, infrastructure).
+   - Enforces `PolicyGuard` on every task before dispatch.
+   - Acts as the coordination layer between GhostBrain Core and all governance signal producers.
+
 The AI plane can recommend actions but cannot modify chain state without governance approval.
+
+## Phase 6+ AI Orchestrator Architecture
+
+### Core Components (`ai-orchestrator/`)
+
+| Module | File | Role |
+|---|---|---|
+| Orchestrator Core | `core/orchestrator.ts` | Routes tasks, enforces policy, manages lifecycle |
+| PolicyGuard | `safety/policy_guard.ts` | ALLOW / DENY / REQUIRE_HUMAN_APPROVAL per task type |
+| TaskScheduler | `scheduler/task_scheduler.ts` | Priority queue + circuit-breaker |
+| Telemetry | `telemetry/orchestrator_telemetry.ts` | Prometheus metrics for all agent actions |
+
+### Agent Roster
+
+| Agent | File | Domain |
+|---|---|---|
+| Economic Agent | `agents/economic_agent.ts` | Treasury, rewards, tokenomics |
+| Governance Agent | `agents/governance_agent.ts` | Proposal routing, bypass detection |
+| Security Agent | `agents/security_agent.ts` | Anomaly, fraud, circuit-breaker |
+| Infrastructure Agent | `agents/infrastructure_agent.ts` | VM health, GAIS relay |
+
+### Governance Agent — Routing-Bypass Detection
+
+`governance_agent.ts` polls both EVM (GhostChain L1 + L2) and Cosmos governance endpoints. Key invariants enforced:
+
+- **L3→L1 direct call detection**: if a cross-layer message skips L2, the agent escalates a CRITICAL alert to the signing relay (`:7910`) with `requires_human_review: true`.
+- **Low governance participation**: if voter turnout falls below threshold, the agent issues an advisory proposal to extend the voting period.
+- **Emergency proposals**: any proposal tagged SECURITY or CRITICAL bypasses the normal queue and routes directly to signing relay.
+
+## Python Swarm (Phase 7)
+
+The `ai-orchestrator/agents/` TypeScript agents are complemented by a Python swarm in `ghost-brain-core/`:
+
+- **`evolution/`**: self-improvement planning (advisory only, never modifies running code autonomously).
+- **`orchestrator/networking/routing_engine.py`**: routes AI tasks within the swarm using internal HTTP handlers.
+- **`infrastructure/supervisor/`**: GAIS (GhostAI Supervisor) — manages VM/container lifecycle within `VM_ALLOWLIST` and `CONTAINER_ALLOWLIST`.
+
+All Python swarm outputs are routed through the Orchestrator Core before reaching any governance endpoint.
+
+## GAIS — Autonomous Infrastructure Safety
+
+`infra/hypervisor/supervisor/ghostais.py` provides VM auto-management with hard safety constraints:
+
+- **Allowlists**: `VM_ALLOWLIST` and `CONTAINER_ALLOWLIST` control what may be auto-restarted. Empty = no action.
+- **Cooldown**: 120 s per VM restart.
+- **Circuit breaker**: max 4 restarts per hour per VM; further restarts require operator approval.
+- **DRY_RUN**: `VM_MANAGER_DRY_RUN=1` logs all actions without executing them (mandatory for staging).
+- **Snapshots**: created before every hard-restart or reboot when `VM_SNAPSHOT_ENABLED=1`.
+
+GAIS never modifies consensus parameters, validator quorum, or bridge addresses.
 
 ## Authority model
 
 Roles and responsibilities:
 
-- AI proposer: generates policy update proposals and evidence bundles.
-- Governance authority: validates and ratifies proposals on-chain.
-- Validators: enforce the active policy retrieved from on-chain registries.
-- Operators: execute runbooks and incident response procedures.
+- **AI proposer**: generates policy update proposals and evidence bundles.
+- **Governance authority**: validates and ratifies proposals on-chain.
+- **Validators**: enforce the active policy retrieved from on-chain registries.
+- **Operators**: execute runbooks and incident response procedures.
+- **GAIS**: auto-restarts whitelisted VMs/containers within circuit-breaker limits.
 
 Authority boundaries:
 
-- AI may propose and explain policy changes.
-- AI may not execute state changes without on-chain approvals.
+- AI may propose, explain, and advise policy changes.
+- AI may not execute state changes without on-chain governance ratification.
+- GAIS may auto-restart whitelisted infrastructure within circuit-breaker limits only.
 - Validators enforce only ratified policies and ignore AI intent.
 
 ## Governance and execution flow
 
-1. Observation and analysis (off-chain)
+1. **Observation and analysis (off-chain)**
    - AI services collect metrics, logs, and chain signals.
+   - GhostBrain Core (`:7900`) provides risk scores and anomaly signals.
    - Simulations produce expected outcomes and rollback plans.
 
-2. Proposal creation (off-chain)
+2. **Proposal creation (off-chain)**
    - A deterministic policy update payload is generated.
-   - Evidence bundle is hashed, includes explainability metadata, and is committed on-chain.
+   - Evidence bundle is hashed, includes explainability metadata, and committed on-chain.
+   - CRITICAL/SECURITY tasks → signing relay (`:7910`) immediately, skipping normal queue.
 
-3. Ratification (on-chain)
-   - Governance validates a proposal and signs for execution (EIP-712 signatures).
+3. **Ratification (on-chain)**
+   - Governance validates a proposal and signs for execution.
    - The proposal is executed through an on-chain executor with quorum and invariant checks.
+   - `GhostChainGovernor` and `GhostConstitution` enforce supermajority + timelock.
 
-4. Enforcement (validator)
+4. **Enforcement (validator)**
    - Validators read active policies from on-chain registries.
    - Policy enforcement is deterministic and bounded by invariants.
 
@@ -63,6 +123,7 @@ Evidence is recorded as immutable hashes and linked to proposals:
 - Evidence hashes are committed to on-chain vaults with proposal linkage.
 - Proposals reference evidence hashes, inputs hashes, and policy versions.
 - Operator runbooks archive evidence bundles, proposal payloads, and signer sets.
+- `TaskScheduler` telemetry tracks every agent task from dispatch to completion.
 
 This ensures a complete audit trail for every policy update.
 
