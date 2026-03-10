@@ -1,0 +1,20 @@
+{
+  "name": "ghostbrain-swarm-agent",
+  "version": "0.1.0",
+  "description": "GhostBrain Distributed AI Swarm Agent — runs on each validator/node VM",
+  "type": "module",
+  "main": "dist/agent.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/agent.js",
+    "dev":   "node --watch dist/agent.js"
+  },
+  "dependencies": {
+    "nats":       "^2.29.4",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "@types/node": "^22.10.7"
+  }
+}

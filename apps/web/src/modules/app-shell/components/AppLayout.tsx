@@ -36,6 +36,7 @@ const legacyNavSections: { title: string; items: NavItem[] }[] = [
       { href: '/chains/l3', label: '↳ GhostL3' },
       { href: '/supercontrol', label: '⬡ SuperControl' },
       { href: '/autonomous', label: '⬡ Autonomous Engine' },
+      { href: '/swarm', label: '↳ Swarm Dashboard' },
       { href: '/network', label: 'Network 3D' },
       { href: '/network/heatmap', label: '↳ Node Heatmap' },
       { href: '/nodes', label: 'Nodes' },
