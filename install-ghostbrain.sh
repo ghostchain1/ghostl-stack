@@ -181,7 +181,6 @@ fi
 
 # Enforce the repo's Node engine constraint (≥22.21.0 <23)
 if [[ "$DRY_RUN" -eq 0 ]]; then
-  NODE_MINOR="$(node --version | sed 's/v22\.\([0-9]*\).*/\1/')"
   NODE_MAJOR="$(node --version | sed 's/v\([0-9]*\).*/\1/')"
   if [[ "$NODE_MAJOR" -ne 22 ]]; then
     die "Node.js 22 required (found $(node --version))"
