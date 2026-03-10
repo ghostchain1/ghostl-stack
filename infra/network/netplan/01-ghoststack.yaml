@@ -1,0 +1,42 @@
+# GhostStack /24 subnet — Ubuntu 24.04 netplan configuration
+#
+# 7 usable IPs, one role per address:
+#
+#   38.247.149.218  edge gateway / reverse proxy    (this host)
+#   38.247.149.219  GhostChain L1 RPC
+#   38.247.149.220  GhostL2 RPC
+#   38.247.149.221  GhostL3 RPC
+#   38.247.149.222  explorer + API services
+#   38.247.149.223  AI / GhostBrain services
+#   38.247.149.224  monitoring / Grafana / Prometheus
+#
+# Apply:  sudo cp infra/network/netplan/01-ghoststack.yaml /etc/netplan/01-ghoststack.yaml
+#         sudo chmod 600 /etc/netplan/01-ghoststack.yaml
+#         sudo netplan apply
+#
+# Verify: ip addr show dev eth0
+#
+# NOTE: All 7 addresses are bound to the SAME physical interface (eth0) as
+# secondary addresses. Each process/service listens on exactly one of them
+# so that the OS kernel delivers traffic to the right backend without a
+# software load-balancer on the hot path.
+
+network:
+  version: 2
+  ethernets:
+    eth0:
+      addresses:
+        - 38.247.149.218/24   # edge gateway / reverse proxy (primary)
+        - 38.247.149.219/24   # GhostChain L1 RPC
+        - 38.247.149.220/24   # GhostL2 RPC
+        - 38.247.149.221/24   # GhostL3 RPC
+        - 38.247.149.222/24   # explorer + API services
+        - 38.247.149.223/24   # AI / GhostBrain services
+        - 38.247.149.224/24   # monitoring / Grafana / Prometheus
+      routes:
+        - to: default
+          via: 38.247.149.1
+      nameservers:
+        addresses:
+          - 1.1.1.1
+          - 8.8.8.8

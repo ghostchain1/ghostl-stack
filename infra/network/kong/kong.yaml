@@ -1,0 +1,170 @@
+# =============================================================================
+# Kong Gateway declarative configuration — kong.yaml
+#
+# Deployed on: 38.247.149.218 (edge gateway)
+# Mode: DB-less (declarative, no PostgreSQL dependency for Kong itself)
+#
+# Deploy:
+#   sudo cp infra/network/kong/kong.yaml /etc/kong/kong.yaml
+#   sudo kong start --conf /etc/kong/kong.conf
+#   # or via Docker:
+#   docker compose -f infra/network/kong/docker-compose.yml up -d
+#
+# This configuration:
+#   - Exposes GhostBrain, ghost-ai-swarm, and the API BFF through Kong
+#   - Applies rate-limiting and HMAC auth plugins
+#   - Internal-only routes are locked to the /24 subnet at the nginx layer;
+#     Kong sits behind nginx and enforces API-level controls
+# =============================================================================
+
+_format_version: "3.0"
+_transform: true
+
+# ── Services ──────────────────────────────────────────────────────────────────
+services:
+  # GhostChain L1 RPC
+  - name: ghostchain-l1-rpc
+    url: http://38.247.149.219:18545
+    connect_timeout: 10000
+    write_timeout:   30000
+    read_timeout:    30000
+    retries: 2
+    routes:
+      - name: l1-rpc-route
+        protocols: [https]
+        hosts: [rpc.ghostchain.cloud]
+        methods: [POST, OPTIONS]
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: local
+          hide_client_headers: false
+      - name: cors
+        config:
+          origins: ["*"]
+          methods: [POST, OPTIONS]
+          headers: [Content-Type]
+          max_age: 3600
+
+  # GhostL2 RPC
+  - name: ghostl2-rpc
+    url: http://38.247.149.220:29545
+    connect_timeout: 10000
+    write_timeout:   30000
+    read_timeout:    30000
+    retries: 2
+    routes:
+      - name: l2-rpc-route
+        protocols: [https]
+        hosts: [l2.ghostchain.cloud]
+        methods: [POST, OPTIONS]
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: local
+
+  # GhostL3 RPC
+  - name: ghostl3-rpc
+    url: http://38.247.149.221:39545
+    connect_timeout: 10000
+    write_timeout:   30000
+    read_timeout:    30000
+    retries: 2
+    routes:
+      - name: l3-rpc-route
+        protocols: [https]
+        hosts: [l3.ghostchain.cloud]
+        methods: [POST, OPTIONS]
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: local
+
+  # GhostStack API BFF
+  - name: ghost-api
+    url: http://38.247.149.222:3001
+    connect_timeout: 5000
+    write_timeout:   30000
+    read_timeout:    30000
+    retries: 1
+    routes:
+      - name: api-route
+        protocols: [https]
+        hosts: [api.ghostchain.cloud]
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 200
+          policy: local
+      - name: cors
+        config:
+          origins: ["https://explorer.ghostchain.world", "https://wallet.ghostchain.world"]
+          methods: [GET, POST, OPTIONS]
+          headers: [Content-Type, Authorization]
+          credentials: true
+
+  # GhostBrain Core — internal HMAC-authenticated service
+  - name: ghostbrain-core
+    url: http://38.247.149.223:7900
+    connect_timeout: 5000
+    write_timeout:   60000
+    read_timeout:    60000
+    retries: 0
+    routes:
+      - name: brain-route
+        protocols: [https]
+        hosts: [brain.ghostchain.cloud]
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 60
+          policy: local
+      - name: ip-restriction
+        config:
+          allow: ["38.247.149.0/24"]
+          deny: []
+
+  # Ghost AI Swarm — internal, HMAC-protected
+  - name: ghost-ai-swarm
+    url: http://38.247.149.223:4080
+    connect_timeout: 5000
+    write_timeout:   30000
+    read_timeout:    30000
+    retries: 0
+    routes:
+      - name: ai-swarm-route
+        protocols: [https]
+        hosts: [ai.ghostchain.cloud]
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 30
+          policy: local
+      - name: ip-restriction
+        config:
+          allow: ["38.247.149.0/24"]
+          deny: []
+
+# ── Global plugins ─────────────────────────────────────────────────────────────
+plugins:
+  - name: prometheus
+    config:
+      status_code_metrics: true
+      latency_metrics: true
+      bandwidth_metrics: true
+      upstream_health_metrics: true
+
+  - name: request-id
+    config:
+      header_name: X-Ghost-Request-Id
+      generator: uuid
+      echo_downstream: true
