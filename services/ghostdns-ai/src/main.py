@@ -21,8 +21,12 @@ from src.governance import GovernanceVerifier
 from src.health import health_status
 from src.intelligence.anomaly_detector import AnomalyDetector
 from src.intelligence.domain_guardian import DomainGuardian
+from src.lb.failover_engine import FailoverEngine, FailoverPolicy
+from src.lb.load_balancer import Backend, LoadBalancer
+from src.mesh.service_mesh import ServiceMeshMapper
 from src.metrics import (
     GHOSTDNS_ANOMALY_DETECTED_TOTAL,
+    GHOSTDNS_DDOS_BLOCKED_IPS,
     GHOSTDNS_RECONCILE_FAIL_TOTAL,
     GHOSTDNS_RECONCILE_TOTAL,
     GHOSTDNS_RECURSION_DENIED_TOTAL,
@@ -33,6 +37,7 @@ from src.metrics import (
 from src.policy import default_static_records, merge_records
 from src.scanner_docker import scan_docker_records
 from src.scanner_libvirt import scan_libvirt_records
+from src.security.ddos_guard import DDoSGuard
 from src.zone_manager import DnsRecord, render_zone, safe_reload, sha256, validate_bind, write_zone
 
 
@@ -74,7 +79,41 @@ class ModeBody(BaseModel):
     mode: Literal["dev", "test", "prod"]
 
 
-app = FastAPI(title="ghostdns-ai", version="1.0.0")
+class RegisterBackendBody(BaseModel):
+    service: str
+    ip: str
+    port: int = Field(default=80, ge=1, le=65535)
+    weight: int = Field(default=100, ge=1, le=10000)
+    region: str = "default"
+
+
+class DeregisterBackendBody(BaseModel):
+    service: str
+    ip: str
+    port: int = Field(default=80, ge=1, le=65535)
+
+
+class RegisterFailoverBody(BaseModel):
+    fqdn: str
+    primary_ip: str
+    backup_ip: str
+    probe_port: int = Field(default=80, ge=1, le=65535)
+
+
+class DeregisterFailoverBody(BaseModel):
+    fqdn: str
+
+
+class DDoSBlockBody(BaseModel):
+    ip: str
+    reason: str = "manual"
+
+
+class DDoSUnblockBody(BaseModel):
+    ip: str
+
+
+app = FastAPI(title="ghostdns-ai", version="2.0.0")
 DOMAIN = os.getenv("GHOSTDNS_DOMAIN", "ghostchain.cloud")
 MODE = os.getenv("GHOSTDNS_MODE", "dev")
 UPSTREAM_DNS = os.getenv("UPSTREAM_DNS", "1.1.1.1,8.8.8.8")
@@ -109,6 +148,29 @@ _acme_manager      = AcmeManager()
 _last_anomalies: list[dict] = []
 _last_domain_statuses: list[dict] = []
 _last_cert_statuses: list[dict] = []
+
+# ── v2: LB / failover / DDoS / mesh singletons ───────────────────────────────
+_load_balancer = LoadBalancer()
+_mesh_mapper   = ServiceMeshMapper(DOMAIN)
+_last_mesh: list[dict] = []
+_ddos_guard    = DDoSGuard(
+    window_s=int(os.getenv("GHOSTDNS_DDOS_WINDOW_S", "60")),
+    threshold=int(os.getenv("GHOSTDNS_DDOS_THRESHOLD", "300")),
+    block_duration_s=int(os.getenv("GHOSTDNS_DDOS_BLOCK_S", "600")),
+)
+
+
+def _on_failover_record_change(fqdn: str, new_ip: str) -> None:
+    """Called by FailoverEngine when it switches a backend.
+    Updates runtime_records and schedules a reconcile on the next tick.
+    The thread has no blocking I/O here — reconcile runs in the loop.
+    """
+    runtime_records[fqdn.lower()] = (new_ip, 60)
+    logger.emit("warning", "failover", "failover_record_rewritten",
+                {"fqdn": fqdn, "new_ip": new_ip})
+
+
+_failover_engine = FailoverEngine(on_record_change=_on_failover_record_change)
 
 
 def _snapshot_last_good(zone_text: str) -> str:
@@ -411,24 +473,204 @@ def get_intelligence_summary() -> dict:
     }
 
 
-# Domain guardian / cert check run every 6 reconcile cycles (~6 min at default)
+# ── Load balancer endpoints ───────────────────────────────────────────────────
+
+@app.get("/lb/services")
+def get_lb_services() -> dict:
+    return {"ok": True, "services": _load_balancer.list_services()}
+
+
+@app.post("/lb/register")
+async def post_lb_register(
+    req: Request,
+    body: RegisterBackendBody,
+    x_ghost_approval: str = Header(default=""),
+    x_ghost_nonce: str = Header(default=""),
+    x_ghost_timestamp: str = Header(default=""),
+) -> dict:
+    payload = await req.body()
+    governance.verify(x_ghost_approval, x_ghost_nonce, x_ghost_timestamp, payload.decode("utf-8"))
+    backend = Backend(ip=body.ip, port=body.port, weight=body.weight, region=body.region)
+    _load_balancer.register(body.service, backend)
+    logger.emit("info", "lb_register", "backend_registered", body.model_dump())
+    return {"ok": True, "service": body.service, "ip": body.ip, "port": body.port}
+
+
+@app.post("/lb/deregister")
+async def post_lb_deregister(
+    req: Request,
+    body: DeregisterBackendBody,
+    x_ghost_approval: str = Header(default=""),
+    x_ghost_nonce: str = Header(default=""),
+    x_ghost_timestamp: str = Header(default=""),
+) -> dict:
+    payload = await req.body()
+    governance.verify(x_ghost_approval, x_ghost_nonce, x_ghost_timestamp, payload.decode("utf-8"))
+    removed = _load_balancer.deregister(body.service, body.ip, body.port)
+    logger.emit("info", "lb_deregister", "backend_deregistered", body.model_dump())
+    return {"ok": True, "removed": removed}
+
+
+@app.get("/lb/select/{service}")
+def get_lb_select(service: str) -> dict:
+    best = _load_balancer.select_backend(service)
+    if best is None:
+        raise HTTPException(status_code=503, detail=f"no_healthy_backend:{service}")
+    return {"ok": True, "service": service, "ip": best.ip, "port": best.port,
+            "latency_ms": best.latency_ms, "region": best.region}
+
+
+# ── Failover endpoints ────────────────────────────────────────────────────────
+
+@app.get("/failover/policies")
+def get_failover_policies() -> dict:
+    return {"ok": True, "policies": _failover_engine.list_policies()}
+
+
+@app.post("/failover/register")
+async def post_failover_register(
+    req: Request,
+    body: RegisterFailoverBody,
+    x_ghost_approval: str = Header(default=""),
+    x_ghost_nonce: str = Header(default=""),
+    x_ghost_timestamp: str = Header(default=""),
+) -> dict:
+    payload = await req.body()
+    governance.verify(x_ghost_approval, x_ghost_nonce, x_ghost_timestamp, payload.decode("utf-8"))
+    policy = FailoverPolicy(
+        fqdn=body.fqdn.lower(),
+        primary_ip=body.primary_ip,
+        backup_ip=body.backup_ip,
+        probe_port=body.probe_port,
+    )
+    _failover_engine.register(policy)
+    logger.emit("info", "failover_register", "failover_policy_registered", body.model_dump())
+    return {"ok": True, "fqdn": body.fqdn}
+
+
+@app.post("/failover/deregister")
+async def post_failover_deregister(
+    req: Request,
+    body: DeregisterFailoverBody,
+    x_ghost_approval: str = Header(default=""),
+    x_ghost_nonce: str = Header(default=""),
+    x_ghost_timestamp: str = Header(default=""),
+) -> dict:
+    payload = await req.body()
+    governance.verify(x_ghost_approval, x_ghost_nonce, x_ghost_timestamp, payload.decode("utf-8"))
+    removed = _failover_engine.deregister(body.fqdn.lower())
+    return {"ok": True, "removed": removed}
+
+
+# ── DDoS guard endpoints ──────────────────────────────────────────────────────
+
+@app.get("/security/ddos")
+def get_ddos_status() -> dict:
+    return {"ok": True, "guard": _ddos_guard.status()}
+
+
+@app.post("/security/ddos/block")
+async def post_ddos_block(
+    req: Request,
+    body: DDoSBlockBody,
+    x_ghost_approval: str = Header(default=""),
+    x_ghost_nonce: str = Header(default=""),
+    x_ghost_timestamp: str = Header(default=""),
+) -> dict:
+    payload = await req.body()
+    governance.verify(x_ghost_approval, x_ghost_nonce, x_ghost_timestamp, payload.decode("utf-8"))
+    _ddos_guard.block(body.ip, body.reason)
+    logger.emit("warning", "ddos_block", "ip_manually_blocked", {"ip": body.ip, "reason": body.reason})
+    return {"ok": True, "ip": body.ip}
+
+
+@app.post("/security/ddos/unblock")
+async def post_ddos_unblock(
+    req: Request,
+    body: DDoSUnblockBody,
+    x_ghost_approval: str = Header(default=""),
+    x_ghost_nonce: str = Header(default=""),
+    x_ghost_timestamp: str = Header(default=""),
+) -> dict:
+    payload = await req.body()
+    governance.verify(x_ghost_approval, x_ghost_nonce, x_ghost_timestamp, payload.decode("utf-8"))
+    removed = _ddos_guard.unblock(body.ip)
+    logger.emit("info", "ddos_unblock", "ip_unblocked", {"ip": body.ip})
+    return {"ok": True, "was_blocked": removed}
+
+
+# ── Service mesh endpoints ────────────────────────────────────────────────────
+
+@app.get("/mesh/map")
+def get_mesh_map() -> dict:
+    return {"ok": True, "endpoints": _last_mesh}
+
+
+@app.post("/mesh/sync")
+async def post_mesh_sync(
+    req: Request,
+    x_ghost_approval: str = Header(default=""),
+    x_ghost_nonce: str = Header(default=""),
+    x_ghost_timestamp: str = Header(default=""),
+) -> dict:
+    payload = await req.body()
+    governance.verify(x_ghost_approval, x_ghost_nonce, x_ghost_timestamp, payload.decode("utf-8"))
+    return _do_mesh_sync()
+
+
+def _do_mesh_sync() -> dict:
+    global _last_mesh
+    docker_recs = scan_docker_records(DOMAIN)
+    libvirt_recs = scan_libvirt_records(DOMAIN, VM_LEASES_FILE)
+    endpoints = _mesh_mapper.build_map(docker_recs, libvirt_recs)
+    lb_map = _mesh_mapper.to_lb_map(endpoints)
+    _load_balancer.bulk_register_from_map(lb_map)
+    _last_mesh = _mesh_mapper.to_api_list(endpoints)
+    logger.emit("info", "mesh_sync", "mesh_sync_complete",
+                {"endpoints": len(endpoints), "services": len(lb_map)})
+    return {"ok": True, "endpoints": len(endpoints), "services": len(lb_map)}
+
+
+# Domain guardian / cert check run every N reconcile cycles (~N min at default)
 _INTELLIGENCE_CHECK_EVERY = max(1, int(os.getenv("GHOSTDNS_INTELLIGENCE_CHECK_EVERY", "6")))
 _tick_count = 0
 
 
 def _autonomous_loop() -> None:
     global _tick_count, _last_domain_statuses, _last_cert_statuses
+    # Initial mesh sync on first tick
+    try:
+        _do_mesh_sync()
+    except Exception as exc:
+        logger.emit("error", "autonomous_loop", "initial_mesh_sync_failed", {"error": str(exc)})
     while True:
         try:
             reconcile()
         except Exception as exc:
             logger.emit("error", "autonomous_loop", "reconcile_tick_failed", {"error": str(exc)})
+
+        # Run failover checks every tick
+        try:
+            failover_events = _failover_engine.run_checks()
+            if failover_events:
+                logger.emit("warning", "failover", "failover_events",
+                            {"events": failover_events, "count": len(failover_events)})
+        except Exception as exc:
+            logger.emit("error", "autonomous_loop", "failover_check_failed", {"error": str(exc)})
+
+        # Prune expired DDoS blocks every tick
+        try:
+            _ddos_guard.prune_expired()
+        except Exception as exc:
+            logger.emit("error", "autonomous_loop", "ddos_prune_failed", {"error": str(exc)})
+
         _tick_count += 1
         if _tick_count % _INTELLIGENCE_CHECK_EVERY == 0:
             try:
                 domain_statuses = _domain_guardian.check_all()
                 _last_domain_statuses = [
-                    {"domain": s.domain, "expiry_days": s.expiry_days, "severity": s.severity, "detail": s.detail}
+                    {"domain": s.domain, "expiry_days": s.expiry_days,
+                     "severity": s.severity, "detail": s.detail}
                     for s in domain_statuses
                 ]
             except Exception as exc:
@@ -438,6 +680,10 @@ def _autonomous_loop() -> None:
                 _last_cert_statuses = cert_statuses
             except Exception as exc:
                 logger.emit("error", "autonomous_loop", "cert_check_failed", {"error": str(exc)})
+            try:
+                _do_mesh_sync()
+            except Exception as exc:
+                logger.emit("error", "autonomous_loop", "mesh_sync_failed", {"error": str(exc)})
         time.sleep(RECONCILE_INTERVAL_SECONDS)
 
 
@@ -448,11 +694,16 @@ def on_startup() -> None:
 
 
 @app.middleware("http")
-async def recursion_guard(request: Request, call_next):
+async def request_guard(request: Request, call_next):
     if request.url.path in {"/metrics", "/health"}:
         return await call_next(request)
 
     client_ip = request.client.host if request.client else "127.0.0.1"
+
+    # DDoS rate guard (applied before recursion check)
+    if not _ddos_guard.check(client_ip):
+        raise HTTPException(status_code=429, detail="rate_limit_exceeded")
+
     if request.url.path.startswith("/resolve") and not any(
         client_ip.startswith(prefix) for prefix in ("127.", "172.", "192.168.", "10.")
     ):
