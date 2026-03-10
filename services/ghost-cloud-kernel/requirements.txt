@@ -1,0 +1,9 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.7.0
+prometheus-client>=0.20.0
+docker>=7.1.0
+psutil>=6.0.0
+# libvirt-python is optional — graceful degradation to empty VM list when absent.
+# Install separately once libvirt system headers are available on the host:
+# libvirt-python>=10.0.0
