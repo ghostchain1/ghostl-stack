@@ -22,9 +22,6 @@ async function getFetch() {
   if (fetchFn) return fetchFn;
   if (typeof globalThis.fetch === "function") {
     fetchFn = globalThis.fetch;
-  } else {
-    const mod = await import("node-fetch");
-    fetchFn = mod.default as unknown as typeof fetch;
   }
   return fetchFn;
 }

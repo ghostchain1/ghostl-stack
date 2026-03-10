@@ -328,7 +328,7 @@ for item in lock.get("images", []):
 PY
 
   log "seal: images.bundle: ${REL_DIR}/images/docker-images.tar.gz"
-  sudo -n docker save $(tr '\n' ' ' < "${REL_DIR}/images/images.txt") | gzip -1 > "${REL_DIR}/images/docker-images.tar.gz"
+  xargs sudo -n docker save < "${REL_DIR}/images/images.txt" | gzip -1 > "${REL_DIR}/images/docker-images.tar.gz"
 fi
 
 REL_ID_BYTES32="$(keccak256_str "${RELEASE_ID}")"

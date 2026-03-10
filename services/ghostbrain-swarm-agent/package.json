@@ -10,8 +10,7 @@
     "dev":   "node --watch dist/agent.js"
   },
   "dependencies": {
-    "nats":       "^2.29.4",
-    "node-fetch": "^3.3.2"
+    "nats": "^2.29.4"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

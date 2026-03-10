@@ -121,15 +121,8 @@ async function runCycle(): Promise<void> {
       case "alert_validator_jailed": {
         if (!CONFIG.dryRun) {
           // Forward alert proposal directly to signing relay for audit trail
-          let fetchFn: typeof fetch;
           try {
-            if (typeof globalThis.fetch === "function") {
-              fetchFn = globalThis.fetch;
-            } else {
-              const mod = await import("node-fetch");
-              fetchFn = mod.default as unknown as typeof fetch;
-            }
-            const r = await fetchFn(`${CONFIG.signingRelayUrl}/proposals`, {
+            const r = await globalThis.fetch(`${CONFIG.signingRelayUrl}/proposals`, {
               method:  "POST",
               headers: { "Content-Type": "application/json" },
               body:    JSON.stringify({ ...p, requestedBy: "ghostbrain-autonomous" }),
