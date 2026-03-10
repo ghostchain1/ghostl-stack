@@ -15,20 +15,29 @@ from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel, Field
 
 from src.bind.generator import BindTemplateContext, render_bind_files
+from src.cert.acme_manager import AcmeManager
 from src.eventlog import EventLogger
 from src.governance import GovernanceVerifier
 from src.health import health_status
+from src.intelligence.anomaly_detector import AnomalyDetector
+from src.intelligence.domain_guardian import DomainGuardian
 from src.metrics import (
+    GHOSTDNS_ANOMALY_DETECTED_TOTAL,
     GHOSTDNS_RECONCILE_FAIL_TOTAL,
     GHOSTDNS_RECONCILE_TOTAL,
     GHOSTDNS_RECURSION_DENIED_TOTAL,
     GHOSTDNS_RELOAD_TOTAL,
+    GHOSTDNS_RECORD_OPS_TOTAL,
     GHOSTDNS_ZONE_SERIAL,
 )
 from src.policy import default_static_records, merge_records
 from src.scanner_docker import scan_docker_records
 from src.scanner_libvirt import scan_libvirt_records
-from src.zone_manager import render_zone, safe_reload, sha256, validate_bind, write_zone
+from src.zone_manager import DnsRecord, render_zone, safe_reload, sha256, validate_bind, write_zone
+
+
+# Valid record types — A-only for legacy endpoint; multi-type for /records/multi
+_ALLOWED_RTYPES = frozenset(["A", "AAAA", "CNAME", "TXT", "MX", "SRV", "CAA", "NS"])
 
 
 class UpsertRecord(BaseModel):
@@ -37,6 +46,24 @@ class UpsertRecord(BaseModel):
     value: str
     ttl: int = Field(default=300, ge=30, le=86400)
     source: str = "manual"
+
+
+class UpsertMultiRecord(BaseModel):
+    fqdn: str
+    type: str = "A"
+    value: str
+    ttl: int = Field(default=300, ge=30, le=86400)
+    source: str = "manual"
+
+    def to_dns_record(self) -> DnsRecord:
+        rtype = self.type.upper()
+        if rtype not in _ALLOWED_RTYPES:
+            raise ValueError(f"unsupported record type: {rtype!r}")
+        return DnsRecord(fqdn=self.fqdn.lower(), rtype=rtype, value=self.value, ttl=self.ttl)  # type: ignore[arg-type]
+
+
+class CloudflareSyncBody(BaseModel):
+    proxied: bool = False
 
 
 class DeleteRecord(BaseModel):
@@ -69,10 +96,19 @@ RELOAD_CMD = os.getenv("GHOSTDNS_RELOAD_CMD", "rndc reload")
 RECONCILE_INTERVAL_SECONDS = max(15, int(os.getenv("GHOSTDNS_RECONCILE_INTERVAL_SECONDS", "60")))
 
 runtime_records: dict[str, tuple[str, int]] = {}
+runtime_multi_records: list[DnsRecord] = []  # CNAME/TXT/MX/SRV/CAA/AAAA
 last_zone_text = ""
 
-logger = EventLogger(HGOP_URL, EVENT_FALLBACK_LOG)
+logger     = EventLogger(HGOP_URL, EVENT_FALLBACK_LOG)
 governance = GovernanceVerifier(HGOP_SHARED_SECRET, MODE, STATE_DIR / "nonces.json")
+
+# ── AI intelligence singletons ────────────────────────────────────────────────
+_anomaly_detector  = AnomalyDetector()
+_domain_guardian   = DomainGuardian()
+_acme_manager      = AcmeManager()
+_last_anomalies: list[dict] = []
+_last_domain_statuses: list[dict] = []
+_last_cert_statuses: list[dict] = []
 
 
 def _snapshot_last_good(zone_text: str) -> str:
@@ -122,7 +158,7 @@ def reconcile() -> dict:
 
     records = _build_records()
     template_text = ZONE_TEMPLATE.read_text(encoding="utf-8")
-    zone_state = render_zone(DOMAIN, template_text, records)
+    zone_state = render_zone(DOMAIN, template_text, records, multi_records=runtime_multi_records)
 
     try:
         write_zone(ZONE_PATH, zone_state.rendered)
@@ -132,8 +168,17 @@ def reconcile() -> dict:
         GHOSTDNS_ZONE_SERIAL.set(zone_state.serial)
         digest = _snapshot_last_good(zone_state.rendered)
         last_zone_text = zone_state.rendered
+        # ── AI anomaly detection ─────────────────────────────────────────────
+        global _last_anomalies
+        anomalies = _anomaly_detector.update(records)
+        _last_anomalies = [
+            {"kind": a.kind, "severity": a.severity, "detail": a.detail, "ts": a.ts}
+            for a in anomalies
+        ]
+        if anomalies:
+            logger.emit("warning", "anomalies", "dns_anomalies_detected", {"count": len(anomalies), "kinds": [a.kind for a in anomalies]})
         logger.emit("info", "reconcile", "reconcile_applied", {"serial": zone_state.serial, "hash": digest})
-        return {"ok": True, "serial": zone_state.serial, "records": len(records), "hash": digest}
+        return {"ok": True, "serial": zone_state.serial, "records": len(records) + len(runtime_multi_records), "hash": digest, "anomalies": len(anomalies)}
     except Exception as exc:
         GHOSTDNS_RECONCILE_FAIL_TOTAL.inc()
         _revert_last_good()
@@ -225,12 +270,174 @@ def post_set_mode(body: ModeBody) -> dict:
     return {"ok": True, "mode": MODE}
 
 
+# ── Multi-type record management ──────────────────────────────────────────────
+
+@app.post("/records/multi/upsert")
+async def post_records_multi_upsert(
+    req: Request,
+    body: UpsertMultiRecord,
+    x_ghost_approval: str = Header(default=""),
+    x_ghost_nonce: str = Header(default=""),
+    x_ghost_timestamp: str = Header(default=""),
+) -> dict:
+    payload = await req.body()
+    governance.verify(x_ghost_approval, x_ghost_nonce, x_ghost_timestamp, payload.decode("utf-8"))
+    rec = body.to_dns_record()
+    # Remove any existing record with same fqdn+type, then append
+    runtime_multi_records[:] = [
+        r for r in runtime_multi_records if not (r.fqdn == rec.fqdn and r.rtype == rec.rtype)
+    ]
+    runtime_multi_records.append(rec)
+    GHOSTDNS_RECORD_OPS_TOTAL.labels(rtype=rec.rtype, op="upsert").inc()
+    logger.emit("info", "record_multi_upsert", "multi_record_upserted", body.model_dump())
+    return reconcile()
+
+
+@app.post("/records/multi/delete")
+async def post_records_multi_delete(
+    req: Request,
+    body: DeleteRecord,
+    x_ghost_approval: str = Header(default=""),
+    x_ghost_nonce: str = Header(default=""),
+    x_ghost_timestamp: str = Header(default=""),
+) -> dict:
+    payload = await req.body()
+    governance.verify(x_ghost_approval, x_ghost_nonce, x_ghost_timestamp, payload.decode("utf-8"))
+    before = len(runtime_multi_records)
+    runtime_multi_records[:] = [r for r in runtime_multi_records if r.fqdn != body.fqdn.lower()]
+    GHOSTDNS_RECORD_OPS_TOTAL.labels(rtype="ANY", op="delete").inc()
+    logger.emit("info", "record_multi_delete", "multi_record_deleted", {"fqdn": body.fqdn, "removed": before - len(runtime_multi_records)})
+    return reconcile()
+
+
+@app.get("/records/multi")
+def get_records_multi() -> dict:
+    return {
+        "ok": True,
+        "records": [
+            {"fqdn": r.fqdn, "type": r.rtype, "value": r.value, "ttl": r.ttl}
+            for r in runtime_multi_records
+        ],
+    }
+
+
+# ── Cloudflare sync ───────────────────────────────────────────────────────────
+
+@app.post("/cloudflare/sync")
+async def post_cloudflare_sync(
+    req: Request,
+    body: CloudflareSyncBody,
+    x_ghost_approval: str = Header(default=""),
+    x_ghost_nonce: str = Header(default=""),
+    x_ghost_timestamp: str = Header(default=""),
+) -> dict:
+    payload = await req.body()
+    governance.verify(x_ghost_approval, x_ghost_nonce, x_ghost_timestamp, payload.decode("utf-8"))
+    try:
+        from src.integrations.cloudflare_client import CloudflareClient
+        cf = CloudflareClient()
+        counts = cf.sync_records(runtime_multi_records, proxied=body.proxied)
+        logger.emit("info", "cloudflare_sync", "cf_sync_complete", counts)
+        return {"ok": True, "counts": counts}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.emit("error", "cloudflare_sync", "cf_sync_failed", {"error": str(exc)})
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+# ── AI intelligence status ────────────────────────────────────────────────────
+
+@app.get("/intelligence/anomalies")
+def get_anomalies() -> dict:
+    return {
+        "ok": True,
+        "anomalies": _last_anomalies,
+        "detector_snapshot": _anomaly_detector.snapshot(),
+    }
+
+
+@app.get("/intelligence/domains")
+def get_domain_guardians() -> dict:
+    return {"ok": True, "domains": _last_domain_statuses}
+
+
+@app.post("/intelligence/domains/check")
+async def post_domain_check(
+    req: Request,
+    x_ghost_approval: str = Header(default=""),
+    x_ghost_nonce: str = Header(default=""),
+    x_ghost_timestamp: str = Header(default=""),
+) -> dict:
+    payload = await req.body()
+    governance.verify(x_ghost_approval, x_ghost_nonce, x_ghost_timestamp, payload.decode("utf-8"))
+    statuses = _domain_guardian.check_all()
+    global _last_domain_statuses
+    _last_domain_statuses = [{
+        "domain": s.domain, "expiry_days": s.expiry_days,
+        "severity": s.severity, "detail": s.detail,
+    } for s in statuses]
+    return {"ok": True, "domains": _last_domain_statuses}
+
+
+@app.get("/intelligence/certs")
+def get_cert_status() -> dict:
+    return {"ok": True, "certs": _last_cert_statuses}
+
+
+@app.post("/intelligence/certs/check")
+async def post_cert_check(
+    req: Request,
+    x_ghost_approval: str = Header(default=""),
+    x_ghost_nonce: str = Header(default=""),
+    x_ghost_timestamp: str = Header(default=""),
+) -> dict:
+    payload = await req.body()
+    governance.verify(x_ghost_approval, x_ghost_nonce, x_ghost_timestamp, payload.decode("utf-8"))
+    statuses = _acme_manager.all_statuses()
+    global _last_cert_statuses
+    _last_cert_statuses = statuses
+    return {"ok": True, "certs": statuses}
+
+
+@app.get("/intelligence/summary")
+def get_intelligence_summary() -> dict:
+    return {
+        "ok": True,
+        "anomalies": {"count": len(_last_anomalies), "items": _last_anomalies},
+        "domains":   {"count": len(_last_domain_statuses), "items": _last_domain_statuses},
+        "certs":     {"count": len(_last_cert_statuses), "items": _last_cert_statuses},
+        "detector":  _anomaly_detector.snapshot(),
+    }
+
+
+# Domain guardian / cert check run every 6 reconcile cycles (~6 min at default)
+_INTELLIGENCE_CHECK_EVERY = max(1, int(os.getenv("GHOSTDNS_INTELLIGENCE_CHECK_EVERY", "6")))
+_tick_count = 0
+
+
 def _autonomous_loop() -> None:
+    global _tick_count, _last_domain_statuses, _last_cert_statuses
     while True:
         try:
             reconcile()
         except Exception as exc:
             logger.emit("error", "autonomous_loop", "reconcile_tick_failed", {"error": str(exc)})
+        _tick_count += 1
+        if _tick_count % _INTELLIGENCE_CHECK_EVERY == 0:
+            try:
+                domain_statuses = _domain_guardian.check_all()
+                _last_domain_statuses = [
+                    {"domain": s.domain, "expiry_days": s.expiry_days, "severity": s.severity, "detail": s.detail}
+                    for s in domain_statuses
+                ]
+            except Exception as exc:
+                logger.emit("error", "autonomous_loop", "domain_guardian_failed", {"error": str(exc)})
+            try:
+                cert_statuses = _acme_manager.all_statuses()
+                _last_cert_statuses = cert_statuses
+            except Exception as exc:
+                logger.emit("error", "autonomous_loop", "cert_check_failed", {"error": str(exc)})
         time.sleep(RECONCILE_INTERVAL_SECONDS)
 
 
