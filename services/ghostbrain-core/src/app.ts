@@ -28,6 +28,8 @@ import { observabilityRoutes } from "./routes/observability.js";
 import { predictiveRoutes }    from "./routes/predictive.js";
 import { simulatorRoutes }     from "./routes/simulator.js";
 import { benchmarkRoutes }     from "./routes/benchmark.js";
+import { brainRoutes }         from "./routes/brain.js";
+import { blockchainRoutes }    from "./routes/blockchain.js";
 import { hmacAuthPlugin } from "./middleware/hmac.js";
 import { rateLimitPlugin } from "./middleware/rateLimit.js";
 
@@ -85,5 +87,9 @@ export function buildApp() {
   app.register(simulatorRoutes);
   // ── Benchmark harness + audit log ─────────────────────────────────────────
   app.register(benchmarkRoutes);
+  // ── AI Memory System + Agent API ──────────────────────────────────────────
+  app.register(brainRoutes);
+  // ── Blockchain Intelligence + Validator + RPC + Memory Graph ────────────────
+  app.register(blockchainRoutes);
   return app;
 }

@@ -24,6 +24,12 @@ import { startEventLoop, stopEventLoop } from "./kernel/event_loop.js";
 import { startPushLoop, stopPushLoop }   from "./observability/prometheus_gateway.js";
 import { startGossip, stopGossip }       from "./cluster/cluster_gossip.js";
 import { startSyncLoop, stopSyncLoop }   from "./cluster/cluster_sync.js";
+import { startBlockchainAI, stopBlockchainAI } from "./blockchain/ghostchain_ai.js";
+import { startValidatorMonitor, stopValidatorMonitor } from "./validators/validator_monitor.js";
+import { startValidatorGuardian, stopValidatorGuardian } from "./validators/validator_guardian.js";
+import { startRpcMonitor, stopRpcMonitor }   from "./rpc_monitor.js";
+import { startHypervisorAI, stopHypervisorAI } from "./hypervisor_ai.js";
+import { hydrateGraph } from "./blockchain/memory_graph.js";
 
 const PORT = Number(process.env.GHOSTBRAIN_PORT ?? "7900");
 const BIND = process.env.GHOSTBRAIN_BIND ?? "127.0.0.1";
@@ -33,6 +39,7 @@ let wss: ReturnType<typeof attachWsServer> | undefined;
 
 // Hydrate all memory layers from disk before serving traffic
 hydrateAllMemory();
+hydrateGraph();
 
 try {
   await app.listen({ port: PORT, host: BIND });
@@ -57,6 +64,13 @@ try {
   // Non-blocking self-registration with cluster coordinator (if CLUSTER_URL is set)
   void selfRegisterWithCluster();
 
+  // Start blockchain intelligence layer
+  startBlockchainAI();
+  startValidatorMonitor();
+  startValidatorGuardian();
+  startRpcMonitor();
+  startHypervisorAI();
+
   app.log.info({ bind: BIND, port: PORT, wsPath: "/ws" }, "ghostbrain-core started");
 } catch (err) {
   app.log.error(err, "ghostbrain-core failed to start");
@@ -71,6 +85,11 @@ process.on("SIGTERM", async () => {
   stopSyncLoop();
   stopEventLoop();
   stopHypervisorLoop();
+  stopBlockchainAI();
+  stopValidatorMonitor();
+  stopValidatorGuardian();
+  stopRpcMonitor();
+  stopHypervisorAI();
   wss?.close();
   await app.close();
   process.exit(0);
