@@ -1,4 +1,5 @@
 import { ValidatorsTable } from '../../src/modules/validators/components/ValidatorsTable';
+import { ValidatorHeatMap } from '../../src/modules/validators/components/ValidatorHeatMap';
 import { ValidatorDetailCard } from '../../src/modules/validators/components/ValidatorDetailCard';
 import { VotingPowerChart } from '../../src/modules/validators/components/VotingPowerChart';
 import { ParticipationPanel } from '../../src/modules/validators/components/ParticipationPanel';
@@ -64,6 +65,7 @@ export default async function ValidatorsPage() {
         )}
         {errors.find((e) => e.title === 'Validators list') ? null : <VotingPowerChart validators={validators} />}
         {errors.find((e) => e.title === 'Validator metrics') ? null : <ParticipationPanel metrics={panelMetrics} />}
+        <ValidatorHeatMap />
       </div>
     </div>
   );

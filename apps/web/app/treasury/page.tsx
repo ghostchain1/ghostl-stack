@@ -2,6 +2,7 @@
 
 import { TreasuryApprovals } from '../../src/modules/treasury/TreasuryApprovals';
 import { SovereignEngineDashboard } from '../../src/modules/treasury/SovereignEngineDashboard';
+import { TreasuryIntelligence } from '../../src/modules/treasury/components/TreasuryIntelligence';
 
 export default function TreasuryPage() {
   return (
@@ -9,6 +10,7 @@ export default function TreasuryPage() {
       <div className="card-grid">
         <SovereignEngineDashboard />
         <TreasuryApprovals />
+        <TreasuryIntelligence />
       </div>
     </div>
   );

@@ -27,9 +27,13 @@ const legacyNavSections: { title: string; items: NavItem[] }[] = [
     title: 'Command',
     items: [
       { href: '/', label: 'Command Hub' },
+      { href: '/command-hub', label: 'Command Hub (New)' },
       { href: '/command-center', label: 'Command Center' },
       { href: '/network-map', label: 'Network Map' },
       { href: '/chain', label: 'Chain' },
+      { href: '/chains/l1', label: '↳ GhostChain L1' },
+      { href: '/chains/l2', label: '↳ GhostL2' },
+      { href: '/chains/l3', label: '↳ GhostL3' },
       { href: '/nodes', label: 'Nodes' },
       { href: '/validators', label: 'Validators' }
     ]

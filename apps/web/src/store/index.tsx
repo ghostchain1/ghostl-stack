@@ -14,17 +14,21 @@ import type { ReactNode } from 'react';
 import { ChainStoreProvider } from './chainStore';
 import { WalletStoreProvider } from './walletStore';
 import { AIStoreProvider } from './aiStore';
+import { ValidatorStoreProvider } from './validatorStore';
 
-export { useChainStore }  from './chainStore';
-export { useWalletStore } from './walletStore';
-export { useAIStore }     from './aiStore';
+export { useChainStore }     from './chainStore';
+export { useWalletStore }    from './walletStore';
+export { useAIStore }        from './aiStore';
+export { useValidatorStore } from './validatorStore';
 
 export function GhostStackStoreProvider({ children }: { children: ReactNode }) {
   return (
     <ChainStoreProvider>
       <WalletStoreProvider>
         <AIStoreProvider>
-          {children}
+          <ValidatorStoreProvider>
+            {children}
+          </ValidatorStoreProvider>
         </AIStoreProvider>
       </WalletStoreProvider>
     </ChainStoreProvider>
