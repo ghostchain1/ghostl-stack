@@ -24,7 +24,7 @@
  */
 
 import { request } from "undici";
-import type { KernelCommand, KernelResult, KernelHandler } from "./command_bus.js";
+import type { KernelCommand, KernelResult, KernelHandler } from "./kernel_types.js";
 import { log } from "../observability/event_logger.js";
 
 // ── Config ────────────────────────────────────────────────────────────────────

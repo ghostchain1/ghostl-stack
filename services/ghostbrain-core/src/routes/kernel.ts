@@ -16,7 +16,7 @@ import {
   resumeKernelEngine,
 } from "../kernel/kernel_engine.js";
 import { dispatch } from "../kernel/command_bus.js";
-import type { KernelCommand } from "../kernel/command_bus.js";
+import type { KernelCommand } from "../kernel/kernel_types.js";
 
 export async function kernelRoutes(app: FastifyInstance): Promise<void> {
   // ── Existing routes ─────────────────────────────────────────────────────

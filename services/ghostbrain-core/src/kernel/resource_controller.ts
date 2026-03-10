@@ -24,7 +24,7 @@
  */
 
 import { getInfraHistory }  from "../memory/infrastructure_memory.js";
-import type { KernelCommand } from "./command_bus.js";
+import type { KernelCommand } from "./kernel_types.js";
 import { log } from "../observability/event_logger.js";
 
 // ── Config ────────────────────────────────────────────────────────────────────
