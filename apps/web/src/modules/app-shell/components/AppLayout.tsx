@@ -18,6 +18,7 @@ import { REALM_NAV } from '@/lib/realms';
 import { resolveApiBase } from '../../../lib/runtime';
 import { DataFetchErrorCard } from '../../../components/DataFetchErrorCard';
 import { apiRequest, type ApiError } from '../../../lib/api';
+import { GlobalStatusBar } from './GlobalStatusBar';
 
 type NavItem = { href: string; label: string; flag?: string };
 
@@ -26,6 +27,8 @@ const legacyNavSections: { title: string; items: NavItem[] }[] = [
     title: 'Command',
     items: [
       { href: '/', label: 'Command Hub' },
+      { href: '/command-center', label: 'Command Center' },
+      { href: '/network-map', label: 'Network Map' },
       { href: '/chain', label: 'Chain' },
       { href: '/nodes', label: 'Nodes' },
       { href: '/validators', label: 'Validators' }
@@ -81,6 +84,7 @@ const legacyNavSections: { title: string; items: NavItem[] }[] = [
       { href: '/devops', label: 'DevOps' },
       { href: '/integrations', label: 'Integrations' },
       { href: '/ai', label: 'AI' },
+      { href: '/ai/recommendations', label: 'AI Recommendations' },
       { href: '/ai/hyperghost', label: 'Hyper Ghost' }
     ]
   },
@@ -249,6 +253,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <strong>{item.value}</strong>
             </div>
           ))}
+          <div className="status-chip" style={{ flex: 1 }}>
+            <GlobalStatusBar />
+          </div>
         </div>
         <main>
           {sessionError && (

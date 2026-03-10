@@ -10,6 +10,8 @@ import { ValidatorPanel } from './components/ValidatorPanel';
 import { TreasuryPanel } from './components/TreasuryPanel';
 import { DeFiPanel } from './components/DeFiPanel';
 import { AIControlPanel } from './components/AIControlPanel';
+import { AIRecommendationsPanel } from '../ai/components/AIRecommendationsPanel';
+import { NetworkTopologyMap } from '../network-map/NetworkTopologyMap';
 
 export function CommandCenter() {
   return (
@@ -67,6 +69,16 @@ export function CommandCenter() {
           <MultichainSovereigntyPanel />
         </Suspense>
       </div>
+
+      {/* Network topology map — full-width below the grid */}
+      <Suspense fallback={<PanelSkeleton title="Network Map" />}>
+        <NetworkTopologyMap />
+      </Suspense>
+
+      {/* GhostBrain AI Recommendations — full-width, human ratification queue */}
+      <Suspense fallback={<PanelSkeleton title="AI Recommendations" />}>
+        <AIRecommendationsPanel maxShown={3} />
+      </Suspense>
     </div>
   );
 }
