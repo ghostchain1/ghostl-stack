@@ -64,7 +64,10 @@ SNAPSHOT_FILE="${IMAGE_SNAPSHOT_DIR}/${TARGET_TAG}.json"
 if [[ ! -f "${SNAPSHOT_FILE}" ]]; then
   warn "Image snapshot for tag '${TARGET_TAG}' not found at ${SNAPSHOT_FILE}."
   warn "Available snapshots:"
-  ls -1 "${IMAGE_SNAPSHOT_DIR}" 2>/dev/null | sed 's/.json$//' || warn "  (none)"
+  find "${IMAGE_SNAPSHOT_DIR}" -maxdepth 1 -name '*.json' -print0 2>/dev/null \
+    | xargs -0 -r basename -s .json \
+    | sort \
+    || warn "  (none)"
   die "Cannot rollback without an image snapshot."
 fi
 

@@ -105,3 +105,27 @@ export const store = storeVector;
 export function vectorStats() {
   return { entries: _store.length };
 }
+
+/**
+ * Remove near-duplicate vectors whose cosine similarity to any earlier entry
+ * exceeds the given threshold. Returns the number of entries removed.
+ * Called by the memory optimizer.
+ */
+export function pruneVectors(similarityThreshold = 0.99): number {
+  if (_store.length <= 1) return 0;
+  const toRemove = new Set<number>();
+  for (let i = 0; i < _store.length; i++) {
+    if (toRemove.has(i)) continue;
+    for (let j = i + 1; j < _store.length; j++) {
+      if (toRemove.has(j)) continue;
+      if (cosine(_store[i]!.vector, _store[j]!.vector) >= similarityThreshold) {
+        toRemove.add(j);
+      }
+    }
+  }
+  if (toRemove.size === 0) return 0;
+  // Remove in reverse order to preserve indices
+  const indices = [...toRemove].sort((a, b) => b - a);
+  for (const idx of indices) _store.splice(idx, 1);
+  return toRemove.size;
+}

@@ -30,6 +30,13 @@ import { startValidatorGuardian, stopValidatorGuardian } from "./validators/vali
 import { startRpcMonitor, stopRpcMonitor }   from "./rpc_monitor.js";
 import { startHypervisorAI, stopHypervisorAI } from "./hypervisor_ai.js";
 import { hydrateGraph } from "./blockchain/memory_graph.js";
+import { initPostgres, closePostgres }   from "./db/postgres_client.js";
+import { initRedis,    closeRedis }      from "./db/redis_client.js";
+import { initQdrant }                    from "./db/qdrant_client.js";
+import { hydrateAuditLog }              from "./memory/memory_audit.js";
+import { startMemoryOptimizer, stopMemoryOptimizer } from "./core/memory_optimizer.js";
+import { startCognitiveLoop, stopCognitiveLoop }     from "./cognition/cognitive_engine.js";
+import { startHyperCoreLoop, stopHyperCoreLoop }     from "./hypercore/hypercore_engine.js";
 
 const PORT = Number(process.env.GHOSTBRAIN_PORT ?? "7900");
 const BIND = process.env.GHOSTBRAIN_BIND ?? "127.0.0.1";
@@ -37,9 +44,15 @@ const BIND = process.env.GHOSTBRAIN_BIND ?? "127.0.0.1";
 const app = buildApp();
 let wss: ReturnType<typeof attachWsServer> | undefined;
 
+// ── Neural Memory Database — init all three backends (graceful degradation) ──
+await initPostgres();
+await initRedis();
+await initQdrant();
+
 // Hydrate all memory layers from disk before serving traffic
 hydrateAllMemory();
 hydrateGraph();
+hydrateAuditLog();
 
 try {
   await app.listen({ port: PORT, host: BIND });
@@ -71,6 +84,15 @@ try {
   startRpcMonitor();
   startHypervisorAI();
 
+  // Start neural memory optimizer (periodic compression + archival)
+  startMemoryOptimizer();
+
+  // Start cognitive engine — the AI reasoning + planning loop (10 s interval)
+  startCognitiveLoop();
+
+  // Start HyperCore — Layer 5 strategic AI loop (15 s interval)
+  startHyperCoreLoop();
+
   app.log.info({ bind: BIND, port: PORT, wsPath: "/ws" }, "ghostbrain-core started");
 } catch (err) {
   app.log.error(err, "ghostbrain-core failed to start");
@@ -90,8 +112,14 @@ process.on("SIGTERM", async () => {
   stopValidatorGuardian();
   stopRpcMonitor();
   stopHypervisorAI();
+  stopMemoryOptimizer();
+  stopCognitiveLoop();
+  stopHyperCoreLoop();
   wss?.close();
   await app.close();
+  // Close DB connections last, after HTTP server is down
+  await closeRedis();
+  await closePostgres();
   process.exit(0);
 });
 

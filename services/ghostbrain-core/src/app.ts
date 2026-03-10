@@ -30,6 +30,8 @@ import { simulatorRoutes }     from "./routes/simulator.js";
 import { benchmarkRoutes }     from "./routes/benchmark.js";
 import { brainRoutes }         from "./routes/brain.js";
 import { blockchainRoutes }    from "./routes/blockchain.js";
+import { aiRoutes }            from "./routes/ai.js";
+import { hypercoreRoutes }     from "./routes/hypercore.js";
 import { hmacAuthPlugin } from "./middleware/hmac.js";
 import { rateLimitPlugin } from "./middleware/rateLimit.js";
 
@@ -91,5 +93,9 @@ export function buildApp() {
   app.register(brainRoutes);
   // ── Blockchain Intelligence + Validator + RPC + Memory Graph ────────────────
   app.register(blockchainRoutes);
+  // ── Cognitive Engine — AI reasoning, planning, strategy, agent coordination ─
+  app.register(aiRoutes);
+  // ── HyperCore — Layer 5 strategic AI: LLM reasoning, DevOps AI, Blockchain AI ─
+  app.register(hypercoreRoutes);
   return app;
 }

@@ -592,4 +592,10 @@ validator-ai/**/checkpoints/
 validator-ai/**/data/
 
 # ── Docker supervisor override ───────────────────────────────────────────────
+
+# ── GhostBrain Core — runtime artefacts ─────────────────────────────────────
+services/ghostbrain-core/dist/
+services/ghostbrain-core/*.pid
+services/ghostbrain-core/memory/
+services/ghostbrain-core/logs/
 docker-compose.supervisor.override.yml

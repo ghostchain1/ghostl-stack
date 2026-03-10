@@ -4,7 +4,7 @@
  * Central unified facade for all three memory layers:
  *   1. Short-term  — Redis (real-time decisions, active metrics, running task states)
  *   2. Mid-term    — PostgreSQL (structured operational knowledge, event history)
- *   3. Long-term   — Vector store (semantic similarity, embedding-based recall)
+ *   3. Long-term   — Qdrant vector DB + file-backed store (semantic similarity)
  *
  * Public API:
  *   store_event()           — persist a raw infrastructure event to all relevant layers
@@ -12,6 +12,8 @@
  *   store_decision()        — persist an AI decision for audit + outcome tracking
  *   recall_similar_events() — semantic lookup against vector + pattern store
  *   predict_next_action()   — combine pattern confidence + failure risk → top recommendation
+ *
+ * All three backends are optional (graceful degradation to in-process fallbacks).
  */
 
 import { recordEvent, getTopPatterns } from "./memory/pattern_memory.js";
@@ -19,8 +21,18 @@ import type { RawEvent, PatternEntry }  from "./memory/pattern_memory.js";
 import { store as vectorStore, search as vectorSearch } from "./memory/vector_memory.js";
 import { recordInfraSnapshot }          from "./memory/infrastructure_memory.js";
 import { recordFix, lookupFix }         from "./memory/fix_memory.js";
-import { recordOptimization }      from "./memory/performance_memory.js";
-import { log }                          from "./observability/event_logger.js";import { incMemoryEvents }               from "./observability/metrics_exporter.js";
+import { recordOptimization }           from "./memory/performance_memory.js";
+import { encodeEvent, encodeText }      from "./embedding_engine.js";
+import { rSet, rGet }                   from "./db/redis_client.js";
+import { execute }                      from "./db/postgres_client.js";
+import {
+  qdrantUpsert, qdrantSearch, isQdrantReady,
+  COLLECTIONS, newPointId,
+}                                       from "./db/qdrant_client.js";
+import { recordAuditEntry }             from "./memory/memory_audit.js";
+import { log }                          from "./observability/event_logger.js";
+import { incMemoryEvents }              from "./observability/metrics_exporter.js";
+import { inc }                          from "./observability/metrics_exporter.js";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface MemoryEvent {
@@ -80,13 +92,14 @@ export interface ActionRecommendation {
 }
 
 // ── Short-term (Redis) helpers ────────────────────────────────────────────────
-// For now we use a lightweight in-process Map as Redis adapter (Redis connection
-// is optional). Replace with ioredis client when REDIS_URL is set.
+// In-process Map used as synchronous fast-path; real Redis writes happen async.
 
 const _shortTerm = new Map<string, { value: unknown; expiresAt: number }>();
 
 function shortTermSet(key: string, value: unknown, ttlMs = 60_000): void {
   _shortTerm.set(key, { value, expiresAt: Date.now() + ttlMs });
+  // Async write to real Redis (fire-and-forget, TTL in seconds)
+  void rSet(key, value, Math.ceil(ttlMs / 1_000));
 }
 
 function shortTermGet<T>(key: string): T | null {
@@ -96,44 +109,142 @@ function shortTermGet<T>(key: string): T | null {
   return entry.value as T;
 }
 
-// Evict expired entries periodically
+// Evict expired entries from the in-process map periodically
 setInterval(() => {
   const now = Date.now();
   for (const [k, v] of _shortTerm) if (now > v.expiresAt) _shortTerm.delete(k);
 }, 30_000).unref();
 
+// ── Async backend persistence helpers ─────────────────────────────────────────
+
+/** Persist an event to PostgreSQL system_events + Qdrant neural memory. */
+async function persistEventToBackends(
+  ev:       MemoryEvent,
+  category: string,
+  label:    string,
+  ts:       number,
+): Promise<void> {
+  const occurredAt = new Date(ts).toISOString();
+  const severity   = ev.severity === "warn" ? "warning" : (ev.severity ?? "info");
+
+  // PostgreSQL — operational memory (mid-term)
+  await execute(
+    `INSERT INTO system_events
+       (resource_id, layer, category, label, severity, payload, chain_id, occurred_at)
+     VALUES ($1, $2, $3, $4, $5::severity_enum, $6, $7, $8)`,
+    [
+      ev.resourceId,
+      ev.layer,
+      category,
+      label,
+      severity,
+      JSON.stringify(ev.payload ?? {}),
+      null,
+      occurredAt,
+    ],
+  );
+
+  // Qdrant — long-term neural memory
+  if (isQdrantReady()) {
+    const vector = encodeEvent({
+      resourceId: ev.resourceId,
+      category,
+      label,
+      layer: ev.layer,
+      payload: ev.payload,
+    });
+    await qdrantUpsert(COLLECTIONS.SYSTEM_LOGS, [{
+      id:      newPointId(),
+      vector,
+      payload: { ...ev, category, label, ts, occurred_at: occurredAt },
+    }]);
+  }
+}
+
+/** Persist a decision to PostgreSQL ai_decisions + Qdrant + audit log. */
+async function persistDecisionToBackends(decision: MemoryDecision): Promise<void> {
+  const now = new Date().toISOString();
+
+  // PostgreSQL — ai_decisions audit table
+  await execute(
+    `INSERT INTO ai_decisions
+       (agent, decision_type, resource_id, layer, rationale, confidence,
+        action_taken, requires_human, policy_guard, decided_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+    [
+      decision.agent,
+      decision.decisionType,
+      decision.resourceId,
+      decision.layer,
+      decision.rationale,
+      decision.confidence,
+      JSON.stringify(decision.actionTaken),
+      decision.requiresHuman ?? false,
+      decision.policyGuard   ?? "ALLOW",
+      now,
+    ],
+  );
+
+  // Qdrant — embed the decision for future association
+  if (isQdrantReady()) {
+    const text   = `agent=${decision.agent} type=${decision.decisionType} resource=${decision.resourceId} rationale=${decision.rationale}`;
+    const vector = encodeText(text);
+    await qdrantUpsert(COLLECTIONS.REPAIR_STRATEGIES, [{
+      id:      newPointId(),
+      vector,
+      payload: { ...decision, type: "decision", recorded_at: now },
+    }]);
+  }
+
+  // HMAC audit log — tamper-proof record
+  await recordAuditEntry({
+    ts:           Date.now(),
+    agent:        decision.agent,
+    decisionType: decision.decisionType,
+    resourceId:   decision.resourceId,
+    layer:        decision.layer,
+    rationale:    decision.rationale,
+    actionTaken:  decision.actionTaken,
+  });
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
  * Store an infrastructure event across all memory layers.
- * - Short-term: keyed by resourceId + label (TTL 5 min)
- * - Mid-term: pattern correlation via pattern_memory
- * - Long-term: vector embedding for semantic recall
+ *
+ * Sync path (zero-latency):
+ *   - Short-term in-process Map (+ async Redis write)
+ *   - Pattern co-occurrence table
+ *   - File-backed TF-IDF vector store
+ *
+ * Async fire-and-forget backends (non-blocking):
+ *   - PostgreSQL system_events table
+ *   - Qdrant neural memory (system_logs_embeddings collection)
  */
 export function store_event(ev: MemoryEvent): void {
   const ts       = ev.ts ?? Date.now();
   const category = ev.category ?? ev.type ?? "event";
   const label    = ev.label    ?? ev.type ?? "unknown";
 
-  // 1. Short-term (real-time active state)
+  // 1. Short-term (real-time active state — in-process + async Redis)
   const stKey = `event:${ev.resourceId}:${label}`;
   shortTermSet(stKey, { ...ev, ts }, 5 * 60_000);
 
-  // 2. Mid-term (pattern correlation)
-  const rawEvent: RawEvent = {
-    resourceId: ev.resourceId,
-    label,
-    category,
-    ts,
-  };
+  // 2. Mid-term pattern correlation (in-process, sync)
+  const rawEvent: RawEvent = { resourceId: ev.resourceId, label, category, ts };
   recordEvent(rawEvent);
 
-  // 3. Long-term (vector store)
-  const text = `[${ev.layer}] ${ev.category}:${ev.label} on ${ev.resourceId} — ${JSON.stringify(ev.payload ?? {})}`;
-  vectorStore(text, text, { ...ev, ts });
+  // 3. Long-term file-backed vector store (sync, immediate semantic recall)
+  const text = `[${ev.layer}] ${category}:${label} on ${ev.resourceId} — ${JSON.stringify(ev.payload ?? {})}`;
+  vectorStore(text, text, { ...ev, category, label, ts });
+
+  // 4. Async: persist to PostgreSQL + Qdrant (fire-and-forget, non-blocking)
+  void persistEventToBackends(ev, category, label, ts);
 
   incMemoryEvents();
-  log.debug("memory_engine: store_event", `${ev.label} on ${ev.resourceId}`);
+  inc("ghostbrain_memory_events_total", "Neural memory events stored");
+  log.debug("memory_engine: store_event", `${label} on ${ev.resourceId}`);
 }
 
 /**
@@ -149,26 +260,49 @@ export function store_pattern(pattern: MemoryPattern): void {
 }
 
 /**
- * Store an AI decision (short-term active state + long-term vector).
+ * Store an AI decision across all layers:
+ *   - Short-term: in-process Map + Redis (TTL 10 min)
+ *   - Long-term: file-backed vector + Qdrant repair_strategy_embeddings
+ *   - Audit: HMAC-signed tamper-proof record (PostgreSQL + NDJSON)
  */
 export function store_decision(decision: MemoryDecision): void {
   // Short-term: track active decision per resource
   shortTermSet(`decision:${decision.resourceId}`, decision, 10 * 60_000);
 
-  // Long-term: embed for future recall
+  // Long-term: file-backed vector (immediate recall)
   const text = `agent=${decision.agent} type=${decision.decisionType} resource=${decision.resourceId} rationale=${decision.rationale}`;
   vectorStore(text, text, { ...decision, type: "decision" });
 
+  // Async: PostgreSQL ai_decisions + Qdrant + HMAC audit (fire-and-forget)
+  void persistDecisionToBackends(decision);
+
+  inc("ghostbrain_memory_decisions_total", "AI decisions stored to neural memory");
   log.debug("memory_engine: store_decision", `agent=${decision.agent} resource=${decision.resourceId}`);
 }
 
 /**
  * Recall similar past events using semantic vector search + pattern matching.
+ * Queries all three memory layers: Qdrant (neural) → file vector → patterns → fixes.
  */
 export async function recall_similar_events(query: string, topK = 5): Promise<RecallResult[]> {
   const results: RecallResult[] = [];
 
-  // Vector recall
+  // Qdrant semantic search (long-term neural memory) — when available
+  if (isQdrantReady()) {
+    const qVec    = encodeText(query);
+    const qdHits  = await qdrantSearch(COLLECTIONS.SYSTEM_LOGS, qVec, topK, 0.3);
+    for (const hit of qdHits) {
+      results.push({
+        source:      "vector",
+        score:       hit.score,
+        description: String(hit.payload.label ?? hit.payload.category ?? "neural_memory_result"),
+        action:      String(hit.payload.actionTaken ?? "") || undefined,
+        metadata:    hit.payload,
+      });
+    }
+  }
+
+  // File-backed vector recall (always available)
   const vecHits = await Promise.resolve(vectorSearch(query, topK, 0.1));
   for (const hit of vecHits) {
     results.push({
