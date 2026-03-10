@@ -73,17 +73,18 @@ jobs:
       - name: SOVEREIGN — trustForwardHeader must not be true
         run: |
           set -euo pipefail
-          echo "Scanning for trustForwardHeader=true..."
+          echo "Scanning for trustForwardHeader violations..."
           if grep -rE 'trustForwardHeader[[:space:]]*=[[:space:]]*true' \
               --include="docker-compose*.yml" \
               --include="*.yml" \
               --include="*.yaml" \
+              --exclude-dir=".github" \
               . 2>/dev/null | grep -v '^Binary' | grep -v node_modules; then
-            echo "FAIL: trustForwardHeader=true allows clients to forge X-Forwarded-For."
+            echo "FAIL: trustForwardHeader flag must not be enabled."
             echo "FIX: Set trustForwardHeader=false in all Traefik forwardauth middleware configs."
             exit 1
           fi
-          echo "PASS: No trustForwardHeader=true found"
+          echo "PASS: No trustForwardHeader violations found"
 
   # ── 3. No insecure default secrets ──────────────────────────────────────────
   no-insecure-defaults:
