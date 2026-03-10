@@ -716,7 +716,7 @@ set -euo pipefail
 rpc_chain_id() {
   local url="$1"
   local out
-  out="$(curl -fsS -H 'Content-Type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_chainId\",\"params\":[]}' \"${url}\")"
+  out="$(curl -fsS -H 'Content-Type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "${url}")"
   printf '%s' "${out}" | jq -r .result
 }
 
@@ -955,7 +955,7 @@ set -euo pipefail
 rpc_chain_id() {
   local url="$1"
   local out
-  out="$(curl -fsS -H 'Content-Type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_chainId\",\"params\":[]}' \"${url}\")"
+  out="$(curl -fsS -H 'Content-Type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "${url}")"
   printf '%s' "${out}" | jq -r .result
 }
 
