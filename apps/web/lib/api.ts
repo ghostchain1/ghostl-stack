@@ -242,3 +242,142 @@ export async function fetchTdsIncidents(): Promise<TdsIncident[] | null> {
     return r.ok ? r.json() : null;
   } catch { return null; }
 }
+
+// ── ACGE — Autonomous Compliance & Governance Engine (9970) ──────────────────
+
+const ACGE = process.env["NEXT_PUBLIC_ACGE_URL"] ?? "http://localhost:9970";
+
+export type KycStatus     = "pending" | "verified" | "rejected" | "expired";
+export type AlertSeverity = "low" | "medium" | "high" | "critical";
+export type ProposalStatus = "pending" | "voting" | "approved" | "rejected" | "executed" | "expired";
+export type VoteChoice     = "yes" | "no" | "abstain";
+
+export interface AcgeIdentityRecord {
+  walletAddress:   string;
+  userId:          string;
+  kycStatus:       KycStatus;
+  kycProvider:     string;
+  jurisdiction:    string;
+  sanctioned:      boolean;
+  riskScore:       number;
+  verifiedAt?:     number;
+  expiresAt?:      number;
+  rejectionReason?: string;
+  updatedAt:       number;
+}
+
+export interface AcgeComplianceAlert {
+  id:            string;
+  type:          string;
+  walletAddress: string;
+  txHash?:       string;
+  amount?:       string;   // bigint serialized as string
+  detail:        string;
+  severity:      AlertSeverity;
+  reported:      boolean;
+  ts:            number;
+}
+
+export interface AcgeGovernanceVote {
+  voter:  string;
+  choice: VoteChoice;
+  weight: number;
+  ts:     number;
+}
+
+export interface AcgeProposal {
+  id:             string;
+  type:           string;
+  title:          string;
+  description:    string;
+  proposer:       string;
+  status:         ProposalStatus;
+  quorumRequired: number;
+  votes:          AcgeGovernanceVote[];
+  voteYes:        number;
+  voteNo:         number;
+  voteAbstain:    number;
+  totalWeight:    number;
+  createdAt:      number;
+  votingDeadline: number;
+  executedAt?:    number;
+}
+
+export interface AcgeAuditEvent {
+  id:       string;
+  category: string;
+  actor:    string;
+  action:   string;
+  details:  Record<string, unknown>;
+  status:   string;
+  hash:     string;
+  prevHash: string;
+  ts:       number;
+}
+
+export interface AcgeRegulation {
+  id:           string;
+  jurisdiction: string;
+  category:     string;
+  title:        string;
+  description:  string;
+  threshold?:   string;
+  rule:         string;
+  source:       string;
+  active:       boolean;
+}
+
+export interface AcgeHealth {
+  status:     string;
+  service:    string;
+  port:       number;
+  uptime:     number;
+  cycleCount: number;
+  identity:   { total: number; verified: number; pending: number; rejected: number; expired: number; sanctioned: number };
+  compliance: { totalAlerts: number; unreported: number; bySeverity: Record<string, number>; mixersTracked: number };
+  governance: { active: number; voting: number; approved: number; rejected: number; expired: number; executed: number; quorums: Record<string, number> };
+  audit:      { totalInMemory: number; ringCapacity: number; lastHash: string; sequenceNumber: number };
+  regulatory: { totalRegulations: number; activeRegulations: number; sanctionedAddresses: number; jurisdictions: Record<string, number> };
+}
+
+export async function fetchAcgeHealth(): Promise<AcgeHealth | null> {
+  try {
+    const r = await fetch(`${ACGE}/health`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchAcgeAlerts(): Promise<AcgeComplianceAlert[] | null> {
+  try {
+    const r = await fetch(`${ACGE}/compliance/alerts?limit=50`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchAcgeProposals(): Promise<AcgeProposal[] | null> {
+  try {
+    const r = await fetch(`${ACGE}/proposals`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchAcgeAudit(limit = 50): Promise<AcgeAuditEvent[] | null> {
+  try {
+    const r = await fetch(`${ACGE}/audit?limit=${limit}`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchAcgeIdentities(): Promise<AcgeIdentityRecord[] | null> {
+  try {
+    const r = await fetch(`${ACGE}/identities`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchAcgeRegulations(): Promise<AcgeRegulation[] | null> {
+  try {
+    const r = await fetch(`${ACGE}/regulations`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}

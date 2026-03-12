@@ -18,6 +18,7 @@ volumes:
   gdm-memory:
   kernel-data:
   governance-proposals:
+  ghostbrain-acge-audits:
 
 services:
 
@@ -435,6 +436,41 @@ services:
       - ghostbrain-aim
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:9960/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Autonomous Compliance & Governance Engine (ACGE) ─────────
+  ghostbrain-acge:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-acge
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-acge:latest
+    container_name: ghostbrain-acge
+    restart: unless-stopped
+    ports:
+      - "${GHOSTBRAIN_ACGE_PORT:-9970}:9970"
+    environment:
+      - NODE_ENV=production
+      - ACGE_PORT=9970
+      - KERNEL_URL=http://ghostbrain-kernel:9300
+      - SCP_URL=http://ghostbrain-control-plane:9500
+      - GVF_URL=http://ghostbrain-validator-fabric:9700
+      - GDM_URL=http://ghostbrain-data-mesh:9900
+      - AIM_URL=http://ghostbrain-aim:9950
+      - TDS_URL=http://ghostbrain-tds:9960
+      - ACGE_LOOP_MS=10000
+      - ACGE_AUDIT_DIR=/var/log/ghostbrain/audits
+    volumes:
+      - ghostbrain-acge-audits:/var/log/ghostbrain/audits
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-kernel
+      - ghostbrain-control-plane
+      - ghostbrain-tds
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9970/health"]
       interval: 30s
       timeout: 10s
       retries: 3
