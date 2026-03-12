@@ -398,3 +398,43 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+  # ── Threat Defense System (TDS) ──────────────────────────────
+  ghostbrain-tds:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-tds
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-tds:latest
+    container_name: ghostbrain-tds
+    restart: unless-stopped
+    ports:
+      - "${GHOSTBRAIN_TDS_PORT:-9960}:9960"
+    environment:
+      - NODE_ENV=production
+      - TDS_PORT=9960
+      - KERNEL_URL=http://ghostbrain-kernel:9300
+      - SCP_URL=http://ghostbrain-control-plane:9500
+      - GVF_URL=http://ghostbrain-validator-fabric:9700
+      - AIM_URL=http://ghostbrain-aim:9950
+      - GDM_URL=http://ghostbrain-data-mesh:9900
+      - L1_RPC_URL=http://ghostchain-l1:18545
+      - L2_RPC_URL=http://ghostchain-l2:29547
+      - L3_RPC_URL=http://ghostchain-l3:39547
+      - TDS_LOOP_MS=3000
+      - TDS_RATE_LIMIT=100
+      - TDS_AUTO_BLOCK=300
+      - TDS_USE_IPTABLES=false
+      - TDS_Z_THRESHOLD=3.0
+    cap_add:
+      - NET_ADMIN
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-kernel
+      - ghostbrain-control-plane
+      - ghostbrain-aim
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9960/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

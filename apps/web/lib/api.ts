@@ -151,3 +151,94 @@ export async function fetchAimCloudNodes(): Promise<AimCloudNode[] | null> {
     return r.ok ? r.json() : null;
   } catch { return null; }
 }
+
+// ── TDS (Threat Defense System — port 9960) ───────────────────────────────────
+
+const TDS = process.env.NEXT_PUBLIC_TDS_URL ?? "http://localhost:9960";
+
+export type ThreatLevel = "low" | "medium" | "high" | "critical";
+
+export interface TdsHealth {
+  status:      string;
+  port:        number;
+  uptime:      number;
+  cycleCount:  number;
+  threatLevel: ThreatLevel;
+}
+
+export interface TdsAlert {
+  type:      string;
+  severity:  string;
+  sourceIp?: string;
+  user?:     string;
+  message:   string;
+  count:     number;
+  ts:        string;
+}
+
+export interface TdsChainThreat {
+  type:     string;
+  chain:    string;
+  severity: string;
+  detail:   string;
+  ts:       string;
+}
+
+export interface TdsAnomaly {
+  metric:    string;
+  source:    string;
+  value:     number;
+  baseline:  number;
+  zScore:    number;
+  severity:  string;
+  detail:    string;
+  ts:        string;
+}
+
+export interface TdsIncident {
+  id:          string;
+  threat:      { type: string; target?: string; source: string; ts: string };
+  actions:     string[];
+  status:      string;
+  ts:          string;
+  resolvedAt?: string;
+}
+
+export interface TdsFirewallRule {
+  ip:        string;
+  action:    string;
+  reason:    string;
+  createdAt: string;
+}
+
+export interface TdsStatus {
+  cycleCount:   number;
+  threatLevel:  ThreatLevel;
+  alerts:       TdsAlert[];
+  chainThreats: TdsChainThreat[];
+  anomalies:    TdsAnomaly[];
+  incidents:    TdsIncident[];
+  blockedIps:   TdsFirewallRule[];
+  firewall:     { totalBlocked: number; totalRequests: number; autoBlocked: number; manualBlocked: number };
+}
+
+export async function fetchTdsHealth(): Promise<TdsHealth | null> {
+  try {
+    const r = await fetch(`${TDS}/health`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchTdsStatus(): Promise<TdsStatus | null> {
+  try {
+    const r = await fetch(`${TDS}/status`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchTdsIncidents(): Promise<TdsIncident[] | null> {
+  try {
+    const r = await fetch(`${TDS}/incidents`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
