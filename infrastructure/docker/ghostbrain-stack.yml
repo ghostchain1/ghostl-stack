@@ -366,3 +366,35 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+  # ── Autonomous Infrastructure Manager (AIM) ──────────────────
+  ghostbrain-aim:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-aim
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-aim:latest
+    container_name: ghostbrain-aim
+    restart: unless-stopped
+    ports:
+      - "${GHOSTBRAIN_AIM_PORT:-9950}:9950"
+    environment:
+      - NODE_ENV=production
+      - AIM_PORT=9950
+      - KERNEL_URL=http://ghostbrain-kernel:9300
+      - SCP_URL=http://ghostbrain-control-plane:9500
+      - GVF_URL=http://ghostbrain-validator-fabric:9700
+      - AIM_CPU_HIGH_PCT=80
+      - AIM_CPU_LOW_PCT=20
+      - AIM_MEM_HIGH_PCT=85
+      - AIM_MEM_LOW_PCT=30
+      - AIM_LOOP_MS=10000
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-kernel
+      - ghostbrain-control-plane
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9950/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

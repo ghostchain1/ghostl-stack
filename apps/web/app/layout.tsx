@@ -19,6 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <ul className="nav-links">
               <li><a href="/">Dashboard</a></li>
               <li><a href="/control-plane">Control Plane</a></li>
+              <li><a href="/infrastructure">Infrastructure</a></li>
               <li><a href="/validators">Validators</a></li>
               <li><a href="/economy">Economy</a></li>
               <li><a href="/data-mesh">Data Mesh</a></li>
