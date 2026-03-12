@@ -820,3 +820,290 @@ export async function fetchKernelBusEvents(topic?: string, limit = 50): Promise<
   } catch { return null; }
 }
 
+// ─── Economic Intelligence Engine (EIE) ──────────────────────────────────────
+
+const ECONOMIC = process.env["NEXT_PUBLIC_ECONOMIC_URL"] ?? "http://localhost:9050";
+
+// --- Types ---
+
+export type EieAllocationPurpose =
+  | "validator_rewards" | "ecosystem_grant" | "liquidity_provision" | "bridge_ops"
+  | "security_audit" | "infrastructure" | "marketing" | "r_and_d" | "emergency_reserve" | "governance";
+
+export type EieAllocationStatus = "pending_auto" | "approved" | "executed" | "rejected" | "pending_governance";
+
+export interface EieTreasuryAllocation {
+  id: string;
+  purpose: EieAllocationPurpose;
+  amountWei: string;
+  requester: string;
+  rationale: string;
+  status: EieAllocationStatus;
+  createdAt: number;
+  resolvedAt?: number;
+  approver?: string;
+}
+
+export interface EieGrant {
+  id: string;
+  grantee: string;
+  purposeTag: string;
+  amountWei: string;
+  approvedBy: string;
+  milestones: string[];
+  completedMilestones: string[];
+  disbursed: boolean;
+  createdAt: number;
+}
+
+export interface EieInvestmentPosition {
+  id: string;
+  protocol: string;
+  layer: string;
+  strategy: string;
+  principalWei: string;
+  currentValueWei: string;
+  apyBps: number;
+  openedAt: number;
+  lastAccruedAt: number;
+}
+
+export interface EieTreasuryState {
+  totalAllocated: string;
+  pendingGovernance: string;
+  executedThisEpoch: string;
+  openGrants: number;
+  totalGrantsWei: string;
+  investedWei: string;
+  accruedRevenueWei: string;
+}
+
+export type EiePoolHealth = "healthy" | "underutilized" | "overutilized" | "critically_low" | "imbalanced";
+export type EieStrategyPriority = "emergency" | "high" | "medium" | "low";
+export type EieStrategyAction = "deploy" | "withdraw" | "rebalance" | "migrate";
+
+export interface EieLiquidityPool {
+  id: string;
+  name: string;
+  chain: string;
+  type: string;
+  tvlWei: string;
+  utilizationPct: number;
+  apyBps: number;
+  health: EiePoolHealth;
+}
+
+export interface EieLiquidityStrategy {
+  id: string;
+  poolId: string;
+  poolName: string;
+  action: EieStrategyAction;
+  amountWei: string;
+  reason: string;
+  priority: EieStrategyPriority;
+  status: string;
+  createdAt: number;
+}
+
+export interface EieArbitrageOpportunity {
+  buyPoolId: string;
+  sellPoolId: string;
+  spreadBps: number;
+  estimatedProfitWei: string;
+  detectedAt: number;
+}
+
+export interface EieLiquidityReport {
+  pools: EieLiquidityPool[];
+  activeStrategies: EieLiquidityStrategy[];
+  arbitrageOpportunities: EieArbitrageOpportunity[];
+  totalTvlWei: string;
+  avgUtilizationPct: number;
+  refreshedAt: number;
+}
+
+export interface EieTokenomicsParams {
+  baseFeeGwei: number;
+  burnRateBps: number;
+  validatorRewardBps: number;
+  stakingIncentiveBps: number;
+  reserveRatioPct: number;
+}
+
+export interface EieTokenomicsBounds {
+  baseFeeGwei: { min: number; max: number };
+  burnRateBps: { min: number; max: number };
+  validatorRewardBps: { min: number; max: number };
+  stakingIncentiveBps: { min: number; max: number };
+  reserveRatioPct: { min: number; max: number };
+}
+
+export interface EieBurnProjection {
+  day: number;
+  date: string;
+  estimatedBurnGhost: number;
+  cumulativeBurnGhost: number;
+}
+
+export interface EieOptimizationRecord {
+  id: string;
+  timestamp: number;
+  previous: EieTokenomicsParams;
+  recommended: EieTokenomicsParams;
+  applied: boolean;
+  requiresGovernance: boolean;
+  rationale: string;
+}
+
+export type EieMarketSentiment = "strong_bullish" | "bullish" | "neutral" | "bearish" | "strong_bearish";
+
+export interface EieMarketTick {
+  pair: string;
+  priceUsd: number;
+  volume24h: number;
+  liquidity: number;
+  change24hPct: number;
+  timestamp: number;
+  source: string;
+}
+
+export interface EieVolatilityMetrics {
+  pair: string;
+  stdDev: number;
+  mean: number;
+  coefficient: number;
+  windowMs: number;
+}
+
+export interface EieArbitrageSignal {
+  buyPair: string;
+  sellPair: string;
+  spreadPct: number;
+  netProfitPct: number;
+  detectedAt: number;
+}
+
+export type EieAlertSeverity = "info" | "warning" | "critical";
+export type EieAlertType = "high_volatility" | "price_dump" | "volume_spike" | "liquidity_drain";
+
+export interface EieMarketAlert {
+  id: string;
+  type: EieAlertType;
+  pair: string;
+  severity: EieAlertSeverity;
+  message: string;
+  value: number;
+  threshold: number;
+  timestamp: number;
+  acknowledged: boolean;
+}
+
+export interface EieMarketReport {
+  latestTicks: EieMarketTick[];
+  volatility: EieVolatilityMetrics[];
+  arbitrageSignals: EieArbitrageSignal[];
+  activeAlerts: EieMarketAlert[];
+  sentiment: EieMarketSentiment;
+  sentimentScore: number;
+  generatedAt: number;
+}
+
+export type EieSimVerdict = "pass" | "fail" | "warning";
+export type EieScenarioType =
+  | "liquidity_injection" | "liquidity_withdrawal" | "burn_rate_change"
+  | "validator_reward_change" | "market_stress_test" | "cross_layer_route"
+  | "treasury_depletion" | "full_strategy";
+
+export interface EieSimResult {
+  id: string;
+  scenarioType: EieScenarioType;
+  strategyName: string;
+  params: Record<string, number | string>;
+  verdict: EieSimVerdict;
+  blockedReason?: string;
+  metrics: Record<string, number>;
+  warnings: string[];
+  recommendation: string;
+  timestamp: number;
+}
+
+export interface EieSimStats {
+  total: number;
+  pass: number;
+  fail: number;
+  warning: number;
+  passRate: number;
+  lastRunAt: number | null;
+}
+
+// --- Fetch helpers ---
+
+export async function fetchEieStatus(): Promise<Record<string, unknown> | null> {
+  try {
+    const r = await fetch(`${ECONOMIC}/eie/status`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchEieTreasury(): Promise<{
+  state: EieTreasuryState;
+  allocations: EieTreasuryAllocation[];
+  grants: EieGrant[];
+  investments: EieInvestmentPosition[];
+} | null> {
+  try {
+    const r = await fetch(`${ECONOMIC}/treasury`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchEieLiquidity(): Promise<EieLiquidityReport | null> {
+  try {
+    const r = await fetch(`${ECONOMIC}/liquidity`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchEieTokenomics(): Promise<{
+  current: EieTokenomicsParams;
+  bounds: EieTokenomicsBounds;
+  burnSchedule: EieBurnProjection[];
+  history: EieOptimizationRecord[];
+} | null> {
+  try {
+    const r = await fetch(`${ECONOMIC}/tokenomics`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchEieMarket(): Promise<EieMarketReport | null> {
+  try {
+    const r = await fetch(`${ECONOMIC}/market`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchEieMarketAlerts(): Promise<{ alerts: EieMarketAlert[] } | null> {
+  try {
+    const r = await fetch(`${ECONOMIC}/market/alerts`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchEieSimHistory(limit = 20): Promise<{
+  history: EieSimResult[];
+  stats: EieSimStats;
+} | null> {
+  try {
+    const r = await fetch(`${ECONOMIC}/simulate/history?limit=${limit}`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchEconomicStatus(): Promise<Record<string, unknown> | null> {
+  try {
+    const r = await fetch(`${ECONOMIC}/economic-status`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+

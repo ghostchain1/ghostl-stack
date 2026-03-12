@@ -111,6 +111,26 @@ services:
     environment:
       - NODE_ENV=production
       - GHOSTBRAIN_ECONOMIC_PORT=9050
+      - ECONOMIC_PORT=9050                              # controller reads ECONOMIC_PORT
+      - ECONOMIC_LOOP_INTERVAL_MS=300000               # 5-min telemetry loop
+      - EIE_LOOP_INTERVAL_MS=1800000                   # 30-min EIE decision loop
+      - GHOSTCHAIN_HUB_URL=http://ghostbrain-hub:9100
+      - KERNEL_URL=http://ghostbrain-kernel:9300
+      - GIN_URL=http://ghostbrain-gin:9980
+      - GHOSTXCHANGE_URL=http://ghostxchange:8080
+      - TREASURY_LARGE_THRESHOLD_WEI=10000000000000000000
+      - TREASURY_MAX_AUTO_WEI=1000000000000000000
+      - LIQUIDITY_REBALANCE_THRESHOLD=75
+      - MAX_SINGLE_DEPLOY_WEI=5000000000000000000
+      - ARBITRAGE_MIN_SPREAD_BPS=50
+      - BURN_RATE_MIN_BPS=10
+      - BURN_RATE_MAX_BPS=300
+      - VALIDATOR_REWARD_MIN_BPS=500
+      - VALIDATOR_REWARD_MAX_BPS=2000
+      - STAKING_INCENTIVE_MIN_BPS=50
+      - STAKING_INCENTIVE_MAX_BPS=1500
+      - MARKET_ALERT_VOL_THRESHOLD=0.05
+      - MARKET_VOLATILITY_WINDOW=3600000
     networks:
       - ghostbrain-net
     depends_on:
