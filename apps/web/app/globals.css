@@ -161,3 +161,218 @@ body {
 }
 .service-table th { color: var(--text-muted); font-weight: 600; }
 .service-table tr:last-child td { border-bottom: none; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MCD additions — command console, live dot, telemetry stream, nav sections
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Nav section labels */
+.nav-section {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  padding: 0.85rem 1.25rem 0.2rem;
+  opacity: 0.55;
+  list-style: none;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Live dot — pulsing green indicator */
+.live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  margin-right: 0.4rem;
+  vertical-align: middle;
+  animation: mcd-pulse 2s ease-in-out infinite;
+}
+@keyframes mcd-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.35; transform: scale(0.85); }
+}
+
+.dot-red { background: var(--red); }
+
+/* Card extras */
+.card-sub {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+.card-link {
+  cursor: pointer;
+  transition: border-color 0.15s;
+  text-decoration: none;
+  display: block;
+  color: inherit;
+}
+.card-link:hover { border-color: var(--accent); }
+
+/* Text utilities */
+.text-muted { color: var(--text-muted); }
+
+/* ── Command Console ─────────────────────────────────────────────────────────── */
+.cmd-console {
+  background: #0d0f14;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.cmd-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 1.1rem;
+}
+
+.cmd-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.38rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-family: inherit;
+  transition: border-color 0.15s, color 0.15s;
+}
+.cmd-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.cmd-btn-high {
+  border-color: rgba(239, 68, 68, 0.4);
+  color: var(--red);
+}
+.cmd-btn-high:hover:not(:disabled) {
+  border-color: var(--red);
+}
+.cmd-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cmd-custom {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.cmd-custom-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.cmd-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-family: monospace;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.cmd-input:focus { border-color: var(--accent); }
+
+/* Command log */
+.cmd-log {
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+}
+.cmd-log-header {
+  background: var(--surface);
+  padding: 0.4rem 0.75rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.cmd-log-entry {
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
+  padding: 0.35rem 0.75rem;
+  border-top: 1px solid var(--border);
+  line-height: 1.4;
+}
+.cmd-log-time   { color: var(--text-muted); flex-shrink: 0; }
+.cmd-log-label  { color: var(--accent); flex-shrink: 0; }
+.cmd-log-status { margin-left: auto; flex-shrink: 0; }
+.cmd-log-ok      { color: var(--green); }
+.cmd-log-error   { color: var(--red); }
+.cmd-log-pending { color: var(--yellow); }
+
+/* ── Telemetry Stream ────────────────────────────────────────────────────────── */
+.telemetry-stream {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+.telemetry-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--surface);
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+.telemetry-title {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.telemetry-status {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+.telemetry-table-wrap {
+  overflow-x: auto;
+  max-height: 420px;
+  overflow-y: auto;
+}
+.telemetry-ts      { white-space: nowrap; font-family: monospace; font-size: 0.75rem; }
+.telemetry-payload { font-family: monospace; font-size: 0.73rem; color: var(--text-muted); }
+.telemetry-empty   { padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; }
+
+/* ── Section header (SectionHeader component) ───────────────────────────────── */
+.section-hdr {
+  margin: 2rem 0 0.75rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+.section-hdr h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.section-hdr p {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0.2rem 0 0;
+}

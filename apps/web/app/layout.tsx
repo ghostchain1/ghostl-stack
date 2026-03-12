@@ -17,23 +17,38 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span>GhostStack</span>
             </div>
             <ul className="nav-links">
+              <li className="nav-section">⚡ Overview</li>
               <li><a href="/">Dashboard</a></li>
-              <li><a href="/control-plane">Control Plane</a></li>
+              <li><a href="/command-hub">Command Hub</a></li>
+
+              <li className="nav-section">🏗 Infrastructure</li>
               <li><a href="/infrastructure">Infrastructure</a></li>
+              <li><a href="/control-plane">Control Plane</a></li>
+
+              <li className="nav-section">⛓ Blockchain</li>
+              <li><a href="/blockchain">Blockchain</a></li>
+              <li><a href="/multichain">Multichain</a></li>
               <li><a href="/validators">Validators</a></li>
+
+              <li className="nav-section">💰 Economy</li>
               <li><a href="/economy">Economy</a></li>
               <li><a href="/data-mesh">Data Mesh</a></li>
-              <li><a href="/multichain">Multichain</a></li>
-              <li><a href="/governance">Governance</a></li>
               <li><a href="/simulation">SimLab</a></li>
+              <li><a href="/governance">Governance</a></li>
+
+              <li className="nav-section">🤖 AI Systems</li>
               <li><a href="/ai">AI System</a></li>
-              <li><a href="/security">Security</a></li>
-              <li><a href="/compliance">Compliance</a></li>
+              <li><a href="/kernel">Kernel</a></li>
+              <li><a href="/orchestrator">Orchestrator</a></li>
               <li><a href="/intelligence">Intelligence</a></li>
               <li><a href="/evolution">Evolution</a></li>
-              <li><a href="/kernel">Kernel</a></li>
-              <li><a href="/economy">Economy</a></li>
-              <li><a href="/orchestrator">Orchestrator</a></li>
+
+              <li className="nav-section">🔐 Security</li>
+              <li><a href="/security">Security</a></li>
+              <li><a href="/compliance">Compliance</a></li>
+
+              <li className="nav-section">🛠 DevOps</li>
+              <li><a href="/devops">DevOps</a></li>
             </ul>
             <div className="sidebar-footer">
               <a href={process.env.NEXT_PUBLIC_GRAFANA_URL || "http://localhost:3001"}
