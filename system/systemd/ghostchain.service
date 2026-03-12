@@ -1,0 +1,25 @@
+[Unit]
+Description=GhostChain Validator Network
+Documentation=https://docs.ghostchain.cloud
+After=network-online.target docker.service ghostbrain.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/ghost/ghostl-stack
+ExecStart=/usr/bin/docker compose \
+    -f /home/ghost/ghostl-stack/infrastructure/docker/validator-stack.yml \
+    up -d
+ExecStop=/usr/bin/docker compose \
+    -f /home/ghost/ghostl-stack/infrastructure/docker/validator-stack.yml \
+    down
+Restart=on-failure
+RestartSec=30s
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ghostchain-validators
+
+[Install]
+WantedBy=multi-user.target

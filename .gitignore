@@ -1,0 +1,45 @@
+# ─── Node / JS ────────────────────────────────────────────────
+node_modules/
+.pnpm-debug.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+.next/
+out/
+.turbo/
+
+# ─── Environment ──────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ─── Docker ───────────────────────────────────────────────────
+*.tar
+
+# ─── Secrets / Keys ───────────────────────────────────────────
+validators/keys/*.key
+validators/keys/*.pem
+validators/keys/*.json
+secrets/
+*.secret
+
+# ─── Logs ─────────────────────────────────────────────────────
+logs/
+*.log
+audit.json
+
+# ─── Data Mesh runtime ────────────────────────────────────────
+data-mesh/memory/*.json
+data-mesh/telemetry/*.json
+
+# ─── OS ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Editor ───────────────────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.swp
+*.swo

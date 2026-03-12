@@ -1,0 +1,166 @@
+# Validator Stack — GhostChain validator nodes managed by GVF AI
+
+name: ghostvalidators
+
+networks:
+  ghostbrain-net:
+    external: true
+  validator-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.29.0.0/24
+
+volumes:
+  validator-1-data:
+  validator-2-data:
+  validator-3-data:
+  validator-4-data:
+  bootnode-data:
+
+services:
+
+  # ── Bootnode ─────────────────────────────────────────────────
+  ghostchain-bootnode:
+    image: ethereum/client-go:stable
+    container_name: ghostchain-bootnode
+    restart: always
+    command: >
+      bootnode
+      --nodekey /data/bootnode.key
+      --addr :30305
+    volumes:
+      - bootnode-data:/data
+      - ../../validators/keys:/keys:ro
+    networks:
+      - validator-net
+    ports:
+      - "30305:30305/udp"
+
+  # ── Validator Node 1 ─────────────────────────────────────────
+  ghostchain-validator-1:
+    image: ethereum/client-go:stable
+    container_name: ghostchain-validator-1
+    restart: always
+    command: >
+      --datadir /data
+      --networkid ${GHOSTCHAIN_L1_CHAIN_ID:-1337}
+      --port 30303
+      --http
+      --http.addr 0.0.0.0
+      --http.port 8545
+      --http.api eth,net,web3,personal,miner
+      --http.corsdomain "*"
+      --ws
+      --ws.addr 0.0.0.0
+      --ws.port 8546
+      --ws.api eth,net,web3
+      --mine
+      --miner.gasprice 0
+      --unlock 0
+      --password /keys/password.txt
+      --allow-insecure-unlock
+      --bootnodes enode://$(cat /data/bootnode-enode.txt)@ghostchain-bootnode:30305
+    volumes:
+      - validator-1-data:/data
+      - ../../validators/keys:/keys:ro
+      - ../../validators/configs:/configs:ro
+    networks:
+      - validator-net
+      - ghostbrain-net
+    ports:
+      - "8545:8545"
+      - "8546:8546"
+      - "30303:30303"
+    depends_on:
+      - ghostchain-bootnode
+
+  # ── Validator Node 2 ─────────────────────────────────────────
+  ghostchain-validator-2:
+    image: ethereum/client-go:stable
+    container_name: ghostchain-validator-2
+    restart: always
+    command: >
+      --datadir /data
+      --networkid ${GHOSTCHAIN_L1_CHAIN_ID:-1337}
+      --port 30304
+      --http
+      --http.addr 0.0.0.0
+      --http.port 8547
+      --http.api eth,net,web3,personal,miner
+      --mine
+      --miner.gasprice 0
+      --unlock 0
+      --password /keys/password.txt
+      --allow-insecure-unlock
+      --bootnodes enode://$(cat /data/bootnode-enode.txt)@ghostchain-bootnode:30305
+    volumes:
+      - validator-2-data:/data
+      - ../../validators/keys:/keys:ro
+    networks:
+      - validator-net
+    ports:
+      - "8547:8547"
+      - "30304:30304"
+    depends_on:
+      - ghostchain-bootnode
+
+  # ── Validator Node 3 ─────────────────────────────────────────
+  ghostchain-validator-3:
+    image: ethereum/client-go:stable
+    container_name: ghostchain-validator-3
+    restart: always
+    command: >
+      --datadir /data
+      --networkid ${GHOSTCHAIN_L1_CHAIN_ID:-1337}
+      --port 30306
+      --http
+      --http.addr 0.0.0.0
+      --http.port 8548
+      --http.api eth,net,web3,personal,miner
+      --mine
+      --miner.gasprice 0
+      --unlock 0
+      --password /keys/password.txt
+      --allow-insecure-unlock
+      --bootnodes enode://$(cat /data/bootnode-enode.txt)@ghostchain-bootnode:30305
+    volumes:
+      - validator-3-data:/data
+      - ../../validators/keys:/keys:ro
+    networks:
+      - validator-net
+    ports:
+      - "8548:8548"
+      - "30306:30306"
+    depends_on:
+      - ghostchain-bootnode
+
+  # ── Validator Node 4 ─────────────────────────────────────────
+  ghostchain-validator-4:
+    image: ethereum/client-go:stable
+    container_name: ghostchain-validator-4
+    restart: always
+    command: >
+      --datadir /data
+      --networkid ${GHOSTCHAIN_L1_CHAIN_ID:-1337}
+      --port 30307
+      --http
+      --http.addr 0.0.0.0
+      --http.port 8549
+      --http.api eth,net,web3,personal,miner
+      --mine
+      --miner.gasprice 0
+      --unlock 0
+      --password /keys/password.txt
+      --allow-insecure-unlock
+      --bootnodes enode://$(cat /data/bootnode-enode.txt)@ghostchain-bootnode:30305
+    volumes:
+      - validator-4-data:/data
+      - ../../validators/keys:/keys:ro
+    networks:
+      - validator-net
+    ports:
+      - "8549:8549"
+      - "30307:30307"
+    depends_on:
+      - ghostchain-bootnode
