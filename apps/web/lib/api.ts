@@ -643,3 +643,180 @@ export async function fetchSeePromotions(): Promise<SeePromotionRecord[] | null>
     return body.promotions;
   } catch { return null; }
 }
+
+// ── Sovereign Core Kernel (SCK) — port 9300 ──────────────────────────
+const KERNEL = process.env["NEXT_PUBLIC_KERNEL_URL"] ?? "http://localhost:9300";
+
+export type KernelTaskPriority = "emergency" | "critical" | "high" | "normal" | "low";
+export type KernelTaskCategory =
+  | "security_analysis" | "code_evolution" | "infra_optimization" | "telemetry_processing"
+  | "governance_action" | "resource_rebalance" | "service_restart" | "knowledge_sync"
+  | "supervisor_sweep" | "batch_inference" | "policy_update" | "emergency_response";
+export type KernelTaskStatus = "queued" | "running" | "completed" | "failed" | "cancelled" | "expired";
+
+export interface KernelTask {
+  id: string;
+  category: KernelTaskCategory;
+  title: string;
+  priority: KernelTaskPriority;
+  status: KernelTaskStatus;
+  submittedBy: string;
+  submittedAt: number;
+  startedAt?: number;
+  completedAt?: number;
+  error?: string;
+  targetUrl?: string;
+}
+
+export interface KernelSchedulerStats {
+  queued: number;
+  running: number;
+  completed: number;
+  failed: number;
+  cancelled: number;
+  expired: number;
+  totalSubmitted: number;
+  byCategory: Record<string, number>;
+  byPriority: Record<string, number>;
+}
+
+export type ResourceLevel = "ok" | "warning" | "critical";
+
+export interface KernelResourceSnapshot {
+  timestamp: number;
+  overallLevel: ResourceLevel;
+  alerts: string[];
+  cpu: { usagePercent: number; level: ResourceLevel };
+  memory: { totalMb: number; usedMb: number; usagePercent: number; level: ResourceLevel };
+  disk: Array<{ path: string; totalKb: number; usedKb: number; usagePercent: number; level: ResourceLevel }>;
+}
+
+export type KernelServiceStatus = "healthy" | "degraded" | "down" | "unknown";
+
+export interface KernelServiceEntry {
+  name: string;
+  url: string;
+  status: KernelServiceStatus;
+  lastChecked: number;
+  consecutiveFailures: number;
+  restartCount: number;
+  critical: boolean;
+}
+
+export interface KernelSupervisorSummary {
+  total: number;
+  healthy: number;
+  degraded: number;
+  down: number;
+  unknown: number;
+  critical_down: number;
+  total_restarts: number;
+}
+
+export type AgentRole = "observer" | "operator" | "admin" | "sovereign";
+
+export interface KernelSecurityAgent {
+  id: string;
+  name: string;
+  role: AgentRole;
+  capabilities: string[];
+  active: boolean;
+  registeredAt: number;
+  lastSeenAt: number;
+}
+
+export interface KernelAuditEntry {
+  id: string;
+  timestamp: number;
+  agentId: string;
+  action: string;
+  allowed: boolean;
+  severity: "info" | "warning" | "critical";
+  reason?: string;
+}
+
+export interface KernelBusStatus {
+  running: boolean;
+  publishCount: number;
+  subscriberCount: number;
+  remoteSubscriberCount: number;
+  deadLetterCount: number;
+  recentEventCount: number;
+  topics: string[];
+}
+
+export interface KernelBusEvent {
+  id: string;
+  topic: string;
+  payload: Record<string, unknown>;
+  source: string;
+  timestamp: number;
+}
+
+export async function fetchKernelHealth(): Promise<Record<string, unknown> | null> {
+  try {
+    const r = await fetch(`${KERNEL}/health`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchKernelTelemetry(): Promise<Record<string, unknown> | null> {
+  try {
+    const r = await fetch(`${KERNEL}/telemetry`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchKernelTasks(status?: string): Promise<{ tasks: KernelTask[]; stats: KernelSchedulerStats } | null> {
+  try {
+    const q = status ? `?status=${status}` : "";
+    const r = await fetch(`${KERNEL}/scheduler/tasks${q}`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchKernelResources(): Promise<KernelResourceSnapshot | null> {
+  try {
+    const r = await fetch(`${KERNEL}/resources`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchKernelServices(): Promise<{ services: KernelServiceEntry[]; summary: KernelSupervisorSummary } | null> {
+  try {
+    const r = await fetch(`${KERNEL}/supervisor/services`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchKernelAgents(): Promise<{ agents: KernelSecurityAgent[] } | null> {
+  try {
+    const r = await fetch(`${KERNEL}/sck/agents`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchKernelAudit(limit = 50): Promise<{ entries: KernelAuditEntry[] } | null> {
+  try {
+    const r = await fetch(`${KERNEL}/sck/audit?limit=${limit}`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchKernelBusStatus(): Promise<KernelBusStatus | null> {
+  try {
+    const r = await fetch(`${KERNEL}/bus/status`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchKernelBusEvents(topic?: string, limit = 50): Promise<{ events: KernelBusEvent[] } | null> {
+  try {
+    const q = new URLSearchParams();
+    if (topic) q.set("topic", topic);
+    q.set("limit", String(limit));
+    const r = await fetch(`${KERNEL}/bus/events?${q.toString()}`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+

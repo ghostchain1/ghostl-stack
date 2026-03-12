@@ -61,8 +61,31 @@ services:
     environment:
       - NODE_ENV=production
       - GHOSTBRAIN_KERNEL_PORT=9300
+      - KERNEL_PORT=9300
+      - KERNEL_LOOP_MS=5000
       - GHOSTBRAIN_HYPERVISOR_HOST=${HYPERVISOR_HOST:-208.110.71.164}
       - GHOSTBRAIN_HYPERVISOR_URL=${GHOSTBRAIN_HYPERVISOR_URL:-http://208.110.71.164:8787}
+      # SCK — Sovereign Core Kernel
+      - SCK_TOKEN_SECRET=${SCK_TOKEN_SECRET:-change_me_in_production}
+      - SCK_TOKEN_TTL_MS=3600000
+      - SCK_RATE_MAX=60
+      - SCK_RATE_WINDOW=60000
+      # AI Scheduler
+      - SCHEDULER_TICK_MS=2000
+      # Resource Manager thresholds
+      - RM_CPU_WARN=70
+      - RM_CPU_CRIT=90
+      - RM_MEM_WARN=75
+      - RM_MEM_CRIT=90
+      - RM_DISK_WARN=70
+      - RM_DISK_CRIT=85
+      # Supervisor
+      - SUPERVISOR_RESTART_THRESHOLD=3
+      - SUPERVISOR_INTERVAL_MS=15000
+      # Intelligence Bus — downstream targets
+      - GIN_URL=http://ghostbrain-gin:9980
+      - ACGE_URL=http://ghostbrain-acge:9970
+      - TDS_URL=http://ghostbrain-tds:9960
     volumes:
       - kernel-data:/app/data
     networks:
