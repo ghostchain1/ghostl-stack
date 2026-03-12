@@ -474,3 +474,39 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+  # ── Global Intelligence Network (GIN) ────────────────────────
+  ghostbrain-gin:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-gin
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-gin:latest
+    container_name: ghostbrain-gin
+    restart: unless-stopped
+    ports:
+      - "${GHOSTBRAIN_GIN_PORT:-9980}:9980"
+    environment:
+      - NODE_ENV=production
+      - GIN_PORT=9980
+      - GIN_LOOP_MS=5000
+      - GIN_SELF_NODE_ID=ghoststack-baremetal
+      - GIN_SELF_REGION=us-east-florida
+      - GIN_SELF_URL=http://ghostbrain-gin:9980
+      - KERNEL_URL=http://ghostbrain-kernel:9300
+      - SCP_URL=http://ghostbrain-control-plane:9500
+      - GVF_URL=http://ghostbrain-validator-fabric:9700
+      - GDM_URL=http://ghostbrain-data-mesh:9900
+      - AIM_URL=http://ghostbrain-aim:9950
+      - TDS_URL=http://ghostbrain-tds:9960
+      - ACGE_URL=http://ghostbrain-acge:9970
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-kernel
+      - ghostbrain-control-plane
+      - ghostbrain-acge
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9980/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

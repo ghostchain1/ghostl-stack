@@ -29,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <li><a href="/ai">AI System</a></li>
               <li><a href="/security">Security</a></li>
               <li><a href="/compliance">Compliance</a></li>
+              <li><a href="/intelligence">Intelligence</a></li>
             </ul>
             <div className="sidebar-footer">
               <a href={process.env.NEXT_PUBLIC_GRAFANA_URL || "http://localhost:3001"}

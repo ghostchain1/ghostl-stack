@@ -381,3 +381,142 @@ export async function fetchAcgeRegulations(): Promise<AcgeRegulation[] | null> {
     return r.ok ? r.json() : null;
   } catch { return null; }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Global Intelligence Network (GIN) — port 9980
+// ─────────────────────────────────────────────────────────────────────────────
+
+const GIN = process.env["NEXT_PUBLIC_GIN_URL"] ?? "http://localhost:9980";
+
+export type NodeRole      = "hypervisor" | "vm" | "validator" | "rpc" | "cloud" | "analytics";
+export type NodeStatus    = "online" | "offline" | "degraded";
+export type DecisionType  = "infra_scaling" | "security_response" | "protocol_upgrade" | "governance" | "emergency_shutdown";
+export type DecisionStatus = "pending" | "voting" | "approved" | "rejected" | "executed";
+export type TaskType      = "code_repair" | "security_analysis" | "infra_optimization" | "economic_simulation" | "threat_response" | "cross_chain_monitoring" | "data_collection";
+export type TaskPriority  = "emergency" | "high" | "normal" | "low";
+export type TaskStatus    = "pending" | "assigned" | "in_progress" | "completed" | "failed";
+export type ChainStatus   = "operational" | "degraded" | "congested" | "unknown";
+
+export interface GinNode {
+  id:           string;
+  region:       string;
+  role:         NodeRole;
+  capabilities: string[];
+  status:       NodeStatus;
+  latencyMs:    number;
+  lastSeen:     number;
+  baseUrl?:     string;
+  version?:     string;
+  metadata:     Record<string, unknown>;
+  registeredAt: number;
+}
+
+export interface GinKnowledgeItem {
+  id:       string;
+  source:   string;
+  origin:   string;
+  region:   string;
+  severity: string;
+  data:     Record<string, unknown>;
+  ts:       number;
+}
+
+export interface GinDecision {
+  id:          string;
+  type:        DecisionType;
+  title:       string;
+  description: string;
+  proposer:    string;
+  quorum:      number;
+  status:      DecisionStatus;
+  votes:       { nodeId: string; choice: string; ts: number }[];
+  deadline:    number;
+  payload:     Record<string, unknown>;
+  result?:     Record<string, unknown>;
+  createdAt:   number;
+  executedAt?: number;
+}
+
+export interface GinSwarmTask {
+  id:                 string;
+  type:               TaskType;
+  priority:           TaskPriority;
+  status:             TaskStatus;
+  assignedNode?:      string;
+  requiredCapability: string;
+  payload:            Record<string, unknown>;
+  result?:            Record<string, unknown>;
+  failReason?:        string;
+  createdAt:          number;
+  assignedAt?:        number;
+  completedAt?:       number;
+  retryCount:         number;
+}
+
+export interface GinChainMetric {
+  chain:          string;
+  status:         ChainStatus;
+  blockHeight?:   number;
+  tps?:           number;
+  gasPriceGwei?:  number;
+  latencyMs:      number;
+  ts:             number;
+  error?:         string;
+}
+
+export interface GinHealth {
+  status:     string;
+  service:    string;
+  port:       number;
+  uptime:     number;
+  cycleCount: number;
+  self:       string;
+  wsClients:  number;
+  nodes:      { total: number; online: number; offline: number; degraded: number; byRole: Record<string, number>; byRegion: Record<string, number> };
+  knowledge:  { totalItems: number; ringCapacity: number; bySeverity: Record<string, number>; bySource: Record<string, number>; lastPropagatedAt: number };
+  decisions:  { total: number; active: number; approved: number; rejected: number; executed: number };
+  swarm:      { totalTasks: number; pending: number; assigned: number; inProgress: number; completed: number; failed: number };
+  telemetry:  { currentLoad1: number; currentMemUsedPct: number; chainStatuses: Record<string, string>; historyDepth: number; lastPushedAt: number };
+}
+
+export async function fetchGinHealth(): Promise<GinHealth | null> {
+  try {
+    const r = await fetch(`${GIN}/health`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchGinNodes(): Promise<GinNode[] | null> {
+  try {
+    const r = await fetch(`${GIN}/nodes`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchGinKnowledge(limit = 30): Promise<GinKnowledgeItem[] | null> {
+  try {
+    const r = await fetch(`${GIN}/knowledge?limit=${limit}`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchGinDecisions(): Promise<GinDecision[] | null> {
+  try {
+    const r = await fetch(`${GIN}/decisions`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchGinSwarmTasks(limit = 30): Promise<GinSwarmTask[] | null> {
+  try {
+    const r = await fetch(`${GIN}/swarm/tasks`, { cache: "no-store" });
+    return r.ok ? (r.json() as Promise<GinSwarmTask[]>).then(t => t.slice(0, limit)) : null;
+  } catch { return null; }
+}
+
+export async function fetchGinChainMetrics(): Promise<GinChainMetric[] | null> {
+  try {
+    const r = await fetch(`${GIN}/telemetry/chains?limit=5`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
