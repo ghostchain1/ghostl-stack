@@ -161,11 +161,22 @@ services:
     environment:
       - NODE_ENV=production
       - GHOSTBRAIN_EVOLUTION_PORT=9250
+      - SEE_CYCLE_INTERVAL_MS=43200000
+      - SEE_SERVICES_ROOT=/app/services
+      - GHOSTBRAIN_KERNEL_URL=http://ghostbrain-kernel:9300
+      - GHOSTBRAIN_CCL_URL=http://ghost-devops-ai:9400
+      - DEVOPS_AI_URL=http://ghost-devops-ai:9400
+      - TDS_URL=http://ghostbrain-tds:9960
+      - ACGE_URL=http://ghostbrain-acge:9970
+      - GIN_URL=http://ghostbrain-gin:9980
+      - DEVNET_HOST=ghostchain-devnet
     networks:
       - ghostbrain-net
     depends_on:
       - ghostbrain-swarm
       - ghostbrain-simulation-lab
+      - ghostbrain-acge
+      - ghostbrain-gin
 
   # ── Kernel (already defined above) — ordering reference ──────
   # ghostbrain-kernel: port 9300

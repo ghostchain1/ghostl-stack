@@ -520,3 +520,126 @@ export async function fetchGinChainMetrics(): Promise<GinChainMetric[] | null> {
     return r.ok ? r.json() : null;
   } catch { return null; }
 }
+
+// ── SEE — Self-Evolution Engine (9250) ───────────────────────────────────────
+
+const SEE = process.env["NEXT_PUBLIC_SEE_URL"] ?? "http://localhost:9250";
+
+export interface SeeCodeFinding {
+  id:            string;
+  file:          string;
+  line?:         number;
+  type:          "security" | "performance" | "dependency" | "config_drift" | "architecture";
+  severity:      "critical" | "warning" | "info";
+  description:   string;
+  suggestion:    string;
+  estimatedGain: string;
+}
+
+export interface SeeCodeAnalysisReport {
+  filesScanned:  number;
+  findings:      SeeCodeFinding[];
+  overallScore:  number;
+  byType:        Record<string, number>;
+  bySeverity:    Record<string, number>;
+  scannedAt:     number;
+  cachedAt?:     number;
+}
+
+export interface SeeRefactorProposal {
+  id:              string;
+  category:        string;
+  impact:          "low" | "medium" | "high" | "critical";
+  title:           string;
+  description:     string;
+  targetFiles:     string[];
+  priority:        number;
+  requiresSandbox: boolean;
+  status:          "draft" | "sandbox_queued" | "sandbox_passed" | "sandbox_failed" | "promoted" | "rejected";
+  createdAt:       number;
+}
+
+export interface SeeArchitectureProposal {
+  id:               string;
+  type:             string;
+  title:            string;
+  description:      string;
+  affectedServices: string[];
+  effort:           "low" | "medium" | "high";
+  priority:         number;
+  createdAt:        number;
+}
+
+export interface SeeTopologyFindings {
+  healthMap:     Array<{ name: string; reachable: boolean; responseMs: number | null }>;
+  avgResponseMs: number;
+  unreachable:   string[];
+  missingHealth: string[];
+  proposals:     SeeArchitectureProposal[];
+  analyzedAt:    number;
+}
+
+export interface SeeEvolutionCycle {
+  cycleId:      string;
+  startedAt:    string;
+  completedAt?: string;
+  status:       "running" | "completed" | "failed";
+  error?:       string;
+  executions:   Array<{ proposalId?: string; status: string; timestamp?: string }>;
+}
+
+export interface SeePromotionRecord {
+  id:          string;
+  proposalId:  string;
+  status:      string;
+  reason:      string;
+  promotedBy:  "auto" | "manual";
+  notifiedGin: boolean;
+  auditLogged: boolean;
+  createdAt:   number;
+  completedAt?: number;
+}
+
+export async function fetchSeeHealth(): Promise<{ status: string; cycle: number } | null> {
+  try {
+    const r = await fetch(`${SEE}/health`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchSeeLatestCycle(): Promise<SeeEvolutionCycle | null> {
+  try {
+    const r = await fetch(`${SEE}/cycle/latest`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchSeeCodeAnalysis(): Promise<SeeCodeAnalysisReport | null> {
+  try {
+    const r = await fetch(`${SEE}/code-analysis`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchSeeRefactorProposals(): Promise<{ proposals: SeeRefactorProposal[]; summary: Record<string, unknown> } | null> {
+  try {
+    const r = await fetch(`${SEE}/refactor/proposals`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchSeeTopology(): Promise<SeeTopologyFindings | null> {
+  try {
+    const r = await fetch(`${SEE}/architecture/topology`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchSeePromotions(): Promise<SeePromotionRecord[] | null> {
+  try {
+    const r = await fetch(`${SEE}/promotions`, { cache: "no-store" });
+    if (!r.ok) return null;
+    const body = (await r.json()) as { promotions: SeePromotionRecord[] };
+    return body.promotions;
+  } catch { return null; }
+}
