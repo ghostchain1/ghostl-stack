@@ -564,3 +564,53 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+  # ── Universal Orchestrator (UO) — top-level coordinator ──────
+  ghostbrain-uo:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-uo
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-uo:latest
+    container_name: ghostbrain-uo
+    restart: unless-stopped
+    ports:
+      - "${GHOSTBRAIN_UO_PORT:-9990}:9990"
+    environment:
+      - NODE_ENV=production
+      - UO_PORT=9990
+      - UO_LOOP_MS=3000
+      - KERNEL_URL=http://ghostbrain-kernel:9300
+      - ECONOMIC_URL=http://ghostbrain-economic:9050
+      - HUB_URL=http://ghostbrain-digital-twin:9100
+      - TDS_URL=http://ghostbrain-tds:9960
+      - AIM_URL=http://ghostbrain-aim:9950
+      - ACGE_URL=http://ghostbrain-acge:9970
+      - GIN_URL=http://ghostbrain-gin:9980
+      - EVOLUTION_URL=http://ghostbrain-evolution-engine:9250
+      - SWARM_URL=http://ghostbrain-swarm:9000
+      - GOVERNANCE_URL=http://ghostbrain-governance:9550
+      - SIMULATION_URL=http://ghostbrain-simulation-lab:9200
+      - VALIDATOR_FABRIC_URL=http://ghostbrain-validator-fabric:9700
+      - INTERCHAIN_URL=http://ghostbrain-interchain:9450
+      - CONTROL_PLANE_URL=http://ghostbrain-control-plane:9500
+      - DATA_MESH_URL=http://ghostbrain-data-mesh:9900
+      - MULTICHAIN_URL=http://ghostbrain-multichain:9350
+      - DEVOPS_URL=http://ghost-devops-ai:9400
+      - CONSCIOUS_CORE_URL=http://ghostbrain-conscious-core:9150
+      - DIGITAL_TWIN_URL=http://ghostbrain-digital-twin:9100
+      - RESEARCH_URL=http://ghostbrain-research-ai:9600
+      - ECONOMY_ENGINE_URL=http://ghostbrain-economy-engine:9800
+      - BUILD_ORCHESTRATOR_URL=http://ghost-build-orchestrator:9001
+      - DEV_AI_URL=http://ghostbrain-dev-ai:9002
+      - GLOBAL_URL=http://ghostbrain-global:9003
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-kernel
+      - ghostbrain-gin
+      - ghostbrain-acge
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9990/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

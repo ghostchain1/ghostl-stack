@@ -33,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <li><a href="/evolution">Evolution</a></li>
               <li><a href="/kernel">Kernel</a></li>
               <li><a href="/economy">Economy</a></li>
+              <li><a href="/orchestrator">Orchestrator</a></li>
             </ul>
             <div className="sidebar-footer">
               <a href={process.env.NEXT_PUBLIC_GRAFANA_URL || "http://localhost:3001"}

@@ -1107,3 +1107,241 @@ export async function fetchEconomicStatus(): Promise<Record<string, unknown> | n
   } catch { return null; }
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// Universal Orchestrator (UO) — port 9990
+// ═══════════════════════════════════════════════════════════════════════
+
+const UO = process.env["NEXT_PUBLIC_UO_URL"] ?? "http://localhost:9990";
+
+// --- Types ---
+
+export interface UoServiceHealth {
+  ok: boolean;
+  latencyMs: number;
+  lastChecked: number;
+}
+
+export interface UoSystemsOverview {
+  systems: Record<string, UoServiceHealth>;
+  total: number;
+  healthy: number;
+}
+
+export interface UoCommand {
+  id: string;
+  target: string;
+  action: string;
+  params: Record<string, unknown>;
+  priority: string;
+  status: "queued" | "dispatching" | "completed" | "failed" | "rejected";
+  source: string;
+  requester: string;
+  issuedAt: number;
+  completedAt?: number;
+  responseCode?: number;
+  error?: string;
+}
+
+export interface UoCommandStats {
+  total: number;
+  completed: number;
+  failed: number;
+  rejected: number;
+  successRate: number;
+}
+
+export interface UoDecision {
+  id: string;
+  type: string;
+  subtype?: string;
+  payload: Record<string, unknown>;
+  priority: string;
+  source: string;
+  createdAt: number;
+}
+
+export interface UoRouteEntry {
+  service: string;
+  url: string;
+  endpoint: string;
+  method: string;
+  reason: string;
+  isPrimary: boolean;
+}
+
+export interface UoRouteResult {
+  decision: UoDecision;
+  primary: UoRouteEntry;
+  secondary: UoRouteEntry[];
+  routedAt: number;
+}
+
+export interface UoWorkflowStep {
+  name: string;
+  service: string;
+  endpoint: string;
+  method: string;
+  status: "pending" | "running" | "completed" | "failed" | "skipped";
+  startedAt?: number;
+  completedAt?: number;
+  error?: string;
+}
+
+export interface UoWorkflowRun {
+  id: string;
+  playbook: string;
+  triggeredBy: string;
+  status: "pending" | "running" | "completed" | "failed" | "aborted";
+  startedAt: number;
+  completedAt?: number;
+  steps: UoWorkflowStep[];
+  error?: string;
+}
+
+export interface UoWorkflowStats {
+  total: number;
+  completed: number;
+  failed: number;
+  active: number;
+  playbooks: Record<string, number>;
+}
+
+export interface UoTask {
+  id: string;
+  type: string;
+  label: string;
+  targetUrl: string;
+  endpoint: string;
+  method: string;
+  intervalMs?: number;
+  nextRunAt: number;
+  lastRunAt?: number;
+  lastStatus?: "ok" | "error";
+  enabled: boolean;
+  addedBy: string;
+}
+
+export interface UoTaskStats {
+  total: number;
+  enabled: number;
+  recurring: number;
+  okRuns: number;
+  errorRuns: number;
+}
+
+export interface UoEvent {
+  id: string;
+  category: string;
+  severity: "info" | "warning" | "critical" | "emergency";
+  message: string;
+  source: string;
+  payload: Record<string, unknown>;
+  acknowledged: boolean;
+  workflowHint?: string;
+  createdAt: number;
+}
+
+export interface UoEventStats {
+  total: number;
+  byCategory: Record<string, number>;
+  bySeverity: Record<string, number>;
+  critical: number;
+  emergency: number;
+}
+
+export interface UoStatus {
+  health: Record<string, UoServiceHealth>;
+  commands: UoCommandStats;
+  routes: { total: number; byType: Record<string, number>; successRate: number };
+  workflows: UoWorkflowStats;
+  tasks: UoTaskStats;
+  events: UoEventStats;
+  critical: number;
+}
+
+// --- Fetch helpers ---
+
+export async function fetchUoStatus(): Promise<UoStatus | null> {
+  try {
+    const r = await fetch(`${UO}/status`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchUoHealth(): Promise<{ ok: boolean; uptime: number } | null> {
+  try {
+    const r = await fetch(`${UO}/health`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchUoSystems(): Promise<UoSystemsOverview | null> {
+  try {
+    const r = await fetch(`${UO}/systems`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchUoCommands(limit = 50): Promise<{ history: UoCommand[]; stats: UoCommandStats } | null> {
+  try {
+    const r = await fetch(`${UO}/commands?limit=${limit}`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchUoRoutingTable(): Promise<{ routes: unknown[] } | null> {
+  try {
+    const r = await fetch(`${UO}/routing-table`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchUoRoutes(limit = 50): Promise<{ history: UoRouteResult[]; stats: unknown } | null> {
+  try {
+    const r = await fetch(`${UO}/routes?limit=${limit}`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchUoWorkflows(limit = 20): Promise<{
+  active: UoWorkflowRun[];
+  history: UoWorkflowRun[];
+  stats: UoWorkflowStats;
+  available: string[];
+} | null> {
+  try {
+    const r = await fetch(`${UO}/workflows?limit=${limit}`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchUoTasks(enabled?: boolean): Promise<{
+  tasks: UoTask[];
+  stats: UoTaskStats;
+  history: unknown[];
+} | null> {
+  try {
+    const url = enabled !== undefined ? `${UO}/tasks?enabled=${enabled}` : `${UO}/tasks`;
+    const r = await fetch(url, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+export async function fetchUoEvents(opts?: {
+  category?: string;
+  severity?: string;
+  limit?: number;
+  since?: number;
+}): Promise<{ events: UoEvent[]; stats: UoEventStats; critical: UoEvent[] } | null> {
+  try {
+    const params = new URLSearchParams();
+    if (opts?.category) params.set("category", opts.category);
+    if (opts?.severity) params.set("severity", opts.severity);
+    if (opts?.limit)    params.set("limit",    String(opts.limit));
+    if (opts?.since)    params.set("since",    String(opts.since));
+    const qs = params.toString();
+    const r  = await fetch(`${UO}/events${qs ? `?${qs}` : ""}`, { cache: "no-store" });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
