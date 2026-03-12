@@ -1,14 +1,20 @@
 # ─── Node / JS ────────────────────────────────────────────────
 node_modules/
+**/node_modules/
 .pnpm-debug.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-lock.yaml
+**/pnpm-lock.yaml
+package-lock.json
 dist/
 build/
 .next/
 out/
 .turbo/
+**/*.tsbuildinfo
+**/*.js.map
 
 # ─── Environment ──────────────────────────────────────────────
 .env
