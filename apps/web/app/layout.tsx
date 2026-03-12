@@ -42,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <li><a href="/orchestrator">Orchestrator</a></li>
               <li><a href="/intelligence">Intelligence</a></li>
               <li><a href="/evolution">Evolution</a></li>
+              <li><a href="/copilot">AI Copilot</a></li>
 
               <li className="nav-section">🔐 Security</li>
               <li><a href="/security">Security</a></li>
