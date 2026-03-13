@@ -84,7 +84,7 @@ export function issueJwt(
     exp: now + expirySeconds,
     roles: actor.roles,
     type: actor.type,
-    chainId: actor.chainId,
+    ...(actor.chainId !== undefined && { chainId: actor.chainId }),
     jti: randomBytes(16).toString('hex'),
   };
 
@@ -197,7 +197,7 @@ export function resolveActorFromRequest(
         id: payload.sub,
         type: payload.type,
         roles: payload.roles,
-        chainId: payload.chainId,
+        ...(payload.chainId !== undefined && { chainId: payload.chainId }),
       };
     } catch {
       // Fall through to other methods
@@ -208,12 +208,13 @@ export function resolveActorFromRequest(
   const actorHeader = req.headers['x-actor-id'];
   const actorId = Array.isArray(actorHeader) ? actorHeader[0] : actorHeader;
   if (actorId) {
+    const id = actorId;   // narrow to string
     const roleHeader = req.headers['x-actor-roles'];
-    const rawRoles = Array.isArray(roleHeader) ? roleHeader[0] : (roleHeader ?? '');
+    const rawRoles = (Array.isArray(roleHeader) ? (roleHeader[0] ?? '') : (roleHeader ?? '')) as string;
     return {
-      id: actorId,
-      type: detectActorType(actorId, rawRoles),
-      roles: rawRoles.split(',').map(r => r.trim()).filter(Boolean),
+      id,
+      type: detectActorType(id, rawRoles),
+      roles: rawRoles.split(',').map((r: string) => r.trim()).filter(Boolean),
     };
   }
 

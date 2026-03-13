@@ -7,6 +7,7 @@
  */
 
 import type { LegacyTxData, TxOptions, SignedTxResult, HexString } from "./types.js";
+import type { Input } from "@ghostchain/ghostchainjs-rlp";
 import {
   toBigInt, toBytes, bigIntToBytes, toAddressBytes, bytesToHex,
   keccak256, rlpEncode, ecSign,
@@ -117,7 +118,7 @@ export class LegacyTransaction {
 
   // ── Private ─────────────────────────────────────────────────────────────────
 
-  private _signingFields(): unknown[] {
+  private _signingFields(): Input[] {
     if (this.chainId > 0n) {
       // EIP-155
       return [

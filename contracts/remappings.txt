@@ -1,0 +1,4 @@
+src/=src/
+forge-std/=lib/forge-std/src/
+@openzeppelin/contracts/=lib/ghostchain-contracts/contracts/
+@ghostchain/contracts/=ghostcain/contracts/

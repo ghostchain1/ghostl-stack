@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.24;
+pragma solidity ^0.8.24;
 
 // GhostChain Contracts v5.6.1 (contracts/src/ghostx/GhostXRouter.sol)
 

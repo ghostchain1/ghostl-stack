@@ -1,6 +1,6 @@
 // GhostChain Contracts v5.6.1 (test/foundry/GRC20.t.sol)
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity ^0.8.24;
 
 import { Test } from "forge-std/Test.sol";
 import { GRC20 } from "../../src/ghost/GRC20.sol";

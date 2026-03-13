@@ -33,7 +33,7 @@ export class TypedDataEncoder {
   static hash(
     domain: GhostTypedDataDomain,
     types:  GhostTypedDataTypes,
-    value:  Record<string, unknown>
+    value:  object
   ): string {
     const encoder       = new TypedDataEncoder(types);
     const domainSep     = TypedDataEncoder.hashDomain(domain);
@@ -52,7 +52,7 @@ export class TypedDataEncoder {
   static hashStructHex(
     primaryType: string,
     types: GhostTypedDataTypes,
-    value: Record<string, unknown>
+    value: object
   ): string {
     const encoder = new TypedDataEncoder(types);
     return keccak256Hex(encoder.hashStruct(primaryType, value));
@@ -77,13 +77,14 @@ export class TypedDataEncoder {
   }
 
   /** Compute the struct hash for a given type name and value. */
-  hashStruct(primaryType: string, value: Record<string, unknown>): Uint8Array {
+  hashStruct(primaryType: string, value: object): Uint8Array {
+    const val = value as Record<string, unknown>;
     const fields     = this._types[primaryType];
     if (!fields)     throw new Error(`TypedDataEncoder: unknown type ${primaryType}`);
     const typeHash   = _typeHash(primaryType, fields.map((f) => `${f.type} ${f.name}`));
     const typeFields = fields.map((f) => `${f.type} ${f.name}`);
     const values     = fields.map((f) => {
-      const v = value[f.name];
+      const v = val[f.name];
       // Recursively hash nested structs
       if (this._types[f.type]) return this.hashStruct(f.type, v as Record<string, unknown>);
       // String/bytes → keccak256

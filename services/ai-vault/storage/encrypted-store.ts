@@ -152,7 +152,7 @@ export class EncryptedStore {
         version: existing.version + 1,
         createdAt: now,
         updatedAt: now,
-        expiresAt: opts.expiresAt,
+        ...(opts.expiresAt !== undefined && { expiresAt: opts.expiresAt }),
         metadata: opts.metadata ?? {},
       };
     }
@@ -173,7 +173,7 @@ export class EncryptedStore {
       JSON.stringify(blob),
     );
 
-    return { id, path, namespace, version: 1, createdAt: now, updatedAt: now, expiresAt: opts.expiresAt, metadata: opts.metadata ?? {} };
+    return { id, path, namespace, version: 1, createdAt: now, updatedAt: now, ...(opts.expiresAt !== undefined && { expiresAt: opts.expiresAt }), metadata: opts.metadata ?? {} };
   }
 
   // ── Read ─────────────────────────────────────────────────────────────────
@@ -186,13 +186,13 @@ export class EncryptedStore {
     const row = this._getRow(path);
     if (!row) return null;
 
-    if (row.expires_at && row.expires_at < Date.now()) {
+    if (row['expires_at'] != null && (row['expires_at'] as number) < Date.now()) {
       // Secret expired — delete and return null
       this.delete(path);
       return null;
     }
 
-    const blob = JSON.parse(row.blob as string) as EncryptedBlob;
+    const blob = JSON.parse(row['blob'] as string) as EncryptedBlob;
     const aad  = Buffer.from(path, 'utf8');
 
     try {
@@ -225,7 +225,7 @@ export class EncryptedStore {
   has(path: string): boolean {
     const row = this._getRow(path);
     if (!row) return false;
-    if (row.expires_at && (row.expires_at as number) < Date.now()) return false;
+    if (row['expires_at'] != null && (row['expires_at'] as number) < Date.now()) return false;
     return true;
   }
 
@@ -244,7 +244,7 @@ export class EncryptedStore {
    * Does NOT return decrypted values.
    */
   list(namespaceOrPrefix = ''): SecretMeta[] {
-    const rows = this._db.prepare<[string]>(`
+    const rows = this._db.prepare<[string, number]>(`
       SELECT id, path, namespace, version, created_at, updated_at, expires_at, rotated_at, metadata
       FROM secrets
       WHERE path LIKE ? AND (expires_at IS NULL OR expires_at > ?)
@@ -278,6 +278,8 @@ export class EncryptedStore {
   }
 
   private _rowToMeta(row: Record<string, unknown>): SecretMeta {
+    const expiresAt = row['expires_at'] != null ? Number(row['expires_at']) : undefined;
+    const rotatedAt = row['rotated_at'] != null ? Number(row['rotated_at']) : undefined;
     return {
       id:        String(row['id'] ?? ''),
       path:      String(row['path'] ?? ''),
@@ -285,8 +287,8 @@ export class EncryptedStore {
       version:   Number(row['version'] ?? 1),
       createdAt: Number(row['created_at'] ?? 0),
       updatedAt: Number(row['updated_at'] ?? 0),
-      expiresAt: row['expires_at'] != null ? Number(row['expires_at']) : undefined,
-      rotatedAt: row['rotated_at'] != null ? Number(row['rotated_at']) : undefined,
+      ...(expiresAt !== undefined && { expiresAt }),
+      ...(rotatedAt !== undefined && { rotatedAt }),
       metadata:  JSON.parse(String(row['metadata'] ?? '{}')),
     };
   }

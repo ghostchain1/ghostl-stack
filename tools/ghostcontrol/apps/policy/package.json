@@ -13,9 +13,8 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@ghostcontrol/shared": "workspace:*",
+    "@ghostcontrol/shared": "*",
     "fastify": "^5.4.0",
     "zod": "^3.25.76"
   }
 }
-

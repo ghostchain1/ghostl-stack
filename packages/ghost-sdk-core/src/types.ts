@@ -19,7 +19,7 @@ export interface GhostTransactionRequest {
   maxFeePerGas?: bigint;
   maxPriorityFeePerGas?: bigint;
   nonce?: number;
-  chainId?: number;
+  chainId?: number | bigint;
   type?: number;
 }
 
@@ -67,7 +67,7 @@ export interface GhostCallOverride {
 export interface GhostTypedDataDomain {
   name?: string;
   version?: string;
-  chainId?: number;
+  chainId?: number | bigint;
   verifyingContract?: string;
   salt?: string;
 }

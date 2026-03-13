@@ -705,3 +705,27 @@ export {
   type GhostERC1155TransferSingleEvent,
   type GhostERC1155TransferBatchEvent,
 } from "./token/GhostERC1155.js";
+
+// ── Batch transaction executor ────────────────────────────────────────────────
+export {
+  GhostBatchTx,
+  type BatchSigner,
+  type BatchResult,
+  type BatchOptions,
+} from "./transaction/GhostBatchTx.js";
+
+// ── Multisig wallet coordinator ───────────────────────────────────────────────
+export {
+  GhostMultisig,
+  type GhostMultisigConfig,
+  type MultisigPayload,
+} from "./wallet/GhostMultisig.js";
+
+// ── Reactive balance hook ─────────────────────────────────────────────────────
+export {
+  GhostBalanceState,
+  createGhostBalanceState,
+  type GhostBalanceSnapshot,
+  type GhostBalanceStatus,
+  type GhostBalanceSubscriber,
+} from "./next/useGhostBalance.js";

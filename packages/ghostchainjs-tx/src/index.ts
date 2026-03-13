@@ -39,7 +39,6 @@ export type {
   AccessListEIP2930TxData,
   FeeMarketEIP1559TxData,
   TypedTxData,
-  TypedTransaction,
   AccessList,
   AccessListItem,
   TxOptions,

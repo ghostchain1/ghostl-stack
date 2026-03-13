@@ -148,14 +148,14 @@ extendEnvironment((hre: HardhatRuntimeEnvironment) => {
 //
 
 task("ghost:generate", "Generate a GhostChain Solidity contract from a template")
-  .addParam("type",    "Contract type: token | nft | staking | dao | dex")
-  .addParam("name",    "PascalCase contract name, e.g. GhostGovToken")
-  .addOptionalParam("symbol",     "Token/NFT symbol (for token and nft types)", "")
-  .addOptionalParam("outDir",     "Output directory inside contracts/src/", "generated")
-  .addOptionalParam("maxSupply",  "Maximum total supply in whole tokens (token type only)", "")
-  .addFlag("noDeploy",            "Skip generating a Hardhat deploy script")
-  .addFlag("emitSdk",             "Also emit a TypeScript SDK wrapper stub")
-  .setAction(async (args, _hre) => {
+  .addOption({ name: "type",      description: "Contract type: token | nft | staking | dao | dex", defaultValue: "" })
+  .addOption({ name: "name",      description: "PascalCase contract name, e.g. GhostGovToken", defaultValue: "" })
+  .addOption({ name: "symbol",    description: "Token/NFT symbol (for token and nft types)", defaultValue: "" })
+  .addOption({ name: "outDir",    description: "Output directory inside contracts/src/", defaultValue: "generated" })
+  .addOption({ name: "maxSupply", description: "Maximum total supply in whole tokens (token type only)", defaultValue: "" })
+  .addFlag({ name: "noDeploy",    description: "Skip generating a Hardhat deploy script" })
+  .addFlag({ name: "emitSdk",     description: "Also emit a TypeScript SDK wrapper stub" })
+  .setInlineAction(async (args, _hre) => {
     // Lazy-load ghost-contract-factory so the plugin itself has no hard dep.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let factory: any;

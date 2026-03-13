@@ -58,7 +58,7 @@ export function bytesToHex(b: Uint8Array): HexString {
 // ── Access list encoding ──────────────────────────────────────────────────────
 
 /** Encode an EIP-2930 access list to RLP-ready nested arrays */
-export function encodeAccessList(list: AccessList | undefined): unknown[] {
+export function encodeAccessList(list: AccessList | undefined): Input[] {
   if (!list || list.length === 0) return [];
   return list.map((item: AccessListItem) => [
     toBytes(item.address),
@@ -76,7 +76,7 @@ export function keccak256(data: Uint8Array): Uint8Array {
 
 // ── RLP helpers ───────────────────────────────────────────────────────────────
 
-import { encode as rlpEncode } from "@ghostchain/ghostchainjs-rlp";
+import { encode as rlpEncode, type Input } from "@ghostchain/ghostchainjs-rlp";
 
 export { rlpEncode };
 

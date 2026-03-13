@@ -1,6 +1,7 @@
 import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
-import "hardhat-ghost";
+
+
+
 import "dotenv/config";
 
 const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
@@ -67,6 +68,7 @@ const config: HardhatUserConfig = {
   },
   networks: {
     anvil: {
+      type: "http",
       url: RPC_L1,
       chainId: L1_CHAIN_ID,
       accounts: LOCAL_ACCOUNTS,
@@ -74,6 +76,7 @@ const config: HardhatUserConfig = {
       gasPrice: 1_000_000_000
     },
     ghostl2: {
+      type: "http",
       url: RPC_L2,
       chainId: L2_CHAIN_ID,
       accounts: LOCAL_ACCOUNTS,
@@ -81,6 +84,7 @@ const config: HardhatUserConfig = {
       gasPrice: 1_000_000_000
     },
     ghostl3: {
+      type: "http",
       url: RPC_L3,
       chainId: L3_CHAIN_ID,
       accounts: LOCAL_ACCOUNTS,

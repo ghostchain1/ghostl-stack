@@ -65,7 +65,7 @@ export interface Signer {
   signTypedData(
     domain: import("./TypedDataEncoder").TypedDataDomain,
     types: Record<string, import("./TypedDataEncoder").TypedDataField[]>,
-    value: Record<string, unknown>
+    value: object
   ): Promise<string>;
 }
 
@@ -77,7 +77,7 @@ import { TypedDataEncoder as _TDE } from "./TypedDataEncoder";
 export function verifyTypedData(
   domain: import("./TypedDataEncoder").TypedDataDomain,
   types: Record<string, import("./TypedDataEncoder").TypedDataField[]>,
-  value: Record<string, unknown>,
+  value: object,
   signature: string
 ): string {
   const digestHex = _TDE.hash(domain, types, value);

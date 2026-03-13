@@ -3,5 +3,77 @@
 		{
 			"path": "."
 		}
-	]
+	],
+	"settings": {
+		"files.watcherExclude": {
+			"**/node_modules/**": true,
+			"**/dist/**": true,
+			"**/out/**": true,
+			"**/build/**": true,
+			"**/.turbo/**": true,
+			"**/.next/**": true,
+			"**/coverage/**": true,
+			"**/contracts/artifacts/**": true,
+			"**/contracts/cache/**": true,
+			"**/contracts/out/**": true,
+			"**/contracts/lib/**": true,
+			"**/contracts/crytic-export/**": true,
+			"**/contracts/broadcast/**": true,
+			"**/contracts/formal/**": true,
+			"**/artifacts/**": true,
+			"**/.git/objects/**": true,
+			"**/.git/subtree-cache/**": true,
+			"**/infra/**/.terraform/**": true,
+			"**/__pycache__/**": true,
+			"**/.pytest_cache/**": true,
+			"**/target/**": true,
+			"**/grafana/data/**": true,
+			"**/evidence/**": true
+		},
+		"files.exclude": {
+			"**/node_modules": true,
+			"**/.turbo": true,
+			"**/.next": true,
+			"**/contracts/cache": true,
+			"**/contracts/out": true,
+			"**/contracts/artifacts": true,
+			"**/contracts/crytic-export": true,
+			"**/contracts/broadcast": true,
+			"**/contracts/formal": true,
+			"**/__pycache__": true,
+			"**/.pytest_cache": true,
+			"**/coverage": true
+		},
+		"search.exclude": {
+			"**/node_modules": true,
+			"**/dist": true,
+			"**/out": true,
+			"**/build": true,
+			"**/.turbo": true,
+			"**/.next": true,
+			"**/coverage": true,
+			"**/contracts/artifacts": true,
+			"**/contracts/cache": true,
+			"**/contracts/out": true,
+			"**/contracts/lib": true,
+			"**/contracts/crytic-export": true,
+			"**/contracts/broadcast": true,
+			"**/artifacts": true,
+			"**/__pycache__": true,
+			"**/*.min.js": true,
+			"**/*.min.css": true
+		},
+		"typescript.tsserver.maxTsServerMemory": 2048,
+		"typescript.disableAutomaticTypeAcquisition": true,
+		"typescript.tsserver.experimental.enableProjectDiagnostics": false,
+		"typescript.preferences.includePackageJsonAutoImports": "off",
+		"extensions.autoUpdate": false,
+		"extensions.autoCheckUpdates": false,
+		"remote.SSH.connectTimeout": 60,
+		"editor.semanticHighlighting.enabled": false,
+		"editor.occurrencesHighlight": "off",
+		"git.autoRepositoryDetection": false,
+		"git.decorations.enabled": false,
+		"telemetry.telemetryLevel": "off"
+	}
 }

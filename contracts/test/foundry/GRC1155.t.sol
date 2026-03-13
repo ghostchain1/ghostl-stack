@@ -1,6 +1,6 @@
 // GhostChain Contracts v5.6.1 (test/foundry/GRC1155.t.sol)
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity ^0.8.24;
 
 import { Test } from "forge-std/Test.sol";
 import { GRC1155 } from "../../src/ghost/GRC1155.sol";
@@ -64,7 +64,7 @@ contract GRC1155Test is Test {
     function test_approvalForAll() public {
         vm.prank(alice);
         token.setApprovalForAll(bob, true);
-        assertTrue(token.isApprovedForAll[alice][bob]);
+        assertTrue(token.isApprovedForAll(alice, bob));
 
         vm.prank(bob);
         token.safeTransferFrom(alice, bob, SHIELD, 2, "");

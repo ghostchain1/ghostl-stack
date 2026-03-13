@@ -21,7 +21,8 @@ export class AbiCoder {
    * @param types  e.g. ["uint256", "address", "bool"]
    * @param values matching values
    */
-  encode(types: string[], values: unknown[]): string {
+  encode(types: readonly string[], values: readonly unknown[]): string {
+    const mutableValues = [...values];
     // Build a synthetic ABI fragment so GhostAbiCoder can process it
     const fragment: GhostABIFragment = {
       type: "function",
@@ -30,7 +31,7 @@ export class AbiCoder {
       outputs: []
     };
     // Strip the 4-byte selector (first 4 bytes = 8 hex chars + "0x" prefix)
-    const full = this._coder.encodeFunctionCall(fragment, values);
+    const full = this._coder.encodeFunctionCall(fragment, mutableValues);
     return "0x" + full.slice(10); // remove "0x" + 8 char selector
   }
 
