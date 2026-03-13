@@ -1040,3 +1040,13 @@ services/gsr-*/models/*.bin
 "packages/ghost-sdk/src/runtime/## GitHub Copilot Chat.litcoffee"
 **/"## GitHub Copilot Chat"*
 **/"## GitHub Copilot"*
+
+# ── GSE — Sovereign Economy Engine ────────────────────────────────────────────
+services/gse-*/data/
+services/gse-*/pgdata/
+contracts/src/gse/out/
+contracts/src/gse/cache/
+infra/gse/terraform/*.tfstate
+infra/gse/terraform/*.tfstate.backup
+infra/gse/terraform/.terraform/
+infra/gse/k8s/**/*.secret.yaml
