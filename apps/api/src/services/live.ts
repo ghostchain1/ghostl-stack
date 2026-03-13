@@ -432,8 +432,8 @@ export const createLiveServices = (deps: {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               channel: ch,
-              message: (alert as Record<string, unknown>).name ?? 'alert',
-              severity: (alert as Record<string, unknown>).severity ?? 'warning',
+              message: (alert as unknown as Record<string, unknown>).name ?? 'alert',
+              severity: (alert as unknown as Record<string, unknown>).severity ?? 'warning',
               metadata: alert
             })
           })

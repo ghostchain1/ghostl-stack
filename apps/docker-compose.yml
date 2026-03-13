@@ -43,11 +43,11 @@ services:
 
   migrate:
     <<: *runtime-hardening
-    image: node:22-alpine@sha256:48f53c3f0105ccddcc5e4f520347398dfc0ba9b3008fbfd98a2add27e5797957
-    working_dir: /work
-    volumes:
-      - ./services/ghost-compliance:/work
+    build:
+      context: /home/ghost/ghostl-stack/services/ghost-compliance
+      network: host
     environment:
+      NODE_ENV: production
       DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/ghost_compliance
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${COMPLIANCE_JWT_SECRET:?COMPLIANCE_JWT_SECRET is required}
@@ -58,14 +58,14 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    # SOVEREIGN FIX: npm ci for deterministic lockfile-enforced installs.
-    command: ["sh", "-lc", "npm ci && npm run migrate"]
+    command: ["node", "dist/src/db/seed.js"]
     restart: "no"
 
   ghost-compliance:
     <<: *runtime-hardening
     build:
-      context: ./services/ghost-compliance
+      context: /home/ghost/ghostl-stack/services/ghost-compliance
+      network: host
     environment:
       NODE_ENV: production
       PORT: 8090
@@ -97,7 +97,8 @@ services:
   ghost-compliance-worker:
     <<: *runtime-hardening
     build:
-      context: ./services/ghost-compliance-worker
+      context: /home/ghost/ghostl-stack/services/ghost-compliance-worker
+      network: host
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/ghost_compliance

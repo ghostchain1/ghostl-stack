@@ -1,0 +1,54 @@
+:root {
+  --bg:           #050507;
+  --surface:      #0d0e14;
+  --border:       #1a1a2e;
+  --accent:       #00F0FF;
+  --accent-purple:#7A00FF;
+  --green:        #10b981;
+  --yellow:       #f59e0b;
+  --red:          #ef4444;
+  --text:         #e2e8f0;
+  --text-muted:   #64748b;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+h1, h2, h3, h4 { line-height: 1.2; letter-spacing: -0.02em; }
+::selection { background: #00F0FF33; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: linear-gradient(135deg, #00F0FF22, #7A00FF22);
+  border: 1px solid #00F0FF55; color: #00F0FF;
+  padding: 0.75rem 1.5rem; border-radius: 10px;
+  font-size: 0.9375rem; font-weight: 600; cursor: pointer;
+  text-decoration: none; transition: all 0.2s;
+}
+.btn-primary:hover { background: linear-gradient(135deg, #00F0FF33, #7A00FF33); border-color: #00F0FF; }
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: transparent; border: 1px solid #1e2230; color: #94a3b8;
+  padding: 0.75rem 1.5rem; border-radius: 10px;
+  font-size: 0.9375rem; font-weight: 500; cursor: pointer;
+  text-decoration: none; transition: all 0.2s;
+}
+.btn-secondary:hover { border-color: #2d3450; color: #e2e8f0; }
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 1.5rem;
+}
+.tag {
+  display: inline-flex; align-items: center;
+  background: #00F0FF11; border: 1px solid #00F0FF33;
+  color: #00F0FF; font-size: 0.75rem; font-weight: 600;
+  padding: 0.25rem 0.75rem; border-radius: 100px;
+  letter-spacing: 0.05em; text-transform: uppercase;
+}

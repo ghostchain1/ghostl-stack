@@ -1,0 +1,14 @@
+{
+  "name": "@ghostchain-gsx/gcm-mint",
+  "version": "0.1.0",
+  "description": "GCM CBDC minting orchestrator — coordinates central bank CBDC issuance across the GCM network",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev":   "node --watch src/index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

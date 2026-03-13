@@ -982,3 +982,61 @@ devnet-snapshots/
 *.bom.json
 **/sbom/
 contracts/sbom.spdx.json
+
+# ── GSX / GSN / GCM / GSR / GWF — Sovereign Financial Infrastructure ─
+# Rust engine build artifacts (also covered by **/target/ above, explicit for clarity)
+services/gsx-engine/target/
+services/gsx-engine/.cargo/
+
+# Runtime data volumes — never track mounted DB / chain data
+services/gsx-*/data/
+services/gsn-*/data/
+services/gcm-*/data/
+services/gsr-*/data/
+services/gwf-*/data/
+
+# PostgreSQL / TimescaleDB local data dirs
+**/pgdata/
+**/postgres-data/
+
+# Redis dump files
+**/dump.rdb
+**/*.rdb
+
+# Compiled Solidity artifacts (forge / hardhat output) for new GSX contract suites
+contracts/src/gsx/out/
+contracts/src/gsx/cache/
+contracts/src/gsn/out/
+contracts/src/gsn/cache/
+contracts/src/gcm/out/
+contracts/src/gcm/cache/
+contracts/src/gsr/out/
+contracts/src/gsr/cache/
+contracts/src/gwf/out/
+contracts/src/gwf/cache/
+
+# HSM / MPC key material (should NEVER be committed)
+**/*.hsm
+**/*.p12
+**/*.pfx
+**/*.key
+**/keystore/
+**/mpc-keys/
+**/sovereign-keys/
+
+# Infra generated configs with secrets
+infra/gsx/k8s/**/*.secret.yaml
+infra/gsx/terraform/**/*.tfvars
+infra/gsx/terraform/.terraform/
+infra/gsx/terraform/*.tfstate
+infra/gsx/terraform/*.tfstate.backup
+
+# AI model weights for gsx risk-ai / gwf economic-ai (local training runs)
+services/gsx-*/models/*.bin
+services/gwf-*/models/*.bin
+services/gsr-*/models/*.bin
+
+# Stray IDE / AI chat artifacts
+"packages/ghost-sdk/src/runtime/## GitHub Copilot Chat.litcoffee"
+**/"## GitHub Copilot Chat"*
+**/"## GitHub Copilot"*

@@ -1,0 +1,23 @@
+{
+  "name": "@ghostl/web-dev",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3012",
+    "build": "NEXT_IGNORE_INCORRECT_LOCKFILE=1 NEXT_DISABLE_ESLINT=1 next build",
+    "start": "next start -p 3012",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "16.1.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "@ghostl/ui": "file:../../packages/ui"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "typescript": "^5.5.0",
+    "@types/react-dom": "^19.0.0"
+  }
+}

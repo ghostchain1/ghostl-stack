@@ -1,0 +1,14 @@
+{
+  "name": "@ghostchain-gsx/gsn-gateway",
+  "version": "0.1.0",
+  "description": "GSN Sovereign Gateway Node — receives and validates cross-border settlement instructions",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev":   "node --watch src/index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

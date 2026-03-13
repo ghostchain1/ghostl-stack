@@ -1,0 +1,201 @@
+# GhostChain Public Web Ecosystem
+# Manages all 11 public-facing Next.js sites
+# Usage: docker compose -f docker-compose.web.yml up -d
+#
+# Ports:
+#   3010  ghostchain.cloud          web-main
+#   3011  invest.ghostchain.cloud   web-investor
+#   3012  dev.ghostchain.cloud      web-dev
+#   3013  apps.ghostchain.cloud     web-apps
+#   3014  explorer.ghostchain.cloud web-explorer
+#   3015  governance.ghostchain.cloud web-governance
+#   3016  nodes.ghostchain.cloud    web-nodes
+#   3017  exchange.ghostchain.cloud web-exchange
+#   3018  ghostchain.company        web-company
+#   3019  status.ghostchain.cloud   web-status
+#   3020  portal.ghostchain.cloud   web-portal
+
+x-web-defaults: &web-defaults
+  restart: unless-stopped
+  networks:
+    - ghostweb
+  environment:
+    - NEXT_PUBLIC_API_URL=https://api.ghostchain.cloud
+    - NEXT_PUBLIC_RPC_L1=https://rpc.ghostchain.cloud
+    - NEXT_PUBLIC_RPC_L2=https://l2rpc.ghostchain.cloud
+    - NEXT_PUBLIC_RPC_L3=https://l3rpc.ghostchain.cloud
+  healthcheck:
+    test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:' + (process.env.PORT||3010) + '/', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))\""]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 30s
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  web-main:
+    <<: *web-defaults
+    build:
+      context: .
+      dockerfile: apps/web-main/Dockerfile
+    image: ghostchain/web-main:latest
+    container_name: ghostweb-main
+    ports:
+      - "3010:3010"
+    environment:
+      - PORT=3010
+      - NEXT_PUBLIC_SITE_NAME=GhostChain
+      - NEXT_PUBLIC_DOMAIN=ghostchain.cloud
+      - NEXT_PUBLIC_API_URL=https://api.ghostchain.cloud
+      - NEXT_PUBLIC_RPC_L1=https://rpc.ghostchain.cloud
+      - NEXT_PUBLIC_RPC_L2=https://l2rpc.ghostchain.cloud
+      - NEXT_PUBLIC_RPC_L3=https://l3rpc.ghostchain.cloud
+
+  web-investor:
+    <<: *web-defaults
+    build:
+      context: .
+      dockerfile: apps/web-investor/Dockerfile
+    image: ghostchain/web-investor:latest
+    container_name: ghostweb-investor
+    ports:
+      - "3011:3011"
+    environment:
+      - PORT=3011
+      - NEXT_PUBLIC_SITE_NAME=GhostChain Investor Relations
+      - NEXT_PUBLIC_DOMAIN=invest.ghostchain.cloud
+
+  web-dev:
+    <<: *web-defaults
+    build:
+      context: .
+      dockerfile: apps/web-dev/Dockerfile
+    image: ghostchain/web-dev:latest
+    container_name: ghostweb-dev
+    ports:
+      - "3012:3012"
+    environment:
+      - PORT=3012
+      - NEXT_PUBLIC_SITE_NAME=GhostChain Developer Hub
+      - NEXT_PUBLIC_DOMAIN=dev.ghostchain.cloud
+
+  web-apps:
+    <<: *web-defaults
+    build:
+      context: .
+      dockerfile: apps/web-apps/Dockerfile
+    image: ghostchain/web-apps:latest
+    container_name: ghostweb-apps
+    ports:
+      - "3013:3013"
+    environment:
+      - PORT=3013
+      - NEXT_PUBLIC_SITE_NAME=Ghost App Universe
+      - NEXT_PUBLIC_DOMAIN=apps.ghostchain.cloud
+
+  web-explorer:
+    <<: *web-defaults
+    build:
+      context: .
+      dockerfile: apps/web-explorer/Dockerfile
+    image: ghostchain/web-explorer:latest
+    container_name: ghostweb-explorer
+    ports:
+      - "3014:3014"
+    environment:
+      - PORT=3014
+      - NEXT_PUBLIC_SITE_NAME=GhostChain Explorer
+      - NEXT_PUBLIC_DOMAIN=explorer.ghostchain.cloud
+
+  web-governance:
+    <<: *web-defaults
+    build:
+      context: .
+      dockerfile: apps/web-governance/Dockerfile
+    image: ghostchain/web-governance:latest
+    container_name: ghostweb-governance
+    ports:
+      - "3015:3015"
+    environment:
+      - PORT=3015
+      - NEXT_PUBLIC_SITE_NAME=Ghost Governance
+      - NEXT_PUBLIC_DOMAIN=governance.ghostchain.cloud
+
+  web-nodes:
+    <<: *web-defaults
+    build:
+      context: .
+      dockerfile: apps/web-nodes/Dockerfile
+    image: ghostchain/web-nodes:latest
+    container_name: ghostweb-nodes
+    ports:
+      - "3016:3016"
+    environment:
+      - PORT=3016
+      - NEXT_PUBLIC_SITE_NAME=Ghost Validator Network
+      - NEXT_PUBLIC_DOMAIN=nodes.ghostchain.cloud
+
+  web-exchange:
+    <<: *web-defaults
+    build:
+      context: .
+      dockerfile: apps/web-exchange/Dockerfile
+    image: ghostchain/web-exchange:latest
+    container_name: ghostweb-exchange
+    ports:
+      - "3017:3017"
+    environment:
+      - PORT=3017
+      - NEXT_PUBLIC_SITE_NAME=GhostXchange
+      - NEXT_PUBLIC_DOMAIN=exchange.ghostchain.cloud
+
+  web-company:
+    <<: *web-defaults
+    build:
+      context: .
+      dockerfile: apps/web-company/Dockerfile
+    image: ghostchain/web-company:latest
+    container_name: ghostweb-company
+    ports:
+      - "3018:3018"
+    environment:
+      - PORT=3018
+      - NEXT_PUBLIC_SITE_NAME=GhostChain Inc.
+      - NEXT_PUBLIC_DOMAIN=ghostchain.company
+
+  web-status:
+    <<: *web-defaults
+    build:
+      context: .
+      dockerfile: apps/web-status/Dockerfile
+    image: ghostchain/web-status:latest
+    container_name: ghostweb-status
+    ports:
+      - "3019:3019"
+    environment:
+      - PORT=3019
+      - NEXT_PUBLIC_SITE_NAME=GhostChain Status
+      - NEXT_PUBLIC_DOMAIN=status.ghostchain.cloud
+
+  web-portal:
+    <<: *web-defaults
+    build:
+      context: .
+      dockerfile: apps/web-portal/Dockerfile
+    image: ghostchain/web-portal:latest
+    container_name: ghostweb-portal
+    ports:
+      - "3020:3020"
+    environment:
+      - PORT=3020
+      - NEXT_PUBLIC_SITE_NAME=Ghost Control Center
+      - NEXT_PUBLIC_DOMAIN=portal.ghostchain.cloud
+
+networks:
+  ghostweb:
+    name: ghostweb
+    driver: bridge

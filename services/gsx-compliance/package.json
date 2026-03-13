@@ -1,0 +1,14 @@
+{
+  "name": "@ghostchain-gsx/gsx-compliance",
+  "version": "0.1.0",
+  "description": "GSX compliance service — KYC/AML/sanctions checks for institutional participants",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev":   "node --watch src/index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

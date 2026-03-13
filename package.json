@@ -44,7 +44,21 @@
     "packages/routing-law",
     "packages/sdk",
     "packages/types",
-    "packages/ui"
+    "packages/ui",
+    "apps/api",
+    "apps/web",
+    "apps/ghostx",
+    "apps/web-main",
+    "apps/web-investor",
+    "apps/web-dev",
+    "apps/web-apps",
+    "apps/web-explorer",
+    "apps/web-governance",
+    "apps/web-nodes",
+    "apps/web-exchange",
+    "apps/web-company",
+    "apps/web-status",
+    "apps/web-portal"
   ],
   "scripts": {
     "preinstall": "node scripts/node-check.mjs && node scripts/package-manager-check.mjs",

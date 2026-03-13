@@ -1,0 +1,13 @@
+{
+  "name": "@ghostl/web-orchestrator",
+  "version": "1.0.0",
+  "description": "Self-healing orchestrator for the GhostChain public web ecosystem",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}
