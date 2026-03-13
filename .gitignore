@@ -1050,3 +1050,18 @@ infra/gse/terraform/*.tfstate
 infra/gse/terraform/*.tfstate.backup
 infra/gse/terraform/.terraform/
 infra/gse/k8s/**/*.secret.yaml
+
+# GSI — Ghost Sovereign Identity Network
+services/gsi-*/data/
+services/gsi-*/node_modules/
+services/gsi-*/dist/
+contracts/src/gsi/out/
+contracts/src/gsi/cache/
+services/gsi-*/secrets/
+**/biometric-data/
+**/biometric-raw/
+**/*.biometric
+infra/gsi/terraform/.terraform/
+infra/gsi/terraform/*.tfstate
+infra/gsi/terraform/*.tfvars
+infra/gsi/k8s/**/*.secret.yaml
