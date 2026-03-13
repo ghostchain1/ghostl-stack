@@ -43,13 +43,16 @@ info() { echo "             $*"; }
 #   devnet  : 8192 MB        — runs full L1+L2+L3+tooling stack locally
 #   L1      : 2048 MB testnet / 6144 MB mainnet   — geth + metrics
 #   L2/L3   : 4096 MB        — op-geth + op-node + batcher + proposer
-declare -A VM_IP VM_VCPU VM_RAM VM_DISK VM_ROLE VM_MAC
+declare -A VM_IP VM_VCPU VM_RAM VM_DISK VM_ROLE VM_MAC VM_MAC2
+# VM_MAC2: optional second NIC MAC (used for VMs with public-facing enp2s0)
 # ghost-web (Next.js frontend + Traefik)
 VM_IP[ghost-web]="10.50.99.10";          VM_VCPU[ghost-web]=2;   VM_RAM[ghost-web]=4096;   VM_DISK[ghost-web]=100;  VM_ROLE[ghost-web]="web";                   VM_MAC[ghost-web]="52:54:00:00:01:0a"
 # ghost-dns-slave (Bind9 secondary)
 VM_IP[ghost-dns-slave]="10.50.99.66";    VM_VCPU[ghost-dns-slave]=1;  VM_RAM[ghost-dns-slave]=512;   VM_DISK[ghost-dns-slave]=20;  VM_ROLE[ghost-dns-slave]="dns";             VM_MAC[ghost-dns-slave]="52:54:00:00:01:66"
 # ghostchain-devnet (all-in-one build/test VM)
+# enp1s0 = gs-mgmt internal (10.50.99.45), enp2s0 = public br0 (38.247.149.219)
 VM_IP[ghostchain-devnet]="10.50.99.45";  VM_VCPU[ghostchain-devnet]=4; VM_RAM[ghostchain-devnet]=8192; VM_DISK[ghostchain-devnet]=300; VM_ROLE[ghostchain-devnet]="devnet";        VM_MAC[ghostchain-devnet]="52:54:00:00:01:2d"
+VM_MAC2[ghostchain-devnet]="52:54:00:00:02:db"  # enp2s0 — public NIC (38.247.149.219)
 # L1 testnet
 VM_IP[ghostchain-testnet-l1]="10.50.99.71"; VM_VCPU[ghostchain-testnet-l1]=2; VM_RAM[ghostchain-testnet-l1]=2048; VM_DISK[ghostchain-testnet-l1]=200; VM_ROLE[ghostchain-testnet-l1]="l1-testnet-fullnode";   VM_MAC[ghostchain-testnet-l1]="52:54:00:00:01:71"
 # L1 testnet validator
@@ -142,6 +145,11 @@ done
 # ── Build cloud-init user-data for a given VM ─────────────────────────────────
 make_cloud_init() {
   local name="$1" role="$2" ip="$3"
+  # Determine public IP for VMs that have a second NIC on br0
+  local public_ip="" public_gw="${GS_PUBLIC_GW}"
+  case "$name" in
+    ghostchain-devnet) public_ip="${GS_DEVNET_PUBLIC_IP}" ;;
+  esac
   local ci_dir="/tmp/cloud-init-${name}"
   mkdir -p "$ci_dir"
 
@@ -245,6 +253,7 @@ runcmd:
   - |
     set -e
     # Static IP via netplan
+    # Configure internal management NIC (enp1s0)
     cat > /etc/netplan/50-gs-mgmt.yaml <<'NETPLAN'
     network:
       version: 2
@@ -253,12 +262,29 @@ runcmd:
           dhcp4: false
           addresses: [${ip}/24]
           routes:
-            - to: default
+            - to: 10.50.99.0/24
               via: 10.50.99.1
           nameservers:
             addresses: [10.50.99.66, 1.1.1.1]
     NETPLAN
     chmod 600 /etc/netplan/50-gs-mgmt.yaml
+    # Configure public NIC (enp2s0) if this VM has a public IP assignment
+    if [ -n "${public_ip:-}" ]; then
+      cat > /etc/netplan/51-gs-public.yaml <<'NETPLAN2'
+    network:
+      version: 2
+      ethernets:
+        enp2s0:
+          dhcp4: false
+          addresses: [${public_ip}/24]
+          routes:
+            - to: default
+              via: ${public_gw}
+          nameservers:
+            addresses: [1.1.1.1, 8.8.8.8]
+    NETPLAN2
+      chmod 600 /etc/netplan/51-gs-public.yaml
+    fi
     netplan apply || true
   - ufw allow ssh
   - ufw allow from 10.50.99.0/24
@@ -321,6 +347,13 @@ create_vm() {
 
   # 3. Install (define) the VM
   log "  Defining VM via virt-install..."
+  local extra_nics=()
+  if [ -n "${VM_MAC2[$name]:-}" ]; then
+    # Second NIC bridges directly onto br0 (the public bridge) so the VM can
+    # hold a public IP without NAT.  br0 must exist on the hypervisor host.
+    extra_nics=(--network "bridge=br0,model=virtio,mac=${VM_MAC2[$name]}")
+    log "  Attaching public NIC: mac=${VM_MAC2[$name]} on br0"
+  fi
   virt-install \
     --name        "$name" \
     --memory      "$ram" \
@@ -329,6 +362,7 @@ create_vm() {
     --disk        "path=${disk_img},format=qcow2,bus=virtio,cache=writeback" \
     --disk        "path=${ci_iso},device=cdrom,bus=sata" \
     --network     "network=${NETWORK},model=virtio,mac=${mac}" \
+    "${extra_nics[@]}" \
     --os-variant  ubuntu24.04 \
     --graphics    none \
     --noautoconsole \

@@ -23,6 +23,37 @@ export GS_MGMT_NETWORK="gs-mgmt"
 export GS_MGMT_CIDR="10.50.99.0/24"
 export GS_MGMT_GW="10.50.99.1"
 
+# ── Public / External Network — Ghoststack-baremetal ─────────────────────────
+# Primary uplink:  208.110.71.164/26  (block 208.110.71.128/26, gw .129)
+# Secondary uplink: 38.247.149.218/24 (block 38.247.149.0/24,   gw .1)
+#
+# Public IP assignments (canonical — match actual br0 configuration):
+#   208.110.71.164/26  — Hypervisor primary (br0)
+#   38.247.149.218/24  — Hypervisor secondary (br0)
+#   38.247.149.219/24  — ghostchain-devnet VM (enp2s0, public-facing NIC)
+#   38.247.149.220/24  — Reserved / available (on br0)
+#   38.247.149.221/24  — Reserved / available (on br0)
+#   38.247.149.222/24  — Reserved / available (on br0)
+#   38.247.149.223/24  — Reserved / available (on br0)
+#   38.247.149.224/24  — Reserved / available (on br0)
+export GS_HV_PRIMARY_IP="208.110.71.164"
+export GS_HV_PRIMARY_CIDR="208.110.71.128/26"
+export GS_HV_PRIMARY_GW="208.110.71.129"
+
+export GS_PUBLIC_CIDR="38.247.149.0/24"
+export GS_PUBLIC_GW="38.247.149.1"
+export GS_PUBLIC_NETMASK="255.255.255.0"
+# Hypervisor secondary address on br0
+export GS_HV_PUBLIC_IP="38.247.149.218"
+# Public IPs bound to VMs (enp2s0 on each)
+export GS_DEVNET_PUBLIC_IP="38.247.149.219"
+# Reserved IPs available for future VM assignments
+export GS_PUBLIC_RESERVED_220="38.247.149.220"
+export GS_PUBLIC_RESERVED_221="38.247.149.221"
+export GS_PUBLIC_RESERVED_222="38.247.149.222"
+export GS_PUBLIC_RESERVED_223="38.247.149.223"
+export GS_PUBLIC_RESERVED_224="38.247.149.224"
+
 # ── Canonical IP assignments ──────────────────────────────────────────────────
 # Naming convention: IP_<vm-name with dashes→underscores>
 #
