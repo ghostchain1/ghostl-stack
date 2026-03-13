@@ -1065,3 +1065,19 @@ infra/gsi/terraform/.terraform/
 infra/gsi/terraform/*.tfstate
 infra/gsi/terraform/*.tfvars
 infra/gsi/k8s/**/*.secret.yaml
+
+# GSA — Ghost Sovereign AI Network
+services/gsa-*/data/
+services/gsa-*/node_modules/
+services/gsa-*/dist/
+contracts/src/gsa/out/
+contracts/src/gsa/cache/
+services/gsa-*/model-weights/
+**/ai-models/
+**/*.onnx
+**/*.pkl
+**/*.pt
+infra/gsa/terraform/.terraform/
+infra/gsa/terraform/*.tfstate
+infra/gsa/terraform/*.tfvars
+infra/gsa/k8s/**/*.secret.yaml
