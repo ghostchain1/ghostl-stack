@@ -12,6 +12,7 @@ import { DeFiPanel } from './components/DeFiPanel';
 import { AIControlPanel } from './components/AIControlPanel';
 import { AIRecommendationsPanel } from '../ai/components/AIRecommendationsPanel';
 import { NetworkTopologyMap } from '../network-map/NetworkTopologyMap';
+import { RuntimeStatusPanel } from './components/RuntimeStatusPanel';
 
 export function CommandCenter() {
   return (
@@ -67,6 +68,10 @@ export function CommandCenter() {
 
         <Suspense fallback={<PanelSkeleton title="Multichain" />}>
           <MultichainSovereigntyPanel />
+        </Suspense>
+
+        <Suspense fallback={<PanelSkeleton title="Runtime / RPC" />}>
+          <RuntimeStatusPanel />
         </Suspense>
       </div>
 

@@ -1,0 +1,190 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# GhostStack — Production Docker Compose
+#
+# Usage:
+#   docker compose -f docker-compose.yml \
+#                  -f infra/production/docker-compose.production.yml \
+#                  up -d
+#
+# Nginx handles all SSL termination and external ports.
+# All services bind only to 127.0.0.1 to prevent accidental external exposure.
+# ══════════════════════════════════════════════════════════════════════════════
+
+services:
+
+  # ── Web portal (Next.js standalone, port 3200) ─────────────────────────────
+  ghostl-web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: runner
+    environment:
+      NODE_ENV: production
+      PORT: "3200"
+      HOSTNAME: "0.0.0.0"
+      # L1 / L2 / L3 RPCs
+      NEXT_PUBLIC_L1_RPC_URL: "http://127.0.0.1:18545"
+      NEXT_PUBLIC_L2_RPC_URL: "http://127.0.0.1:29545"
+      NEXT_PUBLIC_L3_RPC_URL: "http://127.0.0.1:39545"
+      # API BFF (internal)
+      NEXT_PUBLIC_API_URL: "https://api.ghostchain.cloud"
+      # GhostBrain Core (internal SSE)
+      NEXT_PUBLIC_GHOSTBRAIN_URL: "http://127.0.0.1:7900"
+      # SSA service
+      NEXT_PUBLIC_SSA_URL: "http://127.0.0.1:7990"
+    ports:
+      - "127.0.0.1:3200:3200"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3200/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - ghoststack
+
+  # ── API BFF (Express 5, port 4000) ────────────────────────────────────────
+  ghostl-api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: production
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+      # L1 / L2 / L3 RPCs
+      L1_RPC_URL: "http://127.0.0.1:18545"
+      L2_RPC_URL: "http://127.0.0.1:29545"
+      L3_RPC_URL: "http://127.0.0.1:39545"
+      # Services (internal)
+      GHOSTBRAIN_URL: "http://127.0.0.1:7900"
+      SSA_URL: "http://127.0.0.1:7990"
+      COMPLIANCE_URL: "http://127.0.0.1:8090"
+      TREASURY_ENGINE_URL: "http://127.0.0.1:7683"
+      REWARD_DISTRIBUTOR_URL: "http://127.0.0.1:7684"
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:4000:4000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - ghoststack
+
+  # ── GhostBrain Core (port 7900) ──────────────────────────────────────────
+  ghostbrain-core:
+    build:
+      context: services/ghostbrain-core
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: "7900"
+      L1_RPC_URL: "http://127.0.0.1:18545"
+      L2_RPC_URL: "http://127.0.0.1:29545"
+      L3_RPC_URL: "http://127.0.0.1:39545"
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:7900:7900"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:7900/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - ghoststack
+
+  # ── SSA — Sovereign Security Agent (port 7990) ────────────────────────────
+  ghost-ssa:
+    build:
+      context: services/ghost-ssa
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: "7990"
+      L1_RPC_URL: "http://127.0.0.1:18545"
+      L2_RPC_URL: "http://127.0.0.1:29545"
+      L3_RPC_URL: "http://127.0.0.1:39545"
+      SSA_COSMOS_LCD: "http://127.0.0.1:1317"
+      SSA_SIGNING_RELAY: "http://127.0.0.1:7910"
+      SSA_THREAT_RELAY: "http://127.0.0.1:7900"
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:7990:7990"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:7990/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - ghoststack
+
+  # ── Compliance Service (port 8090) ─────────────────────────────────────────
+  compliance-service:
+    image: ghostchain/compliance-service:latest
+    environment:
+      NODE_ENV: production
+      PORT: "8090"
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:8090:8090"
+    restart: unless-stopped
+    networks:
+      - ghoststack
+
+  # ── Prometheus (9090) ─────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.53.1
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+      - --web.listen-address=127.0.0.1:9090
+    ports:
+      - "127.0.0.1:9090:9090"
+    restart: unless-stopped
+    networks:
+      - ghoststack
+
+  # ── Grafana (3000 internal) ────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.5.0
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      GF_SERVER_HTTP_ADDR: "127.0.0.1"
+      GF_SERVER_HTTP_PORT: "3001"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD}"
+    ports:
+      - "127.0.0.1:3001:3001"
+    restart: unless-stopped
+    networks:
+      - ghoststack
+
+networks:
+  ghoststack:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  prometheus-data:
+  grafana-data:

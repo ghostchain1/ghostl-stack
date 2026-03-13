@@ -59,7 +59,31 @@ const policies: PolicyEntry[] = [
   { pattern: '/api/hyperghost', role: 'OPERATOR', methods: ['POST', 'PUT', 'PATCH', 'DELETE'] },
   { pattern: '/api/hyperghost', role: 'READONLY' },
   { pattern: '/api/analytics', role: 'ADMIN', methods: ['GET', 'HEAD'] },
-  { pattern: '/api/analytics', role: 'READONLY' }
+  { pattern: '/api/analytics', role: 'READONLY' },
+
+  // — Portal routes ————————————————————————————————————————————
+  { pattern: '/portal', role: 'OPERATOR' },
+  { pattern: '/portal/dashboard', role: 'OPERATOR' },
+  { pattern: '/portal/chains', role: 'OPERATOR' },
+  { pattern: '/portal/treasury', role: 'OPERATOR' },
+  { pattern: '/portal/governance', role: 'OPERATOR' },
+  { pattern: '/portal/nodes', role: 'ADMIN' },
+  { pattern: '/portal/validators', role: 'ADMIN' },
+  { pattern: '/portal/docker', role: 'ADMIN' },
+  { pattern: '/portal/hypervisor', role: 'ADMIN' },
+  { pattern: '/portal/ai', role: 'ADMIN' },
+  { pattern: '/portal/domains', role: 'ADMIN' },
+  { pattern: '/portal/users', role: 'ADMIN' },
+  { pattern: '/portal/security', role: 'ADMIN' },
+
+  // Portal API routes — write actions require ADMIN, reads require OPERATOR
+  { pattern: '/api/portal/nodes/action', role: 'ADMIN', methods: ['POST'] },
+  { pattern: '/api/portal/users', role: 'ADMIN' },
+  { pattern: '/api/portal/security', role: 'ADMIN' },
+  { pattern: '/api/portal/domains', role: 'ADMIN' },
+  { pattern: '/api/portal/governance', role: 'OPERATOR' },
+  { pattern: '/api/portal/noc', role: 'OPERATOR' },
+  { pattern: '/api/portal', role: 'OPERATOR' },
 ];
 
 export const normalizeRole = (roleInput?: string | string[] | null): Role => {

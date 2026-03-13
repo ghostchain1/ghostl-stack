@@ -107,6 +107,26 @@ const legacyNavSections: { title: string; items: NavItem[] }[] = [
   {
     title: 'Admin',
     items: [{ href: '/admin/users', label: 'Users' }]
+  },
+  {
+    title: 'Control Portal',
+    items: [
+      { href: '/portal/dashboard', label: '⬡ Portal Dashboard' },
+      { href: '/portal/chains', label: '↳ Chains' },
+      { href: '/portal/nodes', label: '↳ Nodes' },
+      { href: '/portal/validators', label: '↳ Validators' },
+      { href: '/portal/docker', label: '↳ Docker' },
+      { href: '/portal/hypervisor', label: '↳ Hypervisor' },
+      { href: '/portal/ai', label: '↳ AI Systems' },
+      { href: '/portal/treasury', label: '↳ Treasury' },
+      { href: '/portal/governance', label: '↳ Governance' },
+      { href: '/portal/domains', label: '↳ Domains' },
+      { href: '/portal/users', label: '↳ Users' },
+      { href: '/portal/security', label: '↳ Security' },
+      { href: '/portal/network',      label: '↳ Global Network' },
+      { href: '/portal/economic',     label: '↳ Economy' },
+      { href: '/portal/security-ai',  label: '↳ Security AI' }
+    ]
   }
 ];
 

@@ -527,7 +527,7 @@ export { HttpProvider, type HttpProviderBlock, type HttpProviderTx } from "./pro
 export { GhostWebSocketProvider, type WsNewHeadEvent, type WsLogEvent } from "./providers/WebSocketProvider.js";
 
 // Wallet
-export { GhostSigner, type Eip712Domain as GhostEip712Domain, type Eip712Type as GhostEip712Type } from "./wallet/GhostSigner.js";
+export { GhostSigner, GhostPrivateKeySigner, type Eip712Domain as GhostEip712Domain, type Eip712Type as GhostEip712Type } from "./wallet/GhostSigner.js";
 export { GhostAccount } from "./wallet/GhostAccount.js";
 export { GhostHDWallet, type GhostHDAccount, generateMnemonic, GHOST_HD_PATH } from "./wallet/GhostHDWallet.js";
 
@@ -729,3 +729,67 @@ export {
   type GhostBalanceStatus,
   type GhostBalanceSubscriber,
 } from "./next/useGhostBalance.js";
+
+// ── Autonomous Runtime Layer ──────────────────────────────────────────────────
+
+/** Service lifecycle manager — registers and starts GhostStack services. */
+export {
+  GhostRuntime,
+  type GhostService,
+  type GhostRuntimeConfig,
+  type ServiceStatus,
+  type ServiceState,
+} from "./runtime/GhostRuntime.js";
+
+/** Self-healing watchdog — health-checks services and restarts on failure. */
+export {
+  GhostSupervisor,
+  type GhostSupervisorConfig,
+  type ServiceHealthReport,
+} from "./runtime/GhostSupervisor.js";
+
+// ── Infrastructure Controllers ────────────────────────────────────────────────
+
+/**
+ * Docker container lifecycle manager.
+ * Uses execFile (not exec) + allowlist validation — no shell injection risk.
+ */
+export {
+  GhostDockerController,
+  type GhostDockerControllerConfig,
+  type ContainerInfo,
+} from "./infra/GhostDockerController.js";
+
+/**
+ * libvirt VM lifecycle manager (start, reboot, snapshot, etc.).
+ * Uses execFile (not exec) + allowlist validation — no shell injection risk.
+ */
+export {
+  GhostVMController,
+  type GhostVMControllerConfig,
+  type VMStatus,
+  type VMState,
+} from "./infra/GhostVMController.js";
+
+/**
+ * RPC endpoint load balancer for L1 / L2 / L3 nodes.
+ * Round-robin with health-aware selection and automatic probing.
+ * Canonical chain IDs: L1=14000101, L2=901, L3=903.
+ */
+export {
+  GhostRpcController,
+  type RpcPoolConfig,
+  type RpcEndpointStatus,
+} from "./infra/GhostRpcController.js";
+
+/**
+ * Validator / sequencer node status monitor.
+ * Fetches block number, peer count, and sync state via JSON-RPC.
+ * Canonical chain IDs: L1=14000101, L2=901, L3=903.
+ */
+export {
+  GhostValidatorController,
+  type ValidatorNodeConfig,
+  type ValidatorNodeStatus,
+  type GhostValidatorControllerConfig,
+} from "./infra/GhostValidatorController.js";
