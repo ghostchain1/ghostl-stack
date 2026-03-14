@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import { GhostSafeCast as SafeCast } from "../common/GhostSafeCast.sol";
 import "../common/Governed.sol";
 import "../governance/IVotingPower.sol";
 
-interface IERC20GasToken {
+interface IGST20GasToken {
     function balanceOf(address account) external view returns (uint256);
     function allowance(address owner, address spender) external view returns (uint256);
     function transfer(address to, uint256 amount) external returns (bool);
@@ -13,9 +14,11 @@ interface IERC20GasToken {
 
 /// @notice Minimal staking manager to track GST-denominated bonds for validators/operators.
 contract StakingManager is Governed, IVotingPower {
+    using SafeCast for uint256;
+
     address internal constant CANONICAL_GAS_TOKEN = 0x5FbDB2315678afecb367f032d93F642f64180aa3;
 
-    IERC20GasToken public immutable gasToken;
+    IGST20GasToken public immutable gasToken;
     mapping(address => uint256) public stakes;
     uint256 public totalStaked;
     address public slashManager;
@@ -34,7 +37,7 @@ contract StakingManager is Governed, IVotingPower {
     event Slashed(address indexed staker, uint256 amount);
 
     constructor(address governor_, address timelock_) Governed(governor_, timelock_) {
-        gasToken = IERC20GasToken(CANONICAL_GAS_TOKEN);
+        gasToken = IGST20GasToken(CANONICAL_GAS_TOKEN);
     }
 
     function setSlashManager(address manager) external onlyGovernance {
@@ -58,8 +61,8 @@ contract StakingManager is Governed, IVotingPower {
         require(gasToken.transferFrom(staker, address(this), amount), "transferFrom failed");
         stakes[staker] += amount;
         totalStaked += amount;
-        _writeCheckpoint(_checkpoints[staker], uint208(stakes[staker]));
-        _writeCheckpoint(_totalCheckpoints, uint208(totalStaked));
+        _writeCheckpoint(_checkpoints[staker], stakes[staker].toUint208());
+        _writeCheckpoint(_totalCheckpoints, totalStaked.toUint208());
         emit Staked(staker, amount);
     }
 
@@ -68,8 +71,8 @@ contract StakingManager is Governed, IVotingPower {
         stakes[msg.sender] -= amount;
         totalStaked -= amount;
         require(gasToken.transfer(msg.sender, amount), "transfer failed");
-        _writeCheckpoint(_checkpoints[msg.sender], uint208(stakes[msg.sender]));
-        _writeCheckpoint(_totalCheckpoints, uint208(totalStaked));
+        _writeCheckpoint(_checkpoints[msg.sender], stakes[msg.sender].toUint208());
+        _writeCheckpoint(_totalCheckpoints, totalStaked.toUint208());
         emit Unstaked(msg.sender, amount);
     }
 
@@ -84,8 +87,8 @@ contract StakingManager is Governed, IVotingPower {
         if (amount > bal) amount = bal;
         stakes[staker] = bal - amount;
         totalStaked -= amount;
-        _writeCheckpoint(_checkpoints[staker], uint208(stakes[staker]));
-        _writeCheckpoint(_totalCheckpoints, uint208(totalStaked));
+        _writeCheckpoint(_checkpoints[staker], stakes[staker].toUint208());
+        _writeCheckpoint(_totalCheckpoints, totalStaked.toUint208());
         emit Slashed(staker, amount);
     }
 
@@ -106,11 +109,11 @@ contract StakingManager is Governed, IVotingPower {
     }
 
     function getVotes(address account, uint256 timepoint) external view returns (uint256) {
-        return _getVotesAt(_checkpoints[account], uint48(timepoint));
+        return _getVotesAt(_checkpoints[account], timepoint.toUint48());
     }
 
     function getTotalVotes(uint256 timepoint) external view returns (uint256) {
-        return _getVotesAt(_totalCheckpoints, uint48(timepoint));
+        return _getVotesAt(_totalCheckpoints, timepoint.toUint48());
     }
 
     function _writeCheckpoint(Checkpoint[] storage cps, uint208 newVotes) internal {

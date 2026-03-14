@@ -47,6 +47,16 @@ High-level page areas and where their service interfaces live in the repo.
 - Pages: AI security center, Wallet behavior, Sybil detection, Forecasting
 - Services: AnomalyDetectionService, FraudScoringService, ForecastingService, ExplainabilityService (apps/web/src/modules/ai/services.ts)
 
+## GhostBrain Autonomous Infrastructure OS (GBA-OS)
+- Service: `ghostbrain-core` (port 7900), `services/ghostbrain-core/src/`
+- Kernel layer: `kernel/brain.ts` (30s tick), `kernel/event_loop.ts` (typed event bus)
+- Cluster layer: `cluster/cluster_node.ts`, `cluster/cluster_gossip.ts`, `cluster/cluster_sync.ts`, `cluster/leader_election.ts`
+- Orchestration: `orchestration/load_balancer.ts`, `orchestration/resource_scheduler.ts`, `orchestration/memory_balancer.ts`
+- Protection: `protection/threshold_monitor.ts`, `protection/crash_predictor.ts`, `protection/stability_guard.ts`, `protection/auto_recovery.ts`
+- Observability: `observability/metrics_exporter.ts`, `observability/prometheus_gateway.ts`, `observability/alert_engine.ts`, `observability/event_logger.ts`
+- Predictive AI: `predictive/load_forecaster.ts` (EWMA+OLS), `predictive/anomaly_detector.ts` (z-score), `predictive/pattern_recognition.ts` (autocorr+TOD+Pearson), `predictive/predictive_balancer.ts`, `predictive/failure_predictor.ts`
+- API routes: `/api/v1/kernel/*`, `/api/v1/orchestrator/*`, `/api/v1/protection/*`, `/api/v1/observability/*`, `/api/v1/predictive/*`, `/metrics`
+
 ## Observability & alerts
 - Pages: Metrics, Dashboards, Logs, Alerts & routing
 - Services: MetricsService, LogsService, AlertRulesService, NotificationRouterService (apps/web/src/modules/observability/services.ts)

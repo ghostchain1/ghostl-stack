@@ -1,0 +1,23 @@
+{
+  "name": "@ghostchain/ghost-multichain-controller",
+  "version": "0.1.0",
+  "description": "GhostChain Autonomous Multichain Controller — sovereign cross-chain gateway on L1",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "node --loader ts-node/esm src/index.ts"
+  },
+  "dependencies": {
+    "fastify": "^5.2.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "@types/node": "^22.0.0"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {AIAttestationBase} from "./AIAttestationBase.sol";
 import {IAITransactionGuard} from "./IAITransactionGuard.sol";
+import {GhostHash} from "../common/GhostHash.sol";
 
 /// @notice AI-driven policy engine for a GhostChain layer (L1/L2/L3).
 contract AILayerGuardian is AIAttestationBase, IAITransactionGuard {
@@ -208,7 +209,22 @@ contract AILayerGuardian is AIAttestationBase, IAITransactionGuard {
         bytes calldata data,
         uint256 value
     ) public view override returns (bytes32) {
-        return keccak256(abi.encodePacked(layerId, block.chainid, actor, target, selector, keccak256(data), value));
+        // abi.encodePacked(bytes32, uint256, address, address, bytes4, bytes32, uint256) = 172 bytes
+        bytes32 _dataHash = keccak256(data);
+        uint8 _layerId = layerId;
+        bytes32 opId;
+        assembly {
+            let p := mload(0x40)
+            mstore(p,          _layerId)
+            mstore(add(p,0x20), chainid())
+            mstore(add(p,0x40), shl(96, actor))
+            mstore(add(p,0x54), shl(96, target))
+            mstore(add(p,0x68), shl(224, selector))
+            mstore(add(p,0x6c), _dataHash)
+            mstore(add(p,0x8c), value)
+            opId := keccak256(p, 0xac)
+        }
+        return opId;
     }
 
     function setRiskThresholds(
@@ -462,7 +478,7 @@ contract AILayerGuardian is AIAttestationBase, IAITransactionGuard {
 
     function _enforceCooldown(address target, bytes4 selector, uint64 cooldownSeconds) internal {
         if (cooldownSeconds == 0) return;
-        bytes32 key = keccak256(abi.encodePacked(target, selector));
+        bytes32 key = GhostHash.commandActionKey(target, selector);
         uint64 lastAt = lastActionAt[key];
         require(block.timestamp >= lastAt + cooldownSeconds, "cooldown");
         lastActionAt[key] = uint64(block.timestamp);

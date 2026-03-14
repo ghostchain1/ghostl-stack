@@ -257,7 +257,7 @@ ghostl-stack/
 | `rpc-forward-l1-29545` | 29545 | `infra/opstack/rpc-forward/` | nginx | L1 RPC port forwarder |
 | `network-manager-service` | — | `infra/opstack/docker-compose.network-manager.yml` | TypeScript | Chain network manager |
 | **AI / Brain Stack** | | | | |
-| `ghostbrain-core` | 7900 | `docker-compose.ghostbrain.yml` | TypeScript | Brain loop · plans · signals · think |
+| `ghostbrain-core` | 7900 | `docker-compose.ghostbrain.yml` | TypeScript | GBA-OS kernel · cluster gossip/sync/leader-election · predictive AI (EWMA forecaster, z-score anomaly, pattern recognition, failure predictor) · 16 REST endpoints |
 | `ghostbrain-gsa` | 7901 | `docker-compose.ghostbrain.yml` | TypeScript | Swarm agent coordinator |
 | `host-orchestrator-ai` | 7902 | `docker-compose.ghostbrain.yml` | TypeScript | KVM + Docker execution agent |
 | `hyper-ghost-supervisor` | 7903 | `docker-compose.ghostbrain.yml` | TypeScript | VM health → brain signals |

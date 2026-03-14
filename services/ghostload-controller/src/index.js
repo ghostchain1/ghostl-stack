@@ -194,6 +194,20 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
+  if (req.method === "GET" && req.url === "/stats") {
+    return json(res, 200, {
+      ok: true,
+      stats: {
+        applies: state.applies,
+        rejects: state.rejects,
+        killSwitch: KILL_SWITCH,
+        manualOnly: MANUAL_ONLY,
+        policyVersion: policy.version,
+        fetchedAt: new Date().toISOString(),
+      },
+    });
+  }
+
   if (req.method === "POST" && req.url === "/apply") {
     try {
       const body = await readBody(req);
@@ -215,3 +229,4 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`[ghostload-controller] listening on ${PORT}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

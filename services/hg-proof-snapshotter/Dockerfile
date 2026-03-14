@@ -10,5 +10,5 @@ RUN useradd -u 10001 -m ghostsvc
 USER ghostsvc
 
 ENV NODE_ENV=production
-EXPOSE 7600
+EXPOSE 7662
 CMD ["node", "dist/index.js"]

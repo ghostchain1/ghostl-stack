@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import crypto from "node:crypto";
 import express from "express";
 import { promises as fs } from "node:fs";
 import path from "node:path";
@@ -125,7 +126,12 @@ function requireAdmin(req, res, next) {
   }
   if (!ADMIN_TOKEN && ALLOW_INSECURE_ADMIN) return next();
   const token = req.header("x-admin-token");
-  if (!token || token !== ADMIN_TOKEN) return res.status(401).json({ ok: false, error: "unauthorized" });
+  // SECURITY: timing-safe comparison prevents token enumeration via timing side-channel.
+  if (!token) return res.status(401).json({ ok: false, error: "unauthorized" });
+  const expected = Buffer.from(ADMIN_TOKEN);
+  const received = Buffer.from(token);
+  if (received.length !== expected.length || !crypto.timingSafeEqual(received, expected))
+    return res.status(401).json({ ok: false, error: "unauthorized" });
   next();
 }
 
@@ -544,7 +550,8 @@ app.post("/", async (req, res) => {
   }
 });
 
-app.get("/gate/status", (_req, res) => {
+// SECURITY: status exposes recentDecisions (tx hashes + risk) and policy — admin-only.
+app.get("/gate/status", requireAdmin, (_req, res) => {
   res.json({
     ok: true,
     mode: state.mode,

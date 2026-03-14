@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "../common/GhostHash.sol";
+
 /// @notice Minimal timelock controller (delay + schedule/execute) suitable for gating
-///         a production launch authorization. Intentionally simpler than OpenZeppelin.
+///         a production launch authorization. GhostChain-native implementation.
 contract GhostTimelockController {
     error Unauthorized();
     error NotScheduled();
@@ -69,7 +71,7 @@ contract GhostTimelockController {
     }
 
     function hashOperation(address target, uint256 value, bytes calldata data, bytes32 salt) public pure returns (bytes32) {
-        return keccak256(abi.encode(target, value, data, salt));
+        return GhostHash.timelockOpId(target, value, keccak256(data), salt);
     }
 
     function schedule(address target, uint256 value, bytes calldata data, bytes32 salt) external onlyProposer returns (bytes32 opId) {

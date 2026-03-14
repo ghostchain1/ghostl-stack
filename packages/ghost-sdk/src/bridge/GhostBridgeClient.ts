@@ -96,7 +96,7 @@ export class GhostBridgeClient {
 
   /**
    * Encode a deposit transaction calldata using the OP Stack depositTransaction ABI.
-   * The sender must broadcast this via their own signer to the L1 OptimismPortal.
+   * The sender must broadcast this via their own signer to the L1 GhostPortal.
    */
   encodeDepositL1ToL2(opts: DepositOptions): {
     to: `0x${string}`;

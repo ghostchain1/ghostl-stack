@@ -23,7 +23,7 @@ import {
   AbiCoder,
   type TransactionRequest,
   type FeeData,
-} from "ethers";
+} from "@ghostchain/sdk";
 import { randomUUID } from "crypto";
 import type { GhostLayer }      from "./Types.js";
 import type { RpcEndpoint }     from "../config.js";
@@ -183,7 +183,7 @@ export class GhostJsonRpcProvider extends JsonRpcProvider {
     const ghostName     = isFlat ? (opts as GhostProviderConfig).ghostName        : (opts as GhostProviderOptions).ghostName;
 
     const network = typeof chainId === "number" ? Network.from(chainId) : undefined;
-    super(primaryUrl, network, { staticNetwork: network ?? null });
+    super(primaryUrl, opts.layer, network);
 
     this.layer          = opts.layer;
     this.endpoint       = isFlat ? { http: primaryUrl, ws: undefined, chainId } : (opts as GhostProviderOptions).endpoint;

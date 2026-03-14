@@ -4,7 +4,7 @@ RUN apk add --no-cache bash curl
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm install
+RUN npm ci
 
 COPY tsconfig.json ./
 COPY src ./src

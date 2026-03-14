@@ -13,9 +13,12 @@ import { normalizeRole, resolveMinimumRole, roleOrder } from '../../identity-acc
 import { useFeatureFlags } from '../services/FeatureFlagsService';
 import { useNetwork } from '../services/NetworkContextService';
 import { useTheme } from '../services/ThemeService';
+import { useRealm } from '../../identity-access/useRealm';
+import { REALM_NAV } from '@/lib/realms';
 import { resolveApiBase } from '../../../lib/runtime';
 import { DataFetchErrorCard } from '../../../components/DataFetchErrorCard';
 import { apiRequest, type ApiError } from '../../../lib/api';
+import { GlobalStatusBar } from './GlobalStatusBar';
 
 type NavItem = { href: string; label: string; flag?: string };
 
@@ -24,17 +27,33 @@ const legacyNavSections: { title: string; items: NavItem[] }[] = [
     title: 'Command',
     items: [
       { href: '/', label: 'Command Hub' },
+      { href: '/command-hub', label: 'Command Hub (New)' },
+      { href: '/command-center', label: 'Command Center' },
+      { href: '/network-map', label: 'Network Map' },
       { href: '/chain', label: 'Chain' },
+      { href: '/chains/l1', label: '↳ GhostChain L1' },
+      { href: '/chains/l2', label: '↳ GhostL2' },
+      { href: '/chains/l3', label: '↳ GhostL3' },
+      { href: '/supercontrol', label: '⬡ SuperControl' },
+      { href: '/autonomous', label: '⬡ Autonomous Engine' },
+      { href: '/swarm', label: '↳ Swarm Dashboard' },
+      { href: '/evolution', label: '↳ Protocol Evolution' },
+      { href: '/network', label: 'Network 3D' },
+      { href: '/network/heatmap', label: '↳ Node Heatmap' },
       { href: '/nodes', label: 'Nodes' },
-      { href: '/validators', label: 'Validators' }
+      { href: '/validators', label: 'Validators' },
+      { href: '/validators/map', label: '↳ Validator Map' },
+      { href: '/validators/control', label: '↳ Validator Control' }
     ]
   },
   {
     title: 'Operations',
     items: [
       { href: '/bridge', label: 'Bridge' },
+      { href: '/bridge/liquidity', label: '↳ Liquidity Monitor' },
       { href: '/wallet', label: 'Wallet' },
-      { href: '/explorer/txs', label: 'Explorer' }
+      { href: '/explorer', label: 'Explorer' },
+      { href: '/explorer/txs', label: '↳ Transactions' }
     ]
   },
   {
@@ -67,6 +86,7 @@ const legacyNavSections: { title: string; items: NavItem[] }[] = [
       { href: '/tokenomics', label: 'Tokenomics' },
       { href: '/stocks', label: 'Stocks' },
       { href: '/treasury', label: 'Treasury' },
+      { href: '/treasury/intelligence', label: '↳ Treasury Intel' },
       { href: '/governance', label: 'Governance' },
       { href: '/nfts', label: 'NFTs' }
     ]
@@ -79,12 +99,34 @@ const legacyNavSections: { title: string; items: NavItem[] }[] = [
       { href: '/devops', label: 'DevOps' },
       { href: '/integrations', label: 'Integrations' },
       { href: '/ai', label: 'AI' },
+      { href: '/ai/console', label: 'AI Console' },
+      { href: '/ai/recommendations', label: 'AI Recommendations' },
       { href: '/ai/hyperghost', label: 'Hyper Ghost' }
     ]
   },
   {
     title: 'Admin',
     items: [{ href: '/admin/users', label: 'Users' }]
+  },
+  {
+    title: 'Control Portal',
+    items: [
+      { href: '/portal/dashboard', label: '⬡ Portal Dashboard' },
+      { href: '/portal/chains', label: '↳ Chains' },
+      { href: '/portal/nodes', label: '↳ Nodes' },
+      { href: '/portal/validators', label: '↳ Validators' },
+      { href: '/portal/docker', label: '↳ Docker' },
+      { href: '/portal/hypervisor', label: '↳ Hypervisor' },
+      { href: '/portal/ai', label: '↳ AI Systems' },
+      { href: '/portal/treasury', label: '↳ Treasury' },
+      { href: '/portal/governance', label: '↳ Governance' },
+      { href: '/portal/domains', label: '↳ Domains' },
+      { href: '/portal/users', label: '↳ Users' },
+      { href: '/portal/security', label: '↳ Security' },
+      { href: '/portal/network',      label: '↳ Global Network' },
+      { href: '/portal/economic',     label: '↳ Economy' },
+      { href: '/portal/security-ai',  label: '↳ Security AI' }
+    ]
   }
 ];
 
@@ -118,7 +160,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [logoutError, setLogoutError] = useState<ApiError | null>(null);
   const userRole = normalizeRole(user?.role);
   const isConsole = pathname?.startsWith('/console');
+  const realm = useRealm();
   const navSections = isConsole ? consoleNavSections : legacyNavSections;
+  const realmNavItems = realm ? REALM_NAV[realm] : null;
   const ribbon = [
     { label: 'Stack', value: 'Operational' },
     { label: 'Bridges', value: 'Monitoring' },
@@ -140,6 +184,23 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </span>
         </div>
         <nav className="nav">
+          {realmNavItems && (
+            <div className="nav-section">
+              <div className="nav-title">My {realm}</div>
+              {realmNavItems.map((item) => {
+                const isActive = item.href === '/' ? pathname === '/' : pathname?.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={isActive ? 'active' : ''}
+                  >
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
           {navSections.map((section) => (
             <div key={section.title} className="nav-section">
               <div className="nav-title">{section.title}</div>
@@ -193,6 +254,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             {user && (
               <div className="inline-form">
                 {userLabel && <span className="muted">{userLabel}</span>}
+                {realm && <span className="badge">{realm}</span>}
                 {user.role && <span className="badge">{user.role}</span>}
                 <button
                   className="button secondary"
@@ -234,6 +296,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <strong>{item.value}</strong>
             </div>
           ))}
+          <div className="status-chip" style={{ flex: 1 }}>
+            <GlobalStatusBar />
+          </div>
         </div>
         <main>
           {sessionError && (

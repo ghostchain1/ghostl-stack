@@ -1,0 +1,26 @@
+[package]
+name = "gsx-engine"
+version = "0.1.0"
+edition = "2021"
+description = "GhostChain Sovereign Exchange — institutional-grade matching engine"
+authors = ["GhostChain Engineering <eng@ghostchain.cloud>"]
+
+[dependencies]
+tokio         = { version = "1", features = ["full"] }
+serde         = { version = "1", features = ["derive"] }
+serde_json    = "1"
+axum          = "0.7"
+dashmap       = "6"
+tracing       = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid          = { version = "1", features = ["v4"] }
+sha2          = "0.10"
+hex           = "0.4"
+parking_lot   = "0.12"
+crossbeam-channel = "0.5"
+
+[profile.release]
+opt-level = 3
+lto       = true
+codegen-units = 1
+panic     = "abort"

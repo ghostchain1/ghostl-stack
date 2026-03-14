@@ -1,0 +1,179 @@
+# GhostStack Autonomous Infrastructure Supervisor — Docker Compose
+# =================================================================
+# Runs the GAIS service alongside the existing monitoring stack.
+# The supervisor needs access to the host libvirt socket to manage VMs.
+#
+# Usage:
+#   docker compose -f docker-compose.supervisor.yml up -d
+#
+# To run alongside the full stack:
+#   docker compose -f docker-compose.yml -f docker-compose.supervisor.yml up -d
+#
+# Secrets (required before first launch):
+#   Set GAIS_API_TOKEN in your .env file (copied from stack.env.example).
+#   Never commit secrets to git.
+
+version: "3.9"
+
+services:
+
+  # ── GhostStack Autonomous Infrastructure Supervisor ───────────────────────
+  gais:
+    build:
+      context: ./infra/hypervisor/supervisor
+      dockerfile: Dockerfile
+    image: ghostchain/gais:latest
+    container_name: gais
+    restart: unless-stopped
+
+    # libvirt socket must be mounted for virsh to communicate with the host
+    # hypervisor.  Requires the container to run as root or be in the libvirt
+    # group on the host.
+    volumes:
+      - /var/run/libvirt/libvirt-sock:/var/run/libvirt/libvirt-sock
+      # Shared .tmp directory so GAIS, guardian, and health-monitor share state
+      - ./logs:/home/ghost/ghostl-stack/logs
+      - ./.tmp:/home/ghost/ghostl-stack/.tmp
+
+    ports:
+      - "9100:9100"    # GAIS REST API (status + control)
+
+    environment:
+      # ── API security ──────────────────────────────────────────────────────
+      GAIS_API_TOKEN:         ${GAIS_API_TOKEN:-}        # Set in .env — required
+
+      # ── Core settings ─────────────────────────────────────────────────────
+      GAIS_LISTEN_ADDR:       "0.0.0.0"
+      GAIS_LISTEN_PORT:       "9100"
+      GAIS_LOG_LEVEL:         ${GAIS_LOG_LEVEL:-INFO}
+
+      # ── Loop intervals ────────────────────────────────────────────────────
+      SCRAPE_INTERVAL_S:      "10"
+      HEAL_INTERVAL_S:        "15"
+      SCALE_INTERVAL_S:       "180"
+      REBALANCE_INTERVAL_S:   "360"
+      DIRECTIVE_POLL_S:       "30"
+
+      # ── libvirt ───────────────────────────────────────────────────────────
+      VIRSH_URI:              "qemu:///system"
+      LIBVIRT_NETWORK:        "gs-mgmt"
+
+      # ── Chain RPC ports ───────────────────────────────────────────────────
+      RPC_PORT_L1:            "18545"
+      RPC_PORT_L2:            "29545"
+      RPC_PORT_L3:            "39545"
+
+      # ── GhostBrain + signing relay ────────────────────────────────────────
+      GHOSTBRAIN_URL:         ${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}
+      SIGNING_RELAY_URL:      ${SIGNING_RELAY_URL:-http://signing-relay:7910}
+
+      # ── Cosmos LCD (validator rebalancer) ─────────────────────────────────
+      COSMOS_LCD_URL:         ${COSMOS_LCD_URL:-http://ghostchain-l1:1317}
+      MAX_REGION_FRACTION_PCT: "50"
+
+      # ── VM Manager safety ─────────────────────────────────────────────────
+      VM_MANAGER_DRY_RUN:       ${VM_MANAGER_DRY_RUN:-0}
+      VM_MANAGER_COOLDOWN_S:    "120"
+      VM_MANAGER_MAX_RESTARTS_H: "4"
+      VM_SNAPSHOT_ENABLED:      "1"
+
+      # ── Node Healer ───────────────────────────────────────────────────────
+      HEALER_SOFT_FAIL_THRESHOLD: "2"
+      HEALER_HARD_FAIL_THRESHOLD: "2"
+      HEALER_UNHEALTHY_WINDOW_S:  "60"
+
+      # ── Autoscaler ────────────────────────────────────────────────────────
+      PROMETHEUS_URL:           ${PROMETHEUS_URL:-http://prometheus:9090}
+      PROPOSAL_COOLDOWN_S:      "300"
+      MIN_ACTIVE_L1_NODES:      "3"
+      MIN_ACTIVE_L2_NODES:      "2"
+
+    healthcheck:
+      test: ["CMD", "python3", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:9100/status', timeout=3)"]
+      interval: 30s
+      timeout:  10s
+      retries:  3
+      start_period: 15s
+
+    networks:
+      - ghost-internal
+
+    # GAIS should start after monitoring so Prometheus is ready to scrape
+    depends_on:
+      - prometheus
+
+  # ── Prometheus (if not already declared in main compose) ──────────────────
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: prometheus
+    restart: unless-stopped
+    volumes:
+      - ./infra/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+      - "--web.enable-lifecycle"
+      - "--web.listen-address=0.0.0.0:9090"
+    ports:
+      - "9090:9090"
+    networks:
+      - ghost-internal
+
+  # ── Grafana ───────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: grafana
+    restart: unless-stopped
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana:/etc/grafana/provisioning
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-changeme}
+      GF_USERS_ALLOW_SIGN_UP:     "false"
+      GF_SERVER_ROOT_URL:         ${GRAFANA_ROOT_URL:-http://localhost:3000}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - ghost-internal
+
+  # ── GAIS Prometheus metrics exporter (read-only, :9108) ───────────────────
+  gais-metrics:
+    build:
+      context: ./infra/hypervisor/supervisor
+      dockerfile: Dockerfile
+    image: ghostchain/gais:latest
+    container_name: gais-metrics
+    restart: unless-stopped
+    command: ["python3", "supervisor.py"]   # Existing read-only metrics exporter
+    volumes:
+      - /var/run/libvirt/libvirt-sock:/var/run/libvirt/libvirt-sock
+    ports:
+      - "9108:9108"
+    environment:
+      LISTEN_ADDR:      "0.0.0.0"
+      LISTEN_PORT:      "9108"
+      SCRAPE_INTERVAL:  "10"
+      VIRSH_URI:        "qemu:///system"
+      LIBVIRT_NETWORK:  "gs-mgmt"
+      RPC_PORT_L1:      "18545"
+      RPC_PORT_L2:      "29545"
+      RPC_PORT_L3:      "39545"
+      GHOSTBRAIN_URL:   ${GHOSTBRAIN_URL:-http://ghostbrain-core:7900/api/v1/signals}
+    networks:
+      - ghost-internal
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  ghost-internal:
+    driver: bridge
+    name: ghost-internal
+    # Attach to this network from the main compose file to share service
+    # discovery between GAIS and ghostbrain-core, signing-relay, etc.

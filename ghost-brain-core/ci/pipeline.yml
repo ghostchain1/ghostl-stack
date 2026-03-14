@@ -1,0 +1,224 @@
+name: GhostBrain CI
+
+on:
+  push:
+    branches: [main, dev, release/*]
+    paths: ['ghost-brain-core/**']
+  pull_request:
+    branches: [main, dev]
+    paths: ['ghost-brain-core/**']
+
+env:
+  NODE_VERSION: "22.21.0"
+  PYTHON_VERSION: "3.11"
+  CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    working-directory: ghost-brain-core
+
+jobs:
+  # ── TypeScript: type-check + lint ────────────────────────────────────────
+  typescript:
+    name: TypeScript — tsc + lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ghost-brain-core/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npx eslint . --ext .ts --max-warnings 0
+
+  # ── TypeScript: unit tests ────────────────────────────────────────────────
+  ts-tests:
+    name: TypeScript — unit tests
+    runs-on: ubuntu-latest
+    needs: typescript
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ghost-brain-core/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run tests
+        run: npm test
+        env:
+          CI: true
+          GHOSTCHAIN_L1_RPC: http://localhost:18545   # stub — no real node in CI
+          GHOSTBRAIN_DEVICE_ID: ci-test-device-0
+
+  # ── Rust: cargo check + test ──────────────────────────────────────────────
+  rust:
+    name: Rust — cargo check + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ghost-brain-core/security/target
+          key: rust-${{ hashFiles('ghost-brain-core/security/Cargo.lock') }}
+
+      - name: Fmt check
+        working-directory: ghost-brain-core/security
+        run: cargo fmt -- --check
+
+      - name: Clippy
+        working-directory: ghost-brain-core/security
+        run: cargo clippy -- -D warnings
+
+      - name: Build
+        working-directory: ghost-brain-core/security
+        run: cargo build --release
+
+      - name: Test
+        working-directory: ghost-brain-core/security
+        run: cargo test
+
+  # ── C++: build simulators and reliability ─────────────────────────────────
+  cpp:
+    name: C++ — build simulators + reliability
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y g++ make
+
+      - name: Build cycle simulator
+        run: |
+          g++ -O2 -std=c++17 -o /tmp/cycle_sim \
+            simulator/cycle_simulator/cycle_sim.cpp
+
+      - name: Build ECC controller
+        run: g++ -O2 -std=c++17 -o /tmp/ecc_controller reliability/ecc_controller.cpp
+
+      - name: Self-test ECC controller
+        run: /tmp/ecc_controller
+
+      - name: Build fault detector
+        run: g++ -O2 -std=c++17 -o /tmp/fault_detector reliability/fault_detector.cpp
+
+      - name: Self-test fault detector
+        run: /tmp/fault_detector
+
+      - name: Build health monitor
+        run: g++ -O2 -std=c++17 -pthread -o /tmp/health_monitor reliability/health_monitor.cpp
+
+  # ── Python: lint + benchmark smoke test ──────────────────────────────────
+  python:
+    name: Python — lint + benchmark smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install python deps
+        run: pip install numpy matplotlib scipy ruff
+
+      - name: Lint (ruff)
+        run: ruff check simulator/ benchmarks/
+
+      - name: Roofline model smoke test
+        run: python3 simulator/roofline/roofline_model.py
+
+      - name: Performance predictor smoke test
+        run: python3 simulator/roofline/performance_predictor.py --kernel matmul_7b --batch 1
+
+      - name: LLaMA benchmark smoke test
+        run: python3 benchmarks/transformer/llama_benchmark.py
+
+  # ── Docker: build images ──────────────────────────────────────────────────
+  docker-build:
+    name: Docker — build images
+    runs-on: ubuntu-latest
+    needs: [typescript, rust, cpp, python]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build runtime image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file:    ghost-brain-core/infrastructure/docker/Dockerfile.runtime
+          push:    false
+          tags:    ghostchain/ghostbrain-runtime:ci-${{ github.sha }}
+          cache-from: type=gha
+          cache-to:   type=gha,mode=max
+
+      - name: Build simulator image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file:    ghost-brain-core/infrastructure/docker/Dockerfile.simulator
+          push:    false
+          tags:    ghostchain/ghostbrain-simulator:ci-${{ github.sha }}
+
+  # ── GhostChain brand compliance ───────────────────────────────────────────
+  brand-check:
+    name: Brand compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install tools
+        working-directory: .
+        run: npm ci --ignore-scripts --workspace packages/brand-enforcer
+
+      - name: Check ghostbrain-core for brand violations
+        working-directory: .
+        run: |
+          node tools/branding/audit.mjs --target ghost-brain-core \
+            --fail-on-violation
+
+  # ── GST leakage check ─────────────────────────────────────────────────────
+  gst-check:
+    name: GST leakage check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Check for non-GST token references
+        run: |
+          cd ..
+          node scripts/gst-leakage-check.mjs --target ghost-brain-core

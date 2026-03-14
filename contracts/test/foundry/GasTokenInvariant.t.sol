@@ -27,7 +27,7 @@ contract GasTokenInvariant is TestBase {
     function testCanonicalGasTokenConstants() public {
         StakingManager staking = new StakingManager(executor, executorV2);
         SlashingManager slashing = new SlashingManager(staking, executor, executorV2);
-        Treasury treasury = new Treasury(IERC20Balance(CANONICAL_GAS_TOKEN), executor, executorV2);
+        Treasury treasury = new Treasury(IGST20Balance(CANONICAL_GAS_TOKEN), executor, executorV2);
         Faucet faucet = new Faucet(1e18, 1 hours, executor, executorV2);
         RewardDistributor rewards = new RewardDistributor(staking, executor, executorV2);
 

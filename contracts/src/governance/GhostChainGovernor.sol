@@ -47,6 +47,7 @@ contract GhostChainGovernor is Governed {
     event VoteCast(uint256 indexed id, address indexed voter, bool support, uint256 weight);
     event Queued(uint256 indexed id, uint256 indexed queueId, uint256 eta, uint256 delaySeconds);
     event Executed(uint256 indexed id, uint256 indexed queueId);
+    event ProposalCancelled(uint256 indexed id);
 
     error VotingClosed();
     error AlreadyVoted();
@@ -145,7 +146,7 @@ contract GhostChainGovernor is Governed {
         emit ProposalCreated(id, msg.sender, target, constitutional, amendment);
     }
 
-    function castVote(uint256 id, bool support) external {
+    function castVote(uint256 id, bool support) public {
         Proposal storage p = proposals[id];
         if (block.timestamp < p.start || block.timestamp > p.end) revert VotingClosed();
         if (hasVoted[id][msg.sender]) revert AlreadyVoted();
@@ -160,7 +161,7 @@ contract GhostChainGovernor is Governed {
         emit VoteCast(id, msg.sender, support, weight);
     }
 
-    function queue(uint256 id, uint256 delaySeconds) external returns (uint256 queueId) {
+    function queue(uint256 id, uint256 delaySeconds) public returns (uint256 queueId) {
         Proposal storage p = proposals[id];
         if (p.queued) revert AlreadyQueued();
         if (block.timestamp <= p.end) revert VotingNotEnded();
@@ -191,13 +192,41 @@ contract GhostChainGovernor is Governed {
         emit Queued(id, queueId, block.timestamp + delaySeconds, delaySeconds);
     }
 
-    function execute(uint256 id) external {
+    function execute(uint256 id) public {
         Proposal storage p = proposals[id];
         if (!p.queued) revert NotQueued();
         if (p.executed) revert AlreadyExecuted();
         p.executed = true;
         executor.execute(p.queueId);
         emit Executed(id, p.queueId);
+    }
+
+    // ── Spec-compatible aliases ─────────────────────────────────────────────
+
+    /// @notice Spec alias for castVote.
+    function vote(uint256 id, bool support) external {
+        castVote(id, support);
+    }
+
+    /// @notice Spec alias for queue — queues with standardMinDelay.
+    function queueProposal(uint256 id) external {
+        ConstitutionRegistry.AmendmentRules memory r = _rules();
+        queue(id, r.standardMinDelay);
+    }
+
+    /// @notice Spec alias for execute.
+    function executeProposal(uint256 id) external {
+        execute(id);
+    }
+
+    /// @notice Cancel a proposal that has not yet been queued.
+    /// @dev Only callable by the executor (governor/timelock).
+    function cancelProposal(uint256 id) external onlyExecutor {
+        Proposal storage p = proposals[id];
+        require(!p.queued, "GhostChainGovernor: already queued");
+        require(!p.executed, "GhostChainGovernor: already executed");
+        p.executed = true; // prevents future queue/execute
+        emit ProposalCancelled(id);
     }
 
     function _votingPowerAt(address voter, uint64 timepoint) internal view returns (uint256) {

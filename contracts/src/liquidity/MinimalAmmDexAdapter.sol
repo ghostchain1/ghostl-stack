@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import "../amm/MinimalAMM.sol";
 import "./IDexAdapter.sol";
 
-interface IERC20Dex {
+interface IGST20Dex {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
     function transfer(address to, uint256 amount) external returns (bool);
     function approve(address spender, uint256 amount) external returns (bool);
@@ -33,14 +33,14 @@ contract MinimalAmmDexAdapter is IDexAdapter {
         (address t0, address t1) = (address(amm.token0()), address(amm.token1()));
         require((tokenIn == t0 && tokenOut == t1) || (tokenIn == t1 && tokenOut == t0), "pair");
 
-        require(IERC20Dex(tokenIn).transferFrom(msg.sender, address(this), amountIn), "pullIn");
+        require(IGST20Dex(tokenIn).transferFrom(msg.sender, address(this), amountIn), "pullIn");
         _approve(tokenIn, address(amm), amountIn);
 
         uint256 expectedOut = _quoteOut(tokenIn, amountIn);
         uint256 minOut = (expectedOut * (BPS_DENOM - maxSlippageBps)) / BPS_DENOM;
         amountOut = amm.swapExactIn(tokenIn, amountIn, minOut);
 
-        require(IERC20Dex(tokenOut).transfer(recipient, amountOut), "sendOut");
+        require(IGST20Dex(tokenOut).transfer(recipient, amountOut), "sendOut");
     }
 
     function provideLiquidityOneSided(
@@ -57,7 +57,7 @@ contract MinimalAmmDexAdapter is IDexAdapter {
         (address t0, address t1) = (address(amm.token0()), address(amm.token1()));
         require((tokenIn == t0 && tokenOut == t1) || (tokenIn == t1 && tokenOut == t0), "pair");
 
-        require(IERC20Dex(tokenIn).transferFrom(msg.sender, address(this), amountIn), "pullIn");
+        require(IGST20Dex(tokenIn).transferFrom(msg.sender, address(this), amountIn), "pullIn");
 
         uint256 amountSwap = amountIn / 2;
         uint256 amountRemain = amountIn - amountSwap;
@@ -102,10 +102,10 @@ contract MinimalAmmDexAdapter is IDexAdapter {
         uint256 refund0 = amount0Desired > use0 ? amount0Desired - use0 : 0;
         uint256 refund1 = amount1Desired > use1 ? amount1Desired - use1 : 0;
         if (refund0 != 0) {
-            require(IERC20Dex(t0).transfer(recipient, refund0), "refund0");
+            require(IGST20Dex(t0).transfer(recipient, refund0), "refund0");
         }
         if (refund1 != 0) {
-            require(IERC20Dex(t1).transfer(recipient, refund1), "refund1");
+            require(IGST20Dex(t1).transfer(recipient, refund1), "refund1");
         }
     }
 
@@ -119,8 +119,8 @@ contract MinimalAmmDexAdapter is IDexAdapter {
     }
 
     function _approve(address token, address spender, uint256 amount) internal {
-        require(IERC20Dex(token).approve(spender, 0), "approve0");
-        require(IERC20Dex(token).approve(spender, amount), "approve");
+        require(IGST20Dex(token).approve(spender, 0), "approve0");
+        require(IGST20Dex(token).approve(spender, amount), "approve");
     }
 }
 

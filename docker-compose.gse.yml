@@ -1,0 +1,146 @@
+version: "3.9"
+
+networks:
+  ghostsovereign:
+    external: true
+    name: ghostsovereign
+
+services:
+
+  gse-gdp:
+    build: ./services/gse-gdp
+    container_name: ghostgse-gdp
+    restart: unless-stopped
+    environment:
+      - PORT=4110
+      - L1_RPC=http://ghostchain-l1:8545
+    ports: ["4110:4110"]
+    networks: [ghostsovereign]
+    healthcheck:
+      test: ["CMD-SHELL","node -e \"require('http').get('http://localhost:4110/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gse-tax:
+    build: ./services/gse-tax
+    container_name: ghostgse-tax
+    restart: unless-stopped
+    environment:
+      - PORT=4111
+      - L1_RPC=http://ghostchain-l1:8545
+    ports: ["4111:4111"]
+    networks: [ghostsovereign]
+    healthcheck:
+      test: ["CMD-SHELL","node -e \"require('http').get('http://localhost:4111/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gse-trade:
+    build: ./services/gse-trade
+    container_name: ghostgse-trade
+    restart: unless-stopped
+    environment:
+      - PORT=4112
+      - L1_RPC=http://ghostchain-l1:8545
+      - GSN_URL=http://ghostgsn-settlement:4060
+    ports: ["4112:4112"]
+    networks: [ghostsovereign]
+    healthcheck:
+      test: ["CMD-SHELL","node -e \"require('http').get('http://localhost:4112/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gse-budget:
+    build: ./services/gse-budget
+    container_name: ghostgse-budget
+    restart: unless-stopped
+    environment:
+      - PORT=4113
+      - L1_RPC=http://ghostchain-l1:8545
+    ports: ["4113:4113"]
+    networks: [ghostsovereign]
+    healthcheck:
+      test: ["CMD-SHELL","node -e \"require('http').get('http://localhost:4113/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gse-infra:
+    build: ./services/gse-infra
+    container_name: ghostgse-infra
+    restart: unless-stopped
+    environment:
+      - PORT=4114
+      - L1_RPC=http://ghostchain-l1:8545
+      - GSX_API=http://ghostgsx-api:4010
+    ports: ["4114:4114"]
+    networks: [ghostsovereign]
+    healthcheck:
+      test: ["CMD-SHELL","node -e \"require('http').get('http://localhost:4114/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gse-monitor:
+    build: ./services/gse-monitor
+    container_name: ghostgse-monitor
+    restart: unless-stopped
+    environment:
+      - PORT=4115
+      - GSE_GDP_URL=http://ghostgse-gdp:4110
+      - GSE_TRADE_URL=http://ghostgse-trade:4112
+      - GWF_MONITOR_URL=http://ghostgwf-monitor:4100
+    ports: ["4115:4115"]
+    networks: [ghostsovereign]
+    healthcheck:
+      test: ["CMD-SHELL","node -e \"require('http').get('http://localhost:4115/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gse-ai:
+    build: ./services/gse-ai
+    container_name: ghostgse-ai
+    restart: unless-stopped
+    environment:
+      - PORT=4116
+      - GHOSTBRAIN_URL=http://ghostbrain-core:7900
+      - GSE_MONITOR_URL=http://ghostgse-monitor:4115
+    ports: ["4116:4116"]
+    networks: [ghostsovereign]
+    healthcheck:
+      test: ["CMD-SHELL","node -e \"require('http').get('http://localhost:4116/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gse-postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: ghostgse-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gse
+      POSTGRES_USER: gse
+      POSTGRES_PASSWORD_FILE: /run/secrets/gse_db_password
+    secrets: [gse_db_password]
+    volumes:
+      - gse-pgdata:/var/lib/postgresql/data
+      - ./services/gse-gdp/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    networks: [ghostsovereign]
+
+secrets:
+  gse_db_password:
+    file: ./secrets/gse_db_password.txt
+
+volumes:
+  gse-pgdata:

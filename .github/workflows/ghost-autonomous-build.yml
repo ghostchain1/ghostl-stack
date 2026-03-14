@@ -1,0 +1,149 @@
+name: Ghost Autonomous Contract Audit
+
+# Runs the contract engine in audit mode (DRY_RUN=true).
+# Fails the build if any required function is missing or branding violations
+# are detected in contracts/src.
+#
+# This workflow is SEPARATE from ghost-autobuild.yml (which handles compile +
+# test).  It is intentionally lightweight and fast — pure static analysis only.
+
+on:
+  pull_request:
+    paths:
+      - 'contracts/src/**'
+      - 'services/ghost-contract-engine/**'
+      - '.github/workflows/ghost-autonomous-build.yml'
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ghost-autonomous-build-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Contract completeness audit ───────────────────────────────────────────
+  contract-engine-audit:
+    name: Autonomous Contract Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node 22
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: '22.22.0'
+          cache: npm
+
+      - name: Install engine dependencies
+        working-directory: services/ghost-contract-engine
+        run: npm ci --no-audit --no-fund
+
+      - name: Run engine (dry-run audit)
+        # DRY_RUN=true → report only, exit 1 if gaps or violations found.
+        run: |
+          DRY_RUN=true \
+          npx tsx services/ghost-contract-engine/src/index.ts
+
+      - name: Confirm GRC20 interface completeness
+        run: |
+          set -euo pipefail
+          file="contracts/src/ghost/GRC20.sol"
+          for fn in totalSupply balanceOf allowance transfer approve transferFrom \
+                    mint burn burnFrom ghostBalance ghostTransfer ghostApprove \
+                    ghostAllowance ghostTransferFrom; do
+            grep -q "$fn" "$file" || (echo "MISSING in GRC20: $fn" && exit 1)
+          done
+          echo "GRC20: OK"
+
+      - name: Confirm GRC721 interface completeness
+        run: |
+          set -euo pipefail
+          file="contracts/src/ghost/GRC721.sol"
+          for fn in ownerOf balanceOf getApproved isApprovedForAll approve \
+                    setApprovalForAll transferFrom safeTransferFrom tokenURI \
+                    mint burn ghostTransferFrom ghostSafeTransferFrom; do
+            grep -q "$fn" "$file" || (echo "MISSING in GRC721: $fn" && exit 1)
+          done
+          echo "GRC721: OK"
+
+      - name: Confirm GRC1155 interface completeness
+        run: |
+          set -euo pipefail
+          file="contracts/src/ghost/GRC1155.sol"
+          for fn in balanceOf balanceOfBatch setApprovalForAll isApprovedForAll \
+                    safeTransferFrom safeBatchTransferFrom mint mintBatch burn burnBatch; do
+            grep -q "$fn" "$file" || (echo "MISSING in GRC1155: $fn" && exit 1)
+          done
+          echo "GRC1155: OK"
+
+      - name: Confirm Governance interface completeness
+        run: |
+          set -euo pipefail
+          file="contracts/src/governance/GhostChainGovernor.sol"
+          for fn in propose castVote queue execute vote queueProposal executeProposal cancelProposal; do
+            grep -q "$fn" "$file" || (echo "MISSING in GhostChainGovernor: $fn" && exit 1)
+          done
+          echo "GhostChainGovernor: OK"
+
+      - name: Confirm Treasury interface completeness
+        run: |
+          set -euo pipefail
+          file="contracts/src/treasury/SovereignTreasuryEngine.sol"
+          for fn in deposit withdraw allocateRewards buybackGST burnGST; do
+            grep -q "$fn" "$file" || (echo "MISSING in SovereignTreasuryEngine: $fn" && exit 1)
+          done
+          echo "SovereignTreasuryEngine: OK"
+
+      - name: Confirm Bridge interface completeness
+        run: |
+          set -euo pipefail
+          file="contracts/src/bridge/StandardBridge.sol"
+          for fn in lockTokens unlockTokens relayMessage verifyProof \
+                    bridgeGST20 finalizeBridgeGST20; do
+            grep -q "$fn" "$file" || (echo "MISSING in StandardBridge: $fn" && exit 1)
+          done
+          echo "StandardBridge: OK"
+
+  # ── Branding scan (fast grep, no Node required) ───────────────────────────
+  branding-audit:
+    name: Branding Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Forbidden Ethereum terms in contracts/src
+        run: |
+          set -euo pipefail
+          # Only scan non-comment, non-import lines for ERC* identifiers.
+          # grep -n prints matching lines.  We invert-match comment lines first.
+          bad=$(grep -rn --include="*.sol" \
+            -E '\bERC20\b|\bERC721\b|\bERC1155\b' \
+            contracts/src/ \
+            --exclude-dir=test \
+            --exclude-dir=mocks \
+            | grep -v '^\s*//' \
+            | grep -v '^\s*\*' \
+            | grep -v '^\s*import' \
+            || true)
+          if [ -n "$bad" ]; then
+            echo "Branding violations:"
+            echo "$bad"
+            exit 1
+          fi
+          echo "Branding: OK"

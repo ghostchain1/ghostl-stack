@@ -67,6 +67,20 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === "GET" && req.url === "/stats") {
+    return json(res, 200, {
+      ok: true,
+      stats: {
+        decisions: state.decisions,
+        fallbacks: state.fallbacks,
+        policyRejections: state.policyRejections,
+        killSwitch: KILL_SWITCH,
+        manualOnly: MANUAL_ONLY,
+        fetchedAt: new Date().toISOString(),
+      },
+    });
+  }
+
   if (req.method === "GET" && req.url === "/explain") {
     return json(res, 200, {
       ok: true,
@@ -121,3 +135,4 @@ server.listen(PORT, "0.0.0.0", () => {
   fs.mkdirSync("/tmp", { recursive: true });
   console.log(`[ghostload-ai] listening on ${PORT}`);
 });
+process.on("SIGTERM", () => server.close(() => process.exit(0)));

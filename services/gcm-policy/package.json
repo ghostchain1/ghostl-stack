@@ -1,0 +1,14 @@
+{
+  "name": "@ghostchain-gsx/gcm-policy",
+  "version": "0.1.0",
+  "description": "GCM monetary policy engine — interest rates, reserve ratios, liquidity caps, velocity limits",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev":   "node --watch src/index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

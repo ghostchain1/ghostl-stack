@@ -9,7 +9,7 @@
     "lint": "echo \"TODO: add lint\""
   },
   "dependencies": {
-    "@ghostchain/ghost-sdk-core": "workspace:*",
+    "@ghostchain/ghost-sdk-core": "*",
     "@ghostl/types": "0.0.1"
   },
   "devDependencies": {

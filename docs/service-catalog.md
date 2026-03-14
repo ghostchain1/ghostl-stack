@@ -40,6 +40,10 @@ Generated from repository inventory and runtime snapshot in `evidence/phase0`.
 - `key-rotation-service`
 
 ## AI and Intelligence Services
+- `ghostbrain-core` (port 7900) — GBA-OS kernel + predictive AI hub; 30-second brain tick with 10-step orchestration pipeline
+  - **GBA-OS Kernel:** event loop, cluster gossip, cluster sync, leader election
+  - **Predictive AI:** EWMA load forecaster, z-score anomaly detector, pattern recognizer (autocorr/TOD/Pearson), predictive balancer, failure predictor
+  - **Routes:** `/api/v1/kernel`, `/api/v1/orchestrator`, `/api/v1/protection`, `/api/v1/observability`, `/api/v1/predictive`, `/metrics`
 - `ai-monitor`
 - `ai-vault`
 - `ai-clock-sync`

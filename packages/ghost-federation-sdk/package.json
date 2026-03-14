@@ -1,0 +1,25 @@
+{
+  "name": "ghost-federation-sdk",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared types, constants, and utilities for the GhostStack Global Federation",
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types":  "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch"
+  },
+  "dependencies": {
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "typescript": "^5.8.2"
+  }
+}

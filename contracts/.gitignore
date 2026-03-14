@@ -12,8 +12,39 @@
 /cache-legacy/
 /out-slither/
 /cache-slither/
+/out/
 /reports/foundry/
 /reports/formal/echidna-corpus/covered.*
+
+# Forge lcov / gas snapshot
+lcov.info
+.gas-snapshot
+
+# Hardhat network fork cache
+/hardhat-network-fork-cache/
+
+# Slither static analysis output
+slither-output.json
+slither.db.json
+crytic-export/
+*.sarif
+
+# Echidna / Medusa fuzzer output
+corpus/
+medusa-corpus/
+
+# Certora prover output
+.certora_cache/
+.certora_config
+certora-output/
+
+# Contract deployment artefacts (local-only — use deployments/ for tracked records)
+broadcast/**/dry-run/
+broadcast/**/*.json
+!broadcast/.gitkeep
+
+# npm packed tarballs
+*.tgz
 
 # local env / secrets — never commit real keys
 .env

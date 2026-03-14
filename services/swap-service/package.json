@@ -1,0 +1,17 @@
+{
+  "name": "swap-service",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "GhostChain native swap routing service — AMM quote + calldata generation",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

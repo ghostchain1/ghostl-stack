@@ -13,6 +13,7 @@ import crypto from 'node:crypto';
 import type { Request, Response, NextFunction } from 'express';
 import { env } from '../config/env.js';
 import type { OIDCRealm, RealmClaim } from '../../../../packages/types/index.js';
+import { mapRealmClaimToPermissions } from '../lib/rbac.js';
 
 // ─── JWKS key cache ───────────────────────────────────────────────────────────
 
@@ -226,12 +227,17 @@ export const realmAuthMiddleware = async (
   try {
     const claim = await validateBearerToken(token);
     if (claim) {
-      req.session.realmClaim = claim;
-      req.session.oidcRealm = claim.realm;
+      req.session.realmClaim      = claim;
+      req.session.oidcRealm       = claim.realm;
       req.session.oidcAccessToken = token;
       // Map realm roles → session roles for RBAC compatibility
       if (!req.session.roles || req.session.roles.length === 0) {
         req.session.roles = claim.realmRoles;
+      }
+      // Map realm roles → GhostChain permission strings so requirePermission()
+      // works for OIDC sessions without requiring a SQLite RBAC lookup.
+      if (!req.session.permissions || req.session.permissions.length === 0) {
+        req.session.permissions = mapRealmClaimToPermissions(claim);
       }
     }
   } catch {
@@ -270,4 +276,66 @@ export const requireRealm = (realm: OIDCRealm) => (
     return;
   }
   next();
+};
+
+/**
+ * Guard middleware: requires any one of the listed realms.
+ * Useful for routes shared between employees and admins, etc.
+ */
+export const requireAnyRealm = (realms: OIDCRealm[]) => (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
+  if (!req.session.oidcRealm || !realms.includes(req.session.oidcRealm as OIDCRealm)) {
+    res.status(403).json({ error: 'wrong_realm', required: realms, actual: req.session.oidcRealm ?? null });
+    return;
+  }
+  next();
+};
+
+/**
+ * Guard middleware: requires a specific role to be present in the realm claim.
+ * Checks both realmRoles and clientRoles (case-insensitive).
+ */
+export const requireRealmRole = (role: string) => (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
+  const claim = req.session.realmClaim;
+  if (!claim) {
+    res.status(401).json({ error: 'oidc_token_required' });
+    return;
+  }
+  const roleLower = role.toLowerCase();
+  const allRoles = [...claim.realmRoles, ...claim.clientRoles].map((r) => r.toLowerCase());
+  if (!allRoles.includes(roleLower)) {
+    res.status(403).json({ error: 'insufficient_realm_role', required: role });
+    return;
+  }
+  next();
+};
+
+/**
+ * Unified authentication guard.
+ *
+ * Passes the request through if the caller holds EITHER:
+ *   (a) a valid password/session authentication (`req.session.userId` set), OR
+ *   (b) a validated OIDC realm claim (`req.session.realmClaim` set).
+ *
+ * Use this in place of manual session checks on routes that should accept
+ * both auth methods.  Authorization (permissions/roles) is enforced separately
+ * downstream with requirePermission() or requireRealmRole().
+ */
+export const requireAuth = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
+  if (req.session.userId || req.session.realmClaim) {
+    next();
+    return;
+  }
+  res.status(401).json({ error: 'unauthenticated' });
 };

@@ -1,0 +1,14 @@
+{
+  "name": "@ghostchain-gsx/gsn-liquidity",
+  "version": "0.1.0",
+  "description": "GSN liquidity routing — manages cross-border liquidity pools for real-time settlement",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev":   "node --watch src/index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

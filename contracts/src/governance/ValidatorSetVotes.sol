@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import { GhostSafeCast as SafeCast } from "../common/GhostSafeCast.sol";
 import "../common/Governed.sol";
 import "./IValidatorSetVotes.sol";
 
 /// @notice Governance-managed validator voting weights with timestamp checkpoints.
 /// @dev Designed to plug into GhostChain governor voting power calculations.
 contract ValidatorSetVotes is Governed, IValidatorSetVotes {
+    using SafeCast for uint256;
+
     struct Checkpoint {
         uint48 timepoint;
         uint208 votes;
@@ -37,11 +40,11 @@ contract ValidatorSetVotes is Governed, IValidatorSetVotes {
     }
 
     function getValidatorVotes(address operator, uint256 timepoint) external view returns (uint256) {
-        return _getVotesAt(_checkpoints[operator], uint48(timepoint));
+        return _getVotesAt(_checkpoints[operator], timepoint.toUint48());
     }
 
     function getTotalValidatorVotes(uint256 timepoint) external view returns (uint256) {
-        return _getVotesAt(_totalCheckpoints, uint48(timepoint));
+        return _getVotesAt(_totalCheckpoints, timepoint.toUint48());
     }
 
     function _set(address operator, uint256 votes) internal {
@@ -54,8 +57,10 @@ contract ValidatorSetVotes is Governed, IValidatorSetVotes {
             totalValidatorVotes -= (prev - votes);
         }
 
-        _writeCheckpoint(_checkpoints[operator], uint208(votes));
-        _writeCheckpoint(_totalCheckpoints, uint208(totalValidatorVotes));
+        require(votes <= type(uint208).max, "overflow");
+        _writeCheckpoint(_checkpoints[operator], votes.toUint208());
+        require(totalValidatorVotes <= type(uint208).max, "overflow");
+        _writeCheckpoint(_totalCheckpoints, totalValidatorVotes.toUint208());
 
         emit ValidatorVotesSet(operator, votes);
     }

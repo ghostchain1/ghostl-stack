@@ -1,0 +1,20 @@
+{
+  "name": "ghostbrain-strategy",
+  "version": "1.0.0",
+  "description": "GhostBrain Strategic Intelligence System (SIS) — predictive forecasting, economic modeling, liquidity routing, and scaling for GhostChain",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev":   "node --watch dist/index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript":   "^5.9.3",
+    "@types/node":  "^22.10.7"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

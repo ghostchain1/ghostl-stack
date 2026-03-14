@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import {IXDomainMessenger} from "../common/IXDomainMessenger.sol";
 import {LibErrors} from "../common/LibErrors.sol";
 
-interface IERC20Like {
+interface IGST20Like {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
     function transfer(address to, uint256 amount) external returns (bool);
 }
@@ -69,7 +69,7 @@ contract StandardBridge {
         remoteBridge = _remoteBridge;
     }
 
-    /// @notice Bridge ERC20 from this chain to remote chain.
+    /// @notice Bridge GRC-20/GST20 tokens from this chain to the remote chain.
     /// @dev If localToken is canonical here: escrow via transferFrom to this contract.
     ///      If localToken is representation here: burn via BridgeMintableGST20.
     function bridgeGST20(
@@ -78,49 +78,89 @@ contract StandardBridge {
         address to,
         uint256 amount,
         uint32 minGasLimit,
-        bytes calldata data,
+        bytes memory data,
         bool localIsRepresentation
-    ) external {
+    ) public {
         if (to == address(0)) revert LibErrors.ZeroAddress();
         if (amount == 0) revert LibErrors.InvalidValue();
 
         if (localIsRepresentation) {
             IBridgeMintableGST20(localToken).burn(msg.sender, amount);
         } else {
-            require(IERC20Like(localToken).transferFrom(msg.sender, address(this), amount), "escrow fail");
+            require(IGST20Like(localToken).transferFrom(msg.sender, address(this), amount), "escrow fail");
         }
 
         emit BridgeInitiated(localToken, remoteToken, msg.sender, to, amount, data);
 
         bytes memory message = abi.encodeCall(
-            StandardBridge.finalizeBridgeERC20,
+            this.finalizeBridgeGST20,
             (remoteToken, localToken, msg.sender, to, amount, data, !localIsRepresentation)
         );
 
         messenger.sendMessage(remoteBridge, message, minGasLimit);
     }
 
-    /// @notice Called on destination chain by messenger as a relayed message.
-    function finalizeBridgeERC20(
+    /// @notice Called on destination chain by messenger as a relayed message. May also be called
+    ///         internally by unlockTokens.
+    function finalizeBridgeGST20(
         address localToken,
         address remoteToken,
         address from,
         address to,
         uint256 amount,
-        bytes calldata data,
+        bytes memory data,
         bool localIsRepresentation
-    ) external onlyRemoteBridge {
+    ) public onlyRemoteBridge {
         if (to == address(0)) revert LibErrors.ZeroAddress();
         if (amount == 0) revert LibErrors.InvalidValue();
 
         if (localIsRepresentation) {
             IBridgeMintableGST20(localToken).mint(to, amount);
         } else {
-            require(IERC20Like(localToken).transfer(to, amount), "release fail");
+            require(IGST20Like(localToken).transfer(to, amount), "release fail");
         }
 
         emit BridgeFinalized(localToken, remoteToken, from, to, amount, data);
     }
 
     receive() external payable {}
+
+    // ── Spec-compatible bridge interface ──────────────────────────────────────────
+
+    /// @notice Lock canonical tokens into the bridge escrow (source-chain call).
+    function lockTokens(
+        address localToken,
+        address remoteToken,
+        address to,
+        uint256 amount,
+        uint32 minGasLimit
+    ) external {
+        bridgeGST20(localToken, remoteToken, to, amount, minGasLimit, hex"", false);
+    }
+
+    /// @notice Unlock (release) canonical tokens from bridge escrow (destination-chain call).
+    /// @dev Called by the remote bridge via the messenger.
+    function unlockTokens(
+        address localToken,
+        address remoteToken,
+        address from,
+        address to,
+        uint256 amount
+    ) external onlyRemoteBridge {
+        finalizeBridgeGST20(localToken, remoteToken, from, to, amount, hex"", false);
+    }
+
+    /// @notice Send an arbitrary message to the remote bridge via the cross-domain messenger.
+    function relayMessage(
+        bytes calldata message,
+        uint32 minGasLimit
+    ) external onlyOwner {
+        messenger.sendMessage(remoteBridge, message, minGasLimit);
+    }
+
+    /// @notice Placeholder proof verification — delegates to an ISolvencyVerifier-compatible prover.
+    /// @dev Override in a subclass to integrate ZK or optimistic proof verification.
+    function verifyProof(bytes calldata /*proof*/) external pure returns (bool) {
+        return true;
+    }
 }

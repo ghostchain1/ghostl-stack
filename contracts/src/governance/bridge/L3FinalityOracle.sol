@@ -5,6 +5,7 @@ import "../../common/Governed.sol";
 import "../../consensus-governance/ConsensusEvidenceRootStore.sol";
 import "./IFederationFinalityVerifier.sol";
 import "./L1FinalityOracle.sol";
+import "../../common/GhostHash.sol";
 import "./L2FinalityOracle.sol";
 
 /// @notice L3 finality oracle enforcing cascading finality: L3 root -> L2 root -> L1 finalized block.
@@ -180,7 +181,7 @@ contract L3FinalityOracle is Governed, IFederationFinalityVerifier {
 
         ConsensusEvidenceRootStore store = evidenceRootStore;
         if (address(store) != address(0)) {
-            bytes32 metadataHash = keccak256(abi.encode(parentL2BlockNumber, canonicalParentRoot, providedParentRoot));
+            bytes32 metadataHash = GhostHash.hash3(bytes32(parentL2BlockNumber), canonicalParentRoot, providedParentRoot);
             uint32 version = store.recordEvidenceRootByReporter(
                 KIND_L3_PARENT_CANONICAL_DIVERGENCE, evidenceHash, 0, 0, metadataHash
             );

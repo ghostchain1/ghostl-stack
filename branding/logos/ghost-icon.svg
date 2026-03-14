@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7B2FBE"/>
+      <stop offset="100%" stop-color="#00D2FF"/>
+    </linearGradient>
+  </defs>
+  <!-- Ghost body -->
+  <path d="M24 4C14.06 4 6 12.06 6 22v20l6-5 6 5 6-5 6 5 6-5 6 5V22C42 12.06 33.94 4 24 4z"
+        fill="url(#g1)"/>
+  <!-- Eyes -->
+  <circle cx="18" cy="21" r="3" fill="#0A0B0F"/>
+  <circle cx="30" cy="21" r="3" fill="#0A0B0F"/>
+</svg>

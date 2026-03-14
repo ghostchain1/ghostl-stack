@@ -36,6 +36,10 @@ const Env = z.object({
   START_BLOCK_L1: z.coerce.number().int().nonnegative().default(0),
   START_BLOCK_L2: z.coerce.number().int().nonnegative().default(0),
 
+  // ── Cosmos SDK (GhostChain) LCD endpoint (empty = skip Cosmos polling) ────
+  COSMOS_LCD_URL:  z.string().default(""),
+  COSMOS_CHAIN_ID: z.string().default("ghostchain-1"),
+
   // ── Log level ─────────────────────────────────────────────────────────────
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
 });

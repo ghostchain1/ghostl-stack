@@ -1,0 +1,170 @@
+# GhostStack AI Vault — Default Security Policies
+# Gas token: GST | Chain L1: 14000101, L2: 901, L3: 903
+
+version: "1.0"
+
+# ── Default access decision when no rule matches ────────────────────────────
+defaultDecision: deny
+
+# ── Rate limiting ────────────────────────────────────────────────────────────
+anomaly:
+  rateLimitPerMinute: 120
+  burst: 40
+  blockMs: 300000
+
+# ── Allow rules (evaluated before deny) ──────────────────────────────────────
+allow:
+  # Internal health probes
+  - path: /health
+    methods: [GET]
+    actors: ["*"]
+
+  - path: /readyz
+    methods: [GET]
+    actors: ["*"]
+
+  # Authenticated secret retrieval
+  - pathPrefix: /vault/secret
+    methods: [GET, POST]
+    requireAuth: true
+
+  # Authenticated key operations
+  - pathPrefix: /vault/key
+    methods: [GET, POST, PUT]
+    requireAuth: true
+    roles: [vault-admin, key-manager]
+
+  # Audit read (authenticated)
+  - path: /vault/audit
+    methods: [GET]
+    requireAuth: true
+    roles: [vault-admin, auditor]
+
+  # Metrics exporter (internal only)
+  - path: /metrics
+    methods: [GET]
+    sourceIpPrefixes: ["127.0.0.1", "::1", "10.", "172.16.", "192.168."]
+
+  # Validator signing (blockchain layer)
+  - pathPrefix: /vault/blockchain/validator
+    methods: [POST]
+    requireAuth: true
+    roles: [validator, vault-admin]
+
+  # Bridge signer keys (blockchain layer)
+  - pathPrefix: /vault/blockchain/bridge
+    methods: [POST]
+    requireAuth: true
+    roles: [bridge-operator, vault-admin]
+
+  # Treasury operations (multisig required)
+  - pathPrefix: /vault/blockchain/treasury
+    methods: [GET, POST]
+    requireAuth: true
+    roles: [treasury-operator, vault-admin]
+    requireMultisig: true
+
+  # Agent-to-vault communication (AI agents)
+  - pathPrefix: /vault/agent
+    methods: [GET, POST]
+    requireAuth: true
+    roles: [ai-agent, vault-admin]
+
+# ── Deny rules (always block these) ──────────────────────────────────────────
+deny:
+  # Block external ETH/Ethereum chain references
+  - pathPrefix: /eth
+    methods: [GET, POST, PUT, DELETE, PATCH]
+    actors: ["*"]
+    reason: "routing-law-violation: external chain blocked"
+
+  # Block raw master key export
+  - path: /vault/master-key
+    methods: [GET]
+    actors: ["*"]
+    reason: "master-key-export-forbidden"
+
+  # Block bulk secret dump
+  - path: /vault/secrets/dump
+    methods: [GET, POST]
+    actors: ["*"]
+    reason: "bulk-dump-forbidden"
+
+# ── Automatic rotation schedules ─────────────────────────────────────────────
+rotate:
+  - name: jwt-secrets
+    path: vault://auth/jwt-secret
+    intervalMs: 86400000      # 24h
+    keyLength: 64
+    encoding: hex
+
+  - name: api-tokens
+    path: vault://api/tokens
+    intervalMs: 604800000     # 7d
+    keyLength: 32
+    encoding: base64
+
+  - name: db-passwords
+    path: vault://docker/postgres/password
+    intervalMs: 604800000     # 7d
+    keyLength: 32
+    encoding: base64
+
+  - name: validator-hot-keys-l1
+    path: vault://validator/l1/mainnet/hot-key
+    intervalMs: 43200000      # 12h
+    keyLength: 32
+    encoding: hex
+
+  - name: validator-hot-keys-l2
+    path: vault://validator/l2/mainnet/hot-key
+    intervalMs: 43200000      # 12h
+    keyLength: 32
+    encoding: hex
+
+  - name: bridge-signer-keys
+    path: vault://bridge/l2/signer
+    intervalMs: 86400000      # 24h
+    keyLength: 32
+    encoding: hex
+
+  - name: dns-tsig-key
+    path: vault://dns/bind9/tsig-key
+    intervalMs: 2592000000    # 30d
+    keyLength: 32
+    encoding: base64
+
+# ── Resource classifications ─────────────────────────────────────────────────
+resourceClasses:
+  critical:
+    - "vault://validator/*"
+    - "vault://bridge/*"
+    - "vault://treasury/*"
+    - "vault://dns/*"
+  high:
+    - "vault://docker/*"
+    - "vault://github/*"
+    - "vault://ssh/*"
+  medium:
+    - "vault://api/*"
+    - "vault://auth/*"
+  low:
+    - "vault://config/*"
+
+# ── Multisig thresholds ──────────────────────────────────────────────────────
+multisig:
+  treasury:
+    threshold: 3
+    signers: 5
+  bridge:
+    threshold: 2
+    signers: 3
+  validatorRotation:
+    threshold: 2
+    signers: 3
+
+# ── Compliance frameworks ────────────────────────────────────────────────────
+compliance:
+  frameworks: [SOC2, ISO27001, GhostChain-Governance-v1]
+  auditRetentionDays: 90
+  mirrorToGhostchain: false

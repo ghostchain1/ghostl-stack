@@ -77,6 +77,7 @@ const BRIDGE_PATTERNS = [
   /BrandingInvariant/,   // the brand enforcement contract itself defines forbidden strings
   /GhostBrainIntegration/, // AI integration tests that test Ethereum detection
   /GhostIdentityConstitution/, // identity constitution tests reference what they guard against
+  /\/ghostcain\//,       // ghostcain sub-project (rebranded OZ fork — uses Solidity unit keyword in mocks/tests)
 ];
 
 function isBridgePath(filePath: string): boolean {

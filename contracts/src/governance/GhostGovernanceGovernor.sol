@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "../common/GhostHash.sol";
+
 interface IGhostTimelockController {
     function schedule(address target, uint256 value, bytes calldata data, bytes32 salt) external returns (bytes32);
     function execute(address target, uint256 value, bytes calldata data, bytes32 salt) external payable returns (bytes memory);
@@ -90,7 +92,7 @@ contract GhostGovernanceGovernor {
         returns (bytes32 proposalId)
     {
         bytes32 descriptionHash = keccak256(bytes(description));
-        proposalId = keccak256(abi.encode(++proposalNonce, target, value, keccak256(data), descriptionHash));
+        proposalId = GhostHash.governorProposalId(++proposalNonce, target, value, keccak256(data), descriptionHash);
 
         Proposal storage p = proposals[proposalId];
         p.target = target;

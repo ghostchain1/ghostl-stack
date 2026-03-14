@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "../GhostBrand.sol";
 import "./AgentRegistry.sol";
+import {GhostHash} from "../common/GhostHash.sol";
 
 /// @title GhostBrainIntegration
 /// @notice On-chain anchor for the GhostBrain Sovereign Autonomous Agent (GSA).
@@ -16,7 +17,7 @@ import "./AgentRegistry.sol";
 ///      Brand Law (non-overridable):
 ///        name=Ghost, symbol=GST, decimals=18.
 ///
-///      The contract is deliberately minimal: no ERC standards, no upgradability,
+///      The contract is deliberately minimal: no external token standards, no upgradability,
 ///      no token transfers. It is pure audit log + constitutional enforcement.
 contract GhostBrainIntegration is GhostBrand {
 
@@ -220,7 +221,7 @@ contract GhostBrainIntegration is GhostBrand {
     ) external onlyOperator returns (bytes32 findingId) {
         if (scanHash == bytes32(0)) revert ZeroHash();
 
-        findingId = keccak256(abi.encode(scanHash, correlationId, severity, block.timestamp, msg.sender));
+        findingId = GhostHash.findingId(scanHash, correlationId, severity, block.timestamp, msg.sender);
         if (_findings[findingId].timestamp != 0) revert DuplicateRecord(findingId);
 
         _findings[findingId] = Finding({
@@ -258,7 +259,7 @@ contract GhostBrainIntegration is GhostBrand {
     ) external onlyOperator returns (bytes32 planId) {
         if (planHash == bytes32(0)) revert ZeroHash();
 
-        planId = keccak256(abi.encode(findingHash, planHash, stepCount, block.timestamp, msg.sender));
+        planId = GhostHash.planId(findingHash, planHash, stepCount, block.timestamp, msg.sender);
         if (_plans[planId].timestamp != 0) revert DuplicateRecord(planId);
 
         _plans[planId] = Plan({
@@ -301,7 +302,7 @@ contract GhostBrainIntegration is GhostBrand {
         if (patchHash == bytes32(0)) revert ZeroHash();
         if (!_verifiedBundles[bundleHash]) revert BundleNotVerified(bundleHash);
 
-        patchId = keccak256(abi.encode(planHash, bundleHash, patchHash, applied, block.timestamp, msg.sender));
+        patchId = GhostHash.patchId(planHash, bundleHash, patchHash, applied, block.timestamp, msg.sender);
         if (_patches[patchId].timestamp != 0) revert DuplicateRecord(patchId);
 
         _patches[patchId] = PatchRecord({

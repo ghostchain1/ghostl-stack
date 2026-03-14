@@ -1,5 +1,35 @@
 const LAYERS = new Set(['L1', 'L2', 'L3']);
 
+/** Canonical chain IDs for the three GhostChain mainchains. */
+export const MAINCHAIN_IDS = Object.freeze({ L1: 14000101, L2: 901, L3: 903 });
+
+/** Map from chain ID number → canonical chain name. */
+export const MAINCHAIN_NAMES = Object.freeze({
+  14000101: 'GhostChain',
+  901: 'GhostL2',
+  903: 'GhostL3',
+});
+
+/** Map from canonical chain name → layer string. */
+export const MAINCHAIN_LAYERS = Object.freeze({
+  GhostChain: 'L1',
+  GhostL2:    'L2',
+  GhostL3:    'L3',
+});
+
+/**
+ * Assert that a chain ID is one of the three canonical GhostChain mainchains.
+ * Throws with code `routing_law_unknown_chain:<id>` if not recognised.
+ */
+export const assertMainchain = (chainId) => {
+  const id = Number(chainId);
+  const name = MAINCHAIN_NAMES[id];
+  if (!name) {
+    throw new Error(`routing_law_unknown_chain:${chainId}`);
+  }
+  return { ok: true, chainId: id, name, layer: MAINCHAIN_LAYERS[name] };
+};
+
 export const normalizeLayer = (value) => {
   const raw = String(value || '').trim().toUpperCase();
   if (raw === '1' || raw === 'L1') return 'L1';

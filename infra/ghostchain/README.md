@@ -60,3 +60,73 @@ cast send 0x0000000000000000000000000000000000000000 \
 - Containers run as UID 1000. If the stack fails to start with permission errors, ensure datadirs are owned by UID 1000 and use 700/600 perms.
 - L1 metrics are exposed on `http://localhost:18660/debug/metrics`; Prometheus scrape config lives in `observability/infra/prometheus.yml`.
 - L1 env is canonicalized in `infra/ghostchain/.env.l1` (copy from `.env.l1.example`).
+
+---
+
+## OP Stack → Cosmos SDK Migration: Full Topology
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  ghostchaind   Cosmos SDK sovereign (ChainID: ghostchain-1, denom: ugst)│
+│   CometBFT     Ports: 26657 (RPC) | 9090 (gRPC) | 1317 (LCD) | 26656  │
+│       ↕ IBC (Hermes — config/hermes.toml)                               │
+│  ghostchain-node1  geth PoA EVM L1 (ChainID: 14000101, port 18545)      │
+│       ↕ OP Stack settlement                                             │
+│  OP Stack L2  (ChainID: 901, port 29547)                                │
+│       ↕ OP Stack                                                        │
+│  OP Stack L3  (ChainID: 903, port 39545)                                │
+│                                                                         │
+│  governance-event-bridge polls ghostchaind LCD :1317 every 12 s        │
+│  Hermes relays ICS-20 packets between ghostchain-1 and EVM chains       │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Compose files
+
+| File | Purpose |
+|------|---------|
+| `docker-compose.l1.yml` | EVM geth PoA L1 stack (bootnode + node1 + node2 + rpc-proxy) |
+| `docker-compose.cosmos.yml` | Cosmos SDK sovereign node + Hermes IBC relayer |
+| `docker-compose.ibft.yml` | Legacy Besu IBFT (kept for reference, stopped by default) |
+| `../../docker-compose.ghostchain.yml` | Primary Cosmos SDK node (root-level, canonical) |
+| `../../docker-compose.ghostbrain.yml` | AI brain stack; governance-event-bridge wired to Cosmos LCD |
+
+### Start Cosmos SDK sovereign node
+
+```bash
+# From workspace root — creates ghostchain-cosmos-net Docker network:
+docker compose -f docker-compose.ghostchain.yml --env-file stack.env up -d
+
+# Verify blocks are being produced:
+curl http://localhost:26657/status | jq .result.sync_info.latest_block_height
+
+# Query GhostGov proposals via LCD:
+curl http://localhost:1317/ghostchain/ghostgov/v1/proposals
+```
+
+### Wire ghostbrain AI stack to Cosmos
+
+```bash
+# Cosmos node must be running first (governs ghostchain-cosmos-net network):
+docker compose -f docker-compose.ghostchain.yml --env-file stack.env up -d
+
+# governance-event-bridge will auto-connect to http://ghostchaind:1317:
+docker compose -f docker-compose.ghostbrain.yml --env-file stack.env up -d
+```
+
+### IBC Hermes relayer quick-start
+
+```bash
+# Add relayer key:
+docker exec hermes-relayer \
+  hermes keys add --chain ghostchain-1 \
+  --mnemonic-file /run/secrets/ghostchain-relayer-mnemonic
+
+# Start with IBC profile:
+docker compose -f docker-compose.ghostchain.yml --profile ibc --env-file stack.env up -d
+
+# Run health check:
+docker exec hermes-relayer hermes health-check
+```
+
+Cosmos SDK chain data lives in Docker volume `ghostchaind-data`. Delete it to reset genesis.

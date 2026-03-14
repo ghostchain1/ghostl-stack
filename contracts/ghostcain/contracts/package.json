@@ -1,0 +1,32 @@
+{
+  "name": "@ghostchain/contracts",
+  "description": "Secure Smart Contract library for Solidity",
+  "version": "5.6.1",
+  "files": [
+    "**/*.sol",
+    "/build/contracts/*.json",
+    "!/mocks/**/*"
+  ],
+  "scripts": {
+    "prepack": "bash ../scripts/prepack.sh",
+    "prepare-docs": "cd ..; npm run prepare-docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GhostChain/ghostchain-contracts.git"
+  },
+  "keywords": [
+    "solidity",
+    "ghostchain",
+    "smart",
+    "contracts",
+    "security",
+    "zeppelin"
+  ],
+  "author": "GhostChain Community <maintainers@ghostchain.org>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/GhostChain/ghostchain-contracts/issues"
+  },
+  "homepage": "https://ghostchain.com/contracts/"
+}

@@ -132,10 +132,10 @@ contract GNSResolver {
         return (pk[0], pk[1]);
     }
 
-    // ── ERC-165 supportsInterface ─────────────────────────────────────────────
+    // ── GST-165 supportsInterface ─────────────────────────────────────────────
     function supportsInterface(bytes4 interfaceID) external pure returns (bool) {
         return
-            interfaceID == 0x01ffc9a7 || // ERC-165
+            interfaceID == 0x01ffc9a7 || // GST-165 (interface detection)
             interfaceID == 0x3b3b57de || // addr(bytes32)
             interfaceID == 0x59d1d43c || // text(bytes32,string)
             interfaceID == 0xbc1c58d1;   // contenthash(bytes32)

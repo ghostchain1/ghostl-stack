@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "../common/GhostHash.sol";
+
 interface IMainnetPolicyOracle {
     function isPolicyHashAccepted(bytes32 policyHash) external view returns (bool);
 }
@@ -54,7 +56,7 @@ contract MainnetLaunchGate {
     ) external returns (bytes32 requestId) {
         emit MainnetLaunchRequested(releaseId, manifestHash, msg.sender);
         // Not authoritative; helpful for off-chain proposal tracking.
-        requestId = keccak256(abi.encode(releaseId, manifestHash, genesisHashL1, rollupHashL2, rollupHashL3, imagesLockHash));
+        requestId = GhostHash.launchRequestId(releaseId, manifestHash, genesisHashL1, rollupHashL2, rollupHashL3, imagesLockHash);
     }
 
     function setStrictCascadingRequirements(bool enabled) external {

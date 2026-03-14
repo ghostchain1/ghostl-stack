@@ -32,7 +32,7 @@ contract TreasuryVault {
 
     receive() external payable {}
 
-    function transferERC20(address token, address to, uint256 amount) external onlyController {
+    function transferGST20(address token, address to, uint256 amount) external onlyController {
         require(token != address(0), "token=0");
         require(to != address(0), "to=0");
         require(IGST20Minimal(token).transfer(to, amount), "transfer failed");
@@ -46,7 +46,8 @@ contract TreasuryVault {
         emit AssetTransferred(address(0), to, amount);
     }
 
-    function call(address target, uint256 value, bytes calldata data) external onlyController returns (bytes memory) {
+    /// @notice Execute an arbitrary call from the vault. Reverts if the low-level call fails.
+    function executeCall(address target, uint256 value, bytes calldata data) external onlyController returns (bytes memory) {
         require(target != address(0), "target=0");
         (bool ok, bytes memory result) = target.call{value: value}(data);
         require(ok, "call failed");

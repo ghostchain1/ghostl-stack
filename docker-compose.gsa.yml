@@ -1,0 +1,205 @@
+version: "3.9"
+
+networks:
+  ghostsovereign:
+    external: true
+    name: ghostsovereign
+
+services:
+
+  gsa-core:
+    build: ./services/gsa-core
+    container_name: ghostgsa-core
+    restart: unless-stopped
+    environment:
+      - PORT=4300
+      - L1_RPC=http://ghostchain-l1:8545
+      - DB_URL=postgresql://gsa:${GSA_DB_PASSWORD}@ghostgsa-postgres:5432/gsa
+      - AGENT_REGISTRY_URL=http://ghostgsa-agent:4306
+      - GSA_GOVERNANCE_URL=http://ghostgsa-governance:4301
+      - GSA_ORACLE_URL=http://ghostgsa-oracle:4302
+      - GSA_POLICY_URL=http://ghostgsa-policy:4303
+      - GSA_MONITOR_URL=http://ghostgsa-monitor:4304
+      - GSA_RISK_URL=http://ghostgsa-risk:4305
+      - GSA_AUDIT_URL=http://ghostgsa-audit:4307
+      - GHOSTBRAIN_URL=http://ghostbrain-core:7900
+    ports: ["4300:4300"]
+    networks: [ghostsovereign]
+    depends_on: [gsa-postgres]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4300/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gsa-governance:
+    build: ./services/gsa-governance
+    container_name: ghostgsa-governance
+    restart: unless-stopped
+    environment:
+      - PORT=4301
+      - L1_RPC=http://ghostchain-l1:8545
+      - DB_URL=postgresql://gsa:${GSA_DB_PASSWORD}@ghostgsa-postgres:5432/gsa
+      - AGENT_REGISTRY_URL=http://ghostgsa-agent:4306
+      - AUDIT_URL=http://ghostgsa-audit:4307
+    ports: ["4301:4301"]
+    networks: [ghostsovereign]
+    depends_on: [gsa-postgres]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4301/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gsa-oracle:
+    build: ./services/gsa-oracle
+    container_name: ghostgsa-oracle
+    restart: unless-stopped
+    environment:
+      - PORT=4302
+      - L1_RPC=http://ghostchain-l1:8545
+      - DB_URL=postgresql://gsa:${GSA_DB_PASSWORD}@ghostgsa-postgres:5432/gsa
+      - AGENT_REGISTRY_URL=http://ghostgsa-agent:4306
+      - AUDIT_URL=http://ghostgsa-audit:4307
+    ports: ["4302:4302"]
+    networks: [ghostsovereign]
+    depends_on: [gsa-postgres]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4302/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gsa-policy:
+    build: ./services/gsa-policy
+    container_name: ghostgsa-policy
+    restart: unless-stopped
+    environment:
+      - PORT=4303
+      - L1_RPC=http://ghostchain-l1:8545
+      - DB_URL=postgresql://gsa:${GSA_DB_PASSWORD}@ghostgsa-postgres:5432/gsa
+      - AGENT_REGISTRY_URL=http://ghostgsa-agent:4306
+      - GOVERNANCE_URL=http://ghostgsa-governance:4301
+      - GSX_URL=http://ghostgsx-api:4010
+      - GCM_URL=http://ghostgcm-node:4070
+      - GSE_URL=http://ghostgse-gdp:4110
+      - AUDIT_URL=http://ghostgsa-audit:4307
+    ports: ["4303:4303"]
+    networks: [ghostsovereign]
+    depends_on: [gsa-postgres]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4303/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gsa-monitor:
+    build: ./services/gsa-monitor
+    container_name: ghostgsa-monitor
+    restart: unless-stopped
+    environment:
+      - PORT=4304
+      - L1_RPC=http://ghostchain-l1:8545
+      - DB_URL=postgresql://gsa:${GSA_DB_PASSWORD}@ghostgsa-postgres:5432/gsa
+      - AGENT_REGISTRY_URL=http://ghostgsa-agent:4306
+      - GSX_URL=http://ghostgsx-api:4010
+      - GSN_URL=http://ghostgsn-gateway:4050
+      - GCM_URL=http://ghostgcm-node:4070
+      - GSI_URL=http://ghostgsi-registry:4200
+      - GSE_URL=http://ghostgse-monitor:4115
+    ports: ["4304:4304"]
+    networks: [ghostsovereign]
+    depends_on: [gsa-postgres]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4304/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gsa-risk:
+    build: ./services/gsa-risk
+    container_name: ghostgsa-risk
+    restart: unless-stopped
+    environment:
+      - PORT=4305
+      - L1_RPC=http://ghostchain-l1:8545
+      - DB_URL=postgresql://gsa:${GSA_DB_PASSWORD}@ghostgsa-postgres:5432/gsa
+      - AGENT_REGISTRY_URL=http://ghostgsa-agent:4306
+      - ORACLE_URL=http://ghostgsa-oracle:4302
+      - GSX_URL=http://ghostgsx-api:4010
+      - GSR_URL=http://ghostgsr-oracle:4080
+      - AUDIT_URL=http://ghostgsa-audit:4307
+    ports: ["4305:4305"]
+    networks: [ghostsovereign]
+    depends_on: [gsa-postgres]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4305/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gsa-agent:
+    build: ./services/gsa-agent
+    container_name: ghostgsa-agent
+    restart: unless-stopped
+    environment:
+      - PORT=4306
+      - L1_RPC=http://ghostchain-l1:8545
+      - DB_URL=postgresql://gsa:${GSA_DB_PASSWORD}@ghostgsa-postgres:5432/gsa
+      - AGENT_REGISTRY_URL=http://ghostgsa-agent:4306
+      - AUDIT_URL=http://ghostgsa-audit:4307
+    ports: ["4306:4306"]
+    networks: [ghostsovereign]
+    depends_on: [gsa-postgres]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4306/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gsa-audit:
+    build: ./services/gsa-audit
+    container_name: ghostgsa-audit
+    restart: unless-stopped
+    environment:
+      - PORT=4307
+      - L1_RPC=http://ghostchain-l1:8545
+      - DB_URL=postgresql://gsa:${GSA_DB_PASSWORD}@ghostgsa-postgres:5432/gsa
+      - AGENT_REGISTRY_URL=http://ghostgsa-agent:4306
+    ports: ["4307:4307"]
+    networks: [ghostsovereign]
+    depends_on: [gsa-postgres]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4307/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gsa-postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: ghostgsa-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gsa
+      POSTGRES_USER: gsa
+      POSTGRES_PASSWORD_FILE: /run/secrets/gsa_db_password
+    secrets: [gsa_db_password]
+    volumes:
+      - gsa-pgdata:/var/lib/postgresql/data
+      - ./services/gsa-core/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    networks: [ghostsovereign]
+
+secrets:
+  gsa_db_password:
+    file: ./secrets/gsa_db_password.txt
+
+volumes:
+  gsa-pgdata:

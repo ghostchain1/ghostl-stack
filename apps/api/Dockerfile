@@ -1,77 +1,42 @@
-FROM node:22.22.0-bookworm-slim AS deps
-WORKDIR /app
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends python3 make g++ \
-  && rm -rf /var/lib/apt/lists/*
-COPY package.json package-lock.json ./
-COPY scripts scripts
-# Copy workspace manifests explicitly so `npm ci --workspaces` has a consistent
-# directory layout (wildcard COPY destinations do not preserve structure).
-COPY apps/api/package.json apps/api/package.json
-COPY apps/web/package.json apps/web/package.json
-COPY apps/worker/package.json apps/worker/package.json
-COPY packages/config/package.json packages/config/package.json
-COPY packages/contract-schemas/package.json packages/contract-schemas/package.json
-COPY packages/ghostchain-sdk/package.json packages/ghostchain-sdk/package.json
-COPY packages/ghostwallet/package.json packages/ghostwallet/package.json
-COPY packages/sdk/package.json packages/sdk/package.json
-COPY packages/types/package.json packages/types/package.json
-COPY packages/ui/package.json packages/ui/package.json
-RUN npm ci --include-workspace-root --workspaces
+FROM node:22-slim
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ curl && rm -rf /var/lib/apt/lists/*
 
-FROM deps AS dev
 WORKDIR /app
-COPY . .
+
+# Build workspace package.json
+RUN python3 -c "import json; json.dump({'private': True, 'workspaces': ['packages/ghost', 'packages/ghost-sdk', 'packages/contract-schemas', 'packages/auth', 'packages/ghostwallet', 'packages/routing-guard', 'packages/routing-law', 'apps/api']}, open('package.json', 'w'))"
+
+# Copy workspace packages needed by the API
+COPY packages/ghost packages/ghost
+COPY packages/ghost-sdk packages/ghost-sdk
+COPY packages/contract-schemas packages/contract-schemas
+COPY packages/auth packages/auth
+COPY packages/ghostwallet packages/ghostwallet
+COPY packages/routing-guard packages/routing-guard
+COPY packages/routing-law packages/routing-law
+
+# Copy observability AI modules (used by API log-intel module)
+COPY observability observability
+
+# Copy the base tsconfig and API source
+COPY tsconfig.base.json .
+COPY apps/api apps/api
+
+# Install all dependencies (network access enables prebuilt native binaries)
+RUN npm install --legacy-peer-deps
+
+# Build TypeScript workspace packages needed at runtime
+RUN npm run build --workspace=packages/ghost-sdk
+RUN npm run build --workspace=packages/ghost
+
+# Install tsx for TypeScript execution
+RUN npm install -g tsx
+
+# Create data directories with proper ownership for all SQLite DBs and JSON stores
+RUN mkdir -p /app/apps/api/data /home/ghost/ghostl-stack/apps/api/data && chown -R node:node /app/apps/api/data /home/ghost/ghostl-stack/apps/api/data
+
 WORKDIR /app/apps/api
 EXPOSE 4000
-CMD ["npm", "run", "dev"]
 
-FROM deps AS builder
-WORKDIR /app
-COPY . .
-RUN npm run build -w packages/ghostwallet
-RUN npm run build -w apps/api
-
-FROM node:22.22.0-bookworm-slim AS prod-deps
-WORKDIR /app
-RUN apt-get update \
-  && apt-get upgrade -y \
-  && rm -rf /var/lib/apt/lists/*
-COPY package.json package-lock.json ./
-COPY scripts scripts
-# Copy workspace manifests explicitly so targeted workspace installs resolve correctly.
-COPY apps/api/package.json apps/api/package.json
-COPY apps/web/package.json apps/web/package.json
-COPY apps/worker/package.json apps/worker/package.json
-COPY packages/config/package.json packages/config/package.json
-COPY packages/contract-schemas/package.json packages/contract-schemas/package.json
-COPY packages/ghostchain-sdk/package.json packages/ghostchain-sdk/package.json
-COPY packages/ghostwallet/package.json packages/ghostwallet/package.json
-COPY packages/sdk/package.json packages/sdk/package.json
-COPY packages/types/package.json packages/types/package.json
-COPY packages/ui/package.json packages/ui/package.json
-RUN npm ci \
-  --omit=dev \
-  --workspace apps/api \
-  --workspace packages/contract-schemas \
-  --workspace packages/ghostwallet \
-  --include-workspace-root=false \
-  && npm cache clean --force
-
-FROM node:22.22.0-bookworm-slim AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-RUN apt-get update \
-  && apt-get upgrade -y \
-  && rm -rf /var/lib/apt/lists/* \
-  && rm -rf /usr/local/lib/node_modules/npm \
-  && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
-COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=prod-deps /app/apps/api/node_modules ./apps/api/node_modules
-COPY --from=builder /app/dist/apps/api ./apps/api/dist
-COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
-COPY --from=builder /app/packages ./packages
-WORKDIR /app/apps/api
-EXPOSE 4000
 USER node
-CMD ["node", "dist/server.js"]
+CMD ["tsx", "src/server.ts"]

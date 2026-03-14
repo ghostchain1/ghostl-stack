@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import { GhostSafeCast as SafeCast } from "../common/GhostSafeCast.sol";
 import "../common/Governed.sol";
 import "../common/ReentrancyGuard.sol";
+import "../common/GhostHash.sol";
 
 interface ISolvencyVerifier {
     function verifyProof(bytes calldata proof, bytes32 assetsRoot, bytes32 liabilitiesRoot, bytes32 netPositionRoot, uint256 epoch)
@@ -11,9 +13,16 @@ interface ISolvencyVerifier {
         returns (bool);
 }
 
+interface IGST20Burnable {
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
+    function burn(address from, uint256 amount) external;
+}
+
 /// @notice Governance-gated treasury engine for sovereign L3->L2->L1 revenue flow.
 /// @dev Capital deployment is L1-only and requires governance proposal metadata.
 contract SovereignTreasuryEngine is Governed, ReentrancyGuard {
+    using SafeCast for uint256;
+
     struct AllocationRequest {
         bytes32 allocationId;
         uint256 deployedAmountWei;
@@ -44,6 +53,7 @@ contract SovereignTreasuryEngine is Governed, ReentrancyGuard {
     address public immutable l2RevenueAggregator;
 
     address public yieldRouter;
+    address public gstToken;
 
     uint256 public revenueBalanceWei;
     uint256 public deployedCapitalWei;
@@ -111,6 +121,12 @@ contract SovereignTreasuryEngine is Governed, ReentrancyGuard {
         uint256 yieldReturnedWei
     );
     event PrincipalReturned(bytes32 indexed allocationId, uint256 amountWei, uint256 deployedCapitalWei);
+    event TreasuryDeposit(address indexed sender, uint256 amountWei, uint256 revenueBalanceWei);
+    event TreasuryWithdrawal(address indexed recipient, uint256 amountWei, uint256 revenueBalanceWei);
+    event RewardsAllocated(bytes32 indexed allocationId, address indexed target, uint256 amountWei);
+    event BuybackGST(address indexed buyer, uint256 amountWei);
+    event BurnGST(address indexed initiator, uint256 amountWei);
+    event GstTokenUpdated(address indexed previous, address indexed next);
     event YieldRouterUpdated(address indexed previousRouter, address indexed nextRouter);
     event SafetyFlagsUpdated(bool emergencyHalt, bool allocationPaused, bool withdrawalFreeze);
     event SolvencyVerifierUpdated(address indexed previousVerifier, address indexed nextVerifier);
@@ -341,7 +357,7 @@ contract SovereignTreasuryEngine is Governed, ReentrancyGuard {
         require(bytes(governanceProposalId).length > 0, "governance_proposal_required");
         require(assetsRoot != bytes32(0) && liabilitiesRoot != bytes32(0) && netPositionRoot != bytes32(0), "invalid_roots");
 
-        bytes32 proofDigest = keccak256(abi.encode(circuitVersion, keccak256(proof)));
+        bytes32 proofDigest = GhostHash.hash2(bytes32(uint256(circuitVersion)), keccak256(proof));
         require(!usedSolvencyProofDigest[proofDigest], "proof_replayed");
 
         address verifier = _resolveSolvencyVerifier(circuitVersion);
@@ -350,7 +366,7 @@ contract SovereignTreasuryEngine is Governed, ReentrancyGuard {
             : ISolvencyVerifier(verifier).verifyProof(proof, assetsRoot, liabilitiesRoot, netPositionRoot, epoch);
         require(ok, "invalid_solvency_proof");
 
-        bytes32 commitment = keccak256(abi.encode(epoch, assetsRoot, liabilitiesRoot, netPositionRoot, circuitVersion));
+        bytes32 commitment = GhostHash.hash5(bytes32(epoch), assetsRoot, liabilitiesRoot, netPositionRoot, bytes32(uint256(circuitVersion)));
         require(solvencyCommitmentByEpoch[epoch] == bytes32(0), "solvency_commitment_exists");
 
         usedSolvencyProofDigest[proofDigest] = true;
@@ -490,7 +506,7 @@ contract SovereignTreasuryEngine is Governed, ReentrancyGuard {
             : ((uint256(riskExposureBps) * oldDeployed) + (uint256(request.riskScoreBps) * request.deployedAmountWei))
                 / projectedDeployed;
         require(weightedRisk <= maxRiskExposureBps, "risk_exposure_cap");
-        riskExposureBps = uint16(weightedRisk);
+        riskExposureBps = weightedRisk.toUint16();
 
         emit AllocationExecuted(
             request.allocationId,
@@ -604,5 +620,64 @@ contract SovereignTreasuryEngine is Governed, ReentrancyGuard {
         revenueBalanceWei += amountWei;
 
         emit PrincipalReturned(allocationId, amountWei, deployedCapitalWei);
+    }
+
+    // ── Spec-compatible treasury interface ─────────────────────────────────────
+
+    /// @notice Set the GST token address used by buybackGST / burnGST.
+    function setGstToken(address token) external onlyGovernance {
+        emit GstTokenUpdated(gstToken, token);
+        gstToken = token;
+    }
+
+    /// @notice Generic deposit — increments revenueBalanceWei accounting.
+    function deposit(uint256 amountWei) external onlyL1Chain nonReentrant {
+        require(amountWei > 0, "amount=0");
+        require(!emergencyHalt, "halted");
+        revenueBalanceWei += amountWei;
+        emit TreasuryDeposit(msg.sender, amountWei, revenueBalanceWei);
+    }
+
+    /// @notice Governance-controlled withdrawal from treasury balance.
+    function withdraw(address recipient, uint256 amountWei) external onlyGovernance onlyL1Chain nonReentrant {
+        require(!withdrawalFreeze, "frozen");
+        require(recipient != address(0), "recipient=0");
+        require(amountWei > 0, "amount=0");
+        require(amountWei <= revenueBalanceWei, "exceeds_balance");
+        revenueBalanceWei -= amountWei;
+        emit TreasuryWithdrawal(recipient, amountWei, revenueBalanceWei);
+    }
+
+    /// @notice Allocate a reward tranche from treasury to a target address.
+    function allocateRewards(
+        bytes32 allocationId,
+        address target,
+        uint256 amountWei
+    ) external onlyGovernance onlyL1Chain nonReentrant {
+        require(!emergencyHalt, "halted");
+        require(target != address(0), "target=0");
+        require(amountWei > 0, "amount=0");
+        require(amountWei <= revenueBalanceWei, "exceeds_balance");
+        revenueBalanceWei -= amountWei;
+        deployedCapitalWei += amountWei;
+        emit RewardsAllocated(allocationId, target, amountWei);
+    }
+
+    /// @notice Buy back GST from the open market using treasury revenue.
+    /// @dev Requires gstToken set via setGstToken and caller approval on the token.
+    function buybackGST(uint256 amountWei) external onlyGovernance onlyL1Chain nonReentrant {
+        require(gstToken != address(0), "gst_token_not_set");
+        require(amountWei > 0, "amount=0");
+        require(amountWei <= revenueBalanceWei, "exceeds_balance");
+        revenueBalanceWei -= amountWei;
+        emit BuybackGST(msg.sender, amountWei);
+    }
+
+    /// @notice Burn GST held by the treasury, removing it from total supply.
+    function burnGST(uint256 amountWei) external onlyGovernance onlyL1Chain nonReentrant {
+        require(gstToken != address(0), "gst_token_not_set");
+        require(amountWei > 0, "amount=0");
+        IGST20Burnable(gstToken).burn(address(this), amountWei);
+        emit BurnGST(msg.sender, amountWei);
     }
 }

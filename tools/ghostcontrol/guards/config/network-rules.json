@@ -1,4 +1,11 @@
 {
+  "chains": {
+    "allowlist": [
+      { "chainId": 14000101, "name": "GhostChain", "layer": "l1" },
+      { "chainId": 901,      "name": "GhostL2",    "layer": "l2" },
+      { "chainId": 903,      "name": "GhostL3",    "layer": "l3" }
+    ]
+  },
   "routes": [
     {
       "from": "l2",

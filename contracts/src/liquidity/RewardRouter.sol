@@ -5,11 +5,11 @@ import "../common/Governed.sol";
 import "../common/ReentrancyGuard.sol";
 import "./IDexAdapter.sol";
 
-interface IERC20Rewards {
+interface IGST20Rewards {
     function transfer(address to, uint256 amount) external returns (bool);
 }
 
-interface IERC20Approve {
+interface IGST20Approve {
     function approve(address spender, uint256 amount) external returns (bool);
 }
 
@@ -224,20 +224,20 @@ contract RewardRouter is Governed, ReentrancyGuard {
                 }
             } else {
                 // Non-DEX path: forward assets directly.
-                require(IERC20Rewards(asset).transfer(polReceiver, polAmount), "transfer pol");
+                require(IGST20Rewards(asset).transfer(polReceiver, polAmount), "transfer pol");
                 if (burnAmount != 0) {
                     address burnDst = burnReceiver;
                     if (burnDst != address(0)) {
-                        require(IERC20Rewards(asset).transfer(burnDst, burnAmount), "transfer burn");
+                        require(IGST20Rewards(asset).transfer(burnDst, burnAmount), "transfer burn");
                     } else if (asset == gasToken) {
                         _burnGasToken(burnAmount);
                     } else {
-                        require(IERC20Rewards(asset).transfer(DEAD, burnAmount), "transfer dead");
+                        require(IGST20Rewards(asset).transfer(DEAD, burnAmount), "transfer dead");
                     }
                 }
             }
 
-            require(IERC20Rewards(asset).transfer(validatorReceiver, validatorAmount), "transfer val");
+            require(IGST20Rewards(asset).transfer(validatorReceiver, validatorAmount), "transfer val");
 
             if (lpMinted != 0 || buybackGasOut != 0) {
                 emit DexExecuted(asset, amount, lpMinted, buybackGasOut);
@@ -254,8 +254,8 @@ contract RewardRouter is Governed, ReentrancyGuard {
     }
 
     function _approve(address token, address spender, uint256 amount) internal {
-        require(IERC20Approve(token).approve(spender, 0), "approve0");
-        require(IERC20Approve(token).approve(spender, amount), "approve");
+        require(IGST20Approve(token).approve(spender, 0), "approve0");
+        require(IGST20Approve(token).approve(spender, amount), "approve");
     }
 
     function _burnGasToken(uint256 amount) internal {
@@ -263,10 +263,10 @@ contract RewardRouter is Governed, ReentrancyGuard {
         address gas = gasToken;
         require(gas != address(0), "gasToken=0");
         // Try to burn gas token supply; fallback to dead address if token is not burnable.
-        try IBurnableERC20(gas).burn(amount) {
+        try IBurnableGST20(gas).burn(amount) {
             // burned
         } catch {
-            require(IERC20Rewards(gas).transfer(DEAD, amount), "burn dead");
+            require(IGST20Rewards(gas).transfer(DEAD, amount), "burn dead");
         }
     }
 

@@ -13,25 +13,28 @@
  *   const balance = await provider.getGstBalance(address);
  */
 
+import { GhostNativeProvider } from "./native/GhostNativeProvider.js";
+import type { GhostAddress, Hex } from "./native/types.js";
+
 export class GhostProvider {
   readonly rpcUrl: string;
+  /** @internal — exposed for GhostWallet and GhostContract delegation */
+  readonly _native: GhostNativeProvider;
 
   constructor(rpcUrl: string) {
     this.rpcUrl = rpcUrl;
+    this._native = new GhostNativeProvider({ rpcUrl });
   }
 
   async getGstBalance(address: string): Promise<bigint> {
-    // TODO: implement via ghost_getBalance RPC call
-    throw new Error("GhostProvider.getGstBalance: not yet implemented");
+    return this._native.getBalance(address as GhostAddress);
   }
 
   async getBlockNumber(): Promise<number> {
-    // TODO: implement via ghost_blockNumber
-    throw new Error("GhostProvider.getBlockNumber: not yet implemented");
+    return Number(await this._native.getBlockNumber());
   }
 
   async call(tx: { to: string; data: string }): Promise<string> {
-    // TODO: implement via ghost_call
-    throw new Error("GhostProvider.call: not yet implemented");
+    return this._native.call({ to: tx.to as GhostAddress, data: tx.data as Hex });
   }
 }

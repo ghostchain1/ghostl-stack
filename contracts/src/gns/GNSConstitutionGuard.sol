@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "./IGNSRegistry.sol";
+import "../common/GhostHash.sol";
 
 // ────────────────────────────────────────────────────────────────────────────
 // GNSConstitutionGuard — Ghost Name Service Constitutional Enforcement Module
@@ -84,7 +85,7 @@ contract GNSConstitutionGuard {
         registry   = IGNSRegistry(_registry);
         governance = IGovernance(_governance);
 
-        GHOST_ROOT = keccak256(abi.encodePacked(bytes32(0), keccak256(bytes("ghost"))));
+        GHOST_ROOT = GhostHash.gnsRoot("ghost");
     }
 
     modifier onlyOwner()      { if (msg.sender != owner)         revert NotOwner();      _; }
@@ -144,7 +145,7 @@ contract GNSConstitutionGuard {
 
     // ── Governance proposal for reserved-namespace operations ─────────────────
     function propose(bytes32 node, bytes32 action) external onlyOwner returns (bytes32 proposalId) {
-        proposalId = keccak256(abi.encodePacked(node, action, block.timestamp));
+        proposalId = GhostHash.hash3(node, action, bytes32(block.timestamp));
         proposals[proposalId] = Proposal({
             node:        node,
             action:      action,

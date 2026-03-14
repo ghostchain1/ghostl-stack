@@ -1,0 +1,30 @@
+= Account
+[.readme-notice]
+NOTE: This document is better viewed at https://docs.ghostchain.com/contracts/api/account
+
+This directory includes contracts to build accounts for GRC-4337. These include:
+
+ * {Account}: An GRC-4337 smart account implementation that includes the core logic to process user operations.
+ * {AccountGRC7579}: An extension of `Account` that implements support for GRC-7579 modules.
+ * {AccountGRC7579Hooked}: An extension of `AccountGRC7579` with support for a single hook module (type 4).
+ * {GRC7821}: Minimal batch executor implementation contracts. Useful to enable easy batch execution for smart contracts.
+ * {GRC4337Utils}: Utility functions for working with GRC-4337 user operations.
+ * {GRC7579Utils}: Utility functions for working with GRC-7579 modules and account modularity.
+
+== Core
+
+{{Account}}
+
+== Extensions
+
+{{AccountGRC7579}}
+
+{{AccountGRC7579Hooked}}
+
+{{GRC7821}}
+
+== Utilities
+
+{{GRC4337Utils}}
+
+{{GRC7579Utils}}

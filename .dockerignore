@@ -68,3 +68,7 @@ apps/worker/**
 # without sending the full worker source in the Docker build context.
 !apps/worker/
 !apps/worker/package.json
+
+# Allow pre-built dist/ for workspace packages needed by API/web builds
+
+# Allow pre-built dist/ for workspace packages needed by API/web builds

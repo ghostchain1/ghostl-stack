@@ -8,6 +8,7 @@ import type {
   UserService
 } from './services';
 import { requirePermission } from '../../lib/rbac';
+import { requireAuth } from '../../middleware/realm-auth';
 import type { User } from '../../../../../packages/types';
 import type { WalletService } from '../../services/wallet-store';
 import type { GhostWalletService } from '../../services/ghostwallet';
@@ -154,6 +155,8 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
 
   const resolveWalletLinkUserId = (req: Request): string | undefined => {
     if (req.session.userId) return req.session.userId;
+    // OIDC session: sub from validated realm claim takes precedence over raw headers
+    if (req.session.realmClaim?.sub) return req.session.realmClaim.sub;
     const realm = String(req.header('x-ghost-realm') || '').trim();
     const subject = String(req.header('x-ghost-subject') || '').trim();
     if (realm === 'users' && subject) return subject;
@@ -737,6 +740,7 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
 
   router.post(
     '/v1/wallet/link/challenge',
+    requireAuth,
     asyncHandler(async (req, res) => {
       const userId = resolveWalletLinkUserId(req);
       if (!userId) {
@@ -774,7 +778,7 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
         `ChainId: ${chainId}`,
         `IssuedAt: ${issuedAt}`,
         `Nonce: ${nonce}`
-      ].join('\\n');
+      ].join('\n');
 
       createChallenge({
         id: challengeId,
@@ -800,6 +804,7 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
 
   router.post(
     '/v1/wallet/link/verify',
+    requireAuth,
     asyncHandler(async (req, res) => {
       const userId = resolveWalletLinkUserId(req);
       if (!userId) {
@@ -907,6 +912,107 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
       });
 
       res.json({ user: updated, linked: walletAddress, challengeId, verifiedAt });
+    })
+  );
+
+  // ─── GET /v1/wallet/link/proofs ─────────────────────────────────────────────
+  // Returns the audit trail of verified wallet-link proofs for the authenticated
+  // user. Requires session or OIDC auth (no admin permission needed — own data).
+  router.get(
+    '/v1/wallet/link/proofs',
+    requireAuth,
+    asyncHandler(async (req, res) => {
+      const userId = resolveWalletLinkUserId(req);
+      if (!userId) {
+        res.status(401).json({ error: 'unauthenticated' });
+        return;
+      }
+      if (!walletLinkDb) {
+        res.json({ proofs: [] });
+        return;
+      }
+      const rows = walletLinkDb
+        .prepare(
+          `select id, wallet_address, challenge_id, method, verified_at, subject, session_id
+           from wallet_link_proofs
+           where user_id = ?
+           order by verified_at desc
+           limit 100`
+        )
+        .all(userId) as Array<{
+          id: string;
+          wallet_address: string;
+          challenge_id: string;
+          method: string;
+          verified_at: string;
+          subject: string | null;
+          session_id: string | null;
+        }>;
+      res.json({
+        proofs: rows.map((r) => ({
+          id: r.id,
+          walletAddress: r.wallet_address,
+          challengeId: r.challenge_id,
+          method: r.method,
+          verifiedAt: r.verified_at,
+          subject: r.subject ?? null,
+          sessionId: r.session_id ?? null
+        }))
+      });
+    })
+  );
+
+  // ─── DELETE /v1/wallet/link ───────────────────────────────────────────────
+  // Unlinks a wallet from the authenticated user. Writes an audit log entry and
+  // emits a wallet:unlinked event.
+  // Query: ?walletAddress=0x...
+  router.delete(
+    '/v1/wallet/link',
+    requireAuth,
+    asyncHandler(async (req, res) => {
+      const userId = resolveWalletLinkUserId(req);
+      if (!userId) {
+        res.status(401).json({ error: 'unauthenticated' });
+        return;
+      }
+      const walletAddress = normalizeWalletAddress(
+        typeof req.query.walletAddress === 'string' ? req.query.walletAddress : ''
+      );
+      if (!walletAddress || !isAddress(walletAddress)) {
+        res.status(400).json({ error: 'walletAddress query param required (0x...)' });
+        return;
+      }
+
+      const user = await deps.userService.get(userId);
+      if (!user) {
+        res.status(404).json({ error: 'user_not_found' });
+        return;
+      }
+
+      const existing = (user.wallets || []).map((w) => w.toLowerCase());
+      if (!existing.includes(walletAddress)) {
+        res.status(404).json({ error: 'wallet_not_linked' });
+        return;
+      }
+
+      const nextWallets = (user.wallets || []).filter((w) => w.toLowerCase() !== walletAddress);
+      const updated = await deps.userService.update(user.id, { wallets: nextWallets });
+
+      await deps.auditLogService.append({
+        actorId: userId,
+        action: 'wallet_link:removed',
+        resource: userId,
+        meta: { correlationId: req.correlationId, walletAddress }
+      });
+      await emitEvent({
+        scope: 'identity',
+        type: 'wallet:unlinked',
+        actorId: userId,
+        status: 'ok',
+        payload: { walletAddress, removedAt: new Date().toISOString() }
+      });
+
+      res.json({ user: updated, removed: walletAddress });
     })
   );
 
@@ -1214,6 +1320,341 @@ export const buildIdentityAccessRouter = (deps: IdentityAccessDeps) => {
         },
         csrfToken: req.session.csrfToken,
       });
+    })
+  );
+
+  // ─── OIDC discovery: GET /auth/oidc/realms ──────────────────────────────────
+  // Returns the configured issuer URLs and client IDs for each realm so the SPA
+  // can build authorization URLs without hard-coding Keycloak details.
+  // This endpoint is intentionally unauthenticated.
+  router.get(
+    '/auth/oidc/realms',
+    asyncHandler(async (_req, res) => {
+      const realmMeta = (realm: string, issuerEnv?: string, clientId?: string) => {
+        const base = (env.KEYCLOAK_BASE_URL ?? '').replace(/\/$/, '');
+        let realmName: string;
+        switch (realm) {
+          case 'users':     realmName = env.KEYCLOAK_REALM_USERS;     break;
+          case 'employees': realmName = env.KEYCLOAK_REALM_EMPLOYEES; break;
+          case 'admins':    realmName = env.KEYCLOAK_REALM_ADMINS;    break;
+          default:          realmName = realm;
+        }
+        const issuerUrl = issuerEnv ?? (base ? `${base}/realms/${realmName}` : null);
+        return {
+          realm,
+          issuerUrl,
+          clientId: clientId ?? null,
+          configured: Boolean(issuerUrl && clientId),
+        };
+      };
+
+      res.json({
+        ok: true,
+        realms: [
+          realmMeta('users',     env.OIDC_ISSUER_USERS,     env.OIDC_CLIENT_ID_USERS),
+          realmMeta('employees', env.OIDC_ISSUER_EMPLOYEES, env.OIDC_CLIENT_ID_EMPLOYEES),
+          realmMeta('admins',    env.OIDC_ISSUER_ADMINS,    env.OIDC_CLIENT_ID_ADMINS),
+        ],
+        oidcEnabled: Boolean(env.KEYCLOAK_BASE_URL || env.OIDC_ISSUER_USERS),
+      });
+    })
+  );
+
+  // ─── OIDC login initiation: GET /auth/oidc/login ────────────────────────────
+  // Starts the PKCE authorization-code flow (BFF-as-client pattern).
+  //
+  // Query params:
+  //   realm       — required: 'users' | 'employees' | 'admins'
+  //   redirect_to — optional post-login destination (must be same-origin or
+  //                 within OIDC_ALLOWED_REDIRECT_ORIGINS); defaults to '/'
+  //
+  // Returns JSON { authorizeUrl } so SPA can perform the redirect itself
+  // (keeps API stateless from the HTTP method perspective):
+  //   { ok: true, authorizeUrl: "https://keycloak.../auth?..." }
+  //
+  // Stores PKCE code_verifier + state nonce in the server-side session so the
+  // callback handler can validate and exchange the auth code securely.
+  router.get(
+    '/auth/oidc/login',
+    asyncHandler(async (req, res) => {
+      const qs = req.query as Record<string, string>;
+      const realm = (qs.realm ?? '').trim() as 'users' | 'employees' | 'admins';
+      const redirectTo = (qs.redirect_to ?? '/').trim();
+
+      if (!['users', 'employees', 'admins'].includes(realm)) {
+        res.status(400).json({ error: 'invalid_realm', valid: ['users', 'employees', 'admins'] });
+        return;
+      }
+
+      // ── Open-redirect guard ─────────────────────────────────────────────
+      const allowedOrigins = (env.OIDC_ALLOWED_REDIRECT_ORIGINS ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      // Also accept relative paths (start with /) as safe same-origin redirects
+      const isRelative = redirectTo.startsWith('/') && !redirectTo.startsWith('//');
+      if (!isRelative) {
+        let originOk = false;
+        try {
+          const parsed = new URL(redirectTo);
+          originOk = allowedOrigins.some((o) => parsed.origin === o || parsed.href.startsWith(o));
+        } catch {
+          originOk = false;
+        }
+        if (!originOk) {
+          res.status(400).json({ error: 'redirect_not_allowed' });
+          return;
+        }
+      }
+
+      // ── Resolve issuer / client config ─────────────────────────────────
+      const base = (env.KEYCLOAK_BASE_URL ?? '').replace(/\/$/, '');
+      let issuerUrl: string | undefined;
+      let clientId:  string | undefined;
+      let realmName: string;
+      switch (realm) {
+        case 'users':
+          issuerUrl = env.OIDC_ISSUER_USERS     ?? (base ? `${base}/realms/${env.KEYCLOAK_REALM_USERS}`     : undefined);
+          clientId  = env.OIDC_CLIENT_ID_USERS;
+          realmName = env.KEYCLOAK_REALM_USERS;
+          break;
+        case 'employees':
+          issuerUrl = env.OIDC_ISSUER_EMPLOYEES ?? (base ? `${base}/realms/${env.KEYCLOAK_REALM_EMPLOYEES}` : undefined);
+          clientId  = env.OIDC_CLIENT_ID_EMPLOYEES;
+          realmName = env.KEYCLOAK_REALM_EMPLOYEES;
+          break;
+        case 'admins':
+          issuerUrl = env.OIDC_ISSUER_ADMINS    ?? (base ? `${base}/realms/${env.KEYCLOAK_REALM_ADMINS}`    : undefined);
+          clientId  = env.OIDC_CLIENT_ID_ADMINS;
+          realmName = env.KEYCLOAK_REALM_ADMINS;
+          break;
+      }
+      if (!issuerUrl) {
+        res.status(503).json({ error: 'oidc_not_configured', realm });
+        return;
+      }
+      const redirectUri = env.OIDC_REDIRECT_URI;
+      if (!redirectUri) {
+        res.status(503).json({ error: 'oidc_redirect_uri_not_configured' });
+        return;
+      }
+      void realmName; // used above for URL derivation; eslint appeasement
+
+      // ── PKCE: generate code_verifier + code_challenge ──────────────────
+      const codeVerifier = crypto.randomBytes(32).toString('base64url');
+      const codeChallenge = crypto
+        .createHash('sha256')
+        .update(codeVerifier)
+        .digest('base64url');
+
+      // ── State: opaque nonce stored in session (CSRF protection) ────────
+      const state = crypto.randomUUID();
+
+      // Persist into session — both will be consumed exactly once in /callback
+      req.session.oidcPkceVerifier = codeVerifier;
+      req.session.oidcState        = state;
+      req.session.oidcRealm        = realm;
+      req.session.oidcRedirectTo   = redirectTo;
+
+      // ── Build Keycloak authorization URL ───────────────────────────────
+      const authEndpoint = `${issuerUrl}/protocol/openid-connect/auth`;
+      const params = new URLSearchParams({
+        response_type:         'code',
+        client_id:             clientId!,
+        redirect_uri:          redirectUri,
+        scope:                 'openid email profile',
+        state,
+        code_challenge:        codeChallenge,
+        code_challenge_method: 'S256',
+      });
+      const authorizeUrl = `${authEndpoint}?${params.toString()}`;
+
+      logAuthEvent('info', 'oidc_login_initiated', {
+        realm,
+        ip:  req.ip,
+        ua:  req.headers['user-agent'],
+        cid: req.correlationId,
+      });
+
+      res.json({ ok: true, authorizeUrl, realm });
+    })
+  );
+
+  // ─── OIDC callback: GET /auth/oidc/callback ─────────────────────────────────
+  // Receives the authorization code from Keycloak, exchanges it for tokens
+  // (using PKCE), validates the access token, and creates a server-side session.
+  //
+  // Query params (set by Keycloak):
+  //   code  — authorization code
+  //   state — must match the value stored in session (CSRF guard)
+  //
+  // On success: redirects to the post-login destination stored in session, or
+  // returns JSON if the Accept header doesn't include text/html.
+  router.get(
+    '/auth/oidc/callback',
+    asyncHandler(async (req, res) => {
+      const qs = req.query as Record<string, string>;
+      const code  = (qs.code  ?? '').trim();
+      const state = (qs.state ?? '').trim();
+
+      if (!code || !state) {
+        res.status(400).json({ error: 'missing_code_or_state' });
+        return;
+      }
+
+      // ── CSRF: validate state matches the one stored in session ─────────
+      const expectedState  = req.session.oidcState;
+      const codeVerifier   = req.session.oidcPkceVerifier;
+      const realm          = req.session.oidcRealm as 'users' | 'employees' | 'admins' | undefined;
+      const redirectTo     = req.session.oidcRedirectTo ?? '/';
+
+      // Consume state immediately to prevent replay
+      delete req.session.oidcState;
+      delete req.session.oidcPkceVerifier;
+      req.session.oidcRedirectTo = undefined;
+
+      if (!expectedState || !codeVerifier || !realm) {
+        res.status(400).json({ error: 'invalid_session_state' });
+        return;
+      }
+      if (!crypto.timingSafeEqual(Buffer.from(state), Buffer.from(expectedState))) {
+        res.status(400).json({ error: 'state_mismatch' });
+        return;
+      }
+
+      // ── Resolve issuer / client for token exchange ─────────────────────
+      const base = (env.KEYCLOAK_BASE_URL ?? '').replace(/\/$/, '');
+      let issuerUrl: string | undefined;
+      let clientId:  string | undefined;
+      switch (realm) {
+        case 'users':
+          issuerUrl = env.OIDC_ISSUER_USERS     ?? (base ? `${base}/realms/${env.KEYCLOAK_REALM_USERS}`     : undefined);
+          clientId  = env.OIDC_CLIENT_ID_USERS;
+          break;
+        case 'employees':
+          issuerUrl = env.OIDC_ISSUER_EMPLOYEES ?? (base ? `${base}/realms/${env.KEYCLOAK_REALM_EMPLOYEES}` : undefined);
+          clientId  = env.OIDC_CLIENT_ID_EMPLOYEES;
+          break;
+        case 'admins':
+          issuerUrl = env.OIDC_ISSUER_ADMINS    ?? (base ? `${base}/realms/${env.KEYCLOAK_REALM_ADMINS}`    : undefined);
+          clientId  = env.OIDC_CLIENT_ID_ADMINS;
+          break;
+      }
+      if (!issuerUrl || !clientId) {
+        res.status(503).json({ error: 'oidc_not_configured', realm });
+        return;
+      }
+      const redirectUri = env.OIDC_REDIRECT_URI;
+      if (!redirectUri) {
+        res.status(503).json({ error: 'oidc_redirect_uri_not_configured' });
+        return;
+      }
+
+      // ── Exchange auth code for tokens ──────────────────────────────────
+      const tokenEndpoint = `${issuerUrl}/protocol/openid-connect/token`;
+      const body = new URLSearchParams({
+        grant_type:    'authorization_code',
+        client_id:     clientId,
+        redirect_uri:  redirectUri,
+        code,
+        code_verifier: codeVerifier,
+      });
+
+      let accessToken: string;
+      try {
+        const tokenRes = await fetch(tokenEndpoint, {
+          method:  'POST',
+          headers: { 'content-type': 'application/x-www-form-urlencoded' },
+          body:    body.toString(),
+          signal:  AbortSignal.timeout(10_000),
+        });
+        if (!tokenRes.ok) {
+          const errBody = await tokenRes.text().catch(() => '');
+          logAuthEvent('warn', 'oidc_token_exchange_failed', {
+            realm, status: tokenRes.status, body: errBody, cid: req.correlationId,
+          });
+          res.status(502).json({ error: 'token_exchange_failed' });
+          return;
+        }
+        const tokenData = (await tokenRes.json()) as Record<string, unknown>;
+        if (typeof tokenData['access_token'] !== 'string') {
+          res.status(502).json({ error: 'unexpected_token_response' });
+          return;
+        }
+        accessToken = tokenData['access_token'];
+      } catch (err) {
+        logAuthEvent('error', 'oidc_token_exchange_error', {
+          realm, err: err instanceof Error ? err.message : String(err), cid: req.correlationId,
+        });
+        res.status(502).json({ error: 'token_exchange_error' });
+        return;
+      }
+
+      // ── Validate token and build realm claim ───────────────────────────
+      const { validateBearerTokenForRouter } = await import('../../middleware/realm-auth.js');
+      const claim = await validateBearerTokenForRouter(accessToken);
+      if (!claim) {
+        res.status(401).json({ error: 'invalid_or_expired_oidc_token' });
+        return;
+      }
+      if (claim.realm !== realm) {
+        res.status(403).json({ error: 'realm_mismatch', expected: realm, actual: claim.realm });
+        return;
+      }
+
+      // ── Persist claim in session ───────────────────────────────────────
+      req.session.realmClaim      = claim;
+      req.session.oidcRealm       = claim.realm;
+      req.session.oidcAccessToken = accessToken;
+      if (!req.session.csrfToken) {
+        req.session.csrfToken = crypto.randomUUID();
+      }
+      const now = Date.now();
+      req.session.lastSeenAt = now;
+      const jwtTtlMs = claim.exp > 0 ? (claim.exp * 1000 - now) : 0;
+      const maxTtl   = env.SESSION_TTL_MS || 30 * 60 * 1000;
+      req.session.expiresAt = now + Math.min(jwtTtlMs > 0 ? jwtTtlMs : maxTtl, maxTtl);
+
+      await deps.auditLogService.append({
+        actorId: claim.sub,
+        action:  'auth:oidc_callback_session',
+        resource: claim.realm,
+        meta: {
+          correlationId: req.correlationId,
+          sub:   claim.sub,
+          email: claim.email,
+          realm: claim.realm,
+          roles: claim.realmRoles,
+        },
+      }).catch(() => undefined);
+
+      logAuthEvent('info', 'oidc_callback_session_created', {
+        sub:   claim.sub,
+        realm: claim.realm,
+        ip:    req.ip,
+        ua:    req.headers['user-agent'],
+        cid:   req.correlationId,
+      });
+
+      // ── Respond: redirect for browsers, JSON for API clients ──────────
+      const wantsHtml = (req.headers.accept ?? '').includes('text/html');
+      if (wantsHtml) {
+        res.redirect(302, redirectTo);
+      } else {
+        res.json({
+          ok: true,
+          user: {
+            sub:               claim.sub,
+            email:             claim.email,
+            preferredUsername: claim.preferredUsername,
+            realm:             claim.realm,
+            roles:             claim.realmRoles,
+            clientRoles:       claim.clientRoles,
+          },
+          csrfToken:  req.session.csrfToken,
+          redirectTo,
+        });
+      }
     })
   );
 

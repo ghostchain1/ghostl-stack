@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
-import { HDNodeWallet, Wallet } from 'ethers';
+import { HDNodeWallet, Wallet } from '@ghostchain/sdk';
 
 type Envelope = {
   v: 1;

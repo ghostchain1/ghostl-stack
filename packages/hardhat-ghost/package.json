@@ -11,12 +11,19 @@
   },
   "peerDependencies": {
     "hardhat": "^2.0.0",
-    "@ghostchain/sdk": "*"
+    "@ghostchain/sdk": "*",
+    "@ghostchain/ghost-contract-factory": "*"
   },
   "devDependencies": {
     "typescript": "^5.4.5",
     "hardhat": "^2.22.19",
-    "@ghostchain/sdk": "*"
+    "@ghostchain/sdk": "*",
+    "@ghostchain/ghost-contract-factory": "*"
+  },
+  "peerDependenciesMeta": {
+    "@ghostchain/ghost-contract-factory": {
+      "optional": true
+    }
   },
   "keywords": ["hardhat", "ghost", "ghostchain", "gst", "plugin"],
   "license": "MIT"

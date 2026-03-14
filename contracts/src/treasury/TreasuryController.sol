@@ -149,14 +149,14 @@ contract TreasuryController is Governed {
             if (action.asset == address(0)) {
                 vault.transferETH(action.target, action.amount);
             } else {
-                vault.transferERC20(action.asset, action.target, action.amount);
+                vault.transferGST20(action.asset, action.target, action.amount);
             }
             return;
         }
 
         if (action.actionType == TreasuryTypes.ActionType.CALL || action.actionType == TreasuryTypes.ActionType.REBALANCE) {
             _enforceNoCircular(action.target);
-            vault.call(action.target, action.value, action.data);
+            vault.executeCall(action.target, action.value, action.data);
             return;
         }
 
@@ -167,7 +167,7 @@ contract TreasuryController is Governed {
             if (action.asset == address(0)) {
                 vault.transferETH(action.target, action.amount);
             } else {
-                vault.transferERC20(action.asset, action.target, action.amount);
+                vault.transferGST20(action.asset, action.target, action.amount);
             }
             routerRef.recordDraw(action.treatyId, action.asset, action.target, action.amount);
             return;

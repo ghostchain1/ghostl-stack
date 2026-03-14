@@ -219,11 +219,85 @@ export async function signalsRoutes(app: FastifyInstance): Promise<void> {
       }).catch((err) => {
         app.log.warn({ err }, "governance-event-bridge: think task injection failed");
       });
-    } else if (GOVERNANCE_SUBJECTS.has(msg.subject)) {
+    } else if (msg.subject === "governance.vote.cast") {
+      const payload = msg.payload as Record<string, unknown>;
       app.log.info(
-        { subject: msg.subject, cid: msg.correlationId },
-        "governance: event recorded in signal ledger",
+        { proposalId: payload["proposalId"], voter: payload["voter"], support: payload["support"], layer: payload["layer"] },
+        "governance: vote cast — scheduling AI analysis",
       );
+      void app.inject({
+        method:  "POST",
+        url:     "/api/v1/think",
+        headers: { "content-type": "application/json" },
+        payload: JSON.stringify({
+          task:    "analyze_vote_cast",
+          agent:   "governance-event-bridge",
+          payload: {
+            proposalId:  payload["proposalId"],
+            voter:       payload["voter"],
+            support:     payload["support"],
+            weight:      payload["weight"],
+            layer:       payload["layer"],
+            chainId:     payload["chainId"],
+            blockNumber: payload["blockNumber"],
+            txHash:      payload["txHash"],
+          },
+        }),
+      }).catch((err) => {
+        app.log.warn({ err }, "governance-event-bridge: vote-cast think task injection failed");
+      });
+    } else if (msg.subject === "governance.proposal.queued") {
+      const payload = msg.payload as Record<string, unknown>;
+      app.log.info(
+        { proposalId: payload["proposalId"], eta: payload["eta"], delaySeconds: payload["delaySeconds"], layer: payload["layer"] },
+        "governance: proposal queued — scheduling AI analysis",
+      );
+      void app.inject({
+        method:  "POST",
+        url:     "/api/v1/think",
+        headers: { "content-type": "application/json" },
+        payload: JSON.stringify({
+          task:    "analyze_proposal_queued",
+          agent:   "governance-event-bridge",
+          payload: {
+            proposalId:   payload["proposalId"],
+            queueId:      payload["queueId"],
+            eta:          payload["eta"],
+            delaySeconds: payload["delaySeconds"],
+            layer:        payload["layer"],
+            chainId:      payload["chainId"],
+            blockNumber:  payload["blockNumber"],
+            txHash:       payload["txHash"],
+          },
+        }),
+      }).catch((err) => {
+        app.log.warn({ err }, "governance-event-bridge: proposal-queued think task injection failed");
+      });
+    } else if (msg.subject === "governance.proposal.executed") {
+      const payload = msg.payload as Record<string, unknown>;
+      app.log.info(
+        { proposalId: payload["proposalId"], layer: payload["layer"] },
+        "governance: proposal executed — scheduling AI analysis",
+      );
+      void app.inject({
+        method:  "POST",
+        url:     "/api/v1/think",
+        headers: { "content-type": "application/json" },
+        payload: JSON.stringify({
+          task:    "analyze_proposal_executed",
+          agent:   "governance-event-bridge",
+          payload: {
+            proposalId:  payload["proposalId"],
+            queueId:     payload["queueId"],
+            layer:       payload["layer"],
+            chainId:     payload["chainId"],
+            blockNumber: payload["blockNumber"],
+            txHash:      payload["txHash"],
+          },
+        }),
+      }).catch((err) => {
+        app.log.warn({ err }, "governance-event-bridge: proposal-executed think task injection failed");
+      });
     }
 
     return reply.code(202).send({

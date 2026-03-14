@@ -6,7 +6,7 @@ pragma solidity ^0.8.24;
 import "forge-std/Test.sol";
 import "forge-std/StdInvariant.sol";
 
-import "../../src/tokens/TestERC20.sol";
+import "../../src/tokens/TestGST20.sol";
 import "../../src/governance/PolicyRegistry.sol";
 import "../../src/liquidity/AdapterRegistry.sol";
 import "../../src/liquidity/CircuitBreaker.sol";
@@ -16,7 +16,7 @@ import "../../src/liquidity/SettlementOracle.sol";
 import "../../src/liquidity/LoadBalancerVault.sol";
 
 contract LiquidityGravityHandler is Test {
-    TestERC20 public token;
+    TestGST20 public token;
     AdapterRegistry public adapterRegistry;
     CircuitBreaker public breaker;
     RewardRouter public rewardRouter;
@@ -35,7 +35,7 @@ contract LiquidityGravityHandler is Test {
     uint256 public relayerPk2;
 
     constructor(
-        TestERC20 token_,
+        TestGST20 token_,
         AdapterRegistry adapterRegistry_,
         CircuitBreaker breaker_,
         RewardRouter rewardRouter_,
@@ -145,7 +145,7 @@ contract LiquidityGravityInvariantTest is StdInvariant, Test {
 
     bytes32 private constant STRATEGY_ID = keccak256("lge.strategy.mock");
 
-    TestERC20 private token;
+    TestGST20 private token;
     AdapterRegistry private adapterRegistry;
     CircuitBreaker private breaker;
     OperatorBondVault private bondVault;
@@ -156,7 +156,7 @@ contract LiquidityGravityInvariantTest is StdInvariant, Test {
     LiquidityGravityHandler private handler;
 
     function setUp() public {
-        token = new TestERC20("USD Stable", "USD", 18);
+        token = new TestGST20("USD Stable", "USD", 18);
         PolicyRegistry policyRegistry = new PolicyRegistry(GOVERNOR, TIMELOCK, keccak256("constitution"));
         adapterRegistry = new AdapterRegistry(GOVERNOR, TIMELOCK);
         breaker = new CircuitBreaker(GOVERNOR, TIMELOCK);

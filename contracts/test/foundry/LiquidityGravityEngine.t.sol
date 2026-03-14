@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "./TestBase.sol";
-import "../../src/tokens/TestERC20.sol";
+import "../../src/tokens/TestGST20.sol";
 import "../../src/governance/PolicyRegistry.sol";
 import "../../src/liquidity/AdapterRegistry.sol";
 import "../../src/liquidity/CircuitBreaker.sol";
@@ -43,7 +43,7 @@ contract LiquidityGravityEngineTest is TestBase {
     function _deployStack(uint64 settlementInterval)
         internal
         returns (
-            TestERC20 token,
+            TestGST20 token,
             AdapterRegistry adapterRegistry,
             CircuitBreaker breaker,
             OperatorBondVault bondVault,
@@ -52,7 +52,7 @@ contract LiquidityGravityEngineTest is TestBase {
             LoadBalancerVault vault
         )
     {
-        token = new TestERC20("USD Stable", "USD", 18);
+        token = new TestGST20("USD Stable", "USD", 18);
 
         PolicyRegistry policyRegistry = new PolicyRegistry(GOVERNOR, TIMELOCK, keccak256("constitution"));
         adapterRegistry = new AdapterRegistry(GOVERNOR, TIMELOCK);
@@ -107,7 +107,7 @@ contract LiquidityGravityEngineTest is TestBase {
 
     function testDeployCapAndOverdueSettlementBlocksContinuation() public {
         (
-            TestERC20 token,
+            TestGST20 token,
             AdapterRegistry _adapterRegistry,
             CircuitBreaker breaker,
             OperatorBondVault _bondVault,
@@ -153,7 +153,7 @@ contract LiquidityGravityEngineTest is TestBase {
 
     function testBridgeEscrowCustodyLocksPrincipalAndUnwindRequiresFundsReturn() public {
         (
-            TestERC20 token,
+            TestGST20 token,
             AdapterRegistry adapterRegistry,
             CircuitBreaker breaker,
             OperatorBondVault bondVault,
@@ -206,7 +206,7 @@ contract LiquidityGravityEngineTest is TestBase {
 
         // Simulate bridge finalization sending principal back to escrow, then finalize unwind.
         bytes memory msgData = abi.encodeCall(
-            StandardBridge.finalizeBridgeERC20,
+            StandardBridge.finalizeBridgeGST20,
             (address(token), address(0xCCCC), address(0xD00D), address(escrow), 15e18, bytes(""), false)
         );
         vm.prank(address(parent));
@@ -234,7 +234,7 @@ contract LiquidityGravityEngineTest is TestBase {
 
     function testBridgeEscrowCustodySupportsNativeViaWrappedToken() public {
         (
-            TestERC20 _token,
+            TestGST20 _token,
             AdapterRegistry adapterRegistry,
             CircuitBreaker breaker,
             OperatorBondVault bondVault,
@@ -303,7 +303,7 @@ contract LiquidityGravityEngineTest is TestBase {
 
         // Simulate bridge finalization sending wrapped principal back to escrow.
         bytes memory msgData = abi.encodeCall(
-            StandardBridge.finalizeBridgeERC20,
+            StandardBridge.finalizeBridgeGST20,
             (address(wn), address(0xCCCC), address(0xD00D), address(escrow), 15e18, bytes(""), false)
         );
         vm.prank(address(parent));
@@ -331,7 +331,7 @@ contract LiquidityGravityEngineTest is TestBase {
 
     function testRewardsOnlyEnterViaSettlementOracleAndRewardSplitsTimelocked() public {
         (
-            TestERC20 token,
+            TestGST20 token,
             AdapterRegistry _adapterRegistry,
             CircuitBreaker _breaker,
             OperatorBondVault _bondVault,
@@ -436,7 +436,7 @@ contract LiquidityGravityEngineTest is TestBase {
 
     function testZkSettlementVerifierModuleAcceptsProofsAndDistributes() public {
         (
-            TestERC20 token,
+            TestGST20 token,
             AdapterRegistry adapterRegistry,
             CircuitBreaker _breaker,
             OperatorBondVault _bondVault,
@@ -522,7 +522,7 @@ contract LiquidityGravityEngineTest is TestBase {
 
     function testDexBuybackAndPolProvisioningExecutesOnChain() public {
         (
-            TestERC20 stable,
+            TestGST20 stable,
             AdapterRegistry adapterRegistry,
             CircuitBreaker _breaker,
             OperatorBondVault _bondVault,
@@ -535,8 +535,8 @@ contract LiquidityGravityEngineTest is TestBase {
         _bondVault;
         _vault;
 
-        TestERC20 gas = new TestERC20("Gas Token", "GST", 18);
-        MinimalAMM amm = new MinimalAMM(IERC20Minimal(address(stable)), IERC20Minimal(address(gas)));
+        TestGST20 gas = new TestGST20("Gas Token", "GST", 18);
+        MinimalAMM amm = new MinimalAMM(IGST20Minimal(address(stable)), IGST20Minimal(address(gas)));
         MinimalAmmDexAdapter dex = new MinimalAmmDexAdapter(amm);
 
         // Seed AMM liquidity.

@@ -5,7 +5,7 @@ interface IGhostXStaking {
     function depositRewards(uint256 amount) external;
 }
 
-interface IERC20Sweep {
+interface IGST20Sweep {
     function transfer(address to, uint256 amount) external returns (bool);
     function approve(address spender, uint256 amount) external returns (bool);
 }
@@ -118,7 +118,7 @@ contract GhostXFeeCollector {
         require(accumulatedFees[token] >= amount, "fee: insufficient");
         accumulatedFees[token] -= amount;
         // Approve then call depositRewards on the staking contract.
-        IERC20Sweep(token).approve(stakingContract, amount);
+        IGST20Sweep(token).approve(stakingContract, amount);
         IGhostXStaking(stakingContract).depositRewards(amount);
         emit FeesRoutedToStaking(token, amount);
     }

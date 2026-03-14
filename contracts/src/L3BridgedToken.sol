@@ -4,6 +4,7 @@
 pragma solidity ^0.8.24;
 
 import "./GST20.sol";
+import "./common/GhostHash.sol";
 
 contract L3BridgedToken is GST20 {
     address public owner;
@@ -52,7 +53,7 @@ contract L3BridgedToken is GST20 {
     }
 
     function mintFromL2(address from, address to, uint256 amount, uint256 nonce) external onlyRelayer {
-        bytes32 key = keccak256(abi.encode(l2Token, from, to, amount, nonce));
+        bytes32 key = GhostHash.bridgeTokenKey(l2Token, from, to, amount, nonce);
         require(!processed[key], "already");
         processed[key] = true;
         _mint(to, amount);
@@ -61,7 +62,7 @@ contract L3BridgedToken is GST20 {
 
     /// @notice Burn bridged tokens on L3 to release the escrowed L2 tokens to `to` (via relayer).
     function burnToL2(address to, uint256 amount, uint256 nonce) external {
-        bytes32 key = keccak256(abi.encode(l2Token, msg.sender, to, amount, nonce));
+        bytes32 key = GhostHash.bridgeTokenKey(l2Token, msg.sender, to, amount, nonce);
         require(!burned[key], "already");
         burned[key] = true;
         _burn(msg.sender, amount);

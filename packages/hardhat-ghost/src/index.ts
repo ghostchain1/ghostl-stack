@@ -14,10 +14,10 @@
  * of RPC logic — Ghost is the public API, ethers stays the private engine.
  */
 
-import { extendEnvironment } from "hardhat/config";
+import { extendEnvironment, task } from "hardhat/config";
 import { lazyObject } from "hardhat/plugins";
 import type { HardhatRuntimeEnvironment } from "hardhat/types";
-import type { Signer, ContractFactory, BaseContract } from "ethers";
+import type { Signer, ContractFactory, BaseContract } from "@ghostchain/sdk";
 import {
   ghost as ghostSdk,
   parseGhost,
@@ -132,3 +132,108 @@ extendEnvironment((hre: HardhatRuntimeEnvironment) => {
     provider: ghostSdk,
   }));
 });
+
+// ── ghost:generate task ────────────────────────────────────────────────────────
+//
+// Generates a GhostChain smart contract from a template and writes the
+// Solidity source (and optionally a deploy script) to the contracts tree.
+//
+// Usage (from the contracts/ directory):
+//
+//   npx hardhat ghost:generate --type token  --name MyToken    --symbol MTK
+//   npx hardhat ghost:generate --type nft    --name GhostBadge --symbol GBDG
+//   npx hardhat ghost:generate --type staking --name MyStaking
+//   npx hardhat ghost:generate --type dao    --name MyCouncil
+//   npx hardhat ghost:generate --type dex    --name GhostX      --no-deploy
+//
+
+task("ghost:generate", "Generate a GhostChain Solidity contract from a template")
+  .addOption({ name: "type",      description: "Contract type: token | nft | staking | dao | dex", defaultValue: "" })
+  .addOption({ name: "name",      description: "PascalCase contract name, e.g. GhostGovToken", defaultValue: "" })
+  .addOption({ name: "symbol",    description: "Token/NFT symbol (for token and nft types)", defaultValue: "" })
+  .addOption({ name: "outDir",    description: "Output directory inside contracts/src/", defaultValue: "generated" })
+  .addOption({ name: "maxSupply", description: "Maximum total supply in whole tokens (token type only)", defaultValue: "" })
+  .addFlag({ name: "noDeploy",    description: "Skip generating a Hardhat deploy script" })
+  .addFlag({ name: "emitSdk",     description: "Also emit a TypeScript SDK wrapper stub" })
+  .setInlineAction(async (args, _hre) => {
+    // Lazy-load ghost-contract-factory so the plugin itself has no hard dep.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let factory: any;
+    try {
+      factory = await import("@ghostchain/ghost-contract-factory");
+    } catch {
+      throw new Error(
+        "[hardhat-ghost] ghost:generate requires @ghostchain/ghost-contract-factory. " +
+        "Run: npm install @ghostchain/ghost-contract-factory"
+      );
+    }
+
+    const { generateContract } = factory as {
+      generateContract: (input: {
+        type: string;
+        name: string;
+        options?: Record<string, unknown>;
+        outDir?: string;
+        emitDeployScript?: boolean;
+        emitSdkWrapper?: boolean;
+      }) => {
+        solidity: { path: string; content: string } | Array<{ path: string; content: string }>;
+        deployScript?: { path: string; content: string };
+        sdkWrapper?:   { path: string; content: string };
+      };
+    };
+
+    const typeLower = (args.type as string).toLowerCase();
+    const nameVal   = args.name as string;
+
+    if (!/^[A-Z][A-Za-z0-9]+$/.test(nameVal)) {
+      throw new Error(
+        `[ghost:generate] --name must be PascalCase (e.g. GhostGovToken). Got: "${nameVal}"`
+      );
+    }
+
+    const options: Record<string, unknown> = {};
+    if (args.symbol)    options["symbol"]    = args.symbol;
+    if (args.maxSupply) options["maxSupply"] = args.maxSupply;
+
+    console.log(`[ghost:generate] type=${typeLower}  name=${nameVal}`);
+
+    const result = generateContract({
+      type:             typeLower as "token" | "nft" | "staking" | "dao" | "dex",
+      name:             nameVal,
+      options,
+      outDir:           `contracts/src/${args.outDir as string}`,
+      emitDeployScript: !(args.noDeploy as boolean),
+      emitSdkWrapper:   args.emitSdk   as boolean,
+    });
+
+    const { writeFileSync, mkdirSync } = await import("fs");
+    const { dirname, resolve }         = await import("path");
+
+    // Write Solidity file(s)
+    const solFiles = Array.isArray(result.solidity) ? result.solidity : [result.solidity];
+    for (const f of solFiles) {
+      const abs = resolve(f.path);
+      mkdirSync(dirname(abs), { recursive: true });
+      writeFileSync(abs, f.content, "utf8");
+      console.log(`[ghost:generate] Written: ${f.path}`);
+    }
+
+    // Write deploy script
+    if (result.deployScript) {
+      const abs = resolve(result.deployScript.path);
+      mkdirSync(dirname(abs), { recursive: true });
+      writeFileSync(abs, result.deployScript.content, "utf8");
+      console.log(`[ghost:generate] Deploy:  ${result.deployScript.path}`);
+    }
+
+    // Write SDK wrapper
+    if (result.sdkWrapper) {
+      const abs = resolve(result.sdkWrapper.path);
+      mkdirSync(dirname(abs), { recursive: true });
+      writeFileSync(abs, result.sdkWrapper.content, "utf8");
+      console.log(`[ghost:generate] SDK:     ${result.sdkWrapper.path}`);
+    }
+
+    console.log("[ghost:generate] Done. Run `forge build` to compile.");
+  });

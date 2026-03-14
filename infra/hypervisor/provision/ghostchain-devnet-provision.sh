@@ -18,9 +18,70 @@ REPO_URL="${REPO_URL:-https://github.com/ghostchain1/ghostl-stack.git}"
 REPO_DIR="${REPO_DIR:-/opt/ghostl-stack}"
 ENV_FILE="${ENV_FILE:-/etc/ghostl-stack/devnet.env}"
 VM_IP="10.50.99.45"
+VM_PUBLIC_IP="38.247.149.219"
+VM_PUBLIC_GW="38.247.149.1"
 UPDATE="${1:-}"
 
 log() { echo "[devnet-provision] $(date -u +%H:%M:%SZ) $*"; }
+
+# ── 0. Network (dual-NIC) ──────────────────────────────────────────────────────
+# enp1s0 — internal mgmt 10.50.99.45/24  (default route goes to enp2s0, not here)
+# enp2s0 — public 38.247.149.219/24, default route via 38.247.149.1
+#
+# These netplan files are idempotent and safe to re-apply on --update runs.
+configure_networking() {
+  log "Configuring dual-NIC networking..."
+
+  # Internal NIC — subnet-specific route only, NOT the default gateway.
+  cat > /etc/netplan/50-gs-mgmt.yaml <<NETPLAN
+network:
+  version: 2
+  ethernets:
+    enp1s0:
+      dhcp4: false
+      addresses: [${VM_IP}/24]
+      routes:
+        - to: 10.50.99.0/24
+          via: 10.50.99.1
+      nameservers:
+        addresses: [10.50.99.66, 1.1.1.1]
+NETPLAN
+  chmod 600 /etc/netplan/50-gs-mgmt.yaml
+
+  # Public NIC — carries the default route.
+  cat > /etc/netplan/51-gs-public.yaml <<NETPLAN
+network:
+  version: 2
+  ethernets:
+    enp2s0:
+      dhcp4: false
+      addresses: [${VM_PUBLIC_IP}/24]
+      routes:
+        - to: default
+          via: ${VM_PUBLIC_GW}
+      nameservers:
+        addresses: [1.1.1.1, 8.8.8.8]
+NETPLAN
+  chmod 600 /etc/netplan/51-gs-public.yaml
+
+  # Remove any stale netplan files that may set a conflicting default route on enp1s0.
+  for stale in /etc/netplan/50-cloud-init.yaml /etc/netplan/00-installer-config.yaml; do
+    if [ -f "$stale" ]; then
+      log "Removing stale netplan config: $stale"
+      rm -f "$stale"
+    fi
+  done
+
+  netplan apply || log "WARNING: netplan apply returned non-zero (may be OK in cloud-init context)"
+  log "Networking configured: mgmt=${VM_IP}/24, public=${VM_PUBLIC_IP}/24"
+}
+
+# Only re-configure on first boot or explicit --update.
+if [ ! -f /etc/netplan/51-gs-public.yaml ] || [ "$UPDATE" = "--update" ]; then
+  configure_networking
+else
+  log "Network already configured — skipping (use --update to reapply)"
+fi
 
 # ── 1. Docker ─────────────────────────────────────────────────────────────────
 if ! command -v docker &>/dev/null; then

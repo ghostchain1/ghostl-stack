@@ -449,8 +449,11 @@ Location:
 * ✅ `@ghostchain/sdk` v1.0.0 — production-complete (38+ sub-path exports, zero external SDK deps)
 * ✅ ERC-20/721/1155, gas tracker, nonce manager, RPC client, signature utils
 * ✅ GhostBrain AI client + AI gas optimizer integrated
+* ✅ **GBA-OS** (GhostBrain Autonomous Infrastructure OS) — kernel, cluster gossip/sync/leader-election, orchestration, protection, observability (Phase 17)
+* ✅ **Predictive Infrastructure AI** — EWMA load forecasting, z-score anomaly detection, pattern recognition (autocorr + TOD + Pearson), predictive balancer, failure predictor (Phase 17)
+* ✅ 16 new REST API endpoints across kernel / orchestrator / protection / observability / predictive layers (Phase 17)
 * ⚠️ L3 OutputOracle wiring in progress
-* 🧠 AI services integrated (expanding)
+* 🧠 AI services integrated and expanding
 
 ---
 

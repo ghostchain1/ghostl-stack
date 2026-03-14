@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import { GhostSafeCast as SafeCast } from "../common/GhostSafeCast.sol";
 import "../common/Governed.sol";
 import "../common/ConstitutionalGuard.sol";
 import "./PolicyRegistry.sol";
 import "./EvidenceVault.sol";
+import "../common/GhostHash.sol";
 
 /// @notice Governance-locked executor for AI policy proposals with quorum signatures.
 contract AIProposalExecutor is Governed {
+    using SafeCast for uint256;
+
     bytes32 private constant DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
     bytes32 private constant UPDATE_TYPEHASH =
@@ -108,7 +112,7 @@ contract AIProposalExecutor is Governed {
 
     function digestUpdate(PolicyUpdate calldata update) external view returns (bytes32) {
         bytes32 structHash = _hashUpdate(update);
-        return keccak256(abi.encodePacked("\x19\x01", _domainSeparator(), structHash));
+        return GhostHash.eip712Digest(_domainSeparator(), structHash);
     }
 
     function executePolicyUpdate(
@@ -141,7 +145,7 @@ contract AIProposalExecutor is Governed {
             targetVersion,
             proposalId,
             signerSetHash,
-            uint16(minApprovals),
+            minApprovals.toUint16(),
             update.metadataHash
         );
         emit EvidenceRecorded(recordId, update.evidenceHash, update.policyKey);
@@ -179,7 +183,7 @@ contract AIProposalExecutor is Governed {
         if (signatures.length < minApprovals) revert QuorumNotMet();
         address[] memory seen = new address[](signatures.length);
         uint256 valid = 0;
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", _domainSeparator(), updateHash));
+        bytes32 digest = GhostHash.eip712Digest(_domainSeparator(), updateHash);
         for (uint256 i = 0; i < signatures.length; i++) {
             address signer = _recoverSigner(digest, signatures[i]);
             if (!approvers[signer]) {

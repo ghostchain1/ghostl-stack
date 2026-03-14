@@ -74,7 +74,8 @@ services:
       - traefik.enable=true
       - traefik.docker.network=docker_internal
       - traefik.http.middlewares.ghost-jwks-guard.forwardauth.address=http://ghost-jwks-guard:8090/verify
-      - traefik.http.middlewares.ghost-jwks-guard.forwardauth.trustForwardHeader=true
+      # SOVEREIGN FIX: trustForwardHeader=false – prevents client-forged X-Forwarded-* bypass (was true).
+      - traefik.http.middlewares.ghost-jwks-guard.forwardauth.trustForwardHeader=false
       - traefik.http.middlewares.ghost-jwks-guard.forwardauth.authResponseHeaders=X-Ghost-Realm,X-Ghost-Subject,X-Ghost-Roles,X-Ghost-Session-Id,X-Correlation-Id
 
   kong:
@@ -83,7 +84,7 @@ services:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
       KONG_PROXY_LISTEN: "0.0.0.0:8000"
-      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+      KONG_ADMIN_LISTEN: "127.0.0.1:8001"
       KONG_PLUGINS: bundled
     volumes:
       - ./kong/kong.yml:/kong/declarative/kong.yml:ro

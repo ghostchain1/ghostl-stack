@@ -6,6 +6,7 @@ import type { TokenService } from '../../services/token-store';
 import type { WalletService } from '../../services/wallet-store';
 import type { TokenRecord } from '@ghostl/types';
 import { ghostWalletRpcManager } from '../../services/rpc-manager';
+import { assertMainchainId } from '@ghostl/routing-guard';
 
 const TOKEN_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 const tokenImportSchema = z.object({
@@ -36,6 +37,13 @@ const resolveRegistryRpc = (chainId: string, override?: string) => {
   if (!layer) {
     const parsed = Number(chainLabel);
     if (Number.isFinite(parsed)) {
+      // MAINCHAIN ENFORCEMENT: reject any numeric chain ID that isn't one of
+      // GhostChain (14000101), GhostL2 (901), or GhostL3 (903).
+      try {
+        assertMainchainId(parsed);
+      } catch {
+        return { error: 'chain_unregistered' as const };
+      }
       const match = (Object.entries(pool) as Array<[keyof typeof pool, typeof pool[keyof typeof pool]]>).find(
         ([, endpoints]) => endpoints.some((endpoint) => endpoint.chainId === parsed)
       );

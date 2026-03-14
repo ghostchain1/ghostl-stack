@@ -4,6 +4,7 @@ import { AppLayout } from '../src/modules/app-shell/components/AppLayout';
 import { AppShellProvider } from '../src/modules/app-shell/AppShellProvider';
 import { SessionProvider } from '../src/modules/identity-access/session';
 import { fetchServerSession } from '../src/modules/identity-access/serverSession';
+import { GhostStackStoreProvider } from '../src/store';
 
 export const metadata = {
   title: {
@@ -44,7 +45,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body>
         <SessionProvider initial={initialSession}>
           <AppShellProvider>
-            <AppLayout>{children}</AppLayout>
+            <GhostStackStoreProvider>
+              <AppLayout>{children}</AppLayout>
+            </GhostStackStoreProvider>
           </AppShellProvider>
         </SessionProvider>
       </body>

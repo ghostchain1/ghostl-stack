@@ -1,19 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import { GhostSafeCast as SafeCast } from "../common/GhostSafeCast.sol";
 import "./IGNSRegistry.sol";
 
 // ────────────────────────────────────────────────────────────────────────────
-// GNSNameWrapper — Ghost Name Service ERC-721 NFT Wrapper
+// GNSNameWrapper — Ghost Name Service GRC-721 NFT Wrapper
 //
-// Each registered .ghost name becomes a transferable ERC-721 NFT.
+// Each registered .ghost name becomes a transferable GRC-721 NFT.
 // Token ID = uint256(bytes32 node).
 // Wrapping delegates GNSRegistry ownership to this contract while the NFT
 // holder retains economic and resolver-control rights.
 // ────────────────────────────────────────────────────────────────────────────
 
 contract GNSNameWrapper {
-    // ── ERC-721 storage ───────────────────────────────────────────────────────
+    using SafeCast for uint256;
+
+    // ── GRC-721 storage ─────────────────────────────────────────────────────────
     string public name   = "Ghost Name Service";
     string public symbol = "GNS";
 
@@ -82,7 +85,7 @@ contract GNSNameWrapper {
         emit Unwrapped(node, msg.sender);
     }
 
-    // ── ERC-721 core ──────────────────────────────────────────────────────────
+    // ── GRC-721 core ─────────────────────────────────────────────────────────────
     function balanceOf(address holder) external view returns (uint256) {
         if (holder == address(0)) revert ZeroAddress();
         return _balances[holder];
@@ -177,7 +180,8 @@ contract GNSNameWrapper {
         bytes memory buffer = new bytes(digits);
         while (value != 0) {
             digits--;
-            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            uint256 _d = 48 + uint256(value % 10);
+            buffer[digits] = bytes1(_d.toUint8());
             value /= 10;
         }
         return string(buffer);

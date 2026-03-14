@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {LibErrors} from "../common/LibErrors.sol";
 
-/// @notice ERC20-like token that can ONLY be minted/burned by a bridge.
+/// @notice GRC-20/GST20 token that can ONLY be minted/burned by a bridge.
 /// Use this for the "representation" token on the child chain.
 contract BridgeMintableGST20 {
     string public name;

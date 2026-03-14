@@ -1,0 +1,14 @@
+{
+  "name": "@ghostchain-gsx/gsx-cbdc",
+  "version": "0.1.0",
+  "description": "GSX CBDC service — central bank digital currency issuance, policy, and account management",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev":   "node --watch src/index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

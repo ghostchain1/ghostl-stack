@@ -35,11 +35,13 @@ VIOLATIONS=0
 for file in $STAGED; do
   if [ ! -f "$file" ]; then continue; fi
 
-  # Skip bridge/adapter/compat paths (legitimate ETH references)
+  # Skip bridge/adapter/compat/vendored/doc paths (legitimate ETH references)
   case "$file" in
     *bridge* | *adapter* | *weth* | *cross-chain* | *l1-interop* | \
     *node_modules* | *dist/* | *artifacts/* | *cache/* | *brand-enforcer/test* | \
-    *tools/sovereignty/*)
+    *tools/sovereignty/* | tools/branding/* | \
+    contracts/lib/* | contracts/ghostcain/* | \
+    .github/* | branding/* | AUDIT_REPORT* | policies/*)
       continue ;;
   esac
 
@@ -65,8 +67,8 @@ if [ "$VIOLATIONS" -gt 0 ]; then
   echo ""
   echo "[brand-hook] ══════════════════════════════════════════════"
   echo "[brand-hook] ❌ $VIOLATIONS branding violation(s) found."
-  echo "[brand-hook]    Run: pnpm brand:enforce --write  (auto-fix)"
-  echo "[brand-hook]    Then: pnpm brand:audit           (verify)"
+  echo "[brand-hook]    Run: npm run brand:enforce:write  (auto-fix)"
+  echo "[brand-hook]    Then: npm run brand:audit          (verify)"
   echo "[brand-hook] ══════════════════════════════════════════════"
   exit 1
 fi

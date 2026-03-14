@@ -45,6 +45,10 @@ abstract contract TestBase is GhostBrand {
         require(a == b, message);
     }
 
+    function assertEq(string memory a, string memory b, string memory message) internal pure virtual {
+        require(keccak256(bytes(a)) == keccak256(bytes(b)), message);
+    }
+
     // Forge invariant hooks (return empty to silence warnings).
     function targetArtifacts() public pure virtual returns (string[] memory) {
         return new string[](0);

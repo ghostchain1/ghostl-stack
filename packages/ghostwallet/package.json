@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "ghost": "^6.13.2"
+    "@ghostchain/sdk": "1.0.0"
   },
   "engines": {
     "node": ">=22.21.0 <23"

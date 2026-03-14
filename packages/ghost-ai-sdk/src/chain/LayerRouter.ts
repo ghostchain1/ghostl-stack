@@ -1,4 +1,4 @@
-import { keccak256 }            from "ethers";
+import { keccak256 }            from "@ghostchain/sdk";
 import type { GhostStackConfig } from "../config.js";
 import { PolicyViolationError }  from "../errors.js";
 import type { GhostBrainWS }     from "../ai/GhostBrainWS.js";

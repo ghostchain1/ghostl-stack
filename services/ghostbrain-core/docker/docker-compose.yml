@@ -1,0 +1,158 @@
+# GhostBrain Core — Docker Stack
+# Runs the complete GhostBrain AI memory system with all backing services.
+#
+# Ports exposed on host:
+#   7900  ghostbrain-core   (Fastify API)
+#   7901  ghostbrain-worker (background worker)
+#   6379  ghostbrain-redis
+#   5432  ghostbrain-postgres (TimescaleDB)
+#   6333  ghostbrain-qdrant  (vector search REST)
+#   6334  ghostbrain-qdrant  (vector search gRPC)
+#   9090  ghostbrain-metrics (Prometheus endpoint, proxied)
+#
+# Environment: copy stack.env.example → .env at repo root before running.
+
+version: "3.9"
+
+networks:
+  ghostbrain:
+    name: ghostbrain
+
+volumes:
+  ghostbrain_memory:
+  ghostbrain_redis_data:
+  ghostbrain_postgres_data:
+  ghostbrain_qdrant_data:
+
+services:
+  # ── GhostBrain Core API ───────────────────────────────────────────────────
+  ghostbrain-core:
+    build:
+      context: ../..
+      dockerfile: services/ghostbrain-core/docker/Dockerfile
+    image: ghostchain/ghostbrain-core:latest
+    container_name: ghostbrain
+    restart: unless-stopped
+    ports:
+      - "7900:7900"
+    environment:
+      - NODE_ENV=production
+      - GHOSTBRAIN_PORT=7900
+      - GHOSTBRAIN_BIND=0.0.0.0
+      - GHOSTBRAIN_MEMORY_DIR=/var/ghostbrain/memory
+      - POSTGRES_URL=postgresql://ghostbrain:${GHOSTBRAIN_DB_PASSWORD:-ghostbrain}@ghostbrain-postgres:5432/ghostbrain
+      - REDIS_URL=redis://ghostbrain-redis:6379
+      - QDRANT_URL=http://ghostbrain-qdrant:6333
+      - DOCKER_SOCKET=/var/run/docker.sock
+      - PROMETHEUS_URL=${PROMETHEUS_URL:-http://observability-prometheus:9090}
+      - GHOSTCHAIN_L1_RPC=${GHOSTCHAIN_L1_RPC:-http://ghostchain-evm:18545}
+      - GHOSTCHAIN_L2_RPC=${GHOSTCHAIN_L2_RPC:-http://op-geth:29545}
+      - GHOSTCHAIN_L3_RPC=${GHOSTCHAIN_L3_RPC:-http://op-geth-l3:39545}
+      - SIGNING_RELAY_URL=${SIGNING_RELAY_URL:-http://signing-relay:7910}
+      - REPAIR_DRY_RUN=${REPAIR_DRY_RUN:-0}
+      - GHOST_REPAIR_DRY_RUN=${GHOST_REPAIR_DRY_RUN:-0}
+      - EVOLUTION_INTERVAL_MS=300000
+      - TELEMETRY_SCRAPE_MS=15000
+    volumes:
+      - ghostbrain_memory:/var/ghostbrain/memory
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - ghostbrain
+    depends_on:
+      ghostbrain-postgres:
+        condition: service_healthy
+      ghostbrain-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7900/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ── Background Worker ────────────────────────────────────────────────────
+  ghostbrain-worker:
+    image: ghostchain/ghostbrain-core:latest
+    container_name: ghostbrain-worker
+    restart: unless-stopped
+    command: ["node", "--experimental-specifier-resolution=node", "dist/worker.js"]
+    ports:
+      - "7901:7901"
+    environment:
+      - NODE_ENV=production
+      - GHOSTBRAIN_PORT=7901
+      - GHOSTBRAIN_BIND=0.0.0.0
+      - GHOSTBRAIN_MEMORY_DIR=/var/ghostbrain/memory
+      - POSTGRES_URL=postgresql://ghostbrain:${GHOSTBRAIN_DB_PASSWORD:-ghostbrain}@ghostbrain-postgres:5432/ghostbrain
+      - REDIS_URL=redis://ghostbrain-redis:6379
+      - QDRANT_URL=http://ghostbrain-qdrant:6333
+      - DOCKER_SOCKET=/var/run/docker.sock
+      - REPAIR_DRY_RUN=${REPAIR_DRY_RUN:-1}
+    volumes:
+      - ghostbrain_memory:/var/ghostbrain/memory
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - ghostbrain
+    depends_on:
+      - ghostbrain-core
+
+  # ── Redis ────────────────────────────────────────────────────────────────
+  ghostbrain-redis:
+    image: redis:7-alpine
+    container_name: ghostbrain-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - ghostbrain_redis_data:/data
+    networks:
+      - ghostbrain
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── TimescaleDB (PostgreSQL) ─────────────────────────────────────────────
+  ghostbrain-postgres:
+    image: timescale/timescaledb:latest-pg16
+    container_name: ghostbrain-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=ghostbrain
+      - POSTGRES_USER=ghostbrain
+      - POSTGRES_PASSWORD=${GHOSTBRAIN_DB_PASSWORD:-ghostbrain}
+    volumes:
+      - ghostbrain_postgres_data:/var/lib/postgresql/data
+      - ../database/postgres_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ../database/migrations/001_initial.sql:/docker-entrypoint-initdb.d/02_migration.sql:ro
+    networks:
+      - ghostbrain
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghostbrain -d ghostbrain"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # ── Qdrant Vector Database ───────────────────────────────────────────────
+  ghostbrain-qdrant:
+    image: qdrant/qdrant:latest
+    container_name: ghostbrain-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ghostbrain_qdrant_data:/qdrant/storage
+    networks:
+      - ghostbrain
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:6333/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s

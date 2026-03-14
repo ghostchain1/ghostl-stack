@@ -71,9 +71,21 @@
       "types": "./dist/transaction/GhostTxBuilder.d.ts",
       "default": "./dist/transaction/GhostTxBuilder.js"
     },
+    "./transaction/batch": {
+      "types": "./dist/transaction/GhostBatchTx.d.ts",
+      "default": "./dist/transaction/GhostBatchTx.js"
+    },
+    "./wallet/multisig": {
+      "types": "./dist/wallet/GhostMultisig.d.ts",
+      "default": "./dist/wallet/GhostMultisig.js"
+    },
     "./next": {
       "types": "./dist/next/useGhostWallet.d.ts",
       "default": "./dist/next/useGhostWallet.js"
+    },
+    "./next/balance": {
+      "types": "./dist/next/useGhostBalance.d.ts",
+      "default": "./dist/next/useGhostBalance.js"
     },
     "./providers": {
       "types": "./dist/providers/HttpProvider.d.ts",

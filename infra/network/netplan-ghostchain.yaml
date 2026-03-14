@@ -1,0 +1,49 @@
+# GhostChain Production Network Configuration
+#
+# Adds all 7 public IPs to enp1s0 as address aliases.
+# IP allocations (IANA-validated subnet 38.247.149.0/24):
+#
+#   38.247.149.218  ghostchain.cloud, ghostchain.world   (primary portal)
+#   38.247.149.219  ghostchain.info, ghostchain.online   (info / existing)
+#   38.247.149.220  ghostchain.life, ghostchain.live     (live chain data)
+#   38.247.149.221  ghostchain.store                     (GhostXchange)
+#   38.247.149.222  ghostchain.space                     (GhostBrain AI)
+#   38.247.149.223  ghostchainlink.com, ghostschain.com  (bridge portal)
+#   38.247.149.224  ghostchainsolutions.com              (enterprise)
+#
+# Apply with:
+#   sudo cp infra/network/netplan-ghostchain.yaml /etc/netplan/01-network.yaml
+#   sudo netplan apply
+#
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp1s0:
+      dhcp4: false
+      optional: true
+      addresses:
+        - 38.247.149.218/24
+        - 38.247.149.219/24
+        - 38.247.149.220/24
+        - 38.247.149.221/24
+        - 38.247.149.222/24
+        - 38.247.149.223/24
+        - 38.247.149.224/24
+      routes:
+        - to: default
+          via: 38.247.149.1
+          metric: 100
+      nameservers:
+        addresses: [8.8.8.8, 1.1.1.1, 8.8.4.4]
+    enp2s0:
+      dhcp4: false
+      optional: true
+      addresses:
+        - 192.168.122.205/24
+      routes:
+        - to: default
+          via: 192.168.122.1
+          metric: 200
+      nameservers:
+        addresses: [192.168.122.1, 8.8.8.8]

@@ -1,0 +1,63 @@
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.26;
+
+// We keep these imports and a dummy contract just to we can run the test suite after transpilation.
+
+import {Accumulators} from "../utils/structs/Accumulators.sol";
+import {Address} from "../utils/Address.sol";
+import {Arrays} from "../utils/Arrays.sol";
+import {AuthorityUtils} from "../access/manager/AuthorityUtils.sol";
+import {Base58} from "../utils/Base58.sol";
+import {Base64} from "../utils/Base64.sol";
+import {BitMaps} from "../utils/structs/BitMaps.sol";
+import {Blockhash} from "../utils/Blockhash.sol";
+import {Bytes} from "../utils/Bytes.sol";
+import {CAIP2} from "../utils/CAIP2.sol";
+import {CAIP10} from "../utils/CAIP10.sol";
+import {Checkpoints} from "../utils/structs/Checkpoints.sol";
+import {CircularBuffer} from "../utils/structs/CircularBuffer.sol";
+import {Clones} from "../proxy/Clones.sol";
+import {Create2} from "../utils/Create2.sol";
+import {DoubleEndedQueue} from "../utils/structs/DoubleEndedQueue.sol";
+import {ECDSA} from "../utils/cryptography/ECDSA.sol";
+import {EIP7702Utils} from "../account/utils/EIP7702Utils.sol";
+import {EnumerableMap} from "../utils/structs/EnumerableMap.sol";
+import {EnumerableSet} from "../utils/structs/EnumerableSet.sol";
+import {GST165} from "../utils/introspection/GST165.sol";
+import {GST165Checker} from "../utils/introspection/GST165Checker.sol";
+import {GRC721Holder} from "../token/GRC721/utils/GRC721Holder.sol";
+import {GRC1155Holder} from "../token/GRC1155/utils/GRC1155Holder.sol";
+import {GRC1967Utils} from "../proxy/GRC1967/GRC1967Utils.sol";
+import {GRC4337Utils} from "../account/utils/draft-GRC4337Utils.sol";
+import {GRC7579Utils} from "../account/utils/draft-GRC7579Utils.sol";
+import {GRC7913P256Verifier} from "../utils/cryptography/verifiers/GRC7913P256Verifier.sol";
+import {GRC7913RSAVerifier} from "../utils/cryptography/verifiers/GRC7913RSAVerifier.sol";
+import {GRC7913WebAuthnVerifier} from "../utils/cryptography/verifiers/GRC7913WebAuthnVerifier.sol";
+import {Heap} from "../utils/structs/Heap.sol";
+import {InteroperableAddress} from "../utils/draft-InteroperableAddress.sol";
+import {LowLevelCall} from "../utils/LowLevelCall.sol";
+import {Math} from "../utils/math/Math.sol";
+import {Memory} from "../utils/Memory.sol";
+import {MerkleProof} from "../utils/cryptography/MerkleProof.sol";
+import {MessageHashUtils} from "../utils/cryptography/MessageHashUtils.sol";
+import {Nonces} from "../utils/Nonces.sol";
+import {NoncesKeyed} from "../utils/NoncesKeyed.sol";
+import {P256} from "../utils/cryptography/P256.sol";
+import {Packing} from "../utils/Packing.sol";
+import {Panic} from "../utils/Panic.sol";
+import {RelayedCall} from "../utils/RelayedCall.sol";
+import {RLP} from "../utils/RLP.sol";
+import {RSA} from "../utils/cryptography/RSA.sol";
+import {SafeCast} from "../utils/math/SafeCast.sol";
+import {SafeGRC20} from "../token/GRC20/utils/SafeGRC20.sol";
+import {ShortStrings} from "../utils/ShortStrings.sol";
+import {SignatureChecker} from "../utils/cryptography/SignatureChecker.sol";
+import {SignedMath} from "../utils/math/SignedMath.sol";
+import {SimulateCall} from "../utils/SimulateCall.sol";
+import {StorageSlot} from "../utils/StorageSlot.sol";
+import {Strings} from "../utils/Strings.sol";
+import {Time} from "../utils/types/Time.sol";
+import {TrieProof} from "../utils/cryptography/TrieProof.sol";
+
+contract Dummy1234 {}

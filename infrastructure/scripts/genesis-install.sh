@@ -82,6 +82,12 @@ GS_MGMT_NETWORK="gs-mgmt"
 GS_MGMT_CIDR="10.50.99.0/24"
 GS_MGMT_GW="10.50.99.1"
 
+# Public network (38.247.149.0/24 — secondary uplink on br0)
+GS_PUBLIC_CIDR="38.247.149.0/24"
+GS_PUBLIC_GW="38.247.149.1"
+GS_HV_PUBLIC_IP="38.247.149.218"    # hypervisor secondary address on br0
+GS_DEVNET_PUBLIC_IP="38.247.149.219" # ghostchain-devnet enp2s0
+
 # Timing
 STAGE_SLEEP=3
 RPC_WAIT_ATTEMPTS=90
@@ -356,59 +362,154 @@ phase4_firewall() {
   banner "PHASE 4 — UFW Firewall"
   dryrun "Would configure UFW with GhostStack port rules" && return 0
 
+  # ── Trusted source ranges ─────────────────────────────────────────────────
+  # Management (internal libvirt NAT) and both public uplinks are trusted for
+  # admin-only ports.  Internet-facing ports are opened globally below.
+  local MGMT_NET="10.50.99.0/24"
+  local PUBLIC_NET="38.247.149.0/24"
+  local PRIMARY_NET="208.110.71.128/26"
+
   ufw --force reset >/dev/null 2>&1 || true
   ufw default deny incoming
   ufw default allow outgoing
 
-  # SSH (critical — never block)
+  # Allow forwarding for VM traffic (libvirt NAT and br0)
+  sed -i 's/^DEFAULT_FORWARD_POLICY=.*/DEFAULT_FORWARD_POLICY="ACCEPT"/' /etc/default/ufw 2>/dev/null || true
+
+  # SSH (critical — never block; restrict to known uplinks if desired)
   ufw allow 22/tcp comment 'SSH'
 
-  # GhostChain L1 RPC
+  # GhostChain L1 RPC — internet-facing (peers need to connect)
   ufw allow 18545/tcp comment 'GhostChain L1 RPC (HTTP)'
   ufw allow 18546/tcp comment 'GhostChain L1 RPC (WS)'
   ufw allow 18547/tcp comment 'GhostChain L1 node2 RPC'
 
-  # OP Stack L2 RPC
+  # OP Stack L2 RPC — internet-facing
   ufw allow 29545/tcp comment 'OP-Geth L2 RPC (HTTP)'
   ufw allow 29546/tcp comment 'OP-Geth L2 RPC (WS)'
   ufw allow 29547/tcp comment 'OP-Geth L2 authrpc'
 
-  # OP Stack L3 RPC
+  # OP Stack L3 RPC — internet-facing
   ufw allow 39545/tcp comment 'OP-Geth L3 RPC (HTTP)'
   ufw allow 39546/tcp comment 'OP-Geth L3 RPC (WS)'
   ufw allow 39547/tcp comment 'OP-Geth L3 authrpc'
 
-  # P2P
+  # P2P — internet-facing (discovery/gossip requires open access)
   ufw allow 30303/tcp  comment 'GhostChain L1 P2P (TCP)'
   ufw allow 30303/udp  comment 'GhostChain L1 P2P (UDP)'
   ufw allow 9003/udp   comment 'OP-Node P2P'
 
-  # Core services
+  # Public-facing user services
   ufw allow 4000/tcp comment 'apps/api (Express 5)'
   ufw allow 3200/tcp comment 'apps/web (Next.js)'
-  ufw allow 8090/tcp comment 'ghost-compliance'
-  ufw allow 7070/tcp comment 'ghost-guard'
-  ufw allow 7171/tcp comment 'ghost-relayer'
-  ufw allow 7900/tcp comment 'ghostbrain-core'
-
-  # DNS
-  ufw allow 53/tcp  comment 'GNS DNS (TCP)'
-  ufw allow 53/udp  comment 'GNS DNS (UDP)'
-
-  # Monitoring
-  ufw allow 9090/tcp comment 'Prometheus'
-  ufw allow 3100/tcp comment 'Grafana'
-
-  # Explorer
   ufw allow 4501/tcp comment 'Ghostscout L1'
   ufw allow 4502/tcp comment 'Ghostscout L2'
   ufw allow 4503/tcp comment 'Ghostscout L3'
 
+  # DNS — internet-facing (GNS serves public queries)
+  ufw allow 53/tcp  comment 'GNS DNS (TCP)'
+  ufw allow 53/udp  comment 'GNS DNS (UDP)'
+
+  # ── Admin/internal services — restricted to management + operator subnets ──
+  # These services have no business being reachable from the open internet.
+  for admin_port in \
+      7070 \
+      7071 \
+      7100 \
+      7171 \
+      7681 \
+      7682 \
+      7683 \
+      7684 \
+      7685 \
+      7900 \
+      7901 \
+      7902 \
+      7903 \
+      7904 \
+      7910 \
+      8090 \
+      9100; do
+    ufw allow from "$MGMT_NET"    to any port "$admin_port" proto tcp
+    ufw allow from "$PUBLIC_NET"  to any port "$admin_port" proto tcp
+    ufw allow from "$PRIMARY_NET" to any port "$admin_port" proto tcp
+  done
+  ok "Admin ports (7070,7171,7681-7685,7900-7910,8090,9100) restricted to mgmt+operator subnets"
+
+  # Monitoring — restricted to operator subnets
+  for mon_port in 9090 3000 3100; do
+    ufw allow from "$MGMT_NET"    to any port "$mon_port" proto tcp
+    ufw allow from "$PUBLIC_NET"  to any port "$mon_port" proto tcp
+    ufw allow from "$PRIMARY_NET" to any port "$mon_port" proto tcp
+  done
+  ok "Monitoring ports (9090,3000,3100) restricted to operator subnets"
+
+  # Allow all traffic within the management network (VM-to-VM, host-to-VM)
+  ufw allow from "$MGMT_NET" comment 'Internal gs-mgmt VM traffic'
+
   ufw --force enable
   ok "Firewall configured (status below):"
-  ufw status numbered | head -30
+  ufw status numbered | head -40
 
   ok "Phase 4 complete"
+}
+
+# =============================================================================
+# PHASE 4b — iptables NAT for 38.247.149.x public range
+# =============================================================================
+# The 38.247.149.0/24 block is a secondary uplink on br0.  VMs that have a
+# public IP (enp2s0 bound to an address in this range) route traffic directly
+# through br0 — no host NAT is needed for those.
+#
+# This function installs a persistent iptables rule to:
+#   1. Allow forwarding between br0 and virbr-ghoststack (mgmt ↔ public).
+#   2. Masquerade outbound traffic from the gs-mgmt NAT network using the
+#      hypervisor's primary public IP when no per-VM public NIC is present.
+#   3. Persist rules across reboots via /etc/iptables/rules.v4 (iptables-save).
+phase4b_nat() {
+  banner "PHASE 4b — iptables NAT (38.247.149.x / br0)"
+  dryrun "Would configure iptables MASQUERADE for gs-mgmt VMs via ${GS_HV_PUBLIC_IP:-38.247.149.218}" && return 0
+
+  # Detect the public uplink interface (the one carrying 38.247.149.x)
+  local pub_iface
+  pub_iface=$(ip -4 route show to 38.247.149.0/24 2>/dev/null | awk '/dev/{for(i=1;i<=NF;i++) if($i=="dev") print $(i+1)}' | head -1)
+  if [ -z "$pub_iface" ]; then
+    # Fall back to the primary uplink interface
+    pub_iface=$(ip -4 route show default 2>/dev/null | awk '/dev/{for(i=1;i<=NF;i++) if($i=="dev") print $(i+1)}' | head -1)
+    warn "38.247.149.0/24 route not found — using default route device: ${pub_iface:-unknown}"
+  fi
+  log "Public uplink interface: ${pub_iface}"
+
+  # Enable IP forwarding (kernel)
+  sysctl -w net.ipv4.ip_forward=1
+  grep -q '^net.ipv4.ip_forward=1' /etc/sysctl.d/99-ghost-forward.conf 2>/dev/null \
+    || echo 'net.ipv4.ip_forward=1' > /etc/sysctl.d/99-ghost-forward.conf
+
+  # MASQUERADE: gs-mgmt VMs that do NOT have a direct public NIC use the
+  # hypervisor's secondary IP (38.247.149.218) as their outbound address.
+  iptables -t nat -C POSTROUTING -s 10.50.99.0/24 -o "${pub_iface}" -j MASQUERADE 2>/dev/null \
+    || iptables -t nat -A POSTROUTING -s 10.50.99.0/24 -o "${pub_iface}" -j MASQUERADE
+
+  # Allow established return traffic from the public side into the mgmt network
+  iptables -C FORWARD -i "${pub_iface}" -o virbr-ghoststack -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null \
+    || iptables  -A FORWARD -i "${pub_iface}" -o virbr-ghoststack -m state --state RELATED,ESTABLISHED -j ACCEPT
+  iptables -C FORWARD -i virbr-ghoststack -o "${pub_iface}" -j ACCEPT 2>/dev/null \
+    || iptables  -A FORWARD -i virbr-ghoststack -o "${pub_iface}" -j ACCEPT
+
+  # Also allow br0 ↔ virbr-ghoststack forwarding (public-NIC VMs ↔ mgmt VMs)
+  if ip link show br0 &>/dev/null; then
+    iptables -C FORWARD -i br0 -o virbr-ghoststack -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null \
+      || iptables  -A FORWARD -i br0 -o virbr-ghoststack -m state --state RELATED,ESTABLISHED -j ACCEPT
+    iptables -C FORWARD -i virbr-ghoststack -o br0 -j ACCEPT 2>/dev/null \
+      || iptables  -A FORWARD -i virbr-ghoststack -o br0 -j ACCEPT
+  fi
+
+  # Persist rules
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq iptables-persistent 2>/dev/null || true
+  mkdir -p /etc/iptables
+  iptables-save > /etc/iptables/rules.v4
+  ok "iptables NAT rules saved to /etc/iptables/rules.v4"
+  ok "Phase 4b complete"
 }
 
 # =============================================================================
@@ -1399,6 +1500,7 @@ main() {
   phase2_repo
   phase3_kvm_network
   phase4_firewall
+  phase4b_nat
   phase5_vms
   phase6_secrets
   phase7_l1

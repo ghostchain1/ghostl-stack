@@ -17,7 +17,7 @@
  *   if (!report.safe) throw new Error(report.summary)
  */
 
-import type { TransactionRequest } from "ethers";
+import type { TransactionRequest } from "@ghostchain/sdk";
 import { ContractAuditor }         from "../audit/ContractAuditor.js";
 import type { AuditFinding }       from "../audit/Types.js";
 import type { GhostJsonRpcProvider } from "../chain/GhostJsonRpcProvider.js";

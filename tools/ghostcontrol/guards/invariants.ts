@@ -4,6 +4,22 @@ export type Layer = "l1" | "l2" | "l3" | "external";
 export type VmTarget = "devnet" | "testnet" | "mainnet";
 export type ViolationSeverity = "critical" | "high" | "medium";
 
+export interface ChainIdentity {
+  chainId: number;
+  name: string;
+  layer: "l1" | "l2" | "l3";
+}
+
+const MAINCHAIN_ALLOWLIST: ReadonlyArray<ChainIdentity> = [
+  { chainId: 14000101, name: "GhostChain", layer: "l1" },
+  { chainId: 901,      name: "GhostL2",    layer: "l2" },
+  { chainId: 903,      name: "GhostL3",    layer: "l3" },
+];
+
+const MAINCHAIN_IDS: ReadonlySet<number> = new Set(
+  MAINCHAIN_ALLOWLIST.map((c) => c.chainId),
+);
+
 export interface LayerRoute {
   from: "l2" | "l3";
   to: Layer;
@@ -30,6 +46,7 @@ export interface InvariantConfig {
   routes: LayerRoute[];
   containers: ContainerSecurityState[];
   governance: GovernanceGate;
+  chains?: { allowlist: ChainIdentity[] };
 }
 
 export interface InvariantViolation {
@@ -64,6 +81,40 @@ function pushViolation(
 
 export function evaluateInvariants(config: InvariantConfig): InvariantResult {
   const violations: InvariantViolation[] = [];
+
+  // ── Chain allowlist: only GhostChain / GhostL2 / GhostL3 are permitted ──
+  const configuredChains = config.chains?.allowlist ?? [];
+  for (const chain of configuredChains) {
+    if (!MAINCHAIN_IDS.has(chain.chainId)) {
+      pushViolation(violations, {
+        code: "CHAIN_NOT_IN_MAINCHAIN_ALLOWLIST",
+        severity: "critical",
+        message: `Chain ${chain.name} (chainId=${chain.chainId}) is not a recognised GhostChain mainchain.`,
+        context: chain as unknown as Record<string, unknown>,
+      });
+    }
+  }
+
+  // Ensure at minimum the three canonical chains are declared
+  if (configuredChains.length === 0) {
+    pushViolation(violations, {
+      code: "MAINCHAIN_ALLOWLIST_MISSING",
+      severity: "high",
+      message: "No chain allowlist declared. GhostChain (L1/L2/L3) chains must be explicitly listed.",
+    });
+  } else {
+    const declaredIds = new Set(configuredChains.map((c) => c.chainId));
+    for (const canonical of MAINCHAIN_ALLOWLIST) {
+      if (!declaredIds.has(canonical.chainId)) {
+        pushViolation(violations, {
+          code: "MAINCHAIN_CHAIN_UNDECLARED",
+          severity: "high",
+          message: `Canonical chain ${canonical.name} (chainId=${canonical.chainId}) is missing from the chain allowlist.`,
+          context: canonical as unknown as Record<string, unknown>,
+        });
+      }
+    }
+  }
 
   for (const route of config.routes) {
     if (route.from === "l2" && route.to === "external") {
@@ -210,6 +261,16 @@ export function runtimeInspectionWarningsToViolations(
     message: warning,
     context: { warning },
   }));
+}
+
+export function assertChainAllowed(chainId: number): ChainIdentity {
+  const found = MAINCHAIN_ALLOWLIST.find((c) => c.chainId === chainId);
+  if (!found) {
+    throw new Error(
+      `invariant_chain_blocked:${chainId} — only GhostChain (14000101), GhostL2 (901), GhostL3 (903) are permitted`,
+    );
+  }
+  return found;
 }
 
 export async function loadInvariantConfig(configPath: string): Promise<InvariantConfig> {

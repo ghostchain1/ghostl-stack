@@ -12,7 +12,8 @@
     "start:prod": "node dist/index.js"
   },
   "dependencies": {
-    "bullmq": "5.70.1",
+    "@ghostl/api-client": "0.0.1",
+    "bullmq": "5.70.4",
     "ioredis": "5.10.0"
   },
   "devDependencies": {

@@ -1,0 +1,80 @@
+# GhostBrain Simulator Container
+# Python 3.11 + C++ toolchain for cycle-accurate simulation
+FROM python:3.11-slim AS base
+
+LABEL org.opencontainers.image.title="ghostbrain-simulator"
+LABEL org.opencontainers.image.description="GhostBrain hardware simulator — roofline + thermal + cycle-accurate"
+LABEL org.opencontainers.image.vendor="GhostChain"
+
+# Install C++ build tools + Python scientific stack
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      g++ \
+      make \
+      cmake \
+      libpthread-stubs0-dev \
+      && rm -rf /var/lib/apt/lists/*
+
+# ── Python deps ────────────────────────────────────────────────────────────
+FROM base AS python-deps
+
+WORKDIR /build
+
+COPY simulator/requirements.txt* ./
+# Install numpy + matplotlib (roofline plots); no GPU deps needed in CI
+RUN pip install --no-cache-dir \
+      numpy==1.26.4 \
+      matplotlib==3.8.4 \
+      scipy==1.13.1 \
+      dataclasses-json==0.6.7
+
+# ── C++ simulator build ────────────────────────────────────────────────────
+FROM base AS cpp-builder
+
+WORKDIR /build
+
+COPY simulator/cycle_simulator/ simulator/cycle_simulator/
+COPY reliability/               reliability/
+
+# Build simulators and reliability tools
+RUN g++ -O2 -std=c++17 -pthread \
+      -o bin/cycle_sim       simulator/cycle_simulator/cycle_sim.cpp \
+    && g++ -O2 -std=c++17 \
+      -o bin/ecc_controller  reliability/ecc_controller.cpp \
+    && g++ -O2 -std=c++17 \
+      -o bin/fault_detector  reliability/fault_detector.cpp \
+    && g++ -O2 -std=c++17 -pthread \
+      -o bin/health_monitor  reliability/health_monitor.cpp
+
+# ── Final stage ────────────────────────────────────────────────────────────
+FROM base AS simulator
+
+RUN addgroup --gid 1001 ghostbrain && \
+    adduser  --uid 1001 --gid 1001 --no-create-home --disabled-password ghostbrain
+
+WORKDIR /app
+
+# Python packages
+COPY --from=python-deps /usr/local/lib/python3.11/site-packages \
+                        /usr/local/lib/python3.11/site-packages
+
+# C++ binaries
+COPY --from=cpp-builder /build/bin/ ./bin/
+
+# Python source
+COPY simulator/   simulator/
+COPY benchmarks/  benchmarks/
+
+RUN chown -R ghostbrain:ghostbrain /app
+USER ghostbrain
+
+# ── Ports ──────────────────────────────────────────────────────────────────
+# 7920: Simulator HTTP API (roofline + thermal query endpoint)
+EXPOSE 7920
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD python3 simulator/roofline/roofline_model.py --check || exit 1
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+ENTRYPOINT ["python3", "simulator/roofline/roofline_model.py"]

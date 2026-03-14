@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {GhostHash} from "../common/GhostHash.sol";
+
 /// @notice Canonical GhostAI attestation types and hashing helpers.
 /// @dev This library encodes the authoritative EIP-712 struct + domain
 ///      described in docs/ai/ATTESTATION_SPEC.md.
@@ -108,11 +110,11 @@ library AIAttestationTypes {
 
     /// @notice Computes the canonical domain separator for the given chain + contract.
     function domainSeparator(uint256 chainId, address verifyingContract) internal pure returns (bytes32) {
-        return keccak256(abi.encode(DOMAIN_TYPEHASH, DOMAIN_NAME_HASH, DOMAIN_VERSION_HASH, chainId, verifyingContract));
+        return GhostHash.domainSeparator(DOMAIN_TYPEHASH, DOMAIN_NAME_HASH, DOMAIN_VERSION_HASH, chainId, verifyingContract);
     }
 
     /// @notice Computes the EIP-712 digest for signing and verification.
     function digest(bytes32 domainSeparator_, bytes32 structHash_) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked("\x19\x01", domainSeparator_, structHash_));
+        return GhostHash.eip712Digest(domainSeparator_, structHash_);
     }
 }

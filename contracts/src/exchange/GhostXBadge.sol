@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import { GhostSafeCast as SafeCast } from "../common/GhostSafeCast.sol";
 import "../common/ReentrancyGuard.sol";
 
 /// @title  GhostXBadge
-/// @notice Soulbound ERC-721 NFT that represents a trader's membership tier on Ghost X.
+/// @notice Soulbound GRC-721 NFT that represents a trader's membership tier on Ghost X.
 ///
 /// Tiers (non-transferable, upgradable by the staking contract):
 ///   0 = NONE      – no badge
@@ -15,6 +16,8 @@ import "../common/ReentrancyGuard.sol";
 ///
 /// One badge per address (soulbound).  The staking contract is the sole minter/upgrader.
 contract GhostXBadge is ReentrancyGuard {
+    using SafeCast for uint256;
+
     // ─── Types ────────────────────────────────────────────────────────────────
 
     /// @dev Tier enum.  Stored as uint8 in the token's metadata.
@@ -27,7 +30,7 @@ contract GhostXBadge is ReentrancyGuard {
         uint256 updatedAt;
     }
 
-    // ─── ERC-721 boilerplate (soulbound – no transfers) ───────────────────────
+    // ─── GRC-721 soulbound (no transfers) ───────────────────────────────────
 
     string public constant name   = "Ghost X Badge";
     string public constant symbol = "GXBADGE";
@@ -124,7 +127,7 @@ contract GhostXBadge is ReentrancyGuard {
         emit BadgeUpgraded(trader, tokenId, old, newTier);
     }
 
-    // ─── ERC-721 view (soulbound – no transfers) ──────────────────────────────
+    // ─── GRC-721 view (soulbound – no transfers) ──────────────────────────────
 
     function ownerOf(uint256 tokenId) external view returns (address) {
         address o = _ownerOf[tokenId];
@@ -154,8 +157,8 @@ contract GhostXBadge is ReentrancyGuard {
     }
 
     function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
-        return interfaceId == 0x01ffc9a7  // ERC-165
-            || interfaceId == 0x80ac58cd; // ERC-721
+        return interfaceId == 0x01ffc9a7  // GST-165 (interface detection)
+            || interfaceId == 0x80ac58cd; // GRC-721
     }
 
     // ─── Ghost X — fee discount helpers ──────────────────────────────────────
@@ -204,7 +207,12 @@ contract GhostXBadge is ReentrancyGuard {
         uint256 n = v; uint256 digits;
         while (n != 0) { digits++; n /= 10; }
         bytes memory buf = new bytes(digits);
-        while (v != 0) { digits--; buf[digits] = bytes1(uint8(48 + v % 10)); v /= 10; }
+        while (v != 0) {
+            digits--;
+            uint256 _d = 48 + v % 10;
+            buf[digits] = bytes1(_d.toUint8());
+            v /= 10;
+        }
         return string(buf);
     }
 }

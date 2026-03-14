@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import "../common/Governed.sol";
 
-interface IERC20FaucetToken {
+interface IGST20FaucetToken {
     function balanceOf(address account) external view returns (uint256);
     function transfer(address to, uint256 amount) external returns (bool);
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
@@ -13,7 +13,7 @@ interface IERC20FaucetToken {
 contract Faucet is Governed {
     address internal constant CANONICAL_GAS_TOKEN = 0x5FbDB2315678afecb367f032d93F642f64180aa3;
 
-    IERC20FaucetToken public immutable gasToken;
+    IGST20FaucetToken public immutable gasToken;
     uint256 public dripAmount;
     uint256 public cooldown;
     mapping(address => uint256) public lastDrip;
@@ -24,7 +24,7 @@ contract Faucet is Governed {
     constructor(uint256 _dripAmount, uint256 _cooldownSeconds, address governor_, address timelock_)
         Governed(governor_, timelock_)
     {
-        gasToken = IERC20FaucetToken(CANONICAL_GAS_TOKEN);
+        gasToken = IGST20FaucetToken(CANONICAL_GAS_TOKEN);
         dripAmount = _dripAmount;
         cooldown = _cooldownSeconds;
     }

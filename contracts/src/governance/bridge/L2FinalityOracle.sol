@@ -5,6 +5,7 @@ import "../../common/Governed.sol";
 import "../../consensus-governance/ConsensusEvidenceRootStore.sol";
 import "./IFederationFinalityVerifier.sol";
 import "./L1FinalityOracle.sol";
+import "../../common/GhostHash.sol";
 
 /// @notice L2 finality oracle. A L2 root is accepted only if anchored to an L1-finalized block.
 contract L2FinalityOracle is Governed, IFederationFinalityVerifier {
@@ -141,7 +142,7 @@ contract L2FinalityOracle is Governed, IFederationFinalityVerifier {
 
         ConsensusEvidenceRootStore store = evidenceRootStore;
         if (address(store) != address(0)) {
-            bytes32 metadataHash = keccak256(abi.encode(l2BlockNumber, canonicalRoot, conflictingRoot));
+            bytes32 metadataHash = GhostHash.hash3(bytes32(l2BlockNumber), canonicalRoot, conflictingRoot);
             uint32 version = store.recordEvidenceRootByReporter(
                 KIND_L2_CANONICAL_DIVERGENCE, evidenceHash, 0, 0, metadataHash
             );

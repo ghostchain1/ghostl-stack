@@ -1,0 +1,49 @@
+# Infrastructure Supervisor Configuration
+# Copy this file to config.yaml and adjust for your environment.
+# All values can also be set via environment variables (env > config file).
+
+# ---------------------------------------------------------------------------
+# Managed VMs — only these VMs will be auto-restarted by the supervisor.
+# An empty list means no VMs are touched automatically.
+# ---------------------------------------------------------------------------
+validators:
+  - ghost-mainnet-validator-0
+  - ghost-mainnet-validator-1
+  - ghost-testnet-validator-0
+
+# ---------------------------------------------------------------------------
+# Managed chains — informational; used for event filtering.
+# ---------------------------------------------------------------------------
+chains:
+  - ghostchain-mainnet-l1
+  - ghostl2-mainnet
+  - ghostl3-mainnet
+
+# ---------------------------------------------------------------------------
+# Polling and thresholds
+# ---------------------------------------------------------------------------
+monitor_interval: 10           # seconds between supervisor cycles
+cpu_scale_threshold: 85        # percent CPU before scale-up signal
+memory_scale_threshold: 88     # percent memory before scale-up signal
+cpu_scale_down_threshold: 20   # percent CPU for scale-down consideration
+memory_scale_down_threshold: 25
+
+# ---------------------------------------------------------------------------
+# GhostBrain AI integration (read-only)
+# ---------------------------------------------------------------------------
+ghostbrain_api_url: "http://localhost:7900"
+
+# ---------------------------------------------------------------------------
+# Signing relay (human-operated — never autonomous)
+# ---------------------------------------------------------------------------
+signing_relay_url: "http://localhost:7910"
+
+# ---------------------------------------------------------------------------
+# Chain IDs (do not change)
+# ---------------------------------------------------------------------------
+chain_ids:
+  l1: 14000101
+  l2: 901
+  l3: 903
+
+gas_token: GST

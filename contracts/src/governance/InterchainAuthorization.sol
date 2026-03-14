@@ -4,6 +4,7 @@
 pragma solidity ^0.8.24;
 
 import "../common/Governed.sol";
+import "../common/GhostHash.sol";
 
 /// @notice Governance-locked allowlists + caps for interchain egress.
 /// @dev Designed to be read by off-chain routers and (later) enforced by an on-chain LowBalancerRouter.
@@ -164,7 +165,7 @@ contract InterchainAuthorization is Governed {
     }
 
     function capKey(uint256 dstChainId, address asset) public pure returns (bytes32) {
-        return keccak256(abi.encode(dstChainId, asset));
+        return GhostHash.interchainAssetKey(dstChainId, asset);
     }
 
     function checkEgress(uint256 dstChainId, address asset, address adapter, uint256 amount)

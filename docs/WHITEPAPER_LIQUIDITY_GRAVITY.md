@@ -1,4 +1,6 @@
-# GhostChain Liquidity Gravity Engine (LGE) — Whitepaper (Plain Language)
+# GhostChain Liquidity Gravity Engine (LGE) — Whitepaper (v2, Plain Language)
+
+_Version: 2.0 | Date: 2026-03-10_
 
 ## Executive summary
 
@@ -37,7 +39,29 @@ LGE consists of:
   - Proposes and executes deploy/unwind within on-chain rules.
   - Collects receipts and submits settlements with threshold relayer attestations.
   - Maintains append-only, signed audit logs for reproducibility.
+## AI Layer and Autonomous Integration
 
+GhostChain's LGE is now integrated with the Global AI Orchestrator (`ai-orchestrator/`) introduced in Phase 6.
+
+### What the AI layer does in LGE
+
+- **Economic Agent** (`agents/economic_agent.ts`): issues rebalance and settlement-window advisory proposals based on on-chain `SettlementOracle` data.
+- **`demand_analyzer`** (`economic-ai/demand/`): tracks adapter utilization, yield rates, and settlement latency to guide governance proposals.
+- **`supply_controller`** (`economic-ai/`): adjusts recommended deployment caps and cooldown parameters based on oracle state.
+- **GhostBrain Core** (`:7900`): risk-scores adapter positions and flags anomalous settlement gaps for operator review.
+
+### Safety guarantees
+
+The AI layer can never:
+- Execute on-chain deployments directly.
+- Override `SettlementOracle.canContinue()` results.
+- Modify adapter allowlists or caps without governance ratification.
+
+All AI-generated proposals are submitted to the signing relay (`:7910`) with `requires_human_review: true` before any on-chain action.
+
+### Orchestrator circuit-breaker
+
+`TaskScheduler` in `ai-orchestrator/scheduler/` maintains a per-agent circuit-breaker. If `PolicyGuard` returns DENY for three consecutive LGE-related tasks, the economic agent is paused and an operator alert is issued.
 ## Canonical accounting and “no settlement → no continuation”
 
 Two key rules:

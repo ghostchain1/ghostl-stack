@@ -164,3 +164,39 @@ export class HopExecutor {
     return tx.hash;
   }
 }
+
+// ── Environment-variable factory ──────────────────────────────────────────────
+
+/**
+ * Minimal OP Stack CrossDomainMessenger ABI fragment required for sendMessage.
+ * Compatible with OP Stack v1.4+ (Bedrock and later).
+ */
+const OP_MESSENGER_ABI = [
+  "function sendMessage(address _target, bytes calldata _message, uint32 _minGasLimit)",
+] as const;
+
+/**
+ * Build a `HopExecutor` wired from standard environment variables:
+ *
+ *   L3_TO_L2_MESSENGER_ADDRESS  — L2CrossDomainMessenger deployed on L3
+ *   L2_TO_L1_MESSENGER_ADDRESS  — L1CrossDomainMessenger deployed on L2
+ *   HOP_EXECUTOR_GAS_LIMIT      — default gas limit for messenger calls (optional, default 200_000)
+ *
+ * Returns a `HopExecutor` with messengers configured for any address that is
+ * set. Unset messengers fall back to the placeholder path until wired.
+ */
+export function buildHopExecutorFromEnv(): HopExecutor {
+  const l3ToL2Addr = process.env.L3_TO_L2_MESSENGER_ADDRESS?.trim();
+  const l2ToL1Addr = process.env.L2_TO_L1_MESSENGER_ADDRESS?.trim();
+  const gasLimitRaw = process.env.HOP_EXECUTOR_GAS_LIMIT;
+
+  const defaultMessengerGasLimit = gasLimitRaw
+    ? BigInt(gasLimitRaw)
+    : 200_000n;
+
+  return new HopExecutor({
+    defaultMessengerGasLimit,
+    ...(l3ToL2Addr ? { L3ToL2Messenger: { address: l3ToL2Addr, abi: [...OP_MESSENGER_ABI] } } : {}),
+    ...(l2ToL1Addr ? { L2ToL1Messenger: { address: l2ToL1Addr, abi: [...OP_MESSENGER_ABI] } } : {}),
+  });
+}

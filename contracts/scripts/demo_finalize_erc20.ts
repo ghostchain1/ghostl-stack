@@ -21,10 +21,10 @@ async function main() {
   const [signer] = await ghost.getSigners();
   const bridge = await ghost.getContractAt("L2L3Bridge", bridgeAddress, signer);
 
-  const tx = await bridge.finalizeERC20ToL3(token, from, to, amountWei, nonce);
+  const tx = await bridge.finalizeGST20ToL3(token, from, to, amountWei, nonce);
   console.log("tx:", tx.hash);
   await tx.wait();
-  console.log("Finalized ERC20.");
+  console.log("Finalized GST20.");
 }
 
 main().catch((e) => {

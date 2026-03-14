@@ -19,10 +19,10 @@ async function main() {
   console.log(`Deployer: ${deployer.address}`);
   console.log(`Token: ${name} (${symbol}), decimals: ${decimals}`);
 
-  const Token = await ghost.getContractFactory("TestERC20");
+  const Token = await ghost.getContractFactory("TestGST20");
   const token = await Token.deploy(name, symbol, decimals);
   await token.waitForDeployment();
-  console.log(`TestERC20 deployed at: ${token.target as string}`);
+  console.log(`TestGST20 deployed at: ${token.target as string}`);
 
   if (mintTo && mintAmount > 0n) {
     const tx = await token.mint(mintTo, mintAmount);

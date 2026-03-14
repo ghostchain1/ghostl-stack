@@ -7,8 +7,9 @@ import "./CircuitBreaker.sol";
 import "./RewardRouter.sol";
 import "./OperatorBondVault.sol";
 import "./IZkSettlementVerifier.sol";
+import {GhostHash} from "../common/GhostHash.sol";
 
-interface IERC20Settlement {
+interface IGST20Settlement {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
     function transfer(address to, uint256 amount) external returns (bool);
 }
@@ -158,8 +159,21 @@ contract SettlementOracle is Governed {
         uint256 sequence,
         uint64 issuedAt,
         uint64 validUntil
-    ) public pure returns (bytes32) {
-        return keccak256(abi.encode(SETTLEMENT_TYPEHASH, adapterId, asset, yieldAmount, feeAmount, commitment, sequence, issuedAt, validUntil));
+    ) public pure returns (bytes32 result) {
+        bytes32 typehash = SETTLEMENT_TYPEHASH;
+        assembly {
+            let p := mload(0x40)
+            mstore(p,           typehash)
+            mstore(add(p,0x20), adapterId)
+            mstore(add(p,0x40), asset)
+            mstore(add(p,0x60), yieldAmount)
+            mstore(add(p,0x80), feeAmount)
+            mstore(add(p,0xa0), commitment)
+            mstore(add(p,0xc0), sequence)
+            mstore(add(p,0xe0), issuedAt)
+            mstore(add(p,0x100), validUntil)
+            result := keccak256(p, 0x120)
+        }
     }
 
     function digestSettlement(
@@ -173,7 +187,7 @@ contract SettlementOracle is Governed {
         uint64 validUntil
     ) external view returns (bytes32) {
         bytes32 structHash = hashSettlement(adapterId, asset, yieldAmount, feeAmount, commitment, sequence, issuedAt, validUntil);
-        return keccak256(abi.encodePacked("\x19\x01", _domainSeparator(), structHash));
+        return GhostHash.eip712Digest(_domainSeparator(), structHash);
     }
 
     /// #if_succeeds principalDeployed[adapterId][asset] == old(principalDeployed[adapterId][asset]) + amount;
@@ -287,7 +301,7 @@ contract SettlementOracle is Governed {
 
         // If settlement is overdue, allow settlement to proceed (it should restore liveness) but it will remain paused until governance unpauses.
         bytes32 structHash = hashSettlement(adapterId, asset, yieldAmount, feeAmount, commitment, sequence, issuedAt, validUntil);
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", _domainSeparator(), structHash));
+        bytes32 digest = GhostHash.eip712Digest(_domainSeparator(), structHash);
         _validateSignatures(digest, signatures);
 
         _acceptSettlement(adapterId, asset, yieldAmount, feeAmount, commitment, sequence);
@@ -320,7 +334,7 @@ contract SettlementOracle is Governed {
         if (verifier == address(0)) revert ZkVerifierMissing(adapterId);
 
         bytes32 structHash = hashSettlement(adapterId, asset, yieldAmount, feeAmount, commitment, sequence, issuedAt, validUntil);
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", _domainSeparator(), structHash));
+        bytes32 digest = GhostHash.eip712Digest(_domainSeparator(), structHash);
         bool ok = IZkSettlementVerifier(verifier).verifySettlement(digest, proof);
         if (!ok) revert ZkProofInvalid();
 
@@ -341,7 +355,7 @@ contract SettlementOracle is Governed {
             require(msg.value == totalIn, "value");
         } else {
             require(msg.value == 0, "no value");
-            require(IERC20Settlement(asset).transferFrom(msg.sender, address(this), totalIn), "transferFrom");
+            require(IGST20Settlement(asset).transferFrom(msg.sender, address(this), totalIn), "transferFrom");
         }
 
         lastSequence[adapterId] = sequence;
@@ -352,7 +366,7 @@ contract SettlementOracle is Governed {
             if (asset == address(0)) {
                 rewardRouter.distribute{value: yieldAmount}(asset, yieldAmount);
             } else {
-                require(IERC20Settlement(asset).transfer(address(rewardRouter), yieldAmount), "to router");
+                require(IGST20Settlement(asset).transfer(address(rewardRouter), yieldAmount), "to router");
                 rewardRouter.distribute(asset, yieldAmount);
             }
         }
@@ -365,7 +379,7 @@ contract SettlementOracle is Governed {
                 (bool ok, ) = payable(receiver).call{value: feeAmount}("");
                 require(ok, "fee eth");
             } else {
-                require(IERC20Settlement(asset).transfer(receiver, feeAmount), "fee");
+                require(IGST20Settlement(asset).transfer(receiver, feeAmount), "fee");
             }
         }
 

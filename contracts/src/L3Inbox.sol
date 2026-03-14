@@ -3,6 +3,8 @@
 
 pragma solidity ^0.8.24;
 
+import "./common/GhostHash.sol";
+
 /// @notice Minimal L3 receiver for mirrored L2 finalization events.
 /// This is an MVP "inbox" that simply marks messages as processed.
 contract L3Inbox {
@@ -41,7 +43,7 @@ contract L3Inbox {
     }
 
     function finalizeFromL2(address from, address to, uint256 amount, uint256 nonce) external onlyRelayer {
-        bytes32 key = keccak256(abi.encode(from, to, amount, nonce));
+        bytes32 key = GhostHash.bridgeNativeKey(from, to, amount, nonce);
         require(!processed[key], "already");
         processed[key] = true;
         emit FinalizedFromL2(from, to, amount, nonce, key);

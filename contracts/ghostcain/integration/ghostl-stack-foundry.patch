@@ -1,0 +1,40 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ghostl-stack  ←  @ghostchain/contracts  (Foundry integration patch)
+#
+# Apply these additions to ghostl-stack/foundry.toml to consume the
+# rebranded GhostChain contracts library as a Foundry lib submodule.
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# 1. Add the submodule (run once in ghostl-stack root):
+#
+#      git submodule add \
+#        https://github.com/ghostchain1/ghostchain-contracts \
+#        contracts/lib/ghostchain-contracts
+#
+#    — OR link locally during development:
+#
+#      mklink /D contracts\lib\ghostchain-contracts \
+#        ..\..\openzepconvert\openzeppelin-contracts-master
+#
+# 2. Add the following remapping entries to ghostl-stack/foundry.toml
+#    under [profile.default] (or whichever profile imports these contracts):
+#
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Add inside [profile.default] in ghostl-stack/foundry.toml ──────────────
+remappings = [
+  # GhostChain base contracts (rebranded OpenZeppelin)
+  "@ghostchain/contracts/=lib/ghostchain-contracts/contracts/",
+  "@ghostchain/contracts-upgradeable/=lib/ghostchain-contracts/contracts/",
+
+  # Standard Forge libs (keep any you already have)
+  "forge-std/=lib/forge-std/src/",
+  "ds-test/=lib/ds-test/src/",
+]
+# ────────────────────────────────────────────────────────────────────────────
+
+# ── Existing ghostl-stack profiles stay as-is ───────────────────────────────
+# [profile.legacy]    evm_version = 'paris',  via_ir = false
+# [profile.gns]       governance / name-service contracts
+# [profile.ai]        AI inference / oracle contracts
+# [profile.exchange]  DEX / liquidity contracts

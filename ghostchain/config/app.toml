@@ -1,0 +1,89 @@
+# GhostChain CometBFT / Cosmos SDK Configuration
+# Place this file at: ~/.ghostchaind/config/app.toml
+
+###############################################################################
+#                      GhostChain Application Configuration                  #
+###############################################################################
+
+# Minimum gas prices accepted by this node.  Transactions with lower fees
+# are rejected.  Format: "amount<denom>[,amount<denom>]..."
+minimum-gas-prices = "0ugst"
+
+# Pruning strategy: "default" | "nothing" | "everything" | "custom"
+pruning = "default"
+
+# halt-height causes the node to halt at this block height (0 = never halt).
+halt-height = 0
+
+# halt-time causes the node to halt when block time crosses this UNIX timestamp.
+halt-time = 0
+
+# inter-block-cache enables the inter-block write-cache.
+inter-block-cache = true
+
+###############################################################################
+#                          API / REST Configuration                           #
+###############################################################################
+
+[api]
+enable = true
+swagger = true
+address = "tcp://0.0.0.0:1317"
+max-open-connections = 1000
+
+###############################################################################
+#                          gRPC Configuration                                 #
+###############################################################################
+
+[grpc]
+enable = true
+address = "0.0.0.0:9090"
+max-recv-msg-size = "10485760"
+max-send-msg-size = "2147483647"
+
+###############################################################################
+#                          gRPC-web Configuration                             #
+###############################################################################
+
+[grpc-web]
+enable = true
+address = "0.0.0.0:9091"
+enable-unsafe-cors = false
+
+###############################################################################
+#                          State Sync Configuration                           #
+###############################################################################
+
+[state-sync]
+snapshot-interval = 0
+snapshot-keep-recent = 2
+
+###############################################################################
+#                          GhostChain Custom Settings                        #
+###############################################################################
+
+[ghost]
+# ai-oracle-address is the bech32 address of the authorised AI oracle.
+# Only messages signed by this account are accepted for MsgAssignAIRisk.
+# Set via GHOST_AI_ORACLE_ADDR environment variable at runtime.
+ai-oracle-address = ""
+
+# zk-verifier selects the ZK proof backend: "stub" | "gnark" | "snarkjs"
+# Stub: accepts any non-empty proof (structural validation only).
+# gnark: calls gnark's Groth16 verifier (requires gnark library).
+zk-verifier = "stub"
+
+# burn-bps is the fee burn fraction in basis-points (500 = 5 %).
+burn-bps = 500
+
+# gas-sponsor-list is a comma-separated list of initial gas-sponsor addresses.
+gas-sponsor-list = ""
+
+[ghost.ibc-routing]
+# l2-channel-id is the IBC channel connecting GhostChain to GhostL2.
+l2-channel-id = "channel-0"
+# l3-channel-id is the IBC channel connecting GhostChain to GhostL3 (via L2).
+l3-channel-id = "channel-1"
+# Channels listed here are treated as external (governance-approved bridging).
+# Format: comma-separated "channel-N" identifiers.
+external-channels = ""

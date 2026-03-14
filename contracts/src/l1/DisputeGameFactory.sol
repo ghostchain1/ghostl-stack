@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "../common/GhostHash.sol";
+
 interface IDisputeGame {
     function gameType() external view returns (uint32);
     function createdAt() external view returns (uint64);
@@ -55,8 +57,13 @@ contract DisputeGameFactory {
         emit ImplementationSet(gameType, impl);
     }
 
-    function computeGameId(uint32 gameType, bytes calldata initData) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(gameType, keccak256(initData)));
+    function computeGameId(uint32 gameType, bytes calldata initData) public pure returns (bytes32 gameId) {
+        bytes32 initHash = keccak256(initData);
+        assembly {
+            mstore(0x00, shl(224, gameType))
+            mstore(0x04, initHash)
+            gameId := keccak256(0x00, 0x24)
+        }
     }
 
     function create(uint32 gameType, bytes calldata initData) external returns (address game) {

@@ -1,0 +1,138 @@
+= Interfaces
+
+[.readme-notice]
+NOTE: This document is better viewed at https://docs.ghostchain.com/contracts/api/interfaces
+
+== List of standardized interfaces
+These interfaces are available as `.sol` files, and also as compiler `.json` ABI files (through the npm package). These
+are useful to interact with third party contracts that implement them.
+
+- {IGRC20}
+- {IGRC20Errors}
+- {IGRC20Metadata}
+- {IGST165}
+- {IGRC721}
+- {IGRC721Receiver}
+- {IGRC721Enumerable}
+- {IGRC721Metadata}
+- {IGRC721Errors}
+- {IGRC777}
+- {IGRC777Recipient}
+- {IGRC777Sender}
+- {IGRC1155}
+- {IGRC1155Receiver}
+- {IGRC1155MetadataURI}
+- {IGRC1155Errors}
+- {IGRC1271}
+- {IGRC1363}
+- {IGRC1363Receiver}
+- {IGRC1363Spender}
+- {IGRC1820Implementer}
+- {IGRC1820Registry}
+- {IGRC1822Proxiable}
+- {IGRC1967}
+- {IGRC2309}
+- {IGRC2612}
+- {IGRC2981}
+- {IGRC3156FlashLender}
+- {IGRC3156FlashBorrower}
+- {IGRC4626}
+- {IGRC4906}
+- {IGRC5267}
+- {IGRC5313}
+- {IGRC5805}
+- {IGRC6372}
+- {IGRC6909}
+- {IGRC6909ContentURI}
+- {IGRC6909Metadata}
+- {IGRC6909TokenSupply}
+- {IGRC7579Module}
+- {IGRC7579Validator}
+- {IGRC7579Hook}
+- {IGRC7579Execution}
+- {IGRC7579AccountConfig}
+- {IGRC7579ModuleConfig}
+- {IGRC7674}
+- {IGRC7751}
+- {IGRC7786GatewaySource}
+- {IGRC7786Recipient}
+- {IGRC7802}
+- {IGRC7913SignatureVerifier}
+
+== Detailed ABI
+
+{{IGRC20Errors}}
+
+{{IGRC721Errors}}
+
+{{IGRC1155Errors}}
+
+{{IGRC1271}}
+
+{{IGRC1363}}
+
+{{IGRC1363Receiver}}
+
+{{IGRC1363Spender}}
+
+{{IGRC1820Implementer}}
+
+{{IGRC1820Registry}}
+
+{{IGRC1822Proxiable}}
+
+{{IGRC1967}}
+
+{{IGRC2309}}
+
+{{IGRC2612}}
+
+{{IGRC2981}}
+
+{{IGRC3156FlashLender}}
+
+{{IGRC3156FlashBorrower}}
+
+{{IGRC4626}}
+
+{{IGRC4906}}
+
+{{IGRC5267}}
+
+{{IGRC5313}}
+
+{{IGRC5805}}
+
+{{IGRC6372}}
+
+{{IGRC6909}}
+
+{{IGRC6909ContentURI}}
+
+{{IGRC6909Metadata}}
+
+{{IGRC6909TokenSupply}}
+
+{{IGRC7579Module}}
+
+{{IGRC7579Validator}}
+
+{{IGRC7579Hook}}
+
+{{IGRC7579Execution}}
+
+{{IGRC7579AccountConfig}}
+
+{{IGRC7579ModuleConfig}}
+
+{{IGRC7674}}
+
+{{IGRC7751}}
+
+{{IGRC7786GatewaySource}}
+
+{{IGRC7786Recipient}}
+
+{{IGRC7802}}
+
+{{IGRC7913SignatureVerifier}}

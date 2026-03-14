@@ -18,3 +18,11 @@ Fast entry points for day-to-day workflows.
 - `../phase7-report.md`: docker/node hygiene gate report and Gate 7 status.
 - `../phase8-report.md`: bridge wiring gate report and Gate 8 status.
 - `../phase9-report.md`: mandatory smoke gate report and Gate 9 status.
+- `../phase10-report.md`: fault safety controls gate report and Gate 10 status.
+- `../phase11-report.md`: operational readiness gate report and Gate 11 status.
+- `../phase12-report.md`: branch protection controls gate report and Gate 12 status.
+- `../phase13-report.md`: release workflow governance gate report and Gate 13 status.
+- `../phase14-report.md`: workflow supply chain hardening gate report and Gate 14 status.
+- `../phase15-report.md`: phase continuity & integrity gate report and Gate 15 status.
+- `../phase16-report.md`: gate framework hygiene report and Gate 16 status.
+- `../phase17-report.md`: GBA-OS autonomous infrastructure OS + predictive AI engine report and Gate 17 status.

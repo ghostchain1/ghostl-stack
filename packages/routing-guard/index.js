@@ -5,6 +5,13 @@ const allowedTransitions = new Set([
   'L2->L3'
 ]);
 
+/** Canonical chain IDs for GhostChain mainchains. */
+const MAINCHAIN_CHAIN_IDS = Object.freeze({
+  14000101: 'GhostChain',
+  901: 'GhostL2',
+  903: 'GhostL3',
+});
+
 const normalizeLayer = (layer) => {
   const raw = String(layer || '').trim().toUpperCase();
   if (raw === '1' || raw === 'L1') return 'L1';
@@ -46,3 +53,18 @@ export const assertEndpointAllowlisted = (endpointUrl, allowlist = []) => {
   }
   return { ok: true, endpoint, mode: 'allowlist' };
 };
+
+/**
+ * Assert that a numeric chain ID is one of the three canonical GhostChain
+ * mainchains: GhostChain (14000101), GhostL2 (901), GhostL3 (903).
+ * Throws `routing_guard_unknown_chain:<id>` for any other ID.
+ */
+export const assertMainchainId = (chainId) => {
+  const id = Number(chainId);
+  const name = MAINCHAIN_CHAIN_IDS[id];
+  if (!name) {
+    throw new Error(`routing_guard_unknown_chain:${chainId}`);
+  }
+  return { ok: true, chainId: id, name };
+};
+

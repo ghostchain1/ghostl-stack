@@ -6,11 +6,11 @@ import "./GhostXBadge.sol";
 import "./GhostXFeeCollector.sol";
 
 /// @title  GhostXStaking
-/// @notice Stake GST (or any ERC-20 reward token) to earn a share of Ghost X trading fees
+/// @notice Stake GST (or any GRC-20 reward token) to earn a share of Ghost X trading fees
 ///         and unlock NFT badge tiers.
 ///
 /// Mechanics:
-///  • Stakers deposit an ERC-20 token (GST or GHOSTX governance token).
+///  • Stakers deposit a GRC-20 token (GST or GHOSTX governance token).
 ///  • The FeeCollector can push fee revenue into this contract via `depositRewards`.
 ///  • Rewards are distributed proportionally to the staked balance using a
 ///    per-share accumulator (standard "MasterChef" approach, 1e18 precision).
@@ -144,7 +144,7 @@ contract GhostXStaking is ReentrancyGuard {
             accRewardPerShare += (amount * PRECISION) / totalWeightedStake;
         }
         // Transfer reward tokens in (caller must have approved).
-        rewardToken.transferFrom(msg.sender, address(this), amount);
+        require(rewardToken.transferFrom(msg.sender, address(this), amount), "GST: reward transferFrom failed");
         emit RewardsDeposited(amount);
     }
 
@@ -156,7 +156,7 @@ contract GhostXStaking is ReentrancyGuard {
 
         _harvestInternal(msg.sender);
 
-        stakeToken.transferFrom(msg.sender, address(this), amount);
+        require(stakeToken.transferFrom(msg.sender, address(this), amount), "GST: stake transferFrom failed");
 
         uint256 multiplier = _multiplier(lockPeriod);
         uint256 weighted   = (amount * multiplier) / 10_000;
@@ -195,7 +195,7 @@ contract GhostXStaking is ReentrancyGuard {
         s.rewardDebt     = 0;
         s.unlocksAt      = 0;
 
-        stakeToken.transfer(msg.sender, amount);
+        require(stakeToken.transfer(msg.sender, amount), "GST: stake transfer failed");
         emit Unstaked(msg.sender, amount);
     }
 
@@ -216,7 +216,7 @@ contract GhostXStaking is ReentrancyGuard {
         totalStake         -= amount;
         totalWeightedStake -= weighted;
 
-        stakeToken.transfer(msg.sender, amount);
+        require(stakeToken.transfer(msg.sender, amount), "GST: stake transfer failed");
         emit Unstaked(msg.sender, amount);
     }
 
@@ -226,7 +226,7 @@ contract GhostXStaking is ReentrancyGuard {
         uint256 pending = stakes[msg.sender].pendingRewards;
         if (pending == 0) return;
         stakes[msg.sender].pendingRewards = 0;
-        rewardToken.transfer(msg.sender, pending);
+        require(rewardToken.transfer(msg.sender, pending), "GST: reward transfer failed");
         emit RewardsHarvested(msg.sender, pending);
     }
 

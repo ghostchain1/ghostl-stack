@@ -1,4 +1,4 @@
-import { Interface, isAddress, ZeroAddress, keccak256 } from "ethers";
+import { Interface, isAddress, ZeroAddress, keccak256 } from "@ghostchain/sdk";
 import type { AuditFinding, AuditResult } from "./Types.js";
 
 // Known high-impact function selectors (can be extended via GhostBrain config)

@@ -320,8 +320,12 @@ contract GhostXOrderBook is IGhostXOrderBook, ReentrancyGuard {
 
     // ─── Internal helpers ─────────────────────────────────────────────────────
 
-    function _pairKey(address base, address quote) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(base, quote));
+    function _pairKey(address base, address quote) internal pure returns (bytes32 key) {
+        assembly {
+            mstore(0x00, shl(96, base))
+            mstore(0x14, shl(96, quote))
+            key := keccak256(0x00, 0x28)
+        }
     }
 
     /// @dev Returns the token and amount that must be locked when placing an order.

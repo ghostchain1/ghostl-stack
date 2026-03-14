@@ -21,6 +21,7 @@ import http from 'node:http';
 import { URL } from 'node:url';
 import { dispatch, vetoAction, getAuditLog, HANDLERS, Role } from './supervisor.js';
 import { ROLE_PERMISSIONS } from './roles.js';
+import { startSwarm, getSwarmStatus, getSwarmEvents, getSwarmActions } from '../swarm/orchestrator/swarmController.js';
 
 const PORT = parseInt(process.env.HYPER_GHOST_PORT ?? '7741', 10);
 const BIND = process.env.HYPER_GHOST_BIND ?? '127.0.0.1';
@@ -87,6 +88,21 @@ async function handleRequest(req, res) {
     // ── Read-only / public endpoints ──────────────────────────────────────────
     if (method === 'GET' && path === '/status') {
       return json(res, 200, { service: 'hyper-ghost-ai', version: '1.1.0', uptime: process.uptime() });
+    }
+
+    // ── Swarm read-only endpoints ─────────────────────────────────────────────
+    if (method === 'GET' && path === '/swarm/status') {
+      return json(res, 200, getSwarmStatus());
+    }
+
+    if (method === 'GET' && path === '/swarm/events') {
+      const n = Math.min(200, Math.max(1, parseInt(u.searchParams.get('limit') ?? '50', 10) || 50));
+      return json(res, 200, { events: getSwarmEvents(n) });
+    }
+
+    if (method === 'GET' && path === '/swarm/actions') {
+      const n = Math.min(200, Math.max(1, parseInt(u.searchParams.get('limit') ?? '50', 10) || 50));
+      return json(res, 200, { actions: getSwarmActions(n) });
     }
 
     if (method === 'GET' && path === '/roles') {
@@ -183,6 +199,8 @@ server.listen(PORT, BIND, () => {
     requireBrainToken: REQUIRE_BRAIN_TOKEN,
     maxBodyBytes: MAX_BODY_BYTES,
   });
+  // Boot the AI swarm after the HTTP server is ready
+  startSwarm();
 });
 
 server.on('error', err => { log('error', 'server-error', { error: err.message }); process.exit(1); });

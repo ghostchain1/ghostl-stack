@@ -19,7 +19,7 @@ interface IGovernorV1 {
         );
 }
 
-interface IERC20Supply {
+interface IGST20Supply {
     function totalSupply() external view returns (uint256);
 }
 
@@ -141,7 +141,7 @@ contract AIConstitutionalProposal {
         }
         if (forVotes <= againstVotes) revert ProposalNotPassed();
 
-        uint256 totalSupply = IERC20Supply(votingToken).totalSupply();
+        uint256 totalSupply = IGST20Supply(votingToken).totalSupply();
         require(totalSupply > 0, "supply=0");
 
         uint256 participation = forVotes + againstVotes;

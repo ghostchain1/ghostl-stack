@@ -1,3 +1,6 @@
+import { HypervisorPanel } from '../../src/modules/devops/components/HypervisorPanel';
+import { SystemHealthPanel } from '../../src/modules/devops/components/SystemHealthPanel';
+import { DockerLogsPanel } from '../../src/modules/devops/components/DockerLogsPanel';
 import { ReleasePlanner } from '../../src/modules/devops/components/ReleasePlanner';
 import { ForkScheduler } from '../../src/modules/devops/components/ForkScheduler';
 import { FeatureFlagsPanel } from '../../src/modules/devops/components/FeatureFlagsPanel';
@@ -88,6 +91,24 @@ export default async function DevOpsPage() {
   const { releases, forks, flags, jobs, rollbacks, errors, ok } = await loadDevOps();
   return (
     <div className="content">
+      <div style={{ padding: '0 0 20px' }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>DevOps Control</h1>
+        <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--color-muted,#9ca3af)' }}>
+          Containers · VMs · Releases · Feature Flags · Upgrade Pipeline
+        </p>
+      </div>
+      {/* System health — service status grid */}
+      <div style={{ marginBottom: 20 }}>
+        <SystemHealthPanel />
+      </div>
+      {/* Hypervisor — container/VM live control */}
+      <div style={{ marginBottom: 20 }}>
+        <HypervisorPanel />
+      </div>
+      {/* Docker logs — container log viewer */}
+      <div style={{ marginBottom: 24 }}>
+        <DockerLogsPanel />
+      </div>
       <div className="card-grid">
         {errors.map((entry, idx) => (
           <DataFetchErrorCard key={`${entry.title}-${idx}`} title={entry.title} error={entry.error} />

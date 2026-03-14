@@ -1,0 +1,45 @@
+{
+  "name": "@ghostchain/ghost-contract-factory",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "GhostChain contract factory — code generators for GRC-20 tokens, NFTs, staking, DAOs, and GhostXchange DEX pairs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "tsx": "^4.19.2",
+    "vitest": "^3.0.0"
+  },
+  "peerDependencies": {
+    "hardhat": "^2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "hardhat": {
+      "optional": true
+    }
+  },
+  "keywords": [
+    "ghostchain",
+    "grc20",
+    "ghostx",
+    "contract-factory",
+    "solidity",
+    "codegen"
+  ],
+  "license": "UNLICENSED"
+}

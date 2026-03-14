@@ -40,10 +40,10 @@ async function main() {
   await systemConfig.waitForDeployment();
   console.log(`L1SystemConfig: ${systemConfig.target as string}`);
 
-  const Portal = await ghost.getContractFactory("L1OptimismPortal");
+  const Portal = await ghost.getContractFactory("L1GhostPortal");
   const portal = await Portal.deploy(systemConfig.target as string);
   await portal.waitForDeployment();
-  console.log(`L1OptimismPortal: ${portal.target as string}`);
+  console.log(`L1GhostPortal: ${portal.target as string}`);
 
   const OutputOracle = await ghost.getContractFactory("L1OutputOracle");
   const outputOracle = await OutputOracle.deploy(proposer);
@@ -79,7 +79,7 @@ async function main() {
   const contracts = [
     { name: "L1CrossDomainMessenger", address: messenger.target as string },
     { name: "L1SystemConfig", address: systemConfig.target as string },
-    { name: "L1OptimismPortal", address: portal.target as string },
+    { name: "L1GhostPortal", address: portal.target as string },
     { name: "L1OutputOracle", address: outputOracle.target as string },
     { name: "L1DisputeGameFactory", address: dgf.target as string },
     { name: "StandardBridge", address: l1Bridge.target as string },

@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import { GhostSafeCast as SafeCast } from "../common/GhostSafeCast.sol";
 import "../GST20.sol";
+import "../common/GhostHash.sol";
 
 error NotImplemented();
 
@@ -617,6 +619,9 @@ contract BurnController is AccessManaged {
 }
 
 contract FeeMarketV2 is AccessManaged {
+    using SafeCast for uint256;
+    using SafeCast for int256;
+
     uint256 public baseFee;
     uint256 public priorityFee;
     uint256 public targetGasPerBlock;
@@ -645,13 +650,13 @@ contract FeeMarketV2 is AccessManaged {
 
     function updateBaseFee(uint256 gasUsed) external onlyAdmin {
         if (targetGasPerBlock == 0) return;
-        int256 delta = int256(gasUsed) - int256(targetGasPerBlock);
-        int256 change = (int256(baseFee) * int256(adjustmentFactorBps) * delta) / int256(targetGasPerBlock * 10_000);
-        int256 updated = int256(baseFee) + change;
+        int256 delta = gasUsed.toInt256() - targetGasPerBlock.toInt256();
+        int256 change = (baseFee.toInt256() * adjustmentFactorBps.toInt256() * delta) / (targetGasPerBlock * 10_000).toInt256();
+        int256 updated = baseFee.toInt256() + change;
         if (updated < 0) {
             baseFee = 0;
         } else {
-            baseFee = uint256(updated);
+            baseFee = updated.toUint256();
         }
         emit FeeUpdated(baseFee, priorityFee);
     }
@@ -944,7 +949,11 @@ contract StablecoinController is AccessManaged {
     }
 
     function mintAgainstCollateral(address collateralAsset, uint256 collateralAmount, uint256 stableAmount) external {
-        bytes32 assetId = keccak256(abi.encodePacked(collateralAsset));
+        bytes32 assetId;
+        assembly {
+            mstore(0x00, shl(96, collateralAsset))
+            assetId := keccak256(0x00, 0x14)
+        }
         uint256 price = oracle.prices(assetId);
         require(price > 0, "price missing");
         // collateral value scaled to basis points (1e4) to match ratio math
@@ -1015,7 +1024,7 @@ contract BridgeRouter is AccessManaged {
 }
 
 // slither-disable-next-line erc20-interface
-interface IERC721Minimal {
+interface IGRC721Minimal {
     function transferFrom(address from, address to, uint256 tokenId) external;
 }
 
@@ -1069,7 +1078,7 @@ contract NFTBridge is AccessManaged {
     constructor(address admin_) AccessManaged(admin_) {}
 
     function deposit(address token, uint256 tokenId, address to, uint256 targetChainId) external {
-        IERC721Minimal(token).transferFrom(msg.sender, address(this), tokenId);
+        IGRC721Minimal(token).transferFrom(msg.sender, address(this), tokenId);
         lastDepositId += 1;
         emit NFTDeposit(lastDepositId, token, tokenId, to, targetChainId);
     }
@@ -1080,7 +1089,7 @@ contract NFTBridge is AccessManaged {
     {
         require(!processedMessages[messageId], "processed");
         processedMessages[messageId] = true;
-        IERC721Minimal(token).transferFrom(address(this), to, tokenId);
+        IGRC721Minimal(token).transferFrom(address(this), to, tokenId);
         emit NFTWithdrawal(messageId, token, tokenId, to, sourceChainId);
     }
 }
@@ -1091,9 +1100,9 @@ contract MerkleProofVerifier {
         for (uint256 i = 0; i < proof.length; i++) {
             bytes32 sibling = proof[i];
             if (computed <= sibling) {
-                computed = keccak256(abi.encodePacked(computed, sibling));
+                computed = GhostHash.merkleNode(computed, sibling);
             } else {
-                computed = keccak256(abi.encodePacked(sibling, computed));
+                computed = GhostHash.merkleNode(sibling, computed);
             }
         }
         return computed == root;

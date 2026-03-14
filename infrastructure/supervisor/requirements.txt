@@ -1,0 +1,19 @@
+# Infrastructure Supervisor — Python dependencies
+#
+# Install on the host (Ubuntu 24.04):
+#   pip install --break-system-packages -r requirements.txt
+#
+# Or inside a venv:
+#   python3 -m venv .venv && source .venv/bin/activate
+#   pip install -r requirements.txt
+
+# ── libvirt Python binding (VM management) ────────────────────────────────────
+# Requires the system libvirt-dev headers:
+#   apt-get install -y libvirt-dev libvirt-daemon-system pkg-config
+libvirt-python>=9.0.0
+
+# ── System metrics ────────────────────────────────────────────────────────────
+psutil>=5.9.0
+
+# ── YAML config loading ───────────────────────────────────────────────────────
+PyYAML>=6.0.1

@@ -1,7 +1,21 @@
-version: 1
+version: 2
 defaults:
   require_bearer: true
 routes:
+  # ── Health / status (always public) ────────────────────────────────────────
+  - id: health
+    path_prefix: /v1/health
+    allow_anonymous: true
+
+  - id: health-root
+    path_prefix: /health
+    allow_anonymous: true
+
+  - id: status
+    path_prefix: /v1/status
+    allow_anonymous: true
+
+  # ── Identity service ────────────────────────────────────────────────────────
   - id: identity-public
     path_prefix: /identity/public
     allow_anonymous: true
@@ -32,6 +46,7 @@ routes:
       - governance_admin
       - default-roles-ghost-admins
 
+  # ── Governance service ──────────────────────────────────────────────────────
   - id: governance-execute
     path_prefix: /governance/execute
     realm: admins
@@ -45,3 +60,288 @@ routes:
       - admin
       - governance_admin
       - default-roles-ghost-admins
+
+  # ── Main API (v1/*) routes ──────────────────────────────────────────────────
+
+  # Wallet admin — admins only (management operations)
+  - id: wallet-admin
+    path_prefix: /v1/wallets
+    realm: admins
+    roles_any:
+      - admin
+      - infra_admin
+      - default-roles-ghost-admins
+
+  - id: wallet-admin-legacy
+    path_prefix: /wallets
+    realm: admins
+    roles_any:
+      - admin
+      - infra_admin
+      - default-roles-ghost-admins
+
+  # Wallet — any authenticated realm
+  - id: wallet
+    path_prefix: /v1/wallet
+    roles_any:
+      - user
+      - employee
+      - admin
+      - default-roles-ghost-users
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  - id: wallet-legacy
+    path_prefix: /wallet
+    roles_any:
+      - user
+      - employee
+      - admin
+      - default-roles-ghost-users
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  # KYC — employees and admins
+  - id: kyc
+    path_prefix: /v1/kyc
+    roles_any:
+      - employee
+      - kyc_reviewer
+      - admin
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  - id: kyc-legacy
+    path_prefix: /kyc
+    roles_any:
+      - employee
+      - kyc_reviewer
+      - admin
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  # Bridge — any authenticated realm
+  - id: bridge
+    path_prefix: /v1/bridge
+    roles_any:
+      - user
+      - employee
+      - admin
+      - default-roles-ghost-users
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  - id: bridge-legacy
+    path_prefix: /bridge
+    roles_any:
+      - user
+      - employee
+      - admin
+      - default-roles-ghost-users
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  # Contract registry — any authenticated realm
+  - id: contracts
+    path_prefix: /v1/contracts
+    roles_any:
+      - user
+      - employee
+      - admin
+      - default-roles-ghost-users
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  # Tokenomics/treasury read — any authenticated realm
+  - id: tokenomics
+    path_prefix: /v1/tokenomics
+    roles_any:
+      - user
+      - employee
+      - admin
+      - default-roles-ghost-users
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  # Treasury management — admins only
+  - id: treasury
+    path_prefix: /v1/treasury
+    realm: admins
+    roles_any:
+      - admin
+      - governance_admin
+      - default-roles-ghost-admins
+
+  # AI command center — employees and admins
+  - id: ai
+    path_prefix: /v1/ai
+    roles_any:
+      - employee
+      - admin
+      - infra_admin
+      - governance_admin
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  - id: ai-legacy
+    path_prefix: /ai
+    roles_any:
+      - employee
+      - admin
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  # DevOps — employees and admins
+  - id: devops
+    path_prefix: /v1/devops
+    roles_any:
+      - employee
+      - admin
+      - infra_admin
+      - ops_viewer
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  - id: devops-legacy
+    path_prefix: /devops
+    roles_any:
+      - employee
+      - admin
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  # Security — admins only
+  - id: security
+    path_prefix: /v1/security
+    realm: admins
+    roles_any:
+      - admin
+      - infra_admin
+      - default-roles-ghost-admins
+
+  # NFT — any authenticated realm
+  - id: nft
+    path_prefix: /v1/nft
+    roles_any:
+      - user
+      - employee
+      - admin
+      - default-roles-ghost-users
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  # Token listing and per-wallet token endpoints — any authenticated realm
+  # These are mounted under /v1 and / by the token router; guard must not
+  # allow anonymous pass-through for paths not matched by /v1/wallets.
+  - id: tokens-v1-api
+    path_prefix: /v1/api/tokens
+    roles_any:
+      - user
+      - employee
+      - admin
+      - default-roles-ghost-users
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  - id: tokens-api
+    path_prefix: /api/tokens
+    roles_any:
+      - user
+      - employee
+      - admin
+      - default-roles-ghost-users
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  - id: tokens
+    path_prefix: /tokens
+    roles_any:
+      - user
+      - employee
+      - admin
+      - default-roles-ghost-users
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  # RPC pool — any authenticated realm
+  - id: rpc-pool
+    path_prefix: /v1/rpc
+    roles_any:
+      - user
+      - employee
+      - admin
+      - default-roles-ghost-users
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  # App shell (feature flags, theme, network context) — any authenticated realm
+  - id: app-shell
+    path_prefix: /v1/app-shell
+    roles_any:
+      - user
+      - employee
+      - admin
+      - default-roles-ghost-users
+      - default-roles-ghost-employees
+      - default-roles-ghost-admins
+
+  # ── Optionally-public routes — gateway passes through; API enforces auth ───
+  # These allow_anonymous entries prevent the guard from blocking in deployments
+  # where PUBLIC_CHAIN, PUBLIC_NODES, etc. are enabled. The API server enforces
+  # requirePermission() when the PUBLIC_* flag is false.
+
+  - id: chain
+    path_prefix: /v1/chain
+    allow_anonymous: true
+
+  - id: chain-legacy
+    path_prefix: /chain
+    allow_anonymous: true
+
+  - id: nodes
+    path_prefix: /v1/nodes
+    allow_anonymous: true
+
+  - id: nodes-legacy
+    path_prefix: /nodes
+    allow_anonymous: true
+
+  - id: validators
+    path_prefix: /v1/validators
+    allow_anonymous: true
+
+  - id: validators-legacy
+    path_prefix: /validators
+    allow_anonymous: true
+
+  - id: explorer
+    path_prefix: /v1/explorer
+    allow_anonymous: true
+
+  - id: explorer-legacy
+    path_prefix: /explorer
+    allow_anonymous: true
+
+  - id: observability
+    path_prefix: /v1/observability
+    allow_anonymous: true
+
+  - id: observability-legacy
+    path_prefix: /observability
+    allow_anonymous: true
+
+  - id: stack
+    path_prefix: /v1/stack
+    allow_anonymous: true
+
+  - id: stack-legacy
+    path_prefix: /stack
+    allow_anonymous: true
+
+  - id: gas
+    path_prefix: /v1/gas
+    allow_anonymous: true
+
+  - id: gas-legacy
+    path_prefix: /gas
+    allow_anonymous: true

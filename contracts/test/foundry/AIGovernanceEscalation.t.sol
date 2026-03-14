@@ -18,7 +18,7 @@ contract AIGovernanceEscalationTest is TestBase {
 
     function testRejectBelowThreshold() public {
         (bytes32 intentId, bool accepted) = escalation.submitIntent(
-            bytes32("bundle"),
+            "bundle",
             1000,
             9000,
             address(0xBEEF),
@@ -31,7 +31,7 @@ contract AIGovernanceEscalationTest is TestBase {
 
     function testAcceptAboveThreshold() public {
         (bytes32 intentId, bool accepted) = escalation.submitIntent(
-            bytes32("bundle"),
+            "bundle",
             9000,
             9000,
             address(0xBEEF),
@@ -45,6 +45,6 @@ contract AIGovernanceEscalationTest is TestBase {
     function testOnlySubmitter() public {
         vm.prank(address(0xCAFE));
         vm.expectRevert(abi.encodeWithSelector(AIGovernanceEscalation.NotSubmitter.selector));
-        escalation.submitIntent(bytes32("bundle"), 9000, 9000, address(0xBEEF), 0, abi.encode(uint256(1)));
+        escalation.submitIntent("bundle", 9000, 9000, address(0xBEEF), 0, abi.encode(uint256(1)));
     }
 }

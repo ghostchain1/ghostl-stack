@@ -1,4 +1,5 @@
 export type Layer = 'L1' | 'L2' | 'L3';
+export type MainchainName = 'GhostChain' | 'GhostL2' | 'GhostL3';
 
 export declare const layerFromNumeric: (value: string | number) => Layer;
 
@@ -16,3 +17,8 @@ export declare const assertEndpointAllowlisted: (
   endpointUrl: string,
   allowlist?: string[]
 ) => { ok: true; endpoint: string; mode: 'open' | 'allowlist' };
+
+export declare const assertMainchainId: (
+  chainId: number | string
+) => { ok: true; chainId: number; name: MainchainName };
+

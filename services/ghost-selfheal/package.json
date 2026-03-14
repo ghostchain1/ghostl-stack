@@ -1,0 +1,20 @@
+{
+  "name": "@ghostchain/ghost-selfheal",
+  "version": "1.0.0",
+  "description": "GhostBrain Self-Healing Infrastructure Monitor — detect anomalies, propose ratifiable remediation actions",
+  "main": "dist/monitor.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/monitor.js",
+    "dev": "node --watch --experimental-specifier-resolution=node dist/monitor.js"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "@types/node": "^22.10.7"
+  },
+  "engines": { "node": ">=22.21.0 <23" }
+}

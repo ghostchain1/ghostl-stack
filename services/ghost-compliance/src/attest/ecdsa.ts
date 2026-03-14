@@ -1,4 +1,5 @@
-import { Wallet, getBytes, verifyMessage } from 'ghost';
+import { Wallet, verifyMessage } from 'ghost';
+import { getBytes } from 'ethers';
 
 export const signParamsHash = async (paramsHash: string, privateKey: string): Promise<string> => {
   const wallet = new Wallet(privateKey);

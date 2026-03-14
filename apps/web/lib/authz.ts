@@ -1,19 +1,11 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/nextauth';
-import type { Realm } from '@/lib/realms';
+import type { Realm } from '@ghostl/auth';
+import { realmForRole } from '@ghostl/auth';
 import { fetchServerSession } from '@/src/modules/identity-access/serverSession';
-import { normalizeRole, type Role } from '@/src/modules/identity-access/access-policy';
+import { normalizeRole } from '@/src/modules/identity-access/access-policy';
 
 const ENABLE_LEGACY_SESSION_FALLBACK = process.env.ENABLE_LEGACY_SESSION_FALLBACK === 'true';
-
-const roleToRealm: Record<Role, Realm> = {
-  READONLY: 'users',
-  OPERATOR: 'employees',
-  ADMIN: 'admins',
-  OWNER: 'admins'
-};
-
-const realmFromLegacyRole = (role?: string | string[] | null): Realm => roleToRealm[normalizeRole(role)];
 
 export async function requireRealm(required: Realm) {
   const nextAuthSession = await auth().catch(() => null);
@@ -29,7 +21,7 @@ export async function requireRealm(required: Realm) {
   }
   const legacySession = await fetchServerSession();
   if (!legacySession.user) redirect('/login');
-  if (realmFromLegacyRole(legacySession.user.role) !== required) redirect('/login');
+  if (realmForRole(legacySession.user.role) !== required) redirect('/login');
 }
 
 export async function requireRole(role: string) {

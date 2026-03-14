@@ -328,7 +328,7 @@ for item in lock.get("images", []):
 PY
 
   log "seal: images.bundle: ${REL_DIR}/images/docker-images.tar.gz"
-  sudo -n docker save $(tr '\n' ' ' < "${REL_DIR}/images/images.txt") | gzip -1 > "${REL_DIR}/images/docker-images.tar.gz"
+  xargs sudo -n docker save < "${REL_DIR}/images/images.txt" | gzip -1 > "${REL_DIR}/images/docker-images.tar.gz"
 fi
 
 REL_ID_BYTES32="$(keccak256_str "${RELEASE_ID}")"
@@ -716,7 +716,7 @@ set -euo pipefail
 rpc_chain_id() {
   local url="$1"
   local out
-  out="$(curl -fsS -H 'Content-Type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_chainId\",\"params\":[]}' \"${url}\")"
+  out="$(curl -fsS -H 'Content-Type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "${url}")"
   printf '%s' "${out}" | jq -r .result
 }
 
@@ -955,7 +955,7 @@ set -euo pipefail
 rpc_chain_id() {
   local url="$1"
   local out
-  out="$(curl -fsS -H 'Content-Type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_chainId\",\"params\":[]}' \"${url}\")"
+  out="$(curl -fsS -H 'Content-Type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "${url}")"
   printf '%s' "${out}" | jq -r .result
 }
 

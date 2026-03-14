@@ -6,6 +6,7 @@ pragma solidity ^0.8.24;
 import "../ai/EvidenceBundle.sol";
 import "../common/ConstitutionalGuard.sol";
 import "../compliance/ComplianceProofGuard.sol";
+import "../common/GhostHash.sol";
 
 /// @notice Minimal timelock-style executor used by Governor.
 contract ProposalExecutor {
@@ -140,9 +141,9 @@ contract ProposalExecutor {
         require(address(bundle) != address(0), "evidence bundle=0");
         EvidenceBundle.Bundle memory evidence = EvidenceBundle.Bundle({
             policyHash: actionHash,
-            decisionHash: keccak256(abi.encode(id, txData.eta)),
+            decisionHash: GhostHash.hash2(bytes32(id), bytes32(txData.eta)),
             modelHash: bytes32(0),
-            executionHash: keccak256(abi.encode(txData.target, txData.value, keccak256(txData.data))),
+            executionHash: GhostHash.hash3(bytes32(uint256(uint160(txData.target))), bytes32(txData.value), keccak256(txData.data)),
             timestamp: block.timestamp,
             chainId: block.chainid,
             emitter: address(this)
