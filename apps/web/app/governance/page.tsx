@@ -92,7 +92,7 @@ export default async function GovernancePage() {
       <div className="grid grid-4" style={{ marginBottom: "1.5rem" }}>
         <div className="card">
           <div className="card-title">Total Proposals</div>
-          <div className="card-value">{propList.length || summary?.proposals?.total ?? 0}</div>
+          <div className="card-value">{propList.length || (summary?.proposals?.total ?? 0)}</div>
         </div>
         <div className="card">
           <div className="card-title">Active Proposals</div>

@@ -1,3 +1,5 @@
+"use client";
+
 import GhostHero from "../../components/hero/GhostHero";
 import EcosystemSection from "../../components/sections/Ecosystem";
 import TokenSection from "../../components/sections/TokenSection";

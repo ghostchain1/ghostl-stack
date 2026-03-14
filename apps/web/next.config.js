@@ -11,6 +11,20 @@ const nextConfig = {
     NEXT_PUBLIC_AIM_URL:        process.env.NEXT_PUBLIC_AIM_URL        || "http://localhost:9400",
     NEXT_PUBLIC_KERNEL_WS_URL:  process.env.NEXT_PUBLIC_KERNEL_WS_URL  || "ws://localhost:9300",
   },
+  async headers() {
+    return [
+      {
+        // Prevent browsers from caching any HTML page — forces re-fetch on every navigation
+        source: "/((?!_next/static|_next/image|favicon.ico).*)",
+        headers: [
+          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate, proxy-revalidate" },
+          { key: "Pragma",        value: "no-cache" },
+          { key: "Expires",       value: "0" },
+        ],
+      },
+    ];
+  },
+
   async rewrites() {
     return [
       {

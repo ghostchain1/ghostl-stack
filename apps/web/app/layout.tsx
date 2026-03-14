@@ -47,11 +47,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
               <li className="nav-section">⛓ Blockchain</li>
               <li><a href="/blockchain">Blockchain</a></li>
-              <li><a href="/multichain">Multichain</a></li>
+              <li><a href="/chain">Chain Registry</a></li>
+              <li><a href="/nodes">Nodes</a></li>
               <li><a href="/validators">Validators</a></li>
+              <li><a href="/bridge">Bridge</a></li>
+              <li><a href="/explorer">Explorer</a></li>
+              <li><a href="/contracts">Contracts</a></li>
+              <li><a href="/multichain">Multichain</a></li>
 
               <li className="nav-section">💰 Economy</li>
               <li><a href="/economy">Economy</a></li>
+              <li><a href="/treasury">Treasury</a></li>
+              <li><a href="/tokenomics">Tokenomics</a></li>
+              <li><a href="/wallet">Wallet &amp; Market</a></li>
               <li><a href="/data-mesh">Data Mesh</a></li>
               <li><a href="/simulation">SimLab</a></li>
               <li><a href="/governance">Governance</a></li>
@@ -85,12 +93,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <li><a href="/expansion">Expansion</a></li>
               <li><a href="/aee">Economy Engine</a></li>
 
-              <li className="nav-section">�🔐 Security</li>
+              <li className="nav-section">🔐 Security</li>
               <li><a href="/security">Security</a></li>
               <li><a href="/compliance">Compliance</a></li>
+              <li><a href="/alerts">Alerts</a></li>
+              <li><a href="/users">Users / KYC</a></li>
 
               <li className="nav-section">🛠 DevOps</li>
               <li><a href="/devops">DevOps</a></li>
+              <li><a href="/logs">Logs</a></li>
             </ul>
             <div className="sidebar-footer">
               <a href={process.env.NEXT_PUBLIC_GRAFANA_URL || "http://localhost:3001"}

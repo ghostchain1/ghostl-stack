@@ -8,8 +8,8 @@
   --surface:      #0f1117;
   --surface-2:    #141720;
   --border:       #1c2030;
-  --accent:       #7c3aed;
-  --accent-glow:  rgba(124, 58, 237, 0.25);
+  --accent:       #FFD700;
+  --accent-glow:  rgba(255, 215, 0, 0.2);
   --green:        #10b981;
   --yellow:       #f59e0b;
   --red:          #ef4444;
@@ -61,7 +61,7 @@ body {
   padding: 1.25rem 1.25rem 1rem;
   border-bottom: 1px solid var(--border);
 }
-.c3-logo { font-size: 1.8rem; filter: drop-shadow(0 0 8px #7c3aed88); }
+.c3-logo { font-size: 1.8rem; filter: drop-shadow(0 0 8px #FFD70088); }
 .c3-brand-title {
   font-size: 0.95rem;
   font-weight: 700;
@@ -373,7 +373,7 @@ body {
   border-radius: 4px;
   cursor: pointer;
   background: var(--accent-glow);
-  border: 1px solid #4c1d95;
+  border: 1px solid #FFAA00;
   color: var(--accent);
   transition: all 0.1s;
 }

@@ -5,7 +5,7 @@ export default function EcosystemSection() {
   const layers = [
     {
       label: "GhostL3 Apps",
-      items: ["GhostSwap", "GhostNFT", "GhostPay", "GhostVyb"],
+      items: ["GhostSwap", "GhostNFT", "GhostPay", "Lit Vyb Live"],
       color: "#C0C0C0",
     },
     {

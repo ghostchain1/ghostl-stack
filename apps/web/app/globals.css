@@ -8,8 +8,8 @@
   --bg: #0a0b0f;
   --surface: #12141a;
   --border: #1e2230;
-  --accent: #7c3aed;
-  --accent-dim: #4c1d95;
+  --accent: #FFD700;
+  --accent-dim: #FFAA00;
   --green: #10b981;
   --yellow: #f59e0b;
   --red: #ef4444;
@@ -86,7 +86,7 @@ body {
 .nav-links li a:hover,
 .nav-links li a.active {
   color: var(--text);
-  background: rgba(124, 58, 237, 0.1);
+  background: rgba(255, 215, 0, 0.08);
   border-left-color: var(--accent);
 }
 
