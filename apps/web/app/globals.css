@@ -1,5 +1,10 @@
 /* GhostStack Dashboard — global styles */
+
+/* ── Ghost Brand Design Tokens ─────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
 :root {
+  /* Dashboard palette */
   --bg: #0a0b0f;
   --surface: #12141a;
   --border: #1e2230;
@@ -11,6 +16,17 @@
   --text: #e2e8f0;
   --text-muted: #64748b;
   --sidebar-w: 220px;
+
+  /* Ghost brand palette */
+  --ghost-gold:   #FFD700;
+  --ghost-ember:  #FFAA00;
+  --ghost-black:  #0A0A0A;
+  --ghost-silver: #C0C0C0;
+  --ghost-glass:  rgba(255, 215, 0, 0.06);
+  --ghost-glow-sm:   0 0 8px rgba(255,215,0,0.4);
+  --ghost-glow-md:   0 0 20px rgba(255,215,0,0.5);
+  --ghost-glow-lg:   0 0 40px rgba(255,215,0,0.6);
+  --ghost-font-display: 'Orbitron', 'Inter', system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -541,4 +557,105 @@ body {
   color: #fff;
   border-color: #dc2626;
   animation: mcd-pulse 1s infinite;
+}
+
+/* ── Ghost Brand Utilities ──────────────────────────────────── */
+
+/* Buttons */
+.ghost-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
+  background: linear-gradient(135deg, var(--ghost-gold), var(--ghost-ember));
+  color: #000;
+  font-family: var(--ghost-font-display);
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: var(--ghost-glow-sm);
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+.ghost-btn-primary:hover {
+  box-shadow: var(--ghost-glow-md);
+  transform: translateY(-1px);
+}
+
+.ghost-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
+  background: transparent;
+  color: var(--ghost-gold);
+  font-family: var(--ghost-font-display);
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border: 1px solid var(--ghost-gold);
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+.ghost-btn-outline:hover {
+  background: rgba(255,215,0,0.08);
+  box-shadow: var(--ghost-glow-sm);
+  transform: translateY(-1px);
+}
+
+/* Glass panels */
+.ghost-panel {
+  background: var(--ghost-glass);
+  border: 1px solid rgba(255,215,0,0.18);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Gold glow text */
+.ghost-text-gold {
+  color: var(--ghost-gold);
+  text-shadow: var(--ghost-glow-sm);
+}
+
+/* Display heading style */
+.ghost-heading {
+  font-family: var(--ghost-font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ghost-gold);
+}
+
+/* Animated gold gradient text */
+@keyframes ghost-shimmer {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.ghost-gradient-text {
+  background: linear-gradient(90deg, #FFD700, #FFAA00, #FFD700, #fff8b0, #FFD700);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: ghost-shimmer 4s linear infinite;
+}
+
+/* Subtle gold border glow */
+.ghost-border-glow {
+  border: 1px solid rgba(255,215,0,0.3);
+  box-shadow: 0 0 12px rgba(255,215,0,0.1), inset 0 0 12px rgba(255,215,0,0.03);
+}
+
+/* Public-facing pages: override dashboard shell */
+.ghost-public-page {
+  min-height: 100vh;
+  background: var(--ghost-black);
+  color: var(--text);
 }

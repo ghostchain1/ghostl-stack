@@ -2,13 +2,21 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "GhostStack Command Center",
-  description: "Unified AI-managed blockchain infrastructure dashboard",
+  title: "GhostChain | Sovereign AI Blockchain",
+  description: "GhostChain — the sovereign AI blockchain powering GhostL2, GhostL3, and the GhostStack ecosystem",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;500;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body>
         <div className="layout">
           <nav className="sidebar">
@@ -17,10 +25,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span>GhostStack</span>
             </div>
             <ul className="nav-links">
-              <li className="nav-section">🎯 Command Center</li>
+              <li className="nav-section">� Public</li>
+              <li><a href="/public-landing">Landing Page</a></li>
+              <li><a href="/ecosystem">Ecosystem</a></li>
+              <li><a href="/token">Token (GST)</a></li>
+              <li><a href="/developers">Developers</a></li>
+
+              <li className="nav-section">�🎯 Command Center</li>
               <li><a href="/command-center">GSCC Overview</a></li>
               <li><a href="/command-center/ai">AI Engine Control</a></li>
               <li><a href="/command-center/logs">Live Log Stream</a></li>
+              <li><a href="/command-center-3d">3D Network Map</a></li>
 
               <li className="nav-section">⚡ Overview</li>
               <li><a href="/">Dashboard</a></li>
