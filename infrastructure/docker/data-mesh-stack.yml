@@ -1,0 +1,97 @@
+# Data Mesh Stack — dedicated storage and indexing services
+
+name: ghostdatamesh
+
+networks:
+  ghostbrain-net:
+    external: true
+  mesh-net:
+    driver: bridge
+
+volumes:
+  redis-data:
+  postgres-data:
+  elasticsearch-data:
+
+services:
+
+  # ── Redis (fast cache + pub/sub) ─────────────────────────────
+  ghostmesh-redis:
+    image: redis:7-alpine
+    container_name: ghostmesh-redis
+    restart: always
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - mesh-net
+      - ghostbrain-net
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── PostgreSQL (structured analytics + proposals) ─────────────
+  ghostmesh-postgres:
+    image: postgres:16-alpine
+    container_name: ghostmesh-postgres
+    restart: always
+    environment:
+      - POSTGRES_DB=ghoststack
+      - POSTGRES_USER=ghost
+      - POSTGRES_PASSWORD=ghoststack_db_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - mesh-net
+      - ghostbrain-net
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghost -d ghoststack"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ── Elasticsearch (knowledge graph + full-text search) ────────
+  ghostmesh-elasticsearch:
+    image: elasticsearch:8.12.1
+    container_name: ghostmesh-elasticsearch
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - mesh-net
+      - ghostbrain-net
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health | grep -v '\"status\":\"red\"'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ── GhostStack Manager (Python Flask — existing) ──────────────
+  ghoststack-manager:
+    build:
+      context: /home/ghost/ghoststack-manager
+    image: ghoststack-manager:latest
+    container_name: ghoststack-manager
+    restart: always
+    environment:
+      - GHOSTSTACK_VM_DOMAIN=ghostchain-x86_64
+      - GHOSTSTACK_VM_PUBLIC_IP=${HYPERVISOR_HOST:-208.110.71.164}
+      - GHOSTSTACK_MANAGER_PORT=8787
+      - GHOSTSTACK_MANAGER_TOKEN=${GHOSTSTACK_MANAGER_TOKEN:-change-me}
+    networks:
+      - ghostbrain-net
+      - mesh-net
+    ports:
+      - "8787:8787"

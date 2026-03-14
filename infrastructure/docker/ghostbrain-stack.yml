@@ -1,0 +1,616 @@
+# GhostBrain AI Stack — all 16 GhostBrain services
+# Build contexts point to the TypeScript monorepo at ~/hyperghost-tooling
+
+name: ghostbrain
+
+networks:
+  ghostbrain-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  scp-logs:
+  scp-policies:
+  gdm-data:
+  gdm-blockchain-index:
+  gdm-memory:
+  kernel-data:
+  governance-proposals:
+  ghostbrain-acge-audits:
+
+services:
+
+  # ── Swarm Bus (must start first) ─────────────────────────────
+  ghostbrain-swarm:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-swarm
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-swarm:latest
+    container_name: ghostbrain-swarm
+    restart: always
+    ports:
+      - "${GHOSTBRAIN_SWARM_PORT:-9000}:9000"
+    environment:
+      - NODE_ENV=production
+      - GHOSTBRAIN_SWARM_PORT=9000
+      - GHOSTBRAIN_KERNEL_URL=http://ghostbrain-kernel:9300
+      - GHOSTBRAIN_AEE_URL=http://ghostbrain-economy-engine:9800
+      - GHOSTBRAIN_GVF_URL=http://ghostbrain-validator-fabric:9700
+      - GHOSTBRAIN_GDM_URL=http://ghostbrain-data-mesh:9900
+      - GHOSTBRAIN_SCP_URL=http://ghostbrain-control-plane:9500
+    networks:
+      - ghostbrain-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Kernel (hypervisor control) ──────────────────────────────
+  ghostbrain-kernel:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-kernel
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-kernel:latest
+    container_name: ghostbrain-kernel
+    restart: always
+    ports:
+      - "${GHOSTBRAIN_KERNEL_PORT:-9300}:9300"
+    environment:
+      - NODE_ENV=production
+      - GHOSTBRAIN_KERNEL_PORT=9300
+      - KERNEL_PORT=9300
+      - KERNEL_LOOP_MS=5000
+      - GHOSTBRAIN_HYPERVISOR_HOST=${HYPERVISOR_HOST:-208.110.71.164}
+      - GHOSTBRAIN_HYPERVISOR_URL=${GHOSTBRAIN_HYPERVISOR_URL:-http://208.110.71.164:8787}
+      # SCK — Sovereign Core Kernel
+      - SCK_TOKEN_SECRET=${SCK_TOKEN_SECRET:-change_me_in_production}
+      - SCK_TOKEN_TTL_MS=3600000
+      - SCK_RATE_MAX=60
+      - SCK_RATE_WINDOW=60000
+      # AI Scheduler
+      - SCHEDULER_TICK_MS=2000
+      # Resource Manager thresholds
+      - RM_CPU_WARN=70
+      - RM_CPU_CRIT=90
+      - RM_MEM_WARN=75
+      - RM_MEM_CRIT=90
+      - RM_DISK_WARN=70
+      - RM_DISK_CRIT=85
+      # Supervisor
+      - SUPERVISOR_RESTART_THRESHOLD=3
+      - SUPERVISOR_INTERVAL_MS=15000
+      # Intelligence Bus — downstream targets
+      - GIN_URL=http://ghostbrain-gin:9980
+      - ACGE_URL=http://ghostbrain-acge:9970
+      - TDS_URL=http://ghostbrain-tds:9960
+    volumes:
+      - kernel-data:/app/data
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-swarm
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9300/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Economic Modeling ────────────────────────────────────────
+  ghostbrain-economic:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-economic
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-economic:latest
+    container_name: ghostbrain-economic
+    restart: always
+    ports:
+      - "${GHOSTBRAIN_ECONOMIC_PORT:-9050}:9050"
+    environment:
+      - NODE_ENV=production
+      - GHOSTBRAIN_ECONOMIC_PORT=9050
+      - ECONOMIC_PORT=9050                              # controller reads ECONOMIC_PORT
+      - ECONOMIC_LOOP_INTERVAL_MS=300000               # 5-min telemetry loop
+      - EIE_LOOP_INTERVAL_MS=1800000                   # 30-min EIE decision loop
+      - GHOSTCHAIN_HUB_URL=http://ghostbrain-hub:9100
+      - KERNEL_URL=http://ghostbrain-kernel:9300
+      - GIN_URL=http://ghostbrain-gin:9980
+      - GHOSTXCHANGE_URL=http://ghostxchange:8080
+      - TREASURY_LARGE_THRESHOLD_WEI=10000000000000000000
+      - TREASURY_MAX_AUTO_WEI=1000000000000000000
+      - LIQUIDITY_REBALANCE_THRESHOLD=75
+      - MAX_SINGLE_DEPLOY_WEI=5000000000000000000
+      - ARBITRAGE_MIN_SPREAD_BPS=50
+      - BURN_RATE_MIN_BPS=10
+      - BURN_RATE_MAX_BPS=300
+      - VALIDATOR_REWARD_MIN_BPS=500
+      - VALIDATOR_REWARD_MAX_BPS=2000
+      - STAKING_INCENTIVE_MIN_BPS=50
+      - STAKING_INCENTIVE_MAX_BPS=1500
+      - MARKET_ALERT_VOL_THRESHOLD=0.05
+      - MARKET_VOLATILITY_WINDOW=3600000
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-swarm
+
+  # ── Digital Twin ─────────────────────────────────────────────
+  ghostbrain-digital-twin:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-digital-twin
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-digital-twin:latest
+    container_name: ghostbrain-digital-twin
+    restart: always
+    ports:
+      - "${GHOSTBRAIN_TWIN_PORT:-9100}:9100"
+    environment:
+      - NODE_ENV=production
+      - GHOSTBRAIN_TWIN_PORT=9100
+      - GHOSTBRAIN_KERNEL_URL=http://ghostbrain-kernel:9300
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-kernel
+
+  # ── Conscious Core ───────────────────────────────────────────
+  ghostbrain-conscious-core:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-conscious-core
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-conscious-core:latest
+    container_name: ghostbrain-conscious-core
+    restart: always
+    ports:
+      - "${GHOSTBRAIN_CONSCIOUS_PORT:-9150}:9150"
+    environment:
+      - NODE_ENV=production
+      - GHOSTBRAIN_CONSCIOUS_PORT=9150
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-swarm
+
+  # ── Simulation Lab ───────────────────────────────────────────
+  ghostbrain-simulation-lab:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-simulation-lab
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-simulation-lab:latest
+    container_name: ghostbrain-simulation-lab
+    restart: always
+    ports:
+      - "${GHOSTBRAIN_SIMLAB_PORT:-9200}:9200"
+    environment:
+      - NODE_ENV=production
+      - GHOSTBRAIN_SIMLAB_PORT=9200
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-swarm
+
+  # ── Evolution Engine ─────────────────────────────────────────
+  ghostbrain-evolution-engine:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-evolution-engine
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-evolution-engine:latest
+    container_name: ghostbrain-evolution-engine
+    restart: always
+    ports:
+      - "${GHOSTBRAIN_EVOLUTION_PORT:-9250}:9250"
+    environment:
+      - NODE_ENV=production
+      - GHOSTBRAIN_EVOLUTION_PORT=9250
+      - SEE_CYCLE_INTERVAL_MS=43200000
+      - SEE_SERVICES_ROOT=/app/services
+      - GHOSTBRAIN_KERNEL_URL=http://ghostbrain-kernel:9300
+      - GHOSTBRAIN_CCL_URL=http://ghost-devops-ai:9400
+      - DEVOPS_AI_URL=http://ghost-devops-ai:9400
+      - TDS_URL=http://ghostbrain-tds:9960
+      - ACGE_URL=http://ghostbrain-acge:9970
+      - GIN_URL=http://ghostbrain-gin:9980
+      - DEVNET_HOST=ghostchain-devnet
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-swarm
+      - ghostbrain-simulation-lab
+      - ghostbrain-acge
+      - ghostbrain-gin
+
+  # ── Kernel (already defined above) — ordering reference ──────
+  # ghostbrain-kernel: port 9300
+
+  # ── Multichain Engine ────────────────────────────────────────
+  ghostbrain-multichain:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-multichain
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-multichain:latest
+    container_name: ghostbrain-multichain
+    restart: always
+    ports:
+      - "${GHOSTBRAIN_MULTICHAIN_PORT:-9350}:9350"
+    environment:
+      - NODE_ENV=production
+      - GHOSTBRAIN_MULTICHAIN_PORT=9350
+      - GHOSTCHAIN_L1_RPC=${GHOSTCHAIN_L1_RPC:-http://ghostchain-devnet:8545}
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-kernel
+
+  # ── DevOps AI ────────────────────────────────────────────────
+  ghost-devops-ai:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghost-devops-ai
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghost-devops-ai:latest
+    container_name: ghost-devops-ai
+    restart: always
+    ports:
+      - "${GHOSTBRAIN_DEVOPS_PORT:-9400}:9400"
+    environment:
+      - NODE_ENV=production
+      - GHOST_DEVOPS_PORT=9400
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-swarm
+
+  # ── Sovereign Control Plane (SCP — master) ───────────────────
+  ghostbrain-control-plane:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-control-plane
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-control-plane:latest
+    container_name: ghostbrain-control-plane
+    restart: always
+    ports:
+      - "${GHOSTBRAIN_SCP_PORT:-9500}:9500"
+    environment:
+      - NODE_ENV=production
+      - GHOSTBRAIN_SCP_PORT=9500
+      - GHOSTBRAIN_KERNEL_URL=http://ghostbrain-kernel:9300
+      - GHOSTBRAIN_AEE_URL=http://ghostbrain-economy-engine:9800
+      - GHOSTBRAIN_GVF_URL=http://ghostbrain-validator-fabric:9700
+      - GHOSTBRAIN_GDM_URL=http://ghostbrain-data-mesh:9900
+      - GHOSTBRAIN_SIMLAB_URL=http://ghostbrain-simulation-lab:9200
+      - GHOSTBRAIN_GOVERNANCE_URL=http://ghostbrain-governance:9550
+      - SCP_API_KEYS=${SCP_API_KEYS:-ghoststack-admin:admin}
+      - SCP_LOGS_DIR=/app/logs
+      - SCP_POLICIES_DIR=/app/policies
+    volumes:
+      - scp-logs:/app/logs
+      - scp-policies:/app/policies
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-kernel
+      - ghostbrain-swarm
+      - ghostbrain-simulation-lab
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9500/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ── Interchain Bridge AI ─────────────────────────────────────
+  ghostbrain-interchain:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-interchain
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-interchain:latest
+    container_name: ghostbrain-interchain
+    restart: always
+    ports:
+      - "${GHOSTBRAIN_INTERCHAIN_PORT:-9450}:9450"
+    environment:
+      - NODE_ENV=production
+      - GHOSTBRAIN_INTERCHAIN_PORT=9450
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-multichain
+
+  # ── Governance AI ────────────────────────────────────────────
+  ghostbrain-governance:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-governance
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-governance:latest
+    container_name: ghostbrain-governance
+    restart: always
+    ports:
+      - "${GHOSTBRAIN_GOVERNANCE_PORT:-9550}:9550"
+    environment:
+      - NODE_ENV=production
+      - GHOSTBRAIN_GOVERNANCE_PORT=9550
+      - GHOSTCHAIN_L1_RPC=${GHOSTCHAIN_L1_RPC:-http://ghostchain-devnet:8545}
+    volumes:
+      - governance-proposals:/app/proposals
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-swarm
+
+  # ── Research AI ──────────────────────────────────────────────
+  ghostbrain-research-ai:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-research-ai
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-research-ai:latest
+    container_name: ghostbrain-research-ai
+    restart: always
+    ports:
+      - "${GHOSTBRAIN_RESEARCH_PORT:-9600}:9600"
+    environment:
+      - NODE_ENV=production
+      - GHOSTBRAIN_RESEARCH_PORT=9600
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-swarm
+
+  # ── Validator Fabric AI (GVF) ────────────────────────────────
+  ghostbrain-validator-fabric:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-validator-fabric
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-validator-fabric:latest
+    container_name: ghostbrain-validator-fabric
+    restart: always
+    ports:
+      - "${GHOSTBRAIN_GVF_PORT:-9700}:9700"
+    environment:
+      - NODE_ENV=production
+      - GHOSTBRAIN_GVF_PORT=9700
+      - GHOSTCHAIN_L1_RPC=${GHOSTCHAIN_L1_RPC:-http://ghostchain-devnet:8545}
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-kernel
+
+  # ── Economy Engine AI (AEE) ──────────────────────────────────
+  ghostbrain-economy-engine:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-economy-engine
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-economy-engine:latest
+    container_name: ghostbrain-economy-engine
+    restart: always
+    ports:
+      - "${GHOSTBRAIN_AEE_PORT:-9800}:9800"
+    environment:
+      - NODE_ENV=production
+      - GHOSTBRAIN_AEE_PORT=9800
+      - GHOSTCHAIN_L1_RPC=${GHOSTCHAIN_L1_RPC:-http://ghostchain-devnet:8545}
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-swarm
+
+  # ── Global Data Mesh (GDM) ───────────────────────────────────
+  ghostbrain-data-mesh:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-data-mesh
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-data-mesh:latest
+    container_name: ghostbrain-data-mesh
+    restart: always
+    ports:
+      - "${GHOSTBRAIN_GDM_PORT:-9900}:9900"
+    environment:
+      - NODE_ENV=production
+      - GHOSTBRAIN_GDM_PORT=9900
+      - GHOSTCHAIN_L1_RPC=${GHOSTCHAIN_L1_RPC:-http://ghostchain-devnet:8545}
+    volumes:
+      - gdm-data:/app/data
+      - gdm-blockchain-index:/app/index
+      - gdm-memory:/app/memory
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-kernel
+      - ghostbrain-swarm
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9900/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Autonomous Infrastructure Manager (AIM) ──────────────────
+  ghostbrain-aim:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-aim
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-aim:latest
+    container_name: ghostbrain-aim
+    restart: unless-stopped
+    ports:
+      - "${GHOSTBRAIN_AIM_PORT:-9950}:9950"
+    environment:
+      - NODE_ENV=production
+      - AIM_PORT=9950
+      - KERNEL_URL=http://ghostbrain-kernel:9300
+      - SCP_URL=http://ghostbrain-control-plane:9500
+      - GVF_URL=http://ghostbrain-validator-fabric:9700
+      - AIM_CPU_HIGH_PCT=80
+      - AIM_CPU_LOW_PCT=20
+      - AIM_MEM_HIGH_PCT=85
+      - AIM_MEM_LOW_PCT=30
+      - AIM_LOOP_MS=10000
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-kernel
+      - ghostbrain-control-plane
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9950/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Threat Defense System (TDS) ──────────────────────────────
+  ghostbrain-tds:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-tds
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-tds:latest
+    container_name: ghostbrain-tds
+    restart: unless-stopped
+    ports:
+      - "${GHOSTBRAIN_TDS_PORT:-9960}:9960"
+    environment:
+      - NODE_ENV=production
+      - TDS_PORT=9960
+      - KERNEL_URL=http://ghostbrain-kernel:9300
+      - SCP_URL=http://ghostbrain-control-plane:9500
+      - GVF_URL=http://ghostbrain-validator-fabric:9700
+      - AIM_URL=http://ghostbrain-aim:9950
+      - GDM_URL=http://ghostbrain-data-mesh:9900
+      - L1_RPC_URL=http://ghostchain-l1:18545
+      - L2_RPC_URL=http://ghostchain-l2:29547
+      - L3_RPC_URL=http://ghostchain-l3:39547
+      - TDS_LOOP_MS=3000
+      - TDS_RATE_LIMIT=100
+      - TDS_AUTO_BLOCK=300
+      - TDS_USE_IPTABLES=false
+      - TDS_Z_THRESHOLD=3.0
+    cap_add:
+      - NET_ADMIN
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-kernel
+      - ghostbrain-control-plane
+      - ghostbrain-aim
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9960/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Autonomous Compliance & Governance Engine (ACGE) ─────────
+  ghostbrain-acge:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-acge
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-acge:latest
+    container_name: ghostbrain-acge
+    restart: unless-stopped
+    ports:
+      - "${GHOSTBRAIN_ACGE_PORT:-9970}:9970"
+    environment:
+      - NODE_ENV=production
+      - ACGE_PORT=9970
+      - KERNEL_URL=http://ghostbrain-kernel:9300
+      - SCP_URL=http://ghostbrain-control-plane:9500
+      - GVF_URL=http://ghostbrain-validator-fabric:9700
+      - GDM_URL=http://ghostbrain-data-mesh:9900
+      - AIM_URL=http://ghostbrain-aim:9950
+      - TDS_URL=http://ghostbrain-tds:9960
+      - ACGE_LOOP_MS=10000
+      - ACGE_AUDIT_DIR=/var/log/ghostbrain/audits
+    volumes:
+      - ghostbrain-acge-audits:/var/log/ghostbrain/audits
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-kernel
+      - ghostbrain-control-plane
+      - ghostbrain-tds
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9970/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Global Intelligence Network (GIN) ────────────────────────
+  ghostbrain-gin:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-gin
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-gin:latest
+    container_name: ghostbrain-gin
+    restart: unless-stopped
+    ports:
+      - "${GHOSTBRAIN_GIN_PORT:-9980}:9980"
+    environment:
+      - NODE_ENV=production
+      - GIN_PORT=9980
+      - GIN_LOOP_MS=5000
+      - GIN_SELF_NODE_ID=ghoststack-baremetal
+      - GIN_SELF_REGION=us-east-florida
+      - GIN_SELF_URL=http://ghostbrain-gin:9980
+      - KERNEL_URL=http://ghostbrain-kernel:9300
+      - SCP_URL=http://ghostbrain-control-plane:9500
+      - GVF_URL=http://ghostbrain-validator-fabric:9700
+      - GDM_URL=http://ghostbrain-data-mesh:9900
+      - AIM_URL=http://ghostbrain-aim:9950
+      - TDS_URL=http://ghostbrain-tds:9960
+      - ACGE_URL=http://ghostbrain-acge:9970
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-kernel
+      - ghostbrain-control-plane
+      - ghostbrain-acge
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9980/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Universal Orchestrator (UO) — top-level coordinator ──────
+  ghostbrain-uo:
+    build:
+      context: ${GHOSTBRAIN_SRC:-/home/ghost/hyperghost-tooling/hyper-ghost-ai/services}/ghostbrain-uo
+      dockerfile: ../../Dockerfile.ghostbrain
+    image: ghostbrain-uo:latest
+    container_name: ghostbrain-uo
+    restart: unless-stopped
+    ports:
+      - "${GHOSTBRAIN_UO_PORT:-9990}:9990"
+    environment:
+      - NODE_ENV=production
+      - UO_PORT=9990
+      - UO_LOOP_MS=3000
+      - KERNEL_URL=http://ghostbrain-kernel:9300
+      - ECONOMIC_URL=http://ghostbrain-economic:9050
+      - HUB_URL=http://ghostbrain-digital-twin:9100
+      - TDS_URL=http://ghostbrain-tds:9960
+      - AIM_URL=http://ghostbrain-aim:9950
+      - ACGE_URL=http://ghostbrain-acge:9970
+      - GIN_URL=http://ghostbrain-gin:9980
+      - EVOLUTION_URL=http://ghostbrain-evolution-engine:9250
+      - SWARM_URL=http://ghostbrain-swarm:9000
+      - GOVERNANCE_URL=http://ghostbrain-governance:9550
+      - SIMULATION_URL=http://ghostbrain-simulation-lab:9200
+      - VALIDATOR_FABRIC_URL=http://ghostbrain-validator-fabric:9700
+      - INTERCHAIN_URL=http://ghostbrain-interchain:9450
+      - CONTROL_PLANE_URL=http://ghostbrain-control-plane:9500
+      - DATA_MESH_URL=http://ghostbrain-data-mesh:9900
+      - MULTICHAIN_URL=http://ghostbrain-multichain:9350
+      - DEVOPS_URL=http://ghost-devops-ai:9400
+      - CONSCIOUS_CORE_URL=http://ghostbrain-conscious-core:9150
+      - DIGITAL_TWIN_URL=http://ghostbrain-digital-twin:9100
+      - RESEARCH_URL=http://ghostbrain-research-ai:9600
+      - ECONOMY_ENGINE_URL=http://ghostbrain-economy-engine:9800
+      - BUILD_ORCHESTRATOR_URL=http://ghost-build-orchestrator:9001
+      - DEV_AI_URL=http://ghostbrain-dev-ai:9002
+      - GLOBAL_URL=http://ghostbrain-global:9003
+    networks:
+      - ghostbrain-net
+    depends_on:
+      - ghostbrain-kernel
+      - ghostbrain-gin
+      - ghostbrain-acge
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9990/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

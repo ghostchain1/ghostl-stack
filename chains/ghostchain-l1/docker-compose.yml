@@ -1,0 +1,95 @@
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "5"
+
+services:
+
+  # ── Datadir initialiser (runs once, exits) ──────────────────────────────────
+  ghostgeth-init:
+    image: ghostchain/ghostgeth:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GETH_VERSION: v1.13.14
+    container_name: ghostgeth-init
+    restart: "no"
+    entrypoint: ghostgeth-init
+    volumes:
+      - geth_data:/data
+      - ./config/genesis.json:/config/genesis.json:ro
+    environment:
+      CHAIN_ID: "14000101"
+    profiles: [init]
+
+  # ── L1 execution node ───────────────────────────────────────────────────────
+  ghostgeth:
+    image: ghostchain/ghostgeth:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GETH_VERSION: v1.13.14
+    container_name: ghostgeth-l1
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      - ghostgeth-init
+    volumes:
+      - geth_data:/data
+      - ./config/genesis.json:/config/genesis.json:ro
+      - ./config/password.txt:/config/password.txt:ro
+      - bootnode_enode:/run:ro          # populated by bootnode sidecar if present
+    environment:
+      # ── Chain ───────────────────────────────────────────────────────────────
+      CHAIN_ID: "14000101"
+      # ── Signer (leave blank for non-mining/RPC-only nodes) ─────────────────
+      SIGNER_ADDRESS: "${SIGNER_ADDRESS:-}"
+      # ── Ports ───────────────────────────────────────────────────────────────
+      HTTP_PORT: "8545"
+      WS_PORT: "8546"
+      AUTH_PORT: "8551"
+      P2P_PORT: "30303"
+      METRICS_PORT: "6060"
+      # ── API surface ─────────────────────────────────────────────────────────
+      HTTP_APIS: "eth,net,web3,debug,txpool"
+      WS_APIS: "eth,net,web3"
+      # ── CORS / vhosts ───────────────────────────────────────────────────────
+      HTTP_CORS: "https://rpc.ghostchain.cloud,https://app.ghostchain.cloud,https://ghostchain.cloud,http://localhost"
+      WS_ORIGINS: "https://rpc.ghostchain.cloud,https://app.ghostchain.cloud,https://ghostchain.cloud,http://localhost"
+      HTTP_VHOSTS: "rpc.ghostchain.cloud,localhost,127.0.0.1"
+      # ── Sync / GC ───────────────────────────────────────────────────────────
+      SYNCMODE: "full"
+      GCMODE: "archive"
+      VERBOSITY: "3"
+    ports:
+      - "8545:8545"       # HTTP RPC
+      - "8546:8546"       # WS RPC
+      - "8551:8551"       # Auth RPC (for consensus clients)
+      - "30303:30303"     # P2P TCP
+      - "30303:30303/udp" # P2P UDP
+      - "6060:6060"       # Prometheus metrics
+    networks:
+      - ghostnet
+    healthcheck:
+      test: ["CMD", "curl", "-sf",
+             "-X", "POST",
+             "-H", "Content-Type: application/json",
+             "--data", '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}',
+             "http://localhost:8545"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+networks:
+  ghostnet:
+    driver: bridge
+
+volumes:
+  geth_data:
+    driver: local
+  bootnode_enode:
+    driver: local

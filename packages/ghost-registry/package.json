@@ -1,0 +1,14 @@
+{
+  "name": "@ghoststack/ghost-registry",
+  "version": "1.0.0",
+  "description": "Ghost Registry — canonical network, chain ID, and contract address registry for GhostStack",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.37",
+    "typescript": "^5.5.2"
+  }
+}

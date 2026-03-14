@@ -1,0 +1,25 @@
+[Unit]
+Description=GhostBrain AI Control Plane
+Documentation=https://github.com/ghostmode25/hyperghost-tooling-private-20260302
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/ghost/ghostl-stack
+ExecStart=/usr/bin/docker compose \
+    -f /home/ghost/ghostl-stack/infrastructure/docker/ghostbrain-stack.yml \
+    up -d
+ExecStop=/usr/bin/docker compose \
+    -f /home/ghost/ghostl-stack/infrastructure/docker/ghostbrain-stack.yml \
+    down
+Restart=on-failure
+RestartSec=30s
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ghostbrain
+
+[Install]
+WantedBy=multi-user.target

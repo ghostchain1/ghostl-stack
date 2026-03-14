@@ -1,0 +1,26 @@
+{
+  "name": "ai-adoption",
+  "version": "1.0.0",
+  "description": "Ghost Autonomous Adoption Engine — developer recruitment, project onboarding, liquidity expansion, grants, and institutional outreach",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "node-cron": "^3.0.3",
+    "express": "^4.19.2",
+    "openai": "^4.52.7",
+    "dotenv": "^16.4.5",
+    "winston": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/express": "^4.17.21",
+    "@types/node-cron": "^3.0.11",
+    "typescript": "^5.5.0",
+    "ts-node": "^10.9.2"
+  }
+}
