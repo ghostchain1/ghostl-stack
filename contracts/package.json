@@ -15,7 +15,7 @@
     "format": "prettier --write 'contracts/**/*.sol' 'scripts/**/*.ts'"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^7.0.0",
     "@types/node": "^20.19.37",
     "hardhat": "^2.22.5",
     "solhint": "^5.0.3",
@@ -23,5 +23,10 @@
   },
   "dependencies": {
     "dotenv": "^16.4.5"
+  },
+  "overrides": {
+    "undici": "^6.24.0",
+    "serialize-javascript": "^7.0.3",
+    "cookie": "^0.7.0"
   }
 }

@@ -28,10 +28,23 @@
   },
   "devDependencies": {
     "@types/node": "^20.19.37",
+    "hardhat": "^2.22.5",
+    "mocha": "^11.7.5",
     "typescript": "^5.5.2"
   },
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
+  },
+  "overrides": {
+    "undici": "^6.24.0",
+    "hardhat": {
+      "undici": "^6.24.0"
+    },
+    "serialize-javascript": "^7.0.3",
+    "mocha": {
+      "serialize-javascript": "^7.0.3"
+    },
+    "cookie": "^0.7.0"
   }
 }

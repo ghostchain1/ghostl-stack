@@ -16,5 +16,15 @@
     "hardhat": "^2.22.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.2"
+  },
+  "overrides": {
+    "undici": "^6.24.0",
+    "hardhat": {
+      "undici": "^6.24.0"
+    },
+    "serialize-javascript": "^7.0.3",
+    "mocha": {
+      "serialize-javascript": "^7.0.3"
+    }
   }
 }
