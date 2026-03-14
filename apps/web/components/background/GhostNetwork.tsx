@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
+import type * as THREE_TYPES from "three";
 
 /**
  * GhostNetwork — WebGL particle field using Three.js canvas.
@@ -75,7 +76,7 @@ export default function GhostNetwork({ className = "" }: { className?: string })
       }
 
       // ── Animate ──────────────────────────────────────────────
-      const pos = geo.attributes.position as THREE.BufferAttribute;
+      const pos = geo.attributes.position as THREE_TYPES.BufferAttribute;
       let t = 0;
       const animate = () => {
         animId = requestAnimationFrame(animate);

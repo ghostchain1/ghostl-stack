@@ -1,8 +1,8 @@
-import GhostHero from "../components/hero/GhostHero";
-import EcosystemSection from "../components/sections/Ecosystem";
-import TokenSection from "../components/sections/TokenSection";
-import GhostBrainSection from "../components/sections/GhostBrain";
-import DevelopersSection from "../components/sections/DevelopersSection";
+import GhostHero from "../../components/hero/GhostHero";
+import EcosystemSection from "../../components/sections/Ecosystem";
+import TokenSection from "../../components/sections/TokenSection";
+import GhostBrainSection from "../../components/sections/GhostBrain";
+import DevelopersSection from "../../components/sections/DevelopersSection";
 
 /**
  * GhostChain public landing page.
