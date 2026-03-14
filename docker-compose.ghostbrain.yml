@@ -1,0 +1,104 @@
+# docker-compose.ghostbrain.yml
+#
+# GhostBrain Core Stack — lightweight compose for ghostbrain-core and
+# governance-event-bridge. Suitable for development and as a companion
+# to the ghostl-stack services without pulling in the full 16-service
+# hyperghost AI stack.
+#
+# Usage:
+#   docker compose -f docker-compose.ghostbrain.yml up -d
+#
+# Required env (override via .env or shell export):
+#   GHOSTCHAIN_RPC_URL           — L1 JSON-RPC endpoint
+#   GOVERNANCE_CONTRACT_ADDRESS  — on-chain governance contract address
+
+name: ghostbrain-core-stack
+
+networks:
+  ghostbrain-core-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.29.0.0/16
+
+services:
+
+  # ── GhostBrain Core ──────────────────────────────────────────────────────────
+  ghostbrain-core:
+    build:
+      context: ./services/ghostbrain-core
+      dockerfile: ../../services/ghostbrain/Dockerfile.ghostbrain
+    image: ghostbrain-core:latest
+    container_name: ghostbrain-core
+    restart: unless-stopped
+    ports:
+      - "${GHOSTBRAIN_CORE_PORT:-9100}:9100"
+    environment:
+      - NODE_ENV=production
+      - PORT=9100
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    networks:
+      - ghostbrain-core-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9100/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Governance Event Bridge ───────────────────────────────────────────────────
+  governance-event-bridge:
+    build:
+      context: ./services/governance-event-bridge
+      dockerfile: ../../services/ghostbrain/Dockerfile.ghostbrain
+    image: governance-event-bridge:latest
+    container_name: governance-event-bridge
+    restart: unless-stopped
+    ports:
+      - "${GOVERNANCE_BRIDGE_PORT:-9200}:9200"
+    environment:
+      - NODE_ENV=production
+      - PORT=9200
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - GHOSTCHAIN_RPC_URL=${GHOSTCHAIN_RPC_URL:-http://host.docker.internal:8545}
+      - GHOSTCHAIN_CHAIN_ID=${GHOSTCHAIN_CHAIN_ID:-1337}
+      - GOVERNANCE_CONTRACT_ADDRESS=${GOVERNANCE_CONTRACT_ADDRESS:-0x0000000000000000000000000000000000000000}
+      - START_BLOCK=${START_BLOCK:-0}
+      - POLL_INTERVAL_MS=${POLL_INTERVAL_MS:-12000}
+      - GHOSTBRAIN_CORE_URL=http://ghostbrain-core:9100
+    depends_on:
+      ghostbrain-core:
+        condition: service_healthy
+    networks:
+      - ghostbrain-core-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9200/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Ghost Compliance ─────────────────────────────────────────────────────────
+  ghost-compliance:
+    build:
+      context: ./services/ghost-compliance
+      dockerfile: ../../services/ghostbrain/Dockerfile.ghostbrain
+    image: ghost-compliance:latest
+    container_name: ghost-compliance
+    restart: unless-stopped
+    ports:
+      - "${GHOST_COMPLIANCE_PORT:-9250}:9250"
+    environment:
+      - NODE_ENV=production
+      - PORT=9250
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - GHOSTBRAIN_CORE_URL=http://ghostbrain-core:9100
+      - GHOSTCHAIN_RPC_URL=${GHOSTCHAIN_RPC_URL:-http://host.docker.internal:8545}
+    depends_on:
+      ghostbrain-core:
+        condition: service_healthy
+    networks:
+      - ghostbrain-core-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9250/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

@@ -1,3 +1,7 @@
+# ─── Foundry / Forge ─────────────────────────────────────────
+contracts/out/
+contracts/cache/
+
 # ─── Node / JS ────────────────────────────────────────────────
 node_modules/
 **/node_modules/

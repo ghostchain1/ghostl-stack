@@ -1,0 +1,37 @@
+{
+  "name": "ghostl-stack",
+  "version": "1.0.0",
+  "description": "GhostStack monorepo — GhostChain protocol services, contracts, and AI infrastructure",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "services/ghost-api",
+    "services/ghost-explorer",
+    "services/ghost-indexer",
+    "services/ghost-runtime",
+    "services/ghost-compliance",
+    "services/ghostbrain-core",
+    "services/ghostbrain-agents",
+    "services/ghostbrain-economy",
+    "services/ghostbrain-evolution",
+    "services/ghostbrain-memory",
+    "services/ghostbrain-network",
+    "services/ghostbrain-simulator",
+    "services/ghostcode-ai",
+    "services/governance-event-bridge"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "clean": "find . -name 'dist' -not -path '*/node_modules/*' -exec rm -rf {} + 2>/dev/null; true"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.37",
+    "typescript": "^5.5.2"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

@@ -17,6 +17,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span>GhostStack</span>
             </div>
             <ul className="nav-links">
+              <li className="nav-section">🎯 Command Center</li>
+              <li><a href="/command-center">GSCC Overview</a></li>
+              <li><a href="/command-center/ai">AI Engine Control</a></li>
+              <li><a href="/command-center/logs">Live Log Stream</a></li>
+
               <li className="nav-section">⚡ Overview</li>
               <li><a href="/">Dashboard</a></li>
               <li><a href="/command-hub">Command Hub</a></li>
@@ -44,7 +49,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <li><a href="/evolution">Evolution</a></li>
               <li><a href="/copilot">AI Copilot</a></li>
 
-              <li className="nav-section">🔐 Security</li>
+              <li className="nav-section">🔧 Autonomous Engines</li>
+              <li><a href="/aie">Infrastructure Engine</a></li>
+              <li><a href="/ase">Security Engine</a></li>
+              <li><a href="/gie">Intelligence Engine</a></li>
+              <li><a href="/governance">Governance Engine</a></li>
+              <li><a href="/interchain">Interchain Engine</a></li>
+              <li><a href="/agents">AI Agent Network</a></li>
+              <li><a href="/development">Development Engine</a></li>
+              <li><a href="/evolution-engine">Self-Evolution Engine</a></li>
+              <li><a href="/planetary">Planetary Network Engine</a></li>
+              <li><a href="/interplanetary">Interplanetary Network Engine</a></li>
+              <li><a href="/hypervisor">Hypervisor Control Layer</a></li>
+              <li><a href="/revenue">Autonomous Revenue Engine</a></li>
+
+              <li className="nav-section">📈 Growth Engines</li>
+              <li><a href="/marketing">AI Marketing</a></li>
+              <li><a href="/growth">Viral Growth</a></li>
+              <li><a href="/adoption">Adoption</a></li>
+              <li><a href="/expansion">Expansion</a></li>
+              <li><a href="/aee">Economy Engine</a></li>
+
+              <li className="nav-section">�🔐 Security</li>
               <li><a href="/security">Security</a></li>
               <li><a href="/compliance">Compliance</a></li>
 

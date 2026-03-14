@@ -1,0 +1,17 @@
+{
+  "id": "exp-liquidity-strategy",
+  "name": "Liquidity Provisioning Strategy",
+  "description": "Compare single-sided vs dual-sided liquidity provisioning on GhostSwap",
+  "control": {
+    "strategy": "dual_sided",
+    "rebalanceThreshold": 0.1,
+    "rebalanceIntervalSec": 3600
+  },
+  "variant": {
+    "strategy": "concentrated",
+    "priceRangePercent": 10,
+    "autoRebalance": true,
+    "rebalanceThreshold": 0.05,
+    "rebalanceIntervalSec": 900
+  }
+}

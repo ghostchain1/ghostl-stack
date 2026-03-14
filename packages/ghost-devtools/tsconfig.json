@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target":            "ES2022",
+    "module":            "commonjs",
+    "lib":               ["ES2022"],
+    "types":             ["node"],
+    "baseUrl":           ".",
+    "paths": {
+      "@ghoststack/ghost-sdk": ["../ghost-sdk/src"]
+    },
+    "outDir":            "./dist",
+    "declaration":       true,
+    "strict":            true,
+    "esModuleInterop":   true,
+    "skipLibCheck":      true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

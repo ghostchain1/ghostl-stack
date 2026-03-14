@@ -1,0 +1,27 @@
+{
+  "name": "@ghoststack/contracts",
+  "version": "1.0.0",
+  "description": "GhostChain smart contracts — GRC20/721/1155 standards, governance, and protocol contracts",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "coverage": "hardhat coverage",
+    "deploy:devnet": "hardhat run scripts/deploy.ts --network ghostdevnet",
+    "deploy:testnet": "hardhat run scripts/deploy.ts --network ghosttestnet",
+    "deploy:mainnet": "hardhat run scripts/deploy.ts --network ghostmainnet",
+    "clean": "hardhat clean",
+    "lint": "solhint 'contracts/**/*.sol'",
+    "format": "prettier --write 'contracts/**/*.sol' 'scripts/**/*.ts'"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@types/node": "^20.19.37",
+    "hardhat": "^2.22.5",
+    "solhint": "^5.0.3",
+    "typescript": "^5.5.2"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  }
+}
