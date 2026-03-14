@@ -1,0 +1,62 @@
+{
+  "generatedAt": "2026-03-13T05:28:22.454Z",
+  "code": 1,
+  "findings": [
+    {
+      "package": "@noble/curves"
+    },
+    {
+      "package": "@noble/hashes"
+    },
+    {
+      "package": "@noble/secp256k1",
+      "current": "2.3.0",
+      "wanted": "2.3.0",
+      "latest": "3.0.0",
+      "location": "/home/ghost/ghostl-stack/node_modules/@noble/secp256k1"
+    },
+    {
+      "package": "@scure/base"
+    },
+    {
+      "package": "@scure/bip32",
+      "current": "1.7.0",
+      "wanted": "1.7.0",
+      "latest": "2.0.1",
+      "location": "/home/ghost/ghostl-stack/node_modules/@scure/bip32"
+    },
+    {
+      "package": "@scure/bip39",
+      "current": "1.6.0",
+      "wanted": "1.6.0",
+      "latest": "2.0.1",
+      "location": "/home/ghost/ghostl-stack/node_modules/@scure/bip39"
+    },
+    {
+      "package": "@types/node"
+    },
+    {
+      "package": "bullmq",
+      "current": "5.70.4",
+      "wanted": "5.70.4",
+      "latest": "5.71.0",
+      "location": "/home/ghost/ghostl-stack/node_modules/bullmq"
+    },
+    {
+      "package": "hardhat"
+    },
+    {
+      "package": "undici",
+      "current": "7.22.0",
+      "wanted": "7.24.0",
+      "latest": "7.24.0",
+      "location": "/home/ghost/ghostl-stack/node_modules/undici"
+    },
+    {
+      "package": "vitest"
+    },
+    {
+      "package": "zod"
+    }
+  ]
+}

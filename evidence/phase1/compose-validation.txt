@@ -1,0 +1,4 @@
+# compose validation status
+PASS docker-compose.dev.yml
+PASS apps/docker-compose.dev.yml
+PASS tools/ghostcontrol/infra/compose/docker-compose.yml

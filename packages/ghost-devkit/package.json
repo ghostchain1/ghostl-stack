@@ -1,0 +1,65 @@
+{
+  "name": "@ghostchain/devkit",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "GhostStack Developer Kit — sovereign developer platform for GhostChain / GhostL2 / GhostL3",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "ghost": "./bin/ghost.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./cli": {
+      "types": "./dist/cli/GhostCLI.d.ts",
+      "default": "./dist/cli/GhostCLI.js"
+    },
+    "./deployment": {
+      "types": "./dist/deployment/GhostDeploymentEngine.d.ts",
+      "default": "./dist/deployment/GhostDeploymentEngine.js"
+    },
+    "./foundry": {
+      "types": "./dist/foundry/GhostFoundryAdapter.d.ts",
+      "default": "./dist/foundry/GhostFoundryAdapter.js"
+    },
+    "./validator": {
+      "types": "./dist/validator/GhostValidatorManager.d.ts",
+      "default": "./dist/validator/GhostValidatorManager.js"
+    },
+    "./auditing": {
+      "types": "./dist/auditing/GhostAIContractAuditor.d.ts",
+      "default": "./dist/auditing/GhostAIContractAuditor.js"
+    },
+    "./monitoring": {
+      "types": "./dist/monitoring/GhostNetworkMonitor.d.ts",
+      "default": "./dist/monitoring/GhostNetworkMonitor.js"
+    },
+    "./scaffolding": {
+      "types": "./dist/scaffolding/GhostProjectGenerator.d.ts",
+      "default": "./dist/scaffolding/GhostProjectGenerator.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/Logger.d.ts",
+      "default": "./dist/utils/Logger.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:watch": "tsc -p tsconfig.json --watch",
+    "lint": "echo 'TODO: add lint'"
+  },
+  "dependencies": {
+    "@ghostchain/sdk": "*"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

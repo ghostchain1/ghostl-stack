@@ -1,0 +1,14 @@
+{
+  "name": "@ghostchain-gsx/gcm-node",
+  "version": "0.1.0",
+  "description": "GCM Central Bank Node — connects to the GhostChain Central Bank Network",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev":   "node --watch src/index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

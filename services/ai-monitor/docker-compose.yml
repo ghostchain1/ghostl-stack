@@ -1,0 +1,204 @@
+# stack-group: observability
+# role: ai-monitor, ai-monitor-l1, ai-monitor-l3
+# ports: 7575:7575, 7576:7576, 7577:7577
+# volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
+services:
+  ai-monitor:
+    container_name: ghost_ai-monitor
+    image: ghostl/ai-monitor:local
+    profiles:
+      - legacy-ai-monitor
+    build:
+      context: .
+    env_file:
+    - .env
+    entrypoint:
+    - /bin/bash
+    - /entrypoint.sh
+    environment:
+    - PORT=7575
+    - HEALTHCHECK_URL=http://127.0.0.1:7575/health
+    - RPC_L2=${RPC_L2}
+    - RPC_URL=${RPC_L2}
+    - RPC_L1=${RPC_L1}
+    - OP_NODE_RPC_URL=${OP_NODE_RPC_URL}
+    - OP_BATCHER_METRICS_URL=${OP_BATCHER_METRICS_URL}
+    - OP_PROPOSER_METRICS_URL=${OP_PROPOSER_METRICS_URL}
+    - POLICY_REGISTRY_ADDRESS=${POLICY_REGISTRY_ADDRESS}
+    - POLICY_REGISTRY_RPC=${POLICY_REGISTRY_RPC}
+    - CHAIN_POLICY_REGISTRY_ADDRESS=${CHAIN_POLICY_REGISTRY_ADDRESS}
+    - CHAIN_POLICY_REGISTRY_RPC=${CHAIN_POLICY_REGISTRY_RPC}
+    - CHAIN_POLICY_REQUIRED=${CHAIN_POLICY_REQUIRED:-0}
+    - CHAIN_POLICY_CACHE_MS=${CHAIN_POLICY_CACHE_MS:-15000}
+    - POLICY_ROLE=${POLICY_ROLE}
+    - POLICY_ACTION_THROTTLE=${POLICY_ACTION_THROTTLE}
+    - POLICY_ACTION_PAUSE=${POLICY_ACTION_PAUSE}
+    - POLICY_APPROVALS_PROVIDED=${POLICY_APPROVALS_PROVIDED:-0}
+    - POLICY_HAS_EVIDENCE=${POLICY_HAS_EVIDENCE:-0}
+    - POLICY_REQUIRED=${POLICY_REQUIRED:-1}
+    - POLICY_CACHE_MS=${POLICY_CACHE_MS:-10000}
+    - GUARD_URL=${GUARD_URL}
+    - ADMIN_TOKEN=${BRIDGE_ADMIN_TOKEN}
+    - OBSERVE_ONLY=1
+    - SIMULATION_ENABLED=${AI_MONITOR_SIMULATION_ENABLED:-0}
+    - ACTION_EVIDENCE_ENABLED=${ACTION_EVIDENCE_ENABLED:-1}
+    - ACTION_EVIDENCE_OUTPUT_DIR=${ACTION_EVIDENCE_OUTPUT_DIR:-/data/evidence}
+    - ACTION_EVIDENCE_KIND=${ACTION_EVIDENCE_KIND:-ghost.ai.monitor.action}
+    - TARGET_LAYER=${AI_MONITOR_LAYER_L2:-L2}
+    - L1_HEAD_LAG_THRESHOLD_SEC=${L1_HEAD_LAG_THRESHOLD_SEC:-120}
+    - BATCHER_IDLE_THRESHOLD_SEC=${BATCHER_IDLE_THRESHOLD_SEC:-900}
+    - PROPOSER_IDLE_THRESHOLD_SEC=${PROPOSER_IDLE_THRESHOLD_SEC:-900}
+    ports:
+    - 7575:7575
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4g
+        reservations:
+          cpus: '0.5'
+          memory: 512m
+    volumes:
+    - ./data:/data
+    - ./entrypoint.sh:/entrypoint.sh:ro
+    - ./healthcheck.sh:/healthcheck.sh:ro
+    networks:
+    - ghost_net
+    - opstack_default
+  ai-monitor-l1:
+    container_name: ghost_ai-monitor-l1
+    image: ghostl/ai-monitor:local
+    build:
+      context: .
+    env_file:
+    - .env
+    entrypoint:
+    - /bin/bash
+    - /entrypoint.sh
+    environment:
+    - PORT=7576
+    - HEALTHCHECK_URL=http://127.0.0.1:7576/health
+    - RPC_L2=${RPC_L2}
+    - RPC_URL=${RPC_L1}
+    - POLICY_REGISTRY_ADDRESS=${POLICY_REGISTRY_ADDRESS}
+    - POLICY_REGISTRY_RPC=${POLICY_REGISTRY_RPC}
+    - CHAIN_POLICY_REGISTRY_ADDRESS=${CHAIN_POLICY_REGISTRY_ADDRESS}
+    - CHAIN_POLICY_REGISTRY_RPC=${CHAIN_POLICY_REGISTRY_RPC}
+    - CHAIN_POLICY_REQUIRED=${CHAIN_POLICY_REQUIRED:-0}
+    - CHAIN_POLICY_CACHE_MS=${CHAIN_POLICY_CACHE_MS:-15000}
+    - GUARD_URL=${GUARD_URL}
+    - ADMIN_TOKEN=${BRIDGE_ADMIN_TOKEN}
+    - OBSERVE_ONLY=1
+    - SIMULATION_ENABLED=${AI_MONITOR_SIMULATION_ENABLED:-0}
+    - ACTION_EVIDENCE_ENABLED=${ACTION_EVIDENCE_ENABLED:-1}
+    - ACTION_EVIDENCE_OUTPUT_DIR=${ACTION_EVIDENCE_OUTPUT_DIR:-/data/evidence}
+    - ACTION_EVIDENCE_KIND=${ACTION_EVIDENCE_KIND:-ghost.ai.monitor.action}
+    - TARGET_LAYER=${AI_MONITOR_LAYER_L1:-L1}
+    ports:
+    - 7576:7576
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4g
+        reservations:
+          cpus: '0.5'
+          memory: 512m
+    volumes:
+    - ./data:/data
+    - ./entrypoint.sh:/entrypoint.sh:ro
+    - ./healthcheck.sh:/healthcheck.sh:ro
+    networks:
+    - ghost_net
+    - opstack_default
+  ai-monitor-l3:
+    container_name: ghost_ai-monitor-l3
+    image: ghostl/ai-monitor:local
+    build:
+      context: .
+    env_file:
+    - .env
+    entrypoint:
+    - /bin/bash
+    - /entrypoint.sh
+    environment:
+    - PORT=7577
+    - HEALTHCHECK_URL=http://127.0.0.1:7577/health
+    - RPC_L2=${RPC_L2}
+    - RPC_URL=${RPC_L3}
+    - RPC_L1=${RPC_L2}
+    - POLICY_REGISTRY_ADDRESS=${POLICY_REGISTRY_ADDRESS}
+    - POLICY_REGISTRY_RPC=${POLICY_REGISTRY_RPC}
+    - CHAIN_POLICY_REGISTRY_ADDRESS=${CHAIN_POLICY_REGISTRY_ADDRESS}
+    - CHAIN_POLICY_REGISTRY_RPC=${CHAIN_POLICY_REGISTRY_RPC}
+    - CHAIN_POLICY_REQUIRED=${CHAIN_POLICY_REQUIRED:-0}
+    - CHAIN_POLICY_CACHE_MS=${CHAIN_POLICY_CACHE_MS:-15000}
+    - OP_NODE_RPC_URL=${OP_NODE_RPC_URL_L3:-http://l3-op-node:19546}
+    - OP_BATCHER_METRICS_URL=${OP_BATCHER_METRICS_URL_L3:-http://l3-op-batcher:8301/metrics}
+    - OP_PROPOSER_METRICS_URL=${OP_PROPOSER_METRICS_URL_L3:-http://l3-op-proposer:8302/metrics}
+    - GUARD_URL=${GUARD_URL}
+    - ADMIN_TOKEN=${BRIDGE_ADMIN_TOKEN}
+    - OBSERVE_ONLY=1
+    - SIMULATION_ENABLED=${AI_MONITOR_SIMULATION_ENABLED:-0}
+    - ACTION_EVIDENCE_ENABLED=${ACTION_EVIDENCE_ENABLED:-1}
+    - ACTION_EVIDENCE_OUTPUT_DIR=${ACTION_EVIDENCE_OUTPUT_DIR:-/data/evidence}
+    - ACTION_EVIDENCE_KIND=${ACTION_EVIDENCE_KIND:-ghost.ai.monitor.action}
+    - TARGET_LAYER=${AI_MONITOR_LAYER_L3:-L3}
+    ports:
+    - 7577:7577
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4g
+        reservations:
+          cpus: '0.5'
+          memory: 512m
+    volumes:
+    - ./data:/data
+    - ./entrypoint.sh:/entrypoint.sh:ro
+    - ./healthcheck.sh:/healthcheck.sh:ro
+    networks:
+    - ghost_net
+    - opstack_default
+networks:
+  ghost_net:
+    external: true
+  opstack_default:
+    external: true

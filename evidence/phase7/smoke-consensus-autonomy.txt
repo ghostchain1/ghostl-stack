@@ -1,0 +1,35 @@
+[2026-02-21T19:22:31Z] Smoke check: syntax
+[2026-02-21T19:22:31Z] Smoke check: consensus-telemetry-service unit tests
+
+> consensus-telemetry-service@0.1.0 test
+> CONSENSUS_TELEMETRY_NO_SERVER=1 node --test src/index.test.js
+
+TAP version 13
+# Subtest: computeOracleIncidents flags stale and lag
+ok 1 - computeOracleIncidents flags stale and lag
+  ---
+  duration_ms: 1.194812
+  type: 'test'
+  ...
+# Subtest: computeOracleIncidents flags Phase5 oracle wiring issues
+ok 2 - computeOracleIncidents flags Phase5 oracle wiring issues
+  ---
+  duration_ms: 0.279247
+  type: 'test'
+  ...
+# Subtest: buildBridgeKey is deterministic
+ok 3 - buildBridgeKey is deterministic
+  ---
+  duration_ms: 5.959222
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 482.021868
+[2026-02-21T19:22:32Z] Smoke check: OK

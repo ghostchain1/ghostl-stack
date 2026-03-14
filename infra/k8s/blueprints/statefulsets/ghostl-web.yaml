@@ -1,0 +1,93 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "ghostl-web",
+    "labels": {
+      "app": "ghostl-web",
+      "role": "ui"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.ui.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "ghostl-web",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "ghostl-web"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "ghostl-web",
+          "role": "ui"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "ghostl-web",
+            "image": "",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "NODE_ENV",
+                "value": "development"
+              },
+              {
+                "name": "PORT",
+                "value": "3200"
+              },
+              {
+                "name": "NEXT_PUBLIC_API_URL",
+                "value": "http://localhost:4000"
+              },
+              {
+                "name": "API_INTERNAL_URL",
+                "value": "http://ghostl-api:4000"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 3200,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "./",
+                "mountPath": "/app"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

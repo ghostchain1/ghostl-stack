@@ -1,0 +1,208 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Badge, Card, Button } from '@ghostl/ui';
+import { useSession } from '../../../src/modules/identity-access/session';
+import { resolveApiBase } from '../../../src/lib/runtime';
+import { jsonWithCsrf } from '../../../src/lib/csrf';
+import { apiRequest, type ApiError, formatApiError } from '../../../src/lib/api';
+import { DataFetchErrorCard } from '../../../src/components/DataFetchErrorCard';
+
+const API_URL = resolveApiBase();
+
+type Alert = {
+  id: string;
+  severity: 'info' | 'warning' | 'critical';
+  source: string;
+  state: 'firing' | 'resolved';
+  firedAt: string;
+  message?: string;
+};
+
+type Policy = { mode?: number; threshold?: number; delaySeconds?: number };
+
+const severityTone: Record<Alert['severity'], 'default' | 'warning' | 'critical'> = {
+  info: 'default',
+  warning: 'warning',
+  critical: 'critical'
+};
+
+export default function AlertsPage() {
+  const session = useSession();
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [policy, setPolicy] = useState<Policy | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<ApiError | null>(null);
+  const [loadErrors, setLoadErrors] = useState<Array<{ title: string; error: ApiError }>>([]);
+  const [modeInput, setModeInput] = useState(0);
+  const [thresholdInput, setThresholdInput] = useState<number | ''>('');
+  const [delayInput, setDelayInput] = useState<number | ''>('');
+  const policyModeLabel =
+    policy?.mode === 0 ? 'allow' : policy?.mode === 1 ? 'delay' : policy?.mode === 2 ? 'pause' : 'unknown';
+  const canWriteGuard = session.user?.role === 'ADMIN';
+
+  const load = async () => {
+    const res = await apiRequest<Alert[]>('/observability/alerts', { baseUrl: API_URL });
+    if (!res.ok) {
+      setLoadErrors((prev) => [{ title: 'Observability alerts', error: res.error }, ...prev]);
+      return;
+    }
+    setAlerts(res.data);
+  };
+
+  const loadPolicy = async () => {
+    const res = await apiRequest<Policy>('/observability/guard/policy', { baseUrl: API_URL });
+    if (!res.ok) {
+      setLoadErrors((prev) => [{ title: 'Guard policy', error: res.error }, ...prev]);
+      setPolicy(null);
+      return;
+    }
+    setPolicy(res.data);
+  };
+
+  useEffect(() => {
+    setLoadErrors([]);
+    load();
+    loadPolicy();
+  }, []);
+
+  const updatePolicy = async (path: 'mode' | 'threshold' | 'delay', body: Record<string, unknown>) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await apiRequest(`/observability/guard/policy/${path}`, {
+        baseUrl: API_URL,
+        init: {
+          method: 'POST',
+          headers: jsonWithCsrf(),
+          body: JSON.stringify(body)
+        }
+      });
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      await loadPolicy();
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Failed to update policy';
+      setError({ message, endpoint: `${API_URL}/observability/guard/policy/${path}`, method: 'POST' });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="content">
+      <div className="card-grid">
+        {loadErrors.map((entry, idx) => (
+          <DataFetchErrorCard key={`${entry.title}-${idx}`} title={entry.title} error={entry.error} />
+        ))}
+        <Card title="Active alerts" subtitle={`${alerts.length} firing`}>
+          <div className="stack">
+            {alerts.length === 0 && <span className="muted">No active alerts</span>}
+            {alerts.map((alert) => (
+              <div key={alert.id} className="spread">
+                <div>
+                  <div>{alert.message || alert.id}</div>
+                  <div className="muted">{alert.source}</div>
+                </div>
+                <Badge tone={severityTone[alert.severity]}>{alert.severity}</Badge>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card title="Guard policy" subtitle="Admin session required for writes">
+          <div className="stack">
+            <div className="stack">
+              <div className="spread">
+                <span className="muted">Mode</span>
+                <span>{policyModeLabel}</span>
+              </div>
+              <div className="inline-form">
+                <select
+                  className="select"
+                  value={modeInput}
+                  onChange={(e) => setModeInput(Number(e.target.value))}
+                  style={{ minWidth: 160 }}
+                  disabled={!canWriteGuard}
+                >
+                  <option value={0}>Allow</option>
+                  <option value={1}>Delay</option>
+                  <option value={2}>Pause</option>
+                </select>
+                <Button
+                  variant="secondary"
+                  disabled={busy || !canWriteGuard}
+                  onClick={() => updatePolicy('mode', { mode: modeInput })}
+                >
+                  Apply
+                </Button>
+                <Button variant="secondary" disabled={busy} onClick={() => loadPolicy()}>
+                  Refresh
+                </Button>
+              </div>
+            </div>
+            {error && (
+              <span className="muted" style={{ color: '#f87171' }}>
+                {`${formatApiError(error).method} ${formatApiError(error).endpoint} · ${formatApiError(error).status} · ${formatApiError(error).hint}`}
+              </span>
+            )}
+            <div className="stack">
+              <div className="spread">
+                <span className="muted">Threshold</span>
+                <span>{policy?.threshold ?? 'n/a'}</span>
+              </div>
+              <div className="inline-form">
+                <input
+                  className="input"
+                  type="number"
+                  placeholder="Set threshold"
+                  value={thresholdInput}
+                  onChange={(e) => setThresholdInput(e.target.value ? Number(e.target.value) : '')}
+                  disabled={!canWriteGuard}
+                />
+                <Button
+                  variant="secondary"
+                  disabled={busy || !canWriteGuard || thresholdInput === '' || Number.isNaN(thresholdInput as number)}
+                  onClick={() => updatePolicy('threshold', { threshold: thresholdInput })}
+                >
+                  Apply
+                </Button>
+                <Button variant="secondary" disabled={busy} onClick={() => loadPolicy()}>
+                  Refresh
+                </Button>
+              </div>
+            </div>
+            <div className="stack">
+              <div className="spread">
+                <span className="muted">Delay seconds</span>
+                <span>{policy?.delaySeconds ?? 'n/a'}</span>
+              </div>
+              <div className="inline-form">
+                <input
+                  className="input"
+                  type="number"
+                  placeholder="Set delay"
+                  value={delayInput}
+                  onChange={(e) => setDelayInput(e.target.value ? Number(e.target.value) : '')}
+                  disabled={!canWriteGuard}
+                />
+                <Button
+                  variant="secondary"
+                  disabled={busy || !canWriteGuard || delayInput === '' || Number.isNaN(delayInput as number)}
+                  onClick={() => updatePolicy('delay', { seconds: delayInput })}
+                >
+                  Apply
+                </Button>
+                <Button variant="secondary" disabled={busy} onClick={() => loadPolicy()}>
+                  Refresh
+                </Button>
+              </div>
+            </div>
+            {busy && <span className="muted">Updating policy...</span>}
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}

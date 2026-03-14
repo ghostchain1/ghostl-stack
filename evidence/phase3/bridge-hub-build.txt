@@ -1,0 +1,4 @@
+
+> ghostchain-bridge-hub@ build /home/ghost/ghostl-stack/services/ghostchain-bridge-hub
+> tsc --outDir dist
+

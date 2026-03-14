@@ -1,0 +1,27 @@
+{
+  "name": "ghost",
+  "version": "6.16.0",
+  "description": "GhostChain SDK — importable as `import ghost from 'ghost'`",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:watch": "tsc -p tsconfig.json --watch"
+  },
+  "dependencies": {
+    "@ghostchain/sdk": "file:../ghost-sdk"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

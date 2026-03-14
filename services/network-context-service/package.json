@@ -1,0 +1,17 @@
+{
+  "name": "network-context-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "build": "node --check src/index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "ghost": "file:../../packages/ghost"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

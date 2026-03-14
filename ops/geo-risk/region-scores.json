@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "regions": [
+    { "region": "us-east", "regulatoryRisk": 3, "sanctionsRisk": 2, "sovereigntyRisk": 2, "politicalStability": 8, "provider": "aws" },
+    { "region": "us-west", "regulatoryRisk": 3, "sanctionsRisk": 2, "sovereigntyRisk": 2, "politicalStability": 8, "provider": "gcp" },
+    { "region": "eu-west", "regulatoryRisk": 4, "sanctionsRisk": 2, "sovereigntyRisk": 3, "politicalStability": 7, "provider": "aws" },
+    { "region": "eu-central", "regulatoryRisk": 4, "sanctionsRisk": 2, "sovereigntyRisk": 3, "politicalStability": 7, "provider": "azure" },
+    { "region": "ap-southeast", "regulatoryRisk": 5, "sanctionsRisk": 3, "sovereigntyRisk": 4, "politicalStability": 6, "provider": "aws" },
+    { "region": "ap-northeast", "regulatoryRisk": 4, "sanctionsRisk": 3, "sovereigntyRisk": 3, "politicalStability": 7, "provider": "gcp" },
+    { "region": "sa-east", "regulatoryRisk": 6, "sanctionsRisk": 4, "sovereigntyRisk": 5, "politicalStability": 5, "provider": "aws" }
+  ]
+}

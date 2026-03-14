@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "validatedAt": "2026-03-08T04:14:51Z",
+  "law": {
+    "l3_to_l2_only": true,
+    "l2_to_l1_only": true,
+    "no_l3_to_l1_bypass": true,
+    "external_settlement_via_l1_only": true
+  },
+  "rpc": {
+    "l1": "http://localhost:18545",
+    "l2": "http://localhost:29547",
+    "l3": "http://localhost:39545",
+    "l1HostPort": "localhost:18545",
+    "l2HostPort": "localhost:29547",
+    "l3HostPort": "localhost:39545",
+    "l3ParentL2": "http://localhost:29547",
+    "l3ParentL2HostPort": "localhost:29547",
+    "chainIds": {
+      "l1": "0xd59fe5",
+      "l2": "0x385",
+      "l3": "0x387"
+    }
+  }
+}

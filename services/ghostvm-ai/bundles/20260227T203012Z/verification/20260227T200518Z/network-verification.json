@@ -1,0 +1,39 @@
+{
+  "checks": [
+    {
+      "details": "ok",
+      "name": "routing_law_rules",
+      "ok": true
+    },
+    {
+      "details": "ok",
+      "name": "no_subnet_overlap",
+      "ok": true
+    },
+    {
+      "details": "",
+      "name": "l3_to_l2_reachability_probe",
+      "ok": false
+    },
+    {
+      "details": "",
+      "name": "l3_to_l1_direct_probe_expected_block",
+      "ok": true
+    },
+    {
+      "details": "",
+      "name": "l3_to_external_probe_expected_block",
+      "ok": false
+    },
+    {
+      "details": "network_count=17",
+      "name": "docker_state_observed",
+      "ok": true
+    }
+  ],
+  "context": "l3",
+  "ok": false,
+  "probe_source": "ghostl-testnet-op-gate-1",
+  "probe_source_strategy": "network",
+  "timestamp": "20260227T200518Z"
+}

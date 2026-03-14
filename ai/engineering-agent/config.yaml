@@ -1,0 +1,82 @@
+##############################################################################
+# GhostStack Autonomous AI Engineering Agent — Configuration
+# Chain:   GhostChain L1 (14000101) / GhostL2 (901) / GhostL3 (903)
+# Gas:     GST
+##############################################################################
+
+# ----- Repository --------------------------------------------------------- #
+repo_path: /home/ghost/ghostl-stack
+
+# Directories excluded from scanning (relative to repo_path)
+scan_exclude:
+  - node_modules
+  - dist
+  - out
+  - .git
+  - contracts/lib
+  - contracts/out
+  - contracts/cache
+  - contracts/cache-codex
+  - contracts/out-codex
+  - contracts/artifacts
+  - contracts/typechain-types
+  - __pycache__
+  - .tmp
+  - logs
+
+# ----- Loop timing -------------------------------------------------------- #
+scan_interval_s:    300   # full repo scan cycle
+analyze_interval_s: 300   # static analysis cycle (aligned with scan)
+report_interval_s:  900   # health report push to GhostBrain
+
+# ----- Repair mode -------------------------------------------------------- #
+# "dry_run"   — generate patches but never apply them
+# "advisory"  — generate patches and submit to signing relay, no git commit
+# "automatic" — apply patches to disk + git commit (tests must pass first)
+repair_mode: advisory
+
+# Maximum lines changed per auto-patch (prevents runaway rewrites)
+max_patch_lines: 200
+
+# ----- Test gate ---------------------------------------------------------- #
+# If repair_mode=automatic, ALL of these commands must exit 0 before commit.
+test_commands:
+  - ["forge", "build", "--skip", "test"]
+  - ["npm", "run", "lint", "--if-present"]
+  - ["npm", "run", "brand:full", "--if-present"]
+
+# ----- Security checks ---------------------------------------------------- #
+security_checks: true
+
+# Static analysis tools.  Each is optional — missing binaries are skipped.
+static_analysis:
+  forge_lint:    true
+  slither:       false   # enable after slither is installed
+  shellcheck:    true
+  py_compile:    true
+
+# ----- Routing law -------------------------------------------------------- #
+# These chain IDs define the ONLY valid settlement topology.
+# Any code that connects L3→L1 directly is flagged CRITICAL.
+chain_ids:
+  l1: 14000101
+  l2: 901
+  l3: 903
+
+# Known external chain IDs — any reference to these in L2/L3 code is a violation.
+forbidden_external_chain_ids: [1, 42161, 8453, 10, 137]
+
+# ----- Services ----------------------------------------------------------- #
+ghostbrain_url:    "http://localhost:7900"
+gais_url:          "http://localhost:9100"
+signing_relay_url: "http://localhost:7910"
+cosmos_lcd_url:    "http://localhost:1317"
+
+# ----- Git ---------------------------------------------------------------- #
+git_commit_enabled: false   # set true only when repair_mode=automatic
+git_author_name:    "GhostStack AI Agent"
+git_author_email:   "ai-agent@ghostchain.local"
+
+# ----- Logging ------------------------------------------------------------ #
+log_level: INFO
+log_file:  /home/ghost/ghostl-stack/logs/ai-engineering-agent.log

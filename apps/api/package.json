@@ -1,0 +1,51 @@
+{
+  "name": "@ghostl/api",
+  "version": "0.0.1",
+  "private": true,
+  "main": "dist/server.js",
+  "types": "dist/server.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start:prod": "node scripts/start-prod.cjs",
+    "dev": "ts-node src/server.ts",
+    "dev:inspect": "NODE_OPTIONS=--inspect=0.0.0.0:9229 ts-node src/server.ts",
+    "lint": "eslint src --ext .ts",
+    "test": "tsx --test src/lib/rbac.test.ts"
+  },
+  "dependencies": {
+    "@ghostl/contract-schemas": "0.0.1",
+    "@ghostl/auth": "0.0.1",
+    "@ghostl/ghostwallet": "0.0.1",
+    "@ghostl/routing-guard": "0.0.1",
+    "@ghostl/routing-law": "0.0.1",
+    "@types/better-sqlite3": "^7.6.13",
+    "argon2": "^0.44.0",
+    "better-sqlite3": "^12.6.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "ghost": "0.0.1",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^8.0.1",
+    "qs": "6.15.0",
+    "session-file-store": "^1.5.0",
+    "ws": "^8.19.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/express-session": "^1.17.7",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^25.3.5",
+    "@types/nodemailer": "^7.0.11",
+    "@types/session-file-store": "^1.2.5",
+    "@types/ws": "^8.5.12",
+    "ts-node": "^10.9.2"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

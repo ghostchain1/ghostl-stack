@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "mode": "AUTONOMOUS",
+  "requirements": {
+    "requireGasToken": true,
+    "requireRecursiveProof": true,
+    "requireRecursiveProofOnchain": true,
+    "requireCrossChainAnchors": true,
+    "requireQuorum": true,
+    "requirePolicyHealthy": true,
+    "requireZkmlProof": true
+  },
+  "maxSeverity": "WARN",
+  "onchainEventRequired": true
+}

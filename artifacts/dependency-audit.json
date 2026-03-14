@@ -1,0 +1,222 @@
+{
+  "generatedAt": "2026-03-13T05:28:22.454Z",
+  "code": 1,
+  "findings": [
+    {
+      "package": "@ethersproject/abi",
+      "severity": "low",
+      "advisoryIds": [],
+      "advisories": []
+    },
+    {
+      "package": "@ethersproject/abstract-provider",
+      "severity": "low",
+      "advisoryIds": [],
+      "advisories": []
+    },
+    {
+      "package": "@ethersproject/abstract-signer",
+      "severity": "low",
+      "advisoryIds": [],
+      "advisories": []
+    },
+    {
+      "package": "@ethersproject/hash",
+      "severity": "low",
+      "advisoryIds": [],
+      "advisories": []
+    },
+    {
+      "package": "@ethersproject/signing-key",
+      "severity": "low",
+      "advisoryIds": [],
+      "advisories": []
+    },
+    {
+      "package": "@ethersproject/transactions",
+      "severity": "low",
+      "advisoryIds": [],
+      "advisories": []
+    },
+    {
+      "package": "@vitest/mocker",
+      "severity": "moderate",
+      "advisoryIds": [],
+      "advisories": []
+    },
+    {
+      "package": "elliptic",
+      "severity": "low",
+      "advisoryIds": [
+        "GHSA-848J-6MX2-7J84"
+      ],
+      "advisories": [
+        {
+          "advisoryId": "GHSA-848J-6MX2-7J84",
+          "url": "https://github.com/advisories/GHSA-848j-6mx2-7j84",
+          "title": "Elliptic Uses a Cryptographic Primitive with a Risky Implementation"
+        }
+      ]
+    },
+    {
+      "package": "esbuild",
+      "severity": "moderate",
+      "advisoryIds": [
+        "GHSA-67MH-4WV8-2F99"
+      ],
+      "advisories": [
+        {
+          "advisoryId": "GHSA-67MH-4WV8-2F99",
+          "url": "https://github.com/advisories/GHSA-67mh-4wv8-2f99",
+          "title": "esbuild enables any website to send any requests to the development server and read the response"
+        }
+      ]
+    },
+    {
+      "package": "ghost",
+      "severity": "critical",
+      "advisoryIds": [
+        "GHSA-7V28-G2PQ-GGG8",
+        "GHSA-FVC6-QJP7-M4G4",
+        "GHSA-Q4H8-7QFF-GH6C",
+        "GHSA-WFRJ-QQC2-83CM",
+        "GHSA-R97Q-GHCH-82J9",
+        "GHSA-9C9V-W225-V5RG",
+        "GHSA-WF7X-FH6W-34R6",
+        "GHSA-FH38-9FGR-454W",
+        "GHSA-FFHQ-G856-9F2P",
+        "GHSA-99VC-XW8J-PHJM"
+      ],
+      "advisories": [
+        {
+          "advisoryId": "GHSA-7V28-G2PQ-GGG8",
+          "url": "https://github.com/advisories/GHSA-7v28-g2pq-ggg8",
+          "title": "Ghost vulnerable to remote code execution in locale setting change"
+        },
+        {
+          "advisoryId": "GHSA-FVC6-QJP7-M4G4",
+          "url": "https://github.com/advisories/GHSA-fvc6-qjp7-m4g4",
+          "title": "Arbitrary file upload in Ghost"
+        },
+        {
+          "advisoryId": "GHSA-Q4H8-7QFF-GH6C",
+          "url": "https://github.com/advisories/GHSA-q4h8-7qff-gh6c",
+          "title": "Server-side request forgery in Ghost CMS"
+        },
+        {
+          "advisoryId": "GHSA-WFRJ-QQC2-83CM",
+          "url": "https://github.com/advisories/GHSA-wfrj-qqc2-83cm",
+          "title": "Remote command injection when using sendmail email transport"
+        },
+        {
+          "advisoryId": "GHSA-R97Q-GHCH-82J9",
+          "url": "https://github.com/advisories/GHSA-r97q-ghch-82j9",
+          "title": "Ghost vulnerable to information disclosure of private API fields"
+        },
+        {
+          "advisoryId": "GHSA-9C9V-W225-V5RG",
+          "url": "https://github.com/advisories/GHSA-9c9v-w225-v5rg",
+          "title": "Ghost vulnerable to arbitrary file read via symlinks in content import"
+        },
+        {
+          "advisoryId": "GHSA-WF7X-FH6W-34R6",
+          "url": "https://github.com/advisories/GHSA-wf7x-fh6w-34r6",
+          "title": "Path Traversal in Ghost"
+        },
+        {
+          "advisoryId": "GHSA-FH38-9FGR-454W",
+          "url": "https://github.com/advisories/GHSA-fh38-9fgr-454w",
+          "title": "Cross-site Scripting in Ghost"
+        },
+        {
+          "advisoryId": "GHSA-FFHQ-G856-9F2P",
+          "url": "https://github.com/advisories/GHSA-ffhq-g856-9f2p",
+          "title": "Arbitrary file upload in Ghost"
+        },
+        {
+          "advisoryId": "GHSA-99VC-XW8J-PHJM",
+          "url": "https://github.com/advisories/GHSA-99vc-xw8j-phjm",
+          "title": "Ghost has possible Cross-site Scripting issue"
+        }
+      ]
+    },
+    {
+      "package": "hardhat",
+      "severity": "high",
+      "advisoryIds": [],
+      "advisories": []
+    },
+    {
+      "package": "mocha",
+      "severity": "high",
+      "advisoryIds": [],
+      "advisories": []
+    },
+    {
+      "package": "serialize-javascript",
+      "severity": "high",
+      "advisoryIds": [
+        "GHSA-5C6J-R48X-RMVQ"
+      ],
+      "advisories": [
+        {
+          "advisoryId": "GHSA-5C6J-R48X-RMVQ",
+          "url": "https://github.com/advisories/GHSA-5c6j-r48x-rmvq",
+          "title": "Serialize JavaScript is Vulnerable to RCE via RegExp.flags and Date.prototype.toISOString()"
+        }
+      ]
+    },
+    {
+      "package": "solc",
+      "severity": "low",
+      "advisoryIds": [],
+      "advisories": []
+    },
+    {
+      "package": "tmp",
+      "severity": "low",
+      "advisoryIds": [
+        "GHSA-52F5-9888-HMC6"
+      ],
+      "advisories": [
+        {
+          "advisoryId": "GHSA-52F5-9888-HMC6",
+          "url": "https://github.com/advisories/GHSA-52f5-9888-hmc6",
+          "title": "tmp allows arbitrary temporary file / directory write via symbolic link `dir` parameter"
+        }
+      ]
+    },
+    {
+      "package": "undici",
+      "severity": "moderate",
+      "advisoryIds": [
+        "GHSA-G9MF-H72J-4RW9"
+      ],
+      "advisories": [
+        {
+          "advisoryId": "GHSA-G9MF-H72J-4RW9",
+          "url": "https://github.com/advisories/GHSA-g9mf-h72j-4rw9",
+          "title": "Undici has an unbounded decompression chain in HTTP responses on Node.js Fetch API via Content-Encoding leads to resource exhaustion"
+        }
+      ]
+    },
+    {
+      "package": "vite",
+      "severity": "moderate",
+      "advisoryIds": [],
+      "advisories": []
+    },
+    {
+      "package": "vite-node",
+      "severity": "moderate",
+      "advisoryIds": [],
+      "advisories": []
+    },
+    {
+      "package": "vitest",
+      "severity": "moderate",
+      "advisoryIds": [],
+      "advisories": []
+    }
+  ]
+}

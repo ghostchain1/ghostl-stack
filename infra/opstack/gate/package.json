@@ -1,0 +1,12 @@
+{
+  "name": "op-gate",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "express": "^4.18.2",
+    "ghost": "file:../../../packages/ghost"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

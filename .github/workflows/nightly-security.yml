@@ -1,0 +1,72 @@
+name: Nightly Security
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Enforce GST-native gates
+        run: |
+          bash scripts/gst-leakage-gate.sh
+          bash scripts/gst-symbol-gate.sh
+
+      - name: Install Trivy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget
+          TRIVY_VERSION="0.69.0"
+          wget -qO- "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" | tar zx
+          sudo mv trivy /usr/local/bin/trivy
+
+      - name: Trivy filesystem scan
+        env:
+          # Prefer a dedicated PAT if configured; otherwise use the built-in workflow token.
+          GITHUB_TOKEN: ${{ secrets.TRIVY_GITHUB_TOKEN || github.token }}
+        run: |
+          trivy fs \
+            --timeout 20m \
+            --scanners vuln,secret,misconfig \
+            --secret-config trivy-secret.yaml \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            --format json -o trivy-fs.json \
+            --skip-dirs node_modules,contracts/node_modules,dist,contracts/dist,contracts/artifacts,contracts/cache,contracts/.hardhat-cache,contracts/typechain-types,contracts/proposals,ops/preflight,ops/snapshots,ops/docker/snapshots,ops/docker/attestations,backups,infra/docker/_backup,infra/docker/runtime,infra/ghostchain/data,infra/ghostchain/secrets,infra/opstack/data,infra/opstack/broadcast,infra/opstack/secrets,infra/opstack/l3/secrets,chains/l2/data,chains/l3/data \
+            --skip-files ops/security/trivy-fs.json,contracts/reports/formal/scribble/scribble.json,contracts/artifacts/build-info/*.json,infra/opstack/op-geth/signer/fourbyte/4byte.json \
+            .
+
+      - name: Digest refresh report (non-blocking)
+        run: bash scripts/security/digest-refresh-report.sh
+
+      - name: Digest rollforward candidates (stale-only)
+        run: bash scripts/security/digest-rollforward-candidates.sh
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: nightly-security
+          path: |
+            trivy-fs.json
+            artifacts/security/digest-refresh-report.md
+            artifacts/security/digest-refresh-report.json
+            artifacts/security/digest-rollforward-candidates.md

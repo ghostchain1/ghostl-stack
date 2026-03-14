@@ -1,0 +1,147 @@
+{
+  "$schema": "https://ghostchain.io/schemas/brand-rules/v1",
+  "version": "1.0.0",
+  "description": "GhostChain sovereign branding rules — 15-layer enforcement",
+
+  "canonical": {
+    "chain":        "GhostChain",
+    "l1":           "GhostChain L1",
+    "l2":           "GhostL2",
+    "l3":           "GhostL3",
+    "tokenName":    "Ghost",
+    "tokenSymbol":  "GST",
+    "tokenDecimals": 18,
+    "rpcNamespace": "ghost_",
+    "explorer":     "GhostScan",
+    "dns":          "GNS",
+    "wallet":       "GhostWallet",
+    "dex":          "GhostXchange",
+    "ai":           "GhostBrain",
+    "sdk":          "ghost-sdk"
+  },
+
+  "layers": {
+    "1_core_chain_identity":      { "canonical": "GhostChain",   "forbidden": ["Ethereum", "ethereum"] },
+    "2_token_identity":           { "canonical": "GST",          "forbidden": ["ETH", "Ether", "ether"] },
+    "3_rpc_sdk":                  { "canonical": "ghost-sdk",    "forbidden": ["ethers", "web3.js"] },
+    "4_explorer":                 { "canonical": "GhostScan",    "forbidden": ["Etherscan", "etherscan"] },
+    "5_ai_layer":                 { "canonical": "GhostBrain",   "forbidden": [] },
+    "6_infrastructure":           { "canonical": "GhostChain",   "forbidden": ["Infura", "Alchemy", "Infura"] },
+    "7_network_layer":            { "canonical": "ghost_",       "forbidden": ["eth_"] },
+    "8_governance":               { "canonical": "GhostGovernor","forbidden": [] },
+    "9_wallet":                   { "canonical": "GhostWallet",  "forbidden": ["MetaMask"] },
+    "10_ecosystem":               { "canonical": "GhostXchange", "forbidden": [] },
+    "11_developer_ecosystem":     { "canonical": "ghost-sdk",    "forbidden": ["ethers.js"] },
+    "12_ai_governance":           { "canonical": "GhostBrain AI","forbidden": [] },
+    "13_security_branding":       { "canonical": "GhostSec",     "forbidden": [] },
+    "14_cross_chain":             { "canonical": "GhostBridge",  "forbidden": [] },
+    "15_identity_layer":          { "canonical": "GNS",          "forbidden": ["ENS"] }
+  },
+
+  "forbidden": [
+    "Ethereum",
+    "ethereum",
+    "Etherscan",
+    "etherscan",
+    "web3.js",
+    "Infura",
+    "Alchemy",
+    "ENS",
+    "MetaMask"
+  ],
+
+  "forbiddenInCanonicalContext": [
+    "ETH",
+    "ethers",
+    "ethers.js"
+  ],
+
+  "replacements": {
+    "Ethereum":   "GhostChain",
+    "Etherscan":  "GhostScan",
+    "etherscan":  "ghostscan",
+    "web3.js":    "ghost-sdk",
+    "Infura":     "GhostRPC",
+    "Alchemy":    "GhostRPC",
+    "ENS":        "GNS",
+    "MetaMask":   "GhostWallet"
+  },
+
+  "exemptPathPatterns": [
+    "node_modules",
+    ".git",
+    ".next/",
+    "dist/",
+    "out/",
+    "out-codex/",
+    "artifacts/",
+    "cache/",
+    "cache-codex/",
+    "crytic-export/",
+    "broadcast/",
+    "typechain-types/",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "yarn.lock",
+    "packages/brand-enforcer/test/",
+    "packages/brand-enforcer/src/",
+    "packages/brand-enforcer/index.js",
+    "tools/branding/",
+    "contracts/lib/",
+    "docs/architecture",
+    "docs/gst-migration/",
+    "contracts/src/constitutional/",
+    "contracts/test/constitutional/",
+    "contracts/test/ai/GhostBrainIntegration",
+    "contracts/test/foundry/GhostIdentityConstitution",
+    "docs/GHOSTSTACK_DEEP_REPO_BLUEPRINT.md",
+    "docs/GHOSTSTACK_DEPLOYMENT_BLUEPRINT.md",
+    "ops/security/scan-report-2026-03-06.md",
+    "services/ghostbrain-gsa/",
+    "docs/brand/spec.json",
+    "infra/ghost-geth/README.md",
+    "docs/GST_GAS_TOKEN_EVERYWHERE.md",
+    "docs/specs/GST_SOVEREIGN_IDENTITY.md",
+    "docs/runbooks/REGENESIS_PRODUCTION_CHECKLIST.md",
+    "docs/meta-governance.md",
+    "CHANGELOG",
+    "brand-enforcer-ignore"
+  ],
+
+  "bridgeExemptPatterns": [
+    "bridge",
+    "adapter",
+    "weth",
+    "wrapped-eth",
+    "cross-chain",
+    "l1-interop"
+  ],
+
+  "compatExemptPatterns": [
+    "ghost-sdk-core/src/ethers/",
+    "ghost-sdk-core/src/abi/",
+    "ghost-sdk-core/src/rpc/",
+    "ghost-sdk-core/src/index",
+    "ghost-sdk-core/src/tx/",
+    "ghost-nodes/src/compat/",
+    "packages/ghost-sdk/src/",
+    "packages/hardhat-ghost/src/",
+    "packages/ghost-ai-sdk/src/",
+    "packages/ghostchainjs-tx/src/",
+    "packages/ghostchainjs-util/src/",
+    "packages/ghostchain-bloom-filters/src/",
+    "packages/ghostchain-cryptography/src/",
+    "packages/ghostwallet/src/",
+    "packages/sdk/src/",
+    "packages/ghost-devkit/src/",
+    "packages/ghost-nodes/src/",
+    "services/"
+  ],
+
+  "scannableExtensions": [
+    ".sol", ".ts", ".tsx", ".js", ".mjs", ".cjs",
+    ".json", ".yml", ".yaml", ".md"
+  ],
+
+  "ciFailOnSeverity": ["CRITICAL", "HIGH"]
+}

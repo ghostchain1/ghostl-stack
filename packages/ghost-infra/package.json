@@ -1,0 +1,50 @@
+{
+  "name": "@ghostchain/infra",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Ghost Autonomous Infrastructure Controller — AI brain for hypervisor, VMs, networking, Docker, storage, and domains",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./hypervisor": {
+      "types": "./dist/hypervisor/GhostHypervisorController.d.ts",
+      "default": "./dist/hypervisor/GhostHypervisorController.js"
+    },
+    "./docker": {
+      "types": "./dist/docker/GhostDockerManager.d.ts",
+      "default": "./dist/docker/GhostDockerManager.js"
+    },
+    "./networking": {
+      "types": "./dist/networking/GhostNetworkController.d.ts",
+      "default": "./dist/networking/GhostNetworkController.js"
+    },
+    "./storage": {
+      "types": "./dist/storage/GhostStorageManager.d.ts",
+      "default": "./dist/storage/GhostStorageManager.js"
+    },
+    "./domains": {
+      "types": "./dist/domains/GhostDomainController.d.ts",
+      "default": "./dist/domains/GhostDomainController.js"
+    },
+    "./orchestration": {
+      "types": "./dist/orchestration/GhostInfraController.d.ts",
+      "default": "./dist/orchestration/GhostInfraController.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@ghostchain/devkit": "*",
+    "@ghostchain/autonomous": "*"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

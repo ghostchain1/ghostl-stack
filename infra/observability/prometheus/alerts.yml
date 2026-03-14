@@ -1,0 +1,106 @@
+groups:
+  - name: guard
+    rules:
+      - alert: GuardDenySpike
+        expr: rate(op_gate_guard_decisions{result="deny"}[5m]) > 2
+        for: 2m
+        labels:
+          severity: warning
+          service: op-gate
+        annotations:
+          summary: "Guard deny spike"
+          description: "Guard is denying >2 decisions/min over last 5m (current: {{ $value }}). Check policy/traffic."
+
+      - alert: GuardErrorSpike
+        expr: rate(op_gate_guard_decisions{result="error"}[5m]) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+          service: op-gate
+        annotations:
+          summary: "Guard error spike"
+          description: "Guard errors >0.5/min over last 5m (current: {{ $value }}). Check guard backend/webhook."
+
+  - name: proposer
+    rules:
+      - alert: ProposerDown
+        expr: up{job="opstack-proposer"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: op-proposer
+        annotations:
+          summary: "Proposer down"
+          description: "op-proposer target is down for >1m."
+
+      - alert: ProposerRestarting
+        expr: changes(process_start_time_seconds{job="opstack-proposer"}[10m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          service: op-proposer
+        annotations:
+          summary: "Proposer restarting"
+          description: "process_start_time_seconds changed within 10m (possible restart)."
+
+  - name: ghost-cascading-finality
+    rules:
+      - alert: GhostConsensusTelemetryDown
+        expr: up{job="consensus-telemetry"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: consensus-telemetry
+        annotations:
+          summary: "Consensus telemetry is down"
+          description: "Prometheus cannot scrape consensus-telemetry for more than 2 minutes."
+
+      - alert: GhostLayerUnhealthy
+        expr: ghost_consensus_layer_up{layer=~"L1|L2|L3"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: consensus-telemetry
+        annotations:
+          summary: "Ghost layer unhealthy"
+          description: "Layer {{ $labels.layer }} is not reporting healthy consensus telemetry."
+
+      - alert: GhostCascadingFinalityLag
+        expr: ghost_consensus_op_lag_blocks{layer=~"L2|L3",type="safe_finalized"} > 240
+        for: 5m
+        labels:
+          severity: warning
+          service: consensus-telemetry
+        annotations:
+          summary: "Cascading finality lag elevated"
+          description: "Layer {{ $labels.layer }} safe->finalized lag is {{ $value }} blocks for over 5 minutes."
+
+      - alert: GhostSettlementAgeHigh
+        expr: ghost_consensus_output_oracle_age_seconds{layer=~"L2|L3"} > 900
+        for: 5m
+        labels:
+          severity: warning
+          service: consensus-telemetry
+        annotations:
+          summary: "Settlement age high"
+          description: "Layer {{ $labels.layer }} output oracle age is {{ $value }} seconds."
+
+      - alert: GhostBridgeFinalizeStalled
+        expr: ghost_consensus_bridge_oldest_pending_age_seconds > 1800 and ghost_consensus_bridge_oldest_pending_age_seconds != -1
+        for: 5m
+        labels:
+          severity: warning
+          service: consensus-telemetry
+        annotations:
+          summary: "Bridge finalization backlog is stale"
+          description: "Oldest pending L2->L3 bridge item exceeds 30 minutes."
+
+      - alert: GhostSovereigntyViolationSignal
+        expr: max by (layer, type) (ghost_consensus_incident{type=~"bridge_finalize_without_deposit|oracle_block_mismatch|oracle_index_mismatch|oracle_zero_root|oracle_output_missing"}) > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: consensus-telemetry
+        annotations:
+          summary: "Sovereignty violation signal"
+          description: "Incident {{ $labels.type }} is active on {{ $labels.layer }} and requires immediate triage."

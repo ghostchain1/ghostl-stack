@@ -1,0 +1,113 @@
+version: 2
+# Touching this config intentionally triggers an immediate Dependabot check on main.
+# Follow-up trigger after fixing unreachable submodule commit in ghostchain1/optimism.
+# Follow-up trigger after fixing unreachable nested submodule commit in ghostchain1/automate.
+# Follow-up trigger after fixing unreachable nested submodule commit in lib-keccak upstream.
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:15"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    ignore:
+      # tailwindcss v4 is a major migration requiring @tailwindcss/postcss and CSS changes.
+      # Pin to v3.x until a dedicated migration is done.
+      - dependency-name: "tailwindcss"
+        update-types:
+          - "version-update:semver-major"
+    groups:
+      npm-root:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "npm"
+    directory: "/contracts"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:30"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    ignore:
+      # Repo is pinned to Hardhat 2.x. Block Hardhat v3 ecosystem major bumps.
+      - dependency-name: "hardhat"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "@nomicfoundation/hardhat-*"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "@nomiclabs/*"
+        update-types:
+          - "version-update:semver-major"
+    groups:
+      npm-contracts:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "npm"
+    directory: "/services/hyper-ghost-supervisor"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:45"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      npm-hyper-ghost-supervisor:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "npm"
+    directory: "/ghost-helper-bots"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "05:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      npm-ghost-helper-bots:
+        patterns:
+          - "*"

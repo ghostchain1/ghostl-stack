@@ -1,0 +1,40 @@
+version: "3.8"
+
+# Kong Gateway — DB-less, declarative config
+# Runs on the edge gateway host (38.247.149.218)
+
+services:
+  kong:
+    image: kong:3.6
+    container_name: ghoststack-kong
+    restart: unless-stopped
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yaml
+      KONG_PROXY_LISTEN: "0.0.0.0:8000, 0.0.0.0:8443 ssl"
+      KONG_ADMIN_LISTEN: "127.0.0.1:8001"           # admin API — localhost only
+      KONG_ADMIN_GUI_LISTEN: "127.0.0.1:8002"       # Konnect UI — localhost only
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_PLUGINS: "bundled,prometheus"
+      KONG_LOG_LEVEL: notice
+    volumes:
+      - ./kong.yaml:/etc/kong/kong.yaml:ro
+    ports:
+      # Only bind Kong's proxy port to the gateway IP
+      - "38.247.149.218:8000:8000"
+      - "38.247.149.218:8443:8443"
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - ghoststack-net
+
+networks:
+  ghoststack-net:
+    external: true
+    name: ghoststack

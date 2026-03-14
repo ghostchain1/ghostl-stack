@@ -1,0 +1,22 @@
+{
+  "signals": [
+    {
+      "jurisdictionCode": "GLOBAL",
+      "category": "AML_CFT",
+      "severity": "MEDIUM",
+      "confidence": 0.68,
+      "detectedAt": "2026-01-01T00:00:00Z",
+      "summary": "Global AML/CFT guidance emphasizes enhanced monitoring for high-risk jurisdictions.",
+      "sourceRefs": ["FATF-UPDATE-2026-01"]
+    },
+    {
+      "jurisdictionCode": "US",
+      "category": "SANCTIONS",
+      "severity": "HIGH",
+      "confidence": 0.74,
+      "detectedAt": "2026-01-10T00:00:00Z",
+      "summary": "Sanctions program update expands restricted entities list.",
+      "sourceRefs": ["OFAC-UPDATE-2026-01"]
+    }
+  ]
+}

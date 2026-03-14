@@ -1,0 +1,14 @@
+{
+  "name": "@ghostchain-gsx/gsr-tokenizer",
+  "version": "0.1.0",
+  "description": "GSR asset tokenizer — wraps strategic real-world reserves into SRT (Sovereign Reserve Token) ERC-20 tokens",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev":   "node --watch src/index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

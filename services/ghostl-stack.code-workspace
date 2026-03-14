@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"debug.javascript.autoAttachFilter": "smart",
+		"javascript.validate.enable": true,
+		"typescript.validate.enable": true,
+		"git.autorefresh": true
+	}
+}

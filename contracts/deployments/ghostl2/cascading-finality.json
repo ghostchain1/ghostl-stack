@@ -1,0 +1,24 @@
+{
+  "network": "ghostl2",
+  "chainIdL1": 14000101,
+  "chainIdL2": 901,
+  "chainIdL3": 903,
+  "enforceHierarchicalFinality": true,
+  "aiPolicyHash": null,
+  "oracles": {
+    "l1": "0x02df3a3F960393F5B349E40A599FEda91a7cc1A7",
+    "l2": "0x821f3361D454cc98b7555221A06Be563a7E2E0A6",
+    "l3": "0x1780bCf4103D3F501463AD3414c7f4b654bb7aFd"
+  },
+  "rollups": {
+    "l2OnL1": "0xFE5f411481565fbF70D8D33D992C78196E014b90",
+    "l2OnL1ParentOracle": "0x821f3361D454cc98b7555221A06Be563a7E2E0A6",
+    "l3OnL2": "0x413b1AfCa96a3df5A686d8BFBF93d30688a7f7D9",
+    "l3OnL2ParentOracle": "0x1780bCf4103D3F501463AD3414c7f4b654bb7aFd"
+  },
+  "bridge": {
+    "l2L3Bridge": "0xaB7B4c595d3cE8C85e16DA86630f2fc223B05057",
+    "l2FinalityOracle": "0x821f3361D454cc98b7555221A06Be563a7E2E0A6",
+    "l3FinalityOracle": "0x1780bCf4103D3F501463AD3414c7f4b654bb7aFd"
+  }
+}

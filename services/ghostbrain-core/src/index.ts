@@ -1,67 +1,135 @@
 /**
- * index.ts
+ * GhostBrain Core — Entry point
  *
- * GhostBrain Core — entry point
- * Port 9100
+ * Boots the GhostBrain central autonomous coordination service.
+ *
+ * Default port : 7900  (GHOSTBRAIN_PORT env to override)
+ * Default bind : 127.0.0.1 (GHOSTBRAIN_BIND env to override — set 0.0.0.0 in Docker)
+ *
+ * Chain-ID env vars (required at runtime for routing-law metric labels):
+ *   GHOSTAI_L1_CHAIN_ID  e.g. 14000101
+ *   GHOSTAI_L2_CHAIN_ID  e.g. 901
+ *   GHOSTAI_L3_CHAIN_ID  e.g. 903
  */
 
-import express, { type Request, type Response, type NextFunction } from "express";
-import pino from "pino";
-import signalsRouter from "./routes/signals.js";
-import thinkRouter from "./routes/think.js";
+import { buildApp }              from "./app.js";
+import { attachWsServer }        from "./routes/ws.js";
+import { markReady }             from "./routes/status.js";
+import { hydrateAllMemory }      from "./cognition/memory_controller.js";
+import { startHypervisorLoop, stopHypervisorLoop } from "./infra/hypervisor_controller.js";
+import { startInfraSupervisor, stopInfraSupervisor } from "./infra/infra_supervisor.js";
+import { selfRegisterWithCluster } from "./routes/cluster_peer.js";
+import { startBrain, stopBrain }   from "./kernel/brain.js";
+import { startEventLoop, stopEventLoop } from "./kernel/event_loop.js";
+import { startPushLoop, stopPushLoop }   from "./observability/prometheus_gateway.js";
+import { startGossip, stopGossip }       from "./cluster/cluster_gossip.js";
+import { startSyncLoop, stopSyncLoop }   from "./cluster/cluster_sync.js";
+import { startBlockchainAI, stopBlockchainAI } from "./blockchain/ghostchain_ai.js";
+import { startValidatorMonitor, stopValidatorMonitor } from "./validators/validator_monitor.js";
+import { startValidatorGuardian, stopValidatorGuardian } from "./validators/validator_guardian.js";
+import { startRpcMonitor, stopRpcMonitor }   from "./rpc_monitor.js";
+import { startHypervisorAI, stopHypervisorAI } from "./hypervisor_ai.js";
+import { hydrateGraph } from "./blockchain/memory_graph.js";
+import { initPostgres, closePostgres }   from "./db/postgres_client.js";
+import { initRedis,    closeRedis }      from "./db/redis_client.js";
+import { initQdrant }                    from "./db/qdrant_client.js";
+import { hydrateAuditLog }              from "./memory/memory_audit.js";
+import { startMemoryOptimizer, stopMemoryOptimizer } from "./core/memory_optimizer.js";
+import { startCognitiveLoop, stopCognitiveLoop }     from "./cognition/cognitive_engine.js";
+import { startHyperCoreLoop, stopHyperCoreLoop }     from "./hypercore/hypercore_engine.js";
+import { startKernelEngine,  stopKernelEngine }       from "./kernel/kernel_engine.js";
+import { startSwarmEngine,   stopSwarmEngine }         from "./swarm/swarm_engine.js";
 
-const PORT    = parseInt(process.env["PORT"] ?? "9100", 10);
-const SERVICE = "ghostbrain-core";
+const PORT = Number(process.env.GHOSTBRAIN_PORT ?? "7900");
+const BIND = process.env.GHOSTBRAIN_BIND ?? "127.0.0.1";
 
-const log = pino({
-  name: SERVICE,
-  level: process.env["LOG_LEVEL"] ?? "info",
-  transport: process.env["NODE_ENV"] !== "production"
-    ? { target: "pino-pretty", options: { colorize: true } }
-    : undefined,
+const app = buildApp();
+let wss: ReturnType<typeof attachWsServer> | undefined;
+
+// ── Neural Memory Database — init all three backends (graceful degradation) ──
+await initPostgres();
+await initRedis();
+await initQdrant();
+
+// Hydrate all memory layers from disk before serving traffic
+hydrateAllMemory();
+hydrateGraph();
+hydrateAuditLog();
+
+try {
+  await app.listen({ port: PORT, host: BIND });
+
+  // Attach WebSocket server to the same port (path: /ws)
+  wss = attachWsServer(app.server);
+  markReady();
+
+  // Start autonomous infrastructure observe loop
+  startHypervisorLoop();
+
+  // Start GhostBrain Infrastructure Supervisor (predictive AI + self-healing)
+  startInfraSupervisor();
+
+  // Start GBA-OS kernel
+  startEventLoop();
+  await startBrain();
+  startPushLoop();
+  startGossip();
+  startSyncLoop();
+
+  // Non-blocking self-registration with cluster coordinator (if CLUSTER_URL is set)
+  void selfRegisterWithCluster();
+
+  // Start blockchain intelligence layer
+  startBlockchainAI();
+  startValidatorMonitor();
+  startValidatorGuardian();
+  startRpcMonitor();
+  startHypervisorAI();
+
+  // Start neural memory optimizer (periodic compression + archival)
+  startMemoryOptimizer();
+
+  // Start cognitive engine — the AI reasoning + planning loop (10 s interval)
+  startCognitiveLoop();
+
+  // Start HyperCore — Layer 5 strategic AI loop (15 s interval)
+  startHyperCoreLoop();
+
+  // Start AI Kernel Engine — Layer 6 infrastructure control loop (5 s interval)
+  startKernelEngine();
+
+  // Start Autonomous Swarm — Layer 7 distributed agent coordination (5 s interval)
+  startSwarmEngine();
+
+  app.log.info({ bind: BIND, port: PORT, wsPath: "/ws" }, "ghostbrain-core started");
+} catch (err) {
+  app.log.error(err, "ghostbrain-core failed to start");
+  process.exit(1);
+}
+
+process.on("SIGTERM", async () => {
+  app.log.info("SIGTERM received — shutting down");
+  stopBrain();
+  stopPushLoop();
+  stopGossip();
+  stopSyncLoop();
+  stopEventLoop();
+  stopHypervisorLoop();
+  stopBlockchainAI();
+  stopValidatorMonitor();
+  stopValidatorGuardian();
+  stopRpcMonitor();
+  stopHypervisorAI();
+  stopMemoryOptimizer();
+  stopCognitiveLoop();
+  stopHyperCoreLoop();
+  stopKernelEngine();
+  stopSwarmEngine();
+  wss?.close();
+  await app.close();
+  // Close DB connections last, after HTTP server is down
+  await closeRedis();
+  await closePostgres();
+  process.exit(0);
 });
 
-const app = express();
-app.use(express.json({ limit: "256kb" }));
-
-// ── CORS ──────────────────────────────────────────────────────────────────────
-app.use((_req: Request, res: Response, next: NextFunction) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  next();
-});
-app.options("*", (_req: Request, res: Response) => res.sendStatus(204));
-
-// ── Request logger ────────────────────────────────────────────────────────────
-app.use((req: Request, _res: Response, next: NextFunction) => {
-  log.info({ method: req.method, url: req.url }, "→");
-  next();
-});
-
-// ── Health ────────────────────────────────────────────────────────────────────
-app.get("/health", (_req: Request, res: Response) => {
-  res.json({ ok: true, service: SERVICE, port: PORT, uptime: process.uptime() });
-});
-
-// ── Routes ────────────────────────────────────────────────────────────────────
-app.use("/signals", signalsRouter);
-app.use("/think",   thinkRouter);
-
-// ── 404 ───────────────────────────────────────────────────────────────────────
-app.use((_req: Request, res: Response) => {
-  res.status(404).json({ ok: false, error: "not found" });
-});
-
-// ── Error handler ─────────────────────────────────────────────────────────────
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  log.error({ err }, "unhandled error");
-  res.status(500).json({ ok: false, error: "internal server error" });
-});
-
-// ── Start ─────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  log.info(`${SERVICE} listening on :${PORT}`);
-});
-
-export default app;

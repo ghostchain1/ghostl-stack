@@ -1,0 +1,33 @@
+[doctor-l2] starting
+OK: docker/compose reachable
+OK: dev secrets allowed
+OK: rollup/genesis checksums verified
+OK: compose config valid
+OK: L2 genesis chainId=901
+OK: L2 RPC chainId=901
+OK: L1 RPC chainId=14000101
+OK: L2 execution head (eth_blockNumber)=702722 (progress check skipped: L2_REQUIRE_L2_PROGRESS=0)
+OK: rollup L1 origin hash matches
+OK: rollup L2 genesis hash matches
+OK: op-node/op-sequencer RPC reachable
+OK: op-sequencer active
+OK: L1 derivation lag within threshold
+OK: L2 safe lag within threshold
+OK: metrics reachable: http://localhost:29606/debug/metrics/prometheus
+OK: metrics reachable: http://localhost:7300/metrics
+OK: metrics reachable: http://localhost:7303/metrics
+OK: metrics reachable: http://localhost:7301/metrics
+OK: metrics reachable: http://localhost:7302/metrics
+OK: ai-monitor reachable
+OK: batcher/proposer idle checks skipped (L2_REQUIRE_L2_PROGRESS=0)
+OK: challenger metrics reachable
+OK: L1 contract SystemConfigProxy at 0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
+OK: L1 contract OptimismPortalProxy at 0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
+OK: L1 contract L2OutputOracleProxy at 0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6
+OK: L1 contract DisputeGameFactoryProxy at 0x8A791620dd6260079BF849Dc5567aDC3F2FdC318
+OK: L1 contract L1StandardBridgeProxy at 0xa513E6E4b8f2a923D98304ec87F64353C4D5C853
+OK: L1 contract L1CrossDomainMessengerProxy at 0x0165878A594ca255338adfa4d48449f69242Eb8F
+OK: L1 contract L1Erc721BridgeProxy at 0x63cf2Cd54fE91e3545D1379abf5bfd194545259d
+OK: genesis gasToken set
+OK: custom gas token deployed
+[doctor-l2] OK

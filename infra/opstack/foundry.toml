@@ -1,0 +1,22 @@
+[profile.default]
+src = "contracts"
+out = "contracts/out"
+optimizer = true
+optimizer_runs = 200
+libs = [
+  "optimism-upstream/packages/contracts-bedrock/lib",
+  "optimism-upstream/packages/contracts-bedrock",
+]
+fs_permissions = [
+  { access = "read", path = "optimism-upstream/packages/contracts-bedrock" },
+  { access = "read", path = "." }
+]
+auto_detect_solc = true
+remappings = [
+  "@openzeppelin/contracts-upgradeable/=optimism-upstream/packages/contracts-bedrock/lib/openzeppelin-contracts-upgradeable/contracts/",
+  "@openzeppelin/contracts/=optimism-upstream/packages/contracts-bedrock/lib/openzeppelin-contracts/contracts/",
+  "@openzeppelin/=optimism-upstream/packages/contracts-bedrock/lib/openzeppelin-contracts/",
+  "@eth-optimism-bedrock/=optimism-upstream/packages/contracts-bedrock/",
+  "src/=optimism-upstream/packages/contracts-bedrock/src/",
+  "forge-std/=optimism-upstream/packages/contracts-bedrock/lib/forge-std/src/",
+]

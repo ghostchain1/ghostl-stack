@@ -1,0 +1,57 @@
+# stack-group: infra
+# role: ghost-rollup-proposer
+# ports: 7272:7272
+# volumes: ./data:/state, ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
+services:
+  ghost-rollup-proposer:
+    container_name: ghost_ghost-rollup-proposer
+    image: ghostl/ghost-rollup-proposer:local
+    build:
+      context: .
+    env_file:
+    - .env
+    entrypoint:
+    - /bin/bash
+    - /entrypoint.sh
+    environment:
+    - PORT=7272
+    - RPC_SETTLEMENT=${RPC_L2}
+    - RPC_CHILD=${RPC_L3}
+    - ROLLUP_ADDRESS=${L2_ROLLUP_L3_ADDRESS}
+    - PROPOSER_PRIVATE_KEY=${PROPOSER_PRIVATE_KEY}
+    - STATE_DIR=/state
+    ports:
+    - 7272:7272
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4g
+        reservations:
+          cpus: '0.5'
+          memory: 512m
+    volumes:
+    - ./data:/state
+    - ./data:/data
+    - ./entrypoint.sh:/entrypoint.sh:ro
+    - ./healthcheck.sh:/healthcheck.sh:ro
+    networks:
+    - ghost_net
+    - opstack_default
+networks:
+  ghost_net:
+    external: true
+  opstack_default:
+    external: true

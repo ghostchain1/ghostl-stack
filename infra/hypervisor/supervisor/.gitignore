@@ -1,0 +1,5 @@
+# Compiled Python bytecode — supervisor.py is the source of truth.
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

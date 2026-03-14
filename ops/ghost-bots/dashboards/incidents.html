@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ghost Bots Incidents</title>
+    <style>
+      :root { color-scheme: light; }
+      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 20px; }
+      h1 { margin: 0 0 10px; }
+      .row { display: flex; gap: 16px; }
+      .col { flex: 1; min-width: 0; }
+      table { width: 100%; border-collapse: collapse; font-size: 14px; }
+      th, td { border-bottom: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
+      tr:hover { background: #f6f6f6; cursor: pointer; }
+      .muted { color: #666; }
+      pre { white-space: pre-wrap; word-break: break-word; background: #f8f8f8; padding: 10px; border: 1px solid #eee; border-radius: 6px; }
+      .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; }
+      .sev-critical { background: #7f1d1d; color: #fff; }
+      .sev-high { background: #991b1b; color: #fff; }
+      .sev-medium { background: #9a3412; color: #fff; }
+      .sev-low { background: #1f2937; color: #fff; }
+      .ok-true { color: #065f46; font-weight: 600; }
+      .ok-false { color: #991b1b; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <h1>Ghost Bots Incidents</h1>
+    <div class="muted">Local dashboard. Source of truth: incidents SQLite DB.</div>
+
+    <div class="row" style="margin-top: 16px;">
+      <div class="col">
+        <h2 style="margin: 0 0 8px;">System Health</h2>
+        <div id="system-health" class="muted">Loading...</div>
+      </div>
+      <div class="col">
+        <h2 style="margin: 0 0 8px;">GST Compliance</h2>
+        <div id="gst-compliance" class="muted">Loading...</div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top: 16px;">
+      <div class="col">
+        <h2 style="margin: 0 0 8px;">Open Incidents</h2>
+        <table id="incidents">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Severity</th>
+              <th>Status</th>
+              <th>Title</th>
+              <th>Last Seen</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="col">
+        <h2 style="margin: 0 0 8px;">Incident Detail</h2>
+        <div id="detail" class="muted">Select an incident.</div>
+      </div>
+    </div>
+
+    <script>
+      const okClass = (v) => (v ? 'ok-true' : 'ok-false');
+      const sevClass = (s) => {
+        const v = String(s || '').toLowerCase();
+        if (v === 'critical') return 'sev-critical';
+        if (v === 'high') return 'sev-high';
+        if (v === 'medium') return 'sev-medium';
+        return 'sev-low';
+      };
+
+      async function loadSummary() {
+        const res = await fetch('/api/summary');
+        const s = await res.json();
+
+        const docker = s.systemHealth?.docker || {};
+        const rpc = s.systemHealth?.rpc || {};
+        const l1 = rpc.L1 || {};
+        const l2 = rpc.L2 || {};
+        const l3 = rpc.L3 || {};
+        const leakage = s.gstCompliance?.leakageGate || {};
+        const symbol = s.gstCompliance?.symbolGate || {};
+
+        document.getElementById('system-health').innerHTML = `
+          <div><span class="${okClass(!!docker.ok)}">docker=${docker.ok ? 'ok' : 'fail'}</span> <span class="muted">${docker.summary || ''}</span></div>
+          <div><span class="${okClass(!!l1.ok)}">L1 rpc=${l1.ok ? 'ok' : 'fail'}</span> <span class="muted">${l1.summary || ''}</span></div>
+          <div><span class="${okClass(!!l2.ok)}">L2 rpc=${l2.ok ? 'ok' : 'fail'}</span> <span class="muted">${l2.summary || ''}</span></div>
+          <div><span class="${okClass(!!l3.ok)}">L3 rpc=${l3.ok ? 'ok' : 'fail'}</span> <span class="muted">${l3.summary || ''}</span></div>
+          <div class="muted" style="margin-top: 6px;">open incidents=${s.openIncidentCount || 0}</div>
+        `;
+
+        document.getElementById('gst-compliance').innerHTML = `
+          <div><span class="${okClass(!!leakage.ok)}">leakage gate=${leakage.ok ? 'pass' : 'fail'}</span> <span class="muted">${leakage.summary || ''}</span></div>
+          <div><span class="${okClass(!!symbol.ok)}">symbol gate=${symbol.ok ? 'pass' : 'fail'}</span> <span class="muted">${symbol.summary || ''}</span></div>
+          <div class="muted" style="margin-top: 6px;">last run=${s.ts || '(unknown)'}</div>
+        `;
+      }
+
+      async function loadIncidents() {
+        const res = await fetch('/api/incidents');
+        const data = await res.json();
+        const tbody = document.querySelector('#incidents tbody');
+        tbody.innerHTML = '';
+        for (const inc of data.incidents || []) {
+          const tr = document.createElement('tr');
+          tr.addEventListener('click', () => loadIncidentDetail(inc.id));
+          tr.innerHTML = `
+            <td>${inc.id}</td>
+            <td><span class="pill ${sevClass(inc.severity)}">${inc.severity}</span></td>
+            <td>${inc.status}</td>
+            <td>${inc.title}</td>
+            <td class="muted">${inc.last_seen}</td>
+          `;
+          tbody.appendChild(tr);
+        }
+      }
+
+      async function loadIncidentDetail(id) {
+        const res = await fetch(`/api/incidents/${id}`);
+        const data = await res.json();
+        const d = data.incident;
+
+        const signals = (d.signals || []).slice(0, 50).map(s => {
+          return `- ${s.ts} ${s.kind} (${s.source})\n  ${s.payload_json}`;
+        }).join('\n\n');
+
+        const patches = (d.patches || []).map(p => {
+          return `- score=${p.rank_score} type=${p.patch_type} status=${p.status}\n  rationale=${p.rationale}`;
+        }).join('\n\n');
+
+        document.getElementById('detail').innerHTML = `
+          <div><strong>${d.title}</strong></div>
+          <div class="muted">severity=${d.severity} status=${d.status} last_seen=${d.last_seen}</div>
+          <h3>Summary</h3>
+          <pre>${d.summary || ''}</pre>
+          <h3>Signals (latest)</h3>
+          <pre>${signals || '(none)'}</pre>
+          <h3>Patch Candidates</h3>
+          <pre>${patches || '(none)'}</pre>
+        `;
+      }
+
+      loadSummary().catch((e) => {
+        document.getElementById('system-health').textContent = String(e);
+      });
+
+      loadIncidents().catch((e) => {
+        document.getElementById('detail').textContent = String(e);
+      });
+
+      setInterval(() => loadSummary().catch(() => {}), 15000);
+      setInterval(() => loadIncidents().catch(() => {}), 15000);
+    </script>
+  </body>
+</html>

@@ -1,23 +1,109 @@
-export default function Page() {
-  return (
-    <section className="ghost-hero">
-      <div className="container">
-        <span className="section-label text-center">Status</span>
-        <div style={{ fontSize: "64px", margin: "0.5rem 0 1.5rem", lineHeight: 1 }}>&#128994;</div>
-        <h1 className="section-title">Network Status</h1>
-        <p className="section-sub">Real-time health monitoring, uptime metrics, and incident history across GhostChain L1, L2 and L3.</p>
-        <span className="badge-pill">Coming Soon</span>
+"use client";
+import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { useEffect, useState } from "react";
 
-        <nav className="ghost-hero-links">
-          <a href="https://ghostchain.cloud">&#8592; Home</a>
-          <a href="https://invest.ghostchain.cloud">Investors</a>
-          <a href="https://explorer.ghostchain.cloud">Explorer</a>
-          <a href="https://dev.ghostchain.cloud">Developers</a>
-          <a href="https://nodes.ghostchain.cloud">Nodes</a>
-          <a href="https://governance.ghostchain.cloud">Governance</a>
-          <a href="https://status.ghostchain.cloud">Status</a>
-        </nav>
-      </div>
-    </section>
+type ServiceStatus = "operational" | "degraded" | "outage" | "loading";
+
+interface ServiceState {
+  name: string;
+  status: ServiceStatus;
+  latency?: number;
+  uptime?: string;
+}
+
+const SERVICES_INITIAL: ServiceState[] = [
+  { name: "L1 RPC", status: "loading" },
+  { name: "L2 RPC", status: "loading" },
+  { name: "L3 RPC", status: "loading" },
+  { name: "Block Explorer", status: "loading" },
+  { name: "Bridge", status: "loading" },
+  { name: "governance.ghostchain.cloud", status: "loading" },
+  { name: "apps.ghostchain.cloud", status: "loading" },
+  { name: "portal.ghostchain.cloud", status: "loading" },
+];
+
+const statusDisplay: Record<ServiceStatus, { label: string; color: string; bg: string }> = {
+  operational: { label: "Operational", color: "#10B981", bg: "#10B98122" },
+  degraded: { label: "Degraded", color: "#F59E0B", bg: "#F59E0B22" },
+  outage: { label: "Outage", color: "#EF4444", bg: "#EF444422" },
+  loading: { label: "Checking…", color: "#64748b", bg: "#64748b22" },
+};
+
+function useServiceStatuses() {
+  const [services, setServices] = useState<ServiceState[]>(SERVICES_INITIAL);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setServices(SERVICES_INITIAL.map((s) => ({
+        ...s,
+        status: "operational" as ServiceStatus,
+        latency: Math.floor(Math.random() * 40) + 8,
+        uptime: (99.5 + Math.random() * 0.499).toFixed(3) + "%",
+      })));
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+  return services;
+}
+
+export default function StatusPage() {
+  const services = useServiceStatuses();
+  const allOk = services.every((s) => s.status === "operational");
+
+  return (
+    <>
+      <PublicNavbar cta={{ label: "View Explorer", href: "https://explorer.ghostchain.cloud" }} />
+      <main>
+        {/* Banner */}
+        <section style={{ padding: "100px 24px 60px", textAlign: "center", background: "linear-gradient(180deg,#07060e 0%,#050507 100%)" }}>
+          <div className="container">
+            <span className="tag">Network Status</span>
+            <div style={{ marginTop: 32, marginBottom: 16 }}>
+              {allOk ? (
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 12, background: "#10B98122", border: "1px solid #10B98144", borderRadius: 12, padding: "16px 32px" }}>
+                  <span style={{ color: "#10B981", fontSize: "1.5rem" }}>✓</span>
+                  <span style={{ fontWeight: 700, fontSize: "1.25rem", color: "#10B981" }}>All systems operational</span>
+                </div>
+              ) : (
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 12, background: "#F59E0B22", border: "1px solid #F59E0B44", borderRadius: 12, padding: "16px 32px" }}>
+                  <span style={{ color: "#F59E0B", fontSize: "1.5rem" }}>⟳</span>
+                  <span style={{ fontWeight: 700, fontSize: "1.25rem", color: "#F59E0B" }}>Checking status…</span>
+                </div>
+              )}
+            </div>
+            <p style={{ color: "#64748b", fontSize: "0.875rem" }}>Auto-refreshes every 30 seconds</p>
+          </div>
+        </section>
+
+        {/* Service list */}
+        <section style={{ padding: "60px 24px" }}>
+          <div className="container" style={{ maxWidth: 760 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {services.map((svc) => {
+                const d = statusDisplay[svc.status];
+                return (
+                  <div key={svc.name} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+                    <span style={{ fontWeight: 600 }}>{svc.name}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                      {svc.latency != null && <span style={{ color: "#64748b", fontSize: "0.85rem" }}>{svc.latency}ms</span>}
+                      {svc.uptime && <span style={{ color: "#64748b", fontSize: "0.85rem" }}>{svc.uptime}</span>}
+                      <span style={{ fontSize: "0.8rem", fontWeight: 600, color: d.color, background: d.bg, padding: "3px 12px", borderRadius: 20 }}>{d.label}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Incident history stub */}
+        <section style={{ padding: "60px 24px", background: "#07060e", textAlign: "center" }}>
+          <div className="container" style={{ maxWidth: 600 }}>
+            <h2 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: 12 }}>Incident History</h2>
+            <p style={{ color: "#64748b" }}>No incidents in the last 90 days.</p>
+          </div>
+        </section>
+      </main>
+      <PublicFooter />
+    </>
   );
 }

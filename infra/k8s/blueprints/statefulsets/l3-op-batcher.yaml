@@ -1,0 +1,89 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "l3-op-batcher",
+    "labels": {
+      "app": "l3-op-batcher",
+      "role": "chain"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "true"
+    }
+  },
+  "spec": {
+    "serviceName": "l3-op-batcher",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "l3-op-batcher"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "l3-op-batcher",
+          "role": "chain"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "l3-op-batcher",
+            "image": "local/op-batcher:${OPSTACK_IMAGE_TAG:-local}",
+            "command": null,
+            "args": [
+              "op-batcher",
+              "--l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}",
+              "--l2-eth-rpc=http://l3-geth:8545",
+              "--rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}",
+              "--private-key=${L3_BATCHER_KEY:-${BATCHER_KEY}}",
+              "--data-availability-type=${L3_DA_TYPE:-calldata}",
+              "--rpc.addr=0.0.0.0",
+              "--rpc.port=${L3_BATCHER_RPC_PORT:-18551}",
+              "--metrics.enabled",
+              "--metrics.addr=0.0.0.0",
+              "--metrics.port=${L3_METRICS_BATCHER_PORT:-8301}",
+              "--throttle.unsafe-da-bytes-lower-threshold=0"
+            ],
+            "env": [
+              {
+                "name": "L2OO_ADDRESS",
+                "value": "${L3_L2OO_ADDRESS:-0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512}"
+              }
+            ],
+            "ports": [],
+            "volumeMounts": [
+              {
+                "name": "./l3/${L3_NAME:-ghostl3}/config",
+                "mountPath": "/config"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./l3/${L3_NAME:-ghostl3}/config"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

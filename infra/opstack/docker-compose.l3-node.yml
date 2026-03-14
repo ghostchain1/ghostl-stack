@@ -1,0 +1,121 @@
+# Minimal L3 OP-Stack node compose — l3-geth + l3-op-node only.
+# Used by ghostl3-provision.sh on remote L3 VMs (testnet: 10.50.99.79, mainnet: 10.50.99.78).
+# batcher + proposer added once L3 contracts deployed.
+#
+# Required env vars (via /etc/ghostl-stack/l3-{env}.env):
+#   L3_CHAIN_ID          — e.g. 903 (testnet) / 904 (mainnet)
+#   L2_RPC_HTTP          — L2 op-geth HTTP RPC (e.g. http://10.50.99.77:29547)
+#   L2_AUTH_RPC          — L2 op-geth auth RPC (e.g. http://10.50.99.77:29549) — unused for L3,
+#                          kept for parity; L3 op-node uses L2_RPC_HTTP as its L1
+#   OPSTACK_IMAGE_TAG    — Docker image tag, default: local
+#   L3_HOST_RPC_PORT     — exposed L3 RPC, default 39545
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-security: &default-security
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  l3-geth:
+    image: local/op-geth:${OPSTACK_IMAGE_TAG:-local}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
+    restart: unless-stopped
+    stop_grace_period: 60s
+    logging: *default-logging
+    ports:
+      - "${L3_RPC_BIND:-0.0.0.0}:${L3_HOST_RPC_PORT:-39545}:8545"
+      - "${L3_HOST_WS:-39548}:8546"
+      - "${L3_GETH_METRICS_HOST_PORT:-39606}:6060"
+    volumes:
+      - /opt/ghostl-stack-data/l3-geth:/data
+      - /etc/ghostl-stack/l3-config:/config:ro
+    entrypoint: ["/bin/sh"]
+    command:
+      - -c
+      - |
+        set -e
+        if [ ! -d /data/geth ]; then
+          echo "[l3-geth] initializing genesis..."
+          geth init --state.scheme=hash --datadir /data /config/genesis.json
+        fi
+        exec geth \
+          --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug,txpool \
+          --http.vhosts="*" \
+          --ws --ws.addr=0.0.0.0 --ws.origins="*" \
+          --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts="*" \
+          --authrpc.jwtsecret=/config/jwt.txt \
+          --datadir=/data \
+          --networkid=${L3_CHAIN_ID:-903} \
+          --state.scheme=hash \
+          --gcmode=archive \
+          --metrics --metrics.addr=0.0.0.0 --metrics.port=6060 \
+          --rollup.computependingblock=true \
+          --rollup.enabletxpooladmission=true \
+          --rollup.disabletxpoolgossip=false
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:8545 >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+    <<: *default-security
+    mem_limit: 4g
+    cpus: "2.0"
+
+  l3-op-node:
+    image: local/op-node:${OPSTACK_IMAGE_TAG:-local}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
+    restart: unless-stopped
+    stop_grace_period: 60s
+    logging: *default-logging
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    depends_on:
+      l3-geth:
+        condition: service_healthy
+    volumes:
+      - /opt/ghostl-stack-data/l3-op-node:/data
+      - /etc/ghostl-stack/l3-config:/config:ro
+    environment:
+      OP_NODE_L1_BEACON_IGNORE: "1"
+      OP_NODE_SEQUENCER_ENABLED: "1"
+    command:
+      - op-node
+      - --l1=${L2_RPC_HTTP:-http://host.docker.internal:29547}
+      - --l2=http://l3-geth:8551
+      - --l2.jwt-secret=/config/jwt.txt
+      - --rollup.config=/config/rollup.json
+      - --rpc.addr=0.0.0.0
+      - --rpc.port=${L3_ROLLUP_RPC_PORT:-19546}
+      - --l1.rpckind=basic
+      - --l1.trustrpc
+      - --p2p.disable
+      - --l1.beacon.ignore
+      - --sequencer.enabled
+      - --sequencer.l1-confs=${L3_SEQUENCER_L1_CONFS:-2}
+      - --metrics.enabled
+      - --metrics.addr=0.0.0.0
+      - --metrics.port=${L3_METRICS_NODE_PORT:-8300}
+    ports:
+      - "${L3_ROLLUP_RPC_HOST_PORT:-39546}:${L3_ROLLUP_RPC_PORT:-19546}"
+      - "${L3_METRICS_NODE_HOST_PORT:-8300}:${L3_METRICS_NODE_PORT:-8300}"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"optimism_syncStatus\",\"params\":[]}' http://localhost:${L3_ROLLUP_RPC_PORT:-19546} >/dev/null"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 25s
+    <<: *default-security
+    mem_limit: 2g
+    cpus: "1.5"
+
+networks:
+  default:
+    driver: bridge

@@ -1,0 +1,12 @@
+{
+  "input": "src",
+  "outputMode": "json",
+  "output": "reports/formal/scribble/scribble.json",
+  "compiler": {
+    "version": "0.8.24",
+    "settings": {
+      "optimizer": { "enabled": true, "runs": 200 },
+      "viaIR": true
+    }
+  }
+}

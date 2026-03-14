@@ -1,0 +1,1232 @@
+{
+  "nodes": [
+    {
+      "id": "contracts/src/StakeToken.sol",
+      "contracts": [
+        "StakeToken"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/src/ai/AILayerGuardian.sol",
+      "contracts": [
+        "AILayerGuardian"
+      ],
+      "layer": "AI"
+    },
+    {
+      "id": "contracts/src/ai/AICommandCenter.sol",
+      "contracts": [
+        "AICommandCenter"
+      ],
+      "layer": "AI"
+    },
+    {
+      "id": "contracts/src/ai/IAITransactionGuard.sol",
+      "contracts": [
+        "IAITransactionGuard"
+      ],
+      "layer": "AI"
+    },
+    {
+      "id": "contracts/src/ai/AIAttestationBase.sol",
+      "contracts": [
+        "for",
+        "AIAttestationBase"
+      ],
+      "layer": "AI"
+    },
+    {
+      "id": "contracts/src/ERC20.sol",
+      "contracts": [
+        "ERC20"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/src/ZkBatchVerifier.sol",
+      "contracts": [
+        "ZkBatchVerifier"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/src/bridge/StandardBridge.sol",
+      "contracts": [
+        "IERC20Like",
+        "IBridgeMintableERC20",
+        "StandardBridge",
+        "on"
+      ],
+      "layer": "Bridge"
+    },
+    {
+      "id": "contracts/src/bridge/BridgeMintableERC20.sol",
+      "contracts": [
+        "BridgeMintableERC20"
+      ],
+      "layer": "Bridge"
+    },
+    {
+      "id": "contracts/src/Merkle.sol",
+      "contracts": [
+        "Merkle"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/src/governance/ProposalExecutor.sol",
+      "contracts": [
+        "ProposalExecutor"
+      ],
+      "layer": "Governance"
+    },
+    {
+      "id": "contracts/src/governance/Governor.sol",
+      "contracts": [
+        "Governor"
+      ],
+      "layer": "Governance"
+    },
+    {
+      "id": "contracts/src/l3/AIGuardianL3.sol",
+      "contracts": [
+        "AIGuardianL3"
+      ],
+      "layer": "L3"
+    },
+    {
+      "id": "contracts/src/common/ERC20.sol",
+      "contracts": [
+        "ERC20"
+      ],
+      "layer": "Common"
+    },
+    {
+      "id": "contracts/src/common/XDomainMessenger.sol",
+      "contracts": [
+        "XDomainMessenger"
+      ],
+      "layer": "Common"
+    },
+    {
+      "id": "contracts/src/common/Ownable.sol",
+      "contracts": [
+        "Ownable"
+      ],
+      "layer": "Common"
+    },
+    {
+      "id": "contracts/src/common/LibErrors.sol",
+      "contracts": [
+        "LibErrors"
+      ],
+      "layer": "Common"
+    },
+    {
+      "id": "contracts/src/common/IXDomainMessenger.sol",
+      "contracts": [
+        "IXDomainMessenger"
+      ],
+      "layer": "Common"
+    },
+    {
+      "id": "contracts/src/common/LibAddress.sol",
+      "contracts": [
+        "LibAddress"
+      ],
+      "layer": "Common"
+    },
+    {
+      "id": "contracts/src/apps/PingPong.sol",
+      "contracts": [
+        "PingPong"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/src/l2/AIGuardianL2.sol",
+      "contracts": [
+        "AIGuardianL2"
+      ],
+      "layer": "L2"
+    },
+    {
+      "id": "contracts/src/l2/DisputeGameAddressBook.sol",
+      "contracts": [
+        "DisputeGameAddressBook"
+      ],
+      "layer": "L2"
+    },
+    {
+      "id": "contracts/src/futuristic/FutureStack.sol",
+      "contracts": [
+        "AccessManaged",
+        "Pausable",
+        "ValidatorRegistryV2",
+        "StakingManagerV2",
+        "SlashingManagerV2",
+        "ITreasuryV2",
+        "RewardDistributorV2",
+        "EpochManager",
+        "ConsensusParams",
+        "GenesisConfigV2",
+        "ChainConfigV2",
+        "UpgradeManagerV2",
+        "PauseGuardianV2",
+        "IMintableToken",
+        "IBurnableToken",
+        "NativeTokenV2",
+        "WrappedNative",
+        "MintController",
+        "BurnController",
+        "FeeMarketV2",
+        "BaseFeeOracle",
+        "IERC20Minimal",
+        "TreasuryV2",
+        "EmissionController",
+        "Stablecoin",
+        "CollateralVault",
+        "PriceOracleRouter",
+        "PegStabilityModule",
+        "AIMonetaryPolicy",
+        "VolatilityController",
+        "CircuitBreaker",
+        "StablecoinController",
+        "CrossChainMessenger",
+        "StateCommitmentChain",
+        "BridgeRouter",
+        "interface",
+        "TokenBridge",
+        "NFTBridge",
+        "MerkleProofVerifier",
+        "ZKProofVerifier",
+        "FraudProofVerifier",
+        "CheckpointManager",
+        "RollupManagerV2",
+        "BatchInbox",
+        "SequencerRegistry",
+        "BatcherBondManager",
+        "DisputeGameFactoryV2",
+        "FaultDisputeGame",
+        "OutputOracle",
+        "FinalizationManager",
+        "GovernanceToken",
+        "VotingEscrow",
+        "GovernorV2",
+        "ProposalExecutorV2",
+        "DelegationManager",
+        "QuadraticVoting",
+        "AIGovernanceAdvisor",
+        "DecentralizedID",
+        "IdentityRegistry",
+        "ReputationScore",
+        "ZKIdentityVerifier",
+        "SelectiveDisclosure",
+        "ComplianceGate",
+        "AISecurityOracle",
+        "AnomalyDetector",
+        "TransactionClassifier",
+        "KeeperRegistry",
+        "AutonomousExecutor",
+        "PredictiveGasManager",
+        "ContractRegistry",
+        "AddressBook",
+        "UpgradeableProxy",
+        "Multicall",
+        "MetaTxForwarder",
+        "AccountAbstraction",
+        "NFTCore",
+        "RoyaltyManager",
+        "SoulboundToken",
+        "DEXRouter",
+        "LiquidityPool",
+        "YieldVault",
+        "InsuranceFund",
+        "EmergencyShutdownV2",
+        "ValidatorRecovery",
+        "TreasuryBackstop",
+        "ForkRecoveryManager"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/src/GhostGasTokens.sol",
+      "contracts": [
+        "GhostGasTokenBase",
+        "GhostGasTokenL2",
+        "GhostGasTokenL3"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/src/L3BridgedToken.sol",
+      "contracts": [
+        "L3BridgedToken"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/src/GuardPolicy.sol",
+      "contracts": [
+        "GuardPolicy"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/src/nft/GhostNFT.sol",
+      "contracts": [
+        "IERC721Receiver",
+        "GhostNFT"
+      ],
+      "layer": "NFT"
+    },
+    {
+      "id": "contracts/src/GhostTokenL2.sol",
+      "contracts": [
+        "GhostTokenL2"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/src/MockL2OutputOracle.sol",
+      "contracts": [
+        "MockL2OutputOracle"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/src/l1/FeeMarket.sol",
+      "contracts": [
+        "FeeMarket"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/Faucet.sol",
+      "contracts": [
+        "Faucet"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/RewardDistributor.sol",
+      "contracts": [
+        "RewardDistributor"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/NativeToken.sol",
+      "contracts": [
+        "NativeToken"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/EmergencyShutdown.sol",
+      "contracts": [
+        "EmergencyShutdown"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/SystemConfig.sol",
+      "contracts": [
+        "to",
+        "SystemConfig"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/Admin.sol",
+      "contracts": [
+        "Admin"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/PauseGuardian.sol",
+      "contracts": [
+        "PauseGuardian"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/ChainConfig.sol",
+      "contracts": [
+        "ChainConfig"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/L2OutputOracle.sol",
+      "contracts": [
+        "L2OutputOracle"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/ValidatorRegistry.sol",
+      "contracts": [
+        "ValidatorRegistry"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/GenesisConfig.sol",
+      "contracts": [
+        "GenesisConfig"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/RollupManager.sol",
+      "contracts": [
+        "addresses",
+        "RollupManager"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/AIGuardianL1.sol",
+      "contracts": [
+        "AIGuardianL1"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/Portal.sol",
+      "contracts": [
+        "Portal"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/SlashingManager.sol",
+      "contracts": [
+        "SlashingManager"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/UpgradeManager.sol",
+      "contracts": [
+        "UpgradeManager"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/DisputeGameFactory.sol",
+      "contracts": [
+        "IDisputeGame",
+        "IGameClone",
+        "at",
+        "DisputeGameFactory"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/SimpleDisputeGame.sol",
+      "contracts": [
+        "to",
+        "SimpleDisputeGame"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/StakingManager.sol",
+      "contracts": [
+        "StakingManager"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/Treasury.sol",
+      "contracts": [
+        "IERC20Balance",
+        "Treasury"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1/Messenger.sol",
+      "contracts": [
+        "Messenger"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/L3Inbox.sol",
+      "contracts": [
+        "L3Inbox"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/src/opstack/DummyL2OO.sol",
+      "contracts": [
+        "DummyL2OO"
+      ],
+      "layer": "OPStack"
+    },
+    {
+      "id": "contracts/src/opstack/GuardPolicyStub.sol",
+      "contracts": [
+        "GuardPolicyStub"
+      ],
+      "layer": "OPStack"
+    },
+    {
+      "id": "contracts/src/opstack/GasToken.sol",
+      "contracts": [
+        "sources",
+        "GasToken"
+      ],
+      "layer": "OPStack"
+    },
+    {
+      "id": "contracts/src/opstack/L2OutputOracleStub.sol",
+      "contracts": [
+        "L2OutputOracle"
+      ],
+      "layer": "OPStack"
+    },
+    {
+      "id": "contracts/src/L2L3Bridge.sol",
+      "contracts": [
+        "L2L3Bridge"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/src/l1custom/L1CrossDomainMessenger.sol",
+      "contracts": [
+        "L1CrossDomainMessenger"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1custom/L1SystemConfig.sol",
+      "contracts": [
+        "to",
+        "L1SystemConfig"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1custom/L1DisputeGameFactory.sol",
+      "contracts": [
+        "L1DisputeGameFactory"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1custom/L1OutputOracle.sol",
+      "contracts": [
+        "L1OutputOracle"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/l1custom/L1OptimismPortal.sol",
+      "contracts": [
+        "L1OptimismPortal"
+      ],
+      "layer": "L1"
+    },
+    {
+      "id": "contracts/src/OptimisticRollup.sol",
+      "contracts": [
+        "for",
+        "OptimisticRollup"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/src/MockSystemConfig.sol",
+      "contracts": [
+        "MockSystemConfig"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/src/L3BridgedTokenFactory.sol",
+      "contracts": [
+        "L3BridgedTokenFactory"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/src/tokens/TestERC20.sol",
+      "contracts": [
+        "TestERC20"
+      ],
+      "layer": "Token"
+    },
+    {
+      "id": "contracts/src/MockDisputeGameFactory.sol",
+      "contracts": [
+        "MockDisputeGameFactory"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/compliance/src/ComplianceOracle.sol",
+      "contracts": [
+        "ComplianceOracle"
+      ],
+      "layer": "Compliance"
+    },
+    {
+      "id": "contracts/compliance/src/ComplianceGuardExample.sol",
+      "contracts": [
+        "IComplianceOracle",
+        "ComplianceGuardExample"
+      ],
+      "layer": "Compliance"
+    },
+    {
+      "id": "contracts/compliance/script/DeployOracle.s.sol",
+      "contracts": [
+        "DeployOracle"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/compliance/test/ComplianceOracle.t.sol",
+      "contracts": [
+        "ComplianceOracleTest"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/formal/echidna/TreasuryEchidna.sol",
+      "contracts": [
+        "TreasuryEchidna"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/formal/echidna/BridgeEchidna.sol",
+      "contracts": [
+        "BridgeEchidna"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/formal/echidna/GovernanceEchidna.sol",
+      "contracts": [
+        "GovToken",
+        "GovernanceEchidna"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/formal/echidna/TokenEchidna.sol",
+      "contracts": [
+        "TokenEchidna"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/test/foundry/TestBase.sol",
+      "contracts": [
+        "Vm",
+        "TestBase"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/test/foundry/FuzzGhostToken.t.sol",
+      "contracts": [
+        "FuzzGhostToken"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/test/foundry/FuzzTreasury.t.sol",
+      "contracts": [
+        "FuzzTreasury"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/test/foundry/FuzzGovernance.t.sol",
+      "contracts": [
+        "GovToken",
+        "FuzzGovernance"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/test/foundry/FuzzNativeToken.t.sol",
+      "contracts": [
+        "FuzzNativeToken"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/test/foundry/FuzzRollup.t.sol",
+      "contracts": [
+        "FuzzRollup"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/test/foundry/InvariantBridge.t.sol",
+      "contracts": [
+        "InvariantBridge"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/test/foundry/AIGuardian.t.sol",
+      "contracts": [
+        "GuardianTarget",
+        "AIGuardianTest"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "contracts/test/foundry/FuzzBridge.t.sol",
+      "contracts": [
+        "FuzzBridge"
+      ],
+      "layer": "Unknown"
+    },
+    {
+      "id": "infra/opstack/contracts/DummyL2OO.sol",
+      "contracts": [
+        "DummyL2OO"
+      ],
+      "layer": "OPStack"
+    },
+    {
+      "id": "infra/opstack/contracts/GuardPolicyStub.sol",
+      "contracts": [
+        "GuardPolicyStub"
+      ],
+      "layer": "OPStack"
+    },
+    {
+      "id": "infra/opstack/contracts/L2OutputOracleMock.sol",
+      "contracts": [
+        "L2OutputOracleMock"
+      ],
+      "layer": "OPStack"
+    },
+    {
+      "id": "infra/opstack/contracts/GasToken.sol",
+      "contracts": [
+        "GasToken"
+      ],
+      "layer": "OPStack"
+    },
+    {
+      "id": "infra/opstack/contracts/script/DeployL1.s.sol",
+      "contracts": [
+        "DummyFaultDisputeGame",
+        "DeployL1"
+      ],
+      "layer": "OPStack"
+    },
+    {
+      "id": "infra/opstack/contracts/script/DeployGasToken.s.sol",
+      "contracts": [
+        "DeployGasToken"
+      ],
+      "layer": "OPStack"
+    },
+    {
+      "id": "infra/opstack/contracts/L2OOStub.sol",
+      "contracts": [
+        "L2OutputOracle"
+      ],
+      "layer": "OPStack"
+    }
+  ],
+  "edges": [
+    {
+      "from": "contracts/src/StakeToken.sol",
+      "to": "contracts/src/ERC20.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/ai/AILayerGuardian.sol",
+      "to": "contracts/src/ai/AIAttestationBase.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/ai/AILayerGuardian.sol",
+      "to": "contracts/src/ai/IAITransactionGuard.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/ai/AICommandCenter.sol",
+      "to": "contracts/src/ai/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/ai/AIAttestationBase.sol",
+      "to": "contracts/src/ai/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/bridge/StandardBridge.sol",
+      "to": "contracts/src/bridge/../common/IXDomainMessenger.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/bridge/StandardBridge.sol",
+      "to": "contracts/src/bridge/../common/LibErrors.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/bridge/BridgeMintableERC20.sol",
+      "to": "contracts/src/bridge/../common/LibErrors.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/governance/Governor.sol",
+      "to": "contracts/src/governance/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/governance/Governor.sol",
+      "to": "contracts/src/governance/../common/ERC20.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/governance/Governor.sol",
+      "to": "contracts/src/governance/ProposalExecutor.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l3/AIGuardianL3.sol",
+      "to": "contracts/src/l3/../ai/AILayerGuardian.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/common/XDomainMessenger.sol",
+      "to": "contracts/src/common/IXDomainMessenger.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/common/XDomainMessenger.sol",
+      "to": "contracts/src/common/LibErrors.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/common/XDomainMessenger.sol",
+      "to": "contracts/src/common/LibAddress.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/apps/PingPong.sol",
+      "to": "contracts/src/apps/../common/IXDomainMessenger.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l2/AIGuardianL2.sol",
+      "to": "contracts/src/l2/../ai/AILayerGuardian.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/futuristic/FutureStack.sol",
+      "to": "contracts/src/futuristic/../ERC20.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/GhostGasTokens.sol",
+      "to": "contracts/src/ERC20.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/L3BridgedToken.sol",
+      "to": "contracts/src/ERC20.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/nft/GhostNFT.sol",
+      "to": "contracts/src/nft/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/GhostTokenL2.sol",
+      "to": "contracts/src/ERC20.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/FeeMarket.sol",
+      "to": "contracts/src/l1/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/Faucet.sol",
+      "to": "contracts/src/l1/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/RewardDistributor.sol",
+      "to": "contracts/src/l1/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/RewardDistributor.sol",
+      "to": "contracts/src/l1/NativeToken.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/RewardDistributor.sol",
+      "to": "contracts/src/l1/StakingManager.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/NativeToken.sol",
+      "to": "contracts/src/l1/../common/ERC20.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/NativeToken.sol",
+      "to": "contracts/src/l1/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/EmergencyShutdown.sol",
+      "to": "contracts/src/l1/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/SystemConfig.sol",
+      "to": "contracts/src/l1/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/Admin.sol",
+      "to": "contracts/src/l1/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/PauseGuardian.sol",
+      "to": "contracts/src/l1/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/ChainConfig.sol",
+      "to": "contracts/src/l1/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/L2OutputOracle.sol",
+      "to": "contracts/src/l1/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/ValidatorRegistry.sol",
+      "to": "contracts/src/l1/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/RollupManager.sol",
+      "to": "contracts/src/l1/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/RollupManager.sol",
+      "to": "contracts/src/l1/L2OutputOracle.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/RollupManager.sol",
+      "to": "contracts/src/l1/Portal.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/RollupManager.sol",
+      "to": "contracts/src/l1/Messenger.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/RollupManager.sol",
+      "to": "contracts/src/l1/SystemConfig.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/AIGuardianL1.sol",
+      "to": "contracts/src/l1/../ai/AILayerGuardian.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/Portal.sol",
+      "to": "contracts/src/l1/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/SlashingManager.sol",
+      "to": "contracts/src/l1/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/SlashingManager.sol",
+      "to": "contracts/src/l1/StakingManager.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/UpgradeManager.sol",
+      "to": "contracts/src/l1/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/StakingManager.sol",
+      "to": "contracts/src/l1/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/Treasury.sol",
+      "to": "contracts/src/l1/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1/Messenger.sol",
+      "to": "contracts/src/l1/../common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/L2L3Bridge.sol",
+      "to": "contracts/src/GuardPolicy.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/L2L3Bridge.sol",
+      "to": "contracts/src/ERC20.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1custom/L1CrossDomainMessenger.sol",
+      "to": "contracts/src/l1custom/../common/XDomainMessenger.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1custom/L1SystemConfig.sol",
+      "to": "contracts/src/l1custom/../common/LibErrors.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1custom/L1OutputOracle.sol",
+      "to": "contracts/src/l1custom/../common/LibErrors.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/l1custom/L1OptimismPortal.sol",
+      "to": "contracts/src/l1custom/../common/LibErrors.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/OptimisticRollup.sol",
+      "to": "contracts/src/Merkle.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/L3BridgedTokenFactory.sol",
+      "to": "contracts/src/L3BridgedToken.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/src/tokens/TestERC20.sol",
+      "to": "contracts/src/tokens/../common/LibErrors.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/compliance/script/DeployOracle.s.sol",
+      "to": "contracts/compliance/script/../src/ComplianceOracle.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/compliance/test/ComplianceOracle.t.sol",
+      "to": "contracts/compliance/test/../src/ComplianceOracle.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/formal/echidna/TreasuryEchidna.sol",
+      "to": "contracts/formal/echidna/../../src/l1/Treasury.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/formal/echidna/TreasuryEchidna.sol",
+      "to": "contracts/formal/echidna/../../src/l1/NativeToken.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/formal/echidna/BridgeEchidna.sol",
+      "to": "contracts/formal/echidna/../../src/GuardPolicy.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/formal/echidna/BridgeEchidna.sol",
+      "to": "contracts/formal/echidna/../../src/L2L3Bridge.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/formal/echidna/BridgeEchidna.sol",
+      "to": "contracts/formal/echidna/../../src/GhostTokenL2.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/formal/echidna/GovernanceEchidna.sol",
+      "to": "contracts/formal/echidna/../../src/governance/Governor.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/formal/echidna/GovernanceEchidna.sol",
+      "to": "contracts/formal/echidna/../../src/governance/ProposalExecutor.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/formal/echidna/GovernanceEchidna.sol",
+      "to": "contracts/formal/echidna/../../src/common/ERC20.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/formal/echidna/TokenEchidna.sol",
+      "to": "contracts/formal/echidna/../../src/l1/NativeToken.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/FuzzGhostToken.t.sol",
+      "to": "contracts/test/foundry/../../src/GhostTokenL2.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/FuzzTreasury.t.sol",
+      "to": "contracts/test/foundry/TestBase.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/FuzzTreasury.t.sol",
+      "to": "contracts/test/foundry/../../src/l1/NativeToken.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/FuzzTreasury.t.sol",
+      "to": "contracts/test/foundry/../../src/l1/Treasury.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/FuzzTreasury.t.sol",
+      "to": "contracts/test/foundry/../../src/common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/FuzzGovernance.t.sol",
+      "to": "contracts/test/foundry/TestBase.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/FuzzGovernance.t.sol",
+      "to": "contracts/test/foundry/../../src/governance/Governor.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/FuzzGovernance.t.sol",
+      "to": "contracts/test/foundry/../../src/governance/ProposalExecutor.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/FuzzGovernance.t.sol",
+      "to": "contracts/test/foundry/../../src/common/ERC20.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/FuzzGovernance.t.sol",
+      "to": "contracts/test/foundry/../../src/common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/FuzzNativeToken.t.sol",
+      "to": "contracts/test/foundry/TestBase.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/FuzzNativeToken.t.sol",
+      "to": "contracts/test/foundry/../../src/l1/NativeToken.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/FuzzNativeToken.t.sol",
+      "to": "contracts/test/foundry/../../src/common/Ownable.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/FuzzRollup.t.sol",
+      "to": "contracts/test/foundry/TestBase.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/FuzzRollup.t.sol",
+      "to": "contracts/test/foundry/../../src/OptimisticRollup.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/InvariantBridge.t.sol",
+      "to": "contracts/test/foundry/TestBase.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/InvariantBridge.t.sol",
+      "to": "contracts/test/foundry/../../src/GuardPolicy.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/InvariantBridge.t.sol",
+      "to": "contracts/test/foundry/../../src/L2L3Bridge.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/AIGuardian.t.sol",
+      "to": "contracts/test/foundry/TestBase.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/AIGuardian.t.sol",
+      "to": "contracts/test/foundry/../../src/l1/AIGuardianL1.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/AIGuardian.t.sol",
+      "to": "contracts/test/foundry/../../src/ai/AILayerGuardian.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/FuzzBridge.t.sol",
+      "to": "contracts/test/foundry/TestBase.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/FuzzBridge.t.sol",
+      "to": "contracts/test/foundry/../../src/GuardPolicy.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/FuzzBridge.t.sol",
+      "to": "contracts/test/foundry/../../src/L2L3Bridge.sol",
+      "type": "import"
+    },
+    {
+      "from": "contracts/test/foundry/FuzzBridge.t.sol",
+      "to": "contracts/test/foundry/../../src/GhostTokenL2.sol",
+      "type": "import"
+    },
+    {
+      "from": "infra/opstack/contracts/script/DeployL1.s.sol",
+      "to": "infra/opstack/contracts/script/../GasToken.sol",
+      "type": "import"
+    },
+    {
+      "from": "infra/opstack/contracts/script/DeployGasToken.s.sol",
+      "to": "infra/opstack/contracts/script/../GasToken.sol",
+      "type": "import"
+    }
+  ],
+  "missing_imports": []
+}

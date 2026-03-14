@@ -1,0 +1,412 @@
+# GhostChain Sovereign Exchange (GSX) — Full Stack Docker Compose
+# Subsystems: GSX · GSN · GCM · GSR · GWF
+# Version strategy: each service uses its own port in range 8090–8199
+#
+# Usage:
+#   docker compose -f docker-compose.gsx.yml up -d
+#   docker compose -f docker-compose.gsx.yml logs -f gsx-api
+
+name: ghostchain-gsx
+
+x-svc-defaults: &svc-defaults
+  restart: unless-stopped
+  networks: [gsx-net]
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "50m"
+      max-file: "5"
+
+x-node-defaults: &node-defaults
+  <<: *svc-defaults
+  build:
+    context: .
+    dockerfile_inline: |
+      FROM node:22-alpine
+      WORKDIR /app
+      COPY package.json ./
+      RUN npm install --production
+      COPY src ./src
+      CMD ["node", "src/index.js"]
+
+services:
+
+  # ── Infrastructure ──────────────────────────────────────────────────
+  gsx-postgres:
+    <<: *svc-defaults
+    image: postgres:16-alpine
+    container_name: gsx-postgres
+    environment:
+      POSTGRES_DB:       gsx
+      POSTGRES_USER:     gsx
+      POSTGRES_PASSWORD: ${GSX_DB_PASSWORD:-gsx_dev_password}
+    volumes:
+      - gsx-pg-data:/var/lib/postgresql/data
+      - ./infra/gsx/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    ports:
+      - "5445:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gsx"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  gsx-redis:
+    <<: *svc-defaults
+    image: redis:7-alpine
+    container_name: gsx-redis
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy volatile-lru
+    volumes:
+      - gsx-redis-data:/data
+    ports:
+      - "6389:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── GSX Core ────────────────────────────────────────────────────────
+  gsx-engine:
+    <<: *svc-defaults
+    build:
+      context: ./services/gsx-engine
+      dockerfile: Dockerfile
+    container_name: gsx-engine
+    ports:
+      - "8090:8090"
+    environment:
+      PORT: "8090"
+      RUST_LOG: "info"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8090/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  gsx-api:
+    <<: *svc-defaults
+    build:
+      context: ./services/gsx-api
+    container_name: gsx-api
+    ports:
+      - "8100:8100"
+    environment:
+      PORT:            "8100"
+      ENGINE_URL:      "http://gsx-engine:8090"
+      COMPLIANCE_URL:  "http://gsx-compliance:8102"
+      SETTLEMENT_URL:  "http://gsx-settlement:8101"
+      RESERVE_URL:     "http://gsx-reserve:8104"
+      CBDC_URL:        "http://gsx-cbdc:8105"
+      CUSTODY_URL:     "http://gsx-custody:8103"
+      AUDIT_URL:       "http://gsx-audit:8106"
+    depends_on:
+      gsx-engine:     { condition: service_healthy }
+      gsx-compliance: { condition: service_started }
+      gsx-settlement: { condition: service_started }
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8100/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  gsx-settlement:
+    <<: *svc-defaults
+    build:
+      context: ./services/gsx-settlement
+    container_name: gsx-settlement
+    ports:
+      - "8101:8101"
+    environment:
+      PORT:              "8101"
+      RPC_URL:           "${GHOST_RPC_URL:-http://ghost-node:8545}"
+      SETTLEMENT_ADDR:   "${GSX_SETTLEMENT_CONTRACT:-0x0000000000000000000000000000000000000000}"
+      BATCH_INTERVAL_MS: "30000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8101/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  gsx-compliance:
+    <<: *svc-defaults
+    build:
+      context: ./services/gsx-compliance
+    container_name: gsx-compliance
+    ports:
+      - "8102:8102"
+    environment:
+      PORT: "8102"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8102/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  gsx-custody:
+    <<: *svc-defaults
+    build:
+      context: ./services/gsx-custody
+    container_name: gsx-custody
+    ports:
+      - "8103:8103"
+    environment:
+      PORT:               "8103"
+      REQUIRED_APPROVALS: "3"
+      CUSTODIANS:         "${GSX_CUSTODIANS:-}"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8103/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  gsx-reserve:
+    <<: *svc-defaults
+    build:
+      context: ./services/gsx-reserve
+    container_name: gsx-reserve
+    ports:
+      - "8104:8104"
+    environment:
+      PORT: "8104"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8104/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  gsx-cbdc:
+    <<: *svc-defaults
+    build:
+      context: ./services/gsx-cbdc
+    container_name: gsx-cbdc
+    ports:
+      - "8105:8105"
+    environment:
+      PORT: "8105"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8105/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  gsx-audit:
+    <<: *svc-defaults
+    build:
+      context: ./services/gsx-audit
+    container_name: gsx-audit
+    ports:
+      - "8106:8106"
+    environment:
+      PORT: "8106"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8106/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── GSN — Global Settlement Network ─────────────────────────────────
+  gsn-gateway:
+    <<: *svc-defaults
+    build:
+      context: ./services/gsn-gateway
+    container_name: gsn-gateway
+    ports:
+      - "8110:8110"
+    environment:
+      PORT:            "8110"
+      GATEWAY_ID:      "${GSN_GATEWAY_ID:-GSN-GW-001}"
+      SETTLEMENT_URL:  "http://gsn-settlement:8111"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8110/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  gsn-settlement:
+    <<: *svc-defaults
+    build:
+      context: ./services/gsn-settlement
+    container_name: gsn-settlement
+    ports:
+      - "8111:8111"
+    environment:
+      PORT: "8111"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8111/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  gsn-liquidity:
+    <<: *svc-defaults
+    build:
+      context: ./services/gsn-liquidity
+    container_name: gsn-liquidity
+    ports:
+      - "8112:8112"
+    environment:
+      PORT: "8112"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8112/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── GCM — Central Bank Network ───────────────────────────────────────
+  gcm-node:
+    <<: *svc-defaults
+    build:
+      context: ./services/gcm-node
+    container_name: gcm-node
+    ports:
+      - "8120:8120"
+    environment:
+      PORT:         "8120"
+      NODE_ID:      "${GCM_NODE_ID:-GCM-NODE-001}"
+      CENTRAL_BANK: "${CENTRAL_BANK_NAME:-GhostChain Reserve Bank}"
+      JURISDICTION: "${JURISDICTION:-GLOBAL}"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8120/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  gcm-policy:
+    <<: *svc-defaults
+    build:
+      context: ./services/gcm-policy
+    container_name: gcm-policy
+    ports:
+      - "8121:8121"
+    environment:
+      PORT: "8121"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8121/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  gcm-mint:
+    <<: *svc-defaults
+    build:
+      context: ./services/gcm-mint
+    container_name: gcm-mint
+    ports:
+      - "8122:8122"
+    environment:
+      PORT:        "8122"
+      CBDC_URL:    "http://gsx-cbdc:8105"
+      GCM_NODE_URL: "http://gcm-node:8120"
+    depends_on:
+      gsx-cbdc:  { condition: service_started }
+      gcm-node:  { condition: service_started }
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8122/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── GSR — Strategic Reserves Network ────────────────────────────────
+  gsr-oracle:
+    <<: *svc-defaults
+    build:
+      context: ./services/gsr-oracle
+    container_name: gsr-oracle
+    ports:
+      - "8130:8130"
+    environment:
+      PORT: "8130"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8130/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  gsr-tokenizer:
+    <<: *svc-defaults
+    build:
+      context: ./services/gsr-tokenizer
+    container_name: gsr-tokenizer
+    ports:
+      - "8131:8131"
+    environment:
+      PORT:       "8131"
+      ORACLE_URL: "http://gsr-oracle:8130"
+    depends_on:
+      gsr-oracle: { condition: service_started }
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8131/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  gsr-audit:
+    <<: *svc-defaults
+    build:
+      context: ./services/gsr-audit
+    container_name: gsr-audit
+    ports:
+      - "8132:8132"
+    environment:
+      PORT: "8132"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8132/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── GWF — World Finance Network ───────────────────────────────────────
+  gwf-policy:
+    <<: *svc-defaults
+    build:
+      context: ./services/gwf-policy
+    container_name: gwf-policy
+    ports:
+      - "8140:8140"
+    environment:
+      PORT: "8140"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8140/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  gwf-router:
+    <<: *svc-defaults
+    build:
+      context: ./services/gwf-router
+    container_name: gwf-router
+    ports:
+      - "8141:8141"
+    environment:
+      PORT: "8141"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8141/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  gwf-monitor:
+    <<: *svc-defaults
+    build:
+      context: ./services/gwf-monitor
+    container_name: gwf-monitor
+    ports:
+      - "8142:8142"
+    environment:
+      PORT: "8142"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8142/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  gsx-pg-data:
+  gsx-redis-data:
+
+networks:
+  gsx-net:
+    name: gsx-net
+    driver: bridge

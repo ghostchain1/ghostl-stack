@@ -1,0 +1,18 @@
+{
+  "name": "consensus-telemetry-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "CONSENSUS_TELEMETRY_NO_SERVER=1 node --test src/index.test.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "ghost": "file:../../packages/ghost",
+    "prom-client": "^15.1.2"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

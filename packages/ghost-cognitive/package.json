@@ -1,0 +1,47 @@
+{
+  "name": "@ghostchain/cognitive",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Ghost Cognitive Layer — long-term AI memory, economic strategy AI, adaptive tokenomics, and predictive governance for GhostChain",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./memory": {
+      "types": "./dist/memory/GhostMemoryStore.d.ts",
+      "default": "./dist/memory/GhostMemoryStore.js"
+    },
+    "./economy": {
+      "types": "./dist/economy/GhostEconomicAI.d.ts",
+      "default": "./dist/economy/GhostEconomicAI.js"
+    },
+    "./tokenomics": {
+      "types": "./dist/tokenomics/GhostTokenomicsController.d.ts",
+      "default": "./dist/tokenomics/GhostTokenomicsController.js"
+    },
+    "./governance": {
+      "types": "./dist/governance/GhostPredictiveGovernance.d.ts",
+      "default": "./dist/governance/GhostPredictiveGovernance.js"
+    },
+    "./cognition": {
+      "types": "./dist/cognition/GhostCognitiveEngine.d.ts",
+      "default": "./dist/cognition/GhostCognitiveEngine.js"
+    },
+    "./telemetry": {
+      "types": "./dist/telemetry/GhostCognitiveTelemetry.d.ts",
+      "default": "./dist/telemetry/GhostCognitiveTelemetry.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

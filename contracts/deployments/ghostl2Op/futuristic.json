@@ -1,0 +1,255 @@
+{
+  "network": "ghostl2Op",
+  "layer": "l2",
+  "chainId": 901,
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "deployedAt": "2026-03-04T03:00:00.000Z",
+  "contracts": [
+    {
+      "name": "ConsensusParams",
+      "address": "0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "ChainConfigV2",
+      "address": "0x0E801D84Fa97b50751Dbf25036d067dCf18858bF",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "GenesisConfigV2",
+      "address": "0x8f86403A4DE0BB5791fa46B8e795C547942fE4Cf",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "ExecutionConfigV2",
+      "address": "0x9d4454B023096f34B160D6B654540c56A1F81688",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "TreasuryV2",
+      "address": "0x4c5859f0F772848b2D91F1D83E2Fe57935348029",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "FeeMarketV2",
+      "address": "0x1291Be112d480055DaFd8a610b7d1e203891C274",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "StakingManagerV2",
+      "address": "0x5f3f1dBD7B74C6B46e8c44f98792A1dAf8d69154",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "SlashingManagerV2",
+      "address": "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "RewardDistributorV2",
+      "address": "0x2bdCC0de6bE1f7D2ee689a0342D76F52E8EFABa3",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "Stablecoin",
+      "address": "0x7969c5eD335650692Bc04293B07F5BF2e7A673C0",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "CollateralVault",
+      "address": "0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "PriceOracleRouter",
+      "address": "0xFD471836031dc5108809D173A067e8486B9047A3",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "StablecoinController",
+      "address": "0x1429859428C0aBc9C2C47C8Ee9FBaf82cFA0F20f",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "PegStabilityModule",
+      "address": "0x162A433068F51e18b7d13932F27e66a3f99E6890",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "BridgeRouter",
+      "address": "0x04C89607413713Ec9775E14b954286519d836FEf",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "TokenBridge",
+      "address": "0x4C4a2f8c81640e47606d3fd77B353E87Ba015584",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "NFTBridge",
+      "address": "0x21dF544947ba3E8b3c32561399E88B52Dc8b2823",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "RollupManagerV2",
+      "address": "0x2E2Ed0Cfd3AD2f1d34481277b3204d807Ca2F8c2",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "BatchInbox",
+      "address": "0xD8a5a9b31c3C0232E196d518E89Fd8bF83AcAd43",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "SequencerRegistry",
+      "address": "0xDC11f7E700A4c898AE5CAddB1082cFfa76512aDD",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "BatcherBondManager",
+      "address": "0x51A1ceB83B83F1985a81C295d1fF28Afef186E02",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "DisputeGameFactoryV2",
+      "address": "0x36b58F5C1969B7b6591D752ea6F5486D069010AB",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "OutputOracle",
+      "address": "0x8198f5d8F8CfFE8f9C413d98a0A55aEB8ab9FbB7",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "FinalizationManager",
+      "address": "0x0355B7B8cb128fA5692729Ab3AAa199C1753f726",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "CheckpointManager",
+      "address": "0x202CCe504e04bEd6fC0521238dDf04Bc9E8E15aB",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "GovernanceToken",
+      "address": "0xf4B146FbA71F41E0592668ffbF264F1D186b2Ca8",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "VotingEscrow",
+      "address": "0x172076E0166D1F9Cc711C77Adf8488051744980C",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "PauseGuardianV2",
+      "address": "0x4EE6eCAD1c2Dae9f525404De8555724e3c35d07B",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "EmergencyShutdownV2",
+      "address": "0xBEc49fA140aCaA83533fB00A2BB19bDdd0290f25",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "ForkRecoveryManager",
+      "address": "0xD84379CEae14AA33C123Af12424A37803F885889",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "ProposalExecutorV2",
+      "address": "0x2B0d36FACD61B71CC05ab8F3D2355ec3631C0dd5",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "GovernorV2",
+      "address": "0xfbC22278A96299D91d41C453234d97b4F5Eb9B2d",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "AddressBook",
+      "address": "0xC9a43158891282A2B1475592D5719c001986Aaec",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "UpgradeManagerV2",
+      "address": "0x1c85638e118b37167e9298c2268758e058DdfDA0",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "AISecurityOracle",
+      "address": "0x86A2EE8FAf9A840F7a2c64CA3d51209F9A02081D",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "AnomalyDetector",
+      "address": "0xA4899D35897033b927acFCf422bc745916139776",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "TransactionClassifier",
+      "address": "0xf953b3A269d80e3eB0F2947630Da976B896A8C5b",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "KeeperRegistry",
+      "address": "0xAA292E8611aDF267e563f334Ee42320aC96D0463",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "AutonomousExecutor",
+      "address": "0x5c74c94173F05dA1720953407cbb920F3DF9f887",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "PredictiveGasManager",
+      "address": "0x720472c8ce72c2A2D711333e064ABD3E6BbEAdd3",
+      "chainId": 901,
+      "layer": "l2"
+    },
+    {
+      "name": "ContractRegistry",
+      "address": "0xe8D2A1E88c91DCd5433208d4152Cc4F399a7e91d",
+      "chainId": 901,
+      "layer": "l2"
+    }
+  ]
+}

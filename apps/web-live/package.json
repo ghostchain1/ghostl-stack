@@ -1,0 +1,32 @@
+{
+  "name": "@ghostchain/web-live",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GhostChain streaming platform — live.ghostchain.live",
+  "scripts": {
+    "dev": "PORT=${PORT:-3017} next dev",
+    "build": "NEXT_IGNORE_INCORRECT_LOCKFILE=1 NEXT_DISABLE_ESLINT=1 next build",
+    "start": "next start -p ${PORT:-3017}",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@ghostchain/ui-components": "*",
+    "@ghostchain/ghost-sdk-core": "*",
+    "@ghostl/ghostwallet": "*",
+    "next": "16.1.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "swr": "^2.2.5",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.5",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^3.4.17",
+    "typescript": "5.9.3"
+  },
+  "engines": { "node": ">=22.21.0 <23" }
+}

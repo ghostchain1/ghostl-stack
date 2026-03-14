@@ -1,0 +1,58 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "participation-service",
+    "labels": {
+      "app": "participation-service",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.services.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "participation-service"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "participation-service",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "participation-service",
+            "image": "ghostl/participation-service:local",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "PORT",
+                "value": "7603"
+              },
+              {
+                "name": "PROM_URL",
+                "value": "${PROM_URL}"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 7603,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

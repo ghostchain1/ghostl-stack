@@ -1,0 +1,77 @@
+{
+  "version": "ghostload-policy-v1",
+  "routingLaw": {
+    "allowedPaths": [
+      ["L3", "L2"],
+      ["L2", "L1"]
+    ],
+    "externalSettlementLayer": "L1"
+  },
+  "feeBands": {
+    "L1": {
+      "minGwei": 0.8,
+      "maxGwei": 5,
+      "targetMinGwei": 0.9,
+      "targetMaxGwei": 2,
+      "maxEpochDeltaBps": 800,
+      "cooldownSeconds": 60
+    },
+    "L2": {
+      "minGwei": 0.0005,
+      "maxGwei": 0.05,
+      "targetMinGwei": 0.0008,
+      "targetMaxGwei": 0.01,
+      "maxEpochDeltaBps": 1000,
+      "cooldownSeconds": 30
+    },
+    "L3": {
+      "minGwei": 0.0005,
+      "maxGwei": 0.05,
+      "targetMinGwei": 0.0008,
+      "targetMaxGwei": 0.01,
+      "maxEpochDeltaBps": 1200,
+      "cooldownSeconds": 20
+    }
+  },
+  "objectives": {
+    "targetUtilizationPct": 68,
+    "profitFloorBps": 1200,
+    "maxSustainedUtilizationPct": 88
+  },
+  "energyPolicy": {
+    "maxRetryRatePct": 3,
+    "maxWastedComputeRatioPct": 7,
+    "minCompressionRatio": 1.15
+  },
+  "criticalParameters": [
+    "routingLaw.allowedPaths",
+    "routingLaw.externalSettlementLayer",
+    "feeBands.L1.maxGwei",
+    "feeBands.L2.maxGwei",
+    "feeBands.L3.maxGwei",
+    "objectives.profitFloorBps"
+  ],
+  "emergencyModes": {
+    "stability-first": {
+      "enabled": true,
+      "description": "Clamp volatility and freeze aggressive throughput increases"
+    },
+    "liveness-first": {
+      "enabled": true,
+      "description": "Maintain minimum safe throughput under congestion"
+    },
+    "cost-cap": {
+      "enabled": true,
+      "description": "Hold fee knobs when settlement costs spike above cap"
+    },
+    "lockdown": {
+      "enabled": true,
+      "description": "Manual-only mode, disable autonomous applies"
+    }
+  },
+  "featureFlags": {
+    "autonomousEnabled": false,
+    "manualOverrideEnabled": true,
+    "killSwitchEnabled": true
+  }
+}

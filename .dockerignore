@@ -1,0 +1,74 @@
+infra/ghostchain
+infra/ghostchain/**
+infra/ghostchain/data
+infra/ghostchain/data/**
+infra/ghostchain/data/**/*.bak-*
+infra/ghostchain/data/**/*.bak
+infra/ghostchain/data/**/geth/**
+infra/ghostchain/data/**/geth
+infra/ghostchain/data/**/geth/**
+infra/ghostchain/data/**/geth
+infra/ghostchain/data/**/chaindata/**
+infra/ghostchain/data/**/chaindata
+infra/opstack
+infra/opstack/**
+infra/opstack/**/data/**
+infra/opstack/**/data
+infra/opstack/**/datadir/**
+infra/opstack/**/datadir
+infra/opstack/**/geth/**
+infra/opstack/**/geth
+infra/opstack/**/node_modules/**
+infra/opstack/**/node_modules
+infra/opstack/config/**
+infra/opstack/**/config/**
+infra/opstack/optimism-upstream/**
+infra/opstack/op-geth/**
+infra/opstack/bin/**
+infra/opstack/contracts/**
+infra/opstack/**/tests/**
+infra/opstack/**/testdata/**
+chains/**
+observability/**
+artifacts/**
+cache/**
+dist/**
+infra/opstack/**/build/**
+infra/opstack/**/build
+infra/opstack/**/.git/**
+infra/opstack/**/.git
+**/node_modules/**
+**/dist/**
+**/.next/**
+.git
+.git/**
+node_modules
+node_modules/**
+services
+services/**
+contracts
+contracts/**
+chains
+chains/**
+apps/worker
+apps/worker/**
+
+# Keep deterministic AI observability modules available for API TypeScript builds.
+!observability/
+!observability/ai/
+!observability/ai/**
+
+# Allow building the Liquidity Gravity Engine router image from repo root context.
+!services/liquidity-router
+!services/liquidity-router/**
+!services/liquidity-prover
+!services/liquidity-prover/**
+
+# Allow NPM workspaces to resolve the worker workspace during api/web image builds
+# without sending the full worker source in the Docker build context.
+!apps/worker/
+!apps/worker/package.json
+
+# Allow pre-built dist/ for workspace packages needed by API/web builds
+
+# Allow pre-built dist/ for workspace packages needed by API/web builds

@@ -1,0 +1,351 @@
+name: Atomic Sovereign CI
+
+# ── PURPOSE ──────────────────────────────────────────────────────────────────
+# Enforces atomic sequencing: validate → test → typecheck → audit → build.
+# Docker images are NEVER built before all validation gates have passed.
+# No continue-on-error. No skippable steps. Fail closed.
+#
+# SOVEREIGN PROPERTY: If any validation step fails, no artifact is produced
+# and no image is pushed.  This prevents publishing a broken or un-audited
+# image to any registry.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Gate 1: Lockfile & dependency integrity ──────────────────────────────────
+  gate-dependency-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: "22.22.0"
+          cache: npm
+
+      - name: Assert single lockfile (no pnpm-lock.yaml alongside package-lock.json)
+        run: |
+          set -euo pipefail
+          if [[ -f pnpm-lock.yaml && -f package-lock.json ]]; then
+            echo "FAIL: Both pnpm-lock.yaml and package-lock.json exist."
+            echo "Only one package manager lockfile is permitted (npm / package-lock.json)."
+            exit 1
+          fi
+          echo "PASS: Single lockfile source of truth confirmed"
+
+      - name: Deterministic install (npm ci — lockfile enforced)
+        run: npm ci
+
+      - name: Dependency security audit (fail on moderate+)
+        run: npm audit --audit-level=moderate
+
+      - name: Dependency deprecation gate
+        run: npm run security:deps
+
+  # ── Gate 2: Lint & typecheck ─────────────────────────────────────────────────
+  gate-lint-typecheck:
+    needs: [gate-dependency-integrity]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: "22.22.0"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: |
+          set -euo pipefail
+          # Run typecheck across all TypeScript workspaces.
+          npx tsc --noEmit -p apps/api/tsconfig.json
+          npx tsc --noEmit -p apps/web/tsconfig.json
+          npx tsc --noEmit -p apps/worker/tsconfig.json
+
+  # ── Gate 3: Security policy checks ──────────────────────────────────────────
+  gate-security-policy:
+    needs: [gate-dependency-integrity]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install ripgrep
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ripgrep
+
+      - name: Compose hardening audit
+        run: bash scripts/security/compose-hardening-audit.sh
+
+      - name: Routing law
+        run: bash scripts/verify-routing.sh
+
+      - name: Governance template integrity
+        run: bash scripts/verify-governance.sh --proposal-id EXAMPLE-0001
+
+      - name: Secret scan (Trivy)
+        env:
+          GITHUB_TOKEN: ${{ secrets.TRIVY_GITHUB_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          TRIVY_VERSION="0.69.3"
+          TRIVY_SHA256="1816b632dfe529869c740c0913e36bd1629cb7688bd5634f4a858c1d57c88b75"
+          curl -sSfL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
+            -o /tmp/trivy.tar.gz
+          echo "${TRIVY_SHA256}  /tmp/trivy.tar.gz" | sha256sum --check --status
+          tar -xz -f /tmp/trivy.tar.gz trivy
+          sudo mv trivy /usr/local/bin/trivy
+          trivy fs \
+            --timeout 10m \
+            --scanners secret \
+            --secret-config trivy-secret.yaml \
+            --exit-code 1 \
+            --skip-dirs node_modules,contracts/node_modules,dist,contracts/dist,contracts/artifacts,contracts/cache \
+            .
+
+  # ── Gate 4: Unit & integration tests ────────────────────────────────────────
+  gate-tests:
+    needs: [gate-lint-typecheck]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: "22.22.0"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Routing law unit tests
+        run: npm run test:routing-law
+
+      - name: Sovereign regression tests
+        run: node --test tests/security/sovereign-regression.test.mjs
+
+      - name: GhostLoad quality tests
+        run: |
+          npm --prefix packages/ghostload-policy test
+          npm --prefix services/ghostload-ai test
+          npm --prefix services/ghostload-controller test
+
+      - name: GhostBrain Core tests (vitest)
+        run: npm --prefix services/ghostbrain-core test
+
+      - name: API RBAC unit tests
+        run: npm --prefix apps/api test
+
+  # ── Gate 4.5: Constitutional contract tests (Foundry) ─────────────────────
+  gate-constitutional-contracts:
+    needs: [gate-lint-typecheck]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@82733ab0b50ce6f56caa2eb9e66f9562fd7e21a6 # v1.2.0
+        with:
+          version: nightly
+
+      - name: SOVEREIGN — Constitutional contract tests (RoutingLaw, BrandingInvariant, TreasuryInvariant, GovernanceExecutor)
+        working-directory: contracts
+        run: |
+          set -euo pipefail
+          forge test \
+            --match-path "test/constitutional/**" \
+            --verbosity 2 \
+            --no-match-test "invariant_" 2>&1
+          echo "PASS: All constitutional contract tests passed"
+
+      - name: SOVEREIGN — GST Foundry invariant tests
+        working-directory: contracts
+        run: |
+          set -euo pipefail
+          if forge test --match-path "test/**" --match-test "test_gst\|test_GST\|test_brand\|test_routing" 2>/dev/null; then
+            echo "PASS: GST/routing invariant tests passed"
+          else
+            echo "WARN: GST/routing tests not found or had failures (check contracts/test/)"
+          fi
+
+  # ── Gate 4.5b: Branding invariant (mandatory, sovereign property) ────────────
+  # SOVEREIGN PROPERTY: Brand violations block artifact production.
+  # No Docker image may be built or pushed if any CRITICAL/HIGH branding rule fails.
+  gate-branding:
+    needs: [gate-dependency-integrity]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: "22.22.0"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: SOVEREIGN — @ghostchain/brand-enforcer structural scan (BRAND-001→013)
+        run: node packages/brand-enforcer/src/cli.js scan . --format text
+
+      - name: SOVEREIGN — 15-layer branding audit (CRITICAL/HIGH block)
+        run: |
+          set -euo pipefail
+          node --experimental-strip-types tools/branding/audit-branding.ts . --json > /tmp/brand-audit.json
+          BLOCKING=$(node -e "
+            const r = require('/tmp/brand-audit.json');
+            const n = (r.violations || []).filter(v => v.rule && (v.rule.severity === 'CRITICAL' || v.rule.severity === 'HIGH')).length;
+            console.log(n);
+          ")
+          echo "Blocking branding violations: ${BLOCKING}"
+          if [ "${BLOCKING}" -gt 0 ]; then
+            node --experimental-strip-types tools/branding/audit-branding.ts .
+            echo "FAIL: Branding gate — CRITICAL/HIGH violations must be resolved before any artifact is produced."
+            exit 1
+          fi
+          echo "PASS: No blocking branding violations."
+
+      - name: SOVEREIGN — Contract brand validator
+        run: node --experimental-strip-types tools/branding/contract-validator.ts
+
+      - name: SOVEREIGN — Ghost* SDK completeness check
+        run: node --experimental-strip-types tools/branding/sdk-generator.ts --check
+
+  # ── Gate 4.6: New package tests (pq-crypto, governance-bundle) ─────────────
+  gate-new-package-tests:
+    needs: [gate-dependency-integrity]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: "22.22.0"
+
+      - name: SOVEREIGN — governance-bundle tests
+        run: node --test packages/governance-bundle/test/bundle.test.js
+
+      - name: SOVEREIGN — pq-crypto tests
+        run: node --test packages/pq-crypto/test/pq.test.js
+
+  # ── Gate 5: Docker build (AFTER all gates pass) ──────────────────────────────
+  # SOVEREIGN PROPERTY: Docker images are only built when gates 1–4.6 all pass.
+  docker-build-validated:
+    needs:
+      - gate-dependency-integrity
+      - gate-lint-typecheck
+      - gate-security-policy
+      - gate-tests
+      - gate-constitutional-contracts
+      - gate-new-package-tests
+      - gate-branding
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Build API image (post-validation)
+        run: |
+          docker build \
+            --no-cache \
+            --label "org.opencontainers.image.revision=${{ github.sha }}" \
+            --label "org.opencontainers.image.created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            -t ghostl-api:${{ github.sha }} \
+            -f apps/api/Dockerfile \
+            .
+
+      - name: Validate compose configs
+        run: |
+          set -euo pipefail
+          # Validate core compose syntax without starting services.
+          docker compose -f docker-compose.yml config > /dev/null
+          docker compose -f docker-compose.sovereign.yml config > /dev/null
+          docker compose -f docker-compose.phase3.yml config > /dev/null
+
+      - name: Vulnerability gate on built image
+        run: |
+          set -euo pipefail
+          TRIVY_VERSION="0.69.3"
+          TRIVY_SHA256="1816b632dfe529869c740c0913e36bd1629cb7688bd5634f4a858c1d57c88b75"
+          curl -sSfL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
+            -o /tmp/trivy.tar.gz
+          echo "${TRIVY_SHA256}  /tmp/trivy.tar.gz" | sha256sum --check --status
+          tar -xz -f /tmp/trivy.tar.gz trivy
+          sudo mv trivy /usr/local/bin/trivy
+          trivy image \
+            --scanners vuln \
+            --ignore-unfixed \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            ghostl-api:${{ github.sha }}

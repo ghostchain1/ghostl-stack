@@ -1,0 +1,35 @@
+{
+  "name": "ghostcontrol",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "packageManager": "pnpm@9.15.5",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "cli": "bash bin/ghostcontrol.sh",
+    "status": "bash bin/ghostcontrol.sh status",
+    "logs": "bash bin/ghostcontrol.sh logs",
+    "doctor": "bash bin/ghostcontrol.sh doctor",
+    "doctor:supervisor": "node --experimental-strip-types supervisor.ts",
+    "backup": "bash bin/ghostcontrol.sh backup",
+    "restore": "bash bin/ghostcontrol.sh restore",
+    "ghostloop:typecheck": "npx tsc -p tsconfig.ghostloop.json",
+    "ghostloop:test": "node --test --experimental-strip-types tests/*.test.ts",
+    "ghostloop:watch": "node --experimental-strip-types orchestrator/event_watchdog.ts",
+    "ghostloop:watch:health": "node --experimental-strip-types orchestrator/watchdog_healthcheck.ts",
+    "ghostloop:watch:recover": "node --experimental-strip-types orchestrator/watchdog_recovery.ts",
+    "ghostloop:watch:drill": "bash infra/systemd/livefire_watchdog_recovery_drill.sh",
+    "ghostloop:watch:install-systemd": "bash infra/systemd/install_event_watchdog_service.sh",
+    "security:trivy:images": "bash security/trivy/scan-images.sh",
+    "security:trivy:secrets": "bash security/trivy/scan-secrets.sh",
+    "docker:up": "bash infra/compose/up.sh",
+    "docker:down": "bash infra/compose/down.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "5.6.3"
+  }
+}

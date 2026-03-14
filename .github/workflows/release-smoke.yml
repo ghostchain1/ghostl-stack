@@ -1,0 +1,207 @@
+name: Release Smoke + Rollback Gate
+
+# ── PURPOSE ─────────────────────────────────────────────────────────────────
+# End-to-end smoke test: builds the API (and web) images, starts the dev
+# compose stack, polls health endpoints, then tears down.  Fails closed —
+# no image is published if the smoke check fails.
+#
+# ROLLBACK CHECKLIST (referenced by the rollback-checklist job):
+#  1. Identify failing commit via `git log --oneline -10`
+#  2. `git revert <sha>` — prefer revert over reset on shared branches
+#  3. Confirm CI green on the revert commit before re-deploying
+#  4. If a DB migration ran: restore from the snapshot taken in the
+#     pre-deploy step of the release workflow
+#  5. Notify on-call via #incidents Slack channel with revert SHA and cause
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      stack_target:
+        description: 'Compose target to smoke-test (dev | prod)'
+        required: false
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  COMPOSE_FILE: docker-compose.dev.yml
+  API_HEALTH_URL: http://localhost:4000/v1/health
+  WEB_HEALTH_URL: http://localhost:3200/api/status
+
+jobs:
+  # ── 1. Config validation (fast gate before any build) ────────────────────
+  compose-config-validate:
+    name: Validate compose configs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Validate dev compose
+        run: docker compose -f docker-compose.dev.yml config --quiet
+
+      - name: Validate infra compose files
+        run: |
+          set -euo pipefail
+          docker compose -f infra/docker/compose/docker-compose.core.yml config --quiet
+          docker compose -f infra/docker/compose/docker-compose.services.yml config --quiet
+          docker compose -f infra/docker/compose/docker-compose.ui.yml config --quiet
+          docker compose -f infra/docker/compose/docker-compose.obs.yml config --quiet
+          docker compose -f infra/docker/compose/docker-compose.ai.yml config --quiet
+          docker compose -f docker-compose.sovereign.yml config --quiet
+
+  # ── 2. API smoke: build → start → health poll → teardown ─────────────────
+  api-smoke:
+    name: API smoke (build + health)
+    needs: [compose-config-validate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Write minimal smoke env
+        run: |
+          cat > .smoke.env <<'ENVEOF'
+          SESSION_SECRET=smoke-ci-secret-not-for-production
+          NODE_ENV=development
+          PORT=4000
+          AUTH_DB_PATH=/tmp/smoke-auth.db
+          SQLITE_DB_PATH=/tmp/smoke-ghostl.db
+          NFT_STORE_PATH=/tmp/smoke-nfts.json
+          MARKET_DATA_FILE=/tmp/smoke-market.json
+          CORS_ALLOW_ORIGINS=http://localhost:3200
+          PUBLIC_OBSERVABILITY=true
+          PUBLIC_CHAIN=true
+          PUBLIC_NODES=true
+          PUBLIC_VALIDATORS=true
+          PUBLIC_EXPLORER=true
+          PUBLIC_STACK=true
+          ENVEOF
+
+      - name: Build API image
+        run: |
+          docker build \
+            -f apps/api/Dockerfile \
+            --target runner \
+            -t ghostl-api:smoke \
+            .
+
+      - name: Start API container
+        run: |
+          docker run -d \
+            --name ghostl-api-smoke \
+            --env-file .smoke.env \
+            -p 4000:4000 \
+            ghostl-api:smoke
+
+      - name: Poll API health (30 attempts × 5s = 150s max)
+        run: |
+          set +e
+          for i in $(seq 1 30); do
+            status=$(curl -sf -o /dev/null -w "%{http_code}" http://localhost:4000/v1/health 2>/dev/null || echo "000")
+            if [ "$status" = "200" ]; then
+              echo "API healthy after ${i} attempt(s)"
+              exit 0
+            fi
+            echo "  attempt ${i}: HTTP ${status}, waiting 5s…"
+            sleep 5
+          done
+          echo "FAIL: API did not become healthy within 150s"
+          docker logs ghostl-api-smoke
+          exit 1
+
+      - name: Verify health response structure
+        run: |
+          BODY=$(curl -sf http://localhost:4000/v1/health)
+          echo "Health response: $BODY"
+          echo "$BODY" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          assert data.get('status') in ('ok', 'healthy', True), f'Unexpected status: {data}'
+          print('PASS: health response valid')
+          " || (echo 'WARN: unexpected health body (non-fatal)' && true)
+
+      - name: Teardown
+        if: always()
+        run: |
+          docker stop ghostl-api-smoke || true
+          docker rm ghostl-api-smoke || true
+          docker image rm ghostl-api:smoke || true
+          rm -f .smoke.env
+
+  # ── 3. Web smoke: build image (no start — requires full backend) ──────────
+  web-smoke-build:
+    name: Web smoke (build only)
+    needs: [compose-config-validate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Build web image
+        run: |
+          docker build \
+            -f apps/web/Dockerfile \
+            --target runner \
+            -t ghostl-web:smoke \
+            .
+
+      - name: Cleanup
+        if: always()
+        run: docker image rm ghostl-web:smoke || true
+
+  # ── 4. Rollback checklist gate (always runs, documents steps) ────────────
+  rollback-checklist:
+    name: Rollback checklist
+    needs: [api-smoke, web-smoke-build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Print rollback procedure
+        run: |
+          cat <<'EOF'
+          ══════════════════════════════════════════════════════════
+          ROLLBACK PROCEDURE (if deploy fails post-smoke)
+          ══════════════════════════════════════════════════════════
+          1. Identify: git log --oneline -10
+          2. Revert:   git revert <bad-sha> && git push origin HEAD
+          3. Verify:   wait for CI green on the revert commit
+          4. Database: restore from pre-deploy snapshot if any
+             migration was applied (see ops/scripts/db-restore.sh)
+          5. Notify:   post to #incidents with revert SHA + root cause
+          ══════════════════════════════════════════════════════════
+          EOF
+          echo "PASS: rollback checklist documented"

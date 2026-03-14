@@ -1,0 +1,180 @@
+version: 1
+scope: ghostchain-l1-ai-governance
+status: draft
+constitution_hash_source: docs/ghostchain/charter.md
+source_of_truth:
+  - contracts/src/governance/AIConstitutionalProposal.sol
+  - contracts/src/governance/PolicyRegistry.sol
+  - contracts/src/governance/EvidenceVault.sol
+  - contracts/src/governance/AIProposalExecutor.sol
+invariants:
+  - id: AI-INV-001
+    title: Constitution hash is immutable across governance primitives
+    description: >
+      All AI governance primitives must bind to the same constitution hash and never mutate it
+      after deployment.
+    enforcement:
+      solidity:
+        - AIConstitutionalProposal.constitutionHash
+        - PolicyRegistry.constitutionHash
+        - EvidenceVault.constitutionHash
+        - AIProposalExecutor.constitutionHash
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:invariant_constitution_hashes_match
+
+  - id: AI-INV-002
+    title: AI cannot influence fork choice, finality, or block ordering
+    description: >
+      The constitutional proposal must permanently forbid AI control over fork choice,
+      block ordering, or finality paths.
+    enforcement:
+      solidity:
+        - AIConstitutionalProposal.forbiddenAction(FORBIDDEN_FORK_CHOICE)
+        - AIConstitutionalProposal.forbiddenAction(FORBIDDEN_BLOCK_ORDERING)
+        - AIConstitutionalProposal.forbiddenAction(FORBIDDEN_FINALITY)
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:invariant_forbidden_actions
+
+  - id: AI-INV-003
+    title: Evidence must be authorized and non-zero
+    description: >
+      EvidenceVault must reject zero hashes and any caller that is not governance, timelock,
+      or an approved submitter.
+    enforcement:
+      solidity:
+        - EvidenceVault.recordEvidence
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_evidence_requires_auth
+
+  - id: AI-INV-004
+    title: Policy updates respect bounds and enabled flags
+    description: >
+      PolicyRegistry must reject updates when the policy key is disabled or the value
+      is out of bounds.
+    math: |
+      ∀ key,value: enabled(key)=false ⇒ reject
+      ∀ key,value: hasBounds(key) ⇒ min(key) ≤ value ≤ max(key)
+    enforcement:
+      solidity:
+        - PolicyRegistry.validatePolicy
+        - PolicyRegistry.queuePolicy
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_policy_bounds_enforced
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_policy_disabled_rejected
+
+  - id: AI-INV-005
+    title: Policy updates require evidence hash
+    description: >
+      AIProposalExecutor must reject policy updates with missing evidence hash.
+    enforcement:
+      solidity:
+        - AIProposalExecutor.executePolicyUpdate
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_executor_requires_evidence
+
+  - id: AI-INV-006
+    title: Activation delay must be enforced
+    description: >
+      Policies with activation delays cannot be activated before their scheduled activation time.
+    math: |
+      ∀ key: activate(key) only if now ≥ activatesAt(key)
+    enforcement:
+      solidity:
+        - PolicyRegistry.activatePolicy
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_activation_delay_enforced
+
+  - id: AI-INV-007
+    title: Emergency policy expiry
+    description: >
+      Emergency policy overrides must expire after their configured expiry window.
+    math: |
+      ∀ key: emergency_active(key) ⇒ now ≤ expiresAt(key)
+    enforcement:
+      solidity:
+        - PolicyRegistry.setEmergencyPolicy
+        - PolicyRegistry.isEmergencyActive
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_emergency_expiry_enforced
+
+  - id: AI-INV-008
+    title: Rollback allowed only within rollback window
+    description: >
+      Rollback must only be permitted within the configured rollback window following activation.
+    math: |
+      ∀ key: rollback(key) ⇒ now ≤ lastActivatedAt(key) + rollbackWindow(key)
+    enforcement:
+      solidity:
+        - PolicyRegistry.rollbackPolicy
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_rollback_within_window
+
+  - id: AI-INV-009
+    title: Cross-chain policy inheritance is required for L2/L3
+    description: >
+      L2 and L3 must be configured to reference upstream chain policy registries
+      and fail closed when required values are missing.
+    enforcement:
+      operational:
+        - scripts/smoke/federation-invariants.sh
+
+  - id: AI-INV-010
+    title: Federation checkpoint exports are deterministic
+    description: >
+      Policy checkpoint exports must produce a deterministic hash for audit and
+      cross-chain evidence anchoring.
+    enforcement:
+      operational:
+        - contracts/scripts/governance/export_policy_checkpoint.ts
+
+  - id: AI-INV-011
+    title: Policy update recency
+    description: >
+      Policy updates must be recent and within the max update age window.
+    math: |
+      ∀ update: now − issuedAt(update) ≤ maxUpdateAge
+    enforcement:
+      solidity:
+        - AIProposalExecutor.executePolicyUpdate
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_executor_rejects_stale_update
+
+  - id: AI-INV-012
+    title: Quorum required for non-governance updates
+    description: >
+      Non-governance callers must provide enough approvals to satisfy minApprovals.
+    math: |
+      ∀ update: caller ∉ {governor, timelock} ⇒ approvals(update) ≥ minApprovals
+    enforcement:
+      solidity:
+        - AIProposalExecutor.executePolicyUpdate
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_executor_requires_quorum
+
+  - id: AI-INV-013
+    title: Governance bypass requires governance authority
+    description: >
+      PolicyGuard governance bypass is limited to governance or timelock executors.
+    enforcement:
+      solidity:
+        - PolicyGuard.governanceBypass
+      tests:
+        - contracts/test/foundry/AIAttestationHubPolicyGuard.t.sol:testGovernanceBypassRestricted
+
+  - id: AI-INV-014
+    title: Emergency scope requires enabled emergency window
+    description: >
+      Emergency policy updates are rejected when the policy key has no emergency expiry configured.
+    enforcement:
+      solidity:
+        - PolicyRegistry.setEmergencyPolicy
+      tests:
+        - contracts/test/invariants/AIConstitution.invariant.t.sol:test_emergency_scope_rejected
+
+  - id: AI-INV-015
+    title: Federated proposals require upstream checkpoint hash
+    description: >
+      When federation is enforced, AI proposals must include the upstream policy checkpoint hash.
+    enforcement:
+      operational:
+        - services/ghost-gas-engine/test/ai-core-proposal.test.ts:requires upstream policy checkpoint when federation is enforced

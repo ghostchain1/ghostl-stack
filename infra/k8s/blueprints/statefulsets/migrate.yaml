@@ -1,0 +1,96 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "migrate",
+    "labels": {
+      "app": "migrate",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.services.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "migrate",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "migrate"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "migrate",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "migrate",
+            "image": "node:22-alpine",
+            "command": null,
+            "args": [
+              "sh",
+              "-lc",
+              "npm install && npm run migrate"
+            ],
+            "env": [
+              {
+                "name": "ATTESTATION_EXPIRY_SECONDS",
+                "value": "900"
+              },
+              {
+                "name": "ATTESTATION_PRIVATE_KEY",
+                "value": "${COMPLIANCE_ATTESTATION_PRIVATE_KEY:-}"
+              },
+              {
+                "name": "DATABASE_URL",
+                "value": "postgresql://ghost:${POSTGRES_PASSWORD:-ghostpass}@postgres:5432/ghost_compliance"
+              },
+              {
+                "name": "JWT_SECRET",
+                "value": "${COMPLIANCE_JWT_SECRET:-change-me}"
+              },
+              {
+                "name": "REDIS_URL",
+                "value": "redis://redis:6379"
+              }
+            ],
+            "ports": [],
+            "volumeMounts": [
+              {
+                "name": "./services/ghost-compliance",
+                "mountPath": "/work"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./services/ghost-compliance"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

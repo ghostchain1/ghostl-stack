@@ -1,0 +1,78 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Incident {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  source    String
+  severity  String
+  signature String
+  message   String
+  details   Json?
+
+  @@index([createdAt])
+  @@index([signature])
+}
+
+model ActionRequest {
+  id               String   @id @default(cuid())
+  createdAt        DateTime @default(now())
+  requestedBy      String
+  reason           String?
+  riskMode         String
+  scope            Json
+  requestedActions Json
+  status           String
+
+  @@index([createdAt])
+  @@index([status])
+}
+
+model SignedBundle {
+  id           String   @id
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+  riskMode     String
+  scope        Json
+  actions      Json
+  gates        Json
+  rollback     Json
+  evidencePlan Json
+
+  algorithm    String
+  keyId        String
+  signatureB64 String
+
+  @@index([createdAt])
+  @@index([expiresAt])
+}
+
+model Evidence {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  bundleId  String?
+  kind      String
+  summary   String?
+  data      Json
+
+  @@index([createdAt])
+  @@index([bundleId])
+}
+
+model AuditEvent {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  actor     String
+  event     String
+  data      Json?
+
+  @@index([createdAt])
+  @@index([event])
+}

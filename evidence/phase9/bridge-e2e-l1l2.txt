@@ -1,0 +1,2 @@
+[bridge-e2e] L1<->L2 bridge E2E (ERC20)
+[bridge-e2e] Deposit -> Withdraw

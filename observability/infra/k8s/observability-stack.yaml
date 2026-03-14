@@ -1,0 +1,845 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: observability-vector-config
+  labels:
+    app: observability
+    component: vector
+  namespace: default
+data:
+  vector.yaml: |
+    sources:
+      k8s_file_logs:
+        type: file
+        include:
+          - /var/log/containers/*.log
+        exclude:
+          - /var/log/containers/vector-*.log
+    transforms:
+      enrich_logs:
+        type: remap
+        inputs: [k8s_file_logs]
+        source: |
+          .raw_message = .message
+          if .timestamp != null { .event_time = .timestamp }
+          .timestamp = now()
+          parsed = parse_json(.message) ?? {}
+          if parsed != {} {
+            .structured = parsed
+          }
+          .level = downcase(to_string(parsed.level) ?? "info")
+          .component = to_string(parsed.component) ?? .container_name
+          .event = to_string(parsed.event) ?? "log_event"
+          if match!(.component, r'(?i)l3') { .layer = "L3" } else if match!(.component, r'(?i)l2') { .layer = "L2" } else if match!(.component, r'(?i)l1|ghostchain') { .layer = "L1" } else { .layer = "INFRA" }
+          if .layer == "L1" { .chain = "GhostChain" } else if .layer == "L2" { .chain = "GhostL2" } else if .layer == "L3" { .chain = "GhostL3" } else { .chain = "Infrastructure" }
+          if exists(parsed.trace_id) { .trace_id = parsed.trace_id }
+          if exists(parsed.request_id) { .request_id = parsed.request_id }
+          if exists(parsed.tx_hash) { .tx_hash = parsed.tx_hash }
+          if exists(parsed.block_number) { .block_number = parsed.block_number }
+          if exists(parsed.node_id) { .node_id = parsed.node_id }
+    
+    sinks:
+      loki:
+        type: loki
+        inputs: [enrich_logs]
+        endpoint: http://loki:3100
+        encoding:
+          codec: json
+        labels:
+          job: "{{container_name}}"
+          component: "{{component}}"
+          layer: "{{layer}}"
+          chain: "{{chain}}"
+          level: "{{level}}"
+          instance: "{{host}}"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: observability-loki-config
+  labels:
+    app: observability
+    component: loki
+  namespace: default
+data:
+  loki-config.yml: |
+    auth_enabled: false
+    
+    server:
+      http_listen_port: 3100
+    
+    ingester:
+      wal:
+        enabled: false
+      lifecycler:
+        address: 0.0.0.0
+        ring:
+          kvstore:
+            store: inmemory
+          replication_factor: 1
+      chunk_idle_period: 10m
+      chunk_retain_period: 5m
+    
+    limits_config:
+      retention_period: 24h
+    
+    schema_config:
+      configs:
+        - from: 2020-10-24
+          store: boltdb-shipper
+          object_store: filesystem
+          schema: v11
+          index:
+            prefix: index_
+            period: 24h
+    
+    storage_config:
+      boltdb_shipper:
+        active_index_directory: /loki/index
+        cache_location: /loki/index_cache
+        cache_ttl: 24h
+      filesystem:
+        directory: /loki/chunks
+    
+    compactor:
+      working_directory: /loki/compactor
+      shared_store: filesystem
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: observability-prometheus-config
+  labels:
+    app: observability
+    component: prometheus
+  namespace: default
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+    
+    rule_files:
+      - /etc/prometheus/alert_rules.yml
+      - /etc/prometheus/gst_metric_rules.yml
+    
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets: ["alertmanager:9093"]
+    
+    scrape_configs:
+      - job_name: op-node
+        static_configs:
+          - targets: ["op-node:7300"]
+    
+      - job_name: op-batcher
+        static_configs:
+          - targets: ["op-batcher:7301"]
+    
+      - job_name: op-proposer
+        static_configs:
+          - targets: ["op-proposer:7302"]
+    
+      - job_name: op-gate
+        metrics_path: /metrics/prom
+        static_configs:
+          - targets: ["op-gate:8545"]
+    
+      - job_name: l3-op-node
+        static_configs:
+          - targets: ["l3-op-node:8300"]
+        metric_relabel_configs:
+          - source_labels: [instance]
+            target_label: network
+            replacement: l3
+    
+      - job_name: l3-op-batcher
+        static_configs:
+          - targets: ["l3-op-batcher:8301"]
+        metric_relabel_configs:
+          - source_labels: [instance]
+            target_label: network
+            replacement: l3
+    
+      - job_name: l3-op-proposer
+        static_configs:
+          - targets: ["l3-op-proposer:8302"]
+        metric_relabel_configs:
+          - source_labels: [instance]
+            target_label: network
+            replacement: l3
+    
+      - job_name: ghost-api-logs
+        metrics_path: /observability/logs/api/metrics
+        static_configs:
+          - targets: ["host.docker.internal:4000"]
+
+      - job_name: ai-clock-sync
+        metrics_path: /metrics
+        static_configs:
+          - targets: ["host.docker.internal:7690"]
+  alert_rules.yml: |
+    groups:
+      - name: ghost-observability-logs
+        rules:
+          - alert: GhostCriticalLogs
+            expr: increase(ghost_observability_log_events_total{severity=~"CRITICAL|SLASHING_RISK|SECURITY_EVENT"}[5m]) > 0
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Critical observability logs detected"
+              description: "Critical, slashing-risk, or security log events observed in the last 5 minutes."
+          - alert: GhostErrorRateSpike
+            expr: increase(ghost_observability_log_events_total{severity=~"ERROR|CONSENSUS_RISK"}[5m]) > 25
+            for: 2m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Error rate spike detected"
+              description: "Error or consensus-risk logs are spiking above normal thresholds."
+  gst_metric_rules.yml: |
+    groups:
+      - name: gst-canonical-recording
+        rules:
+          - record: ghostchain_gst_fees_total
+            labels:
+              layer: L1
+              service: ghost-relayer
+            expr: sum(ghost_relayer_finalized_total{layer=~"l1|L1"}) or vector(0)
+          - record: ghostchain_gst_fees_total
+            labels:
+              layer: L2
+              service: ghost-relayer
+            expr: sum(ghost_relayer_finalized_total{layer=~"l2|L2"}) or vector(0)
+          - record: ghostchain_gst_fees_total
+            labels:
+              layer: L3
+              service: ghost-relayer
+            expr: sum(ghost_relayer_finalized_total{layer=~"l3|L3"}) or vector(0)
+          - record: ghostchain_gst_burned_total
+            labels:
+              layer: L1
+              service: supply-service
+            expr: sum(ghost_observability_log_events_total{event=~"(?i).*burn.*"}) or vector(0)
+          - record: ghostchain_gst_burned_total
+            labels:
+              layer: L2
+              service: supply-service
+            expr: vector(0)
+          - record: ghostchain_gst_burned_total
+            labels:
+              layer: L3
+              service: supply-service
+            expr: vector(0)
+          - record: ghostchain_gst_supply
+            labels:
+              layer: L1
+            expr: sum(token_supply_total) or vector(0)
+          - record: ghostchain_gst_supply
+            labels:
+              layer: L2
+            expr: vector(0)
+          - record: ghostchain_gst_supply
+            labels:
+              layer: L3
+            expr: vector(0)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: observability-alertmanager-config
+  labels:
+    app: observability
+    component: alertmanager
+  namespace: default
+data:
+  alertmanager.yml: |
+    route:
+      receiver: dev-null
+    
+    receivers:
+      - name: dev-null
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: observability-grafana-datasources
+data:
+  prometheus.yaml: |
+    apiVersion: 1
+    
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus:9090
+        isDefault: true
+        editable: false
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://loki:3100
+        editable: false
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: observability-grafana-dashboard-provisioning
+data:
+  opstack.yaml: |
+    apiVersion: 1
+    
+    providers:
+      - name: opstack
+        orgId: 1
+        folder: "OP Stack"
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: observability-grafana-dashboards
+data:
+  ghost-observability-logs.json: |
+    {
+      "uid": "ghost-observability-logs",
+      "title": "Ghost Observability Logs",
+      "schemaVersion": 38,
+      "version": 1,
+      "refresh": "30s",
+      "panels": [
+        {
+          "type": "timeseries",
+          "title": "Log Event Rate by Severity",
+          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "targets": [
+            {
+              "expr": "sum by (severity) (rate(ghost_observability_log_events_total[5m]))",
+              "legendFormat": "{{severity}}"
+            }
+          ],
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+        },
+        {
+          "type": "table",
+          "title": "Top Components by Errors (15m)",
+          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "targets": [
+            {
+              "expr": "topk(10, sum by (component) (increase(ghost_observability_log_events_total{severity=~\"ERROR|CRITICAL|SLASHING_RISK|SECURITY_EVENT\"}[15m])))",
+              "legendFormat": "{{component}}"
+            }
+          ],
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+        },
+        {
+          "type": "logs",
+          "title": "Loki Logs",
+          "datasource": { "type": "loki", "uid": "Loki" },
+          "targets": [
+            {
+              "expr": "{job!=\"\"}",
+              "refId": "A"
+            }
+          ],
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 8 }
+        }
+      ],
+      "time": { "from": "now-30m", "to": "now" },
+      "timepicker": { "refresh_intervals": ["10s", "30s", "1m", "5m", "15m"] }
+    }
+  opstack-observability.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "gnetId": null,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "type": "row",
+          "title": "Rollup Sequencer",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0}
+        },
+        {
+          "type": "timeseries",
+          "title": "Sequencer event rate by type",
+          "gridPos": {"h": 7, "w": 12, "x": 0, "y": 1},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "Prometheus"},
+              "expr": "sum by(event_type)(rate(op_node_default_events_dequeued[5m]))",
+              "legendFormat": "{{event_type}}"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
+        },
+        {
+          "type": "timeseries",
+          "title": "Channel input bytes (L1 DA)",
+          "gridPos": {"h": 7, "w": 12, "x": 12, "y": 1},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "Prometheus"},
+              "expr": "rate(op_node_default_channel_input_bytes[5m])",
+              "legendFormat": "bytes/s"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "Bps"}, "overrides": []}
+        },
+        {
+          "type": "timeseries",
+          "title": "Batcher blob size p90 (bytes)",
+          "gridPos": {"h": 6, "w": 12, "x": 0, "y": 8},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "Prometheus"},
+              "expr": "histogram_quantile(0.9, sum by (le)(rate(op_batcher_default_blob_used_bytes_bucket[5m])))",
+              "legendFormat": "p90"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "bytes"}, "overrides": []}
+        },
+        {
+          "type": "stat",
+          "title": "Channel timeouts",
+          "gridPos": {"h": 6, "w": 6, "x": 12, "y": 8},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "Prometheus"},
+              "expr": "op_node_default_channel_timeout_total"
+            }
+          ],
+          "options": {"reduceOptions": {"calcs": ["last"], "fields": ""}},
+          "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+        },
+        {
+          "type": "stat",
+          "title": "Batcher balance (GST)",
+          "gridPos": {"h": 6, "w": 6, "x": 18, "y": 8},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "Prometheus"},
+              "expr": "op_batcher_default_balance"
+            }
+          ],
+          "options": {"reduceOptions": {"calcs": ["last"], "fields": ""}},
+          "fieldConfig": {"defaults": {"unit": "none"}, "overrides": []}
+        },
+    
+        {
+          "type": "row",
+          "title": "Settlement & Fraud",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 14}
+        },
+        {
+          "type": "stat",
+          "title": "Latest proposed L2 seq #",
+          "gridPos": {"h": 6, "w": 6, "x": 0, "y": 15},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "Prometheus"},
+              "expr": "op_proposer_default_proposed_sequence_number"
+            }
+          ],
+          "options": {"reduceOptions": {"calcs": ["last"], "fields": ""}},
+          "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+        },
+        {
+          "type": "stat",
+          "title": "Proposer guard decisions",
+          "gridPos": {"h": 6, "w": 6, "x": 6, "y": 15},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "Prometheus"},
+              "expr": "sum by (result)(op_proposer_default_guard_decisions_total)"
+            }
+          ],
+          "options": {"reduceOptions": {"calcs": ["last"], "fields": ""}},
+          "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+        },
+        {
+          "type": "stat",
+          "title": "L1 base fee (wei)",
+          "gridPos": {"h": 6, "w": 6, "x": 12, "y": 15},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "Prometheus"},
+              "expr": "op_proposer_default_txmgr_basefee_wei"
+            }
+          ],
+          "options": {"reduceOptions": {"calcs": ["last"], "fields": ""}},
+          "fieldConfig": {"defaults": {"unit": "wei"}, "overrides": []}
+        },
+        {
+          "type": "stat",
+          "title": "Blob base fee (wei)",
+          "gridPos": {"h": 6, "w": 6, "x": 18, "y": 15},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "Prometheus"},
+              "expr": "op_proposer_default_txmgr_blob_basefee_wei"
+            }
+          ],
+          "options": {"reduceOptions": {"calcs": ["last"], "fields": ""}},
+          "fieldConfig": {"defaults": {"unit": "wei"}, "overrides": []}
+        },
+        {
+          "type": "text",
+          "title": "Fraud proof status",
+          "gridPos": {"h": 4, "w": 12, "x": 0, "y": 21},
+          "options": {"content": "Fraud proofs are not active on this devnet (legacy L2OutputOracle flow).", "mode": "markdown"}
+        },
+        {
+          "type": "text",
+          "title": "ZK proof status",
+          "gridPos": {"h": 4, "w": 12, "x": 12, "y": 21},
+          "options": {"content": "This stack is OP rollup (not ZK). Add ZK prover telemetry here if enabled.", "mode": "markdown"}
+        },
+    
+        {
+          "type": "row",
+          "title": "AI Fee Control & DA",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 25}
+        },
+        {
+          "type": "timeseries",
+          "title": "Suggested tip (blob)",
+          "gridPos": {"h": 6, "w": 8, "x": 0, "y": 26},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "Prometheus"},
+              "expr": "op_proposer_default_txmgr_blob_tipcap_wei",
+              "legendFormat": "blob tip"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "wei"}, "overrides": []}
+        },
+        {
+          "type": "timeseries",
+          "title": "Suggested tip (gas)",
+          "gridPos": {"h": 6, "w": 8, "x": 8, "y": 26},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "Prometheus"},
+              "expr": "op_proposer_default_txmgr_blob_tipcap_wei",  "legendFormat": "tip"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "wei"}, "overrides": []}
+        },
+        {
+          "type": "text",
+          "title": "AI-controlled fee market",
+          "gridPos": {"h": 6, "w": 8, "x": 16, "y": 26},
+          "options": {"content": "Stub: hook an external policy engine here to update proposer/batcher fee caps via env or guard.", "mode": "markdown"}
+        }
+      ],
+      "schemaVersion": 37,
+      "style": "dark",
+      "tags": ["opstack"],
+      "timezone": "browser",
+      "title": "OP Stack Control Plane",
+      "version": 1
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loki
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loki
+  template:
+    metadata:
+      labels:
+        app: loki
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: loki
+          image: grafana/loki:2.9.5
+          args: ["-config.file=/etc/loki/loki-config.yml"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 3100
+          volumeMounts:
+            - name: loki-config
+              mountPath: /etc/loki
+            - name: loki-data
+              mountPath: /loki
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: loki-config
+          configMap:
+            name: observability-loki-config
+        - name: loki-data
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loki
+spec:
+  selector:
+    app: loki
+  ports:
+    - port: 3100
+      targetPort: 3100
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.51.2
+          args: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - name: prom-config
+              mountPath: /etc/prometheus
+            - name: prom-data
+              mountPath: /prometheus
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: prom-config
+          configMap:
+            name: observability-prometheus-config
+        - name: prom-data
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+spec:
+  selector:
+    app: prometheus
+  ports:
+    - port: 9090
+      targetPort: 9090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: alertmanager
+          image: prom/alertmanager:v0.27.0
+          args: ["--config.file=/etc/alertmanager/alertmanager.yml", "--storage.path=/alertmanager"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 9093
+          volumeMounts:
+            - name: alertmanager-config
+              mountPath: /etc/alertmanager
+            - name: alertmanager-data
+              mountPath: /alertmanager
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: alertmanager-config
+          configMap:
+            name: observability-alertmanager-config
+        - name: alertmanager-data
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+spec:
+  selector:
+    app: alertmanager
+  ports:
+    - port: 9093
+      targetPort: 9093
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: grafana
+          image: grafana/grafana:10.4.2
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 3000
+          volumeMounts:
+            - name: grafana-data
+              mountPath: /var/lib/grafana
+            - name: grafana-datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: grafana-dashboard-provisioning
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: grafana-dashboards
+              mountPath: /var/lib/grafana/dashboards
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: grafana-data
+          emptyDir: {}
+        - name: grafana-datasources
+          configMap:
+            name: observability-grafana-datasources
+        - name: grafana-dashboard-provisioning
+          configMap:
+            name: observability-grafana-dashboard-provisioning
+        - name: grafana-dashboards
+          configMap:
+            name: observability-grafana-dashboards
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+spec:
+  selector:
+    app: grafana
+  ports:
+    - port: 3000
+      targetPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vector
+  template:
+    metadata:
+      labels:
+        app: vector
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: vector
+          image: timberio/vector:0.38.0-alpine
+          args: ["--config", "/etc/vector/vector.yaml"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: vector-config
+              mountPath: /etc/vector
+            - name: vector-data
+              mountPath: /var/lib/vector
+            - name: tmp
+              mountPath: /tmp
+            - name: varlog-containers
+              mountPath: /var/log/containers
+              readOnly: true
+            - name: varlog-pods
+              mountPath: /var/log/pods
+              readOnly: true
+      volumes:
+        - name: vector-config
+          configMap:
+            name: observability-vector-config
+        - name: vector-data
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+        - name: varlog-containers
+          hostPath:
+            path: /var/log/containers
+            type: Directory
+        - name: varlog-pods
+          hostPath:
+            path: /var/log/pods
+            type: Directory

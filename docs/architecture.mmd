@@ -1,0 +1,35 @@
+flowchart TD
+    subgraph Users
+      UI[Next.js Command Hub\napps/web]
+    end
+
+    subgraph ControlPlane
+      API[Ghost API\napps/api]
+      SVC[Microservices\nservices/*]
+      OBS[Observability\nPrometheus/Grafana/Loki]
+      ID[Identity + RBAC + Audit\nauth/rbac/audit-log/session]
+    end
+
+    subgraph ChainPlane
+      L3[GhostL3 RPC\n:39545]
+      L2[GhostL2 RPC\n:29547]
+      L1[GhostChain L1 RPC\n:18545]
+      BRIDGE[Bridge/Relayer\nbridge-service + ghost-relayer]
+    end
+
+    UI -->|REST/WebSocket| API
+    API --> SVC
+    API --> OBS
+    API --> ID
+    SVC --> BRIDGE
+    BRIDGE --> L3
+    BRIDGE --> L2
+    BRIDGE --> L1
+    API --> L3
+    API --> L2
+    API --> L1
+    L3 -->|settlement path only| L2
+    L2 -->|settlement path only| L1
+
+    classDef chain fill:#eef,stroke:#447;
+    class L1,L2,L3 chain;

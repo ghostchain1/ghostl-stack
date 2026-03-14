@@ -1,0 +1,86 @@
+flowchart TD
+  %% ============================================================
+  %% Phase 2: AI + Policy Layer for Interchain (Low Balancer)
+  %%
+  %% Principle: AI informs decisions, but governance authorizes actions.
+  %% No interchain action may bypass on-chain policy + governance gates.
+  %% ============================================================
+
+  %% -----------------------
+  %% On-chain constitutional root (L1)
+  %% -----------------------
+  subgraph L1["GhostChain L1 — constitutional root"]
+    Gov["Governor + Timelock"]
+    PR["PolicyRegistry\n(chain-wide bounds + checkpoints)"]
+    AGP["AgentGovernancePolicy\n(role/action permissions)"]
+    PAUSE["PauseGuardian\n(emergency kill switch)"]
+    EV["EvidenceVault\n(hash anchoring)"]
+    OR["AIOracleRegistry\n(signer allowlist + thresholds)"]
+  end
+
+  %% -----------------------
+  %% L3 intent plane
+  %% -----------------------
+  subgraph L3["GhostL3 — intent + execution plane"]
+    Router["LowBalancerRouter (planned)\nintent escrow + accounting"]
+    Hub["AIAttestationHub (L3)\n(signature + nonce verification)"]
+    Guard["PolicyGuard (L3)\nOFF/ADVISORY/ENFORCE"]
+  end
+
+  %% -----------------------
+  %% Off-chain control plane (Low Balancer)
+  %% -----------------------
+  subgraph Off["Low Balancer (off-chain)"]
+    Risk["AI Risk Engine\n(fraud + MEV + health)"]
+    Policy["Policy Engine\n(deterministic gates)"]
+    Liq["Liquidity Router\n(route planning + caps)"]
+    Bridge["Bridge Router\n(adapter selection)"]
+    Exec["Executor / Relayer\n(submit txs/proofs)"]
+    Audit["Decision Log\n(evidence bundle)"]
+  end
+
+  %% -----------------------
+  %% External ecosystems
+  %% -----------------------
+  subgraph EXT["External chains / ecosystems"]
+    EVM_EXT["External EVM chain"]
+    BTC["Bitcoin (UTXO)"]
+    OTH["Others (EVM/non‑EVM)"]
+  end
+
+  %% Governance wiring
+  Gov --> PR
+  Gov --> AGP
+  Gov --> PAUSE
+  Gov --> EV
+  Gov --> OR
+  Gov --> Guard
+
+  %% Attestation wiring
+  OR --> Hub
+  Risk -->|"EIP-712 attestation"| Hub
+  Hub --> Guard
+
+  %% Intent → policy-gated execution
+  Router -->|"IntentCreated(event)"| Exec
+  Exec --> Policy
+  Policy --> PR
+  Policy --> AGP
+  Policy --> PAUSE
+  Policy --> Guard
+  Policy -->|"ALLOW / DELAY / DENY"| Exec
+
+  %% Routing (only after policy allow)
+  Exec --> Liq
+  Liq --> Bridge
+  Bridge -->|"approved adapter"| Exec
+
+  %% External execution
+  Exec -->|"submit tx/proof"| EVM_EXT
+  Exec -->|"submit tx/proof"| BTC
+  Exec -->|"submit tx/proof"| OTH
+
+  %% Evidence + audit
+  Exec --> Audit
+  Audit -->|"evidenceHash"| EV
+  EV -->|"auditable record"| Policy

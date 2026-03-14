@@ -1,0 +1,1152 @@
+{
+  "ok": true,
+  "logs": [
+    {
+      "ts": 1771647818191,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8130 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771648138366,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8140 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771648458411,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8150 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771648778541,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8160 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771649069880,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=647069 -> 646428 (latest=646530)",
+      "data": {
+        "latest": 646530,
+        "scanTo": 646528,
+        "resetTo": 646428,
+        "nextL2BlockToScan": 647069
+      }
+    },
+    {
+      "ts": 1771649108707,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8170 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771649428808,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8180 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771649748900,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8190 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771650069037,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8200 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771650389146,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8210 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771650709274,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8220 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771650800491,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=648801 -> 648107 (latest=648209)",
+      "data": {
+        "latest": 648209,
+        "scanTo": 648207,
+        "resetTo": 648107,
+        "nextL2BlockToScan": 648801
+      }
+    },
+    {
+      "ts": 1771651037349,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8230 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771651357456,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8240 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771651677586,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8250 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771651997684,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8260 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771652064974,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=650065 -> 649406 (latest=649508)",
+      "data": {
+        "latest": 649508,
+        "scanTo": 649506,
+        "resetTo": 649406,
+        "nextL2BlockToScan": 650065
+      }
+    },
+    {
+      "ts": 1771652333815,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8270 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771652653946,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8280 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771652974066,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8290 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771653085308,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=651085 -> 650435 (latest=650537)",
+      "data": {
+        "latest": 650537,
+        "scanTo": 650535,
+        "resetTo": 650435,
+        "nextL2BlockToScan": 651085
+      }
+    },
+    {
+      "ts": 1771653294167,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8300 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771653614285,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8310 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771653934507,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8320 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771654137710,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=652137 -> 651491 (latest=651593)",
+      "data": {
+        "latest": 651593,
+        "scanTo": 651591,
+        "resetTo": 651491,
+        "nextL2BlockToScan": 652137
+      }
+    },
+    {
+      "ts": 1771654254539,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8330 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771654574683,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8340 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771654894830,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8350 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771655214881,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8360 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771655534990,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8370 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771655855129,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8380 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771656175203,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8390 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771656495363,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8400 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771656815456,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8410 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771657068759,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=655069 -> 654398 (latest=654500)",
+      "data": {
+        "latest": 654500,
+        "scanTo": 654498,
+        "resetTo": 654398,
+        "nextL2BlockToScan": 655069
+      }
+    },
+    {
+      "ts": 1771657153557,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8420 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771657473642,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8430 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771657793785,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8440 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771658113860,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8450 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771658433990,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8460 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771658749308,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=656749 -> 656080 (latest=656182)",
+      "data": {
+        "latest": 656182,
+        "scanTo": 656180,
+        "resetTo": 656080,
+        "nextL2BlockToScan": 656749
+      }
+    },
+    {
+      "ts": 1771658773377,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8470 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771659094231,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8480 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771659414350,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8490 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771659734468,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8500 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771660054602,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8510 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771660374828,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8520 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771660694847,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8530 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771661014984,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8540 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771661335111,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8550 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771661655264,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8560 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771661975425,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8570 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771662295561,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8580 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771662615709,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8590 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771662935838,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8600 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771663255970,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8610 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771663576140,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8620 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771663896236,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8630 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771664137556,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=662137 -> 661477 (latest=661579)",
+      "data": {
+        "latest": 661579,
+        "scanTo": 661577,
+        "resetTo": 661477,
+        "nextL2BlockToScan": 662137
+      }
+    },
+    {
+      "ts": 1771664232335,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8640 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771664552514,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8650 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771664872605,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8660 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771665192788,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8670 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771665512882,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8680 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771665833037,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8690 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771666153163,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8700 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771666308468,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=664309 -> 663620 (latest=663722)",
+      "data": {
+        "latest": 663722,
+        "scanTo": 663720,
+        "resetTo": 663620,
+        "nextL2BlockToScan": 664309
+      }
+    },
+    {
+      "ts": 1771666503332,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8710 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771666823462,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8720 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771667136832,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=665137 -> 664451 (latest=664553)",
+      "data": {
+        "latest": 664553,
+        "scanTo": 664551,
+        "resetTo": 664451,
+        "nextL2BlockToScan": 665137
+      }
+    },
+    {
+      "ts": 1771667172301,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8730 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771667491824,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8740 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771667811951,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8750 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771667817196,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=665817 -> 665163 (latest=665265)",
+      "data": {
+        "latest": 665265,
+        "scanTo": 665263,
+        "resetTo": 665163,
+        "nextL2BlockToScan": 665817
+      }
+    },
+    {
+      "ts": 1771668140152,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8760 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771668460326,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8770 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771668579671,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=666581 -> 665884 (latest=665986)",
+      "data": {
+        "latest": 665986,
+        "scanTo": 665984,
+        "resetTo": 665884,
+        "nextL2BlockToScan": 666581
+      }
+    },
+    {
+      "ts": 1771668810494,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8780 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771669130621,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8790 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771669450739,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8800 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771669770792,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8810 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771670090944,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8820 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771670411042,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8830 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771670758586,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8840 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771671079324,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8850 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771671399393,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8860 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771671719528,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8870 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771672016842,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=670017 -> 669345 (latest=669447)",
+      "data": {
+        "latest": 669447,
+        "scanTo": 669445,
+        "resetTo": 669345,
+        "nextL2BlockToScan": 670017
+      }
+    },
+    {
+      "ts": 1771672059050,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8880 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771672379709,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8890 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771672699911,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8900 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771673020006,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8910 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771673340067,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8920 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771673553345,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=671553 -> 670898 (latest=671000)",
+      "data": {
+        "latest": 671000,
+        "scanTo": 670998,
+        "resetTo": 670898,
+        "nextL2BlockToScan": 671553
+      }
+    },
+    {
+      "ts": 1771673692212,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8930 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771674012283,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8940 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771674332398,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8950 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771674652572,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8960 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771674972652,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8970 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771675197966,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=673197 -> 672552 (latest=672654)",
+      "data": {
+        "latest": 672654,
+        "scanTo": 672652,
+        "resetTo": 672552,
+        "nextL2BlockToScan": 673197
+      }
+    },
+    {
+      "ts": 1771675340862,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8980 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771675660923,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=8990 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771675981077,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9000 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771676301208,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9010 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771676621279,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9020 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771676818590,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=674817 -> 674156 (latest=674258)",
+      "data": {
+        "latest": 674258,
+        "scanTo": 674256,
+        "resetTo": 674156,
+        "nextL2BlockToScan": 674817
+      }
+    },
+    {
+      "ts": 1771676995465,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9030 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771677315577,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9040 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771677635772,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9050 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771677955856,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9060 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771678276009,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9070 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771678449289,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=676449 -> 675814 (latest=675916)",
+      "data": {
+        "latest": 675916,
+        "scanTo": 675914,
+        "resetTo": 675814,
+        "nextL2BlockToScan": 676449
+      }
+    },
+    {
+      "ts": 1771678630184,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9080 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771678950285,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9090 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771679270400,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9100 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771679590571,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9110 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771679663815,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=677665 -> 676977 (latest=677079)",
+      "data": {
+        "latest": 677079,
+        "scanTo": 677077,
+        "resetTo": 676977,
+        "nextL2BlockToScan": 677665
+      }
+    },
+    {
+      "ts": 1771679942804,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9120 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771680262880,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9130 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771680582999,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9140 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771680624244,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=678625 -> 677932 (latest=678034)",
+      "data": {
+        "latest": 678034,
+        "scanTo": 678032,
+        "resetTo": 677932,
+        "nextL2BlockToScan": 678625
+      }
+    },
+    {
+      "ts": 1771680937143,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9150 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771681257274,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9160 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771681577465,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9170 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771681897581,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9180 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771682217825,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9190 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771682537913,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9200 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771682597093,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=680597 -> 679953 (latest=680055)",
+      "data": {
+        "latest": 680055,
+        "scanTo": 680053,
+        "resetTo": 679953,
+        "nextL2BlockToScan": 680597
+      }
+    },
+    {
+      "ts": 1771682910003,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9210 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771683230096,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9220 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771683550183,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9230 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771683870281,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9240 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771684190460,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9250 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771684510519,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9260 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771684830626,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9270 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771685206825,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9280 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771685526904,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9290 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771685847031,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9300 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771686167130,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9310 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771686487259,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9320 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771686807401,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9330 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771687127485,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9340 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771687447652,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9350 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771687767823,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9360 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771688087921,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9370 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771688408055,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9380 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771688728174,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9390 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771689048345,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9400 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771689368434,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9410 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771689688579,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9420 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771690008714,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9430 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771690330854,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9440 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771690651035,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9450 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771690971219,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9460 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771691291361,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9470 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771691611510,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9480 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771691931683,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9490 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771692251832,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9500 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771692572017,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9510 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771692892167,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9520 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771693212354,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9530 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771693532523,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9540 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771693847760,
+      "level": "error",
+      "msg": "[Relayer] Poll failed",
+      "data": {
+        "error": "Error: could not coalesce error (error={ \"code\": -32002, \"message\": \"request timed out\" }, payload={ \"id\": 1477831, \"jsonrpc\": \"2.0\", \"method\": \"eth_getLogs\", \"params\": [ { \"address\": \"0xdadd1125b8df98a66abd5eb302c0d9ca5a061dc2\", \"fromBlock\": \"0xa8e50\", \"toBlock\": \"0xa8e50\", \"topics\": [ [ \"0x63eeb224f183ce51340b74f4a561aab6bbd7df1dbef59d38dae56b50539f2022\", \"0x719ffbba8b6eb86dbfb3cea30d4b7cc867f02cdb13d8862dc87bf38865186672\", \"0x89e68218c54bfce0bd3ce8746ed45e79468220973316618c6f9b0f10a817bcf0\", \"0xd7869a349facd348e04e7ba650425c9e2194d14ec993e5e26f838a388cdebbc6\" ] ] } ] }, code=UNKNOWN_ERROR, version=6.16.0)"
+      }
+    },
+    {
+      "ts": 1771693918783,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9550 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771694238874,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9560 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771694558970,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9570 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771694662248,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=692661 -> 692010 (latest=692112)",
+      "data": {
+        "latest": 692112,
+        "scanTo": 692110,
+        "resetTo": 692010,
+        "nextL2BlockToScan": 692661
+      }
+    },
+    {
+      "ts": 1771694923125,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9580 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771695243281,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9590 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771695563347,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9600 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771695883510,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9610 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771696249649,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9620 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771696569923,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9630 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771696889842,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9640 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771696941119,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=694941 -> 694278 (latest=694380)",
+      "data": {
+        "latest": 694380,
+        "scanTo": 694378,
+        "resetTo": 694278,
+        "nextL2BlockToScan": 694941
+      }
+    },
+    {
+      "ts": 1771697268007,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9650 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771697588093,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9660 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771697908180,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9670 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771698228304,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9680 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771698489618,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=696489 -> 695836 (latest=695938)",
+      "data": {
+        "latest": 695938,
+        "scanTo": 695936,
+        "resetTo": 695836,
+        "nextL2BlockToScan": 696489
+      }
+    },
+    {
+      "ts": 1771698596461,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9690 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771698916548,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9700 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771699119812,
+      "level": "warn",
+      "msg": "[Relayer] L2 cursor ahead of head; resetting nextBlockToScan=697121 -> 696424 (latest=696526)",
+      "data": {
+        "latest": 696526,
+        "scanTo": 696524,
+        "resetTo": 696424,
+        "nextL2BlockToScan": 697121
+      }
+    },
+    {
+      "ts": 1771699294678,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9710 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771699614868,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9720 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771699934831,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9730 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771700316932,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9740 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771700637111,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9750 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771700957171,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9760 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771701277286,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9770 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771701597432,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9780 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771701917581,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9790 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771702237630,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9800 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771702549168,
+      "level": "warn",
+      "msg": "[Relayer] Finalize blocked key=0x673935dbf558452990f26c61b4782ffb6c2315b8ce8ec490d0dec0e8d8076084 kind=rollup attempts=1 err=L2 block not finalized on L1 rollup"
+    },
+    {
+      "ts": 1771702557824,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9810 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771702639149,
+      "level": "warn",
+      "msg": "[Relayer] Finalize blocked key=0x673935dbf558452990f26c61b4782ffb6c2315b8ce8ec490d0dec0e8d8076084 kind=rollup attempts=10 err=L2 block not finalized on L1 rollup"
+    },
+    {
+      "ts": 1771702853155,
+      "level": "warn",
+      "msg": "[Relayer] Finalize blocked key=0x0aab25ce3b47a53166399d0b0ac85a0e1014e22b9007917449de9f692809a2ff kind=rollup attempts=1 err=L2 block not finalized on L1 rollup"
+    },
+    {
+      "ts": 1771702877897,
+      "level": "warn",
+      "msg": "[Relayer] Release blocked key=0xd335f0d4ab2d238436644900cf505000221f91906f75946ae41b4e5388aa4487 kind=rollup attempts=9820 err=L3 block not finalized on L2 rollup"
+    },
+    {
+      "ts": 1771702883156,
+      "level": "warn",
+      "msg": "[Relayer] Finalize blocked key=0x673935dbf558452990f26c61b4782ffb6c2315b8ce8ec490d0dec0e8d8076084 kind=rollup attempts=20 err=L2 block not finalized on L1 rollup"
+    },
+    {
+      "ts": 1771702945166,
+      "level": "warn",
+      "msg": "[Relayer] Finalize blocked key=0x0aab25ce3b47a53166399d0b0ac85a0e1014e22b9007917449de9f692809a2ff kind=rollup attempts=10 err=L2 block not finalized on L1 rollup"
+    }
+  ]
+}

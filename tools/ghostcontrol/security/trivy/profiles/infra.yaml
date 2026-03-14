@@ -1,0 +1,17 @@
+name: ghostcontrol-infra
+target: /home/ghost/ghostl-stack/tools/ghostcontrol/infra
+scanner:
+  mode: fs
+  scanners:
+    - vuln
+    - misconfig
+    - secret
+  severity:
+    - MEDIUM
+    - HIGH
+    - CRITICAL
+  ignore_unfixed: true
+output:
+  format: json
+  file: /home/ghost/ghostl-stack/tools/ghostcontrol/evidence/scans/trivy-infra.json
+

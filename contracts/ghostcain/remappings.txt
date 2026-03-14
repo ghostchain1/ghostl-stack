@@ -1,0 +1,5 @@
+@ghostchain/contracts/=contracts/
+@ghostchain/contracts-upgradeable/=contracts/
+ds-test/=lib/ds-test/src/
+forge-std/=lib/forge-std/src/
+

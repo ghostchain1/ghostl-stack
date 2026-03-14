@@ -1,0 +1,16 @@
+{
+  "name": "agent-registry-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "ghost": "^6.15.0"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

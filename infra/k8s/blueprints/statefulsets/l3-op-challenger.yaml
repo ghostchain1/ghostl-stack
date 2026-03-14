@@ -1,0 +1,237 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "l3-op-challenger",
+    "labels": {
+      "app": "l3-op-challenger",
+      "role": "chain"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "true"
+    }
+  },
+  "spec": {
+    "serviceName": "l3-op-challenger",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "l3-op-challenger"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "l3-op-challenger",
+          "role": "chain"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "l3-op-challenger",
+            "image": "${OP_CHALLENGER_IMAGE:-local/op-challenger:${OPSTACK_IMAGE_TAG:-devnet}}",
+            "command": null,
+            "args": [
+              "op-challenger",
+              "--l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}",
+              "--rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}",
+              "--l2-eth-rpc=http://l3-geth:8545",
+              "--game-factory-address=${L3_GAME_FACTORY_ADDRESS:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}",
+              "--datadir=/data",
+              "--private-key=${L3_CHALLENGER_KEY:-${CHALLENGER_KEY:-}}",
+              "--trace-type=${L3_CHALLENGER_TRACE_TYPE:-cannon}",
+              "--cannon-rollup-config=/config/rollup.json",
+              "--cannon-l2-genesis=/config/genesis.json",
+              "--metrics.enabled",
+              "--metrics.addr=0.0.0.0",
+              "--metrics.port=${L3_CHALLENGER_METRICS_PORT:-8303}"
+            ],
+            "env": [
+              {
+                "name": "OP_CHALLENGER_CANNON_BIN",
+                "value": "${OP_CHALLENGER_CANNON_BIN:-/assets/cannon/cannon}"
+              },
+              {
+                "name": "OP_CHALLENGER_CANNON_KONA_PRESTATE",
+                "value": "${OP_CHALLENGER_CANNON_KONA_PRESTATE:-/assets/op-program/prestate-mt64.bin.gz}"
+              },
+              {
+                "name": "OP_CHALLENGER_CANNON_KONA_SERVER",
+                "value": "${OP_CHALLENGER_CANNON_KONA_SERVER:-/usr/local/bin/kona-host}"
+              },
+              {
+                "name": "OP_CHALLENGER_CANNON_L2_GENESIS",
+                "value": "/config/genesis.json"
+              },
+              {
+                "name": "OP_CHALLENGER_CANNON_PRESTATE",
+                "value": "${OP_CHALLENGER_CANNON_PRESTATE:-/assets/op-program/prestate-mt64.bin.gz}"
+              },
+              {
+                "name": "OP_CHALLENGER_CANNON_ROLLUP_CONFIG",
+                "value": "/config/rollup.json"
+              },
+              {
+                "name": "OP_CHALLENGER_CANNON_SERVER",
+                "value": "${OP_CHALLENGER_CANNON_SERVER:-/assets/op-program/op-program}"
+              },
+              {
+                "name": "OP_CHALLENGER_DATADIR",
+                "value": "/data"
+              },
+              {
+                "name": "OP_CHALLENGER_GAME_FACTORY_ADDRESS",
+                "value": "${L3_GAME_FACTORY_ADDRESS:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}"
+              },
+              {
+                "name": "OP_CHALLENGER_L1_BEACON",
+                "value": "${L3_L1_BEACON_RPC:-${L3_L1_RPC:-http://l2-geth:8545}}"
+              },
+              {
+                "name": "OP_CHALLENGER_L1_GENESIS",
+                "value": "/config/l1-chain.json"
+              },
+              {
+                "name": "OP_CHALLENGER_PRIVATE_KEY",
+                "value": "${L3_CHALLENGER_KEY:-${CHALLENGER_KEY:-}}"
+              },
+              {
+                "name": "OP_CHALLENGER_ROLLUP_RPC",
+                "value": "http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}"
+              },
+              {
+                "name": "OP_CHALLENGER_TRACE_TYPE",
+                "value": "${L3_CHALLENGER_TRACE_TYPE:-cannon}"
+              }
+            ],
+            "ports": [],
+            "volumeMounts": [
+              {
+                "name": "./l3/${L3_NAME:-ghostl3}/data/challenger",
+                "mountPath": "/data"
+              },
+              {
+                "name": "./l3/${L3_NAME:-ghostl3}/config/rollup.json",
+                "mountPath": "/config/rollup.json"
+              },
+              {
+                "name": "./l3/${L3_NAME:-ghostl3}/config/genesis.json",
+                "mountPath": "/config/genesis.json"
+              },
+              {
+                "name": "./l3/${L3_NAME:-ghostl3}/config/l1-chain.json",
+                "mountPath": "/config/l1-chain.json"
+              },
+              {
+                "name": "${OP_CHALLENGER_ASSETS_DIR:-./optimism/op-program/bin}",
+                "mountPath": "/assets/op-program"
+              },
+              {
+                "name": "./optimism/cannon/bin",
+                "mountPath": "/assets/cannon"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./l3/${L3_NAME:-ghostl3}/data/challenger"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "./l3/${L3_NAME:-ghostl3}/config/rollup.json"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "./l3/${L3_NAME:-ghostl3}/config/genesis.json"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "./l3/${L3_NAME:-ghostl3}/config/l1-chain.json"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "${OP_CHALLENGER_ASSETS_DIR:-./optimism/op-program/bin}"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "./optimism/cannon/bin"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

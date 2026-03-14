@@ -1,0 +1,47 @@
+{
+  "name": "@ghostchain/swarm",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Ghost Autonomous Swarm Intelligence Layer — distributed AI agents, multi-node consensus, predictive healing, and multi-region orchestration for GhostChain",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./swarm": {
+      "types": "./dist/swarm/GhostSwarmController.d.ts",
+      "default": "./dist/swarm/GhostSwarmController.js"
+    },
+    "./consensus": {
+      "types": "./dist/consensus/GhostDecisionConsensus.d.ts",
+      "default": "./dist/consensus/GhostDecisionConsensus.js"
+    },
+    "./agents": {
+      "types": "./dist/agents/GhostAgentBase.d.ts",
+      "default": "./dist/agents/GhostAgentBase.js"
+    },
+    "./prediction": {
+      "types": "./dist/prediction/GhostPredictiveEngine.d.ts",
+      "default": "./dist/prediction/GhostPredictiveEngine.js"
+    },
+    "./multi-region": {
+      "types": "./dist/multi-region/GhostRegionController.d.ts",
+      "default": "./dist/multi-region/GhostRegionController.js"
+    },
+    "./telemetry": {
+      "types": "./dist/telemetry/GhostSwarmTelemetry.d.ts",
+      "default": "./dist/telemetry/GhostSwarmTelemetry.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

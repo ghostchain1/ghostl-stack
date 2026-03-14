@@ -1,0 +1,279 @@
+{
+  "version": 1,
+  "owner": "ghost-platform-security",
+  "exceptions": [
+    {
+      "id": "outdated-next-auth-beta-track",
+      "type": "outdated",
+      "package": "next-auth",
+      "rationale": "The platform intentionally tracks NextAuth v5 beta for App Router realm-aware Auth.js support until v5 stable lands in the configured registry.",
+      "compensating_controls": [
+        "SSO realm smoke tests run in CI",
+        "Dependency gate re-evaluates this exception every run"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-02-27",
+      "expires_at": "2026-05-31"
+    },
+    {
+      "id": "outdated-auth-core-registry-mismatch",
+      "type": "outdated",
+      "package": "@auth/core",
+      "rationale": "Registry metadata currently reports a stale latest tag while GhostStack pins a newer secure @auth/core release required for audit-clean status.",
+      "compensating_controls": [
+        "Pinned to 0.41.1 in root overrides and apps/web dependency",
+        "Audit gate enforces vulnerability clean state on every CI run"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-02-27",
+      "expires_at": "2026-05-31"
+    },
+    {
+      "id": "outdated-tailwind-v4-migration",
+      "type": "outdated",
+      "package": "tailwindcss",
+      "rationale": "Tailwind v4 migration is tracked separately because the current UI package still relies on v3 plugin compatibility.",
+      "compensating_controls": [
+        "Pinned minor/patch updates on v3 line",
+        "Dedicated migration issue required before expiry"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-02-27",
+      "expires_at": "2026-05-31"
+    },
+    {
+      "id": "outdated-eslint-next-peer-window",
+      "type": "outdated",
+      "package": "eslint",
+      "rationale": "The repository runs ESLint 10 while Next's plugin ecosystem currently advertises peer ranges through v9; upgrading immediately is blocked by peer-resolution conflicts in the monorepo.",
+      "compensating_controls": [
+        "Lint gate remains mandatory in CI",
+        "Dependency gate revalidates this exception on every run",
+        "Exception expires and must be reviewed before renewal"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-02-27",
+      "expires_at": "2026-05-31"
+    },
+    {
+      "id": "outdated-typescript-eslint-plugin-peer-window",
+      "type": "outdated",
+      "package": "@typescript-eslint/eslint-plugin",
+      "rationale": "Patch upgrade is currently blocked by peer version lock-step between Next's bundled lint stack and root eslint plugin versions.",
+      "compensating_controls": [
+        "Lint runs in CI for all changed files",
+        "Exception is time-bounded and re-evaluated each release cycle"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-02-27",
+      "expires_at": "2026-05-31"
+    },
+    {
+      "id": "outdated-typescript-eslint-parser-peer-window",
+      "type": "outdated",
+      "package": "@typescript-eslint/parser",
+      "rationale": "Patch upgrade is currently blocked by peer version lock-step between Next's bundled lint stack and root parser versions.",
+      "compensating_controls": [
+        "Lint runs in CI for all changed files",
+        "Exception is time-bounded and re-evaluated each release cycle"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-02-27",
+      "expires_at": "2026-05-31"
+    },
+    {
+      "id": "outdated-hardhat-toolchain-window",
+      "type": "outdated",
+      "package": "hardhat",
+      "rationale": "Hardhat patch upgrades are batched with contract and plugin compatibility testing for Ghostchain release trains to avoid accidental deployment behavior drift.",
+      "compensating_controls": [
+        "Contract CI includes compile/test/static checks",
+        "Release checklist requires explicit hardhat upgrade validation before exception expiry"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-02-27",
+      "expires_at": "2026-05-31"
+    },
+    {
+      "id": "outdated-qs-express-chain",
+      "type": "outdated",
+      "package": "qs",
+      "rationale": "Express 5/body-parser dependency chain currently resolves to qs 6.14.x in this workspace lock; upgrade to 6.15.0 is tracked but blocked by the existing lock/peer graph.",
+      "compensating_controls": [
+        "npm audit is clean with zero vulnerabilities",
+        "Gateway and API input validation remains enforced for query parsing paths",
+        "Exception expires and must be re-validated"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-02-27",
+      "expires_at": "2026-05-31"
+    },
+    {
+      "id": "outdated-ioredis-minor-window",
+      "type": "outdated",
+      "package": "ioredis",
+      "rationale": "ioredis 5.10.0 minor bump is deferred until redis-dependent service integration smoke tests are completed for this release branch.",
+      "compensating_controls": [
+        "Redis-backed services run health checks and integration smoke flows in CI",
+        "npm audit remains enforced and reports zero vulnerabilities",
+        "Exception is short-lived and must be revalidated before expiry"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-02-27",
+      "expires_at": "2026-05-31"
+    },
+    {
+      "id": "outdated-postcss-patch-window",
+      "type": "outdated",
+      "package": "postcss",
+      "rationale": "postcss 8.5.8 patch update is deferred to avoid workspace lock graph churn; existing version has no known vulnerabilities.",
+      "compensating_controls": [
+        "npm audit reports zero vulnerabilities for postcss",
+        "Dependency gate revalidates this exception on every run"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-03-03",
+      "expires_at": "2026-05-31"
+    },
+    {
+      "id": "outdated-types-node-patch-window",
+      "type": "outdated",
+      "package": "@types/node",
+      "rationale": "@types/node patch updates are batched per service to avoid lock-graph conflicts across multiple pnpm workspaces in the monorepo.",
+      "compensating_controls": [
+        "Type-check runs in CI for all changed TypeScript files",
+        "Exception is time-bounded and tied to the active Dependabot batch"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-03-03",
+      "expires_at": "2026-05-31"
+    },
+    {
+      "id": "outdated-types-express-v5-migration",
+      "type": "outdated",
+      "package": "@types/express",
+      "rationale": "@types/express v5 types ship as an optional companion to Express v5. Upgrade from 4.x is tracked as part of the Express v5 migration batch to ensure all augmented request types are updated together.",
+      "compensating_controls": [
+        "TypeScript type-check runs in CI on every push",
+        "Express v5 migration tracked in release backlog",
+        "Exception expires and must be reviewed before renewal"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-03-06",
+      "expires_at": "2026-06-30"
+    },
+    {
+      "id": "outdated-bullmq-patch-window",
+      "type": "outdated",
+      "package": "bullmq",
+      "rationale": "bullmq patch update (5.70.1→5.70.4) is within the same minor line. Deferred to avoid lockfile churn during active Phase 2 release work; no known security findings.",
+      "compensating_controls": [
+        "npm audit reports zero vulnerabilities",
+        "Worker queue smoke tests run in CI",
+        "Exception is short-lived and must be revalidated before expiry"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-03-06",
+      "expires_at": "2026-06-30"
+    },
+    {
+      "id": "outdated-express-workspace-resolution",
+      "type": "outdated",
+      "package": "express",
+      "rationale": "npm outdated -ws reports express as MISSING for sub-workspaces because the package is hoisted to root node_modules by workspace resolution. The correct version (5.2.1) is installed and served workspace-wide via the lockfile.",
+      "compensating_controls": [
+        "npm ci installs pinned and audited versions",
+        "npm audit reports zero vulnerabilities",
+        "API smoke tests run on every push to verify the Express runtime"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-03-06",
+      "expires_at": "2026-06-30"
+    },
+    {
+      "id": "outdated-ghost-internal-version",
+      "type": "outdated",
+      "package": "ghost",
+      "rationale": "The 'ghost' package is GhostStack's internal ethers-based provider fork pinned at 0.0.1 in the workspace. npm outdated compares against the unrelated 'ghost' npm registry package (6.x). The workspace version is correct and intentional.",
+      "compensating_controls": [
+        "Package is a private workspace local package, not sourced from npm registry",
+        "Sovereignty checks enforce ghost-native RPC namespace on every CI run",
+        "Exception is time-bounded and must be renewed per release cycle"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-03-06",
+      "expires_at": "2026-06-30"
+    },
+    {
+      "id": "outdated-next-workspace-resolution",
+      "type": "outdated",
+      "package": "next",
+      "rationale": "npm outdated -ws reports next as MISSING for the web sub-workspace because the package is hoisted to root node_modules by workspace resolution. Next.js 16.1.6 is pinned in the lockfile and installed correctly.",
+      "compensating_controls": [
+        "npm ci installs pinned and audited versions",
+        "Web build smoke runs in CI release gate",
+        "npm audit reports zero vulnerabilities"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-03-06",
+      "expires_at": "2026-06-30"
+    },
+    {
+      "id": "outdated-nodemailer-workspace-resolution",
+      "type": "outdated",
+      "package": "nodemailer",
+      "rationale": "npm outdated -ws reports nodemailer as MISSING due to workspace hoisting. The version declared in apps/api/package.json is installed at root node_modules and available to the API service at runtime.",
+      "compensating_controls": [
+        "npm audit is clean with zero vulnerabilities",
+        "API integration tests cover email-notification code paths",
+        "Exception is time-bounded and tied to the active dependency batch"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-03-06",
+      "expires_at": "2026-06-30"
+    },
+    {
+      "id": "outdated-react-dom-workspace-resolution",
+      "type": "outdated",
+      "package": "react-dom",
+      "rationale": "npm outdated -ws reports react-dom as MISSING due to workspace hoisting. React DOM 19.2.4 is pinned in the lockfile and installed correctly at root node_modules, serving the web sub-workspace.",
+      "compensating_controls": [
+        "npm audit is clean",
+        "Web build smoke verifies the React runtime on every push",
+        "Exception expires and must be re-reviewed per release cycle"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-03-06",
+      "expires_at": "2026-06-30"
+    },
+    {
+      "id": "outdated-ws-minor-window",
+      "type": "outdated",
+      "package": "ws",
+      "rationale": "ws 8.19.0 minor update is deferred to batch with the next lockfile refresh cycle; no known security findings against the installed 8.17.1 version per npm audit.",
+      "compensating_controls": [
+        "npm audit reports zero vulnerabilities for ws",
+        "WebSocket API smoke tests run in CI",
+        "Exception is short-lived and must be revalidated before expiry"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-03-06",
+      "expires_at": "2026-06-30"
+    },
+    {
+      "id": "outdated-zod-v4-migration",
+      "type": "outdated",
+      "package": "zod",
+      "rationale": "Zod v4 (4.x) is a breaking-change major release with significant API surface differences from 3.x. Migration requires coordinated updates across apps/api, apps/web, and packages/contract-schemas. Tracked as a dedicated migration task.",
+      "compensating_controls": [
+        "TypeScript type-check enforces schema correctness at build time",
+        "API integration tests validate all Zod-parsed request/response paths",
+        "npm audit is clean with zero vulnerabilities against zod 3.x",
+        "Exception is time-bounded and tied to the Zod v4 migration release"
+      ],
+      "owner": "ghost-platform-security",
+      "created_at": "2026-03-06",
+      "expires_at": "2026-06-30"
+    }
+  ]
+}

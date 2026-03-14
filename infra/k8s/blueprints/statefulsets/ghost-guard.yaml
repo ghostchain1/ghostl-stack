@@ -1,0 +1,145 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "ghost-guard",
+    "labels": {
+      "app": "ghost-guard",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "ghost-guard",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "ghost-guard"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "ghost-guard",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "ghost-guard",
+            "image": "local/ghost-guard:${OPSTACK_IMAGE_TAG:-devnet}",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "ADMIN_TOKEN",
+                "value": "${GUARD_ADMIN_TOKEN:-}"
+              },
+              {
+                "name": "ALERT_MIN_RISK",
+                "value": "${GUARD_ALERT_MIN_RISK:-70}"
+              },
+              {
+                "name": "AUTO_ACTION",
+                "value": "${GUARD_AUTO_ACTION:-}"
+              },
+              {
+                "name": "AUTO_PAUSE",
+                "value": "${GUARD_AUTO_PAUSE:-0}"
+              },
+              {
+                "name": "AUTO_PAUSE_THRESHOLD",
+                "value": "${GUARD_AUTO_PAUSE_THRESHOLD:-90}"
+              },
+              {
+                "name": "AUTO_QUARANTINE_THRESHOLD",
+                "value": "${GUARD_AUTO_QUARANTINE_THRESHOLD:-70}"
+              },
+              {
+                "name": "BRIDGE_L2L3_ADDRESS",
+                "value": "${BRIDGE_L2L3_ADDRESS:-0x0000000000000000000000000000000000000000}"
+              },
+              {
+                "name": "GRAPH_WINDOW_SECONDS",
+                "value": "${GUARD_GRAPH_WINDOW_SECONDS:-3600}"
+              },
+              {
+                "name": "GUARD_POLICY_ADDRESS",
+                "value": "${GUARD_POLICY_ADDRESS:-}"
+              },
+              {
+                "name": "PORT",
+                "value": "7070"
+              },
+              {
+                "name": "PRIVATE_KEY",
+                "value": "${GUARD_PRIVATE_KEY:-}"
+              },
+              {
+                "name": "QUARANTINE_DELAY_SECONDS",
+                "value": "${GUARD_QUARANTINE_DELAY_SECONDS:-30}"
+              },
+              {
+                "name": "RATE_LIMIT_MAX",
+                "value": "${GUARD_RATE_LIMIT_MAX:-20}"
+              },
+              {
+                "name": "RATE_LIMIT_WINDOW_MS",
+                "value": "${GUARD_RATE_LIMIT_WINDOW_MS:-1000}"
+              },
+              {
+                "name": "RISK_WINDOW_SECONDS",
+                "value": "${GUARD_RISK_WINDOW_SECONDS:-300}"
+              },
+              {
+                "name": "RPC_L2",
+                "value": "http://l2-geth:8545"
+              },
+              {
+                "name": "STATE_DIR",
+                "value": "/state"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 7070,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "./data/guard",
+                "mountPath": "/state"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./data/guard"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

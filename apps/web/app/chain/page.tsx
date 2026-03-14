@@ -1,132 +1,110 @@
-/**
- * Chain — multi-layer GhostChain network status.
- * Pulls live data from GIN chain metrics + blockchainApi L1 RPC.
- */
+import { Badge, Card } from '@ghostl/ui';
+import { ChainOverviewSchema, type ChainOverview } from '@ghostl/contract-schemas';
+import type { ApiError } from '../../src/lib/api';
+import { serverApiRequest } from '../../src/lib/server-api';
+import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
 
-import { fetchNetworkOverview, formatGwei } from "@/lib/blockchainApi";
-import { fetchGiexSummary }                 from "@/lib/api";
-import { SectionHeader }                    from "@/components/dashboard/MetricCard";
-import { StatusBadge }                      from "@/components/dashboard/StatusBadge";
-
-export const metadata = { title: "Chain Status · GhostStack" };
-export const revalidate = 15;
-
-const LAYER_COLORS: Record<string, string> = {
-  L1: "var(--accent)",
-  L2: "var(--green)",
-  L3: "var(--yellow)",
-};
+const formatPercent = (value?: number) => (typeof value === 'number' ? `${Math.round(value * 100)}%` : 'n/a');
+const formatSeconds = (value?: number) => (typeof value === 'number' ? `${(value / 1000).toFixed(2)}s` : 'n/a');
 
 export default async function ChainPage() {
-  const [overview, giex] = await Promise.all([
-    fetchNetworkOverview(),
-    fetchGiexSummary(),
-  ]);
+  const overviewRes = await serverApiRequest<ChainOverview>('/chain', {
+    init: { cache: 'no-store' },
+    schema: ChainOverviewSchema
+  });
+  const errors: Array<{ title: string; error: ApiError }> = [];
+  if (!overviewRes.ok) errors.push({ title: 'Chain overview', error: overviewRes.error });
 
-  const { chains, totalTps, healthyChains } = overview;
-  const snap = giex?.snapshot;
+  const chains = overviewRes.ok ? overviewRes.data.chains : [];
 
   return (
-    <div>
-      <div className="page-header">
-        <h1>Chain Status</h1>
-        <p>GhostChain L1 · GhostL2 · GhostL3 — live network overview</p>
-      </div>
-
-      {/* KPI row */}
-      <div className="grid grid-4">
-        <div className="card">
-          <div className="card-title">Tracked Chains</div>
-          <div className="card-value">{chains.length || "—"}</div>
-        </div>
-        <div className="card">
-          <div className="card-title">Healthy</div>
-          <div className="card-value">{healthyChains} / {chains.length}</div>
-        </div>
-        <div className="card">
-          <div className="card-title">Total TPS</div>
-          <div className="card-value">{totalTps.toFixed(1)}</div>
-        </div>
-        <div className="card">
-          <div className="card-title">Interchain Score</div>
-          <div className="card-value">
-            {snap ? snap.interchainHealthScore.toFixed(0) + "%" : "—"}
-          </div>
-        </div>
-      </div>
-
-      {/* Per-chain table */}
-      <SectionHeader title="Chain Metrics" sub="Sourced from GIN intelligence layer" />
-      {chains.length === 0 ? (
-        <div className="card" style={{ color: "var(--text-muted)" }}>No chain data available — GIN offline?</div>
-      ) : (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Layer</th>
-              <th>Chain</th>
-              <th>Block Height</th>
-              <th>TPS</th>
-              <th>Gas Price</th>
-              <th>Latency</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {chains.map(c => (
-              <tr key={c.chainId}>
-                <td>
-                  <span style={{ color: LAYER_COLORS[c.layer] ?? "inherit", fontWeight: 700 }}>
-                    {c.layer}
-                  </span>
-                </td>
-                <td>{c.label}</td>
-                <td>{c.blockHeight.toLocaleString()}</td>
-                <td>{c.tps.toFixed(2)}</td>
-                <td>{formatGwei(BigInt(c.gasPrice))}</td>
-                <td>{c.latencyMs} ms</td>
-                <td>
-                  <StatusBadge
-                    ok={c.status === "operational"}
-                    onLabel={c.status}
-                    offLabel={c.status}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      {/* Interchain summary */}
-      {snap && (
-        <>
-          <SectionHeader title="Interchain Bridge Summary" sub="Via GIEX engine" />
-          <div className="grid grid-4">
-            <div className="card">
-              <div className="card-title">Active Bridges</div>
-              <div className="card-value">{snap.bridges.active}</div>
-              <div className="card-sub">of {snap.bridges.total}</div>
-            </div>
-            <div className="card">
-              <div className="card-title">Daily Bridge Volume</div>
-              <div className="card-value">
-                ${(snap.bridges.dailyVolume_USD / 1e6).toFixed(2)}M
+    <div className="content">
+      <div className="card-grid">
+        {errors.map((entry, idx) => (
+          <DataFetchErrorCard key={`${entry.title}-${idx}`} title={entry.title} error={entry.error} />
+        ))}
+        {chains.map((chain) => {
+          const participation = formatPercent(chain.telemetry?.participation);
+          const latencyP50 =
+            typeof chain.telemetry?.latency?.p50 === 'number' ? `${chain.telemetry.latency.p50} ms` : 'n/a';
+          const healthSamples = Array.isArray(chain.telemetry?.health?.services)
+            ? `${chain.telemetry?.health?.services.length ?? 0} samples`
+            : 'n/a';
+          return (
+            <Card key={chain.id} title={chain.info?.name || chain.label} subtitle={`Chain ${chain.info?.chainId || 'n/a'}`}>
+              <div className="stack">
+                <div className="spread">
+                  <span className="muted">Environment</span>
+                  <span>{chain.info?.env || 'n/a'}</span>
+                </div>
+                <div className="spread">
+                  <span className="muted">Consensus</span>
+                  <span>{chain.info?.consensus || 'n/a'}</span>
+                </div>
+                <div className="spread">
+                  <span className="muted">Head block</span>
+                  <span>{chain.rpc.blockNumber ?? 'n/a'}</span>
+                </div>
+                <div className="spread">
+                  <span className="muted">Block time</span>
+                  <span>{formatSeconds(chain.blockTimeMs)}</span>
+                </div>
+                <div className="spread">
+                  <span className="muted">Finality lag</span>
+                  <span>{chain.finalityLag ?? 'n/a'}</span>
+                </div>
+                <div className="spread">
+                  <span className="muted">Participation</span>
+                  <Badge tone="success">{participation}</Badge>
+                </div>
+                <div className="spread">
+                  <span className="muted">Latency (p50)</span>
+                  <span>{latencyP50}</span>
+                </div>
+                <div className="spread">
+                  <span className="muted">Health samples</span>
+                  <span>{healthSamples}</span>
+                </div>
+                <div className="spread">
+                  <span className="muted">Peers</span>
+                  <span>{chain.rpc.peers ?? 'n/a'}</span>
+                </div>
+                {chain.peers?.peers?.length ? (
+                  <div className="stack" style={{ gap: 6 }}>
+                    {chain.peers.peers.slice(0, 5).map((peer) => (
+                      <div key={peer.id} className="spread">
+                        <span>{peer.id}</span>
+                        <span className="muted">{peer.latencyMs !== undefined ? `${peer.latencyMs} ms` : 'n/a'}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="muted">Peer graph unavailable.</div>
+                )}
+                {chain.reorgs?.length ? (
+                  <div className="stack" style={{ gap: 6 }}>
+                    {chain.reorgs.slice(0, 5).map((r) => (
+                      <div key={`${r.fromBlock}-${r.toBlock}-${r.depth}`} className="row" style={{ justifyContent: 'space-between' }}>
+                        <div className="muted">
+                          {r.fromBlock} → {r.toBlock}
+                        </div>
+                        <Badge tone="warning">depth {r.depth}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="muted">No recent reorgs.</div>
+                )}
               </div>
-            </div>
-            <div className="card">
-              <div className="card-title">Liquidity Pools</div>
-              <div className="card-value">{snap.liquidity.activePools}</div>
-            </div>
-            <div className="card">
-              <div className="card-title">Total TVL</div>
-              <div className="card-value">
-                ${(snap.liquidity.totalTVL_USD / 1e6).toFixed(2)}M
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+            </Card>
+          );
+        })}
+        {!chains.length && !errors.length && (
+          <Card title="Chain overview">
+            <div className="muted">No chain data returned by /chain.</div>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,0 +1,22 @@
+title = "GhostChain gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "GhostChain allowlist for generated paths and non-secret addresses"
+paths = [
+  '''^node_modules/''',
+  '''^contracts/node_modules/''',
+  '''^core-service/node_modules/''',
+  '''^dist/''',
+  '''^artifacts/''',
+  '''^cache/''',
+  '''^backups/''',
+  '''^observability/.*/data/''',
+  '''^infra/opstack/optimism-upstream/'''
+]
+regexes = [
+  '''0x[a-fA-F0-9]{40}''',
+  '''0x0{24}[a-fA-F0-9]{40}'''
+]

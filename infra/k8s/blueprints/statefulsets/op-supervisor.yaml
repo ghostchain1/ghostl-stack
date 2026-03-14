@@ -1,0 +1,100 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "op-supervisor",
+    "labels": {
+      "app": "op-supervisor",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "op-supervisor",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "op-supervisor"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "op-supervisor",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "op-supervisor",
+            "image": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-supervisor:devnet",
+            "command": null,
+            "args": "op-supervisor --datadir=\"/db\" --dependency-set=\"/depset.json\" --l2-rpcs=\"\" --rpc.addr=\"0.0.0.0\" --rpc.port=8545 --rpc.enable-admin --l2-rpcs=\"ws://l2-a:8546,ws://l2-b:8546\"\n",
+            "env": [
+              {
+                "name": "OP_SUPERVISOR_METRICS_ENABLED",
+                "value": "true"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 8545,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "supervisor_data",
+                "mountPath": "/db"
+              },
+              {
+                "name": "./depset.json",
+                "mountPath": "/depset.json"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "supervisor_data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "./depset.json"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

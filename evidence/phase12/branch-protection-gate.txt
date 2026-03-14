@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "checks": {
+    "script-syntax-apply-branch-protection": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase12/script-syntax-apply-branch-protection.txt"
+    },
+    "script-syntax-phase12-validator": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase12/script-syntax-phase12-validator.txt"
+    },
+    "required-contexts-in-script": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase12/required-contexts-in-script.txt"
+    },
+    "required-workflow-jobs": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase12/required-workflow-jobs.txt"
+    },
+    "checklist-contains-required-checks": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase12/checklist-contains-required-checks.txt"
+    },
+    "apply-branch-protection-dry-run": {
+      "exitCode": 0,
+      "ok": true,
+      "log": "evidence/phase12/apply-branch-protection-dry-run.txt"
+    }
+  },
+  "failures": 0
+}

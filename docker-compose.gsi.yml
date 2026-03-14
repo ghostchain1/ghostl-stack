@@ -1,0 +1,161 @@
+version: "3.9"
+
+networks:
+  ghostsovereign:
+    external: true
+    name: ghostsovereign
+
+services:
+
+  gsi-registry:
+    build: ./services/gsi-registry
+    container_name: ghostgsi-registry
+    restart: unless-stopped
+    environment:
+      - PORT=4200
+      - L1_RPC=http://ghostchain-l1:8545
+      - DB_URL=postgresql://gsi:${GSI_DB_PASSWORD}@ghostgsi-postgres:5432/gsi
+    ports: ["4200:4200"]
+    networks: [ghostsovereign]
+    depends_on: [gsi-postgres]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4200/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gsi-credentials:
+    build: ./services/gsi-credentials
+    container_name: ghostgsi-credentials
+    restart: unless-stopped
+    environment:
+      - PORT=4201
+      - L1_RPC=http://ghostchain-l1:8545
+      - DB_URL=postgresql://gsi:${GSI_DB_PASSWORD}@ghostgsi-postgres:5432/gsi
+    ports: ["4201:4201"]
+    networks: [ghostsovereign]
+    depends_on: [gsi-postgres]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4201/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gsi-verification:
+    build: ./services/gsi-verification
+    container_name: ghostgsi-verification
+    restart: unless-stopped
+    environment:
+      - PORT=4202
+      - L1_RPC=http://ghostchain-l1:8545
+      - DB_URL=postgresql://gsi:${GSI_DB_PASSWORD}@ghostgsi-postgres:5432/gsi
+      - REGISTRY_URL=http://ghostgsi-registry:4200
+      - CREDENTIALS_URL=http://ghostgsi-credentials:4201
+    ports: ["4202:4202"]
+    networks: [ghostsovereign]
+    depends_on: [gsi-postgres]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4202/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gsi-passport:
+    build: ./services/gsi-passport
+    container_name: ghostgsi-passport
+    restart: unless-stopped
+    environment:
+      - PORT=4203
+      - L1_RPC=http://ghostchain-l1:8545
+      - DB_URL=postgresql://gsi:${GSI_DB_PASSWORD}@ghostgsi-postgres:5432/gsi
+    ports: ["4203:4203"]
+    networks: [ghostsovereign]
+    depends_on: [gsi-postgres]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4203/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gsi-institutional:
+    build: ./services/gsi-institutional
+    container_name: ghostgsi-institutional
+    restart: unless-stopped
+    environment:
+      - PORT=4204
+      - L1_RPC=http://ghostchain-l1:8545
+      - DB_URL=postgresql://gsi:${GSI_DB_PASSWORD}@ghostgsi-postgres:5432/gsi
+      - VERIFICATION_URL=http://ghostgsi-verification:4202
+    ports: ["4204:4204"]
+    networks: [ghostsovereign]
+    depends_on: [gsi-postgres]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4204/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gsi-biometric:
+    build: ./services/gsi-biometric
+    container_name: ghostgsi-biometric
+    restart: unless-stopped
+    environment:
+      - PORT=4205
+      - L1_RPC=http://ghostchain-l1:8545
+      - DB_URL=postgresql://gsi:${GSI_DB_PASSWORD}@ghostgsi-postgres:5432/gsi
+      - VERIFICATION_URL=http://ghostgsi-verification:4202
+    ports: ["4205:4205"]
+    networks: [ghostsovereign]
+    depends_on: [gsi-postgres]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4205/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gsi-ai:
+    build: ./services/gsi-ai
+    container_name: ghostgsi-ai
+    restart: unless-stopped
+    environment:
+      - PORT=4206
+      - L1_RPC=http://ghostchain-l1:8545
+      - DB_URL=postgresql://gsi:${GSI_DB_PASSWORD}@ghostgsi-postgres:5432/gsi
+      - GHOSTBRAIN_URL=http://ghostbrain-core:7900
+      - REGISTRY_URL=http://ghostgsi-registry:4200
+    ports: ["4206:4206"]
+    networks: [ghostsovereign]
+    depends_on: [gsi-postgres]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4206/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  gsi-postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: ghostgsi-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gsi
+      POSTGRES_USER: gsi
+      POSTGRES_PASSWORD_FILE: /run/secrets/gsi_db_password
+    secrets: [gsi_db_password]
+    volumes:
+      - gsi-pgdata:/var/lib/postgresql/data
+      - ./services/gsi-registry/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    networks: [ghostsovereign]
+
+secrets:
+  gsi_db_password:
+    file: ./secrets/gsi_db_password.txt
+
+volumes:
+  gsi-pgdata:

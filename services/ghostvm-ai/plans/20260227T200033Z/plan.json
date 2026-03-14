@@ -1,0 +1,432 @@
+{
+  "actions": [
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "ip link show br-mgmt >/dev/null 2>&1 || ip link add br-mgmt type bridge"
+      ],
+      "description": "Ensure bridge br-mgmt",
+      "destructive": false,
+      "id": "p3-hyper-1",
+      "phase": "3",
+      "rollback": [
+        "bash",
+        "-lc",
+        "ip link del br-mgmt || true"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "ip link show br-l1 >/dev/null 2>&1 || ip link add br-l1 type bridge"
+      ],
+      "description": "Ensure bridge br-l1",
+      "destructive": false,
+      "id": "p3-hyper-2",
+      "phase": "3",
+      "rollback": [
+        "bash",
+        "-lc",
+        "ip link del br-l1 || true"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "ip link show br-l2 >/dev/null 2>&1 || ip link add br-l2 type bridge"
+      ],
+      "description": "Ensure bridge br-l2",
+      "destructive": false,
+      "id": "p3-hyper-3",
+      "phase": "3",
+      "rollback": [
+        "bash",
+        "-lc",
+        "ip link del br-l2 || true"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "ip link show br-l3 >/dev/null 2>&1 || ip link add br-l3 type bridge"
+      ],
+      "description": "Ensure bridge br-l3",
+      "destructive": false,
+      "id": "p3-hyper-4",
+      "phase": "3",
+      "rollback": [
+        "bash",
+        "-lc",
+        "ip link del br-l3 || true"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo validate-vm-network ghost-l1-node"
+      ],
+      "description": "Validate network config for VM ghost-l1-node (l1)",
+      "destructive": false,
+      "id": "p4-vm-5",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo no-op"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo configure-netplan vm=ghost-l1-node if=ens3 segment=l1 addr=10.20.0.10/24"
+      ],
+      "description": "Configure interface ens3 on VM ghost-l1-node for l1",
+      "destructive": false,
+      "id": "p4-vm-6",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo rollback-netplan vm=ghost-l1-node if=ens3"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo configure-netplan vm=ghost-l1-node if=ens4 segment=external addr=208.110.71.171/26 gw=208.110.71.129"
+      ],
+      "description": "Configure interface ens4 on VM ghost-l1-node for external",
+      "destructive": false,
+      "id": "p4-vm-7",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo rollback-netplan vm=ghost-l1-node if=ens4"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo validate-vm-network ghost-l2-node"
+      ],
+      "description": "Validate network config for VM ghost-l2-node (l2)",
+      "destructive": false,
+      "id": "p4-vm-8",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo no-op"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo configure-netplan vm=ghost-l2-node if=ens3 segment=l2 addr=10.30.0.10/24"
+      ],
+      "description": "Configure interface ens3 on VM ghost-l2-node for l2",
+      "destructive": false,
+      "id": "p4-vm-9",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo rollback-netplan vm=ghost-l2-node if=ens3"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo configure-netplan vm=ghost-l2-node if=ens4 segment=external addr=208.110.71.172/26 gw=208.110.71.129"
+      ],
+      "description": "Configure interface ens4 on VM ghost-l2-node for external",
+      "destructive": false,
+      "id": "p4-vm-10",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo rollback-netplan vm=ghost-l2-node if=ens4"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo validate-vm-network ghost-l3-node"
+      ],
+      "description": "Validate network config for VM ghost-l3-node (l3)",
+      "destructive": false,
+      "id": "p4-vm-11",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo no-op"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo configure-netplan vm=ghost-l3-node if=ens3 segment=l3 addr=10.40.0.10/24"
+      ],
+      "description": "Configure interface ens3 on VM ghost-l3-node for l3",
+      "destructive": false,
+      "id": "p4-vm-12",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo rollback-netplan vm=ghost-l3-node if=ens3"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo configure-netplan vm=ghost-l3-node if=ens4 segment=external addr=208.110.71.173/26 gw=208.110.71.129"
+      ],
+      "description": "Configure interface ens4 on VM ghost-l3-node for external",
+      "destructive": false,
+      "id": "p4-vm-13",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo rollback-netplan vm=ghost-l3-node if=ens4"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo validate-vm-network ghost-observability-node"
+      ],
+      "description": "Validate network config for VM ghost-observability-node (observability)",
+      "destructive": false,
+      "id": "p4-vm-14",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo no-op"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo configure-netplan vm=ghost-observability-node if=ens3 segment=mgmt addr=10.10.0.20/24"
+      ],
+      "description": "Configure interface ens3 on VM ghost-observability-node for mgmt",
+      "destructive": false,
+      "id": "p4-vm-15",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo rollback-netplan vm=ghost-observability-node if=ens3"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo configure-netplan vm=ghost-observability-node if=ens4 segment=external addr=208.110.71.174/26 gw=208.110.71.129"
+      ],
+      "description": "Configure interface ens4 on VM ghost-observability-node for external",
+      "destructive": false,
+      "id": "p4-vm-16",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo rollback-netplan vm=ghost-observability-node if=ens4"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo validate-vm-network ghost-edge-failover-1"
+      ],
+      "description": "Validate network config for VM ghost-edge-failover-1 (edge-failover)",
+      "destructive": false,
+      "id": "p4-vm-17",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo no-op"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo configure-netplan vm=ghost-edge-failover-1 if=ens3 segment=mgmt addr=10.10.0.31/24"
+      ],
+      "description": "Configure interface ens3 on VM ghost-edge-failover-1 for mgmt",
+      "destructive": false,
+      "id": "p4-vm-18",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo rollback-netplan vm=ghost-edge-failover-1 if=ens3"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo configure-netplan vm=ghost-edge-failover-1 if=ens4 segment=external addr=208.110.71.175/26 gw=208.110.71.129"
+      ],
+      "description": "Configure interface ens4 on VM ghost-edge-failover-1 for external",
+      "destructive": false,
+      "id": "p4-vm-19",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo rollback-netplan vm=ghost-edge-failover-1 if=ens4"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo validate-vm-network ghost-edge-failover-2"
+      ],
+      "description": "Validate network config for VM ghost-edge-failover-2 (edge-failover)",
+      "destructive": false,
+      "id": "p4-vm-20",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo no-op"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo configure-netplan vm=ghost-edge-failover-2 if=ens3 segment=mgmt addr=10.10.0.32/24"
+      ],
+      "description": "Configure interface ens3 on VM ghost-edge-failover-2 for mgmt",
+      "destructive": false,
+      "id": "p4-vm-21",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo rollback-netplan vm=ghost-edge-failover-2 if=ens3"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo configure-netplan vm=ghost-edge-failover-2 if=ens4 segment=external addr=208.110.71.176/26 gw=208.110.71.129"
+      ],
+      "description": "Configure interface ens4 on VM ghost-edge-failover-2 for external",
+      "destructive": false,
+      "id": "p4-vm-22",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo rollback-netplan vm=ghost-edge-failover-2 if=ens4"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo validate-vm-network ghost-edge-failover-3"
+      ],
+      "description": "Validate network config for VM ghost-edge-failover-3 (edge-failover)",
+      "destructive": false,
+      "id": "p4-vm-23",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo no-op"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo configure-netplan vm=ghost-edge-failover-3 if=ens3 segment=mgmt addr=10.10.0.33/24"
+      ],
+      "description": "Configure interface ens3 on VM ghost-edge-failover-3 for mgmt",
+      "destructive": false,
+      "id": "p4-vm-24",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo rollback-netplan vm=ghost-edge-failover-3 if=ens3"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "echo configure-netplan vm=ghost-edge-failover-3 if=ens4 segment=external addr=208.110.71.177/26 gw=208.110.71.129"
+      ],
+      "description": "Configure interface ens4 on VM ghost-edge-failover-3 for external",
+      "destructive": false,
+      "id": "p4-vm-25",
+      "phase": "4",
+      "rollback": [
+        "bash",
+        "-lc",
+        "echo rollback-netplan vm=ghost-edge-failover-3 if=ens4"
+      ]
+    },
+    {
+      "command": [
+        "bash",
+        "-lc",
+        "docker network inspect ghost-devnet >/dev/null 2>&1 || docker network create --driver bridge --subnet 172.31.0.0/24 --gateway 172.31.0.1 ghost-devnet"
+      ],
+      "description": "Ensure docker network ghost-devnet",
+      "destructive": false,
+      "id": "p5-docker-26",
+      "phase": "5",
+      "rollback": [
+        "bash",
+        "-lc",
+        "docker network rm ghost-devnet || true"
+      ]
+    }
+  ],
+  "ai_recommendations": {
+    "migrations": [],
+    "recommendations": [
+      "High docker network count detected; evaluate consolidation per layer labels."
+    ]
+  },
+  "external_ip_errors": [],
+  "external_ips_ok": true,
+  "id": "20260227T200033Z",
+  "routing_errors": [],
+  "routing_ok": true,
+  "subnet_overlaps": []
+}

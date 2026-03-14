@@ -1,0 +1,43 @@
+[Unit]
+Description=GhostStack Autonomous AI Engineering Agent
+Documentation=file:///home/ghost/ghostl-stack/ai/engineering-agent/agent.py
+# Start after GAIS and the infra supervisor are up, but do not hard-require them
+# (the agent gracefully handles unreachable services).
+After=network-online.target ghost-ai-gais.service ghost-infra-supervisor.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ghost
+Group=ghost
+WorkingDirectory=/home/ghost/ghostl-stack/ai/engineering-agent
+
+# Environment — override via /etc/systemd/system/ghost-ai-agent.service.d/override.conf
+Environment=REPAIR_MODE=advisory
+Environment=REPO_PATH=/home/ghost/ghostl-stack
+Environment=GHOSTBRAIN_API_URL=http://localhost:7900
+Environment=GAIS_URL=http://localhost:9100
+Environment=SIGNING_RELAY_URL=http://localhost:7910
+# GAIS_API_TOKEN — set in override.conf using:
+#   [Service]
+#   EnvironmentFile=/etc/ghost/secrets.env
+Environment=GIT_COMMIT_ENABLED=false
+
+ExecStart=/usr/bin/python3 /home/ghost/ghostl-stack/ai/engineering-agent/agent.py
+
+# Safety: kill the process (not the whole group) on stop
+KillMode=process
+Restart=on-failure
+RestartSec=30s
+
+# Resource limits — keeps the agent from starving other services
+MemoryMax=512M
+CPUQuota=50%
+
+# Logging — journald captures stdout/stderr; rotate separately via logrotate
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ghost-ai-agent
+
+[Install]
+WantedBy=multi-user.target

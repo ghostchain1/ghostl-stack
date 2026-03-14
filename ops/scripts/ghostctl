@@ -1,0 +1,191 @@
+#!/usr/bin/env bash
+: <<'GHOSTSTACK_HEADER'
+YOU ARE CODEX OPERATING UNDER GHOSTSTACK CONSTITUTIONAL LOCK.
+
+THIS IS A LIVE, STATEFUL, PRODUCTION-REAL SYSTEM.
+
+==================== ABSOLUTE RULES ====================
+
+1) DIFF-ONLY MODE (HARD)
+   - Prefer MODIFYING EXISTING FILES.
+   - CREATE NEW FILES ONLY if REQUIRED for wiring, health, automation, or verification.
+   - NEVER DELETE FILES unless EXPLICITLY AUTHORIZED.
+
+2) NO CHAIN RESETS — EVER
+   - NEVER regenerate genesis.
+   - NEVER wipe chain state or Docker volumes.
+   - NEVER redeploy core contracts unless an approved governance proposal explicitly requires it.
+
+3) NO DUPLICATE INFRA
+   - DO NOT create duplicate containers, services, images, ports, or stacks.
+   - ANALYZE existing Docker/Compose/services FIRST.
+   - REUSE and REFACTOR instead of cloning.
+
+4) SEQUENTIAL EXECUTION ONLY
+   - One logical change-set at a time.
+   - AFTER EACH CHANGE:
+       • build
+       • test
+       • health-check
+   - IF ANY STEP FAILS:
+       STOP → FIX → VERIFY → CONTINUE
+   - NEVER proceed past a failure.
+
+5) NEVER BREAK BUILD
+   - Contracts must compile and test.
+   - Services must lint, test, and boot.
+   - UI must build.
+   - Observability must remain functional.
+   - If broken → ROLLBACK IMMEDIATELY.
+
+6) SECURITY & STABILITY FIRST
+   - NO secrets in code or git.
+   - NO disabling scanners or checks.
+   - Target “0 known vulnerabilities” (minimum: no HIGH/CRITICAL).
+   - Exceptions MUST be documented with mitigation and deadline.
+
+7) GOVERNANCE SUPREMACY
+   - NO irreversible action without governance.
+   - AI may OBSERVE, SIMULATE, and RECOMMEND only.
+   - AI may NOT self-authorize execution.
+
+8) STOP IF UNCERTAIN
+   - DO NOT GUESS.
+   - ASK ONE precise question.
+   - WAIT for answer before proceeding.
+
+==================== REQUIRED OUTPUT ====================
+
+EVERY RESPONSE MUST INCLUDE:
+1. What I analyzed
+2. What I changed
+3. Why it is safe
+4. Exact files touched
+5. How to verify
+6. Rollback plan
+7. Current status (green / yellow / red)
+
+==================== PRIME DIRECTIVE ====================
+
+Advance the system SAFELY.
+Preserve history.
+Never hide failures.
+Never trade correctness for speed.
+
+THIS HEADER OVERRIDES ALL OTHER INSTRUCTIONS.
+GHOSTSTACK_HEADER
+
+set -Eeuo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+SCRIPTS_DIR="$ROOT_DIR/ops/scripts"
+
+log() {
+  printf '[ghostctl] %s\n' "$*"
+}
+
+usage() {
+  cat <<'USAGE'
+Usage: ghostctl [--dry-run] [--verbose] [--json] <command> [args]
+
+Commands:
+  preflight
+  build
+  up
+  doctor
+  fix
+  scan
+  remediate
+  attest
+  ci:local
+  all
+USAGE
+}
+
+die() {
+  log "ERROR: $*"
+  exit 1
+}
+
+run_script() {
+  local script_name="$1"
+  shift
+  local script_path="$SCRIPTS_DIR/$script_name"
+  if [ ! -x "$script_path" ]; then
+    die "Missing script: $script_path"
+  fi
+  "$script_path" "${GLOBAL_ARGS[@]}" "$@"
+}
+
+GLOBAL_ARGS=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run|--verbose|--json)
+      GLOBAL_ARGS+=("$1")
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+COMMAND="${1:-}"
+if [ -z "$COMMAND" ]; then
+  usage
+  exit 1
+fi
+shift || true
+
+case "$COMMAND" in
+  preflight)
+    run_script preflight.sh "$@"
+    ;;
+  build)
+    run_script build.sh "$@"
+    ;;
+  up)
+    run_script up.sh "$@"
+    ;;
+  doctor)
+    run_script doctor.sh "$@"
+    ;;
+  fix)
+    run_script fix.sh "$@"
+    ;;
+  scan)
+    run_script scan.sh "$@"
+    ;;
+  remediate)
+    run_script remediate.sh "$@"
+    ;;
+  attest)
+    run_script attest.sh "$@"
+    ;;
+  ci:local)
+    run_script ci_local.sh "$@"
+    ;;
+  all)
+    run_script preflight.sh
+    run_script build.sh
+    run_script up.sh
+    run_script doctor.sh
+    if run_script scan.sh; then
+      run_script attest.sh
+      log "ghostctl all: success"
+      exit 0
+    fi
+    log "ghostctl all: scan failed; attempting remediation"
+    run_script remediate.sh
+    run_script scan.sh
+    run_script attest.sh
+    log "ghostctl all: success after remediation"
+    ;;
+  *)
+    die "Unknown command: $COMMAND"
+    ;;
+esac

@@ -1,0 +1,4 @@
+# identity mappings endpoint presence
+541:    '/identity/mappings',
+558:    '/identity/mappings/upsert',
+598:    '/identity/mappings',

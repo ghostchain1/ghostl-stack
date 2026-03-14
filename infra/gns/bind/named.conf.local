@@ -1,0 +1,24 @@
+// GNS BIND9 zone definitions
+
+// ── Internal GhostChain zone ─────────────────────────────────────────────────
+zone "ghostchain.internal" IN {
+    type    primary;
+    file    "/etc/bind/zones/ghostchain.internal.db";
+    allow-update { 10.0.0.0/8; 172.16.0.0/12; 192.168.0.0/16; 127.0.0.1; };
+    notify  yes;
+};
+
+// ── Reverse zone 10.50.99.x ───────────────────────────────────────────────────
+zone "99.50.10.in-addr.arpa" IN {
+    type    primary;
+    file    "/etc/bind/zones/99.50.10.in-addr.arpa.db";
+    allow-update { 10.0.0.0/8; 172.16.0.0/12; 192.168.0.0/16; 127.0.0.1; };
+    notify  yes;
+};
+
+// ── Reverse zone 172.30.20.x (Docker dev network) ─────────────────────────
+zone "20.30.172.in-addr.arpa" IN {
+    type    primary;
+    file    "/etc/bind/zones/20.30.172.in-addr.arpa.db";
+    allow-update { 172.16.0.0/12; 127.0.0.1; };
+};

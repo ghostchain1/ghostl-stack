@@ -1,0 +1,22 @@
+{
+  "name": "ghost-helper-bots",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/loops/loop.js",
+    "dev": "node --loader ts-node/esm loops/loop.ts",
+    "lint": "echo \"(optional) add eslint\"",
+    "test": "echo \"(optional) add tests\""
+  },
+  "dependencies": {
+    "execa": "^9.5.1",
+    "yargs": "^18.0.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/yargs": "^17.0.32",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  }
+}

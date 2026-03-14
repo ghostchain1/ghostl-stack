@@ -1,0 +1,58 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "feature-flags-service",
+    "labels": {
+      "app": "feature-flags-service",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.services.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "feature-flags-service"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "feature-flags-service",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "feature-flags-service",
+            "image": "ghostl/feature-flags-service:local",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "PORT",
+                "value": "7611"
+              },
+              {
+                "name": "FEATURE_FLAGS",
+                "value": "${FEATURE_FLAGS}"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 7611,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

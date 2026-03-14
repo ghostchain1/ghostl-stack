@@ -1,0 +1,74 @@
+# stack-group: infra
+# role: network-manager-service
+# ports: 7766:7766
+# volumes: /var/run/docker.sock:/var/run/docker.sock, ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
+x-ghost-user: &ghost-user "10001:10001"
+
+services:
+  network-manager-service:
+    container_name: ghost_network-manager-service
+    image: ghostl/network-manager-service:local
+    build:
+      context: .
+      args:
+        VCS_REF: ${VCS_REF:-unknown}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+    user: *ghost-user
+    group_add:
+    - ${DOCKER_GROUP_ID:-999}
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    read_only: true
+    tmpfs:
+    - /tmp
+    env_file:
+    - .env
+    entrypoint:
+    - /bin/bash
+    - /entrypoint.sh
+    environment:
+    - NETWORK_MANAGER_PORT=${NETWORK_MANAGER_PORT:-7766}
+    - MONITOR_HOST=${MONITOR_HOST:-host.docker.internal}
+    - MONITOR_RPC_L1=${MONITOR_RPC_L1:-http://host.docker.internal:18545}
+    - MONITOR_RPC_L2=${MONITOR_RPC_L2:-http://host.docker.internal:29547}
+    - MONITOR_RPC_L3=${MONITOR_RPC_L3:-http://host.docker.internal:39545}
+    - MONITOR_PORTS=${MONITOR_PORTS:-7070,7171,18545,29547,39545}
+    - MONITOR_HEALTH_ENDPOINTS=${MONITOR_HEALTH_ENDPOINTS:-http://host.docker.internal:7070/health,http://host.docker.internal:7171/health}
+    - MONITOR_INTERVAL_MS=${MONITOR_INTERVAL_MS:-10000}
+    ports:
+    - 7766:7766
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4g
+        reservations:
+          cpus: '0.5'
+          memory: 512m
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    - ./data:/data
+    - ./entrypoint.sh:/entrypoint.sh:ro
+    - ./healthcheck.sh:/healthcheck.sh:ro
+    networks:
+    - ghost_net
+    - opstack_default
+networks:
+  ghost_net:
+    external: true
+  opstack_default:
+    external: true

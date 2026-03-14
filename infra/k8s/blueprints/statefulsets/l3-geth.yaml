@@ -1,0 +1,100 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "l3-geth",
+    "labels": {
+      "app": "l3-geth",
+      "role": "chain"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "true"
+    }
+  },
+  "spec": {
+    "serviceName": "l3-geth",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "l3-geth"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "l3-geth",
+          "role": "chain"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "l3-geth",
+            "image": "local/op-geth:${OPSTACK_IMAGE_TAG:-local}",
+            "command": [
+              "/bin/sh"
+            ],
+            "args": [
+              "-c",
+              "set -e\nENODE_L2=\"enode://ee9270b480cc105aae5217e7d7fc175ea2a0e15fdda90947ecbfd23b89607f79c1a21890091ff13c058c12c6629c198c65d343db6164dc0a0d5a9310cd95cad6@l2-geth:30303\"\nif [ ! -d /data/geth ]; then\n  echo \"[l3-geth] initializing genesis...\"\n  geth init --datadir /data /config/genesis.json\nfi\necho \"[\\\"${L3_BOOTNODES:-$$ENODE_L2}\\\"]\" > /data/static-nodes.json\nexec geth \\\n  --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug \\\n  --http.vhosts=\"*\" \\\n  --ws --ws.addr=0.0.0.0 --ws.origins=\"*\" \\\n  --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts=\"*\" --authrpc.jwtsecret=/config/jwt.txt \\\n  --datadir=/data \\\n  --networkid=${L3_CHAIN_ID:-903} \\\n  --gcmode=archive \\\n  --bootnodes=${L3_BOOTNODES:-$$ENODE_L2} \\\n  --nodiscover \\\n  --rollup.disabletxpoolgossip=true\n"
+            ],
+            "env": [],
+            "ports": [
+              {
+                "containerPort": 8545,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "./l3/${L3_NAME:-ghostl3}/data",
+                "mountPath": "/data"
+              },
+              {
+                "name": "./l3/${L3_NAME:-ghostl3}/config",
+                "mountPath": "/config"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./l3/${L3_NAME:-ghostl3}/data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "./l3/${L3_NAME:-ghostl3}/config"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

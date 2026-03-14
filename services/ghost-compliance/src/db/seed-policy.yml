@@ -1,0 +1,46 @@
+apiVersion: ghostchain.io/v1
+kind: PolicyBundle
+metadata:
+  bundleId: ghostchain-global
+  version: 1.0.0
+
+defaults:
+  conflictStrategy: most_restrictive
+
+policies:
+  - id: deny_high_risk
+    priority: 100
+    appliesTo:
+      actions: [TRANSFER, BRIDGE, SWAP]
+    when:
+      any:
+        - subject.kycLevel: { lt: 2 }
+        - context.counterpartyRisk: { gte: 0.85 }
+    effect:
+      deny:
+        reason: high_risk_activity
+        message: KYC insufficient or counterparty risk high.
+
+  - id: require_travel_rule
+    priority: 80
+    appliesTo:
+      actions: [TRANSFER]
+    when:
+      all:
+        - resource.amountUSD: { gte: 1000 }
+    effect:
+      require:
+        controls: [travel_rule]
+        disclosures: [travel_rule_notice]
+      reason: travel_rule_threshold
+
+  - id: allow_default
+    priority: 10
+    appliesTo:
+      actions: [TRANSFER, BRIDGE, SWAP]
+    when:
+      any:
+        - subject.kycLevel: { gte: 2 }
+    effect:
+      allow: true
+      reason: kyc_ok

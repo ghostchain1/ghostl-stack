@@ -1,0 +1,21 @@
+[Unit]
+Description=GhostDNS AI Autonomous Controller
+After=network-online.target bind9.service docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/ghost/ghostl-stack/tools/ghostdns-ai
+Environment=PYTHONUNBUFFERED=1
+Environment=GHOSTDNS_PRODUCTION_MODE=1
+Environment=GHOSTDNS_ZONE_FILE=/etc/bind/zones/db.ghostchain.cloud
+Environment=GHOSTDNS_GOVERNANCE_LOCK=/home/ghost/ghostl-stack/tools/ghostdns-ai/governance.lock
+Environment=GHOSTDNS_GOVERNANCE_TOKEN=/home/ghost/ghostl-stack/tools/ghostdns-ai/governance.approval.token
+ExecStart=/usr/bin/python3 -m ghostdns_ai.daemon
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

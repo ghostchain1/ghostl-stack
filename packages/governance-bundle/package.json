@@ -1,0 +1,21 @@
+{
+  "name": "@ghostchain/governance-bundle",
+  "version": "1.0.0",
+  "description": "Offline-first governance bundle: merkle proof, multi-sig verification, replay protection for DTN/air-gap proposals",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "scripts": {
+    "test": "node --test test/bundle.test.js",
+    "lint": "eslint index.js src/"
+  },
+  "keywords": ["ghostchain", "governance", "dtn", "offline", "merkle"],
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {},
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

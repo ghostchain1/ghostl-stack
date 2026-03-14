@@ -1,0 +1,69 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+rule_files:
+  - alerts.yml
+
+scrape_configs:
+  - job_name: ghost-guard
+    metrics_path: /metrics/prom
+    static_configs:
+      - targets: ["host.docker.internal:7070"]
+
+  - job_name: ghost-relayer
+    metrics_path: /metrics/prom
+    static_configs:
+      - targets: ["host.docker.internal:7171"]
+
+  - job_name: rollup-proposer-l2
+    metrics_path: /metrics/prom
+    static_configs:
+      - targets: ["host.docker.internal:7272"]
+
+  - job_name: rollup-proposer-l3
+    metrics_path: /metrics/prom
+    static_configs:
+      - targets: ["host.docker.internal:7373"]
+
+  - job_name: rollup-challenger-l2
+    metrics_path: /metrics/prom
+    static_configs:
+      - targets: ["host.docker.internal:7282"]
+
+  - job_name: rollup-challenger-l3
+    metrics_path: /metrics/prom
+    static_configs:
+      - targets: ["host.docker.internal:7383"]
+
+  - job_name: opstack-node
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:7300"]
+
+  - job_name: opstack-batcher
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:7301"]
+
+  - job_name: opstack-proposer
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:7302"]
+
+  - job_name: op-gate
+    metrics_path: /metrics/prom
+    static_configs:
+      - targets: ["host.docker.internal:28546"]
+
+  - job_name: ghostbrain-rpc
+    metrics_path: /api/v1/rpc/metrics
+    static_configs:
+      - targets: ["ghostbrain-core:7900"]
+    # NOTE: ghostbrain-core auth is HMAC-signed; Prometheus reads this public
+    # metrics endpoint which is open to trusted scrape targets inside ghostbrain-net.
+
+  - job_name: consensus-telemetry
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:7635"]

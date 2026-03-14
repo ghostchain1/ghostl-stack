@@ -1,0 +1,633 @@
+[
+  {
+    "service": "ghostchain-bootnode",
+    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.l1.yml",
+    "status": "success",
+    "startTime": "2026-01-21T18:01:58Z",
+    "endTime": "2026-01-21T18:02:34Z",
+    "oldImage": "ghostl/geth:alltools-v1.13.14",
+    "oldImageId": "sha256:66a08cde138ae6a2e58e011aff1e7ac3bb2e28cabd1f708546159d78406eead8",
+    "newImage": "ghostl/geth:alltools-v1.13.14",
+    "newImageId": "sha256:66a08cde138ae6a2e58e011aff1e7ac3bb2e28cabd1f708546159d78406eead8",
+    "rollbackStatus": "",
+    "logExcerpt": "[redacted]"
+  },
+  {
+    "service": "ghostscout-db",
+    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.l1.yml",
+    "status": "success",
+    "startTime": "2026-01-21T18:02:37Z",
+    "endTime": "2026-01-21T18:03:12Z",
+    "oldImage": "postgres:15-alpine",
+    "oldImageId": "sha256:b3968e348b48f1198cc6de6611d055dbad91cd561b7990c406c3fc28d7095b21",
+    "newImage": "postgres:15-alpine",
+    "newImageId": "sha256:b3968e348b48f1198cc6de6611d055dbad91cd561b7990c406c3fc28d7095b21",
+    "rollbackStatus": "",
+    "logExcerpt": "[redacted]"
+  },
+  {
+    "service": "ghostchain-node1",
+    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.l1.yml",
+    "status": "skipped_not_owned",
+    "startTime": "2026-01-21T18:03:12Z",
+    "endTime": "2026-01-21T18:03:13Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "ghostchain-node2",
+    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.l1.yml",
+    "status": "success",
+    "startTime": "2026-01-21T18:03:13Z",
+    "endTime": "2026-01-21T18:03:46Z",
+    "oldImage": "[redacted]",
+    "oldImageId": "sha256:66a08cde138ae6a2e58e011aff1e7ac3bb2e28cabd1f708546159d78406eead8",
+    "newImage": "[redacted]",
+    "newImageId": "sha256:66a08cde138ae6a2e58e011aff1e7ac3bb2e28cabd1f708546159d78406eead8",
+    "rollbackStatus": "",
+    "logExcerpt": "[redacted]"
+  },
+  {
+    "service": "ghostscout",
+    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.l1.yml",
+    "status": "success",
+    "startTime": "2026-01-21T18:03:46Z",
+    "endTime": "2026-01-21T18:04:19Z",
+    "oldImage": "blockscout/blockscout:latest",
+    "oldImageId": "sha256:909089adf4b0d290cd8e1213e889fc123f475d64a7b56b25a335b9ede901e74f",
+    "newImage": "blockscout/blockscout:latest",
+    "newImageId": "sha256:909089adf4b0d290cd8e1213e889fc123f475d64a7b56b25a335b9ede901e74f",
+    "rollbackStatus": "",
+    "logExcerpt": "[redacted]"
+  },
+  {
+    "service": "ghostscout-frontend",
+    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.l1.yml",
+    "status": "success",
+    "startTime": "2026-01-21T18:04:19Z",
+    "endTime": "2026-01-21T18:04:54Z",
+    "oldImage": "ghcr.io/blockscout/frontend:latest",
+    "oldImageId": "sha256:4b69f44148414b55c6b8550bc3270c63c9f99e923d54ef0b307e762af6bac90a",
+    "newImage": "ghcr.io/blockscout/frontend:latest",
+    "newImageId": "sha256:4b69f44148414b55c6b8550bc3270c63c9f99e923d54ef0b307e762af6bac90a",
+    "rollbackStatus": "",
+    "logExcerpt": "[redacted]"
+  },
+  {
+    "service": "ghostchain-node1",
+    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.ibft.yml",
+    "status": "success",
+    "startTime": "2026-01-21T18:04:54Z",
+    "endTime": "2026-01-21T18:05:26Z",
+    "oldImage": "hyperledger/besu:24.12.0",
+    "oldImageId": "sha256:3bc51efdbf9b335c20b94824028ea5c90bf572c79cef8f458cc2a4d80b603fa8",
+    "newImage": "hyperledger/besu:24.12.0",
+    "newImageId": "sha256:3bc51efdbf9b335c20b94824028ea5c90bf572c79cef8f458cc2a4d80b603fa8",
+    "rollbackStatus": "",
+    "logExcerpt": "[redacted]"
+  },
+  {
+    "service": "ghostchain-node2",
+    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.ibft.yml",
+    "status": "skipped_not_owned",
+    "startTime": "2026-01-21T18:05:27Z",
+    "endTime": "2026-01-21T18:05:27Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "ghostchain-node3",
+    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.ibft.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:27Z",
+    "endTime": "2026-01-21T18:05:27Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "ghostchain-node4",
+    "composeFile": "/home/ghost/ghostl-stack/infra/ghostchain/docker-compose.ibft.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:28Z",
+    "endTime": "2026-01-21T18:05:28Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "alertmanager",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_owned",
+    "startTime": "2026-01-21T18:05:28Z",
+    "endTime": "2026-01-21T18:05:29Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "audit-log-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:29Z",
+    "endTime": "2026-01-21T18:05:29Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "auth-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:29Z",
+    "endTime": "2026-01-21T18:05:29Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "chain-status-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:29Z",
+    "endTime": "2026-01-21T18:05:30Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "compliance-export-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:30Z",
+    "endTime": "2026-01-21T18:05:30Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "entity-tagging-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:30Z",
+    "endTime": "2026-01-21T18:05:31Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "feature-flags-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:31Z",
+    "endTime": "2026-01-21T18:05:31Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "global-search-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:31Z",
+    "endTime": "2026-01-21T18:05:32Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "governance-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:32Z",
+    "endTime": "2026-01-21T18:05:32Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "loki",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_owned",
+    "startTime": "2026-01-21T18:05:32Z",
+    "endTime": "2026-01-21T18:05:33Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "network-context-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:33Z",
+    "endTime": "2026-01-21T18:05:33Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "node-inventory-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:33Z",
+    "endTime": "2026-01-21T18:05:33Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "notifications-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:33Z",
+    "endTime": "2026-01-21T18:05:34Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "op-gate",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_owned",
+    "startTime": "2026-01-21T18:05:34Z",
+    "endTime": "2026-01-21T18:05:34Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "prometheus",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_owned",
+    "startTime": "2026-01-21T18:05:34Z",
+    "endTime": "2026-01-21T18:05:35Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "rbac-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:35Z",
+    "endTime": "2026-01-21T18:05:35Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "session-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:35Z",
+    "endTime": "2026-01-21T18:05:35Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "snapshot-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:35Z",
+    "endTime": "2026-01-21T18:05:36Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "theme-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:36Z",
+    "endTime": "2026-01-21T18:05:36Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "upgrade-orchestrator-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:36Z",
+    "endTime": "2026-01-21T18:05:36Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "verification-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:36Z",
+    "endTime": "2026-01-21T18:05:37Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "vector",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:37Z",
+    "endTime": "2026-01-21T18:05:38Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "l2-geth",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_owned",
+    "startTime": "2026-01-21T18:05:38Z",
+    "endTime": "2026-01-21T18:05:38Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "alerts-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:38Z",
+    "endTime": "2026-01-21T18:05:38Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "anomaly-detection-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:38Z",
+    "endTime": "2026-01-21T18:05:39Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "block-index-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:39Z",
+    "endTime": "2026-01-21T18:05:39Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "bridge-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:39Z",
+    "endTime": "2026-01-21T18:05:40Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "contract-risk-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:40Z",
+    "endTime": "2026-01-21T18:05:40Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "dispute-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:40Z",
+    "endTime": "2026-01-21T18:05:40Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "explainability-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:40Z",
+    "endTime": "2026-01-21T18:05:41Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "fee-model-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:41Z",
+    "endTime": "2026-01-21T18:05:41Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "forecasting-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:41Z",
+    "endTime": "2026-01-21T18:05:41Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "grafana",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_owned",
+    "startTime": "2026-01-21T18:05:41Z",
+    "endTime": "2026-01-21T18:05:42Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "key-rotation-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:42Z",
+    "endTime": "2026-01-21T18:05:43Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "mempool-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:43Z",
+    "endTime": "2026-01-21T18:05:43Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "participation-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:43Z",
+    "endTime": "2026-01-21T18:05:44Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "payout-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:44Z",
+    "endTime": "2026-01-21T18:05:44Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "proxy-inspector-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:44Z",
+    "endTime": "2026-01-21T18:05:44Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "rewards-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:44Z",
+    "endTime": "2026-01-21T18:05:45Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "secrets-health-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:45Z",
+    "endTime": "2026-01-21T18:05:45Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "slashing-detection-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:45Z",
+    "endTime": "2026-01-21T18:05:45Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "staking-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:45Z",
+    "endTime": "2026-01-21T18:05:46Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "supply-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:46Z",
+    "endTime": "2026-01-21T18:05:46Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "transfer-lifecycle-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:46Z",
+    "endTime": "2026-01-21T18:05:47Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "treasury-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:47Z",
+    "endTime": "2026-01-21T18:05:47Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "tx-index-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:47Z",
+    "endTime": "2026-01-21T18:05:48Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "ai-monitor",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:05:48Z",
+    "endTime": "2026-01-21T18:05:48Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "ghost-guard",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_owned",
+    "startTime": "2026-01-21T18:05:48Z",
+    "endTime": "2026-01-21T18:05:49Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "l3-geth",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "success",
+    "startTime": "2026-01-21T18:05:49Z",
+    "endTime": "2026-01-21T18:06:23Z",
+    "oldImage": "[redacted]",
+    "oldImageId": "sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0",
+    "newImage": "[redacted]",
+    "newImageId": "sha256:523b0ef36e26c3e8b99cc83d4bf2cc23ec94774be888d930159b1d9362733bc0",
+    "rollbackStatus": "",
+    "logExcerpt": "[redacted]"
+  },
+  {
+    "service": "op-node",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_owned",
+    "startTime": "2026-01-21T18:06:23Z",
+    "endTime": "2026-01-21T18:06:24Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "consensus-telemetry-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:06:24Z",
+    "endTime": "2026-01-21T18:06:24Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "contract-registry-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:06:25Z",
+    "endTime": "2026-01-21T18:06:25Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "l3-op-node",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "success",
+    "startTime": "2026-01-21T18:06:25Z",
+    "endTime": "2026-01-21T18:06:59Z",
+    "oldImage": "[redacted]",
+    "oldImageId": "sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b",
+    "newImage": "[redacted]",
+    "newImageId": "sha256:d0edc8eb74ba826328b351d09b7533a93117348b779416a8f156d7f2363a033b",
+    "rollbackStatus": "",
+    "logExcerpt": "[redacted]"
+  },
+  {
+    "service": "liquidity-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:07:00Z",
+    "endTime": "2026-01-21T18:07:01Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "node-health-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:07:01Z",
+    "endTime": "2026-01-21T18:07:02Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "peer-graph-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:07:02Z",
+    "endTime": "2026-01-21T18:07:02Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "validator-service",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_running",
+    "startTime": "2026-01-21T18:07:02Z",
+    "endTime": "2026-01-21T18:07:03Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "op-batcher",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_owned",
+    "startTime": "2026-01-21T18:07:03Z",
+    "endTime": "2026-01-21T18:07:04Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "op-proposer",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "skipped_not_owned",
+    "startTime": "2026-01-21T18:07:04Z",
+    "endTime": "2026-01-21T18:07:04Z",
+    "logExcerpt": ""
+  },
+  {
+    "service": "l3-op-batcher",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "success",
+    "startTime": "2026-01-21T18:07:04Z",
+    "endTime": "2026-01-21T18:07:39Z",
+    "oldImage": "[redacted]",
+    "oldImageId": "sha256:21a2426a292a0d1b6c3665c9e07549df97d98e40edda6c880d34e22aefe279d2",
+    "newImage": "[redacted]",
+    "newImageId": "sha256:21a2426a292a0d1b6c3665c9e07549df97d98e40edda6c880d34e22aefe279d2",
+    "rollbackStatus": "",
+    "logExcerpt": "[redacted]"
+  },
+  {
+    "service": "l3-op-proposer",
+    "composeFile": "/home/ghost/ghostl-stack/infra/opstack/docker-compose.l3.yml",
+    "status": "success",
+    "startTime": "2026-01-21T18:07:40Z",
+    "endTime": "2026-01-21T18:08:18Z",
+    "oldImage": "[redacted]",
+    "oldImageId": "sha256:00590e36e37994eefd8bbc9a6498ad20c62b072b381d0b8cdb7293056e6e5b64",
+    "newImage": "[redacted]",
+    "newImageId": "sha256:00590e36e37994eefd8bbc9a6498ad20c62b072b381d0b8cdb7293056e6e5b64",
+    "rollbackStatus": "",
+    "logExcerpt": "[redacted]"
+  },
+  {
+    "service": "ai-clock-sync",
+    "composeFile": "/home/ghost/ghostl-stack/services/docker-compose.yml",
+    "status": "rolled_back",
+    "startTime": "2026-01-21T18:08:19Z",
+    "endTime": "2026-01-21T18:09:38Z",
+    "oldImage": "ghostl/ai-clock-sync:local",
+    "oldImageId": "sha256:ad37b7065320456c87d27e61807cab84b53527d9cc50da2b9c78e55f6b72272b",
+    "newImage": "ghostl/ai-clock-sync:local",
+    "newImageId": "sha256:e233eba2c0d4ddfb8a4e8098b4b08f0e8e5c1fff56499ec3d3299d199cb96587",
+    "rollbackStatus": "rolled_back",
+    "logExcerpt": ""
+  }
+]

@@ -1,0 +1,21 @@
+{
+  "apply_commands": [
+    "sudo nft list ruleset > /tmp/ghostnetsync-ruleset-pre-remediation.nft",
+    "sudo nft -f /home/ghost/ghostl-stack/services/ghostvm-ai/plans/20260227T200903Z/nftables-remediation.conf"
+  ],
+  "bridges": {
+    "l1": "br-fdf77c072ffa",
+    "l2": "br-315cdb4e43c9",
+    "l3": "br-3a47f74c6888",
+    "uplink": "enp2s0"
+  },
+  "dry_run": true,
+  "executed": [],
+  "id": "20260227T200903Z",
+  "ok": true,
+  "path": "/home/ghost/ghostl-stack/services/ghostvm-ai/plans/20260227T200903Z",
+  "rollback_commands": [
+    "sudo nft -f /tmp/ghostnetsync-ruleset-pre-remediation.nft"
+  ],
+  "rules_file": "/home/ghost/ghostl-stack/services/ghostvm-ai/plans/20260227T200903Z/nftables-remediation.conf"
+}

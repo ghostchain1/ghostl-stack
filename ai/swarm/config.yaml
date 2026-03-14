@@ -1,0 +1,50 @@
+# GhostStack AI Python Swarm — Configuration
+# ============================================
+# All values can be overridden by environment variables (see swarm_controller.py).
+
+# ── Core paths ────────────────────────────────────────────────────────────────
+repo_path:              /home/ghost/ghostl-stack
+
+# ── Service URLs ──────────────────────────────────────────────────────────────
+ghostbrain_url:         http://localhost:7900
+gais_url:               http://localhost:9100
+signing_relay_url:      http://localhost:7910
+l1_rpc_url:             http://localhost:18545
+l2_rpc_url:             http://localhost:29545
+l3_rpc_url:             http://localhost:39545
+cosmos_lcd_url:         http://localhost:1317
+prometheus_url:         http://localhost:9108
+
+# Authenticated GAIS writes (leave empty to disable write directives)
+gais_api_token:         ""
+
+# ── Timing ────────────────────────────────────────────────────────────────────
+swarm_interval_s:       30       # seconds between full tick cycles
+agent_timeout_s:        25       # per-agent timeout (must be < swarm_interval_s)
+
+# ── Chain constants (never change) ────────────────────────────────────────────
+chain_ids:
+  l1: 14000101
+  l2: 901
+  l3: 903
+
+# ── Security agent ────────────────────────────────────────────────────────────
+security_files_per_tick:      200   # max files sampled per tick
+security_forge_lint:          true  # enable forge lint pass
+security_forge_lint_interval_s: 300 # seconds between forge lint runs
+
+# ── Blockchain agent ──────────────────────────────────────────────────────────
+# Number of consecutive ticks without block advance before raising an alert
+block_halt_ticks: 3
+
+# ── Economic agent ────────────────────────────────────────────────────────────
+econ_gas_high_gwei:     500   # gas price spike threshold (gwei)
+econ_fee_anomaly_pct:   50    # % change from last tick to flag as anomaly
+
+# ── Governance agent ──────────────────────────────────────────────────────────
+governance_low_participation_pct:  5    # % of quorum below which a warning is raised
+governance_deadline_hours:        24    # hours before deadline to check for low participation
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+log_level:   INFO
+log_file:    /home/ghost/ghostl-stack/logs/ai-swarm.log

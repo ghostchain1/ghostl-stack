@@ -1,0 +1,58 @@
+name: Security Production Preflight
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: security-production-preflight-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secure-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: "22.22.0"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install ripgrep
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ripgrep
+
+      - name: Run secure production preflight
+        env:
+          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+          VAULT_ROLE_ID: ${{ secrets.VAULT_ROLE_ID }}
+          VAULT_SECRET_ID: ${{ secrets.VAULT_SECRET_ID }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${VAULT_ADDR:-}" ]] && [[ -n "${VAULT_TOKEN:-}" || ( -n "${VAULT_ROLE_ID:-}" && -n "${VAULT_SECRET_ID:-}" ) ]]; then
+            echo "Vault credentials detected; running production secure preflight."
+            npm run security:production:preflight -- --skip-lint --skip-build --skip-foundry --skip-configure
+          else
+            echo "Vault credentials not configured; running dev secure rehearsal."
+            bash scripts/security/secure-production-build.sh --mode=dev --secrets=dev --skip-lint --skip-build --skip-foundry --skip-configure
+          fi

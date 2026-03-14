@@ -1,0 +1,93 @@
+groups:
+  - name: ghost-observability-logs
+    rules:
+      - alert: GhostCriticalLogs
+        expr: increase(ghost_observability_log_events_total{severity=~"CRITICAL|SLASHING_RISK|SECURITY_EVENT"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical observability logs detected"
+          description: "Critical, slashing-risk, or security log events observed in the last 5 minutes."
+      - alert: GhostErrorRateSpike
+        expr: increase(ghost_observability_log_events_total{severity=~"ERROR|CONSENSUS_RISK"}[5m]) > 25
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Error rate spike detected"
+          description: "Error or consensus-risk logs are spiking above normal thresholds."
+  - name: sovereign-economy-engine
+    rules:
+      - alert: SovereignServiceDown
+        expr: up{job=~"l3-fee-collector|l2-revenue-aggregator|treasury-engine|reward-distributor"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Sovereign service down"
+          description: "One of the sovereign economic services is unavailable."
+      - alert: SovereignBatchFailureSpike
+        expr: increase(l2_revenue_batch_failures_total[5m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "L2 revenue batch forwarding failures detected"
+          description: "Deterministic batch forwarding from L2 to L1 is failing."
+      - alert: SovereignL3ForwardFailures
+        expr: increase(l3_fee_forward_failures_total[5m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "L3 fee forwarding failures detected"
+          description: "L3 fee collector cannot forward events to L2 aggregator."
+      - alert: SovereignTreasuryRiskHigh
+        expr: treasury_risk_exposure > 8000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Treasury risk exposure elevated"
+          description: "Treasury risk exposure metric is above configured threshold."
+      - alert: SovereignQueueSaturation
+        expr: l2_revenue_pending_events > 500
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "L2 revenue queue saturation"
+          description: "Pending L2 revenue events exceeded threshold, indicating database/forwarding pressure."
+      - alert: HyperGhostGovernorDown
+        expr: up{job="hyper-ghost-governor"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Hyper Ghost Governor down"
+          description: "Hyper Ghost Governor service is unavailable."
+      - alert: HyperGhostGovernorPolicyViolations
+        expr: increase(hg_policy_violation_total[10m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Hyper Ghost Governor policy violations"
+          description: "New governor strategy policy violations were detected in the last 10 minutes."
+      - alert: FederationPolicyViolations
+        expr: increase(policy_violations_total[10m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Federation policy violations detected"
+          description: "Treasury allocation requests were rejected by federation policy checks."
+      - alert: SolvencyProofFailures
+        expr: increase(solvency_proof_failed_total[10m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Solvency proof verification failures"
+          description: "One or more solvency proof verifications failed in the last 10 minutes."

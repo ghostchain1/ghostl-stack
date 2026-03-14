@@ -1,0 +1,149 @@
+# Hermes IBC Relayer Configuration
+# GhostChain Cosmos SDK sovereign chain
+#
+# Connects ghostchaind (Cosmos SDK, ghostchain-1, ugst) to external chains
+# via IBC. Intent: sovereign governance + settlement on Cosmos, EVM chains
+# as execution layers underneath.
+#
+# Key-management quick-start:
+#   # Add relayer key to ghostchain-1 (from a BIP39 mnemonic):
+#   docker exec hermes-relayer \
+#     hermes keys add --chain ghostchain-1 \
+#     --mnemonic-file /run/secrets/ghostchain-relayer-mnemonic
+#
+#   # Verify key was added:
+#   docker exec hermes-relayer hermes keys list --chain ghostchain-1
+#
+#   # Fund the relayer wallet on ghostchain-1 (needs ugst for gas):
+#   docker exec ghostchaind \
+#     ghostchaind tx bank send <funder-key> <relayer-addr> 10000000ugst \
+#     --chain-id ghostchain-1 --fees 500ugst -y
+#
+#   # Create IBC connection to a counterparty (run ONCE per channel pair):
+#   docker exec hermes-relayer \
+#     hermes create channel \
+#       --a-chain ghostchain-1 \
+#       --b-chain <counterparty-chain-id> \
+#       --a-port transfer \
+#       --b-port transfer \
+#       --new-client-connection
+#
+# See: https://hermes.informal.systems/documentation/configuration/configure-hermes.html
+
+[global]
+log_level = "info"
+
+[mode]
+
+[mode.clients]
+enabled     = true   # automatically refresh and update IBC light clients
+refresh     = true
+misbehaviour = true
+
+[mode.connections]
+enabled = false   # connections are created once manually; not automated
+
+[mode.channels]
+enabled = false   # channels are created once manually; not automated
+
+[mode.packets]
+enabled               = true   # relay all IBC packets automatically
+clear_interval        = 100    # re-scan for unrelayed packets every N blocks
+clear_on_start        = true
+tx_confirmation       = true
+auto_register_counterparty_payee = false
+
+[rest]
+enabled = true
+host    = "0.0.0.0"
+port    = 3000
+
+[telemetry]
+enabled = true
+host    = "0.0.0.0"
+port    = 3001
+
+# ─── GhostChain — Cosmos SDK Sovereign (ghostchain-1) ────────────────────────
+#
+# This is the primary chain. governance-event-bridge CosmosGovPoller polls
+# /ghostchain/ghostgov/v1/proposals through the LCD at ghostchaind:1317.
+# Hermes relays ICS-20 token transfers via the gRPC at ghostchaind:9090.
+
+[[chains]]
+id = "ghostchain-1"
+type = "CosmosSdk"
+
+# CometBFT RPC — used by Hermes for block subscription and query
+rpc_addr  = "http://ghostchaind:26657"
+
+# gRPC — used by Hermes for transaction broadcast and proof queries
+grpc_addr = "http://ghostchaind:9090"
+
+# WebSocket event stream (push mode) — fastest packet detection
+event_source = { mode = "push", url = "ws://ghostchaind:26657/websocket", batch_delay = "500ms" }
+
+rpc_timeout    = "10s"
+max_block_time = "30s"
+trusted_node   = false
+
+# Cosmos SDK chain params
+account_prefix = "ghost"
+key_name       = "ghostchain-relayer"   # must match key added via `hermes keys add`
+store_prefix   = "ibc"
+
+# Gas settings (ugst is the native denom)
+default_gas    = 100000
+max_gas        = 400000
+gas_price      = { price = 0.025, denom = "ugst" }
+gas_multiplier = 1.2
+
+max_msg_num  = 30
+max_tx_size  = 180000
+clock_drift  = "5s"
+max_block_delay = "30s"
+
+address_type = { derivation = "cosmos" }
+
+# ─── GhostChain EVM L1 — geth PoA (chainId 14000101) ────────────────────────
+#
+# NOTE: Standard Hermes does NOT natively relay from EVM chains. IBC over EVM
+# requires an ICS-on-EVM implementation (e.g., IBC-Solidity or a custom light
+# client contract deployed on the geth PoA chain at port 18545).
+#
+# This section is a stub — uncomment and configure when IBC-Solidity is deployed
+# on ghostchain-node1. Until then, cross-chain asset transfers between the Cosmos
+# sovereign chain and the EVM L1/L2/L3 use the existing lock-and-mint bridge
+# contracts in contracts/src/bridge/.
+#
+# [[chains]]
+# id              = "ghostchain-evm-1"
+# rpc_addr        = "http://host.docker.internal:18545"   # geth PoA HTTP-RPC
+# websocket_addr  = "ws://host.docker.internal:18546"
+# account_prefix  = "0x"
+# key_name        = "ghostchain-evm-relayer"
+# default_gas     = 300000
+# gas_price       = { price = 1000000000, denom = "wei" }  # 1 gwei
+
+# ─── OP Stack L2 (chainId 901) ────────────────────────────────────────────────
+#
+# Same note applies: requires IBC-Solidity or a dedicated IBC-compatible light
+# client on the OP Stack sequencer. Stub provided for future wiring.
+#
+# [[chains]]
+# id              = "ghostchain-l2-op"
+# rpc_addr        = "http://host.docker.internal:29547"
+# websocket_addr  = "ws://host.docker.internal:29548"
+# account_prefix  = "0x"
+# key_name        = "ghostchain-l2-relayer"
+# default_gas     = 500000
+# gas_price       = { price = 1000000000, denom = "wei" }
+
+# ─── OP Stack L3 (chainId 903) ────────────────────────────────────────────────
+# [[chains]]
+# id              = "ghostchain-l3-op"
+# rpc_addr        = "http://host.docker.internal:39545"
+# websocket_addr  = "ws://host.docker.internal:39546"
+# account_prefix  = "0x"
+# key_name        = "ghostchain-l3-relayer"
+# default_gas     = 500000
+# gas_price       = { price = 1000000000, denom = "wei" }

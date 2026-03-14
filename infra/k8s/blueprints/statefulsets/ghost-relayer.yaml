@@ -1,0 +1,125 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "ghost-relayer",
+    "labels": {
+      "app": "ghost-relayer",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.services.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "ghost-relayer",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "ghost-relayer"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "ghost-relayer",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "ghost-relayer",
+            "image": "ghostl/ghost-relayer:local",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "PORT",
+                "value": "7171"
+              },
+              {
+                "name": "RPC_L1",
+                "value": "${RPC_L1}"
+              },
+              {
+                "name": "RPC_L2",
+                "value": "${RPC_L2}"
+              },
+              {
+                "name": "RPC_L3",
+                "value": "${RPC_L3}"
+              },
+              {
+                "name": "BRIDGE_L2L3_ADDRESS",
+                "value": "${BRIDGE_L2L3_ADDRESS}"
+              },
+              {
+                "name": "L1_ROLLUP_L2_ADDRESS",
+                "value": "${L1_ROLLUP_L2_ADDRESS}"
+              },
+              {
+                "name": "L2_ROLLUP_L3_ADDRESS",
+                "value": "${L2_ROLLUP_L3_ADDRESS}"
+              },
+              {
+                "name": "L3_INBOX_ADDRESS",
+                "value": "${L3_INBOX_ADDRESS}"
+              },
+              {
+                "name": "L3_TOKEN_FACTORY_ADDRESS",
+                "value": "${L3_TOKEN_FACTORY_ADDRESS}"
+              },
+              {
+                "name": "RELAYER_PRIVATE_KEY",
+                "value": "${RELAYER_PRIVATE_KEY}"
+              },
+              {
+                "name": "L2_RELAYER_PRIVATE_KEY",
+                "value": "${L2_RELAYER_PRIVATE_KEY}"
+              },
+              {
+                "name": "STATE_DIR",
+                "value": "/state"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 7171,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "./data",
+                "mountPath": "/state"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

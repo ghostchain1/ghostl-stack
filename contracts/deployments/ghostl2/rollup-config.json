@@ -1,0 +1,25 @@
+{
+  "l1": {
+    "rollup": "0xFE5f411481565fbF70D8D33D992C78196E014b90",
+    "chainId": 14000101,
+    "parentFinalityOracle": "0x821f3361D454cc98b7555221A06Be563a7E2E0A6"
+  },
+  "l2": {
+    "rollup": "0x413b1AfCa96a3df5A686d8BFBF93d30688a7f7D9",
+    "chainId": 901,
+    "parentFinalityOracle": "0x1780bCf4103D3F501463AD3414c7f4b654bb7aFd"
+  },
+  "l3": {
+    "inbox": "0x3155755b79aA083bd953911C92705B7aA82a18F9",
+    "factory": "0x5bf5b11053e734690269C6B9D438F8C9d48F528A",
+    "chainId": 903
+  },
+  "cascadingFinality": {
+    "enabled": true,
+    "enforceHierarchicalFinality": true,
+    "aiPolicyHash": null,
+    "l1FinalityOracle": "0x02df3a3F960393F5B349E40A599FEda91a7cc1A7",
+    "l2FinalityOracle": "0x821f3361D454cc98b7555221A06Be563a7E2E0A6",
+    "l3FinalityOracle": "0x1780bCf4103D3F501463AD3414c7f4b654bb7aFd"
+  }
+}

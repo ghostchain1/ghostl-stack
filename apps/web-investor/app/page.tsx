@@ -1,23 +1,94 @@
-export default function Page() {
-  return (
-    <section className="ghost-hero">
-      <div className="container">
-        <span className="section-label text-center">Investors</span>
-        <div style={{ fontSize: "64px", margin: "0.5rem 0 1.5rem", lineHeight: 1 }}>&#128200;</div>
-        <h1 className="section-title">Investor Portal</h1>
-        <p className="section-sub">Treasury data, tokenomics, yield curves and governance metrics for GhostChain investors.</p>
-        <span className="badge-pill">Coming Soon</span>
+"use client";
+import { PublicNavbar, PublicFooter } from "@ghostl/ui";
 
-        <nav className="ghost-hero-links">
-          <a href="https://ghostchain.cloud">&#8592; Home</a>
-          <a href="https://invest.ghostchain.cloud">Investors</a>
-          <a href="https://explorer.ghostchain.cloud">Explorer</a>
-          <a href="https://dev.ghostchain.cloud">Developers</a>
-          <a href="https://nodes.ghostchain.cloud">Nodes</a>
-          <a href="https://governance.ghostchain.cloud">Governance</a>
-          <a href="https://status.ghostchain.cloud">Status</a>
-        </nav>
-      </div>
-    </section>
+const stats = [
+  { label: "GST Market Cap", value: "$—", note: "live data soon" },
+  { label: "Total Supply", value: "1,000,000,000", note: "GST" },
+  { label: "Circulating", value: "—%", note: "of total supply" },
+  { label: "Validator Yield", value: "~12%", note: "APY estimated" },
+  { label: "Treasury", value: "$—", note: "on-chain reserve" },
+  { label: "Burn Rate", value: "—/day", note: "GST destroyed" },
+];
+
+const tokenomics = [
+  { label: "Validator Rewards", pct: 30, color: "#00F0FF" },
+  { label: "Treasury", pct: 20, color: "#7A00FF" },
+  { label: "Ecosystem Fund", pct: 20, color: "#A855F7" },
+  { label: "Team & Advisors", pct: 15, color: "#06B6D4" },
+  { label: "Public Sale", pct: 10, color: "#8B5CF6" },
+  { label: "Reserve", pct: 5, color: "#4B5563" },
+];
+
+export default function InvestorPage() {
+  return (
+    <>
+      <PublicNavbar cta={{ label: "Get GST", href: "https://exchange.ghostchain.cloud" }} />
+      <main>
+        {/* Hero */}
+        <section style={{ padding: "100px 24px 60px", textAlign: "center", background: "linear-gradient(180deg,#07060e 0%,#050507 100%)" }}>
+          <div className="container">
+            <span className="tag">Investor Relations</span>
+            <h1 style={{ fontSize: "clamp(2rem,6vw,4rem)", fontWeight: 800, margin: "24px 0 16px" }}>
+              The <span style={{ color: "#00F0FF" }}>GST</span> Token Economy
+            </h1>
+            <p style={{ color: "#94a3b8", maxWidth: 600, margin: "0 auto 40px", fontSize: "1.1rem" }}>
+              GhostChain Token (GST) powers every layer of the Ghost ecosystem — from validator staking and governance to gas fees and AI compute.
+            </p>
+            <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+              <a href="/tokenomics" className="btn-primary">View Tokenomics</a>
+              <a href="/reports" className="btn-secondary">Financial Reports</a>
+            </div>
+          </div>
+        </section>
+
+        {/* Stats grid */}
+        <section style={{ padding: "60px 24px", background: "#050507" }}>
+          <div className="container">
+            <h2 style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: 32, textAlign: "center" }}>Live Metrics</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 20 }}>
+              {stats.map((s) => (
+                <div key={s.label} className="card" style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "2rem", fontWeight: 800, color: "#00F0FF" }}>{s.value}</div>
+                  <div style={{ fontWeight: 600, marginTop: 8 }}>{s.label}</div>
+                  <div style={{ color: "#64748b", fontSize: "0.85rem", marginTop: 4 }}>{s.note}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Tokenomics */}
+        <section style={{ padding: "60px 24px", background: "#07060e" }}>
+          <div className="container">
+            <h2 style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: 8, textAlign: "center" }}>Token Allocation</h2>
+            <p style={{ color: "#94a3b8", textAlign: "center", marginBottom: 48 }}>1,000,000,000 GST — fixed supply, no inflation</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 16, maxWidth: 900, margin: "0 auto" }}>
+              {tokenomics.map((t) => (
+                <div key={t.label} className="card" style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: "50%", background: t.color, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "0.9rem", color: "#000", flexShrink: 0 }}>{t.pct}%</div>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{t.label}</div>
+                    <div style={{ color: "#64748b", fontSize: "0.85rem" }}>{(t.pct * 10_000_000).toLocaleString()} GST</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section style={{ padding: "80px 24px", textAlign: "center" }}>
+          <div className="container">
+            <h2 style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: 16 }}>Ready to participate?</h2>
+            <p style={{ color: "#94a3b8", marginBottom: 32 }}>Stake GST, earn yield, and vote on the future of GhostChain.</p>
+            <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+              <a href="https://nodes.ghostchain.cloud" className="btn-primary">Become a Validator</a>
+              <a href="https://governance.ghostchain.cloud" className="btn-secondary">Join Governance</a>
+            </div>
+          </div>
+        </section>
+      </main>
+      <PublicFooter />
+    </>
   );
 }

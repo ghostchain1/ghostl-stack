@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "baseUrl": ".",
+    "paths": {
+      "ghost": ["../../packages/ghost/src/index.ts"],
+      "@ghostchain/ghost-sdk-core": ["../../packages/ghost-sdk-core/dist/index.d.ts"],
+      "@ghostchain/ghost-sdk-core/*": ["../../packages/ghost-sdk-core/dist/*"]
+    }
+  },
+  "include": ["src"]
+}

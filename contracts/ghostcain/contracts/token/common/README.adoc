@@ -1,0 +1,10 @@
+= Common (Tokens)
+
+Functionality that is common to multiple token standards.
+
+* {GRC2981}: NFT Royalties compatible with both GRC-721 and GRC-1155.
+** For GRC-721 consider {GRC721Royalty} which clears the royalty information from storage on burn.
+
+== Contracts
+
+{{GRC2981}}

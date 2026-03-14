@@ -1,0 +1,24 @@
+{
+  "SAFE": {
+    "actions": ["docker.restart_service", "docker.restart_container", "health.rpc_probe"],
+    "gateCommandPrefixes": [["bash"], ["node"], ["npm"], ["pnpm"], ["git"], ["docker"]]
+  },
+  "GATED": {
+    "actions": [
+      "docker.restart_service",
+      "docker.restart_container",
+      "health.rpc_probe",
+      "gates.run_commands"
+    ],
+    "gateCommandPrefixes": [["bash"], ["node"], ["npm"], ["pnpm"], ["git"], ["docker"]]
+  },
+  "APPROVAL": {
+    "actions": [],
+    "gateCommandPrefixes": []
+  },
+  "GOVERNANCE": {
+    "actions": [],
+    "gateCommandPrefixes": []
+  }
+}
+

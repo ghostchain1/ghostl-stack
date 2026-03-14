@@ -1,0 +1,97 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "loki",
+    "labels": {
+      "app": "loki",
+      "role": "obs"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.obs.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "loki",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "loki"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "loki",
+          "role": "obs"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "loki",
+            "image": "grafana/loki:2.9.5",
+            "command": null,
+            "args": [
+              "-config.file=/etc/loki/config.yml"
+            ],
+            "env": [],
+            "ports": [
+              {
+                "containerPort": 3100,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "../storage/loki-config.yml",
+                "mountPath": "/etc/loki/config.yml"
+              },
+              {
+                "name": "loki_data",
+                "mountPath": "/loki"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "../storage/loki-config.yml"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "loki_data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

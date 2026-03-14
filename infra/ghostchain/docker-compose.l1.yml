@@ -1,0 +1,216 @@
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-security: &default-security
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  ghostchain-bootnode:
+    image: ${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}
+    user: "${L1_UID:-1000}:${L1_GID:-1000}"
+    restart: unless-stopped
+    logging: *default-logging
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        if [ ! -f /config/boot.key ]; then
+          echo "[bootnode] Generating boot.key..."
+          bootnode -genkey /config/boot.key
+        fi
+        BOOT_ID="$(bootnode --nodekey /config/boot.key --writeaddress)"
+        echo "enode://$${BOOT_ID}@${L1_GHOSTCHAIN_BOOTNODE_IP:-172.28.0.21}:30301" > /config/bootnode-enode.txt
+        exec bootnode --nodekey /config/boot.key --addr :30301
+    env_file:
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/.env
+    volumes:
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/data/bootnode:/config
+    ports:
+      - "${L1_BOOTNODE_PORT:-30301}:30301/udp"
+    networks:
+      ghostchain:
+        ipv4_address: ${L1_GHOSTCHAIN_BOOTNODE_IP:-172.28.0.21}
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.5"
+
+  ghostchain-node1:
+    image: ${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}
+    user: "${L1_UID:-1000}:${L1_GID:-1000}"
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - ghostchain-bootnode
+    entrypoint: ["/bin/sh", "/config/run-node.sh"]
+    env_file:
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/.env
+    volumes:
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/data/node1:/data
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/geth:/config:ro
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/data/bootnode:/run/bootnode:ro
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/secrets:/secrets:ro
+    ports:
+      - "${L1_RPC_WS_PORT:-18546}:8546"
+      - "${L1_RPC_AUTH_PORT:-18552}:8551"
+      - "${L1_P2P_PORT:-18551}:30303"
+      - "${L1_METRICS_PORT:-18660}:6060"
+    environment:
+      - CHAIN_ID=${L1_CHAIN_ID:-14000101}
+      - SIGNER_ADDRESS=0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+      - MINING_ENABLED=${L1_NODE1_MINING_ENABLED:-1}
+      - HTTP_PORT=8545
+      - WS_PORT=8546
+      - AUTH_PORT=8551
+      - P2P_PORT=30303
+      - METRICS_PORT=6060
+      - AUTH_JWT_FILE=${AUTH_JWT_FILE:-/secrets/jwtsecret}
+      - HTTP_APIS=${L1_HTTP_APIS:-eth,net,web3,debug,txpool}
+      - WS_APIS=${L1_WS_APIS:-eth,net,web3}
+      - HTTP_VHOSTS=${L1_HTTP_VHOSTS:-localhost,127.0.0.1}
+      - HTTP_CORS=${L1_HTTP_CORS:-http://localhost,http://127.0.0.1}
+      - WS_ORIGINS=${L1_WS_ORIGINS:-http://localhost,http://127.0.0.1}
+      - AUTHRPC_VHOSTS=${L1_AUTHRPC_VHOSTS:-localhost,127.0.0.1}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' --header 'Content-Type: application/json' http://localhost:8545 >/dev/null",
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+    networks:
+      ghostchain:
+        ipv4_address: ${L1_GHOSTCHAIN_NODE1_IP:-172.28.0.22}
+    <<: *default-security
+    mem_limit: 2g
+    cpus: "1.5"
+    stop_grace_period: 30s
+
+  ghostchain-node2:
+    image: ${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}
+    user: "${L1_UID:-1000}:${L1_GID:-1000}"
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - ghostchain-bootnode
+    entrypoint: ["/bin/sh", "/config/run-node.sh"]
+    env_file:
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/.env
+    volumes:
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/data/node2:/data
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/geth:/config:ro
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/data/bootnode:/run/bootnode:ro
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/secrets:/secrets:ro
+    environment:
+      - CHAIN_ID=${L1_CHAIN_ID:-14000101}
+      - SIGNER_ADDRESS=0x70997970c51812dc3a010c7d01b50e0d17dc79c8
+      - MINING_ENABLED=${L1_NODE2_MINING_ENABLED:-1}
+      - HTTP_PORT=8545
+      - WS_PORT=8546
+      - AUTH_PORT=8551
+      - P2P_PORT=30304
+      - METRICS_PORT=6061
+      - AUTH_JWT_FILE=${AUTH_JWT_FILE:-/secrets/jwtsecret}
+      - HTTP_APIS=${L1_HTTP_APIS:-eth,net,web3,debug,txpool}
+      - WS_APIS=${L1_WS_APIS:-eth,net,web3}
+      - HTTP_VHOSTS=${L1_HTTP_VHOSTS:-localhost,127.0.0.1}
+      - HTTP_CORS=${L1_HTTP_CORS:-http://localhost,http://127.0.0.1}
+      - WS_ORIGINS=${L1_WS_ORIGINS:-http://localhost,http://127.0.0.1}
+      - AUTHRPC_VHOSTS=${L1_AUTHRPC_VHOSTS:-localhost,127.0.0.1}
+    networks:
+      ghostchain:
+        ipv4_address: ${L1_GHOSTCHAIN_NODE2_IP:-172.28.0.23}
+    <<: *default-security
+    mem_limit: 2g
+    cpus: "1.5"
+    stop_grace_period: 30s
+
+  ghostchain-rpc-proxy:
+    image: ghostl/ghost-rpc-proxy:local
+    build:
+      context: ../../services/ghost-rpc-proxy
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - ghostchain-node1
+    env_file:
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/.env
+    environment:
+      - PORT=8545
+      - UPSTREAM_URL=http://ghostchain-node1:8545
+      - LOG_REQUESTS=${L1_RPC_PROXY_LOG_REQUESTS:-0}
+      - RPC_AUTH_TOKEN=${L1_RPC_AUTH_TOKEN:-}
+      - RPC_REQUIRE_AUTH=${L1_RPC_REQUIRE_AUTH:-0}
+      - RPC_SENSITIVE_METHODS=${L1_RPC_SENSITIVE_METHODS:-personal_,debug_,txpool_,admin_}
+      - RPC_RATE_LIMIT_PER_MINUTE=${L1_RPC_RATE_LIMIT_PER_MINUTE:-120}
+      - RPC_RATE_LIMIT_BURST=${L1_RPC_RATE_LIMIT_BURST:-40}
+      - RPC_RATE_WINDOW_MS=${L1_RPC_RATE_WINDOW_MS:-60000}
+      - RPC_RATE_LIMIT_ALLOWLIST=${L1_RPC_RATE_LIMIT_ALLOWLIST:-127.0.0.1,::1,${L1_GHOSTCHAIN_GATEWAY_IP:-172.28.0.1}}
+      - RPC_CORS_ORIGINS=${L1_RPC_CORS_ORIGINS:-http://localhost,http://127.0.0.1}
+    ports:
+      - "${L1_RPC_HTTP_PORT:-18545}:8545"
+    networks:
+      ghostchain:
+        ipv4_address: ${L1_GHOSTCHAIN_RPC_PROXY_IP:-172.28.0.30}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8545/health >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    <<: *default-security
+    mem_limit: 256m
+    cpus: "0.5"
+    stop_grace_period: 20s
+
+  ghostscout:
+    image: blockscout/blockscout:latest
+    restart: unless-stopped
+    logging: *default-logging
+    profiles:
+      - legacy
+    depends_on:
+      - ghostchain-node1
+    entrypoint: ["/bin/sh", "/config/ghostscout-entrypoint.sh"]
+    environment:
+      DATABASE_URL: postgres://ghostscout:${GHOSTSCOUT_DB_PASSWORD:-ghostpass}@ghostscout-postgres:5432/ghostscout_l1
+      ECTO_USE_SSL: "false"
+      GST_JSONRPC_HTTP_URL: http://ghostchain-node1:8545
+      GST_JSONRPC_TRACE_URL: http://ghostchain-node1:8545
+      GST_JSONRPC_WS_URL: ws://ghostchain-node1:8546
+      BLOCKSCOUT_HOST: 0.0.0.0
+      PORT: 4000
+      NETWORK: Ghostchain
+      SUBNETWORK: PoA
+      COIN: GST
+      COIN_NAME: Ghost
+      SECRET_KEY_BASE: ${GHOSTSCOUT_SECRET_KEY_BASE_L1:-}
+      DISABLE_EVISION: "true"
+      API_ONLY: "true"
+      LOG_LEVEL: warn
+    volumes:
+      - ${GHOSTCHAIN_PATH_PREFIX:-.}/scripts/ghostscout-entrypoint.sh:/config/ghostscout-entrypoint.sh:ro
+    ports:
+      - "18644:4000"
+    networks:
+      ghostchain:
+        ipv4_address: ${L1_GHOSTCHAIN_GHOSTSCOUT_IP:-172.28.0.31}
+    <<: *default-security
+    mem_limit: 2g
+    cpus: "1.5"
+
+networks:
+  ghostchain:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${L1_GHOSTCHAIN_SUBNET:-172.28.0.0/16}

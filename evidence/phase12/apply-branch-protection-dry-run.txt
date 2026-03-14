@@ -1,0 +1,45 @@
+Ensuring required labels on ghostchain1/ghostl-stack...
+Applying branch protection to ghostchain1/ghostl-stack:main...
+[dry-run] would call: PUT repos/ghostchain1/ghostl-stack/branches/main/protection
+[dry-run] payload:
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": [
+      "rpc-namespace",
+      "shellcheck",
+      "node-lint-build",
+      "contracts-hardhat-compile",
+      "contracts-gst-invariant",
+      "contracts-lge-tests",
+      "contracts-cascading-finality",
+      "secure-preflight"
+    ]
+  },
+  "enforce_admins": true,
+  "required_pull_request_reviews": {
+    "dismiss_stale_reviews": true,
+    "require_code_owner_reviews": false,
+    "required_approving_review_count": 1,
+    "require_last_push_approval": false
+  },
+  "restrictions": null,
+  "required_linear_history": true,
+  "allow_force_pushes": false,
+  "allow_deletions": false,
+  "block_creations": false,
+  "required_conversation_resolution": true,
+  "lock_branch": false,
+  "allow_fork_syncing": false
+}
+Enabling required signed commits on ghostchain1/ghostl-stack:main...
+[dry-run] would enable required signed commits for ghostchain1/ghostl-stack:main
+Preview complete. Required status checks that would be configured:
+rpc-namespace
+shellcheck
+node-lint-build
+contracts-hardhat-compile
+contracts-gst-invariant
+contracts-lge-tests
+contracts-cascading-finality
+secure-preflight

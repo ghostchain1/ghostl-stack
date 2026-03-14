@@ -1,0 +1,238 @@
+name: ghost-sovereign-engine
+
+x-hardening: &hardening
+  user: "10001:10001"
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  read_only: true
+  tmpfs:
+    - /tmp
+  restart: unless-stopped
+
+services:
+  l3-fee-collector:
+    <<: *hardening
+    build:
+      context: ./services/l3-fee-collector
+    image: ghostl/l3-fee-collector:local
+    environment:
+      PORT: 7681
+      HOST: 0.0.0.0
+      L3_CHAIN_ID: ${L3_CHAIN_ID:-903}
+      L2_CHAIN_ID: ${L2_CHAIN_ID:-901}
+      L2_REVENUE_AGGREGATOR_URL: http://l2-revenue-aggregator:7682
+      L2_REVENUE_BRIDGE_ADDRESS: ${L2_REVENUE_BRIDGE_ADDRESS:-0x0000000000000000000000000000000000000901}
+      LEDGER_PATH: /data/l3-fee-ledger.sqlite
+      L3_FEE_FORWARD_HMAC_SECRET: ${L3_FEE_FORWARD_HMAC_SECRET:-}
+      L3_FEE_ADMIN_TOKEN: ${L3_FEE_ADMIN_TOKEN:-}
+    depends_on:
+      l2-revenue-aggregator:
+        condition: service_healthy
+    volumes:
+      - ./services/l3-fee-collector/data:/data
+    ports:
+      - "127.0.0.1:7681:7681"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7681/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - internal-services
+      - observability
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M
+
+  l2-revenue-aggregator:
+    <<: *hardening
+    build:
+      context: ./services/l2-revenue-aggregator
+    image: ghostl/l2-revenue-aggregator:local
+    environment:
+      PORT: 7682
+      HOST: 0.0.0.0
+      L1_CHAIN_ID: ${L1_CHAIN_ID:-14000101}
+      L2_CHAIN_ID: ${L2_CHAIN_ID:-901}
+      L3_CHAIN_ID: ${L3_CHAIN_ID:-903}
+      L1_TREASURY_ENGINE_URL: http://treasury-engine:7683
+      LEDGER_PATH: /data/l2-revenue-aggregator.sqlite
+      L3_SHARED_SECRET: ${L3_FEE_FORWARD_HMAC_SECRET:-}
+      AGGREGATOR_ADMIN_TOKEN: ${L2_REVENUE_AGGREGATOR_ADMIN_TOKEN:-}
+      FORWARD_TIMEOUT_MS: 4500
+      BATCH_SIZE: 50
+      BATCH_INTERVAL_MS: 15000
+      OPERATIONS_FEE_BPS: 250
+      RATE_LIMIT_WINDOW_MS: 60000
+      RATE_LIMIT_MAX: 240
+    depends_on:
+      treasury-engine:
+        condition: service_healthy
+    volumes:
+      - ./services/l2-revenue-aggregator/data:/data
+    ports:
+      - "127.0.0.1:7682:7682"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7682/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - internal-services
+      - chains
+      - observability
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M
+
+  treasury-engine:
+    <<: *hardening
+    build:
+      context: ./services/treasury-engine
+    image: ghostl/treasury-engine:local
+    environment:
+      PORT: 7683
+      HOST: 0.0.0.0
+      SERVICE_LAYER: L1
+      L1_CHAIN_ID: ${L1_CHAIN_ID:-14000101}
+      L2_CHAIN_ID: ${L2_CHAIN_ID:-901}
+      DB_PATH: /data/treasury-engine.sqlite
+      PROOF_DIR: /data/proofs
+      SOLVENCY_ARTIFACT_DIR: /artifacts/solvency
+      SOLVENCY_ARTIFACT_SIGNING_KEY: ${SOLVENCY_ARTIFACT_SIGNING_KEY:-}
+      GOVERNANCE_ROOT: /governance/proposals
+      STABLE_ASSET_RATIO: ${TREASURY_STABLE_ASSET_RATIO:-65}
+      YIELD_RATIO: ${TREASURY_YIELD_RATIO:-35}
+      RISK_CAP_BPS: ${TREASURY_RISK_CAP_BPS:-7200}
+      ROUTE_TIMEOUT_MS: 5000
+      TREASURY_ADMIN_TOKEN: ${TREASURY_ENGINE_ADMIN_TOKEN:-}
+      YIELD_ADAPTERS_JSON: ${YIELD_ADAPTERS_JSON:-[]}
+      FEDERATION_POLICY_PATH: /governance/federation/policy.json
+    volumes:
+      - ./services/treasury-engine/data:/data
+      - ./artifacts:/artifacts
+      - ./governance:/governance:ro
+    ports:
+      - "127.0.0.1:7683:7683"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7683/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - internal-services
+      - chains
+      - observability
+    deploy:
+      resources:
+        limits:
+          cpus: "1.50"
+          memory: 1G
+
+  reward-distributor:
+    <<: *hardening
+    build:
+      context: ./services/reward-distributor
+    image: ghostl/reward-distributor:local
+    environment:
+      PORT: 7684
+      HOST: 0.0.0.0
+      DB_PATH: /data/reward-distributor.sqlite
+      GOVERNANCE_ROOT: /governance/proposals
+      DISTRIBUTOR_ADMIN_TOKEN: ${REWARD_DISTRIBUTOR_ADMIN_TOKEN:-}
+    depends_on:
+      treasury-engine:
+        condition: service_healthy
+    volumes:
+      - ./services/reward-distributor/data:/data
+      - ./governance:/governance:ro
+    ports:
+      - "127.0.0.1:7684:7684"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7684/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - internal-services
+      - observability
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M
+
+  hyper-ghost-governor:
+    <<: *hardening
+    build:
+      context: ./services/hyper-ghost-governor
+    image: ghostl/hyper-ghost-governor:local
+    environment:
+      PORT: 7685
+      HOST: 0.0.0.0
+      DB_PATH: /data/hyper-ghost-governor.sqlite
+      ARTIFACTS_ROOT: /artifacts/governor
+      TREASURY_STATUS_URL: http://treasury-engine:7683/v1/treasury/status
+      GOVERNOR_ADMIN_TOKEN: ${HYPER_GHOST_GOVERNOR_ADMIN_TOKEN:-}
+    depends_on:
+      treasury-engine:
+        condition: service_healthy
+    volumes:
+      - ./services/hyper-ghost-governor/data:/data
+      - ./artifacts:/artifacts
+    ports:
+      - "127.0.0.1:7685:7685"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7685/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - internal-services
+      - observability
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M
+
+networks:
+  public-edge:
+    internal: false
+  internal-services:
+    internal: true
+  chains:
+    internal: true
+  observability:
+    internal: true

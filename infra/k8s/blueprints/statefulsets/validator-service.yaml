@@ -1,0 +1,72 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "validator-service",
+    "labels": {
+      "app": "validator-service",
+      "role": "chain"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.services.yml",
+      "ghost.no_recreate": "true"
+    }
+  },
+  "spec": {
+    "serviceName": "validator-service",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "validator-service"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "validator-service",
+          "role": "chain"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "validator-service",
+            "image": "ghostl/validator-service:local",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "PORT",
+                "value": "7600"
+              },
+              {
+                "name": "PROM_URL",
+                "value": "${PROM_URL}"
+              },
+              {
+                "name": "RPC_L2",
+                "value": "${RPC_L2}"
+              },
+              {
+                "name": "RPC_L3",
+                "value": "${RPC_L3}"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 7600,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": []
+  }
+}

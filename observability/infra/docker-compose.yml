@@ -1,0 +1,85 @@
+x-ghost-user: &ghost-user "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
+
+x-runtime-hardening: &runtime-hardening
+  user: *ghost-user
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  loki:
+    <<: *runtime-hardening
+    image: grafana/loki:2.9.5@sha256:03d4bb6874898cc503a6a121b832556dd7747b20b5efe8cbc9ae175caf43811b
+    restart: unless-stopped
+    command:
+      - -config.file=/etc/loki/config.yml
+    volumes:
+      - ../storage/loki-config.yml:/etc/loki/config.yml:ro
+      - loki_data:/loki
+    ports:
+      - 3100:3100
+  prometheus:
+    <<: *runtime-hardening
+    image: prom/prometheus:v2.51.2@sha256:dc056a19e2398743fdd8133ca02cd9967c659608c625286ce0c18b5bfb413180
+    restart: unless-stopped
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../alerts/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - ../alerts/gst_metric_rules.yml:/etc/prometheus/gst_metric_rules.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - 9090:9090
+    healthcheck:
+      test: ["CMD", "promtool", "--version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - default
+      - opstack_default
+  alertmanager:
+    <<: *runtime-hardening
+    image: prom/alertmanager:v0.27.0@sha256:45c3a586d4332d710bef92b06e90380c0b1f588968c00100d4b5e4e44c40ca5f
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+      - --cluster.listen-address=
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    ports:
+      - 9093:9093
+  grafana:
+    <<: *runtime-hardening
+    image: grafana/grafana:10.4.2@sha256:3aa2a03d88ad9628485f78e89adcd5b18bcde1aced3e6146bbbd7a718b82b797
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    depends_on:
+      - prometheus
+      - loki
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ../../grafana/dashboards:/var/lib/grafana/gst-dashboards:ro
+    ports:
+      - 3000:3000
+volumes:
+  loki_data: {}
+  prometheus_data: {}
+  grafana_data: {}
+  alertmanager_data: {}
+
+networks:
+  opstack_default:
+    external: true

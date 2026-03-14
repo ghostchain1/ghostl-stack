@@ -1,0 +1,26 @@
+{
+  "name": "ghost-economic-ai",
+  "version": "1.0.0",
+  "description": "GhostStack Autonomous Economic Engine — financial intelligence for GhostChain L1",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "start": "node dist/server.js",
+    "dev":   "tsx src/server.ts"
+  },
+  "dependencies": {
+    "express":    "^4.21.2",
+    "node-cron":  "^3.0.3",
+    "prom-client": "^15.1.3"
+  },
+  "devDependencies": {
+    "@types/express":   "^5.0.0",
+    "@types/node":      "^22.15.0",
+    "@types/node-cron": "^3.0.11",
+    "tsx":              "^4.19.3",
+    "typescript":       "^5.8.3"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

@@ -1,148 +1,72 @@
-/**
- * Validators — active validator set across GhostChain L1/L2/L3.
- * Sources: ASE validator registry + INE orbital validators.
- */
+import { ValidatorsTable } from '../../src/modules/validators/components/ValidatorsTable';
+import { ValidatorHeatMap } from '../../src/modules/validators/components/ValidatorHeatMap';
+import { ValidatorDetailCard } from '../../src/modules/validators/components/ValidatorDetailCard';
+import { VotingPowerChart } from '../../src/modules/validators/components/VotingPowerChart';
+import { ParticipationPanel } from '../../src/modules/validators/components/ParticipationPanel';
+import type { Validator, SlashEvent } from '@ghostl/types/validators';
+import type { ApiError } from '../../src/lib/api';
+import { serverApiRequest } from '../../src/lib/server-api';
+import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
 
-import {
-  fetchAseValidators,
-  fetchIneValidators,
-  type IneOrbitalValidator,
-} from "@/lib/api";
-import { SectionHeader } from "@/components/dashboard/MetricCard";
-import { StatusBadge }   from "@/components/dashboard/StatusBadge";
+type RawValidator = Partial<Validator> & {
+  proposerIndex?: number | string;
+  byzantine?: number | string;
+};
 
-export const metadata = { title: "Validators · GhostStack" };
-export const revalidate = 20;
+async function loadValidators(): Promise<{
+  validators: Validator[];
+  metrics: { missedBlocks?: number; participationRate?: number; lastProposer?: string } | null;
+  errors: Array<{ title: string; error: ApiError }>;
+}> {
+  const [validatorsRes, metricsRes] = await Promise.all([
+    serverApiRequest<{ validators?: RawValidator[] }>('/api/validators', { init: { cache: 'no-store' } }),
+    serverApiRequest<{ metrics?: { missedBlocks?: number; participationRate?: number; lastProposer?: string } }>(
+      '/api/validators/metrics',
+      { init: { cache: 'no-store' } }
+    )
+  ]);
+  const errors: Array<{ title: string; error: ApiError }> = [];
+  if (!validatorsRes.ok) errors.push({ title: 'Validators list', error: validatorsRes.error });
+  if (!metricsRes.ok) errors.push({ title: 'Validator metrics', error: metricsRes.error });
 
-function formatWei(wei: string | undefined) {
-  if (!wei) return "—";
-  const eth = Number(BigInt(wei) / BigInt(1e15)) / 1e3;
-  return eth.toFixed(2) + " GST";
+  const list = validatorsRes.ok ? validatorsRes.data.validators || [] : [];
+  const validators = list.map((v) => {
+    const powerSource = v.byzantine ?? v.proposerIndex ?? v.power ?? 0;
+    return {
+      id: v.id || v.address || 'unknown',
+      address: v.id || v.address || '0x0',
+      status: v.status || 'active',
+      stake: v.stake || '?',
+      commission: Number(v.commission || 0),
+      power: typeof powerSource === 'string' ? Number(powerSource) || 0 : Number(powerSource || 0)
+    };
+  });
+  const metrics = metricsRes.ok ? metricsRes.data.metrics || null : null;
+  return { validators, metrics, errors };
 }
 
 export default async function ValidatorsPage() {
-  const [aseRaw, ineValidators] = await Promise.all([
-    fetchAseValidators(),
-    fetchIneValidators(),
-  ]);
-
-  // ASE returns an arbitrary shape — normalise defensively
-  const aseList: unknown[] = Array.isArray(aseRaw)
-    ? aseRaw
-    : aseRaw && typeof aseRaw === "object" && "validators" in (aseRaw as object)
-      ? ((aseRaw as Record<string, unknown>).validators as unknown[])
-      : [];
-
-  const ine: IneOrbitalValidator[] = ineValidators ?? [];
-
-  const ineOnline  = ine.filter(v => v.status === "active" || v.status === "online").length;
-  const ineTotal   = ine.length;
+  const { validators, metrics, errors } = await loadValidators();
+  const target = validators[0];
+  const slashes: SlashEvent[] = [];
+  const participation = metrics?.participationRate !== undefined ? `${Math.round(metrics.participationRate * 100)}%` : 'n/a';
+  const proposer = metrics?.lastProposer || 'n/a';
+  const panelMetrics = { finality: 'n/a', participation, proposer };
 
   return (
-    <div>
-      <div className="page-header">
-        <h1>Validators</h1>
-        <p>Active validator set, orbital assignments, and uptime metrics</p>
+    <div className="content">
+      <div className="card-grid">
+        {errors.map((entry, idx) => (
+          <DataFetchErrorCard key={`${entry.title}-${idx}`} title={entry.title} error={entry.error} />
+        ))}
+        {errors.find((e) => e.title === 'Validators list') ? null : <ValidatorsTable validators={validators} />}
+        {errors.find((e) => e.title === 'Validator metrics') || !target ? null : (
+          <ValidatorDetailCard validator={target} missedBlocks={metrics?.missedBlocks} slashes={slashes} />
+        )}
+        {errors.find((e) => e.title === 'Validators list') ? null : <VotingPowerChart validators={validators} />}
+        {errors.find((e) => e.title === 'Validator metrics') ? null : <ParticipationPanel metrics={panelMetrics} />}
+        <ValidatorHeatMap />
       </div>
-
-      {/* KPIs */}
-      <div className="grid grid-4">
-        <div className="card">
-          <div className="card-title">ASE Validators</div>
-          <div className="card-value">{aseList.length || "—"}</div>
-        </div>
-        <div className="card">
-          <div className="card-title">INE Orbital</div>
-          <div className="card-value">{ineTotal}</div>
-        </div>
-        <div className="card">
-          <div className="card-title">Active (INE)</div>
-          <div className="card-value" style={{ color: "var(--green)" }}>{ineOnline}</div>
-          <div className="card-sub">of {ineTotal}</div>
-        </div>
-        <div className="card">
-          <div className="card-title">Networks Covered</div>
-          <div className="card-value">
-            {ine.length > 0 ? [...new Set(ine.map(v => v.network))].length : "—"}
-          </div>
-        </div>
-      </div>
-
-      {/* INE validator table */}
-      <SectionHeader title="Orbital Validators (INE)" sub="Interplanetary Node Engine validator registry" />
-      {ine.length === 0 ? (
-        <div className="card" style={{ color: "var(--text-muted)" }}>No INE validator data — INE offline?</div>
-      ) : (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Network</th>
-              <th>Orbit Type</th>
-              <th>Block Height</th>
-              <th>Uptime</th>
-              <th>Missed Slots</th>
-              <th>Latency</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ine.map(v => (
-              <tr key={v.id}>
-                <td className="code">{v.id.slice(0, 12)}…</td>
-                <td>{v.network}</td>
-                <td>{v.orbitType ?? "—"}</td>
-                <td className="code">{v.blockHeight.toLocaleString()}</td>
-                <td style={{ color: v.uptime > 99 ? "var(--green)" : "var(--yellow)" }}>
-                  {v.uptime.toFixed(2)}%
-                </td>
-                <td style={{ color: v.missedSlots > 0 ? "var(--red)" : "inherit" }}>
-                  {v.missedSlots}
-                </td>
-                <td>{v.latency_ms} ms</td>
-                <td>
-                  <StatusBadge
-                    ok={v.status === "active" || v.status === "online"}
-                    onLabel={v.status}
-                    offLabel={v.status}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      {/* ASE validators (raw) */}
-      {aseList.length > 0 && (
-        <>
-          <SectionHeader title="ASE Validator Registry" sub="Security Engine validator monitoring" />
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Address</th>
-                <th>Stake</th>
-                <th>Status</th>
-                <th>Slashed</th>
-              </tr>
-            </thead>
-            <tbody>
-              {aseList.map((v: any, i) => (
-                <tr key={i}>
-                  <td className="code">{v.address ?? v.id ?? `validator-${i + 1}`}</td>
-                  <td>{formatWei(v.stakedWei ?? v.stake)}</td>
-                  <td>
-                    <StatusBadge ok={v.status === "active" || v.active} onLabel={v.status ?? "active"} offLabel={v.status ?? "inactive"} />
-                  </td>
-                  <td style={{ color: v.slashed ? "var(--red)" : "var(--text-muted)" }}>
-                    {v.slashed ? "Yes" : "No"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
     </div>
   );
 }

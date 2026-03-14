@@ -1,179 +1,205 @@
 /**
- * index.ts
+ * governance-event-bridge — Main Polling Loop
  *
- * Governance Event Bridge — entry point.
+ * Polls GhostChainGovernor events on L1 and L2 using eth_getLogs,
+ * decodes them, and forwards each event as a BrainMessage signal to
+ * ghostbrain-core via HMAC-authenticated HTTP POST.
  *
- * Polls GhostChain L1 for governance contract events and forwards each
- * one to ghostbrain-core /signals so GhostBrain can reason about them.
- *
- * Also exposes a minimal HTTP server on PORT (default 9200) for health
- * checks and operational inspection.
+ * Architecture:
+ *   GhostChainGovernor (L1/L2)
+ *       ↓  eth_getLogs
+ *   governance-event-bridge
+ *       ↓  POST /api/v1/signals  (HMAC auth)
+ *   ghostbrain-core
+ *       ↓  evaluatePlan / AI routing
+ *   hyper-ghost-ai / treasury-ai
  */
 
-import express, { type Request, type Response } from "express";
-import pino from "pino";
-import { config } from "./config.js";
-import { publishGovernanceEvent, type GovernanceEvent } from "./brain.js";
+import { loadConfig }                        from "./config.js";
+import { TOPICS, parseLog, type RawLog }     from "./events.js";
+import { getLatestBlock, getLogs }           from "./rpc.js";
+import { loadState, saveState }              from "./state.js";
+import { BrainPoster }                       from "./brain.js";
 
-const SERVICE = "governance-event-bridge";
+// ── Logging ───────────────────────────────────────────────────────────────────
 
-const log = pino({
-  name: SERVICE,
-  level: config.logLevel,
-  transport: process.env["NODE_ENV"] !== "production"
-    ? { target: "pino-pretty", options: { colorize: true } }
-    : undefined,
-});
+const cfg = loadConfig();
 
-// ── Known governance event signatures (4-byte selectors → friendly name) ─────
-// In a real deployment these come from the ABI; we keep a minimal set here
-// so the bridge works without a full ABI parser dependency.
-const GOVERNANCE_EVENTS: Record<string, string> = {
-  ProposalCreated:   "ProposalCreated",
-  ProposalQueued:    "ProposalQueued",
-  ProposalExecuted:  "ProposalExecuted",
-  ProposalCanceled:  "ProposalCanceled",
-  VoteCast:          "VoteCast",
-  VoteCastWithParams:"VoteCastWithParams",
-  QuorumNumeratorUpdated: "QuorumNumeratorUpdated",
-  TimelockChange:    "TimelockChange",
-};
+type LogLevel = "debug" | "info" | "warn" | "error";
+const LEVELS: Record<LogLevel, number> = { debug: 0, info: 1, warn: 2, error: 3 };
+const minLevel = LEVELS[cfg.LOG_LEVEL];
 
-// Track last seen block so duplicate events are not forwarded
-let lastSeenBlock = config.startBlock;
-let stats = { eventsPublished: 0, pollCycles: 0, errors: 0 };
-
-// ── Simple RPC helper (no ethers/web3 dependency) ────────────────────────────
-
-async function rpcCall(method: string, params: unknown[]): Promise<unknown> {
-  const res = await fetch(config.rpcUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-  });
-  if (!res.ok) throw new Error(`RPC HTTP error: ${res.status}`);
-  const json = (await res.json()) as { result?: unknown; error?: { message: string } };
-  if (json.error) throw new Error(`RPC error: ${json.error.message}`);
-  return json.result;
-}
-
-async function getBlockNumber(): Promise<number> {
-  const hex = (await rpcCall("eth_blockNumber", [])) as string;
-  return parseInt(hex, 16);
-}
-
-interface RpcLog {
-  topics: string[];
-  data: string;
-  blockNumber: string;
-  transactionHash: string;
-  logIndex: string;
-}
-
-async function getLogs(fromBlock: number, toBlock: number): Promise<RpcLog[]> {
-  if (config.governanceContractAddress === "0x0000000000000000000000000000000000000000") {
-    return []; // no contract configured yet
+function log(level: LogLevel, msg: string): void {
+  if (LEVELS[level] >= minLevel) {
+    const ts = new Date().toISOString();
+    process.stderr.write(`${ts} [${level.toUpperCase()}] governance-event-bridge | ${msg}\n`);
   }
-  const result = await rpcCall("eth_getLogs", [{
-    fromBlock: `0x${fromBlock.toString(16)}`,
-    toBlock:   `0x${toBlock.toString(16)}`,
-    address:   config.governanceContractAddress,
-  }]);
-  return result as RpcLog[];
 }
 
-// topic0 is the keccak256 of the event signature — we map the last known
-// human-readable name by matching the topic against well-known selectors.
-// For simplicity we match by event name stored in topics[0] suffix pattern.
-function resolveEventName(topics: string[]): string {
-  const topic0 = topics[0] ?? "";
-  // Fallback: use a shortened topic hex as the event name
-  for (const name of Object.values(GOVERNANCE_EVENTS)) {
-    // Topics are keccak256 hashes; real resolution needs ABI.
-    // Here we just store all logs as "GovernanceLog" until ABI is wired in.
-    void name;
-  }
-  return `GovernanceLog_${topic0.slice(0, 10)}`;
+// ── Network descriptor ────────────────────────────────────────────────────────
+
+interface NetworkTarget {
+  layer:    "L1" | "L2";
+  rpcUrl:   string;
+  address:  string;
+  chainId:  number;
 }
 
-// ── Poll loop ─────────────────────────────────────────────────────────────────
+// ── Topic0 array — same set for all networks ───────────────────────────────────
 
-async function pollOnce(): Promise<void> {
-  stats.pollCycles++;
+const ALL_TOPIC0S = Object.values(TOPICS);
+
+// ── Per-network poll ──────────────────────────────────────────────────────────
+
+async function pollNetwork(
+  net:     NetworkTarget,
+  poster:  BrainPoster,
+  fromBlock: bigint,
+  toBlock:   bigint,
+): Promise<bigint> {
+  log("debug", `[${net.layer}] getLogs from=${fromBlock} to=${toBlock}`);
+
+  let rawLogs: RawLog[];
   try {
-    const currentBlock = await getBlockNumber();
-    const fromBlock = lastSeenBlock > 0 ? lastSeenBlock + 1 : currentBlock;
-    if (fromBlock > currentBlock) return; // nothing new
+    rawLogs = await getLogs(net.rpcUrl, net.address, ALL_TOPIC0S, fromBlock, toBlock);
+  } catch (err) {
+    log("warn", `[${net.layer}] getLogs failed: ${String(err)}`);
+    return fromBlock - 1n; // retry same range next cycle
+  }
 
-    const logs = await getLogs(fromBlock, currentBlock);
-    log.debug({ fromBlock, toBlock: currentBlock, logCount: logs.length }, "poll cycle");
+  const events = rawLogs.map((l) => parseLog(l)).filter((e) => e !== null);
 
-    for (const rpcLog of logs) {
-      const eventName = resolveEventName(rpcLog.topics);
-      const event: GovernanceEvent = {
-        eventName,
-        blockNumber: parseInt(rpcLog.blockNumber, 16),
-        transactionHash: rpcLog.transactionHash,
-        args: { data: rpcLog.data, topics: rpcLog.topics },
-      };
-      await publishGovernanceEvent(event);
-      stats.eventsPublished++;
+  if (events.length === 0) {
+    log("debug", `[${net.layer}] no governance events in range`);
+    return toBlock;
+  }
+
+  log("info", `[${net.layer}] ${events.length} event(s) in blocks [${fromBlock}..${toBlock}]`);
+
+  const { sent, failed } = await poster.postAll(
+    events,
+    net.layer,
+    net.chainId,
+    (msg) => log("warn", msg),
+  );
+
+  if (sent > 0) {
+    log("info", `[${net.layer}] posted ${sent} signal(s) to ghostbrain-core`);
+  }
+  if (failed > 0) {
+    log("warn", `[${net.layer}] failed to post ${failed} signal(s)`);
+  }
+
+  return toBlock;
+}
+
+// ── Main loop ─────────────────────────────────────────────────────────────────
+
+async function main(): Promise<void> {
+  log("info", "starting governance-event-bridge");
+  log("info", `ghostbrain-core URL: ${cfg.GHOSTBRAIN_URL}`);
+  log("info", `L1 RPC: ${cfg.RPC_L1}  governor: ${cfg.GOVERNOR_ADDRESS_L1 || "(not configured)"}`);
+  log("info", `L2 RPC: ${cfg.RPC_L2}  governor: ${cfg.GOVERNOR_ADDRESS_L2 || "(not configured)"}`);
+
+  // Build list of active network targets (skip unconfigured ones)
+  const networks: NetworkTarget[] = [];
+
+  if (cfg.GOVERNOR_ADDRESS_L1) {
+    // Fetch chainId to include in signals for downstream consumers
+    let l1ChainId = 14000101; // default
+    try {
+      const hex = await (await fetch(cfg.RPC_L1, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_chainId", params: [] }),
+      })).json() as { result?: string };
+      if (hex.result) l1ChainId = Number(BigInt(hex.result));
+    } catch { /* use default */ }
+
+    networks.push({ layer: "L1", rpcUrl: cfg.RPC_L1, address: cfg.GOVERNOR_ADDRESS_L1, chainId: l1ChainId });
+  }
+
+  if (cfg.GOVERNOR_ADDRESS_L2) {
+    let l2ChainId = 901;
+    try {
+      const hex = await (await fetch(cfg.RPC_L2, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_chainId", params: [] }),
+      })).json() as { result?: string };
+      if (hex.result) l2ChainId = Number(BigInt(hex.result));
+    } catch { /* use default */ }
+
+    networks.push({ layer: "L2", rpcUrl: cfg.RPC_L2, address: cfg.GOVERNOR_ADDRESS_L2, chainId: l2ChainId });
+  }
+
+  if (networks.length === 0) {
+    log("warn", "no governor addresses configured — service is idle. Set GOVERNOR_ADDRESS_L1 and/or GOVERNOR_ADDRESS_L2.");
+  }
+
+  const poster = new BrainPoster({
+    ghostbrainUrl: cfg.GHOSTBRAIN_URL,
+    hmacSecret:    cfg.CONTROL_PLANE_HMAC_SECRET,
+  });
+
+  // Load persisted state (last processed block per layer)
+  const state = loadState(cfg.STATE_FILE, cfg.START_BLOCK_L1, cfg.START_BLOCK_L2);
+  log("info", `state loaded: L1=${state.L1} L2=${state.L2}`);
+
+  const lastBlock: Record<"L1" | "L2", bigint> = {
+    L1: BigInt(state.L1),
+    L2: BigInt(state.L2),
+  };
+
+  // ── Polling loop ────────────────────────────────────────────────────────────
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const cycleStart = Date.now();
+    let stateChanged = false;
+
+    for (const net of networks) {
+      let latestBlock: bigint;
+      try {
+        latestBlock = await getLatestBlock(net.rpcUrl);
+      } catch (err) {
+        log("warn", `[${net.layer}] eth_blockNumber failed: ${String(err)}`);
+        continue;
+      }
+
+      const from = lastBlock[net.layer] + 1n;
+      if (from > latestBlock) {
+        log("debug", `[${net.layer}] up to date at block ${latestBlock}`);
+        continue;
+      }
+
+      // Cap the range to avoid oversized getLogs requests
+      const rangeLimit = BigInt(cfg.LOG_BLOCK_RANGE);
+      const to = from + rangeLimit - 1n < latestBlock ? from + rangeLimit - 1n : latestBlock;
+
+      const processed = await pollNetwork(net, poster, from, to);
+      if (processed >= from) {
+        lastBlock[net.layer] = processed;
+        stateChanged = true;
+      }
     }
 
-    lastSeenBlock = currentBlock;
-  } catch (err) {
-    stats.errors++;
-    log.error({ err }, "poll cycle error");
+    // Persist state only when something changed
+    if (stateChanged) {
+      try {
+        saveState(cfg.STATE_FILE, { L1: Number(lastBlock.L1), L2: Number(lastBlock.L2) });
+      } catch (err) {
+        log("warn", `failed to save state: ${String(err)}`);
+      }
+    }
+
+    // Sleep until next poll, accounting for time spent
+    const elapsed = Date.now() - cycleStart;
+    const sleep = Math.max(0, cfg.POLL_INTERVAL_MS - elapsed);
+    await new Promise<void>((resolve) => setTimeout(resolve, sleep));
   }
 }
 
-// ── HTTP health & status server ───────────────────────────────────────────────
-
-const app = express();
-app.use(express.json({ limit: "16kb" }));
-
-app.get("/health", (_req: Request, res: Response) => {
-  res.json({ ok: true, service: SERVICE, port: config.port, uptime: process.uptime() });
+main().catch((err) => {
+  process.stderr.write(`[FATAL] governance-event-bridge: ${String(err)}\n`);
+  process.exit(1);
 });
-
-app.get("/status", (_req: Request, res: Response) => {
-  res.json({
-    ok: true,
-    service: SERVICE,
-    lastSeenBlock,
-    rpcUrl: config.rpcUrl,
-    governanceContract: config.governanceContractAddress,
-    ghostbrainCoreUrl: config.ghostbrainCoreUrl,
-    stats,
-  });
-});
-
-app.listen(config.port, () => {
-  log.info(`${SERVICE} health server on :${config.port}`);
-});
-
-// ── Start polling ─────────────────────────────────────────────────────────────
-
-log.info(
-  {
-    rpcUrl: config.rpcUrl,
-    contract: config.governanceContractAddress,
-    ghostbrainCore: config.ghostbrainCoreUrl,
-    pollIntervalMs: config.pollIntervalMs,
-  },
-  "governance-event-bridge starting",
-);
-
-void pollOnce(); // initial poll immediately
-const interval = setInterval(() => void pollOnce(), config.pollIntervalMs);
-
-// ── Graceful shutdown ─────────────────────────────────────────────────────────
-
-function shutdown(signal: string): void {
-  log.info({ signal }, "shutting down");
-  clearInterval(interval);
-  process.exit(0);
-}
-
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("SIGINT",  () => shutdown("SIGINT"));

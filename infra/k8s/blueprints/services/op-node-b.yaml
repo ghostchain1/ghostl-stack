@@ -1,0 +1,38 @@
+{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "name": "op-node-b",
+    "labels": {
+      "app": "op-node-b"
+    }
+  },
+  "spec": {
+    "type": "NodePort",
+    "selector": {
+      "app": "op-node-b"
+    },
+    "ports": [
+      {
+        "port": "7245",
+        "targetPort": 8545,
+        "protocol": "TCP"
+      },
+      {
+        "port": "9203",
+        "targetPort": 9003,
+        "protocol": "TCP"
+      },
+      {
+        "port": "7200",
+        "targetPort": 7300,
+        "protocol": "TCP"
+      },
+      {
+        "port": "6260",
+        "targetPort": 6060,
+        "protocol": "TCP"
+      }
+    ]
+  }
+}

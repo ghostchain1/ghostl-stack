@@ -1,0 +1,16 @@
+### docker-compose.phase3.secrets.yml
+service "ghost-relayer" has neither an image nor a build context specified: invalid compose project
+exit=1
+
+### infra/opstack/docker-compose.l3.yml
+time="2026-02-21T17:30:42Z" level=warning msg="The \"L3_DATA_PROFILE\" variable is not set. Defaulting to a blank string."
+time="2026-02-21T17:30:42Z" level=warning msg="The \"PROPOSER_KEY\" variable is not set. Defaulting to a blank string."
+time="2026-02-21T17:30:42Z" level=warning msg="The \"L3_DATA_PROFILE\" variable is not set. Defaulting to a blank string."
+time="2026-02-21T17:30:42Z" level=warning msg="The \"BATCHER_KEY\" variable is not set. Defaulting to a blank string."
+service "consensus-telemetry-service" depends on undefined service "l2-geth": invalid compose project
+exit=1
+
+### infra/opstack/docker-compose.challengers.yml
+service "l3-op-challenger" depends on undefined service "l3-op-node": invalid compose project
+exit=1
+

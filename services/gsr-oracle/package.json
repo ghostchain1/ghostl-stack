@@ -1,0 +1,14 @@
+{
+  "name": "@ghostchain-gsx/gsr-oracle",
+  "version": "0.1.0",
+  "description": "GSR reserve oracle — commodity price feeds and reserve valuations for strategic assets",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev":   "node --watch src/index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

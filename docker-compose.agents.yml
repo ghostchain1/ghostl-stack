@@ -1,0 +1,156 @@
+name: ghostchain-agents
+
+services:
+  agent-registry:
+    build:
+      context: ./services/agent-registry-service
+    environment:
+      PORT: 7701
+      AGENT_REGISTRY_STORE: /data/agent-registry.json
+      AGENT_HEARTBEAT_STORE: /data/agent-heartbeats.json
+      AGENT_POLICY_STORE: /data/agent-policy.json
+      AGENT_POLICY_RPC_URL: ${AGENT_POLICY_RPC_URL:-http://host.docker.internal:28545}
+      AGENT_POLICY_CONTRACT: ${AGENT_POLICY_CONTRACT:-0x5eb3Bc0a489C5A8288765d2336659EbCA68FCd00}
+      AGENT_REGISTRY_RPC_URL: ${AGENT_REGISTRY_RPC_URL:-http://host.docker.internal:28545}
+      AGENT_REGISTRY_CONTRACT: ${AGENT_REGISTRY_CONTRACT:-0x36C02dA8a0983159322a80FFE9F24b1acfF8B570}
+    ports:
+      - "7701:7701"
+    volumes:
+      - agent_registry_data:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  governance-service:
+    build:
+      context: ./services/governance-service
+    environment:
+      PORT: 7645
+      GOVERNANCE_LAYER: L1
+      RPC_L1: ${RPC_L1:-http://host.docker.internal:28545}
+      GOVERNOR_ADDRESS: ${GOVERNOR_ADDRESS:-0x70e0bA845a1A0F2DA3359C97E0285013525FFC49}
+      EXECUTOR_ADDRESS: ${EXECUTOR_ADDRESS:-0x84eA74d481Ee0A5332c457a4d796187F6Ba67fEB}
+    ports:
+      - "17645:7645"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  evidence-service:
+    build:
+      context: ./services/audit-log-service
+    environment:
+      PORT: 7641
+      AUDIT_LOG_PATH: /data/agent-evidence.log
+    ports:
+      - "17641:7641"
+    volumes:
+      - evidence_data:/data
+
+  router-agent:
+    build:
+      context: ./services/agent-node
+    environment:
+      PORT: 7702
+      AGENT_ROLE: router
+      AGENT_ID: router-1
+      AGENT_REGISTRY_URL: http://agent-registry:7701
+      EVIDENCE_URL: http://evidence-service:7641
+      GOVERNANCE_POLICY_REQUIRED: "true"
+    depends_on:
+      - agent-registry
+      - evidence-service
+
+  planner-agent:
+    build:
+      context: ./services/agent-node
+    environment:
+      PORT: 7702
+      AGENT_ROLE: planner
+      AGENT_ID: planner-1
+      AGENT_REGISTRY_URL: http://agent-registry:7701
+      EVIDENCE_URL: http://evidence-service:7641
+      GOVERNANCE_POLICY_REQUIRED: "true"
+    depends_on:
+      - agent-registry
+      - evidence-service
+
+  coder-agent:
+    build:
+      context: ./services/agent-node
+    environment:
+      PORT: 7702
+      AGENT_ROLE: coder
+      AGENT_ID: coder-1
+      AGENT_REGISTRY_URL: http://agent-registry:7701
+      EVIDENCE_URL: http://evidence-service:7641
+      GOVERNANCE_POLICY_REQUIRED: "true"
+    depends_on:
+      - agent-registry
+      - evidence-service
+
+  auditor-agent:
+    build:
+      context: ./services/agent-node
+    environment:
+      PORT: 7702
+      AGENT_ROLE: auditor
+      AGENT_ID: auditor-1
+      AGENT_REGISTRY_URL: http://agent-registry:7701
+      EVIDENCE_URL: http://evidence-service:7641
+      GOVERNANCE_POLICY_REQUIRED: "true"
+    depends_on:
+      - agent-registry
+      - evidence-service
+
+  docs-agent:
+    build:
+      context: ./services/agent-node
+    environment:
+      PORT: 7702
+      AGENT_ROLE: docs
+      AGENT_ID: docs-1
+      AGENT_REGISTRY_URL: http://agent-registry:7701
+      EVIDENCE_URL: http://evidence-service:7641
+      GOVERNANCE_POLICY_REQUIRED: "true"
+    depends_on:
+      - agent-registry
+      - evidence-service
+
+  ops-agent:
+    build:
+      context: ./services/agent-node
+    environment:
+      PORT: 7702
+      AGENT_ROLE: ops
+      AGENT_ID: ops-1
+      AGENT_REGISTRY_URL: http://agent-registry:7701
+      EVIDENCE_URL: http://evidence-service:7641
+      GOVERNANCE_POLICY_REQUIRED: "true"
+    depends_on:
+      - agent-registry
+      - evidence-service
+
+  watchdog-agent:
+    build:
+      context: ./services/agent-node
+    environment:
+      PORT: 7702
+      AGENT_ROLE: watchdog
+      AGENT_ID: watchdog-1
+      AGENT_REGISTRY_URL: http://agent-registry:7701
+      EVIDENCE_URL: http://evidence-service:7641
+      GOVERNANCE_POLICY_REQUIRED: "true"
+      WATCHDOG_TARGETS: >-
+        http://router-agent:7702/health,
+        http://planner-agent:7702/health,
+        http://coder-agent:7702/health,
+        http://auditor-agent:7702/health,
+        http://docs-agent:7702/health,
+        http://ops-agent:7702/health
+      WATCHDOG_INTERVAL_MS: 15000
+    depends_on:
+      - agent-registry
+      - evidence-service
+
+volumes:
+  agent_registry_data:
+  evidence_data:

@@ -1,0 +1,9 @@
+{
+  "id": "ghostchain-ethereum-v1",
+  "name": "GhostChain ↔ Ethereum Sovereign Treaty v1",
+  "counterpartyChain": "ethereum",
+  "maxBridgeAmountBps": 500,
+  "minBridgeIntervalSecs": 3600,
+  "activeFrom": 1709769600,
+  "enabled": true
+}

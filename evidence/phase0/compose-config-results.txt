@@ -1,0 +1,17 @@
+PASS docker-compose.yml
+PASS docker-compose.dev.yml
+PASS docker-compose.autonomy.yml
+PASS docker-compose.ai-consensus.yml
+PASS docker-compose.cascading-finality.yml
+PASS docker-compose.phase3.yml
+FAIL docker-compose.phase3.secrets.yml
+PASS docker-compose.agents.yml
+PASS apps/docker-compose.yml
+PASS apps/docker-compose.dev.yml
+PASS infra/ghostchain/docker-compose.l1.yml
+PASS infra/ghostchain/docker-compose.ibft.yml
+PASS infra/opstack/docker-compose.yml
+FAIL infra/opstack/docker-compose.l3.yml
+FAIL infra/opstack/docker-compose.challengers.yml
+PASS infra/opstack/docker-compose.network-manager.yml
+PASS infra/opstack/docker-compose.mainnet-geth.yml

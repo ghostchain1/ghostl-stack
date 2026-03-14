@@ -1,0 +1,56 @@
+[bridge-e2e] L2<->L3 bridge E2E (ERC20)
+[bridge-e2e] Deposit -> Relay -> Withdraw
+L2 token balance too low for deposit (need=1 have=0).
+Deploying a fresh TestERC20 on L2 and minting demo funds to depositor...
+Using fresh demo token: 0xDeBD0Bc00932E8b5bEfF65053989B0687c894b5F
+Using BRIDGE_L2L3_ADDRESS=0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2
+Using L2_TOKEN_ADDRESS=0xDeBD0Bc00932E8b5bEfF65053989B0687c894b5F
+Depositor=0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+Sending demo ERC20 deposit (amount=0.000000000000000001 tokens)...
+bridge: 0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2
+token: 0xDeBD0Bc00932E8b5bEfF65053989B0687c894b5F
+from: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+to: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+amountGst: 0.000000000000000001
+nonce: 1771702542
+tx: 0x6b9861c7e2dfb02d2e9976582da18e629e5ed864e79cf4468dd7284780169a88
+ERC20DepositInitiated emitted.
+Wrote: /home/ghost/ghostl-stack/.tmp/last_deposit_erc20.json
+[bridge-e2e] Waiting for relayer to mint on L3 (nonce=1771702542)...
+Timed out waiting for ERC20 relay/mint on L3.
+{
+  "ok": true,
+  "observeOnly": false,
+  "l1ChainId": "0xd59fe5",
+  "l2ChainId": "0x385",
+  "l3ChainId": "0x387",
+  "confirmations": 2,
+  "bridge": "0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2",
+  "rollupGating": {
+    "l2FinalityOnL1": true,
+    "l3FinalityOnL2": true,
+    "l1RollupL2": "0xad32D5C2Da9f4159C4cc98686C005852b3905355",
+    "l2RollupL3": "0x130A46b6E41DB6E1e18fb9c759F223c459190e90"
+  },
+  "inbox": "0x8464135c8F25Da09e49BC8782676a84730C318bC",
+  "l3TokenFactory": "0x71C95911E9a5D330f4D621842EC243EE1343292e",
+  "hasL2Signer": true,
+  "pendingFinalizations": 2,
+  "lastSeen": {
+    "kind": "ERC20DepositInitiated",
+    "token": "0xDeBD0Bc00932E8b5bEfF65053989B0687c894b5F",
+    "from": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "to": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "amount": "1",
+    "nonce": "1771702542",
+    "key": "0x673935dbf558452990f26c61b4782ffb6c2315b8ce8ec490d0dec0e8d8076084",
+    "l2Tx": "0x6b9861c7e2dfb02d2e9976582da18e629e5ed864e79cf4468dd7284780169a88"
+  },
+  "lastRelayed": null
+}
+[bridge-e2e][WARN] Checking L3 contract visibility via RPC_L3=http://127.0.0.1:39545
+[bridge-e2e][WARN] L3 chainId=903 head=699998
+[bridge-e2e][WARN] L3 tokenFactory codeLen=11824 addr=0x71C95911E9a5D330f4D621842EC243EE1343292e
+[bridge-e2e][WARN] L3 inbox codeLen=1884 addr=0x8464135c8F25Da09e49BC8782676a84730C318bC
+[bridge-e2e][WARN] If codeLen=0 here, the relayer is pointed at an RPC that does not have the deployed contracts.
+[bridge-e2e][WARN] Fix: restart ghost-relayer on the OP Stack docker network and use docker RPCs (RPC_L3_DOCKER=http://l3-geth:8545).

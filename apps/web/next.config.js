@@ -1,51 +1,58 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Use a user-owned build directory to avoid permission issues with root-owned .next artifacts.
+  distDir: process.env.NEXT_DIST_DIR || '.next-ghost',
+  // NEXT_OUTPUT_MODE=export enables static export (used by GitHub Pages CI).
+  output: process.env.NEXT_OUTPUT_MODE || 'standalone',
   reactStrictMode: true,
-  env: {
-    NEXT_PUBLIC_SCP_URL:        process.env.NEXT_PUBLIC_SCP_URL        || "http://localhost:9500",
-    NEXT_PUBLIC_GRAFANA_URL:    process.env.NEXT_PUBLIC_GRAFANA_URL    || "http://localhost:3001",
-    NEXT_PUBLIC_CHAIN_RPC:      process.env.NEXT_PUBLIC_CHAIN_RPC      || "http://localhost:8545",
-    NEXT_PUBLIC_UO_URL:         process.env.NEXT_PUBLIC_UO_URL         || "http://localhost:9990",
-    NEXT_PUBLIC_KERNEL_URL:     process.env.NEXT_PUBLIC_KERNEL_URL     || "http://localhost:9300",
-    NEXT_PUBLIC_GIN_URL:        process.env.NEXT_PUBLIC_GIN_URL        || "http://localhost:9600",
-    NEXT_PUBLIC_AIM_URL:        process.env.NEXT_PUBLIC_AIM_URL        || "http://localhost:9400",
-    NEXT_PUBLIC_KERNEL_WS_URL:  process.env.NEXT_PUBLIC_KERNEL_WS_URL  || "ws://localhost:9300",
-  },
   async headers() {
+    // Security headers applied to all routes.
+    // CSP keeps 'unsafe-inline' for scripts/styles because Next.js App Router
+    // injects inline hydration scripts; 'unsafe-eval' is intentionally absent.
+    const securityHeaders = [
+      {
+        key: 'X-Frame-Options',
+        value: 'DENY'
+      },
+      {
+        key: 'X-Content-Type-Options',
+        value: 'nosniff'
+      },
+      {
+        key: 'Referrer-Policy',
+        value: 'strict-origin-when-cross-origin'
+      },
+      {
+        key: 'Permissions-Policy',
+        value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=()'
+      },
+      {
+        key: 'Strict-Transport-Security',
+        value: 'max-age=63072000; includeSubDomains; preload'
+      },
+      {
+        key: 'Content-Security-Policy',
+        value: [
+          "default-src 'self'",
+          "script-src 'self' 'unsafe-inline'",
+          "style-src 'self' 'unsafe-inline'",
+          "img-src 'self' data: blob: https:",
+          "connect-src 'self' https: wss:",
+          "font-src 'self' data: https:",
+          "frame-src 'none'",
+          "object-src 'none'",
+          "base-uri 'self'",
+          "form-action 'self'"
+        ].join('; ')
+      }
+    ];
     return [
       {
-        // Prevent browsers from caching any HTML page — forces re-fetch on every navigation
-        source: "/((?!_next/static|_next/image|favicon.ico).*)",
-        headers: [
-          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate, proxy-revalidate" },
-          { key: "Pragma",        value: "no-cache" },
-          { key: "Expires",       value: "0" },
-        ],
-      },
+        source: '/(.*)',
+        headers: securityHeaders
+      }
     ];
-  },
-
-  async rewrites() {
-    return [
-      {
-        source:      "/api/scp/:path*",
-        destination: `${process.env.NEXT_PUBLIC_SCP_URL || "http://localhost:9500"}/:path*`,
-      },
-      {
-        source:      "/api/uo/:path*",
-        destination: `${process.env.NEXT_PUBLIC_UO_URL || "http://localhost:9990"}/:path*`,
-      },
-      {
-        source:      "/api/blockchain/:path*",
-        destination: `${process.env.NEXT_PUBLIC_CHAIN_RPC || "http://localhost:8545"}/:path*`,
-      },
-      {
-        source:      "/api/gin/:path*",
-        destination: `${process.env.NEXT_PUBLIC_GIN_URL || "http://localhost:9600"}/:path*`,
-      },
-    ];
-  },
+  }
 };
 
 module.exports = nextConfig;
-

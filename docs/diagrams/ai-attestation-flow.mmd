@@ -1,0 +1,36 @@
+flowchart TD
+  subgraph OffChain[Off-Chain AI Attestation]
+    AI[AI Agent / Risk Engine]
+    Signer[Attestor Signer]
+    Payload[AIAttestation Payload]
+    AI --> Payload
+    Payload --> Signer
+  end
+
+  subgraph OnChain[On-Chain Deterministic Verification]
+    Registry[AIOracleRegistry\n(governed signer allowlist + policies)]
+    Hub[AIAttestationHub\n(verify signature + nonce + expiry + layer)]
+    Guard[PolicyGuard\n(OFF / ADVISORY / ENFORCE)]
+    Target[SlashingManager.setFeePolicy\n(sensitive admin path)]
+    Evidence[EvidenceAnchor\n(model cards + reports + configs)]
+  end
+
+  Signer -->|EIP-712 signature| Hub
+  Hub -->|isSignerAllowed| Registry
+  Hub -->|latest attestation by subject+layer| Guard
+  Registry -->|policy thresholds| Guard
+  Guard -->|enforcePolicy| Target
+  Registry --> Evidence
+
+  subgraph Governance[Governance / Timelock Control]
+    Gov[Governor / Timelock / ProposalExecutor]
+  end
+
+  Gov -->|register/rotate signers| Registry
+  Gov -->|setPolicy thresholds| Registry
+  Gov -->|setMode / bypass| Guard
+  Gov -->|anchor evidence| Evidence
+
+  style OffChain fill:#0b132b,stroke:#1c2541,color:#ffffff
+  style OnChain fill:#1b4332,stroke:#2d6a4f,color:#ffffff
+  style Governance fill:#3a0ca3,stroke:#4361ee,color:#ffffff

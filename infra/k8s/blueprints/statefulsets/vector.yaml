@@ -1,0 +1,117 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "vector",
+    "labels": {
+      "app": "vector",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.obs.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "vector",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "vector"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "vector",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "vector",
+            "image": "timberio/vector:0.38.0-alpine",
+            "command": null,
+            "args": [
+              "--config",
+              "/etc/vector/vector.yaml"
+            ],
+            "env": [
+              {
+                "name": "VECTOR_LOG",
+                "value": "info"
+              }
+            ],
+            "ports": [],
+            "volumeMounts": [
+              {
+                "name": "/var/run/docker.sock",
+                "mountPath": "/var/run/docker.sock"
+              },
+              {
+                "name": "/var/lib/docker/containers",
+                "mountPath": "/var/lib/docker/containers"
+              },
+              {
+                "name": "../collector/vector.yaml",
+                "mountPath": "/etc/vector/vector.yaml"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "/var/run/docker.sock"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "/var/lib/docker/containers"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "../collector/vector.yaml"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

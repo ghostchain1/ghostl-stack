@@ -1,36 +1,55 @@
 /**
- * config.ts
+ * governance-event-bridge — Configuration
  *
- * Configuration for the Governance Event Bridge.
- * All values are read from environment variables with sensible defaults
- * for local development.
+ * All settings are drawn from environment variables so the service can be
+ * configured identically via docker-compose, Kubernetes, or a bare .env
+ * without any code changes.
  */
 
-export const config = {
-  /** Ethereum-compatible JSON-RPC endpoint for GhostChain L1 */
-  rpcUrl: process.env["GHOSTCHAIN_RPC_URL"] ?? "http://localhost:8545",
+import { z } from "zod";
 
-  /** Chain ID for GhostChain L1 */
-  chainId: parseInt(process.env["GHOSTCHAIN_CHAIN_ID"] ?? "1337", 10),
+const Env = z.object({
+  // ── Chain RPC endpoints ────────────────────────────────────────────────────
+  RPC_L1: z.string().url().default("http://localhost:18545"),
+  RPC_L2: z.string().url().default("http://localhost:29547"),
 
-  /** Address of the on-chain Governance contract to watch */
-  governanceContractAddress: process.env["GOVERNANCE_CONTRACT_ADDRESS"] ?? "0x0000000000000000000000000000000000000000",
+  // ── Governor contract addresses per layer (empty = skip that layer) ────────
+  GOVERNOR_ADDRESS_L1: z.string().default(""),
+  GOVERNOR_ADDRESS_L2: z.string().default(""),
 
-  /** Block number to start indexing from (0 = live head only) */
-  startBlock: parseInt(process.env["START_BLOCK"] ?? "0", 10),
+  // ── ghostbrain-core signal endpoint ───────────────────────────────────────
+  GHOSTBRAIN_URL: z.string().url().default("http://localhost:7700"),
 
-  /** How often to poll for new events (ms) */
-  pollIntervalMs: parseInt(process.env["POLL_INTERVAL_MS"] ?? "12000", 10),
+  // ── HMAC auth shared with ghostbrain-core ─────────────────────────────────
+  CONTROL_PLANE_HMAC_SECRET: z.string().default(""),
 
-  /** Base URL of the ghostbrain-core service */
-  ghostbrainCoreUrl: process.env["GHOSTBRAIN_CORE_URL"] ?? "http://ghostbrain-core:9100",
+  // ── Polling interval (milliseconds) ───────────────────────────────────────
+  POLL_INTERVAL_MS: z.coerce.number().int().positive().default(6_000),
 
-  /** HTTP timeout (ms) for calls to ghostbrain-core */
-  ghostbrainTimeoutMs: parseInt(process.env["GHOSTBRAIN_TIMEOUT_MS"] ?? "5000", 10),
+  // ── Block-range cap: how many blocks to request in a single eth_getLogs ───
+  LOG_BLOCK_RANGE: z.coerce.number().int().positive().default(500),
 
-  /** Service HTTP port (for /health) */
-  port: parseInt(process.env["PORT"] ?? "9200", 10),
+  // ── State file for persisting the last processed block per layer ──────────
+  STATE_FILE: z.string().default("/var/lib/governance-event-bridge/state.json"),
 
-  /** Log level */
-  logLevel: process.env["LOG_LEVEL"] ?? "info",
-} as const;
+  // ── Starting block to use when no state exists (0 = chain genesis) ────────
+  START_BLOCK_L1: z.coerce.number().int().nonnegative().default(0),
+  START_BLOCK_L2: z.coerce.number().int().nonnegative().default(0),
+
+  // ── Log level ─────────────────────────────────────────────────────────────
+  LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
+});
+
+export type Config = z.infer<typeof Env>;
+
+export function loadConfig(): Config {
+  const result = Env.safeParse(process.env);
+  if (!result.success) {
+    throw new Error(
+      `governance-event-bridge: invalid config\n${result.error.issues
+        .map((i) => `  ${i.path.join(".")}: ${i.message}`)
+        .join("\n")}`,
+    );
+  }
+  return result.data;
+}

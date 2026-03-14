@@ -1,0 +1,23 @@
+{
+  "name": "ghost-guard",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --experimental-strip-types src/index.ts",
+    "build": "tsc --outDir dist",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "ghost": "^6.13.2",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.2",
+    "typescript": "5.6.3"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

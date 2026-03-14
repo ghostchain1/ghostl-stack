@@ -1,0 +1,66 @@
+services:
+  hg-reporting-indexer:
+    extends:
+      file: docker-compose.econ.devnet.yml
+      service: hg-reporting-indexer
+    environment:
+      - NODE_ENV=production
+      - PORT=7603
+    networks:
+      - econ_internal
+
+  hg-risk-oracle:
+    extends:
+      file: docker-compose.econ.devnet.yml
+      service: hg-risk-oracle
+    environment:
+      - NODE_ENV=production
+      - PORT=7602
+    networks:
+      - econ_internal
+
+  hg-treasury-agent:
+    extends:
+      file: docker-compose.econ.devnet.yml
+      service: hg-treasury-agent
+    environment:
+      - NODE_ENV=production
+      - PORT=7601
+      - MAINNET_EXECUTION_MODE=false
+    networks:
+      - econ_internal
+
+  hg-proof-snapshotter:
+    extends:
+      file: docker-compose.econ.devnet.yml
+      service: hg-proof-snapshotter
+    environment:
+      - NODE_ENV=production
+      - PORT=7662
+      - POST_ONCHAIN=true
+    networks:
+      - econ_internal
+
+  econ-prometheus:
+    extends:
+      file: docker-compose.econ.devnet.yml
+      service: econ-prometheus
+    networks:
+      - econ_internal
+
+  econ-grafana:
+    extends:
+      file: docker-compose.econ.devnet.yml
+      service: econ-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${ECON_GRAFANA_ADMIN_USER:-ghostops}
+      - GF_SECURITY_ADMIN_PASSWORD=${ECON_GRAFANA_ADMIN_PASSWORD:?set_ECON_GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - econ_internal
+
+networks:
+  econ_internal:
+    name: ghost_econ_internal
+    driver: bridge
+    internal: true

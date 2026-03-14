@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GhostLoadPolicy",
+  "type": "object",
+  "required": [
+    "version",
+    "routingLaw",
+    "feeBands",
+    "objectives",
+    "energyPolicy",
+    "criticalParameters",
+    "emergencyModes",
+    "featureFlags"
+  ],
+  "properties": {
+    "version": { "type": "string", "minLength": 1 },
+    "routingLaw": {
+      "type": "object",
+      "required": ["allowedPaths", "externalSettlementLayer"],
+      "properties": {
+        "allowedPaths": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              { "type": "string", "enum": ["L1", "L2", "L3"] },
+              { "type": "string", "enum": ["L1", "L2", "L3"] }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "minItems": 1
+        },
+        "externalSettlementLayer": { "type": "string", "enum": ["L1"] }
+      }
+    },
+    "feeBands": {
+      "type": "object",
+      "required": ["L1", "L2", "L3"],
+      "properties": {
+        "L1": { "$ref": "#/$defs/feeBand" },
+        "L2": { "$ref": "#/$defs/feeBand" },
+        "L3": { "$ref": "#/$defs/feeBand" }
+      }
+    },
+    "objectives": {
+      "type": "object",
+      "required": ["targetUtilizationPct", "profitFloorBps", "maxSustainedUtilizationPct"],
+      "properties": {
+        "targetUtilizationPct": { "type": "number", "minimum": 1, "maximum": 100 },
+        "profitFloorBps": { "type": "number", "minimum": 0, "maximum": 10000 },
+        "maxSustainedUtilizationPct": { "type": "number", "minimum": 1, "maximum": 100 }
+      }
+    },
+    "energyPolicy": {
+      "type": "object",
+      "required": ["maxRetryRatePct", "maxWastedComputeRatioPct", "minCompressionRatio"],
+      "properties": {
+        "maxRetryRatePct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "maxWastedComputeRatioPct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "minCompressionRatio": { "type": "number", "minimum": 1 }
+      }
+    },
+    "criticalParameters": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "emergencyModes": {
+      "type": "object",
+      "required": ["stability-first", "liveness-first", "cost-cap", "lockdown"],
+      "additionalProperties": {
+        "type": "object",
+        "required": ["enabled", "description"],
+        "properties": {
+          "enabled": { "type": "boolean" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "featureFlags": {
+      "type": "object",
+      "required": ["autonomousEnabled", "manualOverrideEnabled", "killSwitchEnabled"],
+      "properties": {
+        "autonomousEnabled": { "type": "boolean" },
+        "manualOverrideEnabled": { "type": "boolean" },
+        "killSwitchEnabled": { "type": "boolean" }
+      }
+    }
+  },
+  "$defs": {
+    "feeBand": {
+      "type": "object",
+      "required": ["minGwei", "maxGwei", "targetMinGwei", "targetMaxGwei", "maxEpochDeltaBps", "cooldownSeconds"],
+      "properties": {
+        "minGwei": { "type": "number", "minimum": 0 },
+        "maxGwei": { "type": "number", "minimum": 0 },
+        "targetMinGwei": { "type": "number", "minimum": 0 },
+        "targetMaxGwei": { "type": "number", "minimum": 0 },
+        "maxEpochDeltaBps": { "type": "number", "minimum": 0, "maximum": 10000 },
+        "cooldownSeconds": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}

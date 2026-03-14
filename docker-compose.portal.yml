@@ -1,0 +1,35 @@
+services:
+  ghost-noc-ai:
+    build:
+      context: ./services/ghost-noc-ai
+      dockerfile: Dockerfile
+    image: ghostchain/ghost-noc-ai:latest
+    container_name: ghost-noc-ai
+    restart: unless-stopped
+    ports:
+      - "7960:7960"
+    environment:
+      - NODE_ENV=production
+      - NOC_PORT=7960
+      - NOC_POLL_INTERVAL_MS=30000
+      - DRY_RUN=${NOC_DRY_RUN:-0}
+      - SIGNING_RELAY_URL=${SIGNING_RELAY_URL:-http://ghost-signing-relay:7910}
+      - GHOSTBRAIN_INTERNAL=${GHOSTBRAIN_INTERNAL:-http://ghost-brain-core:7900}
+      - GAIS_URL=${GAIS_URL:-http://gais:9100}
+      - INFRA_CONTROLLER_URL=${INFRA_CONTROLLER_URL:-http://ghost-infra-controller:7940}
+      - COSMOS_LCD_URL=${COSMOS_LCD_URL:-http://ghostchain-lcd:1317}
+      - L1_RPC_URL=${L1_RPC_URL:-http://ghostchain-l1:18545}
+      - L2_RPC_URL=${L2_RPC_URL:-http://ghostl2-rpc:29545}
+      - L3_RPC_URL=${L3_RPC_URL:-http://ghostl3-rpc:39545}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7960/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    labels:
+      ghostchain.service: "ghost-noc-ai"
+      ghostchain.layer: "monitoring"
+      ghostchain.port: "7960"

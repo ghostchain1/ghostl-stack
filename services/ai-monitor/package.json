@@ -1,0 +1,17 @@
+{
+  "name": "ai-monitor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "ghost": "^6.15.0",
+    "express": "^5.2.1",
+    "prom-client": "^15.1.3"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

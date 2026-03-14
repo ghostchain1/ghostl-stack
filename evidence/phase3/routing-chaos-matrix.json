@@ -1,0 +1,59 @@
+{
+  "generatedAt": "2026-02-21T18:29:44.432Z",
+  "matrix": [
+    {
+      "source": "L1",
+      "target": "L1",
+      "allowed": false,
+      "error": "routing_guard_blocked:L1->L1 intent=chaos_matrix"
+    },
+    {
+      "source": "L1",
+      "target": "L2",
+      "allowed": true,
+      "transition": "L1->L2"
+    },
+    {
+      "source": "L1",
+      "target": "L3",
+      "allowed": false,
+      "error": "routing_guard_blocked:L1->L3 intent=chaos_matrix"
+    },
+    {
+      "source": "L2",
+      "target": "L1",
+      "allowed": true,
+      "transition": "L2->L1"
+    },
+    {
+      "source": "L2",
+      "target": "L2",
+      "allowed": false,
+      "error": "routing_guard_blocked:L2->L2 intent=chaos_matrix"
+    },
+    {
+      "source": "L2",
+      "target": "L3",
+      "allowed": true,
+      "transition": "L2->L3"
+    },
+    {
+      "source": "L3",
+      "target": "L1",
+      "allowed": false,
+      "error": "routing_guard_blocked:L3->L1 intent=chaos_matrix"
+    },
+    {
+      "source": "L3",
+      "target": "L2",
+      "allowed": true,
+      "transition": "L3->L2"
+    },
+    {
+      "source": "L3",
+      "target": "L3",
+      "allowed": false,
+      "error": "routing_guard_blocked:L3->L3 intent=chaos_matrix"
+    }
+  ]
+}

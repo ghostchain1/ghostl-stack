@@ -1,0 +1,61 @@
+name: Contracts Cascading Finality (Fast)
+
+on:
+  pull_request:
+    paths: &cascading_paths
+      - 'contracts/src/governance/bridge/**'
+      - 'contracts/src/consensus-governance/GhostChainBridgeHub.sol'
+      - 'contracts/src/L2L3Bridge.sol'
+      - 'contracts/src/OptimisticRollup.sol'
+      - 'contracts/src/governance/MainnetLaunchGate.sol'
+      - 'contracts/test/foundry/*Cascading*.t.sol'
+      - 'contracts/test/foundry/GhostChainBridgeHub.t.sol'
+      - 'contracts/test/foundry/MainnetLaunchGate.t.sol'
+      - 'contracts/scripts/run_cascading_finality_ci.sh'
+      - 'contracts/foundry.toml'
+      - 'contracts/package.json'
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/contracts-cascading-fast.yml'
+  push:
+    branches:
+      - main
+    paths: *cascading_paths
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: contracts-cascading-fast-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cascading-finality-fast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: '22.22.0'
+          cache: npm
+          cache-dependency-path: contracts/package-lock.json
+
+      - name: Install contracts deps
+        working-directory: contracts
+        run: npm ci --legacy-peer-deps
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@8789b3e21e6c11b2697f5eb56eddae542f746c10 # v1
+        with:
+          version: stable
+
+      - name: Run cascading finality tests (Foundry, low-memory profile)
+        working-directory: contracts
+        run: npm run test:cascading-finality:ci

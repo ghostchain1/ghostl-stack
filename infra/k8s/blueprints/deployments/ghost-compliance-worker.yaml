@@ -1,0 +1,65 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "ghost-compliance-worker",
+    "labels": {
+      "app": "ghost-compliance-worker",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.services.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "ghost-compliance-worker"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "ghost-compliance-worker",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "ghost-compliance-worker",
+            "image": "",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "COMPLIANCE_API_URL",
+                "value": "http://ghost-compliance:8090"
+              },
+              {
+                "name": "DATABASE_URL",
+                "value": "postgresql://ghost:${POSTGRES_PASSWORD:-ghostpass}@postgres:5432/ghost_compliance"
+              },
+              {
+                "name": "NODE_ENV",
+                "value": "production"
+              },
+              {
+                "name": "PREDICT_INTERVAL_SECONDS",
+                "value": "60"
+              },
+              {
+                "name": "REDIS_URL",
+                "value": "redis://redis:6379"
+              }
+            ],
+            "ports": [],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

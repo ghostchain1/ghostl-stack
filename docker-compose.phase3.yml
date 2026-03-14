@@ -1,0 +1,268 @@
+name: ghostl-phase3
+
+x-ghost-user: &ghost-user "10001:10001"
+
+x-node-hardening: &node-hardening
+  user: *ghost-user
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  read_only: true
+  tmpfs:
+    - /tmp
+  init: true
+  restart: unless-stopped
+  stop_grace_period: 30s
+
+services:
+  # Egress gateway: the only service on the interchain network by default.
+  # Internal services must reach chains/metrics via this mapper (network segmentation).
+  ghost-mapper:
+    <<: *node-hardening
+    build:
+      context: ./services/ghost-mapper
+      args:
+        VCS_REF: ${VCS_REF:-unknown}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+    image: ghostl/ghost-mapper:local
+    environment:
+      PORT: 7780
+      SERVICE_NAME: ghost-mapper
+      MAPPER_CONFIG_PATH: /config/mappings.phase3.hostports.json
+      MAPPER_PERSIST_ENABLED: "false"
+      MAPPER_EXECUTION_ENABLED: "false"
+      MAPPER_BIND_ADDRESS: 0.0.0.0
+      LOG_REQUESTS: ${GHOST_MAPPER_LOG_REQUESTS:-0}
+      LOG_CONNECTIONS: ${GHOST_MAPPER_LOG_CONNECTIONS:-0}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - ./infra/docker/ghost-mapper:/config:ro
+    networks:
+      - ghost_internal
+      - ghost_interchain
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7780/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  ghost-registry:
+    <<: *node-hardening
+    build:
+      context: ./services/ghost-registry
+    image: ghostl/ghost-registry:local
+    depends_on:
+      ghost-mapper:
+        condition: service_healthy
+    environment:
+      PORT: 8088
+      NET_ENV: ${NET_ENV:-dev}
+      RPC_L1: http://ghost-mapper:18545
+      RPC_L2: http://ghost-mapper:29547
+      RPC_L3: http://ghost-mapper:39545
+      RPC_L1_WS: ${RPC_L1_WS:-}
+      RPC_L2_WS: ${RPC_L2_WS:-}
+      RPC_L3_WS: ${RPC_L3_WS:-}
+    networks:
+      - ghost_internal
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:8088/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  ghost-guard:
+    <<: *node-hardening
+    build:
+      context: ./services/ghost-guard
+    image: ghostl/ghost-guard:local
+    depends_on:
+      ghost-mapper:
+        condition: service_healthy
+    environment:
+      PORT: 7070
+      STATE_DIR: /state
+      RPC_L1: http://ghost-mapper:18545
+      RPC_L2: http://ghost-mapper:29547
+      RPC_L3: http://ghost-mapper:39545
+      ADMIN_TOKEN_FILE: /run/secrets/ghost_guard_admin_token
+      PRIVATE_KEY_FILE: /run/secrets/ghost_guard_private_key
+      AI_SIGNER_PRIVATE_KEY_FILE: /run/secrets/ghost_guard_ai_private_key
+      ALLOW_INSECURE_ADMIN: ${ALLOW_INSECURE_ADMIN:-0}
+      AI_CONSENSUS_MODE: ${AI_CONSENSUS_MODE:-audit}
+      AI_CONSENSUS_FAIL_OPEN: ${AI_CONSENSUS_FAIL_OPEN:-0}
+      AI_AUTO_ATTEST: ${AI_AUTO_ATTEST:-1}
+      AI_WAIT_CONFIRMATIONS: ${AI_WAIT_CONFIRMATIONS:-0}
+    volumes:
+      - ./services/ghost-guard/state:/state
+    networks:
+      - ghost_internal
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7070/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  ai-monitor:
+    <<: *node-hardening
+    build:
+      context: ./services/ai-monitor
+    image: ghostl/ai-monitor:local
+    depends_on:
+      ghost-registry:
+        condition: service_healthy
+      ghost-guard:
+        condition: service_healthy
+    environment:
+      PORT: 7575
+      TARGET_LAYER: ${AI_MONITOR_LAYER:-L2}
+      RPC_REGISTRY_URL: http://ghost-registry:8088/v1/endpoints
+      GUARD_URL: http://ghost-guard:7070
+      ADMIN_TOKEN_FILE: /run/secrets/bridge_admin_token
+      OBSERVE_ONLY: ${AI_MONITOR_OBSERVE_ONLY:-1}
+      POLICY_REQUIRED: ${AI_MONITOR_POLICY_REQUIRED:-0}
+      CHAIN_POLICY_REQUIRED: ${AI_MONITOR_CHAIN_POLICY_REQUIRED:-0}
+      OP_NODE_RPC_URL: http://ghost-mapper:9546
+      OP_BATCHER_METRICS_URL: http://ghost-mapper:7301/metrics
+      OP_PROPOSER_METRICS_URL: http://ghost-mapper:7302/metrics
+      ACTION_EVIDENCE_ENABLED: ${AI_MONITOR_ACTION_EVIDENCE_ENABLED:-0}
+      ACTION_EVIDENCE_OUTPUT_DIR: /data/evidence
+    volumes:
+      - ./services/ai-monitor/data:/data
+    networks:
+      - ghost_internal
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7575/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  bridge-service:
+    <<: *node-hardening
+    build:
+      context: ./services/bridge-service
+    image: ghostl/bridge-service:local
+    depends_on:
+      ghost-mapper:
+        condition: service_healthy
+    environment:
+      PORT: 7604
+      PROM_URL: http://ghost-mapper:9090
+      ADMIN_TOKEN_FILE: /run/secrets/bridge_admin_token
+      INCIDENTS_FILE: /data/bridge-incidents.json
+      CORS_ALLOW_ORIGINS: ${BRIDGE_CORS_ALLOW_ORIGINS:-}
+    volumes:
+      - ./services/bridge-service/data:/data
+    networks:
+      - ghost_internal
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7604/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  liquidity-service:
+    <<: *node-hardening
+    build:
+      context: ./services/liquidity-service
+    image: ghostl/liquidity-service:local
+    depends_on:
+      ghost-registry:
+        condition: service_healthy
+      ghost-mapper:
+        condition: service_healthy
+    environment:
+      PORT: 7606
+      PROM_URL: http://ghost-mapper:9090
+      RPC_REGISTRY_URL: http://ghost-registry:8088/v1/endpoints
+      BRIDGE_ADDRESS: ${BRIDGE_ADDRESS:-}
+      L2_TOKEN_ADDRESS: ${L2_TOKEN_ADDRESS:-}
+      L3_TOKEN_ADDRESS: ${L3_TOKEN_ADDRESS:-}
+    networks:
+      - ghost_internal
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7606/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  # Optional (profile): requires L2/L3 bridge addresses and relayer key material.
+  ghost-relayer:
+    <<: *node-hardening
+    profiles: ["interchain"]
+    build:
+      context: ./services/ghost-relayer
+    image: ghostl/ghost-relayer:local
+    depends_on:
+      ghost-registry:
+        condition: service_healthy
+      ghost-mapper:
+        condition: service_healthy
+    environment:
+      PORT: 7171
+      RPC_REGISTRY_URL: http://ghost-registry:8088/v1/endpoints
+      BRIDGE_L2L3_ADDRESS: ${BRIDGE_L2L3_ADDRESS:-}
+      L1_ROLLUP_L2_ADDRESS: ${L1_ROLLUP_L2_ADDRESS:-}
+      L2_ROLLUP_L3_ADDRESS: ${L2_ROLLUP_L3_ADDRESS:-}
+      L3_INBOX_ADDRESS: ${L3_INBOX_ADDRESS:-}
+      L3_TOKEN_FACTORY_ADDRESS: ${L3_TOKEN_FACTORY_ADDRESS:-}
+      RELAYER_PRIVATE_KEY_FILE: /run/secrets/relayer_private_key
+      L2_RELAYER_PRIVATE_KEY_FILE: /run/secrets/relayer_private_key_l2
+      STATE_DIR: /state
+      RELAYER_REQUIRE_L2_FINALITY_ON_L1: ${RELAYER_REQUIRE_L2_FINALITY_ON_L1:-false}
+      RELAYER_REQUIRE_L3_FINALITY_ON_L2: ${RELAYER_REQUIRE_L3_FINALITY_ON_L2:-false}
+      CANONICAL_GAS_TOKEN_MODE: ${CANONICAL_GAS_TOKEN_MODE:-native}
+      CANONICAL_GAS_TOKEN_ADDRESS: ${CANONICAL_GAS_TOKEN_ADDRESS:-0x5FbDB2315678afecb367f032d93F642f64180aa3}
+      CANONICAL_GAS_TOKEN_SYMBOL: ${CANONICAL_GAS_TOKEN_SYMBOL:-GST}
+      CANONICAL_GAS_TOKEN_MIN_BALANCE: ${CANONICAL_GAS_TOKEN_MIN_BALANCE:-0}
+    volumes:
+      - ./services/ghost-relayer/data:/state
+    networks:
+      - ghost_internal
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7171/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+networks:
+  ghost_internal:
+    internal: true
+  ghost_interchain: {}

@@ -1,0 +1,59 @@
+# stack-group: apps
+# role: ghostscout-frontend-l2
+# ports: ${GHOSTSCOUT_L2_UI_PORT:-18652}:3000
+# volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
+services:
+  ghostscout-frontend-l2:
+    container_name: ghost_ghostscout-frontend-l2
+    image: ghostl/ghostscout-frontend-l2:local
+    build:
+      context: .
+    env_file:
+    - .env
+    entrypoint:
+    - /bin/bash
+    - /entrypoint.sh
+    environment:
+      NEXT_PUBLIC_API_HOST: ghostscout-l2:4000
+      NEXT_PUBLIC_API_PROTOCOL: http
+      NEXT_PUBLIC_APP_HOST: http://localhost:${GHOSTSCOUT_L2_UI_PORT:-18652}
+      NEXT_PUBLIC_NETWORK_NAME: GhostL2
+      NEXT_PUBLIC_NETWORK_ID: '901'
+      NEXT_PUBLIC_NETWORK_ICON: https://raw.githubusercontent.com/blockscout/frontend/main/public/favicon.ico
+      NEXT_PUBLIC_NETWORK_CURRENCY_SYMBOL: GST
+      NEXT_PUBLIC_NETWORK_CURRENCY_NAME: Ghost
+      NEXT_PUBLIC_NETWORK_CURRENCY_DECIMALS: '18'
+      PORT: 3000
+      HOST: 0.0.0.0
+    ports:
+    - ${GHOSTSCOUT_L2_UI_PORT:-18652}:3000
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4g
+        reservations:
+          cpus: '0.5'
+          memory: 512m
+    volumes:
+    - ./data:/data
+    - ./entrypoint.sh:/entrypoint.sh:ro
+    - ./healthcheck.sh:/healthcheck.sh:ro
+    networks:
+    - ghostchain_ghostchain
+    - opstack_default
+networks:
+  ghostchain_ghostchain:
+    external: true
+  opstack_default:
+    external: true

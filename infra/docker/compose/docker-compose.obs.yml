@@ -1,0 +1,306 @@
+{
+  "services": {
+    "alertmanager": {
+      "command": [
+        "sed -e \"s|\\$${ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL}|$${ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL}|g\" -e \"s|\\$${ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL}|$${ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL}|g\" /etc/alertmanager/alertmanager.yml > /tmp/alertmanager.rendered.yml && exec alertmanager --config.file=/tmp/alertmanager.rendered.yml --storage.path=/alertmanager"
+      ],
+      "entrypoint": [
+        "/bin/sh",
+        "-lc"
+      ],
+      "environment": {
+        "ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL": "${ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL:-http://host.docker.internal:19093/alert-hooks/sovereignty-critical}",
+        "ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL": "${ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL:-http://host.docker.internal:19093/alert-hooks/sovereignty-warning}"
+      },
+      "image": "prom/alertmanager:v0.27.0",
+      "networks": {
+        "default": null,
+        "opstack_default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "9093",
+          "target": 9093
+        }
+      ],
+      "restart": "unless-stopped",
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./alertmanager.yml",
+          "target": "/etc/alertmanager/alertmanager.yml",
+          "type": "bind"
+        },
+        {
+          "source": "alertmanager_data",
+          "target": "/alertmanager",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "alertmanager",
+        "com.ghost.k8s.role": "obs",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "./alertmanager.yml,alertmanager_data",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "grafana": {
+      "depends_on": {
+        "loki": {
+          "condition": "service_started",
+          "required": true
+        },
+        "prometheus": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "environment": {
+        "GF_SECURITY_ADMIN_PASSWORD": "${GRAFANA_ADMIN_PASSWORD:-admin}"
+      },
+      "image": "grafana/grafana:10.4.2",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "3000",
+          "target": 3000
+        }
+      ],
+      "restart": "unless-stopped",
+      "volumes": [
+        {
+          "source": "grafana_data",
+          "target": "/var/lib/grafana",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./grafana/provisioning",
+          "target": "/etc/grafana/provisioning",
+          "type": "bind"
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./grafana/dashboards",
+          "target": "/var/lib/grafana/dashboards",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "grafana",
+        "com.ghost.k8s.role": "obs",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "grafana_data,./grafana/provisioning,./grafana/dashboards",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "loki": {
+      "command": [
+        "-config.file=/etc/loki/config.yml"
+      ],
+      "image": "grafana/loki:2.9.5",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "../storage/loki-config.yml",
+          "target": "/etc/loki/config.yml",
+          "type": "bind"
+        },
+        {
+          "source": "loki_data",
+          "target": "/loki",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "loki",
+        "com.ghost.k8s.role": "obs",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "../storage/loki-config.yml,loki_data",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "prometheus": {
+      "command": [
+        "--config.file=/etc/prometheus/prometheus.yml",
+        "--storage.tsdb.path=/prometheus"
+      ],
+      "extra_hosts": [
+        "host.docker.internal:host-gateway"
+      ],
+      "image": "prom/prometheus:v2.51.2",
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "9090",
+          "target": 9090
+        }
+      ],
+      "restart": "unless-stopped",
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "./prometheus.yml",
+          "target": "/etc/prometheus/prometheus.yml",
+          "type": "bind"
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "../alerts/alert_rules.yml",
+          "target": "/etc/prometheus/alert_rules.yml",
+          "type": "bind"
+        },
+        {
+          "source": "prometheus_data",
+          "target": "/prometheus",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "prometheus",
+        "com.ghost.k8s.role": "obs",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "./prometheus.yml,../alerts/alert_rules.yml,prometheus_data",
+        "com.ghost.k8s.service.type": "NodePort"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    },
+    "vector": {
+      "command": [
+        "--config",
+        "/etc/vector/vector.yaml"
+      ],
+      "depends_on": {
+        "loki": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "environment": {
+        "VECTOR_LOG": "info"
+      },
+      "image": "timberio/vector:0.38.0-alpine",
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "source": "/var/run/docker.sock",
+          "target": "/var/run/docker.sock",
+          "type": "bind"
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "/var/lib/docker/containers",
+          "target": "/var/lib/docker/containers",
+          "type": "bind"
+        },
+        {
+          "bind": {
+            "create_host_path": true
+          },
+          "read_only": true,
+          "source": "../collector/vector.yaml",
+          "target": "/etc/vector/vector.yaml",
+          "type": "bind"
+        }
+      ],
+      "labels": {
+        "com.ghost.k8s.name": "vector",
+        "com.ghost.k8s.role": "api",
+        "com.ghost.k8s.stateful": "true",
+        "com.ghost.k8s.no_recreate": "false",
+        "com.ghost.k8s.volume.claim": "/var/run/docker.sock,/var/lib/docker/containers,../collector/vector.yaml",
+        "com.ghost.k8s.service.type": "ClusterIP"
+      },
+      "security_opt": [
+        "no-new-privileges:true"
+      ]
+    }
+  },
+  "networks": {
+    "default": {
+      "name": "infra_default"
+    },
+    "opstack_default": {
+      "external": true,
+      "name": "opstack_default"
+    }
+  },
+  "volumes": {
+    "alertmanager_data": {
+      "name": "infra_alertmanager_data"
+    },
+    "grafana_data": {
+      "name": "infra_grafana_data"
+    },
+    "loki_data": {
+      "name": "infra_loki_data"
+    },
+    "prometheus_data": {
+      "name": "infra_prometheus_data"
+    }
+  },
+  "x-ghost-source-files": [
+    "observability/infra/docker-compose.yml"
+  ]
+}

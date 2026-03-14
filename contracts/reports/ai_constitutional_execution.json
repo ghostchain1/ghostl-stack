@@ -1,0 +1,13 @@
+{
+  "proposalId": "3",
+  "governor": "0xdbC43Ba45381e02825b14322cDdd15eC4B3164E6",
+  "executor": "0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650",
+  "queued": true,
+  "executed": true,
+  "queueTxHash": null,
+  "executeTxHash": "0xc9d485855f09f56d32b16a097d8eb89465ca05f384812b1b35e7c23236fb0df7",
+  "eta": "1770138675",
+  "now": "1770138697",
+  "executeError": null,
+  "recordedAt": "2026-02-03T17:11:43.138Z"
+}

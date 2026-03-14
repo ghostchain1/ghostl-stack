@@ -1,0 +1,944 @@
+x-logging: &id003
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '3'
+x-security:
+  cap_drop: &id001
+  - ALL
+  security_opt: &id002
+  - no-new-privileges:true
+services:
+  op-gate:
+    cap_drop: *id001
+    security_opt: *id002
+    image: ${OP_GATE_IMAGE:-local/op-gate:0.1.0}
+    build:
+      context: ./gate
+      dockerfile: Dockerfile
+      args:
+        NODE_IMAGE: ${OP_STACK_BASE_IMAGE:-node@sha256:e4bf2a82ad0a4037d28035ae71529873c069b13eb0455466ae0bc13363826e34}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
+    working_dir: /app
+    restart: unless-stopped
+    logging: *id003
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    environment:
+      NODE_ENV: production
+      PORT: ${GATE_PORT:-8545}
+      UPSTREAM_RPC: ${GATE_UPSTREAM_RPC:-http://l2-geth:8545}
+      STATE_DIR: /state
+      ADMIN_TOKEN: ${GATE_ADMIN_TOKEN:-}
+      ALLOW_INSECURE_ADMIN: ${GATE_ALLOW_INSECURE_ADMIN:-0}
+      DEFAULT_DELAY_SECONDS: ${GATE_DEFAULT_DELAY_SECONDS:-0}
+      GUARD_URL: ${GATE_GUARD_URL:-http://ghost-guard:7070}
+      BATCH_SENDER_ADDRESS: ${BATCH_SENDER_ADDRESS:-}
+      PROPOSER_ADDRESS: ${PROPOSER_ADDRESS:-}
+    volumes:
+    - ./data/op-gate-state:/state
+    ports:
+    - ${L2_GATE_BIND:-127.0.0.1}:${L2_GATE_HOST_PORT:-28546}:8545
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - curl -sf http://localhost:8545/gate/status >/dev/null
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    mem_limit: 512m
+    cpus: '0.5'
+  op-gate-l1:
+    cap_drop: *id001
+    security_opt: *id002
+    image: ${OP_GATE_IMAGE:-local/op-gate:0.1.0}
+    build:
+      context: ./gate
+      dockerfile: Dockerfile
+      args:
+        NODE_IMAGE: ${OP_STACK_BASE_IMAGE:-node@sha256:e4bf2a82ad0a4037d28035ae71529873c069b13eb0455466ae0bc13363826e34}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
+    working_dir: /app
+    restart: unless-stopped
+    logging: *id003
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    environment:
+      NODE_ENV: production
+      PORT: ${GATE_L1_PORT:-8545}
+      UPSTREAM_RPC: ${GATE_L1_UPSTREAM_RPC:-http://l1-rpc-proxy:18546}
+      STATE_DIR: /state
+      ADMIN_TOKEN: ${GATE_L1_ADMIN_TOKEN:-${GATE_ADMIN_TOKEN:-}}
+      ALLOW_INSECURE_ADMIN: ${GATE_L1_ALLOW_INSECURE_ADMIN:-${GATE_ALLOW_INSECURE_ADMIN:-0}}
+      DEFAULT_DELAY_SECONDS: ${GATE_L1_DEFAULT_DELAY_SECONDS:-0}
+      GUARD_URL: ${GATE_L1_GUARD_URL:-${GATE_GUARD_URL:-http://ghost-guard:7070}}
+      BATCH_SENDER_ADDRESS: ${BATCH_SENDER_ADDRESS:-}
+      PROPOSER_ADDRESS: ${PROPOSER_ADDRESS:-}
+    volumes:
+    - ./data/op-gate-l1-state:/state
+    ports:
+    - ${L1_GATE_BIND:-127.0.0.1}:${L1_GATE_HOST_PORT:-28547}:8545
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - curl -sf http://localhost:8545/gate/status >/dev/null
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    mem_limit: 512m
+    cpus: '0.5'
+  gas-engine-postgres:
+    cap_drop: *id001
+    security_opt: *id002
+    image: ghostl/gas-engine-postgres:local
+    build:
+      context: ../../services/gas-engine-postgres
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    logging: *id003
+    environment:
+      POSTGRES_DB: ghost_gas
+      POSTGRES_USER: ghost
+      POSTGRES_PASSWORD: ${GAS_ENGINE_DB_PASSWORD:-ghostpass}
+    ports:
+    - 5433:5432
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    volumes:
+    - ./data/gas-engine-postgres:/var/lib/postgresql/data
+    - ../../services/gas-engine-postgres/healthcheck.sh:/healthcheck.sh:ro
+    mem_limit: 2g
+    cpus: '1.0'
+    profiles:
+    - ai
+  gas-engine-redis:
+    cap_drop: *id001
+    security_opt: *id002
+    image: ghostl/gas-engine-redis:local
+    build:
+      context: ../../services/gas-engine-redis
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    logging: *id003
+    entrypoint:
+    - /bin/bash
+    - /entrypoint.sh
+    command:
+    - redis-server
+    - --appendonly
+    - 'yes'
+    ports:
+    - 6381:6379
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    volumes:
+    - ./data/gas-engine-redis:/data
+    - ../../services/gas-engine-redis/entrypoint.sh:/entrypoint.sh:ro
+    - ../../services/gas-engine-redis/healthcheck.sh:/healthcheck.sh:ro
+    mem_limit: 512m
+    cpus: '0.5'
+    profiles:
+    - ai
+  ghost-gas-engine:
+    cap_drop: *id001
+    security_opt: *id002
+    image: ghostl/ghost-gas-engine:local
+    build:
+      context: ../../services/ghost-gas-engine
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    logging: *id003
+    depends_on:
+      gas-engine-postgres:
+        condition: service_healthy
+      gas-engine-redis:
+        condition: service_healthy
+    environment:
+      PORT: 3210
+      DATABASE_URL: postgresql://ghost:${GAS_ENGINE_DB_PASSWORD:-ghostpass}@gas-engine-postgres:5432/ghost_gas
+      REDIS_URL: redis://gas-engine-redis:6379
+      CHAINS_CONFIG_PATH: /app/config/chains.json
+      POLICIES_PATH: /app/config/gas-policies.json
+      SEED_SAMPLE_DATA: ${GAS_ENGINE_SEED_SAMPLE_DATA:-true}
+      RPC_L1: ${HOST_L1_RPC:-http://host.docker.internal:18545}
+      RPC_L2: ${HOST_L2_RPC:-http://host.docker.internal:29547}
+      RPC_L3: ${HOST_L3_RPC:-http://host.docker.internal:39545}
+      GAS_TOKEN_L1: ${GAS_TOKEN_L1:-GST}
+      GAS_TOKEN_L2: ${GAS_TOKEN_L2:-GST}
+      GAS_TOKEN_L3: ${GAS_TOKEN_L3:-GST}
+      SIGNER_PRIVATE_KEY: ${GAS_ENGINE_SIGNER_PRIVATE_KEY:-}
+      SIGNER_PRIVATE_KEY_L1: ${GAS_ENGINE_SIGNER_PRIVATE_KEY_L1:-}
+      SIGNER_PRIVATE_KEY_L2: ${GAS_ENGINE_SIGNER_PRIVATE_KEY_L2:-}
+      SIGNER_PRIVATE_KEY_L3: ${GAS_ENGINE_SIGNER_PRIVATE_KEY_L3:-}
+      ADMIN_TOKEN: ${GAS_ENGINE_ADMIN_TOKEN:-}
+      RUN_MIGRATIONS: '1'
+      MIGRATION_TIMEOUT_MS: 120000
+      READINESS_FILE: /tmp/ghost_gas_engine_migrated
+      HEALTHCHECK_URL: http://127.0.0.1:3210/ready
+    ports:
+    - 3210:3210
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    volumes:
+    - ./data/ghost-gas-engine:/data
+    - ../../services/ghost-gas-engine/entrypoint.sh:/entrypoint.sh:ro
+    - ../../services/ghost-gas-engine/healthcheck.sh:/healthcheck.sh:ro
+    mem_limit: 2g
+    cpus: '1.0'
+    profiles:
+    - ai
+  ghost-gas-engine-worker:
+    cap_drop: *id001
+    security_opt: *id002
+    image: ghostl/ghost-gas-engine:local
+    build:
+      context: ../../services/ghost-gas-engine
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    logging: *id003
+    depends_on:
+      gas-engine-postgres:
+        condition: service_healthy
+      gas-engine-redis:
+        condition: service_healthy
+      ghost-gas-engine:
+        condition: service_healthy
+    entrypoint:
+    - /bin/bash
+    - /entrypoint.sh
+    command:
+    - node
+    - dist/worker.js
+    environment:
+      DATABASE_URL: postgresql://ghost:${GAS_ENGINE_DB_PASSWORD:-ghostpass}@gas-engine-postgres:5432/ghost_gas
+      REDIS_URL: redis://gas-engine-redis:6379
+      CHAINS_CONFIG_PATH: /app/config/chains.json
+      POLICIES_PATH: /app/config/gas-policies.json
+      RPC_L1: ${HOST_L1_RPC:-http://host.docker.internal:18545}
+      RPC_L2: ${HOST_L2_RPC:-http://host.docker.internal:29547}
+      RPC_L3: ${HOST_L3_RPC:-http://host.docker.internal:39545}
+      GAS_TOKEN_L1: ${GAS_TOKEN_L1:-GST}
+      GAS_TOKEN_L2: ${GAS_TOKEN_L2:-GST}
+      GAS_TOKEN_L3: ${GAS_TOKEN_L3:-GST}
+      SIGNER_PRIVATE_KEY: ${GAS_ENGINE_SIGNER_PRIVATE_KEY:-}
+      SIGNER_PRIVATE_KEY_L1: ${GAS_ENGINE_SIGNER_PRIVATE_KEY_L1:-}
+      SIGNER_PRIVATE_KEY_L2: ${GAS_ENGINE_SIGNER_PRIVATE_KEY_L2:-}
+      SIGNER_PRIVATE_KEY_L3: ${GAS_ENGINE_SIGNER_PRIVATE_KEY_L3:-}
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    volumes:
+    - ./data/ghost-gas-engine:/data
+    - ../../services/ghost-gas-engine/entrypoint.sh:/entrypoint.sh:ro
+    - ../../services/ghost-gas-engine/healthcheck.sh:/healthcheck.sh:ro
+    mem_limit: 1g
+    cpus: '0.5'
+    profiles:
+    - ai
+  ghost-guard:
+    cap_drop: *id001
+    security_opt: *id002
+    build:
+      context: ../../services/ghost-guard
+      dockerfile: Dockerfile
+    image: local/ghost-guard:${OPSTACK_IMAGE_TAG:-devnet}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
+    restart: unless-stopped
+    logging: *id003
+    depends_on:
+      l2-geth:
+        condition: service_healthy
+    environment:
+      PORT: 7070
+      RPC_L1: http://l1-rpc-proxy:18546
+      RPC_L2: http://l2-geth:8545
+      # Prefer docker-network RPCs when L3 is running (avoids localhost-from-container mistakes).
+      RPC_L3: ${L3_ARCHIVE_RPC:-${HOST_L3_RPC:-http://host.docker.internal:39545}}
+      BRIDGE_L2L3_ADDRESS: ${BRIDGE_L2L3_ADDRESS:-0x0000000000000000000000000000000000000000}
+      GUARD_POLICY_ADDRESS: ${GUARD_POLICY_ADDRESS:-}
+      PRIVATE_KEY: ${GUARD_PRIVATE_KEY:-}
+      ADMIN_TOKEN: ${GUARD_ADMIN_TOKEN:-}
+      STATE_DIR: /state
+      AI_GUARDIAN_L1_ADDRESS: ${AI_GUARDIAN_L1_ADDRESS:-}
+      AI_GUARDIAN_L2_ADDRESS: ${AI_GUARDIAN_L2_ADDRESS:-}
+      AI_GUARDIAN_L3_ADDRESS: ${AI_GUARDIAN_L3_ADDRESS:-}
+      AI_SIGNER_PRIVATE_KEY: ${AI_SIGNER_PRIVATE_KEY:-}
+      AI_CONSENSUS_MODE: ${AI_CONSENSUS_MODE:-enforce}
+      AI_CONSENSUS_FAIL_OPEN: ${AI_CONSENSUS_FAIL_OPEN:-0}
+      AI_MODEL_ID: ${AI_MODEL_ID:-GHOST_AI_CONSENSUS_V1}
+      AI_CONFIDENCE_BPS: ${AI_CONFIDENCE_BPS:-9000}
+      AI_ATTEST_TTL_SECONDS: ${AI_ATTEST_TTL_SECONDS:-300}
+      AI_RISK_REVIEW_BPS: ${AI_RISK_REVIEW_BPS:-5000}
+      AI_RISK_BLOCK_BPS: ${AI_RISK_BLOCK_BPS:-8000}
+      AI_REVIEW_DELAY_SECONDS: ${AI_REVIEW_DELAY_SECONDS:-60}
+      AI_WAIT_CONFIRMATIONS: ${AI_WAIT_CONFIRMATIONS:-0}
+      AI_DEFAULT_LAYER: ${AI_DEFAULT_LAYER:-l2}
+      AI_ROLE_LAYER_MAP: ${AI_ROLE_LAYER_MAP:-}
+      AUTO_PAUSE: ${GUARD_AUTO_PAUSE:-0}
+      AUTO_ACTION: ${GUARD_AUTO_ACTION:-}
+      QUARANTINE_DELAY_SECONDS: ${GUARD_QUARANTINE_DELAY_SECONDS:-30}
+      AUTO_QUARANTINE_THRESHOLD: ${GUARD_AUTO_QUARANTINE_THRESHOLD:-70}
+      AUTO_PAUSE_THRESHOLD: ${GUARD_AUTO_PAUSE_THRESHOLD:-90}
+      RISK_WINDOW_SECONDS: ${GUARD_RISK_WINDOW_SECONDS:-300}
+      GRAPH_WINDOW_SECONDS: ${GUARD_GRAPH_WINDOW_SECONDS:-3600}
+      ALERT_MIN_RISK: ${GUARD_ALERT_MIN_RISK:-70}
+      RATE_LIMIT_WINDOW_MS: ${GUARD_RATE_LIMIT_WINDOW_MS:-1000}
+      RATE_LIMIT_MAX: ${GUARD_RATE_LIMIT_MAX:-20}
+    volumes:
+    - ./data/guard:/state
+    ports:
+    - 7070:7070
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:7070/health >/dev/null
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    mem_limit: 512m
+    cpus: '0.5'
+  ghost-rpc-proxy-l1:
+    cap_drop: *id001
+    security_opt: *id002
+    build:
+      context: ../../services/ghost-rpc-proxy
+      dockerfile: Dockerfile
+    image: local/ghost-rpc-proxy:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *id003
+    depends_on:
+      l1-rpc-proxy:
+        condition: service_healthy
+    environment:
+      PORT: 8546
+      UPSTREAM_URL: http://l1-rpc-proxy:18546
+      RPC_ENABLE_GST_NAMESPACE: '1'
+      RPC_DEPRECATE_LEGACY_NAMESPACE: '1'
+      RPC_RATE_LIMIT_ALLOWLIST: ${L1_RPC_RATE_LIMIT_ALLOWLIST:-127.0.0.1,::1,172.28.0.1}
+      RPC_CORS_ORIGINS: ${L1_RPC_CORS_ORIGINS:-http://localhost,http://127.0.0.1}
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - "curl -sf http://localhost:8546 -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"gst_chainId\",\"params\":[]}' >/dev/null"
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 15s
+    mem_limit: 128m
+    cpus: '0.25'
+  ghost-rpc-proxy-l2:
+    cap_drop: *id001
+    security_opt: *id002
+    build:
+      context: ../../services/ghost-rpc-proxy
+      dockerfile: Dockerfile
+    image: local/ghost-rpc-proxy:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *id003
+    depends_on:
+      l2-geth:
+        condition: service_healthy
+    environment:
+      PORT: 8546
+      UPSTREAM_URL: http://l2-geth:8545
+      RPC_ENABLE_GST_NAMESPACE: '1'
+      RPC_DEPRECATE_LEGACY_NAMESPACE: '1'
+      RPC_RATE_LIMIT_ALLOWLIST: ${L2_RPC_RATE_LIMIT_ALLOWLIST:-127.0.0.1,::1,172.28.0.1}
+      RPC_CORS_ORIGINS: ${L2_RPC_CORS_ORIGINS:-http://localhost,http://127.0.0.1}
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - "curl -sf http://localhost:8546 -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"gst_chainId\",\"params\":[]}' >/dev/null"
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 15s
+    mem_limit: 128m
+    cpus: '0.25'
+  ghost-rpc-proxy-l3:
+    cap_drop: *id001
+    security_opt: *id002
+    build:
+      context: ../../services/ghost-rpc-proxy
+      dockerfile: Dockerfile
+    image: local/ghost-rpc-proxy:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *id003
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    environment:
+      PORT: 8546
+      # Prefer docker-network L3 RPC when running 3-layer stack; override with L3_ARCHIVE_RPC if needed.
+      UPSTREAM_URL: ${L3_ARCHIVE_RPC:-http://l3-geth:8545}
+      RPC_ENABLE_GST_NAMESPACE: '1'
+      RPC_DEPRECATE_LEGACY_NAMESPACE: '1'
+      RPC_RATE_LIMIT_ALLOWLIST: ${L3_RPC_RATE_LIMIT_ALLOWLIST:-127.0.0.1,::1,172.28.0.1}
+      RPC_CORS_ORIGINS: ${L3_RPC_CORS_ORIGINS:-http://localhost,http://127.0.0.1}
+    mem_limit: 128m
+    cpus: '0.25'
+  hyper-ghost-supervisor:
+    cap_drop: *id001
+    security_opt: *id002
+    build:
+      context: ../../services/hyper-ghost-supervisor
+      dockerfile: Dockerfile
+    image: local/hyper-ghost-supervisor:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *id003
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    depends_on:
+      ghost-rpc-proxy-l1:
+        condition: service_healthy
+      ghost-rpc-proxy-l2:
+        condition: service_healthy
+    environment:
+      HG_ENV: ${HG_ENV:-${OPSTACK_IMAGE_TAG:-devnet}}
+      HG_BIND: 0.0.0.0
+      HG_PORT: 7077
+      HG_DB_PATH: /var/lib/ghost/incident.db
+      HG_ARTIFACT_DIR: /var/lib/ghost/hgop
+      HG_DB_MIGRATE: '1'
+      HG_DB_SEED_DEMO: ${HG_DB_SEED_DEMO:-1}
+      HGOP_EXEC_ENABLED: ${HGOP_EXEC_ENABLED:-0}
+      HGOP_APPROVAL_TOKEN: ${HGOP_APPROVAL_TOKEN:-}
+      HG_ATTESTOR_PRIVATE_KEY: ${HG_ATTESTOR_PRIVATE_KEY:-}
+      L1_RPC_URL: http://ghost-rpc-proxy-l1:8546
+      L2_RPC_URL: http://ghost-rpc-proxy-l2:8546
+      L3_RPC_URL: http://ghost-rpc-proxy-l3:8546
+      HG_PROBE_URLS: ${HG_PROBE_URLS:-}
+      HG_GHOSTDNS_URL: ${HG_GHOSTDNS_URL:-http://host.docker.internal:18089}
+      HG_GHOSTDNS_SHARED_SECRET: ${HG_GHOSTDNS_SHARED_SECRET:-}
+    ports:
+    - 7077:7077
+    volumes:
+    - hyperghost_data:/var/lib/ghost
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - node -e "fetch('http://localhost:7077/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))"
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    mem_limit: 256m
+    cpus: '0.25'
+  ai-monitor:
+    cap_drop: *id001
+    security_opt: *id002
+    build:
+      context: ../../services/ai-monitor
+      dockerfile: ../../services/common.Dockerfile
+    image: local/ai-monitor:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    stop_grace_period: 30s
+    logging: *id003
+    depends_on:
+      l2-geth:
+        condition: service_healthy
+      op-node:
+        condition: service_healthy
+    environment:
+      PORT: 7575
+      RPC_L2: http://l2-geth:8545
+      RPC_URL: http://l2-geth:8545
+      RPC_L1: http://l1-rpc-proxy:18546
+      OP_NODE_RPC_URL: http://op-node:9546
+      OP_BATCHER_METRICS_URL: http://op-batcher:7301/metrics
+      OP_PROPOSER_METRICS_URL: http://op-proposer:7302/metrics
+      POLICY_REGISTRY_ADDRESS: ${POLICY_REGISTRY_ADDRESS:-}
+      POLICY_REGISTRY_RPC: ${POLICY_REGISTRY_RPC:-${L1_RPC:-http://l1-rpc-proxy:18546}}
+      POLICY_ROLE: ${POLICY_ROLE:-L2_AI_MONITOR}
+      POLICY_ACTION_THROTTLE: ${POLICY_ACTION_THROTTLE:-L2_AI_THROTTLE}
+      POLICY_ACTION_PAUSE: ${POLICY_ACTION_PAUSE:-L2_AI_PAUSE}
+      POLICY_APPROVALS_PROVIDED: ${POLICY_APPROVALS_PROVIDED:-0}
+      POLICY_HAS_EVIDENCE: ${POLICY_HAS_EVIDENCE:-0}
+      POLICY_REQUIRED: ${POLICY_REQUIRED:-1}
+      POLICY_CACHE_MS: ${POLICY_CACHE_MS:-10000}
+      GUARD_URL: ${GUARD_URL:-${GATE_GUARD_URL:-http://ghost-guard:7070}}
+      ADMIN_TOKEN: ${AI_MONITOR_ADMIN_TOKEN:-}
+      OBSERVE_ONLY: ${AI_MONITOR_OBSERVE_ONLY:-1}
+      SIMULATION_ENABLED: ${AI_MONITOR_SIMULATION_ENABLED:-0}
+      TARGET_LAYER: ${AI_MONITOR_LAYER_L2:-L2}
+      L1_HEAD_LAG_THRESHOLD_SEC: ${AI_MONITOR_L1_HEAD_LAG_THRESHOLD_SEC:-120}
+      BATCHER_IDLE_THRESHOLD_SEC: ${AI_MONITOR_BATCHER_IDLE_THRESHOLD_SEC:-900}
+      PROPOSER_IDLE_THRESHOLD_SEC: ${AI_MONITOR_PROPOSER_IDLE_THRESHOLD_SEC:-900}
+    ports:
+    - 7575:7575
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:7575/health >/dev/null
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+    mem_limit: 256m
+    cpus: '0.25'
+    profiles:
+    - ai
+  l2-geth:
+    cap_drop: *id001
+    security_opt: *id002
+    image: local/op-geth:${OPSTACK_IMAGE_TAG:-local}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
+    restart: unless-stopped
+    stop_grace_period: 45s
+    logging: *id003
+    depends_on:
+      op-gate:
+        condition: service_healthy
+    ports:
+    - ${L2_RPC_BIND:-127.0.0.1}:${L2_HOST_RPC_PORT:-29547}:8545
+    - ${L2_HOST_WS:-29548}:8546
+    - ${L2_METRICS_HOST_PORT:-29606}:6060
+    volumes:
+    - ./data/l2-geth-${L2_CHAIN_ID:-901}:/data
+    - ./config:/config:ro
+    entrypoint:
+    - /bin/sh
+    command:
+    - -c
+    - "set -e\nif [ ! -d /data/geth ]; then\n  echo \"[l2-geth] initializing genesis...\"\
+      \n  geth init --state.scheme=hash --datadir /data /config/genesis-l2.json\nfi\nexec geth \\\n  --http\
+      \ --http.addr=0.0.0.0 --http.api=eth,net,web3,debug,txpool \\\n  --http.vhosts=\"\
+      *\" \\\n  --ws --ws.addr=0.0.0.0 --ws.origins=\"*\" \\\n  --authrpc.addr=0.0.0.0\
+      \ --authrpc.port=8551 --authrpc.vhosts=\"*\" --authrpc.jwtsecret=/config/jwt.txt\
+      \\\n  --datadir=/data \\\n  --networkid=${L2_CHAIN_ID:-901} \\\n  --state.scheme=hash \\\n  --gcmode=archive \\\n  --metrics --metrics.addr=0.0.0.0 --metrics.port=6060 \\\n  --rollup.computependingblock=true \\\n  --rollup.enabletxpooladmission=true \\\n  --rollup.disabletxpoolgossip=false\n"
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - geth attach --datadir /data --exec 'net.version' http://localhost:8545 >/dev/null
+        2>&1
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 25s
+    mem_limit: 4g
+    cpus: '2.0'
+  rpc-forward-l2-18547:
+    cap_drop: *id001
+    security_opt: *id002
+    image: ${OPSTACK_RPC_FORWARD_IMAGE:-local/rpc-forward:0.1.0}
+    build:
+      context: ./rpc-forward
+    restart: unless-stopped
+    logging: *id003
+    depends_on:
+      l2-geth:
+        condition: service_healthy
+      op-gate:
+        condition: service_healthy
+    command:
+    - -d
+    - -d
+    - TCP-LISTEN:18547,fork,reuseaddr
+    - TCP:op-gate:8545
+    ports:
+    - ${RPC_FORWARD_L2_BIND:-127.0.0.1}:${RPC_FORWARD_L2_HOST_PORT:-18547}:18547
+    mem_limit: 64m
+    cpus: '0.1'
+  l1-rpc-proxy:
+    cap_drop: *id001
+    security_opt: *id002
+    image: node:22-alpine@sha256:e4bf2a82ad0a4037d28035ae71529873c069b13eb0455466ae0bc13363826e34
+    restart: unless-stopped
+    logging: *id003
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    working_dir: /app
+    volumes:
+    - ./scripts/l1-rpc-proxy.mjs:/app/l1-rpc-proxy.mjs:ro
+    environment:
+      UPSTREAM_URL: ${L1_RPC_UPSTREAM:-http://host.docker.internal:18545}
+      PORT: 18546
+    command:
+    - node
+    - /app/l1-rpc-proxy.mjs
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -qO- http://127.0.0.1:18546/ >/dev/null
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 10s
+    mem_limit: 256m
+    cpus: '0.5'
+  op-node:
+    cap_drop: *id001
+    security_opt: *id002
+    image: local/op-node:${OPSTACK_IMAGE_TAG:-local}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    logging: *id003
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    depends_on:
+      l2-geth:
+        condition: service_healthy
+      l1-rpc-proxy:
+        condition: service_healthy
+    volumes:
+    - ./data/op-node:/data
+    - ./config:/config:ro
+    command:
+    - op-node
+    - --l1=${L1_RPC_DOCKER:-http://host.docker.internal:18545}
+    - --l2=http://l2-geth:8551
+    - --l2.jwt-secret=/config/jwt.txt
+    - --log.level=debug
+    - --rollup.config=/config/rollup.json
+    - --rpc.addr=0.0.0.0
+    - --rpc.port=9546
+    - --rpc.enable-admin
+    - --rpc.admin-state=/data/admin-state.json
+    - --l1.rpckind=basic
+    - --l1.trustrpc
+    - --p2p.disable
+    - --l1.beacon.ignore
+    - --l1.runtime-config-reload-interval=30s
+    - --metrics.enabled
+    - --metrics.addr=0.0.0.0
+    - --metrics.port=7300
+    ports:
+    - ${OP_NODE_HOST_PORT:-9546}:9546
+    - ${OP_NODE_METRICS_HOST_PORT:-7300}:7300
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - 'wget -qO- --header=''Content-Type: application/json'' --post-data=''{"jsonrpc":"2.0","id":1,"method":"optimism_syncStatus","params":[]}''
+        http://localhost:9546 >/dev/null'
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 25s
+    mem_limit: 2g
+    cpus: '1.5'
+  op-sequencer:
+    cap_drop: *id001
+    security_opt: *id002
+    image: local/op-node:${OPSTACK_IMAGE_TAG:-local}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    logging: *id003
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    depends_on:
+      l2-geth:
+        condition: service_healthy
+      l1-rpc-proxy:
+        condition: service_healthy
+    volumes:
+    - ./data/op-sequencer:/data
+    - ./config:/config:ro
+    environment:
+      OP_NODE_L1_BEACON_IGNORE: '1'
+    command:
+    - op-node
+    - --l1=http://l1-rpc-proxy:18546
+    - --l2=http://l2-geth:8551
+    - --l2.jwt-secret=/config/jwt.txt
+    - --rollup.config=/config/rollup.json
+    - --rpc.addr=0.0.0.0
+    - --rpc.port=9646
+    - --rpc.enable-admin
+    - --rpc.admin-state=/data/admin-state.json
+    - --l1.rpckind=basic
+    - --l1.trustrpc
+    - --p2p.disable
+    - --l1.beacon.ignore
+    - --sequencer.enabled
+    - --sequencer.l1-confs=${SEQUENCER_L1_CONFS:-2}
+    - --l1.runtime-config-reload-interval=0
+    - --metrics.enabled
+    - --metrics.addr=0.0.0.0
+    - --metrics.port=7303
+    ports:
+    - ${OP_SEQUENCER_HOST_PORT:-9646}:9646
+    - ${OP_SEQUENCER_METRICS_HOST_PORT:-7303}:7303
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - 'wget -qO- --header=''Content-Type: application/json'' --post-data=''{"jsonrpc":"2.0","id":1,"method":"optimism_syncStatus","params":[]}''
+        http://localhost:9646 >/dev/null'
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 25s
+    mem_limit: 2g
+    cpus: '1.5'
+  op-batcher:
+    cap_drop: *id001
+    security_opt: *id002
+    image: local/op-batcher:${OPSTACK_IMAGE_TAG:-local}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    logging: *id003
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    depends_on:
+      op-sequencer:
+        condition: service_healthy
+      op-gate:
+        condition: service_healthy
+      op-gate-l1:
+        condition: service_healthy
+      l1-rpc-proxy:
+        condition: service_healthy
+    environment:
+      L2OO_ADDRESS: ${L2OO_ADDRESS:-0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9}
+      OP_BATCHER_DATA_AVAILABILITY_TYPE: ${OP_BATCHER_DATA_AVAILABILITY_TYPE:-calldata}
+      OP_BATCHER_MAX_CHANNEL_DURATION: ${OP_BATCHER_MAX_CHANNEL_DURATION:-2}
+      OP_BATCHER_NUM_CONFIRMATIONS: ${OP_BATCHER_NUM_CONFIRMATIONS:-1}
+      OP_BATCHER_POLL_INTERVAL: ${OP_BATCHER_POLL_INTERVAL:-1s}
+      OP_BATCHER_RPC_ENABLE_ADMIN: ${OP_BATCHER_RPC_ENABLE_ADMIN:-true}
+      OP_BATCHER_SUB_SAFETY_MARGIN: ${OP_BATCHER_SUB_SAFETY_MARGIN:-4}
+    command:
+    - op-batcher
+    - --l1-eth-rpc=http://op-gate-l1:8545
+    - --l2-eth-rpc=http://l2-geth:8545
+    - --rollup-rpc=http://op-sequencer:9646
+    - --private-key=${BATCHER_KEY}
+    - --rpc.addr=0.0.0.0
+    - --rpc.port=8551
+    # op-geth in this stack does not expose miner_setMaxDASize; disable DA throttling.
+    - --throttle-interval=0
+    - --metrics.enabled
+    - --metrics.addr=0.0.0.0
+    - --metrics.port=7301
+    volumes:
+    - ./config:/config:ro
+    ports:
+    - ${OP_BATCHER_HOST_PORT:-8551}:8551
+    - ${OP_BATCHER_METRICS_HOST_PORT:-7301}:7301
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:7301/metrics >/dev/null
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 25s
+    mem_limit: 1g
+    cpus: '1.0'
+  op-proposer:
+    cap_drop: *id001
+    security_opt: *id002
+    image: local/op-proposer:${OPSTACK_IMAGE_TAG:-local}
+    user: "${OPSTACK_UID:-1000}:${OPSTACK_GID:-1000}"
+    restart: unless-stopped
+    profiles:
+    - disabled
+    stop_grace_period: 30s
+    logging: *id003
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    depends_on:
+      op-sequencer:
+        condition: service_healthy
+      op-gate:
+        condition: service_healthy
+      op-gate-l1:
+        condition: service_healthy
+      l1-rpc-proxy:
+        condition: service_healthy
+    environment:
+      PROPOSER_KEY: ${PROPOSER_KEY:-}
+    command:
+    - op-proposer
+    - --l1-eth-rpc=http://op-gate-l1:8545
+    - --rollup-rpc=http://op-sequencer:9646
+    # Fault-proofs mode (DisputeGameFactory). Safer than legacy L2OutputOracle polling.
+    - --game-factory-address=${L2_GAME_FACTORY_ADDRESS:-0x8A791620dd6260079BF849Dc5567aDC3F2FdC318}
+    - --proposal-interval=${PROPOSAL_INTERVAL:-30s}
+    - --poll-interval=${OP_PROPOSER_POLL_INTERVAL:-10m}
+    - --game-type=${OP_PROPOSER_GAME_TYPE:-0}
+    - --private-key=${PROPOSER_KEY:-}
+    - --allow-non-finalized
+    - --txmgr.send-timeout=30s
+    - --rpc.addr=0.0.0.0
+    - --rpc.port=8560
+    - --metrics.enabled
+    - --metrics.addr=0.0.0.0
+    - --metrics.port=7302
+    volumes:
+    - ./config:/config:ro
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:7302/metrics >/dev/null
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 25s
+    mem_limit: 1g
+    cpus: '1.0'
+  prometheus:
+    cap_drop: *id001
+    security_opt: *id002
+    image: ${PROMETHEUS_IMAGE:-prom/prometheus@sha256:075b1ba2c4ebb04bc3a6ab86c06ec8d8099f8fda1c96ef6d104d9bb1def1d8bc}
+    restart: unless-stopped
+    logging: *id003
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    volumes:
+    - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    - ./observability/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+    - prometheus_data:/prometheus
+    command:
+    - --config.file=/etc/prometheus/prometheus.yml
+    - --storage.tsdb.path=/prometheus
+    ports:
+    - 9091:9090
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:9090/-/healthy >/dev/null
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+    mem_limit: 512m
+    cpus: '0.5'
+  alertmanager:
+    cap_drop: *id001
+    security_opt: *id002
+    image: ${ALERTMANAGER_IMAGE:-prom/alertmanager@sha256:e13b6ed5cb929eeaee733479dce55e10eb3bc2e9c4586c705a4e8da41e5eacf5}
+    restart: unless-stopped
+    logging: *id003
+    entrypoint:
+    - /bin/sh
+    - -lc
+    command:
+    - sed -e "s|\$${ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL}|$${ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL}|g"
+      -e "s|\$${ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL}|$${ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL}|g"
+      /etc/alertmanager/alertmanager.yml > /tmp/alertmanager.rendered.yml && exec alertmanager
+      --config.file=/tmp/alertmanager.rendered.yml --storage.path=/alertmanager --cluster.listen-address=
+    environment:
+      ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL: ${ALERTMANAGER_SOVEREIGNTY_CRITICAL_WEBHOOK_URL:-http://host.docker.internal:19093/alert-hooks/sovereignty-critical}
+      ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL: ${ALERTMANAGER_SOVEREIGNTY_WARNING_WEBHOOK_URL:-http://host.docker.internal:19093/alert-hooks/sovereignty-warning}
+    volumes:
+    - ./observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    - alertmanager_data:/alertmanager
+    ports:
+    - 9093:9093
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:9093/api/v2/status >/dev/null
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+    mem_limit: 256m
+    cpus: '0.25'
+  loki:
+    cap_drop: *id001
+    security_opt: *id002
+    image: ${LOKI_IMAGE:-grafana/loki@sha256:8b5bd7748d0e4da66cd741ac276e485517514af0bea32167e27c0e1a95bcf8aa}
+    restart: unless-stopped
+    logging: *id003
+    command:
+    - -config.file=/etc/loki/config.yml
+    volumes:
+    - ./observability/loki/config.yml:/etc/loki/config.yml:ro
+    - loki_data:/loki
+    ports:
+    - 3100:3100
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:3100/ready >/dev/null
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+    mem_limit: 512m
+    cpus: '0.5'
+  grafana:
+    cap_drop: *id001
+    security_opt: *id002
+    image: ${GRAFANA_IMAGE:-grafana/grafana@sha256:408afb9726de5122b00a2576763a8a57a3c86d5b0eff5305bc994ceb3eb96c3f}
+    restart: unless-stopped
+    logging: *id003
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      PROMETHEUS_URL: ${PROMETHEUS_URL:-http://prometheus:9090}
+    depends_on:
+      prometheus:
+        condition: service_started
+      loki:
+        condition: service_healthy
+    ports:
+    - 3000:3000
+    volumes:
+    - grafana_data:/var/lib/grafana
+    - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    mem_limit: 512m
+    cpus: '0.5'
+  vector:
+    cap_drop: *id001
+    security_opt: *id002
+    image: ${VECTOR_IMAGE:-timberio/vector:0.38.0-alpine@sha256:0f40a5bc6df18de0f4855ee6a801449f1b78fa60b3c5001c530896abc64b18b2}
+    restart: unless-stopped
+    logging: *id003
+    depends_on:
+      loki:
+        condition: service_started
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    - ./observability/vector/vector.yaml:/etc/vector/vector.yaml:ro
+    environment:
+      VECTOR_LOG: info
+    command:
+    - --config
+    - /etc/vector/vector.yaml
+    mem_limit: 256m
+    cpus: '0.25'
+volumes:
+  op_gate_state: null
+  hyperghost_data: null
+  prometheus_data: null
+  grafana_data: null
+  alertmanager_data: null
+  loki_data: null

@@ -1,0 +1,47 @@
+x-ghost-user: &ghost-user "10001:10001"
+
+services:
+  ghostdns-ai:
+    build:
+      context: .
+    image: ghostl/ghostdns-ai:local
+    profiles: ["ghostdns"]
+    user: *ghost-user
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=64m,uid=10001,gid=10001,mode=0770
+      - /app/state:size=32m,uid=10001,gid=10001,mode=0770
+    volumes:
+      - ./config:/app/config:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+      - "127.0.0.1:18089:8089"
+    environment:
+      GHOSTDNS_DOMAIN: ${GHOSTDNS_DOMAIN:-ghostchain.cloud}
+      GHOSTDNS_MODE: ${GHOSTDNS_MODE:-dev}
+      UPSTREAM_DNS: ${UPSTREAM_DNS:-1.1.1.1,8.8.8.8}
+      ALLOW_RECURSION_CIDRS: ${ALLOW_RECURSION_CIDRS:-127.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
+      HGOP_URL: ${HGOP_URL:-http://hyper-ghost-supervisor:7077}
+      HGOP_SHARED_SECRET: ${HGOP_SHARED_SECRET:-}
+      GHOSTDNS_HYPERVISOR_IP: ${GHOSTDNS_HYPERVISOR_IP:-10.50.99.1}
+      GHOSTDNS_DOCKER_GATEWAY_IP: ${GHOSTDNS_DOCKER_GATEWAY_IP:-172.17.0.1}
+      GHOSTDNS_STATE_DIR: ${GHOSTDNS_STATE_DIR:-/tmp/ghostdns-state}
+      GHOSTDNS_VM_LEASES_FILE: ${GHOSTDNS_VM_LEASES_FILE:-/tmp/ghostdns-state/vm_leases.json}
+      GHOSTDNS_EVENT_FALLBACK_LOG: ${GHOSTDNS_EVENT_FALLBACK_LOG:-/tmp/ghostdns-state/events-fallback.log}
+      GHOSTDNS_BIND_ETC: /tmp/bind
+      GHOSTDNS_NAMED_CHECKCONF: ${GHOSTDNS_NAMED_CHECKCONF:-named-checkconf /tmp/bind/named.conf}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8089/health >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+

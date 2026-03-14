@@ -1,0 +1,19 @@
+{
+  "name": "ghostbrain-coordinator",
+  "version": "0.1.0",
+  "description": "GhostBrain Swarm Coordinator — aggregates swarm alerts, forwards proposals to signing relay",
+  "type": "module",
+  "main": "dist/coordinator.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/coordinator.js",
+    "dev":   "node --watch dist/coordinator.js"
+  },
+  "dependencies": {
+    "nats": "^2.29.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "@types/node": "^22.10.7"
+  }
+}

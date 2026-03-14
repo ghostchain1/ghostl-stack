@@ -1,0 +1,53 @@
+# stack-group: infra
+# role: ghost-pil-worker
+# ports: none
+# volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
+services:
+  ghost-pil-worker:
+    container_name: ghost_ghost-pil-worker
+    image: ghostl/ghost-pil:local
+    build:
+      context: ../ghost-pil
+    env_file:
+    - .env
+    entrypoint:
+    - /bin/bash
+    - /entrypoint.sh
+    command:
+    - node
+    - dist/worker.js
+    environment:
+      DATABASE_URL: postgresql://ghost:${PIL_DB_PASSWORD:-ghostpass}@pil-postgres:5432/ghost_pil
+      PIL_REGISTRY_URL: http://ghost-registry:8088
+      PIL_CHAIN_CONFIG_PATH: /app/config/chains.json
+      PIL_JURISDICTIONS_PATH: /app/config/jurisdictions.json
+      PIL_LEGAL_SIGNALS_PATH: /app/config/legal-signals.json
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4g
+        reservations:
+          cpus: '0.5'
+          memory: 512m
+    volumes:
+    - ./data:/data
+    - ./entrypoint.sh:/entrypoint.sh:ro
+    - ./healthcheck.sh:/healthcheck.sh:ro
+    networks:
+    - ghost_net
+networks:
+  ghost_net:
+    external: true

@@ -1,0 +1,4 @@
+# Example Engine API JWT secret (32 bytes hex).
+# Generate a real one (DO NOT COMMIT):
+#   openssl rand -hex 32 | tr -d '\n' > infra/opstack/l3/ghostsample/config/jwt.txt
+REPLACE_ME

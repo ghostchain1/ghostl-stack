@@ -1,0 +1,46 @@
+# stack-group: infra
+# role: ghost-ai-attestor
+# ports: 3310:3310
+# volumes: ghost_ai_attestor_nonce_store:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
+services:
+  ghost-ai-attestor:
+    container_name: ghost_ai_attestor
+    image: ghostl/ghost-ai-attestor:local
+    build:
+      context: .
+    entrypoint:
+    - /bin/bash
+    - /entrypoint.sh
+    environment:
+    - PORT=3310
+    - AI_LAYER_DEFAULT=${AI_LAYER_DEFAULT:-2}
+    - AI_MODEL_VERSION=${AI_MODEL_VERSION:-1}
+    - AI_ATTESTATION_TTL_SECONDS=${AI_ATTESTATION_TTL_SECONDS:-3600}
+    - AI_MIN_ATTEST_INTERVAL_SECONDS=${AI_MIN_ATTEST_INTERVAL_SECONDS:-15}
+    - AI_NONCE_STORE_PATH=${AI_NONCE_STORE_PATH:-/data/ai-attestor-nonces.json}
+    ports:
+    - 3310:3310
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    volumes:
+    - ghost_ai_attestor_nonce_store:/data
+    - ./entrypoint.sh:/entrypoint.sh:ro
+    - ./healthcheck.sh:/healthcheck.sh:ro
+    networks:
+    - ghost_net
+networks:
+  ghost_net:
+    external: true
+volumes:
+  ghost_ai_attestor_nonce_store:
+    name: ghost_ai_attestor_nonce_store

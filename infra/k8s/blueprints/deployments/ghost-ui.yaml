@@ -1,0 +1,70 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "ghost-ui",
+    "labels": {
+      "app": "ghost-ui",
+      "role": "ui"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.ui.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "ghost-ui"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "ghost-ui",
+          "role": "ui"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "ghost-ui",
+            "image": "",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "COMPLIANCE_ANALYST_JWT",
+                "value": "${COMPLIANCE_ANALYST_JWT:-}"
+              },
+              {
+                "name": "COMPLIANCE_URL",
+                "value": "http://ghost-compliance:8090"
+              },
+              {
+                "name": "NEXT_PUBLIC_COMPLIANCE_URL",
+                "value": "http://localhost:8090"
+              },
+              {
+                "name": "NODE_ENV",
+                "value": "production"
+              },
+              {
+                "name": "PORT",
+                "value": "3200"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 3200,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

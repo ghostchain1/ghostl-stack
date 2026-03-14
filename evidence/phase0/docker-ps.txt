@@ -1,0 +1,105 @@
+NAMES                                             STATUS                PORTS
+compose-alertmanager-1                            Up 3 days             0.0.0.0:9093->9093/tcp, [::]:9093->9093/tcp
+services-ghost-rollup-proposer-l2-1               Up 3 days (healthy)   7272/tcp, 0.0.0.0:7273->7273/tcp, [::]:7273->7273/tcp
+services-ghost-rollup-challenger-l2-1             Up 3 days (healthy)   7282/tcp, 0.0.0.0:7283->7283/tcp, [::]:7283->7283/tcp
+services-ghost-relayer-1                          Up 3 days (healthy)   0.0.0.0:7171->7171/tcp, [::]:7171->7171/tcp
+services-ghost-registry-1                         Up 3 days (healthy)   0.0.0.0:18088->8088/tcp, [::]:18088->8088/tcp
+services-ghost-rollup-challenger-1                Up 3 days (healthy)   0.0.0.0:7282->7282/tcp, [::]:7282->7282/tcp
+services-governance-service-1                     Up 3 days (healthy)   0.0.0.0:7645->7645/tcp, [::]:7645->7645/tcp
+services-liquidity-service-1                      Up 3 days (healthy)   0.0.0.0:7606->7606/tcp, [::]:7606->7606/tcp
+compose-ghostcontrol-runner-1                     Up 3 days (healthy)   
+compose-ghostcontrol-planner-1                    Up 3 days (healthy)   
+compose-ghostcontrol-ui-1                         Up 3 days (healthy)   0.0.0.0:7400->3000/tcp, [::]:7400->3000/tcp
+compose-ghostcontrol-api-1                        Up 3 days (healthy)   0.0.0.0:7401->8080/tcp, [::]:7401->8080/tcp
+compose-ghostcontrol-ingest-1                     Up 3 days (healthy)   
+compose-docker-socket-proxy-1                     Up 3 days (healthy)   2375/tcp
+compose-ghostcontrol-policy-1                     Up 3 days (healthy)   
+compose-ghostcontrol-db-1                         Up 3 days (healthy)   5432/tcp
+compose-ghostcontrol-redis-1                      Up 3 days (healthy)   6379/tcp
+services-ghost-gas-engine-worker-1                Up 3 days (healthy)   3210/tcp
+services-ghost-pil-worker-1                       Up 3 days             3220/tcp
+services-ghost-gas-engine-1                       Up 3 days (healthy)   0.0.0.0:3210->3210/tcp, [::]:3210->3210/tcp
+services-ghost-pil-1                              Up 3 days (healthy)   0.0.0.0:3220->3220/tcp, [::]:3220->3220/tcp
+services-forecasting-service-1                    Up 3 days (healthy)   0.0.0.0:7617->7617/tcp, [::]:7617->7617/tcp
+services-audit-log-service-1                      Up 3 days (healthy)   0.0.0.0:7641->7641/tcp, [::]:7641->7641/tcp
+services-rewards-service-1                        Up 3 days (healthy)   0.0.0.0:7602->7602/tcp, [::]:7602->7602/tcp
+services-bridge-service-1                         Up 3 days (healthy)   0.0.0.0:7604->7604/tcp, [::]:7604->7604/tcp
+services-participation-service-1                  Up 3 days (healthy)   0.0.0.0:7603->7603/tcp, [::]:7603->7603/tcp
+services-key-rotation-service-1                   Up 3 days             0.0.0.0:7619->7619/tcp, [::]:7619->7619/tcp
+services-chain-status-service-1                   Up 3 days (healthy)   0.0.0.0:7612->7612/tcp, [::]:7612->7612/tcp
+services-verification-service-1                   Up 3 days (healthy)   0.0.0.0:7630->7630/tcp, [::]:7630->7630/tcp
+services-anomaly-detection-service-1              Up 3 days             0.0.0.0:7616->7616/tcp, [::]:7616->7616/tcp
+services-proxy-inspector-service-1                Up 3 days (healthy)   0.0.0.0:7631->7631/tcp, [::]:7631->7631/tcp
+services-upgrade-orchestrator-service-1           Up 3 days (healthy)   0.0.0.0:7623->7623/tcp, [::]:7623->7623/tcp
+services-node-health-service-1                    Up 3 days (healthy)   0.0.0.0:7613->7613/tcp, [::]:7613->7613/tcp
+services-command-palette-service-1                Up 3 days (healthy)   0.0.0.0:7642->7642/tcp, [::]:7642->7642/tcp
+services-explainability-service-1                 Up 3 days             0.0.0.0:7632->7632/tcp, [::]:7632->7632/tcp
+services-mempool-service-1                        Up 3 days (healthy)   0.0.0.0:7610->7610/tcp, [::]:7610->7610/tcp
+services-slashing-detection-service-1             Up 3 days             0.0.0.0:7620->7620/tcp, [::]:7620->7620/tcp
+services-ai-clock-sync-1                          Up 3 days             0.0.0.0:7690->7690/tcp, [::]:7690->7690/tcp
+services-notifications-service-1                  Up 3 days (healthy)   0.0.0.0:7638->7638/tcp, [::]:7638->7638/tcp
+services-contract-risk-service-1                  Up 3 days             0.0.0.0:7609->7609/tcp, [::]:7609->7609/tcp
+services-peer-graph-service-1                     Up 3 days (healthy)   0.0.0.0:7636->7636/tcp, [::]:7636->7636/tcp
+services-gas-engine-redis-1                       Up 3 days (healthy)   0.0.0.0:6381->6379/tcp, [::]:6381->6379/tcp
+services-snapshot-service-1                       Up 3 days (healthy)   0.0.0.0:7624->7624/tcp, [::]:7624->7624/tcp
+services-block-index-service-1                    Up 3 days (healthy)   0.0.0.0:7626->7626/tcp, [::]:7626->7626/tcp
+services-rbac-service-1                           Up 3 days (healthy)   0.0.0.0:7640->7640/tcp, [::]:7640->7640/tcp
+services-gas-engine-postgres-1                    Up 3 days (healthy)   0.0.0.0:5433->5432/tcp, [::]:5433->5432/tcp
+services-alerts-service-1                         Up 3 days (healthy)   0.0.0.0:7644->7644/tcp, [::]:7644->7644/tcp
+services-transfer-lifecycle-service-1             Up 3 days             0.0.0.0:7605->7605/tcp, [::]:7605->7605/tcp
+services-consensus-telemetry-service-1            Up 3 days (healthy)   0.0.0.0:7635->7635/tcp, [::]:7635->7635/tcp
+services-ai-vault-1                               Up 3 days             0.0.0.0:7710->7710/tcp, [::]:7710->7710/tcp
+services-pil-postgres-1                           Up 3 days (healthy)   0.0.0.0:5434->5432/tcp, [::]:5434->5432/tcp
+services-dispute-service-1                        Up 3 days             0.0.0.0:7607->7607/tcp, [::]:7607->7607/tcp
+services-network-manager-service-1                Up 3 days (healthy)   0.0.0.0:7766->7766/tcp, [::]:7766->7766/tcp
+services-payout-service-1                         Up 3 days             0.0.0.0:7629->7629/tcp, [::]:7629->7629/tcp
+services-contract-registry-service-1              Up 3 days (healthy)   0.0.0.0:7608->7608/tcp, [::]:7608->7608/tcp
+services-treasury-service-1                       Up 3 days (healthy)   0.0.0.0:7628->7628/tcp, [::]:7628->7628/tcp
+services-preconfirm-l3-service-1                  Up 3 days (healthy)   7691/tcp, 0.0.0.0:7692->7692/tcp, [::]:7692->7692/tcp
+services-session-service-1                        Up 3 days (healthy)   0.0.0.0:7643->7643/tcp, [::]:7643->7643/tcp
+services-theme-service-1                          Up 3 days (healthy)   0.0.0.0:7634->7634/tcp, [::]:7634->7634/tcp
+services-compliance-export-service-1              Up 3 days (healthy)   0.0.0.0:7621->7621/tcp, [::]:7621->7621/tcp
+services-ghost-rpc-proxy-1                        Up 3 days             0.0.0.0:8546->8546/tcp, [::]:8546->8546/tcp
+services-global-search-service-1                  Up 3 days (healthy)   0.0.0.0:7637->7637/tcp, [::]:7637->7637/tcp
+services-secrets-health-service-1                 Up 3 days             0.0.0.0:7618->7618/tcp, [::]:7618->7618/tcp
+services-supply-service-1                         Up 3 days (healthy)   0.0.0.0:7614->7614/tcp, [::]:7614->7614/tcp
+services-fee-model-service-1                      Up 3 days (healthy)   0.0.0.0:7615->7615/tcp, [::]:7615->7615/tcp
+services-staking-service-1                        Up 3 days (healthy)   0.0.0.0:7601->7601/tcp, [::]:7601->7601/tcp
+services-network-context-service-1                Up 3 days (healthy)   0.0.0.0:7633->7633/tcp, [::]:7633->7633/tcp
+services-entity-tagging-service-1                 Up 3 days (healthy)   0.0.0.0:7627->7627/tcp, [::]:7627->7627/tcp
+services-auth-service-1                           Up 3 days (healthy)   0.0.0.0:7639->7639/tcp, [::]:7639->7639/tcp
+services-preconfirm-l2-service-1                  Up 3 days (healthy)   0.0.0.0:7691->7691/tcp, [::]:7691->7691/tcp
+services-node-inventory-service-1                 Up 3 days (healthy)   0.0.0.0:7622->7622/tcp, [::]:7622->7622/tcp
+services-feature-flags-service-1                  Up 3 days (healthy)   0.0.0.0:7611->7611/tcp, [::]:7611->7611/tcp
+services-tx-index-service-1                       Up 3 days             0.0.0.0:7625->7625/tcp, [::]:7625->7625/tcp
+services-validator-service-1                      Up 3 days (healthy)   0.0.0.0:7600->7600/tcp, [::]:7600->7600/tcp
+opstack-hyper-ghost-supervisor-1                  Up 4 days (healthy)   0.0.0.0:7077->7077/tcp, [::]:7077->7077/tcp
+opstack-ghost-rpc-proxy-l3-1                      Up 4 days             8546/tcp
+opstack-ghost-rpc-proxy-l1-1                      Up 4 days (healthy)   8546/tcp
+opstack-ghost-rpc-proxy-l2-1                      Up 4 days (healthy)   8546/tcp
+opstack-op-batcher-1                              Up 3 days (healthy)   0.0.0.0:7301->7301/tcp, [::]:7301->7301/tcp, 0.0.0.0:8551->8551/tcp, [::]:8551->8551/tcp
+opstack-op-sequencer-1                            Up 3 days (healthy)   0.0.0.0:7303->7303/tcp, [::]:7303->7303/tcp, 0.0.0.0:9646->9646/tcp, [::]:9646->9646/tcp
+opstack-op-node-1                                 Up 3 days (healthy)   0.0.0.0:7300->7300/tcp, [::]:7300->7300/tcp, 0.0.0.0:9546->9546/tcp, [::]:9546->9546/tcp
+ghostchain-ghostchain-node2-1                     Up 4 days             8545-8546/tcp, 30303/tcp, 30303/udp
+ghost_ai-monitor-l3                               Up 4 days (healthy)   7575/tcp, 0.0.0.0:7577->7577/tcp, [::]:7577->7577/tcp
+ghost_ai-monitor                                  Up 4 days (healthy)   0.0.0.0:7575->7575/tcp, [::]:7575->7575/tcp
+ghost_ai-monitor-l1                               Up 4 days (healthy)   7575/tcp, 0.0.0.0:7576->7576/tcp, [::]:7576->7576/tcp
+compose-vector-1                                  Up 4 days             
+compose-grafana-1                                 Up 4 days             0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp
+compose-prometheus-1                              Up 4 days             0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp
+opstack-l3-op-batcher-1                           Up 3 days (healthy)   0.0.0.0:8301->8301/tcp, [::]:8301->8301/tcp, 0.0.0.0:39551->18551/tcp, [::]:39551->18551/tcp
+opstack-l3-op-node-1                              Up 3 days (healthy)   0.0.0.0:8300->8300/tcp, [::]:8300->8300/tcp, 0.0.0.0:39546->19546/tcp, [::]:39546->19546/tcp
+opstack-op-proposer-1                             Up 3 days (healthy)   0.0.0.0:7302->7302/tcp, [::]:7302->7302/tcp, 0.0.0.0:8560->8560/tcp, [::]:8560->8560/tcp
+ghostchain-compliance-ghost-compliance-worker-1   Up 4 days             
+opstack-ghost-guard-1                             Up 3 days (healthy)   0.0.0.0:7070->7070/tcp, [::]:7070->7070/tcp
+opstack-l3-geth-1                                 Up 3 days (healthy)   30303/tcp, 30303/udp, 0.0.0.0:39606->6060/tcp, [::]:39606->6060/tcp, 0.0.0.0:39545->8545/tcp, [::]:39545->8545/tcp, 0.0.0.0:39548->8546/tcp, [::]:39548->8546/tcp
+opstack-l2-geth-1                                 Up 3 days (healthy)   30303/tcp, 30303/udp, 0.0.0.0:29606->6060/tcp, [::]:29606->6060/tcp, 0.0.0.0:29547->8545/tcp, [::]:29547->8545/tcp, 0.0.0.0:29548->8546/tcp, [::]:29548->8546/tcp
+services-ai-vault-dev-1                           Up 3 days             0.0.0.0:8200->8200/tcp, [::]:8200->8200/tcp
+services-rpc-forward-l1-29545-1                   Up 3 days             0.0.0.0:29545->29545/tcp, [::]:29545->29545/tcp
+opstack-op-gate-l1-1                              Up 4 days (healthy)   0.0.0.0:28547->8545/tcp, [::]:28547->8545/tcp
+opstack-l1-rpc-proxy-1                            Up 4 days (healthy)   
+opstack-rpc-forward-l2-18547-1                    Up 4 days             0.0.0.0:18547->18547/tcp, [::]:18547->18547/tcp
+opstack-op-gate-1                                 Up 4 days (healthy)   0.0.0.0:28546->8545/tcp, [::]:28546->8545/tcp
+ghostchain-ghostchain-rpc-proxy-1                 Up 4 days (healthy)   8546/tcp, 0.0.0.0:18545->8545/tcp, [::]:18545->8545/tcp
+ghostchain-ghostchain-node1-1                     Up 4 days (healthy)   8545/tcp, 30303/udp, 0.0.0.0:18660->6060/tcp, [::]:18660->6060/tcp, 0.0.0.0:18546->8546/tcp, [::]:18546->8546/tcp, 0.0.0.0:18552->8551/tcp, [::]:18552->8551/tcp, 0.0.0.0:18551->30303/tcp, [::]:18551->30303/tcp
+ghostchain-ghostchain-bootnode-1                  Up 4 days             8545-8546/tcp, 30303/tcp, 0.0.0.0:30301->30301/udp, [::]:30301->30301/udp, 30303/udp

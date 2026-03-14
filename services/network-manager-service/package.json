@@ -1,0 +1,18 @@
+{
+  "name": "network-manager-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "build": "node --check src/index.js"
+  },
+  "dependencies": {
+    "dockerode": "^4.0.3",
+    "ghost": "^6.13.2",
+    "express": "^5.2.1"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

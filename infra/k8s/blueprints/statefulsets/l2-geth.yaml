@@ -1,0 +1,100 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "l2-geth",
+    "labels": {
+      "app": "l2-geth",
+      "role": "chain"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "true"
+    }
+  },
+  "spec": {
+    "serviceName": "l2-geth",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "l2-geth"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "l2-geth",
+          "role": "chain"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "l2-geth",
+            "image": "local/op-geth:${OPSTACK_IMAGE_TAG:-local}",
+            "command": [
+              "/bin/sh"
+            ],
+            "args": [
+              "-c",
+              "set -e\nif [ ! -d /data/geth ]; then\n  echo \"[l2-geth] initializing genesis...\"\n  geth init --datadir /data /config/genesis-l2.json\nfi\nexec geth \\\n  --http --http.addr=0.0.0.0 --http.api=eth,net,web3,debug,txpool \\\n  --http.vhosts=\"*\" \\\n  --ws --ws.addr=0.0.0.0 --ws.origins=\"*\" \\\n  --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts=\"*\" --authrpc.jwtsecret=/config/jwt.txt\\\n  --datadir=/data \\\n  --networkid=${L2_CHAIN_ID:-901} \\\n  --gcmode=archive \\\n  --rollup.disabletxpoolgossip=true\n"
+            ],
+            "env": [],
+            "ports": [
+              {
+                "containerPort": 8545,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "./data/l2-geth-new2",
+                "mountPath": "/data"
+              },
+              {
+                "name": "./config",
+                "mountPath": "/config"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "./data/l2-geth-new2"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "./config"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

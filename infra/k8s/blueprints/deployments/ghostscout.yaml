@@ -1,0 +1,112 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "ghostscout",
+    "labels": {
+      "app": "ghostscout",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "ghostscout"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "ghostscout",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "ghostscout",
+            "image": "ghostl/ghostscout-l1:local",
+            "command": [
+              "/bin/bash",
+              "/entrypoint.sh"
+            ],
+            "args": [
+              "/app/bin/blockscout",
+              "start"
+            ],
+            "env": [
+              {
+                "name": "API_ONLY",
+                "value": "true"
+              },
+              {
+                "name": "BLOCKSCOUT_HOST",
+                "value": "0.0.0.0"
+              },
+              {
+                "name": "COIN",
+                "value": "GST"
+              },
+              {
+                "name": "DATABASE_URL",
+                "value": "postgres://postgres:postgres@ghostscout-db:5432/blockscout"
+              },
+              {
+                "name": "DISABLE_EVISION",
+                "value": "true"
+              },
+              {
+                "name": "ECTO_USE_SSL",
+                "value": "false"
+              },
+              {
+                "name": "GST_JSONRPC_HTTP_URL",
+                "value": "http://ghostchain-node1:8545"
+              },
+              {
+                "name": "GST_JSONRPC_TRACE_URL",
+                "value": "http://ghostchain-node1:8545"
+              },
+              {
+                "name": "GST_JSONRPC_WS_URL",
+                "value": "ws://ghostchain-node1:8546"
+              },
+              {
+                "name": "LOG_LEVEL",
+                "value": "warn"
+              },
+              {
+                "name": "NETWORK",
+                "value": "Ghostchain"
+              },
+              {
+                "name": "PORT",
+                "value": "4000"
+              },
+              {
+                "name": "SECRET_KEY_BASE",
+                "value": "${GHOSTSCOUT_SECRET_KEY_BASE_L1:-}"
+              },
+              {
+                "name": "SUBNETWORK",
+                "value": "PoA"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 4000,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,45 @@
+[Unit]
+Description=GhostStack Hypervisor Supervisor (Prometheus Exporter + GhostBrain relay)
+Documentation=https://github.com/ghostchain1/ghostl-stack/blob/main/infra/hypervisor/supervisor/supervisor.py
+After=network-online.target libvirtd.service
+Wants=network-online.target
+Requires=libvirtd.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/ghost/ghostl-stack/infra/hypervisor/supervisor
+
+# ── Core settings ──────────────────────────────────────────────────────────────
+Environment=LISTEN_ADDR=0.0.0.0
+Environment=LISTEN_PORT=9108
+Environment=SCRAPE_INTERVAL=10
+Environment=VIRSH_URI=qemu:///system
+Environment=LIBVIRT_NETWORK=gs-mgmt
+
+# ── RPC ports (must match provisioned values) ──────────────────────────────────
+Environment=RPC_PORT_L1=18545
+Environment=RPC_PORT_L2=29547
+Environment=RPC_PORT_L3=39545
+
+# ── GhostBrain signal endpoint (uncomment to enable) ──────────────────────────
+# Environment=GHOSTBRAIN_URL=http://ghostbrain-core:7900/api/v1/signals
+
+ExecStart=/usr/bin/python3 /home/ghost/ghostl-stack/infra/hypervisor/supervisor/supervisor.py
+
+# Harden the process
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/tmp
+
+Restart=on-failure
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ghoststack-supervisor
+
+[Install]
+WantedBy=multi-user.target

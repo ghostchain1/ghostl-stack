@@ -1,0 +1,65 @@
+# stack-group: infra
+# role: ghost-mapper
+# ports: 7780:7780
+# volumes: ./data:/data, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
+x-ghost-user: &ghost-user "10001:10001"
+
+services:
+  ghost-mapper:
+    container_name: ghost_ghost-mapper
+    image: ghostl/ghost-mapper:local
+    build:
+      context: .
+      args:
+        VCS_REF: ${VCS_REF:-unknown}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+    user: *ghost-user
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    read_only: true
+    tmpfs:
+    - /tmp
+    env_file:
+    - .env
+    entrypoint:
+    - /bin/bash
+    - /entrypoint.sh
+    environment:
+    - PORT=${PORT:-7780}
+    - MAPPER_CONFIG_PATH=${MAPPER_CONFIG_PATH:-/data/mappings.json}
+    ports:
+    - 7780:7780
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - bash /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4g
+        reservations:
+          cpus: '0.5'
+          memory: 256m
+    volumes:
+    - ./data:/data
+    - ./entrypoint.sh:/entrypoint.sh:ro
+    - ./healthcheck.sh:/healthcheck.sh:ro
+    networks:
+    - ghost_net
+    - opstack_default
+networks:
+  ghost_net:
+    external: true
+  opstack_default:
+    external: true

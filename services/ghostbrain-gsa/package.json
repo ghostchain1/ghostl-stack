@@ -1,0 +1,16 @@
+{
+  "name": "@ghostchain/ghostbrain-gsa",
+  "version": "1.0.0",
+  "description": "GhostBrain Sovereign Autonomous Agent — production-grade autonomous analysis, planning and governance service integrated with GhostBrain Core",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test test/**/*.test.js"
+  },
+  "dependencies": {},
+  "license": "UNLICENSED",
+  "private": true
+}

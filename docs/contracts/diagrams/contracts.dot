@@ -1,0 +1,1969 @@
+digraph G {
+  graph [ ratio = "auto", page = "100", compound =true ];
+subgraph "clusterERC20" {
+  graph [ label = "ERC20", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "ERC20.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "ERC20.transfer" [ label = "transfer", color = "blue" ];
+  "ERC20.approve" [ label = "approve", color = "blue" ];
+  "ERC20.transferFrom" [ label = "transferFrom", color = "blue" ];
+  "ERC20._transfer" [ label = "_transfer", color = "white" ];
+  "ERC20._mint" [ label = "_mint", color = "white" ];
+  "ERC20._burn" [ label = "_burn", color = "white" ];
+  "ERC20.type" [ label = "type" ];
+  "ERC20.address" [ label = "address" ];
+  "ERC20.balanceOf" [ label = "balanceOf" ];
+}
+
+subgraph "clusterGhostGasTokenBase" {
+  graph [ label = "GhostGasTokenBase", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "GhostGasTokenBase.onlyOwner" [ label = "onlyOwner", color = "yellow" ];
+  "GhostGasTokenBase.onlyMinter" [ label = "onlyMinter", color = "yellow" ];
+  "GhostGasTokenBase.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "GhostGasTokenBase.setOwner" [ label = "setOwner", color = "blue" ];
+  "GhostGasTokenBase.setMinter" [ label = "setMinter", color = "blue" ];
+  "GhostGasTokenBase.mint" [ label = "mint", color = "blue" ];
+  "GhostGasTokenBase.burn" [ label = "burn", color = "blue" ];
+  "GhostGasTokenBase.burnFrom" [ label = "burnFrom", color = "blue" ];
+}
+
+subgraph "clusterGhostGasTokenL2" {
+  graph [ label = "GhostGasTokenL2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "GhostGasTokenL2.<Constructor>" [ label = "<Constructor>", color = "green" ];
+}
+
+subgraph "clusterGhostGasTokenL3" {
+  graph [ label = "GhostGasTokenL3", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "GhostGasTokenL3.<Constructor>" [ label = "<Constructor>", color = "green" ];
+}
+
+subgraph "clusterGhostTokenL2" {
+  graph [ label = "GhostTokenL2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "GhostTokenL2.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "GhostTokenL2.burn" [ label = "burn", color = "blue" ];
+  "GhostTokenL2.burnFrom" [ label = "burnFrom", color = "blue" ];
+}
+
+subgraph "clusterGuardPolicy" {
+  graph [ label = "GuardPolicy", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "GuardPolicy.onlyOwner" [ label = "onlyOwner", color = "yellow" ];
+  "GuardPolicy.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "GuardPolicy.setOwner" [ label = "setOwner", color = "blue" ];
+  "GuardPolicy.setMode" [ label = "setMode", color = "blue" ];
+  "GuardPolicy.setDelaySeconds" [ label = "setDelaySeconds", color = "blue" ];
+  "GuardPolicy.setRiskThreshold" [ label = "setRiskThreshold", color = "blue" ];
+  "GuardPolicy.setRiskScore" [ label = "setRiskScore", color = "blue" ];
+  "GuardPolicy.check" [ label = "check" ];
+}
+
+subgraph "clusterL2L3Bridge" {
+  graph [ label = "L2L3Bridge", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "L2L3Bridge.onlyOwner" [ label = "onlyOwner", color = "yellow" ];
+  "L2L3Bridge.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "L2L3Bridge.setPolicy" [ label = "setPolicy", color = "blue" ];
+  "L2L3Bridge.setRelayer" [ label = "setRelayer", color = "blue" ];
+  "L2L3Bridge.onlyRelayer" [ label = "onlyRelayer", color = "yellow" ];
+  "L2L3Bridge.depositToL3" [ label = "depositToL3", color = "blue" ];
+  "L2L3Bridge.depositERC20ToL3" [ label = "depositERC20ToL3", color = "blue" ];
+  "L2L3Bridge.finalizeToL3" [ label = "finalizeToL3", color = "blue" ];
+  "L2L3Bridge.finalizeERC20ToL3" [ label = "finalizeERC20ToL3", color = "blue" ];
+  "L2L3Bridge.releaseERC20FromL3" [ label = "releaseERC20FromL3", color = "blue" ];
+  "L2L3Bridge.address" [ label = "address" ];
+}
+
+subgraph "clusterL3BridgedToken" {
+  graph [ label = "L3BridgedToken", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "L3BridgedToken.onlyOwner" [ label = "onlyOwner", color = "yellow" ];
+  "L3BridgedToken.onlyRelayer" [ label = "onlyRelayer", color = "yellow" ];
+  "L3BridgedToken.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "L3BridgedToken.setOwner" [ label = "setOwner", color = "blue" ];
+  "L3BridgedToken.setRelayer" [ label = "setRelayer", color = "blue" ];
+  "L3BridgedToken.mintFromL2" [ label = "mintFromL2", color = "blue" ];
+  "L3BridgedToken.burnToL2" [ label = "burnToL2", color = "blue" ];
+}
+
+subgraph "clusterL3BridgedTokenFactory" {
+  graph [ label = "L3BridgedTokenFactory", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "L3BridgedTokenFactory.onlyOwner" [ label = "onlyOwner", color = "yellow" ];
+  "L3BridgedTokenFactory.onlyRelayer" [ label = "onlyRelayer", color = "yellow" ];
+  "L3BridgedTokenFactory.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "L3BridgedTokenFactory.setOwner" [ label = "setOwner", color = "blue" ];
+  "L3BridgedTokenFactory.setRelayer" [ label = "setRelayer", color = "blue" ];
+  "L3BridgedTokenFactory.getOrDeployBridgedToken" [ label = "getOrDeployBridgedToken", color = "blue" ];
+  "L3BridgedTokenFactory.l2TokensLength" [ label = "l2TokensLength", color = "blue" ];
+  "L3BridgedTokenFactory.address" [ label = "address" ];
+}
+
+subgraph "clusterL3Inbox" {
+  graph [ label = "L3Inbox", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "L3Inbox.onlyOwner" [ label = "onlyOwner", color = "yellow" ];
+  "L3Inbox.onlyRelayer" [ label = "onlyRelayer", color = "yellow" ];
+  "L3Inbox.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "L3Inbox.setOwner" [ label = "setOwner", color = "blue" ];
+  "L3Inbox.setRelayer" [ label = "setRelayer", color = "blue" ];
+  "L3Inbox.finalizeFromL2" [ label = "finalizeFromL2", color = "blue" ];
+}
+
+subgraph "clusterMerkle" {
+  graph [ label = "Merkle  (lib)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "Merkle.hashLeaf" [ label = "hashLeaf" ];
+  "Merkle.hashPair" [ label = "hashPair" ];
+  "Merkle.verify" [ label = "verify", color = "white" ];
+}
+
+subgraph "clusterMockDisputeGameFactory" {
+  graph [ label = "MockDisputeGameFactory", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "MockDisputeGameFactory.version" [ label = "version", color = "blue" ];
+  "MockDisputeGameFactory.create" [ label = "create", color = "blue" ];
+  "MockDisputeGameFactory.address" [ label = "address" ];
+}
+
+subgraph "clusterMockL2OutputOracle" {
+  graph [ label = "MockL2OutputOracle", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "MockL2OutputOracle.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "MockL2OutputOracle.version" [ label = "version", color = "blue" ];
+  "MockL2OutputOracle.latestOutputIndex" [ label = "latestOutputIndex", color = "blue" ];
+  "MockL2OutputOracle.nextBlockNumber" [ label = "nextBlockNumber", color = "blue" ];
+  "MockL2OutputOracle.getL2Output" [ label = "getL2Output", color = "blue" ];
+  "MockL2OutputOracle.proposeL2Output" [ label = "proposeL2Output", color = "blue" ];
+}
+
+subgraph "clusterMockSystemConfig" {
+  graph [ label = "MockSystemConfig", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "MockSystemConfig.<Constructor>" [ label = "<Constructor>", color = "green" ];
+}
+
+subgraph "clusterOptimisticRollup" {
+  graph [ label = "OptimisticRollup", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "OptimisticRollup.onlyOwner" [ label = "onlyOwner", color = "yellow" ];
+  "OptimisticRollup.onlyProposer" [ label = "onlyProposer", color = "yellow" ];
+  "OptimisticRollup.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "OptimisticRollup.setOwner" [ label = "setOwner", color = "blue" ];
+  "OptimisticRollup.setProposer" [ label = "setProposer", color = "blue" ];
+  "OptimisticRollup.batchesLength" [ label = "batchesLength", color = "blue" ];
+  "OptimisticRollup.proposeBatch" [ label = "proposeBatch", color = "blue" ];
+  "OptimisticRollup.challengeBatch" [ label = "challengeBatch", color = "blue" ];
+  "OptimisticRollup.finalizeBatch" [ label = "finalizeBatch", color = "blue" ];
+  "OptimisticRollup.resolveChallenge" [ label = "resolveChallenge", color = "blue" ];
+  "OptimisticRollup.verifyBlockInBatch" [ label = "verifyBlockInBatch", color = "blue" ];
+}
+
+subgraph "clusterStakeToken" {
+  graph [ label = "StakeToken", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "StakeToken.onlyOwner" [ label = "onlyOwner", color = "yellow" ];
+  "StakeToken.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "StakeToken.mint" [ label = "mint", color = "blue" ];
+}
+
+subgraph "clusterZkBatchVerifier" {
+  graph [ label = "ZkBatchVerifier", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "ZkBatchVerifier.verifyBatch" [ label = "verifyBatch", color = "blue" ];
+}
+
+subgraph "clusterAIAttestationBase" {
+  graph [ label = "AIAttestationBase", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "AIAttestationBase.onlyOracle" [ label = "onlyOracle", color = "yellow" ];
+  "AIAttestationBase.onlyOffchainOracle" [ label = "onlyOffchainOracle", color = "yellow" ];
+  "AIAttestationBase.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "AIAttestationBase.domainSeparator" [ label = "domainSeparator", color = "blue" ];
+  "AIAttestationBase.setSigner" [ label = "setSigner", color = "blue" ];
+  "AIAttestationBase.setModel" [ label = "setModel", color = "blue" ];
+  "AIAttestationBase.setModelPolicy" [ label = "setModelPolicy", color = "blue" ];
+  "AIAttestationBase.setLayerOracle" [ label = "setLayerOracle", color = "blue" ];
+  "AIAttestationBase.submitLayerDigest" [ label = "submitLayerDigest", color = "blue" ];
+  "AIAttestationBase.setOffchainOracle" [ label = "setOffchainOracle", color = "blue" ];
+  "AIAttestationBase.submitOffchainDigest" [ label = "submitOffchainDigest", color = "blue" ];
+  "AIAttestationBase.setLayerRequired" [ label = "setLayerRequired", color = "blue" ];
+  "AIAttestationBase.setLayerMaxAge" [ label = "setLayerMaxAge", color = "blue" ];
+  "AIAttestationBase.setOffchainMaxAge" [ label = "setOffchainMaxAge", color = "blue" ];
+  "AIAttestationBase.setPolicy" [ label = "setPolicy", color = "blue" ];
+  "AIAttestationBase.setPaused" [ label = "setPaused", color = "blue" ];
+  "AIAttestationBase._validateAttestation" [ label = "_validateAttestation", color = "white" ];
+  "AIAttestationBase._recordAttestation" [ label = "_recordAttestation" ];
+  "AIAttestationBase._checkLayerDigest" [ label = "_checkLayerDigest" ];
+  "AIAttestationBase._checkOffchainDigest" [ label = "_checkOffchainDigest" ];
+  "AIAttestationBase._validateSignatures" [ label = "_validateSignatures" ];
+  "AIAttestationBase._recoverSigner" [ label = "_recoverSigner" ];
+  "AIAttestationBase._hashTypedData" [ label = "_hashTypedData" ];
+  "AIAttestationBase._domainSeparator" [ label = "_domainSeparator" ];
+  "AIAttestationBase._buildDomainSeparator" [ label = "_buildDomainSeparator" ];
+  "AIAttestationBase._requireLayer" [ label = "_requireLayer" ];
+  "AIAttestationBase.address" [ label = "address" ];
+}
+
+subgraph "clusterAICommandCenter" {
+  graph [ label = "AICommandCenter", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "AICommandCenter.onlyOracle" [ label = "onlyOracle", color = "yellow" ];
+  "AICommandCenter.onlyOffchainOracle" [ label = "onlyOffchainOracle", color = "yellow" ];
+  "AICommandCenter.nonReentrant" [ label = "nonReentrant", color = "yellow" ];
+  "AICommandCenter.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "AICommandCenter.setSigner" [ label = "setSigner", color = "blue" ];
+  "AICommandCenter.setModel" [ label = "setModel", color = "blue" ];
+  "AICommandCenter.setModelPolicy" [ label = "setModelPolicy", color = "blue" ];
+  "AICommandCenter.setLayerOracle" [ label = "setLayerOracle", color = "blue" ];
+  "AICommandCenter.submitLayerDigest" [ label = "submitLayerDigest", color = "blue" ];
+  "AICommandCenter.setOffchainOracle" [ label = "setOffchainOracle", color = "blue" ];
+  "AICommandCenter.submitOffchainDigest" [ label = "submitOffchainDigest", color = "blue" ];
+  "AICommandCenter.setLayerRequired" [ label = "setLayerRequired", color = "blue" ];
+  "AICommandCenter.setLayerMaxAge" [ label = "setLayerMaxAge", color = "blue" ];
+  "AICommandCenter.setOffchainMaxAge" [ label = "setOffchainMaxAge", color = "blue" ];
+  "AICommandCenter.setPolicy" [ label = "setPolicy", color = "blue" ];
+  "AICommandCenter.setActionPolicy" [ label = "setActionPolicy", color = "blue" ];
+  "AICommandCenter.setPaused" [ label = "setPaused", color = "blue" ];
+  "AICommandCenter.executeDecision" [ label = "executeDecision", color = "blue" ];
+  "AICommandCenter._precheckDecision" [ label = "_precheckDecision" ];
+  "AICommandCenter._consumeDecision" [ label = "_consumeDecision" ];
+  "AICommandCenter._executeAction" [ label = "_executeAction" ];
+  "AICommandCenter._requiredConfidence" [ label = "_requiredConfidence" ];
+  "AICommandCenter._checkLayerDigest" [ label = "_checkLayerDigest" ];
+  "AICommandCenter._checkOffchainDigest" [ label = "_checkOffchainDigest" ];
+  "AICommandCenter._enforceCooldown" [ label = "_enforceCooldown" ];
+  "AICommandCenter._enforceBounds" [ label = "_enforceBounds" ];
+  "AICommandCenter._validateSignatures" [ label = "_validateSignatures" ];
+  "AICommandCenter._recoverSigner" [ label = "_recoverSigner" ];
+  "AICommandCenter._hashDecision" [ label = "_hashDecision" ];
+  "AICommandCenter._domainSeparator" [ label = "_domainSeparator" ];
+  "AICommandCenter._buildDomainSeparator" [ label = "_buildDomainSeparator" ];
+  "AICommandCenter._requireLayer" [ label = "_requireLayer" ];
+  "AICommandCenter.address" [ label = "address" ];
+}
+
+subgraph "clusterAILayerGuardian" {
+  graph [ label = "AILayerGuardian", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "AILayerGuardian.nonReentrant" [ label = "nonReentrant", color = "yellow" ];
+  "AILayerGuardian.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "AILayerGuardian.computeOperationId" [ label = "computeOperationId" ];
+  "AILayerGuardian.setRiskThresholds" [ label = "setRiskThresholds", color = "blue" ];
+  "AILayerGuardian.setAssessmentRequirements" [ label = "setAssessmentRequirements", color = "blue" ];
+  "AILayerGuardian.setActionPolicy" [ label = "setActionPolicy", color = "blue" ];
+  "AILayerGuardian.submitFraudAssessment" [ label = "submitFraudAssessment", color = "blue" ];
+  "AILayerGuardian.submitTxAnalysis" [ label = "submitTxAnalysis", color = "blue" ];
+  "AILayerGuardian.submitComplianceDecision" [ label = "submitComplianceDecision", color = "blue" ];
+  "AILayerGuardian.submitExplainability" [ label = "submitExplainability", color = "blue" ];
+  "AILayerGuardian.checkTransaction" [ label = "checkTransaction", color = "green" ];
+  "AILayerGuardian.executeIfAllowed" [ label = "executeIfAllowed", color = "blue" ];
+  "AILayerGuardian._remainingDelay" [ label = "_remainingDelay" ];
+  "AILayerGuardian._enforceCooldown" [ label = "_enforceCooldown" ];
+  "AILayerGuardian._enforceBounds" [ label = "_enforceBounds" ];
+}
+
+subgraph "clusterIAITransactionGuard" {
+  graph [ label = "IAITransactionGuard  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "IAITransactionGuard.checkTransaction" [ label = "checkTransaction", color = "blue" ];
+  "IAITransactionGuard.computeOperationId" [ label = "computeOperationId", color = "blue" ];
+}
+
+subgraph "clusterBridgeMintableERC20" {
+  graph [ label = "BridgeMintableERC20", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "BridgeMintableERC20.onlyBridge" [ label = "onlyBridge", color = "yellow" ];
+  "BridgeMintableERC20.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "BridgeMintableERC20.mint" [ label = "mint", color = "blue" ];
+  "BridgeMintableERC20.burn" [ label = "burn", color = "blue" ];
+  "BridgeMintableERC20.transfer" [ label = "transfer", color = "blue" ];
+  "BridgeMintableERC20.approve" [ label = "approve", color = "blue" ];
+  "BridgeMintableERC20.transferFrom" [ label = "transferFrom", color = "blue" ];
+  "BridgeMintableERC20._transfer" [ label = "_transfer" ];
+  "BridgeMintableERC20.address" [ label = "address" ];
+}
+
+subgraph "clusterIERC20Like" {
+  graph [ label = "IERC20Like  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "IERC20Like.transferFrom" [ label = "transferFrom", color = "blue" ];
+  "IERC20Like.transfer" [ label = "transfer", color = "blue" ];
+}
+
+subgraph "clusterIBridgeMintableERC20" {
+  graph [ label = "IBridgeMintableERC20  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "IBridgeMintableERC20.mint" [ label = "mint", color = "blue" ];
+  "IBridgeMintableERC20.burn" [ label = "burn", color = "blue" ];
+}
+
+subgraph "clusterStandardBridge" {
+  graph [ label = "StandardBridge", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "StandardBridge.onlyOwner" [ label = "onlyOwner", color = "yellow" ];
+  "StandardBridge.onlyRemoteBridge" [ label = "onlyRemoteBridge", color = "yellow" ];
+  "StandardBridge.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "StandardBridge.setRemoteBridge" [ label = "setRemoteBridge", color = "blue" ];
+  "StandardBridge.bridgeERC20" [ label = "bridgeERC20", color = "blue" ];
+  "StandardBridge.finalizeBridgeERC20" [ label = "finalizeBridgeERC20", color = "blue" ];
+  "StandardBridge.<Receive Native>" [ label = "<Receive Native>", color = "blue" ];
+  "StandardBridge.address" [ label = "address" ];
+}
+
+subgraph "clusterIXDomainMessenger" {
+  graph [ label = "IXDomainMessenger  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "IXDomainMessenger.xDomainMessageSender" [ label = "xDomainMessageSender", color = "blue" ];
+  "IXDomainMessenger.sendMessage" [ label = "sendMessage", color = "blue" ];
+  "IXDomainMessenger.relayMessage" [ label = "relayMessage", color = "blue" ];
+}
+
+subgraph "clusterLibAddress" {
+  graph [ label = "LibAddress  (lib)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "LibAddress.isContract" [ label = "isContract", color = "white" ];
+}
+
+subgraph "clusterLibErrors" {
+  graph [ label = "LibErrors  (lib)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "LibErrors.NotAuthorized" [ label = "NotAuthorized" ];
+  "LibErrors.ZeroAddress" [ label = "ZeroAddress" ];
+  "LibErrors.NotOwner" [ label = "NotOwner" ];
+  "LibErrors.InvalidValue" [ label = "InvalidValue" ];
+  "LibErrors.AlreadyRelayed" [ label = "AlreadyRelayed" ];
+}
+
+subgraph "clusterOwnable" {
+  graph [ label = "Ownable", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "Ownable.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "Ownable.onlyOwner" [ label = "onlyOwner", color = "yellow" ];
+  "Ownable.transferOwnership" [ label = "transferOwnership", color = "blue" ];
+  "Ownable.address" [ label = "address" ];
+  "Ownable.NotOwner" [ color = "brown2", shape =box ];
+}
+
+subgraph "clusterXDomainMessenger" {
+  graph [ label = "XDomainMessenger", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "XDomainMessenger.onlyOwner" [ label = "onlyOwner", color = "yellow" ];
+  "XDomainMessenger.onlyParentMessenger" [ label = "onlyParentMessenger", color = "yellow" ];
+  "XDomainMessenger.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "XDomainMessenger.setParentMessenger" [ label = "setParentMessenger", color = "blue" ];
+  "XDomainMessenger.setChildMessenger" [ label = "setChildMessenger", color = "blue" ];
+  "IXDomainMessenger.xDomainMessageSender" [ label = "xDomainMessageSender", color = "blue" ];
+  "IXDomainMessenger.sendMessage" [ label = "sendMessage", color = "blue" ];
+  "XDomainMessenger.relayMessage" [ label = "relayMessage", color = "blue" ];
+  "XDomainMessenger.<Receive Native>" [ label = "<Receive Native>", color = "blue" ];
+  "XDomainMessenger.address" [ label = "address" ];
+}
+
+subgraph "clusterAccessManaged" {
+  graph [ label = "AccessManaged", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "AccessManaged.onlyAdmin" [ label = "onlyAdmin", color = "yellow" ];
+  "AccessManaged.onlyRole" [ label = "onlyRole", color = "yellow" ];
+  "AccessManaged.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "AccessManaged.hasRole" [ label = "hasRole" ];
+  "AccessManaged.grantRole" [ label = "grantRole", color = "blue" ];
+  "AccessManaged.revokeRole" [ label = "revokeRole", color = "blue" ];
+  "AccessManaged.transferAdmin" [ label = "transferAdmin", color = "blue" ];
+  "AccessManaged.address" [ label = "address" ];
+}
+
+subgraph "clusterPausable" {
+  graph [ label = "Pausable", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "Pausable.whenNotPaused" [ label = "whenNotPaused", color = "yellow" ];
+  "Pausable.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "Pausable.pause" [ label = "pause", color = "blue" ];
+  "Pausable.unpause" [ label = "unpause", color = "blue" ];
+}
+
+subgraph "clusterValidatorRegistryV2" {
+  graph [ label = "ValidatorRegistryV2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "ValidatorRegistryV2.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "ValidatorRegistryV2.registerValidator" [ label = "registerValidator", color = "blue" ];
+  "ValidatorRegistryV2.removeValidator" [ label = "removeValidator", color = "blue" ];
+  "ValidatorRegistryV2.setJailed" [ label = "setJailed", color = "blue" ];
+  "ValidatorRegistryV2.setCommission" [ label = "setCommission", color = "blue" ];
+  "ValidatorRegistryV2.validatorCount" [ label = "validatorCount", color = "blue" ];
+}
+
+subgraph "clusterStakingManagerV2" {
+  graph [ label = "StakingManagerV2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "StakingManagerV2.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "StakingManagerV2.setSlashManager" [ label = "setSlashManager", color = "blue" ];
+  "StakingManagerV2.delegateStake" [ label = "delegateStake", color = "blue" ];
+  "StakingManagerV2.withdrawStake" [ label = "withdrawStake", color = "blue" ];
+  "StakingManagerV2.requestUnbond" [ label = "requestUnbond", color = "blue" ];
+  "StakingManagerV2.claimUnbonded" [ label = "claimUnbonded", color = "blue" ];
+  "StakingManagerV2.previewWithdraw" [ label = "previewWithdraw", color = "blue" ];
+  "StakingManagerV2.slashStake" [ label = "slashStake", color = "blue" ];
+  "StakingManagerV2._previewMintedShares" [ label = "_previewMintedShares" ];
+  "StakingManagerV2.setJail" [ label = "setJail" ];
+  "StakingManagerV2.setParams" [ label = "setParams", color = "blue" ];
+  "StakingManagerV2.pools" [ label = "pools" ];
+}
+
+subgraph "clusterSlashingManagerV2" {
+  graph [ label = "SlashingManagerV2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "SlashingManagerV2.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "SlashingManagerV2.slash" [ label = "slash", color = "blue" ];
+  "SlashingManagerV2.slashWithType" [ label = "slashWithType", color = "blue" ];
+  "SlashingManagerV2.slashDowntime" [ label = "slashDowntime", color = "blue" ];
+  "SlashingManagerV2.setParams" [ label = "setParams", color = "blue" ];
+  "SlashingManagerV2.payable" [ label = "payable" ];
+}
+
+subgraph "clusterITreasuryV2" {
+  graph [ label = "ITreasuryV2  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "ITreasuryV2.withdraw" [ label = "withdraw" ];
+}
+
+subgraph "clusterRewardDistributorV2" {
+  graph [ label = "RewardDistributorV2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "RewardDistributorV2.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "RewardDistributorV2.depositReward" [ label = "depositReward", color = "blue" ];
+  "RewardDistributorV2.pullFromTreasury" [ label = "pullFromTreasury", color = "blue" ];
+  "RewardDistributorV2.claim" [ label = "claim", color = "blue" ];
+  "RewardDistributorV2.payable" [ label = "payable" ];
+}
+
+subgraph "clusterEpochManager" {
+  graph [ label = "EpochManager", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "EpochManager.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "EpochManager.advance" [ label = "advance", color = "blue" ];
+  "EpochManager.setParams" [ label = "setParams", color = "blue" ];
+}
+
+subgraph "clusterConsensusParams" {
+  graph [ label = "ConsensusParams", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "ConsensusParams.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "ConsensusParams.setUint" [ label = "setUint", color = "blue" ];
+  "ConsensusParams.setBytes" [ label = "setBytes", color = "blue" ];
+}
+
+subgraph "clusterGenesisConfigV2" {
+  graph [ label = "GenesisConfigV2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "GenesisConfigV2.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "GenesisConfigV2.updateConfig" [ label = "updateConfig", color = "blue" ];
+}
+
+subgraph "clusterChainConfigV2" {
+  graph [ label = "ChainConfigV2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "ChainConfigV2.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "ChainConfigV2.setConfig" [ label = "setConfig", color = "blue" ];
+}
+
+subgraph "clusterUpgradeManagerV2" {
+  graph [ label = "UpgradeManagerV2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "UpgradeManagerV2.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "UpgradeManagerV2.schedule" [ label = "schedule", color = "blue" ];
+  "UpgradeManagerV2.markExecuted" [ label = "markExecuted", color = "blue" ];
+}
+
+subgraph "clusterPauseGuardianV2" {
+  graph [ label = "PauseGuardianV2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "PauseGuardianV2.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "PauseGuardianV2.guardedCall" [ label = "guardedCall", color = "blue" ];
+}
+
+subgraph "clusterIMintableToken" {
+  graph [ label = "IMintableToken  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "IMintableToken.mint" [ label = "mint" ];
+}
+
+subgraph "clusterIBurnableToken" {
+  graph [ label = "IBurnableToken  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "IBurnableToken.burn" [ label = "burn" ];
+}
+
+subgraph "clusterNativeTokenV2" {
+  graph [ label = "NativeTokenV2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "NativeTokenV2.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "NativeTokenV2.mint" [ label = "mint", color = "blue" ];
+  "NativeTokenV2.burn" [ label = "burn", color = "blue" ];
+}
+
+subgraph "clusterWrappedNative" {
+  graph [ label = "WrappedNative", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "WrappedNative.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "WrappedNative.<Receive Native>" [ label = "<Receive Native>", color = "blue" ];
+  "WrappedNative.deposit" [ label = "deposit", color = "blue" ];
+  "WrappedNative.withdraw" [ label = "withdraw", color = "blue" ];
+  "WrappedNative.payable" [ label = "payable" ];
+}
+
+subgraph "clusterMintController" {
+  graph [ label = "MintController", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "MintController.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "MintController.setMinter" [ label = "setMinter", color = "blue" ];
+  "MintController.controlledMint" [ label = "controlledMint", color = "blue" ];
+}
+
+subgraph "clusterBurnController" {
+  graph [ label = "BurnController", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "BurnController.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "BurnController.setBurner" [ label = "setBurner", color = "blue" ];
+  "BurnController.controlledBurn" [ label = "controlledBurn", color = "blue" ];
+}
+
+subgraph "clusterFeeMarketV2" {
+  graph [ label = "FeeMarketV2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "FeeMarketV2.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "FeeMarketV2.setPriorityFee" [ label = "setPriorityFee", color = "blue" ];
+  "FeeMarketV2.updateBaseFee" [ label = "updateBaseFee", color = "blue" ];
+  "FeeMarketV2.quote" [ label = "quote", color = "blue" ];
+}
+
+subgraph "clusterBaseFeeOracle" {
+  graph [ label = "BaseFeeOracle", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "BaseFeeOracle.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "BaseFeeOracle.pushBaseFee" [ label = "pushBaseFee", color = "blue" ];
+}
+
+subgraph "clusterIERC20Minimal" {
+  graph [ label = "IERC20Minimal  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "IERC20Minimal.transfer" [ label = "transfer", color = "blue" ];
+  "IERC20Minimal.transferFrom" [ label = "transferFrom", color = "blue" ];
+}
+
+subgraph "clusterTreasuryV2" {
+  graph [ label = "TreasuryV2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "TreasuryV2.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "TreasuryV2.<Receive Native>" [ label = "<Receive Native>", color = "blue" ];
+  "TreasuryV2.withdraw" [ label = "withdraw", color = "green" ];
+  "TreasuryV2.withdrawToken" [ label = "withdrawToken", color = "blue" ];
+}
+
+subgraph "clusterEmissionController" {
+  graph [ label = "EmissionController", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "EmissionController.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "EmissionController.setEmissionRate" [ label = "setEmissionRate", color = "blue" ];
+}
+
+subgraph "clusterStablecoin" {
+  graph [ label = "Stablecoin", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "Stablecoin.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "Stablecoin.setMinter" [ label = "setMinter", color = "blue" ];
+  "Stablecoin.setBurner" [ label = "setBurner", color = "blue" ];
+  "Stablecoin.mint" [ label = "mint", color = "blue" ];
+  "Stablecoin.burn" [ label = "burn", color = "blue" ];
+  "Stablecoin.burnSelf" [ label = "burnSelf", color = "blue" ];
+}
+
+subgraph "clusterCollateralVault" {
+  graph [ label = "CollateralVault", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "CollateralVault.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "CollateralVault.onlyController" [ label = "onlyController", color = "yellow" ];
+  "CollateralVault.setController" [ label = "setController", color = "blue" ];
+  "CollateralVault.setCollateralAsset" [ label = "setCollateralAsset", color = "blue" ];
+  "CollateralVault.deposit" [ label = "deposit", color = "blue" ];
+  "CollateralVault.withdraw" [ label = "withdraw", color = "blue" ];
+  "CollateralVault.consume" [ label = "consume", color = "blue" ];
+  "CollateralVault.moveCollateral" [ label = "moveCollateral" ];
+  "CollateralVault._withdraw" [ label = "_withdraw" ];
+}
+
+subgraph "clusterPriceOracleRouter" {
+  graph [ label = "PriceOracleRouter", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "PriceOracleRouter.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "PriceOracleRouter.setPrice" [ label = "setPrice", color = "blue" ];
+  "PriceOracleRouter.prices" [ label = "prices" ];
+}
+
+subgraph "clusterPegStabilityModule" {
+  graph [ label = "PegStabilityModule", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "PegStabilityModule.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "PegStabilityModule.setFee" [ label = "setFee", color = "blue" ];
+  "PegStabilityModule.swapCollateralForStable" [ label = "swapCollateralForStable", color = "blue" ];
+  "PegStabilityModule.swapStableForCollateral" [ label = "swapStableForCollateral", color = "blue" ];
+}
+
+subgraph "clusterAIMonetaryPolicy" {
+  graph [ label = "AIMonetaryPolicy", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "AIMonetaryPolicy.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "AIMonetaryPolicy.pushSignal" [ label = "pushSignal", color = "blue" ];
+}
+
+subgraph "clusterVolatilityController" {
+  graph [ label = "VolatilityController", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "VolatilityController.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "VolatilityController.setBound" [ label = "setBound", color = "blue" ];
+}
+
+subgraph "clusterCircuitBreaker" {
+  graph [ label = "CircuitBreaker", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "CircuitBreaker.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "CircuitBreaker.trip" [ label = "trip", color = "blue" ];
+}
+
+subgraph "clusterStablecoinController" {
+  graph [ label = "StablecoinController", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "StablecoinController.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "StablecoinController.setMinCollateralRatio" [ label = "setMinCollateralRatio", color = "blue" ];
+  "StablecoinController.mintAgainstCollateral" [ label = "mintAgainstCollateral", color = "blue" ];
+  "StablecoinController.repay" [ label = "repay", color = "blue" ];
+}
+
+subgraph "clusterCrossChainMessenger" {
+  graph [ label = "CrossChainMessenger", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "CrossChainMessenger.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "CrossChainMessenger.sendMessage" [ label = "sendMessage", color = "blue" ];
+  "CrossChainMessenger.relayMessage" [ label = "relayMessage", color = "blue" ];
+}
+
+subgraph "clusterStateCommitmentChain" {
+  graph [ label = "StateCommitmentChain", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "StateCommitmentChain.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "StateCommitmentChain.appendState" [ label = "appendState", color = "blue" ];
+}
+
+subgraph "clusterBridgeRouter" {
+  graph [ label = "BridgeRouter", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "BridgeRouter.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "BridgeRouter.registerBridge" [ label = "registerBridge", color = "blue" ];
+}
+
+subgraph "clusterIERC721Minimal" {
+  graph [ label = "IERC721Minimal  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "IERC721Minimal.transferFrom" [ label = "transferFrom", color = "blue" ];
+}
+
+subgraph "clusterTokenBridge" {
+  graph [ label = "TokenBridge", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "TokenBridge.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "TokenBridge.deposit" [ label = "deposit", color = "blue" ];
+  "TokenBridge.finalizeWithdrawal" [ label = "finalizeWithdrawal", color = "blue" ];
+}
+
+subgraph "clusterNFTBridge" {
+  graph [ label = "NFTBridge", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "NFTBridge.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "NFTBridge.deposit" [ label = "deposit", color = "blue" ];
+  "NFTBridge.finalizeWithdrawal" [ label = "finalizeWithdrawal", color = "blue" ];
+}
+
+subgraph "clusterMerkleProofVerifier" {
+  graph [ label = "MerkleProofVerifier", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "MerkleProofVerifier.verify" [ label = "verify", color = "blue" ];
+}
+
+subgraph "clusterZKProofVerifier" {
+  graph [ label = "ZKProofVerifier", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "ZKProofVerifier.verify" [ label = "verify", color = "blue" ];
+}
+
+subgraph "clusterFraudProofVerifier" {
+  graph [ label = "FraudProofVerifier", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "FraudProofVerifier.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "FraudProofVerifier.submitProof" [ label = "submitProof", color = "blue" ];
+  "FraudProofVerifier.resolve" [ label = "resolve", color = "blue" ];
+}
+
+subgraph "clusterCheckpointManager" {
+  graph [ label = "CheckpointManager", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "CheckpointManager.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "CheckpointManager.submitCheckpoint" [ label = "submitCheckpoint", color = "blue" ];
+}
+
+subgraph "clusterRollupManagerV2" {
+  graph [ label = "RollupManagerV2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "RollupManagerV2.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "RollupManagerV2.registerRollup" [ label = "registerRollup", color = "blue" ];
+  "RollupManagerV2.setLive" [ label = "setLive", color = "blue" ];
+}
+
+subgraph "clusterBatchInbox" {
+  graph [ label = "BatchInbox", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "BatchInbox.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "BatchInbox.appendBatch" [ label = "appendBatch", color = "blue" ];
+}
+
+subgraph "clusterSequencerRegistry" {
+  graph [ label = "SequencerRegistry", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "SequencerRegistry.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "SequencerRegistry.addSequencer" [ label = "addSequencer", color = "blue" ];
+  "SequencerRegistry.removeSequencer" [ label = "removeSequencer", color = "blue" ];
+}
+
+subgraph "clusterBatcherBondManager" {
+  graph [ label = "BatcherBondManager", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "BatcherBondManager.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "BatcherBondManager.postBond" [ label = "postBond", color = "blue" ];
+  "BatcherBondManager.slash" [ label = "slash", color = "blue" ];
+}
+
+subgraph "clusterDisputeGameFactoryV2" {
+  graph [ label = "DisputeGameFactoryV2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "DisputeGameFactoryV2.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "DisputeGameFactoryV2.createGame" [ label = "createGame", color = "blue" ];
+  "DisputeGameFactoryV2.games" [ label = "games" ];
+}
+
+subgraph "clusterFaultDisputeGame" {
+  graph [ label = "FaultDisputeGame", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "FaultDisputeGame.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "FaultDisputeGame.initiate" [ label = "initiate" ];
+  "FaultDisputeGame.resolve" [ label = "resolve", color = "blue" ];
+  "FaultDisputeGame.resolved" [ label = "resolved" ];
+  "FaultDisputeGame.faultProven" [ label = "faultProven" ];
+}
+
+subgraph "clusterOutputOracle" {
+  graph [ label = "OutputOracle", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "OutputOracle.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "OutputOracle.proposeOutput" [ label = "proposeOutput", color = "blue" ];
+  "OutputOracle.proposals" [ label = "proposals" ];
+}
+
+subgraph "clusterFinalizationManager" {
+  graph [ label = "FinalizationManager", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "FinalizationManager.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "FinalizationManager.finalize" [ label = "finalize", color = "blue" ];
+  "FinalizationManager._finalize" [ label = "_finalize" ];
+  "FinalizationManager.finalizeWithDispute" [ label = "finalizeWithDispute", color = "blue" ];
+  "FinalizationManager.challenge" [ label = "challenge", color = "blue" ];
+  "FinalizationManager._requireFinalizable" [ label = "_requireFinalizable" ];
+}
+
+subgraph "clusterGovernanceToken" {
+  graph [ label = "GovernanceToken", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "GovernanceToken.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "GovernanceToken.mint" [ label = "mint", color = "blue" ];
+  "GovernanceToken.burn" [ label = "burn", color = "blue" ];
+}
+
+subgraph "clusterVotingEscrow" {
+  graph [ label = "VotingEscrow", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "VotingEscrow.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "VotingEscrow.lock" [ label = "lock", color = "blue" ];
+  "VotingEscrow.unlock" [ label = "unlock", color = "blue" ];
+  "VotingEscrow.votingPower" [ label = "votingPower" ];
+}
+
+subgraph "clusterGovernorV2" {
+  graph [ label = "GovernorV2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "GovernorV2.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "GovernorV2.propose" [ label = "propose", color = "blue" ];
+  "GovernorV2.castVote" [ label = "castVote", color = "blue" ];
+  "GovernorV2.queue" [ label = "queue", color = "blue" ];
+  "GovernorV2.execute" [ label = "execute", color = "blue" ];
+  "GovernorV2.state" [ label = "state" ];
+}
+
+subgraph "clusterProposalExecutorV2" {
+  graph [ label = "ProposalExecutorV2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "ProposalExecutorV2.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "ProposalExecutorV2.schedule" [ label = "schedule", color = "blue" ];
+  "ProposalExecutorV2.execute" [ label = "execute", color = "blue" ];
+}
+
+subgraph "clusterDelegationManager" {
+  graph [ label = "DelegationManager", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "DelegationManager.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "DelegationManager.delegate" [ label = "delegate", color = "blue" ];
+}
+
+subgraph "clusterQuadraticVoting" {
+  graph [ label = "QuadraticVoting", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "QuadraticVoting.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "QuadraticVoting.castVote" [ label = "castVote", color = "blue" ];
+  "QuadraticVoting.sqrt" [ label = "sqrt" ];
+}
+
+subgraph "clusterAIGovernanceAdvisor" {
+  graph [ label = "AIGovernanceAdvisor", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "AIGovernanceAdvisor.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "AIGovernanceAdvisor.pushRecommendation" [ label = "pushRecommendation", color = "blue" ];
+}
+
+subgraph "clusterDecentralizedID" {
+  graph [ label = "DecentralizedID", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "DecentralizedID.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "DecentralizedID.issue" [ label = "issue", color = "blue" ];
+  "DecentralizedID.revoke" [ label = "revoke", color = "blue" ];
+}
+
+subgraph "clusterIdentityRegistry" {
+  graph [ label = "IdentityRegistry", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "IdentityRegistry.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "IdentityRegistry.setStatus" [ label = "setStatus", color = "blue" ];
+}
+
+subgraph "clusterReputationScore" {
+  graph [ label = "ReputationScore", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "ReputationScore.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "ReputationScore.adjust" [ label = "adjust", color = "blue" ];
+}
+
+subgraph "clusterZKIdentityVerifier" {
+  graph [ label = "ZKIdentityVerifier", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "ZKIdentityVerifier.verify" [ label = "verify", color = "blue" ];
+}
+
+subgraph "clusterSelectiveDisclosure" {
+  graph [ label = "SelectiveDisclosure", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "SelectiveDisclosure.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "SelectiveDisclosure.shareClaim" [ label = "shareClaim", color = "blue" ];
+}
+
+subgraph "clusterComplianceGate" {
+  graph [ label = "ComplianceGate", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "ComplianceGate.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "ComplianceGate.setAllowed" [ label = "setAllowed", color = "blue" ];
+  "ComplianceGate.check" [ label = "check", color = "blue" ];
+}
+
+subgraph "clusterAISecurityOracle" {
+  graph [ label = "AISecurityOracle", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "AISecurityOracle.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "AISecurityOracle.publishScore" [ label = "publishScore", color = "blue" ];
+}
+
+subgraph "clusterAnomalyDetector" {
+  graph [ label = "AnomalyDetector", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "AnomalyDetector.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "AnomalyDetector.flag" [ label = "flag", color = "blue" ];
+}
+
+subgraph "clusterTransactionClassifier" {
+  graph [ label = "TransactionClassifier", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "TransactionClassifier.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "TransactionClassifier.classify" [ label = "classify", color = "blue" ];
+}
+
+subgraph "clusterKeeperRegistry" {
+  graph [ label = "KeeperRegistry", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "KeeperRegistry.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "KeeperRegistry.addKeeper" [ label = "addKeeper", color = "blue" ];
+  "KeeperRegistry.removeKeeper" [ label = "removeKeeper", color = "blue" ];
+}
+
+subgraph "clusterAutonomousExecutor" {
+  graph [ label = "AutonomousExecutor", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "AutonomousExecutor.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "AutonomousExecutor.schedule" [ label = "schedule", color = "blue" ];
+  "AutonomousExecutor.execute" [ label = "execute", color = "blue" ];
+}
+
+subgraph "clusterPredictiveGasManager" {
+  graph [ label = "PredictiveGasManager", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "PredictiveGasManager.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "PredictiveGasManager.publishForecast" [ label = "publishForecast", color = "blue" ];
+}
+
+subgraph "clusterContractRegistry" {
+  graph [ label = "ContractRegistry", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "ContractRegistry.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "ContractRegistry.register" [ label = "register", color = "blue" ];
+}
+
+subgraph "clusterAddressBook" {
+  graph [ label = "AddressBook", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "AddressBook.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "AddressBook.setAddress" [ label = "setAddress", color = "blue" ];
+}
+
+subgraph "clusterUpgradeableProxy" {
+  graph [ label = "UpgradeableProxy", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "UpgradeableProxy.onlyAdmin" [ label = "onlyAdmin", color = "yellow" ];
+  "UpgradeableProxy.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "UpgradeableProxy.upgradeTo" [ label = "upgradeTo", color = "blue" ];
+  "UpgradeableProxy.<Fallback>" [ label = "<Fallback>", color = "blue" ];
+  "UpgradeableProxy.<Receive Native>" [ label = "<Receive Native>", color = "blue" ];
+  "UpgradeableProxy.address" [ label = "address" ];
+}
+
+subgraph "clusterMulticall" {
+  graph [ label = "Multicall", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "Multicall.multicall" [ label = "multicall", color = "blue" ];
+  "Multicall.delegatecall" [ label = "delegatecall" ];
+  "Multicall.address" [ label = "address" ];
+}
+
+subgraph "clusterMetaTxForwarder" {
+  graph [ label = "MetaTxForwarder", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "MetaTxForwarder.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "MetaTxForwarder.execute" [ label = "execute", color = "blue" ];
+}
+
+subgraph "clusterAccountAbstraction" {
+  graph [ label = "AccountAbstraction", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "AccountAbstraction.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "AccountAbstraction.handleOp" [ label = "handleOp", color = "blue" ];
+}
+
+subgraph "clusterNFTCore" {
+  graph [ label = "NFTCore", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "NFTCore.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "NFTCore.mint" [ label = "mint", color = "blue" ];
+  "NFTCore.burn" [ label = "burn", color = "blue" ];
+  "NFTCore.transferFrom" [ label = "transferFrom", color = "blue" ];
+}
+
+subgraph "clusterRoyaltyManager" {
+  graph [ label = "RoyaltyManager", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "RoyaltyManager.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "RoyaltyManager.setRoyalty" [ label = "setRoyalty", color = "blue" ];
+}
+
+subgraph "clusterSoulboundToken" {
+  graph [ label = "SoulboundToken", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "SoulboundToken.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "SoulboundToken.mint" [ label = "mint", color = "blue" ];
+  "SoulboundToken.burn" [ label = "burn", color = "blue" ];
+}
+
+subgraph "clusterDEXRouter" {
+  graph [ label = "DEXRouter", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "DEXRouter.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "DEXRouter.swap" [ label = "swap", color = "blue" ];
+}
+
+subgraph "clusterLiquidityPool" {
+  graph [ label = "LiquidityPool", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "LiquidityPool.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "LiquidityPool.addLiquidity" [ label = "addLiquidity", color = "blue" ];
+  "LiquidityPool.removeLiquidity" [ label = "removeLiquidity", color = "blue" ];
+}
+
+subgraph "clusterYieldVault" {
+  graph [ label = "YieldVault", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "YieldVault.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "YieldVault.deposit" [ label = "deposit", color = "blue" ];
+  "YieldVault.withdraw" [ label = "withdraw", color = "blue" ];
+}
+
+subgraph "clusterInsuranceFund" {
+  graph [ label = "InsuranceFund", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "InsuranceFund.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "InsuranceFund.<Receive Native>" [ label = "<Receive Native>", color = "blue" ];
+  "InsuranceFund.payout" [ label = "payout", color = "blue" ];
+}
+
+subgraph "clusterEmergencyShutdownV2" {
+  graph [ label = "EmergencyShutdownV2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "EmergencyShutdownV2.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "EmergencyShutdownV2.shutdown" [ label = "shutdown", color = "blue" ];
+}
+
+subgraph "clusterValidatorRecovery" {
+  graph [ label = "ValidatorRecovery", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "ValidatorRecovery.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "ValidatorRecovery.setRecovery" [ label = "setRecovery", color = "blue" ];
+}
+
+subgraph "clusterTreasuryBackstop" {
+  graph [ label = "TreasuryBackstop", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "TreasuryBackstop.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "TreasuryBackstop.backstop" [ label = "backstop", color = "blue" ];
+}
+
+subgraph "clusterForkRecoveryManager" {
+  graph [ label = "ForkRecoveryManager", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "ForkRecoveryManager.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "ForkRecoveryManager.selectFork" [ label = "selectFork", color = "blue" ];
+}
+
+subgraph "clusterGovernor" {
+  graph [ label = "Governor", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "Governor.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "Governor.setVotingPeriod" [ label = "setVotingPeriod", color = "blue" ];
+  "Governor.propose" [ label = "propose", color = "blue" ];
+  "Governor.vote" [ label = "vote", color = "blue" ];
+  "Governor.queue" [ label = "queue", color = "blue" ];
+  "Governor.execute" [ label = "execute", color = "blue" ];
+  "Governor.proposalsLength" [ label = "proposalsLength", color = "blue" ];
+}
+
+subgraph "clusterProposalExecutor" {
+  graph [ label = "ProposalExecutor", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "ProposalExecutor.setGovernor" [ label = "setGovernor", color = "blue" ];
+  "ProposalExecutor.queueTx" [ label = "queueTx", color = "blue" ];
+  "ProposalExecutor.execute" [ label = "execute", color = "blue" ];
+  "ProposalExecutor.onlyGovernor" [ label = "onlyGovernor", color = "yellow" ];
+  "ProposalExecutor.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "ProposalExecutor.queueLength" [ label = "queueLength", color = "blue" ];
+  "ProposalExecutor.address" [ label = "address" ];
+}
+
+subgraph "clusterAIGuardianL1" {
+  graph [ label = "AIGuardianL1", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "AIGuardianL1.<Constructor>" [ label = "<Constructor>", color = "green" ];
+}
+
+subgraph "clusterAdmin" {
+  graph [ label = "Admin", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "Admin.onlyAdmin" [ label = "onlyAdmin", color = "yellow" ];
+  "Admin.addAdmin" [ label = "addAdmin", color = "blue" ];
+  "Admin.removeAdmin" [ label = "removeAdmin", color = "blue" ];
+}
+
+subgraph "clusterChainConfig" {
+  graph [ label = "ChainConfig", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "ChainConfig.setConfig" [ label = "setConfig", color = "blue" ];
+  "ChainConfig.getConfig" [ label = "getConfig", color = "blue" ];
+}
+
+subgraph "clusterIDisputeGame" {
+  graph [ label = "IDisputeGame  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "IDisputeGame.gameType" [ label = "gameType", color = "blue" ];
+  "IDisputeGame.createdAt" [ label = "createdAt", color = "blue" ];
+  "IDisputeGame.status" [ label = "status", color = "blue" ];
+}
+
+subgraph "clusterIGameClone" {
+  graph [ label = "IGameClone  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "IGameClone.initialize" [ label = "initialize", color = "blue" ];
+}
+
+subgraph "clusterDisputeGameFactory" {
+  graph [ label = "DisputeGameFactory", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "DisputeGameFactory.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "DisputeGameFactory.onlyOwner" [ label = "onlyOwner", color = "yellow" ];
+  "DisputeGameFactory.version" [ label = "version", color = "blue" ];
+  "DisputeGameFactory.transferOwnership" [ label = "transferOwnership", color = "blue" ];
+  "DisputeGameFactory.setImplementation" [ label = "setImplementation", color = "blue" ];
+  "DisputeGameFactory.computeGameId" [ label = "computeGameId" ];
+  "DisputeGameFactory.create" [ label = "create", color = "blue" ];
+  "DisputeGameFactory.allGamesLength" [ label = "allGamesLength", color = "blue" ];
+  "DisputeGameFactory._clone" [ label = "_clone" ];
+  "DisputeGameFactory.address" [ label = "address" ];
+  "DisputeGameFactory.Unauthorized" [ color = "brown2", shape =box ];
+  "DisputeGameFactory.GameTypeNotSet" [ color = "brown2", shape =box ];
+  "DisputeGameFactory.GameAlreadyExists" [ color = "brown2", shape =box ];
+}
+
+subgraph "clusterEmergencyShutdown" {
+  graph [ label = "EmergencyShutdown", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "EmergencyShutdown.trigger" [ label = "trigger", color = "blue" ];
+  "EmergencyShutdown.clear" [ label = "clear", color = "blue" ];
+}
+
+subgraph "clusterFaucet" {
+  graph [ label = "Faucet", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "Faucet.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "Faucet.setConfig" [ label = "setConfig", color = "blue" ];
+  "Faucet.fund" [ label = "fund", color = "blue" ];
+  "Faucet.drip" [ label = "drip", color = "blue" ];
+}
+
+subgraph "clusterFeeMarket" {
+  graph [ label = "FeeMarket", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "FeeMarket.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "FeeMarket.setFeeParams" [ label = "setFeeParams", color = "blue" ];
+}
+
+subgraph "clusterGenesisConfig" {
+  graph [ label = "GenesisConfig", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "GenesisConfig.<Constructor>" [ label = "<Constructor>", color = "green" ];
+}
+
+subgraph "clusterL2OutputOracle" {
+  graph [ label = "L2OutputOracle", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "L2OutputOracle.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "L2OutputOracle.setProposer" [ label = "setProposer", color = "blue" ];
+  "L2OutputOracle.proposeOutput" [ label = "proposeOutput", color = "blue" ];
+  "L2OutputOracle.getOutput" [ label = "getOutput", color = "blue" ];
+  "L2OutputOracle.outputsLength" [ label = "outputsLength", color = "blue" ];
+  "L2OutputOracle.address" [ label = "address" ];
+  "L2OutputOracle.ProposerUpdated" [ style = "dotted" ];
+  "L2OutputOracle.NotProposer" [ color = "brown2", shape =box ];
+  "L2OutputOracle.NonMonotonicBlockNumber" [ color = "brown2", shape =box ];
+  "L2OutputOracle.OutputProposal" [ label = "OutputProposal" ];
+  "L2OutputOracle.version" [ label = "version", color = "blue" ];
+  "L2OutputOracle.submissionInterval" [ label = "submissionInterval", color = "blue" ];
+  "L2OutputOracle.l2BlockTime" [ label = "l2BlockTime", color = "blue" ];
+  "L2OutputOracle.startingBlockNumber" [ label = "startingBlockNumber", color = "blue" ];
+  "L2OutputOracle.startingTimestamp" [ label = "startingTimestamp", color = "blue" ];
+  "L2OutputOracle.finalizationPeriodSeconds" [ label = "finalizationPeriodSeconds", color = "blue" ];
+  "L2OutputOracle.proposer" [ label = "proposer", color = "blue" ];
+  "L2OutputOracle.challenger" [ label = "challenger", color = "blue" ];
+  "L2OutputOracle.nextBlockNumber" [ label = "nextBlockNumber", color = "blue" ];
+  "L2OutputOracle.computeL2Timestamp" [ label = "computeL2Timestamp", color = "blue" ];
+  "L2OutputOracle.proposeL2Output" [ label = "proposeL2Output", color = "blue" ];
+}
+
+subgraph "clusterMessenger" {
+  graph [ label = "Messenger", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "Messenger.sendMessage" [ label = "sendMessage", color = "blue" ];
+  "Messenger.relayMessage" [ label = "relayMessage", color = "blue" ];
+  "Messenger.sentCount" [ label = "sentCount", color = "blue" ];
+  "Messenger.relayedCount" [ label = "relayedCount", color = "blue" ];
+}
+
+subgraph "clusterNativeToken" {
+  graph [ label = "NativeToken", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "NativeToken.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "NativeToken.mint" [ label = "mint", color = "blue" ];
+  "NativeToken.burn" [ label = "burn", color = "blue" ];
+}
+
+subgraph "clusterPauseGuardian" {
+  graph [ label = "PauseGuardian", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "PauseGuardian.setPaused" [ label = "setPaused", color = "blue" ];
+}
+
+subgraph "clusterPortal" {
+  graph [ label = "Portal", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "Portal.depositETH" [ label = "depositETH", color = "blue" ];
+  "Portal.sendMessage" [ label = "sendMessage", color = "blue" ];
+}
+
+subgraph "clusterRewardDistributor" {
+  graph [ label = "RewardDistributor", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "RewardDistributor.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "RewardDistributor.setStakingManager" [ label = "setStakingManager", color = "blue" ];
+  "RewardDistributor.distribute" [ label = "distribute", color = "blue" ];
+}
+
+subgraph "clusterRollupManager" {
+  graph [ label = "RollupManager", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "RollupManager.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "RollupManager.setAddresses" [ label = "setAddresses", color = "blue" ];
+}
+
+subgraph "clusterSimpleDisputeGame" {
+  graph [ label = "SimpleDisputeGame", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "SimpleDisputeGame.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "SimpleDisputeGame.version" [ label = "version", color = "blue" ];
+  "SimpleDisputeGame.gameType" [ label = "gameType", color = "blue" ];
+  "SimpleDisputeGame.initialize" [ label = "initialize", color = "blue" ];
+  "SimpleDisputeGame.dispute" [ label = "dispute", color = "blue" ];
+  "SimpleDisputeGame.resolveChallengerWins" [ label = "resolveChallengerWins", color = "blue" ];
+  "SimpleDisputeGame.resolveDefenderWins" [ label = "resolveDefenderWins", color = "blue" ];
+}
+
+subgraph "clusterSlashingManager" {
+  graph [ label = "SlashingManager", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "SlashingManager.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "SlashingManager.setStakingManager" [ label = "setStakingManager", color = "blue" ];
+  "SlashingManager.slash" [ label = "slash", color = "blue" ];
+}
+
+subgraph "clusterStakingManager" {
+  graph [ label = "StakingManager", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "StakingManager.slash" [ label = "slash", color = "blue" ];
+  "StakingManager.stake" [ label = "stake", color = "blue" ];
+  "StakingManager.unstake" [ label = "unstake", color = "blue" ];
+  "StakingManager.payable" [ label = "payable" ];
+}
+
+subgraph "clusterSystemConfig" {
+  graph [ label = "SystemConfig", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "SystemConfig.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "SystemConfig.setBatcher" [ label = "setBatcher", color = "blue" ];
+  "SystemConfig.setUnsafeBlockSigner" [ label = "setUnsafeBlockSigner", color = "blue" ];
+  "SystemConfig.setGasConfig" [ label = "setGasConfig", color = "blue" ];
+}
+
+subgraph "clusterIERC20Balance" {
+  graph [ label = "IERC20Balance  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "IERC20Balance.balanceOf" [ label = "balanceOf", color = "blue" ];
+  "IERC20Balance.transfer" [ label = "transfer" ];
+}
+
+  subgraph "clusterTreasury" {
+	  graph [ label = "Treasury", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+	  "Treasury.<Constructor>" [ label = "<Constructor>", color = "green" ];
+	  "Treasury.<Receive Native>" [ label = "<Receive Native>", color = "blue" ];
+	  "Treasury.withdrawLegacyValue" [ label = "withdrawLegacyValue", color = "blue" ];
+	  "Treasury.withdrawNative" [ label = "withdrawNative", color = "blue" ];
+	}
+
+subgraph "clusterUpgradeManager" {
+  graph [ label = "UpgradeManager", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "UpgradeManager.propose" [ label = "propose", color = "blue" ];
+  "UpgradeManager.execute" [ label = "execute", color = "blue" ];
+  "UpgradeManager.proposalsLength" [ label = "proposalsLength", color = "blue" ];
+}
+
+subgraph "clusterValidatorRegistry" {
+  graph [ label = "ValidatorRegistry", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "ValidatorRegistry.addValidator" [ label = "addValidator", color = "blue" ];
+  "ValidatorRegistry.removeValidator" [ label = "removeValidator", color = "blue" ];
+  "ValidatorRegistry.validatorCount" [ label = "validatorCount", color = "blue" ];
+}
+
+subgraph "clusterL1CrossDomainMessenger" {
+  graph [ label = "L1CrossDomainMessenger", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "L1CrossDomainMessenger.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "L1CrossDomainMessenger.version" [ label = "version", color = "blue" ];
+}
+
+subgraph "clusterL1DisputeGameFactory" {
+  graph [ label = "L1DisputeGameFactory", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "L1DisputeGameFactory.version" [ label = "version", color = "blue" ];
+}
+
+subgraph "clusterL1OptimismPortal" {
+  graph [ label = "L1OptimismPortal", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "L1OptimismPortal.onlyOwner" [ label = "onlyOwner", color = "yellow" ];
+  "L1OptimismPortal.whenNotPaused" [ label = "whenNotPaused", color = "yellow" ];
+  "L1OptimismPortal.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "L1OptimismPortal.pause" [ label = "pause", color = "blue" ];
+  "L1OptimismPortal.unpause" [ label = "unpause", color = "blue" ];
+  "L1OptimismPortal.depositTransaction" [ label = "depositTransaction", color = "blue" ];
+  "L1OptimismPortal.version" [ label = "version", color = "blue" ];
+}
+
+subgraph "clusterL1OutputOracle" {
+  graph [ label = "L1OutputOracle", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "L1OutputOracle.onlyOwner" [ label = "onlyOwner", color = "yellow" ];
+  "L1OutputOracle.onlyProposer" [ label = "onlyProposer", color = "yellow" ];
+  "L1OutputOracle.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "L1OutputOracle.setProposer" [ label = "setProposer", color = "blue" ];
+  "L1OutputOracle.proposeOutput" [ label = "proposeOutput", color = "blue" ];
+  "L1OutputOracle.version" [ label = "version", color = "blue" ];
+}
+
+subgraph "clusterL1SystemConfig" {
+  graph [ label = "L1SystemConfig", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "L1SystemConfig.onlyOwner" [ label = "onlyOwner", color = "yellow" ];
+  "L1SystemConfig.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "L1SystemConfig.setBatcher" [ label = "setBatcher", color = "blue" ];
+  "L1SystemConfig.setUnsafeBlockSigner" [ label = "setUnsafeBlockSigner", color = "blue" ];
+  "L1SystemConfig.setGasConfig" [ label = "setGasConfig", color = "blue" ];
+}
+
+subgraph "clusterAIGuardianL2" {
+  graph [ label = "AIGuardianL2", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "AIGuardianL2.<Constructor>" [ label = "<Constructor>", color = "green" ];
+}
+
+subgraph "clusterDisputeGameAddressBook" {
+  graph [ label = "DisputeGameAddressBook", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "DisputeGameAddressBook.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "DisputeGameAddressBook.onlyAdmin" [ label = "onlyAdmin", color = "yellow" ];
+  "DisputeGameAddressBook.version" [ label = "version", color = "blue" ];
+  "DisputeGameAddressBook.setFactory" [ label = "setFactory", color = "blue" ];
+  "DisputeGameAddressBook.setAdmin" [ label = "setAdmin", color = "blue" ];
+  "DisputeGameAddressBook.address" [ label = "address" ];
+  "DisputeGameAddressBook.Unauthorized" [ color = "brown2", shape =box ];
+}
+
+subgraph "clusterAIGuardianL3" {
+  graph [ label = "AIGuardianL3", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "AIGuardianL3.<Constructor>" [ label = "<Constructor>", color = "green" ];
+}
+
+subgraph "clusterIERC721Receiver" {
+  graph [ label = "IERC721Receiver  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "IERC721Receiver.onERC721Received" [ label = "onERC721Received", color = "blue" ];
+}
+
+subgraph "clusterGhostNFT" {
+  graph [ label = "GhostNFT", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "GhostNFT.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "GhostNFT.onlyMinter" [ label = "onlyMinter", color = "yellow" ];
+  "GhostNFT.supportsInterface" [ label = "supportsInterface", color = "green" ];
+  "GhostNFT.balanceOf" [ label = "balanceOf", color = "green" ];
+  "GhostNFT.ownerOf" [ label = "ownerOf", color = "green" ];
+  "GhostNFT.getApproved" [ label = "getApproved", color = "green" ];
+  "GhostNFT.isApprovedForAll" [ label = "isApprovedForAll" ];
+  "GhostNFT.tokenURI" [ label = "tokenURI", color = "green" ];
+  "GhostNFT.setMinter" [ label = "setMinter", color = "blue" ];
+  "GhostNFT.approve" [ label = "approve", color = "green" ];
+  "GhostNFT.setApprovalForAll" [ label = "setApprovalForAll", color = "green" ];
+  "GhostNFT.transferFrom" [ label = "transferFrom", color = "green" ];
+  "GhostNFT.safeTransferFrom" [ label = "safeTransferFrom" ];
+  "GhostNFT.mint" [ label = "mint", color = "blue" ];
+  "GhostNFT.burn" [ label = "burn", color = "blue" ];
+  "GhostNFT._mint" [ label = "_mint" ];
+  "GhostNFT._burn" [ label = "_burn" ];
+  "GhostNFT._approve" [ label = "_approve" ];
+  "GhostNFT._transfer" [ label = "_transfer" ];
+  "GhostNFT._isApprovedOrOwner" [ label = "_isApprovedOrOwner" ];
+  "GhostNFT._checkOnERC721Received" [ label = "_checkOnERC721Received" ];
+}
+
+subgraph "clusterDummyL2OO" {
+  graph [ label = "DummyL2OO", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "DummyL2OO.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "DummyL2OO.version" [ label = "version", color = "blue" ];
+  "DummyL2OO.nextOutputIndex" [ label = "nextOutputIndex", color = "blue" ];
+  "DummyL2OO.latestBlockNumber" [ label = "latestBlockNumber", color = "blue" ];
+  "DummyL2OO.initialize" [ label = "initialize", color = "blue" ];
+  "DummyL2OO.proposeL2Output" [ label = "proposeL2Output", color = "blue" ];
+}
+
+subgraph "clusterGasToken" {
+  graph [ label = "GasToken", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "GasToken.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "GasToken.approve" [ label = "approve", color = "blue" ];
+  "GasToken.transfer" [ label = "transfer", color = "blue" ];
+  "GasToken.transferFrom" [ label = "transferFrom", color = "blue" ];
+  "GasToken._transfer" [ label = "_transfer" ];
+  "GasToken._mint" [ label = "_mint" ];
+  "GasToken.burn" [ label = "burn", color = "blue" ];
+  "GasToken.burnFrom" [ label = "burnFrom", color = "blue" ];
+  "GasToken._burn" [ label = "_burn" ];
+  "GasToken.type" [ label = "type" ];
+  "GasToken.address" [ label = "address" ];
+}
+
+subgraph "clusterGuardPolicyStub" {
+  graph [ label = "GuardPolicyStub", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "GuardPolicyStub.mode" [ label = "mode", color = "blue" ];
+  "GuardPolicyStub.setMode" [ label = "setMode", color = "blue" ];
+  "GuardPolicyStub.delaySeconds" [ label = "delaySeconds", color = "blue" ];
+  "GuardPolicyStub.setDelaySeconds" [ label = "setDelaySeconds", color = "blue" ];
+  "GuardPolicyStub.riskThreshold" [ label = "riskThreshold", color = "blue" ];
+  "GuardPolicyStub.setRiskThreshold" [ label = "setRiskThreshold", color = "blue" ];
+  "GuardPolicyStub.riskScore" [ label = "riskScore", color = "blue" ];
+  "GuardPolicyStub.setRiskScore" [ label = "setRiskScore", color = "blue" ];
+}
+
+subgraph "clusterTestERC20" {
+  graph [ label = "TestERC20", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "TestERC20.onlyOwner" [ label = "onlyOwner", color = "yellow" ];
+  "TestERC20.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "TestERC20.mint" [ label = "mint", color = "blue" ];
+  "TestERC20.transfer" [ label = "transfer", color = "blue" ];
+  "TestERC20.approve" [ label = "approve", color = "blue" ];
+  "TestERC20.transferFrom" [ label = "transferFrom", color = "blue" ];
+  "TestERC20._transfer" [ label = "_transfer" ];
+  "TestERC20.address" [ label = "address" ];
+}
+
+subgraph "clusterabi" {
+  graph [ label = "abi", color = "lightgray" ];
+  "abi.encodeCall" [ label = "encodeCall" ];
+}
+
+subgraph "clusterto" {
+  graph [ label = "to", color = "lightgray" ];
+  "to.transfer" [ label = "transfer" ];
+}
+
+subgraph "clusterrecipient" {
+  graph [ label = "recipient", color = "lightgray" ];
+  "recipient.transfer" [ label = "transfer" ];
+}
+
+subgraph "clustertarget" {
+  graph [ label = "target", color = "lightgray" ];
+  "target.call" [ label = "call" ];
+}
+
+subgraph "clusterimpl" {
+  graph [ label = "impl", color = "lightgray" ];
+  "impl.delegatecall" [ label = "delegatecall" ];
+}
+
+  "ERC20.transfer";
+  "ERC20._transfer";
+  "ERC20.transferFrom";
+  "ERC20.type";
+  "ERC20.address";
+  "ERC20._mint";
+  "ERC20._burn";
+  "GhostGasTokenBase.<Constructor>";
+  "GhostGasTokenBase.mint";
+  "GhostGasTokenBase.burn";
+  "GhostGasTokenBase.burnFrom";
+  "GhostTokenL2.<Constructor>";
+  "GhostTokenL2.burn";
+  "GhostTokenL2.burnFrom";
+  "L2L3Bridge.depositERC20ToL3";
+  "L2L3Bridge.address";
+  "L2L3Bridge.finalizeToL3";
+  "GuardPolicy.check";
+  "L2L3Bridge.finalizeERC20ToL3";
+  "L2L3Bridge.releaseERC20FromL3";
+  "L3BridgedToken.mintFromL2";
+  "L3BridgedToken.burnToL2";
+  "L3BridgedTokenFactory.getOrDeployBridgedToken";
+  "L3BridgedTokenFactory.address";
+  "Merkle.verify";
+  "Merkle.hashPair";
+  "MockDisputeGameFactory.create";
+  "MockDisputeGameFactory.address";
+  "OptimisticRollup.verifyBlockInBatch";
+  "Merkle.hashLeaf";
+  "StakeToken.<Constructor>";
+  "StakeToken.mint";
+  "AIAttestationBase.<Constructor>";
+  "AIAttestationBase._buildDomainSeparator";
+  "AIAttestationBase.domainSeparator";
+  "AIAttestationBase._domainSeparator";
+  "AIAttestationBase.setLayerOracle";
+  "AIAttestationBase._requireLayer";
+  "AIAttestationBase.submitLayerDigest";
+  "AIAttestationBase.setLayerRequired";
+  "AIAttestationBase.setLayerMaxAge";
+  "AIAttestationBase._validateAttestation";
+  "AIAttestationBase._checkOffchainDigest";
+  "AIAttestationBase._checkLayerDigest";
+  "AIAttestationBase._hashTypedData";
+  "AIAttestationBase._validateSignatures";
+  "AIAttestationBase._recordAttestation";
+  "AIAttestationBase._recoverSigner";
+  "AIAttestationBase.address";
+  "AICommandCenter.<Constructor>";
+  "AICommandCenter._buildDomainSeparator";
+  "AICommandCenter.setLayerOracle";
+  "AICommandCenter._requireLayer";
+  "AICommandCenter.submitLayerDigest";
+  "AICommandCenter.setLayerRequired";
+  "AICommandCenter.setLayerMaxAge";
+  "AICommandCenter.executeDecision";
+  "AICommandCenter._precheckDecision";
+  "AICommandCenter._hashDecision";
+  "AICommandCenter._consumeDecision";
+  "AICommandCenter._executeAction";
+  "AICommandCenter.address";
+  "AICommandCenter._requiredConfidence";
+  "AICommandCenter._checkOffchainDigest";
+  "AICommandCenter._checkLayerDigest";
+  "AICommandCenter._validateSignatures";
+  "AICommandCenter._enforceCooldown";
+  "AICommandCenter._enforceBounds";
+  "AICommandCenter._recoverSigner";
+  "AICommandCenter._domainSeparator";
+  "AILayerGuardian.<Constructor>";
+  "AILayerGuardian.submitFraudAssessment";
+  "AILayerGuardian.submitTxAnalysis";
+  "AILayerGuardian.submitComplianceDecision";
+  "AILayerGuardian.submitExplainability";
+  "AILayerGuardian.checkTransaction";
+  "AILayerGuardian._remainingDelay";
+  "AILayerGuardian.executeIfAllowed";
+  "AILayerGuardian.computeOperationId";
+  "AILayerGuardian._enforceCooldown";
+  "AILayerGuardian._enforceBounds";
+  "BridgeMintableERC20.onlyBridge";
+  "LibErrors.NotAuthorized";
+  "BridgeMintableERC20.<Constructor>";
+  "BridgeMintableERC20.address";
+  "LibErrors.ZeroAddress";
+  "BridgeMintableERC20.mint";
+  "BridgeMintableERC20.burn";
+  "BridgeMintableERC20.transfer";
+  "BridgeMintableERC20._transfer";
+  "BridgeMintableERC20.transferFrom";
+  "StandardBridge.onlyOwner";
+  "LibErrors.NotOwner";
+  "StandardBridge.onlyRemoteBridge";
+  "StandardBridge.address";
+  "IXDomainMessenger.xDomainMessageSender";
+  "StandardBridge.<Constructor>";
+  "StandardBridge.setRemoteBridge";
+  "StandardBridge.bridgeERC20";
+  "LibErrors.InvalidValue";
+  "abi.encodeCall";
+  "IXDomainMessenger.sendMessage";
+  "StandardBridge.finalizeBridgeERC20";
+  "Ownable.<Constructor>";
+  "Ownable.address";
+  "Ownable.onlyOwner";
+  "Ownable.NotOwner";
+  "Ownable.transferOwnership";
+  "XDomainMessenger.onlyOwner";
+  "XDomainMessenger.onlyParentMessenger";
+  "XDomainMessenger.address";
+  "XDomainMessenger.relayMessage";
+  "LibErrors.AlreadyRelayed";
+  "AccessManaged.onlyRole";
+  "AccessManaged.hasRole";
+  "AccessManaged.<Constructor>";
+  "AccessManaged.address";
+  "AccessManaged.transferAdmin";
+  "StakingManagerV2.delegateStake";
+  "StakingManagerV2._previewMintedShares";
+  "StakingManagerV2.withdrawStake";
+  "to.transfer";
+  "StakingManagerV2.claimUnbonded";
+  "StakingManagerV2.slashStake";
+  "recipient.transfer";
+  "SlashingManagerV2.slash";
+  "SlashingManagerV2.payable";
+  "SlashingManagerV2.slashWithType";
+  "StakingManagerV2.setJail";
+  "SlashingManagerV2.slashDowntime";
+  "StakingManagerV2.pools";
+  "RewardDistributorV2.pullFromTreasury";
+  "ITreasuryV2.withdraw";
+  "RewardDistributorV2.payable";
+  "RewardDistributorV2.claim";
+  "PauseGuardianV2.guardedCall";
+  "target.call";
+  "NativeTokenV2.mint";
+  "NativeTokenV2.burn";
+  "WrappedNative.<Receive Native>";
+  "WrappedNative.deposit";
+  "WrappedNative.withdraw";
+  "WrappedNative.payable";
+  "MintController.controlledMint";
+  "IMintableToken.mint";
+  "BurnController.controlledBurn";
+  "IBurnableToken.burn";
+  "TreasuryV2.withdraw";
+  "Stablecoin.mint";
+  "Stablecoin.burn";
+  "Stablecoin.burnSelf";
+  "CollateralVault.deposit";
+  "CollateralVault.withdraw";
+  "CollateralVault._withdraw";
+  "CollateralVault.consume";
+  "PegStabilityModule.swapCollateralForStable";
+  "PegStabilityModule.swapStableForCollateral";
+  "StablecoinController.mintAgainstCollateral";
+  "PriceOracleRouter.prices";
+  "CollateralVault.moveCollateral";
+  "StablecoinController.repay";
+  "TokenBridge.deposit";
+  "NFTBridge.deposit";
+  "NFTBridge.finalizeWithdrawal";
+  "DisputeGameFactoryV2.createGame";
+  "FaultDisputeGame.initiate";
+  "FinalizationManager.finalize";
+  "FinalizationManager._requireFinalizable";
+  "FinalizationManager._finalize";
+  "FinalizationManager.finalizeWithDispute";
+  "DisputeGameFactoryV2.games";
+  "FaultDisputeGame.resolved";
+  "FaultDisputeGame.faultProven";
+  "OutputOracle.proposals";
+  "GovernanceToken.mint";
+  "GovernanceToken.burn";
+  "GovernorV2.castVote";
+  "GovernorV2.state";
+  "VotingEscrow.votingPower";
+  "GovernorV2.queue";
+  "GovernorV2.execute";
+  "ProposalExecutorV2.execute";
+  "QuadraticVoting.castVote";
+  "QuadraticVoting.sqrt";
+  "AutonomousExecutor.execute";
+  "UpgradeableProxy.<Constructor>";
+  "UpgradeableProxy.address";
+  "UpgradeableProxy.upgradeTo";
+  "UpgradeableProxy.<Fallback>";
+  "impl.delegatecall";
+  "Multicall.multicall";
+  "Multicall.delegatecall";
+  "Multicall.address";
+  "MetaTxForwarder.execute";
+  "NFTCore.mint";
+  "NFTCore.burn";
+  "InsuranceFund.payout";
+  "TreasuryBackstop.backstop";
+  "Governor.<Constructor>";
+  "ProposalExecutor.setGovernor";
+  "Governor.vote";
+  "ERC20.balanceOf";
+  "Governor.queue";
+  "ProposalExecutor.queueTx";
+  "Governor.execute";
+  "ProposalExecutor.execute";
+  "ProposalExecutor.address";
+  "DisputeGameFactory.<Constructor>";
+  "DisputeGameFactory.address";
+  "DisputeGameFactory.onlyOwner";
+  "DisputeGameFactory.Unauthorized";
+  "DisputeGameFactory.create";
+  "DisputeGameFactory.GameTypeNotSet";
+  "DisputeGameFactory.computeGameId";
+  "DisputeGameFactory.GameAlreadyExists";
+  "DisputeGameFactory._clone";
+  "Faucet.drip";
+  "L2OutputOracle.<Constructor>";
+  "L2OutputOracle.address";
+  "L2OutputOracle.ProposerUpdated";
+  "L2OutputOracle.setProposer";
+  "L2OutputOracle.proposeOutput";
+  "L2OutputOracle.NotProposer";
+  "L2OutputOracle.NonMonotonicBlockNumber";
+  "L2OutputOracle.OutputProposal";
+  "NativeToken.mint";
+  "NativeToken.burn";
+  "RewardDistributor.distribute";
+  "RollupManager.<Constructor>";
+  "RollupManager.setAddresses";
+  "SlashingManager.slash";
+  "StakingManager.slash";
+  "StakingManager.unstake";
+  "StakingManager.payable";
+  "SystemConfig.setBatcher";
+  "SystemConfig.setUnsafeBlockSigner";
+	  "Treasury.withdrawLegacyValue";
+  "Treasury.withdrawNative";
+  "IERC20Balance.transfer";
+  "ValidatorRegistry.addValidator";
+  "L1CrossDomainMessenger.<Constructor>";
+  "L1OptimismPortal.onlyOwner";
+  "L1OptimismPortal.whenNotPaused";
+  "L1OutputOracle.onlyOwner";
+  "L1OutputOracle.onlyProposer";
+  "L1SystemConfig.onlyOwner";
+  "DisputeGameAddressBook.<Constructor>";
+  "DisputeGameAddressBook.address";
+  "DisputeGameAddressBook.onlyAdmin";
+  "DisputeGameAddressBook.Unauthorized";
+  "GhostNFT.balanceOf";
+  "GhostNFT.ownerOf";
+  "GhostNFT.getApproved";
+  "GhostNFT.tokenURI";
+  "GhostNFT.approve";
+  "GhostNFT.isApprovedForAll";
+  "GhostNFT.transferFrom";
+  "GhostNFT._isApprovedOrOwner";
+  "GhostNFT._transfer";
+  "GhostNFT.safeTransferFrom";
+  "GhostNFT._checkOnERC721Received";
+  "GhostNFT.mint";
+  "GhostNFT._mint";
+  "GhostNFT.burn";
+  "GhostNFT._burn";
+  "GhostNFT._approve";
+  "GasToken.<Constructor>";
+  "GasToken._mint";
+  "GasToken.transfer";
+  "GasToken._transfer";
+  "GasToken.transferFrom";
+  "GasToken.type";
+  "GasToken.address";
+  "GasToken.burn";
+  "GasToken._burn";
+  "GasToken.burnFrom";
+  "TestERC20.onlyOwner";
+  "TestERC20.mint";
+  "TestERC20.address";
+  "TestERC20.transfer";
+  "TestERC20._transfer";
+  "TestERC20.transferFrom";
+  "ERC20.transfer" -> "ERC20._transfer" [ color = "green" ];
+  "ERC20.transferFrom" -> "ERC20.type" [ color = "green" ];
+  "ERC20.transferFrom" -> "ERC20._transfer" [ color = "green" ];
+  "ERC20._transfer" -> "ERC20.address" [ color = "green" ];
+  "ERC20._mint" -> "ERC20.address" [ color = "green" ];
+  "ERC20._mint" -> "ERC20.address" [ color = "green" ];
+  "ERC20._burn" -> "ERC20.address" [ color = "green" ];
+  "GhostGasTokenBase.<Constructor>" -> "ERC20._mint" [ color = "green" ];
+  "GhostGasTokenBase.mint" -> "ERC20._mint" [ color = "green" ];
+  "GhostGasTokenBase.burn" -> "ERC20._burn" [ color = "green" ];
+  "GhostGasTokenBase.burnFrom" -> "ERC20._burn" [ color = "green" ];
+  "GhostTokenL2.<Constructor>" -> "ERC20._mint" [ color = "green" ];
+  "GhostTokenL2.burn" -> "ERC20._burn" [ color = "green" ];
+  "GhostTokenL2.burnFrom" -> "ERC20.type" [ color = "green" ];
+  "GhostTokenL2.burnFrom" -> "ERC20._burn" [ color = "green" ];
+  "L2L3Bridge.depositERC20ToL3" -> "L2L3Bridge.address" [ color = "green" ];
+  "L2L3Bridge.finalizeToL3" -> "GuardPolicy.check" [ color = "orange" ];
+  "L2L3Bridge.finalizeERC20ToL3" -> "GuardPolicy.check" [ color = "orange" ];
+  "L2L3Bridge.releaseERC20FromL3" -> "GuardPolicy.check" [ color = "orange" ];
+  "L3BridgedToken.mintFromL2" -> "ERC20._mint" [ color = "green" ];
+  "L3BridgedToken.burnToL2" -> "ERC20._burn" [ color = "green" ];
+  "L3BridgedTokenFactory.getOrDeployBridgedToken" -> "L3BridgedTokenFactory.address" [ color = "green" ];
+  "L3BridgedTokenFactory.getOrDeployBridgedToken" -> "L3BridgedTokenFactory.address" [ color = "green" ];
+  "Merkle.verify" -> "Merkle.hashPair" [ color = "green" ];
+  "Merkle.verify" -> "Merkle.hashPair" [ color = "green" ];
+  "MockDisputeGameFactory.create" -> "MockDisputeGameFactory.address" [ color = "green" ];
+  "MockDisputeGameFactory.create" -> "MockDisputeGameFactory.address" [ color = "green" ];
+  "OptimisticRollup.verifyBlockInBatch" -> "Merkle.hashLeaf" [ color = "orange" ];
+  "OptimisticRollup.verifyBlockInBatch" -> "Merkle.verify" [ color = "orange" ];
+  "StakeToken.<Constructor>" -> "ERC20._mint" [ color = "green" ];
+  "StakeToken.mint" -> "ERC20._mint" [ color = "green" ];
+  "AIAttestationBase.<Constructor>" -> "AIAttestationBase._buildDomainSeparator" [ color = "green" ];
+  "AIAttestationBase.domainSeparator" -> "AIAttestationBase._domainSeparator" [ color = "green" ];
+  "AIAttestationBase.setLayerOracle" -> "AIAttestationBase._requireLayer" [ color = "green" ];
+  "AIAttestationBase.submitLayerDigest" -> "AIAttestationBase._requireLayer" [ color = "green" ];
+  "AIAttestationBase.setLayerRequired" -> "AIAttestationBase._requireLayer" [ color = "green" ];
+  "AIAttestationBase.setLayerMaxAge" -> "AIAttestationBase._requireLayer" [ color = "green" ];
+  "AIAttestationBase._validateAttestation" -> "AIAttestationBase._checkOffchainDigest" [ color = "green" ];
+  "AIAttestationBase._validateAttestation" -> "AIAttestationBase._checkLayerDigest" [ color = "green" ];
+  "AIAttestationBase._validateAttestation" -> "AIAttestationBase._checkLayerDigest" [ color = "green" ];
+  "AIAttestationBase._validateAttestation" -> "AIAttestationBase._checkLayerDigest" [ color = "green" ];
+  "AIAttestationBase._validateAttestation" -> "AIAttestationBase._hashTypedData" [ color = "green" ];
+  "AIAttestationBase._validateAttestation" -> "AIAttestationBase._validateSignatures" [ color = "green" ];
+  "AIAttestationBase._validateAttestation" -> "AIAttestationBase._recordAttestation" [ color = "green" ];
+  "AIAttestationBase._checkLayerDigest" -> "AIAttestationBase._requireLayer" [ color = "green" ];
+  "AIAttestationBase._validateSignatures" -> "AIAttestationBase._recoverSigner" [ color = "green" ];
+  "AIAttestationBase._recoverSigner" -> "AIAttestationBase.address" [ color = "green" ];
+  "AIAttestationBase._hashTypedData" -> "AIAttestationBase._domainSeparator" [ color = "green" ];
+  "AIAttestationBase._domainSeparator" -> "AIAttestationBase._buildDomainSeparator" [ color = "green" ];
+  "AIAttestationBase._buildDomainSeparator" -> "AIAttestationBase.address" [ color = "green" ];
+  "AICommandCenter.<Constructor>" -> "AICommandCenter._buildDomainSeparator" [ color = "green" ];
+  "AICommandCenter.setLayerOracle" -> "AICommandCenter._requireLayer" [ color = "green" ];
+  "AICommandCenter.submitLayerDigest" -> "AICommandCenter._requireLayer" [ color = "green" ];
+  "AICommandCenter.setLayerRequired" -> "AICommandCenter._requireLayer" [ color = "green" ];
+  "AICommandCenter.setLayerMaxAge" -> "AICommandCenter._requireLayer" [ color = "green" ];
+  "AICommandCenter.executeDecision" -> "AICommandCenter._precheckDecision" [ color = "green" ];
+  "AICommandCenter.executeDecision" -> "AICommandCenter._hashDecision" [ color = "green" ];
+  "AICommandCenter.executeDecision" -> "AICommandCenter._consumeDecision" [ color = "green" ];
+  "AICommandCenter.executeDecision" -> "AICommandCenter._executeAction" [ color = "green" ];
+  "AICommandCenter._precheckDecision" -> "AICommandCenter.address" [ color = "green" ];
+  "AICommandCenter._precheckDecision" -> "AICommandCenter._requiredConfidence" [ color = "green" ];
+  "AICommandCenter._precheckDecision" -> "AICommandCenter._checkOffchainDigest" [ color = "green" ];
+  "AICommandCenter._precheckDecision" -> "AICommandCenter._checkLayerDigest" [ color = "green" ];
+  "AICommandCenter._precheckDecision" -> "AICommandCenter._checkLayerDigest" [ color = "green" ];
+  "AICommandCenter._precheckDecision" -> "AICommandCenter._checkLayerDigest" [ color = "green" ];
+  "AICommandCenter._consumeDecision" -> "AICommandCenter._validateSignatures" [ color = "green" ];
+  "AICommandCenter._executeAction" -> "AICommandCenter._enforceCooldown" [ color = "green" ];
+  "AICommandCenter._executeAction" -> "AICommandCenter._enforceBounds" [ color = "green" ];
+  "AICommandCenter._checkLayerDigest" -> "AICommandCenter._requireLayer" [ color = "green" ];
+  "AICommandCenter._validateSignatures" -> "AICommandCenter._recoverSigner" [ color = "green" ];
+  "AICommandCenter._recoverSigner" -> "AICommandCenter._domainSeparator" [ color = "green" ];
+  "AICommandCenter._recoverSigner" -> "AICommandCenter.address" [ color = "green" ];
+  "AICommandCenter._domainSeparator" -> "AICommandCenter._buildDomainSeparator" [ color = "green" ];
+  "AICommandCenter._buildDomainSeparator" -> "AICommandCenter.address" [ color = "green" ];
+  "AILayerGuardian.<Constructor>" -> "AIAttestationBase._requireLayer" [ color = "green" ];
+  "AILayerGuardian.submitFraudAssessment" -> "AIAttestationBase._requireLayer" [ color = "green" ];
+  "AILayerGuardian.submitFraudAssessment" -> "AIAttestationBase._validateAttestation" [ color = "green" ];
+  "AILayerGuardian.submitTxAnalysis" -> "AIAttestationBase._requireLayer" [ color = "green" ];
+  "AILayerGuardian.submitTxAnalysis" -> "AIAttestationBase._validateAttestation" [ color = "green" ];
+  "AILayerGuardian.submitComplianceDecision" -> "AIAttestationBase._requireLayer" [ color = "green" ];
+  "AILayerGuardian.submitComplianceDecision" -> "AIAttestationBase._validateAttestation" [ color = "green" ];
+  "AILayerGuardian.submitExplainability" -> "AIAttestationBase._requireLayer" [ color = "green" ];
+  "AILayerGuardian.submitExplainability" -> "AIAttestationBase._validateAttestation" [ color = "green" ];
+  "AILayerGuardian.checkTransaction" -> "AILayerGuardian._remainingDelay" [ color = "green" ];
+  "AILayerGuardian.checkTransaction" -> "AILayerGuardian._remainingDelay" [ color = "green" ];
+  "AILayerGuardian.executeIfAllowed" -> "AILayerGuardian.computeOperationId" [ color = "green" ];
+  "AILayerGuardian.executeIfAllowed" -> "AILayerGuardian.checkTransaction" [ color = "green" ];
+  "AILayerGuardian.executeIfAllowed" -> "AILayerGuardian._enforceCooldown" [ color = "green" ];
+  "AILayerGuardian.executeIfAllowed" -> "AILayerGuardian._enforceBounds" [ color = "green" ];
+  "BridgeMintableERC20.onlyBridge" -> "LibErrors.NotAuthorized" [ color = "orange" ];
+  "BridgeMintableERC20.<Constructor>" -> "BridgeMintableERC20.address" [ color = "green" ];
+  "BridgeMintableERC20.<Constructor>" -> "LibErrors.ZeroAddress" [ color = "orange" ];
+  "BridgeMintableERC20.mint" -> "BridgeMintableERC20.address" [ color = "green" ];
+  "BridgeMintableERC20.burn" -> "BridgeMintableERC20.address" [ color = "green" ];
+  "BridgeMintableERC20.transfer" -> "BridgeMintableERC20._transfer" [ color = "green" ];
+  "BridgeMintableERC20.transferFrom" -> "BridgeMintableERC20._transfer" [ color = "green" ];
+  "BridgeMintableERC20._transfer" -> "BridgeMintableERC20.address" [ color = "green" ];
+  "StandardBridge.onlyOwner" -> "LibErrors.NotOwner" [ color = "orange" ];
+  "StandardBridge.onlyRemoteBridge" -> "StandardBridge.address" [ color = "green" ];
+  "StandardBridge.onlyRemoteBridge" -> "LibErrors.NotAuthorized" [ color = "orange" ];
+  "StandardBridge.onlyRemoteBridge" -> "IXDomainMessenger.xDomainMessageSender" [ color = "orange" ];
+  "StandardBridge.onlyRemoteBridge" -> "LibErrors.NotAuthorized" [ color = "orange" ];
+  "StandardBridge.<Constructor>" -> "StandardBridge.address" [ color = "green" ];
+  "StandardBridge.<Constructor>" -> "StandardBridge.address" [ color = "green" ];
+  "StandardBridge.<Constructor>" -> "LibErrors.ZeroAddress" [ color = "orange" ];
+  "StandardBridge.setRemoteBridge" -> "StandardBridge.address" [ color = "green" ];
+  "StandardBridge.setRemoteBridge" -> "LibErrors.ZeroAddress" [ color = "orange" ];
+  "StandardBridge.bridgeERC20" -> "StandardBridge.address" [ color = "green" ];
+  "StandardBridge.bridgeERC20" -> "LibErrors.ZeroAddress" [ color = "orange" ];
+  "StandardBridge.bridgeERC20" -> "LibErrors.InvalidValue" [ color = "orange" ];
+  "StandardBridge.bridgeERC20" -> "StandardBridge.address" [ color = "green" ];
+  "StandardBridge.bridgeERC20" -> "abi.encodeCall" [ color = "orange" ];
+  "StandardBridge.bridgeERC20" -> "IXDomainMessenger.sendMessage" [ color = "orange" ];
+  "StandardBridge.finalizeBridgeERC20" -> "StandardBridge.address" [ color = "green" ];
+  "StandardBridge.finalizeBridgeERC20" -> "LibErrors.ZeroAddress" [ color = "orange" ];
+  "StandardBridge.finalizeBridgeERC20" -> "LibErrors.InvalidValue" [ color = "orange" ];
+  "ERC20._transfer" -> "ERC20.address" [ color = "green" ];
+  "ERC20.transfer" -> "ERC20._transfer" [ color = "green" ];
+  "ERC20.transferFrom" -> "ERC20.type" [ color = "green" ];
+  "ERC20.transferFrom" -> "ERC20._transfer" [ color = "green" ];
+  "ERC20._mint" -> "ERC20.address" [ color = "green" ];
+  "ERC20._mint" -> "ERC20.address" [ color = "green" ];
+  "ERC20._burn" -> "ERC20.address" [ color = "green" ];
+  "Ownable.<Constructor>" -> "Ownable.address" [ color = "green" ];
+  "Ownable.onlyOwner" -> "Ownable.NotOwner" [ color = "red" ];
+  "Ownable.transferOwnership" -> "Ownable.address" [ color = "green" ];
+  "XDomainMessenger.onlyOwner" -> "LibErrors.NotOwner" [ color = "orange" ];
+  "XDomainMessenger.onlyParentMessenger" -> "LibErrors.NotAuthorized" [ color = "orange" ];
+  "IXDomainMessenger.sendMessage" -> "XDomainMessenger.address" [ color = "green" ];
+  "IXDomainMessenger.sendMessage" -> "LibErrors.ZeroAddress" [ color = "orange" ];
+  "IXDomainMessenger.sendMessage" -> "XDomainMessenger.address" [ color = "green" ];
+  "IXDomainMessenger.sendMessage" -> "LibErrors.NotAuthorized" [ color = "orange" ];
+  "XDomainMessenger.relayMessage" -> "XDomainMessenger.address" [ color = "green" ];
+  "XDomainMessenger.relayMessage" -> "LibErrors.ZeroAddress" [ color = "orange" ];
+  "XDomainMessenger.relayMessage" -> "LibErrors.AlreadyRelayed" [ color = "orange" ];
+  "XDomainMessenger.relayMessage" -> "XDomainMessenger.address" [ color = "green" ];
+  "AccessManaged.onlyRole" -> "AccessManaged.hasRole" [ color = "green" ];
+  "AccessManaged.<Constructor>" -> "AccessManaged.address" [ color = "green" ];
+  "AccessManaged.transferAdmin" -> "AccessManaged.address" [ color = "green" ];
+  "StakingManagerV2.delegateStake" -> "StakingManagerV2._previewMintedShares" [ color = "green" ];
+  "StakingManagerV2.withdrawStake" -> "AccessManaged.address" [ color = "green" ];
+  "StakingManagerV2.withdrawStake" -> "to.transfer" [ color = "orange" ];
+  "StakingManagerV2.claimUnbonded" -> "AccessManaged.address" [ color = "green" ];
+  "StakingManagerV2.claimUnbonded" -> "to.transfer" [ color = "orange" ];
+  "StakingManagerV2.slashStake" -> "AccessManaged.address" [ color = "green" ];
+  "StakingManagerV2.slashStake" -> "AccessManaged.address" [ color = "green" ];
+  "StakingManagerV2.slashStake" -> "recipient.transfer" [ color = "orange" ];
+  "SlashingManagerV2.slash" -> "StakingManagerV2.slashStake" [ color = "orange" ];
+  "SlashingManagerV2.slash" -> "SlashingManagerV2.payable" [ color = "green" ];
+  "SlashingManagerV2.slash" -> "AccessManaged.address" [ color = "green" ];
+  "SlashingManagerV2.slashWithType" -> "StakingManagerV2.slashStake" [ color = "orange" ];
+  "SlashingManagerV2.slashWithType" -> "SlashingManagerV2.payable" [ color = "green" ];
+  "SlashingManagerV2.slashWithType" -> "AccessManaged.address" [ color = "green" ];
+  "SlashingManagerV2.slashWithType" -> "StakingManagerV2.setJail" [ color = "orange" ];
+  "SlashingManagerV2.slashDowntime" -> "StakingManagerV2.pools" [ color = "orange" ];
+  "SlashingManagerV2.slashDowntime" -> "StakingManagerV2.slashStake" [ color = "orange" ];
+  "SlashingManagerV2.slashDowntime" -> "SlashingManagerV2.payable" [ color = "green" ];
+  "SlashingManagerV2.slashDowntime" -> "AccessManaged.address" [ color = "green" ];
+  "SlashingManagerV2.slashDowntime" -> "StakingManagerV2.setJail" [ color = "orange" ];
+  "RewardDistributorV2.pullFromTreasury" -> "ITreasuryV2.withdraw" [ color = "orange" ];
+  "RewardDistributorV2.pullFromTreasury" -> "RewardDistributorV2.payable" [ color = "green" ];
+  "RewardDistributorV2.pullFromTreasury" -> "AccessManaged.address" [ color = "green" ];
+  "RewardDistributorV2.claim" -> "AccessManaged.address" [ color = "green" ];
+  "RewardDistributorV2.claim" -> "to.transfer" [ color = "orange" ];
+  "PauseGuardianV2.guardedCall" -> "target.call" [ color = "orange" ];
+  "NativeTokenV2.mint" -> "ERC20._mint" [ color = "green" ];
+  "NativeTokenV2.burn" -> "ERC20._burn" [ color = "green" ];
+  "WrappedNative.<Receive Native>" -> "ERC20._mint" [ color = "green" ];
+  "WrappedNative.deposit" -> "ERC20._mint" [ color = "green" ];
+  "WrappedNative.withdraw" -> "ERC20._burn" [ color = "green" ];
+  "WrappedNative.withdraw" -> "WrappedNative.payable" [ color = "green" ];
+  "MintController.controlledMint" -> "IMintableToken.mint" [ color = "orange" ];
+  "BurnController.controlledBurn" -> "IBurnableToken.burn" [ color = "orange" ];
+  "TreasuryV2.withdraw" -> "AccessManaged.address" [ color = "green" ];
+  "TreasuryV2.withdraw" -> "to.transfer" [ color = "orange" ];
+  "Stablecoin.mint" -> "ERC20._mint" [ color = "green" ];
+  "Stablecoin.burn" -> "ERC20._burn" [ color = "green" ];
+  "Stablecoin.burnSelf" -> "ERC20._burn" [ color = "green" ];
+  "CollateralVault.deposit" -> "AccessManaged.address" [ color = "green" ];
+  "CollateralVault.withdraw" -> "CollateralVault._withdraw" [ color = "green" ];
+  "CollateralVault.consume" -> "CollateralVault._withdraw" [ color = "green" ];
+  "PegStabilityModule.swapCollateralForStable" -> "AccessManaged.address" [ color = "green" ];
+  "PegStabilityModule.swapCollateralForStable" -> "Stablecoin.mint" [ color = "orange" ];
+  "PegStabilityModule.swapStableForCollateral" -> "Stablecoin.burn" [ color = "orange" ];
+  "StablecoinController.mintAgainstCollateral" -> "PriceOracleRouter.prices" [ color = "orange" ];
+  "StablecoinController.mintAgainstCollateral" -> "CollateralVault.moveCollateral" [ color = "orange" ];
+  "StablecoinController.mintAgainstCollateral" -> "AccessManaged.address" [ color = "green" ];
+  "StablecoinController.mintAgainstCollateral" -> "Stablecoin.mint" [ color = "orange" ];
+  "StablecoinController.repay" -> "Stablecoin.burn" [ color = "orange" ];
+  "StablecoinController.repay" -> "CollateralVault.moveCollateral" [ color = "orange" ];
+  "StablecoinController.repay" -> "AccessManaged.address" [ color = "green" ];
+  "TokenBridge.deposit" -> "AccessManaged.address" [ color = "green" ];
+  "NFTBridge.deposit" -> "AccessManaged.address" [ color = "green" ];
+  "NFTBridge.finalizeWithdrawal" -> "AccessManaged.address" [ color = "green" ];
+  "DisputeGameFactoryV2.createGame" -> "AccessManaged.address" [ color = "green" ];
+  "DisputeGameFactoryV2.createGame" -> "FaultDisputeGame.initiate" [ color = "orange" ];
+  "DisputeGameFactoryV2.createGame" -> "AccessManaged.address" [ color = "green" ];
+  "DisputeGameFactoryV2.createGame" -> "AccessManaged.address" [ color = "green" ];
+  "FinalizationManager.finalize" -> "FinalizationManager._requireFinalizable" [ color = "green" ];
+  "FinalizationManager.finalize" -> "FinalizationManager._finalize" [ color = "green" ];
+  "FinalizationManager.finalizeWithDispute" -> "DisputeGameFactoryV2.games" [ color = "orange" ];
+  "FinalizationManager.finalizeWithDispute" -> "AccessManaged.address" [ color = "green" ];
+  "FinalizationManager.finalizeWithDispute" -> "FaultDisputeGame.resolved" [ color = "orange" ];
+  "FinalizationManager.finalizeWithDispute" -> "FaultDisputeGame.faultProven" [ color = "orange" ];
+  "FinalizationManager.finalizeWithDispute" -> "FinalizationManager._requireFinalizable" [ color = "green" ];
+  "FinalizationManager.finalizeWithDispute" -> "FinalizationManager._finalize" [ color = "green" ];
+  "FinalizationManager._requireFinalizable" -> "OutputOracle.proposals" [ color = "orange" ];
+  "GovernanceToken.mint" -> "ERC20._mint" [ color = "green" ];
+  "GovernanceToken.burn" -> "ERC20._burn" [ color = "green" ];
+  "GovernorV2.castVote" -> "GovernorV2.state" [ color = "green" ];
+  "GovernorV2.castVote" -> "VotingEscrow.votingPower" [ color = "orange" ];
+  "GovernorV2.queue" -> "GovernorV2.state" [ color = "green" ];
+  "GovernorV2.execute" -> "GovernorV2.state" [ color = "green" ];
+  "ProposalExecutorV2.execute" -> "target.call" [ color = "orange" ];
+  "QuadraticVoting.castVote" -> "QuadraticVoting.sqrt" [ color = "green" ];
+  "AutonomousExecutor.execute" -> "target.call" [ color = "orange" ];
+  "UpgradeableProxy.<Constructor>" -> "UpgradeableProxy.address" [ color = "green" ];
+  "UpgradeableProxy.upgradeTo" -> "UpgradeableProxy.address" [ color = "green" ];
+  "UpgradeableProxy.<Fallback>" -> "UpgradeableProxy.address" [ color = "green" ];
+  "UpgradeableProxy.<Fallback>" -> "impl.delegatecall" [ color = "orange" ];
+  "Multicall.multicall" -> "Multicall.delegatecall" [ color = "green" ];
+  "Multicall.multicall" -> "Multicall.address" [ color = "green" ];
+  "MetaTxForwarder.execute" -> "target.call" [ color = "orange" ];
+  "NFTCore.mint" -> "AccessManaged.address" [ color = "green" ];
+  "NFTCore.mint" -> "AccessManaged.address" [ color = "green" ];
+  "NFTCore.burn" -> "AccessManaged.address" [ color = "green" ];
+  "NFTCore.burn" -> "AccessManaged.address" [ color = "green" ];
+  "InsuranceFund.payout" -> "to.transfer" [ color = "orange" ];
+  "TreasuryBackstop.backstop" -> "to.transfer" [ color = "orange" ];
+  "Governor.<Constructor>" -> "ProposalExecutor.setGovernor" [ color = "orange" ];
+  "Governor.<Constructor>" -> "Ownable.address" [ color = "green" ];
+  "Governor.vote" -> "ERC20.balanceOf" [ color = "orange" ];
+  "Governor.queue" -> "ProposalExecutor.queueTx" [ color = "orange" ];
+  "Governor.execute" -> "ProposalExecutor.execute" [ color = "orange" ];
+  "ProposalExecutor.setGovernor" -> "ProposalExecutor.address" [ color = "green" ];
+  "DisputeGameFactory.<Constructor>" -> "DisputeGameFactory.address" [ color = "green" ];
+  "DisputeGameFactory.onlyOwner" -> "DisputeGameFactory.Unauthorized" [ color = "red" ];
+  "DisputeGameFactory.create" -> "DisputeGameFactory.address" [ color = "green" ];
+  "DisputeGameFactory.create" -> "DisputeGameFactory.GameTypeNotSet" [ color = "red" ];
+  "DisputeGameFactory.create" -> "DisputeGameFactory.computeGameId" [ color = "green" ];
+  "DisputeGameFactory.create" -> "DisputeGameFactory.address" [ color = "green" ];
+  "DisputeGameFactory.create" -> "DisputeGameFactory.GameAlreadyExists" [ color = "red" ];
+  "DisputeGameFactory.create" -> "DisputeGameFactory._clone" [ color = "green" ];
+  "DisputeGameFactory._clone" -> "DisputeGameFactory.address" [ color = "green" ];
+  "Faucet.drip" -> "Ownable.address" [ color = "green" ];
+  "L2OutputOracle.<Constructor>" -> "L2OutputOracle.address" [ color = "green" ];
+  "L2OutputOracle.<Constructor>" -> "L2OutputOracle.ProposerUpdated" [ color = "green" ];
+  "L2OutputOracle.setProposer" -> "L2OutputOracle.address" [ color = "green" ];
+  "L2OutputOracle.setProposer" -> "L2OutputOracle.ProposerUpdated" [ color = "green" ];
+  "L2OutputOracle.proposeOutput" -> "L2OutputOracle.NotProposer" [ color = "red" ];
+  "L2OutputOracle.proposeOutput" -> "L2OutputOracle.NonMonotonicBlockNumber" [ color = "red" ];
+  "L2OutputOracle.proposeOutput" -> "L2OutputOracle.OutputProposal" [ color = "green" ];
+  "NativeToken.mint" -> "ERC20._mint" [ color = "green" ];
+  "NativeToken.burn" -> "ERC20._burn" [ color = "green" ];
+  "RewardDistributor.distribute" -> "ERC20.transfer" [ color = "orange" ];
+  "RollupManager.<Constructor>" -> "Ownable.address" [ color = "green" ];
+  "RollupManager.<Constructor>" -> "Ownable.address" [ color = "green" ];
+  "RollupManager.<Constructor>" -> "Ownable.address" [ color = "green" ];
+  "RollupManager.<Constructor>" -> "Ownable.address" [ color = "green" ];
+  "RollupManager.setAddresses" -> "Ownable.address" [ color = "green" ];
+  "RollupManager.setAddresses" -> "Ownable.address" [ color = "green" ];
+  "RollupManager.setAddresses" -> "Ownable.address" [ color = "green" ];
+  "RollupManager.setAddresses" -> "Ownable.address" [ color = "green" ];
+  "SlashingManager.slash" -> "StakingManager.slash" [ color = "orange" ];
+  "StakingManager.unstake" -> "StakingManager.payable" [ color = "green" ];
+  "SystemConfig.setBatcher" -> "Ownable.address" [ color = "green" ];
+  "SystemConfig.setUnsafeBlockSigner" -> "Ownable.address" [ color = "green" ];
+	  "Treasury.withdrawLegacyValue" -> "Ownable.address" [ color = "green" ];
+	  "Treasury.withdrawLegacyValue" -> "to.transfer" [ color = "orange" ];
+  "Treasury.withdrawNative" -> "IERC20Balance.transfer" [ color = "orange" ];
+  "ValidatorRegistry.addValidator" -> "Ownable.address" [ color = "green" ];
+  "L1CrossDomainMessenger.<Constructor>" -> "XDomainMessenger.address" [ color = "green" ];
+  "L1OptimismPortal.onlyOwner" -> "LibErrors.NotOwner" [ color = "orange" ];
+  "L1OptimismPortal.whenNotPaused" -> "LibErrors.NotAuthorized" [ color = "orange" ];
+  "L1OutputOracle.onlyOwner" -> "LibErrors.NotOwner" [ color = "orange" ];
+  "L1OutputOracle.onlyProposer" -> "LibErrors.NotAuthorized" [ color = "orange" ];
+  "L1SystemConfig.onlyOwner" -> "LibErrors.NotOwner" [ color = "orange" ];
+  "DisputeGameAddressBook.<Constructor>" -> "DisputeGameAddressBook.address" [ color = "green" ];
+  "DisputeGameAddressBook.<Constructor>" -> "DisputeGameAddressBook.address" [ color = "green" ];
+  "DisputeGameAddressBook.onlyAdmin" -> "DisputeGameAddressBook.Unauthorized" [ color = "red" ];
+  "GhostNFT.balanceOf" -> "Ownable.address" [ color = "green" ];
+  "GhostNFT.ownerOf" -> "Ownable.address" [ color = "green" ];
+  "GhostNFT.getApproved" -> "Ownable.address" [ color = "green" ];
+  "GhostNFT.tokenURI" -> "Ownable.address" [ color = "green" ];
+  "GhostNFT.approve" -> "GhostNFT.ownerOf" [ color = "green" ];
+  "GhostNFT.approve" -> "GhostNFT.isApprovedForAll" [ color = "green" ];
+  "GhostNFT.transferFrom" -> "GhostNFT._isApprovedOrOwner" [ color = "green" ];
+  "GhostNFT.transferFrom" -> "GhostNFT._transfer" [ color = "green" ];
+  "GhostNFT.safeTransferFrom" -> "GhostNFT.safeTransferFrom" [ color = "green" ];
+  "GhostNFT.safeTransferFrom" -> "GhostNFT._isApprovedOrOwner" [ color = "green" ];
+  "GhostNFT.safeTransferFrom" -> "GhostNFT._transfer" [ color = "green" ];
+  "GhostNFT.safeTransferFrom" -> "GhostNFT._checkOnERC721Received" [ color = "green" ];
+  "GhostNFT.mint" -> "Ownable.address" [ color = "green" ];
+  "GhostNFT.mint" -> "GhostNFT._mint" [ color = "green" ];
+  "GhostNFT.mint" -> "Ownable.address" [ color = "green" ];
+  "GhostNFT.mint" -> "Ownable.address" [ color = "green" ];
+  "GhostNFT.mint" -> "GhostNFT._mint" [ color = "green" ];
+  "GhostNFT.burn" -> "GhostNFT._isApprovedOrOwner" [ color = "green" ];
+  "GhostNFT.burn" -> "GhostNFT._burn" [ color = "green" ];
+  "GhostNFT._mint" -> "Ownable.address" [ color = "green" ];
+  "GhostNFT._mint" -> "Ownable.address" [ color = "green" ];
+  "GhostNFT._burn" -> "GhostNFT.ownerOf" [ color = "green" ];
+  "GhostNFT._burn" -> "GhostNFT._approve" [ color = "green" ];
+  "GhostNFT._burn" -> "Ownable.address" [ color = "green" ];
+  "GhostNFT._burn" -> "Ownable.address" [ color = "green" ];
+  "GhostNFT._approve" -> "GhostNFT.ownerOf" [ color = "green" ];
+  "GhostNFT._transfer" -> "GhostNFT.ownerOf" [ color = "green" ];
+  "GhostNFT._transfer" -> "Ownable.address" [ color = "green" ];
+  "GhostNFT._transfer" -> "GhostNFT._approve" [ color = "green" ];
+  "GhostNFT._transfer" -> "Ownable.address" [ color = "green" ];
+  "GhostNFT._isApprovedOrOwner" -> "GhostNFT.ownerOf" [ color = "green" ];
+  "GhostNFT._isApprovedOrOwner" -> "GhostNFT.getApproved" [ color = "green" ];
+  "GhostNFT._isApprovedOrOwner" -> "GhostNFT.isApprovedForAll" [ color = "green" ];
+  "GasToken.<Constructor>" -> "GasToken._mint" [ color = "green" ];
+  "GasToken.transfer" -> "GasToken._transfer" [ color = "green" ];
+  "GasToken.transferFrom" -> "GasToken.type" [ color = "green" ];
+  "GasToken.transferFrom" -> "GasToken._transfer" [ color = "green" ];
+  "GasToken._transfer" -> "GasToken.address" [ color = "green" ];
+  "GasToken._mint" -> "GasToken.address" [ color = "green" ];
+  "GasToken._mint" -> "GasToken.address" [ color = "green" ];
+  "GasToken.burn" -> "GasToken._burn" [ color = "green" ];
+  "GasToken.burnFrom" -> "GasToken.type" [ color = "green" ];
+  "GasToken.burnFrom" -> "GasToken._burn" [ color = "green" ];
+  "GasToken._burn" -> "GasToken.address" [ color = "green" ];
+  "TestERC20.onlyOwner" -> "LibErrors.NotOwner" [ color = "orange" ];
+  "TestERC20.mint" -> "TestERC20.address" [ color = "green" ];
+  "TestERC20.transfer" -> "TestERC20._transfer" [ color = "green" ];
+  "TestERC20.transferFrom" -> "TestERC20._transfer" [ color = "green" ];
+  "TestERC20._transfer" -> "TestERC20.address" [ color = "green" ];
+
+
+rankdir=LR
+node [shape=plaintext]
+subgraph cluster_01 { 
+label = "Legend";
+key [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">
+  <tr><td align="right" port="i1">Internal Call</td></tr>
+  <tr><td align="right" port="i2">External Call</td></tr>
+  <tr><td align="right" port="i2">Custom Error Call</td></tr>
+  <tr><td align="right" port="i3">Defined Contract</td></tr>
+  <tr><td align="right" port="i4">Undefined Contract</td></tr>
+  </table>>]
+key2 [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">
+  <tr><td port="i1">&nbsp;&nbsp;&nbsp;</td></tr>
+  <tr><td port="i2">&nbsp;&nbsp;&nbsp;</td></tr>
+  <tr><td port="i3" bgcolor="lightgray">&nbsp;&nbsp;&nbsp;</td></tr>
+  <tr><td port="i4">
+    <table border="1" cellborder="0" cellspacing="0" cellpadding="7" color="lightgray">
+      <tr>
+       <td></td>
+      </tr>
+     </table>
+  </td></tr>
+  </table>>]
+key:i1:e -> key2:i1:w [color="green"]
+key:i2:e -> key2:i2:w [color="orange"]
+key:i2:e -> key2:i2:w [color="red"]
+}
+}

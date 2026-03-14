@@ -1,0 +1,79 @@
+{
+  "name": "@ghostchain/ghostchainjs-util",
+  "version": "1.0.0",
+  "description": "GhostChain primitive utilities — zero external deps. Hex, address, units, ABI, RLP, hash, signature, EIP-712.",
+  "author": "GhostChain Core Team",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./address": {
+      "import": "./dist/address.js",
+      "types": "./dist/address.d.ts"
+    },
+    "./hex": {
+      "import": "./dist/hex.js",
+      "types": "./dist/hex.d.ts"
+    },
+    "./units": {
+      "import": "./dist/units.js",
+      "types": "./dist/units.d.ts"
+    },
+    "./hash": {
+      "import": "./dist/hash.js",
+      "types": "./dist/hash.d.ts"
+    },
+    "./abi": {
+      "import": "./dist/abi.js",
+      "types": "./dist/abi.d.ts"
+    },
+    "./rlp": {
+      "import": "./dist/rlp.js",
+      "types": "./dist/rlp.d.ts"
+    },
+    "./signature": {
+      "import": "./dist/signature.js",
+      "types": "./dist/signature.d.ts"
+    },
+    "./eip712": {
+      "import": "./dist/eip712.js",
+      "types": "./dist/eip712.d.ts"
+    },
+    "./chains": {
+      "import": "./dist/chains.js",
+      "types": "./dist/chains.d.ts"
+    },
+    "./math": {
+      "import": "./dist/math.js",
+      "types": "./dist/math.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts"
+    },
+    "./errors": {
+      "import": "./dist/errors.js",
+      "types": "./dist/errors.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "build:watch": "tsc --build --watch",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "test": "node --test test/*.test.js",
+    "brand-check": "node ../../packages/brand-enforcer/src/cli.js scan src/"
+  },
+  "dependencies": {
+    "@noble/curves": "^1.2.0",
+    "@noble/hashes": "^1.3.2",
+    "@scure/base": "^1.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

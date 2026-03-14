@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@ghostl/types": ["packages/types/index.ts"],
+      "@ghostl/types/*": ["packages/types/*"],
+      "@ghostl/contract-schemas": ["packages/contract-schemas/index.ts"],
+      "@ghostl/contract-schemas/*": ["packages/contract-schemas/*"],
+      "@ghostl/ui": ["packages/ui/src/index.ts"],
+      "@ghostl/ui/*": ["packages/ui/src/*"],
+      "@ghostl/sdk": ["packages/sdk/src/index.ts"],
+      "@ghostl/ghostwallet": ["packages/ghostwallet/src/index.ts"],
+      "@ghostl/ghostchain-sdk": ["packages/ghostchain-sdk/src/index.ts"],
+      "@ghostl/config": ["packages/config/index.ts"],
+      "@ghostl/config/*": ["packages/config/*"],
+      "@ghostl/ghost-sdk": ["packages/ghost-sdk/src/index.ts"],
+      "@ghostl/ghost-sdk/*": ["packages/ghost-sdk/src/*"],
+      "ghost": ["packages/ghost/src/index.ts"],
+      "@ghost/ai": ["packages/ghost-ai/src/index.ts"],
+      "@ghost/ai/*": ["packages/ghost-ai/src/*"],
+      "@ghost/ai-sdk": ["packages/ghost-ai-sdk/src/index.ts"],
+      "@ghost/ai-sdk/*": ["packages/ghost-ai-sdk/src/*"],
+      "@ghostchain/ui-components": ["packages/ui-components/src/index.ts"],
+      "@ghostchain/ui-components/*": ["packages/ui-components/src/*"],
+      "@ghostchain/ghost-sdk-core": ["packages/ghost-sdk-core/src/index.ts"],
+      "@ghostchain/ghost-sdk-core/*": ["packages/ghost-sdk-core/src/*"]
+    }
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "ai-clock-sync",
+    "labels": {
+      "app": "ai-clock-sync",
+      "role": "ai"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.ai.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "ai-clock-sync"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "ai-clock-sync",
+          "role": "ai"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "ai-clock-sync",
+            "image": "ghostl/ai-clock-sync:local",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "PORT",
+                "value": "7690"
+              },
+              {
+                "name": "CLOCK_SYNC_RPC_L1",
+                "value": ""
+              },
+              {
+                "name": "CLOCK_SYNC_RPC_L2",
+                "value": ""
+              },
+              {
+                "name": "CLOCK_SYNC_RPC_L3",
+                "value": ""
+              },
+              {
+                "name": "CLOCK_SYNC_INTERVAL_MS",
+                "value": ""
+              },
+              {
+                "name": "CLOCK_SYNC_DRIFT_THRESHOLD_SEC",
+                "value": ""
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 7690,
+                "protocol": "TCP"
+              }
+            ],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../../dist/apps/api",
+    "rootDir": "../..",
+    "lib": ["ES2022"],
+    "types": ["node", "express-session"],
+    "typeRoots": ["./src/types", "./node_modules/@types", "../../node_modules/@types"],
+    "noEmitOnError": true
+  },
+  "include": [
+    "src",
+    "src/types/**/*.d.ts",
+    "../../packages/types/**/*.ts",
+    "../../packages/contract-schemas/**/*.ts",
+    "../../observability/**/*.ts"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "id": "ghostchain-polygon-v1",
+  "name": "GhostChain ↔ Polygon Sovereign Treaty v1",
+  "counterpartyChain": "polygon",
+  "maxBridgeAmountBps": 300,
+  "minBridgeIntervalSecs": 1800,
+  "activeFrom": 1709769600,
+  "enabled": true
+}

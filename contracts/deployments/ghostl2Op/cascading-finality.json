@@ -1,0 +1,24 @@
+{
+  "network": "ghostl2Op",
+  "chainIdL1": 14000101,
+  "chainIdL2": 901,
+  "chainIdL3": 903,
+  "enforceHierarchicalFinality": true,
+  "aiPolicyHash": null,
+  "oracles": {
+    "l1": "0x1613beB3B2C4f22Ee086B2b38C1476A3cE7f78E8",
+    "l2": "0x851356ae760d987E095750cCeb3bC6014560891C",
+    "l3": "0xf5059a5D33d5853360D16C683c16e67980206f36"
+  },
+  "rollups": {
+    "l2OnL1": "0xE8addD62feD354203d079926a8e563BC1A7FE81e",
+    "l2OnL1ParentOracle": "0x851356ae760d987E095750cCeb3bC6014560891C",
+    "l3OnL2": "0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9",
+    "l3OnL2ParentOracle": "0xf5059a5D33d5853360D16C683c16e67980206f36"
+  },
+  "bridge": {
+    "l2L3Bridge": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
+    "l2FinalityOracle": "0x851356ae760d987E095750cCeb3bC6014560891C",
+    "l3FinalityOracle": "0xf5059a5D33d5853360D16C683c16e67980206f36"
+  }
+}

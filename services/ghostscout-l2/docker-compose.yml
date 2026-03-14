@@ -1,0 +1,67 @@
+# stack-group: apps
+# role: ghostscout-l2
+# ports: ${GHOSTSCOUT_L2_PORT:-18642}:4000
+# volumes: ./data:/data, ../../infra/opstack/config/genesis-l2.json:/config/chain-spec.json:ro, ./data/precompiles-evm.json:/config/precompiles.json:ro, ./entrypoint.sh:/entrypoint.sh:ro, ./healthcheck.sh:/healthcheck.sh:ro
+services:
+  ghostscout-l2:
+    container_name: ghost_ghostscout-l2
+    image: ghostl/ghostscout-l2:local
+    build:
+      context: .
+    env_file:
+    - .env
+    entrypoint:
+    - /bin/bash
+    - /entrypoint.sh
+    command:
+    - /app/bin/blockscout
+    - start
+    environment:
+      DATABASE_URL: postgres://ghostscout:${GHOSTSCOUT_DB_PASSWORD:-ghostpass}@ghostscout-postgres:5432/ghostscout_l2
+      ECTO_USE_SSL: 'false'
+      POOL_SIZE: ${GHOSTSCOUT_POOL_SIZE:-10}
+      POOL_SIZE_API: ${GHOSTSCOUT_POOL_SIZE_API:-10}
+      ACCOUNT_POOL_SIZE: ${GHOSTSCOUT_ACCOUNT_POOL_SIZE:-10}
+      MUD_POOL_SIZE: ${GHOSTSCOUT_MUD_POOL_SIZE:-10}
+      BLOCKSCOUT_HOST: 0.0.0.0
+      PORT: 4000
+      SECRET_KEY_BASE: ${GHOSTSCOUT_SECRET_KEY_BASE_L2:-1c9f9b0d27d9c76a8c5f4b2e1d0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a}
+      DISABLE_EVISION: 'true'
+      LOG_LEVEL: warn
+      # Native gas token — GST (Ghost) on all layers
+      COIN: GST
+      COIN_NAME: Ghost
+    ports:
+    - ${GHOSTSCOUT_L2_PORT:-18642}:4000
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4g
+        reservations:
+          cpus: '0.5'
+          memory: 512m
+    volumes:
+    - ./data:/data
+    - ../../infra/opstack/config/genesis-l2.json:/config/chain-spec.json:ro
+    - ./data/precompiles-evm.json:/config/precompiles.json:ro
+    - ./entrypoint.sh:/entrypoint.sh:ro
+    - ./healthcheck.sh:/healthcheck.sh:ro
+    networks:
+    - ghostchain_ghostchain
+    - opstack_default
+networks:
+  ghostchain_ghostchain:
+    external: true
+  opstack_default:
+    external: true

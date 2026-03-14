@@ -1,0 +1,14 @@
+{
+  "name": "Ghost Token",
+  "symbol": "GST",
+  "standard": "ERC-20",
+  "chain": "GhostChain L1",
+  "contract_address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+  "decimals": 18,
+  "genesis_mint": "1000000000",
+  "genesis_holder": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+  "gas_token_for": ["GhostL2", "GhostL3"],
+  "source_of_truth": "contracts/src/GhostConstitution.sol",
+  "status": "canonical",
+  "notes": "Declarative binding only. No on-chain mutation executed from this file."
+}

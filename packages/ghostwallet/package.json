@@ -1,0 +1,16 @@
+{
+  "name": "@ghostl/ghostwallet",
+  "version": "0.0.1",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@ghostchain/sdk": "1.0.0"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

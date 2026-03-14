@@ -1,0 +1,28 @@
+{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "name": "l1-bn",
+    "labels": {
+      "app": "l1-bn"
+    }
+  },
+  "spec": {
+    "type": "NodePort",
+    "selector": {
+      "app": "l1-bn"
+    },
+    "ports": [
+      {
+        "port": "9000",
+        "targetPort": 9000,
+        "protocol": "TCP"
+      },
+      {
+        "port": "5052",
+        "targetPort": 5052,
+        "protocol": "TCP"
+      }
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "@ghostl/config",
+  "version": "0.0.1",
+  "private": true,
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "lint": "echo \"TODO: lint\""
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

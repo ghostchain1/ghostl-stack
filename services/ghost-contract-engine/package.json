@@ -1,0 +1,25 @@
+{
+  "name": "@ghostchain/ghost-contract-engine",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Autonomous contract scanner, function auditor, ABI sync, SDK + test generator for GhostStack",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "scan": "tsx src/index.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@solidity-parser/parser": "^0.18.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

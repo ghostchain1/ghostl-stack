@@ -1,0 +1,49 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "bridge-service",
+    "labels": {
+      "app": "bridge-service",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "bridge-service"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "bridge-service",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "bridge-service",
+            "image": "local/bridge-service:${OPSTACK_IMAGE_TAG:-devnet}",
+            "command": null,
+            "args": null,
+            "env": [
+              {
+                "name": "PROM_URL",
+                "value": "${PROM_URL:-http://prometheus:9090}"
+              }
+            ],
+            "ports": [],
+            "volumeMounts": []
+          }
+        ]
+      }
+    }
+  }
+}

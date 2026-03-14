@@ -1,0 +1,10 @@
+infra/ghostchain/docker-compose.l1.yml: services=5 missing_healthchecks=3
+  ghostchain-bootnode, ghostchain-node2, ghostscout
+infra/opstack/docker-compose.yml: services=24 missing_healthchecks=4
+  ghost-rpc-proxy-l3, rpc-forward-l2-18547, grafana, vector
+infra/opstack/docker-compose.l3.yml: services=49 missing_healthchecks=0
+infra/opstack/docker-compose.challengers.yml: services=2 missing_healthchecks=2
+  op-challenger, l3-op-challenger
+docker-compose.sovereign.yml: services=5 missing_healthchecks=0
+docker-compose.autonomy.yml: services=13 missing_healthchecks=1
+  ghostdns-volume-init

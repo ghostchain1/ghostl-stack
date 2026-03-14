@@ -1,0 +1,14 @@
+{
+  "name": "@ghostl/api-client",
+  "version": "0.0.1",
+  "private": true,
+  "main": "index.ts",
+  "types": "index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./csrf": "./csrf.ts"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

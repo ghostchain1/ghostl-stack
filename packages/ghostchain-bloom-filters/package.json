@@ -1,0 +1,24 @@
+{
+  "name": "@ghostchain/ghostchain-bloom-filters",
+  "version": "1.0.0",
+  "description": "GhostChain bloom filter utilities — drop-in replacement for ghostchain-bloom-filters upstream API. Keccak-256 backed. Zero external deps.",
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/src/index.js",
+      "types": "./dist/src/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@noble/hashes": "^1.3.2"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

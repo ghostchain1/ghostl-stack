@@ -1,0 +1,465 @@
+/**
+ * GhostChain Theme Service
+ *
+ * Provides canonical GhostChain design tokens and theme configuration to
+ * all frontend consumers. Tokens are synchronized with apps/web/app/globals.css
+ * and packages/ui/src/components/*.
+ *
+ * GET  /health       — liveness probe
+ * GET  /theme        — full design token set for the configured theme
+ * GET  /themes       — list all available themes
+ * GET  /tokens       — raw token manifest (colour + typography + spacing)
+ * GET  /logo         — SVG logo markup (inline-safe)
+ *
+ * Port default: 7634 (THEME_SERVICE_PORT env to override)
+ */
+
+import express from "express";
+
+const PORT = Number(process.env.THEME_SERVICE_PORT || process.env.PORT || 7634);
+const THEME = (process.env.UI_THEME || "dark").toLowerCase();
+
+const app = express();
+process.title = process.env.npm_package_name ?? 'ghoststack';
+const _startedAt = process.hrtime.bigint();
+app.set("trust proxy", 1);
+app.set("etag", false);
+app.set("json spaces", 0);
+app.set("query parser", "simple");
+app.set("strict routing", true);
+app.set("case sensitive routing", true);
+app.disable("x-powered-by");
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-XSS-Protection", "0");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  res.setHeader("X-DNS-Prefetch-Control", "off");
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+  res.removeHeader("X-Powered-By");
+  res.removeHeader("Server");
+  res.setHeader("Vary", "Accept");
+  res.setHeader("Keep-Alive", "timeout=65");
+  res.setHeader("X-Robots-Tag", "noindex,nofollow");
+  res.setHeader("Accept-Ranges", "none");
+  res.setHeader("Origin-Agent-Cluster", "?1");
+  res.setHeader("X-Permitted-Cross-Domain-Policies", "none");
+  res.setHeader("Timing-Allow-Origin", process.env.TIMING_ALLOW_ORIGIN ?? "");
+  if (process.env.REPORT_TO_URL) {
+    res.setHeader("Report-To", JSON.stringify({ group: "default", max_age: 86400, endpoints: [{ url: process.env.REPORT_TO_URL }] }));
+    res.setHeader("NEL", JSON.stringify({ report_to: "default", max_age: 86400, include_subdomains: false }));
+  }
+  next();
+});
+const _CORS_ORIGINS = (process.env.ALLOWED_ORIGINS ?? "").split(",").map(s => s.trim()).filter(Boolean);
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && _CORS_ORIGINS.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+    res.setHeader("Access-Control-Max-Age", "86400");
+    res.setHeader("Access-Control-Allow-Private-Network", "true");
+  }
+  if (req.headers["access-control-request-private-network"] === "true") { res.setHeader("Access-Control-Allow-Private-Network", "true"); }
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
+const _RL_WINDOW = Number(process.env.RATE_LIMIT_WINDOW_MS ?? 60_000);
+const _RL_MAX    = Number(process.env.RATE_LIMIT_MAX ?? 1000);
+const _rlStore   = new Map();
+setInterval(() => _rlStore.clear(), _RL_WINDOW).unref();
+app.use((req, res, next) => {
+  const key = req.ip ?? "unknown";
+  const count = (_rlStore.get(key) ?? 0) + 1;
+  _rlStore.set(key, count);
+  res.setHeader("X-RateLimit-Limit", _RL_MAX);
+  res.setHeader("X-RateLimit-Remaining", Math.max(0, _RL_MAX - count));
+  res.setHeader("X-RateLimit-Reset", Math.ceil((Date.now() + _RL_WINDOW) / 1000));
+  if (count > _RL_MAX) { res.setHeader("Retry-After", Math.ceil(_RL_WINDOW / 1000)); res.setHeader("RateLimit-Policy", `limit=${_RL_MAX};w=${Math.ceil(_RL_WINDOW / 1000)}`); return res.status(429).json({ error: "Too many requests" }); }
+  next();
+});
+const _safeReviver = (k, v) => { if (k === "__proto__" || k === "constructor" || k === "prototype") return undefined; return v; };
+app.use(express.json({ limit: "256kb", reviver: _safeReviver }));
+app.use(express.urlencoded({ extended: false, parameterLimit: 100 }));
+app.use((req, res, next) => {
+  if (["POST","PUT","PATCH"].includes(req.method) && req.headers["content-type"] &&
+      !req.is(["application/json","application/x-www-form-urlencoded"])) {
+    return res.status(415).json({ ok: false, error: "Unsupported Media Type" });
+  }
+  next();
+});
+app.use((req, res, next) => {
+  if (req.method !== "OPTIONS" && !req.accepts("application/json")) {
+    return res.status(406).json({ ok: false, error: "Not Acceptable" });
+  }
+  next();
+});
+const _ALLOWED_HOSTS = new Set((process.env.ALLOWED_HOSTS ?? "").split(",").map(s => s.trim()).filter(Boolean));
+app.use((req, res, next) => {
+  if (_ALLOWED_HOSTS.size > 0) {
+    const host = (req.headers.host ?? "").split(":")[0].toLowerCase();
+    if (!_ALLOWED_HOSTS.has(host)) { return res.status(421).json({ ok: false, error: "Misdirected Request" }); }
+  }
+  next();
+});
+let _activeReqs = 0;
+const _MAX_CONCURRENT = Number(process.env.MAX_CONCURRENT_REQUESTS ?? 500);
+app.use((req, res, next) => {
+  if (_activeReqs >= _MAX_CONCURRENT) { res.setHeader("Retry-After", "1"); return res.status(503).json({ ok: false, error: "server_busy" }); }
+  _activeReqs++;
+  let _decr = false;
+  const _decrActive = () => { if (!_decr) { _decr = true; _activeReqs = Math.max(0, _activeReqs - 1); } };
+  res.on("finish", _decrActive);
+  res.on("close", _decrActive);
+  next();
+});
+const _idemStore = new Map();
+setInterval(() => _idemStore.clear(), 5 * 60_000).unref();
+app.use((req, res, next) => {
+  const _idemKey = req.headers["idempotency-key"];
+  if (_idemKey && req.method === "POST") {
+    const _cached = _idemStore.get(_idemKey);
+    if (_cached) { res.setHeader("Idempotency-Key", _idemKey); return res.status(_cached.status).json(_cached.body); }
+    const _origJson = res.json.bind(res);
+    res.json = (body) => { if (res.statusCode < 500) { _idemStore.set(_idemKey, { status: res.statusCode, body }); } return _origJson(body); };
+  }
+  next();
+});
+let _reqTotal = 0;
+let _ellMs = 0;
+(function _pollEll() { const _t = process.hrtime.bigint(); setImmediate(() => { _ellMs = Number(process.hrtime.bigint() - _t) / 1e6; setImmediate(_pollEll); }); })();
+let _draining = false;
+app.use((req, res, next) => { if (_draining) { res.set("Connection","close"); res.setHeader("Retry-After", "5"); return res.status(503).json({ error: "Service shutting down" }); } next(); });
+app.use((req, res, next) => {
+  _reqTotal++;
+  req.id = req.headers["x-request-id"] ?? crypto.randomUUID();
+  res.setHeader("X-Request-ID", req.id);
+  const _tp = req.headers["traceparent"] ?? `00-${crypto.randomUUID().replace(/-/g,"")}-${req.id.replace(/-/g,"").slice(0,16)}-01`;
+  res.setHeader("X-Trace-ID", _tp);
+  const _spanId = crypto.randomUUID().replace(/-/g,"").slice(0,16);
+  res.setHeader("X-Span-ID", _spanId);
+  const _sfs = req.headers["sec-fetch-site"];
+  if (_sfs && _sfs !== "same-origin" && _sfs !== "same-site" && _sfs !== "none" && !["GET","HEAD","OPTIONS"].includes(req.method)) {
+    console.warn(JSON.stringify({ ts: new Date().toISOString(), level: "warn", msg: "sec_fetch_cross_site", method: req.method, url: req.url, sfs: _sfs, sfm: req.headers["sec-fetch-mode"] ?? "", sfd: req.headers["sec-fetch-dest"] ?? "", reqId: req.id }));
+  }
+  const t0 = process.hrtime.bigint();
+  res.on("prefinish", () => { const _ms = (Number(process.hrtime.bigint()-t0)/1e6).toFixed(2); res.setHeader("X-Response-Time", `${_ms}ms`); res.setHeader("Server-Timing", `total;dur=${_ms}`); });
+  res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: +(Number(process.hrtime.bigint()-t0)/1e6).toFixed(2), bytes: Number(req.headers["content-length"] ?? 0), reqId: req.id, pid: process.pid, mem: process.memoryUsage().rss, httpVer: req.httpVersion, xff: req.headers["x-forwarded-for"] ?? "" })));
+  next();
+});
+
+
+// ── Brand canonical constants ─────────────────────────────────────────────────
+const BRAND = Object.freeze({
+  name:    "GhostChain",
+  symbol:  "GST",
+  decimals: 18,
+  unit:    "GST_UNIT",
+  tagline: "Sovereign L1 · L2 · L3",
+  url:     "https://ghostchain.io",
+  chain:   "GhostChain",
+});
+
+// ── Raw colour palette ────────────────────────────────────────────────────────
+const PALETTE = Object.freeze({
+  // Ghost Green — primary accent
+  ghost: {
+    50:  "#edfdf8",
+    100: "#d0fbef",
+    200: "#a4f7df",
+    300: "#67eece",
+    400: "#2eddb6",
+    500: "#23d6a6",   // canonical brand accent
+    600: "#0ba882",
+    700: "#087b60",
+    800: "#07604c",
+    900: "#064f3e",
+    950: "#022d24",
+  },
+  // Ghost Gold — secondary accent
+  gold: {
+    400: "#f7d577",
+    500: "#f2c14e",   // canonical
+    600: "#e6a325",
+    700: "#c6891d",
+  },
+  // Ghost Blue — tertiary accent
+  blue: {
+    400: "#a3bcff",
+    500: "#7aa2ff",   // canonical
+    600: "#3d6df6",
+    700: "#2451d5",
+  },
+  // Neutrals
+  neutral: {
+    50:   "#f8fafc",
+    100:  "#ebf0f7",
+    200:  "#d2dce9",
+    300:  "#9fb1c8",
+    400:  "#6b7e96",
+    500:  "#4f5f73",
+    600:  "#374557",
+    700:  "#1e2a38",
+    800:  "#111827",
+    900:  "#0a0f1b",
+    950:  "#05070f",
+  },
+  // Semantic
+  danger:  { DEFAULT: "#ff6b6b", dark: "#d14b4b" },
+  success: { DEFAULT: "#72f2a7", dark: "#1e8f6c" },
+  warning: { DEFAULT: "#f2c14e", dark: "#c6891d" },
+});
+
+// ── Theme definitions ─────────────────────────────────────────────────────────
+const THEMES = {
+  dark: {
+    bg:         "#05070f",
+    bg2:        "#0a0f1b",
+    panel:      "rgba(10,16,28,0.82)",
+    panelStrong:"rgba(8,12,22,0.92)",
+    text:       "#ebf0f7",
+    muted:      "#9fb1c8",
+    accent:     PALETTE.ghost[500],
+    accent2:    PALETTE.gold[500],
+    accent3:    PALETTE.blue[500],
+    border:     "rgba(255,255,255,0.08)",
+    glow:       "rgba(35,214,166,0.28)",
+    danger:     PALETTE.danger.DEFAULT,
+    success:    PALETTE.success.DEFAULT,
+    warning:    PALETTE.warning.DEFAULT,
+  },
+  light: {
+    bg:         "#f4f3ed",
+    bg2:        "#ffffff",
+    panel:      "rgba(255,255,255,0.92)",
+    panelStrong:"rgba(248,249,252,0.95)",
+    text:       "#10131a",
+    muted:      "#4f5f73",
+    accent:     "#1bb388",
+    accent2:    "#e6a325",
+    accent3:    "#3d6df6",
+    border:     "rgba(16,19,26,0.12)",
+    glow:       "rgba(27,179,136,0.2)",
+    danger:     PALETTE.danger.dark,
+    success:    PALETTE.success.dark,
+    warning:    PALETTE.warning.dark,
+  },
+  // High-contrast accessibility theme
+  highcontrast: {
+    bg:         "#000000",
+    bg2:        "#0d0d0d",
+    panel:      "rgba(0,0,0,0.95)",
+    panelStrong:"rgba(0,0,0,1)",
+    text:       "#ffffff",
+    muted:      "#c0c0c0",
+    accent:     "#00ffbb",
+    accent2:    "#ffdd33",
+    accent3:    "#6699ff",
+    border:     "rgba(255,255,255,0.3)",
+    glow:       "rgba(0,255,187,0.4)",
+    danger:     "#ff5555",
+    success:    "#55ff88",
+    warning:    "#ffdd33",
+  },
+};
+
+// ── Typography & spacing tokens ────────────────────────────────────────────────
+const TYPOGRAPHY = Object.freeze({
+  fontBody:    "'Space Grotesk', 'Sora', system-ui, -apple-system, sans-serif",
+  fontDisplay: "'Sora', 'Space Grotesk', system-ui, -apple-system, sans-serif",
+  fontMono:    "'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace",
+  scale: {
+    xs:   "0.72rem",
+    sm:   "0.84rem",
+    base: "0.92rem",
+    md:   "1rem",
+    lg:   "1.14rem",
+    xl:   "1.3rem",
+    "2xl":"1.6rem",
+    "3xl":"2rem",
+    "4xl":"2.6rem",
+  },
+  weight: { normal: 400, medium: 500, semibold: 600, bold: 700 },
+});
+
+const SPACING = Object.freeze({
+  0: "0px", 1: "4px", 2: "8px", 3: "12px", 4: "16px",
+  5: "20px", 6: "24px", 8: "32px", 10: "40px", 12: "48px",
+  16: "64px", 20: "80px",
+});
+
+const RADIUS = Object.freeze({
+  xs: "8px", sm: "10px", md: "14px", lg: "18px", xl: "22px", "2xl": "28px", full: "9999px",
+});
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const resolveTheme = (name) => {
+  const key = (name || THEME).toLowerCase();
+  return THEMES[key] ?? THEMES.dark;
+};
+
+// ── Routes ────────────────────────────────────────────────────────────────────
+
+app.get("/health", (_req, res) =>
+  res.json({ ok: true, service: "theme-service", version: "1.1.0", brand: BRAND.name })
+);
+
+app.get("/themes", (_req, res) =>
+  res.json({ ok: true, themes: Object.keys(THEMES), default: THEME })
+);
+
+app.get("/theme", (req, res) => {
+  const name = req.query?.name || THEME;
+  const colours = resolveTheme(name);
+  res.json({
+    ok: true,
+    theme: name,
+    brand: BRAND,
+    colours,
+    typography: TYPOGRAPHY,
+    spacing: SPACING,
+    radius: RADIUS,
+    palette: PALETTE,
+  });
+});
+
+app.get("/tokens", (_req, res) =>
+  res.json({
+    ok: true,
+    brand: BRAND,
+    palette: PALETTE,
+    themes: THEMES,
+    typography: TYPOGRAPHY,
+    spacing: SPACING,
+    radius: RADIUS,
+  })
+);
+
+// Inline SVG logo for server-side render / email templates
+app.get("/logo", (req, res) => {
+  const fmt = req.query?.format || "svg";
+  if (fmt !== "svg") {
+    res.status(400).json({ ok: false, error: "Only format=svg supported" });
+    return;
+  }
+  res.setHeader("Content-Type", "image/svg+xml");
+  res.setHeader("Cache-Control", "public, max-age=86400");
+  res.send(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" fill="none">
+  <defs>
+    <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#23d6a6"/><stop offset="60%" stop-color="#7aa2ff"/><stop offset="100%" stop-color="#f2c14e"/>
+    </linearGradient>
+    <linearGradient id="icon-body" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#23d6a6" stop-opacity="0.95"/><stop offset="100%" stop-color="#0ba882" stop-opacity="0.85"/>
+    </linearGradient>
+    <filter id="icon-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1" result="b"/><feComposite in="SourceGraphic" in2="b" operator="over"/>
+    </filter>
+  </defs>
+  <g transform="translate(10,10)">
+    <rect width="40" height="40" rx="10" fill="#0a0f1b"/>
+    <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" stroke="url(#logo-grad)" stroke-width="0.7" stroke-opacity="0.4" fill="none"/>
+    <path d="M20 8 C15 8 11 12.5 11 17.5 L11 28 L13.8 25 L16.5 28 L19 25.5 L20 27 L21 25.5 L23.5 28 L26.2 25 L29 28 L29 17.5 C29 12.5 25 8 20 8 Z" fill="url(#icon-body)" filter="url(#icon-glow)"/>
+    <circle cx="16.5" cy="18.5" r="1.9" fill="#0a0f1b"/><circle cx="23.5" cy="18.5" r="1.9" fill="#0a0f1b"/>
+    <circle cx="17.2" cy="17.8" r="0.65" fill="#23d6a6" opacity="0.9"/><circle cx="24.2" cy="17.8" r="0.65" fill="#23d6a6" opacity="0.9"/>
+  </g>
+  <text x="60" y="38" font-family="'Sora','Space Grotesk',system-ui,sans-serif" font-size="22" font-weight="700" letter-spacing="0.04em" fill="url(#logo-grad)">GhostChain</text>
+  <text x="61" y="52" font-family="'Space Grotesk',system-ui,sans-serif" font-size="9" font-weight="500" letter-spacing="0.18em" fill="#9fb1c8">SOVEREIGN L1 · L2 · L3</text>
+</svg>`);
+});
+
+/** GET /stats — theme configuration summary */
+app.get("/stats", (_req, res) => {
+  res.json({ ok: true, stats: { themes: Object.keys(THEMES), default: THEME, brand: BRAND.name, fetchedAt: new Date().toISOString() } });
+});
+
+app.get("/readyz", (_req, res) => {
+  if (_draining) { res.setHeader("Retry-After", "5"); return res.status(503).json({ ok: false, error: "draining" }); }
+  res.json({ ok: true });
+});
+app.use((_req, res) => { res.setHeader("Cache-Control", "no-store"); res.setHeader("Surrogate-Control", "no-store"); return res.status(404).json({ ok: false, error: "not_found" }); });
+
+app.use((err, _req, res, _next) => {
+  if (err.type === "entity.parse.failed") return res.status(400).json({ ok: false, error: "Invalid JSON" });
+  if (err.status === 413 || err.statusCode === 413) return res.status(413).json({ ok: false, error: "Payload too large" });
+  if (err.status === 431 || err.statusCode === 431) return res.status(431).json({ ok: false, error: "Request header fields too large" });
+  if (err.status === 408 || err.statusCode === 408) return res.status(408).json({ ok: false, error: "Request timeout" });
+  if (err.status === 405 || err.statusCode === 405) return res.status(405).json({ ok: false, error: "Method not allowed" });
+  const status = err.status ?? err.statusCode ?? 500;
+  const _isProd = process.env.NODE_ENV === "production";
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Surrogate-Control", "no-store");
+  console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "unhandledError", status, error: err?.message ?? String(err), stack: _isProd ? undefined : err?.stack }));
+  res.status(status).json({ ok: false, error: err?.message ?? String(err) });
+});
+
+const server = app.listen(PORT, "0.0.0.0", () => {
+  console.log(JSON.stringify({
+    ts: new Date().toISOString(),
+    level: "info",
+    service: "theme-service",
+    msg: `GhostChain theme-service started on :${PORT}`,
+    theme: THEME,
+    brand: BRAND.name,
+  }));
+});
+server.keepAliveTimeout = 65_000;
+server.headersTimeout = 66_000;
+server.timeout = 30_000;
+server.maxHeadersCount = 100;
+server.requestTimeout = 30_000;
+server.maxConnections = 1024;
+server.maxRequestsPerSocket = 100;
+server.on("connection", (socket) => socket.setNoDelay(true));
+server.on("error", (err) => {
+  console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "serverError", error: err?.message ?? String(err), code: err?.code }));
+  if (err.code === "EADDRINUSE" || err.code === "EACCES") { process.exitCode = 1; process.exit(1); }
+});
+console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "startup", version: process.env.npm_package_version ?? "unknown", port: PORT, pid: process.pid, boot_ms: Number((process.hrtime.bigint() - _startedAt) / 1_000_000n), env: process.env.NODE_ENV ?? "development" }));
+process.setMaxListeners(20);
+process.on("warning", (w) => console.warn(JSON.stringify({ ts: new Date().toISOString(), level: "warn", msg: "NodeWarning", name: w.name, message: w.message })));
+process.on("exit", (code) => { console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "exit", code })); });
+process.on("SIGUSR2", () => {
+  const m = process.memoryUsage(); const cu = process.cpuUsage();
+  console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "sigusr2_diag", pid: process.pid, rss: m.rss, heapUsed: m.heapUsed, heapTotal: m.heapTotal, external: m.external, cpuUser: cu.user, cpuSystem: cu.system, reqTotal: _reqTotal, uptime: process.uptime(), ell: _ellMs, handles: process._getActiveHandles().length }));
+});
+process.on("SIGPIPE", () => { /* ignore: client disconnected mid-response */ });
+process.on("SIGHUP", () => { console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "sighup_reload", pid: process.pid })); });
+process.on("uncaughtException", (err) => {
+  console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "uncaughtException", error: err?.message ?? String(err), stack: err?.stack, cause: err?.cause != null ? String(err.cause) : undefined }));
+  process.exitCode = 1; process.exit(1);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "unhandledRejection", error: String(reason), stack: reason?.stack, cause: reason?.cause != null ? String(reason.cause) : undefined }));
+  process.exitCode = 1; process.exit(1);
+});
+process.on("SIGTERM", () => {
+  _draining = true;
+  console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "drain_start", pid: process.pid }));
+  setTimeout(() => { console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "shutdown_timeout", pid: process.pid })); process.exit(1); }, 10_000).unref();
+  server.closeAllConnections();
+  server.close(() => { console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "shutdown_complete", pid: process.pid })); process.exit(0); });
+});
+process.on("SIGINT", () => {
+  _draining = true;
+  console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "drain_start", pid: process.pid }));
+  setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
+  server.closeAllConnections();
+  server.close(() => { console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "shutdown_complete", pid: process.pid })); process.exit(0); });
+});
+process.on("SIGQUIT", () => {
+  _draining = true;
+  console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "drain_start", pid: process.pid }));
+  setTimeout(() => { console.error("Shutdown timeout — forcing exit"); process.exit(1); }, 10_000).unref();
+  server.closeAllConnections();
+  server.close(() => { console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "shutdown_complete", pid: process.pid })); process.exit(0); });
+});
+

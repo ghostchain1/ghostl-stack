@@ -1,0 +1,28 @@
+acl trusted_recursor {
+{{RECURSION_CIDRS}}
+};
+
+options {
+  directory "/tmp/bind/cache";
+  session-keyfile "/tmp/bind/session.key";
+  listen-on { {{BIND_LISTEN_IPV4}}; };
+  listen-on-v6 { none; };
+
+  recursion yes;
+  allow-recursion { trusted_recursor; };
+  allow-query-cache { trusted_recursor; };
+  allow-query { any; };
+
+  allow-transfer { none; };
+
+  forwarders {
+{{UPSTREAM_DNS}}
+  };
+  dnssec-validation auto;
+
+  minimal-responses yes;
+  rate-limit {
+    responses-per-second 20;
+    window 5;
+  };
+};

@@ -1,0 +1,88 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "ghostscout-db",
+    "labels": {
+      "app": "ghostscout-db",
+      "role": "api"
+    },
+    "annotations": {
+      "ghost.source.compose": "/home/ghost/ghostl-stack/infra/docker/compose/docker-compose.core.yml",
+      "ghost.no_recreate": "false"
+    }
+  },
+  "spec": {
+    "serviceName": "ghostscout-db",
+    "replicas": 1,
+    "podManagementPolicy": "OrderedReady",
+    "updateStrategy": {
+      "type": "OnDelete"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "ghostscout-db"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "ghostscout-db",
+          "role": "api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "ghostscout-db",
+            "image": "postgres:15-alpine",
+            "command": null,
+            "args": [
+              "postgres",
+              "-c",
+              "max_connections=200"
+            ],
+            "env": [
+              {
+                "name": "POSTGRES_DB",
+                "value": "blockscout"
+              },
+              {
+                "name": "POSTGRES_PASSWORD",
+                "value": "postgres"
+              },
+              {
+                "name": "POSTGRES_USER",
+                "value": "postgres"
+              }
+            ],
+            "ports": [],
+            "volumeMounts": [
+              {
+                "name": "ghostscout-db-data",
+                "mountPath": "/var/lib/postgresql/data"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "ghostscout-db-data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

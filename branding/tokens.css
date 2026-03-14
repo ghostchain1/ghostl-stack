@@ -1,0 +1,57 @@
+/**
+ * GhostChain Brand Design Tokens
+ *
+ * Single source of truth for all CSS custom properties.
+ * Import this file once at the root of every GhostStack web app.
+ *
+ * Usage:
+ *   import "@ghostchain/theme-service/dist/tokens.css";
+ */
+
+:root {
+  /* ── Primary palette ──────────────────────────────────────── */
+  --ghost-violet:       #7B2FBE;
+  --ghost-violet-dark:  #4A1880;
+  --ghost-teal:         #00D2FF;
+  --ghost-teal-dark:    #008EAB;
+
+  /* ── Neutrals ──────────────────────────────────────────────── */
+  --ghost-bg:           #0A0B0F;
+  --ghost-surface:      #13141A;
+  --ghost-surface-2:    #1C1D26;
+  --ghost-border:       #252733;
+  --ghost-text:         #E8E9F0;
+  --ghost-muted:        #7A7D95;
+
+  /* ── Semantic ──────────────────────────────────────────────── */
+  --ghost-success:      #22C55E;
+  --ghost-warning:      #F59E0B;
+  --ghost-error:        #EF4444;
+
+  /* ── Typography ────────────────────────────────────────────── */
+  --ghost-font-display: "Syne", system-ui, sans-serif;
+  --ghost-font-body:    "Inter", system-ui, sans-serif;
+  --ghost-font-mono:    "JetBrains Mono", "Fira Code", monospace;
+
+  /* ── Spacing scale (4-pt base) ─────────────────────────────── */
+  --ghost-space-1:  4px;
+  --ghost-space-2:  8px;
+  --ghost-space-3:  12px;
+  --ghost-space-4:  16px;
+  --ghost-space-6:  24px;
+  --ghost-space-8:  32px;
+  --ghost-space-12: 48px;
+  --ghost-space-16: 64px;
+
+  /* ── Border radius ─────────────────────────────────────────── */
+  --ghost-radius-sm:  4px;
+  --ghost-radius-md:  8px;
+  --ghost-radius-lg:  12px;
+  --ghost-radius-xl:  20px;
+  --ghost-radius-full: 9999px;
+
+  /* ── Shadows ────────────────────────────────────────────────── */
+  --ghost-shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
+  --ghost-shadow-md:  0 4px 12px rgba(0,0,0,0.5);
+  --ghost-shadow-glow: 0 0 20px rgba(123,47,190,0.35);
+}

@@ -1,0 +1,17 @@
+# GhostStack Hypervisor Supervisor + GAIS — Python dependencies
+#
+# Install on the hypervisor host:
+#   pip install -r requirements.txt
+# OR (recommended on Ubuntu 24.04):
+#   pip install --break-system-packages -r requirements.txt
+
+# ── Prometheus metrics exporter (supervisor.py) ───────────────────────────────
+prometheus-client>=0.14.0
+
+# ── GAIS REST API (ghostais.py) ───────────────────────────────────────────────
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+
+# ── HTTP client helpers ────────────────────────────────────────────────────────
+# (urllib.request is stdlib; aiohttp used optionally for async probing)
+aiohttp>=3.9.0

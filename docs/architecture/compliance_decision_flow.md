@@ -1,0 +1,15 @@
+```mermaid
+sequenceDiagram
+  participant TX as Transaction
+  participant RPC as RPC Gateway
+  participant PIL as Jurisdiction Resolver
+  participant Policy as Policy Engine
+  participant Logs as Audit Logs
+  TX->>RPC: Submit
+  RPC->>PIL: Preflight
+  PIL->>Policy: Evaluate
+  Policy-->>PIL: Decision (ALLOW/WARN/BLOCK)
+  PIL-->>RPC: Decision + CorrelationId
+  RPC-->>Logs: Emit audit trail
+  RPC-->>TX: Allow or reject
+```

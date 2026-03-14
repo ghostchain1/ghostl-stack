@@ -1,0 +1,43 @@
+// GNS BIND9 options
+// Trusted networks: GNS management CIDR + loopback
+acl "gns-trusted" {
+    127.0.0.0/8;
+    10.0.0.0/8;
+    172.16.0.0/12;
+    192.168.0.0/16;
+};
+
+options {
+    directory "/var/cache/bind";
+
+    listen-on     { any; };
+    listen-on-v6  { none; };
+
+    allow-query       { any; };
+    allow-recursion   { "gns-trusted"; };
+    allow-query-cache { "gns-trusted"; };
+
+    recursion yes;
+
+    // Kea DDNS may push signed updates
+    allow-update { "gns-trusted"; };
+
+    forwarders {
+        1.1.1.1;
+        8.8.8.8;
+    };
+    forward first;
+
+    dnssec-validation auto;
+    auth-nxdomain     no;
+    minimal-responses yes;
+
+    // DDNS zone transfers to a secondary if needed
+    allow-transfer { none; };
+
+    rate-limit {
+        responses-per-second 20;
+        window 5;
+        slip 2;
+    };
+};

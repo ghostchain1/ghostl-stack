@@ -1,0 +1,1 @@
+{"version":3,"file":"GhostContractTemplate.d.ts","sourceRoot":"","sources":["GhostContractTemplate.ts"],"names":[],"mappings":"AAAA,qBAAa,qBAAqB;IAChC,sDAAsD;IACtD,QAAQ,CAAC,IAAI,EAAE,MAAM,GAAG,MAAM;IA4B9B,6BAA6B;IAC7B,YAAY,CAAC,IAAI,EAAE,MAAM,GAAG,MAAM;IAiClC,yCAAyC;IACzC,cAAc,CAAC,IAAI,EAAE,MAAM,GAAG,MAAM;IAiBpC,MAAM,CAAC,QAAQ,CAAC,SAAS,wIAYzB;CACD"}

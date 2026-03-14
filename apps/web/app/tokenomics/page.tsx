@@ -1,151 +1,62 @@
-/**
- * Tokenomics — GST token parameters, burn schedule, and market report.
- * Sources: EIE economy engine.
- */
+import { SupplyDashboard } from '../../src/modules/tokenomics/components/SupplyDashboard';
+import { FeeMarketCard } from '../../src/modules/tokenomics/components/FeeMarketCard';
+import { TreasuryOverview } from '../../src/modules/tokenomics/components/TreasuryOverview';
+import { PayoutsPanel } from '../../src/modules/tokenomics/components/PayoutsPanel';
+import { RevenuePanel } from '../../src/modules/tokenomics/components/RevenuePanel';
+import type { SupplySnapshot, TreasuryTx } from '@ghostl/types/tokenomics';
+import type { ApiError } from '../../src/lib/api';
+import { serverApiRequest } from '../../src/lib/server-api';
+import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
 
-import {
-  fetchEieTokenomics,
-  fetchEieMarket,
-  type EieTokenomicsParams,
-  type EieBurnProjection,
-  type EieMarketTick,
-} from "@/lib/api";
-import { SectionHeader } from "@/components/dashboard/MetricCard";
-
-export const metadata = { title: "Tokenomics · GhostStack" };
-export const revalidate = 60;
-
-const SENTIMENT_COLOR: Record<string, string> = {
-  strong_bullish: "var(--green)",
-  bullish:        "var(--green)",
-  neutral:        "var(--text-muted)",
-  bearish:        "var(--red)",
-  strong_bearish: "var(--red)",
+type RawNetwork = {
+  id?: string;
+  supply?: string;
+  emissions?: string;
+  multisig?: string;
 };
 
-export default async function TokenomicsPage() {
-  const [tok, market] = await Promise.all([
-    fetchEieTokenomics(),
-    fetchEieMarket(),
+async function loadTokenomics() {
+  const [tokenRes, payoutsRes] = await Promise.all([
+    serverApiRequest<{ networks?: RawNetwork[]; feeModel?: { baseFee?: string; targetGas?: string; mode?: string } }>(
+      '/api/token',
+      { init: { cache: 'no-store' } }
+    ),
+    serverApiRequest<{ payouts?: TreasuryTx[] }>('/api/treasury/payouts', { init: { cache: 'no-store' } })
   ]);
+  const errors: Array<{ title: string; error: ApiError }> = [];
+  if (!tokenRes.ok) errors.push({ title: 'Tokenomics summary', error: tokenRes.error });
+  if (!payoutsRes.ok) errors.push({ title: 'Treasury payouts', error: payoutsRes.error });
 
-  const params: EieTokenomicsParams | undefined  = tok?.current;
-  const burn:   EieBurnProjection[]              = tok?.burnSchedule ?? [];
-  const ticks:  EieMarketTick[]                  = market?.latestTicks ?? [];
+  const data = tokenRes.ok ? tokenRes.data : { networks: [], feeModel: undefined };
+  const snap: SupplySnapshot[] = (data.networks || []).map((n) => ({
+    total: n.supply || '0',
+    circulating: n.supply || '0',
+    burned: '0',
+    minted: n.emissions || '0',
+    time: new Date().toISOString()
+  }));
+  const revenue = (data.networks || []).map((n) => ({ source: n.id || 'net', amount: n.multisig || '0' }));
+  const payouts = payoutsRes.ok ? payoutsRes.data.payouts || [] : [];
+  return { snap, revenue, feeModel: data.feeModel, errors, payouts };
+}
 
+export default async function TokenomicsPage() {
+  const { snap, revenue, feeModel, errors, payouts } = await loadTokenomics();
+  const model = feeModel || { baseFee: 'n/a', targetGas: 'n/a', mode: 'n/a' };
+  const treasuryBalance = revenue[0]?.amount;
+  const balance = { chain: revenue[0]?.source || 'l2', native: treasuryBalance };
   return (
-    <div>
-      <div className="page-header">
-        <h1>Tokenomics</h1>
-        <p>GST token parameters, burn schedule, and market data</p>
+    <div className="content">
+      <div className="card-grid">
+        {errors.map((entry, idx) => (
+          <DataFetchErrorCard key={`${entry.title}-${idx}`} title={entry.title} error={entry.error} />
+        ))}
+        <SupplyDashboard snapshots={snap} />
+        <FeeMarketCard model={model} />
+        <TreasuryOverview balance={balance} recent={[]} />
+        {errors.find((e) => e.title === 'Treasury payouts') ? null : <PayoutsPanel payouts={payouts} />}
+        <RevenuePanel items={revenue} />
       </div>
-
-      {/* Market sentiment */}
-      {market && (
-        <div className="grid grid-4" style={{ marginBottom: "1.5rem" }}>
-          <div className="card">
-            <div className="card-title">Sentiment</div>
-            <div className="card-value" style={{ color: SENTIMENT_COLOR[market.sentiment] ?? "inherit", fontSize: "0.9rem" }}>
-              {market.sentiment.replace(/_/g, " ").toUpperCase()}
-            </div>
-          </div>
-          <div className="card">
-            <div className="card-title">Sentiment Score</div>
-            <div className="card-value">{market.sentimentScore.toFixed(1)}</div>
-          </div>
-          <div className="card">
-            <div className="card-title">Active Alerts</div>
-            <div className="card-value" style={{ color: market.activeAlerts.length > 0 ? "var(--yellow)" : "var(--green)" }}>
-              {market.activeAlerts.length}
-            </div>
-          </div>
-          <div className="card">
-            <div className="card-title">Arb Signals</div>
-            <div className="card-value">{market.arbitrageSignals.length}</div>
-          </div>
-        </div>
-      )}
-
-      {/* Current params */}
-      <SectionHeader title="Active Tokenomic Parameters" sub="EIE current configuration" />
-      {!params ? (
-        <div className="card" style={{ color: "var(--text-muted)" }}>No data — EIE offline?</div>
-      ) : (
-        <div className="grid grid-4">
-          {[
-            ["Base Fee", params.baseFeeGwei + " Gwei"],
-            ["Burn Rate", (params.burnRateBps / 100).toFixed(2) + "%"],
-            ["Validator Reward", (params.validatorRewardBps / 100).toFixed(2) + "%"],
-            ["Staking Incentive", (params.stakingIncentiveBps / 100).toFixed(2) + "%"],
-            ["Reserve Ratio", params.reserveRatioPct.toFixed(1) + "%"],
-          ].map(([label, value]) => (
-            <div key={label} className="card">
-              <div className="card-title">{label}</div>
-              <div className="card-value" style={{ fontSize: "1.1rem", color: "var(--accent)" }}>{value}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Market ticks */}
-      {ticks.length > 0 && (
-        <>
-          <SectionHeader title="Live Market Ticks" sub="GST pair prices sourced by EIE" />
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Pair</th>
-                <th>Price (USD)</th>
-                <th>24h Change</th>
-                <th>Volume 24h</th>
-                <th>Liquidity</th>
-                <th>Source</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ticks.map((t: EieMarketTick, i) => (
-                <tr key={i}>
-                  <td style={{ color: "var(--accent)", fontWeight: 700 }}>{t.pair}</td>
-                  <td>${t.priceUsd.toFixed(6)}</td>
-                  <td style={{ color: t.change24hPct >= 0 ? "var(--green)" : "var(--red)" }}>
-                    {t.change24hPct >= 0 ? "+" : ""}{t.change24hPct.toFixed(2)}%
-                  </td>
-                  <td>${t.volume24h.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                  <td>${t.liquidity.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                  <td style={{ color: "var(--text-muted)" }}>{t.source}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
-
-      {/* Burn schedule */}
-      {burn.length > 0 && (
-        <>
-          <SectionHeader title="Burn Schedule" sub="Projected GST burn over time" />
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Day</th>
-                <th>Date</th>
-                <th>Estimated Burn (GST)</th>
-                <th>Cumulative Burn (GST)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {burn.slice(0, 30).map((b: EieBurnProjection) => (
-                <tr key={b.day}>
-                  <td>{b.day}</td>
-                  <td style={{ color: "var(--text-muted)" }}>{b.date}</td>
-                  <td style={{ color: "var(--accent)" }}>{b.estimatedBurnGhost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  <td>{b.cumulativeBurnGhost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
     </div>
   );
 }

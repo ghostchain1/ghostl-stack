@@ -1,0 +1,21 @@
+{
+  "name": "liquidityctl",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node --experimental-strip-types src/cli.ts",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "ghost": "file:../../packages/ghost"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "5.6.3"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

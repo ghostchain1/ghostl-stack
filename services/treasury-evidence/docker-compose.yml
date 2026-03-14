@@ -1,0 +1,30 @@
+# stack-group: tokenomics
+# role: treasury-evidence
+# ports: none
+# volumes: ./data:/data
+services:
+  treasury-evidence:
+    container_name: ghost_treasury-evidence
+    image: ghostl/treasury-evidence:local
+    build:
+      context: .
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: "no"
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD-SHELL", "test -d /data && test -w /data"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    volumes:
+      - ./data:/data
+    networks:
+      - ghost_net
+
+networks:
+  ghost_net:
+    external: true

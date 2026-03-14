@@ -1,0 +1,51 @@
+services:
+  hyper-ghost-governor:
+    container_name: ghost_hyper-ghost-governor
+    image: ghostl/hyper-ghost-governor:local
+    build:
+      context: ./services/hyper-ghost-governor
+    environment:
+      PORT: 7685
+      HOST: 0.0.0.0
+      DB_PATH: /data/hyper-ghost-governor.sqlite
+      ARTIFACTS_ROOT: /artifacts/governor
+      TREASURY_STATUS_URL: http://treasury-engine:7683/v1/treasury/status
+      GOVERNOR_ADMIN_TOKEN: ${HYPER_GHOST_GOVERNOR_ADMIN_TOKEN:-}
+    user: "10001:10001"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - ./data:/data
+      - ../../artifacts:/artifacts
+    ports:
+      - "127.0.0.1:7685:7685"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:7685/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M
+    networks:
+      - internal-services
+      - observability
+
+networks:
+  internal-services:
+    external: true
+  observability:
+    external: true

@@ -1,0 +1,36 @@
+[Unit]
+Description=GhostStack AI Swarm Controller
+Documentation=https://ghostchain.internal/docs/ai-swarm
+After=network.target ghost-ai-agent.service ghost-ai-gais.service
+Wants=ghost-ai-agent.service ghost-ai-gais.service
+
+[Service]
+Type=simple
+User=ghost
+Group=ghost
+WorkingDirectory=/home/ghost/ghostl-stack/ai/swarm
+
+ExecStart=/usr/bin/python3 /home/ghost/ghostl-stack/ai/swarm/swarm_controller.py \
+    --config /home/ghost/ghostl-stack/ai/swarm/config.yaml
+
+Restart=on-failure
+RestartSec=30s
+TimeoutStopSec=20s
+
+# Resource limits
+MemoryMax=768M
+CPUQuota=75%
+TasksMax=64
+
+# Sandboxing
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/home/ghost/ghostl-stack/logs /home/ghost/ghostl-stack/.tmp
+
+# Environment
+EnvironmentFile=-/home/ghost/ghostl-stack/.env
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,82 @@
+$ uname -a
+Linux ghostchain-devnet 6.8.0-100-generic #100-Ubuntu SMP PREEMPT_DYNAMIC Tue Jan 13 16:40:06 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+
+$ lsb_release -a
+Distributor ID:	Ubuntu
+Description:	Ubuntu 24.04.3 LTS
+Release:	24.04
+Codename:	noble
+
+$ docker version
+Client:
+ Version:           28.2.2
+ API version:       1.50
+ Go version:        go1.23.1
+ Git commit:        28.2.2-0ubuntu1~24.04.1
+ Built:             Wed Sep 10 14:16:39 2025
+ OS/Arch:           linux/amd64
+ Context:           default
+
+Server:
+ Engine:
+  Version:          28.2.2
+  API version:      1.50 (minimum version 1.24)
+  Go version:       go1.23.1
+  Git commit:       28.2.2-0ubuntu1~24.04.1
+  Built:            Wed Sep 10 14:16:39 2025
+  OS/Arch:          linux/amd64
+  Experimental:     false
+ containerd:
+  Version:          1.7.28
+  GitCommit:        
+ runc:
+  Version:          1.3.3-0ubuntu1~24.04.3
+  GitCommit:        
+ docker-init:
+  Version:          0.19.0
+  GitCommit:        
+
+$ docker compose version
+Docker Compose version 2.37.1+ds1-0ubuntu2~24.04.1
+
+$ node -v
+v22.22.0
+
+$ npm -v
+10.9.4
+
+$ pnpm -v
+9.15.5
+
+$ yarn -v
+
+$ go version
+go version go1.22.2 linux/amd64
+
+$ rustc --version
+
+$ foundryup --version
+foundryup: 1.5.0
+
+$ forge --version
+forge Version: 1.5.1-stable
+Commit SHA: b0a9dd9ceda36f63e2326ce530c10e6916f4b8a2
+Build Timestamp: 2025-12-22T11:39:01.425730780Z (1766403541)
+Build Profile: maxperf
+
+$ cast --version
+cast Version: 1.5.1-stable
+Commit SHA: b0a9dd9ceda36f63e2326ce530c10e6916f4b8a2
+Build Timestamp: 2025-12-22T11:39:01.425730780Z (1766403541)
+Build Profile: maxperf
+
+$ git rev-parse HEAD
+c35073327307bb693105f44c72ef831a59b23148
+
+$ git status --short
+?? .audit/
+
+$ git remote -v
+origin	git@github.com:ghostchain1/ghostl-stack.git (fetch)
+origin	git@github.com:ghostchain1/ghostl-stack.git (push)
+

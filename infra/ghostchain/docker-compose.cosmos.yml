@@ -1,0 +1,125 @@
+# GhostChain — Cosmos SDK Sovereign Node (infra-companion compose)
+#
+# This file is the infra/ghostchain-scoped view of the sovereign node.
+# Run from the workspace root (not from infra/ghostchain/):
+#
+#   # Standalone Cosmos node only:
+#   docker compose -f docker-compose.ghostchain.yml --env-file stack.env up -d
+#
+#   # Cosmos node + EVM geth PoA L1 (both in infra/ghostchain/):
+#   docker compose \
+#     -f docker-compose.ghostchain.yml \
+#     -f infra/ghostchain/docker-compose.cosmos.yml \
+#     --env-file stack.env up -d
+#
+# This override file adds ghostchaind to the infra-level network so the geth
+# PoA L1 services (ghostchain-node1, ghostchain-rpc-proxy) can be monitored
+# alongside the Cosmos SDK node via a unified infra deployment.
+#
+# Note: the canonical ghostchaind service definition lives in
+# docker-compose.ghostchain.yml at the workspace root.
+
+name: ghostchain-infra
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  # ─── Cosmos SDK Sovereign Node (companion to docker-compose.l1.yml) ───────
+  ghostchaind:
+    build:
+      context: ../../ghostchain
+      dockerfile: Dockerfile
+    image: ghostchain/ghostchaind:local
+    container_name: ghostchaind
+    restart: unless-stopped
+    read_only: false
+    user: "0:0"
+    logging: *default-logging
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      CHAIN_ID:             "${COSMOS_CHAIN_ID:-ghostchain-1}"
+      MONIKER:              "${GHOSTCHAIN_MONIKER:-ghostchain-validator}"
+      GHOST_HOME:           "/root/.ghostchaind"
+      GHOST_AI_ORACLE_ADDR: "${GHOST_AI_ORACLE_ADDR:-}"
+    ports:
+      - "127.0.0.1:${GHOSTCHAIN_RPC_PORT:-26657}:26657"   # CometBFT RPC
+      - "127.0.0.1:${GHOSTCHAIN_P2P_PORT:-26656}:26656"   # P2P
+      - "127.0.0.1:${GHOSTCHAIN_GRPC_PORT:-9090}:9090"    # gRPC
+      - "127.0.0.1:${GHOSTCHAIN_LCD_PORT:-1317}:1317"     # LCD/REST
+    volumes:
+      - ghostchaind-data:/root/.ghostchaind
+    networks:
+      - ghostchain-cosmos-net
+      - ghostchain    # join the EVM L1 network for co-monitoring
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:26657/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+    labels:
+      ghostchain.role:      "cosmos-validator"
+      ghostchain.layer:     "sovereign"
+      ghostchain.chain-id:  "${COSMOS_CHAIN_ID:-ghostchain-1}"
+      ghostchain.consensus: "cometbft"
+      ghostchain.denom:     "ugst"
+
+  # ─── IBC / Hermes Relayer ─────────────────────────────────────────────────
+  # Activate with: docker compose ... --profile ibc up
+  hermes-relayer:
+    image: informalsystems/hermes:1.10.1
+    container_name: hermes-relayer
+    restart: unless-stopped
+    read_only: false
+    user: "1000:1000"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    command: ["start"]
+    logging: *default-logging
+    environment:
+      RUST_LOG:    "${HERMES_LOG_LEVEL:-info}"
+      HERMES_HOME: "/home/hermes/.hermes"
+    volumes:
+      - ./config/hermes.toml:/home/hermes/.hermes/config.toml:ro
+      - hermes-keys:/home/hermes/.hermes/keys
+    networks:
+      - ghostchain-cosmos-net
+      - ghostchain
+    depends_on:
+      ghostchaind:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "hermes health-check 2>&1 | grep -q 'healthy'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    profiles:
+      - ibc
+    labels:
+      ghostchain.role:  "ibc-relayer"
+      ghostchain.layer: "bridge"
+
+networks:
+  ghostchain-cosmos-net:
+    name: ghostchain-cosmos-net
+    driver: bridge
+  ghostchain:
+    # Reuse the existing EVM L1 network declared in docker-compose.l1.yml
+    external: true
+    name: ghostchain
+
+volumes:
+  ghostchaind-data:
+    name: ghostchaind-data
+  hermes-keys:
+    name: hermes-keys

@@ -1,23 +1,35 @@
 {
-  "name": "ghostbrain-core",
-  "version": "1.0.0",
-  "description": "GhostBrain Core HTTP Service — signals ingestion and think/inference endpoints",
+  "name": "@ghostchain/ghostbrain-core",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
-    "dev": "ts-node src/index.ts",
-    "start": "node dist/index.js"
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "test": "vitest run"
   },
   "dependencies": {
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "pino": "^9.2.0",
-    "pino-pretty": "^11.2.1"
+    "express": "^4.21.0",
+    "fastify": "^5.0.0",
+    "ioredis": "^5.4.2",
+    "nats": "^2.28.0",
+    "pg": "^8.13.3",
+    "undici": "^7.0.0",
+    "winston": "^3.14.0",
+    "ws": "^8.0.0",
+    "zod": "^3.23.8",
+    "@ghostchain/ghost-sdk-core": "file:../../packages/ghost-sdk-core",
+    "@qdrant/js-client-rest": "^1.13.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
-    "@types/node": "^20.19.37",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.5.2"
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.11",
+    "@types/ws": "^8.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
   }
 }

@@ -1,0 +1,71 @@
+Debugger listening on ws://127.0.0.1:53602/cb86eca8-d4b0-4b99-85c4-5216f67e6e26
+For help, see: https://nodejs.org/en/docs/inspector
+Debugger attached.
+Waiting for the debugger to disconnect...
+Debugger listening on ws://127.0.0.1:53992/30718487-151d-4141-8a41-7416ab892499
+For help, see: https://nodejs.org/en/docs/inspector
+Debugger attached.
+Waiting for the debugger to disconnect...
+Debugger listening on ws://127.0.0.1:53070/c3308051-2a53-40b1-aa71-e900112408ed
+For help, see: https://nodejs.org/en/docs/inspector
+Debugger attached.
+Waiting for the debugger to disconnect...
+Debugger listening on ws://127.0.0.1:53151/a215a53a-d892-4960-a3f2-7c650756ce4c
+For help, see: https://nodejs.org/en/docs/inspector
+Debugger attached.
+Waiting for the debugger to disconnect...
+Debugger listening on ws://127.0.0.1:53345/44f20d69-2a6d-4e65-b42f-4ee80877fad2
+For help, see: https://nodejs.org/en/docs/inspector
+Debugger attached.
+Waiting for the debugger to disconnect...
+Debugger listening on ws://127.0.0.1:53520/704059eb-37cc-42d3-8977-1b24b1dec4f6
+For help, see: https://nodejs.org/en/docs/inspector
+Debugger attached.
+Waiting for the debugger to disconnect...
+Debugger listening on ws://127.0.0.1:53739/ade72cb6-d7fb-4e52-bd50-650bfc1a5b39
+For help, see: https://nodejs.org/en/docs/inspector
+Debugger attached.
+Waiting for the debugger to disconnect...
+{
+  "ok": true,
+  "checks": {
+    "disputeGamesEnabled": {
+      "l2OnL1": {
+        "address": "0x05Aa229Aec102f78CE0E852A812a388F076Aa555",
+        "codeLen": 4104,
+        "ok": true
+      },
+      "l3OnL2": {
+        "address": "0x05Aa229Aec102f78CE0E852A812a388F076Aa555",
+        "codeLen": 3316,
+        "ok": true
+      }
+    },
+    "emergencyPauseAtL2": {
+      "guardPolicyAddress": "0x677df0cb865368207999F2862Ece576dC56D8dF6",
+      "guardPolicyCodeLen": 2834,
+      "guardPolicyMode": "allow",
+      "guardUrl": "http://localhost:7070",
+      "ok": true
+    },
+    "l3MessagingRateLimits": {
+      "windowMs": 1000,
+      "max": 20,
+      "ok": true
+    },
+    "manualFinalizationDisabledOnL3": {
+      "bridgeAddress": "0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2",
+      "bridgeRelayer": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+      "revertContainsNotRelayer": true,
+      "revertMessage": "execution reverted: not relayer",
+      "ok": true
+    }
+  },
+  "rpc": {
+    "l1": "http://localhost:18545",
+    "l2": "http://localhost:29547",
+    "l3": "http://localhost:39545"
+  },
+  "failures": 0
+}
+[phase10] PASS: fault/safety controls validated

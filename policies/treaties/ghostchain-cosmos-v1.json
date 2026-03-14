@@ -1,0 +1,9 @@
+{
+  "id": "ghostchain-cosmos-v1",
+  "name": "GhostChain ↔ Cosmos Sovereign Treaty v1",
+  "counterpartyChain": "cosmos",
+  "maxBridgeAmountBps": 200,
+  "minBridgeIntervalSecs": 7200,
+  "activeFrom": 1709769600,
+  "enabled": true
+}

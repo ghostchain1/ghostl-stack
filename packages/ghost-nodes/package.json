@@ -1,0 +1,46 @@
+{
+  "name": "@ghostchain/ghost-nodes",
+  "version": "1.0.0",
+  "description": "GhostChain branded node connectivity module \u2014 zero external SDK surface exposure",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./compat": {
+      "import": "./dist/compat/index.js",
+      "types": "./dist/compat/index.d.ts"
+    },
+    "./rpc": {
+      "import": "./dist/rpc/GhostRPCClient.js",
+      "types": "./dist/rpc/GhostRPCClient.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "brand-check": "node ../../packages/brand-enforcer/src/cli.js --dir ./src"
+  },
+  "dependencies": {
+    "@ghostchain/ghost-sdk-core": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  },
+  "keywords": [
+    "ghostchain",
+    "ghost",
+    "gst",
+    "blockchain",
+    "l1",
+    "l2",
+    "l3",
+    "nodes",
+    "rpc"
+  ],
+  "license": "MIT"
+}

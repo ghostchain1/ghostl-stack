@@ -1,0 +1,127 @@
+name: ghostchain-compliance
+
+x-ghost-user: &ghost-user "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
+
+x-runtime-hardening: &runtime-hardening
+  user: *ghost-user
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  postgres:
+    image: postgres:16-alpine@sha256:129fbfd388241accda7b15e38ada14b11c70698e01e5c8072265b0eaa03af010
+    environment:
+      POSTGRES_DB: ghost_compliance
+      POSTGRES_USER: ghost
+      # SOVEREIGN: no default – fail closed if POSTGRES_PASSWORD is unset.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    ports:
+      # SOVEREIGN: database bound to loopback only. Remove this port binding in
+      # production deployments that share a Docker network with the service consumer.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghost -d ghost_compliance"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine@sha256:4bfd9eca23339865dc14fe75f6d9ae643f714924623978dd2798f1a673b08f43
+    ports:
+      # SOVEREIGN: Redis bound to loopback only.
+      - "127.0.0.1:6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    <<: *runtime-hardening
+    image: node:22-alpine@sha256:48f53c3f0105ccddcc5e4f520347398dfc0ba9b3008fbfd98a2add27e5797957
+    working_dir: /work
+    volumes:
+      - ./services/ghost-compliance:/work
+    environment:
+      DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/ghost_compliance
+      REDIS_URL: redis://redis:6379
+      # SOVEREIGN: no default – fail closed if JWT_SECRET is unset.
+      JWT_SECRET: ${COMPLIANCE_JWT_SECRET:?COMPLIANCE_JWT_SECRET is required}
+      ATTESTATION_PRIVATE_KEY: ${COMPLIANCE_ATTESTATION_PRIVATE_KEY:-}
+      ATTESTATION_EXPIRY_SECONDS: 900
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # SOVEREIGN FIX: npm ci instead of npm install for deterministic, lockfile-enforced installs.
+    command: ["sh", "-lc", "npm ci && npm run migrate"]
+    restart: "no"
+
+  ghost-compliance:
+    <<: *runtime-hardening
+    build:
+      context: ./services/ghost-compliance
+    environment:
+      NODE_ENV: production
+      PORT: 8090
+      DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/ghost_compliance
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${COMPLIANCE_JWT_SECRET:?COMPLIANCE_JWT_SECRET is required}
+      ATTESTATION_PRIVATE_KEY: ${COMPLIANCE_ATTESTATION_PRIVATE_KEY:-}
+      ATTESTATION_EXPIRY_SECONDS: 900
+      CORS_ORIGIN: http://localhost:3200
+    ports:
+      - "8090:8090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:8090/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  ghost-compliance-worker:
+    <<: *runtime-hardening
+    build:
+      context: ./services/ghost-compliance-worker
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://ghost:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/ghost_compliance
+      REDIS_URL: redis://redis:6379
+      COMPLIANCE_API_URL: http://ghost-compliance:8090
+      PREDICT_INTERVAL_SECONDS: 60
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      ghost-compliance:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+  redis_data:
+
+networks:
+  default:
+    name: ghostchain-compliance_default

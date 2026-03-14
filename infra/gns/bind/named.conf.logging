@@ -1,0 +1,23 @@
+// GNS BIND9 logging configuration
+logging {
+    channel default_log {
+        stderr;
+        severity info;
+        print-severity yes;
+        print-time     yes;
+        print-category yes;
+    };
+
+    channel security_log {
+        stderr;
+        severity notice;
+        print-severity yes;
+        print-time     yes;
+    };
+
+    category default  { default_log;  };
+    category security { security_log; };
+    category dnssec   { security_log; };
+    category update   { default_log;  };
+    category queries  { default_log;  };
+};
