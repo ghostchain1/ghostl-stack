@@ -40,7 +40,7 @@ const CampaignSchema = z.object({
   min_level:        z.number().int().min(1).optional(),
   start_date:       z.string().datetime(),
   end_date:         z.string().datetime(),
-  metadata:         z.record(z.unknown()).optional(),
+  metadata:         z.record(z.string(), z.unknown()).optional(),
 });
 
 // ── Routes ────────────────────────────────────────────────────────────────────

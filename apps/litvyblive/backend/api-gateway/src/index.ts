@@ -91,9 +91,9 @@ for (const [prefix, envTarget] of Object.entries(routes)) {
       changeOrigin: true,
       on: {
         proxyReq: fixRequestBody,
-        error: (_err, _req, res) => {
+        error: (_err: Error, _req: Request, res: Response) => {
           log.error(`Proxy error → ${target}: service unreachable`);
-          (res as Response).status(502).json({ error: 'Upstream service unavailable' });
+          res.status(502).json({ error: 'Upstream service unavailable' });
         },
       },
     }),

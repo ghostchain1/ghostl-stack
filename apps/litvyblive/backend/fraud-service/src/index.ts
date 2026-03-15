@@ -196,16 +196,18 @@ app.post('/alerts/:id/resolve', requireAuth, (req: AuthReq, res) => {
 
 // ── GET /fraud/risk/:userId ───────────────────────────────────────────────────
 app.get('/risk/:userId', requireAuth, (req, res) => {
-  ensureRisk(req.params['userId']);
-  const row = db.prepare('SELECT * FROM risk_scores WHERE user_id=?').get(req.params['userId']);
+  const userId = req.params['userId'] as string;
+  ensureRisk(userId);
+  const row = db.prepare('SELECT * FROM risk_scores WHERE user_id=?').get(userId);
   res.json(row ?? null);
 });
 
 // ── POST /fraud/ban/:userId ───────────────────────────────────────────────────
 app.post('/ban/:userId', requireAuth, (req, res) => {
-  ensureRisk(req.params['userId']);
-  db.prepare('UPDATE risk_scores SET is_banned=1, score=100, last_check=? WHERE user_id=?').run(new Date().toISOString(), req.params['userId']);
-  redis.publish('fraud:user:banned', JSON.stringify({ userId: req.params['userId'] })).catch(() => null);
+  const userId = req.params['userId'] as string;
+  ensureRisk(userId);
+  db.prepare('UPDATE risk_scores SET is_banned=1, score=100, last_check=? WHERE user_id=?').run(new Date().toISOString(), userId);
+  redis.publish('fraud:user:banned', JSON.stringify({ userId })).catch(() => null);
   res.json({ success: true, banned: true });
 });
 

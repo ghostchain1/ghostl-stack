@@ -169,7 +169,7 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 const StartSchema = z.object({
   title:    z.string().min(1).max(200),
   category: z.string().default('general'),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 app.post('/streams', requireAuth, async (req, res) => {
@@ -269,10 +269,10 @@ app.post('/streams/:id/viewers', requireAuth, async (req, res) => {
     region:   (req.body as { region?: string }).region ?? 'unknown',
   });
 
-  const count = syncViewers(req.params.id);
+  const count = syncViewers(req.params.id as string);
 
   await redis.publish('viewer:joined', JSON.stringify({
-    streamId: req.params.id, userId: user.userId, viewerCount: count,
+    streamId: req.params.id as string, userId: user.userId, viewerCount: count,
   }));
 
   res.json({ joined: true, viewerCount: count });

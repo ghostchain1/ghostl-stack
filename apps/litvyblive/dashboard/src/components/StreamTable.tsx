@@ -7,7 +7,7 @@ import { timeAgo } from "@/lib/utils";
 import { Square, Flag, Star, ChevronDown, ChevronUp } from "lucide-react";
 import clsx from "clsx";
 
-type SortKey = "viewers" | "started_at" | "host_name";
+type SortKey = "viewer_count" | "started_at" | "host_name";
 
 interface Props {
   streams: Stream[];
@@ -16,7 +16,7 @@ interface Props {
 
 export default function StreamTable({ streams, isLoading }: Props) {
   const qc = useQueryClient();
-  const [sortKey, setSortKey]     = useState<SortKey>("viewers");
+  const [sortKey, setSortKey]     = useState<SortKey>("viewer_count");
   const [sortDir, setSortDir]     = useState<"asc" | "desc">("desc");
   const [filter, setFilter]       = useState("");
   const [selected, setSelected]   = useState<Set<string>>(new Set());

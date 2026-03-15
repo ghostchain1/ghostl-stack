@@ -37,11 +37,11 @@ class WebSocketService {
       console.log("[WS] connected", this.socket?.id);
     });
 
-    this.socket.on("disconnect", (reason) => {
+    this.socket.on("disconnect", (reason: string) => {
       console.warn("[WS] disconnected:", reason);
     });
 
-    this.socket.on("connect_error", (err) => {
+    this.socket.on("connect_error", (err: Error) => {
       this.reconnectAttempts++;
       console.error(`[WS] connect_error (attempt ${this.reconnectAttempts}):`, err.message);
     });

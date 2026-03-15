@@ -6,7 +6,7 @@
  * Billing:   monthly GST debit from fan wallet → revenue-distribution
  */
 
-import express, { Request, Response, NextFunction } from "express";
+import express, { Application, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
@@ -20,7 +20,7 @@ const PORT = Number(process.env.PORT ?? 7041);
 const redis = new Redis(process.env.REDIS_URL ?? "redis://localhost:6379");
 const db = new Pool({ connectionString: process.env.DATABASE_URL });
 
-const app = express();
+const app: Application = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());

@@ -58,7 +58,7 @@ app.get("/analytics/dau", async (req: Request, res: Response) => {
          WHERE date BETWEEN $1 AND $2
          ORDER BY date`,
         [from, to],
-      ).then((r) => r.rows),
+      ).then((r: { rows: Record<string, unknown>[] }) => r.rows),
     );
     res.json(data);
   } catch {
@@ -78,7 +78,7 @@ app.get("/analytics/gift-volume", async (req: Request, res: Response) => {
         `SELECT date::text, SUM(gift_gst) AS gift_volume_gst, COUNT(*) AS gift_count
          FROM gift_events WHERE date BETWEEN $1 AND $2 GROUP BY date ORDER BY date`,
         [from, to],
-      ).then((r) => r.rows),
+      ).then((r: { rows: Record<string, unknown>[] }) => r.rows),
     );
     res.json(data);
   } catch {
@@ -108,7 +108,7 @@ app.get("/analytics/creator-earnings", async (req: Request, res: Response) => {
          ORDER BY total_earned_gst DESC
          LIMIT $3`,
         [from, to, limit],
-      ).then((r) => r.rows),
+      ).then((r: { rows: Record<string, unknown>[] }) => r.rows),
     );
     res.json(data);
   } catch {
@@ -133,7 +133,7 @@ app.get("/analytics/referrals", async (req: Request, res: Response) => {
          WHERE created_at::date BETWEEN $1 AND $2
          GROUP BY 1 ORDER BY 1`,
         [from, to],
-      ).then((r) => r.rows),
+      ).then((r: { rows: Record<string, unknown>[] }) => r.rows),
     );
     res.json(data);
   } catch {
@@ -149,7 +149,7 @@ app.get("/analytics/retention", async (_req: Request, res: Response) => {
         `SELECT cohort_week, d1_retention, d7_retention, d30_retention
          FROM analytics_retention_cohorts
          ORDER BY cohort_week DESC LIMIT 12`,
-      ).then((r) => r.rows),
+      ).then((r: { rows: Record<string, unknown>[] }) => r.rows),
     );
     res.json(data);
   } catch {
@@ -176,7 +176,7 @@ app.get("/analytics/campaigns", async (req: Request, res: Response) => {
          GROUP BY c.id, c.name, c.type
          ORDER BY participants DESC`,
         [from, to],
-      ).then((r) => r.rows),
+      ).then((r: { rows: Record<string, unknown>[] }) => r.rows),
     );
     res.json(data);
   } catch {

@@ -10,7 +10,7 @@
  * All trades settled on GhostL3 via L3 settlement queue.
  */
 
-import express, { Request, Response, NextFunction } from "express";
+import express, { Application, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
@@ -28,7 +28,7 @@ const TRADE_FEE_PCT = 0.02;
 // Min launch reserve (GST) — creator must seed liquidity
 const MIN_LAUNCH_RESERVE = 500;
 
-const app = express();
+const app: Application = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
@@ -149,7 +149,7 @@ app.post("/tokens/:symbol/buy", async (req: Request, res: Response) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
   const { buyer_id, token_amt } = parsed.data;
-  const sym = req.params.symbol.toUpperCase();
+  const sym = (req.params.symbol as string).toUpperCase();
 
   try {
     const { rows } = await db.query(
@@ -211,7 +211,7 @@ app.post("/tokens/:symbol/sell", async (req: Request, res: Response) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
   const { buyer_id: seller_id, token_amt } = parsed.data;
-  const sym = req.params.symbol.toUpperCase();
+  const sym = (req.params.symbol as string).toUpperCase();
 
   try {
     const { rows } = await db.query(

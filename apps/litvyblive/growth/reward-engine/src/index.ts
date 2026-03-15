@@ -118,7 +118,7 @@ app.post("/reward/login", async (req: Request, res: Response) => {
 // GET /reward/multiplier/:userId — current gift multiplier for a user
 app.get("/reward/multiplier/:userId", async (req: Request, res: Response) => {
   try {
-    const multiplier = await getActiveMultiplier(req.params.userId);
+    const multiplier = await getActiveMultiplier(req.params.userId as string);
     res.json({ multiplier });
   } catch {
     res.status(500).json({ error: "Failed to get multiplier" });

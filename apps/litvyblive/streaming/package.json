@@ -1,0 +1,37 @@
+{
+  "name": "@litvyblive/streaming",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LitVybzLive Streaming — shared deps for WebRTC, MediaSoup SFU, edge nodes, Redis bus, stream controller",
+  "scripts": {
+    "build": "echo 'Build individual services'"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.7.5",
+    "mediasoup": "^3.15.0",
+    "ioredis": "^5.4.1",
+    "better-sqlite3": "^11.8.0",
+    "jsonwebtoken": "^9.0.2",
+    "uuid": "^11.0.5",
+    "axios": "^1.7.9",
+    "zod": "^3.24.2",
+    "cors": "^2.8.5",
+    "helmet": "^8.0.0",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/uuid": "^10.0.0",
+    "@types/node": "^22.0.0",
+    "@types/cors": "^2.8.17",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

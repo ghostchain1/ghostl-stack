@@ -77,11 +77,11 @@ app.get('/recommendations', requireAuth, async (req: AuthReq, res) => {
 
     // Filter by preference if user has any
     if (wantedCategories.length > 0) {
-      streams = streams.filter((s) => wantedCategories.includes(String(s['category'])));
+      streams = streams.filter((s: Record<string, unknown>) => wantedCategories.includes(String(s['category'])));
     }
 
     // Sort by viewer count descending — simple relevance ranking
-    streams.sort((a, b) => Number(b['viewer_count'] ?? 0) - Number(a['viewer_count'] ?? 0));
+    streams.sort((a: Record<string, unknown>, b: Record<string, unknown>) => Number(b['viewer_count'] ?? 0) - Number(a['viewer_count'] ?? 0));
 
     res.json({ recommendations: streams.slice(0, 20), source: 'rule-based' });
   } catch {
@@ -124,7 +124,7 @@ app.post('/find-pk-partner', requireAuth, async (req: AuthReq, res) => {
 
   try {
     const { data } = await axios.get<{ streams?: Array<Record<string, unknown>> }>(`${STREAM_SVC}/live`, { timeout: 3000 });
-    let candidates = (data.streams ?? []).filter((s) => {
+    let candidates = (data.streams ?? []).filter((s: Record<string, unknown>) => {
       if (s['id'] === streamId) return false;          // exclude self
       if ((s['is_pk_active'] as boolean)) return false; // already in PK
       if (Number(s['viewer_count'] ?? 0) < minViewers) return false;
@@ -132,9 +132,9 @@ app.post('/find-pk-partner', requireAuth, async (req: AuthReq, res) => {
       return true;
     });
     // Sort by closest viewer count to ensure fair match
-    const myStream = (data.streams ?? []).find((s) => s['id'] === streamId);
+    const myStream = (data.streams ?? []).find((s: Record<string, unknown>) => s['id'] === streamId);
     if (myStream) {
-      candidates.sort((a, b) =>
+      candidates.sort((a: Record<string, unknown>, b: Record<string, unknown>) =>
         Math.abs(Number(a['viewer_count']) - Number(myStream['viewer_count'])) -
         Math.abs(Number(b['viewer_count']) - Number(myStream['viewer_count']))
       );

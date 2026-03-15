@@ -10,7 +10,7 @@
  * Withdrawal requests are queued for L3 settlement on GhostChain.
  */
 
-import express, { Request, Response, NextFunction } from "express";
+import express, { Application, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
@@ -29,7 +29,7 @@ const MIN_WITHDRAWAL_GST = 100;
 // Platform withdrawal fee: 1%
 const WITHDRAWAL_FEE_PCT = 0.01;
 
-const app = express();
+const app: Application = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());

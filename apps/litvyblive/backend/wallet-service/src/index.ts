@@ -204,8 +204,9 @@ app.get('/history', requireAuth, (req: AuthReq, res) => {
 
 // ── GET /wallet/treasury/:userId (creator treasury view) ──────────────────────
 app.get('/treasury/:userId', requireAuth, (req, res) => {
-  ensureBalance(req.params['userId']);
-  const row = db.prepare('SELECT gst_balance, staked_gst FROM balances WHERE user_id=?').get(req.params['userId']) as { gst_balance: number; staked_gst: number } | undefined;
+  const userId = req.params['userId'] as string;
+  ensureBalance(userId);
+  const row = db.prepare('SELECT gst_balance, staked_gst FROM balances WHERE user_id=?').get(userId) as { gst_balance: number; staked_gst: number } | undefined;
   res.json({ vaultBalance: row?.gst_balance ?? 0, stakedBalance: row?.staked_gst ?? 0, chainId: GHOST_L3_CHAIN_ID });
 });
 

@@ -67,7 +67,7 @@ function rewardForLevel(level: number): number {
 // GET /referral/code/:userId — get or create referral code for a user
 app.get("/referral/code/:userId", async (req: Request, res: Response) => {
   try {
-    const code = await generateCode(req.params.userId);
+    const code = await generateCode(req.params.userId as string);
     res.json({ code, link: `https://litvybzlive.ghostchain.cloud/join?ref=${code}` });
   } catch (err) {
     res.status(500).json({ error: "Failed to generate referral code" });
