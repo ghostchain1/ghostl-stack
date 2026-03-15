@@ -1,0 +1,41 @@
+{
+  "name": "litvyblive-backend",
+  "version": "1.0.0",
+  "description": "LitVybzLive backend — streams, gifts, agency, wallet, games. GhostL3 (chain 903) settlement.",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "cors": "^2.8.5",
+    "helmet": "^8.0.0",
+    "winston": "^3.17.0",
+    "socket.io": "^4.7.0",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^3.0.2",
+    "better-sqlite3": "^9.6.0",
+    "ethers": "^6.13.4",
+    "zod": "^3.23.8",
+    "uuid": "^10.0.0",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "tsx": "^4.19.2",
+    "@types/express": "^5.0.0",
+    "@types/cors": "^2.8.17",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/uuid": "^10.0.0",
+    "@types/node": "^22.13.0"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

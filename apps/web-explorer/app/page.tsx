@@ -21,16 +21,16 @@ export default function ExplorerPage() {
       <PublicNavbar cta={{ label: "Dev Docs", href: "https://dev.ghostchain.cloud" }} />
       <main>
         {/* Hero / Search */}
-        <section style={{ padding: "100px 24px 60px", textAlign: "center", background: "linear-gradient(180deg,#07060e 0%,#050507 100%)" }}>
+        <section style={{ padding: "100px 24px 60px", textAlign: "center", background: "linear-gradient(180deg,#0A0A0A 0%,#0A0A0A 100%)" }}>
           <div className="container">
             <span className="tag">Block Explorer</span>
             <h1 style={{ fontSize: "clamp(2rem,6vw,3.5rem)", fontWeight: 800, margin: "24px 0 40px" }}>
-              Explore <span style={{ color: "#00F0FF" }}>GhostChain</span>
+              Explore <span style={{ color: "#FFD700" }}>GhostChain</span>
             </h1>
             {/* Chain selector */}
             <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 24, flexWrap: "wrap" }}>
               {chains.map((c, i) => (
-                <button key={c} onClick={() => setChain(i)} style={{ padding: "8px 20px", borderRadius: 9999, border: "1px solid " + (chain === i ? "#00F0FF" : "#1e293b"), background: chain === i ? "#00F0FF22" : "transparent", color: chain === i ? "#00F0FF" : "#94a3b8", cursor: "pointer", fontSize: "0.875rem", fontWeight: 600 }}>{c}</button>
+                <button key={c} onClick={() => setChain(i)} style={{ padding: "8px 20px", borderRadius: 9999, border: "1px solid " + (chain === i ? "#FFD700" : "#1e293b"), background: chain === i ? "#FFD70022" : "transparent", color: chain === i ? "#FFD700" : "#94a3b8", cursor: "pointer", fontSize: "0.875rem", fontWeight: 600 }}>{c}</button>
               ))}
             </div>
             {/* Search */}
@@ -51,7 +51,7 @@ export default function ExplorerPage() {
           <div className="container">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
               <h2 style={{ fontSize: "1.5rem", fontWeight: 700 }}>Recent Blocks — {chains[chain]}</h2>
-              <span style={{ background: "#00F0FF22", color: "#00F0FF", padding: "4px 12px", borderRadius: 20, fontSize: "0.8rem", fontWeight: 600 }}>⬤ Live</span>
+              <span style={{ background: "#FFD70022", color: "#FFD700", padding: "4px 12px", borderRadius: 20, fontSize: "0.8rem", fontWeight: 600 }}>⬤ Live</span>
             </div>
             <p style={{ color: "#64748b", fontSize: "0.85rem", marginBottom: 24 }}>Showing mock data. Live data streams from RPC when nodes are connected.</p>
             <div style={{ overflowX: "auto" }}>
@@ -66,11 +66,11 @@ export default function ExplorerPage() {
                 <tbody>
                   {mockBlocks.map((b) => (
                     <tr key={b.num} style={{ borderBottom: "1px solid #0f172a" }}>
-                      <td style={{ padding: "12px 14px", color: "#00F0FF", fontWeight: 600 }}>#{b.num}</td>
+                      <td style={{ padding: "12px 14px", color: "#FFD700", fontWeight: 600 }}>#{b.num}</td>
                       <td style={{ padding: "12px 14px", color: "#94a3b8" }}>{b.hash}</td>
                       <td style={{ padding: "12px 14px" }}>{b.txs}</td>
                       <td style={{ padding: "12px 14px", color: "#94a3b8" }}>{b.time}</td>
-                      <td style={{ padding: "12px 14px", color: "#7A00FF" }}>{b.miner}</td>
+                      <td style={{ padding: "12px 14px", color: "#FFAA00" }}>{b.miner}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -80,7 +80,7 @@ export default function ExplorerPage() {
         </section>
 
         {/* Stats bar */}
-        <section style={{ padding: "40px 24px", background: "#07060e" }}>
+        <section style={{ padding: "40px 24px", background: "#0A0A0A" }}>
           <div className="container" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 20, textAlign: "center" }}>
             {[
               { label: "TPS", value: "2,847" },
@@ -90,7 +90,7 @@ export default function ExplorerPage() {
               { label: "Avg Block Time", value: "5s" },
             ].map((s) => (
               <div key={s.label}>
-                <div style={{ fontSize: "1.75rem", fontWeight: 800, color: "#00F0FF" }}>{s.value}</div>
+                <div style={{ fontSize: "1.75rem", fontWeight: 800, color: "#FFD700" }}>{s.value}</div>
                 <div style={{ color: "#64748b", fontSize: "0.85rem", marginTop: 4 }}>{s.label}</div>
               </div>
             ))}

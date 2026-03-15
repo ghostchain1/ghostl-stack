@@ -11,8 +11,8 @@ const stats = [
 ];
 
 const tokenomics = [
-  { label: "Validator Rewards", pct: 30, color: "#00F0FF" },
-  { label: "Treasury", pct: 20, color: "#7A00FF" },
+  { label: "Validator Rewards", pct: 30, color: "#FFD700" },
+  { label: "Treasury", pct: 20, color: "#FFAA00" },
   { label: "Ecosystem Fund", pct: 20, color: "#A855F7" },
   { label: "Team & Advisors", pct: 15, color: "#06B6D4" },
   { label: "Public Sale", pct: 10, color: "#8B5CF6" },
@@ -25,11 +25,11 @@ export default function InvestorPage() {
       <PublicNavbar cta={{ label: "Get GST", href: "https://exchange.ghostchain.cloud" }} />
       <main>
         {/* Hero */}
-        <section style={{ padding: "100px 24px 60px", textAlign: "center", background: "linear-gradient(180deg,#07060e 0%,#050507 100%)" }}>
+        <section style={{ padding: "100px 24px 60px", textAlign: "center", background: "linear-gradient(180deg,#0A0A0A 0%,#0A0A0A 100%)" }}>
           <div className="container">
             <span className="tag">Investor Relations</span>
             <h1 style={{ fontSize: "clamp(2rem,6vw,4rem)", fontWeight: 800, margin: "24px 0 16px" }}>
-              The <span style={{ color: "#00F0FF" }}>GST</span> Token Economy
+              The <span style={{ color: "#FFD700" }}>GST</span> Token Economy
             </h1>
             <p style={{ color: "#94a3b8", maxWidth: 600, margin: "0 auto 40px", fontSize: "1.1rem" }}>
               GhostChain Token (GST) powers every layer of the Ghost ecosystem — from validator staking and governance to gas fees and AI compute.
@@ -42,13 +42,13 @@ export default function InvestorPage() {
         </section>
 
         {/* Stats grid */}
-        <section style={{ padding: "60px 24px", background: "#050507" }}>
+        <section style={{ padding: "60px 24px", background: "#0A0A0A" }}>
           <div className="container">
             <h2 style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: 32, textAlign: "center" }}>Live Metrics</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 20 }}>
               {stats.map((s) => (
                 <div key={s.label} className="card" style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "2rem", fontWeight: 800, color: "#00F0FF" }}>{s.value}</div>
+                  <div style={{ fontSize: "2rem", fontWeight: 800, color: "#FFD700" }}>{s.value}</div>
                   <div style={{ fontWeight: 600, marginTop: 8 }}>{s.label}</div>
                   <div style={{ color: "#64748b", fontSize: "0.85rem", marginTop: 4 }}>{s.note}</div>
                 </div>
@@ -58,7 +58,7 @@ export default function InvestorPage() {
         </section>
 
         {/* Tokenomics */}
-        <section style={{ padding: "60px 24px", background: "#07060e" }}>
+        <section style={{ padding: "60px 24px", background: "#0A0A0A" }}>
           <div className="container">
             <h2 style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: 8, textAlign: "center" }}>Token Allocation</h2>
             <p style={{ color: "#94a3b8", textAlign: "center", marginBottom: 48 }}>1,000,000,000 GST — fixed supply, no inflation</p>

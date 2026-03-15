@@ -24,11 +24,11 @@ export default function NodesPage() {
       <PublicNavbar cta={{ label: "Run a Node", href: "/setup" }} />
       <main>
         {/* Hero */}
-        <section style={{ padding: "100px 24px 60px", textAlign: "center", background: "linear-gradient(180deg,#07060e 0%,#050507 100%)" }}>
+        <section style={{ padding: "100px 24px 60px", textAlign: "center", background: "linear-gradient(180deg,#0A0A0A 0%,#0A0A0A 100%)" }}>
           <div className="container">
             <span className="tag">Validator Network</span>
             <h1 style={{ fontSize: "clamp(2rem,6vw,4rem)", fontWeight: 800, margin: "24px 0 16px" }}>
-              Secure <span style={{ color: "#00F0FF" }}>GhostChain</span>.<br />Earn GST.
+              Secure <span style={{ color: "#FFD700" }}>GhostChain</span>.<br />Earn GST.
             </h1>
             <p style={{ color: "#94a3b8", maxWidth: 600, margin: "0 auto 40px", fontSize: "1.1rem" }}>
               Run a validator node and help secure the Ghost network. Earn up to 12% APY in GST rewards plus transaction fees.
@@ -41,13 +41,13 @@ export default function NodesPage() {
         </section>
 
         {/* Requirements */}
-        <section style={{ padding: "60px 24px", background: "#07060e" }}>
+        <section style={{ padding: "60px 24px", background: "#0A0A0A" }}>
           <div className="container">
             <h2 style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: 32, textAlign: "center" }}>Minimum Requirements</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 16, maxWidth: 900, margin: "0 auto" }}>
               {requirements.map((r) => (
                 <div key={r.label} className="card" style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "1.25rem", fontWeight: 800, color: "#00F0FF", marginBottom: 6 }}>{r.value}</div>
+                  <div style={{ fontSize: "1.25rem", fontWeight: 800, color: "#FFD700", marginBottom: 6 }}>{r.value}</div>
                   <div style={{ color: "#94a3b8", fontSize: "0.85rem" }}>{r.label}</div>
                 </div>
               ))}
@@ -62,7 +62,7 @@ export default function NodesPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
               {steps.map((s) => (
                 <div key={s.n} style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
-                  <div style={{ width: 48, height: 48, borderRadius: "50%", border: "2px solid #00F0FF", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#00F0FF", fontSize: "0.9rem", flexShrink: 0 }}>{s.n}</div>
+                  <div style={{ width: 48, height: 48, borderRadius: "50%", border: "2px solid #FFD700", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#FFD700", fontSize: "0.9rem", flexShrink: 0 }}>{s.n}</div>
                   <div className="card" style={{ flex: 1 }}>
                     <h3 style={{ fontWeight: 700, marginBottom: 6 }}>{s.title}</h3>
                     <p style={{ color: "#94a3b8", fontSize: "0.9rem", margin: 0 }}>{s.desc}</p>
@@ -74,7 +74,7 @@ export default function NodesPage() {
         </section>
 
         {/* Reward calculator stub */}
-        <section style={{ padding: "60px 24px", background: "#07060e", textAlign: "center" }}>
+        <section style={{ padding: "60px 24px", background: "#0A0A0A", textAlign: "center" }}>
           <div className="container" style={{ maxWidth: 600 }}>
             <h2 style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: 12 }}>Reward Calculator</h2>
             <p style={{ color: "#94a3b8", marginBottom: 32 }}>Estimate your validator yield based on stake size and network participation.</p>

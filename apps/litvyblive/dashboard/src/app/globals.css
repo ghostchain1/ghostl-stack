@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-purple: #7B2FBE;
+  --brand-gold:   #FFD700;
+  --brand-pink:   #FF2D78;
+  --ghost-blue:   #00D4FF;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  background: #0A0A12;
+  color: #ffffff;
+}
+
+.card {
+  @apply bg-dark-card border border-dark-border rounded-xl p-4;
+}
+
+.btn-primary {
+  @apply bg-brand-purple hover:opacity-90 text-white px-4 py-2 rounded-lg text-sm font-medium transition;
+}
+
+.btn-danger {
+  @apply bg-brand-pink hover:opacity-90 text-white px-4 py-2 rounded-lg text-sm font-medium transition;
+}

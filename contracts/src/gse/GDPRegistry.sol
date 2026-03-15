@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "../common/AccessControl.sol";
-
 /// @title GDPRegistry — on-chain record of sovereign GDP submissions
 contract GDPRegistry {
 

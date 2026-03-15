@@ -95,11 +95,11 @@ export default function PortalPage() {
       <PublicNavbar cta={{ label: "ghostchain.cloud", href: "https://ghostchain.cloud" }} />
       <main style={{ minHeight: "100vh" }}>
         {/* Header */}
-        <section style={{ padding: "80px 24px 40px", textAlign: "center", background: "linear-gradient(180deg,#07060e 0%,#050507 100%)" }}>
+        <section style={{ padding: "80px 24px 40px", textAlign: "center", background: "linear-gradient(180deg,#0A0A0A 0%,#0A0A0A 100%)" }}>
           <div className="container">
             <span className="tag">Super Portal</span>
             <h1 style={{ fontSize: "clamp(2rem,5vw,3.5rem)", fontWeight: 800, margin: "20px 0 12px" }}>
-              Ghost <span style={{ color: "#00F0FF" }}>Control Center</span>
+              Ghost <span style={{ color: "#FFD700" }}>Control Center</span>
             </h1>
             <p style={{ color: "#94a3b8", maxWidth: 500, margin: "0 auto", fontSize: "1rem" }}>
               Unified dashboard for every GhostChain service — chains, governance, validators, treasury, and more.
@@ -112,7 +112,7 @@ export default function PortalPage() {
           <div className="container" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))", gap: 16, textAlign: "center" }}>
             {quickStats.map((s) => (
               <div key={s.label}>
-                <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#00F0FF" }}>{s.value}</div>
+                <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#FFD700" }}>{s.value}</div>
                 <div style={{ color: "#64748b", fontSize: "0.8rem", marginTop: 4 }}>{s.label}</div>
               </div>
             ))}
@@ -127,7 +127,7 @@ export default function PortalPage() {
               <nav style={{ position: "sticky", top: 80 }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   {navSections.map((s) => (
-                    <button key={s.category} onClick={() => setActive(s.category)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 8, border: "none", background: active === s.category ? "#00F0FF22" : "transparent", color: active === s.category ? "#00F0FF" : "#94a3b8", cursor: "pointer", textAlign: "left", fontWeight: active === s.category ? 700 : 400, fontSize: "0.9rem", transition: "all .15s" }}>
+                    <button key={s.category} onClick={() => setActive(s.category)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 8, border: "none", background: active === s.category ? "#FFD70022" : "transparent", color: active === s.category ? "#FFD700" : "#94a3b8", cursor: "pointer", textAlign: "left", fontWeight: active === s.category ? 700 : 400, fontSize: "0.9rem", transition: "all .15s" }}>
                       <span>{s.icon}</span>{s.category}
                     </button>
                   ))}
@@ -141,7 +141,7 @@ export default function PortalPage() {
                   {section.items.map((item) => (
                     <a key={item.label} href={item.href} className="card" style={{ textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <span style={{ fontWeight: 600 }}>{item.label}</span>
-                      <span style={{ color: "#00F0FF", fontSize: "1.1rem" }}>→</span>
+                      <span style={{ color: "#FFD700", fontSize: "1.1rem" }}>→</span>
                     </a>
                   ))}
                 </div>
@@ -150,18 +150,18 @@ export default function PortalPage() {
                 <h2 style={{ fontSize: "1.5rem", fontWeight: 700, margin: "48px 0 24px" }}>All Ghost Portals</h2>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 16 }}>
                   {[
-                    { name: "Main Site", href: "https://ghostchain.cloud", color: "#00F0FF" },
+                    { name: "Main Site", href: "https://ghostchain.cloud", color: "#FFD700" },
                     { name: "Investor", href: "https://invest.ghostchain.cloud", color: "#10B981" },
-                    { name: "Developers", href: "https://dev.ghostchain.cloud", color: "#7A00FF" },
+                    { name: "Developers", href: "https://dev.ghostchain.cloud", color: "#FFAA00" },
                     { name: "Apps", href: "https://apps.ghostchain.cloud", color: "#A855F7" },
                     { name: "Explorer", href: "https://explorer.ghostchain.cloud", color: "#06B6D4" },
                     { name: "Governance", href: "https://governance.ghostchain.cloud", color: "#8B5CF6" },
-                    { name: "Validators", href: "https://nodes.ghostchain.cloud", color: "#00F0FF" },
+                    { name: "Validators", href: "https://nodes.ghostchain.cloud", color: "#FFD700" },
                     { name: "Exchange", href: "https://exchange.ghostchain.cloud", color: "#F59E0B" },
                     { name: "Company", href: "https://ghostchain.company", color: "#64748b" },
                     { name: "Status", href: "https://status.ghostchain.cloud", color: "#10B981" },
                   ].map((p) => (
-                    <a key={p.name} href={p.href} style={{ display: "block", padding: "14px 20px", borderRadius: 10, border: "1px solid #1e293b", background: "#07060e", textDecoration: "none", color: p.color, fontWeight: 700, fontSize: "0.9rem", transition: "border-color .15s" }}>
+                    <a key={p.name} href={p.href} style={{ display: "block", padding: "14px 20px", borderRadius: 10, border: "1px solid #1e293b", background: "#0A0A0A", textDecoration: "none", color: p.color, fontWeight: 700, fontSize: "0.9rem", transition: "border-color .15s" }}>
                       {p.name} →
                     </a>
                   ))}

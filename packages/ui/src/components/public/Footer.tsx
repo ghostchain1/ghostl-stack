@@ -31,38 +31,40 @@ const cols = [
   {
     title: "Company",
     links: [
-      { label: "About",   href: "https://ghostchain.company/team" },
-      { label: "Careers", href: "https://ghostchain.company/careers" },
-      { label: "Press",   href: "https://ghostchain.company/press" },
-      { label: "Contact", href: "https://ghostchain.company/contact" },
+      { label: "About",   href: "https://company.ghostchain.cloud/team" },
+      { label: "Careers", href: "https://company.ghostchain.cloud/careers" },
+      { label: "Press",   href: "https://company.ghostchain.cloud/press" },
+      { label: "Contact", href: "https://company.ghostchain.cloud/contact" },
     ],
   },
 ];
 
 export function PublicFooter() {
   return (
-    <footer style={{ background: "#050507", borderTop: "1px solid #1a1a2e", padding: "4rem 1.5rem 2rem" }}>
+    <footer style={{ background: "#0A0A0A", borderTop: "1px solid rgba(255,215,0,0.18)", padding: "4rem 1.5rem 2rem" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "3rem", marginBottom: "3rem" }}>
           <div>
-            <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#00F0FF", marginBottom: "1rem" }}>◈ GhostChain</div>
-            <p style={{ color: "#64748b", fontSize: "0.875rem", lineHeight: 1.6, maxWidth: 240 }}>
+            <div style={{ fontFamily: "'Orbitron', 'Inter', sans-serif", fontSize: "1.25rem", fontWeight: 700, color: "#FFD700", marginBottom: "1rem", letterSpacing: "0.1em", textShadow: "0 0 12px rgba(255,215,0,0.4)" }}>
+              👻 GhostChain
+            </div>
+            <p style={{ color: "rgba(232,232,232,0.5)", fontSize: "0.875rem", lineHeight: 1.6, maxWidth: 240 }}>
               Sovereign AI-powered multi-layer blockchain. L1 · L2 · L3.
             </p>
             <div style={{ marginTop: "1rem", display: "flex", gap: "0.75rem" }}>
               {["𝕏", "⬡ GitHub", "◎ Discord"].map(s => (
-                <span key={s} style={{ color: "#475569", fontSize: "0.8rem", cursor: "pointer" }}>{s}</span>
+                <span key={s} style={{ color: "rgba(192,192,192,0.5)", fontSize: "0.8rem", cursor: "pointer" }}>{s}</span>
               ))}
             </div>
           </div>
           {cols.map(col => (
             <div key={col.title}>
-              <div style={{ color: "#e2e8f0", fontWeight: 600, fontSize: "0.875rem", marginBottom: "1rem" }}>{col.title}</div>
+              <div style={{ color: "#C0C0C0", fontWeight: 600, fontSize: "0.875rem", marginBottom: "1rem", letterSpacing: "0.05em" }}>{col.title}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
                 {col.links.map(l => (
-                  <Link key={l.href} href={l.href} style={{ color: "#64748b", fontSize: "0.8125rem", textDecoration: "none" }}
-                    onMouseEnter={e => (e.currentTarget.style.color = "#94a3b8")}
-                    onMouseLeave={e => (e.currentTarget.style.color = "#64748b")}>
+                  <Link key={l.href} href={l.href} style={{ color: "rgba(232,232,232,0.4)", fontSize: "0.8125rem", textDecoration: "none" }}
+                    onMouseEnter={e => (e.currentTarget.style.color = "#FFD700")}
+                    onMouseLeave={e => (e.currentTarget.style.color = "rgba(232,232,232,0.4)")}>
                     {l.label}
                   </Link>
                 ))}
@@ -70,11 +72,11 @@ export function PublicFooter() {
             </div>
           ))}
         </div>
-        <div style={{ borderTop: "1px solid #1a1a2e", paddingTop: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-          <span style={{ color: "#475569", fontSize: "0.8125rem" }}>© 2026 GhostChain. All rights reserved.</span>
+        <div style={{ borderTop: "1px solid rgba(255,215,0,0.12)", paddingTop: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+          <span style={{ color: "rgba(232,232,232,0.35)", fontSize: "0.8125rem" }}>© 2026 GhostChain. All rights reserved.</span>
           <div style={{ display: "flex", gap: "1.5rem" }}>
             {["Privacy Policy", "Terms of Service", "Security"].map(l => (
-              <span key={l} style={{ color: "#475569", fontSize: "0.8125rem", cursor: "pointer" }}>{l}</span>
+              <span key={l} style={{ color: "rgba(232,232,232,0.35)", fontSize: "0.8125rem", cursor: "pointer" }}>{l}</span>
             ))}
           </div>
         </div>

@@ -43,6 +43,7 @@ ENV NODE_ENV=production \
 
 # Standalone output bundles everything needed
 COPY --from=builder /repo/apps/web-portal/.next/standalone ./
+COPY --from=builder /repo/apps/web-portal/public ./apps/web-portal/public
 COPY --from=builder /repo/apps/web-portal/.next/static ./apps/web-portal/.next/static
 RUN mkdir -p ./apps/web-portal/public
 

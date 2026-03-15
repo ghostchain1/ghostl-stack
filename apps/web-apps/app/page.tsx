@@ -2,8 +2,8 @@
 import { PublicNavbar, PublicFooter } from "@ghostl/ui";
 
 const apps = [
-  { name: "GhostSwap", tagline: "DEX across all Ghost layers", status: "live", href: "https://apps.ghostchain.cloud/ghostswap", color: "#00F0FF" },
-  { name: "GhostWallet", tagline: "Self-custodial multi-layer wallet", status: "live", href: "https://apps.ghostchain.cloud/wallet", color: "#7A00FF" },
+  { name: "GhostSwap", tagline: "DEX across all Ghost layers", status: "live", href: "https://apps.ghostchain.cloud/ghostswap", color: "#FFD700" },
+  { name: "GhostWallet", tagline: "Self-custodial multi-layer wallet", status: "live", href: "https://apps.ghostchain.cloud/wallet", color: "#FFAA00" },
   { name: "GhostBridge", tagline: "L1↔L2↔L3 asset bridge", status: "live", href: "https://apps.ghostchain.cloud/bridge", color: "#A855F7" },
   { name: "GhostNFT", tagline: "NFT marketplace with AI provenance", status: "beta", href: "https://apps.ghostchain.cloud/nft", color: "#06B6D4" },
   { name: "GhostDAO", tagline: "Decentralized governance suite", status: "beta", href: "https://governance.ghostchain.cloud", color: "#8B5CF6" },
@@ -24,11 +24,11 @@ export default function AppsPage() {
       <PublicNavbar cta={{ label: "Launch an App", href: "https://portal.ghostchain.cloud" }} />
       <main>
         {/* Hero */}
-        <section style={{ padding: "100px 24px 60px", textAlign: "center", background: "linear-gradient(180deg,#07060e 0%,#050507 100%)" }}>
+        <section style={{ padding: "100px 24px 60px", textAlign: "center", background: "linear-gradient(180deg,#0A0A0A 0%,#0A0A0A 100%)" }}>
           <div className="container">
             <span className="tag">Application Ecosystem</span>
             <h1 style={{ fontSize: "clamp(2rem,6vw,4rem)", fontWeight: 800, margin: "24px 0 16px" }}>
-              The <span style={{ color: "#00F0FF" }}>Ghost</span> App Universe
+              The <span style={{ color: "#FFD700" }}>Ghost</span> App Universe
             </h1>
             <p style={{ color: "#94a3b8", maxWidth: 600, margin: "0 auto 40px", fontSize: "1.1rem" }}>
               DeFi, wallets, identity, social, and governance — all built natively on GhostChain's three-layer architecture.
@@ -56,7 +56,7 @@ export default function AppsPage() {
         </section>
 
         {/* Build CTA */}
-        <section style={{ padding: "80px 24px", textAlign: "center", background: "#07060e" }}>
+        <section style={{ padding: "80px 24px", textAlign: "center", background: "#0A0A0A" }}>
           <div className="container">
             <h2 style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: 16 }}>Build the next Ghost app</h2>
             <p style={{ color: "#94a3b8", marginBottom: 32 }}>Get listed in the Ghost App Universe. Open-source contributions welcome.</p>

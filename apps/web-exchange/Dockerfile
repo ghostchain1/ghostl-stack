@@ -43,6 +43,7 @@ ENV NODE_ENV=production \
 
 # Standalone output bundles everything needed
 COPY --from=builder /repo/apps/web-exchange/.next/standalone ./
+COPY --from=builder /repo/apps/web-exchange/public ./apps/web-exchange/public
 COPY --from=builder /repo/apps/web-exchange/.next/static ./apps/web-exchange/.next/static
 RUN mkdir -p ./apps/web-exchange/public
 

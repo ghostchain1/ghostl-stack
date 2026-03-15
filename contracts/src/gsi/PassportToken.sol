@@ -91,6 +91,6 @@ contract PassportToken {
 
     /// @dev Soul-bound: transfers are blocked
     function transfer(address, uint256) external pure {
-        revert("PassportToken: soul-bound — non-transferable");
+        revert(unicode"PassportToken: soul-bound \u2014 non-transferable");
     }
 }

@@ -16,7 +16,7 @@ export default function ExchangePage() {
       <PublicNavbar cta={{ label: "Onboard Now", href: "/kyc" }} />
       <main>
         {/* Hero */}
-        <section style={{ padding: "100px 24px 60px", textAlign: "center", background: "linear-gradient(180deg,#07060e 0%,#050507 100%)" }}>
+        <section style={{ padding: "100px 24px 60px", textAlign: "center", background: "linear-gradient(180deg,#0A0A0A 0%,#0A0A0A 100%)" }}>
           <div className="container">
             <span className="tag">Institutional</span>
             <h1 style={{ fontSize: "clamp(2rem,6vw,4rem)", fontWeight: 800, margin: "24px 0 16px" }}>
@@ -49,7 +49,7 @@ export default function ExchangePage() {
         </section>
 
         {/* Compliance badges */}
-        <section style={{ padding: "60px 24px", background: "#07060e", textAlign: "center" }}>
+        <section style={{ padding: "60px 24px", background: "#0A0A0A", textAlign: "center" }}>
           <div className="container">
             <h2 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: 32 }}>Compliance & Certifications</h2>
             <div style={{ display: "flex", gap: 20, justifyContent: "center", flexWrap: "wrap" }}>

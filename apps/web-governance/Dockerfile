@@ -43,6 +43,7 @@ ENV NODE_ENV=production \
 
 # Standalone output bundles everything needed
 COPY --from=builder /repo/apps/web-governance/.next/standalone ./
+COPY --from=builder /repo/apps/web-governance/public ./apps/web-governance/public
 COPY --from=builder /repo/apps/web-governance/.next/static ./apps/web-governance/.next/static
 RUN mkdir -p ./apps/web-governance/public
 

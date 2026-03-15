@@ -23,11 +23,11 @@ export default function CompanyPage() {
       <PublicNavbar cta={{ label: "Join the Team", href: "/careers" }} />
       <main>
         {/* Hero */}
-        <section style={{ padding: "100px 24px 60px", textAlign: "center", background: "linear-gradient(180deg,#07060e 0%,#050507 100%)" }}>
+        <section style={{ padding: "100px 24px 60px", textAlign: "center", background: "linear-gradient(180deg,#0A0A0A 0%,#0A0A0A 100%)" }}>
           <div className="container">
             <span className="tag">About GhostChain</span>
             <h1 style={{ fontSize: "clamp(2rem,6vw,4rem)", fontWeight: 800, margin: "24px 0 16px" }}>
-              Building the <span style={{ color: "#00F0FF" }}>Autonomous</span> Internet
+              Building the <span style={{ color: "#FFD700" }}>Autonomous</span> Internet
             </h1>
             <p style={{ color: "#94a3b8", maxWidth: 640, margin: "0 auto", fontSize: "1.1rem" }}>
               GhostChain is a team of engineers, researchers, and operators obsessed with making decentralized infrastructure as reliable and fast as the services it replaces.
@@ -52,15 +52,15 @@ export default function CompanyPage() {
         </section>
 
         {/* Team */}
-        <section style={{ padding: "60px 24px", background: "#07060e" }}>
+        <section style={{ padding: "60px 24px", background: "#0A0A0A" }}>
           <div className="container">
             <h2 style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: 32, textAlign: "center" }}>Team</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 24 }}>
               {team.map((m) => (
                 <div key={m.name} className="card">
-                  <div style={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg,#7A00FF,#00F0FF)", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "1.25rem", color: "#000" }}>{m.name[0]}</div>
+                  <div style={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg,#FFAA00,#FFD700)", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "1.25rem", color: "#000" }}>{m.name[0]}</div>
                   <div style={{ fontWeight: 700, fontSize: "1rem", marginBottom: 4 }}>{m.name}</div>
-                  <div style={{ color: "#7A00FF", fontSize: "0.85rem", fontWeight: 600, marginBottom: 10 }}>{m.role}</div>
+                  <div style={{ color: "#FFAA00", fontSize: "0.85rem", fontWeight: 600, marginBottom: 10 }}>{m.role}</div>
                   <p style={{ color: "#94a3b8", fontSize: "0.875rem", margin: 0 }}>{m.bio}</p>
                 </div>
               ))}

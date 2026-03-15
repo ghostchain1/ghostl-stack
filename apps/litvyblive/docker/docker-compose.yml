@@ -1,0 +1,103 @@
+# LitVybzLive — GhostL3 platform services
+# All transactions are hard-locked to GhostChain L3 (chain_id=903)
+# Connects to ghostchaind L1:18545 / L2:29545 / L3:39545 via host network
+
+services:
+
+  # ─────────────────────────────────────────────
+  # TypeScript / Express Backend  (port 7001)
+  # ─────────────────────────────────────────────
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: litvyb_backend
+    restart: unless-stopped
+    ports:
+      - "7001:7001"
+    environment:
+      NODE_ENV: production
+      PORT: "7001"
+      DB_PATH: /data/litvyblive.db
+      JWT_SECRET: ${JWT_SECRET:?secret required}
+      GHOSTBRAIN_URL: http://ai:7002
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+      GHOST_L3_CHAIN_ID: "903"
+      MEDIASOUP_URL: http://mediasoup:2000
+    volumes:
+      - backend_data:/data
+    depends_on:
+      - ai
+    networks:
+      - litvyb
+
+  # ─────────────────────────────────────────────
+  # GhostBrain AI Microservice  (port 7002)
+  # ─────────────────────────────────────────────
+  ai:
+    build:
+      context: ../ai
+      dockerfile: Dockerfile
+    container_name: litvyb_ai
+    restart: unless-stopped
+    ports:
+      - "7002:7002"
+    environment:
+      NODE_ENV: production
+      PORT: "7002"
+      GHOST_L3_CHAIN_ID: "903"
+    networks:
+      - litvyb
+
+  # ─────────────────────────────────────────────
+  # Next.js Admin Dashboard  (port 3100)
+  # ─────────────────────────────────────────────
+  dashboard:
+    build:
+      context: ../dashboard
+      dockerfile: Dockerfile
+    container_name: litvyb_dashboard
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    environment:
+      NODE_ENV: production
+      PORT: "3100"
+      BACKEND_URL: http://backend:7001
+      GHOSTBRAIN_URL: http://ai:7002
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+    depends_on:
+      - backend
+    networks:
+      - litvyb
+
+  # ─────────────────────────────────────────────
+  # MediaSoup SFU  (WebRTC media server)
+  # ─────────────────────────────────────────────
+  mediasoup:
+    image: node:22-alpine
+    container_name: litvyb_mediasoup
+    restart: unless-stopped
+    working_dir: /app
+    command: ["node", "server.js"]
+    ports:
+      - "2000:2000"           # HTTP signalling
+      - "10000-10100:10000-10100/udp"  # RTP/RTCP UDP range
+    volumes:
+      - ../mediasoup:/app:ro
+    environment:
+      MEDIASOUP_LISTEN_IP: 0.0.0.0
+      MEDIASOUP_ANNOUNCED_IP: ${MEDIASOUP_ANNOUNCED_IP:-127.0.0.1}
+      RTC_MIN_PORT: "10000"
+      RTC_MAX_PORT: "10100"
+    networks:
+      - litvyb
+
+volumes:
+  backend_data:
+    name: litvyb_backend_data
+
+networks:
+  litvyb:
+    name: litvyb_network
+    driver: bridge

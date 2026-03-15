@@ -54,7 +54,7 @@ export default function StatusPage() {
       <PublicNavbar cta={{ label: "View Explorer", href: "https://explorer.ghostchain.cloud" }} />
       <main>
         {/* Banner */}
-        <section style={{ padding: "100px 24px 60px", textAlign: "center", background: "linear-gradient(180deg,#07060e 0%,#050507 100%)" }}>
+        <section style={{ padding: "100px 24px 60px", textAlign: "center", background: "linear-gradient(180deg,#0A0A0A 0%,#0A0A0A 100%)" }}>
           <div className="container">
             <span className="tag">Network Status</span>
             <div style={{ marginTop: 32, marginBottom: 16 }}>
@@ -96,7 +96,7 @@ export default function StatusPage() {
         </section>
 
         {/* Incident history stub */}
-        <section style={{ padding: "60px 24px", background: "#07060e", textAlign: "center" }}>
+        <section style={{ padding: "60px 24px", background: "#0A0A0A", textAlign: "center" }}>
           <div className="container" style={{ maxWidth: 600 }}>
             <h2 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: 12 }}>Incident History</h2>
             <p style={{ color: "#64748b" }}>No incidents in the last 90 days.</p>

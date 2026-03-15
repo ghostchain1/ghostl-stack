@@ -158,6 +158,32 @@ services/**/logs/
 # coverage
 coverage/
 **/coverage/
+
+# Flutter / Dart build artifacts
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/build/
+packages/ghost_flutter_sdk/.dart_tool/
+packages/ghost_flutter_sdk/build/
+
+# SQLite runtime databases (litvyblive backend)
+apps/litvyblive/backend/*.db
+apps/litvyblive/backend/*.db-shm
+apps/litvyblive/backend/*.db-wal
+
+# Next.js public auto-generated assets
+apps/web-apps/public/
+apps/web-company/public/
+apps/web-dev/public/
+apps/web-exchange/public/
+apps/web-explorer/public/
+apps/web-governance/public/
+apps/web-investor/public/
+apps/web-main/public/
+apps/web-nodes/public/
+apps/web-portal/public/
+apps/web-status/public/
 .nyc_output/
 
 # tooling caches

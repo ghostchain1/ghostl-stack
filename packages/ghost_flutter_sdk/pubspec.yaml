@@ -1,0 +1,23 @@
+name: ghost_flutter_sdk
+description: GhostChain Flutter SDK — GhostL3 wallet, GST transactions, NFT gifts (chain 903).
+version: 0.1.0
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.10.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  web3dart: ^2.7.3
+  http: ^1.2.0
+  convert: ^3.1.2
+  pointycastle: ^3.9.1
+  bip39: ^1.0.6
+  hex: ^0.2.0
+  shared_preferences: ^2.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0

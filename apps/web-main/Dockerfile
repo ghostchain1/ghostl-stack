@@ -43,6 +43,7 @@ ENV NODE_ENV=production \
 
 # Standalone output bundles everything needed
 COPY --from=builder /repo/apps/web-main/.next/standalone ./
+COPY --from=builder /repo/apps/web-main/public ./apps/web-main/public
 COPY --from=builder /repo/apps/web-main/.next/static ./apps/web-main/.next/static
 RUN mkdir -p ./apps/web-main/public
 

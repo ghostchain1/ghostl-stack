@@ -43,6 +43,7 @@ ENV NODE_ENV=production \
 
 # Standalone output bundles everything needed
 COPY --from=builder /repo/apps/web-investor/.next/standalone ./
+COPY --from=builder /repo/apps/web-investor/public ./apps/web-investor/public
 COPY --from=builder /repo/apps/web-investor/.next/static ./apps/web-investor/.next/static
 RUN mkdir -p ./apps/web-investor/public
 

@@ -4,8 +4,8 @@ import { PublicNavbar } from "@ghostl/ui";
 import { PublicFooter } from "@ghostl/ui";
 
 const layers = [
-  { id: "L1", name: "GhostChain", desc: "Sovereign proof-of-authority L1 with IBFT consensus. 5-second finality, 2000+ TPS.", color: "#00F0FF" },
-  { id: "L2", name: "GhostL2",    desc: "Optimistic rollup layer. 10x throughput. EVM-compatible smart contracts.", color: "#7A00FF" },
+  { id: "L1", name: "GhostChain", desc: "Sovereign proof-of-authority L1 with IBFT consensus. 5-second finality, 2000+ TPS.", color: "#FFD700" },
+  { id: "L2", name: "GhostL2",    desc: "Optimistic rollup layer. 10x throughput. EVM-compatible smart contracts.", color: "#FFAA00" },
   { id: "L3", name: "GhostL3",    desc: "Application-specific rollup. 100,000+ TPS for high-frequency workloads.", color: "#FF6B6B" },
 ];
 
@@ -36,12 +36,12 @@ export default function Home() {
 
       {/* Hero */}
       <section style={{ padding: "7rem 1.5rem 5rem", textAlign: "center", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 80% 60% at 50% -10%, #00F0FF08, transparent)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 80% 60% at 50% -10%, #FFD70008, transparent)", pointerEvents: "none" }} />
         <div style={{ maxWidth: 860, margin: "0 auto", position: "relative" }}>
           <div className="tag" style={{ marginBottom: "1.5rem" }}>Mainnet Live — L1 · L2 · L3</div>
           <h1 style={{ fontSize: "clamp(2.5rem,6vw,4.5rem)", fontWeight: 800, marginBottom: "1.5rem" }}>
             The Sovereign<br />
-            <span style={{ background: "linear-gradient(135deg,#00F0FF,#7A00FF)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            <span style={{ background: "linear-gradient(135deg,#FFD700,#FFAA00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
               AI Blockchain
             </span>
           </h1>
@@ -56,7 +56,7 @@ export default function Home() {
           <div style={{ marginTop: "3.5rem", display: "flex", gap: "2.5rem", justifyContent: "center", flexWrap: "wrap" }}>
             {[["2,000+","TPS L1"],["100,000+","TPS L3"],["5s","Finality"],["3","Layers"]].map(([v,l]) => (
               <div key={l} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "2rem", fontWeight: 700, color: "#00F0FF" }}>{v}</div>
+                <div style={{ fontSize: "2rem", fontWeight: 700, color: "#FFD700" }}>{v}</div>
                 <div style={{ color: "var(--text-muted)", fontSize: "0.875rem", marginTop: "0.25rem" }}>{l}</div>
               </div>
             ))}
@@ -86,7 +86,7 @@ export default function Home() {
       </section>
 
       {/* Features */}
-      <section style={{ padding: "5rem 1.5rem", background: "linear-gradient(180deg,transparent,#0d0e1488)" }}>
+      <section style={{ padding: "5rem 1.5rem", background: "linear-gradient(180deg,transparent,#11111188)" }}>
         <div className="container">
           <div style={{ textAlign: "center", marginBottom: "3rem" }}>
             <div className="tag" style={{ marginBottom: "1rem" }}>Technology</div>
@@ -115,7 +115,7 @@ export default function Home() {
               <a key={e.name} href={"https://" + e.name} className="card" style={{ textDecoration: "none", display: "block", cursor: "pointer" }}>
                 <div style={{ fontWeight: 600, marginBottom: "0.25rem" }}>{e.label}</div>
                 <div style={{ color: "var(--text-muted)", fontSize: "0.875rem", marginBottom: "0.5rem" }}>{e.desc}</div>
-                <div style={{ color: "#00F0FF99", fontSize: "0.75rem" }}>{e.name} →</div>
+                <div style={{ color: "#FFD70099", fontSize: "0.75rem" }}>{e.name} →</div>
               </a>
             ))}
           </div>

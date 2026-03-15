@@ -12,6 +12,14 @@ export const metadata: Metadata = {
     description: "Institutional OTC trading, treasury markets, KYC onboarding, and custody settlement.",
     siteName: "GhostChain",
   },
+  icons: {
+    icon: [
+      { url: '/favicon.png', type: 'image/png', sizes: '32x32' },
+      { url: '/favicon-192.png', type: 'image/png', sizes: '192x192' },
+    ],
+    apple: { url: '/apple-touch-icon.png', sizes: '180x180' },
+    other: [{ rel: 'icon', url: '/favicon.svg', type: 'image/svg+xml' }],
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

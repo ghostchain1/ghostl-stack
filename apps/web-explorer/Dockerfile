@@ -43,6 +43,7 @@ ENV NODE_ENV=production \
 
 # Standalone output bundles everything needed
 COPY --from=builder /repo/apps/web-explorer/.next/standalone ./
+COPY --from=builder /repo/apps/web-explorer/public ./apps/web-explorer/public
 COPY --from=builder /repo/apps/web-explorer/.next/static ./apps/web-explorer/.next/static
 RUN mkdir -p ./apps/web-explorer/public
 
