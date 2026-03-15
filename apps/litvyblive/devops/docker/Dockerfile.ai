@@ -1,0 +1,58 @@
+# LitVybzLive — AI Integration Service Dockerfile
+# Used for: GhostBrain proxy, matchmaking-ai, marketing-ai, fraud-ai
+# Also wraps any Python-based analytics / ML inference services
+#
+# Build context: apps/litvyblive/{service}/
+# Supports both TypeScript services (Node) and Python services.
+#
+# Set build arg RUNTIME=node (default) or RUNTIME=python
+
+ARG RUNTIME=node
+ARG NODE_VERSION=22-alpine
+ARG PYTHON_VERSION=3.12-slim
+
+# ── Node.js AI service ────────────────────────────────────────────────────────
+FROM node:${NODE_VERSION} AS node-builder
+WORKDIR /app
+RUN apk add --no-cache python3 make g++
+COPY package.json tsconfig.json ./
+RUN npm install
+COPY src/ ./src/
+RUN npm run build
+
+FROM node:${NODE_VERSION} AS node-runtime
+RUN apk add --no-cache python3 make g++
+WORKDIR /app
+COPY package.json ./
+RUN npm install --omit=dev
+COPY --from=node-builder /app/dist ./dist
+RUN mkdir -p /data
+
+# ── Python AI service ─────────────────────────────────────────────────────────
+FROM python:${PYTHON_VERSION} AS python-runtime
+WORKDIR /app
+COPY requirements.txt* ./
+RUN pip install --no-cache-dir -r requirements.txt 2>/dev/null || true
+COPY . .
+RUN mkdir -p /data
+
+# ── Select runtime via target ─────────────────────────────────────────────────
+# Build with: --target node-runtime  or  --target python-runtime
+# Default (no target): node-runtime
+
+FROM node-runtime AS final
+
+ARG PORT=7900
+ENV PORT=${PORT}
+
+# GhostBrain connection
+ENV GHOSTBRAIN_URL=http://ghostbrain-core:7900
+ENV GHOST_L3_RPC=http://host.docker.internal:39545
+ENV GHOST_L3_CHAIN_ID=903
+
+EXPOSE ${PORT}
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
+  CMD wget -qO- http://localhost:${PORT}/health || exit 1
+
+CMD ["node", "dist/index.js"]

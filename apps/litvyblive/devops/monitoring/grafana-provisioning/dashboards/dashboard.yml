@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: LitVybzLive
+    orgId: 1
+    folder: LitVybzLive
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

@@ -1,0 +1,56 @@
+# LitVybzLive — Generic Backend Service Dockerfile
+# Used for: auth, user, stream-service, chat, gift, wallet, agency,
+#           matchmaking, games, ranking, event, launchpad, treasury,
+#           marketing, fraud, analytics, notification, api-gateway
+#
+# Build context: apps/litvyblive/backend/{service-name}/
+# Example:
+#   docker build -f devops/docker/Dockerfile.api \
+#     --build-arg PORT=7010 \
+#     apps/litvyblive/backend/auth-service
+
+ARG NODE_VERSION=22-alpine
+FROM node:${NODE_VERSION} AS builder
+
+WORKDIR /app
+
+# Install build deps (needed for better-sqlite3 native addon)
+RUN apk add --no-cache python3 make g++
+
+COPY package.json ./
+RUN npm install
+
+COPY tsconfig.json ./
+COPY src/ ./src/
+
+RUN npm run build
+
+# ── Runtime image ─────────────────────────────────────────────────────────────
+FROM node:${NODE_VERSION}
+
+RUN apk add --no-cache python3 make g++
+
+WORKDIR /app
+
+COPY package.json ./
+RUN npm install --omit=dev
+
+COPY --from=builder /app/dist ./dist
+
+# SQLite data volume
+RUN mkdir -p /data
+
+ARG PORT=7000
+ENV PORT=${PORT}
+
+EXPOSE ${PORT}
+
+# Non-root user for security
+RUN addgroup -S litvyb && adduser -S litvyb -G litvyb
+RUN chown -R litvyb:litvyb /app /data
+USER litvyb
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
+  CMD wget -qO- http://localhost:${PORT}/health || exit 1
+
+CMD ["node", "dist/index.js"]

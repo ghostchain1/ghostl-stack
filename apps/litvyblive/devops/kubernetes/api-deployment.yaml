@@ -1,0 +1,201 @@
+# API Gateway — Deployment + Service + HPA
+# Handles all external traffic, proxies to backend microservices
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: litvyblive
+  labels:
+    app: api-gateway
+    tier: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: api-gateway
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+        tier: backend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: api-gateway
+          image: "${REGISTRY:-ghcr.io/ghostchain}/litvyblive-api:${IMAGE_TAG:-latest}"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 7001
+              name: http
+          env:
+            - name: PORT
+              value: "7001"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: litvyblive-secrets
+                  key: JWT_SECRET
+          envFrom:
+            - configMapRef:
+                name: litvyblive-config
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 7001
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 7001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: litvyblive
+  labels:
+    app: api-gateway
+spec:
+  type: LoadBalancer
+  selector:
+    app: api-gateway
+  ports:
+    - name: http
+      port: 80
+      targetPort: 7001
+      protocol: TCP
+---
+# Backend microservices — auth through notification (ports 7010-7026)
+# Each is a small 2-replica deployment sharing the same configmap/secret
+# Macro expands each service definition below:
+{% for item in [
+  { name: "auth-service",         port: 7010 },
+  { name: "user-service",         port: 7011 },
+  { name: "stream-service",       port: 7012 },
+  { name: "chat-service",         port: 7013 },
+  { name: "gift-service",         port: 7014 },
+  { name: "wallet-service",       port: 7015 },
+  { name: "agency-service",       port: 7016 },
+  { name: "matchmaking-service",  port: 7017 },
+  { name: "games-service",        port: 7018 },
+  { name: "ranking-service",      port: 7019 },
+  { name: "event-service",        port: 7020 },
+  { name: "launchpad-service",    port: 7021 },
+  { name: "treasury-service",     port: 7022 },
+  { name: "marketing-service",    port: 7023 },
+  { name: "fraud-service",        port: 7024 },
+  { name: "analytics-service",    port: 7025 },
+  { name: "notification-service", port: 7026 },
+] %}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ item.name }}
+  namespace: litvyblive
+  labels:
+    app: {{ item.name }}
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: {{ item.name }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }
+  template:
+    metadata:
+      labels:
+        app: {{ item.name }}
+        tier: backend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: {{ item.name }}
+          image: "${REGISTRY:-ghcr.io/ghostchain}/litvyblive-api:${IMAGE_TAG:-latest}"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: {{ item.port }}
+              name: http
+          env:
+            - name: PORT
+              value: "{{ item.port }}"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: litvyblive-secrets
+                  key: JWT_SECRET
+          envFrom:
+            - configMapRef:
+                name: litvyblive-config
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ item.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ item.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ item.name }}
+  namespace: litvyblive
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ item.name }}
+  ports:
+    - name: http
+      port: {{ item.port }}
+      targetPort: {{ item.port }}
+{% endfor %}

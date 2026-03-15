@@ -1,0 +1,723 @@
+# LitVybzLive — Master Docker Compose
+# Deploys ALL platform services: 18 backend + 6 streaming + monitoring
+#
+# Usage:
+#   cp devops/.env.example devops/.env
+#   docker compose -f devops/compose/docker-compose.full.yml up -d
+#
+# Single-command deploy via script:
+#   bash devops/scripts/deploy.sh [environment]        # dev|staging|prod
+#
+# All transactions settle on GhostL3 (chain_id=903, RPC :39545) using GST Token.
+
+name: litvyblive-full
+
+x-build-api: &build-api
+  context: ../../backend
+  dockerfile: ../devops/docker/Dockerfile.api
+
+x-build-stream: &build-stream
+  context: ../../streaming
+  dockerfile: ../devops/docker/Dockerfile.stream
+
+x-common-env: &common-env
+  JWT_SECRET:           "${LITVYB_JWT_SECRET:-litvyblive-dev-secret}"
+  REDIS_URL:            "redis://redis:6379"
+  DATA_DIR:             "/data"
+  GHOST_L3_RPC:         "${GHOST_L3_RPC:-http://host.docker.internal:39545}"
+  GHOST_L3_CHAIN_ID:    "903"
+  CORS_ORIGIN:          "${CORS_ORIGIN:-*}"
+  GHOSTBRAIN_URL:       "${GHOSTBRAIN_URL:-http://host.docker.internal:7900}"
+  NODE_ENV:             "${NODE_ENV:-development}"
+  LOG_LEVEL:            "${LOG_LEVEL:-info}"
+
+x-svc-defaults: &svc-defaults
+  restart: unless-stopped
+  networks: [litvyblive-net]
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  logging:
+    driver: json-file
+    options:
+      max-size: "50m"
+      max-file: "5"
+
+x-hc-http: &hc-http
+  interval: 15s
+  timeout:  5s
+  retries:  5
+  start_period: 30s
+
+services:
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # INFRASTRUCTURE
+  # ══════════════════════════════════════════════════════════════════════════
+
+  redis:
+    image: redis:7-alpine
+    container_name: litvyblive-redis
+    command: >
+      redis-server
+      --appendonly yes
+      --tcp-backlog 511
+      --maxmemory "${REDIS_MAX_MEMORY:-512mb}"
+      --maxmemory-policy allkeys-lru
+    ports: ["6379:6379"]
+    volumes: [redis-data:/data]
+    restart: unless-stopped
+    networks: [litvyblive-net]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: litvyblive-postgres
+    environment:
+      POSTGRES_DB:       litvyblive
+      POSTGRES_USER:     "${POSTGRES_USER:-litvyb}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports: ["5434:5432"]
+    restart: unless-stopped
+    networks: [litvyblive-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-litvyb} -d litvyblive"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # BACKEND MICROSERVICES (ports 7001-7026)
+  # ══════════════════════════════════════════════════════════════════════════
+
+  api-gateway:
+    build:
+      <<: *build-api
+      args: [PORT=7001]
+      context: ../../backend/api-gateway
+    container_name: litvyblive-gateway
+    ports: ["7001:7001"]
+    environment:
+      <<: *common-env
+      PORT: "7001"
+      AUTH_SVC:          "http://auth-service:7010"
+      USER_SVC:          "http://user-service:7011"
+      STREAM_SVC:        "http://stream-service:7012"
+      CHAT_SVC:          "http://chat-service:7013"
+      GIFT_SVC:          "http://gift-service:7014"
+      WALLET_SVC:        "http://wallet-service:7015"
+      AGENCY_SVC:        "http://agency-service:7016"
+      MATCHMAKING_SVC:   "http://matchmaking-service:7017"
+      GAMES_SVC:         "http://games-service:7018"
+      RANKING_SVC:       "http://ranking-service:7019"
+      EVENT_SVC:         "http://event-service:7020"
+      LAUNCHPAD_SVC:     "http://launchpad-service:7021"
+      TREASURY_SVC:      "http://treasury-service:7022"
+      ANALYTICS_SVC:     "http://analytics-service:7025"
+      NOTIFICATION_SVC:  "http://notification-service:7026"
+    volumes: [gateway-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7001/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  auth-service:
+    build:
+      <<: *build-api
+      context: ../../backend/auth-service
+      args: [PORT=7010]
+    container_name: litvyblive-auth
+    ports: ["7010:7010"]
+    environment:
+      <<: *common-env
+      PORT: "7010"
+    volumes: [auth-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7010/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  user-service:
+    build:
+      <<: *build-api
+      context: ../../backend/user-service
+      args: [PORT=7011]
+    container_name: litvyblive-users
+    ports: ["7011:7011"]
+    environment:
+      <<: *common-env
+      PORT: "7011"
+    volumes: [user-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7011/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  stream-service:
+    build:
+      <<: *build-api
+      context: ../../backend/stream-service
+      args: [PORT=7012]
+    container_name: litvyblive-streams
+    ports: ["7012:7012"]
+    environment:
+      <<: *common-env
+      PORT:               "7012"
+      STREAM_CTRL_URL:    "http://stream-controller:3002"
+    volumes: [stream-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7012/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  chat-service:
+    build:
+      <<: *build-api
+      context: ../../backend/chat-service
+      args: [PORT=7013]
+    container_name: litvyblive-chat
+    ports: ["7013:7013"]
+    environment:
+      <<: *common-env
+      PORT: "7013"
+    volumes: [chat-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7013/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  gift-service:
+    build:
+      <<: *build-api
+      context: ../../backend/gift-service
+      args: [PORT=7014]
+    container_name: litvyblive-gifts
+    ports: ["7014:7014"]
+    environment:
+      <<: *common-env
+      PORT: "7014"
+    volumes: [gift-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7014/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  wallet-service:
+    build:
+      <<: *build-api
+      context: ../../backend/wallet-service
+      args: [PORT=7015]
+    container_name: litvyblive-wallet
+    ports: ["7015:7015"]
+    environment:
+      <<: *common-env
+      PORT: "7015"
+    volumes: [wallet-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7015/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  agency-service:
+    build:
+      <<: *build-api
+      context: ../../backend/agency-service
+      args: [PORT=7016]
+    container_name: litvyblive-agency
+    ports: ["7016:7016"]
+    environment:
+      <<: *common-env
+      PORT: "7016"
+    volumes: [agency-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7016/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  matchmaking-service:
+    build:
+      <<: *build-api
+      context: ../../backend/matchmaking-service
+      args: [PORT=7017]
+    container_name: litvyblive-matchmaking
+    ports: ["7017:7017"]
+    environment:
+      <<: *common-env
+      PORT:         "7017"
+      STREAM_SVC:   "http://stream-service:7012"
+      RANKING_SVC:  "http://ranking-service:7019"
+    volumes: [match-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7017/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  games-service:
+    build:
+      <<: *build-api
+      context: ../../backend/games-service
+      args: [PORT=7018]
+    container_name: litvyblive-games
+    ports: ["7018:7018"]
+    environment:
+      <<: *common-env
+      PORT: "7018"
+    volumes: [games-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7018/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  ranking-service:
+    build:
+      <<: *build-api
+      context: ../../backend/ranking-service
+      args: [PORT=7019]
+    container_name: litvyblive-ranking
+    ports: ["7019:7019"]
+    environment:
+      <<: *common-env
+      PORT: "7019"
+    volumes: [ranking-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7019/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  event-service:
+    build:
+      <<: *build-api
+      context: ../../backend/event-service
+      args: [PORT=7020]
+    container_name: litvyblive-events
+    ports: ["7020:7020"]
+    environment:
+      <<: *common-env
+      PORT: "7020"
+    volumes: [event-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7020/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  launchpad-service:
+    build:
+      <<: *build-api
+      context: ../../backend/launchpad-service
+      args: [PORT=7021]
+    container_name: litvyblive-launchpad
+    ports: ["7021:7021"]
+    environment:
+      <<: *common-env
+      PORT: "7021"
+    volumes: [launchpad-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7021/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  treasury-service:
+    build:
+      <<: *build-api
+      context: ../../backend/treasury-service
+      args: [PORT=7022]
+    container_name: litvyblive-treasury
+    ports: ["7022:7022"]
+    environment:
+      <<: *common-env
+      PORT: "7022"
+    volumes: [treasury-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7022/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  marketing-service:
+    build:
+      <<: *build-api
+      context: ../../backend/marketing-service
+      args: [PORT=7023]
+    container_name: litvyblive-marketing
+    ports: ["7023:7023"]
+    environment:
+      <<: *common-env
+      PORT: "7023"
+    volumes: [marketing-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7023/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  fraud-service:
+    build:
+      <<: *build-api
+      context: ../../backend/fraud-service
+      args: [PORT=7024]
+    container_name: litvyblive-fraud
+    ports: ["7024:7024"]
+    environment:
+      <<: *common-env
+      PORT: "7024"
+    volumes: [fraud-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7024/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  analytics-service:
+    build:
+      <<: *build-api
+      context: ../../backend/analytics-service
+      args: [PORT=7025]
+    container_name: litvyblive-analytics
+    ports: ["7025:7025"]
+    environment:
+      <<: *common-env
+      PORT: "7025"
+    volumes: [analytics-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7025/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  notification-service:
+    build:
+      <<: *build-api
+      context: ../../backend/notification-service
+      args: [PORT=7026]
+    container_name: litvyblive-notifications
+    ports: ["7026:7026"]
+    environment:
+      <<: *common-env
+      PORT: "7026"
+    volumes: [notification-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7026/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # STREAMING INFRASTRUCTURE (ports 3000-3005)
+  # WebRTC SFU services use host networking for UDP RTP port ranges
+  # ══════════════════════════════════════════════════════════════════════════
+
+  mediasoup-server:
+    build:
+      <<: *build-stream
+      context: ../../streaming/mediasoup-server
+      args:
+        - PORT=3000
+        - INSTALL_FFMPEG=false
+    container_name: litvyblive-stream-core
+    network_mode: host
+    environment:
+      <<: *common-env
+      PORT:          "3000"
+      ANNOUNCED_IP:  "${PUBLIC_IP:-127.0.0.1}"
+      RTC_MIN_PORT:  "40000"
+      RTC_MAX_PORT:  "49999"
+      NODE_ID:       "${MEDIASOUP_NODE_ID:-ms-core-1}"
+      REGION:        "${REGION:-default}"
+      HOST:          "${PUBLIC_IP:-127.0.0.1}"
+    volumes: [mediasoup-data:/data]
+    restart: unless-stopped
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      <<: *hc-http
+
+  webrtc-gateway:
+    build:
+      <<: *build-stream
+      context: ../../streaming/webrtc-gateway
+      args: [PORT=3001]
+    container_name: litvyblive-webrtc-gw
+    ports: ["3001:3001"]
+    environment:
+      <<: *common-env
+      PORT:                  "3001"
+      MEDIASOUP_WS_URL:      "ws://${PUBLIC_IP:-127.0.0.1}:3000"
+      STREAM_CONTROLLER_URL: "http://stream-controller:3002"
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  stream-controller:
+    build:
+      <<: *build-stream
+      context: ../../streaming/stream-controller
+      args: [PORT=3002]
+    container_name: litvyblive-stream-ctrl
+    ports: ["3002:3002"]
+    environment:
+      <<: *common-env
+      PORT:          "3002"
+      MEDIASOUP_URL: "http://host.docker.internal:3000"
+    volumes: [stream-ctrl-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3002/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  edge-node-us-east:
+    build:
+      <<: *build-stream
+      context: ../../streaming/edge-nodes
+      args: [PORT=3003]
+    container_name: litvyblive-edge-us
+    network_mode: host
+    environment:
+      <<: *common-env
+      PORT:               "3003"
+      ANNOUNCED_IP:       "${PUBLIC_IP:-127.0.0.1}"
+      CORE_MEDIASOUP_URL: "ws://${PUBLIC_IP:-127.0.0.1}:3000"
+      CORE_HTTP_URL:      "http://127.0.0.1:3000"
+      RTC_MIN_PORT:       "41000"
+      RTC_MAX_PORT:       "41999"
+      NODE_ID:            "edge-us-east-1"
+      REGION:             "us-east"
+    volumes: [edge-us-data:/data]
+    restart: unless-stopped
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3003/health"]
+      <<: *hc-http
+
+  edge-node-eu-west:
+    build:
+      <<: *build-stream
+      context: ../../streaming/edge-nodes
+      args: [PORT=3013]
+    container_name: litvyblive-edge-eu
+    network_mode: host
+    environment:
+      <<: *common-env
+      PORT:               "3013"
+      ANNOUNCED_IP:       "${EU_WEST_IP:-127.0.0.1}"
+      CORE_MEDIASOUP_URL: "ws://${PUBLIC_IP:-127.0.0.1}:3000"
+      CORE_HTTP_URL:      "http://127.0.0.1:3000"
+      RTC_MIN_PORT:       "42000"
+      RTC_MAX_PORT:       "42999"
+      NODE_ID:            "edge-eu-west-1"
+      REGION:             "eu-west"
+    volumes: [edge-eu-data:/data]
+    restart: unless-stopped
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3013/health"]
+      <<: *hc-http
+
+  edge-node-asia:
+    build:
+      <<: *build-stream
+      context: ../../streaming/edge-nodes
+      args: [PORT=3023]
+    container_name: litvyblive-edge-asia
+    network_mode: host
+    environment:
+      <<: *common-env
+      PORT:               "3023"
+      ANNOUNCED_IP:       "${ASIA_IP:-127.0.0.1}"
+      CORE_MEDIASOUP_URL: "ws://${PUBLIC_IP:-127.0.0.1}:3000"
+      CORE_HTTP_URL:      "http://127.0.0.1:3000"
+      RTC_MIN_PORT:       "43000"
+      RTC_MAX_PORT:       "43999"
+      NODE_ID:            "edge-asia-1"
+      REGION:             "asia"
+    volumes: [edge-asia-data:/data]
+    restart: unless-stopped
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3023/health"]
+      <<: *hc-http
+
+  ffmpeg-transcoder:
+    build:
+      <<: *build-stream
+      context: ../../streaming/ffmpeg-transcoder
+      args:
+        - PORT=3004
+        - INSTALL_FFMPEG=true
+    container_name: litvyblive-transcoder
+    ports: ["3004:3004"]
+    environment:
+      <<: *common-env
+      PORT:              "3004"
+      MEDIASOUP_HTTP_URL: "http://host.docker.internal:3000"
+      RECORDINGS_DIR:    "/recordings"
+      HLS_DIR:           "/hls"
+      RECORD_ALL:        "${RECORD_ALL:-false}"
+    volumes:
+      - transcoder-data:/data
+      - recordings-data:/recordings
+      - hls-data:/hls
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3004/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  redis-bus:
+    build:
+      <<: *build-stream
+      context: ../../streaming/redis-bus
+      args: [PORT=3005]
+    container_name: litvyblive-redis-bus
+    ports: ["3005:3005"]
+    environment:
+      <<: *common-env
+      PORT: "3005"
+    volumes: [redis-bus-data:/data]
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3005/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # MONITORING STACK
+  # ══════════════════════════════════════════════════════════════════════════
+
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    container_name: litvyblive-prometheus
+    ports: ["9090:9090"]
+    volumes:
+      - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+      - "--web.enable-lifecycle"
+    restart: unless-stopped
+    networks: [litvyblive-net]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: litvyblive-grafana
+    ports: ["3100:3000"]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_PASSWORD:-ghost-admin}"
+      GF_USERS_ALLOW_SIGN_UP:     "false"
+      GF_SERVER_ROOT_URL:         "${GRAFANA_URL:-http://localhost:3100}"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ../monitoring/grafana-provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      prometheus: { condition: service_healthy }
+    restart: unless-stopped
+    networks: [litvyblive-net]
+
+  # Node Exporter — host metrics (CPU, memory, disk, network)
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: litvyblive-node-exporter
+    command:
+      - "--path.rootfs=/host"
+    volumes:
+      - "/:/host:ro,rslave"
+    ports: ["9100:9100"]
+    pid: host
+    restart: unless-stopped
+    networks: [litvyblive-net]
+
+volumes:
+  # Infrastructure
+  redis-data:
+  postgres-data:
+  # Backend services
+  gateway-data:
+  auth-data:
+  user-data:
+  stream-data:
+  chat-data:
+  gift-data:
+  wallet-data:
+  agency-data:
+  match-data:
+  games-data:
+  ranking-data:
+  event-data:
+  launchpad-data:
+  treasury-data:
+  marketing-data:
+  fraud-data:
+  analytics-data:
+  notification-data:
+  # Streaming
+  mediasoup-data:
+  stream-ctrl-data:
+  edge-us-data:
+  edge-eu-data:
+  edge-asia-data:
+  transcoder-data:
+  recordings-data:
+  hls-data:
+  redis-bus-data:
+  # Monitoring
+  prometheus-data:
+  grafana-data:
+
+networks:
+  litvyblive-net:
+    driver: bridge
+    name: litvyblive-net

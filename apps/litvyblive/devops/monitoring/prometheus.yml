@@ -1,0 +1,85 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+  external_labels:
+    platform: litvyblive
+    chain:    ghostl3
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+scrape_configs:
+
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+  - job_name: node-exporter
+    static_configs:
+      - targets: ["node-exporter:9100"]
+        labels:
+          tier: infrastructure
+
+  - job_name: redis
+    static_configs:
+      - targets: ["redis:6379"]
+        labels:
+          tier: infrastructure
+
+  # ── Prometheus self-monitoring ──────────────────────────────────────────────
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # ── Backend microservices (ports 7001-7026) ─────────────────────────────────
+  - job_name: litvyblive-backend
+    metrics_path: /metrics
+    scrape_interval: 15s
+    static_configs:
+      - targets:
+          - "api-gateway:7001"
+          - "auth-service:7010"
+          - "user-service:7011"
+          - "stream-service:7012"
+          - "chat-service:7013"
+          - "gift-service:7014"
+          - "wallet-service:7015"
+          - "agency-service:7016"
+          - "matchmaking-service:7017"
+          - "games-service:7018"
+          - "ranking-service:7019"
+          - "event-service:7020"
+          - "launchpad-service:7021"
+          - "treasury-service:7022"
+          - "marketing-service:7023"
+          - "fraud-service:7024"
+          - "analytics-service:7025"
+          - "notification-service:7026"
+        labels:
+          tier: backend
+
+  # ── Streaming services (ports 3000-3023) ────────────────────────────────────
+  - job_name: litvyblive-streaming
+    metrics_path: /metrics
+    scrape_interval: 10s
+    static_configs:
+      - targets:
+          - "mediasoup-server:3000"
+          - "webrtc-gateway:3001"
+          - "stream-controller:3002"
+          - "edge-node-us-east:3003"
+          - "edge-node-eu-west:3013"
+          - "edge-node-asia:3023"
+          - "ffmpeg-transcoder:3004"
+          - "redis-bus:3005"
+        labels:
+          tier: streaming
+
+  # ── GhostChain L3 health (external) ────────────────────────────────────────
+  - job_name: ghostchain-l3
+    metrics_path: /debug/metrics/prometheus
+    scheme: http
+    static_configs:
+      - targets: ["host.docker.internal:39545"]
+        labels:
+          tier: blockchain
+          chain: l3

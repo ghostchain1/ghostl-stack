@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: litvyblive-config
+  namespace: litvyblive
+  labels:
+    app.kubernetes.io/name: litvyblive
+data:
+  NODE_ENV:           "production"
+  LOG_LEVEL:          "info"
+  GHOST_L3_CHAIN_ID:  "903"
+  REDIS_URL:          "redis://redis:6379"
+  DATA_DIR:           "/data"
+  CORS_ORIGIN:        "*"
+  AUTH_SVC:           "http://auth-service:7010"
+  USER_SVC:           "http://user-service:7011"
+  STREAM_SVC:         "http://stream-service:7012"
+  CHAT_SVC:           "http://chat-service:7013"
+  GIFT_SVC:           "http://gift-service:7014"
+  WALLET_SVC:         "http://wallet-service:7015"
+  AGENCY_SVC:         "http://agency-service:7016"
+  MATCHMAKING_SVC:    "http://matchmaking-service:7017"
+  GAMES_SVC:          "http://games-service:7018"
+  RANKING_SVC:        "http://ranking-service:7019"
+  EVENT_SVC:          "http://event-service:7020"
+  LAUNCHPAD_SVC:      "http://launchpad-service:7021"
+  TREASURY_SVC:       "http://treasury-service:7022"
+  ANALYTICS_SVC:      "http://analytics-service:7025"
+  NOTIFICATION_SVC:   "http://notification-service:7026"
+  STREAM_CONTROLLER_URL: "http://stream-controller:3002"
+  GHOSTBRAIN_URL:     "http://ghostbrain-core.ghostchain.svc.cluster.local:7900"
+  GHOST_L3_RPC:       "http://ghostchain-l3-rpc.ghostchain.svc.cluster.local:39545"
+  # Streaming
+  RTC_MIN_PORT:       "40000"
+  RTC_MAX_PORT:       "49999"
+  RECORDINGS_DIR:     "/recordings"
+  HLS_DIR:            "/hls"
+  RECORD_ALL:         "false"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: litvyblive-secrets
+  namespace: litvyblive
+  labels:
+    app.kubernetes.io/name: litvyblive
+type: Opaque
+stringData:
+  # Override these via: kubectl create secret generic litvyblive-secrets \
+  #   --from-literal=JWT_SECRET=<your-secret> \
+  #   --from-literal=POSTGRES_PASSWORD=<your-pw> \
+  #   --namespace litvyblive --dry-run=client -o yaml | kubectl apply -f -
+  JWT_SECRET:        "CHANGE_ME_IN_PRODUCTION"
+  POSTGRES_PASSWORD: "CHANGE_ME_IN_PRODUCTION"
+  GRAFANA_PASSWORD:  "CHANGE_ME_IN_PRODUCTION"
