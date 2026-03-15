@@ -13,3 +13,6 @@ export 'src/models/ghost_token.dart';
 export 'src/services/wallet_service.dart';
 export 'src/services/gift_service.dart';
 export 'src/services/nft_service.dart';
+export 'src/services/streaming_service.dart';
+export 'src/services/identity_service.dart';
+export 'src/services/creator_token_service.dart';

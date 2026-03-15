@@ -22,6 +22,13 @@ import '../../screens/social/feed_screen.dart';
 import '../../screens/avatar/avatar_builder_screen.dart';
 import '../../screens/metaverse/metaverse_room_screen.dart';
 import '../../screens/treasury/treasury_screen.dart';
+import '../../screens/discovery/discovery_screen.dart';
+import '../../screens/launchpad/launchpad_screen.dart';
+import '../../screens/league/league_screen.dart';
+import '../../screens/league/competition_screen.dart';
+import '../../screens/settings/settings_screen.dart';
+import '../../screens/notifications/notifications_screen.dart';
+import '../../screens/creator/creator_earnings_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -61,6 +68,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/avatar-studio', builder: (_, __) => const AvatarBuilderScreen()),
       GoRoute(path: '/metaverse', builder: (_, __) => const MetaverseRoomScreen()),
       GoRoute(path: '/treasury', builder: (_, __) => const TreasuryScreen()),
+      GoRoute(path: '/discovery', builder: (_, __) => const DiscoveryScreen()),
+      GoRoute(path: '/launchpad', builder: (_, __) => const LaunchpadScreen()),
+      GoRoute(path: '/league', builder: (_, __) => const LeagueScreen()),
+      GoRoute(
+        path: '/league/competition/:creatorId',
+        builder: (_, state) =>
+            CompetitionScreen(creatorId: state.pathParameters['creatorId']!),
+      ),
+      GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+      GoRoute(path: '/notifications', builder: (_, __) => const NotificationsScreen()),
+      GoRoute(path: '/creator/earnings', builder: (_, __) => const CreatorEarningsScreen()),
     ],
   );
 });

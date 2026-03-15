@@ -1,5 +1,6 @@
--keep class io.flutter.** { *; }
 -keep class com.ghostchain.litvyblive.** { *; }
+-keep class io.flutter.** { *; }
 -keep class com.google.firebase.** { *; }
--dontwarn io.flutter.**
 -dontwarn com.google.firebase.**
+-keepattributes Signature
+-keepattributes *Annotation*
