@@ -29,6 +29,17 @@ import '../../screens/league/competition_screen.dart';
 import '../../screens/settings/settings_screen.dart';
 import '../../screens/notifications/notifications_screen.dart';
 import '../../screens/creator/creator_earnings_screen.dart';
+import '../../screens/avatar/avatar_screen.dart';
+import '../../screens/insights/creator_insights.dart';
+import '../../screens/live/multihost_screen.dart';
+import '../../screens/wallet/buy_gst_screen.dart';
+import '../../screens/wallet/transaction_history.dart';
+import '../../screens/league/leaderboard_screen.dart';
+import '../../screens/profile/followers_screen.dart';
+import '../../screens/system/system_status.dart';
+import '../../screens/promotions/event_promotions.dart';
+import '../../screens/promotions/featured_creators.dart';
+import '../../screens/promotions/trending_streams.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -79,6 +90,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
       GoRoute(path: '/notifications', builder: (_, __) => const NotificationsScreen()),
       GoRoute(path: '/creator/earnings', builder: (_, __) => const CreatorEarningsScreen()),
+      GoRoute(path: '/avatar', builder: (_, __) => const AvatarScreen()),
+      GoRoute(path: '/insights', builder: (_, __) => const CreatorInsightsScreen()),
+      GoRoute(
+        path: '/multihost/:streamId',
+        builder: (_, state) =>
+            MultiHostScreen(streamId: state.pathParameters['streamId']!),
+      ),
+      GoRoute(path: '/wallet/buy', builder: (_, __) => const BuyGSTScreen()),
+      GoRoute(path: '/wallet/history', builder: (_, __) => const TransactionHistoryScreen()),
+      GoRoute(path: '/league/leaderboard', builder: (_, __) => const LeaderboardScreen()),
+      GoRoute(
+        path: '/profile/:userId/followers',
+        builder: (_, state) =>
+            FollowersScreen(userId: state.pathParameters['userId']!),
+      ),
+      GoRoute(path: '/system', builder: (_, __) => const SystemStatusScreen()),
+      GoRoute(path: '/promotions', builder: (_, __) => const EventPromotionsScreen()),
+      GoRoute(path: '/promotions/creators', builder: (_, __) => const FeaturedCreatorsScreen()),
+      GoRoute(path: '/social/trending', builder: (_, __) => const TrendingStreamsScreen()),
     ],
   );
 });
