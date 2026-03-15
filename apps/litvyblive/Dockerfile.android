@@ -1,0 +1,80 @@
+# LitVybz Live — Android Build Container
+# Usage:
+#   docker build -f Dockerfile.android -t litvyblive-android-builder .
+#   docker run --rm -v $(pwd)/build:/workspace/build litvyblive-android-builder
+#
+# Output: build/app/outputs/flutter-apk/*.apk
+#         build/app/outputs/bundle/release/*.aab
+
+ARG FLUTTER_VERSION=3.27.4
+ARG JAVA_VERSION=17
+
+FROM ubuntu:24.04
+
+ARG FLUTTER_VERSION
+ARG JAVA_VERSION
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV FLUTTER_HOME=/opt/flutter
+ENV ANDROID_HOME=/opt/android-sdk
+ENV ANDROID_SDK_ROOT=/opt/android-sdk
+ENV PATH="${FLUTTER_HOME}/bin:${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${PATH}"
+
+# ── System deps ────────────────────────────────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    git \
+    unzip \
+    xz-utils \
+    zip \
+    libglu1-mesa \
+    openjdk-${JAVA_VERSION}-jdk \
+    wget \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── Android SDK command-line tools ─────────────────────────────────────────
+RUN mkdir -p ${ANDROID_HOME}/cmdline-tools && \
+    wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O /tmp/cmdline-tools.zip && \
+    unzip -q /tmp/cmdline-tools.zip -d /tmp/cmdline-tools-extracted && \
+    mv /tmp/cmdline-tools-extracted/cmdline-tools ${ANDROID_HOME}/cmdline-tools/latest && \
+    rm /tmp/cmdline-tools.zip
+
+# ── Accept licenses + install platform tools ───────────────────────────────
+RUN yes | sdkmanager --licenses > /dev/null 2>&1 || true && \
+    sdkmanager \
+    "platform-tools" \
+    "platforms;android-34" \
+    "build-tools;34.0.0" \
+    "ndk;26.1.10909125"
+
+# ── Flutter SDK ────────────────────────────────────────────────────────────
+RUN git clone --depth 1 --branch ${FLUTTER_VERSION} \
+    https://github.com/flutter/flutter.git ${FLUTTER_HOME}
+
+# Pre-warm Flutter + Android toolchain
+RUN flutter precache --android && \
+    flutter config --no-analytics && \
+    flutter doctor --android-licenses -- yes 2>/dev/null || true
+
+# ── Workspace ──────────────────────────────────────────────────────────────
+WORKDIR /workspace
+COPY . .
+
+# Install ghost_flutter_sdk deps
+RUN cd packages/ghost_flutter_sdk && flutter pub get
+
+# Install app deps
+RUN cd apps/litvyblive/mobile && flutter pub get
+
+# ── Default build command: release APK (all ABIs) + App Bundle ─────────────
+CMD ["sh", "-c", "\
+    cd apps/litvyblive/mobile && \
+    flutter build apk --release \
+        --target-platform android-arm,android-arm64,android-x64 \
+        --split-per-abi && \
+    flutter build appbundle --release && \
+    echo '=== Build complete ===' && \
+    ls -lh build/app/outputs/flutter-apk/ && \
+    ls -lh build/app/outputs/bundle/release/ \
+"]

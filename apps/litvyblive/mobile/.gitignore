@@ -18,11 +18,15 @@ ios/Runner.xcworkspace/xcuserdata/
 ios/Runner.xcodeproj/xcuserdata/
 ios/Runner.xcodeproj/project.xcworkspace/xcuserdata/
 
-# Local config
+# Local config & signing secrets
 android/local.properties
 android/key.properties
 **/*.keystore
 **/*.jks
+
+# Firebase real credentials (use placeholder files in repo, replace in CI)
+# android/app/google-services.json  <- tracked as placeholder
+# ios/Runner/GoogleService-Info.plist <- tracked as placeholder
 
 # IDE
 .idea/

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Change to "app-store" for App Store submission -->
+  <key>method</key>
+  <string>ad-hoc</string>
+
+  <key>teamID</key>
+  <!-- Set APPLE_TEAM_ID in GitHub Actions secrets -->
+  <string>$(APPLE_TEAM_ID)</string>
+
+  <key>uploadBitcode</key>
+  <false/>
+
+  <key>uploadSymbols</key>
+  <true/>
+
+  <key>compileBitcode</key>
+  <false/>
+
+  <key>signingStyle</key>
+  <string>manual</string>
+
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>com.ghostchain.litvyblive</key>
+    <string>LitVybz Live AdHoc</string>
+  </dict>
+</dict>
+</plist>
