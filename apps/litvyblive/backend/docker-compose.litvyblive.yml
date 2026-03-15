@@ -1,0 +1,376 @@
+# LitVybzLive microservice stack
+# Usage:  docker compose -f apps/litvyblive/backend/docker-compose.litvyblive.yml up -d
+# Env:    copy backend/config/.env.example to backend/config/.env and source it
+#
+# All platform transactions settle on GhostL3 (chain_id=903, RPC :39545)
+# using GhostChain GST Token.
+
+name: litvyblive
+
+x-common-env: &common-env
+  JWT_SECRET: "${LITVYB_JWT_SECRET:-litvyblive-dev-secret}"
+  DATA_DIR: /data
+  REDIS_URL: "redis://redis:6379"
+  GHOST_L3_RPC: "${GHOST_L3_RPC:-http://host.docker.internal:39545}"
+  GHOST_L3_CHAIN_ID: "903"
+  CORS_ORIGIN: "${CORS_ORIGIN:-*}"
+
+x-service-defaults: &svc-defaults
+  restart: unless-stopped
+  networks: [litvyblive-net]
+
+x-healthcheck-http: &hc-http
+  interval: 15s
+  timeout: 5s
+  retries: 5
+  start_period: 30s
+
+services:
+
+  # ── Infrastructure ─────────────────────────────────────────────────────────
+
+  redis:
+    image: redis:7-alpine
+    container_name: litvyblive-redis
+    ports: ["6390:6379"]
+    restart: unless-stopped
+    volumes: [redis-data:/data]
+    networks: [litvyblive-net]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── API Gateway (port 7001) ────────────────────────────────────────────────
+
+  api-gateway:
+    build: { context: ., dockerfile: api-gateway/Dockerfile }
+    container_name: litvyblive-gateway
+    ports: ["7001:7001"]
+    environment:
+      <<: *common-env
+      PORT: "7001"
+      AUTH_SVC: "http://auth-service:7010"
+      USER_SVC: "http://user-service:7011"
+      STREAM_SVC: "http://stream-service:7012"
+      CHAT_SVC: "http://chat-service:7013"
+      GIFT_SVC: "http://gift-service:7014"
+      WALLET_SVC: "http://wallet-service:7015"
+      AGENCY_SVC: "http://agency-service:7016"
+      MATCH_SVC: "http://matchmaking-service:7017"
+      GAMES_SVC: "http://games-service:7018"
+      RANKING_SVC: "http://ranking-service:7019"
+      EVENT_SVC: "http://event-service:7020"
+      LAUNCHPAD_SVC: "http://launchpad-service:7021"
+      TREASURY_SVC: "http://treasury-service:7022"
+      MARKETING_SVC: "http://marketing-service:7023"
+      FRAUD_SVC: "http://fraud-service:7024"
+      ANALYTICS_SVC: "http://analytics-service:7025"
+      NOTIFICATION_SVC: "http://notification-service:7026"
+    depends_on: { redis: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7001/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── Auth (port 7010) ───────────────────────────────────────────────────────
+
+  auth-service:
+    build: { context: ., dockerfile: auth-service/Dockerfile }
+    container_name: litvyblive-auth
+    ports: ["7010:7010"]
+    environment:
+      <<: *common-env
+      PORT: "7010"
+    volumes: [auth-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7010/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── User (port 7011) ───────────────────────────────────────────────────────
+
+  user-service:
+    build: { context: ., dockerfile: user-service/Dockerfile }
+    container_name: litvyblive-users
+    ports: ["7011:7011"]
+    environment:
+      <<: *common-env
+      PORT: "7011"
+    volumes: [user-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7011/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── Stream (port 7012) ─────────────────────────────────────────────────────
+
+  stream-service:
+    build: { context: ., dockerfile: stream-service/Dockerfile }
+    container_name: litvyblive-streams
+    ports: ["7012:7012"]
+    environment:
+      <<: *common-env
+      PORT: "7012"
+    volumes: [stream-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7012/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── Chat / WebSocket (port 7013) ───────────────────────────────────────────
+
+  chat-service:
+    build: { context: ., dockerfile: chat-service/Dockerfile }
+    container_name: litvyblive-chat
+    ports: ["7013:7013"]
+    environment:
+      <<: *common-env
+      PORT: "7013"
+    volumes: [chat-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7013/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── Gift Economy (port 7014) ───────────────────────────────────────────────
+
+  gift-service:
+    build: { context: ., dockerfile: gift-service/Dockerfile }
+    container_name: litvyblive-gifts
+    ports: ["7014:7014"]
+    environment:
+      <<: *common-env
+      PORT: "7014"
+    volumes: [gift-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7014/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── Wallet / GST (port 7015) ───────────────────────────────────────────────
+
+  wallet-service:
+    build: { context: ., dockerfile: wallet-service/Dockerfile }
+    container_name: litvyblive-wallet
+    ports: ["7015:7015"]
+    environment:
+      <<: *common-env
+      PORT: "7015"
+    volumes: [wallet-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7015/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── Agency (port 7016) ─────────────────────────────────────────────────────
+
+  agency-service:
+    build: { context: ., dockerfile: agency-service/Dockerfile }
+    container_name: litvyblive-agency
+    ports: ["7016:7016"]
+    environment:
+      <<: *common-env
+      PORT: "7016"
+    volumes: [agency-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7016/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── Matchmaking / AI (port 7017) ───────────────────────────────────────────
+
+  matchmaking-service:
+    build: { context: ., dockerfile: matchmaking-service/Dockerfile }
+    container_name: litvyblive-matchmaking
+    ports: ["7017:7017"]
+    environment:
+      <<: *common-env
+      PORT: "7017"
+      STREAM_SVC: "http://stream-service:7012"
+      RANKING_SVC: "http://ranking-service:7019"
+      GHOSTBRAIN_URL: "${GHOSTBRAIN_URL:-http://host.docker.internal:7900}"
+    volumes: [match-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7017/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── Games (port 7018) ──────────────────────────────────────────────────────
+
+  games-service:
+    build: { context: ., dockerfile: games-service/Dockerfile }
+    container_name: litvyblive-games
+    ports: ["7018:7018"]
+    environment:
+      <<: *common-env
+      PORT: "7018"
+    volumes: [games-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7018/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── Ranking / Leaderboards (port 7019) ────────────────────────────────────
+
+  ranking-service:
+    build: { context: ., dockerfile: ranking-service/Dockerfile }
+    container_name: litvyblive-ranking
+    ports: ["7019:7019"]
+    environment:
+      <<: *common-env
+      PORT: "7019"
+    volumes: [ranking-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7019/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── Events / PK Battles (port 7020) ───────────────────────────────────────
+
+  event-service:
+    build: { context: ., dockerfile: event-service/Dockerfile }
+    container_name: litvyblive-events
+    ports: ["7020:7020"]
+    environment:
+      <<: *common-env
+      PORT: "7020"
+    volumes: [event-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7020/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── Creator Token Launchpad (port 7021) ───────────────────────────────────
+
+  launchpad-service:
+    build: { context: ., dockerfile: launchpad-service/Dockerfile }
+    container_name: litvyblive-launchpad
+    ports: ["7021:7021"]
+    environment:
+      <<: *common-env
+      PORT: "7021"
+    volumes: [launchpad-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7021/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── Creator Treasury (port 7022) ───────────────────────────────────────────
+
+  treasury-service:
+    build: { context: ., dockerfile: treasury-service/Dockerfile }
+    container_name: litvyblive-treasury
+    ports: ["7022:7022"]
+    environment:
+      <<: *common-env
+      PORT: "7022"
+    volumes: [treasury-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7022/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── Marketing / GhostBrain AI (port 7023) ─────────────────────────────────
+
+  marketing-service:
+    build: { context: ., dockerfile: marketing-service/Dockerfile }
+    container_name: litvyblive-marketing
+    ports: ["7023:7023"]
+    environment:
+      <<: *common-env
+      PORT: "7023"
+      GHOSTBRAIN_URL: "${GHOSTBRAIN_URL:-http://host.docker.internal:7900}"
+    volumes: [marketing-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7023/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── Fraud Detection (port 7024) ────────────────────────────────────────────
+
+  fraud-service:
+    build: { context: ., dockerfile: fraud-service/Dockerfile }
+    container_name: litvyblive-fraud
+    ports: ["7024:7024"]
+    environment:
+      <<: *common-env
+      PORT: "7024"
+      GHOSTBRAIN_URL: "${GHOSTBRAIN_URL:-http://host.docker.internal:7900}"
+    volumes: [fraud-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7024/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── Analytics (port 7025) ──────────────────────────────────────────────────
+
+  analytics-service:
+    build: { context: ., dockerfile: analytics-service/Dockerfile }
+    container_name: litvyblive-analytics
+    ports: ["7025:7025"]
+    environment:
+      <<: *common-env
+      PORT: "7025"
+    volumes: [analytics-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7025/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── Notifications (port 7026) ──────────────────────────────────────────────
+
+  notification-service:
+    build: { context: ., dockerfile: notification-service/Dockerfile }
+    container_name: litvyblive-notifications
+    ports: ["7026:7026"]
+    environment:
+      <<: *common-env
+      PORT: "7026"
+    volumes: [notification-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7026/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+volumes:
+  redis-data:
+  auth-data:
+  user-data:
+  stream-data:
+  chat-data:
+  gift-data:
+  wallet-data:
+  agency-data:
+  match-data:
+  games-data:
+  ranking-data:
+  event-data:
+  launchpad-data:
+  treasury-data:
+  marketing-data:
+  fraud-data:
+  analytics-data:
+  notification-data:
+
+networks:
+  litvyblive-net:
+    driver: bridge
