@@ -11,7 +11,7 @@ export class GhostTypedDataSigner {
   async sign(
     domain: GhostTypedDataDomain,
     types: GhostTypedDataTypes,
-    value: Record<string, unknown>
+    value: Record<string, any>
   ): Promise<string> {
     const domainSeparator = this._hashDomain(domain);
     const primaryType = Object.keys(types).find((k) => k !== "EIP712Domain")!;
@@ -36,7 +36,7 @@ export class GhostTypedDataSigner {
   private _hashStruct(
     primaryType: string,
     types: GhostTypedDataTypes,
-    value: Record<string, unknown>
+    value: Record<string, any>
   ): Uint8Array {
     const typeStr = this._encodeType(primaryType, types);
     const typeHash = keccak256(new TextEncoder().encode(typeStr));
@@ -55,7 +55,7 @@ export class GhostTypedDataSigner {
   private _encodeData(
     primaryType: string,
     types: GhostTypedDataTypes,
-    value: Record<string, unknown>
+    value: Record<string, any>
   ): Uint8Array {
     const encoded = JSON.stringify(value);
     return new TextEncoder().encode(encoded);

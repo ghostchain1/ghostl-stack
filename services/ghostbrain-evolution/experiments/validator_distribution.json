@@ -1,0 +1,16 @@
+{
+  "id": "exp-validator-distribution",
+  "name": "Validator Distribution Strategy",
+  "description": "Compare uniform validator selection vs stake-weighted selection",
+  "control": {
+    "selectionStrategy": "uniform",
+    "validatorCount": 21,
+    "rotationInterval": 3600
+  },
+  "variant": {
+    "selectionStrategy": "stake_weighted",
+    "validatorCount": 33,
+    "rotationInterval": 1800,
+    "minStakeGST": 10000
+  }
+}

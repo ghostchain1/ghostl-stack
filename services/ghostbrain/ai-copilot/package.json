@@ -1,0 +1,25 @@
+{
+  "name": "@ghostbrain/ai-copilot",
+  "version": "1.0.0",
+  "description": "GhostStack AI Operations Copilot — natural-language command interface to GhostBrain",
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "build":  "tsc --project tsconfig.json",
+    "start":  "node dist/server.js",
+    "dev":    "node --loader ts-node/esm src/server.ts",
+    "clean":  "rm -rf dist"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pino":    "^9.3.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node":    "^22.0.0",
+    "typescript":     "^5.6.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

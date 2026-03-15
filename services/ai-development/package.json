@@ -1,0 +1,27 @@
+{
+  "name": "ai-development",
+  "version": "1.0.0",
+  "description": "Ghost Autonomous Development Engine (ADE) — AI-driven code generation, testing, auditing & deployment",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "dotenv": "^16.4.1",
+    "express": "^4.19.2",
+    "node-cron": "^3.0.3",
+    "uuid": "^9.0.0",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.5",
+    "@types/node-cron": "^3.0.11",
+    "@types/uuid": "^9.0.7",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.2"
+  }
+}

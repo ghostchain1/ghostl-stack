@@ -1,6 +1,6 @@
 {
   "name": "ghost",
-  "version": "0.0.1",
+  "version": "6.16.0",
   "description": "GhostChain SDK — importable as `import ghost from 'ghost'`",
   "main": "dist/index.js",
   "module": "dist/index.js",

@@ -1,0 +1,143 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: ghoststack
+    environment: production
+
+rule_files:
+  - "rules/*.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+scrape_configs:
+
+  # ── Prometheus self ──────────────────────────────────────────
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # ── Node Exporter ─────────────────────────────────────────────
+  - job_name: node
+    static_configs:
+      - targets: ["node-exporter:9100"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+
+  # ── cAdvisor ──────────────────────────────────────────────────
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]
+
+  # ── GhostBrain Services ───────────────────────────────────────
+  - job_name: ghostbrain-control-plane
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghostbrain-control-plane:9500"]
+        labels: { service: scp, layer: ai }
+
+  - job_name: ghostbrain-swarm
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghostbrain-swarm:9000"]
+        labels: { service: swarm, layer: ai }
+
+  - job_name: ghostbrain-kernel
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghostbrain-kernel:9300"]
+        labels: { service: kernel, layer: ai }
+
+  - job_name: ghostbrain-data-mesh
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghostbrain-data-mesh:9900"]
+        labels: { service: gdm, layer: ai }
+
+  - job_name: ghostbrain-economy-engine
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghostbrain-economy-engine:9800"]
+        labels: { service: aee, layer: ai }
+
+  - job_name: ghostbrain-validator-fabric
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghostbrain-validator-fabric:9700"]
+        labels: { service: gvf, layer: ai }
+
+  - job_name: ghostbrain-multichain
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghostbrain-multichain:9350"]
+        labels: { service: multichain, layer: ai }
+
+  - job_name: ghostbrain-governance
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghostbrain-governance:9550"]
+        labels: { service: governance, layer: ai }
+
+  - job_name: ghostbrain-simulation-lab
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghostbrain-simulation-lab:9200"]
+        labels: { service: simlab, layer: ai }
+
+  - job_name: ghostbrain-digital-twin
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghostbrain-digital-twin:9100"]
+        labels: { service: twin, layer: ai }
+
+  - job_name: ghostbrain-conscious-core
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghostbrain-conscious-core:9150"]
+        labels: { service: conscious, layer: ai }
+
+  - job_name: ghostbrain-evolution-engine
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghostbrain-evolution-engine:9250"]
+        labels: { service: evolution, layer: ai }
+
+  - job_name: ghostbrain-interchain
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghostbrain-interchain:9450"]
+        labels: { service: interchain, layer: ai }
+
+  - job_name: ghostbrain-research
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghostbrain-research-ai:9600"]
+        labels: { service: research, layer: ai }
+
+  - job_name: ghostbrain-economic
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghostbrain-economic:9050"]
+        labels: { service: economic, layer: ai }
+
+  # ── GhostStack Manager ────────────────────────────────────────
+  - job_name: ghoststack-manager
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghoststack-manager:8787"]
+        labels: { service: manager, layer: infra }
+
+  # ── Validator Nodes ───────────────────────────────────────────
+  - job_name: ghostchain-validators
+    metrics_path: /debug/metrics/prometheus
+    static_configs:
+      - targets:
+          - "ghostchain-validator-1:6060"
+          - "ghostchain-validator-2:6061"
+          - "ghostchain-validator-3:6062"
+          - "ghostchain-validator-4:6063"
+        labels: { layer: l1, network: ghostchain }

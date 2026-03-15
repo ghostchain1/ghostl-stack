@@ -122,30 +122,6 @@ export class BrainPoster {
       sentAt:        new Date().toISOString(),
     };
 
-    await this._send(message);
-  }
-
-  /**
-   * Generic signal posting — for non-EVM event sources (e.g. Cosmos governance).
-   * Does not require a GovernanceEvent; accepts any JSON-serialisable payload.
-   */
-  async postSignal(
-    subject:       string,
-    correlationId: string,
-    payload:       unknown,
-  ): Promise<void> {
-    const message: BrainMessage = {
-      messageId:     randomUUID(),
-      subject,
-      correlationId,
-      senderAgentId: "governance-event-bridge",
-      payload,
-      sentAt:        new Date().toISOString(),
-    };
-    await this._send(message);
-  }
-
-  private async _send(message: BrainMessage): Promise<void> {
     const body = JSON.stringify(message);
     const ts   = Date.now();
     const sig  = signBody(body, this.secret, ts);

@@ -1,0 +1,21 @@
+{
+  "name": "ghostcode-ai",
+  "version": "1.0.0",
+  "description": "GhostCode AI — autonomous code builder, branding enforcer, and self-healing build system",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
+    "winston": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.37",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.2"
+  }
+}

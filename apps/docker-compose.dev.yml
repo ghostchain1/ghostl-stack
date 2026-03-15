@@ -14,7 +14,7 @@ services:
       - PORT=4000
       - FORCE_LISTEN=true
       - TS_NODE_TRANSPILE_ONLY=true
-      - CORS_ALLOW_ORIGINS=http://localhost:3200
+      - CORS_ALLOW_ORIGINS=http://localhost:3002
       - SQLITE_DB_PATH=/app/apps/api/data/ghostl.db
       - AUTH_DB_PATH=/app/apps/api/data/ghostl.db
       - NFT_DB_PATH=/app/apps/api/data/nfts.db
@@ -48,12 +48,12 @@ services:
       dockerfile: apps/web/Dockerfile
       target: dev
     ports:
-      - "3200:3200"
+      - "3002:3002"
     env_file:
       - ./web/.env.example
     environment:
       - NODE_ENV=development
-      - PORT=3200
+      - PORT=3002
       - NEXT_PUBLIC_API_URL=http://localhost:4000
       - API_INTERNAL_URL=http://ghostl-api:4000
       - NEXT_PUBLIC_COMPLIANCE_URL=http://localhost:8090
@@ -81,7 +81,7 @@ services:
           "CMD",
           "node",
           "-e",
-          "fetch('http://localhost:3200').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+          "fetch('http://localhost:3002').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
         ]
       interval: 20s
       timeout: 5s

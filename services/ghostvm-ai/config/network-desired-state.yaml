@@ -204,6 +204,16 @@ vms:
         gateway: 10.50.99.1
 
 vms:
+  - name: ghost-gateway-node
+    role: edge
+    interfaces:
+      - name: ens3
+        segment: mgmt
+        address: 10.10.0.10/24
+      - name: ens4
+        segment: external
+        address: 38.247.149.218/24
+        gateway: 38.247.149.1
   - name: ghost-l1-node
     role: l1
     interfaces:
@@ -212,8 +222,8 @@ vms:
         address: 10.20.0.10/24
       - name: ens4
         segment: external
-        address: 208.110.71.171/26
-        gateway: 208.110.71.129
+        address: 38.247.149.219/24
+        gateway: 38.247.149.1
   - name: ghost-l2-node
     role: l2
     interfaces:
@@ -222,8 +232,8 @@ vms:
         address: 10.30.0.10/24
       - name: ens4
         segment: external
-        address: 208.110.71.172/26
-        gateway: 208.110.71.129
+        address: 38.247.149.220/24
+        gateway: 38.247.149.1
   - name: ghost-l3-node
     role: l3
     interfaces:
@@ -232,48 +242,38 @@ vms:
         address: 10.40.0.10/24
       - name: ens4
         segment: external
-        address: 208.110.71.173/26
-        gateway: 208.110.71.129
+        address: 38.247.149.221/24
+        gateway: 38.247.149.1
+  - name: ghost-apps-node
+    role: apps
+    interfaces:
+      - name: ens3
+        segment: mgmt
+        address: 10.10.0.22/24
+      - name: ens4
+        segment: external
+        address: 38.247.149.222/24
+        gateway: 38.247.149.1
+  - name: ghost-ai-node
+    role: ai
+    interfaces:
+      - name: ens3
+        segment: mgmt
+        address: 10.10.0.23/24
+      - name: ens4
+        segment: external
+        address: 38.247.149.223/24
+        gateway: 38.247.149.1
   - name: ghost-observability-node
     role: observability
     interfaces:
       - name: ens3
         segment: mgmt
-        address: 10.10.0.20/24
+        address: 10.10.0.24/24
       - name: ens4
         segment: external
-        address: 208.110.71.174/26
-        gateway: 208.110.71.129
-  - name: ghost-edge-failover-1
-    role: edge-failover
-    interfaces:
-      - name: ens3
-        segment: mgmt
-        address: 10.10.0.31/24
-      - name: ens4
-        segment: external
-        address: 208.110.71.175/26
-        gateway: 208.110.71.129
-  - name: ghost-edge-failover-2
-    role: edge-failover
-    interfaces:
-      - name: ens3
-        segment: mgmt
-        address: 10.10.0.32/24
-      - name: ens4
-        segment: external
-        address: 208.110.71.176/26
-        gateway: 208.110.71.129
-  - name: ghost-edge-failover-3
-    role: edge-failover
-    interfaces:
-      - name: ens3
-        segment: mgmt
-        address: 10.10.0.33/24
-      - name: ens4
-        segment: external
-        address: 208.110.71.177/26
-        gateway: 208.110.71.129
+        address: 38.247.149.224/24
+        gateway: 38.247.149.1
 
 docker:
   managed_networks:

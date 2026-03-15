@@ -34,6 +34,7 @@ x-hardening: &hardening
     - /tmp
   restart: unless-stopped
 
+services:
   # ─── NATS message bus ──────────────────────────────────────────────────────
   nats:
     # SOVEREIGN: pin to digest – run scripts/security/digest-refresh-report.sh to update.
@@ -540,17 +541,10 @@ x-hardening: &hardening
       START_BLOCK_L1: "${GOV_BRIDGE_START_BLOCK_L1:-0}"
       START_BLOCK_L2: "${GOV_BRIDGE_START_BLOCK_L2:-0}"
       LOG_LEVEL: "${LOG_LEVEL:-info}"
-      # ── Cosmos SDK sovereign chain (GhostChain) ───────────────────────────
-      # CosmosGovPoller polls GET /ghostchain/ghostgov/v1/proposals on the LCD.
-      # ghostchaind is reachable by DNS name when ghostchain-cosmos-net is joined.
-      COSMOS_LCD_URL:   "${COSMOS_LCD_URL:-http://ghostchaind:1317}"
-      COSMOS_CHAIN_ID:  "${COSMOS_CHAIN_ID:-ghostchain-1}"
-      COSMOS_POLL_INTERVAL_MS: "${COSMOS_POLL_INTERVAL_MS:-12000}"
     volumes:
       - governance-bridge-state:/var/lib/governance-event-bridge
     networks:
       - ghostbrain-net
-      - ghostchain-cosmos-net   # enables DNS resolution of 'ghostchaind'
     depends_on:
       ghostbrain-core:
         condition: service_healthy
@@ -559,184 +553,6 @@ x-hardening: &hardening
       ghostbrain.layer: "L1"
       ghostbrain.routing-law: "L3→L2→L1"
       ghostbrain.pipeline: "contracts→ai"
-      ghostbrain.cosmos-lcd: "${COSMOS_LCD_URL:-http://ghostchaind:1317}"
-
-  # ─── Ghost Health Aggregator ──────────────────────────────────────────────────
-  ghost-health-aggregator:
-    build:
-      context: ./services/ghost-health-aggregator
-      dockerfile: Dockerfile
-    image: ghost-health-aggregator:latest
-    container_name: ghost-health-aggregator
-    restart: unless-stopped
-    ports:
-      - "${HEALTH_AGG_PORT:-7640}:7640"
-    environment:
-      PORT: "7640"
-      NODE_ENV: "${NODE_ENV:-production}"
-      POLL_TIMEOUT_MS: "${HEALTH_AGG_POLL_TIMEOUT_MS:-3000}"
-      POLL_CACHE_MS: "${HEALTH_AGG_POLL_CACHE_MS:-10000}"
-      # Service URLs (override for non-default deployments)
-      GHOSTBRAIN_CORE_URL:   "${GHOSTBRAIN_CORE_URL:-http://ghostbrain-core:7900}"
-      HYPER_GHOST_BASE_URL:  "${HYPER_GHOST_BASE_URL:-http://hyper-ghost-ai:7741}"
-      GSA_BASE_URL:          "${GSA_BASE_URL:-http://ghostbrain-gsa:7850}"
-      GOVERNANCE_SERVICE_URL: "${GOVERNANCE_SERVICE_URL:-http://governance-service:7645}"
-      TREASURY_AI_URL:       "${TREASURY_AI_URL:-http://treasury-ai:7630}"
-      THEME_SERVICE_URL:     "${THEME_SERVICE_URL:-http://theme-service:7634}"
-    networks:
-      - ghostbrain-net
-      - ghostl-stack_default
-    depends_on:
-      ghostbrain-core:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:7640/health"]
-      interval: 20s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
-    labels:
-      ghostbrain.role: "health-aggregator"
-      ghostbrain.liveness-probe: "http://localhost:7640/health"
-      ghostbrain.status-endpoint: "http://localhost:7640/status"
-
-  # ─── GhostBrain Cluster Mesh (distributed infrastructure intelligence) ─────
-
-  ghostbrain-agent:
-    build:
-      context: ./services/ghostbrain-agent
-      dockerfile: Dockerfile
-    image: ghostbrain-agent:latest
-    container_name: ghostbrain-agent
-    restart: unless-stopped
-    pid: host
-    group_add:
-      - "112"  # docker socket GID
-    ports:
-      - "${GHOSTBRAIN_AGENT_PORT:-7901}:7901"
-    environment:
-      AGENT_PORT: "7901"
-      AGENT_BIND: "0.0.0.0"
-      AGENT_NODE_ID: "${AGENT_NODE_ID:-ghostbrain-agent-0}"
-      CLUSTER_URL: "${CLUSTER_URL:-http://ghostbrain-cluster:7902}"
-      MEMORY_URL: "${MEMORY_URL:-http://ghostbrain-memory:7903}"
-      DOCKER_SOCKET: "/var/run/docker.sock"
-      LIBVIRT_REST_URL: "${LIBVIRT_REST_URL:-}"
-      REPORT_INTERVAL_MS: "${REPORT_INTERVAL_MS:-15000}"
-      GHOSTBRAIN_AGENT_MEMORY_DIR: "/data/ghostbrain-agent-memory"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /proc:/proc:ro
-      - ghostbrain-agent-memory:/data/ghostbrain-agent-memory
-    networks:
-      - ghostbrain-net
-    depends_on:
-      ghostbrain-cluster:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:7901/healthz"]
-      interval: 20s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    labels:
-      ghostbrain.role: "cluster-agent"
-      ghostbrain.liveness-probe: "http://localhost:7901/healthz"
-
-  ghostbrain-cluster:
-    build:
-      context: ./services/ghostbrain-cluster
-      dockerfile: Dockerfile
-    image: ghostbrain-cluster:latest
-    container_name: ghostbrain-cluster
-    restart: unless-stopped
-    ports:
-      - "${GHOSTBRAIN_CLUSTER_PORT:-7902}:7902"
-    environment:
-      CLUSTER_PORT: "7902"
-      CLUSTER_BIND: "0.0.0.0"
-      CLUSTER_NODE_ID: "${CLUSTER_NODE_ID:-cluster-leader-0}"
-      CLUSTER_NODE_URL: "${CLUSTER_NODE_URL:-http://ghostbrain-cluster:7902}"
-      CLUSTER_PEERS: "${CLUSTER_PEERS:-}"
-      CLUSTER_PRIORITY: "${CLUSTER_PRIORITY:-100}"
-      MEMORY_URL: "${MEMORY_URL:-http://ghostbrain-memory:7903}"
-      INFRA_URL: "${INFRA_URL:-http://ghostbrain-infra:7904}"
-      GOSSIP_INTERVAL_MS: "${GOSSIP_INTERVAL_MS:-5000}"
-      HEARTBEAT_INTERVAL_MS: "${HEARTBEAT_INTERVAL_MS:-3000}"
-      SYNC_INTERVAL_MS: "${SYNC_INTERVAL_MS:-30000}"
-    networks:
-      - ghostbrain-net
-    depends_on:
-      ghostbrain-memory:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:7902/healthz"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-    labels:
-      ghostbrain.role: "cluster-coordinator"
-      ghostbrain.liveness-probe: "http://localhost:7902/healthz"
-
-  ghostbrain-memory:
-    build:
-      context: ./services/ghostbrain-memory
-      dockerfile: Dockerfile
-    image: ghostbrain-memory:latest
-    container_name: ghostbrain-memory
-    restart: unless-stopped
-    ports:
-      - "${GHOSTBRAIN_MEMORY_PORT:-7903}:7903"
-    environment:
-      MEMORY_PORT: "7903"
-      MEMORY_BIND: "0.0.0.0"
-      MEMORY_DIR: "/data/ghostbrain-fed-memory"
-    volumes:
-      - ghostbrain-fed-memory:/data/ghostbrain-fed-memory
-    networks:
-      - ghostbrain-net
-    healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:7903/healthz"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-    labels:
-      ghostbrain.role: "distributed-memory"
-      ghostbrain.liveness-probe: "http://localhost:7903/healthz"
-
-  ghostbrain-infra:
-    build:
-      context: ./services/ghostbrain-infra
-      dockerfile: Dockerfile
-    image: ghostbrain-infra:latest
-    container_name: ghostbrain-infra
-    restart: unless-stopped
-    group_add:
-      - "112"  # docker socket GID
-    ports:
-      - "${GHOSTBRAIN_INFRA_PORT:-7904}:7904"
-    environment:
-      INFRA_PORT: "7904"
-      INFRA_BIND: "0.0.0.0"
-      HYPERVISOR_URLS: "${HYPERVISOR_URLS:-}"
-      DOCKER_HOSTS: "${DOCKER_HOSTS:-unix:///var/run/docker.sock}"
-      AGENT_URLS: "${AGENT_URLS:-http://ghostbrain-agent:7901}"
-      INFRA_POLL_INTERVAL_MS: "${INFRA_POLL_INTERVAL_MS:-60000}"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - ghostbrain-net
-    healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:7904/healthz"]
-      interval: 20s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    labels:
-      ghostbrain.role: "infra-controller"
-      ghostbrain.liveness-probe: "http://localhost:7904/healthz"
 
 volumes:
   ghostbrain-postgres-data:
@@ -747,8 +563,6 @@ volumes:
   ghost-helper-bots-attestations:
   acg-scratch:           # isolated scratch volume for ACG workspace clones
   governance-bridge-state:  # persists last processed block per layer across restarts
-  ghostbrain-agent-memory:  # per-node NDJSON event journal for ghostbrain-agent
-  ghostbrain-fed-memory:    # federated AI memory store for ghostbrain-memory
 
 networks:
   ghostbrain-net:

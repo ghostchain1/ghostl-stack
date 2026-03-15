@@ -1,0 +1,24 @@
+[Unit]
+Description=GhostStack Monitoring (Prometheus + Grafana + Loki)
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/ghost/ghostl-stack
+ExecStart=/usr/bin/docker compose \
+    -f /home/ghost/ghostl-stack/infrastructure/docker/monitoring-stack.yml \
+    up -d
+ExecStop=/usr/bin/docker compose \
+    -f /home/ghost/ghostl-stack/infrastructure/docker/monitoring-stack.yml \
+    down
+Restart=on-failure
+RestartSec=30s
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ghoststack-monitoring
+
+[Install]
+WantedBy=multi-user.target

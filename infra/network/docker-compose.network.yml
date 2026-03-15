@@ -1,0 +1,98 @@
+# =============================================================================
+# GhostStack — network IP binding overlay
+#
+# Purpose: bind each service group to its dedicated public IP so the OS
+# delivers incoming traffic directly to the right container without an
+# extra hop through the gateway.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f infra/network/docker-compose.network.yml up -d
+#
+# Or set COMPOSE_FILE in .env:
+#   COMPOSE_FILE=docker-compose.yml:infra/network/docker-compose.network.yml
+#
+# IP layout:
+#   38.247.149.218  edge gateway (nginx / Kong)    — not a service container
+#   38.247.149.219  GhostChain L1 RPC
+#   38.247.149.220  GhostL2 RPC
+#   38.247.149.221  GhostL3 RPC
+#   38.247.149.222  explorer + API services
+#   38.247.149.223  AI / GhostBrain services
+#   38.247.149.224  monitoring / Grafana / Prometheus
+# =============================================================================
+
+x-l1-ports: &l1_ports
+  ports:
+    - "${GHOST_BIND_L1:-38.247.149.219}:18545:18545"   # L1 EVM RPC
+    - "${GHOST_BIND_L1:-38.247.149.219}:1317:1317"     # Cosmos LCD
+    - "${GHOST_BIND_L1:-38.247.149.219}:26657:26657"   # CometBFT RPC
+    - "${GHOST_BIND_L1:-38.247.149.219}:9090:9090"     # Cosmos gRPC
+
+x-l2-ports: &l2_ports
+  ports:
+    - "${GHOST_BIND_L2:-38.247.149.220}:29545:29545"   # L2 EVM RPC
+    - "${GHOST_BIND_L2:-38.247.149.220}:29546:29546"   # L2 WS
+
+x-l3-ports: &l3_ports
+  ports:
+    - "${GHOST_BIND_L3:-38.247.149.221}:39545:39545"   # L3 EVM RPC
+    - "${GHOST_BIND_L3:-38.247.149.221}:39546:39546"   # L3 WS
+
+x-apps-ports: &apps_ports
+  ports:
+    - "${GHOST_BIND_APPS:-38.247.149.222}:3000:3000"   # explorer (Next.js)
+    - "${GHOST_BIND_APPS:-38.247.149.222}:3001:3001"   # API BFF (Express)
+    - "${GHOST_BIND_APPS:-38.247.149.222}:3002:3002"   # GhostWallet
+
+services:
+  # ── GhostChain L1 ────────────────────────────────────────────────────────────
+  ghostchaind:
+    <<: *l1_ports
+
+  # ── GhostL2 ──────────────────────────────────────────────────────────────────
+  op-geth-l2:
+    <<: *l2_ports
+
+  op-node-l2:
+    ports:
+      - "${GHOST_BIND_L2:-38.247.149.220}:7545:7545"   # op-node P2P
+
+  # ── GhostL3 ──────────────────────────────────────────────────────────────────
+  op-geth-l3:
+    <<: *l3_ports
+
+  op-node-l3:
+    ports:
+      - "${GHOST_BIND_L3:-38.247.149.221}:7546:7546"   # op-node P2P
+
+  # ── API BFF ───────────────────────────────────────────────────────────────────
+  api:
+    <<: *apps_ports
+
+  # ── GhostBrain Core ───────────────────────────────────────────────────────────
+  ghostbrain-core:
+    ports:
+      - "${GHOST_BIND_AI:-38.247.149.223}:7900:7900"
+
+  # ── Ghost AI Swarm ────────────────────────────────────────────────────────────
+  ghost-ai-swarm:
+    ports:
+      - "${GHOST_BIND_AI:-38.247.149.223}:4080:4080"
+
+  # ── Grafana ───────────────────────────────────────────────────────────────────
+  grafana:
+    ports:
+      - "${GHOST_BIND_MON:-38.247.149.224}:3000:3000"
+
+  # ── Prometheus ────────────────────────────────────────────────────────────────
+  prometheus:
+    ports:
+      - "${GHOST_BIND_MON:-38.247.149.224}:9090:9090"
+
+networks:
+  default:
+    name: ghoststack
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

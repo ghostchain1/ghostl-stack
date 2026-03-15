@@ -174,7 +174,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="logo">
-          <img src="/ghostchain-logo.svg" alt="GhostChain" height={42} width={160} style={{ maxWidth: '100%', height: 42 }} />
+          {/* Wrapper gives the overlay a tight anchor on the logo image itself. */}
+          <span className="logo-img-wrap">
+            {/* Ghostcain brand overlay — 22 × 22 px, top-left of the logo image.
+                Replace /ghostcain-logo.png with the real asset from
+                ghostchain1/ghostcain-contracts (blob/main/logo.png) when available. */}
+            <img src="/ghostcain-logo.png" alt="" aria-hidden="true" className="logo-overlay" />
+            <img src="/ghostchain-logo.svg" alt="GhostChain" height={42} width={160} style={{ maxWidth: '100%', height: 42 }} />
+          </span>
         </div>
         <nav className="nav">
           {realmNavItems && (

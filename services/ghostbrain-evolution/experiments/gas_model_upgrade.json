@@ -1,0 +1,16 @@
+{
+  "id": "exp-gas-model-upgrade",
+  "name": "Gas Model Upgrade",
+  "description": "Test EIP-1559-style base gas fee vs fixed-fee model for GhostChain",
+  "control": {
+    "gasModel": "fixed",
+    "baseFee": 1000000000,
+    "maxFeePerGas": 2000000000
+  },
+  "variant": {
+    "gasModel": "dynamic",
+    "minBaseFee": 500000000,
+    "maxBaseFee": 5000000000,
+    "adjustmentFactor": 0.125
+  }
+}

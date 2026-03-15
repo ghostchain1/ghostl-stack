@@ -1,0 +1,647 @@
+# GhostStack AI Marketing Ecosystem — ai-marketing, ai-growth, ai-adoption, ai-expansion, ai-economy, ai-infrastructure, ai-security, ai-intelligence, ai-governance
+# Start with: docker compose -f infrastructure/docker/ai-marketing-stack.yml up -d
+
+name: ghoststack-ai-marketing
+
+networks:
+  ghoststack-ai-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.32.0.0/16
+
+volumes:
+  aims-blog-data:
+  aims-logs:
+  vge-logs:
+  aae-logs:
+  gee-logs:
+  aee-logs:
+  aie-logs:
+  ase-logs:
+  gie-logs:
+  age-logs:
+  giex-logs:
+  gaan-logs:
+  ade-logs:
+  see-logs:
+  pne-logs:
+  ine-logs:
+  hcl-logs:
+  are-logs:
+  c3-logs:
+  aiops-logs:
+  gcl-logs:
+
+services:
+
+  # ── AI Marketing Engine (AIMS) — port 9970 ────────────────────────────────
+  ai-marketing:
+    build:
+      context: ${GHOSTSTACK_SERVICES:-/home/ghost/ghostl-stack/services}/ai-marketing
+      dockerfile: docker/Dockerfile
+    image: ghoststack-ai-marketing:latest
+    container_name: ai-marketing
+    restart: always
+    ports:
+      - "${AIMS_PORT:-9970}:9970"
+    environment:
+      - NODE_ENV=production
+      - PORT=9970
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      # AI
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      # Social
+      - TWITTER_API_KEY=${TWITTER_API_KEY:-}
+      - TWITTER_API_SECRET=${TWITTER_API_SECRET:-}
+      - TWITTER_ACCESS_TOKEN=${TWITTER_ACCESS_TOKEN:-}
+      - TWITTER_ACCESS_SECRET=${TWITTER_ACCESS_SECRET:-}
+      - REDDIT_CLIENT_ID=${REDDIT_CLIENT_ID:-}
+      - REDDIT_CLIENT_SECRET=${REDDIT_CLIENT_SECRET:-}
+      - REDDIT_USERNAME=${REDDIT_USERNAME:-}
+      - REDDIT_PASSWORD=${REDDIT_PASSWORD:-}
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}
+      - DISCORD_CHANNEL_ID=${DISCORD_CHANNEL_ID:-}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      # Economy
+      - GHOST_ECONOMY_URL=${GHOST_ECONOMY_URL:-http://ghostbrain-economy-engine:9800}
+      # Blog output
+      - BLOG_OUTPUT_DIR=/data/blog
+    volumes:
+      - aims-blog-data:/data/blog
+      - aims-logs:/app/logs
+    networks:
+      - ghoststack-ai-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9970/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Viral Growth Engine (VGE) — port 9971 ────────────────────────────────
+  ai-growth:
+    build:
+      context: ${GHOSTSTACK_SERVICES:-/home/ghost/ghostl-stack/services}/ai-growth
+      dockerfile: docker/Dockerfile
+    image: ghoststack-ai-growth:latest
+    container_name: ai-growth
+    restart: always
+    ports:
+      - "${VGE_PORT:-9971}:9971"
+    environment:
+      - NODE_ENV=production
+      - PORT=9971
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GHOST_ECONOMY_URL=${GHOST_ECONOMY_URL:-http://ghostbrain-economy-engine:9800}
+      # YouTube / TikTok (optional)
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY:-}
+      - TIKTOK_ACCESS_TOKEN=${TIKTOK_ACCESS_TOKEN:-}
+    volumes:
+      - vge-logs:/app/logs
+    networks:
+      - ghoststack-ai-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9971/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Autonomous Adoption Engine (AAE) — port 9972 ──────────────────────────
+  ai-adoption:
+    build:
+      context: ${GHOSTSTACK_SERVICES:-/home/ghost/ghostl-stack/services}/ai-adoption
+      dockerfile: docker/Dockerfile
+    image: ghoststack-ai-adoption:latest
+    container_name: ai-adoption
+    restart: always
+    ports:
+      - "${AAE_PORT:-9972}:9972"
+    environment:
+      - NODE_ENV=production
+      - PORT=9972
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - GHOST_ECONOMY_URL=${GHOST_ECONOMY_URL:-http://ghostbrain-economy-engine:9800}
+    volumes:
+      - aae-logs:/app/logs
+    networks:
+      - ghoststack-ai-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9972/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Global Expansion Engine (GEE) — port 9973 ────────────────────────────
+  ai-expansion:
+    build:
+      context: ${GHOSTSTACK_SERVICES:-/home/ghost/ghostl-stack/services}/ai-expansion
+      dockerfile: docker/Dockerfile
+    image: ghoststack-ai-expansion:latest
+    container_name: ai-expansion
+    restart: always
+    ports:
+      - "${GEE_PORT:-9973}:9973"
+    environment:
+      - NODE_ENV=production
+      - PORT=9973
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GHOST_ECONOMY_URL=${GHOST_ECONOMY_URL:-http://ghostbrain-economy-engine:9800}
+    volumes:
+      - gee-logs:/app/logs
+    networks:
+      - ghoststack-ai-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9973/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Autonomous Economy Engine (AEE) — port 9974 ──────────────────────────
+  ai-economy:
+    build:
+      context: ${GHOSTSTACK_SERVICES:-/home/ghost/ghostl-stack/services}/ai-economy
+      dockerfile: docker/Dockerfile
+    image: ghoststack-ai-economy:latest
+    container_name: ai-economy
+    restart: always
+    ports:
+      - "${AEE_PORT:-9974}:9974"
+    environment:
+      - NODE_ENV=production
+      - PORT=9974
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GHOST_ECONOMY_URL=${GHOST_ECONOMY_URL:-http://ghostbrain-economy-engine:9800}
+    volumes:
+      - aee-logs:/app/logs
+    networks:
+      - ghoststack-ai-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9974/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Autonomous Infrastructure Engine (AIE) — port 9975 ───────────────────
+  ai-infrastructure:
+    build:
+      context: ${GHOSTSTACK_SERVICES:-/home/ghost/ghostl-stack/services}/ai-infrastructure
+      dockerfile: docker/Dockerfile
+    image: ghoststack-ai-infrastructure:latest
+    container_name: ai-infrastructure
+    restart: always
+    ports:
+      - "${AIE_PORT:-9975}:9975"
+    environment:
+      - NODE_ENV=production
+      - PORT=9975
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - AIE_DOCKER_REPAIR=${AIE_DOCKER_REPAIR:-false}
+      - AIE_REPAIR_ENABLED=${AIE_REPAIR_ENABLED:-false}
+      - AIE_SCALING_ENABLED=${AIE_SCALING_ENABLED:-false}
+      - AIE_ENABLE_VIRSH=${AIE_ENABLE_VIRSH:-false}
+      - GIN_URL=${GIN_URL:-http://ghostbrain-intelligence:9980}
+    volumes:
+      - aie-logs:/app/logs
+      # Mount Docker socket to allow container supervision (read-only by default)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - ghoststack-ai-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9975/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Autonomous Security Engine (ASE) — port 9976 ─────────────────────────
+  ai-security:
+    build:
+      context: ${GHOSTSTACK_SERVICES:-/home/ghost/ghostl-stack/services}/ai-security
+      dockerfile: docker/Dockerfile
+    image: ghoststack-ai-security:latest
+    container_name: ai-security
+    restart: always
+    ports:
+      - "${ASE_PORT:-9976}:9976"
+    environment:
+      - NODE_ENV=production
+      - PORT=9976
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - ASE_ENABLE_IPTABLES=${ASE_ENABLE_IPTABLES:-false}
+      - ASE_ENABLE_TREASURY_PAUSE=${ASE_ENABLE_TREASURY_PAUSE:-false}
+      - AEE_URL=${AEE_URL:-http://ai-economy:9974}
+      - AIE_URL=${AIE_URL:-http://ai-infrastructure:9975}
+      - GIN_URL=${GIN_URL:-http://ghostbrain-intelligence:9980}
+    volumes:
+      - ase-logs:/app/logs
+      # Mount auth log read-only for intrusion detection (optional)
+      - /var/log/auth.log:/var/log/auth.log:ro
+    cap_add:
+      - NET_ADMIN   # Required only when ASE_ENABLE_IPTABLES=true
+    networks:
+      - ghoststack-ai-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9976/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Ghost Intelligence Engine (GIE) — port 9977 ──────────────────────────
+  ai-intelligence:
+    build:
+      context: ${GHOSTSTACK_SERVICES:-/home/ghost/ghostl-stack/services}/ai-intelligence
+      dockerfile: docker/Dockerfile
+    image: ghoststack-ai-intelligence:latest
+    container_name: ai-intelligence
+    restart: always
+    ports:
+      - "${GIE_PORT:-9977}:9977"
+    environment:
+      - NODE_ENV=production
+      - PORT=9977
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - GIE_MAX_MEMORIES=${GIE_MAX_MEMORIES:-10000}
+      - GIE_MAX_SNAPSHOTS=${GIE_MAX_SNAPSHOTS:-288}
+      # URLs for upstream engine polling
+      - NEXT_PUBLIC_AIMS_URL=${NEXT_PUBLIC_AIMS_URL:-http://ai-marketing:9970}
+      - NEXT_PUBLIC_VGE_URL=${NEXT_PUBLIC_VGE_URL:-http://ai-growth:9971}
+      - NEXT_PUBLIC_AAE_URL=${NEXT_PUBLIC_AAE_URL:-http://ai-adoption:9972}
+      - NEXT_PUBLIC_GEE_URL=${NEXT_PUBLIC_GEE_URL:-http://ai-expansion:9973}
+      - NEXT_PUBLIC_AEE_URL=${NEXT_PUBLIC_AEE_URL:-http://ai-economy:9974}
+      - NEXT_PUBLIC_AIE_URL=${NEXT_PUBLIC_AIE_URL:-http://ai-infrastructure:9975}
+      - NEXT_PUBLIC_ASE_URL=${NEXT_PUBLIC_ASE_URL:-http://ai-security:9976}
+      - GIN_URL=${GIN_URL:-http://ghostbrain-intelligence:9980}
+    volumes:
+      - gie-logs:/app/logs
+    networks:
+      - ghoststack-ai-net
+    depends_on:
+      - ai-marketing
+      - ai-growth
+      - ai-adoption
+      - ai-expansion
+      - ai-economy
+      - ai-infrastructure
+      - ai-security
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9977/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Ghost Autonomous Governance Engine (AGE-Gov) — port 9978 ─────────────
+  ai-governance:
+    build:
+      context: ${GHOSTSTACK_SERVICES:-/home/ghost/ghostl-stack/services}/ai-governance
+      dockerfile: docker/Dockerfile
+    image: ghoststack-ai-governance:latest
+    container_name: ai-governance
+    restart: always
+    ports:
+      - "${AGE_PORT:-9978}:9978"
+    environment:
+      - NODE_ENV=production
+      - AGE_PORT=9978
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      # Allow AGE to query GIE for enriched context
+      - NEXT_PUBLIC_GIE_URL=${NEXT_PUBLIC_GIE_URL:-http://ai-intelligence:9977}
+    volumes:
+      - age-logs:/app/logs
+    networks:
+      - ghoststack-ai-net
+    depends_on:
+      - ai-marketing
+      - ai-growth
+      - ai-adoption
+      - ai-expansion
+      - ai-economy
+      - ai-infrastructure
+      - ai-security
+      - ai-intelligence
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9978/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Ghost Interchain Expansion Engine (GIE-X) — port 9979 ─────────────────
+  ai-interchain:
+    build:
+      context: ${GHOSTSTACK_SERVICES:-/home/ghost/ghostl-stack/services}/ai-interchain
+      dockerfile: docker/Dockerfile
+    image: ghoststack-ai-interchain:latest
+    container_name: ai-interchain
+    restart: always
+    ports:
+      - "${GIEX_PORT:-9979}:9979"
+    environment:
+      - NODE_ENV=production
+      - GIEX_PORT=9979
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - NEXT_PUBLIC_GIE_URL=${NEXT_PUBLIC_GIE_URL:-http://ai-intelligence:9977}
+      - NEXT_PUBLIC_AGE_URL=${NEXT_PUBLIC_AGE_URL:-http://ai-governance:9978}
+    volumes:
+      - giex-logs:/app/logs
+    networks:
+      - ghoststack-ai-net
+    depends_on:
+      - ai-intelligence
+      - ai-governance
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9979/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Ghost Autonomous AI Agent Network (GAAN) — port 9981 ─────────────────
+  ai-agents:
+    build:
+      context: ${GHOSTSTACK_SERVICES:-/home/ghost/ghostl-stack/services}/ai-agents
+      dockerfile: docker/Dockerfile
+    image: ghoststack-ai-agents:latest
+    container_name: ai-agents
+    restart: unless-stopped
+    ports:
+      - "${GAAN_PORT:-9981}:9981"
+    environment:
+      - NODE_ENV=production
+      - PORT=9981
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - NEXT_PUBLIC_AIMS_URL=${NEXT_PUBLIC_AIMS_URL:-http://ai-marketing:9970}
+      - NEXT_PUBLIC_VGE_URL=${NEXT_PUBLIC_VGE_URL:-http://ai-growth:9971}
+      - NEXT_PUBLIC_AAE_URL=${NEXT_PUBLIC_AAE_URL:-http://ai-adoption:9972}
+      - NEXT_PUBLIC_GEE_URL=${NEXT_PUBLIC_GEE_URL:-http://ai-expansion:9973}
+      - NEXT_PUBLIC_AEE_URL=${NEXT_PUBLIC_AEE_URL:-http://ai-economy:9974}
+      - NEXT_PUBLIC_AIE_URL=${NEXT_PUBLIC_AIE_URL:-http://ai-infrastructure:9975}
+      - NEXT_PUBLIC_ASE_URL=${NEXT_PUBLIC_ASE_URL:-http://ai-security:9976}
+      - NEXT_PUBLIC_GIE_URL=${NEXT_PUBLIC_GIE_URL:-http://ai-intelligence:9977}
+      - NEXT_PUBLIC_AGE_URL=${NEXT_PUBLIC_AGE_URL:-http://ai-governance:9978}
+      - NEXT_PUBLIC_GIEX_URL=${NEXT_PUBLIC_GIEX_URL:-http://ai-interchain:9979}
+    volumes:
+      - gaan-logs:/app/logs
+    networks:
+      - ghoststack-ai-net
+    depends_on:
+      - ai-marketing
+      - ai-growth
+      - ai-adoption
+      - ai-expansion
+      - ai-economy
+      - ai-infrastructure
+      - ai-security
+      - ai-intelligence
+      - ai-governance
+      - ai-interchain
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9981/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Ghost Autonomous Development Engine (ADE) — port 9982 ─────────────────
+  ai-development:
+    build:
+      context: ${GHOSTSTACK_SERVICES:-/home/ghost/ghostl-stack/services}/ai-development
+      dockerfile: docker/Dockerfile
+    image: ghoststack-ai-development:latest
+    container_name: ai-development
+    restart: unless-stopped
+    ports:
+      - "${ADE_PORT:-9982}:9982"
+    environment:
+      - NODE_ENV=production
+      - PORT=9982
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - ade-logs:/app/logs
+    networks:
+      - ghoststack-ai-net
+    depends_on:
+      - ai-agents
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9982/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Ghost Self-Evolution Engine (ai-evolution) — port 9983 ──────────────
+  ai-evolution:
+    build:
+      context: ${GHOSTSTACK_SERVICES:-/home/ghost/ghostl-stack/services}/ai-evolution
+      dockerfile: docker/Dockerfile
+    image: ghoststack-ai-evolution:latest
+    container_name: ai-evolution
+    restart: unless-stopped
+    ports:
+      - "${AI_EVO_PORT:-9983}:9983"
+    environment:
+      - NODE_ENV=production
+      - PORT=9983
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - see-logs:/app/logs
+    networks:
+      - ghoststack-ai-net
+    depends_on:
+      - ai-agents
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9983/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Ghost Planetary Network Engine (PNE) — port 9984 ─────────────────
+  ai-planetary:
+    build:
+      context: ${GHOSTSTACK_SERVICES:-/home/ghost/ghostl-stack/services}/ai-planetary
+      dockerfile: docker/Dockerfile
+    image: ghoststack-ai-planetary:latest
+    container_name: ai-planetary
+    restart: unless-stopped
+    ports:
+      - "${PNE_PORT:-9984}:9984"
+    environment:
+      - NODE_ENV=production
+      - PORT=9984
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - pne-logs:/app/logs
+    networks:
+      - ghoststack-ai-net
+    depends_on:
+      - ai-evolution
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9984/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Interplanetary Network Engine (INE) — port 9985 ──────────────────────────────
+  ai-interplanetary:
+    build:
+      context: ${GHOSTSTACK_SERVICES:-/home/ghost/ghostl-stack/services}/ai-interplanetary
+      dockerfile: docker/Dockerfile
+    image: ghoststack-ai-interplanetary:latest
+    container_name: ai-interplanetary
+    restart: unless-stopped
+    ports:
+      - "${INE_PORT:-9985}:9985"
+    environment:
+      - NODE_ENV=production
+      - PORT=9985
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - ine-logs:/app/logs
+    networks:
+      - ghoststack-ai-net
+    depends_on:
+      - ai-planetary
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9985/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Hypervisor Control Layer (HCL) — port 9986 ───────────────────────────────
+  ai-hypervisor:
+    build:
+      context: ${GHOSTSTACK_SERVICES:-/home/ghost/ghostl-stack/services}/ai-hypervisor
+      dockerfile: docker/Dockerfile
+    image: ghoststack-ai-hypervisor:latest
+    container_name: ai-hypervisor
+    restart: unless-stopped
+    ports:
+      - "${HCL_PORT:-9986}:9986"
+    environment:
+      - NODE_ENV=production
+      - PORT=9986
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - hcl-logs:/app/logs
+    networks:
+      - ghoststack-ai-net
+    depends_on:
+      - ai-interplanetary
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9986/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Autonomous Revenue Engine (ARE) — port 9987 ─────────────────────────────
+  ai-revenue:
+    build:
+      context: ${GHOSTSTACK_SERVICES:-/home/ghost/ghostl-stack/services}/ai-revenue
+      dockerfile: docker/Dockerfile
+    image: ghoststack-ai-revenue:latest
+    container_name: ai-revenue
+    restart: unless-stopped
+    ports:
+      - "${ARE_PORT:-9987}:9987"
+    environment:
+      - NODE_ENV=production
+      - PORT=9987
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - are-logs:/app/logs
+    networks:
+      - ghoststack-ai-net
+    depends_on:
+      - ai-hypervisor
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9987/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  # ── AI Operations Center (AIOps) — port 9988 ──────────────────────────────────
+  ai-operations:
+    build:
+      context: ${GHOSTSTACK_SERVICES:-/home/ghost/ghostl-stack/services}/ai-operations
+      dockerfile: docker/Dockerfile
+    image: ghoststack-ai-operations:latest
+    container_name: ai-operations
+    restart: unless-stopped
+    ports:
+      - "${AIOPS_PORT:-9988}:9988"
+    environment:
+      - NODE_ENV=production
+      - PORT=9988
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - HCL_URL=http://ai-hypervisor:9986
+      - GHOSTCHAIN_RPC=${GHOSTCHAIN_RPC:-http://localhost:8545}
+      - GHOSTL2_RPC=${GHOSTL2_RPC:-http://localhost:8546}
+      - GHOSTL3_RPC=${GHOSTL3_RPC:-http://localhost:8547}
+    volumes:
+      - aiops-logs:/app/logs
+    networks:
+      - ghoststack-ai-net
+    depends_on:
+      - ai-revenue
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9988/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  # ── GhostBrain Cognitive Layer (GCL) — port 9989 ──────────────────────────────
+  ai-cognitive:
+    build:
+      context: ${GHOSTSTACK_SERVICES:-/home/ghost/ghostl-stack/services}/ai-cognitive
+      dockerfile: docker/Dockerfile
+    image: ghoststack-ai-cognitive:latest
+    container_name: ai-cognitive
+    restart: unless-stopped
+    ports:
+      - "${GCL_PORT:-9989}:9989"
+    environment:
+      - NODE_ENV=production
+      - PORT=9989
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - gcl-logs:/app/logs
+    networks:
+      - ghoststack-ai-net
+    depends_on:
+      - ai-operations
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9989/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  # ── GhostStack C3 — Unified Command & Control Center — port 3100 ─────────────
+  control-center:
+    build:
+      context: ${GHOSTSTACK_APPS:-/home/ghost/ghostl-stack/apps}/control-center
+      dockerfile: docker/Dockerfile
+    image: ghoststack-c3:latest
+    container_name: control-center
+    restart: unless-stopped
+    ports:
+      - "${C3_PORT:-3100}:3100"
+    environment:
+      - NODE_ENV=production
+      - PORT=3100
+      - NEXT_PUBLIC_SCP_URL=http://localhost:9500
+      - NEXT_PUBLIC_HCL_URL=http://localhost:9986
+      - NEXT_PUBLIC_ARE_URL=http://localhost:9987
+      - NEXT_PUBLIC_AIMS_URL=http://localhost:9970
+      - NEXT_PUBLIC_VGE_URL=http://localhost:9971
+      - NEXT_PUBLIC_GIE_URL=http://localhost:9975
+      - NEXT_PUBLIC_GHOSTCHAIN_RPC=http://localhost:8545
+      - NEXT_PUBLIC_GHOSTL2_RPC=http://localhost:8546
+      - NEXT_PUBLIC_GHOSTL3_RPC=http://localhost:8547
+    volumes:
+      - c3-logs:/app/logs
+    networks:
+      - ghoststack-ai-net
+    depends_on:
+      - ai-revenue
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3100/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

@@ -1,0 +1,45 @@
+# Shared Node.js Dockerfile for all GhostBrain TypeScript services
+# Build context: the individual service directory (e.g. ghostbrain-control-plane/)
+# This file lives at services/ level, one directory above each package
+
+FROM node:22-alpine AS builder
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /build
+
+# Copy workspace root config
+COPY package.json pnpm-workspace.yaml tsconfig.json ./
+
+# Copy ghost-sdk (shared dependency) first for layer caching
+COPY ghost-sdk/ ./ghost-sdk/
+
+# Copy the specific service (determined by the build context path)
+ARG SERVICE_DIR=.
+COPY ${SERVICE_DIR}/ ./service/
+
+# Resolve workspace symlinks and install only production deps
+RUN pnpm install --filter ./ghost-sdk --frozen-lockfile || pnpm install --filter ./ghost-sdk
+RUN cd service && pnpm install --frozen-lockfile || pnpm install
+RUN cd service && pnpm run build
+
+# ── Runtime stage ─────────────────────────────────────────────
+FROM node:22-alpine AS runtime
+
+RUN apk add --no-cache wget
+
+WORKDIR /app
+
+# Copy built artifacts + production node_modules
+COPY --from=builder /build/service/dist ./dist
+COPY --from=builder /build/service/node_modules ./node_modules
+COPY --from=builder /build/service/package.json ./
+
+ENV NODE_ENV=production
+
+# Runtime user (non-root)
+RUN addgroup -S ghostbrain && adduser -S ghostbrain -G ghostbrain
+USER ghostbrain
+
+CMD ["node", "dist/index.js"]
