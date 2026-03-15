@@ -1,0 +1,275 @@
+# LitVybzLive — Global Streaming Infrastructure
+#
+# Usage:
+#   docker compose -f apps/litvyblive/streaming/docker-compose.streaming.yml up -d
+#
+# All WebRTC media (RTP/RTCP) uses host networking for UDP port ranges.
+# Services settle monetisation on GhostL3 (chain_id=903, RPC :39545) via GST Token.
+#
+# Architecture:
+#   Flutter App → WebRTC Gateway (auth) → MediaSoup Core SFU → Viewers
+#                                       ↓
+#                               Edge Nodes (regional relay)
+#                                       ↓
+#   FFmpeg Transcoder ← PlainTransport ← MediaSoup Core
+#   Redis Event Bus ← publishes from all services
+
+name: litvyblive-streaming
+
+x-common-env: &common-env
+  JWT_SECRET:            "${LITVYB_JWT_SECRET:-litvyblive-dev-secret}"
+  REDIS_URL:             "redis://redis:6379"
+  DATA_DIR:              "/data"
+  GHOST_L3_RPC:          "${GHOST_L3_RPC:-http://host.docker.internal:39545}"
+  GHOST_L3_CHAIN_ID:     "903"
+
+x-svc-defaults: &svc-defaults
+  restart: unless-stopped
+  networks: [streaming-net]
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+
+x-hc-http: &hc-http
+  interval: 15s
+  timeout:  5s
+  retries:  5
+  start_period: 30s
+
+services:
+
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+
+  redis:
+    image: redis:7-alpine
+    container_name: streaming-redis
+    command: redis-server --appendonly yes --tcp-backlog 511
+    ports: ["6391:6379"]
+    restart: unless-stopped
+    volumes: [streaming-redis:/data]
+    networks: [streaming-net]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Core MediaSoup SFU (port 3000 + UDP 40000-49999) ───────────────────────
+  # Uses host networking for the UDP port range (WebRTC RTP/RTCP)
+
+  mediasoup-server:
+    build:
+      context: .
+      dockerfile: mediasoup-server/Dockerfile
+    container_name: streaming-mediasoup-core
+    network_mode: host          # required for WebRTC UDP port range
+    environment:
+      <<: *common-env
+      PORT:          "3000"
+      ANNOUNCED_IP:  "${PUBLIC_IP:-127.0.0.1}"
+      RTC_MIN_PORT:  "40000"
+      RTC_MAX_PORT:  "49999"
+      NODE_ID:       "ms-core-1"
+      REGION:        "${REGION:-default}"
+      HOST:          "${PUBLIC_IP:-127.0.0.1}"
+    volumes:
+      - mediasoup-data:/data
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      <<: *hc-http
+
+  # ── WebRTC Gateway (port 3001) ──────────────────────────────────────────────
+
+  webrtc-gateway:
+    build:
+      context: .
+      dockerfile: webrtc-gateway/Dockerfile
+    container_name: streaming-webrtc-gateway
+    ports: ["3001:3001"]
+    environment:
+      <<: *common-env
+      PORT:                  "3001"
+      MEDIASOUP_WS_URL:      "ws://${PUBLIC_IP:-127.0.0.1}:3000"
+      STREAM_CONTROLLER_URL: "http://stream-controller:3002"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── Stream Controller REST API (port 3002) ──────────────────────────────────
+
+  stream-controller:
+    build:
+      context: .
+      dockerfile: stream-controller/Dockerfile
+    container_name: streaming-stream-controller
+    ports: ["3002:3002"]
+    environment:
+      <<: *common-env
+      PORT:           "3002"
+      MEDIASOUP_URL:  "http://host.docker.internal:3000"
+    volumes: [stream-ctrl-data:/data]
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3002/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── Edge Node US-East (port 3003) ───────────────────────────────────────────
+
+  edge-node-us-east:
+    build:
+      context: .
+      dockerfile: edge-nodes/Dockerfile
+    container_name: streaming-edge-us-east
+    network_mode: host          # UDP ports 41000-41999
+    environment:
+      <<: *common-env
+      PORT:                  "3003"
+      ANNOUNCED_IP:          "${PUBLIC_IP:-127.0.0.1}"
+      CORE_MEDIASOUP_URL:    "ws://${PUBLIC_IP:-127.0.0.1}:3000"
+      CORE_HTTP_URL:         "http://host.docker.internal:3000"
+      RTC_MIN_PORT:          "41000"
+      RTC_MAX_PORT:          "41999"
+      NODE_ID:               "edge-us-east-1"
+      REGION:                "us-east"
+      HOST:                  "${PUBLIC_IP:-127.0.0.1}"
+    volumes: [edge-us-east-data:/data]
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3003/health"]
+      <<: *hc-http
+
+  # ── Edge Node EU-West (port 3013) ───────────────────────────────────────────
+
+  edge-node-eu-west:
+    build:
+      context: .
+      dockerfile: edge-nodes/Dockerfile
+    container_name: streaming-edge-eu-west
+    network_mode: host          # UDP ports 42000-42999
+    environment:
+      <<: *common-env
+      PORT:                  "3013"
+      ANNOUNCED_IP:          "${EU_WEST_IP:-127.0.0.1}"
+      CORE_MEDIASOUP_URL:    "ws://${PUBLIC_IP:-127.0.0.1}:3000"
+      CORE_HTTP_URL:         "http://host.docker.internal:3000"
+      RTC_MIN_PORT:          "42000"
+      RTC_MAX_PORT:          "42999"
+      NODE_ID:               "edge-eu-west-1"
+      REGION:                "eu-west"
+      HOST:                  "${EU_WEST_IP:-127.0.0.1}"
+    volumes: [edge-eu-west-data:/data]
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3013/health"]
+      <<: *hc-http
+
+  # ── Edge Node Asia-Southeast (port 3023) ────────────────────────────────────
+
+  edge-node-asia:
+    build:
+      context: .
+      dockerfile: edge-nodes/Dockerfile
+    container_name: streaming-edge-asia
+    network_mode: host          # UDP ports 43000-43999
+    environment:
+      <<: *common-env
+      PORT:                  "3023"
+      ANNOUNCED_IP:          "${ASIA_IP:-127.0.0.1}"
+      CORE_MEDIASOUP_URL:    "ws://${PUBLIC_IP:-127.0.0.1}:3000"
+      CORE_HTTP_URL:         "http://host.docker.internal:3000"
+      RTC_MIN_PORT:          "43000"
+      RTC_MAX_PORT:          "43999"
+      NODE_ID:               "edge-asia-1"
+      REGION:                "asia"
+      HOST:                  "${ASIA_IP:-127.0.0.1}"
+    volumes: [edge-asia-data:/data]
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3023/health"]
+      <<: *hc-http
+
+  # ── FFmpeg Transcoder (port 3004) ───────────────────────────────────────────
+
+  ffmpeg-transcoder:
+    build:
+      context: .
+      dockerfile: ffmpeg-transcoder/Dockerfile
+    container_name: streaming-transcoder
+    ports: ["3004:3004"]
+    environment:
+      <<: *common-env
+      PORT:                "3004"
+      MEDIASOUP_HTTP_URL:  "http://host.docker.internal:3000"
+      RECORDINGS_DIR:      "/recordings"
+      HLS_DIR:             "/hls"
+      RECORD_ALL:          "${RECORD_ALL:-false}"
+      DUMMY_STREAM:        "${DUMMY_STREAM:-false}"
+    volumes:
+      - transcoder-data:/data
+      - recordings-data:/recordings
+      - hls-data:/hls
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3004/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+  # ── Redis Event Bus (port 3005) ─────────────────────────────────────────────
+
+  redis-bus:
+    build:
+      context: .
+      dockerfile: redis-bus/Dockerfile
+    container_name: streaming-redis-bus
+    ports: ["3005:3005"]
+    environment:
+      <<: *common-env
+      PORT: "3005"
+    volumes: [redis-bus-data:/data]
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3005/health"]
+      <<: *hc-http
+    <<: *svc-defaults
+
+volumes:
+  streaming-redis:
+  mediasoup-data:
+  stream-ctrl-data:
+  edge-us-east-data:
+  edge-eu-west-data:
+  edge-asia-data:
+  transcoder-data:
+  recordings-data:
+  hls-data:
+  redis-bus-data:
+
+networks:
+  streaming-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
