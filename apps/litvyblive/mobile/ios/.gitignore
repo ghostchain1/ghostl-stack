@@ -1,0 +1,21 @@
+## Flutter-generated - do not edit manually
+*.mode1v3
+*.mode2v3
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.perspectivev3
+!default.perspectivev3
+xerox
+xcuserdata
+*.xccheckout
+*.xcscmblueprint
+DerivedData/
+build/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+Pods/
+.symlinks/
+profile
