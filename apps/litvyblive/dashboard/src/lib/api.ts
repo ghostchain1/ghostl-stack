@@ -41,6 +41,31 @@ export interface RankEntry {
   level: number; score: number;
 }
 
+// ── Infrastructure ────────────────────────────────────────────────────────
+export interface InfraNode {
+  id:          string;
+  name:        string;
+  type:        "api" | "streaming" | "database";
+  region:      string;
+  status:      "healthy" | "warning" | "critical" | "degraded" | "unknown";
+  cpu_pct:     number;
+  mem_pct:     number;
+  uptime:      string;
+  connections: number;
+}
+
+// ── Games ─────────────────────────────────────────────────────────────────
+export interface GameConfig {
+  id:              string;
+  name:            string;
+  description:     string;
+  enabled:         boolean;
+  entry_cost_gst:  number;
+  max_reward_gst:  number;
+  daily_players?:  number;
+  total_payout_gst?: number;
+}
+
 // ── GhostBrain Governor types ─────────────────────────────────────────────
 export type AgentName = 'economy' | 'security' | 'discovery' | 'event' | 'infrastructure' | 'treasury';
 export type AlertSeverity = 'info' | 'warning' | 'critical';
@@ -110,3 +135,36 @@ export const fetchGovernorState = (): Promise<GovernorState> =>
 
 export const fetchGovernorDecisions = (): Promise<GovernorDecision[]> =>
   api.get("/admin/ghostbrain/decisions").then((r) => r.data);
+
+// ── Infrastructure ────────────────────────────────────────────────────────
+export const fetchInfrastructure = (): Promise<InfraNode[]> =>
+  api.get("/admin/infrastructure").then((r) => r.data);
+
+export const restartNode = (id: string) =>
+  api.post(`/admin/infrastructure/${id}/restart`).then((r) => r.data);
+
+export const scaleNode = (id: string, delta: number) =>
+  api.post(`/admin/infrastructure/${id}/scale`, { delta }).then((r) => r.data);
+
+// ── Games ─────────────────────────────────────────────────────────────────
+export const fetchGames = (): Promise<GameConfig[]> =>
+  api.get("/admin/games").then((r) => r.data);
+
+export const updateGame = (game: GameConfig) =>
+  api.put(`/admin/games/${game.id}`, game).then((r) => r.data);
+
+// ── Agency management ─────────────────────────────────────────────────────
+export const approveAgency = (id: string) =>
+  api.post(`/agency/${id}/approve`).then((r) => r.data);
+
+export const freezeAgency = (id: string) =>
+  api.post(`/agency/${id}/freeze`).then((r) => r.data);
+
+export const updateAgencyCommission = (id: string, rate: number) =>
+  api.patch(`/agency/${id}/commission`, { rate }).then((r) => r.data);
+
+// ── Moderation queue ──────────────────────────────────────────────────────
+export const fetchModerationQueue = () =>
+  api.get("/admin/moderation/queue").then((r) => r.data);
+
+export { api };

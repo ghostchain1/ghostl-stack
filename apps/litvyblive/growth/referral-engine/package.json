@@ -1,0 +1,34 @@
+{
+  "name": "@litvybzlive/referral-engine",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LitVybzLive Referral Engine — invite tracking, GST reward distribution",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "express": "^5.0.1",
+    "ioredis": "^5.3.2",
+    "zod": "^3.22.4",
+    "jsonwebtoken": "^9.0.2",
+    "uuid": "^9.0.1",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.3.1",
+    "pg": "^8.11.5"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/cors": "^2.8.17",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/pg": "^8.11.6",
+    "@types/uuid": "^9.0.8",
+    "@types/node": "^20.12.0",
+    "tsx": "^4.7.3",
+    "typescript": "^5.4.5"
+  },
+  "engines": { "node": ">=22.21.0 <23" }
+}
