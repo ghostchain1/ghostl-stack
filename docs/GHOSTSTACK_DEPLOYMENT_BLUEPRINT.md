@@ -182,7 +182,7 @@ Source of truth: [`infra/hypervisor/provision/inventory.sh`](../infra/hypervisor
 │    gns-api                        10.50.99.34     2     1 GB      30 GB  api   │
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │ 4  DEVNET / TEST                                                                │
-│    ghostchain-devnet              10.50.99.45     4     8 GB     300 GB  dev   │
+│    ghostchain-devnet              38.247.149.219  4     8 GB     300 GB  dev   │
 │    ghostchain-testnet-l1          10.50.99.71     2     2 GB     200 GB  l1    │
 │    ghost-testnet-validator        10.50.99.73     2     2 GB     100 GB  val   │
 │    ghostl2-testnet                10.50.99.77     2     4 GB     120 GB  l2    │
@@ -939,7 +939,7 @@ Ghoststack-baremetal (Ubuntu 24.04, KVM, 10.50.99.0/24)
 │   ├── gns-indexer (GNS record indexer)
 │   └── gns-api     :6000 (GNS REST API)
 │
-├── ghostchain-devnet (10.50.99.45)
+├── ghostchain-devnet (38.247.149.219)
 │   └── 🐳 Full L1+L2+L3+services (development/CI)
 │
 ├── ghostchain-mainnet-l1 (10.50.99.70)

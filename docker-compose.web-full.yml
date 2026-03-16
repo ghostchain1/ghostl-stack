@@ -247,7 +247,7 @@ services:
     environment:
       PORT: 3021
       NEXT_PUBLIC_SITE_NAME: GhostWallet
-      NEXT_PUBLIC_DOMAIN: wallet.ghostchain.world
+      NEXT_PUBLIC_DOMAIN: wallet.ghostchain.cloud
     ports:
       - "3021:3021"
 
@@ -260,7 +260,7 @@ services:
     environment:
       PORT: 3022
       NEXT_PUBLIC_SITE_NAME: GhostChain Bridge
-      NEXT_PUBLIC_DOMAIN: bridge.ghostchain.world
+      NEXT_PUBLIC_DOMAIN: bridge.ghostchain.cloud
     ports:
       - "3022:3022"
 
@@ -273,7 +273,7 @@ services:
     environment:
       PORT: 3023
       NEXT_PUBLIC_SITE_NAME: GhostChain Docs
-      NEXT_PUBLIC_DOMAIN: docs.ghostchain.online
+      NEXT_PUBLIC_DOMAIN: docs.ghostchain.cloud
     ports:
       - "3023:3023"
 
@@ -286,7 +286,7 @@ services:
     environment:
       PORT: 3024
       NEXT_PUBLIC_SITE_NAME: LitVyb Live
-      NEXT_PUBLIC_DOMAIN: apps.ghostchain.cloud
+      NEXT_PUBLIC_DOMAIN: ghostchain.live
     ports:
       - "3024:3024"
 

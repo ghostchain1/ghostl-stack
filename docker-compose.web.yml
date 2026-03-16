@@ -1,5 +1,5 @@
 # GhostChain Public Web Ecosystem
-# Manages all 11 public-facing Next.js sites
+# Manages the public GhostChain web mesh
 # Usage: docker compose -f docker-compose.web.yml up -d
 #
 # Ports:
@@ -14,6 +14,12 @@
 #   3018  company.ghostchain.cloud  web-company
 #   3019  status.ghostchain.cloud   web-status
 #   3020  portal.ghostchain.cloud   web-portal
+#   3021  wallet.ghostchain.cloud   web-wallet
+#   3022  bridge.ghostchain.cloud   web-bridge
+#   3023  docs.ghostchain.cloud     web-docs
+#   3024  ghostchain.live           web-live
+#   3025  ai.ghostchain.cloud       web-ai
+#   3026  rpc.ghostchain.cloud      web-rpc-portal
 
 x-web-defaults: &web-defaults
   restart: unless-stopped
@@ -194,6 +200,90 @@ services:
       - PORT=3020
       - NEXT_PUBLIC_SITE_NAME=Ghost Control Center
       - NEXT_PUBLIC_DOMAIN=portal.ghostchain.cloud
+
+  web-wallet:
+    <<: *web-defaults
+    build:
+      context: .
+      dockerfile: apps/web-wallet/Dockerfile
+    image: ghostchain/web-wallet:latest
+    container_name: ghostweb-wallet
+    ports:
+      - "3021:3021"
+    environment:
+      - PORT=3021
+      - NEXT_PUBLIC_SITE_NAME=GhostWallet
+      - NEXT_PUBLIC_DOMAIN=wallet.ghostchain.cloud
+
+  web-bridge:
+    <<: *web-defaults
+    build:
+      context: .
+      dockerfile: apps/web-bridge/Dockerfile
+    image: ghostchain/web-bridge:latest
+    container_name: ghostweb-bridge
+    ports:
+      - "3022:3022"
+    environment:
+      - PORT=3022
+      - NEXT_PUBLIC_SITE_NAME=GhostChain Bridge
+      - NEXT_PUBLIC_DOMAIN=bridge.ghostchain.cloud
+
+  web-docs:
+    <<: *web-defaults
+    build:
+      context: .
+      dockerfile: apps/web-docs/Dockerfile
+    image: ghostchain/web-docs:latest
+    container_name: ghostweb-docs
+    ports:
+      - "3023:3023"
+    environment:
+      - PORT=3023
+      - NEXT_PUBLIC_SITE_NAME=GhostChain Docs
+      - NEXT_PUBLIC_DOMAIN=docs.ghostchain.cloud
+
+  web-live:
+    <<: *web-defaults
+    build:
+      context: .
+      dockerfile: apps/web-live/Dockerfile
+    image: ghostchain/web-live:latest
+    container_name: ghostweb-live
+    ports:
+      - "3024:3024"
+    environment:
+      - PORT=3024
+      - NEXT_PUBLIC_SITE_NAME=LitVyb Live
+      - NEXT_PUBLIC_DOMAIN=ghostchain.live
+
+  web-ai:
+    <<: *web-defaults
+    build:
+      context: .
+      dockerfile: apps/web-ai/Dockerfile
+    image: ghostchain/web-ai:latest
+    container_name: ghostweb-ai
+    ports:
+      - "3025:3025"
+    environment:
+      - PORT=3025
+      - NEXT_PUBLIC_SITE_NAME=GhostBrain
+      - NEXT_PUBLIC_DOMAIN=ai.ghostchain.cloud
+
+  web-rpc-portal:
+    <<: *web-defaults
+    build:
+      context: .
+      dockerfile: apps/web-rpc-portal/Dockerfile
+    image: ghostchain/web-rpc-portal:latest
+    container_name: ghostweb-rpc-portal
+    ports:
+      - "3026:3026"
+    environment:
+      - PORT=3026
+      - NEXT_PUBLIC_SITE_NAME=GhostChain RPC Portal
+      - NEXT_PUBLIC_DOMAIN=rpc.ghostchain.cloud
 
 networks:
   ghostweb:

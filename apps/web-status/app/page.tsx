@@ -92,6 +92,11 @@ export default function StatusPage() {
             <p style={{ color: "#64748b", fontSize: "0.875rem" }}>
               Auto-refreshes every 30 seconds{updatedAt ? ` · checked ${new Date(updatedAt).toLocaleTimeString()}` : ""}
             </p>
+            <div style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap", marginTop: 20 }}>
+              <a href="/incidents" className="btn-secondary">Incidents</a>
+              <a href="/history" className="btn-secondary">History</a>
+              <a href="/maintenance" className="btn-secondary">Maintenance</a>
+            </div>
           </div>
         </section>
 

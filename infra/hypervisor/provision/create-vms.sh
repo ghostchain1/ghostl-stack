@@ -7,7 +7,7 @@
 # VMs created:
 #   ghost-web                10.50.99.10   2 vCPU   4GB  100GB
 #   ghost-dns-slave          10.50.99.66   1 vCPU   1GB   20GB
-#   ghostchain-devnet        10.50.99.45   4 vCPU   8GB  300GB
+#   ghostchain-devnet        38.247.149.219 (canonical public control IP; legacy mgmt 10.50.99.45)   4 vCPU   8GB  300GB
 #   ghostchain-testnet-l1    10.50.99.71   2 vCPU   2GB  200GB
 #   ghost-testnet-validator  10.50.99.73   2 vCPU   2GB  100GB
 #   ghostl2-testnet          10.50.99.77   2 vCPU   4GB  120GB
@@ -50,6 +50,7 @@ VM_IP[ghost-web]="10.50.99.10";          VM_VCPU[ghost-web]=2;   VM_RAM[ghost-we
 # ghost-dns-slave (Bind9 secondary)
 VM_IP[ghost-dns-slave]="10.50.99.66";    VM_VCPU[ghost-dns-slave]=1;  VM_RAM[ghost-dns-slave]=512;   VM_DISK[ghost-dns-slave]=20;  VM_ROLE[ghost-dns-slave]="dns";             VM_MAC[ghost-dns-slave]="52:54:00:00:01:66"
 # ghostchain-devnet (all-in-one build/test VM)
+# Canonical control/SSH address is 38.247.149.219; legacy guest template keeps
 # enp1s0 = gs-mgmt internal (10.50.99.45), enp2s0 = public br0 (38.247.149.219)
 VM_IP[ghostchain-devnet]="10.50.99.45";  VM_VCPU[ghostchain-devnet]=4; VM_RAM[ghostchain-devnet]=8192; VM_DISK[ghostchain-devnet]=300; VM_ROLE[ghostchain-devnet]="devnet";        VM_MAC[ghostchain-devnet]="52:54:00:00:01:2d"
 VM_MAC2[ghostchain-devnet]="52:54:00:00:02:db"  # enp2s0 — public NIC (38.247.149.219)

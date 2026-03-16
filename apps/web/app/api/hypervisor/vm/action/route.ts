@@ -1,14 +1,16 @@
 /**
- * /api/hypervisor/vm/action — Proxy VM actions to the GAIS kernel.
+ * /api/hypervisor/vm/action — Proxy supported VM actions to the live GAIS API.
  *
  * Body: { id: string, action: "start"|"stop"|"reboot"|"suspend"|"resume" }
  *
- * Enforces the same safety invariants as the container action route.
+ * GAIS currently exposes manual restart as its operator-safe write path.
+ * Unsupported actions return 501 until GAIS gains native endpoints for them.
  */
 
 import { type NextRequest, NextResponse } from 'next/server';
 
-const BRAIN_URL   = process.env.GHOSTBRAIN_INTERNAL ?? 'http://localhost:7900';
+import { GAIS_URL, readGaisToken } from '../../../vm/lib';
+
 const ALLOWED_ACT = new Set(['start', 'stop', 'reboot', 'suspend', 'resume']);
 const ID_RE       = /^[a-zA-Z0-9_\-.]{1,128}$/;
 
@@ -37,19 +39,33 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
+  if (action !== 'reboot') {
+    return NextResponse.json(
+      {
+        error: 'live GAIS currently supports reboot only',
+        supportedActions: ['reboot'],
+      },
+      { status: 501 },
+    );
+  }
+
   try {
-    const upstream = await fetch(`${BRAIN_URL}/kernel/vm/${encodeURIComponent(action)}`, {
+    const token = await readGaisToken();
+    const upstream = await fetch(`${GAIS_URL}/vms/${encodeURIComponent(id)}/restart`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ target: id, type: 'vm', action }),
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'X-GAIS-Token': token } : {}),
+      },
+      body: JSON.stringify({ force: false }),
       signal: AbortSignal.timeout(15_000),
     });
 
     const data: unknown = await upstream.json().catch(() => ({}));
-    return NextResponse.json(data, { status: upstream.ok ? 200 : 502 });
+    return NextResponse.json(data, { status: upstream.status });
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'kernel unreachable' },
+      { error: err instanceof Error ? err.message : 'GAIS unreachable' },
       { status: 502 },
     );
   }

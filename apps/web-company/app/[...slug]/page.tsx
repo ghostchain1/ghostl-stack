@@ -10,6 +10,10 @@ const PAGES = {
     title: "Careers",
     intro: "GhostChain is hiring across protocol engineering, AI operations, and branded developer platform work.",
   },
+  contact: {
+    title: "Contact GhostChain",
+    intro: "Reach the GhostChain company and solutions desks for enterprise deployments, brand partnerships, and operator coordination.",
+  },
 } as const;
 
 export const dynamicParams = false;

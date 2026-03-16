@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: { template: "%s | GhostChain Bridge", default: "GhostChain Bridge — Cross-Layer Asset Transfers" },
   description: "Transfer GST and assets between GhostChain L1, GhostL2, and GhostL3 via the official GhostChain bridge.",
-  metadataBase: new URL("https://bridge.ghostchain.world"),
+  metadataBase: new URL("https://bridge.ghostchain.cloud"),
   openGraph: { siteName: "GhostChain Bridge", locale: "en_US", type: "website" },
 };
 

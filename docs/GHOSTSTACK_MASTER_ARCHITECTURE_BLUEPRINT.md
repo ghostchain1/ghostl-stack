@@ -367,7 +367,7 @@ Bridge:   virbr-ghoststack
 │  gns-api          10.50.99.34 │
 └───────────────────────────────┘
 ┌── Devnet / Testnet ───────────┐
-│  ghostchain-devnet  10.50.99.45 │
+│  ghostchain-devnet  38.247.149.219 │
 │  testnet-l1       10.50.99.71 │
 │  testnet-validator 10.50.99.73│
 │  ghostl2-testnet  10.50.99.77 │
@@ -399,7 +399,7 @@ Bridge:   virbr-ghoststack
 | `gns-postgres` | 10.50.99.32 | 2 | 4 GB | 50 GB | GNS zone database |
 | `gns-indexer` | 10.50.99.33 | 2 | 4 GB | 50 GB | GNS zone indexer |
 | `gns-api` | 10.50.99.34 | 2 | 4 GB | 20 GB | GNS REST API |
-| `ghostchain-devnet` | 10.50.99.45 | 4 | 8 GB | 100 GB | All-in-one devnet VM |
+| `ghostchain-devnet` | 38.247.149.219 | 4 | 8 GB | 100 GB | All-in-one devnet controller |
 | `ghostchain-testnet-l1` | 10.50.99.71 | 4 | 8 GB | 200 GB | Testnet L1 GhostChain |
 | `ghost-testnet-validator` | 10.50.99.73 | 4 | 8 GB | 100 GB | Testnet L1 validator |
 | `ghostl2-testnet` | 10.50.99.77 | 4 | 8 GB | 200 GB | Testnet OP Stack L2 |

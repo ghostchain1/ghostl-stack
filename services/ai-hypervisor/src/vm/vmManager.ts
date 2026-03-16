@@ -6,7 +6,19 @@
 import { v4 as uuid } from "uuid";
 
 export type VmState  = "creating" | "running" | "stopped" | "destroying" | "snapshotting" | "errored";
-export type VmRole   = "ghostchain-validator" | "ghostl2-node" | "ghostl3-node" | "ghostbrain" | "monitoring" | "ai-engine" | "general";
+export type VmRole =
+  | "ghostchain-validator"
+  | "ghostchain-fullnode"
+  | "ghostchain-archive"
+  | "ghostl2-node"
+  | "ghostl3-node"
+  | "ghostbrain"
+  | "monitoring"
+  | "ai-engine"
+  | "web"
+  | "dns"
+  | "devnet"
+  | "general";
 export type VmAction = "start" | "stop" | "restart" | "destroy" | "snapshot";
 
 export interface VmSnapshot {
@@ -46,15 +58,21 @@ export interface VmActionResult {
 
 // ── Seeded VM fleet ───────────────────────────────────────────────────────────
 const SEED: Array<Omit<GhostVM, "uptime" | "cpuPct" | "memPct" | "lastActivity" | "snapshots">> = [
-  { id: "vm-gc-val-1",  name: "ghost-chain-validator-1", role: "ghostchain-validator", state: "running", cpuCores: 4,  ramGB: 8,  diskGB: 200, ip: "192.168.10.11", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 60 },
-  { id: "vm-gc-val-2",  name: "ghost-chain-validator-2", role: "ghostchain-validator", state: "running", cpuCores: 4,  ramGB: 8,  diskGB: 200, ip: "192.168.10.12", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 60 },
-  { id: "vm-gc-val-3",  name: "ghost-chain-validator-3", role: "ghostchain-validator", state: "running", cpuCores: 4,  ramGB: 8,  diskGB: 200, ip: "192.168.10.13", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 30 },
-  { id: "vm-gc-val-4",  name: "ghost-chain-validator-4", role: "ghostchain-validator", state: "stopped", cpuCores: 4,  ramGB: 8,  diskGB: 200, ip: "192.168.10.14", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 30 },
-  { id: "vm-l2-node",   name: "ghost-l2-node",           role: "ghostl2-node",        state: "running", cpuCores: 8,  ramGB: 16, diskGB: 500, ip: "192.168.10.20", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 45 },
-  { id: "vm-l3-node",   name: "ghost-l3-node",           role: "ghostl3-node",        state: "running", cpuCores: 8,  ramGB: 16, diskGB: 500, ip: "192.168.10.21", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 20 },
-  { id: "vm-brain",     name: "ghostbrain-core",         role: "ghostbrain",          state: "running", cpuCores: 16, ramGB: 32, diskGB: 1000,ip: "192.168.10.30", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 90 },
-  { id: "vm-monitor",   name: "ghost-monitoring",        role: "monitoring",          state: "running", cpuCores: 4,  ramGB: 8,  diskGB: 200, ip: "192.168.10.40", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 90 },
-  { id: "vm-ai-shard1", name: "ghost-ai-cluster-1",     role: "ai-engine",           state: "running", cpuCores: 32, ramGB: 64, diskGB: 2000,ip: "192.168.10.50", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 14 },
+  { id: "vm-ghost-web",                name: "ghost-web",                role: "web",                  state: "running", cpuCores: 2,  ramGB: 4,  diskGB: 100,  ip: "10.50.99.10", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 180 },
+  { id: "vm-ghost-dns-slave",          name: "ghost-dns-slave",          role: "dns",                  state: "running", cpuCores: 1,  ramGB: 1,  diskGB: 20,   ip: "10.50.99.66", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 180 },
+  { id: "vm-ghostchain-devnet",        name: "ghostchain-devnet",        role: "devnet",               state: "running", cpuCores: 8,  ramGB: 19, diskGB: 435,  ip: "38.247.149.219", hypervisor: "kvm", os: "Ubuntu 24.04 LTS", createdAt: Date.now() - 86400000 * 120 },
+  { id: "vm-ghostchain-testnet-l1",    name: "ghostchain-testnet-l1",    role: "ghostchain-fullnode",  state: "running", cpuCores: 2,  ramGB: 6,  diskGB: 500,  ip: "10.50.99.71", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 90 },
+  { id: "vm-ghost-testnet-validator",  name: "ghost-testnet-validator",  role: "ghostchain-validator", state: "running", cpuCores: 2,  ramGB: 4,  diskGB: 200,  ip: "10.50.99.73", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 90 },
+  { id: "vm-ghostl2-testnet",          name: "ghostl2-testnet",          role: "ghostl2-node",         state: "running", cpuCores: 2,  ramGB: 4,  diskGB: 300,  ip: "10.50.99.77", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 75 },
+  { id: "vm-ghostl3-testnet",          name: "ghostl3-testnet",          role: "ghostl3-node",         state: "running", cpuCores: 2,  ramGB: 4,  diskGB: 300,  ip: "10.50.99.79", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 75 },
+  { id: "vm-ghostchain-mainnet-l1",    name: "ghostchain-mainnet-l1",    role: "ghostchain-fullnode",  state: "running", cpuCores: 8,  ramGB: 32, diskGB: 1000, ip: "10.50.99.70", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 220 },
+  { id: "vm-ghost-mainnet-validator",  name: "ghost-mainnet-validator",  role: "ghostchain-validator", state: "running", cpuCores: 8,  ramGB: 16, diskGB: 500,  ip: "10.50.99.72", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 220 },
+  { id: "vm-ghost-mainnet-archive",    name: "ghost-mainnet-archive-node", role: "ghostchain-archive", state: "stopped", cpuCores: 8,  ramGB: 32, diskGB: 2000, ip: "10.50.99.74", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 180 },
+  { id: "vm-ghostl2-mainnet",          name: "ghostl2-mainnet",          role: "ghostl2-node",         state: "running", cpuCores: 8,  ramGB: 32, diskGB: 1000, ip: "10.50.99.76", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 210 },
+  { id: "vm-ghostl3-mainnet",          name: "ghostl3-mainnet",          role: "ghostl3-node",         state: "running", cpuCores: 8,  ramGB: 16, diskGB: 500,  ip: "10.50.99.78", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 210 },
+  { id: "vm-ghost-monitoring",         name: "ghost-monitoring",         role: "monitoring",           state: "running", cpuCores: 4,  ramGB: 8,  diskGB: 200,  ip: "10.50.99.40", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 200 },
+  { id: "vm-ghostbrain-core",          name: "ghostbrain-core",          role: "ghostbrain",           state: "running", cpuCores: 16, ramGB: 32, diskGB: 1000, ip: "10.50.99.30", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 200 },
+  { id: "vm-ghost-ai-cluster-1",       name: "ghost-ai-cluster-1",       role: "ai-engine",            state: "running", cpuCores: 32, ramGB: 64, diskGB: 2000, ip: "10.50.99.50", hypervisor: "kvm", os: "Ubuntu 22.04 LTS", createdAt: Date.now() - 86400000 * 60 },
 ];
 
 const vms: Map<string, GhostVM> = new Map(

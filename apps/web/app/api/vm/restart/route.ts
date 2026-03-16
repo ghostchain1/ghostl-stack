@@ -1,19 +1,19 @@
 /**
- * /api/vm/restart — Restart a VM via GAIS kernel.
+ * /api/vm/restart — Restart a VM via the live GAIS API.
  *
  * Convenience alias for the hypervisor/vm/action route that enforces
- * "reboot" action.  Body: { id: string }
- *
- * Forwards to GAIS via the kernel safety guard (allowlist, dry-run,
- * rate limiter) — same invariants as /api/hypervisor/vm/action.
+ * the GAIS restart path. Body: { id: string }
  *
  * Env vars:
- *   GHOSTBRAIN_INTERNAL   default http://localhost:7900
+ *   GAIS_URL         default http://127.0.0.1:9100
+ *   GAIS_API_TOKEN   optional direct token override
+ *   GAIS_ENV_FILE    optional path to the GAIS env file
  */
 
 import { type NextRequest, NextResponse } from 'next/server';
 
-const BRAIN_URL = process.env.GHOSTBRAIN_INTERNAL ?? 'http://localhost:7900';
+import { GAIS_URL, readGaisToken } from '../lib';
+
 const ID_RE     = /^[a-zA-Z0-9_\-.]{1,128}$/;
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -31,18 +31,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const upstream = await fetch(`${BRAIN_URL}/kernel/vm/reboot`, {
+    const token = await readGaisToken();
+    const upstream = await fetch(`${GAIS_URL}/vms/${encodeURIComponent(id)}/restart`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ target: id, type: 'vm', action: 'reboot' }),
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'X-GAIS-Token': token } : {}),
+      },
+      body: JSON.stringify({ force: false }),
       signal: AbortSignal.timeout(15_000),
     });
 
     const data: unknown = await upstream.json().catch(() => ({}));
-    return NextResponse.json(data, { status: upstream.ok ? 200 : 502 });
+    return NextResponse.json(data, { status: upstream.status });
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'kernel unreachable' },
+      { error: err instanceof Error ? err.message : 'GAIS unreachable' },
       { status: 502 },
     );
   }

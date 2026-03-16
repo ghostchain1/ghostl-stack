@@ -86,7 +86,7 @@ GS_MGMT_GW="10.50.99.1"
 GS_PUBLIC_CIDR="38.247.149.0/24"
 GS_PUBLIC_GW="38.247.149.1"
 GS_HV_PUBLIC_IP="38.247.149.218"    # hypervisor secondary address on br0
-GS_DEVNET_PUBLIC_IP="38.247.149.219" # ghostchain-devnet enp2s0
+GS_DEVNET_PUBLIC_IP="38.247.149.219" # ghostchain-devnet canonical public control IP
 
 # Timing
 STAGE_SLEEP=3
@@ -543,7 +543,7 @@ phase5_vms() {
   info "  gns-postgres              10.50.99.32   2 vCPU   2 GB   100 GB  (gns db)"
   info "  gns-indexer               10.50.99.33   2 vCPU   2 GB    50 GB  (gns idx)"
   info "  gns-api                   10.50.99.34   2 vCPU   1 GB    30 GB  (gns api)"
-  info "  ghostchain-devnet         10.50.99.45   4 vCPU   8 GB   300 GB  (devnet)"
+  info "  ghostchain-devnet         38.247.149.219  4 vCPU   8 GB   300 GB  (devnet public control IP)"
   info "  ghostchain-testnet-l1     10.50.99.71   2 vCPU   2 GB   200 GB  (testnet l1)"
   info "  ghost-testnet-validator   10.50.99.73   2 vCPU   2 GB   100 GB  (testnet val)"
   info "  ghostl2-testnet           10.50.99.77   2 vCPU   4 GB   120 GB  (testnet l2)"

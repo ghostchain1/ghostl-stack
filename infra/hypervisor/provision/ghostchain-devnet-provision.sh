@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
 # ghostchain-devnet-provision.sh
-# KVM VM 45 — ghostchain-devnet (10.50.99.45)
+# ghostchain-devnet controller — canonical public IP 38.247.149.219
 #
 # ROLE: Full local devnet — L1 + L2 + L3 all-in-one.
 #       This is the build/test box.  Contracts are developed and tested here
@@ -17,67 +17,134 @@ set -euo pipefail
 REPO_URL="${REPO_URL:-https://github.com/ghostchain1/ghostl-stack.git}"
 REPO_DIR="${REPO_DIR:-/opt/ghostl-stack}"
 ENV_FILE="${ENV_FILE:-/etc/ghostl-stack/devnet.env}"
-VM_IP="10.50.99.45"
-VM_PUBLIC_IP="38.247.149.219"
+LEGACY_MGMT_IP="10.50.99.45"
+CANONICAL_PUBLIC_IP="38.247.149.219"
 VM_PUBLIC_GW="38.247.149.1"
+VM_BACKHAUL_IP="192.168.122.205"
+VM_BACKHAUL_GW="192.168.122.1"
 UPDATE="${1:-}"
+
+detect_network_profile() {
+  if ip -4 addr show dev enp2s0 2>/dev/null | grep -q "192\\.168\\.122\\."; then
+    echo "live-public-controller"
+  else
+    echo "legacy-kvm"
+  fi
+}
+
+NETWORK_PROFILE="${DEVNET_NETWORK_PROFILE:-$(detect_network_profile)}"
 
 log() { echo "[devnet-provision] $(date -u +%H:%M:%SZ) $*"; }
 
-# ── 0. Network (dual-NIC) ──────────────────────────────────────────────────────
-# enp1s0 — internal mgmt 10.50.99.45/24  (default route goes to enp2s0, not here)
-# enp2s0 — public 38.247.149.219/24, default route via 38.247.149.1
+# ── 0. Network ────────────────────────────────────────────────────────────────
+# live-public-controller:
+#   enp1s0 — public ingress aliases 38.247.149.218-224/24, default route via 38.247.149.1
+#   enp2s0 — libvirt/NAT backhaul 192.168.122.205/24, backup route via 192.168.122.1
+#
+# legacy-kvm:
+#   enp1s0 — internal mgmt 10.50.99.45/24
+#   enp2s0 — public 38.247.149.219/24, default route via 38.247.149.1
 #
 # These netplan files are idempotent and safe to re-apply on --update runs.
 configure_networking() {
-  log "Configuring dual-NIC networking..."
+  log "Configuring networking profile: ${NETWORK_PROFILE}"
 
-  # Internal NIC — subnet-specific route only, NOT the default gateway.
-  cat > /etc/netplan/50-gs-mgmt.yaml <<NETPLAN
+  case "$NETWORK_PROFILE" in
+    live-public-controller)
+      cat > /etc/netplan/01-network.yaml <<NETPLAN
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp1s0:
+      dhcp4: false
+      optional: true
+      addresses:
+        - 38.247.149.218/24
+        - 38.247.149.219/24
+        - 38.247.149.220/24
+        - 38.247.149.221/24
+        - 38.247.149.222/24
+        - 38.247.149.223/24
+        - 38.247.149.224/24
+      routes:
+        - to: default
+          via: ${VM_PUBLIC_GW}
+          metric: 100
+      nameservers:
+        addresses: [8.8.8.8, 1.1.1.1, 8.8.4.4]
+    enp2s0:
+      dhcp4: false
+      optional: true
+      addresses:
+        - ${VM_BACKHAUL_IP}/24
+      routes:
+        - to: default
+          via: ${VM_BACKHAUL_GW}
+          metric: 200
+      nameservers:
+        addresses: [${VM_BACKHAUL_GW}, 8.8.8.8]
+NETPLAN
+      chmod 600 /etc/netplan/01-network.yaml
+      for stale in /etc/netplan/50-gs-mgmt.yaml /etc/netplan/51-gs-public.yaml /etc/netplan/50-cloud-init.yaml /etc/netplan/00-installer-config.yaml; do
+        if [ -f "$stale" ]; then
+          log "Removing stale netplan config: $stale"
+          rm -f "$stale"
+        fi
+      done
+      ;;
+    legacy-kvm)
+      cat > /etc/netplan/50-gs-mgmt.yaml <<NETPLAN
 network:
   version: 2
   ethernets:
     enp1s0:
       dhcp4: false
-      addresses: [${VM_IP}/24]
+      addresses: [${LEGACY_MGMT_IP}/24]
       routes:
         - to: 10.50.99.0/24
           via: 10.50.99.1
       nameservers:
         addresses: [10.50.99.66, 1.1.1.1]
 NETPLAN
-  chmod 600 /etc/netplan/50-gs-mgmt.yaml
+      chmod 600 /etc/netplan/50-gs-mgmt.yaml
 
-  # Public NIC — carries the default route.
-  cat > /etc/netplan/51-gs-public.yaml <<NETPLAN
+      cat > /etc/netplan/51-gs-public.yaml <<NETPLAN
 network:
   version: 2
   ethernets:
     enp2s0:
       dhcp4: false
-      addresses: [${VM_PUBLIC_IP}/24]
+      addresses: [${CANONICAL_PUBLIC_IP}/24]
       routes:
         - to: default
           via: ${VM_PUBLIC_GW}
       nameservers:
         addresses: [1.1.1.1, 8.8.8.8]
 NETPLAN
-  chmod 600 /etc/netplan/51-gs-public.yaml
+      chmod 600 /etc/netplan/51-gs-public.yaml
 
-  # Remove any stale netplan files that may set a conflicting default route on enp1s0.
-  for stale in /etc/netplan/50-cloud-init.yaml /etc/netplan/00-installer-config.yaml; do
-    if [ -f "$stale" ]; then
-      log "Removing stale netplan config: $stale"
-      rm -f "$stale"
-    fi
-  done
+      for stale in /etc/netplan/01-network.yaml /etc/netplan/50-cloud-init.yaml /etc/netplan/00-installer-config.yaml; do
+        if [ -f "$stale" ]; then
+          log "Removing stale netplan config: $stale"
+          rm -f "$stale"
+        fi
+      done
+      ;;
+    *)
+      log "ERROR: unsupported DEVNET_NETWORK_PROFILE=${NETWORK_PROFILE}"
+      exit 1
+      ;;
+  esac
 
   netplan apply || log "WARNING: netplan apply returned non-zero (may be OK in cloud-init context)"
-  log "Networking configured: mgmt=${VM_IP}/24, public=${VM_PUBLIC_IP}/24"
+  log "Networking configured: profile=${NETWORK_PROFILE}, canonical_public=${CANONICAL_PUBLIC_IP}, backhaul=${VM_BACKHAUL_IP}"
 }
 
 # Only re-configure on first boot or explicit --update.
-if [ ! -f /etc/netplan/51-gs-public.yaml ] || [ "$UPDATE" = "--update" ]; then
+NETWORK_MARKER="/etc/netplan/51-gs-public.yaml"
+[ "$NETWORK_PROFILE" = "live-public-controller" ] && NETWORK_MARKER="/etc/netplan/01-network.yaml"
+if [ ! -f "$NETWORK_MARKER" ] || [ "$UPDATE" = "--update" ]; then
   configure_networking
 else
   log "Network already configured — skipping (use --update to reapply)"
@@ -110,7 +177,7 @@ mkdir -p /etc/ghostl-stack
 if [ ! -f "$ENV_FILE" ] || [ "$UPDATE" = "--update" ]; then
   log "Writing $ENV_FILE..."
   cat > "$ENV_FILE" <<'DEVENV'
-# ghostchain-devnet — VM 45 — 10.50.99.45
+# ghostchain-devnet — canonical public control IP 38.247.149.219
 # All chains run locally.  Secrets are dev-grade only; no real funds.
 
 GHOST_ENV=devnet

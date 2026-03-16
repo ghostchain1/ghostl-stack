@@ -2,6 +2,15 @@ import { notFound } from "next/navigation";
 import { PublicFooter, PublicNavbar } from "@ghostchain/ui";
 
 const PAGES = {
+  treasury: {
+    title: "Treasury Overview",
+    intro: "Inspect GhostChain treasury posture, GST reserves, and governance-scoped capital allocation from the investor surface.",
+    bullets: [
+      "Treasury accounting should reconcile against GhostChain L1 and proposal-approved distribution records.",
+      "GST remains the denomination for reserves, grants, validator programs, and treasury reporting.",
+      "Capital deployment should always reference the governance proposal or operating mandate that authorized it.",
+    ],
+  },
   tokenomics: {
     title: "GST Tokenomics",
     intro: "Review the branded GST allocation model, validator incentives, and treasury distribution guardrails.",

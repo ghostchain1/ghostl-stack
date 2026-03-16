@@ -2,8 +2,27 @@
 
 import { useEffect, useState } from 'react';
 
-type VM = { id: string; name: string; state: string; cpuPercent?: number; memoryMb?: number; memoryMaxMb?: number };
-type VMListResponse = { vms: VM[]; total: number; running: number };
+type VM = {
+  id: string;
+  name: string;
+  role: string;
+  ip: string;
+  state: 'running' | 'stopped' | 'suspended' | 'rebooting' | 'unknown';
+  stateLabel: string;
+  rpcHealthy: boolean;
+  healLevel: string;
+  escalated: boolean;
+  restarts1h: number;
+};
+
+type VMListResponse = {
+  vms: VM[];
+  total: number;
+  running: number;
+  dryRun: boolean;
+  source: string;
+  timestamp: string;
+};
 
 const CARD: React.CSSProperties = {
   background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 22px',
@@ -31,13 +50,13 @@ export function HypervisorPage() {
     return () => { cancelled = true; clearInterval(id); };
   }, []);
 
-  async function vmAction(id: string, action: string) {
+  async function rebootVm(id: string) {
     setActionState((p) => ({ ...p, [id]: 'pending' }));
     try {
       const res = await fetch('/api/hypervisor/vm/action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, action }),
+        body: JSON.stringify({ id, action: 'reboot' }),
       });
       setActionState((p) => ({ ...p, [id]: res.ok ? 'ok' : 'error' }));
     } catch {
@@ -54,16 +73,27 @@ export function HypervisorPage() {
         <div>
           <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Hypervisor Management</h1>
           <p style={{ margin: '4px 0 0', color: 'var(--muted)', fontSize: 13 }}>
-            Virtual machine control via GAIS kernel — start, stop, reboot, suspend
+            Live GhostChain VM inventory from GAIS with operator-safe reboot wiring
           </p>
         </div>
         {data && (
-          <div style={{ fontSize: 13 }}>
-            <span style={{ color: '#22c55e', fontWeight: 700 }}>{data.running}</span>
-            <span style={{ color: 'var(--muted)' }}>/{data.total} VMs running</span>
+          <div style={{ fontSize: 13, textAlign: 'right' }}>
+            <div>
+              <span style={{ color: '#22c55e', fontWeight: 700 }}>{data.running}</span>
+              <span style={{ color: 'var(--muted)' }}>/{data.total} VMs running</span>
+            </div>
+            <div style={{ color: 'var(--muted)', fontSize: 11 }}>
+              {new Date(data.timestamp).toLocaleTimeString()}
+            </div>
           </div>
         )}
       </div>
+
+      {data?.dryRun && (
+        <div style={{ ...CARD, color: '#f59e0b', fontSize: 13 }}>
+          GAIS is in dry-run mode. Reboot requests are accepted for audit, but no live VM mutation is executed.
+        </div>
+      )}
 
       {error && (
         <div style={{ ...CARD, color: 'var(--danger)', fontSize: 13 }}>
@@ -79,70 +109,89 @@ export function HypervisorPage() {
         {vms.map((vm) => {
           const st = actionState[vm.id] ?? 'idle';
           const running = vm.state === 'running';
-          const cpuPct = vm.cpuPercent ?? 0;
-          const memPct = vm.memoryMb && vm.memoryMaxMb ? Math.round((vm.memoryMb / vm.memoryMaxMb) * 100) : null;
+          const isEscalated = vm.escalated || vm.healLevel === 'escalated';
+          const rpcLabel = vm.role === 'l1' || vm.role === 'l2' || vm.role === 'l3'
+            ? vm.rpcHealthy ? 'healthy' : 'offline'
+            : 'n/a';
+          const stateColor =
+            isEscalated ? '#ef4444'
+              : running ? '#22c55e'
+                : vm.state === 'rebooting' ? '#f59e0b'
+                  : 'var(--muted)';
           return (
             <div key={vm.id} style={CARD}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>{vm.name}</div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>{vm.name}</div>
+                  <div style={{ color: 'var(--muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    {vm.role}
+                  </div>
+                </div>
                 <span style={{
                   fontSize: 10, padding: '2px 8px', borderRadius: 99, fontWeight: 600,
-                  background: running ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-                  color: running ? '#22c55e' : '#ef4444',
+                  background: isEscalated ? 'rgba(239,68,68,0.1)' : running ? 'rgba(34,197,94,0.1)' : 'rgba(148,163,184,0.12)',
+                  color: stateColor,
                 }}>
-                  {vm.state}
+                  {vm.stateLabel}
                 </span>
               </div>
 
               <div style={{ display: 'flex', gap: 20, fontSize: 12, marginBottom: 14 }}>
-                {cpuPct !== null && (
-                  <div>
-                    <div style={{ color: 'var(--muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em' }}>CPU</div>
-                    <div style={{ fontFamily: 'monospace', fontWeight: 600, color: cpuPct > 80 ? 'var(--danger)' : 'var(--text)' }}>
-                      {cpuPct}%
-                    </div>
-                  </div>
-                )}
-                {memPct !== null && (
-                  <div>
-                    <div style={{ color: 'var(--muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em' }}>RAM</div>
-                    <div style={{ fontFamily: 'monospace', fontWeight: 600, color: memPct > 85 ? 'var(--danger)' : 'var(--text)' }}>
-                      {vm.memoryMb} MB
-                    </div>
-                  </div>
-                )}
                 <div>
-                  <div style={{ color: 'var(--muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em' }}>ID</div>
-                  <div style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--muted)' }}>{vm.id.slice(0, 10)}</div>
+                  <div style={{ color: 'var(--muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em' }}>RPC</div>
+                  <div style={{ fontFamily: 'monospace', fontWeight: 600, color: vm.rpcHealthy ? '#22c55e' : 'var(--muted)' }}>
+                    {rpcLabel}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: 'var(--muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Healing</div>
+                  <div style={{ fontFamily: 'monospace', fontWeight: 600, color: isEscalated ? '#ef4444' : 'var(--text)' }}>
+                    {vm.healLevel}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: 'var(--muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Restarts</div>
+                  <div style={{ fontFamily: 'monospace', fontWeight: 600 }}>
+                    {vm.restarts1h}/h
+                  </div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
-                {(['start', 'stop', 'reboot', 'suspend'] as const).map((action) => {
-                  const disabled = st === 'pending' ||
-                    (action === 'start' && running) ||
-                    (action === 'stop' && !running) ||
-                    (action === 'suspend' && !running);
-                  return (
-                    <button
-                      key={action}
-                      disabled={disabled}
-                      onClick={() => { void vmAction(vm.id, action); }}
-                      style={{
-                        fontSize: 11, padding: '5px 11px', borderRadius: 7, cursor: disabled ? 'not-allowed' : 'pointer',
-                        border: '1px solid var(--border)', background: 'transparent',
-                        color: disabled ? 'var(--border)' : action === 'stop' ? 'var(--danger)' : 'var(--muted)',
-                        opacity: disabled ? 0.4 : 1,
-                      }}
-                    >
-                      {st === 'pending' ? '…' : action.charAt(0).toUpperCase() + action.slice(1)}
-                    </button>
-                  );
-                })}
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: 11 }}>
+                  <span style={{ color: 'var(--muted)' }}>
+                    IP: <span style={{ fontFamily: 'monospace', color: 'var(--text)' }}>{vm.ip || 'unresolved'}</span>
+                  </span>
+                  <span style={{ color: 'var(--muted)' }}>
+                    ID: <span style={{ fontFamily: 'monospace', color: 'var(--text)' }}>{vm.id}</span>
+                  </span>
+                </div>
+                <button
+                  disabled={st === 'pending'}
+                  onClick={() => { void rebootVm(vm.id); }}
+                  style={{
+                    fontSize: 11,
+                    padding: '6px 12px',
+                    borderRadius: 7,
+                    cursor: st === 'pending' ? 'not-allowed' : 'pointer',
+                    border: '1px solid rgba(245,158,11,0.35)',
+                    background: 'rgba(245,158,11,0.08)',
+                    color: st === 'pending' ? 'var(--border)' : '#f59e0b',
+                    opacity: st === 'pending' ? 0.5 : 1,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {st === 'pending' ? 'Sending…' : 'Reboot via GAIS'}
+                </button>
               </div>
 
-              {st === 'ok' && <div style={{ fontSize: 11, color: '#22c55e', marginTop: 6 }}>Action sent ✓</div>}
-              {st === 'error' && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 6 }}>Action failed</div>}
+              {isEscalated && (
+                <div style={{ fontSize: 11, color: '#ef4444', marginTop: 8 }}>
+                  Escalated by GAIS circuit breaker or healer policy.
+                </div>
+              )}
+              {st === 'ok' && <div style={{ fontSize: 11, color: '#22c55e', marginTop: 6 }}>GAIS request accepted ✓</div>}
+              {st === 'error' && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 6 }}>GAIS request failed</div>}
             </div>
           );
         })}

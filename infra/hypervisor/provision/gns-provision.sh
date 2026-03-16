@@ -139,7 +139,8 @@ ghostchain-bootnode IN A 10.50.99.20
 ghostchain-node1    IN A 10.50.99.21
 ghostchain-node2    IN A 10.50.99.22
 l1          IN  A    10.50.99.21
-devnet      IN  A    10.50.99.45
+devnet      IN  A    38.247.149.219
+devnet-backhaul IN A 192.168.122.205
 l2-testnet  IN  A    10.50.99.77
 l3-testnet  IN  A    10.50.99.79
 l2-mainnet  IN  A    10.50.99.76
@@ -164,7 +165,6 @@ ZONE
 32  IN  PTR postgres.ghostchain.internal.
 33  IN  PTR indexer.ghostchain.internal.
 34  IN  PTR api.ghostchain.internal.
-45  IN  PTR devnet.ghostchain.internal.
 RZONE
 
   docker pull "$BIND9_IMAGE"

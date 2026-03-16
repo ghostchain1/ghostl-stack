@@ -62,7 +62,7 @@ class VM:
 VMS: List[VM] = [
     VM("ghost-dns-slave",         "dns",    "10.50.99.66"),
     VM("ghost-web",               "web",    "10.50.99.10"),
-    VM("ghostchain-devnet",       "devnet", "10.50.99.45"),
+    VM("ghostchain-devnet",       "devnet", "38.247.149.219"),
     VM("ghostchain-testnet-l1",   "l1",     "10.50.99.71"),
     VM("ghost-testnet-validator", "l1",     "10.50.99.73"),
     VM("ghostl2-testnet",         "l2",     "10.50.99.77"),

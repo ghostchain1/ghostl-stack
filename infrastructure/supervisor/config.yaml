@@ -7,9 +7,8 @@
 # An empty list means no VMs are touched automatically.
 # ---------------------------------------------------------------------------
 validators:
-  - ghost-mainnet-validator-0
-  - ghost-mainnet-validator-1
-  - ghost-testnet-validator-0
+  - ghost-mainnet-validator
+  - ghost-testnet-validator
 
 # ---------------------------------------------------------------------------
 # Managed chains — informational; used for event filtering.

@@ -60,7 +60,7 @@ export default function WalletPage() {
             Receive
           </Link>
           <Link
-            href="https://bridge.ghostchain.world"
+            href="https://bridge.ghostchain.cloud"
             className="px-5 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-xl text-sm font-medium border border-zinc-700 transition-colors"
           >
             Bridge

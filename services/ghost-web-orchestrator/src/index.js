@@ -28,6 +28,12 @@ const SERVICES = [
   { name: "web-company",    port: 3018, domain: "company.ghostchain.cloud" },
   { name: "web-status",     port: 3019, domain: "status.ghostchain.cloud" },
   { name: "web-portal",     port: 3020, domain: "portal.ghostchain.cloud" },
+  { name: "web-wallet",     port: 3021, domain: "wallet.ghostchain.cloud" },
+  { name: "web-bridge",     port: 3022, domain: "bridge.ghostchain.cloud" },
+  { name: "web-docs",       port: 3023, domain: "docs.ghostchain.cloud" },
+  { name: "web-live",       port: 3024, domain: "ghostchain.live" },
+  { name: "web-ai",         port: 3025, domain: "ai.ghostchain.cloud" },
+  { name: "web-rpc-portal", port: 3026, domain: "rpc.ghostchain.cloud" },
 ];
 
 const lastRestart = new Map();

@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: { template: "%s | GhostWallet", default: "GhostWallet — Multi-Chain GST Wallet" },
   description: "GhostWallet is the official web wallet for GhostChain (L1/L2/L3). Send, receive, and manage GST across all layers.",
-  metadataBase: new URL("https://wallet.ghostchain.world"),
+  metadataBase: new URL("https://wallet.ghostchain.cloud"),
   openGraph: { siteName: "GhostWallet", locale: "en_US", type: "website" },
 };
 

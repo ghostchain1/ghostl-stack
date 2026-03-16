@@ -2,7 +2,8 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # push-to-vm.sh — GhostChain devnet → testnet → mainnet promotion
 #
-# Run FROM the devnet VM (VM 45, 10.50.99.45) or any host with SSH access.
+# Run FROM the devnet controller (canonical public IP 38.247.149.219) or any
+# host with SSH access.
 #
 # Promotion flow:
 #   devnet (VM 45)  ──promote──▶  testnet (VMs 71/73/77/79)
@@ -45,7 +46,7 @@ SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes"
 
 # ── VM IP map ─────────────────────────────────────────────────────────────────
 declare -A VM_IP=(
-  [devnet]="10.50.99.45"
+  [devnet]="38.247.149.219"
   [dns_slave]="10.50.99.66"
   [mainnet_l1]="10.50.99.70"
   [testnet_l1]="10.50.99.71"

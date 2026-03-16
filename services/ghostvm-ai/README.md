@@ -46,12 +46,12 @@ Endpoints:
 - `config/network-desired-state.yaml`
 - `config/routing-policy.yaml`
 
-The external block currently configured:
+The live external block currently configured:
 
-- CIDR: `208.110.71.128/26`
-- Gateway: `208.110.71.129`
-- Main IP: `208.110.71.164`
-- Reserved pool: `208.110.71.171-177`
+- CIDR: `38.247.149.0/24`
+- Gateway: `38.247.149.1`
+- Primary alias: `38.247.149.218`
+- Canonical devnet control IP: `38.247.149.219`
 
 ## Tests
 

@@ -11,7 +11,7 @@ Enforced routing law:
 Metrics exported:
   ghoststack_vm_up{vm}                 — 1 if running
   ghoststack_vm_has_ip{vm,method}      — 1 if IP is visible; "method" tag explains how it was found
-  ghoststack_rpc_ok{vm,ip,port}        — 1 if web3_clientVersion responds
+  ghoststack_rpc_ok{vm,ip,port}        — 1 if ghost_blockNumber responds
   ghoststack_topology_edge{from_node,to_node} — static topology graph (1=edge exists)
 
 Environment variables (all optional):
@@ -20,7 +20,7 @@ Environment variables (all optional):
   SCRAPE_INTERVAL  default 10  (seconds)
   VIRSH_URI        default qemu:///system
   RPC_PORT_L1      default 18545
-  RPC_PORT_L2      default 29547
+  RPC_PORT_L2      default 29545
   RPC_PORT_L3      default 39545
   LIBVIRT_NETWORK  default gs-mgmt  (for DHCP lease fallback)
   GHOSTBRAIN_URL   default ""  (blank = disabled)
@@ -55,7 +55,7 @@ VIRSH_URI       = os.getenv("VIRSH_URI", "qemu:///system")
 LIBVIRT_NETWORK = os.getenv("LIBVIRT_NETWORK", "gs-mgmt")
 
 RPC_PORT_L1 = int(os.getenv("RPC_PORT_L1", "18545"))
-RPC_PORT_L2 = int(os.getenv("RPC_PORT_L2", "29547"))
+RPC_PORT_L2 = int(os.getenv("RPC_PORT_L2", "29545"))
 RPC_PORT_L3 = int(os.getenv("RPC_PORT_L3", "39545"))
 
 GHOSTBRAIN_URL = os.getenv("GHOSTBRAIN_URL", "").strip()
@@ -89,7 +89,7 @@ VMS: List[VM] = [
     # Infrastructure
     VM("ghost-dns-slave",          "dns",    "10.50.99.66"),
     VM("ghost-web",                "web",    "10.50.99.10"),
-    VM("ghostchain-devnet",        "devnet", "10.50.99.45"),
+    VM("ghostchain-devnet",        "devnet", "38.247.149.219"),
     # Testnet
     VM("ghostchain-testnet-l1",    "l1",     "10.50.99.71"),
     VM("ghost-testnet-validator",  "l1",     "10.50.99.73"),
@@ -201,7 +201,7 @@ def discover_ip(vm: VM) -> Tuple[Optional[str], str]:
 # ── RPC health probe ──────────────────────────────────────────────────────────
 def rpc_healthy(ip: str, port: int) -> bool:
     body = json.dumps(
-        {"jsonrpc": "2.0", "id": 1, "method": "web3_clientVersion", "params": []}
+        {"jsonrpc": "2.0", "id": 1, "method": "ghost_blockNumber", "params": []}
     ).encode()
     req = urllib.request.Request(
         url=f"http://{ip}:{port}",

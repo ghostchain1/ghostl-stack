@@ -6,6 +6,14 @@ const PAGES = {
     title: "Node Setup",
     intro: "Prepare a Ghost validator or node deployment with GST stake, storage, and routing-safe infrastructure defaults.",
   },
+  stake: {
+    title: "Validator Stake",
+    intro: "Review minimum GST bonding, delegation posture, and validator-set entry requirements for GhostChain participation.",
+  },
+  rewards: {
+    title: "Validator Rewards",
+    intro: "Track GST reward flows, fee participation, and performance-linked payout factors for validators and delegators.",
+  },
   "docs/validators": {
     title: "Validator Docs",
     intro: "Review GhostChain validator requirements, commissioning, monitoring, and restart protection guidance.",

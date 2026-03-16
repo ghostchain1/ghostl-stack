@@ -1110,3 +1110,7 @@ infra/gsa/terraform/.terraform/
 infra/gsa/terraform/*.tfstate
 infra/gsa/terraform/*.tfvars
 infra/gsa/k8s/**/*.secret.yaml
+
+# ghostvm-ai runtime plans and discovery state (ephemeral, timestamped)
+services/ghostvm-ai/plans/
+services/ghostvm-ai/state/

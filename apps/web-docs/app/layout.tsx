@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: { template: "%s | GhostChain Docs", default: "GhostChain Docs — Developer Documentation" },
   description: "Official developer documentation for GhostChain, GhostL2, GhostL3, GhostBrain AI, GNS, GhostXchange, and the GST token.",
-  metadataBase: new URL("https://docs.ghostchain.online"),
+  metadataBase: new URL("https://docs.ghostchain.cloud"),
   openGraph: { siteName: "GhostChain Docs", locale: "en_US", type: "website" },
 };
 

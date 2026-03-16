@@ -27,15 +27,15 @@ export GS_MGMT_GW="10.50.99.1"
 # Primary uplink:  208.110.71.164/26  (block 208.110.71.128/26, gw .129)
 # Secondary uplink: 38.247.149.218/24 (block 38.247.149.0/24,   gw .1)
 #
-# Public IP assignments (canonical — match actual br0 configuration):
-#   208.110.71.164/26  — Hypervisor primary (br0)
-#   38.247.149.218/24  — Hypervisor secondary (br0)
-#   38.247.149.219/24  — ghostchain-devnet VM (enp2s0, public-facing NIC)
-#   38.247.149.220/24  — Reserved / available (on br0)
-#   38.247.149.221/24  — Reserved / available (on br0)
-#   38.247.149.222/24  — Reserved / available (on br0)
-#   38.247.149.223/24  — Reserved / available (on br0)
-#   38.247.149.224/24  — Reserved / available (on br0)
+# Public IP assignments (live public-controller profile):
+#   208.110.71.164/26  — Historical hypervisor primary (br0)
+#   38.247.149.218/24  — Primary GhostChain portal alias on ghostchain-devnet
+#   38.247.149.219/24  — Canonical ghostchain-devnet control/SSH IP
+#   38.247.149.220/24  — GhostChain live/status alias
+#   38.247.149.221/24  — GhostXchange / store alias
+#   38.247.149.222/24  — GhostBrain / AI alias
+#   38.247.149.223/24  — GhostChain bridge/link alias
+#   38.247.149.224/24  — GhostChain enterprise alias
 export GS_HV_PRIMARY_IP="208.110.71.164"
 export GS_HV_PRIMARY_CIDR="208.110.71.128/26"
 export GS_HV_PRIMARY_GW="208.110.71.129"
@@ -43,10 +43,11 @@ export GS_HV_PRIMARY_GW="208.110.71.129"
 export GS_PUBLIC_CIDR="38.247.149.0/24"
 export GS_PUBLIC_GW="38.247.149.1"
 export GS_PUBLIC_NETMASK="255.255.255.0"
-# Hypervisor secondary address on br0
+# Primary public alias carried by the live ghostchain-devnet controller
 export GS_HV_PUBLIC_IP="38.247.149.218"
-# Public IPs bound to VMs (enp2s0 on each)
+# Canonical public control IP for ghostchain-devnet
 export GS_DEVNET_PUBLIC_IP="38.247.149.219"
+export GS_DEVNET_BACKHAUL_IP="192.168.122.205"
 # Reserved IPs available for future VM assignments
 export GS_PUBLIC_RESERVED_220="38.247.149.220"
 export GS_PUBLIC_RESERVED_221="38.247.149.221"
@@ -63,7 +64,7 @@ export GS_PUBLIC_RESERVED_224="38.247.149.224"
 # They are exported so they survive into subshells when this file is sourced.
 export IP_ghost_web="10.50.99.10"
 export IP_ghost_dns_slave="10.50.99.66"
-export IP_ghostchain_devnet="10.50.99.45"
+export IP_ghostchain_devnet="38.247.149.219"
 
 # GhostChain L1 node VMs (container → VM lift-and-shift)
 export IP_ghostchain_web="10.50.99.10"          # alias: same host as ghost-web
