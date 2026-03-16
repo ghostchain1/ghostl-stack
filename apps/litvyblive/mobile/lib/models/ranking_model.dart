@@ -26,6 +26,9 @@ class RankingEntry {
     );
   }
 
+  /// Alias for username for call sites using e.name.
+  String get name => username;
+
   Map<String, dynamic> toJson() => {
         'rank': rank,
         'userId': userId,

@@ -18,7 +18,7 @@ class AgencyDashboard extends StatelessWidget {
           ),
         ],
       ),
-      body: FutureBuilder<AgencyModel>(
+      body: FutureBuilder<AgencyModel?>(
         future: ApiService.instance.getMyAgency(),
         builder: (_, snap) {
           if (snap.connectionState == ConnectionState.waiting) {

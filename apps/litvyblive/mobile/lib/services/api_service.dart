@@ -18,6 +18,21 @@ class ApiService {
 
   void setAuthToken(String token) => _authToken = token;
 
+  // ── Public API surface (used by external services) ───────────────────────
+  String get baseUrl => kApiBaseUrl;
+  Map<String, String> get authHeaders => _headers;
+
+  Future<dynamic> get(String path, {Map<String, String>? query}) =>
+      _get(path, query);
+
+  Future<dynamic> post(String path, {required Map<String, dynamic> body}) =>
+      _post(path, body);
+
+  /// Creator insights — falls through to demo data on error.
+  Future<Map<String, dynamic>> getCreatorInsights(String userId, String period) =>
+      _get('/insights/$userId', {'period': period})
+          .then((v) => v as Map<String, dynamic>);
+
   Map<String, String> get _headers => {
         'Content-Type': 'application/json',
         if (_authToken != null) 'Authorization': 'Bearer $_authToken',

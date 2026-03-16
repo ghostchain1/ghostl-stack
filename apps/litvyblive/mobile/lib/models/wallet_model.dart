@@ -29,6 +29,9 @@ class WalletModel {
     );
   }
 
+  /// Alias for stakedGst to match treasury screen expectations.
+  double get stakedBalance => stakedGst;
+
   Map<String, dynamic> toJson() => {
         'gstBalance': gstBalance,
         'stakedGst': stakedGst,

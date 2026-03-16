@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class EventModel {
   final String id;
   final String name;
@@ -46,4 +48,12 @@ class EventModel {
       };
 
   Duration get timeRemaining => endsAt.difference(DateTime.now());
+
+  Color get color {
+    try {
+      return Color(int.parse(colorHex.replaceFirst('#', '0xFF')));
+    } catch (_) {
+      return const Color(0xFF7B2FBE);
+    }
+  }
 }

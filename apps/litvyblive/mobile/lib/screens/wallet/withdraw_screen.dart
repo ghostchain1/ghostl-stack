@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/wallet_service.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/config/app_config.dart';
 
 class WithdrawScreen extends StatefulWidget {
   const WithdrawScreen({super.key});
@@ -24,7 +25,10 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
     setState(() { _loading = true; _error = null; _success = null; });
     try {
       // All withdrawals route through GhostL3 (chain ID 903)
-      await WalletService.instance.withdrawGst(amount);
+      await WalletService.instance.withdrawGst(
+        amount: amount,
+        toAddress: AppConfig.walletAddress ?? '',
+      );
       setState(() => _success = 'Withdrawal of $amount $kGstSymbol submitted on GhostL3');
       _amountCtrl.clear();
     } catch (e) {

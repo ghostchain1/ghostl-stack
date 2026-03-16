@@ -22,10 +22,10 @@ class _SignupScreenState extends State<SignupScreen> {
       _error = null;
     });
     try {
-      await AuthService.register(
-        _usernameCtrl.text.trim(),
-        _emailCtrl.text.trim(),
-        _passCtrl.text,
+      await AuthService.instance.register(
+        username: _usernameCtrl.text.trim(),
+        email: _emailCtrl.text.trim(),
+        password: _passCtrl.text,
       );
       if (!mounted) return;
       context.go('/home');

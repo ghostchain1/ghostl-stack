@@ -451,7 +451,7 @@ class _EnterButton extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           padding: const EdgeInsets.symmetric(vertical: 12),
         ),
-        child: const Text('Enter Competition', fontWeight: FontWeight.bold),
+        child: const Text('Enter Competition', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
     );
   }

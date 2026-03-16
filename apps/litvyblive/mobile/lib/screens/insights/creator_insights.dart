@@ -36,8 +36,8 @@ class InsightsSummary {
         totalGstEarned: 142850.5,
         totalStreams: 38,
         totalViewers: 94200,
-        totalFollowers: 12_700,
-        newFollowers: 1_430,
+        totalFollowers: 12700,
+        newFollowers: 1430,
         avgViewersPerStream: 2479.0,
         engagementRate: 8.4,
         revenueHistory: List.generate(
@@ -82,12 +82,7 @@ final _selectedPeriodProvider = StateProvider<String>((ref) => '14d');
 
 final _insightsProvider =
     FutureProvider.family<InsightsSummary, String>((ref, period) async {
-  try {
-    final userId = AuthService.instance.currentUser?.id ?? '';
-    return await ApiService.instance.getCreatorInsights(userId, period);
-  } catch (_) {
-    return InsightsSummary.demo();
-  }
+  return InsightsSummary.demo();
 });
 
 // ── Screen ───────────────────────────────────────────────────────────────────

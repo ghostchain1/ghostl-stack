@@ -21,7 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _error = null;
     });
     try {
-      await AuthService.login(_emailCtrl.text.trim(), _passCtrl.text);
+      await AuthService.instance.login(_emailCtrl.text.trim(), _passCtrl.text);
       if (!mounted) return;
       context.go('/home');
     } catch (e) {
@@ -34,7 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _ghostWalletLogin() async {
     setState(() => _loading = true);
     try {
-      await AuthService.loginWithGhostWallet();
+      await AuthService.instance.loginWithGhostWallet('');
       if (!mounted) return;
       context.go('/home');
     } catch (e) {

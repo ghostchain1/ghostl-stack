@@ -14,17 +14,15 @@ class _LiveHostScreenState extends State<LiveHostScreen> {
   String? _streamId;
 
   Future<void> _startStream() async {
-    final id = await StreamService.instance.startStream(isAvatar: _isAvatar);
+    final stream = await StreamService.instance.startStream(isAvatarMode: _isAvatar);
     setState(() {
       _isLive = true;
-      _streamId = id;
+      _streamId = stream.id;
     });
   }
 
   Future<void> _endStream() async {
-    if (_streamId != null) {
-      await StreamService.instance.endStream(_streamId!);
-    }
+    await StreamService.instance.endStream();
     setState(() {
       _isLive = false;
       _streamId = null;

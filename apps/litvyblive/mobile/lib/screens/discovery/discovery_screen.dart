@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/api_service.dart';
 import '../../models/stream_model.dart';
-import 'live_room_screen.dart';
+import '../live/live_room_screen.dart';
 import '../../widgets/discovery/live_card.dart';
 
 final discoveryStreamsProvider = FutureProvider<List<StreamModel>>((ref) async {
@@ -25,7 +25,10 @@ class DiscoveryScreen extends ConsumerWidget {
               scrollDirection: Axis.vertical,
               itemCount: list.length,
               itemBuilder: (_, i) => LiveCard(
-                stream: list[i],
+                streamId: list[i].id,
+                hostName: list[i].hostName,
+                viewerCount: list[i].viewerCount,
+                title: list[i].title,
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(

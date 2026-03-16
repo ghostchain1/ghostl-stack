@@ -12,6 +12,7 @@ class UserModel {
   final int talentScore;
   final String? agencyId;
   final bool isHost;
+  final String walletAddress;
 
   const UserModel({
     required this.id,
@@ -25,6 +26,7 @@ class UserModel {
     this.talentScore = 0,
     this.agencyId,
     this.isHost = false,
+    this.walletAddress = '',
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -40,6 +42,7 @@ class UserModel {
       talentScore: (json['talentScore'] as num?)?.toInt() ?? 0,
       agencyId: json['agencyId'] as String?,
       isHost: json['isHost'] as bool? ?? false,
+      walletAddress: json['walletAddress'] as String? ?? '',
     );
   }
 
@@ -55,6 +58,7 @@ class UserModel {
         'talentScore': talentScore,
         'agencyId': agencyId,
         'isHost': isHost,
+        'walletAddress': walletAddress,
       };
 
   static UserModel fromJsonString(String src) =>

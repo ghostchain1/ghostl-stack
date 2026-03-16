@@ -32,12 +32,12 @@ class GameHubScreen extends StatelessWidget {
   }
 
   List<GameModel> _defaultGames() => [
-        GameModel(id: 'lucky_spin', name: 'Lucky Spin', icon: '🎰', entryFee: 10),
-        GameModel(id: 'guess_number', name: 'Guess Number', icon: '🔢', entryFee: 5),
-        GameModel(id: 'dice', name: 'Dice Game', icon: '🎲', entryFee: 20),
-        GameModel(id: 'treasure_box', name: 'Treasure Box', icon: '🎁', entryFee: 15),
-        GameModel(id: 'pk_game', name: 'PK Battle', icon: '⚔️', entryFee: 50),
-        GameModel(id: 'slot', name: 'Lucky Slots', icon: '🎰', entryFee: 25),
+        GameModel(id: 'lucky_spin', name: 'Lucky Spin', iconEmoji: 'Ἷ0', entryFee: 10),
+        GameModel(id: 'guess_number', name: 'Guess Number', iconEmoji: 'ὒ2', entryFee: 5),
+        GameModel(id: 'dice', name: 'Dice Game', iconEmoji: 'Ἳ2', entryFee: 20),
+        GameModel(id: 'treasure_box', name: 'Treasure Box', iconEmoji: 'Ἰ1', entryFee: 15),
+        GameModel(id: 'pk_game', name: 'PK Battle', iconEmoji: '⚔️', entryFee: 50),
+        GameModel(id: 'slot', name: 'Lucky Slots', iconEmoji: 'Ἷ0', entryFee: 25),
       ];
 }
 

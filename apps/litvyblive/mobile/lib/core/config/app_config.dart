@@ -13,6 +13,9 @@ class AppConfig {
   /// Returns stored auth token or null.
   static String? get authToken => _prefs.getString('auth_token');
 
+  /// Async wrapper for use in Riverpod providers that await the token.
+  static Future<String?> getAuthToken() async => _prefs.getString('auth_token');
+
   /// Returns stored wallet address or null.
   static String? get walletAddress => _prefs.getString('wallet_address');
 

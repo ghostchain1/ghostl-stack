@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/multiverse_service.dart';
 import '../../services/auth_service.dart';
+import 'avatar_customizer.dart';
 
 /// Lists all avatar states for the current creator and lets them manage
 /// their 3D presence across connected virtual worlds.

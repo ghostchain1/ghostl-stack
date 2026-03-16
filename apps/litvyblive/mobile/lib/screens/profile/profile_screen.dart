@@ -18,7 +18,7 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return FutureBuilder<_ProfileData>(
+    return FutureBuilder<_ProfileData?>(
       future: _loadData(),
       builder: (_, snap) {
         if (snap.connectionState == ConnectionState.waiting) {

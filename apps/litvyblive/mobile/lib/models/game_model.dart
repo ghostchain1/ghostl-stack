@@ -32,6 +32,9 @@ class GameModel {
     );
   }
 
+  /// Alias for iconEmoji for backward-compat with call sites using game.icon.
+  String get icon => iconEmoji;
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,

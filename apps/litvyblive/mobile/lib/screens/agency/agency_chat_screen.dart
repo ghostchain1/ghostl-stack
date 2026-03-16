@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/socket_service.dart';
+import '../../services/auth_service.dart';
 
 class AgencyChatScreen extends StatefulWidget {
   const AgencyChatScreen({super.key});
@@ -10,7 +11,7 @@ class AgencyChatScreen extends StatefulWidget {
 
 class _AgencyChatScreenState extends State<AgencyChatScreen> {
   final _msgCtrl = TextEditingController();
-  final _messages = <Map<String, String>>[];
+  final _messages = <Map<String, dynamic>>();
   final _scrollCtrl = ScrollController();
 
   @override
@@ -24,19 +25,22 @@ class _AgencyChatScreenState extends State<AgencyChatScreen> {
         curve: Curves.easeOut,
       );
     });
-    SocketService.instance.joinAgencyChat();
+    SocketService.instance.joinAgencyChat(
+        AuthService.instance.currentUser?.agencyId ?? '');
   }
 
   void _send() {
     final text = _msgCtrl.text.trim();
     if (text.isEmpty) return;
-    SocketService.instance.sendAgencyMessage(text);
+    SocketService.instance.sendAgencyMessage(
+        AuthService.instance.currentUser?.agencyId ?? '', text);
     _msgCtrl.clear();
   }
 
   @override
   void dispose() {
-    SocketService.instance.leaveAgencyChat();
+    SocketService.instance.leaveAgencyChat(
+        AuthService.instance.currentUser?.agencyId ?? '');
     _msgCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();

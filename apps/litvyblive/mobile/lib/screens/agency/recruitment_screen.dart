@@ -10,7 +10,8 @@ class RecruitmentScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Recruit Hosts')),
       body: FutureBuilder<List<UserModel>>(
-        future: ApiService.instance.getTalentRecommendations(),
+        future: ApiService.instance.getTalentRecommendations().then(
+          (list) => list.map(UserModel.fromJson).toList()),
         builder: (_, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

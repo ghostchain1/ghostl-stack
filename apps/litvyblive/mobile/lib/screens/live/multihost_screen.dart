@@ -55,9 +55,9 @@ class _MultiHostScreenState extends ConsumerState<MultiHostScreen> {
 
   void _initSocket() {
     SocketService.instance.joinStream(widget.streamId);
-    SocketService.instance.onViewerUpdate((count) {
+    SocketService.instance.onViewerUpdate((data) {
       if (mounted) {
-        ref.read(_viewerCountProvider.notifier).state = count;
+        ref.read(_viewerCountProvider.notifier).state = (data['count'] as num?)?.toInt() ?? 0;
       }
     });
   }
@@ -82,8 +82,16 @@ class _MultiHostScreenState extends ConsumerState<MultiHostScreen> {
             // ── Host grid ─────────────────────────────────────────────────
             Positioned.fill(
               child: MultiHostLayout(
-                streamId: widget.streamId,
-                hostCount: mode.hostCount,
+                hostViews: List.generate(
+                  mode.hostCount,
+                  (i) => Container(
+                    color: Colors.black54,
+                    child: Center(
+                      child: Text('Host ${i + 1}',
+                          style: const TextStyle(color: Colors.white54)),
+                    ),
+                  ),
+                ),
               ),
             ),
 

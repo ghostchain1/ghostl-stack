@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/wallet_service.dart';
+import '../../services/auth_service.dart';
 import '../../models/wallet_model.dart';
 import '../../core/constants/app_constants.dart';
 
@@ -11,7 +12,9 @@ class TreasuryScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Creator Treasury')),
       body: FutureBuilder<WalletModel>(
-        future: WalletService.instance.getCreatorTreasury(),
+        future: WalletService.instance
+            .getCreatorTreasury(AuthService.instance.currentUser?.id ?? '')
+            .then(WalletModel.fromJson),
         builder: (_, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

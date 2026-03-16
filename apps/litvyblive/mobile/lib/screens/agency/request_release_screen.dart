@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
 
 class RequestReleaseScreen extends StatefulWidget {
   const RequestReleaseScreen({super.key});
@@ -17,7 +18,10 @@ class _RequestReleaseScreenState extends State<RequestReleaseScreen> {
     if (_reasonCtrl.text.trim().isEmpty) return;
     setState(() { _loading = true; _result = null; });
     try {
-      final decision = await ApiService.instance.requestHostRelease(_reasonCtrl.text.trim());
+      final decision = await ApiService.instance.requestHostRelease(
+        hostId: AuthService.instance.currentUser?.id ?? '',
+        reason: _reasonCtrl.text.trim(),
+      );
       setState(() => _result = 'AI Mediator Decision: ${decision['status']}. '
           '${decision['message'] ?? ''}');
     } catch (e) {

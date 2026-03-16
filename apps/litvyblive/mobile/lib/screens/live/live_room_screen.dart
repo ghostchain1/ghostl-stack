@@ -27,17 +27,17 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
     super.initState();
     _socket = SocketService.instance;
     _socket.joinStream(widget.streamId);
-    _socket.onViewerUpdate((count) {
-      if (mounted) setState(() => _viewerCount = count);
+    _socket.onViewerUpdate((data) {
+      if (mounted) setState(() => _viewerCount = (data['count'] as num?)?.toInt() ?? 0);
     });
-    _socket.onGiftEvent((type) {
+    _socket.onGiftEvent((data) {
       if (mounted) {
-        setState(() => _activeGiftEvent = type);
+        setState(() => _activeGiftEvent = data['type'] as String?);
         Future.delayed(const Duration(seconds: 4),
             () => mounted ? setState(() => _activeGiftEvent = null) : null);
       }
     });
-    _socket.onPkStart(() {
+    _socket.onPkStart((_) {
       if (mounted) setState(() => _isPkActive = true);
     });
   }

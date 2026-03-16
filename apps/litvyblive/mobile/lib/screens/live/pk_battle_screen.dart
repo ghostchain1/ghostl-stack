@@ -18,8 +18,11 @@ class _PkBattleScreenState extends State<PkBattleScreen> {
   @override
   void initState() {
     super.initState();
-    SocketService.instance.onPkScore((a, b) {
-      if (mounted) setState(() { _scoreA = a; _scoreB = b; });
+    SocketService.instance.onPkScore((data) {
+      if (mounted) setState(() {
+        _scoreA = (data['scoreA'] as num?)?.toInt() ?? 0;
+        _scoreB = (data['scoreB'] as num?)?.toInt() ?? 0;
+      });
     });
     _startTimer();
   }

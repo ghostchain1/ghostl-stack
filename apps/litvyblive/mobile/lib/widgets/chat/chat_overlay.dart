@@ -3,14 +3,15 @@ import '../../services/socket_service.dart';
 
 /// Scrolling chat messages overlaid on the live stream.
 class ChatOverlay extends StatefulWidget {
-  const ChatOverlay({super.key});
+  final String streamId;
+  const ChatOverlay({super.key, this.streamId = ''});
 
   @override
   State<ChatOverlay> createState() => _ChatOverlayState();
 }
 
 class _ChatOverlayState extends State<ChatOverlay> {
-  final _messages = <Map<String, String>>[];
+  final _messages = <Map<String, dynamic>>();
   final _msgCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
 
@@ -35,7 +36,7 @@ class _ChatOverlayState extends State<ChatOverlay> {
   void _send() {
     final text = _msgCtrl.text.trim();
     if (text.isEmpty) return;
-    SocketService.instance.sendChatMessage(text);
+    SocketService.instance.sendChatMessage(widget.streamId, text);
     _msgCtrl.clear();
   }
 
