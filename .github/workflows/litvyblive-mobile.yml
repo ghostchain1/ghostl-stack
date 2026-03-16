@@ -78,6 +78,9 @@ jobs:
     defaults:
       run:
         working-directory: apps/litvyblive/mobile
+    env:
+      HAS_KEYSTORE:  ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && 'true' || 'false' }}
+      HAS_FIREBASE_ANDROID: ${{ secrets.FIREBASE_ANDROID_GOOGLE_SERVICES_BASE64 != '' && 'true' || 'false' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -113,7 +116,7 @@ jobs:
 
       # ── Decode keystore (if release signing secrets exist) ──
       - name: Decode keystore
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: env.HAS_KEYSTORE == 'true'
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/litvyblive-release.jks
           cat > android/key.properties <<EOF
@@ -125,7 +128,7 @@ jobs:
 
       # ── Inject real Firebase google-services.json if available ──
       - name: Inject Firebase Android config
-        if: ${{ secrets.FIREBASE_ANDROID_GOOGLE_SERVICES_BASE64 != '' }}
+        if: env.HAS_FIREBASE_ANDROID == 'true'
         run: |
           echo "${{ secrets.FIREBASE_ANDROID_GOOGLE_SERVICES_BASE64 }}" | \
             base64 --decode > android/app/google-services.json
@@ -133,15 +136,33 @@ jobs:
       # ── Debug builds (always) ──
       - name: Build APK (debug)
         if: ${{ github.event.inputs.build_type != 'release' }}
-        run: flutter build apk --debug --target-platform android-arm64
+        run: |
+          flutter build apk --debug --target-platform android-arm64 \
+            --dart-define=GHOST_L3_RPC=${{ vars.GHOST_L3_RPC || 'http://localhost:39545' }} \
+            --dart-define=API_BASE_URL=${{ vars.LITVYB_API_URL || 'http://localhost:7001' }} \
+            --dart-define=SOCKET_URL=${{ vars.LITVYB_SOCKET_URL || 'http://localhost:7001' }} \
+            --dart-define=GHOSTBRAIN_URL=${{ vars.GHOSTBRAIN_URL || 'http://localhost:7002' }} \
+            --dart-define=MEDIASOUP_URL=${{ vars.MEDIASOUP_URL || 'http://localhost:2000' }}
 
       - name: Build APK (release)
         if: ${{ github.event.inputs.build_type == 'release' || github.event_name != 'pull_request' }}
-        run: flutter build apk --release --target-platform android-arm,android-arm64,android-x64 --split-per-abi
+        run: |
+          flutter build apk --release --target-platform android-arm,android-arm64,android-x64 --split-per-abi \
+            --dart-define=GHOST_L3_RPC=${{ vars.GHOST_L3_RPC || 'http://localhost:39545' }} \
+            --dart-define=API_BASE_URL=${{ vars.LITVYB_API_URL || 'http://localhost:7001' }} \
+            --dart-define=SOCKET_URL=${{ vars.LITVYB_SOCKET_URL || 'http://localhost:7001' }} \
+            --dart-define=GHOSTBRAIN_URL=${{ vars.GHOSTBRAIN_URL || 'http://localhost:7002' }} \
+            --dart-define=MEDIASOUP_URL=${{ vars.MEDIASOUP_URL || 'http://localhost:2000' }}
 
       - name: Build App Bundle (release)
         if: ${{ github.event.inputs.build_type == 'release' || github.event_name == 'push' }}
-        run: flutter build appbundle --release
+        run: |
+          flutter build appbundle --release \
+            --dart-define=GHOST_L3_RPC=${{ vars.GHOST_L3_RPC || 'http://localhost:39545' }} \
+            --dart-define=API_BASE_URL=${{ vars.LITVYB_API_URL || 'http://localhost:7001' }} \
+            --dart-define=SOCKET_URL=${{ vars.LITVYB_SOCKET_URL || 'http://localhost:7001' }} \
+            --dart-define=GHOSTBRAIN_URL=${{ vars.GHOSTBRAIN_URL || 'http://localhost:7002' }} \
+            --dart-define=MEDIASOUP_URL=${{ vars.MEDIASOUP_URL || 'http://localhost:2000' }}
 
       - name: Upload APKs
         uses: actions/upload-artifact@v4
@@ -162,6 +183,10 @@ jobs:
     defaults:
       run:
         working-directory: apps/litvyblive/mobile
+    env:
+      HAS_FIREBASE_IOS:  ${{ secrets.FIREBASE_IOS_GOOGLE_SERVICES_BASE64 != '' && 'true' || 'false' }}
+      HAS_APPLE_CERT:    ${{ secrets.APPLE_CERTIFICATE_BASE64 != '' && 'true' || 'false' }}
+      HAS_PROV_PROFILE:  ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 != '' && 'true' || 'false' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -194,21 +219,21 @@ jobs:
 
       # ── Inject real Firebase GoogleService-Info.plist if available ──
       - name: Inject Firebase iOS config
-        if: ${{ secrets.FIREBASE_IOS_GOOGLE_SERVICES_BASE64 != '' }}
+        if: env.HAS_FIREBASE_IOS == 'true'
         run: |
           echo "${{ secrets.FIREBASE_IOS_GOOGLE_SERVICES_BASE64 }}" | \
             base64 --decode > ios/Runner/GoogleService-Info.plist
 
       # ── Signed IPA (if Apple certificates are available) ──
       - name: Import Apple signing certificate
-        if: ${{ secrets.APPLE_CERTIFICATE_BASE64 != '' }}
+        if: env.HAS_APPLE_CERT == 'true'
         uses: apple-actions/import-codesign-certs@v3
         with:
           p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
           p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
 
       - name: Download provisioning profile
-        if: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 != '' }}
+        if: env.HAS_PROV_PROFILE == 'true'
         run: |
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           echo "${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}" | base64 --decode \
@@ -218,12 +243,15 @@ jobs:
       - name: Build iOS (no codesign)
         run: |
           flutter build ios --release --no-codesign \
-            --dart-define=GHOST_L1_RPC=${{ vars.GHOST_L1_RPC || 'http://localhost:18545' }} \
-            --dart-define=GHOST_L3_RPC=${{ vars.GHOST_L3_RPC || 'http://localhost:39545' }}
+            --dart-define=GHOST_L3_RPC=${{ vars.GHOST_L3_RPC || 'http://localhost:39545' }} \
+            --dart-define=API_BASE_URL=${{ vars.LITVYB_API_URL || 'http://localhost:7001' }} \
+            --dart-define=SOCKET_URL=${{ vars.LITVYB_SOCKET_URL || 'http://localhost:7001' }} \
+            --dart-define=GHOSTBRAIN_URL=${{ vars.GHOSTBRAIN_URL || 'http://localhost:7002' }} \
+            --dart-define=MEDIASOUP_URL=${{ vars.MEDIASOUP_URL || 'http://localhost:2000' }}
 
       # ── Signed IPA export (only with certs) ──
       - name: Export signed IPA
-        if: ${{ secrets.APPLE_CERTIFICATE_BASE64 != '' && secrets.APPLE_PROVISIONING_PROFILE_BASE64 != '' }}
+        if: env.HAS_APPLE_CERT == 'true' && env.HAS_PROV_PROFILE == 'true'
         run: |
           xcodebuild -workspace ios/Runner.xcworkspace \
             -scheme Runner \
