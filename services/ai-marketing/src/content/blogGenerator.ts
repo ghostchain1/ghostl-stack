@@ -27,7 +27,7 @@ const BLOG_TOPICS = [
   "Building on GhostL3: a developer guide to the next generation blockchain",
   "GST tokenomics explained: deflationary mechanics and staking yields",
   "GhostXchange deep dive: liquidity pools, AMM design, and yield farming",
-  "GhostVyb: the Web3 live streaming revolution powered by GST",
+  "LitVyb Live: the GhostChain streaming economy powered by GST",
 ];
 
 export async function generateBlogPost(topic: string): Promise<BlogPost> {
@@ -107,7 +107,7 @@ GhostChain uses an IBFT consensus mechanism ensuring Byzantine fault tolerance a
 1. Acquire GST tokens on GhostXchange
 2. Bridge assets from Ethereum using the Ghost Bridge
 3. Deploy your dApp using our EVM-compatible tooling
-4. Apply for ecosystem grants at ghostchain.io/grants
+4. Apply for ecosystem grants at dev.ghostchain.cloud/grants
 
 ### Conclusion
 

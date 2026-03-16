@@ -1,5 +1,6 @@
 import './globals.css';
 import type { ReactNode } from 'react';
+import { GHOST_SITES } from '@ghostchain/config';
 import { AppLayout } from '../src/modules/app-shell/components/AppLayout';
 import { AppShellProvider } from '../src/modules/app-shell/AppShellProvider';
 import { SessionProvider } from '../src/modules/identity-access/session';
@@ -14,7 +15,7 @@ export const metadata = {
   description: 'GhostChain Sovereign L1/L2/L3 blockchain management, governance, treasury, and AI-powered operations dashboard.',
   applicationName: 'GhostChain Control Center',
   keywords: ['GhostChain', 'GST', 'blockchain', 'L1', 'L2', 'L3', 'OP Stack', 'sovereign'],
-  authors: [{ name: 'GhostChain', url: 'https://ghostchain.io' }],
+  authors: [{ name: 'GhostChain', url: GHOST_SITES.main.url }],
   creator: 'GhostChain',
   publisher: 'GhostChain',
   robots: { index: false, follow: false },

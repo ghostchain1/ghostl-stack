@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Card } from '@ghostl/ui';
+import { Badge, Button, Card } from '@ghostchain/ui';
 import { apiRequest, type ApiError } from '../../lib/api';
 import { jsonWithCsrf, withCsrf } from '../../lib/csrf';
 import { normalizeRole, roleOrder } from '../identity-access/access-policy';

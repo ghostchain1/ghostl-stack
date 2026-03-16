@@ -18,14 +18,14 @@ const RESTART_COOLDOWN_MS = 120_000; // 2 minutes between restarts
 
 const SERVICES = [
   { name: "web-main",       port: 3010, domain: "ghostchain.cloud" },
-  { name: "web-investor",   port: 3011, domain: "invest.ghostchain.cloud" },
+  { name: "web-investor",   port: 3011, domain: "investor.ghostchain.cloud" },
   { name: "web-dev",        port: 3012, domain: "dev.ghostchain.cloud" },
   { name: "web-apps",       port: 3013, domain: "apps.ghostchain.cloud" },
   { name: "web-explorer",   port: 3014, domain: "explorer.ghostchain.cloud" },
   { name: "web-governance", port: 3015, domain: "governance.ghostchain.cloud" },
   { name: "web-nodes",      port: 3016, domain: "nodes.ghostchain.cloud" },
   { name: "web-exchange",   port: 3017, domain: "exchange.ghostchain.cloud" },
-  { name: "web-company",    port: 3018, domain: "ghostchain.company" },
+  { name: "web-company",    port: 3018, domain: "company.ghostchain.cloud" },
   { name: "web-status",     port: 3019, domain: "status.ghostchain.cloud" },
   { name: "web-portal",     port: 3020, domain: "portal.ghostchain.cloud" },
 ];

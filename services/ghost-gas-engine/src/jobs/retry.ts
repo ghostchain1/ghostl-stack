@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { Wallet } from 'ghost';
+import { Wallet } from '@ghostchain/sdk';
 import { config, loadChains, loadPolicies, signerForChain } from '../config.js';
 import { createGhostRpc, type TxRequest } from '../rpc/ghost-rpc.js';
 import { getActivePolicy } from '../policies/policy.js';

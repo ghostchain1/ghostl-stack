@@ -9,7 +9,7 @@ import type {
   KycProvider,
   KycReviewDecision,
   KycSummary
-} from '@ghostl/types/kyc';
+} from '@ghostchain/types/kyc';
 import { resolveApiBase } from '../../lib/runtime';
 import { jsonWithCsrf } from '../../lib/csrf';
 import { apiRequest, formatApiError, type ApiError } from '../../lib/api';

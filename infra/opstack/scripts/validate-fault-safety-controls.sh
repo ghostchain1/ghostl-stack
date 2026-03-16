@@ -56,7 +56,7 @@ to_checksum_or_empty() {
     echo ""
     return
   fi
-  node -e 'const v=process.argv[1]; try { const {ghost}=require("ghost"); console.log(ghost.getAddress(v)); } catch { process.exit(1); }' "$value" 2>/dev/null || echo ""
+  node -e 'const v=process.argv[1]; try { const {ghost}=require("@ghostchain/sdk"); console.log(ghost.getAddress(v)); } catch { process.exit(1); }' "$value" 2>/dev/null || echo ""
 }
 
 rpc_call() {
@@ -170,12 +170,12 @@ fi
 
 # 4) Manual finalization disabled on L3 path (only relayer can finalize)
 if [[ -n "$BRIDGE_ADDR" ]]; then
-  relayer_call_data="$(node -e 'const {ghost}=require("ghost"); const i=new ghost.Interface(["function relayer() view returns (address)"]); process.stdout.write(i.encodeFunctionData("relayer"));')"
+  relayer_call_data="$(node -e 'const {ghost}=require("@ghostchain/sdk"); const i=new ghost.Interface(["function relayer() view returns (address)"]); process.stdout.write(i.encodeFunctionData("relayer"));')"
   relayer_payload="$(eth_call_payload "$BRIDGE_ADDR" "$relayer_call_data")"
   relayer_raw="$(rpc_call "$L2_RPC" "$relayer_payload" | node -e 'const fs=require("fs"); const j=JSON.parse(fs.readFileSync(0,"utf8")); process.stdout.write(j.result||"")' || true)"
   l3_bridge_relayer="$(decode_address_result "$relayer_raw" | tr '[:upper:]' '[:lower:]')"
 
-  finalize_call_data="$(node -e 'const {ghost}=require("ghost"); const i=new ghost.Interface(["function finalizeToL3(address,address,uint256,uint256)"]); process.stdout.write(i.encodeFunctionData("finalizeToL3", ["0x70997970C51812dc3A010C7d01b50e0d17dc79C8","0x70997970C51812dc3A010C7d01b50e0d17dc79C8",1,1]));')"
+  finalize_call_data="$(node -e 'const {ghost}=require("@ghostchain/sdk"); const i=new ghost.Interface(["function finalizeToL3(address,address,uint256,uint256)"]); process.stdout.write(i.encodeFunctionData("finalizeToL3", ["0x70997970C51812dc3A010C7d01b50e0d17dc79C8","0x70997970C51812dc3A010C7d01b50e0d17dc79C8",1,1]));')"
   finalize_payload="$(eth_call_payload "$BRIDGE_ADDR" "$finalize_call_data" "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC")"
   finalize_resp="$(rpc_call "$L2_RPC" "$finalize_payload" || true)"
   l3_manual_finalize_revert="$(printf '%s' "$finalize_resp" | node -e 'const fs=require("fs"); try { const j=JSON.parse(fs.readFileSync(0,"utf8")); const msg=j?.error?.message || j?.error?.data || ""; process.stdout.write(String(msg)); } catch {}')"

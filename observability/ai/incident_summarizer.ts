@@ -1,4 +1,4 @@
-import type { LogIncident, NormalizedLogEvent, LogSeverity } from '@ghostl/types/observability';
+import type { LogIncident, NormalizedLogEvent, LogSeverity } from '@ghostchain/types/observability';
 
 const severityRank: Record<LogSeverity, number> = {
   INFO: 1,

@@ -1,7 +1,7 @@
 import { ghost } from "hardhat";
 import fs from "node:fs";
 import path from "node:path";
-import { getCreateAddress } from "ghost";
+import { getCreateAddress } from "@ghostchain/sdk";
 
 type L1Deployments = Record<string, string>;
 

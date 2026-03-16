@@ -9,10 +9,10 @@ import nodemailer from 'nodemailer';
 import helmet from 'helmet';
 import type {} from './types/session';
 import WebSocket from 'ws';
-import { Interface, JsonRpcProvider, Wallet } from 'ghost';
+import { Interface, JsonRpcProvider, Wallet } from '@ghostchain/sdk';
 import { z } from 'zod';
-import type { Transfer } from '@ghostl/types/bridge';
-import type { WalletRecord } from '@ghostl/types';
+import type { Transfer } from '@ghostchain/types/bridge';
+import type { WalletRecord } from '@ghostchain/types';
 import { buildAppShellRouter } from './modules/app-shell/router';
 import { buildIdentityAccessRouter } from './modules/identity-access/router';
 import { buildChainRouter } from './modules/chain/router';
@@ -73,7 +73,7 @@ import {
   TreasurySummarySchema,
   ValidatorsResponseSchema,
   WalletsResponseSchema
-} from '@ghostl/contract-schemas';
+} from '@ghostchain/contract-schemas';
 import './types/express';
 // Load environment variables from local env file when running locally (cwd may be repo root or apps/api)
 loadEnv({ path: path.join(process.cwd(), '.env.local') });

@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const features = [
   { icon: "🏦", title: "OTC Trading", desc: "Deep-liquidity OTC desk for block trades of $250K+. Dedicated relationship managers, competitive spreads." },

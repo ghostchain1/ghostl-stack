@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const ALERTS = [
   { id: 1, subject: "0x8fA3...d91c", type: "FAKE_INSTITUTION",  severity: "critical", msg: "Entity claims to be a central bank but jurisdiction hash does not match any registered sovereign authority.", ts: "2026-03-13 17:45 UTC", resolved: false },

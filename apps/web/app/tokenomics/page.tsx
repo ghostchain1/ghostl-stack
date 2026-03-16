@@ -3,7 +3,7 @@ import { FeeMarketCard } from '../../src/modules/tokenomics/components/FeeMarket
 import { TreasuryOverview } from '../../src/modules/tokenomics/components/TreasuryOverview';
 import { PayoutsPanel } from '../../src/modules/tokenomics/components/PayoutsPanel';
 import { RevenuePanel } from '../../src/modules/tokenomics/components/RevenuePanel';
-import type { SupplySnapshot, TreasuryTx } from '@ghostl/types/tokenomics';
+import type { SupplySnapshot, TreasuryTx } from '@ghostchain/types/tokenomics';
 import type { ApiError } from '../../src/lib/api';
 import { serverApiRequest } from '../../src/lib/server-api';
 import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';

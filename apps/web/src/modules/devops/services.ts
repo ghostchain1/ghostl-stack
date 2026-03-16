@@ -1,4 +1,4 @@
-import type { ForkEvent, Release } from '@ghostl/types/devops';
+import type { ForkEvent, Release } from '@ghostchain/types/devops';
 
 export interface ReleaseService {
   list(): Promise<Release[]>;

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/nextauth';
-import type { Realm } from '@ghostl/auth';
-import { realmForRole } from '@ghostl/auth';
+import type { Realm } from '@ghostchain/auth';
+import { realmForRole } from '@ghostchain/auth';
 import { fetchServerSession } from '@/src/modules/identity-access/serverSession';
 import { normalizeRole } from '@/src/modules/identity-access/access-policy';
 

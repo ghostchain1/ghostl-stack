@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 
 const RPC_L1 = process.env.RPC_L1 ?? "http://localhost:18545";
 

@@ -50,7 +50,7 @@ Why migrate?
 • L2/L3 scaling for mass-adoption apps
 • Grant funding in GST available now
 
-Interested? docs.ghostchain.io — let's build!`;
+Interested? docs.ghostchain.cloud — let's build!`;
 }
 
 export async function inviteDeveloper(dev: Developer): Promise<OutreachRecord> {

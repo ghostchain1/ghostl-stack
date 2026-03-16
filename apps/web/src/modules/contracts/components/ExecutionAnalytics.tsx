@@ -1,6 +1,6 @@
 'use client';
 
-import type { ContractCallStats } from '@ghostl/types/contracts';
+import type { ContractCallStats } from '@ghostchain/types/contracts';
 
 export function ExecutionAnalytics({ stats }: { stats: ContractCallStats }) {
   return (

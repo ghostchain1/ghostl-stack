@@ -1,5 +1,5 @@
 import express, { type NextFunction, type Request, type Response } from "express";
-import { getAddress, isAddress } from "ghost";
+import { getAddress, isAddress } from "@ghostchain/sdk";
 import { loadConfig, type GhostLayer } from "./config.js";
 import { NonceStore } from "./nonceStore.js";
 import { HubClient, type LatestRiskSnapshot, type PolicySnapshot } from "./hubClient.js";

@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { JsonRpcProvider, Contract } from 'ghost';
+import { JsonRpcProvider, Contract } from '@ghostchain/sdk';
 import { requirePermission } from '../../lib/rbac';
 import type { TokenService } from '../../services/token-store';
 import type { WalletService } from '../../services/wallet-store';
-import type { TokenRecord } from '@ghostl/types';
+import type { TokenRecord } from '@ghostchain/types';
 import { ghostWalletRpcManager } from '../../services/rpc-manager';
-import { assertMainchainId } from '@ghostl/routing-guard';
+import { assertMainchainId } from '@ghostchain/routing-guard';
 
 const TOKEN_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 const tokenImportSchema = z.object({

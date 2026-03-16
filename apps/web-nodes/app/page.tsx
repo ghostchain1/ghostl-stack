@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const steps = [
   { n: "01", title: "Acquire GST", desc: "You need a minimum of 100,000 GST to participate as a validator. Delegated staking available for smaller holders." },

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Badge, Card, Button } from '@ghostl/ui';
+import { Badge, Card, Button } from '@ghostchain/ui';
 import { useSession } from '../../../src/modules/identity-access/session';
 import { resolveApiBase } from '../../../src/lib/runtime';
 import { jsonWithCsrf } from '../../../src/lib/csrf';

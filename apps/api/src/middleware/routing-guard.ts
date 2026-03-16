@@ -20,7 +20,7 @@
  * considered layer-agnostic and is not subject to transition enforcement.
  */
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
-import { assertRoutingTransition, assertExternalEgress, assertMainchainId, layerFromNumeric } from '@ghostl/routing-guard';
+import { assertRoutingTransition, assertExternalEgress, assertMainchainId, layerFromNumeric } from '@ghostchain/routing-guard';
 
 // ─── Field extraction ─────────────────────────────────────────────────────────
 

@@ -186,7 +186,7 @@ contract GhostXBadge is ReentrancyGuard {
         require(o != address(0), "badge: not minted");
         Tier t = _badges[tokenId].tier;
         return string(abi.encodePacked(
-            "https://meta.ghostchain.io/ghostx/badge/",
+            "https://exchange.ghostchain.cloud/ghostx/badge/",
             _tierName(t),
             "/", _toString(tokenId)
         ));

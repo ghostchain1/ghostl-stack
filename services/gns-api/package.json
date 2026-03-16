@@ -10,7 +10,7 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
-    "ghost":     "^6.13.4",
+    "@ghostchain/sdk": "file:../../packages/ghost-sdk",
     "express":    "^5.2.1",
     "pg":         "^8.13.1",
     "pino":       "^9.6.0",

@@ -24,7 +24,7 @@ const CAMPAIGN_THEMES = [
   { theme: "Ghost Developer Week",         hashtags: ["#BuildOnGhost", "#GhostChain", "#Web3Dev"] },
   { theme: "GST Staking Season",           hashtags: ["#GST", "#Staking", "#DeFi", "#GhostChain"] },
   { theme: "GhostXchange Launch Surge",    hashtags: ["#GhostXchange", "#DEX", "#DeFi", "#GST"] },
-  { theme: "GhostVyb Creator Economy",     hashtags: ["#GhostVyb", "#Web3Music", "#CreatorEconomy"] },
+  { theme: "LitVyb Live Creator Economy",  hashtags: ["#LitVybLive", "#Web3Music", "#CreatorEconomy"] },
   { theme: "Ghost L3 AppChain Showcase",   hashtags: ["#GhostL3", "#AppChains", "#GhostChain"] },
 ];
 

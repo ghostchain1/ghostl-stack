@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const ALERTS = [
   { type: "INFLATION", severity: "warning", msg: "Global inflation elevated at 4.2%. Recommend coordinated rate adjustment via GCM monetary policy.",    ts: "2026-03-13 18:00 UTC" },

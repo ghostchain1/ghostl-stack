@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { ghost } from 'ghost';
+import { ghost } from '@ghostchain/sdk';
 import { z } from 'zod';
 import { config, loadChains } from '../config.js';
 import { buildEvidenceBundle, fetchPolicyVersion, recordEvidence, writeEvidenceBundle } from '../ai-core/evidence.js';

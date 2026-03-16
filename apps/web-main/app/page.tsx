@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
-import { PublicNavbar } from "@ghostl/ui";
-import { PublicFooter } from "@ghostl/ui";
+import { GHOST_SITES } from "@ghostchain/config";
+import { PublicNavbar } from "@ghostchain/ui";
+import { PublicFooter } from "@ghostchain/ui";
 
 const layers = [
   { id: "L1", name: "GhostChain", desc: "Sovereign proof-of-authority L1 with IBFT consensus. 5-second finality, 2000+ TPS.", color: "#FFD700" },
@@ -19,20 +20,20 @@ const features = [
 ];
 
 const ecosystem = [
-  { name: "invest.ghostchain.cloud",     label: "Investor Portal",   desc: "Treasury & tokenomics" },
-  { name: "dev.ghostchain.cloud",        label: "Developer Portal",  desc: "SDK, RPC, grants" },
-  { name: "apps.ghostchain.cloud",       label: "Ecosystem Apps",    desc: "DApps directory" },
-  { name: "explorer.ghostchain.cloud",   label: "Block Explorer",    desc: "L1 / L2 / L3 explorer" },
-  { name: "governance.ghostchain.cloud", label: "Governance",        desc: "DAO, proposals, voting" },
-  { name: "nodes.ghostchain.cloud",      label: "Node Operators",    desc: "Validator setup & rewards" },
-  { name: "exchange.ghostchain.cloud",   label: "Exchange",          desc: "Institutional OTC" },
-  { name: "status.ghostchain.cloud",     label: "Status",            desc: "Network health" },
+  { site: GHOST_SITES.investor, label: "Investor Portal", desc: "Treasury & tokenomics" },
+  { site: GHOST_SITES.dev, label: "Developer Portal", desc: "SDK, RPC, grants" },
+  { site: GHOST_SITES.apps, label: "Ecosystem Apps", desc: "DApps directory" },
+  { site: GHOST_SITES.explorer, label: "GhostScan", desc: "L1 / L2 / L3 explorer" },
+  { site: GHOST_SITES.governance, label: "Governance", desc: "DAO, proposals, voting" },
+  { site: GHOST_SITES.nodes, label: "Node Operators", desc: "Validator setup & rewards" },
+  { site: GHOST_SITES.exchange, label: "GhostXchange", desc: "Institutional OTC" },
+  { site: GHOST_SITES.status, label: "Status", desc: "Network health" },
 ];
 
 export default function Home() {
   return (
     <>
-      <PublicNavbar cta={{ label: "Launch App →", href: "https://portal.ghostchain.cloud" }} />
+      <PublicNavbar cta={{ label: "Launch App →", href: GHOST_SITES.portal.url }} />
 
       {/* Hero */}
       <section style={{ padding: "7rem 1.5rem 5rem", textAlign: "center", position: "relative", overflow: "hidden" }}>
@@ -51,7 +52,7 @@ export default function Home() {
           </p>
           <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
             <Link className="btn-primary" href="/ecosystem">Explore Ecosystem →</Link>
-            <Link className="btn-secondary" href="https://dev.ghostchain.cloud/docs">Developer Docs</Link>
+            <Link className="btn-secondary" href={GHOST_SITES.docs.url}>Developer Docs</Link>
           </div>
           <div style={{ marginTop: "3.5rem", display: "flex", gap: "2.5rem", justifyContent: "center", flexWrap: "wrap" }}>
             {[["2,000+","TPS L1"],["100,000+","TPS L3"],["5s","Finality"],["3","Layers"]].map(([v,l]) => (
@@ -111,11 +112,11 @@ export default function Home() {
             <h2 style={{ fontSize: "clamp(1.75rem,4vw,2.5rem)", fontWeight: 700 }}>The GhostChain Ecosystem</h2>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: "1rem" }}>
-            {ecosystem.map(e => (
-              <a key={e.name} href={"https://" + e.name} className="card" style={{ textDecoration: "none", display: "block", cursor: "pointer" }}>
-                <div style={{ fontWeight: 600, marginBottom: "0.25rem" }}>{e.label}</div>
-                <div style={{ color: "var(--text-muted)", fontSize: "0.875rem", marginBottom: "0.5rem" }}>{e.desc}</div>
-                <div style={{ color: "#FFD70099", fontSize: "0.75rem" }}>{e.name} →</div>
+            {ecosystem.map(({ site, label, desc }) => (
+              <a key={site.key} href={site.url} className="card" style={{ textDecoration: "none", display: "block", cursor: "pointer" }}>
+                <div style={{ fontWeight: 600, marginBottom: "0.25rem" }}>{label}</div>
+                <div style={{ color: "var(--text-muted)", fontSize: "0.875rem", marginBottom: "0.5rem" }}>{desc}</div>
+                <div style={{ color: "#FFD70099", fontSize: "0.75rem" }}>{site.domain} →</div>
               </a>
             ))}
           </div>
@@ -132,8 +133,8 @@ export default function Home() {
             Access grants, SDKs, devnet faucet, and full documentation. The GhostChain ecosystem is open.
           </p>
           <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-            <Link className="btn-primary" href="https://dev.ghostchain.cloud">Start Building →</Link>
-            <Link className="btn-secondary" href="https://dev.ghostchain.cloud/grants">Apply for Grant</Link>
+            <Link className="btn-primary" href={GHOST_SITES.dev.url}>Start Building →</Link>
+            <Link className="btn-secondary" href={`${GHOST_SITES.dev.url}/grants`}>Apply for Grant</Link>
           </div>
         </div>
       </section>

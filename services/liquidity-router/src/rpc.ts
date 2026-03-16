@@ -1,4 +1,4 @@
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 
 export type ExternalRpcMap = Record<string, string[]>;
 

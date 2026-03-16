@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { ghost } from 'ghost';
+import { ghost } from '@ghostchain/sdk';
 import {
   EXECUTOR_ABI_FRAGMENTS,
   buildCall,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, Badge } from '@ghostl/ui';
+import { Card, Badge } from '@ghostchain/ui';
 import type { ApiError } from '../../src/lib/api';
 import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
 

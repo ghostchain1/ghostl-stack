@@ -2,7 +2,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 import {
   EXECUTOR_ABI_FRAGMENTS,
   buildCall,

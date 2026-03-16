@@ -1,6 +1,6 @@
 'use client';
 
-import type { Webhook } from '@ghostl/types/integrations';
+import type { Webhook } from '@ghostchain/types/integrations';
 
 export function WebhooksPanel({ hooks }: { hooks: Webhook[] }) {
   return (

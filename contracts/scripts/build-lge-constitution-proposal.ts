@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import fs from "node:fs";
 import path from "node:path";
-import { AbiCoder, ghost } from "ghost";
+import { AbiCoder, ghost } from "@ghostchain/sdk";
 import {
   EXECUTOR_ABI_FRAGMENTS,
   buildCall,

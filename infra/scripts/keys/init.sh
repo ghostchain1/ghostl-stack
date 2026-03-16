@@ -49,7 +49,7 @@ echo "Generating private keys (not printing them)..."
 # Generate wallets using ghost from contracts/node_modules.
 keys_json="$(
   cd "$ROOT_DIR/contracts"
-  node -e "const {Wallet}=require('ghost'); const mk=()=>{const w=Wallet.createRandom(); return {address:w.address, privateKey:w.privateKey};}; console.log(JSON.stringify({guard:mk(), relayer:mk(), proposerL2:mk(), proposerL3:mk(), challengerL2:mk(), challengerL3:mk()}));"
+  node -e "const {Wallet}=require('@ghostchain/sdk'); const mk=()=>{const w=Wallet.createRandom(); return {address:w.address, privateKey:w.privateKey};}; console.log(JSON.stringify({guard:mk(), relayer:mk(), proposerL2:mk(), proposerL3:mk(), challengerL2:mk(), challengerL3:mk()}));"
 )"
 
 echo "$keys_json" >"$keys_path"

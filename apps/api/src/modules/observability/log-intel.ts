@@ -9,7 +9,7 @@ import type {
   LogSeverity,
   NormalizedLogEvent,
   RiskLevel
-} from '@ghostl/types/observability';
+} from '@ghostchain/types/observability';
 import { flattenLokiEntries, isCriticalSeverity, normalizeLogEvents, normalizeLogEvent } from './log-helpers';
 import type { AuditLog } from './services';
 import { CriticalLogStore } from './critical-log-store';

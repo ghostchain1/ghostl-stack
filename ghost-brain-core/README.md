@@ -7,7 +7,7 @@
 
 ## Overview
 
-GhostBrain is the AI compute layer of [GhostChain](https://ghostchain.io).
+GhostBrain is the AI compute layer of [GhostChain](https://ghostchain.cloud).
 It combines a custom 7nm AI chiplet, an MLIR tensor compiler
 (GhostTensor dialect), a TypeScript inference runtime anchored to
 GhostChain L1 governance, and a Rust hardware security subsystem.

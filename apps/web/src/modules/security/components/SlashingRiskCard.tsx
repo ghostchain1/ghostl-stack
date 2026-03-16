@@ -1,6 +1,6 @@
 'use client';
 
-import type { RiskSignal } from '@ghostl/types/security';
+import type { RiskSignal } from '@ghostchain/types/security';
 
 export function SlashingRiskCard({ signals }: { signals: RiskSignal[] }) {
   const highRisk = signals.filter((s) => ['high', 'critical'].includes(s.severity));

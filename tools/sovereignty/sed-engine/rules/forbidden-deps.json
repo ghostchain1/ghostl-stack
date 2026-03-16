@@ -1,5 +1,5 @@
 {
-  "$schema": "https://ghostchain.io/schemas/sed-engine/forbidden-deps/v1",
+  "$schema": "https://ghostchain.cloud/schemas/sed-engine/forbidden-deps/v1",
   "version": "1.0.0",
   "description": "GhostChain SED-Engine — forbidden npm package list and Ghost sovereign equivalents.",
 

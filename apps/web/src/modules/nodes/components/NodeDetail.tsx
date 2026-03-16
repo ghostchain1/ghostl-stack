@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { resolveApiBase } from '../../../lib/runtime';
 import { jsonWithCsrf } from '../../../lib/csrf';
 import { apiRequest, formatApiError, type ApiError } from '../../../lib/api';
-import type { Node, NodeMetrics } from '@ghostl/types/nodes';
+import type { Node, NodeMetrics } from '@ghostchain/types/nodes';
 
 const API_BASE = resolveApiBase();
 const formatStatus = (error: ApiError) => {

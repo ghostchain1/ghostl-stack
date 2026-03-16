@@ -4,14 +4,14 @@
 #
 # Ports:
 #   3010  ghostchain.cloud          web-main
-#   3011  invest.ghostchain.cloud   web-investor
+#   3011  investor.ghostchain.cloud web-investor
 #   3012  dev.ghostchain.cloud      web-dev
 #   3013  apps.ghostchain.cloud     web-apps
 #   3014  explorer.ghostchain.cloud web-explorer
 #   3015  governance.ghostchain.cloud web-governance
 #   3016  nodes.ghostchain.cloud    web-nodes
 #   3017  exchange.ghostchain.cloud web-exchange
-#   3018  ghostchain.company        web-company
+#   3018  company.ghostchain.cloud  web-company
 #   3019  status.ghostchain.cloud   web-status
 #   3020  portal.ghostchain.cloud   web-portal
 
@@ -67,7 +67,7 @@ services:
     environment:
       - PORT=3011
       - NEXT_PUBLIC_SITE_NAME=GhostChain Investor Relations
-      - NEXT_PUBLIC_DOMAIN=invest.ghostchain.cloud
+      - NEXT_PUBLIC_DOMAIN=investor.ghostchain.cloud
 
   web-dev:
     <<: *web-defaults
@@ -165,7 +165,7 @@ services:
     environment:
       - PORT=3018
       - NEXT_PUBLIC_SITE_NAME=GhostChain Inc.
-      - NEXT_PUBLIC_DOMAIN=ghostchain.company
+      - NEXT_PUBLIC_DOMAIN=company.ghostchain.cloud
 
   web-status:
     <<: *web-defaults

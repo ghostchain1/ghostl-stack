@@ -1,6 +1,6 @@
 import type { NextAuthConfig } from 'next-auth';
 import Keycloak from 'next-auth/providers/keycloak';
-import { isRealm, REALMS, realmFromCookieHeader, type Realm } from '@ghostl/auth';
+import { isRealm, REALMS, realmFromCookieHeader, type Realm } from '@ghostchain/auth';
 
 export { realmFromCookieHeader };
 

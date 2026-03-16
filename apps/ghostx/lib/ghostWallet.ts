@@ -1,3 +1,5 @@
+import { GHOST_RPC_ENDPOINTS } from "@ghostchain/config";
+
 /**
  * Ghost Wallet integration helper
  *
@@ -9,7 +11,7 @@
  */
 
 export const GHOST_WALLET_RDNS = "io.ghostchain.wallet";
-export const GHOST_CHAIN_L2_ID = 471; // GhostChain L2 chain id
+export const GHOST_CHAIN_L2_ID = GHOST_RPC_ENDPOINTS.l2.chainId;
 
 export interface GhostWalletProvider {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
@@ -50,15 +52,15 @@ export function resolveProvider(): GhostWalletProvider | null {
 // ─── Connection helpers ────────────────────────────────────────────────────
 
 export async function requestAccounts(provider: GhostWalletProvider): Promise<string[]> {
-  return provider.request({ method: "eth_requestAccounts" }) as Promise<string[]>;
+  return provider.request({ method: "ghost_requestAccounts" }) as Promise<string[]>;
 }
 
 export async function getAccounts(provider: GhostWalletProvider): Promise<string[]> {
-  return provider.request({ method: "eth_accounts" }) as Promise<string[]>;
+  return provider.request({ method: "ghost_accounts" }) as Promise<string[]>;
 }
 
 export async function getChainId(provider: GhostWalletProvider): Promise<number> {
-  const raw = (await provider.request({ method: "eth_chainId" })) as string;
+  const raw = (await provider.request({ method: "ghost_chainId" })) as string;
   return parseInt(raw, 16);
 }
 
@@ -67,7 +69,7 @@ export async function getBalance(
   address: string,
 ): Promise<bigint> {
   const hex = (await provider.request({
-    method: "eth_getBalance",
+    method: "ghost_getBalance",
     params: [address, "latest"],
   })) as string;
   return BigInt(hex);
@@ -88,12 +90,10 @@ export async function switchToGhostChain(provider: GhostWalletProvider): Promise
         params: [
           {
             chainId: "0x" + GHOST_CHAIN_L2_ID.toString(16),
-            chainName: "GhostChain L2",
-            nativeCurrency: { name: "Ghost", symbol: "GST", decimals: 18 },
-            rpcUrls: [
-              process.env.NEXT_PUBLIC_L2_RPC_URL ?? "https://rpc.l2.ghostchain.io",
-            ],
-            blockExplorerUrls: ["https://explorer.l2.ghostchain.io"],
+            chainName: "GhostL2",
+            nativeCurrency: { name: "Ghost Standard Token", symbol: "GST", decimals: 18 },
+            rpcUrls: [process.env.NEXT_PUBLIC_L2_RPC_URL ?? GHOST_RPC_ENDPOINTS.l2.publicUrl],
+            blockExplorerUrls: [GHOST_RPC_ENDPOINTS.l2.explorerUrl],
           },
         ],
       });

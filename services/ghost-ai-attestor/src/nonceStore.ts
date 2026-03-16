@@ -1,4 +1,4 @@
-import { getAddress } from "ghost";
+import { getAddress } from "@ghostchain/sdk";
 import fs from "node:fs/promises";
 import path from "node:path";
 

@@ -141,6 +141,9 @@ services/.state/
 # build artifacts
 apps/web/.next/
 **/.next/
+**/.next-ghost/
+**/.next-codex/
+**/.next-local-*/
 apps/web/.next-codex/
 apps/web/.next-ghost/
 apps/web/.next-local-*/

@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const modules = [
   { icon: "🤖", title: "AI Agent Registry",   href: "/gsa/agents",     desc: "All GhostBrain AI agents operating across GhostStack. Lifecycle management: register, activate, suspend, decommission." },

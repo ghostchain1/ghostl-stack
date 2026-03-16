@@ -20,7 +20,7 @@ export const GHOST_BRAND = Object.freeze({
   decimals:        18,
   tagline:         "Sovereign L1 · L2 · L3",
   description:     "GhostChain — a sovereign, multi-layer blockchain with autonomous AI governance.",
-  homepage:        "https://ghostchain.io",
+  homepage:        "https://ghostchain.cloud",
   application:     "GhostChain Control Center",
   /** Chain IDs for all supported layers. */
   chainIds: Object.freeze({

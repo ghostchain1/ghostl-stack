@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, Badge } from '@ghostl/ui';
-import { ChainOverviewSchema, type ChainOverview } from '@ghostl/contract-schemas';
-import type { Alert } from '@ghostl/types/observability';
+import { Card, Badge } from '@ghostchain/ui';
+import { ChainOverviewSchema, type ChainOverview } from '@ghostchain/contract-schemas';
+import type { Alert } from '@ghostchain/types/observability';
 import { resolveApiBase } from '../../../src/lib/runtime';
 import { apiRequest, type ApiError } from '../../../src/lib/api';
 import { DataFetchErrorCard } from '../../../src/components/DataFetchErrorCard';

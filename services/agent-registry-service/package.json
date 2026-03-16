@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "express": "^5.2.1",
-    "ghost": "^6.15.0"
+    "@ghostchain/sdk": "file:../../packages/ghost-sdk"
   },
   "engines": {
     "node": ">=22.21.0 <23"

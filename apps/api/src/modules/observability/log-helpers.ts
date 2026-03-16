@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import type { LokiLogEntry } from '../../clients/loki';
-import type { LogEvent, LogLayer, LogSeverity, NormalizedLogEvent } from '@ghostl/types/observability';
+import type { LogEvent, LogLayer, LogSeverity, NormalizedLogEvent } from '@ghostchain/types/observability';
 
 export interface FlattenedLokiEvent {
   log: LogEvent;

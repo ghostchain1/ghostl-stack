@@ -73,7 +73,6 @@
     "@types/mocha": "^10.0.10",
     "chai": "^5.1.0",
     "dotenv": "^17.3.1",
-    "ghost": "^6.16.0",
     "hardhat": "^2.26.0",
     "hardhat-gas-reporter": "^2.3.0",
     "hardhat-ghost": "file:../packages/hardhat-ghost",
@@ -88,6 +87,5 @@
     "node": ">=22.21.0 <23"
   },
   "dependencies": {
-    "ghost": "file:../packages/ghost"
   }
 }

@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const PROJECTS = [
   { name: "INFRA-HIGHWAY-I95",     nation: "gov.us", target: "$12B",  raised: "$8.4B",  pct: 70, bonds: 142 },

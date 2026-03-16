@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReorgEvent } from '@ghostl/types/chain';
+import type { ReorgEvent } from '@ghostchain/types/chain';
 
 export function ForkReorgMonitor({ events }: { events: ReorgEvent[] }) {
   return (

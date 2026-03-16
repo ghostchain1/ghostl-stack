@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const ID_TYPES = ["GOVERNMENT","CENTRAL_BANK","INSTITUTION","CORPORATION","CITIZEN","DEVICE","AI_AGENT"];
 const TYPE_COLOR: Record<string,string> = {

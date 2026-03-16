@@ -3,7 +3,7 @@
  * Deploys MockDisputeGameFactory to the current dev L1/L2 endpoints.
  * Useful for unblocking proposers/challengers when you just need a live factory address.
  */
-const { ghost } = require("ghost");
+const { ghost } = require("@ghostchain/sdk");
 const path = require("path");
 const fs = require("fs");
 

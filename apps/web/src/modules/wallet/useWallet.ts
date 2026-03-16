@@ -1,6 +1,6 @@
 'use client';
 
-import { formatUnits, parseUnits } from 'ghost';
+import { formatUnits, parseUnits } from '@ghostchain/sdk';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { tokensForChain, TokenConfig, SupportedChain } from './tokens';
 import {
@@ -14,7 +14,7 @@ import {
 } from './api';
 import { resolveApiBase } from '../../lib/runtime';
 import { apiRequest, formatApiError, type ApiError } from '../../lib/api';
-import type { RpcEndpoint } from '@ghostl/types/integrations';
+import type { RpcEndpoint } from '@ghostchain/types/integrations';
 
 type ChainConfig = {
   id: number;

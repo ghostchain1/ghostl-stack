@@ -9,7 +9,7 @@
     "dev": "tsc -w -p tsconfig.json"
   },
   "dependencies": {
-    "ghost": "0.0.1",
+    "@ghostchain/sdk": "file:../../packages/ghost-sdk",
     "express": "^4.21.2",
     "prom-client": "^15.1.3"
   },

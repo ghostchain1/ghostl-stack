@@ -1,4 +1,4 @@
-import type { Node, NodeMetrics } from '@ghostl/types/nodes';
+import type { Node, NodeMetrics } from '@ghostchain/types/nodes';
 
 export interface NodeInventoryService {
   list(): Promise<Node[]>;

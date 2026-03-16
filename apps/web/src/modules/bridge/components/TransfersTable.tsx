@@ -1,6 +1,6 @@
 'use client';
 
-import type { Transfer } from '@ghostl/types/bridge';
+import type { Transfer } from '@ghostchain/types/bridge';
 
 export function TransfersTable({ transfers }: { transfers: Transfer[] }) {
   return (

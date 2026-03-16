@@ -1,6 +1,6 @@
 'use client';
 
-import type { Release } from '@ghostl/types/devops';
+import type { Release } from '@ghostchain/types/devops';
 
 export function ReleasePlanner({ releases }: { releases: Release[] }) {
   return (

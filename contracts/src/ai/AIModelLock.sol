@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// @ghostchain Part of the GhostChain protocol suite — https://ghostchain.io
+// @ghostchain Part of the GhostChain protocol suite — https://ghostchain.cloud
 
 pragma solidity ^0.8.24;
 

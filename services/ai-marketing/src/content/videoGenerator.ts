@@ -80,7 +80,7 @@ Host: GhostChain delivers sub-second finality, near-zero fees — powered by GST
 Whether you're a developer building the next DeFi app, or a trader looking for speed — GhostChain has you covered.
 
 [CTA]
-Host: Visit ghostchain.io today. Grab some GST. Build something great.
+Host: Visit ghostchain.cloud today. Grab some GST. Build something great.
 
 [SCENE: Ghost logo + website URL]
 #GhostChain #GST #Web3 #Blockchain"

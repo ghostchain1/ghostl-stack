@@ -1,5 +1,6 @@
 'use client';
 
+import { GHOST_DNS_ZONES, GHOST_GNS } from "@ghostchain/config";
 import { useEffect, useState } from 'react';
 
 type DomainZone = {
@@ -17,13 +18,13 @@ const CARD: React.CSSProperties = {
   background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 22px',
 };
 
-const STATIC_DOMAINS: DomainZone[] = [
-  { domain: 'ghostchain.cloud', status: 'healthy', gnsEnabled: true },
-  { domain: 'ghostchain.info', status: 'healthy', gnsEnabled: true },
-  { domain: 'ghostchain.life', status: 'healthy', gnsEnabled: true },
-  { domain: 'ghostbrain.ai', status: 'healthy', gnsEnabled: false },
-  { domain: 'ghostxchange.io', status: 'healthy', gnsEnabled: false },
-];
+const STATIC_DOMAINS: DomainZone[] = GHOST_DNS_ZONES.map((zone) => ({
+  domain: zone.domain,
+  status: zone.status as DomainZone["status"],
+  gnsEnabled: zone.gnsEnabled,
+  recordCount: zone.recordCount,
+  ttl: zone.ttl,
+}));
 
 function statusDot(s: 'healthy' | 'degraded' | 'offline') {
   const c = s === 'healthy' ? '#22c55e' : s === 'degraded' ? '#f59e0b' : '#ef4444';
@@ -59,7 +60,7 @@ export function DomainsPage() {
       <div>
         <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Domains &amp; GNS</h1>
         <p style={{ margin: '4px 0 0', color: 'var(--muted)', fontSize: 13 }}>
-          Ghost Name System — DNS zones, GNS records, domain health
+          {GHOST_GNS.label} — DNS zones, GNS records, domain health
         </p>
       </div>
 
@@ -98,20 +99,20 @@ export function DomainsPage() {
       <div style={CARD}>
         <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 700 }}>Ghost Name System (GNS)</h3>
         <p style={{ margin: '0 0 10px', fontSize: 13, color: 'var(--muted)' }}>
-          GNS replaces ENS on GhostChain. Names resolve to wallet addresses, contract addresses, and IPFS content hashes on-chain via the GNS registry contracts.
+          {GHOST_GNS.shortLabel} replaces ENS on GhostChain. Names resolve to wallet addresses, contract addresses, and IPFS content hashes on-chain via the GNS registry contracts.
         </p>
         <div style={{ display: 'flex', gap: 16, fontSize: 12 }}>
           <div>
             <div style={{ color: 'var(--muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Registry</div>
-            <code style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--accent)' }}>contracts/src/gns/</code>
+            <code style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--accent)' }}>{GHOST_GNS.registryPath}</code>
           </div>
           <div>
             <div style={{ color: 'var(--muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Layer</div>
-            <span>GhostChain L1 + L2</span>
+            <span>{GHOST_GNS.supportedLayers.join(' + ')}</span>
           </div>
           <div>
             <div style={{ color: 'var(--muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>TLD</div>
-            <span>.ghost, .ghostchain</span>
+            <span>{GHOST_GNS.tlds.join(', ')}</span>
           </div>
         </div>
       </div>

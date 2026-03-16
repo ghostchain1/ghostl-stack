@@ -1,7 +1,7 @@
 import type { ApiError } from '../../src/lib/api';
 import { serverApiRequest } from '../../src/lib/server-api';
 import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
-import type { KycApplicant, KycPolicy, KycProvider, KycSummary } from '@ghostl/types/kyc';
+import type { KycApplicant, KycPolicy, KycProvider, KycSummary } from '@ghostchain/types/kyc';
 import { KycDashboard } from '../../src/modules/kyc/KycDashboard';
 
 export default async function KycPage() {

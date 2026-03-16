@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { JsonRpcProvider } from 'ghost';
+import { JsonRpcProvider } from '@ghostchain/sdk';
 import { requirePermission } from '../../lib/rbac';
 import { ghostWalletRpcManager } from '../../services/rpc-manager';
 

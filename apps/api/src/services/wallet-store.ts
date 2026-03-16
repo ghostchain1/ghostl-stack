@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
-import type { WalletRecord, WalletPolicy } from '@ghostl/types';
+import type { WalletRecord, WalletPolicy } from '@ghostchain/types';
 import { openSqlite, type SqliteHandle } from './db';
 
 type CreateWalletInput = {

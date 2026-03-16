@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const SUBSYSTEMS = [
   { name: "GSX", label: "Sovereign Exchange",   health: 99.8, alerts: 0, load: 42 },

@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const PROPOSALS = [
   { id: 1, title: "Increase GSX Reserve Ratio to 12%",           type: "PARAMETER_CHANGE", agent: "ai.policy-engine", for: 7200, against: 800,  deadline: "2026-03-20", status: "active" },

@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { Card, Badge } from '@ghostl/ui';
-import { ChainOverviewSchema, type ChainOverview } from '@ghostl/contract-schemas';
-import type { Node } from '@ghostl/types/nodes';
+import { Card, Badge } from '@ghostchain/ui';
+import { ChainOverviewSchema, type ChainOverview } from '@ghostchain/contract-schemas';
+import type { Node } from '@ghostchain/types/nodes';
 import type { ApiError } from '../../../src/lib/api';
 import { serverApiRequest } from '../../../src/lib/server-api';
 import { DataFetchErrorCard } from '../../../src/components/DataFetchErrorCard';

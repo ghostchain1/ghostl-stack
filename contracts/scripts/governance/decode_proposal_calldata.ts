@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { Interface, ghost } from 'ghost';
+import { Interface, ghost } from '@ghostchain/sdk';
 import { EXECUTOR_ABI_FRAGMENTS, computeGovernorHash, computeProposalHash } from './build_proposal_calldata';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';

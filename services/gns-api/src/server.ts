@@ -26,7 +26,7 @@ import express, {
 import { Pool }    from 'pg';
 import pino        from 'pino';
 import pinoHttp    from 'pino-http';
-import { ghost }  from 'ghost';
+import { ghost }  from '@ghostchain/sdk';
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const PORT           = Number(process.env.PORT || 3000);

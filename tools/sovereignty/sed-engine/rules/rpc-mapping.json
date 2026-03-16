@@ -1,5 +1,5 @@
 {
-  "$schema": "https://ghostchain.io/schemas/sed-engine/rpc-mapping/v1",
+  "$schema": "https://ghostchain.cloud/schemas/sed-engine/rpc-mapping/v1",
   "version": "1.0.0",
   "description": "Maps Ethereum JSON-RPC method names to Ghost sovereign equivalents. The ghost_* namespace is GhostChain's canonical RPC surface. Nodes MAY also accept eth_* as a compatibility alias for standard methods, but GhostStack source code must always use ghost_*.",
 

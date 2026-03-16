@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  createGhostXBrowserProvider,
+  createGhostXContract,
+} from "@ghostchain/ghostx-sdk";
 import { useWallet } from "../context/WalletContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -61,33 +65,30 @@ export default function BadgeDisplay() {
       "function discountBps(address) view returns (uint256)",
     ];
 
-    // Use ghost via the provider
-    import("ghost").then(({ ghost }) => {
-      const web3 = new ghost.BrowserProvider(provider as unknown as ghost.Eip1193Provider);
-      const contract = new ghost.Contract(badgeAddr, abi, web3);
+    const web3 = createGhostXBrowserProvider(provider);
+    const contract = createGhostXContract(badgeAddr, abi, web3);
 
-      Promise.all([
-        contract.hasBadge(address) as Promise<boolean>,
-        contract.discountBps(address) as Promise<bigint>,
-      ])
-        .then(async ([has, discount]) => {
-          if (!has) {
-            setBadge({ tier: "NONE", tokenId: "", mintedAt: 0, updatedAt: 0, discount: 0 });
-            return;
-          }
-          const raw = await (contract.getBadge(address) as Promise<[bigint, number, bigint, bigint]>);
-          const tierNames: Tier[] = ["NONE", "BRONZE", "SILVER", "GOLD", "DIAMOND"];
-          setBadge({
-            tier:      tierNames[raw[1]] ?? "NONE",
-            tokenId:   raw[0].toString(),
-            mintedAt:  Number(raw[2]),
-            updatedAt: Number(raw[3]),
-            discount:  Number(discount),
-          });
-        })
-        .catch(() => setBadge(null))
-        .finally(() => setLoading(false));
-    });
+    Promise.all([
+      contract.hasBadge(address) as Promise<boolean>,
+      contract.discountBps(address) as Promise<bigint>,
+    ])
+      .then(async ([has, discount]) => {
+        if (!has) {
+          setBadge({ tier: "NONE", tokenId: "", mintedAt: 0, updatedAt: 0, discount: 0 });
+          return;
+        }
+        const raw = await (contract.getBadge(address) as Promise<[bigint, number, bigint, bigint]>);
+        const tierNames: Tier[] = ["NONE", "BRONZE", "SILVER", "GOLD", "DIAMOND"];
+        setBadge({
+          tier:      tierNames[raw[1]] ?? "NONE",
+          tokenId:   raw[0].toString(),
+          mintedAt:  Number(raw[2]),
+          updatedAt: Number(raw[3]),
+          discount:  Number(discount),
+        });
+      })
+      .catch(() => setBadge(null))
+      .finally(() => setLoading(false));
   }, [address, isConnected, provider]);
 
   if (!isConnected) return null;

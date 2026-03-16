@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const FEEDS = [
   { name: "gdp.usa.forecast",    value: "28.4T",    unit: "USD",  conf: 9700, agent: "ai.gdp-forecaster",   updated: "2026-03-13 17:00 UTC" },

@@ -1,4 +1,4 @@
-const { ghost } = require("ghost");
+const { ghost } = require("@ghostchain/sdk");
 const fs = require("fs");
 const rpc = process.env.RPC_L2 || "http://l2-geth:8545";
 const pk = process.env.DEPLOYER_PRIVATE_KEY;

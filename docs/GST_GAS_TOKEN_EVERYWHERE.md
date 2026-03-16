@@ -143,27 +143,27 @@ When calling `wallet_addGhostChainChain` or `wallet_switchGhostChainChain`, alwa
 {
   chainId: '0xD59EB5',      // 14000101
   chainName: 'GhostChain',
-  rpcUrls: ['https://rpc.ghostchain.io'],
+  rpcUrls: ['https://rpc.ghostchain.cloud'],
   nativeCurrency: { name: 'Ghost', symbol: 'GST', decimals: 18 },
-  blockExplorerUrls: ['https://explorer.ghostchain.io']
+  blockExplorerUrls: ['https://explorer.ghostchain.cloud']
 }
 
 // GhostL2
 {
   chainId: '0x385',         // 901
   chainName: 'GhostL2',
-  rpcUrls: ['https://rpc.l2.ghostchain.io'],
+  rpcUrls: ['https://l2rpc.ghostchain.cloud'],
   nativeCurrency: { name: 'Ghost', symbol: 'GST', decimals: 18 },
-  blockExplorerUrls: ['https://explorer-l2.ghostchain.io']
+  blockExplorerUrls: ['https://explorer.ghostchain.cloud?layer=2']
 }
 
 // GhostL3
 {
   chainId: '0x387',         // 903
   chainName: 'GhostL3',
-  rpcUrls: ['https://rpc.l3.ghostchain.io'],
+  rpcUrls: ['https://l3rpc.ghostchain.cloud'],
   nativeCurrency: { name: 'Ghost', symbol: 'GST', decimals: 18 },
-  blockExplorerUrls: ['https://explorer-l3.ghostchain.io']
+  blockExplorerUrls: ['https://explorer.ghostchain.cloud?layer=3']
 }
 ```
 

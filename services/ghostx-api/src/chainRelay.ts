@@ -8,7 +8,7 @@
  * the engine has accepted the order.  The returned on-chain order ID is
  * stored back on the local order object.
  */
-import { ghost, JsonRpcProvider, Wallet, Contract } from "ghost";
+import { ghost, JsonRpcProvider, Wallet, Contract } from "@ghostchain/sdk";
 import { Fill, LimitOrder } from "./types";
 
 // Minimal ABI – only what the relay needs.

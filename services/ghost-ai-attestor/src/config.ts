@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { getAddress, isAddress } from "ghost";
+import { getAddress, isAddress } from "@ghostchain/sdk";
 
 export type GhostLayer = 1 | 2 | 3;
 

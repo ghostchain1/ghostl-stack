@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import type { NormalizedLogEvent } from '@ghostl/types/observability';
+import type { NormalizedLogEvent } from '@ghostchain/types/observability';
 
 export interface CriticalLogRecord {
   id: string;

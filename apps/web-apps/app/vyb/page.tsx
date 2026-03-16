@@ -1,5 +1,6 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { GHOST_SITES } from "@ghostchain/config";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const features = [
   { icon: "🎥", title: "Live Streaming", desc: "Broadcast in 4K with ultra-low latency powered by GhostChain L3 WebRTC settlement." },
@@ -22,7 +23,7 @@ const stats = [
 export default function VybPage() {
   return (
     <>
-      <PublicNavbar cta={{ label: "Launch Web App", href: "https://apps.ghostchain.cloud/vyb" }} />
+      <PublicNavbar cta={{ label: "Download App", href: `${GHOST_SITES.apps.url}/vyb/download` }} />
       <main>
         {/* Hero */}
         <section style={{ padding: "100px 24px 80px", textAlign: "center", background: "linear-gradient(180deg,#0A0A0A 0%,#12040A 100%)" }}>
@@ -32,10 +33,10 @@ export default function VybPage() {
               <span style={{ color: "#EC4899", fontSize: "0.8rem", fontWeight: 600 }}>Live Now on GhostChain</span>
             </div>
             <h1 style={{ fontSize: "clamp(2.5rem,8vw,5rem)", fontWeight: 900, margin: "0 0 12px", lineHeight: 1.05 }}>
-              <span style={{ color: "#EC4899" }}>GhostVyb</span>
+              <span style={{ color: "#EC4899" }}>LitVyb Live</span>
             </h1>
             <p style={{ fontSize: "1.1rem", color: "#94a3b8", marginBottom: 8 }}>
-              powered by <strong style={{ color: "#f1f5f9" }}>LitVybz Live</strong>
+              GhostChain&apos;s social layer and creator economy mobile app
             </p>
             <p style={{ color: "#64748b", maxWidth: 540, margin: "0 auto 48px", fontSize: "1.05rem", lineHeight: 1.7 }}>
               The first live streaming platform where every gift, battle, and membership is settled on-chain.
@@ -74,7 +75,7 @@ export default function VybPage() {
                 Download for Android
               </a>
               <a
-                href="https://apps.ghostchain.cloud/vyb"
+                href={GHOST_SITES.live.url}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 10,
                   background: "transparent", color: "#EC4899",
@@ -83,7 +84,7 @@ export default function VybPage() {
                   textDecoration: "none", fontWeight: 700, fontSize: "1rem",
                 }}
               >
-                Open Web App →
+                View Product Page →
               </a>
             </div>
 

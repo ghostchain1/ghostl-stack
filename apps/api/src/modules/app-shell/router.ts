@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import type { ThemeMode } from '@ghostl/types';
+import type { ThemeMode } from '@ghostchain/types';
 import type {
   FeatureFlagsService,
   NetworkContextService,

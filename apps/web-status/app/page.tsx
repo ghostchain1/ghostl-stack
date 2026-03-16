@@ -1,5 +1,6 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { GHOST_SITES } from "@ghostchain/config";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 import { useEffect, useState } from "react";
 
 type ServiceStatus = "operational" | "degraded" | "outage" | "loading";
@@ -15,11 +16,11 @@ const SERVICES_INITIAL: ServiceState[] = [
   { name: "L1 RPC", status: "loading" },
   { name: "L2 RPC", status: "loading" },
   { name: "L3 RPC", status: "loading" },
-  { name: "Block Explorer", status: "loading" },
+  { name: "GhostScan", status: "loading" },
   { name: "Bridge", status: "loading" },
-  { name: "governance.ghostchain.cloud", status: "loading" },
-  { name: "apps.ghostchain.cloud", status: "loading" },
-  { name: "portal.ghostchain.cloud", status: "loading" },
+  { name: GHOST_SITES.governance.domain, status: "loading" },
+  { name: GHOST_SITES.apps.domain, status: "loading" },
+  { name: GHOST_SITES.portal.domain, status: "loading" },
 ];
 
 const statusDisplay: Record<ServiceStatus, { label: string; color: string; bg: string }> = {
@@ -31,27 +32,45 @@ const statusDisplay: Record<ServiceStatus, { label: string; color: string; bg: s
 
 function useServiceStatuses() {
   const [services, setServices] = useState<ServiceState[]>(SERVICES_INITIAL);
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setServices(SERVICES_INITIAL.map((s) => ({
-        ...s,
-        status: "operational" as ServiceStatus,
-        latency: Math.floor(Math.random() * 40) + 8,
-        uptime: (99.5 + Math.random() * 0.499).toFixed(3) + "%",
-      })));
-    }, 1500);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+
+    const poll = async () => {
+      try {
+        const res = await fetch("/api/services", { cache: "no-store" });
+        if (!res.ok) throw new Error(`status_http_${res.status}`);
+        const data = (await res.json()) as { services?: ServiceState[]; checkedAt?: string };
+        if (!cancelled && Array.isArray(data.services)) {
+          setServices(data.services);
+          setUpdatedAt(data.checkedAt || null);
+        }
+      } catch {
+        if (!cancelled) setServices(SERVICES_INITIAL);
+      }
+    };
+
+    void poll();
+    const id = window.setInterval(() => {
+      void poll();
+    }, 30_000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
   }, []);
-  return services;
+  return { services, updatedAt };
 }
 
 export default function StatusPage() {
-  const services = useServiceStatuses();
+  const { services, updatedAt } = useServiceStatuses();
   const allOk = services.every((s) => s.status === "operational");
 
   return (
     <>
-      <PublicNavbar cta={{ label: "View Explorer", href: "https://explorer.ghostchain.cloud" }} />
+      <PublicNavbar cta={{ label: "View Explorer", href: GHOST_SITES.explorer.url }} />
       <main>
         {/* Banner */}
         <section style={{ padding: "100px 24px 60px", textAlign: "center", background: "linear-gradient(180deg,#0A0A0A 0%,#0A0A0A 100%)" }}>
@@ -70,7 +89,9 @@ export default function StatusPage() {
                 </div>
               )}
             </div>
-            <p style={{ color: "#64748b", fontSize: "0.875rem" }}>Auto-refreshes every 30 seconds</p>
+            <p style={{ color: "#64748b", fontSize: "0.875rem" }}>
+              Auto-refreshes every 30 seconds{updatedAt ? ` · checked ${new Date(updatedAt).toLocaleTimeString()}` : ""}
+            </p>
           </div>
         </section>
 

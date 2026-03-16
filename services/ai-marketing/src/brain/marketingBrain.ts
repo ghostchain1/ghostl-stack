@@ -48,7 +48,7 @@ const GHOST_CAMPAIGNS = [
   "GhostChain developer adoption",
   "GST token awareness",
   "GhostXchange liquidity incentives",
-  "GhostVyb live streaming platform",
+  "LitVyb Live streaming platform",
   "GhostL2 scaling capabilities",
   "GhostL3 enterprise solutions",
 ];

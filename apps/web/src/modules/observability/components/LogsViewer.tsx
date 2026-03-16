@@ -1,6 +1,6 @@
 'use client';
 
-import type { LogEvent } from '@ghostl/types/observability';
+import type { LogEvent } from '@ghostchain/types/observability';
 
 export function LogsViewer({ events }: { events: LogEvent[] }) {
   return (

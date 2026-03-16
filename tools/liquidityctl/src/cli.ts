@@ -1,7 +1,7 @@
 import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 import {
   AdapterRegistryAbi,
   CircuitBreakerAbi,

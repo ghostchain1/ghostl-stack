@@ -1,4 +1,4 @@
-import type { AIExplanation, NormalizedLogEvent } from '@ghostl/types/observability';
+import type { AIExplanation, NormalizedLogEvent } from '@ghostchain/types/observability';
 
 export const analyzeRootCause = (events: NormalizedLogEvent[]): AIExplanation[] => {
   if (!events.length) return [];

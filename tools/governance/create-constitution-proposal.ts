@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { Interface, keccak256, toUtf8Bytes } from "ghost";
+import { Interface, keccak256, toUtf8Bytes } from "@ghostchain/sdk";
 
 type CliArgs = {
   proposalId: string;

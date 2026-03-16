@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GHOST_SITES } from "@ghostchain/config";
 import { GhostLogo } from "./GhostLogo";
 
 export function GhostFooter() {
@@ -13,11 +14,11 @@ export function GhostFooter() {
           </span>
         </div>
         <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-zinc-500">
-          <Link href="https://ghostchain.cloud" className="hover:text-zinc-300 transition-colors">Home</Link>
-          <Link href="https://docs.ghostchain.online" className="hover:text-zinc-300 transition-colors">Docs</Link>
-          <Link href="https://explorer.ghostchain.world" className="hover:text-zinc-300 transition-colors">GhostScan</Link>
-          <Link href="https://bridge.ghostchain.world" className="hover:text-zinc-300 transition-colors">Bridge</Link>
-          <Link href="https://rpc.ghostchain.cloud" className="hover:text-zinc-300 transition-colors">RPC</Link>
+          <Link href={GHOST_SITES.main.url} className="hover:text-zinc-300 transition-colors">Home</Link>
+          <Link href={GHOST_SITES.docs.url} className="hover:text-zinc-300 transition-colors">Docs</Link>
+          <Link href={GHOST_SITES.explorer.url} className="hover:text-zinc-300 transition-colors">GhostScan</Link>
+          <Link href={GHOST_SITES.bridge.url} className="hover:text-zinc-300 transition-colors">Bridge</Link>
+          <Link href={GHOST_SITES.rpc.url} className="hover:text-zinc-300 transition-colors">RPC</Link>
         </nav>
       </div>
     </footer>

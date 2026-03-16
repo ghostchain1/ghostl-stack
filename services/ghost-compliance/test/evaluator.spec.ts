@@ -3,7 +3,7 @@ import { evaluatePolicy } from '../src/engine/evaluator';
 import type { PolicyBundle, DecisionInput } from '../src/engine/types';
 
 const bundle: PolicyBundle = {
-  apiVersion: 'ghostchain.io/v1',
+  apiVersion: 'ghostchain.cloud/v1',
   kind: 'PolicyBundle',
   metadata: { bundleId: 'test', version: '1' },
   policies: [

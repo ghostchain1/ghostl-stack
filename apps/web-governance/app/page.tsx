@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const proposals = [
   { id: "GIP-042", title: "Increase L2 block gas limit to 50M", status: "active", votes: { for: 67, against: 21, abstain: 12 }, ends: "3 days" },

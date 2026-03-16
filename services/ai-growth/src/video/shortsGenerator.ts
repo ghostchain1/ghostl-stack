@@ -14,7 +14,7 @@ const SHORT_TOPICS = [
   "Building your first dApp on GhostChain",
   "GhostXchange: the fastest DEX in crypto",
   "What is GST staking?",
-  "GhostVyb: earn crypto while streaming",
+  "LitVyb Live: earn GST while streaming",
 ];
 
 export async function generateShortsBatch(count = 5) {

@@ -263,7 +263,7 @@ deployer_addr=""
 if command -v cast >/dev/null 2>&1; then
   deployer_addr="$(cast wallet address --private-key "$DEPLOYER_PRIVATE_KEY")"
 elif command -v node >/dev/null 2>&1; then
-  deployer_addr="$(node -e "const { Wallet } = require('ghost'); console.log(new Wallet(process.argv[1]).address)" "$DEPLOYER_PRIVATE_KEY")"
+  deployer_addr="$(node -e "const { Wallet } = require('@ghostchain/sdk'); console.log(new Wallet(process.argv[1]).address)" "$DEPLOYER_PRIVATE_KEY")"
 fi
 
 jq -n \

@@ -17,7 +17,7 @@
     "@fastify/rate-limit": "^10.3.0",
     "bullmq": "5.15.0",
     "fastify": "^5.7.4",
-    "ghost": "file:../../packages/ghost",
+    "@ghostchain/sdk": "file:../../packages/ghost-sdk",
     "ioredis": "5.4.1",
     "pg": "8.13.1",
     "prom-client": "15.1.1",

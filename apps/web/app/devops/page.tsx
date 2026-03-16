@@ -9,7 +9,7 @@ import { RollbackHistory } from '../../src/modules/devops/components/RollbackHis
 import type { ApiError } from '../../src/lib/api';
 import { serverApiRequest } from '../../src/lib/server-api';
 import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
-import type { Release, ForkEvent } from '@ghostl/types/devops';
+import type { Release, ForkEvent } from '@ghostchain/types/devops';
 import { UpgradePlans } from '../../src/modules/devops/components/UpgradePlans';
 
 type UpgradeJob = { id: string; target: string; status: 'planned' | 'running' | 'failed' | 'done'; startedAt?: string };

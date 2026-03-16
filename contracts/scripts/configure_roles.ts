@@ -1,4 +1,4 @@
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 
 const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
 

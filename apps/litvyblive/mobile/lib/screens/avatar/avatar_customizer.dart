@@ -15,7 +15,7 @@ class AvatarCustomizer extends ConsumerStatefulWidget {
 class _AvatarCustomizerState extends ConsumerState<AvatarCustomizer> {
   final _service = MultiverseService.instance;
 
-  final _modelController = TextEditingController(text: 'https://assets.ghostchain.io/avatars/default.glb');
+  final _modelController = TextEditingController(text: const String.fromEnvironment('GHOSTCHAIN_AVATAR_MODEL_URL'));
   String _selectedStyle    = 'ghost-dark';
   String _selectedAnim     = 'idle';
   bool   _saving           = false;

@@ -10,7 +10,7 @@ import {
   zeroPadValue,
   toUtf8Bytes,
   type ContractTransactionResponse,
-} from "ghost";
+} from "@ghostchain/sdk";
 
 /** Minimal ABI for ZkBatchVerifier.verifyBatch */
 const ZK_BATCH_VERIFIER_ABI = [

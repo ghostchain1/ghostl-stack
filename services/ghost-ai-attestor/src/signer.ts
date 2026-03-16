@@ -5,7 +5,7 @@ import {
   keccak256,
   toUtf8Bytes,
   type Provider
-} from "ghost";
+} from "@ghostchain/sdk";
 import {
   buildGhostAIDomain,
   normalizeAttestation,

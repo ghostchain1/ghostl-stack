@@ -1,7 +1,7 @@
 import "dotenv/config";
 import fs from "node:fs/promises";
 import express from "express";
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 import {
   AdapterRegistryAbi,
   CircuitBreakerAbi,

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 
 const INPUT_PATH = process.env.EVIDENCE_PACK_PATH || process.argv[2] || path.join(process.cwd(), "data", "evidence_pack.json");
 const SIGNER_ADDRESS = process.env.EVIDENCE_SIGNER_ADDRESS || "";

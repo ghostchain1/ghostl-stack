@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { formatUnits, parseUnits } from 'ghost';
-import { Badge, Button, Card } from '@ghostl/ui';
+import { formatUnits, parseUnits } from '@ghostchain/sdk';
+import { Badge, Button, Card } from '@ghostchain/ui';
 import { useSession } from '../../src/modules/identity-access/session';
 import { useWallet } from '../../src/modules/wallet/useWallet';
 import type { TokenConfig } from '../../src/modules/wallet/tokens';
-import type { WalletRecord, TokenRecord } from '@ghostl/types';
+import type { WalletRecord, TokenRecord } from '@ghostchain/types';
 import { resolveApiBase } from '../../src/lib/runtime';
 import { jsonWithCsrf } from '../../src/lib/csrf';
 import { fundWallet, getBalance as apiGetBalance, getTxReceipt } from '../../src/modules/wallet/api';

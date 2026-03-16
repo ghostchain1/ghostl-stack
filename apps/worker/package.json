@@ -12,7 +12,7 @@
     "start:prod": "node dist/index.js"
   },
   "dependencies": {
-    "@ghostl/api-client": "0.0.1",
+    "@ghostchain/api-client": "*",
     "bullmq": "5.70.4",
     "ioredis": "5.10.0"
   },

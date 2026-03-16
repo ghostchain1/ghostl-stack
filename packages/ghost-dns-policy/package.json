@@ -1,0 +1,17 @@
+{
+  "name": "@ghostchain/ghostdns-policy",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@ghostl/ghostdns-policy": "0.1.0"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

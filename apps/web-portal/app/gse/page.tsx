@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const modules = [
   { icon: "📊", title: "GDP Dashboard",          href: "/gse/gdp",       desc: "Real-time national GDP records, growth trends, and historical economic output across all registered sovereign nations." },

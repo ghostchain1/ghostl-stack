@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ExplorerSummarySchema, type ExplorerSummary } from '@ghostl/contract-schemas';
+import { ExplorerSummarySchema, type ExplorerSummary } from '@ghostchain/contract-schemas';
 import { resolveApiBase } from '../../../lib/runtime';
 import { apiRequest, formatApiError, type ApiError } from '../../../lib/api';
 

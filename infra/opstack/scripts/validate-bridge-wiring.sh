@@ -47,7 +47,7 @@ to_checksum_or_empty() {
     echo ""
     return
   fi
-  node -e 'const v=process.argv[1]; try { const {ghost}=require("ghost"); console.log(ghost.getAddress(v)); } catch { process.exit(1); }' "$value" 2>/dev/null || echo ""
+  node -e 'const v=process.argv[1]; try { const {ghost}=require("@ghostchain/sdk"); console.log(ghost.getAddress(v)); } catch { process.exit(1); }' "$value" 2>/dev/null || echo ""
 }
 
 rpc_call() {

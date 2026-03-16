@@ -1,7 +1,7 @@
 'use client';
 
-import { roleToRealm } from '@ghostl/auth';
-import type { Realm } from '@ghostl/auth';
+import { roleToRealm } from '@ghostchain/auth';
+import type { Realm } from '@ghostchain/auth';
 import { normalizeRole } from './access-policy';
 import { useSession } from './session';
 

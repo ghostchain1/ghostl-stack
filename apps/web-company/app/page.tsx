@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const team = [
   { name: "Alex Carter", role: "Chief Executive Officer", bio: "15 years building distributed systems. Former Ethereum core contributor." },

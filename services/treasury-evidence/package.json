@@ -11,7 +11,7 @@
     "verify_evidence_pack": "bin/verify_evidence_pack.js"
   },
   "dependencies": {
-    "ghost": "^6.15.0",
+    "@ghostchain/sdk": "file:../../packages/ghost-sdk",
     "pdfkit": "^0.15.0"
   },
   "engines": {

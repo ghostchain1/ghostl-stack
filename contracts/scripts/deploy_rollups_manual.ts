@@ -1,4 +1,4 @@
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import "dotenv/config";

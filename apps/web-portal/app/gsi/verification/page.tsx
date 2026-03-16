@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const QUEUE = [
   { subject: "bank.hsbc",          type: "TIER1_BANK",    submitted: "2026-03-13 09:00", docs: 4, status: "under_review" },

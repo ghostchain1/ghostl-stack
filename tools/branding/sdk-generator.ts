@@ -63,12 +63,12 @@ const REQUIRED_EXPORTS: RequiredExport[] = [
  * Wraps the ghost-sdk-core provider with GhostChain chain defaults.
  *
  * GhostChain RPC Endpoints:
- *   L1: https://rpc.ghostchain.io
- *   L2: https://l2.rpc.ghostchain.io
- *   L3: https://l3.rpc.ghostchain.io
+ *   L1: https://rpc.ghostchain.cloud
+ *   L2: https://l2rpc.ghostchain.cloud
+ *   L3: https://l3rpc.ghostchain.cloud
  *
  * @example
- *   const provider = new GhostProvider("https://rpc.ghostchain.io");
+ *   const provider = new GhostProvider("https://rpc.ghostchain.cloud");
  *   const balance = await provider.getGstBalance(address);
  */
 

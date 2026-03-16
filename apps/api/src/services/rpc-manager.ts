@@ -1,4 +1,4 @@
-import { JsonRpcProvider } from 'ghost';
+import { JsonRpcProvider } from '@ghostchain/sdk';
 import WebSocket from 'ws';
 import { env } from '../config/env';
 

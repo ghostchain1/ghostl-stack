@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import type { NftContract, NftToken } from '@ghostl/types/nfts';
+import type { NftContract, NftToken } from '@ghostchain/types/nfts';
 import { openSqlite, type SqliteHandle } from './db';
 
 type StoreShape = { contracts: NftContract[]; tokens: NftToken[] };

@@ -312,15 +312,15 @@ export class CosmosClient {
 export const GhostChainNetworks = {
   mainnet: {
     chainId: 'ghostchain-1',
-    restUrl: 'https://lcd.ghostchain.io',
-    rpcUrl: 'https://rpc.ghostchain.io',
-    grpcUrl: 'https://grpc.ghostchain.io:443',
+    restUrl: process.env.GHOSTCHAIN_LCD_URL || 'https://api.ghostchain.cloud',
+    rpcUrl: process.env.GHOSTCHAIN_RPC_URL || 'https://rpc.ghostchain.cloud',
+    grpcUrl: process.env.GHOSTCHAIN_GRPC_URL || 'api.ghostchain.cloud:443',
   },
   testnet: {
     chainId: 'ghostchain-testnet-1',
-    restUrl: 'https://lcd.testnet.ghostchain.io',
-    rpcUrl: 'https://rpc.testnet.ghostchain.io',
-    grpcUrl: 'https://grpc.testnet.ghostchain.io:443',
+    restUrl: process.env.GHOSTCHAIN_TESTNET_LCD_URL || 'http://localhost:1317',
+    rpcUrl: process.env.GHOSTCHAIN_TESTNET_RPC_URL || 'http://localhost:26657',
+    grpcUrl: process.env.GHOSTCHAIN_TESTNET_GRPC_URL || 'localhost:9090',
   },
   local: {
     chainId: 'ghostchain-1',

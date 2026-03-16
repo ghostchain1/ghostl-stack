@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
-import type { ApiKey, Role, User } from '@ghostl/types';
+import type { ApiKey, Role, User } from '@ghostchain/types';
 import type { ApiKeyService, AuditLogService, AuthService, RBACService, UserService } from '../modules/identity-access/services';
 import { openSqlite, type SqliteHandle } from './db';
 

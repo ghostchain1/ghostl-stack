@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import promClient from "prom-client";
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 import fs from "node:fs";
 
 const PORT = Number(process.env.PORT || "7691");

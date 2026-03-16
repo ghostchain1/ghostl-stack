@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const CAT_COLOR: Record<string,string> = {
   DECISION: "#dc2626", POLICY_PROP: "#8b5cf6", ORACLE_UPDATE: "#3b82f6",

@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@ghostchain/ghost-sdk-core": "*",
-    "@ghostl/types": "0.0.1"
+    "@ghostchain/types": "*"
   },
   "devDependencies": {
     "typescript": "5.9.3"

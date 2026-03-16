@@ -1,4 +1,4 @@
-import type { SlashEvent, Validator } from '@ghostl/types/validators';
+import type { SlashEvent, Validator } from '@ghostchain/types/validators';
 
 export interface ValidatorService {
   list(): Promise<Validator[]>;

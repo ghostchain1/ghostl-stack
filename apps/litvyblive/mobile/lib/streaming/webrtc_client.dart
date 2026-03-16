@@ -13,7 +13,7 @@ class WebRtcClient {
 
   final _iceServers = {
     'iceServers': [
-      {'urls': 'stun:stun.ghostchain.io:3478'},
+      {'urls': const String.fromEnvironment('GHOSTCHAIN_STUN_URL', defaultValue: 'stun:localhost:3478')},
     ],
   };
 

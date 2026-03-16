@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const CHANGES = [
   { id: 1, agent: "ai.policy-engine", subsystem: "GSX", param: "reserveRatio",  from: "10%",   to: "12%",     conf: 9810, status: "pending",  rationale: "Reserve stress-test shows 340% coverage gap under tail-risk scenario. Increasing ratio provides additional system stability." },

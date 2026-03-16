@@ -1,4 +1,4 @@
-import { getAddress, keccak256, solidityPacked, toUtf8Bytes } from "ghost";
+import { getAddress, keccak256, solidityPacked, toUtf8Bytes } from "@ghostchain/sdk";
 import type { GhostLayer } from "./attestation.js";
 
 export type RiskRequest = {

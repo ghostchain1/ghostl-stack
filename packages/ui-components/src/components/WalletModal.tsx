@@ -9,6 +9,16 @@ interface WalletModalProps {
   onClose: () => void;
 }
 
+type GhostWalletProvider = {
+  request: (request: { method: string }) => Promise<string[]>;
+};
+
+declare global {
+  interface Window {
+    ghostWallet?: GhostWalletProvider;
+  }
+}
+
 export function WalletModal({ open, onClose }: WalletModalProps) {
   const [connecting, setConnecting] = useState(false);
 
@@ -17,9 +27,9 @@ export function WalletModal({ open, onClose }: WalletModalProps) {
   async function handleConnect() {
     setConnecting(true);
     // GhostWallet connection via ghost-sdk-core injected provider
-    if (typeof window !== "undefined" && (window as { ghostWallet?: { request: (r: { method: string }) => Promise<string[]> } }).ghostWallet) {
+    if (typeof window !== "undefined" && window.ghostWallet) {
       try {
-        await (window as { ghostWallet: { request: (r: { method: string }) => Promise<string[]> } }).ghostWallet.request({ method: "ghost_requestAccounts" });
+        await window.ghostWallet.request({ method: "ghost_requestAccounts" });
       } catch {
         // user rejected — not an error
       }

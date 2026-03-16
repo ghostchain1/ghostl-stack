@@ -1,8 +1,8 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  distDir: process.env.NEXT_DIST_DIR || '.next-ghost',
-  output: process.env.NEXT_OUTPUT_MODE || 'standalone',
-  reactStrictMode: true,
+const { createPublicSiteNextConfig } = require("../../packages/config/index.js");
+
+module.exports = createPublicSiteNextConfig("rpc", {
+  distDir: process.env.NEXT_DIST_DIR || ".next-ghost",
+  output: process.env.NEXT_OUTPUT_MODE || "standalone",
   async headers() {
     return [
       {
@@ -17,6 +17,4 @@ const nextConfig = {
       },
     ];
   },
-};
-
-module.exports = nextConfig;
+});

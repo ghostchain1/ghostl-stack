@@ -3,7 +3,7 @@ import { ValidatorHeatMap } from '../../src/modules/validators/components/Valida
 import { ValidatorDetailCard } from '../../src/modules/validators/components/ValidatorDetailCard';
 import { VotingPowerChart } from '../../src/modules/validators/components/VotingPowerChart';
 import { ParticipationPanel } from '../../src/modules/validators/components/ParticipationPanel';
-import type { Validator, SlashEvent } from '@ghostl/types/validators';
+import type { Validator, SlashEvent } from '@ghostchain/types/validators';
 import type { ApiError } from '../../src/lib/api';
 import { serverApiRequest } from '../../src/lib/server-api';
 import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';

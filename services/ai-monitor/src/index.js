@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import express from "express";
 import client from "prom-client";
-import { Interface, ghost } from "ghost";
+import { Interface, ghost } from "@ghostchain/sdk";
 
 const env = process.env;
 const readSecret = (key) => {

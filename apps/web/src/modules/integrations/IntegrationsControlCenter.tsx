@@ -1,15 +1,15 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Card } from '@ghostl/ui';
-import type { AnalyticsEvent, WebhookStatusSummary } from '@ghostl/types';
-import type { IntegrationDefinition, IntegrationInstance, IntegrationTestResult } from '@ghostl/types/integrations';
+import { Badge, Button, Card } from '@ghostchain/ui';
+import type { AnalyticsEvent, WebhookStatusSummary } from '@ghostchain/types';
+import type { IntegrationDefinition, IntegrationInstance, IntegrationTestResult } from '@ghostchain/types/integrations';
 import { resolveApiBase } from '../../lib/runtime';
 import { jsonWithCsrf } from '../../lib/csrf';
 import { apiRequest, type ApiError, formatApiError } from '../../lib/api';
 import { DataFetchErrorCard } from '../../components/DataFetchErrorCard';
 import { RpcEndpointManager } from './components/RpcEndpointManager';
-import type { RpcEndpoint } from '@ghostl/types/integrations';
+import type { RpcEndpoint } from '@ghostchain/types/integrations';
 import { useSession } from '../identity-access/session';
 
 const API_URL = resolveApiBase();

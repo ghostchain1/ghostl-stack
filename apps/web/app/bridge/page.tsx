@@ -4,7 +4,7 @@ import { LiquidityPools } from '../../src/modules/bridge/components/LiquidityPoo
 import { DisputesPanel } from '../../src/modules/bridge/components/DisputesPanel';
 import { EmergencyControls } from '../../src/modules/bridge/components/EmergencyControls';
 import { BridgeMetrics } from '../../src/modules/bridge/components/BridgeMetrics';
-import type { Transfer } from '@ghostl/types/bridge';
+import type { Transfer } from '@ghostchain/types/bridge';
 import { serverApiRequest } from '../../src/lib/server-api';
 import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';
 import type { ApiError } from '../../src/lib/api';

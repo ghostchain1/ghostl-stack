@@ -17,7 +17,7 @@ const TEMPLATES: Record<string, string[]> = {
     "The future is gasless. GhostL2 delivers near-zero fees with the security of GhostChain L1. /GST/ holders ride free. #GhostChain",
     "📦 Developers: build on GhostL3. Deploy your app, leverage L1 security, pay gas in /GST/. Grant funding available. #GhostChain #Web3",
     "🔥 GhostXchange — the first DEX native to GhostChain. Trade, stake, earn /GST/ rewards. #DeFi #GhostChain",
-    "🎵 GhostVyb: stream, create, earn. The first Web3 live-streaming platform powered by /GST/ tips. #GhostVyb #Web3",
+    "🎵 LitVyb Live: stream, create, earn. The first GhostChain live platform powered by /GST/ tips. #LitVybLive #Web3",
   ],
   developer: [
     "Calling all Solidity devs 👻 GhostChain is EVM-compatible, 10× cheaper, and growing fast. Deploy today. #GhostChain #BuildOnGhost",

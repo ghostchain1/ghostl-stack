@@ -23,7 +23,7 @@ export default function LivePage() {
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-12 w-full">
         <div className="flex items-center justify-between mb-10">
           <div>
-            <h1 className="text-3xl font-bold text-zinc-100 mb-1">GhostChain Live</h1>
+            <h1 className="text-3xl font-bold text-zinc-100 mb-1">LitVyb Live</h1>
             <p className="text-zinc-400 text-sm">Watch and host on-chain streams. Monetize with GST on GhostL3.</p>
           </div>
           <a

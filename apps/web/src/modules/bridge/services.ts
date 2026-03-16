@@ -1,4 +1,4 @@
-import type { BridgeControl, Transfer } from '@ghostl/types/bridge';
+import type { BridgeControl, Transfer } from '@ghostchain/types/bridge';
 
 export interface BridgeService {
   list(): Promise<{ id: string; src: string; dst: string; status: string }[]>;

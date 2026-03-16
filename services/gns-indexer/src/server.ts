@@ -10,7 +10,7 @@
  */
 
 import express, { type Request, type Response } from 'express';
-import { ghost }    from 'ghost';
+import { ghost }    from '@ghostchain/sdk';
 import { Pool }      from 'pg';
 import pino          from 'pino';
 import pinoHttp      from 'pino-http';

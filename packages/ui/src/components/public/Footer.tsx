@@ -1,43 +1,7 @@
 import Link from "next/link";
+import { GHOST_PUBLIC_FOOTER_COLUMNS } from "@ghostchain/config";
 
-const cols = [
-  {
-    title: "Platform",
-    links: [
-      { label: "GhostChain L1", href: "https://ghostchain.cloud/technology" },
-      { label: "GhostL2",       href: "https://ghostchain.cloud/technology#l2" },
-      { label: "GhostL3",       href: "https://ghostchain.cloud/technology#l3" },
-      { label: "Tokenomics",    href: "https://ghostchain.cloud/tokenomics" },
-    ],
-  },
-  {
-    title: "Developers",
-    links: [
-      { label: "Documentation", href: "https://dev.ghostchain.cloud/docs" },
-      { label: "SDK",           href: "https://dev.ghostchain.cloud/sdk" },
-      { label: "RPC Endpoints", href: "https://dev.ghostchain.cloud/rpc" },
-      { label: "Grants",        href: "https://dev.ghostchain.cloud/grants" },
-    ],
-  },
-  {
-    title: "Ecosystem",
-    links: [
-      { label: "App Directory",  href: "https://apps.ghostchain.cloud" },
-      { label: "Explorer",       href: "https://explorer.ghostchain.cloud" },
-      { label: "Governance",     href: "https://governance.ghostchain.cloud" },
-      { label: "Node Operators", href: "https://nodes.ghostchain.cloud" },
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      { label: "About",   href: "https://company.ghostchain.cloud/team" },
-      { label: "Careers", href: "https://company.ghostchain.cloud/careers" },
-      { label: "Press",   href: "https://company.ghostchain.cloud/press" },
-      { label: "Contact", href: "https://company.ghostchain.cloud/contact" },
-    ],
-  },
-];
+const cols = [...GHOST_PUBLIC_FOOTER_COLUMNS];
 
 export function PublicFooter() {
   return (
@@ -62,9 +26,7 @@ export function PublicFooter() {
               <div style={{ color: "#C0C0C0", fontWeight: 600, fontSize: "0.875rem", marginBottom: "1rem", letterSpacing: "0.05em" }}>{col.title}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
                 {col.links.map(l => (
-                  <Link key={l.href} href={l.href} style={{ color: "rgba(232,232,232,0.4)", fontSize: "0.8125rem", textDecoration: "none" }}
-                    onMouseEnter={e => (e.currentTarget.style.color = "#FFD700")}
-                    onMouseLeave={e => (e.currentTarget.style.color = "rgba(232,232,232,0.4)")}>
+                  <Link key={l.href} href={l.href} style={{ color: "rgba(232,232,232,0.4)", fontSize: "0.8125rem", textDecoration: "none" }}>
                     {l.label}
                   </Link>
                 ))}

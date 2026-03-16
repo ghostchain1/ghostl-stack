@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 
 export type AuditEvent = Record<string, unknown>;
 

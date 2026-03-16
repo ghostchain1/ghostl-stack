@@ -1,4 +1,4 @@
-import type { Contract, ContractCallStats } from '@ghostl/types/contracts';
+import type { Contract, ContractCallStats } from '@ghostchain/types/contracts';
 
 export interface ContractRegistryService {
   list(): Promise<Contract[]>;

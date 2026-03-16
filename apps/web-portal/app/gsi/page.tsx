@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const modules = [
   { icon: "🗂️", title: "Identity Registry",    href: "/gsi/registry",     desc: "Register and resolve sovereign identities across governments, institutions, corporations, citizens, devices, and AI agents." },

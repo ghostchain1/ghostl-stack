@@ -1,4 +1,4 @@
-apiVersion: ghostchain.io/v1
+apiVersion: ghostchain.cloud/v1
 kind: PolicyBundle
 metadata:
   bundleId: ghostchain-global

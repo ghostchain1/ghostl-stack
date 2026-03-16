@@ -3,7 +3,7 @@ import net from "net";
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import crypto from "node:crypto";
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 import Docker from "dockerode";
 
 const PORT = Number(process.env.NETWORK_MANAGER_PORT || "7766");

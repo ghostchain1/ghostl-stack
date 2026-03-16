@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { ghost } from "ghost";
+import {
+  createGhostXBrowserProvider,
+  parseGhostXUnits,
+} from "@ghostchain/ghostx-sdk";
 import { placeOrder, ApiOrder } from "../lib/api";
 
 interface Props {
@@ -21,11 +24,14 @@ export default function PlaceOrder({ baseToken, quoteToken }: Props) {
   const [error,      setError]      = useState<string | null>(null);
 
   async function connectWallet() {
-    if (typeof window === "undefined" || !(window as any).ethereum) {
-      setError("No EVM wallet detected");
+    const walletProvider =
+      typeof window === "undefined" ? undefined : ((window as any).ghostWallet ?? (window as any).ethereum);
+
+    if (!walletProvider) {
+      setError("No GhostWallet detected");
       return;
     }
-    const provider = new ghost.BrowserProvider((window as any).ethereum);
+    const provider = createGhostXBrowserProvider(walletProvider);
     const signer   = await provider.getSigner();
     setTraderAddr(await signer.getAddress());
   }
@@ -39,8 +45,8 @@ export default function PlaceOrder({ baseToken, quoteToken }: Props) {
 
     try {
       // Parse to 18-decimal bigint strings.
-      const price18  = ghost.parseUnits(priceStr,  18).toString();
-      const amount18 = ghost.parseUnits(amountStr, 18).toString();
+      const price18  = parseGhostXUnits(priceStr, 18).toString();
+      const amount18 = parseGhostXUnits(amountStr, 18).toString();
 
       setLoading(true);
       const order = await placeOrder({

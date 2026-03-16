@@ -1,7 +1,7 @@
 import express from "express";
 import fs from "node:fs";
 import path from "node:path";
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 
 const PORT = Number(process.env.PORT || 7701);
 const STORE_PATH = process.env.AGENT_REGISTRY_STORE || path.join(process.cwd(), "data", "agent-registry.json");

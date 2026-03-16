@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Badge, Button, Card } from '@ghostl/ui';
-import type { AnalyticsEvent, WebhookStatusSummary } from '@ghostl/types';
-import { ghost, type InterfaceAbi } from 'ghost';
+import { Badge, Button, Card } from '@ghostchain/ui';
+import type { AnalyticsEvent, WebhookStatusSummary } from '@ghostchain/types';
+import { ghost, type InterfaceAbi } from '@ghostchain/sdk';
 import { resolveAiAttestorBase, resolveApiBase } from '../../lib/runtime';
 import { useSession } from '../identity-access/session';
 import { apiRequest, type ApiError, formatApiError } from '../../lib/api';

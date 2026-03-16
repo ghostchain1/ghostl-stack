@@ -1,6 +1,6 @@
 'use client';
 
-import type { ChainInfo, EpochInfo } from '@ghostl/types/chain';
+import type { ChainInfo, EpochInfo } from '@ghostchain/types/chain';
 
 export function ChainOverviewCard({
   chain,

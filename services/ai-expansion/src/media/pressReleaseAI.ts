@@ -20,9 +20,9 @@ export interface PressRelease {
 }
 
 const BOILERPLATE = `About GhostChain
-GhostChain is a next-generation multi-layer blockchain ecosystem consisting of GhostChain L1 (settlement), GhostL2 (scaling), and GhostL3 (app-chains). Powered by the GST gas token, GhostChain delivers sub-second finality and near-zero transaction fees. Learn more at ghostchain.io.
+GhostChain is a next-generation multi-layer blockchain ecosystem consisting of GhostChain L1 (settlement), GhostL2 (scaling), and GhostL3 (app-chains). Powered by the GST gas token, GhostChain delivers sub-second finality and near-zero transaction fees. Learn more at ghostchain.cloud.
 
-Contact: press@ghostchain.io`;
+Contact: press@ghostchain.cloud`;
 
 const releases: PressRelease[] = [];
 

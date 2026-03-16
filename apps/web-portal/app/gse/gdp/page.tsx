@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const mockNations = [
   { name: "United States",   iso: "USA", gdp: "27,360",  period: "2026-Q1", growth: "+2.4%" },

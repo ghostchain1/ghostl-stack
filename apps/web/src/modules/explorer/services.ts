@@ -1,4 +1,4 @@
-import type { Block, Tx } from '@ghostl/types/explorer';
+import type { Block, Tx } from '@ghostchain/types/explorer';
 
 export interface MempoolService {
   stream(onTx: (tx: Tx) => void): () => void;

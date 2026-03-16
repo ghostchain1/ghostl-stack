@@ -1,4 +1,4 @@
-import type { Anomaly, Forecast } from '@ghostl/types/ai';
+import type { Anomaly, Forecast } from '@ghostchain/types/ai';
 
 export interface AnomalyDetectionService {
   list(): Promise<Anomaly[]>;

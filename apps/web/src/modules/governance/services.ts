@@ -1,4 +1,4 @@
-import type { Proposal, Vote } from '@ghostl/types/governance';
+import type { Proposal, Vote } from '@ghostchain/types/governance';
 
 export interface GovernanceService {
   listProposals(): Promise<Proposal[]>;

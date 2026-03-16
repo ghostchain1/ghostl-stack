@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const RISK_SCORES = [
   { subsystem: "GSX", type: "Market Risk",    score: 2400, label: "Low",    color: "#10b981" },

@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import type { Request, Response } from "express";
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 import fs from "node:fs/promises";
 import path from "node:path";
 

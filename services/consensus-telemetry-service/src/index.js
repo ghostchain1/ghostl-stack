@@ -1,5 +1,5 @@
 import express from "express";
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 import promClient from "prom-client";
 import { promises as fs } from "node:fs";
 import path from "node:path";

@@ -16,7 +16,7 @@
  * Safe to re-run: skips contracts already deployed at the recorded address.
  */
 
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 import path from "node:path";
 import crypto from "node:crypto";
 import { readFileSync, promises as fs } from "node:fs";

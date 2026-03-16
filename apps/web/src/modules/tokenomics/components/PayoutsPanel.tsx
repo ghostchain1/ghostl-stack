@@ -1,6 +1,6 @@
 'use client';
 
-import type { TreasuryTx } from '@ghostl/types/tokenomics';
+import type { TreasuryTx } from '@ghostchain/types/tokenomics';
 
 export function PayoutsPanel({ payouts }: { payouts: TreasuryTx[] }) {
   return (

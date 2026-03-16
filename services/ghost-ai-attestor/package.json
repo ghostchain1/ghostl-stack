@@ -10,7 +10,7 @@
   "dependencies": {
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
-    "ghost": "file:../../packages/ghost"
+    "@ghostchain/sdk": "file:../../packages/ghost-sdk"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",

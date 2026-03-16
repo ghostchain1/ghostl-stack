@@ -1,8 +1,8 @@
 import { BlocksTable } from '../../../src/modules/explorer/components/BlocksTable';
 import { TransactionsTable } from '../../../src/modules/explorer/components/TransactionsTable';
 import { MempoolPanel } from '../../../src/modules/explorer/components/MempoolPanel';
-import { ExplorerSummarySchema, type ExplorerSummary } from '@ghostl/contract-schemas';
-import type { Block, Tx } from '@ghostl/types/explorer';
+import { ExplorerSummarySchema, type ExplorerSummary } from '@ghostchain/contract-schemas';
+import type { Block, Tx } from '@ghostchain/types/explorer';
 import type { ApiError } from '../../../src/lib/api';
 import { serverApiRequest } from '../../../src/lib/server-api';
 import { DataFetchErrorCard } from '../../../src/components/DataFetchErrorCard';

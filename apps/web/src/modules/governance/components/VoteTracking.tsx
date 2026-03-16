@@ -1,6 +1,6 @@
 'use client';
 
-import type { Proposal, Vote } from '@ghostl/types/governance';
+import type { Proposal, Vote } from '@ghostchain/types/governance';
 
 export function VoteTracking({ proposal, votes }: { proposal?: Proposal | null; votes: Vote[] }) {
   if (!proposal) {

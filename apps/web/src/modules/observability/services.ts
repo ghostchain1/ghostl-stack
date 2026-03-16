@@ -1,4 +1,4 @@
-import type { Alert, LogEvent } from '@ghostl/types/observability';
+import type { Alert, LogEvent } from '@ghostchain/types/observability';
 
 export interface MetricsService {
   listTargets(): Promise<{ name: string; url: string }[]>;

@@ -2,7 +2,7 @@
   "name": "@ghostchain/web-live",
   "version": "0.1.0",
   "private": true,
-  "description": "GhostChain streaming platform — live.ghostchain.live",
+  "description": "LitVyb Live streaming platform — apps.ghostchain.cloud/vyb",
   "scripts": {
     "dev": "PORT=${PORT:-3017} next dev",
     "build": "NEXT_IGNORE_INCORRECT_LOCKFILE=1 NEXT_DISABLE_ESLINT=1 next build",
@@ -12,7 +12,7 @@
   "dependencies": {
     "@ghostchain/ui-components": "*",
     "@ghostchain/ghost-sdk-core": "*",
-    "@ghostl/ghostwallet": "*",
+    "@ghostchain/ghostwallet-sdk": "*",
     "next": "16.1.6",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

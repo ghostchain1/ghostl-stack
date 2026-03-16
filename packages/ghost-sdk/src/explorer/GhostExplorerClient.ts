@@ -6,7 +6,7 @@
  */
 
 export interface ExplorerConfig {
-  /** Explorer base URL, e.g. https://explorer.ghostchain.io */
+  /** Explorer base URL, e.g. https://explorer.ghostchain.cloud */
   baseUrl: string;
   /** Optional API key */
   apiKey?: string;

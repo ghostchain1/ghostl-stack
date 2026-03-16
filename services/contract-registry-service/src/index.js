@@ -1,5 +1,5 @@
 import express from "express";
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 
 const PORT = Number(process.env.PORT || 7608);
 const PROM_URL = process.env.PROM_URL || "http://localhost:9090";

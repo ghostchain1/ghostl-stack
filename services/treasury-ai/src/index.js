@@ -1,5 +1,5 @@
 import express from "express";
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 
 const PORT = Number(process.env.PORT || 7630);
 const SIGNER_KEY = process.env.TREASURY_AI_SIGNER_KEY || "";

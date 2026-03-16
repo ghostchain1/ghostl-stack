@@ -6,7 +6,7 @@ import {
   keccak256,
   toUtf8Bytes,
   type InterfaceAbi
-} from "ghost";
+} from "@ghostchain/sdk";
 import type { AIAttestation, GhostLayer } from "./attestation.js";
 import { POLICY_KEYS, type LayerConfig } from "./config.js";
 

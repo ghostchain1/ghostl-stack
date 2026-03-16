@@ -1,8 +1,8 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
-import { JsonRpcProvider, Contract } from 'ghost';
-import type { TokenRecord } from '@ghostl/types';
+import { JsonRpcProvider, Contract } from '@ghostchain/sdk';
+import type { TokenRecord } from '@ghostchain/types';
 import { openSqlite, type SqliteHandle } from './db';
 
 type StoreShape = { tokens: TokenRecord[] };

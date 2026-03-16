@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const CREDS = [
   { id: 1, type: "CENTRAL_BANK_LICENSE",  subject: "bank.ecb",        issuer: "ghostchain-governance", issued: "2026-01-15", expires: "2031-01-15", valid: true },

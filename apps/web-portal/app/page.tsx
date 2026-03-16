@@ -1,5 +1,6 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { GHOST_SITE_DIRECTORY, GHOST_SITES } from "@ghostchain/config";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 import { useState } from "react";
 
 const navSections = [
@@ -7,54 +8,54 @@ const navSections = [
     category: "Chains",
     icon: "⛓",
     items: [
-      { label: "L1 Explorer", href: "https://explorer.ghostchain.cloud" },
-      { label: "L2 Explorer", href: "https://explorer.ghostchain.cloud?layer=2" },
-      { label: "L3 Explorer", href: "https://explorer.ghostchain.cloud?layer=3" },
+      { label: "L1 Explorer", href: GHOST_SITES.explorer.url },
+      { label: "L2 Explorer", href: `${GHOST_SITES.explorer.url}?layer=2` },
+      { label: "L3 Explorer", href: `${GHOST_SITES.explorer.url}?layer=3` },
     ],
   },
   {
     category: "Governance",
     icon: "🗳",
     items: [
-      { label: "Active Proposals", href: "https://governance.ghostchain.cloud" },
-      { label: "Council", href: "https://governance.ghostchain.cloud/council" },
-      { label: "Constitution", href: "https://governance.ghostchain.cloud/constitution" },
+      { label: "Active Proposals", href: GHOST_SITES.governance.url },
+      { label: "Council", href: `${GHOST_SITES.governance.url}/council` },
+      { label: "Constitution", href: `${GHOST_SITES.governance.url}/constitution` },
     ],
   },
   {
     category: "Validators",
     icon: "🔒",
     items: [
-      { label: "Validator Set", href: "https://nodes.ghostchain.cloud" },
-      { label: "My Stake", href: "https://nodes.ghostchain.cloud/stake" },
-      { label: "Rewards", href: "https://nodes.ghostchain.cloud/rewards" },
+      { label: "Validator Set", href: GHOST_SITES.nodes.url },
+      { label: "My Stake", href: `${GHOST_SITES.nodes.url}/stake` },
+      { label: "Rewards", href: `${GHOST_SITES.nodes.url}/rewards` },
     ],
   },
   {
     category: "Treasury",
     icon: "💰",
     items: [
-      { label: "Balance", href: "https://invest.ghostchain.cloud/treasury" },
-      { label: "Tokenomics", href: "https://invest.ghostchain.cloud/tokenomics" },
-      { label: "Reports", href: "https://invest.ghostchain.cloud/reports" },
+      { label: "Balance", href: `${GHOST_SITES.investor.url}/treasury` },
+      { label: "Tokenomics", href: `${GHOST_SITES.investor.url}/tokenomics` },
+      { label: "Reports", href: `${GHOST_SITES.investor.url}/reports` },
     ],
   },
   {
     category: "Developer",
     icon: "⚡",
     items: [
-      { label: "Docs", href: "https://dev.ghostchain.cloud/docs" },
-      { label: "RPC Endpoints", href: "https://dev.ghostchain.cloud#rpc" },
-      { label: "Grants", href: "https://dev.ghostchain.cloud/grants" },
+      { label: "Docs", href: GHOST_SITES.docs.url },
+      { label: "RPC Endpoints", href: GHOST_SITES.rpc.url },
+      { label: "Grants", href: `${GHOST_SITES.dev.url}/grants` },
     ],
   },
   {
     category: "Apps",
     icon: "🚀",
     items: [
-      { label: "GhostSwap", href: "https://apps.ghostchain.cloud/ghostswap" },
-      { label: "GhostWallet", href: "https://apps.ghostchain.cloud/wallet" },
-      { label: "GhostBridge", href: "https://apps.ghostchain.cloud/bridge" },
+      { label: "GhostSwap", href: `${GHOST_SITES.apps.url}/ghostswap` },
+      { label: "GhostWallet", href: GHOST_SITES.wallet.url },
+      { label: "GhostBridge", href: GHOST_SITES.bridge.url },
     ],
   },
   {
@@ -70,7 +71,7 @@ const navSections = [
     category: "Status",
     icon: "✓",
     items: [
-      { label: "System Status", href: "https://status.ghostchain.cloud" },
+      { label: "System Status", href: GHOST_SITES.status.url },
       { label: "Alerts", href: "/alerts" },
       { label: "Incidents", href: "/incidents" },
     ],
@@ -92,7 +93,7 @@ export default function PortalPage() {
 
   return (
     <>
-      <PublicNavbar cta={{ label: "ghostchain.cloud", href: "https://ghostchain.cloud" }} />
+      <PublicNavbar cta={{ label: GHOST_SITES.main.domain, href: GHOST_SITES.main.url }} />
       <main style={{ minHeight: "100vh" }}>
         {/* Header */}
         <section style={{ padding: "80px 24px 40px", textAlign: "center", background: "linear-gradient(180deg,#0A0A0A 0%,#0A0A0A 100%)" }}>
@@ -149,20 +150,9 @@ export default function PortalPage() {
                 {/* All portals grid */}
                 <h2 style={{ fontSize: "1.5rem", fontWeight: 700, margin: "48px 0 24px" }}>All Ghost Portals</h2>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 16 }}>
-                  {[
-                    { name: "Main Site", href: "https://ghostchain.cloud", color: "#FFD700" },
-                    { name: "Investor", href: "https://invest.ghostchain.cloud", color: "#10B981" },
-                    { name: "Developers", href: "https://dev.ghostchain.cloud", color: "#FFAA00" },
-                    { name: "Apps", href: "https://apps.ghostchain.cloud", color: "#A855F7" },
-                    { name: "Explorer", href: "https://explorer.ghostchain.cloud", color: "#06B6D4" },
-                    { name: "Governance", href: "https://governance.ghostchain.cloud", color: "#8B5CF6" },
-                    { name: "Validators", href: "https://nodes.ghostchain.cloud", color: "#FFD700" },
-                    { name: "Exchange", href: "https://exchange.ghostchain.cloud", color: "#F59E0B" },
-                    { name: "Company", href: "https://ghostchain.company", color: "#64748b" },
-                    { name: "Status", href: "https://status.ghostchain.cloud", color: "#10B981" },
-                  ].map((p) => (
-                    <a key={p.name} href={p.href} style={{ display: "block", padding: "14px 20px", borderRadius: 10, border: "1px solid #1e293b", background: "#0A0A0A", textDecoration: "none", color: p.color, fontWeight: 700, fontSize: "0.9rem", transition: "border-color .15s" }}>
-                      {p.name} →
+                  {GHOST_SITE_DIRECTORY.filter((site) => !["wallet", "live"].includes(site.key)).map((site, index) => (
+                    <a key={site.key} href={site.url} style={{ display: "block", padding: "14px 20px", borderRadius: 10, border: "1px solid #1e293b", background: "#0A0A0A", textDecoration: "none", color: ["#FFD700", "#10B981", "#FFAA00", "#A855F7", "#06B6D4", "#8B5CF6", "#FFD700", "#F59E0B", "#64748b", "#10B981"][index % 10], fontWeight: 700, fontSize: "0.9rem", transition: "border-color .15s" }}>
+                      {site.label} →
                     </a>
                   ))}
                 </div>

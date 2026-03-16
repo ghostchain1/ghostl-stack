@@ -33,7 +33,7 @@ export function startCampaignScheduler(): void {
       logger.info(`CampaignScheduler: social cycle — topic: "${campaign}"`);
       await Promise.allSettled([
         runTwitterCampaign(campaign),
-        telegramBroadcast(`👻 **GhostChain Update**: ${campaign}\n\nVisit ghostchain.io for more. #GhostChain #GST`),
+        telegramBroadcast(`👻 **GhostChain Update**: ${campaign}\n\nVisit ghostchain.cloud for more. #GhostChain #GST`),
       ]);
     } catch (err: any) {
       logger.error("CampaignScheduler: social cycle error", { err: err?.message });
@@ -48,7 +48,7 @@ export function startCampaignScheduler(): void {
       const campaign = plan.strategy.campaigns[0];
       await Promise.allSettled([
         runRedditCampaign(campaign, `GhostChain is live and growing fast! Check out our latest on ${campaign}.`),
-        discordBroadcast(`📢 **${campaign}**\n\nGhostChain continues to push the boundaries of L1/L2/L3 blockchain. Join the ecosystem! ghostchain.io`),
+        discordBroadcast(`📢 **${campaign}**\n\nGhostChain continues to push the boundaries of L1/L2/L3 blockchain. Join the ecosystem! ghostchain.cloud`),
       ]);
     } catch (err: any) {
       logger.error("CampaignScheduler: community cycle error", { err: err?.message });

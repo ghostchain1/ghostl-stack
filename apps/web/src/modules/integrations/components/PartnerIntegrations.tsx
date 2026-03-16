@@ -1,6 +1,6 @@
 'use client';
 
-import type { IntegrationPartner } from '@ghostl/types/integrations';
+import type { IntegrationPartner } from '@ghostchain/types/integrations';
 
 export function PartnerIntegrations({ partners }: { partners: IntegrationPartner[] }) {
   return (

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { z } from 'zod';
-import { Badge, Button, Card } from '@ghostl/ui';
+import { Badge, Button, Card } from '@ghostchain/ui';
 import {
   ChainOverviewSchema,
   ExplorerSummarySchema,
@@ -11,7 +11,7 @@ import {
   type ChainOverview,
   type ExplorerSummary,
   type ObservabilitySummary
-} from '@ghostl/contract-schemas';
+} from '@ghostchain/contract-schemas';
 import { apiRequest, type ApiError, formatApiError } from '../../lib/api';
 import { DataFetchErrorCard } from '../../components/DataFetchErrorCard';
 import { ComplianceStatusBannerClient } from '../../components/compliance/ComplianceStatusBannerClient';

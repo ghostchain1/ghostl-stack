@@ -1,5 +1,5 @@
-import { Card } from '@ghostl/ui';
-import type { Node, NodeMetrics } from '@ghostl/types/nodes';
+import { Card } from '@ghostchain/ui';
+import type { Node, NodeMetrics } from '@ghostchain/types/nodes';
 import type { ApiError } from '../../src/lib/api';
 import { serverApiRequest } from '../../src/lib/server-api';
 import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';

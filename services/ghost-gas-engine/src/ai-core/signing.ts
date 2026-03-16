@@ -1,4 +1,4 @@
-import { ghost } from 'ghost';
+import { ghost } from '@ghostchain/sdk';
 import type { PolicyUpdate } from './proposal.js';
 
 const EXECUTOR_ABI = [

@@ -7,7 +7,7 @@ import { apiRequest, formatApiError, type ApiError } from '../../../lib/api';
 import { jsonWithCsrf } from '../../../lib/csrf';
 import { normalizeRole, roleOrder } from '../../identity-access/access-policy';
 import { useSession } from '../../identity-access/session';
-import type { Contract, ContractCallStats } from '@ghostl/types/contracts';
+import type { Contract, ContractCallStats } from '@ghostchain/types/contracts';
 import { ContractsRegistry } from './ContractsRegistry';
 import { ContractDetailCard } from './ContractDetailCard';
 import { AdminControls } from './AdminControls';

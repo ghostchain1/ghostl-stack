@@ -9,21 +9,21 @@ export const GhostNetworks = {
     chainId: 1337,
     rpc:     process.env.GHOST_L1_RPC ?? "http://ghostchain-l1:8545",
     symbol:  "GST",
-    explorer:"https://explorer.ghostchain.io",
+    explorer:"https://explorer.ghostchain.cloud",
   },
   L2: {
     name:    "ghostl2",
     chainId: 1338,
     rpc:     process.env.GHOST_L2_RPC ?? "http://ghostl2:9545",
     symbol:  "GST",
-    explorer:"https://l2-explorer.ghostchain.io",
+    explorer:"https://explorer.ghostchain.cloud?layer=2",
   },
   L3: {
     name:    "ghostl3",
     chainId: 1339,
     rpc:     process.env.GHOST_L3_RPC ?? "http://ghostl3:10545",
     symbol:  "GST",
-    explorer:"https://l3-explorer.ghostchain.io",
+    explorer:"https://explorer.ghostchain.cloud?layer=3",
   },
   devnet: {
     name:    "ghostchain-devnet",
@@ -35,9 +35,9 @@ export const GhostNetworks = {
   testnet: {
     name:    "ghostchain-testnet",
     chainId: 1341,
-    rpc:     process.env.GHOST_TESTNET_RPC ?? "http://testnet.ghostchain.io:8545",
+    rpc:     process.env.GHOST_TESTNET_RPC ?? "http://localhost:8545",
     symbol:  "GST",
-    explorer:"https://testnet-explorer.ghostchain.io",
+    explorer:"http://localhost:4000",
   },
 } as const;
 

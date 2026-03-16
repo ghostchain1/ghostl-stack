@@ -164,7 +164,7 @@ const BRAND = Object.freeze({
   decimals: 18,
   unit:    "GST_UNIT",
   tagline: "Sovereign L1 · L2 · L3",
-  url:     "https://ghostchain.io",
+  url:     "https://ghostchain.cloud",
   chain:   "GhostChain",
 });
 
@@ -462,4 +462,3 @@ process.on("SIGQUIT", () => {
   server.closeAllConnections();
   server.close(() => { console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg: "shutdown_complete", pid: process.pid })); process.exit(0); });
 });
-

@@ -1,6 +1,6 @@
 'use client';
 
-import type { Validator } from '@ghostl/types/validators';
+import type { Validator } from '@ghostchain/types/validators';
 
 export function ValidatorsTable({ validators }: { validators: Validator[] }) {
   return (

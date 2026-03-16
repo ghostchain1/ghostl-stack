@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const PASSPORTS = [
   { tokenId: 1,   holder: "0x1aB2...F9c3", country: "USA", issued: "2026-01-10", expires: "2036-01-10", valid: true },

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // GhostChain Contracts v5.6.1 (ghostswap/GhostRouter.sol)
-// @ghostchain Part of the GhostChain protocol suite — https://ghostchain.io
+// @ghostchain Part of the GhostChain protocol suite — https://ghostchain.cloud
 
 pragma solidity ^0.8.24;
 

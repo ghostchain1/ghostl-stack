@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const TYPE_COLOR: Record<string,string> = {
   MARKET_MONITOR: "#f59e0b", RISK_ASSESSOR: "#ef4444", POLICY_ENGINE: "#8b5cf6",

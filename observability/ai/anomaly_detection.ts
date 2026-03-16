@@ -1,4 +1,4 @@
-import type { LogAnomaly, NormalizedLogEvent } from '@ghostl/types/observability';
+import type { LogAnomaly, NormalizedLogEvent } from '@ghostchain/types/observability';
 
 const severityWeight: Record<string, number> = {
   INFO: 0,

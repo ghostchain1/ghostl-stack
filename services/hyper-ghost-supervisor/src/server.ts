@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { z } from 'zod';
-import { ghost } from 'ghost';
+import { ghost } from '@ghostchain/sdk';
 
 import { loadConfig, type HgConfig } from './config.js';
 import { openDb, type SqliteDb } from './db/sqlite.js';

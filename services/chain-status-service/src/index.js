@@ -1,5 +1,5 @@
 import express from "express";
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 
 const PORT              = Number(process.env.PORT || 7612);
 const registryUrl       = process.env.RPC_REGISTRY_URL || "http://ghost-registry:8088/v1/endpoints";

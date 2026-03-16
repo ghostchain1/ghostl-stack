@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Card, Badge } from '@ghostl/ui';
+import { Card, Badge } from '@ghostchain/ui';
 import { z } from 'zod';
 import { DataFetchErrorCard } from '../../../src/components/DataFetchErrorCard';
 import { useSession } from '../../../src/modules/identity-access/session';

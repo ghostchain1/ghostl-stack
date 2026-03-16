@@ -13,7 +13,7 @@ import type {
   KycReviewDecision,
   KycRiskLevel,
   KycSummary
-} from '@ghostl/types';
+} from '@ghostchain/types';
 
 type StoreShape = {
   applicants: KycApplicant[];
@@ -110,7 +110,7 @@ const buildSeedApplicants = (): KycApplicant[] => {
   const bob = buildBaseApplicant({
     type: 'business',
     companyName: 'Ghost Mining LLC',
-    email: 'ops@ghostmining.io',
+    email: 'ops@ghostchain.cloud',
     country: 'SG',
     walletAddress: '0xBbb0000000000000000000000000000000000000',
     chainId: 'l2',

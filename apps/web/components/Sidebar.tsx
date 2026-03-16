@@ -131,7 +131,7 @@ export function Sidebar({ collapsed = false, onToggle, className = '' }: Sidebar
           color: 'var(--muted)',
         }}>
           <span className={`status-dot ${connected ? 'status-dot--live' : 'status-dot--danger'}`} />
-          <span>{connected ? 'GhostChain Live' : 'Connecting…'}</span>
+          <span>{connected ? 'LitVyb Live' : 'Connecting…'}</span>
           {ai && (
             <span style={{ marginLeft: 'auto', color: 'var(--accent)', fontWeight: 700 }}>
               {ai.alertLevel === 'critical' ? '⚡' : ai.alertLevel === 'elevated' ? '⚠' : '●'}

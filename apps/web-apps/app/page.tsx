@@ -1,15 +1,16 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { GHOST_SITES } from "@ghostchain/config";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const apps = [
-  { name: "GhostSwap", tagline: "DEX across all Ghost layers", status: "live", href: "https://apps.ghostchain.cloud/ghostswap", color: "#FFD700" },
-  { name: "GhostWallet", tagline: "Self-custodial multi-layer wallet", status: "live", href: "https://apps.ghostchain.cloud/wallet", color: "#FFAA00" },
-  { name: "GhostBridge", tagline: "L1↔L2↔L3 asset bridge", status: "live", href: "https://apps.ghostchain.cloud/bridge", color: "#A855F7" },
-  { name: "GhostNFT", tagline: "NFT marketplace with AI provenance", status: "beta", href: "https://apps.ghostchain.cloud/nft", color: "#06B6D4" },
-  { name: "GhostDAO", tagline: "Decentralized governance suite", status: "beta", href: "https://governance.ghostchain.cloud", color: "#8B5CF6" },
-  { name: "GhostVyb", tagline: "Social layer & creator economy", status: "coming soon", href: "https://apps.ghostchain.cloud/vyb", color: "#EC4899" },
-  { name: "GhostXchange", tagline: "Institutional OTC & spot trading", status: "coming soon", href: "https://exchange.ghostchain.cloud", color: "#F59E0B" },
-  { name: "GhostID", tagline: "ZK-verified on-chain identity", status: "coming soon", href: "https://apps.ghostchain.cloud/id", color: "#10B981" },
+  { name: "GhostSwap", tagline: "DEX across all Ghost layers", status: "live", href: `${GHOST_SITES.apps.url}/ghostswap`, color: "#FFD700" },
+  { name: "GhostWallet", tagline: "Self-custodial multi-layer wallet", status: "live", href: GHOST_SITES.wallet.url, color: "#FFAA00" },
+  { name: "GhostBridge", tagline: "L1↔L2↔L3 asset bridge", status: "live", href: GHOST_SITES.bridge.url, color: "#A855F7" },
+  { name: "GhostNFT", tagline: "NFT marketplace with AI provenance", status: "beta", href: `${GHOST_SITES.apps.url}/nft`, color: "#06B6D4" },
+  { name: "GhostDAO", tagline: "Decentralized governance suite", status: "beta", href: GHOST_SITES.governance.url, color: "#8B5CF6" },
+  { name: "LitVyb Live", tagline: "Social layer & creator economy", status: "live", href: `${GHOST_SITES.apps.url}/vyb/download`, color: "#EC4899", ctaLabel: "Download app →" },
+  { name: "GhostXchange", tagline: "Institutional OTC & spot trading", status: "coming soon", href: GHOST_SITES.exchange.url, color: "#F59E0B" },
+  { name: "GhostID", tagline: "ZK-verified on-chain identity", status: "coming soon", href: `${GHOST_SITES.apps.url}/id`, color: "#10B981" },
 ];
 
 const statusColor: Record<string, string> = {
@@ -21,7 +22,7 @@ const statusColor: Record<string, string> = {
 export default function AppsPage() {
   return (
     <>
-      <PublicNavbar cta={{ label: "Launch an App", href: "https://portal.ghostchain.cloud" }} />
+      <PublicNavbar cta={{ label: "Launch an App", href: GHOST_SITES.portal.url }} />
       <main>
         {/* Hero */}
         <section style={{ padding: "100px 24px 60px", textAlign: "center", background: "linear-gradient(180deg,#0A0A0A 0%,#0A0A0A 100%)" }}>
@@ -48,7 +49,7 @@ export default function AppsPage() {
                     <span style={{ fontSize: "0.72rem", fontWeight: 600, color: statusColor[app.status], background: statusColor[app.status] + "22", padding: "3px 10px", borderRadius: 20, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{app.status}</span>
                   </div>
                   <p style={{ color: "#94a3b8", fontSize: "0.9rem", marginBottom: 20 }}>{app.tagline}</p>
-                  <a href={app.href} style={{ color: app.color, textDecoration: "none", fontSize: "0.9rem", fontWeight: 600 }}>Launch app →</a>
+                  <a href={app.href} style={{ color: app.color, textDecoration: "none", fontSize: "0.9rem", fontWeight: 600 }}>{app.ctaLabel ?? "Launch app →"}</a>
                 </div>
               ))}
             </div>
@@ -61,8 +62,8 @@ export default function AppsPage() {
             <h2 style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: 16 }}>Build the next Ghost app</h2>
             <p style={{ color: "#94a3b8", marginBottom: 32 }}>Get listed in the Ghost App Universe. Open-source contributions welcome.</p>
             <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
-              <a href="https://dev.ghostchain.cloud/grants" className="btn-primary">Apply for Grant</a>
-              <a href="https://dev.ghostchain.cloud" className="btn-secondary">Developer Docs</a>
+              <a href={`${GHOST_SITES.dev.url}/grants`} className="btn-primary">Apply for Grant</a>
+              <a href={GHOST_SITES.docs.url} className="btn-secondary">Developer Docs</a>
             </div>
           </div>
         </section>

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { ChainOverviewSchema, type ChainOverview } from '@ghostl/contract-schemas';
+import { ChainOverviewSchema, type ChainOverview } from '@ghostchain/contract-schemas';
 import { resolveApiBase } from '../../../lib/runtime';
 import { apiRequest, type ApiError } from '../../../lib/api';
 

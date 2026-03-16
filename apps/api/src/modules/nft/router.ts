@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { Contract, Interface, JsonRpcProvider, Wallet, id as keccakId } from 'ghost';
+import { Contract, Interface, JsonRpcProvider, Wallet, id as keccakId } from '@ghostchain/sdk';
 import type { GhostWalletService } from '../../services/ghostwallet';
 import type { WalletService } from '../../services/wallet-store';
 import type { NftStore } from '../../services/nft-store';

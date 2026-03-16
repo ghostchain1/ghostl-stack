@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const BUDGETS = [
   { id: 1, category: "Infrastructure", allocated: "$500B", spent: "$120B", pct: 24 },

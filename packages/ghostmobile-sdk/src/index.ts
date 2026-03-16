@@ -52,9 +52,9 @@ export interface GhostDeepLink {
  * import { GhostMobile } from '@ghostchain/ghostmobile-sdk';
  *
  * const ghost = new GhostMobile({
- *   l1Rpc: 'https://rpc.ghostchain.io',
- *   l2Rpc: 'https://l2.ghostchain.io',
- *   l3Rpc: 'https://l3.ghostchain.io',
+ *   l1Rpc: 'https://rpc.ghostchain.cloud',
+ *   l2Rpc: 'https://l2rpc.ghostchain.cloud',
+ *   l3Rpc: 'https://l3rpc.ghostchain.cloud',
  * });
  *
  * const balance = await ghost.getBalance(address, 'l2');

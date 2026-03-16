@@ -1,6 +1,6 @@
 'use client';
 
-import type { Proposal } from '@ghostl/types/governance';
+import type { Proposal } from '@ghostchain/types/governance';
 
 export function ProposalsList({ proposals }: { proposals: Proposal[] }) {
   return (

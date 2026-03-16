@@ -1,6 +1,6 @@
-// Core realm primitives come from the shared @ghostl/auth package.
-export { REALMS, type Realm, isRealm } from '@ghostl/auth';
-import type { Realm } from '@ghostl/auth';
+// Core realm primitives come from the shared @ghostchain/auth package.
+export { REALMS, type Realm, isRealm } from '@ghostchain/auth';
+import type { Realm } from '@ghostchain/auth';
 
 export type RealmNavItem = {
   href: string;

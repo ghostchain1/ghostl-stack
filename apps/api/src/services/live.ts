@@ -1,4 +1,4 @@
-import type { ChainInfo, Node, NodeMetrics, Alert, LogEvent } from '@ghostl/types';
+import type { ChainInfo, Node, NodeMetrics, Alert, LogEvent } from '@ghostchain/types';
 import type { PrometheusAlert, PrometheusVectorResult } from '../clients/prometheus';
 import { PrometheusClient } from '../clients/prometheus';
 import { GrafanaClient } from '../clients/grafana';
@@ -26,8 +26,8 @@ import type {
   ExplainabilityService,
   FraudScoringService
 } from '../modules/ai/services';
-import type { Release, ForkEvent } from '@ghostl/types/devops';
-import type { Anomaly, Forecast } from '@ghostl/types';
+import type { Release, ForkEvent } from '@ghostchain/types/devops';
+import type { Anomaly, Forecast } from '@ghostchain/types';
 import { ghostWalletRpcManager } from './rpc-manager';
 
 const parsePromValue = (value?: [number, string]) => {

@@ -10,7 +10,7 @@ import { IncidentTimeline } from '../../src/modules/observability/components/Inc
 import { BridgeValidatorHealth } from '../../src/modules/observability/components/BridgeValidatorHealth';
 import { ValidatorMetrics } from '../../src/modules/observability/components/ValidatorMetrics';
 import { SecurityControls } from '../../src/modules/observability/components/SecurityControls';
-import type { Alert, LogEvent } from '@ghostl/types/observability';
+import type { Alert, LogEvent } from '@ghostchain/types/observability';
 import { apiRequest, type ApiError } from '../../src/lib/api';
 import { resolvePrometheusBase } from '../../src/lib/runtime';
 import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';

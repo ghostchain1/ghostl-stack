@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Card } from '@ghostl/ui';
+import { Badge, Button, Card } from '@ghostchain/ui';
 import { jsonWithCsrf } from '../../lib/csrf';
 import { resolveApiBase } from '../../lib/runtime';
 import { apiRequest, formatApiError, type ApiError } from '../../lib/api';
 import { normalizeRole, roleOrder } from '../identity-access/access-policy';
 import { useSession } from '../identity-access/session';
 import { fetchNftContracts, fetchNftTokens, type NftContract, type NftToken } from './services';
-import type { WalletRecord } from '@ghostl/types';
+import type { WalletRecord } from '@ghostchain/types';
 
 const API_URL = resolveApiBase();
 const formatStatus = (error: ApiError) => {

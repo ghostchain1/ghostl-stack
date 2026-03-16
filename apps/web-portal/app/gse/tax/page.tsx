@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const POLICIES = [
   { nation: "United States", income: "22%", corp: "21%", vat: "0%",  tariff: "3%" },

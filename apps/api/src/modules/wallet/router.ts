@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { ghost } from 'ghost';
+import { ghost } from '@ghostchain/sdk';
 import type { GhostWalletService } from '../../services/ghostwallet';
 import { requirePermission } from '../../lib/rbac';
 import { ghostWalletRpcManager } from '../../services/rpc-manager';
-import { assertRoutingLaw } from '@ghostl/routing-law';
+import { assertRoutingLaw } from '@ghostchain/routing-law';
 
 export const buildWalletRouter = (ghostWallet: GhostWalletService) => {
   const router = Router();

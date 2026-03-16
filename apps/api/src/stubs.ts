@@ -1,4 +1,4 @@
-import type { FeatureFlag, NetworkContext, ThemeMode } from '@ghostl/types';
+import type { FeatureFlag, NetworkContext, ThemeMode } from '@ghostchain/types';
 import type { FeatureFlagsService, NetworkContextService, ThemeService } from './modules/app-shell/services';
 import { ghostWalletRpcManager } from './services/rpc-manager';
 

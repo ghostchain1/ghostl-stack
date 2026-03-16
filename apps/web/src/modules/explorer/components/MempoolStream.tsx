@@ -1,6 +1,6 @@
 'use client';
 
-import type { Tx } from '@ghostl/types/explorer';
+import type { Tx } from '@ghostchain/types/explorer';
 
 export function MempoolStream({ txs }: { txs: Tx[] }) {
   return (

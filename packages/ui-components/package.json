@@ -9,6 +9,9 @@
     ".": "./src/index.ts",
     "./components/*": "./src/components/*"
   },
+  "dependencies": {
+    "@ghostchain/config": "1.0.0"
+  },
   "scripts": {
     "lint": "eslint src --ext .ts,.tsx"
   },

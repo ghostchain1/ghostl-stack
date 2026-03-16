@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const endpoints = [
   { layer: "L1 — GhostChain", rpc: "https://rpc.ghostchain.cloud", chain: 1337, currency: "GST" },

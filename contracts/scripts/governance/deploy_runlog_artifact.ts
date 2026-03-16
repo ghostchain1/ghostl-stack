@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 import dotenv from "dotenv";
 import fs from "node:fs";
 import path from "node:path";

@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import express from "express";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { ghost } from "ghost";
+import { ghost } from "@ghostchain/sdk";
 
 const PORT = Number(process.env.PORT || "8545");
 const UPSTREAM_RPC = process.env.UPSTREAM_RPC || "http://l1:8545";

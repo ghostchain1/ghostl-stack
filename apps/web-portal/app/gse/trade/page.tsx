@@ -1,5 +1,5 @@
 "use client";
-import { PublicNavbar, PublicFooter } from "@ghostl/ui";
+import { PublicNavbar, PublicFooter } from "@ghostchain/ui";
 
 const TRADES = [
   { id: 1, exporter: "gov.us",     importer: "gov.eu",  commodity: "OIL",     value: "$4.2B",  status: "settled" },

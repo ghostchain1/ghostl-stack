@@ -1,3 +1,4 @@
+import { GHOST_RPC_ENDPOINTS, GHOST_SITES } from "@ghostchain/config";
 import { Ghostnavbar } from "@ghostchain/ui-components";
 import { GhostFooter } from "@ghostchain/ui-components";
 import { ChainBadge } from "@ghostchain/ui-components";
@@ -6,13 +7,13 @@ const NAV = [
   { label: "Endpoints", href: "/" },
   { label: "API Keys",  href: "/keys" },
   { label: "Usage",     href: "/usage" },
-  { label: "Docs",      href: "https://docs.ghostchain.online" },
+  { label: "Docs",      href: GHOST_SITES.docs.url },
 ];
 
 const ENDPOINTS = [
-  { chain: "L1" as const, url: "https://rpc.ghostchain.cloud/l1",         ns: "ghost_", port: 18545 },
-  { chain: "L2" as const, url: "https://rpc.ghostchain.cloud/l2",         ns: "ghost_", port: 29545 },
-  { chain: "L3" as const, url: "https://rpc.ghostchain.cloud/l3",         ns: "ghost_", port: 39545 },
+  { chain: "L1" as const, url: GHOST_RPC_ENDPOINTS.l1.publicUrl, ns: "ghost_", port: GHOST_RPC_ENDPOINTS.l1.port },
+  { chain: "L2" as const, url: GHOST_RPC_ENDPOINTS.l2.publicUrl, ns: "ghost_", port: GHOST_RPC_ENDPOINTS.l2.port },
+  { chain: "L3" as const, url: GHOST_RPC_ENDPOINTS.l3.publicUrl, ns: "ghost_", port: GHOST_RPC_ENDPOINTS.l3.port },
 ];
 
 export default function RpcPortalPage() {
@@ -54,8 +55,8 @@ export default function RpcPortalPage() {
 import { createGhostProvider } from "@ghostchain/ghost-sdk-core";
 
 const provider = createGhostProvider({
-  rpcUrl: "https://rpc.ghostchain.cloud/l1",
-  chainId: 14000101,
+  rpcUrl: "${GHOST_RPC_ENDPOINTS.l1.publicUrl}",
+  chainId: ${GHOST_RPC_ENDPOINTS.l1.chainId},
 });
 
 const block = await provider.ghost_getBlockByNumber("latest", false);`}

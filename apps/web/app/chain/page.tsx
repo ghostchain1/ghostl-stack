@@ -1,5 +1,5 @@
-import { Badge, Card } from '@ghostl/ui';
-import { ChainOverviewSchema, type ChainOverview } from '@ghostl/contract-schemas';
+import { Badge, Card } from '@ghostchain/ui';
+import { ChainOverviewSchema, type ChainOverview } from '@ghostchain/contract-schemas';
 import type { ApiError } from '../../src/lib/api';
 import { serverApiRequest } from '../../src/lib/server-api';
 import { DataFetchErrorCard } from '../../src/components/DataFetchErrorCard';

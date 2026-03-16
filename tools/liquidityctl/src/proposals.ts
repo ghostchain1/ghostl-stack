@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Interface, ghost } from "ghost";
+import { Interface, ghost } from "@ghostchain/sdk";
 
 export type ProposalCall = { target: string; value: bigint; data: string };
 

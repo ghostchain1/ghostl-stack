@@ -10,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ghostchain/config": "1.0.0",
     "@ghostchain/ui-components": "*",
     "@ghostchain/ghost-sdk-core": "*",
     "next": "16.1.6",

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const { ghost } = require('ghost');
+const { ghost } = require('@ghostchain/sdk');
 
 const L2_RPC = process.env.L2_RPC || 'http://localhost:29547';
 const L3_RPC = process.env.L3_RPC || 'http://localhost:39545';

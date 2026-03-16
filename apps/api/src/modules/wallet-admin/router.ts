@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { requirePermission } from '../../lib/rbac';
 import type { WalletService } from '../../services/wallet-store';
-import type { WalletRecord } from '@ghostl/types';
+import type { WalletRecord } from '@ghostchain/types';
 import type { GhostWalletService } from '../../services/ghostwallet';
 
 export const buildWalletAdminRouter = (wallets: WalletService, ghostWallet: GhostWalletService) => {

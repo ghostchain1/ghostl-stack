@@ -1,5 +1,5 @@
 {
-  "$schema": "https://ghostchain.io/schemas/brand-rules/v1",
+  "$schema": "https://ghostchain.cloud/schemas/brand-rules/v1",
   "version": "1.0.0",
   "description": "GhostChain sovereign branding rules — 15-layer enforcement",
 

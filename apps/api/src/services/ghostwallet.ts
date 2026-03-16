@@ -1,4 +1,4 @@
-import { Contract, Wallet } from 'ghost';
+import { Contract, Wallet } from '@ghostchain/sdk';
 import {
   decryptSecret,
   encryptSecret,
@@ -6,9 +6,9 @@ import {
   loadMasterKey,
   walletFromMnemonic,
   walletFromPrivateKey
-} from '@ghostl/ghostwallet';
+} from '@ghostchain/ghostwallet-sdk';
 import type { WalletService } from './wallet-store';
-import type { WalletRecord } from '@ghostl/types';
+import type { WalletRecord } from '@ghostchain/types';
 import { env } from '../config/env';
 import { ghostWalletRpcManager } from './rpc-manager';
 

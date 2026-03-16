@@ -1,5 +1,5 @@
 {
-  "$schema": "https://ghostchain.io/schemas/sed-engine/branding-map/v1",
+  "$schema": "https://ghostchain.cloud/schemas/sed-engine/branding-map/v1",
   "version": "1.0.0",
   "description": "Maps Ethereum code constructs and API surface to Ghost sovereign equivalents for auto-rewrite.",
 
