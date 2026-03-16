@@ -1,0 +1,5 @@
+# Private keys — NEVER commit
+*.key
+*.p12
+*.cer
+*.mobileprovision

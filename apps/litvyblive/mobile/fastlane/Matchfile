@@ -1,0 +1,6 @@
+git_url(ENV["MATCH_GIT_URL"] || "https://github.com/ghostchain1/ghostl-stack-certs.git")
+storage_mode("git")
+type("adhoc")           # "development", "adhoc", "appstore"
+app_identifier(["com.ghostchain.litvyblive"])
+username(ENV["APPLE_ID"] || "dev@ghostchain.io")
+team_id(ENV["APPLE_TEAM_ID"])

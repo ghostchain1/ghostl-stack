@@ -1,0 +1,4 @@
+app_identifier("com.ghostchain.litvyblive")
+apple_id(ENV["APPLE_ID"] || "dev@ghostchain.io")
+team_id(ENV["APPLE_TEAM_ID"])
+itc_team_id(ENV["APPLE_ITC_TEAM_ID"] || ENV["APPLE_TEAM_ID"])

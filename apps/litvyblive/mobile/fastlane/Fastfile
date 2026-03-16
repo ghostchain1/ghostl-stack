@@ -1,0 +1,90 @@
+default_platform(:ios)
+
+platform :ios do
+
+  # ── sync_certs: fetch or create certs + profiles via fastlane match ──────────
+  desc "Sync signing certificates and provisioning profiles (ad-hoc)"
+  lane :sync_certs do
+    match(
+      type: "adhoc",
+      readonly: is_ci,
+      app_identifier: "com.ghostchain.litvyblive",
+    )
+  end
+
+  desc "Sync App Store certificates and provisioning profiles"
+  lane :sync_certs_appstore do
+    match(
+      type: "appstore",
+      readonly: is_ci,
+      app_identifier: "com.ghostchain.litvyblive",
+    )
+  end
+
+  # ── build_adhoc: signed .ipa for device testing ──────────────────────────────
+  desc "Build signed ad-hoc IPA"
+  lane :build_adhoc do
+    sync_certs
+
+    gym(
+      workspace:            "Runner.xcworkspace",
+      scheme:               "Runner",
+      configuration:        "Release",
+      export_method:        "ad-hoc",
+      output_directory:     "build/ios/ipa",
+      output_name:          "LitVybzLive-adhoc.ipa",
+      export_options: {
+        teamID:              ENV["APPLE_TEAM_ID"],
+        provisioningProfiles: {
+          "com.ghostchain.litvyblive" => "match AdHoc com.ghostchain.litvyblive",
+        },
+      },
+      xcargs: [
+        "DART_DEFINES=GHOST_L3_RPC=#{ENV.fetch('GHOST_L3_RPC', 'http://localhost:39545')}",
+        "DART_DEFINES+=API_BASE_URL=#{ENV.fetch('LITVYB_API_URL', 'http://localhost:7001')}",
+      ].join(" "),
+    )
+  end
+
+  # ── build_appstore: signed .ipa for TestFlight / App Store ───────────────────
+  desc "Build signed App Store IPA"
+  lane :build_appstore do
+    sync_certs_appstore
+
+    gym(
+      workspace:         "Runner.xcworkspace",
+      scheme:            "Runner",
+      configuration:     "Release",
+      export_method:     "app-store",
+      output_directory:  "build/ios/ipa",
+      output_name:       "LitVybzLive-appstore.ipa",
+      export_options: {
+        teamID: ENV["APPLE_TEAM_ID"],
+        provisioningProfiles: {
+          "com.ghostchain.litvyblive" => "match AppStore com.ghostchain.litvyblive",
+        },
+      },
+    )
+  end
+
+  # ── upload_testflight: direct upload after build_appstore ────────────────────
+  desc "Upload to TestFlight"
+  lane :upload_tf do
+    build_appstore
+    upload_to_testflight(
+      api_key_path: ENV["APP_STORE_CONNECT_KEY_PATH"],
+      skip_waiting_for_build_processing: true,
+    )
+  end
+
+  # ── register_device: add a device UDID to your portal + profile ──────────────
+  desc "Register a test device (UDID + name required)"
+  lane :register_device do |opts|
+    register_devices(
+      devices: { opts[:name] => opts[:udid] },
+      team_id: ENV["APPLE_TEAM_ID"],
+    )
+    sync_certs   # refresh ad-hoc profile to include new device
+  end
+
+end
