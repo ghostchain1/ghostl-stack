@@ -52,6 +52,7 @@ import { buildKycRouter } from './modules/kyc/router';
 import { createKycService } from './services/kyc-store';
 import { createIntegrationsStore } from './services/integrations-store';
 import { buildAiRouter } from './modules/ai/router';
+import { buildOrchestratorRouter } from './modules/orchestrator/router';
 import { ghostWalletRpcManager } from './services/rpc-manager';
 import { createSessionStore } from './services/session-store';
 import { emitEvent, getEvents, getWebhookDeliveries, getWebhookSummary } from './lib/events';
@@ -1959,6 +1960,7 @@ app.use(
   })
 );
 app.use(['/v1/ai', '/ai'], buildAiRouter());
+app.use(['/v1/orchestrator', '/api/orchestrator', '/orchestrator'], buildOrchestratorRouter());
 
 app.get(['/v1/rpc/pool', '/rpc/pool'], requirePermission('integrations:read'), (_req, res) => {
   res.json({ pool: ghostWalletRpcManager.getPoolSnapshot() });

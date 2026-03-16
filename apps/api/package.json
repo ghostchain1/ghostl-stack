@@ -23,7 +23,7 @@
     "better-sqlite3": "^12.6.2",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
-    "ghost": "0.0.1",
+    "ghost": "6.16.0",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "helmet": "^8.1.0",

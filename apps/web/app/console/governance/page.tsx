@@ -1,1 +1,1 @@
-export { default } from '../../(admin)/governance/page';
+export { default } from '../../governance/page';

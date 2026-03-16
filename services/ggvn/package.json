@@ -1,0 +1,27 @@
+{
+  "name": "@ghostchain/ggvn",
+  "version": "1.0.0",
+  "description": "GGVN — Ghost Global Validator Network coordinator and staking registry",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "node --test tests/**/*.test.mjs"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "cors": "^2.8.5",
+    "better-sqlite3": "^11.10.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/cors": "^2.8.17",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "5.9.3"
+  }
+}

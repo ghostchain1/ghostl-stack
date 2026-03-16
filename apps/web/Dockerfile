@@ -3,21 +3,21 @@ WORKDIR /app
 RUN apt-get update \
   && apt-get install -y --no-install-recommends python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
-COPY package.json package-lock.json ./
-COPY scripts scripts
-# Copy workspace manifests explicitly so `npm ci --workspaces` has a consistent
-# directory layout (wildcard COPY destinations do not preserve structure).
-COPY apps/api/package.json apps/api/package.json
-COPY apps/web/package.json apps/web/package.json
-COPY apps/worker/package.json apps/worker/package.json
-COPY packages/config/package.json packages/config/package.json
-COPY packages/contract-schemas/package.json packages/contract-schemas/package.json
-COPY packages/ghostchain-sdk/package.json packages/ghostchain-sdk/package.json
-COPY packages/ghostwallet/package.json packages/ghostwallet/package.json
-COPY packages/sdk/package.json packages/sdk/package.json
-COPY packages/types/package.json packages/types/package.json
-COPY packages/ui/package.json packages/ui/package.json
-RUN npm ci --include-workspace-root --workspaces
+
+# Build a minimal workspace package.json referencing only the packages
+# that apps/web directly depends on — avoids copying 50+ workspace manifests.
+RUN python3 -c "import json; json.dump({'private': True, 'workspaces': ['packages/ghost-sdk', 'packages/api-client', 'packages/auth', 'packages/contract-schemas', 'packages/ui', 'apps/web']}, open('package.json', 'w'))"
+
+# Copy only the workspace packages the web app depends on
+COPY packages/ghost-sdk packages/ghost-sdk
+COPY packages/api-client packages/api-client
+COPY packages/auth packages/auth
+COPY packages/contract-schemas packages/contract-schemas
+COPY packages/ui packages/ui
+COPY tsconfig.base.json .
+COPY apps/web apps/web
+
+RUN npm install --legacy-peer-deps
 
 FROM deps AS dev
 WORKDIR /app

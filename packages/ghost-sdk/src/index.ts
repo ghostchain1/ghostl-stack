@@ -754,22 +754,19 @@ export {
  * Docker container lifecycle manager.
  * Uses execFile (not exec) + allowlist validation — no shell injection risk.
  */
-export {
-  GhostDockerController,
-  type GhostDockerControllerConfig,
-  type ContainerInfo,
-} from "./infra/GhostDockerController.js";
+// GhostDockerController uses node:child_process — server-only, import directly from subpath
+// 
 
 /**
  * libvirt VM lifecycle manager (start, reboot, snapshot, etc.).
  * Uses execFile (not exec) + allowlist validation — no shell injection risk.
  */
-export {
-  GhostVMController,
-  type GhostVMControllerConfig,
-  type VMStatus,
-  type VMState,
-} from "./infra/GhostVMController.js";
+// export {
+//   GhostVMController,
+//   type GhostVMControllerConfig,
+//   type VMStatus,
+//   type VMState,
+// } from "./infra/GhostVMController.js";
 
 /**
  * RPC endpoint load balancer for L1 / L2 / L3 nodes.

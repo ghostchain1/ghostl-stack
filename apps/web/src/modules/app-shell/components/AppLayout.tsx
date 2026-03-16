@@ -24,6 +24,16 @@ type NavItem = { href: string; label: string; flag?: string };
 
 const legacyNavSections: { title: string; items: NavItem[] }[] = [
   {
+    title: 'Dashboard',
+    items: [
+      { href: '/overview', label: '◈ Overview' },
+      { href: '/monitor',  label: '⬡ Monitor' },
+      { href: '/alerts',   label: '⚡ Alerts' },
+      { href: '/logs',     label: '≡ Logs' },
+      { href: '/settings', label: '⚙ Settings' },
+    ]
+  },
+  {
     title: 'Command',
     items: [
       { href: '/', label: 'Command Hub' },
@@ -106,7 +116,10 @@ const legacyNavSections: { title: string; items: NavItem[] }[] = [
   },
   {
     title: 'Admin',
-    items: [{ href: '/admin/users', label: 'Users' }]
+    items: [
+      { href: '/admin/users', label: 'Users' },
+      { href: '/settings',    label: 'Settings' },
+    ]
   },
   {
     title: 'Control Portal',

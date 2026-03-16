@@ -1,0 +1,25 @@
+{
+  "name": "@ghostchain/ghostforge",
+  "version": "1.0.0",
+  "description": "GhostForge — GhostChain's native smart contract build framework (replaces Hardhat/Foundry CLI wrapper)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "ghostforge": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./cli": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": ["ghostchain", "ghostforge", "solidity", "build", "deploy", "smart-contracts"],
+  "license": "MIT"
+}

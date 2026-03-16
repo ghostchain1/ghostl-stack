@@ -91,9 +91,11 @@ for (const [prefix, envTarget] of Object.entries(routes)) {
       changeOrigin: true,
       on: {
         proxyReq: fixRequestBody,
-        error: (_err: Error, _req: Request, res: Response) => {
+        error: (_err: Error, _req: Request, res: Response | import('net').Socket) => {
           log.error(`Proxy error → ${target}: service unreachable`);
-          res.status(502).json({ error: 'Upstream service unavailable' });
+          if ('status' in res) {
+            (res as Response).status(502).json({ error: 'Upstream service unavailable' });
+          }
         },
       },
     }),

@@ -3,14 +3,23 @@ import 'package:http/http.dart' as http;
 
 /// GhostL3 RPC provider.
 /// Chain ID 903 is enforced — any attempt to use a different chain throws.
+///
+/// The RPC URL is resolved at build time via:
+///   flutter build ios --dart-define=GHOST_L3_RPC=https://<host>
+/// Falls back to localhost:39545 for local devnet.
 class GhostProvider {
   static const int chainId = 903;
-  static const String _rpcUrl = 'http://localhost:39545'; // GhostL3 RPC
+
+  // Injected at build time; defaults to local devnet.
+  static const String _defaultRpc = String.fromEnvironment(
+    'GHOST_L3_RPC',
+    defaultValue: 'http://localhost:39545',
+  );
 
   final Web3Client _client;
 
   GhostProvider._({String? rpcUrl})
-      : _client = Web3Client(rpcUrl ?? _rpcUrl, http.Client());
+      : _client = Web3Client(rpcUrl ?? _defaultRpc, http.Client());
 
   static GhostProvider? _instance;
 

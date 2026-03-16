@@ -1,0 +1,15 @@
+{
+  "name": "@ghostchain/ghostlint",
+  "version": "1.0.0",
+  "description": "GhostLint — GhostChain branding enforcement scanner. Blocks eth_/ethereum/ethers/web3/ERC references.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": { "ghostlint": "./dist/cli.js" },
+  "exports": {
+    ".": { "import": "./dist/index.js", "types": "./dist/index.d.ts" }
+  },
+  "scripts": { "build": "tsc", "dev": "tsc --watch", "clean": "rm -rf dist" },
+  "keywords": ["ghostchain", "ghostlint", "branding", "lint"],
+  "license": "MIT"
+}

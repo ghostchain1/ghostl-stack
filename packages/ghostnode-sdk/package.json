@@ -1,0 +1,53 @@
+{
+  "name": "@ghostchain/ghostnode-sdk",
+  "version": "1.0.0",
+  "description": "GhostNode SDK — full lifecycle management for GhostChain L1/L2/L3 validator and sequencer nodes",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./validator": {
+      "types": "./dist/validator/GhostValidator.d.ts",
+      "default": "./dist/validator/GhostValidator.js"
+    },
+    "./sequencer": {
+      "types": "./dist/sequencer/GhostSequencer.d.ts",
+      "default": "./dist/sequencer/GhostSequencer.js"
+    },
+    "./sync": {
+      "types": "./dist/sync/GhostSync.d.ts",
+      "default": "./dist/sync/GhostSync.js"
+    },
+    "./staking": {
+      "types": "./dist/staking/GhostStaking.d.ts",
+      "default": "./dist/staking/GhostStaking.js"
+    },
+    "./peer": {
+      "types": "./dist/peer/GhostPeer.d.ts",
+      "default": "./dist/peer/GhostPeer.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:watch": "tsc -p tsconfig.json --watch",
+    "clean": "rm -rf dist",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest"
+  },
+  "dependencies": {
+    "@ghostchain/sdk": "1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  },
+  "keywords": ["ghostchain", "ghostnode", "validator", "sequencer", "staking"],
+  "license": "MIT"
+}

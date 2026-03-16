@@ -1,0 +1,17 @@
+{
+  "name": "@ghostchain/ghostl2-sdk",
+  "version": "1.0.0",
+  "description": "GhostL2 SDK — OP-Stack L2 (chain_id=901, RPC :29545) deposit, withdraw, sequencer, and batch submission",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }
+  },
+  "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist" },
+  "dependencies": { "@ghostchain/sdk": "1.0.0", "@ghostchain/ghostbridge-sdk": "1.0.0" },
+  "devDependencies": { "@types/node": "^22.0.0", "typescript": "^5.6.0" },
+  "engines": { "node": ">=22.21.0 <23" },
+  "keywords": ["ghostchain", "ghostl2", "optimism", "opstack", "l2", "rollup"],
+  "license": "MIT"
+}

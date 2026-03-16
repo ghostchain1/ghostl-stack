@@ -59,7 +59,7 @@ export function SparkLine({
             fontSize: 11,
             color: "#e2e8f0",
           }}
-          formatter={(v: number) => [v.toLocaleString(), ""]}
+          formatter={(v) => [(v != null ? Number(v).toLocaleString() : ""), ""]}
           labelFormatter={() => ""}
         />
       </LineChart>

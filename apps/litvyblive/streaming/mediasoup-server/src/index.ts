@@ -29,12 +29,16 @@ const REGION       = process.env.REGION                ?? 'default';
 
 // ── RTP Media Codecs ──────────────────────────────────────────────────────────
 const CODECS: mediasoup.types.RtpCodecCapability[] = [
-  { kind: 'audio', mimeType: 'audio/opus',   clockRate: 48000, channels: 2 },
+  { kind: 'audio', mimeType: 'audio/opus',   clockRate: 48000, channels: 2,
+    preferredPayloadType: 100 },
   { kind: 'video', mimeType: 'video/VP8',    clockRate: 90000,
+    preferredPayloadType: 96,
     parameters: { 'x-google-start-bitrate': 1000 } },
   { kind: 'video', mimeType: 'video/VP9',    clockRate: 90000,
+    preferredPayloadType: 101,
     parameters: { 'profile-id': 2, 'x-google-start-bitrate': 1000 } },
   { kind: 'video', mimeType: 'video/h264',   clockRate: 90000,
+    preferredPayloadType: 102,
     parameters: { 'packetization-mode': 1, 'profile-level-id': '4d0032',
                   'level-asymmetry-allowed': 1, 'x-google-start-bitrate': 1000 } },
 ];
@@ -214,7 +218,7 @@ app.post('/rooms/:streamId/plain-consume', async (req, res) => {
     const producer = room.producers.get(producerId);
     if (!producer) return res.status(404).json({ error: 'producer not found' });
 
-    const consumer = await pt.consume({ producerId });
+    const consumer = await pt.consume({ producerId, rtpCapabilities: room.router.rtpCapabilities });
     res.json({ consumerId: consumer.id, kind: consumer.kind, rtpParameters: consumer.rtpParameters });
   } catch (err: unknown) {
     res.status(500).json({ error: (err as Error).message });
@@ -263,7 +267,6 @@ io.on('connection', (socket) => {
           listenIps: [{ ip: '0.0.0.0', announcedIp: ANNOUNCED_IP }],
           enableUdp: true, enableTcp: true, preferUdp: true,
           initialAvailableOutgoingBitrate: 1_000_000,
-          minimumAvailableOutgoingBitrate:   600_000,
         });
 
         t.on('dtlsstatechange', (s) => { if (s === 'failed' || s === 'closed') t.close(); });

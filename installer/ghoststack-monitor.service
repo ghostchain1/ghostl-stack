@@ -1,0 +1,47 @@
+[Unit]
+Description=GhostStack Health Monitor — continuous system watchdog
+Documentation=file:///home/ghost/ghostl-stack/installer/health-check.sh
+# Start after Docker and networking are ready
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ghost
+Group=ghost
+
+# Working directory set to repo root for relative path resolution
+WorkingDirectory=/home/ghost/ghostl-stack
+
+# Load stack environment variables
+EnvironmentFile=-/home/ghost/ghostl-stack/.env
+
+# Run health-check in continuous loop mode
+ExecStart=/bin/bash /home/ghost/ghostl-stack/installer/health-check.sh --loop --interval 30
+
+# On abnormal exit, wait 10 s then restart
+Restart=on-failure
+RestartSec=10s
+
+# Redirect all output to journald (view with: journalctl -u ghoststack-monitor -f)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ghoststack-monitor
+
+# Safety hardening
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=read-only
+PrivateTmp=true
+
+# Resource limits (prevent runaway memory usage)
+MemoryMax=256M
+CPUQuota=20%
+
+# Give up after 5 consecutive failures within 5 minutes
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Install]
+WantedBy=multi-user.target

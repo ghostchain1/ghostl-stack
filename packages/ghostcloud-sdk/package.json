@@ -1,0 +1,21 @@
+{
+  "name": "@ghostchain/ghostcloud-sdk",
+  "version": "1.0.0",
+  "description": "GhostCloud Infrastructure SDK — baremetal, Hetzner, AWS, GCP validator deployments",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": ["ghostchain", "ghost-cloud", "infrastructure", "validator", "deployment"],
+  "license": "MIT"
+}

@@ -219,7 +219,7 @@ app.get("/dao/proposal/:id", async (req: Request, res: Response) => {
 // GET /dao/voter/:userId/power/:creatorId
 app.get("/dao/voter/:userId/power/:creatorId", async (req: Request, res: Response) => {
   try {
-    const power = await votingPower(req.params.userId, req.params.creatorId);
+    const power = await votingPower(req.params.userId as string, req.params.creatorId as string);
     res.json({ user_id: req.params.userId, creator_id: req.params.creatorId, voting_power: power });
   } catch {
     res.status(500).json({ error: "Failed to compute voting power" });

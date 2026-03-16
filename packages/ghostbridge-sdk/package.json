@@ -1,0 +1,20 @@
+{
+  "name": "@ghostchain/ghostbridge-sdk",
+  "version": "1.0.0",
+  "description": "GhostBridge SDK — canonical cross-chain bridge for GhostChain L1 ↔ L2 ↔ L3 with lock/mint/burn/release primitives",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./l1l2": { "types": "./dist/l1l2/GhostL1L2Bridge.d.ts", "default": "./dist/l1l2/GhostL1L2Bridge.js" },
+    "./l2l3": { "types": "./dist/l2l3/GhostL2L3Bridge.d.ts", "default": "./dist/l2l3/GhostL2L3Bridge.js" },
+    "./relay": { "types": "./dist/relay/GhostRelay.d.ts", "default": "./dist/relay/GhostRelay.js" }
+  },
+  "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist" },
+  "dependencies": { "@ghostchain/sdk": "1.0.0" },
+  "devDependencies": { "@types/node": "^22.0.0", "typescript": "^5.6.0" },
+  "engines": { "node": ">=22.21.0 <23" },
+  "keywords": ["ghostchain", "bridge", "l1", "l2", "l3", "cross-chain"],
+  "license": "MIT"
+}

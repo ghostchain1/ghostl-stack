@@ -1,0 +1,21 @@
+{
+  "name": "@ghostchain/ghostmetaverse-sdk",
+  "version": "1.0.0",
+  "description": "GhostMetaverse SDK — On-chain 3D world, avatar, land, and social layer for GhostChain",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": ["ghostchain", "metaverse", "ghost-metaverse", "gst", "avatar", "land", "virtual-world"],
+  "license": "MIT"
+}

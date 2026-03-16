@@ -1,0 +1,21 @@
+{
+  "name": "@ghostchain/ghostenterprise-sdk",
+  "version": "1.0.0",
+  "description": "GhostChain Enterprise SDK — CBDC, institutional finance, bank rails, compliance",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": ["ghostchain", "cbdc", "enterprise", "compliance", "institutional"],
+  "license": "MIT"
+}

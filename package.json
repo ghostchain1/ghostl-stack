@@ -47,6 +47,7 @@
     "packages/ui",
     "apps/api",
     "apps/web",
+    "apps/gateway",
     "apps/ghostx",
     "apps/web-main",
     "apps/web-investor",
@@ -58,7 +59,30 @@
     "apps/web-exchange",
     "apps/web-company",
     "apps/web-status",
-    "apps/web-portal"
+    "apps/web-portal",
+    "packages/ghostos-sdk",
+    "packages/ghostnode-sdk",
+    "packages/ghostbridge-sdk",
+    "packages/ghostl2-sdk",
+    "packages/ghostl3-sdk",
+    "packages/ghostdefi-sdk",
+    "packages/ghostnft-sdk",
+    "packages/ghostgame-sdk",
+    "packages/ghostmetaverse-sdk",
+    "packages/ghoststarlink-sdk",
+    "packages/ghostcloud-sdk",
+    "packages/ghostenterprise-sdk",
+    "packages/ghostmobile-sdk",
+    "packages/ghostforge",
+    "packages/ghostdeploy",
+    "packages/ghosttest",
+    "packages/ghostpkg",
+    "tools/ghostlint",
+    "services/ghostscan",
+    "services/ghostrpc",
+    "services/ghostxchange",
+    "services/ggvn",
+    "services/ghost-universe"
   ],
   "scripts": {
     "preinstall": "node scripts/node-check.mjs && node scripts/package-manager-check.mjs",
@@ -166,7 +190,10 @@
     "typescript": "5.9.3"
   },
   "dependencies": {
-    "nodemailer": "8.0.1"
+    "@types/three": "^0.183.1",
+    "nodemailer": "8.0.1",
+    "recharts": "^3.8.0",
+    "three": "^0.183.2"
   },
   "engines": {
     "node": ">=22.21.0 <23"

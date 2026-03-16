@@ -201,6 +201,8 @@ const EnvSchema = z.object({
    * Comma-separated list of origins allowed for CORS (validated at startup).
    * Empty = allow all in dev, deny all non-same-origin in production.
    */
+  /** GhostBrain Orchestrator service URL (port 7895). */
+  GHOSTBRAIN_ORCHESTRATOR_URL: z.string().url().default('http://localhost:7895'),
   CORS_ALLOW_ORIGINS: z.string().default(''),
   /** Rate-limit sliding window duration in ms (default: 1 min). */
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(1_000).max(3_600_000).default(60_000),

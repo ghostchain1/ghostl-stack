@@ -1,0 +1,21 @@
+{
+  "name": "@ghostchain/ghoststarlink-sdk",
+  "version": "1.0.0",
+  "description": "GhostStarlink SDK — Satellite mesh network integration for GhostChain node connectivity and off-grid consensus",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": ["ghostchain", "starlink", "satellite", "mesh-network", "off-grid", "gst", "ghostnode"],
+  "license": "MIT"
+}

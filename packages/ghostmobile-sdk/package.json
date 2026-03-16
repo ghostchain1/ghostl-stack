@@ -1,0 +1,21 @@
+{
+  "name": "@ghostchain/ghostmobile-sdk",
+  "version": "1.0.0",
+  "description": "GhostMobile SDK — React Native / JavaScript bridge for GhostChain mobile apps and GhostWallet mobile",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": ["ghostchain", "ghost-mobile", "react-native", "ghostwallet", "mobile"],
+  "license": "MIT"
+}

@@ -54,7 +54,7 @@ async function poolStats(creatorId: string) {
 // GET /pool/:creatorId — pool stats
 app.get("/pool/:creatorId", async (req: Request, res: Response) => {
   try {
-    const stats = await poolStats(req.params.creatorId);
+    const stats = await poolStats(req.params.creatorId as string);
     res.json({ creator_id: req.params.creatorId, apy_bps: ANNUAL_YIELD_BPS, ...stats });
   } catch {
     res.status(500).json({ error: "Failed to fetch pool stats" });

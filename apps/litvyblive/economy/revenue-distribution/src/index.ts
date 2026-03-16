@@ -200,7 +200,7 @@ app.post("/distribute", async (req: Request, res: Response) => {
 // GET /split/:creatorId — view effective split for a creator
 app.get("/split/:creatorId", async (req: Request, res: Response) => {
   try {
-    const split = await splitForCreator(req.params.creatorId);
+    const split = await splitForCreator(req.params.creatorId as string);
     res.json({ creator_id: req.params.creatorId, ...split });
   } catch {
     res.status(500).json({ error: "Failed to fetch split config" });

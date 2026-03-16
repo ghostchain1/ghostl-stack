@@ -99,7 +99,7 @@ sub.on("message", async (_ch, msg) => {
 // GET /creator/treasury/:creatorId
 app.get("/creator/treasury/:creatorId", async (req: Request, res: Response) => {
   try {
-    const bal = await getBalance(req.params.creatorId);
+    const bal = await getBalance(req.params.creatorId as string);
     const { rows: recent } = await db.query(
       `SELECT * FROM treasury_transactions WHERE creator_id = $1
        ORDER BY created_at DESC LIMIT 20`,

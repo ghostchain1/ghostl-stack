@@ -1,0 +1,15 @@
+{
+  "name": "@ghostchain/ghosttest",
+  "version": "1.0.0",
+  "description": "GhostTest — GhostChain smart contract testing framework with on-chain assertions",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": { "ghosttest": "./dist/cli.js" },
+  "exports": {
+    ".": { "import": "./dist/index.js", "types": "./dist/index.d.ts" }
+  },
+  "scripts": { "build": "tsc", "dev": "tsc --watch", "clean": "rm -rf dist" },
+  "keywords": ["ghostchain", "ghosttest", "testing", "solidity"],
+  "license": "MIT"
+}

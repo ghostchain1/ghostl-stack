@@ -1,0 +1,21 @@
+{
+  "name": "@ghostchain/ghostdefi-sdk",
+  "version": "1.0.0",
+  "description": "GhostDeFi SDK — swap, pool, farm, staking, stable, and treasury DeFi primitives on GhostChain L2/L3",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./swap": { "types": "./dist/swap/GhostSwap.d.ts", "default": "./dist/swap/GhostSwap.js" },
+    "./pool": { "types": "./dist/pool/GhostPool.d.ts", "default": "./dist/pool/GhostPool.js" },
+    "./farm": { "types": "./dist/farm/GhostFarm.d.ts", "default": "./dist/farm/GhostFarm.js" },
+    "./stable": { "types": "./dist/stable/GhostStable.d.ts", "default": "./dist/stable/GhostStable.js" }
+  },
+  "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist" },
+  "dependencies": { "@ghostchain/sdk": "1.0.0" },
+  "devDependencies": { "@types/node": "^22.0.0", "typescript": "^5.6.0" },
+  "engines": { "node": ">=22.21.0 <23" },
+  "keywords": ["ghostchain", "defi", "swap", "amm", "liquidity", "gst", "ghostxchange"],
+  "license": "MIT"
+}

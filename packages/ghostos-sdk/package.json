@@ -1,0 +1,66 @@
+{
+  "name": "@ghostchain/ghostos-sdk",
+  "version": "1.0.0",
+  "description": "GhostOS SDK — baremetal server, hypervisor, VM, container, network, and storage management for GhostChain infrastructure",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/GhostServer.d.ts",
+      "default": "./dist/server/GhostServer.js"
+    },
+    "./hypervisor": {
+      "types": "./dist/hypervisor/GhostHypervisor.d.ts",
+      "default": "./dist/hypervisor/GhostHypervisor.js"
+    },
+    "./vm": {
+      "types": "./dist/vm/GhostVM.d.ts",
+      "default": "./dist/vm/GhostVM.js"
+    },
+    "./container": {
+      "types": "./dist/container/GhostContainer.d.ts",
+      "default": "./dist/container/GhostContainer.js"
+    },
+    "./network": {
+      "types": "./dist/network/GhostOSNetwork.d.ts",
+      "default": "./dist/network/GhostOSNetwork.js"
+    },
+    "./storage": {
+      "types": "./dist/storage/GhostStorage.d.ts",
+      "default": "./dist/storage/GhostStorage.js"
+    },
+    "./security": {
+      "types": "./dist/security/GhostOSSecurity.d.ts",
+      "default": "./dist/security/GhostOSSecurity.js"
+    },
+    "./monitor": {
+      "types": "./dist/monitor/GhostOSMonitor.d.ts",
+      "default": "./dist/monitor/GhostOSMonitor.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:watch": "tsc -p tsconfig.json --watch",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest"
+  },
+  "dependencies": {
+    "@ghostchain/sdk": "1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  },
+  "keywords": ["ghostchain", "ghostos", "hypervisor", "infrastructure", "baremetal"],
+  "license": "MIT"
+}

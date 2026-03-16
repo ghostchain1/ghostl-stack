@@ -1,0 +1,15 @@
+{
+  "name": "@ghostchain/ghostnft-sdk",
+  "version": "1.0.0",
+  "description": "GhostNFT SDK — GRC-721/GRC-1155 mint, transfer, marketplace, and royalty management on GhostChain",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist" },
+  "dependencies": { "@ghostchain/sdk": "1.0.0" },
+  "devDependencies": { "@types/node": "^22.0.0", "typescript": "^5.6.0" },
+  "engines": { "node": ">=22.21.0 <23" },
+  "keywords": ["ghostchain", "nft", "grc721", "grc1155", "marketplace"],
+  "license": "MIT"
+}

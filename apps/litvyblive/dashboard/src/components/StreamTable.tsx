@@ -88,8 +88,8 @@ export default function StreamTable({ streams, isLoading }: Props) {
                 <span className="flex items-center gap-1">Host <SortIcon k="host_name" /></span>
               </th>
               <th className="py-2 pr-4">Title</th>
-              <th className="py-2 pr-4 cursor-pointer select-none hover:text-white" onClick={() => toggle("viewers")}>
-                <span className="flex items-center gap-1">Viewers <SortIcon k="viewers" /></span>
+              <th className="py-2 pr-4 cursor-pointer select-none hover:text-white" onClick={() => toggle("viewer_count")}>
+                <span className="flex items-center gap-1">Viewers <SortIcon k="viewer_count" /></span>
               </th>
               <th className="py-2 pr-4">Category</th>
               <th className="py-2 pr-4">Status</th>

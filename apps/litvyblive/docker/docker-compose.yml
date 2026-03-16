@@ -93,9 +93,246 @@ services:
     networks:
       - litvyb
 
+  # ─────────────────────────────────────────────
+  # Shared infrastructure for economy services
+  # ─────────────────────────────────────────────
+  economy-postgres:
+    image: postgres:16-alpine
+    container_name: litvyb_economy_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       litvyb_economy
+      POSTGRES_USER:     litvyb
+      POSTGRES_PASSWORD: ${ECONOMY_DB_PASSWORD:?required}
+    volumes:
+      - economy_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litvyb -d litvyb_economy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - litvyb
+
+  economy-redis:
+    image: redis:7-alpine
+    container_name: litvyb_economy_redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - economy_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - litvyb
+
+  # ─────────────────────────────────────────────
+  # Economy Microservices (ports 7040–7047)
+  # Build context: ../economy/  (SERVICE build arg selects the service)
+  # ─────────────────────────────────────────────
+
+  creator-treasury:
+    build:
+      context: ../economy
+      dockerfile: Dockerfile
+      args:
+        SERVICE: creator-treasury
+    image: litvyb/creator-treasury:latest
+    container_name: litvyb_creator_treasury
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:7040:7040"
+    environment:
+      NODE_ENV:     production
+      PORT:         "7040"
+      DATABASE_URL: postgresql://litvyb:${ECONOMY_DB_PASSWORD}@economy-postgres:5432/litvyb_economy
+      REDIS_URL:    redis://economy-redis:6379
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+    depends_on:
+      economy-postgres: { condition: service_healthy }
+      economy-redis:    { condition: service_healthy }
+    networks:
+      - litvyb
+
+  fan-memberships:
+    build:
+      context: ../economy
+      dockerfile: Dockerfile
+      args:
+        SERVICE: fan-memberships
+    image: litvyb/fan-memberships:latest
+    container_name: litvyb_fan_memberships
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:7041:7041"
+    environment:
+      NODE_ENV:     production
+      PORT:         "7041"
+      DATABASE_URL: postgresql://litvyb:${ECONOMY_DB_PASSWORD}@economy-postgres:5432/litvyb_economy
+      REDIS_URL:    redis://economy-redis:6379
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+    depends_on:
+      economy-postgres: { condition: service_healthy }
+      economy-redis:    { condition: service_healthy }
+    networks:
+      - litvyb
+
+  creator-tokens:
+    build:
+      context: ../economy
+      dockerfile: Dockerfile
+      args:
+        SERVICE: creator-tokens
+    image: litvyb/creator-tokens:latest
+    container_name: litvyb_creator_tokens
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:7042:7042"
+    environment:
+      NODE_ENV:     production
+      PORT:         "7042"
+      DATABASE_URL: postgresql://litvyb:${ECONOMY_DB_PASSWORD}@economy-postgres:5432/litvyb_economy
+      REDIS_URL:    redis://economy-redis:6379
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+    depends_on:
+      economy-postgres: { condition: service_healthy }
+      economy-redis:    { condition: service_healthy }
+    networks:
+      - litvyb
+
+  nft-gifts:
+    build:
+      context: ../economy
+      dockerfile: Dockerfile
+      args:
+        SERVICE: nft-gifts
+    image: litvyb/nft-gifts:latest
+    container_name: litvyb_nft_gifts
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:7043:7043"
+    environment:
+      NODE_ENV:     production
+      PORT:         "7043"
+      DATABASE_URL: postgresql://litvyb:${ECONOMY_DB_PASSWORD}@economy-postgres:5432/litvyb_economy
+      REDIS_URL:    redis://economy-redis:6379
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+    depends_on:
+      economy-postgres: { condition: service_healthy }
+      economy-redis:    { condition: service_healthy }
+    networks:
+      - litvyb
+
+  staking-engine:
+    build:
+      context: ../economy
+      dockerfile: Dockerfile
+      args:
+        SERVICE: staking-engine
+    image: litvyb/staking-engine:latest
+    container_name: litvyb_staking_engine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:7044:7044"
+    environment:
+      NODE_ENV:     production
+      PORT:         "7044"
+      DATABASE_URL: postgresql://litvyb:${ECONOMY_DB_PASSWORD}@economy-postgres:5432/litvyb_economy
+      REDIS_URL:    redis://economy-redis:6379
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+    depends_on:
+      economy-postgres: { condition: service_healthy }
+      economy-redis:    { condition: service_healthy }
+    networks:
+      - litvyb
+
+  revenue-distribution:
+    build:
+      context: ../economy
+      dockerfile: Dockerfile
+      args:
+        SERVICE: revenue-distribution
+    image: litvyb/revenue-distribution:latest
+    container_name: litvyb_revenue_distribution
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:7045:7045"
+    environment:
+      NODE_ENV:     production
+      PORT:         "7045"
+      DATABASE_URL: postgresql://litvyb:${ECONOMY_DB_PASSWORD}@economy-postgres:5432/litvyb_economy
+      REDIS_URL:    redis://economy-redis:6379
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+      CREATOR_TREASURY_URL: http://creator-treasury:7040
+    depends_on:
+      economy-postgres:  { condition: service_healthy }
+      economy-redis:     { condition: service_healthy }
+      creator-treasury:  { condition: service_started }
+    networks:
+      - litvyb
+
+  fan-dao:
+    build:
+      context: ../economy
+      dockerfile: Dockerfile
+      args:
+        SERVICE: fan-dao
+    image: litvyb/fan-dao:latest
+    container_name: litvyb_fan_dao
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:7046:7046"
+    environment:
+      NODE_ENV:     production
+      PORT:         "7046"
+      DATABASE_URL: postgresql://litvyb:${ECONOMY_DB_PASSWORD}@economy-postgres:5432/litvyb_economy
+      REDIS_URL:    redis://economy-redis:6379
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+      STAKING_ENGINE_URL: http://staking-engine:7044
+    depends_on:
+      economy-postgres: { condition: service_healthy }
+      economy-redis:    { condition: service_healthy }
+      staking-engine:   { condition: service_started }
+    networks:
+      - litvyb
+
+  marketplace:
+    build:
+      context: ../economy
+      dockerfile: Dockerfile
+      args:
+        SERVICE: marketplace
+    image: litvyb/marketplace:latest
+    container_name: litvyb_marketplace
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:7047:7047"
+    environment:
+      NODE_ENV:     production
+      PORT:         "7047"
+      DATABASE_URL: postgresql://litvyb:${ECONOMY_DB_PASSWORD}@economy-postgres:5432/litvyb_economy
+      REDIS_URL:    redis://economy-redis:6379
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+      CREATOR_TOKENS_URL:  http://creator-tokens:7042
+      NFT_GIFTS_URL:       http://nft-gifts:7043
+    depends_on:
+      economy-postgres: { condition: service_healthy }
+      economy-redis:    { condition: service_healthy }
+      creator-tokens:   { condition: service_started }
+      nft-gifts:        { condition: service_started }
+    networks:
+      - litvyb
+
 volumes:
   backend_data:
     name: litvyb_backend_data
+  economy_pg_data:
+    name: litvyb_economy_pg_data
+  economy_redis_data:
+    name: litvyb_economy_redis_data
 
 networks:
   litvyb:
