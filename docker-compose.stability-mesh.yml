@@ -1,0 +1,85 @@
+services:
+  ghost-rpc-aggregator:
+    container_name: ghost_ghost-rpc-aggregator
+    build:
+      context: .
+      dockerfile: services/ghost-rpc-aggregator/Dockerfile
+    environment:
+      PORT: 7615
+      HOST: 0.0.0.0
+      RPC_L1_URLS: ${RPC_L1_URLS:-http://host.docker.internal:18545}
+      RPC_L2_URLS: ${RPC_L2_URLS:-http://host.docker.internal:29545}
+      RPC_L3_URLS: ${RPC_L3_URLS:-http://host.docker.internal:39545}
+      RPC_REQUEST_TIMEOUT_MS: ${RPC_REQUEST_TIMEOUT_MS:-4000}
+      RPC_CACHE_DEFAULT_TTL_MS: ${RPC_CACHE_DEFAULT_TTL_MS:-1000}
+      RPC_CACHE_MAX_ENTRIES: ${RPC_CACHE_MAX_ENTRIES:-2048}
+      RPC_CIRCUIT_FAILURES: ${RPC_CIRCUIT_FAILURES:-3}
+      RPC_CIRCUIT_COOLDOWN_MS: ${RPC_CIRCUIT_COOLDOWN_MS:-15000}
+      RPC_VERIFY_INTERVAL_MS: ${RPC_VERIFY_INTERVAL_MS:-60000}
+    ports:
+      - "7615:7615"
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.50
+
+  ghost-tx-engine:
+    container_name: ghost_ghost-tx-engine
+    build:
+      context: .
+      dockerfile: services/ghost-tx-engine/Dockerfile
+    environment:
+      PORT: 7616
+      HOST: 0.0.0.0
+      TX_ENGINE_L1_RPC_URL: http://ghost-rpc-aggregator:7615/rpc/l1
+      TX_ENGINE_L2_RPC_URL: http://ghost-rpc-aggregator:7615/rpc/l2
+      TX_ENGINE_L3_RPC_URL: http://ghost-rpc-aggregator:7615/rpc/l3
+      TX_ENGINE_REQUEST_TIMEOUT_MS: ${TX_ENGINE_REQUEST_TIMEOUT_MS:-12000}
+      TX_ENGINE_POLL_INTERVAL_MS: ${TX_ENGINE_POLL_INTERVAL_MS:-250}
+      TX_ENGINE_RETRY_BASE_MS: ${TX_ENGINE_RETRY_BASE_MS:-2000}
+      TX_ENGINE_RETRY_MAX_MS: ${TX_ENGINE_RETRY_MAX_MS:-120000}
+      TX_ENGINE_MAX_ATTEMPTS: ${TX_ENGINE_MAX_ATTEMPTS:-5}
+      TX_ENGINE_MAX_TRACKED_JOBS: ${TX_ENGINE_MAX_TRACKED_JOBS:-5000}
+      TX_ENGINE_COMPACT_EVERY: ${TX_ENGINE_COMPACT_EVERY:-250}
+      TX_ENGINE_JOURNAL_PATH: /workspace/services/ghost-tx-engine/data/tx-journal.ndjson
+    ports:
+      - "7616:7616"
+    volumes:
+      - ./services/ghost-tx-engine/data:/workspace/services/ghost-tx-engine/data
+    depends_on:
+      - ghost-rpc-aggregator
+    restart: unless-stopped
+    mem_limit: 384m
+    cpus: 0.50
+
+  ghost-memory-guard:
+    container_name: ghost_ghost-memory-guard
+    build:
+      context: .
+      dockerfile: services/ghost-memory-guard/Dockerfile
+    environment:
+      PORT: 7617
+      HOST: 0.0.0.0
+      DOCKER_SOCKET_PATH: /var/run/docker.sock
+      MEMORY_GUARD_POLL_INTERVAL_MS: ${MEMORY_GUARD_POLL_INTERVAL_MS:-30000}
+      MEMORY_GUARD_WARN_PERCENT: ${MEMORY_GUARD_WARN_PERCENT:-70}
+      MEMORY_GUARD_RESTART_PERCENT: ${MEMORY_GUARD_RESTART_PERCENT:-85}
+      MEMORY_GUARD_RESTART_COOLDOWN_MS: ${MEMORY_GUARD_RESTART_COOLDOWN_MS:-180000}
+      MEMORY_GUARD_MAX_RESTARTS_PER_HOUR: ${MEMORY_GUARD_MAX_RESTARTS_PER_HOUR:-3}
+      MEMORY_GUARD_MONITOR: ghost-rpc-aggregator,ghost-tx-engine
+      MEMORY_GUARD_HEALTH_TARGETS: ghost-rpc-aggregator|http://ghost-rpc-aggregator:7615/health,ghost-tx-engine|http://ghost-tx-engine:7616/health
+      MEMORY_GUARD_AUTO_RESTART: ${MEMORY_GUARD_AUTO_RESTART:-false}
+      CONTAINER_ALLOWLIST: ${CONTAINER_ALLOWLIST:-ghost-rpc-aggregator,ghost-tx-engine}
+      MEMORY_GUARD_INCIDENT_PATH: /app/data/incidents.ndjson
+    ports:
+      - "7617:7617"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./services/ghost-memory-guard/data:/app/data
+    depends_on:
+      - ghost-rpc-aggregator
+      - ghost-tx-engine
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.50

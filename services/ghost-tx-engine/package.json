@@ -1,0 +1,14 @@
+{
+  "name": "ghost-tx-engine",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Durable Ghost transaction engine with bounded memory and retry control",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

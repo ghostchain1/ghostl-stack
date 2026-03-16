@@ -1,0 +1,14 @@
+{
+  "name": "ghost-memory-guard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Container memory guard for Ghost services with bounded retention and allowlisted restart policy",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

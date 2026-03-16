@@ -1,0 +1,25 @@
+services:
+  ghost-memory-guard:
+    container_name: ghost_ghost-memory-guard
+    build:
+      context: ../..
+      dockerfile: services/ghost-memory-guard/Dockerfile
+    environment:
+      PORT: ${GHOST_MEMORY_GUARD_PORT:-7617}
+      HOST: 0.0.0.0
+      DOCKER_SOCKET_PATH: /var/run/docker.sock
+      MEMORY_GUARD_POLL_INTERVAL_MS: ${MEMORY_GUARD_POLL_INTERVAL_MS:-30000}
+      MEMORY_GUARD_WARN_PERCENT: ${MEMORY_GUARD_WARN_PERCENT:-70}
+      MEMORY_GUARD_RESTART_PERCENT: ${MEMORY_GUARD_RESTART_PERCENT:-85}
+      MEMORY_GUARD_RESTART_COOLDOWN_MS: ${MEMORY_GUARD_RESTART_COOLDOWN_MS:-180000}
+      MEMORY_GUARD_MAX_RESTARTS_PER_HOUR: ${MEMORY_GUARD_MAX_RESTARTS_PER_HOUR:-3}
+      CONTAINER_ALLOWLIST: ${CONTAINER_ALLOWLIST:-}
+      MEMORY_GUARD_AUTO_RESTART: ${MEMORY_GUARD_AUTO_RESTART:-false}
+    ports:
+      - "${GHOST_MEMORY_GUARD_PORT:-7617}:7617"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/app/data
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.50

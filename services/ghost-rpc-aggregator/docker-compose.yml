@@ -1,0 +1,25 @@
+services:
+  ghost-rpc-aggregator:
+    container_name: ghost_ghost-rpc-aggregator
+    build:
+      context: ../..
+      dockerfile: services/ghost-rpc-aggregator/Dockerfile
+    environment:
+      PORT: ${GHOST_RPC_AGGREGATOR_PORT:-7615}
+      HOST: 0.0.0.0
+      RPC_L1_URLS: ${RPC_L1_URLS:-http://host.docker.internal:18545}
+      RPC_L2_URLS: ${RPC_L2_URLS:-http://host.docker.internal:29545}
+      RPC_L3_URLS: ${RPC_L3_URLS:-http://host.docker.internal:39545}
+      RPC_REQUEST_TIMEOUT_MS: ${RPC_REQUEST_TIMEOUT_MS:-4000}
+      RPC_CACHE_DEFAULT_TTL_MS: ${RPC_CACHE_DEFAULT_TTL_MS:-1000}
+      RPC_CACHE_MAX_ENTRIES: ${RPC_CACHE_MAX_ENTRIES:-2048}
+      RPC_CIRCUIT_FAILURES: ${RPC_CIRCUIT_FAILURES:-3}
+      RPC_CIRCUIT_COOLDOWN_MS: ${RPC_CIRCUIT_COOLDOWN_MS:-15000}
+      RPC_VERIFY_INTERVAL_MS: ${RPC_VERIFY_INTERVAL_MS:-60000}
+    ports:
+      - "${GHOST_RPC_AGGREGATOR_PORT:-7615}:7615"
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.50

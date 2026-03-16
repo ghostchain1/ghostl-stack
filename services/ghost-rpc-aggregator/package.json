@@ -1,0 +1,14 @@
+{
+  "name": "ghost-rpc-aggregator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Ghost-native RPC aggregation service with caching, dedupe, and failover",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

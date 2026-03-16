@@ -458,6 +458,10 @@ app.use((err, _req, res, _next) => {
   if (err.status === 405 || err.statusCode === 405) return res.status(405).json({ ok: false, error: "Method not allowed" });
   const status = err.status ?? err.statusCode ?? 500;
   const _isProd = process.env.NODE_ENV === "production";
+  if (res.headersSent || res.writableEnded) {
+    console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "lateError", status, error: err?.message ?? String(err), stack: _isProd ? undefined : err?.stack }));
+    return;
+  }
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("Surrogate-Control", "no-store");
   console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "unhandledError", status, error: err?.message ?? String(err), stack: _isProd ? undefined : err?.stack }));

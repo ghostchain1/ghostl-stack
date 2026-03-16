@@ -1,0 +1,29 @@
+services:
+  ghost-tx-engine:
+    container_name: ghost_ghost-tx-engine
+    build:
+      context: ../..
+      dockerfile: services/ghost-tx-engine/Dockerfile
+    environment:
+      PORT: ${GHOST_TX_ENGINE_PORT:-7616}
+      HOST: 0.0.0.0
+      TX_ENGINE_L1_RPC_URL: ${TX_ENGINE_L1_RPC_URL:-http://host.docker.internal:18545}
+      TX_ENGINE_L2_RPC_URL: ${TX_ENGINE_L2_RPC_URL:-http://host.docker.internal:29545}
+      TX_ENGINE_L3_RPC_URL: ${TX_ENGINE_L3_RPC_URL:-http://host.docker.internal:39545}
+      TX_ENGINE_REQUEST_TIMEOUT_MS: ${TX_ENGINE_REQUEST_TIMEOUT_MS:-12000}
+      TX_ENGINE_POLL_INTERVAL_MS: ${TX_ENGINE_POLL_INTERVAL_MS:-250}
+      TX_ENGINE_RETRY_BASE_MS: ${TX_ENGINE_RETRY_BASE_MS:-2000}
+      TX_ENGINE_RETRY_MAX_MS: ${TX_ENGINE_RETRY_MAX_MS:-120000}
+      TX_ENGINE_MAX_ATTEMPTS: ${TX_ENGINE_MAX_ATTEMPTS:-5}
+      TX_ENGINE_MAX_TRACKED_JOBS: ${TX_ENGINE_MAX_TRACKED_JOBS:-5000}
+      TX_ENGINE_COMPACT_EVERY: ${TX_ENGINE_COMPACT_EVERY:-250}
+      TX_ENGINE_JOURNAL_PATH: /workspace/services/ghost-tx-engine/data/tx-journal.ndjson
+    ports:
+      - "${GHOST_TX_ENGINE_PORT:-7616}:7616"
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - ./data:/workspace/services/ghost-tx-engine/data
+    restart: unless-stopped
+    mem_limit: 384m
+    cpus: 0.50
