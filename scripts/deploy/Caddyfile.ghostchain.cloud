@@ -1,0 +1,238 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# GhostChain Caddyfile — Production
+# Host: ghost-web  208.110.71.171
+# All ghostchain.cloud subdomains — TLS auto-provisioned via Let's Encrypt
+# Updated: 2026-03-16
+# ══════════════════════════════════════════════════════════════════════════════
+
+{
+        email ghosttoken.dev@gmail.com
+
+        servers {
+                protocols h1 h2 h3
+        }
+}
+
+# ── Global security + compression snippet ─────────────────────────────────────
+(ghost_security) {
+        encode {
+                gzip 6
+                zstd
+        }
+        header {
+                -Server
+                -X-Powered-By
+                Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+                X-Content-Type-Options nosniff
+                X-Frame-Options SAMEORIGIN
+                X-XSS-Protection "1; mode=block"
+                Referrer-Policy strict-origin-when-cross-origin
+                Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        }
+}
+
+# ── CORS snippet (for RPC / API endpoints) ────────────────────────────────────
+(ghost_cors) {
+        @options method OPTIONS
+        handle @options {
+                header Access-Control-Allow-Origin "*"
+                header Access-Control-Allow-Methods "GET, POST, PUT, OPTIONS"
+                header Access-Control-Allow-Headers "Content-Type, Authorization"
+                respond "" 204
+        }
+        header Access-Control-Allow-Origin "*"
+        header Access-Control-Allow-Methods "GET, POST, PUT, OPTIONS"
+        header Access-Control-Allow-Headers "Content-Type, Authorization"
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# PRIMARY DOMAIN
+# ══════════════════════════════════════════════════════════════════════════════
+
+ghostchain.cloud, www.ghostchain.cloud {
+        import ghost_security
+
+        @www host www.ghostchain.cloud
+        redir @www https://ghostchain.cloud{uri} 301
+
+        reverse_proxy ghostchain-web:80
+
+        log {
+                output file /data/logs/access.log {
+                        roll_size 10MB
+                        roll_keep 10
+                }
+                format json
+        }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# WEB APPS  — ghostweb Docker network (ports 3011–3026)
+# ══════════════════════════════════════════════════════════════════════════════
+
+# 3011  Investor Relations
+investor.ghostchain.cloud, invest.ghostchain.cloud {
+        import ghost_security
+        reverse_proxy ghostweb-investor:3011
+}
+
+# 3012  Developer Hub
+dev.ghostchain.cloud {
+        import ghost_security
+        reverse_proxy ghostweb-dev:3012
+}
+
+# 3013  App Universe
+apps.ghostchain.cloud, app.ghostchain.cloud {
+        import ghost_security
+        reverse_proxy ghostweb-apps:3013
+}
+
+# 3014  Block Explorer (GhostScan)
+explorer.ghostchain.cloud {
+        import ghost_security
+        reverse_proxy ghostweb-explorer:3014
+}
+
+# 3015  Governance
+governance.ghostchain.cloud {
+        import ghost_security
+        reverse_proxy ghostweb-governance:3015
+}
+
+# 3016  Node / Validator Network
+nodes.ghostchain.cloud, validator.ghostchain.cloud {
+        import ghost_security
+        reverse_proxy ghostweb-nodes:3016
+}
+
+# 3017  GhostXchange DEX
+exchange.ghostchain.cloud {
+        import ghost_security
+        reverse_proxy ghostweb-exchange:3017
+}
+
+# 3018  Company / Employee portal
+company.ghostchain.cloud, employee.ghostchain.cloud {
+        import ghost_security
+        reverse_proxy ghostweb-company:3018
+}
+
+# 3019  Status page
+status.ghostchain.cloud {
+        import ghost_security
+        reverse_proxy ghostweb-status:3019
+}
+
+# 3020  Admin portal
+portal.ghostchain.cloud, admin.ghostchain.cloud {
+        import ghost_security
+        reverse_proxy ghostweb-portal:3020
+}
+
+# 3021  GhostWallet
+wallet.ghostchain.cloud {
+        import ghost_security
+        reverse_proxy ghostweb-wallet:3021
+}
+
+# 3022  Bridge UI
+bridge.ghostchain.cloud {
+        import ghost_security
+        reverse_proxy ghostweb-bridge:3022
+}
+
+# 3023  Docs
+docs.ghostchain.cloud {
+        import ghost_security
+        reverse_proxy ghostweb-docs:3023
+}
+
+# 3024  GhostChain Live
+live.ghostchain.cloud {
+        import ghost_security
+        reverse_proxy ghostweb-live:3024
+}
+
+# 3025  GhostBrain AI interface
+ai.ghostchain.cloud {
+        import ghost_security
+        reverse_proxy ghostweb-ai:3025
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# API + RPC ENDPOINTS
+# ══════════════════════════════════════════════════════════════════════════════
+
+api.ghostchain.cloud {
+        import ghost_security
+        import ghost_cors
+        reverse_proxy http://38.247.149.218:4000
+}
+
+# GhostChain L1 JSON-RPC proxy
+rpc.ghostchain.cloud {
+        import ghost_security
+        import ghost_cors
+        reverse_proxy http://208.110.71.164:18545 {
+                header_up Host "208.110.71.164:18545"
+        }
+}
+
+l2rpc.ghostchain.cloud {
+        import ghost_security
+        import ghost_cors
+        header Content-Type "application/json"
+        respond `{"error":"GhostL2 RPC not yet deployed","status":"coming-soon"}` 503
+}
+
+l3rpc.ghostchain.cloud {
+        import ghost_security
+        import ghost_cors
+        header Content-Type "application/json"
+        respond `{"error":"GhostL3 RPC not yet deployed","status":"coming-soon"}` 503
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# OWNED DOMAINS — 301 → https://ghostchain.cloud
+# ══════════════════════════════════════════════════════════════════════════════
+
+ghostchain.info, www.ghostchain.info {
+        redir https://ghostchain.cloud{uri} 301
+}
+
+ghostchain.life, www.ghostchain.life {
+        redir https://ghostchain.cloud{uri} 301
+}
+
+ghostchain.live, www.ghostchain.live {
+        redir https://ghostchain.cloud{uri} 301
+}
+
+ghostchain.online, www.ghostchain.online {
+        redir https://ghostchain.cloud{uri} 301
+}
+
+ghostchain.space, www.ghostchain.space {
+        redir https://ghostchain.cloud{uri} 301
+}
+
+ghostchain.store, www.ghostchain.store {
+        redir https://ghostchain.cloud{uri} 301
+}
+
+ghostchain.world, www.ghostchain.world {
+        redir https://ghostchain.cloud{uri} 301
+}
+
+ghostchainlink.com, www.ghostchainlink.com {
+        redir https://ghostchain.cloud{uri} 301
+}
+
+ghostchainsolutions.com, www.ghostchainsolutions.com {
+        redir https://ghostchain.cloud{uri} 301
+}
+
+ghostschain.com, www.ghostschain.com {
+        redir https://ghostchain.cloud{uri} 301
+}
