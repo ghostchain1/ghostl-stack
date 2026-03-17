@@ -10,6 +10,12 @@ FROM node:22-alpine AS base
 WORKDIR /workspace
 COPY packages/ghost-sdk-core/ ./packages/ghost-sdk-core/
 
+# ── Build ghost-sdk-core as CommonJS so Node ESM resolution works at runtime ──
+# The package tsconfig emits ESNext (with bare specifiers); override to CJS here.
+WORKDIR /workspace/packages/ghost-sdk-core
+RUN npm install --omit=dev && npm install --save-dev typescript @types/node
+RUN ./node_modules/.bin/tsc --outDir dist --module CommonJS --moduleResolution node --declaration true
+
 WORKDIR /workspace/services/ghostbrain-core
 COPY services/ghostbrain-core/package.json services/ghostbrain-core/tsconfig.json ./
 
