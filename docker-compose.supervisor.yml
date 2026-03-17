@@ -173,7 +173,5 @@ volumes:
 
 networks:
   ghost-internal:
-    driver: bridge
+    external: true
     name: ghost-internal
-    # Attach to this network from the main compose file to share service
-    # discovery between GAIS and ghostbrain-core, signing-relay, etc.

@@ -15,6 +15,8 @@ RUN addgroup -S hyperai && adduser -S hyperai -G hyperai
 COPY package.json ./
 # Zero production dependencies — no npm install step needed
 COPY src ./src
+COPY swarm ./swarm
+COPY agents ./agents
 
 # Runtime defaults (all configurable via compose env_file / environment:)
 ENV NODE_ENV=production
@@ -27,6 +29,6 @@ USER hyperai
 EXPOSE 7741
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:7741/healthz || exit 1
+  CMD wget -qO- http://127.0.0.1:7741/status || exit 1
 
 CMD ["node", "src/index.js"]

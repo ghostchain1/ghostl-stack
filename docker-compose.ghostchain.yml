@@ -146,8 +146,8 @@ networks:
   #       external: true
   #       name: ghostchain-cosmos-net
   ghostchain-cosmos-net:
+    external: true
     name: ghostchain-cosmos-net
-    driver: bridge
 
 volumes:
   ghostchaind-data:

@@ -153,6 +153,49 @@ export class BrainPoster {
   }
 
   /**
+   * Generic signal poster: send a raw subject/correlationId/payload tuple.
+   */
+  async postSignal(subject: string, correlationId: string, payload: unknown): Promise<void> {
+    const message: BrainMessage = {
+      messageId:     randomUUID(),
+      subject,
+      correlationId,
+      senderAgentId: "governance-event-bridge",
+      payload,
+      sentAt:        new Date().toISOString(),
+    };
+
+    const body = JSON.stringify(message);
+    const ts   = Date.now();
+    const sig  = signBody(body, this.secret, ts);
+
+    const headers: Record<string, string> = {
+      "content-type":     "application/json",
+      "x-agent-id":       "governance-event-bridge",
+      "x-hmac-timestamp": String(ts),
+      "x-hmac-signature": sig,
+    };
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    try {
+      const res = await fetch(this.url, {
+        method:  "POST",
+        headers,
+        body,
+        signal:  controller.signal,
+      });
+
+      if (!res.ok) {
+        throw new Error(`ghostbrain-core returned HTTP ${res.status}`);
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /**
    * Convenience: post an array of events in series.
    * Continues on individual failures.
    */

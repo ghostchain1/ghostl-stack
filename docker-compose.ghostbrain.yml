@@ -44,7 +44,7 @@ services:
     ports:
       # SOVEREIGN: NATS bound to localhost; monitoring port (8222) internal only.
       - "127.0.0.1:${NATS_PORT:-4222}:4222"
-    command: ["-js"]
+    command: ["-js", "-m", "8222"]
     networks:
       - ghostbrain-net
     healthcheck:
@@ -59,6 +59,8 @@ services:
     image: postgres:16-alpine
     container_name: ghostbrain-postgres
     <<: *hardening
+    user: "70:70"     # postgres user in alpine — overrides hardening's 10001:10001
+    read_only: false  # postgres must write to its data volume
     environment:
       POSTGRES_DB: ghostbrain
       POSTGRES_USER: ghostbrain
@@ -93,8 +95,8 @@ services:
   # ─── GhostBrain Core (central brain + HTTP API on :7900) ──────────────────
   ghostbrain-core:
     build:
-      context: ./services/ghostbrain-core
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/ghostbrain-core/Dockerfile
     image: ghostbrain-core:latest
     container_name: ghostbrain-core
     restart: unless-stopped
@@ -284,8 +286,8 @@ services:
   # ─── ACG: Planner Agent (code change planning) ────────────────────────────
   acg-planner:
     build:
-      context: ./services/ghostbrain-core
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/ghostbrain-core/Dockerfile
     image: ghostbrain-core:latest
     container_name: acg-planner
     restart: unless-stopped
@@ -326,8 +328,8 @@ services:
   # ─── ACG: Auditor Agent (security gate enforcement) ───────────────────────
   acg-auditor:
     build:
-      context: ./services/ghostbrain-core
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/ghostbrain-core/Dockerfile
     image: ghostbrain-core:latest
     container_name: acg-auditor
     restart: unless-stopped
@@ -366,8 +368,8 @@ services:
   # ─── ACG: Sentinel Agent (post-deploy SLO watcher) ────────────────────────
   acg-sentinel:
     build:
-      context: ./services/ghostbrain-core
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/ghostbrain-core/Dockerfile
     image: ghostbrain-core:latest
     container_name: acg-sentinel
     restart: unless-stopped
@@ -443,7 +445,7 @@ services:
       nats:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:7741/healthz"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:7741/status"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -557,11 +559,8 @@ services:
   # ── GhostBrain Orchestrator (port 7895) ────────────────────────────────────
   ghostbrain-orchestrator:
     build:
-      context: .
-      dockerfile: ./services/ghostbrain/Dockerfile.ghostbrain
-      args:
-        SERVICE_DIR: orchestrator
-        SERVICE_NAME: ghostbrain-orchestrator
+      context: ./services/ghostbrain/orchestrator
+      dockerfile: Dockerfile
     image: ghostbrain-orchestrator:latest
     container_name: ghostbrain-orchestrator
     <<: *hardening
@@ -624,7 +623,7 @@ volumes:
 
 networks:
   ghostbrain-net:
-    driver: bridge
+    external: true
     name: ghostbrain-net
   ghostl-stack_default:
     external: true

@@ -69,6 +69,37 @@ apps/worker/**
 !apps/worker/
 !apps/worker/package.json
 
+# Allow ghostbrain-core and dependent services to build from repo root context
+!services/ghostbrain-core
+!services/ghostbrain-core/src
+!services/ghostbrain-core/src/**
+!services/ghostbrain-core/package.json
+!services/ghostbrain-core/tsconfig.json
+
+# Allow stability-mesh services to build from repo root context
+!services/ghost-tx-engine
+!services/ghost-tx-engine/**
+!services/ghost-rpc-aggregator
+!services/ghost-rpc-aggregator/**
+!services/ghost-memory-guard
+!services/ghost-memory-guard/**
+
+# Allow autonomy services with @ghostchain/sdk workspace dep to build from repo root context
+!services/network-context-service
+!services/network-context-service/**
+!services/consensus-telemetry-service
+!services/consensus-telemetry-service/**
+!services/network-manager-service
+!services/network-manager-service/**
+
+# Allow packages/ (workspace packages) for root-context builds
+!packages/ghost-sdk-core
+!packages/ghost-sdk-core/**
+!packages/ghost-sdk
+!packages/ghost-sdk/**
+!packages/ui
+!packages/ui/**
+
 # Allow pre-built dist/ for workspace packages needed by API/web builds
 
 # Allow pre-built dist/ for workspace packages needed by API/web builds

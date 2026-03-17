@@ -48,7 +48,7 @@ MAX_RESTARTS_HOUR   = int(os.getenv("VM_MANAGER_MAX_RESTARTS_H", "4"))
 SNAPSHOT_ENABLED    = os.getenv("VM_SNAPSHOT_ENABLED", "1") == "1"
 VIRSH_URI           = os.getenv("VIRSH_URI", "qemu:///system")
 
-_REPO_ROOT = Path(__file__).resolve().parents[3]
+_REPO_ROOT = Path(os.getenv("REPO_ROOT", "/home/ghost/ghostl-stack"))
 STATE_FILE = Path(os.getenv("VM_MGR_STATE_FILE", str(_REPO_ROOT / ".tmp" / "vm_manager_state.json")))
 
 # ── VM inventory (mirrors supervisor.py) ─────────────────────────────────────

@@ -1,0 +1,21 @@
+{
+  "name": "@ghostchain/ghost-orchestrator",
+  "version": "1.0.0",
+  "description": "GhostStack Autonomous Build Orchestrator — watches the devnet codebase, drives build → test → validate pipelines, and signals the promotion engine when quality gates pass.",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev":   "node --watch dist/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node":    "^22.10.7",
+    "typescript":     "^5.9.3"
+  },
+  "engines": { "node": ">=22.21.0 <23" }
+}

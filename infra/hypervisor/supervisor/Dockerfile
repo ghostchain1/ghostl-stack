@@ -34,6 +34,7 @@ COPY node_healer.py          .
 COPY validator_rebalancer.py .
 COPY vm_manager.py           .
 COPY ghostais.py             .
+COPY supervisor.py           .
 
 # Runtime defaults (all overridable via environment or docker-compose)
 ENV GAIS_LISTEN_ADDR=0.0.0.0 \

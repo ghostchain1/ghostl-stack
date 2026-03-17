@@ -1,0 +1,160 @@
+# GhostStack — Evolution Stack Docker Compose
+# =============================================
+# Brings all autonomous evolution services online:
+#   ghost-orchestrator      — devnet build pipeline watcher  (port 7950)
+#   ghost-promotion-engine  — dev → test → main promotion    (port 7951)
+#   (references existing services: ghostbrain-core, ghostbrain-simulator, GAIS)
+#
+# Usage:
+#   docker compose -f docker-compose.evolution.yml up -d
+#
+# To run alongside the full stack + supervisor:
+#   docker compose \
+#     -f docker-compose.yml \
+#     -f docker-compose.supervisor.yml \
+#     -f docker-compose.evolution.yml \
+#     up -d
+#
+# Prerequisites:
+#   .env (or stack.env sourced) must contain:
+#     GAIS_API_TOKEN=<strong-secret>
+#     VM_MANAGER_DRY_RUN=0        (leave as 0 for live healing)
+#     GHOSTBRAIN_URL=http://ghostbrain-core:7900
+#     SIGNING_RELAY_URL=http://signing-relay:7910
+#
+# Routing law (enforced in code):
+#   L3 (chain 903) → L2 (chain 901) → L1 (chain 14000101)
+#   Boot order: L1 first, L2 second, L3 third
+
+---
+
+version: "3.9"
+
+x-common-env: &common-env
+  NODE_ENV:             "production"
+  REPO_PATH:            "/workspace"
+  GHOSTBRAIN_URL:       "${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}"
+  SIGNING_RELAY_URL:    "${SIGNING_RELAY_URL:-http://signing-relay:7910}"
+  GAIS_URL:             "${GAIS_URL:-http://gais:9100}"
+  GAIS_API_TOKEN:       "${GAIS_API_TOKEN:-}"
+  DRY_RUN:              "${EVOLUTION_DRY_RUN:-0}"
+
+services:
+
+  # ── GhostBrain Simulator — AI Testnet Attack/Defense Engine ──────────────
+  ghostbrain-simulator:
+    build:
+      context:    ./services/ghostbrain-simulator
+      dockerfile: Dockerfile
+    image: ghostchain/ghostbrain-simulator:latest
+    container_name: ghostbrain-simulator
+    restart: unless-stopped
+
+    ports:
+      - "7960:7960"
+
+    environment:
+      SIMULATOR_PORT:  "7960"
+      GHOSTBRAIN_URL:  "${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}"
+      DRY_RUN:         "${EVOLUTION_DRY_RUN:-0}"
+
+    healthcheck:
+      test:         ["CMD", "node", "-e", "fetch('http://localhost:7960/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))"]
+      interval:     30s
+      timeout:      10s
+      retries:      3
+      start_period: 15s
+
+    networks:
+      - ghost-internal
+
+  # ── Ghost Orchestrator — Devnet Build Pipeline Watcher ────────────────────
+  ghost-orchestrator:
+    build:
+      context:    ./services/ghost-orchestrator
+      dockerfile: Dockerfile
+    image: ghostchain/ghost-orchestrator:latest
+    container_name: ghost-orchestrator
+    restart: unless-stopped
+
+    volumes:
+      # Full repo mount so orchestrator can read git hash + run forge
+      - .:/workspace:ro
+      # Writable .tmp for state persistence
+      - ./.tmp:/workspace/.tmp
+      # Docker socket so orchestrator can trigger docker compose builds
+      - /var/run/docker.sock:/var/run/docker.sock
+    # network_mode: host would give localhost RPC access — but breaks inter-container DNS.
+    # Use host IPs in DEVNET_RPC_* env vars instead (e.g., host.docker.internal or VM IP).
+
+    ports:
+      - "7950:7950"
+
+    environment:
+      <<: *common-env
+      PROMOTION_ENGINE_URL: "http://ghost-promotion-engine:7951"
+      RPC_L1_URL:           "${DEVNET_RPC_L1:-http://172.24.0.1:18545}"
+      RPC_L2_URL:           "${DEVNET_RPC_L2:-http://172.24.0.1:29545}"
+      RPC_L3_URL:           "${DEVNET_RPC_L3:-http://172.24.0.1:39545}"
+      POLL_INTERVAL_MS:     "${POLL_INTERVAL_MS:-60000}"
+      BUILD_TIMEOUT_MS:     "${BUILD_TIMEOUT_MS:-600000}"
+      TEST_TIMEOUT_MS:      "${TEST_TIMEOUT_MS:-300000}"
+      ORCH_PORT:            "7950"
+
+    healthcheck:
+      test:         ["CMD", "node", "-e", "fetch('http://localhost:7950/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))"]
+      interval:     30s
+      timeout:      10s
+      retries:      3
+      start_period: 20s
+
+    networks:
+      - ghost-internal
+
+    depends_on:
+      ghost-promotion-engine:
+        condition: service_started
+      ghostbrain-simulator:
+        condition: service_started
+
+  # ── Ghost Promotion Engine — DEV → TEST → MAIN Gate Manager ──────────────
+  ghost-promotion-engine:
+    build:
+      context:    ./services/ghost-promotion-engine
+      dockerfile: Dockerfile
+    image: ghostchain/ghost-promotion-engine:latest
+    container_name: ghost-promotion-engine
+    restart: unless-stopped
+
+    volumes:
+      - ./.tmp:/workspace/.tmp
+
+    ports:
+      - "7951:7951"
+
+    environment:
+      <<: *common-env
+      SIMULATOR_URL: "${SIMULATOR_URL:-http://ghostbrain-simulator:7960}"
+      # Testnet VM IPs (from GAIS vm_manager.py inventory)
+      # Routing law: L1 first, then L2, then L3
+      RPC_L1_URL:       "${TESTNET_RPC_L1:-http://10.50.99.71:18545}"
+      RPC_L2_URL:       "${TESTNET_RPC_L2:-http://10.50.99.77:29545}"
+      RPC_L3_URL:       "${TESTNET_RPC_L3:-http://10.50.99.79:39545}"
+      MAINNET_L1_URL:   "${MAINNET_RPC_L1:-http://10.50.99.70:18545}"
+      SIMULATION_TIMEOUT_MS: "${SIMULATION_TIMEOUT_MS:-900000}"
+      PROMO_PORT:       "7951"
+
+    healthcheck:
+      test:         ["CMD", "node", "-e", "fetch('http://localhost:7951/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))"]
+      interval:     30s
+      timeout:      10s
+      retries:      3
+      start_period: 20s
+
+    networks:
+      - ghost-internal
+
+networks:
+  ghost-internal:
+    external: true
+    name: ghost-internal

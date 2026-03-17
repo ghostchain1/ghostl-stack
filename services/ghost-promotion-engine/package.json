@@ -1,0 +1,21 @@
+{
+  "name": "@ghostchain/ghost-promotion-engine",
+  "version": "1.0.0",
+  "description": "GhostStack Autonomous Promotion Engine — manages the quality-gated pipeline from devnet → testnet simulation → mainnet → apps. All cross-layer promotions are advisory proposals submitted to the signing relay for governance ratification.",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev":   "node --watch dist/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node":    "^22.10.7",
+    "typescript":     "^5.9.3"
+  },
+  "engines": { "node": ">=22.21.0 <23" }
+}

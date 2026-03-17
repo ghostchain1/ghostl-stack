@@ -54,7 +54,7 @@ from typing import Any, Dict, Optional, Tuple
 log = logging.getLogger("auto_scaler")
 
 PROMETHEUS_URL        = os.getenv("PROMETHEUS_URL", "http://localhost:9090").rstrip("/")
-_REPO_ROOT            = Path(__file__).resolve().parents[3]
+_REPO_ROOT            = Path(os.getenv("REPO_ROOT", "/home/ghost/ghostl-stack"))
 METRICS_SNAPSHOT_FILE = Path(os.getenv(
     "METRICS_SNAPSHOT_FILE",
     str(_REPO_ROOT / ".tmp" / "metrics_snapshot.json"),

@@ -42,7 +42,8 @@ services:
 
   network-context-service:
     build:
-      context: ./services/network-context-service
+      context: .
+      dockerfile: ./services/network-context-service/Dockerfile
       args:
         VCS_REF: ${VCS_REF:-unknown}
         BUILD_DATE: ${BUILD_DATE:-unknown}
@@ -81,7 +82,8 @@ services:
 
   consensus-telemetry-service:
     build:
-      context: ./services/consensus-telemetry-service
+      context: .
+      dockerfile: ./services/consensus-telemetry-service/Dockerfile
       args:
         VCS_REF: ${VCS_REF:-unknown}
         BUILD_DATE: ${BUILD_DATE:-unknown}
@@ -130,7 +132,8 @@ services:
 
   network-manager-service:
     build:
-      context: ./services/network-manager-service
+      context: .
+      dockerfile: ./services/network-manager-service/Dockerfile
       args:
         VCS_REF: ${VCS_REF:-unknown}
         BUILD_DATE: ${BUILD_DATE:-unknown}

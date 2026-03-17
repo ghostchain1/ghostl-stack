@@ -61,6 +61,5 @@ services:
 
 networks:
   econ_internal:
+    external: true
     name: ghost_econ_internal
-    driver: bridge
-    internal: true

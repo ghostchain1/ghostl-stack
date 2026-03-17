@@ -56,7 +56,7 @@ UNHEALTHY_WINDOW_S     = int(os.getenv("HEALER_UNHEALTHY_WINDOW_S", "60"))
 GHOSTBRAIN_URL         = os.getenv("GHOSTBRAIN_URL", "http://localhost:7900").rstrip("/")
 
 # Path to node-healer state file
-_REPO_ROOT  = Path(__file__).resolve().parents[3]
+_REPO_ROOT  = Path(os.getenv("REPO_ROOT", "/home/ghost/ghostl-stack"))
 _STATE_FILE = _REPO_ROOT / ".tmp" / "healer_state.json"
 
 

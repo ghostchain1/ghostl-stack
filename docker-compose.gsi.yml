@@ -19,7 +19,7 @@ services:
     networks: [ghostsovereign]
     depends_on: [gsi-postgres]
     healthcheck:
-      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4200/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      test: ["CMD", "curl", "-sf", "http://localhost:4200/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -37,7 +37,7 @@ services:
     networks: [ghostsovereign]
     depends_on: [gsi-postgres]
     healthcheck:
-      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4201/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      test: ["CMD", "curl", "-sf", "http://localhost:4201/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -57,7 +57,7 @@ services:
     networks: [ghostsovereign]
     depends_on: [gsi-postgres]
     healthcheck:
-      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4202/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      test: ["CMD", "curl", "-sf", "http://localhost:4202/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -75,7 +75,7 @@ services:
     networks: [ghostsovereign]
     depends_on: [gsi-postgres]
     healthcheck:
-      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4203/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      test: ["CMD", "curl", "-sf", "http://localhost:4203/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -94,7 +94,7 @@ services:
     networks: [ghostsovereign]
     depends_on: [gsi-postgres]
     healthcheck:
-      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4204/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      test: ["CMD", "curl", "-sf", "http://localhost:4204/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -113,7 +113,7 @@ services:
     networks: [ghostsovereign]
     depends_on: [gsi-postgres]
     healthcheck:
-      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4205/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      test: ["CMD", "curl", "-sf", "http://localhost:4205/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -133,7 +133,7 @@ services:
     networks: [ghostsovereign]
     depends_on: [gsi-postgres]
     healthcheck:
-      test: ["CMD-SHELL", "node -e "require('http').get('http://localhost:4206/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))""]
+      test: ["CMD", "curl", "-sf", "http://localhost:4206/health"]
       interval: 30s
       timeout: 10s
       retries: 3

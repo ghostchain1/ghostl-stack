@@ -6,18 +6,44 @@
  *
  * The messenger calls are structured as production-safe stubs: wire your
  * real OP Stack messenger ABI + addresses via `HopExecutorConfig`.
+ *
+ * Uses @ghostchain/ghost-sdk-core exclusively (no ethers dependency).
  */
 
-import { Contract, type Wallet } from "@ghostchain/sdk";
-import type { GhostJsonRpcProvider } from "@ghost/ai-sdk";
-import type { RoutedTxPlan, TxRequest } from "@ghost/ai-sdk";
+import {
+  GhostSigner,
+  GhostProvider,
+  GhostAbiCoder,
+  type GhostABIFragment,
+} from "@ghostchain/ghost-sdk-core";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+/** Describes which layer a transaction should execute on and the hop path required. */
+export interface RoutedTxPlan {
+  /** The layer to execute the transaction on: "L1" | "L2" | "L3". */
+  executeOn: "L1" | "L2" | "L3";
+  /** Ordered list of layers the cross-chain message must traverse (e.g. ["L3", "L2", "L1"]). */
+  path: Array<"L1" | "L2" | "L3">;
+  /** Whether cross-layer messenger hops are required after execution. */
+  requiresMessaging: boolean;
+}
+
+/** Raw transaction request parameters. */
+export interface TxRequest {
+  to: string;
+  data?: string;
+  value?: bigint;
+  gasLimit?: bigint;
+  maxFeePerGas?: bigint;
+  maxPriorityFeePerGas?: bigint;
+  nonce?: number;
+}
+
 export interface MessengerRef {
   address: string;
-  /** Minimal ABI for the send-message function. */
-  abi:     string[];
+  /** Parsed ABI fragments for the messenger contract. */
+  abi: GhostABIFragment[];
 }
 
 export interface HopExecutorConfig {
@@ -60,28 +86,28 @@ export class HopExecutor {
    *
    * @param params.plan      - Routing plan from LayerRouter / GhostBrain
    * @param params.tx        - Raw transaction request (to, data, value, etc.)
-   * @param params.signer    - Wallet connected to the `plan.executeOn` provider
-   * @param params.providers - One provider per layer for post-hop verification
+   * @param params.signer    - GhostSigner connected to the `plan.executeOn` layer
+   * @param params.providers - One GhostProvider per layer for post-hop verification
    */
   async executeWithHops(params: {
     plan:      RoutedTxPlan;
     tx:        TxRequest;
-    signer:    Wallet;
-    providers: { L1: GhostJsonRpcProvider; L2: GhostJsonRpcProvider; L3: GhostJsonRpcProvider };
+    signer:    GhostSigner;
+    providers: { L1: GhostProvider; L2: GhostProvider; L3: GhostProvider };
     /** Optional per-hop gas limit override (key = "L3-L2" | "L2-L1"). */
     hopGasLimits?: Partial<Record<"L3-L2" | "L2-L1", bigint>>;
   }): Promise<HopResult> {
     const { plan, tx, signer, hopGasLimits } = params;
 
     // ── 1. Execute on the designated layer ───────────────────────────────────
-    const sent = await signer.sendTransaction({
-      to:                  tx.to,
-      data:                tx.data               ?? "0x",
-      value:               tx.value              ?? 0n,
-      gasLimit:            tx.gasLimit,
-      maxFeePerGas:        tx.maxFeePerGas,
+    const executeTxHash = await signer.send({
+      to:                   tx.to,
+      data:                 tx.data               ?? "0x",
+      value:                tx.value              ?? 0n,
+      gasLimit:             tx.gasLimit,
+      maxFeePerGas:         tx.maxFeePerGas,
       maxPriorityFeePerGas: tx.maxPriorityFeePerGas,
-      nonce:               tx.nonce,
+      nonce:                tx.nonce,
     });
 
     // ── 2. Schedule messenger hops ────────────────────────────────────────────
@@ -99,7 +125,7 @@ export class HopExecutor {
       }
     }
 
-    return { executeTxHash: sent.hash, hopTxHashes };
+    return { executeTxHash, hopTxHashes };
   }
 
   // ── Private helpers ─────────────────────────────────────────────────────────
@@ -108,27 +134,27 @@ export class HopExecutor {
     from:     string;
     to:       string;
     tx:       TxRequest;
-    signer:   Wallet;
+    signer:   GhostSigner;
     gasLimit: bigint;
   }): Promise<string> {
     const { from, to, tx, signer, gasLimit } = params;
 
     if (from === "L3" && to === "L2" && this.cfg.L3ToL2Messenger) {
       return this.callMessenger({
-        ref:      this.cfg.L3ToL2Messenger,
+        ref:     this.cfg.L3ToL2Messenger,
         signer,
-        target:   tx.to,
-        message:  tx.data ?? "0x",
+        target:  tx.to,
+        message: tx.data ?? "0x",
         gasLimit,
       });
     }
 
     if (from === "L2" && to === "L1" && this.cfg.L2ToL1Messenger) {
       return this.callMessenger({
-        ref:      this.cfg.L2ToL1Messenger,
+        ref:     this.cfg.L2ToL1Messenger,
         signer,
-        target:   tx.to,
-        message:  tx.data ?? "0x",
+        target:  tx.to,
+        message: tx.data ?? "0x",
         gasLimit,
       });
     }
@@ -138,42 +164,49 @@ export class HopExecutor {
   }
 
   /**
-   * Call the OP Stack canonical messenger's `sendMessage(target, message, gasLimit)`.
-   *
-   * ABI fragment expected (at minimum):
-   *   "function sendMessage(address target, bytes calldata message, uint32 gasLimit)"
+   * Call the OP Stack canonical messenger's `sendMessage(target, message, minGasLimit)`
+   * using GhostAbiCoder + GhostSigner (ghost-sdk-core, no ethers dependency).
    */
   private async callMessenger(params: {
     ref:      MessengerRef;
-    signer:   Wallet;
+    signer:   GhostSigner;
     target:   string;
     message:  string;
     gasLimit: bigint;
   }): Promise<string> {
     const { ref, signer, target, message, gasLimit } = params;
 
-    const messenger = new Contract(ref.address, ref.abi, signer);
+    const fragment = ref.abi.find((f) => f.type === "function" && f.name === "sendMessage");
+    if (!fragment) {
+      throw new Error(`HopExecutor: MessengerRef ABI missing "sendMessage" fragment`);
+    }
 
-    // Type-safe dynamic call — OP Stack canonical messenger signature
-    const tx = await (messenger["sendMessage"] as (
-      target:   string,
-      message:  string,
-      gasLimit: bigint
-    ) => Promise<{ hash: string }>)(target, message, gasLimit);
+    const coder = new GhostAbiCoder();
+    const data = coder.encodeFunctionCall(fragment, [target, message, Number(gasLimit)]);
 
-    return tx.hash;
+    return signer.send({ to: ref.address, data, gasLimit });
   }
 }
 
 // ── Environment-variable factory ──────────────────────────────────────────────
 
 /**
- * Minimal OP Stack CrossDomainMessenger ABI fragment required for sendMessage.
+ * Minimal OP Stack CrossDomainMessenger ABI (structured fragments for GhostAbiCoder).
  * Compatible with OP Stack v1.4+ (Bedrock and later).
  */
-const OP_MESSENGER_ABI = [
-  "function sendMessage(address _target, bytes calldata _message, uint32 _minGasLimit)",
-] as const;
+const OP_MESSENGER_ABI: GhostABIFragment[] = [
+  {
+    type: "function",
+    name: "sendMessage",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_target",      type: "address" },
+      { name: "_message",     type: "bytes"   },
+      { name: "_minGasLimit", type: "uint32"  },
+    ],
+    outputs: [],
+  },
+];
 
 /**
  * Build a `HopExecutor` wired from standard environment variables:
@@ -196,7 +229,7 @@ export function buildHopExecutorFromEnv(): HopExecutor {
 
   return new HopExecutor({
     defaultMessengerGasLimit,
-    ...(l3ToL2Addr ? { L3ToL2Messenger: { address: l3ToL2Addr, abi: [...OP_MESSENGER_ABI] } } : {}),
-    ...(l2ToL1Addr ? { L2ToL1Messenger: { address: l2ToL1Addr, abi: [...OP_MESSENGER_ABI] } } : {}),
+    ...(l3ToL2Addr ? { L3ToL2Messenger: { address: l3ToL2Addr, abi: OP_MESSENGER_ABI } } : {}),
+    ...(l2ToL1Addr ? { L2ToL1Messenger: { address: l2ToL1Addr, abi: OP_MESSENGER_ABI } } : {}),
   });
 }

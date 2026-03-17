@@ -1,0 +1,46 @@
+# GhostStack — Prometheus Configuration
+# ======================================
+# Scrapes GAIS metrics exporter (port 9108) and the main chain RPC endpoints.
+
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: ghostchain-devnet
+
+rule_files:
+  - "alerts/*.yml"
+
+scrape_configs:
+  # GAIS hypervisor metrics (Prometheus exporter)
+  - job_name: gais-metrics
+    static_configs:
+      - targets: ["gais-metrics:9108"]
+    scrape_interval: 10s
+
+  # GAIS REST API health
+  - job_name: gais
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["gais:9100"]
+
+  # Evolution stack services
+  - job_name: ghost-orchestrator
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghost-orchestrator:7950"]
+
+  - job_name: ghost-promotion-engine
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghost-promotion-engine:7951"]
+
+  - job_name: ghostbrain-simulator
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ghostbrain-simulator:7960"]
+
+  # Prometheus self-monitoring
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]

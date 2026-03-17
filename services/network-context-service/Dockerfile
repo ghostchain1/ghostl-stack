@@ -7,15 +7,20 @@ LABEL org.opencontainers.image.revision=$VCS_REF \
 
 RUN apk add --no-cache bash curl
 
-WORKDIR /app
+# /workspace mirrors the monorepo layout so file:../../packages/ghost-sdk resolves correctly
+WORKDIR /workspace
+COPY packages/ghost-sdk/ ./packages/ghost-sdk/
 
-COPY package*.json ./
-RUN npm config set fetch-retries 5 \
- && npm config set fetch-timeout 600000 \
- && npm install --production || (echo "npm install failed, retrying in 5s" && sleep 5 && npm install --production)
-
-COPY src ./src
-RUN chown -R node:node /app
+WORKDIR /workspace/services/network-context-service
+COPY services/network-context-service/package.json ./
+# Delete stale lockfile; use --install-links to copy (not symlink) file: deps
+# so transitive deps (ethers etc.) are resolved from the service's node_modules
+RUN rm -f package-lock.json && \
+    npm config set fetch-retries 5 && \
+    npm config set fetch-timeout 600000 && \
+    npm install --omit=dev --install-links
+COPY services/network-context-service/src ./src
+RUN chown -R node:node /workspace
 
 EXPOSE 7633
 USER node
