@@ -1,0 +1,174 @@
+{
+  "name": "ghostbrain",
+  "displayName": "GhostBrain",
+  "description": "GhostChain AI copilot for GhostChain L1, GhostL2, GhostL3, bridge, validator, and multichain development workflows.",
+  "version": "0.2.0",
+  "publisher": "ghostchain",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.92.0"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:ghostbrain.openPanel",
+    "onCommand:ghostbrain.askSelection",
+    "onCommand:ghostbrain.analyzeWorkspace",
+    "onCommand:ghostbrain.checkChainHealth",
+    "onCommand:ghostbrain.analyzeBridgeConfig",
+    "onCommand:ghostbrain.reviewValidatorSetup",
+    "onCommand:ghostbrain.explainContract",
+    "onCommand:ghostbrain.setApiKey",
+    "onView:ghostbrain.chat"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ghostbrain.openPanel",
+        "title": "GhostBrain: Open Console",
+        "category": "GhostBrain"
+      },
+      {
+        "command": "ghostbrain.askSelection",
+        "title": "GhostBrain: Ask About Selection",
+        "category": "GhostBrain"
+      },
+      {
+        "command": "ghostbrain.analyzeWorkspace",
+        "title": "GhostBrain: Analyze Workspace",
+        "category": "GhostBrain"
+      },
+      {
+        "command": "ghostbrain.checkChainHealth",
+        "title": "GhostBrain: Check L1/L2/L3 Health",
+        "category": "GhostBrain"
+      },
+      {
+        "command": "ghostbrain.analyzeBridgeConfig",
+        "title": "GhostBrain: Analyze Bridge Config",
+        "category": "GhostBrain"
+      },
+      {
+        "command": "ghostbrain.reviewValidatorSetup",
+        "title": "GhostBrain: Review Validator Setup",
+        "category": "GhostBrain"
+      },
+      {
+        "command": "ghostbrain.explainContract",
+        "title": "GhostBrain: Explain Selected Contract",
+        "category": "GhostBrain"
+      },
+      {
+        "command": "ghostbrain.setApiKey",
+        "title": "GhostBrain: Set API Key (Secure)",
+        "category": "GhostBrain"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ghostbrain",
+          "title": "GhostBrain",
+          "icon": "media/ghostbrain.svg"
+        }
+      ]
+    },
+    "views": {
+      "ghostbrain": [
+        {
+          "id": "ghostbrain.chat",
+          "name": "Ghost Console"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "GhostBrain",
+      "properties": {
+        "ghostbrain.apiBaseUrl": {
+          "type": "string",
+          "default": "http://localhost:7900",
+          "description": "Base URL for the GhostBrain Core service (default: http://localhost:7900)."
+        },
+        "ghostbrain.defaultModel": {
+          "type": "string",
+          "default": "ghostbrain-dev",
+          "description": "Default model or agent identifier sent with every request."
+        },
+        "ghostbrain.enableWorkspaceContext": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include workspace metadata (folders, active file, language) in prompts."
+        },
+        "ghostbrain.l1RpcUrl": {
+          "type": "string",
+          "default": "http://localhost:18545",
+          "description": "GhostChain L1 JSON-RPC endpoint (chain_id 14000101)."
+        },
+        "ghostbrain.l2RpcUrl": {
+          "type": "string",
+          "default": "http://localhost:29545",
+          "description": "GhostL2 JSON-RPC endpoint (chain_id 901)."
+        },
+        "ghostbrain.l3RpcUrl": {
+          "type": "string",
+          "default": "http://localhost:39545",
+          "description": "GhostL3 JSON-RPC endpoint (chain_id 903)."
+        },
+        "ghostbrain.enableStreaming": {
+          "type": "boolean",
+          "default": true,
+          "description": "Stream GhostBrain responses token-by-token in the sidebar console."
+        }
+      }
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "command": "ghostbrain.askSelection",
+          "when": "editorHasSelection",
+          "group": "ghostbrain@1"
+        },
+        {
+          "command": "ghostbrain.explainContract",
+          "when": "editorHasSelection && resourceExtname =~ /\\.(sol|ts|go|rs|vy)$/",
+          "group": "ghostbrain@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "ghostbrain.explainContract",
+          "when": "editorHasSelection"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "ghostbrain.askSelection",
+        "key": "ctrl+shift+g",
+        "mac": "cmd+shift+g",
+        "when": "editorHasSelection"
+      },
+      {
+        "command": "ghostbrain.checkChainHealth",
+        "key": "ctrl+shift+h",
+        "mac": "cmd+shift+h"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@types/vscode": "^1.92.0",
+    "typescript": "^5.5.4",
+    "@vscode/vsce": "^3.0.0"
+  }
+}

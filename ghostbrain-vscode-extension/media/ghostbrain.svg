@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2bd174"/>
+      <stop offset="100%" stop-color="#1a8f52"/>
+    </linearGradient>
+  </defs>
+  <path d="M20 52 C20 30 35 16 50 16 C65 16 80 30 80 52 L80 78 C80 78 72 70 65 76 C58 82 57 72 50 72 C43 72 42 82 35 76 C28 70 20 78 20 78 Z" fill="url(#bodyGrad)" opacity="0.95"/>
+  <ellipse cx="38" cy="50" rx="5.5" ry="6.5" fill="#07110d"/>
+  <ellipse cx="62" cy="50" rx="5.5" ry="6.5" fill="#07110d"/>
+  <circle cx="40" cy="48" r="1.8" fill="#3cff8f" opacity="0.9"/>
+  <circle cx="64" cy="48" r="1.8" fill="#3cff8f" opacity="0.9"/>
+  <circle cx="50" cy="28" r="3" fill="#07110d" opacity="0.7"/>
+  <circle cx="40" cy="33" r="2.2" fill="#07110d" opacity="0.6"/>
+  <circle cx="60" cy="33" r="2.2" fill="#07110d" opacity="0.6"/>
+  <line x1="50" y1="28" x2="40" y2="33" stroke="#07110d" stroke-width="1.2" opacity="0.5"/>
+  <line x1="50" y1="28" x2="60" y2="33" stroke="#07110d" stroke-width="1.2" opacity="0.5"/>
+  <line x1="40" y1="33" x2="60" y2="33" stroke="#07110d" stroke-width="1" opacity="0.4"/>
+</svg>

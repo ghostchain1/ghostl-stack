@@ -1,0 +1,12 @@
+.vscode/**
+.vscode-test/**
+src/**
+.gitignore
+README-draft.md
+TODO.md
+**/*.map
+**/*.ts
+!out/**
+node_modules/**
+.eslintrc*
+.prettierrc*
