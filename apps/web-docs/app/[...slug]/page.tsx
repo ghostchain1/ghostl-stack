@@ -116,7 +116,7 @@ const PAGES: Record<string, DocsPage> = {
     intro: "GhostChain L1 handles sovereign anchoring, GhostL2 mediates rollup coordination, and GhostL3 serves app throughput.",
     bullets: [
       "L1 RPC port 18545.",
-      "L2 RPC port 29545.",
+      "L2 RPC port 29547.",
       "L3 RPC port 39545.",
     ],
     related: [
@@ -185,7 +185,7 @@ const PAGES: Record<string, DocsPage> = {
     eyebrow: "SDK",
     title: "ghost-sdk",
     intro: "Compatibility layer for existing integrations that still need the broader branded ethers-backed surface.",
-    code: `import { ghost, JsonRpcProvider, Wallet } from "@ghostchain/sdk";\n\nconst provider = new JsonRpcProvider("http://localhost:29545");\nconst wallet = new Wallet(process.env.PRIVATE_KEY!, provider);`,
+    code: `import { ghost, JsonRpcProvider, Wallet } from "@ghostchain/sdk";\n\nconst provider = new JsonRpcProvider("http://localhost:29547");\nconst wallet = new Wallet(process.env.PRIVATE_KEY!, provider);`,
     related: [
       { label: "ghost-sdk-core", href: "/sdk/ghost-sdk-core" },
       { label: "GNS resolver", href: "/sdk/gns" },
@@ -197,7 +197,7 @@ const PAGES: Record<string, DocsPage> = {
     intro: "GhostStack uses the `ghost_` namespace for RPC. Avoid emitting `eth_` methods from application code.",
     bullets: [
       "L1 uses port 18545.",
-      "L2 uses port 29545.",
+      "L2 uses port 29547.",
       "L3 uses port 39545.",
     ],
     related: [

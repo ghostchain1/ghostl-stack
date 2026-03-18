@@ -107,7 +107,7 @@ const EnvSchema = z.object({
   RELEASE_ATTESTATION_PATH: z.string().default('artifacts/release/release_manifest.sig'),
   RELEASE_ATTESTATION_PUBLIC_KEY_PATH: z.string().default('artifacts/release/release_manifest.pub'),
   CONSTITUTION_DOC_PATH: z.string().default('docs/constitution/GhostChain-Constitution.md'),
-  GOVERNANCE_PROPOSAL_ID: z.string().default('EXAMPLE-0001'),
+  GOVERNANCE_PROPOSAL_ID: z.preprocess(emptyToUndefined, z.string().optional()),
   SWAP_SERVICE_URL: z.string().url().default('http://localhost:7670'),
   BRIDGE_ADMIN_TOKEN: z.string().optional(),
   CHAIN_ID: z.string().optional(),

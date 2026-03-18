@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 const RPC_URLS: Record<string, string> = {
   l1: process.env['L1_RPC_URL'] ?? 'http://localhost:18545',
-  l2: process.env['L2_RPC_URL'] ?? 'http://localhost:29545',
+  l2: process.env['L2_RPC_URL'] ?? 'http://localhost:29547',
   l3: process.env['L3_RPC_URL'] ?? 'http://localhost:39545',
 };
 

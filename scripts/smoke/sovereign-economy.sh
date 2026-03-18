@@ -6,7 +6,12 @@ L2_URL="${L2_REVENUE_AGGREGATOR_URL:-http://localhost:7682}"
 TREASURY_URL="${TREASURY_ENGINE_URL:-http://localhost:7683}"
 REWARDS_URL="${REWARD_DISTRIBUTOR_URL:-http://localhost:7684}"
 GOVERNOR_URL="${HYPER_GHOST_GOVERNOR_URL:-http://localhost:7685}"
-PROPOSAL_ID="${GOVERNANCE_PROPOSAL_ID:-EXAMPLE-0001}"
+PROPOSAL_ID="${GOVERNANCE_PROPOSAL_ID:-}"
+
+[[ -n "$PROPOSAL_ID" ]] || {
+  echo "GOVERNANCE_PROPOSAL_ID is required" >&2
+  exit 2
+}
 
 log() {
   printf '[sovereign-smoke] %s\n' "$*"

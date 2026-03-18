@@ -11,14 +11,14 @@
  *
  * Env vars:
  *   GHOSTSCOUT_L1_INTERNAL, GHOSTSCOUT_L2_INTERNAL, GHOSTSCOUT_L3_INTERNAL
- *   L1_RPC_URL (default :18545), L2_RPC_URL (default :29545), L3_RPC_URL (default :39545)
+ *   L1_RPC_URL (default :18545), L2_RPC_URL (default :29547), L3_RPC_URL (default :39545)
  */
 
 import { type NextRequest, NextResponse } from 'next/server';
 
 const RPC: Record<string, string> = {
   l1: process.env.L1_RPC_URL ?? 'http://localhost:18545',
-  l2: process.env.L2_RPC_URL ?? 'http://localhost:29545',
+  l2: process.env.L2_RPC_URL ?? 'http://localhost:29547',
   l3: process.env.L3_RPC_URL ?? 'http://localhost:39545',
 };
 

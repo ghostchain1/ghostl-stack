@@ -22,7 +22,7 @@ const PAGES: Record<string, PageContent> = {
     intro: "Install the GhostStack workspace, point at Ghost-native RPC endpoints, and start with the branded SDK surface.",
     cards: [
       { title: "1. Install", body: "Use Node 22, run `npm install`, and keep work inside the branded GhostChain workspace packages." },
-      { title: "2. Connect", body: "Use GhostChain L1 on 18545, GhostL2 on 29545, and GhostL3 on 39545 via `ghost_` methods." },
+      { title: "2. Connect", body: "Use GhostChain L1 on 18545, GhostL2 on 29547, and GhostL3 on 39545 via `ghost_` methods." },
       { title: "3. Build", body: "Prefer `@ghostchain/ghost-sdk-core` for new code and `@ghostchain/sdk` for compatibility paths." },
     ],
   },

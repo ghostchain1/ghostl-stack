@@ -138,7 +138,7 @@ export function ChainLayerDashboard({ layer }: { layer: ChainLayer }) {
               <>
                 <MetricRow label="L1 Portal"    value="0xad32D5C2Da…" />
                 <MetricRow label="L2L3 Bridge"  value="0xDadd1125B8…" />
-                <MetricRow label="op-geth port" value="29545" />
+                <MetricRow label="op-geth port" value="29547" />
               </>
             )}
             {layer === 'l3' && (

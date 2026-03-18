@@ -72,7 +72,7 @@ export class GhostL3 {
 
   constructor(config: GhostL3Config = {}) {
     this.rpc = config.rpc ?? GHOST_L3.RPC;
-    this.l2Rpc = config.l2Rpc ?? 'http://localhost:29545';
+    this.l2Rpc = config.l2Rpc ?? 'http://localhost:29547';
     this.authToken = config.authToken;
   }
 

@@ -4,7 +4,7 @@
 
 import { NextResponse } from 'next/server';
 
-const L2_RPC = process.env['L2_RPC_URL'] ?? 'http://localhost:29545';
+const L2_RPC = process.env['L2_RPC_URL'] ?? 'http://localhost:29547';
 
 async function jsonRpc(method: string, params: unknown[] = []): Promise<unknown> {
   const res = await fetch(L2_RPC, {

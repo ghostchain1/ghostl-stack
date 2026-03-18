@@ -13,7 +13,7 @@ const CARD: React.CSSProperties = {
 
 const CHAINS = [
   { id: 'l1', label: 'GhostChain L1', chainId: 14000101, rpc: 'L1_RPC', port: 18545 },
-  { id: 'l2', label: 'GhostL2',       chainId: 901,      rpc: 'L2_RPC', port: 29545 },
+  { id: 'l2', label: 'GhostL2',       chainId: 901,      rpc: 'L2_RPC', port: 29547 },
   { id: 'l3', label: 'GhostL3',       chainId: 903,      rpc: 'L3_RPC', port: 39545 },
 ];
 

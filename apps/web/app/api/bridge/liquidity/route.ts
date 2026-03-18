@@ -13,7 +13,7 @@
  * Env vars:
  *   GHOSTBRAIN_INTERNAL   default http://localhost:7900
  *   L1_RPC_URL            default http://localhost:18545
- *   L2_RPC_URL            default http://localhost:29545
+ *   L2_RPC_URL            default http://localhost:29547
  *   L3_RPC_URL            default http://localhost:39545
  */
 
@@ -21,7 +21,7 @@ import { NextResponse } from 'next/server';
 
 const BRAIN  = process.env.GHOSTBRAIN_INTERNAL ?? 'http://localhost:7900';
 const L1_RPC = process.env.L1_RPC_URL         ?? 'http://localhost:18545';
-const L2_RPC = process.env.L2_RPC_URL         ?? 'http://localhost:29545';
+const L2_RPC = process.env.L2_RPC_URL         ?? 'http://localhost:29547';
 const L3_RPC = process.env.L3_RPC_URL         ?? 'http://localhost:39545';
 
 // Canonical bridge addresses — never modified without governance proposal

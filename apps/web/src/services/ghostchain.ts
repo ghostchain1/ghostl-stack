@@ -6,7 +6,7 @@
  *
  * Chain IDs:
  *   L1 → 14000101  (GhostChain sovereign, RPC :18545)
- *   L2 → 901       (GhostL2 OP Stack,    RPC :29545)
+ *   L2 → 901       (GhostL2 OP Stack,    RPC :29547)
  *   L3 → 903       (GhostL3 OP Stack,    RPC :39545)
  */
 
@@ -21,7 +21,7 @@ export interface ChainConfig {
 
 export const CHAIN_CONFIGS: Record<ChainLayer, ChainConfig> = {
   l1: { layer: 'l1', chainId: 14000101, rpcPort: 18545, label: 'GhostChain L1' },
-  l2: { layer: 'l2', chainId: 901,      rpcPort: 29545, label: 'GhostL2'       },
+  l2: { layer: 'l2', chainId: 901,      rpcPort: 29547, label: 'GhostL2'       },
   l3: { layer: 'l3', chainId: 903,      rpcPort: 39545, label: 'GhostL3'       },
 };
 

@@ -45,7 +45,7 @@ function statusDotClass(s: ServiceStatus): string {
 
 const STATIC_SERVICES: ServiceInfo[] = [
   { name: 'GhostChain L1 RPC',   group: 'Chain',      status: 'unknown', latencyMs: null, uptime: null, detail: ':18545' },
-  { name: 'GhostL2 RPC',         group: 'Chain',      status: 'unknown', latencyMs: null, uptime: null, detail: ':29545' },
+  { name: 'GhostL2 RPC',         group: 'Chain',      status: 'unknown', latencyMs: null, uptime: null, detail: ':29547' },
   { name: 'GhostL3 RPC',         group: 'Chain',      status: 'unknown', latencyMs: null, uptime: null, detail: ':39545' },
   { name: 'Cosmos LCD',          group: 'Chain',      status: 'unknown', latencyMs: null, uptime: null, detail: ':1317' },
   { name: 'CometBFT RPC',        group: 'Chain',      status: 'unknown', latencyMs: null, uptime: null, detail: ':26657' },

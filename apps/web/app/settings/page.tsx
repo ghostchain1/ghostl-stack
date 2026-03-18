@@ -136,7 +136,7 @@ export default function SettingsPage() {
     setApiUrl(safeLocalGet('GHOST_API_URL',  process.env.NEXT_PUBLIC_API_URL  ?? 'http://localhost:4000'));
     setWsUrl( safeLocalGet('GHOST_WS_URL',   process.env.NEXT_PUBLIC_WS_GATEWAY_URL ?? 'ws://localhost:8085'));
     setL1Rpc( safeLocalGet('GHOST_L1_RPC',   'http://localhost:18545'));
-    setL2Rpc( safeLocalGet('GHOST_L2_RPC',   'http://localhost:29545'));
+    setL2Rpc( safeLocalGet('GHOST_L2_RPC',   'http://localhost:29547'));
     setL3Rpc( safeLocalGet('GHOST_L3_RPC',   'http://localhost:39545'));
     setDarkMode(      safeLocalGet('GHOST_DARK',        'true')  === 'true');
     setCompactSidebar(safeLocalGet('GHOST_COMPACT',     'false') === 'true');
@@ -228,9 +228,9 @@ export default function SettingsPage() {
 
         <SettingRow
           label="GhostL2 RPC"
-          description="Chain ID 901 · port 29545"
+          description="Chain ID 901 · port 29547"
         >
-          <TextInput value={l2Rpc} onChange={setL2Rpc} placeholder="http://localhost:29545" />
+          <TextInput value={l2Rpc} onChange={setL2Rpc} placeholder="http://localhost:29547" />
         </SettingRow>
 
         <SettingRow

@@ -102,8 +102,8 @@ jobs:
       - name: Verify routing law
         run: bash scripts/verify-routing.sh
 
-      - name: Verify governance template integrity
-        run: bash scripts/verify-governance.sh --proposal-id EXAMPLE-0001
+      - name: Verify governance smoke fixture integrity
+        run: bash scripts/verify-governance.sh --proposal-id ci-mainnet-governance-smoke
 
       - name: Compose hardening audit
         run: bash scripts/security/compose-hardening-audit.sh
@@ -720,7 +720,7 @@ jobs:
       - name: Validate routing + governance gates
         run: |
           bash scripts/verify-routing.sh
-          bash scripts/verify-governance.sh --proposal-id EXAMPLE-0001
+          bash scripts/verify-governance.sh --proposal-id ci-mainnet-governance-smoke
 
       - name: Build and verify constitutional release artifacts
         run: |
@@ -729,7 +729,7 @@ jobs:
           RELEASE_ATTESTATION_PRIVATE_KEY_FILE=/tmp/release-attestation.key bash scripts/release/sign-release-manifest.sh
           bash scripts/release/verify-release-attestation.sh
           node --experimental-strip-types tools/governance/create-constitution-proposal.ts \
-            --proposal-id EXAMPLE-0001 \
+            --proposal-id ci-mainnet-governance-smoke \
             --release-id ci-release \
             --release-gate 0x0000000000000000000000000000000000000001 \
             --manifest artifacts/release/release_manifest.json \

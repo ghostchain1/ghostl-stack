@@ -6,7 +6,7 @@
  *
  * Canonical chain IDs:
  *   L1 — GhostChain  (chainId 14000101, port 18545)
- *   L2 — GhostL2     (chainId 901,      port 29545)
+ *   L2 — GhostL2     (chainId 901,      port 29547)
  *   L3 — GhostL3     (chainId 903,      port 39545)
  *
  * Response shape: RuntimeStatus
@@ -22,7 +22,7 @@ import {
 // ── Canonical node configs — env-overridable ────────────────────────────────
 
 const L1_RPC = process.env.GHOST_L1_RPC ?? process.env.RPC_L1 ?? 'http://localhost:18545';
-const L2_RPC = process.env.GHOST_L2_RPC ?? process.env.RPC_L2 ?? 'http://localhost:29545';
+const L2_RPC = process.env.GHOST_L2_RPC ?? process.env.RPC_L2 ?? 'http://localhost:29547';
 const L3_RPC = process.env.GHOST_L3_RPC ?? process.env.RPC_L3 ?? 'http://localhost:39545';
 
 function buildValidatorController(): GhostValidatorController {

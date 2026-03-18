@@ -118,8 +118,8 @@ jobs:
       - name: Routing law
         run: bash scripts/verify-routing.sh
 
-      - name: Governance template integrity
-        run: bash scripts/verify-governance.sh --proposal-id EXAMPLE-0001
+      - name: Governance smoke fixture integrity
+        run: bash scripts/verify-governance.sh --proposal-id ci-mainnet-governance-smoke
 
       - name: Secret scan (Trivy)
         env:

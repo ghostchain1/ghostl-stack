@@ -1,5 +1,5 @@
 {
-  "proposalId": "EXAMPLE-0001",
+  "proposalId": "ci-mainnet-governance-smoke",
   "network": "mainnet",
   "allowDeploy": true,
   "approvedBy": "GhostChain DAO Multisig",
@@ -18,6 +18,6 @@
   "releaseManifestHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
   "releaseAttestationHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
   "metadata": {
-    "note": "Template for governance-locked mainnet deployment approval"
+    "note": "CI smoke fixture for governance-locked mainnet gate validation"
   }
 }

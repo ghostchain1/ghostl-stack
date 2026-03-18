@@ -42,7 +42,7 @@ Mainnet path fails closed unless governance approval file exists and validates.
 - Index: `artifacts/final-release-evidence-index.md`
 - `bash scripts/security/compose-hardening-audit.sh` -> PASS
 - `bash tools/ghostctl verify-routing` -> PASS
-- `bash tools/ghostctl verify-governance --proposal-id EXAMPLE-0001` -> PASS
+- `bash tools/ghostctl verify-governance --proposal-id <id>` -> PASS
 - Artifact: `artifacts/final-gate-evidence-20260225-190429Z.md`
 - Artifact: `artifacts/final-compile-evidence-20260225-190635Z.md`
 - Artifact: `artifacts/final-compile-evidence-fullbuild-20260225-191156Z.md`

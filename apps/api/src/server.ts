@@ -882,13 +882,16 @@ const readMainnetReadiness = async () => {
   const manifestPath = resolveRepoPath(env.RELEASE_MANIFEST_PATH);
   const signaturePath = resolveRepoPath(env.RELEASE_ATTESTATION_PATH);
   const publicKeyPath = resolveRepoPath(env.RELEASE_ATTESTATION_PUBLIC_KEY_PATH);
-  const approvalPath = path.join(repoRoot, 'governance', 'proposals', env.GOVERNANCE_PROPOSAL_ID, 'approval.json');
+  const governanceProposalId = env.GOVERNANCE_PROPOSAL_ID || null;
+  const approvalPath = governanceProposalId
+    ? path.join(repoRoot, 'governance', 'proposals', governanceProposalId, 'approval.json')
+    : null;
 
   const constitutionExists = fs.existsSync(constitutionPath);
   const manifestExists = fs.existsSync(manifestPath);
   const signatureExists = fs.existsSync(signaturePath);
   const publicKeyExists = fs.existsSync(publicKeyPath);
-  const approval = safeReadJsonFile<Record<string, unknown>>(approvalPath);
+  const approval = approvalPath ? safeReadJsonFile<Record<string, unknown>>(approvalPath) : null;
   const now = Date.now();
 
   const constitutionHash = constitutionExists ? `sha256:${sha256Hex(fs.readFileSync(constitutionPath))}` : null;
@@ -938,7 +941,7 @@ const readMainnetReadiness = async () => {
       hash: constitutionHash
     },
     governance: {
-      proposalId: env.GOVERNANCE_PROPOSAL_ID,
+      proposalId: governanceProposalId,
       approvalPath,
       approvalExists: Boolean(approval),
       quorumReached: approval?.quorumReached === true,

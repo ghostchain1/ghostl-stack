@@ -1,0 +1,42 @@
+./scripts/smoke/sovereign-economy.sh:9:PROPOSAL_ID="${GOVERNANCE_PROPOSAL_ID:-EXAMPLE-0001}"
+./.github/workflows/ci.yml:106:        run: bash scripts/verify-governance.sh --proposal-id EXAMPLE-0001
+./.github/workflows/ci.yml:723:          bash scripts/verify-governance.sh --proposal-id EXAMPLE-0001
+./.github/workflows/ci.yml:732:            --proposal-id EXAMPLE-0001 \
+./.github/workflows/atomic-ci.yml:122:        run: bash scripts/verify-governance.sh --proposal-id EXAMPLE-0001
+./.github/workflows/supply-chain-security.yml:42:        run: bash scripts/verify-governance.sh --proposal-id EXAMPLE-0001
+./.audit/snapshots/20260226-162505/tree-L4.txt:13758:      EXAMPLE-0001
+./.audit/snapshots/20260226-162437/tree-L4.txt:13753:      EXAMPLE-0001
+./artifacts/runtime/source-truth-scan.txt:15:apps/api/src/config/env.ts:110:  GOVERNANCE_PROPOSAL_ID: z.string().default('EXAMPLE-0001'),
+./artifacts/runtime/source-truth-scan.txt:130:scripts/smoke/sovereign-economy.sh:9:PROPOSAL_ID="${GOVERNANCE_PROPOSAL_ID:-EXAMPLE-0001}"
+./artifacts/runtime/source-truth-scan.txt:641:docs/FINAL_PRODUCTION_CERTIFICATION.md:45:- `bash tools/ghostctl verify-governance --proposal-id EXAMPLE-0001` -> PASS
+./artifacts/runtime/source-truth-scan.txt:834:package.json:191:    "governance:constitution-proposal": "node --experimental-strip-types tools/governance/create-constitution-proposal.ts --proposal-id EXAMPLE-0001 --release-id local-release --release-gate 0x0000000000000000000000000000000000000001",
+./artifacts/master-todo-grep.txt:1:./package.json:191:    "governance:constitution-proposal": "node --experimental-strip-types tools/governance/create-constitution-proposal.ts --proposal-id EXAMPLE-0001 --release-id local-release --release-gate 0x0000000000000000000000000000000000000001",
+./artifacts/master-todo-grep.txt:380:./docs/FINAL_PRODUCTION_CERTIFICATION.md:45:- `bash tools/ghostctl verify-governance --proposal-id EXAMPLE-0001` -> PASS
+./artifacts/master-todo-grep.txt:608:./scripts/smoke/sovereign-economy.sh:9:PROPOSAL_ID="${GOVERNANCE_PROPOSAL_ID:-EXAMPLE-0001}"
+./artifacts/master-todo-grep.txt:830:./.audit/snapshots/20260226-162505/tree-L4.txt:13758:      EXAMPLE-0001
+./artifacts/master-todo-grep.txt:848:./governance/proposals/EXAMPLE-0001/approval.json:2:  "proposalId": "EXAMPLE-0001",
+./artifacts/master-todo-grep.txt:849:./governance/proposals/EXAMPLE-0001/approval.json:21:    "note": "Template for governance-locked mainnet deployment approval"
+./artifacts/master-todo-grep.txt:905:./.audit/snapshots/20260226-162437/tree-L4.txt:13753:      EXAMPLE-0001
+./artifacts/master-todo-grep.txt:926:./.github/workflows/ci.yml:106:        run: bash scripts/verify-governance.sh --proposal-id EXAMPLE-0001
+./artifacts/master-todo-grep.txt:927:./.github/workflows/ci.yml:723:          bash scripts/verify-governance.sh --proposal-id EXAMPLE-0001
+./artifacts/master-todo-grep.txt:928:./.github/workflows/ci.yml:732:            --proposal-id EXAMPLE-0001 \
+./artifacts/master-todo-grep.txt:941:./.github/workflows/atomic-ci.yml:122:        run: bash scripts/verify-governance.sh --proposal-id EXAMPLE-0001
+./artifacts/master-todo-grep.txt:949:./.github/workflows/supply-chain-security.yml:42:        run: bash scripts/verify-governance.sh --proposal-id EXAMPLE-0001
+./artifacts/master-todo-grep.txt:2137:./apps/api/src/config/env.ts:110:  GOVERNANCE_PROPOSAL_ID: z.string().default('EXAMPLE-0001'),
+./artifacts/master-todo-grep.txt:2857:./artifacts/master-todo-grep.txt:1:./package.json:191:    "governance:constitution-proposal": "node --experimental-strip-types tools/governance/create-constitution-proposal.ts --proposal-id EXAMPLE-0001 --release-id local-release --release-gate 0x0000000000000000000000000000000000000001",
+./artifacts/master-todo-grep.txt:3236:./artifacts/master-todo-grep.txt:380:./docs/FINAL_PRODUCTION_CERTIFICATION.md:45:- `bash tools/ghostctl verify-governance --proposal-id EXAMPLE-0001` -> PASS
+./artifacts/master-todo-grep.txt:3464:./artifacts/master-todo-grep.txt:608:./scripts/smoke/sovereign-economy.sh:9:PROPOSAL_ID="${GOVERNANCE_PROPOSAL_ID:-EXAMPLE-0001}"
+./artifacts/master-todo-grep.txt:3686:./artifacts/master-todo-grep.txt:830:./.audit/snapshots/20260226-162505/tree-L4.txt:13758:      EXAMPLE-0001
+./artifacts/master-todo-grep.txt:3704:./artifacts/master-todo-grep.txt:848:./governance/proposals/EXAMPLE-0001/approval.json:2:  "proposalId": "EXAMPLE-0001",
+./artifacts/master-todo-grep.txt:3705:./artifacts/master-todo-grep.txt:849:./governance/proposals/EXAMPLE-0001/approval.json:21:    "note": "Template for governance-locked mainnet deployment approval"
+./artifacts/master-todo-grep.txt:3761:./artifacts/master-todo-grep.txt:905:./.audit/snapshots/20260226-162437/tree-L4.txt:13753:      EXAMPLE-0001
+./artifacts/master-todo-grep.txt:3782:./artifacts/master-todo-grep.txt:926:./.github/workflows/ci.yml:106:        run: bash scripts/verify-governance.sh --proposal-id EXAMPLE-0001
+./artifacts/master-todo-grep.txt:3783:./artifacts/master-todo-grep.txt:927:./.github/workflows/ci.yml:723:          bash scripts/verify-governance.sh --proposal-id EXAMPLE-0001
+./artifacts/master-todo-grep.txt:3784:./artifacts/master-todo-grep.txt:928:./.github/workflows/ci.yml:732:            --proposal-id EXAMPLE-0001 \
+./artifacts/master-todo-grep.txt:3797:./artifacts/master-todo-grep.txt:941:./.github/workflows/atomic-ci.yml:122:        run: bash scripts/verify-governance.sh --proposal-id EXAMPLE-0001
+./artifacts/master-todo-grep.txt:3805:./artifacts/master-todo-grep.txt:949:./.github/workflows/supply-chain-security.yml:42:        run: bash scripts/verify-governance.sh --proposal-id EXAMPLE-0001
+./artifacts/master-todo-grep.txt:4993:./artifacts/master-todo-grep.txt:2137:./apps/api/src/config/env.ts:110:  GOVERNANCE_PROPOSAL_ID: z.string().default('EXAMPLE-0001'),
+./docs/FINAL_PRODUCTION_CERTIFICATION.md:45:- `bash tools/ghostctl verify-governance --proposal-id EXAMPLE-0001` -> PASS
+./apps/api/src/config/env.ts:110:  GOVERNANCE_PROPOSAL_ID: z.string().default('EXAMPLE-0001'),
+./package.json:191:    "governance:constitution-proposal": "node --experimental-strip-types tools/governance/create-constitution-proposal.ts --proposal-id EXAMPLE-0001 --release-id local-release --release-gate 0x0000000000000000000000000000000000000001",
+./governance/proposals/EXAMPLE-0001/approval.json:2:  "proposalId": "EXAMPLE-0001",
