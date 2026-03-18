@@ -5,11 +5,13 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json ./
+COPY scripts scripts
 COPY tsconfig.base.json .
 COPY packages packages
 COPY apps/web apps/web
 
-RUN npm install --legacy-peer-deps
+RUN npm ci --legacy-peer-deps
+RUN npm run build -w packages/ghost-sdk
 
 FROM deps AS dev
 WORKDIR /app

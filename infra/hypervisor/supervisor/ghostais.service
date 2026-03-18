@@ -9,6 +9,7 @@ Requires=libvirtd.service
 Type=simple
 User=root
 WorkingDirectory=/home/ghost/ghostl-stack/infra/hypervisor/supervisor
+EnvironmentFile=-/etc/ghoststack/gais.env
 
 # ── Network endpoints ──────────────────────────────────────────────────────────
 Environment=GAIS_LISTEN_ADDR=0.0.0.0
@@ -23,12 +24,12 @@ Environment=REBALANCE_INTERVAL_S=360
 Environment=DIRECTIVE_POLL_S=30
 
 # ── libvirt ────────────────────────────────────────────────────────────────────
-Environment=VIRSH_URI=qemu:///system
+Environment=VIRSH_URI=qemu+ssh://ghost@192.168.122.1/system?keyfile=/home/ghost/.ssh/hypervisor_access&no_verify=1
 Environment=LIBVIRT_NETWORK=gs-mgmt
 
 # ── Chain RPC ports ────────────────────────────────────────────────────────────
 Environment=RPC_PORT_L1=18545
-Environment=RPC_PORT_L2=29545
+Environment=RPC_PORT_L2=29547
 Environment=RPC_PORT_L3=39545
 
 # ── GhostBrain Core + signing relay ───────────────────────────────────────────

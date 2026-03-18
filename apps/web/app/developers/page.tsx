@@ -9,14 +9,14 @@ export const metadata: Metadata = {
 const TOOLS = [
   {
     name: "Ghost SDK Core",
-    description: "Preferred zero-ethers SDK for GhostChain, GhostL2, and GhostL3 integrations.",
+    description: "Preferred native Ghost SDK for GhostChain, GhostL2, and GhostL3 integrations.",
     badge: "Preferred",
     install: "npm install @ghostchain/ghost-sdk-core",
     links: [["Documentation", GHOST_SITES.docs.url], ["RPC Portal", GHOST_SITES.rpc.url]],
   },
   {
     name: "Ghost SDK",
-    description: "Compatibility SDK for existing integrations that still need the legacy wrapper surface.",
+    description: "Compatibility SDK for existing integrations that still need the broader wrapper surface.",
     badge: "Compat",
     install: "npm install @ghostchain/sdk",
     links: [["Docs", GHOST_SITES.docs.url], ["Portal", GHOST_SITES.dev.url]],

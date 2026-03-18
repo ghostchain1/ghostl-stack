@@ -31,7 +31,9 @@ import os
 import time
 import urllib.error
 import urllib.request
+import uuid
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 log = logging.getLogger("validator_rebalancer")
@@ -54,7 +56,7 @@ def _get_json(url: str, timeout: int = PROBE_TIMEOUT_S) -> Optional[Any]:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return json.loads(resp.read())
     except Exception as exc:
-        log.warning("GET %s failed: %s", url, exc)
+        log.debug("GET %s failed: %s", url, exc)
         return None
 
 
@@ -199,7 +201,7 @@ def check_and_propose() -> bool:
     """
     validators = fetch_validators()
     if not validators:
-        log.warning("No validators returned — skipping rebalance check.")
+        log.info("No validators returned — skipping rebalance check.")
         return False
 
     region_tags = fetch_region_tags()
@@ -242,12 +244,19 @@ def check_and_propose() -> bool:
     _post_json(
         f"{GHOSTBRAIN_URL}/api/v1/signals",
         {
-            "source":   "validator-rebalancer",
-            "type":     "validator.rebalance.proposed",
-            "proposal": proposal["id"],
-            "dominant": dominant.region,
-            "pct":      dominant.power_pct,
-            "ts":       int(time.time()),
+            "messageId": str(uuid.uuid4()),
+            "subject": "infra.validator.rebalance.proposed",
+            "correlationId": f"validator-rebalance:{proposal['id']}",
+            "senderAgentId": "validator-rebalancer",
+            "payload": {
+                "source": "validator-rebalancer",
+                "type": "validator.rebalance.proposed",
+                "proposal": proposal["id"],
+                "dominant": dominant.region,
+                "pct": dominant.power_pct,
+                "ts": int(time.time()),
+            },
+            "sentAt": datetime.now(timezone.utc).isoformat(),
         },
     )
 

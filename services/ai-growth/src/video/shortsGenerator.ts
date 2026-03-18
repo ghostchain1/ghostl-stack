@@ -9,7 +9,7 @@ import logger from "../utils/logger";
 const SHORT_TOPICS = [
   "Why GhostChain has zero gas fees",
   "GST token explained in 60 seconds",
-  "GhostChain vs Ethereum — who wins?",
+  "GhostChain vs legacy L1 stacks",
   "How GhostL2 makes DeFi affordable",
   "Building your first dApp on GhostChain",
   "GhostXchange: the fastest DEX in crypto",

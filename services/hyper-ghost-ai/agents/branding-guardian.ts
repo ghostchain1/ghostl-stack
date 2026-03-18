@@ -5,7 +5,7 @@ import * as cp   from "child_process";
 /**
  * BrandingGuardian — AI-layer enforcer for Ghost-native branding sovereignty.
  *
- * Scans the entire repo for Ethereum-legacy references, rewrites them to Ghost
+ * Scans the entire repo for legacy upstream references, rewrites them to Ghost
  * equivalents in-place, and can patch CI workflows to ensure future compliance.
  */
 

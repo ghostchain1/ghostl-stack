@@ -15,7 +15,7 @@ import { LIQUIDITY_POLICY }                           from "../policies/liquidit
 interface PoolConfig {
   id:            string;
   internalChain: "L1" | "L2" | "L3";
-  externalChain: "ethereum" | "polygon" | "arbitrum" | "solana" | "cosmos";
+  externalChain: "ghostbridge" | "polygon" | "arbitrum" | "solana" | "cosmos";
   token0:        string;
   token1:        string;
   aprInternal:   number;
@@ -70,7 +70,7 @@ export function analyzeMarkets(_state: MultichainState): MarketInfo[] {
   interface MarketConfig {
     symbol:        string;
     internalChain: "L1" | "L2" | "L3";
-    externalChain: "ethereum" | "polygon" | "arbitrum" | "solana" | "cosmos";
+    externalChain: "ghostbridge" | "polygon" | "arbitrum" | "solana" | "cosmos";
     internalPrice: number;
     externalPrice: number;
     source:        string;

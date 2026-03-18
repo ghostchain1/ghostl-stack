@@ -53,12 +53,12 @@ const LAYERS = [
 ];
 
 const INTEGRATIONS = [
-  { name: "Ethereum", logo: "⟠", desc: "Canonical bridge + EVM compatibility" },
-  { name: "Bitcoin",  logo: "₿", desc: "BTC wrapped asset + payment rail" },
-  { name: "IPFS",     logo: "🌐", desc: "Decentralized content addressing" },
-  { name: "Chainlink", logo: "🔗", desc: "Oracle data feeds for DeFi protocols" },
-  { name: "The Graph", logo: "◈", desc: "Subgraph-based on-chain indexing" },
-  { name: "Cosmos IBC", logo: "∞", desc: "Interchain messaging and token transfers" },
+  { name: "GhostBridge EVM", logo: "⟠", desc: "Canonical GhostChain bridge with EVM compatibility" },
+  { name: "Bitcoin Rail",    logo: "₿", desc: "BTC settlement route managed through GhostChain L1" },
+  { name: "Ghost Content",   logo: "🌐", desc: "Distributed content addressing for Ghost apps and media" },
+  { name: "Oracle Relay",    logo: "🔗", desc: "Market data and off-chain signal delivery for Ghost protocols" },
+  { name: "Ghost Index",     logo: "◈", desc: "Structured chain indexing for dashboards and analytics" },
+  { name: "Cosmos IBC",      logo: "∞", desc: "Interchain messaging and token transfers routed through L1" },
 ];
 
 export default function EcosystemPage() {

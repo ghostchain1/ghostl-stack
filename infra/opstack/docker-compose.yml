@@ -42,7 +42,7 @@ services:
     healthcheck:
       test:
       - CMD-SHELL
-      - curl -sf http://localhost:8545/gate/status >/dev/null
+      - curl -sf http://localhost:8545/health >/dev/null
       interval: 15s
       timeout: 5s
       retries: 5
@@ -82,7 +82,7 @@ services:
     healthcheck:
       test:
       - CMD-SHELL
-      - curl -sf http://localhost:8545/gate/status >/dev/null
+      - curl -sf http://localhost:8545/health >/dev/null
       interval: 15s
       timeout: 5s
       retries: 5

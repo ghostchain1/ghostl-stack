@@ -99,7 +99,7 @@ export function DomainsPage() {
       <div style={CARD}>
         <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 700 }}>Ghost Name System (GNS)</h3>
         <p style={{ margin: '0 0 10px', fontSize: 13, color: 'var(--muted)' }}>
-          {GHOST_GNS.shortLabel} replaces ENS on GhostChain. Names resolve to wallet addresses, contract addresses, and IPFS content hashes on-chain via the GNS registry contracts.
+          {GHOST_GNS.shortLabel} is the canonical naming layer on GhostChain. Names resolve to wallet addresses, contract addresses, and IPFS content hashes on-chain via the GNS registry contracts.
         </p>
         <div style={{ display: 'flex', gap: 16, fontSize: 12 }}>
           <div>

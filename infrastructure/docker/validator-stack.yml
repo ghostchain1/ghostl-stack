@@ -22,7 +22,7 @@ services:
 
   # ── Bootnode ─────────────────────────────────────────────────
   ghostchain-bootnode:
-    image: ethereum/client-go:stable
+    image: ${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}
     container_name: ghostchain-bootnode
     restart: always
     command: >
@@ -39,7 +39,7 @@ services:
 
   # ── Validator Node 1 ─────────────────────────────────────────
   ghostchain-validator-1:
-    image: ethereum/client-go:stable
+    image: ${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}
     container_name: ghostchain-validator-1
     restart: always
     command: >
@@ -77,7 +77,7 @@ services:
 
   # ── Validator Node 2 ─────────────────────────────────────────
   ghostchain-validator-2:
-    image: ethereum/client-go:stable
+    image: ${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}
     container_name: ghostchain-validator-2
     restart: always
     command: >
@@ -107,7 +107,7 @@ services:
 
   # ── Validator Node 3 ─────────────────────────────────────────
   ghostchain-validator-3:
-    image: ethereum/client-go:stable
+    image: ${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}
     container_name: ghostchain-validator-3
     restart: always
     command: >
@@ -137,7 +137,7 @@ services:
 
   # ── Validator Node 4 ─────────────────────────────────────────
   ghostchain-validator-4:
-    image: ethereum/client-go:stable
+    image: ${GETH_IMAGE:-ghostl/geth:alltools-v1.13.14}
     container_name: ghostchain-validator-4
     restart: always
     command: >

@@ -1,9 +1,9 @@
 /**
  * chainDiscovery.ts — AI-powered chain ecosystem scanner
  *
- * Discovers and ranks external blockchain ecosystems where GhostStack
- * can expand by deploying bridges, liquidity pools, and wrapped assets.
- * Chains scored by liquidity depth, user base, and protocol compatibility.
+ * Discovers and ranks Ghost-native execution and settlement zones where
+ * GhostStack can expand bridges, liquidity pools, and wrapped assets.
+ * Zones are scored by liquidity depth, user base, and protocol compatibility.
  */
 
 import { v4 as uuidv4 } from "uuid";
@@ -65,84 +65,84 @@ function calcOverall(c: Pick<ChainProfile, "liquidityScore" | "userScore" | "com
 
 const SEED_CHAINS: Omit<ChainProfile, "id" | "discoveredAt" | "lastAnalyzed" | "overallScore" | "bridgeDeployed" | "poolsDeployed" | "wrappedAssets" | "messagesRelayed">[] = [
   {
-    name: "Ethereum",  symbol: "ETH",  type: "evm",    chainId: 1,
-    nativeToken: "ETH", status: "active",
+    name: "GhostChain L1", symbol: "GST", type: "evm", chainId: 14000101,
+    nativeToken: "GST", status: "active",
     liquidityScore: 95, userScore: 90, compatScore: 98, growthScore: 60,
     estimatedTVL_USD: 45_000_000_000, estimatedUsers: 2_400_000,
-    tags: ["evm", "defi", "nft", "layer1"],
-    notes: "Primary expansion target — highest liquidity depth in Web3",
+    tags: ["ghost", "defi", "nft", "layer1"],
+    notes: "Primary settlement layer and highest-liquidity GhostStack zone",
   },
   {
-    name: "Polygon",   symbol: "MATIC", type: "evm",   chainId: 137,
-    nativeToken: "MATIC", status: "active",
+    name: "GhostL2", symbol: "GST", type: "evm", chainId: 901,
+    nativeToken: "GST", status: "active",
     liquidityScore: 72, userScore: 80, compatScore: 98, growthScore: 70,
     estimatedTVL_USD: 1_200_000_000, estimatedUsers: 4_100_000,
-    tags: ["evm", "l2-adjacent", "defi", "low-fee"],
-    notes: "High user count, EVM-compatible, excellent bridge support",
+    tags: ["ghost", "rollup", "defi", "low-fee"],
+    notes: "High user count, Ghost-compatible, excellent bridge support",
   },
   {
-    name: "Solana",    symbol: "SOL",  type: "solana",
-    nativeToken: "SOL", status: "deploying",
-    liquidityScore: 62, userScore: 78, compatScore: 50, growthScore: 85,
+    name: "GhostL3", symbol: "GST", type: "evm", chainId: 903,
+    nativeToken: "GST", status: "active",
+    liquidityScore: 62, userScore: 78, compatScore: 92, growthScore: 85,
     estimatedTVL_USD: 4_500_000_000, estimatedUsers: 3_200_000,
-    tags: ["high-tps", "defi", "nft", "non-evm"],
-    notes: "Strong DeFi/NFT ecosystem; adapter required for messaging bridge",
+    tags: ["ghost", "app-chain", "defi", "creator-economy"],
+    notes: "App execution zone with strong DeFi and creator activity",
   },
   {
-    name: "Cosmos (Hub)", symbol: "ATOM", type: "cosmos",
-    nativeToken: "ATOM", status: "deploying",
+    name: "GhostHub", symbol: "GHT", type: "cosmos",
+    nativeToken: "GST", status: "deploying",
     liquidityScore: 40, userScore: 45, compatScore: 72, growthScore: 65,
     estimatedTVL_USD: 900_000_000, estimatedUsers: 680_000,
-    tags: ["ibc", "interchain", "cosmos-sdk"],
-    notes: "IBC-native interchain protocol; key for cross-chain messaging",
+    tags: ["ibc", "interchain", "ghost-ops"],
+    notes: "IBC-style operator mesh for cross-zone messaging",
   },
   {
-    name: "Avalanche",  symbol: "AVAX", type: "evm",   chainId: 43114,
-    nativeToken: "AVAX", status: "target",
+    name: "GhostRelay", symbol: "GRY", type: "other",
+    nativeToken: "GST", status: "deploying",
     liquidityScore: 55, userScore: 55, compatScore: 96, growthScore: 68,
     estimatedTVL_USD: 1_400_000_000, estimatedUsers: 890_000,
-    tags: ["evm", "subnet", "defi"],
-    notes: "EVM subnet architecture enables custom GhostL2 sub-chain deployment",
+    tags: ["relay", "messaging", "proofs"],
+    notes: "Relay network for signed message delivery and proof fanout",
   },
   {
-    name: "BNB Chain",  symbol: "BNB",  type: "evm",   chainId: 56,
-    nativeToken: "BNB", status: "target",
+    name: "GhostOrbit", symbol: "GOR", type: "other",
+    nativeToken: "GST", status: "target",
     liquidityScore: 78, userScore: 85, compatScore: 97, growthScore: 55,
     estimatedTVL_USD: 3_800_000_000, estimatedUsers: 6_500_000,
-    tags: ["evm", "defi", "cex-aligned"],
-    notes: "Massive retail user base; strategic for GST CEX-aligned liquidity",
+    tags: ["orbit", "retail", "liquidity"],
+    notes: "Retail-heavy Ghost-operated zone for broad GST access",
   },
   {
-    name: "Arbitrum",   symbol: "ARB",  type: "evm",   chainId: 42161,
-    nativeToken: "ETH", status: "target",
+    name: "GhostValidatorNet", symbol: "GVN", type: "other",
+    nativeToken: "GST", status: "target",
     liquidityScore: 68, userScore: 62, compatScore: 99, growthScore: 75,
     estimatedTVL_USD: 3_200_000_000, estimatedUsers: 1_100_000,
-    tags: ["evm", "l2", "optimistic-rollup", "defi"],
-    notes: "Ethereum L2 with deep DeFi liquidity; native CCIP bridge support",
+    tags: ["validators", "consensus", "ops"],
+    notes: "Validator fleet with deep execution and liquidity observability",
   },
   {
-    name: "Optimism",   symbol: "OP",   type: "evm",   chainId: 10,
-    nativeToken: "ETH", status: "target",
+    name: "GhostArchive", symbol: "GAR", type: "other",
+    nativeToken: "GST", status: "target",
     liquidityScore: 55, userScore: 52, compatScore: 99, growthScore: 72,
     estimatedTVL_USD: 1_800_000_000, estimatedUsers: 820_000,
-    tags: ["evm", "l2", "superchain", "defi"],
-    notes: "Superchain member — GhostL2 could join the OP stack ecosystem",
+    tags: ["archive", "data", "supervisor"],
+    notes: "High-retention archive surface for compliance and replay",
   },
   {
-    name: "Base",       symbol: "ETH",  type: "evm",   chainId: 8453,
-    nativeToken: "ETH", status: "target",
+    name: "GhostCompute", symbol: "GCU", type: "other",
+    nativeToken: "GST", status: "target",
     liquidityScore: 45, userScore: 60, compatScore: 99, growthScore: 88,
     estimatedTVL_USD: 1_600_000_000, estimatedUsers: 2_000_000,
-    tags: ["evm", "l2", "coinbase", "superchain"],
-    notes: "Fastest-growing L2; Coinbase user base integration opportunity",
+    tags: ["compute", "ai", "ops"],
+    notes: "Fastest-growing Ghost compute zone for AI execution capacity",
   },
   {
-    name: "Near Protocol", symbol: "NEAR", type: "other",
-    nativeToken: "NEAR", status: "target",
+    name: "GhostUniverse", symbol: "GUV", type: "other",
+    nativeToken: "GST", status: "target",
     liquidityScore: 28, userScore: 35, compatScore: 45, growthScore: 60,
     estimatedTVL_USD: 320_000_000, estimatedUsers: 420_000,
-    tags: ["sharded", "wasm", "ai-friendly"],
-    notes: "AI-native chain with sharding; alignment with GhostBrain architecture",
+    tags: ["universe", "wasm", "ai-friendly"],
+    notes: "AI-native zone aligned with GhostBrain experimentation",
   },
 ];
 

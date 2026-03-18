@@ -4,7 +4,7 @@
  * walletStore.ts — Global wallet / identity state store.
  *
  * Manages the currently active GhostWallet address and GNS name.
- * GhostWallet is the only supported wallet — no MetaMask / external wallets.
+ * GhostWallet is the only supported wallet in this UI surface.
  */
 
 import {

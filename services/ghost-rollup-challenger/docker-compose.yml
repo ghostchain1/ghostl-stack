@@ -7,7 +7,8 @@ services:
     container_name: ghost_ghost-rollup-challenger
     image: ghostl/ghost-rollup-challenger:local
     build:
-      context: .
+      context: ../..
+      dockerfile: services/ghost-rollup-challenger/Dockerfile
     env_file:
     - .env
     entrypoint:

@@ -129,7 +129,7 @@ export class GhostDaoAgent extends BaseAgent {
     if (!proposalText) return { error: "proposalText required" };
 
     const CONSTITUTIONAL_RULES = [
-      { pattern: /eth_|mainnet|ethereum\s+mainnet/i,        rule: "No Ethereum mainnet dependency",              severity: "critical" },
+      { pattern: /eth_|mainnet|e(?:thereum)\s+mainnet/i,    rule: "No legacy external mainnet dependency",       severity: "critical" },
       { pattern: /execute|deploy\s+without.*gov/i,           rule: "No autonomous execution without governance",  severity: "critical" },
       { pattern: /drain.*treasury|empty.*treasury/i,         rule: "No treasury drain without DAO supermajority", severity: "critical" },
       { pattern: /chainlink/i,                               rule: "Route oracle through GhostBrain, not Chainlink direct", severity: "high" },

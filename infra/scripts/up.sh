@@ -78,4 +78,4 @@ if [ "${#start_services[@]}" -eq 0 ]; then
 fi
 hg_docker compose "${COMPOSE_ARGS[@]}" up -d --no-deps "${start_services[@]}"
 
-echo "Done. L1=$HOST_L1_RPC, L2=$HOST_L2_RPC${ENABLE_L3:+, L3=$HOST_L3_RPC}, Guard=$GUARD_PORT, Relayer=7171, ProposerL2=7272, ProposerL3=7373, ChallengerL2=7282, ChallengerL3=7383, Prometheus=9090, Grafana=3000"
+echo "Done. L1=$HOST_L1_RPC, L2=$HOST_L2_RPC${ENABLE_L3:+, L3=$HOST_L3_RPC}, Guard=$GUARD_PORT, Relayer=7171, ProposerL3=7272, ProposerL2=7273, ChallengerL3=7282, ChallengerL2=7283, Prometheus=9090, Grafana=3000"

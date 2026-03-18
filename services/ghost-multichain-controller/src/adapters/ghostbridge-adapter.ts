@@ -1,21 +1,21 @@
 /**
- * Ethereum External Chain Adapter — Read-Only Observer
+ * GhostBridge External Adapter — Read-Only Observer
  *
- * Queries the Ethereum RPC endpoint to observe chain health, block height,
- * and gas prices. Used by the crosschain-analyzer to assess the L1↔Ethereum
- * bridge landing zone.
+ * Queries the GhostBridge RPC endpoint to observe chain health, block height,
+ * and gas prices. Used by the crosschain-analyzer to assess the L1↔GhostBridge
+ * settlement landing zone.
  *
  * SECURITY: Only HTTP(S) URLs from env are accepted. No transactions are
  * signed or broadcast — this adapter is strictly read-only.
  *
  * Config (env vars):
- *   ETHEREUM_RPC_URL          — full RPC endpoint URL (required for live data)
- *   ETHEREUM_EXPECTED_CHAIN_ID — decimal chain ID to verify (default: "1")
+ *   GHOSTBRIDGE_RPC_URL          — full RPC endpoint URL (required for live data)
+ *   GHOSTBRIDGE_EXPECTED_CHAIN_ID — decimal chain ID to verify (default: "17001")
  */
 import type { ChainSnapshot } from "../types.js";
 
-const RPC_URL          = process.env["ETHEREUM_RPC_URL"] ?? "";
-const EXPECTED_CHAIN_ID = process.env["ETHEREUM_EXPECTED_CHAIN_ID"] ?? "1";
+const RPC_URL           = process.env["GHOSTBRIDGE_RPC_URL"] ?? "";
+const EXPECTED_CHAIN_ID = process.env["GHOSTBRIDGE_EXPECTED_CHAIN_ID"] ?? "17001";
 const TIMEOUT_MS       = 5_000;
 
 function validateHttpUrl(url: string, label: string): void {
@@ -45,14 +45,14 @@ async function rpc(method: string, params: unknown[] = []): Promise<string> {
     signal:  AbortSignal.timeout(TIMEOUT_MS),
   });
   const data = await res.json() as JsonRpcResponse;
-  if (data.error) throw new Error(`ethereum RPC error: ${data.error.message}`);
+  if (data.error) throw new Error(`ghostbridge RPC error: ${data.error.message}`);
   return data.result ?? "0x0";
 }
 
-export async function getEthereumSnapshot(): Promise<ChainSnapshot> {
+export async function getGhostbridgeSnapshot(): Promise<ChainSnapshot> {
   const t0 = Date.now();
   try {
-    validateHttpUrl(RPC_URL, "ETHEREUM_RPC_URL");
+    validateHttpUrl(RPC_URL, "GHOSTBRIDGE_RPC_URL");
 
     const [blockHex, chainIdHex, gasPriceHex] = await Promise.all([
       rpc("eth_blockNumber"),
@@ -68,14 +68,14 @@ export async function getEthereumSnapshot(): Promise<ChainSnapshot> {
     const healthy = remoteChain === EXPECTED_CHAIN_ID;
     if (!healthy) {
       console.warn(
-        `[ethereum-adapter] chain ID mismatch: expected ${EXPECTED_CHAIN_ID}, got ${remoteChain}`,
+        `[ghostbridge-adapter] chain ID mismatch: expected ${EXPECTED_CHAIN_ID}, got ${remoteChain}`,
       );
     }
 
-    return { chainId: "ethereum", blockHeight, healthy, gasPriceWei, latencyMs, timestamp: Date.now() };
+    return { chainId: "ghostbridge", blockHeight, healthy, gasPriceWei, latencyMs, timestamp: Date.now() };
   } catch (err) {
     return {
-      chainId: "ethereum", blockHeight: "0", healthy: false,
+      chainId: "ghostbridge", blockHeight: "0", healthy: false,
       latencyMs: Date.now() - t0, timestamp: Date.now(), error: String(err),
     };
   }

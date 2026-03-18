@@ -861,7 +861,8 @@ services:
   ghost-rollup-proposer:
     <<: *host-gateway
     build:
-      context: ./ghost-rollup-proposer
+      context: ..
+      dockerfile: services/ghost-rollup-proposer/Dockerfile
     image: ghostl/ghost-rollup-proposer:local
     depends_on:
       ghost-registry:
@@ -896,7 +897,8 @@ services:
   ghost-rollup-challenger:
     <<: *host-gateway
     build:
-      context: ./ghost-rollup-challenger
+      context: ..
+      dockerfile: services/ghost-rollup-challenger/Dockerfile
     image: ghostl/ghost-rollup-challenger:local
     depends_on:
       ghost-registry:
@@ -928,7 +930,8 @@ services:
   ghost-rollup-proposer-l2:
     <<: *host-gateway
     build:
-      context: ./ghost-rollup-proposer
+      context: ..
+      dockerfile: services/ghost-rollup-proposer/Dockerfile
     image: ghostl/ghost-rollup-proposer:local
     depends_on:
       ghost-registry:
@@ -963,7 +966,8 @@ services:
   ghost-rollup-challenger-l2:
     <<: *host-gateway
     build:
-      context: ./ghost-rollup-challenger
+      context: ..
+      dockerfile: services/ghost-rollup-challenger/Dockerfile
     image: ghostl/ghost-rollup-challenger:local
     depends_on:
       ghost-registry:

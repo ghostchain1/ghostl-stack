@@ -92,14 +92,18 @@ services:
 
     environment:
       <<: *common-env
+      GHOSTBRAIN_URL:       "http://ghostbrain-core:7900"
       PROMOTION_ENGINE_URL: "http://ghost-promotion-engine:7951"
-      RPC_L1_URL:           "${DEVNET_RPC_L1:-http://172.24.0.1:18545}"
-      RPC_L2_URL:           "${DEVNET_RPC_L2:-http://172.24.0.1:29545}"
-      RPC_L3_URL:           "${DEVNET_RPC_L3:-http://172.24.0.1:39545}"
+      RPC_L1_URL:           "${DEVNET_RPC_L1:-http://host.docker.internal:18545}"
+      RPC_L2_URL:           "${DEVNET_RPC_L2:-http://l2-geth:8545}"
+      RPC_L3_URL:           "${DEVNET_RPC_L3:-http://l3-geth:8545}"
       POLL_INTERVAL_MS:     "${POLL_INTERVAL_MS:-60000}"
       BUILD_TIMEOUT_MS:     "${BUILD_TIMEOUT_MS:-600000}"
       TEST_TIMEOUT_MS:      "${TEST_TIMEOUT_MS:-300000}"
+      ORCH_ENV:             "${ORCH_ENV:-devnet}"
       ORCH_PORT:            "7950"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
     healthcheck:
       test:         ["CMD", "node", "-e", "fetch('http://localhost:7950/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))"]
@@ -110,6 +114,7 @@ services:
 
     networks:
       - ghost-internal
+      - opstack_default
 
     depends_on:
       ghost-promotion-engine:
@@ -138,7 +143,7 @@ services:
       # Testnet VM IPs (from GAIS vm_manager.py inventory)
       # Routing law: L1 first, then L2, then L3
       RPC_L1_URL:       "${TESTNET_RPC_L1:-http://10.50.99.71:18545}"
-      RPC_L2_URL:       "${TESTNET_RPC_L2:-http://10.50.99.77:29545}"
+      RPC_L2_URL:       "${TESTNET_RPC_L2:-http://10.50.99.77:29547}"
       RPC_L3_URL:       "${TESTNET_RPC_L3:-http://10.50.99.79:39545}"
       MAINNET_L1_URL:   "${MAINNET_RPC_L1:-http://10.50.99.70:18545}"
       SIMULATION_TIMEOUT_MS: "${SIMULATION_TIMEOUT_MS:-900000}"
@@ -158,3 +163,6 @@ networks:
   ghost-internal:
     external: true
     name: ghost-internal
+  opstack_default:
+    external: true
+    name: opstack_default

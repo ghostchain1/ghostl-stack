@@ -6,7 +6,7 @@
  *
  * Chain topology:
  *   L1  chain_id 14000101  RPC :18545  gas token GST
- *   L2  chain_id 901       RPC :29545
+ *   L2  chain_id 901       RPC :29547
  *   L3  chain_id 903       RPC :39545
  *   GhostBrain Core        :7900
  *
@@ -58,7 +58,7 @@ const SECRET_KEY = 'ghostbrain.apiKey';
 
 const CHAIN_LAYERS = [
   { label: 'GhostChain L1', chainId: 14000101, configKey: 'l1RpcUrl', defaultUrl: 'http://localhost:18545' },
-  { label: 'GhostL2',       chainId: 901,       configKey: 'l2RpcUrl', defaultUrl: 'http://localhost:29545' },
+  { label: 'GhostL2',       chainId: 901,       configKey: 'l2RpcUrl', defaultUrl: 'http://localhost:29547' },
   { label: 'GhostL3',       chainId: 903,       configKey: 'l3RpcUrl', defaultUrl: 'http://localhost:39545' },
 ] as const;
 
@@ -276,7 +276,7 @@ async function checkChainHealth(): Promise<ChainHealthResult[]> {
     const t0  = Date.now();
 
     const [blockRes, peerRes] = await Promise.all([
-      rpcCall(url, 'eth_blockNumber'),
+      rpcCall(url, 'ghost_blockNumber'),
       rpcCall(url, 'net_peerCount'),
     ]);
 

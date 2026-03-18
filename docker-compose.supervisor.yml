@@ -1,7 +1,10 @@
 # GhostStack Autonomous Infrastructure Supervisor — Docker Compose
 # =================================================================
 # Runs the GAIS service alongside the existing monitoring stack.
-# The supervisor needs access to the host libvirt socket to manage VMs.
+# On ghostchain-devnet, GAIS should target the remote hypervisor over libvirt
+# SSH rather than the local host's empty qemu:///system inventory. The
+# operator-facing public hypervisor IP is 208.110.71.164, but libvirt access
+# from devnet is expected to use the hypervisor management endpoint 192.168.122.1.
 #
 # Usage:
 #   docker compose -f docker-compose.supervisor.yml up -d
@@ -26,11 +29,12 @@ services:
     container_name: gais
     restart: unless-stopped
 
-    # libvirt socket must be mounted for virsh to communicate with the host
-    # hypervisor.  Requires the container to run as root or be in the libvirt
-    # group on the host.
+    # Local libvirt socket remains mounted for same-host operation, but the
+    # default VIRSH_URI below targets the proven remote hypervisor path used
+    # from ghostchain-devnet.
     volumes:
       - /var/run/libvirt/libvirt-sock:/var/run/libvirt/libvirt-sock
+      - ${HYPERVISOR_SSH_KEY_PATH:-/home/ghost/.ssh/hypervisor_access}:/root/.ssh/hypervisor_access:ro
       # Shared .tmp directory so GAIS, guardian, and health-monitor share state
       - ./logs:/home/ghost/ghostl-stack/logs
       - ./.tmp:/home/ghost/ghostl-stack/.tmp
@@ -55,16 +59,16 @@ services:
       DIRECTIVE_POLL_S:       "30"
 
       # ── libvirt ───────────────────────────────────────────────────────────
-      VIRSH_URI:              "qemu:///system"
-      LIBVIRT_NETWORK:        "gs-mgmt"
+      VIRSH_URI:              ${VIRSH_URI:-qemu+ssh://ghost@192.168.122.1/system?keyfile=/root/.ssh/hypervisor_access&no_verify=1}
+      LIBVIRT_NETWORK:        ${LIBVIRT_NETWORK:-gs-mgmt}
 
       # ── Chain RPC ports ───────────────────────────────────────────────────
       RPC_PORT_L1:            "18545"
-      RPC_PORT_L2:            "29545"
+      RPC_PORT_L2:            "29547"
       RPC_PORT_L3:            "39545"
 
       # ── GhostBrain + signing relay ────────────────────────────────────────
-      GHOSTBRAIN_URL:         ${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}
+      GHOSTBRAIN_URL:         "http://ghostbrain-core:7900"
       SIGNING_RELAY_URL:      ${SIGNING_RELAY_URL:-http://signing-relay:7910}
 
       # ── Cosmos LCD (validator rebalancer) ─────────────────────────────────
@@ -152,18 +156,19 @@ services:
     command: ["python3", "supervisor.py"]   # Existing read-only metrics exporter
     volumes:
       - /var/run/libvirt/libvirt-sock:/var/run/libvirt/libvirt-sock
+      - ${HYPERVISOR_SSH_KEY_PATH:-/home/ghost/.ssh/hypervisor_access}:/root/.ssh/hypervisor_access:ro
     ports:
       - "9108:9108"
     environment:
       LISTEN_ADDR:      "0.0.0.0"
       LISTEN_PORT:      "9108"
       SCRAPE_INTERVAL:  "10"
-      VIRSH_URI:        "qemu:///system"
-      LIBVIRT_NETWORK:  "gs-mgmt"
+      VIRSH_URI:        ${VIRSH_URI:-qemu+ssh://ghost@192.168.122.1/system?keyfile=/root/.ssh/hypervisor_access&no_verify=1}
+      LIBVIRT_NETWORK:  ${LIBVIRT_NETWORK:-gs-mgmt}
       RPC_PORT_L1:      "18545"
-      RPC_PORT_L2:      "29545"
+      RPC_PORT_L2:      "29547"
       RPC_PORT_L3:      "39545"
-      GHOSTBRAIN_URL:   ${GHOSTBRAIN_URL:-http://ghostbrain-core:7900/api/v1/signals}
+      GHOSTBRAIN_URL:   "http://ghostbrain-core:7900/api/v1/signals"
     networks:
       - ghost-internal
 

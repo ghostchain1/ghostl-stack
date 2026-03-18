@@ -85,7 +85,7 @@ export async function fetchValidatorPerf(): Promise<ValidatorPerf[]> {
 
 /** Detailed info + slashing history for one validator. */
 export async function fetchValidatorDetail(address: string): Promise<ValidatorDetail> {
-  // Sanitise: only hex addresses, ENS-like names, or bech32
+  // Sanitise: only hex addresses, GNS-style names, or bech32
   if (!/^[a-zA-Z0-9._\-]{1,100}$/.test(address)) {
     throw new Error('invalid validator address');
   }

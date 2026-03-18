@@ -9,7 +9,7 @@
  *   signing relay for human / governance ratification.
  *
  * Pipeline stages:
- *   IDLE → BUILDING → TESTING → VALIDATING_RPC → READY_FOR_PROMOTION
+ *   IDLE → BUILDING → TESTING → QUALITY_GATES → VALIDATING_RPC → READY_FOR_PROMOTION
  *
  * Environment variables:
  *   REPO_PATH               absolute path to ghostl-stack repo (default: /home/ghost/ghostl-stack)
@@ -19,8 +19,14 @@
  *   POLL_INTERVAL_MS        git-hash poll cadence       (default: 60000)
  *   BUILD_TIMEOUT_MS        max ms for docker compose build (default: 600000)
  *   TEST_TIMEOUT_MS         max ms for forge tests          (default: 300000)
+ *   QUALITY_TIMEOUT_MS      max ms for routing/brand/GST gates (default: 900000)
+ *   APP_BUILD_TIMEOUT_MS    max ms for workspace app build      (default: 1200000)
+ *   ENABLE_APP_BUILD        "0" skips npm run build             (default: 1)
+ *   ENABLE_SERVICE_BUILD    "1" also runs npm run build:services (default: 0)
+ *   ORCH_ENV                control-plane manifest env          (default: devnet)
+ *   ORCH_CONFIG_DIR         overrides service config directory
  *   RPC_L1_URL              L1 RPC endpoint  (default: http://localhost:18545)
- *   RPC_L2_URL              L2 RPC endpoint  (default: http://localhost:29545)
+ *   RPC_L2_URL              L2 RPC endpoint  (default: http://localhost:29547)
  *   RPC_L3_URL              L3 RPC endpoint  (default: http://localhost:39545)
  *   DRY_RUN                 if "1" log actions without executing (default: 0)
  *   ORCH_PORT               HTTP port for status API    (default: 7950)
@@ -28,12 +34,18 @@
 
 import { execFile }     from 'node:child_process';
 import { promisify }    from 'node:util';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 import path             from 'node:path';
 import http             from 'node:http';
 import process          from 'node:process';
 import express          from 'express';
 import type { Request, Response } from 'express';
+import { loadManagedUnits, parseRuntimeEnvironment } from './core/config-loader.js';
+import { GhostKernel } from './core/kernel.js';
+import { buildLayerOverrideHealth, probeManagedUnit, summarizeInventory } from './domains/chains/rpc-health.js';
+import { buildBootPlan } from './workflows/boot-devnet.js';
+import type { RuntimeEnvironment } from './core/types.js';
+import type { BootPlanStep } from './workflows/boot-devnet.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -45,9 +57,15 @@ const SIGNING_RELAY_URL    = (process.env.SIGNING_RELAY_URL   ?? 'http://localho
 const POLL_INTERVAL_MS     = Number(process.env.POLL_INTERVAL_MS  ?? '60000');
 const BUILD_TIMEOUT_MS     = Number(process.env.BUILD_TIMEOUT_MS  ?? '600000');
 const TEST_TIMEOUT_MS      = Number(process.env.TEST_TIMEOUT_MS   ?? '300000');
+const QUALITY_TIMEOUT_MS   = Number(process.env.QUALITY_TIMEOUT_MS ?? '900000');
+const APP_BUILD_TIMEOUT_MS = Number(process.env.APP_BUILD_TIMEOUT_MS ?? '1200000');
 const RPC_L1_URL           = (process.env.RPC_L1_URL ?? 'http://localhost:18545').replace(/\/$/, '');
-const RPC_L2_URL           = (process.env.RPC_L2_URL ?? 'http://localhost:29545').replace(/\/$/, '');
+const RPC_L2_URL           = (process.env.RPC_L2_URL ?? 'http://localhost:29547').replace(/\/$/, '');
 const RPC_L3_URL           = (process.env.RPC_L3_URL ?? 'http://localhost:39545').replace(/\/$/, '');
+const ENABLE_APP_BUILD     = process.env.ENABLE_APP_BUILD !== '0';
+const ENABLE_SERVICE_BUILD = process.env.ENABLE_SERVICE_BUILD === '1';
+const ORCH_ENV             = parseRuntimeEnvironment(process.env.ORCH_ENV);
+const ORCH_CONFIG_DIR      = process.env.ORCH_CONFIG_DIR;
 const DRY_RUN              = process.env.DRY_RUN === '1' || process.env.DRY_RUN === 'true';
 const ORCH_PORT            = Number(process.env.ORCH_PORT ?? '7950');
 
@@ -58,6 +76,7 @@ type Stage =
   | 'IDLE'
   | 'BUILDING'
   | 'TESTING'
+  | 'QUALITY_GATES'
   | 'VALIDATING_RPC'
   | 'READY_FOR_PROMOTION'
   | 'PROMOTION_REQUESTED'
@@ -68,15 +87,27 @@ interface OrchestratorState {
   lastGitHash:       string;
   lastBuildAt:       string | null;
   lastTestAt:        string | null;
+  lastQualityGateAt: string | null;
   lastRpcCheckAt:    string | null;
   lastPromotionAt:   string | null;
   buildErrors:       string[];
   testErrors:        string[];
+  qualityGateErrors: string[];
   rpcStatus:         Record<string, boolean>;
   cyclesTotal:       number;
   cyclesSucceeded:   number;
   cyclesFailed:      number;
   updatedAt:         string;
+}
+
+interface InventorySnapshot {
+  env: RuntimeEnvironment;
+  manifestPath: string | null;
+  generatedBy: string | null;
+  loadedAt: string | null;
+  refreshedAt: string | null;
+  error: string | null;
+  bootPlan: BootPlanStep[];
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -85,10 +116,12 @@ let state: OrchestratorState = {
   lastGitHash:       '',
   lastBuildAt:       null,
   lastTestAt:        null,
+  lastQualityGateAt: null,
   lastRpcCheckAt:    null,
   lastPromotionAt:   null,
   buildErrors:       [],
   testErrors:        [],
+  qualityGateErrors: [],
   rpcStatus:         { l1: false, l2: false, l3: false },
   cyclesTotal:       0,
   cyclesSucceeded:   0,
@@ -97,6 +130,18 @@ let state: OrchestratorState = {
 };
 
 let running = false;
+const kernel = new GhostKernel();
+let inventorySnapshot: InventorySnapshot = {
+  env: ORCH_ENV,
+  manifestPath: null,
+  generatedBy: null,
+  loadedAt: null,
+  refreshedAt: null,
+  error: null,
+  bootPlan: [],
+};
+
+type RpcLayer = 'l1' | 'l2' | 'l3';
 
 // ── Logging ──────────────────────────────────────────────────────────────────
 function log(level: 'INFO' | 'WARN' | 'ERROR', msg: string, extra?: unknown): void {
@@ -115,7 +160,9 @@ function log(level: 'INFO' | 'WARN' | 'ERROR', msg: string, extra?: unknown): vo
 async function saveState(): Promise<void> {
   await mkdir(path.dirname(STATE_FILE), { recursive: true });
   state.updatedAt = new Date().toISOString();
-  await writeFile(STATE_FILE, JSON.stringify(state, null, 2), 'utf8');
+  const tempFile = `${STATE_FILE}.tmp`;
+  await writeFile(tempFile, JSON.stringify(state, null, 2), 'utf8');
+  await rename(tempFile, STATE_FILE);
 }
 
 async function loadState(): Promise<void> {
@@ -141,28 +188,134 @@ async function getCurrentGitHash(): Promise<string> {
   }
 }
 
-// ── RPC health check — uses ghost_ namespace ──────────────────────────────────
+// ── RPC health check — prefers ghost_ namespace, falls back to eth_ for direct OP RPC ──
 async function checkRpc(name: string, url: string): Promise<boolean> {
-  try {
-    const req = JSON.stringify({
-      jsonrpc: '2.0',
-      method:  'ghost_blockNumber',   // GhostChain RPC namespace — never eth_
-      params:  [],
-      id:      1,
-    });
-    const res = await fetch(url, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    req,
-      signal:  AbortSignal.timeout(8_000),
-    });
-    if (!res.ok) return false;
-    const json = await res.json() as { result?: string };
-    return typeof json.result === 'string' && json.result.startsWith('0x');
-  } catch {
-    log('WARN', `RPC unreachable: ${name}`, { url });
-    return false;
+  const methods = ['ghost_blockNumber', 'eth_blockNumber'];
+  let lastError: string | null = null;
+
+  for (const method of methods) {
+    try {
+      const req = JSON.stringify({
+        jsonrpc: '2.0',
+        method,
+        params: [],
+        id: 1,
+      });
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: req,
+        signal: AbortSignal.timeout(8_000),
+      });
+      if (!res.ok) {
+        lastError = `HTTP ${res.status} for ${method}`;
+        continue;
+      }
+
+      const json = await res.json() as { result?: string; error?: { message?: string } };
+      if (typeof json.result === 'string' && json.result.startsWith('0x')) return true;
+      lastError = json.error?.message ?? `invalid payload for ${method}`;
+    } catch (err: unknown) {
+      lastError = err instanceof Error ? err.message : String(err);
+    }
   }
+
+  log('WARN', `RPC unreachable: ${name}`, { url, error: lastError });
+  return false;
+}
+
+function layerOverrideForUnit(layer: string, overrides: Partial<Record<RpcLayer, boolean>>): boolean | undefined {
+  if (layer === 'l1') return overrides.l1;
+  if (layer === 'l2') return overrides.l2;
+  if (layer === 'l3') return overrides.l3;
+  return undefined;
+}
+
+function buildInventoryReport(): {
+  env: RuntimeEnvironment;
+  manifestPath: string | null;
+  generatedBy: string | null;
+  loadedAt: string | null;
+  refreshedAt: string | null;
+  error: string | null;
+  bootPlan: BootPlanStep[];
+  summary: ReturnType<typeof summarizeInventory>;
+  degradedUnits: Array<{ id: string; name: string; layer: string; status: string; detail?: string }>;
+  units: ReturnType<GhostKernel['inventoryByEnv']>;
+} {
+  const units = kernel.inventoryByEnv(ORCH_ENV);
+  return {
+    ...inventorySnapshot,
+    summary: summarizeInventory(units),
+    degradedUnits: kernel.degradedUnits(ORCH_ENV).map((unit) => ({
+      id: unit.id,
+      name: unit.name,
+      layer: unit.layer,
+      status: unit.health.status,
+      detail: unit.health.detail,
+    })),
+    units,
+  };
+}
+
+async function loadControlPlaneInventory(): Promise<void> {
+  try {
+    const { manifest, manifestPath, units } = await loadManagedUnits(ORCH_ENV);
+    kernel.replaceInventory(units);
+    inventorySnapshot = {
+      env: ORCH_ENV,
+      manifestPath,
+      generatedBy: manifest.generatedBy,
+      loadedAt: new Date().toISOString(),
+      refreshedAt: inventorySnapshot.refreshedAt,
+      error: null,
+      bootPlan: buildBootPlan(units, ORCH_ENV),
+    };
+    log('INFO', 'Loaded control-plane inventory', {
+      env: ORCH_ENV,
+      manifestPath,
+      units: units.length,
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    inventorySnapshot = {
+      ...inventorySnapshot,
+      env: ORCH_ENV,
+      error: msg,
+    };
+    log('WARN', 'Failed to load control-plane inventory', { env: ORCH_ENV, msg });
+  }
+}
+
+async function refreshControlPlaneHealth(
+  overrides: Partial<Record<RpcLayer, boolean>> = {},
+): Promise<void> {
+  const units = kernel.inventoryByEnv(ORCH_ENV);
+  if (units.length === 0) return;
+
+  const updates = await Promise.all(units.map(async (unit) => {
+    const override = layerOverrideForUnit(unit.layer, overrides);
+    const health = override === undefined
+      ? await probeManagedUnit(unit)
+      : buildLayerOverrideHealth(unit, override);
+    return { id: unit.id, health };
+  }));
+
+  for (const update of updates) {
+    kernel.updateHealth(update.id, update.health);
+  }
+
+  const refreshedUnits = kernel.inventoryByEnv(ORCH_ENV);
+  state.rpcStatus = {
+    l1: refreshedUnits.some((unit) => unit.layer === 'l1' && unit.health.status === 'ok'),
+    l2: refreshedUnits.some((unit) => unit.layer === 'l2' && unit.health.status === 'ok'),
+    l3: refreshedUnits.some((unit) => unit.layer === 'l3' && unit.health.status === 'ok'),
+  };
+
+  inventorySnapshot = {
+    ...inventorySnapshot,
+    refreshedAt: new Date().toISOString(),
+  };
 }
 
 // ── Forge contract build ──────────────────────────────────────────────────────
@@ -227,6 +380,58 @@ async function runForgeTests(): Promise<{ ok: boolean; error?: string }> {
     log('WARN', 'Forge tests failed', { msg });
     return { ok: false, error: msg };
   }
+}
+
+async function runWorkspaceCommand(
+  label: string,
+  args: string[],
+  timeout: number,
+): Promise<{ ok: boolean; error?: string }> {
+  if (DRY_RUN) {
+    log('INFO', `[DRY_RUN] Skipping ${label}`, { args });
+    return { ok: true };
+  }
+
+  log('INFO', `Running ${label}`, { args });
+  try {
+    await execFileAsync('npm', args, {
+      cwd:     REPO_PATH,
+      timeout,
+      env:     { ...process.env },
+    });
+    log('INFO', `${label} passed`);
+    return { ok: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log('ERROR', `${label} failed`, { msg });
+    return { ok: false, error: msg };
+  }
+}
+
+async function runQualityGates(): Promise<{ ok: boolean; errors: string[] }> {
+  const errors: string[] = [];
+  const steps: Array<{ label: string; args: string[]; timeout: number }> = [
+    { label: 'routing verification', args: ['run', 'verify:routing'], timeout: QUALITY_TIMEOUT_MS },
+    { label: 'branding audit', args: ['run', 'brand:full'], timeout: QUALITY_TIMEOUT_MS },
+    { label: 'GST leakage gate', args: ['run', 'gst:leakage'], timeout: QUALITY_TIMEOUT_MS },
+  ];
+
+  if (ENABLE_APP_BUILD) {
+    steps.push({ label: 'workspace build', args: ['run', 'build'], timeout: APP_BUILD_TIMEOUT_MS });
+  }
+
+  if (ENABLE_SERVICE_BUILD) {
+    steps.push({ label: 'service build', args: ['run', 'build:services'], timeout: APP_BUILD_TIMEOUT_MS });
+  }
+
+  for (const step of steps) {
+    const result = await runWorkspaceCommand(step.label, step.args, step.timeout);
+    if (!result.ok) {
+      errors.push(`${step.label}: ${result.error ?? 'failed'}`);
+    }
+  }
+
+  return { ok: errors.length === 0, errors };
 }
 
 // ── Proposal to signing relay ─────────────────────────────────────────────────
@@ -358,7 +563,7 @@ async function runPipelineCycle(): Promise<void> {
 
     // 3. Run forge tests
     state.stage      = 'TESTING';
-    state.testErrors  = [];
+    state.testErrors = [];
     await saveState();
 
     const testResult = await runForgeTests();
@@ -374,7 +579,35 @@ async function runPipelineCycle(): Promise<void> {
       await notifyGhostBrain('tests_passed', { gitHash: currentHash });
     }
 
-    // 4. RPC validation
+    // 4. Workspace quality gates
+    state.stage = 'QUALITY_GATES';
+    state.qualityGateErrors = [];
+    await saveState();
+
+    const qualityResult = await runQualityGates();
+    state.lastQualityGateAt = new Date().toISOString();
+    state.qualityGateErrors = qualityResult.errors;
+    await saveState();
+
+    if (!qualityResult.ok) {
+      state.stage = 'ERROR';
+      state.cyclesFailed++;
+      await saveState();
+      await submitProposal('quality_gates_failed', {
+        gitHash: currentHash,
+        errors:  state.qualityGateErrors,
+      });
+      await notifyGhostBrain('quality_gates_failed', {
+        gitHash: currentHash,
+        errors:  state.qualityGateErrors,
+      });
+      log('ERROR', 'Quality gates failed — staying in ERROR', { errors: state.qualityGateErrors });
+      return;
+    }
+
+    await notifyGhostBrain('quality_gates_passed', { gitHash: currentHash });
+
+    // 5. RPC validation
     state.stage = 'VALIDATING_RPC';
     await saveState();
 
@@ -387,6 +620,7 @@ async function runPipelineCycle(): Promise<void> {
     state.rpcStatus    = { l1: l1Ok, l2: l2Ok, l3: l3Ok };
     state.lastRpcCheckAt = new Date().toISOString();
     await saveState();
+    await refreshControlPlaneHealth({ l1: l1Ok, l2: l2Ok, l3: l3Ok });
 
     log('INFO', 'RPC validation complete', state.rpcStatus);
 
@@ -402,7 +636,7 @@ async function runPipelineCycle(): Promise<void> {
       return;
     }
 
-    // 5. Signal readiness
+    // 6. Signal readiness
     state.stage        = 'READY_FOR_PROMOTION';
     state.cyclesSucceeded++;
     state.lastPromotionAt = null;
@@ -425,16 +659,100 @@ async function runPipelineCycle(): Promise<void> {
 }
 
 // ── HTTP API ─────────────────────────────────────────────────────────────────
+const PROMETHEUS_STAGES: Stage[] = [
+  'IDLE',
+  'BUILDING',
+  'TESTING',
+  'QUALITY_GATES',
+  'VALIDATING_RPC',
+  'READY_FOR_PROMOTION',
+  'PROMOTION_REQUESTED',
+  'ERROR',
+];
+
+function buildMetrics(): string {
+  const stageMetrics = PROMETHEUS_STAGES.map((stage) =>
+    `ghost_orchestrator_stage{stage="${stage}"} ${state.stage === stage ? 1 : 0}`,
+  );
+
+  return [
+    '# HELP ghost_orchestrator_cycles_total Total orchestrator pipeline cycles.',
+    '# TYPE ghost_orchestrator_cycles_total counter',
+    `ghost_orchestrator_cycles_total ${state.cyclesTotal}`,
+    '# HELP ghost_orchestrator_cycles_succeeded Total successful orchestrator cycles.',
+    '# TYPE ghost_orchestrator_cycles_succeeded counter',
+    `ghost_orchestrator_cycles_succeeded ${state.cyclesSucceeded}`,
+    '# HELP ghost_orchestrator_cycles_failed Total failed orchestrator cycles.',
+    '# TYPE ghost_orchestrator_cycles_failed counter',
+    `ghost_orchestrator_cycles_failed ${state.cyclesFailed}`,
+    '# HELP ghost_orchestrator_rpc_status RPC health by layer.',
+    '# TYPE ghost_orchestrator_rpc_status gauge',
+    `ghost_orchestrator_rpc_status{layer="l1"} ${state.rpcStatus.l1 ? 1 : 0}`,
+    `ghost_orchestrator_rpc_status{layer="l2"} ${state.rpcStatus.l2 ? 1 : 0}`,
+    `ghost_orchestrator_rpc_status{layer="l3"} ${state.rpcStatus.l3 ? 1 : 0}`,
+    '# HELP ghost_orchestrator_quality_gate_errors Current quality gate error count.',
+    '# TYPE ghost_orchestrator_quality_gate_errors gauge',
+    `ghost_orchestrator_quality_gate_errors ${state.qualityGateErrors.length}`,
+    '# HELP ghost_orchestrator_stage Current orchestrator stage.',
+    '# TYPE ghost_orchestrator_stage gauge',
+    ...stageMetrics,
+  ].join('\n') + '\n';
+}
+
 function buildApp(): express.Express {
   const app = express();
   app.use(express.json());
 
   app.get('/status', (_req: Request, res: Response) => {
-    res.json({ service: 'ghost-orchestrator', ...state, dryRun: DRY_RUN });
+    res.json({
+      service: 'ghost-orchestrator',
+      environment: ORCH_ENV,
+      ...state,
+      dryRun: DRY_RUN,
+      inventory: buildInventoryReport(),
+    });
   });
 
   app.get('/health', (_req: Request, res: Response) => {
-    res.json({ ok: true, stage: state.stage });
+    res.json({
+      ok: state.stage !== 'ERROR' && !inventorySnapshot.error,
+      stage: state.stage,
+      environment: ORCH_ENV,
+      inventoryError: inventorySnapshot.error,
+    });
+  });
+
+  app.get('/inventory', (_req: Request, res: Response) => {
+    res.json(buildInventoryReport());
+  });
+
+  app.get('/topology', (_req: Request, res: Response) => {
+    const inventory = buildInventoryReport();
+    res.json({
+      environment: ORCH_ENV,
+      manifestPath: inventory.manifestPath,
+      bootPlan: inventory.bootPlan,
+      dependencies: inventory.units.map((unit) => ({
+        id: unit.id,
+        name: unit.name,
+        layer: unit.layer,
+        dependencies: unit.dependencies,
+        governance: unit.governance,
+      })),
+    });
+  });
+
+  app.get('/metrics', (_req: Request, res: Response) => {
+    res.type('text/plain').send(buildMetrics());
+  });
+
+  app.post('/inventory/refresh', (_req: Request, res: Response) => {
+    setImmediate(() => {
+      loadControlPlaneInventory()
+        .then(() => refreshControlPlaneHealth())
+        .catch(console.error);
+    });
+    res.json({ ok: true, environment: ORCH_ENV, message: 'Inventory refresh scheduled' });
   });
 
   // Manual trigger (for admin / testing)
@@ -450,6 +768,7 @@ function buildApp(): express.Express {
     state.stage = 'IDLE';
     state.buildErrors = [];
     state.testErrors  = [];
+    state.qualityGateErrors = [];
     saveState().catch(console.error);
     res.json({ ok: true, message: 'State reset to IDLE' });
   });
@@ -461,11 +780,15 @@ function buildApp(): express.Express {
 async function main(): Promise<void> {
   log('INFO', '👻 GhostStack Ghost Orchestrator starting', {
     repoPath: REPO_PATH,
+    environment: ORCH_ENV,
+    configDir: ORCH_CONFIG_DIR ?? 'service-default',
     port:     ORCH_PORT,
     dryRun:   DRY_RUN,
   });
 
   await loadState();
+  await loadControlPlaneInventory();
+  await refreshControlPlaneHealth();
 
   const app = buildApp();
   const server = http.createServer(app);

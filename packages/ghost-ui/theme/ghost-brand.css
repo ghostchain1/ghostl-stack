@@ -1,54 +1,63 @@
 /* ═══════════════════════════════════════════════════════════════════
    GhostChain Brand Design System — Canonical Global Stylesheet
-   Ghost Gold (#FFD700) · Midnight Black (#0A0A0A) · Neon Ember (#FFAA00)
-   Fonts: Orbitron (headings) · Inter (body)
+   Deep Graphite · Ghost Green · Signal Cyan · Governance Gold
+   Fonts: Space Grotesk (headings) · Inter (body)
    Single source of truth — copied into every app's globals.css
    by: packages/ghost-ui/theme/ghost-brand.css
 ═══════════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
 
 /* ── DESIGN TOKENS ──────────────────────────────────────────────────── */
 :root {
-  /* Brand palette */
-  --gold:          #FFD700;
-  --gold-light:    #FFE55C;
-  --gold-dim:      #B8860B;
-  --ember:         #FFAA00;
-  --black:         #0A0A0A;
-  --silver:        #C0C0C0;
+  /* Canonical sovereign palette */
+  --ghost-green:   #23d6a6;
+  --ghost-green-light: #57f3c4;
+  --ghost-green-dim: #159173;
+  --ghost-cyan:    #6bc7ff;
+  --ghost-purple:  #8d7cff;
+  --ghost-gold:    #d6b15f;
+  --black:         #06090d;
+  --silver:        #8fa6a0;
+
+  /* Compatibility aliases retained for existing app globals */
+  --gold:          var(--ghost-green);
+  --gold-light:    var(--ghost-green-light);
+  --gold-dim:      var(--ghost-green-dim);
+  --ember:         var(--ghost-cyan);
 
   /* Surface hierarchy */
-  --bg:            #0A0A0A;
-  --surface:       #0D0D0D;
-  --surface-2:     #111111;
-  --surface-3:     #161616;
+  --bg:            #06090d;
+  --surface:       #0f141a;
+  --surface-2:     #141b22;
+  --surface-3:     #1b242d;
 
   /* Text */
-  --text:          #E8E8E8;
-  --text-muted:    rgba(232,232,232,0.45);
-  --white:         #F0F0F0;
+  --text:          #ebf6f2;
+  --text-muted:    rgba(235,246,242,0.58);
+  --white:         #f5fbf9;
 
   /* Borders */
-  --border:        rgba(255,215,0,0.18);
-  --border-hover:  rgba(255,215,0,0.45);
+  --border:        rgba(87,243,196,0.16);
+  --border-hover:  rgba(87,243,196,0.34);
 
   /* Glows */
-  --glow-sm:       0 0 12px rgba(255,215,0,0.35);
-  --glow-md:       0 0 24px rgba(255,215,0,0.5);
-  --glow-lg:       0 0 48px rgba(255,215,0,0.35);
+  --glow-sm:       0 0 12px rgba(35,214,166,0.28);
+  --glow-md:       0 0 24px rgba(35,214,166,0.42);
+  --glow-lg:       0 0 48px rgba(35,214,166,0.28);
 
   /* Semantic aliases (keep compat with components using old var names) */
-  --accent:        #FFD700;
-  --accent-2:      #FFAA00;
-  --accent-glow:   rgba(255,215,0,0.25);
-  --green:         #10b981;
-  --yellow:        #f59e0b;
-  --red:           #ef4444;
-  --cyan:          #FFD700;   /* remap: gold replaces cyan */
+  --accent:        var(--ghost-green);
+  --accent-2:      var(--ghost-gold);
+  --accent-3:      var(--ghost-cyan);
+  --accent-glow:   rgba(35,214,166,0.25);
+  --green:         var(--ghost-green);
+  --yellow:        var(--ghost-gold);
+  --red:           #ff6b6b;
+  --cyan:          var(--ghost-cyan);
 
   /* Typography */
-  --font-display:  'Orbitron', monospace;
+  --font-display:  'Space Grotesk', 'Inter', sans-serif;
   --font-body:     'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   /* Layout */

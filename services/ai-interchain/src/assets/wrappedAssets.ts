@@ -1,7 +1,7 @@
 /**
- * wrappedAssets.ts — Cross-chain wrapped GST token manager
+ * wrappedAssets.ts — Interlayer wrapped GST token manager
  *
- * Tracks wGST deployments across external networks. Each wrapped token
+ * Tracks wGST deployments across approved Ghost settlement zones. Each wrapped token
  * is fully backed 1:1 by GST locked in the GhostChain bridge contract.
  */
 
@@ -11,7 +11,7 @@ import logger from "../utils/logger";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type WrappedStatus = "pending" | "active" | "paused" | "migrating" | "deprecated";
-export type WrappedStandard = "ERC-20" | "SPL" | "CW-20" | "BEP-20" | "native";
+export type WrappedStandard = "GRC-20" | "SPL" | "CW-20" | "BEP-20" | "native";
 
 export interface WrappedAsset {
   id:              string;
@@ -59,49 +59,49 @@ function addr(): string {
 
 const SEED_ASSETS: Omit<WrappedAsset, "id" | "deployedAt" | "updatedAt" | "contractAddress">[] = [
   {
-    token: "wGST", network: "Ethereum",    standard: "ERC-20",  status: "active",
+    token: "wGST", network: "GhostL2",      standard: "GRC-20", status: "active",
     backing: "GST on GhostChain",           decimals: 18,
     totalMinted: 42_000_000, burned: 3_200_000, circulatingSupply: 38_800_000,
     holdersCount: 4_820,
     price_USD: 0.0245, marketCap_USD: 950_600, volume24h_USD: 182_000,
     pegDeviation_pct: 0.12, lastRebaseAt: Date.now() - 86400 * 1000,
-    notes: "Largest wGST deployment — anchors ETH DeFi ecosystem",
+    notes: "Largest wGST deployment — anchors GhostL2 liquidity settlement",
   },
   {
-    token: "wGST", network: "Polygon",     standard: "ERC-20",  status: "active",
+    token: "wGST", network: "GhostL3",      standard: "GRC-20", status: "active",
     backing: "GST on GhostChain",           decimals: 18,
     totalMinted: 18_500_000, burned: 1_400_000, circulatingSupply: 17_100_000,
     holdersCount: 11_340,
     price_USD: 0.0244, marketCap_USD: 417_240, volume24h_USD: 68_000,
     pegDeviation_pct: 0.08, lastRebaseAt: Date.now() - 3600 * 1000,
-    notes: "Polygon's low fees drive high holder diversity for wGST",
+    notes: "GhostL3 retail activity drives high holder diversity for wGST",
   },
   {
-    token: "wGST", network: "Cosmos (Hub)", standard: "CW-20", status: "active",
+    token: "wGST", network: "GhostHub",     standard: "CW-20", status: "active",
     backing: "GST on GhostChain",           decimals: 6,
     totalMinted: 5_200_000, burned: 640_000, circulatingSupply: 4_560_000,
     holdersCount: 1_820,
     price_USD: 0.0246, marketCap_USD: 112_176, volume24h_USD: 21_000,
     pegDeviation_pct: 0.20, lastRebaseAt: Date.now() - 12 * 3600 * 1000,
-    notes: "IBC-native CW-20 token enabling Cosmos DEX trading",
+    notes: "CW-20 wrapper enabling GhostHub operator settlement",
   },
   {
-    token: "wGST", network: "Solana",      standard: "SPL",     status: "pending",
+    token: "wGST", network: "GhostRelay",  standard: "SPL",     status: "pending",
     backing: "GST on GhostChain",           decimals: 9,
     totalMinted: 0, burned: 0, circulatingSupply: 0,
     holdersCount: 0,
     price_USD: 0, marketCap_USD: 0, volume24h_USD: 0,
     pegDeviation_pct: 0, lastRebaseAt: null,
-    notes: "SPL token pending Solana bridge activation",
+    notes: "SPL-form asset pending GhostRelay activation",
   },
   {
-    token: "wGST", network: "BNB Chain",   standard: "BEP-20",  status: "pending",
+    token: "wGST", network: "GhostOrbit",  standard: "BEP-20",  status: "pending",
     backing: "GST on GhostChain",           decimals: 18,
     totalMinted: 0, burned: 0, circulatingSupply: 0,
     holdersCount: 0,
     price_USD: 0, marketCap_USD: 0, volume24h_USD: 0,
     pegDeviation_pct: 0, lastRebaseAt: null,
-    notes: "BEP-20 contract deployed with bridge testnet — pending mainnet",
+    notes: "Orbit-zone asset deployed in staging — pending production release",
   },
 ];
 
@@ -139,7 +139,7 @@ export function createWrappedToken(chain: string, opts?: {
     id:              uuidv4(),
     token:           "wGST",
     network:         chain,
-    standard:        opts?.standard ?? "ERC-20",
+    standard:        opts?.standard ?? "GRC-20",
     status:          "pending",
     backing:         "GST on GhostChain",
     deployedAt:      now,

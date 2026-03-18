@@ -1,6 +1,6 @@
 /**
- * EcosystemAlliance — proposes bridge integrations and ecosystem treaties with
- * major L1/L2 chains so GhostChain becomes an interoperability hub.
+ * EcosystemAlliance — proposes Ghost-native integration treaties across the
+ * GhostStack product and infrastructure layers.
  */
 
 import OpenAI from "openai";
@@ -23,14 +23,14 @@ export interface ChainAlliance {
 }
 
 export const ALLIANCES: ChainAlliance[] = [
-  { id: "a1", chain: "Ethereum",   ecosystem: "Ethereum L1", bridgeType: "canonical",   tvlTarget: "$50M",  status: "building",    proposal: "" },
-  { id: "a2", chain: "Arbitrum",   ecosystem: "Ethereum L2", bridgeType: "native",      tvlTarget: "$20M",  status: "proposed",    proposal: "" },
-  { id: "a3", chain: "Optimism",   ecosystem: "Ethereum L2", bridgeType: "native",      tvlTarget: "$15M",  status: "proposed",    proposal: "" },
-  { id: "a4", chain: "Polygon",    ecosystem: "Ethereum L2", bridgeType: "canonical",   tvlTarget: "$25M",  status: "identified",  proposal: "" },
-  { id: "a5", chain: "Solana",     ecosystem: "Solana",      bridgeType: "third-party", tvlTarget: "$10M",  status: "identified",  proposal: "" },
-  { id: "a6", chain: "Cosmos Hub", ecosystem: "Cosmos",      bridgeType: "native",      tvlTarget: "$8M",   status: "identified",  proposal: "" },
-  { id: "a7", chain: "BNB Chain",  ecosystem: "BNB",         bridgeType: "canonical",   tvlTarget: "$30M",  status: "identified",  proposal: "" },
-  { id: "a8", chain: "Avalanche",  ecosystem: "Avalanche",   bridgeType: "native",      tvlTarget: "$12M",  status: "identified",  proposal: "" },
+  { id: "a1", chain: "GhostL2",           ecosystem: "Ghost rollup core",      bridgeType: "canonical",   tvlTarget: "$50M", status: "building",   proposal: "" },
+  { id: "a2", chain: "GhostL3",           ecosystem: "Ghost app execution",    bridgeType: "native",      tvlTarget: "$20M", status: "proposed",   proposal: "" },
+  { id: "a3", chain: "GhostBridge",       ecosystem: "Ghost settlement rail",  bridgeType: "native",      tvlTarget: "$15M", status: "proposed",   proposal: "" },
+  { id: "a4", chain: "GhostXchange",      ecosystem: "Ghost liquidity layer",  bridgeType: "canonical",   tvlTarget: "$25M", status: "identified", proposal: "" },
+  { id: "a5", chain: "GhostWallet",       ecosystem: "Ghost user wallet",      bridgeType: "third-party", tvlTarget: "$10M", status: "identified", proposal: "" },
+  { id: "a6", chain: "GhostHub",          ecosystem: "Ghost operator mesh",    bridgeType: "native",      tvlTarget: "$8M",  status: "identified", proposal: "" },
+  { id: "a7", chain: "GhostValidatorNet", ecosystem: "Ghost validator fleet",  bridgeType: "canonical",   tvlTarget: "$30M", status: "identified", proposal: "" },
+  { id: "a8", chain: "GhostDNS",          ecosystem: "Ghost identity layer",   bridgeType: "native",      tvlTarget: "$12M", status: "identified", proposal: "" },
 ];
 
 async function generateBridgeProposal(alliance: ChainAlliance): Promise<string> {
@@ -39,8 +39,8 @@ async function generateBridgeProposal(alliance: ChainAlliance): Promise<string> 
       const res = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
-          { role: "system", content: "You write concise technical blockchain bridge integration proposals (2 paragraphs)." },
-          { role: "user",   content: `Write a bridge integration proposal from GhostChain to ${alliance.chain} (${alliance.ecosystem}). Bridge type: ${alliance.bridgeType}. Emphasise TVL growth target of ${alliance.tvlTarget}, security model, and mutual ecosystem benefits. Keep professional and technical.` },
+          { role: "system", content: "You write concise technical GhostStack integration proposals (2 paragraphs)." },
+          { role: "user",   content: `Write an internal GhostStack integration proposal between GhostChain and ${alliance.chain} (${alliance.ecosystem}). Integration type: ${alliance.bridgeType}. Emphasise TVL growth target of ${alliance.tvlTarget}, security model, and mutual ecosystem benefits. Keep professional and technical.` },
         ],
         max_tokens: 300, temperature: 0.7,
       });
@@ -53,9 +53,9 @@ async function generateBridgeProposal(alliance: ChainAlliance): Promise<string> 
 }
 
 function fallbackProposal(a: ChainAlliance): string {
-  return `GhostChain proposes a ${a.bridgeType} bridge integration with ${a.chain} targeting ${a.tvlTarget} in bridged TVL within 6 months. The integration would use a validator-signed message-passing protocol with 7-of-12 multi-sig security, enabling seamless GST and ERC-20 transfers between ecosystems.
+  return `GhostChain proposes a ${a.bridgeType} integration with ${a.chain} targeting ${a.tvlTarget} in routed value within 6 months. The integration would use a validator-signed message-passing protocol with 7-of-12 multi-sig security, enabling seamless GST movement and Ghost-native service calls between layers.
 
-Both ecosystems benefit from expanded liquidity, shared DeFi composability, and unified developer tooling. GhostChain commits to co-funding the bridge security audit and providing dedicated developer support for the ${a.chain} team during integration.`;
+Both systems benefit from expanded liquidity, shared composability, and unified developer tooling. GhostChain commits to co-funding the security audit and providing dedicated operator support for the ${a.chain} team during integration.`;
 }
 
 export async function buildAlliance(allianceId: string): Promise<ChainAlliance | null> {

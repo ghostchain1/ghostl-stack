@@ -22,7 +22,7 @@ export interface BlogPost {
 }
 
 const BLOG_TOPICS = [
-  "GhostChain vs Ethereum: Why the future of L1 is built for speed",
+  "GhostChain vs legacy monoliths: why the future of L1 is built for speed",
   "How GhostL2 achieves near-zero gas fees without sacrificing security",
   "Building on GhostL3: a developer guide to the next generation blockchain",
   "GST tokenomics explained: deflationary mechanics and staking yields",
@@ -105,7 +105,7 @@ GhostChain uses an IBFT consensus mechanism ensuring Byzantine fault tolerance a
 ### How to Get Started
 
 1. Acquire GST tokens on GhostXchange
-2. Bridge assets from Ethereum using the Ghost Bridge
+2. Route assets across Ghost layers using GhostBridge
 3. Deploy your dApp using our EVM-compatible tooling
 4. Apply for ecosystem grants at dev.ghostchain.cloud/grants
 

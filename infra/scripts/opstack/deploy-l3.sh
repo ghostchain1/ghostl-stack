@@ -178,41 +178,36 @@ if [ "${CUSTOM_GAS_TOKEN_ADDRESS,,}" != "${CANONICAL_GAS_TOKEN,,}" ]; then
   exit 1
 fi
 
-deploy_log="$(mktemp)"
-deploy_gas_args=()
-if [ -n "${L3_DEPLOY_GAS_PRICE:-}" ]; then
-  deploy_gas_args+=(--gas-price "$L3_DEPLOY_GAS_PRICE")
-fi
-if [ -n "${L3_DEPLOY_PRIORITY_GAS_PRICE:-}" ]; then
-  deploy_gas_args+=(--priority-gas-price "$L3_DEPLOY_PRIORITY_GAS_PRICE")
-fi
-if [ "${L3_DEPLOY_LEGACY:-0}" = "1" ]; then
-  deploy_gas_args+=(--legacy)
-fi
+deploy_json="$(mktemp)"
 (
-  cd "$OP_DIR"
-  FOUNDRY_DISABLE_COLORS=1 forge script contracts/script/DeployL1.s.sol:DeployL1 \
-    --rpc-url "$HOST_L2_RPC" --private-key "$DEPLOYER_PRIVATE_KEY" --broadcast \
-    "${deploy_gas_args[@]}" 2>&1 | tee "$deploy_log"
+  cd "$ROOT/contracts"
+  ROOT_DIR="$ROOT" \
+  OUTPUT_FILE="$deploy_json" \
+  OUTPUT_DIR="$(dirname "$deploy_json")" \
+  RPC_L2="$HOST_L2_RPC" \
+  L2_CHAIN_ID="$L2_CHAIN_ID" \
+  DEPLOYER_PRIVATE_KEY="$DEPLOYER_PRIVATE_KEY" \
+  L3_PARENT_DEPLOYER_PRIVATE_KEY="${L3_PARENT_DEPLOYER_PRIVATE_KEY:-}" \
+  BATCH_SENDER_ADDRESS="$BATCH_SENDER_ADDRESS" \
+  SEQUENCER_ADDRESS="$SEQUENCER_ADDRESS" \
+  PROPOSER_ADDRESS="$PROPOSER_ADDRESS" \
+  CHALLENGER_ADDRESS="$CHALLENGER_ADDRESS" \
+  BATCH_INBOX_ADDRESS="$batch_inbox" \
+  CANONICAL_GAS_TOKEN="$CANONICAL_GAS_TOKEN" \
+  ./node_modules/.bin/tsx scripts/deploy_l3_parent_on_l2.ts
 )
 
-extract_addr() {
-  awk -v key="$1" '$1 == key { print $2; exit }' "$deploy_log"
-}
+portal="$(jq -r '.OptimismPortalProxy // .portal // empty' "$deploy_json")"
+system_config="$(jq -r '.SystemConfigProxy // .systemConfig // empty' "$deploy_json")"
+protocol_versions="$(jq -r '.ProtocolVersionsProxy // .protocolVersions // empty' "$deploy_json")"
+l1_cdm="$(jq -r '.L1CrossDomainMessengerProxy // .l1CrossDomainMessenger // empty' "$deploy_json")"
+l1_std_bridge="$(jq -r '.L1StandardBridgeProxy // .l1StandardBridge // empty' "$deploy_json")"
+l2oo="$(jq -r '.L2OutputOracleProxy // .l2OutputOracle // empty' "$deploy_json")"
+dgf="$(jq -r '.DisputeGameFactoryProxy // .disputeGameFactory // empty' "$deploy_json")"
 
-proxy_admin="$(extract_addr "ProxyAdmin")"
-superchain_cfg="$(extract_addr "SuperchainConfig")"
-protocol_versions="$(extract_addr "ProtocolVersions")"
-system_config="$(extract_addr "SystemConfig")"
-portal="$(extract_addr "OptimismPortal")"
-l1_cdm="$(extract_addr "L1CrossDomainMessenger")"
-l1_std_bridge="$(extract_addr "L1StandardBridge")"
-l2oo="$(extract_addr "L2OutputOracle")"
-dgf="$(extract_addr "DisputeGameFactory")"
-
-for label in proxy_admin superchain_cfg protocol_versions system_config portal l1_cdm l1_std_bridge l2oo dgf; do
-  if [ -z "${!label}" ]; then
-    echo "Missing $label from deploy output (see $deploy_log)" >&2
+for label in protocol_versions system_config portal l1_cdm l1_std_bridge l2oo dgf; do
+  if [ -z "${!label}" ] || [ "${!label}" = "null" ]; then
+    echo "Missing $label from deploy output ($deploy_json)" >&2
     exit 1
   fi
 done
@@ -269,6 +264,7 @@ fi
 jq -n \
   --arg portal "$portal" \
   --arg sys "$system_config" \
+  --arg pv "$protocol_versions" \
   --arg dgf "$dgf" \
   --arg l2oo "$l2oo" \
   --arg std "$l1_std_bridge" \
@@ -279,6 +275,7 @@ jq -n \
   '{
     OptimismPortalProxy: $portal,
     SystemConfigProxy: $sys,
+    ProtocolVersionsProxy: $pv,
     DisputeGameFactoryProxy: $dgf,
     L2OutputOracleProxy: $l2oo,
     L1StandardBridgeProxy: $std,

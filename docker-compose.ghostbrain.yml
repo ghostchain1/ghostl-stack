@@ -101,7 +101,7 @@ services:
     container_name: ghostbrain-core
     restart: unless-stopped
     group_add:
-      - "112"  # docker socket GID
+      - "${DOCKER_GID:-1000}"  # host docker socket GID
     extra_hosts:
       - "vault:host-gateway"
       - "host.docker.internal:host-gateway"
@@ -142,9 +142,12 @@ services:
       GSA_BASE_URL: "${GSA_BASE_URL:-http://ghostbrain-gsa:7850}"
       CONTROL_PLANE_HMAC_SECRET: "${CONTROL_PLANE_HMAC_SECRET:?CONTROL_PLANE_HMAC_SECRET is required}"
       # ── Autonomous RPC pool endpoint lists (comma-separated) ──
+      GHOSTCHAIN_L1_RPC: "${GHOSTCHAIN_L1_RPC:-http://host.docker.internal:18545}"
+      GHOSTCHAIN_L2_RPC: "${GHOSTCHAIN_L2_RPC:-http://l2-geth:8545}"
+      GHOSTCHAIN_L3_RPC: "${GHOSTCHAIN_L3_RPC:-http://l3-geth:8545}"
       GHOST_L1_RPC_URLS: "${GHOST_L1_RPC_URLS:-http://host.docker.internal:18545}"
-      GHOST_L2_RPC_URLS: "${GHOST_L2_RPC_URLS:-http://host.docker.internal:29547}"
-      GHOST_L3_RPC_URLS: "${GHOST_L3_RPC_URLS:-http://host.docker.internal:39545}"
+      GHOST_L2_RPC_URLS: "${GHOST_L2_RPC_URLS:-http://l2-geth:8545}"
+      GHOST_L3_RPC_URLS: "${GHOST_L3_RPC_URLS:-http://l3-geth:8545}"
       # ── Allow services using ghost-sdk GhostBrainAiEngine to auto-discover ──
       GHOSTBRAIN_CORE_URL: "${GHOSTBRAIN_CORE_URL:-http://ghostbrain-core:7900}"
     volumes:
@@ -152,6 +155,8 @@ services:
       - /home/ghost/ghostl-stack/services/ghostbrain-core/dist/connectors/docker.js:/app/dist/connectors/docker.js:ro
     networks:
       - ghostbrain-net
+      - ghost-internal
+      - opstack_default
       - ghostl-stack_default
     depends_on:
       ghostbrain-postgres:
@@ -163,7 +168,7 @@ services:
       hyper-ghost-ai:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:7900/readyz"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:7900/readyz"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -172,9 +177,9 @@ services:
       ghostbrain.role: "brain-core"
       ghostbrain.layer: "L2"
       ghostbrain.routing-law: "L3→L2→L1"
-      ghostbrain.liveness-probe: "http://localhost:7900/healthz"
-      ghostbrain.readiness-probe: "http://localhost:7900/readyz"
-      ghostbrain.status-endpoint: "http://localhost:7900/status"
+      ghostbrain.liveness-probe: "http://127.0.0.1:7900/healthz"
+      ghostbrain.readiness-probe: "http://127.0.0.1:7900/readyz"
+      ghostbrain.status-endpoint: "http://127.0.0.1:7900/status"
 
   # ─── Hypervisor Supervisor (VM health → GhostBrain signals) ───────────────
   hypervisor-supervisor:
@@ -574,8 +579,8 @@ services:
       GHOSTBRAIN_ORCHESTRATOR_PORT: "7895"
       # GhostChain RPC endpoints (correct ports per routing law)
       GHOST_L1_RPC_URL: "${GHOST_L1_RPC_URL:-http://host.docker.internal:18545}"
-      GHOST_L2_RPC_URL: "${GHOST_L2_RPC_URL:-http://host.docker.internal:29545}"
-      GHOST_L3_RPC_URL: "${GHOST_L3_RPC_URL:-http://host.docker.internal:39545}"
+      GHOST_L2_RPC_URL: "${GHOST_L2_RPC_URL:-http://l2-geth:8545}"
+      GHOST_L3_RPC_URL: "${GHOST_L3_RPC_URL:-http://l3-geth:8545}"
       # Cosmos LCD (validator health via staking module)
       GHOST_L1_LCD_URL: "${GHOST_L1_LCD_URL:-http://host.docker.internal:1317}"
       # Governance signing relay — proposals forwarded here, not executed inline
@@ -596,6 +601,7 @@ services:
       - "host.docker.internal:host-gateway"
     networks:
       - ghostbrain-net
+      - opstack_default
     depends_on:
       ghostbrain-core:
         condition: service_healthy
@@ -625,9 +631,15 @@ networks:
   ghostbrain-net:
     external: true
     name: ghostbrain-net
+  ghost-internal:
+    external: true
+    name: ghost-internal
   ghostl-stack_default:
     external: true
     name: ghostl-stack_default
+  opstack_default:
+    external: true
+    name: opstack_default
   # ghostchain-cosmos-net is owned by docker-compose.ghostchain.yml.
   # governance-event-bridge joins it so it can reach ghostchaind by DNS name.
   # Bring up docker-compose.ghostchain.yml before this stack, or run both with:

@@ -1,0 +1,49 @@
+apps/api/src/lib/rbac.test.ts	legacy_symbol	  assert.ok(perms.includes('iam:write'), 'GHOST-ADMIN must get admin perms');
+apps/api/src/lib/rbac.test.ts	legacy_symbol	  const perms = mapRealmClaimToPermissions(claim('users', ['GHOST-ADMIN']));
+apps/api/src/lib/rbac.test.ts	legacy_symbol	  const perms = mapRealmClaimToPermissions(claim('users', ['GHOST-OWNER']));
+apps/api/src/lib/rbac.test.ts	legacy_symbol	test('role matching is case-insensitive (GHOST-ADMIN → admin perms)', () => {
+apps/api/src/lib/rbac.test.ts	legacy_symbol	test('role matching is case-insensitive (GHOST-OWNER → wildcard)', () => {
+apps/control-center/app/api/chains/status/route.ts	legacy_symbol	      totalStaked:      id === "ghostchain" ? "10,160,000 GHOST" : "—",
+apps/control-center/config/ghostConfig.ts	legacy_symbol	      symbol:  "GHOST",
+apps/web/app/economy/page.tsx	legacy_symbol	                  <Th>Day</Th><Th>Date</Th><Th>Daily Burn (GHOST)</Th><Th>Cumulative (GHOST)</Th>
+apps/web/app/economy/page.tsx	legacy_symbol	  return `${whole.toLocaleString()}.${String(frac.toFixed(4)).split(".")[1]} GHOST`;
+contracts/src/grc/GRCSoulbound.sol	legacy_symbol	        GRCSoulbound("GhostChain Identity", "GHOST-ID", issuer_)
+docs/GHOSTSTACK_DEPLOYMENT_BLUEPRINT.md	legacy_symbol	│ 3  GNS (GHOST NAME SERVICE) FLEET                                               │
+docs/GST_GAS_TOKEN_EVERYWHERE.md	legacy_symbol	- `GHOST` — original deprecated symbol
+docs/GST_GAS_TOKEN_EVERYWHERE.md	legacy_symbol	- `GTK`, `GTL2`, `GTL3` — per-layer legacy fallback symbols used by old wallet code
+docs/GST_GAS_TOKEN_EVERYWHERE.md	legacy_symbol	- `gGHOST` — wrapped variant
+docs/dtn-governance-spec.md	legacy_symbol	- Brand Law: No GHOST/GST metadata mutations via unsigned bundles
+packages/ghost_flutter_sdk/lib/src/models/ghost_creator.dart	legacy_symbol	  /// IPFS/GHOST CID for the creator's profile image.
+packages/ghoststack-cli/src/cli.ts	legacy_symbol	  log(`\n${GHOST} Deploying ${contractName} to ${layer} ...\n`);
+packages/ghoststack-cli/src/cli.ts	legacy_symbol	  log(`\n${GHOST} Ecosystem Feature Scan\n`);
+packages/ghoststack-cli/src/cli.ts	legacy_symbol	  log(`\n${GHOST} Generating upgrade proposal ...\n`);
+packages/ghoststack-cli/src/cli.ts	legacy_symbol	  log(`\n${GHOST} GhostBrain Swarm Agents\n`);
+packages/ghoststack-cli/src/cli.ts	legacy_symbol	  log(`\n${GHOST} GhostStack Chain Status\n`);
+packages/ghoststack-cli/src/cli.ts	legacy_symbol	  log(`\n${GHOST} GhostStack Genesis — bootstrapping sovereign ecosystem ...\n`);
+packages/ghoststack-cli/src/cli.ts	legacy_symbol	${GHOST} ghoststack — GhostChain Sovereign Development CLI
+packages/ghoststack-cli/src/cli.ts	legacy_symbol	const GHOST = "\x1b[35m👻\x1b[0m";
+services/ai-adoption/src/liquidity/liquidityExpansion.ts	legacy_symbol	  { id: "pool-003", pair: "GST/GHOST", tvl: 800_000,   apy: 45.0, utilization: 34, status: "critical",     incentiveUsd: 120_000 },
+services/ai-adoption/src/liquidity/liquidityExpansion.ts	legacy_symbol	  { id: "pool-004", pair: "GHOST/BTC", tvl: 1_500_000, apy: 14.2, utilization: 80, status: "healthy",      incentiveUsd: 0 },
+services/ai-economy/src/liquidity/liquidityBalancer.ts	legacy_symbol	  { id: "lp3", pair: "GST/GHOST", dex: "GhostSwap", chain: "GhostL1", tvl: 340_000,   apr: 35, minTVL: 200_000,  status: "healthy" },
+services/ai-economy/src/liquidity/liquidityBalancer.ts	legacy_symbol	  { id: "lp4", pair: "GHOST/BTC", dex: "GhostSwap", chain: "GhostL1", tvl: 220_000,   apr: 28, minTVL: 150_000,  status: "healthy" },
+services/ai-evolution/src/protocols/protocolUpgrade.ts	legacy_symbol	    titles:   ["Single-Slot Finality (SSF) Implementation", "Faster BLS Aggregation Protocol", "GHOST Fork-Choice Rule Enhancement", "Validator Set Rotation Optimization"],
+services/ai-governance/src/registry/daoRegistry.ts	legacy_symbol	  treasuryToken:     number;   // GHOST tokens
+services/ai-intelligence/src/knowledge/knowledgeGraph.ts	legacy_symbol	  const ghostToken   = addNode("token",      "GHOST Token",           { symbol: "GHOST", chain: "L2" },          "token-ghost");
+services/ai-intelligence/src/knowledge/knowledgeGraph.ts	legacy_symbol	  const lpPool       = addNode("pool",       "GHOST/ETH Liquidity",   { protocol: "Uniswap V3" },                "pool-ghost-eth");
+services/ai-revenue/src/defi/liquidityEngine.ts	legacy_symbol	  pool("GST/GHOST", "ghostl2",    "active",        870_000, 34.5, 180_000, "GST",   "GHOST",   480_000,   390_000, 30),
+services/ai-revenue/src/trading/tradingEngine.ts	legacy_symbol	const PAIRS = ["GST/USDC", "GST/ETH", "GST/BTC", "USDC/ETH", "GST/GHOST"];
+tools/ghostlint/src/index.ts	legacy_symbol	    id: 'GHOST-001',
+tools/ghostlint/src/index.ts	legacy_symbol	    id: 'GHOST-002',
+tools/ghostlint/src/index.ts	legacy_symbol	    id: 'GHOST-003',
+tools/ghostlint/src/index.ts	legacy_symbol	    id: 'GHOST-004',
+tools/ghostlint/src/index.ts	legacy_symbol	    id: 'GHOST-005',
+tools/ghostlint/src/index.ts	legacy_symbol	    id: 'GHOST-006',
+tools/ghostlint/src/index.ts	legacy_symbol	    id: 'GHOST-007',
+tools/ghostlint/src/index.ts	legacy_symbol	    id: 'GHOST-008',
+tools/ghostlint/src/index.ts	legacy_symbol	    id: 'GHOST-009',
+tools/ghostlint/src/index.ts	legacy_symbol	    id: 'GHOST-010',
+tools/ghostlint/src/index.ts	legacy_symbol	    id: 'GHOST-011',
+tools/ghostlint/src/index.ts	legacy_symbol	    id: 'GHOST-012',
+tools/ghostlint/src/index.ts	legacy_symbol	    id: 'GHOST-013',
+tools/ghostlint/src/index.ts	legacy_symbol	    id: 'GHOST-014',
+tools/ghostlint/src/index.ts	legacy_symbol	    id: 'GHOST-015',

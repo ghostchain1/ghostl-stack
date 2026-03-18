@@ -47,7 +47,9 @@ import logging
 import os
 import time
 import urllib.request
+import uuid
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
@@ -148,9 +150,9 @@ def collect_metrics() -> Metrics:
             log.debug("Metrics from snapshot: %s", m)
             return m
         except Exception as exc:
-            log.warning("Snapshot read failed: %s", exc)
+            log.debug("Snapshot read failed: %s", exc)
 
-    log.warning("No metric source available — using default neutral values.")
+    log.info("No metric source available — using default neutral values.")
     return m
 
 
@@ -256,12 +258,19 @@ def check_and_propose() -> Optional[Dict]:
         _post_json(
             f"{GHOSTBRAIN_URL}/api/v1/signals",
             {
-                "source":   "auto-scaler",
-                "type":     "autoscale.proposed",
-                "proposal": proposal["id"],
-                "rec":      rec,
-                "reason":   reason,
-                "ts":       int(now),
+                "messageId": str(uuid.uuid4()),
+                "subject": "infra.autoscale.proposed",
+                "correlationId": f"autoscale:{proposal['id']}",
+                "senderAgentId": "auto-scaler",
+                "payload": {
+                    "source": "auto-scaler",
+                    "type": "autoscale.proposed",
+                    "proposal": proposal["id"],
+                    "rec": rec,
+                    "reason": reason,
+                    "ts": int(now),
+                },
+                "sentAt": datetime.now(timezone.utc).isoformat(),
             },
         )
     else:

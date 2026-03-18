@@ -29,7 +29,7 @@ HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
 export OP_L2_RPC="${OP_L2_RPC:-$HOST_L2_RPC}"
 export OP_L2_CHAIN_ID="${OP_L2_CHAIN_ID:-${L2_CHAIN_ID:-901}}"
 export OP_L3_RPC="${OP_L3_RPC:-${HOST_L3_RPC:-http://localhost:39545}}"
-export OP_L3_CHAIN_ID="${OP_L3_CHAIN_ID:-902}"
+export OP_L3_CHAIN_ID="${OP_L3_CHAIN_ID:-903}"
 
 # Deploy script also reads these for cross-chain contracts.
 export RPC_L1="${RPC_L1:-$HOST_L1_RPC}"

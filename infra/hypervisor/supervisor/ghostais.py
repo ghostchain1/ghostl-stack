@@ -64,6 +64,7 @@ import asyncio
 import json
 import logging
 import os
+import socket
 import sys
 import time
 import urllib.request
@@ -105,6 +106,12 @@ REBALANCE_INTERVAL_S = int(os.getenv("REBALANCE_INTERVAL_S", "360"))
 DIRECTIVE_POLL_S     = int(os.getenv("DIRECTIVE_POLL_S",     "30"))
 
 GHOSTBRAIN_URL = os.getenv("GHOSTBRAIN_URL", "http://localhost:7900").rstrip("/")
+GHOSTBRAIN_DIRECTIVES_URL = os.getenv("GHOSTBRAIN_DIRECTIVES_URL", "").rstrip("/")
+VIRSH_URI = os.getenv("VIRSH_URI", "qemu:///system")
+LIBVIRT_NETWORK = os.getenv("LIBVIRT_NETWORK", "gs-mgmt")
+RPC_PORT_L1 = int(os.getenv("RPC_PORT_L1", "18545"))
+RPC_PORT_L2 = int(os.getenv("RPC_PORT_L2", "29547"))
+RPC_PORT_L3 = int(os.getenv("RPC_PORT_L3", "39545"))
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -149,39 +156,68 @@ def _discover_ip(vm: vmm.VM) -> str:
     return ""
 
 
-def _rpc_probe(ip: str, port: int) -> bool:
-    body = json.dumps(
-        {"jsonrpc": "2.0", "id": 1, "method": "ghost_blockNumber", "params": []}
-    ).encode()
-    req = urllib.request.Request(
-        f"http://{ip}:{port}",
-        data=body,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
+def _tcp_reachable(ip: str, port: int, timeout: float = 0.5) -> bool:
     try:
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            return "result" in json.loads(resp.read())
-    except Exception:
+        with socket.create_connection((ip, port), timeout=timeout):
+            return True
+    except OSError:
         return False
 
 
+def _rpc_probe(ip: str, port: int) -> bool:
+    if not _tcp_reachable(ip, port):
+        return False
+    for method in ("ghost_blockNumber", "eth_blockNumber"):
+        body = json.dumps(
+            {"jsonrpc": "2.0", "id": 1, "method": method, "params": []}
+        ).encode()
+        req = urllib.request.Request(
+            f"http://{ip}:{port}",
+            data=body,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=1.5) as resp:
+                payload = json.loads(resp.read())
+            if isinstance(payload.get("result"), str) and payload["result"].startswith("0x"):
+                return True
+        except Exception:
+            continue
+    return False
+
+
 def _rpc_port(role: str) -> Optional[int]:
-    return {"l1": 18545, "l2": 29545, "l3": 39545}.get(role)
+    return {
+        "devnet": RPC_PORT_L1,
+        "l1": RPC_PORT_L1,
+        "l1-validator": None,
+        "l2": RPC_PORT_L2,
+        "l3": RPC_PORT_L3,
+    }.get(role)
+
+
+def _visible_domains() -> List[str]:
+    rc, out = vmm._virsh("list", "--all", "--name", timeout=10)
+    if rc != 0:
+        return []
+    return [line.strip() for line in out.splitlines() if line.strip()]
 
 
 def scrape_vms() -> None:
     global _last_scrape
     for vm in vmm.VMS:
         state = vmm.get_state(vm.name)
-        _vm_states[vm.name] = state
-        ip = _discover_ip(vm) if state == "running" else (_vm_ips.get(vm.name) or "")
-        _vm_ips[vm.name] = ip
+        ip = _discover_ip(vm) if state == "running" else (_vm_ips.get(vm.name) or vm.static_ip or "")
         port = _rpc_port(vm.role)
-        if state == "running" and ip and port:
-            _rpc_health[vm.name] = _rpc_probe(ip, port)
-        else:
-            _rpc_health[vm.name] = False
+        rpc_ok = False
+        if ip and port:
+            rpc_ok = _rpc_probe(ip, port)
+            if state == "unknown" and rpc_ok:
+                state = "running"
+        _vm_states[vm.name] = state
+        _vm_ips[vm.name] = ip
+        _rpc_health[vm.name] = rpc_ok
     _last_scrape = time.time()
     log.debug("VM scrape complete. %d VMs.", len(vmm.VMS))
 
@@ -211,8 +247,11 @@ def run_healing() -> None:
 # ── GhostBrain directive processor ───────────────────────────────────────────
 def poll_directives() -> None:
     """Poll GhostBrain for any pending infrastructure directives."""
+    if not GHOSTBRAIN_DIRECTIVES_URL:
+        return
+
     try:
-        url = f"{GHOSTBRAIN_URL}/api/v1/directives?target=gais"
+        url = GHOSTBRAIN_DIRECTIVES_URL
         req = urllib.request.Request(url, headers={"Accept": "application/json"})
         with urllib.request.urlopen(req, timeout=5) as resp:
             items = json.loads(resp.read())
@@ -318,6 +357,18 @@ async def _require_token(request: Request) -> None:
 @app.get("/status")
 async def get_status() -> JSONResponse:
     healer_states = node_healer.get_all_states()
+    visible_domains = _visible_domains()
+    unknown_state_count = sum(1 for s in _vm_states.values() if s == "unknown")
+    inventory_empty = len(visible_domains) == 0
+    circuit_breakers_open = [vm.name for vm in vmm.VMS if vmm._vm_state(vm.name).escalated]
+    warning = None
+    if inventory_empty:
+        warning = (
+            "virsh inventory is empty; verify VIRSH_URI, libvirt socket access, "
+            "or whether this GAIS instance is pointed at the correct hypervisor"
+        )
+    elif unknown_state_count == len(vmm.VMS):
+        warning = "all configured VMs resolved to unknown state; libvirt visibility is incomplete"
     return JSONResponse({
         "service":       "gais",
         "version":       "1.0.0",
@@ -328,11 +379,35 @@ async def get_status() -> JSONResponse:
         "vm_count":      len(vmm.VMS),
         "running_count": sum(1 for s in _vm_states.values() if s == "running"),
         "escalated":     [n for n, s in healer_states.items() if s["level"] == "escalated"],
+        "circuit_breakers_open": circuit_breakers_open,
         "last_scrape":   _last_scrape,
         "last_heal":     _last_heal,
         "last_scale":    _last_scale,
         "last_rebalance":_last_rebalance,
+        "virsh_uri":     VIRSH_URI,
+        "libvirt_network": LIBVIRT_NETWORK,
+        "rpc_ports": {
+            "l1": RPC_PORT_L1,
+            "l2": RPC_PORT_L2,
+            "l3": RPC_PORT_L3,
+        },
+        "visible_domain_count": len(visible_domains),
+        "visible_domains": visible_domains,
+        "inventory_empty": inventory_empty,
+        "unknown_state_count": unknown_state_count,
+        "control_plane_warning": warning,
         "uptime":        time.time(),
+    })
+
+
+@app.get("/health")
+async def get_health() -> JSONResponse:
+    return JSONResponse({
+        "ok": True,
+        "service": "gais",
+        "dry_run": vmm.DRY_RUN,
+        "visible_domain_count": len(_visible_domains()),
+        "last_scrape": _last_scrape,
     })
 
 
@@ -342,14 +417,20 @@ async def get_vms() -> JSONResponse:
     vms = []
     for vm in vmm.VMS:
         vs = vmm._vm_state(vm.name)
+        healer_state = healer_states.get(vm.name, {})
+        healer_level = healer_state.get("level", "healthy")
+        healer_escalated = healer_level == "escalated"
         vms.append({
             "name":        vm.name,
             "role":        vm.role,
             "ip":          _vm_ips.get(vm.name, ""),
             "state":       _vm_states.get(vm.name, "unknown"),
             "rpc_healthy": _rpc_health.get(vm.name, False),
-            "heal_level":  healer_states.get(vm.name, {}).get("level", "healthy"),
-            "escalated":   vs.escalated,
+            "heal_level":  healer_level,
+            "escalated":   healer_escalated or vs.escalated,
+            "healer_escalated": healer_escalated,
+            "circuit_breaker_open": vs.escalated,
+            "escalation_reason": healer_state.get("escalation_reason", ""),
             "restarts_1h": len([t for t in vs.restart_times if t >= time.time() - 3600]),
         })
     return JSONResponse({"vms": vms, "ts": time.time()})

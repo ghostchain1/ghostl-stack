@@ -11,6 +11,7 @@ RUN apk add --no-cache git docker-cli docker-cli-compose
 COPY package.json ./
 RUN npm install --omit=dev
 COPY --from=builder /app/dist ./dist
+COPY config/ ./config/
 ENV NODE_ENV=production
 EXPOSE 7950
 CMD ["node", "dist/index.js"]

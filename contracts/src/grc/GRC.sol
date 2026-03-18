@@ -8,7 +8,7 @@ pragma solidity ^0.8.24;
     GhostChain Standard Registry — GRC
     ===================================
 
-    GRC replaces ERC (Ethereum Request for Comments) with
+    GRC replaces the legacy ERC standard label with
     GRC (Ghost Request for Comments), enforcing GhostChain
     protocol identity while maintaining full ABI compatibility
     with existing tooling.
@@ -22,7 +22,7 @@ pragma solidity ^0.8.24;
       ERC2981 → GRC2981 (contracts/src/grc/GRC2981.sol)
       ERC4626 → GRC4626 (contracts/src/grc/GRC4626.sol)
 
-    All standards are ABI-identical to their Ethereum equivalents.
+    All standards remain ABI-identical to their legacy EVM counterparts.
     GhostChain explorers, bridges, and SDKs display "GRC" not "ERC".
 
     ──────────────────────────────────────────────────────────────

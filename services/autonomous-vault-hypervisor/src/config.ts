@@ -34,7 +34,7 @@ export const CFG = {
   remediateEnabled: (process.env.REMEDIATE_ENABLED ?? '1') !== '0',
   maxRemediationsPerRun: Number(process.env.MAX_REMEDIATIONS_PER_RUN ?? 3),
 
-  policyPath: process.env.POLICY_PATH ?? '/app/policy.json',
+  policyPath: process.env.POLICY_PATH ?? '/var/lib/avh/policy.json',
   executeActions: (process.env.EXECUTE_ACTIONS ?? '1') !== '0',
   emergencyLock: (process.env.EMERGENCY_LOCK ?? '0') === '1',
 

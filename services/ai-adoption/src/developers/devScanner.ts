@@ -21,13 +21,13 @@ export interface Developer {
 }
 
 const SYNTHETIC_DEVS: Developer[] = [
-  { id: "dev-001", username: "0xDexter",    name: "Dexter Hayes",   chain: "Ethereum", followers: 520,  stars: 1200, repos: 34, languages: ["Solidity", "TypeScript"], score: 0, contacted: false },
-  { id: "dev-002", username: "polychained", name: "Maya Cortez",    chain: "Polygon",  followers: 340,  stars: 890,  repos: 28, languages: ["Solidity", "Rust"],       score: 0, contacted: false },
-  { id: "dev-003", username: "arb-genius",  name: "Tom Krishnamur", chain: "Arbitrum", followers: 780,  stars: 2100, repos: 51, languages: ["Solidity", "Go"],         score: 0, contacted: false },
-  { id: "dev-004", username: "solanaSeal",  name: "Nina Park",      chain: "Solana",   followers: 210,  stars: 450,  repos: 19, languages: ["Rust", "TypeScript"],     score: 0, contacted: false },
-  { id: "dev-005", username: "optimized5",  name: "Jake Brennan",   chain: "Optimism", followers: 630,  stars: 3400, repos: 67, languages: ["Solidity", "Python"],     score: 0, contacted: false },
-  { id: "dev-006", username: "zkProver",    name: "Asel Nurlan",    chain: "StarkNet", followers: 920,  stars: 5100, repos: 82, languages: ["Cairo", "Solidity"],      score: 0, contacted: false },
-  { id: "dev-007", username: "baseBuilder", name: "Liam O'Brien",   chain: "Base",     followers: 440,  stars: 1600, repos: 44, languages: ["Solidity", "TypeScript"], score: 0, contacted: false },
+  { id: "dev-001", username: "ghostDexter", name: "Dexter Hayes",   chain: "GhostChain", followers: 520, stars: 1200, repos: 34, languages: ["Solidity", "TypeScript"], score: 0, contacted: false },
+  { id: "dev-002", username: "ghostMesh",   name: "Maya Cortez",    chain: "GhostL2",    followers: 340, stars: 890,  repos: 28, languages: ["Solidity", "Rust"],       score: 0, contacted: false },
+  { id: "dev-003", username: "ghostRollup", name: "Tom Krishnamur", chain: "GhostL3",    followers: 780, stars: 2100, repos: 51, languages: ["Solidity", "Go"],         score: 0, contacted: false },
+  { id: "dev-004", username: "ghostFlow",   name: "Nina Park",      chain: "GhostChain", followers: 210, stars: 450,  repos: 19, languages: ["Rust", "TypeScript"],     score: 0, contacted: false },
+  { id: "dev-005", username: "ghostScale",  name: "Jake Brennan",   chain: "GhostL2",    followers: 630, stars: 3400, repos: 67, languages: ["Solidity", "Python"],     score: 0, contacted: false },
+  { id: "dev-006", username: "ghostProof",  name: "Asel Nurlan",    chain: "GhostL3",    followers: 920, stars: 5100, repos: 82, languages: ["Cairo", "Solidity"],      score: 0, contacted: false },
+  { id: "dev-007", username: "ghostBuilder",name: "Liam O'Brien",   chain: "GhostChain", followers: 440, stars: 1600, repos: 44, languages: ["Solidity", "TypeScript"], score: 0, contacted: false },
 ];
 
 function scoredev(d: Developer): number {

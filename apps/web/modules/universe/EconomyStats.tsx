@@ -98,7 +98,7 @@ export function EconomyStats() {
 
       {/* GST token note */}
       <p style={{ color: '#555', fontSize: 11, marginTop: 20 }}>
-        All values in GST — GhostChain native gas token. No ETH, Ether, or WETH.
+        All values are GST-denominated and follow GhostChain native gas semantics only.
         Transactions follow routing law: L3 → L2 → L1 only.
       </p>
     </div>

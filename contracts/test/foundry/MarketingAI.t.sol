@@ -58,7 +58,7 @@ contract MarketingAITest is Test {
     // ── Wrong chain ───────────────────────────────────────────────────────────
 
     function test_vault_wrongChain_reverts() public {
-        vm.chainId(1); // Ethereum mainnet — not allowed
+        vm.chainId(1); // legacy external mainnet sentinel — not allowed
         vm.expectRevert();
         new MarketingCampaignVault(address(gst));
     }

@@ -91,6 +91,10 @@ apps/worker/**
 !services/consensus-telemetry-service/**
 !services/network-manager-service
 !services/network-manager-service/**
+!services/ghost-rollup-proposer
+!services/ghost-rollup-proposer/**
+!services/ghost-rollup-challenger
+!services/ghost-rollup-challenger/**
 
 # Allow packages/ (workspace packages) for root-context builds
 !packages/ghost-sdk-core
@@ -101,5 +105,7 @@ apps/worker/**
 !packages/ui/**
 
 # Allow pre-built dist/ for workspace packages needed by API/web builds
-
-# Allow pre-built dist/ for workspace packages needed by API/web builds
+!packages/ghost-sdk/dist
+!packages/ghost-sdk/dist/**
+!packages/ghost-sdk-core/dist
+!packages/ghost-sdk-core/dist/**

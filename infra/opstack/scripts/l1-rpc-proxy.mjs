@@ -30,6 +30,30 @@ async function blobBaseFeeResponse(id) {
   return { jsonrpc: "2.0", id, result: baseFee };
 }
 
+function normalizeBlockResult(result) {
+  if (!result || typeof result !== "object") return result;
+  return {
+    ...result,
+    blobGasUsed: result.blobGasUsed ?? "0x0",
+    excessBlobGas: result.excessBlobGas ?? "0x0",
+    parentBeaconBlockRoot: result.parentBeaconBlockRoot ?? null,
+  };
+}
+
+function normalizeResponseBlocks(response) {
+  if (!response || typeof response !== "object") return response;
+  if (Array.isArray(response)) {
+    return response.map(normalizeResponseBlocks);
+  }
+  if ("result" in response) {
+    return {
+      ...response,
+      result: normalizeBlockResult(response.result),
+    };
+  }
+  return response;
+}
+
 async function handleOne(reqBody) {
   if (reqBody?.method === "eth_blobBaseFee") {
     return blobBaseFeeResponse(reqBody.id ?? null);
@@ -42,7 +66,12 @@ async function handleOne(reqBody) {
     Array.isArray(reqBody?.params) &&
     (reqBody.params[0] === "safe" || reqBody.params[0] === "finalized")
   ) {
-    return postJson(upstreamUrl, { ...reqBody, params: ["latest", reqBody.params[1] ?? false] });
+    const response = await postJson(upstreamUrl, { ...reqBody, params: ["latest", reqBody.params[1] ?? false] });
+    return normalizeResponseBlocks(response);
+  }
+  if (reqBody?.method === "eth_getBlockByNumber" || reqBody?.method === "eth_getBlockByHash") {
+    const response = await postJson(upstreamUrl, reqBody);
+    return normalizeResponseBlocks(response);
   }
   return postJson(upstreamUrl, reqBody);
 }

@@ -508,7 +508,7 @@ contract LitVybzLiveTest is Test {
             msgHash := keccak256(ptr, 0x21)
         }
 
-        // Oracle signs with Ethereum prefix
+        // Oracle signs with the legacy personal-sign prefix
         bytes32 prefixed = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", msgHash));
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(0xDEAD, prefixed);
         bytes memory sig = abi.encodePacked(r, s, v);

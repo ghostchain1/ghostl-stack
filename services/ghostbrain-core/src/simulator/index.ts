@@ -20,11 +20,11 @@
 import os          from "node:os";
 import { exec }    from "node:child_process";
 import { promisify } from "node:util";
-import { request } from "undici";
 
 import { runSimulation }       from "./safety_evaluator.js";
 import { recordAuditEvent }    from "../audit/chain_audit.js";
 import type { SimAction, SimOutcome, SimState, SimContainerState } from "./sim_model.js";
+import { resolveRpcEndpoint, rpcBlockNumber } from "../rpc/compat.js";
 
 const execAsync = promisify(exec);
 
@@ -33,9 +33,9 @@ const execAsync = promisify(exec);
 const HISTORY_SIZE      = Number(process.env.SIM_HISTORY_SIZE   ?? "200");
 const COLLECT_TIMEOUT   = Number(process.env.SIM_COLLECT_MS     ?? "3000");
 const DOCKER_SOCKET     = process.env.DOCKER_SOCKET             ?? "/var/run/docker.sock";
-const L1_RPC            = process.env.GHOSTCHAIN_L1_RPC         ?? "http://localhost:18545";
-const L2_RPC            = process.env.GHOSTCHAIN_L2_RPC         ?? "http://localhost:29545";
-const L3_RPC            = process.env.GHOSTCHAIN_L3_RPC         ?? "http://localhost:39545";
+const L1_RPC            = resolveRpcEndpoint(["GHOSTCHAIN_L1_RPC"], ["GHOST_L1_RPC_URLS"], "http://localhost:18545");
+const L2_RPC            = resolveRpcEndpoint(["GHOSTCHAIN_L2_RPC"], ["GHOST_L2_RPC_URLS"], "http://localhost:29547");
+const L3_RPC            = resolveRpcEndpoint(["GHOSTCHAIN_L3_RPC"], ["GHOST_L3_RPC_URLS"], "http://localhost:39545");
 
 // GhostStack container name patterns → chain layer mapping
 const CHAIN_PATTERNS: [RegExp, "l1" | "l2" | "l3"][] = [
@@ -129,19 +129,8 @@ async function getDockerContainers(): Promise<Record<string, SimContainerState>>
 
 async function probeChain(rpc: string): Promise<{ alive: boolean; blockHeight: number }> {
   try {
-    const ctrl  = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 2_000);
-    const res   = await request(rpc, {
-      method:  "POST",
-      headers: { "content-type": "application/json" },
-      body:    JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ghost_blockNumber", params: [] }),
-      bodyTimeout: 2_000,
-    });
-    clearTimeout(timer);
-    if (res.statusCode !== 200) return { alive: false, blockHeight: 0 };
-    const body = await res.body.json() as { result?: string };
-    const h    = parseInt(body.result ?? "0x0", 16);
-    return { alive: true, blockHeight: isNaN(h) ? 0 : h };
+    const probe = await rpcBlockNumber(rpc, 2_000);
+    return { alive: true, blockHeight: probe.blockNumber };
   } catch {
     return { alive: false, blockHeight: 0 };
   }

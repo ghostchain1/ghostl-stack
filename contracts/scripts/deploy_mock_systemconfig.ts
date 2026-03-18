@@ -1,7 +1,7 @@
 import { ghost } from "hardhat";
 
 async function main() {
-  const l2Provider = new ghost.JsonRpcProvider(process.env.RPC_L2 ?? "http://localhost:29545");
+  const l2Provider = new ghost.JsonRpcProvider(process.env.RPC_L2 ?? "http://localhost:29547");
   const deployerKey = process.env.DEPLOYER_PRIVATE_KEY;
   if (!deployerKey) {
     throw new Error("missing_DEPLOYER_PRIVATE_KEY");
@@ -16,6 +16,10 @@ async function main() {
   const gst20MintableFactory =
     process.env.GST20_MINTABLE_FACTORY ?? "0x69abbde9ebba86707ae2ccf56e9572fbb0d11da6";
   const batchInbox = process.env.BATCH_INBOX ?? "0x00289c189bee4e70334629f04cd5ed602b6600eb";
+  const gasLimit = BigInt(process.env.GAS_LIMIT ?? "30000000");
+  const baseFeeScalar = BigInt(process.env.BASE_FEE_SCALAR ?? "1368");
+  const blobBaseFeeScalar = BigInt(process.env.BLOB_BASE_FEE_SCALAR ?? "0");
+  const legacyScalar = BigInt(process.env.LEGACY_SCALAR ?? baseFeeScalar.toString());
 
   console.log("Deploying MockSystemConfig to L2 via", await signer.getAddress());
   const net = await l2Provider.getNetwork();
@@ -28,7 +32,11 @@ async function main() {
     l1StandardBridge,
     ghostPortal,
     gst20MintableFactory,
-    batchInbox
+    batchInbox,
+    gasLimit,
+    baseFeeScalar,
+    blobBaseFeeScalar,
+    legacyScalar
   );
   console.log("Tx hash", contract.deploymentTransaction()?.hash);
   await contract.waitForDeployment();

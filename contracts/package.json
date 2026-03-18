@@ -1,6 +1,7 @@
 {
   "name": "ghostl-contracts",
   "private": true,
+  "type": "module",
   "scripts": {
     "prebuild": "npm run pragmas:check",
     "build": "hardhat compile --no-tests",
@@ -20,6 +21,7 @@
     "deploy:solvency-verifier": "hardhat run --network anvil scripts/treasury/05_deploy_solvency_verifier.ts",
     "deploy:sovereign": "hardhat run --network anvil scripts/treasury/04_deploy_sovereign_engine.ts",
     "deploy:ghostload:governance": "hardhat run --network anvil scripts/deploy_ghostload_governance.ts",
+    "deploy:l3:parent:l2": "tsx scripts/deploy_l3_parent_on_l2.ts",
     "deploy:cascading-finality": "hardhat run --network ghostl2 scripts/deploy_cascading_finality.ts",
     "deploy:cascading-finality:op": "hardhat run --network ghostl2Op scripts/deploy_cascading_finality.ts",
     "deploy:ai": "hardhat run --network ghostl2 scripts/deploy_ai_layers.ts",

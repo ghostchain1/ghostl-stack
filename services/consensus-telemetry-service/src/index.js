@@ -216,7 +216,7 @@ app.use((req, res, next) => {
     console.warn(JSON.stringify({ ts: new Date().toISOString(), level: "warn", msg: "sec_fetch_cross_site", method: req.method, url: req.url, sfs: _sfs, sfm: req.headers["sec-fetch-mode"] ?? "", sfd: req.headers["sec-fetch-dest"] ?? "", reqId: req.id }));
   }
   const t0 = process.hrtime.bigint();
-  res.on("prefinish", () => { const _ms = (Number(process.hrtime.bigint()-t0)/1e6).toFixed(2); res.setHeader("X-Response-Time", `${_ms}ms`); res.setHeader("Server-Timing", `total;dur=${_ms}`); });
+  res.on("prefinish", () => { try { const _ms = (Number(process.hrtime.bigint()-t0)/1e6).toFixed(2); if (!res.headersSent) { res.setHeader("X-Response-Time", `${_ms}ms`); res.setHeader("Server-Timing", `total;dur=${_ms}`); } } catch {} });
   res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: +(Number(process.hrtime.bigint()-t0)/1e6).toFixed(2), bytes: Number(req.headers["content-length"] ?? 0), reqId: req.id, pid: process.pid, mem: process.memoryUsage().rss, httpVer: req.httpVersion, xff: req.headers["x-forwarded-for"] ?? "" })));
   next();
 });
@@ -467,6 +467,18 @@ const getProvider = (rpc) => {
   return providerCache.get(rpc);
 };
 
+const providerSendWithFallback = async (provider, methods, params = []) => {
+  let lastError = null;
+  for (const method of methods) {
+    try {
+      return await provider.send(method, params);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError ?? new Error("rpc_method_failed");
+};
+
 const fetchOutputOracleSnapshot = async (label, rpc, address, expectedParentChainId = null) => {
   if (!address) return { label, address: "", configured: true, error: "oracle_address_missing" };
   if (!rpc) return { label, address, configured: true, error: "oracle_parent_rpc_missing" };
@@ -492,7 +504,9 @@ const fetchOutputOracleSnapshot = async (label, rpc, address, expectedParentChai
   const snapshot = { label, address: normalizedAddress, rpc, configured: true, expectedParentChainId };
 
   try {
-    snapshot.parentChainId = parseNumber(await provider.send("gst_chainId", []));
+    snapshot.parentChainId = parseNumber(
+      await providerSendWithFallback(provider, ["ghost_chainId", "eth_chainId"])
+    );
   } catch (err) {
     snapshot.parentChainIdError = err?.message || String(err);
   }
@@ -1001,7 +1015,9 @@ const fetchLayerStatus = async (layer, rpc) => {
   return {
     layer,
     rpc,
-    chainId: parseNumber(await provider.send("gst_chainId", [])),
+    chainId: parseNumber(
+      await providerSendWithFallback(provider, ["ghost_chainId", "eth_chainId"])
+    ),
     headNumber: latest?.number ?? null,
     headHash: latest?.hash ?? null,
     headTimestamp: latest?.timestamp ?? null,
@@ -1081,15 +1097,15 @@ const computeIncidents = (layer, data, opStatus, l1HeadNumber) => {
     const safeNum = normalizedOp.safeL2?.number;
     const finalizedNum = normalizedOp.finalizedL2?.number;
 
-    if (unsafeNum !== null && safeNum !== null && unsafeNum - safeNum > OP_SAFE_LAG_BLOCKS) {
+    if (unsafeNum != null && safeNum != null && unsafeNum - safeNum > OP_SAFE_LAG_BLOCKS) {
       incidents.oracle_lag = true;
     }
 
-    if (safeNum !== null && finalizedNum !== null && safeNum - finalizedNum > OP_FINALIZED_LAG_BLOCKS) {
+    if (safeNum != null && finalizedNum != null && safeNum - finalizedNum > OP_FINALIZED_LAG_BLOCKS) {
       incidents.finalized_lag = true;
     }
 
-    if (l1HeadNumber !== null && normalizedOp.currentL1?.number !== null) {
+    if (l1HeadNumber != null && normalizedOp.currentL1?.number != null) {
       if (l1HeadNumber - normalizedOp.currentL1.number > OP_L1_LAG_BLOCKS) {
         incidents.portal_lag = true;
       }
@@ -1125,10 +1141,10 @@ const updateMetricsForLayer = (layer, data, incidents, opStatus) => {
     const unsafeNum = normalizedOp.unsafeL2?.number;
     const safeNum = normalizedOp.safeL2?.number;
     const finalizedNum = normalizedOp.finalizedL2?.number;
-    if (unsafeNum !== null && safeNum !== null) {
+    if (unsafeNum != null && safeNum != null) {
       setGaugeValue(opLagGauge, { layer, type: "unsafe_safe" }, Math.max(0, unsafeNum - safeNum));
     }
-    if (safeNum !== null && finalizedNum !== null) {
+    if (safeNum != null && finalizedNum != null) {
       setGaugeValue(opLagGauge, { layer, type: "safe_finalized" }, Math.max(0, safeNum - finalizedNum));
     }
   } else if (layer === "L2" || layer === "L3") {
@@ -1420,6 +1436,7 @@ app.use((err, _req, res, _next) => {
   if (err.status === 405 || err.statusCode === 405) return res.status(405).json({ ok: false, error: "Method not allowed" });
   const status = err.status ?? err.statusCode ?? 500;
   const _isProd = process.env.NODE_ENV === "production";
+  if (res.headersSent) return;
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("Surrogate-Control", "no-store");
   console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "unhandledError", status, error: err?.message ?? String(err), stack: _isProd ? undefined : err?.stack }));

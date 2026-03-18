@@ -16,7 +16,7 @@ function w256(n: bigint | number): string {
   return BigInt(n).toString(16).padStart(64, "0");
 }
 
-/** Encode an Ethereum address as a 32-byte ABI topic (0x-prefixed). */
+/** Encode an EVM-style address as a 32-byte ABI topic (0x-prefixed). */
 function wAddr(addr: string): string {
   const hex = addr.startsWith("0x") ? addr.slice(2) : addr;
   return "0x" + hex.toLowerCase().padStart(64, "0");

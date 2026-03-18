@@ -189,7 +189,7 @@ library GhostHash {
     // ═══════════════════════════════════════════════════════════════════════════
 
     /**
-     * @notice Key for a native-asset (GST/ETH) bridge transfer.
+     * @notice Key for a native-asset (GST/native) bridge transfer.
      * @dev    Equivalent to keccak256(abi.encode(from, to, amount, nonce)).
      *         Used by L2L3Bridge._finalizeNativeToL3 and L3Inbox.
      */
@@ -267,7 +267,7 @@ library GhostHash {
      * @notice Compute a GNS namehash node from a parent node and a label hash.
      * @dev    Equivalent to keccak256(abi.encodePacked(parent, labelHash)).
      *         Both inputs are 32 bytes so encodePacked == encode for this pair.
-     *         This is the GhostChain equivalent of ENS namehash.
+     *         This is the GhostChain equivalent of the legacy namehash flow.
      */
     function gnsNode(bytes32 parent, bytes32 labelHash)
         internal pure returns (bytes32 node)

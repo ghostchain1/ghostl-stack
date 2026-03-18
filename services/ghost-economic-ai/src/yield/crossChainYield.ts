@@ -7,7 +7,7 @@
  * ARCHITECTURAL NOTE:
  *   L2 and L3 never call external chains. GhostChain L1 is the sole actor
  *   for any cross-chain interactions. This engine never makes RPC calls to
- *   Ethereum, Polygon, or any other external network. It computes strategy
+ *   any legacy external network. It computes strategy
  *   recommendations from chain-internal metrics and delegates execution to
  *   the L1 treasury (via signed governance proposals).
  *

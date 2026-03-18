@@ -24,6 +24,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
+RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh
+
 # Install Python dependencies first (better layer caching)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -45,7 +47,7 @@ ENV GAIS_LISTEN_ADDR=0.0.0.0 \
     SCALE_INTERVAL_S=180 \
     REBALANCE_INTERVAL_S=360 \
     DIRECTIVE_POLL_S=30 \
-    VIRSH_URI=qemu:///system \
+    VIRSH_URI=qemu+ssh://ghost@192.168.122.1/system?keyfile=/root/.ssh/hypervisor_access&no_verify=1 \
     VM_MANAGER_DRY_RUN=0 \
     VM_SNAPSHOT_ENABLED=1
 

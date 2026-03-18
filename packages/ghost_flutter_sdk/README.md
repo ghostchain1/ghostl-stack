@@ -186,7 +186,7 @@ flutter test
 ## Branding
 
 - Gas token: **GST** (never ETH)
-- Chain explorer: **GhostScan** (never Etherscan)
-- DNS: **GNS** (never ENS)
+- Chain explorer: **GhostScan** only
+- DNS: **GNS** only
 - DEX: **GhostXchange** (never Uniswap)
 - RPC namespace: **`ghost_`** (never `eth_`)

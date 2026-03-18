@@ -1,6 +1,6 @@
 export default function DevelopersSection() {
   const tools = [
-    { name: "Ghost SDK",       desc: "Sovereign ethers.js replacement — full wallet, contract & RPC support.",   cmd: "npm install @ghoststack/ghost-sdk" },
+    { name: "Ghost SDK",       desc: "Sovereign JavaScript SDK surface for wallets, contracts, and Ghost RPC access.",   cmd: "npm install @ghoststack/ghost-sdk" },
     { name: "Ghost DevTools",  desc: "Hardhat plugin for GRC contracts with Ghost-native compiler hooks.",        cmd: "npm install @ghoststack/ghost-devtools" },
     { name: "Ghost Registry",  desc: "Canonical chain IDs, RPC endpoints, and contract addresses for all GhostStack networks.",  cmd: "npm install @ghoststack/ghost-registry" },
     { name: "GRC Standards",   desc: "GRC20 / GRC721 / GRC1155 — Ghost-native token standards replacing ERC.",  cmd: "forge install ghostchain/grc-contracts" },
@@ -20,7 +20,7 @@ export default function DevelopersSection() {
             marginBottom: "1rem",
           }}>Build on GhostChain</h2>
           <p style={{ color: "#C0C0C0", maxWidth: "520px", margin: "0 auto", lineHeight: 1.7 }}>
-            Sovereign-first developer tooling. No Ethereum dependency — Ghost-native from day one.
+            Sovereign-first developer tooling. Ghost-native from day one, with no upstream chain dependency in the app surface.
           </p>
         </div>
 

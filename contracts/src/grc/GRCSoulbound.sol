@@ -12,7 +12,7 @@ import { GhostBrand } from "../GhostBrand.sol";
 ///         and other non-financial attestations that must not be traded.
 ///
 ///         Standard: GRC-SBT (Ghost Soulbound Token)
-///         Inspired by Ethereum EIP-5114 and EIP-4973, adapted for GhostChain.
+///         Inspired by legacy EIP-5114 and EIP-4973 patterns, adapted for GhostChain.
 ///
 ///         Features:
 ///           • Non-transferable: `transfer` and `approve` always revert.

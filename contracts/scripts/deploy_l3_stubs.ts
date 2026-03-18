@@ -4,7 +4,7 @@ import path from "path";
 import crypto from "node:crypto";
 
 async function main() {
-  const rpc = process.env.RPC_L2 ?? "http://localhost:29545";
+  const rpc = process.env.RPC_L2 ?? "http://localhost:29547";
   const provider = new ghost.JsonRpcProvider(rpc);
   const deployerKey = process.env.DEPLOYER_PRIVATE_KEY;
   if (!deployerKey) {

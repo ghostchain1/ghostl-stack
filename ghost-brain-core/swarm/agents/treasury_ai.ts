@@ -178,7 +178,7 @@ export class TreasuryAI implements ISwarmAgent {
 }
 
 // ---------------------------------------------------------------------------
-// Inline ghost_* RPC helpers (no ethers.js)
+// Inline ghost_* RPC helpers (no legacy compatibility SDK)
 // ---------------------------------------------------------------------------
 
 async function ghostRpc<T>(rpcUrl: string, method: string, params: unknown[]): Promise<T> {

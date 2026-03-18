@@ -7,7 +7,7 @@
  *
  * Security:
  * - Uses ghost_getBlockByNumber / ghost_getLogs exclusively (NOT eth_call).
- * - No ethers.js dependency — raw JSON-RPC via fetch.
+ * - No legacy compatibility SDK dependency — raw JSON-RPC via fetch.
  * - Read-only — never submits transactions.
  */
 
@@ -37,7 +37,7 @@ async function ghostCall<T>(rpcUrl: string, method: string, params: unknown[]): 
 // ---------------------------------------------------------------------------
 
 const L1_RPC = process.env["GHOSTCHAIN_L1_RPC"] ?? "http://localhost:18545";
-const L2_RPC = process.env["GHOSTL2_RPC"]       ?? "http://localhost:29545";
+const L2_RPC = process.env["GHOSTL2_RPC"]       ?? "http://localhost:29547";
 const L3_RPC = process.env["GHOSTL3_RPC"]       ?? "http://localhost:39545";
 
 /** L1 finality oracle — used to derive L2 block lag baseline. */

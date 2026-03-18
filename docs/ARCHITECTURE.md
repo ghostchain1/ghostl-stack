@@ -1,6 +1,6 @@
 # GhostChain — Full Stack Architecture
 
-_Last updated: 2026-03-10_
+_Last updated: 2026-03-17_
 
 This document covers the complete GhostChain stack: chain topology, AI layer, autonomous systems, and the Liquidity Gravity Engine (LGE).
 
@@ -10,11 +10,13 @@ This document covers the complete GhostChain stack: chain topology, AI layer, au
 
 ```
 GhostChain L1  (chain_id=14000101, RPC :18545)   ← Cosmos SDK + CometBFT + EVM
-  └── GhostL2  (chain_id=901,       RPC :29545)   ← OP Stack (op-geth / op-node / batcher)
+  └── GhostL2  (chain_id=901,       RPC :29547)   ← OP Stack (op-geth / op-node / batcher)
         └── GhostL3 (chain_id=903,   RPC :39545)  ← OP Stack, app-specific execution
 ```
 
 **Routing law (non-negotiable):** L3 settles to L2 only. L2 settles to L1 only. L1 is the only layer with external settlement authority. Enforced at runtime by `packages/routing-guard/` and `packages/routing-law/`.
+
+**Canonical direct L2 RPC:** `29547`. `29545` may still exist in compatibility forwarding paths, but it is not the direct default for new configs, health checks, or documentation.
 
 **Gas token everywhere:** `GST` — never ETH, Ether, WETH, or any non-GST token.
 
@@ -35,7 +37,7 @@ GhostChain L1  (chain_id=14000101, RPC :18545)   ← Cosmos SDK + CometBFT + EVM
 
 ## AI Layer
 
-### GhostBrain Core (`ghost-brain-core/`, port 7900)
+### GhostBrain Core (`services/ghostbrain-core/`, port 7900)
 
 The GhostBrain OS — the central AI runtime powering all autonomous decisions.
 
@@ -47,9 +49,21 @@ The GhostBrain OS — the central AI runtime powering all autonomous decisions.
 - `security/encryption/` — `KeyManager` (Vault HKDF key derivation), `MemoryEncryption` (AES-256-XTS chiplet interface)
 - `evolution/verification/` — `SecurityAudit`: static analysis for forbidden patterns
 
-### Global AI Orchestrator (`ai-orchestrator/`)
+### Ghost Orchestrator (`services/ghost-orchestrator/`, port 7950)
 
-Unified task lifecycle: receives tasks from all AI agents, applies `PolicyGuard`, routes via `TaskRouter`, schedules via `TaskScheduler`.
+The canonical sovereign control plane for the live stack.
+
+- Maintains environment-scoped managed-unit inventory for VMs, chains, agents, services, portals, and RPC endpoints
+- Enforces dependency order: hypervisor -> DNS/secrets -> L1 -> L2 -> L3 -> bridge -> GhostBrain -> apps -> observability
+- Runs devnet build, quality, RPC, and promotion-readiness workflows
+- Keeps promotion advisory-only until governance and release-gate evidence are satisfied
+- Treats `services/ghost-rollup-proposer` as a single authoritative proposer path and avoids duplicate proposer activation
+
+### AI Orchestration Seed Layer (`ai-orchestrator/`)
+
+Unified task-routing seed logic: receives tasks from AI agents, applies `PolicyGuard`, routes via `TaskRouter`, schedules via `TaskScheduler`.
+
+This directory is reference and seed logic for the production control plane. It should feed `services/ghost-orchestrator` and `services/ghostbrain-core`, not compete with them as a second public runtime authority.
 
 **Agents:**
 - `economic_agent.ts` — gas price monitor (L1/L2/L3), treasury drawdown, reward distributor
@@ -103,6 +117,16 @@ Python daemon managing containerized services:
 - `load_balancer.py` — weighted load distribution across node replicas
 - `scaling_engine.py` — horizontal scaling proposals
 - `vm_manager.py` — VM-level management (delegates to GAIS)
+
+The infrastructure supervisor is subordinate to GAIS for VM authority. GAIS owns hypervisor-facing actions; the infrastructure supervisor focuses on container and service orchestration.
+
+### Operator CLI (`tools/ghostctl`)
+
+`tools/ghostctl` is the canonical public operator entrypoint.
+
+- Environment promotion, routing gates, and release checks are invoked from here
+- The internal backend dispatcher remains `ops/scripts/ghostctl`
+- New automation and runbook examples should reference `tools/ghostctl`, not the internal path directly
 
 ### Autonomous Installer (`autonomous-installer/`)
 
@@ -227,11 +251,12 @@ Autonomous validator monitoring and optimization:
 | Service | Port |
 |---|---|
 | GhostChain L1 RPC | 18545 |
-| GhostL2 RPC | 29545 |
+| GhostL2 RPC | 29547 |
 | GhostL3 RPC | 39545 |
 | Cosmos LCD | 1317 |
 | CometBFT RPC | 26657 |
 | GhostBrain Core | 7900 |
+| Ghost Orchestrator | 7950 |
 | Signing Relay | 7910 |
 | GAIS REST API | 9100 |
 | GAIS Prometheus | 9108 |
@@ -251,12 +276,13 @@ Autonomous validator monitoring and optimization:
 | `contracts/src/governance/GhostChainGovernor.sol` | Custom governor |
 | `contracts/src/treasury/SovereignTreasuryEngine.sol` | Primary treasury |
 | `contracts/src/constitution/GhostConstitution.sol` | On-chain law |
-| `ghost-brain-core/` | GhostBrain OS runtime |
-| `ai-orchestrator/` | Global AI task orchestrator |
+| `services/ghostbrain-core/` | GhostBrain OS runtime |
+| `services/ghost-orchestrator/` | Canonical sovereign control plane |
+| `ai-orchestrator/` | AI orchestration seed logic and reference modules |
 | `ai/swarm/` | Python multi-agent swarm |
 | `ai/engineering-agent/` | Code analysis + patch agent |
 | `infra/hypervisor/supervisor/` | GAIS (VM + container manager) |
-| `infrastructure/supervisor/` | Python infra daemon |
+| `infrastructure/supervisor/` | Python infra daemon subordinate to GAIS for VM actions |
 | `autonomous-installer/` | Self-healing installer |
 | `economic-ai/` | Economic optimization AI |
 | `governance-ai/` | Governance AI + Solidity contracts |
@@ -265,6 +291,7 @@ Autonomous validator monitoring and optimization:
 | `gid/` | Ghost Identity (GID) |
 | `packages/routing-guard/` | On-chain routing enforcement |
 | `packages/ghost-sdk-core/` | Native SDK (no ethers) |
+| `packages/ghost-ui-sdk/` | Canonical `@ghostchain/ui` entrypoint for shared theme and UI exports |
 
 - **`LoadBalancerVault`**
   - Accepts deposits of supported assets (ERC20 and native gas token via `asset=address(0)` in the MVP).

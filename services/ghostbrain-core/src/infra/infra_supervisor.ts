@@ -231,7 +231,9 @@ async function supervisorTick(): Promise<void> {
     // 3. Check Docker container health for GhostStack services
     const docker = await collectDockerSnapshots();
     if (docker.errors > 0) {
-      log("warn", "Docker collection errors", { errors: docker.errors });
+      const meta = { errors: docker.errors, processed: docker.processed };
+      if (docker.processed === 0) log("warn", "Docker collection failed", meta);
+      else log("info", "Docker collection partial errors", meta);
     }
 
     // 4. Assess imminent failure predictions from predictive engine

@@ -26,7 +26,57 @@ HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
 L2_CONTAINER_RPC="${L2_CONTAINER_RPC:-http://localhost:8545}"
 TAG="${OPSTACK_IMAGE_TAG:-devnet}"
 GATE_IMAGE="${OP_GATE_IMAGE:-local/op-gate:0.1.0}"
-L1_ORIGIN_BLOCK="${L1_ORIGIN_BLOCK:-0x0}"
+L1_ORIGIN_BLOCK="${L1_ORIGIN_BLOCK:-latest}"
+ENABLE_OP_BATCHER="${ENABLE_OP_BATCHER:-auto}"
+ENABLE_OP_PROPOSER="${ENABLE_OP_PROPOSER:-auto}"
+OP_SEQUENCER_RPC="${OP_SEQUENCER_RPC:-http://localhost:9646}"
+L2_DATA_DIR="$OP_DIR/data/l2-geth-${L2_CHAIN_ID:-901}"
+OP_NODE_DATA_DIR="$OP_DIR/data/op-node"
+OP_SEQUENCER_DATA_DIR="$OP_DIR/data/op-sequencer"
+L2_CHAIN_CONFIG_CHANGED=0
+L2_ROLLUP_CONFIG_CHANGED=0
+
+PREV_ROLLUP_L1_HASH="$(jq -r '.genesis.l1.hash // empty' "$OP_DIR/config/rollup.json" 2>/dev/null || true)"
+PREV_ROLLUP_L1_NUM="$(jq -r '.genesis.l1.number // empty' "$OP_DIR/config/rollup.json" 2>/dev/null || true)"
+PREV_ROLLUP_L2_TIME="$(jq -r '.genesis.l2_time // empty' "$OP_DIR/config/rollup.json" 2>/dev/null || true)"
+PREV_ROLLUP_BATCHER_ADDR="$(jq -r '.genesis.system_config.batcherAddr // empty' "$OP_DIR/config/rollup.json" 2>/dev/null || true)"
+PREV_GENESIS_L2_TS="$(jq -r '.timestamp // empty' "$OP_DIR/config/genesis-l2.json" 2>/dev/null || true)"
+
+rpc_call() {
+  local rpc="$1"
+  local method="$2"
+  local params="$3"
+  curl -fsS -X POST "$rpc" -H 'Content-Type: application/json' \
+    --data "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"${method}\",\"params\":${params}}"
+}
+
+rpc_get_code() {
+  local rpc="$1"
+  local address="$2"
+  rpc_call "$rpc" "eth_getCode" "[\"${address}\",\"latest\"]" | jq -r '.result // empty'
+}
+
+derive_address_from_key() {
+  local private_key="$1"
+  [ -n "$private_key" ] || return 1
+  node - "$ROOT" "$private_key" <<'NODE'
+const [root, privateKey] = process.argv.slice(2);
+process.chdir(root);
+const { Wallet } = require("ethers");
+process.stdout.write(new Wallet(privateKey.trim()).address);
+NODE
+}
+
+ACTIVE_BATCH_SENDER_ADDRESS="${BATCH_SENDER_ADDRESS:-}"
+if [ -n "${BATCHER_KEY:-}" ]; then
+  if derived_batcher_addr="$(derive_address_from_key "$BATCHER_KEY" 2>/dev/null)"; then
+    ACTIVE_BATCH_SENDER_ADDRESS="$derived_batcher_addr"
+  fi
+fi
+if [ -z "$ACTIVE_BATCH_SENDER_ADDRESS" ]; then
+  echo "Missing active batch sender address; set BATCH_SENDER_ADDRESS or BATCHER_KEY." >&2
+  exit 1
+fi
 
 echo "Checking required images for L1/L2..."
 missing=()
@@ -52,7 +102,7 @@ fi
 
 echo "Waiting for L1 RPC..."
 for i in $(seq 1 60); do
-  if curl -fsS -X POST "$HOST_L1_RPC" -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' >/dev/null 2>&1; then
+  if rpc_call "$HOST_L1_RPC" "eth_chainId" '[]' >/dev/null 2>&1; then
     echo "OK: $HOST_L1_RPC"
     break
   fi
@@ -62,6 +112,38 @@ for i in $(seq 1 60); do
     exit 1
   fi
 done
+
+L1_LATEST_JSON="$(rpc_call "$HOST_L1_RPC" "eth_getBlockByNumber" '["latest", false]')"
+L1_HAS_BLOB_FIELDS="$(printf '%s' "$L1_LATEST_JSON" | jq -r '(.result.excessBlobGas != null) and (.result.blobGasUsed != null)')"
+BATCHER_SKIP_REASON=""
+case "${ENABLE_OP_BATCHER}" in
+  0|false|FALSE|no|NO)
+    BATCHER_SKIP_REASON="disabled by ENABLE_OP_BATCHER=${ENABLE_OP_BATCHER}"
+    ;;
+esac
+if [ "$ENABLE_OP_BATCHER" = "auto" ] || [ -z "$ENABLE_OP_BATCHER" ]; then
+  if [ "$L1_HAS_BLOB_FIELDS" != "true" ]; then
+    echo "L1 latest block has no blob gas fields; relying on l1-rpc-proxy/op-gate-l1 synthetic blob compatibility."
+  fi
+fi
+
+GAME_FACTORY_ADDR="${L2_GAME_FACTORY_ADDRESS:-0x8A791620dd6260079BF849Dc5567aDC3F2FdC318}"
+L2OO_ADDR="${L2OO_ADDRESS:-0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9}"
+GAME_FACTORY_CODE="$(rpc_get_code "$HOST_L1_RPC" "$GAME_FACTORY_ADDR" || true)"
+L2OO_CODE="$(rpc_get_code "$HOST_L1_RPC" "$L2OO_ADDR" || true)"
+PROPOSER_SKIP_REASON=""
+case "${ENABLE_OP_PROPOSER}" in
+  0|false|FALSE|no|NO)
+    PROPOSER_SKIP_REASON="disabled by ENABLE_OP_PROPOSER=${ENABLE_OP_PROPOSER}"
+    ;;
+  auto|"")
+    if [ -z "$GAME_FACTORY_CODE" ] || [ "$GAME_FACTORY_CODE" = "0x" ]; then
+      if [ -z "$L2OO_CODE" ] || [ "$L2OO_CODE" = "0x" ]; then
+        PROPOSER_SKIP_REASON="no proposal contract code at ${GAME_FACTORY_ADDR} or ${L2OO_ADDR}"
+      fi
+    fi
+    ;;
+esac
 
 # Fetch L1 genesis block (block 0) for chain config validation.
 L1_GENESIS_JSON=""
@@ -94,7 +176,7 @@ fi
 
 # Determine which L1 block to anchor the rollup genesis to (default: block 0).
 if [ -z "$L1_ORIGIN_BLOCK" ]; then
-  L1_ORIGIN_BLOCK="0x0"
+  L1_ORIGIN_BLOCK="latest"
 fi
 if [ "$L1_ORIGIN_BLOCK" = "latest" ] || [ "$L1_ORIGIN_BLOCK" = "head" ]; then
   L1_ORIGIN_TAG="latest"
@@ -141,6 +223,11 @@ if [ -n "$L1_ORIGIN_HASH" ] && [ "$L1_ORIGIN_HASH" != "null" ]; then
   chmod 644 "$OP_DIR/config/rollup.json" || true
   echo "Set rollup genesis.l1.hash=$L1_ORIGIN_HASH number=$L1_ORIGIN_NUM_DEC"
 
+  tmp_rollup_batcher=$(mktemp)
+  jq --arg batcher "$ACTIVE_BATCH_SENDER_ADDRESS" '.genesis.system_config.batcherAddr = $batcher' "$OP_DIR/config/rollup.json" >"$tmp_rollup_batcher" && mv "$tmp_rollup_batcher" "$OP_DIR/config/rollup.json"
+  chmod 644 "$OP_DIR/config/rollup.json" || true
+  echo "Authorized L2 batch sender: $ACTIVE_BATCH_SENDER_ADDRESS"
+
   # Keep l1-chain.json in sync with block 0 so op-node validation stays consistent.
   L1_DIFF=$(printf '%s' "$L1_GENESIS_JSON" | jq -r '.result.difficulty')
   L1_GAS_LIMIT=$(printf '%s' "$L1_GENESIS_JSON" | jq -r '.result.gasLimit')
@@ -179,6 +266,35 @@ if [ -n "$L1_ORIGIN_HASH" ] && [ "$L1_ORIGIN_HASH" != "null" ]; then
     cd "$OP_DIR/config"
     sha256sum genesis-l2.json rollup.json > checksums.txt
   )
+fi
+
+if [ "$PREV_ROLLUP_L1_HASH" != "$L1_ORIGIN_HASH" ] || [ "$PREV_ROLLUP_L1_NUM" != "$L1_ORIGIN_NUM_DEC" ] || [ "$PREV_ROLLUP_L2_TIME" != "$L2_GENESIS_TS_DEC" ]; then
+  L2_ROLLUP_CONFIG_CHANGED=1
+fi
+if [ "$PREV_ROLLUP_BATCHER_ADDR" != "$ACTIVE_BATCH_SENDER_ADDRESS" ]; then
+  L2_ROLLUP_CONFIG_CHANGED=1
+fi
+if [ "$PREV_GENESIS_L2_TS" != "$L2_GENESIS_TS_HEX" ]; then
+  L2_CHAIN_CONFIG_CHANGED=1
+fi
+
+if [ "$L2_CHAIN_CONFIG_CHANGED" -eq 1 ] || [ "$L2_ROLLUP_CONFIG_CHANGED" -eq 1 ]; then
+  echo "Detected L2 config drift; reinitializing stale L2 state."
+  hg_docker compose "${COMPOSE_ENV_ARGS[@]}" stop l2-geth op-node op-sequencer op-batcher op-proposer >/dev/null 2>&1 || true
+  hg_docker compose "${COMPOSE_ENV_ARGS[@]}" rm -f l2-geth op-node op-sequencer op-batcher op-proposer >/dev/null 2>&1 || true
+
+  ts="$(date +%Y%m%d-%H%M%S)"
+  backup_dir="$OP_DIR/backups/l2-$ts"
+  mkdir -p "$backup_dir"
+
+  for data_dir in "$L2_DATA_DIR" "$OP_NODE_DATA_DIR" "$OP_SEQUENCER_DATA_DIR"; do
+    if [ -d "$data_dir" ] && [ -n "$(find "$data_dir" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]; then
+      mv "$data_dir" "$backup_dir/$(basename "$data_dir")"
+      mkdir -p "$data_dir"
+      chmod 775 "$data_dir" || true
+      echo "Backed up $data_dir to $backup_dir/$(basename "$data_dir")"
+    fi
+  done
 fi
 
 # Bring up the execution client first so we can record the genesis hash into rollup.json
@@ -220,6 +336,56 @@ if [ -n "$L2_GENESIS_HASH" ] && [ "$L2_GENESIS_HASH" != "null" ]; then
 fi
 
 # Start the rollup node + batcher only after rollup.json is pinned to the live genesis.
-hg_docker compose "${COMPOSE_ENV_ARGS[@]}" up -d --force-recreate op-node op-sequencer op-batcher op-proposer
+rollup_services=(op-node op-sequencer)
+skip_services=()
+
+if [ -z "$BATCHER_SKIP_REASON" ]; then
+  rollup_services+=(op-batcher)
+else
+  echo "Skipping op-batcher: $BATCHER_SKIP_REASON"
+  skip_services+=(op-batcher)
+fi
+
+if [ -z "$PROPOSER_SKIP_REASON" ]; then
+  rollup_services+=(op-proposer)
+else
+  echo "Skipping op-proposer: $PROPOSER_SKIP_REASON"
+  skip_services+=(op-proposer)
+fi
+
+if [ "${#skip_services[@]}" -gt 0 ]; then
+  hg_docker compose "${COMPOSE_ENV_ARGS[@]}" rm -sf "${skip_services[@]}" >/dev/null 2>&1 || true
+fi
+
+hg_docker compose "${COMPOSE_ENV_ARGS[@]}" up -d --force-recreate "${rollup_services[@]}"
+
+echo "Ensuring op-sequencer is active..."
+for i in $(seq 1 60); do
+  if rpc_call "$OP_SEQUENCER_RPC" "optimism_syncStatus" '[]' >/dev/null 2>&1; then
+    break
+  fi
+  sleep 1
+  if [ "$i" -eq 60 ]; then
+    echo "op-sequencer RPC not responding at $OP_SEQUENCER_RPC" >&2
+    exit 1
+  fi
+done
+
+SEQ_ACTIVE="$(rpc_call "$OP_SEQUENCER_RPC" "admin_sequencerActive" '[]' | jq -r '.result // empty' | tr '[:upper:]' '[:lower:]' || true)"
+if [ "$SEQ_ACTIVE" != "true" ]; then
+  SEQ_UNSAFE_HASH="$(rpc_call "$OP_SEQUENCER_RPC" "optimism_syncStatus" '[]' | jq -r '.result.unsafe_l2.hash // empty' || true)"
+  if [ -z "$SEQ_UNSAFE_HASH" ] || [ "$SEQ_UNSAFE_HASH" = "null" ] || [ "$SEQ_UNSAFE_HASH" = "0x0000000000000000000000000000000000000000000000000000000000000000" ]; then
+    SEQ_UNSAFE_HASH="$(rpc_call "$HOST_L2_RPC" "eth_getBlockByNumber" '["latest", false]' | jq -r '.result.hash // empty' || true)"
+  fi
+  if [ -n "$SEQ_UNSAFE_HASH" ] && [ "$SEQ_UNSAFE_HASH" != "null" ]; then
+    rpc_call "$OP_SEQUENCER_RPC" "admin_startSequencer" "[\"${SEQ_UNSAFE_HASH}\"]" >/dev/null
+  fi
+fi
+
+SEQ_ACTIVE="$(rpc_call "$OP_SEQUENCER_RPC" "admin_sequencerActive" '[]' | jq -r '.result // empty' | tr '[:upper:]' '[:lower:]' || true)"
+if [ "$SEQ_ACTIVE" != "true" ]; then
+  echo "op-sequencer failed to enter active state" >&2
+  exit 1
+fi
 
 echo "OP Stack L2 up (external L1). L1=$HOST_L1_RPC L2=$HOST_L2_RPC"

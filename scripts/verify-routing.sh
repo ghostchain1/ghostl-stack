@@ -60,14 +60,21 @@ rpc_chain_id() {
   if ! command -v curl >/dev/null 2>&1; then
     return 1
   fi
+  local method
   local response
-  response="$(curl -fsS -m 3 -H 'content-type: application/json' \
-    --data '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' \
-    "$rpc_url" 2>/dev/null || true)"
-  if [[ -z "$response" ]]; then
-    return 1
-  fi
-  printf '%s' "$response" | sed -n 's/.*"result"[[:space:]]*:[[:space:]]*"\(0x[0-9a-fA-F]\+\)".*/\1/p' | tr '[:upper:]' '[:lower:]'
+  for method in ghost_chainId eth_chainId; do
+    response="$(curl -fsS -m 3 -H 'content-type: application/json' \
+      --data "{\"jsonrpc\":\"2.0\",\"method\":\"${method}\",\"params\":[],\"id\":1}" \
+      "$rpc_url" 2>/dev/null || true)"
+    if [[ -z "$response" ]]; then
+      continue
+    fi
+    if printf '%s' "$response" | grep -q '"result"'; then
+      printf '%s' "$response" | sed -n 's/.*"result"[[:space:]]*:[[:space:]]*"\(0x[0-9a-fA-F]\+\)".*/\1/p' | tr '[:upper:]' '[:lower:]'
+      return 0
+    fi
+  done
+  return 1
 }
 
 l1="$(norm "$L1_RPC")"

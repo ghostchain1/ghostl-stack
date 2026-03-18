@@ -2,10 +2,12 @@ FROM node:22-alpine AS base
 RUN apk add --no-cache bash curl
 WORKDIR /app
 # install full deps so ts-node is available from devDependencies
-COPY package*.json ./
+COPY packages/ghost-sdk ./packages/ghost-sdk
+COPY services/ghost-rollup-proposer/package*.json ./services/ghost-rollup-proposer/
+WORKDIR /app/services/ghost-rollup-proposer
 RUN npm install
-COPY tsconfig.json ./tsconfig.json
-COPY src ./src
+COPY services/ghost-rollup-proposer/tsconfig.json ./tsconfig.json
+COPY services/ghost-rollup-proposer/src ./src
 RUN chown -R node:node /app
 USER node
 EXPOSE 7272

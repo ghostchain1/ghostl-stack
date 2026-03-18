@@ -1,8 +1,8 @@
 /**
- * crossChainMessaging.ts — Interchain messaging relay engine
+ * crossChainMessaging.ts — Interlayer messaging relay engine
  *
- * Tracks cross-chain messages dispatched from GhostChain to external
- * networks for governance votes, liquidity signals, and DeFi triggers.
+ * Tracks cross-zone messages dispatched from GhostChain to Ghost-operated
+ * layers for governance votes, liquidity signals, and execution triggers.
  * Compatible with IBC, LayerZero, Wormhole, and CCIP message formats.
  */
 
@@ -50,16 +50,15 @@ const messages: CrossChainMessage[] = [];
 let nonceCounter = 1000;
 
 const PROTOCOL_FOR_CHAIN: Record<string, MessageProtocol> = {
-  "Ethereum":    "layerzero",
-  "Polygon":     "layerzero",
-  "BNB Chain":   "layerzero",
-  "Avalanche":   "layerzero",
-  "Arbitrum":    "ccip",
-  "Optimism":    "ccip",
-  "Base":        "ccip",
-  "Cosmos (Hub)":"ibc",
-  "Solana":      "wormhole",
-  "Near Protocol":"axelar",
+  "GhostL2":            "layerzero",
+  "GhostL3":            "ccip",
+  "GhostBridge":        "ccip",
+  "GhostRelay":         "wormhole",
+  "GhostHub":           "ibc",
+  "GhostOrbit":         "layerzero",
+  "GhostCompute":       "axelar",
+  "GhostArchive":       "ghost-native",
+  "GhostValidatorNet":  "ghost-native",
 };
 
 // ── Seed recent messages ──────────────────────────────────────────────────────
@@ -68,7 +67,7 @@ export function seedMessages(): void {
   if (messages.length > 0) { logger.info("[CrossChainMsg] Already seeded — skipping"); return; }
 
   const now = Date.now();
-  const chains = ["Ethereum", "Polygon", "Cosmos (Hub)", "Ethereum", "Polygon", "Cosmos (Hub)", "Ethereum", "Solana"];
+  const chains = ["GhostL2", "GhostL3", "GhostHub", "GhostBridge", "GhostL2", "GhostHub", "GhostOrbit", "GhostRelay"];
   const types: MessageType[] = ["governance", "liquidity", "asset-mint", "oracle", "governance", "liquidity", "asset-burn", "oracle"];
 
   for (let i = 0; i < chains.length; i++) {

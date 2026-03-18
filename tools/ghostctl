@@ -7,7 +7,7 @@ SOVEREIGN_COMPOSE_FILE="${ROOT_DIR}/docker-compose.sovereign.yml"
 
 usage() {
   cat <<'USAGE'
-Usage: tools/ghostctl <command> [args]
+Usage: tools/ghostctl [--dry-run] [--verbose] [--json] <command> [args]
 
 Commands:
   up <devnet|testnet|mainnet> [--proposal-id <id>]
@@ -15,11 +15,23 @@ Commands:
   status
   logs [args...]
   doctor
+  preflight
+  build
+  fix
+  scan
+  remediate
+  attest
+  ci:local
+  all
   verify-routing
   verify-governance --proposal-id <id>
 
 Promotion law:
   devnet -> testnet -> mainnet
+
+Notes:
+  - tools/ghostctl is the canonical public operator entrypoint.
+  - ops/scripts/ghostctl is the internal backend dispatcher.
 USAGE
 }
 
@@ -33,6 +45,12 @@ require_cmd() {
 
 docker_compose_available() {
   command -v docker >/dev/null 2>&1
+}
+
+run_ops_ghostctl() {
+  local subcommand="$1"
+  shift || true
+  bash "$ROOT_DIR/ops/scripts/ghostctl" "${GLOBAL_ARGS[@]}" "$subcommand" "$@"
 }
 
 sovereign_up() {
@@ -122,14 +140,14 @@ cmd_up() {
 
   case "$target" in
     devnet)
-      bash "$ROOT_DIR/ops/scripts/ghostctl" preflight
-      bash "$ROOT_DIR/ops/scripts/ghostctl" up
+      run_ops_ghostctl preflight
+      run_ops_ghostctl up
       sovereign_up
       bash "$ROOT_DIR/scripts/verify-routing.sh"
       mark_stage devnet
       ;;
     testnet)
-      bash "$ROOT_DIR/ops/scripts/ghostctl" preflight --l1-doctor
+      run_ops_ghostctl preflight --l1-doctor
       sovereign_up
       bash "$ROOT_DIR/scripts/verify-routing.sh"
       mark_stage testnet
@@ -158,7 +176,7 @@ cmd_verify_routing() {
 }
 
 cmd_status() {
-  bash "$ROOT_DIR/ops/scripts/ghostctl" doctor || true
+  run_ops_ghostctl doctor || true
   mkdir -p "$STATE_DIR"
   echo "promotion_state_dir=$STATE_DIR"
   ls -1 "$STATE_DIR" 2>/dev/null || true
@@ -171,20 +189,69 @@ cmd_logs() {
   if docker_compose_available && [[ -f "$SOVEREIGN_COMPOSE_FILE" ]]; then
     docker compose -f "$SOVEREIGN_COMPOSE_FILE" logs --tail=200 "$@" || true
   else
-    bash "$ROOT_DIR/ops/scripts/ghostctl" doctor || true
+    run_ops_ghostctl doctor || true
   fi
 }
 
 cmd_doctor() {
-  bash "$ROOT_DIR/ops/scripts/ghostctl" doctor
+  run_ops_ghostctl doctor
   bash "$ROOT_DIR/scripts/verify-routing.sh"
   node --experimental-strip-types "$ROOT_DIR/tools/ghostcontrol/supervisor.ts"
+}
+
+cmd_preflight() {
+  run_ops_ghostctl preflight "$@"
+}
+
+cmd_build() {
+  run_ops_ghostctl build "$@"
+}
+
+cmd_fix() {
+  run_ops_ghostctl fix "$@"
+}
+
+cmd_scan() {
+  run_ops_ghostctl scan "$@"
+}
+
+cmd_remediate() {
+  run_ops_ghostctl remediate "$@"
+}
+
+cmd_attest() {
+  run_ops_ghostctl attest "$@"
+}
+
+cmd_ci_local() {
+  run_ops_ghostctl ci:local "$@"
+}
+
+cmd_all() {
+  run_ops_ghostctl all "$@"
 }
 
 cmd_down() {
   sovereign_down
   bash "$ROOT_DIR/infra/scripts/down.sh"
 }
+
+GLOBAL_ARGS=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run|--verbose|--json)
+      GLOBAL_ARGS+=("$1")
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
 
 main() {
   require_cmd bash
@@ -196,6 +263,14 @@ main() {
     status) cmd_status "$@" ;;
     logs) cmd_logs "$@" ;;
     doctor) cmd_doctor "$@" ;;
+    preflight) cmd_preflight "$@" ;;
+    build) cmd_build "$@" ;;
+    fix) cmd_fix "$@" ;;
+    scan) cmd_scan "$@" ;;
+    remediate) cmd_remediate "$@" ;;
+    attest) cmd_attest "$@" ;;
+    ci:local) cmd_ci_local "$@" ;;
+    all) cmd_all "$@" ;;
     verify-routing) cmd_verify_routing "$@" ;;
     verify-governance) cmd_verify_governance "$@" ;;
     -h|--help|help|"") usage ;;

@@ -5,6 +5,11 @@
   "version": "0.2.0",
   "publisher": "ghostchain",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ghostchain1/ghostl-stack.git",
+    "directory": "ghostbrain-vscode-extension"
+  },
   "engines": {
     "vscode": "^1.92.0"
   },
@@ -110,7 +115,7 @@
         },
         "ghostbrain.l2RpcUrl": {
           "type": "string",
-          "default": "http://localhost:29545",
+          "default": "http://localhost:29547",
           "description": "GhostL2 JSON-RPC endpoint (chain_id 901)."
         },
         "ghostbrain.l3RpcUrl": {

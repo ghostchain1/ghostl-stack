@@ -3,7 +3,9 @@ import crypto from "node:crypto";
 import express from "express";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { ghost } from "@ghostchain/sdk";
+import { Transaction, formatEther, getAddress, keccak256 } from "ethers";
+
+const BRAND = "ghost-op-gate";
 
 const PORT = Number(process.env.PORT || "8545");
 const UPSTREAM_RPC = process.env.UPSTREAM_RPC || "http://l1:8545";
@@ -64,9 +66,9 @@ async function loadPolicy() {
     const raw = await fs.readFile(POLICY_FILE, "utf8");
     policy = JSON.parse(raw);
     policy.updatedAt = policy.updatedAt || Date.now();
-    console.log("[gate] loaded guard policy", { version: policy.version, updatedAt: policy.updatedAt });
+    console.log(`[${BRAND}] loaded guard policy`, { version: policy.version, updatedAt: policy.updatedAt });
   } catch (e) {
-    console.warn("[gate] using default guard policy", e?.message || e);
+    console.warn(`[${BRAND}] using default guard policy`, e?.message || e);
   }
 }
 
@@ -74,12 +76,12 @@ async function savePolicy(nextPolicy) {
   policy = { ...nextPolicy, updatedAt: Date.now() };
   await fs.mkdir(STATE_DIR, { recursive: true });
   await fs.writeFile(POLICY_FILE, JSON.stringify(policy, null, 2), "utf8");
-  console.log("[gate] saved guard policy", { version: policy.version, updatedAt: policy.updatedAt });
+  console.log(`[${BRAND}] saved guard policy`, { version: policy.version, updatedAt: policy.updatedAt });
 }
 
 function safeAddr(a) {
   try {
-    return a ? ghost.getAddress(a) : null;
+    return a ? getAddress(a) : null;
   } catch {
     return null;
   }
@@ -99,7 +101,7 @@ async function appendDecision(entry) {
     await fs.mkdir(STATE_DIR, { recursive: true });
     await fs.appendFile(DECISIONS_LOG, JSON.stringify(entry) + "\n", "utf8");
   } catch (e) {
-    console.error("[gate] failed to write decision log:", e);
+    console.error(`[${BRAND}] failed to write decision log:`, e);
   }
 
   const payload = JSON.stringify(entry);
@@ -149,7 +151,7 @@ async function guardEval(context) {
     return body;
   } catch (e) {
     metrics.guardErrors += 1;
-    console.warn("[gate] guard eval failed:", e?.message ?? String(e));
+    console.warn(`[${BRAND}] guard eval failed:`, e?.message ?? String(e));
     return null;
   }
 }
@@ -165,6 +167,28 @@ async function forwardRpc(body) {
     throw new Error(`upstream status ${r.status}: ${txt}`);
   }
   return r.json();
+}
+
+function normalizeBlockResult(result) {
+  if (!result || typeof result !== "object") return result;
+  return {
+    ...result,
+    blobGasUsed: result.blobGasUsed ?? "0x0",
+    excessBlobGas: result.excessBlobGas ?? "0x0",
+    parentBeaconBlockRoot: result.parentBeaconBlockRoot ?? null
+  };
+}
+
+function normalizeResponseBlocks(response) {
+  if (!response || typeof response !== "object") return response;
+  if (Array.isArray(response)) return response.map(normalizeResponseBlocks);
+  if ("result" in response) {
+    return {
+      ...response,
+      result: normalizeBlockResult(response.result)
+    };
+  }
+  return response;
 }
 
 function gateDecisionForTx(txSummary) {
@@ -192,7 +216,7 @@ async function handleSendRawTx(body) {
   }
   let tx;
   try {
-    tx = ghost.Transaction.from(raw);
+    tx = Transaction.from(raw);
   } catch (e) {
     return { jsonrpc: "2.0", id: body.id ?? null, error: { code: -32602, message: `invalid raw tx: ${e?.message ?? e}` } };
   }
@@ -200,14 +224,14 @@ async function handleSendRawTx(body) {
   const dataHex = tx.data ?? "0x";
   const txSummary = {
     hash: tx.hash,
-    from: tx.from ? ghost.getAddress(tx.from) : null,
-    to: tx.to ? ghost.getAddress(tx.to) : null,
+    from: tx.from ? getAddress(tx.from) : null,
+    to: tx.to ? getAddress(tx.to) : null,
     nonce: tx.nonce,
     type: tx.type,
     value: tx.value?.toString() ?? "0",
     gasLimit: tx.gasLimit?.toString() ?? null,
     dataLength: dataHex.length > 2 ? dataHex.length / 2 - 1 : 0,
-    dataHash: ghost.keccak256(dataHex),
+    dataHash: keccak256(dataHex),
     selector: dataHex.length >= 10 ? dataHex.slice(0, 10) : "0x00000000"
   };
 
@@ -278,7 +302,7 @@ async function handleSendRawTx(body) {
 async function handleBlobBaseFee(body) {
   try {
     const upstream = await forwardRpc(body);
-    if (!upstream?.error) return upstream;
+    if (!upstream?.error && upstream?.result !== null && upstream?.result !== undefined) return upstream;
   } catch {
     // Fall through to a safe default when the upstream RPC lacks blob support.
   }
@@ -307,6 +331,21 @@ async function handleRpc(body) {
   }
   if (method === "eth_blobBaseFee") {
     return handleBlobBaseFee(body);
+  }
+  if (
+    method === "eth_getBlockByNumber" &&
+    Array.isArray(body.params) &&
+    (body.params[0] === "safe" || body.params[0] === "finalized")
+  ) {
+    const response = await forwardRpc({
+      ...body,
+      params: ["latest", body.params[1] ?? false]
+    });
+    return normalizeResponseBlocks(response);
+  }
+  if (method === "eth_getBlockByNumber" || method === "eth_getBlockByHash") {
+    const response = await forwardRpc(body);
+    return normalizeResponseBlocks(response);
   }
   return forwardRpc(body);
 }
@@ -351,7 +390,7 @@ function evaluatePolicy(context) {
   }
 
   if (context.tx) {
-    const valueEth = Number(ghost.formatEther(context.tx.value || "0"));
+    const valueEth = Number(formatEther(context.tx.value || "0"));
     if (valueEth >= 1) {
       risk += Math.min(12, Math.floor(valueEth));
       reason = "high_value";
@@ -376,7 +415,7 @@ function evaluatePolicy(context) {
       reason = rule.reason || rule.id || "rule_match";
     }
     if (cond.txValueEthGte && context.tx) {
-      const valueEth = Number(ghost.formatEther(context.tx.value || "0"));
+      const valueEth = Number(formatEther(context.tx.value || "0"));
       if (valueEth >= cond.txValueEthGte) {
         risk += rule.risk || 0;
         reason = rule.reason || rule.id || "rule_match";
@@ -545,9 +584,20 @@ app.post("/", async (req, res) => {
       res.json(result);
     }
   } catch (e) {
-    console.error("[gate] rpc error", e);
+    console.error(`[${BRAND}] rpc error`, e);
     res.status(500).json({ jsonrpc: "2.0", id: body?.id ?? null, error: { code: -32000, message: String(e) } });
   }
+});
+
+app.get("/health", (_req, res) => {
+  res.json({
+    ok: true,
+    service: BRAND,
+    brand: "GhostChain",
+    upstreamRpc: UPSTREAM_RPC,
+    mode: state.mode,
+    delaySeconds: state.delaySeconds
+  });
 });
 
 // SECURITY: status exposes recentDecisions (tx hashes + risk) and policy — admin-only.
@@ -640,6 +690,6 @@ app.get("/guard/events", (req, res) => {
 
 app.listen(PORT, () => {
   loadPolicy().then(() => {
-    console.log(`[gate] listening on :${PORT}, upstream ${UPSTREAM_RPC}, guard ${GUARD_EVAL_URL || "none"}`);
+    console.log(`[${BRAND}] listening on :${PORT}, upstream ${UPSTREAM_RPC}, guard ${GUARD_EVAL_URL || "none"}`);
   });
 });

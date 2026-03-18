@@ -3,17 +3,17 @@
  *
  * Monitors the three GhostStack JSON-RPC endpoints:
  *   L1  :18545  (GhostChain Sovereign, ghost_ namespace)
- *   L2  :29545  (GhostL2 OP Stack)
+ *   L2  :29547  (GhostL2 OP Stack)
  *   L3  :39545  (GhostL3 OP Stack)
  *
  * Tracks latency, block height drift, peer count, and RPC availability.
  * Emits memory events when nodes degrade so GhostBrain can act.
  */
 
-import { GhostJsonRpc }    from "@ghostchain/ghost-sdk-core";
 import { store_event }        from "./memory_engine.js";
 import { recordInfraSnapshot } from "./memory/infrastructure_memory.js";
 import { log }                from "./observability/event_logger.js";
+import { resolveRpcEndpoint, rpcBlockNumber } from "./rpc/compat.js";
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -23,9 +23,9 @@ const LATENCY_CRIT_MS = Number(process.env.RPC_LATENCY_CRIT_MS    ?? "5000");
 const DRIFT_WARN      = Number(process.env.RPC_BLOCK_DRIFT_WARN   ?? "10");  // blocks
 
 const ENDPOINTS = [
-  { id: "l1-rpc",  url: process.env.L1_RPC_URL ?? "http://localhost:18545", label: "GhostChain L1" },
-  { id: "l2-rpc",  url: process.env.L2_RPC_URL ?? "http://localhost:29545", label: "GhostL2" },
-  { id: "l3-rpc",  url: process.env.L3_RPC_URL ?? "http://localhost:39545", label: "GhostL3" },
+  { id: "l1-rpc",  url: resolveRpcEndpoint(["L1_RPC_URL", "GHOSTCHAIN_L1_RPC"], ["GHOST_L1_RPC_URLS"], "http://localhost:18545"), label: "GhostChain L1" },
+  { id: "l2-rpc",  url: resolveRpcEndpoint(["L2_RPC_URL", "GHOSTCHAIN_L2_RPC"], ["GHOST_L2_RPC_URLS"], "http://localhost:29547"), label: "GhostL2" },
+  { id: "l3-rpc",  url: resolveRpcEndpoint(["L3_RPC_URL", "GHOSTCHAIN_L3_RPC"], ["GHOST_L3_RPC_URLS"], "http://localhost:39545"), label: "GhostL3" },
 ] as const;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -49,25 +49,12 @@ const _prevBlock = new Map<string, number>();  // for drift detection
 let   _sampleCount = 0;
 let   _timer: ReturnType<typeof setInterval> | null = null;
 
-// ── Per-endpoint GhostJsonRpc clients ─────────────────────────────────────────
-
-const _rpcClients = new Map<string, GhostJsonRpc>();
-
-function clientFor(url: string): GhostJsonRpc {
-  let c = _rpcClients.get(url);
-  if (!c) { c = new GhostJsonRpc(url, { timeoutMs: 8_000 }); _rpcClients.set(url, c); }
-  return c;
-}
-
-// ── RPC call ──────────────────────────────────────────────────────────────────
-
 async function probeNode(id: string, url: string, label: string): Promise<void> {
   const t0 = Date.now();
   try {
-    const blockHex = await clientFor(url).request<string>("ghost_blockNumber", []);
-
+    const probe = await rpcBlockNumber(url, 8_000);
     const latencyMs   = Date.now() - t0;
-    const blockNumber = parseInt(blockHex ?? "0x0", 16);
+    const blockNumber = probe.blockNumber;
     const prevBlock   = _prevBlock.get(id) ?? blockNumber;
     const drift       = Math.abs(blockNumber - prevBlock);
     _prevBlock.set(id, blockNumber);
@@ -127,7 +114,7 @@ async function probeNode(id: string, url: string, label: string): Promise<void> 
       });
     }
 
-    log.debug("rpc_monitor: probe_ok", `${id} block=${blockNumber} latency=${latencyMs}ms`);
+    log.debug("rpc_monitor: probe_ok", `${id} block=${blockNumber} latency=${latencyMs}ms via=${probe.method}`);
   } catch (err) {
     const errorCount = (_errors.get(id) ?? 0) + 1;
     _errors.set(id, errorCount);

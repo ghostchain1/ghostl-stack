@@ -17,7 +17,7 @@ let seoScore          = 78;
 
 function generateCampaign(): { channel: string; topic: string; budget: number } {
   return {
-    channel: pick(["Twitter/X", "LinkedIn", "Reddit r/ethereum", "Telegram", "Discord", "YouTube"]),
+    channel: pick(["Twitter/X", "LinkedIn", "Reddit r/ghostchain", "Telegram", "Discord", "YouTube"]),
     topic:   pick([
       "GhostStack DeFi ecosystem",
       "GhostL2 — 10× cheaper transactions",
@@ -34,7 +34,7 @@ function generateCampaign(): { channel: string; topic: string; budget: number } 
 function assessContentGap(): string {
   return pick([
     "Developer tutorial: deploy on GhostL2 EVM",
-    "Explainer blog: GhostStack vs Ethereum L2s",
+      "Explainer blog: GhostStack vs legacy rollup stacks",
     "Video: GST tokenomics deep dive",
     "Infographic: GhostStack chain stats",
     "Thread: 10 reasons to build on GhostStack",

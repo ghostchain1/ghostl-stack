@@ -8,7 +8,7 @@ import {GhostOwnable} from "../ghost/GhostOwnable.sol";
 
 /// @title NFTGift
 /// @notice Mintable NFT collectible gifts (e.g. Dragon) on GhostL3 (chain 903).
-///         Branding: GhostChain NFT Gift — NOT "ERC-721 on Ethereum".
+///         Branding: GhostChain NFT Gift — never legacy ERC-style naming.
 contract NFTGift is GhostBrand, GRC721Storage, GhostOwnable {
     error WrongChain(uint256 expected, uint256 actual);
     error Unauthorized();

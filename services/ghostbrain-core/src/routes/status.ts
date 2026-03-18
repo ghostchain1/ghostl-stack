@@ -39,7 +39,7 @@ export async function statusRoutes(app: FastifyInstance): Promise<void> {
    *  2. CONTROL_PLANE_HMAC_SECRET is set in production
    *  3. At least one agent is registered OR we are in dev/test mode
    */
-  app.get("/readyz", async (_req, reply) => {
+  async function buildReadiness() {
     const checks: Record<string, { ok: boolean; detail?: string }> = {};
 
     // Check 1: process fully initialised
@@ -64,12 +64,25 @@ export async function statusRoutes(app: FastifyInstance): Promise<void> {
     const allOk = Object.values(checks).every(c => c.ok);
     const code  = allOk ? 200 : 503;
 
-    return reply.code(code).send({
-      ready:   allOk,
-      checks,
-      uptimeS: Math.floor(process.uptime()),
-      ts:      new Date().toISOString(),
-    });
+    return {
+      code,
+      payload: {
+        ready:   allOk,
+        checks,
+        uptimeS: Math.floor(process.uptime()),
+        ts:      new Date().toISOString(),
+      },
+    };
+  }
+
+  app.get("/readyz", async (_req, reply) => {
+    const readiness = await buildReadiness();
+    return reply.code(readiness.code).send(readiness.payload);
+  });
+
+  app.get("/health", async (_req, reply) => {
+    const readiness = await buildReadiness();
+    return reply.code(readiness.code).send(readiness.payload);
   });
 
   /** Informational status — version, uptime, memory. No auth required. */
@@ -83,4 +96,3 @@ export async function statusRoutes(app: FastifyInstance): Promise<void> {
     env:       process.env.NODE_ENV ?? "development",
   }));
 }
-

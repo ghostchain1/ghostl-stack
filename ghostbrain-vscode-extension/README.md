@@ -47,7 +47,7 @@ GhostBrain brings GhostChain-native AI workflows directly into VS Code for build
 | `ghostbrain.defaultModel` | `ghostbrain-dev` | Model/agent identifier |
 | `ghostbrain.enableWorkspaceContext` | `true` | Include workspace metadata in prompts |
 | `ghostbrain.l1RpcUrl` | `http://localhost:18545` | GhostChain L1 JSON-RPC |
-| `ghostbrain.l2RpcUrl` | `http://localhost:29545` | GhostL2 JSON-RPC |
+| `ghostbrain.l2RpcUrl` | `http://localhost:29547` | GhostL2 JSON-RPC |
 | `ghostbrain.l3RpcUrl` | `http://localhost:39545` | GhostL3 JSON-RPC |
 | `ghostbrain.enableStreaming` | `true` | Stream responses in the sidebar |
 
@@ -95,8 +95,8 @@ GhostBrain VS Code Extension
 │   ├── openPanel          → reveal sidebar + prefill prompt
 │   ├── askSelection       → send selected code to GhostBrain
 │   ├── analyzeWorkspace   → full workspace context analysis
-│   ├── checkChainHealth   → JSON-RPC eth_blockNumber + net_peerCount
-│   │                         L1 :18545 · L2 :29545 · L3 :39545
+│   ├── checkChainHealth   → JSON-RPC ghost_blockNumber + net_peerCount
+│   │                         L1 :18545 · L2 :29547 · L3 :39545
 │   ├── analyzeBridgeConfig → scan interchain-bridge/ files → GhostBrain
 │   ├── reviewValidatorSetup → scan validators/ files → GhostBrain
 │   ├── explainContract    → selected .sol/.ts/.go/.rs/.vy → GhostBrain

@@ -54,7 +54,7 @@ Supporting Layers:
 ├── packages/            # Shared SDKs, UI libs, config packages
 ├── docs/                # Architecture, governance, whitepapers, evidence
 ├── .codex/              # Codex automation inputs, logs, ratification blocks
-├── docker-compose.yml   # Canonical devnet composition
+├── docker-compose.yml   # Compliance-only root compose; use compose bundles / launch-system for devnet bring-up
 └── README.md
 ```
 
@@ -286,11 +286,8 @@ optimism: https://github.com/ghostchain1/optimism/pull/1
 * One container per responsibility
 * Duplicate containers avoided by design
 
-Start devnet:
-
-```
-docker compose up -d
-```
+Start devnet with the launch-system flow or the layer-specific compose bundle described in `launch-system/README-LAUNCH.md`.
+Do not treat the root `docker-compose.yml` as the canonical devnet launcher.
 
 Enforced promotion workflow (recommended):
 

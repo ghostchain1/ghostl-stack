@@ -61,7 +61,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    # SOVEREIGN FIX: npm ci instead of npm install for deterministic, lockfile-enforced installs.
+    # SOVEREIGN FIX: use npm ci for deterministic, lockfile-enforced installs.
     command: ["sh", "-lc", "npm ci && npm run migrate"]
     restart: "no"
 

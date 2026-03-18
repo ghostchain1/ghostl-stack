@@ -6,6 +6,20 @@ import crypto from "node:crypto";
 import { ghost } from "@ghostchain/sdk";
 import Docker from "dockerode";
 
+const normalizeControlPlaneUrl = (rawUrl, internalUrl = "") => {
+  if (!rawUrl) return "";
+  try {
+    const parsed = new URL(rawUrl);
+    const host = parsed.hostname.toLowerCase();
+    if ((host === "localhost" || host === "127.0.0.1") && internalUrl) {
+      return internalUrl.replace(/\/$/, "");
+    }
+    return parsed.toString().replace(/\/$/, "");
+  } catch {
+    return rawUrl.replace(/\/$/, "");
+  }
+};
+
 const PORT = Number(process.env.NETWORK_MANAGER_PORT || "7766");
 const MONITOR_HOST = process.env.MONITOR_HOST || "localhost";
 const registryUrl = process.env.RPC_REGISTRY_URL || "http://ghost-registry:8088/v1/endpoints";
@@ -13,7 +27,7 @@ const registryTimeoutMs = Number(process.env.REGISTRY_TIMEOUT_MS || "1500");
 const registryRetries = Math.max(0, Number(process.env.REGISTRY_RETRY_COUNT || "2"));
 const registryCacheMs = Math.max(1000, Number(process.env.REGISTRY_CACHE_MS || "30000"));
 const registryCache = { data: null, expiresAt: 0 };
-const PORTS = (process.env.MONITOR_PORTS || "7070,7171,18545,29547,39545")
+const PORTS = (process.env.MONITOR_PORTS ?? "7070,7171,18545,29547,39545")
   .split(",")
   .map((p) => Number(p.trim()))
   .filter(Boolean);
@@ -33,6 +47,35 @@ const REQUIRE_GOVERNANCE = process.env.REQUIRE_GOVERNANCE !== "false";
 const REQUIRE_PAUSE_GUARDIAN = process.env.REQUIRE_PAUSE_GUARDIAN !== "false";
 const DOCKER_ACTIONS_ENABLED = process.env.DOCKER_ACTIONS_ENABLED === "true";
 const DOCKER_SOCKET_PATH = process.env.DOCKER_SOCKET_PATH || "/var/run/docker.sock";
+const GHOSTBRAIN_INTERNAL_URL = process.env.GHOSTBRAIN_INTERNAL_URL || "";
+const GHOSTBRAIN_URL =
+  normalizeControlPlaneUrl(
+    process.env.GHOSTBRAIN_URL ||
+      process.env.GHOSTBRAIN_CORE_URL ||
+      process.env.GNMC_GHOSTBRAIN_URL ||
+      "",
+    GHOSTBRAIN_INTERNAL_URL
+  );
+const GHOSTBRAIN_ENABLED = process.env.GHOSTBRAIN_ENABLED !== "false" && Boolean(GHOSTBRAIN_URL);
+const CONTROL_PLANE_HMAC_SECRET = process.env.CONTROL_PLANE_HMAC_SECRET || "";
+const GHOSTBRAIN_AGENT_ID =
+  process.env.GHOSTBRAIN_AGENT_ID ||
+  process.env.SERVICE_NAME ||
+  process.env.npm_package_name ||
+  "network-manager-service";
+const GHOSTBRAIN_AGENT_ROLE = process.env.GHOSTBRAIN_AGENT_ROLE || "executor";
+const GHOSTBRAIN_REGISTER_INTERVAL_MS = Math.max(
+  30_000,
+  Number(process.env.GHOSTBRAIN_REGISTER_INTERVAL_MS || "120000")
+);
+const GHOSTBRAIN_HEARTBEAT_INTERVAL_MS = Math.max(
+  15_000,
+  Number(process.env.GHOSTBRAIN_HEARTBEAT_INTERVAL_MS || "60000")
+);
+const GHOSTBRAIN_SIGNAL_TIMEOUT_MS = Math.max(
+  1000,
+  Number(process.env.GHOSTBRAIN_SIGNAL_TIMEOUT_MS || "5000")
+);
 
 const EXECUTION_TOKEN = process.env.EXECUTION_APPROVAL_TOKEN || "";
 
@@ -195,7 +238,7 @@ app.use((req, res, next) => {
     console.warn(JSON.stringify({ ts: new Date().toISOString(), level: "warn", msg: "sec_fetch_cross_site", method: req.method, url: req.url, sfs: _sfs, sfm: req.headers["sec-fetch-mode"] ?? "", sfd: req.headers["sec-fetch-dest"] ?? "", reqId: req.id }));
   }
   const t0 = process.hrtime.bigint();
-  res.on("prefinish", () => { const _ms = (Number(process.hrtime.bigint()-t0)/1e6).toFixed(2); res.setHeader("X-Response-Time", `${_ms}ms`); res.setHeader("Server-Timing", `total;dur=${_ms}`); });
+  res.on("prefinish", () => { try { const _ms = (Number(process.hrtime.bigint()-t0)/1e6).toFixed(2); if (!res.headersSent) { res.setHeader("X-Response-Time", `${_ms}ms`); res.setHeader("Server-Timing", `total;dur=${_ms}`); } } catch {} });
   res.on("finish", () => console.log(JSON.stringify({ ts: new Date().toISOString(), level: "info", method: req.method, url: req.url, status: res.statusCode, ms: +(Number(process.hrtime.bigint()-t0)/1e6).toFixed(2), bytes: Number(req.headers["content-length"] ?? 0), reqId: req.id, pid: process.pid, mem: process.memoryUsage().rss, httpVer: req.httpVersion, xff: req.headers["x-forwarded-for"] ?? "" })));
   next();
 });
@@ -204,12 +247,30 @@ app.use((req, res, next) => {
 const state = {
   lastRun: null,
   results: [],
-  errors: []
+  errors: [],
+  ghostbrain: {
+    enabled: GHOSTBRAIN_ENABLED,
+    url: GHOSTBRAIN_URL || null,
+    agentId: GHOSTBRAIN_AGENT_ID,
+    role: GHOSTBRAIN_AGENT_ROLE,
+    registered: false,
+    registeredAt: null,
+    lastRegistrationAt: null,
+    lastHeartbeatAt: null,
+    lastSignalAt: null,
+    lastSignalSubject: null,
+    lastStatus: "unknown",
+    signalCount: 0,
+    lastError: null,
+    lastFindingHash: null,
+    lastPlanHash: null
+  }
 };
 
 let rpcTargets = [];
 let policy = null;
 let dockerClient = null;
+let ghostBrainSyncRunning = false;
 
 const GOVERNOR_ABI = [
   "function executor() view returns (address)",
@@ -268,6 +329,18 @@ const logEvent = (level, event, data) => {
   console.log(JSON.stringify(payload));
 };
 
+const currentGhostBrainCapabilities = () => [
+  "network.rpc.observe",
+  "network.port.observe",
+  "network.health.observe",
+  "ghostbrain.signal.publish",
+  "ghostbrain.agent.register",
+  "remediation.plan.create",
+  ...(AUTONOMY_EXECUTION_ENABLED ? ["remediation.safe_auto.execute"] : []),
+  ...(DOCKER_ACTIONS_ENABLED ? ["docker.restart.request"] : []),
+  ...(policy?.actions?.op_gate_mode?.enabled ? ["opgate.mode.request"] : [])
+];
+
 const mergePolicy = (base, next) => {
   if (!next || typeof next !== "object") return base;
   const mergedActions = { ...(base.actions || {}) };
@@ -319,13 +392,16 @@ const stableStringify = (value) => {
   return JSON.stringify(value);
 };
 
+const computeDigest = (value) =>
+  ghost.keccak256(ghost.toUtf8Bytes(stableStringify(value)));
+
 const planPayload = (plan) => {
   const { planHash, approvals, signatureMessage, approvalsRequired, ...rest } = plan || {};
   return rest;
 };
 
 const computePlanHash = (plan) =>
-  ghost.keccak256(ghost.toUtf8Bytes(stableStringify(planPayload(plan))));
+  computeDigest(planPayload(plan));
 
 const approvalMessage = (planHash) => `GhostChain ActionPlan ${planHash}`;
 
@@ -443,6 +519,335 @@ async function fetchJson(url, body) {
   return data;
 }
 
+const buildControlPlaneHeaders = (body) => {
+  const headers = {
+    "content-type": "application/json",
+    "x-agent-id": GHOSTBRAIN_AGENT_ID
+  };
+  if (!CONTROL_PLANE_HMAC_SECRET) return headers;
+  const ts = Date.now();
+  const sig = crypto.createHmac("sha256", CONTROL_PLANE_HMAC_SECRET).update(`${ts}:${body}`).digest("hex");
+  return {
+    ...headers,
+    "x-hmac-timestamp": String(ts),
+    "x-hmac-signature": sig
+  };
+};
+
+async function postGhostBrain(pathname, payload, expectedStatuses = [200, 201, 202]) {
+  if (!GHOSTBRAIN_ENABLED) return { ok: false, skipped: true };
+  const url = `${GHOSTBRAIN_URL.replace(/\/$/, "")}${pathname}`;
+  const body = JSON.stringify(payload);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), GHOSTBRAIN_SIGNAL_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: buildControlPlaneHeaders(body),
+      body,
+      signal: controller.signal
+    });
+    if (!expectedStatuses.includes(res.status)) {
+      const detail = (await res.text().catch(() => "")).slice(0, 200);
+      throw new Error(`ghostbrain_http_${res.status}${detail ? `:${detail}` : ""}`);
+    }
+    state.ghostbrain.lastError = null;
+    return { ok: true, status: res.status };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+const buildAgentRegistrationPayload = () => {
+  const now = new Date().toISOString();
+  return {
+    agentId: GHOSTBRAIN_AGENT_ID,
+    role: GHOSTBRAIN_AGENT_ROLE,
+    capabilities: currentGhostBrainCapabilities(),
+    resourceScopes: [
+      { type: "service", name: "network-manager-service", layer: "L1" },
+      { type: "rpc-endpoint", name: "ghostchain-l1", layer: "L1" },
+      { type: "rpc-endpoint", name: "ghostl2", layer: "L2" },
+      { type: "rpc-endpoint", name: "ghostl3", layer: "L3" }
+    ],
+    healthy: state.errors.length === 0,
+    registeredAt: state.ghostbrain.registeredAt || now,
+    lastSeen: now
+  };
+};
+
+async function registerGhostBrainAgent(reason = "sync") {
+  if (!GHOSTBRAIN_ENABLED) return { ok: false, skipped: true };
+  try {
+    await postGhostBrain("/api/v1/agents/register", buildAgentRegistrationPayload(), [201]);
+    const now = new Date().toISOString();
+    state.ghostbrain.registered = true;
+    state.ghostbrain.registeredAt = state.ghostbrain.registeredAt || now;
+    state.ghostbrain.lastRegistrationAt = now;
+    logEvent("info", "ghostbrain_registered", { reason, agentId: GHOSTBRAIN_AGENT_ID });
+    return { ok: true };
+  } catch (err) {
+    state.ghostbrain.registered = false;
+    state.ghostbrain.lastError = err?.message || String(err);
+    logEvent("warn", "ghostbrain_registration_failed", {
+      reason,
+      agentId: GHOSTBRAIN_AGENT_ID,
+      error: state.ghostbrain.lastError
+    });
+    return { ok: false, error: state.ghostbrain.lastError };
+  }
+}
+
+function buildBrainMessage(subject, payload, correlationId = crypto.randomUUID()) {
+  return {
+    messageId: crypto.randomUUID(),
+    subject,
+    correlationId,
+    senderAgentId: GHOSTBRAIN_AGENT_ID,
+    payload,
+    sentAt: new Date().toISOString()
+  };
+}
+
+async function publishGhostBrainSignal(subject, payload, correlationId = crypto.randomUUID()) {
+  if (!GHOSTBRAIN_ENABLED) return { ok: false, skipped: true };
+  try {
+    await postGhostBrain("/api/v1/signals", buildBrainMessage(subject, payload, correlationId), [202]);
+    const now = new Date().toISOString();
+    state.ghostbrain.lastSignalAt = now;
+    state.ghostbrain.lastSignalSubject = subject;
+    state.ghostbrain.signalCount += 1;
+    return { ok: true };
+  } catch (err) {
+    state.ghostbrain.lastError = err?.message || String(err);
+    logEvent("warn", "ghostbrain_signal_failed", {
+      subject,
+      error: state.ghostbrain.lastError
+    });
+    return { ok: false, error: state.ghostbrain.lastError };
+  }
+}
+
+const fireAndForgetGhostBrainSignal = (subject, payload, correlationId) => {
+  void publishGhostBrainSignal(subject, payload, correlationId);
+};
+
+function normalizeFailedChecks() {
+  return state.results
+    .filter((result) => result.ok === false)
+    .map((result) => ({
+      target: String(result.target || "unknown"),
+      type: String(result.type || "unknown"),
+      error: String(result.error || result.detail || "unknown")
+    }))
+    .sort((a, b) => `${a.type}:${a.target}:${a.error}`.localeCompare(`${b.type}:${b.target}:${b.error}`));
+}
+
+function layerForTarget(target) {
+  const normalized = String(target || "").toLowerCase();
+  if (normalized === "l1" || normalized.includes("18545")) return "L1";
+  if (normalized === "l2" || normalized.includes("29547")) return "L2";
+  if (normalized === "l3" || normalized.includes("39545")) return "L3";
+  return "OPS";
+}
+
+function severityForFailures(failedChecks) {
+  if (failedChecks.some((item) => item.type === "rpc")) return failedChecks.length > 1 ? "high" : "medium";
+  if (failedChecks.length > 2) return "medium";
+  return "low";
+}
+
+function buildGhostBrainStatusPayload(kind = "heartbeat") {
+  const summary = summarize();
+  const failedChecks = normalizeFailedChecks();
+  return {
+    kind,
+    service: GHOSTBRAIN_AGENT_ID,
+    environment: NET_ENV || "dev",
+    monitorHost: MONITOR_HOST,
+    ok: state.errors.length === 0,
+    lastRun: state.lastRun,
+    observedAt: new Date(state.lastRun || Date.now()).toISOString(),
+    failedCount: failedChecks.length,
+    failedChecks,
+    suggestions: summary.suggestions,
+    autonomy: {
+      executionEnabled: AUTONOMY_EXECUTION_ENABLED,
+      killSwitch: AUTONOMY_KILL_SWITCH,
+      prodLock: PROD_LOCK_ACTIVE,
+      requireTelemetry: REQUIRE_TELEMETRY,
+      requireGovernance: REQUIRE_GOVERNANCE
+    },
+    rpcTargets: rpcTargets.map((target) => ({
+      name: target.name,
+      layer: layerForTarget(target.name),
+      url: target.url
+    }))
+  };
+}
+
+function buildGhostBrainRemediationPlan() {
+  const failedChecks = normalizeFailedChecks();
+  if (!failedChecks.length) return null;
+  const restartPolicy = policy?.actions?.restart_service || DEFAULT_POLICY.actions.restart_service;
+  const allowlist = Array.isArray(restartPolicy.allowedContainers) ? restartPolicy.allowedContainers : [];
+  const recommendedActions = [];
+
+  for (const failure of failedChecks) {
+    const layer = layerForTarget(failure.target);
+    const candidates = allowlist.filter((containerName) => {
+      const name = String(containerName).toLowerCase();
+      if (layer === "L1") return name.includes("l1") || name.includes("ghostchain");
+      if (layer === "L2") return name.includes("l2") || name.includes("op-node") || name.includes("sequencer");
+      if (layer === "L3") return name.includes("l3") || name.includes("op-node") || name.includes("sequencer");
+      return false;
+    });
+
+    if (restartPolicy.enabled && candidates.length) {
+      recommendedActions.push({
+        type: "restart_service",
+        candidates,
+        safeAutoEligible: AUTONOMY_EXECUTION_ENABLED && DOCKER_ACTIONS_ENABLED,
+        rationale: `Restart allowlisted ${layer} containers tied to ${failure.target}`
+      });
+    }
+
+    if (
+      failure.type === "rpc" &&
+      policy?.actions?.op_gate_mode?.enabled &&
+      (layer === "L2" || layer === "L3")
+    ) {
+      recommendedActions.push({
+        type: "op_gate_mode",
+        target: layer.toLowerCase(),
+        mode: "delay",
+        delaySeconds: Math.min(30, Number(policy?.actions?.op_gate_mode?.maxDelaySeconds || 30)),
+        safeAutoEligible: AUTONOMY_EXECUTION_ENABLED && !REQUIRE_GOVERNANCE,
+        rationale: `Temporarily slow ${layer} ingress while RPC instability is investigated`
+      });
+    }
+  }
+
+  if (!recommendedActions.length) return null;
+
+  return {
+    kind: "network_remediation_plan",
+    service: GHOSTBRAIN_AGENT_ID,
+    severity: severityForFailures(failedChecks),
+    generatedAt: new Date().toISOString(),
+    failedChecks,
+    recommendedActions
+  };
+}
+
+async function reconcileGhostBrainState({ forceRegistration = false, forceHeartbeat = false } = {}) {
+  if (!GHOSTBRAIN_ENABLED || ghostBrainSyncRunning) return;
+  ghostBrainSyncRunning = true;
+  try {
+    const now = Date.now();
+    const lastRegistrationAt = state.ghostbrain.lastRegistrationAt ? Date.parse(state.ghostbrain.lastRegistrationAt) : 0;
+    if (forceRegistration || !lastRegistrationAt || now - lastRegistrationAt >= GHOSTBRAIN_REGISTER_INTERVAL_MS) {
+      await registerGhostBrainAgent(forceRegistration ? "manual" : "periodic");
+    }
+
+    const heartbeatPayload = buildGhostBrainStatusPayload(forceHeartbeat ? "manual_heartbeat" : "heartbeat");
+    const heartbeatDue =
+      forceHeartbeat ||
+      !state.ghostbrain.lastHeartbeatAt ||
+      now - Date.parse(state.ghostbrain.lastHeartbeatAt) >= GHOSTBRAIN_HEARTBEAT_INTERVAL_MS;
+
+    if (heartbeatDue) {
+      const heartbeatId = computeDigest({
+        ok: heartbeatPayload.ok,
+        failedChecks: heartbeatPayload.failedChecks,
+        lastRun: heartbeatPayload.lastRun
+      });
+      const heartbeat = await publishGhostBrainSignal(
+        "ghostbrain.agent.status",
+        {
+          ...heartbeatPayload,
+          fingerprint: heartbeatId
+        },
+        `network-manager-heartbeat-${heartbeatId}`
+      );
+      if (heartbeat.ok) {
+        state.ghostbrain.lastHeartbeatAt = new Date().toISOString();
+      }
+    }
+
+    const failureFingerprint = computeDigest({
+      ok: heartbeatPayload.ok,
+      failedChecks: heartbeatPayload.failedChecks
+    });
+
+    if (!heartbeatPayload.ok) {
+      if (
+        state.ghostbrain.lastStatus !== "degraded" ||
+        state.ghostbrain.lastFindingHash !== failureFingerprint
+      ) {
+        await publishGhostBrainSignal(
+          "ghostbrain.gsa.finding",
+          {
+            ...buildGhostBrainStatusPayload("incident"),
+            severity: severityForFailures(heartbeatPayload.failedChecks),
+            fingerprint: failureFingerprint
+          },
+          `network-manager-finding-${failureFingerprint}`
+        );
+        state.ghostbrain.lastFindingHash = failureFingerprint;
+      }
+
+      const plan = buildGhostBrainRemediationPlan();
+      if (plan) {
+        const planHash = computeDigest(plan);
+        if (state.ghostbrain.lastPlanHash !== planHash) {
+          await publishGhostBrainSignal(
+            "ghostbrain.gsa.plan",
+            { ...plan, fingerprint: planHash },
+            `network-manager-plan-${planHash}`
+          );
+          state.ghostbrain.lastPlanHash = planHash;
+        }
+      }
+
+      state.ghostbrain.lastStatus = "degraded";
+      return;
+    }
+
+    if (state.ghostbrain.lastStatus === "degraded") {
+      await publishGhostBrainSignal(
+        "ghostbrain.gsa.verify",
+        {
+          ...buildGhostBrainStatusPayload("recovered"),
+          passed: true,
+          fingerprint: failureFingerprint
+        },
+        `network-manager-recovery-${failureFingerprint}`
+      );
+    }
+
+    state.ghostbrain.lastStatus = "healthy";
+    state.ghostbrain.lastFindingHash = null;
+    state.ghostbrain.lastPlanHash = null;
+  } finally {
+    ghostBrainSyncRunning = false;
+  }
+}
+
+async function fetchRpcResult(url, methods) {
+  let lastError = null;
+  for (const method of methods) {
+    try {
+      const data = await fetchJson(url, { jsonrpc: "2.0", id: 1, method, params: [] });
+      if (data?.result != null) return data.result;
+      throw new Error("missing_result");
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError ?? new Error("rpc_probe_failed");
+}
+
 function checkPort(host, port, timeoutMs = 1500) {
   return new Promise((resolve) => {
     const socket = new net.Socket();
@@ -465,8 +870,8 @@ async function probe() {
   const errors = [];
   for (const t of rpcTargets) {
     try {
-      const data = await fetchJson(t.url, { jsonrpc: "2.0", id: 1, method: "ghost_chainId", params: [] });
-      results.push({ target: t.name, type: "rpc", ok: true, detail: data.result });
+      const result = await fetchRpcResult(t.url, ["ghost_chainId", "eth_chainId"]);
+      results.push({ target: t.name, type: "rpc", ok: true, detail: result });
     } catch (e) {
       errors.push({ target: t.name, type: "rpc", error: e.message, url: t.url });
       results.push({ target: t.name, type: "rpc", ok: false, error: e.message });
@@ -495,6 +900,7 @@ async function probe() {
   state.lastRun = Date.now();
   state.results = results;
   state.errors = errors;
+  void reconcileGhostBrainState();
 }
 
 function summarize() {
@@ -783,6 +1189,12 @@ app.get("/health", (_req, res) => {
     autonomy: {
       enabled: AUTONOMY_EXECUTION_ENABLED,
       killSwitch: AUTONOMY_KILL_SWITCH
+    },
+    ghostbrain: {
+      enabled: state.ghostbrain.enabled,
+      registered: state.ghostbrain.registered,
+      lastStatus: state.ghostbrain.lastStatus,
+      lastError: state.ghostbrain.lastError
     }
   });
 });
@@ -818,13 +1230,29 @@ app.post("/remediate/dry-run", async (req, res) => {
     if (REQUIRE_PAUSE_GUARDIAN && !PAUSE_GUARDIAN_ADDRESS) {
       warnings.push("pause_guardian_not_configured");
     }
-    res.json({
+    const response = {
       ok: telemetryCheck.ok,
       plan,
       telemetry: telemetryCheck,
       summary: summarize(),
       warnings
-    });
+    };
+    fireAndForgetGhostBrainSignal(
+      "ghostbrain.gsa.plan",
+      {
+        kind: "network_manager_dry_run",
+        service: GHOSTBRAIN_AGENT_ID,
+        environment: NET_ENV || "dev",
+        planHash: plan.planHash,
+        actions: plan.actions,
+        telemetry: telemetryCheck,
+        summary: response.summary,
+        warnings,
+        observedAt: new Date().toISOString()
+      },
+      plan.planHash
+    );
+    res.json(response);
   } catch (err) {
     res.status(400).json({ ok: false, error: err?.message || String(err) });
   }
@@ -897,8 +1325,35 @@ app.post("/remediate/execute", async (req, res) => {
 
     const requirePost = policy?.postconditions?.requireTelemetryAfter ?? DEFAULT_POLICY.postconditions.requireTelemetryAfter;
     const ok = requirePost ? postTelemetryCheck.ok : true;
+    fireAndForgetGhostBrainSignal(
+      "ghostbrain.gsa.audit",
+      {
+        kind: "network_manager_execute",
+        service: GHOSTBRAIN_AGENT_ID,
+        environment: NET_ENV || "dev",
+        ok,
+        planHash: plan.planHash,
+        executionHash: evidence.executionHash,
+        results,
+        postconditions: evidence.postconditions,
+        evidencePath,
+        observedAt: new Date().toISOString()
+      },
+      plan.planHash
+    );
     res.json({ ok, results, evidencePath, executionHash: evidence.executionHash, postconditions: evidence.postconditions });
   } catch (err) {
+    fireAndForgetGhostBrainSignal(
+      "ghostbrain.gsa.audit",
+      {
+        kind: "network_manager_execute_failed",
+        service: GHOSTBRAIN_AGENT_ID,
+        environment: NET_ENV || "dev",
+        ok: false,
+        error: err?.message || String(err),
+        observedAt: new Date().toISOString()
+      }
+    );
     res.status(400).json({ ok: false, error: err?.message || String(err) });
   }
 });
@@ -916,8 +1371,40 @@ app.get("/stats", (_req, res) => {
       errors: state.errors.length,
       rpcTargets: rpcTargets.map((r) => r.name),
       fetchedAt: new Date().toISOString()
+    },
+    ghostbrain: {
+      enabled: state.ghostbrain.enabled,
+      url: state.ghostbrain.url,
+      agentId: state.ghostbrain.agentId,
+      role: state.ghostbrain.role,
+      registered: state.ghostbrain.registered,
+      registeredAt: state.ghostbrain.registeredAt,
+      lastRegistrationAt: state.ghostbrain.lastRegistrationAt,
+      lastHeartbeatAt: state.ghostbrain.lastHeartbeatAt,
+      lastSignalAt: state.ghostbrain.lastSignalAt,
+      lastSignalSubject: state.ghostbrain.lastSignalSubject,
+      lastStatus: state.ghostbrain.lastStatus,
+      signalCount: state.ghostbrain.signalCount,
+      lastError: state.ghostbrain.lastError
     }
   });
+});
+
+app.get("/ghostbrain/status", (_req, res) => {
+  res.json({
+    ok: true,
+    ghostbrain: state.ghostbrain
+  });
+});
+
+app.post("/ghostbrain/sync", async (req, res) => {
+  if (!requireToken(req, res)) return;
+  try {
+    await reconcileGhostBrainState({ forceRegistration: true, forceHeartbeat: true });
+    res.json({ ok: true, ghostbrain: state.ghostbrain });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err?.message || String(err) });
+  }
 });
 
 app.get("/readyz", (_req, res) => {
@@ -934,6 +1421,7 @@ app.use((err, _req, res, _next) => {
   if (err.status === 405 || err.statusCode === 405) return res.status(405).json({ ok: false, error: "Method not allowed" });
   const status = err.status ?? err.statusCode ?? 500;
   const _isProd = process.env.NODE_ENV === "production";
+  if (res.headersSent) return;
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("Surrogate-Control", "no-store");
   console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg: "unhandledError", status, error: err?.message ?? String(err), stack: _isProd ? undefined : err?.stack }));
@@ -955,7 +1443,13 @@ async function init() {
     ];
     const intervalMs = Number(process.env.MONITOR_INTERVAL_MS || "10000");
     setInterval(probe, intervalMs);
+    if (GHOSTBRAIN_ENABLED) {
+      setInterval(() => {
+        void reconcileGhostBrainState();
+      }, Math.min(GHOSTBRAIN_REGISTER_INTERVAL_MS, GHOSTBRAIN_HEARTBEAT_INTERVAL_MS)).unref();
+    }
     probe().catch(() => {});
+    void reconcileGhostBrainState({ forceRegistration: true, forceHeartbeat: true });
     const server = app.listen(PORT, "0.0.0.0", () => {
       console.log(`[netmgr] listening on :${PORT}`);
     });

@@ -7,6 +7,22 @@ cd "$ROOT_DIR"
 log() { printf '[gst-leakage-gate] %s\n' "$*"; }
 fail() { printf '[gst-leakage-gate][FAIL] %s\n' "$*" >&2; exit 1; }
 
+BASELINE_FILE="${BASELINE_FILE:-$ROOT_DIR/config/gst-leakage-baseline.txt}"
+MODE="${1:-check}"
+
+if [[ "$MODE" == "--help" || "$MODE" == "-h" ]]; then
+  cat <<'USAGE'
+Usage:
+  bash scripts/gst-leakage-gate.sh
+  bash scripts/gst-leakage-gate.sh --print
+  bash scripts/gst-leakage-gate.sh --update-baseline
+
+Env:
+  BASELINE_FILE=config/gst-leakage-baseline.txt
+USAGE
+  exit 0
+fi
+
 HAS_RG=0
 if command -v rg >/dev/null 2>&1; then
   HAS_RG=1
@@ -23,6 +39,9 @@ rg_globs=(
 	--glob '!docs/gst-migration/**'
 	--glob '!scripts/gst-leakage-gate.sh'
 	--glob '!config/gst-allowlist.txt'
+	--glob '!config/gst-leakage-baseline.txt'
+	--glob '!config/gst-symbol-baseline.txt'
+	--glob '!ops/policy/no-eth-rpc-baseline.txt'
 	--glob '!backups/**'
 	--glob '!infra/docker/_backup/**'
 	--glob '!**/node_modules/**'
@@ -65,6 +84,9 @@ else
       ':!docs/gst-migration/**' \
       ':!scripts/gst-leakage-gate.sh' \
       ':!config/gst-allowlist.txt' \
+      ':!config/gst-leakage-baseline.txt' \
+      ':!config/gst-symbol-baseline.txt' \
+      ':!ops/policy/no-eth-rpc-baseline.txt' \
       ':!backups/**' \
       ':!infra/docker/_backup/**' \
       ':!infra/opstack/optimism-upstream/**' \
@@ -120,15 +142,43 @@ if [ -n "$matches" ] && [ "${#allowlist_globs[@]}" -gt 0 ]; then
   matches="${filtered%$'\n'}"
 fi
 if [ -z "$matches" ]; then
-  log "OK: no forbidden ETH branding tokens found."
+  findings=""
+else
+  findings="$(printf '%s\n' "$matches" | sed -E 's#^\./##; s#^([^:]+):[0-9]+:#\1\t#' | sort -u)"
+fi
+
+if [[ "$MODE" == "--print" ]]; then
+  printf '%s\n' "$findings"
+  exit 0
+fi
+
+if [[ "$MODE" == "--update-baseline" ]]; then
+  mkdir -p "$(dirname "$BASELINE_FILE")"
+  printf '%s\n' "$findings" >"$BASELINE_FILE"
+  log "Wrote baseline: ${BASELINE_FILE#$ROOT_DIR/}"
+  exit 0
+fi
+
+if [ ! -f "$BASELINE_FILE" ]; then
+  fail "missing baseline file: ${BASELINE_FILE#$ROOT_DIR/} (run: bash scripts/gst-leakage-gate.sh --update-baseline)"
+fi
+
+current="$(mktemp)"
+baseline="$(mktemp)"
+printf '%s\n' "$findings" | sed '/^$/d' | sort -u >"$current"
+sed 's#^\./##' "$BASELINE_FILE" | sort -u >"$baseline"
+
+new="$(comm -13 "$baseline" "$current" || true)"
+if [ -z "$new" ]; then
+  log "OK: no new forbidden ETH branding tokens found."
   exit 0
 fi
 
 {
-  echo "Forbidden ETH branding tokens detected (GST-native policy violation):"
+  echo "New forbidden ETH branding tokens detected (GST-native policy violation):"
   echo
-  printf '%s\n' "$matches" | sed -n '1,200p'
-  if [ "$(printf '%s\n' "$matches" | wc -l | tr -d ' ')" -gt 200 ]; then
+  printf '%s\n' "$new" | sed -n '1,200p'
+  if [ "$(printf '%s\n' "$new" | wc -l | tr -d ' ')" -gt 200 ]; then
     echo "... (truncated)"
   fi
   echo
@@ -137,6 +187,7 @@ fi
   else
     echo "Allowlist file missing (optional): ${ALLOWLIST_FILE#$ROOT_DIR/}"
   fi
+  echo "Baseline file: ${BASELINE_FILE#$ROOT_DIR/}"
 } >&2
 
 exit 1

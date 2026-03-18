@@ -38,6 +38,6 @@ VOLUME ["/var/ghostbrain/memory"]
 EXPOSE 7900
 
 HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
-  CMD wget -qO- http://localhost:7900/health || exit 1
+  CMD wget -qO- http://localhost:7900/readyz || exit 1
 
 CMD ["node", "dist/index.js"]

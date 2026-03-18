@@ -33,7 +33,7 @@ library GhostECDSA {
      * @notice Recover the signer address from a 65-byte `{r,s,v}` signature.
      * @param  hash  The 32-byte message hash that was signed.
      * @param  sig   65-byte signature encoded as `abi.encodePacked(r, s, v)`.
-     * @return signer  The recovered Ethereum address.
+     * @return signer  The recovered signer address.
      *
      * Reverts with `GhostECDSA__InvalidSignatureLength` for wrong lengths and
      * `GhostECDSA__InvalidSignature` if ecrecover returns address(0).
@@ -59,10 +59,10 @@ library GhostECDSA {
     // ─── Message hash helpers ──────────────────────────────────────────────────
 
     /**
-     * @notice Apply the Ethereum personal-sign prefix so the result matches
-     *         what `eth_sign` / `personal_sign` produces in standard wallets.
+     * @notice Apply the legacy personal-sign prefix so the result matches
+     *         what `eth_sign` / `personal_sign` produces in compatibility wallets.
      * @dev    `\x19Ethereum Signed Message:\n32` — 32 == sizeof(bytes32).
-     *         Use this when signing with external Ethereum-compatible tooling.
+     *         Use this when signing with legacy EVM-compatible tooling.
      */
     function toEthSignedMessageHash(bytes32 hash) internal pure returns (bytes32) {
         // abi.encodePacked costs 3 memory allocations; inline assembly is 1 op cheaper

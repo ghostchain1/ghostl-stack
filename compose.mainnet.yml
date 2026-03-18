@@ -71,7 +71,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget -qO- --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' --header 'Content-Type: application/json' http://localhost:8545 >/dev/null",
+          "wget -qO- --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ghost_blockNumber\",\"params\":[]}' --header 'Content-Type: application/json' http://localhost:8545 >/dev/null || wget -qO- --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' --header 'Content-Type: application/json' http://localhost:8545 >/dev/null",
         ]
       interval: 20s
       timeout: 5s
@@ -196,7 +196,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -sf http://localhost:8546 -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_chainId\",\"params\":[]}' >/dev/null",
+          "curl -sf http://localhost:8546 -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ghost_chainId\",\"params\":[]}' >/dev/null || curl -sf http://localhost:8546 -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_chainId\",\"params\":[]}' >/dev/null",
         ]
       interval: 20s
       timeout: 10s

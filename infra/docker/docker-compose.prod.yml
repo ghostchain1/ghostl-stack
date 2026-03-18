@@ -21,7 +21,7 @@ services:
   traefik:
     # SOVEREIGN: pin to digest – run scripts/security/digest-refresh-report.sh to update.
     # To refresh: docker pull traefik:v3.1 && docker inspect traefik:v3.1 --format '{{index .RepoDigests 0}}'
-    image: traefik:v3.1@sha256:REPLACE_WITH_CURRENT_DIGEST
+    image: traefik:v3.1@sha256:74d72c7a1345984f186bddbabcc462b2128d0d8054177dc84afaeac4db1f0f56
     command:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
@@ -58,7 +58,7 @@ services:
   # ── Identity provider ────────────────────────────────────────────────────────
   keycloak:
     # SOVEREIGN: pin to digest – run scripts/security/digest-refresh-report.sh to update.
-    image: quay.io/keycloak/keycloak:26.0@sha256:REPLACE_WITH_CURRENT_DIGEST
+    image: quay.io/keycloak/keycloak:26.0@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858
     command: ["start", "--http-enabled=true", "--proxy-headers=xforwarded", "--import-realm"]
     <<: *hardening
     environment:
@@ -112,7 +112,7 @@ services:
   # Binding the admin port to 0.0.0.0 is a critical privilege-escalation vector.
   kong:
     # SOVEREIGN: pin to digest – run scripts/security/digest-refresh-report.sh to update.
-    image: kong:3.7@sha256:REPLACE_WITH_CURRENT_DIGEST
+    image: kong:3.7@sha256:5d46b1fcb0c29a1e5739499ca8d7af9ce6a6531ab37d9ae42f49478103a4c4dc
     <<: *hardening
     environment:
       KONG_DATABASE: "off"

@@ -1,0 +1,175 @@
+{
+  "env": "mainnet",
+  "generatedBy": "services/ghost-orchestrator",
+  "units": [
+    {
+      "id": "vm-ghostchain-mainnet-l1",
+      "name": "ghostchain-mainnet-l1",
+      "kind": "vm",
+      "layer": "hypervisor",
+      "env": "mainnet",
+      "desiredState": "running",
+      "dependencies": [],
+      "governance": {
+        "actionClass": "forbidden"
+      },
+      "metadata": {
+        "role": "mainnet-l1"
+      }
+    },
+    {
+      "id": "vm-ghost-mainnet-validator",
+      "name": "ghost-mainnet-validator",
+      "kind": "vm",
+      "layer": "hypervisor",
+      "env": "mainnet",
+      "desiredState": "running",
+      "dependencies": [
+        "vm-ghostchain-mainnet-l1"
+      ],
+      "governance": {
+        "actionClass": "forbidden"
+      },
+      "metadata": {
+        "role": "validator"
+      }
+    },
+    {
+      "id": "vm-ghostl2-mainnet",
+      "name": "ghostl2-mainnet",
+      "kind": "vm",
+      "layer": "hypervisor",
+      "env": "mainnet",
+      "desiredState": "running",
+      "dependencies": [
+        "vm-ghostchain-mainnet-l1"
+      ],
+      "governance": {
+        "actionClass": "forbidden"
+      },
+      "metadata": {
+        "role": "mainnet-l2"
+      }
+    },
+    {
+      "id": "vm-ghostl3-mainnet",
+      "name": "ghostl3-mainnet",
+      "kind": "vm",
+      "layer": "hypervisor",
+      "env": "mainnet",
+      "desiredState": "running",
+      "dependencies": [
+        "vm-ghostl2-mainnet"
+      ],
+      "governance": {
+        "actionClass": "forbidden"
+      },
+      "metadata": {
+        "role": "mainnet-l3"
+      }
+    },
+    {
+      "id": "chain-ghostchain-l1-mainnet",
+      "name": "ghostchain-l1-mainnet",
+      "kind": "chain",
+      "layer": "l1",
+      "env": "mainnet",
+      "desiredState": "running",
+      "dependencies": [
+        "vm-ghostchain-mainnet-l1"
+      ],
+      "governance": {
+        "actionClass": "forbidden"
+      },
+      "checks": {
+        "rpcUrl": "http://localhost:18545"
+      },
+      "metadata": {
+        "chainId": 14000101
+      }
+    },
+    {
+      "id": "chain-ghostl2-mainnet",
+      "name": "ghostl2-mainnet",
+      "kind": "chain",
+      "layer": "l2",
+      "env": "mainnet",
+      "desiredState": "running",
+      "dependencies": [
+        "chain-ghostchain-l1-mainnet"
+      ],
+      "governance": {
+        "actionClass": "forbidden"
+      },
+      "checks": {
+        "rpcUrl": "http://localhost:29547"
+      },
+      "metadata": {
+        "chainId": 901
+      }
+    },
+    {
+      "id": "chain-ghostl3-mainnet",
+      "name": "ghostl3-mainnet",
+      "kind": "chain",
+      "layer": "l3",
+      "env": "mainnet",
+      "desiredState": "running",
+      "dependencies": [
+        "chain-ghostl2-mainnet"
+      ],
+      "governance": {
+        "actionClass": "forbidden"
+      },
+      "checks": {
+        "rpcUrl": "http://localhost:39545"
+      },
+      "metadata": {
+        "chainId": 903
+      }
+    },
+    {
+      "id": "service-ghost-web-mainnet",
+      "name": "ghost-web",
+      "kind": "service",
+      "layer": "ops",
+      "env": "mainnet",
+      "desiredState": "running",
+      "dependencies": [
+        "chain-ghostl3-mainnet"
+      ],
+      "governance": {
+        "actionClass": "approval-required",
+        "advisoryProposalType": "mainnet-app-release"
+      },
+      "checks": {
+        "healthPath": "apps/web"
+      },
+      "metadata": {
+        "workspace": "apps/web"
+      }
+    },
+    {
+      "id": "service-ghost-rollup-proposer-mainnet",
+      "name": "ghost-rollup-proposer",
+      "kind": "service",
+      "layer": "ops",
+      "env": "mainnet",
+      "desiredState": "maintenance",
+      "dependencies": [
+        "chain-ghostl2-mainnet",
+        "chain-ghostl3-mainnet"
+      ],
+      "governance": {
+        "actionClass": "forbidden"
+      },
+      "checks": {
+        "healthPath": "services/ghost-rollup-proposer/docker-compose.yml"
+      },
+      "metadata": {
+        "composeFile": "services/ghost-rollup-proposer/docker-compose.yml",
+        "ownership": "single-authoritative"
+      }
+    }
+  ]
+}

@@ -17,9 +17,9 @@ services:
     environment:
       PORT: 8088
       NET_ENV: ${NET_ENV:-dev}
-      RPC_L1: ${RPC_L1:-http://ghost-mapper:18545}
-      RPC_L2: ${RPC_L2:-http://ghost-mapper:29547}
-      RPC_L3: ${RPC_L3:-http://ghost-mapper:39545}
+      RPC_L1: ${AUTONOMY_RPC_L1:-http://ghostchain-rpc-proxy:8545}
+      RPC_L2: ${AUTONOMY_RPC_L2:-http://l2-geth:8545}
+      RPC_L3: ${AUTONOMY_RPC_L3:-http://l3-geth:8545}
       RPC_L1_WS: ${RPC_L1_WS:-}
       RPC_L2_WS: ${RPC_L2_WS:-}
       RPC_L3_WS: ${RPC_L3_WS:-}
@@ -29,6 +29,12 @@ services:
       - "${AUTONOMY_GHOST_REGISTRY_HOST_PORT:-28088}:8088"
     restart: unless-stopped
     stop_grace_period: 30s
+    volumes:
+      - ./services/ghost-registry/dist:/app/dist:ro
+    networks:
+      - default
+      - opstack_default
+      - ghostchain
     healthcheck:
       test:
         [
@@ -69,6 +75,12 @@ services:
       - "${AUTONOMY_NETWORK_CONTEXT_HOST_PORT:-17633}:7633"
     restart: unless-stopped
     stop_grace_period: 30s
+    volumes:
+      - ./services/network-context-service/src:/workspace/services/network-context-service/src:ro
+    networks:
+      - default
+      - opstack_default
+      - ghostchain
     healthcheck:
       test:
         [
@@ -103,11 +115,11 @@ services:
       PORT: 7635
       NET_ENV: ${NET_ENV:-dev}
       RPC_REGISTRY_URL: http://ghost-registry:8088/v1/endpoints
-      RPC_L1: ${RPC_L1:-http://ghost-mapper:18545}
-      RPC_L2: ${RPC_L2:-http://ghost-mapper:29547}
-      RPC_L3: ${RPC_L3:-http://ghost-mapper:39545}
-      OP_NODE_L2_RPC: ${OP_NODE_L2_RPC:-http://ghost-mapper:9546}
-      OP_NODE_L3_RPC: ${OP_NODE_L3_RPC:-http://ghost-mapper:39546}
+      RPC_L1: ${AUTONOMY_RPC_L1:-http://ghostchain-rpc-proxy:8545}
+      RPC_L2: ${AUTONOMY_RPC_L2:-http://l2-geth:8545}
+      RPC_L3: ${AUTONOMY_RPC_L3:-http://l3-geth:8545}
+      OP_NODE_L2_RPC: ${AUTONOMY_OP_NODE_L2_RPC:-http://op-node:9546}
+      OP_NODE_L3_RPC: ${AUTONOMY_OP_NODE_L3_RPC:-http://l3-op-node:19546}
       EVIDENCE_DIR: /data/evidence
       PROPOSAL_DIR: /data/proposals
       FINALITY_STATE_PATH: /data/finality-state.json
@@ -119,6 +131,11 @@ services:
     stop_grace_period: 30s
     volumes:
       - ./services/consensus-telemetry-service/data:/data
+      - ./services/consensus-telemetry-service/src:/workspace/services/consensus-telemetry-service/src:ro
+    networks:
+      - default
+      - opstack_default
+      - ghostchain
     healthcheck:
       test:
         [
@@ -140,7 +157,7 @@ services:
     image: ghostl/network-manager-service:local
     user: *ghost-user
     group_add:
-      - ${DOCKER_GROUP_ID:-999}
+      - ${DOCKER_GID:-1000}
     cap_drop:
       - ALL
     security_opt:
@@ -159,10 +176,13 @@ services:
       RPC_REGISTRY_URL: http://ghost-registry:8088/v1/endpoints
       CONSENSUS_TELEMETRY_URL: http://consensus-telemetry-service:7635/consensus
       MONITOR_HOST: ${MONITOR_HOST:-host.docker.internal}
-      MONITOR_PORTS: ${MONITOR_PORTS:-7070,7171,18545,29547,39545}
-      MONITOR_HEALTH_ENDPOINTS: ${MONITOR_HEALTH_ENDPOINTS:-http://host.docker.internal:7070/health,http://host.docker.internal:7171/health}
+      MONITOR_RPC_L1: ${AUTONOMY_RPC_L1:-http://ghostchain-rpc-proxy:8545}
+      MONITOR_RPC_L2: ${AUTONOMY_RPC_L2:-http://l2-geth:8545}
+      MONITOR_RPC_L3: ${AUTONOMY_RPC_L3:-http://l3-geth:8545}
+      MONITOR_PORTS: ${MONITOR_PORTS:-}
+      MONITOR_HEALTH_ENDPOINTS: ${MONITOR_HEALTH_ENDPOINTS:-}
       MONITOR_INTERVAL_MS: ${MONITOR_INTERVAL_MS:-10000}
-      OP_GATE_URL: ${OP_GATE_URL:-http://ghost-mapper:28546}
+      OP_GATE_URL: ${AUTONOMY_OP_GATE_URL:-http://op-gate:8545}
       OP_GATE_URL_L3: ${OP_GATE_URL_L3:-}
       OP_GATE_ADMIN_TOKEN: ${OP_GATE_ADMIN_TOKEN:-}
       AUTONOMY_EXECUTION_ENABLED: ${AUTONOMY_EXECUTION_ENABLED:-false}
@@ -174,7 +194,7 @@ services:
       EXECUTION_APPROVAL_TOKEN: ${EXECUTION_APPROVAL_TOKEN:-}
       ACTION_APPROVER_ADDRESSES: ${ACTION_APPROVER_ADDRESSES:-}
       ACTION_APPROVAL_THRESHOLD: ${ACTION_APPROVAL_THRESHOLD:-2}
-      GOVERNANCE_RPC_L1: ${GOVERNANCE_RPC_L1:-http://ghost-mapper:18545}
+      GOVERNANCE_RPC_L1: ${AUTONOMY_RPC_L1:-http://ghostchain-rpc-proxy:8545}
       GOVERNOR_ADDRESS_L1: ${GOVERNOR_ADDRESS_L1:-}
       EVIDENCE_ANCHOR_ADDRESS: ${EVIDENCE_ANCHOR_ADDRESS:-}
       PAUSE_GUARDIAN_ADDRESS: ${PAUSE_GUARDIAN_ADDRESS:-}
@@ -182,6 +202,14 @@ services:
       EVIDENCE_DIR: /data/evidence
       DOCKER_ACTIONS_ENABLED: ${DOCKER_ACTIONS_ENABLED:-false}
       DOCKER_SOCKET_PATH: /var/run/docker.sock
+      SERVICE_NAME: network-manager-service
+      GHOSTBRAIN_ENABLED: ${GHOSTBRAIN_ENABLED:-true}
+      GHOSTBRAIN_URL: ${NETWORK_MANAGER_GHOSTBRAIN_URL:-http://ghostbrain-core:7900}
+      GHOSTBRAIN_INTERNAL_URL: http://ghostbrain-core:7900
+      GHOSTBRAIN_AGENT_ROLE: ${GHOSTBRAIN_AGENT_ROLE:-executor}
+      GHOSTBRAIN_HEARTBEAT_INTERVAL_MS: ${GHOSTBRAIN_HEARTBEAT_INTERVAL_MS:-60000}
+      GHOSTBRAIN_REGISTER_INTERVAL_MS: ${GHOSTBRAIN_REGISTER_INTERVAL_MS:-120000}
+      CONTROL_PLANE_HMAC_SECRET: ${CONTROL_PLANE_HMAC_SECRET:-dev-control-plane-secret}
     extra_hosts:
       - host.docker.internal:host-gateway
     ports:
@@ -190,7 +218,12 @@ services:
     stop_grace_period: 30s
     volumes:
       - ./services/network-manager-service/data:/data
+      - ./services/network-manager-service/src:/workspace/services/network-manager-service/src:ro
       - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - default
+      - opstack_default
+      - ghostchain
     healthcheck:
       test:
         [
@@ -528,6 +561,7 @@ services:
     stop_grace_period: 30s
     volumes:
       - ./services/ghost-mapper/data:/data
+      - ./services/ghost-mapper/src:/app/src:ro
     networks:
       - default
       - ghost_net
@@ -552,13 +586,13 @@ services:
     container_name: ghost_autonomous-vault-hypervisor
     restart: unless-stopped
     group_add:
-      - "112"  # docker socket GID
+      - "${DOCKER_GID:-1000}"  # host docker socket GID
     extra_hosts:
       - host.docker.internal:host-gateway
     environment:
       PORT: 7720
-      NATS_URL: ${NATS_URL:-nats://nats:4222}
-      GHOSTBRAIN_URL: ${GHOSTBRAIN_URL:-http://ghostbrain-core:7900}
+      NATS_URL: ${AVH_NATS_URL:-nats://nats:4222}
+      GHOSTBRAIN_URL: ${AVH_GHOSTBRAIN_URL:-http://ghostbrain-core:7900}
       GHOSTBRAIN_ENABLED: ${GHOSTBRAIN_ENABLED:-1}
       AI_VAULT_ADDR: ${AI_VAULT_ADDR:-http://host.docker.internal:7710}
       VAULT_ADDR: ${VAULT_ADDR:-http://host.docker.internal:8200}
@@ -584,7 +618,7 @@ services:
       MAX_REMEDIATIONS_PER_RUN: ${AVH_MAX_REMEDIATIONS_PER_RUN:-3}
       MAX_CONTAINER_RESTARTS: ${AVH_MAX_CONTAINER_RESTARTS:-5}
       RESTART_COOLDOWN_MS: ${AVH_RESTART_COOLDOWN_MS:-120000}
-      POLICY_PATH: /app/policy.json
+      POLICY_PATH: /var/lib/avh/policy.json
       # SOVEREIGN: autonomous execution disabled by default.
       EXECUTE_ACTIONS: ${AVH_EXECUTE_ACTIONS:-0}
       EMERGENCY_LOCK: ${AVH_EMERGENCY_LOCK:-0}
@@ -595,7 +629,7 @@ services:
       VM_LAYER_MAP: ${AVH_VM_LAYER_MAP:-{}}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - avh_policy:/app
+      - avh_policy:/var/lib/avh
     ports:
       - "${AVH_HOST_PORT:-7720}:7720"
     stop_grace_period: 30s
@@ -608,6 +642,7 @@ services:
       - /tmp
     networks:
       - ghost_net
+      - ghostbrain-net
     healthcheck:
       test:
         - "CMD"
@@ -622,6 +657,9 @@ services:
 networks:
   ghost_net:
     external: true
+  ghostbrain-net:
+    external: true
+    name: ghostbrain-net
   opstack_default:
     external: true
   ghostchain:

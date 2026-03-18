@@ -36,11 +36,11 @@ export interface ContainerActionResult {
 // ── Seeded service containers ─────────────────────────────────────────────────
 const SEED: Array<Omit<GhostContainer, "cpuPct" | "memMB" | "uptime" | "lastEvent">> = [
   // Chain validators
-  { id: "ctr-gc-boot",  name: "ghostchain-bootnode",    image: "ethereum/client-go:stable",          stack: "ghostvalidators",         state: "running", port: 30305, restarts: 0, startedAt: Date.now() - 86400000 * 60 },
-  { id: "ctr-gc-val1",  name: "ghostchain-validator-1", image: "ethereum/client-go:stable",          stack: "ghostvalidators",         state: "running", port: 8545,  restarts: 0, startedAt: Date.now() - 86400000 * 60 },
-  { id: "ctr-gc-val2",  name: "ghostchain-validator-2", image: "ethereum/client-go:stable",          stack: "ghostvalidators",         state: "running", port: 8645,  restarts: 1, startedAt: Date.now() - 86400000 * 30 },
-  { id: "ctr-gc-val3",  name: "ghostchain-validator-3", image: "ethereum/client-go:stable",          stack: "ghostvalidators",         state: "running", port: 8745,  restarts: 0, startedAt: Date.now() - 86400000 * 14 },
-  { id: "ctr-gc-val4",  name: "ghostchain-validator-4", image: "ethereum/client-go:stable",          stack: "ghostvalidators",         state: "stopped", port: 8845,  restarts: 3, exitCode: 1, startedAt: Date.now() - 86400000 * 7 },
+  { id: "ctr-gc-boot",  name: "ghostchain-bootnode",    image: "ghostl/geth:alltools-v1.13.14",     stack: "ghostvalidators",         state: "running", port: 30305, restarts: 0, startedAt: Date.now() - 86400000 * 60 },
+  { id: "ctr-gc-val1",  name: "ghostchain-validator-1", image: "ghostl/geth:alltools-v1.13.14",     stack: "ghostvalidators",         state: "running", port: 8545,  restarts: 0, startedAt: Date.now() - 86400000 * 60 },
+  { id: "ctr-gc-val2",  name: "ghostchain-validator-2", image: "ghostl/geth:alltools-v1.13.14",     stack: "ghostvalidators",         state: "running", port: 8645,  restarts: 1, startedAt: Date.now() - 86400000 * 30 },
+  { id: "ctr-gc-val3",  name: "ghostchain-validator-3", image: "ghostl/geth:alltools-v1.13.14",     stack: "ghostvalidators",         state: "running", port: 8745,  restarts: 0, startedAt: Date.now() - 86400000 * 14 },
+  { id: "ctr-gc-val4",  name: "ghostchain-validator-4", image: "ghostl/geth:alltools-v1.13.14",     stack: "ghostvalidators",         state: "stopped", port: 8845,  restarts: 3, exitCode: 1, startedAt: Date.now() - 86400000 * 7 },
   // GhostBrain
   { id: "ctr-gb-swarm", name: "ghostbrain-swarm",       image: "ghoststack-ghostbrain-swarm:latest", stack: "ghostbrain",              state: "running", port: 9000,  restarts: 0, startedAt: Date.now() - 86400000 * 90 },
   { id: "ctr-gb-kern",  name: "ghostbrain-kernel",      image: "ghoststack-ghostbrain-kernel:latest",stack: "ghostbrain",              state: "running", port: 9300,  restarts: 0, startedAt: Date.now() - 86400000 * 90 },

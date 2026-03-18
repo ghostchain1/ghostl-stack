@@ -15,13 +15,13 @@ export interface Partner {
 }
 
 const PARTNERS: Partner[] = [
-  { id: "par-001", name: "MetaMask",      category: "wallet",   website: "metamask.io",      users: 30_000_000, integrationFit: 95, status: "discovered" },
-  { id: "par-002", name: "WalletConnect", category: "wallet",   website: "walletconnect.com", users: 15_000_000, integrationFit: 90, status: "discovered" },
-  { id: "par-003", name: "Chainlink",     category: "infra",    website: "chain.link",        users: 0,          integrationFit: 88, status: "proposed" },
-  { id: "par-004", name: "TheGraph",      category: "infra",    website: "thegraph.com",      users: 0,          integrationFit: 85, status: "proposed" },
-  { id: "par-005", name: "Transak",       category: "payment",  website: "transak.com",       users: 5_000_000,  integrationFit: 80, status: "negotiating" },
-  { id: "par-006", name: "Axelar",        category: "infra",    website: "axelar.network",    users: 0,          integrationFit: 92, status: "discovered" },
-  { id: "par-007", name: "Biconomy",      category: "infra",    website: "biconomy.io",       users: 2_000_000,  integrationFit: 78, status: "discovered" },
+  { id: "par-001", name: "GhostWallet", category: "wallet",  website: "ghostchain.cloud/wallet",      users: 30_000_000, integrationFit: 95, status: "discovered" },
+  { id: "par-002", name: "GhostConnect", category: "wallet",  website: "ghostchain.cloud/connect",     users: 15_000_000, integrationFit: 90, status: "discovered" },
+  { id: "par-003", name: "GhostOracle",  category: "infra",   website: "ghostchain.cloud/oracle",      users: 0,          integrationFit: 88, status: "proposed" },
+  { id: "par-004", name: "GhostIndex",   category: "infra",   website: "ghostchain.cloud/index",       users: 0,          integrationFit: 85, status: "proposed" },
+  { id: "par-005", name: "GhostPay",     category: "payment", website: "ghostchain.cloud/pay",         users: 5_000_000,  integrationFit: 80, status: "negotiating" },
+  { id: "par-006", name: "GhostBridge",  category: "infra",   website: "ghostchain.cloud/bridge",      users: 0,          integrationFit: 92, status: "discovered" },
+  { id: "par-007", name: "GhostRouter",  category: "infra",   website: "ghostchain.cloud/router",      users: 2_000_000,  integrationFit: 78, status: "discovered" },
 ];
 
 export async function scanWeb3Companies(): Promise<Partner[]> {

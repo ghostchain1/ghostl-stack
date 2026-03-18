@@ -179,47 +179,77 @@ function hasAuth(req) {
 
 // GhostChain RPC namespace remap.
 //
-// Canonical: gst_*
-// Compatibility alias: eth_*
+// Canonical client namespace: ghost_*
+// Compatibility aliases: gst_* and eth_*
 //
-// Note: Upstream execution clients (geth/op-geth) only implement eth_* today,
-// so we map gst_* back to eth_* when forwarding upstream.
-const METHOD_CANONICAL_MAP = new Map([
-  ["eth_blockNumber", "gst_blockNumber"],
-  ["eth_chainId", "gst_chainId"],
-  ["eth_getBalance", "gst_getBalance"],
-  ["eth_getTransactionCount", "gst_getTransactionCount"],
-  ["eth_getBlockByNumber", "gst_getBlockByNumber"],
-  ["eth_getBlockByHash", "gst_getBlockByHash"],
-  ["eth_getCode", "gst_getCode"],
-  ["eth_call", "gst_call"],
-  ["eth_estimateGas", "gst_estimateGas"],
-  ["eth_gasPrice", "gst_gasPrice"],
-  ["eth_feeHistory", "gst_feeHistory"],
-  ["eth_maxPriorityFeePerGas", "gst_maxPriorityFeePerGas"]
+// Upstream execution clients (geth/op-geth) still expose eth_* today, so the
+// proxy accepts ghost_* at the edge and translates the standard execution
+// methods back to eth_* when forwarding upstream.
+const EXECUTION_METHOD_SUFFIXES = new Set([
+  "accounts",
+  "blockNumber",
+  "call",
+  "chainId",
+  "coinbase",
+  "estimateGas",
+  "feeHistory",
+  "gasPrice",
+  "getBalance",
+  "getBlockByHash",
+  "getBlockByNumber",
+  "getBlockReceipts",
+  "getBlockTransactionCountByHash",
+  "getBlockTransactionCountByNumber",
+  "getCode",
+  "getFilterChanges",
+  "getFilterLogs",
+  "getLogs",
+  "getStorageAt",
+  "getTransactionByBlockHashAndIndex",
+  "getTransactionByBlockNumberAndIndex",
+  "getTransactionByHash",
+  "getTransactionCount",
+  "getTransactionReceipt",
+  "maxPriorityFeePerGas",
+  "newBlockFilter",
+  "newFilter",
+  "newPendingTransactionFilter",
+  "peerCount",
+  "protocolVersion",
+  "sendRawTransaction",
+  "sendTransaction",
+  "signTransaction",
+  "syncing",
+  "uninstallFilter",
+  "unsubscribe"
 ]);
 
-const METHOD_UPSTREAM_MAP = new Map([
-  ["gst_blockNumber", "eth_blockNumber"],
-  ["gst_chainId", "eth_chainId"],
-  ["gst_getBalance", "eth_getBalance"],
-  ["gst_getTransactionCount", "eth_getTransactionCount"],
-  ["gst_getBlockByNumber", "eth_getBlockByNumber"],
-  ["gst_getBlockByHash", "eth_getBlockByHash"],
-  ["gst_getCode", "eth_getCode"],
-  ["gst_call", "eth_call"],
-  ["gst_estimateGas", "eth_estimateGas"],
-  ["gst_gasPrice", "eth_gasPrice"],
-  ["gst_feeHistory", "eth_feeHistory"],
-  ["gst_maxPriorityFeePerGas", "eth_maxPriorityFeePerGas"]
-]);
+function mapAliasMethod(method, targetPrefix) {
+  const match = /^(ghost|gst|eth)_(.+)$/.exec(method);
+  if (!match) return "";
+  const suffix = match[2];
+  if (!EXECUTION_METHOD_SUFFIXES.has(suffix)) return "";
+  return `${targetPrefix}_${suffix}`;
+}
 
 function normalizeRpcMethod(method) {
   if (!method || typeof method !== "string") return { canonical: "", upstream: "", aliasFrom: "" };
   if (!RPC_ENABLE_GST_NAMESPACE) return { canonical: method, upstream: method, aliasFrom: "" };
 
-  const canonical = METHOD_CANONICAL_MAP.get(method) || method;
-  const upstream = METHOD_UPSTREAM_MAP.get(canonical) || canonical;
+  let canonical = method;
+  if (method.startsWith("eth_")) {
+    canonical = mapAliasMethod(method, "ghost") || method;
+  } else if (method.startsWith("gst_")) {
+    canonical = mapAliasMethod(method, "ghost") || method;
+  }
+
+  let upstream = canonical;
+  if (canonical.startsWith("ghost_")) {
+    upstream = mapAliasMethod(canonical, "eth") || canonical;
+  } else if (canonical.startsWith("gst_")) {
+    upstream = mapAliasMethod(canonical, "eth") || canonical;
+  }
+
   const aliasFrom = method !== canonical ? method : "";
   return { canonical, upstream, aliasFrom };
 }
@@ -314,7 +344,8 @@ const server = http.createServer(async (req, res) => {
     return json(res, 401, { ok: false, error: "auth_required" });
   }
 
-  // Apply RPC namespace remaps (eth_* compatibility -> gst_* canonical) at the proxy boundary.
+  // Apply RPC namespace remaps (ghost_* canonical, gst_*/eth_* compatibility)
+  // at the proxy boundary.
   const normalizeOne = (msg, clientIp) => {
     if (!msg || typeof msg !== "object" || typeof msg.method !== "string") return { msg, reject: false, canonical: "" };
     const { canonical, upstream, aliasFrom } = normalizeRpcMethod(msg.method);
@@ -335,7 +366,7 @@ const server = http.createServer(async (req, res) => {
 
   // If configured, warn on legacy namespace usage without breaking compatibility.
   if (RPC_DEPRECATE_LEGACY_NAMESPACE && anyEthNamespaceUsed) {
-    res.setHeader("x-ghost-rpc-warning", "legacy namespace deprecated; use gst_*");
+    res.setHeader("x-ghost-rpc-warning", "legacy namespace deprecated; use ghost_*");
   }
 
   // Hard reject eth_* namespace (opt-in) without touching upstream clients.
@@ -345,7 +376,7 @@ const server = http.createServer(async (req, res) => {
       const errOne = (m) => ({
         jsonrpc: "2.0",
         id: m?.msg?.id ?? null,
-        error: { code: -32000, message: `legacy namespace rejected; use ${m?.canonical || "gst_*"}` }
+        error: { code: -32000, message: `legacy namespace rejected; use ${m?.canonical || "ghost_*"}` }
       });
       return json(res, 200, Array.isArray(payload) ? rejected.map(errOne) : errOne(rejected[0]));
     }

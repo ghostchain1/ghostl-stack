@@ -59,7 +59,7 @@ services:
           --rollup.enabletxpooladmission=true \
           --rollup.disabletxpoolgossip=false
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:8545 >/dev/null"]
+      test: ["CMD-SHELL", "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ghost_blockNumber\",\"params\":[]}' http://localhost:8545 >/dev/null || wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:8545 >/dev/null"]
       interval: 20s
       timeout: 10s
       retries: 6

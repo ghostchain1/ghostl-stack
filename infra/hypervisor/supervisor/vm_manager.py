@@ -64,11 +64,11 @@ VMS: List[VM] = [
     VM("ghost-web",               "web",    "10.50.99.10"),
     VM("ghostchain-devnet",       "devnet", "38.247.149.219"),
     VM("ghostchain-testnet-l1",   "l1",     "10.50.99.71"),
-    VM("ghost-testnet-validator", "l1",     "10.50.99.73"),
+    VM("ghost-testnet-validator", "l1-validator", "10.50.99.73"),
     VM("ghostl2-testnet",         "l2",     "10.50.99.77"),
     VM("ghostl3-testnet",         "l3",     "10.50.99.79"),
     VM("ghostchain-mainnet-l1",   "l1",     "10.50.99.70"),
-    VM("ghost-mainnet-validator", "l1",     "10.50.99.72"),
+    VM("ghost-mainnet-validator", "l1-validator", "10.50.99.72"),
     VM("ghostl2-mainnet",         "l2",     "10.50.99.76"),
     VM("ghostl3-mainnet",         "l3",     "10.50.99.78"),
 ]
@@ -77,7 +77,7 @@ VM_BY_NAME: Dict[str, VM] = {v.name: v for v in VMS}
 
 # ── Boot order — lower number = boot first ────────────────────────────────────
 # Routing law: L1 → L2 → L3 (startup); L3 → L2 → L1 (settlement flow)
-_BOOT_ORDER = {"l1": 10, "l2": 20, "l3": 30, "dns": 1, "web": 40, "devnet": 5}
+_BOOT_ORDER = {"l1": 10, "l1-validator": 11, "l2": 20, "l3": 30, "dns": 1, "web": 40, "devnet": 5}
 
 
 def boot_priority(vm: VM) -> int:

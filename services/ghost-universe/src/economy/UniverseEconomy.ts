@@ -6,7 +6,7 @@
  *   - L2 (chain 901, :29545)  — land/asset settlement + rollup batching
  *   - L1 (chain 14000101, :18545) — treasury accumulation, final finality
  *
- * No Ethereum. No ETH. Only GST.
+ * Ghost-native economy only. GST only.
  */
 
 const L3_RPC  = 'http://localhost:39545';

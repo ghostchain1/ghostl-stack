@@ -2594,7 +2594,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -3258,7 +3258,7 @@
     "grafana": {
       "env_file": [
         {
-          "path": "monitoring/grafana.env",
+          "path": "monitoring/grafana.env.example",
           "required": true
         }
       ],
@@ -5342,7 +5342,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],

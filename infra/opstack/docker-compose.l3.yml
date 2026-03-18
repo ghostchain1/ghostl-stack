@@ -57,7 +57,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:8545 >/dev/null",
+          "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ghost_blockNumber\",\"params\":[]}' http://localhost:8545 >/dev/null || wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:8545 >/dev/null",
         ]
       interval: 30s
       timeout: 5s
@@ -193,7 +193,7 @@ services:
       - "${L3_PROPOSER_HOST_PORT:-39560}:${L3_PROPOSER_RPC_PORT:-18560}"
       - "${L3_METRICS_PROPOSER_HOST_PORT:-8302}:${L3_METRICS_PROPOSER_PORT:-8302}"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:${L3_PROPOSER_RPC_PORT:-18560} >/dev/null"]
+      test: ["CMD-SHELL", "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ghost_blockNumber\",\"params\":[]}' http://localhost:${L3_PROPOSER_RPC_PORT:-18560} >/dev/null || wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:${L3_PROPOSER_RPC_PORT:-18560} >/dev/null"]
       interval: 20s
       timeout: 10s
       retries: 6

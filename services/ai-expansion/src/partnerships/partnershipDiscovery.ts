@@ -1,5 +1,5 @@
 /**
- * PartnershipDiscovery — catalogue of Web3 & traditional tech partners to target.
+ * PartnershipDiscovery — catalogue of Ghost-native partners to target.
  */
 
 import logger from "../utils/logger";
@@ -17,18 +17,18 @@ export interface Partner {
 }
 
 export const PARTNERS: Partner[] = [
-  { id: "p1",  name: "MetaMask",        category: "wallet",         website: "metamask.io",          contacts: 3, relevance: 95, status: "identified", notes: "Add GhostChain network to MetaMask Snaps" },
-  { id: "p2",  name: "WalletConnect",   category: "infrastructure", website: "walletconnect.com",    contacts: 2, relevance: 90, status: "identified", notes: "WalletConnect v2 chain integration" },
-  { id: "p3",  name: "Chainlink",       category: "infrastructure", website: "chain.link",           contacts: 2, relevance: 88, status: "identified", notes: "CCIP bridge + Data Feeds on GhostL2" },
-  { id: "p4",  name: "Alchemy",         category: "infrastructure", website: "alchemy.com",          contacts: 1, relevance: 85, status: "proposed",   notes: "Node RPC provider for GhostChain" },
-  { id: "p5",  name: "The Graph",       category: "infrastructure", website: "thegraph.com",         contacts: 1, relevance: 82, status: "identified", notes: "Subgraph indexing for GhostChain" },
-  { id: "p6",  name: "Axelar",          category: "infrastructure", website: "axelar.network",       contacts: 2, relevance: 80, status: "identified", notes: "Cross-chain messaging layer" },
-  { id: "p7",  name: "Uniswap",         category: "defi",           website: "uniswap.org",          contacts: 1, relevance: 92, status: "identified", notes: "Deploy Uniswap v4 on GhostL2" },
-  { id: "p8",  name: "Aave",            category: "defi",           website: "aave.com",             contacts: 1, relevance: 89, status: "identified", notes: "Aave v3 lending markets on GhostL2" },
-  { id: "p9",  name: "Transak",         category: "payments",       website: "transak.com",          contacts: 1, relevance: 78, status: "proposed",   notes: "Fiat on/off-ramp for GST" },
-  { id: "p10", name: "MoonPay",         category: "payments",       website: "moonpay.com",          contacts: 1, relevance: 75, status: "identified", notes: "GST buy/sell widget" },
-  { id: "p11", name: "Immutable",       category: "gaming",         website: "immutable.com",        contacts: 1, relevance: 72, status: "identified", notes: "GhostL3 gaming chain partnership" },
-  { id: "p12", name: "Polygon Labs",    category: "infrastructure", website: "polygon.technology",   contacts: 2, relevance: 85, status: "identified", notes: "zkEVM bridging technology sharing" },
+  { id: "p1",  name: "GhostWallet",   category: "wallet",         website: "ghostchain.cloud/wallet",      contacts: 3, relevance: 95, status: "identified", notes: "Primary wallet path for GhostChain accounts" },
+  { id: "p2",  name: "GhostConnect",  category: "infrastructure", website: "ghostchain.cloud/connect",     contacts: 2, relevance: 90, status: "identified", notes: "Session relay for GhostWallet and app auth" },
+  { id: "p3",  name: "GhostOracle",   category: "infrastructure", website: "ghostchain.cloud/oracle",      contacts: 2, relevance: 88, status: "identified", notes: "Data feeds and settlement signals on GhostL2" },
+  { id: "p4",  name: "GhostRPC",      category: "infrastructure", website: "ghostchain.cloud/rpc",         contacts: 1, relevance: 85, status: "proposed",   notes: "Canonical RPC provider for GhostChain and rollups" },
+  { id: "p5",  name: "GhostIndex",    category: "infrastructure", website: "ghostchain.cloud/index",       contacts: 1, relevance: 82, status: "identified", notes: "Subgraph-style indexing for GhostChain" },
+  { id: "p6",  name: "GhostBridge",   category: "infrastructure", website: "ghostchain.cloud/bridge",      contacts: 2, relevance: 80, status: "identified", notes: "Message relay and bridge proofs across Ghost layers" },
+  { id: "p7",  name: "GhostXchange",  category: "defi",           website: "ghostchain.cloud/exchange",    contacts: 1, relevance: 92, status: "identified", notes: "Deep GST liquidity deployment on GhostL2" },
+  { id: "p8",  name: "GhostLend",     category: "defi",           website: "ghostchain.cloud/lend",        contacts: 1, relevance: 89, status: "identified", notes: "Credit and lending markets on GhostL2" },
+  { id: "p9",  name: "GhostPay",      category: "payments",       website: "ghostchain.cloud/pay",         contacts: 1, relevance: 78, status: "proposed",   notes: "On-ramp and treasury settlement flow for GST" },
+  { id: "p10", name: "GhostCheckout", category: "payments",       website: "ghostchain.cloud/checkout",    contacts: 1, relevance: 75, status: "identified", notes: "Embedded GST buy and checkout widgets" },
+  { id: "p11", name: "GhostArcade",   category: "gaming",         website: "ghostchain.cloud/arcade",      contacts: 1, relevance: 72, status: "identified", notes: "GhostL3 gaming chain partnership" },
+  { id: "p12", name: "GhostLabs",     category: "infrastructure", website: "ghostchain.cloud/labs",        contacts: 2, relevance: 85, status: "identified", notes: "Rollup, proving, and execution research for GhostStack" },
 ];
 
 export function discoverPartners(category?: string, minRelevance = 0): Partner[] {

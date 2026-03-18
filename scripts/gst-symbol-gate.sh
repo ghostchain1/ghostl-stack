@@ -7,6 +7,22 @@ cd "$ROOT_DIR"
 log() { printf '[gst-symbol-gate] %s\n' "$*"; }
 fail() { printf '[gst-symbol-gate][FAIL] %s\n' "$*" >&2; exit 1; }
 
+BASELINE_FILE="${BASELINE_FILE:-$ROOT_DIR/config/gst-symbol-baseline.txt}"
+MODE="${1:-check}"
+
+if [[ "$MODE" == "--help" || "$MODE" == "-h" ]]; then
+  cat <<'USAGE'
+Usage:
+  bash scripts/gst-symbol-gate.sh
+  bash scripts/gst-symbol-gate.sh --print
+  bash scripts/gst-symbol-gate.sh --update-baseline
+
+Env:
+  BASELINE_FILE=config/gst-symbol-baseline.txt
+USAGE
+  exit 0
+fi
+
 if ! command -v git >/dev/null 2>&1; then
   fail "missing required binary: git"
 fi
@@ -18,6 +34,8 @@ EXCLUDES=(
   ':!docs/gst-migration/**'
   ':!docs/rollback/**'
   ':!scripts/gst-symbol-gate.sh'
+  ':!config/gst-symbol-baseline.txt'
+  ':!config/gst-leakage-baseline.txt'
   ':!backups/**'
   ':!infra/docker/_backup/**'
   ':!infra/docker/runtime/**'
@@ -44,6 +62,8 @@ matches="$(
 # by scoping this check only to .json, .yml, .yaml, and .env* files, and using value-context patterns.
 ETH_CURRENCY_EXCLUDES=(
   ':!scripts/gst-symbol-gate.sh'
+  ':!config/gst-symbol-baseline.txt'
+  ':!config/gst-leakage-baseline.txt'
   ':!docs/**'
   ':!evidence/**'
   ':!backups/**'
@@ -71,6 +91,8 @@ eth_matches="$(
 # keyword so that branding remains sovereign and searchable.
 ETHER_SOL_EXCLUDES=(
   ':!scripts/gst-symbol-gate.sh'
+  ':!config/gst-symbol-baseline.txt'
+  ':!config/gst-leakage-baseline.txt'
   ':!contracts/lib/**'
   ':!contracts/test/**'
   ':!contracts/script/**'
@@ -83,46 +105,62 @@ ether_sol_matches="$(
   git grep -n -I -E '[0-9_] ether\b' -- 'contracts/src/**/*.sol' "${ETHER_SOL_EXCLUDES[@]}" || true
 )"
 
-if [ -z "$matches" ] && [ -z "$eth_matches" ] && [ -z "$ether_sol_matches" ]; then
-  log "OK: no forbidden legacy GHOST symbol tokens found. GATE PASSED"
+normalize_findings() {
+  local category="$1"
+  local raw="$2"
+  [ -n "$raw" ] || return 0
+  printf '%s\n' "$raw" | sed '/^$/d' | sed -E "s#^\./##; s#^([^:]+):[0-9]+:#\\1\t${category}\t#"
+}
+
+findings="$(
+  {
+    normalize_findings "legacy_symbol" "$matches"
+    normalize_findings "eth_currency" "$eth_matches"
+    normalize_findings "ether_unit" "$ether_sol_matches"
+  } | sort -u
+)"
+
+if [[ "$MODE" == "--print" ]]; then
+  printf '%s\n' "$findings"
+  exit 0
+fi
+
+if [[ "$MODE" == "--update-baseline" ]]; then
+  mkdir -p "$(dirname "$BASELINE_FILE")"
+  printf '%s\n' "$findings" >"$BASELINE_FILE"
+  log "Wrote baseline: ${BASELINE_FILE#$ROOT_DIR/}"
+  exit 0
+fi
+
+if [ ! -f "$BASELINE_FILE" ]; then
+  fail "missing baseline file: ${BASELINE_FILE#$ROOT_DIR/} (run: bash scripts/gst-symbol-gate.sh --update-baseline)"
+fi
+
+current="$(mktemp)"
+baseline="$(mktemp)"
+printf '%s\n' "$findings" | sed '/^$/d' | sort -u >"$current"
+sed 's#^\./##' "$BASELINE_FILE" | sort -u >"$baseline"
+
+new="$(comm -13 "$baseline" "$current" || true)"
+if [ -z "$new" ]; then
+  log "OK: no new forbidden legacy GHOST symbol tokens found. GATE PASSED"
   exit 0
 fi
 
 if [ -n "$matches" ]; then
-  {
-    echo "Forbidden legacy/non-canonical gas token symbols detected (GST-native policy violation):"
-    echo "  Banned: GHOST, gGHOST, GTK, GTL2, GTL3 — all layers must use GST (Ghost) as native currency."
-    echo
-    echo "$matches" | head -n 200
-    if [ "$(echo "$matches" | wc -l | tr -d ' ')" -gt 200 ]; then
-      echo "... (truncated)"
-    fi
-    echo
-    echo "If this is an intentional historical reference, move it under docs/gst-migration/ or docs/rollback/."
-  } >&2
+  :
 fi
 
-if [ -n "$eth_matches" ]; then
-  {
-    echo "ETH used as native currency symbol in config file (GST-native policy violation):"
-    echo "  All chains must declare nativeCurrency symbol = GST, not ETH."
-    echo "  Note: CLI flag names (--l1-eth-rpc) and RPC namespaces (eth_chainId) are NOT flagged by this rule."
-    echo
-    echo "$eth_matches" | head -n 50
-    echo
-    echo "Fix: set COIN=GST, GAS_TOKEN_SYMBOL=GST, or nativeCurrency.symbol=GST."
-  } >&2
-fi
-
-if [ -n "$ether_sol_matches" ]; then
-  {
-    echo "Raw 'ether' unit keyword found in Solidity src (GST branding policy violation):"
-    echo "  Use GST_UNIT (from GhostBrand.sol) instead of '1 ether' so branding stays sovereign and auditable."
-    echo
-    echo "$ether_sol_matches" | head -n 50
-    echo
-    echo "Fix: import GhostBrand.sol, inherit it, and use GST_UNIT in place of ether literals."
-  } >&2
-fi
+{
+  echo "New forbidden legacy/non-canonical gas token findings detected (GST-native policy violation):"
+  echo "  Banned: GHOST, gGHOST, GTK, GTL2, GTL3. Config ETH symbols and raw Solidity ether units are also blocked."
+  echo
+  printf '%s\n' "$new" | head -n 200
+  if [ "$(printf '%s\n' "$new" | wc -l | tr -d ' ')" -gt 200 ]; then
+    echo "... (truncated)"
+  fi
+  echo
+  echo "Baseline file: ${BASELINE_FILE#$ROOT_DIR/}"
+} >&2
 
 exit 1

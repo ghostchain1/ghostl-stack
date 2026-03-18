@@ -72,7 +72,7 @@ allow:
 
 # ── Deny rules (always block these) ──────────────────────────────────────────
 deny:
-  # Block external ETH/Ethereum chain references
+  # Block legacy external-chain namespace references
   - pathPrefix: /eth
     methods: [GET, POST, PUT, DELETE, PATCH]
     actors: ["*"]

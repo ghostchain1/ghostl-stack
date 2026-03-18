@@ -1,0 +1,155 @@
+{
+  "env": "devnet",
+  "generatedBy": "services/ghost-orchestrator",
+  "units": [
+    {
+      "id": "vm-ghostchain-devnet",
+      "name": "ghostchain-devnet",
+      "kind": "vm",
+      "layer": "hypervisor",
+      "env": "devnet",
+      "desiredState": "running",
+      "dependencies": [],
+      "governance": {
+        "actionClass": "safe-auto"
+      },
+      "metadata": {
+        "role": "build-authority",
+        "workspacePath": "/home/ghost/ghostl-stack"
+      }
+    },
+    {
+      "id": "chain-ghostchain-l1-devnet",
+      "name": "ghostchain-l1-devnet",
+      "kind": "chain",
+      "layer": "l1",
+      "env": "devnet",
+      "desiredState": "running",
+      "dependencies": [
+        "vm-ghostchain-devnet"
+      ],
+      "governance": {
+        "actionClass": "approval-required",
+        "advisoryProposalType": "devnet-release-readiness"
+      },
+      "checks": {
+        "rpcUrl": "http://host.docker.internal:18545"
+      },
+      "metadata": {
+        "chainId": 14000101,
+        "rpcPort": 18545,
+        "token": "GST"
+      }
+    },
+    {
+      "id": "chain-ghostl2-devnet",
+      "name": "ghostl2-devnet",
+      "kind": "chain",
+      "layer": "l2",
+      "env": "devnet",
+      "desiredState": "running",
+      "dependencies": [
+        "chain-ghostchain-l1-devnet"
+      ],
+      "governance": {
+        "actionClass": "approval-required",
+        "advisoryProposalType": "devnet-release-readiness"
+      },
+      "checks": {
+        "rpcUrl": "http://l2-geth:8545"
+      },
+      "metadata": {
+        "chainId": 901,
+        "rpcPort": 29547,
+        "routingLaw": "l3-via-l2-only"
+      }
+    },
+    {
+      "id": "chain-ghostl3-devnet",
+      "name": "ghostl3-devnet",
+      "kind": "chain",
+      "layer": "l3",
+      "env": "devnet",
+      "desiredState": "running",
+      "dependencies": [
+        "chain-ghostl2-devnet"
+      ],
+      "governance": {
+        "actionClass": "approval-required",
+        "advisoryProposalType": "devnet-release-readiness"
+      },
+      "checks": {
+        "rpcUrl": "http://l3-geth:8545"
+      },
+      "metadata": {
+        "chainId": 903,
+        "rpcPort": 39545,
+        "routingLaw": "l3-via-l2-only"
+      }
+    },
+    {
+      "id": "service-ghostbrain-core-devnet",
+      "name": "ghostbrain-core",
+      "kind": "service",
+      "layer": "ai",
+      "env": "devnet",
+      "desiredState": "running",
+      "dependencies": [
+        "chain-ghostchain-l1-devnet"
+      ],
+      "governance": {
+        "actionClass": "safe-auto"
+      },
+      "checks": {
+        "healthPath": "http://ghostbrain-core:7900/readyz"
+      },
+      "metadata": {
+        "port": 7900
+      }
+    },
+    {
+      "id": "service-ghost-promotion-engine-devnet",
+      "name": "ghost-promotion-engine",
+      "kind": "service",
+      "layer": "ops",
+      "env": "devnet",
+      "desiredState": "running",
+      "dependencies": [
+        "service-ghostbrain-core-devnet",
+        "chain-ghostchain-l1-devnet"
+      ],
+      "governance": {
+        "actionClass": "approval-required"
+      },
+      "checks": {
+        "healthPath": "http://ghost-promotion-engine:7951/health"
+      },
+      "metadata": {
+        "port": 7951
+      }
+    },
+    {
+      "id": "service-ghost-rollup-proposer-devnet",
+      "name": "ghost-rollup-proposer",
+      "kind": "service",
+      "layer": "ops",
+      "env": "devnet",
+      "desiredState": "maintenance",
+      "dependencies": [
+        "chain-ghostl2-devnet",
+        "chain-ghostl3-devnet"
+      ],
+      "governance": {
+        "actionClass": "approval-required",
+        "advisoryProposalType": "single-authoritative-proposer-claim"
+      },
+      "checks": {
+        "healthPath": "services/ghost-rollup-proposer/docker-compose.yml"
+      },
+      "metadata": {
+        "composeFile": "services/ghost-rollup-proposer/docker-compose.yml",
+        "ownership": "single-authoritative"
+      }
+    }
+  ]
+}

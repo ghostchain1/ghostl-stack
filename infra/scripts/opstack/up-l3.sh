@@ -37,6 +37,11 @@ source "$L3_ENV_FILE"
 [ -f "$OP_DIR/.env.l3" ] && source "$OP_DIR/.env.l3"
 set +a
 
+if [ "${L3_L1_RPC:-}" = "http://l2-geth:8545" ]; then
+  export L3_L1_RPC="http://op-gate:8545"
+  echo "Routing L3 parent RPC through op-gate for GhostStack blob compatibility."
+fi
+
 OP_GETH_IMAGE="${OP_GETH_IMAGE:-local/op-geth:${OPSTACK_IMAGE_TAG:-local}}"
 
 HOST_L3_RPC="${HOST_L3_RPC:-http://localhost:39545}"
@@ -54,6 +59,31 @@ L3_L1_CHAIN_JSON="$L3_CONFIG_DIR/l1-chain.json"
 L3_GENESIS_JSON="$L3_CONFIG_DIR/genesis.json"
 RESET_L3_OP_NODE="${RESET_L3_OP_NODE:-0}"
 L3_CHAIN_CONFIG_CHANGED=0
+ENABLE_L3_OP_BATCHER="${ENABLE_L3_OP_BATCHER:-auto}"
+PREV_L3_ROLLUP_BATCHER_ADDR="$(jq -r '.genesis.system_config.batcherAddr // empty' "$L3_ROLLUP_JSON" 2>/dev/null || true)"
+
+derive_address_from_key() {
+  local private_key="$1"
+  [ -n "$private_key" ] || return 1
+  node - "$ROOT" "$private_key" <<'NODE'
+const [root, privateKey] = process.argv.slice(2);
+process.chdir(root);
+const { Wallet } = require("ethers");
+process.stdout.write(new Wallet(privateKey.trim()).address);
+NODE
+}
+
+ACTIVE_L3_BATCH_SENDER_ADDRESS="${L3_BATCH_SENDER_ADDRESS:-${BATCH_SENDER_ADDRESS:-}}"
+ACTIVE_L3_BATCHER_KEY="${L3_BATCHER_KEY:-${BATCHER_KEY:-}}"
+if [ -n "$ACTIVE_L3_BATCHER_KEY" ]; then
+  if derived_l3_batcher_addr="$(derive_address_from_key "$ACTIVE_L3_BATCHER_KEY" 2>/dev/null)"; then
+    ACTIVE_L3_BATCH_SENDER_ADDRESS="$derived_l3_batcher_addr"
+  fi
+fi
+if [ -z "$ACTIVE_L3_BATCH_SENDER_ADDRESS" ]; then
+  echo "Missing active L3 batch sender address; set L3_BATCHER_KEY, BATCHER_KEY, L3_BATCH_SENDER_ADDRESS, or BATCH_SENDER_ADDRESS." >&2
+  exit 1
+fi
 
 check_required_code() {
   local label="$1" addr="$2" rpc="$3"
@@ -100,6 +130,20 @@ if ! curl -fsS -X POST "$HOST_L2_RPC" -H 'content-type: application/json' --data
   if ! hg_docker compose -f "$OP_DIR/docker-compose.yml" --env-file "$OP_DIR/.env" exec -T l2-geth wget -qO- --header='content-type: application/json' --post-data='{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "$L2_CONTAINER_RPC" >/dev/null 2>&1; then
     echo "L2 RPC $HOST_L2_RPC is not reachable; start L1/L2 first (infra/scripts/opstack/up-l2.sh)." >&2
     exit 1
+  fi
+fi
+
+L2_LATEST_JSON="$(curl -fsS -X POST "$HOST_L2_RPC" -H 'Content-Type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_getBlockByNumber","params":["latest", false]}')"
+L2_HAS_BLOB_FIELDS="$(printf '%s' "$L2_LATEST_JSON" | jq -r '(.result.excessBlobGas != null) and (.result.blobGasUsed != null)')"
+L3_BATCHER_SKIP_REASON=""
+case "${ENABLE_L3_OP_BATCHER}" in
+  0|false|FALSE|no|NO)
+    L3_BATCHER_SKIP_REASON="disabled by ENABLE_L3_OP_BATCHER=${ENABLE_L3_OP_BATCHER}"
+    ;;
+esac
+if [ "$ENABLE_L3_OP_BATCHER" = "auto" ] || [ -z "$ENABLE_L3_OP_BATCHER" ]; then
+  if [ "$L2_HAS_BLOB_FIELDS" != "true" ]; then
+    echo "L2 latest block has no blob gas fields; relying on op-gate synthetic blob compatibility for L3 batching."
   fi
 fi
 
@@ -177,6 +221,15 @@ if [ -n "$L2_GENESIS_HASH" ] && [ "$L2_GENESIS_HASH" != "null" ] && [ -f "$L3_RO
     "$L3_ROLLUP_JSON" >"$tmp_rollup" && mv "$tmp_rollup" "$L3_ROLLUP_JSON"
   chmod 644 "$L3_ROLLUP_JSON" || true
   echo "Set L3 rollup genesis.l1.hash=$L2_GENESIS_HASH number=$L2_PARENT_NUM_DEC"
+
+  tmp_rollup_batcher=$(mktemp)
+  jq --arg batcher "$ACTIVE_L3_BATCH_SENDER_ADDRESS" '.genesis.system_config.batcherAddr = $batcher' "$L3_ROLLUP_JSON" >"$tmp_rollup_batcher" && mv "$tmp_rollup_batcher" "$L3_ROLLUP_JSON"
+  chmod 644 "$L3_ROLLUP_JSON" || true
+  echo "Authorized L3 batch sender: $ACTIVE_L3_BATCH_SENDER_ADDRESS"
+fi
+
+if [ "$PREV_L3_ROLLUP_BATCHER_ADDR" != "$ACTIVE_L3_BATCH_SENDER_ADDRESS" ]; then
+  L3_CHAIN_CONFIG_CHANGED=1
 fi
 L2_CHAIN_ID="${L2_CHAIN_ID:-901}"
 L2_DATA_DIR="$OP_DIR/data/l2-geth-$L2_CHAIN_ID"
@@ -216,7 +269,16 @@ if [ "$synced_l1_chain" -ne 1 ] && [ -f "$OP_DIR/config/genesis-l2.json" ]; then
   echo "Synced L3 l1-chain.json from config/genesis-l2.json (gasToken stripped)."
 fi
 
+cd "$OP_DIR"
+COMPOSE_FILES=(-f "$OP_DIR/docker-compose.yml" -f "$OP_DIR/docker-compose.l3.yml")
+COMPOSE_ENV_ARGS=(--env-file "$OP_DIR/.env" --env-file "$L3_ENV_FILE")
+if [ -f "$OP_DIR/.env.secrets" ]; then
+  COMPOSE_ENV_ARGS+=(--env-file "$OP_DIR/.env.secrets")
+fi
+
 if [ -d "$L3_DATA_DIR/geth" ] && [ "$L3_CHAIN_CONFIG_CHANGED" -eq 1 ]; then
+  hg_docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" stop l3-geth l3-op-node l3-op-batcher >/dev/null 2>&1 || true
+  hg_docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" rm -f l3-geth l3-op-node l3-op-batcher >/dev/null 2>&1 || true
   ts=$(date +%Y%m%d-%H%M%S)
   backup_dir="$L3_DIR/backups-$ts"
   mkdir -p "$backup_dir"
@@ -227,14 +289,8 @@ if [ -d "$L3_DATA_DIR/geth" ] && [ "$L3_CHAIN_CONFIG_CHANGED" -eq 1 ]; then
 fi
 
 echo "Starting OP Stack L3 ($L3_NAME) geth..."
-cd "$OP_DIR"
-COMPOSE_FILES=(-f "$OP_DIR/docker-compose.yml" -f "$OP_DIR/docker-compose.l3.yml")
-COMPOSE_ENV_ARGS=(--env-file "$OP_DIR/.env" --env-file "$L3_ENV_FILE")
-if [ -f "$OP_DIR/.env.secrets" ]; then
-  COMPOSE_ENV_ARGS+=(--env-file "$OP_DIR/.env.secrets")
-fi
 # --no-deps prevents auto-starting L1/L2; assume up-l2.sh already ran.
-hg_docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" up -d --no-deps \
+hg_docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" up -d --no-deps --force-recreate \
   l3-geth
 
 echo "Waiting for L3 RPC..."
@@ -275,7 +331,15 @@ if [ "$RESET_L3_OP_NODE" = "1" ] && [ -d "$L3_OP_NODE_DIR" ]; then
   mkdir -p "$L3_OP_NODE_DIR"
   echo "Reset L3 op-node data dir (backup: $L3_DATA_DIR/op-node.bak-$ts)."
 fi
-hg_docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" up -d --no-deps --force-recreate \
-  l3-op-node l3-op-batcher
+
+l3_services=(l3-op-node)
+if [ -z "$L3_BATCHER_SKIP_REASON" ]; then
+  l3_services+=(l3-op-batcher)
+else
+  echo "Skipping l3-op-batcher: $L3_BATCHER_SKIP_REASON"
+  hg_docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" rm -sf l3-op-batcher >/dev/null 2>&1 || true
+fi
+
+hg_docker compose "${COMPOSE_FILES[@]}" "${COMPOSE_ENV_ARGS[@]}" up -d --no-deps --force-recreate "${l3_services[@]}"
 
 echo "OP Stack L3 up. L3=$HOST_L3_RPC"

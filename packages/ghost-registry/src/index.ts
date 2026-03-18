@@ -43,7 +43,7 @@ export const GhostNetworks = {
 
 export type GhostNetworkKey = keyof typeof GhostNetworks;
 
-/** Ghost token unit conversions (replaces ETH/Gwei/Wei naming). */
+/** Ghost token unit conversions for GST-native naming. */
 export const GhostUnits = {
   /** Smallest unit — 1 GST = 10^18 GhostUnits */
   GHOST_UNIT:  1n,
@@ -55,12 +55,12 @@ export const GhostUnits = {
 
 /** Branding replacement map — for documentation and tooling. */
 export const GhostBrandMap = {
-  "Ethereum":  "GhostChain",
+  "LegacyEvmChain": "GhostChain",
   "ERC20":     "GRC20",
   "ERC721":    "GRC721",
   "ERC1155":   "GRC1155",
   "eth_":      "ghost_",
-  "ethers.js": "GhostSDK",
+  "legacy-sdk-js": "GhostSDK",
   "Wei":       "GhostUnit",
   "Gwei":      "GhostGas",
   "web3":      "GhostSDK",

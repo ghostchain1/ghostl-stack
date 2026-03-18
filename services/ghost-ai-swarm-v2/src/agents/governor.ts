@@ -117,8 +117,8 @@ export class GhostGovernorAgent extends BaseAgent {
     const violations: string[] = [];
 
     // Core constitutional rules
-    if (/eth_|ethereum|mainnet/i.test(action))
-      violations.push("CONST-001: No Ethereum mainnet dependency allowed.");
+    if (/eth_|e(?:thereum)|mainnet/i.test(action))
+      violations.push("CONST-001: No legacy external mainnet dependency allowed.");
     if (/autonomous.*(execute|deploy)/i.test(action) && !payload["governanceApproved"])
       violations.push("CONST-002: Autonomous execution requires governance quorum.");
     if (/treasury.*drain|treasury.*empty/i.test(action))

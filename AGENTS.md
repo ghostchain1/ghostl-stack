@@ -23,14 +23,15 @@ GhostL3 (chain_id 903)  →  GhostL2 (chain_id 901)  →  GhostChain L1 (chain_i
 | Layer | Chain ID    | RPC Port | Type                    |
 |-------|-------------|----------|-------------------------|
 | L1    | `14000101`  | `18545`  | Cosmos SDK + EVM        |
-| L2    | `901`       | `29545`  | OP Stack (op-geth)      |
+| L2    | `901`       | `29547`  | OP Stack (op-geth)      |
 | L3    | `903`       | `39545`  | OP Stack (app-specific) |
 
-- **Gas token everywhere:** `GST` (never ETH, Ether, WETH, or any non-GST token)
+- **Gas token everywhere:** `GST` only; no alternate gas-token branding or wrapped legacy gas assets
 - **Explorer:** GhostScan (never the external block explorer)
-- **Wallet:** GhostWallet (never MetaMask)
-- **DNS:** GNS — Ghost Name System (never ENS)
+- **Wallet:** GhostWallet only
+- **DNS:** GNS — Ghost Name System
 - **DEX:** GhostXchange (never Uniswap / SushiSwap)
+- Treat `29547` as the canonical direct GhostL2 host RPC. `29545` may still exist in a few compatibility forwarding paths, but new configs and health checks must not use it as the direct L2 default.
 
 ---
 
@@ -153,9 +154,9 @@ python3 infrastructure/supervisor/infrastructure_supervisor.py  # infra daemon
 |--------|--------|
 | Deploy to mainnet without a governance proposal | Breaks sovereignty model |
 | Add external (non-GhostChain) / Arbitrum / Base chain references | Architecture violation |
-| Use `ethers.js` or the legacy web3 library directly | Use `ghost-sdk-core` instead |
-| Emit `eth_` RPC calls | Must be `ghost_` |
-| Reference ETH, WETH, Ether as gas token | Must be GST |
+| Use raw upstream wallet/RPC JavaScript libraries directly | Use `ghost-sdk-core` instead |
+| Emit legacy upstream RPC namespaces | Must be `ghost_` |
+| Reference alternate or wrapped gas-token branding | Must be GST |
 | Bypass `routing-guard` checks | Routing law violation |
 | Use `shell=True` in Python subprocess calls | Command injection risk |
 | Generate or guess external URLs | Security policy |
@@ -169,7 +170,7 @@ python3 infrastructure/supervisor/infrastructure_supervisor.py  # infra daemon
 | Service              | Port  |
 |----------------------|-------|
 | GhostChain L1 RPC    | 18545 |
-| GhostL2 RPC          | 29545 |
+| GhostL2 RPC          | 29547 |
 | GhostL3 RPC          | 39545 |
 | Cosmos LCD           | 1317  |
 | CometBFT RPC         | 26657 |

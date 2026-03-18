@@ -46,7 +46,7 @@ services:
       - DOCKER_SOCKET=/var/run/docker.sock
       - PROMETHEUS_URL=${PROMETHEUS_URL:-http://observability-prometheus:9090}
       - GHOSTCHAIN_L1_RPC=${GHOSTCHAIN_L1_RPC:-http://ghostchain-evm:18545}
-      - GHOSTCHAIN_L2_RPC=${GHOSTCHAIN_L2_RPC:-http://op-geth:29545}
+      - GHOSTCHAIN_L2_RPC=${GHOSTCHAIN_L2_RPC:-http://op-geth:29547}
       - GHOSTCHAIN_L3_RPC=${GHOSTCHAIN_L3_RPC:-http://op-geth-l3:39545}
       - SIGNING_RELAY_URL=${SIGNING_RELAY_URL:-http://signing-relay:7910}
       - REPAIR_DRY_RUN=${REPAIR_DRY_RUN:-0}
@@ -64,7 +64,7 @@ services:
       ghostbrain-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:7900/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:7900/readyz"]
       interval: 10s
       timeout: 5s
       retries: 5

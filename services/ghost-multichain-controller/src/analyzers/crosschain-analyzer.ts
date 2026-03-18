@@ -9,7 +9,7 @@
  * (a failing adapter yields an unhealthy snapshot rather than aborting the cycle).
  */
 import type { MultichainState, ChainSnapshot, BridgeInfo } from "../types.js";
-import { getEthereumSnapshot } from "../adapters/ethereum-adapter.js";
+import { getGhostbridgeSnapshot } from "../adapters/ghostbridge-adapter.js";
 import { getPolygonSnapshot }  from "../adapters/polygon-adapter.js";
 import { getArbitrumSnapshot } from "../adapters/arbitrum-adapter.js";
 import { getSolanaSnapshot }   from "../adapters/solana-adapter.js";
@@ -45,9 +45,9 @@ function buildBridges(snapshots: ChainSnapshot[]): BridgeInfo[] {
 
 export async function analyzeCrosschain(): Promise<MultichainState> {
   // Query all 5 external chain adapters in parallel — each fails gracefully
-  const [ethSnap, polySnap, arbSnap, solSnap, cosmosSnap] = await Promise.all([
-    getEthereumSnapshot().catch(err => ({
-      chainId: "ethereum" as const, blockHeight: "0", healthy: false,
+  const [ghostbridgeSnap, polySnap, arbSnap, solSnap, cosmosSnap] = await Promise.all([
+    getGhostbridgeSnapshot().catch(err => ({
+      chainId: "ghostbridge" as const, blockHeight: "0", healthy: false,
       latencyMs: 0, timestamp: Date.now(), error: String(err),
     })),
     getPolygonSnapshot().catch(err => ({
@@ -68,7 +68,7 @@ export async function analyzeCrosschain(): Promise<MultichainState> {
     })),
   ]);
 
-  const snapshots: ChainSnapshot[] = [ethSnap, polySnap, arbSnap, solSnap, cosmosSnap];
+  const snapshots: ChainSnapshot[] = [ghostbridgeSnap, polySnap, arbSnap, solSnap, cosmosSnap];
   const bridges  = buildBridges(snapshots);
 
   // Build a partial state for the pool/market analyzers

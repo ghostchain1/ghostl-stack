@@ -246,6 +246,30 @@ const wsCall = async (url: string, method: string, timeoutMs: number) =>
     };
   });
 
+const rpcCallWithFallback = async (url: string, methods: string[], timeoutMs: number) => {
+  let lastError: Error | null = null;
+  for (const method of methods) {
+    try {
+      return await rpcCall(url, method, timeoutMs);
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+    }
+  }
+  throw lastError ?? new Error('rpc_probe_failed');
+};
+
+const wsCallWithFallback = async (url: string, methods: string[], timeoutMs: number) => {
+  let lastError: Error | null = null;
+  for (const method of methods) {
+    try {
+      return await wsCall(url, method, timeoutMs);
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+    }
+  }
+  throw lastError ?? new Error('ws_probe_failed');
+};
+
 const nowIso = () => new Date().toISOString();
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -430,12 +454,12 @@ export class HealthChecker {
       try {
         const chainId =
           endpoint.protocol === 'ws'
-            ? await wsCall(endpoint.url, 'ghost_chainId', this.timeoutMs)
-            : await rpcCall(endpoint.url, 'ghost_chainId', this.timeoutMs);
+            ? await wsCallWithFallback(endpoint.url, ['ghost_chainId', 'eth_chainId'], this.timeoutMs)
+            : await rpcCallWithFallback(endpoint.url, ['ghost_chainId', 'eth_chainId'], this.timeoutMs);
         const blockNumber =
           endpoint.protocol === 'ws'
-            ? await wsCall(endpoint.url, 'ghost_blockNumber', this.timeoutMs)
-            : await rpcCall(endpoint.url, 'ghost_blockNumber', this.timeoutMs);
+            ? await wsCallWithFallback(endpoint.url, ['ghost_blockNumber', 'eth_blockNumber'], this.timeoutMs)
+            : await rpcCallWithFallback(endpoint.url, ['ghost_blockNumber', 'eth_blockNumber'], this.timeoutMs);
         if (chainId !== endpoint.chainId) throw new Error('chainId_mismatch');
         if (!Number.isFinite(blockNumber)) throw new Error('blockNumber_invalid');
         this.recordSuccess(key, Date.now() - started);

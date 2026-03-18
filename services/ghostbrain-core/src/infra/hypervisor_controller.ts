@@ -15,11 +15,11 @@ import { collectDockerSnapshots }  from "./docker_controller.js";
 import { learn }                   from "../cognition/learning_engine.js";
 import { decide }                  from "../cognition/decision_engine.js";
 import { getInfraHistory }         from "../memory/infrastructure_memory.js";
-import { request }                 from "undici";
+import { resolveRpcEndpoint, rpcAlive } from "../rpc/compat.js";
 
-const L1_RPC = process.env.GHOSTCHAIN_L1_RPC ?? "http://localhost:18545";
-const L2_RPC = process.env.GHOSTCHAIN_L2_RPC ?? "http://localhost:29545";
-const L3_RPC = process.env.GHOSTCHAIN_L3_RPC ?? "http://localhost:39545";
+const L1_RPC = resolveRpcEndpoint(["GHOSTCHAIN_L1_RPC"], ["GHOST_L1_RPC_URLS"], "http://localhost:18545");
+const L2_RPC = resolveRpcEndpoint(["GHOSTCHAIN_L2_RPC"], ["GHOST_L2_RPC_URLS"], "http://localhost:29547");
+const L3_RPC = resolveRpcEndpoint(["GHOSTCHAIN_L3_RPC"], ["GHOST_L3_RPC_URLS"], "http://localhost:39545");
 
 const COLLECT_INTERVAL_MS = Number(process.env.GHOSTBRAIN_COLLECT_INTERVAL_MS ?? 30_000);
 
@@ -36,33 +36,30 @@ let _intervalHandle: ReturnType<typeof setInterval> | null = null;
 
 /** Check if a GhostChain RPC endpoint is alive. */
 async function checkChainHealth(rpc: string, chain: string): Promise<boolean> {
-  try {
-    const res = await request(rpc, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", method: "ghost_blockNumber", params: [], id: 1 }),
-      bodyTimeout: 4_000,
+  const probe = await rpcAlive(rpc, 4_000);
+  if (probe.alive) {
+    void learn({
+      type: "infra_snap",
+      resourceId: chain,
+      layer: "chain",
+      cpuPct: 0,
+      memPct: 0,
+      healthy: true,
+      meta: { rpc, method: probe.method, blockNumber: probe.blockNumber },
     });
-    return res.statusCode === 200;
-  } catch {
-    // Chain might use eth_ namespace fallback
-    try {
-      const res2 = await request(rpc, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", method: "eth_blockNumber", params: [], id: 1 }),
-        bodyTimeout: 4_000,
-
-      });
-      if (res2.statusCode !== 200) return false;
-      // Feed into learning
-      void learn({ type: "infra_snap", resourceId: chain, layer: "chain", cpuPct: 0, memPct: 0, healthy: true });
-      return true;
-    } catch {
-      void learn({ type: "infra_snap", resourceId: chain, layer: "chain", cpuPct: 0, memPct: 100, healthy: false, meta: { rpc } });
-      return false;
-    }
+    return true;
   }
+
+  void learn({
+    type: "infra_snap",
+    resourceId: chain,
+    layer: "chain",
+    cpuPct: 0,
+    memPct: 100,
+    healthy: false,
+    meta: { rpc, error: probe.error },
+  });
+  return false;
 }
 
 /** One full observe cycle: collect → learn → decide on critical resources. */

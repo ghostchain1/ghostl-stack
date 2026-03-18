@@ -6,19 +6,19 @@
  * memory / event system for pattern analysis and anomaly detection.
  *
  * Chain IDs:  L1 = 14000101 (port 18545)
- *             L2 = 901      (port 29545)
+ *             L2 = 901      (port 29547)
  *             L3 = 903      (port 39545)
  */
 
-import { GhostJsonRpc }    from "@ghostchain/ghost-sdk-core";
 import { store_event } from "../memory_engine.js";
 import { log }         from "../observability/event_logger.js";
+import { resolveRpcEndpoint, rpcBlockNumber, rpcGasPrice } from "../rpc/compat.js";
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
-const L1_RPC = process.env.L1_RPC_URL ?? "http://localhost:18545";
-const L2_RPC = process.env.L2_RPC_URL ?? "http://localhost:29545";
-const L3_RPC = process.env.L3_RPC_URL ?? "http://localhost:39545";
+const L1_RPC = resolveRpcEndpoint(["L1_RPC_URL", "GHOSTCHAIN_L1_RPC"], ["GHOST_L1_RPC_URLS"], "http://localhost:18545");
+const L2_RPC = resolveRpcEndpoint(["L2_RPC_URL", "GHOSTCHAIN_L2_RPC"], ["GHOST_L2_RPC_URLS"], "http://localhost:29547");
+const L3_RPC = resolveRpcEndpoint(["L3_RPC_URL", "GHOSTCHAIN_L3_RPC"], ["GHOST_L3_RPC_URLS"], "http://localhost:39545");
 
 const SAMPLE_INTERVAL_MS  = Number(process.env.CHAIN_SAMPLE_INTERVAL_MS  ?? "15000");
 const GAS_SPIKE_THRESHOLD = Number(process.env.CHAIN_GAS_SPIKE_THRESHOLD  ?? "2.0"); // multiplier vs baseline
@@ -54,32 +54,18 @@ const _gasBaseline = new Map<ChainLayer, bigint>(); // rolling baseline gas pric
 let   _sampleCount = 0;
 let   _timer: ReturnType<typeof setInterval> | null = null;
 
-// ── RPC helpers ───────────────────────────────────────────────────────────────
-
-const _rpcClients = new Map<string, GhostJsonRpc>();
-
-function rpcClientFor(url: string): GhostJsonRpc {
-  let c = _rpcClients.get(url);
-  if (!c) { c = new GhostJsonRpc(url, { timeoutMs: 8_000 }); _rpcClients.set(url, c); }
-  return c;
-}
-
-async function rpcCall<T>(url: string, method: string, params: unknown[] = []): Promise<T> {
-  return rpcClientFor(url).request<T>(method, params);
-}
-
 // ── Sampling ──────────────────────────────────────────────────────────────────
 
 async function sampleChain(layer: ChainLayer, rpcUrl: string, chainId: number): Promise<void> {
   const t0 = Date.now();
   try {
-    const [blockHex, gasPriceHex] = await Promise.all([
-      rpcCall<string>(rpcUrl, "ghost_blockNumber"),
-      rpcCall<string>(rpcUrl, "ghost_gasPrice"),
+    const [blockProbe, gasPriceProbe] = await Promise.all([
+      rpcBlockNumber(rpcUrl, 8_000),
+      rpcGasPrice(rpcUrl, 8_000),
     ]);
     const latencyMs   = Date.now() - t0;
-    const blockNumber = parseInt(blockHex, 16);
-    const gasPrice    = BigInt(gasPriceHex);
+    const blockNumber = blockProbe.blockNumber;
+    const gasPrice    = gasPriceProbe.gasPrice;
 
     // Update gas baseline (exponential moving average)
     const prev = _gasBaseline.get(layer) ?? gasPrice;

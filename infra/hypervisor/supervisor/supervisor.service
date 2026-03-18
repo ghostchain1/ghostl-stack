@@ -9,12 +9,13 @@ Requires=libvirtd.service
 Type=simple
 User=root
 WorkingDirectory=/home/ghost/ghostl-stack/infra/hypervisor/supervisor
+EnvironmentFile=-/etc/ghoststack/supervisor.env
 
 # ── Core settings ──────────────────────────────────────────────────────────────
 Environment=LISTEN_ADDR=0.0.0.0
 Environment=LISTEN_PORT=9108
 Environment=SCRAPE_INTERVAL=10
-Environment=VIRSH_URI=qemu:///system
+Environment=VIRSH_URI=qemu+ssh://ghost@192.168.122.1/system?keyfile=/home/ghost/.ssh/hypervisor_access&no_verify=1
 Environment=LIBVIRT_NETWORK=gs-mgmt
 
 # ── RPC ports (must match provisioned values) ──────────────────────────────────

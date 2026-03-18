@@ -1,0 +1,158 @@
+{
+  "env": "testnet",
+  "generatedBy": "services/ghost-orchestrator",
+  "units": [
+    {
+      "id": "vm-ghostchain-testnet-l1",
+      "name": "ghostchain-testnet-l1",
+      "kind": "vm",
+      "layer": "hypervisor",
+      "env": "testnet",
+      "desiredState": "running",
+      "dependencies": [],
+      "governance": {
+        "actionClass": "safe-auto"
+      },
+      "metadata": {
+        "role": "testnet-l1"
+      }
+    },
+    {
+      "id": "vm-ghost-testnet-validator",
+      "name": "ghost-testnet-validator",
+      "kind": "vm",
+      "layer": "hypervisor",
+      "env": "testnet",
+      "desiredState": "running",
+      "dependencies": [
+        "vm-ghostchain-testnet-l1"
+      ],
+      "governance": {
+        "actionClass": "safe-auto"
+      },
+      "metadata": {
+        "role": "validator"
+      }
+    },
+    {
+      "id": "vm-ghostl2-testnet",
+      "name": "ghostl2-testnet",
+      "kind": "vm",
+      "layer": "hypervisor",
+      "env": "testnet",
+      "desiredState": "running",
+      "dependencies": [
+        "vm-ghostchain-testnet-l1"
+      ],
+      "governance": {
+        "actionClass": "safe-auto"
+      },
+      "metadata": {
+        "role": "testnet-l2"
+      }
+    },
+    {
+      "id": "vm-ghostl3-testnet",
+      "name": "ghostl3-testnet",
+      "kind": "vm",
+      "layer": "hypervisor",
+      "env": "testnet",
+      "desiredState": "running",
+      "dependencies": [
+        "vm-ghostl2-testnet"
+      ],
+      "governance": {
+        "actionClass": "safe-auto"
+      },
+      "metadata": {
+        "role": "testnet-l3"
+      }
+    },
+    {
+      "id": "chain-ghostchain-l1-testnet",
+      "name": "ghostchain-l1-testnet",
+      "kind": "chain",
+      "layer": "l1",
+      "env": "testnet",
+      "desiredState": "running",
+      "dependencies": [
+        "vm-ghostchain-testnet-l1"
+      ],
+      "governance": {
+        "actionClass": "approval-required",
+        "advisoryProposalType": "testnet-promotion"
+      },
+      "checks": {
+        "rpcUrl": "http://localhost:18545"
+      },
+      "metadata": {
+        "chainId": 14000101
+      }
+    },
+    {
+      "id": "chain-ghostl2-testnet",
+      "name": "ghostl2-testnet",
+      "kind": "chain",
+      "layer": "l2",
+      "env": "testnet",
+      "desiredState": "running",
+      "dependencies": [
+        "chain-ghostchain-l1-testnet"
+      ],
+      "governance": {
+        "actionClass": "approval-required",
+        "advisoryProposalType": "testnet-promotion"
+      },
+      "checks": {
+        "rpcUrl": "http://localhost:29547"
+      },
+      "metadata": {
+        "chainId": 901
+      }
+    },
+    {
+      "id": "chain-ghostl3-testnet",
+      "name": "ghostl3-testnet",
+      "kind": "chain",
+      "layer": "l3",
+      "env": "testnet",
+      "desiredState": "running",
+      "dependencies": [
+        "chain-ghostl2-testnet"
+      ],
+      "governance": {
+        "actionClass": "approval-required",
+        "advisoryProposalType": "testnet-promotion"
+      },
+      "checks": {
+        "rpcUrl": "http://localhost:39545"
+      },
+      "metadata": {
+        "chainId": 903
+      }
+    },
+    {
+      "id": "service-ghost-rollup-proposer-testnet",
+      "name": "ghost-rollup-proposer",
+      "kind": "service",
+      "layer": "ops",
+      "env": "testnet",
+      "desiredState": "maintenance",
+      "dependencies": [
+        "chain-ghostl2-testnet",
+        "chain-ghostl3-testnet"
+      ],
+      "governance": {
+        "actionClass": "approval-required",
+        "advisoryProposalType": "single-authoritative-proposer-claim"
+      },
+      "checks": {
+        "healthPath": "services/ghost-rollup-proposer/docker-compose.yml"
+      },
+      "metadata": {
+        "composeFile": "services/ghost-rollup-proposer/docker-compose.yml",
+        "ownership": "single-authoritative"
+      }
+    }
+  ]
+}

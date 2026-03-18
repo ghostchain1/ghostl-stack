@@ -1,15 +1,17 @@
-FROM node:22-slim
+FROM node:22-slim AS runner
 RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 COPY package.json package-lock.json ./
+COPY scripts scripts
 COPY tsconfig.base.json .
 COPY packages packages
 COPY observability observability
 COPY apps/api apps/api
 
-RUN npm install --legacy-peer-deps
+RUN npm ci --legacy-peer-deps
+RUN npm run build -w packages/ghost-sdk
 
 # Install tsx for TypeScript execution
 RUN npm install -g tsx

@@ -57,6 +57,23 @@ let currentRun: RunStatus = {
   gitHash:    "",
 };
 
+function buildMetrics(): string {
+  return [
+    "# HELP ghostbrain_simulator_running Whether a simulation run is currently active.",
+    "# TYPE ghostbrain_simulator_running gauge",
+    `ghostbrain_simulator_running ${currentRun.running ? 1 : 0}`,
+    "# HELP ghostbrain_simulator_done Whether the latest simulation run completed.",
+    "# TYPE ghostbrain_simulator_done gauge",
+    `ghostbrain_simulator_done ${currentRun.done ? 1 : 0}`,
+    "# HELP ghostbrain_simulator_passed Whether the latest simulation run passed.",
+    "# TYPE ghostbrain_simulator_passed gauge",
+    `ghostbrain_simulator_passed ${currentRun.passed ? 1 : 0}`,
+    "# HELP ghostbrain_simulator_score Latest simulation score.",
+    "# TYPE ghostbrain_simulator_score gauge",
+    `ghostbrain_simulator_score ${currentRun.score}`,
+  ].join("\n") + "\n";
+}
+
 // ── Score computation ─────────────────────────────────────────────────────────
 function computeScore(results: Record<string, Record<string, unknown>>): number {
   let total = 0;
@@ -151,6 +168,10 @@ app.get("/health", (_req: Request, res: Response) => {
 
 app.get("/status", (_req: Request, res: Response) => {
   res.json({ service: "ghostbrain-simulator", ...currentRun, dryRun: DRY_RUN });
+});
+
+app.get("/metrics", (_req: Request, res: Response) => {
+  res.type("text/plain").send(buildMetrics());
 });
 
 app.get("/results/latest", (_req: Request, res: Response) => {

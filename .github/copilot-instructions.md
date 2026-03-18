@@ -8,7 +8,7 @@
 
 ```
 GhostChain L1 (chain_id=14000101, RPC :18545)
-  └── GhostL2   (chain_id=901,       RPC :29545)  — OP Stack, anchored to L1 via L1GhostPortal
+  └── GhostL2   (chain_id=901,       RPC :29547)  — OP Stack, anchored to L1 via L1GhostPortal
         └── GhostL3 (chain_id=903,   RPC :39545)  — OP Stack, anchored to L2
 ```
 
@@ -142,7 +142,7 @@ ghostl-stack/
 │   ├── branding/                    # audit & enforce GhostChain branding (15-layer rules)
 │   ├── governance/                  # proposal builders
 │   └── sovereignty/                 # SED engine (scan/enforce/rewrite sovereignty rules)
-├── docker-compose.yml               # canonical devnet
+├── docker-compose.yml               # compliance-only root compose (not the canonical devnet launcher)
 └── stack.env.example                # service URLs, chain IDs, ports — copy to .env
 ```
 
@@ -202,7 +202,7 @@ Always use GhostChain branding. The `npm run brand:full` audit enforces this at 
 | Service | Port |
 |---|---|
 | GhostChain L1 RPC | 18545 |
-| GhostL2 RPC | 29545 |
+| GhostL2 RPC | 29547 |
 | GhostL3 RPC | 39545 |
 | Cosmos LCD | 1317 |
 | CometBFT RPC | 26657 |
@@ -232,7 +232,8 @@ POSTGRES_PASSWORD=<set>
 COMPLIANCE_JWT_SECRET=<set>
 
 # 3. Start devnet
-docker compose up -d
+# Use the compose bundle or launch-system flow for the layer you are bringing up.
+# See launch-system/README-LAUNCH.md and do not treat the root docker-compose.yml as the canonical devnet launcher.
 
 # 4. Cosmos sovereign chain (optional, separate)
 # ghostchaind binary at /tmp/ghostchaind

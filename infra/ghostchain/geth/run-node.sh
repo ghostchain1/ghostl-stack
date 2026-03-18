@@ -27,6 +27,11 @@ HTTP_VHOSTS=${HTTP_VHOSTS:-localhost,127.0.0.1}
 HTTP_CORS=${HTTP_CORS:-http://localhost,http://127.0.0.1}
 WS_ORIGINS=${WS_ORIGINS:-http://localhost,http://127.0.0.1}
 AUTHRPC_VHOSTS=${AUTHRPC_VHOSTS:-localhost,127.0.0.1}
+PASSWORD_FILE=${PASSWORD_FILE:-/secrets/password.txt}
+
+if [ ! -f "$PASSWORD_FILE" ] && [ -f /config/password.txt ]; then
+  PASSWORD_FILE=/config/password.txt
+fi
 
 if [ ! -d "$DATADIR/geth" ]; then
   echo "Datadir not initialized. Run scripts/init.sh first." >&2
@@ -36,7 +41,11 @@ fi
 MINING_ARGS=""
 case "$MINING_ENABLED" in
   1|true|TRUE|yes|YES)
-    MINING_ARGS="--mine --miner.etherbase=$SIGNER --unlock $SIGNER --password /config/password.txt --allow-insecure-unlock"
+    if [ ! -f "$PASSWORD_FILE" ]; then
+      echo "Password file not found: $PASSWORD_FILE" >&2
+      exit 1
+    fi
+    MINING_ARGS="--mine --miner.etherbase=$SIGNER --unlock $SIGNER --password $PASSWORD_FILE --allow-insecure-unlock"
     ;;
 esac
 

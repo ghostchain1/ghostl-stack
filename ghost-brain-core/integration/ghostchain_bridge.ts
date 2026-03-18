@@ -18,7 +18,7 @@
  *   - No autonomous on-chain execution without governance quorum.
  *
  * Chain routing law:
- *   - L1 only (chain_id 14000101). Never Ethereum mainnet or any
+ *   - L1 only (chain_id 14000101). Never any external mainnet or
  *     non-GhostChain network.
  *   - All gas denominated in GST.
  *
@@ -62,7 +62,7 @@ async function ghostCall<T>(
 }
 
 // ── ABI encoding — minimal inline ─────────────────────────────────────────
-// We do not use ethers.js. Encoding is done explicitly for the small subset
+// We do not use the legacy compatibility SDK here. Encoding is done explicitly for the small subset
 // of contract functions GhostBrain calls.
 
 function encodeUint256(n: bigint): string {

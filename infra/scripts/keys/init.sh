@@ -33,6 +33,24 @@ for f in "$guard_env" "$relayer_env" "$proposer_l2_env" "$proposer_l3_env" "$cha
   fi
 done
 
+COMPOSE_DIR="$ROOT_DIR/.devcontainer"
+COMPOSE_FILE="$COMPOSE_DIR/docker-compose.yml"
+if [ ! -f "$COMPOSE_FILE" ]; then
+  COMPOSE_DIR="$ROOT_DIR/services"
+  COMPOSE_FILE="$COMPOSE_DIR/docker-compose.yml"
+  if [ ! -f "$COMPOSE_FILE" ]; then
+    COMPOSE_FILE="$COMPOSE_DIR/docker-compose.legacy.yml"
+  fi
+fi
+COMPOSE_ARGS=(-f "$COMPOSE_FILE")
+if [ "$COMPOSE_DIR" = "$ROOT_DIR/services" ] && [ -f "$COMPOSE_DIR/stack.env" ]; then
+  COMPOSE_ARGS=(--env-file "$COMPOSE_DIR/stack.env" -f "$COMPOSE_FILE")
+fi
+compose_service_exists() {
+  local svc="$1"
+  hg_docker compose "${COMPOSE_ARGS[@]}" config --services 2>/dev/null | grep -qx "$svc"
+}
+
 if [ -f "$OP_ENV" ]; then
   set -a
   # shellcheck disable=SC1090
@@ -93,9 +111,15 @@ echo "  challenger(l2->l1): $challenger_l2_addr"
 echo "  challenger(l3->l2): $challenger_l3_addr"
 
 echo "Pausing proposers during funding (avoids nonce collisions)..."
-cd "$ROOT_DIR/.devcontainer"
-hg_docker compose stop --no-deps ghost-rollup-proposer-l2 ghost-rollup-proposer-l3 >/dev/null 2>&1 || true
-hg_docker compose stop --no-deps ghost-rollup-challenger-l2 ghost-rollup-challenger-l3 >/dev/null 2>&1 || true
+pause_services=()
+for svc in ghost-rollup-proposer ghost-rollup-proposer-l2 ghost-rollup-proposer-l3 ghost-rollup-challenger ghost-rollup-challenger-l2 ghost-rollup-challenger-l3; do
+  if compose_service_exists "$svc"; then
+    pause_services+=("$svc")
+  fi
+done
+if [ "${#pause_services[@]}" -gt 0 ]; then
+  hg_docker compose "${COMPOSE_ARGS[@]}" stop --no-deps "${pause_services[@]}" >/dev/null 2>&1 || true
+fi
 
 HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:18545}"
 HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
@@ -145,13 +169,18 @@ fund_list="$(
 )
 
 echo "Restarting services to pick up updated env..."
-hg_docker compose up -d --no-deps --force-recreate \
-  ghost-guard ghost-relayer \
-  ghost-rollup-proposer-l2 ghost-rollup-proposer-l3 \
-  ghost-rollup-challenger-l2 ghost-rollup-challenger-l3 >/dev/null
+restart_services=()
+for svc in ghost-guard ghost-relayer ghost-rollup-proposer ghost-rollup-proposer-l2 ghost-rollup-proposer-l3 ghost-rollup-challenger ghost-rollup-challenger-l2 ghost-rollup-challenger-l3; do
+  if compose_service_exists "$svc"; then
+    restart_services+=("$svc")
+  fi
+done
+if [ "${#restart_services[@]}" -gt 0 ]; then
+  hg_docker compose "${COMPOSE_ARGS[@]}" up -d --no-deps --force-recreate "${restart_services[@]}" >/dev/null
+fi
 
 echo "Done."
 echo "Guard:   http://localhost:7070/health"
 echo "Relayer: http://localhost:7171/health"
-echo "PropL2:  http://localhost:7272/health"
-echo "PropL3:  http://localhost:7373/health"
+echo "PropL3:  http://localhost:7272/health"
+echo "PropL2:  http://localhost:7273/health"

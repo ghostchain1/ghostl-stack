@@ -10,8 +10,8 @@
  *
  * Valid route pairs  (origin : destination):
  *   Internal hops  → L3:L2, L2:L1, L1:L2, L2:L3
- *   Outbound L1    → L1:ethereum, L1:polygon, L1:arbitrum, L1:solana, L1:cosmos
- *   Inbound L1     → ethereum:L1, polygon:L1, arbitrum:L1, solana:L1, cosmos:L1
+ *   Outbound L1    → L1:ghostbridge, L1:polygon, L1:arbitrum, L1:solana, L1:cosmos
+ *   Inbound L1     → ghostbridge:L1, polygon:L1, arbitrum:L1, solana:L1, cosmos:L1
  *
  * Forbidden:
  *   L2→external, L3→external, L3→L1 (must hop via L2)
@@ -22,9 +22,9 @@ const VALID_ROUTE_KEYS = new Set<string>([
   // Internal GhostStack hops
   "L3:L2", "L2:L1", "L1:L2", "L2:L3",
   // Outbound from L1 to external chains
-  "L1:ethereum", "L1:polygon", "L1:arbitrum", "L1:solana", "L1:cosmos",
+  "L1:ghostbridge", "L1:polygon", "L1:arbitrum", "L1:solana", "L1:cosmos",
   // Inbound from external chains into L1
-  "ethereum:L1", "polygon:L1", "arbitrum:L1", "solana:L1", "cosmos:L1",
+  "ghostbridge:L1", "polygon:L1", "arbitrum:L1", "solana:L1", "cosmos:L1",
 ]);
 
 export function validateRoute(route: CrossChainRoute): void {

@@ -9,8 +9,8 @@ import dotenv                from "dotenv";
 dotenv.config();
 
 import logger                from "./utils/logger";
-import { getAllExchanges, getApplications }     from "./exchanges/exchangeScanner";
-import { runListingCycle }                      from "./exchanges/listingEngine";
+import { getExchanges }                         from "./exchanges/exchangeScanner";
+import { getApplications, runListingCycle }    from "./exchanges/listingEngine";
 import { getAllMedia }                          from "./media/mediaDiscovery";
 import { createPressRelease, getReleases }      from "./media/pressReleaseAI";
 import { discoverPartners, summaryByCategory }  from "./partnerships/partnershipDiscovery";
@@ -29,7 +29,7 @@ app.get("/health", (_req, res) => {
 });
 
 // ── Exchanges ────────────────────────────────────────────────────────────────
-app.get("/exchanges",             (_req, res) => res.json(getAllExchanges()));
+app.get("/exchanges",             (_req, res) => res.json(getExchanges()));
 app.get("/exchanges/applications",(_req, res) => res.json(getApplications()));
 app.post("/exchanges/run-cycle",  async (_req, res) => {
   try { res.json(await runListingCycle()); }
@@ -79,7 +79,7 @@ app.post("/alliances/cycle",  async (_req, res) => {
 
 // ── Summary ───────────────────────────────────────────────────────────────────
 app.get("/summary", (_req, res) => {
-  const exchanges = getAllExchanges();
+  const exchanges = getExchanges();
   res.json({
     exchanges:    { total: exchanges.length, listed: exchanges.filter(e => e.status === "listed").length, applications: getApplications().length },
     media:        { total: getAllMedia().length, releases: getReleases().length },

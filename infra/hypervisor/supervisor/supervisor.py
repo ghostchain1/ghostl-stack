@@ -11,7 +11,7 @@ Enforced routing law:
 Metrics exported:
   ghoststack_vm_up{vm}                 — 1 if running
   ghoststack_vm_has_ip{vm,method}      — 1 if IP is visible; "method" tag explains how it was found
-  ghoststack_rpc_ok{vm,ip,port}        — 1 if ghost_blockNumber responds
+  ghoststack_rpc_ok{vm,ip,port}        — 1 if ghost_blockNumber or eth_blockNumber responds
   ghoststack_topology_edge{from_node,to_node} — static topology graph (1=edge exists)
 
 Environment variables (all optional):
@@ -20,7 +20,7 @@ Environment variables (all optional):
   SCRAPE_INTERVAL  default 10  (seconds)
   VIRSH_URI        default qemu:///system
   RPC_PORT_L1      default 18545
-  RPC_PORT_L2      default 29545
+  RPC_PORT_L2      default 29547
   RPC_PORT_L3      default 39545
   LIBVIRT_NETWORK  default gs-mgmt  (for DHCP lease fallback)
   GHOSTBRAIN_URL   default ""  (blank = disabled)
@@ -32,10 +32,13 @@ import json
 import logging
 import os
 import re
+import socket
 import subprocess
 import time
 import urllib.request
+import uuid
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 
 try:
@@ -55,7 +58,7 @@ VIRSH_URI       = os.getenv("VIRSH_URI", "qemu:///system")
 LIBVIRT_NETWORK = os.getenv("LIBVIRT_NETWORK", "gs-mgmt")
 
 RPC_PORT_L1 = int(os.getenv("RPC_PORT_L1", "18545"))
-RPC_PORT_L2 = int(os.getenv("RPC_PORT_L2", "29545"))
+RPC_PORT_L2 = int(os.getenv("RPC_PORT_L2", "29547"))
 RPC_PORT_L3 = int(os.getenv("RPC_PORT_L3", "39545"))
 
 GHOSTBRAIN_URL = os.getenv("GHOSTBRAIN_URL", "").strip()
@@ -92,12 +95,12 @@ VMS: List[VM] = [
     VM("ghostchain-devnet",        "devnet", "38.247.149.219"),
     # Testnet
     VM("ghostchain-testnet-l1",    "l1",     "10.50.99.71"),
-    VM("ghost-testnet-validator",  "l1",     "10.50.99.73"),
+    VM("ghost-testnet-validator",  "l1-validator", "10.50.99.73"),
     VM("ghostl2-testnet",          "l2",     "10.50.99.77"),
     VM("ghostl3-testnet",          "l3",     "10.50.99.79"),
     # Mainnet
     VM("ghostchain-mainnet-l1",    "l1",     "10.50.99.70"),
-    VM("ghost-mainnet-validator",  "l1",     "10.50.99.72"),
+    VM("ghost-mainnet-validator",  "l1-validator", "10.50.99.72"),
     VM("ghostl2-mainnet",          "l2",     "10.50.99.76"),
     VM("ghostl3-mainnet",          "l3",     "10.50.99.78"),
 ]
@@ -132,7 +135,9 @@ _validate_topology(TOPOLOGY_EDGES, VMS)
 # ── Port mapping ──────────────────────────────────────────────────────────────
 def rpc_port(role: str) -> Optional[int]:
     return {
+        "devnet": RPC_PORT_L1,
         "l1": RPC_PORT_L1,
+        "l1-validator": None,
         "l2": RPC_PORT_L2,
         "l3": RPC_PORT_L3,
     }.get(role)
@@ -200,20 +205,30 @@ def discover_ip(vm: VM) -> Tuple[Optional[str], str]:
 
 # ── RPC health probe ──────────────────────────────────────────────────────────
 def rpc_healthy(ip: str, port: int) -> bool:
-    body = json.dumps(
-        {"jsonrpc": "2.0", "id": 1, "method": "ghost_blockNumber", "params": []}
-    ).encode()
-    req = urllib.request.Request(
-        url=f"http://{ip}:{port}",
-        data=body,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
     try:
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            return "result" in json.loads(resp.read())
-    except Exception:
+        with socket.create_connection((ip, port), timeout=0.5):
+            pass
+    except OSError:
         return False
+
+    for method in ("ghost_blockNumber", "eth_blockNumber"):
+        body = json.dumps(
+            {"jsonrpc": "2.0", "id": 1, "method": method, "params": []}
+        ).encode()
+        req = urllib.request.Request(
+            url=f"http://{ip}:{port}",
+            data=body,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=1.5) as resp:
+                payload = json.loads(resp.read())
+            if isinstance(payload.get("result"), str) and payload["result"].startswith("0x"):
+                return True
+        except Exception:
+            continue
+    return False
 
 
 # ── GhostBrain signal publisher ───────────────────────────────────────────────
@@ -232,20 +247,36 @@ def _post_json(url: str, payload: Dict) -> None:
         log.debug("GhostBrain POST to %s failed: %s", url, exc)
 
 
+def _brain_message(subject: str, sender: str, payload: Dict, correlation_id: Optional[str] = None) -> Dict:
+    return {
+        "messageId": str(uuid.uuid4()),
+        "subject": subject,
+        "correlationId": correlation_id or f"{sender}:{int(time.time())}",
+        "senderAgentId": sender,
+        "payload": payload,
+        "sentAt": datetime.now(timezone.utc).isoformat(),
+    }
+
+
 def publish_vm_signal(vm: VM, is_up: bool, ip: Optional[str], rpc: Optional[bool]) -> None:
     if not GHOSTBRAIN_URL:
         return
     _post_json(
         GHOSTBRAIN_URL,
-        {
-            "source":    "hypervisor-supervisor",
-            "type":      "vm.status",
-            "vm":        vm.name,
-            "role":      vm.role,
-            "running":   is_up,
-            "ip":        ip or "",
-            "rpc_ok":    rpc,
-        },
+        _brain_message(
+            "infra.vm.status",
+            "hypervisor-supervisor",
+            {
+                "source": "hypervisor-supervisor",
+                "type": "vm.status",
+                "vm": vm.name,
+                "role": vm.role,
+                "running": is_up,
+                "ip": ip or "",
+                "rpc_ok": rpc,
+            },
+            correlation_id=f"vm-status:{vm.name}:{int(time.time())}",
+        ),
     )
 
 
@@ -263,16 +294,16 @@ def scrape_once() -> None:
         ip, how = discover_ip(vm)
         port    = rpc_port(vm.role)
 
+        rpc_result: Optional[bool] = None
+        if ip and port:
+            rpc_result = rpc_healthy(ip, port)
+            if not is_up and state == "unknown" and rpc_result:
+                state = "running (rpc-probe)"
+                is_up = True
+            rpc_ok.labels(vm=vm.name, ip=ip, port=str(port)).set(1.0 if rpc_result else 0.0)
+
         vm_up.labels(vm=vm.name).set(1.0 if is_up else 0.0)
         vm_has_ip.labels(vm=vm.name, method=how).set(1.0 if ip else 0.0)
-
-        rpc_result: Optional[bool] = None
-        if is_up and ip and port:
-            rpc_result = rpc_healthy(ip, port)
-            rpc_ok.labels(vm=vm.name, ip=ip, port=str(port)).set(1.0 if rpc_result else 0.0)
-        elif ip and port:
-            # VM is not running — keep series stable so Grafana panels don't disappear.
-            rpc_ok.labels(vm=vm.name, ip=ip, port=str(port)).set(0.0)
 
         log.info(
             "%-35s  state=%-10s  ip=%-16s  rpc=%s",
@@ -295,7 +326,15 @@ def main() -> None:
     start_http_server(LISTEN_PORT, addr=LISTEN_ADDR)
     log.info("Metrics server started on :%d", LISTEN_PORT)
 
-    _post_json(GHOSTBRAIN_URL, {"source": "hypervisor-supervisor", "type": "supervisor_start"})
+    if GHOSTBRAIN_URL:
+        _post_json(
+            GHOSTBRAIN_URL,
+            _brain_message(
+                "infra.supervisor.start",
+                "hypervisor-supervisor",
+                {"source": "hypervisor-supervisor", "type": "supervisor_start"},
+            ),
+        )
     publish_topology()
 
     while True:

@@ -7,7 +7,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -53,7 +53,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -98,7 +98,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -140,7 +140,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -182,7 +182,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -234,7 +234,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -275,7 +275,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -317,7 +317,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -371,7 +371,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -414,7 +414,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -455,7 +455,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -496,7 +496,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -539,7 +539,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -583,7 +583,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -625,7 +625,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -667,7 +667,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -708,7 +708,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -750,7 +750,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -792,7 +792,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -834,7 +834,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -876,7 +876,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -917,7 +917,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -988,7 +988,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1044,7 +1044,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1100,7 +1100,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1143,7 +1143,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1184,7 +1184,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1225,7 +1225,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1267,7 +1267,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1314,7 +1314,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1356,7 +1356,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1400,7 +1400,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1457,7 +1457,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1500,7 +1500,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1541,7 +1541,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1582,7 +1582,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1624,7 +1624,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1665,7 +1665,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1708,7 +1708,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1750,7 +1750,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1791,7 +1791,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1868,7 +1868,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1910,7 +1910,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1951,7 +1951,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -1993,7 +1993,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -2034,7 +2034,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -2076,7 +2076,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -2118,7 +2118,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -2160,7 +2160,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -2202,7 +2202,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -2256,7 +2256,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -2298,7 +2298,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -2339,7 +2339,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],
@@ -2383,7 +2383,7 @@
       },
       "env_file": [
         {
-          "path": "./stack.env",
+          "path": "./stack.env.example",
           "required": true
         }
       ],

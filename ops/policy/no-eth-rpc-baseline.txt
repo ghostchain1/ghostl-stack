@@ -1,55 +1,279 @@
-apps/api/src/modules/ai/router.ts	eth_getBlockByNumber	1186:          { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: `sample:${blocks.length}` }
-apps/api/src/modules/ai/router.ts	eth_getBlockByNumber	439:        { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: String(tx.blockNumber ?? '') },
-apps/api/src/modules/ai/router.ts	eth_getBlockByNumber	539:        { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: `lookback:${lookbackBlocks}` },
-apps/api/src/modules/ai/router.ts	eth_getBlockByNumber	906:              { kind: 'rpc', ref: 'eth_getBlockByNumber', detail: `head:${latest?.number ?? ''}` }
-apps/api/src/modules/ghostchain/router.ts	eth_chainId	21:    rpcCall<string>(provider, 'eth_chainId'),
-apps/api/src/server.ts	eth_blockNumber	1796:            provider.send('eth_blockNumber', []),
-apps/api/src/server.ts	eth_blockNumber	2166:      const latestHex = (await rpcCall<HexString>('eth_blockNumber', [], chain)) as HexString;
-apps/api/src/server.ts	eth_blockNumber	3785:    const latestHex = (await rpcCall<HexString>('eth_blockNumber', [], chain)) as HexString;
-apps/api/src/server.ts	eth_blockNumber	3835:    const latestHex = (await rpcCall<HexString>('eth_blockNumber', [], chain)) as HexString;
-apps/api/src/server.ts	eth_chainId	1795:            provider.send('eth_chainId', []),
-apps/api/src/server.ts	eth_chainId	430:    const rawChainId = await withTimeout(rpcProbe<string>(endpoint.url, 'eth_chainId'), 1500);
-apps/api/src/server.ts	eth_gasPrice	1797:            provider.send('eth_gasPrice', []),
-apps/api/src/server.ts	eth_getBalance	3883:    const balanceHex = (await rpcCall('eth_getBalance', [address, 'latest'])) as HexString;
-apps/api/src/server.ts	eth_getBlockByNumber	2173:              'eth_getBlockByNumber',
-apps/api/src/server.ts	eth_getBlockByNumber	2191:          'eth_getBlockByNumber',
-apps/api/src/server.ts	eth_getBlockByNumber	3792:            'eth_getBlockByNumber',
-apps/api/src/server.ts	eth_getBlockByNumber	3841:        'eth_getBlockByNumber',
-apps/api/src/services/integrations-store.ts	eth_chainId	367:        const result = await rpcJson(baseUrl, 'eth_chainId', timeoutMs);
-apps/api/src/services/rpc-manager.ts	eth_blockNumber	129:      return await call('eth_blockNumber');
-apps/api/src/services/rpc-manager.ts	eth_blockNumber	209:              send('eth_blockNumber', 2);
-apps/api/src/services/rpc-manager.ts	eth_chainId	144:      socket.send(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_chainId', params: [] }));
-apps/api/src/services/rpc-manager.ts	eth_chainId	80:      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_chainId', params: [] }),
-apps/web/app/api/status/route.ts	eth_blockNumber	90:  return await rpcCall(url, 'eth_blockNumber');
-apps/web/app/api/status/route.ts	eth_chainId	97:  const [chainId, blockNumber] = await Promise.all([rpcCall(rpc, 'eth_chainId'), rpcBlockNumber(rpc)]);
-packages/ghostchain-sdk/src/index.ts	eth_blockNumber	28:  getBlockNumber: async () => parseHex(await rpcCall<string>(url, 'eth_blockNumber')),
-packages/ghostchain-sdk/src/index.ts	eth_chainId	29:  getChainId: async () => parseHex(await rpcCall<string>(url, 'eth_chainId')),
-packages/ghostchain-sdk/src/index.ts	eth_gasPrice	30:  getGasPrice: async () => parseHex(await rpcCall<string>(url, 'eth_gasPrice')),
-packages/ghostchain-sdk/src/index.ts	eth_getBalance	31:  getBalance: async (address: string) => parseHex(await rpcCall<string>(url, 'eth_getBalance', [address, 'latest'])),
-services/ai-clock-sync/index.js	eth_blockNumber	147:      rpcCall(rpc, "eth_blockNumber")
-services/ai-clock-sync/index.js	eth_chainId	146:      rpcCall(rpc, "eth_chainId"),
-services/ai-clock-sync/index.js	eth_getBlockByNumber	149:    const block = await rpcCall(rpc, "eth_getBlockByNumber", [blockNumberHex, false]);
-services/ai-monitor/src/index.js	eth_call	219:  const result = await rpcRequest(POLICY_REGISTRY_RPC, "eth_call", [
-services/ai-monitor/src/index.js	eth_chainId	560:        await rpcRequest(RPC_L1, "eth_chainId");
-services/ai-monitor/src/index.js	eth_getBlockByNumber	537:      latestBlock = await rpc("eth_getBlockByNumber", ["latest", true]);
-services/ai-monitor/src/index.js	eth_getCode	237:    const code = await rpcRequest(CHAIN_POLICY_REGISTRY_RPC, "eth_getCode", [
-services/chain-status-service/src/index.js	eth_chainId	67:    chainId: await provider.send("eth_chainId", []),
-services/consensus-telemetry-service/src/index.js	eth_chainId	798:    chainId: parseNumber(await provider.send("eth_chainId", [])),
-services/ghost-registry/src/health/checker.ts	eth_blockNumber	437:            ? await wsCall(endpoint.url, 'eth_blockNumber', this.timeoutMs)
-services/ghost-registry/src/health/checker.ts	eth_blockNumber	438:            : await rpcCall(endpoint.url, 'eth_blockNumber', this.timeoutMs);
-services/ghost-registry/src/health/checker.ts	eth_chainId	433:            ? await wsCall(endpoint.url, 'eth_chainId', this.timeoutMs)
-services/ghost-registry/src/health/checker.ts	eth_chainId	434:            : await rpcCall(endpoint.url, 'eth_chainId', this.timeoutMs);
-services/ghost-relayer/src/index.ts	eth_chainId	1052:    const l1ChainId = l1Provider ? await l1Provider.send("eth_chainId", []) : null;
-services/ghost-relayer/src/index.ts	eth_chainId	1053:    const l2ChainId = await l2Provider.send("eth_chainId", []);
-services/ghost-relayer/src/index.ts	eth_chainId	1054:    const l3ChainId = await l3Provider.send("eth_chainId", []);
-services/ghost-rollup-challenger/src/index.ts	eth_chainId	268:    const settlementChainId = await settlement.send("eth_chainId", []);
-services/ghost-rollup-challenger/src/index.ts	eth_chainId	269:    const childChainId = await child.send("eth_chainId", []);
-services/ghost-rollup-proposer/src/index.ts	eth_chainId	263:  const raw = await provider.send("eth_chainId", []);
-services/ghost-rollup-proposer/src/index.ts	eth_chainId	326:    const settlementChainId = await settlement.send("eth_chainId", []);
-services/ghost-rollup-proposer/src/index.ts	eth_chainId	327:    const childChainId = await child.send("eth_chainId", []);
-services/governance-service/src/index.js	eth_call	109:  rpc(rpcUrl, "eth_call", [
-services/governance-service/src/index.js	eth_chainId	142:      rpc(config.rpc, "eth_chainId"),
-services/network-context-service/src/index.js	eth_chainId	64:    const chainId = await provider.send("eth_chainId", []);
-services/network-manager-service/src/index.js	eth_chainId	333:      const data = await fetchJson(t.url, { jsonrpc: "2.0", id: 1, method: "eth_chainId", params: [] });
-services/validator-service/src/index.js	eth_blockNumber	110:    const latestHex = await jsonRpc(rpc, "eth_blockNumber");
-services/validator-service/src/index.js	eth_getBlockByNumber	114:      const blk = await jsonRpc(rpc, "eth_getBlockByNumber", [`0x${n.toString(16)}`, false]);
+apps/control-center/app/api/chains/status/route.ts	eth_blockNumber	      rpcCall(cfg.rpc, "eth_blockNumber"),
+apps/control-center/app/api/chains/status/route.ts	eth_gasPrice	      rpcCall(cfg.rpc, "eth_gasPrice"),
+apps/control-center/app/dashboard/overview/page.tsx	eth_blockNumber	      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] }),
+apps/litvyblive/launchpad/ghost_chain_client.ts	eth_blockNumber	  const result = await rpc<string>('eth_blockNumber');
+apps/litvyblive/launchpad/ghost_chain_client.ts	eth_call	  const result = await rpc<string>('eth_call', [
+apps/litvyblive/launchpad/ghost_chain_client.ts	eth_call	  const result = await rpc<string>('eth_call', [{ to: tokenAddress, data }, 'latest']);
+apps/web-status/app/api/services/route.ts	eth_chainId	      res = await request("eth_chainId");
+apps/web/app/api/bridge/liquidity/route.ts	eth_call	 *   - Direct L2/L3 bridge contract balance reads (eth_call)
+apps/web/app/api/bridge/liquidity/route.ts	eth_getBalance	        method:  'eth_getBalance',
+apps/web/app/api/chains/l1/route.ts	eth_blockNumber	        jsonRpc('eth_blockNumber'),
+apps/web/app/api/chains/l1/route.ts	eth_chainId	        jsonRpc('eth_chainId'),
+apps/web/app/api/chains/l1/route.ts	eth_gasPrice	        jsonRpc('eth_gasPrice'),
+apps/web/app/api/chains/l2/route.ts	eth_blockNumber	      jsonRpc('eth_blockNumber'),
+apps/web/app/api/chains/l2/route.ts	eth_chainId	      jsonRpc('eth_chainId'),
+apps/web/app/api/chains/l2/route.ts	eth_gasPrice	      jsonRpc('eth_gasPrice'),
+apps/web/app/api/chains/l3/route.ts	eth_blockNumber	      jsonRpc('eth_blockNumber'),
+apps/web/app/api/chains/l3/route.ts	eth_chainId	      jsonRpc('eth_chainId'),
+apps/web/app/api/chains/l3/route.ts	eth_gasPrice	      jsonRpc('eth_gasPrice'),
+apps/web/app/api/command-center/chain-health/route.ts	eth_blockNumber	      jsonRpc(rpcUrl, 'eth_blockNumber'),
+apps/web/app/api/command-center/chain-health/route.ts	eth_chainId	      jsonRpc(rpcUrl, 'eth_chainId'),
+apps/web/app/api/command-center/nodes/route.ts	eth_blockNumber	  const body = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] });
+apps/web/app/api/explorer/blocks/route.ts	eth_blockNumber	  const latestHex = await rpcCall<string>(rpcUrl, 'eth_blockNumber', []);
+apps/web/app/api/explorer/blocks/route.ts	eth_getBlockByNumber	      rpcCall<RpcBlock>(rpcUrl, 'eth_getBlockByNumber', [`0x${n.toString(16)}`, false])
+apps/web/app/api/explorer/blocks/route.ts	eth_getBlockByNumber	 * eth_getBlockByNumber calls so the explorer always shows data.
+apps/web/app/api/network/status/route.ts	eth_blockNumber	      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] }),
+apps/web/app/api/network/topology/route.ts	eth_blockNumber	        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] }),
+apps/web/lib/blockchainApi.ts	eth_blockNumber	    rpc<string>("eth_blockNumber"),
+apps/web/lib/blockchainApi.ts	eth_chainId	    rpc<string>("eth_chainId"),
+apps/web/lib/blockchainApi.ts	eth_gasPrice	    rpc<string>("eth_gasPrice"),
+apps/web/pages/api/rpc/[layer].ts	eth_blockNumber	  "eth_blockNumber",
+apps/web/pages/api/rpc/[layer].ts	eth_call	  "eth_call",
+apps/web/pages/api/rpc/[layer].ts	eth_chainId	  "eth_chainId",
+apps/web/pages/api/rpc/[layer].ts	eth_estimateGas	  "eth_estimateGas",
+apps/web/pages/api/rpc/[layer].ts	eth_feeHistory	  "eth_feeHistory",
+apps/web/pages/api/rpc/[layer].ts	eth_gasPrice	  "eth_gasPrice",
+apps/web/pages/api/rpc/[layer].ts	eth_getBalance	  "eth_getBalance",
+apps/web/pages/api/rpc/[layer].ts	eth_getBlockByHash	  "eth_getBlockByHash",
+apps/web/pages/api/rpc/[layer].ts	eth_getBlockByNumber	  "eth_getBlockByNumber",
+apps/web/pages/api/rpc/[layer].ts	eth_getCode	  "eth_getCode",
+apps/web/pages/api/rpc/[layer].ts	eth_getTransactionCount	  "eth_getTransactionCount",
+apps/web/pages/api/rpc/[layer].ts	eth_maxPriorityFeePerGas	  "eth_maxPriorityFeePerGas",
+packages/brand-enforcer/src/rules.js	eth_blockNumber	    // Matches: "eth_getBalance", 'eth_blockNumber', `eth_call`, etc.
+packages/brand-enforcer/src/rules.js	eth_call	    // Matches: "eth_getBalance", 'eth_blockNumber', `eth_call`, etc.
+packages/brand-enforcer/src/rules.js	eth_getBalance	    // Matches: "eth_getBalance", 'eth_blockNumber', `eth_call`, etc.
+packages/ghost-ai-sdk/src/chain/GhostJsonRpcProvider.ts	eth_call	   * Simulate via eth_call without broadcasting.
+packages/ghost-ai-sdk/src/chain/GhostJsonRpcProvider.ts	eth_call	 *   ✓ Tx simulation   — eth_call + ABI revert decoding
+packages/ghost-ai-sdk/src/chain/GhostJsonRpcProvider.ts	eth_chainId	  /** Skip eth_chainId handshake when chain ID is known statically. */
+packages/ghost-ai-sdk/src/chain/GhostJsonRpcProvider.ts	eth_feeHistory	      this.send("eth_feeHistory", ["0xa", "latest", [25, 50, 75]]),
+packages/ghost-ai-sdk/src/chain/GhostJsonRpcProvider.ts	eth_feeHistory	    const fhRaw = await this.send("eth_feeHistory", ["0x14", "latest", [50]]);
+packages/ghost-ai-sdk/src/risk/GhostRisk.ts	eth_call	                message:  "eth_call simulation passed",
+packages/ghost-ai-sdk/src/risk/GhostRisk.ts	eth_call	   * Whether to run eth_call simulation before scoring.
+packages/ghost-ai-sdk/src/risk/GhostRisk.ts	eth_call	 *   3. Simulation      — eth_call + revert decoding (optional, async)
+packages/ghost-devkit/src/cli/commands/bridge.js	eth_blockNumber	                        rpcRequest(cfg.rpc.l2, "eth_blockNumber"),
+packages/ghost-devkit/src/cli/commands/bridge.js	eth_blockNumber	                        rpcRequest(cfg.rpc.l3, "eth_blockNumber"),
+packages/ghost-devkit/src/cli/commands/bridge.js	eth_blockNumber	                    const block = await rpcRequest(url, "eth_blockNumber");
+packages/ghost-devkit/src/cli/commands/bridge.ts	eth_blockNumber	            rpcRequest(cfg.rpc.l2, "eth_blockNumber") as Promise<string>,
+packages/ghost-devkit/src/cli/commands/bridge.ts	eth_blockNumber	            rpcRequest(cfg.rpc.l3, "eth_blockNumber") as Promise<string>,
+packages/ghost-devkit/src/cli/commands/bridge.ts	eth_blockNumber	          const block = await rpcRequest(url, "eth_blockNumber") as string;
+packages/ghost-devkit/src/cli/commands/doctor.js	eth_blockNumber	            body: JSON.stringify({ id: 1, jsonrpc: "2.0", method: "eth_blockNumber", params: [] }),
+packages/ghost-devkit/src/cli/commands/doctor.ts	eth_blockNumber	      body: JSON.stringify({ id: 1, jsonrpc: "2.0", method: "eth_blockNumber", params: [] }),
+packages/ghost-devkit/src/cli/commands/network.js	eth_blockNumber	                const block = await rpcRequest(url, "eth_blockNumber");
+packages/ghost-devkit/src/cli/commands/network.js	eth_blockNumber	            rpcRequest(url, "eth_blockNumber"),
+packages/ghost-devkit/src/cli/commands/network.ts	eth_blockNumber	        const block = await rpcRequest(url, "eth_blockNumber") as string;
+packages/ghost-devkit/src/cli/commands/network.ts	eth_blockNumber	      rpcRequest(url, "eth_blockNumber") as Promise<string>,
+packages/ghost-devkit/src/cli/commands/wallet.js	eth_getBalance	        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_getBalance", params: [address, "latest"] }),
+packages/ghost-devkit/src/cli/commands/wallet.js	eth_getBalance	/** Call eth_getBalance via JSON-RPC and return the value in GST (18 decimals). */
+packages/ghost-devkit/src/cli/commands/wallet.ts	eth_getBalance	    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_getBalance", params: [address, "latest"] }),
+packages/ghost-devkit/src/cli/commands/wallet.ts	eth_getBalance	/** Call eth_getBalance via JSON-RPC and return the value in GST (18 decimals). */
+packages/ghost-devkit/src/foundry/GhostAnvilRunner.d.ts	eth_blockNumber	    /** Wait until the RPC is answering (polls eth_blockNumber) */
+packages/ghost-devkit/src/foundry/GhostAnvilRunner.js	eth_blockNumber	                    body: JSON.stringify({ id: 1, jsonrpc: "2.0", method: "eth_blockNumber", params: [] }),
+packages/ghost-devkit/src/foundry/GhostAnvilRunner.js	eth_blockNumber	    /** Wait until the RPC is answering (polls eth_blockNumber) */
+packages/ghost-devkit/src/foundry/GhostAnvilRunner.ts	eth_blockNumber	          body: JSON.stringify({ id: 1, jsonrpc: "2.0", method: "eth_blockNumber", params: [] }),
+packages/ghost-devkit/src/foundry/GhostAnvilRunner.ts	eth_blockNumber	  /** Wait until the RPC is answering (polls eth_blockNumber) */
+packages/ghost-devkit/src/foundry/GhostCastAdapter.d.ts	eth_call	    /** eth_call a view function */
+packages/ghost-devkit/src/foundry/GhostCastAdapter.js	eth_call	    /** eth_call a view function */
+packages/ghost-devkit/src/foundry/GhostCastAdapter.ts	eth_call	  /** eth_call a view function */
+packages/ghost-devkit/src/monitoring/GhostNetworkMonitor.js	eth_blockNumber	                body: JSON.stringify({ id: 1, jsonrpc: "2.0", method: "eth_blockNumber", params: [] }),
+packages/ghost-devkit/src/monitoring/GhostNetworkMonitor.ts	eth_blockNumber	        body: JSON.stringify({ id: 1, jsonrpc: "2.0", method: "eth_blockNumber", params: [] }),
+packages/ghost-devkit/src/monitoring/GhostRPCMonitor.js	eth_blockNumber	            const blockRes = await this.call(url, "eth_blockNumber", []);
+packages/ghost-devkit/src/monitoring/GhostRPCMonitor.js	eth_chainId	            const chainRes = await this.call(url, "eth_chainId", []);
+packages/ghost-devkit/src/monitoring/GhostRPCMonitor.ts	eth_blockNumber	      const blockRes = await this.call(url, "eth_blockNumber", []);
+packages/ghost-devkit/src/monitoring/GhostRPCMonitor.ts	eth_chainId	      const chainRes = await this.call(url, "eth_chainId",     []);
+packages/ghost-devkit/src/validator/GhostValidatorHealth.js	eth_blockNumber	                this.rpc(rpcUrl, "eth_blockNumber", []),
+packages/ghost-devkit/src/validator/GhostValidatorHealth.ts	eth_blockNumber	        this.rpc(rpcUrl, "eth_blockNumber", []),
+packages/ghost-devkit/src/validator/GhostValidatorMetrics.js	eth_blockNumber	            this.rpc(rpcUrl, "eth_blockNumber", []),
+packages/ghost-devkit/src/validator/GhostValidatorMetrics.js	eth_gasPrice	            this.rpc(rpcUrl, "eth_gasPrice", []).catch(() => "0x0"),
+packages/ghost-devkit/src/validator/GhostValidatorMetrics.ts	eth_blockNumber	      this.rpc(rpcUrl, "eth_blockNumber",         []),
+packages/ghost-devkit/src/validator/GhostValidatorMetrics.ts	eth_gasPrice	      this.rpc(rpcUrl, "eth_gasPrice",             []).catch(() => "0x0"),
+packages/ghost-nodes/src/rpc/GhostRPCClient.ts	eth_blockNumber	  ghost_blockNumber:                "eth_blockNumber",
+packages/ghost-nodes/src/rpc/GhostRPCClient.ts	eth_call	  ghost_call:                       "eth_call",
+packages/ghost-nodes/src/rpc/GhostRPCClient.ts	eth_chainId	  ghost_chainId:                    "eth_chainId",
+packages/ghost-nodes/src/rpc/GhostRPCClient.ts	eth_estimateGas	  ghost_estimateGas:                "eth_estimateGas",
+packages/ghost-nodes/src/rpc/GhostRPCClient.ts	eth_feeHistory	  ghost_feeHistory:                 "eth_feeHistory",
+packages/ghost-nodes/src/rpc/GhostRPCClient.ts	eth_gasPrice	  ghost_gasPrice:                   "eth_gasPrice",
+packages/ghost-nodes/src/rpc/GhostRPCClient.ts	eth_getBalance	  ghost_getBalance:                 "eth_getBalance",
+packages/ghost-nodes/src/rpc/GhostRPCClient.ts	eth_getBlockByHash	  ghost_getBlockByHash:             "eth_getBlockByHash",
+packages/ghost-nodes/src/rpc/GhostRPCClient.ts	eth_getBlockByNumber	  ghost_getBlockByNumber:           "eth_getBlockByNumber",
+packages/ghost-nodes/src/rpc/GhostRPCClient.ts	eth_getCode	  ghost_getCode:                    "eth_getCode",
+packages/ghost-nodes/src/rpc/GhostRPCClient.ts	eth_getTransactionCount	  ghost_getTransactionCount:        "eth_getTransactionCount",
+packages/ghost-nodes/src/rpc/GhostRPCClient.ts	eth_maxPriorityFeePerGas	  ghost_maxPriorityFeePerGas:       "eth_maxPriorityFeePerGas",
+packages/ghost-nodes/src/types.ts	eth_getBalance	  /** Wire-level EVM JSON-RPC method, e.g. "eth_getBalance". */
+packages/ghost-sdk-core/src/abi/GhostAbiCoder.d.ts	eth_call	     * Decode the result bytes from an eth_call into a usable value.
+packages/ghost-sdk-core/src/abi/GhostAbiCoder.js	eth_call	     * Decode the result bytes from an eth_call into a usable value.
+packages/ghost-sdk-core/src/abi/GhostAbiCoder.ts	eth_call	   * Decode the result bytes from an eth_call into a usable value.
+packages/ghost-sdk-core/src/ethers/BaseContract.d.ts	eth_call	    /** Low-level eth_call. Returns raw hex result. */
+packages/ghost-sdk-core/src/ethers/BaseContract.js	eth_call	    /** Low-level eth_call. Returns raw hex result. */
+packages/ghost-sdk-core/src/ethers/BaseContract.ts	eth_call	  /** Low-level eth_call. Returns raw hex result. */
+packages/ghost-sdk-core/src/ethers/Contract.js	eth_call	                // Read method: eth_call -> decoded result
+packages/ghost-sdk-core/src/ethers/Contract.ts	eth_call	        // Read method: eth_call -> decoded result
+packages/ghost-sdk-core/src/ethers/Interface.d.ts	eth_call	    /** Decode the result bytes from an eth_call into a Result-like array. */
+packages/ghost-sdk-core/src/ethers/Interface.js	eth_call	    /** Decode the result bytes from an eth_call into a Result-like array. */
+packages/ghost-sdk-core/src/ethers/Interface.ts	eth_call	  /** Decode the result bytes from an eth_call into a Result-like array. */
+packages/ghost-sdk-core/src/provider/GhostProvider.js	eth_blockNumber	        const hex = await this.rpc.request("eth_blockNumber");
+packages/ghost-sdk-core/src/provider/GhostProvider.js	eth_call	        return this.rpc.request("eth_call", [override, tag]);
+packages/ghost-sdk-core/src/provider/GhostProvider.js	eth_chainId	        const hex = await this.rpc.request("eth_chainId");
+packages/ghost-sdk-core/src/provider/GhostProvider.js	eth_estimateGas	        const hex = await this.rpc.request("eth_estimateGas", [tx]);
+packages/ghost-sdk-core/src/provider/GhostProvider.js	eth_gasPrice	        const hex = await this.rpc.request("eth_gasPrice");
+packages/ghost-sdk-core/src/provider/GhostProvider.js	eth_getBalance	        const hex = await this.rpc.request("eth_getBalance", [address, tag]);
+packages/ghost-sdk-core/src/provider/GhostProvider.js	eth_getBlockByNumber	        return this.rpc.request("eth_getBlockByNumber", [param, false]);
+packages/ghost-sdk-core/src/provider/GhostProvider.js	eth_getCode	        return this.rpc.request("eth_getCode", [address, tag]);
+packages/ghost-sdk-core/src/provider/GhostProvider.js	eth_getTransactionCount	        const hex = await this.rpc.request("eth_getTransactionCount", [address, tag]);
+packages/ghost-sdk-core/src/provider/GhostProvider.ts	eth_blockNumber	    const hex = await this.rpc.request<string>("eth_blockNumber");
+packages/ghost-sdk-core/src/provider/GhostProvider.ts	eth_call	    return this.rpc.request<string>("eth_call", [override, tag]);
+packages/ghost-sdk-core/src/provider/GhostProvider.ts	eth_chainId	    const hex = await this.rpc.request<string>("eth_chainId");
+packages/ghost-sdk-core/src/provider/GhostProvider.ts	eth_estimateGas	    const hex = await this.rpc.request<string>("eth_estimateGas", [tx]);
+packages/ghost-sdk-core/src/provider/GhostProvider.ts	eth_gasPrice	    const hex = await this.rpc.request<string>("eth_gasPrice");
+packages/ghost-sdk-core/src/provider/GhostProvider.ts	eth_getBalance	    const hex = await this.rpc.request<string>("eth_getBalance", [address, tag]);
+packages/ghost-sdk-core/src/provider/GhostProvider.ts	eth_getBlockByNumber	    return this.rpc.request<GhostBlock>("eth_getBlockByNumber", [param, false]);
+packages/ghost-sdk-core/src/provider/GhostProvider.ts	eth_getCode	    return this.rpc.request<string>("eth_getCode", [address, tag]);
+packages/ghost-sdk-core/src/provider/GhostProvider.ts	eth_getTransactionCount	    const hex = await this.rpc.request<string>("eth_getTransactionCount", [address, tag]);
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_blockNumber	    const hex = await this.rpc.request<string>("eth_blockNumber");
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_blockNumber	  /** ghost_blockNumber → eth_blockNumber */
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_call	    return this.rpc.request<string>("eth_call", [tx, blockTag]);
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_call	  /** ghost_call → eth_call */
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_chainId	    const hex = await this.rpc.request<string>("eth_chainId");
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_chainId	  /** ghost_chainId → eth_chainId */
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_estimateGas	    const hex = await this.rpc.request<string>("eth_estimateGas", [tx]);
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_estimateGas	  /** ghost_estimateGas → eth_estimateGas */
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_feeHistory	  /** ghost_getFeeData → eth_feeHistory / eth_maxPriorityFeePerGas */
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_gasPrice	      this.rpc.request<string>("eth_gasPrice"),
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_gasPrice	    const hex = await this.rpc.request<string>("eth_gasPrice");
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_gasPrice	  /** ghost_getGasPrice → eth_gasPrice */
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_getBalance	    const hex = await this.rpc.request<string>("eth_getBalance", [address, blockTag]);
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_getBalance	  /** ghost_getBalance → eth_getBalance — returns bigint GhostWei */
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_getBlockByHash	      "eth_getBlockByHash", [hashHex, fullTx]
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_getBlockByHash	  /** ghost_getBlockByHash → eth_getBlockByHash */
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_getBlockByNumber	      "eth_getBlockByNumber", [tag, fullTx]
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_getBlockByNumber	  /** ghost_getBlockByNumber → eth_getBlockByNumber */
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_getCode	    return this.rpc.request<string>("eth_getCode", [address, blockTag]);
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_getCode	  /** ghost_getCode → eth_getCode */
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_getTransactionCount	    const hex = await this.rpc.request<string>("eth_getTransactionCount", [address, blockTag]);
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_getTransactionCount	  /** ghost_getNonce → eth_getTransactionCount */
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_maxPriorityFeePerGas	      this.rpc.request<string>("eth_maxPriorityFeePerGas").catch(() => "0x0"),
+packages/ghost-sdk-core/src/rpc/GhostRPC.ts	eth_maxPriorityFeePerGas	  /** ghost_getFeeData → eth_feeHistory / eth_maxPriorityFeePerGas */
+packages/ghost-sdk-core/src/rpc/GhostRPCFailover.ts	eth_blockNumber	        await ep.rpc.request("eth_blockNumber");
+packages/ghost-sdk/src/GhostGasEngine.ts	eth_estimateGas	      body: JSON.stringify({ jsonrpc: "2.0", method: "eth_estimateGas", id, params: [params] }),
+packages/ghost-sdk/src/GhostGasEngine.ts	eth_estimateGas	  /** Optional RPC URL used for eth_estimateGas calls. */
+packages/ghost-sdk/src/GhostJsonRpc.ts	eth_blockNumber	 *   ghost_blockNumber         ← replaces eth_blockNumber
+packages/ghost-sdk/src/GhostJsonRpc.ts	eth_call	 *   ghost_call                ← replaces eth_call
+packages/ghost-sdk/src/GhostJsonRpc.ts	eth_chainId	 *   ghost_chainId             ← replaces eth_chainId
+packages/ghost-sdk/src/GhostJsonRpc.ts	eth_getBalance	 *   ghost_getBalance          ← replaces eth_getBalance
+packages/ghost-sdk/src/abi/GhostAbi.ts	eth_call	 * Decode ABI-encoded return data (eth_call result) into typed values.
+packages/ghost-sdk/src/accounts/AccountAbstraction.ts	eth_chainId	    const result = await this._rpc<string>("eth_chainId", []);
+packages/ghost-sdk/src/blockNumber/GhostBlockNumber.ts	eth_call	   * Convert to a `GhostBlockTag` (eth_call / eth_getLogs compatible).
+packages/ghost-sdk/src/contract/GhostAbiDecoder.ts	eth_call	   * @param hex   - raw hex returned from eth_call (including leading 0x)
+packages/ghost-sdk/src/contract/GhostAbiDecoder.ts	eth_call	 * Decode raw eth_call / getTransactionReceipt return data into
+packages/ghost-sdk/src/core/GhostNetworkDetector.ts	eth_chainId	      const chainIdHex = await this._rpc(rpcUrl, "eth_chainId", []);
+packages/ghost-sdk/src/events/GhostEventSubscriber.ts	eth_blockNumber	    const res = await this._rpc("eth_blockNumber", []);
+packages/ghost-sdk/src/events/GhostEventSubscriber.ts	eth_getBlockByNumber	    const res = await this._rpc("eth_getBlockByNumber", [`0x${number.toString(16)}`, false]) as Record<string, string> | null;
+packages/ghost-sdk/src/gns/GNSResolver.ts	eth_call	        method: "eth_call",
+packages/ghost-sdk/src/gns/GNSResolver.ts	eth_call	/** eth_call selector for `resolve(bytes32)` */
+packages/ghost-sdk/src/index.ts	eth_call	  /** Zero-ethers native contract — ABI encoding + eth_call. */
+packages/ghost-sdk/src/infra/GhostRpcController.ts	eth_blockNumber	        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] }),
+packages/ghost-sdk/src/infra/GhostRpcController.ts	eth_blockNumber	   * Probe all endpoints with a lightweight `eth_blockNumber` call and
+packages/ghost-sdk/src/infra/GhostValidatorController.ts	eth_blockNumber	        this._rpc<string>(node.rpcUrl, "eth_blockNumber"),
+packages/ghost-sdk/src/native/GhostNativeGasEngine.ts	eth_feeHistory	      const fh = await this.provider.rpc.request<FeeHistoryRpc>("eth_feeHistory", [
+packages/ghost-sdk/src/native/GhostNativeProvider.ts	eth_blockNumber	    return hexToBigInt(await this.rpc.request<Hex>("eth_blockNumber", []));
+packages/ghost-sdk/src/native/GhostNativeProvider.ts	eth_call	    return this.rpc.request<Hex>("eth_call", [params, tag]);
+packages/ghost-sdk/src/native/GhostNativeProvider.ts	eth_chainId	    const idHex = await this.rpc.request<Hex>("eth_chainId", []);
+packages/ghost-sdk/src/native/GhostNativeProvider.ts	eth_estimateGas	    return hexToBigInt(await this.rpc.request<Hex>("eth_estimateGas", [this._txToRpc(tx)]));
+packages/ghost-sdk/src/native/GhostNativeProvider.ts	eth_getBalance	    return hexToBigInt(await this.rpc.request<Hex>("eth_getBalance", [normalizeAddress(address), tag]));
+packages/ghost-sdk/src/native/GhostNativeProvider.ts	eth_getTransactionCount	    const n = await this.rpc.request<Hex>("eth_getTransactionCount", [normalizeAddress(address), tag]);
+packages/ghost-sdk/src/provider.d.ts	eth_blockNumber	     * Example: gst_blockNumber → eth_blockNumber
+packages/ghost-sdk/src/provider.d.ts	eth_blockNumber	    /** Canonical block number (tries gst_blockNumber, falls back to eth_blockNumber). */
+packages/ghost-sdk/src/provider.js	eth_blockNumber	        const hex = await this.sendGstMethod("gst_blockNumber", "eth_blockNumber");
+packages/ghost-sdk/src/provider.js	eth_blockNumber	     * Example: gst_blockNumber → eth_blockNumber
+packages/ghost-sdk/src/provider.js	eth_blockNumber	    /** Canonical block number (tries gst_blockNumber, falls back to eth_blockNumber). */
+packages/ghost-sdk/src/provider.ts	eth_blockNumber	      "eth_blockNumber"
+packages/ghost-sdk/src/provider.ts	eth_blockNumber	   * Example: gst_blockNumber → eth_blockNumber
+packages/ghost-sdk/src/provider.ts	eth_blockNumber	  /** Canonical block number (tries gst_blockNumber, falls back to eth_blockNumber). */
+packages/ghost-sdk/src/providers/HttpProvider.ts	eth_blockNumber	    return hexToBigInt(await this.rpc.request<Hex>("eth_blockNumber", []));
+packages/ghost-sdk/src/providers/HttpProvider.ts	eth_call	    return this.rpc.request<Hex>("eth_call", [tx, tag]);
+packages/ghost-sdk/src/providers/HttpProvider.ts	eth_chainId	    return Number(hexToBigInt(await this.rpc.request<Hex>("eth_chainId", [])));
+packages/ghost-sdk/src/providers/HttpProvider.ts	eth_estimateGas	    return hexToBigInt(await this.rpc.request<Hex>("eth_estimateGas", [tx]));
+packages/ghost-sdk/src/providers/HttpProvider.ts	eth_feeHistory	    }>("eth_feeHistory", [bigIntToHex(BigInt(blockCount)), blockTag, percentiles]);
+packages/ghost-sdk/src/providers/HttpProvider.ts	eth_gasPrice	    return hexToBigInt(await this.rpc.request<Hex>("eth_gasPrice", []));
+packages/ghost-sdk/src/providers/HttpProvider.ts	eth_getBalance	      await this.rpc.request<Hex>("eth_getBalance", [normalizeAddress(address), tag])
+packages/ghost-sdk/src/providers/HttpProvider.ts	eth_getBlockByHash	    return this.rpc.request<HttpProviderBlock>("eth_getBlockByHash", [hash, full]);
+packages/ghost-sdk/src/providers/HttpProvider.ts	eth_getBlockByNumber	    return this.rpc.request<HttpProviderBlock>("eth_getBlockByNumber", [param, full]);
+packages/ghost-sdk/src/providers/HttpProvider.ts	eth_getCode	    return this.rpc.request<Hex>("eth_getCode", [normalizeAddress(address), tag]);
+packages/ghost-sdk/src/providers/HttpProvider.ts	eth_getTransactionCount	      await this.rpc.request<Hex>("eth_getTransactionCount", [normalizeAddress(address), tag])
+packages/ghost-sdk/src/rpc/GhostRpcClient.ts	eth_chainId	 * const chainId = await rpc.request<number>("eth_chainId", []);
+packages/ghost-sdk/src/rpc/GhostRpcClient.ts	eth_getBalance	 *   { method: "eth_getBalance", params: [addrA, "latest"] },
+packages/ghost-sdk/src/rpc/GhostRpcClient.ts	eth_getBalance	 *   { method: "eth_getBalance", params: [addrB, "latest"] },
+packages/ghost-sdk/src/transaction/GhostGasOracle.ts	eth_feeHistory	 *   2. RPC `eth_feeHistory` — on-chain truth
+packages/ghost-sdk/src/transaction/GhostGasOracle.ts	eth_gasPrice	      this._rpc("eth_gasPrice", []),
+packages/ghost-sdk/src/transaction/GhostGasOracle.ts	eth_gasPrice	 *   3. RPC `eth_gasPrice` — legacy fallback
+packages/ghost-sdk/src/transaction/GhostGasOracle.ts	eth_getBlockByNumber	      this._rpc("eth_getBlockByNumber", ["latest", false]),
+packages/ghost-sdk/src/validator/GhostRPCMonitor.ts	eth_blockNumber	    this.method    = config.method    ?? "eth_blockNumber";
+packages/ghost-sdk/src/validator/GhostRPCMonitor.ts	eth_blockNumber	  /** JSON-RPC method to call. Default: "eth_blockNumber" */
+packages/ghost-sdk/src/validator/GhostValidatorMonitor.ts	eth_blockNumber	        this._rpc<string>(rpcUrl, "eth_blockNumber"),
+packages/ghost-sdk/src/validator/GhostValidatorMonitor.ts	eth_blockNumber	      this._rpc<string>(rpcUrl, "eth_blockNumber"),
+packages/ghost-sdk/src/validator/GhostValidatorMonitor.ts	eth_blockNumber	    const laterHex = await this._rpc<string>(rpcUrl, "eth_blockNumber");
+packages/ghost-sdk/src/validator/GhostValidatorMonitor.ts	eth_getBlockByNumber	      // We use `eth_getBlockByNumber` with a lookback offset
+packages/ghostdefi-sdk/src/swap/GhostSwap.ts	eth_call	    // This is a placeholder that delegates to the node's eth_call
+packages/ghoststack-cli/src/cli.ts	eth_blockNumber	      body:    JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] }),
+services/ai-operations/src/monitoring/metricsCollector.ts	eth_blockNumber	      { jsonrpc: "2.0", method: "eth_blockNumber", params: [], id: 1 },
+services/ai-operations/src/monitoring/metricsCollector.ts	eth_blockNumber	// ── Probe a chain RPC via eth_blockNumber ──────────────────────────────────────
+services/consensus-telemetry-service/src/index.js	eth_chainId	      await providerSendWithFallback(provider, ["ghost_chainId", "eth_chainId"])
+services/ghost-ai-swarm-v2/src/agents/lend.ts	eth_call	          jsonrpc: "2.0", id: 1, method: "eth_call",
+services/ghost-ai-swarm-v2/src/agents/network.ts	eth_blockNumber	        body:    JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] }),
+services/ghost-ai-swarm-v2/src/agents/node.ts	eth_blockNumber	          body:    JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] }),
+services/ghost-economic-ai/src/treasury/treasuryMonitor.ts	eth_getBalance	 * ghost_getBalance (GhostChain EVM namespace — never eth_getBalance).
+services/ghost-evolution/src/scanner.ts	eth_blockNumber	      body:    JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] }),
+services/ghost-federation-coordinator/src/regionRegistry.ts	eth_blockNumber	// eth_blockNumber over JSON-RPC
+services/ghost-multichain-controller/src/adapters/arbitrum-adapter.ts	eth_blockNumber	      rpc("eth_blockNumber"),
+services/ghost-multichain-controller/src/adapters/arbitrum-adapter.ts	eth_chainId	      rpc("eth_chainId"),
+services/ghost-multichain-controller/src/adapters/arbitrum-adapter.ts	eth_gasPrice	      rpc("eth_gasPrice"),
+services/ghost-multichain-controller/src/adapters/ghostbridge-adapter.ts	eth_blockNumber	      rpc("eth_blockNumber"),
+services/ghost-multichain-controller/src/adapters/ghostbridge-adapter.ts	eth_chainId	      rpc("eth_chainId"),
+services/ghost-multichain-controller/src/adapters/ghostbridge-adapter.ts	eth_gasPrice	      rpc("eth_gasPrice"),
+services/ghost-multichain-controller/src/adapters/polygon-adapter.ts	eth_blockNumber	      rpc("eth_blockNumber"),
+services/ghost-multichain-controller/src/adapters/polygon-adapter.ts	eth_chainId	      rpc("eth_chainId"),
+services/ghost-multichain-controller/src/adapters/polygon-adapter.ts	eth_gasPrice	      rpc("eth_gasPrice"),
+services/ghost-orchestrator/src/domains/chains/rpc-health.ts	eth_blockNumber	  for (const method of ["ghost_blockNumber", "eth_blockNumber"]) {
+services/ghost-orchestrator/src/index.ts	eth_blockNumber	  const methods = ['ghost_blockNumber', 'eth_blockNumber'];
+services/ghost-promotion-engine/src/index.ts	eth_blockNumber	  for (const method of ['ghost_blockNumber', 'eth_blockNumber']) {
+services/ghost-registry/src/health/checker.ts	eth_blockNumber	            : await rpcCallWithFallback(endpoint.url, ['ghost_blockNumber', 'eth_blockNumber'], this.timeoutMs);
+services/ghost-registry/src/health/checker.ts	eth_blockNumber	            ? await wsCallWithFallback(endpoint.url, ['ghost_blockNumber', 'eth_blockNumber'], this.timeoutMs)
+services/ghost-registry/src/health/checker.ts	eth_chainId	            : await rpcCallWithFallback(endpoint.url, ['ghost_chainId', 'eth_chainId'], this.timeoutMs);
+services/ghost-registry/src/health/checker.ts	eth_chainId	            ? await wsCallWithFallback(endpoint.url, ['ghost_chainId', 'eth_chainId'], this.timeoutMs)
+services/ghost-relayer/src/index.ts	eth_chainId	    const l1ChainId = l1Provider ? await l1Provider.send("eth_chainId", []) : null;
+services/ghost-relayer/src/index.ts	eth_chainId	    const l2ChainId = await l2Provider.send("eth_chainId", []);
+services/ghost-relayer/src/index.ts	eth_chainId	    const l3ChainId = await l3Provider.send("eth_chainId", []);
+services/ghost-rollup-challenger/src/index.ts	eth_chainId	    const childChainId = await child.send("eth_chainId", []);
+services/ghost-rollup-challenger/src/index.ts	eth_chainId	    const settlementChainId = await settlement.send("eth_chainId", []);
+services/ghost-rollup-proposer/src/index.ts	eth_chainId	    const childChainId = await child.send("eth_chainId", []);
+services/ghost-rollup-proposer/src/index.ts	eth_chainId	    const settlementChainId = await settlement.send("eth_chainId", []);
+services/ghost-rollup-proposer/src/index.ts	eth_chainId	  const raw = await provider.send("eth_chainId", []);
+services/ghost-rpc-aggregator/test/core.test.js	eth_blockNumber	  assert.equal(isGhostRpcMethod("eth_blockNumber"), false);
+services/ghost-runtime/rpc-firewall.ts	eth_blockNumber	  eth_blockNumber:              "ghost_blockNumber",
+services/ghost-runtime/rpc-firewall.ts	eth_call	  eth_call:                     "ghost_call",
+services/ghost-runtime/rpc-firewall.ts	eth_chainId	  eth_chainId:                  "ghost_chainId",
+services/ghost-runtime/rpc-firewall.ts	eth_estimateGas	  eth_estimateGas:              "ghost_estimateGas",
+services/ghost-runtime/rpc-firewall.ts	eth_gasPrice	  eth_gasPrice:                 "ghost_gasPrice",
+services/ghost-runtime/rpc-firewall.ts	eth_getBalance	  eth_getBalance:               "ghost_getBalance",
+services/ghost-runtime/rpc-firewall.ts	eth_getBlockByHash	  eth_getBlockByHash:           "ghost_getBlockByHash",
+services/ghost-runtime/rpc-firewall.ts	eth_getBlockByNumber	  eth_getBlockByNumber:         "ghost_getBlockByNumber",
+services/ghost-runtime/rpc-firewall.ts	eth_getCode	  eth_getCode:                  "ghost_getCode",
+services/ghost-runtime/rpc-firewall.ts	eth_getTransactionCount	  eth_getTransactionCount:      "ghost_getTransactionCount",
+services/ghost-runtime/rpc-firewall.ts	eth_maxPriorityFeePerGas	  eth_maxPriorityFeePerGas:     "ghost_maxPriorityFeePerGas",
+services/ghost-ws-gateway/src/server.ts	eth_blockNumber	      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] }),
+services/ghostbrain-core/src/rpc/compat.ts	eth_blockNumber	  const probe = await rpcHexCall(rpc, ["ghost_blockNumber", "eth_blockNumber"], timeoutMs);
+services/ghostbrain-core/src/rpc/compat.ts	eth_gasPrice	  const probe = await rpcHexCall(rpc, ["ghost_gasPrice", "eth_gasPrice"], timeoutMs);
+services/global-search-service/src/index.js	eth_getBalance	      rpcCall(rpcUrl, "eth_getBalance", [qTrim, "latest"]),
+services/global-search-service/src/index.js	eth_getBlockByHash	    const blk = await rpcCall(rpcUrl, "eth_getBlockByHash", [qTrim, false]);
+services/global-search-service/src/index.js	eth_getBlockByNumber	    const blk = await rpcCall(rpcUrl, "eth_getBlockByNumber", [`0x${Number(qTrim).toString(16)}`, false]);
+services/global-search-service/src/index.js	eth_getCode	      rpcCall(rpcUrl, "eth_getCode", [qTrim, "latest"]),
+services/governance-event-bridge/src/index.ts	eth_blockNumber	        log("warn", `[${net.layer}] eth_blockNumber failed: ${String(err)}`);
+services/governance-event-bridge/src/index.ts	eth_chainId	        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_chainId", params: [] }),
+services/governance-event-bridge/src/rpc.ts	eth_blockNumber	  const hex = await rpcCall<string>(rpcUrl, "eth_blockNumber", []);
+services/network-manager-service/src/index.js	eth_chainId	      const result = await fetchRpcResult(t.url, ["ghost_chainId", "eth_chainId"]);
+services/swap-service/src/index.js	eth_call	    rpcCall(rpcUrl, "eth_call", [{ to: ammAddress, data: encodeViewCall("reserve0()") }, "latest"]),
+services/swap-service/src/index.js	eth_call	    rpcCall(rpcUrl, "eth_call", [{ to: ammAddress, data: encodeViewCall("reserve1()") }, "latest"]),
+services/swap-service/src/index.js	eth_call	    rpcCall(rpcUrl, "eth_call", [{ to: ammAddress, data: encodeViewCall("token0()") }, "latest"]),
+services/swap-service/src/index.js	eth_call	    rpcCall(rpcUrl, "eth_call", [{ to: ammAddress, data: encodeViewCall("token1()") }, "latest"]),
+services/swap-service/src/index.js	eth_call	  // the fact that GhostChain exposes eth_call with our calldata, so we compute
+services/swap-service/src/index.js	eth_call	 *   1. Read AMM reserve0/reserve1 via eth_call → getReserves()
+services/swap-service/src/index.js	eth_call	 * Fetch AMM reserves via eth_call.

@@ -12,7 +12,7 @@
  *
  * Example:
  *   GST/USD on GhostXchange = $1.00
- *   GST/USD on Ethereum DEX  = $1.05
+ *   GST/USD on GhostBridge DEX = $1.05
  *   Spread = 5% → arbitrage_propose generated
  */
 import { randomUUID }       from "node:crypto";

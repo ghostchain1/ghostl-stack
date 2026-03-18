@@ -31,7 +31,8 @@ FROM node:22-alpine AS production
 WORKDIR /workspace/services/ghostbrain-core
 
 # Non-root user for container security
-RUN addgroup -S ghostbrain && adduser -S ghostbrain -G ghostbrain
+RUN addgroup -S ghostbrain && adduser -S ghostbrain -G ghostbrain \
+ && mkdir -p /var/lib/ghostbrain && chown ghostbrain:ghostbrain /var/lib/ghostbrain
 
 # Copy built artefacts + package manifest only
 COPY --from=builder /workspace/services/ghostbrain-core/package.json ./

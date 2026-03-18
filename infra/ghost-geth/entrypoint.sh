@@ -3,7 +3,7 @@
 # Prints the GhostChain banner, then delegates to the requested binary (default: geth).
 set -e
 
-cat <<'BANNER'
+cat >&2 <<'BANNER'
   ██████╗ ██╗  ██╗ ██████╗ ███████╗████████╗ ██████╗  ███████╗████████╗██╗  ██╗
  ██╔════╝ ██║  ██║██╔═══██╗██╔════╝╚══██╔══╝██╔════╝  ██╔════╝╚══██╔══╝██║  ██║
  ██║  ███╗███████║██║   ██║███████╗   ██║   ██║  ███╗ █████╗     ██║   ███████║
@@ -12,6 +12,6 @@ cat <<'BANNER'
   ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚═╝    ╚═════╝  ╚══════╝   ╚═╝   ╚═╝  ╚═╝
 BANNER
 
-echo "[ghost-geth] GhostChain L1 execution client — chain-id ${CHAIN_ID:-14000101}"
-echo "[ghost-geth] delegating to: $*"
+printf '%s\n' "[ghost-geth] GhostChain L1 execution client — chain-id ${CHAIN_ID:-14000101}" >&2
+printf '%s\n' "[ghost-geth] delegating to: $*" >&2
 exec "$@"

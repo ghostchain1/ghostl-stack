@@ -2,31 +2,39 @@
  * GhostChain Brand Design Tokens
  *
  * Single source of truth for all CSS custom properties.
- * Import this file once at the root of every GhostStack web app.
+ * Import this file once at the root of every GhostStack web app, or
+ * consume the matching TypeScript theme exports from `@ghostchain/ui`.
  *
  * Usage:
- *   import "@ghostchain/theme-service/dist/tokens.css";
+ *   import "/home/ghost/ghostl-stack/branding/tokens.css";
  */
 
 :root {
-  /* ── Primary palette ──────────────────────────────────────── */
-  --ghost-violet:       #7B2FBE;
-  --ghost-violet-dark:  #4A1880;
-  --ghost-teal:         #00D2FF;
-  --ghost-teal-dark:    #008EAB;
+  /* ── Canonical sovereign palette ──────────────────────────── */
+  --ghost-green:        #23d6a6;
+  --ghost-green-bright: #57f3c4;
+  --ghost-green-dark:   #159173;
+  --ghost-cyan:         #6bc7ff;
+  --ghost-cyan-dark:    #2f7fb2;
+  --ghost-purple:       #8d7cff;
+  --ghost-gold:         #d6b15f;
 
   /* ── Neutrals ──────────────────────────────────────────────── */
-  --ghost-bg:           #0A0B0F;
-  --ghost-surface:      #13141A;
-  --ghost-surface-2:    #1C1D26;
-  --ghost-border:       #252733;
-  --ghost-text:         #E8E9F0;
-  --ghost-muted:        #7A7D95;
+  --ghost-bg:           #06090d;
+  --ghost-surface:      #10161c;
+  --ghost-surface-2:    #161e26;
+  --ghost-surface-3:    #1d2831;
+  --ghost-border:       rgba(87, 243, 196, 0.16);
+  --ghost-border-strong: rgba(87, 243, 196, 0.28);
+  --ghost-text:         #ebf6f2;
+  --ghost-muted:        #8fa6a0;
 
   /* ── Semantic ──────────────────────────────────────────────── */
-  --ghost-success:      #22C55E;
-  --ghost-warning:      #F59E0B;
-  --ghost-error:        #EF4444;
+  --ghost-success:      #23d6a6;
+  --ghost-warning:      #f2c063;
+  --ghost-error:        #ff6b6b;
+  --ghost-simulation:   #8d7cff;
+  --ghost-governance:   #d6b15f;
 
   /* ── Typography ────────────────────────────────────────────── */
   --ghost-font-display: "Syne", system-ui, sans-serif;
@@ -53,5 +61,17 @@
   /* ── Shadows ────────────────────────────────────────────────── */
   --ghost-shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
   --ghost-shadow-md:  0 4px 12px rgba(0,0,0,0.5);
-  --ghost-shadow-glow: 0 0 20px rgba(123,47,190,0.35);
+  --ghost-shadow-glow: 0 0 20px rgba(35,214,166,0.28);
+
+  /* ── Compatibility aliases for existing apps ───────────────── */
+  --accent:            var(--ghost-green);
+  --accent-2:          var(--ghost-gold);
+  --accent-3:          var(--ghost-cyan);
+  --ghost-violet:      var(--ghost-purple);
+  --ghost-violet-dark: #5a47d8;
+  --ghost-teal:        var(--ghost-cyan);
+  --ghost-teal-dark:   var(--ghost-cyan-dark);
+  --green:             var(--ghost-success);
+  --yellow:            var(--ghost-warning);
+  --red:               var(--ghost-error);
 }

@@ -41,7 +41,9 @@ import logging
 import os
 import subprocess
 import time
+import uuid
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from enum import Enum, auto
 from pathlib import Path
 from typing import Callable, Dict, Optional
@@ -143,13 +145,21 @@ def _node(name: str) -> NodeHealState:
 # ── GhostBrain notification (fire-and-forget) ─────────────────────────────────
 def _notify_ghostbrain(name: str, level: HealLevel, reason: str) -> None:
     import urllib.request
+    event = {
+        "source": "node-healer",
+        "type": "node.heal.event",
+        "vm": name,
+        "level": _LEVEL_NAMES[level],
+        "reason": reason,
+        "ts": int(time.time()),
+    }
     payload = json.dumps({
-        "source":  "node-healer",
-        "type":    "node.heal.event",
-        "vm":      name,
-        "level":   _LEVEL_NAMES[level],
-        "reason":  reason,
-        "ts":      int(time.time()),
+        "messageId": str(uuid.uuid4()),
+        "subject": "infra.node.heal.event",
+        "correlationId": f"node-heal:{name}:{int(time.time())}",
+        "senderAgentId": "node-healer",
+        "payload": event,
+        "sentAt": datetime.now(timezone.utc).isoformat(),
     }).encode()
     url = f"{GHOSTBRAIN_URL}/api/v1/signals"
     try:
@@ -207,12 +217,13 @@ def _ssh_restart_service(vm_name: str, ip: Optional[str]) -> bool:
 def report_healthy(name: str) -> None:
     """Called when a node passes its health check."""
     s = _node(name)
-    if s.level != HealLevel.HEALTHY:
+    if s.level != HealLevel.HEALTHY or s.escalation_reason:
         log.info("%s: recovered — resetting healer state.", name)
         s.level             = HealLevel.HEALTHY
         s.soft_fail_count   = 0
         s.hard_fail_count   = 0
         s.first_unhealthy_at = 0.0
+        s.escalation_reason = ""
         _notify_ghostbrain(name, HealLevel.HEALTHY, "node recovered")
         _save_state()
 
@@ -226,6 +237,10 @@ def report_unhealthy(name: str, ip: Optional[str] = None, reason: str = "") -> N
     now = time.time()
 
     if s.level == HealLevel.ESCALATED:
+        next_reason = f"still unhealthy after escalation: {reason}" if reason else s.escalation_reason
+        if next_reason and next_reason != s.escalation_reason:
+            s.escalation_reason = next_reason
+            _save_state()
         log.debug("%s: escalated — awaiting human review, no automated action.", name)
         return
 

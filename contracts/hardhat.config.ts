@@ -1,7 +1,5 @@
 import { HardhatUserConfig } from "hardhat/config";
 
-
-
 import "dotenv/config";
 
 const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;

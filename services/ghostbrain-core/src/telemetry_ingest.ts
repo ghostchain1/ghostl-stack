@@ -18,15 +18,16 @@
 import { request }              from "undici";
 import { store_event, record_infra_snapshot } from "./memory_engine.js";
 import { log }                  from "./observability/event_logger.js";
+import { resolveRpcEndpoint, rpcAlive } from "./rpc/compat.js";
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
 const PROMETHEUS_URL   = process.env.PROMETHEUS_URL      ?? "http://localhost:9090";
 const DOCKER_HTTP      = process.env.DOCKER_HTTP         ?? "";
 const DOCKER_SOCKET    = process.env.DOCKER_SOCKET       ?? "unix:///var/run/docker.sock";
-const L1_RPC           = process.env.GHOSTCHAIN_L1_RPC   ?? "http://localhost:18545";
-const L2_RPC           = process.env.GHOSTCHAIN_L2_RPC   ?? "http://localhost:29545";
-const L3_RPC           = process.env.GHOSTCHAIN_L3_RPC   ?? "http://localhost:39545";
+const L1_RPC           = resolveRpcEndpoint(["GHOSTCHAIN_L1_RPC"], ["GHOST_L1_RPC_URLS"], "http://localhost:18545");
+const L2_RPC           = resolveRpcEndpoint(["GHOSTCHAIN_L2_RPC"], ["GHOST_L2_RPC_URLS"], "http://localhost:29547");
+const L3_RPC           = resolveRpcEndpoint(["GHOSTCHAIN_L3_RPC"], ["GHOST_L3_RPC_URLS"], "http://localhost:39545");
 const SCRAPE_INTERVAL  = Number(process.env.TELEMETRY_SCRAPE_MS ?? "15000");  // 15 s
 
 // ── HTTP helper ───────────────────────────────────────────────────────────────
@@ -172,17 +173,11 @@ async function scrapeChainNodes(): Promise<void> {
   ];
 
   await Promise.all(nodes.map(async (node) => {
-    const body  = JSON.stringify({ jsonrpc: "2.0", method: "ghost_blockNumber", params: [], id: 1 });
     const start = Date.now();
     try {
-      const res = await request(node.url, {
-        method:      "POST",
-        headers:     { "content-type": "application/json" },
-        body,
-        bodyTimeout: 3_000,
-      });
+      const probe = await rpcAlive(node.url, 3_000);
       const latencyMs = Date.now() - start;
-      const ok        = res.statusCode === 200;
+      const ok        = probe.alive;
 
       store_event({
         resourceId: node.id,
@@ -190,7 +185,13 @@ async function scrapeChainNodes(): Promise<void> {
         category:   "health",
         label:      ok ? "rpc_ok" : "rpc_error",
         severity:   ok ? "info" : "warning",
-        payload:    { latencyMs, chainId: node.chainId, status: res.statusCode },
+        payload:    {
+          latencyMs,
+          chainId: node.chainId,
+          method: probe.method,
+          blockNumber: probe.blockNumber,
+          error: probe.error,
+        },
       });
     } catch {
       store_event({

@@ -139,7 +139,7 @@ test("blocks unknown chain IDs via CHAIN_NOT_IN_MAINCHAIN_ALLOWLIST", () => {
     governance: { target: "devnet", proposalApproved: false, constitutionalGateEnabled: true },
     chains: {
       allowlist: [
-        { chainId: 1,   name: "GhostChain" as const, layer: "l1" as const }, // Ethereum mainnet — NOT allowed
+        { chainId: 1,   name: "GhostChain" as const, layer: "l1" as const }, // legacy external mainnet sentinel — NOT allowed
         { chainId: 137, name: "GhostL2"    as const, layer: "l2" as const }, // Polygon — NOT allowed
       ],
     },
@@ -182,4 +182,3 @@ test("assertChainAllowed throws for non-GhostChain IDs", () => {
   assert.throws(() => assertChainAllowed(1),   /invariant_chain_blocked:1/);
   assert.throws(() => assertChainAllowed(137), /invariant_chain_blocked:137/);
 });
-

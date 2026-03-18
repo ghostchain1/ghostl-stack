@@ -1,7 +1,7 @@
 /**
- * bridgeDeployment.ts — Cross-chain bridge deployment engine
+ * bridgeDeployment.ts — Interlayer bridge deployment engine
  *
- * Manages deployment lifecycle of GhostChain bridges to external networks.
+ * Manages deployment lifecycle of GhostChain bridges to approved Ghost zones.
  * Supports lock-and-mint, burn-and-mint, and IBC native transfer modes.
  */
 
@@ -16,7 +16,7 @@ export type BridgeStatus = "deploying" | "active" | "paused" | "failed" | "depre
 export interface Bridge {
   id:             string;
   source:         string;       // Always "GhostChain"
-  destination:    string;       // External chain name
+  destination:    string;       // Destination Ghost zone name
   mode:           BridgeMode;
   status:         BridgeStatus;
   deployedAt:     number;
@@ -60,39 +60,39 @@ function syntheticAddr(prefix: string): string {
 
 const SEED_BRIDGES: Omit<Bridge, "id" | "deployedAt" | "updatedAt" | "sourceContract" | "destContract" | "lastAuditAt">[] = [
   {
-    source: "GhostChain", destination: "Ethereum", mode: "lock-mint", status: "active",
+    source: "GhostChain", destination: "GhostL2", mode: "lock-mint", status: "active",
     totalVolume_USD: 18_400_000, dailyVolume_USD: 240_000, txCount: 12_840, avgConfirmSecs: 180,
     successRate: 0.997, bridgeFee_bps: 10, estimatedGasUSD: 12.50,
     validatorThreshold: 7, validatorCount: 10,
-    notes: "Primary Ethereum bridge — lock GST on GhostChain, mint wGST on ETH",
+    notes: "Primary GhostL1 to GhostL2 bridge for GST settlement",
   },
   {
-    source: "GhostChain", destination: "Polygon", mode: "lock-mint", status: "active",
+    source: "GhostChain", destination: "GhostL3", mode: "lock-mint", status: "active",
     totalVolume_USD: 5_200_000, dailyVolume_USD: 87_000, txCount: 31_420, avgConfirmSecs: 45,
     successRate: 0.999, bridgeFee_bps: 5, estimatedGasUSD: 0.30,
     validatorThreshold: 5, validatorCount: 7,
-    notes: "High-frequency Polygon bridge — low fees drive retail adoption",
+    notes: "High-frequency GhostL3 bridge supporting retail app flows",
   },
   {
-    source: "GhostChain", destination: "Cosmos (Hub)", mode: "ibc-transfer", status: "active",
+    source: "GhostChain", destination: "GhostHub", mode: "ibc-transfer", status: "active",
     totalVolume_USD: 2_100_000, dailyVolume_USD: 34_000, txCount: 8_910, avgConfirmSecs: 12,
     successRate: 0.995, bridgeFee_bps: 3, estimatedGasUSD: 0.15,
     validatorThreshold: 5, validatorCount: 7,
-    notes: "IBC-native; fastest finality across GhostStack bridges",
+    notes: "IBC-native path with fast finality across Ghost operator mesh",
   },
   {
-    source: "GhostChain", destination: "Solana", mode: "burn-mint", status: "deploying",
+    source: "GhostChain", destination: "GhostRelay", mode: "burn-mint", status: "deploying",
     totalVolume_USD: 0, dailyVolume_USD: 0, txCount: 0, avgConfirmSecs: 30,
     successRate: 1.0, bridgeFee_bps: 8, estimatedGasUSD: 0.001,
     validatorThreshold: 6, validatorCount: 8,
-    notes: "Wormhole-compatible adapter in testnet — launching Q2 2026",
+    notes: "Relay-zone adapter in testnet — launching after sealed release validation",
   },
   {
-    source: "GhostChain", destination: "BNB Chain", mode: "lock-mint", status: "deploying",
+    source: "GhostChain", destination: "GhostOrbit", mode: "lock-mint", status: "deploying",
     totalVolume_USD: 0, dailyVolume_USD: 0, txCount: 0, avgConfirmSecs: 20,
     successRate: 1.0, bridgeFee_bps: 5, estimatedGasUSD: 0.20,
     validatorThreshold: 5, validatorCount: 7,
-    notes: "BSC bridge targets 6M+ BNB Chain users for GST exposure",
+    notes: "Orbit-zone bridge extends GST exposure to Ghost-operated partner surfaces",
   },
 ];
 

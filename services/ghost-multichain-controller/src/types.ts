@@ -12,12 +12,12 @@
 // Chain identifiers
 // ---------------------------------------------------------------------------
 
-export type ExternalChainId = "ethereum" | "polygon" | "arbitrum" | "solana" | "cosmos";
+export type ExternalChainId = "ghostbridge" | "polygon" | "arbitrum" | "solana" | "cosmos";
 export type InternalLayerId = "L1" | "L2" | "L3";
 export type LayerId        = InternalLayerId | ExternalChainId;
 
 export const EXTERNAL_CHAIN_IDS: ReadonlySet<ExternalChainId> = new Set([
-  "ethereum", "polygon", "arbitrum", "solana", "cosmos",
+  "ghostbridge", "polygon", "arbitrum", "solana", "cosmos",
 ]);
 
 export const INTERNAL_LAYER_IDS: ReadonlySet<InternalLayerId> = new Set([
@@ -58,7 +58,7 @@ export interface ChainSnapshot {
   chainId:       ExternalChainId;
   blockHeight:   string;   // stringified bigint
   healthy:       boolean;
-  gasPriceWei?:  string;   // stringified bigint (ETH-like), or lamports for Solana
+  gasPriceWei?:  string;   // stringified bigint (GST-like), or lamports for Solana
   latencyMs:     number;
   timestamp:     number;
   error?:        string;
@@ -87,7 +87,7 @@ export interface BridgeInfo {
 // ---------------------------------------------------------------------------
 
 export interface MarketInfo {
-  symbol:        string;           // e.g. "GST/ETH"
+  symbol:        string;           // e.g. "GST/stGST"
   internalChain: InternalLayerId;
   externalChain: ExternalChainId;
   internalPrice: number;

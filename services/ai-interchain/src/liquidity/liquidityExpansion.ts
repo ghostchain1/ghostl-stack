@@ -1,7 +1,7 @@
 /**
- * liquidityExpansion.ts — Cross-chain liquidity pool manager
+ * liquidityExpansion.ts — Interlayer liquidity pool manager
  *
- * Deploys and tracks GST liquidity pools across external blockchains.
+ * Deploys and tracks GST liquidity pools across approved Ghost zones.
  * Each pool incentivises deep liquidity via GST rewards, boosting
  * cross-chain token demand and price stability.
  */
@@ -19,8 +19,8 @@ export interface LiquidityPool {
   chain:         string;
   protocol:      PoolProtocol;
   pairA:         string;        // e.g. "GST"
-  pairB:         string;        // e.g. "ETH"
-  label:         string;        // "GST/ETH"
+  pairB:         string;        // e.g. "stGST"
+  label:         string;        // "GST/stGST"
   status:        PoolStatus;
   createdAt:     number;
   updatedAt:     number;
@@ -60,15 +60,15 @@ function addr(): string {
 
 const SEED_POOLS: Omit<LiquidityPool, "id" | "createdAt" | "updatedAt" | "poolAddress" | "routerAddress">[] = [
   {
-    chain: "Ethereum",  protocol: "uniswap-v3",
-    pairA: "GST", pairB: "ETH",   label: "GST/ETH",  status: "active",
+    chain: "GhostL2",   protocol: "ghost-dex",
+    pairA: "GST", pairB: "stGST", label: "GST/stGST", status: "active",
     tvl_USD: 3_200_000, volume24h_USD: 480_000, fees24h_USD: 1_440, apy: 24.5,
     gstRewardsPerDay: 5_000, rewardEndAt: null,
     gstReserve: 42_000_000, pairedReserve: 1_280,
-    notes: "Core ETH pool — anchor pair for wGST price discovery",
+    notes: "Core staking pair anchoring price discovery across GhostL2",
   },
   {
-    chain: "Ethereum",  protocol: "uniswap-v3",
+    chain: "GhostL2",   protocol: "ghost-dex",
     pairA: "GST", pairB: "USDC",  label: "GST/USDC", status: "active",
     tvl_USD: 2_100_000, volume24h_USD: 320_000, fees24h_USD: 960, apy: 18.2,
     gstRewardsPerDay: 3_500, rewardEndAt: null,
@@ -76,44 +76,44 @@ const SEED_POOLS: Omit<LiquidityPool, "id" | "createdAt" | "updatedAt" | "poolAd
     notes: "Stable pair drives low-slippage GST↔USD conversion",
   },
   {
-    chain: "Polygon",   protocol: "uniswap-v3",
-    pairA: "GST", pairB: "MATIC", label: "GST/MATIC", status: "active",
+    chain: "GhostL3",   protocol: "ghost-dex",
+    pairA: "GST", pairB: "gNOTE", label: "GST/gNOTE", status: "active",
     tvl_USD: 820_000, volume24h_USD: 145_000, fees24h_USD: 290, apy: 31.8,
     gstRewardsPerDay: 8_000, rewardEndAt: null,
     gstReserve: 12_000_000, pairedReserve: 1_820_000,
-    notes: "High-APY Polygon pool attracts retail yield farmers",
+    notes: "High-APY GhostL3 pool attracts retail yield farmers",
   },
   {
-    chain: "Polygon",   protocol: "uniswap-v3",
+    chain: "GhostL3",   protocol: "ghost-dex",
     pairA: "GST", pairB: "USDC",  label: "GST/USDC", status: "active",
     tvl_USD: 640_000, volume24h_USD: 98_000, fees24h_USD: 196, apy: 22.4,
     gstRewardsPerDay: 4_000, rewardEndAt: null,
     gstReserve: 9_500_000, pairedReserve: 320_000,
-    notes: "Stable Polygon pair supporting GST market-making",
+    notes: "Stable GhostL3 pair supporting GST market-making",
   },
   {
-    chain: "Cosmos (Hub)", protocol: "osmosis",
-    pairA: "GST", pairB: "ATOM",  label: "GST/ATOM", status: "active",
+    chain: "GhostHub",  protocol: "osmosis",
+    pairA: "GST", pairB: "gHUB",  label: "GST/gHUB", status: "active",
     tvl_USD: 380_000, volume24h_USD: 42_000, fees24h_USD: 84, apy: 28.0,
     gstRewardsPerDay: 6_000, rewardEndAt: null,
     gstReserve: 5_200_000, pairedReserve: 31_000,
-    notes: "IBC native pool on Osmosis DEX — Cosmos ecosystem entry point",
+    notes: "IBC-style pool on GhostHub — operator ecosystem entry point",
   },
   {
-    chain: "Solana",    protocol: "orca",
-    pairA: "GST", pairB: "SOL",   label: "GST/SOL",  status: "seeding",
+    chain: "GhostRelay", protocol: "orca",
+    pairA: "GST", pairB: "gREL",  label: "GST/gREL", status: "seeding",
     tvl_USD: 0, volume24h_USD: 0, fees24h_USD: 0, apy: 0,
     gstRewardsPerDay: 10_000, rewardEndAt: null,
     gstReserve: 0, pairedReserve: 0,
-    notes: "Launching alongside Solana bridge — initial seed $200K",
+    notes: "Launching alongside GhostRelay activation — initial seed $200K",
   },
   {
-    chain: "BNB Chain", protocol: "pancakeswap",
-    pairA: "GST", pairB: "BNB",   label: "GST/BNB",  status: "seeding",
+    chain: "GhostOrbit", protocol: "pancakeswap",
+    pairA: "GST", pairB: "gORB",  label: "GST/gORB", status: "seeding",
     tvl_USD: 0, volume24h_USD: 0, fees24h_USD: 0, apy: 0,
     gstRewardsPerDay: 7_500, rewardEndAt: null,
     gstReserve: 0, pairedReserve: 0,
-    notes: "BSC launch pool — targeting BNB Chain retail DeFi users",
+    notes: "Orbit launch pool targeting retail Ghost DeFi users",
   },
 ];
 

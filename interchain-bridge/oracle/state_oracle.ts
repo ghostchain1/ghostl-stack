@@ -14,7 +14,7 @@
  *     3. Confirms the message hash matches the on-chain event parameters.
  *
  * In the current implementation the Merkle verification is performed via
- * a keccak256 sibling-hash chain (same as Ethereum's Patricia trie leaf
+ * a keccak256 sibling-hash chain (same as the canonical EVM Patricia trie leaf
  * proofs).  Full Patricia-Trie verification can be plugged in by replacing
  * `merkleVerify()`.
  *
@@ -186,7 +186,7 @@ export class StateOracle {
   /**
    * Compute Merkle root from leaf + siblings using left/right determination
    * from the leaf index (bit i of `index` indicates direction at depth i).
-   * This is the same sibling-hash protocol used by Ethereum's receipt trie.
+   * This is the same sibling-hash protocol used by canonical EVM receipt tries.
    */
   private merkleVerify(proof: MerkleProof): string {
     // We simulate keccak256 sibling-chain with hex concatenation + hash.

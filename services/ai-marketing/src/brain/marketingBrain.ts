@@ -73,7 +73,7 @@ export class MarketingBrain {
       logger.warn("scanCryptoTrends: upstream unreachable, using synthetic data");
       return [
         { topic: "GhostChain", momentum: 85, sentiment: "bullish", relatedCoins: ["GST"] },
-        { topic: "Layer2 Scaling", momentum: 72, sentiment: "bullish", relatedCoins: ["ETH", "GST"] },
+        { topic: "Layer2 Scaling", momentum: 72, sentiment: "bullish", relatedCoins: ["GST", "stGST"] },
         { topic: "DeFi Yields",   momentum: 60, sentiment: "neutral", relatedCoins: ["GST"] },
       ];
     }
@@ -82,9 +82,9 @@ export class MarketingBrain {
   /** Stub: scan competitor social/chain activity. */
   async scanCompetitors(): Promise<CompetitorMove[]> {
     return [
-      { project: "Ethereum L2", action: "New developer grant announcement", platform: "Twitter",  timestamp: new Date().toISOString(), engagement: 4200 },
-      { project: "Polygon",     action: "Exchange listing announcement",    platform: "Discord",  timestamp: new Date().toISOString(), engagement: 3100 },
-      { project: "Arbitrum",    action: "DeFi liquidity campaign",         platform: "Reddit",   timestamp: new Date().toISOString(), engagement: 2800 },
+      { project: "GhostL2",      action: "New developer grant announcement", platform: "Twitter", timestamp: new Date().toISOString(), engagement: 4200 },
+      { project: "GhostXchange", action: "Liquidity incentive announcement", platform: "Discord", timestamp: new Date().toISOString(), engagement: 3100 },
+      { project: "GhostL3",      action: "Builder acceleration campaign",    platform: "Reddit",  timestamp: new Date().toISOString(), engagement: 2800 },
     ];
   }
 

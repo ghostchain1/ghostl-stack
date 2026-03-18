@@ -48,7 +48,7 @@ export async function generateMeme(topic: string): Promise<MemeConcept> {
         size:    "1024x1024",
         quality: "standard",
       });
-      imageUrl = img.data[0]?.url;
+      imageUrl = img.data?.[0]?.url;
     } catch (err: any) {
       logger.warn("MemeFactory: DALL-E unavailable", { err: err?.message });
     }

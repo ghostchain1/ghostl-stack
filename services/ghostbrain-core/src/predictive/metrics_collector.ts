@@ -18,6 +18,7 @@ import os                   from "node:os";
 import { exec }             from "node:child_process";
 import { promisify }        from "node:util";
 import { request }          from "undici";
+import { resolveRpcEndpoint, rpcBlockNumber, rpcGasPrice } from "../rpc/compat.js";
 
 const execAsync = promisify(exec);
 
@@ -25,9 +26,9 @@ const execAsync = promisify(exec);
 
 const DOCKER_SOCKET    = process.env.DOCKER_SOCKET        ?? "/var/run/docker.sock";
 const NODE_EXPORTER    = process.env.NODE_EXPORTER_URL    ?? "http://localhost:9100/metrics";
-const L1_RPC           = process.env.GHOSTCHAIN_L1_RPC    ?? "http://localhost:18545";
-const L2_RPC           = process.env.GHOSTCHAIN_L2_RPC    ?? "http://localhost:29545";
-const L3_RPC           = process.env.GHOSTCHAIN_L3_RPC    ?? "http://localhost:39545";
+const L1_RPC           = resolveRpcEndpoint(["GHOSTCHAIN_L1_RPC"], ["GHOST_L1_RPC_URLS"], "http://localhost:18545");
+const L2_RPC           = resolveRpcEndpoint(["GHOSTCHAIN_L2_RPC"], ["GHOST_L2_RPC_URLS"], "http://localhost:29547");
+const L3_RPC           = resolveRpcEndpoint(["GHOSTCHAIN_L3_RPC"], ["GHOST_L3_RPC_URLS"], "http://localhost:39545");
 const COLLECT_TIMEOUT  = Number(process.env.COLLECT_TIMEOUT_MS ?? "3000");
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -199,38 +200,19 @@ async function probeChain(
 ): Promise<ChainSnapshot> {
   const base: ChainSnapshot = { chain, chainId, rpc, blockNumber: 0, gasPrice: 0n, alive: false };
   try {
-    const res = await request(rpc, {
-      method:      "POST",
-      headers:     { "content-type": "application/json" },
-      body:        JSON.stringify([
-        { jsonrpc: "2.0", method: "ghost_blockNumber", params: [], id: 1 },
-        { jsonrpc: "2.0", method: "ghost_gasPrice",    params: [], id: 2 },
-      ]),
-      bodyTimeout: COLLECT_TIMEOUT,
-    });
-    if (res.statusCode !== 200) return base;
-    const data = await res.body.json() as Array<{ id: number; result?: string }>;
-    for (const d of data) {
-      if (d.id === 1 && d.result) base.blockNumber = parseInt(d.result, 16);
-      if (d.id === 2 && d.result) base.gasPrice    = BigInt(d.result);
-    }
+    const block = await rpcBlockNumber(rpc, COLLECT_TIMEOUT);
+    base.blockNumber = block.blockNumber;
     base.alive = true;
+
+    try {
+      const gas = await rpcGasPrice(rpc, COLLECT_TIMEOUT);
+      base.gasPrice = gas.gasPrice;
+    } catch {
+      base.gasPrice = 0n;
+    }
+
     return base;
   } catch {
-    // Fallback to eth_ namespace
-    try {
-      const res2 = await request(rpc, {
-        method:      "POST",
-        headers:     { "content-type": "application/json" },
-        body:        JSON.stringify({ jsonrpc: "2.0", method: "eth_blockNumber", params: [], id: 1 }),
-        bodyTimeout: COLLECT_TIMEOUT,
-      });
-      if (res2.statusCode === 200) {
-        const d2 = await res2.body.json() as { result?: string };
-        if (d2.result) base.blockNumber = parseInt(d2.result, 16);
-        base.alive = true;
-      }
-    } catch { /* chain offline */ }
     return base;
   }
 }
