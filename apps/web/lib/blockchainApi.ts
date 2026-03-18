@@ -80,9 +80,9 @@ async function rpc<T>(method: string, params: unknown[] = []): Promise<T | null>
 
 export async function fetchL1Stats(): Promise<L1Stats | null> {
   const [blockHex, chainHex, gasPriceHex] = await Promise.all([
-    rpc<string>("eth_blockNumber"),
-    rpc<string>("eth_chainId"),
-    rpc<string>("eth_gasPrice"),
+    rpc<string>("ghost_blockNumber"),
+    rpc<string>("ghost_chainId"),
+    rpc<string>("ghost_gasPrice"),
   ]);
   if (!blockHex && !chainHex) return null;
   return {

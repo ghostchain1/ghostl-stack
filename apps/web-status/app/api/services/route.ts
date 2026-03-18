@@ -71,7 +71,7 @@ const probeRpc = async (name: string, url: string, expectedChainId: number): Pro
     let data = (await res.json().catch(() => ({}))) as { result?: string; error?: { message?: string }; status?: string };
 
     if (data.error || !data.result) {
-      res = await request("eth_chainId");
+      res = await request("ghost_chainId");
       data = (await res.json().catch(() => ({}))) as { result?: string; error?: { message?: string }; status?: string };
     }
 

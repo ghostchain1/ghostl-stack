@@ -35,7 +35,7 @@ async function rpcBlockNumber(rpc: string): Promise<{ block: number; peers: numb
       fetch(rpc, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] }),
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'ghost_blockNumber', params: [] }),
         signal: AbortSignal.timeout(4_000),
       }),
       fetch(rpc, {

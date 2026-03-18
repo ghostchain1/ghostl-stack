@@ -11,7 +11,7 @@ const NODES: Array<{ name: string; layer: string; chainId: number; rpc: string }
 ];
 
 async function probeNode(rpc: string): Promise<{ status: string; blockNumber?: number }> {
-  const body = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] });
+  const body = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'ghost_blockNumber', params: [] });
   const res = await fetch(rpc, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

@@ -31,7 +31,7 @@ async function getChainBlock() {
     const res = await fetch(C3_CONFIG.chains.ghostchain.rpc, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] }),
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ghost_blockNumber", params: [] }),
       signal: AbortSignal.timeout(3_000),
       cache: "no-store",
     });

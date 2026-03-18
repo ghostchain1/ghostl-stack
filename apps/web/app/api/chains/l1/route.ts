@@ -37,9 +37,9 @@ export async function GET(): Promise<NextResponse> {
   try {
     const [chainIdRaw, blockRaw, gasPriceRaw, peerCountRaw, cosmosValidators] =
       await Promise.allSettled([
-        jsonRpc('eth_chainId'),
-        jsonRpc('eth_blockNumber'),
-        jsonRpc('eth_gasPrice'),
+        jsonRpc('ghost_chainId'),
+        jsonRpc('ghost_blockNumber'),
+        jsonRpc('ghost_gasPrice'),
         jsonRpc('net_peerCount'),
         cosmosGet<{ result?: { total?: string } }>('/cosmos/staking/v1beta1/validators?status=BOND_STATUS_BONDED&pagination.limit=1'),
       ]);

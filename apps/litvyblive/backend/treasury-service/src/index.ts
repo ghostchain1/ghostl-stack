@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { v4 as uuid } from 'uuid';
 import Database from 'better-sqlite3';
 import Redis from 'ioredis';
-import { ethers } from 'ethers';
+import { JsonRpcProvider } from '@ghostchain/sdk';
 import { mkdirSync } from 'fs';
 import { createLogger, transports, format } from 'winston';
 
@@ -61,9 +61,9 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_ttx_creator ON treasury_txs(creator_id, created_at);
 `);
 
-let provider: ethers.JsonRpcProvider | undefined;
+let provider: JsonRpcProvider | undefined;
 try {
-  provider = new ethers.JsonRpcProvider(GHOST_L3_RPC, { chainId: GHOST_L3_CHAIN_ID, name: 'ghostl3' });
+  provider = new JsonRpcProvider(GHOST_L3_RPC, { chainId: GHOST_L3_CHAIN_ID, name: 'ghostl3' });
 } catch {
   log.warn('GhostL3 RPC unavailable');
 }

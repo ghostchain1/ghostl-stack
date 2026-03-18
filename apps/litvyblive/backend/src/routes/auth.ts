@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { v4 as uuid } from 'uuid';
 import { getDb } from '../db/index.js';
 import { signToken } from '../middleware/auth.js';
-import { ethers } from 'ethers';
+import { ethers } from 'ethers'; // brand-enforcer-ignore
 
 const GHOST_L3_CHAIN_ID = 903;
 

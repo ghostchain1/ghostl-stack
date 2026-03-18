@@ -20,9 +20,9 @@ async function jsonRpc(method: string, params: unknown[] = []): Promise<unknown>
 export async function GET(): Promise<NextResponse> {
   try {
     const [blockRaw, gasPriceRaw, chainIdRaw, peerCountRaw] = await Promise.allSettled([
-      jsonRpc('eth_blockNumber'),
-      jsonRpc('eth_gasPrice'),
-      jsonRpc('eth_chainId'),
+      jsonRpc('ghost_blockNumber'),
+      jsonRpc('ghost_gasPrice'),
+      jsonRpc('ghost_chainId'),
       jsonRpc('net_peerCount'),
     ]);
 

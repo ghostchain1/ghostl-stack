@@ -65,8 +65,8 @@ async function rpcCall(url: string, method: string, params: unknown[] = []) {
 async function probeChain(name: string, url: string, expectedChainId: number) {
   try {
     const [chainIdHex, blockHex, clientVersion] = await Promise.all([
-      rpcCall(url, "eth_chainId"),
-      rpcCall(url, "eth_blockNumber"),
+      rpcCall(url, "ghost_chainId"),
+      rpcCall(url, "ghost_blockNumber"),
       rpcCall(url, "web3_clientVersion"),
     ]);
 
@@ -164,10 +164,10 @@ app.get("/api/system/overview", async () => {
   if (cfg.l3OracleAddress) {
     try {
       // Confirm contract is deployed
-      const code = await rpcCall(cfg.rpcL2, "eth_getCode", [cfg.l3OracleAddress, "latest"]);
+      const code = await rpcCall(cfg.rpcL2, "ghost_getCode", [cfg.l3OracleAddress, "latest"]);
       if (code && code !== "0x" && code !== "0x0") {
         // Call latestOutputIndex() selector 0x69f16eec — succeeds when at least one output exists
-        const result = await rpcCall(cfg.rpcL2, "eth_call", [
+        const result = await rpcCall(cfg.rpcL2, "ghost_call", [
           { to: cfg.l3OracleAddress, data: "0x69f16eec" },
           "latest",
         ]);

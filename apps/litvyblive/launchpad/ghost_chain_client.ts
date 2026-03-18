@@ -42,7 +42,7 @@ function decodeUint256(hex: string): bigint {
 export async function getTokenBalance(tokenAddress: string, holder: string): Promise<bigint> {
   // balanceOf(address) selector = 0x70a08231
   const data = '0x70a08231' + holder.replace('0x', '').padStart(64, '0');
-  const result = await rpc<string>('eth_call', [
+  const result = await rpc<string>('ghost_call', [
     { to: tokenAddress, data },
     'latest',
   ]);
@@ -52,7 +52,7 @@ export async function getTokenBalance(tokenAddress: string, holder: string): Pro
 /** Read totalSupply() of a GRC-20 token on GhostL3 */
 export async function getTotalSupply(tokenAddress: string): Promise<bigint> {
   const data = encodeNoArgCall('0x18160ddd'); // totalSupply()
-  const result = await rpc<string>('eth_call', [{ to: tokenAddress, data }, 'latest']);
+  const result = await rpc<string>('ghost_call', [{ to: tokenAddress, data }, 'latest']);
   return decodeUint256(result);
 }
 
@@ -60,12 +60,12 @@ export async function getTotalSupply(tokenAddress: string): Promise<bigint> {
 export async function getMaxSupply(tokenAddress: string): Promise<bigint> {
   // maxSupply() selector on CreatorToken — 4-byte: keccak("maxSupply()")[:4] = 0xd5abeb01
   const data = encodeNoArgCall('0xd5abeb01');
-  const result = await rpc<string>('eth_call', [{ to: tokenAddress, data }, 'latest']);
+  const result = await rpc<string>('ghost_call', [{ to: tokenAddress, data }, 'latest']);
   return decodeUint256(result);
 }
 
 /** Get current GhostL3 block number */
 export async function getBlockNumber(): Promise<bigint> {
-  const result = await rpc<string>('eth_blockNumber');
+  const result = await rpc<string>('ghost_blockNumber');
   return BigInt(result);
 }

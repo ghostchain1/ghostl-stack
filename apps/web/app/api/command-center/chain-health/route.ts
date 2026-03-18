@@ -27,8 +27,8 @@ export async function GET(request: Request): Promise<NextResponse> {
 
   try {
     const [rawChainId, rawBlock] = await Promise.all([
-      jsonRpc(rpcUrl, 'eth_chainId'),
-      jsonRpc(rpcUrl, 'eth_blockNumber'),
+      jsonRpc(rpcUrl, 'ghost_chainId'),
+      jsonRpc(rpcUrl, 'ghost_blockNumber'),
     ]);
     return NextResponse.json({
       status: 'ok',

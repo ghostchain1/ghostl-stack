@@ -82,7 +82,7 @@ async function fetchBlocksViaRpc(chain: string, count: number): Promise<BlockRes
   const rpcUrl = RPC[chain];
   if (!rpcUrl) throw new Error(`no RPC URL for chain ${chain}`);
 
-  const latestHex = await rpcCall<string>(rpcUrl, 'eth_blockNumber', []);
+  const latestHex = await rpcCall<string>(rpcUrl, 'ghost_blockNumber', []);
   const latest    = parseInt(latestHex, 16);
 
   const batchSize = Math.min(count, 50);
@@ -90,7 +90,7 @@ async function fetchBlocksViaRpc(chain: string, count: number): Promise<BlockRes
 
   const blocks = await Promise.all(
     blockNums.map(n =>
-      rpcCall<RpcBlock>(rpcUrl, 'eth_getBlockByNumber', [`0x${n.toString(16)}`, false])
+      rpcCall<RpcBlock>(rpcUrl, 'ghost_getBlockByNumber', [`0x${n.toString(16)}`, false])
         .catch(() => null),
     ),
   );

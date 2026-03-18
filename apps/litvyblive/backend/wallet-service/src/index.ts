@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { v4 as uuid } from 'uuid';
 import Database from 'better-sqlite3';
 import Redis from 'ioredis';
-import { ethers } from 'ethers';
+import { JsonRpcProvider, formatEther } from '@ghostchain/sdk';
 import { mkdirSync } from 'fs';
 import { createLogger, transports, format } from 'winston';
 
@@ -50,9 +50,9 @@ db.exec(`
 `);
 
 // GhostL3 JSON-RPC provider (used for on-chain balance reads)
-let provider: ethers.JsonRpcProvider | undefined;
+let provider: JsonRpcProvider | undefined;
 try {
-  provider = new ethers.JsonRpcProvider(GHOST_L3_RPC, { chainId: GHOST_L3_CHAIN_ID, name: 'ghostl3' });
+  provider = new JsonRpcProvider(GHOST_L3_RPC, { chainId: GHOST_L3_CHAIN_ID, name: 'ghostl3' });
 } catch {
   log.warn('GhostL3 RPC unavailable — using ledger balances only');
 }
@@ -102,7 +102,7 @@ app.get('/balance/onchain/:address', async (req, res) => {
   }
   try {
     const balWei = await provider?.getBalance(req.params['address']);
-    const balGst = balWei ? Number(ethers.formatEther(balWei)) : null;
+    const balGst = balWei ? Number(formatEther(balWei)) : null;
     res.json({ address: req.params['address'], gstBalance: balGst, chainId: GHOST_L3_CHAIN_ID });
   } catch {
     res.status(503).json({ error: 'GhostL3 RPC unreachable' });

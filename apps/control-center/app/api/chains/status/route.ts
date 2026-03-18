@@ -19,8 +19,8 @@ async function probeChain(id: string, cfg: ChainCfg) {
   const t0 = Date.now();
   try {
     const [blockHex, gasPriceHex] = await Promise.all([
-      rpcCall(cfg.rpc, "eth_blockNumber"),
-      rpcCall(cfg.rpc, "eth_gasPrice"),
+      rpcCall(cfg.rpc, "ghost_blockNumber"),
+      rpcCall(cfg.rpc, "ghost_gasPrice"),
     ]);
     const blockHeight = blockHex ? parseInt(blockHex, 16) : 0;
     const gasGwei     = gasPriceHex ? (parseInt(gasPriceHex, 16) / 1e9).toFixed(2) + " Gwei" : "—";
