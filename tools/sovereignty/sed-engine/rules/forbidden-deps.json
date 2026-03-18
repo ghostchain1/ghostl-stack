@@ -1,8 +1,7 @@
 {
   "$schema": "https://ghostchain.cloud/schemas/sed-engine/forbidden-deps/v1",
   "version": "1.0.0",
-  "description": "GhostChain SED-Engine — forbidden npm package list and Ghost sovereign equivalents.",
-
+  "description": "GhostChain SED-Engine \u2014 forbidden npm package list and Ghost sovereign equivalents.",
   "forbidden": [
     "ethers",
     "web3",
@@ -40,43 +39,40 @@
     "eth-query",
     "@openzeppelin/contracts"
   ],
-
   "ghostEquivalents": {
-    "ethers":                          "@ghostchain/sdk",
-    "web3":                            "@ghostchain/sdk",
-    "web3-eth":                        "@ghostchain/sdk",
-    "web3-core":                       "@ghostchain/sdk",
-    "web3-utils":                      "@ghostchain/sdk",
-    "@ethersproject/providers":        "@ghostchain/sdk/provider",
-    "@ethersproject/contracts":        "@ghostchain/sdk/contract",
-    "@ethersproject/abi":              "@ghostchain/sdk/abi",
-    "@ethersproject/wallet":           "@ghostchain/sdk/wallet",
-    "@ethersproject/address":          "@ghostchain/sdk/address",
-    "@ethersproject/hash":             "@ghostchain/sdk/hash",
-    "@ethersproject/units":            "@ghostchain/sdk/units",
-    "@ethersproject/transactions":     "@ghostchain/sdk/transaction",
-    "@ethersproject/signing-key":      "@ghostchain/sdk/wallet",
-    "@ethersproject/bytes":            "@ghostchain/sdk",
-    "@ethersproject/bignumber":        "built-in BigInt",
-    "@ethersproject/keccak256":        "@ghostchain/sdk",
-    "ethereumjs-util":                 "@ghostchain/sdk",
-    "ethereumjs-tx":                   "@ghostchain/sdk/transaction",
-    "eth-sig-util":                    "@ghostchain/sdk/wallet",
-    "@openzeppelin/contracts":         "@ghostchain/contracts"
+    "ethers": "@ghostchain/sdk",
+    "web3": "@ghostchain/sdk",
+    "web3-eth": "@ghostchain/sdk",
+    "web3-core": "@ghostchain/sdk",
+    "web3-utils": "@ghostchain/sdk",
+    "@ethersproject/providers": "@ghostchain/sdk/provider",
+    "@ethersproject/contracts": "@ghostchain/sdk/contract",
+    "@ethersproject/abi": "@ghostchain/sdk/abi",
+    "@ethersproject/wallet": "@ghostchain/sdk/wallet",
+    "@ethersproject/address": "@ghostchain/sdk/address",
+    "@ethersproject/hash": "@ghostchain/sdk/hash",
+    "@ethersproject/units": "@ghostchain/sdk/units",
+    "@ethersproject/transactions": "@ghostchain/sdk/transaction",
+    "@ethersproject/signing-key": "@ghostchain/sdk/wallet",
+    "@ethersproject/bytes": "@ghostchain/sdk",
+    "@ethersproject/bignumber": "built-in BigInt",
+    "@ethersproject/keccak256": "@ghostchain/sdk",
+    "ethereumjs-util": "@ghostchain/sdk",
+    "ethereumjs-tx": "@ghostchain/sdk/transaction",
+    "eth-sig-util": "@ghostchain/sdk/wallet",
+    "@openzeppelin/contracts": "@ghostchain/contracts"
   },
-
   "severity": {
-    "ethers":                   "CRITICAL",
-    "web3":                     "CRITICAL",
+    "ethers": "CRITICAL",
+    "web3": "CRITICAL",
     "@ethersproject/providers": "CRITICAL",
     "@ethersproject/contracts": "CRITICAL",
-    "@ethersproject/abi":       "HIGH",
-    "@openzeppelin/contracts":  "HIGH",
-    "ethereumjs-util":          "HIGH",
-    "ethereumjs-tx":            "HIGH",
-    "eth-sig-util":             "MEDIUM"
+    "@ethersproject/abi": "HIGH",
+    "@openzeppelin/contracts": "HIGH",
+    "ethereumjs-util": "HIGH",
+    "ethereumjs-tx": "HIGH",
+    "eth-sig-util": "MEDIUM"
   },
-
   "exemptPaths": [
     "packages/ghost-sdk/src/",
     "packages/ghost-sdk-core/src/",
@@ -88,11 +84,11 @@
     "packages/ghostchainjs-util/src/",
     "packages/sdk/src/",
     "contracts/lib/",
+    "infra/opstack/gate/",
     "node_modules/",
     "dist/",
     ".git/",
     "brand-enforcer-ignore"
   ],
-
   "note": "Packages in exemptPaths are the canonical Ghost compat/bridge layer and are ALLOWED to import ethers as their implementation engine. ALL other packages must import @ghostchain/sdk instead."
 }

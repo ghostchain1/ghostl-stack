@@ -48,49 +48,49 @@ runs:
       shell: bash
       run: |
         python3 - <<'PY'
-import json
-from pathlib import Path
-import os
+        import json
+        from pathlib import Path
+        import os
 
-jsonl_path = Path("${{ inputs.jsonl_path }}")
-summary_path = Path("${{ inputs.summary_path }}")
-bundle_dir = "${{ inputs.bundle_dir }}"
+        jsonl_path = Path("${{ inputs.jsonl_path }}")
+        summary_path = Path("${{ inputs.summary_path }}")
+        bundle_dir = "${{ inputs.bundle_dir }}"
 
-lines = jsonl_path.read_text(encoding='utf-8').splitlines()
-summary = None
-checks = []
-for line in lines:
-    if not line.strip():
+        lines = jsonl_path.read_text(encoding='utf-8').splitlines()
+        summary = None
+        checks = []
+        for line in lines:
+        if not line.strip():
         continue
-    obj = json.loads(line)
-    if obj.get('type') == 'bundle_summary':
+        obj = json.loads(line)
+        if obj.get('type') == 'bundle_summary':
         summary = obj
-    elif obj.get('type') == 'check':
+        elif obj.get('type') == 'check':
         checks.append(obj)
 
-ok = bool(summary and summary.get('ok'))
-status = 'PASS' if ok else 'FAIL'
+        ok = bool(summary and summary.get('ok'))
+        status = 'PASS' if ok else 'FAIL'
 
-md_lines = [
-    f"### GhostVM AI Bundle Verification: {status}",
-    "",
-    f"- Bundle Dir Input: `{bundle_dir}`",
-    f"- Bundle Dir: `{summary.get('bundle_dir') if summary else ''}`",
-    f"- Manifest: `{summary.get('manifest') if summary else ''}`",
-    "",
-    "| Check | OK | Details |",
-    "|---|---:|---|",
-]
-for c in checks:
-    md_lines.append(f"| {c.get('name','')} | {'✅' if c.get('ok') else '❌'} | {c.get('details','')} |")
+        md_lines = [
+        f"### GhostVM AI Bundle Verification: {status}",
+        "",
+        f"- Bundle Dir Input: `{bundle_dir}`",
+        f"- Bundle Dir: `{summary.get('bundle_dir') if summary else ''}`",
+        f"- Manifest: `{summary.get('manifest') if summary else ''}`",
+        "",
+        "| Check | OK | Details |",
+        "|---|---:|---|",
+        ]
+        for c in checks:
+        md_lines.append(f"| {c.get('name','')} | {'✅' if c.get('ok') else '❌'} | {c.get('details','')} |")
 
-summary_path.write_text('\n'.join(md_lines) + '\n', encoding='utf-8')
+        summary_path.write_text('\n'.join(md_lines) + '\n', encoding='utf-8')
 
-github_output = os.environ.get('GITHUB_OUTPUT')
-if github_output:
-    with open(github_output, 'a', encoding='utf-8') as fh:
+        github_output = os.environ.get('GITHUB_OUTPUT')
+        if github_output:
+        with open(github_output, 'a', encoding='utf-8') as fh:
         fh.write(f"verify_ok={'true' if ok else 'false'}\n")
-PY
+        PY
 
     - name: Append GitHub job summary
       if: ${{ inputs.append_job_summary == 'true' }}
