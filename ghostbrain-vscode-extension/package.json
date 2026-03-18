@@ -18,16 +18,7 @@
     "Programming Languages"
   ],
   "activationEvents": [
-    "onStartupFinished",
-    "onCommand:ghostbrain.openPanel",
-    "onCommand:ghostbrain.askSelection",
-    "onCommand:ghostbrain.analyzeWorkspace",
-    "onCommand:ghostbrain.checkChainHealth",
-    "onCommand:ghostbrain.analyzeBridgeConfig",
-    "onCommand:ghostbrain.reviewValidatorSetup",
-    "onCommand:ghostbrain.explainContract",
-    "onCommand:ghostbrain.setApiKey",
-    "onView:ghostbrain.chat"
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -86,7 +77,8 @@
       "ghostbrain": [
         {
           "id": "ghostbrain.chat",
-          "name": "Ghost Console"
+          "name": "Ghost Console",
+          "icon": "media/ghostbrain.svg"
         }
       ]
     },
