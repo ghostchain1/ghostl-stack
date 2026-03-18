@@ -7,6 +7,7 @@ if (!JWT_SECRET) throw new Error('JWT_SECRET env var is required');
 export interface AuthRequest extends Request {
   userId?: string;
   walletAddress?: string;
+  role?: string;
 }
 
 export function authMiddleware(
@@ -22,12 +23,27 @@ export function authMiddleware(
   const token = header.slice(7);
   try {
     const payload = jwt.verify(token, JWT_SECRET!) as jwt.JwtPayload;
-    req.userId = payload['userId'] as string;
+    req.userId        = payload['userId'] as string;
     req.walletAddress = payload['walletAddress'] as string | undefined;
+    req.role          = payload['role'] as string | undefined;
     next();
   } catch {
     res.status(401).json({ error: 'Invalid or expired token' });
   }
+}
+
+export function adminMiddleware(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): void {
+  authMiddleware(req, res, () => {
+    if (req.role !== 'admin') {
+      res.status(403).json({ error: 'Admin role required' });
+      return;
+    }
+    next();
+  });
 }
 
 export function signToken(payload: Record<string, unknown>): string {

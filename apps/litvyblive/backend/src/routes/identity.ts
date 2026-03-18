@@ -20,7 +20,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { getDb } from '../db/index.js';
-import { authMiddleware, type AuthRequest } from '../middleware/auth.js';
+import { authMiddleware, adminMiddleware, type AuthRequest } from '../middleware/auth.js';
 import { IdentityService } from '../../../identity/identity_service.js';
 
 export const identityRouter = Router();
@@ -156,13 +156,13 @@ identityRouter.get('/verify/status', (req: AuthRequest, res) => {
 });
 
 // ─── Admin endpoints ──────────────────────────────────────────────────────────
-// TODO: Restrict to admin JWT role once role-based auth middleware is added.
+// Restricted to JWT role="admin".
 
-identityRouter.get('/verify/pending', (_req, res) => {
+identityRouter.get('/verify/pending', adminMiddleware, (_req, res) => {
   res.json(svc().listPendingVerifications());
 });
 
-identityRouter.post('/verify/review', (req, res) => {
+identityRouter.post('/verify/review', adminMiddleware, (req, res) => {
   const parsed = reviewSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten() }); return; }
   try {

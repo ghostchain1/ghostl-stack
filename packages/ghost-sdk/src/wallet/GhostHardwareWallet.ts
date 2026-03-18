@@ -111,13 +111,93 @@ export class GhostSoftwareHardwareWallet implements GhostHardwareWallet {
   }
 
   async signTypedData(
-    _domain: Eip712Domain,
-    _types: Record<string, Eip712Type[]>,
-    _value: Record<string, unknown>,
+    domain: Eip712Domain,
+    types: Record<string, Eip712Type[]>,
+    value: Record<string, unknown>,
   ): Promise<string> {
-    // Software stub: EIP-712 signing requires ethers TypedDataEncoder
-    // In production use GhostHardwareWalletBase extension with real transport
-    throw new Error("GhostSoftwareHardwareWallet: signTypedData not implemented in software stub");
+    const { secp256k1 } = await import("@noble/curves/secp256k1");
+    const { keccak_256 }  = await import("@noble/hashes/sha3");
+
+    // ── helpers ─────────────────────────────────────────────────────────────
+    const hexToB = (hex: string): Uint8Array => {
+      const h = hex.replace(/^0x/i, "");
+      const b = new Uint8Array(h.length / 2);
+      for (let i = 0; i < b.length; i++) b[i] = parseInt(h.slice(i * 2, i * 2 + 2), 16);
+      return b;
+    };
+    const pad32 = (b: Uint8Array): Uint8Array => {
+      if (b.length >= 32) return b.slice(b.length - 32);
+      const o = new Uint8Array(32); o.set(b, 32 - b.length); return o;
+    };
+    const encUint = (n: bigint | number | string): Uint8Array =>
+      pad32(hexToB(BigInt(n as string | number | bigint).toString(16).padStart(2, "0")));
+
+    // ── Build full type registry including EIP-712 domain ────────────────────
+    const domainFields: Eip712Type[] = [];
+    if (domain.name !== undefined)              domainFields.push({ name: "name",              type: "string"  });
+    if (domain.version !== undefined)           domainFields.push({ name: "version",           type: "string"  });
+    if (domain.chainId !== undefined)           domainFields.push({ name: "chainId",           type: "uint256" });
+    if (domain.verifyingContract !== undefined) domainFields.push({ name: "verifyingContract", type: "address" });
+    if (domain.salt !== undefined)              domainFields.push({ name: "salt",              type: "bytes32" });
+    const allTypes: Record<string, Eip712Type[]> = { EIP712Domain: domainFields, ...types };
+
+    // ── Type string builder (deterministic, sorted deps) ────────────────────
+    const buildTypeStr = (name: string): string => {
+      const fields = (allTypes[name] ?? []).map(f => `${f.type} ${f.name}`).join(",");
+      const deps = new Set<string>();
+      const collect = (t: string) => {
+        for (const f of allTypes[t] ?? []) {
+          const base = f.type.endsWith("[]") ? f.type.slice(0, -2) : f.type;
+          if (allTypes[base] && !deps.has(base)) { deps.add(base); collect(base); }
+        }
+      };
+      collect(name);
+      const depStr = [...deps].sort()
+        .map(d => `${d}(${(allTypes[d] ?? []).map(f => `${f.type} ${f.name}`).join(",")})`)
+        .join("");
+      return `${name}(${fields})${depStr}`;
+    };
+
+    const typeHash = (name: string): Uint8Array =>
+      keccak_256(new TextEncoder().encode(buildTypeStr(name)));
+
+    // ── Value encoder ────────────────────────────────────────────────────────
+    const encVal = (type: string, v: unknown): Uint8Array => {
+      if (type === "address")               return pad32(hexToB(v as string));
+      if (/^u?int/.test(type))              return encUint(v as bigint | number | string);
+      if (type === "bool")                  return encUint(v ? 1n : 0n);
+      if (type === "bytes32")               return pad32(hexToB(v as string));
+      if (/^bytes\d/.test(type))            return pad32(hexToB(v as string));
+      if (type === "string")                return keccak_256(new TextEncoder().encode(v as string));
+      if (type === "bytes")                 return keccak_256(hexToB(v as string));
+      if (allTypes[type])                   return hashStruct(type, v as Record<string, unknown>);
+      return new Uint8Array(32);
+    };
+
+    // ── Struct hasher ────────────────────────────────────────────────────────
+    const hashStruct = (name: string, data: Record<string, unknown>): Uint8Array => {
+      const parts = [typeHash(name), ...(allTypes[name] ?? []).map(f => encVal(f.type, data[f.name]))];
+      const buf = new Uint8Array(parts.reduce((a, b) => a + b.length, 0));
+      let off = 0; for (const p of parts) { buf.set(p, off); off += p.length; }
+      return keccak_256(buf);
+    };
+
+    const domainSep  = hashStruct("EIP712Domain", domain as unknown as Record<string, unknown>);
+    const primaryType = Object.keys(types)[0] ?? "";
+    const structHash  = hashStruct(primaryType, value);
+
+    // "\x19\x01" + domainSep (32) + structHash (32) = 66 bytes
+    const msg = new Uint8Array(66);
+    msg[0] = 0x19; msg[1] = 0x01;
+    msg.set(domainSep, 2); msg.set(structHash, 34);
+    const digest = keccak_256(msg);
+
+    const privK = hexToB(this._privateKey);
+    const sig   = secp256k1.sign(digest, privK, { lowS: true });
+    const r     = sig.r.toString(16).padStart(64, "0");
+    const s     = sig.s.toString(16).padStart(64, "0");
+    const v     = sig.recovery.toString(16).padStart(2, "0");
+    return `0x${r}${s}${v}`;
   }
 
   async isConnected(): Promise<boolean> {

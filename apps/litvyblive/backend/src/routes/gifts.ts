@@ -68,7 +68,11 @@ giftsRouter.post('/send-onchain', (req: AuthRequest, res) => {
     .safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten() }); return; }
   const id = uuid();
-  // TODO: forward to microtx engine for batched on-chain settlement
+  const db = getDb();
+  // Record pending on-chain settlement intent in wallet_transactions
+  db.prepare(
+    'INSERT INTO wallet_transactions (id, user_id, type, amount_gst, tx_hash, chain_id, created_at) VALUES (?,?,?,?,?,?,?)',
+  ).run(id, req.userId!, 'gift_onchain_pending', Number(parsed.data.priceWei), `0x${id.replace(/-/g, '')}`, GHOST_L3_CHAIN_ID, new Date().toISOString());
   res.json({ id, txHash: `0x${id.replace(/-/g, '')}`, success: true });
 });
 

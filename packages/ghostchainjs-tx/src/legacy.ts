@@ -10,7 +10,7 @@ import type { LegacyTxData, TxOptions, SignedTxResult, HexString } from "./types
 import type { Input } from "@ghostchain/ghostchainjs-rlp";
 import {
   toBigInt, toBytes, bigIntToBytes, toAddressBytes, bytesToHex,
-  keccak256, rlpEncode, ecSign,
+  keccak256, rlpEncode, rlpDecode, bytesArrToBigInt, ecSign,
 } from "./_utils.js";
 
 export class LegacyTransaction {
@@ -57,8 +57,32 @@ export class LegacyTransaction {
 
   /** Create a LegacyTransaction from a serialized RLP buffer */
   static fromSerializedTx(serialized: Uint8Array, _opts?: TxOptions): LegacyTransaction {
-    // Minimal decode: just re-wrap; full decode left for future
-    throw new Error("GhostTx: LegacyTransaction.fromSerializedTx not yet implemented");
+    const decoded = rlpDecode(serialized);
+    if (!Array.isArray(decoded) || decoded.length !== 9) {
+      throw new Error(
+        `GhostTx: invalid legacy transaction RLP — expected 9 fields, got ${
+          Array.isArray(decoded) ? decoded.length : "non-list"
+        }`,
+      );
+    }
+    const [nonceB, gasPriceB, gasLimitB, toB, valueB, dataB, vB, rB, sB] =
+      decoded as Uint8Array[];
+    const v = bytesArrToBigInt(vB);
+    // EIP-155: v = chainId * 2 + 35 (or +36). Pre-155 v is 27 or 28.
+    let chainId = 0n;
+    if (v >= 37n) chainId = (v - 35n) / 2n;
+    return new LegacyTransaction({
+      nonce:    bytesArrToBigInt(nonceB),
+      gasPrice: bytesArrToBigInt(gasPriceB),
+      gasLimit: bytesArrToBigInt(gasLimitB),
+      to:       toB.length === 20 ? bytesToHex(toB) as HexString : null,
+      value:    bytesArrToBigInt(valueB),
+      data:     dataB,
+      chainId,
+      v,
+      r: bytesToHex(rB),
+      s: bytesToHex(sB),
+    });
   }
 
   /** Return the signing hash (EIP-155 if chainId is set, else pre-155) */

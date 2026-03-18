@@ -76,9 +76,24 @@ export function keccak256(data: Uint8Array): Uint8Array {
 
 // ── RLP helpers ───────────────────────────────────────────────────────────────
 
-import { encode as rlpEncode, type Input } from "@ghostchain/ghostchainjs-rlp";
+import { encode as rlpEncode, decode as rlpDecodeRaw, type Input } from "@ghostchain/ghostchainjs-rlp";
 
 export { rlpEncode };
+
+/** RLP-decode bytes. Returns a Uint8Array (single) or nested array (list). */
+export function rlpDecode(data: Uint8Array): unknown {
+  return rlpDecodeRaw(data);
+}
+
+/** Convert a big-endian Uint8Array to a bigint (e.g. for RLP-decoded numeric fields). */
+export function bytesArrToBigInt(b: Uint8Array): bigint {
+  if (!b.length) return 0n;
+  let result = 0n;
+  for (const byte of b) {
+    result = (result << 8n) | BigInt(byte);
+  }
+  return result;
+}
 
 // ── ECDSA signing ─────────────────────────────────────────────────────────────
 
