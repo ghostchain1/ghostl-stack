@@ -12,7 +12,7 @@ import { bus }       from "../bus/messageBus.js";
 import type { SwarmTask } from "../types.js";
 
 const DEFI_ARCHITECT_URL = process.env.DEFI_ARCHITECT_URL ?? "http://127.0.0.1:7920";
-const L2_RPC             = process.env.L2_RPC_URL         ?? "http://127.0.0.1:29545";
+const L2_RPC             = process.env.L2_RPC_URL         ?? "http://127.0.0.1:29547";
 
 // If pool ratio deviates >20% from target (1:1) flag for rebalance
 const IMBALANCE_THRESHOLD = 0.20;

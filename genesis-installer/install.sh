@@ -93,7 +93,7 @@ phase start_stack.sh
 
 banner "GhostStack Deployment Complete"
 info "Chain IDs:  L1=14000101  L2=901  L3=903"
-info "RPC ports:  L1=18545  L2=29545  L3=39545"
+info "RPC ports:  L1=18545  L2=29547  L3=39545"
 info "GhostBrain: port 7900 (API)  7901 (mgmt)"
 info "Grafana:    http://localhost:3000"
 info "Log:        ${LOG_FILE}"

@@ -474,7 +474,7 @@ services:
       - GDM_URL=http://ghostbrain-data-mesh:9900
       - L1_RPC_URL=http://ghostchain-l1:18545
       - L2_RPC_URL=http://ghostchain-l2:29547
-      - L3_RPC_URL=http://ghostchain-l3:39547
+      - L3_RPC_URL=http://ghostchain-l3:39545
       - TDS_LOOP_MS=3000
       - TDS_RATE_LIMIT=100
       - TDS_AUTO_BLOCK=300

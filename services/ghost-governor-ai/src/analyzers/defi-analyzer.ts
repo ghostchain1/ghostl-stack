@@ -1,7 +1,7 @@
 /**
  * DeFi Analyzer
  *
- * Queries GhostL2 (port 29545) for pool health, TVL, and fee revenue.
+ * Queries GhostL2 (port 29547) for pool health, TVL, and fee revenue.
  * Pool addresses are configurable via env; defaults represent common devnet pools.
  *
  * Returns both DefiState and LiquidityState so the network analyzer can
@@ -11,7 +11,7 @@ import type { DefiState, LiquidityState, PoolHealth } from "../types.js";
 import { LIQUIDITY_POLICY } from "../policies/liquidity-policy.js";
 import { SECURITY_POLICY } from "../policies/security-policy.js";
 
-const L2_RPC = process.env.GHOSTCHAIN_L2_RPC ?? "http://127.0.0.1:29545";
+const L2_RPC = process.env.GHOSTCHAIN_L2_RPC ?? "http://127.0.0.1:29547";
 
 // Pool addresses come from environment; comma-separated list of 0x addresses.
 // Each pool is a GhostXchange pair. The first token in every pair is assumed GST.

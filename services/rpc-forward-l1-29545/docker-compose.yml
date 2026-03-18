@@ -1,6 +1,7 @@
 # stack-group: chain-l1
-# role: L1 RPC forwarder (host 18545 -> published 29545)
+# role: Legacy compatibility L1 RPC forwarder (host 18545 -> published 29545)
 # ports: 29545 -> 29545
+# note: compatibility-only; do not use as the canonical GhostL2 RPC
 # volumes: ./data, entrypoint/healthcheck (read-only)
 services:
   rpc-forward-l1-29545:

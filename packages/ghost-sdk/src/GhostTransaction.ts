@@ -4,14 +4,14 @@
  * Replaces ethers.TransactionRequest / TransactionResponse.
  *
  * GhostChain L1 chain ID:  14000101
- * GhostChain L2 chain ID:  14000102
- * GhostChain L3 chain ID:  14000103
+ * GhostChain L2 chain ID:  901
+ * GhostChain L3 chain ID:  903
  */
 
 export const GHOST_CHAIN_IDS = {
   L1: 14000101,
-  L2: 14000102,
-  L3: 14000103,
+  L2: 901,
+  L3: 903,
 } as const;
 
 export interface GhostTransactionRequest {

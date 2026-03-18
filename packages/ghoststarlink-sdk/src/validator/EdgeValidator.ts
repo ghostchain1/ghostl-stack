@@ -222,7 +222,7 @@ export class EdgeValidator {
   static devnet(validatorAddress: string, layer: RelayLayer = 'l3'): EdgeValidator {
     const rpcMap: Record<RelayLayer, string> = {
       l1: 'http://localhost:18545',
-      l2: 'http://localhost:29545',
+      l2: 'http://localhost:29547',
       l3: 'http://localhost:39545',
     };
     return new EdgeValidator({ validatorAddress, gatewayRpc: rpcMap[layer], layer, maxBlockGap: 5 });

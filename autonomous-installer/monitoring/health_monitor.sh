@@ -6,7 +6,7 @@
 #
 # Probes (in order):
 #   1. L1 EVM RPC (port 18545)  — ghost_blockNumber
-#   2. L2 EVM RPC (port 29545)  — ghost_blockNumber
+#   2. L2 EVM RPC (port 29547)  — ghost_blockNumber
 #   3. L3 EVM RPC (port 39545)  — ghost_blockNumber
 #   4. GhostBrain Supervisor     — GET :9100/status
 #   5. GhostBrain Core API       — GET :7900/health  (or /healthz)
@@ -91,11 +91,11 @@ check_chains() {
 
   local h1 h2 h3
   h1="$(rpc_block_number http://localhost:18545)"
-  h2="$(rpc_block_number http://localhost:29545)"
+  h2="$(rpc_block_number http://localhost:29547)"
   h3="$(rpc_block_number http://localhost:39545)"
 
   probe "l1_rpc" "1" "GhostChain L1 :18545 (block=${h1:-?})" "${h1}"
-  probe "l2_rpc" "1" "GhostL2       :29545 (block=${h2:-?})" "${h2}"
+  probe "l2_rpc" "1" "GhostL2       :29547 (block=${h2:-?})" "${h2}"
   probe "l3_rpc" "1" "GhostL3       :39545 (block=${h3:-?})" "${h3}"
 }
 

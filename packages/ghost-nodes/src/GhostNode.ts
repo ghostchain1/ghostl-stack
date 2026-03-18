@@ -204,11 +204,11 @@ export class GhostL1Node extends GhostNode {
 }
 
 /**
- * GhostL2Node — a node on GhostL2 (chainId 14000102, OP Stack settling to L1).
+ * GhostL2Node — a node on GhostL2 (chainId 901, OP Stack settling to L1).
  * L2 nodes run the op-node sequencer and l2-geth execution engine.
  */
 export class GhostL2Node extends GhostNode {
-  static readonly CHAIN_ID   = 14000102;
+  static readonly CHAIN_ID   = 901;
   static readonly CHAIN_NAME = "GhostL2";
   static readonly LAYER      = GhostNodeLayer.L2;
 
@@ -230,11 +230,11 @@ export class GhostL2Node extends GhostNode {
 }
 
 /**
- * GhostL3Node — a node on GhostL3 (chainId 14000103, OP Stack settling to L2).
+ * GhostL3Node — a node on GhostL3 (chainId 903, OP Stack settling to L2).
  * L3 nodes run application-layer transactions and batch to GhostL2.
  */
 export class GhostL3Node extends GhostNode {
-  static readonly CHAIN_ID   = 14000103;
+  static readonly CHAIN_ID   = 903;
   static readonly CHAIN_NAME = "GhostL3";
   static readonly LAYER      = GhostNodeLayer.L3;
 
@@ -334,8 +334,7 @@ export const GHOST_FLEET: readonly GhostFleetNode[] = Object.freeze([
     layer:       GhostNodeLayer.L2,
     role:        GhostNodeRole.Sequencer,
     chainId:     GhostL2Node.CHAIN_ID,
-    rpcUrl:      "http://10.50.99.76:29545",
-    authRpcUrl:  "http://10.50.99.76:29547",
+    rpcUrl:      "http://10.50.99.76:29547",
     wsRpcUrl:    "ws://10.50.99.76:29546",
     managementIp: "10.50.99.76",
     isMainnet:   true,
@@ -348,8 +347,7 @@ export const GHOST_FLEET: readonly GhostFleetNode[] = Object.freeze([
     layer:       GhostNodeLayer.L2,
     role:        GhostNodeRole.Sequencer,
     chainId:     GhostL2Node.CHAIN_ID,
-    rpcUrl:      "http://10.50.99.77:29545",
-    authRpcUrl:  "http://10.50.99.77:29547",
+    rpcUrl:      "http://10.50.99.77:29547",
     managementIp: "10.50.99.77",
     isMainnet:   false,
   },
@@ -361,7 +359,6 @@ export const GHOST_FLEET: readonly GhostFleetNode[] = Object.freeze([
     role:        GhostNodeRole.Sequencer,
     chainId:     GhostL3Node.CHAIN_ID,
     rpcUrl:      "http://10.50.99.78:39545",
-    authRpcUrl:  "http://10.50.99.78:39547",
     wsRpcUrl:    "ws://10.50.99.78:39546",
     managementIp: "10.50.99.78",
     isMainnet:   true,

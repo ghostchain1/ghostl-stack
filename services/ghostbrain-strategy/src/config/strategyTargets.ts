@@ -33,7 +33,7 @@ export const TARGETS = {
 // Canonical chain identifiers — used in proposals and log labels
 export const CHAIN = {
   L1:      { id: 14000101, rpc: process.env.L1_RPC_URL ?? 'http://localhost:18545', label: 'GhostChain L1' },
-  L2:      { id: 901,      rpc: process.env.L2_RPC_URL ?? 'http://localhost:29545', label: 'GhostL2'       },
+  L2:      { id: 901,      rpc: process.env.L2_RPC_URL ?? 'http://localhost:29547', label: 'GhostL2'       },
   L3:      { id: 903,      rpc: process.env.L3_RPC_URL ?? 'http://localhost:39545', label: 'GhostL3'       },
 } as const;
 

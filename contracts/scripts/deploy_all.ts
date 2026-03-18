@@ -89,7 +89,7 @@ async function main() {
   );
   const ROOT = process.env.ROOT_DIR ?? path.resolve(__dirname, "..", "..");
   const version = process.env.CONTRACTS_VERSION ?? "0.0.1";
-  // Default to OP Stack devnet ports (Anvil L1 :28545, op-geth L2 :29545). L3 is optional; keep overrideable.
+  // Default to OP Stack devnet ports (Anvil L1 :28545, op-geth L2 :29547). L3 is optional; keep overrideable.
   const l2ChainId = Number(process.env.L2_CHAIN_ID ?? process.env.OP_L2_CHAIN_ID ?? network.config.chainId ?? 901);
   const l3ChainId = Number(process.env.L3_CHAIN_ID ?? process.env.OP_L3_CHAIN_ID ?? 903);
   const challengePeriodSeconds = Number(process.env.CHALLENGE_PERIOD_SECONDS ?? 30);
@@ -117,7 +117,7 @@ async function main() {
   const rpcL1 = process.env.RPC_L1 ?? "http://localhost:28545";
   const rpcL2Public =
     process.env.RPC_L2 ??
-    (typeof (network.config as any)?.url === "string" ? String((network.config as any).url) : "http://localhost:29545");
+    (typeof (network.config as any)?.url === "string" ? String((network.config as any).url) : "http://localhost:29547");
   const rpcL3Public = process.env.RPC_L3 ?? "http://localhost:39545";
 
   console.log(

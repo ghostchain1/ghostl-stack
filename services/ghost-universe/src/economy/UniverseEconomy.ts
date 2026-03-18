@@ -3,14 +3,14 @@
  *
  * Routing law (enforced): GST always flows L3 → L2 → L1
  *   - L3 (chain 903, :39545)  — in-world transactions (buys, rewards, tips)
- *   - L2 (chain 901, :29545)  — land/asset settlement + rollup batching
+ *   - L2 (chain 901, :29547)  — land/asset settlement + rollup batching
  *   - L1 (chain 14000101, :18545) — treasury accumulation, final finality
  *
  * Ghost-native economy only. GST only.
  */
 
 const L3_RPC  = 'http://localhost:39545';
-const L2_RPC  = 'http://localhost:29545';
+const L2_RPC  = 'http://localhost:29547';
 const L1_RPC  = 'http://localhost:18545';
 
 const GST_UNIT          = 10n ** 18n;

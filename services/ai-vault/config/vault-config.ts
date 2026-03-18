@@ -154,7 +154,7 @@ export function loadVaultConfig(): VaultConfig {
     ghostl2ChainId: 901,
     ghostl3ChainId: 903,
     ghostchainL1Rpc: e('GHOSTCHAIN_L1_RPC', 'http://localhost:18545'),
-    ghostl2Rpc: e('GHOSTL2_RPC', 'http://localhost:29545'),
+    ghostl2Rpc: e('GHOSTL2_RPC', 'http://localhost:29547'),
     ghostl3Rpc: e('GHOSTL3_RPC', 'http://localhost:39545'),
 
     dockerSocketPath: e('DOCKER_SOCKET', '/var/run/docker.sock'),

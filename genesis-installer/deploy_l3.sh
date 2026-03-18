@@ -41,12 +41,12 @@ HEALTH_RETRY_INTERVAL_S=5
 # ---------------------------------------------------------------------------
 
 verify_l2() {
-  info "Verifying GhostL2 is reachable at port 29545…"
+  info "Verifying GhostL2 is reachable at port 29547…"
   curl -sf \
       -X POST \
       -H "Content-Type: application/json" \
       --data '{"jsonrpc":"2.0","method":"ghost_blockNumber","params":[],"id":1}' \
-      http://localhost:29545 >/dev/null 2>&1 \
+      http://localhost:29547 >/dev/null 2>&1 \
     || fatal "GhostL2 RPC not available. Deploy L2 first (deploy_l2.sh)."
   info "L2 reachable."
 }

@@ -24,7 +24,7 @@ services:
       HOSTNAME: "0.0.0.0"
       # L1 / L2 / L3 RPCs
       NEXT_PUBLIC_L1_RPC_URL: "http://127.0.0.1:18545"
-      NEXT_PUBLIC_L2_RPC_URL: "http://127.0.0.1:29545"
+      NEXT_PUBLIC_L2_RPC_URL: "http://127.0.0.1:29547"
       NEXT_PUBLIC_L3_RPC_URL: "http://127.0.0.1:39545"
       # API BFF (internal)
       NEXT_PUBLIC_API_URL: "https://api.ghostchain.cloud"
@@ -55,7 +55,7 @@ services:
       PORT: "4000"
       # L1 / L2 / L3 RPCs
       L1_RPC_URL: "http://127.0.0.1:18545"
-      L2_RPC_URL: "http://127.0.0.1:29545"
+      L2_RPC_URL: "http://127.0.0.1:29547"
       L3_RPC_URL: "http://127.0.0.1:39545"
       # Services (internal)
       GHOSTBRAIN_URL: "http://127.0.0.1:7900"
@@ -86,7 +86,7 @@ services:
       NODE_ENV: production
       PORT: "7900"
       L1_RPC_URL: "http://127.0.0.1:18545"
-      L2_RPC_URL: "http://127.0.0.1:29545"
+      L2_RPC_URL: "http://127.0.0.1:29547"
       L3_RPC_URL: "http://127.0.0.1:39545"
     env_file:
       - .env
@@ -111,7 +111,7 @@ services:
       NODE_ENV: production
       PORT: "7990"
       L1_RPC_URL: "http://127.0.0.1:18545"
-      L2_RPC_URL: "http://127.0.0.1:29545"
+      L2_RPC_URL: "http://127.0.0.1:29547"
       L3_RPC_URL: "http://127.0.0.1:39545"
       SSA_COSMOS_LCD: "http://127.0.0.1:1317"
       SSA_SIGNING_RELAY: "http://127.0.0.1:7910"

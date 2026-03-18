@@ -68,8 +68,8 @@ SERVICES_DIR="$STACK_ROOT/services"
 
 # Chain IDs (canonical — do NOT change)
 L1_CHAIN_ID=14000101
-L2_CHAIN_ID=14000102
-L3_CHAIN_ID=14000103
+L2_CHAIN_ID=901
+L3_CHAIN_ID=903
 
 # RPC endpoints (local loopback - populated after chain startup)
 HOST_L1_RPC="http://localhost:18545"
@@ -385,14 +385,14 @@ phase4_firewall() {
   ufw allow 18547/tcp comment 'GhostChain L1 node2 RPC'
 
   # OP Stack L2 RPC — internet-facing
-  ufw allow 29545/tcp comment 'OP-Geth L2 RPC (HTTP)'
+  ufw allow 29547/tcp comment 'OP-Geth L2 RPC (HTTP)'
   ufw allow 29546/tcp comment 'OP-Geth L2 RPC (WS)'
-  ufw allow 29547/tcp comment 'OP-Geth L2 authrpc'
+  ufw allow 29551/tcp comment 'OP-Geth L2 authrpc'
 
   # OP Stack L3 RPC — internet-facing
   ufw allow 39545/tcp comment 'OP-Geth L3 RPC (HTTP)'
   ufw allow 39546/tcp comment 'OP-Geth L3 RPC (WS)'
-  ufw allow 39547/tcp comment 'OP-Geth L3 authrpc'
+  ufw allow 39551/tcp comment 'OP-Geth L3 authrpc'
 
   # P2P — internet-facing (discovery/gossip requires open access)
   ufw allow 30303/tcp  comment 'GhostChain L1 P2P (TCP)'

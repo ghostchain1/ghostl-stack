@@ -1,6 +1,6 @@
 # LitVybzLive — GhostL3 platform services
 # All transactions are hard-locked to GhostChain L3 (chain_id=903)
-# Connects to ghostchaind L1:18545 / L2:29545 / L3:39545 via host network
+# Connects to ghostchaind L1:18545 / L2:29547 / L3:39545 via host network
 
 services:
 

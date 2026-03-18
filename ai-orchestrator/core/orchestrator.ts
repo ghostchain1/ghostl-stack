@@ -373,7 +373,7 @@ export class Orchestrator {
     // L2 node health
     healthTasks.push(this.makeTask("INFRASTRUCTURE", "MEDIUM", "L2", "orchestrator:cycle", {
       action:   "check_node_health",
-      rpc_url:  process.env["L2_RPC_URL"] ?? "http://localhost:29545",
+      rpc_url:  process.env["L2_RPC_URL"] ?? "http://localhost:29547",
       chain_id: L2_CHAIN_ID,
     }));
 

@@ -10,7 +10,7 @@
 #   bash installer/genesis-install.sh [--dry-run] [--skip-docker]
 #
 # Chain IDs:  L1=14000101  L2=901  L3=903
-# RPC ports:  L1=18545     L2=29545   L3=39545
+# RPC ports:  L1=18545     L2=29547   L3=39545
 #
 # SECURITY: This script does NOT use eval, exec with user input, or shell=True.
 #           All docker compose arguments are shell-quoted literals.
@@ -121,7 +121,7 @@ log "╔════════════════════════
 log "║         GhostStack deployment COMPLETE                   ║"
 log "╟──────────────────────────────────────────────────────────╢"
 log "║  L1 RPC     : http://localhost:18545                     ║"
-log "║  L2 RPC     : http://localhost:29545                     ║"
+log "║  L2 RPC     : http://localhost:29547                     ║"
 log "║  L3 RPC     : http://localhost:39545                     ║"
 log "║  API        : http://localhost:4000                      ║"
 log "║  Web UI     : http://localhost:3000                      ║"

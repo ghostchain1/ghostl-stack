@@ -34,7 +34,7 @@ export interface GhostRunReport {
 
 const GHOST_RPC: Record<GhostTestLayer, string> = {
   l1: 'http://localhost:18545',
-  l2: 'http://localhost:29545',
+  l2: 'http://localhost:29547',
   l3: 'http://localhost:39545',
 };
 

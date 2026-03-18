@@ -15,7 +15,7 @@ import { recordThreat, notifyGhostBrain } from '../securityBus.js';
 import type { NetworkSnapshot, ThreatEvent } from '../types.js';
 
 const L1_RPC       = process.env.L1_RPC_URL ?? 'http://localhost:18545';
-const L2_RPC       = process.env.L2_RPC_URL ?? 'http://localhost:29545';
+const L2_RPC       = process.env.L2_RPC_URL ?? 'http://localhost:29547';
 const L3_RPC       = process.env.L3_RPC_URL ?? 'http://localhost:39545';
 
 const PEER_DROP_PCT = Number(process.env.SSA_PEER_DROP_PCT  ?? 0.50); // 50% peer loss

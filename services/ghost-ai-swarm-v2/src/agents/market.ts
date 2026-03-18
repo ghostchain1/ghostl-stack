@@ -11,7 +11,7 @@ import { bus }       from "../bus/messageBus.js";
 import type { SwarmTask } from "../types.js";
 
 const L1_RPC       = process.env.L1_RPC_URL   ?? "http://127.0.0.1:18545";
-const L2_RPC       = process.env.L2_RPC_URL   ?? "http://127.0.0.1:29545";
+const L2_RPC       = process.env.L2_RPC_URL   ?? "http://127.0.0.1:29547";
 const L3_RPC       = process.env.L3_RPC_URL   ?? "http://127.0.0.1:39545";
 const GHOSTBRAIN   = process.env.GHOSTBRAIN_URL ?? "http://127.0.0.1:7900";
 

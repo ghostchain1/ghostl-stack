@@ -28,7 +28,7 @@
 #   ENABLE_AUTO_UPGRADE   true | false         (default: false)
 #   FAILOVER_REGIONS      "r1=url1 r2=url2"   (default: monitors local L1/L2/L3)
 #
-# Chain IDs: L1=14000101 (:18545) | L2=901 (:29545) | L3=903 (:39545)
+# Chain IDs: L1=14000101 (:18545) | L2=901 (:29547) | L3=903 (:39545)
 # AI ports : 7900 GhostBrain | 7910 ProtocolArchitect | 7920 DeFiArchitect
 #            7930 GovernorAI | 7940 InfraController   | 7950 MultichainCtrl
 
@@ -49,7 +49,7 @@ DRY_RUN="${DRY_RUN:-false}"
 ENABLE_AUTO_UPGRADE="${ENABLE_AUTO_UPGRADE:-false}"
 
 L1_RPC="${L1_RPC:-http://localhost:18545}"
-L2_RPC="${L2_RPC:-http://localhost:29545}"
+L2_RPC="${L2_RPC:-http://localhost:29547}"
 L3_RPC="${L3_RPC:-http://localhost:39545}"
 
 GOVERNOR_AI_URL="${GOVERNOR_AI_URL:-http://localhost:7930}"
@@ -698,7 +698,7 @@ mkdir -p "${LOG_DIR}"
 REGIONS="${FAILOVER_REGIONS:-}"
 INTERVAL="${FAILOVER_INTERVAL:-60}"
 L1_RPC="${L1_RPC:-http://localhost:18545}"
-L2_RPC="${L2_RPC:-http://localhost:29545}"
+L2_RPC="${L2_RPC:-http://localhost:29547}"
 L3_RPC="${L3_RPC:-http://localhost:39545}"
 
 log() { echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] [FAILOVER] $*" | tee -a "${LOG}"; }

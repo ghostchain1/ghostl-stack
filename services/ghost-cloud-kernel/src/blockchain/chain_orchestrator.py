@@ -41,7 +41,7 @@ CHAINS: dict[str, ChainSpec] = {
     "L2": ChainSpec(
         layer="L2",
         chain_id=901,
-        rpc_url=os.getenv("GACK_L2_RPC_URL", "http://127.0.0.1:29545"),
+        rpc_url=os.getenv("GACK_L2_RPC_URL", "http://127.0.0.1:29547"),
     ),
     "L3": ChainSpec(
         layer="L3",

@@ -35,7 +35,7 @@ ip addr show dev eth0   # verify 7 addresses listed
 sudo bash firewall/ufw-setup.sh
 ```
 
-> RPC ports (18545, 29545, 39545) are only reachable from within the `/24` subnet by default. Public traffic goes through the nginx reverse proxy on port 443.
+> RPC ports (18545, 29547, 39545) are only reachable from within the `/24` subnet by default. Public traffic goes through the nginx reverse proxy on port 443. Legacy compatibility listeners such as `29545` must not be treated as the canonical GhostL2 RPC.
 
 ### 3. SSL certificates
 
@@ -88,7 +88,7 @@ Internet
 38.247.149.218:443  (nginx/Kong — SSL termination)
    │
    ├─ rpc.ghostchain.cloud    → 38.247.149.219:18545  (L1 RPC)
-   ├─ l2.ghostchain.cloud     → 38.247.149.220:29545  (L2 RPC)
+   ├─ l2.ghostchain.cloud     → 38.247.149.220:29547  (L2 RPC)
    ├─ l3.ghostchain.cloud     → 38.247.149.221:39545  (L3 RPC)
    ├─ explorer.ghostchain.world → 38.247.149.222:3000 (GhostScan)
    ├─ wallet.ghostchain.world  → 38.247.149.222:3002  (GhostWallet)

@@ -8,7 +8,7 @@ services:
       PORT: ${GHOST_TX_ENGINE_PORT:-7616}
       HOST: 0.0.0.0
       TX_ENGINE_L1_RPC_URL: ${TX_ENGINE_L1_RPC_URL:-http://host.docker.internal:18545}
-      TX_ENGINE_L2_RPC_URL: ${TX_ENGINE_L2_RPC_URL:-http://host.docker.internal:29545}
+      TX_ENGINE_L2_RPC_URL: ${TX_ENGINE_L2_RPC_URL:-http://host.docker.internal:29547}
       TX_ENGINE_L3_RPC_URL: ${TX_ENGINE_L3_RPC_URL:-http://host.docker.internal:39545}
       TX_ENGINE_REQUEST_TIMEOUT_MS: ${TX_ENGINE_REQUEST_TIMEOUT_MS:-12000}
       TX_ENGINE_POLL_INTERVAL_MS: ${TX_ENGINE_POLL_INTERVAL_MS:-250}

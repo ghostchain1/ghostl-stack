@@ -16,7 +16,7 @@ export const EVOLUTION_BIND = process.env.EVOLUTION_BIND ?? "127.0.0.1";
 
 export const GHOSTBRAIN_URL   = process.env.GHOSTBRAIN_URL   ?? "http://127.0.0.1:7900";
 export const GHOST_L1_RPC     = process.env.GHOST_L1_RPC     ?? "http://127.0.0.1:18545";
-export const GHOST_L2_RPC     = process.env.GHOST_L2_RPC     ?? "http://127.0.0.1:29545";
+export const GHOST_L2_RPC     = process.env.GHOST_L2_RPC     ?? "http://127.0.0.1:29547";
 export const GHOST_L3_RPC     = process.env.GHOST_L3_RPC     ?? "http://127.0.0.1:39545";
 export const DEPLOYER_URL     = process.env.DEPLOYER_URL      ?? "http://127.0.0.1:7961";
 export const SWARM_URL        = process.env.SWARM_URL         ?? "http://127.0.0.1:7960";

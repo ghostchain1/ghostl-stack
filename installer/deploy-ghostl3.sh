@@ -16,7 +16,7 @@ STACK_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 [[ -f "${STACK_DIR}/.env" ]] && set -a && source "${STACK_DIR}/.env" && set +a
 
-L2_RPC_PORT="${L2_RPC_PORT:-29545}"
+L2_RPC_PORT="${L2_RPC_PORT:-29547}"
 L3_RPC_PORT="${L3_RPC_PORT:-39545}"
 WAIT_TIMEOUT="${DEPLOY_WAIT_TIMEOUT:-180}"
 

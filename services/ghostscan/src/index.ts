@@ -26,7 +26,7 @@ import { Indexer } from './indexer.js';
 
 export const GHOST_LAYERS = {
   l1: { chainId: 14000101, rpc: process.env.GHOST_L1_RPC ?? 'http://localhost:18545', name: 'GhostChain L1' },
-  l2: { chainId: 901,      rpc: process.env.GHOST_L2_RPC ?? 'http://localhost:29545', name: 'GhostL2'      },
+  l2: { chainId: 901,      rpc: process.env.GHOST_L2_RPC ?? 'http://localhost:29547', name: 'GhostL2'      },
   l3: { chainId: 903,      rpc: process.env.GHOST_L3_RPC ?? 'http://localhost:39545', name: 'GhostL3'      },
 } as const;
 

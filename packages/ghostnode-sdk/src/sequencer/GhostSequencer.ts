@@ -13,7 +13,7 @@ export interface GhostSequencerStatus {
 
 /**
  * GhostSequencer — manages OP-Stack based L2/L3 sequencer nodes.
- * L2 chain ID: 901 (RPC :29545)
+ * L2 chain ID: 901 (RPC :29547)
  * L3 chain ID: 903 (RPC :39545)
  */
 export class GhostSequencer {

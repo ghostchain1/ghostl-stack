@@ -51,7 +51,7 @@ class GhostBridgeService {
     String? l2Rpc,
     String? l3Rpc,
   })  : _l1Rpc = l1Rpc ?? 'http://localhost:18545',
-        _l2Rpc = l2Rpc ?? 'http://localhost:29545',
+        _l2Rpc = l2Rpc ?? 'http://localhost:29547',
         _l3Rpc = l3Rpc ?? 'http://localhost:39545';
 
   // ── L3 → L2 (Routing law: step 1 of withdrawal) ──────────────────────────

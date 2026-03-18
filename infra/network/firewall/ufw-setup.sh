@@ -58,8 +58,8 @@ ufw allow in on eth0 to "${L1_IP}" port 26657 proto tcp comment "CometBFT RPC"
 ufw allow in on eth0 to "${L1_IP}" port 9090 proto tcp comment "Cosmos gRPC"
 
 # ── GhostL2 RPC (38.247.149.220) — INTERNAL only ─────────────────────────────
-echo "==> L2 RPC: 29545 internal only on ${L2_IP}"
-ufw allow in on eth0 to "${L2_IP}" port 29545 proto tcp comment "L2 RPC (internal)"
+echo "==> L2 RPC: 29547 internal only on ${L2_IP}"
+ufw allow in on eth0 to "${L2_IP}" port 29547 proto tcp comment "L2 RPC (internal)"
 
 # ── GhostL3 RPC (38.247.149.221) — INTERNAL only ─────────────────────────────
 echo "==> L3 RPC: 39545 internal only on ${L3_IP}"
@@ -105,7 +105,7 @@ ufw status verbose
 echo ""
 echo "DONE. UFW is active."
 echo ""
-echo "IMPORTANT: RPC ports (18545, 29545, 39545) are only allowed from eth0."
+echo "IMPORTANT: RPC ports (18545, 29547, 39545) are only allowed from eth0."
 echo "For true internal-only access add an explicit source restriction:"
 echo "  sudo ufw allow in on eth0 from ${SUBNET} to 38.247.149.219 port 18545"
 echo "  then remove the open rule above."

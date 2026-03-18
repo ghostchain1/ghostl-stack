@@ -27,7 +27,7 @@ Environment=GHOSTAI_L3_CHAIN_ID=903
 
 # ── GhostChain RPC endpoints (canonical L3 → L2 → L1 routing) ─────────────────
 Environment=GHOSTCHAIN_L1_RPC=http://localhost:18545
-Environment=GHOSTCHAIN_L2_RPC=http://localhost:29545
+Environment=GHOSTCHAIN_L2_RPC=http://localhost:29547
 Environment=GHOSTCHAIN_L3_RPC=http://localhost:39545
 
 # ── Disk-backed AI memory ──────────────────────────────────────────────────────

@@ -10,7 +10,7 @@ OBS_COMPOSE="$ROOT_DIR/infra/docker/compose/docker-compose.obs.yml"
 AI_COMPOSE="$ROOT_DIR/infra/docker/compose/docker-compose.ai.yml"
 
 L1_RPC_URL="${L1_RPC_URL:-http://localhost:18545}"
-L2_RPC_URL="${L2_RPC_URL:-http://localhost:29545}"
+L2_RPC_URL="${L2_RPC_URL:-http://localhost:29547}"
 L3_RPC_URL="${L3_RPC_URL:-http://localhost:39545}"
 UI_URL="${UI_URL:-http://localhost:3200}"
 PROM_URL="${PROM_URL:-http://localhost:9090}"

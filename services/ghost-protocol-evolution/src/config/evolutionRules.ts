@@ -36,7 +36,7 @@ export const RULES: EvolutionConfig = {
   maxProposalsPerDay:           Number(process.env.APE_MAX_PROPOSALS_DAY        ?? 5),
   ghostbrainUrl:  process.env.GHOSTBRAIN_URL       ?? 'http://localhost:7900',
   l1RpcUrl:       process.env.L1_RPC_URL           ?? 'http://localhost:18545',
-  l2RpcUrl:       process.env.L2_RPC_URL           ?? 'http://localhost:29545',
+  l2RpcUrl:       process.env.L2_RPC_URL           ?? 'http://localhost:29547',
   l3RpcUrl:       process.env.L3_RPC_URL           ?? 'http://localhost:39545',
   signingRelayUrl: process.env.SIGNING_RELAY_URL   ?? 'http://localhost:7910',
   statusPort:     Number(process.env.APE_STATUS_PORT ?? 7924),

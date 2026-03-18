@@ -47,7 +47,7 @@ const L2_REVENUE_AGG_URL     = process.env["L2_REVENUE_AGG_URL"]     ?? "http://
 const TREASURY_ENGINE_URL    = process.env["TREASURY_ENGINE_URL"]    ?? "http://localhost:7683";
 const REWARD_DISTRIBUTOR_URL = process.env["REWARD_DISTRIBUTOR_URL"] ?? "http://localhost:7684";
 const L1_RPC_URL             = process.env["L1_RPC_URL"]             ?? "http://localhost:18545";
-const L2_RPC_URL             = process.env["L2_RPC_URL"]             ?? "http://localhost:29545";
+const L2_RPC_URL             = process.env["L2_RPC_URL"]             ?? "http://localhost:29547";
 const L3_RPC_URL             = process.env["L3_RPC_URL"]             ?? "http://localhost:39545";
 
 /** Gas price spike: > 500 gwei on L1 triggers a HIGH advisory. */

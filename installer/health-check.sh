@@ -52,7 +52,7 @@ log() { echo "[health-check] $(date '+%H:%M:%S') $*"; }
 CHECKS=(
   # Blockchain (critical)
   "GhostChain L1 RPC|${L1_EVM_PORT:-18545}|rpc|1"
-  "GhostL2 RPC|${L2_RPC_PORT:-29545}|rpc|1"
+  "GhostL2 RPC|${L2_RPC_PORT:-29547}|rpc|1"
   "GhostL3 RPC|${L3_RPC_PORT:-39545}|rpc|0"
 
   # Applications (critical)

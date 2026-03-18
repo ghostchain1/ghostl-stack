@@ -12,7 +12,7 @@ import { bus }       from "../bus/messageBus.js";
 import type { SwarmTask } from "../types.js";
 
 const L1_RPC    = process.env.L1_RPC    ?? "http://localhost:18545";
-const L2_RPC    = process.env.L2_RPC    ?? "http://localhost:29545";
+const L2_RPC    = process.env.L2_RPC    ?? "http://localhost:29547";
 const L3_RPC    = process.env.L3_RPC    ?? "http://localhost:39545";
 const COSMOS_LC = process.env.COSMOS_LC ?? "http://localhost:1317";
 

@@ -25,7 +25,7 @@ const CHAIN_ENDPOINTS: ChainEndpoint[] = [
   },
   {
     name:    "ghostchain-l2",
-    rpc:     process.env.GHOSTCHAIN_L2_RPC ?? "http://127.0.0.1:29545",
+    rpc:     process.env.GHOSTCHAIN_L2_RPC ?? "http://127.0.0.1:29547",
     chainId: 901,
   },
   {

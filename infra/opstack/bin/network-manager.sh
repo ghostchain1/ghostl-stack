@@ -1,8 +1,11 @@
 #!/usr/bin/env sh
 set -eu
 
-# Ports we want to keep free for host-level RPC publishes.
-PORTS="28545 28546 29545 29547"
+# Ports we want to keep free for host-level RPC publishes and compatibility
+# shims. GhostL2's canonical direct host RPC is :29547, the host-exposed
+# op-node rollup RPC is :29546, and :29545 is retained only for the legacy
+# compatibility/internal layer.
+PORTS="28545 28546 29545 29546 29547"
 
 echo "[net-mgr] starting; monitoring ports: $PORTS"
 

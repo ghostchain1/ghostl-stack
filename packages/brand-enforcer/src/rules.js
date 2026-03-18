@@ -136,7 +136,7 @@ export const VIOLATION_PATTERNS = [
     id: 'BRAND-013',
     severity: 'LOW',
     description: 'Hardcoded chainId 1 (Ethereum mainnet) without a // ghost-chainid-ignore comment.',
-    // GhostChain uses L1=14000101, L2=14000102, L3=14000103.
+    // GhostChain uses L1=14000101, L2=901, L3=903.
     // Bare chainId = 1 indicates a forgotten Ethereum assumption.
     regex: /\bchainId\s*[=:]\s*1\b(?!.*ghost-chainid-ignore)/,
     allowlistedBy: 'BRIDGE_ALLOWLIST_PATTERNS',

@@ -27,7 +27,7 @@ _PORT_HINTS: dict[str, int] = {
     "grafana":          3000,
     "prometheus":       9090,
     "ghostchain":       18545,
-    "ghostl2":          29545,
+    "ghostl2":          29547,
     "ghostl3":          39545,
     "redis":            6379,
     "postgres":         5432,

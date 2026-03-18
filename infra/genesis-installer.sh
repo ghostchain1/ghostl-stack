@@ -18,7 +18,7 @@
 #   SKIP_VMS=true   ./infra/genesis-installer.sh   # skip libvirt provisioning
 #   DRY_RUN=true    ./infra/genesis-installer.sh   # print actions, do nothing
 #
-# Chain IDs  : L1=14000101 (:18545)  L2=901 (:29545)  L3=903 (:39545)
+# Chain IDs  : L1=14000101 (:18545)  L2=901 (:29547)  L3=903 (:39545)
 # AI services: GhostBrain=7900  ProtocolArchitect=7910  DeFiArchitect=7920
 #              GovernorAI=7930  InfraController=7940   MultichainCtrl=7950
 
@@ -33,7 +33,7 @@ SKIP_VMS="${SKIP_VMS:-false}"               # skip libvirt VM provisioning
 DRY_RUN="${DRY_RUN:-false}"                 # print actions without executing
 
 L1_RPC="${L1_RPC:-http://localhost:18545}"
-L2_RPC="${L2_RPC:-http://localhost:29545}"
+L2_RPC="${L2_RPC:-http://localhost:29547}"
 L3_RPC="${L3_RPC:-http://localhost:39545}"
 COSMOS_LCD="${COSMOS_LCD:-http://localhost:1317}"
 

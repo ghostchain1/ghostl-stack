@@ -148,7 +148,7 @@ export const ClusterNodeSchema = z.object({
   role:    z.enum(NODE_ROLES),
   host:    z.string(),
   l1Port:  z.number().int().default(18545),
-  l2Port:  z.number().int().default(29545),
+  l2Port:  z.number().int().default(29547),
   l3Port:  z.number().int().default(39545),
   cosmosPort: z.number().int().default(1317),
 });

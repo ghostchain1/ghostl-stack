@@ -176,6 +176,7 @@ export {
   GhostChainId,
   GHOST_CHAIN_NAMES,
   GHOST_DEVNET_RPC,
+  GHOST_TESTNET_RPC,
   GHOST_MAINNET_RPC,
   GHOST_CHAINS,
   isGhostChainId,
@@ -183,3 +184,4 @@ export {
   ghostChainLayer,
   ghostChain,
 } from "./chains.js";
+export type { GhostEnvironment, GhostChainKey } from "./chains.js";

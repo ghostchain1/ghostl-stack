@@ -19,7 +19,7 @@ services:
       - INFRA_CONTROLLER_URL=${INFRA_CONTROLLER_URL:-http://ghost-infra-controller:7940}
       - COSMOS_LCD_URL=${COSMOS_LCD_URL:-http://ghostchain-lcd:1317}
       - L1_RPC_URL=${L1_RPC_URL:-http://ghostchain-l1:18545}
-      - L2_RPC_URL=${L2_RPC_URL:-http://ghostl2-rpc:29545}
+      - L2_RPC_URL=${L2_RPC_URL:-http://ghostl2-rpc:29547}
       - L3_RPC_URL=${L3_RPC_URL:-http://ghostl3-rpc:39545}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro

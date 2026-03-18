@@ -111,7 +111,7 @@ log "╚════════════════════════
 # ── Blockchain layer (CRITICAL) ───────────────────────────────────────────────
 
 check_rpc "GhostChain L1 RPC (chain_id=14000101)" "${L1_EVM_PORT:-18545}"  1 || true
-check_rpc "GhostL2 RPC      (chain_id=901)"        "${L2_RPC_PORT:-29545}" 1 || true
+check_rpc "GhostL2 RPC      (chain_id=901)"        "${L2_RPC_PORT:-29547}" 1 || true
 check_rpc "GhostL3 RPC      (chain_id=903)"        "${L3_RPC_PORT:-39545}" 0 || true
 
 check_http "Cosmos LCD"         "http://localhost:${GHOSTCHAIN_LCD_PORT:-1317}/cosmos/base/tendermint/v1beta1/node_info" 0 || true

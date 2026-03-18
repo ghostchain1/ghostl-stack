@@ -23,7 +23,7 @@ RPC_TIMEOUT="${RPC_TIMEOUT:-5}"            # curl timeout per RPC check
 MAX_RESTART_BACKOFF="${MAX_RESTART_BACKOFF:-300}"  # max seconds before alerting
 
 L1_RPC="${L1_RPC:-http://localhost:18545}"
-L2_RPC="${L2_RPC:-http://localhost:29545}"
+L2_RPC="${L2_RPC:-http://localhost:29547}"
 L3_RPC="${L3_RPC:-http://localhost:39545}"
 GHOSTBRAIN_URL="${GHOSTBRAIN_URL:-http://localhost:7900/health}"
 PROTOCOL_ARCHITECT_URL="${PROTOCOL_ARCHITECT_URL:-http://localhost:7910/healthz}"

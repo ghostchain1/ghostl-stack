@@ -30,7 +30,7 @@ x-l1-ports: &l1_ports
 
 x-l2-ports: &l2_ports
   ports:
-    - "${GHOST_BIND_L2:-38.247.149.220}:29545:29545"   # L2 EVM RPC
+    - "${GHOST_BIND_L2:-38.247.149.220}:29547:8545"    # L2 EVM RPC
     - "${GHOST_BIND_L2:-38.247.149.220}:29546:29546"   # L2 WS
 
 x-l3-ports: &l3_ports

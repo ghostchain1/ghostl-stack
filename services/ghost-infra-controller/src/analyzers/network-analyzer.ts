@@ -27,7 +27,7 @@ function parseHostPort(url: string, defaultPort: number): MonitoredEndpoint {
 
 const ENDPOINTS: MonitoredEndpoint[] = [
   parseHostPort(process.env.GHOSTCHAIN_L1_RPC ?? "http://127.0.0.1:18545",  18545),
-  parseHostPort(process.env.GHOSTCHAIN_L2_RPC ?? "http://127.0.0.1:29545",  29545),
+  parseHostPort(process.env.GHOSTCHAIN_L2_RPC ?? "http://127.0.0.1:29547",  29547),
   parseHostPort(process.env.GHOSTCHAIN_L3_RPC ?? "http://127.0.0.1:39545",  39545),
   parseHostPort(process.env.COSMOS_LCD_URL    ?? "http://127.0.0.1:1317",    1317),
   parseHostPort(process.env.PROMETHEUS_URL    ?? "http://127.0.0.1:9090",    9090),

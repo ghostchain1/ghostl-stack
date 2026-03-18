@@ -27,7 +27,7 @@
 #   SKIP_BOOTSTRAP    true | false         (default: false — runs v3 phases 1-18 first)
 #   DEPLOYER_KEY      0x<privkey>          (required for forge contract deployment)
 #   L1_RPC            http://…:18545       (default: http://localhost:18545)
-#   L2_RPC            http://…:29545       (default: http://localhost:29545)
+#   L2_RPC            http://…:29547       (default: http://localhost:29547)
 #   L3_RPC            http://…:39545       (default: http://localhost:39545)
 #   VALIDATOR_COUNT   integer              (default: 10)
 #   CANONICAL_GST     0x<addr>             (GST token address on L1 — set after L1 deploy)
@@ -56,7 +56,7 @@ SKIP_BOOTSTRAP="${SKIP_BOOTSTRAP:-false}"
 VALIDATOR_COUNT="${VALIDATOR_COUNT:-10}"
 
 L1_RPC="${L1_RPC:-http://localhost:18545}"
-L2_RPC="${L2_RPC:-http://localhost:29545}"
+L2_RPC="${L2_RPC:-http://localhost:29547}"
 L3_RPC="${L3_RPC:-http://localhost:39545}"
 
 DEPLOYER_KEY="${DEPLOYER_KEY:-}"

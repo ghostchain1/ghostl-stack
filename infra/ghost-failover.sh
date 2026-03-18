@@ -13,7 +13,7 @@ mkdir -p "${LOG_DIR}"
 REGIONS="${FAILOVER_REGIONS:-}"
 INTERVAL="${FAILOVER_INTERVAL:-60}"
 L1_RPC="${L1_RPC:-http://localhost:18545}"
-L2_RPC="${L2_RPC:-http://localhost:29545}"
+L2_RPC="${L2_RPC:-http://localhost:29547}"
 L3_RPC="${L3_RPC:-http://localhost:39545}"
 
 log() { echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] [FAILOVER] $*" | tee -a "${LOG}"; }

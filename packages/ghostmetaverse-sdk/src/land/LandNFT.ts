@@ -9,7 +9,7 @@
  * Each parcel is a 16m × 16m tile in the metaverse world grid.
  */
 
-const L2_RPC         = 'http://localhost:29545';
+const L2_RPC         = 'http://localhost:29547';
 const LAND_REGISTRY  = '0x0000000000000000000000000000000000010001';
 
 export type GhostCoord = { x: number; y: number };
@@ -250,6 +250,6 @@ export class LandNFT {
   }
 
   static devnet(): LandNFT {
-    return new LandNFT('http://localhost:29545');
+    return new LandNFT('http://localhost:29547');
   }
 }

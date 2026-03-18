@@ -27,7 +27,7 @@ export interface GhostNetworkConfig {
 /** Local / devnet RPC endpoints */
 const LOCAL_RPCS = {
   L1: "http://localhost:18545",
-  L2: "http://localhost:29545",
+  L2: "http://localhost:29547",
   L3: "http://localhost:39545",
 };
 

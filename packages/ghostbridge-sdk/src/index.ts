@@ -19,7 +19,7 @@ import type { BridgeConfig } from './types.js';
  *
  * const bridge = new GhostBridge({
  *   l1Rpc: 'http://localhost:18545',
- *   l2Rpc: 'http://localhost:29545',
+ *   l2Rpc: 'http://localhost:29547',
  *   l3Rpc: 'http://localhost:39545',
  * });
  *

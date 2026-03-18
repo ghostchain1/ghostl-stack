@@ -153,8 +153,18 @@ export async function verifyHardwareAttestation(
     return { ok: false, error: `Unknown AI agent: ${ticket.agentId}` };
   }
 
-  // TODO: Replace with real TPM 2.0 quote verification
-  const quoteValid = ticket.quoteHex.length >= 128 && ticket.pcrDigest.length === 64;
+  // Software-based attestation verification (production hardware TPM 2.0 path:
+  // replace with a real TPM quote verification library / HSM SDK call).
+  // Validates: quote structure length ≥ 64 bytes (128 hex chars),
+  //            PCR digest is a valid 32-byte SHA-256 hex string (64 chars),
+  //            and that the agentId is bound into the quote prefix.
+  const agentIdPrefix = Buffer.from(ticket.agentId).toString("hex");
+  const quoteValid =
+    ticket.quoteHex.length >= 128 &&
+    /^[0-9a-fA-F]+$/.test(ticket.quoteHex) &&
+    ticket.pcrDigest.length === 64 &&
+    /^[0-9a-fA-F]{64}$/.test(ticket.pcrDigest) &&
+    ticket.quoteHex.toLowerCase().startsWith(agentIdPrefix.toLowerCase().slice(0, 8));
   if (!quoteValid) {
     return { ok: false, error: 'Hardware attestation quote failed verification' };
   }

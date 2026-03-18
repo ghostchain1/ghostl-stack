@@ -17,7 +17,7 @@ export const GHOST_METAVERSE_CHAINS = {
   /** World execution — L3 for high-throughput scene updates */
   world:    { chainId: 903,      rpc: 'http://localhost:39545', name: 'GhostL3' },
   /** Asset settlement — L2 for GRC-721/-1155 token ownership */
-  assets:   { chainId: 901,      rpc: 'http://localhost:29545', name: 'GhostL2' },
+  assets:   { chainId: 901,      rpc: 'http://localhost:29547', name: 'GhostL2' },
   /** Governance / land registry permanence — L1 */
   registry: { chainId: 14000101, rpc: 'http://localhost:18545', name: 'GhostChain L1' },
 } as const;
@@ -417,7 +417,7 @@ export class GhostMetaverse {
   static devnet(overrides?: Partial<GhostMetaverseConfig>): GhostMetaverse {
     return new GhostMetaverse({
       worldRpc:              'http://localhost:39545',
-      assetsRpc:             'http://localhost:29545',
+      assetsRpc:             'http://localhost:29547',
       registryRpc:           'http://localhost:18545',
       landRegistryAddress:   '0x0000000000000000000000000000000000010001',
       avatarRegistryAddress: '0x0000000000000000000000000000000000010002',

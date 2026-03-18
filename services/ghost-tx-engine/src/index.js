@@ -22,7 +22,7 @@ const config = {
   compactEvery: parseNumber("TX_ENGINE_COMPACT_EVERY", 250, 0),
   rpcUrls: {
     L1: process.env.TX_ENGINE_L1_RPC_URL ?? "http://127.0.0.1:18545",
-    L2: process.env.TX_ENGINE_L2_RPC_URL ?? "http://127.0.0.1:29545",
+    L2: process.env.TX_ENGINE_L2_RPC_URL ?? "http://127.0.0.1:29547",
     L3: process.env.TX_ENGINE_L3_RPC_URL ?? "http://127.0.0.1:39545"
   },
   concurrencyByLayer: {

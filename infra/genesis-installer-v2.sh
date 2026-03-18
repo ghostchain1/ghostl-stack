@@ -12,7 +12,7 @@
 #                   VAULT_TOKEN=<root> \
 #                   ./infra/genesis-installer-v2.sh
 #
-# Chain IDs:  L1=14000101 (port 18545) | L2=901 (port 29545) | L3=903 (port 39545)
+# Chain IDs:  L1=14000101 (port 18545) | L2=901 (port 29547) | L3=903 (port 39545)
 # GhostBrain: port 7900
 
 set -euo pipefail
@@ -25,7 +25,7 @@ GHOST_MODE="${GHOST_MODE:-dev}"
 VAULT_VERSION="${VAULT_VERSION:-1.16.1}"
 VALIDATOR_COUNT="${VALIDATOR_COUNT:-2}"
 L1_RPC="${L1_RPC:-http://localhost:18545}"
-L2_RPC="${L2_RPC:-http://localhost:29545}"
+L2_RPC="${L2_RPC:-http://localhost:29547}"
 L3_RPC="${L3_RPC:-http://localhost:39545}"
 PROMETHEUS_IMAGE="${PROMETHEUS_IMAGE:-prom/prometheus:v2.51.0}"
 GRAFANA_IMAGE="${GRAFANA_IMAGE:-grafana/grafana:10.4.0}"

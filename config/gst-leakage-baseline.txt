@@ -17,8 +17,6 @@
 .husky/pre-commit	      echo "[brand-hook] ❌ 'Ethereum' branding in $file — use 'GhostChain'"
 .husky/pre-commit	  # Skip bridge/adapter/compat/vendored/doc paths (legitimate ETH references)
 .husky/pre-commit	# Check for Ethereum (but skip if it's a link/URL/reference doc)
-AGENTS.md	- **Gas token everywhere:** `GST` (never ETH, Ether, WETH, or any non-GST token)
-AGENTS.md	| Reference ETH, WETH, Ether as gas token | Must be GST |
 ai-orchestrator/agents/economic_agent.ts	 *   - Gas token is always GST — no ETH/WETH references anywhere.
 ai/engineering-agent/code_analyzer.py	    r"\b(ETH|WETH|Ether|ether)\b|\"eth_|'eth_|`eth_",
 ai/engineering-agent/code_analyzer.py	    r"\b(mainnet|arbitrum|base|optimism|polygon|ethereum)\b", re.IGNORECASE
@@ -39,9 +37,6 @@ apps/litvyblive/backend/config/.env.example	# Gas token: GST — never ETH, Ethe
 apps/litvyblive/mobile/lib/core/constants/app_constants.dart	/// GST canonical symbol — never use ETH/WETH.
 apps/web-docs/app/[...slug]/page.tsx	    intro: "GST is the only gas token across the GhostChain ecosystem. No ETH or alternate gas token branding should leak through the stack.",
 apps/web-wallet/app/[...slug]/page.tsx	    note: "GhostWallet only exposes GST-denominated transfers. No ETH or non-GST gas paths are surfaced.",
-apps/web/app/ecosystem/page.tsx	  { name: "Ethereum", logo: "⟠", desc: "Canonical bridge + EVM compatibility" },
-apps/web/components/sections/DevelopersSection.tsx	            Sovereign-first developer tooling. No Ethereum dependency — Ghost-native from day one.
-apps/web/modules/universe/EconomyStats.tsx	        All values in GST — GhostChain native gas token. No ETH, Ether, or WETH.
 apps/web/src/services/treasury.ts	 * TokenID / denomination: GST (never ETH / WETH).
 branding/README.md	- No `window.ethereum` reference without GhostWallet wrapper
 branding/README.md	- `ETH`, `Ether`, `Ethereum` — use **GST** / **Ghost** / **GhostChain**
@@ -79,23 +74,15 @@ contracts/ghostcain/test/account/AccountEIP7702.t.sol	        vm.deal(entrypoint
 contracts/ghostcain/test/account/AccountEIP7702.t.sol	    uint256 private constant MAX_ETH = type(uint128).max;
 contracts/ghostcain/test/finance/VestingWallet.test.js	        Object.assign(this, this.env.eth);
 contracts/ghostcain/test/finance/VestingWalletCliff.test.js	        Object.assign(this, this.env.eth);
-contracts/src/common/GhostHash.sol	     * @notice Key for a native-asset (GST/ETH) bridge transfer.
 contracts/src/constitutional/BrandingInvariant.sol	    /// @notice Asserts that a string does not contain forbidden legacy ETH branding.
 contracts/src/constitutional/BrandingInvariant.sol	    /// @notice Caller attempted to set a forbidden legacy (ETH/Ether) reference
 contracts/src/constitutional/BrandingInvariant.sol	    bytes32 private constant _ETHEREUM_HASH = keccak256(bytes("ethereum"));
 contracts/src/constitutional/BrandingInvariant.sol	///        - No "eth", "ETH", "ether", "Ethereum" references in canonical token metadata
-contracts/src/ghost/GhostECDSA.sol	     *         Use this when signing with external Ethereum-compatible tooling.
-contracts/src/ghost/GhostECDSA.sol	     * @notice Apply the Ethereum personal-sign prefix so the result matches
-contracts/src/ghost/GhostECDSA.sol	     * @return signer  The recovered Ethereum address.
 contracts/src/gns/GNSResolver.sol	        addrRecords[node][COIN_TYPE_ETH] = bAddr;
 contracts/src/gns/GNSResolver.sol	        bytes memory b = addrRecords[node][COIN_TYPE_ETH];
 contracts/src/gns/GNSResolver.sol	        emit AddressChanged(node, COIN_TYPE_ETH, bAddr);
 contracts/src/gns/GNSResolver.sol	    uint256 internal constant COIN_TYPE_ETH = 60;
-contracts/src/grc/GRC.sol	    All standards are ABI-identical to their Ethereum equivalents.
-contracts/src/grc/GRC.sol	    GRC replaces ERC (Ethereum Request for Comments) with
-contracts/src/grc/GRCSoulbound.sol	///         Inspired by Ethereum EIP-5114 and EIP-4973, adapted for GhostChain.
 contracts/src/l1/GhostIdentity.sol	///           • No ETH/GST fee is charged at the contract level — registration
-contracts/src/l3/NFTGift.sol	///         Branding: GhostChain NFT Gift — NOT "ERC-721 on Ethereum".
 contracts/test/ai/GhostBrainIntegration.t.sol	        gbi.checkBrandName("Ethereum");
 contracts/test/ai/GhostBrainIntegration.t.sol	        gbi.checkBrandSymbol("ETH");
 contracts/test/constitutional/BrandingInvariant.t.sol	            "ETH",
@@ -111,8 +98,6 @@ contracts/test/constitutional/RoutingLaw.t.sol	    uint256 constant EXTERNAL = 1
 contracts/test/foundry/GhostIdentityConstitution.t.sol	        assertEq(c.verifyIdentity("Ghost", "ETH", 18), false, "ETH symbol must fail");
 contracts/test/foundry/GhostIdentityConstitution.t.sol	        c.requireIdentity("Ethereum", "GST", 18);
 contracts/test/foundry/GhostIdentityConstitution.t.sol	        c.requireIdentity("Ghost", "ETH", 18);
-contracts/test/foundry/LitVybzLive.t.sol	        // Oracle signs with Ethereum prefix
-contracts/test/foundry/MarketingAI.t.sol	        vm.chainId(1); // Ethereum mainnet — not allowed
 docs/ARCHITECTURE.md	**Gas token everywhere:** `GST` — never ETH, Ether, WETH, or any non-GST token.
 docs/GHOSTSTACK_DEEP_REPO_BLUEPRINT.md	│   ├── ghost-geth/                ← Custom go-ethereum build
 docs/GST_GAS_TOKEN_EVERYWHERE.md	# 2. L1 — confirm chain returns no ETH denomination in RPC metadata
@@ -144,7 +129,6 @@ docs/specs/GST_SOVEREIGN_IDENTITY.md	| `"Not enough ETH"`  | User-facing string 
 docs/specs/GST_SOVEREIGN_IDENTITY.md	| `ETH`               | Foreign currency symbol |
 docs/specs/GST_SOVEREIGN_IDENTITY.md	| `Ether` / `GhostChain`| Foreign chain/currency |
 ghost-brain-core/architecture/ghost_brain_architecture.md	- Gas token: **GST** (no ETH, WETH, or external tokens)
-ghost-brain-core/integration/ghostchain_bridge.ts	 *   - L1 only (chain_id 14000101). Never Ethereum mainnet or any
 governance-ai/contracts/ProposalManager.sol	 * Gas token: GST (native, deposited as ETH-equivalent value).
 infra/genesis-installer-v3.sh	# the correct GhostChain-native values (GST not ETH, sovereignty route enforced).
 infra/ghost-geth/Dockerfile	      org.opencontainers.image.description="GhostChain L1 execution client (go-ethereum alltools)" \
@@ -153,8 +137,6 @@ infra/ghost-geth/README.md	for `ethereum/client-go` in all GhostChain infrastruc
 infra/ghost-geth/README.md	upstream `ethereum/client-go` alltools image. It is a drop-in replacement
 infra/ghostchain/.env.l1.example	# GhostChain-branded geth image (ghostchain/ghost-geth wraps go-ethereum alltools; same binaries).
 infrastructure/scripts/genesis-install.sh	    info "  Fund sequencer/batcher/proposer/challenger addresses with L1 ETH"
-interchain-bridge/oracle/state_oracle.ts	   * This is the same sibling-hash protocol used by Ethereum's receipt trie.
-interchain-bridge/oracle/state_oracle.ts	 * a keccak256 sibling-hash chain (same as Ethereum's Patricia trie leaf
 package.json	    "ethereum-bloom-filters": "file:./packages/ghostchain-bloom-filters",
 package.json	    "ethereum-cryptography": "file:./packages/ghostchain-cryptography",
 packages/brand-enforcer/index.js	          message: `UI string contains forbidden ETH branding: "${uiStr}"`,
@@ -210,8 +192,6 @@ packages/ghost-devkit/src/foundry/GhostCastAdapter.ts	  /** Get ETH balance */
 packages/ghost-nodes/src/GhostNode.ts	 *   - Zero "GhostChain" / "ETH" / "ether" identifiers on the public API. // brand-enforcer-ignore — listing forbidden terms
 packages/ghost-nodes/src/index.ts	 * "eth_" string literals, or "window.ethereum" references appear on the
 packages/ghost-nodes/src/index.ts	 * No "GhostChain", "ethers", "ETH", "ether", "parseEther", "formatEther", // brand-enforcer-ignore — listing forbidden terms
-packages/ghost-registry/src/index.ts	  "Ethereum":  "GhostChain",
-packages/ghost-registry/src/index.ts	/** Ghost token unit conversions (replaces ETH/Gwei/Wei naming). */
 packages/ghost-sdk/src/bridge/GhostBridgeClient.ts	    // For native ETH withdrawal use the simpler initiateWithdrawal on the portal
 packages/ghost_flutter_sdk/README.md	- Gas token: **GST** (never ETH)
 packages/ghost_flutter_sdk/README.md	Gas token: **GST** — never ETH, Ether, or WETH.
@@ -236,9 +216,6 @@ packages/ghostchain-cryptography/src/utils.ts	 * Utility helpers. Drop-in replac
 packages/ghostchainjs-rlp/src/index.ts	 * Spec: https://ethereum.org/en/developers/docs/data-structures-and-encoding/rlp/
 packages/ghostchainjs-util/src/eip712.ts	 * Reference: https://eips.ethereum.org/EIPS/eip-712
 packages/ghostdefi-sdk/src/swap/GhostSwap.ts	   * Swap ETH (GST) for exact tokens.
-policies/treaties/ghostchain-ethereum-v1.json	  "counterpartyChain": "ethereum",
-policies/treaties/ghostchain-ethereum-v1.json	  "id": "ghostchain-ethereum-v1",
-policies/treaties/ghostchain-ethereum-v1.json	  "name": "GhostChain ↔ Ethereum Sovereign Treaty v1",
 scripts/brand-audit.sh	  echo "FAIL: '\"symbol\":\"ETH\"' in JSON config (should be GST):"
 scripts/brand-audit.sh	  echo "OK: No '\"symbol\":\"ETH\"' in JSON config files."
 scripts/brand-audit.sh	  rg -n --pcre2 '"symbol"\s*:\s*"ETH"' \
@@ -258,93 +235,31 @@ scripts/gst-symbol-gate.sh	# --- ETH-as-currency guard ---
 scripts/gst-symbol-gate.sh	# Detect "ETH" used as a native currency symbol or COIN value in config files (JSON/YAML/env).
 scripts/gst-symbol-gate.sh	ETH_CURRENCY_EXCLUDES=(
 scripts/testnet/common.sh	# Use the GhostChain-branded ghost-geth image (wraps go-ethereum alltools, same binaries).
-services/ai-adoption/src/developers/devScanner.ts	  { id: "dev-001", username: "0xDexter",    name: "Dexter Hayes",   chain: "Ethereum", followers: 520,  stars: 1200, repos: 34, languages: ["Solidity", "TypeScript"], score: 0, contacted: false },
 services/ai-adoption/src/liquidity/liquidityExpansion.ts	  { id: "pool-002", pair: "GST/ETH",   tvl: 2_800_000, apy: 22.1, utilization: 58, status: "incentivised", incentiveUsd: 50_000 },
-services/ai-adoption/src/projects/projectDiscovery.ts	  { id: "proj-003", name: "NftLaunch",        category: "NFT",       currentChain: "Ethereum", tvl: 1_200_000,  users: 38000, githubStars: 1100, innovScore: 68, migrationFit: 75, status: "discovered" },
 services/ai-agents/src/agents/economyAgent.ts	    const asset = pick(["USDC", "ETH", "BTC", "stGST"]);
 services/ai-agents/src/agents/economyAgent.ts	    const pool    = pick(["GST/ETH", "GST/USDC", "GST/wBTC", "wGST/MATIC", "GST/OP"]);
 services/ai-agents/src/agents/interchainAgent.ts	      reasoning: `wGST/${chain === "Polygon" ? "MATIC" : "ETH"} pool depth below optimal; yield arbitrage window: ${rand(12, 48)}h`,
-services/ai-agents/src/agents/marketingAgent.ts	    "Explainer blog: GhostStack vs Ethereum L2s",
-services/ai-agents/src/agents/marketingAgent.ts	    channel: pick(["Twitter/X", "LinkedIn", "Reddit r/ethereum", "Telegram", "Discord", "YouTube"]),
 services/ai-agents/src/registry/agentRegistry.ts	        mkDecision("economy-agent", "Rebalance GST/ETH pool",     "GST/ETH pool imbalanced 62/38 (target 50/50)",        "medium", "Added $82K ETH liquidity; ratio restored to 51/49",      hoursAgo(5)),
 services/ai-economy/src/liquidity/liquidityBalancer.ts	  { id: "lp2", pair: "GST/ETH",   dex: "GhostSwap", chain: "GhostL2", tvl: 850_000,   apr: 22, minTVL: 400_000,  status: "healthy" },
 services/ai-economy/src/markets/marketCreator.ts	  { id: "m1", name: "GhostSwap AMM",       type: "defi",       description: "Uniswap v4 fork with GST/USDC, GST/ETH pools", layer: "GhostL2", tvl: 1_200_000, status: "live",     createdAt: "2025-01-15T00:00:00Z" },
-services/ai-evolution/src/innovation/innovationEngine.ts	  { name: "Single-Slot Finality",        domain: "consensus",          summary: "Achieve Ethereum-style SSF to finalize blocks in a single slot", benefits: ["Sub-12s finality", "Eliminates long-range attacks"], challenges: ["Validator coordination overhead"] },
-services/ai-expansion/src/alliances/ecosystemAlliance.ts	  { id: "a1", chain: "Ethereum",   ecosystem: "Ethereum L1", bridgeType: "canonical",   tvlTarget: "$50M",  status: "building",    proposal: "" },
-services/ai-expansion/src/alliances/ecosystemAlliance.ts	  { id: "a2", chain: "Arbitrum",   ecosystem: "Ethereum L2", bridgeType: "native",      tvlTarget: "$20M",  status: "proposed",    proposal: "" },
-services/ai-expansion/src/alliances/ecosystemAlliance.ts	  { id: "a3", chain: "Optimism",   ecosystem: "Ethereum L2", bridgeType: "native",      tvlTarget: "$15M",  status: "proposed",    proposal: "" },
-services/ai-expansion/src/alliances/ecosystemAlliance.ts	  { id: "a4", chain: "Polygon",    ecosystem: "Ethereum L2", bridgeType: "canonical",   tvlTarget: "$25M",  status: "identified",  proposal: "" },
-services/ai-governance/src/proposals/proposalGenerator.ts	    description:     "Introduce a 6-month liquidity mining programme on GhostL2 GHOST/ETH and GHOST/USDC pools with a 12% APY subsidy funded from the ecosystem reserve.",
-services/ai-governance/src/proposals/proposalGenerator.ts	    description:     "Proposal to deploy and fund the canonical GhostChain → Ethereum mainnet bridge, enabling GHOST token transfers and cross-chain DeFi integrations.",
-services/ai-governance/src/proposals/proposalGenerator.ts	    estimatedImpact: "Access to Ethereum DeFi liquidity, projected +$10-20M TVL within 90 days of launch.",
-services/ai-governance/src/proposals/proposalGenerator.ts	    parameters:      { pools: ["GHOST/ETH", "GHOST/USDC"], subsidyAPY: 0.12, durationDays: 180, maxReserveAllocation: 2_000_000 },
-services/ai-governance/src/proposals/proposalGenerator.ts	    tags:            ["bridge", "ethereum", "interchain", "defi"],
-services/ai-governance/src/proposals/proposalGenerator.ts	    title:           "Enable Cross-Chain Bridge to Ethereum Mainnet",
-services/ai-growth/src/video/shortsGenerator.ts	  "GhostChain vs Ethereum — who wins?",
 services/ai-growth/src/viral/memeFactory.ts	  { caption: "ETH gas fees vs GhostChain fees:", format: "image" as const, viralScore: 91 },
 services/ai-intelligence/src/knowledge/knowledgeGraph.ts	  const lpPool       = addNode("pool",       "GHOST/ETH Liquidity",   { protocol: "Uniswap V3" },                "pool-ghost-eth");
-services/ai-interchain/src/assets/wrappedAssets.ts	    notes: "Largest wGST deployment — anchors ETH DeFi ecosystem",
-services/ai-interchain/src/assets/wrappedAssets.ts	    token: "wGST", network: "Ethereum",    standard: "ERC-20",  status: "active",
-services/ai-interchain/src/bridges/bridgeDeployment.ts	    notes: "Primary Ethereum bridge — lock GST on GhostChain, mint wGST on ETH",
-services/ai-interchain/src/bridges/bridgeDeployment.ts	    source: "GhostChain", destination: "Ethereum", mode: "lock-mint", status: "active",
-services/ai-interchain/src/discovery/chainDiscovery.ts	    name: "Base",       symbol: "ETH",  type: "evm",   chainId: 8453,
-services/ai-interchain/src/discovery/chainDiscovery.ts	    name: "Ethereum",  symbol: "ETH",  type: "evm",    chainId: 1,
-services/ai-interchain/src/discovery/chainDiscovery.ts	    nativeToken: "ETH", status: "active",
-services/ai-interchain/src/discovery/chainDiscovery.ts	    nativeToken: "ETH", status: "target",
-services/ai-interchain/src/discovery/chainDiscovery.ts	    notes: "Ethereum L2 with deep DeFi liquidity; native CCIP bridge support",
-services/ai-interchain/src/liquidity/liquidityExpansion.ts	    chain: "Ethereum",  protocol: "uniswap-v3",
-services/ai-interchain/src/liquidity/liquidityExpansion.ts	    notes: "Core ETH pool — anchor pair for wGST price discovery",
-services/ai-interchain/src/liquidity/liquidityExpansion.ts	    pairA: "GST", pairB: "ETH",   label: "GST/ETH",  status: "active",
-services/ai-interchain/src/liquidity/liquidityExpansion.ts	  label:         string;        // "GST/ETH"
-services/ai-interchain/src/liquidity/liquidityExpansion.ts	  pairB:         string;        // e.g. "ETH"
-services/ai-interchain/src/messaging/crossChainMessaging.ts	  "Ethereum":    "layerzero",
-services/ai-interchain/src/messaging/crossChainMessaging.ts	  const chains = ["Ethereum", "Polygon", "Cosmos (Hub)", "Ethereum", "Polygon", "Cosmos (Hub)", "Ethereum", "Solana"];
-services/ai-marketing/src/brain/marketingBrain.ts	        { topic: "Layer2 Scaling", momentum: 72, sentiment: "bullish", relatedCoins: ["ETH", "GST"] },
-services/ai-marketing/src/brain/marketingBrain.ts	      { project: "Ethereum L2", action: "New developer grant announcement", platform: "Twitter",  timestamp: new Date().toISOString(), engagement: 4200 },
-services/ai-marketing/src/content/blogGenerator.ts	  "GhostChain vs Ethereum: Why the future of L1 is built for speed",
-services/ai-marketing/src/content/blogGenerator.ts	2. Bridge assets from Ethereum using the Ghost Bridge
 services/ai-revenue/src/defi/liquidityEngine.ts	  pool("ETH/USDC",  "ghostchain", "rebalancing",   980_000, 11.2, 200_000, "ETH",   "USDC",    510_000,   470_000, 40),
 services/ai-revenue/src/defi/liquidityEngine.ts	  pool("GST/ETH",   "ghostl2",    "active",      2_340_000, 22.1, 430_000, "GST",   "ETH",   1_500_000,   840_000, 60),
 services/ai-revenue/src/defi/liquidityEngine.ts	  pool("USDC/ETH",  "ghostl2",    "active",      3_200_000, 12.3, 760_000, "USDC",  "ETH",   1_700_000, 1_500_000, 120),
 services/ai-revenue/src/trading/tradingEngine.ts	const PAIRS = ["GST/USDC", "GST/ETH", "GST/BTC", "USDC/ETH", "GST/GHOST"];
 services/ai-security/src/contracts/contractAuditor.ts	    description: "Arbitrary ETH send pattern — ensure recipient is controlled",
 services/ai-security/src/contracts/contractAuditor.ts	 *   • Unrestricted ETH withdrawal patterns
-services/ai-vault/config/policies.yaml	  # Block external ETH/Ethereum chain references
 services/ghost-ai-swarm-v2/src/agents/auditor.ts	  { id: "ETH_TRANSFER",     severity: "high",     pattern: /\.transfer\(|\.send\(/,               desc: "Low-level ETH transfer — prefer SafeERC20 GST transfer" },
 services/ghost-ai-swarm-v2/src/agents/auditor.ts	  { id: "ETH_UNIT",         severity: "high",     pattern: /\b(ether|gwei|wei)\b/,                desc: "ETH unit used — must use GST (GhostChain branding)" },
-services/ghost-ai-swarm-v2/src/agents/dao.ts	      { pattern: /eth_|mainnet|ethereum\s+mainnet/i,        rule: "No Ethereum mainnet dependency",              severity: "critical" },
-services/ghost-ai-swarm-v2/src/agents/governor.ts	      violations.push("CONST-001: No Ethereum mainnet dependency allowed.");
-services/ghost-ai-swarm-v2/src/agents/governor.ts	    if (/eth_|ethereum|mainnet/i.test(action))
 services/ghost-branding/docker-scan.sh	# Fails CI if any Ethereum-branded Docker images are present.
 services/ghost-branding/docker-scan.sh	check_image "ethereum"
 services/ghost-branding/scan.js	  "ethereum",
 services/ghost-branding/scan.js	 * Fails with exit code 1 if any banned Ethereum/ethers reference is found.
 services/ghost-branding/solidity-ast-validator.ts	  { label: "Ethereum keyword",    regex: /\bethereum\b/i },
 services/ghost-branding/solidity-ast-validator.ts	 *  - Rejected: ETH, Ethereum, wei, gwei, ethers, ERC20, ERC721, ERC1155
-services/ghost-economic-ai/src/yield/crossChainYield.ts	 *   Ethereum, Polygon, or any other external network. It computes strategy
-services/ghost-multichain-controller/src/adapters/ethereum-adapter.ts	        `[ethereum-adapter] chain ID mismatch: expected ${EXPECTED_CHAIN_ID}, got ${remoteChain}`,
-services/ghost-multichain-controller/src/adapters/ethereum-adapter.ts	      chainId: "ethereum", blockHeight: "0", healthy: false,
-services/ghost-multichain-controller/src/adapters/ethereum-adapter.ts	    return { chainId: "ethereum", blockHeight, healthy, gasPriceWei, latencyMs, timestamp: Date.now() };
-services/ghost-multichain-controller/src/adapters/ethereum-adapter.ts	  if (data.error) throw new Error(`ethereum RPC error: ${data.error.message}`);
-services/ghost-multichain-controller/src/adapters/ethereum-adapter.ts	 * Ethereum External Chain Adapter — Read-Only Observer
-services/ghost-multichain-controller/src/adapters/ethereum-adapter.ts	 * Queries the Ethereum RPC endpoint to observe chain health, block height,
-services/ghost-multichain-controller/src/adapters/ethereum-adapter.ts	 * and gas prices. Used by the crosschain-analyzer to assess the L1↔Ethereum
-services/ghost-multichain-controller/src/analyzers/crosschain-analyzer.ts	      chainId: "ethereum" as const, blockHeight: "0", healthy: false,
-services/ghost-multichain-controller/src/analyzers/crosschain-analyzer.ts	import { getEthereumSnapshot } from "../adapters/ethereum-adapter.js";
-services/ghost-multichain-controller/src/analyzers/liquidity-analyzer.ts	    externalChain: "ethereum" | "polygon" | "arbitrum" | "solana" | "cosmos";
-services/ghost-multichain-controller/src/analyzers/liquidity-analyzer.ts	  externalChain: "ethereum" | "polygon" | "arbitrum" | "solana" | "cosmos";
-services/ghost-multichain-controller/src/modules/arbitrage-engine.ts	 *   GST/USD on Ethereum DEX  = $1.05
-services/ghost-multichain-controller/src/policies/sovereignty-policy.ts	  "L1:ethereum", "L1:polygon", "L1:arbitrum", "L1:solana", "L1:cosmos",
-services/ghost-multichain-controller/src/policies/sovereignty-policy.ts	  "ethereum:L1", "polygon:L1", "arbitrum:L1", "solana:L1", "cosmos:L1",
-services/ghost-multichain-controller/src/policies/sovereignty-policy.ts	 *   Inbound L1     → ethereum:L1, polygon:L1, arbitrum:L1, solana:L1, cosmos:L1
-services/ghost-multichain-controller/src/policies/sovereignty-policy.ts	 *   Outbound L1    → L1:ethereum, L1:polygon, L1:arbitrum, L1:solana, L1:cosmos
-services/ghost-multichain-controller/src/types.ts	  "ethereum", "polygon", "arbitrum", "solana", "cosmos",
-services/ghost-multichain-controller/src/types.ts	  gasPriceWei?:  string;   // stringified bigint (ETH-like), or lamports for Solana
-services/ghost-multichain-controller/src/types.ts	  symbol:        string;           // e.g. "GST/ETH"
-services/ghost-multichain-controller/src/types.ts	export type ExternalChainId = "ethereum" | "polygon" | "arbitrum" | "solana" | "cosmos";
 services/ghost-runtime/rpc-firewall.ts	  const ghostMethod = ETH_TO_GHOST[req.method];
 services/ghost-runtime/rpc-firewall.ts	const ETH_TO_GHOST: Record<string, string> = {
-services/ghost-universe/src/economy/UniverseEconomy.ts	 * No Ethereum. No ETH. Only GST.
 services/ghostbrain-gsa/src/agent/roles/auditor.js	      ? 'ETH symbol correctly rejected, Ghost/GST/18 correctly accepted'
 services/ghostbrain-gsa/src/agent/roles/auditor.js	  const brandBad   = assertBrandingLaw({ symbol: 'ETH' });
 services/ghostbrain-gsa/src/agent/roles/diagnostician.js	  else if (/brand|GST|Ghost|ETH|symbol|decimals/i.test(f.description))      category = 'branding';
@@ -365,8 +280,6 @@ services/ghostcode-ai/src/BrandingEnforcer.ts	  { label: "ethereum",      test: 
 services/ghostcode-ai/src/DockerVerifier.ts	    const banned = ["ethereum", "geth", "parity", "nethermind", "besu"];
 services/ghostxchange/src/index.ts	 *   - Native token: GST (never ETH or any external token)
 services/global-search-service/src/index.js	        snippet: `Balance: ${(Number(balWei) / 1e18).toFixed(6)} ETH`,
-services/governance-event-bridge/src/events.test.ts	/** Encode an Ethereum address as a 32-byte ABI topic (0x-prefixed). */
-services/hyper-ghost-ai/agents/branding-guardian.ts	 * Scans the entire repo for Ethereum-legacy references, rewrites them to Ghost
 tools/branding/audit-branding.ts	      // Avoid false-positive: "ETH" inside "METHOD", "synthetic", etc.
 tools/branding/audit-branding.ts	      if (rule.term === "ETH" || rule.term === "ENS") {
 tools/branding/audit-branding.ts	    // Skip Besu/Geth API namespace flags — ETH here is the RPC namespace, not a token name
@@ -377,11 +290,13 @@ tools/branding/audit-branding.ts	    if (/window[\s\S]*?\.ethereum/.test(line)) 
 tools/branding/audit-branding.ts	  { id: "GBC-001", severity: "CRITICAL", term: "Ethereum",  layer: "1_core_chain_identity",  suggestion: "GhostChain",   bridgeExempt: false, compatExempt: false },
 tools/branding/audit-branding.ts	  { id: "GBC-002", severity: "CRITICAL", term: "ethereum",  layer: "1_core_chain_identity",  suggestion: "ghostchain",   bridgeExempt: false, compatExempt: false },
 tools/branding/audit-branding.ts	  { id: "GBC-012", severity: "MEDIUM",   term: "ETH",       layer: "2_token_identity",       suggestion: "GST",          bridgeExempt: true,  compatExempt: false },
-tools/branding/branding-rules.json	    "1_core_chain_identity":      { "canonical": "GhostChain",   "forbidden": ["Ethereum", "ethereum"] },
-tools/branding/branding-rules.json	    "2_token_identity":           { "canonical": "GST",          "forbidden": ["ETH", "Ether", "ether"] },
+tools/branding/branding-rules.json	        "ETH",
+tools/branding/branding-rules.json	        "Ether",
+tools/branding/branding-rules.json	        "Ethereum",
+tools/branding/branding-rules.json	        "ethereum"
 tools/branding/branding-rules.json	    "ETH",
 tools/branding/branding-rules.json	    "Ethereum",
-tools/branding/branding-rules.json	    "Ethereum":   "GhostChain",
+tools/branding/branding-rules.json	    "Ethereum": "GhostChain",
 tools/branding/branding-rules.json	    "ethereum",
 tools/branding/contract-validator.ts	        ?? content.match(/\bNAME\s*=\s*"Ethereum"/);
 tools/branding/contract-validator.ts	        ?? content.match(/\bSYMBOL\s*=\s*"ETH"/);
@@ -403,7 +318,6 @@ tools/branding/enforce-branding.ts	  // Ethereum → GhostChain: never legitimat
 tools/branding/enforce-branding.ts	  // NOTE: "ethereum" (lowercase) and "ethers" (without .js) are NOT replaced automatically
 tools/branding/enforce-branding.ts	  { from: "Ethereum",   to: "GhostChain",  bridgeExempt: false, compatExempt: false },
 tools/branding/enforce-branding.ts	 *    - Bridge/cross-chain files: ETH references preserved (interop intentional)
-tools/ghostcontrol/tests/guards.invariants.test.ts	        { chainId: 1,   name: "GhostChain" as const, layer: "l1" as const }, // Ethereum mainnet — NOT allowed
 tools/ghostlint/package.json	  "description": "GhostLint — GhostChain branding enforcement scanner. Blocks eth_/ethereum/ethers/web3/ERC references.",
 tools/ghostlint/src/index.ts	    description: 'Chain name must be GhostChain, not Ethereum/Mainnet',
 tools/ghostlint/src/index.ts	    description: 'Native token must be GST, not ETH/Ether/WETH',

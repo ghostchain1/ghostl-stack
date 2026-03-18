@@ -366,7 +366,7 @@ GHOSTAI_L3_CHAIN_ID=903
 
 # ── Chain RPC endpoints ───────────────────────────────────────────────────────
 GHOST_L1_RPC_URLS=http://127.0.0.1:18545
-GHOST_L2_RPC_URLS=http://127.0.0.1:29545
+GHOST_L2_RPC_URLS=http://127.0.0.1:29547
 GHOST_L3_RPC_URLS=http://127.0.0.1:39545
 
 # ── Neural Memory — PostgreSQL ────────────────────────────────────────────────

@@ -25,7 +25,7 @@ import os
 
 _ENDPOINTS: dict[str, str] = {
     "L1": os.getenv("GACK_L1_RPC_URL", "http://127.0.0.1:18545"),
-    "L2": os.getenv("GACK_L2_RPC_URL", "http://127.0.0.1:29545"),
+    "L2": os.getenv("GACK_L2_RPC_URL", "http://127.0.0.1:29547"),
     "L3": os.getenv("GACK_L3_RPC_URL", "http://127.0.0.1:39545"),
 }
 

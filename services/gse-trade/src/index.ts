@@ -16,36 +16,61 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-// ── Health ────────────────────────────────────────────────────────────────────
+// ─── In-memory trade store ─────────────────────────────────────────────────────
+interface TradeRecord {
+  id: string;
+  fromNation: string;
+  toNation: string;
+  assetSymbol: string;
+  amountGST: number;
+  status: "pending" | "settled" | "failed";
+  txHash?: string;
+  recordedAt: number;
+  settledAt?: number;
+}
+
+const trades = new Map<string, TradeRecord>();
+
+// ─── Health ───────────────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "gse-trade", ts: Date.now() });
 });
 
-app.post("/trade/record", async (req, res) => {
-  try {
-    // TODO: implement — Record trade transaction
-    res.json({ ok: true, stub: "gse-trade/trade/record" });
-  } catch (err) {
-    res.status(500).json({ error: String(err) });
+app.post("/trade/record", (req, res) => {
+  const { fromNation, toNation, assetSymbol, amountGST, txHash } = req.body as Partial<TradeRecord>;
+  if (!fromNation || !toNation || !assetSymbol || amountGST === undefined) {
+    res.status(400).json({ error: "fromNation, toNation, assetSymbol and amountGST are required" });
+    return;
   }
+  const id = `trade-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const trade: TradeRecord = { id, fromNation, toNation, assetSymbol, amountGST, status: "pending", txHash, recordedAt: Date.now() };
+  trades.set(id, trade);
+  log.info("trade.recorded", { id, fromNation, toNation, assetSymbol, amountGST });
+  res.status(201).json({ trade });
 });
 
-app.post("/trade/settle", async (req, res) => {
-  try {
-    // TODO: implement — Settle pending trade
-    res.json({ ok: true, stub: "gse-trade/trade/settle" });
-  } catch (err) {
-    res.status(500).json({ error: String(err) });
+app.post("/trade/settle", (req, res) => {
+  const { id, txHash } = req.body as { id?: string; txHash?: string };
+  if (!id) { res.status(400).json({ error: "id is required" }); return; }
+  const trade = trades.get(id);
+  if (!trade) { res.status(404).json({ error: "trade not found" }); return; }
+  if (trade.status !== "pending") {
+    res.status(409).json({ error: `trade is already ${trade.status}` }); return;
   }
+  trade.status = "settled";
+  trade.settledAt = Date.now();
+  if (txHash) trade.txHash = txHash;
+  log.info("trade.settled", { id });
+  res.json({ trade });
 });
 
-app.get("/trade/history", async (req, res) => {
-  try {
-    // TODO: implement — Trade history
-    res.json({ ok: true, stub: "gse-trade/trade/history" });
-  } catch (err) {
-    res.status(500).json({ error: String(err) });
-  }
+app.get("/trade/history", (req, res) => {
+  const nation = req.query.nation as string | undefined;
+  let list = [...trades.values()];
+  if (nation) list = list.filter(t => t.fromNation === nation || t.toNation === nation);
+  list.sort((a, b) => b.recordedAt - a.recordedAt);
+  const limit = Math.min(Number(req.query.limit ?? 50), 200);
+  res.json({ records: list.slice(0, limit), total: list.length });
 });
 
 

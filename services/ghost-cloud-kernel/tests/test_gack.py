@@ -101,7 +101,7 @@ class TestTxRouter:
         from src.blockchain.tx_router import route_transaction
         tx = route_transaction("L3")
         assert tx.next_hop_rpc is not None
-        assert "29545" in tx.next_hop_rpc  # L2 default RPC port
+        assert "29547" in tx.next_hop_rpc  # L2 default RPC port
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -211,7 +211,7 @@ class TestChainOrchestrator:
     def test_rpc_urls_use_ghost_ports(self):
         from src.blockchain.chain_orchestrator import CHAINS
         assert "18545" in CHAINS["L1"].rpc_url
-        assert "29545" in CHAINS["L2"].rpc_url
+        assert "29547" in CHAINS["L2"].rpc_url
         assert "39545" in CHAINS["L3"].rpc_url
 
     def test_check_chain_graceful_on_connect_failure(self):

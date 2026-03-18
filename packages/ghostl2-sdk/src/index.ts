@@ -1,13 +1,13 @@
 // GhostL2 SDK — GhostChain Layer 2
 // OP-Stack based rollup anchored to GhostChain L1
-// Chain ID: 901 | RPC: http://localhost:29545
+// Chain ID: 901 | RPC: http://localhost:29547
 
 import type { BridgeTransferReceipt } from '@ghostchain/ghostbridge-sdk';
 
 /** GhostL2 canonical constants */
 export const GHOST_L2 = {
   CHAIN_ID: 901,
-  RPC: 'http://localhost:29545',
+  RPC: 'http://localhost:29547',
   L1_ROLLUP: '0xad32D5C2Da9f4159C4cc98686C005852b3905355',
   FINALITY_ORACLE: '0x650aEF4b63095e4EDe581BC79CdeA927e3ba553A',
 } as const;

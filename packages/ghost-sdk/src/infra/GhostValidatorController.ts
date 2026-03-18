@@ -11,7 +11,7 @@
  *
  * Canonical chain IDs:
  *   L1 — GhostChain  (chainId 14000101, port 18545)
- *   L2 — GhostL2     (chainId 901,      port 29545)
+ *   L2 — GhostL2     (chainId 901,      port 29547)
  *   L3 — GhostL3     (chainId 903,      port 39545)
  *
  * Usage:

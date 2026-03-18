@@ -6,7 +6,7 @@
 #
 # L2 Rollup address  : 0xad32D5C2Da9f4159C4cc98686C005852b3905355
 # Finality Oracle L2 : 0x650aEF4b63095e4EDe581BC79CdeA927e3ba553A
-# RPC port: 29545
+# RPC port: 29547
 #
 # NOTE: L2 is deployed via infra/opstack/ configs + op-geth / op-node.
 #       This script starts the OP Stack containers defined in the appropriate
@@ -20,7 +20,7 @@ STACK_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 [[ -f "${STACK_DIR}/.env" ]] && set -a && source "${STACK_DIR}/.env" && set +a
 
 L1_RPC_PORT="${L1_EVM_PORT:-18545}"
-L2_RPC_PORT="${L2_RPC_PORT:-29545}"
+L2_RPC_PORT="${L2_RPC_PORT:-29547}"
 WAIT_TIMEOUT="${DEPLOY_WAIT_TIMEOUT:-180}"
 
 log() { echo "[deploy-ghostl2] $*"; }

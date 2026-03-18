@@ -5,7 +5,7 @@
  * Chain IDs and ports are canonical — never change without governance approval.
  *
  * GhostChain L1  chain_id = 14000101  RPC :18545
- * GhostL2        chain_id = 901        RPC :29545
+ * GhostL2        chain_id = 901        RPC :29547
  * GhostL3        chain_id = 903        RPC :39545
  */
 
@@ -28,7 +28,7 @@ export const LOG_LEVEL = env("LOG_LEVEL", "info");
 
 export const CHAIN_NODES = {
   l1: env("GHOST_L1_RPC_URL", "http://localhost:18545"),
-  l2: env("GHOST_L2_RPC_URL", "http://localhost:29545"),
+  l2: env("GHOST_L2_RPC_URL", "http://localhost:29547"),
   l3: env("GHOST_L3_RPC_URL", "http://localhost:39545"),
 } as const;
 

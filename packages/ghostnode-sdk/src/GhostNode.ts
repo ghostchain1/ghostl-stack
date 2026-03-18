@@ -20,7 +20,7 @@ import type { GhostNodeConfig, GhostChainLayer } from './types.js';
  * console.log(await node.validator.syncStatus());
  *
  * // L2 Sequencer
- * const l2 = new GhostNode({ rpc: 'http://localhost:29545', layer: 'L2' });
+ * const l2 = new GhostNode({ rpc: 'http://localhost:29547', layer: 'L2' });
  * const status = await l2.sequencer.status();
  * ```
  */
@@ -35,7 +35,7 @@ export class GhostNode {
   /** Canonical RPC endpoints per layer */
   static readonly RPC = {
     L1: 'http://localhost:18545',
-    L2: 'http://localhost:29545',
+    L2: 'http://localhost:29547',
     L3: 'http://localhost:39545',
   } as const;
 

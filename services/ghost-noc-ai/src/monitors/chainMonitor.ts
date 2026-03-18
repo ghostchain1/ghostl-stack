@@ -2,7 +2,7 @@ import type { MonitorResult, NocAlert } from '../types.js';
 
 const CHAINS = [
   { name: 'GhostChain L1', id: 'l1', rpc: process.env.L1_RPC_URL ?? 'http://localhost:18545', chainId: 14000101 },
-  { name: 'GhostL2',       id: 'l2', rpc: process.env.L2_RPC_URL ?? 'http://localhost:29545', chainId: 901 },
+  { name: 'GhostL2',       id: 'l2', rpc: process.env.L2_RPC_URL ?? 'http://localhost:29547', chainId: 901 },
   { name: 'GhostL3',       id: 'l3', rpc: process.env.L3_RPC_URL ?? 'http://localhost:39545', chainId: 903 },
 ];
 

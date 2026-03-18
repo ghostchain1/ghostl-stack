@@ -1,7 +1,7 @@
 {
   "name": "@ghostchain/ghostl2-sdk",
   "version": "1.0.0",
-  "description": "GhostL2 SDK — OP-Stack L2 (chain_id=901, RPC :29545) deposit, withdraw, sequencer, and batch submission",
+  "description": "GhostL2 SDK — OP-Stack L2 (chain_id=901, RPC :29547) deposit, withdraw, sequencer, and batch submission",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",

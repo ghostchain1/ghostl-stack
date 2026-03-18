@@ -55,7 +55,7 @@ HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
 # ── Environment defaults ───────────────────────────────────────────────────
 ENV NODE_ENV=production \
     GHOSTCHAIN_L1_RPC=http://ghostchain-l1:18545 \
-    GHOSTL2_RPC=http://ghostl2:29545 \
+    GHOSTL2_RPC=http://ghostl2:29547 \
     GHOSTL3_RPC=http://ghostl3:39545 \
     GHOSTBRAIN_URL=http://localhost:7900 \
     GHOSTSCAN_INDEXER_URL=http://ghostscan:8545 \

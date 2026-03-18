@@ -41,7 +41,7 @@ metadata:
   namespace: ghostbrain
 data:
   GHOSTCHAIN_L1_RPC:     "http://ghostchain-l1.ghostchain.svc.cluster.local:18545"
-  GHOSTL2_RPC:           "http://ghostl2.ghostchain.svc.cluster.local:29545"
+  GHOSTL2_RPC:           "http://ghostl2.ghostchain.svc.cluster.local:29547"
   GHOSTL3_RPC:           "http://ghostl3.ghostchain.svc.cluster.local:39545"
   SIGNING_RELAY_URL:     "http://signing-relay.ghostchain.svc.cluster.local:7910"
   GHOSTSCAN_INDEXER_URL: "http://ghostscan.ghostchain.svc.cluster.local:8545"

@@ -3,6 +3,8 @@ x-host-gateway: &host-gateway
     - "host.docker.internal:host-gateway"
 
 services:
+  # Legacy compatibility forwarder for older clients that still expect :29545.
+  # This is an L1 forwarder and must not be used as the canonical GhostL2 RPC.
   rpc-forward-l1-29545:
     <<: *host-gateway
     image: ghostl/rpc-forward-l1-29545:local

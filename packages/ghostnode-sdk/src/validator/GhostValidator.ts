@@ -20,7 +20,7 @@ export interface GhostSlashingEvent {
  *
  * Chain IDs:
  *  L1 → 14000101 (RPC :18545)
- *  L2 → 901      (RPC :29545)
+ *  L2 → 901      (RPC :29547)
  *  L3 → 903      (RPC :39545)
  */
 export class GhostValidator {

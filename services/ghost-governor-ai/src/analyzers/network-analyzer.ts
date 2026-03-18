@@ -14,7 +14,7 @@ import { analyzeTreasury }   from "./treasury-analyzer.js";
 import { analyzeDefi }       from "./defi-analyzer.js";
 
 const L1_RPC  = process.env.GHOSTCHAIN_L1_RPC ?? "http://127.0.0.1:18545";
-const L2_RPC  = process.env.GHOSTCHAIN_L2_RPC ?? "http://127.0.0.1:29545";
+const L2_RPC  = process.env.GHOSTCHAIN_L2_RPC ?? "http://127.0.0.1:29547";
 const L3_RPC  = process.env.GHOSTCHAIN_L3_RPC ?? "http://127.0.0.1:39545";
 
 const CHAIN_IDS = { L1: 14_000_101, L2: 901, L3: 903 } as const;

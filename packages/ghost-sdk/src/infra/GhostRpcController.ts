@@ -7,13 +7,13 @@
  *
  * Canonical chain IDs and default RPC ports:
  *   L1 — GhostChain  (chainId 14000101, port 18545)
- *   L2 — GhostL2     (chainId 901,      port 29545)
+ *   L2 — GhostL2     (chainId 901,      port 29547)
  *   L3 — GhostL3     (chainId 903,      port 39545)
  *
  * Usage:
  *   const ctrl = new GhostRpcController({
  *     L1: ["http://localhost:18545", "http://validator2:18545"],
- *     L2: ["http://localhost:29545"],
+ *     L2: ["http://localhost:29547"],
  *     L3: ["http://localhost:39545", "http://validator2:39545"],
  *   });
  *

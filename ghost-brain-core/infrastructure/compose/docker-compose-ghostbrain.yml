@@ -10,7 +10,7 @@
 #
 # Requires (from parent stack):
 #   ghostchain-l1        — GhostChain L1 RPC :18545 (on host network or overlay)
-#   ghostl2              — GhostL2 RPC       :29545
+#   ghostl2              — GhostL2 RPC       :29547
 #   ghostl3              — GhostL3 RPC       :39545
 #
 # To start (standalone):
@@ -52,7 +52,7 @@ services:
     environment:
       - NODE_ENV=production
       - GHOSTCHAIN_L1_RPC=http://ghostchain-l1:18545
-      - GHOSTL2_RPC=http://ghostl2:29545
+      - GHOSTL2_RPC=http://ghostl2:29547
       - GHOSTL3_RPC=http://ghostl3:39545
       - GHOSTBRAIN_URL=http://ghostbrain-runtime:7900
       - SIGNING_RELAY_URL=http://signing-relay:7910

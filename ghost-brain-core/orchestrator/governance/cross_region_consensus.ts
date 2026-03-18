@@ -7,7 +7,7 @@
  *
  * Chain topology enforced:
  *   L1 chain_id=14000101  GhostChain sovereign chain  port 18545
- *   L2 chain_id=901       GhostL2 OP Stack            port 29545
+ *   L2 chain_id=901       GhostL2 OP Stack            port 29547
  *   L3 chain_id=903       GhostL3 OP Stack            port 39545
  *
  * Settlement order: L3 → L2 → L1.  L3 lag is measured against L2;
@@ -52,7 +52,7 @@ const RELAY_TIMEOUT_MS = parseInt(
 // Layer port map: standard GhostChain RPC ports.
 const LAYER_PORTS: Record<string, number> = {
   l1: 18545,
-  l2: 29545,
+  l2: 29547,
   l3: 39545,
 };
 

@@ -120,7 +120,7 @@ info "  CPU idle: ${CPU_IDLE}%  RAM used: ${RAM_USED}%  Disk used: ${DISK_USED}%
 info "Collecting chain metrics…"
 
 L1_HEIGHT="$(rpc_height http://localhost:18545)"
-L2_HEIGHT="$(rpc_height http://localhost:29545)"
+L2_HEIGHT="$(rpc_height http://localhost:29547)"
 L3_HEIGHT="$(rpc_height http://localhost:39545)"
 
 info "  L1 block: ${L1_HEIGHT}  L2 block: ${L2_HEIGHT}  L3 block: ${L3_HEIGHT}"

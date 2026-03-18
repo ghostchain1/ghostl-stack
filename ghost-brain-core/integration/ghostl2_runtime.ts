@@ -1,7 +1,7 @@
 /**
  * GhostBrain — GhostL2 Runtime Monitor (TypeScript)
  *
- * Monitors the GhostL2 sequencer (chain_id = 901, RPC :29545) and
+ * Monitors the GhostL2 sequencer (chain_id = 901, RPC :29547) and
  * triggers GhostBrain AI evaluations on new blocks and sequencer events.
  *
  * Responsibilities:
@@ -24,7 +24,7 @@
 
 export {}; // ensure module scope — prevents redeclare conflicts with other runtime files
 
-const L2_RPC_URL       = process.env["GHOSTL2_RPC"]          ?? "http://localhost:29545";
+const L2_RPC_URL       = process.env["GHOSTL2_RPC"]          ?? "http://localhost:29547";
 const L1_RPC_URL       = process.env["GHOSTCHAIN_L1_RPC"]    ?? "http://localhost:18545";
 const GHOSTBRAIN_URL   = process.env["GHOSTBRAIN_URL"]        ?? "http://localhost:7900";
 const L2_CHAIN_ID      = 901;

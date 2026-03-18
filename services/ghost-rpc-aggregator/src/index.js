@@ -32,7 +32,7 @@ const VERIFY_INTERVAL_MS = Math.max(5_000, Number(process.env.RPC_VERIFY_INTERVA
 
 const configuredUrls = {
   L1: parseUrlList(process.env.RPC_L1_URLS ?? "http://127.0.0.1:18545"),
-  L2: parseUrlList(process.env.RPC_L2_URLS ?? "http://127.0.0.1:29545"),
+  L2: parseUrlList(process.env.RPC_L2_URLS ?? "http://127.0.0.1:29547"),
   L3: parseUrlList(process.env.RPC_L3_URLS ?? "http://127.0.0.1:39545")
 };
 

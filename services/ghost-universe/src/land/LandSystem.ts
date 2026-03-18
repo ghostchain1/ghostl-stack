@@ -10,7 +10,7 @@
  * Economic flow: land sales → L3 → L2 settlement → L1 treasury
  */
 
-const L2_RPC = 'http://localhost:29545';
+const L2_RPC = 'http://localhost:29547';
 
 export type LandType = 'residential' | 'commercial' | 'event-venue' | 'game-arena' | 'civic' | 'wilderness';
 
@@ -141,5 +141,5 @@ export class LandSystem {
     };
   }
 
-  static devnet(): LandSystem { return new LandSystem('http://localhost:29545'); }
+  static devnet(): LandSystem { return new LandSystem('http://localhost:29547'); }
 }

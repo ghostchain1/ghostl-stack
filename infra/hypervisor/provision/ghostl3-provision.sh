@@ -98,11 +98,12 @@ L3_PROPOSER_METRICS_PORT=8302
 L3_METRICS_PROPOSER_HOST_PORT=39302
 
 # ── Settlement — L2 this L3 settles into ──────────────────────────────────────
-# L2 VM ${L2_VM_IP} — op-geth HTTP for eth calls, op-node for rollup RPC
+# L2 VM ${L2_VM_IP} — op-geth HTTP for eth calls, op-node for internal rollup
+# RPC. The canonical direct GhostL2 host RPC remains :29547.
 RPC_SETTLEMENT=http://${L2_VM_IP}:29547
 L2_RPC=http://${L2_VM_IP}:29547
 L2_WS=ws://${L2_VM_IP}:29546
-L2_OP_NODE_RPC=http://${L2_VM_IP}:29545
+L2_OP_NODE_RPC=http://${L2_VM_IP}:29546
 L2_CHAIN_ID=901
 
 # ── L1 (for L3 verifier / challenger cross-reference) ─────────────────────────

@@ -147,7 +147,7 @@ fi
 info "GhostStack is running."
 info "  Compliance API : http://localhost:8090"
 info "  RPC L1         : http://localhost:18545"
-info "  RPC L2         : http://localhost:29545"
+info "  RPC L2         : http://localhost:29547"
 info "  RPC L3         : http://localhost:39545"
 info "  GhostBrain     : http://localhost:7900"
 info "  Grafana        : http://localhost:3000"

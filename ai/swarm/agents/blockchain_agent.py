@@ -45,7 +45,7 @@ logger = logging.getLogger("BlockchainAgent")
 
 _CHAINS: list[dict[str, Any]] = [
     {"name": "GhostChain L1", "chain_id": 14000101, "rpc_env": "GHOSTCHAIN_L1_RPC", "default_rpc": "http://localhost:18545", "layer": "L1"},
-    {"name": "GhostL2",       "chain_id": 901,       "rpc_env": "GHOSTL2_RPC",        "default_rpc": "http://localhost:29545", "layer": "L2"},
+    {"name": "GhostL2",       "chain_id": 901,       "rpc_env": "GHOSTL2_RPC",        "default_rpc": "http://localhost:29547", "layer": "L2"},
     {"name": "GhostL3",       "chain_id": 903,       "rpc_env": "GHOSTL3_RPC",        "default_rpc": "http://localhost:39545", "layer": "L3"},
 ]
 

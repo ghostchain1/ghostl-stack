@@ -234,8 +234,8 @@ const GHOST_RPC_ENDPOINTS = Object.freeze({
     layer: "L2",
     chainId: 901,
     publicUrl: "https://l2rpc.ghostchain.cloud",
-    localUrl: "http://localhost:29545",
-    port: 29545,
+    localUrl: "http://localhost:29547",
+    port: 29547,
     explorerUrl: `${GHOST_SITES.explorer.url}?layer=2`,
   }),
   l3: Object.freeze({

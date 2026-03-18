@@ -480,7 +480,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
           "expr": "ghostbrain_chain_alive{chain=\"l2\"}",
-          "legendFormat": "L2 :29545"
+          "legendFormat": "L2 :29547"
         }
       ]
     },

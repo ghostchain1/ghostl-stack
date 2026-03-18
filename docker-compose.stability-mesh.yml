@@ -8,7 +8,7 @@ services:
       PORT: 7615
       HOST: 0.0.0.0
       RPC_L1_URLS: ${RPC_L1_URLS:-http://host.docker.internal:18545}
-      RPC_L2_URLS: ${RPC_L2_URLS:-http://host.docker.internal:29545}
+      RPC_L2_URLS: ${RPC_L2_URLS:-http://host.docker.internal:29547}
       RPC_L3_URLS: ${RPC_L3_URLS:-http://host.docker.internal:39545}
       RPC_REQUEST_TIMEOUT_MS: ${RPC_REQUEST_TIMEOUT_MS:-4000}
       RPC_CACHE_DEFAULT_TTL_MS: ${RPC_CACHE_DEFAULT_TTL_MS:-1000}

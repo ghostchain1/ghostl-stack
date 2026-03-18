@@ -7,7 +7,7 @@
 # Compose file: infra/opstack/docker-compose.l2-node.yml
 # Services:     l2-geth, op-node
 # Chain ID:     901
-# RPC port:     29545
+# RPC port:     29547
 #
 # Settlement target: GhostChain L1 (chain_id=14000101, port 18545)
 # L2 NEVER contacts external chains directly — all cross-chain traffic
@@ -47,13 +47,13 @@ run_preflight() {
 # ---------------------------------------------------------------------------
 
 wait_for_l2_rpc() {
-  info "Waiting for GhostL2 RPC on port 29545 (timeout ${WAIT_TIMEOUT_S}s)…"
+  info "Waiting for GhostL2 RPC on port 29547 (timeout ${WAIT_TIMEOUT_S}s)…"
   local elapsed=0
   until curl -sf \
       -X POST \
       -H "Content-Type: application/json" \
       --data '{"jsonrpc":"2.0","method":"ghost_blockNumber","params":[],"id":1}' \
-      http://localhost:29545 >/dev/null 2>&1
+      http://localhost:29547 >/dev/null 2>&1
   do
     if [[ "${elapsed}" -ge "${WAIT_TIMEOUT_S}" ]]; then
       fatal "GhostL2 RPC did not become ready within ${WAIT_TIMEOUT_S}s."
@@ -106,6 +106,6 @@ hg_docker compose -f "${COMPOSE_FILE}" -p "${PROJECT_NAME}" up -d op-node
 wait_for_l2_rpc
 
 info "GhostL2 deployed."
-info "  RPC      : http://localhost:29545"
+info "  RPC      : http://localhost:29547"
 info "  Chain ID : 901"
 info "  Settles to L1 chain_id=14000101"

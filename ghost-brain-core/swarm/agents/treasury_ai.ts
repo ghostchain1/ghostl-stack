@@ -26,7 +26,7 @@ import type { ISwarmAgent, SwarmContext, AgentReport, AgentRecommendation } from
 // ---------------------------------------------------------------------------
 
 const L1_RPC = process.env["GHOSTCHAIN_L1_RPC"] ?? "http://localhost:18545";
-const L2_RPC = process.env["GHOSTL2_RPC"]       ?? "http://localhost:29545";
+const L2_RPC = process.env["GHOSTL2_RPC"]       ?? "http://localhost:29547";
 const L3_RPC = process.env["GHOSTL3_RPC"]       ?? "http://localhost:39545";
 
 const L1_ROLLUP_ADDR     = "0xad32D5C2Da9f4159C4cc98686C005852b3905355";
