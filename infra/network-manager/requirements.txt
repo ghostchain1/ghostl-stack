@@ -1,0 +1,4 @@
+# GANM — no heavy dependencies, stdlib only at runtime
+# Optional: install these for richer integration
+# (all are optional; GANM degrades gracefully without them)
+psutil>=5.9.0

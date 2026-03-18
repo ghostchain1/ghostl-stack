@@ -12,9 +12,14 @@
 #
 # This configuration:
 #   - Exposes GhostBrain, ghost-ai-swarm, and the API BFF through Kong
-#   - Applies rate-limiting and HMAC auth plugins
-#   - Internal-only routes are locked to the /24 subnet at the nginx layer;
-#     Kong sits behind nginx and enforces API-level controls
+#   - Applies rate-limiting and IP-restriction controls
+#   - Internal-only routes (GhostBrain, AI Swarm) are locked to the /24
+#     subnet at both nginx and Kong layers
+#   - Application-level HMAC verification is performed by ghostos-core
+#     (not a Kong OSS HMAC plugin) for internal control-plane requests
+#   - JWT/OIDC validation for user-facing routes uses the ghost-jwks-guard
+#     Traefik ForwardAuth sidecar (see infra/docker/docker-compose.prod.yml)
+#   - Kong sits behind nginx and enforces API-level controls
 # =============================================================================
 
 _format_version: "3.0"
@@ -50,7 +55,7 @@ services:
 
   # GhostL2 RPC
   - name: ghostl2-rpc
-    url: http://38.247.149.220:29545
+    url: http://38.247.149.220:29547
     connect_timeout: 10000
     write_timeout:   30000
     read_timeout:    30000
@@ -201,7 +206,7 @@ services:
             headers: ["X-Ghost-Region:asia"]
 
   - name: ghostl2-rpc-us
-    url: http://38.247.149.220:29545
+    url: http://38.247.149.220:29547
     connect_timeout: 10000
     write_timeout:   30000
     read_timeout:    30000
@@ -226,7 +231,7 @@ services:
             headers: ["X-Ghost-Region:us"]
 
   - name: ghostl2-rpc-eu
-    url: http://38.247.149.220:29545
+    url: http://38.247.149.220:29547
     connect_timeout: 10000
     write_timeout:   30000
     read_timeout:    30000
@@ -251,7 +256,7 @@ services:
             headers: ["X-Ghost-Region:eu"]
 
   - name: ghostl2-rpc-asia
-    url: http://38.247.149.220:29545
+    url: http://38.247.149.220:29547
     connect_timeout: 10000
     write_timeout:   30000
     read_timeout:    30000

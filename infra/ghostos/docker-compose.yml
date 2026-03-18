@@ -1,0 +1,52 @@
+# GhostOS control-plane compose
+# Build context is the monorepo root (../.. relative to this file).
+# Attach to the existing ghostl-stack OP-Stack network so ghostos-core
+# can reach L1/L2/L3 containers by service name when running together.
+
+services:
+  ghostos:
+    container_name: ghostos
+    build:
+      context: ../..
+      dockerfile: infra/ghostos/Dockerfile
+    env_file:
+      - ../../services/stack.env
+    environment:
+      PORT: "8484"
+      GHOSTOS_ENV: ${GHOSTOS_ENV:-devnet}
+      RPC_L1: ${RPC_L1:-http://host.docker.internal:18545}
+      RPC_L2: ${RPC_L2:-http://host.docker.internal:29547}
+      RPC_L3: ${RPC_L3:-http://host.docker.internal:39545}
+      AI_VAULT_URL: ${AI_VAULT_URL:-http://host.docker.internal:7710}
+      CONTROL_PLANE_REQUIRE_SIGNATURE: ${CONTROL_PLANE_REQUIRE_SIGNATURE:-1}
+      CONTROL_PLANE_HMAC_SECRET: ${CONTROL_PLANE_HMAC_SECRET:-dev-control-plane-secret}
+      VM_PROTOCOL_MANUAL_ONLY: ${VM_PROTOCOL_MANUAL_ONLY:-1}
+      L3_OUTPUT_ORACLE_ADDRESS: ${L3_OUTPUT_ORACLE_ADDRESS:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8484:8484"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ghostos_logs:/var/log/ghostos
+      - ghostos_state:/var/lib/ghostos
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8484/health >/dev/null || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ghostos
+      - opstack
+
+volumes:
+  ghostos_logs:
+  ghostos_state:
+
+networks:
+  ghostos:
+    driver: bridge
+  opstack:
+    external: true
+    name: ghostl-stack_default

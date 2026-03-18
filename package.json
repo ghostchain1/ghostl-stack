@@ -104,7 +104,8 @@
     "services/ghostrpc",
     "services/ghostxchange",
     "services/ggvn",
-    "services/ghost-universe"
+    "services/ghost-universe",
+    "services/ghostos-core"
   ],
   "scripts": {
     "preinstall": "node scripts/node-check.mjs && node scripts/package-manager-check.mjs",
@@ -178,8 +179,8 @@
     "release:verify-attestation": "bash scripts/release/verify-release-attestation.sh",
     "release:push:ghostdns:ghcr": "bash scripts/release/push-ghcr-ghostdns.sh",
     "verify:routing": "bash scripts/verify-routing.sh",
-    "verify:governance": "bash scripts/verify-governance.sh --proposal-id EXAMPLE-0001",
-    "verify:release-gate": "bash scripts/verify-release-gate.sh --proposal-id EXAMPLE-0001",
+    "verify:governance": "bash scripts/verify-governance.sh",
+    "verify:release-gate": "bash scripts/verify-release-gate.sh",
     "econ:test:contracts": "cd contracts && forge test --match-path test/foundry/GhostEconomicRouting.t.sol && forge test --match-path test/foundry/GhostEconomicGovernanceRisk.t.sol && forge test --match-path test/foundry/GhostEconomicFlywheel.t.sol",
     "econ:simulate": "bash scripts/simulate-flywheel.sh",
     "econ:routing-law": "bash scripts/econ/verify-routing-law.sh",
@@ -196,7 +197,10 @@
     "ghost:sovereignty:enforce": "node --experimental-strip-types tools/sovereignty/sed-engine/cli.ts enforce",
     "ghost:sovereignty:rewrite": "node --experimental-strip-types tools/sovereignty/sed-engine/cli.ts rewrite",
     "ghost:sovereignty:fix": "node --experimental-strip-types tools/sovereignty/sed-engine/cli.ts fix",
-    "ghost:sovereignty:report": "node --experimental-strip-types tools/sovereignty/sed-engine/cli.ts report"
+    "ghost:sovereignty:report": "node --experimental-strip-types tools/sovereignty/sed-engine/cli.ts report",
+    "ghostos:up": "docker compose -f infra/ghostos/docker-compose.yml up -d --build",
+    "ghostos:down": "docker compose -f infra/ghostos/docker-compose.yml down",
+    "ghostos:logs": "docker compose -f infra/ghostos/docker-compose.yml logs -f ghostos"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
@@ -205,12 +209,12 @@
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
     "eslint": "^10.0.2",
-    "eslint-config-next": "^16.1.6",
+    "eslint-config-next": "^16.1.7",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.0.1",
     "globals": "^17.4.0",
-    "hardhat": "^3.1.10",
-    "next": "16.1.6",
+    "hardhat": "^3.1.12",
+    "next": "16.1.7",
     "prettier": "^3.8.1",
     "typescript": "5.9.3"
   },
@@ -245,6 +249,10 @@
     },
     "ts-node": {
       "diff": "^8.0.3"
-    }
+    },
+    "next": "16.1.7",
+    "next-mdx-remote": "6.0.0",
+    "serialize-javascript": "7.0.4",
+    "mocha": "11.1.0"
   }
 }

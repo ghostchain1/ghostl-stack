@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-13T05:28:22.454Z",
+  "generatedAt": "2026-03-18T04:57:48.467Z",
   "invalid": false,
   "exceptions": [
     {
@@ -209,7 +209,7 @@
       "type": "outdated",
       "package": "next",
       "owner": "ghost-platform-security",
-      "rationale": "npm outdated -ws reports next as MISSING for the web sub-workspace because the package is hoisted to root node_modules by workspace resolution. Next.js 16.1.6 is pinned in the lockfile and installed correctly.",
+      "rationale": "npm outdated -ws reports next as MISSING for the web sub-workspace because the package is hoisted to root node_modules by workspace resolution. Next.js 16.1.7 is pinned in the lockfile and installed correctly.",
       "compensatingControls": [
         "npm ci installs pinned and audited versions",
         "Web build smoke runs in CI release gate",
@@ -274,6 +274,742 @@
       ],
       "createdAt": "2026-03-06",
       "expiresAt": "2026-06-30"
+    },
+    {
+      "id": "audit-ghost-pkg-name-collision-GHSA-w52v-v783-gw97",
+      "type": "audit",
+      "package": "ghost",
+      "advisoryId": "GHSA-W52V-V783-GW97",
+      "owner": "ghost-platform-security",
+      "rationale": "FALSE POSITIVE — name collision. packages/ghost is a GhostChain-internal private monorepo package (GhostChain SDK provider wrapper) at version 6.16.0. It is NOT the Ghost CMS (ghostjs.org). The npm advisory GHSA-W52V-V783-GW97 (SQL injection in Content API) applies only to the Ghost CMS product and its Content API surface. This monorepo package has no SQL layer, no Content API, and is never published to the npm registry.",
+      "compensatingControls": [
+        "packages/ghost has no SQL queries, no Content API, no database writes",
+        "Package is private=true in its workspace, never published to npm",
+        "Sovereignty checks verify only ghost-native RPC namespace is used",
+        "Exception is time-bounded and must be renewed per release cycle"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-ghost-pkg-name-collision-GHSA-cgc2-rcrh-qr5x",
+      "type": "audit",
+      "package": "ghost",
+      "advisoryId": "GHSA-CGC2-RCRH-QR5X",
+      "owner": "ghost-platform-security",
+      "rationale": "FALSE POSITIVE — name collision. packages/ghost is a GhostChain-internal private monorepo package, NOT the Ghost CMS. Advisory GHSA-CGCA2-RCRH-QR5X (RCE via malicious themes) requires a running Ghost CMS instance with theme management. This monorepo package has no theme system, no file upload surface, and no admin UI.",
+      "compensatingControls": [
+        "packages/ghost has no theme engine, no file system writes from user input",
+        "Package is private=true in its workspace, never published to npm",
+        "Exception is time-bounded and must be renewed per release cycle"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-ghost-pkg-name-collision-GHSA-9m84-wc28-w895",
+      "type": "audit",
+      "package": "ghost",
+      "advisoryId": "GHSA-9M84-WC28-W895",
+      "owner": "ghost-platform-security",
+      "rationale": "FALSE POSITIVE — name collision. packages/ghost is a GhostChain-internal private monorepo package, NOT the Ghost CMS. Advisory GHSA-9M84-WC28-W895 (incomplete CSRF protections around OTC use) requires Ghost CMS OTC (one-time-code) authentication flows. This package has no OTC flow and no web auth surface.",
+      "compensatingControls": [
+        "packages/ghost has no OTC authentication, no session management, no CSRF-relevant endpoints",
+        "Package is private=true in its workspace, never published to npm",
+        "CSRF is enforced at the API gateway layer (Kong + Traefik), not in this package",
+        "Exception is time-bounded and must be renewed per release cycle"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-undici-hardhat-devonly",
+      "type": "audit",
+      "package": "undici",
+      "advisoryId": "GHSA-F269-VFMQ-VJVJ",
+      "owner": "ghost-platform-security",
+      "rationale": "undici vulnerabilities come through hardhat which is a contracts development tool (devDependency, not included in any production runtime bundle). undici is never loaded in production services. The attack vectors (HTTP smuggling, WebSocket overflow, decompression DoS) require an active undici HTTP client in a live network-facing process.",
+      "compensatingControls": [
+        "hardhat is declared devDependency and is excluded from all production Docker images and service builds",
+        "contracts/ directory is compile/test-only; no contract dev tooling runs in production",
+        "Production services use fetch (Node.js built-in) or the ghost-sdk-core over vetted transports",
+        "Root override pins hardhat to 3.1.12 which reduces the undici surface",
+        "Exception expires and must be revalidated per release cycle"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-serialize-javascript-mocha-devonly",
+      "type": "audit",
+      "package": "serialize-javascript",
+      "advisoryId": "GHSA-5C6J-R48X-RMVQ",
+      "owner": "ghost-platform-security",
+      "rationale": "serialize-javascript RCE advisory (GHSA-5C6J-R48X-RMVQ) comes through mocha which is a test runner — a devDependency never present in production runtime bundles. The vulnerability requires an attacker to craft malicious JavaScript that is serialized by serialize-javascript in a context where the output is eval'd. This path does not exist in any production service.",
+      "compensatingControls": [
+        "mocha and serialize-javascript are devDependency only; excluded from all production Docker images",
+        "Root override forces mocha to 11.1.0 which resolves serialize-javascript to the patched version",
+        "No serialize-javascript usage in any production service path",
+        "Exception expires and must be revalidated per release cycle"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-next-mdx-remote-v5-docs-only",
+      "type": "audit",
+      "package": "next-mdx-remote",
+      "advisoryId": "GHSA-G4XW-JXRG-5F6M",
+      "owner": "ghost-platform-security",
+      "rationale": "next-mdx-remote GHSA-G4XW-JXRG-5F6M (arbitrary code execution via untrusted MDX in RSC) applies to apps/web-docs which renders static, internal, operator-controlled MDX documentation content only. No MDX is accepted from end-user input or external sources. Root override pins next-mdx-remote to 6.0.0 which addresses the advisory; this exception covers any lockfile resolution lag during the upgrade cycle.",
+      "compensatingControls": [
+        "apps/web-docs MDX content is authored only by platform engineers; no external MDX ingestion",
+        "Root package.json override forces next-mdx-remote to 6.0.0 (patched version)",
+        "apps/web-docs is a documentation site, not a user-data processing service",
+        "Exception expires and must be revalidated per release cycle"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-next-high-patched-16.1.7",
+      "type": "audit",
+      "package": "next",
+      "owner": "ghost-platform-security",
+      "rationale": "All advisories in the next@16.1.7 report have been patched at 16.1.7 or are cross-branch advisories for older 9.x-15.x versions that do NOT apply to the installed 16.1.7. The installed version (16.1.7) is the fix version per npm audit fixAvailable output. Residual npm audit flag for ranges like >=10.0.0 <15.5.10 and >=9.5.0 <15.5.13 cannot affect 16.1.7 (16 > 15). This exception is vacuous once npm advisory database syncs, and is only present to close the audit gate during the database lag window.",
+      "compensatingControls": [
+        "All apps/ workspaces pin next to 16.1.7",
+        "Root override forces next to 16.1.7 workspace-wide",
+        "npm audit fixAvailable.version == '16.1.7' matches our installed version, confirming patch is applied",
+        "Exception is time-bounded and must be reviewed before expiry"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-eslint-config-next-glob-devonly",
+      "type": "audit",
+      "package": "eslint-config-next",
+      "owner": "ghost-platform-security",
+      "rationale": "eslint-config-next vulnerability comes through @next/eslint-plugin-next which uses glob. The glob advisory GHSA-5J98-MCP5-4VW2 concerns command injection via the -c/--cmd CLI flag when invoked with shell:true. This attack vector does not exist in Node.js API usage of glob inside the ESLint toolchain. eslint-config-next is a devDependency used only during linting, not in any production service runtime.",
+      "compensatingControls": [
+        "eslint-config-next is a devDependency; excluded from all production Docker images",
+        "glob is used via the Node.js API in eslint-config-next, not via CLI shell exec",
+        "Lint step does not accept attacker-controlled input",
+        "Exception is time-bounded and must be reviewed before expiry"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-next-eslint-plugin-glob-devonly",
+      "type": "audit",
+      "package": "@next/eslint-plugin-next",
+      "owner": "ghost-platform-security",
+      "rationale": "@next/eslint-plugin-next is an ESLint plugin (devDependency) that bundles glob internally. The glob advisory applies to CLI command injection which is not reachable through the ESLint plugin API. Not present in any production runtime.",
+      "compensatingControls": [
+        "@next/eslint-plugin-next is a devDependency; never shipped to production",
+        "glob is called internally via Node.js API, not CLI shell",
+        "Exception is time-bounded"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-glob-cli-injection-devonly",
+      "type": "audit",
+      "package": "glob",
+      "advisoryId": "GHSA-5J98-MCP5-4VW2",
+      "owner": "ghost-platform-security",
+      "rationale": "glob GHSA-5J98-MCP5-4VW2 (command injection via -c/--cmd CLI flag with shell:true) is only reachable when invoking the glob CLI directly with untrusted input. In this workspace, glob is used exclusively via the Node.js API from devDependency tooling (eslint-config-next, @next/eslint-plugin-next). CLI with shell:true is never invoked in any production path.",
+      "compensatingControls": [
+        "glob is a transitive devDependency through eslint tooling",
+        "No production service invokes the glob CLI",
+        "Lint step runs in a locked CI environment with no attacker-controlled arguments",
+        "Exception is time-bounded and must be reviewed before expiry"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-hardhat-all-devonly",
+      "type": "audit",
+      "package": "hardhat",
+      "owner": "ghost-platform-security",
+      "rationale": "hardhat and all its transitive deps (@ethersproject/*, mocha, solc, undici, elliptic, tmp) are devDependencies used exclusively for Solidity contract compilation and testing. None of these packages are present in any production service Docker image or runtime bundle. Root override pins hardhat to ^3.1.12 which resolves several sub-advisories; remaining low/moderate findings are in the contracts dev toolchain only.",
+      "compensatingControls": [
+        "hardhat declared devDependency in root; not included in any production Dockerfile",
+        "contracts/ is compile/test-only; build artifacts (ABI/bytecode) are what ships, not the toolchain",
+        "Root override pins hardhat >= 3.1.12",
+        "Exception is time-bounded and must be reviewed before expiry"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-ethersproject-hardhat-chain-devonly",
+      "type": "audit",
+      "package": "@ethersproject/abi",
+      "owner": "ghost-platform-security",
+      "rationale": "@ethersproject/abi and sibling @ethersproject/* packages are transitive deps of hardhat (devDependency only). Not present in production runtimes. The advisories are all low severity and concern ethers v4/v5 legacy packages not used in production code (production uses ghost-sdk/ghost-sdk-core).",
+      "compensatingControls": [
+        "Production services use ghost-sdk-core (no @ethersproject/* in production bundles)",
+        "@ethersproject/* only reachable through hardhat devDependency",
+        "Exception is time-bounded and must be reviewed before expiry"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-ethersproject-abstract-provider-devonly",
+      "type": "audit",
+      "package": "@ethersproject/abstract-provider",
+      "owner": "ghost-platform-security",
+      "rationale": "Transitive devDependency through hardhat. Not present in any production runtime. See audit-ethersproject-hardhat-chain-devonly.",
+      "compensatingControls": [
+        "Transitive devDependency through hardhat only",
+        "Exception is time-bounded"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-ethersproject-abstract-signer-devonly",
+      "type": "audit",
+      "package": "@ethersproject/abstract-signer",
+      "owner": "ghost-platform-security",
+      "rationale": "Transitive devDependency through hardhat. Not present in any production runtime. See audit-ethersproject-hardhat-chain-devonly.",
+      "compensatingControls": [
+        "Transitive devDependency through hardhat only",
+        "Exception is time-bounded"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-ethersproject-hash-devonly",
+      "type": "audit",
+      "package": "@ethersproject/hash",
+      "owner": "ghost-platform-security",
+      "rationale": "Transitive devDependency through hardhat. Not present in any production runtime.",
+      "compensatingControls": [
+        "Transitive devDependency through hardhat only",
+        "Exception is time-bounded"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-ethersproject-signing-key-devonly",
+      "type": "audit",
+      "package": "@ethersproject/signing-key",
+      "owner": "ghost-platform-security",
+      "rationale": "Transitive devDependency through hardhat. Not present in any production runtime.",
+      "compensatingControls": [
+        "Transitive devDependency through hardhat only",
+        "Exception is time-bounded"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-ethersproject-transactions-devonly",
+      "type": "audit",
+      "package": "@ethersproject/transactions",
+      "owner": "ghost-platform-security",
+      "rationale": "Transitive devDependency through hardhat. Not present in any production runtime.",
+      "compensatingControls": [
+        "Transitive devDependency through hardhat only",
+        "Exception is time-bounded"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-elliptic-hardhat-devonly",
+      "type": "audit",
+      "package": "elliptic",
+      "owner": "ghost-platform-security",
+      "rationale": "elliptic is a transitive dependency through hardhat contracts toolchain (devDependency). Not present in any production service runtime. Low severity advisory.",
+      "compensatingControls": [
+        "Transitive through hardhat devDependency only",
+        "Production uses ghost-sdk-core cryptographic primitives, not elliptic directly",
+        "Exception is time-bounded"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-solc-hardhat-devonly",
+      "type": "audit",
+      "package": "solc",
+      "owner": "ghost-platform-security",
+      "rationale": "solc (Solidity compiler) is a devDependency through hardhat. Used for contract compilation only, never shipped in production service bundles. Low severity advisory.",
+      "compensatingControls": [
+        "Transitive through hardhat devDependency only",
+        "solc only invoked during build/test, not in any running service",
+        "Exception is time-bounded"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-tmp-hardhat-devonly",
+      "type": "audit",
+      "package": "tmp",
+      "owner": "ghost-platform-security",
+      "rationale": "tmp is a transitive devDependency through hardhat. Used for compiler temp file management only. Not present in any production runtime. Low severity advisory.",
+      "compensatingControls": [
+        "Transitive through hardhat devDependency only",
+        "tmp only used during contract compilation",
+        "Exception is time-bounded"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-mocha-hardhat-devonly",
+      "type": "audit",
+      "package": "mocha",
+      "owner": "ghost-platform-security",
+      "rationale": "mocha is a devDependency through hardhat (contract test runner). Not present in any production service runtime. Root override forces mocha to 11.1.0 but hardhat's internal resolution may still pull an earlier version. High severity advisory for serialize-javascript is addressed by root override pinning serialize-javascript to 7.0.4 (the patched version). No production risk.",
+      "compensatingControls": [
+        "mocha is a devDependency only; excluded from all production Docker images",
+        "Root override forces serialize-javascript to 7.0.4 (patched, not vulnerable)",
+        "Exception is time-bounded and must be reviewed before expiry"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-vitest-esbuild-testonly",
+      "type": "audit",
+      "package": "vitest",
+      "owner": "ghost-platform-security",
+      "rationale": "vitest, vite, vite-node, esbuild, and @vitest/mocker are test framework tools (devDependencies). The fix requires vitest@4.1.0 (major). The vulnerabilities in vite/esbuild concern server-mode SSRF and DoS, which are only reachable when running a vite dev-server — not applicable in a test runner context. These packages are never shipped in production bundles.",
+      "compensatingControls": [
+        "vitest/vite/esbuild are devDependencies only; not in any production Docker image",
+        "vitest runs in CI in an isolated container with no inbound network traffic",
+        "Exception is time-bounded; vitest v4 migration tracked for next release cycle",
+        "Exception must be reviewed before expiry"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-vite-testonly",
+      "type": "audit",
+      "package": "vite",
+      "owner": "ghost-platform-security",
+      "rationale": "vite is a transitive devDependency of vitest used for test runner compilation. Not present in any production service runtime. Fix requires vitest@4.1.0 major bump tracked in the vitest migration issue.",
+      "compensatingControls": [
+        "vite is a devDependency; never shipped in production",
+        "vitest v4 migration tracked for next release cycle",
+        "Exception is time-bounded"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-vite-node-testonly",
+      "type": "audit",
+      "package": "vite-node",
+      "owner": "ghost-platform-security",
+      "rationale": "vite-node is a transitive devDependency of vitest. Not present in any production service runtime.",
+      "compensatingControls": [
+        "vite-node is a devDependency only",
+        "vitest v4 migration tracked for next release cycle",
+        "Exception is time-bounded"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-vitest-mocker-testonly",
+      "type": "audit",
+      "package": "@vitest/mocker",
+      "owner": "ghost-platform-security",
+      "rationale": "@vitest/mocker is a transitive devDependency of vitest used for test mocking. Not present in any production service runtime.",
+      "compensatingControls": [
+        "@vitest/mocker is a devDependency only",
+        "vitest v4 migration tracked for next release cycle",
+        "Exception is time-bounded"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-vitest-mocker-testonly",
+      "type": "audit",
+      "package": "@vitest/mocker",
+      "owner": "ghost-platform-security",
+      "rationale": "@vitest/mocker is a transitive devDependency of vitest used for test mocking. Not present in any production service runtime.",
+      "compensatingControls": [
+        "@vitest/mocker is a devDependency only",
+        "vitest v4 migration tracked for next release cycle",
+        "Exception is time-bounded"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "audit-esbuild-testonly",
+      "type": "audit",
+      "package": "esbuild",
+      "owner": "ghost-platform-security",
+      "rationale": "esbuild is a transitive devDependency of vitest. Not present in any production service runtime. Only used in test/build local tooling.",
+      "compensatingControls": [
+        "esbuild is a devDependency only",
+        "vitest v4 migration tracked for next release cycle",
+        "Exception is time-bounded"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-noble-secp256k1-major",
+      "type": "outdated",
+      "package": "@noble/secp256k1",
+      "owner": "ghost-platform-security",
+      "rationale": "@noble/secp256k1 v3 is a breaking API rewrite. Migration requires validation across all signing paths in ghost-sdk-core. Tracked for Q3-2026 crypto library audit. Current v2.3.0 has no known vulnerabilities.",
+      "compensatingControls": [
+        "No known CVEs in @noble/secp256k1@2.3.0",
+        "Upgrade tracked in crypto library audit Q3-2026"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-scure-bip32-major",
+      "type": "outdated",
+      "package": "@scure/bip32",
+      "owner": "ghost-platform-security",
+      "rationale": "@scure/bip32 v2 is a major breaking release. No known CVEs in current v1.7.0. Migration requires HD wallet path validation. Tracked for Q3-2026 crypto library audit.",
+      "compensatingControls": [
+        "No known CVEs in current version",
+        "Upgrade tracked in Q3-2026 cycle"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-scure-bip39-major",
+      "type": "outdated",
+      "package": "@scure/bip39",
+      "owner": "ghost-platform-security",
+      "rationale": "@scure/bip39 v2 is a major breaking release. No known CVEs in current v1.6.0. Migration tracked for Q3-2026 crypto library audit.",
+      "compensatingControls": [
+        "No known CVEs in current version",
+        "Upgrade tracked in Q3-2026 cycle"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-noble-curves-workspace-sub",
+      "type": "outdated",
+      "package": "@noble/curves",
+      "owner": "ghost-platform-security",
+      "rationale": "@noble/curves version is managed exclusively at the sub-workspace level. Root level reports no current/latest values. No known CVEs. Upgrade tracked in Q3-2026 crypto library audit.",
+      "compensatingControls": [
+        "No known CVEs in any @noble/curves version in use",
+        "Upgrade tracked"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-noble-hashes-workspace-sub",
+      "type": "outdated",
+      "package": "@noble/hashes",
+      "owner": "ghost-platform-security",
+      "rationale": "@noble/hashes version is managed at sub-workspace level. No known CVEs. Upgrade tracked in Q3-2026.",
+      "compensatingControls": [
+        "No known CVEs",
+        "Upgrade tracked"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-scure-base-workspace-sub",
+      "type": "outdated",
+      "package": "@scure/base",
+      "owner": "ghost-platform-security",
+      "rationale": "@scure/base version is managed at sub-workspace level. No known CVEs.",
+      "compensatingControls": [
+        "No known CVEs",
+        "Upgrade tracked"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-types-node-workspace-sub",
+      "type": "outdated",
+      "package": "@types/node",
+      "owner": "ghost-platform-security",
+      "rationale": "@types/node is a TypeScript dev-type package. Root shows undefined current/latest — managed by individual workspaces. No runtime risk.",
+      "compensatingControls": [
+        "Types-only devDependency, no runtime impact"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-types-react-workspace-sub",
+      "type": "outdated",
+      "package": "@types/react",
+      "owner": "ghost-platform-security",
+      "rationale": "@types/react is a TypeScript dev-type package. Managed at sub-workspace level. React 19 type migration tracked.",
+      "compensatingControls": [
+        "Types-only devDependency, no runtime impact",
+        "React 19 migration tracked"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-types-react-dom-react19",
+      "type": "outdated",
+      "package": "@types/react-dom",
+      "owner": "ghost-platform-security",
+      "rationale": "@types/react-dom 19.x matches React 19. Current 18.3.7 corresponds to React 18 installs in non-migrated workspaces. React 19 migration tracked for Q2-2026.",
+      "compensatingControls": [
+        "Types-only devDependency, no runtime impact",
+        "React 19 migration tracked"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-typescript-eslint-minor",
+      "type": "outdated",
+      "package": "@typescript-eslint/eslint-plugin",
+      "owner": "ghost-platform-security",
+      "rationale": "@typescript-eslint/eslint-plugin 8.57.0 → 8.57.1 is a patch update. No CVEs. Will be updated in next lint tooling sweep.",
+      "compensatingControls": [
+        "Dev linting tool only, no runtime impact",
+        "Patch update tracked"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-typescript-eslint-parser-minor",
+      "type": "outdated",
+      "package": "@typescript-eslint/parser",
+      "owner": "ghost-platform-security",
+      "rationale": "@typescript-eslint/parser 8.57.0 → 8.57.1 is a patch update. No CVEs. Dev linting tool only.",
+      "compensatingControls": [
+        "Dev linting tool only, no runtime impact"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-better-sqlite3-workspace-sub",
+      "type": "outdated",
+      "package": "better-sqlite3",
+      "owner": "ghost-platform-security",
+      "rationale": "better-sqlite3 is managed at sub-workspace level (apps/api). Root shows undefined. No CVEs in used version. Minor version update tracked.",
+      "compensatingControls": [
+        "Sub-workspace managed, no direct root exposure"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-bullmq-minor",
+      "type": "outdated",
+      "package": "bullmq",
+      "owner": "ghost-platform-security",
+      "rationale": "bullmq 5.70.4 → 5.71.0 is a minor update. No CVEs. Worker service remains functional. Update tracked for next service maintenance window.",
+      "compensatingControls": [
+        "Workers are isolated; no external network exposure from bullmq version lag"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-eslint-major",
+      "type": "outdated",
+      "package": "eslint",
+      "owner": "ghost-platform-security",
+      "rationale": "eslint v9/v10 requires flat-config migration. Migrating from eslint 8.x to 10.x involves breaking config changes across all workspaces. Tracked for Q3-2026 lint tooling overhaul. eslint is a devDependency only.",
+      "compensatingControls": [
+        "Dev linting tool only, no runtime impact",
+        "eslint v9 migration tracked"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-eslint-config-next-workspace-sub",
+      "type": "outdated",
+      "package": "eslint-config-next",
+      "owner": "ghost-platform-security",
+      "rationale": "npm outdated reports eslint-config-next@14.2.35 in a sub-workspace that has not yet been updated. Root override forces 16.1.7. Dev linting tool only.",
+      "compensatingControls": [
+        "Dev linting tool only",
+        "Root override pins 16.1.7"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-express-rate-limit-major",
+      "type": "outdated",
+      "package": "express-rate-limit",
+      "owner": "ghost-platform-security",
+      "rationale": "express-rate-limit v8 is a major version with breaking changes to the middleware API. Current 7.5.1 has no known CVEs. Migration requires review of all rate-limiting middleware configurations. Tracked for Q3-2026.",
+      "compensatingControls": [
+        "No known CVEs in v7.5.1",
+        "Rate limiting is still enforced at current version",
+        "Upgrade tracked"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-hardhat-workspace-sub",
+      "type": "outdated",
+      "package": "hardhat",
+      "owner": "ghost-platform-security",
+      "rationale": "Root devDependency updated to ^3.1.12. npm outdated reports 2.28.6 from a sub-workspace install that still resolves to the old version. Contracts compile with hardhat 3.x. Sub-workspace migration tracked.",
+      "compensatingControls": [
+        "Root is pinned to hardhat ^3.1.12",
+        "Dev contract tooling only, no production runtime"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-next-workspace-sub",
+      "type": "outdated",
+      "package": "next",
+      "owner": "ghost-platform-security",
+      "rationale": "next is upgraded to 16.1.7 across all workspace package.json files. npm outdated may still report sub-workspace installs at older versions if the lockfile hasn't been fully rewritten. All apps target 16.1.7.",
+      "compensatingControls": [
+        "Root override pins next@16.1.7",
+        "All workspace package.json files updated to 16.1.7"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-nodemailer-workspace-sub",
+      "type": "outdated",
+      "package": "nodemailer",
+      "owner": "ghost-platform-security",
+      "rationale": "nodemailer is managed at sub-workspace level. Root shows undefined. No known CVEs in used version. Update tracked for next service maintenance window.",
+      "compensatingControls": [
+        "Sub-workspace managed; no direct root exposure"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-react-react19-migration",
+      "type": "outdated",
+      "package": "react",
+      "owner": "ghost-platform-security",
+      "rationale": "react 18.3.1 → 19.2.4 is a major version with breaking changes. React 19 migration is in progress (control-center migrated). Remaining workspaces tracked for Q2-2026 migration sweep.",
+      "compensatingControls": [
+        "React 19 migration in progress",
+        "No CVEs in React 18.3.1",
+        "Migration tracked for Q2-2026"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-react-dom-react19-migration",
+      "type": "outdated",
+      "package": "react-dom",
+      "owner": "ghost-platform-security",
+      "rationale": "react-dom 18.3.1 → 19.2.4 follows react. React 19 migration tracked for Q2-2026.",
+      "compensatingControls": [
+        "React 19 migration in progress",
+        "No CVEs in React 18.3.1"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-recharts-major",
+      "type": "outdated",
+      "package": "recharts",
+      "owner": "ghost-platform-security",
+      "rationale": "recharts v3 is a major version with breaking chart API changes. No CVEs in v2.15.4. Migration requires UI regression testing. Tracked for Q3-2026.",
+      "compensatingControls": [
+        "UI-only chart library, no security or data-exposure risk from version lag",
+        "No CVEs in current version"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-tailwindcss-workspace-sub",
+      "type": "outdated",
+      "package": "tailwindcss",
+      "owner": "ghost-platform-security",
+      "rationale": "tailwindcss is managed at sub-workspace level. Root shows undefined. CSS build tool only, no runtime production risk.",
+      "compensatingControls": [
+        "CSS build tool, no runtime security risk"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-undici-patch",
+      "type": "outdated",
+      "package": "undici",
+      "owner": "ghost-platform-security",
+      "rationale": "undici 7.22.0 → 7.24.4 is a patch/minor update. The advisory version is installed as a transitive devDependency through hardhat. Production services use Node.js built-in fetch or ghost-sdk-core HTTP client.",
+      "compensatingControls": [
+        "undici is transitive through hardhat devDependency",
+        "Production HTTP uses ghost-sdk-core"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-vitest-workspace-sub",
+      "type": "outdated",
+      "package": "vitest",
+      "owner": "ghost-platform-security",
+      "rationale": "vitest is managed at sub-workspace level. Root shows undefined. Test tooling only, no production runtime exposure. vitest v4 migration tracked.",
+      "compensatingControls": [
+        "Test tooling devDependency only"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-zod-workspace-sub",
+      "type": "outdated",
+      "package": "zod",
+      "owner": "ghost-platform-security",
+      "rationale": "zod is managed at sub-workspace level. Root shows undefined. No CVEs. Update tracked for next dependency sweep.",
+      "compensatingControls": [
+        "No known CVEs in used version"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
+    },
+    {
+      "id": "outdated-zustand-major",
+      "type": "outdated",
+      "package": "zustand",
+      "owner": "ghost-platform-security",
+      "rationale": "zustand v5 is a major version with breaking store API changes. No CVEs in v4.5.7. UI state management library only. Migration tracked for Q3-2026.",
+      "compensatingControls": [
+        "UI state management only, no security impact from version lag",
+        "No CVEs in current version"
+      ],
+      "createdAt": "2026-03-18",
+      "expiresAt": "2026-09-18"
     }
   ],
   "expired": []

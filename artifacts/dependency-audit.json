@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-13T05:28:22.454Z",
+  "generatedAt": "2026-03-18T04:57:48.467Z",
   "code": 1,
   "findings": [
     {
@@ -39,6 +39,12 @@
       "advisories": []
     },
     {
+      "package": "@next/eslint-plugin-next",
+      "severity": "high",
+      "advisoryIds": [],
+      "advisories": []
+    },
+    {
       "package": "@vitest/mocker",
       "severity": "moderate",
       "advisoryIds": [],
@@ -73,96 +79,110 @@
       ]
     },
     {
+      "package": "eslint-config-next",
+      "severity": "high",
+      "advisoryIds": [],
+      "advisories": []
+    },
+    {
       "package": "ghost",
       "severity": "critical",
       "advisoryIds": [
-        "GHSA-7V28-G2PQ-GGG8",
-        "GHSA-FVC6-QJP7-M4G4",
-        "GHSA-Q4H8-7QFF-GH6C",
-        "GHSA-WFRJ-QQC2-83CM",
-        "GHSA-R97Q-GHCH-82J9",
-        "GHSA-9C9V-W225-V5RG",
-        "GHSA-WF7X-FH6W-34R6",
-        "GHSA-FH38-9FGR-454W",
-        "GHSA-FFHQ-G856-9F2P",
-        "GHSA-99VC-XW8J-PHJM"
+        "GHSA-W52V-V783-GW97",
+        "GHSA-CGC2-RCRH-QR5X",
+        "GHSA-9M84-WC28-W895"
       ],
       "advisories": [
         {
-          "advisoryId": "GHSA-7V28-G2PQ-GGG8",
-          "url": "https://github.com/advisories/GHSA-7v28-g2pq-ggg8",
-          "title": "Ghost vulnerable to remote code execution in locale setting change"
+          "advisoryId": "GHSA-W52V-V783-GW97",
+          "url": "https://github.com/advisories/GHSA-w52v-v783-gw97",
+          "title": "Ghost has a SQL injection in Content API"
         },
         {
-          "advisoryId": "GHSA-FVC6-QJP7-M4G4",
-          "url": "https://github.com/advisories/GHSA-fvc6-qjp7-m4g4",
-          "title": "Arbitrary file upload in Ghost"
+          "advisoryId": "GHSA-CGC2-RCRH-QR5X",
+          "url": "https://github.com/advisories/GHSA-cgc2-rcrh-qr5x",
+          "title": "Ghost Vulnerable to Remote Code Execution via Malicious Themes"
         },
         {
-          "advisoryId": "GHSA-Q4H8-7QFF-GH6C",
-          "url": "https://github.com/advisories/GHSA-q4h8-7qff-gh6c",
-          "title": "Server-side request forgery in Ghost CMS"
-        },
+          "advisoryId": "GHSA-9M84-WC28-W895",
+          "url": "https://github.com/advisories/GHSA-9m84-wc28-w895",
+          "title": "Ghost has incomplete CSRF protections around OTC use"
+        }
+      ]
+    },
+    {
+      "package": "glob",
+      "severity": "high",
+      "advisoryIds": [
+        "GHSA-5J98-MCP5-4VW2"
+      ],
+      "advisories": [
         {
-          "advisoryId": "GHSA-WFRJ-QQC2-83CM",
-          "url": "https://github.com/advisories/GHSA-wfrj-qqc2-83cm",
-          "title": "Remote command injection when using sendmail email transport"
-        },
-        {
-          "advisoryId": "GHSA-R97Q-GHCH-82J9",
-          "url": "https://github.com/advisories/GHSA-r97q-ghch-82j9",
-          "title": "Ghost vulnerable to information disclosure of private API fields"
-        },
-        {
-          "advisoryId": "GHSA-9C9V-W225-V5RG",
-          "url": "https://github.com/advisories/GHSA-9c9v-w225-v5rg",
-          "title": "Ghost vulnerable to arbitrary file read via symlinks in content import"
-        },
-        {
-          "advisoryId": "GHSA-WF7X-FH6W-34R6",
-          "url": "https://github.com/advisories/GHSA-wf7x-fh6w-34r6",
-          "title": "Path Traversal in Ghost"
-        },
-        {
-          "advisoryId": "GHSA-FH38-9FGR-454W",
-          "url": "https://github.com/advisories/GHSA-fh38-9fgr-454w",
-          "title": "Cross-site Scripting in Ghost"
-        },
-        {
-          "advisoryId": "GHSA-FFHQ-G856-9F2P",
-          "url": "https://github.com/advisories/GHSA-ffhq-g856-9f2p",
-          "title": "Arbitrary file upload in Ghost"
-        },
-        {
-          "advisoryId": "GHSA-99VC-XW8J-PHJM",
-          "url": "https://github.com/advisories/GHSA-99vc-xw8j-phjm",
-          "title": "Ghost has possible Cross-site Scripting issue"
+          "advisoryId": "GHSA-5J98-MCP5-4VW2",
+          "url": "https://github.com/advisories/GHSA-5j98-mcp5-4vw2",
+          "title": "glob CLI: Command injection via -c/--cmd executes matches with shell:true"
         }
       ]
     },
     {
       "package": "hardhat",
-      "severity": "high",
+      "severity": "moderate",
       "advisoryIds": [],
       "advisories": []
     },
     {
-      "package": "mocha",
-      "severity": "high",
-      "advisoryIds": [],
-      "advisories": []
-    },
-    {
-      "package": "serialize-javascript",
+      "package": "next",
       "severity": "high",
       "advisoryIds": [
-        "GHSA-5C6J-R48X-RMVQ"
+        "GHSA-9G9P-9GW9-JX7F",
+        "GHSA-H25M-26QC-WCJF",
+        "GHSA-MQ59-M269-XVCX",
+        "GHSA-JCC7-9WPM-MJ36",
+        "GHSA-GGV3-7P47-PFV8",
+        "GHSA-GGV3-7P47-PFV8",
+        "GHSA-3X4C-7XQ6-9PQ8",
+        "GHSA-H27X-G6W4-24GQ"
       ],
       "advisories": [
         {
-          "advisoryId": "GHSA-5C6J-R48X-RMVQ",
-          "url": "https://github.com/advisories/GHSA-5c6j-r48x-rmvq",
-          "title": "Serialize JavaScript is Vulnerable to RCE via RegExp.flags and Date.prototype.toISOString()"
+          "advisoryId": "GHSA-9G9P-9GW9-JX7F",
+          "url": "https://github.com/advisories/GHSA-9g9p-9gw9-jx7f",
+          "title": "Next.js self-hosted applications vulnerable to DoS via Image Optimizer remotePatterns configuration"
+        },
+        {
+          "advisoryId": "GHSA-H25M-26QC-WCJF",
+          "url": "https://github.com/advisories/GHSA-h25m-26qc-wcjf",
+          "title": "Next.js HTTP request deserialization can lead to DoS when using insecure React Server Components"
+        },
+        {
+          "advisoryId": "GHSA-MQ59-M269-XVCX",
+          "url": "https://github.com/advisories/GHSA-mq59-m269-xvcx",
+          "title": "Next.js: null origin can bypass Server Actions CSRF checks"
+        },
+        {
+          "advisoryId": "GHSA-JCC7-9WPM-MJ36",
+          "url": "https://github.com/advisories/GHSA-jcc7-9wpm-mj36",
+          "title": "Next.js: null origin can bypass dev HMR websocket CSRF checks"
+        },
+        {
+          "advisoryId": "GHSA-GGV3-7P47-PFV8",
+          "url": "https://github.com/advisories/GHSA-ggv3-7p47-pfv8",
+          "title": "Next.js: HTTP request smuggling in rewrites"
+        },
+        {
+          "advisoryId": "GHSA-GGV3-7P47-PFV8",
+          "url": "https://github.com/advisories/GHSA-ggv3-7p47-pfv8",
+          "title": "Next.js: HTTP request smuggling in rewrites"
+        },
+        {
+          "advisoryId": "GHSA-3X4C-7XQ6-9PQ8",
+          "url": "https://github.com/advisories/GHSA-3x4c-7xq6-9pq8",
+          "title": "Next.js: Unbounded next/image disk cache growth can exhaust storage"
+        },
+        {
+          "advisoryId": "GHSA-H27X-G6W4-24GQ",
+          "url": "https://github.com/advisories/GHSA-h27x-g6w4-24gq",
+          "title": "Next.js: Unbounded postponed resume buffering can lead to DoS"
         }
       ]
     },
@@ -188,15 +208,81 @@
     },
     {
       "package": "undici",
-      "severity": "moderate",
+      "severity": "high",
       "advisoryIds": [
-        "GHSA-G9MF-H72J-4RW9"
+        "GHSA-G9MF-H72J-4RW9",
+        "GHSA-F269-VFMQ-VJVJ",
+        "GHSA-F269-VFMQ-VJVJ",
+        "GHSA-2MJP-6Q6P-2QXM",
+        "GHSA-2MJP-6Q6P-2QXM",
+        "GHSA-VRM6-8VPV-QV8Q",
+        "GHSA-VRM6-8VPV-QV8Q",
+        "GHSA-V9P9-HFJ2-HCW8",
+        "GHSA-V9P9-HFJ2-HCW8",
+        "GHSA-4992-7RV2-5PVQ",
+        "GHSA-4992-7RV2-5PVQ",
+        "GHSA-PHC3-FGPG-7M6H"
       ],
       "advisories": [
         {
           "advisoryId": "GHSA-G9MF-H72J-4RW9",
           "url": "https://github.com/advisories/GHSA-g9mf-h72j-4rw9",
           "title": "Undici has an unbounded decompression chain in HTTP responses on Node.js Fetch API via Content-Encoding leads to resource exhaustion"
+        },
+        {
+          "advisoryId": "GHSA-F269-VFMQ-VJVJ",
+          "url": "https://github.com/advisories/GHSA-f269-vfmq-vjvj",
+          "title": "Undici: Malicious WebSocket 64-bit length overflows parser and crashes the client"
+        },
+        {
+          "advisoryId": "GHSA-F269-VFMQ-VJVJ",
+          "url": "https://github.com/advisories/GHSA-f269-vfmq-vjvj",
+          "title": "Undici: Malicious WebSocket 64-bit length overflows parser and crashes the client"
+        },
+        {
+          "advisoryId": "GHSA-2MJP-6Q6P-2QXM",
+          "url": "https://github.com/advisories/GHSA-2mjp-6q6p-2qxm",
+          "title": "Undici has an HTTP Request/Response Smuggling issue"
+        },
+        {
+          "advisoryId": "GHSA-2MJP-6Q6P-2QXM",
+          "url": "https://github.com/advisories/GHSA-2mjp-6q6p-2qxm",
+          "title": "Undici has an HTTP Request/Response Smuggling issue"
+        },
+        {
+          "advisoryId": "GHSA-VRM6-8VPV-QV8Q",
+          "url": "https://github.com/advisories/GHSA-vrm6-8vpv-qv8q",
+          "title": "Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression"
+        },
+        {
+          "advisoryId": "GHSA-VRM6-8VPV-QV8Q",
+          "url": "https://github.com/advisories/GHSA-vrm6-8vpv-qv8q",
+          "title": "Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression"
+        },
+        {
+          "advisoryId": "GHSA-V9P9-HFJ2-HCW8",
+          "url": "https://github.com/advisories/GHSA-v9p9-hfj2-hcw8",
+          "title": "Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation"
+        },
+        {
+          "advisoryId": "GHSA-V9P9-HFJ2-HCW8",
+          "url": "https://github.com/advisories/GHSA-v9p9-hfj2-hcw8",
+          "title": "Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation"
+        },
+        {
+          "advisoryId": "GHSA-4992-7RV2-5PVQ",
+          "url": "https://github.com/advisories/GHSA-4992-7rv2-5pvq",
+          "title": "Undici has CRLF Injection in undici via `upgrade` option"
+        },
+        {
+          "advisoryId": "GHSA-4992-7RV2-5PVQ",
+          "url": "https://github.com/advisories/GHSA-4992-7rv2-5pvq",
+          "title": "Undici has CRLF Injection in undici via `upgrade` option"
+        },
+        {
+          "advisoryId": "GHSA-PHC3-FGPG-7M6H",
+          "url": "https://github.com/advisories/GHSA-phc3-fgpg-7m6h",
+          "title": "Undici has Unbounded Memory Consumption in its DeduplicationHandler via Response Buffering that leads to DoS"
         }
       ]
     },

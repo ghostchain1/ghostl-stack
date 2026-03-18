@@ -1,0 +1,68 @@
+[Unit]
+Description=GhostChain Autonomous Network Manager (GANM)
+Documentation=https://github.com/ghostchain1/ghostl-stack/infra/network-manager/
+After=network-online.target docker.service
+Wants=network-online.target
+# Start before chain services so ports are claimed before nodes boot
+Before=ghostchaind.service op-geth-l2.service op-geth-l3.service
+
+[Service]
+Type=simple
+User=ghost
+Group=ghost
+WorkingDirectory=/home/ghost/ghostl-stack/infra/network-manager
+
+# --- Environment ---
+Environment=PYTHONUNBUFFERED=1
+Environment=LOG_LEVEL=INFO
+Environment=PROBE_INTERVAL_S=15
+Environment=CONFLICT_INTERVAL_S=10
+Environment=GHOSTBRAIN_POLL_INTERVAL_S=30
+Environment=METRICS_PORT=9109
+Environment=DRY_RUN=0
+Environment=AI_SCORE_THRESHOLD=0.6
+Environment=EVICTION_NEEDS_PLAN=1
+Environment=GHOSTBRAIN_URL=http://localhost:7900
+Environment=SIGNING_RELAY_URL=http://localhost:7910
+Environment=GANM_AGENT_ID=ghost-autonomous-network-manager
+Environment=GHOSTBRAIN_HTTP_TIMEOUT=5
+
+# Override with site-local values
+EnvironmentFile=-/etc/ghostchain/ganm.env
+EnvironmentFile=-/home/ghost/ghostl-stack/.env
+
+ExecStart=/usr/bin/python3 /home/ghost/ghostl-stack/infra/network-manager/ghost_network_manager.py
+
+# --- Restart policy ---
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+# --- Security hardening ---
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/tmp /var/log/ghostchain
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+
+# --- Resource limits ---
+LimitNOFILE=65536
+MemoryMax=256M
+CPUQuota=20%
+
+# --- Logging ---
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ganm
+
+[Install]
+WantedBy=multi-user.target

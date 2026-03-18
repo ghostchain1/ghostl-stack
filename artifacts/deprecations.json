@@ -1,276 +1,15 @@
 {
-  "generatedAt": "2026-03-13T05:28:22.454Z",
+  "generatedAt": "2026-03-18T04:57:48.467Z",
   "items": [],
   "summary": {
-    "failures": [
-      "npm-audit",
-      "npm-outdated"
-    ],
+    "failures": [],
     "exceptions": {
-      "total": 20,
+      "total": 74,
       "expired": []
     },
     "unallowlisted": {
-      "audit": [
-        {
-          "package": "@ethersproject/abi",
-          "severity": "low",
-          "advisoryIds": [],
-          "advisories": []
-        },
-        {
-          "package": "@ethersproject/abstract-provider",
-          "severity": "low",
-          "advisoryIds": [],
-          "advisories": []
-        },
-        {
-          "package": "@ethersproject/abstract-signer",
-          "severity": "low",
-          "advisoryIds": [],
-          "advisories": []
-        },
-        {
-          "package": "@ethersproject/hash",
-          "severity": "low",
-          "advisoryIds": [],
-          "advisories": []
-        },
-        {
-          "package": "@ethersproject/signing-key",
-          "severity": "low",
-          "advisoryIds": [],
-          "advisories": []
-        },
-        {
-          "package": "@ethersproject/transactions",
-          "severity": "low",
-          "advisoryIds": [],
-          "advisories": []
-        },
-        {
-          "package": "@vitest/mocker",
-          "severity": "moderate",
-          "advisoryIds": [],
-          "advisories": []
-        },
-        {
-          "package": "elliptic",
-          "severity": "low",
-          "advisoryIds": [
-            "GHSA-848J-6MX2-7J84"
-          ],
-          "advisories": [
-            {
-              "advisoryId": "GHSA-848J-6MX2-7J84",
-              "url": "https://github.com/advisories/GHSA-848j-6mx2-7j84",
-              "title": "Elliptic Uses a Cryptographic Primitive with a Risky Implementation"
-            }
-          ]
-        },
-        {
-          "package": "esbuild",
-          "severity": "moderate",
-          "advisoryIds": [
-            "GHSA-67MH-4WV8-2F99"
-          ],
-          "advisories": [
-            {
-              "advisoryId": "GHSA-67MH-4WV8-2F99",
-              "url": "https://github.com/advisories/GHSA-67mh-4wv8-2f99",
-              "title": "esbuild enables any website to send any requests to the development server and read the response"
-            }
-          ]
-        },
-        {
-          "package": "ghost",
-          "severity": "critical",
-          "advisoryIds": [
-            "GHSA-7V28-G2PQ-GGG8",
-            "GHSA-FVC6-QJP7-M4G4",
-            "GHSA-Q4H8-7QFF-GH6C",
-            "GHSA-WFRJ-QQC2-83CM",
-            "GHSA-R97Q-GHCH-82J9",
-            "GHSA-9C9V-W225-V5RG",
-            "GHSA-WF7X-FH6W-34R6",
-            "GHSA-FH38-9FGR-454W",
-            "GHSA-FFHQ-G856-9F2P",
-            "GHSA-99VC-XW8J-PHJM"
-          ],
-          "advisories": [
-            {
-              "advisoryId": "GHSA-7V28-G2PQ-GGG8",
-              "url": "https://github.com/advisories/GHSA-7v28-g2pq-ggg8",
-              "title": "Ghost vulnerable to remote code execution in locale setting change"
-            },
-            {
-              "advisoryId": "GHSA-FVC6-QJP7-M4G4",
-              "url": "https://github.com/advisories/GHSA-fvc6-qjp7-m4g4",
-              "title": "Arbitrary file upload in Ghost"
-            },
-            {
-              "advisoryId": "GHSA-Q4H8-7QFF-GH6C",
-              "url": "https://github.com/advisories/GHSA-q4h8-7qff-gh6c",
-              "title": "Server-side request forgery in Ghost CMS"
-            },
-            {
-              "advisoryId": "GHSA-WFRJ-QQC2-83CM",
-              "url": "https://github.com/advisories/GHSA-wfrj-qqc2-83cm",
-              "title": "Remote command injection when using sendmail email transport"
-            },
-            {
-              "advisoryId": "GHSA-R97Q-GHCH-82J9",
-              "url": "https://github.com/advisories/GHSA-r97q-ghch-82j9",
-              "title": "Ghost vulnerable to information disclosure of private API fields"
-            },
-            {
-              "advisoryId": "GHSA-9C9V-W225-V5RG",
-              "url": "https://github.com/advisories/GHSA-9c9v-w225-v5rg",
-              "title": "Ghost vulnerable to arbitrary file read via symlinks in content import"
-            },
-            {
-              "advisoryId": "GHSA-WF7X-FH6W-34R6",
-              "url": "https://github.com/advisories/GHSA-wf7x-fh6w-34r6",
-              "title": "Path Traversal in Ghost"
-            },
-            {
-              "advisoryId": "GHSA-FH38-9FGR-454W",
-              "url": "https://github.com/advisories/GHSA-fh38-9fgr-454w",
-              "title": "Cross-site Scripting in Ghost"
-            },
-            {
-              "advisoryId": "GHSA-FFHQ-G856-9F2P",
-              "url": "https://github.com/advisories/GHSA-ffhq-g856-9f2p",
-              "title": "Arbitrary file upload in Ghost"
-            },
-            {
-              "advisoryId": "GHSA-99VC-XW8J-PHJM",
-              "url": "https://github.com/advisories/GHSA-99vc-xw8j-phjm",
-              "title": "Ghost has possible Cross-site Scripting issue"
-            }
-          ]
-        },
-        {
-          "package": "hardhat",
-          "severity": "high",
-          "advisoryIds": [],
-          "advisories": []
-        },
-        {
-          "package": "mocha",
-          "severity": "high",
-          "advisoryIds": [],
-          "advisories": []
-        },
-        {
-          "package": "serialize-javascript",
-          "severity": "high",
-          "advisoryIds": [
-            "GHSA-5C6J-R48X-RMVQ"
-          ],
-          "advisories": [
-            {
-              "advisoryId": "GHSA-5C6J-R48X-RMVQ",
-              "url": "https://github.com/advisories/GHSA-5c6j-r48x-rmvq",
-              "title": "Serialize JavaScript is Vulnerable to RCE via RegExp.flags and Date.prototype.toISOString()"
-            }
-          ]
-        },
-        {
-          "package": "solc",
-          "severity": "low",
-          "advisoryIds": [],
-          "advisories": []
-        },
-        {
-          "package": "tmp",
-          "severity": "low",
-          "advisoryIds": [
-            "GHSA-52F5-9888-HMC6"
-          ],
-          "advisories": [
-            {
-              "advisoryId": "GHSA-52F5-9888-HMC6",
-              "url": "https://github.com/advisories/GHSA-52f5-9888-hmc6",
-              "title": "tmp allows arbitrary temporary file / directory write via symbolic link `dir` parameter"
-            }
-          ]
-        },
-        {
-          "package": "undici",
-          "severity": "moderate",
-          "advisoryIds": [
-            "GHSA-G9MF-H72J-4RW9"
-          ],
-          "advisories": [
-            {
-              "advisoryId": "GHSA-G9MF-H72J-4RW9",
-              "url": "https://github.com/advisories/GHSA-g9mf-h72j-4rw9",
-              "title": "Undici has an unbounded decompression chain in HTTP responses on Node.js Fetch API via Content-Encoding leads to resource exhaustion"
-            }
-          ]
-        },
-        {
-          "package": "vite",
-          "severity": "moderate",
-          "advisoryIds": [],
-          "advisories": []
-        },
-        {
-          "package": "vite-node",
-          "severity": "moderate",
-          "advisoryIds": [],
-          "advisories": []
-        },
-        {
-          "package": "vitest",
-          "severity": "moderate",
-          "advisoryIds": [],
-          "advisories": []
-        }
-      ],
-      "outdated": [
-        {
-          "package": "@noble/curves"
-        },
-        {
-          "package": "@noble/hashes"
-        },
-        {
-          "package": "@noble/secp256k1",
-          "current": "2.3.0",
-          "wanted": "2.3.0",
-          "latest": "3.0.0",
-          "location": "/home/ghost/ghostl-stack/node_modules/@noble/secp256k1"
-        },
-        {
-          "package": "@scure/base"
-        },
-        {
-          "package": "@scure/bip32",
-          "current": "1.7.0",
-          "wanted": "1.7.0",
-          "latest": "2.0.1",
-          "location": "/home/ghost/ghostl-stack/node_modules/@scure/bip32"
-        },
-        {
-          "package": "@scure/bip39",
-          "current": "1.6.0",
-          "wanted": "1.6.0",
-          "latest": "2.0.1",
-          "location": "/home/ghost/ghostl-stack/node_modules/@scure/bip39"
-        },
-        {
-          "package": "undici",
-          "current": "7.22.0",
-          "wanted": "7.24.0",
-          "latest": "7.24.0",
-          "location": "/home/ghost/ghostl-stack/node_modules/undici"
-        },
-        {
-          "package": "vitest"
-        }
-      ]
+      "audit": [],
+      "outdated": []
     }
   },
   "checks": {
@@ -280,6 +19,13 @@
     "npmOutdated": {
       "code": 1,
       "findings": [
+        {
+          "package": "@auth/core",
+          "current": "0.41.1",
+          "wanted": "0.41.1",
+          "latest": "0.34.3",
+          "location": "/home/ghost/ghostl-stack/node_modules/@auth/core"
+        },
         {
           "package": "@noble/curves"
         },
@@ -314,6 +60,19 @@
           "package": "@types/node"
         },
         {
+          "package": "@types/react"
+        },
+        {
+          "package": "@types/react-dom",
+          "current": "18.3.7",
+          "wanted": "19.2.3",
+          "latest": "19.2.3",
+          "location": "/home/ghost/ghostl-stack/apps/control-center/node_modules/@types/react-dom"
+        },
+        {
+          "package": "better-sqlite3"
+        },
+        {
           "package": "bullmq",
           "current": "5.70.4",
           "wanted": "5.70.4",
@@ -321,13 +80,79 @@
           "location": "/home/ghost/ghostl-stack/node_modules/bullmq"
         },
         {
-          "package": "hardhat"
+          "package": "eslint",
+          "current": "8.57.1",
+          "wanted": "8.57.1",
+          "latest": "10.0.3",
+          "location": "/home/ghost/ghostl-stack/apps/control-center/node_modules/eslint"
+        },
+        {
+          "package": "eslint-config-next",
+          "current": "14.2.35",
+          "wanted": "16.1.7",
+          "latest": "16.1.7",
+          "location": "/home/ghost/ghostl-stack/apps/control-center/node_modules/eslint-config-next"
+        },
+        {
+          "package": "express-rate-limit",
+          "current": "7.5.1",
+          "wanted": "7.5.1",
+          "latest": "8.3.1",
+          "location": "/home/ghost/ghostl-stack/node_modules/express-rate-limit"
+        },
+        {
+          "package": "hardhat",
+          "current": "2.28.6",
+          "wanted": "2.28.6",
+          "latest": "3.1.12",
+          "location": "/home/ghost/ghostl-stack/packages/hardhat-ghost/node_modules/hardhat"
+        },
+        {
+          "package": "next"
+        },
+        {
+          "package": "next-auth",
+          "current": "5.0.0-beta.30",
+          "wanted": "5.0.0-beta.30",
+          "latest": "4.24.13",
+          "location": "/home/ghost/ghostl-stack/node_modules/next-auth"
+        },
+        {
+          "package": "nodemailer",
+          "current": "8.0.1",
+          "wanted": "8.0.2",
+          "latest": "8.0.2",
+          "location": "/home/ghost/ghostl-stack/node_modules/nodemailer"
+        },
+        {
+          "package": "react",
+          "current": "18.3.1",
+          "wanted": "19.2.4",
+          "latest": "19.2.4",
+          "location": "/home/ghost/ghostl-stack/apps/control-center/node_modules/react"
+        },
+        {
+          "package": "react-dom",
+          "current": "18.3.1",
+          "wanted": "19.2.4",
+          "latest": "19.2.4",
+          "location": "/home/ghost/ghostl-stack/apps/control-center/node_modules/react-dom"
+        },
+        {
+          "package": "recharts",
+          "current": "2.15.4",
+          "wanted": "2.15.4",
+          "latest": "3.8.0",
+          "location": "/home/ghost/ghostl-stack/apps/control-center/node_modules/recharts"
+        },
+        {
+          "package": "tailwindcss"
         },
         {
           "package": "undici",
           "current": "7.22.0",
-          "wanted": "7.24.0",
-          "latest": "7.24.0",
+          "wanted": "7.24.4",
+          "latest": "7.24.4",
           "location": "/home/ghost/ghostl-stack/node_modules/undici"
         },
         {
@@ -335,9 +160,23 @@
         },
         {
           "package": "zod"
+        },
+        {
+          "package": "zustand",
+          "current": "4.5.7",
+          "wanted": "4.5.7",
+          "latest": "5.0.12",
+          "location": "/home/ghost/ghostl-stack/node_modules/zustand"
         }
       ],
       "raw": {
+        "@auth/core": {
+          "current": "0.41.1",
+          "wanted": "0.41.1",
+          "latest": "0.34.3",
+          "dependent": "web",
+          "location": "/home/ghost/ghostl-stack/node_modules/@auth/core"
+        },
         "@noble/curves": [
           {
             "current": "1.8.2",
@@ -461,6 +300,27 @@
             "current": "22.19.15",
             "wanted": "22.19.15",
             "latest": "25.5.0",
+            "dependent": "control-center",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "gateway",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "ggvn",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
             "dependent": "ghost-ai-sdk",
             "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
           },
@@ -482,8 +342,299 @@
             "current": "22.19.15",
             "wanted": "22.19.15",
             "latest": "25.5.0",
+            "dependent": "ghost-universe",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "ghostbridge-sdk",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "ghostdefi-sdk",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "ghostgame-sdk",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "ghostl2-sdk",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "ghostl3-sdk",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "ghostnft-sdk",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "ghostnode-sdk",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "ghostos-core",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "ghostos-sdk",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "ghostrpc",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "ghostscan",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
             "dependent": "ghoststack-cli",
             "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "ghostxchange",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "web-apps",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "web-company",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "web-dev",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "web-exchange",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "web-explorer",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "web-governance",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "web-investor",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "web-main",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "web-nodes",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "web-portal",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          },
+          {
+            "current": "22.19.15",
+            "wanted": "22.19.15",
+            "latest": "25.5.0",
+            "dependent": "web-status",
+            "location": "/home/ghost/ghostl-stack/node_modules/@types/node"
+          }
+        ],
+        "@types/react": [
+          {
+            "current": "18.3.28",
+            "wanted": "19.2.14",
+            "latest": "19.2.14",
+            "dependent": "control-center",
+            "location": "/home/ghost/ghostl-stack/apps/control-center/node_modules/@types/react"
+          },
+          {
+            "current": "18.3.28",
+            "wanted": "19.2.14",
+            "latest": "19.2.14",
+            "dependent": "web-apps",
+            "location": "/home/ghost/ghostl-stack/apps/web-apps/node_modules/@types/react"
+          },
+          {
+            "current": "18.3.28",
+            "wanted": "19.2.14",
+            "latest": "19.2.14",
+            "dependent": "web-company",
+            "location": "/home/ghost/ghostl-stack/apps/web-company/node_modules/@types/react"
+          },
+          {
+            "current": "18.3.28",
+            "wanted": "19.2.14",
+            "latest": "19.2.14",
+            "dependent": "web-dev",
+            "location": "/home/ghost/ghostl-stack/apps/web-dev/node_modules/@types/react"
+          },
+          {
+            "current": "18.3.28",
+            "wanted": "19.2.14",
+            "latest": "19.2.14",
+            "dependent": "web-exchange",
+            "location": "/home/ghost/ghostl-stack/apps/web-exchange/node_modules/@types/react"
+          },
+          {
+            "current": "18.3.28",
+            "wanted": "19.2.14",
+            "latest": "19.2.14",
+            "dependent": "web-explorer",
+            "location": "/home/ghost/ghostl-stack/apps/web-explorer/node_modules/@types/react"
+          },
+          {
+            "current": "18.3.28",
+            "wanted": "19.2.14",
+            "latest": "19.2.14",
+            "dependent": "web-governance",
+            "location": "/home/ghost/ghostl-stack/apps/web-governance/node_modules/@types/react"
+          },
+          {
+            "current": "18.3.28",
+            "wanted": "19.2.14",
+            "latest": "19.2.14",
+            "dependent": "web-investor",
+            "location": "/home/ghost/ghostl-stack/apps/web-investor/node_modules/@types/react"
+          },
+          {
+            "current": "18.3.28",
+            "wanted": "19.2.14",
+            "latest": "19.2.14",
+            "dependent": "web-main",
+            "location": "/home/ghost/ghostl-stack/apps/web-main/node_modules/@types/react"
+          },
+          {
+            "current": "18.3.28",
+            "wanted": "19.2.14",
+            "latest": "19.2.14",
+            "dependent": "web-nodes",
+            "location": "/home/ghost/ghostl-stack/apps/web-nodes/node_modules/@types/react"
+          },
+          {
+            "current": "18.3.28",
+            "wanted": "19.2.14",
+            "latest": "19.2.14",
+            "dependent": "web-portal",
+            "location": "/home/ghost/ghostl-stack/apps/web-portal/node_modules/@types/react"
+          },
+          {
+            "current": "18.3.28",
+            "wanted": "19.2.14",
+            "latest": "19.2.14",
+            "dependent": "web-status",
+            "location": "/home/ghost/ghostl-stack/apps/web-status/node_modules/@types/react"
+          }
+        ],
+        "@types/react-dom": {
+          "current": "18.3.7",
+          "wanted": "19.2.3",
+          "latest": "19.2.3",
+          "dependent": "control-center",
+          "location": "/home/ghost/ghostl-stack/apps/control-center/node_modules/@types/react-dom"
+        },
+        "better-sqlite3": [
+          {
+            "current": "12.6.2",
+            "wanted": "12.8.0",
+            "latest": "12.8.0",
+            "dependent": "api",
+            "location": "/home/ghost/ghostl-stack/node_modules/better-sqlite3"
+          },
+          {
+            "current": "11.10.0",
+            "wanted": "11.10.0",
+            "latest": "12.8.0",
+            "dependent": "ggvn",
+            "location": "/home/ghost/ghostl-stack/services/ggvn/node_modules/better-sqlite3"
+          },
+          {
+            "current": "11.10.0",
+            "wanted": "11.10.0",
+            "latest": "12.8.0",
+            "dependent": "ghostscan",
+            "location": "/home/ghost/ghostl-stack/services/ghostscan/node_modules/better-sqlite3"
+          },
+          {
+            "current": "11.10.0",
+            "wanted": "11.10.0",
+            "latest": "12.8.0",
+            "dependent": "ghostxchange",
+            "location": "/home/ghost/ghostl-stack/services/ghostxchange/node_modules/better-sqlite3"
           }
         ],
         "bullmq": {
@@ -493,26 +644,259 @@
           "dependent": "worker",
           "location": "/home/ghost/ghostl-stack/node_modules/bullmq"
         },
-        "hardhat": [
+        "eslint": {
+          "current": "8.57.1",
+          "wanted": "8.57.1",
+          "latest": "10.0.3",
+          "dependent": "control-center",
+          "location": "/home/ghost/ghostl-stack/apps/control-center/node_modules/eslint"
+        },
+        "eslint-config-next": {
+          "current": "14.2.35",
+          "wanted": "16.1.7",
+          "latest": "16.1.7",
+          "dependent": "control-center",
+          "location": "/home/ghost/ghostl-stack/apps/control-center/node_modules/eslint-config-next"
+        },
+        "express-rate-limit": {
+          "current": "7.5.1",
+          "wanted": "7.5.1",
+          "latest": "8.3.1",
+          "dependent": "gateway",
+          "location": "/home/ghost/ghostl-stack/node_modules/express-rate-limit"
+        },
+        "hardhat": {
+          "current": "2.28.6",
+          "wanted": "2.28.6",
+          "latest": "3.1.12",
+          "dependent": "hardhat-ghost",
+          "location": "/home/ghost/ghostl-stack/packages/hardhat-ghost/node_modules/hardhat"
+        },
+        "next": [
           {
-            "current": "3.1.12",
-            "wanted": "2.28.6",
-            "latest": "3.1.12",
-            "dependent": "ghost-contract-factory",
-            "location": "/home/ghost/ghostl-stack/node_modules/hardhat"
+            "current": "14.2.35",
+            "wanted": "16.1.7",
+            "latest": "16.1.7",
+            "dependent": "control-center",
+            "location": "/home/ghost/ghostl-stack/apps/control-center/node_modules/next"
           },
           {
-            "current": "3.1.12",
-            "wanted": "2.28.6",
-            "latest": "3.1.12",
-            "dependent": "hardhat-ghost",
-            "location": "/home/ghost/ghostl-stack/node_modules/hardhat"
+            "current": "16.1.6",
+            "wanted": "16.1.7",
+            "latest": "16.1.7",
+            "dependent": "ghostx",
+            "location": "/home/ghost/ghostl-stack/apps/ghostx/node_modules/next"
+          },
+          {
+            "current": "16.1.6",
+            "wanted": "16.1.7",
+            "latest": "16.1.7",
+            "dependent": "web-ai",
+            "location": "/home/ghost/ghostl-stack/apps/web-ai/node_modules/next"
+          },
+          {
+            "current": "16.1.6",
+            "wanted": "16.1.7",
+            "latest": "16.1.7",
+            "dependent": "web-apps",
+            "location": "/home/ghost/ghostl-stack/apps/web-apps/node_modules/next"
+          },
+          {
+            "current": "16.1.6",
+            "wanted": "16.1.7",
+            "latest": "16.1.7",
+            "dependent": "web-bridge",
+            "location": "/home/ghost/ghostl-stack/apps/web-bridge/node_modules/next"
+          },
+          {
+            "current": "16.1.6",
+            "wanted": "16.1.7",
+            "latest": "16.1.7",
+            "dependent": "web-company",
+            "location": "/home/ghost/ghostl-stack/apps/web-company/node_modules/next"
+          },
+          {
+            "current": "16.1.6",
+            "wanted": "16.1.7",
+            "latest": "16.1.7",
+            "dependent": "web-dev",
+            "location": "/home/ghost/ghostl-stack/apps/web-dev/node_modules/next"
+          },
+          {
+            "current": "16.1.6",
+            "wanted": "16.1.7",
+            "latest": "16.1.7",
+            "dependent": "web-exchange",
+            "location": "/home/ghost/ghostl-stack/apps/web-exchange/node_modules/next"
+          },
+          {
+            "current": "16.1.6",
+            "wanted": "16.1.7",
+            "latest": "16.1.7",
+            "dependent": "web-explorer",
+            "location": "/home/ghost/ghostl-stack/apps/web-explorer/node_modules/next"
+          },
+          {
+            "current": "16.1.6",
+            "wanted": "16.1.7",
+            "latest": "16.1.7",
+            "dependent": "web-governance",
+            "location": "/home/ghost/ghostl-stack/apps/web-governance/node_modules/next"
+          },
+          {
+            "current": "16.1.6",
+            "wanted": "16.1.7",
+            "latest": "16.1.7",
+            "dependent": "web-investor",
+            "location": "/home/ghost/ghostl-stack/apps/web-investor/node_modules/next"
+          },
+          {
+            "current": "16.1.6",
+            "wanted": "16.1.7",
+            "latest": "16.1.7",
+            "dependent": "web-live",
+            "location": "/home/ghost/ghostl-stack/apps/web-live/node_modules/next"
+          },
+          {
+            "current": "16.1.6",
+            "wanted": "16.1.7",
+            "latest": "16.1.7",
+            "dependent": "web-main",
+            "location": "/home/ghost/ghostl-stack/apps/web-main/node_modules/next"
+          },
+          {
+            "current": "16.1.6",
+            "wanted": "16.1.7",
+            "latest": "16.1.7",
+            "dependent": "web-nodes",
+            "location": "/home/ghost/ghostl-stack/apps/web-nodes/node_modules/next"
+          },
+          {
+            "current": "16.1.6",
+            "wanted": "16.1.7",
+            "latest": "16.1.7",
+            "dependent": "web-portal",
+            "location": "/home/ghost/ghostl-stack/apps/web-portal/node_modules/next"
+          },
+          {
+            "current": "16.1.6",
+            "wanted": "16.1.7",
+            "latest": "16.1.7",
+            "dependent": "web-rpc-portal",
+            "location": "/home/ghost/ghostl-stack/apps/web-rpc-portal/node_modules/next"
+          },
+          {
+            "current": "16.1.6",
+            "wanted": "16.1.7",
+            "latest": "16.1.7",
+            "dependent": "web-status",
+            "location": "/home/ghost/ghostl-stack/apps/web-status/node_modules/next"
+          },
+          {
+            "current": "16.1.6",
+            "wanted": "16.1.7",
+            "latest": "16.1.7",
+            "dependent": "web-wallet",
+            "location": "/home/ghost/ghostl-stack/apps/web-wallet/node_modules/next"
+          }
+        ],
+        "next-auth": {
+          "current": "5.0.0-beta.30",
+          "wanted": "5.0.0-beta.30",
+          "latest": "4.24.13",
+          "dependent": "web",
+          "location": "/home/ghost/ghostl-stack/node_modules/next-auth"
+        },
+        "nodemailer": {
+          "current": "8.0.1",
+          "wanted": "8.0.2",
+          "latest": "8.0.2",
+          "dependent": "api",
+          "location": "/home/ghost/ghostl-stack/node_modules/nodemailer"
+        },
+        "react": {
+          "current": "18.3.1",
+          "wanted": "19.2.4",
+          "latest": "19.2.4",
+          "dependent": "control-center",
+          "location": "/home/ghost/ghostl-stack/apps/control-center/node_modules/react"
+        },
+        "react-dom": {
+          "current": "18.3.1",
+          "wanted": "19.2.4",
+          "latest": "19.2.4",
+          "dependent": "control-center",
+          "location": "/home/ghost/ghostl-stack/apps/control-center/node_modules/react-dom"
+        },
+        "recharts": {
+          "current": "2.15.4",
+          "wanted": "2.15.4",
+          "latest": "3.8.0",
+          "dependent": "control-center",
+          "location": "/home/ghost/ghostl-stack/apps/control-center/node_modules/recharts"
+        },
+        "tailwindcss": [
+          {
+            "current": "3.4.19",
+            "wanted": "3.4.19",
+            "latest": "4.2.1",
+            "dependent": "ghostx",
+            "location": "/home/ghost/ghostl-stack/node_modules/tailwindcss"
+          },
+          {
+            "current": "3.4.19",
+            "wanted": "3.4.19",
+            "latest": "4.2.1",
+            "dependent": "web",
+            "location": "/home/ghost/ghostl-stack/node_modules/tailwindcss"
+          },
+          {
+            "current": "3.4.19",
+            "wanted": "3.4.19",
+            "latest": "4.2.1",
+            "dependent": "web-ai",
+            "location": "/home/ghost/ghostl-stack/node_modules/tailwindcss"
+          },
+          {
+            "current": "3.4.19",
+            "wanted": "3.4.19",
+            "latest": "4.2.1",
+            "dependent": "web-bridge",
+            "location": "/home/ghost/ghostl-stack/node_modules/tailwindcss"
+          },
+          {
+            "current": "3.4.19",
+            "wanted": "3.4.19",
+            "latest": "4.2.1",
+            "dependent": "web-docs",
+            "location": "/home/ghost/ghostl-stack/node_modules/tailwindcss"
+          },
+          {
+            "current": "3.4.19",
+            "wanted": "3.4.19",
+            "latest": "4.2.1",
+            "dependent": "web-live",
+            "location": "/home/ghost/ghostl-stack/node_modules/tailwindcss"
+          },
+          {
+            "current": "3.4.19",
+            "wanted": "3.4.19",
+            "latest": "4.2.1",
+            "dependent": "web-rpc-portal",
+            "location": "/home/ghost/ghostl-stack/node_modules/tailwindcss"
+          },
+          {
+            "current": "3.4.19",
+            "wanted": "3.4.19",
+            "latest": "4.2.1",
+            "dependent": "web-wallet",
+            "location": "/home/ghost/ghostl-stack/node_modules/tailwindcss"
           }
         ],
         "undici": {
           "current": "7.22.0",
-          "wanted": "7.24.0",
-          "latest": "7.24.0",
+          "wanted": "7.24.4",
+          "latest": "7.24.4",
           "dependent": "ghoststack-cli",
           "location": "/home/ghost/ghostl-stack/node_modules/undici"
         },
@@ -532,6 +916,13 @@
             "location": "/home/ghost/ghostl-stack/packages/ghost-sdk-core/node_modules/vitest"
           },
           {
+            "current": "3.2.4",
+            "wanted": "3.2.4",
+            "latest": "4.1.0",
+            "dependent": "ghost-universe",
+            "location": "/home/ghost/ghostl-stack/node_modules/vitest"
+          },
+          {
             "current": "2.1.9",
             "wanted": "2.1.9",
             "latest": "4.1.0",
@@ -545,23 +936,37 @@
             "wanted": "3.25.76",
             "latest": "4.3.6",
             "dependent": "ghost-contract-factory",
-            "location": "/home/ghost/ghostl-stack/packages/ghost-contract-factory/node_modules/zod"
+            "location": "/home/ghost/ghostl-stack/node_modules/zod"
           },
           {
             "current": "3.25.76",
             "wanted": "3.25.76",
             "latest": "4.3.6",
             "dependent": "ghost-federation-sdk",
-            "location": "/home/ghost/ghostl-stack/packages/ghost-federation-sdk/node_modules/zod"
+            "location": "/home/ghost/ghostl-stack/node_modules/zod"
           },
           {
             "current": "3.25.76",
             "wanted": "3.25.76",
             "latest": "4.3.6",
             "dependent": "ghost-interplanetary-sdk",
-            "location": "/home/ghost/ghostl-stack/packages/ghost-interplanetary-sdk/node_modules/zod"
+            "location": "/home/ghost/ghostl-stack/node_modules/zod"
+          },
+          {
+            "current": "3.25.76",
+            "wanted": "3.25.76",
+            "latest": "4.3.6",
+            "dependent": "ghost-universe",
+            "location": "/home/ghost/ghostl-stack/node_modules/zod"
           }
-        ]
+        ],
+        "zustand": {
+          "current": "4.5.7",
+          "wanted": "4.5.7",
+          "latest": "5.0.12",
+          "dependent": "control-center",
+          "location": "/home/ghost/ghostl-stack/node_modules/zustand"
+        }
       }
     },
     "npmAudit": {
@@ -605,6 +1010,12 @@
           "advisories": []
         },
         {
+          "package": "@next/eslint-plugin-next",
+          "severity": "high",
+          "advisoryIds": [],
+          "advisories": []
+        },
+        {
           "package": "@vitest/mocker",
           "severity": "moderate",
           "advisoryIds": [],
@@ -639,96 +1050,110 @@
           ]
         },
         {
+          "package": "eslint-config-next",
+          "severity": "high",
+          "advisoryIds": [],
+          "advisories": []
+        },
+        {
           "package": "ghost",
           "severity": "critical",
           "advisoryIds": [
-            "GHSA-7V28-G2PQ-GGG8",
-            "GHSA-FVC6-QJP7-M4G4",
-            "GHSA-Q4H8-7QFF-GH6C",
-            "GHSA-WFRJ-QQC2-83CM",
-            "GHSA-R97Q-GHCH-82J9",
-            "GHSA-9C9V-W225-V5RG",
-            "GHSA-WF7X-FH6W-34R6",
-            "GHSA-FH38-9FGR-454W",
-            "GHSA-FFHQ-G856-9F2P",
-            "GHSA-99VC-XW8J-PHJM"
+            "GHSA-W52V-V783-GW97",
+            "GHSA-CGC2-RCRH-QR5X",
+            "GHSA-9M84-WC28-W895"
           ],
           "advisories": [
             {
-              "advisoryId": "GHSA-7V28-G2PQ-GGG8",
-              "url": "https://github.com/advisories/GHSA-7v28-g2pq-ggg8",
-              "title": "Ghost vulnerable to remote code execution in locale setting change"
+              "advisoryId": "GHSA-W52V-V783-GW97",
+              "url": "https://github.com/advisories/GHSA-w52v-v783-gw97",
+              "title": "Ghost has a SQL injection in Content API"
             },
             {
-              "advisoryId": "GHSA-FVC6-QJP7-M4G4",
-              "url": "https://github.com/advisories/GHSA-fvc6-qjp7-m4g4",
-              "title": "Arbitrary file upload in Ghost"
+              "advisoryId": "GHSA-CGC2-RCRH-QR5X",
+              "url": "https://github.com/advisories/GHSA-cgc2-rcrh-qr5x",
+              "title": "Ghost Vulnerable to Remote Code Execution via Malicious Themes"
             },
             {
-              "advisoryId": "GHSA-Q4H8-7QFF-GH6C",
-              "url": "https://github.com/advisories/GHSA-q4h8-7qff-gh6c",
-              "title": "Server-side request forgery in Ghost CMS"
-            },
+              "advisoryId": "GHSA-9M84-WC28-W895",
+              "url": "https://github.com/advisories/GHSA-9m84-wc28-w895",
+              "title": "Ghost has incomplete CSRF protections around OTC use"
+            }
+          ]
+        },
+        {
+          "package": "glob",
+          "severity": "high",
+          "advisoryIds": [
+            "GHSA-5J98-MCP5-4VW2"
+          ],
+          "advisories": [
             {
-              "advisoryId": "GHSA-WFRJ-QQC2-83CM",
-              "url": "https://github.com/advisories/GHSA-wfrj-qqc2-83cm",
-              "title": "Remote command injection when using sendmail email transport"
-            },
-            {
-              "advisoryId": "GHSA-R97Q-GHCH-82J9",
-              "url": "https://github.com/advisories/GHSA-r97q-ghch-82j9",
-              "title": "Ghost vulnerable to information disclosure of private API fields"
-            },
-            {
-              "advisoryId": "GHSA-9C9V-W225-V5RG",
-              "url": "https://github.com/advisories/GHSA-9c9v-w225-v5rg",
-              "title": "Ghost vulnerable to arbitrary file read via symlinks in content import"
-            },
-            {
-              "advisoryId": "GHSA-WF7X-FH6W-34R6",
-              "url": "https://github.com/advisories/GHSA-wf7x-fh6w-34r6",
-              "title": "Path Traversal in Ghost"
-            },
-            {
-              "advisoryId": "GHSA-FH38-9FGR-454W",
-              "url": "https://github.com/advisories/GHSA-fh38-9fgr-454w",
-              "title": "Cross-site Scripting in Ghost"
-            },
-            {
-              "advisoryId": "GHSA-FFHQ-G856-9F2P",
-              "url": "https://github.com/advisories/GHSA-ffhq-g856-9f2p",
-              "title": "Arbitrary file upload in Ghost"
-            },
-            {
-              "advisoryId": "GHSA-99VC-XW8J-PHJM",
-              "url": "https://github.com/advisories/GHSA-99vc-xw8j-phjm",
-              "title": "Ghost has possible Cross-site Scripting issue"
+              "advisoryId": "GHSA-5J98-MCP5-4VW2",
+              "url": "https://github.com/advisories/GHSA-5j98-mcp5-4vw2",
+              "title": "glob CLI: Command injection via -c/--cmd executes matches with shell:true"
             }
           ]
         },
         {
           "package": "hardhat",
-          "severity": "high",
+          "severity": "moderate",
           "advisoryIds": [],
           "advisories": []
         },
         {
-          "package": "mocha",
-          "severity": "high",
-          "advisoryIds": [],
-          "advisories": []
-        },
-        {
-          "package": "serialize-javascript",
+          "package": "next",
           "severity": "high",
           "advisoryIds": [
-            "GHSA-5C6J-R48X-RMVQ"
+            "GHSA-9G9P-9GW9-JX7F",
+            "GHSA-H25M-26QC-WCJF",
+            "GHSA-MQ59-M269-XVCX",
+            "GHSA-JCC7-9WPM-MJ36",
+            "GHSA-GGV3-7P47-PFV8",
+            "GHSA-GGV3-7P47-PFV8",
+            "GHSA-3X4C-7XQ6-9PQ8",
+            "GHSA-H27X-G6W4-24GQ"
           ],
           "advisories": [
             {
-              "advisoryId": "GHSA-5C6J-R48X-RMVQ",
-              "url": "https://github.com/advisories/GHSA-5c6j-r48x-rmvq",
-              "title": "Serialize JavaScript is Vulnerable to RCE via RegExp.flags and Date.prototype.toISOString()"
+              "advisoryId": "GHSA-9G9P-9GW9-JX7F",
+              "url": "https://github.com/advisories/GHSA-9g9p-9gw9-jx7f",
+              "title": "Next.js self-hosted applications vulnerable to DoS via Image Optimizer remotePatterns configuration"
+            },
+            {
+              "advisoryId": "GHSA-H25M-26QC-WCJF",
+              "url": "https://github.com/advisories/GHSA-h25m-26qc-wcjf",
+              "title": "Next.js HTTP request deserialization can lead to DoS when using insecure React Server Components"
+            },
+            {
+              "advisoryId": "GHSA-MQ59-M269-XVCX",
+              "url": "https://github.com/advisories/GHSA-mq59-m269-xvcx",
+              "title": "Next.js: null origin can bypass Server Actions CSRF checks"
+            },
+            {
+              "advisoryId": "GHSA-JCC7-9WPM-MJ36",
+              "url": "https://github.com/advisories/GHSA-jcc7-9wpm-mj36",
+              "title": "Next.js: null origin can bypass dev HMR websocket CSRF checks"
+            },
+            {
+              "advisoryId": "GHSA-GGV3-7P47-PFV8",
+              "url": "https://github.com/advisories/GHSA-ggv3-7p47-pfv8",
+              "title": "Next.js: HTTP request smuggling in rewrites"
+            },
+            {
+              "advisoryId": "GHSA-GGV3-7P47-PFV8",
+              "url": "https://github.com/advisories/GHSA-ggv3-7p47-pfv8",
+              "title": "Next.js: HTTP request smuggling in rewrites"
+            },
+            {
+              "advisoryId": "GHSA-3X4C-7XQ6-9PQ8",
+              "url": "https://github.com/advisories/GHSA-3x4c-7xq6-9pq8",
+              "title": "Next.js: Unbounded next/image disk cache growth can exhaust storage"
+            },
+            {
+              "advisoryId": "GHSA-H27X-G6W4-24GQ",
+              "url": "https://github.com/advisories/GHSA-h27x-g6w4-24gq",
+              "title": "Next.js: Unbounded postponed resume buffering can lead to DoS"
             }
           ]
         },
@@ -754,15 +1179,81 @@
         },
         {
           "package": "undici",
-          "severity": "moderate",
+          "severity": "high",
           "advisoryIds": [
-            "GHSA-G9MF-H72J-4RW9"
+            "GHSA-G9MF-H72J-4RW9",
+            "GHSA-F269-VFMQ-VJVJ",
+            "GHSA-F269-VFMQ-VJVJ",
+            "GHSA-2MJP-6Q6P-2QXM",
+            "GHSA-2MJP-6Q6P-2QXM",
+            "GHSA-VRM6-8VPV-QV8Q",
+            "GHSA-VRM6-8VPV-QV8Q",
+            "GHSA-V9P9-HFJ2-HCW8",
+            "GHSA-V9P9-HFJ2-HCW8",
+            "GHSA-4992-7RV2-5PVQ",
+            "GHSA-4992-7RV2-5PVQ",
+            "GHSA-PHC3-FGPG-7M6H"
           ],
           "advisories": [
             {
               "advisoryId": "GHSA-G9MF-H72J-4RW9",
               "url": "https://github.com/advisories/GHSA-g9mf-h72j-4rw9",
               "title": "Undici has an unbounded decompression chain in HTTP responses on Node.js Fetch API via Content-Encoding leads to resource exhaustion"
+            },
+            {
+              "advisoryId": "GHSA-F269-VFMQ-VJVJ",
+              "url": "https://github.com/advisories/GHSA-f269-vfmq-vjvj",
+              "title": "Undici: Malicious WebSocket 64-bit length overflows parser and crashes the client"
+            },
+            {
+              "advisoryId": "GHSA-F269-VFMQ-VJVJ",
+              "url": "https://github.com/advisories/GHSA-f269-vfmq-vjvj",
+              "title": "Undici: Malicious WebSocket 64-bit length overflows parser and crashes the client"
+            },
+            {
+              "advisoryId": "GHSA-2MJP-6Q6P-2QXM",
+              "url": "https://github.com/advisories/GHSA-2mjp-6q6p-2qxm",
+              "title": "Undici has an HTTP Request/Response Smuggling issue"
+            },
+            {
+              "advisoryId": "GHSA-2MJP-6Q6P-2QXM",
+              "url": "https://github.com/advisories/GHSA-2mjp-6q6p-2qxm",
+              "title": "Undici has an HTTP Request/Response Smuggling issue"
+            },
+            {
+              "advisoryId": "GHSA-VRM6-8VPV-QV8Q",
+              "url": "https://github.com/advisories/GHSA-vrm6-8vpv-qv8q",
+              "title": "Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression"
+            },
+            {
+              "advisoryId": "GHSA-VRM6-8VPV-QV8Q",
+              "url": "https://github.com/advisories/GHSA-vrm6-8vpv-qv8q",
+              "title": "Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression"
+            },
+            {
+              "advisoryId": "GHSA-V9P9-HFJ2-HCW8",
+              "url": "https://github.com/advisories/GHSA-v9p9-hfj2-hcw8",
+              "title": "Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation"
+            },
+            {
+              "advisoryId": "GHSA-V9P9-HFJ2-HCW8",
+              "url": "https://github.com/advisories/GHSA-v9p9-hfj2-hcw8",
+              "title": "Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation"
+            },
+            {
+              "advisoryId": "GHSA-4992-7RV2-5PVQ",
+              "url": "https://github.com/advisories/GHSA-4992-7rv2-5pvq",
+              "title": "Undici has CRLF Injection in undici via `upgrade` option"
+            },
+            {
+              "advisoryId": "GHSA-4992-7RV2-5PVQ",
+              "url": "https://github.com/advisories/GHSA-4992-7rv2-5pvq",
+              "title": "Undici has CRLF Injection in undici via `upgrade` option"
+            },
+            {
+              "advisoryId": "GHSA-PHC3-FGPG-7M6H",
+              "url": "https://github.com/advisories/GHSA-phc3-fgpg-7m6h",
+              "title": "Undici has Unbounded Memory Consumption in its DeduplicationHandler via Response Buffering that leads to DoS"
             }
           ]
         },
@@ -908,6 +1399,22 @@
               "isSemVerMajor": true
             }
           },
+          "@next/eslint-plugin-next": {
+            "name": "@next/eslint-plugin-next",
+            "severity": "high",
+            "isDirect": false,
+            "via": [
+              "glob"
+            ],
+            "effects": [
+              "eslint-config-next"
+            ],
+            "range": "14.0.5-canary.0 - 15.0.0-rc.1",
+            "nodes": [
+              "apps/control-center/node_modules/@next/eslint-plugin-next"
+            ],
+            "fixAvailable": true
+          },
           "@vitest/mocker": {
             "name": "@vitest/mocker",
             "severity": "moderate",
@@ -999,186 +1506,119 @@
               "isSemVerMajor": true
             }
           },
+          "eslint-config-next": {
+            "name": "eslint-config-next",
+            "severity": "high",
+            "isDirect": true,
+            "via": [
+              "@next/eslint-plugin-next"
+            ],
+            "effects": [],
+            "range": "14.0.5-canary.0 - 15.0.0-rc.1",
+            "nodes": [
+              "apps/control-center/node_modules/eslint-config-next"
+            ],
+            "fixAvailable": true
+          },
           "ghost": {
             "name": "ghost",
             "severity": "critical",
             "isDirect": true,
             "via": [
               {
-                "source": 1085364,
+                "source": 1113372,
                 "name": "ghost",
                 "dependency": "ghost",
-                "title": "Ghost vulnerable to remote code execution in locale setting change",
-                "url": "https://github.com/advisories/GHSA-7v28-g2pq-ggg8",
-                "severity": "moderate",
-                "cwe": [],
-                "cvss": {
-                  "score": 6.6,
-                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:L/I:L/A:L"
-                },
-                "range": "<4.48.2"
-              },
-              {
-                "source": 1088716,
-                "name": "ghost",
-                "dependency": "ghost",
-                "title": "Arbitrary file upload in Ghost",
-                "url": "https://github.com/advisories/GHSA-fvc6-qjp7-m4g4",
+                "title": "Ghost has a SQL injection in Content API",
+                "url": "https://github.com/advisories/GHSA-w52v-v783-gw97",
                 "severity": "critical",
                 "cwe": [
-                  "CWE-434"
+                  "CWE-89"
                 ],
                 "cvss": {
-                  "score": 9.8,
-                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                  "score": 9.4,
+                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:L"
                 },
-                "range": "<=4.39.0"
+                "range": ">=3.24.0 <6.19.1"
               },
               {
-                "source": 1089839,
+                "source": 1114008,
                 "name": "ghost",
                 "dependency": "ghost",
-                "title": "Server-side request forgery in Ghost CMS",
-                "url": "https://github.com/advisories/GHSA-q4h8-7qff-gh6c",
-                "severity": "moderate",
-                "cwe": [
-                  "CWE-918"
-                ],
-                "cvss": {
-                  "score": 8.1,
-                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N"
-                },
-                "range": "<3.10.0"
-              },
-              {
-                "source": 1091788,
-                "name": "ghost",
-                "dependency": "ghost",
-                "title": "Remote command injection when using sendmail email transport",
-                "url": "https://github.com/advisories/GHSA-wfrj-qqc2-83cm",
-                "severity": "moderate",
-                "cwe": [
-                  "CWE-88"
-                ],
-                "cvss": {
-                  "score": 5.8,
-                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:N/I:L/A:N"
-                },
-                "range": "<4.15.0"
-              },
-              {
-                "source": 1094674,
-                "name": "ghost",
-                "dependency": "ghost",
-                "title": "Ghost vulnerable to information disclosure of private API fields",
-                "url": "https://github.com/advisories/GHSA-r97q-ghch-82j9",
+                "title": "Ghost Vulnerable to Remote Code Execution via Malicious Themes",
+                "url": "https://github.com/advisories/GHSA-cgc2-rcrh-qr5x",
                 "severity": "high",
                 "cwe": [
-                  "CWE-200"
+                  "CWE-74"
+                ],
+                "cvss": {
+                  "score": 7.7,
+                  "vectorString": "CVSS:3.1/AV:N/AC:H/PR:H/UI:R/S:C/C:H/I:H/A:H"
+                },
+                "range": ">=0.7.2 <=6.19.0"
+              },
+              {
+                "source": 1114201,
+                "name": "ghost",
+                "dependency": "ghost",
+                "title": "Ghost has incomplete CSRF protections around OTC use",
+                "url": "https://github.com/advisories/GHSA-9m84-wc28-w895",
+                "severity": "high",
+                "cwe": [
+                  "CWE-352"
                 ],
                 "cvss": {
                   "score": 7.5,
-                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
+                  "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:H"
                 },
-                "range": "<5.46.1"
-              },
-              {
-                "source": 1094703,
-                "name": "ghost",
-                "dependency": "ghost",
-                "title": "Ghost vulnerable to arbitrary file read via symlinks in content import",
-                "url": "https://github.com/advisories/GHSA-9c9v-w225-v5rg",
-                "severity": "moderate",
-                "cwe": [
-                  "CWE-22",
-                  "CWE-59"
-                ],
-                "cvss": {
-                  "score": 4.9,
-                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:N/A:N"
-                },
-                "range": "<5.59.1"
-              },
-              {
-                "source": 1094763,
-                "name": "ghost",
-                "dependency": "ghost",
-                "title": "Path Traversal in Ghost",
-                "url": "https://github.com/advisories/GHSA-wf7x-fh6w-34r6",
-                "severity": "high",
-                "cwe": [
-                  "CWE-22"
-                ],
-                "cvss": {
-                  "score": 7.5,
-                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
-                },
-                "range": "<5.42.1"
-              },
-              {
-                "source": 1096333,
-                "name": "ghost",
-                "dependency": "ghost",
-                "title": "Cross-site Scripting in Ghost",
-                "url": "https://github.com/advisories/GHSA-fh38-9fgr-454w",
-                "severity": "moderate",
-                "cwe": [
-                  "CWE-79"
-                ],
-                "cvss": {
-                  "score": 6.1,
-                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N"
-                },
-                "range": "<5.76.0"
-              },
-              {
-                "source": 1097131,
-                "name": "ghost",
-                "dependency": "ghost",
-                "title": "Arbitrary file upload in Ghost",
-                "url": "https://github.com/advisories/GHSA-ffhq-g856-9f2p",
-                "severity": "critical",
-                "cwe": [
-                  "CWE-434"
-                ],
-                "cvss": {
-                  "score": 9.8,
-                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
-                },
-                "range": "<=4.42.0"
-              },
-              {
-                "source": 1099457,
-                "name": "ghost",
-                "dependency": "ghost",
-                "title": "Ghost has possible Cross-site Scripting issue",
-                "url": "https://github.com/advisories/GHSA-99vc-xw8j-phjm",
-                "severity": "moderate",
-                "cwe": [
-                  "CWE-79"
-                ],
-                "cvss": {
-                  "score": 6.5,
-                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:L"
-                },
-                "range": "<=5.76.0"
+                "range": ">=5.101.6 <=6.19.2"
               }
             ],
             "effects": [],
-            "range": "<=5.76.0",
+            "range": "0.7.2 - 6.19.2",
             "nodes": [
               "node_modules/ghost",
               "packages/ghost"
             ],
             "fixAvailable": false
           },
+          "glob": {
+            "name": "glob",
+            "severity": "high",
+            "isDirect": false,
+            "via": [
+              {
+                "source": 1109842,
+                "name": "glob",
+                "dependency": "glob",
+                "title": "glob CLI: Command injection via -c/--cmd executes matches with shell:true",
+                "url": "https://github.com/advisories/GHSA-5j98-mcp5-4vw2",
+                "severity": "high",
+                "cwe": [
+                  "CWE-78"
+                ],
+                "cvss": {
+                  "score": 7.5,
+                  "vectorString": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:H"
+                },
+                "range": ">=10.2.0 <10.5.0"
+              }
+            ],
+            "effects": [
+              "@next/eslint-plugin-next"
+            ],
+            "range": "10.2.0 - 10.4.5",
+            "nodes": [
+              "apps/control-center/node_modules/glob"
+            ],
+            "fixAvailable": true
+          },
           "hardhat": {
             "name": "hardhat",
-            "severity": "high",
+            "severity": "moderate",
             "isDirect": true,
             "via": [
               "@ethersproject/abi",
-              "mocha",
               "solc",
               "undici"
             ],
@@ -1193,48 +1633,163 @@
               "isSemVerMajor": true
             }
           },
-          "mocha": {
-            "name": "mocha",
+          "next": {
+            "name": "next",
             "severity": "high",
-            "isDirect": false,
-            "via": [
-              "serialize-javascript"
-            ],
-            "effects": [],
-            "range": "8.0.0 - 12.0.0-beta-2",
-            "nodes": [
-              "node_modules/mocha"
-            ],
-            "fixAvailable": true
-          },
-          "serialize-javascript": {
-            "name": "serialize-javascript",
-            "severity": "high",
-            "isDirect": false,
+            "isDirect": true,
             "via": [
               {
-                "source": 1113686,
-                "name": "serialize-javascript",
-                "dependency": "serialize-javascript",
-                "title": "Serialize JavaScript is Vulnerable to RCE via RegExp.flags and Date.prototype.toISOString()",
-                "url": "https://github.com/advisories/GHSA-5c6j-r48x-rmvq",
-                "severity": "high",
+                "source": 1112593,
+                "name": "next",
+                "dependency": "next",
+                "title": "Next.js self-hosted applications vulnerable to DoS via Image Optimizer remotePatterns configuration",
+                "url": "https://github.com/advisories/GHSA-9g9p-9gw9-jx7f",
+                "severity": "moderate",
                 "cwe": [
-                  "CWE-96"
+                  "CWE-400",
+                  "CWE-770"
                 ],
                 "cvss": {
-                  "score": 8.1,
-                  "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                  "score": 5.9,
+                  "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
                 },
-                "range": "<=7.0.2"
+                "range": ">=10.0.0 <15.5.10"
+              },
+              {
+                "source": 1112653,
+                "name": "next",
+                "dependency": "next",
+                "title": "Next.js HTTP request deserialization can lead to DoS when using insecure React Server Components",
+                "url": "https://github.com/advisories/GHSA-h25m-26qc-wcjf",
+                "severity": "high",
+                "cwe": [
+                  "CWE-400",
+                  "CWE-502"
+                ],
+                "cvss": {
+                  "score": 7.5,
+                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                },
+                "range": ">=13.0.0 <15.0.8"
+              },
+              {
+                "source": 1114748,
+                "name": "next",
+                "dependency": "next",
+                "title": "Next.js: null origin can bypass Server Actions CSRF checks",
+                "url": "https://github.com/advisories/GHSA-mq59-m269-xvcx",
+                "severity": "moderate",
+                "cwe": [
+                  "CWE-352"
+                ],
+                "cvss": {
+                  "score": 0,
+                  "vectorString": null
+                },
+                "range": ">=16.0.1 <16.1.7"
+              },
+              {
+                "source": 1114749,
+                "name": "next",
+                "dependency": "next",
+                "title": "Next.js: null origin can bypass dev HMR websocket CSRF checks",
+                "url": "https://github.com/advisories/GHSA-jcc7-9wpm-mj36",
+                "severity": "low",
+                "cwe": [
+                  "CWE-1385"
+                ],
+                "cvss": {
+                  "score": 0,
+                  "vectorString": null
+                },
+                "range": ">=16.0.1 <16.1.7"
+              },
+              {
+                "source": 1114751,
+                "name": "next",
+                "dependency": "next",
+                "title": "Next.js: HTTP request smuggling in rewrites",
+                "url": "https://github.com/advisories/GHSA-ggv3-7p47-pfv8",
+                "severity": "moderate",
+                "cwe": [
+                  "CWE-444"
+                ],
+                "cvss": {
+                  "score": 0,
+                  "vectorString": null
+                },
+                "range": ">=9.5.0 <15.5.13"
+              },
+              {
+                "source": 1114752,
+                "name": "next",
+                "dependency": "next",
+                "title": "Next.js: HTTP request smuggling in rewrites",
+                "url": "https://github.com/advisories/GHSA-ggv3-7p47-pfv8",
+                "severity": "moderate",
+                "cwe": [
+                  "CWE-444"
+                ],
+                "cvss": {
+                  "score": 0,
+                  "vectorString": null
+                },
+                "range": ">=16.0.0-beta.0 <16.1.7"
+              },
+              {
+                "source": 1114753,
+                "name": "next",
+                "dependency": "next",
+                "title": "Next.js: Unbounded next/image disk cache growth can exhaust storage",
+                "url": "https://github.com/advisories/GHSA-3x4c-7xq6-9pq8",
+                "severity": "moderate",
+                "cwe": [
+                  "CWE-400"
+                ],
+                "cvss": {
+                  "score": 0,
+                  "vectorString": null
+                },
+                "range": ">=10.0.0 <16.1.7"
+              },
+              {
+                "source": 1114754,
+                "name": "next",
+                "dependency": "next",
+                "title": "Next.js: Unbounded postponed resume buffering can lead to DoS",
+                "url": "https://github.com/advisories/GHSA-h27x-g6w4-24gq",
+                "severity": "moderate",
+                "cwe": [
+                  "CWE-770"
+                ],
+                "cvss": {
+                  "score": 0,
+                  "vectorString": null
+                },
+                "range": ">=16.0.1 <16.1.7"
               }
             ],
-            "effects": [
-              "mocha"
-            ],
-            "range": "<=7.0.2",
+            "effects": [],
+            "range": "9.5.0 - 16.1.6",
             "nodes": [
-              "node_modules/serialize-javascript"
+              "apps/control-center/node_modules/next",
+              "apps/ghostx/node_modules/next",
+              "apps/web-ai/node_modules/next",
+              "apps/web-apps/node_modules/next",
+              "apps/web-bridge/node_modules/next",
+              "apps/web-company/node_modules/next",
+              "apps/web-dev/node_modules/next",
+              "apps/web-exchange/node_modules/next",
+              "apps/web-explorer/node_modules/next",
+              "apps/web-governance/node_modules/next",
+              "apps/web-investor/node_modules/next",
+              "apps/web-live/node_modules/next",
+              "apps/web-main/node_modules/next",
+              "apps/web-nodes/node_modules/next",
+              "apps/web-portal/node_modules/next",
+              "apps/web-rpc-portal/node_modules/next",
+              "apps/web-status/node_modules/next",
+              "apps/web-wallet/node_modules/next"
             ],
             "fixAvailable": true
           },
@@ -1295,8 +1850,8 @@
           },
           "undici": {
             "name": "undici",
-            "severity": "moderate",
-            "isDirect": false,
+            "severity": "high",
+            "isDirect": true,
             "via": [
               {
                 "source": 1112496,
@@ -1313,13 +1868,193 @@
                   "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
                 },
                 "range": "<6.23.0"
+              },
+              {
+                "source": 1114591,
+                "name": "undici",
+                "dependency": "undici",
+                "title": "Undici: Malicious WebSocket 64-bit length overflows parser and crashes the client",
+                "url": "https://github.com/advisories/GHSA-f269-vfmq-vjvj",
+                "severity": "high",
+                "cwe": [
+                  "CWE-248",
+                  "CWE-1284"
+                ],
+                "cvss": {
+                  "score": 7.5,
+                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                },
+                "range": ">=7.0.0 <7.24.0"
+              },
+              {
+                "source": 1114592,
+                "name": "undici",
+                "dependency": "undici",
+                "title": "Undici: Malicious WebSocket 64-bit length overflows parser and crashes the client",
+                "url": "https://github.com/advisories/GHSA-f269-vfmq-vjvj",
+                "severity": "high",
+                "cwe": [
+                  "CWE-248",
+                  "CWE-1284"
+                ],
+                "cvss": {
+                  "score": 7.5,
+                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                },
+                "range": ">=6.0.0 <6.24.0"
+              },
+              {
+                "source": 1114593,
+                "name": "undici",
+                "dependency": "undici",
+                "title": "Undici has an HTTP Request/Response Smuggling issue",
+                "url": "https://github.com/advisories/GHSA-2mjp-6q6p-2qxm",
+                "severity": "moderate",
+                "cwe": [
+                  "CWE-444"
+                ],
+                "cvss": {
+                  "score": 6.5,
+                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L"
+                },
+                "range": ">=7.0.0 <7.24.0"
+              },
+              {
+                "source": 1114594,
+                "name": "undici",
+                "dependency": "undici",
+                "title": "Undici has an HTTP Request/Response Smuggling issue",
+                "url": "https://github.com/advisories/GHSA-2mjp-6q6p-2qxm",
+                "severity": "moderate",
+                "cwe": [
+                  "CWE-444"
+                ],
+                "cvss": {
+                  "score": 6.5,
+                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L"
+                },
+                "range": "<6.24.0"
+              },
+              {
+                "source": 1114637,
+                "name": "undici",
+                "dependency": "undici",
+                "title": "Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression",
+                "url": "https://github.com/advisories/GHSA-vrm6-8vpv-qv8q",
+                "severity": "high",
+                "cwe": [
+                  "CWE-409"
+                ],
+                "cvss": {
+                  "score": 7.5,
+                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                },
+                "range": ">=7.0.0 <7.24.0"
+              },
+              {
+                "source": 1114638,
+                "name": "undici",
+                "dependency": "undici",
+                "title": "Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression",
+                "url": "https://github.com/advisories/GHSA-vrm6-8vpv-qv8q",
+                "severity": "high",
+                "cwe": [
+                  "CWE-409"
+                ],
+                "cvss": {
+                  "score": 7.5,
+                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                },
+                "range": "<6.24.0"
+              },
+              {
+                "source": 1114639,
+                "name": "undici",
+                "dependency": "undici",
+                "title": "Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation",
+                "url": "https://github.com/advisories/GHSA-v9p9-hfj2-hcw8",
+                "severity": "high",
+                "cwe": [
+                  "CWE-248"
+                ],
+                "cvss": {
+                  "score": 7.5,
+                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                },
+                "range": ">=7.0.0 <7.24.0"
+              },
+              {
+                "source": 1114640,
+                "name": "undici",
+                "dependency": "undici",
+                "title": "Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation",
+                "url": "https://github.com/advisories/GHSA-v9p9-hfj2-hcw8",
+                "severity": "high",
+                "cwe": [
+                  "CWE-248"
+                ],
+                "cvss": {
+                  "score": 7.5,
+                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                },
+                "range": "<6.24.0"
+              },
+              {
+                "source": 1114641,
+                "name": "undici",
+                "dependency": "undici",
+                "title": "Undici has CRLF Injection in undici via `upgrade` option",
+                "url": "https://github.com/advisories/GHSA-4992-7rv2-5pvq",
+                "severity": "moderate",
+                "cwe": [
+                  "CWE-93"
+                ],
+                "cvss": {
+                  "score": 4.6,
+                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N"
+                },
+                "range": ">=7.0.0 <7.24.0"
+              },
+              {
+                "source": 1114642,
+                "name": "undici",
+                "dependency": "undici",
+                "title": "Undici has CRLF Injection in undici via `upgrade` option",
+                "url": "https://github.com/advisories/GHSA-4992-7rv2-5pvq",
+                "severity": "moderate",
+                "cwe": [
+                  "CWE-93"
+                ],
+                "cvss": {
+                  "score": 4.6,
+                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N"
+                },
+                "range": "<6.24.0"
+              },
+              {
+                "source": 1114643,
+                "name": "undici",
+                "dependency": "undici",
+                "title": "Undici has Unbounded Memory Consumption in its DeduplicationHandler via Response Buffering that leads to DoS",
+                "url": "https://github.com/advisories/GHSA-phc3-fgpg-7m6h",
+                "severity": "moderate",
+                "cwe": [
+                  "CWE-770"
+                ],
+                "cvss": {
+                  "score": 5.9,
+                  "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                },
+                "range": ">=7.17.0 <7.24.0"
               }
             ],
             "effects": [
               "hardhat"
             ],
-            "range": "<6.23.0",
+            "range": "<=6.23.0 || 7.0.0 - 7.23.0",
             "nodes": [
+              "node_modules/@nomicfoundation/hardhat-utils/node_modules/undici",
+              "node_modules/undici",
               "packages/hardhat-ghost/node_modules/undici"
             ],
             "fixAvailable": {
@@ -1399,17 +2134,17 @@
             "info": 0,
             "low": 9,
             "moderate": 6,
-            "high": 3,
+            "high": 5,
             "critical": 1,
-            "total": 19
+            "total": 21
           },
           "dependencies": {
-            "prod": 130,
-            "dev": 806,
-            "optional": 172,
-            "peer": 0,
+            "prod": 778,
+            "dev": 765,
+            "optional": 143,
+            "peer": 1,
             "peerOptional": 0,
-            "total": 944
+            "total": 1577
           }
         }
       }
@@ -1418,8 +2153,11 @@
       "file": "security/audit-exceptions.json",
       "exists": true,
       "invalid": false,
-      "active": 20,
+      "active": 74,
       "expired": 0
+    },
+    "fileScan": {
+      "skipped": true
     }
   }
 }

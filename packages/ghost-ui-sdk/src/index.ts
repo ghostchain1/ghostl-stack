@@ -5,4 +5,4 @@ export {
   ghostGlow,
   ghostStatus,
   ghostTypography,
-} from "./theme.ts";
+} from "./theme";

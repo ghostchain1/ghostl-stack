@@ -11,10 +11,10 @@
   },
   "dependencies": {
     "@ghostchain/ui-components": "*",
-    "next": "16.1.6",
+    "next": "16.1.7",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "next-mdx-remote": "^5.0.0"
+    "next-mdx-remote": "^6.0.0"
   },
   "devDependencies": {
     "@types/node": "^25.3.5",

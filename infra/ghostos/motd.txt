@@ -1,0 +1,8 @@
+╔══════════════════════════════════════════════╗
+║            GhostOS  v0.1.0-devnet            ║
+║    Ghost Brain Operating System              ║
+║    GhostChain / GhostL2 / GhostL3            ║
+╠══════════════════════════════════════════════╣
+║  Operator shell — advisory mode only         ║
+║  Run  ghost-status  to inspect chain health  ║
+╚══════════════════════════════════════════════╝

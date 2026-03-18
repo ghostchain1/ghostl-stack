@@ -76,6 +76,13 @@ apps/worker/**
 !services/ghostbrain-core/package.json
 !services/ghostbrain-core/tsconfig.json
 
+# Allow ghostos-core to build from repo root context
+!services/ghostos-core
+!services/ghostos-core/src
+!services/ghostos-core/src/**
+!services/ghostos-core/package.json
+!services/ghostos-core/tsconfig.json
+
 # Allow stability-mesh services to build from repo root context
 !services/ghost-tx-engine
 !services/ghost-tx-engine/**

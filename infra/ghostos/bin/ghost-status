@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# GhostOS operator status probe — queries the local ghostos-core API
+set -euo pipefail
+
+GHOSTOS_API="${GHOSTOS_API:-http://127.0.0.1:8484}"
+
+if ! command -v curl >/dev/null 2>&1; then
+  echo "error: curl not found" >&2
+  exit 1
+fi
+
+if ! command -v jq >/dev/null 2>&1; then
+  echo "error: jq not found" >&2
+  exit 1
+fi
+
+curl -fsS "${GHOSTOS_API}/api/system/overview" | jq .
