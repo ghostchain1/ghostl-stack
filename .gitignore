@@ -1167,3 +1167,6 @@ contracts/gas-report.txt
 
 # ── Release attestation keys (ephemeral, CLI-generated) ──────────────────────
 /tmp/release-attestation.key
+
+# ── Downloaded CI tool binaries (not source) ─────────────────────────────────
+/actionlint
