@@ -1114,3 +1114,56 @@ infra/gsa/k8s/**/*.secret.yaml
 # ghostvm-ai runtime plans and discovery state (ephemeral, timestamped)
 services/ghostvm-ai/plans/
 services/ghostvm-ai/state/
+
+# ── CodeQL / SARIF security scan output ──────────────────────────────────────
+*.sarif
+*.sarif.gz
+**/*.sarif
+codeql-results/
+.codeql/
+
+# ── CI-generated report files (produced by workflow jobs, not source) ─────────
+sed-engine-report.json
+brand-audit-results.json
+brand-enforcer-results.json
+contract-brand-results.json
+nightly-security-report.json
+trivy-image.json
+supply-chain-security-artifacts/
+digest-refresh-report.json
+digest-refresh-report.md
+digest-rollforward-candidates.md
+
+# ── GitHub Actions local runner (act) ────────────────────────────────────────
+.act/
+
+# ── VS Code copilot chat workspace storage (local cache, not source) ──────────
+.vscode-server/
+**/.vscode-server/
+
+# ── Node.js 22+ runtime diagnostics ─────────────────────────────────────────
+node_modules/.cache/
+*.heapsnapshot
+*.cpuprofile
+*.heapprofile
+isolate-*.log
+
+# ── Package manager lock files for auto-installed service deps ────────────────
+# (only for generated lock files in services that are not source-of-truth)
+services/ai-adoption/package-lock.json
+services/ai-expansion/package-lock.json
+services/ai-governance/package-lock.json
+services/ai-growth/package-lock.json
+services/ai-hypervisor/package-lock.json
+services/ai-interchain/package-lock.json
+services/ai-marketing/package-lock.json
+
+# ── Forge / Foundry gas reports (generated output) ───────────────────────────
+contracts/gas-report.txt
+**/gas-report.txt
+
+# ── Local smoke env file (written by release-smoke workflow) ─────────────────
+.smoke.env
+
+# ── Release attestation keys (ephemeral, CLI-generated) ──────────────────────
+/tmp/release-attestation.key

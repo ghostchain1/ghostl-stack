@@ -36,12 +36,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
@@ -49,17 +49,35 @@ jobs:
       - name: Install brand-enforcer dependencies
         run: npm install --prefix packages/brand-enforcer
 
+      - name: Create PR snapshot
+        if: github.event_name == 'pull_request'
+        id: pr_snapshot
+        run: |
+          SNAPSHOT_DIR="$(mktemp -d)"
+          bash scripts/github/create-pr-snapshot.sh "$SNAPSHOT_DIR" >/dev/null
+          echo "snapshot_dir=$SNAPSHOT_DIR" >> "$GITHUB_OUTPUT"
+
       - name: Run ghost-brand structural scan
-        run: node packages/brand-enforcer/src/cli.js scan . --format text
+        run: |
+          TARGET="."
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            TARGET="${{ steps.pr_snapshot.outputs.snapshot_dir }}"
+          fi
+          node packages/brand-enforcer/src/cli.js scan "$TARGET" --format text
         # Exits 1 on any CRITICAL/HIGH violation (BRAND-001 through BRAND-013)
 
       - name: Upload scan results (JSON)
         if: always()
-        run: node packages/brand-enforcer/src/cli.js scan . --format json --exit-zero > brand-enforcer-results.json || true
+        run: |
+          TARGET="."
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            TARGET="${{ steps.pr_snapshot.outputs.snapshot_dir }}"
+          fi
+          node packages/brand-enforcer/src/cli.js scan "$TARGET" --format json --exit-zero > brand-enforcer-results.json || true
 
       - name: Upload artifact
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: brand-enforcer-results
           path: brand-enforcer-results.json
@@ -75,17 +93,30 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
 
+      - name: Create PR snapshot
+        if: github.event_name == 'pull_request'
+        id: pr_snapshot
+        run: |
+          SNAPSHOT_DIR="$(mktemp -d)"
+          bash scripts/github/create-pr-snapshot.sh "$SNAPSHOT_DIR" >/dev/null
+          echo "snapshot_dir=$SNAPSHOT_DIR" >> "$GITHUB_OUTPUT"
+
       - name: Run branding audit
-        run: node --experimental-strip-types tools/branding/audit-branding.ts . --json > brand-audit-results.json
+        run: |
+          TARGET="."
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            TARGET="${{ steps.pr_snapshot.outputs.snapshot_dir }}"
+          fi
+          node --experimental-strip-types tools/branding/audit-branding.ts "$TARGET" --json > brand-audit-results.json
         continue-on-error: true
 
       - name: Check for CRITICAL/HIGH violations
@@ -93,7 +124,11 @@ jobs:
           CRITICAL=$(node -e "const r=require('./brand-audit-results.json'); console.log(r.violations.filter(v=>v.rule.severity==='CRITICAL'||v.rule.severity==='HIGH').length)")
           echo "CRITICAL/HIGH violations: $CRITICAL"
           if [ "$CRITICAL" -gt 0 ]; then
-            node --experimental-strip-types tools/branding/audit-branding.ts .
+            TARGET="."
+            if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              TARGET="${{ steps.pr_snapshot.outputs.snapshot_dir }}"
+            fi
+            node --experimental-strip-types tools/branding/audit-branding.ts "$TARGET"
             exit 1
           fi
           echo "✔ No blocking branding violations."
@@ -107,7 +142,7 @@ jobs:
 
       - name: Upload audit results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: brand-audit-results
           path: brand-audit-results.json
@@ -123,12 +158,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
 
@@ -142,7 +177,7 @@ jobs:
 
       - name: Upload artifact
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: contract-brand-results
           path: contract-brand-results.json
@@ -158,12 +193,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
 

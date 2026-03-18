@@ -37,12 +37,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0   # full history needed for git diff in github-guard
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
@@ -50,15 +50,27 @@ jobs:
       - name: Install root dependencies
         run: npm ci --ignore-scripts
 
+      - name: Create PR snapshot
+        if: github.event_name == 'pull_request'
+        id: pr_snapshot
+        run: |
+          SNAPSHOT_DIR="$(mktemp -d)"
+          bash scripts/github/create-pr-snapshot.sh "$SNAPSHOT_DIR" >/dev/null
+          echo "snapshot_dir=$SNAPSHOT_DIR" >> "$GITHUB_OUTPUT"
+
       - name: Run SED-Engine scan (non-blocking — for report only)
         run: |
+          TARGET="."
+          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
+            TARGET="${{ steps.pr_snapshot.outputs.snapshot_dir }}"
+          fi
           node --experimental-strip-types \
-            tools/sovereignty/sed-engine/cli.ts scan . --json \
+            tools/sovereignty/sed-engine/cli.ts scan "$TARGET" --json \
             > sed-engine-report.json || true
 
       - name: Upload scan report artifact
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: sed-engine-report-${{ github.run_id }}
           path: sed-engine-report.json
@@ -66,8 +78,12 @@ jobs:
 
       - name: Run SED-Engine enforce (blocking — fails CI on CRITICAL/HIGH)
         run: |
+          TARGET="."
+          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
+            TARGET="${{ steps.pr_snapshot.outputs.snapshot_dir }}"
+          fi
           node --experimental-strip-types \
-            tools/sovereignty/sed-engine/cli.ts enforce .
+            tools/sovereignty/sed-engine/cli.ts enforce "$TARGET"
 
       - name: Post PR annotations via github-guard
         if: github.event_name == 'pull_request' && failure()
@@ -109,12 +125,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
@@ -122,8 +138,15 @@ jobs:
       - name: Install root dependencies
         run: npm ci --ignore-scripts
 
+      - name: Create PR snapshot
+        id: pr_snapshot
+        run: |
+          SNAPSHOT_DIR="$(mktemp -d)"
+          bash scripts/github/create-pr-snapshot.sh "$SNAPSHOT_DIR" >/dev/null
+          echo "snapshot_dir=$SNAPSHOT_DIR" >> "$GITHUB_OUTPUT"
+
       - name: Dry-run rewrite (shows what would change)
         run: |
           node --experimental-strip-types \
-            tools/sovereignty/sed-engine/cli.ts rewrite . --dry-run \
+            tools/sovereignty/sed-engine/cli.ts rewrite "${{ steps.pr_snapshot.outputs.snapshot_dir }}" --dry-run \
             | head -200 || true
