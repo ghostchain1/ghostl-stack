@@ -22,6 +22,9 @@ REPO_BRANCH="main"
 REMOTE_DIR="/home/ghost/ghostl-stack"
 DRY_RUN=false
 TARGET_VM=""
+TESTNET_L1_RPC="http://10.50.10.11:18545"
+TESTNET_L2_RPC="http://10.50.20.11:29547"
+TESTNET_L3_RPC="http://10.50.30.11:39545"
 
 # Testnet VMs (as known by hypervisor's SSH config)
 declare -A TESTNET_VMS=(
@@ -100,12 +103,6 @@ deploy_l1_simulation() {
     local vm="$1"
     log "  Deploying testnet L1 simulation on ${vm}..."
 
-    # Transfer compose.testnet.yml + env (if exists)
-    if ! "$DRY_RUN"; then
-        scp compose.testnet.yml stack.env.example \
-            "${HYPERVISOR}:~/" 2>/dev/null || warn "scp via hypervisor failed — using git clone copy"
-    fi
-
     vm_exec "${vm}" "
         set -e
         cd '${REMOTE_DIR}'
@@ -117,14 +114,24 @@ deploy_l1_simulation() {
             sed -i 's/COMPLIANCE_JWT_SECRET=.*/COMPLIANCE_JWT_SECRET=ghost_sim_\$(openssl rand -hex 32)/' .env
         fi
 
-        # Pull available images (skip build-only ones)
-        docker compose -f compose.testnet.yml pull --ignore-pull-failures 2>&1 | tail -20 || true
+        docker network inspect ghost-rollup >/dev/null 2>&1 || docker network create ghost-rollup >/dev/null
 
-        # Start testnet stack
-        docker compose -f compose.testnet.yml up -d --remove-orphans 2>&1 | tail -30
+        docker compose -f infra/ghostchain/docker-compose.l1.yml up -d \
+            ghostchain-bootnode ghostchain-node1 ghostchain-node2 ghostchain-rpc-proxy 2>&1 | tail -30
 
-        echo 'Testnet L1 simulation started'
-        docker compose -f compose.testnet.yml ps
+        docker compose -f docker-compose.yml up -d \
+            postgres redis migrate ghost-compliance ghost-compliance-worker 2>&1 | tail -30
+
+        docker compose -f observability/infra/docker-compose.yml up -d \
+            loki prometheus alertmanager grafana 2>&1 | tail -30
+
+        echo 'Testnet L1/compliance/observability services started'
+        docker compose -f infra/ghostchain/docker-compose.l1.yml ps
+        docker compose -f docker-compose.yml ps
+        docker compose -f observability/infra/docker-compose.yml ps
+        echo
+        echo 'Once GhostL2 and GhostL3 RPCs are reachable, start the control plane with:'
+        echo '  RPC_L1=${TESTNET_L1_RPC} RPC_L2=${TESTNET_L2_RPC} RPC_L3=${TESTNET_L3_RPC} bash genesis-installer/start_stack.sh'
     "
 }
 
@@ -191,4 +198,4 @@ done
 log ""
 log "=== Testnet Simulation Deployment Complete ==="
 log "Monitor with:"
-log "  ssh hypervisor 'ssh ghostchain-testnet-l1 \"docker compose -f ghostl-stack/compose.testnet.yml ps\"'"
+log "  ssh hypervisor 'ssh ghostchain-testnet-l1 \"cd ghostl-stack && docker compose -f infra/ghostchain/docker-compose.l1.yml ps\"'"

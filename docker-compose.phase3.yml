@@ -64,9 +64,9 @@ services:
     environment:
       PORT: 8088
       NET_ENV: ${NET_ENV:-dev}
-      RPC_L1: http://ghost-mapper:18545
-      RPC_L2: http://ghost-exec-l2:7260
-      RPC_L3: http://ghost-exec-l3:7270
+      RPC_L1: ${RPC_L1:-http://ghost-mapper:18545}
+      RPC_L2: ${RPC_L2:-http://ghost-mapper:29547}
+      RPC_L3: ${RPC_L3:-http://ghost-mapper:39545}
       RPC_L1_WS: ${RPC_L1_WS:-}
       RPC_L2_WS: ${RPC_L2_WS:-}
       RPC_L3_WS: ${RPC_L3_WS:-}
@@ -94,9 +94,9 @@ services:
     environment:
       PORT: 7070
       STATE_DIR: /state
-      RPC_L1: http://ghost-mapper:18545
-      RPC_L2: http://ghost-exec-l2:7260
-      RPC_L3: http://ghost-exec-l3:7270
+      RPC_L1: ${RPC_L1:-http://ghost-mapper:18545}
+      RPC_L2: ${RPC_L2:-http://ghost-mapper:29547}
+      RPC_L3: ${RPC_L3:-http://ghost-mapper:39545}
       ADMIN_TOKEN_FILE: /run/secrets/ghost_guard_admin_token
       PRIVATE_KEY_FILE: /run/secrets/ghost_guard_private_key
       AI_SIGNER_PRIVATE_KEY_FILE: /run/secrets/ghost_guard_ai_private_key
@@ -139,9 +139,9 @@ services:
       OBSERVE_ONLY: ${AI_MONITOR_OBSERVE_ONLY:-1}
       POLICY_REQUIRED: ${AI_MONITOR_POLICY_REQUIRED:-0}
       CHAIN_POLICY_REQUIRED: ${AI_MONITOR_CHAIN_POLICY_REQUIRED:-0}
-      OP_NODE_RPC_URL: http://ghost-mapper:9546
-      OP_BATCHER_METRICS_URL: http://ghost-mapper:7301/metrics
-      OP_PROPOSER_METRICS_URL: http://ghost-mapper:7302/metrics
+      GHOST_SYNC_RPC_URL: ${GHOST_SYNC_RPC_URL:-}
+      GHOST_SEQUENCER_METRICS_URL: ${GHOST_SEQUENCER_METRICS_URL:-}
+      GHOST_SETTLEMENT_METRICS_URL: ${GHOST_SETTLEMENT_METRICS_URL:-}
       ACTION_EVIDENCE_ENABLED: ${AI_MONITOR_ACTION_EVIDENCE_ENABLED:-0}
       ACTION_EVIDENCE_OUTPUT_DIR: /data/evidence
     volumes:

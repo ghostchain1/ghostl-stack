@@ -25,12 +25,12 @@ The persisted config file is:
   "version": 1,
   "mappings": [
     {
-      "id": "op-gate",
+      "id": "ghostl2-rpc",
       "enabled": true,
       "protocol": "tcp",
-      "listen": { "host": "0.0.0.0", "port": 28546 },
-      "target": { "host": "op-gate", "port": 8545 },
-      "notes": "Expose op-gate into ghost_net"
+      "listen": { "host": "0.0.0.0", "port": 29547 },
+      "target": { "host": "host.docker.internal", "port": 29547 },
+      "notes": "Expose GhostL2 canonical RPC into ghost_net"
     }
   ]
 }

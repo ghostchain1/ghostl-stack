@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # GhostStack Genesis Installer — Start Remaining Stack Services
 #
-# Starts the compliance/API/web tier and the full OP Stack service mesh.
+# Starts the compliance/API/web tier and the Ghost-native control plane.
 # Run AFTER L1, L2, L3, GhostBrain, and monitoring are healthy.
 #
 # Services started:
 #   Compliance tier : postgres, redis, migrate, ghost-compliance (docker-compose.yml)
-#   OP Stack mesh   : ghost-guard, ghost-rpc-proxy-l*, hyper-ghost-supervisor,
-#                     gas-engine, op-gate (infra/opstack/docker-compose.yml)
+#   Control plane   : ghost-mapper, ghost-registry, ghost-guard, ai-monitor,
+#                     bridge-service, liquidity-service (docker-compose.phase3.yml)
+#   Observability   : loki, prometheus, alertmanager, grafana (observability/infra/docker-compose.yml)
 #   Sovereign econ  : l3-fee-collector, l2-revenue-aggregator, treasury-engine,
 #                     reward-distributor, hyper-ghost-governor (docker-compose.sovereign.yml)
 
@@ -18,7 +19,8 @@ PROJECT_NAME="${COMPOSE_PROJECT_NAME:-ghostl-stack}"
 
 # Compose files in start order.
 COMPLIANCE_COMPOSE="${ROOT}/docker-compose.yml"
-OPSTACK_COMPOSE="${ROOT}/infra/opstack/docker-compose.yml"
+CONTROL_PLANE_COMPOSE="${ROOT}/docker-compose.phase3.yml"
+OBSERVABILITY_COMPOSE="${ROOT}/observability/infra/docker-compose.yml"
 SOVEREIGN_COMPOSE="${ROOT}/docker-compose.sovereign.yml"
 
 # shellcheck source=scripts/lib/docker.sh
@@ -44,23 +46,28 @@ COMPLIANCE_SERVICES=(
 )
 
 # ---------------------------------------------------------------------------
-# OP Stack mesh services (infra/opstack/docker-compose.yml)
-# Order matters: RPC proxies before guard, guard before op-gate.
+# Ghost-native control-plane services (docker-compose.phase3.yml)
+# Order matters: mapper before registry/guard, then monitors and bridge UX.
 # ---------------------------------------------------------------------------
 
-OPSTACK_SERVICES=(
-  ghost-rpc-proxy-l1
-  ghost-rpc-proxy-l2
-  ghost-rpc-proxy-l3
-  gas-engine-postgres
-  gas-engine-redis
-  ghost-gas-engine
-  ghost-gas-engine-worker
+CONTROL_PLANE_SERVICES=(
+  ghost-mapper
+  ghost-registry
   ghost-guard
-  hyper-ghost-supervisor
   ai-monitor
-  op-gate
-  op-gate-l1
+  bridge-service
+  liquidity-service
+)
+
+# ---------------------------------------------------------------------------
+# Observability services (observability/infra/docker-compose.yml)
+# ---------------------------------------------------------------------------
+
+OBSERVABILITY_SERVICES=(
+  loki
+  prometheus
+  alertmanager
+  grafana
 )
 
 # ---------------------------------------------------------------------------
@@ -97,6 +104,15 @@ start_services() {
   done
 }
 
+ensure_docker_network() {
+  local name="$1"
+  if hg_docker network inspect "${name}" >/dev/null 2>&1; then
+    return 0
+  fi
+  info "Ensuring Docker network '${name}' exists…"
+  hg_docker network create "${name}" >/dev/null
+}
+
 wait_for_compliance() {
   info "Waiting for ghost-compliance API on port 8090 (timeout ${WAIT_TIMEOUT_S}s)…"
   local elapsed=0
@@ -119,13 +135,17 @@ info "=== Starting Full GhostStack ==="
 
 hg_docker_init
 cd "${ROOT}"
+ensure_docker_network "ghost-rollup"
 
 info "-- Compliance tier --"
 start_services "${COMPLIANCE_COMPOSE}" "${COMPLIANCE_SERVICES[@]}"
 wait_for_compliance
 
-info "-- OP Stack service mesh --"
-start_services "${OPSTACK_COMPOSE}" "${OPSTACK_SERVICES[@]}"
+info "-- Observability --"
+start_services "${OBSERVABILITY_COMPOSE}" "${OBSERVABILITY_SERVICES[@]}"
+
+info "-- Ghost-native control plane --"
+start_services "${CONTROL_PLANE_COMPOSE}" "${CONTROL_PLANE_SERVICES[@]}"
 
 info "-- Sovereign economy services --"
 start_services "${SOVEREIGN_COMPOSE}" "${SOVEREIGN_SERVICES[@]}"
@@ -140,7 +160,10 @@ info "=== Service Status Overview ==="
 if hg_docker compose -f "${COMPLIANCE_COMPOSE}" -p "${PROJECT_NAME}" ps 2>/dev/null; then
   true
 fi
-if hg_docker compose -f "${OPSTACK_COMPOSE}" -p "${PROJECT_NAME}" ps 2>/dev/null; then
+if hg_docker compose -f "${OBSERVABILITY_COMPOSE}" -p "${PROJECT_NAME}" ps 2>/dev/null; then
+  true
+fi
+if hg_docker compose -f "${CONTROL_PLANE_COMPOSE}" -p "${PROJECT_NAME}" ps 2>/dev/null; then
   true
 fi
 

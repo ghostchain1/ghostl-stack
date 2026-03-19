@@ -26,28 +26,28 @@
       "notes": "GhostL3 RPC (host-exposed)"
     },
     {
-      "id": "op-gate",
+      "id": "ghostl2-control",
       "enabled": true,
       "protocol": "tcp",
-      "listen": { "host": "0.0.0.0", "port": 28546 },
-      "target": { "host": "host.docker.internal", "port": 28546 },
-      "notes": "OP gate (host-exposed)"
+      "listen": { "host": "0.0.0.0", "port": 7260 },
+      "target": { "host": "host.docker.internal", "port": 7260 },
+      "notes": "GhostL2 control-plane exec endpoint (host-exposed)"
     },
     {
-      "id": "op-node-l2",
+      "id": "ghostl3-control",
       "enabled": true,
       "protocol": "tcp",
-      "listen": { "host": "0.0.0.0", "port": 9546 },
-      "target": { "host": "host.docker.internal", "port": 9546 },
-      "notes": "OP Stack L2 op-node RPC (host-exposed)"
+      "listen": { "host": "0.0.0.0", "port": 7270 },
+      "target": { "host": "host.docker.internal", "port": 7270 },
+      "notes": "GhostL3 control-plane exec endpoint (host-exposed)"
     },
     {
-      "id": "op-node-l3",
+      "id": "ghost-rollup-observability",
       "enabled": true,
       "protocol": "tcp",
-      "listen": { "host": "0.0.0.0", "port": 39546 },
-      "target": { "host": "host.docker.internal", "port": 39546 },
-      "notes": "OP Stack L3 op-node RPC (host-exposed)"
+      "listen": { "host": "0.0.0.0", "port": 7276 },
+      "target": { "host": "host.docker.internal", "port": 7276 },
+      "notes": "Ghost rollup observability metrics/status (host-exposed)"
     },
     {
       "id": "prometheus",
@@ -56,55 +56,6 @@
       "listen": { "host": "0.0.0.0", "port": 9090 },
       "target": { "host": "host.docker.internal", "port": 9090 },
       "notes": "Prometheus (host-exposed)"
-    },
-    {
-      "id": "op-l2-metrics-node",
-      "enabled": true,
-      "protocol": "tcp",
-      "listen": { "host": "0.0.0.0", "port": 7300 },
-      "target": { "host": "host.docker.internal", "port": 7300 },
-      "notes": "OP Stack L2 op-node metrics (host-exposed)"
-    },
-    {
-      "id": "op-l2-metrics-batcher",
-      "enabled": true,
-      "protocol": "tcp",
-      "listen": { "host": "0.0.0.0", "port": 7301 },
-      "target": { "host": "host.docker.internal", "port": 7301 },
-      "notes": "OP Stack L2 batcher metrics (host-exposed)"
-    },
-    {
-      "id": "op-l2-metrics-proposer",
-      "enabled": true,
-      "protocol": "tcp",
-      "listen": { "host": "0.0.0.0", "port": 7302 },
-      "target": { "host": "host.docker.internal", "port": 7302 },
-      "notes": "OP Stack L2 proposer metrics (host-exposed)"
-    },
-    {
-      "id": "op-l3-metrics-node",
-      "enabled": true,
-      "protocol": "tcp",
-      "listen": { "host": "0.0.0.0", "port": 8300 },
-      "target": { "host": "host.docker.internal", "port": 8300 },
-      "notes": "OP Stack L3 op-node metrics (host-exposed)"
-    },
-    {
-      "id": "op-l3-metrics-batcher",
-      "enabled": true,
-      "protocol": "tcp",
-      "listen": { "host": "0.0.0.0", "port": 8301 },
-      "target": { "host": "host.docker.internal", "port": 8301 },
-      "notes": "OP Stack L3 batcher metrics (host-exposed)"
-    },
-    {
-      "id": "op-l3-metrics-proposer",
-      "enabled": true,
-      "protocol": "tcp",
-      "listen": { "host": "0.0.0.0", "port": 8302 },
-      "target": { "host": "host.docker.internal", "port": 8302 },
-      "notes": "OP Stack L3 proposer metrics (host-exposed)"
     }
   ]
 }
-

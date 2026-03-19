@@ -30,9 +30,9 @@ const OBSERVE_ONLY = env.OBSERVE_ONLY === "1";
 const SIMULATION_ENABLED = env.SIMULATION_ENABLED === "1";
 const TARGET_LAYER = String(env.TARGET_LAYER || "L2").toUpperCase();
 const RPC_L1 = env.RPC_L1 || "";
-const OP_NODE_RPC_URL = env.OP_NODE_RPC_URL || "";
-const OP_BATCHER_METRICS_URL = env.OP_BATCHER_METRICS_URL || "";
-const OP_PROPOSER_METRICS_URL = env.OP_PROPOSER_METRICS_URL || "";
+const GHOST_SYNC_RPC_URL = env.GHOST_SYNC_RPC_URL || env.OP_NODE_RPC_URL || "";
+const GHOST_SEQUENCER_METRICS_URL = env.GHOST_SEQUENCER_METRICS_URL || env.OP_BATCHER_METRICS_URL || "";
+const GHOST_SETTLEMENT_METRICS_URL = env.GHOST_SETTLEMENT_METRICS_URL || env.OP_PROPOSER_METRICS_URL || "";
 const POLICY_REGISTRY_ADDRESS = env.POLICY_REGISTRY_ADDRESS || "";
 const POLICY_REGISTRY_RPC = env.POLICY_REGISTRY_RPC || RPC_L1 || "";
 const POLICY_ROLE = env.POLICY_ROLE || "L2_AI_MONITOR";
@@ -621,16 +621,16 @@ function classifyIncidents({
   const incidents = [];
   if (rpcError) incidents.push(LAYER_RPC_INCIDENT);
   if (l1RpcError) incidents.push(PARENT_RPC_INCIDENT);
-  if (opNodeError) incidents.push("op_node_unreachable");
+  if (opNodeError) incidents.push("sync_rpc_unreachable");
   if (syncing) incidents.push("syncing");
   if (headLag > HEAD_LAG_THRESHOLD_SEC) incidents.push(LAYER_HEAD_STALE);
   if (l1HeadLag > L1_HEAD_LAG_THRESHOLD_SEC) incidents.push(PARENT_HEAD_STALE);
   if (peers < MIN_PEERS) incidents.push("low_peers");
   if (reorged) incidents.push("reorg_detected");
-  if (batcherStalled) incidents.push("batcher_stalled");
-  if (proposerStalled) incidents.push("proposer_stalled");
-  if (batcherMetricsError) incidents.push("batcher_metrics_unreachable");
-  if (proposerMetricsError) incidents.push("proposer_metrics_unreachable");
+  if (batcherStalled) incidents.push("sequencer_stalled");
+  if (proposerStalled) incidents.push("settlement_stalled");
+  if (batcherMetricsError) incidents.push("sequencer_metrics_unreachable");
+  if (proposerMetricsError) incidents.push("settlement_metrics_unreachable");
   if (policyUnavailable) incidents.push("policy_registry_unreachable");
   if (policyDenied) incidents.push("policy_denied");
   if (chainPolicyUnavailable) incidents.push("chain_policy_registry_unreachable");
@@ -642,16 +642,16 @@ function recommendFix(incidents) {
   if (!incidents.length) return "";
   if (incidents.includes(LAYER_RPC_INCIDENT)) return `Check ${TARGET_LAYER} RPC proxy/container health, restart node if needed.`;
   if (incidents.includes(PARENT_RPC_INCIDENT)) return `Check ${TARGET_LAYER} parent RPC and network connectivity.`;
-  if (incidents.includes("op_node_unreachable")) return "Check rollup RPC proxy and op-node health, then restart the affected service if needed.";
+  if (incidents.includes("sync_rpc_unreachable")) return "Check the Ghost sync RPC path and restart the affected control-plane service if needed.";
   if (incidents.includes("syncing")) return "Node syncing; verify disk IO and peer connectivity.";
   if (incidents.includes(LAYER_HEAD_STALE)) return `Investigate ${TARGET_LAYER} node lag; check CPU/memory and peer count.`;
-  if (incidents.includes(PARENT_HEAD_STALE)) return `Investigate ${TARGET_LAYER} parent RPC lag and op-node derivation.`;
+  if (incidents.includes(PARENT_HEAD_STALE)) return `Investigate ${TARGET_LAYER} parent RPC lag and derivation health.`;
   if (incidents.includes("low_peers")) return "Check P2P connectivity and firewall rules.";
   if (incidents.includes("reorg_detected")) return "Investigate validator health and network stability.";
-  if (incidents.includes("batcher_stalled")) return "Restart op-batcher and verify batcher key/parent RPC.";
-  if (incidents.includes("proposer_stalled")) return "Restart op-proposer and verify proposer key/parent RPC.";
-  if (incidents.includes("batcher_metrics_unreachable")) return "Check op-batcher metrics endpoint or container health.";
-  if (incidents.includes("proposer_metrics_unreachable")) return "Check op-proposer metrics endpoint or container health.";
+  if (incidents.includes("sequencer_stalled")) return "Restart the Ghost sequencer and verify its parent RPC path.";
+  if (incidents.includes("settlement_stalled")) return "Restart Ghost settlement and verify its parent RPC path.";
+  if (incidents.includes("sequencer_metrics_unreachable")) return "Check the Ghost sequencer metrics endpoint or container health.";
+  if (incidents.includes("settlement_metrics_unreachable")) return "Check the Ghost settlement metrics endpoint or container health.";
   if (incidents.includes("policy_registry_unreachable")) return "Check L1 policy registry RPC/address and network connectivity.";
   if (incidents.includes("policy_denied")) return "AI action blocked by on-chain policy; submit governance proposal to adjust.";
   if (incidents.includes("chain_policy_registry_unreachable")) return "Check chain policy registry RPC/address and network connectivity.";
@@ -710,9 +710,9 @@ async function loop() {
       }
     }
 
-    if (OP_NODE_RPC_URL) {
+    if (GHOST_SYNC_RPC_URL) {
       try {
-        const status = await rpcRequest(OP_NODE_RPC_URL, "ghost_compat_syncStatus");
+        const status = await rpcRequest(GHOST_SYNC_RPC_URL, "ghost_compat_syncStatus");
         const headL1 = status?.head_l1 ?? status?.headL1;
         const headL1Ts = parseHexNumber(headL1?.timestamp, 0);
         if (headL1Ts > 0) {
@@ -725,10 +725,10 @@ async function loop() {
       }
     }
 
-    if (OP_BATCHER_METRICS_URL) {
+    if (GHOST_SEQUENCER_METRICS_URL) {
       try {
         const lastBatch = await fetchMetricValue(
-          OP_BATCHER_METRICS_URL,
+          GHOST_SEQUENCER_METRICS_URL,
           "op_batcher_default_last_batcher_tx_unix",
           'stage="success"'
         );
@@ -743,10 +743,10 @@ async function loop() {
       }
     }
 
-    if (OP_PROPOSER_METRICS_URL) {
+    if (GHOST_SETTLEMENT_METRICS_URL) {
       try {
         const lastPublish = await fetchMetricValue(
-          OP_PROPOSER_METRICS_URL,
+          GHOST_SETTLEMENT_METRICS_URL,
           "op_proposer_default_txmgr_last_publish_unix"
         );
         if (!lastPublish || Number.isNaN(lastPublish)) {
