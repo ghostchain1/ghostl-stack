@@ -6,6 +6,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 require_cmd docker
 require_cmd python3
 require_cmd bash
+require_cmd curl
 
 for f in "${STACK_COMPOSE_FILES[@]}"; do
   [[ -f "$ROOT_DIR/$f" ]] || { echo "[preflight] missing compose file: $f" >&2; exit 1; }
@@ -23,7 +24,10 @@ path=sys.argv[1]
 cfg=yaml.safe_load(open(path)) or {}
 services=cfg.get('services',{})
 
-required=['l2-geth','l3-geth','op-node','op-batcher','op-proposer','l3-op-node','l3-op-batcher','l3-op-proposer']
+required=[
+    'ghost-exec-l2','ghost-sequencer-l2','ghost-deriver-l2','ghost-settlement-l2','ghost-bridge-l2','ghost-proof-l2',
+    'ghost-exec-l3','ghost-sequencer-l3','ghost-deriver-l3','ghost-settlement-l3','ghost-bridge-l3','ghost-proof-l3'
+]
 for s in required:
     if s not in services:
         print(f"[preflight] missing required service: {s}",file=sys.stderr)
@@ -38,29 +42,23 @@ def service_text(svc):
     else: e=''
     return (str(c)+' '+str(e)).lower()
 
-# enforce no L3->L1 direct by config text and network segmentation
-for name in ['l3-op-node','l3-op-batcher','l3-op-proposer','l3-op-challenger']:
-    if name not in services:
-        continue
+# enforce no direct L3 -> L1 references in the canonical Ghost-native path
+for name in ['ghost-deriver-l3','ghost-settlement-l3','ghost-bridge-l3','ghost-proof-l3']:
     txt=service_text(services[name])
-    banned=['l1-rpc-proxy','op-gate-l1',':18545','host.docker.internal:18545']
+    banned=['ghostchain-l1', 'ghostchain-rpc-proxy', 'host.docker.internal:18545', ':18545']
     for b in banned:
         if b in txt:
             print(f"[preflight] routing violation: {name} references {b}",file=sys.stderr)
             sys.exit(1)
-    nets=services[name].get('networks',[])
-    if isinstance(nets,dict):
-        nets=list(nets.keys())
-    if 'l1_net' in nets:
-        print(f"[preflight] routing violation: {name} attached to l1_net",file=sys.stderr)
-        sys.exit(1)
 
-# enforce L2 settlement through L1 proxy/gate only
-for name in ['op-batcher','op-proposer']:
+# enforce L2 parent-facing services do not point at L3
+for name in ['ghost-deriver-l2','ghost-settlement-l2','ghost-bridge-l2','ghost-proof-l2']:
     txt=service_text(services[name])
-    if ('op-gate-l1' not in txt) and ('l1-rpc-proxy' not in txt):
-        print(f"[preflight] settlement path violation: {name} missing op-gate-l1/l1-rpc-proxy",file=sys.stderr)
-        sys.exit(1)
+    banned=['ghost-exec-l3', 'host.docker.internal:39545', ':39545']
+    for b in banned:
+        if b in txt:
+            print(f"[preflight] settlement path violation: {name} references {b}",file=sys.stderr)
+            sys.exit(1)
 
 print('[preflight] routing-law static checks passed')
 PY

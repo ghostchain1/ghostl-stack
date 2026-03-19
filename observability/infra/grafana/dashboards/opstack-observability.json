@@ -3,14 +3,12 @@
     "list": []
   },
   "editable": true,
-  "gnetId": null,
   "graphTooltip": 0,
-  "id": null,
   "links": [],
   "panels": [
     {
       "type": "row",
-      "title": "Rollup Sequencer",
+      "title": "Ghost Rollup Overview",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -19,142 +17,24 @@
       }
     },
     {
-      "type": "timeseries",
-      "title": "Sequencer event rate by type",
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 0,
-        "y": 1
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "expr": "sum by(event_type)(rate(op_node_default_events_dequeued[5m]))",
-          "legendFormat": "{{event_type}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ops"
-        },
-        "overrides": []
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "Channel input bytes (L1 DA)",
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 1
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "expr": "rate(op_node_default_channel_input_bytes[5m])",
-          "legendFormat": "bytes/s"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "Bps"
-        },
-        "overrides": []
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "Batcher blob size p90 (bytes)",
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 0,
-        "y": 8
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "expr": "histogram_quantile(0.9, sum by (le)(rate(op_batcher_default_blob_used_bytes_bucket[5m])))",
-          "legendFormat": "p90"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes"
-        },
-        "overrides": []
-      }
-    },
-    {
       "type": "stat",
-      "title": "Channel timeouts",
+      "title": "L2 Services Up",
       "gridPos": {
         "h": 6,
         "w": 6,
-        "x": 12,
-        "y": 8
+        "x": 0,
+        "y": 1
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "expr": "op_node_default_channel_timeout_total"
+          "expr": "sum(ghost_rollup_service_up{layer=\"l2\"})",
+          "legendFormat": "l2"
         }
       ],
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "last"
-          ],
-          "fields": ""
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short"
-        },
-        "overrides": []
-      }
-    },
-    {
-      "type": "stat",
-      "title": "Batcher balance (GST)",
-      "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 18,
-        "y": 8
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "expr": "op_batcher_default_balance"
-        }
-      ],
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "last"
-          ],
-          "fields": ""
-        }
-      },
       "fieldConfig": {
         "defaults": {
           "unit": "none"
@@ -163,439 +43,121 @@
       }
     },
     {
-      "type": "row",
-      "title": "Settlement & Fraud",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 14
-      }
-    },
-    {
       "type": "stat",
-      "title": "Latest proposed L2 seq #",
-      "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 0,
-        "y": 15
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "expr": "op_proposer_default_proposed_sequence_number"
-        }
-      ],
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "last"
-          ],
-          "fields": ""
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short"
-        },
-        "overrides": []
-      }
-    },
-    {
-      "type": "stat",
-      "title": "Proposer guard decisions",
+      "title": "L3 Services Up",
       "gridPos": {
         "h": 6,
         "w": 6,
         "x": 6,
-        "y": 15
+        "y": 1
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "expr": "sum by (result)(op_proposer_default_guard_decisions_total)"
+          "expr": "sum(ghost_rollup_service_up{layer=\"l3\"})",
+          "legendFormat": "l3"
         }
       ],
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "last"
-          ],
-          "fields": ""
-        }
-      },
       "fieldConfig": {
         "defaults": {
-          "unit": "short"
+          "unit": "none"
         },
         "overrides": []
       }
     },
     {
       "type": "stat",
-      "title": "L1 base fee (wei)",
+      "title": "Active Alerts",
       "gridPos": {
         "h": 6,
         "w": 6,
         "x": 12,
-        "y": 15
+        "y": 1
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "expr": "op_proposer_default_txmgr_basefee_wei"
+          "expr": "ghost_rollup_active_alerts",
+          "legendFormat": "alerts"
         }
       ],
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "last"
-          ],
-          "fields": ""
-        }
-      },
       "fieldConfig": {
         "defaults": {
-          "unit": "wei"
+          "unit": "none"
         },
         "overrides": []
       }
     },
     {
-      "type": "stat",
-      "title": "Blob base fee (wei)",
+      "type": "text",
+      "title": "Routing Law",
       "gridPos": {
         "h": 6,
         "w": 6,
         "x": 18,
-        "y": 15
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "expr": "op_proposer_default_txmgr_blob_basefee_wei"
-        }
-      ],
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "last"
-          ],
-          "fields": ""
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "wei"
-        },
-        "overrides": []
-      }
-    },
-    {
-      "type": "text",
-      "title": "Fraud proof status",
-      "gridPos": {
-        "h": 4,
-        "w": 12,
-        "x": 0,
-        "y": 21
+        "y": 1
       },
       "options": {
-        "content": "Fraud proofs are not active on this devnet (legacy L2OutputOracle flow).",
-        "mode": "markdown"
+        "mode": "markdown",
+        "content": "GhostL3 -> GhostL2 -> GhostChain L1 only. No direct GhostL3 -> L1 bypass."
       }
     },
     {
-      "type": "text",
-      "title": "ZK proof status",
+      "type": "timeseries",
+      "title": "Service Availability",
       "gridPos": {
-        "h": 4,
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "targets": [
+        {
+          "expr": "ghost_rollup_service_up",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Service Latency (ms)",
+      "gridPos": {
+        "h": 8,
         "w": 12,
         "x": 12,
-        "y": 21
+        "y": 7
       },
-      "options": {
-        "content": "This stack is OP rollup (not ZK). Add ZK prover telemetry here if enabled.",
-        "mode": "markdown"
-      }
-    },
-    {
-      "type": "row",
-      "title": "AI Fee Control & DA",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 25
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "Suggested tip (blob)",
-      "gridPos": {
-        "h": 6,
-        "w": 8,
-        "x": 0,
-        "y": 26
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "expr": "op_proposer_default_txmgr_blob_tipcap_wei",
-          "legendFormat": "blob tip"
+          "expr": "ghost_rollup_service_latency_ms",
+          "legendFormat": "{{service}}"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "wei"
-        },
-        "overrides": []
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "Suggested tip (gas)",
-      "gridPos": {
-        "h": 6,
-        "w": 8,
-        "x": 8,
-        "y": 26
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "expr": "op_proposer_default_txmgr_blob_tipcap_wei",
-          "legendFormat": "tip"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "wei"
-        },
-        "overrides": []
-      }
-    },
-    {
-      "type": "text",
-      "title": "AI-controlled fee market",
-      "gridPos": {
-        "h": 6,
-        "w": 8,
-        "x": 16,
-        "y": 26
-      },
-      "options": {
-        "content": "Stub: hook an external policy engine here to update proposer/batcher fee caps via env or guard.",
-        "mode": "markdown"
-      }
-    },
-    {
-      "type": "row",
-      "title": "L3 Rollup",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 32
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "L3 sequencer event rate by type",
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 0,
-        "y": 33
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "expr": "sum by(event_type)(rate(op_node_default_events_dequeued{job=\"l3-op-node\"}[5m]))",
-          "legendFormat": "{{event_type}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ops"
-        },
-        "overrides": []
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "L3 channel input bytes (parent DA)",
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 33
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "expr": "rate(op_node_default_channel_input_bytes{job=\"l3-op-node\"}[5m])",
-          "legendFormat": "bytes/s"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "Bps"
-        },
-        "overrides": []
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "L3 batcher idle seconds",
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 0,
-        "y": 40
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "expr": "time() - max(op_batcher_default_last_batcher_tx_unix{job=\"l3-op-batcher\",stage=\"success\"})",
-          "legendFormat": "idle seconds"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s"
-        },
-        "overrides": []
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "L3 proposer idle seconds",
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 40
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "expr": "time() - max(op_proposer_default_txmgr_last_publish_unix{job=\"l3-op-proposer\"})",
-          "legendFormat": "idle seconds"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s"
-        },
-        "overrides": []
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "L3 AI monitor incidents",
-      "gridPos": {
-        "h": 7,
-        "w": 24,
-        "x": 0,
-        "y": 47
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "expr": "sum by(type)(ai_monitor_incident_active{job=\"ai-monitor-l3\"})",
-          "legendFormat": "{{type}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short"
-        },
-        "overrides": []
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "Clock sync drift (seconds)",
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 0,
-        "y": 54
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "expr": "ai_clock_sync_drift_seconds{job=\"ai-clock-sync\"}",
-          "legendFormat": "{{chain}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s"
-        },
-        "overrides": []
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "Clock sync within threshold",
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 54
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "expr": "ai_clock_sync_ok{job=\"ai-clock-sync\"}",
-          "legendFormat": "{{chain}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short"
+          "unit": "ms"
         },
         "overrides": []
       }
@@ -604,9 +166,13 @@
   "schemaVersion": 37,
   "style": "dark",
   "tags": [
-    "opstack"
+    "ghost-rollup"
   ],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
   "timezone": "browser",
-  "title": "OP Stack Control Plane",
-  "version": 1
+  "title": "Ghost Rollup Control Plane",
+  "version": 2
 }

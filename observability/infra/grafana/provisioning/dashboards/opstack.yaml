@@ -1,9 +1,9 @@
 apiVersion: 1
 
 providers:
-  - name: opstack
+  - name: ghost-rollup
     orgId: 1
-    folder: "OP Stack"
+    folder: "Ghost Rollup"
     type: file
     disableDeletion: false
     editable: true

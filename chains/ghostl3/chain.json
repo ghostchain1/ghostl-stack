@@ -4,8 +4,8 @@
   "parentLayer": "L2",
   "chainId": 903,
   "parentChainId": 901,
-  "rpcUrl": "${GHOST_L3_RPC_URL:-http://ghostl3:8545}",
-  "wsUrl": "${GHOST_L3_WS_URL:-ws://ghostl3:8546}",
+  "rpcUrl": "${GHOST_L3_RPC_URL:-http://localhost:39545}",
+  "wsUrl": "${GHOST_L3_WS_URL:-ws://localhost:39548}",
   "blockExplorer": "${GHOST_L3_EXPLORER_URL:-http://ghostscout-l3:4000}",
   "nativeCurrency": {
     "name": "Ghost",

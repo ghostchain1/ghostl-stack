@@ -24,10 +24,12 @@ COMPOSE_FILES=(
   "docker-compose.phase3.secrets.yml"
   "apps/docker-compose.yml"
   "apps/docker-compose.dev.yml"
-  "infra/opstack/docker-compose.yml"
-  "infra/opstack/docker-compose.network-manager.yml"
-  "infra/opstack/docker-compose.l3.yml"
-  "infra/opstack/docker-compose.challengers.yml"
+  "services/ghost-exec/docker-compose.yml"
+  "services/ghost-sequencer/docker-compose.yml"
+  "services/ghost-deriver/docker-compose.yml"
+  "services/ghost-settlement/docker-compose.yml"
+  "services/ghost-bridge/docker-compose.yml"
+  "services/ghost-proof/docker-compose.yml"
 )
 
 if ! command -v docker >/dev/null 2>&1; then

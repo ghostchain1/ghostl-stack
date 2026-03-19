@@ -5,18 +5,13 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 ARTIFACT_DIR="${ARTIFACT_DIR:-$ROOT_DIR/artifacts/testnet}"
 mkdir -p "$ARTIFACT_DIR"
 
-# L2 op-proposer is currently assigned to profile "disabled" in base compose.
-# Default to enabling it for release rehearsal unless operator overrides.
-export COMPOSE_PROFILES="${COMPOSE_PROFILES:-disabled}"
-# Resolve GhostChain relative paths when compose base file is infra/opstack/docker-compose.yml.
-export GHOSTCHAIN_PATH_PREFIX="${GHOSTCHAIN_PATH_PREFIX:-../ghostchain}"
-# Use the GhostChain-branded ghost-geth image (wraps go-ethereum alltools, same binaries).
+# The canonical Ghost-native bring-up path is GhostChain L1 + custom rollup services.
+export COMPOSE_PROFILES="${COMPOSE_PROFILES:-}"
+export GHOSTCHAIN_PATH_PREFIX="${GHOSTCHAIN_PATH_PREFIX:-./infra/ghostchain}"
+export GHOST_RPC_PROXY_BUILD_CONTEXT="${GHOST_RPC_PROXY_BUILD_CONTEXT:-$ROOT_DIR/services/ghost-rpc-proxy}"
 export GETH_IMAGE="${GETH_IMAGE:-ghostchain/ghost-geth:v1.13.14}"
-export OPSTACK_UID="${OPSTACK_UID:-$(id -u)}"
-export OPSTACK_GID="${OPSTACK_GID:-$(id -g)}"
 export L1_UID="${L1_UID:-$(id -u)}"
 export L1_GID="${L1_GID:-$(id -g)}"
-# Avoid default docker subnet collisions on hosts already using 172.28.0.0/16.
 export L1_GHOSTCHAIN_SUBNET="${L1_GHOSTCHAIN_SUBNET:-10.89.0.0/24}"
 export L1_GHOSTCHAIN_GATEWAY_IP="${L1_GHOSTCHAIN_GATEWAY_IP:-10.89.0.1}"
 export L1_GHOSTCHAIN_BOOTNODE_IP="${L1_GHOSTCHAIN_BOOTNODE_IP:-10.89.0.21}"
@@ -24,48 +19,18 @@ export L1_GHOSTCHAIN_NODE1_IP="${L1_GHOSTCHAIN_NODE1_IP:-10.89.0.22}"
 export L1_GHOSTCHAIN_NODE2_IP="${L1_GHOSTCHAIN_NODE2_IP:-10.89.0.23}"
 export L1_GHOSTCHAIN_RPC_PROXY_IP="${L1_GHOSTCHAIN_RPC_PROXY_IP:-10.89.0.30}"
 export L1_GHOSTCHAIN_GHOSTSCOUT_IP="${L1_GHOSTCHAIN_GHOSTSCOUT_IP:-10.89.0.31}"
-export L2_GATE_HOST_PORT="${L2_GATE_HOST_PORT:-38546}"
-export L1_GATE_HOST_PORT="${L1_GATE_HOST_PORT:-38547}"
-export L2_HOST_RPC_PORT="${L2_HOST_RPC_PORT:-49547}"
-export L2_HOST_WS="${L2_HOST_WS:-49548}"
-export L2_METRICS_HOST_PORT="${L2_METRICS_HOST_PORT:-49606}"
-export OP_NODE_HOST_PORT="${OP_NODE_HOST_PORT:-49546}"
-export OP_NODE_METRICS_HOST_PORT="${OP_NODE_METRICS_HOST_PORT:-17300}"
-export OP_SEQUENCER_HOST_PORT="${OP_SEQUENCER_HOST_PORT:-49646}"
-export OP_SEQUENCER_METRICS_HOST_PORT="${OP_SEQUENCER_METRICS_HOST_PORT:-17303}"
-export OP_BATCHER_HOST_PORT="${OP_BATCHER_HOST_PORT:-48551}"
-export OP_BATCHER_METRICS_HOST_PORT="${OP_BATCHER_METRICS_HOST_PORT:-17301}"
-export RPC_FORWARD_L2_HOST_PORT="${RPC_FORWARD_L2_HOST_PORT:-48547}"
-export L3_HOST_RPC="${L3_HOST_RPC:-59545}"
-export L3_HOST_WS="${L3_HOST_WS:-59548}"
-export L3_GETH_METRICS_HOST_PORT="${L3_GETH_METRICS_HOST_PORT:-59606}"
-export L3_ROLLUP_RPC_HOST_PORT="${L3_ROLLUP_RPC_HOST_PORT:-59546}"
-export L3_METRICS_NODE_HOST_PORT="${L3_METRICS_NODE_HOST_PORT:-18300}"
-export L3_BATCHER_HOST_PORT="${L3_BATCHER_HOST_PORT:-59551}"
-export L3_METRICS_BATCHER_HOST_PORT="${L3_METRICS_BATCHER_HOST_PORT:-18301}"
-export L3_PROPOSER_HOST_PORT="${L3_PROPOSER_HOST_PORT:-59560}"
-export L3_METRICS_PROPOSER_HOST_PORT="${L3_METRICS_PROPOSER_HOST_PORT:-18302}"
 export RPC_L1="${RPC_L1:-http://localhost:18545}"
-export RPC_L2="${RPC_L2:-http://localhost:${L2_HOST_RPC_PORT}}"
-export RPC_L3="${RPC_L3:-http://localhost:${L3_HOST_RPC}}"
+export RPC_L2="${RPC_L2:-http://localhost:29547}"
+export RPC_L3="${RPC_L3:-http://localhost:39545}"
 export L3_PARENT_L2_RPC="${L3_PARENT_L2_RPC:-$RPC_L2}"
-# Set optional vars explicitly so compose does not emit noisy "not set" warnings.
-export BATCHER_KEY="${BATCHER_KEY-}"
-export PROPOSER_KEY="${PROPOSER_KEY-}"
-export L3_BATCHER_KEY="${L3_BATCHER_KEY-}"
-export L3_PROPOSER_KEY="${L3_PROPOSER_KEY-}"
-export L3_DATA_PROFILE="${L3_DATA_PROFILE-}"
+export GHOST_L1_RPC_INTERNAL="${GHOST_L1_RPC_INTERNAL:-http://host.docker.internal:18545}"
+export GHOST_L2_EXEC_RPC_URL="${GHOST_L2_EXEC_RPC_URL:-http://host.docker.internal:29547}"
+export GHOST_L3_EXEC_RPC_URL="${GHOST_L3_EXEC_RPC_URL:-http://host.docker.internal:39545}"
 
 STACK_COMPOSE_FILES=(
-  "infra/opstack/docker-compose.yml"
   "infra/ghostchain/docker-compose.l1.yml"
-  "infra/opstack/docker-compose.l3.yml"
-  "compose.testnet.yml"
+  "docker-compose.custom-rollup.yml"
 )
-
-if [[ "${INCLUDE_CHALLENGERS:-0}" == "1" ]]; then
-  STACK_COMPOSE_FILES+=("infra/opstack/docker-compose.challengers.yml")
-fi
 
 if [[ "${INCLUDE_SOVEREIGN:-0}" == "1" ]]; then
   STACK_COMPOSE_FILES+=("docker-compose.sovereign.yml")
@@ -87,7 +52,7 @@ for f in "${STACK_COMPOSE_FILES[@]}"; do
 done
 
 compose_cmd() {
-  docker compose "${compose_args[@]}" "$@"
+  docker compose --project-directory "$ROOT_DIR" "${compose_args[@]}" "$@"
 }
 
 require_cmd() {
@@ -96,4 +61,53 @@ require_cmd() {
     echo "[testnet] missing required command: $cmd" >&2
     exit 1
   fi
+}
+
+rpc_ready() {
+  local url="$1"
+  local response
+  local method
+  for method in ghost_chainId eth_chainId; do
+    response="$(curl -fsS -m 3 -H 'content-type: application/json' \
+      --data "{\"jsonrpc\":\"2.0\",\"method\":\"${method}\",\"params\":[],\"id\":1}" \
+      "$url" 2>/dev/null || true)"
+    if [[ "$response" == *'"result"'* ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+wait_for_rpc() {
+  local name="$1"
+  local url="$2"
+  local attempts="${3:-30}"
+  local delay_seconds="${4:-2}"
+  local i
+  echo "[wait] ${name}: ${url}"
+  for i in $(seq 1 "$attempts"); do
+    if rpc_ready "$url"; then
+      return 0
+    fi
+    sleep "$delay_seconds"
+  done
+  echo "[wait] FAIL ${name} not reachable at ${url}" >&2
+  return 1
+}
+
+wait_for_http() {
+  local name="$1"
+  local url="$2"
+  local attempts="${3:-30}"
+  local delay_seconds="${4:-2}"
+  local i
+  echo "[wait] ${name}: ${url}"
+  for i in $(seq 1 "$attempts"); do
+    if curl -fsS -m 5 "$url" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep "$delay_seconds"
+  done
+  echo "[wait] FAIL ${name} endpoint not ready at ${url}" >&2
+  return 1
 }

@@ -12,8 +12,8 @@
 #                  -f docker-compose.ghostchain.yml up
 #
 # Prerequisites:
-#   - GhostChain L1 RPC reachable at ghostchain-l1:18545
-#   - GhostL2 and GhostL3 EVM nodes reachable (ghostl2:8545, ghostl3:8545)
+#   - GhostChain L1 RPC reachable at host.docker.internal:18545
+#   - GhostL2 and GhostL3 EVM RPC reachable at host.docker.internal:29547 / 39545
 #   - Copy .env.example to .env and set required secrets
 #
 # Routing Law enforced in every service:
@@ -34,10 +34,12 @@ services:
       PORT: "7260"
       CHAIN_ID: "901"
       GHOST_LAYER: "L2"
-      GHOST_EXEC_RPC_URL: "http://ghostl2:8545"
+      GHOST_EXEC_RPC_URL: "${GHOST_L2_EXEC_RPC_URL:-http://host.docker.internal:29547}"
       GAS_LIMIT_CAP: "30000000"
       MAX_TX_PER_BLOCK: "1000"
       STATE_DIR: "/state"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "7260:7260"
     volumes:
@@ -95,10 +97,12 @@ services:
       CHAIN_ID: "901"
       GHOST_LAYER: "L2"
       # L2 derives from L1 (routing law)
-      GHOST_PARENT_RPC_URL: "http://ghostchain-l1:18545"
+      GHOST_PARENT_RPC_URL: "${GHOST_L1_RPC_INTERNAL:-http://host.docker.internal:18545}"
       GHOST_EXEC_URL: "http://ghost-exec-l2:7260"
       STATE_DIR: "/state"
       POLL_INTERVAL_MS: "4000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "7262:7262"
     volumes:
@@ -128,13 +132,15 @@ services:
       CHAIN_ID: "901"
       GHOST_LAYER: "L2"
       # L2 settles to L1 (routing law)
-      GHOST_PARENT_RPC_URL: "http://ghostchain-l1:18545"
+      GHOST_PARENT_RPC_URL: "${GHOST_L1_RPC_INTERNAL:-http://host.docker.internal:18545}"
       ROLLUP_ADDRESS: "0xad32D5C2Da9f4159C4cc98686C005852b3905355"
       FINALITY_ORACLE_ADDRESS: "0x7B3Be2dDDdDf9A0a3fE1DC57B98980F662C3a422"
       GHOST_PROOF_URL: "http://ghost-proof-l2:7265"
       STATE_DIR: "/state"
       CHALLENGE_PERIOD_SECONDS: "300"
       CONFIRMATIONS: "12"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "7263:7263"
     volumes:
@@ -162,10 +168,12 @@ services:
       GHOST_LAYER: "L2"
       BRIDGE_ADDRESS: "0xad32D5C2Da9f4159C4cc98686C005852b3905355"
       DEST_BRIDGE_ADDRESS: "0xad32D5C2Da9f4159C4cc98686C005852b3905355"
-      GHOST_SOURCE_RPC_URL: "http://ghostchain-l1:18545"
-      GHOST_DEST_RPC_URL: "http://ghostl2:8545"
+      GHOST_SOURCE_RPC_URL: "${GHOST_L1_RPC_INTERNAL:-http://host.docker.internal:18545}"
+      GHOST_DEST_RPC_URL: "${GHOST_L2_EXEC_RPC_URL:-http://host.docker.internal:29547}"
       GHOST_SETTLEMENT_URL: "http://ghost-settlement-l2:7263"
       STATE_DIR: "/state"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "7264:7264"
     volumes:
@@ -195,11 +203,13 @@ services:
       CHAIN_ID: "901"
       GHOST_LAYER: "L2"
       PROOF_MODE: "fraud"
-      GHOST_PARENT_RPC_URL: "http://ghostchain-l1:18545"
+      GHOST_PARENT_RPC_URL: "${GHOST_L1_RPC_INTERNAL:-http://host.docker.internal:18545}"
       ROLLUP_ADDRESS: "0xad32D5C2Da9f4159C4cc98686C005852b3905355"
       GHOST_EXEC_URL: "http://ghost-exec-l2:7260"
       GHOST_SETTLEMENT_URL: "http://ghost-settlement-l2:7263"
       STATE_DIR: "/state"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "7265:7265"
     volumes:
@@ -228,10 +238,12 @@ services:
       PORT: "7270"
       CHAIN_ID: "903"
       GHOST_LAYER: "L3"
-      GHOST_EXEC_RPC_URL: "http://ghostl3:8545"
+      GHOST_EXEC_RPC_URL: "${GHOST_L3_EXEC_RPC_URL:-http://host.docker.internal:39545}"
       GAS_LIMIT_CAP: "20000000"
       MAX_TX_PER_BLOCK: "500"
       STATE_DIR: "/state"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "7270:7270"
     volumes:
@@ -289,7 +301,7 @@ services:
       CHAIN_ID: "903"
       GHOST_LAYER: "L3"
       # L3 MUST derive from L2, never L1 directly (routing law)
-      GHOST_PARENT_RPC_URL: "http://ghost-exec-l2:7260"
+      GHOST_PARENT_RPC_URL: "${GHOST_L3_PARENT_RPC_URL:-http://ghost-exec-l2:7260}"
       STATE_DIR: "/state"
       POLL_INTERVAL_MS: "3000"
     ports:
@@ -321,7 +333,7 @@ services:
       CHAIN_ID: "903"
       GHOST_LAYER: "L3"
       # L3 MUST settle to L2, never L1 directly (routing law)
-      GHOST_PARENT_RPC_URL: "http://ghost-exec-l2:7260"
+      GHOST_PARENT_RPC_URL: "${GHOST_L3_PARENT_RPC_URL:-http://ghost-exec-l2:7260}"
       ROLLUP_ADDRESS: "0x130A46b6E41DB6E1e18fb9c759F223c459190e90"
       FINALITY_ORACLE_ADDRESS: "0x87F850cbC2cFfac086F20d0d7307E12d06fA2127"
       GHOST_PROOF_URL: "http://ghost-proof-l3:7275"
@@ -356,7 +368,7 @@ services:
       # L2L3Bridge canonical
       BRIDGE_ADDRESS: "0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2"
       DEST_BRIDGE_ADDRESS: "0x130A46b6E41DB6E1e18fb9c759F223c459190e90"
-      GHOST_SOURCE_RPC_URL: "http://ghost-exec-l2:7260"
+      GHOST_SOURCE_RPC_URL: "${GHOST_L3_SOURCE_RPC_URL:-http://ghost-exec-l2:7260}"
       GHOST_DEST_RPC_URL: "http://ghost-exec-l3:7270"
       GHOST_SETTLEMENT_URL: "http://ghost-settlement-l3:7273"
       STATE_DIR: "/state"
@@ -390,7 +402,7 @@ services:
       GHOST_LAYER: "L3"
       PROOF_MODE: "fraud"
       # L3 proof disputes are posted to L2 rollup (not L1 directly)
-      GHOST_PARENT_RPC_URL: "http://ghost-exec-l2:7260"
+      GHOST_PARENT_RPC_URL: "${GHOST_L3_PARENT_RPC_URL:-http://ghost-exec-l2:7260}"
       ROLLUP_ADDRESS: "0x130A46b6E41DB6E1e18fb9c759F223c459190e90"
       GHOST_EXEC_URL: "http://ghost-exec-l3:7270"
       GHOST_SETTLEMENT_URL: "http://ghost-settlement-l3:7273"

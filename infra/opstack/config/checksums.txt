@@ -1,2 +1,0 @@
-e04a2fe2ec064dcf96e768fce450a15fdc3b92cc9cefd5e6103d6aec7939621d  genesis-l2.json
-086bc47adc49add03a4a152182aca8fdf812240cbcb106a1db3ef9657268ffad  rollup.json

@@ -14,7 +14,7 @@ export const metadata = {
   },
   description: 'GhostChain Sovereign L1/L2/L3 blockchain management, governance, treasury, and AI-powered operations dashboard.',
   applicationName: 'GhostChain Control Center',
-  keywords: ['GhostChain', 'GST', 'blockchain', 'L1', 'L2', 'L3', 'OP Stack', 'sovereign'],
+  keywords: ['GhostChain', 'GST', 'blockchain', 'L1', 'L2', 'L3', 'sovereign', 'custom execution'],
   authors: [{ name: 'GhostChain', url: GHOST_SITES.main.url }],
   creator: 'GhostChain',
   publisher: 'GhostChain',

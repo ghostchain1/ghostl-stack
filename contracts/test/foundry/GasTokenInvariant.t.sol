@@ -129,20 +129,17 @@ contract GasTokenInvariant is TestBase {
     }
 
     function testConfigFilesReferenceCanonicalGasToken() public view {
-        _assertCanonicalConfig("../infra/opstack/config/deploy-config.json");
-        _assertCanonicalConfig("../infra/opstack/config/deploy-config.l3.json");
-        _assertCanonicalConfig("../infra/opstack/op-intent/intent.toml");
-        _assertCanonicalConfig("../infra/opstack/l3/op-intent/intent.toml");
-        _assertCanonicalConfig("../infra/opstack/.env.sample");
-        _assertCanonicalConfig("../infra/scripts/opstack/preflight-3layer.sh");
-        _assertCanonicalConfig("../infra/scripts/opstack/deploy-l3.sh");
-        _assertCanonicalConfig("../infra/scripts/opstack/up-l3.sh");
-        _assertCanonicalConfig("../infra/opstack/contracts/script/DeployL1.s.sol");
+        _assertCanonicalConfig("../README.md");
+        _assertCanonicalConfig("../docs/architecture/custom-ghost-multichain.md");
+        _assertCanonicalConfig("../environments/devnet/ghostl2.env.example");
+        _assertCanonicalConfig("../environments/devnet/ghostl3.env.example");
         _assertCanonicalConfig("../services/ghost-gas-engine/config/chains.json");
         _assertCanonicalConfig("../services/ghost-relayer/src/index.ts");
         _assertCanonicalConfig("../services/stack.env");
         _assertCanonicalConfig("../services/stack.env.example");
+        _assertCanonicalConfig("../services/stack.env.production.template");
         _assertCanonicalConfig("../apps/api/src/server.ts");
+        _assertCanonicalConfig("../apps/api/.env.local.example");
     }
 
     function testPerLayerGasTokenDeploymentsRevert() public {
@@ -163,13 +160,7 @@ contract GasTokenInvariant is TestBase {
             " --glob '!backups/**'"
             " --glob '!ops/snapshots/**'"
             " --glob '!infra/docker/_backup/**'"
-            " --glob '!infra/opstack/backups*/**'"
-            " --glob '!infra/opstack/data/**'"
             " --glob '!infra/**/data/**'"
-            " --glob '!infra/opstack/optimism/**'"
-            " --glob '!infra/opstack/optimism-upstream/**'"
-            " --glob '!infra/opstack/op-geth/**'"
-            " --glob '!infra/opstack/alloc_merged.json'"
             " --glob '!infra/docker/runtime/**'"
             " --glob '!infra/docker/audit/**'"
             " --glob '!contracts/artifacts/**'"

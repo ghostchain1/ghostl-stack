@@ -73,8 +73,8 @@ compose_priority() {
     *logging* ) echo 1;;
     *gateway*|*proxy*|*ingress* ) echo 2;;
     *infra/ghostchain* ) echo 3;;
-    *infra/opstack*/*l3*|*docker-compose.l3.yml* ) echo 5;;
-    *infra/opstack* ) echo 4;;
+    *services/ghost-exec*|*services/ghost-sequencer*|*services/ghost-deriver*|*services/ghost-settlement* ) echo 4;;
+    *services/ghost-bridge*|*services/ghost-proof* ) echo 5;;
     *services/*/docker-compose.yml*|*core-service/docker-compose.yml* ) echo 6;;
     *docker-compose.dev.yml*|*docker-compose.yml* ) echo 7;;
     * ) echo 8;;

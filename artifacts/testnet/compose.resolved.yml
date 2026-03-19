@@ -1,0 +1,926 @@
+name: ghostl-stack
+services:
+  ghost-bridge-l2:
+    build:
+      context: /home/ghost/ghostl-stack
+      dockerfile: services/ghost-bridge/Dockerfile
+    container_name: ghost-bridge-l2
+    depends_on:
+      ghost-settlement-l2:
+        condition: service_healthy
+        required: true
+    environment:
+      BRIDGE_ADDRESS: 0xad32D5C2Da9f4159C4cc98686C005852b3905355
+      CHAIN_ID: "901"
+      DEST_BRIDGE_ADDRESS: 0xad32D5C2Da9f4159C4cc98686C005852b3905355
+      GHOST_DEST_RPC_URL: http://host.docker.internal:29547
+      GHOST_LAYER: L2
+      GHOST_SETTLEMENT_URL: http://ghost-settlement-l2:7263
+      GHOST_SOURCE_RPC_URL: http://host.docker.internal:18545
+      PORT: "7264"
+      STATE_DIR: /state
+    extra_hosts:
+      - host.docker.internal=host-gateway
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -sf
+        - http://localhost:7264/healthz
+      timeout: 5s
+      interval: 15s
+      retries: 3
+    networks:
+      ghost-rollup: null
+    ports:
+      - mode: ingress
+        target: 7264
+        published: "7264"
+        protocol: tcp
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: ghost-bridge-l2-state
+        target: /state
+        volume: {}
+  ghost-bridge-l3:
+    build:
+      context: /home/ghost/ghostl-stack
+      dockerfile: services/ghost-bridge/Dockerfile
+    container_name: ghost-bridge-l3
+    depends_on:
+      ghost-settlement-l3:
+        condition: service_healthy
+        required: true
+    environment:
+      BRIDGE_ADDRESS: 0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2
+      CHAIN_ID: "903"
+      DEST_BRIDGE_ADDRESS: 0x130A46b6E41DB6E1e18fb9c759F223c459190e90
+      GHOST_DEST_RPC_URL: http://ghost-exec-l3:7270
+      GHOST_LAYER: L3
+      GHOST_SETTLEMENT_URL: http://ghost-settlement-l3:7273
+      GHOST_SOURCE_RPC_URL: http://ghost-exec-l2:7260
+      PORT: "7274"
+      STATE_DIR: /state
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -sf
+        - http://localhost:7274/healthz
+      timeout: 5s
+      interval: 15s
+      retries: 3
+    networks:
+      ghost-rollup: null
+    ports:
+      - mode: ingress
+        target: 7274
+        published: "7274"
+        protocol: tcp
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: ghost-bridge-l3-state
+        target: /state
+        volume: {}
+  ghost-deriver-l2:
+    build:
+      context: /home/ghost/ghostl-stack
+      dockerfile: services/ghost-deriver/Dockerfile
+    container_name: ghost-deriver-l2
+    depends_on:
+      ghost-exec-l2:
+        condition: service_healthy
+        required: true
+    environment:
+      CHAIN_ID: "901"
+      GHOST_EXEC_URL: http://ghost-exec-l2:7260
+      GHOST_LAYER: L2
+      GHOST_PARENT_RPC_URL: http://host.docker.internal:18545
+      POLL_INTERVAL_MS: "4000"
+      PORT: "7262"
+      STATE_DIR: /state
+    extra_hosts:
+      - host.docker.internal=host-gateway
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -sf
+        - http://localhost:7262/healthz
+      timeout: 5s
+      interval: 15s
+      retries: 3
+    networks:
+      ghost-rollup: null
+    ports:
+      - mode: ingress
+        target: 7262
+        published: "7262"
+        protocol: tcp
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: ghost-deriver-l2-state
+        target: /state
+        volume: {}
+  ghost-deriver-l3:
+    build:
+      context: /home/ghost/ghostl-stack
+      dockerfile: services/ghost-deriver/Dockerfile
+    container_name: ghost-deriver-l3
+    depends_on:
+      ghost-exec-l3:
+        condition: service_healthy
+        required: true
+    environment:
+      CHAIN_ID: "903"
+      GHOST_LAYER: L3
+      GHOST_PARENT_RPC_URL: http://ghost-exec-l2:7260
+      POLL_INTERVAL_MS: "3000"
+      PORT: "7272"
+      STATE_DIR: /state
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -sf
+        - http://localhost:7272/healthz
+      timeout: 5s
+      interval: 15s
+      retries: 3
+    networks:
+      ghost-rollup: null
+    ports:
+      - mode: ingress
+        target: 7272
+        published: "7272"
+        protocol: tcp
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: ghost-deriver-l3-state
+        target: /state
+        volume: {}
+  ghost-exec-l2:
+    build:
+      context: /home/ghost/ghostl-stack
+      dockerfile: services/ghost-exec/Dockerfile
+    container_name: ghost-exec-l2
+    environment:
+      CHAIN_ID: "901"
+      GAS_LIMIT_CAP: "30000000"
+      GHOST_EXEC_RPC_URL: http://host.docker.internal:29547
+      GHOST_LAYER: L2
+      MAX_TX_PER_BLOCK: "1000"
+      PORT: "7260"
+      STATE_DIR: /state
+    extra_hosts:
+      - host.docker.internal=host-gateway
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -sf
+        - http://localhost:7260/healthz
+      timeout: 5s
+      interval: 15s
+      retries: 3
+    networks:
+      ghost-rollup: null
+    ports:
+      - mode: ingress
+        target: 7260
+        published: "7260"
+        protocol: tcp
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: ghost-exec-l2-state
+        target: /state
+        volume: {}
+  ghost-exec-l3:
+    build:
+      context: /home/ghost/ghostl-stack
+      dockerfile: services/ghost-exec/Dockerfile
+    container_name: ghost-exec-l3
+    environment:
+      CHAIN_ID: "903"
+      GAS_LIMIT_CAP: "20000000"
+      GHOST_EXEC_RPC_URL: http://host.docker.internal:39545
+      GHOST_LAYER: L3
+      MAX_TX_PER_BLOCK: "500"
+      PORT: "7270"
+      STATE_DIR: /state
+    extra_hosts:
+      - host.docker.internal=host-gateway
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -sf
+        - http://localhost:7270/healthz
+      timeout: 5s
+      interval: 15s
+      retries: 3
+    networks:
+      ghost-rollup: null
+    ports:
+      - mode: ingress
+        target: 7270
+        published: "7270"
+        protocol: tcp
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: ghost-exec-l3-state
+        target: /state
+        volume: {}
+  ghost-observability:
+    build:
+      context: /home/ghost/ghostl-stack/services/ghost-observability
+      dockerfile: Dockerfile
+    container_name: ghost-observability
+    depends_on:
+      ghost-exec-l2:
+        condition: service_healthy
+        required: true
+      ghost-exec-l3:
+        condition: service_healthy
+        required: true
+    environment:
+      ALERT_MISS_THRESHOLD: "3"
+      GHOST_BRIDGE_L2_URL: http://ghost-bridge-l2:7264
+      GHOST_BRIDGE_L3_URL: http://ghost-bridge-l3:7274
+      GHOST_DERIVER_L2_URL: http://ghost-deriver-l2:7262
+      GHOST_DERIVER_L3_URL: http://ghost-deriver-l3:7272
+      GHOST_EXEC_L2_URL: http://ghost-exec-l2:7260
+      GHOST_EXEC_L3_URL: http://ghost-exec-l3:7270
+      GHOST_PROOF_L2_URL: http://ghost-proof-l2:7265
+      GHOST_PROOF_L3_URL: http://ghost-proof-l3:7275
+      GHOST_SEQUENCER_L2_URL: http://ghost-sequencer-l2:7261
+      GHOST_SEQUENCER_L3_URL: http://ghost-sequencer-l3:7271
+      GHOST_SETTLEMENT_L2_URL: http://ghost-settlement-l2:7263
+      GHOST_SETTLEMENT_L3_URL: http://ghost-settlement-l3:7273
+      PORT: "7276"
+      SCRAPE_INTERVAL_MS: "15000"
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -sf
+        - http://localhost:7276/healthz
+      timeout: 5s
+      interval: 15s
+      retries: 3
+    image: ghostchain/ghost-observability:local
+    networks:
+      ghost-rollup: null
+    ports:
+      - mode: ingress
+        target: 7276
+        published: "7276"
+        protocol: tcp
+    restart: unless-stopped
+  ghost-proof-l2:
+    build:
+      context: /home/ghost/ghostl-stack
+      dockerfile: services/ghost-proof/Dockerfile
+    container_name: ghost-proof-l2
+    depends_on:
+      ghost-exec-l2:
+        condition: service_healthy
+        required: true
+    environment:
+      CHAIN_ID: "901"
+      GHOST_EXEC_URL: http://ghost-exec-l2:7260
+      GHOST_LAYER: L2
+      GHOST_PARENT_RPC_URL: http://host.docker.internal:18545
+      GHOST_SETTLEMENT_URL: http://ghost-settlement-l2:7263
+      PORT: "7265"
+      PROOF_MODE: fraud
+      ROLLUP_ADDRESS: 0xad32D5C2Da9f4159C4cc98686C005852b3905355
+      STATE_DIR: /state
+    extra_hosts:
+      - host.docker.internal=host-gateway
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -sf
+        - http://localhost:7265/healthz
+      timeout: 5s
+      interval: 15s
+      retries: 3
+    networks:
+      ghost-rollup: null
+    ports:
+      - mode: ingress
+        target: 7265
+        published: "7265"
+        protocol: tcp
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: ghost-proof-l2-state
+        target: /state
+        volume: {}
+  ghost-proof-l3:
+    build:
+      context: /home/ghost/ghostl-stack
+      dockerfile: services/ghost-proof/Dockerfile
+    container_name: ghost-proof-l3
+    depends_on:
+      ghost-exec-l3:
+        condition: service_healthy
+        required: true
+    environment:
+      CHAIN_ID: "903"
+      GHOST_EXEC_URL: http://ghost-exec-l3:7270
+      GHOST_LAYER: L3
+      GHOST_PARENT_RPC_URL: http://ghost-exec-l2:7260
+      GHOST_SETTLEMENT_URL: http://ghost-settlement-l3:7273
+      PORT: "7275"
+      PROOF_MODE: fraud
+      ROLLUP_ADDRESS: 0x130A46b6E41DB6E1e18fb9c759F223c459190e90
+      STATE_DIR: /state
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -sf
+        - http://localhost:7275/healthz
+      timeout: 5s
+      interval: 15s
+      retries: 3
+    networks:
+      ghost-rollup: null
+    ports:
+      - mode: ingress
+        target: 7275
+        published: "7275"
+        protocol: tcp
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: ghost-proof-l3-state
+        target: /state
+        volume: {}
+  ghost-sequencer-l2:
+    build:
+      context: /home/ghost/ghostl-stack
+      dockerfile: services/ghost-sequencer/Dockerfile
+    container_name: ghost-sequencer-l2
+    depends_on:
+      ghost-exec-l2:
+        condition: service_healthy
+        required: true
+    environment:
+      BLOCK_TIME_MS: "2000"
+      CHAIN_ID: "901"
+      GAS_LIMIT_CAP: "30000000"
+      GHOST_EXEC_URL: http://ghost-exec-l2:7260
+      GHOST_LAYER: L2
+      GHOST_SETTLEMENT_URL: http://ghost-settlement-l2:7263
+      MAX_TX_PER_BLOCK: "1000"
+      PORT: "7261"
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -sf
+        - http://localhost:7261/healthz
+      timeout: 5s
+      interval: 15s
+      retries: 3
+    networks:
+      ghost-rollup: null
+    ports:
+      - mode: ingress
+        target: 7261
+        published: "7261"
+        protocol: tcp
+    restart: unless-stopped
+  ghost-sequencer-l3:
+    build:
+      context: /home/ghost/ghostl-stack
+      dockerfile: services/ghost-sequencer/Dockerfile
+    container_name: ghost-sequencer-l3
+    depends_on:
+      ghost-exec-l3:
+        condition: service_healthy
+        required: true
+    environment:
+      BLOCK_TIME_MS: "1000"
+      CHAIN_ID: "903"
+      GAS_LIMIT_CAP: "20000000"
+      GHOST_EXEC_URL: http://ghost-exec-l3:7270
+      GHOST_LAYER: L3
+      GHOST_SETTLEMENT_URL: http://ghost-settlement-l3:7273
+      MAX_TX_PER_BLOCK: "500"
+      PORT: "7271"
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -sf
+        - http://localhost:7271/healthz
+      timeout: 5s
+      interval: 15s
+      retries: 3
+    networks:
+      ghost-rollup: null
+    ports:
+      - mode: ingress
+        target: 7271
+        published: "7271"
+        protocol: tcp
+    restart: unless-stopped
+  ghost-settlement-l2:
+    build:
+      context: /home/ghost/ghostl-stack
+      dockerfile: services/ghost-settlement/Dockerfile
+    container_name: ghost-settlement-l2
+    environment:
+      CHAIN_ID: "901"
+      CHALLENGE_PERIOD_SECONDS: "300"
+      CONFIRMATIONS: "12"
+      FINALITY_ORACLE_ADDRESS: 0x7B3Be2dDDdDf9A0a3fE1DC57B98980F662C3a422
+      GHOST_LAYER: L2
+      GHOST_PARENT_RPC_URL: http://host.docker.internal:18545
+      GHOST_PROOF_URL: http://ghost-proof-l2:7265
+      PORT: "7263"
+      ROLLUP_ADDRESS: 0xad32D5C2Da9f4159C4cc98686C005852b3905355
+      STATE_DIR: /state
+    extra_hosts:
+      - host.docker.internal=host-gateway
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -sf
+        - http://localhost:7263/healthz
+      timeout: 5s
+      interval: 15s
+      retries: 3
+    networks:
+      ghost-rollup: null
+    ports:
+      - mode: ingress
+        target: 7263
+        published: "7263"
+        protocol: tcp
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: ghost-settlement-l2-state
+        target: /state
+        volume: {}
+  ghost-settlement-l3:
+    build:
+      context: /home/ghost/ghostl-stack
+      dockerfile: services/ghost-settlement/Dockerfile
+    container_name: ghost-settlement-l3
+    environment:
+      CHAIN_ID: "903"
+      CHALLENGE_PERIOD_SECONDS: "180"
+      CONFIRMATIONS: "6"
+      FINALITY_ORACLE_ADDRESS: 0x87F850cbC2cFfac086F20d0d7307E12d06fA2127
+      GHOST_LAYER: L3
+      GHOST_PARENT_RPC_URL: http://ghost-exec-l2:7260
+      GHOST_PROOF_URL: http://ghost-proof-l3:7275
+      PORT: "7273"
+      ROLLUP_ADDRESS: 0x130A46b6E41DB6E1e18fb9c759F223c459190e90
+      STATE_DIR: /state
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -sf
+        - http://localhost:7273/healthz
+      timeout: 5s
+      interval: 15s
+      retries: 3
+    networks:
+      ghost-rollup: null
+    ports:
+      - mode: ingress
+        target: 7273
+        published: "7273"
+        protocol: tcp
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: ghost-settlement-l3-state
+        target: /state
+        volume: {}
+  ghostchain-bootnode:
+    cap_drop:
+      - ALL
+    cpus: 0.5
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        if [ ! -f /config/boot.key ]; then
+          echo "[bootnode] Generating boot.key..."
+          bootnode -genkey /config/boot.key
+        fi
+        BOOT_ID="$$(bootnode --nodekey /config/boot.key --writeaddress)"
+        echo "enode://$${BOOT_ID}@10.89.0.21:30301" > /config/bootnode-enode.txt
+        exec bootnode --nodekey /config/boot.key --addr :30301
+    environment:
+      AUTH_JWT_FILE: /secrets/jwtsecret
+      BOOTNODE_IP: 172.31.0.21
+      BOOTNODE_PORT: "30301"
+      CHAIN_ID: "14000101"
+      GETH_IMAGE: ghostchain/ghost-geth:alltools-v1.13.14
+      L1_AUTHRPC_VHOSTS: localhost,127.0.0.1
+      L1_GHOSTCHAIN_BOOTNODE_IP: 172.31.0.21
+      L1_GHOSTCHAIN_GHOSTSCOUT_IP: 172.31.0.31
+      L1_GHOSTCHAIN_NODE1_IP: 172.31.0.22
+      L1_GHOSTCHAIN_NODE2_IP: 172.31.0.23
+      L1_GHOSTCHAIN_RPC_PROXY_IP: 172.31.0.30
+      L1_GHOSTCHAIN_SUBNET: 172.31.0.0/16
+      L1_GID: "1002"
+      L1_HTTP_APIS: eth,net,web3,debug,txpool
+      L1_HTTP_CORS: http://localhost,http://127.0.0.1
+      L1_HTTP_VHOSTS: localhost,127.0.0.1,ghostchain-node1
+      L1_METRICS_PORT: "18660"
+      L1_P2P_PORT: "18551"
+      L1_RPC_AUTH_PORT: "18552"
+      L1_RPC_AUTH_TOKEN: ""
+      L1_RPC_CORS_ORIGINS: http://localhost,http://127.0.0.1
+      L1_RPC_HTTP_PORT: "18545"
+      L1_RPC_PROXY_LOG_REQUESTS: "0"
+      L1_RPC_RATE_LIMIT_ALLOWLIST: 127.0.0.1,::1,172.31.0.1
+      L1_RPC_RATE_LIMIT_BURST: "40"
+      L1_RPC_RATE_LIMIT_PER_MINUTE: "120"
+      L1_RPC_RATE_WINDOW_MS: "60000"
+      L1_RPC_REQUIRE_AUTH: "0"
+      L1_RPC_SENSITIVE_METHODS: personal_,debug_,txpool_,admin_
+      L1_RPC_WS_PORT: "18546"
+      L1_UID: "1000"
+      L1_WS_APIS: eth,net,web3
+      L1_WS_ORIGINS: http://localhost,http://127.0.0.1
+    image: ghostchain/ghost-geth:v1.13.14
+    logging:
+      driver: json-file
+      options:
+        max-file: "3"
+        max-size: 10m
+    mem_limit: "268435456"
+    networks:
+      ghostchain:
+        ipv4_address: 10.89.0.21
+    ports:
+      - mode: ingress
+        target: 30301
+        published: "30301"
+        protocol: udp
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    user: 1000:1002
+    volumes:
+      - type: bind
+        source: /home/ghost/ghostl-stack/infra/ghostchain/data/bootnode
+        target: /config
+        bind: {}
+  ghostchain-node1:
+    cap_drop:
+      - ALL
+    cpus: 1.5
+    depends_on:
+      ghostchain-bootnode:
+        condition: service_started
+        required: true
+    entrypoint:
+      - /bin/sh
+      - /config/run-node.sh
+    environment:
+      AUTH_JWT_FILE: /secrets/jwtsecret
+      AUTH_PORT: "8551"
+      AUTHRPC_VHOSTS: localhost,127.0.0.1
+      BOOTNODE_IP: 172.31.0.21
+      BOOTNODE_PORT: "30301"
+      CHAIN_ID: "14000101"
+      GETH_IMAGE: ghostchain/ghost-geth:alltools-v1.13.14
+      HTTP_APIS: eth,net,web3,debug,txpool
+      HTTP_CORS: http://localhost,http://127.0.0.1
+      HTTP_PORT: "8545"
+      HTTP_VHOSTS: localhost,127.0.0.1
+      L1_AUTHRPC_VHOSTS: localhost,127.0.0.1
+      L1_GHOSTCHAIN_BOOTNODE_IP: 172.31.0.21
+      L1_GHOSTCHAIN_GHOSTSCOUT_IP: 172.31.0.31
+      L1_GHOSTCHAIN_NODE1_IP: 172.31.0.22
+      L1_GHOSTCHAIN_NODE2_IP: 172.31.0.23
+      L1_GHOSTCHAIN_RPC_PROXY_IP: 172.31.0.30
+      L1_GHOSTCHAIN_SUBNET: 172.31.0.0/16
+      L1_GID: "1002"
+      L1_HTTP_APIS: eth,net,web3,debug,txpool
+      L1_HTTP_CORS: http://localhost,http://127.0.0.1
+      L1_HTTP_VHOSTS: localhost,127.0.0.1,ghostchain-node1
+      L1_METRICS_PORT: "18660"
+      L1_P2P_PORT: "18551"
+      L1_RPC_AUTH_PORT: "18552"
+      L1_RPC_AUTH_TOKEN: ""
+      L1_RPC_CORS_ORIGINS: http://localhost,http://127.0.0.1
+      L1_RPC_HTTP_PORT: "18545"
+      L1_RPC_PROXY_LOG_REQUESTS: "0"
+      L1_RPC_RATE_LIMIT_ALLOWLIST: 127.0.0.1,::1,172.31.0.1
+      L1_RPC_RATE_LIMIT_BURST: "40"
+      L1_RPC_RATE_LIMIT_PER_MINUTE: "120"
+      L1_RPC_RATE_WINDOW_MS: "60000"
+      L1_RPC_REQUIRE_AUTH: "0"
+      L1_RPC_SENSITIVE_METHODS: personal_,debug_,txpool_,admin_
+      L1_RPC_WS_PORT: "18546"
+      L1_UID: "1000"
+      L1_WS_APIS: eth,net,web3
+      L1_WS_ORIGINS: http://localhost,http://127.0.0.1
+      METRICS_PORT: "6060"
+      MINING_ENABLED: "1"
+      P2P_PORT: "30303"
+      SIGNER_ADDRESS: 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+      WS_APIS: eth,net,web3
+      WS_ORIGINS: http://localhost,http://127.0.0.1
+      WS_PORT: "8546"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'wget -qO- --post-data=''{"jsonrpc":"2.0","id":1,"method":"ghost_blockNumber","params":[]}'' --header ''Content-Type: application/json'' http://localhost:8545 >/dev/null || wget -qO- --post-data=''{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}'' --header ''Content-Type: application/json'' http://localhost:8545 >/dev/null'
+      timeout: 5s
+      interval: 20s
+      retries: 5
+      start_period: 25s
+    image: ghostchain/ghost-geth:v1.13.14
+    logging:
+      driver: json-file
+      options:
+        max-file: "3"
+        max-size: 10m
+    mem_limit: "2147483648"
+    networks:
+      ghostchain:
+        ipv4_address: 10.89.0.22
+    ports:
+      - mode: ingress
+        target: 8546
+        published: "18546"
+        protocol: tcp
+      - mode: ingress
+        target: 8551
+        published: "18552"
+        protocol: tcp
+      - mode: ingress
+        target: 30303
+        published: "18551"
+        protocol: tcp
+      - mode: ingress
+        target: 6060
+        published: "18660"
+        protocol: tcp
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
+    user: 1000:1002
+    volumes:
+      - type: bind
+        source: /home/ghost/ghostl-stack/infra/ghostchain/data/node1
+        target: /data
+        bind: {}
+      - type: bind
+        source: /home/ghost/ghostl-stack/infra/ghostchain/geth
+        target: /config
+        read_only: true
+        bind: {}
+      - type: bind
+        source: /home/ghost/ghostl-stack/infra/ghostchain/data/bootnode
+        target: /run/bootnode
+        read_only: true
+        bind: {}
+      - type: bind
+        source: /home/ghost/ghostl-stack/infra/ghostchain/secrets
+        target: /secrets
+        read_only: true
+        bind: {}
+  ghostchain-node2:
+    cap_drop:
+      - ALL
+    cpus: 1.5
+    depends_on:
+      ghostchain-bootnode:
+        condition: service_started
+        required: true
+    entrypoint:
+      - /bin/sh
+      - /config/run-node.sh
+    environment:
+      AUTH_JWT_FILE: /secrets/jwtsecret
+      AUTH_PORT: "8551"
+      AUTHRPC_VHOSTS: localhost,127.0.0.1
+      BOOTNODE_IP: 172.31.0.21
+      BOOTNODE_PORT: "30301"
+      CHAIN_ID: "14000101"
+      GETH_IMAGE: ghostchain/ghost-geth:alltools-v1.13.14
+      HTTP_APIS: eth,net,web3,debug,txpool
+      HTTP_CORS: http://localhost,http://127.0.0.1
+      HTTP_PORT: "8545"
+      HTTP_VHOSTS: localhost,127.0.0.1
+      L1_AUTHRPC_VHOSTS: localhost,127.0.0.1
+      L1_GHOSTCHAIN_BOOTNODE_IP: 172.31.0.21
+      L1_GHOSTCHAIN_GHOSTSCOUT_IP: 172.31.0.31
+      L1_GHOSTCHAIN_NODE1_IP: 172.31.0.22
+      L1_GHOSTCHAIN_NODE2_IP: 172.31.0.23
+      L1_GHOSTCHAIN_RPC_PROXY_IP: 172.31.0.30
+      L1_GHOSTCHAIN_SUBNET: 172.31.0.0/16
+      L1_GID: "1002"
+      L1_HTTP_APIS: eth,net,web3,debug,txpool
+      L1_HTTP_CORS: http://localhost,http://127.0.0.1
+      L1_HTTP_VHOSTS: localhost,127.0.0.1,ghostchain-node1
+      L1_METRICS_PORT: "18660"
+      L1_P2P_PORT: "18551"
+      L1_RPC_AUTH_PORT: "18552"
+      L1_RPC_AUTH_TOKEN: ""
+      L1_RPC_CORS_ORIGINS: http://localhost,http://127.0.0.1
+      L1_RPC_HTTP_PORT: "18545"
+      L1_RPC_PROXY_LOG_REQUESTS: "0"
+      L1_RPC_RATE_LIMIT_ALLOWLIST: 127.0.0.1,::1,172.31.0.1
+      L1_RPC_RATE_LIMIT_BURST: "40"
+      L1_RPC_RATE_LIMIT_PER_MINUTE: "120"
+      L1_RPC_RATE_WINDOW_MS: "60000"
+      L1_RPC_REQUIRE_AUTH: "0"
+      L1_RPC_SENSITIVE_METHODS: personal_,debug_,txpool_,admin_
+      L1_RPC_WS_PORT: "18546"
+      L1_UID: "1000"
+      L1_WS_APIS: eth,net,web3
+      L1_WS_ORIGINS: http://localhost,http://127.0.0.1
+      METRICS_PORT: "6061"
+      MINING_ENABLED: "1"
+      P2P_PORT: "30304"
+      SIGNER_ADDRESS: 0x70997970c51812dc3a010c7d01b50e0d17dc79c8
+      WS_APIS: eth,net,web3
+      WS_ORIGINS: http://localhost,http://127.0.0.1
+      WS_PORT: "8546"
+    image: ghostchain/ghost-geth:v1.13.14
+    logging:
+      driver: json-file
+      options:
+        max-file: "3"
+        max-size: 10m
+    mem_limit: "2147483648"
+    networks:
+      ghostchain:
+        ipv4_address: 10.89.0.23
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
+    user: 1000:1002
+    volumes:
+      - type: bind
+        source: /home/ghost/ghostl-stack/infra/ghostchain/data/node2
+        target: /data
+        bind: {}
+      - type: bind
+        source: /home/ghost/ghostl-stack/infra/ghostchain/geth
+        target: /config
+        read_only: true
+        bind: {}
+      - type: bind
+        source: /home/ghost/ghostl-stack/infra/ghostchain/data/bootnode
+        target: /run/bootnode
+        read_only: true
+        bind: {}
+      - type: bind
+        source: /home/ghost/ghostl-stack/infra/ghostchain/secrets
+        target: /secrets
+        read_only: true
+        bind: {}
+  ghostchain-rpc-proxy:
+    build:
+      context: /home/ghost/ghostl-stack/services/ghost-rpc-proxy
+      dockerfile: Dockerfile
+    cap_drop:
+      - ALL
+    cpus: 0.5
+    depends_on:
+      ghostchain-node1:
+        condition: service_started
+        required: true
+    environment:
+      AUTH_JWT_FILE: /secrets/jwtsecret
+      BOOTNODE_IP: 172.31.0.21
+      BOOTNODE_PORT: "30301"
+      CHAIN_ID: "14000101"
+      GETH_IMAGE: ghostchain/ghost-geth:alltools-v1.13.14
+      L1_AUTHRPC_VHOSTS: localhost,127.0.0.1
+      L1_GHOSTCHAIN_BOOTNODE_IP: 172.31.0.21
+      L1_GHOSTCHAIN_GHOSTSCOUT_IP: 172.31.0.31
+      L1_GHOSTCHAIN_NODE1_IP: 172.31.0.22
+      L1_GHOSTCHAIN_NODE2_IP: 172.31.0.23
+      L1_GHOSTCHAIN_RPC_PROXY_IP: 172.31.0.30
+      L1_GHOSTCHAIN_SUBNET: 172.31.0.0/16
+      L1_GID: "1002"
+      L1_HTTP_APIS: eth,net,web3,debug,txpool
+      L1_HTTP_CORS: http://localhost,http://127.0.0.1
+      L1_HTTP_VHOSTS: localhost,127.0.0.1,ghostchain-node1
+      L1_METRICS_PORT: "18660"
+      L1_P2P_PORT: "18551"
+      L1_RPC_AUTH_PORT: "18552"
+      L1_RPC_AUTH_TOKEN: ""
+      L1_RPC_CORS_ORIGINS: http://localhost,http://127.0.0.1
+      L1_RPC_HTTP_PORT: "18545"
+      L1_RPC_PROXY_LOG_REQUESTS: "0"
+      L1_RPC_RATE_LIMIT_ALLOWLIST: 127.0.0.1,::1,172.31.0.1
+      L1_RPC_RATE_LIMIT_BURST: "40"
+      L1_RPC_RATE_LIMIT_PER_MINUTE: "120"
+      L1_RPC_RATE_WINDOW_MS: "60000"
+      L1_RPC_REQUIRE_AUTH: "0"
+      L1_RPC_SENSITIVE_METHODS: personal_,debug_,txpool_,admin_
+      L1_RPC_WS_PORT: "18546"
+      L1_UID: "1000"
+      L1_WS_APIS: eth,net,web3
+      L1_WS_ORIGINS: http://localhost,http://127.0.0.1
+      LOG_REQUESTS: "0"
+      PORT: "8545"
+      RPC_AUTH_TOKEN: ""
+      RPC_CORS_ORIGINS: http://localhost,http://127.0.0.1
+      RPC_RATE_LIMIT_ALLOWLIST: 127.0.0.1,::1,10.89.0.1
+      RPC_RATE_LIMIT_BURST: "40"
+      RPC_RATE_LIMIT_PER_MINUTE: "120"
+      RPC_RATE_WINDOW_MS: "60000"
+      RPC_REQUIRE_AUTH: "0"
+      RPC_SENSITIVE_METHODS: personal_,debug_,txpool_,admin_
+      UPSTREAM_URL: http://ghostchain-node1:8545
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -qO- http://127.0.0.1:8545/health >/dev/null
+      timeout: 5s
+      interval: 10s
+      retries: 10
+      start_period: 15s
+    image: ghostl/ghost-rpc-proxy:local
+    logging:
+      driver: json-file
+      options:
+        max-file: "3"
+        max-size: 10m
+    mem_limit: "268435456"
+    networks:
+      ghostchain:
+        ipv4_address: 10.89.0.30
+    ports:
+      - mode: ingress
+        target: 8545
+        published: "18545"
+        protocol: tcp
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 20s
+networks:
+  ghost-rollup:
+    name: ghost-rollup
+    driver: bridge
+  ghostchain:
+    name: ghostl-stack_ghostchain
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.89.0.0/24
+volumes:
+  ghost-bridge-l2-state:
+    name: ghostl-stack_ghost-bridge-l2-state
+  ghost-bridge-l3-state:
+    name: ghostl-stack_ghost-bridge-l3-state
+  ghost-deriver-l2-state:
+    name: ghostl-stack_ghost-deriver-l2-state
+  ghost-deriver-l3-state:
+    name: ghostl-stack_ghost-deriver-l3-state
+  ghost-exec-l2-state:
+    name: ghostl-stack_ghost-exec-l2-state
+  ghost-exec-l3-state:
+    name: ghostl-stack_ghost-exec-l3-state
+  ghost-proof-l2-state:
+    name: ghostl-stack_ghost-proof-l2-state
+  ghost-proof-l3-state:
+    name: ghostl-stack_ghost-proof-l3-state
+  ghost-settlement-l2-state:
+    name: ghostl-stack_ghost-settlement-l2-state
+  ghost-settlement-l3-state:
+    name: ghostl-stack_ghost-settlement-l3-state
+x-logging:
+  driver: json-file
+  options:
+    max-file: "3"
+    max-size: 10m
+x-security:
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true

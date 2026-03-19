@@ -39,7 +39,7 @@ rg_forbidden() {
     --glob='!**/contracts/src/bridge/**' \
     --glob='!**/contracts/bridge/**' --glob='!**/contracts/bridges/**' \
     --glob='!**/services/bridge/**' \
-    --glob='!**/infra/opstack/bridge/**' --glob='!**/apps/bridge/**' \
+    --glob='!**/services/ghost-bridge/**' --glob='!**/apps/bridge/**' \
     "$1" . 2>/dev/null || true
 }
 
@@ -70,7 +70,7 @@ echo
 echo "== C) Bridge Allowlist Report (informational) =="
 for dir in \
   "./contracts/src/bridge" "./contracts/bridge" "./contracts/bridges" \
-  "./services/bridge" "./infra/opstack/bridge" "./apps/bridge"
+  "./services/bridge" "./services/ghost-bridge" "./apps/bridge"
 do
   if [[ -d "$dir" ]]; then
     echo "OK: bridge allow-dir exists: $dir"

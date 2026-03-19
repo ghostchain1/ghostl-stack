@@ -51,8 +51,6 @@ rg_globs=(
   --glob '!**/out/**'
   --glob '!**/cache/**'
   --glob '!**/artifacts/**'
-	--glob '!infra/opstack/optimism-upstream/**'
-  --glob '!infra/opstack/op-geth/**'
   --glob '!contracts/lib/**'
   --glob '!**/package-lock.json'
 )
@@ -89,8 +87,6 @@ else
       ':!ops/policy/no-eth-rpc-baseline.txt' \
       ':!backups/**' \
       ':!infra/docker/_backup/**' \
-      ':!infra/opstack/optimism-upstream/**' \
-      ':!infra/opstack/op-geth/**' \
       ':!contracts/lib/**' \
       ':!**/node_modules/**' \
       ':!**/dist/**' \

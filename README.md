@@ -5,8 +5,8 @@
 **GhostL‑Stack** is the canonical monorepo for the **GhostChain Sovereign Blockchain System** — a production‑grade, AI‑native, multi‑layer blockchain architecture consisting of:
 
 * **GhostChain (L1)** — main Autonomous Layer 1 blockchain (EVM‑compatible base chain)
-* **GhostL2 (L2)** — OP‑Stack rollup anchored to GhostChain
-* **GhostL3 (L3)** — OP‑Stack rollup anchored to GhostL2
+* **GhostL2 (L2)** — Ghost-native custom execution layer anchored to GhostChain
+* **GhostL3 (L3)** — Ghost-native application layer anchored to GhostL2
 
 This repository is designed to be **diff‑only evolvable**, **governance‑locked**, **AI‑assisted**, and **court / regulator‑ready**.
 
@@ -17,17 +17,17 @@ This repository is designed to be **diff‑only evolvable**, **governance‑lock
 ```
 ┌───────────────────────────────────────────┐
 │                GhostChain L1              │
-│  (EVM, GST Gas, Governance, Treasury)     │
+│  (Settlement, Governance, Treasury, GST)  │
 └───────────────▲───────────────────────────┘
-                │ OptimismPortal / Oracles
+                │ Ghost settlement + finality
 ┌───────────────┴───────────────────────────┐
-│                GhostL2 (OP Stack)         │
-│  op-geth · op-node · batcher · proposer   │
+│                GhostL2                    │
+│  ghost-exec · ghost-sequencer · deriver   │
 └───────────────▲───────────────────────────┘
-                │ L3 Output Oracle
+                │ Canonical L2↔L3 bridge
 ┌───────────────┴───────────────────────────┐
-│                GhostL3 (OP Stack)         │
-│  App‑specific execution & scaling layer   │
+│                GhostL3                    │
+│  Custom app execution & fast confirmations│
 └───────────────────────────────────────────┘
 
 Supporting Layers:
@@ -46,11 +46,8 @@ Supporting Layers:
 ├── apps/                # User‑facing apps (Next.js, dashboards, explorers)
 ├── services/            # Backend microservices (AI, governance, treasury, relayers)
 ├── contracts/           # Solidity smart contracts (L1/L2/L3)
-├── infra/               # Docker, OP‑Stack, scripts, env management
-│   ├── opstack/
-│   ├── docker/
-│   ├── scripts/
-│   └── monitoring/
+├── chains/              # Canonical GhostChain / GhostL2 / GhostL3 descriptors
+├── infra/               # Docker, hypervisor, scripts, env management
 ├── packages/            # Shared SDKs, UI libs, config packages
 ├── docs/                # Architecture, governance, whitepapers, evidence
 ├── .codex/              # Codex automation inputs, logs, ratification blocks
@@ -92,13 +89,14 @@ See `docs/DEV_SETUP.md` for prerequisites, bootstrap instructions, and local bri
 
 ---
 
-### GhostL2 (OP Stack)
+### GhostL2
 
-* Uses `op-geth`, `op-node`, `op-batcher` by default (`infra/opstack` keeps `op-proposer` disabled)
-* Authoritative proposer runtime: `services-ghost-rollup-proposer-1`
-* Anchored to GhostChain via OptimismPortal
-* OutputOracle verified during preflight
+* Custom Ghost-native execution layer anchored to GhostChain
+* Sequencing via `services/ghost-sequencer`
+* Execution and replay via `services/ghost-exec` and `services/ghost-deriver`
+* Settlement via `services/ghost-settlement`
 * Uses GST as canonical gas
+* Canonical descriptor: `chains/ghostl2/chain.json`
 
 Ports (default devnet):
 
@@ -107,11 +105,12 @@ Ports (default devnet):
 
 ---
 
-### GhostL3 (OP Stack)
+### GhostL3
 
 * Anchored to GhostL2
-* Independent execution domain
-* App‑specific scaling & experimentation
+* Independent application execution domain
+* Fast user confirmations backed by L2 checkpoints
+* Canonical descriptor: `chains/ghostl3/chain.json`
 
 Ports:
 
@@ -268,14 +267,8 @@ Key tools:
 * `infra/scripts/doctor.sh`
 * `docs/checklists/WHAT_YOU_CAN_RUN_TODAY.md` (doctors, gates, bridge E2E, evidence, scans)
 * `infra/scripts/up.sh`
-* `infra/scripts/preflight:opstack`
-
-Recent submodule PRs:
-
-```
-op-geth: https://github.com/ghostchain1/op-geth/pull/1
-optimism: https://github.com/ghostchain1/optimism/pull/1
-```
+* `npm run check:custom-runtime`
+* `docs/architecture/custom-ghost-multichain.md`
 
 ---
 
@@ -442,14 +435,14 @@ Location:
 
 * ✅ L1/L2/L3 built, wired, and tested
 * ✅ Canonical GST gas enforced
-* ✅ OP‑Stack preflight passing (L1/L2)
+* ✅ Ghost-native chain identity normalized for L1/L2/L3
 * ✅ `@ghostchain/sdk` v1.0.0 — production-complete (38+ sub-path exports, zero external SDK deps)
 * ✅ ERC-20/721/1155, gas tracker, nonce manager, RPC client, signature utils
 * ✅ GhostBrain AI client + AI gas optimizer integrated
 * ✅ **GBA-OS** (GhostBrain Autonomous Infrastructure OS) — kernel, cluster gossip/sync/leader-election, orchestration, protection, observability (Phase 17)
 * ✅ **Predictive Infrastructure AI** — EWMA load forecasting, z-score anomaly detection, pattern recognition (autocorr + TOD + Pearson), predictive balancer, failure predictor (Phase 17)
 * ✅ 16 new REST API endpoints across kernel / orchestrator / protection / observability / predictive layers (Phase 17)
-* ⚠️ L3 OutputOracle wiring in progress
+* ⚠️ Legacy compatibility references still need follow-up cleanup outside the canonical runtime path
 * 🧠 AI services integrated and expanding
 
 ---

@@ -8,8 +8,8 @@
 # VMs targeted:
 #   ghostchain-testnet-l1  (10.50.10.11)  — L1 chain + AI simulation host
 #   ghost-testnet-validator (10.50.10.13) — Validator node
-#   ghostl2-testnet        (10.50.20.11)  — L2 OP Stack
-#   ghostl3-testnet        (10.50.30.11)  — L3 app chain
+#   ghostl2-testnet        (10.50.20.11)  — GhostL2 custom execution host
+#   ghostl3-testnet        (10.50.30.11)  — GhostL3 application host
 #
 # Usage (run from devnet as ghost, via hypervisor jump):
 #   bash scripts/deploy/deploy-testnet.sh [--vm <name>] [--dry-run]
@@ -27,8 +27,8 @@ TARGET_VM=""
 declare -A TESTNET_VMS=(
     ["ghostchain-testnet-l1"]="L1 chain simulation host"
     ["ghost-testnet-validator"]="Validator simulation node"
-    ["ghostl2-testnet"]="L2 OP Stack simulation"
-    ["ghostl3-testnet"]="L3 app chain simulation"
+    ["ghostl2-testnet"]="GhostL2 custom execution simulation"
+    ["ghostl3-testnet"]="GhostL3 app chain simulation"
 )
 
 while [[ $# -gt 0 ]]; do

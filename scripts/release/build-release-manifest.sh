@@ -25,8 +25,12 @@ COMPOSE_FILES=(
   "$ROOT_DIR/docker-compose.phase3.yml"
   "$ROOT_DIR/docker-compose.sovereign.yml"
   "$ROOT_DIR/infra/ghostchain/docker-compose.l1.yml"
-  "$ROOT_DIR/infra/opstack/docker-compose.yml"
-  "$ROOT_DIR/infra/opstack/docker-compose.l3.yml"
+  "$ROOT_DIR/services/ghost-exec/docker-compose.yml"
+  "$ROOT_DIR/services/ghost-sequencer/docker-compose.yml"
+  "$ROOT_DIR/services/ghost-deriver/docker-compose.yml"
+  "$ROOT_DIR/services/ghost-settlement/docker-compose.yml"
+  "$ROOT_DIR/services/ghost-bridge/docker-compose.yml"
+  "$ROOT_DIR/services/ghost-proof/docker-compose.yml"
 )
 
 CONFIG_FILES=(

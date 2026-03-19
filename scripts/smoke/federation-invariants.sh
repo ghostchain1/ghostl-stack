@@ -50,14 +50,14 @@ require_file "$ROOT_DIR/infra/scripts/federation/export-policy-checkpoint.sh" ||
 require_executable "$ROOT_DIR/infra/scripts/federation/export-policy-checkpoint.sh" || missing=1
 
 log "Federation invariants: env wiring for L2"
-ENV_L2="$ROOT_DIR/infra/opstack/.env.l2.example"
+ENV_L2="$ROOT_DIR/environments/devnet/ghostl2.env.example"
 require_file "$ENV_L2" || missing=1
 require_line "^CHAIN_POLICY_REGISTRY_ADDRESS=" "$ENV_L2" || missing=1
 require_line "^CHAIN_POLICY_REGISTRY_RPC=" "$ENV_L2" || missing=1
 require_line "^CHAIN_POLICY_REQUIRED=" "$ENV_L2" || missing=1
 
 log "Federation invariants: env wiring for L3"
-ENV_L3="$ROOT_DIR/infra/opstack/.env.l3.example"
+ENV_L3="$ROOT_DIR/environments/devnet/ghostl3.env.example"
 require_file "$ENV_L3" || missing=1
 require_line "^CHAIN_POLICY_REGISTRY_ADDRESS=" "$ENV_L3" || missing=1
 require_line "^CHAIN_POLICY_REGISTRY_RPC=" "$ENV_L3" || missing=1

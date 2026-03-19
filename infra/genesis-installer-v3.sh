@@ -254,8 +254,8 @@ else
   }
 
   _provision_vm ghostchain-l1        8192  4  100   # GhostChain L1 sovereign node
-  _provision_vm ghostl2              8192  4  100   # GhostL2 OP Stack sequencer
-  _provision_vm ghostl3              8192  4  100   # GhostL3 OP Stack node
+  _provision_vm ghostl2              8192  4  100   # GhostL2 custom execution VM
+  _provision_vm ghostl3              8192  4  100   # GhostL3 custom application VM
   _provision_vm ghost-validator      4096  2   50   # CometBFT validator
   _provision_vm ghost-ai-controller  4096  2   50   # AI services host
 fi
@@ -396,14 +396,15 @@ phase 10 "Blockchain Nodes"
 
 #
 # GhostChain L1 runs ghostchaind (Cosmos SDK + CometBFT + EVM).
-# GhostL2 / GhostL3 run OP Stack (op-geth + op-node + op-batcher).
+# GhostL2 / GhostL3 run the Ghost-native custom service plane.
 # Neither uses `npx hardhat node` — those are managed as Docker Compose services.
 #
 
-OPSTACK_UP="${STACK_ROOT}/infra/scripts/opstack/up-l2.sh"
-if [[ -f "${OPSTACK_UP}" ]]; then
-  log "  Running OP Stack L2 startup (up-l2.sh)…"
-  run_cmd bash "${OPSTACK_UP}" || warn "  up-l2.sh returned non-zero — check OP Stack logs."
+ROLLUP_PREFLIGHT="${STACK_ROOT}/scripts/testnet/00-preflight.sh"
+if [[ -f "${ROLLUP_PREFLIGHT}" ]]; then
+  log "  Running Ghost rollup preflight…"
+  run_cmd env STRICT_SECRETS="${STRICT_SECRETS:-0}" bash "${ROLLUP_PREFLIGHT}" \
+    || warn "  Ghost rollup preflight returned non-zero — check logs."
 fi
 
 ENV_SYNC="${STACK_ROOT}/infra/scripts/env-sync-stack.sh"

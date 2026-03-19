@@ -29,10 +29,12 @@ CHECKS=(
   "docker-compose.phase3.secrets.yml (with phase3 base)::docker-compose.phase3.yml docker-compose.phase3.secrets.yml"
   "apps/docker-compose.yml::apps/docker-compose.yml"
   "apps/docker-compose.dev.yml::apps/docker-compose.dev.yml"
-  "infra/opstack/docker-compose.yml::infra/opstack/docker-compose.yml"
-  "infra/opstack/docker-compose.l3.yml (with opstack base)::infra/opstack/docker-compose.yml infra/opstack/docker-compose.l3.yml"
-  "infra/opstack/docker-compose.network-manager.yml::infra/opstack/docker-compose.network-manager.yml"
-  "infra/opstack/docker-compose.challengers.yml (with opstack+l3 bases)::infra/opstack/docker-compose.yml infra/opstack/docker-compose.l3.yml infra/opstack/docker-compose.challengers.yml"
+  "services/ghost-exec/docker-compose.yml::services/ghost-exec/docker-compose.yml"
+  "services/ghost-sequencer/docker-compose.yml::services/ghost-sequencer/docker-compose.yml"
+  "services/ghost-deriver/docker-compose.yml::services/ghost-deriver/docker-compose.yml"
+  "services/ghost-settlement/docker-compose.yml::services/ghost-settlement/docker-compose.yml"
+  "services/ghost-bridge/docker-compose.yml::services/ghost-bridge/docker-compose.yml"
+  "services/ghost-proof/docker-compose.yml::services/ghost-proof/docker-compose.yml"
 )
 
 TOTAL=0

@@ -36,7 +36,7 @@ if command -v trivy >/dev/null 2>&1; then
     --format json \
     --output "$OUT_DIR/trivy-secrets.json" \
     --exit-code 1 \
-    --skip-dirs node_modules,contracts/node_modules,dist,contracts/dist,contracts/artifacts,contracts/cache,contracts/.hardhat-cache,ops/preflight,ops/snapshots,backups,infra/docker/_backup,infra/docker/runtime,infra/ghostchain/data,infra/ghostchain/secrets,infra/opstack/data,infra/opstack/broadcast,infra/opstack/secrets,infra/opstack/l3/secrets,chains/l2/data,chains/l3/data \
+    --skip-dirs node_modules,contracts/node_modules,dist,contracts/dist,contracts/artifacts,contracts/cache,contracts/.hardhat-cache,ops/preflight,ops/snapshots,backups,infra/docker/_backup,infra/docker/runtime,infra/ghostchain/data,infra/ghostchain/secrets,chains/ghostl2/data,chains/ghostl3/data \
     "$ROOT_DIR"; then
     echo "[secret-scan] FAIL trivy detected potential leaks"
     failures=$((failures + 1))
@@ -56,4 +56,3 @@ if [[ "$failures" -gt 0 ]]; then
 fi
 
 echo "[secret-scan] PASS"
-

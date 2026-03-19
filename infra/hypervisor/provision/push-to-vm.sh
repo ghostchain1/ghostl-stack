@@ -173,42 +173,14 @@ extract_addr() {
 
 # ── Build promoted address map from devnet deployments ────────────────────────
 build_addr_env() {
-  local env_out=""
-  local deployments="$DEPLOY_DIR"
-
-  [ -d "$deployments" ] || { log "WARNING: $deployments not found; skipping address injection"; return; }
-
-  # L2 contracts
-  env_out+="$(extract_addr "$deployments/L2OutputOracle.json"           address L2_OUTPUT_ORACLE_ADDRESS)
-"
-  env_out+="$(extract_addr "$deployments/L2ToL1MessagePasser.json"      address L2_TO_L1_MESSAGE_PASSER)
-"
-  env_out+="$(extract_addr "$deployments/OptimismPortal.json"           address OPTIMISM_PORTAL_ADDRESS)
-"
-  env_out+="$(extract_addr "$deployments/L1CrossDomainMessenger.json"   address L1_XDOMAIN_MESSENGER)
-"
-  env_out+="$(extract_addr "$deployments/L1StandardBridge.json"         address L1_STANDARD_BRIDGE)
-"
-  env_out+="$(extract_addr "$deployments/SystemConfig.json"             address SYSTEM_CONFIG_ADDRESS)
-"
-  # L3 contracts (deployed on L2)
-  env_out+="$(extract_addr "$deployments/L3OutputOracle.json"           address L3_OUTPUT_ORACLE_ADDRESS)
-"
-  env_out+="$(extract_addr "$deployments/L2Rollup.json"                 address L2_ROLLUP_L3_ADDRESS)
-"
-  # Economy / Gov
-  env_out+="$(extract_addr "$deployments/GovernorL1.json"               address GOVERNOR_L1)
-"
-  env_out+="$(extract_addr "$deployments/GasToken.json"                 address GAS_TOKEN)
-"
-  env_out+="$(extract_addr "$deployments/FinalityOracleL1.json"         address L1_FINALITY_ORACLE_ADDRESS)
-"
-  env_out+="$(extract_addr "$deployments/FinalityOracleL2.json"         address L2_FINALITY_ORACLE_ADDRESS)
-"
-  env_out+="$(extract_addr "$deployments/FinalityOracleL3.json"         address L3_FINALITY_ORACLE_ADDRESS)
-"
-
-  printf '%s' "$env_out" | grep -v '^$' || true
+  cat <<EOF
+GHOST_L2_ROLLUP_ADDRESS=${GHOST_L2_ROLLUP_ADDRESS:-0xad32D5C2Da9f4159C4cc98686C005852b3905355}
+GHOST_L3_ROLLUP_ADDRESS=${GHOST_L3_ROLLUP_ADDRESS:-0x130A46b6E41DB6E1e18fb9c759F223c459190e90}
+GHOST_L1_FINALITY_ORACLE_ADDRESS=${GHOST_L1_FINALITY_ORACLE_ADDRESS:-0x7B3Be2dDDdDf9A0a3fE1DC57B98980F662C3a422}
+GHOST_L2_FINALITY_ORACLE_ADDRESS=${GHOST_L2_FINALITY_ORACLE_ADDRESS:-0x650aEF4b63095e4EDe581BC79CdeA927e3ba553A}
+GHOST_L3_FINALITY_ORACLE_ADDRESS=${GHOST_L3_FINALITY_ORACLE_ADDRESS:-0x87F850cbC2cFfac086F20d0d7307E12d06fA2127}
+BRIDGE_L2L3_ADDRESS=${BRIDGE_L2L3_ADDRESS:-0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2}
+EOF
 }
 
 # ── Inject promoted addresses into a remote env file ─────────────────────────

@@ -191,19 +191,19 @@ L1_RPC_AUTH_PORT=18552
 L1_P2P_PORT=18551
 L1_METRICS_PORT=18660
 
-# ── L2 (OP-Stack rollup on L1) ────────────────────────────────────────────────
+# ── L2 (Ghost-native custom execution layer on L1) ───────────────────────────
 L2_CHAIN_ID=901
 L2_GETH_HTTP_PORT=29547
 L2_GETH_WS_PORT=29546
 L2_GETH_AUTH_PORT=29551
 L2_GETH_P2P_PORT=30306
-# Internal op-node rollup RPC only. Direct GhostL2 host RPC stays on :29547.
+# Internal compatibility RPC only. Direct GhostL2 host RPC stays on :29547.
 L2_OP_NODE_RPC_PORT=29546
 L2_BATCHER_RPC_PORT=29548
 L2_PROPOSER_RPC_PORT=29549
 L2_METRICS_PORT=29660
 
-# ── L3 (OP-Stack rollup on L2) ────────────────────────────────────────────────
+# ── L3 (Ghost-native custom application layer on L2) ─────────────────────────
 L3_CHAIN_ID=903
 L3_GETH_HTTP_PORT=39545
 L3_GETH_WS_PORT=39546

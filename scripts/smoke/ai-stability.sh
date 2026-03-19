@@ -50,18 +50,18 @@ for svc in ai-monitor ghost-gas-engine ghost-gas-engine-worker ghost-compliance 
 done
 
 log "AI stability check: verifying compose definitions"
-OPSTACK_COMPOSE="$ROOT_DIR/infra/opstack/docker-compose.yml"
+AI_RUNTIME_COMPOSE="$ROOT_DIR/services/docker-compose.legacy.yml"
 COMPLIANCE_COMPOSE="$ROOT_DIR/docker-compose.yml"
 SERVICES_COMPOSE="$ROOT_DIR/services/docker-compose.legacy.yml"
 
-require_file "$OPSTACK_COMPOSE" || missing=1
+require_file "$AI_RUNTIME_COMPOSE" || missing=1
 require_file "$COMPLIANCE_COMPOSE" || missing=1
 require_file "$SERVICES_COMPOSE" || missing=1
 
-require_service "$OPSTACK_COMPOSE" "ghost-gas-engine" || missing=1
-require_service "$OPSTACK_COMPOSE" "ghost-gas-engine-worker" || missing=1
-require_service "$OPSTACK_COMPOSE" "gas-engine-postgres" || missing=1
-require_service "$OPSTACK_COMPOSE" "gas-engine-redis" || missing=1
+require_service "$AI_RUNTIME_COMPOSE" "ghost-gas-engine" || missing=1
+require_service "$AI_RUNTIME_COMPOSE" "ghost-gas-engine-worker" || missing=1
+require_service "$AI_RUNTIME_COMPOSE" "gas-engine-postgres" || missing=1
+require_service "$AI_RUNTIME_COMPOSE" "gas-engine-redis" || missing=1
 
 require_service "$COMPLIANCE_COMPOSE" "ghost-compliance" || missing=1
 require_service "$COMPLIANCE_COMPOSE" "ghost-compliance-worker" || missing=1
@@ -73,7 +73,7 @@ require_service "$SERVICES_COMPOSE" "ghost-pil" || missing=1
 require_service "$SERVICES_COMPOSE" "ghost-pil-worker" || missing=1
 
 log "AI stability check: verifying Prometheus scrape targets"
-PROM_CONFIG="$ROOT_DIR/infra/opstack/observability/prometheus.yml"
+PROM_CONFIG="$ROOT_DIR/infra/docker/compose/prometheus.yml"
 require_file "$PROM_CONFIG" || missing=1
 if ! has_line "ghost-gas-engine" "$PROM_CONFIG"; then
   log "Missing ghost-gas-engine scrape in $PROM_CONFIG"

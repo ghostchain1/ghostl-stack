@@ -40,7 +40,6 @@ EXCLUDES=(
   ':!infra/docker/_backup/**'
   ':!infra/docker/runtime/**'
   ':!infra/docker/audit/**'
-  ':!infra/opstack/broadcast/**'
   ':!evidence/**'
 )
 
@@ -69,7 +68,6 @@ ETH_CURRENCY_EXCLUDES=(
   ':!backups/**'
   ':!node_modules/**'
   ':!contracts/lib/**'
-  ':!infra/opstack/broadcast/**'
 )
 eth_matches="$(
   {

@@ -5,8 +5,10 @@
 #   78  ghostl3-mainnet  10.50.99.78  ENV=mainnet
 #   79  ghostl3-testnet  10.50.99.79  ENV=testnet
 #
-# ROLE: OP-Stack L3 — l3-geth + l3-op-node + l3-batcher + l3-proposer.
-#       Settles to L2 (VM 76 mainnet / VM 77 testnet).
+# ROLE: Ghost-native L3 application layer.
+#       Runs the GhostL3 custom service set and anchors to GhostL2
+#       (VM 76 mainnet / VM 77 testnet). The base L3 RPC on :39545 is treated
+#       as a local prerequisite and is not bootstrapped by this script.
 #
 # Usage:
 #   sudo ENV=testnet bash ghostl3-provision.sh
@@ -63,74 +65,42 @@ mkdir -p /etc/ghostl-stack
 if [ ! -f "$ENV_FILE" ] || [ "$UPDATE" = "--update" ]; then
   log "Writing $ENV_FILE..."
   cat > "$ENV_FILE" <<ENVBLOCK
-# GhostL3 OP-Stack — ENV=${ENV}
+# GhostL3 custom application layer — ENV=${ENV}
 # Managed by ghostl3-provision.sh.  Non-secret defaults only.
 
 GHOST_ENV=${ENV}
 REPO_DIR=${REPO_DIR}
+COMPOSE_PROJECT_NAME=ghostl3-${ENV}
 
-# ── L3 chain ───────────────────────────────────────────────────────────────────
+# ── Chain identity ─────────────────────────────────────────────────────────────
 L3_CHAIN_ID=903
-
-# ── L3 ports (l3-geth) ────────────────────────────────────────────────────────
-L3_GETH_HTTP_PORT=39545
-L3_GETH_WS_PORT=39548
-L3_GETH_AUTH_PORT=39551
-L3_GETH_P2P_PORT=30307
-L3_GETH_METRICS_PORT=39660
-
-# ── L3 ports (rollup compat proxy + l3-op-node) ───────────────────────────────
-L3_OP_NODE_RPC_PORT=39546
-L3_OP_NODE_DIRECT_RPC_PORT=39646
-L3_ROLLUP_RPC_PORT=19546
-L3_ROLLUP_RPC_HOST_PORT=39546
-L3_OP_NODE_METRICS_PORT=39661
-
-# ── L3 ports (l3-batcher) ─────────────────────────────────────────────────────
-L3_BATCHER_RPC_PORT=18551
-L3_BATCHER_HOST_PORT=39551
-L3_BATCHER_METRICS_PORT=8301
-L3_METRICS_BATCHER_HOST_PORT=39301
-
-# ── L3 ports (l3-proposer) ────────────────────────────────────────────────────
-L3_PROPOSER_RPC_PORT=18560
-L3_PROPOSER_HOST_PORT=39560
-L3_PROPOSER_METRICS_PORT=8302
-L3_METRICS_PROPOSER_HOST_PORT=39302
-
-# ── Settlement — L2 this L3 settles into ──────────────────────────────────────
-# L2 VM ${L2_VM_IP} — op-geth HTTP for eth calls, rollup compat proxy for
-# internal rollup RPC. The canonical direct GhostL2 host RPC remains :29547.
-RPC_SETTLEMENT=http://${L2_VM_IP}:29547
-L2_RPC=http://${L2_VM_IP}:29547
-L2_WS=ws://${L2_VM_IP}:29548
-L2_OP_NODE_RPC=http://${L2_VM_IP}:29546
 L2_CHAIN_ID=901
+L1_CHAIN_ID=14000101
+
+# ── Canonical base RPC prerequisite (host-local) ─────────────────────────────
+RPC_L3=http://localhost:39545
+GHOST_L3_EXEC_RPC_URL=http://host.docker.internal:39545
+
+# ── Ghost-native control-plane services (host) ────────────────────────────────
+GHOST_EXEC_L3_PORT=7270
+GHOST_SEQUENCER_L3_PORT=7271
+GHOST_DERIVER_L3_PORT=7272
+GHOST_SETTLEMENT_L3_PORT=7273
+GHOST_BRIDGE_L3_PORT=7274
+GHOST_PROOF_L3_PORT=7275
+
+# ── Parent settlement and execution RPC (remote L2 VM) ───────────────────────
+L2_RPC=http://${L2_VM_IP}:29547
+GHOST_L3_PARENT_RPC_URL=http://${L2_VM_IP}:7260
+GHOST_L3_SOURCE_RPC_URL=http://${L2_VM_IP}:7260
 
 # ── L1 (for L3 verifier / challenger cross-reference) ─────────────────────────
 L1_RPC=http://${L1_VM_IP}:18545
-L1_CHAIN_ID=14000101
 
-# ── L3 rollup & contract addresses (promoted from devnet via push-to-vm.sh) ───
-L3_OUTPUT_ORACLE_ADDRESS=REPLACE_WITH_PROMOTED_VALUE
-L3_TO_L2_MESSAGE_PASSER=REPLACE_WITH_PROMOTED_VALUE
-L3_BATCH_INBOX_ADDRESS=0xff00000000000000000000000000000000000903
-L3_BATCH_SENDER_ADDRESS=REPLACE_WITH_PROMOTED_VALUE
-L3_PROPOSER_ADDRESS=REPLACE_WITH_PROMOTED_VALUE
-L2_ROLLUP_L3_ADDRESS=0x130A46b6E41DB6E1e18fb9c759F223c459190e90
-L3_FINALITY_ORACLE_ADDRESS=0x87F850cbC2cFfac086F20d0d7307E12d06fA2127
-
-# ── L3 batcher / proposer keys (loaded from Vault in prod) ────────────────────
-L3_BATCHER_PRIVATE_KEY=REPLACE_VIA_VAULT
-L3_PROPOSER_PRIVATE_KEY=REPLACE_VIA_VAULT
-
-# ── Expected chain ID cross-checks (ghost-rollup-proposer l3) ─────────────────
-EXPECTED_SETTLEMENT_CHAIN_ID=901
-EXPECTED_CHILD_CHAIN_ID=903
-
-# ── Bootnode (peer with L2 geth) ──────────────────────────────────────────────
-# l3-geth boots off the l2-geth enode; set at runtime by op-node init
-L3_BOOTNODES=
+# ── Canonical settlement metadata ─────────────────────────────────────────────
+GHOST_L3_ROLLUP_ADDRESS=0x130A46b6E41DB6E1e18fb9c759F223c459190e90
+GHOST_L3_FINALITY_ORACLE_ADDRESS=0x87F850cbC2cFfac086F20d0d7307E12d06fA2127
+BRIDGE_L2L3_ADDRESS=0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2
 
 # ── Vault ─────────────────────────────────────────────────────────────────────
 VAULT_ADDR=
@@ -156,21 +126,22 @@ if [ ! -f "$JWT_FILE" ]; then
 fi
 
 # ── 5. Rollup config promotion ────────────────────────────────────────────────
-ROLLUP_DST="/etc/ghostl-stack/l3-rollup.json"
-ROLLUP_SRC="$REPO_DIR/chains/l3/rollup.json"
+ROLLUP_DST="/etc/ghostl-stack/ghostl3-chain.json"
+ROLLUP_SRC="$REPO_DIR/chains/ghostl3/chain.json"
 if [ ! -f "$ROLLUP_DST" ]; then
   if [ -f "$ROLLUP_SRC" ]; then
-    log "Copying l3 rollup.json from repo..."
+    log "Copying GhostL3 chain metadata from repo..."
     cp "$ROLLUP_SRC" "$ROLLUP_DST"
     chmod 644 "$ROLLUP_DST"
   else
-    log "WARNING: $ROLLUP_SRC not found. Copy rollup.json from devnet before starting services."
+    log "WARNING: $ROLLUP_SRC not found. Copy GhostL3 chain metadata before starting services."
   fi
 fi
 
 # ── 6. Compose file ───────────────────────────────────────────────────────────
-# Minimal L3 compose: l3-geth + l3-op-node only (batcher/proposer added once L3 contracts deployed)
-COMPOSE_FILE="$REPO_DIR/infra/opstack/docker-compose.l3-node.yml"
+# Dedicated GhostL3 VM launches only the L3 custom service slice.
+COMPOSE_FILE="$REPO_DIR/docker-compose.custom-rollup.yml"
+COMPOSE_SERVICES="ghost-exec-l3 ghost-sequencer-l3 ghost-deriver-l3 ghost-settlement-l3 ghost-bridge-l3 ghost-proof-l3"
 if [ ! -f "$COMPOSE_FILE" ]; then
   die "L3 compose file not found: $COMPOSE_FILE"
 fi
@@ -178,7 +149,7 @@ fi
 log "Configuring systemd service: ${SVC_NAME}..."
 cat > "/etc/systemd/system/${SVC_NAME}.service" <<SERVICE
 [Unit]
-Description=GhostL3 OP-Stack — ENV=${ENV} (l3-geth + l3-op-node + batcher + proposer)
+Description=GhostL3 custom service plane — ENV=${ENV}
 Requires=docker.service
 After=docker.service network-online.target
 Wants=network-online.target
@@ -187,8 +158,8 @@ Wants=network-online.target
 Type=simple
 WorkingDirectory=${REPO_DIR}
 EnvironmentFile=${ENV_FILE}
-ExecStart=/usr/bin/docker compose -f ${COMPOSE_FILE} --env-file ${ENV_FILE} up --remove-orphans
-ExecStop=/usr/bin/docker compose  -f ${COMPOSE_FILE} down
+ExecStart=/usr/bin/docker compose --project-directory ${REPO_DIR} -f ${COMPOSE_FILE} --env-file ${ENV_FILE} up --remove-orphans ${COMPOSE_SERVICES}
+ExecStop=/usr/bin/docker compose --project-directory ${REPO_DIR} -f ${COMPOSE_FILE} --env-file ${ENV_FILE} stop ${COMPOSE_SERVICES}
 Restart=on-failure
 RestartSec=20
 StandardOutput=journal
@@ -238,10 +209,22 @@ sync_check() {
   fi
 }
 
+service_check() {
+  local name="\$1" url="\$2"
+  if curl -sSf --max-time 6 "\$url" >/dev/null 2>&1; then
+    echo "  OK   \${name}"
+    (( ok++ )) || true
+  else
+    echo "  FAIL \${name}" >&2
+    (( fail++ )) || true
+  fi
+}
+
 echo "=== GhostL3 health [${ENV}] \$(date -u +%H:%M:%SZ) ==="
-rpc_check  "L3 l3-geth    :39545" "http://localhost:39545"
-sync_check "L3 rollup proxy :39546" "http://localhost:39546"
-rpc_check  "L2 settle     :29547" "http://${L2_VM_IP}:29547"
+rpc_check     "L3 base RPC         :39545" "http://localhost:39545"
+service_check "ghost-exec-l3       :7270/status" "http://localhost:7270/status"
+service_check "ghost-settlement-l3 :7273/status" "http://localhost:7273/status"
+service_check "GhostL2 parent exec :7260/status" "http://${L2_VM_IP}:7260/status"
 
 echo "--- ok=\${ok} fail=\${fail} ---"
 [ "\$fail" -eq 0 ]
@@ -280,17 +263,16 @@ systemctl enable "${SVC_NAME}-health.timer"
 log "L3 provision complete."
 log "  ENV         : ${ENV}"
 log "  VM IP       : ${VM_IP}"
-log "  L2 settle   : http://${L2_VM_IP}:29547"
+log "  L2 parent   : http://${L2_VM_IP}:7260"
 log "  L3 RPC      : http://${VM_IP}:39545"
-log "  L3 rollup proxy : http://${VM_IP}:39546"
-log "  L3 op-node direct: http://${VM_IP}:39646"
+log "  GhostExec   : http://${VM_IP}:7270"
+log "  Settlement  : http://${VM_IP}:7273"
 log "  Service     : sudo journalctl -u ${SVC_NAME} -f"
 log "  Health      : sudo ${HEALTH_BIN}"
 log ""
 log "  IMPORTANT before starting:"
-log "    1. Populate /etc/ghostl-stack/l3-${ENV}.env — L3_BATCHER_PRIVATE_KEY, L3_PROPOSER_PRIVATE_KEY"
-log "       and contract addresses from push-to-vm.sh --target ${ENV}"
-log "    2. Ensure rollup.json is at /etc/ghostl-stack/l3-rollup.json"
-log "    3. Ensure L2 VM (${L2_VM_IP}) is synced and healthy"
+log "    1. Ensure the local GhostL3 base RPC is available on :39545"
+log "    2. Ensure GhostL3 metadata is at /etc/ghostl-stack/ghostl3-chain.json"
+log "    3. Ensure the L2 parent service plane on ${L2_VM_IP}:7260 is healthy"
 log ""
 log "  Then: sudo systemctl start ${SVC_NAME}"

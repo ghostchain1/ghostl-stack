@@ -137,7 +137,7 @@ services:
   ghostchain-rpc-proxy:
     image: ghostl/ghost-rpc-proxy:local
     build:
-      context: ../../services/ghost-rpc-proxy
+      context: ${GHOST_RPC_PROXY_BUILD_CONTEXT:-../../services/ghost-rpc-proxy}
     restart: unless-stopped
     logging: *default-logging
     depends_on:

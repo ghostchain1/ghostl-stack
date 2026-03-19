@@ -1,6 +1,0 @@
-{
-  "allowlist": [],
-  "blocklist": [],
-  "riskThreshold": 70,
-  "notes": "Update with L3 policy settings before production. Keep secrets out of version control."
-}

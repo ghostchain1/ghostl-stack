@@ -42,7 +42,7 @@ info() { echo "             $*"; }
 #   dns/web : 512 / 4096 MB  — lightweight services
 #   devnet  : 8192 MB        — runs full L1+L2+L3+tooling stack locally
 #   L1      : 2048 MB testnet / 6144 MB mainnet   — geth + metrics
-#   L2/L3   : 4096 MB        — op-geth + op-node + batcher + proposer
+#   L2/L3   : 4096 MB        — Ghost-native execution + settlement services
 declare -A VM_IP VM_VCPU VM_RAM VM_DISK VM_ROLE VM_MAC VM_MAC2
 # VM_MAC2: optional second NIC MAC (used for VMs with public-facing enp2s0)
 # ghost-web (Next.js frontend + Traefik)
@@ -58,17 +58,17 @@ VM_MAC2[ghostchain-devnet]="52:54:00:00:02:db"  # enp2s0 — public NIC (38.247.
 VM_IP[ghostchain-testnet-l1]="10.50.99.71"; VM_VCPU[ghostchain-testnet-l1]=2; VM_RAM[ghostchain-testnet-l1]=2048; VM_DISK[ghostchain-testnet-l1]=200; VM_ROLE[ghostchain-testnet-l1]="l1-testnet-fullnode";   VM_MAC[ghostchain-testnet-l1]="52:54:00:00:01:71"
 # L1 testnet validator
 VM_IP[ghost-testnet-validator]="10.50.99.73"; VM_VCPU[ghost-testnet-validator]=2; VM_RAM[ghost-testnet-validator]=2048; VM_DISK[ghost-testnet-validator]=100; VM_ROLE[ghost-testnet-validator]="l1-testnet-validator"; VM_MAC[ghost-testnet-validator]="52:54:00:00:01:73"
-# L2 testnet (op-geth + op-node + batcher + proposer)
+# L2 testnet (Ghost-native custom execution layer)
 VM_IP[ghostl2-testnet]="10.50.99.77"; VM_VCPU[ghostl2-testnet]=2; VM_RAM[ghostl2-testnet]=4096; VM_DISK[ghostl2-testnet]=120; VM_ROLE[ghostl2-testnet]="l2-testnet";           VM_MAC[ghostl2-testnet]="52:54:00:00:01:77"
-# L3 testnet (l3-geth + l3-op-node + batcher + proposer)
+# L3 testnet (Ghost-native application layer)
 VM_IP[ghostl3-testnet]="10.50.99.79"; VM_VCPU[ghostl3-testnet]=2; VM_RAM[ghostl3-testnet]=4096; VM_DISK[ghostl3-testnet]=120; VM_ROLE[ghostl3-testnet]="l3-testnet";           VM_MAC[ghostl3-testnet]="52:54:00:00:01:79"
 # L1 mainnet
 VM_IP[ghostchain-mainnet-l1]="10.50.99.70"; VM_VCPU[ghostchain-mainnet-l1]=2; VM_RAM[ghostchain-mainnet-l1]=6144; VM_DISK[ghostchain-mainnet-l1]=500; VM_ROLE[ghostchain-mainnet-l1]="l1-mainnet-fullnode";   VM_MAC[ghostchain-mainnet-l1]="52:54:00:00:01:70"
 # L1 mainnet validator
 VM_IP[ghost-mainnet-validator]="10.50.99.72"; VM_VCPU[ghost-mainnet-validator]=2; VM_RAM[ghost-mainnet-validator]=4096; VM_DISK[ghost-mainnet-validator]=200; VM_ROLE[ghost-mainnet-validator]="l1-mainnet-validator"; VM_MAC[ghost-mainnet-validator]="52:54:00:00:01:72"
-# L2 mainnet (op-geth + op-node + batcher + proposer)
+# L2 mainnet (Ghost-native custom execution layer)
 VM_IP[ghostl2-mainnet]="10.50.99.76"; VM_VCPU[ghostl2-mainnet]=2; VM_RAM[ghostl2-mainnet]=4096; VM_DISK[ghostl2-mainnet]=300; VM_ROLE[ghostl2-mainnet]="l2-mainnet";           VM_MAC[ghostl2-mainnet]="52:54:00:00:01:76"
-# L3 mainnet (l3-geth + l3-op-node + batcher + proposer)
+# L3 mainnet (Ghost-native application layer)
 VM_IP[ghostl3-mainnet]="10.50.99.78"; VM_VCPU[ghostl3-mainnet]=2; VM_RAM[ghostl3-mainnet]=4096; VM_DISK[ghostl3-mainnet]=300; VM_ROLE[ghostl3-mainnet]="l3-mainnet";           VM_MAC[ghostl3-mainnet]="52:54:00:00:01:78"
 # GhostChain L1 cluster nodes
 VM_IP[ghost-ghostchain-bootnode-1]="10.50.99.20"; VM_VCPU[ghost-ghostchain-bootnode-1]=1; VM_RAM[ghost-ghostchain-bootnode-1]=512;  VM_DISK[ghost-ghostchain-bootnode-1]=20;  VM_ROLE[ghost-ghostchain-bootnode-1]="ghostchain-bootnode"; VM_MAC[ghost-ghostchain-bootnode-1]="52:54:00:00:01:14"

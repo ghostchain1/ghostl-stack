@@ -88,8 +88,8 @@ class PortSpec:
 
 PORT_REGISTRY: List[PortSpec] = [
     PortSpec(18545, "ghostchaind/L1-rpc",      "L1",    "tcp", True,  False, True,  14000101),
-    PortSpec(29547, "op-geth/L2-rpc",          "L2",    "tcp", True,  False, True,  901),
-    PortSpec(39545, "op-geth/L3-rpc",          "L3",    "tcp", True,  False, True,  903),
+    PortSpec(29547, "ghostl2/rpc",             "L2",    "tcp", True,  False, True,  901),
+    PortSpec(39545, "ghostl3/rpc",             "L3",    "tcp", True,  False, True,  903),
     PortSpec(1317,  "cosmos-lcd",              "L1",    "tcp", False, True,  False),
     PortSpec(26657, "cometbft-rpc",            "L1",    "tcp", False, True,  False),
     PortSpec(9090,  "cosmos-grpc",             "L1",    "tcp", False, False, False),
@@ -119,7 +119,7 @@ PORT_REGISTRY: List[PortSpec] = [
 PORT_MAP: Dict[int, PortSpec] = {p.port: p for p in PORT_REGISTRY}
 
 PROCESS_ALLOWLIST = [
-    "ghostchaind", "op-geth", "op-node", "op-batcher",
+    "ghostchaind", "ghost-exec", "ghost-sequencer", "ghost-deriver", "ghost-settlement", "ghost-bridge", "ghost-proof",
     "ghostbrain", "node", "python3", "ghost-",
     "postgres", "redis-server", "grafana", "prometheus",
     "docker-proxy",

@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "validatedAt": "2026-03-19T10:46:27Z",
+  "validatedAt": "2026-03-19T16:08:34Z",
   "law": {
     "l3_to_l2_only": true,
     "l2_to_l1_only": true,
@@ -18,8 +18,8 @@
     "l3ParentL2HostPort": "localhost:29547",
     "chainIds": {
       "l1": "0xd59fe5",
-      "l2": "0x385",
-      "l3": "0x387"
+      "l2": "unknown",
+      "l3": "unknown"
     }
   }
 }

@@ -82,8 +82,8 @@ export function ChainLayerDashboard({ layer }: { layer: ChainLayer }) {
 
   const layerLabels: Record<ChainLayer, { full: string; type: string }> = {
     l1: { full: 'GhostChain L1', type: 'Sovereign (Cosmos SDK + EVM)' },
-    l2: { full: 'GhostL2', type: 'OP Stack Rollup → L1' },
-    l3: { full: 'GhostL3', type: 'OP Stack App Rollup → L2' },
+    l2: { full: 'GhostL2', type: 'Ghost-native execution layer → L1' },
+    l3: { full: 'GhostL3', type: 'Ghost-native application layer → L2' },
   };
   const meta = layerLabels[layer];
 
@@ -113,7 +113,7 @@ export function ChainLayerDashboard({ layer }: { layer: ChainLayer }) {
             <MetricRow label="Gas Price"   value={data?.gasPriceGwei != null ? `${data.gasPriceGwei.toFixed(4)} Gwei` : null} />
             <MetricRow label="Peers"       value={data?.peers} />
             {data?.consensus      && <MetricRow label="Consensus" value={data.consensus} />}
-            {data?.rollupType     && <MetricRow label="Rollup"    value={data.rollupType} />}
+            {data?.rollupType     && <MetricRow label="Runtime"   value={data.rollupType} />}
             {data?.settlementLayer && <MetricRow label="Settles to" value={data.settlementLayer.toUpperCase()} />}
             {data?.activeValidators != null && <MetricRow label="Active Validators" value={data.activeValidators} />}
           </div>
@@ -136,16 +136,16 @@ export function ChainLayerDashboard({ layer }: { layer: ChainLayer }) {
             )}
             {layer === 'l2' && (
               <>
-                <MetricRow label="L1 Portal"    value="0xad32D5C2Da…" />
+                <MetricRow label="L1 Rollup"    value="0xad32D5C2Da…" />
                 <MetricRow label="L2L3 Bridge"  value="0xDadd1125B8…" />
-                <MetricRow label="op-geth port" value="29547" />
+                <MetricRow label="RPC Port"      value="29547" />
               </>
             )}
             {layer === 'l3' && (
               <>
-                <MetricRow label="L2 Rollup"    value="0x130A46b6E4…" />
+                <MetricRow label="L2 Checkpoint" value="0x130A46b6E4…" />
                 <MetricRow label="Fee Collector" value=":7681" />
-                <MetricRow label="op-geth port" value="39545" />
+                <MetricRow label="RPC Port"      value="39545" />
               </>
             )}
           </div>

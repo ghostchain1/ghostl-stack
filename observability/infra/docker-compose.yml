@@ -44,7 +44,7 @@ services:
       start_period: 10s
     networks:
       - default
-      - opstack_default
+      - ghost_rollup
   alertmanager:
     <<: *runtime-hardening
     image: prom/alertmanager:v0.27.0@sha256:45c3a586d4332d710bef92b06e90380c0b1f588968c00100d4b5e4e44c40ca5f
@@ -81,5 +81,6 @@ volumes:
   alertmanager_data: {}
 
 networks:
-  opstack_default:
+  ghost_rollup:
     external: true
+    name: ghost-rollup

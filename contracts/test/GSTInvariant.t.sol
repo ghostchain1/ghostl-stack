@@ -37,13 +37,13 @@ contract GSTInvariantTest is Test {
         paths[0] = "../services/stack.env.example";
         paths[1] = "../package.json";
         paths[2] = "../infra/docker/compose/stack.env";
-        paths[3] = "../docs/architecture/phase3-containers.md";
+        paths[3] = "../docs/architecture/custom-ghost-multichain.md";
         paths[4] = "../infra/ghostchain/docker-compose.l1.yml";
-        paths[5] = "../infra/opstack/docker-compose.yml";
-        paths[6] = "../infra/opstack/docker-compose.l3.yml";
-        paths[7] = "../infra/opstack/config/rollup.json";
-        paths[8] = "../infra/opstack/l3/ghostl3/config/rollup.json";
-        paths[9] = "../infra/opstack/contracts/script/DeployL1.s.sol";
+        paths[5] = "../chains/ghostl2/chain.json";
+        paths[6] = "../chains/ghostl3/chain.json";
+        paths[7] = "../environments/devnet/ghostl2.env.example";
+        paths[8] = "../environments/devnet/ghostl3.env.example";
+        paths[9] = "../apps/web/src/modules/chain/components/ChainLayerDashboard.tsx";
 
         bytes memory legacySymbol = abi.encodePacked(bytes1(uint8(69)), bytes1(uint8(84)), bytes1(uint8(72)));
         bytes memory legacyUnit = abi.encodePacked(

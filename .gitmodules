@@ -1,18 +1,6 @@
-[submodule "infra/opstack/op-geth"]
-	path = infra/opstack/op-geth
-	url = git@github.com:ghostchain1/op-geth.git
-
-[submodule "infra/opstack/optimism"]
-	path = infra/opstack/optimism
-	url = git@github.com:ghostchain1/optimism.git
-
 [submodule "core-service"]
 	path = core-service
 	url = git@github.com:ghostchain1/core-service.git
-
-[submodule "infra/opstack/optimism-upstream"]
-	path = infra/opstack/optimism-upstream
-	url = git@github.com:ghostchain1/optimism.git
 [submodule "contracts/lib/forge-std"]
 	path = contracts/lib/forge-std
 	url = https://github.com/foundry-rs/forge-std

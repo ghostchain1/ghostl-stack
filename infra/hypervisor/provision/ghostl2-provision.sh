@@ -5,8 +5,10 @@
 #   76  ghostl2-mainnet  10.50.99.76  ENV=mainnet
 #   77  ghostl2-testnet  10.50.99.77  ENV=testnet
 #
-# ROLE: OP-Stack L2 — op-geth + op-node + op-batcher + op-proposer.
-#       Settles to L1 (VM 70 mainnet / VM 71 testnet).
+# ROLE: Ghost-native L2 execution layer.
+#       Runs the GhostL2 custom service set and anchors to GhostChain L1
+#       (VM 70 mainnet / VM 71 testnet). The base L2 RPC on :29547 is treated
+#       as a local prerequisite and is not bootstrapped by this script.
 #
 # Usage:
 #   sudo ENV=testnet bash ghostl2-provision.sh
@@ -60,65 +62,37 @@ mkdir -p /etc/ghostl-stack
 if [ ! -f "$ENV_FILE" ] || [ "$UPDATE" = "--update" ]; then
   log "Writing $ENV_FILE..."
   cat > "$ENV_FILE" <<ENVBLOCK
-# GhostL2 OP-Stack — ENV=${ENV}
+# GhostL2 custom execution layer — ENV=${ENV}
 # Managed by ghostl2-provision.sh.  Non-secret defaults only.
 
 GHOST_ENV=${ENV}
 REPO_DIR=${REPO_DIR}
+COMPOSE_PROJECT_NAME=ghostl2-${ENV}
 
-# ── L2 chain ───────────────────────────────────────────────────────────────────
+# ── Chain identity ─────────────────────────────────────────────────────────────
 L2_CHAIN_ID=901
-
-# ── L2 ports (op-geth) ────────────────────────────────────────────────────────
-L2_GETH_HTTP_PORT=29547
-L2_GETH_WS_PORT=29548
-L2_GETH_AUTH_PORT=29551
-L2_GETH_P2P_PORT=30306
-L2_GETH_METRICS_PORT=29660
-
-# ── L2 ports (rollup compat proxy + op-node) ──────────────────────────────────
-# Canonical direct GhostL2 host RPC remains :29547.
-# The host-exposed rollup compat proxy used for sync/admin checks is :29546.
-L2_OP_NODE_RPC_PORT=29546
-L2_OP_NODE_DIRECT_RPC_PORT=9546
-L2_OP_NODE_METRICS_PORT=29661
-
-# ── L2 ports (op-batcher) ─────────────────────────────────────────────────────
-L2_BATCHER_RPC_PORT=29548
-L2_BATCHER_METRICS_PORT=29662
-
-# ── L2 ports (op-proposer) ────────────────────────────────────────────────────
-L2_PROPOSER_RPC_PORT=29549
-L2_PROPOSER_METRICS_PORT=29663
-
-# ── Settlement — L1 this L2 settles into ──────────────────────────────────────
-# RPC (VM ${L1_VM_IP}) — use the auth port for engine API, public port otherwise
-RPC_SETTLEMENT=http://${L1_VM_IP}:18545
-L1_RPC=http://${L1_VM_IP}:18545
-L1_WS=ws://${L1_VM_IP}:18546
-L1_BEACON=http://${L1_VM_IP}:18545   # placeholder; set to real beacon URL if CL active
 L1_CHAIN_ID=14000101
 
-# ── Op-node sequencer (self) ───────────────────────────────────────────────────
-# sequencer = this VM; replica nodes point here
-OP_NODE_SEQUENCER_L1_CONFS=4
-OP_NODE_VERIFIER_L1_CONFS=12
+# ── Canonical base RPC prerequisite (host-local) ─────────────────────────────
+RPC_L2=http://localhost:29547
+GHOST_L2_EXEC_RPC_URL=http://host.docker.internal:29547
 
-# ── Rollup & contract addresses (promoted from devnet via push-to-vm.sh) ──────
-# These are populated by the deploy pipeline; set placeholders so service boots.
-L2_OUTPUT_ORACLE_ADDRESS=REPLACE_WITH_PROMOTED_VALUE
-L2_TO_L1_MESSAGE_PASSER=REPLACE_WITH_PROMOTED_VALUE
-BATCH_INBOX_ADDRESS=0xff00000000000000000000000000000000000901
-BATCH_SENDER_ADDRESS=REPLACE_WITH_PROMOTED_VALUE
-PROPOSER_ADDRESS=REPLACE_WITH_PROMOTED_VALUE
+# ── Ghost-native control-plane services (host) ────────────────────────────────
+GHOST_EXEC_L2_PORT=7260
+GHOST_SEQUENCER_L2_PORT=7261
+GHOST_DERIVER_L2_PORT=7262
+GHOST_SETTLEMENT_L2_PORT=7263
+GHOST_BRIDGE_L2_PORT=7264
+GHOST_PROOF_L2_PORT=7265
 
-# ── Batcher / proposer keys (loaded from Vault in prod; dev fallback below) ───
-BATCHER_PRIVATE_KEY=REPLACE_VIA_VAULT
-PROPOSER_PRIVATE_KEY=REPLACE_VIA_VAULT
+# ── Parent settlement RPC (remote L1 VM) ──────────────────────────────────────
+L1_RPC=http://${L1_VM_IP}:18545
+GHOST_L1_RPC_INTERNAL=http://${L1_VM_IP}:18545
 
-# ── Expected chain ID cross-checks (ghost-rollup-proposer) ────────────────────
-EXPECTED_SETTLEMENT_CHAIN_ID=14000101
-EXPECTED_CHILD_CHAIN_ID=901
+# ── Canonical settlement metadata ─────────────────────────────────────────────
+GHOST_L2_ROLLUP_ADDRESS=0xad32D5C2Da9f4159C4cc98686C005852b3905355
+GHOST_L1_FINALITY_ORACLE_ADDRESS=0x7B3Be2dDDdDf9A0a3fE1DC57B98980F662C3a422
+GHOST_L2_BRIDGE_ADDRESS=0xad32D5C2Da9f4159C4cc98686C005852b3905355
 
 # ── Vault ─────────────────────────────────────────────────────────────────────
 VAULT_ADDR=
@@ -145,21 +119,22 @@ fi
 
 # ── 5. Rollup config promotion ────────────────────────────────────────────────
 # Copy the rollup.json promoted from devnet (push-to-vm.sh places it here).
-ROLLUP_DST="/etc/ghostl-stack/l2-rollup.json"
-ROLLUP_SRC="$REPO_DIR/chains/l2/rollup.json"
+ROLLUP_DST="/etc/ghostl-stack/ghostl2-chain.json"
+ROLLUP_SRC="$REPO_DIR/chains/ghostl2/chain.json"
 if [ ! -f "$ROLLUP_DST" ]; then
   if [ -f "$ROLLUP_SRC" ]; then
-    log "Copying rollup.json from repo..."
+    log "Copying GhostL2 chain metadata from repo..."
     cp "$ROLLUP_SRC" "$ROLLUP_DST"
     chmod 644 "$ROLLUP_DST"
   else
-    log "WARNING: $ROLLUP_SRC not found. Copy rollup.json from devnet before starting services."
+    log "WARNING: $ROLLUP_SRC not found. Copy GhostL2 chain metadata before starting services."
   fi
 fi
 
 # ── 6. Compose file ───────────────────────────────────────────────────────────
-# Minimal L2 compose: op-geth + op-node only (batcher/proposer added once contracts are deployed)
-COMPOSE_FILE="$REPO_DIR/infra/opstack/docker-compose.l2-node.yml"
+# Dedicated GhostL2 VM launches only the L2 custom service slice.
+COMPOSE_FILE="$REPO_DIR/docker-compose.custom-rollup.yml"
+COMPOSE_SERVICES="ghost-exec-l2 ghost-sequencer-l2 ghost-deriver-l2 ghost-settlement-l2 ghost-bridge-l2 ghost-proof-l2"
 if [ ! -f "$COMPOSE_FILE" ]; then
   die "L2 compose file not found: $COMPOSE_FILE"
 fi
@@ -167,7 +142,7 @@ fi
 log "Configuring systemd service: ${SVC_NAME}..."
 cat > "/etc/systemd/system/${SVC_NAME}.service" <<SERVICE
 [Unit]
-Description=GhostL2 OP-Stack — ENV=${ENV} (op-geth + op-node + batcher + proposer)
+Description=GhostL2 custom service plane — ENV=${ENV}
 Requires=docker.service
 After=docker.service network-online.target
 Wants=network-online.target
@@ -176,8 +151,8 @@ Wants=network-online.target
 Type=simple
 WorkingDirectory=${REPO_DIR}
 EnvironmentFile=${ENV_FILE}
-ExecStart=/usr/bin/docker compose -f ${COMPOSE_FILE} --env-file ${ENV_FILE} up --remove-orphans
-ExecStop=/usr/bin/docker compose  -f ${COMPOSE_FILE} down
+ExecStart=/usr/bin/docker compose --project-directory ${REPO_DIR} -f ${COMPOSE_FILE} --env-file ${ENV_FILE} up --remove-orphans ${COMPOSE_SERVICES}
+ExecStop=/usr/bin/docker compose --project-directory ${REPO_DIR} -f ${COMPOSE_FILE} --env-file ${ENV_FILE} stop ${COMPOSE_SERVICES}
 Restart=on-failure
 RestartSec=20
 StandardOutput=journal
@@ -227,10 +202,22 @@ sync_check() {
   fi
 }
 
+service_check() {
+  local name="\$1" url="\$2"
+  if curl -sSf --max-time 6 "\$url" >/dev/null 2>&1; then
+    echo "  OK   \${name}"
+    (( ok++ )) || true
+  else
+    echo "  FAIL \${name}" >&2
+    (( fail++ )) || true
+  fi
+}
+
 echo "=== GhostL2 health [${ENV}] \$(date -u +%H:%M:%SZ) ==="
-rpc_check  "L2 op-geth  :29547" "http://localhost:29547"
-sync_check "L2 rollup proxy :29546" "http://localhost:29546"
-rpc_check  "L1 settle   :18545" "http://${L1_VM_IP}:18545"
+rpc_check     "L2 base RPC         :29547" "http://localhost:29547"
+service_check "ghost-exec-l2       :7260/status" "http://localhost:7260/status"
+service_check "ghost-settlement-l2 :7263/status" "http://localhost:7263/status"
+rpc_check     "L1 settlement RPC   :18545" "http://${L1_VM_IP}:18545"
 
 echo "--- ok=\${ok} fail=\${fail} ---"
 [ "\$fail" -eq 0 ]
@@ -271,15 +258,14 @@ log "  ENV         : ${ENV}"
 log "  VM IP       : ${VM_IP}"
 log "  L1 settle   : http://${L1_VM_IP}:18545"
 log "  L2 RPC      : http://${VM_IP}:29547"
-log "  L2 rollup proxy : http://${VM_IP}:29546"
-log "  L2 op-node direct: http://${VM_IP}:9546"
+log "  GhostExec   : http://${VM_IP}:7260"
+log "  Settlement  : http://${VM_IP}:7263"
 log "  Service     : sudo journalctl -u ${SVC_NAME} -f"
 log "  Health      : sudo ${HEALTH_BIN}"
 log ""
 log "  IMPORTANT before starting:"
-log "    1. Populate /etc/ghostl-stack/l2-${ENV}.env — BATCHER_PRIVATE_KEY, PROPOSER_PRIVATE_KEY"
-log "       and contract addresses from push-to-vm.sh --target ${ENV}"
-log "    2. Ensure rollup.json is at /etc/ghostl-stack/l2-rollup.json"
+log "    1. Ensure the local GhostL2 base RPC is available on :29547"
+log "    2. Ensure GhostL2 metadata is at /etc/ghostl-stack/ghostl2-chain.json"
 log "    3. Ensure L1 VM (${L1_VM_IP}) is synced and healthy"
 log ""
 log "  Then: sudo systemctl start ${SVC_NAME}"

@@ -3,7 +3,7 @@
 #
 # Installs, configures, and starts the full GhostStack ecosystem:
 #   system deps → Vault → VM provisioning → docker services →
-#   validator keys → secret storage → OP Stack preflight →
+#   validator keys → secret storage → Ghost rollup preflight →
 #   monitoring → AI services → self-healing supervisor
 #
 # Usage:
@@ -212,18 +212,19 @@ fi
 
 log "Phase 8 done."
 
-# ── Phase 9: OP Stack Preflight + Chain Health ───────────────────────────────
-step 9 "OP Stack Preflight & Chain Health"
+# ── Phase 9: Ghost Rollup Preflight + Chain Health ───────────────────────────
+step 9 "Ghost Rollup Preflight & Chain Health"
 
 # Sync env from deployed L1/L2/L3 contracts
 if [[ -f "${STACK_ROOT}/infra/scripts/env-sync-stack.sh" ]]; then
   bash "${STACK_ROOT}/infra/scripts/env-sync-stack.sh" || log "  env-sync-stack.sh failed – continuing."
 fi
 
-# Run OP Stack preflight if available
-if [[ -f "${STACK_ROOT}/infra/scripts/opstack/up-l2.sh" ]]; then
-  log "  Running OP Stack preflight…"
-  bash "${STACK_ROOT}/infra/scripts/opstack/up-l2.sh" || log "  L2 stack startup returned non-zero – check logs."
+# Run Ghost-native rollup preflight if available
+if [[ -f "${STACK_ROOT}/scripts/testnet/00-preflight.sh" ]]; then
+  log "  Running Ghost rollup preflight…"
+  STRICT_SECRETS="${STRICT_SECRETS:-0}" bash "${STACK_ROOT}/scripts/testnet/00-preflight.sh" \
+    || log "  Ghost rollup preflight returned non-zero – check logs."
 fi
 
 # Chain RPC health checks

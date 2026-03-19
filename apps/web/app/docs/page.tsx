@@ -11,7 +11,7 @@ const sections = [
       { label: 'Full Stack Architecture', href: 'https://github.com/ghostchain1/ghostl-stack/blob/main/docs/ARCHITECTURE.md', desc: 'L1/L2/L3 topology, AI layer, LGE, bridge, validators, port reference.' },
       { label: 'AI Governance Whitepaper', href: 'https://github.com/ghostchain1/ghostl-stack/blob/main/docs/architecture/ghostchain-ai-governance-whitepaper.md', desc: 'Phase 6+ orchestrator, authority model, GAIS, evidence chain.' },
       { label: 'LGE Architecture Deep-Dive', href: 'https://github.com/ghostchain1/ghostl-stack/blob/main/docs/ARCHITECTURE.md#liquidity-gravity-engine', desc: 'LoadBalancerVault, AdapterRegistry, SettlementOracle, CircuitBreaker.' },
-      { label: 'Bridge Architecture', href: 'https://github.com/ghostchain1/ghostl-stack/blob/main/docs/ai-guard-opstack.md', desc: 'GhostBridge, OP Stack anchoring, finality oracles.' },
+      { label: 'Bridge Architecture', href: 'https://github.com/ghostchain1/ghostl-stack/blob/main/docs/architecture/custom-ghost-multichain.md', desc: 'GhostBridge, Ghost settlement, finality oracles, and L3 routing law.' },
     ],
   },
   {
