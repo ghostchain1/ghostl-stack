@@ -156,7 +156,7 @@ services:
     networks:
       - ghostbrain-net
       - ghost-internal
-      - opstack_default
+      - ghost-rollup
       - ghostl-stack_default
     depends_on:
       ghostbrain-postgres:
@@ -601,7 +601,7 @@ services:
       - "host.docker.internal:host-gateway"
     networks:
       - ghostbrain-net
-      - opstack_default
+      - ghost-rollup
     depends_on:
       ghostbrain-core:
         condition: service_healthy
@@ -637,13 +637,13 @@ networks:
   ghostl-stack_default:
     external: true
     name: ghostl-stack_default
-  opstack_default:
+  ghost-rollup:
     external: true
-    name: opstack_default
+    name: ghost-rollup
   # ghostchain-cosmos-net is owned by docker-compose.ghostchain.yml.
   # governance-event-bridge joins it so it can reach ghostchaind by DNS name.
   # Bring up docker-compose.ghostchain.yml before this stack, or run both with:
-  #   docker compose -f docker-compose.ghostchain.yml -f docker-compose.ghostbrain.yml up -d
+  #   docker compose -f docker-compose.ghostchain.yml -f docker-compose.custom-rollup.yml -f docker-compose.ghostbrain.yml up -d
   ghostchain-cosmos-net:
     external: true
     name: ghostchain-cosmos-net

@@ -4,15 +4,15 @@
 # and settlement layer for the entire GhostL-Stack.
 #
 # ┌─────────────────────────────────────────────────────────────────────────┐
-# │  Topology (OP Stack → Cosmos SDK migration)                             │
+# │  Topology (GhostChain sovereign settlement + Ghost-native rollups)      │
 # │                                                                         │
 # │  ghostchaind (Cosmos SDK, ChainID: ghostchain-1, denom: ugst)          │
 # │    ↑ IBC (Hermes) ↕                                                     │
 # │  ghostchain-evm-l1 (geth PoA, ChainID: 14000101, port: 18545)          │
-# │    ↑ OP Stack settlement ↕                                              │
-# │  ghostchain-l2 (OP Stack, ChainID: 901, port: 29547)                   │
-# │    ↑ OP Stack ↕                                                         │
-# │  ghostchain-l3 (OP Stack, ChainID: 903, port: 39545)                   │
+# │    ↑ Ghost-native settlement ↕                                          │
+# │  ghostchain-l2 (Ghost-native, ChainID: 901, port: 29547)               │
+# │    ↑ Ghost-native routing law ↕                                         │
+# │  ghostchain-l3 (Ghost-native, ChainID: 903, port: 39545)               │
 # │                                                                         │
 # │  AI Services (ghostbrain + governance-event-bridge) poll LCD :1317      │
 # └─────────────────────────────────────────────────────────────────────────┘

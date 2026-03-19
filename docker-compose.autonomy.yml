@@ -33,7 +33,7 @@ services:
       - ./services/ghost-registry/dist:/app/dist:ro
     networks:
       - default
-      - opstack_default
+      - ghost-rollup
       - ghostchain
     healthcheck:
       test:
@@ -79,7 +79,7 @@ services:
       - ./services/network-context-service/src:/workspace/services/network-context-service/src:ro
     networks:
       - default
-      - opstack_default
+      - ghost-rollup
       - ghostchain
     healthcheck:
       test:
@@ -116,10 +116,10 @@ services:
       NET_ENV: ${NET_ENV:-dev}
       RPC_REGISTRY_URL: http://ghost-registry:8088/v1/endpoints
       RPC_L1: ${AUTONOMY_RPC_L1:-http://ghostchain-rpc-proxy:8545}
-      RPC_L2: ${AUTONOMY_RPC_L2:-http://ghost-exec-l2:7260}
-      RPC_L3: ${AUTONOMY_RPC_L3:-http://ghost-exec-l3:7270}
-      OP_NODE_L2_RPC: ${AUTONOMY_OP_NODE_L2_RPC:-http://ghost-sequencer-l2:7261}
-      OP_NODE_L3_RPC: ${AUTONOMY_OP_NODE_L3_RPC:-http://ghost-sequencer-l3:7271}
+      RPC_L2: ${AUTONOMY_RPC_L2:-http://host.docker.internal:29547}
+      RPC_L3: ${AUTONOMY_RPC_L3:-http://host.docker.internal:39545}
+      GHOST_SYNC_L2_RPC: ${AUTONOMY_GHOST_SYNC_L2_RPC:-http://ghost-sequencer-l2:7261}
+      GHOST_SYNC_L3_RPC: ${AUTONOMY_GHOST_SYNC_L3_RPC:-http://ghost-sequencer-l3:7271}
       EVIDENCE_DIR: /data/evidence
       PROPOSAL_DIR: /data/proposals
       FINALITY_STATE_PATH: /data/finality-state.json
@@ -134,7 +134,7 @@ services:
       - ./services/consensus-telemetry-service/src:/workspace/services/consensus-telemetry-service/src:ro
     networks:
       - default
-      - opstack_default
+      - ghost-rollup
       - ghostchain
     healthcheck:
       test:
@@ -177,14 +177,14 @@ services:
       CONSENSUS_TELEMETRY_URL: http://consensus-telemetry-service:7635/consensus
       MONITOR_HOST: ${MONITOR_HOST:-host.docker.internal}
       MONITOR_RPC_L1: ${AUTONOMY_RPC_L1:-http://ghostchain-rpc-proxy:8545}
-      MONITOR_RPC_L2: ${AUTONOMY_RPC_L2:-http://ghost-exec-l2:7260}
-      MONITOR_RPC_L3: ${AUTONOMY_RPC_L3:-http://ghost-exec-l3:7270}
+      MONITOR_RPC_L2: ${AUTONOMY_RPC_L2:-http://host.docker.internal:29547}
+      MONITOR_RPC_L3: ${AUTONOMY_RPC_L3:-http://host.docker.internal:39545}
       MONITOR_PORTS: ${MONITOR_PORTS:-}
       MONITOR_HEALTH_ENDPOINTS: ${MONITOR_HEALTH_ENDPOINTS:-}
       MONITOR_INTERVAL_MS: ${MONITOR_INTERVAL_MS:-10000}
-      OP_GATE_URL: ${AUTONOMY_OP_GATE_URL:-http://op-gate:8545}
-      OP_GATE_URL_L3: ${OP_GATE_URL_L3:-}
-      OP_GATE_ADMIN_TOKEN: ${OP_GATE_ADMIN_TOKEN:-}
+      GHOST_ROUTE_RPC_URL: ${AUTONOMY_GHOST_ROUTE_RPC_URL:-}
+      GHOST_ROUTE_RPC_URL_L3: ${GHOST_ROUTE_RPC_URL_L3:-}
+      GHOST_ROUTE_ADMIN_TOKEN: ${GHOST_ROUTE_ADMIN_TOKEN:-}
       AUTONOMY_EXECUTION_ENABLED: ${AUTONOMY_EXECUTION_ENABLED:-false}
       AUTONOMY_KILL_SWITCH: ${AUTONOMY_KILL_SWITCH:-false}
       AUTONOMY_PROD_LOCK: ${AUTONOMY_PROD_LOCK:-true}
@@ -222,7 +222,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - default
-      - opstack_default
+      - ghost-rollup
       - ghostchain
     healthcheck:
       test:
@@ -565,7 +565,7 @@ services:
     networks:
       - default
       - ghost_net
-      - opstack_default
+      - ghost-rollup
       - ghostchain
     healthcheck:
       test:
@@ -660,8 +660,9 @@ networks:
   ghostbrain-net:
     external: true
     name: ghostbrain-net
-  opstack_default:
+  ghost-rollup:
     external: true
+    name: ghost-rollup
   ghostchain:
     external: true
     name: ghostchain_ghostchain

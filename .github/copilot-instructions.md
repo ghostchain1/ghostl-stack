@@ -8,13 +8,13 @@
 
 ```
 GhostChain L1 (chain_id=14000101, RPC :18545)
-  └── GhostL2   (chain_id=901,       RPC :29547)  — OP Stack, anchored to L1 via L1GhostPortal
-        └── GhostL3 (chain_id=903,   RPC :39545)  — OP Stack, anchored to L2
+  └── GhostL2   (chain_id=901,       RPC :29547)  — Ghost-native execution layer, anchored to L1
+        └── GhostL3 (chain_id=903,   RPC :39545)  — Ghost-native application layer, anchored to L2
 ```
 
 - **GhostChain L1** — Cosmos SDK sovereign chain (`ghostchaind`), CometBFT consensus, EVM execution, governance-locked, GST gas token, treasury + slashing
-- **GhostL2** — OP Stack (op-geth / op-node / op-batcher), settlement to L1
-- **GhostL3** — OP Stack, app-specific execution, settlement to L2
+- **GhostL2** — Ghost-native sequencing, derivation, settlement, bridge, and proof services, settlement to L1
+- **GhostL3** — Ghost-native application runtime, settlement to L2, routing-law constrained through L2
 - **AI Layer** — GhostBrain Core (port 7900): transaction classification, risk scoring, fraud detection, autonomous proposals (human-ratified)
 - **Liquidity Gravity Engine (LGE)** — governance-locked on-chain: LoadBalancerVault, AdapterRegistry, SettlementOracle, CircuitBreaker, BridgeEscrow
 - **GNS** — Ghost Name System (replaces ENS)
@@ -84,9 +84,8 @@ npm run verify:routing      # validate routing-law guards
 
 # Preflight
 npm run phase2:preflight    # deprecations + hardhat build smoke test (run before governance deploy)
-npm run preflight:opstack   # validate L2/L3 chain configs before node startup
-npm run env:sync:opstack    # sync env from L1/L2 deployments
-npm run env:sync:opstack:l3 # sync env from L2/L3 deployments
+bash scripts/testnet/00-preflight.sh   # validate GhostChain / GhostL2 / GhostL3 runtime prerequisites
+bash scripts/testnet/20-up.sh          # bring up the Ghost-native testnet path
 ```
 
 ---
@@ -105,7 +104,7 @@ ghostl-stack/
 │   │   ├── treasury/, econ/         # SovereignTreasuryEngine, RewardDistributor
 │   │   ├── federation/, consensus-governance/
 │   │   ├── ai/, ghost/, ghostx/, gns/
-│   │   ├── bridge/, liquidity/, opstack/
+│   │   ├── bridge/, liquidity/, opstack/   # `opstack/` remains compatibility-only until fully retired
 │   │   └── compliance/, security/
 │   ├── test/
 │   │   ├── foundry/                 # forge unit + fuzz tests
@@ -131,10 +130,11 @@ ghostl-stack/
 │   ├── routing-guard/, routing-law/ # on-chain + off-chain routing enforcement
 │   └── brand-enforcer/              # 15-layer branding audit
 ├── chains/
-│   ├── l2/rollup.json               # GhostL2 OP Stack config
-│   └── l3/rollup.json               # GhostL3 OP Stack config
+│   ├── ghostl2/chain.json           # GhostL2 canonical chain metadata
+│   ├── ghostl3/chain.json           # GhostL3 canonical chain metadata
+│   └── l3/rollup.json               # legacy compatibility descriptor
 ├── infra/
-│   ├── opstack/                     # OP Stack node configs, Geth setup
+│   ├── opstack/                     # deprecated compatibility tree; not canonical
 │   ├── ghostchain/                  # Cosmos SDK sovereign chain (ghostchaind, CometBFT)
 │   ├── kubernetes/, helm/, terraform/
 │   └── vault/                       # HashiCorp Vault integration
@@ -269,9 +269,9 @@ COMPLIANCE_JWT_SECRET=<set>
 - AI may **write** proposals; humans must **ratify** them — no autonomous on-chain execution without governance quorum
 - Run `npm run phase2:preflight` before any governance contract deployment
 
-### OP Stack Preflight
-- Always run `npm run preflight:opstack` before starting L2/L3 nodes
-- Sync env after any L1/L2 deployment: `npm run env:sync:opstack`
+### Ghost Runtime Preflight
+- Always run `bash scripts/testnet/00-preflight.sh` before starting GhostL2/GhostL3 services
+- Use the active Ghost-native compose owners and launch scripts instead of deprecated OP-shaped aggregate bundles
 
 ### LGE / Settlement
 - If `SettlementOracle` does not report "can continue", `LoadBalancerVault` pauses recursively — check oracle health first when debugging paused state

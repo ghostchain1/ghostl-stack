@@ -23,8 +23,8 @@ GhostL3 (chain_id 903)  →  GhostL2 (chain_id 901)  →  GhostChain L1 (chain_i
 | Layer | Chain ID    | RPC Port | Type                    |
 |-------|-------------|----------|-------------------------|
 | L1    | `14000101`  | `18545`  | Cosmos SDK + EVM        |
-| L2    | `901`       | `29547`  | OP Stack (op-geth)      |
-| L3    | `903`       | `39545`  | OP Stack (app-specific) |
+| L2    | `901`       | `29547`  | Ghost-native execution  |
+| L3    | `903`       | `39545`  | Ghost-native app layer  |
 
 - **Gas token everywhere:** `GST` only; no alternate gas-token branding or wrapped legacy gas assets
 - **Explorer:** GhostScan (never the external block explorer)

@@ -27,9 +27,9 @@ const RPC_OVERRIDES = {
   L2: process.env.RPC_L2 || "",
   L3: process.env.RPC_L3 || ""
 };
-const OP_NODE_RPC = {
-  L2: process.env.OP_NODE_L2_RPC || process.env.OP_NODE_RPC_L2 || process.env.OP_NODE_RPC || "",
-  L3: process.env.OP_NODE_L3_RPC || process.env.OP_NODE_RPC_L3 || process.env.OP_NODE_RPC || ""
+const GHOST_SYNC_RPC = {
+  L2: process.env.GHOST_SYNC_L2_RPC || "",
+  L3: process.env.GHOST_SYNC_L3_RPC || ""
 };
 
 const STALL_THRESHOLD_SEC = {
@@ -42,9 +42,9 @@ const PEER_MIN = {
   L2: Number(process.env.PEER_MIN_L2 || 1),
   L3: Number(process.env.PEER_MIN_L3 || 1)
 };
-const OP_SAFE_LAG_BLOCKS = Number(process.env.OP_SAFE_LAG_BLOCKS || 120);
-const OP_FINALIZED_LAG_BLOCKS = Number(process.env.OP_FINALIZED_LAG_BLOCKS || 240);
-const OP_L1_LAG_BLOCKS = Number(process.env.OP_L1_LAG_BLOCKS || 20);
+const GHOST_SAFE_LAG_BLOCKS = Number(process.env.GHOST_SAFE_LAG_BLOCKS || 120);
+const GHOST_FINALIZED_LAG_BLOCKS = Number(process.env.GHOST_FINALIZED_LAG_BLOCKS || 240);
+const GHOST_PARENT_LAG_BLOCKS = Number(process.env.GHOST_PARENT_LAG_BLOCKS || 20);
 
 const FINALITY_ENABLED = process.env.FINALITY_ENABLED !== "false";
 const DRAFT_PROPOSALS_ENABLED = process.env.DRAFT_PROPOSALS_ENABLED !== "false";
@@ -52,18 +52,10 @@ const EVIDENCE_DIR = process.env.EVIDENCE_DIR || "/data/evidence";
 const PROPOSAL_DIR = process.env.PROPOSAL_DIR || "/data/proposals";
 const FINALITY_STATE_PATH = process.env.FINALITY_STATE_PATH || "/data/finality-state.json";
 
-const L2_OUTPUT_ORACLE_ADDRESS =
-  process.env.L2_OUTPUT_ORACLE_ADDRESS ||
-  process.env.L2OO_ADDRESS ||
-  process.env.L2_OUTPUT_ORACLE_PROXY ||
-  "";
-const L3_OUTPUT_ORACLE_ADDRESS =
-  process.env.L3_OUTPUT_ORACLE_ADDRESS ||
-  process.env.L3_L2OO_ADDRESS ||
-  process.env.L3_OUTPUT_ORACLE_PROXY ||
-  "";
-const L2_OUTPUT_ORACLE_RPC = process.env.L2_OUTPUT_ORACLE_RPC || RPC_OVERRIDES.L1 || "";
-const L3_OUTPUT_ORACLE_RPC = process.env.L3_OUTPUT_ORACLE_RPC || RPC_OVERRIDES.L2 || "";
+const L2_FINALITY_ORACLE_ADDRESS = process.env.L2_FINALITY_ORACLE_ADDRESS || "";
+const L3_FINALITY_ORACLE_ADDRESS = process.env.L3_FINALITY_ORACLE_ADDRESS || "";
+const L2_FINALITY_ORACLE_RPC = process.env.L2_FINALITY_ORACLE_RPC || RPC_OVERRIDES.L1 || "";
+const L3_FINALITY_ORACLE_RPC = process.env.L3_FINALITY_ORACLE_RPC || RPC_OVERRIDES.L2 || "";
 
 const ORACLE_MAX_BLOCK_DRIFT_L2 = Number(process.env.ORACLE_MAX_BLOCK_DRIFT_L2 || 500);
 const ORACLE_MAX_BLOCK_DRIFT_L3 = Number(process.env.ORACLE_MAX_BLOCK_DRIFT_L3 || 500);
@@ -282,27 +274,27 @@ const syncingGauge = new promClient.Gauge({
   labelNames: ["layer"],
   registers: [registry]
 });
-const opLagGauge = new promClient.Gauge({
-  name: `${metricsPrefix}_op_lag_blocks`,
-  help: "OP Stack lag metrics",
+const syncLagGauge = new promClient.Gauge({
+  name: `${metricsPrefix}_sync_lag_blocks`,
+  help: "Ghost rollup sync lag metrics",
   labelNames: ["layer", "type"],
   registers: [registry]
 });
-const outputOracleBlockGauge = new promClient.Gauge({
-  name: `${metricsPrefix}_output_oracle_latest_block`,
-  help: "latest L2 output oracle block number",
+const finalityOracleBlockGauge = new promClient.Gauge({
+  name: `${metricsPrefix}_finality_oracle_latest_block`,
+  help: "latest finality oracle block number",
   labelNames: ["layer"],
   registers: [registry]
 });
-const outputOracleIndexGauge = new promClient.Gauge({
-  name: `${metricsPrefix}_output_oracle_latest_index`,
-  help: "latest L2 output oracle index",
+const finalityOracleIndexGauge = new promClient.Gauge({
+  name: `${metricsPrefix}_finality_oracle_latest_index`,
+  help: "latest finality oracle index",
   labelNames: ["layer"],
   registers: [registry]
 });
-const outputOracleAgeGauge = new promClient.Gauge({
-  name: `${metricsPrefix}_output_oracle_age_seconds`,
-  help: "age of latest L2 output oracle timestamp",
+const finalityOracleAgeGauge = new promClient.Gauge({
+  name: `${metricsPrefix}_finality_oracle_age_seconds`,
+  help: "age of latest finality oracle timestamp",
   labelNames: ["layer"],
   registers: [registry]
 });
@@ -438,7 +430,7 @@ const parseTimestamp = (value) => {
 
 const ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000";
 
-const L2_OUTPUT_ORACLE_ABI = [
+const FINALITY_ORACLE_ABI = [
   "function latestOutputIndex() view returns (uint256)",
   "function latestBlockNumber() view returns (uint256)",
   "function nextOutputIndex() view returns (uint256)",
@@ -479,7 +471,7 @@ const providerSendWithFallback = async (provider, methods, params = []) => {
   throw lastError ?? new Error("rpc_method_failed");
 };
 
-const fetchOutputOracleSnapshot = async (label, rpc, address, expectedParentChainId = null) => {
+const fetchFinalityOracleSnapshot = async (label, rpc, address, expectedParentChainId = null) => {
   if (!address) return { label, address: "", configured: true, error: "oracle_address_missing" };
   if (!rpc) return { label, address, configured: true, error: "oracle_parent_rpc_missing" };
   let normalizedAddress = "";
@@ -499,7 +491,7 @@ const fetchOutputOracleSnapshot = async (label, rpc, address, expectedParentChai
   }
 
   const provider = getProvider(rpc);
-  const contract = new ghost.Contract(normalizedAddress, L2_OUTPUT_ORACLE_ABI, provider);
+  const contract = new ghost.Contract(normalizedAddress, FINALITY_ORACLE_ABI, provider);
   const versionContract = new ghost.Contract(normalizedAddress, ORACLE_VERSION_ABI, provider);
   const snapshot = { label, address: normalizedAddress, rpc, configured: true, expectedParentChainId };
 
@@ -1032,7 +1024,7 @@ const fetchLayerStatus = async (layer, rpc) => {
   };
 };
 
-const fetchOpSyncStatus = async (rpc) => {
+const fetchGhostSyncStatus = async (rpc) => {
   if (!rpc) return null;
   try {
     const provider = getProvider(rpc);
@@ -1051,7 +1043,7 @@ const normalizeOpEntry = (entry) => {
   };
 };
 
-const normalizeOpStatus = (status) => {
+const normalizeSyncStatus = (status) => {
   if (!status || status.error) return null;
   return {
     currentL1: normalizeOpEntry(status.currentL1 ?? status.current_l1),
@@ -1062,7 +1054,7 @@ const normalizeOpStatus = (status) => {
   };
 };
 
-const computeIncidents = (layer, data, opStatus, l1HeadNumber) => {
+const computeIncidents = (layer, data, syncStatus, l1HeadNumber) => {
   const incidents = {};
   if (!data || data.error) {
     incidents.rpc_error = true;
@@ -1091,22 +1083,22 @@ const computeIncidents = (layer, data, opStatus, l1HeadNumber) => {
     }
   }
 
-  const normalizedOp = normalizeOpStatus(opStatus);
-  if (normalizedOp) {
-    const unsafeNum = normalizedOp.unsafeL2?.number;
-    const safeNum = normalizedOp.safeL2?.number;
-    const finalizedNum = normalizedOp.finalizedL2?.number;
+  const normalizedSync = normalizeSyncStatus(syncStatus);
+  if (normalizedSync) {
+    const unsafeNum = normalizedSync.unsafeL2?.number;
+    const safeNum = normalizedSync.safeL2?.number;
+    const finalizedNum = normalizedSync.finalizedL2?.number;
 
-    if (unsafeNum != null && safeNum != null && unsafeNum - safeNum > OP_SAFE_LAG_BLOCKS) {
+    if (unsafeNum != null && safeNum != null && unsafeNum - safeNum > GHOST_SAFE_LAG_BLOCKS) {
       incidents.oracle_lag = true;
     }
 
-    if (safeNum != null && finalizedNum != null && safeNum - finalizedNum > OP_FINALIZED_LAG_BLOCKS) {
+    if (safeNum != null && finalizedNum != null && safeNum - finalizedNum > GHOST_FINALIZED_LAG_BLOCKS) {
       incidents.finalized_lag = true;
     }
 
-    if (l1HeadNumber != null && normalizedOp.currentL1?.number != null) {
-      if (l1HeadNumber - normalizedOp.currentL1.number > OP_L1_LAG_BLOCKS) {
+    if (l1HeadNumber != null && normalizedSync.currentL1?.number != null) {
+      if (l1HeadNumber - normalizedSync.currentL1.number > GHOST_PARENT_LAG_BLOCKS) {
         incidents.portal_lag = true;
       }
     }
@@ -1115,7 +1107,7 @@ const computeIncidents = (layer, data, opStatus, l1HeadNumber) => {
   return incidents;
 };
 
-const updateMetricsForLayer = (layer, data, incidents, opStatus) => {
+const updateMetricsForLayer = (layer, data, incidents, syncStatus) => {
   const setGaugeValue = (gauge, labels, value) => {
     if (value === null || value === undefined || Number.isNaN(value)) {
       gauge.set(labels, -1);
@@ -1136,20 +1128,20 @@ const updateMetricsForLayer = (layer, data, incidents, opStatus) => {
   setGaugeValue(finalizedBlockGauge, { layer }, data?.finalizedBlock);
   syncingGauge.set({ layer }, data?.syncing ? 1 : 0);
 
-  const normalizedOp = normalizeOpStatus(opStatus);
-  if (normalizedOp) {
-    const unsafeNum = normalizedOp.unsafeL2?.number;
-    const safeNum = normalizedOp.safeL2?.number;
-    const finalizedNum = normalizedOp.finalizedL2?.number;
+  const normalizedSync = normalizeSyncStatus(syncStatus);
+  if (normalizedSync) {
+    const unsafeNum = normalizedSync.unsafeL2?.number;
+    const safeNum = normalizedSync.safeL2?.number;
+    const finalizedNum = normalizedSync.finalizedL2?.number;
     if (unsafeNum != null && safeNum != null) {
-      setGaugeValue(opLagGauge, { layer, type: "unsafe_safe" }, Math.max(0, unsafeNum - safeNum));
+      setGaugeValue(syncLagGauge, { layer, type: "unsafe_safe" }, Math.max(0, unsafeNum - safeNum));
     }
     if (safeNum != null && finalizedNum != null) {
-      setGaugeValue(opLagGauge, { layer, type: "safe_finalized" }, Math.max(0, safeNum - finalizedNum));
+      setGaugeValue(syncLagGauge, { layer, type: "safe_finalized" }, Math.max(0, safeNum - finalizedNum));
     }
   } else if (layer === "L2" || layer === "L3") {
-    setGaugeValue(opLagGauge, { layer, type: "unsafe_safe" }, null);
-    setGaugeValue(opLagGauge, { layer, type: "safe_finalized" }, null);
+    setGaugeValue(syncLagGauge, { layer, type: "unsafe_safe" }, null);
+    setGaugeValue(syncLagGauge, { layer, type: "safe_finalized" }, null);
   }
 
   const incidentTypes = new Set([
@@ -1171,13 +1163,13 @@ const updateFinalityMetrics = ({ layer, oracleSnapshot, headTimestamp }) => {
   };
 
   if (layer === "L2" || layer === "L3") {
-    setGaugeValue(outputOracleBlockGauge, { layer }, oracleSnapshot?.latestBlockNumber ?? null);
-    setGaugeValue(outputOracleIndexGauge, { layer }, oracleSnapshot?.latestOutputIndex ?? null);
+    setGaugeValue(finalityOracleBlockGauge, { layer }, oracleSnapshot?.latestBlockNumber ?? null);
+    setGaugeValue(finalityOracleIndexGauge, { layer }, oracleSnapshot?.latestOutputIndex ?? null);
     if (headTimestamp && oracleSnapshot?.outputTimestamp) {
       const age = Math.max(0, headTimestamp - oracleSnapshot.outputTimestamp);
-      setGaugeValue(outputOracleAgeGauge, { layer }, age);
+      setGaugeValue(finalityOracleAgeGauge, { layer }, age);
     } else {
-      setGaugeValue(outputOracleAgeGauge, { layer }, null);
+      setGaugeValue(finalityOracleAgeGauge, { layer }, null);
     }
   }
 };
@@ -1263,7 +1255,7 @@ const pollLayer = async (layer) => {
     const rpc = await resolveRpc(layer);
     const [base, opStatus] = await Promise.all([
       fetchLayerStatus(layer, rpc),
-      layer === "L2" || layer === "L3" ? fetchOpSyncStatus(OP_NODE_RPC[layer]) : Promise.resolve(null)
+      layer === "L2" || layer === "L3" ? fetchGhostSyncStatus(GHOST_SYNC_RPC[layer]) : Promise.resolve(null)
     ]);
     return { layer, base, opStatus };
   } catch (err) {
@@ -1290,19 +1282,19 @@ const pollOnce = async () => {
     let finalitySnapshots = { L2: null, L3: null };
     let bridgeStatus = null;
     if (FINALITY_ENABLED) {
-      const l1Rpc = L2_OUTPUT_ORACLE_RPC || state.layers.L1?.rpc || "";
-      const l2Rpc = L3_OUTPUT_ORACLE_RPC || state.layers.L2?.rpc || "";
+      const l1Rpc = L2_FINALITY_ORACLE_RPC || state.layers.L1?.rpc || "";
+      const l2Rpc = L3_FINALITY_ORACLE_RPC || state.layers.L2?.rpc || "";
       finalitySnapshots = {
-        L2: await fetchOutputOracleSnapshot(
+        L2: await fetchFinalityOracleSnapshot(
           "L2",
           l1Rpc,
-          L2_OUTPUT_ORACLE_ADDRESS,
+          L2_FINALITY_ORACLE_ADDRESS,
           state.layers.L1?.chainId ?? null
         ),
-        L3: await fetchOutputOracleSnapshot(
+        L3: await fetchFinalityOracleSnapshot(
           "L3",
           l2Rpc,
-          L3_OUTPUT_ORACLE_ADDRESS,
+          L3_FINALITY_ORACLE_ADDRESS,
           state.layers.L2?.chainId ?? null
         )
       };

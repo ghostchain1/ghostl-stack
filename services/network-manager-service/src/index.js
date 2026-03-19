@@ -82,9 +82,12 @@ const EXECUTION_TOKEN = process.env.EXECUTION_APPROVAL_TOKEN || "";
 const CONSENSUS_TELEMETRY_URL =
   process.env.CONSENSUS_TELEMETRY_URL || "http://consensus-telemetry-service:7635/consensus";
 
-const OP_GATE_URL = process.env.OP_GATE_URL || "http://op-gate:8545";
-const OP_GATE_URL_L3 = process.env.OP_GATE_URL_L3 || "";
-const OP_GATE_ADMIN_TOKEN = process.env.OP_GATE_ADMIN_TOKEN || process.env.GATE_ADMIN_TOKEN || "";
+const GHOST_ROUTE_RPC_URL =
+  process.env.GHOST_ROUTE_RPC_URL || "";
+const GHOST_ROUTE_RPC_URL_L3 =
+  process.env.GHOST_ROUTE_RPC_URL_L3 || "";
+const GHOST_ROUTE_ADMIN_TOKEN =
+  process.env.GHOST_ROUTE_ADMIN_TOKEN || process.env.GATE_ADMIN_TOKEN || "";
 
 const GOVERNANCE_RPC =
   process.env.GOVERNANCE_RPC_L1 ||
@@ -698,8 +701,8 @@ function buildGhostBrainRemediationPlan() {
     const candidates = allowlist.filter((containerName) => {
       const name = String(containerName).toLowerCase();
       if (layer === "L1") return name.includes("l1") || name.includes("ghostchain");
-      if (layer === "L2") return name.includes("l2") || name.includes("op-node") || name.includes("sequencer");
-      if (layer === "L3") return name.includes("l3") || name.includes("op-node") || name.includes("sequencer");
+      if (layer === "L2") return name.includes("l2") || name.includes("sequencer") || name.includes("deriver");
+      if (layer === "L3") return name.includes("l3") || name.includes("sequencer") || name.includes("deriver");
       return false;
     });
 
@@ -906,7 +909,7 @@ async function probe() {
 function summarize() {
   const failed = state.results.filter((r) => r.ok === false);
   const suggestions = [];
-  if (failed.some((r) => r.type === "rpc")) suggestions.push("Check RPC endpoints, restart op-node/op-geth if unresponsive.");
+  if (failed.some((r) => r.type === "rpc")) suggestions.push("Check canonical RPC endpoints and restart the affected Ghost execution services if unresponsive.");
   if (failed.some((r) => r.type === "port")) suggestions.push("Port unreachable; check docker-proxy or host firewall.");
   if (failed.some((r) => r.type === "health")) suggestions.push("Service health failing; inspect container logs.");
   if (suggestions.length === 0) suggestions.push("All monitored checks are OK.");
@@ -988,7 +991,7 @@ const executeRestart = async (action) => {
 
 const executeGateMode = async (action) => {
   const modePolicy = policy?.actions?.op_gate_mode || DEFAULT_POLICY.actions.op_gate_mode;
-  if (!modePolicy.enabled) throw new Error("op_gate_mode_disabled");
+  if (!modePolicy.enabled) throw new Error("ghost_route_mode_disabled");
   const mode = String(action.mode || "").toLowerCase();
   if (!modePolicy.allowedModes.includes(mode)) throw new Error("mode_not_allowed");
   const delaySeconds = Number(action.delaySeconds || 0);
@@ -996,21 +999,21 @@ const executeGateMode = async (action) => {
   const target = String(action.target || "l2").toLowerCase();
   if (!modePolicy.targets.includes(target)) throw new Error("target_not_allowed");
 
-  const gateUrl = target === "l3" && OP_GATE_URL_L3 ? OP_GATE_URL_L3 : OP_GATE_URL;
-  if (!gateUrl) throw new Error("op_gate_url_not_configured");
-  if (!OP_GATE_ADMIN_TOKEN) throw new Error("op_gate_admin_token_missing");
+  const gateUrl = target === "l3" && GHOST_ROUTE_RPC_URL_L3 ? GHOST_ROUTE_RPC_URL_L3 : GHOST_ROUTE_RPC_URL;
+  if (!gateUrl) throw new Error("ghost_route_rpc_url_not_configured");
+  if (!GHOST_ROUTE_ADMIN_TOKEN) throw new Error("ghost_route_admin_token_missing");
 
   const res = await fetch(`${gateUrl.replace(/\/$/, "")}/gate/mode`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-admin-token": OP_GATE_ADMIN_TOKEN
+      "x-admin-token": GHOST_ROUTE_ADMIN_TOKEN
     },
     body: JSON.stringify({ mode, delaySeconds })
   });
-  if (!res.ok) throw new Error(`op_gate_http_${res.status}`);
+  if (!res.ok) throw new Error(`ghost_route_http_${res.status}`);
   const body = await res.json();
-  if (!body?.ok) throw new Error(body?.error || "op_gate_error");
+  if (!body?.ok) throw new Error(body?.error || "ghost_route_error");
   return { ok: true, target, mode, delaySeconds };
 };
 

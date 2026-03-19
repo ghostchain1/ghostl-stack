@@ -30,8 +30,8 @@ These paths still define the official L2/L3 runtime as OP Stack.
 | `.github/copilot-instructions.md` | Declares GhostL2/GhostL3 as OP Stack and instructs operators to run OP preflight/env sync flows | blocker | Replace with Ghost-runtime-primary guidance after replacement scripts exist |
 | `AGENTS.md` | Chain identity table still labels L2/L3 as OP Stack | blocker | Update only when the runtime cutover is real and parity is proven |
 | `package.json` | Root scripts expose `preflight:opstack`, `env:sync:opstack`, `env:sync:opstack:l3`, `opstack:check` as canonical flows | blocker | Introduce custom-runtime equivalents and demote OP scripts to compat/baseline |
-| `compose.mainnet.yml` | Includes `op-node`, `op-batcher`, `op-proposer`, `op-challenger`, plus L3 variants | blocker | Replace production-path compose with Ghost-native services |
-| `compose.testnet.yml` | Same OP service ownership in testnet path | blocker | Same as mainnet |
+| `compose.mainnet.yml` | Quarantined as an empty deprecated stub; no runtime services remain in this file | compat-only | Keep inert and route production through the active Ghost-native compose owners |
+| `compose.testnet.yml` | Quarantined as an empty deprecated stub; no runtime services remain in this file | compat-only | Keep inert and route testnet through the active Ghost-native compose owners |
 
 ## 2. SDK And RPC Compatibility Layers
 These are the main protocol-surface blockers because they preserve OP semantics behind Ghost-branded names.
@@ -132,7 +132,7 @@ This is the largest operational surface area for migration.
 | `infra/network-manager/ghost_network_manager.py` | Port labels and process inventory still tied to OP binaries | blocker | Replace with Ghost-native runtime process model |
 | `infra/docker/compose/prometheus.yml` | Scrapes `op-node`, `op-batcher`, `op-proposer` and L3 OP variants | blocker | Replace with Ghost-native metrics jobs |
 | `infra/k8s/blueprints/statefulsets/op-*.yaml` and `l3-op-*.yaml` | Kubernetes statefulsets are still OP-native | blocker | Replace with Ghost-native runtime manifests |
-| `infra/network/docker-compose.network.yml` | Network bundles still expose OP geth/node naming | blocker | Update topology to custom runtime services |
+| `infra/network/docker-compose.network.yml` | Quarantined as an inert deprecated overlay; canonical network publication is now host-level | compat-only | Keep inert and use nginx/Kong/HAProxy/firewall configs instead |
 | `infra/genesis-installer-v3.sh` | Still states GhostL2/GhostL3 run OP Stack | blocker | Rewrite installation workflow |
 
 ## 8. Baseline And Archive Candidates

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 MODE="staging"
@@ -9,7 +9,7 @@ usage() {
   cat <<'USAGE'
 Usage: infra/scripts/rollback-l2.sh --tag=<tag> [--mode=local|staging|production]
 
-Rolls back to the specified git tag, deploys, and runs smoke tests.
+Rolls back to the specified git tag, syncs GhostL2 env, starts the canonical path, and runs smoke tests.
 USAGE
 }
 
@@ -22,7 +22,7 @@ for arg in "$@"; do
   esac
 done
 
-if [ -z "$TAG" ]; then
+if [[ -z "$TAG" ]]; then
   echo "rollback-l2: --tag is required" >&2
   exit 1
 fi
@@ -37,13 +37,17 @@ fi
 echo "[rollback-l2] checking out $TAG"
 git checkout "$TAG"
 
-export L2_ENV="$MODE"
-echo "[rollback-l2] syncing env"
-"$ROOT_DIR/infra/scripts/env-sync-l2.sh"
+echo "[rollback-l2] syncing GhostL2 env"
+L2_ENV="$MODE" "$ROOT_DIR/infra/scripts/env-sync-l2.sh"
 
-echo "[rollback-l2] starting L2"
-"$ROOT_DIR/infra/scripts/opstack/up-l2.sh"
+echo "[rollback-l2] starting Ghost-native chain path"
+STRICT_SECRETS="${STRICT_SECRETS:-0}" \
+START_PHASE3_SERVICES=0 \
+START_OBSERVABILITY_STACK=0 \
+RUN_DOCTOR=0 \
+  "$ROOT_DIR/infra/scripts/up.sh"
 
+echo "[rollback-l2] smoke tests"
 "$ROOT_DIR/infra/scripts/doctor-l2.sh"
 
 echo "[rollback-l2] done"

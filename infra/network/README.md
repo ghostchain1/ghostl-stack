@@ -60,21 +60,24 @@ sudo nginx -t && sudo systemctl reload nginx
 docker compose -f kong/docker-compose.yml up -d
 ```
 
-### 6. Docker services with IP binding
+### 6. Docker IP Overlay
 
-Add the network overlay to your compose command:
+The old Docker IP-binding overlay at [`infra/network/docker-compose.network.yml`](/home/ghost/ghostl-stack/infra/network/docker-compose.network.yml) has been retired from the canonical path. Do not use it for new deployments.
+
+Publish GhostChain, GhostL2, and GhostL3 through the host-level network stack instead:
 
 ```bash
-docker compose \
-  -f docker-compose.yml \
-  -f infra/network/docker-compose.network.yml \
-  up -d
+sudo cp nginx/nginx.conf /etc/nginx/nginx.conf
+sudo cp nginx/conf.d/*.conf /etc/nginx/conf.d/
+sudo nginx -t && sudo systemctl reload nginx
+docker compose -f kong/docker-compose.yml up -d
 ```
 
-Or add to `.env`:
+For geo and RPC host routing, use:
 
-```
-COMPOSE_FILE=docker-compose.yml:infra/network/docker-compose.network.yml
+```bash
+infra/network/haproxy/haproxy-geo.cfg
+infra/network/firewall/ufw-setup.sh
 ```
 
 ---
@@ -108,3 +111,4 @@ Internet
 - All RPC responses block `admin_`, `debug_`, and `personal_` JSON-RPC methods at the nginx layer.
 - Kong adds request-ID tracing (`X-Ghost-Request-Id`) on all routes for log correlation.
 - SSL is TLS 1.2/1.3 only; auto-renewed via certbot cron.
+- The deprecated Docker IP-binding overlay is intentionally inert; canonical ingress is host-level only.
